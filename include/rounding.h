@@ -10,16 +10,16 @@
   ******************************************************************************
   */  
 
-#ifndef __PP_ROUNDING_H
-#define __PP_ROUNDING_H
+#ifndef __ROUNDING_H
+#define __ROUNDING_H
 
 #include "map.h"
 
 typedef enum {
-	PP_ROUNDING_LEFT = 0,
-	PP_ROUNDING_RIGHT,
-} PpRoundingType;
+	ROUNDING_LEFT = 0,
+	ROUNDING_RIGHT,
+} RoundingType;
 
-uint8_t pp_rounding(PpRoundingType type, Point32_t target);
+uint8_t rounding(RoundingType type, Point32_t target);
 
 #endif
