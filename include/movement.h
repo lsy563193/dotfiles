@@ -15,6 +15,7 @@ void Set_Wheel_Step(uint32_t Left,uint32_t Right);
 int32_t Get_Wall_ADC(void);
 
 void Set_Dir_Backward(void);
+void Set_Dir_Forward(void);
 
 uint8_t Is_Encoder_Fail(void);
 
@@ -24,6 +25,7 @@ void Wall_Dynamic_Base(uint32_t Cy);
 
 void Quick_Back(uint8_t Speed,uint16_t Distance);
 
+void Turn_Left(uint16_t speed,uint16_t angle);
 void Turn_Right(uint16_t speed,uint16_t angle);
 
 void Set_Error_Code(uint8_t code);
@@ -50,6 +52,7 @@ void Turn_Right(uint16_t speed,uint16_t angle);
 uint8_t Get_OBS_Status(void);
 
 int32_t Get_FrontOBS(void);
+int32_t Get_LeftOBS(void);
 
 uint8_t Get_Bumper_Status(void);
 
@@ -86,6 +89,8 @@ void Set_Vac_Speed(void);
 void OBS_Dynamic_Base(uint16_t Cy);
 
 int16_t Get_FrontOBST_Value(void);
+int16_t Get_LeftOBST_Value(void);
+uint8_t Is_WallOBS_Near(void);
 
 void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed);
 

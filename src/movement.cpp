@@ -3,6 +3,7 @@
 #include "control.h"
 #include "robot.hpp"
 
+#include "gyro.h"
 #include "movement.h"
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -49,6 +50,12 @@ void Set_Dir_Backward(void)
 	wheel_right_direction = 1;
 }
 
+void Set_Dir_Forward(void)
+{
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+}
+
 uint8_t Is_Encoder_Fail(void)
 {
 	return 0;
@@ -70,10 +77,77 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	Distance = Distance;
 }
 
+void Turn_Left(uint16_t speed, uint16_t angle)
+{
+	int16_t target_angle;
+	uint16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle(0);
+
+	target_angle = gyro_angle + angle;
+	if (target_angle >= 3600) {
+		target_angle = target_angle - 3600;
+	}
+
+	wheel_left_direction = 1;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(speed, speed);
+
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	while (1) {
+		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+			Set_Wheel_Speed(speed / 2, speed / 2);
+		} else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		usleep(10000);
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0));
+}
 void Turn_Right(uint16_t speed, uint16_t angle)
 {
-	speed = speed;
-	angle = angle;
+	int16_t target_angle;
+	uint16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle(0);
+
+	target_angle = gyro_angle - angle;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+
+	wheel_left_direction = 0;
+	wheel_right_direction = 1;
+
+	Set_Wheel_Speed(speed, speed);
+
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	while (1) {
+		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+			Set_Wheel_Speed(speed / 2, speed / 2);
+		} else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		usleep(10000);
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0));
 }
 
 uint8_t Get_OBS_Status(void)
@@ -92,8 +166,15 @@ uint8_t Get_OBS_Status(void)
 	return Status;
 }
 
-int32_t Get_FrontOBS(void){
+
+int32_t Get_FrontOBS(void)
+{
 	return robot::instance()->robot_get_obs_front();
+}
+
+int32_t Get_LeftOBS(void)
+{
+	return robot::instance()->robot_get_obs_left();
 }
 
 uint8_t Get_Bumper_Status(void)
@@ -155,9 +236,11 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 	if (wheel_right_direction == 1) {
 		right_speed |= 0x8000;
 	}
-	//printf("%s %d: left: %d\tright: %d\tposition: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
-	//	left_speed, right_speed, robot::instance()->robot_get_position_x(), robot::instance()->robot_get_position_y(), robot::instance()->robot_get_position_z());
 
+#if 0
+	printf("%s %d: left: %d\tright: %d\tposition: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
+		left_speed, right_speed, robot::instance()->robot_get_position_x(), robot::instance()->robot_get_position_y(), robot::instance()->robot_get_position_z());
+#endif
 	control_set_wheel_speed(left_speed, right_speed);
 }
 
@@ -204,6 +287,25 @@ void OBS_Dynamic_Base(uint16_t Cy)
 int16_t Get_FrontOBST_Value(void)
 {
 	return Front_OBSTrig_Value + 1700;
+}
+
+int16_t Get_LeftOBST_Value(void)
+{
+    return Left_OBSTrig_Value + 200;
+}
+
+uint8_t Is_WallOBS_Near(void)
+{
+    if (robot::instance()->robot_get_obs_front() > (Front_OBSTrig_Value + 500)) {
+		return 1;
+	}
+    if (robot::instance()->robot_get_obs_right() > (Right_OBSTrig_Value + 500)) {
+		return 1;
+	}
+    if (robot::instance()->robot_get_obs_left() > (Front_OBSTrig_Value + 1000)) {
+		return 1;
+	}
+    return 0;
 }
 
 void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed)
