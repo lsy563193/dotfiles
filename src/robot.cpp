@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 
 #include "gyro.h"
 
@@ -6,30 +7,35 @@
 
 static	robot *robot_obj = NULL;
 
+time_t	start_time;
+
 robot::robot()
 {
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 1, &robot::robot_robot_sensor_cb, this);
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
-	//this->scan_sub = this->robot_node_handler.subscribe("scan", 1, &robot::robot_scan_cb, this);
 
-	is_sensor_ready = is_scan_ready = false;
+	this->is_moving = false;
+	this->is_sensor_ready = false;
+	this->is_scan_ready = false;
 
-	bumper_left = 0;
-	bumper_right = 0;
+	this->bumper_left = 0;
+	this->bumper_right = 0;
 
-	is_moving = false;
-	linear_x = 0.0;
-	linear_y = 0.0;
-	linear_z = 0.0;
+	this->linear_x = 0.0;
+	this->linear_y = 0.0;
+	this->linear_z = 0.0;
+	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
+	start_time = time(NULL);
 }
 
 robot::~robot()
 {
 	delete this->robot_tf;
+
+	robot_obj = NULL;
 }
 
 robot *robot::instance()
@@ -46,42 +52,45 @@ void robot::init()
 
 bool robot::robot_is_all_ready()
 {
-	return (is_sensor_ready && is_scan_ready) ? true : false;
+	return (this->is_sensor_ready && this->is_scan_ready) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg)
 {
-	angle = msg->angle;
+	this->angle = msg->angle;
 
-	angle_v = msg->angle_v;
+	this->angle_v = msg->angle_v;
 
-	cliff_right = msg->rcliff;
+	this->cliff_right = msg->rcliff;
 
-	cliff_left = msg->lcliff;
+	this->cliff_left = msg->lcliff;
 
-	cliff_front = msg->fcliff;
+	this->cliff_front = msg->fcliff;
 
-	wall  = msg->wall;
+	this->wall = msg->wall;
 
-	bumper_right = msg->rbumper;
+	this->bumper_right = msg->rbumper;
 
-	bumper_left = msg->lbumper;
+	this->bumper_left = msg->lbumper;
 
-	obs_left = msg->lobs;
+	this->obs_left = msg->lobs;
 
-	obs_right = msg->robs;
+	this->obs_right = msg->robs;
 
-	obs_front = msg->fobs;
+	this->obs_front = msg->fobs;
 
-	battery_voltage = msg->batv;
+	this->battery_voltage = msg->batv;
 
-	if (is_sensor_ready == false) {
-		printf("%s %d: Gyro starting angle: %d\n", __FUNCTION__, __LINE__, (int16_t)((angle * 10 + 3600)) % 3600);
+	if (this->is_sensor_ready == false) {
+		if (time(NULL) - start_time > 2) {
+			//printf("%s %d: Gyro starting angle: %d\n", __FUNCTION__, __LINE__, (int16_t)((this->angle * 10 + 3600)) % 3600);
 
-		Gyro_SetAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v);
-		is_sensor_ready = true;
+			Gyro_SetImuOffset(((int16_t)(this->angle * 10 + 3600)) % 3600);
+			Gyro_SetImuAngle(((int16_t)(this->angle * 10 + 3600)) % 3600, this->angle_v);
+			this->is_sensor_ready = true;
+		}
 	} else {
-		Gyro_SetAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v);
+		Gyro_SetImuAngle(((int16_t)(this->angle * 10 + 3600)) % 3600, this->angle_v);
 	}
 
 #if 0
@@ -99,16 +108,17 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 
 	tf::Matrix3x3				mat;
 	tf::Stamped<tf::Pose>		ident;
+	tf::StampedTransform		transform;
 	tf::Stamped<tf::Transform>	odom_pose, base_link_pose, map_pose;
 
-	linear_x = msg->twist.twist.linear.x;
-	linear_y = msg->twist.twist.linear.y;
-	linear_z = msg->twist.twist.linear.z;
+	this->linear_x = msg->twist.twist.linear.x;
+	this->linear_y = msg->twist.twist.linear.y;
+	this->linear_z = msg->twist.twist.linear.z;
 
-	if (linear_x == 0.0 && linear_y == 0.0 && linear_z == 0.0) {
-		is_moving = false;
+	if (this->linear_x == 0.0 && this->linear_y == 0.0 && this->linear_z == 0.0) {
+		this->is_moving = false;
 	} else {
-		is_moving = true;
+		this->is_moving = true;
 	}
 
 	ident.setIdentity();
@@ -144,6 +154,17 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	ident.stamp_ = msg->header.stamp;
 
 	try {
+		this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
+		this->yaw = tf::getYaw(transform.getRotation());
+
+		Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
+		//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+	} catch(tf::TransformException e) {
+		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+		return;
+	}
+
+	try {
 		this->robot_tf->transformPose("/map", ident, map_pose);
 		mat = odom_pose.getBasis();
 		mat.getEulerYPR(map_yaw, pitch, roll);
@@ -154,62 +175,18 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		return;
 	}
 
-	if (!is_scan_ready) {
-		position_x_off = map_pose.getOrigin().x();
-		position_y_off = map_pose.getOrigin().y();
-		position_z_off = map_pose.getOrigin().z();
+	if (!this->is_scan_ready) {
+		this->position_x_off = map_pose.getOrigin().x();
+		this->position_y_off = map_pose.getOrigin().y();
+		this->position_z_off = map_pose.getOrigin().z();
 	}
 
-	position_y = map_pose.getOrigin().y() - position_y_off;
-	position_x = map_pose.getOrigin().x() - position_x_off;
+	this->position_y = map_pose.getOrigin().y() - position_y_off;
+	this->position_x = map_pose.getOrigin().x() - position_x_off;
 
-	if (is_scan_ready == false) {
-		is_scan_ready = true;
+	if (this->is_scan_ready == false) {
+		this->is_scan_ready = true;
 	}
-
-}
-
-void robot::robot_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg)
-{
-	tf::Stamped<tf::Pose> ident;
-	tf::Stamped<tf::Transform> odom_pose;
-	ident.setIdentity();
-	ident.frame_id_ = "base_link";
-	ident.stamp_ = msg->header.stamp;
-
-	try {
-		this->robot_tf->transformPose("odom", ident, odom_pose);
-	} catch(tf::TransformException e) {
-		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
-		return;
-	}
-
-	double yaw,pitch,roll;
-	tf::Matrix3x3 mat =  odom_pose.getBasis();
-	mat.getEulerYPR(yaw, pitch, roll);
-
-	if (!is_scan_ready) {
-		position_x_off = odom_pose.getOrigin().x();
-		position_y_off = odom_pose.getOrigin().y();
-		position_z_off = odom_pose.getOrigin().z();
-	}
-
-	position_y = odom_pose.getOrigin().y() - position_y_off;
-	position_x = odom_pose.getOrigin().x() - position_x_off;
-
-	if (is_scan_ready) {
-		//Gyro_SetAngle(((int16_t)(rad2deg(yaw, 10) + 3600)) % 3600, angle_v);
-	} else {
-		//Gyro_SetOffset(((int16_t)(rad2deg(yaw, 10) + 3600)) % 3600);
-		//Gyro_SetAngle(((int16_t)(rad2deg(yaw, 10) + 3600)) % 3600, angle_v);
-		is_scan_ready = true;
-	}
-
-#if 0
-	printf("%s %d: time %f: pos.: (%.6f, %.6f) yaw: %.6f(%d)\troll: %.6f\tpitch: %.6f\tpos: (%.6f, %.6f)\n", __FUNCTION__, __LINE__,
-		msg->header.stamp.toSec(), odom_pose.getOrigin().x(), odom_pose.getOrigin().y(), yaw, Gyro_GetAngle(0), roll, pitch, position_x, position_y);
-#endif
-
 }
 
 float robot::robot_get_angle()
@@ -369,8 +346,8 @@ float robot::robot_get_position_z()
 
 void robot::robot_display_positions()
 {
-	printf("base_link->odom: (%f, %f) %f(%f)\todom->base_link: (%f, %f) %f(%f)\tbase_link->map: (%f, %f) %f(%f) Gyro: %d\n",
+	printf("base_link->odom: (%f, %f) %f(%f)\todom->base_link: (%f, %f) %f(%f)\tbase_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)\n",
 			this->odom_pose.getOrigin().x(), this->odom_pose.getOrigin().y(), this->odom_yaw, this->odom_yaw * 1800 / M_PI,
 			this->base_link_pose.getOrigin().x(), this->base_link_pose.getOrigin().y(), this->base_link_yaw, this->base_link_yaw * 1800 / M_PI,
-			this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI, Gyro_GetAngle(0));
+			this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI, Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
 }

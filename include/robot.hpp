@@ -5,7 +5,6 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <tf/transform_listener.h>
-#include <sensor_msgs/LaserScan.h>
 
 #include <pp/sensor.h>
 
@@ -150,10 +149,11 @@ private:
 	float	base_link_yaw;
 	float	map_yaw;
 
+	float	yaw;
+
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
-	ros::Subscriber scan_sub;
 
 	tf::TransformListener		*robot_tf;
 	tf::Stamped<tf::Transform>	odom_pose;
@@ -162,7 +162,6 @@ private:
 
 	void robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
-	void robot_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg);
 
 };
 
