@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "crc8.h"
 #include "log.h"
@@ -8,11 +10,20 @@
 
 #define TAG	"Ctl. (%d):\t"
 
-static uint8_t ctl_data[16] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static uint8_t ctl_data[19] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x55, 0xAA};
 
 void control_set_wheel_speed(int16_t left, int16_t right) {
+	int i;
+
 	control_set_wheel_left_speed(left);
 	control_set_wheel_right_speed(right);
+
+#if 0
+	printf("set speed: ");
+	for (i = 0; i < 19; i++)
+		printf("%02x", ctl_data[i]);
+	printf("\n");
+#endif
 }
 
 void control_set_wheel_left_speed(int16_t val)
@@ -47,14 +58,29 @@ void control_set_brush_main(uint8_t val)
 	control_set(CTL_BRUSH_MAIN, val & 0xff);
 }
 
+void control_set_buzzer(uint8_t val)
+{
+	control_set(CTL_BUZZER, val & 0xff);
+}
+
 void control_set_main_pwr(uint8_t val)
 {
 	control_set(CTL_MAIN_PWR, val & 0xff);
 }
 
-void control_set_buzzer(uint8_t val)
+void control_set_led_red(uint8_t val)
 {
-	control_set(CTL_BUZZER, val & 0xff);
+	control_set(CTL_LED_RED, val & 0xff);
+}
+
+void control_set_led_green(uint8_t val)
+{
+	control_set(CTL_LED_GREEN, val & 0xff);
+}
+
+void control_set_gyro(uint8_t state, uint8_t calibration)
+{
+	control_set(CTL_GYRO, (state ? 0x2 : 0x0) | (calibration ? 0x1 : 0x0));
 }
 
 void control_append_crc(void)
@@ -69,27 +95,16 @@ void control_append_crc(void)
 	}
 #endif
 
-	ctl_data[15] = calcBufCrc8((char *)ctl_data, 15);
-
-	log_msg(LOG_VERBOSE, TAG, __LINE__);
-	for (i = 0; i < 16; i++) {
-		log_msg(LOG_VERBOSE, "%02x ", ctl_data[i]);
-	}
-	log_msg(LOG_VERBOSE, "\n");
+	ctl_data[16] = calcBufCrc8((char *)ctl_data, 16);
 }
 
 void control_set(ControlType type, uint8_t val)
 {
-	uint8_t updated = 0;
-
-	if (type > CTL_HEADER_LOW && type < CTL_RESERVE_2) {
-		log_msg(LOG_VERBOSE, TAG "set type: %d\tval: %02x\n", __LINE__, type, val);
+	if (type > CTL_HEADER_LOW && type < CTL_CRC) {
+		//log_msg(LOG_VERBOSE, TAG "set type: %d\tval: %02x\n", __LINE__, type, val);
 		ctl_data[type] = val;
-		updated = 1;
-	}
 
-	if (updated == 1) {
 		control_append_crc();
-		serial_write(16, ctl_data);
+		serial_write(19, ctl_data);
 	}
 }

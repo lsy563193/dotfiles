@@ -167,21 +167,23 @@
 #define Display_Low					5
 typedef enum {
 	CTL_HEADER_HIGH = 0,
-	CTL_HEADER_LOW,
-	CTL_WHEEL_LEFT_HIGH,
-	CTL_WHEEL_LEFT_LOW,
-	CTL_WHEEL_RIGHT_HIGH,
-	CTL_WHEEL_RIGHT_LOW,
-	CTL_VACUUM_PWR,
-	CTL_BRUSH_LEFT,
-	CTL_BRUSH_RIGHT,
-	CTL_BRUSH_MAIN,
-	CTL_RESERVE_1,
-	CTL_MAIN_PWR,
-	CTL_CHARGER_SEARCHING,
-	CTL_BUZZER,
-	CTL_RESERVE_2,
-	CTL_CRC,
+	CTL_HEADER_LOW = 1,
+	CTL_WHEEL_LEFT_HIGH = 2,
+	CTL_WHEEL_LEFT_LOW = 3,
+	CTL_WHEEL_RIGHT_HIGH = 4,
+	CTL_WHEEL_RIGHT_LOW = 5,
+	CTL_VACUUM_PWR = 6,
+	CTL_BRUSH_LEFT = 7,
+	CTL_BRUSH_RIGHT = 8,
+	CTL_BRUSH_MAIN = 9,
+	CTL_BUZZER = 10,
+	CTL_MAIN_PWR = 11,
+	CTL_CHARGER = 12,
+	CTL_LED_RED = 13,
+	CTL_LED_GREEN = 14,
+	CTL_GYRO = 15,
+	CTL_CRC = 16,
+	CTL_CRC1 = 17,
 } ControlType;
 
 void control_set_wheel_speed(int16_t left, int16_t right);
@@ -194,8 +196,13 @@ void control_set_brush_left(uint8_t val);
 void control_set_brush_right(uint8_t val);
 void control_set_brush_main(uint8_t val);
 
-void control_set_main_pwr(uint8_t val);
 void control_set_buzzer(uint8_t val);
+void control_set_main_pwr(uint8_t val);
+
+void control_set_led_red(uint8_t val);
+void control_set_led_green(uint8_t val);
+
+void control_set_gyro(uint8_t state, uint8_t calibration);
 
 void control_append_crc(void);
 void control_set(ControlType type, uint8_t val);
