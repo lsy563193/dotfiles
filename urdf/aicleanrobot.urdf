@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<robot name="aiclearnrobot">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.06" radius="0.15"/>
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 .8 2"/>
+      </material>
+    </visual>
+  </link>
+</robot>
