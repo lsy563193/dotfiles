@@ -1295,6 +1295,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	printf("%s %d: move to point: %d\tGyro Calibration: %d\n", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
 	control_set_gyro(1, 0);
+	robot::instance()->robot_display_positions();
 	usleep(10000);
 
 	return retval;
