@@ -250,7 +250,7 @@
 /*
  * Definition of the grid map.
  */
-#define MAP_DIMENSION			(138 * CELL_SIZE)//CELL_SIZE * 190 //9225//7925  // 14250
+#define MAP_DIMENSION			(200 * CELL_SIZE)//CELL_SIZE * 190 //9225//7925  // 14250
 #define MAP_SIZE			(MAP_DIMENSION / CELL_SIZE)
 
 /*
