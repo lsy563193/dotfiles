@@ -158,27 +158,29 @@ class Robot_Base():
 		self.st.join(1)
 
 	def baseSleep(self):
-		self.sendCommand["SLEEP"]="01"
 		self.sendCommand["GYRO"]="00"
+		self.serial_write()
+		rospy.sleep(0.5)
+		self.sendCommand["SLEEP"]="01"
 		self.serial_write()
 		print "robot is going to sleep"
 
 	def baseAwake(self):
 		self.baseSleep()
-		rospy.sleep(1)
+		rospy.sleep(0.5)
 		self.sendCommand["SLEEP"]="00"
+		self.serial_write()
+		rospy.sleep(0.5)
 		self.sendCommand["GYRO"]="02"
 		self.serial_write()
 		print "wait 2 sencond or more ,before robot awake!"
-		rospy.sleep(3)
+		rospy.sleep(2)
 
 	def serial_write(self):
 		str_combine = self.sendCommand["CheckHead"]+self.sendCommand["LW"]+self.sendCommand["RW"]+self.sendCommand["VACUM"]+self.sendCommand["LB"]+self.sendCommand["RB"]+self.sendCommand["MB"]+self.sendCommand["AUDIO"]+self.sendCommand["SLEEP"]+self.sendCommand["CHARGE"]+self.sendCommand["LED_R"]+self.sendCommand["LED_G"]+self.sendCommand["GYRO"]
 		crc_result = calBufCRC8(str_combine, len(str_combine)/2)
-		print crc_result
 		str_combine = str_combine+crc_result+"55aa"
 		tranStream = str_combine.decode("hex")
-		print str_combine
 		self.st.ser.write(tranStream)
 
 	def robot_msg_pub(self):
