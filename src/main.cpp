@@ -79,7 +79,7 @@ void intialize(void)
 
 void *core_move_thread(void *)
 {
-	while (!robot::instance()->robot_is_ready()) {
+	while (!robot::instance()->robot_is_all_ready()) {
 		usleep(1000);
 	}
 	CM_Touring();

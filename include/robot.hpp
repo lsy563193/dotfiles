@@ -4,6 +4,8 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <tf/transform_listener.h>
+#include <sensor_msgs/LaserScan.h>
 
 #include <pp/sensor.h>
 
@@ -16,7 +18,7 @@ public:
 	static robot *instance();
 	void init();
 
-	bool robot_is_ready();
+	bool robot_is_all_ready();
 
 	float robot_get_angle();
 	float robot_get_angle_v();
@@ -53,7 +55,8 @@ public:
 	float robot_get_position_z();
 
 private:
-	bool	is_ready;
+	bool	is_sensor_ready;
+	bool	is_scan_ready;
 
 	/* 1 byte */
 	float	angle;
@@ -137,14 +140,20 @@ private:
 	float	position_y;
 	float	position_z;
 
+	float	position_x_off;
+	float	position_y_off;
+	float	position_z_off;
+
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
-	ros::Subscriber amcl_pose_sub;
+	ros::Subscriber scan_sub;
+
+	tf::TransformListener *robot_tf;
 
 	void robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
-	void robot_amcl_pose_cb(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
+	void robot_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg);
 
 };
 
