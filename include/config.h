@@ -229,7 +229,7 @@
  * When it is too small, it will move like shaking when robot startup.
  * When it is too large, it will fall down when reach the cliff.
  */
-#define BASE_SPEED						((int32_t) 30) // 15)
+#define BASE_SPEED						((int32_t) 15) // 15)
 #define Rotate_TopSpeed					((uint32_t) 16) // 22)
 #define Run_TopSpeed					((int32_t) 43) // 45)
 
