@@ -7,11 +7,12 @@ FILE(GLOB PP_SRC
 )
 
 find_package(catkin REQUIRED COMPONENTS
-	roscpp
-	rosconsole
-	std_msgs
 	message_generation
+	rosconsole
+	roscpp
 	sensor_msgs
+	std_msgs
+	tf
 )
 
 add_message_files(
@@ -33,9 +34,10 @@ include_directories(
 
 catkin_package(
 	CATKIN_DEPENDS
+	message_runtime
 	roscpp
 	std_msgs
-	message_runtime
+	tf
 )
 
 add_executable(pp ${PP_SRC} )
