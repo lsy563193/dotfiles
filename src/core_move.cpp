@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include "laser.hpp"
 #include "robot.hpp"
 #include "control.h"
 #include "core_move.h"
@@ -1279,6 +1280,12 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			Integrated = 0;
 			Rotate_Angle = 0;
 			//Rotate_Angle=Rotate_Angle*Base_Speed/RUN_TOP_SPEED;
+			Base_Speed -= 3;
+			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
+		}
+		else if (laser::instance()->laser_obstcal_detected(0.2, 0, -1.0) == true) {
+			printf("%s %d: laser detected obstcal, slow down!\n", __FUNCTION__, __LINE__);
+			Integrated = 0;
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}

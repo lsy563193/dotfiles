@@ -16,6 +16,7 @@
 #include "movement.h"
 #include "serial.h"
 
+#include "laser.hpp"
 #include "robot.hpp"
 
 #include "main.h"
@@ -95,6 +96,7 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "pp");
 
+	laser	laser_obj;
 	robot	robot_obj;
 
 #if 1
