@@ -211,7 +211,7 @@ void Map_SetCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 			y += MAP_SIZE + MAP_SIZE / 2;
 			y %= MAP_SIZE;
 
-	val = spmap[x][y / 2];
+	val = (CellState) spmap[x][y / 2];
 
 	/* Upper 4 bits and last 4 bits. */
 	spmap[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
