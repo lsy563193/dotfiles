@@ -414,4 +414,10 @@ uint16_t GetBatteryVoltage();
 uint8_t Get_Key_Time(uint16_t key);
 
 uint8_t Spot_OBS_Status(void);
+	
+bool IsSendBusy(void);
+
+void SetSendFlag(void);
+
+void ResetSendFlag(void);
 #endif

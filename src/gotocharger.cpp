@@ -21,6 +21,8 @@ void goto_charger(){
 	bool left_bumper,right_bumper;
 	uint8_t brush_pwr;
 	bool on_charger_stub= false;
+	Reset_Wheel_Step();
+	Set_Wheel_Speed(0,0);
 	ros::Time startTime;
 	startTime = ros::Time::now();
 	while(ros::ok()){
@@ -29,6 +31,7 @@ void goto_charger(){
 			control_set(CTL_CHARGER,0x00);
 			Set_CleanTool_Power(0,0,0,0);
 			ROS_DEBUG_NAMED(GOTO_CHARGER,"goto charger timeout!!!");
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
 		if(robot::instance()->robot_get_charge_status()){
@@ -43,14 +46,21 @@ void goto_charger(){
 			control_set(CTL_CHARGER,0x00);
 			Set_CleanTool_Power(0,0,0,0);
 			ROS_DEBUG_NAMED(GOTO_CHARGER,"jump out go_home_mode");
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
 		if(!set_charge_state){
 			set_charge_state = true;
 			ROS_DEBUG_NAMED(GOTO_CHARGER,"goto charger");
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			control_set(CTL_CHARGER, 0x01);
 		}
 		
+		if(Get_Rcon_Remote())
+		{
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			break;
+		}	
 		fobs = robot::instance()->robot_get_obs_front();
 		rcon = robot::instance()->robot_get_rcon();
 		if(fobs>=100)

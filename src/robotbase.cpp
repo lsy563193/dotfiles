@@ -340,13 +340,15 @@ void *serial_send_routine(void*){
 				Beep(3, 25, 25, -1);
 			}
 		}
-		pthread_mutex_lock(&send_lock);
+		SetSendFlag();
+		//pthread_mutex_lock(&send_lock);
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
-		pthread_mutex_unlock(&send_lock);	
+		//pthread_mutex_unlock(&send_lock);	
 		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 		if(buf[CTL_CRC] != calcBufCrc8((char*)sendStream,sl))
-			ROS_DEBUG_NAMED("robotbase","crc not same");
+			ROS_DEBUG_NAMED("robotbase","crc incorret!!");
 		serial_write(SEND_LEN, buf);
+		ResetSendFlag();
 	}
 	//pthread_exit(NULL);
 }

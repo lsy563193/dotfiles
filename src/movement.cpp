@@ -30,7 +30,7 @@ static uint32_t rightwall_step = 0;
 // Variable for vaccum mode
 volatile uint8_t Vac_Mode;
 static uint8_t Cleaning_mode = 0;
-
+static bool sendflag=false;
 ros::Time lw_t,rw_t; // this variable is used for calculate wheel step
 /*----------------------- Work Timer functions--------------------------*/
 void Reset_Work_Timer_Start()
@@ -865,31 +865,50 @@ void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right
 
 void control_set(uint8_t type, uint8_t val)
 {
-	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
-		sendStream[type] = val;
-		//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-		//serial_write(SEND_LEN, sendStream);
+	if(!IsSendBusy()){
+		if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
+			sendStream[type] = val;
+			//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+			//serial_write(SEND_LEN, sendStream);
+		}
 	}
 }
 
 void control_append_crc(){
-	sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);	
+	if(!IsSendBusy()){
+		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	}	
 }
 
 void control_stop_all(void)
 {
 	uint8_t i;
-
-	for(i = 2; i < (SEND_LEN)-2; i++) {
-		if (i == CTL_MAIN_PWR)
-			sendStream[i] = 0x01;
-		else
-			sendStream[i] = 0x00;
+	if(!IsSendBusy()){
+		for(i = 2; i < (SEND_LEN)-2; i++) {
+			if (i == CTL_MAIN_PWR)
+				sendStream[i] = 0x01;
+			else
+				sendStream[i] = 0x00;
+		}
 	}
 	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	//serial_write(SEND_LEN, sendStream);
 }
 
+bool IsSendBusy(void)
+{
+	return sendflag;
+}
+
+void SetSendFlag(void)
+{
+	sendflag = true;
+}
+
+void ResetSendFlag(void)
+{
+	sendflag = false;
+}
 void Random_Back(void)
 {
 	Stop_Brifly();
@@ -931,6 +950,7 @@ uint16_t GetBatteryVoltage()
 {
 	return robot::instance()->robot_get_battery_voltage();
 }
+
 uint8_t  Check_Battery()
 {
 	if(robot::instance()->robot_get_battery_voltage()<Low_Battery_Limit)
