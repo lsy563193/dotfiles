@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "map.h"
 #include "mathematics.h"
@@ -191,17 +192,17 @@ void Map_SetCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 			COLUMN = y + MAP_SIZE + MAP_SIZE / 2;
 			COLUMN %= MAP_SIZE;
 
-	val = (CellState) map[ROW][COLUMN / 2];
-	if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
-		map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+			val = (CellState) map[ROW][COLUMN / 2];
+			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
+				map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
 
-		if(debugMsg_idx < DEBUG_MSG_SIZE) {
-			debugMsg[debugMsg_idx][0] = x;
-			debugMsg[debugMsg_idx][1] = y;
-			debugMsg[debugMsg_idx][2] = value;
-			debugMsg_idx++;
-		}
-	}
+				if(debugMsg_idx < DEBUG_MSG_SIZE) {
+					debugMsg[debugMsg_idx][0] = x;
+					debugMsg[debugMsg_idx][1] = y;
+					debugMsg[debugMsg_idx][2] = value;
+					debugMsg_idx++;
+				}
+			}
 		}
 #ifndef SHORTEST_PATH_V2
 	} else {
@@ -211,10 +212,10 @@ void Map_SetCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 			y += MAP_SIZE + MAP_SIZE / 2;
 			y %= MAP_SIZE;
 
-	val = (CellState) spmap[x][y / 2];
+			val = (CellState) spmap[x][y / 2];
 
-	/* Upper 4 bits and last 4 bits. */
-	spmap[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+			/* Upper 4 bits and last 4 bits. */
+			spmap[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
 		}
 #endif
 	}
