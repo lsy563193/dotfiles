@@ -279,12 +279,12 @@ void Set_LED(uint16_t G, uint16_t R)
 void Stop_Brifly(void)
 {
 	printf("%s %d: stopping robot.\n", __FUNCTION__, __LINE__);
-	while (robot::instance()->robot_is_moving()) {
+	do {
 		control_set_wheel_speed(0, 0);
 		usleep(15000);
 		//printf("%s %d: linear speed: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
 		//	robot::instance()->robot_get_linear_x(), robot::instance()->robot_get_linear_y(), robot::instance()->robot_get_linear_z());
-	}
+	} while (robot::instance()->robot_is_moving());
 	printf("%s %d: robot is stopped.\n", __FUNCTION__, __LINE__);
 }
 
