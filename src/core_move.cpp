@@ -12,7 +12,7 @@
 #include "map.h"
 #include "mathematics.h"
 #include "path_planning.h"
-#include "pp_rounding.h"
+#include "rounding.h"
 #include "shortest_path.h"
 
 #include "movement.h"
@@ -1843,7 +1843,7 @@ uint8_t CM_Touring(void)
 								if (countToCell(Next_Point.Y) < Map_GetYPos()) {
 									if (countToCell(Next_Point.Y) == Map_GetYPos() - 1 || countToCell(Next_Point.Y) == Map_GetYPos() - 2) {
 										printf("%s %d: left\n", __FUNCTION__, __LINE__);
-										pp_rounding(PP_ROUNDING_LEFT, Next_Point);
+										rounding(ROUNDING_LEFT, Next_Point);
 									} else {
 										printf("%s %d\n", __FUNCTION__, __LINE__);
 										mt_state = CM_MoveToPoint(Next_Point);
@@ -1851,7 +1851,7 @@ uint8_t CM_Touring(void)
 								} else {
 									if (countToCell(Next_Point.Y) == Map_GetYPos() + 1 || countToCell(Next_Point.Y) == Map_GetYPos() + 2) {
 										printf("%s %d: right\n", __FUNCTION__, __LINE__);
-										pp_rounding(PP_ROUNDING_RIGHT, Next_Point);
+										rounding(ROUNDING_RIGHT, Next_Point);
 									} else {
 										printf("%s %d\n", __FUNCTION__, __LINE__);
 										mt_state = CM_MoveToPoint(Next_Point);
@@ -1861,7 +1861,7 @@ uint8_t CM_Touring(void)
 								if (countToCell(Next_Point.Y) < Map_GetYPos()) {
 									if (countToCell(Next_Point.Y) == Map_GetYPos() - 1 || countToCell(Next_Point.Y) == Map_GetYPos() - 2) {
 										printf("%s %d: right\n", __FUNCTION__, __LINE__);
-										pp_rounding(PP_ROUNDING_RIGHT, Next_Point);
+										rounding(ROUNDING_RIGHT, Next_Point);
 									} else {
 										printf("%s %d\n", __FUNCTION__, __LINE__);
 										mt_state = CM_MoveToPoint(Next_Point);
@@ -1869,7 +1869,7 @@ uint8_t CM_Touring(void)
 								} else {
 									if (countToCell(Next_Point.Y) == Map_GetYPos() + 1 || countToCell(Next_Point.Y) == Map_GetYPos() + 2 ) {
 										printf("%s %d: left\n", __FUNCTION__, __LINE__);
-										pp_rounding(PP_ROUNDING_LEFT, Next_Point);
+										rounding(ROUNDING_LEFT, Next_Point);
 									} else {
 										printf("%s %d\n", __FUNCTION__, __LINE__);
 										mt_state = CM_MoveToPoint(Next_Point);
@@ -1880,14 +1880,15 @@ uint8_t CM_Touring(void)
 								mt_state = CM_MoveToPoint(Next_Point);
 							}
 						} else {
-							if (path_targets_get_last(&tmpPnt.X, &tmpPnt.Y) == 1 && (countToCell(Next_Point.X) != SHRT_MAX || countToCell(Next_Point.X) != SHRT_MIN)) {
+							printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, countToCell(Next_Point.X), SHRT_MAX, SHRT_MIN);
+							if (path_targets_get_last(&tmpPnt.X, &tmpPnt.Y) == 1 && !(countToCell(Next_Point.X) == SHRT_MAX || countToCell(Next_Point.X) == SHRT_MIN)) {
 								if (abs(tmpPnt.Y) != abs(Map_GetYPos())) {
 									if (dir == NORTH) {
 										if (tmpPnt.Y < Map_GetYPos()) {
 											if (tmpPnt.Y == Map_GetYPos() - 1 || tmpPnt.Y == Map_GetYPos() - 2) {
 												printf("%s %d: left\n", __FUNCTION__, __LINE__);
 												Next_Point.Y = cellToCount(tmpPnt.Y);
-												pp_rounding(PP_ROUNDING_LEFT, Next_Point);
+												rounding(ROUNDING_LEFT, Next_Point);
 											} else {
 												printf("%s %d\n", __FUNCTION__, __LINE__);
 												mt_state = CM_MoveToPoint(Next_Point);
@@ -1896,7 +1897,7 @@ uint8_t CM_Touring(void)
 											if (tmpPnt.Y == Map_GetYPos() + 1 || tmpPnt.Y == Map_GetYPos() + 2) {
 												printf("%s %d: right\n", __FUNCTION__, __LINE__);
 												Next_Point.Y = cellToCount(tmpPnt.Y);
-												pp_rounding(PP_ROUNDING_RIGHT, Next_Point);
+												rounding(ROUNDING_RIGHT, Next_Point);
 											} else {
 												printf("%s %d\n", __FUNCTION__, __LINE__);
 												mt_state = CM_MoveToPoint(Next_Point);
@@ -1907,7 +1908,7 @@ uint8_t CM_Touring(void)
 											if (tmpPnt.Y == Map_GetYPos() - 1 || tmpPnt.Y == Map_GetYPos() - 2) {
 												printf("%s %d: right\n", __FUNCTION__, __LINE__);
 												Next_Point.Y = cellToCount(tmpPnt.Y);
-												pp_rounding(PP_ROUNDING_RIGHT, Next_Point);
+												rounding(ROUNDING_RIGHT, Next_Point);
 											} else {
 												printf("%s %d\n", __FUNCTION__, __LINE__);
 												mt_state = CM_MoveToPoint(Next_Point);
@@ -1916,7 +1917,7 @@ uint8_t CM_Touring(void)
 											if (tmpPnt.Y == Map_GetYPos() + 1 || tmpPnt.Y == Map_GetYPos() + 2 ) {
 												printf("%s %d: left\n", __FUNCTION__, __LINE__);
 												Next_Point.Y = cellToCount(tmpPnt.Y);
-												pp_rounding(PP_ROUNDING_LEFT, Next_Point);
+												rounding(ROUNDING_LEFT, Next_Point);
 											} else {
 												printf("%s %d\n", __FUNCTION__, __LINE__);
 												mt_state = CM_MoveToPoint(Next_Point);
