@@ -134,7 +134,7 @@
  * defines SHORTEST_PATH_V2, line-segment strategy will be use,
  * otherwise, it will use A* like strategy.
  */
-#define SHORTEST_PATH_V2		(1)
+//#define SHORTEST_PATH_V2		(1)
 
 /*
  * When defines SHORTEST_PATH_V2_RAM, line-segment & targets will
