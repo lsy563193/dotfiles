@@ -55,14 +55,6 @@ void robot::robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg)
 
 	angle_v = msg->angle_v;
 
-	vaccum = msg->vaccum;
-
-	brush_left = msg->lbrush;
-
-	brush_right = msg->rbrush;
-
-	brush_main = msg->mbrush;
-
 	cliff_right = msg->rcliff;
 
 	cliff_left = msg->lcliff;
@@ -70,18 +62,6 @@ void robot::robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg)
 	cliff_front = msg->fcliff;
 
 	wall  = msg->wall;
-
-	rcon_front_left = msg->flrcon;
-
-	rcon_front_right = msg->frrcon;
-
-	rcon_back_left = msg->blrcon;
-
-	rcon_back_right = msg->brrcon;
-
-	rcon_left = msg->lrcon;
-
-	rcon_right = msg->rrcon;
 
 	bumper_right = msg->rbumper;
 
@@ -92,8 +72,6 @@ void robot::robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg)
 	obs_right = msg->robs;
 
 	obs_front = msg->fobs;
-
-	box = msg->box;
 
 	battery_voltage = msg->batv;
 
