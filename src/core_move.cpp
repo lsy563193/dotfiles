@@ -768,6 +768,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	Reset_Rcon_Status();
 
+	control_set_gyro(1, 0);
+	usleep(10000);
 	//10 second
 
 	HomeT = HomeL = HomeR = home_hit = slow_down = 0;
@@ -782,11 +784,15 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	if (Touch_Detect()) {
 		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
+		control_set_gyro(1, 0);
+		usleep(10000);
 
 		return MT_Key_Clean;
 	}
 	if (Get_Clean_Mode() == Clean_Mode_GoHome) {
 		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
+		control_set_gyro(1, 0);
+		usleep(10000);
 
 		Set_Clean_Mode(Clean_Mode_Navigation);
 		return MT_Remote_Home;
@@ -1288,6 +1294,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 	printf("%s %d: move to point: %d\tGyro Calibration: %d\n", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
+	control_set_gyro(1, 0);
+	usleep(10000);
 
 	return retval;
 }
