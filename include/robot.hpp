@@ -54,6 +54,8 @@ public:
 	float robot_get_position_y();
 	float robot_get_position_z();
 
+	void robot_display_positions();
+
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
@@ -144,12 +146,19 @@ private:
 	float	position_y_off;
 	float	position_z_off;
 
+	float	odom_yaw;
+	float	base_link_yaw;
+	float	map_yaw;
+
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
 	ros::Subscriber scan_sub;
 
-	tf::TransformListener *robot_tf;
+	tf::TransformListener		*robot_tf;
+	tf::Stamped<tf::Transform>	odom_pose;
+	tf::Stamped<tf::Transform>	base_link_pose;
+	tf::Stamped<tf::Transform>	map_pose;
 
 	void robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);

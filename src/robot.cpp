@@ -14,7 +14,7 @@ robot::robot()
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
-	this->scan_sub = this->robot_node_handler.subscribe("scan", 1, &robot::robot_scan_cb, this);
+	//this->scan_sub = this->robot_node_handler.subscribe("scan", 1, &robot::robot_scan_cb, this);
 
 	is_sensor_ready = is_scan_ready = false;
 
@@ -95,6 +95,12 @@ void robot::robot_robot_sensor_cb(const pp::sensor::ConstPtr& msg)
 
 void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 {
+	double odom_yaw, base_link_yaw, map_yaw, pitch, roll;
+
+	tf::Matrix3x3				mat;
+	tf::Stamped<tf::Pose>		ident;
+	tf::Stamped<tf::Transform>	odom_pose, base_link_pose, map_pose;
+
 	linear_x = msg->twist.twist.linear.x;
 	linear_y = msg->twist.twist.linear.y;
 	linear_z = msg->twist.twist.linear.z;
@@ -104,6 +110,63 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	} else {
 		is_moving = true;
 	}
+
+	ident.setIdentity();
+	ident.frame_id_ = "base_link";
+	ident.stamp_ = msg->header.stamp;
+
+	try {
+		this->robot_tf->transformPose("odom", ident, odom_pose);
+		mat = odom_pose.getBasis();
+		mat.getEulerYPR(odom_yaw, pitch, roll);
+		this->odom_yaw = odom_yaw;
+		this->odom_pose = odom_pose;
+	} catch(tf::TransformException e) {
+		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+		//return;
+	}
+
+	ident.frame_id_ = "/odom";
+	ident.stamp_ = msg->header.stamp;
+
+	try {
+		this->robot_tf->transformPose("/base_link", ident, base_link_pose);
+		mat = odom_pose.getBasis();
+		mat.getEulerYPR(base_link_yaw, pitch, roll);
+		this->base_link_yaw = base_link_yaw;
+		this->base_link_pose = base_link_pose;
+	} catch(tf::TransformException e) {
+		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+		//return;
+	}
+
+	ident.frame_id_ = "base_link";
+	ident.stamp_ = msg->header.stamp;
+
+	try {
+		this->robot_tf->transformPose("/map", ident, map_pose);
+		mat = odom_pose.getBasis();
+		mat.getEulerYPR(map_yaw, pitch, roll);
+		this->map_yaw = map_yaw;
+		this->map_pose = map_pose;
+	} catch(tf::TransformException e) {
+		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+		return;
+	}
+
+	if (!is_scan_ready) {
+		position_x_off = map_pose.getOrigin().x();
+		position_y_off = map_pose.getOrigin().y();
+		position_z_off = map_pose.getOrigin().z();
+	}
+
+	position_y = map_pose.getOrigin().y() - position_y_off;
+	position_x = map_pose.getOrigin().x() - position_x_off;
+
+	if (is_scan_ready == false) {
+		is_scan_ready = true;
+	}
+
 }
 
 void robot::robot_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg)
@@ -302,4 +365,12 @@ float robot::robot_get_position_y()
 float robot::robot_get_position_z()
 {
 	return this->position_z;
+}
+
+void robot::robot_display_positions()
+{
+	printf("base_link->odom: (%f, %f) %f(%f)\todom->base_link: (%f, %f) %f(%f)\tbase_link->map: (%f, %f) %f(%f) Gyro: %d\n",
+			this->odom_pose.getOrigin().x(), this->odom_pose.getOrigin().y(), this->odom_yaw, this->odom_yaw * 1800 / M_PI,
+			this->base_link_pose.getOrigin().x(), this->base_link_pose.getOrigin().y(), this->base_link_yaw, this->base_link_yaw * 1800 / M_PI,
+			this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI, Gyro_GetAngle(0));
 }
