@@ -1533,7 +1533,8 @@ uint8_t CM_Touring(void)
 {
 	int8_t	state;
 	uint8_t Blink_LED = 0;
-	int16_t	i, k, j;
+	int16_t	i, k, j, x, y, x_current, y_current, start, end;
+	float	slop, intercept;
 
 	Point32_t	Next_Point;
 	Point16_t	tmpPnt, pnt16ArTmp[3];
@@ -1845,6 +1846,8 @@ uint8_t CM_Touring(void)
 					LED_Blink = 1;
 
 //					Set_Run_HS_Timer(1);
+					x_current = Map_GetXPos();
+					y_current = Map_GetYPos();
 					state = path_next(&Next_Point.X, &Next_Point.Y);
 //					Set_Run_HS_Timer(0);
 //					if(state>-1)
@@ -2003,6 +2006,26 @@ uint8_t CM_Touring(void)
 					mt_state = CM_MoveToPoint(Next_Point);
 #endif
 
+					if (y_current == countToCell(Next_Point.Y)) {
+						x = Map_GetXPos();
+						y = Map_GetYPos();
+						if (x_current != x ) {
+							slop = (((float)y_current) - ((float)y)) / (((float)x_current) - ((float)x));
+							intercept = ((float)(y)) - slop *  ((float)(x));
+
+							start = x > x_current ? x_current : x;
+							end = x > x_current ? x: x_current;
+
+							for (x = start; x <= end; x++) {
+								y = (int16_t) (slop * (x) + intercept);
+
+								printf("%s %d: marking (%d, %d) (%d, %d) (%d, %d)\n", __FUNCTION__, __LINE__, x, y - 1, x, y, x, y + 1);
+								Map_SetCell(MAP, cellToCount(x), cellToCount(y - 1), CLEANED);
+								Map_SetCell(MAP, cellToCount(x), cellToCount(y), CLEANED);
+								Map_SetCell(MAP, cellToCount(x), cellToCount(y + 1), CLEANED);
+							}
+						}
+					}
 					//FIXME
 					/*
 					if (Work_Timer - work_timer_start > cleanning_time_allowed) {
