@@ -106,11 +106,13 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int
 	int16_t c, d, x, y, path_heading;
 	int32_t i, j, k;
 
+	float	pos_x, pos_y;
+
 	extern int16_t WheelCount_Left, WheelCount_Right;
 
-	if (left == 0 && right == 0) {
-		return;
-	}
+	//if (left == 0 && right == 0) {
+	//	return;
+	//}
 
 #if 0
 	int16_t	delta_theta, delta_theta_wheel;
@@ -182,7 +184,11 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
-	Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
+	//Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
+	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	Map_SetPosition(pos_x, pos_y);
+	//printf("%s %d: robot positions: (%f, %f) (%f, %f)\n", __FUNCTION__, __LINE__, pos_x, pos_y, robot::instance()->robot_get_position_x(), robot::instance()->robot_get_position_y());
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
@@ -702,7 +708,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 		Diff = CM_ABS(Angle, Gyro_GetAngle(0));
 		Diff = Diff > 1800 ? 3600 - Diff : Diff;
-		printf("%s %d: Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
 		if ((Diff < 10) && (Diff > (-10))) {
 			Stop_Brifly();
 			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
@@ -1137,7 +1142,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		}
 
 		//printf("%s %d: Gyro: %d\tX: %d(%d) %d\tY: %d(%d) %d\n", __FUNCTION__, __LINE__, Gyro_GetAngle(0), Target.X, Map_GetXCount(), CM_ABS(Map_GetXCount(), Target.X), Target.Y, Map_GetYCount(), CM_ABS(Map_GetYCount(), Target.Y));
-		if (CM_ABS(Map_GetXCount(), Target.X) < 30 && CM_ABS(Map_GetYCount(), Target.Y) < 30) {
+		//if (CM_ABS(Map_GetXCount(), Target.X) < 30 && CM_ABS(Map_GetYCount(), Target.Y) < 30) {
+		if (CM_ABS(Map_GetXCount(), Target.X) < 150 && CM_ABS(Map_GetYCount(), Target.Y) < 150) {
 			isBumperTriggered = Get_Bumper_Status();
 			CM_update_map(action, isBumperTriggered);
 			Stop_Brifly();
@@ -1184,6 +1190,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 		/*--------------------------Adjust Move ------------------------------------*/
 		Rotate_Angle = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y) - Gyro_GetAngle(0);
+		//printf("%s %d: cour: %d\tGyro: %d\tangle: %d\n", __FUNCTION__, __LINE__, course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y), Gyro_GetAngle(0), Rotate_Angle);
 
 		if (Rotate_Angle >= 1800) {
 			Rotate_Angle -= 3600;
@@ -1232,6 +1239,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 		Left_Speed = Base_Speed - Rotate_Angle / 10 - Integrated / 150; // - Delta / 20; // - Delta * 10 ; // - Integrated / 2500;
 		Right_Speed = Base_Speed + Rotate_Angle / 10 + Integrated / 150; // + Delta / 20;// + Delta * 10 ; // + Integrated / 2500;
+		//printf("%s %d: base: %d\tangle: %d\tint: %d\tleft: %d\tright: %d\n", __FUNCTION__, __LINE__, Base_Speed, Rotate_Angle, Integrated, Left_Speed, Right_Speed);
 
 		if (Left_Speed < BASE_SPEED) {
 			Left_Speed = BASE_SPEED;
@@ -2321,7 +2329,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 /*-------------- Move Back -----------------------------*/
 void CM_CorBack(uint16_t dist)
 {
-	float distance;
+	float pos_x, pos_y, distance;
 	uint32_t SP = 10;
 	uint16_t Counter_Watcher = 0;
 
@@ -2334,10 +2342,15 @@ void CM_CorBack(uint16_t dist)
 	Counter_Watcher = 0;
 //	Reset_Touch();
 
-	distance = robot::instance()->robot_get_position_x();
+	pos_x = robot::instance()->robot_get_position_x();
+	pos_y = robot::instance()->robot_get_position_y();
 	//while ((Get_LeftWheel_Step() < dist) || (Get_RightWheel_Step() < dist)) {
-	while (fabsf(distance - robot::instance()->robot_get_position_x()) < 0.02f) {
-		printf("%s %d: %f %f\n", __FUNCTION__, __LINE__, distance, robot::instance()->robot_get_position_x());
+	while (1) {
+		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_position_y(), 2));
+		if (fabsf(distance) > 0.02f) {
+			break;
+		}
+
 		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 		usleep(10000);
 		Counter_Watcher++;
