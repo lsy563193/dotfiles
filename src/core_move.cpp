@@ -1252,7 +1252,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		} else if (Rotate_Angle <= -1800) {
 			Rotate_Angle += 3600;
 		}
-		if (abs(Rotate_Angle) > 200) {
+		if (abs(Rotate_Angle) > 300) {
 			printf("%s %d: warning: angle is too big, angle: %d\n\n", __FUNCTION__, __LINE__, Rotate_Angle);
 			break;
 		}
