@@ -1690,7 +1690,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-					printf("%s %d: Finish cleanning but not stop near home\n", __FUNCTION__, __LINE__);
+					printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
 					return 0;
 
 				} else if (state == -3) {
@@ -1703,7 +1703,7 @@ uint8_t CM_Touring(void)
 						Beep(i);
 					}
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					printf("%s %d: Finish cleanning to find station\n", __FUNCTION__, __LINE__);
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
 					return 0;
 				} else if ( state == -7 ) {
 					Disable_Motors();
@@ -1711,7 +1711,7 @@ uint8_t CM_Touring(void)
 						Beep(i);
 					}
 					Set_Clean_Mode(Clean_Mode_GoHome);
-					printf("%s %d: Finish cleanning to find station\n", __FUNCTION__, __LINE__);
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
 					return 0;
 				} else if ( state == 1 ) {
 					if (from_station == 0) {
@@ -1733,7 +1733,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-					printf("%s %d: Finish cleanning\n", __FUNCTION__, __LINE__);
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
 					return 0;
 
 				}
@@ -1762,7 +1762,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-					printf("%s %d: finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
 					return 0;
 				} else {
 					mt_state = CM_MoveToPoint(Next_Point);
