@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<launch>
+	<param name="robot_description" command="$(find xacro)/xacro  '$(find pp)/urdf/aicleanrobot.urdf'" />
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">
+		<param name="publish_frequency" value="20.0"/>
+	</node>
+
+	<node name="robot_driver" pkg="pp" type="robot_base.py" output="screen"  />
+
+	<include file="$(find pp)/launch/rplidar.launch" />
+	<include file="$(find pp)/launch/tf_laser2base.launch" />
+	<include file="$(find pp)/launch/gmapping.launch" />
+
+	<include file="$(find pp)/launch/pp.launch" />
+
+</launch>
