@@ -774,7 +774,11 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			}
 			//printf("%s %d Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
 		}
-		Set_Wheel_Speed(SpeedUp, SpeedUp);
+		if (Diff < 100 && Diff > (-100)) {
+			Set_Wheel_Speed(SpeedUp / 2 < 7 ? 7 : SpeedUp / 2, SpeedUp / 2 < 7 ? 7 : SpeedUp / 2);
+		} else {
+			Set_Wheel_Speed(SpeedUp, SpeedUp);
+		}
 
 		usleep(10000);
 	}
