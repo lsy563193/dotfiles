@@ -1,37 +1,29 @@
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <string.h>
-#include <pthread.h>
 
 #include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
-#include <nav_msgs/Odometry.h>
+
+#include "control.h"
+#include "core_move.h"
+#include "crc8.h"
+#include "gyro.h"
+#include "log.h"
+#include "movement.h"
+#include "serial.h"
 
 #include "robot.hpp"
 
 #include "main.h"
-#include "core_move.h"
-#include "path_planning.h"
-#include "shortest_path.h"
-
-#include "control.h"
-#include "crc8.h"
-#include "log.h"
-#include "serial.h"
-
 
 #define	TAG	"Main. (%d):\t"
 
-static int move_speed = 50;
-
 static int32_t log_level = LOG_ERROR;
 static int32_t log_enabled = 0;
-
-extern int32_t rowMin, rowMax, columnMin, columnMax;
 
 void usage(void)
 {
@@ -73,7 +65,6 @@ void intialize(void)
 	}
 
 	serial_init();
-
 }
 
 
@@ -82,6 +73,7 @@ void *core_move_thread(void *)
 	while (!robot::instance()->robot_is_all_ready()) {
 		usleep(1000);
 	}
+
 	CM_Touring();
 }
 
@@ -99,17 +91,16 @@ int main(int argc, char **argv)
 	robot	robot_obj;
 
 #if 1
-	printf("%s, %d\n", __FUNCTION__, __LINE__);
 	ret = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
 	if (ret != 0) {
-		printf("%s, %d\n", __FUNCTION__, __LINE__);
 		core_move_thread_state = 0;
 		log_msg(LOG_FATAL, TAG "fails to core move thread\n");
 	} else {
-		printf("%s, %d\n", __FUNCTION__, __LINE__);
+		printf("%s %d: core_move thread is up!\n", __FUNCTION__, __LINE__);
 		core_move_thread_state = 1;
 	}
 #endif
+
 	ros::spin();
 
 	if (core_move_thread_state == 1) {
@@ -124,4 +115,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-
