@@ -1,0 +1,359 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+/* ------------------------------------- System Setting ------------------------------------- */
+
+/*
+ * Chipset setting.
+ */
+#define CPU_CHIP			(91)
+
+/*
+ * Build system, CPU ID checking will be different for building on Linux or Window.
+ */
+#define BUILD_ON_LINUX			(1)
+
+
+/* ------------------------------------- Path Planning ------------------------------------- */
+
+/*
+ * Definition for enable debug or not.
+ */
+#define ENABLE_DEBUG			(1)
+
+/*
+ * Enable debugging the grid map.
+ */
+#define DEBUG_MAP			(1)
+
+/*
+ * Enable debugging the shortest path map when finding the
+ * shortest path is using the A* like method.
+ */
+//#define DEBUG_SM_MAP			(1)
+
+/*
+ * Enable target debug.
+ */
+#define DEBUG_TARGETS			(1)
+
+/*
+ * Definition to enable/disable robot rounding the obstcal or not.
+ */
+//#define PP_ROUNDING_OBSTCAL		(1)
+
+/*
+ * Definition to force robot to move the center of a cell.
+ *
+ * If not defined, when moving to a cell, it will just use the
+ * curent positions of X or Y encoder count only.
+ */
+#define PP_MOVE_TO_CELL_CENTER		(1)
+
+/* Zig-Zag cleanning time 120 minutes */
+#define CLEANNING_TIME			(14400)
+
+/* With water tank, Zig-Zag cleanning time 90 minutes */
+#define WET_CLEANNING_TIME		(10800)
+
+/* Low battery go home voltage value */
+#define LOW_BATTERY_GO_HOME_VOLTAGE		(1300)
+
+/* OBS setting */
+#define OBS_DYNAMIC			(1)
+#define WALL_DYNAMIC    (1)
+
+/*
+ * If defined, enable virtual wall.
+ */
+#define VIRTUAL_WALL			(1)
+
+/*
+ * Defines for maximum distance between 2 virtual wall points,
+ * If less than this value, points between these two points will be
+ * marked as unaccessible.
+ */
+#define VIRTUAL_WALL_MAX_SEGMENT_DISTANCE	(6)
+
+#define OBS_DYNAMIC_MOVETOTARGET (1)
+/* Bumper and Cliff Error */
+#define CLIFF_ERROR    (1)
+#define BUMPER_ERROR   (1)
+
+/*
+ * Definition relates to the robot.
+ */
+
+/*
+ * If ROBOT_SIZE equals to 5, robot is defined as occupying 25(5x5) cells.
+ * If it equals to 3, robot is defined as occupying 9(3x3) cells
+ */
+#define ROBOT_SIZE			(3)
+
+#if (ROBOT_SIZE == 5)
+
+#define ROBOT_HEAD_OFFSET		(3)
+#define ROBOT_LEFT_OFFSET		(2)
+#define ROBOT_RIGHT_OFFSET		(-2)
+
+#define ROBOT_BRUSH_LENGTH		(3)
+#define ROBOT_BRUSH_LEFT_OFFSET		(-1)
+#define ROBOT_BRUSH_RIGHT_OFFSET	(1)
+
+#define SLOW_DOWN_DISTANCE		(2 * CELL_COUNT_MUL)
+
+#else
+
+#define ROBOT_HEAD_OFFSET		(2)
+#define ROBOT_LEFT_OFFSET		(1)
+#define ROBOT_RIGHT_OFFSET		(-1)
+
+#define ROBOT_BRUSH_LENGTH		(1)
+#define ROBOT_BRUSH_LEFT_OFFSET		(0)
+#define ROBOT_BRUSH_RIGHT_OFFSET	(0)
+
+#define SLOW_DOWN_DISTANCE		(CELL_COUNT_MUL)
+
+#endif
+
+/*
+ * Total number of targets that can be allowed..
+ */
+#define TARGET_TOTAL_COUNT		(MAP_SIZE * 5 / 2)
+
+/* ------------------------------------- Shortest Path ------------------------------------- */
+
+/*
+ * Enable debugging the shortest path when using line-segments
+ * strategy.
+ */
+#define DEBUG_POS			(1)
+
+/*
+ * Defines for when strategy to be used for shortest path. If
+ * defines SHORTEST_PATH_V2, line-segment strategy will be use,
+ * otherwise, it will use A* like strategy.
+ */
+#define SHORTEST_PATH_V2		(1)
+
+/*
+ * When defines SHORTEST_PATH_V2_RAM, line-segment & targets will
+ * be saved by using dymanic memory allocation, but that is not
+ * statble currently.
+ */
+//#define SHORTEST_PATH_V2_RAM		(1)
+
+/*
+ * Total number of lines that the shorestpath will search for.
+ */
+#define POS_LINE_CNT			(780)
+
+/* ------------------------------------- Path Planning Wall Follow ------------------------------------- */
+
+/*
+ * If defined DISABLE_WALL_ALIGN, robot will disable wall
+ * alignment when it starts, otherwise, it when it starts,
+ * it will move for a short distance and align the Gyro angle
+ * with the wall.
+ */
+#define DISABLE_WALL_ALIGN		(1)
+
+/*
+ * If defined DISABLE_WALL_ALIGN_SPOT_MODE, remote spot key even won't be handled.
+ */
+#define DISABLE_WALL_ALIGN_SPOT_MODE	(1)
+
+/*
+ * Define find wall method
+ */
+//#define FIND_WALL_ANGLE_METHOD_1		(1)
+#define FIND_WALL_ANGLE_METHOD_2		(1)
+
+/* 5 meters for finding wall, align the starting angle for Gyro */
+#define MAP_FIND_WALL_DISTANCE		(67 * 4)
+
+/* Escape time set to 9 minutes */
+#define ESCAPE_TRAPPED_TIME		(1080)
+
+/* Set trapped reference target size for robot to check that if it is trapped */
+#define ESCAPE_TRAPPED_REF_CELL_SIZE		(3)
+
+/* Set maximum bumper count of complicated area */
+#define COMPLICATED_AREA_BUMPER_MAX_COUNT		(10)
+
+/* ------------------------------------- Path Planning Gyro ------------------------------------- */
+
+/*
+ * Define which Gyro will be use.
+ * If defined GYRO_XV7011, it will use XV70XX from Espon.
+ * If not defined, it will use RN13XX from MicroInfinity
+ */
+#define GYRO_XV7011			(1)
+
+/*
+ * Define for enabling/disabling Gyro realtime calibration.
+ * Default is disabled.
+ */
+#define GYRO_CALIBRATION             (1)
+
+/*
+ * Defines for enabling/disabling tilted detect or not.
+ * When detecting the robot is tilted, it will check the all the 3 cliff
+ * sensors value, which if all are less then 1500, and at the same time,
+ * if the gyro X-axis & Y-axis angle are greater than 5 degree, we will
+ * confirmed that the robot is tilted.
+ */
+//#define ENABLE_TILTED_DETECT		(1)
+
+/*
+ * Value for maximum allowed angle while the robot is tilted. If it is greater
+ * than this angle, the robot is tilted.
+ */
+#define TILTED_ANGLE_LIMIT		(75)
+
+/*
+ * Value for lower limit of all the 3 cliff sensors, if all those 3 sensors have
+ * values lower than this value, the robot is tilted.
+ */
+#define TILTED_CLIFF_LIMIT		(1500)
+
+/* ------------------------------------- Core Move ------------------------------------- */
+
+/*
+ * Distance between left & right wheel in mm.
+ */
+#define WHEEL_BASE			(201)
+
+/*
+ * Range of BASE_SPEED should be better within 12 to 15.
+ * When it is too small, it will move like shaking when robot startup.
+ * When it is too large, it will fall down when reach the cliff.
+ */
+#define BASE_SPEED						((int32_t) 30) // 15)
+#define Rotate_TopSpeed					((uint32_t) 16) // 22)
+#define Run_TopSpeed					((int32_t) 43) // 45)
+
+/*
+ * Go home using CM_MoveToCell function
+ */
+#define GO_HOME_METHOD_2		(1)
+
+/*
+ * How to add targets in zone, if defined, will add targets by using wall
+ * follow path, otherwise, will just add radomly.
+ */
+#define ADD_TARGET_BY_PATH		(1)
+#define ADD_TARGET_BY_PATH_ONLY		(1)
+
+/* ------------------------------------- Path Planning Map ------------------------------------- */
+
+/*
+ * Definition of the grid map.
+ */
+#define MAP_DIMENSION			(138 * CELL_SIZE)//CELL_SIZE * 190 //9225//7925  // 14250
+#define MAP_SIZE			(MAP_DIMENSION / CELL_SIZE)
+
+/*
+ * Definition relates to a grid cell.
+ */
+#if (ROBOT_SIZE == 5)
+
+#define CELL_SIZE			(65) // 65
+#define CELL_SIZE_2			(2 * CELL_SIZE) // 65
+#define CELL_SIZE_3			(3 * CELL_SIZE) // 65
+#define CELL_COUNT_MUL			(349) // 375  // 207
+#define CELL_COUNT_MUL_1_2		(175) // 187  // 103
+
+#else
+
+#define CELL_SIZE			(103) // 65
+#define CELL_SIZE_2			(2 * CELL_SIZE) // 65
+#define CELL_SIZE_3			(3 * CELL_SIZE) // 65
+#define CELL_COUNT_MUL			(553) // 375  // 207
+#define CELL_COUNT_MUL_1_2		(276) // 187  // 103
+
+#endif
+
+/* ------------------------------------- Zone Wall Follow ------------------------------------- */
+
+/*
+ * Enable or disable zone cleaning mode.
+ */
+#define ZONE_WALLFOLLOW		(1)
+
+/*
+ * Enable or disable escape mode
+ */
+//#define ZONE_ESCAPE		(1)
+
+/*
+ * Zone definitions.
+ */
+
+#define ZONE_DIMENSION			(CELL_SIZE * ZONE_SIZE)//3090  //1430  // 910  // 1950
+#define ZONE_SIZE				(30)
+#define ZONE_SIZE_HALF			(ZONE_SIZE / 2)
+
+/*
+ * Zone size of keeping obstacals
+ */
+#define ZONE_KEEP_OBSTACALS_SIZE	(2)
+
+/*
+ * Number of maximum zone allowed.
+ */
+#define ZONE_MAX			((MAP_DIMENSION * MAP_DIMENSION / ZONE_DIMENSION / ZONE_DIMENSION) * 4)
+
+/*
+ * Maximum number of zone allowed, if greater than this count, force go home.
+ */
+#define FROCE_GO_HOME_ZONE_CNT		(25)
+
+/*
+ * Boundary increment, extend the boundary with this value
+ */
+#define BOUNDARY_INCREMENT			(3)
+
+/* ----------------- Defines about how to stop when cleaning zone mode. ----------------- */
+/*
+ * Stop Robot clean method 1.
+ */
+#define STOP_WALL_FOLLOW_M1			(1)
+
+/*
+ * Maximum distance for method 1 which will cause the robot to stop cleaning.
+ * The value is the distance between start point of current zone and start point of
+ * zone 1, 2, or 3. Also is for the end point to end point of the zones for matching.
+ *
+ * This value is calculated in cell size.
+ */
+#define STOP_WALL_FOLLOW_M1_MAX_DISTANCE	(7)
+
+//#define STOP_WALL_FOLLOW_M2			(1)
+#define STOP_WALL_FOLLOW_M3			(1)
+/*
+ * Check zone size of method 1
+ */
+#define STOP_WALL_FOLLOW_M1_CHECK_ZONE_SIZE		(3)
+#define STOP_WALL_FOLLOW_M3_CHECK_ZONE_SIZE		(3)
+/*
+ * Define that if create middle zone to clean after finish normal wall follow cleaning
+ */
+//#define MIDDLE_ZONE				(1)
+
+/* ------------------------------------- Alignment ------------------------------------- */
+/*
+ * Enable alignment
+ */
+#define ALIGNMENT_ENABLE			(1)
+
+/*
+ * Define that the alignment will use the wall angle to directly alignment gyro angle
+ */
+#define ALIGNMENT_ANGLE_WALL_ENABLE		(1)
+
+/*
+ *Define that alignement will use the gyro data instead of line angle to alignment gyro angle
+ */
+//#define OFFSET_ANGLE_GYRO_DATA			(1)
+#endif

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+gcc -Wall -DCR_PORT=\""/dev/ttyUSB0\"" -o x900 main.c common.c control.c log.c serial.c -lm
