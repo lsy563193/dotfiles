@@ -57,7 +57,7 @@
 #define WET_CLEANNING_TIME		(10800)
 
 /* Low battery go home voltage value */
-#define LOW_BATTERY_GO_HOME_VOLTAGE		(132)
+#define LOW_BATTERY_GO_HOME_VOLTAGE		(1320)
 
 /* OBS setting */
 #define OBS_DYNAMIC			(1)
@@ -360,3 +360,6 @@
 
 #define LIMIT_DISTANCE_ENABLE				(1)
 #define EXPLORE_SCOPE_ENABLE				(0)
+
+// Define the display mode in user interface routine
+#define ONE_KEY_DISPLAY                     (1)

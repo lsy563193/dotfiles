@@ -265,6 +265,8 @@ uint8_t Get_Cliff_Trig(void);
 
 uint8_t Is_AtHomeBase(void);
 
+uint8_t Turn_Connect(void);
+
 void SetHomeRemote(void);
 
 void Reset_HomeRemote(void);
@@ -337,8 +339,6 @@ void Set_MainBrush_PWM(uint16_t PWM);
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R);
 
-void Set_Vacuum_PWM(uint8_t vacuum_pwr);
-
 uint8_t Get_LeftBrush_Stall(void);
 
 uint8_t Get_RightBrush_Stall(void);
@@ -364,6 +364,8 @@ uint8_t Is_Water_Tank(void);
 void Set_Clean_Mode(uint8_t mode);
 
 void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
+
+void Initialize_Motors(void);
 
 void Disable_Motors(void);
 

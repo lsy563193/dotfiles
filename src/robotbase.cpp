@@ -120,12 +120,16 @@ void robotbase_deinit(void)
 		} while (serial_read(2, buf) > 0);
 	*/
 		control_stop_all();
+		
 		usleep(40000);
+		// Stop the beeping
+		Beep(0, 0, 0, -1);
+		serial_flush();
 		send_stream_thread = false;
 		usleep(20000);
 		serial_flush();
 		serial_close();
-		printf("ok\n");
+		ROS_DEBUG_NAMED("robotbase","stop ok\n");
 		int mutex_ret = pthread_mutex_destroy(&send_lock);
 		if(mutex_ret<0)
 			ROS_INFO("[robotbase] mutex destroy fail\n");
