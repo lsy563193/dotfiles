@@ -765,22 +765,17 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		}
 
 		Tick++;
-		if (Tick > 20) {
+		if (Tick > 2) {
 			Tick = 0;
-			if (Diff > 100) {// acceleration and deceleration angle = 10
+			if (Diff > 350) {// acceleration and deceleration angle = 10
 				SpeedUp += 1;
 				SpeedUp = SpeedUp > Speed ? Speed : SpeedUp;
 			} else {
 				SpeedUp -= 1;
 				SpeedUp = SpeedUp < 7 ? 7 : SpeedUp;
 			}
-			//printf("%s %d Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
 		}
-		if (Diff < 100 && Diff > (-100)) {
-			Set_Wheel_Speed(SpeedUp / 2 < 7 ? 7 : SpeedUp / 2, SpeedUp / 2 < 7 ? 7 : SpeedUp / 2);
-		} else {
-			Set_Wheel_Speed(SpeedUp, SpeedUp);
-		}
+		Set_Wheel_Speed(SpeedUp, SpeedUp);
 
 		usleep(10000);
 	}
