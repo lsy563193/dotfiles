@@ -300,6 +300,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int
 #else
 		CM_count_normalize(Gyro_GetAngle(0), (c - 1) * CELL_SIZE, CELL_SIZE_2, &j, &k);
 		if (i && Map_GetCell(MAP, countToCell(j), countToCell(k)) != BLOCKED_BUMPER) {
+			//printf("%s %d: c: %d\ti: %d\tmarking (%d, %d) (%d, %d)\tGyro: %d\tPos: (%d, %d)\n", __FUNCTION__, __LINE__, c, i, j, k, countToCell(j), countToCell(k), Gyro_GetAngle(0), Map_GetXCount(), Map_GetYCount());
 			Map_SetCell(MAP, j, k, BLOCKED_OBS);
 		} else if (Map_GetCell(MAP, countToCell(j), countToCell(k)) == BLOCKED_OBS) {
 			Map_SetCell(MAP, j, k, UNCLEAN);
@@ -474,6 +475,7 @@ void CM_update_map(ActionType action, uint8_t bumper) {
 #else
 			CM_count_normalize(Gyro_GetAngle(0), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) != BLOCKED_BUMPER) {
+				printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
 			}
 		} else {
@@ -519,10 +521,10 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 	SpeedUp = Tick = 0;
 
-	Diff = Angle - Gyro_GetImuAngle(0);
+	Diff = Angle - Gyro_GetAngle(0);
 
 	printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tBias: %d\tTemp: %d\tScale: %d\n",
-	         __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
+	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	while (Diff >= 1800) {
 		Diff = Diff - 3600;
@@ -537,7 +539,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 	}
 
 	printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tangle_turned: %d\tBias: %d\tTemp: %d\tScale: %d\n",
-	         __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)), angle_turned, Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
+	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)), angle_turned, Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	if (((Diff <= 1800 && Diff >= 1700) || (Diff >= -1800 && Diff <= -1700))) {
 		if (Diff <= 1800 && Diff >= 1700) {
@@ -658,7 +660,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			Stop_Brifly();
 			CM_update_map(action, isBumperTriggered);
 
-			Diff = Angle - Gyro_GetImuAngle(0);
+			Diff = Angle - Gyro_GetAngle(0);
 			while (Diff >= 1800) {
 				Diff = Diff - 3600;
 			}
@@ -667,7 +669,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				Diff = Diff + 3600;
 			}
 
-			printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)));
+			printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
 			if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
 				printf("Turn Left\n");
 
@@ -693,7 +695,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
 
-				Diff = Angle - Gyro_GetImuAngle(0);
+				Diff = Angle - Gyro_GetAngle(0);
 				while (Diff >= 1800) {
 					Diff = Diff - 3600;
 				}
@@ -702,7 +704,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					Diff = Diff + 3600;
 				}
 
-				printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)));
+				printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
 				if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
 					printf("Turn Left\n");
 
@@ -717,7 +719,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
 
-					Diff = Angle - Gyro_GetImuAngle(0);
+					Diff = Angle - Gyro_GetAngle(0);
 					while (Diff >= 1800) {
 						Diff = Diff - 3600;
 					}
@@ -726,7 +728,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 						Diff = Diff + 3600;
 					}
 
-					printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)));
+					printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
 					if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
 						printf("Turn Left\n");
 
@@ -751,14 +753,14 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 #endif
 		}
 
-		Diff = CM_ABS(Angle, Gyro_GetImuAngle(0));
+		Diff = CM_ABS(Angle, Gyro_GetAngle(0));
 		Diff = Diff > 1800 ? 3600 - Diff : Diff;
 		if ((Diff < 10) && (Diff > (-10))) {
 			Stop_Brifly();
 			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 			//usleep(1000);
-			printf("%s %d: Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff);
+			printf("%s %d: Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
 			return;
 		}
 
@@ -1131,7 +1133,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 					CM_update_map(action, isBumperTriggered);
 					retval = MT_None;
 					should_follow_wall = 1;
-					printf("%s %d: OBS break!\n", __FUNCTION__, __LINE__);
+					printf("%s %d: OBS break, val: %d(%d)\n", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
 					break;
 //				}
 //			}
