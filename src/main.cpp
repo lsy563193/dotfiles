@@ -74,6 +74,13 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 
+	Turn_Right(10, 850);
+	Turn_Right(10, 1750);
+	Turn_Right(10, 1000);
+	Turn_Left(10, 850);
+	Turn_Left(10, 1750);
+	Turn_Left(10, 1000);
+
 	CM_Touring();
 }
 
