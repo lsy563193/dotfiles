@@ -1476,6 +1476,8 @@ uint8_t CM_Touring(void)
 
 	uint16_t	home_angle = 0;
 
+	time_t		work_timer_cnt = time(NULL);
+
 	MapTouringType	mt_state = MT_None;
 
 	Reset_WorkTimer();
@@ -1750,7 +1752,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-					printf("%s %d: finish cleanning\n", __FUNCTION__, __LINE__);
+					printf("%s %d: finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
 					return 0;
 				} else {
 					mt_state = CM_MoveToPoint(Next_Point);
