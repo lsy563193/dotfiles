@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+	<node name="ldslidar" pkg = "lds_lidar" type="ldslidarnode.py" output = "screen"/>
+		<param name="~serial_port" type="string" value="/dev/ttyUSB0" />
+		<param name="~baudrate" type="int" value="230400" />
+</launch>
