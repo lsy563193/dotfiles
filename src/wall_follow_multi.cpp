@@ -127,7 +127,8 @@ void *WFM_check_trapped(void *data)
 	while (escape_thread_running == true) {
 		pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	    pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-    	Map_SetPosition(pos_x, pos_y);
+		Map_SetPosition(pos_x, pos_y);
+		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
 		if (abs(current_x - Map_GetXPos()) >= 2 || abs(current_y - Map_GetYPos()) >= 2) {
 			printf("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
