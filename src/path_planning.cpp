@@ -26,12 +26,23 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <list>
+
 #include "core_move.h"
 #include "gyro.h"
 #include "mathematics.h"
 #include "map.h"
 #include "path_planning.h"
 #include "shortest_path.h"
+
+using namespace std;
+
+typedef struct {
+	Point16_t	target;
+	list <Point16_t> points;
+} PPTargetType;
+
+list <PPTargetType> targets;
 
 uint8_t	first_start = 0;
 
@@ -2061,6 +2072,417 @@ int8_t path_next_approaching(int16_t *x, int16_t *y)
 	return found;
 }
 
+void path_find_all_targets()
+{
+	bool		all_set;
+	int16_t		target_x, target_y, i, j, x, y, offset, passValue, nextPassValue, passSet, tracex, tracey, costAtCell, targetCost;
+	CellState	cs;
+
+	Map_Reset(SPMAP);
+
+	for (i = xMin; i <= xMax; ++i) {
+		for (j = yMin; j <= yMax; ++j) {
+			cs = Map_GetCell(MAP, i, j);
+			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
+				for (x = ROBOT_RIGHT_OFFSET; x <= ROBOT_LEFT_OFFSET; x++) {
+					for (y = ROBOT_RIGHT_OFFSET; y <= ROBOT_LEFT_OFFSET; y++) {
+						Map_SetCell(SPMAP, i + x, j + y, COST_HIGH);
+					}
+				}
+			}
+		}
+	}
+
+	x = Map_GetXPos();
+	y = Map_GetYPos();
+	/* Set the current robot position has the cost value of 1. */
+	Map_SetCell(SPMAP, (int32_t)x, (int32_t)y, COST_1);
+
+	offset = 0;
+	passSet = 1;
+	passValue = 1;
+	nextPassValue = 2;
+	while (passSet == 1) {
+		offset++;
+		passSet = 0;
+		for (i = x - offset; i <= x + offset; i++) {
+			if (i < xMin || i > xMax)
+				continue;
+
+				for (j = y - offset; j <= y + offset; j++) {
+					if (j < yMin || j > yMax)
+						continue;
+
+				if(Map_GetCell(SPMAP, i, j) == passValue) {
+					if (i - 1 >= xMin && Map_GetCell(SPMAP, i - 1, j) == COST_NO) {
+						Map_SetCell(SPMAP, (i - 1), (j), (CellState)nextPassValue);
+						passSet = 1;
+					}
+
+					if ((i + 1) <= xMax && Map_GetCell(SPMAP, i + 1, j) == COST_NO) {
+						Map_SetCell(SPMAP, (i + 1), (j), (CellState)nextPassValue);
+						passSet = 1;
+					}
+
+					if (j - 1  >= yMin && Map_GetCell(SPMAP, i, j - 1) == COST_NO) {
+						Map_SetCell(SPMAP, (i), (j - 1), (CellState)nextPassValue);
+						passSet = 1;
+					}
+
+					if ((j + 1) <= yMax && Map_GetCell(SPMAP, i, j + 1) == COST_NO) {
+						Map_SetCell(SPMAP, (i), (j + 1), (CellState)nextPassValue);
+						passSet = 1;
+					}
+				}
+			}
+		}
+
+		all_set = true;
+		for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+			target_x = it->target.X;
+			target_y = it->target.Y;
+
+			if (Map_GetCell(SPMAP, target_x, target_y) == COST_NO) {
+				all_set = false;
+			}
+		}
+		if (all_set == true) {
+			printf("%s %d\n", __FUNCTION__, __LINE__);
+			passSet = 0;
+		}
+
+		passValue = nextPassValue;
+		nextPassValue++;
+		if(nextPassValue == COST_PATH)
+			nextPassValue = 1;
+	}
+
+	printf("%s %d: offset: %d\tx: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
+	debug_sm_map(SPMAP, 0, 0);
+
+	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+		target_x = it->target.X;
+		target_y = it->target.Y;
+		if (Map_GetCell(SPMAP, target_x, target_y) == COST_NO || Map_GetCell(SPMAP, target_x, target_y) == COST_HIGH) {
+			continue;
+		}
+
+		tracex = target_x;
+		tracey = target_y;
+		while (tracex != x || tracey != y) {
+			//printf("%s %d\n", __FUNCTION__, __LINE__);
+			costAtCell = Map_GetCell(SPMAP, tracex, tracey);
+			targetCost = costAtCell - 1;
+
+			if (targetCost == 0)
+				targetCost = COST_5;
+
+			Point16_t	t;
+			t.X = tracex;
+			t.Y = tracey;
+			it->points.push_back(t);
+
+			if ((tracex -1  >= xMin) && (Map_GetCell(SPMAP, tracex - 1, tracey) == targetCost)) {
+				tracex--;
+				continue;
+			}
+
+			if ((tracex + 1 <= xMax) && Map_GetCell(SPMAP, tracex + 1, tracey) == targetCost) {
+				tracex++;
+				continue;
+			}
+
+			if ((tracey -1 >= yMin) && (Map_GetCell(SPMAP, tracex, tracey - 1) == targetCost)) {
+				tracey--;
+				continue;
+			}
+
+			if ((tracey + 1<= yMax) && (Map_GetCell(SPMAP, tracex, tracey + 1) == targetCost)) {
+				tracey++;
+				continue;
+			}
+		}
+	}
+}
+
+int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
+{
+	bool	within_range;
+	int16_t found, final_cost, a, b, c, d, start, end, last_y;
+	int16_t x_min, y_min, x_max, y_max, x_min_tmp, y_min_tmp, x_max_tmp, y_max_tmp, stop;
+
+	final_cost = 1000;
+	found = 0;
+	x_max = y_max = x_max_tmp = y_max_tmp = SHRT_MIN;
+	x_min = y_min = x_min_tmp = y_min_tmp = SHRT_MAX;
+
+	for (c = xMin - 1; c < xMax + 1; ++c) {
+		for (d = yMin - 1; d < yMax + 1; ++d) {
+			if (Map_GetCell(MAP, c, d) != UNCLEAN) {
+				x_min_tmp = x_min_tmp > c ? c : x_min_tmp;
+				x_max_tmp = x_max_tmp < c ? c : x_max_tmp;
+				y_min_tmp = y_min_tmp > d ? d : y_min_tmp;
+				y_max_tmp = y_max_tmp < d ? d : y_max_tmp;
+			}
+		}
+	}
+
+	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
+		for (d = y_min_tmp; d <= y_max_tmp; ++d) {
+			if (Map_GetCell(MAP, c, d) != CLEANED)
+				continue;
+
+			if (c > xMin - 1 && Map_GetCell(MAP, c - 1, d) == UNCLEAN) {
+				if (is_block_accessible(c - 1, d) == 1) {
+					Map_SetCell(MAP, cellToCount(c - 1), cellToCount(d), TARGET);
+					x_min = x_min > (c - 1) ? (c - 1) : x_min;
+					x_max = x_max < (c - 1) ? (c - 1) : x_max;
+					y_min = y_min > d ? d : y_min;
+					y_max = y_max < d ? d : y_max;
+				}
+			}
+
+			if (c < xMax + 1 && Map_GetCell(MAP, c + 1, d) == UNCLEAN) {
+				if (is_block_accessible(c + 1, d) == 1) {
+					Map_SetCell(MAP, cellToCount(c + 1), cellToCount(d), TARGET);
+					x_min = x_min > (c + 1) ? (c + 1) : x_min;
+					x_max = x_max < (c + 1) ? (c + 1) : x_max;
+					y_min = y_min > d ? d : y_min;
+					y_max = y_max < d ? d : y_max;
+				}
+			}
+
+			if (d > yMin - 1 && Map_GetCell(MAP, c, d - 1) == UNCLEAN) {
+				if (is_block_accessible(c, d - 1) == 1) {
+					Map_SetCell(MAP, cellToCount(c), cellToCount(d - 1), TARGET);
+					x_min = x_min > c ? c : x_min;
+					x_max = x_max < c ? c : x_max;
+					y_min = y_min > (d - 1) ? (d - 1) : y_min;
+					y_max = y_max < (d - 1) ? (d - 1) : y_max;
+				}
+			}
+
+			if (d < yMax + 1 && Map_GetCell(MAP, c, d + 1) == UNCLEAN) {
+				if (is_block_accessible(c, d + 1) == 1) {
+					Map_SetCell(MAP, cellToCount(c), cellToCount(d + 1), TARGET);
+					x_min = x_min > c ? c : x_min;
+					x_max = x_max < c ? c : x_max;
+					y_min = y_min > (d + 1) ? (d + 1) : y_min;
+					y_max = y_max < (d + 1) ? (d + 1) : y_max;
+				}
+			}
+		}
+	}
+
+	/* Narrow down the coodinate that robot should go */
+	for (d = y_min; d <= y_max; d++) {
+		start = end = SHRT_MAX;
+		for (c = x_min; c <= Map_GetXPos(); c++) {
+			if (Map_GetCell(MAP, c, d) == TARGET) {
+				if (start == SHRT_MAX)
+					start = c;
+				if (start != SHRT_MAX)
+					end = c;
+			}
+			if (Map_GetCell(MAP, c, d) != TARGET || c == Map_GetXPos()){
+				if ( start != SHRT_MAX) {
+					for (a = start + 1; a < end; a++) {
+						Map_SetCell(MAP, cellToCount(a), cellToCount(d), UNCLEAN);
+					}
+				}
+				start = end = SHRT_MAX;
+			}
+		}
+
+		start = end = SHRT_MIN;
+		for (c = x_max; c >= Map_GetXPos(); c--) {
+			if (Map_GetCell(MAP, c, d) == TARGET) {
+				if (start == SHRT_MIN)
+					start = c;
+				if (start != SHRT_MIN)
+					end = c;
+			}
+			if (Map_GetCell(MAP, c, d) != TARGET || c == Map_GetXPos()){
+				if (end != SHRT_MIN) {
+					for (a = start - 1; a > end; a--) {
+						Map_SetCell(MAP, cellToCount(a), cellToCount(d), UNCLEAN);
+					}
+				}
+				start = end = SHRT_MIN;
+			}
+		}
+	}
+
+	x_min_tmp = x_min;
+	x_max_tmp = x_max;
+	y_min_tmp = y_min;
+	y_max_tmp = y_max;
+
+	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+		it->points.clear();
+	}
+
+	targets.clear();
+	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
+		for (d = y_min_tmp; d <= y_max_tmp; ++d) {
+			if (Map_GetCell(MAP, c, d) == TARGET) {
+				PPTargetType t;
+				t.target.X = c;
+				t.target.Y = d;
+				t.points.clear();
+				targets.push_back(t);
+
+				x_min = x_min > c ? c : x_min;
+				x_max = x_max < c ? c : x_max;
+				y_min = y_min > d ? d : y_min;
+				y_max = y_max < d ? d : y_max;
+			}
+		}
+	}
+
+	debug_map(MAP, home_x, home_y);
+	for (c = x_min; c <= x_max; ++c) {
+		for (d = y_min; d <= y_max; ++d) {
+			if (Map_GetCell(MAP, c, d) == TARGET) {
+				Map_SetCell(MAP, cellToCount(c), cellToCount(d), UNCLEAN);
+			}
+		}
+	}
+
+	path_find_all_targets();
+
+	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end();) {
+		if (it->points.empty() == true) {
+			it = targets.erase(it);
+		} else {
+			it++;
+		}
+	}
+
+	/* No more target to clean */
+	if (targets.empty() == true) {
+		if (path_escape_trapped() <= 0) {
+			printf("%s %d: trapped\n", __FUNCTION__, __LINE__);
+			return -2;
+		}
+		return 0;
+	}
+
+	printf("%s %d: targets count: %d\n", __FUNCTION__, __LINE__, targets.size());
+	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+		printf("%s %d: target (%d, %d) %d: ", __FUNCTION__, __LINE__, it->target.X, it->target.Y, it->points.size());
+
+		for (list<Point16_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
+			printf("(%d, %d)->", i->X, i->Y);
+		}
+		printf("(%d, %d)\n\n", Map_GetXPos(), Map_GetYPos());
+	}
+
+#if 1
+	printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, c, d, final_cost);
+	for (d = Map_GetYPos(); d <= y_max; ++d) {
+		for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+			if (it->target.Y == d) {
+				last_y = it->points.front().Y;
+				within_range = true;
+				for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+					if (i->Y < Map_GetYPos() || i->Y > d) {
+						within_range = false;
+					}
+					if (i->Y > last_y) {
+						within_range = false;
+					} else {
+						last_y = i->Y;
+					}
+				}
+				if (within_range == true && it->points.size() < final_cost) {
+					*x = it->target.X;
+					*y = it->target.Y;
+					final_cost = it->points.size();
+				}
+			}
+		}
+	}
+
+	printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, c, d, final_cost);
+	if (final_cost == 1000) {
+		stop = 0;
+		for (a = Map_GetYPos(); a >= y_min && stop == 0; --a) {
+			for (d = Map_GetYPos(); d >= a && stop == 0; --d) {
+				for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+					if (it->target.Y == d) {
+						within_range = true;
+						last_y = it->points.front().Y;
+						for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+							if (i->Y > Map_GetYPos() || i->Y < a) {
+								within_range = false;
+							}
+							if (i->Y < last_y) {
+								within_range = false;
+							} else {
+								last_y = i->Y;
+							}
+						}
+						if (within_range == true && it->points.size() < final_cost) {
+							*x = it->target.X;
+							*y = it->target.Y;
+							final_cost = it->points.size();
+							stop = 1;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, c, d, final_cost);
+	if (final_cost == 1000) {
+		stop = 0;
+        for (a = Map_GetYPos(); a <= y_max  && stop == 0; ++a) {
+            for (d = Map_GetYPos(); d <= a && stop == 0; ++d) {
+				for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+					if (it->target.Y == d) {
+						within_range = true;
+						for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+							if (i->Y < Map_GetYPos() || i->Y > a) {
+								within_range = false;
+							}
+						}
+						if (within_range == true && it->points.size() < final_cost) {
+							*x = it->target.X;
+							*y = it->target.Y;
+							final_cost = it->points.size();
+							stop = 1;
+						}
+					}
+				}
+			}
+		}
+	}
+#endif
+	printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, c, d, final_cost);
+	/* fallback to find unclean area */
+	if (final_cost == 1000) {
+		for (c = x_min; c <= x_max; ++c) {
+			for (d = y_min; d <= y_max; ++d) {
+				for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+					if (it->points.size() < final_cost) {
+						*x = it->target.X;
+						*y = it->target.Y;
+						final_cost = it->points.size();
+					}
+				}
+			}
+		}
+	}
+
+	found = (final_cost != 1000) ? final_cost : 0 ;
+	printf("%s %d found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, *x, *y);
+
+	return found;
+}
+
+
 /*
  * Find how many cells ahead to clean with a given target.
  *
@@ -2469,7 +2891,10 @@ int8_t path_next(int32_t *target_x, int32_t *target_y) {
 		positions[0].y_target = y_next_area;
 	} else {
 		/* Get the next target to clean. */
-		val = path_next_approaching(&x_next_area, &y_next_area);
+		debug_map(MAP, home_x, home_y);
+		val = find_next_unclean_with_approaching(&x_next_area, &y_next_area);
+		printf("%s %d: val: %d\t target: (%d, %d)\n\n", __FUNCTION__, __LINE__, val, x_next_area, y_next_area);
+		//val = path_next_approaching(&x_next_area, &y_next_area);
 		if (val > 0) {
 			if (first_start == 1)
 				first_start++;
