@@ -16,6 +16,7 @@
 #include "shortest_path.h"
 
 #include "movement.h"
+#include "wall_follow_multi.h"
 
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
@@ -1965,8 +1966,7 @@ uint8_t CM_Touring(void)
 				//Trapped, escape mode
 				else if (state == 2) {
 					//printf("State 2!");
-					//FIXME
-					//state = Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
+					state = Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 
 					if ( map_touring_cancel == 1 ) {
 						return 0;
