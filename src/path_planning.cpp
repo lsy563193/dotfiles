@@ -2314,9 +2314,12 @@ int16_t path_escape_trapped() {
 			}
 		}
 	} else {
-			if (is_block_accessible(0, 0) == 1) {
-			printf("%s %d\n", __FUNCTION__, __LINE__);
+		if (is_block_accessible(0, 0) == 1) {
 			val = path_find_shortest_path(positions[0].x, positions[0].y, 0, 0, 0, last_dir);
+#if DEBUG_SM_MAP
+			debug_sm_map(SPMAP, 0, 0);
+#endif
+			printf("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
 				val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0, last_dir);
@@ -2338,8 +2341,11 @@ int16_t path_escape_trapped() {
 			val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0, last_dir);
 			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 
+#if DEBUG_SM_MAP
+			debug_sm_map(SPMAP, 0, 0);
+#endif
 #if DEBUG_MAP
-				debug_map(MAP, home_x, home_y);
+			debug_map(MAP, home_x, home_y);
 #endif
 
 			if (val < 0 || val == SCHAR_MAX) {
