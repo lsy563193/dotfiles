@@ -2321,6 +2321,11 @@ int8_t path_escape_trapped() {
 				/* Robot start position is blocked. */
 				val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0, last_dir);
 				printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+
+#if DEBUG_MAP
+				debug_map(MAP, home_x, home_y);
+#endif
+
 				if (val < 0 || val == SCHAR_MAX) {
 					val = 0;
 				} else {
@@ -2332,6 +2337,11 @@ int8_t path_escape_trapped() {
 		} else {
 			val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0, last_dir);
 			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+
+#if DEBUG_MAP
+				debug_map(MAP, home_x, home_y);
+#endif
+
 			if (val < 0 || val == SCHAR_MAX) {
 				/* No path to home, which is set when path planning is initialized. */
 				val = 0;
