@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "map.h"
 #include "mathematics.h"
@@ -20,9 +21,6 @@ uint16_t relative_theta = 3600;
 int16_t xMin, xMax, yMin, yMax;
 int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 
-int16_t debugMsg[DEBUG_MSG_SIZE][3];
-uint8_t debugMsg_idx;
-
 void Map_Initialize(void) {
 	uint8_t c, d;
 
@@ -40,8 +38,6 @@ void Map_Initialize(void) {
 
 	xCount = 0;
 	yCount = 0;
-
-	debugMsg_idx = 0;
 }
 
 int16_t Map_GetEstimatedRoomSize(void) {
@@ -127,12 +123,6 @@ CellState Map_GetCell(uint8_t id, int16_t x, int16_t y) {
 	} else {
 		if(id == MAP) {
 			val = BLOCKED_BOUNDARY;
-			if(debugMsg_idx < DEBUG_MSG_SIZE && (x - xRangeMax == 1 || xRangeMin - x == 1 || y - yRangeMax == 1 || yRangeMax - y == 1)) {
-				debugMsg[debugMsg_idx][0] = x;
-				debugMsg[debugMsg_idx][1] = y;
-				debugMsg[debugMsg_idx][2] = BLOCKED_BOUNDARY;
-				debugMsg_idx++;
-			}
 		} else {
 			val = COST_HIGH;
 		}
@@ -195,13 +185,6 @@ void Map_SetCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 			val = (CellState) map[ROW][COLUMN / 2];
 			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
 				map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
-
-				if(debugMsg_idx < DEBUG_MSG_SIZE) {
-					debugMsg[debugMsg_idx][0] = x;
-					debugMsg[debugMsg_idx][1] = y;
-					debugMsg[debugMsg_idx][2] = value;
-					debugMsg_idx++;
-				}
 			}
 		}
 #ifndef SHORTEST_PATH_V2
@@ -342,50 +325,13 @@ void Map_Set_Cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state
 	}
 }
 
-void Map_PrintDebug(uint8_t id) {
-	uint8_t c;
+void Map_Reset(uint8_t id)
+{
+#ifndef SHORTEST_PATH_V2
+	uint16_t idx;
 
-	id = id;
-	if(debugMsg_idx) {
-		//Debug_String("$UPD");
-		for(c = 0; c < debugMsg_idx; ++c) {
-			//Debug_Number(debugMsg[c][0]);
-			//Debug_String(",");
-			//Debug_Number(debugMsg[c][1]);
-			//Debug_String(",");
-			//Debug_Number(debugMsg[c][2]);
-			//Debug_String(";");
-		}
-		//Debug_String("#");
-		debugMsg_idx = 0;
+	for (idx = 0; idx < MAP_SIZE; idx++) {
+		memset((id == SPMAP ? spmap[idx] : map[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
 	}
-}
-
-void Map_PrintPosition(void) {
-	static int16_t x = 32767, y = 32767;
-
-	if(x != Map_GetXPos() || y != Map_GetYPos()) {
-		x = Map_GetXPos();
-		y = Map_GetYPos();
-		////Debug_String("$RBT");
-		//Debug_Number(x);
-		//Debug_String(",");
-		//Debug_Number(y);
-		//Debug_String(";");
-		//Debug_String("#\r\n");
-	}
-	/*
-	//Debug_Number(xCount / CELL_COUNT_MUL);
-	//Debug_String(".");
-	//Debug_Number(((int32_t)xCount % CELL_COUNT_MUL) * 100 / CELL_COUNT_MUL);
-	//Debug_String(" (");
-	//Debug_Number(xCount);
-	//Debug_String(")\t");
-	//Debug_Number(yCount / CELL_COUNT_MUL);
-	//Debug_String(".");
-	//Debug_Number(((int32_t)yCount % CELL_COUNT_MUL) * 100 / CELL_COUNT_MUL);
-	//Debug_String(" (");
-	//Debug_Number(yCount);
-	//Debug_String(")\r\n");
-	*/
+#endif
 }

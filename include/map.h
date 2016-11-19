@@ -73,6 +73,6 @@ Point16_t Map_PointToCell( Point32_t pnt );
 
 void Map_Set_Cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
 
-void Map_PrintDebug(uint8_t id);
-void Map_PrintPosition(void);
+void Map_Reset(uint8_t id);
+
 #endif /* __MAP_H */
