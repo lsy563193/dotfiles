@@ -518,10 +518,10 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 	SpeedUp = Tick = 0;
 
-	Diff = Angle - Gyro_GetAngle(0);
+	Diff = Angle - Gyro_GetImuAngle(0);
 
 	printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tBias: %d\tTemp: %d\tScale: %d\n",
-	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
+	         __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	while (Diff >= 1800) {
 		Diff = Diff - 3600;
@@ -536,7 +536,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 	}
 
 	printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tangle_turned: %d\tBias: %d\tTemp: %d\tScale: %d\n",
-	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)), angle_turned, Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
+	         __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)), angle_turned, Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	if (((Diff <= 1800 && Diff >= 1700) || (Diff >= -1800 && Diff <= -1700))) {
 		if (Diff <= 1800 && Diff >= 1700) {
@@ -657,7 +657,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			Stop_Brifly();
 			CM_update_map(action, isBumperTriggered);
 
-			Diff = Angle - Gyro_GetAngle(0);
+			Diff = Angle - Gyro_GetImuAngle(0);
 			while (Diff >= 1800) {
 				Diff = Diff - 3600;
 			}
@@ -666,7 +666,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				Diff = Diff + 3600;
 			}
 
-			printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+			printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)));
 			if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
 				printf("Turn Left\n");
 
@@ -692,7 +692,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
 
-				Diff = Angle - Gyro_GetAngle(0);
+				Diff = Angle - Gyro_GetImuAngle(0);
 				while (Diff >= 1800) {
 					Diff = Diff - 3600;
 				}
@@ -701,7 +701,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					Diff = Diff + 3600;
 				}
 
-				printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+				printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)));
 				if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
 					printf("Turn Left\n");
 
@@ -716,7 +716,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
 
-					Diff = Angle - Gyro_GetAngle(0);
+					Diff = Angle - Gyro_GetImuAngle(0);
 					while (Diff >= 1800) {
 						Diff = Diff - 3600;
 					}
@@ -725,7 +725,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 						Diff = Diff + 3600;
 					}
 
-					printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+					printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff, (Angle - Gyro_GetImuAngle(0)));
 					if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
 						printf("Turn Left\n");
 
@@ -750,14 +750,14 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 #endif
 		}
 
-		Diff = CM_ABS(Angle, Gyro_GetAngle(0));
+		Diff = CM_ABS(Angle, Gyro_GetImuAngle(0));
 		Diff = Diff > 1800 ? 3600 - Diff : Diff;
 		if ((Diff < 10) && (Diff > (-10))) {
 			Stop_Brifly();
 			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 			//usleep(1000);
-			printf("%s %d: Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
+			printf("%s %d: Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetImuAngle(0), Diff);
 			return;
 		}
 
