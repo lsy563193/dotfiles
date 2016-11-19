@@ -2290,11 +2290,11 @@ void path_update_cells()
  * @return	0 if the robot is trapped
  * 		1 if the robot is not trapped.
  */
-int8_t path_escape_trapped() {
+int16_t path_escape_trapped() {
 
-	int8_t	val;
+	int16_t	val = 0;
 	path_set_current_pos();
-	uint8_t i = 0;
+	uint16_t i = 0;
 	if ( trappedCell[0].X != home_x || trappedCell[0].Y != home_y ){
 		for ( i = 0; i < trappedCellSize; ++i ) {
 			printf("%s %d Check %d trapped reference cell: x: %d, y: %d\n", __FUNCTION__, __LINE__,
@@ -2370,7 +2370,7 @@ int8_t path_escape_trapped() {
  * 		-1 if target is blocked
  */
 int8_t path_next(int32_t *target_x, int32_t *target_y) {
-	int8_t	val;
+	int16_t	val;
 	uint8_t status;
 	int16_t	x, y, cnt, x_next_area, y_next_area, offset;
 	int8_t i, j;

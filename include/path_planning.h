@@ -48,7 +48,7 @@ void path_targets_add_one(int16_t x, int16_t y, uint8_t accessible);
 void path_targets_update(void);
 
 void path_update_cells(void);
-int8_t path_escape_trapped(void);
+int16_t path_escape_trapped(void);
 
  /* Set the around 9 cell as state */
 void path_set_9cell(int16_t cell_x, int16_t cell_y, CellState state);

@@ -400,7 +400,7 @@ void path_trace_path(int16_t line_idx, int16_t cur_idx)
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
  */
-int8_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir)
+int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir)
 {
 	uint8_t	level_cur, level_target, level_next, level_set, should_trace, found, blocked;
 
@@ -1045,7 +1045,7 @@ int8_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x
  *
  * @return
  */
-int8_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir)
+int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir)
 {
 	int16_t *x_next, *y_next;
 	Point16_t	pos;
@@ -1093,8 +1093,8 @@ int8_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t e
  * 		1:  Path to target is found
  *
  */
-int8_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max, uint16_t last_dir) {
-	uint8_t	next;
+int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max, uint16_t last_dir) {
+	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, passValue, nextPassValue, passSet, offset;
 	CellState cs;
@@ -1132,7 +1132,7 @@ int8_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, in
 		}
 	}
 
-#if 1
+#if 0
 	/*
 	 * Try to handle the following cases:
 	 *
@@ -1208,6 +1208,7 @@ int8_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, in
 	/* Set the current robot position has the cost value of 1. */
 	Map_SetCell(SPMAP, (int32_t)xID, (int32_t)yID, COST_1);
 
+#if 0
 	/*
 	 * If the cells on lower, upper, right & left is marked as obstcal,
 	 * try to clear them according to obstcal's coordinate.
@@ -1244,6 +1245,7 @@ int8_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, in
 			Map_SetCell(SPMAP, (int32_t)xID, (int32_t)(yID - 1), COST_NO);
 		}
 	}
+#endif
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -1431,8 +1433,8 @@ int8_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, in
  * 		1:  Path to target is found
  *
  */
-int8_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir) {
-	int8_t val;
+int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir) {
+	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
 	if (bound == 1) {
@@ -1474,8 +1476,8 @@ int8_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t e
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
  */
-int8_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir) {
-	int8_t	retval;
+int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir) {
+	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
 
