@@ -115,8 +115,9 @@ void *WFM_check_trapped(void *data)
 	MapEscapeTrappedType	escaped = Map_Escape_Trapped_Escaped;
 
 	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-    pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-    Map_SetPosition(pos_x, pos_y);
+	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	Map_SetPosition(pos_x, pos_y);
+	Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
 	current_x = Map_GetXPos();
 	current_y = Map_GetYPos();
