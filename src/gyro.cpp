@@ -28,6 +28,10 @@ uint16_t gyro_offset = 0;
 int32_t gyro_odometer = 0;
 uint16_t gyro_time = 0;
 
+uint16_t gyro_imu_offset = 0;
+uint16_t gyro_imu_angle[2];
+int16_t gyro_imu_rate[2];
+
 int16_t	gyro_raw = 0;
 
 uint8_t gyro_calibration = 255;
@@ -275,6 +279,9 @@ void Gyro_Reset() {
 	gyro_xacc_offset = gyro_xacc;
 	gyro_yacc_offset = gyro_yacc;
 	gyro_zacc_offset = gyro_zacc;
+
+	gyro_imu_offset = gyro_imu_angle[0] = gyro_imu_angle[1] = 0;
+	gyro_imu_rate[0] = gyro_imu_rate[1] = 0;
 }
 
 void Gyro_Reset_With_Offset(int16_t offset) {
@@ -355,4 +362,21 @@ uint8_t Gyro_Test()
 #endif
 
 	return state;
+}
+
+void Gyro_SetImuOffset(int16_t offset) {
+	gyro_imu_offset = (3600 + offset + gyro_imu_offset) % 3600;
+	printf("Gyro IMU Offset: %d (%d)\n", gyro_imu_offset, offset);
+}
+
+uint16_t Gyro_GetImuAngle(uint8_t id) {
+	return (gyro_imu_angle[id] - gyro_imu_offset + 3600) % 3600;
+}
+
+void Gyro_SetImuAngle(int16_t angle, int16_t rate) {
+	gyro_imu_angle[1] = gyro_imu_angle[0];
+	gyro_imu_angle[0] = angle;
+
+	gyro_imu_rate[1] = gyro_imu_rate[0];
+	gyro_imu_rate[0] = rate;
 }

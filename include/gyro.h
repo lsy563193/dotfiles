@@ -31,4 +31,8 @@ void Gyro_ReceiveCharacter(uint8_t c);
 uint8_t Gyro_Test(void);
 void Gyro_Debug_Cmd(void);
 
+void Gyro_SetImuOffset(int16_t offset);
+uint16_t Gyro_GetImuAngle(uint8_t id);
+void Gyro_SetImuAngle(int16_t angle, int16_t rate);
+
 #endif /* __GYRO_H */
