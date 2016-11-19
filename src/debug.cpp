@@ -150,7 +150,7 @@ void debug_sm_map(uint8_t id, int16_t endx, int16_t endy)
 		}
 		outString[index++] = '\n';
 		outString[index++] = 0;
-		printf(outString);
+		printf("%s", outString);
 		printf("\r");
 	}
 	printf("\n");
