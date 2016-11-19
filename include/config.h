@@ -230,8 +230,8 @@
  * When it is too large, it will fall down when reach the cliff.
  */
 #define BASE_SPEED						((int32_t) 15) // 15)
-#define Rotate_TopSpeed					((uint32_t) 16) // 22)
-#define Run_TopSpeed					((int32_t) 43) // 45)
+#define ROTATE_TOP_SPEED				((uint32_t) 16) // 22)
+#define RUN_TOP_SPEED					((int32_t) 43) // 45)
 
 /*
  * Go home using CM_MoveToCell function

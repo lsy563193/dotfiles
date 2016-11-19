@@ -780,7 +780,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 	Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
-	CM_HeadToCourse(Rotate_TopSpeed, Target_Course);	//turn to target position
+	CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
 
 	if (Touch_Detect()) {
 		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
@@ -1231,11 +1231,11 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		else if ((distance < SLOW_DOWN_DISTANCE) || slow_down) {
 			Integrated = 0;
 			Rotate_Angle = 0;
-			//Rotate_Angle=Rotate_Angle*Base_Speed/Run_TopSpeed;
+			//Rotate_Angle=Rotate_Angle*Base_Speed/RUN_TOP_SPEED;
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
-		else if (Base_Speed < (int32_t) Run_TopSpeed) {
+		else if (Base_Speed < (int32_t) RUN_TOP_SPEED) {
 			Tick++;
 			if (Tick > 0) {
 				Tick = 0;
@@ -1250,14 +1250,14 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 		if (Left_Speed < BASE_SPEED) {
 			Left_Speed = BASE_SPEED;
-		} else if (Left_Speed > Run_TopSpeed) {
-			Left_Speed = Run_TopSpeed;
+		} else if (Left_Speed > RUN_TOP_SPEED) {
+			Left_Speed = RUN_TOP_SPEED;
 		}
 
 		if (Right_Speed < BASE_SPEED) {
 			Right_Speed = BASE_SPEED;
-		} else if (Right_Speed > Run_TopSpeed) {
-			Right_Speed = Run_TopSpeed;
+		} else if (Right_Speed > RUN_TOP_SPEED) {
+			Right_Speed = RUN_TOP_SPEED;
 		}
 		//printf("%s %d: left: %d\tright: %d\tbumper left: %d\tright: %d\n", __FUNCTION__, __LINE__, (int16_t)(Left_Speed * 7.23), (int16_t) (Right_Speed * 7.23), robot::instance()->robot_get_bumper_left(), robot::instance()->robot_get_bumper_right());
 		Move_Forward(Left_Speed, Right_Speed);
@@ -1567,7 +1567,7 @@ uint8_t CM_Touring(void)
 	if (from_station == 1) {
 		printf("%s %d: Turn 45 degree to the wall\n", __FUNCTION__, __LINE__);
 
-		CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle(0) - 450);
+		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle(0) - 450);
 
 		if (Touch_Detect()) {
 			Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1715,7 +1715,7 @@ uint8_t CM_Touring(void)
 					return 0;
 				} else if ( state == 1 ) {
 					if (from_station == 0) {
-						CM_HeadToCourse(Rotate_TopSpeed, home_angle);
+						CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
 
 						if (Touch_Detect()) {
 							return 0;
@@ -1744,7 +1744,7 @@ uint8_t CM_Touring(void)
 				//2.2-1.5 Check state
 				if (state == 0) {
 					if (from_station == 0) {
-						CM_HeadToCourse(Rotate_TopSpeed, home_angle);
+						CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
 
 						if (Touch_Detect()) {
 							return 0;
