@@ -108,7 +108,7 @@ void WFM_move_back(uint16_t dist)
 void *WFM_check_trapped(void *data)
 {
 	float		pos_x, pos_y;
-	int8_t		val;
+	int16_t		val;
 	uint32_t	left_speed, right_speed;
 	static int16_t	current_x = 0, current_y = 0;
 
