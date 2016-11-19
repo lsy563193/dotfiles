@@ -531,8 +531,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		Diff = Diff + 3600;
 	}
 
-	if ((Diff < 10) && (Diff > (-10)))
-	{
+	if ((Diff < 10) && (Diff > (-10))) {
 		return;
 	}
 
@@ -692,8 +691,52 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			if (Get_Bumper_Status()) {
 				printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
+
+				Diff = Angle - Gyro_GetAngle(0);
+				while (Diff >= 1800) {
+					Diff = Diff - 3600;
+				}
+
+				while (Diff <= (-1800)) {
+					Diff = Diff + 3600;
+				}
+
+				printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+				if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
+					printf("Turn Left\n");
+
+					Set_Dir_Left();
+					action = ACTION_LT;
+				} else if ((Diff <= 0) && (Diff >= (-1800))) {
+					printf("Turn Right\n");
+
+					Set_Dir_Right();
+					action = ACTION_RT;
+				}
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
+
+					Diff = Angle - Gyro_GetAngle(0);
+					while (Diff >= 1800) {
+						Diff = Diff - 3600;
+					}
+
+					while (Diff <= (-1800)) {
+						Diff = Diff + 3600;
+					}
+
+					printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+					if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
+						printf("Turn Left\n");
+
+						Set_Dir_Left();
+						action = ACTION_LT;
+					} else if ((Diff <= 0) && (Diff >= (-1800))) {
+						printf("Turn Right\n");
+
+						Set_Dir_Right();
+						action = ACTION_RT;
+					}
 					if (Get_Bumper_Status()) {
 						printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
@@ -1203,6 +1246,10 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			Rotate_Angle -= 3600;
 		} else if (Rotate_Angle <= -1800) {
 			Rotate_Angle += 3600;
+		}
+		if (abs(Rotate_Angle) > 200) {
+			printf("%s %d: warning: angle is too big, angle: %d\n\n", __FUNCTION__, __LINE__, Rotate_Angle);
+			break;
 		}
 
 		Integration_Cycle++;
@@ -2387,6 +2434,7 @@ void CM_CorBack(uint16_t dist)
 	}
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 	Reset_TempPWM();
+	Stop_Brifly();
 	printf("%s %d: Moving back done!\n", __FUNCTION__, __LINE__);
 }
 
