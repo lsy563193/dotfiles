@@ -18,7 +18,7 @@
 
 #include "movement.h"
 #include "wall_follow_multi.h"
-
+#include <ros/ros.h>
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
 //1 1 1
@@ -1639,23 +1639,35 @@ uint8_t CM_Touring(void)
 		from_station = 1;
 		station_zone = 0;
 	}
-
+	int work_mode=0;
 	/*****************************************************Cleaning*****************************************************/
-	while (1) {
+	while (ros::ok()) {
 
 		/*************************************2 Cleaning Main Loop*************************************/
 		state = -1;
-		while (1) {
+		while (ros::ok()) {
 
 			/***************************2.1 Common Process***************************/
 			if (map_touring_cancel == 1) {
 				return 0;
 			}
+			work_mode = robot::instance()->robot_get_workmode();
+			if(work_mode==NORMAL_CLEAN){
+				control_set_cleantool_pwr((uint8_t)60);
+			}
+			else if(work_mode == GO_HOME){
+				go_home = 1;	
+			}
+			else{
+				usleep(100000);
+				continue;	
+			}
+
 			/***************************2.1 Common Process End***************************/
 
 			/***************************2.2-1 Go Home***************************/
 			if (go_home == 1) {
-
+				control_set_cleantool_pwr((uint8_t)27);
 				//2.2-1.1 Common process
 				tmpPnt.X = countToCell(Home_Point.X);
 				tmpPnt.Y = countToCell(Home_Point.Y);

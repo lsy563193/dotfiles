@@ -1,46 +1,43 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-
-#include "crc8.h"
 #include "log.h"
-#include "serial.h"
-
 #include "control.h"
+#include "robot.hpp"
+#include "common.h"
 
 #define TAG	"Ctl. (%d):\t"
 
-static uint8_t ctl_data[19] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x55, 0xAA};
-
 void control_set_wheel_speed(int16_t left, int16_t right) {
-	int i;
-
-	control_set_wheel_left_speed(left);
-	control_set_wheel_right_speed(right);
-
-#if 0
-	printf("set speed: ");
-	for (i = 0; i < 19; i++)
-		printf("%02x", ctl_data[i]);
-	printf("\n");
-#endif
+	robot::instance()->set_ctrl_data(CTL_WHEEL_LEFT_HIGH,(left>>8)&0xff);
+	robot::instance()->set_ctrl_data(CTL_WHEEL_LEFT_LOW,left&0xff);	
+	robot::instance()->set_ctrl_data(CTL_WHEEL_RIGHT_HIGH,(right>>8)&0xff);
+	robot::instance()->set_ctrl_data(CTL_WHEEL_RIGHT_LOW,right&0xff);	
+	robot::instance()->pub_ctrl_command();
 }
 
 void control_set_wheel_left_speed(int16_t val)
 {
-	control_set(CTL_WHEEL_LEFT_HIGH, (val >> 8) & 0xff);
-	control_set(CTL_WHEEL_LEFT_LOW, val & 0xff);
+	robot::instance()->set_ctrl_data(CTL_WHEEL_LEFT_HIGH,(val>>8)&0xff);
+	robot::instance()->set_ctrl_data(CTL_WHEEL_LEFT_LOW,val&0xff);	
+	robot::instance()->pub_ctrl_command();
 }
 
 void control_set_wheel_right_speed(int16_t val)
 {
-	control_set(CTL_WHEEL_RIGHT_HIGH, (val >> 8) & 0xff);
-	control_set(CTL_WHEEL_RIGHT_LOW, val & 0xff);
+	robot::instance()->set_ctrl_data(CTL_WHEEL_RIGHT_HIGH,(val>>8)&0xff);
+	robot::instance()->set_ctrl_data(CTL_WHEEL_RIGHT_LOW,val&0xff);	
+	robot::instance()->pub_ctrl_command();
 }
-
+void control_set_cleantool_pwr(uint8_t val){
+	robot::instance()->set_ctrl_data(CTL_VACCUM_PWR,map(val,0,100,0,255)&0xff);
+	robot::instance()->set_ctrl_data(CTL_BRUSH_LEFT,val*0xff);
+	robot::instance()->set_ctrl_data(CTL_BRUSH_RIGHT,val*0xff);
+	robot::instance()->pub_ctrl_command();
+}
 void control_set_vaccum_pwr(uint8_t val)
 {
-	control_set(CTL_VACUUM_PWR, val & 0xff);
+	control_set(CTL_VACCUM_PWR, map(val,0,100,0,255)&0xff);
 }
 
 void control_set_brush_left(uint8_t val)
@@ -83,28 +80,12 @@ void control_set_gyro(uint8_t state, uint8_t calibration)
 	control_set(CTL_GYRO, (state ? 0x2 : 0x0) | (calibration ? 0x1 : 0x0));
 }
 
-void control_append_crc(void)
+void control_set(uint8_t type, uint8_t val)
 {
-	uint8_t i;
-
-#if 0
-	int16_t	crc = 0;
-
-	for (i = 0; i < 15; i++) {
-		crc += ctl_data[i];
-	}
-#endif
-
-	ctl_data[16] = calcBufCrc8((char *)ctl_data, 16);
-}
-
-void control_set(ControlType type, uint8_t val)
-{
-	if (type > CTL_HEADER_LOW && type < CTL_CRC) {
+	if (type > CTL_WHEEL_LEFT_HIGH && type < CTL_GYRO) {
 		//log_msg(LOG_VERBOSE, TAG "set type: %d\tval: %02x\n", __LINE__, type, val);
-		ctl_data[type] = val;
+		robot::instance()->set_ctrl_data(type,val);
 
-		control_append_crc();
-		serial_write(19, ctl_data);
+		robot::instance()->pub_ctrl_command();
 	}
 }

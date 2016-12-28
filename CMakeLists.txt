@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 	message_generation
 	rosconsole
 	roscpp
+	rospy
 	sensor_msgs
 	std_msgs
 	tf
@@ -17,18 +18,19 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
 	FILES
-	periph.msg
-	sensor.msg
+	peripheral.msg
+	x900sensor.msg
+	robotmode.msg
 )
 
 generate_messages(
 	DEPENDENCIES
 	std_msgs
+	sensor_msgs
 )
 
 include_directories(
   ./include
-  ./src
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -36,20 +38,21 @@ catkin_package(
 	CATKIN_DEPENDS
 	message_runtime
 	roscpp
+	rospy
 	std_msgs
 	tf
 )
 
-add_executable(pp ${PP_SRC} )
+add_executable(pp  ${PP_SRC} )
 target_link_libraries(pp ${catkin_LIBRARIES} -lm -lpthread)
 
-install(TARGETS pp 
+install(TARGETS pp
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY launch rviz
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  USE_SOURCE_PERMISSIONS
-)
+#install(DIRECTORY launch rviz
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#  USE_SOURCE_PERMISSIONS
+#)

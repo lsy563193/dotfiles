@@ -5,5 +5,5 @@
 
 void ilife_error(const char *fmt, ...);
 void datetime(char *dt, int milli);
-
+int map(int val,int mmin,int mmax,int amin,int amax);
 #endif

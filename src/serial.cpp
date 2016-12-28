@@ -15,15 +15,16 @@
 #include "serial.h"
 
 #ifndef CR_PORT
-#define CR_PORT			"/dev/ttyS0"
+#define CR_PORT			"/dev/ttyS3"
 #endif
 
 #define CR_BAUDRATE		B115200
 
 #define	TAG			"Ser. (%d):\t"
 
-static int	fd = -1;
+static int	crport_fd = -1;
 static int	msg_id = 0;
+static bool serial_init_done = false;
 
 static struct termios	orgopt, curopt;
 
@@ -32,18 +33,18 @@ extern double rowCount, columnCount;
 void serial_init() {
 	char buf[1024];
 
-	if( fd != -1 )
+	if( crport_fd != -1 )
 		return;
 
 	sprintf(buf, "%s", CR_PORT);
-	fd = open(buf, O_RDWR | O_NOCTTY | O_NDELAY);
-	if (fd == -1)
+	crport_fd = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if (crport_fd == -1)
 		return;
 
-	fcntl(fd, F_SETFL, FNDELAY);
+	fcntl(crport_fd, F_SETFL, FNDELAY);
 
-	tcgetattr(fd, &orgopt);
-	tcgetattr(fd, &curopt);
+	tcgetattr(crport_fd, &orgopt);
+	tcgetattr(crport_fd, &curopt);
 
 	cfsetispeed(&curopt, CR_BAUDRATE);
 	cfsetospeed(&curopt, CR_BAUDRATE);
@@ -58,35 +59,68 @@ void serial_init() {
 
 	cfmakeraw(&curopt);		//make raw mode
 
-	tcsetattr(fd, TCSANOW, &curopt);
+	if (tcsetattr(crport_fd, TCSANOW, &curopt) == 0)
+		serial_init_done = true;
 
-	log_msg(LOG_TRACE, "Serial port (%s): initialized, fd(%d)!\n", buf, fd);
-	read(fd, buf, 1024);
+	log_msg(LOG_TRACE, "Serial port (%s): initialized, fd(%d)!\n", buf, crport_fd);
+	read(crport_fd, buf, 1024);
 }
+
+bool is_serial_ready(){
+	return serial_init_done;
+}		
 
 void serial_close()
 {
 	char buf[128];
 
-	if (fd == -1)
+	if (crport_fd == -1)
 		return;
 
-	read(fd, buf, 128);
-	tcsetattr(fd, TCSANOW, &orgopt);
-	close(fd);
-	fd = -1;
+	read(crport_fd, buf, 128);
+	tcsetattr(crport_fd, TCSANOW, &orgopt);
+	close(crport_fd);
+	crport_fd = -1;
+	serial_init_done = false;
 }
 
 int serial_write(uint8_t len, uint8_t *buf) {
 	int	retval;
 
 	log_msg(LOG_VERBOSE, TAG "Output %d byte(s)\n", __LINE__, len);
-	retval = write(fd, buf, len);
+	retval = write(crport_fd, buf, len);
 	fflush(NULL);
 
 	return retval;
 }
 
+int serial_read(uint8_t len,uint8_t *buf){
+	int r_ret,s_ret;
+	fd_set read_serial_fds;
+	struct timeval timeout;
+
+	while (1){
+		FD_ZERO(&read_serial_fds);
+		FD_SET(crport_fd,&read_serial_fds);
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;// ms	
+		s_ret = select(crport_fd,&read_serial_fds,NULL,NULL,&timeout);
+		if (s_ret <0){
+			printf("select error \n");
+			break;
+		}else if(s_ret >0){
+			FD_ISSET(crport_fd,&read_serial_fds);
+			r_ret = read(crport_fd,buf,len);
+			break;
+		}else{
+			//printf("read timeout! \n");
+			continue;
+		}
+
+	}
+	return r_ret;
+	
+}
 #if 0
 SerialCommandType serial_read() {
 	int	i, val, nread, x, y, value, xtmp, ytmp;
@@ -94,13 +128,13 @@ SerialCommandType serial_read() {
 	fd_set	rfds;
 	SerialCommandType	cmd = SERIAL_NONE;
 
-	if (fd == -1)
+	if (crport_fd == -1)
 		goto done;
 
 	nread = 0;
 
 #if 1
-	if ((val = ioctl(fd, 0x541B, &nread)) < 0)
+	if ((val = ioctl(crport_fd, 0x541B, &nread)) < 0)
 		perror("ioctl error");
 #endif
 	if (nread > 0) {
@@ -112,8 +146,8 @@ SerialCommandType serial_read() {
 	}
 
 	FD_ZERO(&rfds);
-	FD_SET(fd, &rfds);
-	val = select(fd + 1, &rfds, NULL, NULL, NULL);
+	FD_SET(crport_fd, &rfds);
+	val = select(crport_fd + 1, &rfds, NULL, NULL, NULL);
 
 	if  (val == -1) {
 		log_msg(LOG_VERBOSE, TAG "Select Error.\n", __LINE__);
@@ -126,7 +160,7 @@ SerialCommandType serial_read() {
 no_select:
 	usleep(1* 50* 1000);
 	memset(buf, 0, sizeof(char) * strlen(buf));
-	nread = read(fd, buf, 4);
+	nread = read(crport_fd, buf, 4);
 
 	if (strncmp(buf, "$UPD", 4) == 0) {
 		log_msg(LOG_VERBOSE, TAG "Updating Map\n", __LINE__);
@@ -135,7 +169,7 @@ no_select:
 		xtmp = ytmp = -1;
 		while (1) {
 again:
-			val = read(fd, &c, 1);
+			val = read(crport_fd, &c, 1);
 			if (val <= 0) {
 				//printf("buf %s\n", buf);
 				usleep(1* 50* 1000);
