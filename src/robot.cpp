@@ -16,6 +16,8 @@ robot::robot()
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 	this->robot_mode_sub = this->robot_node_handler.subscribe("/robot_mode",1,&robot::robot_mode_cb,this);
 	this->send_cmd_pub = this->robot_node_handler.advertise<ilife_robotbase::peripheral>("periph_ctrl",10);
+	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
+	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
 
 	this->is_moving = false;
@@ -36,6 +38,7 @@ robot::robot()
 	this->ctrl_data[CTL_GYRO] = 0x02;//active gyro
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
+	visualize_marker_init();
 }
 
 robot::~robot()
@@ -149,7 +152,8 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	this->linear_x = msg->twist.twist.linear.x;
 	this->linear_y = msg->twist.twist.linear.y;
 	this->linear_z = msg->twist.twist.linear.z;
-
+	this->odom_pose_x = msg->pose.pose.position.x;
+	this->odom_pose_y = msg->pose.pose.position.y;
 	if (this->linear_x == 0.0 && this->linear_y == 0.0 && this->linear_z == 0.0) {
 		this->is_moving = false;
 	} else {
@@ -435,4 +439,53 @@ void robot::pub_ctrl_command(void){
 	this->peripheral_msg.gyro_state = (this->ctrl_data[CTL_GYRO]&0x02)?1:0;
 	this->peripheral_msg.gyro_cali = (this->ctrl_data[CTL_GYRO]&0x01)?1:0;
 	this->send_cmd_pub.publish(this->peripheral_msg);
+}
+
+void robot::visualize_marker_init(){
+	this->clean_markers.ns = "waypoints";
+	this->clean_markers.id = 0;
+	this->clean_markers.type = visualization_msgs::Marker::POINTS;//points
+	this->clean_markers.action= 0;//add
+	this->clean_markers.lifetime=ros::Duration(0);
+	this->clean_markers.scale.x = 0.31;
+	this->clean_markers.scale.y = 0.31;
+	this->clean_markers.color.r = 0.0;
+	this->clean_markers.color.g = 0.0;
+	this->clean_markers.color.b = 1.0;
+	this->clean_markers.color.a = 0.2;
+	this->clean_markers.header.frame_id = "/map";
+	this->clean_markers.header.stamp = ros::Time::now();
+	this->m_points.x = 0.0;
+	this->m_points.y = 0.0;
+	this->m_points.z = 0.0;
+	this->clean_markers.points.push_back(m_points);
+
+	this->bumper_markers.id=1;
+	this->bumper_markers.type=visualization_msgs::Marker::POINTS;
+	this->bumper_markers.action=0;
+	this->bumper_markers.lifetime=ros::Duration(0);
+	this->bumper_markers.scale.x = 0.1;
+	this->bumper_markers.scale.y = 0.1;
+	this->bumper_markers.color.g = 1.0;
+	this->bumper_markers.color.a =0.4;
+	this->bumper_markers.header.frame_id = "/map";
+	this->bumper_markers.header.stamp = ros::Time::now();
+}
+
+void robot::pub_clean_markers(){
+	this->m_points.x = this->position_x;
+	this->m_points.y = this->position_y;
+	this->m_points.z = 0;
+	this->clean_markers.header.stamp = ros::Time::now();
+	this->clean_markers.points.push_back(this->m_points);
+	this->send_clean_marker_pub.publish(this->clean_markers);
+}
+
+void robot::pub_bumper_markers(){
+	this->m_points.x = this->odom_pose_x;
+	this->m_points.y = this->odom_pose_y;
+
+	this->bumper_markers.header.stamp = ros::Time::now();
+	this->bumper_markers.points.push_back(this->m_points);
+	this->send_bumper_marker_pub.publish(this->bumper_markers);
 }

@@ -4,7 +4,9 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/Point.h>
 #include <tf/transform_listener.h>
+#include <visualization_msgs/Marker.h>
 #include <ilife_robotbase/x900sensor.h>
 #include <ilife_robotbase/peripheral.h>
 #include <ilife_robotbase/robotmode.h>
@@ -67,6 +69,9 @@ public:
 
 	void robot_display_positions();
 	void pub_ctrl_command(void);
+	void pub_clean_markers(void);
+	void pub_bumper_markers(void);
+	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
 private:
 	bool	is_sensor_ready;
@@ -173,7 +178,8 @@ private:
 	float	position_x;
 	float	position_y;
 	float	position_z;
-
+	float 	odom_pose_x;
+	float   odom_pose_y;
 	float	position_x_off;
 	float	position_y_off;
 	float	position_z_off;
@@ -189,8 +195,12 @@ private:
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
 	ros::Publisher send_cmd_pub;
+	ros::Publisher send_clean_marker_pub;
+	ros::Publisher send_bumper_marker_pub;
 	ros::Subscriber robot_mode_sub;
 	ilife_robotbase::peripheral  peripheral_msg;
+	visualization_msgs::Marker clean_markers,bumper_markers;
+	geometry_msgs::Point m_points;
 	tf::TransformListener		*robot_tf;
 	tf::Stamped<tf::Transform>	odom_pose;
 	tf::Stamped<tf::Transform>	base_link_pose;

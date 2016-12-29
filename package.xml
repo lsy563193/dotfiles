@@ -17,6 +17,10 @@
 	<build_depend>std_srvs</build_depend>
 	<build_depend>tf</build_depend>
 	<build_depend>x900sensor</build_depend>
+	<build_depend>visualization_msgs</build_depend>
+	<build_depend>geometry_msgs</build_depend>
+	<build_depend>peripheral</build_depend>
+	<build_depend>robotmode</build_depend>
 
 	<run_depend>message_runtime</run_depend>
 	<run_depend>rosconsole</run_depend>
@@ -27,5 +31,9 @@
 	<run_depend>std_srvs</run_depend>
 	<run_depend>tf</run_depend>
 	<run_depend>x900sensor</run_depend>
+	<run_depend>peripheral</run_depend>
+	<run_depend>visualization_msgs</run_depend>
+	<run_depend>geometry_msgs</run_depend>
+	<run_depend>robotmode</run_depend>
 
 </package>

@@ -203,6 +203,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int
 				}
 			}
 		}
+		robot::instance() -> pub_clean_markers();
 	}
 
 #if (ROBOT_SIZE == 5)
@@ -866,7 +867,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	}
 
 	while (1) {
-
+		
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
 		OBS_Dynamic_Base(100);

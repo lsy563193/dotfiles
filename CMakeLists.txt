@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
 	rospy
 	sensor_msgs
 	std_msgs
+	geometry_msgs
+	visualization_msgs
 	tf
 )
 
@@ -27,6 +29,8 @@ generate_messages(
 	DEPENDENCIES
 	std_msgs
 	sensor_msgs
+	visualization_msgs
+	geometry_msgs
 )
 
 include_directories(
@@ -40,6 +44,9 @@ catkin_package(
 	roscpp
 	rospy
 	std_msgs
+	visualization_msgs
+	geometry_msgs
+	sensor_msgs
 	tf
 )
 
