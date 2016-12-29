@@ -1649,7 +1649,7 @@ uint8_t CM_Touring(void)
 			}
 			work_mode = robot::instance()->robot_get_workmode();
 			if(work_mode==NORMAL_CLEAN){
-				control_set_cleantool_pwr((uint8_t)60);
+				control_set_cleantool_pwr(60);
 			}
 			else if(work_mode == GO_HOME){
 				go_home = 1;	

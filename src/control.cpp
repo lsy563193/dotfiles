@@ -30,7 +30,7 @@ void control_set_wheel_right_speed(int16_t val)
 	robot::instance()->pub_ctrl_command();
 }
 void control_set_cleantool_pwr(uint8_t val){
-	robot::instance()->set_ctrl_data(CTL_VACCUM_PWR,map(val,0,100,0,255)&0xff);
+	robot::instance()->set_ctrl_data(CTL_VACCUM_PWR,val&0xff);
 	robot::instance()->set_ctrl_data(CTL_BRUSH_LEFT,val&0xff);
 	robot::instance()->set_ctrl_data(CTL_BRUSH_RIGHT,val&0xff);
 	robot::instance()->set_ctrl_data(CTL_BRUSH_MAIN,val&0xff);
@@ -38,7 +38,7 @@ void control_set_cleantool_pwr(uint8_t val){
 }
 void control_set_vaccum_pwr(uint8_t val)
 {
-	control_set(CTL_VACCUM_PWR, map(val,0,100,0,255)&0xff);
+	control_set(CTL_VACCUM_PWR, val&0xff);
 }
 
 void control_set_brush_left(uint8_t val)

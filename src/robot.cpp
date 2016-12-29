@@ -229,6 +229,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		this->is_scan_ready = true;
 	}
 }
+
 uint8_t robot::robot_get_workmode(){
 	uint8_t workmode = this->robot_workmode;
 	if(workmode&0xf0)
@@ -446,15 +447,15 @@ void robot::pub_ctrl_command(void){
 void robot::visualize_marker_init(){
 	this->clean_markers.ns = "waypoints";
 	this->clean_markers.id = 0;
-	this->clean_markers.type = visualization_msgs::Marker::POINTS;//points
+	this->clean_markers.type = visualization_msgs::Marker::LINE_STRIP;
 	this->clean_markers.action= 0;//add
 	this->clean_markers.lifetime=ros::Duration(0);
 	this->clean_markers.scale.x = 0.31;
-	this->clean_markers.scale.y = 0.31;
+//	this->clean_markers.scale.y = 0.31;
 	this->clean_markers.color.r = 0.0;
-	this->clean_markers.color.g = 0.0;
-	this->clean_markers.color.b = 1.0;
-	this->clean_markers.color.a = 0.2;
+	this->clean_markers.color.g = 1.0;
+	this->clean_markers.color.b = 0.0;
+	this->clean_markers.color.a = 0.4;
 	this->clean_markers.header.frame_id = "/map";
 	this->clean_markers.header.stamp = ros::Time::now();
 	this->m_points.x = 0.0;
@@ -466,10 +467,11 @@ void robot::visualize_marker_init(){
 	this->bumper_markers.type=visualization_msgs::Marker::POINTS;
 	this->bumper_markers.action=0;
 	this->bumper_markers.lifetime=ros::Duration(0);
-	this->bumper_markers.scale.x = 0.1;
+	this->bumper_markers.scale.x = 0.05;
 	this->bumper_markers.scale.y = 0.1;
 	this->bumper_markers.color.g = 1.0;
-	this->bumper_markers.color.a =0.4;
+	this->bumper_markers.color.r = 1.0;
+	this->bumper_markers.color.a =1.0;
 	this->bumper_markers.header.frame_id = "/map";
 	this->bumper_markers.header.stamp = ros::Time::now();
 }
@@ -484,10 +486,12 @@ void robot::pub_clean_markers(){
 }
 
 void robot::pub_bumper_markers(){
-	
-	this->m_points.x = this->odom_pose_x;
-	this->m_points.y = this->odom_pose_y;
-
+	float radius = 0.16;
+	float angle = this->yaw;//this->angle*M_PI/180.0f;//transform into angle
+	float offset_x = sin(angle)*radius;
+	float offset_y = cos(angle)*radius;
+	this->m_points.x = this->position_x+offset_x;
+	this->m_points.y = this->position_y+offset_y;
 	this->bumper_markers.header.stamp = ros::Time::now();
 	this->bumper_markers.points.push_back(this->m_points);
 	this->send_bumper_marker_pub.publish(this->bumper_markers);
