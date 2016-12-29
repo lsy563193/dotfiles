@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 
 #include "gyro.h"
 #include "control.h"
@@ -154,6 +155,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	this->linear_z = msg->twist.twist.linear.z;
 	this->odom_pose_x = msg->pose.pose.position.x;
 	this->odom_pose_y = msg->pose.pose.position.y;
+	//this->odom_eualr_angle;
 	if (this->linear_x == 0.0 && this->linear_y == 0.0 && this->linear_z == 0.0) {
 		this->is_moving = false;
 	} else {
@@ -482,6 +484,7 @@ void robot::pub_clean_markers(){
 }
 
 void robot::pub_bumper_markers(){
+	
 	this->m_points.x = this->odom_pose_x;
 	this->m_points.y = this->odom_pose_y;
 

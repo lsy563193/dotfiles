@@ -1163,7 +1163,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		if (isBumperTriggered) {
 			Stop_Brifly();
 			CM_update_map_bumper(action, isBumperTriggered);
-
+			robot::instance()->pub_bumper_markers();
 			//isBumperTriggered = Get_Bumper_Status();
 			//CM_update_map(action, isBumperTriggered);
 
