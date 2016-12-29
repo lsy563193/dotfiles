@@ -5,12 +5,11 @@
 		<param name="publish_frequency" value="20.0"/>
 	</node>
 
-	<node name="robot_driver" pkg="pp" type="robot_base.py" output="screen"  />
-
-	<include file="$(find pp)/launch/rplidar.launch" />
+	<include file="$(find ilife_robotbase)/launch/robotbase.launch" />
+	<include file="$(find ilife_robotmovement)launch/robotmovement.launch" />
+	<include file="$(find lds_lidar)/launch/ldslidar.launch" />
 	<include file="$(find pp)/launch/tf_laser2base.launch" />
 	<include file="$(find pp)/launch/gmapping.launch" />
-
 	<include file="$(find pp)/launch/pp.launch" />
 
 </launch>

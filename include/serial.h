@@ -12,9 +12,9 @@ typedef enum {
 
 void serial_init();
 void serial_close();
-
+bool is_serial_ready();
 int serial_write(uint8_t len, uint8_t *buf);
-
+int serial_read(uint8_t len,uint8_t *buf);
 //SerialCommandType  serial_read();
 
 #endif

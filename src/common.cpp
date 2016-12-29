@@ -41,3 +41,10 @@ void datetime(char *dt, int milli) {
 				tb.tm_mon+1, tb.tm_mday, tb.tm_hour, tb.tm_min, tb.tm_sec);
 	}
 }
+
+int map(int val,int mmin,int mmax,int amin,int amax){
+	if(val < mmin)val = mmin;
+	if(val > mmax)val = mmax;
+	float ratio = (float)(amax-amin)/(float)(mmax-mmin);
+	return (int)(ratio*val);
+}

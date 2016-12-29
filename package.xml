@@ -2,28 +2,38 @@
 <package>
 	<name>pp</name>
 	<version>0.0.1</version>
-	<description>PathPlanning for X900</description>
+	<description>pathplanning for X900</description>
 
-	<maintainer email="patrickchau@china-ilife.com">PathPlanning for X900 Maintainer</maintainer>
+	<maintainer email="msg1988@qq.com">msg</maintainer>
 	<license>BSD</license>
 
 	<buildtool_depend>catkin</buildtool_depend>
 	<build_depend>message_generation</build_depend>
 	<build_depend>rosconsole</build_depend>
 	<build_depend>roscpp</build_depend>
-	<build_depend>periph_msgs</build_depend>
+	<build_depend>rospy</build_depend>
 	<build_depend>sensor_msgs</build_depend>
 	<build_depend>std_msgs</build_depend>
 	<build_depend>std_srvs</build_depend>
 	<build_depend>tf</build_depend>
+	<build_depend>x900sensor</build_depend>
+	<build_depend>visualization_msgs</build_depend>
+	<build_depend>geometry_msgs</build_depend>
+	<build_depend>peripheral</build_depend>
+	<build_depend>robotmode</build_depend>
 
 	<run_depend>message_runtime</run_depend>
-	<run_depend>periph_msgs</run_depend>
 	<run_depend>rosconsole</run_depend>
 	<run_depend>roscpp</run_depend>
+	<run_depend>rospy</run_depend>
 	<run_depend>sensor_msgs</run_depend>
 	<run_depend>std_msgs</run_depend>
 	<run_depend>std_srvs</run_depend>
 	<run_depend>tf</run_depend>
+	<run_depend>x900sensor</run_depend>
+	<run_depend>peripheral</run_depend>
+	<run_depend>visualization_msgs</run_depend>
+	<run_depend>geometry_msgs</run_depend>
+	<run_depend>robotmode</run_depend>
 
 </package>

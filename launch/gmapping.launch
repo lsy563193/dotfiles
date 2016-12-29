@@ -5,10 +5,10 @@
 
   <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen" clear_params="true">
     <param name="odom_frame" value="odom"/>
-    <param name="map_update_interval" value="5"/>
+    <param name="map_update_interval" value="2"/>
     <!-- Set maxUrange < actual maximum range of the Laser -->
-    <param name="maxRange" value="5.0"/>
-    <param name="maxUrange" value="4.5"/>
+    <param name="maxRange" value="3.5"/>
+    <param name="maxUrange" value="3.4"/>
     <param name="sigma" value="0.05"/>
     <param name="kernelSize" value="1"/>
     <param name="lstep" value="0.05"/>
@@ -22,12 +22,12 @@
     <param name="str" value="0.01"/>
     <param name="stt" value="0.02"/>
     <!-- <param name="linearUpdate" value="0.5"/> -->
-    <param name="linearUpdate" value="0.5"/>
+    <param name="linearUpdate" value="0.25"/>
     <!-- <param name="angularUpdate" value="0.436"/> -->
-    <param name="angularUpdate" value="0.436"/>
+    <param name="angularUpdate" value="0.218"/>
     <param name="temporalUpdate" value="-1.0"/>
-    <param name="resampleThreshold" value="0.5"/>
-    <param name="particles" value="120"/>
+    <param name="resampleThreshold" value="0.25"/>
+    <param name="particles" value="50"/>
 	<param name="pub_map_odom_transform" value="true" />
   <!--
     <param name="xmin" value="-50.0"/>
@@ -41,7 +41,8 @@
     <param name="xmax" value="1.0"/>
     <param name="ymax" value="1.0"/>
 
-    <param name="delta" value="0.1"/>
+    <param name="minimumScore" value="70"/>
+    <param name="delta" value="0.05"/>
     <param name="llsamplerange" value="0.01"/>
     <param name="llsamplestep" value="0.01"/>
     <param name="lasamplerange" value="0.005"/>

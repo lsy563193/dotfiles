@@ -5,20 +5,14 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
 #include <ros/ros.h>
-
 #include "control.h"
 #include "core_move.h"
-#include "crc8.h"
 #include "gyro.h"
 #include "log.h"
 #include "movement.h"
-#include "serial.h"
-
 #include "laser.hpp"
 #include "robot.hpp"
-
 #include "main.h"
 
 #define	TAG	"Main. (%d):\t"
@@ -56,7 +50,7 @@ void process_args(int argc, char **argv)
 void intialize(void)
 {
 
-	init_crc8();
+	//init_crc8();
 
 	if (log_enabled == 1) {
 		if (log_init() == -1)
@@ -65,7 +59,7 @@ void intialize(void)
 			log_set_level(log_level);
 	}
 
-	serial_init();
+	//serial_init();
 }
 
 
@@ -74,34 +68,36 @@ void *core_move_thread(void *)
 	while (!robot::instance()->robot_is_all_ready()) {
 		usleep(1000);
 	}
-
+	/*
 	Turn_Right(10, 850);
 	Turn_Right(10, 1750);
 	Turn_Right(10, 1000);
 	Turn_Left(10, 850);
 	Turn_Left(10, 1750);
 	Turn_Left(10, 1000);
-
+	*/
 	CM_Touring();
+	
+	return NULL;
+	//pthread_exit(NULL);	
 }
+
 
 int main(int argc, char **argv)
 {
-	int			ret, core_move_thread_state;
+	int			ret1, core_move_thread_state;
 	pthread_t	core_move_thread_id;
-
 	process_args(argc, argv);
 
 	intialize();
 
 	ros::init(argc, argv, "pp");
-
 	laser	laser_obj;
 	robot	robot_obj;
 
 #if 1
-	ret = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
-	if (ret != 0) {
+	ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
+	if (ret1 != 0) {
 		core_move_thread_state = 0;
 		log_msg(LOG_FATAL, TAG "fails to core move thread\n");
 	} else {
@@ -109,18 +105,18 @@ int main(int argc, char **argv)
 		core_move_thread_state = 1;
 	}
 #endif
-
+	//ros::MultiThreadedSpinner spiner(4);
+	//spiner.spin();
 	ros::spin();
 
 	if (core_move_thread_state == 1) {
-		pthread_join(core_move_thread_id, NULL);
+		//pthread_join(core_move_thread_id, NULL);
 	}
 
 	if (log_enabled == 1) {
 		log_deinit();
 	}
-
-	serial_close();
-
+	//serial_close();
+	pthread_exit(NULL);
 	return 0;
 }

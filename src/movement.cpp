@@ -169,12 +169,12 @@ uint8_t Get_OBS_Status(void)
 
 int32_t Get_FrontOBS(void)
 {
-	return robot::instance()->robot_get_obs_front();
+	return (int32_t)robot::instance()->robot_get_obs_front();
 }
 
 int32_t Get_LeftOBS(void)
 {
-	return robot::instance()->robot_get_obs_left();
+	return (int32_t)robot::instance()->robot_get_obs_left();
 }
 
 uint8_t Get_Bumper_Status(void)
@@ -230,11 +230,11 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 	left_speed = (int16_t)(Left * 7.23);
 	right_speed = (int16_t)(Right * 7.23);
 	if (wheel_left_direction == 1) {
-		left_speed |= 0x8000;
+		left_speed = -left_speed;
 	}
 	
 	if (wheel_right_direction == 1) {
-		right_speed |= 0x8000;
+		right_speed = -right_speed;
 	}
 
 #if 0
