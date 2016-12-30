@@ -82,7 +82,7 @@ void control_set_gyro(uint8_t state, uint8_t calibration)
 
 void control_set(uint8_t type, uint8_t val)
 {
-	if (type > CTL_WHEEL_LEFT_HIGH && type < CTL_GYRO) {
+	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
 		robot::instance()->set_ctrl_data(type,val);
 
 		robot::instance()->pub_ctrl_command();
