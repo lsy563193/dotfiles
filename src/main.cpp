@@ -58,8 +58,6 @@ void intialize(void)
 		else
 			log_set_level(log_level);
 	}
-
-	//serial_init();
 }
 
 
@@ -116,7 +114,6 @@ int main(int argc, char **argv)
 	if (log_enabled == 1) {
 		log_deinit();
 	}
-	//serial_close();
 	pthread_exit(NULL);
 	return 0;
 }
