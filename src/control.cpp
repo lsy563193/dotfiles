@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "log.h"
 #include "control.h"
 #include "robot.hpp"
 #include "common.h"
@@ -84,7 +83,6 @@ void control_set_gyro(uint8_t state, uint8_t calibration)
 void control_set(uint8_t type, uint8_t val)
 {
 	if (type > CTL_WHEEL_LEFT_HIGH && type < CTL_GYRO) {
-		//log_msg(LOG_VERBOSE, TAG "set type: %d\tval: %02x\n", __LINE__, type, val);
 		robot::instance()->set_ctrl_data(type,val);
 
 		robot::instance()->pub_ctrl_command();

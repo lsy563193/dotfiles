@@ -9,16 +9,12 @@
 #include "control.h"
 #include "core_move.h"
 #include "gyro.h"
-#include "log.h"
 #include "movement.h"
 #include "laser.hpp"
 #include "robot.hpp"
 #include "main.h"
 
 #define	TAG	"Main. (%d):\t"
-
-static int32_t log_level = LOG_ERROR;
-static int32_t log_enabled = 0;
 
 void usage(void)
 {
@@ -33,12 +29,8 @@ void process_args(int argc, char **argv)
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "l:")) != -1) {
+	while ((c = getopt(argc, argv, "h")) != -1) {
 		switch (c) {
-			case 'l':
-				log_enabled = 1;
-				log_level = atoi(optarg);
-				break;
 			case 'h':
 			default:
 				usage();
@@ -46,20 +38,6 @@ void process_args(int argc, char **argv)
 		}
 	}
 }
-
-void intialize(void)
-{
-
-	//init_crc8();
-
-	if (log_enabled == 1) {
-		if (log_init() == -1)
-			log_enabled = 0;
-		else
-			log_set_level(log_level);
-	}
-}
-
 
 void *core_move_thread(void *)
 {
@@ -87,8 +65,6 @@ int main(int argc, char **argv)
 	pthread_t	core_move_thread_id;
 	process_args(argc, argv);
 
-	intialize();
-
 	ros::init(argc, argv, "pp");
 	laser	laser_obj;
 	robot	robot_obj;
@@ -97,7 +73,6 @@ int main(int argc, char **argv)
 	ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
 	if (ret1 != 0) {
 		core_move_thread_state = 0;
-		log_msg(LOG_FATAL, TAG "fails to core move thread\n");
 	} else {
 		printf("%s %d: core_move thread is up!\n", __FUNCTION__, __LINE__);
 		core_move_thread_state = 1;
@@ -111,9 +86,6 @@ int main(int argc, char **argv)
 		//pthread_join(core_move_thread_id, NULL);
 	}
 
-	if (log_enabled == 1) {
-		log_deinit();
-	}
 	pthread_exit(NULL);
 	return 0;
 }

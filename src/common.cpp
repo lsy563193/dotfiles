@@ -4,17 +4,7 @@
 #include <sys/timeb.h>
 #include <time.h>
 
-#include "log.h"
 #include "common.h"
-
-void ilife_error(const char *fmt, ...) {
-	va_list ap;
-
-	log_msg(LOG_TRACE, PROGNAME ": ");
-	va_start(ap, fmt);
-	vprintf(fmt, ap);
-	va_end(ap);
-}
 
 void datetime(char *dt, int milli) {
 	struct tm	tb;
