@@ -374,8 +374,8 @@ void Set_Dir_Right(void)
 
 void Set_LED(uint16_t G, uint16_t R)
 {
-	G = G;
-	R = R;
+	control_set_led_red(R);
+	control_set_led_green(G);
 }
 
 void Stop_Brifly(void)

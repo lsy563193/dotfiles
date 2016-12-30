@@ -1579,9 +1579,6 @@ uint8_t CM_Touring(void)
 		Stop_Brifly();
 		from_station = 1;
 	}
-	/*Enabel Gyro*/
-	usleep(200);
-	usleep(300);
 
 	Blink_LED = 8;
 	Reset_Touch();
@@ -1592,13 +1589,13 @@ uint8_t CM_Touring(void)
 			return 0;
 		}
 		Set_LED(0, 0);
-		usleep(2000);
+		usleep(200000);
 		if (Touch_Detect()) {
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
 		Set_LED(100, 0);
-		usleep(2000);
+		usleep(200000);
 
 	}
 
