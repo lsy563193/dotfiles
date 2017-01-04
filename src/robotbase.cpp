@@ -148,6 +148,8 @@ void *serial_receive(void *)
 void *base_run(void*)
 {
 	float	th_last, vth, pose_x, pose_y;
+	float	previous_angle = 999;
+	float	delta_angle = 0;
 	int16_t	angle;
 
 	uint16_t	lw_speed, rw_speed;
@@ -184,6 +186,22 @@ void *base_run(void*)
 
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
+		// Check for avoiding angle's sudden change
+		if (previous_angle == 999){
+			previous_angle = sensor.angle;
+		}else{
+			delta_angle = sensor.angle - previous_angle;
+			// Format the delta_angle into Range(-180, 180)
+			delta_angle = (180 < delta_angle ? delta_angle - 360 : delta_angle);
+			delta_angle = (delta_angle < -180 ? delta_angle + 360 : delta_angle);
+			// Decide whether it is a sudden change
+			if (10 < fabs(delta_angle)){
+				// It is a sudden change, discard this value
+				sensor.angle = previous_angle;
+			}
+			// Save current angle as previous_angle
+			previous_angle = sensor.angle;
+		}
 		//sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
