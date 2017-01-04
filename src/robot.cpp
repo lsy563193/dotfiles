@@ -142,12 +142,12 @@ void robot::robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg)
 
 void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 {
-	double odom_yaw, base_link_yaw, map_yaw, pitch, roll;
+	double map_yaw, pitch, roll;
 
 	tf::Matrix3x3				mat;
 	tf::Stamped<tf::Pose>		ident;
 	tf::StampedTransform		transform;
-	tf::Stamped<tf::Transform>	odom_pose, base_link_pose, map_pose;
+	tf::Stamped<tf::Transform>	odom_pose, map_pose;
 
 	this->linear_x = msg->twist.twist.linear.x;
 	this->linear_y = msg->twist.twist.linear.y;

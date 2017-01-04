@@ -198,8 +198,6 @@ private:
 	geometry_msgs::Point m_points;
 
 	tf::TransformListener		*robot_tf;
-	tf::Stamped<tf::Transform>	odom_pose;
-	tf::Stamped<tf::Transform>	base_link_pose;
 	tf::Stamped<tf::Transform>	map_pose;
 
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
