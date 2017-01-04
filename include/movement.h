@@ -72,6 +72,8 @@ void Reset_TempPWM(void);
 
 void Set_Wheel_Speed(uint8_t Left, uint8_t Right);
 
+void Work_Motor_Configure(void);
+
 uint8_t Check_Motor_Current(void);
 
 uint8_t Self_Check(uint8_t Check_Code);

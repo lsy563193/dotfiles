@@ -244,6 +244,14 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 	control_set_wheel_speed(left_speed, right_speed);
 }
 
+void Work_Motor_Configure(void)
+{
+	control_set_vaccum_pwr(60);
+	control_set_brush_left(30);
+	control_set_brush_right(30);
+	control_set_brush_main(30);
+}
+
 uint8_t Check_Motor_Current(void)
 {
 	return 0;
