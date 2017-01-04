@@ -154,52 +154,25 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	ident.stamp_ = msg->header.stamp;
 
 	try {
-		this->robot_tf->transformPose("odom", ident, odom_pose);
-		mat = odom_pose.getBasis();
-		mat.getEulerYPR(odom_yaw, pitch, roll);
-		this->odom_yaw = odom_yaw;
-		this->odom_pose = odom_pose;
-	} catch(tf::TransformException e) {
-		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
-		//return;
-	}
-
-	ident.frame_id_ = "/odom";
-	ident.stamp_ = msg->header.stamp;
-
-	try {
-		this->robot_tf->transformPose("/base_link", ident, base_link_pose);
-		mat = odom_pose.getBasis();
-		mat.getEulerYPR(base_link_yaw, pitch, roll);
-		this->base_link_yaw = base_link_yaw;
-		this->base_link_pose = base_link_pose;
-	} catch(tf::TransformException e) {
-		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
-		//return;
-	}
-
-	ident.frame_id_ = "base_link";
-	ident.stamp_ = msg->header.stamp;
-
-	try {
 		this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 		this->yaw = tf::getYaw(transform.getRotation());
 
 		Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
 		//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
 	} catch(tf::TransformException e) {
-		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+		ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 		return;
 	}
 
 	try {
+		this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
 		this->robot_tf->transformPose("/map", ident, map_pose);
 		mat = odom_pose.getBasis();
 		mat.getEulerYPR(map_yaw, pitch, roll);
 		this->map_yaw = map_yaw;
 		this->map_pose = map_pose;
 	} catch(tf::TransformException e) {
-		ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+		ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 		return;
 	}
 
@@ -391,9 +364,7 @@ float robot::robot_get_position_z()
 
 void robot::robot_display_positions()
 {
-	printf("base_link->odom: (%f, %f) %f(%f)\todom->base_link: (%f, %f) %f(%f)\tbase_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)\n",
-			this->odom_pose.getOrigin().x(), this->odom_pose.getOrigin().y(), this->odom_yaw, this->odom_yaw * 1800 / M_PI,
-			this->base_link_pose.getOrigin().x(), this->base_link_pose.getOrigin().y(), this->base_link_yaw, this->base_link_yaw * 1800 / M_PI,
+	printf("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)\n",
 			this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI, Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
 }
 
