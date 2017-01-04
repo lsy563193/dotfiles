@@ -166,20 +166,22 @@
 
 #define Display_Low					5
 
-#define	CTL_WHEEL_LEFT_HIGH 0
-#define	CTL_WHEEL_LEFT_LOW  1
-#define	CTL_WHEEL_RIGHT_HIGH  2
-#define	CTL_WHEEL_RIGHT_LOW 3
-#define	CTL_VACCUM_PWR 4
-#define	CTL_BRUSH_LEFT 5
-#define	CTL_BRUSH_RIGHT 6
-#define	CTL_BRUSH_MAIN 7
-#define	CTL_BUZZER 8
-#define	CTL_MAIN_PWR 9
-#define	CTL_CHARGER 10
-#define	CTL_LED_RED 11
-#define	CTL_LED_GREEN 12
-#define	CTL_GYRO 13
+#define	CTL_WHEEL_LEFT_HIGH 2
+#define	CTL_WHEEL_LEFT_LOW  3
+#define	CTL_WHEEL_RIGHT_HIGH  4
+#define	CTL_WHEEL_RIGHT_LOW 5
+#define	CTL_VACCUM_PWR 6
+#define	CTL_BRUSH_LEFT 7
+#define	CTL_BRUSH_RIGHT 8
+#define	CTL_BRUSH_MAIN 9
+#define	CTL_BUZZER 10
+#define	CTL_MAIN_PWR 11
+#define	CTL_CHARGER 12
+#define	CTL_LED_RED 13
+#define	CTL_LED_GREEN 14
+#define	CTL_GYRO 15
+
+#define SEND_LEN 19
 
 void control_set_wheel_speed(int16_t left, int16_t right);
 void control_set_wheel_left_speed(int16_t val);
@@ -193,7 +195,10 @@ void control_set_main_pwr(uint8_t val);
 void control_set_led_red(uint8_t val);
 void control_set_led_green(uint8_t val);
 void control_set_gyro(uint8_t state, uint8_t calibration);
+void control_stop_all(void);
+
 void control_set(uint8_t type, uint8_t val);
-void control_set_cleantool_pwr(uint8_t val);
+
+void control_append_crc(void);
 
 #endif

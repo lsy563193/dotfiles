@@ -230,11 +230,11 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 	left_speed = (int16_t)(Left * 7.23);
 	right_speed = (int16_t)(Right * 7.23);
 	if (wheel_left_direction == 1) {
-		left_speed = -left_speed;
+		left_speed |= 0x8000;
 	}
 	
 	if (wheel_right_direction == 1) {
-		right_speed = -right_speed;
+		right_speed |= 0x8000;
 	}
 
 #if 0

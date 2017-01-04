@@ -7,17 +7,10 @@
 #include <geometry_msgs/Point.h>
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
-#include <ilife_robotbase/x900sensor.h>
-#include <ilife_robotbase/peripheral.h>
-#include <ilife_robotbase/robotmode.h>
+#include <pp/x900sensor.h>
+
 #include "control.h"
-#define SEND_CMD_NUM 14
-#define NORMAL_CLEAN 8
-#define GO_HOME 4
-#define RANDOM_MODE 2
-#define SPOT_MODE 1
-#define HAND_CONTROL 16
-#define IDLE_MODE 0
+
 class robot
 {
 public:
@@ -76,8 +69,6 @@ public:
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
-
-	uint8_t ctrl_data[SEND_CMD_NUM];
 
 	/* 1 byte */
 	float	angle;
@@ -190,25 +181,24 @@ private:
 
 	float	yaw;
 
-	uint8_t robot_workmode;
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
+
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
 	ros::Publisher send_bumper_marker_pub;
-	ros::Subscriber robot_mode_sub;
-	ilife_robotbase::peripheral  peripheral_msg;
+
 	visualization_msgs::Marker clean_markers,bumper_markers;
 	geometry_msgs::Point m_points;
+
 	tf::TransformListener		*robot_tf;
 	tf::Stamped<tf::Transform>	odom_pose;
 	tf::Stamped<tf::Transform>	base_link_pose;
 	tf::Stamped<tf::Transform>	map_pose;
 
-	void robot_robot_sensor_cb(const ilife_robotbase::x900sensor::ConstPtr& msg);
+	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
-	void robot_mode_cb(const ilife_robotbase::robotmode::ConstPtr& msg);
 
 };
 

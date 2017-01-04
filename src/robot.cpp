@@ -15,8 +15,6 @@ robot::robot()
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 1, &robot::robot_robot_sensor_cb, this);
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
-	this->robot_mode_sub = this->robot_node_handler.subscribe("/robot_mode",1,&robot::robot_mode_cb,this);
-	this->send_cmd_pub = this->robot_node_handler.advertise<ilife_robotbase::peripheral>("periph_ctrl",10);
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
@@ -31,12 +29,7 @@ robot::robot()
 	this->linear_x = 0.0;
 	this->linear_y = 0.0;
 	this->linear_z = 0.0;
-	this->robot_workmode = 0;	
-	int i =0;
-	for(;i<SEND_CMD_NUM;i++){
-		this->ctrl_data[i] = 0x00;
-	}
-	this->ctrl_data[CTL_GYRO] = 0x02;//active gyro
+
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 	visualize_marker_init();
@@ -66,13 +59,7 @@ bool robot::robot_is_all_ready()
 	return (this->is_sensor_ready && this->is_scan_ready) ? true : false;
 }
 
-void robot::set_ctrl_data(uint8_t type,uint8_t val){
-	this->ctrl_data[type] = val;
-}
-void robot::robot_mode_cb(const ilife_robotbase::robotmode::ConstPtr& msg){
-	this->robot_workmode = msg->workmode;
-}
-void robot::robot_robot_sensor_cb(const ilife_robotbase::x900sensor::ConstPtr& msg)
+void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 {
 	this->angle = msg->angle;
 
@@ -228,22 +215,6 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	if (this->is_scan_ready == false) {
 		this->is_scan_ready = true;
 	}
-}
-
-uint8_t robot::robot_get_workmode(){
-	uint8_t workmode = this->robot_workmode;
-	if(workmode&0xf0)
-		return HAND_CONTROL;
-	else if(workmode&0x08)
-		return NORMAL_CLEAN;
-	else if(workmode&0x04)
-		return GO_HOME;
-	else if(workmode&0x02)
-		return RANDOM_MODE;
-	else if(workmode&0x01)
-		return SPOT_MODE;
-	else
-		return IDLE_MODE;
 }
 
 float robot::robot_get_angle()
@@ -424,24 +395,6 @@ void robot::robot_display_positions()
 			this->odom_pose.getOrigin().x(), this->odom_pose.getOrigin().y(), this->odom_yaw, this->odom_yaw * 1800 / M_PI,
 			this->base_link_pose.getOrigin().x(), this->base_link_pose.getOrigin().y(), this->base_link_yaw, this->base_link_yaw * 1800 / M_PI,
 			this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI, Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
-}
-
-void robot::pub_ctrl_command(void){
-	
-	this->peripheral_msg.lw_speed = (this->ctrl_data[CTL_WHEEL_LEFT_HIGH]<<8)|this->ctrl_data[CTL_WHEEL_LEFT_LOW];
-	this->peripheral_msg.rw_speed = (this->ctrl_data[CTL_WHEEL_RIGHT_HIGH]<<8)|this->ctrl_data[CTL_WHEEL_RIGHT_LOW];
-	this->peripheral_msg.vaccum = this->ctrl_data[CTL_VACCUM_PWR];
-	this->peripheral_msg.lbrush = this->ctrl_data[CTL_BRUSH_LEFT];
-	this->peripheral_msg.rbrush = this->ctrl_data[CTL_BRUSH_RIGHT];
-	this->peripheral_msg.mbrush = this->ctrl_data[CTL_BRUSH_MAIN];
-	this->peripheral_msg.beep = this->ctrl_data[CTL_BUZZER];
-	this->peripheral_msg.sleep = this->ctrl_data[CTL_MAIN_PWR];
-	this->peripheral_msg.charge = (this->ctrl_data[CTL_CHARGER]>0)?1:0;
-	this->peripheral_msg.ledr = this->ctrl_data[CTL_LED_RED];
-	this->peripheral_msg.ledg = this->ctrl_data[CTL_LED_GREEN];
-	this->peripheral_msg.gyro_state = (this->ctrl_data[CTL_GYRO]&0x02)?1:0;
-	this->peripheral_msg.gyro_cali = (this->ctrl_data[CTL_GYRO]&0x01)?1:0;
-	this->send_cmd_pub.publish(this->peripheral_msg);
 }
 
 void robot::visualize_marker_init(){

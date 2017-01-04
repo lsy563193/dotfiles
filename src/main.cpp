@@ -14,6 +14,10 @@
 #include "robot.hpp"
 #include "main.h"
 
+#include "serial.h"
+#include "crc8.h"
+#include "robotbase.h"
+
 void *core_move_thread(void *)
 {
 	while (!robot::instance()->robot_is_all_ready()) {
@@ -36,12 +40,21 @@ void *core_move_thread(void *)
 
 int main(int argc, char **argv)
 {
-	int			ret1, core_move_thread_state;
+	int			baudrate, ret1, core_move_thread_state;
 	pthread_t	core_move_thread_id;
+	std::string	serial_port;
 
 	ros::init(argc, argv, "pp");
+	ros::NodeHandle	nh_private("~");
+
 	laser	laser_obj;
 	robot	robot_obj;
+
+	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
+	nh_private.param<int>("baudrate", baudrate, 115200);
+
+	serial_init(serial_port.c_str(), baudrate);
+	robotbase_init();
 
 #if 1
 	ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
@@ -59,6 +72,9 @@ int main(int argc, char **argv)
 	if (core_move_thread_state == 1) {
 		//pthread_join(core_move_thread_id, NULL);
 	}
+
+	robotbase_deinit();
+	serial_close();
 
 	pthread_exit(NULL);
 	return 0;

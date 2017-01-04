@@ -19,6 +19,8 @@
 
 #include "robotbase.h"
 
+#define RECEI_LEN	41
+
 static int TOPIC_PUB_RATE = 50;
 
 bool is_robotbase_init = false;
