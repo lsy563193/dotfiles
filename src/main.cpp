@@ -14,31 +14,6 @@
 #include "robot.hpp"
 #include "main.h"
 
-#define	TAG	"Main. (%d):\t"
-
-void usage(void)
-{
-	printf("\npp:\n"
-		"  -l: Log level\n"
-		"  -h: This help manual.\n"
-		"\n"
-		);
-}
-
-void process_args(int argc, char **argv)
-{
-	int c;
-
-	while ((c = getopt(argc, argv, "h")) != -1) {
-		switch (c) {
-			case 'h':
-			default:
-				usage();
-				return;
-		}
-	}
-}
-
 void *core_move_thread(void *)
 {
 	while (!robot::instance()->robot_is_all_ready()) {
@@ -63,7 +38,6 @@ int main(int argc, char **argv)
 {
 	int			ret1, core_move_thread_state;
 	pthread_t	core_move_thread_id;
-	process_args(argc, argv);
 
 	ros::init(argc, argv, "pp");
 	laser	laser_obj;
