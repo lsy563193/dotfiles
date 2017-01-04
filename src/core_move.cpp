@@ -1551,6 +1551,7 @@ uint8_t CM_Touring(void)
 	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
 
+	Work_Motor_Configure();
 	Reset_Touch();
 
 	station_zone = -1;
