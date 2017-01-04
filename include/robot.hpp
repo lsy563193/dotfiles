@@ -2,6 +2,7 @@
 #define __ROBOT_H__
 
 #include <ros/ros.h>
+#include <nav_msgs/MapMetaData.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Point.h>
@@ -56,6 +57,8 @@ public:
 	float robot_get_linear_y();
 	float robot_get_linear_z();
 
+	int16_t robot_get_yaw();
+
 	float robot_get_position_x();
 	float robot_get_position_y();
 	float robot_get_position_z();
@@ -69,6 +72,7 @@ public:
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
+	bool	is_map_ready;
 
 	/* 1 byte */
 	float	angle;
@@ -184,6 +188,7 @@ private:
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
+	ros::Subscriber map_metadata_sub;
 
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
@@ -199,6 +204,7 @@ private:
 
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
+	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
 };
 

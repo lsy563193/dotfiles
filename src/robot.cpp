@@ -18,10 +18,12 @@ robot::robot()
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
+	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	this->is_moving = false;
 	this->is_sensor_ready = false;
 	this->is_scan_ready = false;
+	this->is_map_ready = false;
 
 	this->bumper_left = 0;
 	this->bumper_right = 0;
@@ -56,7 +58,7 @@ void robot::init()
 
 bool robot::robot_is_all_ready()
 {
-	return (this->is_sensor_ready && this->is_scan_ready) ? true : false;
+	return (this->is_sensor_ready && this->is_scan_ready && this->is_map_ready) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
@@ -126,6 +128,16 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	printf("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d\n", cliff_right, cliff_left, cliff_front, wall);
 	printf("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d\n", rcon_left, rcon_right, rcon_front_left, rcon_front_right, rcon_back_left, rcon_back_right);
 #endif
+}
+
+void robot::robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg)
+{
+	static int count = 0;
+
+	count++;
+	if (count > 1) {
+		this->is_map_ready = true;
+	}
 }
 
 void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
@@ -360,6 +372,11 @@ float robot::robot_get_position_y()
 float robot::robot_get_position_z()
 {
 	return this->position_z;
+}
+
+int16_t robot::robot_get_yaw()
+{
+	return ((int16_t)(this->yaw * 1800 / M_PI));
 }
 
 void robot::robot_display_positions()
