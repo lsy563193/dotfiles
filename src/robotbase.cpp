@@ -7,6 +7,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <pp/x900sensor.h>
+#include <pp/slam_angle_offset.h>
 #include <stdlib.h>
 #include <math.h>
 #include <pthread.h>
@@ -34,6 +35,9 @@ uint8_t receiStream[RECEI_LEN] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 									0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 									0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xcc,
 									0x33};
+
+// Initialize the slam_angle_offset
+float slam_angle_offset = 0;
 
 int robotbase_init(void)
 {
@@ -147,6 +151,7 @@ void *serial_receive(void *)
 
 void *base_run(void*)
 {
+	printf("[robotbase.cpp] base_run is on.\n");
 	float	th_last, vth, pose_x, pose_y;
 	float	previous_angle = 999;
 	float	delta_angle = 0;
@@ -165,19 +170,24 @@ void *base_run(void*)
 	geometry_msgs::TransformStamped	odom_trans;
 
 	ros::Publisher	odom_pub,sensor_pub;
+	ros::Subscriber	slam_angle_offset_sub;
 	ros::NodeHandle	robotsensor_node;
 	ros::NodeHandle	odom_node;
+	ros::NodeHandle	slam_angle_offset_node;
 
 	th_last = vth = pose_x = pose_y = 0.0;
 
 	sensor_pub = robotsensor_node.advertise<pp::x900sensor>("/robot_sensor",1);
 	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",5);
+	slam_angle_offset_sub = slam_angle_offset_node.subscribe<pp::slam_angle_offset>("/slam_angle_offset", 1, slam_angle_offset_callback);
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
 
 	while (ros::ok() && !robotbase_thread_stop) {
 		r.sleep();
+		// Spin once to get the updated slam_angle_offset
+		ros::spinOnce();
 
 		lw_speed = (receiStream[2] << 8) | receiStream[3];
 		rw_speed = (receiStream[4] << 8) | receiStream[5];
@@ -186,6 +196,8 @@ void *base_run(void*)
 
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
+		// Compensate the angle with the offset published by slam
+		sensor.angle -= slam_angle_offset;
 		// Check for avoiding angle's sudden change
 		if (previous_angle == 999){
 			previous_angle = sensor.angle;
@@ -270,4 +282,13 @@ void *base_run(void*)
 		odom_pub.publish(odom);
 		sensor_pub.publish(sensor);
 	}
+}
+
+void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
+{
+	// Update the angle offset given by slam
+	if(ros::ok()&&(!robotbase_thread_stop)){
+		slam_angle_offset = msg->slam_angle_offset;
+	}
+	printf("[robotbase.cpp] Get slam_angle_offset as: %f.\n", slam_angle_offset);
 }

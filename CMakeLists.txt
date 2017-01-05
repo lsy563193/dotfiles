@@ -22,6 +22,7 @@ add_message_files(
 	FILES
 	peripheral.msg
 	x900sensor.msg
+	slam_angle_offset.msg
 	robotmode.msg
 )
 
