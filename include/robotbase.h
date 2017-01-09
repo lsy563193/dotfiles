@@ -6,8 +6,6 @@
 #include <pp/peripheral.h>
 #include <pp/slam_angle_offset.h>
 
-#include "control.h"
-
 int robotbase_init();
 void robotbase_deinit(void);
 bool is_robotbase_stop(void);

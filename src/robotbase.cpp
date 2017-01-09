@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "control.h"
+#include <movement.h>
 #include "crc8.h"
 #include "serial.h"
 
@@ -52,8 +52,8 @@ int robotbase_init(void)
 		return -1;
 	}
 
-	control_set_main_pwr(0);
-	control_set_gyro(1, 0);
+	set_main_pwr(0);
+	set_gyro(1, 0);
 
 	do {
 		printf("waiting robot awake...\n");

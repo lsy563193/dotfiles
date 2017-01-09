@@ -3,7 +3,6 @@
 #include <math.h>
 
 #include "gyro.h"
-#include "control.h"
 #include "robot.hpp"
 
 static	robot *robot_obj = NULL;

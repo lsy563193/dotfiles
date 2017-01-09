@@ -10,8 +10,6 @@
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
 
-#include "control.h"
-
 class robot
 {
 public:

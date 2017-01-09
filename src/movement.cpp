@@ -1,10 +1,13 @@
 #include <stdint.h>
 
-#include "control.h"
 #include "robot.hpp"
 
 #include "gyro.h"
 #include "movement.h"
+#include "crc8.h"
+#include "serial.h"
+
+static uint8_t ctl_data[19] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0xCC, 0x33};
 
 static int16_t Left_OBSTrig_Value = 500;
 static int16_t Front_OBSTrig_Value = 500;
@@ -113,6 +116,7 @@ void Turn_Left(uint16_t speed, uint16_t angle)
 
 	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0));
 }
+
 void Turn_Right(uint16_t speed, uint16_t angle)
 {
 	int16_t target_angle;
@@ -241,15 +245,28 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 	printf("%s %d: left: %d\tright: %d\tposition: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
 		left_speed, right_speed, robot::instance()->robot_get_position_x(), robot::instance()->robot_get_position_y(), robot::instance()->robot_get_position_z());
 #endif
-	control_set_wheel_speed(left_speed, right_speed);
+	control_set(CTL_WHEEL_LEFT_HIGH, (left_speed >> 8) & 0xff);
+	control_set(CTL_WHEEL_LEFT_LOW, left_speed & 0xff);
+	control_set(CTL_WHEEL_RIGHT_HIGH, (right_speed >> 8) & 0xff);
+	control_set(CTL_WHEEL_RIGHT_LOW, right_speed & 0xff);
 }
 
 void Work_Motor_Configure(void)
 {
-	control_set_vaccum_pwr(60);
-	control_set_brush_left(30);
-	control_set_brush_right(30);
-	control_set_brush_main(30);
+	int vaccum_pwr = 60;
+	vaccum_pwr = vaccum_pwr > 0 ? vaccum_pwr : 0;
+	vaccum_pwr = vaccum_pwr < 100 ? vaccum_pwr : 100;
+	control_set(CTL_VACCUM_PWR, ((int)(((float)vaccum_pwr) * 2.55)) & 0xff);
+
+	int brush_left = 30;
+	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
+
+	int brush_right = 30;
+	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
+
+	int brush_main = 30;
+	control_set(CTL_BRUSH_MAIN, brush_main & 0xff);
+
 }
 
 uint8_t Check_Motor_Current(void)
@@ -318,15 +335,10 @@ uint8_t Is_WallOBS_Near(void)
 
 void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
-	int16_t left_speed, right_speed;
-
 	wheel_left_direction = 0;
-	left_speed = (int16_t)(Left_Speed * 7.23);
-
 	wheel_right_direction = 0;
-	right_speed = (int16_t)(Right_Speed * 7.23);
 
-	control_set_wheel_speed(left_speed, right_speed);
+	Set_Wheel_Speed(Left_Speed, Right_Speed);
 }
 
 uint8_t Get_VacMode(void)
@@ -382,15 +394,15 @@ void Set_Dir_Right(void)
 
 void Set_LED(uint16_t G, uint16_t R)
 {
-	control_set_led_red(R);
-	control_set_led_green(G);
+	control_set(CTL_LED_RED, R & 0xff);
+	control_set(CTL_LED_GREEN, G & 0xff);
 }
 
 void Stop_Brifly(void)
 {
 	printf("%s %d: stopping robot.\n", __FUNCTION__, __LINE__);
 	do {
-		control_set_wheel_speed(0, 0);
+		Set_Wheel_Speed(0, 0);
 		usleep(15000);
 		//printf("%s %d: linear speed: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
 		//	robot::instance()->robot_get_linear_x(), robot::instance()->robot_get_linear_y(), robot::instance()->robot_get_linear_z());
@@ -466,4 +478,38 @@ void Beep(uint8_t Sound)
 
 void Disable_Motors(void)
 {
+}
+
+void set_gyro(uint8_t state, uint8_t calibration)
+{
+	control_set(CTL_GYRO, (state ? 0x2 : 0x0) | (calibration ? 0x1 : 0x0));
+}
+
+void set_main_pwr(uint8_t val)
+{
+	control_set(CTL_MAIN_PWR, val & 0xff);
+}
+
+void control_set(uint8_t type, uint8_t val)
+{
+	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
+		ctl_data[type] = val;
+
+		ctl_data[16] = calcBufCrc8((char *)ctl_data, 16);
+		serial_write(19, ctl_data);
+	}
+}
+
+void control_stop_all(void)
+{
+	uint8_t i;
+
+	for(i = 2; i < 17; i++) {
+		if (i == 11)
+			ctl_data[i] = 0x01;
+		else
+			ctl_data[i] = 0x00;
+	}
+	ctl_data[16] = calcBufCrc8((char *)ctl_data, 16);
+	serial_write(19, ctl_data);
 }

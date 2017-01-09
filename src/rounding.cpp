@@ -16,7 +16,6 @@
 
 #include "movement.h"
 
-#include "control.h"
 #include "robot.hpp"
 #include "mathematics.h"
 #include "path_planning.h"

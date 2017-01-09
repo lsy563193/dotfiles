@@ -18,7 +18,6 @@
 #include <pthread.h>
 
 #include "robot.hpp"
-#include "control.h"
 #include "movement.h"
 #include "core_move.h"
 #include "gyro.h"

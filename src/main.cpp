@@ -6,7 +6,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <ros/ros.h>
-#include "control.h"
 #include "core_move.h"
 #include "gyro.h"
 #include "movement.h"
