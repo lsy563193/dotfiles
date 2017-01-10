@@ -124,6 +124,24 @@ private:
 	float rw_crt; // right wheel current
 
 	/*1 byte*/
+	uint16_t left_wall; // left wall sensor
+	
+	/*1 byte*/
+	uint16_t right_wall; // left wall sensor
+	
+	/*? byte*/
+	float x_acc; // accelaration of x
+	
+	/*? byte*/
+	float y_acc; // accelaration of y
+	
+	/*? byte*/
+	float z_acc; // accelaration of z
+	
+	/*1 byte*/
+	uint8_t gyro_dymc; // ??
+	
+	/*1 byte*/
 	uint16_t ir_ctrl;
 	
 	/*3 bytes*/

@@ -70,7 +70,17 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	
 	this->rw_crt = msg->rw_crt;
 
-	this->wall = msg->wall;
+	this->left_wall = msg->left_wall;
+
+	this->right_wall = msg->right_wall;
+
+	this->x_acc = msg->x_acc;
+
+	this->y_acc = msg->y_acc;
+
+	this->z_acc = msg->z_acc;
+
+	this->gyro_dymc = msg->gyro_dymc;
 
 	this->obs_left = msg->l_obs;
 

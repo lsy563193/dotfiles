@@ -180,8 +180,8 @@
 #define	CTL_LED_RED 13
 #define	CTL_LED_GREEN 14
 #define	CTL_GYRO 15
+#define	CTL_CRC 16
 
-#define SEND_LEN 19
 
 void Set_Error_Code(uint8_t Code);
 
@@ -333,6 +333,8 @@ void set_gyro(uint8_t state, uint8_t calibration);
 void set_main_pwr(uint8_t val);
 
 void control_set(uint8_t type, uint8_t val);
+
+void control_append_crc(void);
 
 void control_stop_all(void);
 #endif

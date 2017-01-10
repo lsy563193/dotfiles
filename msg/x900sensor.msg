@@ -11,7 +11,8 @@ float32 lw_crt
 float32 rw_crt
 
 #infrated detect value,0~65535
-int16 wall
+int16 left_wall
+int16 right_wall
 #left right front obs value,0~65535
 int16 l_obs
 int16 f_obs
@@ -49,3 +50,10 @@ bool lbrush_oc
 bool mbrush_oc
 bool rbrush_oc
 bool vcum_oc
+
+# Acceleration for x, y, z
+float32 x_acc
+float32 y_acc
+float32 z_acc
+
+uint8 gyro_dymc

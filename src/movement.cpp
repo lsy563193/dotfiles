@@ -6,8 +6,9 @@
 #include "movement.h"
 #include "crc8.h"
 #include "serial.h"
+#include "robotbase.h"
 
-static uint8_t ctl_data[19] = {0xAA, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0xCC, 0x33};
+extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
 static int16_t Front_OBSTrig_Value = 500;
@@ -482,7 +483,10 @@ void Disable_Motors(void)
 
 void set_gyro(uint8_t state, uint8_t calibration)
 {
-	control_set(CTL_GYRO, (state ? 0x2 : 0x0) | (calibration ? 0x1 : 0x0));
+	//control_set(CTL_GYRO, (state ? 0x02 : 0x0) | (calibration ? 0x01 : 0x00));
+	uint8_t du = calibration;
+	control_set(CTL_GYRO, (state ? 0x02 : 0x0));
+
 }
 
 void set_main_pwr(uint8_t val)
@@ -493,23 +497,26 @@ void set_main_pwr(uint8_t val)
 void control_set(uint8_t type, uint8_t val)
 {
 	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
-		ctl_data[type] = val;
-
-		ctl_data[16] = calcBufCrc8((char *)ctl_data, 16);
-		serial_write(19, ctl_data);
+		sendStream[type] = val;
+		//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+		//serial_write(SEND_LEN, sendStream);
 	}
+}
+
+void control_append_crc(){
+	sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);	
 }
 
 void control_stop_all(void)
 {
 	uint8_t i;
 
-	for(i = 2; i < 17; i++) {
+	for(i = 2; i < (SEND_LEN)-2; i++) {
 		if (i == 11)
-			ctl_data[i] = 0x01;
+			sendStream[i] = 0x01;
 		else
-			ctl_data[i] = 0x00;
+			sendStream[i] = 0x00;
 	}
-	ctl_data[16] = calcBufCrc8((char *)ctl_data, 16);
-	serial_write(19, ctl_data);
+	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	//serial_write(SEND_LEN, sendStream);
 }
