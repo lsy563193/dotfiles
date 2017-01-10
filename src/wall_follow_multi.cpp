@@ -197,11 +197,15 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
 	
+	escape_thread_running = false;
 	ret = pthread_create(&escape_thread_id, 0, WFM_check_trapped, &escape_state);
 	if (ret != 0) {
 		printf("%s %d: failed to create escape thread!\n", __FUNCTION__, __LINE__);
 		return 2;
 	} else {
+		while (escape_thread_running == false) {
+			usleep(10000);
+		}
 		printf("%s %d: escape thread is running!\n", __FUNCTION__, __LINE__);
 	}
 
@@ -270,6 +274,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 	while (1) {
 		if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME || escape_thread_running == false) {
+			printf("%s %d: quit due to %s\n", __FUNCTION__, __LINE__, escape_thread_running == false ? "thread exit" : "timeout");
 			break;
 		}
 
