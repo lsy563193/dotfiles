@@ -261,7 +261,7 @@ bool robot::robot_get_vacuum_oc()
 	return this->vacuum_oc;
 }
 
-bool robot::robot_get_charge_status()
+int robot::robot_get_charge_status()
 {
 	return this->charge_status;
 }

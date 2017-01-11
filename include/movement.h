@@ -324,9 +324,11 @@ uint8_t Is_Water_Tank(void);
 
 void Set_Clean_Mode(uint8_t mode);
 
-void Beep(uint8_t Sound);
+void Beep(uint8_t Sound, uint8_t Time);
 
 void Disable_Motors(void);
+
+void set_stop_charge(void);
 
 void set_gyro(uint8_t state, uint8_t calibration);
 

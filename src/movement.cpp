@@ -77,8 +77,17 @@ void Wall_Dynamic_Base(uint32_t Cy)
 
 void Quick_Back(uint8_t Speed, uint16_t Distance)
 {
-	Speed = Speed;
-	Distance = Distance;
+	// Quickly move back for a distance.
+	wheel_left_direction = 1;
+	wheel_right_direction = 1;
+	Set_Wheel_Speed(Speed, Speed);
+	// This count is for how many miniseconds it should take. The Distance is in mm.
+	int back_count = int(1000 * Distance / (Speed * 7.23));
+	printf("[movement.cpp] Quick_back for %dms.\n", back_count);
+	for (int i = 0; i < back_count; i++){
+		// Sleep for 1 minisecond
+		usleep(1000);
+	}
 }
 
 void Turn_Left(uint16_t speed, uint16_t angle)
@@ -197,12 +206,24 @@ uint8_t Get_Bumper_Status(void)
 
 uint8_t Get_Cliff_Trig(void)
 {
-	return 0;
+	if ((robot::instance()->robot_get_cliff_left() < 30) || (robot::instance()->robot_get_cliff_right() < 30) || (robot::instance()->robot_get_cliff_front() < 30)){
+		printf("[movement.cpp] Cliff is detected.\n");
+		return 1;
+	}else{
+		return 0;
+	}
 }
 
 uint8_t Is_AtHomeBase(void)
 {
-	return 0;
+	// If the charge status is true, it means it is at home base charging.
+	//Debug
+	printf("[movement.cpp] Get charge status: %d.\n", robot::instance()->robot_get_charge_status());
+	if (robot::instance()->robot_get_charge_status() == 2 || robot::instance()->robot_get_charge_status() == 1){
+		return 1;
+	}else{
+		return 0;
+	}
 }
 
 void SetHomeRemote(void)
@@ -413,8 +434,12 @@ void Stop_Brifly(void)
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 {
-	L = L;
-	R = R;
+	// Set left and right brush PWM
+	int brush_left = L;
+	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
+
+	int brush_right = R;
+	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
 }
 
 uint8_t Get_LeftBrush_Stall(void)
@@ -449,6 +474,18 @@ void Deceleration(void)
 
 uint8_t Touch_Detect(void)
 {
+	// Get the key value from robot sensor
+	if (key_or_clean_button_detected){
+		key_or_clean_button_detected = false;
+		return 1;
+	}
+	if (Remote_Key(Remote_Clean)){
+		return 1;
+	}
+	if (Get_Cliff_Trig()){
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -459,7 +496,11 @@ uint8_t Is_Station(void)
 
 uint8_t Is_ChargerOn(void)
 {
-	return 0;
+	if (robot::instance()->robot_get_charge_status() == 1){
+		return 1;
+	}else{
+		return 0;
+	}
 }
 
 uint8_t Is_Water_Tank(void)
@@ -472,13 +513,22 @@ void Set_Clean_Mode(uint8_t mode)
 	mode = mode;
 }
 
-void Beep(uint8_t Sound)
+void Beep(uint8_t Sound, uint8_t Time)
 {
-	Sound = Sound;
+	// Sound means the interval of the speaker sounding, higher interval makes lower sound.
+	control_set(CTL_BUZZER, Sound & 0xFF);
+	// Time means how many loops of robotbase sending serial will it sound.
+	beep_time_count = Time;
 }
 
 void Disable_Motors(void)
 {
+}
+
+void set_stop_charge(void)
+{
+	// Set the flag to false so that it can quit charger mode.
+	control_set(CTL_CHARGER, 0x00);
 }
 
 void set_gyro(uint8_t state, uint8_t calibration)

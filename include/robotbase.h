@@ -8,6 +8,8 @@
 #define SEND_LEN 19
 extern uint8_t receiStream[RECEI_LEN];
 extern uint8_t sendStream[SEND_LEN] ;
+extern int beep_time_count;
+extern bool key_or_clean_button_detected;
 int robotbase_init();
 void robotbase_deinit(void);
 bool is_robotbase_stop(void);

@@ -1563,17 +1563,27 @@ uint8_t CM_Touring(void)
 	Set_LED(100, 0);
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
+		// Reset the robot to non charge mode.
+		set_stop_charge();
 		printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
 		usleep(4000);
-		for (i = 0; i < 5; i++) {
-			Quick_Back(20, COR_BACK_100MM);	//move back a short distance
-			if (Touch_Detect() || Remote_Key(Remote_Clean) || Is_ChargerOn()) {
+		if (Is_ChargerOn()){
+			printf("[core_move.cpp] Still charging.\n");
+		}
+		// Set i < 7 for robot to move back for approximately 500mm.
+		for (i = 0; i < 7; i++) {
+			// Move back for distance of 72mm, it takes approximately 0.5s.
+			Quick_Back(20, 72);
+			if (Touch_Detect() || Is_AtHomeBase()) {
 				printf("%s %d: move back 100mm and still detect charger or touch event! return 0\n", __FUNCTION__, __LINE__);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
+				Stop_Brifly();
+				Set_SideBrush_PWM(0, 0);
+				Beep(3, 250);
 				return 0;
 			}
-			Beep(3);
+			Beep(3, 25);
 		}
 		Deceleration();
 		Stop_Brifly();
@@ -1735,7 +1745,7 @@ uint8_t CM_Touring(void)
 				if ( state == -2 ) {
 					Disable_Motors();
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 25);
 					}
 
 					if (from_station >= 1) {
@@ -1754,7 +1764,7 @@ uint8_t CM_Touring(void)
 				} else if (state == -5) {
 					Disable_Motors();
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 25);
 					}
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
@@ -1762,7 +1772,7 @@ uint8_t CM_Touring(void)
 				} else if ( state == -7 ) {
 					Disable_Motors();
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 25);
 					}
 					Set_Clean_Mode(Clean_Mode_GoHome);
 					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
@@ -1778,7 +1788,7 @@ uint8_t CM_Touring(void)
 
 					Disable_Motors();
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 25);
 					}
 
 					if (from_station >= 1) {
@@ -1807,7 +1817,7 @@ uint8_t CM_Touring(void)
 
 					Disable_Motors();
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 25);
 					}
 
 					if (from_station >= 1) {
@@ -2543,7 +2553,7 @@ MapTouringType CM_handleExtEvent()
 	if (Touch_Detect()) {
 		Stop_Brifly();
 		printf("%s %d: clean key is pressed.\n", __FUNCTION__, __LINE__);
-		Beep(5);
+		Beep(5, 25);
 		Reset_Touch();
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return MT_Key_Clean;

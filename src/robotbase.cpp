@@ -38,6 +38,10 @@ pthread_mutex_t send_lock;
 
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
+// Speaker sound time count, every count means once of send streem loop
+int beep_time_count = 0;
+// Flag for key touched or clean button pressed
+bool key_or_clean_button_detected = false;
 
 int robotbase_init(void)
 {
@@ -142,6 +146,10 @@ void *serial_receive_runtime(void *)
 					for (j = 0; j < wht_len; j++) {
 						receiStream[j + 2] = receiData[j];
 					}
+					// Check for key touched or clean button pressed.
+					if (receiStream[27] == 1){
+						key_or_clean_button_detected = true;
+					}
 				} else {
 					printf("tail incorret\n");
 				}
@@ -236,7 +244,7 @@ void *robotbase_runtime(void*)
 		sensor.ir_ctrl = receiStream[23];
 		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
 		sensor.key = receiStream[27];
-		sensor.c_s = (receiStream[28] > 0) ? true : false;
+		sensor.c_s = receiStream[28];
 		sensor.w_tank = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
 
@@ -299,6 +307,14 @@ void *serial_send_runtime(void*){
 	int sl = SEND_LEN-3;
 	while(send_stream_thread){
 		r.sleep();
+		// If beep_time_count has ran out, it will call Beep(0, 0) to stop beepping.
+		if (beep_time_count == 0){
+			Beep(0, 0);
+		}
+		// Decreace the beep_time_count
+		if (beep_time_count > 0){
+			beep_time_count--;
+		}
 		pthread_mutex_lock(&send_lock);
 		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, sl);
 		serial_write(SEND_LEN, sendStream);
