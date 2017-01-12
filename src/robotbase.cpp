@@ -38,8 +38,21 @@ pthread_mutex_t send_lock;
 
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
-// Speaker sound time count, every count means once of send streem loop
-int beep_time_count = 0;
+
+// This flag is for reset beep action
+bool robotbase_beep_update_flag = false;
+// Speaker totally sound time count, every count means once of send streem loop
+int robotbase_speaker_sound_loop_count = 0;
+// Sound code to be set in sendStream
+uint8_t robotbase_sound_code = 0;
+// A speaker sound loop contains one sound time and one silence time
+// Speaker sound time count in one speaker sound loop, every count means once of send streem loop
+int robotbase_speaker_sound_time_count = 0;
+int temp_speaker_sound_time_count = -1;
+// Speaker silence time count in one speaker sound loop, every count means once of send streem loop
+int robotbase_speaker_silence_time_count = 0;
+int temp_speaker_silence_time_count = 0;
+
 // Flag for key touched or clean button pressed
 bool key_or_clean_button_detected = false;
 
@@ -307,13 +320,16 @@ void *serial_send_runtime(void*){
 	int sl = SEND_LEN-3;
 	while(send_stream_thread){
 		r.sleep();
-		// If beep_time_count has ran out, it will call Beep(0, 0) to stop beepping.
-		if (beep_time_count == 0){
-			Beep(0, 0);
+		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
+		if (robotbase_beep_update_flag){
+			temp_speaker_sound_time_count = -1;
+			temp_speaker_silence_time_count = 0;
+			robotbase_beep_update_flag = false;
 		}
-		// Decreace the beep_time_count
-		if (beep_time_count > 0){
-			beep_time_count--;
+		//printf("[robotbase.cpp] tmp_sound_count:%d, tmp_silence_count:%d, sound_loop_count:%d.\n", temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
+		// If beep_time_count has ran out, it will call Beep(0, 0) to stop beepping. Otherwise process the beep action.
+		if (robotbase_speaker_sound_loop_count != 0){
+			process_beep_routine();
 		}
 		pthread_mutex_lock(&send_lock);
 		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, sl);
@@ -330,4 +346,32 @@ void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
 		slam_angle_offset = msg->slam_angle_offset;
 	}
 	printf("[robotbase.cpp] Get slam_angle_offset as: %f.\n", slam_angle_offset);
+}
+
+void process_beep_routine(){
+	// This routine handles the speaker sounding logic
+	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in sendStream.
+	if (temp_speaker_silence_time_count == 0){
+		temp_speaker_silence_time_count--;
+		temp_speaker_sound_time_count = robotbase_speaker_sound_time_count;
+		control_set(CTL_BUZZER, robotbase_sound_code & 0xFF);
+	}
+	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in sendStream.
+	if (temp_speaker_sound_time_count == 0){
+		temp_speaker_sound_time_count--;
+		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
+		control_set(CTL_BUZZER, 0x00);
+		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
+		if (robotbase_speaker_sound_loop_count > 0){
+			robotbase_speaker_sound_loop_count--;
+		}
+	}
+	// If temp_speaker_silence_time_count == -1, it is in loop of sound, so decrease the count.
+	if (temp_speaker_silence_time_count == -1){
+		temp_speaker_sound_time_count--;
+	}
+	// If temp_speaker_sound_time_count == -1, it is in loop of silence, so decrease the count.
+	if (temp_speaker_sound_time_count == -1){
+		temp_speaker_silence_time_count--;
+	}
 }

@@ -8,7 +8,11 @@
 #define SEND_LEN 19
 extern uint8_t receiStream[RECEI_LEN];
 extern uint8_t sendStream[SEND_LEN] ;
-extern int beep_time_count;
+extern bool robotbase_beep_update_flag;
+extern int robotbase_speaker_sound_loop_count;
+extern uint8_t robotbase_sound_code;
+extern int robotbase_speaker_sound_time_count;
+extern int robotbase_speaker_silence_time_count;
 extern bool key_or_clean_button_detected;
 int robotbase_init();
 void robotbase_deinit(void);
@@ -17,5 +21,6 @@ void *serial_receive_runtime(void*);
 void *robotbase_runtime(void*);
 void *serial_send_runtime(void*);
 void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg);
+void process_beep_routine();
 
 #endif

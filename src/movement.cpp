@@ -513,12 +513,19 @@ void Set_Clean_Mode(uint8_t mode)
 	mode = mode;
 }
 
-void Beep(uint8_t Sound, uint8_t Time)
+void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count)
 {
-	// Sound means the interval of the speaker sounding, higher interval makes lower sound.
-	control_set(CTL_BUZZER, Sound & 0xFF);
-	// Time means how many loops of robotbase sending serial will it sound.
-	beep_time_count = Time;
+	// Sound_Code means the interval of the speaker sounding, higher interval makes lower sound.
+	robotbase_sound_code = Sound_Code;
+	// Total_Time_Count means how many loops of speaker sound loop will it sound.
+	robotbase_speaker_sound_loop_count = Total_Time_Count;
+	// A speaker sound loop contains one sound time and one silence time
+	// Sound_Time_Count means how many loops of sendStream loop will it sound in one speaker sound loop
+	robotbase_speaker_sound_time_count = Sound_Time_Count;
+	// Silence_Time_Count means how many loops of sendStream loop will it be silence in one speaker sound loop
+	robotbase_speaker_silence_time_count = Silence_Time_Count;
+	// Trigger the update flag to start the new beep action
+	robotbase_beep_update_flag = true;
 }
 
 void Disable_Motors(void)

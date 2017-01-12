@@ -324,7 +324,7 @@ uint8_t Is_Water_Tank(void);
 
 void Set_Clean_Mode(uint8_t mode);
 
-void Beep(uint8_t Sound, uint8_t Time);
+void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
 
 void Disable_Motors(void);
 
