@@ -206,12 +206,24 @@ uint8_t Get_Bumper_Status(void)
 
 uint8_t Get_Cliff_Trig(void)
 {
-	if ((robot::instance()->robot_get_cliff_left() < 30) || (robot::instance()->robot_get_cliff_right() < 30) || (robot::instance()->robot_get_cliff_front() < 30)){
-		printf("[movement.cpp] Cliff is detected.\n");
-		return 1;
-	}else{
-		return 0;
+	// Logic of getting the cliff status.
+	uint8_t Cliff_Status = 0x00;
+	if (robot::instance()->robot_get_cliff_left() < 30){
+		printf("[movement.cpp] Left cliff is detected.\n");
+		Cliff_Status += 0x01;
 	}
+	if (robot::instance()->robot_get_cliff_right() < 30){
+		printf("[movement.cpp] Right cliff is detected.\n");
+		Cliff_Status += 0x02;
+	}
+	if (robot::instance()->robot_get_cliff_right() < 30){
+		printf("[movement.cpp] Front cliff is detected.\n");
+		Cliff_Status += 0x04;
+	}
+	if (Cliff_Status != 0x00){
+		printf("[movement.cpp] Return Cliff status:%x.\n", Cliff_Status);
+	}
+	return Cliff_Status;
 }
 
 uint8_t Is_AtHomeBase(void)

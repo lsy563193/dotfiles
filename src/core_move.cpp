@@ -1175,9 +1175,15 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 						CM_CorBack(COR_BACK_20MM);
 						Set_Error_Code(Error_Code_Bumper);
 						Stop_Brifly();
-						retval = MT_Key_Clean;
-						printf("%s %d: bumper jam break!\n", __FUNCTION__, __LINE__);
-						break;
+						// If bumper jam, wait for manual release and it can keep on.(Convenient for testing)
+						//retval = MT_Key_Clean;
+						printf("%s %d: bumper jam break! Please manual release the bumper!\n", __FUNCTION__, __LINE__);
+						while (Get_Bumper_Status()){
+							// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
+							Beep(3, 25, 0, 1);
+							usleep(2000000);
+						}
+						//break;
 					}
 				}
 			}
