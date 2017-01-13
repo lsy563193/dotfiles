@@ -41,7 +41,7 @@ float slam_angle_offset = 0;
 
 // This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
-// Speaker totally sound time count, every count means once of send streem loop
+// Speaker totally sound time count, every count means once of send streem loop, if this count < 0, it will be a constant beep action
 int robotbase_speaker_sound_loop_count = 0;
 // Sound code to be set in sendStream
 uint8_t robotbase_sound_code = 0;
@@ -55,6 +55,9 @@ int temp_speaker_silence_time_count = 0;
 
 // Flag for key touched or clean button pressed
 bool key_or_clean_button_detected = false;
+
+// Low battery flag
+bool low_battary = false;
 
 int robotbase_init(void)
 {
@@ -260,6 +263,13 @@ void *robotbase_runtime(void*)
 		sensor.c_s = receiStream[28];
 		sensor.w_tank = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
+		//printf("[robotbase.cpp] Battary:%d.\n", sensor.batv);
+		// Check if battary low, if low, it will trigger speaker alarm.
+		// Check 0 < sensor.batv is for skipping the first few frames of robot data that battary value is still 0.
+		if (0 < sensor.batv && sensor.batv < 132 && !low_battary){
+			printf("[robotbase.cpp] Battary < 13.2v.\n");
+			low_battary = true;
+		}
 
 		sensor.lcliff = ((receiStream[31] << 8) | receiStream[32]);
 		sensor.fcliff = ((receiStream[33] << 8) | receiStream[34]);
@@ -327,9 +337,15 @@ void *serial_send_runtime(void*){
 			robotbase_beep_update_flag = false;
 		}
 		//printf("[robotbase.cpp] tmp_sound_count:%d, tmp_silence_count:%d, sound_loop_count:%d.\n", temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
-		// If beep_time_count has ran out, it will call Beep(0, 0) to stop beepping. Otherwise process the beep action.
+		// If beep_time_count has ran out, it will not sound anymore and check the battary status. If low battary, it will constantly beep to alarm.
+		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
 			process_beep_routine();
+		}else{
+			// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
+			if (low_battary){
+				Beep(3, 25, 25, -1);
+			}
 		}
 		pthread_mutex_lock(&send_lock);
 		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, sl);
@@ -362,6 +378,7 @@ void process_beep_routine(){
 		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
 		control_set(CTL_BUZZER, 0x00);
 		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
+		// If it is for constant beep, the loop count will be less than 0, it will not decrease either.
 		if (robotbase_speaker_sound_loop_count > 0){
 			robotbase_speaker_sound_loop_count--;
 		}
