@@ -494,7 +494,7 @@ uint8_t Touch_Detect(void)
 	if (Remote_Key(Remote_Clean)){
 		return 1;
 	}
-	if (Get_Cliff_Trig()){
+	if (Get_Cliff_Trig() == 0x07){
 		return 1;
 	}
 
