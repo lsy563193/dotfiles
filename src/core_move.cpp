@@ -795,7 +795,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	int8_t	HomeT, HomeL, HomeR, home_hit;
 	//int32_t	front_obs_val = 0;
-	uint32_t Temp_Rcon_Status = 0;
 
 	int8_t	slow_down;
 	int16_t	i;
@@ -810,8 +809,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	//uint32_t Temp_Mobility_Distance = Get_Move_Distance();
 	//uint8_t Mobility_Temp_Error = 0;
-
-	Reset_Rcon_Status();
 
 	set_gyro(1, 0);
 	usleep(10000);
@@ -1020,20 +1017,23 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		}
 #endif
 
-		Temp_Rcon_Status = Get_Rcon_Status() & 0x00000F00;
-		if (go_home == 0 && Temp_Rcon_Status && !(from_station == 1)){
+		if (go_home == 0){
 //		if (go_home == 0 && Temp_Rcon_Status) {
-			Set_Rcon_Status(Get_Rcon_Status()&(~Temp_Rcon_Status));
-			if (Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT)) {
+			// The return rcon info is at lowest 4 bits
+			if ((robot::instance()->robot_get_rcon_front_left() & Rcon_HomeT) || (robot::instance()->robot_get_rcon_front_right() & Rcon_HomeT)) {
 				HomeT++;
 			} 
-			if (Temp_Rcon_Status & RconL_HomeT) {
+			if (robot::instance()->robot_get_rcon_left() & Rcon_HomeT) {
 				HomeL++;
 			} 
-			if (Temp_Rcon_Status & RconR_HomeT) {
+			if (robot::instance()->robot_get_rcon_right() & Rcon_HomeT) {
 				HomeR++;
 			}
-			printf("%s %d: home detected %x(%d %d %d)\n", __FUNCTION__, __LINE__, Temp_Rcon_Status, HomeL, HomeT, HomeR);
+
+			// If detect charger stub then print the detection info
+			if (HomeL || HomeR || HomeT){
+				printf("%s %d: home detected (%d %d %d)\n", __FUNCTION__, __LINE__, HomeL, HomeT, HomeR);
+			}
 
 			if (HomeR + HomeL + HomeT > 4) {
 				home_hit = HomeR > HomeL ? HomeR : HomeL;
@@ -1066,6 +1066,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				}
 				Stop_Brifly();
 				retval = MT_None;
+				// Update the location of charger stub
+				CM_SetStationHome();
 				break;
 			} else if (HomeT == 0 && (HomeR > 2 || HomeL > 2)) {
 				Stop_Brifly();
@@ -1089,6 +1091,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				}
 				Stop_Brifly();
 				retval = MT_None;
+				// Update the location of charger stub
+				CM_SetStationHome();
 				break;
 			} else if (HomeR == 0 && HomeL == 0 && HomeT > 2) {
 				Stop_Brifly();
@@ -1099,11 +1103,15 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_3, &x, &y);
 #else
 				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_2, &x, &y);
+				// Mark CELL_SIZE_3 to avoid position jump caused by slam
+				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_3, &x, &y);
 #endif
 				Map_SetCell(MAP, x, y, BLOCKED_BUMPER);
 
 				Stop_Brifly();
 				retval = MT_None;
+				// Update the location of charger stub
+				CM_SetStationHome();
 				break;
 			}
 		}else if (go_home == 1 && Is_Station() == 1 ) {
@@ -1112,7 +1120,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			break;
 		}
 
-		Reset_Rcon_Status();
 
 		/* Check bumper & cliff event.*/
 #ifdef OBS_DYNAMIC
@@ -1363,6 +1370,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 }
 
 
+#if 0
 //return: 1: return to user interface;
 //        0: Normal return
 uint8_t CM_MoveForward(void) {
@@ -1504,6 +1512,7 @@ uint8_t CM_MoveForward(void) {
 
 	return retval;
 }
+#endif
 
 #ifdef PP_ROUNDING_OBSTCAL
 uint16_t CM_get_robot_direction()
@@ -1563,7 +1572,6 @@ uint8_t CM_Touring(void)
 	from_station = 0;
 	map_touring_cancel = LED_Blink = LED_Blink_State = go_home = remote_go_home = 0;
 
-	Reset_Rcon_Status();
 	Reset_Touch();
 	Reset_MoveWithRemote();
 	Set_LED(100, 0);
@@ -1631,7 +1639,6 @@ uint8_t CM_Touring(void)
 	//FIXME
 	//Map_Wall_Follow_Initialize();
 
-	Reset_Rcon_Status();
 
 	/* usleep for checking whether robot is in the station */
 	usleep(700);
@@ -2515,8 +2522,9 @@ void CM_SetHome(int32_t x, int32_t y) {
 
 void CM_SetStationHome(void) {
 
-	Home_Point.X = Map_GetXCount();
-	Home_Point.Y = Map_GetYCount();
+	Home_Point.X = countToCell(Map_GetXCount());
+	Home_Point.Y = countToCell(Map_GetYCount());
+	printf("%s %d: set new station position: (%d, %d)\n", __FUNCTION__, __LINE__, Home_Point.X, Home_Point.Y);
 }
 
 uint8_t CM_IsLowBattery(void) {

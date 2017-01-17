@@ -44,6 +44,11 @@
 #define Charge_Home_Top				((uint8_t) 0x0c)
 #define Vitual_Wall_Code			((uint8_t) 0x24)
 
+#define Rcon_Wall 					((uint32_t) 0x00000008)
+#define Rcon_HomeL 					((uint32_t) 0x00000004)
+#define Rcon_HomeT 					((uint32_t) 0x00000002)
+#define Rcon_HomeR 					((uint32_t) 0x00000001)
+#if 0
 #define RconL_HomeL					((uint32_t) 0x00000080)
 #define RconL_HomeR					((uint32_t) 0x00000040)
 
@@ -75,6 +80,7 @@
 #define RconL_Wall					((uint32_t) 0x00000000)
 #define RconBL_Wall					((uint32_t) 0x00000000)
 #define RconBR_Wall					((uint32_t) 0x00000000)
+#endif
 
 #define Remote_Clean				((uint32_t) 0X02AA22DD)
 #define Remote_Forward				((uint32_t) 0X02AA55AA)
@@ -182,6 +188,7 @@
 #define	CTL_GYRO 15
 #define	CTL_CRC 16
 
+#define Cliff_Limit         (int16_t)20
 
 void Set_Error_Code(uint8_t Code);
 

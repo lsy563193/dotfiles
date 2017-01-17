@@ -208,15 +208,15 @@ uint8_t Get_Cliff_Trig(void)
 {
 	// Logic of getting the cliff status.
 	uint8_t Cliff_Status = 0x00;
-	if (robot::instance()->robot_get_cliff_left() < 30){
+	if (robot::instance()->robot_get_cliff_left() < Cliff_Limit){
 		printf("[movement.cpp] Left cliff is detected.\n");
 		Cliff_Status += 0x01;
 	}
-	if (robot::instance()->robot_get_cliff_right() < 30){
+	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
 		printf("[movement.cpp] Right cliff is detected.\n");
 		Cliff_Status += 0x02;
 	}
-	if (robot::instance()->robot_get_cliff_right() < 30){
+	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
 		printf("[movement.cpp] Front cliff is detected.\n");
 		Cliff_Status += 0x04;
 	}
@@ -245,16 +245,6 @@ void SetHomeRemote(void)
 uint8_t Is_OBS_Near(void)
 {
 	return 0;
-}
-
-uint32_t Get_Rcon_Status(void)
-{
-	return 0;
-}
-
-void Set_Rcon_Status(uint32_t code)
-{
-	code = code;
 }
 
 void Reset_TempPWM(void)
@@ -402,10 +392,6 @@ uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32
 }
 
 void Reset_WorkTimer(void)
-{
-}
-
-void Reset_Rcon_Status(void)
 {
 }
 
