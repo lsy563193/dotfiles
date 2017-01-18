@@ -96,6 +96,7 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	this->ir_ctrl = msg->ir_ctrl;
 
 	this->charge_stub = msg->c_stub;//charge stub signal
+	//printf("[robot.cpp] Rcon info:%x.\n", this->charge_stub);
 
 	this->key = msg->key;
 
@@ -262,7 +263,7 @@ bool robot::robot_get_vacuum_oc()
 	return this->vacuum_oc;
 }
 
-bool robot::robot_get_charge_status()
+int robot::robot_get_charge_status()
 {
 	return this->charge_status;
 }
@@ -286,32 +287,44 @@ float robot::robot_get_rwheel_current()
 }
 uint32_t robot::robot_get_rcon_front_left()
 {
-	return this -> rcon_front_left = this->charge_stub & 0x000000f0;
+	// Move the 4 bits info to lowest bits
+	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0xf00000) >> 20);
+	return this -> rcon_front_left = (this->charge_stub & 0xf00000) >> 20;
 }
 
 uint32_t robot::robot_get_rcon_front_right()
 {
-	return this->rcon_front_right = this->charge_stub & 0x0000000f;
+	// Move the 4 bits info to lowest bits
+	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0x0f0000) >> 16);
+	return this->rcon_front_right = (this->charge_stub & 0x0f0000) >> 16;
 }
 
 uint32_t robot::robot_get_rcon_back_left()
 {
-	return this->rcon_back_left = this->charge_stub & 0x00f00000;
+	// Move the 4 bits info to lowest bits
+	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0x0000f0) >> 4);
+	return this->rcon_back_left = (this->charge_stub & 0x0000f0) >> 4;
 }
 
 uint32_t robot::robot_get_rcon_back_right()
 {
-	return this->rcon_back_right = this-> charge_stub & 0x000f0000;
+	// Move the 4 bits info to lowest bits
+	//printf("[robot.cpp] charge_stub:%x.\n", (this-> charge_stub & 0x00000f) >> 0);
+	return this->rcon_back_right = (this-> charge_stub & 0x00000f) >> 0;
 }
 
 uint32_t robot::robot_get_rcon_left()
 {
-	return this->rcon_left = this-> charge_stub & 0x0000f000;
+	// Move the 4 bits info to lowest bits
+	//printf("[robot.cpp] charge_stub:%x.\n", (this-> charge_stub & 0x00f000) >> 12);
+	return this->rcon_left = (this-> charge_stub & 0x00f000) >> 12;
 }
 
 uint32_t robot::robot_get_rcon_right()
 {
-	return this->rcon_right = this->charge_stub & 0x00000f00;
+	// Move the 4 bits info to lowest bits
+	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0x000f00) >> 8);
+	return this->rcon_right = (this->charge_stub & 0x000f00) >> 8;
 }
 
 bool robot::robot_get_bumper_right()

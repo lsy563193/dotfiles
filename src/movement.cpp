@@ -77,8 +77,17 @@ void Wall_Dynamic_Base(uint32_t Cy)
 
 void Quick_Back(uint8_t Speed, uint16_t Distance)
 {
-	Speed = Speed;
-	Distance = Distance;
+	// Quickly move back for a distance.
+	wheel_left_direction = 1;
+	wheel_right_direction = 1;
+	Set_Wheel_Speed(Speed, Speed);
+	// This count is for how many miniseconds it should take. The Distance is in mm.
+	int back_count = int(1000 * Distance / (Speed * 7.23));
+	printf("[movement.cpp] Quick_back for %dms.\n", back_count);
+	for (int i = 0; i < back_count; i++){
+		// Sleep for 1 minisecond
+		usleep(1000);
+	}
 }
 
 void Turn_Left(uint16_t speed, uint16_t angle)
@@ -200,12 +209,36 @@ uint8_t Get_Bumper_Status(void)
 
 uint8_t Get_Cliff_Trig(void)
 {
-	return 0;
+	// Logic of getting the cliff status.
+	uint8_t Cliff_Status = 0x00;
+	if (robot::instance()->robot_get_cliff_left() < Cliff_Limit){
+		printf("[movement.cpp] Left cliff is detected.\n");
+		Cliff_Status += 0x01;
+	}
+	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
+		printf("[movement.cpp] Right cliff is detected.\n");
+		Cliff_Status += 0x02;
+	}
+	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
+		printf("[movement.cpp] Front cliff is detected.\n");
+		Cliff_Status += 0x04;
+	}
+	if (Cliff_Status != 0x00){
+		printf("[movement.cpp] Return Cliff status:%x.\n", Cliff_Status);
+	}
+	return Cliff_Status;
 }
 
 uint8_t Is_AtHomeBase(void)
 {
-	return 0;
+	// If the charge status is true, it means it is at home base charging.
+	//Debug
+	printf("[movement.cpp] Get charge status: %d.\n", robot::instance()->robot_get_charge_status());
+	if (robot::instance()->robot_get_charge_status() == 2 || robot::instance()->robot_get_charge_status() == 1){
+		return 1;
+	}else{
+		return 0;
+	}
 }
 
 void SetHomeRemote(void)
@@ -215,16 +248,6 @@ void SetHomeRemote(void)
 uint8_t Is_OBS_Near(void)
 {
 	return 0;
-}
-
-uint32_t Get_Rcon_Status(void)
-{
-	return 0;
-}
-
-void Set_Rcon_Status(uint32_t code)
-{
-	code = code;
 }
 
 void Reset_TempPWM(void)
@@ -378,10 +401,6 @@ void Reset_WorkTimer(void)
 {
 }
 
-void Reset_Rcon_Status(void)
-{
-}
-
 void Display_Battery_Status(uint8_t temp)
 {
 	temp = temp;
@@ -419,8 +438,12 @@ void Stop_Brifly(void)
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 {
-	L = L;
-	R = R;
+	// Set left and right brush PWM
+	int brush_left = L;
+	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
+
+	int brush_right = R;
+	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
 }
 
 uint8_t Get_LeftBrush_Stall(void)
@@ -455,6 +478,18 @@ void Deceleration(void)
 
 uint8_t Touch_Detect(void)
 {
+	// Get the key value from robot sensor
+	if (key_or_clean_button_detected){
+		key_or_clean_button_detected = false;
+		return 1;
+	}
+	if (Remote_Key(Remote_Clean)){
+		return 1;
+	}
+	if (Get_Cliff_Trig() == 0x07){
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -465,7 +500,11 @@ uint8_t Is_Station(void)
 
 uint8_t Is_ChargerOn(void)
 {
-	return 0;
+	if (robot::instance()->robot_get_charge_status() == 1){
+		return 1;
+	}else{
+		return 0;
+	}
 }
 
 uint8_t Is_Water_Tank(void)
@@ -478,13 +517,29 @@ void Set_Clean_Mode(uint8_t mode)
 	mode = mode;
 }
 
-void Beep(uint8_t Sound)
+void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count)
 {
-	Sound = Sound;
+	// Sound_Code means the interval of the speaker sounding, higher interval makes lower sound.
+	robotbase_sound_code = Sound_Code;
+	// Total_Time_Count means how many loops of speaker sound loop will it sound.
+	robotbase_speaker_sound_loop_count = Total_Time_Count;
+	// A speaker sound loop contains one sound time and one silence time
+	// Sound_Time_Count means how many loops of sendStream loop will it sound in one speaker sound loop
+	robotbase_speaker_sound_time_count = Sound_Time_Count;
+	// Silence_Time_Count means how many loops of sendStream loop will it be silence in one speaker sound loop
+	robotbase_speaker_silence_time_count = Silence_Time_Count;
+	// Trigger the update flag to start the new beep action
+	robotbase_beep_update_flag = true;
 }
 
 void Disable_Motors(void)
 {
+}
+
+void set_stop_charge(void)
+{
+	// Set the flag to false so that it can quit charger mode.
+	control_set(CTL_CHARGER, 0x00);
 }
 
 void set_gyro(uint8_t state, uint8_t calibration)

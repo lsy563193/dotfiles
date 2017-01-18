@@ -32,7 +32,7 @@ public:
 	bool robot_get_mbrush_oc();
 	bool robot_get_vacuum_oc();
 	uint8_t robot_get_key();
-	bool robot_get_charge_status();
+	int robot_get_charge_status();
 	uint8_t robot_get_ir_ctrl();
 	float robot_get_lwheel_current();
 	float robot_get_rwheel_current();

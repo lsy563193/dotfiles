@@ -39,6 +39,26 @@ pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
 
+// This flag is for reset beep action
+bool robotbase_beep_update_flag = false;
+// Speaker totally sound time count, every count means once of send streem loop, if this count < 0, it will be a constant beep action
+int robotbase_speaker_sound_loop_count = 0;
+// Sound code to be set in sendStream
+uint8_t robotbase_sound_code = 0;
+// A speaker sound loop contains one sound time and one silence time
+// Speaker sound time count in one speaker sound loop, every count means once of send streem loop
+int robotbase_speaker_sound_time_count = 0;
+int temp_speaker_sound_time_count = -1;
+// Speaker silence time count in one speaker sound loop, every count means once of send streem loop
+int robotbase_speaker_silence_time_count = 0;
+int temp_speaker_silence_time_count = 0;
+
+// Flag for key touched or clean button pressed
+bool key_or_clean_button_detected = false;
+
+// Low battery flag
+bool low_battary = false;
+
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret,sers_ret;
@@ -146,6 +166,10 @@ void *serial_receive_runtime(void *)
 					for (j = 0; j < wht_len; j++) {
 						receiStream[j + 2] = receiData[j];
 					}
+					// Check for key touched or clean button pressed.
+					if (receiStream[27] == 1){
+						key_or_clean_button_detected = true;
+					}
 				} else {
 					ROS_INFO("[robotbase] tail incorret\n");
 				}
@@ -239,9 +263,16 @@ void *robotbase_runtime(void*)
 		sensor.ir_ctrl = receiStream[23];
 		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
 		sensor.key = receiStream[27];
-		sensor.c_s = (receiStream[28] > 0) ? true : false;
+		sensor.c_s = receiStream[28];
 		sensor.w_tank = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
+		//printf("[robotbase.cpp] Battary:%d.\n", sensor.batv);
+		// Check if battary low, if low, it will trigger speaker alarm.
+		// Check 0 < sensor.batv is for skipping the first few frames of robot data that battary value is still 0.
+		if (0 < sensor.batv && sensor.batv < 132 && !low_battary){
+			printf("[robotbase.cpp] Battary < 13.2v.\n");
+			low_battary = true;
+		}
 
 		sensor.lcliff = ((receiStream[31] << 8) | receiStream[32]);
 		sensor.fcliff = ((receiStream[33] << 8) | receiStream[34]);
@@ -303,6 +334,23 @@ void *serial_send_runtime(void*){
 	int sl = SEND_LEN-3;
 	while(send_stream_thread){
 		r.sleep();
+		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
+		if (robotbase_beep_update_flag){
+			temp_speaker_sound_time_count = -1;
+			temp_speaker_silence_time_count = 0;
+			robotbase_beep_update_flag = false;
+		}
+		//printf("[robotbase.cpp] tmp_sound_count:%d, tmp_silence_count:%d, sound_loop_count:%d.\n", temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
+		// If beep_time_count has ran out, it will not sound anymore and check the battary status. If low battary, it will constantly beep to alarm.
+		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
+		if (robotbase_speaker_sound_loop_count != 0){
+			process_beep_routine();
+		}else{
+			// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
+			if (low_battary){
+				Beep(3, 25, 25, -1);
+			}
+		}
 		pthread_mutex_lock(&send_lock);
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
 		pthread_mutex_unlock(&send_lock);	
@@ -319,4 +367,33 @@ void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
 		slam_angle_offset = msg->slam_angle_offset;
 	}
 	ROS_INFO("[robotbase] Get slam_angle_offset as: %f.\n", slam_angle_offset);
+}
+
+void process_beep_routine(){
+	// This routine handles the speaker sounding logic
+	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in sendStream.
+	if (temp_speaker_silence_time_count == 0){
+		temp_speaker_silence_time_count--;
+		temp_speaker_sound_time_count = robotbase_speaker_sound_time_count;
+		control_set(CTL_BUZZER, robotbase_sound_code & 0xFF);
+	}
+	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in sendStream.
+	if (temp_speaker_sound_time_count == 0){
+		temp_speaker_sound_time_count--;
+		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
+		control_set(CTL_BUZZER, 0x00);
+		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
+		// If it is for constant beep, the loop count will be less than 0, it will not decrease either.
+		if (robotbase_speaker_sound_loop_count > 0){
+			robotbase_speaker_sound_loop_count--;
+		}
+	}
+	// If temp_speaker_silence_time_count == -1, it is in loop of sound, so decrease the count.
+	if (temp_speaker_silence_time_count == -1){
+		temp_speaker_sound_time_count--;
+	}
+	// If temp_speaker_sound_time_count == -1, it is in loop of silence, so decrease the count.
+	if (temp_speaker_sound_time_count == -1){
+		temp_speaker_silence_time_count--;
+	}
 }

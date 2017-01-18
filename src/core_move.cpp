@@ -795,7 +795,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	int8_t	HomeT, HomeL, HomeR, home_hit;
 	//int32_t	front_obs_val = 0;
-	uint32_t Temp_Rcon_Status = 0;
 
 	int8_t	slow_down;
 	int16_t	i;
@@ -810,8 +809,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	//uint32_t Temp_Mobility_Distance = Get_Move_Distance();
 	//uint8_t Mobility_Temp_Error = 0;
-
-	Reset_Rcon_Status();
 
 	set_gyro(1, 0);
 	usleep(10000);
@@ -1020,20 +1017,23 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		}
 #endif
 
-		Temp_Rcon_Status = Get_Rcon_Status() & 0x00000F00;
-		if (go_home == 0 && Temp_Rcon_Status && !(from_station == 1)){
+		if (go_home == 0){
 //		if (go_home == 0 && Temp_Rcon_Status) {
-			Set_Rcon_Status(Get_Rcon_Status()&(~Temp_Rcon_Status));
-			if (Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT)) {
+			// The return rcon info is at lowest 4 bits
+			if ((robot::instance()->robot_get_rcon_front_left() & Rcon_HomeT) || (robot::instance()->robot_get_rcon_front_right() & Rcon_HomeT)) {
 				HomeT++;
 			} 
-			if (Temp_Rcon_Status & RconL_HomeT) {
+			if (robot::instance()->robot_get_rcon_left() & Rcon_HomeT) {
 				HomeL++;
 			} 
-			if (Temp_Rcon_Status & RconR_HomeT) {
+			if (robot::instance()->robot_get_rcon_right() & Rcon_HomeT) {
 				HomeR++;
 			}
-			printf("%s %d: home detected %x(%d %d %d)\n", __FUNCTION__, __LINE__, Temp_Rcon_Status, HomeL, HomeT, HomeR);
+
+			// If detect charger stub then print the detection info
+			if (HomeL || HomeR || HomeT){
+				printf("%s %d: home detected (%d %d %d)\n", __FUNCTION__, __LINE__, HomeL, HomeT, HomeR);
+			}
 
 			if (HomeR + HomeL + HomeT > 4) {
 				home_hit = HomeR > HomeL ? HomeR : HomeL;
@@ -1066,6 +1066,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				}
 				Stop_Brifly();
 				retval = MT_None;
+				// Update the location of charger stub
+				CM_SetStationHome();
 				break;
 			} else if (HomeT == 0 && (HomeR > 2 || HomeL > 2)) {
 				Stop_Brifly();
@@ -1089,6 +1091,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				}
 				Stop_Brifly();
 				retval = MT_None;
+				// Update the location of charger stub
+				CM_SetStationHome();
 				break;
 			} else if (HomeR == 0 && HomeL == 0 && HomeT > 2) {
 				Stop_Brifly();
@@ -1099,11 +1103,15 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_3, &x, &y);
 #else
 				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_2, &x, &y);
+				// Mark CELL_SIZE_3 to avoid position jump caused by slam
+				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_3, &x, &y);
 #endif
 				Map_SetCell(MAP, x, y, BLOCKED_BUMPER);
 
 				Stop_Brifly();
 				retval = MT_None;
+				// Update the location of charger stub
+				CM_SetStationHome();
 				break;
 			}
 		}else if (go_home == 1 && Is_Station() == 1 ) {
@@ -1112,7 +1120,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			break;
 		}
 
-		Reset_Rcon_Status();
 
 		/* Check bumper & cliff event.*/
 #ifdef OBS_DYNAMIC
@@ -1175,9 +1182,15 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 						CM_CorBack(COR_BACK_20MM);
 						Set_Error_Code(Error_Code_Bumper);
 						Stop_Brifly();
-						retval = MT_Key_Clean;
-						printf("%s %d: bumper jam break!\n", __FUNCTION__, __LINE__);
-						break;
+						// If bumper jam, wait for manual release and it can keep on.(Convenient for testing)
+						//retval = MT_Key_Clean;
+						printf("%s %d: bumper jam break! Please manual release the bumper!\n", __FUNCTION__, __LINE__);
+						while (Get_Bumper_Status()){
+							// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
+							Beep(3, 25, 0, 1);
+							usleep(2000000);
+						}
+						//break;
 					}
 				}
 			}
@@ -1357,6 +1370,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 }
 
 
+#if 0
 //return: 1: return to user interface;
 //        0: Normal return
 uint8_t CM_MoveForward(void) {
@@ -1498,6 +1512,7 @@ uint8_t CM_MoveForward(void) {
 
 	return retval;
 }
+#endif
 
 #ifdef PP_ROUNDING_OBSTCAL
 uint16_t CM_get_robot_direction()
@@ -1557,23 +1572,33 @@ uint8_t CM_Touring(void)
 	from_station = 0;
 	map_touring_cancel = LED_Blink = LED_Blink_State = go_home = remote_go_home = 0;
 
-	Reset_Rcon_Status();
 	Reset_Touch();
 	Reset_MoveWithRemote();
 	Set_LED(100, 0);
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
+		// Reset the robot to non charge mode.
+		set_stop_charge();
 		printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
 		usleep(4000);
-		for (i = 0; i < 5; i++) {
-			Quick_Back(20, COR_BACK_100MM);	//move back a short distance
-			if (Touch_Detect() || Remote_Key(Remote_Clean) || Is_ChargerOn()) {
+		if (Is_ChargerOn()){
+			printf("[core_move.cpp] Still charging.\n");
+		}
+		// Beep while moving back.
+		Beep(3, 25, 25, 6);
+		// Set i < 7 for robot to move back for approximately 500mm.
+		for (i = 0; i < 7; i++) {
+			// Move back for distance of 72mm, it takes approximately 0.5s.
+			Quick_Back(20, 72);
+			if (Touch_Detect() || Is_AtHomeBase()) {
 				printf("%s %d: move back 100mm and still detect charger or touch event! return 0\n", __FUNCTION__, __LINE__);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
+				Stop_Brifly();
+				Set_SideBrush_PWM(0, 0);
+				Beep(3, 100, 25, 5);
 				return 0;
 			}
-			Beep(3);
 		}
 		Deceleration();
 		Stop_Brifly();
@@ -1614,7 +1639,6 @@ uint8_t CM_Touring(void)
 	//FIXME
 	//Map_Wall_Follow_Initialize();
 
-	Reset_Rcon_Status();
 
 	/* usleep for checking whether robot is in the station */
 	usleep(700);
@@ -1734,8 +1758,9 @@ uint8_t CM_Touring(void)
 				state = CM_MoveToCell( tmpPnt.X, tmpPnt.Y, 2, 6, 3 );
 				if ( state == -2 ) {
 					Disable_Motors();
+					// Beep for 2.4s
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 6, 6, 1);
 					}
 
 					if (from_station >= 1) {
@@ -1753,16 +1778,18 @@ uint8_t CM_Touring(void)
 					return 0;
 				} else if (state == -5) {
 					Disable_Motors();
+					// Beep for 2.4s
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 6, 6, 1);
 					}
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
 					return 0;
 				} else if ( state == -7 ) {
 					Disable_Motors();
+					// Beep for 2.4s
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 6, 6, 1);
 					}
 					Set_Clean_Mode(Clean_Mode_GoHome);
 					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
@@ -1777,8 +1804,9 @@ uint8_t CM_Touring(void)
 					}
 
 					Disable_Motors();
+					// Beep for 2.4s
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 6, 6, 1);
 					}
 
 					if (from_station >= 1) {
@@ -1806,8 +1834,9 @@ uint8_t CM_Touring(void)
 					}
 
 					Disable_Motors();
+					// Beep for 2.4s
 					for (i = 10; i > 0; i--) {
-						Beep(i);
+						Beep(i, 6, 6, 1);
 					}
 
 					if (from_station >= 1) {
@@ -2493,8 +2522,9 @@ void CM_SetHome(int32_t x, int32_t y) {
 
 void CM_SetStationHome(void) {
 
-	Home_Point.X = Map_GetXCount();
-	Home_Point.Y = Map_GetYCount();
+	Home_Point.X = countToCell(Map_GetXCount());
+	Home_Point.Y = countToCell(Map_GetYCount());
+	printf("%s %d: set new station position: (%d, %d)\n", __FUNCTION__, __LINE__, Home_Point.X, Home_Point.Y);
 }
 
 uint8_t CM_IsLowBattery(void) {
@@ -2543,7 +2573,7 @@ MapTouringType CM_handleExtEvent()
 	if (Touch_Detect()) {
 		Stop_Brifly();
 		printf("%s %d: clean key is pressed.\n", __FUNCTION__, __LINE__);
-		Beep(5);
+		Beep(5, 6, 6, 1);
 		Reset_Touch();
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return MT_Key_Clean;
