@@ -249,6 +249,8 @@ uint8_t Is_AtHomeBase(void);
 
 void SetHomeRemote(void);
 
+void Reset_HomeRemote(void);
+
 uint8_t Is_OBS_Near(void);
 
 uint32_t Get_Rcon_Status(void);
@@ -289,6 +291,10 @@ void Switch_VacMode(void);
 
 uint32_t Get_Rcon_Remote(void);
 
+void Set_Rcon_Remote(void);
+
+void Reset_Rcon_Remote(void);
+
 void Reset_MoveWithRemote(void);
 
 uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush);
@@ -314,6 +320,8 @@ uint8_t Get_LeftBrush_Stall(void);
 uint8_t Get_RightBrush_Stall(void);
 
 uint8_t Remote_Key(uint32_t Key);
+
+uint8_t Is_MoveWithRemote(void);
 
 void Reset_Touch(void);
 
