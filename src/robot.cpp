@@ -93,7 +93,8 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->bumper_left = msg->lbumper;
 
-	this->ir_ctrl = msg->ir_ctrl;
+	if(msg->ir_ctrl>0)
+		this->ir_ctrl = msg->ir_ctrl;
 
 	this->charge_stub = msg->c_stub;//charge stub signal
 	//printf("[robot.cpp] Rcon info:%x.\n", this->charge_stub);
@@ -273,7 +274,9 @@ uint8_t robot::robot_get_key(){
 }
 uint8_t robot::robot_get_ir_ctrl()
 {
-	return this->ir_ctrl;
+	uint8_t ir_cmd = this->ir_ctrl;
+	//this->ir_ctrl = 0;
+	return ir_cmd;
 }
 
 float robot::robot_get_lwheel_current()

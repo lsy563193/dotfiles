@@ -16,7 +16,10 @@ static int16_t Right_OBSTrig_Value = 500;
 static int16_t Leftwall_OBSTrig_Vale = 500;
 static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
-
+static uint8_t ir_cmd;
+static uint8_t remote_move_flag=0;
+static uint8_t home_remote_flag = 0;
+static uint32_t Rcon_Status;
 void Set_Error_Code(uint8_t code)
 {
 	code = code;
@@ -243,6 +246,16 @@ uint8_t Is_AtHomeBase(void)
 
 void SetHomeRemote(void)
 {
+	home_remote_flag = 1;
+}
+
+void Reset_HomeRemote(void)
+{
+	home_remote_flag = 0;
+}
+
+uint8_t  Is_MoveWithRemote(void){
+	return remote_move_flag;	
 }
 
 uint8_t Is_OBS_Near(void)
@@ -380,13 +393,39 @@ void Switch_VacMode(void)
 {
 }
 
+void Set_Rcon_Status(uint32_t code)
+{
+	Rcon_Status = code;
+}
+
+void Reset_Rcon_Status(void)
+{
+	Rcon_Status = 0;
+}
+
+uint32_t Get_Rcon_status(void)
+{
+	return Rcon_Status;
+}
+
 uint32_t Get_Rcon_Remote(void)
 {
-	return 0;
+	return (uint32_t)ir_cmd;
+}
+
+void Set_Rcon_Remote(void)
+{
+	ir_cmd = robot::instance()->robot_get_ir_ctrl();
+}
+
+void Reset_Rcon_Remote(void)
+{
+	ir_cmd = 0;
 }
 
 void Reset_MoveWithRemote(void)
 {
+	remote_move_flag = 0;
 }
 
 uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush)
@@ -457,10 +496,45 @@ uint8_t Get_RightBrush_Stall(void)
 }
 
 
-
-uint8_t Remote_Key(uint32_t Key)
+uint8_t Remote_Key(uint32_t key)
 {
-	Key = Key;
+	Set_Rcon_Remote();
+	switch(ir_cmd){
+		case 0x80:
+			if(key == Remote_Forward)
+				return 1;
+			break;
+		case 0x40:
+			if(key == Remote_Left)
+				return 1;
+			break;
+		case 0x20:
+			if(key == Remote_Right)
+				return 1;
+			break;
+		case 0x10:
+			if(key == Remote_Max)
+				return 1;
+			break;
+		case 0x08:
+			if(key == Remote_Clean)
+				return 1;
+			break;
+		case 0x04:
+			if(key == Remote_Home)
+				return 1;
+			break;
+		case 0x02:
+			if(key == Remote_Random)
+				return 1;
+			break;
+		case 0x01:
+			if(key == Remote_Spot)
+				return 1;
+			break;
+		default:
+			return 0;
+	}
 	return 0;
 }
 
