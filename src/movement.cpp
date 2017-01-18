@@ -13,7 +13,7 @@ extern uint8_t sendStream[SEND_LEN];
 static int16_t Left_OBSTrig_Value = 500;
 static int16_t Front_OBSTrig_Value = 500;
 static int16_t Right_OBSTrig_Value = 500;
-
+static int16_t Leftwall_OBSTrig_Vale = 500;
 static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
 
@@ -181,7 +181,10 @@ int32_t Get_LeftOBS(void)
 {
 	return (int32_t)robot::instance()->robot_get_obs_left();
 }
-
+int32_t Get_rightOBS(void)
+{
+	return (int32_t)robot::instance()->robot_get_obs_right();
+}
 uint8_t Get_Bumper_Status(void)
 {
 	uint8_t Temp_Status = 0;
@@ -329,6 +332,9 @@ uint8_t Is_WallOBS_Near(void)
 		return 1;
 	}
     if (robot::instance()->robot_get_obs_left() > (Front_OBSTrig_Value + 1000)) {
+		return 1;
+	}
+	if (robot::instance()->robot_get_wall() > (Leftwall_OBSTrig_Vale +500)){
 		return 1;
 	}
     return 0;

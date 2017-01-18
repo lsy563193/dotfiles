@@ -96,9 +96,6 @@ private:
 	/* 2 bytes */
 	int16_t cliff_front;
 
-	/* 2 bytes */
-	int16_t wall;
-
 	/*1 byte */
 	uint8_t key;
 

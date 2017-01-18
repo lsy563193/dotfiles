@@ -19,6 +19,7 @@
 
 void *core_move_thread(void *)
 {
+	pthread_detach(pthread_self());
 	while (!robot::instance()->robot_is_all_ready()) {
 		usleep(1000);
 	}

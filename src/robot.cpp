@@ -4,11 +4,12 @@
 
 #include "gyro.h"
 #include "robot.hpp"
-
+#include "robotbase.h"
 static	robot *robot_obj = NULL;
 
 time_t	start_time;
 
+//extern pp::x900sensor sensor;
 robot::robot()
 {
 	this->init();
@@ -238,7 +239,7 @@ int16_t robot::robot_get_cliff_front()
 
 int16_t robot::robot_get_wall()
 {
-	return this->wall;
+	return this->left_wall;
 }
 
 bool robot::robot_get_lbrush_oc()//oc : over current

@@ -35,7 +35,7 @@ pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
 pthread_t sendPortThread_id;
 pthread_mutex_t send_lock;
-
+pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
 
@@ -49,20 +49,20 @@ int robotbase_init(void)
 	send_stream_thread = true;
 	
 	if (!is_serial_ready()) {
-		printf("serial not ready\n");
+		ROS_INFO("[robotbase] serial not ready\n");
 		return -1;
 	}
-
 	set_main_pwr(0);
 	set_gyro(1, 0);
 	Set_LED(100,0);
 	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	printf("waiting robotbase awake ");
 	do {
 		serial_write(SEND_LEN,sendStream);
-		printf("waiting robot awake...\n");
+		printf(".");
 		usleep(20000);
 	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
-
+	printf("ok\n");
 	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_runtime, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_runtime, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_runtime,NULL);
@@ -70,14 +70,15 @@ int robotbase_init(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		send_stream_thread = false;
-		if (base_ret != 0) {fprintf(stderr,"fail to create robotbase thread!! %s \n", strerror(base_ret));}
-		else if (ser_ret != 0) {fprintf(stderr,"fail to create serial receive thread!! %s \n", strerror(ser_ret));}
-		else if (sers_ret !=0){fprintf(stderr,"fail to create serial send therad!! %s \n",strerror(sers_ret));}
+		if (base_ret < 0) {ROS_INFO("[robotbase] fail to create robotbase thread!! %s \n", strerror(base_ret));}
+		if (ser_ret < 0) {ROS_INFO("[robotbase] fail to create serial receive thread!! %s \n", strerror(ser_ret));}
+		if (sers_ret < 0){ROS_INFO("[robotbase] fail to create serial send therad!! %s \n",strerror(sers_ret));}
 		return -1;
-	} else {
-		printf("threads running...\n");
-		is_robotbase_init = true;
 	}
+	is_robotbase_init = true;
+	int mutex_ret = pthread_mutex_init(&send_lock,NULL);
+	if(mutex_ret <0)
+		ROS_INFO("mutex lock crate fail\n");
 	return 0;
 }
 
@@ -91,18 +92,21 @@ void robotbase_deinit(void)
 	uint8_t buf[2];
 
 	if (is_robotbase_init) {
-		printf("robotbase deinit...\n");
+		ROS_INFO("[robotbase] deinit...\n");
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
-
+		printf("\tshutdown robotbase power ");
 		do {
 			control_stop_all();
-			printf("shutdown robot power\n");
 			usleep(300000);
+			printf(".");
 		} while (serial_read(2, buf) > 0);
 		send_stream_thread = false;
 		serial_flush();
-		printf("shutdown power OK\n");
+		printf("ok\n");
+		int mutex_ret = pthread_mutex_destroy(&send_lock);
+		if(mutex_ret<0)
+			ROS_INFO("[robotbase] mutex destroy fail\n");
 		usleep(20000);
 	}
 }
@@ -143,10 +147,10 @@ void *serial_receive_runtime(void *)
 						receiStream[j + 2] = receiData[j];
 					}
 				} else {
-					printf("tail incorret\n");
+					ROS_INFO("[robotbase] tail incorret\n");
 				}
 			} else {
-				printf("crc incorret\n");
+				ROS_INFO("[robotbase] crc incorret\n");
 			}
 		}
 	}
@@ -155,9 +159,8 @@ void *serial_receive_runtime(void *)
 
 void *robotbase_runtime(void*)
 {
-	//pthread_detach(pthread_self());
-
-	printf("[robotbase.cpp] base_run is on.\n");
+	pthread_detach(pthread_self());
+	ROS_INFO("[robotbase] robotbase thread running!!!\n");
 	float	th_last, vth, pose_x, pose_y;
 	float	previous_angle = 999;
 	float	delta_angle = 0;
@@ -168,7 +171,7 @@ void *robotbase_runtime(void*)
 	ros::Rate	r(TOPIC_PUB_RATE);
 	ros::Time	cur_time, last_time;
 
-	pp::x900sensor				sensor;
+
 	nav_msgs::Odometry			odom;
 	tf::TransformBroadcaster	odom_broad;
 	geometry_msgs::Quaternion	odom_quat;
@@ -296,13 +299,15 @@ void *robotbase_runtime(void*)
 void *serial_send_runtime(void*){
 	//pthread_detach(pthread_self());
 	ros::Rate r(50);
+	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
 	while(send_stream_thread){
 		r.sleep();
 		pthread_mutex_lock(&send_lock);
-		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, sl);
-		serial_write(SEND_LEN, sendStream);
-		pthread_mutex_unlock(&send_lock);
+		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
+		pthread_mutex_unlock(&send_lock);	
+		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
+		serial_write(SEND_LEN, buf);
 	}
 	pthread_exit(NULL);
 }
@@ -313,5 +318,5 @@ void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
 	if(ros::ok()&&(!robotbase_thread_stop)){
 		slam_angle_offset = msg->slam_angle_offset;
 	}
-	printf("[robotbase.cpp] Get slam_angle_offset as: %f.\n", slam_angle_offset);
+	ROS_INFO("[robotbase] Get slam_angle_offset as: %f.\n", slam_angle_offset);
 }
