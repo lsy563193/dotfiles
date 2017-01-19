@@ -1662,6 +1662,8 @@ uint8_t CM_Touring(void)
 
 		/*************************************2 Cleaning Main Loop*************************************/
 		state = -1;
+		// Debug
+		printf("[core_move.cpp] %s %d: Current Battery level: %d.\n", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
 		while (ros::ok()) {
 
 			/***************************2.1 Common Process***************************/
@@ -2522,9 +2524,9 @@ void CM_SetHome(int32_t x, int32_t y) {
 
 void CM_SetStationHome(void) {
 
-	Home_Point.X = countToCell(Map_GetXCount());
-	Home_Point.Y = countToCell(Map_GetYCount());
-	printf("%s %d: set new station position: (%d, %d)\n", __FUNCTION__, __LINE__, Home_Point.X, Home_Point.Y);
+	Home_Point.X = Map_GetXCount();
+	Home_Point.Y = Map_GetYCount();
+	printf("%s %d: set new station position: (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(Home_Point.X), countToCell(Home_Point.Y));
 }
 
 uint8_t CM_IsLowBattery(void) {
@@ -2564,7 +2566,7 @@ MapTouringType CM_handleExtEvent()
 			Switch_VacMode();
 		}
 		Stop_Brifly();
-		printf("%s %d: low battery, battery < 1300 is detected.\n", __FUNCTION__, __LINE__);
+		printf("%s %d: low battery, battery < 13.2v is detected.\n", __FUNCTION__, __LINE__);
 		remote_go_home = 1;
 		return MT_Battery_Home;
 	}

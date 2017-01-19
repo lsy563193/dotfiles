@@ -110,9 +110,9 @@
 #define Clean_Vac_Power				120000
 #define Home_Vac_Power				40000
 
-#define Vac_Speed_Max				1550 //775=15500rpm=1000PA
-#define Vac_Speed_Normal			900 //9000rpm
-#define Vac_Speed_NormalL			800 //8000rpm
+#define Vac_Speed_Max				255 //15500rpm
+#define Vac_Speed_Normal			150 //9000rpm
+#define Vac_Speed_NormalL			133 //8000rpm
 
 #define Vac_Normal					0
 #define Vac_Max						1
@@ -170,6 +170,7 @@
 #define Error_Code_Encoder			0x0C
 
 
+#define Display_Full				4
 #define Display_Low					5
 
 #define	CTL_WHEEL_LEFT_HIGH 2
@@ -303,7 +304,7 @@ void Reset_WorkTimer(void);
 
 void Reset_Rcon_Status(void);
 
-void Display_Battery_Status(uint8_t temp);
+void Display_Battery_Status(uint8_t display_mode);
 
 void Set_Dir_Left(void);
 
@@ -312,6 +313,8 @@ void Set_Dir_Right(void);
 void Set_LED(uint16_t G, uint16_t R);
 
 void Stop_Brifly(void);
+
+void Set_MainBrush_PWM(uint16_t PWM);
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R);
 

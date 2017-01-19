@@ -20,6 +20,10 @@ static uint8_t ir_cmd;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 static uint32_t Rcon_Status;
+
+// Variable for vaccum mode
+volatile uint8_t Vac_Mode;
+
 void Set_Error_Code(uint8_t code)
 {
 	code = code;
@@ -322,6 +326,10 @@ uint8_t Self_Check(uint8_t Check_Code)
 
 uint8_t Check_Bat_Home(void)
 {
+	// Check if battary is lower than the low battery go home voltage value.
+	if (robot::instance()->robot_get_battery_voltage() < LOW_BATTERY_GO_HOME_VOLTAGE){
+		return 1;
+	}
 	return 0;
 }
 
@@ -332,16 +340,37 @@ uint8_t Get_Clean_Mode(void)
 
 void Set_VacMode(uint8_t data)
 {
-	data = data;
+	// Set the mode for vaccum.
+	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL
+	Vac_Mode = data;
 }
 
 void Set_BLDC_Speed(uint32_t S)
 {
-	S = S;
+	// Set the power of BLDC
+	control_set(CTL_VACCUM_PWR, S & 0xff);
 }
 
 void Set_Vac_Speed(void)
 {
+	// Set the power of BLDC according to different situation
+	// Stop the BLDC if robot carries the water tank
+	if (Is_Water_Tank()){
+		Set_BLDC_Speed(0);
+	}else{
+		// Set the BLDC power to max if robot in max mode
+		if (Get_VacMode() == Vac_Max){
+			Set_BLDC_Speed(Vac_Speed_Max);
+		}else{
+			Set_BLDC_Speed(Vac_Speed_Normal);
+			// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
+			//if (Get_WorkTime() < Two_Hours){
+			//	Set_BLDC_Speed(Vac_Speed_Normal);
+			//}else{
+			//	Set_BLDC_Speed(Vac_Speed_NormalL);
+			//}
+		}
+	}
 }
 
 void OBS_Dynamic_Base(uint16_t Cy)
@@ -386,11 +415,20 @@ void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed)
 
 uint8_t Get_VacMode(void)
 {
-	return 0;
+	// Return the vaccum mode
+	return Vac_Mode;
 }
 
 void Switch_VacMode(void)
 {
+	// Switch the vaccum mode between Max and Normal
+	if (Get_VacMode() == Vac_Normal){
+		Set_VacMode(Vac_Max);
+	}else{
+		Set_VacMode(Vac_Normal);
+	}
+	// Process the vaccum mode
+	Set_Vac_Speed();
 }
 
 void Set_Rcon_Status(uint32_t code)
@@ -440,9 +478,34 @@ void Reset_WorkTimer(void)
 {
 }
 
-void Display_Battery_Status(uint8_t temp)
+void Display_Battery_Status(uint8_t display_mode)
 {
-	temp = temp;
+	// Change the LED according to the display_mode.
+	switch (display_mode){
+		case Display_Clean:{
+			break;
+		}
+		case Display_Wall:{
+			break;
+		}
+		case Display_Zizag:{
+			break;
+		}
+		case Display_Remote:{
+			break;
+		}
+		case Display_Full:{
+			Set_LED(100, 0);
+			break;
+		}
+		case Display_Low:{
+			Set_LED(50, 100);
+			break;
+		}
+		default:{
+			break;
+		}
+	}
 }
 
 void Set_Dir_Left(void)
@@ -459,6 +522,7 @@ void Set_Dir_Right(void)
 
 void Set_LED(uint16_t G, uint16_t R)
 {
+	// Set the brightnesss of the LED within range(0, 100).
 	control_set(CTL_LED_RED, R & 0xff);
 	control_set(CTL_LED_GREEN, G & 0xff);
 }
@@ -473,6 +537,13 @@ void Stop_Brifly(void)
 		//	robot::instance()->robot_get_linear_x(), robot::instance()->robot_get_linear_y(), robot::instance()->robot_get_linear_z());
 	} while (robot::instance()->robot_is_moving());
 	printf("%s %d: robot is stopped.\n", __FUNCTION__, __LINE__);
+}
+
+void Set_MainBrush_PWM(uint16_t PWM)
+{
+	// Set left and right brush PWM
+	int pwm = PWM;
+	control_set(CTL_BRUSH_MAIN, pwm & 0xff);
 }
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R)
@@ -608,6 +679,15 @@ void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int 
 
 void Disable_Motors(void)
 {
+	// Disable all the motors, including brush, wheels, and vacuum.
+	// Stop the wheel
+	Set_Wheel_Speed(0, 0);
+	// Stop the side brush
+	Set_SideBrush_PWM(0, 0);
+	// Stop the main brush
+	Set_MainBrush_PWM(0);
+	// Stop the vaccum, directly stop the BLDC
+	Set_BLDC_Speed(0);
 }
 
 void set_stop_charge(void)
