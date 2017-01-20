@@ -145,7 +145,7 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 						//printf("exist wall\n");
 						c++;//add one grid wall
 						if (c >= (search_width / 0.05)){
-							return 0;
+							return 2;
 						}
 					}else{
 						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
@@ -182,6 +182,7 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 						//printf("x_1=%f ,y=%f\n",x_1,y);
 						//printf("exist wall\n");
 						c++;
+						return 2;
 					}else{
 						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
 							//printf("x_1=%f ,y=%f\n",x_1,y);
@@ -936,7 +937,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	int32_t x, y;
 
         int32_t Init_Pose_X, Init_Pose_Y;
-        int16_t Limited_Distance = 2107;//21476 = 4M 16107 = 3M
+        int16_t Limited_Distance = 16107;//21476 = 4M 16107 = 3M
         bool Limited_Flag = 0;
 
 
@@ -1377,9 +1378,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		if (bool Explore_Flag = CM_Check_is_exploring() == 1){
 			Limited_Flag = 1;
 		}
-		//else if(Explore_Flag == 0){
-		//	Limited_Flag = 0;
-		//}
+		else if(Explore_Flag == 2){
+			Limited_Flag = 2;
+		}
 #endif
 
 		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
@@ -1495,12 +1496,15 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			Right_Speed = RUN_TOP_SPEED;
 		}
 		//printf("%s %d: left: %d\tright: %d\tbumper left: %d\tright: %d\n", __FUNCTION__, __LINE__, (int16_t)(Left_Speed * 7.23), (int16_t) (Right_Speed * 7.23), robot::instance()->robot_get_bumper_left(), robot::instance()->robot_get_bumper_right());
-		if (Limited_Flag == 0){
+		if (Limited_Flag == 2){
 			Move_Forward(Left_Speed, Right_Speed);
 		} else{
-			Move_Forward(Left_Speed / 2, Right_Speed / 2);
+			if (Limited_Flag == 0){
+				Move_Forward(Left_Speed, Right_Speed);
+			} else if(Limited_Flag == 1){
+				Move_Forward(Left_Speed / 2, Right_Speed / 2);
+			} 
 		}
-		
 		Base_Speed = (Left_Speed + Right_Speed) / 2;
 
 		if (Rotate_Angle > 0) {
