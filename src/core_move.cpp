@@ -18,6 +18,7 @@
 #include "movement.h"
 #include "wall_follow_multi.h"
 #include <ros/ros.h>
+#include <vector>
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
 //1 1 1
@@ -94,6 +95,139 @@ static inline void CM_count_normalize(uint16_t heading, int16_t offset_lat, int1
 {
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
 	*y = cellToCount(countToCell(Map_GetRelativeY(heading, offset_lat, offset_long)));
+}
+
+bool CM_Check_is_exploring()//not yet minus the x_off
+{
+	float search_length = 1.00, search_width = 0.303;//unit for meter
+	std::vector<int8_t> *p_map_data;
+	int index;
+	double yaw;
+	float position_x, position_y;
+	uint32_t width,  height;
+	float resolution;
+	double origin_x, origin_y;
+	int plus_sign;
+	position_x = robot::instance()->robot_get_position_x();
+	position_y = robot::instance()->robot_get_position_y();
+	yaw = robot::instance()->robot_get_map_yaw();
+	yaw = robot::instance()->robot_get_obs_left();
+	
+	width = robot::instance()->robot_get_width();
+	height = robot::instance()->robot_get_height();
+	resolution = robot::instance()->robot_get_resolution();
+	origin_x = robot::instance()->robot_get_origin_x();
+	origin_y = robot::instance()->robot_get_origin_y();
+	
+
+	p_map_data = robot::instance()->robot_get_map_data();
+	//index = CM_Get_grid_index();
+	/*main search*/
+	if (abs(yaw) <= (M_PI / 2) ){
+		plus_sign = 1;
+		//printf("+yaw=%lf\n",yaw);
+		for (int a = 0; a <= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
+			printf("a_max=%d\n",(plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))));
+			int c = 0;
+			float x = position_x + a * 0.05;
+			float y = position_y + a * tan(abs(yaw)) * 0.05;
+			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
+				float x_1 = x + b * 0.05;
+				//printf("a=%d b=%d c=%d\n", a, b, c);
+				/*over map scope*/
+				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05) )){
+					//printf("x_1=%f ,y=%f\n",x_1,y);
+					//printf("over scope\n");
+					//return 0;
+				}else{
+					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100){
+						//printf("x_1=%f ,y=%f\n",x_1,y);
+						//printf("exist wall\n");
+						c++;//add one grid wall
+						if (c >= (search_width / 0.05)){
+							return 0;
+						}
+					}else{
+						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
+							//printf("x_1=%f ,y=%f\n",x_1,y);
+							//printf("exist unkown\n");
+							return 1;
+						}
+					}
+				}
+
+			}
+			
+		}
+
+	}
+	else{
+		plus_sign = -1;
+		//printf("-yaw=%lf\n",yaw);
+		for (int a = 0; a >= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
+			//printf("a_max=%d\n",(plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))));
+			int c = 0;
+			float x = position_x + a * 0.05;
+			float y = position_y + a * tan(abs(yaw)) * 0.05;
+			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
+				float x_1 = x + b * 0.05;
+				//printf("a=%d b=%d c=%d\n", a, b, c);
+				/*over map scope*/
+				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05) )){
+					//printf("x_1=%f ,y=%f\n",x_1,y);
+					//printf("over scope\n");
+					//return 0;
+				}else{
+					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100){
+						//printf("x_1=%f ,y=%f\n",x_1,y);
+						//printf("exist wall\n");
+						c++;
+					}else{
+						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
+							//printf("x_1=%f ,y=%f\n",x_1,y);
+							//printf("exist unkown\n");
+							return 1;
+						}
+					}
+				}
+
+			}
+			
+		}
+
+	}
+
+	//printf("known\n");
+	return 0;
+}
+
+int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y )
+{
+	/*
+	uint32_t width,  height;
+	float resolution, position_x, position_y;
+	double origin_x, origin_y;
+	int index,grid_x,grid_y;
+	width = robot::instance()->robot_get_width();
+	height = robot::instance()->robot_get_height();
+	resolution = robot::instance()->robot_get_resolution();
+	origin_x = robot::instance()->robot_get_origin_x();
+	origin_y = robot::instance()->robot_get_origin_y();
+	position_x = x;
+	position_y = y;
+	*/
+	
+	int index,grid_x,grid_y;
+
+	/*get index*/
+	grid_x = int(round((position_x - origin_x) / resolution));
+	grid_y = int(round((position_y - origin_y) / resolution));
+	index = grid_x + grid_y * width;
+	//printf("width=%d height=%d resolution=%f origin_x%lf =origin_y%lf =position_x=%f position_=%f yaw=%lf\n", width, height, resolution, origin_x,origin_y, position_x, position_y, yaw);
+	//printf("grid_x=%d grid_y=%d index=%d origin_x=%lf origin_y=%lf \n", grid_x, grid_y, index, origin_x, origin_y);
+	
+	return index;
+	
 }
 
 int32_t CM_ABS(int32_t A, int32_t B)
@@ -784,7 +918,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 // Target:	robot coordinate
 MapTouringType CM_MoveToPoint(Point32_t Target)
 {
-	int32_t Target_Course, Rotate_Angle, Integrated, Left_Speed, Right_Speed, Base_Speed, distance;
+	int32_t Target_Course, Rotate_Angle, Integrated, Left_Speed, Right_Speed, Base_Speed, distance, Dis_From_Init;
 	uint8_t Adjust_Left, Adjust_Right, Integration_Cycle, boundary_reach;
 	uint32_t Tick = 0;
 	ActionType action = ACTION_NONE;
@@ -800,6 +934,10 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	int16_t	i;
 	//int8_t c;
 	int32_t x, y;
+
+        int32_t Init_Pose_X, Init_Pose_Y;
+        int16_t Limited_Distance = 2107;//21476 = 4M 16107 = 3M
+        bool Limited_Flag = 0;
 
 
 	MapTouringType	retval = MT_None;
@@ -856,7 +994,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	else {
 		Set_Vac_Speed();
 	}
-
+	
+	Init_Pose_X = Map_GetXCount();
+	Init_Pose_Y = Map_GetYCount();
 	while (1) {
 		
 #ifdef OBS_DYNAMIC_MOVETOTARGET
@@ -1215,6 +1355,33 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			retval = MT_None;
 			break;
 		}
+#if LIMIT_DISTANCE_ENABLE
+		/*Check limited distance in one straight movement*/
+		if ((Dis_From_Init = TwoPointsDistance(Map_GetXCount(), Map_GetYCount(), Init_Pose_X, Init_Pose_Y)) > Limited_Distance) {
+			Stop_Brifly();
+			printf("reach the limited distance\n");
+			printf("Map_XCount=%d,Map_YCount=%d,Init_Pose_X=%d,Init_Pose_Y=%d,Dis_From_Init=%d,Limited_Distance=%d\n",Map_GetXCount(),Map_GetYCount(),Init_Pose_X, Init_Pose_Y, Dis_From_Init, Limited_Distance);
+			Limited_Flag = 1;
+			sleep(1);
+			printf("after sleep");
+			//std::vector<int8_t> *p1;
+			//p1 = robot::instance()->robot_get_map_data();
+			//printf("map_data_coremove=%d\n", (*p1)[0]);
+			Init_Pose_X = Map_GetXCount();
+			Init_Pose_Y = Map_GetYCount();
+		}
+#endif
+
+#if EXPLORE_SCOPE_ENABLE 
+		/*Check if in exploring status*/
+		if (bool Explore_Flag = CM_Check_is_exploring() == 1){
+			Limited_Flag = 1;
+		}
+		//else if(Explore_Flag == 0){
+		//	Limited_Flag = 0;
+		//}
+#endif
+
 		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 #if 1
@@ -1328,7 +1495,12 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			Right_Speed = RUN_TOP_SPEED;
 		}
 		//printf("%s %d: left: %d\tright: %d\tbumper left: %d\tright: %d\n", __FUNCTION__, __LINE__, (int16_t)(Left_Speed * 7.23), (int16_t) (Right_Speed * 7.23), robot::instance()->robot_get_bumper_left(), robot::instance()->robot_get_bumper_right());
-		Move_Forward(Left_Speed, Right_Speed);
+		if (Limited_Flag == 0){
+			Move_Forward(Left_Speed, Right_Speed);
+		} else{
+			Move_Forward(Left_Speed / 2, Right_Speed / 2);
+		}
+		
 		Base_Speed = (Left_Speed + Right_Speed) / 2;
 
 		if (Rotate_Angle > 0) {

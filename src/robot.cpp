@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
-
+#include <string.h>
 #include "gyro.h"
 #include "robot.hpp"
+#include <nav_msgs/OccupancyGrid.h>
+#include <vector>
 #include "robotbase.h"
 static	robot *robot_obj = NULL;
 
@@ -18,12 +20,15 @@ robot::robot()
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
+	/*map subscriber for exploration*/
+	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
 	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	this->is_moving = false;
 	this->is_sensor_ready = false;
 	this->is_scan_ready = false;
-	this->is_map_ready = false;
+	//this->is_map_ready = false;
+	this->is_map_ready = true;
 
 	this->bumper_left = 0;
 	this->bumper_right = 0;
@@ -212,6 +217,72 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	if (this->is_scan_ready == false) {
 		this->is_scan_ready = true;
 	}
+}
+void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
+{	
+	int map_size, vector_size;
+	//uint32_t seq;
+	//uint32_t width;
+	//uint32_t height;
+	//float resolution;
+	//std::vector<int8_t> *ptr;
+	this->width = map->info.width;
+	this->height = map->info.height;
+	this->resolution = map->info.resolution;
+	this->seq = map->header.seq;
+	this->origin_x = map->info.origin.position.x;
+	this->origin_y = map->info.origin.position.y;
+	//map_size = (width * height);
+	//int8_t map_data[n];
+	//std::vector<int8_t> map_data(map->data);
+	this->map_data = map->data;
+	//this->map_data(map->data);
+	this->ptr = &(map_data);
+	//vector_size = v1.size();
+	
+	//v1.swap(map->data);
+	//memcpy(map_data, &map->data, sizeof(map->data));
+	//printf("width=%dheight=%dresolution=%fseq=%d\n",width,height,resolution,seq);
+	//printf("map_size=%d\nvector_size=%d", map_size, vector_size);
+	//printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",map_data[0],map_data[1],map_data[2],map_data[3],map_data[4],map_data[5],map_data[6],map_data[7],map_data[8],map_data[9],map_data[10],map_data[11]);
+	//printf("map->data=%d,%d,%d,%d,%d,%d\n",(map->data)[0],(map->data)[1],(map->data)[2],(map->data)[3],(map->data)[4],(map->data)[5]);
+	printf("vector=%d,%d,%d\n",map_data[0],map_data[1],map_data[2]);
+	printf("vector_pointer=%d\n",(*(this->ptr))[0]);
+	printf("finished map callback\n");
+
+}
+
+uint32_t robot::robot_get_width()
+{
+	return this->width;
+}
+
+uint32_t robot::robot_get_height()
+{
+	return this->height;
+}
+
+float robot::robot_get_resolution()
+{
+	return this->resolution;
+}
+
+
+double robot::robot_get_origin_x()
+{
+	return this->origin_x;
+}
+
+double robot::robot_get_origin_y()
+{
+	return this->origin_y;
+}
+std::vector<int8_t> *robot::robot_get_map_data()
+{
+	//printf("return the ptr address\n");
+	//printf("vector_pointer_address=%d\n",(*(this->ptr))[0]);
+	//printf("seq=%d\n",this->seq);
+	return this->ptr;
 }
 
 float robot::robot_get_angle()
@@ -443,6 +514,10 @@ void robot::visualize_marker_init(){
 	this->bumper_markers.header.stamp = ros::Time::now();
 }
 
+double robot::robot_get_map_yaw()
+{
+	return this->yaw;
+}
 void robot::pub_clean_markers(){
 	this->m_points.x = this->position_x;
 	this->m_points.y = this->position_y;

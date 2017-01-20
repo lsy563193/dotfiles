@@ -304,8 +304,8 @@ void *robotbase_runtime(void*)
 
 		odom_quat = tf::createQuaternionMsgFromYaw(th);
 		odom.header.stamp = cur_time;
-		odom.header.frame_id = "/odom";
-		odom.child_frame_id = "/base_link";
+		odom.header.frame_id = "odom";
+		odom.child_frame_id = "base_link";
 		odom.pose.pose.position.x = pose_x;
 		odom.pose.pose.position.y = pose_y;
 		odom.pose.pose.position.z = 0.0;
@@ -314,8 +314,8 @@ void *robotbase_runtime(void*)
 		odom.twist.twist.linear.y = 0.0;
 		odom.twist.twist.angular.z = vth;
 		odom_trans.header.stamp = cur_time;
-		odom_trans.header.frame_id = "/odom";
-		odom_trans.child_frame_id = "/base_link";
+		odom_trans.header.frame_id = "odom";
+		odom_trans.child_frame_id = "base_link";
 		odom_trans.transform.translation.x = pose_x;
 		odom_trans.transform.translation.y = pose_y;
 		odom_trans.transform.translation.z = 0.0;

@@ -357,3 +357,6 @@
  */
 //#define OFFSET_ANGLE_GYRO_DATA			(1)
 #endif
+
+#define LIMIT_DISTANCE_ENABLE				(1)
+#define EXPLORE_SCOPE_ENABLE				(0)
