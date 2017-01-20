@@ -5,7 +5,13 @@ FILE(GLOB PP_SRC
 	"./src/*.c"
 	"./src/*.cpp"
 )
-
+add_message_files(
+	DIRECTORY msg
+	FILES
+	x900sensor.msg
+	slam_angle_offset.msg
+	robotmode.msg
+)
 find_package(catkin REQUIRED COMPONENTS
 	message_generation
 	rosconsole
@@ -17,22 +23,16 @@ find_package(catkin REQUIRED COMPONENTS
 	visualization_msgs
 	tf
 )
-
-add_message_files(
-	FILES
-	peripheral.msg
-	x900sensor.msg
-	slam_angle_offset.msg
-	robotmode.msg
-)
-
 generate_messages(
 	DEPENDENCIES
 	std_msgs
-	sensor_msgs
 	visualization_msgs
 	geometry_msgs
+	sensor_msgs
 )
+
+
+
 
 include_directories(
   ./include
@@ -60,7 +60,7 @@ install(TARGETS pp
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-#install(DIRECTORY launch rviz
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#  USE_SOURCE_PERMISSIONS
-#)
+install(DIRECTORY launch urdf
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  USE_SOURCE_PERMISSIONS
+)
