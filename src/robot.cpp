@@ -13,7 +13,7 @@ time_t	start_time;
 robot::robot()
 {
 	this->init();
-	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 1, &robot::robot_robot_sensor_cb, this);
+	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
@@ -288,6 +288,12 @@ float robot::robot_get_rwheel_current()
 {
 	return this->rw_crt;
 }
+
+uint32_t robot::robot_get_rcon()
+{
+	return this->charge_stub;
+}
+
 uint32_t robot::robot_get_rcon_front_left()
 {
 	// Move the 4 bits info to lowest bits

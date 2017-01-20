@@ -17,10 +17,10 @@ extern bool key_or_clean_button_detected;
 int robotbase_init();
 void robotbase_deinit(void);
 bool is_robotbase_stop(void);
-void *serial_receive_runtime(void*);
-void *robotbase_runtime(void*);
-void *serial_send_runtime(void*);
+void *serial_receive_routine(void*);
+void *robotbase_routine(void*);
+void *serial_send_routine(void*);
 void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg);
-void process_beep_routine();
+void process_beep();
 
 #endif

@@ -349,9 +349,21 @@ void set_gyro(uint8_t state, uint8_t calibration);
 
 void set_main_pwr(uint8_t val);
 
+void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val);
+
 void control_set(uint8_t type, uint8_t val);
 
 void control_append_crc(void);
 
 void control_stop_all(void);
+
+void movement_go(int16_t speed);
+
+void movement_stop();
+
+void movement_turn(int16_t left_speed,int16_t right_speed);
+
+void movement_rot_left(int16_t speed);
+
+void movement_rot_right(int16_t speed);
 #endif

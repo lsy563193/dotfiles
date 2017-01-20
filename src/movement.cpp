@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+#include <math.h>
 #include "robot.hpp"
 
 #include "gyro.h"
@@ -20,6 +20,8 @@ static uint8_t ir_cmd;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 static uint32_t Rcon_Status;
+static uint8_t Cleaning_mode = 0;
+
 void Set_Error_Code(uint8_t code)
 {
 	code = code;
@@ -327,7 +329,7 @@ uint8_t Check_Bat_Home(void)
 
 uint8_t Get_Clean_Mode(void)
 {
-	return 0;
+	return Cleaning_mode;
 }
 
 void Set_VacMode(uint8_t data)
@@ -588,7 +590,7 @@ uint8_t Is_Water_Tank(void)
 
 void Set_Clean_Mode(uint8_t mode)
 {
-	mode = mode;
+	Cleaning_mode = mode;
 }
 
 void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count)
@@ -629,6 +631,24 @@ void set_main_pwr(uint8_t val)
 	control_set(CTL_MAIN_PWR, val & 0xff);
 }
 
+
+void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val)
+{
+	int vaccum_pwr = vaccum_val;
+	vaccum_pwr = vaccum_pwr > 0 ? vaccum_pwr : 0;
+	vaccum_pwr = vaccum_pwr < 100 ? vaccum_pwr : 100;
+	control_set(CTL_VACCUM_PWR, ((int)(((float)vaccum_pwr) * 2.55)) & 0xff);
+
+	int brush_left = left_brush_val;
+	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
+
+	int brush_right = right_brush_val;
+	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
+
+	int brush_main = main_brush_val;
+	control_set(CTL_BRUSH_MAIN, brush_main & 0xff);
+}
+
 void control_set(uint8_t type, uint8_t val)
 {
 	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
@@ -647,11 +667,103 @@ void control_stop_all(void)
 	uint8_t i;
 
 	for(i = 2; i < (SEND_LEN)-2; i++) {
-		if (i == 11)
+		if (i == CTL_MAIN_PWR)
 			sendStream[i] = 0x01;
 		else
 			sendStream[i] = 0x00;
 	}
 	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	//serial_write(SEND_LEN, sendStream);
+}
+
+/*
+*	@brief
+*		go straight forward or backward 
+*	@input
+*		speed - wheel speed in mm/s
+*	@output
+*	@retval
+*
+*/
+void movement_go(int16_t speed)
+{
+	uint8_t high_byte = speed >> 8&0xff;
+	uint8_t low_byte  = speed & 0xff;
+
+	control_set(CTL_WHEEL_LEFT_HIGH, high_byte);
+	control_set(CTL_WHEEL_LEFT_LOW, low_byte);
+	control_set(CTL_WHEEL_RIGHT_HIGH, high_byte);
+	control_set(CTL_WHEEL_RIGHT_LOW, low_byte);
+}
+
+/*
+*	@brief
+*		turn left or right
+*	@input
+*		left_speed - left wheel speed in mm/s
+*		right_speed - right wheel speed in mm/s
+*	@output
+*	@retval
+*		int8_t - -1 error,0 normal
+*
+*/
+void movement_turn(int16_t left,int16_t right)
+{
+	int16_t left_speed,right_speed;
+	left_speed = (left>=0)?left:((~left)|0x8000+1);
+	right_speed = (right>=0)?right:((~right)|0x8000+1);
+	control_set(CTL_WHEEL_LEFT_HIGH, (left_speed>>8 & 0xff));
+	control_set(CTL_WHEEL_LEFT_LOW, (left_speed & 0xff));
+	control_set(CTL_WHEEL_RIGHT_HIGH, (right_speed >>8 & 0xff));
+	control_set(CTL_WHEEL_RIGHT_LOW, (right_speed & 0xff));
+
+}
+
+/*
+*	@brief
+*		rotation left,around robot center
+*	@input
+*		speed - wheel speed in mm/s
+*		right_speed - right wheel speed in mm/s
+*		angle - rotating angle in 0.1 degrees
+*	@output
+*	@retval
+*
+*/
+void movement_rot_left(int16_t speed)
+{
+	if(speed<0)
+		speed = abs(speed);
+	movement_turn(-speed,speed);
+
+}
+
+/*
+*	@brief
+*		rotation right,around robot center
+*	@input
+*		speed - wheel speed in mm/s
+*	@output
+*	@retval
+*
+*/
+void movement_rot_right(int16_t speed)
+{
+	if(speed<0)
+		speed = abs(speed);
+	movement_turn(speed,-speed);
+
+}
+
+/*
+*	@brief
+*		stop move
+*	@input
+*	@output
+*	@retval
+*
+*/
+void movement_stop()
+{
+	movement_turn(0,0);
 }

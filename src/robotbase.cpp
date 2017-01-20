@@ -83,9 +83,9 @@ int robotbase_init(void)
 		usleep(20000);
 	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
 	printf("ok\n");
-	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_runtime, NULL);
-	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_runtime, NULL);
-	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_runtime,NULL);
+	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
+	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
+	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);
 	if (base_ret != 0 || ser_ret != 0 || sers_ret !=0) {
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
@@ -112,14 +112,14 @@ void robotbase_deinit(void)
 	uint8_t buf[2];
 
 	if (is_robotbase_init) {
-		ROS_INFO("[robotbase] deinit...\n");
+		ROS_INFO_NAMED("robotbase","deinit...\n");
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		printf("\tshutdown robotbase power ");
 		do {
 			control_stop_all();
-			usleep(300000);
 			printf(".");
+			usleep(400000);
 		} while (serial_read(2, buf) > 0);
 		send_stream_thread = false;
 		serial_flush();
@@ -131,10 +131,9 @@ void robotbase_deinit(void)
 	}
 }
 
-void *serial_receive_runtime(void *)
+void *serial_receive_routine(void *)
 {
-	//pthread_detach(pthread_self());
-
+	pthread_detach(pthread_self());
 	int		i, j, ret, wh_len, wht_len, whtc_len;
 
 	uint8_t	r_crc, c_crc;
@@ -178,13 +177,12 @@ void *serial_receive_runtime(void *)
 			}
 		}
 	}
-	pthread_exit(NULL);
+	//pthread_exit(NULL);
 }
 
-void *robotbase_runtime(void*)
+void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("[robotbase] robotbase thread running!!!\n");
 	float	th_last, vth, pose_x, pose_y;
 	float	previous_angle = 999;
 	float	delta_angle = 0;
@@ -324,11 +322,11 @@ void *robotbase_runtime(void*)
 		odom_pub.publish(odom);
 		sensor_pub.publish(sensor);
 	}
-	pthread_exit(NULL);
+	//pthread_exit(NULL);
 }
 
-void *serial_send_runtime(void*){
-	//pthread_detach(pthread_self());
+void *serial_send_routine(void*){
+	pthread_detach(pthread_self());
 	ros::Rate r(50);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
@@ -344,7 +342,7 @@ void *serial_send_runtime(void*){
 		// If beep_time_count has ran out, it will not sound anymore and check the battary status. If low battary, it will constantly beep to alarm.
 		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
-			process_beep_routine();
+			process_beep();
 		}else{
 			// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
 			if (low_battary){
@@ -355,9 +353,11 @@ void *serial_send_runtime(void*){
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
 		pthread_mutex_unlock(&send_lock);	
 		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
+		if(buf[CTL_CRC] != calcBufCrc8((char*)sendStream,sl))
+			ROS_DEBUG_NAMED("robotbase","crc not same");
 		serial_write(SEND_LEN, buf);
 	}
-	pthread_exit(NULL);
+	//pthread_exit(NULL);
 }
 
 void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
@@ -369,7 +369,7 @@ void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
 	ROS_INFO("[robotbase] Get slam_angle_offset as: %f.\n", slam_angle_offset);
 }
 
-void process_beep_routine(){
+void process_beep(){
 	// This routine handles the speaker sounding logic
 	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in sendStream.
 	if (temp_speaker_silence_time_count == 0){

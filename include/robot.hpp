@@ -36,6 +36,7 @@ public:
 	uint8_t robot_get_ir_ctrl();
 	float robot_get_lwheel_current();
 	float robot_get_rwheel_current();
+	uint32_t robot_get_rcon();
 	uint32_t robot_get_rcon_front_left();
 	uint32_t robot_get_rcon_front_right();
 	uint32_t robot_get_rcon_back_left();
