@@ -57,7 +57,7 @@
 #define WET_CLEANNING_TIME		(10800)
 
 /* Low battery go home voltage value */
-#define LOW_BATTERY_GO_HOME_VOLTAGE		(1300)
+#define LOW_BATTERY_GO_HOME_VOLTAGE		(132)
 
 /* OBS setting */
 #define OBS_DYNAMIC			(1)
@@ -357,3 +357,6 @@
  */
 //#define OFFSET_ANGLE_GYRO_DATA			(1)
 #endif
+
+#define LIMIT_DISTANCE_ENABLE				(1)
+#define EXPLORE_SCOPE_ENABLE				(0)

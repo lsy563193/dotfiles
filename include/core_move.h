@@ -3,7 +3,7 @@
 
 #include "mathematics.h"
 #include "debug.h"
-
+#include <vector>
 #define MS_Clear 		0x00
 #define MS_OBS   		0x01
 #define MS_Bumper		0x02
@@ -39,7 +39,8 @@ typedef struct {
 void CM_HeadToCourse(uint8_t Speed,int16_t Angle);
 
 MapTouringType CM_MoveToPoint(Point32_t Target);
-
+bool CM_Check_is_exploring();
+int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y);
 uint8_t CM_MoveForward(void);
 
 uint8_t CM_Touring(void);

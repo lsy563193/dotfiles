@@ -4,12 +4,13 @@
 #include <ros/ros.h>
 #include <nav_msgs/MapMetaData.h>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Point.h>
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
-
+#include <vector>
 class robot
 {
 public:
@@ -51,6 +52,13 @@ public:
 	bool robot_get_water_tank();
 	uint16_t robot_get_battery_voltage();
 
+        std::vector<int8_t> *robot_get_map_data();
+        uint32_t robot_get_width();
+        uint32_t robot_get_height();
+        float robot_get_resolution();
+        double robot_get_origin_x();
+        double robot_get_origin_y();
+
 	bool robot_is_moving();
 	float robot_get_linear_x();
 	float robot_get_linear_y();
@@ -62,6 +70,10 @@ public:
 	float robot_get_position_y();
 	float robot_get_position_z();
 
+	float robot_get_map_position_x();
+	float robot_get_map_position_y();
+	double robot_get_map_yaw();
+
 	void robot_display_positions();
 	void pub_ctrl_command(void);
 	void pub_clean_markers(void);
@@ -71,6 +83,14 @@ public:
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
+	std::vector<int8_t> map_data;
+	std::vector<int8_t> *ptr;	
+	uint32_t seq;
+        uint32_t width;
+        uint32_t height;
+	float resolution;
+	double origin_x;
+	double origin_y;
 	bool	is_map_ready;
 
 	/* 1 byte */
@@ -189,6 +209,8 @@ private:
 	float	position_z;
 	float 	odom_pose_x;
 	float   odom_pose_y;
+	float	position_map_x;
+	float	position_map_y;
 	float	position_x_off;
 	float	position_y_off;
 	float	position_z_off;
@@ -197,13 +219,13 @@ private:
 	float	base_link_yaw;
 	float	map_yaw;
 
-	float	yaw;
+	double	yaw;
 
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
 	ros::Subscriber map_metadata_sub;
-
+	ros::Subscriber map_sub;
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
 	ros::Publisher send_bumper_marker_pub;
@@ -217,7 +239,7 @@ private:
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
 	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
-
+	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& msg);
 };
 
 #endif

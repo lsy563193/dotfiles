@@ -31,8 +31,8 @@ uint32 c_stub
 # on board key ,value:0 no press, 1 press
 uint8 key
 
-#c_s: charge status,true:charge ,false:no charge
-bool c_s
+#c_s: charge status, 0: Not on charger stub, 1: On charger stub and charging, 2: On charger stub but not charging.
+uint8 c_s
 
 #w_tank: water tank status,1:set,0:not set
 bool w_tank

@@ -1091,6 +1091,7 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
+ * 		totalCost: Total cost
  *
  */
 int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max, uint16_t last_dir) {
@@ -1431,6 +1432,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
+ * 		(totalCost: from function path_find_shortest_path_ranged)
  *
  */
 int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir) {
@@ -1475,6 +1477,7 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
+ * 		(totalCost: from function path_find_shortest_path)
  */
 int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir) {
 	int16_t	retval;
@@ -1483,7 +1486,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 
 	/* Find the shortest path to the target by using shorest path grid map. */
 	retval = path_find_shortest_path(pos.X, pos.Y, x, y, 0, last_dir);
-	if (retval <= 0)
+	if (retval < 0)
 		return retval;
 
 	/* direct_go flag is enabled. */
