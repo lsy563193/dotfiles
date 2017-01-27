@@ -6,13 +6,13 @@
 #include <time.h>
 #include <unistd.h>
 #include <ros/ros.h>
+#include "gotocharger.hpp"
 #include "core_move.h"
 #include "gyro.h"
 #include "movement.h"
 #include "laser.hpp"
 #include "robot.hpp"
 #include "main.h"
-
 #include "serial.h"
 #include "crc8.h"
 #include "robotbase.h"
@@ -23,15 +23,65 @@ void *core_move_thread(void *)
 	while (!robot::instance()->robot_is_all_ready()) {
 		usleep(1000);
 	}
-	/*
-	Turn_Right(10, 850);
-	Turn_Right(10, 1750);
-	Turn_Right(10, 1000);
-	Turn_Left(10, 850);
-	Turn_Left(10, 1750);
-	Turn_Left(10, 1000);
-	*/
-	CM_Touring();
+	Set_Clean_Mode(Clean_Mode_Navigation);
+
+	while(ros::ok()){
+		usleep(20000);
+		switch(Get_Clean_Mode()){
+			case Clean_Mode_Userinterface:
+			//	ROS_INFO("\n-------user interface  mode------\n");
+				break;
+			case Clean_Mode_WallFollow:
+				ROS_INFO("\n-------wall follow mode------\n");
+
+				break;
+			case Clean_Mode_RandomMode:
+				ROS_INFO("\n-------random mode------\n");
+
+				break;
+			case Clean_Mode_Navigation:
+				ROS_INFO("\n---------navigation mode-----------\n");
+
+				/*
+					Turn_Right(10, 850);
+					Turn_Right(10, 1750);
+					Turn_Right(10, 1000);
+					Turn_Left(10, 850);
+					Turn_Left(10, 1750);
+					Turn_Left(10, 1000);
+				*/
+				CM_Touring();
+				Set_Clean_Mode(Clean_Mode_Charging);
+				break;
+			case Clean_Mode_Charging:
+				ROS_INFO("\n-------charging mode------\n");
+				goto_charger();
+				break;
+			case Clean_Mode_GoHome:
+				ROS_INFO("\n-----------go home mode--------\n");
+				break;
+			case Clean_Mode_Test:
+				ROS_INFO("\n-----------test mode--------\n");
+
+				break;
+			case Clean_Mode_Remote:
+				ROS_INFO("\n-----------remote mode--------\n");
+
+				break;
+			case Clean_Mode_Spot:
+				ROS_INFO("\n-----------spot mode--------\n");
+
+				break;
+			case Clean_Mode_Mobility:
+				ROS_INFO("\n-----------mobility mode--------\n");
+
+				break;
+			default:
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				break;
+			
+		}
+	}
 	
 	return NULL;
 	//pthread_exit(NULL);	
@@ -74,8 +124,8 @@ int main(int argc, char **argv)
 	}
 
 	robotbase_deinit();
-	serial_close();
+//	serial_close();
 
-	pthread_exit(NULL);
+	//pthread_exit(NULL);
 	return 0;
 }

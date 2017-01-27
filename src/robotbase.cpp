@@ -116,18 +116,22 @@ void robotbase_deinit(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		printf("\tshutdown robotbase power ");
-		do {
+	/*	do {
 			control_stop_all();
 			printf(".");
 			usleep(400000);
 		} while (serial_read(2, buf) > 0);
-		send_stream_thread = false;
+	*/
+		control_stop_all();
+		usleep(10000);
 		serial_flush();
+		send_stream_thread = false;
+		serial_close();
 		printf("ok\n");
 		int mutex_ret = pthread_mutex_destroy(&send_lock);
 		if(mutex_ret<0)
 			ROS_INFO("[robotbase] mutex destroy fail\n");
-		usleep(20000);
+		//usleep(20000);
 	}
 }
 
