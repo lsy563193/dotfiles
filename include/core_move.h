@@ -36,6 +36,8 @@ typedef struct {
 	Point16_t	pos;
 } VWType;
 
+extern uint8_t lowBattery;
+
 void CM_HeadToCourse(uint8_t Speed,int16_t Angle);
 
 MapTouringType CM_MoveToPoint(Point32_t Target);

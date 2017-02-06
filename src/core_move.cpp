@@ -1737,6 +1737,8 @@ uint8_t CM_Touring(void)
 
 	MapTouringType	mt_state = MT_None;
 
+	// Reset battery status
+	lowBattery = 0;
 	Reset_WorkTimer();
 	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
@@ -1838,9 +1840,9 @@ uint8_t CM_Touring(void)
 
 		/*************************************2 Cleaning Main Loop*************************************/
 		state = -1;
-		// Debug
-		printf("[core_move.cpp] %s %d: Current Battery level: %d.\n", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
 		while (ros::ok()) {
+			// Debug
+			printf("[core_move.cpp] %s %d: Current Battery level: %d.\n", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
 
 			/***************************2.1 Common Process***************************/
 			if (map_touring_cancel == 1) {

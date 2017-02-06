@@ -110,9 +110,9 @@
 #define Clean_Vac_Power				120000
 #define Home_Vac_Power				40000
 
-#define Vac_Speed_Max				255 //15500rpm
-#define Vac_Speed_Normal			150 //9000rpm
-#define Vac_Speed_NormalL			133 //8000rpm
+#define Vac_Speed_Max				100 //15500rpm
+#define Vac_Speed_Normal			60 //9000rpm
+#define Vac_Speed_NormalL			50 //8000rpm
 
 #define Vac_Normal					0
 #define Vac_Max						1
