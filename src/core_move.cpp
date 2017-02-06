@@ -99,7 +99,7 @@ static inline void CM_count_normalize(uint16_t heading, int16_t offset_lat, int1
 
 bool CM_Check_is_exploring()//not yet minus the x_off
 {
-	float search_length = 1.00, search_width = 0.303;//unit for meter
+	float search_length = 0.50, search_width = 0.303;//unit for meter
 	std::vector<int8_t> *p_map_data;
 	int index;
 	double yaw;
@@ -142,15 +142,15 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 				}else{
 					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100){
 						//printf("x_1=%f ,y=%f\n",x_1,y);
-						//printf("exist wall\n");
 						c++;//add one grid wall
 						if (c >= (search_width / 0.05)){
+						printf("exist wall\n");
 							return 2;
 						}
 					}else{
 						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
 							//printf("x_1=%f ,y=%f\n",x_1,y);
-							//printf("exist unkown\n");
+							printf("exist unkown\n");
 							return 1;
 						}
 					}
@@ -182,11 +182,14 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 						//printf("x_1=%f ,y=%f\n",x_1,y);
 						//printf("exist wall\n");
 						c++;
-						return 2;
+						if (c >= (search_width / 0.05)){
+						printf("exist wall\n");
+							return 2;
+						}
 					}else{
 						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
 							//printf("x_1=%f ,y=%f\n",x_1,y);
-							//printf("exist unkown\n");
+							printf("exist unkown\n");
 							return 1;
 						}
 					}
@@ -1375,11 +1378,13 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 #if EXPLORE_SCOPE_ENABLE 
 		/*Check if in exploring status*/
-		if (bool Explore_Flag = CM_Check_is_exploring() == 1){
-			Limited_Flag = 1;
-		}
-		else if(Explore_Flag == 2){
-			Limited_Flag = 2;
+		if (Limited_Flag != 1){
+			if (bool Explore_Flag = CM_Check_is_exploring() == 1){
+				Limited_Flag = 1;
+			}
+			else if(Explore_Flag == 2){
+				Limited_Flag = 2;
+			}
 		}
 #endif
 
