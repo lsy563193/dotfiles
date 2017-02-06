@@ -30,6 +30,7 @@ void Set_Error_Code(uint8_t code)
 
 void Set_LeftBrush_Stall(uint8_t L)
 {
+	// Actually not used in old code
 	L = L;
 }
 
@@ -274,6 +275,9 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 {
 	int16_t left_speed, right_speed;
 
+	// Check for the speed limit
+	Left = Left < RUN_TOP_SPEED ? Left : RUN_TOP_SPEED;
+	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
 	left_speed = (int16_t)(Left * 7.23);
 	right_speed = (int16_t)(Right * 7.23);
 	if (wheel_left_direction == 1) {
@@ -296,20 +300,13 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 
 void Work_Motor_Configure(void)
 {
-	int vaccum_pwr = 60;
-	vaccum_pwr = vaccum_pwr > 0 ? vaccum_pwr : 0;
-	vaccum_pwr = vaccum_pwr < 100 ? vaccum_pwr : 100;
-	control_set(CTL_VACCUM_PWR, ((int)(((float)vaccum_pwr) * 2.55)) & 0xff);
+	// Set the vaccum to a normal mode
+	Set_VacMode(Vac_Normal);
+	Set_Vac_Speed();
 
-	int brush_left = 30;
-	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
-
-	int brush_right = 30;
-	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
-
-	int brush_main = 30;
-	control_set(CTL_BRUSH_MAIN, brush_main & 0xff);
-
+	// Trun on the main brush and side brush
+	Set_SideBrush_PWM(30, 30);
+	Set_MainBrush_PWM(30);
 }
 
 uint8_t Check_Motor_Current(void)
@@ -326,7 +323,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 uint8_t Check_Bat_Home(void)
 {
 	// Check if battary is lower than the low battery go home voltage value.
-	if (robot::instance()->robot_get_battery_voltage() < LOW_BATTERY_GO_HOME_VOLTAGE){
+	if (robot::instance()->robot_get_battery_voltage() > 0 && robot::instance()->robot_get_battery_voltage() < LOW_BATTERY_GO_HOME_VOLTAGE){
 		return 1;
 	}
 	return 0;
@@ -340,13 +337,14 @@ uint8_t Get_Clean_Mode(void)
 void Set_VacMode(uint8_t data)
 {
 	// Set the mode for vaccum.
-	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL
+	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
 	Vac_Mode = data;
 }
 
 void Set_BLDC_Speed(uint32_t S)
 {
-	// Set the power of BLDC
+	// Set the power of BLDC, S should be in range(0, 100).
+	S = S < 100 ? S : 100;
 	control_set(CTL_VACCUM_PWR, S & 0xff);
 }
 
@@ -522,6 +520,8 @@ void Set_Dir_Right(void)
 void Set_LED(uint16_t G, uint16_t R)
 {
 	// Set the brightnesss of the LED within range(0, 100).
+	G = G < 100 ? G : 100;
+	R = R < 100 ? R : 100;
 	control_set(CTL_LED_RED, R & 0xff);
 	control_set(CTL_LED_GREEN, G & 0xff);
 }
@@ -540,19 +540,18 @@ void Stop_Brifly(void)
 
 void Set_MainBrush_PWM(uint16_t PWM)
 {
-	// Set left and right brush PWM
-	int pwm = PWM;
-	control_set(CTL_BRUSH_MAIN, pwm & 0xff);
+	// Set main brush PWM, the value of PWM should be in range (0, 100).
+	PWM = PWM < 100 ? PWM : 100;
+	control_set(CTL_BRUSH_MAIN, PWM & 0xff);
 }
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 {
-	// Set left and right brush PWM
-	int brush_left = L;
-	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
-
-	int brush_right = R;
-	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
+	// Set left and right brush PWM, the value of L/R should be in range (0, 100).
+	L = L < 100 ? L : 100 ;
+	control_set(CTL_BRUSH_LEFT, L & 0xff);
+	R = R < 100 ? R : 100 ;
+	control_set(CTL_BRUSH_RIGHT, R & 0xff);
 }
 
 uint8_t Get_LeftBrush_Stall(void)
@@ -623,8 +622,7 @@ void Deceleration(void)
 uint8_t Touch_Detect(void)
 {
 	// Get the key value from robot sensor
-	if (key_or_clean_button_detected){
-		key_or_clean_button_detected = false;
+	if (robot::instance()->robot_get_key() == 1){
 		return 1;
 	}
 	if (Remote_Key(Remote_Clean)){
