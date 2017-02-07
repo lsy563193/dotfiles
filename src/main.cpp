@@ -20,6 +20,9 @@
 #include "user_interface.h"
 #include "remote_mode.h"
 
+// This is the start time of cleanning
+time_t Work_Timer_Start = 0;
+
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());

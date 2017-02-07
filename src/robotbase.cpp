@@ -53,11 +53,8 @@ int temp_speaker_sound_time_count = -1;
 int robotbase_speaker_silence_time_count = 0;
 int temp_speaker_silence_time_count = 0;
 
-// Flag for key touched or clean button pressed
-bool key_or_clean_button_detected = false;
-
 // Low battery flag
-bool low_battary = false;
+extern uint8_t lowBattery;
 
 int robotbase_init(void)
 {
@@ -169,10 +166,6 @@ void *serial_receive_routine(void *)
 					for (j = 0; j < wht_len; j++) {
 						receiStream[j + 2] = receiData[j];
 					}
-					// Check for key touched or clean button pressed.
-					if (receiStream[27] == 1){
-						key_or_clean_button_detected = true;
-					}
 				} else {
 					ROS_INFO("[robotbase] tail incorret\n");
 				}
@@ -268,13 +261,6 @@ void *robotbase_routine(void*)
 		sensor.c_s = receiStream[28];
 		sensor.w_tank = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
-		//printf("[robotbase.cpp] Battary:%d.\n", sensor.batv);
-		// Check if battary low, if low, it will trigger speaker alarm.
-		// Check 0 < sensor.batv is for skipping the first few frames of robot data that battary value is still 0.
-		if (0 < sensor.batv && sensor.batv < 132 && !low_battary){
-			printf("[robotbase.cpp] Battary < 13.2v.\n");
-			low_battary = true;
-		}
 
 		sensor.lcliff = ((receiStream[31] << 8) | receiStream[32]);
 		sensor.fcliff = ((receiStream[33] << 8) | receiStream[34]);
@@ -349,7 +335,7 @@ void *serial_send_routine(void*){
 			process_beep();
 		}else{
 			// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
-			if (low_battary){
+			if (lowBattery){
 				Beep(3, 25, 25, -1);
 			}
 		}
