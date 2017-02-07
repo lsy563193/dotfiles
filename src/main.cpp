@@ -16,6 +16,9 @@
 #include "serial.h"
 #include "crc8.h"
 #include "robotbase.h"
+#include "spot.h"
+#include "user_interface.h"
+#include "remote_mode.h"
 
 void *core_move_thread(void *)
 {
@@ -29,7 +32,8 @@ void *core_move_thread(void *)
 		usleep(20000);
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
-			//	ROS_INFO("\n-------user interface  mode------\n");
+				//ROS_INFO("\n-------user interface  mode------\n");
+				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
@@ -66,11 +70,15 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-----------remote mode--------\n");
-
+				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-----------spot mode--------\n");
-
+				Spot_Mode();
+				Disable_Motors();
+				usleep(200000);
+				Beep(1,25,25,2);
+				Beep(2,25,25,2);
 				break;
 			case Clean_Mode_Mobility:
 				ROS_INFO("\n-----------mobility mode--------\n");

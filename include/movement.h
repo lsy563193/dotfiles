@@ -173,6 +173,12 @@
 #define Display_Full				4
 #define Display_Low					5
 
+#define KEY_CLEAN 0x02
+#define KEY_CLOCK 0x01
+#define KEY_SPOT  0x04
+#define KEY_HOME  0x08
+#define KEY_PLAN  0x10
+
 #define	CTL_WHEEL_LEFT_HIGH 2
 #define	CTL_WHEEL_LEFT_LOW  3
 #define	CTL_WHEEL_RIGHT_HIGH  4
@@ -197,8 +203,12 @@ void Set_LeftBrush_Stall(uint8_t L);
 
 uint32_t Get_RightWheel_Step(void);
 uint32_t Get_LeftWheel_Step(void);
-
+void Reset_RightWheel_Step();
+void Reset_LeftWheel_Step();
 void Set_Wheel_Step(uint32_t Left,uint32_t Right);
+void Reset_Wheel_Step(void);
+void Reset_Wall_Step(void);
+uint32_t Get_LeftWall_Step(void);
 
 int32_t Get_Wall_ADC(void);
 
@@ -218,8 +228,6 @@ void Turn_Right(uint16_t speed,uint16_t angle);
 
 void Set_Error_Code(uint8_t code);
 void Set_LeftBrush_Stall(uint8_t L);
-uint32_t Get_RightWheel_Step(void);
-uint32_t Get_LeftWheel_Step(void);
 
 void Set_Wheel_Step(uint32_t Left,uint32_t Right);
 
@@ -298,6 +306,8 @@ void Reset_Rcon_Remote(void);
 
 void Reset_MoveWithRemote(void);
 
+void Set_MoveWithRemote(void);
+
 uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush);
 
 void Reset_WorkTimer(void);
@@ -317,6 +327,8 @@ void Stop_Brifly(void);
 void Set_MainBrush_PWM(uint16_t PWM);
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R);
+
+void Set_Vacuum_PWM(uint8_t vacuum_pwr);
 
 uint8_t Get_LeftBrush_Stall(void);
 
@@ -360,6 +372,12 @@ void control_append_crc(void);
 
 void control_stop_all(void);
 
+void Random_Back(void);
+
+void Move_Back(void);
+
+void Cliff_Move_Back(void);
+
 void movement_go(int16_t speed);
 
 void movement_stop();
@@ -369,4 +387,20 @@ void movement_turn(int16_t left_speed,int16_t right_speed);
 void movement_rot_left(int16_t speed);
 
 void movement_rot_right(int16_t speed);
+
+void Set_LeftWheel_Speed(uint8_t speed);
+
+void Set_RightWheel_Speed(uint8_t speed);
+
+int8_t Get_LeftWheel_Speed(void);
+
+int8_t Get_RightWheel_Speed(void);
+
+uint8_t  Check_Battery();
+
+uint8_t Get_Key_Press(void);
+
+uint16_t GetBatteryVoltage();
+
+uint8_t Get_Key_Time(uint16_t key);
 #endif

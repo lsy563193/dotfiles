@@ -20,6 +20,8 @@ static uint8_t ir_cmd;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 static uint32_t Rcon_Status;
+int8_t Left_Wheel_Speed = 0;
+int8_t Right_Wheel_Speed = 0;
 // Variable for vaccum mode
 volatile uint8_t Vac_Mode;
 static uint8_t Cleaning_mode = 0;
@@ -43,6 +45,16 @@ uint32_t Get_LeftWheel_Step(void)
 	return 0;
 }
 
+void Reset_Wheel_Step(void)
+{}
+
+void Reset_Wall_Step(void)
+{}
+
+uint32_t Get_LeftWall_Step(void)
+{
+	return 0;
+}
 void Set_Wheel_Step(uint32_t Left, uint32_t Right)
 {
 	Left = Left;
@@ -87,11 +99,11 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	wheel_left_direction = 1;
 	wheel_right_direction = 1;
 	Set_Wheel_Speed(Speed, Speed);
-	// This count is for how many miniseconds it should take. The Distance is in mm.
+	// This count is for how many milliseconds it should take. The Distance is in mm.
 	int back_count = int(1000 * Distance / (Speed * 7.23));
-	printf("[movement.cpp] Quick_back for %dms.\n", back_count);
+	//printf("[movement.cpp] Quick_back for %dms.\n", back_count);
 	for (int i = 0; i < back_count; i++){
-		// Sleep for 1 minisecond
+		// Sleep for 1 millisecond
 		usleep(1000);
 	}
 }
@@ -263,6 +275,9 @@ uint8_t  Is_MoveWithRemote(void){
 
 uint8_t Is_OBS_Near(void)
 {
+	if(robot::instance()->robot_get_obs_front() > (Front_OBSTrig_Value-200))return 1;
+	if(robot::instance()->robot_get_obs_right() > (Right_OBSTrig_Value-200))return 1;
+	if(robot::instance()->robot_get_obs_left() > (Left_OBSTrig_Value-200))return 1;
 	return 0;
 }
 
@@ -294,6 +309,28 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 	control_set(CTL_WHEEL_RIGHT_LOW, right_speed & 0xff);
 }
 
+void Set_LeftWheel_Speed(uint8_t speed)
+{
+	if(speed>100)speed=100;
+	Left_Wheel_Speed = speed;
+}
+
+void Set_RightWheel_Speed(uint8_t speed)
+{
+	if(speed>100)speed=100;
+	Right_Wheel_Speed = speed;
+}
+
+int8_t Get_LeftWheel_Speed(void)
+{
+	return Left_Wheel_Speed;
+}
+
+int8_t Get_RightWheel_Speed(void)
+{
+	return Right_Wheel_Speed;
+}
+
 void Work_Motor_Configure(void)
 {
 	int vaccum_pwr = 60;
@@ -314,6 +351,34 @@ void Work_Motor_Configure(void)
 
 uint8_t Check_Motor_Current(void)
 {
+	static uint8_t lwheel_oc_count = 0;
+	static uint8_t rwheel_oc_count = 0;
+	if((uint32_t)robot::instance()->robot_get_lwheel_current() > Wheel_Stall_Limit){
+		lwheel_oc_count++;
+		if(lwheel_oc_count >40){
+			lwheel_oc_count =0;
+			return Check_Left_Wheel;
+		}
+	}
+	else
+		lwheel_oc_count = 0;
+	if((uint32_t)robot::instance()->robot_get_rwheel_current() > Wheel_Stall_Limit){
+		rwheel_oc_count++;
+		if(rwheel_oc_count > 40){
+			rwheel_oc_count = 0;
+			return Check_Right_Wheel;
+		}
+	}
+	else
+		rwheel_oc_count = 0;
+	if(robot::instance()->robot_get_rbrush_oc())
+		return Check_Right_Brush;
+	if(robot::instance()->robot_get_lbrush_oc())
+		return Check_Left_Brush;
+	if(robot::instance()->robot_get_mbrush_oc())
+		return Check_Main_Brush;
+	if(robot::instance()->robot_get_vacuum_oc())
+		return Check_Vacuum;	
 	return 0;
 }
 
@@ -339,7 +404,7 @@ uint8_t Get_Clean_Mode(void)
 
 void Set_VacMode(uint8_t data)
 {
-	// Set the mode for vaccum.
+	// Set the mode of vaccum.
 	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL
 	Vac_Mode = data;
 }
@@ -353,7 +418,7 @@ void Set_BLDC_Speed(uint32_t S)
 void Set_Vac_Speed(void)
 {
 	// Set the power of BLDC according to different situation
-	// Stop the BLDC if robot carries the water tank
+	// Stop the BLDC if rGobot carries the water tank
 	if (Is_Water_Tank()){
 		Set_BLDC_Speed(0);
 	}else{
@@ -460,6 +525,11 @@ void Reset_Rcon_Remote(void)
 	ir_cmd = 0;
 }
 
+void Set_MoveWithRemote(void)
+{
+	remote_move_flag = 1;
+}
+
 void Reset_MoveWithRemote(void)
 {
 	remote_move_flag = 0;
@@ -528,14 +598,14 @@ void Set_LED(uint16_t G, uint16_t R)
 
 void Stop_Brifly(void)
 {
-	printf("%s %d: stopping robot.\n", __FUNCTION__, __LINE__);
+	//printf("%s %d: stopping robot.\n", __FUNCTION__, __LINE__);
 	do {
 		Set_Wheel_Speed(0, 0);
 		usleep(15000);
 		//printf("%s %d: linear speed: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
 		//	robot::instance()->robot_get_linear_x(), robot::instance()->robot_get_linear_y(), robot::instance()->robot_get_linear_z());
 	} while (robot::instance()->robot_is_moving());
-	printf("%s %d: robot is stopped.\n", __FUNCTION__, __LINE__);
+	//printf("%s %d: robot is stopped.\n", __FUNCTION__, __LINE__);
 }
 
 void Set_MainBrush_PWM(uint16_t PWM)
@@ -553,6 +623,12 @@ void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 
 	int brush_right = R;
 	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
+}
+
+void Set_Vacuum_PWM(uint8_t vacuum_pwr)
+{
+	vacuum_pwr = vacuum_pwr > 100 ? 100 : vacuum_pwr;
+	control_set(CTL_VACCUM_PWR, ((int)(((float)vacuum_pwr) * 2.55)) & 0xff);
 }
 
 uint8_t Get_LeftBrush_Stall(void)
@@ -751,6 +827,72 @@ void control_stop_all(void)
 	}
 	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	//serial_write(SEND_LEN, sendStream);
+}
+
+void Random_Back(void)
+{
+	Stop_Brifly();
+	Quick_Back(8,30);
+	
+}
+
+void Move_Back(void)
+{
+	Stop_Brifly();
+	Quick_Back(18,30);
+}
+
+void Back(void)
+{
+	Stop_Brifly();
+	Quick_Back(18,30);
+}
+
+void Cliff_Move_Back()
+{
+	Stop_Brifly();
+	Quick_Back(18,60);
+}
+
+void Reset_RightWheel_Step(){}
+void Reset_LeftWheel_Step(){}
+
+uint16_t GetBatteryVoltage()
+{
+	uint8_t i;
+	uint32_t temp_v=0;	
+	for(i=0;i<10;i++)
+	{
+		temp_v += robot::instance()->robot_get_battery_voltage();
+		usleep(10000);
+	}
+	return (uint16_t)temp_v/10;
+}
+uint8_t  Check_Battery()
+{
+	if(robot::instance()->robot_get_battery_voltage()<Low_Battery_Limit)
+		return 0;
+	else
+		return 1;
+}
+
+uint8_t Get_Key_Press(void)
+{	
+	uint8_t status=0;
+	if(robot::instance()->robot_get_key())
+		return status |= KEY_CLEAN;
+}
+
+uint8_t Get_Key_Time(uint16_t key)
+{
+	uint8_t time;
+	while(ros::ok()){
+		time++;
+		if(time>200)break;
+		usleep(10000);
+		if(Get_Key_Press()!=key)break;
+	}
+	return time;
 }
 
 /*
