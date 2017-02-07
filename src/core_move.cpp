@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include "main.h"
 #include "laser.hpp"
 #include "robot.hpp"
 #include "core_move.h"
@@ -1738,8 +1739,6 @@ uint8_t CM_Touring(void)
 
 	uint16_t	home_angle = 0;
 
-	time_t		work_timer_cnt = time(NULL);
-
 	MapTouringType	mt_state = MT_None;
 
 	// Reset battery status
@@ -1810,6 +1809,9 @@ uint8_t CM_Touring(void)
 	//usleep(100);
 	//Gyro_Debug_Cmd();
 
+	// Set the Work_Timer_Start as current time
+	Reset_Work_Timer_Start();
+
 	//Initital home point
 	Home_Point.X = Home_Point.Y = 0;
 	charger_point.X = 3100; //Map_GetXCount();
@@ -1848,6 +1850,7 @@ uint8_t CM_Touring(void)
 		while (ros::ok()) {
 			// Debug
 			printf("[core_move.cpp] %s %d: Current Battery level: %d.\n", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+			printf("[core_move.cpp] %s %d: Current work time: %d(s).\n", __FUNCTION__, __LINE__, Get_Work_Timer(Work_Timer_Start));
 
 			/***************************2.1 Common Process***************************/
 			if (map_touring_cancel == 1) {
@@ -1954,7 +1957,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-					printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
+					printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Timer(Work_Timer_Start));
 					return 0;
 
 				} else if (state == -3) {
@@ -1968,7 +1971,7 @@ uint8_t CM_Touring(void)
 						Beep(i, 6, 6, 1);
 					}
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Timer(Work_Timer_Start));
 					return 0;
 				} else if ( state == -7 ) {
 					Disable_Motors();
@@ -1977,7 +1980,7 @@ uint8_t CM_Touring(void)
 						Beep(i, 6, 6, 1);
 					}
 					Set_Clean_Mode(Clean_Mode_GoHome);
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Timer(Work_Timer_Start));
 					return 0;
 				} else if ( state == 1 ) {
 					if (from_station == 0) {
@@ -2000,7 +2003,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Timer(Work_Timer_Start));
 					return 0;
 
 				}
@@ -2030,7 +2033,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, (uint32_t) (time(NULL) - work_timer_cnt));
+					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Timer(Work_Timer_Start));
 					return 0;
 				} else {
 					mt_state = CM_MoveToPoint(Next_Point);

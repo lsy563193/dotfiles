@@ -23,6 +23,25 @@ static uint32_t Rcon_Status;
 // Variable for vaccum mode
 volatile uint8_t Vac_Mode;
 static uint8_t Cleaning_mode = 0;
+
+/*----------------------- Work Timer functions--------------------------*/
+void Reset_Work_Timer_Start()
+{
+	// Save current time as Work_Timer_Start
+	Work_Timer_Start = time(NULL);
+}
+
+uint32_t Get_Work_Timer(time_t start_time)
+{
+	// Get the Duration of time between now and start_time
+	if ((uint32_t)start_time == 0){
+		return (uint32_t)0;
+	}else{
+		return (uint32_t)difftime(time(NULL), start_time);
+	}
+}
+
+/*----------------------- Set error functions--------------------------*/
 void Set_Error_Code(uint8_t code)
 {
 	code = code;
@@ -359,13 +378,13 @@ void Set_Vac_Speed(void)
 		if (Get_VacMode() == Vac_Max){
 			Set_BLDC_Speed(Vac_Speed_Max);
 		}else{
-			Set_BLDC_Speed(Vac_Speed_Normal);
 			// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-			//if (Get_WorkTime() < Two_Hours){
-			//	Set_BLDC_Speed(Vac_Speed_Normal);
-			//}else{
-			//	Set_BLDC_Speed(Vac_Speed_NormalL);
-			//}
+			if (Get_Work_Timer(Work_Timer_Start) < Two_Hours){
+				Set_BLDC_Speed(Vac_Speed_Normal);
+			}else{
+				//printf("[movement.cpp] Work time more than 2 hours.\n");
+				Set_BLDC_Speed(Vac_Speed_NormalL);
+			}
 		}
 	}
 }

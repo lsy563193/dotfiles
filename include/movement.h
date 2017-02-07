@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "main.h"
 
 #define Brush_Power					128
 #define MainBrush_Power				70
@@ -190,6 +191,11 @@
 #define	CTL_CRC 16
 
 #define Cliff_Limit         (int16_t)20
+
+#define Two_Hours         3600
+
+void Reset_Work_Timer_Start();
+uint32_t Get_Work_Timer(time_t start_time);
 
 void Set_Error_Code(uint8_t Code);
 
