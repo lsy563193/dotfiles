@@ -16,7 +16,6 @@ static int16_t Right_OBSTrig_Value = 500;
 static int16_t Leftwall_OBSTrig_Vale = 500;
 static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
-static uint8_t ir_cmd;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 static uint32_t Rcon_Status;
@@ -522,24 +521,41 @@ void Reset_Rcon_Status(void)
 	Rcon_Status = 0;
 }
 
-uint32_t Get_Rcon_status(void)
+uint32_t Get_Rcon_Status(void)
 {
 	return Rcon_Status;
 }
 
 uint32_t Get_Rcon_Remote(void)
 {
-	return (uint32_t)ir_cmd;
-}
-
-void Set_Rcon_Remote(void)
-{
+	uint8_t ir_cmd;
 	ir_cmd = robot::instance()->robot_get_ir_ctrl();
+	if(ir_cmd == 0x80)
+		return Remote_Forward;
+	else if(ir_cmd == 0x40)
+		return Remote_Left;
+	else if(ir_cmd == 0x20)
+		return Remote_Right;
+	else if(ir_cmd == 0x10)
+		return Remote_Max;
+	else if(ir_cmd == 0x08)
+		return Remote_Clean;
+	else if(ir_cmd == 0x04)
+		return Remote_Home;
+	else if(ir_cmd == 0x02)
+		return Remote_Random;
+	else if(ir_cmd == 0x01)
+		return Remote_Spot;
+	else 
+		return 0;
 }
-
+void Set_Rcon_Remote(uint8_t cmd)
+{
+	robot::instance()->robot_set_ir_cmd(cmd);
+}
 void Reset_Rcon_Remote(void)
 {
-	ir_cmd = 0;
+	Set_Rcon_Remote(0);
 }
 
 void Set_MoveWithRemote(void)
@@ -662,44 +678,12 @@ uint8_t Get_RightBrush_Stall(void)
 
 uint8_t Remote_Key(uint32_t key)
 {
-	Set_Rcon_Remote();
-	switch(ir_cmd){
-		case 0x80:
-			if(key == Remote_Forward)
-				return 1;
-			break;
-		case 0x40:
-			if(key == Remote_Left)
-				return 1;
-			break;
-		case 0x20:
-			if(key == Remote_Right)
-				return 1;
-			break;
-		case 0x10:
-			if(key == Remote_Max)
-				return 1;
-			break;
-		case 0x08:
-			if(key == Remote_Clean)
-				return 1;
-			break;
-		case 0x04:
-			if(key == Remote_Home)
-				return 1;
-			break;
-		case 0x02:
-			if(key == Remote_Random)
-				return 1;
-			break;
-		case 0x01:
-			if(key == Remote_Spot)
-				return 1;
-			break;
-		default:
-			return 0;
-	}
-	return 0;
+	
+	if(Get_Rcon_Remote() == key)
+		return 1;
+	else
+		return 0;
+
 }
 
 void Reset_Touch(void)
@@ -876,14 +860,7 @@ void Reset_LeftWheel_Step(){}
 
 uint16_t GetBatteryVoltage()
 {
-	uint8_t i;
-	uint32_t temp_v=0;	
-	for(i=0;i<10;i++)
-	{
-		temp_v += robot::instance()->robot_get_battery_voltage();
-		usleep(10000);
-	}
-	return (uint16_t)temp_v/10;
+	return robot::instance()->robot_get_battery_voltage();
 }
 uint8_t  Check_Battery()
 {
@@ -898,6 +875,7 @@ uint8_t Get_Key_Press(void)
 	uint8_t status=0;
 	if(robot::instance()->robot_get_key())
 		return status |= KEY_CLEAN;
+	return status;
 }
 
 uint8_t Get_Key_Time(uint16_t key)

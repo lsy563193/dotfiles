@@ -19,11 +19,11 @@
 
 //extern volatile ADC_Value_Struct ADC_Value;
 
-
+#define USER_INTERFACE "user interface"
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
-  static volatile uint8_t Press_time=0;
+  	static volatile uint8_t Press_time=0;
 	static volatile uint8_t Temp_Mode=0;
 	static volatile uint16_t Error_Show_Counter=400;
 	static volatile uint16_t TimeOutCounter=0;
@@ -48,6 +48,7 @@ void User_Interface(void)
 
 	Disable_Motors();
 	Beep(3,25,25,1);
+	ROS_DEBUG_NAMED(USER_INTERFACE,"in user interface mode");
 	usleep(600000);
 
 //	Reset_Encoder_Error();
@@ -63,9 +64,9 @@ void User_Interface(void)
 	Set_VacMode(Vac_Normal);
 	while(ros::ok())
 	{
-
-		if(Get_Rcon_Remote()==Remote_Forward||Get_Rcon_Remote()==Remote_Right
-		    ||Get_Rcon_Remote()==Remote_Left||Get_Rcon_Remote()==Remote_Max)
+		uint32_t remote_cmd = Get_Rcon_Remote();
+		if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
+		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)
 	  	{
 			Set_Clean_Mode(Clean_Mode_Remote);
 			return;
@@ -167,7 +168,7 @@ void User_Interface(void)
 					usleep(50000);
 				}
 			  	Temp_Mode=Clean_Mode_Navigation;
-//        		Reset_WorkTimer();
+        		Reset_Work_Timer_Start();
 			}
 			Reset_MoveWithRemote();
 		//	Reset_Error_Code();
@@ -202,6 +203,8 @@ void User_Interface(void)
 				}
 				else if(GetBatteryVoltage() < 1300)
 				{
+
+					ROS_DEBUG_NAMED(USER_INTERFACE,"BATTERY VOLTAGE LOW!");
 					Set_LED(0,0);
 					Display_Battery_Status(Display_Low);
 					Beep(6,25,25,2);
@@ -305,14 +308,14 @@ void User_Interface(void)
 //		{
 //			Set_LED(0,100);
 //		}
-//		else if(BTA_Power_Dis)//display low battery = red & green
-//		{
-//			Set_LED_Table(ONE_Display_Counter,ONE_Display_Counter);
-//		}
-//		else
-//		{
-//			Set_LED_Table(ONE_Display_Counter,0);//display normal green
-//		}
+		if(BTA_Power_Dis)//display low battery = red & green
+		{
+			Set_LED(ONE_Display_Counter,ONE_Display_Counter);
+		}
+		else
+		{
+			Set_LED(ONE_Display_Counter,0);//display normal green
+		}
 
 		#endif
 
@@ -371,8 +374,14 @@ void User_Interface(void)
           			}
           			else
           			{
-  				  		if((LED_Brightness==0)&&(LED_Add==0))Display_Content(0,100,100,0,LED_Brightness);
-  						else Display_Content(LED_Spot|LED_Plan|LED_Clean|LED_Home|LED_Clock,100,100,0,LED_Brightness);
+  				  		if((LED_Brightness==0)&&(LED_Add==0)){
+							//Display_Content(0,100,100,0,LED_Brightness);
+							Set_LED(LED_Brightness,LED_Brightness);
+						}
+  						else{
+							//Display_Content(LED_Spot|LED_Plan|LED_Clean|LED_Home|LED_Clock,100,100,0,LED_Brightness);
+							Set_LED(LED_Brightness,LED_Brightness);
+						}
           			}
 				}
 			}

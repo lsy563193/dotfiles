@@ -306,7 +306,7 @@ void Switch_VacMode(void);
 
 uint32_t Get_Rcon_Remote(void);
 
-void Set_Rcon_Remote(void);
+void Set_Rcon_Remote(uint8_t cmd);
 
 void Reset_Rcon_Remote(void);
 

@@ -345,11 +345,14 @@ uint8_t robot::robot_get_key(){
 }
 uint8_t robot::robot_get_ir_ctrl()
 {
-	uint8_t ir_cmd = this->ir_ctrl;
-	//this->ir_ctrl = 0;
-	return ir_cmd;
+	return  this->ir_ctrl;
 }
-
+void robot::robot_set_ir_cmd(uint8_t cmd)
+{
+	if(cmd>0xff)
+		return;
+	this->ir_ctrl = cmd;
+}
 float robot::robot_get_lwheel_current()
 {
 	return this->lw_crt;
@@ -439,7 +442,7 @@ bool robot::robot_get_water_tank()
 
 uint16_t robot::robot_get_battery_voltage()
 {
-	return this->battery_voltage;
+	return this->battery_voltage*10;
 }
 
 bool robot::robot_is_moving()

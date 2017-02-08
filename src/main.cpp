@@ -29,13 +29,13 @@ void *core_move_thread(void *)
 	while (!robot::instance()->robot_is_all_ready()) {
 		usleep(1000);
 	}
-	Set_Clean_Mode(Clean_Mode_Navigation);
+	//Set_Clean_Mode(Clean_Mode_Navigation);
 
 	while(ros::ok()){
 		usleep(20000);
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
-				//ROS_INFO("\n-------user interface  mode------\n");
+				ROS_INFO("\n-------user interface  mode------\n");
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
@@ -58,7 +58,7 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1000);
 				*/
 				CM_Touring();
-				Set_Clean_Mode(Clean_Mode_Charging);
+				//Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------charging mode------\n");
@@ -66,6 +66,7 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_GoHome:
 				ROS_INFO("\n-----------go home mode--------\n");
+				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:
 				ROS_INFO("\n-----------test mode--------\n");
@@ -86,6 +87,14 @@ void *core_move_thread(void *)
 			case Clean_Mode_Mobility:
 				ROS_INFO("\n-----------mobility mode--------\n");
 
+				break;
+			case Clean_Mode_Sleep:
+				ROS_INFO("\n-----------SLEEP MODE----------\n");
+				while(ros::ok()){
+					usleep(10000);
+					if(Get_Rcon_Remote())
+						break;
+				}
 				break;
 			default:
 				Set_Clean_Mode(Clean_Mode_Userinterface);
