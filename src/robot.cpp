@@ -6,7 +6,10 @@
 #include "robot.hpp"
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
+#include <movement.h>
 #include "robotbase.h"
+
+extern float line_angle_offset;
 static	robot *robot_obj = NULL;
 
 time_t	start_time;
@@ -37,6 +40,10 @@ robot::robot()
 	this->linear_y = 0.0;
 	this->linear_z = 0.0;
 
+	this->line_angle = 0;
+	this->line_align = detecting;
+	this->obstacles_sub = this->robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 	visualize_marker_init();
@@ -61,9 +68,9 @@ void robot::init()
 	}
 }
 
-bool robot::robot_is_all_ready()
-{
-	return (this->is_sensor_ready && this->is_scan_ready && this->is_map_ready) ? true : false;
+bool robot::robot_is_all_ready() {
+//	printf("sensor(%d),scan(%d),map(%d),align(%d)",is_sensor_ready,is_scan_ready,is_map_ready,is_align_obstacles);
+  return (is_sensor_ready && is_scan_ready && is_map_ready && line_align == finish) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
@@ -205,21 +212,21 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		return;
 	}
 
-	if (!this->is_scan_ready) {
-		this->position_x_off = map_pose.getOrigin().x();
-		this->position_y_off = map_pose.getOrigin().y();
-		this->position_z_off = map_pose.getOrigin().z();
-	}
+  if (!this->is_scan_ready) {
+    this->position_x_off = map_pose.getOrigin().x();
+    this->position_y_off = map_pose.getOrigin().y();
+    this->position_z_off = map_pose.getOrigin().z();
+  }
 
-	this->position_y = map_pose.getOrigin().y() - position_y_off;
-	this->position_x = map_pose.getOrigin().x() - position_x_off;
+  this->position_y = map_pose.getOrigin().y() - position_y_off;
+  this->position_x = map_pose.getOrigin().x() - position_x_off;
 
-	if (this->is_scan_ready == false) {
-		this->is_scan_ready = true;
-	}
+  if (this->is_scan_ready == false) {
+    this->is_scan_ready = true;
+  }
 }
 void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
-{	
+{
 	int map_size, vector_size;
 	//uint32_t seq;
 	//uint32_t width;
@@ -239,7 +246,7 @@ void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
 	//this->map_data(map->data);
 	this->ptr = &(map_data);
 	//vector_size = v1.size();
-	
+
 	//v1.swap(map->data);
 	//memcpy(map_data, &map->data, sizeof(map->data));
 	//printf("width=%dheight=%dresolution=%fseq=%d\n",width,height,resolution,seq);
@@ -285,9 +292,96 @@ std::vector<int8_t> *robot::robot_get_map_data()
 	return this->ptr;
 }
 
-float robot::robot_get_angle()
-{
-	return this->angle;
+double distance(double x1, double y1, double x2, double y2) {
+  double d = x2 - x1;
+  double e = y2 - y1;
+  d *= d;
+  e *= e;
+  return sqrt(d + e);
+}
+
+void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg) {
+  static int count = 400;//5s
+  double last_distant = 0;
+  auto i = 0;
+  double detalx = 0, detaly = 0;
+  if (is_scan_ready == false || is_sensor_ready == false)
+    return;
+
+  switch (line_align) {
+
+    case detecting:
+      count--;
+      if (count == 0) {
+        ROS_DEBUG("line detect timeout");
+        line_align = finish;
+        return;
+      }
+      if (msg->segments.size() != 0) {
+        for (auto &s : msg->segments) {
+          i++;
+          auto dist = distance(s.first_point.x, s.first_point.y, s.last_point.x, s.last_point.y);
+          if (dist > last_distant) {
+            last_distant = dist;
+            detalx = s.last_point.x - s.first_point.x;
+            detaly = s.last_point.y - s.first_point.y;
+          }
+        }
+        if (last_distant > 1) {
+          line_align = rotating;
+          auto yaw = arctan(detaly, detalx);
+          line_angle = ((int16_t) (yaw * 1800 / M_PI) % 3600);
+          if (line_angle > 900) {
+            line_angle -= 1800;
+          } else if (line_angle < -900) {
+            line_angle += 1800;
+          }
+
+          if (abs(line_angle) < 50) {
+            ROS_WARN("abs(line_angle) < 50(%d)\n", line_angle);
+            line_align = finish;
+            obstacles_sub.shutdown();
+          }
+        }
+      }
+      break;
+    case rotating:
+      if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
+        line_angle_offset = angle;
+        line_align = finish;
+      }
+      break;
+    default:
+      break;
+  }
+
+  /*else {//(is_obstacles_ready == true)
+		static int count = 0;
+		if(count++%300==0) {
+			for (auto &s : msg->segments) {
+				std::cout << "first " << s.first_point << std::endl;
+				std::cout << "last " << s.last_point << std::endl;
+//			查找直线经过的格子
+				Point32_t p1, p2;
+				p1 = PointToCount(s.first_point);
+				p2 = PointToCount(s.last_point);
+				cout << "$$$$$$$$$p1:" << p1.X << "," << p1.Y << endl;
+				cout << "$$$$$$$$$p2:" << p2.X << "," << p2.Y << endl;
+				std::vector<Point16_t> cells = greds_of_line_pass(p1, p2);
+				for (auto &cell : cells) {
+					std::cout << "cell:" << cell.X << "," << cell.Y << "\t";
+					Point32_t p = Map_CellToPoint(cell);
+					Map_SetCell(MAP, p.X, p.Y, BLOCKED_OBS);
+				}
+				cout << endl;
+			}
+			debug_map(MAP,0,0);
+		}
+	}*/
+}
+
+float robot::robot_get_angle() {
+  return this->angle;
 }
 
 float robot::robot_get_angle_v()
@@ -485,10 +579,14 @@ int16_t robot::robot_get_yaw()
 	return ((int16_t)(this->yaw * 1800 / M_PI));
 }
 
-void robot::robot_display_positions()
-{
-	printf("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)\n",
-			this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI, Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
+int16_t robot::robot_get_home_angle() {
+  return ((int16_t) (this->line_angle));
+}
+
+void robot::robot_display_positions() {
+  printf("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)\n",
+         this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI,
+         Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
 }
 
 void robot::visualize_marker_init(){

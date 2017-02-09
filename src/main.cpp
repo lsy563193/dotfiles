@@ -30,6 +30,10 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	//Set_Clean_Mode(Clean_Mode_Navigation);
+	system("rosnode kill /obstacle_visualizer");
+	system("rosnode kill /obstacle_tracker");
+	system("rosnode kill /obstacle_recorder");
+	system("rosnode kill /obstacle_detector");
 
 	while(ros::ok()){
 		usleep(20000);
@@ -99,7 +103,7 @@ void *core_move_thread(void *)
 			default:
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
-			
+
 		}
 	}
 	

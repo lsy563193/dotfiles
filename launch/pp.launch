@@ -1,6 +1,10 @@
 <launch>
+
+  <env name="ROSCONSOLE_CONFIG_FILE"
+       value="$(find pp)/custom_rosconsole.conf"/>
+
 	<node name="pp" pkg="pp" type="pp" output="screen">
-		<param name="serial_port" type="string" value="/dev/ttyUSB0" />
+		<param name="serial_port" type="string" value="/dev/ttyUSB1" />
 		<param name="baudrate" type="int" value="115200" />
 	</node>
 </launch>

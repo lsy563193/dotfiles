@@ -38,6 +38,8 @@ pthread_mutex_t send_lock;
 pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
+//启动pp时，gyro可能处于未关闭状态，会有angle值，补偿掉
+float line_angle_offset = 0;
 
 // This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
@@ -219,6 +221,12 @@ void *robotbase_routine(void*)
 
 		lw_speed = (receiStream[2] << 8) | receiStream[3];
 		rw_speed = (receiStream[4] << 8) | receiStream[5];
+//		printf("receiStream=[");
+//		for(int i=0;i<50;i++){
+//			printf("0x%02x, ",receiStream[i]);
+//		}
+//		printf("]\n");
+
 		sensor.lw_vel = (lw_speed > 0x7fff) ? -((float)(lw_speed - 0x8000) / 1000.0) : (float)(lw_speed) / 1000.0;
 		sensor.rw_vel = (rw_speed > 0x7fff) ? -((float)(rw_speed - 0x8000) / 1000.0) : (float)(rw_speed) / 1000.0;
 
@@ -242,6 +250,12 @@ void *robotbase_routine(void*)
 			// Save current angle as previous_angle
 			previous_angle = sensor.angle;
 		}
+
+		sensor.angle -= line_angle_offset;
+
+//		ROS_INFO("angle(%d),\n",angle);
+//		ROS_INFO("sensor.angle(%f)\n",sensor.angle);
+//		ROS_INFO("sensor.angle_v(%f)\n",sensor.angle_v);
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -277,7 +291,7 @@ void *robotbase_routine(void*)
 		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/66564.0f; //in G
 		cur_time = ros::Time::now();
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
-		float th = (-(float)(angle) / 100.0) * 0.01745;					//turn degrees into radians
+		float th = sensor.angle * 0.01745;					//turn degrees into radians
 		float dt = (cur_time - last_time).toSec();
 
 		last_time = cur_time;
@@ -341,7 +355,7 @@ void *serial_send_routine(void*){
 		}
 		pthread_mutex_lock(&send_lock);
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
-		pthread_mutex_unlock(&send_lock);	
+		pthread_mutex_unlock(&send_lock);
 		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 		if(buf[CTL_CRC] != calcBufCrc8((char*)sendStream,sl))
 			ROS_DEBUG_NAMED("robotbase","crc not same");

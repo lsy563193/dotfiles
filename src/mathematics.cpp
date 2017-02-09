@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "mathematics.h"
+#include "ros/ros.h"
 
 double absolute(double d)
 {
@@ -22,6 +23,7 @@ uint16_t course2dest(int32_t startx, int32_t starty, int32_t destx, int32_t dest
 {
 	int16_t alpha = 0;
 
+//	ROS_WARN("startx(%d),starty(%d),destx(%d),desty(%d)",startx,starty,destx,desty);
 	if (startx == destx) {
 		if (desty > starty) {
 			alpha = 900;
@@ -229,16 +231,16 @@ int16_t degreeDeltaAngleMin( uint16_t a, uint16_t b ) {
 }
 
 //arctan, range is [0, 2 * PI)
-double arctan( double deltay, double deltax ) {
-	if ( deltax == 0 ) {
-		if ( deltay >= 0 )
+double arctan(double deltay, double deltax) {
+	if (deltax == 0 ) {
+		if (deltay >= 0 )
 			return PI / 2;
 		else return -PI / 2;
 	} else {
-		double angle = atan( deltay / deltax );
-		if ( deltax < 0 && angle > 0 )
+		double angle = atan(deltay / deltax);
+		if (deltax < 0 && angle > 0 )
 			angle -= PI;
-		else if ( deltax < 0 && angle <= 0 )
+		else if (deltax < 0 && angle <= 0 )
 			angle += PI;
 		return angle;
 	}

@@ -201,6 +201,51 @@ void Turn_Right(uint16_t speed, uint16_t angle)
 	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0));
 }
 
+bool Turn_no_while(uint16_t speed, int16_t target_angle)
+{
+	static bool first=true;
+	uint16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle(0);
+
+	if(first == true){
+		first =false;
+		if(target_angle > 0){
+			ROS_WARN("turn left");
+			wheel_left_direction = 1;
+			wheel_right_direction = 0;
+		} else if(target_angle < 0){
+			wheel_left_direction = 0;
+			wheel_right_direction = 1;
+			ROS_WARN("turn right");
+		}
+
+		Set_Wheel_Speed(speed, speed);
+		ROS_WARN("target_angle: %d\tcurrent: %d\tspeed: %d\n", target_angle, Gyro_GetAngle(0), speed);
+	}
+	if (target_angle < 0) {
+			target_angle = 3600 + target_angle;
+	}
+	if (abs(target_angle - Gyro_GetAngle(0)) < 5) {
+		wheel_left_direction = 0;
+		wheel_right_direction = 0;
+		Set_Wheel_Speed(0, 0);
+		first = 0;
+		ROS_WARN("target_angle: %d\tcurrent: %d\tspeed: %d\n", target_angle, Gyro_GetAngle(0), speed);
+		return true;
+	}
+	if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+//		auto speed = abs(target_angle - Gyro_GetAngle(0))/2;
+		speed /= 2;
+		Set_Wheel_Speed(speed, speed);
+		ROS_WARN("angle<20: target_angle(%d),current(%d),speed(%d),left(%d),right(%d)\n", target_angle, Gyro_GetAngle(0), speed,wheel_left_direction,wheel_right_direction);
+	} else {
+//		Set_Wheel_Speed(speed, speed);
+		ROS_WARN("angle>20: target_angle(%d),current(%d),speed(%d),left(%d),right(%d)\n", target_angle, Gyro_GetAngle(0), speed,wheel_left_direction,wheel_right_direction);
+	}
+	return false;
+}
+
 uint8_t Get_OBS_Status(void)
 {
 	uint8_t Status = 0;
