@@ -249,15 +249,18 @@ uint8_t Get_Cliff_Trig(void)
 	// Logic of getting the cliff status.
 	uint8_t Cliff_Status = 0x00;
 	if (robot::instance()->robot_get_cliff_left() < Cliff_Limit){
-		printf("[movement.cpp] Left cliff is detected.\n");
+		printf("[movement.cpp] Left cliff is detected:%d\n", robot::instance()->robot_get_cliff_left());
 		Cliff_Status += 0x01;
+		for(int a = 0;a < 100; a++){
+			printf("[movement.cpp] Left cliff is detected:%d\n", robot::instance()->robot_get_cliff_left());
+		}
 	}
 	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
-		printf("[movement.cpp] Right cliff is detected.\n");
+		printf("[movement.cpp] Right cliff is detected:%d\n", robot::instance()->robot_get_cliff_right());
 		Cliff_Status += 0x02;
 	}
-	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
-		printf("[movement.cpp] Front cliff is detected.\n");
+	if (robot::instance()->robot_get_cliff_front() < Cliff_Limit){
+		printf("[movement.cpp] Front cliff is detected:%d\n", robot::instance()->robot_get_cliff_front());
 		Cliff_Status += 0x04;
 	}
 	if (Cliff_Status != 0x00){

@@ -100,7 +100,7 @@ static inline void CM_count_normalize(uint16_t heading, int16_t offset_lat, int1
 
 bool CM_Check_is_exploring()//not yet minus the x_off
 {
-	float search_length = 0.50, search_width = 0.303;//unit for meter
+	float search_length = 0.10, search_width = 0.303;//unit for meter
 	std::vector<int8_t> *p_map_data;
 	int index;
 	double yaw;
@@ -109,6 +109,7 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 	float resolution;
 	double origin_x, origin_y;
 	int plus_sign;
+	int a_max;
 	position_x = robot::instance()->robot_get_position_x();
 	position_y = robot::instance()->robot_get_position_y();
 	yaw = robot::instance()->robot_get_map_yaw();
@@ -124,21 +125,29 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 	p_map_data = robot::instance()->robot_get_map_data();
 	//index = CM_Get_grid_index();
 	/*main search*/
+	//printf("/*main search*/\n");
 	if (abs(yaw) <= (M_PI / 2) ){
 		plus_sign = 1;
 		//printf("+yaw=%lf\n",yaw);
-		for (int a = 0; a <= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
-			printf("a_max=%d\n",(plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))));
+		a_max = (plus_sign * abs(int(round(search_length * sin(abs(yaw)) / 0.05))));
+		//printf("before_a_max=%d\n", a_max);
+		//for (int a = 0; a <= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
+		//for (int a = 0; a <= (plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
+		for (int a = 0; a <= a_max; a = a + 1){//n = (search_length * cos(yaw)) / resolution
+			//printf("a_max=%d\n",(plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))));
+			//printf("a = %d\n", a);
 			int c = 0;
-			float x = position_x + a * 0.05;
-			float y = position_y + a * tan(abs(yaw)) * 0.05;
+			float x = position_x + (a / tan(abs(yaw))) * 0.05;
+			//float y = position_y + a * tan(abs(yaw)) * 0.05;
+			float y = position_y + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
 				float x_1 = x + b * 0.05;
+				//printf("x_1=%f ,y=%f\n",x_1,y);
 				//printf("a=%d b=%d c=%d\n", a, b, c);
 				/*over map scope*/
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05) )){
 					//printf("x_1=%f ,y=%f\n",x_1,y);
-					//printf("over scope\n");
+					printf("over scope\n");
 					//return 0;
 				}else{
 					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100){
@@ -165,18 +174,25 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 	else{
 		plus_sign = -1;
 		//printf("-yaw=%lf\n",yaw);
-		for (int a = 0; a >= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
-			//printf("a_max=%d\n",(plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))));
+		a_max = (plus_sign * abs(int(round(search_length * sin(abs(yaw)) / 0.05))));
+		//printf("before_a_max=%d\n", a_max);
+		//for (int a = 0; a >= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
+		//for (int a = 0; a >= (plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
+		for (int a = 0; a >= a_max; a = a - 1){//n = (search_length * cos(yaw)) / resolution
+			//printf("a_max=%d\n",(plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))));
+			//printf("a = %d\n", a);
 			int c = 0;
-			float x = position_x + a * 0.05;
-			float y = position_y + a * tan(abs(yaw)) * 0.05;
+			float x = position_x + (a / tan(abs(yaw))) * 0.05;
+			//float y = position_y + a * tan(abs(yaw)) * 0.05;
+			float y = position_y + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
 				float x_1 = x + b * 0.05;
+				//printf("x_1=%f ,y=%f\n",x_1,y);
 				//printf("a=%d b=%d c=%d\n", a, b, c);
 				/*over map scope*/
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05) )){
 					//printf("x_1=%f ,y=%f\n",x_1,y);
-					//printf("over scope\n");
+					printf("over scope\n");
 					//return 0;
 				}else{
 					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100){
@@ -942,8 +958,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
         int32_t Init_Pose_X, Init_Pose_Y;
         int16_t Limited_Distance = 16107;//21476 = 4M 16107 = 3M
-        bool Limited_Flag = 0;
-
+        int8_t Limited_Flag = 0;
+	bool Dynamic_Flag = 0;//Dynamic adjust speed when exploring
 
 	MapTouringType	retval = MT_None;
 
@@ -1363,11 +1379,11 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 #if LIMIT_DISTANCE_ENABLE
 		/*Check limited distance in one straight movement*/
 		if ((Dis_From_Init = TwoPointsDistance(Map_GetXCount(), Map_GetYCount(), Init_Pose_X, Init_Pose_Y)) > Limited_Distance) {
-			Stop_Brifly();
+			//Stop_Brifly();
 			printf("reach the limited distance\n");
 			printf("Map_XCount=%d,Map_YCount=%d,Init_Pose_X=%d,Init_Pose_Y=%d,Dis_From_Init=%d,Limited_Distance=%d\n",Map_GetXCount(),Map_GetYCount(),Init_Pose_X, Init_Pose_Y, Dis_From_Init, Limited_Distance);
-			Limited_Flag = 1;
-			sleep(1);
+			Limited_Flag = 3;//Limit distance flag
+			//sleep(1);
 			printf("after sleep");
 			//std::vector<int8_t> *p1;
 			//p1 = robot::instance()->robot_get_map_data();
@@ -1379,12 +1395,38 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 #if EXPLORE_SCOPE_ENABLE 
 		/*Check if in exploring status*/
-		if (Limited_Flag != 1){
-			if (bool Explore_Flag = CM_Check_is_exploring() == 1){
-				Limited_Flag = 1;
+		if (Dynamic_Flag == 1){//Dynamic adjust speed when exploring
+			if (Limited_Flag != 3){//not in distance limit
+				if (bool Explore_Flag = CM_Check_is_exploring() == 1){
+					Limited_Flag = 1;
+					//printf("1\n");
+				}
+				else if(Explore_Flag == 2){
+					Limited_Flag = 2;
+					//printf("2\n");
+				}
+				else if(Explore_Flag == 0){
+					Limited_Flag = 0;
+					//printf("0\n");
+				}
 			}
-			else if(Explore_Flag == 2){
-				Limited_Flag = 2;
+		}
+		else{//Adjust once when exploring
+			if (Limited_Flag != 1){
+				if (Limited_Flag != 3){//not in distance limit
+					if (bool Explore_Flag = CM_Check_is_exploring() == 1){
+						Limited_Flag = 1;
+						//printf("1\n");
+					}
+					else if(Explore_Flag == 2){
+						Limited_Flag = 2;
+						//printf("2\n");
+					}
+					else if(Explore_Flag == 0){
+						Limited_Flag = 0;
+						//printf("0\n");
+					}
+				}
 			}
 		}
 #endif
@@ -1502,7 +1544,11 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			Right_Speed = RUN_TOP_SPEED;
 		}
 		//printf("%s %d: left: %d\tright: %d\tbumper left: %d\tright: %d\n", __FUNCTION__, __LINE__, (int16_t)(Left_Speed * 7.23), (int16_t) (Right_Speed * 7.23), robot::instance()->robot_get_bumper_left(), robot::instance()->robot_get_bumper_right());
-		if (Limited_Flag == 2){
+		//printf("Limited_Flag = %d\n",Limited_Flag);
+		if (Limited_Flag == 3){
+			Move_Forward(Left_Speed / 2, Right_Speed / 2);
+		}
+		else if (Limited_Flag == 2){
 			Move_Forward(Left_Speed, Right_Speed);
 		} else{
 			if (Limited_Flag == 0){
