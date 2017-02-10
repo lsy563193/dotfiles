@@ -120,6 +120,8 @@ void robotbase_deinit(void)
 		} while (serial_read(2, buf) > 0);
 	*/
 		control_stop_all();
+		// Stop the beeping
+		Beep(0, 0, 0, -1);
 		usleep(10000);
 		serial_flush();
 		send_stream_thread = false;

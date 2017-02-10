@@ -52,7 +52,7 @@ void Spot_Mode(void)
 	Set_LED(100,0);
 	Set_SideBrush_PWM(60, 60);
 	Set_MainBrush_PWM(90);
-	Set_Vacuum_PWM(90);
+	Set_BLDC_Speed(90);
 
 #ifdef BLDC_INSTALL
 	usleep(10000);
@@ -125,7 +125,7 @@ void Spot_Mode(void)
 	Reset_Wall_Step();
 	Set_MainBrush_PWM(90);
 	Set_SideBrush_PWM(60, 60);
-	Set_Vacuum_PWM(90);
+	Set_BLDC_Speed(90);
 	Set_LED(100,0);
 	Motor_OC_Counter = 0;
 

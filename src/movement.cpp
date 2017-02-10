@@ -21,7 +21,7 @@ static uint8_t home_remote_flag = 0;
 static uint32_t Rcon_Status;
 int8_t Left_Wheel_Speed = 0;
 int8_t Right_Wheel_Speed = 0;
-// Variable for vaccum mode
+// Variable for vacuum mode
 volatile uint8_t Vac_Mode;
 static uint8_t Cleaning_mode = 0;
 
@@ -269,6 +269,7 @@ uint8_t Get_Cliff_Trig(void)
 	return Cliff_Status;
 }
 
+/*-------------------------------Check if at home base------------------------------------*/
 uint8_t Is_AtHomeBase(void)
 {
 	// If the charge status is true, it means it is at home base charging.
@@ -279,6 +280,71 @@ uint8_t Is_AtHomeBase(void)
 	}else{
 		return 0;
 	}
+}
+
+uint8_t Turn_Connect(void)
+{
+	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
+
+	int16_t target_angle;
+	int8_t speed = 5;
+	// Start turning left.
+	target_angle = Gyro_GetAngle(0) - 120;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 1;
+	Set_Wheel_Speed(speed, speed);
+	while(abs(target_angle - Gyro_GetAngle(0)) > 20)
+	{
+		if(Is_ChargerOn())
+		{
+			Disable_Motors();
+			Stop_Brifly();
+			if(Is_ChargerOn())
+			{
+				ROS_INFO("[movement.cpp] Turn left reach charger.");
+				return 1;
+			}
+			break;
+		}
+		if(Touch_Detect())
+		{
+			Disable_Motors();
+			return 0;
+		}
+	}
+	Stop_Brifly();
+	// Start turning right.
+	target_angle = Gyro_GetAngle(0) + 240;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	wheel_left_direction = 1;
+	wheel_right_direction = 0;
+	Set_Wheel_Speed(speed, speed);
+	while(abs(target_angle - Gyro_GetAngle(0)) > 20)
+	{
+		if(Is_ChargerOn())
+		{
+			Disable_Motors();
+			Stop_Brifly();
+			if(Is_ChargerOn())
+			{
+				ROS_INFO("[movement.cpp] Turn right reach charger.");
+				return 1;
+			}
+			break;
+		}
+		if(Touch_Detect())
+		{
+			Disable_Motors();
+			return 0;
+		}
+	}
+	Disable_Motors();
+	return 0;
 }
 
 void SetHomeRemote(void)
@@ -358,7 +424,7 @@ int8_t Get_RightWheel_Speed(void)
 
 void Work_Motor_Configure(void)
 {
-	// Set the vaccum to a normal mode
+	// Set the vacuum to a normal mode
 	Set_VacMode(Vac_Normal);
 	Set_Vac_Speed();
 
@@ -422,7 +488,7 @@ uint8_t Get_Clean_Mode(void)
 
 void Set_VacMode(uint8_t data)
 {
-	// Set the mode for vaccum.
+	// Set the mode for vacuum.
 	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
 	Vac_Mode = data;
 }
@@ -498,19 +564,19 @@ void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed)
 
 uint8_t Get_VacMode(void)
 {
-	// Return the vaccum mode
+	// Return the vacuum mode
 	return Vac_Mode;
 }
 
 void Switch_VacMode(void)
 {
-	// Switch the vaccum mode between Max and Normal
+	// Switch the vacuum mode between Max and Normal
 	if (Get_VacMode() == Vac_Normal){
 		Set_VacMode(Vac_Max);
 	}else{
 		Set_VacMode(Vac_Normal);
 	}
-	// Process the vaccum mode
+	// Process the vacuum mode
 	Set_Vac_Speed();
 }
 
@@ -662,12 +728,6 @@ void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 	control_set(CTL_BRUSH_RIGHT, R & 0xff);
 }
 
-void Set_Vacuum_PWM(uint8_t vacuum_pwr)
-{
-	vacuum_pwr = vacuum_pwr > 100 ? 100 : vacuum_pwr;
-	control_set(CTL_VACCUM_PWR, ((int)(((float)vacuum_pwr) * 2.55)) & 0xff);
-}
-
 uint8_t Get_LeftBrush_Stall(void)
 {
 	return 0;
@@ -756,6 +816,26 @@ void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int 
 	robotbase_beep_update_flag = true;
 }
 
+void Initialize_Motors(void)
+{
+	#ifdef BLDC_INSTALL
+	Clear_BLDC_Fail();
+	BLDC_OFF;
+	delay(5000);
+	Set_BLDC_TPWM(40);
+	Set_Vac_Speed();
+	#endif
+	Set_MainBrush_PWM(50);
+	Set_SideBrush_PWM(60,60);
+	Set_BLDC_Speed(40);
+//	Move_Forward(0,0);
+	Stop_Brifly();
+	Reset_TempPWM();
+//	Left_Wheel_Slow=0;
+//	Right_Wheel_Slow=0;
+//	Reset_Bumper_Error();
+}
+
 void Disable_Motors(void)
 {
 	// Disable all the motors, including brush, wheels, and vacuum.
@@ -765,7 +845,7 @@ void Disable_Motors(void)
 	Set_SideBrush_PWM(0, 0);
 	// Stop the main brush
 	Set_MainBrush_PWM(0);
-	// Stop the vaccum, directly stop the BLDC
+	// Stop the vacuum, directly stop the BLDC
 	Set_BLDC_Speed(0);
 }
 
@@ -789,12 +869,12 @@ void set_main_pwr(uint8_t val)
 }
 
 
-void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val)
+void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val)
 {
-	int vaccum_pwr = vaccum_val;
-	vaccum_pwr = vaccum_pwr > 0 ? vaccum_pwr : 0;
-	vaccum_pwr = vaccum_pwr < 100 ? vaccum_pwr : 100;
-	control_set(CTL_VACCUM_PWR, ((int)(((float)vaccum_pwr) * 2.55)) & 0xff);
+	int vacuum_pwr = vacuum_val;
+	vacuum_pwr = vacuum_pwr > 0 ? vacuum_pwr : 0;
+	vacuum_pwr = vacuum_pwr < 100 ? vacuum_pwr : 100;
+	control_set(CTL_VACCUM_PWR, vacuum_pwr & 0xff);
 
 	int brush_left = left_brush_val;
 	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
@@ -883,7 +963,7 @@ uint8_t Get_Key_Press(void)
 
 uint8_t Get_Key_Time(uint16_t key)
 {
-	uint8_t time;
+	uint8_t time = 0;
 	while(ros::ok()){
 		time++;
 		if(time>200)break;

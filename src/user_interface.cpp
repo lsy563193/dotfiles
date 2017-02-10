@@ -102,7 +102,8 @@ void User_Interface(void)
 				Set_LED(100,100);
 			//	Press_time=Get_Key_Time(KEY_HOME);
 				Temp_Mode=Clean_Mode_GoHome;
-				Reset_MoveWithRemote();
+			//	Reset_MoveWithRemote();
+				Set_MoveWithRemote();
 				SetHomeRemote();
 			}
 			/* -----------------------------Check if wall follow event ----------------------------------*/
@@ -127,16 +128,16 @@ void User_Interface(void)
 		{
 			Reset_Rcon_Remote();
 //			Set_Room_Mode(Room_Mode_Large);
-			Press_time=10;
-			while(Press_time--)
-			{
+//			Press_time=10;
+//			while(Press_time--)
+//			{
 //				if(Remote_Key(Remote_Clean))
 //				{
 //					Set_Room_Mode(Room_Mode_Auto);
 //					break;
 //				}
-				usleep(50000);
-			}
+//				usleep(50000);
+//			}
      		Temp_Mode=Clean_Mode_Navigation;
 			Reset_Rcon_Remote();
 			Reset_MoveWithRemote();
@@ -147,6 +148,7 @@ void User_Interface(void)
 			Beep(2,25,25,2);
 			//TX_D();
 		  	Press_time=Get_Key_Time(KEY_CLEAN);
+			// Long press on the clean button means let the robot go to sleep mode.
 			if(Press_time>100)
 			{
 				Beep(3,25,25,2);
@@ -156,17 +158,18 @@ void User_Interface(void)
 			else
 			{
 				//Set_Room_Mode(Room_Mode_Large);
-				Press_time=5;
-				while(Press_time--)
-				{
-					if(Get_Key_Press()==KEY_CLEAN)
-					{
-						Beep(2,25,25,2);
-//						Set_Room_Mode(Room_Mode_Auto);
-						break;
-					}
-					usleep(50000);
-				}
+//				Press_time=5;
+//				while(Press_time--)
+//				{
+//					if(Get_Key_Press()==KEY_CLEAN)
+//					{
+//						Beep(2,25,25,2);
+////						Set_Room_Mode(Room_Mode_Auto);
+//						break;
+//					}
+//					usleep(50000);
+//				}
+				Beep(2, 25, 25, 2);
 			  	Temp_Mode=Clean_Mode_Navigation;
         		Reset_Work_Timer_Start();
 			}
@@ -195,26 +198,21 @@ void User_Interface(void)
 			}
 			if((Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation))
 			{
+				//ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
 				if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 //					Set_Error_Code(Error_Code_Cliff);
-					Error_Show_Counter=400;
+//					Error_Show_Counter=400;
 					Temp_Mode=0;
 				}
-				else if(GetBatteryVoltage() < 1300)
+				//else if(GetBatteryVoltage() < 1520)
+				else if(GetBatteryVoltage() < 1320)
 				{
-
 					ROS_DEBUG_NAMED(USER_INTERFACE,"BATTERY VOLTAGE LOW!");
+					ROS_INFO("BATTERY VOLTAGE LOW!");
 					Set_LED(0,0);
 					Display_Battery_Status(Display_Low);
-					Beep(6,25,25,2);
-					Beep(6,25,25,2);
-					usleep(100000);
-					Set_LED(0,0);
-					usleep(300000);
-					Display_Battery_Status(Display_Low);
-					Beep(6,25,25,2);
-					Beep(6,25,25,2);
+					Beep(6,25,25,-1);
 					Temp_Mode=0;
 				}
 				else
@@ -236,7 +234,10 @@ void User_Interface(void)
 	//					Beep(5,25,25,2);
 	//					Beep(3,25,25,2);
 	//				}
-//					if(!Is_ChargerOn()&&(Temp_Mode!=Clean_Mode_Navigation))Initialize_Motor();
+					if(!Is_ChargerOn()&&(Temp_Mode!=Clean_Mode_Navigation)){
+						Initialize_Motors();
+						ROS_INFO("user_interface.cpp] init motors.");
+					}
 					Set_Clean_Mode(Temp_Mode);
 //					Set_CleanKeyDelay(0);
 					Reset_Rcon_Remote();
@@ -259,6 +260,7 @@ void User_Interface(void)
 		#ifdef ONE_KEY_DISPLAY
 		usleep(8000);
 
+		//ROS_INFO("One key display logic. odc = %d", ONE_Display_Counter);
 		ONE_Display_Counter++;
 		if(ONE_Display_Counter>99)
 		{
@@ -272,24 +274,22 @@ void User_Interface(void)
 			}
 			if(TimeOutCounter>0)//on base but miss charging , adjust position to charge
 			{
-//				if(Is_Base_C())
-//				{
-//					Reset_Base_C();
-//					if(Get_Rcon_Status()&0x000000ff)
-//					{
-//						Reset_Rcon_Status();
-//						if(Get_Cliff_Trig()==0)
-//						{
-//							if(Turn_Connect())
-//							{
-//								Set_Clean_Mode(Clean_Mode_Charging);
-//								break;
-//							}
-//							Disable_Motors();
-//						}
-//
-//					}
-//				}
+				//ROS_INFO("TimeOutCounter = %d.", TimeOutCounter);
+				if(Is_AtHomeBase())
+				{
+					ROS_INFO("At home base.");
+					if(Get_Cliff_Trig()==0)
+					{
+						ROS_INFO("Cliff not triggered.");
+						if(Turn_Connect())
+						{
+							ROS_INFO("Turn_connect pass.");
+							Set_Clean_Mode(Clean_Mode_Charging);
+							break;
+						}
+						Disable_Motors();
+					}
+				}
 			}
 		}
 		

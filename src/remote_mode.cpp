@@ -34,7 +34,7 @@ void Remote_Mode(void)
 
   	Reset_Wheel_Step();
 	Reset_Touch();
-	Set_Vacuum_PWM(40);
+	Set_BLDC_Speed(40);
 	Set_Vac_Speed();
 	while(ros::ok())
 	{
@@ -83,7 +83,7 @@ void Remote_Mode(void)
 			Turn_Left(Turn_Speed,400);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
-			Set_Vacuum_PWM(30);
+			Set_BLDC_Speed(30);
 			No_Command_Counter=0;
 			Reset_TempPWM();
 			Forward_Flag=0;
@@ -95,7 +95,7 @@ void Remote_Mode(void)
 			Turn_Right(Turn_Speed,320);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
-			Set_Vacuum_PWM(30);
+			Set_BLDC_Speed(30);
 			No_Command_Counter=0;
 			Reset_Wheel_Step();
 			Forward_Flag=0;
@@ -109,7 +109,7 @@ void Remote_Mode(void)
 			Turn_Right(Turn_Speed,1800);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
-			Set_Vacuum_PWM(30);
+			Set_BLDC_Speed(30);
 			Reset_TempPWM();
 			No_Command_Counter=0;
 			Forward_Flag=0;
