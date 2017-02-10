@@ -122,7 +122,7 @@ void robotbase_deinit(void)
 		} while (serial_read(2, buf) > 0);
 	*/
 		control_stop_all();
-		usleep(10000);
+		usleep(40000);
 		serial_flush();
 		send_stream_thread = false;
 		serial_close();
