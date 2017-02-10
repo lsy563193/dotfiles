@@ -70,7 +70,7 @@ void robot::init()
 
 bool robot::robot_is_all_ready() {
 //	printf("sensor(%d),scan(%d),map(%d),align(%d)",is_sensor_ready,is_scan_ready,is_map_ready,is_align_obstacles);
-  return (is_sensor_ready && is_scan_ready && is_map_ready && line_align == finish) ? true : false;
+  return (is_sensor_ready && is_scan_ready && is_map_ready) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
@@ -308,6 +308,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
   if (is_scan_ready == false || is_sensor_ready == false)
     return;
 
+	return;
   switch (line_align) {
 
     case detecting:
