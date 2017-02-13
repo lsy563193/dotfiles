@@ -29,8 +29,6 @@ static uint32_t right_wheel_step = 0;
 static uint32_t leftwall_step = 0;
 static uint32_t rightwall_step = 0;
 
-int8_t Left_Wheel_Speed = 0;
-int8_t Right_Wheel_Speed = 0;
 
 // Variable for vacuum mode
 
