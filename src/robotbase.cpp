@@ -39,6 +39,7 @@ pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
 //启动pp时，gyro可能处于未关闭状态，会有angle值，补偿掉
+bool is_line_angle_offset = false;
 float line_angle_offset = 0;
 
 // This flag is for reset beep action
@@ -226,7 +227,7 @@ void *robotbase_routine(void*)
 //			printf("0x%02x, ",receiStream[i]);
 //		}
 //		printf("]\n");
-
+//
 		sensor.lw_vel = (lw_speed > 0x7fff) ? -((float)(lw_speed - 0x8000) / 1000.0) : (float)(lw_speed) / 1000.0;
 		sensor.rw_vel = (rw_speed > 0x7fff) ? -((float)(rw_speed - 0x8000) / 1000.0) : (float)(rw_speed) / 1000.0;
 
@@ -252,10 +253,16 @@ void *robotbase_routine(void*)
 			previous_angle = sensor.angle;
 		}
 
+		if(is_line_angle_offset == true){
+			is_line_angle_offset = false;
+			line_angle_offset = sensor.angle;
+		}
 		sensor.angle -= line_angle_offset;
 
 //		ROS_INFO("angle(%d),\n",angle);
 //		ROS_INFO("sensor.angle(%f)\n",sensor.angle);
+//		ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
+//		ROS_WARN("angle_diff(%f)\n", sensor.angle - is_line_angle_offset);
 //		ROS_INFO("sensor.angle_v(%f)\n",sensor.angle_v);
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 

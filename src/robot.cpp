@@ -9,7 +9,7 @@
 #include <movement.h>
 #include "robotbase.h"
 
-extern float line_angle_offset;
+extern bool is_line_angle_offset;
 static	robot *robot_obj = NULL;
 
 time_t	start_time;
@@ -346,7 +346,6 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
       break;
     case rotating:
       if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
-        line_angle_offset = angle;
 	      system("rosnode kill /slam_gmapping");
 	      system("rosnode kill /obstacle_visualizer");
 	      system("rosnode kill /obstacle_tracker");
@@ -355,6 +354,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
 
 	      system("roslaunch pp gmapping.launch &");
 
+	      is_line_angle_offset = true;
 	      line_align = finish;
       }
       break;
