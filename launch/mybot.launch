@@ -7,7 +7,8 @@
 	<!--<include file="$(find pp)/launch/robotbase.launch" />-->
 
 	<!--<include file="$(find ilife_robotmovement)launch/robotmovement.launch" />-->
-	<include file="$(find lds_lidar)/launch/ldslidar.launch" />
+	<!--<include file="$(find lds_lidar)/launch/ldslidar.launch" />-->
+	<include file="$(find pp)/launch/rplidar.launch" />
 	<include file="$(find pp)/launch/tf_laser2base.launch" />
 	<include file="$(find pp)/launch/gmapping.launch" />
 	<include file="$(find obstacle_detector)/launch/single_scanner.launch" />

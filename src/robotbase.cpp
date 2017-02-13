@@ -232,6 +232,7 @@ void *robotbase_routine(void*)
 
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
+//		ROS_INFO("angle(%d)",angle);
 		// Compensate the angle with the offset published by slam
 		sensor.angle -= slam_angle_offset;
 		// Check for avoiding angle's sudden change

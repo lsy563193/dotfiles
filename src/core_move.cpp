@@ -1771,7 +1771,6 @@ uint16_t CM_get_robot_direction()
 	return dir;
 }
 #endif
-
 uint8_t CM_Touring(void)
 {
 	int8_t	state;

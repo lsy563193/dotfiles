@@ -69,8 +69,7 @@ void robot::init()
 }
 
 bool robot::robot_is_all_ready() {
-//	printf("sensor(%d),scan(%d),map(%d),align(%d)",is_sensor_ready,is_scan_ready,is_map_ready,is_align_obstacles);
-  return (is_sensor_ready && is_scan_ready && is_map_ready) ? true : false;
+  return (is_sensor_ready && is_scan_ready && is_map_ready && line_align == finish) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
@@ -308,7 +307,6 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
   if (is_scan_ready == false || is_sensor_ready == false)
     return;
 
-	return;
   switch (line_align) {
 
     case detecting:
@@ -349,11 +347,20 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
     case rotating:
       if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
         line_angle_offset = angle;
-        line_align = finish;
+	      system("rosnode kill /slam_gmapping");
+	      system("rosnode kill /obstacle_visualizer");
+	      system("rosnode kill /obstacle_tracker");
+	      system("rosnode kill /obstacle_recorder");
+	      system("rosnode kill /obstacle_detector");
+
+	      system("roslaunch pp gmapping.launch &");
+
+	      line_align = finish;
       }
       break;
     default:
       break;
+	  case finish:break;
   }
 
   /*else {//(is_obstacles_ready == true)
