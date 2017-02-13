@@ -90,13 +90,15 @@ void *core_move_thread(void *)
 
 				break;
 			case Clean_Mode_Sleep:
-				ROS_INFO("\n-----------SLEEP MODE----------\n");
+				ROS_INFO("\n-----------sleep mode----------\n");
 				// Stop the robot wheels and vacuum and brushs.
 				Disable_Motors();
 				while(ros::ok()){
 					usleep(10000);
-					if(Get_Rcon_Remote())
+					if(Get_Rcon_Remote()){
+						Set_Clean_Mode(Clean_Mode_Userinterface);
 						break;
+					}
 				}
 				break;
 			default:
