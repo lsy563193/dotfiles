@@ -50,9 +50,9 @@ void Spot_Mode(void)
 
 
 	Set_LED(100,0);
-	Set_SideBrush_PWM(60, 60);
-	Set_MainBrush_PWM(90);
-	Set_Vacuum_PWM(90);
+	Set_SideBrush_PWM(50, 50);
+	Set_MainBrush_PWM(50);
+	Set_Vacuum_PWM(50);
 
 #ifdef BLDC_INSTALL
 	usleep(10000);
@@ -66,11 +66,15 @@ void Spot_Mode(void)
 	Counter_Watcher=0;
 	Reset_Rcon_Remote();
 	Motor_OC_Counter=0;
-
-	while (Get_LeftWheel_Step() < 6900 && ros::ok()) {
+	Reset_Wheel_Step();
+	uint32_t step;
+//	while (Get_LeftWheel_Step() < 6900 && ros::ok()) {
+	while(ros::ok()){
+		step =Get_LeftWheel_Step();
+		if(step >=6900)break;
 		usleep(40000);
 		Counter_Watcher++;
-		if (Counter_Watcher > 50000) {
+		if (Counter_Watcher > 1000) {//about 200 seconds
 			break;
 		}
 		Set_Dir_Right();
@@ -121,16 +125,16 @@ void Spot_Mode(void)
 	}
 
 	Move_Forward(5, 5);
-	Set_Wheel_Step(0, 0);
+	Reset_Wheel_Step();
 	Reset_Wall_Step();
-	Set_MainBrush_PWM(90);
-	Set_SideBrush_PWM(60, 60);
-	Set_Vacuum_PWM(90);
+	Set_MainBrush_PWM(50);
+	Set_SideBrush_PWM(50, 50);
+	Set_Vacuum_PWM(50);
 	Set_LED(100,0);
 	Motor_OC_Counter = 0;
 
 	while (ros::ok()) {
-
+		usleep(1000);
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if (Check_Bat_SetMotors(135000, 80000, 100000)) {	//Low Battery Event
 			Display_Battery_Status(Display_Low);//display low
@@ -138,7 +142,7 @@ void Spot_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		Set_MainBrush_PWM(80);
+		//Set_MainBrush_PWM(80);
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
 			Reset_Touch();
@@ -178,7 +182,8 @@ void Spot_Mode(void)
 		Set_Dir_Forward();
 		switch (Move_Style) {
 			case Spiral_Right_Out:
-				if (Get_LeftWheel_Step() > (Radius * 3)) {
+				step = Get_LeftWheel_Step();
+				if (step > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 100) {
 						Radius += 1;
@@ -189,10 +194,9 @@ void Spot_Mode(void)
 						Move_Style = Spiral_Right_In;
 					}
 				}
-//				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (Get_RightWall_Step() < 3000) {
 						Stunk++;
 					}
 					if (Get_Bumper_Status()) {
@@ -212,7 +216,8 @@ void Spot_Mode(void)
 				break;
 
 			case Spiral_Right_In:
-				if (Get_LeftWheel_Step() > (Radius * 3)) {
+				step = Get_LeftWheel_Step();
+				if (step > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -223,9 +228,8 @@ void Spot_Mode(void)
 						Radius -= 3;
 					}
 				}
-//				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
-					if (Get_LeftWall_Step() < 3000) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
+					if (Get_RightWall_Step() < 3000) {
 						Stunk++;
 					}
 					if (Get_Bumper_Status()) {
@@ -246,7 +250,8 @@ void Spot_Mode(void)
 				break;
 
 			case Spiral_Left_Out:
-				if (Get_RightWheel_Step() > (Radius * 3)) {
+				step = Get_RightWheel_Step();
+				if (step > (Radius * 3)) {
 					Reset_RightWheel_Step();
 					if (Radius < 100) {
 						Radius += 1;
@@ -257,8 +262,7 @@ void Spot_Mode(void)
 						Move_Style = Spiral_Left_In;
 					}
 				}
-			//	if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
 					if (Get_LeftWall_Step() < 3000) {
 						Stunk++;
@@ -281,7 +285,8 @@ void Spot_Mode(void)
 				break;
 
 			case Spiral_Left_In:
-				if (Get_RightWheel_Step() > (Radius * 2)) {
+				step = Get_RightWheel_Step();
+				if (step > (Radius * 2)) {
 					Reset_RightWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -292,8 +297,7 @@ void Spot_Mode(void)
 						Radius -= 3;
 					}
 				}
-			//	if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
 					if (Get_LeftWall_Step() < 3000) {
 						Stunk++;
@@ -428,8 +432,7 @@ uint8_t Random_Dirt_Event(void)
 				Set_Dir_Right();
 				Set_Wheel_Speed(25, 10);
 
-				//if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
 					if (Get_Bumper_Status()) {
 						Random_Back();
@@ -459,8 +462,7 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = Spiral_Right_In;
 					}
 				}
-				//if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
 					if (Get_LeftWall_Step() < 3000) {
 						Stunk++;
@@ -496,8 +498,7 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-				//if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
 					if (Get_LeftWall_Step() < 3000) {
 						Stunk++;
@@ -532,8 +533,7 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = Spiral_Left_In;
 					}
 				}
-				//if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
 					if (Get_LeftWall_Step() < 3000) {
 						Stunk++;
@@ -569,8 +569,7 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-			//	if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
-				if (Get_Bumper_Status() || Get_Cliff_Trig() ) {
+				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
 					if (Get_LeftWall_Step() < 3000) {
 						Stunk++;

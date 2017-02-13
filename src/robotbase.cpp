@@ -120,9 +120,10 @@ void robotbase_deinit(void)
 		} while (serial_read(2, buf) > 0);
 	*/
 		control_stop_all();
-		usleep(10000);
-		serial_flush();
+		usleep(40000);
 		send_stream_thread = false;
+		usleep(20000);
+		serial_flush();
 		serial_close();
 		printf("ok\n");
 		int mutex_ret = pthread_mutex_destroy(&send_lock);

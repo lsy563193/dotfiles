@@ -35,10 +35,10 @@ void Remote_Mode(void)
   	Reset_Wheel_Step();
 	Reset_Touch();
 	Set_Vacuum_PWM(40);
-	Set_Vac_Speed();
+	//Set_Vac_Speed();
 	while(ros::ok())
 	{
-		usleep(10000);
+		usleep(20000);
 
 		if(Remote_Key(Remote_Forward))
 		{
@@ -49,6 +49,7 @@ void Remote_Mode(void)
 
 		if(Forward_Flag)
 		{
+		
 			if(Get_OBS_Status())
 			{
 				Dec_Counter++;
@@ -78,30 +79,36 @@ void Remote_Mode(void)
 
 		if(Remote_Key(Remote_Left))
 		{
+
 			Deceleration();
 			Work_Motor_Configure();
 			Turn_Left(Turn_Speed,400);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
-			Set_Vacuum_PWM(30);
+			Set_Vacuum_PWM(50);
 			No_Command_Counter=0;
 			Reset_TempPWM();
+			Reset_Rcon_Remote();
+			Reset_Wheel_Step();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Right))
 		{
+	
 			Deceleration();
 			Work_Motor_Configure();
 			Turn_Right(Turn_Speed,320);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
-			Set_Vacuum_PWM(30);
+			Set_Vacuum_PWM(50);
 			No_Command_Counter=0;
 			Reset_Wheel_Step();
+			Reset_Rcon_Remote();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Max))
 		{
+
 //			Switch_VacMode();
 			Deceleration();
 			Reset_Rcon_Remote();
@@ -109,7 +116,7 @@ void Remote_Mode(void)
 			Turn_Right(Turn_Speed,1800);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
-			Set_Vacuum_PWM(30);
+			Set_Vacuum_PWM(40);
 			Reset_TempPWM();
 			No_Command_Counter=0;
 			Forward_Flag=0;
@@ -164,7 +171,7 @@ void Remote_Mode(void)
 		}
 
 		/*------------------------------------------------------Check Battery-----------------------*/
-    	if(Check_Battery())
+    	if(Check_Battery()==0)
 		{
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
