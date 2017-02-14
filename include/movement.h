@@ -196,6 +196,8 @@
 #define	CTL_GYRO 15
 #define	CTL_CRC 16
 
+
+#define STEP_PER_MM  186
 #define Cliff_Limit         (int16_t)20
 
 #define Two_Hours         7200
@@ -215,6 +217,7 @@ void Set_Wheel_Step(uint32_t Left,uint32_t Right);
 void Reset_Wheel_Step(void);
 void Reset_Wall_Step(void);
 uint32_t Get_LeftWall_Step(void);
+uint32_t Get_RightWall_Step(void);
 
 int32_t Get_Wall_ADC(void);
 
@@ -402,9 +405,9 @@ void Set_LeftWheel_Speed(uint8_t speed);
 
 void Set_RightWheel_Speed(uint8_t speed);
 
-int8_t Get_LeftWheel_Speed(void);
+int16_t Get_LeftWheel_Speed(void);
 
-int8_t Get_RightWheel_Speed(void);
+int16_t Get_RightWheel_Speed(void);
 
 uint8_t  Check_Battery();
 
@@ -413,4 +416,12 @@ uint8_t Get_Key_Press(void);
 uint16_t GetBatteryVoltage();
 
 uint8_t Get_Key_Time(uint16_t key);
+
+uint8_t Spot_OBS_Status(void);
+	
+bool IsSendBusy(void);
+
+void SetSendFlag(void);
+
+void ResetSendFlag(void);
 #endif

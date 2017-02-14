@@ -64,6 +64,7 @@ void User_Interface(void)
 	Set_VacMode(Vac_Normal);
 	while(ros::ok())
 	{
+		usleep(2000);	
 		uint32_t remote_cmd = Get_Rcon_Remote();
 		if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
 		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)

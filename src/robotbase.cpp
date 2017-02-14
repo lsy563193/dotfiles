@@ -38,6 +38,9 @@ pthread_mutex_t send_lock;
 pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
+//When you restart gmapping, gyro may be have a angle offset, compensate it
+bool is_line_angle_offset = false;
+float line_angle_offset = 0;
 
 // This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
@@ -120,14 +123,19 @@ void robotbase_deinit(void)
 		} while (serial_read(2, buf) > 0);
 	*/
 		control_stop_all();
+		usleep(40000);
+
+		usleep(40000);
 		// Stop the beeping
 		Beep(0, 0, 0, -1);
 		// Sleep for 30ms to make sure it sends only one control message to shut down the stm32 board.
 		usleep(30000);
 		serial_flush();
 		send_stream_thread = false;
+		usleep(20000);
+		serial_flush();
 		serial_close();
-		printf("ok\n");
+		ROS_DEBUG_NAMED("robotbase","stop ok\n");
 		int mutex_ret = pthread_mutex_destroy(&send_lock);
 		if(mutex_ret<0)
 			ROS_INFO("[robotbase] mutex destroy fail\n");
@@ -245,6 +253,20 @@ void *robotbase_routine(void*)
 			// Save current angle as previous_angle
 			previous_angle = sensor.angle;
 		}
+
+		if(is_line_angle_offset == true){
+			is_line_angle_offset = false;
+		  ROS_INFO("angle(%d),\n",angle);
+		  ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
+			line_angle_offset = sensor.angle;
+		}
+		sensor.angle -= line_angle_offset;
+
+//		ROS_INFO("angle(%d),\n",angle);
+//		ROS_INFO("sensor.angle(%f)\n",sensor.angle);
+//		ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
+//		ROS_WARN("angle_diff(%f)\n", sensor.angle - is_line_angle_offset);
+//		ROS_INFO("sensor.angle_v(%f)\n",sensor.angle_v);
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -281,7 +303,7 @@ void *robotbase_routine(void*)
 		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/66564.0f; //in G
 		cur_time = ros::Time::now();
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
-		float th = (-(float)(angle) / 100.0) * 0.01745;					//turn degrees into radians
+		float th = sensor.angle * 0.01745;					//turn degrees into radians
 		float dt = (cur_time - last_time).toSec();
 
 		last_time = cur_time;
@@ -343,13 +365,15 @@ void *serial_send_routine(void*){
 				Beep(3, 25, 25, -1);
 			}
 		}
-		pthread_mutex_lock(&send_lock);
+		SetSendFlag();
+		//pthread_mutex_lock(&send_lock);
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
-		pthread_mutex_unlock(&send_lock);	
+		//pthread_mutex_unlock(&send_lock);
 		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 		if(buf[CTL_CRC] != calcBufCrc8((char*)sendStream,sl))
-			ROS_DEBUG_NAMED("robotbase","crc not same");
+			ROS_DEBUG_NAMED("robotbase","crc incorret!!");
 		serial_write(SEND_LEN, buf);
+		ResetSendFlag();
 	}
 	//pthread_exit(NULL);
 }

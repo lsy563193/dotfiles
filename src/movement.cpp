@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <math.h>
+#include <time.h>
+#include <ros/ros.h>
 #include "robot.hpp"
 
 #include "gyro.h"
@@ -19,12 +21,21 @@ static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 static uint32_t Rcon_Status;
-int8_t Left_Wheel_Speed = 0;
-int8_t Right_Wheel_Speed = 0;
+
+static int16_t Left_Wheel_Speed = 0;
+static int16_t Right_Wheel_Speed = 0;
+static uint32_t left_wheel_step = 0;
+static uint32_t right_wheel_step = 0;
+static uint32_t leftwall_step = 0;
+static uint32_t rightwall_step = 0;
+
+
 // Variable for vacuum mode
+
 volatile uint8_t Vac_Mode;
 static uint8_t Cleaning_mode = 0;
-
+static bool sendflag=false;
+ros::Time lw_t,rw_t; // this variable is used for calculate wheel step
 /*----------------------- Work Timer functions--------------------------*/
 void Reset_Work_Timer_Start()
 {
@@ -56,28 +67,57 @@ void Set_LeftBrush_Stall(uint8_t L)
 
 uint32_t Get_RightWheel_Step(void)
 {
-	return 0;
+	double t,step;
+	double rwsp;
+	if(Right_Wheel_Speed<0)
+		rwsp = (double)Right_Wheel_Speed*-1;
+	else
+		rwsp = (double)Right_Wheel_Speed;
+	t = (double)(ros::Time::now()-rw_t).toSec();
+	step = rwsp*t/0.181;
+	right_wheel_step = (uint32_t)step;
+	return right_wheel_step;
 }
-
 uint32_t Get_LeftWheel_Step(void)
 {
-	return 0;
+	double t,step;
+	double lwsp;
+	if(Left_Wheel_Speed<0)
+		lwsp = (double)Left_Wheel_Speed*-1;
+	else
+		lwsp = (double)Left_Wheel_Speed;
+	t=(double)(ros::Time::now()-lw_t).toSec();
+	step = lwsp*t/0.181;
+	left_wheel_step = (uint32_t)step;
+	return left_wheel_step;
 }
 
 void Reset_Wheel_Step(void)
-{}
+{
+	lw_t = ros::Time::now();
+	rw_t = ros::Time::now();
+	right_wheel_step = 0;
+	left_wheel_step = 0;
+}
 
 void Reset_Wall_Step(void)
-{}
+{
+	leftwall_step = 0;
+	rightwall_step = 0;
+}
 
 uint32_t Get_LeftWall_Step(void)
 {
-	return 0;
+	return leftwall_step;
+}
+uint32_t Get_RightWall_Step(void)
+{
+	return rightwall_step;
 }
 void Set_Wheel_Step(uint32_t Left, uint32_t Right)
 {
-	Left = Left;
-	Right = Right;
+	left_wheel_step = Left;
+	right_wheel_step = Right;
 }
 
 int32_t Get_Wall_ADC(void)
@@ -117,6 +157,7 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	// Quickly move back for a distance.
 	wheel_left_direction = 1;
 	wheel_right_direction = 1;
+	Reset_Wheel_Step();
 	Set_Wheel_Speed(Speed, Speed);
 	// This count is for how many milliseconds it should take. The Distance is in mm.
 	int back_count = int(1000 * Distance / (Speed * 7.23));
@@ -216,7 +257,14 @@ uint8_t Get_OBS_Status(void)
 
 	return Status;
 }
-
+uint8_t Spot_OBS_Status(void)
+{
+	uint8_t status =0;
+	if(robot::instance()->robot_get_obs_left() > 1500)status |=Status_Left_OBS;
+	if(robot::instance()->robot_get_obs_right() > 1500)status |=Status_Right_OBS;
+	if(robot::instance()->robot_get_obs_front() >2000)status |=Status_Front_OBS;
+	return status;
+}
 
 int32_t Get_FrontOBS(void)
 {
@@ -251,9 +299,9 @@ uint8_t Get_Cliff_Trig(void)
 	if (robot::instance()->robot_get_cliff_left() < Cliff_Limit){
 		printf("[movement.cpp] Left cliff is detected:%d\n", robot::instance()->robot_get_cliff_left());
 		Cliff_Status += 0x01;
-		for(int a = 0;a < 100; a++){
-			printf("[movement.cpp] Left cliff is detected:%d\n", robot::instance()->robot_get_cliff_left());
-		}
+//		for(int a = 0;a < 100; a++){
+//			printf("[movement.cpp] Left cliff is detected:%d\n", robot::instance()->robot_get_cliff_left());
+//		}
 	}
 	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
 		printf("[movement.cpp] Right cliff is detected:%d\n", robot::instance()->robot_get_cliff_right());
@@ -384,49 +432,43 @@ void Reset_TempPWM(void)
 
 void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 {
-	int16_t left_speed, right_speed;
-
-	// Check for the speed limit
 	Left = Left < RUN_TOP_SPEED ? Left : RUN_TOP_SPEED;
 	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
-	left_speed = (int16_t)(Left * 7.23);
-	right_speed = (int16_t)(Right * 7.23);
-	if (wheel_left_direction == 1) {
-		left_speed |= 0x8000;
-	}
-	
-	if (wheel_right_direction == 1) {
-		right_speed |= 0x8000;
-	}
-
-#if 0
-	printf("%s %d: left: %d\tright: %d\tposition: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
-		left_speed, right_speed, robot::instance()->robot_get_position_x(), robot::instance()->robot_get_position_y(), robot::instance()->robot_get_position_z());
-#endif
-	control_set(CTL_WHEEL_LEFT_HIGH, (left_speed >> 8) & 0xff);
-	control_set(CTL_WHEEL_LEFT_LOW, left_speed & 0xff);
-	control_set(CTL_WHEEL_RIGHT_HIGH, (right_speed >> 8) & 0xff);
-	control_set(CTL_WHEEL_RIGHT_LOW, right_speed & 0xff);
+	Set_LeftWheel_Speed(Left);
+	Set_RightWheel_Speed(Right);
 }
 
 void Set_LeftWheel_Speed(uint8_t speed)
 {
-	if(speed>100)speed=100;
-	Left_Wheel_Speed = speed;
+	int16_t l_speed;
+	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
+	l_speed = (int16_t)(speed*7.23);
+	if(wheel_left_direction == 1)
+		l_speed |=0x8000;
+	Left_Wheel_Speed = l_speed;
+	control_set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
+	control_set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
+
 }
 
 void Set_RightWheel_Speed(uint8_t speed)
 {
-	if(speed>100)speed=100;
-	Right_Wheel_Speed = speed;
+	int16_t r_speed;
+	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
+	r_speed = (int16_t)(speed*7.23);
+	if(wheel_right_direction == 1)
+		r_speed |=0x8000;
+	Right_Wheel_Speed = r_speed;
+	control_set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
+	control_set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
 }
 
-int8_t Get_LeftWheel_Speed(void)
+int16_t Get_LeftWheel_Speed(void)
 {
 	return Left_Wheel_Speed;
 }
 
-int8_t Get_RightWheel_Speed(void)
+int16_t Get_RightWheel_Speed(void)
 {
 	return Right_Wheel_Speed;
 }
@@ -649,10 +691,29 @@ void Reset_MoveWithRemote(void)
 
 uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush)
 {
-	Vacuum_Voltage = Vacuum_Voltage;
-	Side_Brush = Side_Brush;
-	Main_Brush = Main_Brush;
-	return 0;
+	static uint8_t low_acc=0;
+	if(Check_Battery()==0){
+		if(low_acc<255)
+			low_acc++;
+		if(low_acc>50){
+			low_acc = 0;
+			uint16_t t_vol = GetBatteryVoltage();
+			uint8_t v_pwr = Vacuum_Voltage/t_vol;
+			uint8_t s_pwr = Side_Brush/t_vol;
+			uint8_t m_pwr = Main_Brush/t_vol;
+
+			Set_BLDC_Speed(v_pwr);
+			Set_SideBrush_PWM(s_pwr,s_pwr);
+			Set_MainBrush_PWM(m_pwr);
+			return 1;
+			
+		}
+		else
+			return 0;
+	}
+	else{
+		return 0;
+	}
 }
 
 void Reset_WorkTimer(void)
@@ -904,31 +965,50 @@ void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right
 
 void control_set(uint8_t type, uint8_t val)
 {
-	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
-		sendStream[type] = val;
-		//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-		//serial_write(SEND_LEN, sendStream);
+	if(!IsSendBusy()){
+		if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
+			sendStream[type] = val;
+			//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+			//serial_write(SEND_LEN, sendStream);
+		}
 	}
 }
 
 void control_append_crc(){
-	sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);	
+	if(!IsSendBusy()){
+		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	}	
 }
 
 void control_stop_all(void)
 {
 	uint8_t i;
-
-	for(i = 2; i < (SEND_LEN)-2; i++) {
-		if (i == CTL_MAIN_PWR)
-			sendStream[i] = 0x01;
-		else
-			sendStream[i] = 0x00;
+	if(!IsSendBusy()){
+		for(i = 2; i < (SEND_LEN)-2; i++) {
+			if (i == CTL_MAIN_PWR)
+				sendStream[i] = 0x01;
+			else
+				sendStream[i] = 0x00;
+		}
 	}
 	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	//serial_write(SEND_LEN, sendStream);
 }
 
+bool IsSendBusy(void)
+{
+	return sendflag;
+}
+
+void SetSendFlag(void)
+{
+	sendflag = true;
+}
+
+void ResetSendFlag(void)
+{
+	sendflag = false;
+}
 void Random_Back(void)
 {
 	Stop_Brifly();
@@ -954,13 +1034,23 @@ void Cliff_Move_Back()
 	Quick_Back(18,60);
 }
 
-void Reset_RightWheel_Step(){}
-void Reset_LeftWheel_Step(){}
+void Reset_RightWheel_Step()
+{
+	rw_t = ros::Time::now();
+	right_wheel_step = 0;
+}
+
+void Reset_LeftWheel_Step()
+{
+	lw_t = ros::Time::now();
+	left_wheel_step	= 0;
+}
 
 uint16_t GetBatteryVoltage()
 {
 	return robot::instance()->robot_get_battery_voltage();
 }
+
 uint8_t  Check_Battery()
 {
 	if(robot::instance()->robot_get_battery_voltage()<Low_Battery_Limit)
