@@ -366,6 +366,8 @@ void Initialize_Motors(void);
 
 void Disable_Motors(void);
 
+void set_start_charge(void);
+
 void set_stop_charge(void);
 
 void set_gyro(uint8_t state, uint8_t calibration);

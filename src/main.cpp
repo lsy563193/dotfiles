@@ -19,6 +19,7 @@
 #include "spot.h"
 #include "user_interface.h"
 #include "remote_mode.h"
+#include "sleep.h"
 
 // This is the start time of cleanning
 time_t Work_Timer_Start = 0;
@@ -63,11 +64,13 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------charging mode------\n");
-				goto_charger();
+				//goto_charger();
+				Charge_Function();
 				break;
 			case Clean_Mode_GoHome:
 				ROS_INFO("\n-----------go home mode--------\n");
-				Set_Clean_Mode(Clean_Mode_Charging);
+				goto_charger();
+				//Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:
 				ROS_INFO("\n-----------test mode--------\n");
@@ -93,11 +96,12 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-----------SLEEP MODE----------\n");
 				// Stop the robot wheels and vacuum and brushs.
 				Disable_Motors();
-				while(ros::ok()){
-					usleep(10000);
-					if(Get_Rcon_Remote())
-						break;
-				}
+//				while(ros::ok()){
+//					usleep(10000);
+//					if(Get_Rcon_Remote())
+//						break;
+//				}
+				Sleep_Mode();
 				break;
 			default:
 				Set_Clean_Mode(Clean_Mode_Userinterface);

@@ -122,7 +122,7 @@ private:
 	uint8_t key;
 
 	/*1 byte */
-	bool charge_status;  
+	uint8_t charge_status;
 
 	/*1 byte*/
 	bool w_tank; //water tank 

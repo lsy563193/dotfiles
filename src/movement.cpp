@@ -288,6 +288,15 @@ uint8_t Turn_Connect(void)
 
 	int16_t target_angle;
 	int8_t speed = 5;
+	// Enable the switch for charging.
+	set_start_charge();
+	// Wait for 200ms for charging activated.
+	usleep(200000);
+	if (Is_ChargerOn())
+	{
+		ROS_INFO("[movement.cpp] Reach charger without turning.");
+		return 1;
+	}
 	// Start turning left.
 	target_angle = Gyro_GetAngle(0) - 120;
 	if (target_angle < 0) {
@@ -592,7 +601,8 @@ void Reset_Rcon_Status(void)
 
 uint32_t Get_Rcon_Status(void)
 {
-	return Rcon_Status;
+	// Return the rcon info for charge stub from robot instance.
+	return robot::instance()->robot_get_rcon();
 }
 
 uint32_t Get_Rcon_Remote(void)
@@ -810,7 +820,7 @@ void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int 
 	// A speaker sound loop contains one sound time and one silence time
 	// Sound_Time_Count means how many loops of sendStream loop will it sound in one speaker sound loop
 	robotbase_speaker_sound_time_count = Sound_Time_Count;
-	// Silence_Time_Count means how many loops of sendStream loop will it be silence in one speaker sound loop
+	// Silence_Time_Count means how many loops of sendStream loop will it be silence in one speaker sound loop, -1 means consistently beep.
 	robotbase_speaker_silence_time_count = Silence_Time_Count;
 	// Trigger the update flag to start the new beep action
 	robotbase_beep_update_flag = true;
@@ -847,6 +857,12 @@ void Disable_Motors(void)
 	Set_MainBrush_PWM(0);
 	// Stop the vacuum, directly stop the BLDC
 	Set_BLDC_Speed(0);
+}
+
+void set_start_charge(void)
+{
+	// This function will turn on the charging function.
+	control_set(CTL_CHARGER, 0x01);
 }
 
 void set_stop_charge(void)

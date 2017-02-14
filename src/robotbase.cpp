@@ -122,7 +122,8 @@ void robotbase_deinit(void)
 		control_stop_all();
 		// Stop the beeping
 		Beep(0, 0, 0, -1);
-		usleep(10000);
+		// Sleep for 30ms to make sure it sends only one control message to shut down the stm32 board.
+		usleep(30000);
 		serial_flush();
 		send_stream_thread = false;
 		serial_close();
@@ -261,6 +262,7 @@ void *robotbase_routine(void*)
 		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
 		sensor.key = receiStream[27];
 		sensor.c_s = receiStream[28];
+//		ROS_INFO("charge status: %x.", sensor.c_s);
 		sensor.w_tank = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
 

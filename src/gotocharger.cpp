@@ -140,3 +140,131 @@ void goto_charger(){
 	}
 	
 }
+
+/*---------------------------------------------------------------- Charge Funtion ------------------------*/
+void Charge_Function(void)
+{
+
+	volatile uint8_t Display_Switch=1;
+
+	uint8_t Display_Full_Switch=0;
+
+	#ifdef ONE_KEY_DISPLAY
+
+	uint8_t One_Display_Counter=0;
+
+	#endif
+
+	set_start_charge();
+
+	ROS_INFO("[gotocharger.cpp] Start charger mode.");
+	while(1)
+	{
+		usleep(1000000);
+
+		ROS_INFO("[gotocharger.cpp] Loop for charger mode.");
+//		#ifdef SCREEN_REMOTE
+//		if(Remote_Clock_Received())
+//		{
+//			Set_Remote_Schedule();
+//		}
+//		#endif
+
+		if(!Is_ChargerOn())//check if charger unplug
+		{
+			ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			break;
+		}
+		/*----------------------------------------------------Check Key---------------------*/
+		if(Get_Key_Press() == KEY_CLEAN)//                                    Check Key Clean
+		{
+			Get_Key_Time(KEY_CLEAN);
+//			Reset_Error_Code();
+			if(Is_AtHomeBase()) {
+				ROS_INFO("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
+//				Set_Room_Mode(Room_Mode_Large);
+				Set_Clean_Mode(Clean_Mode_Navigation);
+				break;
+			}
+		}
+
+		if(Remote_Key(Remote_Random))//                                       Check Remote Key Clean
+		{
+			set_stop_charge();
+			Reset_Rcon_Remote();
+			if(Is_AtHomeBase())
+			{
+				Set_VacMode(Vac_Normal);
+//				Set_Room_Mode(Room_Mode_Large);
+//				Press_time=10;
+//				while(Press_time--)
+//				{
+//					if(Get_Rcon_Remote()==Remote_Wallfollow)
+//					{
+//						Set_LED(100,0);
+//						Beep(1);
+//						Set_LED(0,0);
+//						Beep(3);
+//						Set_LED(100,0);
+//						Beep(5);
+//						Set_Room_Mode(Room_Mode_Auto);
+//						break;
+//					}
+//					delay(500);
+//				}
+				Set_Clean_Mode(Clean_Mode_RandomMode);
+				break;
+			}
+		}
+		if (Remote_Key(Remote_Clean)) {
+			set_stop_charge();
+			Reset_Rcon_Remote();
+			if(Is_AtHomeBase()) {
+//				Set_VacMode(Vac_Normal);
+//				Set_Room_Mode(Room_Mode_Large);
+				Set_Clean_Mode(Clean_Mode_Navigation);
+				break;
+			}
+		}
+		/*-----------------------------------------------------Schedul Timer Up-----------------*/
+//		if(Is_Alarm())
+//		{
+//			Reset_Alarm();
+//      		if(Is_AtHomeBase())
+//			{
+//				Set_VacMode(Vac_Normal);
+//				Set_Room_Mode(Room_Mode_Large);
+//				Set_Clean_Mode(Clean_Mode_Navigation);
+//				break;
+//			}
+//		}
+
+		#ifdef ONE_KEY_DISPLAY
+		if(robot::instance()->robot_get_battery_voltage())
+		{
+			// For displaying breathing LED
+			if(Display_Switch)
+			{
+				One_Display_Counter+=2;
+				if(One_Display_Counter>98)Display_Switch=0;
+			}
+			else
+			{
+				One_Display_Counter-=2;
+				if(One_Display_Counter<2)Display_Switch=1;
+			}
+
+			if(Display_Full_Switch)
+			{
+				Set_LED(100,0);
+			}
+			else
+			{
+				Set_LED(One_Display_Counter,One_Display_Counter);
+			}
+		}
+		#endif
+
+  }
+}

@@ -1805,11 +1805,18 @@ uint8_t CM_Touring(void)
 	Set_LED(100, 0);
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
-		// Reset the robot to non charge mode.
-		set_stop_charge();
 		printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
-		usleep(4000);
+		// Reset the robot to non charge mode.
+		set_stop_charge();
+		// Debug
+		while (Is_ChargerOn())
+		{
+			ROS_INFO("Robot Still charging.");
+			usleep(20000);
+		}
+		// Sleep for 30ms to make sure it has sent at least one control message to stop charging.
+		usleep(30000);
 		if (Is_ChargerOn()){
 			printf("[core_move.cpp] Still charging.\n");
 		}
