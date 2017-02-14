@@ -58,7 +58,7 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1000);
 				*/
 				CM_Touring();
-				//Set_Clean_Mode(Clean_Mode_Charging);
+				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------charging mode------\n");
@@ -99,7 +99,7 @@ void *core_move_thread(void *)
 			default:
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
-			
+
 		}
 	}
 	
@@ -113,6 +113,7 @@ int main(int argc, char **argv)
 	int			baudrate, ret1, core_move_thread_state;
 	pthread_t	core_move_thread_id;
 	std::string	serial_port;
+	bool line_align_active;
 
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
@@ -122,8 +123,13 @@ int main(int argc, char **argv)
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 115200);
+	nh_private.param<bool>("line_align", line_align_active, false);
 
 	serial_init(serial_port.c_str(), baudrate);
+	if(line_align_active == true){
+		robot::instance()->align_init();
+		system("roslaunch obstacle_detector single_scanner.launch &");
+	}
 	robotbase_init();
 
 #if 1
