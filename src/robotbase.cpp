@@ -38,7 +38,7 @@ pthread_mutex_t send_lock;
 pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
-//启动pp时，gyro可能处于未关闭状态，会有angle值，补偿掉
+//When you restart gmapping, gyro may be have a angle offset, compensate it
 bool is_line_angle_offset = false;
 float line_angle_offset = 0;
 
@@ -255,6 +255,8 @@ void *robotbase_routine(void*)
 
 		if(is_line_angle_offset == true){
 			is_line_angle_offset = false;
+		  ROS_INFO("angle(%d),\n",angle);
+		  ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
 			line_angle_offset = sensor.angle;
 		}
 		sensor.angle -= line_angle_offset;

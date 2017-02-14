@@ -1785,7 +1785,8 @@ uint8_t CM_Touring(void)
 	uint16_t dir;
 #endif
 
-	uint16_t	home_angle = robot::instance()->robot_get_home_angle();
+	int16_t	home_angle = robot::instance()->robot_get_home_angle();
+	robot::instance()->align();
 
 	MapTouringType	mt_state = MT_None;
 

@@ -12,6 +12,7 @@
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
 #include <vector>
+
 class robot
 {
 public:
@@ -82,6 +83,8 @@ public:
 	void pub_bumper_markers(void);
 	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
+	void align(void);
+	void align_init(void);
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
@@ -98,9 +101,11 @@ private:
 		detecting=0,
 		rotating=1,
 		finish=2,
-	}line_align;
+	}line_align_;
 	/* 1 byte */
 	float	angle;
+
+	bool	is_align_active_;
 	int16_t line_angle;
 	/* 1 byte */
 	float	angle_v;

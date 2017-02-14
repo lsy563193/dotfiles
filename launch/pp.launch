@@ -6,5 +6,6 @@
 	<node name="pp" pkg="pp" type="pp" output="screen">
 		<param name="serial_port" type="string" value="/dev/ttyUSB1" />
 		<param name="baudrate" type="int" value="115200" />
+		<param name="line_align" type="bool" value="false" />
 	</node>
 </launch>

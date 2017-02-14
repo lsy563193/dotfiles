@@ -15,7 +15,7 @@ static	robot *robot_obj = NULL;
 time_t	start_time;
 
 //extern pp::x900sensor sensor;
-robot::robot()
+robot::robot():is_align_active_(false),line_align_(finish)
 {
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
@@ -41,7 +41,6 @@ robot::robot()
 	this->linear_z = 0.0;
 
 	this->line_angle = 0;
-	this->line_align = detecting;
 	this->obstacles_sub = this->robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
@@ -69,7 +68,7 @@ void robot::init()
 }
 
 bool robot::robot_is_all_ready() {
-  return (is_sensor_ready && is_scan_ready && is_map_ready && line_align == finish) ? true : false;
+  return (is_sensor_ready && is_scan_ready && is_map_ready && line_align_ > detecting) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
@@ -307,13 +306,11 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
   if (is_scan_ready == false || is_sensor_ready == false)
     return;
 
-  switch (line_align) {
-
-    case detecting:
+  if(line_align_ == detecting) {
       count--;
       if (count == 0) {
         ROS_DEBUG("line detect timeout");
-        line_align = finish;
+        line_align_ = finish;
         return;
       }
       if (msg->segments.size() != 0) {
@@ -327,7 +324,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
           }
         }
         if (last_distant > 1) {
-          line_align = rotating;
+          line_align_ = rotating;
           auto yaw = arctan(detaly, detalx);
           line_angle = ((int16_t) (yaw * 1800 / M_PI) % 3600);
           if (line_angle > 900) {
@@ -336,31 +333,21 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
             line_angle += 1800;
           }
 
+	        ROS_INFO("line detect timeout");
           if (abs(line_angle) < 50) {
-            ROS_WARN("abs(line_angle) < 50(%d)\n", line_angle);
-            line_align = finish;
+            ROS_INFO("abs(line_angle) < 50(%d)\n", line_angle);
+            line_align_ = finish;
             obstacles_sub.shutdown();
           }
         }
       }
-      break;
-    case rotating:
-      if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
-	      system("rosnode kill /slam_gmapping");
-	      system("rosnode kill /obstacle_visualizer");
-	      system("rosnode kill /obstacle_tracker");
-	      system("rosnode kill /obstacle_recorder");
-	      system("rosnode kill /obstacle_detector");
+//    case rotating:
+//      if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
 
-	      system("roslaunch pp gmapping.launch &");
-
-	      is_line_angle_offset = true;
-	      line_align = finish;
-      }
-      break;
-    default:
-      break;
-	  case finish:break;
+//	      is_line_angle_offset = true;
+//	      line_align_ = finish;
+//      }
+//      break;
   }
 
   /*else {//(is_obstacles_ready == true)
@@ -652,4 +639,36 @@ void robot::pub_bumper_markers(){
 	this->bumper_markers.header.stamp = ros::Time::now();
 	this->bumper_markers.points.push_back(this->m_points);
 	this->send_bumper_marker_pub.publish(this->bumper_markers);
+}
+
+void robot::align(void){
+
+	if(is_align_active_ != true)
+		return;
+
+	if(line_align_ == rotating) {
+		ROS_WARN("line detect: rotating line_angle(%d)",line_angle);
+		auto angle = static_cast<uint16_t>(abs(line_angle));
+		if (line_angle > 0) {
+			ROS_WARN("Turn_Left %d",angle);
+			Turn_Left(Turn_Speed / 10, angle);
+		} else if (line_angle < 0) {
+			ROS_WARN("Turn_Right %d",angle);
+			Turn_Right(Turn_Speed / 10, angle);
+		}
+		is_line_angle_offset = true;
+
+		system("rosnode kill /slam_gmapping");
+		system("roslaunch pp gmapping.launch &");
+		line_align_ = finish;
+	}
+	system("rosnode kill /obstacle_visualizer");
+	system("rosnode kill /obstacle_tracker");
+	system("rosnode kill /obstacle_recorder");
+	system("rosnode kill /obstacle_detector");
+	sleep(2);
+}
+void robot::align_init(void){
+	is_align_active_ =  true;
+	line_align_ = detecting;
 }
