@@ -1,6 +1,6 @@
 <launch>
-	<node name = "robotbase" pkg="ilife_robotbase" type ="robotbase" output = "screen">
-		<param name="serial_port" type="string" value="/dev/ttyS3" />
+	<node name = "robotbase" pkg="pp" type ="robotbase" output = "screen">
+		<param name="serial_port" type="string" value="/dev/ttyUSB1" />
 		<param name="baudrate" type="int" value="115200" />
 		<param name="pub_rate" type="int" value="50" />
 		<param name="cliff_warnning" type="bool" value="true" />

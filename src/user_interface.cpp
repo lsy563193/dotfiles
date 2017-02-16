@@ -81,11 +81,8 @@ void User_Interface(void)
 		/*--------------------------------------------------------Check if on the station--------------*/
 		if(Is_ChargerOn())
 		{
-//		  	if(Get_CleanKeyDelay()<1)
-//	  		{
-//				Set_Clean_Mode(Clean_Mode_Charging);
-//				break;
-//			}
+			Set_Clean_Mode(Clean_Mode_Charging);
+			break;
 		}
 		else
 		{

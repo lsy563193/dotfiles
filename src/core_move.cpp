@@ -981,7 +981,10 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 	Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
+//	Target_Course += robot::instance()->robot_get_home_angle();
+	printf("Target_Course(%d)\n",Target_Course);
 	CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
+	printf("leave CM_HeadToCourse\n");
 
 	if (Touch_Detect()) {
 		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
@@ -1768,7 +1771,6 @@ uint16_t CM_get_robot_direction()
 	return dir;
 }
 #endif
-
 uint8_t CM_Touring(void)
 {
 	int8_t	state;
@@ -1783,7 +1785,8 @@ uint8_t CM_Touring(void)
 	uint16_t dir;
 #endif
 
-	uint16_t	home_angle = 0;
+	int16_t	home_angle = robot::instance()->robot_get_home_angle();
+	robot::instance()->align();
 
 	MapTouringType	mt_state = MT_None;
 
@@ -1805,11 +1808,18 @@ uint8_t CM_Touring(void)
 	Set_LED(100, 0);
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
-		// Reset the robot to non charge mode.
-		set_stop_charge();
 		printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
-		usleep(4000);
+		// Reset the robot to non charge mode.
+		set_stop_charge();
+		// Debug
+		while (Is_ChargerOn())
+		{
+			ROS_INFO("Robot Still charging.");
+			usleep(20000);
+		}
+		// Sleep for 30ms to make sure it has sent at least one control message to stop charging.
+		usleep(30000);
 		if (Is_ChargerOn()){
 			printf("[core_move.cpp] Still charging.\n");
 		}
@@ -1836,20 +1846,22 @@ uint8_t CM_Touring(void)
 	Blink_LED = 8;
 	Reset_Touch();
 	/*wati for gyro initialize*/
+	ROS_DEBUG("while Blink_LED-----------------------------");
 	while (Blink_LED--) {
 		if (Touch_Detect()) {
+			ROS_DEBUG("Touch_Detect1-----------------------------");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
 		Set_LED(0, 0);
 		usleep(200000);
 		if (Touch_Detect()) {
+			ROS_DEBUG("Touch_Detect2-----------------------------");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
 		Set_LED(100, 0);
 		usleep(200000);
-
 	}
 
 	//usleep(100);
@@ -1864,6 +1876,7 @@ uint8_t CM_Touring(void)
 	charger_point.Y =  0; //Map_GetYCount();
 	printf("New Home Point: (%d, %d) (%d, %d)\n", charger_point.X, charger_point.Y, countToCell(charger_point.X), countToCell(charger_point.Y));
 
+	ROS_DEBUG("Map_Initialize-----------------------------");
 	Map_Initialize();
 	PathPlanning_Initialize(&Home_Point.X, &Home_Point.Y);
 
@@ -1888,6 +1901,8 @@ uint8_t CM_Touring(void)
 		station_zone = 0;
 	}
 	int work_mode=0;
+
+	ROS_DEBUG("-----------------------------");
 	/*****************************************************Cleaning*****************************************************/
 	while (ros::ok()) {
 
@@ -2101,6 +2116,8 @@ uint8_t CM_Touring(void)
 				/***************************2.2-2.2-1 Start State -1*************************/
 				//Find path
 				if (state == -1) {
+
+					ROS_DEBUG("Find path-----------------------------");
 					LED_Blink = 1;
 
 //					Set_Run_HS_Timer(1);
@@ -2142,6 +2159,8 @@ uint8_t CM_Touring(void)
 				//Move to target
 				else if (state == 1) {
 					//printf("State 1!");
+
+					ROS_DEBUG("Move to target-----------------------------");
 
 #ifdef PP_ROUNDING_OBSTCAL
 					dir = CM_get_robot_direction();

@@ -5,12 +5,14 @@
 #include <nav_msgs/MapMetaData.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <obstacle_detector/Obstacles.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Point.h>
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
 #include <vector>
+
 class robot
 {
 public:
@@ -19,7 +21,6 @@ public:
 
 	static robot *instance();
 	void init();
-
 	bool robot_is_all_ready();
 	uint8_t robot_get_workmode();
 	float robot_get_angle();
@@ -67,6 +68,7 @@ public:
 
 	int16_t robot_get_yaw();
 
+	int16_t robot_get_home_angle();
 	float robot_get_position_x();
 	float robot_get_position_y();
 	float robot_get_position_z();
@@ -81,11 +83,13 @@ public:
 	void pub_bumper_markers(void);
 	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
+	void align(void);
+	void align_init(void);
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
 	std::vector<int8_t> map_data;
-	std::vector<int8_t> *ptr;	
+	std::vector<int8_t> *ptr;
 	uint32_t seq;
         uint32_t width;
         uint32_t height;
@@ -93,10 +97,16 @@ private:
 	double origin_x;
 	double origin_y;
 	bool	is_map_ready;
-
+	enum align_state{
+		detecting=0,
+		rotating=1,
+		finish=2,
+	}line_align_;
 	/* 1 byte */
 	float	angle;
 
+	bool	is_align_active_;
+	int16_t line_angle;
 	/* 1 byte */
 	float	angle_v;
 
@@ -122,7 +132,7 @@ private:
 	uint8_t key;
 
 	/*1 byte */
-	bool charge_status;  
+	uint8_t charge_status;
 
 	/*1 byte*/
 	bool w_tank; //water tank 
@@ -227,6 +237,7 @@ private:
 	ros::Subscriber odom_sub;
 	ros::Subscriber map_metadata_sub;
 	ros::Subscriber map_sub;
+	ros::Subscriber obstacles_sub;
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
 	ros::Publisher send_bumper_marker_pub;
@@ -239,6 +250,7 @@ private:
 
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
+	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr& obstacles);
 	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& msg);
 };

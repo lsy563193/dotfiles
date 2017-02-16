@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pp)
+set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
+FILE(GLOB PP_SRC
+	"./src/*.c"
+	"./src/*.cpp"
+)
 
 find_package(catkin REQUIRED COMPONENTS
 	message_generation
@@ -16,11 +21,6 @@ find_package(catkin REQUIRED COMPONENTS
 include_directories(
   ./include
   ${catkin_INCLUDE_DIRS}
-)
-
-FILE(GLOB PP_SRC
-	"./src/*.c"
-	"./src/*.cpp"
 )
 
 add_message_files(

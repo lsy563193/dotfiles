@@ -20,6 +20,8 @@
 #include "user_interface.h"
 #include "remote_mode.h"
 #include "random_runing.h"
+#include "sleep.h"
+
 
 void *core_move_thread(void *)
 {
@@ -57,15 +59,17 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1000);
 				*/
 				CM_Touring();
-				//Set_Clean_Mode(Clean_Mode_Charging);
+				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------charging mode------\n");
-				goto_charger();
+				//goto_charger();
+				Charge_Function();
 				break;
 			case Clean_Mode_GoHome:
 				ROS_INFO("\n-----------go home mode--------\n");
-				Set_Clean_Mode(Clean_Mode_Charging);
+				goto_charger();
+				//Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:
 				ROS_INFO("\n-----------test mode--------\n");
@@ -91,18 +95,17 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-----------sleep mode----------\n");
 				// Stop the robot wheels and vacuum and brushs.
 				Disable_Motors();
-				while(ros::ok()){
-					usleep(10000);
-					if(Get_Rcon_Remote()){
-						Set_Clean_Mode(Clean_Mode_Userinterface);
-						break;
-					}
-				}
+//				while(ros::ok()){
+//					usleep(10000);
+//					if(Get_Rcon_Remote())
+//						break;
+//				}
+				Sleep_Mode();
 				break;
 			default:
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
-			
+
 		}
 	}
 	
@@ -116,6 +119,7 @@ int main(int argc, char **argv)
 	int			baudrate, ret1, core_move_thread_state;
 	pthread_t	core_move_thread_id;
 	std::string	serial_port;
+	bool line_align_active;
 
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
@@ -125,8 +129,13 @@ int main(int argc, char **argv)
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 115200);
+	nh_private.param<bool>("line_align", line_align_active, false);
 
 	serial_init(serial_port.c_str(), baudrate);
+	if(line_align_active == true){
+		robot::instance()->align_init();
+		system("roslaunch obstacle_detector single_scanner.launch &");
+	}
 	robotbase_init();
 
 #if 1

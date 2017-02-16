@@ -39,6 +39,9 @@ pthread_mutex_t send_lock;
 pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
+//When you restart gmapping, gyro may be have a angle offset, compensate it
+bool is_line_angle_offset = false;
+float line_angle_offset = 0;
 
 // This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
@@ -121,10 +124,13 @@ void robotbase_deinit(void)
 		} while (serial_read(2, buf) > 0);
 	*/
 		control_stop_all();
-		
+		usleep(40000);
+
 		usleep(40000);
 		// Stop the beeping
 		Beep(0, 0, 0, -1);
+		// Sleep for 30ms to make sure it sends only one control message to shut down the stm32 board.
+		usleep(30000);
 		serial_flush();
 		send_stream_thread = false;
 		usleep(20000);
@@ -248,6 +254,20 @@ void *robotbase_routine(void*)
 			// Save current angle as previous_angle
 			previous_angle = sensor.angle;
 		}
+
+		if(is_line_angle_offset == true){
+			is_line_angle_offset = false;
+		  ROS_INFO("angle(%d),\n",angle);
+		  ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
+			line_angle_offset = sensor.angle;
+		}
+		sensor.angle -= line_angle_offset;
+
+//		ROS_INFO("angle(%d),\n",angle);
+//		ROS_INFO("sensor.angle(%f)\n",sensor.angle);
+//		ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
+//		ROS_WARN("angle_diff(%f)\n", sensor.angle - is_line_angle_offset);
+//		ROS_INFO("sensor.angle_v(%f)\n",sensor.angle_v);
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -265,6 +285,7 @@ void *robotbase_routine(void*)
 		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
 		sensor.key = receiStream[27];
 		sensor.c_s = receiStream[28];
+//		ROS_INFO("charge status: %x.", sensor.c_s);
 		sensor.w_tank = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
 
@@ -286,7 +307,7 @@ void *robotbase_routine(void*)
 		if(sensor.right_wall>0)
 			ROS_DEBUG_NAMED(ROBOTBASE,"on stm32 crc calculate bad time %d ",sensor.right_wall);
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
-		float th = (-(float)(angle) / 100.0) * 0.01745;					//turn degrees into radians
+		float th = sensor.angle * 0.01745;					//turn degrees into radians
 		float dt = (cur_time - last_time).toSec();
 
 		last_time = cur_time;
@@ -354,7 +375,7 @@ void *serial_send_routine(void*){
 		SetSendFlag();
 		//pthread_mutex_lock(&send_lock);
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
-		//pthread_mutex_unlock(&send_lock);	
+		//pthread_mutex_unlock(&send_lock);
 		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 		if(buf[CTL_CRC] != calcBufCrc8((char*)sendStream,sl))
 			ROS_DEBUG_NAMED(ROBOTBASE,"on send process crc incorret!!");
