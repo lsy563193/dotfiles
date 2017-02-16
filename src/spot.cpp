@@ -67,6 +67,7 @@ void Spot_Mode(void)
 	Reset_Rcon_Remote();
 	Motor_OC_Counter=0;
 	Reset_Wheel_Step();
+	Reset_Work_Time();
 	uint32_t step;
 //	while (Get_LeftWheel_Step() < 6900 && ros::ok()) {
 	while(ros::ok()){
@@ -335,7 +336,7 @@ void Spot_Mode(void)
 }
 
 /*----------------------------------------------------------------Random Dirt Event---------------------------------*/
-#if 0
+ 
 uint8_t Random_Dirt_Event(void)
 {
 	uint16_t Radius = 0;
@@ -355,10 +356,10 @@ uint8_t Random_Dirt_Event(void)
 
 	Check_Bat_SetMotors(135000, 100000, 100000);
 
-	#ifdef BLDC_INSTALL
+#ifdef BLDC_INSTALL
 	Set_VacMode(Vac_Max);
 	Set_Vac_Speed();
-	#endif
+#endif
 
 	Move_Forward(0, 0);
 	Set_Wheel_Step(0, 0);
@@ -393,11 +394,11 @@ uint8_t Random_Dirt_Event(void)
 		}
 
 		/*------------------------------------------------------Virtual Wall-----------------------*/
-	#ifdef VIRTUAL_WALL
+#ifdef VIRTUAL_WALL
 
 
 
-	#endif
+#endif
 
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if (Check_Bat_SetMotors(135000, 100000, 120000)) {	//Low Battery Event
@@ -612,4 +613,3 @@ uint8_t Random_Dirt_Event(void)
 	//return 2;
 }
 
-#endif

@@ -3,13 +3,15 @@
 #include <time.h>
 #include <ros/ros.h>
 #include "robot.hpp"
+#include <time.h>
 
 #include "gyro.h"
 #include "movement.h"
 #include "crc8.h"
 #include "serial.h"
 #include "robotbase.h"
-
+#include "config.h"
+#define MOVEMENT "movement"
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -22,6 +24,14 @@ static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 static uint32_t Rcon_Status;
 
+uint32_t Average_Move = 0;
+uint32_t Average_Counter =0;
+uint32_t Max_Move = 0;
+uint32_t Auto_Work_Time = 2800;
+uint32_t Room_Work_Time = 3600;
+uint8_t Room_Mode = 0;
+
+static uint32_t Wall_Accelerate =0;
 static int16_t Left_Wheel_Speed = 0;
 static int16_t Right_Wheel_Speed = 0;
 static uint32_t left_wheel_step = 0;
@@ -29,28 +39,30 @@ static uint32_t right_wheel_step = 0;
 static uint32_t leftwall_step = 0;
 static uint32_t rightwall_step = 0;
 
-
+static int32_t MoveStepCounter = 0;
+static uint32_t Mobility_Step = 0;
+static uint8_t Direction_Flag=0;
 // Variable for vacuum mode
 
 volatile uint8_t Vac_Mode;
 static uint8_t Cleaning_mode = 0;
-static bool sendflag=false;
-ros::Time lw_t,rw_t; // this variable is used for calculate wheel step
+static uint8_t sendflag=0;
+static time_t work_time;
+ros::Time lw_t,rw_t; // these variable is used for calculate wheel step
 /*----------------------- Work Timer functions--------------------------*/
-void Reset_Work_Timer_Start()
+void Reset_Work_Time()
 {
-	// Save current time as Work_Timer_Start
-	Work_Timer_Start = time(NULL);
+	work_time = time(NULL);
 }
 
-uint32_t Get_Work_Timer(time_t start_time)
+uint32_t Get_Work_Time()
 {
-	// Get the Duration of time between now and start_time
-	if ((uint32_t)start_time == 0){
-		return (uint32_t)0;
-	}else{
-		return (uint32_t)difftime(time(NULL), start_time);
-	}
+	return (uint32_t)difftime(time(NULL), work_time);
+}
+
+void Set_Work_Time(time_t time)
+{
+	work_time = time;
 }
 
 /*----------------------- Set error functions--------------------------*/
@@ -122,7 +134,7 @@ void Set_Wheel_Step(uint32_t Left, uint32_t Right)
 
 int32_t Get_Wall_ADC(void)
 {
-	return 0;
+	return (int32_t)robot::instance()->robot_get_wall();
 }
 
 void Set_Dir_Backward(void)
@@ -184,9 +196,10 @@ void Turn_Left(uint16_t speed, uint16_t angle)
 	wheel_right_direction = 0;
 
 	Set_Wheel_Speed(speed, speed);
-
+	
+	uint8_t oc=0;
 	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
-	while (1) {
+	while (ros::ok()) {
 		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
 			break;
 		}
@@ -195,6 +208,13 @@ void Turn_Left(uint16_t speed, uint16_t angle)
 		} else {
 			Set_Wheel_Speed(speed, speed);
 		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		if(Is_Turn_Remote())
+			break;
 		usleep(10000);
 	}
 	wheel_left_direction = 0;
@@ -221,9 +241,9 @@ void Turn_Right(uint16_t speed, uint16_t angle)
 	wheel_right_direction = 1;
 
 	Set_Wheel_Speed(speed, speed);
-
+	uint8_t oc=0;
 	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
-	while (1) {
+	while (ros::ok()) {
 		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
 			break;
 		}
@@ -232,6 +252,13 @@ void Turn_Right(uint16_t speed, uint16_t angle)
 		} else {
 			Set_Wheel_Speed(speed, speed);
 		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		if(Is_Turn_Remote())
+			break;
 		usleep(10000);
 	}
 	wheel_left_direction = 0;
@@ -294,29 +321,112 @@ uint8_t Get_Bumper_Status(void)
 
 uint8_t Get_Cliff_Trig(void)
 {
-	// Logic of getting the cliff status.
 	uint8_t Cliff_Status = 0x00;
-	if (robot::instance()->robot_get_cliff_left() < Cliff_Limit){
-		printf("[movement.cpp] Left cliff is detected:%d\n", robot::instance()->robot_get_cliff_left());
+	int16_t cl,cr,cf;
+	cl = robot::instance()->robot_get_cliff_left();
+	cr = robot::instance()->robot_get_cliff_right();
+	cf = robot::instance()->robot_get_cliff_front();	
+	if (cl < Cliff_Limit){
+		ROS_DEBUG_NAMED(MOVEMENT,"Left cliff is detected:%d", cl);
 		Cliff_Status += 0x01;
-//		for(int a = 0;a < 100; a++){
-//			printf("[movement.cpp] Left cliff is detected:%d\n", robot::instance()->robot_get_cliff_left());
-//		}
 	}
-	if (robot::instance()->robot_get_cliff_right() < Cliff_Limit){
-		printf("[movement.cpp] Right cliff is detected:%d\n", robot::instance()->robot_get_cliff_right());
+	if (cr< Cliff_Limit){
+		ROS_DEBUG_NAMED(MOVEMENT,"Right cliff is detected:%d", cr);
 		Cliff_Status += 0x02;
 	}
-	if (robot::instance()->robot_get_cliff_front() < Cliff_Limit){
-		printf("[movement.cpp] Front cliff is detected:%d\n", robot::instance()->robot_get_cliff_front());
+	if (cf < Cliff_Limit){
+		ROS_DEBUG_NAMED(MOVEMENT,"Front cliff is detected:%d", cf);
 		Cliff_Status += 0x04;
 	}
 	if (Cliff_Status != 0x00){
-		printf("[movement.cpp] Return Cliff status:%x.\n", Cliff_Status);
+		ROS_DEBUG_NAMED(MOVEMENT,"Return Cliff status:%x.", Cliff_Status);
 	}
 	return Cliff_Status;
 }
 
+uint8_t Cliff_Escape(void)
+{
+	uint8_t count=1;
+	uint8_t cc;	
+	while(ros::ok()){
+		cc = Get_Cliff_Trig();
+		if(cc){
+			if(cc==(Status_Cliff_Left|Status_Cliff_Right|Status_Cliff_Front)){
+				return 1;
+			}
+			switch(count++){
+				case 1:
+						Cliff_Turn_Right(100,300);
+						break;
+				case 2:
+						Cliff_Turn_Left(100,300);
+						break;
+				case 3:
+						Cliff_Turn_Right(100,300);
+						break;
+				case 4:
+						Cliff_Turn_Left(100,300);
+						break;
+				case 5:
+						Move_Back();
+						Cliff_Turn_Left(30,800);
+						break;
+				default:
+					return 1;
+			}
+			
+		}
+		else
+			return 0;
+	}
+}
+
+uint8_t Cliff_Event(uint8_t event)
+{
+	uint16_t temp_adjust=0,random_factor=0;
+	uint8_t d_flag = 0;
+	if(left_wheel_step%2)temp_adjust = 450;
+	else temp_adjust = 0;
+	if(right_wheel_step%3)random_factor = 1;
+	else random_factor = 0;
+
+	switch(event){
+		case Status_Cliff_Left:
+			Cliff_Turn_Right(Turn_Speed,temp_adjust+900);
+			break;
+		case Status_Cliff_Right:
+			Cliff_Turn_Left(Turn_Speed,temp_adjust+900);
+			d_flag = 1;
+			break;
+		case Status_Cliff_Front:
+			if(random_factor)
+			{
+				Cliff_Turn_Left(Turn_Speed,1200+temp_adjust);
+				d_flag = 1;
+			}
+			else Cliff_Turn_Right(Turn_Speed,1300+temp_adjust);
+			break;
+		case (Status_Cliff_Left|Status_Cliff_Front):
+			Cliff_Turn_Right(Turn_Speed,1650+temp_adjust);
+			break;
+		case (Status_Cliff_Right|Status_Cliff_Front):
+			Cliff_Turn_Left(Turn_Speed,1650+temp_adjust);
+			d_flag = 1;
+			break;
+		case (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right):
+			Cliff_Turn_Right(Turn_Speed,1700);
+			break;
+		case 0:
+			break;
+		default:
+			Cliff_Turn_Left(Turn_Speed,1800);
+			d_flag = 1;
+			break;
+	}
+	Move_Forward(30,30);
+	if(d_flag)return 1;
+	return 0;
+}
 /*-------------------------------Check if at home base------------------------------------*/
 uint8_t Is_AtHomeBase(void)
 {
@@ -554,7 +664,7 @@ void Set_Vac_Speed(void)
 			Set_BLDC_Speed(Vac_Speed_Max);
 		}else{
 			// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-			if (Get_Work_Timer(Work_Timer_Start) < Two_Hours){
+			if (Get_Work_Time() < Two_Hours){
 				Set_BLDC_Speed(Vac_Speed_Normal);
 			}else{
 				//printf("[movement.cpp] Work time more than 2 hours.\n");
@@ -632,8 +742,8 @@ void Reset_Rcon_Status(void)
 	Rcon_Status = 0;
 }
 
-uint32_t Get_Rcon_Status(void)
-{
+uint32_t Get_Rcon_Status(){
+	Rcon_Status = robot::instance()->robot_get_rcon();
 	return Rcon_Status;
 }
 
@@ -706,9 +816,6 @@ uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32
 	}
 }
 
-void Reset_WorkTimer(void)
-{
-}
 
 void Display_Battery_Status(uint8_t display_mode)
 {
@@ -879,13 +986,13 @@ void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int 
 
 void Initialize_Motors(void)
 {
-	#ifdef BLDC_INSTALL
+#ifdef BLDC_INSTALL
 	Clear_BLDC_Fail();
 	BLDC_OFF;
 	delay(5000);
 	Set_BLDC_TPWM(40);
 	Set_Vac_Speed();
-	#endif
+#endif
 	Set_MainBrush_PWM(50);
 	Set_SideBrush_PWM(60,60);
 	Set_BLDC_Speed(40);
@@ -979,19 +1086,19 @@ void control_stop_all(void)
 	//serial_write(SEND_LEN, sendStream);
 }
 
-bool IsSendBusy(void)
+uint8_t IsSendBusy(void)
 {
 	return sendflag;
 }
 
 void SetSendFlag(void)
 {
-	sendflag = true;
+	sendflag = 1;
 }
 
 void ResetSendFlag(void)
 {
-	sendflag = false;
+	sendflag = 0;
 }
 void Random_Back(void)
 {
@@ -1017,7 +1124,15 @@ void Cliff_Move_Back()
 	Stop_Brifly();
 	Quick_Back(18,60);
 }
+void Set_RightWheel_Step(uint32_t step)
+{
+	right_wheel_step = step;
+}
 
+void Set_LeftWheel_Step(uint32_t step)
+{
+	left_wheel_step = step;
+}
 void Reset_RightWheel_Step()
 {
 	rw_t = ros::Time::now();
@@ -1063,6 +1178,317 @@ uint8_t Get_Key_Time(uint16_t key)
 	return time;
 }
 
+uint8_t Is_Front_Close(){	
+	if(robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value+1500)
+		return 1;
+	else
+		return 0;
+}
+
+uint8_t Is_virtualWall(void){
+	return 0;
+}
+
+uint8_t Is_BumperJamed(void){
+	return 0;
+}
+
+uint8_t Is_Turn_Remote(void){
+	uint32_t rectrl = Get_Rcon_Remote();
+	if(rectrl == Remote_Max)return 1;
+	else if(rectrl == Remote_Home)return 1;
+	else if(rectrl == Remote_Spot)return 1;
+	else return 0;	
+}
+
+uint8_t Get_Direction_Flag(void)
+{
+	return Direction_Flag;
+}
+
+void Set_Direction_Flag(uint8_t flag)
+{
+	Direction_Flag = flag;
+}
+
+uint8_t Is_Direction_Right(void)
+{
+	if(Get_Direction_Flag() == Direction_Flag_Right)return 1;
+	return 0;
+}
+uint8_t Is_Direction_Left(void)
+{
+	if(Get_Direction_Flag() == Direction_Flag_Left)return 1;
+	return 0;
+}
+uint8_t Is_LeftWheel_Reach(int32_t step)
+{
+	if(left_wheel_step > (uint32_t)step)
+		return 1;
+	else
+		return 0;
+}
+
+uint8_t Is_RightWheel_Reach(int32_t step)
+{
+	if(right_wheel_step > (uint32_t)step)
+		return 1;
+	else
+		return 0;
+}
+
+void Wall_Move_Back(void)
+{
+	uint16_t count=0;
+	uint16_t tp = 0;
+	uint8_t mc = 0;	
+	Set_Dir_Backward();
+	Set_Wheel_Speed(3,3);
+	usleep(20000);
+	Reset_Wheel_Step();
+	while(((left_wheel_step<100)||(right_wheel_step<100))&&ros::ok()){
+		tp = left_wheel_step/3+8;
+		if(tp>12)tp=12;	
+		Set_Wheel_Speed(tp,tp);
+		usleep(1000);
+	
+		if(Touch_Detect())
+			return;
+		count++;
+		if(count>3000);
+			return;	
+		mc = Check_Motor_Current();
+		if(mc == Check_Left_Wheel || mc == Check_Right_Wheel)
+			return;
+	}	
+	Set_Dir_Forward();
+	Set_Wheel_Speed(0,0);
+		
+}
+
+void Reset_Move_Distance(){
+	MoveStepCounter = 0;
+}
+
+uint8_t Is_Move_Finished(int32_t distance)
+{
+	MoveStepCounter = Get_LeftWheel_Step();
+	MoveStepCounter +=Get_RightWheel_Step();
+	if((MoveStepCounter/2)>distance)
+		return 1;
+	else
+		return 0;
+}
+uint32_t Get_Move_Distance(void)
+{
+	MoveStepCounter = Get_LeftWheel_Step();
+	MoveStepCounter +=Get_RightWheel_Step();
+
+	if(MoveStepCounter>0)return (uint32_t)(MoveStepCounter/2);
+	return 0;
+}
+
+void OBS_Turn_Left(uint16_t speed,uint16_t angle)
+{
+	uint16_t counter = 0;
+	uint8_t oc = 0;
+	Set_Dir_Left();
+	Reset_Rcon_Remote();
+	Set_Wheel_Speed(speed,speed);
+	Reset_LeftWheel_Step();
+	while(ros::ok()&&left_wheel_step <angle){
+		counter++;
+		if(counter>3000)
+			return;
+		if(Is_Turn_Remote())
+			return;
+		oc = Check_Motor_Current();
+		if(oc== Check_Left_Wheel || oc==Check_Right_Wheel)
+			return;
+		usleep(1000);
+	}
+		
+}
+void OBS_Turn_Right(uint16_t speed,uint16_t angle)
+{
+	uint16_t counter = 0;
+	uint8_t oc = 0;
+	Set_Dir_Right();
+	Reset_Rcon_Remote();
+	Set_Wheel_Speed(speed,speed);
+	Reset_RightWheel_Step();
+	while(ros::ok()&&right_wheel_step <angle){
+		counter++;
+		if(counter>3000)
+			return;
+		if(Is_Turn_Remote())
+			return;
+		oc = Check_Motor_Current();
+		if(oc== Check_Left_Wheel || oc==Check_Right_Wheel)
+			return;
+		usleep(1000);
+	}
+
+}
+
+void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
+{
+	OBS_Turn_Left(speed,angle);
+}
+
+void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
+{
+	OBS_Turn_Right(speed,angle);
+}
+
+uint8_t Get_Random_Factor(void){
+	srand(time(0));
+	return (uint8_t)rand()%100;
+}
+
+uint8_t Is_NearStation(void){
+	static uint32_t s_count=0;
+	static uint32_t no_s = 0;
+	static uint32_t s_rcon =0;
+	s_rcon = Get_Rcon_Status();
+	if(s_rcon&0x00000f00){
+		return 1;
+	}
+	if(s_rcon&0x0330ff){
+		no_s = 0;
+		s_count ++;
+		Reset_Rcon_Status();	
+		if(s_count>3)
+		{
+			s_count=0;
+			return 1;
+		}
+	}
+	else{
+		no_s ++;
+		if(no_s > 50){
+			no_s = 0;
+			s_count =0;
+		}
+	}
+	return 0;
+}
+
+void Set_Mobility_Step(uint32_t Steps)
+{
+	Mobility_Step = Steps;
+}
+
+void Reset_Mobility_Step()
+{
+	Mobility_Step = 0;
+}
+
+uint32_t  Get_Mobility_Step()
+{
+	return Mobility_Step;
+}
+
+void Adjust_OBST_Value(void)
+{
+	
+	if(robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value )
+		Front_OBSTrig_Value += 800;
+	if(robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
+		Left_OBSTrig_Value  += 800;
+	if(robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
+		Right_OBSTrig_Value += 800;
+}
+
+void Check_Mobility(void)
+{
+	
+}
+
+void Add_Average(uint32_t data)
+{
+	Average_Move += data;
+	Average_Counter++;
+	if(data>Max_Move)
+		Max_Move = data;
+	
+}
+
+uint32_t Get_Average_Move(void)
+{
+	return (Average_Move/Average_Counter);
+}
+
+uint32_t Reset_Average_Counter(void)
+{
+	Average_Move = 0;
+	Average_Counter = 0;
+}
+
+void Reset_VirtualWall(void)
+{
+
+}
+
+uint8_t  VirtualWall_TurnRight()
+{
+	return 0;
+}
+
+uint8_t VirtualWall_TurnLeft()
+{
+	return 0;
+}
+
+uint8_t Is_WorkFinish(uint8_t m)
+{
+	static uint8_t bat_count = 0;
+	uint32_t wt = Get_Work_Time();	
+	if(m){
+		if(wt>Auto_Work_Time)return 1;
+	}
+	else if(wt>Const_Work_Time)return 1;
+	if(robot::instance()->robot_get_battery_voltage()<1420)
+	{
+		bat_count++;
+		if(bat_count>50)return 1;
+	}
+	else
+		bat_count = 0;
+	return 0;		
+}
+
+uint8_t Get_Room_Mode(){
+	return Room_Mode;	
+}
+
+void Set_Room_Mode(uint8_t m){
+	if(m)
+		Room_Mode = 1;
+	else
+		Room_Mode = 0;
+}
+
+void Reset_WallAccelerate()
+{
+		Wall_Accelerate =0;
+}
+
+uint32_t Get_WallAccelerate()
+{
+	
+	return Wall_Accelerate=Get_RightWheel_Step(); 
+}
+
+uint8_t Is_Bumper_Jamed()
+{
+	return 0;
+}
+
+uint8_t Is_VirtualWall()
+{
+	return 0;
+}
 /*
 *	@brief
 *		go straight forward or backward 
