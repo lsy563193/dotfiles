@@ -19,6 +19,7 @@
 #include "serial.h"
 #include "robotbase.h"
 
+#define ROBOTBASE "robotbase"
 
 uint8_t receiStream[50]={				0Xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -112,7 +113,7 @@ void robotbase_deinit(void)
 	uint8_t buf[2];
 
 	if (is_robotbase_init) {
-		ROS_INFO_NAMED("robotbase","deinit...\n");
+		ROS_INFO_NAMED(ROBOTBASE,"deinit...\n");
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		printf("\tshutdown robotbase power ");
@@ -135,7 +136,7 @@ void robotbase_deinit(void)
 		usleep(20000);
 		serial_flush();
 		serial_close();
-		ROS_DEBUG_NAMED("robotbase","stop ok\n");
+		ROS_INFO("stop ok\n");
 		int mutex_ret = pthread_mutex_destroy(&send_lock);
 		if(mutex_ret<0)
 			ROS_INFO("[robotbase] mutex destroy fail\n");
@@ -178,10 +179,10 @@ void *serial_receive_routine(void *)
 						receiStream[j + 2] = receiData[j];
 					}
 				} else {
-					ROS_INFO("[robotbase] tail incorret\n");
+					ROS_DEBUG_NAMED(ROBOTBASE," tail incorret\n");
 				}
 			} else {
-				ROS_INFO("[robotbase] crc incorret\n");
+				ROS_DEBUG_NAMED(ROBOTBASE, "crc incorret\n");
 			}
 		}
 	}
@@ -302,6 +303,9 @@ void *robotbase_routine(void*)
 		sensor.y_acc = ((receiStream[43]<<8)|receiStream[44])/66564.0f; //in G
 		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/66564.0f; //in G
 		cur_time = ros::Time::now();
+
+		if(sensor.right_wall>0)
+			ROS_DEBUG_NAMED(ROBOTBASE,"on stm32 crc calculate bad time %d ",sensor.right_wall);
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
 		float th = sensor.angle * 0.01745;					//turn degrees into radians
 		float dt = (cur_time - last_time).toSec();
@@ -343,10 +347,12 @@ void *robotbase_routine(void*)
 
 void *serial_send_routine(void*){
 	pthread_detach(pthread_self());
-	ros::Rate r(50);
+	ros::Time start_t;
+	ros::Rate r(50);double proc_t;
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
 	while(send_stream_thread){
+		start_t =  ros::Time::now();
 		r.sleep();
 		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
 		if (robotbase_beep_update_flag){
@@ -365,14 +371,18 @@ void *serial_send_routine(void*){
 				Beep(3, 25, 25, -1);
 			}
 		}
+
 		SetSendFlag();
 		//pthread_mutex_lock(&send_lock);
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
 		//pthread_mutex_unlock(&send_lock);
 		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 		if(buf[CTL_CRC] != calcBufCrc8((char*)sendStream,sl))
-			ROS_DEBUG_NAMED("robotbase","crc incorret!!");
+			ROS_DEBUG_NAMED(ROBOTBASE,"on send process crc incorret!!");
 		serial_write(SEND_LEN, buf);
+		proc_t = (ros::Time::now()-start_t).toSec();
+		if(proc_t>0.025)
+			ROS_DEBUG_NAMED(ROBOTBASE,"process time %f",proc_t);
 		ResetSendFlag();
 	}
 	//pthread_exit(NULL);

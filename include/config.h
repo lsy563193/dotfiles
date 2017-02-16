@@ -66,7 +66,7 @@
 /*
  * If defined, enable virtual wall.
  */
-#define VIRTUAL_WALL			(1)
+#define VIRTUAL_WALL			(0)
 
 /*
  * Defines for maximum distance between 2 virtual wall points,

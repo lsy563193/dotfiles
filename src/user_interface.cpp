@@ -16,7 +16,7 @@
 #include "movement.h"
 #include "user_interface.h"
 #include <ros/ros.h>
-
+#include "config.h"
 //extern volatile ADC_Value_Struct ADC_Value;
 
 #define USER_INTERFACE "user interface"
@@ -59,7 +59,7 @@ void User_Interface(void)
 	//Disable_Motors();
 	Reset_Rcon_Status();
 //	Clear_Clcok_Receive();
-//	Set_Room_Mode(Room_Mode_Large);
+	Set_Room_Mode(Room_Mode_Large);
 //	ResetHomeRemote();
 	Set_VacMode(Vac_Normal);
 	while(ros::ok())
@@ -125,13 +125,13 @@ void User_Interface(void)
 		if(Remote_Key(Remote_Clean))//                                       Check Remote Key Clean
 		{
 			Reset_Rcon_Remote();
-//			Set_Room_Mode(Room_Mode_Large);
+			Set_Room_Mode(Room_Mode_Large);
 //			Press_time=10;
 //			while(Press_time--)
 //			{
 //				if(Remote_Key(Remote_Clean))
 //				{
-//					Set_Room_Mode(Room_Mode_Auto);
+					Set_Room_Mode(Room_Mode_Auto);
 //					break;
 //				}
 //				usleep(50000);
@@ -155,21 +155,21 @@ void User_Interface(void)
 			}
 			else
 			{
-				//Set_Room_Mode(Room_Mode_Large);
+				Set_Room_Mode(Room_Mode_Large);
 //				Press_time=5;
 //				while(Press_time--)
 //				{
 //					if(Get_Key_Press()==KEY_CLEAN)
 //					{
 //						Beep(2,25,25,2);
-////						Set_Room_Mode(Room_Mode_Auto);
+						Set_Room_Mode(Room_Mode_Auto);
 //						break;
 //					}
 //					usleep(50000);
 //				}
 				Beep(2, 25, 25, 2);
 			  	Temp_Mode=Clean_Mode_Navigation;
-        		Reset_Work_Timer_Start();
+        		Reset_Work_Time();
 			}
 			Reset_MoveWithRemote();
 		//	Reset_Error_Code();
@@ -217,24 +217,24 @@ void User_Interface(void)
 				{
 //					Reset_Error_Code();
 					Set_LED(100,0);
-//					if(Get_Room_Mode()==Room_Mode_Auto)
-//					{
-//						Set_LED(100,0);
-//						Beep(1,25,25,2);
-//						Set_LED(0,0);
-//						Beep(3,25,25,2);
-//						Set_LED(100,0);
-//						Beep(5,25,25,2);
-//					}
-//					else
-//					{
-  //          			Set_LED(100,0);
-	//					Beep(5,25,25,2);
-	//					Beep(3,25,25,2);
-	//				}
+					if(Get_Room_Mode()==Room_Mode_Auto)
+					{
+						Set_LED(100,0);
+						Beep(1,25,25,2);
+						Set_LED(0,0);
+						Beep(3,25,25,2);
+						Set_LED(100,0);
+						Beep(5,25,25,2);
+					}
+					else
+					{
+	          			Set_LED(100,0);
+						Beep(5,25,25,2);
+						Beep(3,25,25,2);
+					}
 					if(!Is_ChargerOn()&&(Temp_Mode!=Clean_Mode_Navigation)){
 						Initialize_Motors();
-						ROS_INFO("user_interface.cpp] init motors.");
+						ROS_DEBUG_NAMED(USER_INTERFACE," init motors.");
 					}
 					Set_Clean_Mode(Temp_Mode);
 //					Set_CleanKeyDelay(0);
@@ -255,7 +255,7 @@ void User_Interface(void)
 //			Sound_Out_Error(Get_Error_Code());
 		}
 
-		#ifdef ONE_KEY_DISPLAY
+#ifdef ONE_KEY_DISPLAY
 		usleep(8000);
 
 		//ROS_INFO("One key display logic. odc = %d", ONE_Display_Counter);
@@ -275,13 +275,13 @@ void User_Interface(void)
 				//ROS_INFO("TimeOutCounter = %d.", TimeOutCounter);
 				if(Is_AtHomeBase())
 				{
-					ROS_INFO("At home base.");
+					ROS_DEBUG_NAMED(USER_INTERFACE,"At home base.");
 					if(Get_Cliff_Trig()==0)
 					{
-						ROS_INFO("Cliff not triggered.");
+						ROS_DEBUG_NAMED(USER_INTERFACE,"Cliff not triggered.");
 						if(Turn_Connect())
 						{
-							ROS_INFO("Turn_connect pass.");
+							ROS_DEBUG_NAMED(USER_INTERFACE,"Turn_connect pass.");
 							Set_Clean_Mode(Clean_Mode_Charging);
 							break;
 						}
@@ -315,9 +315,9 @@ void User_Interface(void)
 			Set_LED(ONE_Display_Counter,0);//display normal green
 		}
 
-		#endif
+#endif
 
- #ifdef STANDARD_DISPLAY
+#ifdef STANDARD_DISPLAY
 		{
 			Display_Counter++;
 			if(Display_Counter>0x000a)
@@ -384,7 +384,7 @@ void User_Interface(void)
 				}
 			}
 		}
-		#endif
+#endif
 
 	}
 //	Set_CleanKeyDelay(0);

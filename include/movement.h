@@ -2,7 +2,7 @@
 #define __MOVEMENT_H__
 
 #include <stdint.h>
-
+#include <time.h>
 #include "config.h"
 #include "main.h"
 
@@ -22,6 +22,9 @@
 #define Check_Main_Brush			0x08
 #define Check_Vacuum				0x10
 //#define Check_Vacuum				0x20
+
+#define Room_Mode_Auto (uint8_t)0x01
+#define Room_Mode_Large (uint8_t)0x00
 
 #define Status_Left_Wall			((uint8_t) 0x01)
 #define Status_Left_OBS				((uint8_t) 0x02)
@@ -49,7 +52,7 @@
 #define Rcon_HomeL 					((uint32_t) 0x00000004)
 #define Rcon_HomeT 					((uint32_t) 0x00000002)
 #define Rcon_HomeR 					((uint32_t) 0x00000001)
-#if 0
+
 #define RconL_HomeL					((uint32_t) 0x00000080)
 #define RconL_HomeR					((uint32_t) 0x00000040)
 
@@ -81,7 +84,7 @@
 #define RconL_Wall					((uint32_t) 0x00000000)
 #define RconBL_Wall					((uint32_t) 0x00000000)
 #define RconBR_Wall					((uint32_t) 0x00000000)
-#endif
+
 
 #define Remote_Clean				((uint32_t) 0X02AA22DD)
 #define Remote_Forward				((uint32_t) 0X02AA55AA)
@@ -196,14 +199,16 @@
 #define	CTL_GYRO 15
 #define	CTL_CRC 16
 
+#define Direction_Flag_Right 0x01
+#define Direction_Flag_Left  0x02
 
 #define STEP_PER_MM  186
 #define Cliff_Limit         (int16_t)20
 
 #define Two_Hours         7200
 
-void Reset_Work_Timer_Start();
-uint32_t Get_Work_Timer(time_t start_time);
+void Reset_Work_Time();
+uint32_t Get_Work_Time();
 
 void Set_Error_Code(uint8_t Code);
 
@@ -419,9 +424,93 @@ uint8_t Get_Key_Time(uint16_t key);
 
 uint8_t Spot_OBS_Status(void);
 	
-bool IsSendBusy(void);
+uint8_t IsSendBusy(void);
 
 void SetSendFlag(void);
 
 void ResetSendFlag(void);
+
+uint8_t Is_VirtualWall(void);
+
+uint8_t Is_Bumper_Jamed(void);
+
+uint8_t Is_Turn_Remote(void);
+
+uint8_t Is_Front_Close(void);
+
+void Set_LeftWheel_Step(uint32_t step);
+
+void Set_RightWheel_Step(uint32_t step);
+
+void Set_Direction_Flag(uint8_t flag);
+
+uint8_t Is_Direction_Right();
+
+uint8_t Is_Direction_Left();
+
+uint8_t Get_Direction_Flag();
+
+uint8_t Is_RightWheel_Reach(int32_t step);
+
+uint8_t Is_LeftWheel_Reach(int32_t step);
+
+void Wall_Move_Back(void);
+
+void Reset_Move_Distance(void);
+
+uint8_t Is_Move_Finished(int32_t distance);
+
+uint32_t Get_Move_Distance(void);
+
+void OBS_Turn_Left(uint16_t speed,uint16_t angle);
+
+void OBS_Turn_Right(uint16_t speed,uint16_t angle);
+
+uint8_t Get_Random_Factor();
+
+uint8_t Is_NearStation(void);
+
+void Set_Mobility_Step(uint32_t Steps);
+
+void Reset_Mobility_Step();
+
+uint32_t  Get_Mobility_Step();
+
+void Adjust_OBST_Value();
+
+void Check_Mobility(void);
+
+void Add_Average(uint32_t data);
+
+uint32_t Get_Average_Move(void);
+
+uint32_t Reset_Average_Counter(void);
+
+void Set_Work_Time(time_t );
+
+uint8_t Cliff_Escape(void);
+
+uint8_t Cliff_Event(uint8_t temp_status);
+
+void Reset_VirtualWall();
+
+void Cliff_Turn_Left(uint16_t speed,uint16_t angle);
+
+void Cliff_Turn_Right(uint16_t speed,uint16_t angle);
+
+uint8_t Is_WorkFinish(uint8_t m);
+
+void Set_Room_Mode(uint8_t m);
+
+uint8_t Get_Room_Mode(void);
+
+uint32_t Get_WallAccelerate();
+
+void Reset_WallAccelerate();
+
+uint8_t VirtualWall_TurnRight();
+
+uint8_t VirtualWall_TurnLeft(); 
 #endif
+
+

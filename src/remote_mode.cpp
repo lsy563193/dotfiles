@@ -82,7 +82,7 @@ void Remote_Mode(void)
 
 			Deceleration();
 			Work_Motor_Configure();
-			Turn_Left(Turn_Speed,400);
+			Turn_Left(Turn_Speed,320);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
 			Set_BLDC_Speed(30);

@@ -19,10 +19,9 @@
 #include "spot.h"
 #include "user_interface.h"
 #include "remote_mode.h"
+#include "random_runing.h"
 #include "sleep.h"
 
-// This is the start time of cleanning
-time_t Work_Timer_Start = 0;
 
 void *core_move_thread(void *)
 {
@@ -46,7 +45,7 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------random mode------\n");
-
+				Random_Running_Mode();
 				break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n---------navigation mode-----------\n");
