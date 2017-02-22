@@ -959,7 +959,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
         int32_t Init_Pose_X, Init_Pose_Y;
         int16_t Limited_Distance = 16107;//21476 = 4M 16107 = 3M
         int8_t Limited_Flag = 0;
-	bool Dynamic_Flag = 0;//Dynamic adjust speed when exploring
+	bool Dynamic_Flag = 1;//Dynamic adjust speed when exploring
 
 	MapTouringType	retval = MT_None;
 
@@ -1517,7 +1517,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
 		else if (laser::instance()->laser_obstcal_detected(0.2, 0, -1.0) == true) {
-			printf("%s %d: laser detected obstcal, slow down!\n", __FUNCTION__, __LINE__);
+			//printf("%s %d: laser detected obstcal, slow down!\n", __FUNCTION__, __LINE__);
 			Integrated = 0;
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;

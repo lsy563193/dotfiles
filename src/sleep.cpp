@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <unistd.h>
+#include <ros/ros.h>
 #include "sleep.h"
 #include "movement.h"
 #include <ros/ros.h>
@@ -10,14 +11,24 @@ void Sleep_Mode(void)
 	static uint32_t Ch_WP_Counter=0;
 
 	ROS_DEBUG_NAMED("sleep","-----in sleep mode-----");	
-	Disable_Motors();
 	
 	/*---------------------------------Wake Up-------------------------------*/
 	Reset_Touch();
 	Set_LED(0,0);
 	
-	while(ros::ok()){
-		usleep(100000);
+	/*--------------------------------ENTER LOW POWER--------------------------*/
+	
+	Disable_Motors();
+	
+	while(ros::ok())
+	{
+		usleep(200000);
+		/*---------------------------------Wake Up-------------------------------*/
+		Set_LED(0,0);
+
+		// Time for key pressing
+		time=0;
+		//judge which wakeup signal
 		while(Get_Key_Press() == KEY_CLEAN)
 		{
 			usleep(100000);// Wait for 100ms.
@@ -64,6 +75,30 @@ void Sleep_Mode(void)
 	  			return;
 			}
 		}
-	}	
-
+		if(Remote_Key(Remote_Clean))
+		{
+			Ch_WP_Counter=0;
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			return;
+		}
+		if(Is_ChargerOn())
+		{
+			Ch_WP_Counter=0;
+			Set_Clean_Mode(Clean_Mode_Charging);
+			return;
+		}
+		/*-----------------Check if near the charging base-----------------------------*/
+		if(Get_Rcon_Status()&0x777777)
+		{
+			Ch_WP_Counter++;
+			if(Ch_WP_Counter>50)
+			{
+				Ch_WP_Counter=0;
+				Set_Clean_Mode(Clean_Mode_GoHome);
+				SetHomeRemote();
+				Set_LED(100,100);
+			  return;
+			}
+		}
+	}
 }
