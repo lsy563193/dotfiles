@@ -87,7 +87,8 @@ void Random_Running_Mode(void)
 //    Disable_Motors();
 //    return;
 //  }
-  
+ 	
+	ROS_DEBUG_NAMED("random mode","-------in random running mode-----");
 	if(Is_AtHomeBase())
 	{	  
 		Set_Clean_Mode(Clean_Mode_Userinterface);

@@ -4,9 +4,19 @@
 #include <sys/types.h>
 #include <ros/ros.h>
 #include <pp/slam_angle_offset.h>
-#define RECEI_LEN	50
-#define SEND_LEN 19
+#include "config.h"
+
+#if ROBOT_X600
+#define RECEI_LEN 60
 extern uint8_t receiStream[RECEI_LEN];
+
+#elif ROBOT_X400
+#define RECEI_LEN	50
+extern uint8_t receiStream[RECEI_LEN];
+#endif
+
+#define SEND_LEN 19
+
 extern uint8_t sendStream[SEND_LEN] ;
 extern bool robotbase_beep_update_flag;
 extern int robotbase_speaker_sound_loop_count;

@@ -109,7 +109,7 @@ int serial_write(uint8_t len, uint8_t *buf) {
 	int	retval;
 
 	retval = write(crport_fd, buf, len);
-	fflush(NULL);
+	//fflush(NULL);
 
 	return retval;
 }

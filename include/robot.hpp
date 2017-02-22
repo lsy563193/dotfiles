@@ -12,6 +12,7 @@
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
 #include <vector>
+#include "config.h"
 
 class robot
 {
@@ -199,7 +200,7 @@ private:
 
 	/* 1 byte */
 	bool bumper_left;
-
+	#if ROBOT_X400
 	/* 1 byte */
 	int16_t obs_left;
 
@@ -208,6 +209,17 @@ private:
 
 	/* 1 byte */
 	int16_t obs_front;
+
+	#elif ROBOT_X600
+	int16_t obs0;
+	int16_t obs1;
+	int16_t obs2;
+	int16_t obs3;
+	int16_t obs4;
+	int16_t obs5;
+	int16_t obs6;
+	int16_t obs7;
+	#endif
 
 	bool	is_moving;
 

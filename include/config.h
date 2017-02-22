@@ -361,5 +361,9 @@
 #define LIMIT_DISTANCE_ENABLE				(1)
 #define EXPLORE_SCOPE_ENABLE				(0)
 
-// Define the display mode in user interface routine
+/* Define the display mode in user interface routine*/
 #define ONE_KEY_DISPLAY                     (1)
+
+/*robot type define,currently got two type "ROBOT_X600" "ROBOT_X400"*/
+#define ROBOT_X600 							(0)
+#define ROBOT_X400							(1)

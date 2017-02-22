@@ -9,4 +9,7 @@ void goto_charger();
 
 void Charge_Function();
 
+static void search_mid_line();
+
+
 #endif /*endif  __GOTOCHARGER_H__*/

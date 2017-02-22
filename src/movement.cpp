@@ -86,7 +86,7 @@ uint32_t Get_RightWheel_Step(void)
 	else
 		rwsp = (double)Right_Wheel_Speed;
 	t = (double)(ros::Time::now()-rw_t).toSec();
-	step = rwsp*t/0.181;
+	step = rwsp*t/0.10;//0.181
 	right_wheel_step = (uint32_t)step;
 	return right_wheel_step;
 }
@@ -99,7 +99,7 @@ uint32_t Get_LeftWheel_Step(void)
 	else
 		lwsp = (double)Left_Wheel_Speed;
 	t=(double)(ros::Time::now()-lw_t).toSec();
-	step = lwsp*t/0.181;
+	step = lwsp*t/0.100;//0.181
 	left_wheel_step = (uint32_t)step;
 	return left_wheel_step;
 }
@@ -1042,7 +1042,7 @@ void set_gyro(uint8_t state, uint8_t calibration)
 {
 	//control_set(CTL_GYRO, (state ? 0x02 : 0x0) | (calibration ? 0x01 : 0x00));
 	uint8_t du = calibration;
-	control_set(CTL_GYRO, (state ? 0x02 : 0x0));
+	control_set(CTL_GYRO, (state ? 0x02 : 0x00));
 
 }
 
@@ -1515,7 +1515,11 @@ uint8_t Is_VirtualWall()
 */
 void movement_go(int16_t speed)
 {
-	uint8_t high_byte = speed >> 8&0xff;
+	if(speed<0){
+		speed = speed*-1;
+		speed = speed &0xffff;
+	}
+	uint8_t high_byte = (speed >> 8) &0xff;
 	uint8_t low_byte  = speed & 0xff;
 
 	control_set(CTL_WHEEL_LEFT_HIGH, high_byte);

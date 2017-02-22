@@ -36,20 +36,14 @@ void *core_move_thread(void *)
 		usleep(20000);
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
-				ROS_INFO("\n-------user interface  mode------\n");
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
-				ROS_INFO("\n-------wall follow mode------\n");
-
 				break;
 			case Clean_Mode_RandomMode:
-				ROS_INFO("\n-------random mode------\n");
 				Random_Running_Mode();
 				break;
 			case Clean_Mode_Navigation:
-				ROS_INFO("\n---------navigation mode-----------\n");
-
 				/*
 					Turn_Right(10, 850);
 					Turn_Right(10, 1750);
@@ -59,28 +53,22 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1000);
 				*/
 				CM_Touring();
-				Set_Clean_Mode(Clean_Mode_Charging);
+				Set_Clean_Mode(Clean_Mode_GoHome);
 				break;
 			case Clean_Mode_Charging:
-				ROS_INFO("\n-------charging mode------\n");
-				//goto_charger();
 				Charge_Function();
 				break;
 			case Clean_Mode_GoHome:
-				ROS_INFO("\n-----------go home mode--------\n");
 				goto_charger();
 				//Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:
-				ROS_INFO("\n-----------test mode--------\n");
 
 				break;
 			case Clean_Mode_Remote:
-				ROS_INFO("\n-----------remote mode--------\n");
 				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:
-				ROS_INFO("\n-----------spot mode--------\n");
 				Spot_Mode();
 				Disable_Motors();
 				usleep(200000);
@@ -88,16 +76,15 @@ void *core_move_thread(void *)
 				Beep(2,25,25,2);
 				break;
 			case Clean_Mode_Mobility:
-				ROS_INFO("\n-----------mobility mode--------\n");
 
 				break;
 			case Clean_Mode_Sleep:
-				ROS_INFO("\n-----------sleep mode----------\n");
-				// Stop the robot wheels and vacuum and brushs.
 				Disable_Motors();
 //				while(ros::ok()){
 //					usleep(10000);
 //					if(Get_Rcon_Remote())
+//					{
+//						Set_Clean_Mode(Clean_Mode_Userinterface);
 //						break;
 //				}
 				Sleep_Mode();
@@ -120,7 +107,6 @@ int main(int argc, char **argv)
 	pthread_t	core_move_thread_id;
 	std::string	serial_port;
 	bool line_align_active;
-
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
 

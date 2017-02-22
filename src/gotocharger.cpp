@@ -8,21 +8,26 @@
 
 #define GOTO_CHARGER "goto charger"
 #define GOTO_CHARGER_TIMEOUT 180 //3 minutes
+#define STUB_L_R_V 0X05 //the charger left & right value
 
 void goto_charger(){
 	uint8_t fl,fr,l,r,bl,br;
 	int16_t fobs;
 	uint32_t rcon;
-	uint8_t stub_l=0x04;
-	uint8_t stub_r=0x01;
-	uint8_t stub_t=0x02;
+	uint8_t stub_l = 0x04;
+	uint8_t stub_r = 0x01;
+	uint8_t stub_t = 0x02;
+	uint8_t stub_lr = 0x05;
 	bool set_charge_state = false;
 	uint8_t in_charge_stub_move = 1;
 	bool left_bumper,right_bumper;
+	uint8_t onside_left = 0,onside_right = 0,back_detect = 0;
 	uint8_t brush_pwr;
 	bool on_charger_stub= false;
+	ROS_DEBUG_NAMED(GOTO_CHARGER,"---------goto charger--------");
 	Reset_Wheel_Step();
 	Set_Wheel_Speed(0,0);
+	Reset_Rcon_Remote();
 	ros::Time startTime;
 	startTime = ros::Time::now();
 	while(ros::ok()){
@@ -34,7 +39,7 @@ void goto_charger(){
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		if(robot::instance()->robot_get_charge_status()){
+		if(robot::instance()->robot_get_charge_status()==1){
 			movement_go(0);
 			on_charger_stub= true;	
 			ROS_DEBUG_NAMED(GOTO_CHARGER,"on charger stub");
@@ -42,22 +47,15 @@ void goto_charger(){
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		if(Get_Clean_Mode() != Clean_Mode_Charging){
-			control_set(CTL_CHARGER,0x00);
-			Set_CleanTool_Power(0,0,0,0);
-			ROS_DEBUG_NAMED(GOTO_CHARGER,"jump out go_home_mode");
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			break;
-		}
-		if(!set_charge_state){
+		if(!set_charge_state){//run one time
 			set_charge_state = true;
-			ROS_DEBUG_NAMED(GOTO_CHARGER,"goto charger");
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			Set_LED(100,100);
 			control_set(CTL_CHARGER, 0x01);
 		}
 		
-		if(Get_Rcon_Remote())
+		if(robot::instance()->robot_get_ir_ctrl())
 		{
+			ROS_DEBUG_NAMED(GOTO_CHARGER,"break out goto charger");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}	
@@ -81,25 +79,25 @@ void goto_charger(){
 			if(left_bumper|| right_bumper){
 				if(left_bumper&&(fl&stub_l||fr&stub_r)){
 					movement_go(-150);
-					usleep(500000);
+					usleep(700000);
 					movement_turn(-220,-80);
 					usleep(700000);
 				}
 				else if(right_bumper&&(fl&stub_l||fr&stub_r)){
 					movement_go(-150);
-					usleep(500000);
+					usleep(700000);
 					movement_turn(-80,-220);
 					usleep(700000);		
 				}
 				else if(left_bumper){
 					movement_go(-150);
-					usleep(500000);
+					usleep(700000);
 					movement_turn(-200,-10);
 					usleep(1300000);
 				}	
 				else if(right_bumper){
 					movement_go(-150);
-					usleep(500000);
+					usleep(700000);
 					movement_turn(-10,-200);
 					usleep(1300000);
 				}
@@ -108,7 +106,7 @@ void goto_charger(){
 					usleep(700000);
 				}
 			}
-			else if((fl|fr|l|r|bl|br)&0x05){
+			else if((fl|fr|l|r|bl|br)&stub_lr){
 				if(fl & stub_l || fr & stub_r){
 					if((fl & stub_r) && (fr & stub_r))
 						if(fobs>=100)
@@ -117,12 +115,12 @@ void goto_charger(){
 							movement_go(100);
 					else if((fl & stub_l) && !(fr & stub_r))
 						if(	fobs>=100)
-							movement_turn(-30,80);
+							movement_turn(-30,90);
 						else
 							movement_turn(80,180);
 					else if(!(fl & stub_l) && (fr &stub_r))
 						if(fobs>=100)
-							movement_turn(80,-30);	
+							movement_turn(90,-30);	
 						else
 							movement_turn(180,80);
 				}
@@ -131,6 +129,7 @@ void goto_charger(){
 				else if(r&stub_l || r&stub_r || br&stub_r || br&stub_l)
 					movement_rot_right(80);
 			}else {	
+			#if 0
 				if(fl&stub_t&&fr&stub_t)
 					if(fobs>=100)
 						movement_go(50);
@@ -144,14 +143,115 @@ void goto_charger(){
 					movement_rot_left(50);
 				else if(br&stub_t)
 					movement_rot_right(50);
-
+			#endif
+			#if 0
+				if(l&stub_t && !fl&stub_t && !fr&stub_t && !bl&stub_t && !br&stub_t){
+					if(!back_detect){
+						onside_left=1;
+						movement_turn(100,50);
+					}
+					else if(onside_left)
+						movement_turn(100,50);
+				}
+				else if(r&stub_t && !fl&stub_t && !fr&stub_t && !bl&stub_t && !br&stub_t){
+					if(!back_detect){
+						onside_right = 1;
+						movement_turn(50,100);
+					}
+					else if(onside_right)
+						movement_turn(50,100);
+				}
+				else if((fl&stub_t || fr&stub_t)){
+					if(onside_left && !back_detect)
+						movement_turn(50,-50);
+					else if(onside_right && !back_detect);
+						movement_turn(-50,50);	
+				}
+				else if(bl&stub_t || br&stub_t){
+					
+					if(onside_right){
+						onside_right = 0;
+						onside_left  = 1;
+						movement_turn(50,-50);
+					}
+					else if(onside_left){
+						onside_left = 0;
+						onside_right = 1;
+						movement_turn(-50,50);
+					}
+					else{
+						movement_turn(-50,50);
+					}
+					back_detect = 1;
+				}
+				
+			#endif
+			#if 1
+				if(fobs <150){
+					search_mid_line();
+				}
+				else{
+					movement_turn(50,-50);
+				}
+			#endif
 			}
+		}//end if(rcon>0)
+		else{
+
+		}
+	}//end while(ros::ok())
+	
+}
+
+static void search_mid_line(){
+	uint8_t stub_r = 0x01;
+	uint8_t stub_t = 0x02;
+	uint8_t stub_l = 0x04;
+	uint8_t stub_lr = 0x05;
+	uint8_t bad_dir = 0;
+	uint8_t fl,fr,l,r,bl,br;
+	uint32_t rcon;
+	uint8_t bul,bur;
+	while(ros::ok()){
+		usleep(20000);
+		if(robot::instance()->robot_get_ir_ctrl())break;
+		rcon = robot::instance()->robot_get_rcon();
+		bul = robot::instance()->robot_get_bumper_left();
+		bur = robot::instance()->robot_get_bumper_right();
+		fl = ((rcon&0x00f00000)>>20);
+		fr = ((rcon&0x000f0000)>>16);
+		l  = ((rcon&0x0000f000)>>12);
+		r  = ((rcon&0x00000f00)>>8);
+		bl = ((rcon&0x000000f0)>>4);
+		br = ( rcon&0x0000000f);
+		if((fl|l|bl)&stub_t){
+			movement_turn(100,50);
+			usleep(100000);
+			continue;
+		}
+		if((fr|r|br)&stub_t){
+			movement_turn(50,100);
+			usleep(100000);
+			continue;
+		}
+		if((fl|fr|l|r|bl|br)&stub_lr)
+			break;
+		if(bul || bur){
+			movement_go(-100);	
+			usleep(500000);
+			movement_go(0);
+			Turn_Left(20,1800);
+			continue;
+		}
+		if(rcon == 0)
+		{
+			movement_turn(50,-50);
+			continue;
 		}
 	}
 	
 }
-
-/*---------------------------------------------------------------- Charge Funtion ------------------------*/
+/*---------------------------------------------------------------- Charge Function ------------------------*/
 void Charge_Function(void)
 {
 
@@ -166,13 +266,14 @@ void Charge_Function(void)
 	#endif
 
 	set_start_charge();
-
+	uint16_t bat_v;
 	ROS_INFO("[gotocharger.cpp] Start charger mode.");
-	while(1)
+	while(ros::ok())
 	{
-		usleep(1000000);
+		usleep(1000000);	
+		bat_v = robot::instance()->robot_get_battery_voltage();
 
-		ROS_INFO("[gotocharger.cpp] Loop for charger mode.");
+		ROS_DEBUG_NAMED("charger"," Loop for charger mode,voltage %f.",bat_v/100.0);
 //		#ifdef SCREEN_REMOTE
 //		if(Remote_Clock_Received())
 //		{

@@ -59,7 +59,7 @@ void Spot_Mode(void)
 	Set_VacMode(Vac_Max);
 	Set_Vac_Speed();
 #endif
-
+	ROS_DEBUG_NAMED(SPOT_MODE,"-------in sport mode------");
 	usleep(10000);
 	Set_Dir_Right();
 	Set_Wheel_Speed(25,5);

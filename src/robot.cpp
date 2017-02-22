@@ -8,6 +8,8 @@
 #include <vector>
 #include <movement.h>
 #include "robotbase.h"
+#include "config.h"
+
 
 extern bool is_line_angle_offset;
 static	robot *robot_obj = NULL;
@@ -92,12 +94,14 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	this->z_acc = msg->z_acc;
 
 	this->gyro_dymc = msg->gyro_dymc;
-
+	
+	#if ROBOT_X400
 	this->obs_left = msg->l_obs;
 
 	this->obs_right = msg->r_obs;
 
 	this->obs_front = msg->f_obs;
+	#endif
 
 	this->bumper_right = msg->rbumper;
 
@@ -132,6 +136,17 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	this->mbrush_oc = msg->mbrush_oc;
 
 	this->vacuum_oc = msg->vcum_oc;
+	
+	#if ROBOT_X600
+	this->obs0 = msg->obs0;
+	this->obs1 = msg->obs1;
+	this->obs2 = msg->obs2;
+	this->obs3 = msg->obs3;
+	this->obs4 = msg->obs4;
+	this->obs5 = msg->obs5;
+	this->obs6 = msg->obs6;
+	this->obs7 = msg->obs7;
+	#endif
 
 	if (this->is_sensor_ready == false) {
 		if (time(NULL) - start_time > 2) {
@@ -513,17 +528,48 @@ bool robot::robot_get_bumper_left()
 
 int16_t robot::robot_get_obs_left()
 {
+	#if ROBOT_X600
+	if(this->obs0 >= this->obs1)
+		if(this->obs0 >= this->obs2)
+			return this->obs0;
+		else
+			return this->obs2;
+	else if(this->obs1	>= this->obs2)
+			return this->obs1;
+	else
+		return this->obs2;
+	#elif ROBOT_X400
 	return this->obs_left;
+	#endif
 }
 
 int16_t robot::robot_get_obs_right()
 {
+	#if ROBOT_X600
+	if(this->obs5 >= this->obs6)
+		if(this->obs5 >= this->obs7)
+			return this->obs5;
+		else
+			return this->obs7;
+	else if(this->obs6	>= this->obs7)
+			return this->obs6;
+	else
+		return this->obs7;
+	#elif ROBOT_X400
 	return this->obs_right;
+	#endif
 }
 
 int16_t robot::robot_get_obs_front()
 {
+	#if ROBOT_X600
+	if(this->obs3>=this->obs4)
+		return this->obs3;
+	else
+		return this->obs4;	
+	#elif ROBOT_X400
 	return this->obs_front;
+	#endif
 }
 
 bool robot::robot_get_water_tank()

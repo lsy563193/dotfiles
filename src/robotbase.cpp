@@ -18,13 +18,22 @@
 #include "crc8.h"
 #include "serial.h"
 #include "robotbase.h"
+#include "config.h"
 
 #define ROBOTBASE "robotbase"
 
-uint8_t receiStream[50]={				0Xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+#if ROBOT_X400
+uint8_t receiStream[50]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
+#elif ROBOT_X600
+uint8_t receiStream[60]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
+#endif
 
 uint8_t sendStream[19]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
 static int TOPIC_PUB_RATE = 50;
@@ -77,7 +86,7 @@ int robotbase_init(void)
 	set_gyro(1, 0);
 	Set_LED(100,0);
 	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-	printf("waiting robotbase awake ");
+	ROS_INFO("[robotbase] waiting robotbase awake ");
 	do {
 		serial_write(SEND_LEN,sendStream);
 		printf(".");
@@ -91,9 +100,9 @@ int robotbase_init(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		send_stream_thread = false;
-		if (base_ret < 0) {ROS_INFO("[robotbase] fail to create robotbase thread!! %s \n", strerror(base_ret));}
-		if (ser_ret < 0) {ROS_INFO("[robotbase] fail to create serial receive thread!! %s \n", strerror(ser_ret));}
-		if (sers_ret < 0){ROS_INFO("[robotbase] fail to create serial send therad!! %s \n",strerror(sers_ret));}
+		if (base_ret < 0) {ROS_INFO("[robotbase] fail to create robotbase thread!! %s ", strerror(base_ret));}
+		if (ser_ret < 0) {ROS_INFO("[robotbase] fail to create serial receive thread!! %s ", strerror(ser_ret));}
+		if (sers_ret < 0){ROS_INFO("[robotbase] fail to create serial send therad!! %s ",strerror(sers_ret));}
 		return -1;
 	}
 	is_robotbase_init = true;
@@ -113,34 +122,25 @@ void robotbase_deinit(void)
 	uint8_t buf[2];
 
 	if (is_robotbase_init) {
-		ROS_INFO_NAMED(ROBOTBASE,"deinit...\n");
+		printf("[robotbase]deinit...\n");
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		printf("\tshutdown robotbase power ");
-	/*	do {
-			control_stop_all();
-			printf(".");
-			usleep(400000);
-		} while (serial_read(2, buf) > 0);
-	*/
-		control_stop_all();
+		Set_LED(0,0);
+		control_set(CTL_BUZZER, 0x00);
+		set_gyro(0,0);
+		usleep(20000);
+		Disable_Motors();
 		usleep(40000);
-
-		usleep(40000);
-		// Stop the beeping
-		Beep(0, 0, 0, -1);
-		// Sleep for 30ms to make sure it sends only one control message to shut down the stm32 board.
-		usleep(30000);
-		serial_flush();
+		set_main_pwr(1);
+		usleep(20000);	
 		send_stream_thread = false;
 		usleep(20000);
-		serial_flush();
 		serial_close();
-		ROS_INFO("stop ok\n");
+		printf("[robotbase.cpp] Stop ok\n");
 		int mutex_ret = pthread_mutex_destroy(&send_lock);
 		if(mutex_ret<0)
-			ROS_INFO("[robotbase] mutex destroy fail\n");
-		//usleep(20000);
+			printf("[robotbase] mutex destroy fail\n");
 	}
 }
 
@@ -274,10 +274,15 @@ void *robotbase_routine(void*)
 		sensor.rw_crt = (((receiStream[12] << 8) | receiStream[13]) & 0x7fff) * 1.622;
 
 		sensor.left_wall = ((receiStream[14] << 8)| receiStream[15]);
+		#if ROBOT_X600
+		sensor.obs0 = ((receiStream[16]<<8) | receiStream[17]);
+		sensor.obs1 = ((receiStream[18] << 8) | receiStream[19]);
+		sensor.obs2 = ((receiStream[20] << 8) | receiStream[21]);
+		#elif ROBOT_X400
 		sensor.l_obs = ((receiStream[16] << 8) | receiStream[17]);
 		sensor.f_obs = ((receiStream[18] << 8) | receiStream[19]);
 		sensor.r_obs = ((receiStream[20] << 8) | receiStream[21]);
-
+		#endif
 		sensor.lbumper = (receiStream[22] & 0xf0) ? true : false;
 		sensor.rbumper = (receiStream[22] & 0x0f) ? true : false;
 
@@ -302,6 +307,15 @@ void *robotbase_routine(void*)
 		sensor.x_acc = ((receiStream[41]<<8)|receiStream[42])/66564.0f; //in G
 		sensor.y_acc = ((receiStream[43]<<8)|receiStream[44])/66564.0f; //in G
 		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/66564.0f; //in G
+
+		#if ROBOT_X600
+		sensor.obs3 = ((receiStream[47]<<8)|receiStream[48]);
+		sensor.obs4 = ((receiStream[49]<<8)|receiStream[50]);
+		sensor.obs5 = ((receiStream[51]<<8)|receiStream[52]);
+		sensor.obs6 = ((receiStream[53]<<8)|receiStream[54]);
+		sensor.obs7 = ((receiStream[55]<<8)|receiStream[56]);
+		#endif
+	
 		cur_time = ros::Time::now();
 
 		if(sensor.right_wall>0)
@@ -351,6 +365,7 @@ void *serial_send_routine(void*){
 	ros::Rate r(50);double proc_t;
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
+	ResetSendFlag();
 	while(send_stream_thread){
 		start_t =  ros::Time::now();
 		r.sleep();
