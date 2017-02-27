@@ -66,8 +66,9 @@ void User_Interface(void)
 	{
 		usleep(2000);	
 		uint32_t remote_cmd = Get_Rcon_Remote();
-		if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
-		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)
+		/*if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
+		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)*/
+		if(remote_cmd == Remote_Right|| remote_cmd ==Remote_Left||remote_cmd == Remote_Forward)
 	  	{
 			Set_Clean_Mode(Clean_Mode_Remote);
 			return;
@@ -104,12 +105,18 @@ void User_Interface(void)
 				Set_MoveWithRemote();
 				SetHomeRemote();
 			}
-			/* -----------------------------Check if wall follow event ----------------------------------*/
-			if(Remote_Key(Remote_Random))//                                  Check Remote Key Wallfollow
+			/* -----------------------------Check if Random event ----------------------------------*/
+			if(Remote_Key(Remote_Random))//                                  Check Remote Key Random
 			{
 			  	Set_MoveWithRemote();
-				//Temp_Mode=Clean_Mode_WallFollow;
 				Temp_Mode=Clean_Mode_RandomMode;
+			}
+			/* -----------------------------Check if wall follow event ----------------------------------*/
+			//if(Remote_Key(Remote_Wallfollow))//                                  Check Remote Key Wallfollow
+			if(Remote_Key(Remote_Max))//                                  Check Remote Key Wallfollow
+			{
+			  	Set_MoveWithRemote();
+				Temp_Mode=Clean_Mode_WallFollow;
 			}
 		}
 		/* -----------------------------Check if Clean event ----------------------------------*/
