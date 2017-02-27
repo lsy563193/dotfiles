@@ -8,6 +8,7 @@
 #include <vector>
 #include <movement.h>
 #include "robotbase.h"
+#include "std_srvs/Empty.h"
 
 extern bool is_line_angle_offset;
 static	robot *robot_obj = NULL;
@@ -43,6 +44,8 @@ robot::robot():is_align_active_(false),line_align_(finish)
 	this->line_angle = 0;
 	this->obstacles_sub = this->robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
+	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
+	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 	visualize_marker_init();
@@ -68,7 +71,7 @@ void robot::init()
 }
 
 bool robot::robot_is_all_ready() {
-  return (is_sensor_ready && is_scan_ready && is_map_ready && line_align_ > detecting) ? true : false;
+  return (is_sensor_ready /*&& is_scan_ready && is_map_ready*/ /*&& line_align_ > detecting*/) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
@@ -643,34 +646,83 @@ void robot::pub_bumper_markers(){
 	this->send_bumper_marker_pub.publish(this->bumper_markers);
 }
 
-void robot::align(void){
+void robot::align(void)
+{
 
-	if(is_align_active_ != true)
+	if (is_align_active_ != true)
 		return;
 
-	if(line_align_ == rotating) {
-		ROS_WARN("line detect: rotating line_angle(%d)",line_angle);
+	line_align_ = detecting;
+	is_scan_ready = false;
+	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+	while (line_align_ == detecting){
+//		ROS_WARN("line_align_ = %d\n", static_cast<int>(line_align_));
+//		ROS_WARN("is_scan_ready = %d\n", static_cast<int>(is_scan_ready));
+		usleep(1000);
+	}
+
+	if(line_align_ == rotating)
+	{
+		ROS_WARN("line detect: rotating line_angle(%d)", line_angle);
 		auto angle = static_cast<uint16_t>(abs(line_angle));
-		if (line_angle > 0) {
-			ROS_WARN("Turn_Left %d",angle);
+		if (line_angle > 0)
+		{
+			ROS_WARN("Turn_Left %d", angle);
 			Turn_Left(Turn_Speed / 10, angle);
-		} else if (line_angle < 0) {
-			ROS_WARN("Turn_Right %d",angle);
+		} else if (line_angle < 0)
+		{
+			ROS_WARN("Turn_Right %d", angle);
 			Turn_Right(Turn_Speed / 10, angle);
 		}
 		is_line_angle_offset = true;
 
-		system("rosnode kill /slam_gmapping");
-		system("roslaunch pp gmapping.launch &");
 		line_align_ = finish;
+		system("rosnode kill /slam_gmapping 2>/dev/null");
+		system("roslaunch pp gmapping.launch 2>/dev/null&");
+//		system("rosnode kill /obstacle_visualizer");
+//		system("rosnode kill /obstacle_detector");
+		sleep(2);
 	}
-	system("rosnode kill /obstacle_visualizer");
-	system("rosnode kill /obstacle_tracker");
-	system("rosnode kill /obstacle_recorder");
-	system("rosnode kill /obstacle_detector");
-	sleep(2);
+
+
 }
-void robot::align_init(void){
+
+void robot::align_exit(void){
 	is_align_active_ =  true;
 	line_align_ = detecting;
+}
+
+void robot::align_active(bool active){
+	is_align_active_ =  active;
+	if(is_align_active_ == true){
+		line_align_ = detecting;
+	}
+}
+
+void robot::start_lidar(void){
+	std_srvs::Empty empty;
+	is_scan_ready = false;
+	do{
+		if(start_mator_cli_.call(empty))
+			printf("start_lidar ok\n");
+		else
+			printf("start_lidar false\n");
+		usleep(1000);
+	} while(is_scan_ready !=true);
+}
+
+void robot::stop_lidar(void){
+	std_srvs::Empty empty;
+//	is_scan_ready = false;
+//	do
+//	{
+//		printf("is_scan_ready(%d)\n", is_scan_ready);
+		if (stop_mator_cli_.call(empty))
+			printf("stop_lidar ok\n");
+		else
+			printf("stop_lidar false\n");
+//		usleep(2000);
+//		printf("is_scan_ready(%d)\n", is_scan_ready);
+//	}while (is_scan_ready != false);
+
 }

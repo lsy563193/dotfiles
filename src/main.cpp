@@ -132,10 +132,7 @@ int main(int argc, char **argv)
 	nh_private.param<bool>("line_align", line_align_active, false);
 
 	serial_init(serial_port.c_str(), baudrate);
-	if(line_align_active == true){
-		robot::instance()->align_init();
-		system("roslaunch obstacle_detector single_scanner.launch &");
-	}
+	robot::instance()->align_active(line_align_active);
 	robotbase_init();
 
 #if 1

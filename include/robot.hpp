@@ -84,7 +84,11 @@ public:
 	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
 	void align(void);
-	void align_init(void);
+	void align_exit(void);
+	void align_active(bool);
+
+	void start_lidar(void);
+	void stop_lidar(void);
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
@@ -241,6 +245,9 @@ private:
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
 	ros::Publisher send_bumper_marker_pub;
+
+	ros::ServiceClient start_mator_cli_;
+	ros::ServiceClient stop_mator_cli_;
 
 	visualization_msgs::Marker clean_markers,bumper_markers;
 	geometry_msgs::Point m_points;

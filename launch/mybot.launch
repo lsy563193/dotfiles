@@ -11,7 +11,7 @@
 	<include file="$(find pp)/launch/rplidar.launch" />
 	<include file="$(find pp)/launch/tf_laser2base.launch" />
 	<include file="$(find pp)/launch/gmapping.launch" />
-	<!--<include file="$(find obstacle_detector)/launch/single_scanner.launch" />-->
+	<include file="$(find obstacle_detector)/launch/single_scanner.launch" />
 	<include file="$(find pp)/launch/pp.launch" />
 
 </launch>
