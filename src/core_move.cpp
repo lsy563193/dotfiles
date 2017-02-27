@@ -1771,6 +1771,19 @@ uint16_t CM_get_robot_direction()
 	return dir;
 }
 #endif
+class Motion_cantroller{
+public:
+  Motion_cantroller(){
+    Work_Motor_Configure();
+    robot::instance()->start_lidar();
+	  robot::instance()->align();
+  };
+  ~Motion_cantroller(){
+    Disable_Motors();
+    robot::instance()->stop_lidar();
+	  robot::instance()->align_exit();
+  }
+};
 uint8_t CM_Touring(void)
 {
 	int8_t	state;
@@ -1786,7 +1799,8 @@ uint8_t CM_Touring(void)
 #endif
 
 	int16_t	home_angle = robot::instance()->robot_get_home_angle();
-	robot::instance()->align();
+
+	Motion_cantroller motion;
 
 	MapTouringType	mt_state = MT_None;
 
@@ -1796,7 +1810,6 @@ uint8_t CM_Touring(void)
 	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
 
-	Work_Motor_Configure();
 	Reset_Touch();
 
 	station_zone = -1;

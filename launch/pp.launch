@@ -4,8 +4,8 @@
        value="$(find pp)/custom_rosconsole.conf"/>
 
 	<node name="pp" pkg="pp" type="pp" output="screen">
-		<param name="serial_port" type="string" value="/dev/ttyS3" />
-		<param name="baudrate" type="int" value="57600" />
-		<param name="line_align" type="bool" value="false" />
+		<param name="serial_port" type="string" value="/dev/ttyUSB0" />
+		<param name="baudrate" type="int" value="115200" />
+		<param name="line_align" type="bool" value="true" />
 	</node>
 </launch>
