@@ -121,11 +121,11 @@
 #define Vac_Normal					0
 #define Vac_Max						1
 
-#define Clean_MainBrush_Power		85000
-#define Home_MainBrush_Power		40000
+#define Clean_MainBrush_Power		8500
+#define Home_MainBrush_Power		4000
 
-#define Clean_SideBrush_Power		80000
-#define Home_SideBrush_Power		40000
+#define Clean_SideBrush_Power		8000
+#define Home_SideBrush_Power		4000
 //brush actual 12V
 
 #define Charger_Detected_Voltage	(uint16_t)1700
@@ -206,6 +206,8 @@
 #define Cliff_Limit         (int16_t)20
 
 #define Two_Hours         7200
+
+extern uint32_t Rcon_Status;
 
 void Reset_Work_Time();
 uint32_t Get_Work_Time();

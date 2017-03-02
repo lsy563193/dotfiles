@@ -950,6 +950,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	int8_t	HomeT, HomeL, HomeR, home_hit;
 	//int32_t	front_obs_val = 0;
+	uint32_t Temp_Rcon_Status;
 
 	int8_t	slow_down;
 	int16_t	i;
@@ -973,6 +974,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	usleep(10000);
 	//10 second
 
+	Reset_Rcon_Status();
 	HomeT = HomeL = HomeR = home_hit = slow_down = 0;
 	Adjust_Left = Adjust_Right = Integration_Cycle = 0;
 	Target_Course = Rotate_Angle = Integrated = Left_Speed = Right_Speed = 0;
@@ -1181,25 +1183,36 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		}
 #endif
 
-		if (go_home == 0){
-//		if (go_home == 0 && Temp_Rcon_Status) {
+		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT);
+//		if (go_home == 0){
+		if (go_home == 0 && Temp_Rcon_Status) {
 			// The return rcon info is at lowest 4 bits
-			if ((robot::instance()->robot_get_rcon_front_left() & Rcon_HomeT) || (robot::instance()->robot_get_rcon_front_right() & Rcon_HomeT)) {
+			Set_Rcon_Status(Get_Rcon_Status() & (~Temp_Rcon_Status));
+			if (Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT)) {
 				HomeT++;
-			} 
-			if (robot::instance()->robot_get_rcon_left() & Rcon_HomeT) {
+			}
+			if (Temp_Rcon_Status & RconL_HomeT) {
 				HomeL++;
-			} 
-			if (robot::instance()->robot_get_rcon_right() & Rcon_HomeT) {
+			}
+			if (Temp_Rcon_Status & RconR_HomeT) {
 				HomeR++;
 			}
+			//if ((robot::instance()->robot_get_rcon_front_left() & Rcon_HomeT) || (robot::instance()->robot_get_rcon_front_right() & Rcon_HomeT)) {
+			//	HomeT++;
+			//}
+			//if (robot::instance()->robot_get_rcon_left() & Rcon_HomeT) {
+			//	HomeL++;
+			//}
+			//if (robot::instance()->robot_get_rcon_right() & Rcon_HomeT) {
+			//	HomeR++;
+			//}
 
 			// If detect charger stub then print the detection info
 			if (HomeL || HomeR || HomeT){
 				printf("%s %d: home detected (%d %d %d)\n", __FUNCTION__, __LINE__, HomeL, HomeT, HomeR);
 			}
 
-			if (HomeR + HomeL + HomeT > 4) {
+			if (HomeR + HomeL + HomeT > 6) {
 				home_hit = HomeR > HomeL ? HomeR : HomeL;
 				home_hit = home_hit > HomeT ? home_hit : HomeT;
 
@@ -1233,7 +1246,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				// Update the location of charger stub
 				CM_SetStationHome();
 				break;
-			} else if (HomeT == 0 && (HomeR > 2 || HomeL > 2)) {
+			} else if (HomeT == 0 && (HomeR > 3 || HomeL > 3)) {
 				Stop_Brifly();
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
@@ -1258,7 +1271,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				// Update the location of charger stub
 				CM_SetStationHome();
 				break;
-			} else if (HomeR == 0 && HomeL == 0 && HomeT > 2) {
+			} else if (HomeR == 0 && HomeL == 0 && HomeT > 3) {
 				Stop_Brifly();
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
@@ -1284,6 +1297,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			break;
 		}
 
+		Reset_Rcon_Status();
 
 		/* Check bumper & cliff event.*/
 #ifdef OBS_DYNAMIC
@@ -1810,6 +1824,8 @@ uint8_t CM_Touring(void)
 	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
 
+	Work_Motor_Configure();
+	Reset_Rcon_Status();
 	Reset_Touch();
 
 	station_zone = -1;
@@ -1896,6 +1912,7 @@ uint8_t CM_Touring(void)
 	//FIXME
 	//Map_Wall_Follow_Initialize();
 
+	Reset_Rcon_Status();
 
 	/* usleep for checking whether robot is in the station */
 	usleep(700);

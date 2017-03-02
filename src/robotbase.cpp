@@ -202,6 +202,8 @@ void *robotbase_routine(void*)
 	ros::Rate	r(_RATE);
 	ros::Time	cur_time, last_time;
 
+	//Debug
+	uint16_t error_count = 0;
 
 	nav_msgs::Odometry			odom;
 	tf::TransformBroadcaster	odom_broad;
@@ -319,7 +321,14 @@ void *robotbase_routine(void*)
 		cur_time = ros::Time::now();
 
 		if(sensor.right_wall>0)
+		{
 			ROS_DEBUG_NAMED(ROBOTBASE,"on stm32 crc calculate bad time %d ",sensor.right_wall);
+			error_count++;
+			ROS_WARN("[robotbase.cpp] sensor.right_wall value: %d, error count: %d.", sensor.right_wall, error_count);
+		}
+		else{
+			error_count = 0;
+		}
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
 		float th = sensor.angle * 0.01745;					//turn degrees into radians
 		float dt = (cur_time - last_time).toSec();

@@ -41,12 +41,12 @@ public:
 	float robot_get_lwheel_current();
 	float robot_get_rwheel_current();
 	uint32_t robot_get_rcon();
-	uint32_t robot_get_rcon_front_left();
-	uint32_t robot_get_rcon_front_right();
-	uint32_t robot_get_rcon_back_left();
-	uint32_t robot_get_rcon_back_right();
-	uint32_t robot_get_rcon_left();
-	uint32_t robot_get_rcon_right();
+	//uint32_t robot_get_rcon_front_left();
+	//uint32_t robot_get_rcon_front_right();
+	//uint32_t robot_get_rcon_back_left();
+	//uint32_t robot_get_rcon_back_right();
+	//uint32_t robot_get_rcon_left();
+	//uint32_t robot_get_rcon_right();
 	bool robot_get_bumper_right();
 	bool robot_get_bumper_left();
 	int16_t robot_get_obs_left();

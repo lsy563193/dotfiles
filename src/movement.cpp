@@ -22,7 +22,7 @@ static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
-static uint32_t Rcon_Status;
+uint32_t Rcon_Status;
 
 uint32_t Average_Move = 0;
 uint32_t Average_Counter =0;
@@ -592,7 +592,7 @@ void Work_Motor_Configure(void)
 	Set_Vac_Speed();
 
 	// Trun on the main brush and side brush
-	Set_SideBrush_PWM(30, 30);
+	Set_SideBrush_PWM(50, 50);
 	Set_MainBrush_PWM(30);
 }
 
@@ -754,12 +754,14 @@ void Reset_Rcon_Status(void)
 }
 
 uint32_t Get_Rcon_Status(){
-	Rcon_Status = robot::instance()->robot_get_rcon();
+	//Rcon_Status = robot::instance()->robot_get_rcon();
 	return Rcon_Status;
 }
 
 uint32_t Get_Rcon_Remote(void)
 {
+	//Debug
+	return 0;
 	uint8_t ir_cmd;
 	ir_cmd = robot::instance()->robot_get_ir_ctrl();
 	if(ir_cmd == 0x80)
