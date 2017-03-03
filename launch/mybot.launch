@@ -10,8 +10,10 @@
 	<!--<include file="$(find lds_lidar)/launch/ldslidar.launch" />-->
 	<include file="$(find pp)/launch/rplidar.launch" />
 	<include file="$(find pp)/launch/tf_laser2base.launch" />
-	<include file="$(find pp)/launch/gmapping.launch" />
 	<include file="$(find obstacle_detector)/launch/single_scanner.launch" />
 	<include file="$(find pp)/launch/pp.launch" />
 
+	<include file="$(find pp)/launch/gmapping.launch" />
+	<!--<include file="$(find pp)/launch/karto_slam.launch" />-->
+	<!--<include file="$(find pp)/launch/cartographer_slam.launch" />-->
 </launch>
