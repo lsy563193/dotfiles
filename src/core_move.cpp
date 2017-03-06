@@ -1805,8 +1805,6 @@ uint8_t CM_Touring(void)
 
 	int16_t	home_angle = robot::instance()->robot_get_home_angle();
 
-	Motion_controller motion;
-
 	MapTouringType	mt_state = MT_None;
 
 	// Reset battery status
@@ -1904,23 +1902,9 @@ uint8_t CM_Touring(void)
 
 	/* usleep for checking whether robot is in the station */
 	usleep(700);
-	if (from_station == 1) {
-		printf("%s %d: Turn 45 degree to the wall\n", __FUNCTION__, __LINE__);
 
-		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle(0) - 450);
+	Motion_controller motion;
 
-		if (Touch_Detect()) {
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			printf("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
-			return 0;
-		}
-
-		from_station = 1;
-		station_zone = 0;
-	}
-	int work_mode=0;
-
-	ROS_DEBUG("-----------------------------");
 	/*****************************************************Cleaning*****************************************************/
 	while (ros::ok()) {
 
