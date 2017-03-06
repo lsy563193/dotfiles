@@ -1,4 +1,4 @@
-/**
+/*
 ******************************************************************************
 * @file    AI Cleaning Robot
 * @author  ILife Team Dxsong
@@ -522,6 +522,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	volatile int32_t		Wall_Straight_Distance = 100, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
 	static volatile int32_t	Wall_Distance = Wall_High_Limit;
 	//pthread_t	escape_thread_id;
+	if (Get_IMU_Status() == 0){
+        set_gyro(1, 0);
+	Set_IMU_Status();
+        usleep(2000000);
+	//printf("IMU_Status%d\n", Get_IMU_Status());
+	}
+	
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
 	

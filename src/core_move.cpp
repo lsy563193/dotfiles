@@ -978,6 +978,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	set_gyro(1, 0);
 	usleep(10000);
+	Set_IMU_Status();
 	//10 second
 
 	Reset_Rcon_Status();

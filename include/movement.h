@@ -511,7 +511,15 @@ void Reset_WallAccelerate();
 
 uint8_t VirtualWall_TurnRight();
 
-uint8_t VirtualWall_TurnLeft(); 
+uint8_t VirtualWall_TurnLeft();
+
+void Set_IMU_Status(void);
+
+void Reset_IMU_Status(void);
+
+uint8_t Get_IMU_Status(void);
+
+
 #endif
 
 

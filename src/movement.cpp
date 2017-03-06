@@ -22,6 +22,7 @@ static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
+static uint8_t IMU_Status = 0;
 uint32_t Rcon_Status;
 
 uint32_t Average_Move = 0;
@@ -743,6 +744,20 @@ void Switch_VacMode(void)
 	Set_Vac_Speed();
 }
 
+void Set_IMU_Status(void)
+{
+	IMU_Status = 1;
+}
+
+void Reset_IMU_Status(void)
+{
+	IMU_Status = 0;
+}
+
+uint8_t Get_IMU_Status(void){
+	return IMU_Status;
+}
+
 void Set_Rcon_Status(uint32_t code)
 {
 	Rcon_Status = code;
@@ -977,6 +992,7 @@ uint8_t Is_Water_Tank(void)
 {
 	return 0;
 }
+
 
 void Set_Clean_Mode(uint8_t mode)
 {
