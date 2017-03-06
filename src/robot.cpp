@@ -19,7 +19,7 @@ time_t	start_time;
 
 int obstacles_count = 0;//5s
 //extern pp::x900sensor sensor;
-robot::robot():is_align_active_(false),line_align_(finish)
+robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0)
 {
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
@@ -727,10 +727,14 @@ void robot::align(void)
 		is_line_angle_offset = true;
 
 		line_align_ = finish;
-		system("rosnode kill /slam_gmapping 2>/dev/null");
-		system("roslaunch pp gmapping.launch 2>/dev/null&");
-		//system("rosnode kill /slam_karto 2>/dev/null");
-		//system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null&");
+		if(slam_type_ == 0){
+			system("rosnode kill /slam_gmapping 2>/dev/null");
+			system("roslaunch pp gmapping.launch 2>/dev/null&");
+		}
+		else if (slam_type_ == 1){
+			system("rosnode kill /slam_karto 2>/dev/null");
+			system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null&");
+		}
 //		system("rosnode kill /obstacle_visualizer");
 //		system("rosnode kill /obstacle_detector");
 		sleep(2);
@@ -777,4 +781,9 @@ void robot::stop_lidar(void){
 //		printf("is_scan_ready(%d)\n", is_scan_ready);
 //	}while (is_scan_ready != false);
 
+}
+
+void robot::slam_type(int type)
+{
+	slam_type_ = type;
 }

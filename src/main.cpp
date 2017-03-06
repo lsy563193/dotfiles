@@ -108,6 +108,7 @@ int main(int argc, char **argv)
 	int			baudrate, ret1, core_move_thread_state;
 	pthread_t	core_move_thread_id;
 	std::string	serial_port;
+	int slam_type;
 	bool line_align_active;
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
@@ -118,9 +119,12 @@ int main(int argc, char **argv)
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 57600);
 	nh_private.param<bool>("line_align", line_align_active, false);
+//	nh_private.param<robot::Slam_type>("slam_type", slam_type, robot::Slam_type::GMAPPING);
+	nh_private.param<int>("slam_type", slam_type, 0);
 
 	serial_init(serial_port.c_str(), baudrate);
 	robot::instance()->align_active(line_align_active);
+	robot::instance()->slam_type(slam_type);
 	robotbase_init();
 
 #if 1

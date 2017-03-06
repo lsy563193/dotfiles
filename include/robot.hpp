@@ -90,6 +90,12 @@ public:
 
 	void start_lidar(void);
 	void stop_lidar(void);
+//	typedef enum class _Slam_type{
+//		GMAPPING,
+//		OPEN_KARTO,
+//	}Slam_type;
+
+	void slam_type(int type);
 private:
 	bool	is_sensor_ready;
 	bool	is_scan_ready;
@@ -248,6 +254,7 @@ private:
 
 	double	yaw;
 
+	int slam_type_;
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
