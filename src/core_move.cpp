@@ -965,6 +965,11 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	MapTouringType	retval = MT_None;
 
+	Point32_t position;
+
+	position.X = Map_GetXCount();
+	position.Y = Map_GetYCount();
+
 	should_follow_wall = 0;
 	//int32_t	x_tmp, y_tmp;
 
@@ -988,6 +993,12 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	printf("Target_Course(%d)\n",Target_Course);
 	CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
 	printf("leave CM_HeadToCourse\n");
+
+	if (position.X == Target.X) {
+		Target.X = Map_GetXCount();
+	} else {
+		Target.Y = Map_GetYCount();
+	}
 
 	if (Touch_Detect()) {
 		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
