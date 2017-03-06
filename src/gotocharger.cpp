@@ -271,6 +271,7 @@ void Charge_Function(void)
 		bat_v = robot::instance()->robot_get_battery_voltage();
 
 		ROS_DEBUG_NAMED("charger"," Loop for charger mode,voltage %f.",bat_v/100.0);
+		ROS_INFO(" Loop for charger mode,voltage %f.",bat_v/100.0);
 //		#ifdef SCREEN_REMOTE
 //		if(Remote_Clock_Received())
 //		{
