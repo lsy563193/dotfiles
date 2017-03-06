@@ -24,5 +24,6 @@ typedef struct {
 } MapWallFollowSetting;
 
 uint8_t Map_Wall_Follow(MapWallFollowType follow_type);
+uint8_t Wall_Follow(MapWallFollowType follow_type);
 
 #endif

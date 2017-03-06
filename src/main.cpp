@@ -40,7 +40,7 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
-				Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
+				Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 				break;
 			case Clean_Mode_RandomMode:
 				Random_Running_Mode();
