@@ -56,6 +56,7 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH (2 * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH / MOVE_TO_CELL_SEARCH_INCREMENT + 1)
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
+extern int obstacles_count;//5s
 typedef enum {
 	ACTION_NONE	= 0x01,
 	ACTION_GO	= 0x02,
@@ -1771,14 +1772,18 @@ uint16_t CM_get_robot_direction()
 	return dir;
 }
 #endif
-class Motion_cantroller{
+class Motion_controller {
 public:
-  Motion_cantroller(){
-    Work_Motor_Configure();
+  Motion_controller(){
+
+//	  set_gyro(1, 0);
+
+		obstacles_count = 40;
+		Work_Motor_Configure();
     robot::instance()->start_lidar();
 	  robot::instance()->align();
   };
-  ~Motion_cantroller(){
+  ~Motion_controller(){
     Disable_Motors();
     robot::instance()->stop_lidar();
 	  robot::instance()->align_exit();
@@ -1800,7 +1805,7 @@ uint8_t CM_Touring(void)
 
 	int16_t	home_angle = robot::instance()->robot_get_home_angle();
 
-	Motion_cantroller motion;
+	Motion_controller motion;
 
 	MapTouringType	mt_state = MT_None;
 

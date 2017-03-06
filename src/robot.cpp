@@ -17,6 +17,7 @@ static	robot *robot_obj = NULL;
 
 time_t	start_time;
 
+int obstacles_count = 0;//5s
 //extern pp::x900sensor sensor;
 robot::robot():is_align_active_(false),line_align_(finish)
 {
@@ -319,7 +320,6 @@ double distance(double x1, double y1, double x2, double y2) {
 }
 
 void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg) {
-  static int count = 400;//5s
   double last_distant = 0;
   auto i = 0;
   double detalx = 0, detaly = 0;
@@ -327,9 +327,12 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
     return;
 
   if(line_align_ == detecting) {
-      count--;
-      if (count == 0) {
-        ROS_DEBUG("line detect timeout");
+      obstacles_count--;
+	    if (obstacles_count % 10 == 0) {
+		    ROS_INFO("obstacles_count %d s",obstacles_count/10);
+	    }
+      if (obstacles_count == 0) {
+        ROS_WARN("line detect timeout");
         line_align_ = finish;
         return;
       }
