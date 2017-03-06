@@ -1776,8 +1776,8 @@ class Motion_controller {
 public:
   Motion_controller(){
 
-//	  set_gyro(1, 0);
-
+	  set_gyro(1, 0);
+	  usleep(1000);
 		obstacles_count = 40;
 		Work_Motor_Configure();
     robot::instance()->start_lidar();
