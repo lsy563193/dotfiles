@@ -995,9 +995,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 	CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
 	printf("leave CM_HeadToCourse\n");
 
-	if (position.X == Target.X) {
+	if (position.X != Map_GetXCount() && position.X == Target.X) {
 		Target.X = Map_GetXCount();
-	} else {
+	} else if (position.Y != Map_GetYCount() && position.Y == Target.Y) {
 		Target.Y = Map_GetYCount();
 	}
 
