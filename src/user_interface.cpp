@@ -68,6 +68,14 @@ void User_Interface(void)
 		uint32_t remote_cmd = Get_Rcon_Remote();
 		/*if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
 		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)*/
+		/*
+		if (Get_IMU_Status() == 0){
+			set_gyro(1, 0);
+			Set_IMU_Status();
+			usleep(2000000);
+			//printf("IMU_Status%d\n", Get_IMU_Status());
+		}*/
+
 		if(remote_cmd == Remote_Right|| remote_cmd ==Remote_Left||remote_cmd == Remote_Forward)
 	  	{
 			Set_Clean_Mode(Clean_Mode_Remote);

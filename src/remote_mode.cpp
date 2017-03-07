@@ -31,6 +31,12 @@ void Remote_Mode(void)
 
 
   //Display_Clean_Status(Display_Remote);
+	if (Get_IMU_Status() == 0){
+		set_gyro(1, 0);
+		Set_IMU_Status();
+		usleep(2000000);
+		//printf("IMU_Status%d\n", Get_IMU_Status());
+	}
 
   	Reset_Wheel_Step();
 	Reset_Touch();
