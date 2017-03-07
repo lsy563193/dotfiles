@@ -74,6 +74,14 @@ void Random_Running_Mode(void)
 #ifdef VIRTUAL_WALL
 	uint8_t Virtual_Wall_C = 0, Virtual_Wall_NG = 0;
 #endif
+
+        if (Get_IMU_Status() == 0){
+  		set_gyro(1, 0);
+       		Set_IMU_Status();
+        	usleep(2000000);
+        	//printf("IMU_Status%d\n", Get_IMU_Status());
+        }
+
 	Reset_Work_Time();
 	Wall_Bumper_Factor = Get_Random_Factor()/15;
 	Reset_MoveWithRemote();

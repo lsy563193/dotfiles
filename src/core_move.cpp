@@ -975,7 +975,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	//uint32_t Temp_Mobility_Distance = Get_Move_Distance();
 	//uint8_t Mobility_Temp_Error = 0;
-
+	set_gyro(0, 0);
+	Reset_IMU_Status();
 	set_gyro(1, 0);
 	usleep(10000);
 	Set_IMU_Status();
