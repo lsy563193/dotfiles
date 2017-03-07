@@ -31,7 +31,10 @@ void Remote_Mode(void)
 
 
   //Display_Clean_Status(Display_Remote);
+
 	if (Get_IMU_Status() == 0){
+		Set_LED(100,0);
+		Beep(3,25,25,2);
 		set_gyro(1, 0);
 		Set_IMU_Status();
 		usleep(2000000);
