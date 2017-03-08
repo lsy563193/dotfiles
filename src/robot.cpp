@@ -9,11 +9,14 @@
 #include <movement.h>
 #include "robotbase.h"
 #include "config.h"
+#include "Angles.h"
 
 #include "std_srvs/Empty.h"
 
 extern bool is_line_angle_offset;
 static	robot *robot_obj = NULL;
+//typedef double Angle;
+Angles<std::pair<int16_t,double>> angles;
 
 time_t	start_time;
 
@@ -45,7 +48,6 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0)
 	this->linear_z = 0.0;
 
 	this->line_angle = 0;
-	this->obstacles_sub = this->robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
@@ -320,85 +322,6 @@ double distance(double x1, double y1, double x2, double y2) {
   return sqrt(d + e);
 }
 
-void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg) {
-  double last_distant = 0;
-  auto i = 0;
-  double detalx = 0, detaly = 0;
-  if (is_scan_ready == false || is_sensor_ready == false)
-    return;
-
-  if(line_align_ == detecting) {
-      obstacles_count--;
-	    if (obstacles_count % 10 == 0) {
-		    ROS_INFO("obstacles_count %d s",obstacles_count/10);
-	    }
-      if (obstacles_count == 0) {
-        ROS_WARN("line detect timeout");
-        line_align_ = finish;
-        return;
-      }
-      if (msg->segments.size() != 0) {
-        for (auto &s : msg->segments) {
-          i++;
-          auto dist = distance(s.first_point.x, s.first_point.y, s.last_point.x, s.last_point.y);
-          if (dist > last_distant) {
-            last_distant = dist;
-            detalx = s.last_point.x - s.first_point.x;
-            detaly = s.last_point.y - s.first_point.y;
-          }
-        }
-        if (last_distant > 1) {
-          line_align_ = rotating;
-          auto yaw = arctan(detaly, detalx);
-          line_angle = ((int16_t) (yaw * 1800 / M_PI) % 3600);
-          if (line_angle > 900) {
-            line_angle -= 1800;
-          } else if (line_angle < -900) {
-            line_angle += 1800;
-          }
-
-	        ROS_INFO("line detect timeout");
-          if (abs(line_angle) < 50) {
-            ROS_INFO("abs(line_angle) < 50(%d)\n", line_angle);
-            line_align_ = finish;
-            obstacles_sub.shutdown();
-          }
-        }
-      }
-//    case rotating:
-//      if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
-
-//	      is_line_angle_offset = true;
-//	      line_align_ = finish;
-//      }
-//      break;
-  }
-
-  /*else {//(is_obstacles_ready == true)
-		static int count = 0;
-		if(count++%300==0) {
-			for (auto &s : msg->segments) {
-				std::cout << "first " << s.first_point << std::endl;
-				std::cout << "last " << s.last_point << std::endl;
-//			查找直线经过的格子
-				Point32_t p1, p2;
-				p1 = PointToCount(s.first_point);
-				p2 = PointToCount(s.last_point);
-				cout << "$$$$$$$$$p1:" << p1.X << "," << p1.Y << endl;
-				cout << "$$$$$$$$$p2:" << p2.X << "," << p2.Y << endl;
-				std::vector<Point16_t> cells = greds_of_line_pass(p1, p2);
-				for (auto &cell : cells) {
-					std::cout << "cell:" << cell.X << "," << cell.Y << "\t";
-					Point32_t p = Map_CellToPoint(cell);
-					Map_SetCell(MAP, p.X, p.Y, BLOCKED_OBS);
-				}
-				cout << endl;
-			}
-			debug_map(MAP,0,0);
-		}
-	}*/
-}
-
 float robot::robot_get_angle() {
   return this->angle;
 }
@@ -671,10 +594,10 @@ void robot::visualize_marker_init(){
 	this->bumper_markers.header.stamp = ros::Time::now();
 }
 
-double robot::robot_get_map_yaw()
-{
+double robot::robot_get_map_yaw() {
 	return this->yaw;
 }
+
 void robot::pub_clean_markers(){
 	this->m_points.x = this->position_x;
 	this->m_points.y = this->position_y;
@@ -704,48 +627,115 @@ void robot::align(void)
 
 	line_align_ = detecting;
 	is_scan_ready = false;
+	angles.clear();
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-	while (line_align_ == detecting){
-//		ROS_WARN("line_align_ = %d\n", static_cast<int>(line_align_));
-//		ROS_WARN("is_scan_ready = %d\n", static_cast<int>(is_scan_ready));
-		usleep(1000);
+	sleep(10);
+	obstacles_sub.shutdown();
+	usleep(10000);
+	angles.display();
+//	line_angle = angles.longest();
+	sleep(100);
+	ROS_WARN("line detect: rotating line_angle(%d)", line_angle);
+	auto angle = static_cast<uint16_t>(abs(line_angle));
+	if (line_angle > 0)
+	{
+		ROS_WARN("Turn_Left %d", angle);
+		Turn_Left(Turn_Speed / 10, angle);
+	} else if (line_angle < 0)
+	{
+		ROS_WARN("Turn_Right %d", angle);
+		Turn_Right(Turn_Speed / 10, angle);
 	}
 
-	if(line_align_ == rotating)
-	{
-		ROS_WARN("line detect: rotating line_angle(%d)", line_angle);
-		auto angle = static_cast<uint16_t>(abs(line_angle));
-		if (line_angle > 0)
-		{
-			ROS_WARN("Turn_Left %d", angle);
-			Turn_Left(Turn_Speed / 10, angle);
-		} else if (line_angle < 0)
-		{
-			ROS_WARN("Turn_Right %d", angle);
-			Turn_Right(Turn_Speed / 10, angle);
-		}
-		is_line_angle_offset = true;
+	is_line_angle_offset = true;
 
-		line_align_ = finish;
-		if(slam_type_ == 0){
-			system("rosnode kill /slam_gmapping 2>/dev/null");
-			system("roslaunch pp gmapping.launch 2>/dev/null&");
-		}
-		else if (slam_type_ == 1){
-			system("rosnode kill /slam_karto 2>/dev/null");
-			system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null&");
-		}
+	line_align_ = finish;
+	if (slam_type_ == 0)
+	{
+		system("rosnode kill /slam_gmapping 2>/dev/null");
+		system("roslaunch pp gmapping.launch 2>/dev/null&");
+	}
+	else if (slam_type_ == 1)
+	{
+		system("rosnode kill /slam_karto 2>/dev/null");
+		system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null&");
+	}
 //		system("rosnode kill /obstacle_visualizer");
 //		system("rosnode kill /obstacle_detector");
-		sleep(2);
-	}
-
-
+	sleep(2);
 }
 
-void robot::align_exit(void){
-	is_align_active_ =  true;
-	line_align_ = detecting;
+void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg) {
+  double detalx = 0, detaly = 0;
+  if (is_scan_ready == false || is_sensor_ready == false)
+    return;
+
+    if (msg->segments.size() != 0)
+    {
+	    for (auto &s : msg->segments)
+	    {
+		    double dist = distance(s.first_point.x, s.first_point.y, s.last_point.x, s.last_point.y);
+		    if (dist < 1)
+			    return;
+
+		    detalx = s.last_point.x - s.first_point.x;
+		    detaly = s.last_point.y - s.first_point.y;
+
+		    double yaw = arctan(detaly, detalx);
+
+		    int16_t line_angle = ((int16_t) (yaw * 1800 / M_PI) % 3600);
+          if (line_angle > 900) {
+            line_angle -= 1800;
+          } else if (line_angle < -900) {
+            line_angle += 1800;
+          }
+		    auto pair = std::make_pair(line_angle,dist);
+		    angles.classive(pair);
+	    }
+	    /*if (last_distant > 1) {
+        line_align_ = rotating;
+
+        ROS_INFO("line_angle = %d\n", line_angle);
+
+        ROS_INFO("line detect timeout");
+        if (abs(line_angle) < 50) {
+          ROS_INFO("abs(line_angle) < 50(%d)\n", line_angle);
+          line_align_ = finish;
+          obstacles_sub.shutdown();
+        }
+      }*/
+/*//    case rotating:
+//      if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
+
+//	      is_line_angle_offset = true;
+//	      line_align_ = finish;
+//      }
+//      break;
+ */
+    }
+  /*else {//(is_obstacles_ready == true)
+		static int count = 0;
+		if(count++%300==0) {
+			for (auto &s : msg->segments) {
+				std::cout << "first " << s.first_point << std::endl;
+				std::cout << "last " << s.last_point << std::endl;
+//			查找直线经过的格子
+				Point32_t p1, p2;
+				p1 = PointToCount(s.first_point);
+				p2 = PointToCount(s.last_point);
+				cout << "$$$$$$$$$p1:" << p1.X << "," << p1.Y << endl;
+				cout << "$$$$$$$$$p2:" << p2.X << "," << p2.Y << endl;
+				std::vector<Point16_t> cells = greds_of_line_pass(p1, p2);
+				for (auto &cell : cells) {
+					std::cout << "cell:" << cell.X << "," << cell.Y << "\t";
+					Point32_t p = Map_CellToPoint(cell);
+					Map_SetCell(MAP, p.X, p.Y, BLOCKED_OBS);
+				}
+				cout << endl;
+			}
+			debug_map(MAP,0,0);
+		}
+	}*/
 }
 
 void robot::align_active(bool active){
@@ -783,7 +773,11 @@ void robot::stop_lidar(void){
 
 }
 
-void robot::slam_type(int type)
-{
+void robot::slam_type(int type) {
 	slam_type_ = type;
+}
+
+void robot::align_exit(void) {
+	is_align_active_ =  true;
+	line_align_ = detecting;
 }
