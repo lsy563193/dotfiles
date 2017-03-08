@@ -2,6 +2,8 @@
 <launch>
 
   <arg name="scan_topic" default="scan" />
+  <!-- <arg name="scan_topic" default="scan_filtered" /> -->
+  <!-- <remap from="scan" to="$(arg scan_topic)"/> -->
 
   <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen" clear_params="true">
     <param name="odom_frame" value="odom"/>
