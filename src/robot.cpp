@@ -737,7 +737,7 @@ void robot::align(void)
 		}
 //		system("rosnode kill /obstacle_visualizer");
 //		system("rosnode kill /obstacle_detector");
-		sleep(2);
+		sleep(5);
 	}
 
 

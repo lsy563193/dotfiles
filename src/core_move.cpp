@@ -20,6 +20,8 @@
 #include "wall_follow_multi.h"
 #include <ros/ros.h>
 #include <vector>
+#include <chrono>
+#include <functional>
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
 //1 1 1
@@ -1799,12 +1801,22 @@ uint16_t CM_get_robot_direction()
 	return dir;
 }
 #endif
+
+//typedef void func(void) func;
+
+void show_time(std::function<void(void)> task){
+	auto gyro_start = std::chrono::system_clock::now();
+	task();
+	auto diff = std::chrono::system_clock::now() - gyro_start;
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
+	std::cout <<"this task runs:" << ms.count() << " ms" << std::endl;
+}
 class Motion_controller {
 public:
   Motion_controller(){
 
-	  set_gyro(1, 0);
-	  usleep(1000);
+	  show_time(Set_gyro_off);
+	  show_time(Set_gyro_on);
 		obstacles_count = 40;
 		Work_Motor_Configure();
     robot::instance()->start_lidar();
@@ -1840,7 +1852,7 @@ uint8_t CM_Touring(void)
 	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
 
-	Work_Motor_Configure();
+//	Work_Motor_Configure();
 	Reset_Rcon_Status();
 	Reset_Touch();
 

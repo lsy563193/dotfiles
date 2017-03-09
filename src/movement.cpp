@@ -1620,3 +1620,44 @@ void movement_stop()
 {
 	movement_turn(0,0);
 }
+
+void Set_gyro_on(void)
+{
+	static int count=0;
+	set_gyro(1,0);
+	ROS_INFO("waiting for gyro start");
+
+	count = 0;
+	auto stop_angle_v = robot::instance()->robot_get_angle_v();
+	while (count<10)
+	{
+		usleep(10000);
+
+		if (robot::instance()->robot_get_angle_v() != stop_angle_v){
+			++count;
+		}
+//		ROS_INFO("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
+	}
+//	ROS_INFO("gyro start ok");
+}
+
+void Set_gyro_off()
+{
+	static int count=0;
+	set_gyro(0,0);
+	ROS_INFO("waiting for gyro stop");
+	count = 0;
+	auto angle_v = robot::instance()->robot_get_angle_v();
+
+	while(count <= 20)
+	{
+		usleep(10000);
+		count++;
+		if (robot::instance()->robot_get_angle_v() != angle_v){
+			count=0;
+			angle_v = robot::instance()->robot_get_angle_v();
+		}
+//		ROS_INFO("gyro stop ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
+	}
+	ROS_INFO("gyro stop ok");
+}
