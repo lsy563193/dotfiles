@@ -1610,9 +1610,11 @@ int8_t path_next(int32_t *target_x, int32_t *target_y) {
 			positions[0].y_target = y_next_area;
 
 			/* Find the path to the next target to clean. */
-			pos.X = Map_GetXPos();
-			pos.Y = Map_GetYPos();
-			val = path_move_to_unclean_area(pos, x_next_area, y_next_area, &x, &y, last_dir);
+			//pos.X = Map_GetXPos();
+			//pos.Y = Map_GetYPos();
+			pos.X = x_next_area;
+			pos.Y = y_next_area;
+			val = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x, &y, last_dir);
 			printf("%s %d %d %d %d %d\n", __FUNCTION__, __LINE__, x_next_area, y_next_area, x, y);
 		} else {
 			printf("%s %d %d %d %d %d %d\n", __FUNCTION__, __LINE__, val, x_next_area, y_next_area, x, y);
@@ -1755,9 +1757,11 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 				}
 			} else {
 				/* If no path find anymore, stop. */
-				pos.X = Map_GetXPos();
-				pos.Y = Map_GetYPos();
-				if ((retval = path_move_to_unclean_area(pos, x_next, y_next, &x, &y, last_dir)) <= 0) {
+				//pos.X = Map_GetXPos();
+				//pos.Y = Map_GetYPos();
+				pos.X = x_next;
+				pos.Y = y_next;
+				if ((retval = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x, &y, last_dir)) <= 0) {
 					printf("%s %d: stop robot, no path to home (%d, %d)\n", __FUNCTION__, __LINE__, x_next, y_next);
 					retval = 0;
 					*target_x = Map_GetXCount();
