@@ -1345,6 +1345,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	tracex = endx;
 	tracey = endy;
 	next = 0;
+	dest_dir = (last_dir == EAST || last_dir == WEST) ? 1: 0;
 	while (tracex != xID || tracey != yID) {
 		costAtCell = Map_GetCell(SPMAP, tracex, tracey);
 		targetCost = costAtCell - 1;
@@ -1360,6 +1361,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && (Map_GetCell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
 					tracex--;								\
 					next = 1;								\
+					dest_dir = 1;								\
 				}										\
 			}
 
@@ -1367,6 +1369,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && (Map_GetCell(SPMAP, tracex, tracey - 1) == targetCost)) {	\
 					tracey--;								\
 					next = 1;								\
+					dest_dir = 0;								\
 				}										\
 			}
 
@@ -1374,6 +1377,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && (Map_GetCell(SPMAP, tracex, tracey + 1) == targetCost)) {	\
 					tracey++;								\
 					next = 1;								\
+					dest_dir = 0;								\
 				}										\
 			}
 
@@ -1381,30 +1385,21 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && Map_GetCell(SPMAP, tracex + 1, tracey) == targetCost) {	\
 					tracex++;								\
 					next = 1;								\
+					dest_dir = 1;								\
 				}										\
 			}
 
 		next = 0;
-		if (last_dir == NORTH) {
-			COST_SOUTH
-			COST_WEST
-			COST_EAST
-			COST_NORTH
-		} else if (last_dir == SOUTH) {
-			COST_NORTH
+		if (dest_dir == 0) {
 			COST_WEST
 			COST_EAST
 			COST_SOUTH
-		} else if (last_dir == EAST) {
-			COST_WEST
-			COST_SOUTH
 			COST_NORTH
-			COST_EAST
 		} else {
-			COST_EAST
 			COST_SOUTH
 			COST_NORTH
 			COST_WEST
+			COST_EAST
 		}
 
 #undef COST_EAST
