@@ -975,8 +975,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	//uint32_t Temp_Mobility_Distance = Get_Move_Distance();
 	//uint8_t Mobility_Temp_Error = 0;
-	set_gyro(0, 0);
-	Reset_IMU_Status();
 	set_gyro(1, 0);
 	usleep(10000);
 	Set_IMU_Status();
@@ -1802,13 +1800,15 @@ uint16_t CM_get_robot_direction()
 class Motion_controller {
 public:
   Motion_controller(){
-
-	  set_gyro(1, 0);
-	  usleep(1000);
-		obstacles_count = 40;
-		Work_Motor_Configure();
-    robot::instance()->start_lidar();
-	  robot::instance()->align();
+	set_gyro(0, 0);
+	Reset_IMU_Status();
+	set_gyro(1, 0);
+	sleep(2);
+	Set_IMU_Status();
+	obstacles_count = 40;
+	Work_Motor_Configure();
+	robot::instance()->start_lidar();
+	robot::instance()->align();
   };
   ~Motion_controller(){
     Disable_Motors();
@@ -1840,7 +1840,7 @@ uint8_t CM_Touring(void)
 	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
 
-	Work_Motor_Configure();
+	//Work_Motor_Configure();
 	Reset_Rcon_Status();
 	Reset_Touch();
 
