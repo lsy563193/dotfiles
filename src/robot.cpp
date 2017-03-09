@@ -734,6 +734,9 @@ void robot::align(void)
 		else if (slam_type_ == 1){
 			system("rosnode kill /slam_karto 2>/dev/null");
 			system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null&");
+		} else if (slam_type_ == 2){
+			system("rosnode kill /cartographer_node 2>/dev/null");
+			system("roslaunch pp cartographer_slam.launch 2>/dev/null&");
 		}
 //		system("rosnode kill /obstacle_visualizer");
 //		system("rosnode kill /obstacle_detector");
