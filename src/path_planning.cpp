@@ -1426,8 +1426,8 @@ void path_update_cells()
 int16_t path_escape_trapped() {
 
 	int16_t	val = 0;
-	path_set_current_pos();
 	uint16_t i = 0;
+
 	if ( trappedCell[0].X != home_x || trappedCell[0].Y != home_y ){
 		for ( i = 0; i < trappedCellSize; ++i ) {
 			printf("%s %d Check %d trapped reference cell: x: %d, y: %d\n", __FUNCTION__, __LINE__,
