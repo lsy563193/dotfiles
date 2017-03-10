@@ -7,6 +7,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 #include <movement.h>
+#include <core_move.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
@@ -718,16 +719,9 @@ void robot::align(void)
 	if(line_align_ == rotating)
 	{
 		ROS_WARN("line detect: rotating line_angle(%d)", line_angle);
-		auto angle = static_cast<uint16_t>(abs(line_angle));
-		if (line_angle > 0)
-		{
-			ROS_WARN("Turn_Left %d", angle);
-			Turn_Left(Turn_Speed / 10, angle);
-		} else if (line_angle < 0)
-		{
-			ROS_WARN("Turn_Right %d", angle);
-			Turn_Right(Turn_Speed / 10, angle);
-		}
+//		auto angle = static_cast<int16_t>(abs(line_angle));
+		CM_HeadToCourse(ROTATE_TOP_SPEED,line_angle);
+
 		is_line_angle_offset = true;
 
 		line_align_ = finish;

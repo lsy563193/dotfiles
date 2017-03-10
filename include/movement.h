@@ -239,8 +239,8 @@ void Wall_Dynamic_Base(uint32_t Cy);
 
 void Quick_Back(uint8_t Speed,uint16_t Distance);
 
-void Turn_Left(uint16_t speed,uint16_t angle);
-void Turn_Right(uint16_t speed,uint16_t angle);
+void Turn_Left(uint16_t speed,int16_t angle);
+void Turn_Right(uint16_t speed,int16_t angle);
 
 void Set_Error_Code(uint8_t code);
 void Set_LeftBrush_Stall(uint8_t L);
@@ -258,7 +258,7 @@ void Wall_Dynamic_Base(uint32_t Cy);
 
 void Quick_Back(uint8_t Speed,uint16_t Distance);
 
-void Turn_Right(uint16_t speed,uint16_t angle);
+//void Turn_Right(uint16_t speed,uint16_t angle);
 
 uint8_t Get_OBS_Status(void);
 

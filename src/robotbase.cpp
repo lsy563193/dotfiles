@@ -268,7 +268,8 @@ void *robotbase_routine(void*)
 				// Save current angle as previous_angle
 				previous_angle = sensor.angle;
 			}
-		}else{
+		}
+		else{
 			previous_angle = std::numeric_limits<float>::max();
 			slam_angle_offset=0;
 		}

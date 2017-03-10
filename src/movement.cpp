@@ -51,6 +51,15 @@ static uint8_t sendflag=0;
 static time_t work_time;
 ros::Time lw_t,rw_t; // these variable is used for calculate wheel step
 /*----------------------- Work Timer functions--------------------------*/
+
+static inline int16_t Gyro_GetAngle(){
+	auto angle = static_cast<int16_t>( (robot::instance()->robot_get_angle()) * 10);
+	if(angle <0)
+		angle += 3600;
+
+	return angle;
+}
+
 void Reset_Work_Time()
 {
 	work_time = time(NULL);
@@ -183,17 +192,19 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	}
 }
 
-void Turn_Left(uint16_t speed, uint16_t angle)
+
+void Turn_Left(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
-	uint16_t gyro_angle;
+	int16_t gyro_angle;
 
-	gyro_angle = Gyro_GetAngle(0);
+	gyro_angle = Gyro_GetAngle();
 
 	target_angle = gyro_angle + angle;
 	if (target_angle >= 3600) {
-		target_angle = target_angle - 3600;
+		target_angle -= 3600;
 	}
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	wheel_left_direction = 1;
 	wheel_right_direction = 0;
@@ -201,12 +212,11 @@ void Turn_Left(uint16_t speed, uint16_t angle)
 	Set_Wheel_Speed(speed, speed);
 	
 	uint8_t oc=0;
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
 	while (ros::ok()) {
-		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+		if (abs(target_angle - Gyro_GetAngle()) < 20) {
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			Set_Wheel_Speed(speed / 2, speed / 2);
 		} else {
 			Set_Wheel_Speed(speed, speed);
@@ -219,38 +229,39 @@ void Turn_Left(uint16_t speed, uint16_t angle)
 		if(Is_Turn_Remote())
 			break;
 		usleep(10000);
+		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0));
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
-void Turn_Right(uint16_t speed, uint16_t angle)
+void Turn_Right(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
-	uint16_t gyro_angle;
+	int16_t gyro_angle;
 
-	gyro_angle = Gyro_GetAngle(0);
+	gyro_angle = Gyro_GetAngle();
 
 	target_angle = gyro_angle - angle;
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	wheel_left_direction = 0;
 	wheel_right_direction = 1;
 
 	Set_Wheel_Speed(speed, speed);
 	uint8_t oc=0;
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
 	while (ros::ok()) {
-		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+		if (abs(target_angle - Gyro_GetAngle()) < 30) {
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+		if (abs(target_angle - Gyro_GetAngle()) < 60) {
 			Set_Wheel_Speed(speed / 2, speed / 2);
 		} else {
 			Set_Wheel_Speed(speed, speed);
@@ -263,13 +274,14 @@ void Turn_Right(uint16_t speed, uint16_t angle)
 		if(Is_Turn_Remote())
 			break;
 		usleep(10000);
+		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0));
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
 uint8_t Get_OBS_Status(void)
@@ -459,14 +471,14 @@ uint8_t Turn_Connect(void)
 		return 1;
 	}
 	// Start turning left.
-	target_angle = Gyro_GetAngle(0) - 120;
+	target_angle = Gyro_GetAngle() - 120;
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 1;
 	Set_Wheel_Speed(speed, speed);
-	while(abs(target_angle - Gyro_GetAngle(0)) > 20)
+	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
 		if(Is_ChargerOn())
 		{
@@ -487,14 +499,14 @@ uint8_t Turn_Connect(void)
 	}
 	Stop_Brifly();
 	// Start turning right.
-	target_angle = Gyro_GetAngle(0) + 240;
+	target_angle = Gyro_GetAngle() + 240;
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
 	wheel_left_direction = 1;
 	wheel_right_direction = 0;
 	Set_Wheel_Speed(speed, speed);
-	while(abs(target_angle - Gyro_GetAngle(0)) > 20)
+	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
 		if(Is_ChargerOn())
 		{
