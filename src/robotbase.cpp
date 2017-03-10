@@ -69,7 +69,7 @@ int temp_speaker_silence_time_count = 0;
 
 // Low battery flag
 extern uint8_t lowBattery;
-
+extern bool enable_slam_offset;
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret,sers_ret;
@@ -193,7 +193,7 @@ void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
 	float	th_last, vth, pose_x, pose_y;
-	float	previous_angle = 999;
+	float	previous_angle = std::numeric_limits<float>::max();
 	float	delta_angle = 0;
 	int16_t	angle;
 
@@ -238,38 +238,46 @@ void *robotbase_routine(void*)
 
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
-		// Compensate the angle with the offset published by slam
-		sensor.angle -= slam_angle_offset;
-		// Check for avoiding angle's sudden change
-		if (previous_angle == 999){
-			previous_angle = sensor.angle;
-		}else{
-			delta_angle = sensor.angle - previous_angle;
-			// Format the delta_angle into Range(-180, 180)
-			delta_angle = (180 < delta_angle ? delta_angle - 360 : delta_angle);
-			delta_angle = (delta_angle < -180 ? delta_angle + 360 : delta_angle);
-			// Decide whether it is a sudden change
-			if (10 < fabs(delta_angle)){
-				// It is a sudden change, discard this value
-				sensor.angle = previous_angle;
-			}
-			// Save current angle as previous_angle
-			previous_angle = sensor.angle;
-		}
 
 		if(is_line_angle_offset == true){
-			is_line_angle_offset = false;
-		  ROS_INFO("angle(%d),\n",angle);
-		  ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
-			line_angle_offset = sensor.angle;
-		}
-		sensor.angle -= line_angle_offset;
+			if(line_angle_offset == std::numeric_limits<float>::max())
+				line_angle_offset = sensor.angle;
+			sensor.angle -= line_angle_offset;
+		}else
+			line_angle_offset =std::numeric_limits<float>::max();
 
-//		ROS_INFO("angle(%d),\n",angle);
-//		ROS_INFO("sensor.angle(%f)\n",sensor.angle);
-//		ROS_INFO("line_angle_offset(%f)\n",line_angle_offset);
-//		ROS_WARN("angle_diff(%f)\n", sensor.angle - is_line_angle_offset);
-//		ROS_INFO("sensor.angle_v(%f)\n",sensor.angle_v);
+		if(enable_slam_offset)
+		{
+			// Compensate the angle with the offset published by slam
+			sensor.angle -= slam_angle_offset;
+			// Check for avoiding angle's sudden change
+			if (previous_angle == std::numeric_limits<float>::max())
+				previous_angle = sensor.angle;
+			else
+			{
+				delta_angle = sensor.angle - previous_angle;
+				// Format the delta_angle into Range(-180, 180)
+				delta_angle = (180 < delta_angle ? delta_angle - 360 : delta_angle);
+				delta_angle = (delta_angle < -180 ? delta_angle + 360 : delta_angle);
+				// Decide whether it is a sudden change
+				if (10 < fabs(delta_angle))
+				{
+					// It is a sudden change, discard this value
+					sensor.angle = previous_angle;
+				}
+				// Save current angle as previous_angle
+				previous_angle = sensor.angle;
+			}
+		}else{
+			previous_angle = std::numeric_limits<float>::max();
+			slam_angle_offset=0;
+		}
+
+//		ROS_WARN("angle(%d),\n",angle);
+//		ROS_INFO("previous_angle(%f),\n",previous_angle);
+//		ROS_WARN("line_angle_offset(%f)\n",line_angle_offset);
+//		ROS_INFO("sensor.angle(%f),\n", sensor.angle);
+
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;

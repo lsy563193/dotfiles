@@ -9,6 +9,7 @@
 #include <movement.h>
 #include "robotbase.h"
 #include "config.h"
+#include "laser.hpp"
 
 #include "std_srvs/Empty.h"
 
@@ -19,23 +20,21 @@ time_t	start_time;
 
 int obstacles_count = 0;//5s
 //extern pp::x900sensor sensor;
-robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0)
+robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
 {
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
-	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
 	/*map subscriber for exploration*/
-	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
+//	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	this->is_moving = false;
 	this->is_sensor_ready = false;
-	this->is_scan_ready = false;
+	this->is_odom_ready = false;
 	//this->is_map_ready = false;
-	this->is_map_ready = true;
+//	this->is_map_ready = true;
 
 	this->bumper_left = 0;
 	this->bumper_right = 0;
@@ -46,6 +45,9 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0)
 
 	this->line_angle = 0;
 	this->obstacles_sub = this->robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+
+	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
+	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
 	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
@@ -74,7 +76,7 @@ void robot::init()
 }
 
 bool robot::robot_is_all_ready() {
-  return (is_sensor_ready /*&& is_scan_ready && is_map_ready*/ /*&& line_align_ > detecting*/) ? true : false;
+  return (is_sensor_ready ) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
@@ -173,6 +175,7 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	printf("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d\n", rcon_left, rcon_right, rcon_front_left, rcon_front_right, rcon_back_left, rcon_back_right);
 #endif
 }
+/*
 
 void robot::robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg)
 {
@@ -183,6 +186,7 @@ void robot::robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg)
 		this->is_map_ready = true;
 	}
 }
+*/
 
 void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 {
@@ -232,7 +236,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		return;
 	}
 
-  if (!this->is_scan_ready) {
+  if (!this->is_odom_ready) {
     this->position_x_off = map_pose.getOrigin().x();
     this->position_y_off = map_pose.getOrigin().y();
     this->position_z_off = map_pose.getOrigin().z();
@@ -241,8 +245,8 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
   this->position_y = map_pose.getOrigin().y() - position_y_off;
   this->position_x = map_pose.getOrigin().x() - position_x_off;
 
-  if (this->is_scan_ready == false) {
-    this->is_scan_ready = true;
+  if (this->is_odom_ready == false) {
+    this->is_odom_ready = true;
   }
 }
 void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
@@ -276,6 +280,7 @@ void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
 	printf("vector=%d,%d,%d\n",map_data[0],map_data[1],map_data[2]);
 	printf("vector_pointer=%d\n",(*(this->ptr))[0]);
 	printf("finished map callback\n");
+	is_map_ready=true;
 
 }
 
@@ -324,7 +329,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
   double last_distant = 0;
   auto i = 0;
   double detalx = 0, detaly = 0;
-  if (is_scan_ready == false || is_sensor_ready == false)
+  if (laser::instance()->laser_is_ready() == false || is_sensor_ready == false)
     return;
 
   if(line_align_ == detecting) {
@@ -703,11 +708,10 @@ void robot::align(void)
 		return;
 
 	line_align_ = detecting;
-	is_scan_ready = false;
+	is_odom_ready = false;
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 	while (line_align_ == detecting){
 //		ROS_WARN("line_align_ = %d\n", static_cast<int>(line_align_));
-//		ROS_WARN("is_scan_ready = %d\n", static_cast<int>(is_scan_ready));
 		usleep(1000);
 	}
 
@@ -757,33 +761,48 @@ void robot::align_active(bool active){
 
 void robot::start_lidar(void){
 	std_srvs::Empty empty;
-	is_scan_ready = false;
 	do{
 		if(start_mator_cli_.call(empty))
 			printf("start_lidar ok\n");
 		else
 			printf("start_lidar false\n");
-		usleep(1000);
-	} while(is_scan_ready !=true);
+		usleep(10000);
+	} while(laser::instance()->laser_is_ready() !=true);
 }
 
 void robot::stop_lidar(void){
 	std_srvs::Empty empty;
-//	is_scan_ready = false;
+//	is_odom_ready = false;
 //	do
 //	{
-//		printf("is_scan_ready(%d)\n", is_scan_ready);
+//		printf("is_odom_ready(%d)\n", is_odom_ready);
 		if (stop_mator_cli_.call(empty))
 			printf("stop_lidar ok\n");
 		else
 			printf("stop_lidar false\n");
 //		usleep(2000);
-//		printf("is_scan_ready(%d)\n", is_scan_ready);
-//	}while (is_scan_ready != false);
+//		printf("is_odom_ready(%d)\n", is_odom_ready);
+//	}while (is_odom_ready != false);
 
 }
 
 void robot::slam_type(int type)
 {
 	slam_type_ = type;
+}
+
+void robot::map_ready(bool val)
+{
+	is_map_ready = val;
+}
+
+bool robot::map_ready(void)
+{
+	return is_map_ready;
+}
+
+void robot::Subscriber(void)
+{
+	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
+	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 }

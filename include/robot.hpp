@@ -22,6 +22,7 @@ public:
 
 	static robot *instance();
 	void init();
+	void Subscriber(void);
 	bool robot_is_all_ready();
 	uint8_t robot_get_workmode();
 	float robot_get_angle();
@@ -96,9 +97,11 @@ public:
 //	}Slam_type;
 
 	void slam_type(int type);
+	void map_ready(bool);
+	bool map_ready(void);
 private:
 	bool	is_sensor_ready;
-	bool	is_scan_ready;
+	bool	is_odom_ready;
 	std::vector<int8_t> map_data;
 	std::vector<int8_t> *ptr;
 	uint32_t seq;
@@ -277,7 +280,7 @@ private:
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
 	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr& obstacles);
-	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
+//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& msg);
 };
 

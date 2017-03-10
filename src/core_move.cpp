@@ -59,6 +59,8 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
 extern int obstacles_count;//5s
+extern bool is_line_angle_offset;
+bool enable_slam_offset{false};
 typedef enum {
 	ACTION_NONE	= 0x01,
 	ACTION_GO	= 0x02,
@@ -1817,17 +1819,23 @@ public:
 
 	  show_time(Set_gyro_off);
 	  show_time(Set_gyro_on);
+//	  robot::instance()->Subscriber();
 		obstacles_count = 40;
 		Work_Motor_Configure();
     robot::instance()->start_lidar();
 	  robot::instance()->align();
+	  enable_slam_offset = true;
   };
   ~Motion_controller(){
     Disable_Motors();
     robot::instance()->stop_lidar();
 	  robot::instance()->align_exit();
 	  show_time(Set_gyro_off);
+	  is_line_angle_offset = false;
+	  enable_slam_offset = false;
   }
+
+private:
 };
 uint8_t CM_Touring(void)
 {

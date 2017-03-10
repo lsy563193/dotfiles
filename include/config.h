@@ -358,8 +358,8 @@
 //#define OFFSET_ANGLE_GYRO_DATA			(1)
 #endif
 
-#define LIMIT_DISTANCE_ENABLE				(1)
-#define EXPLORE_SCOPE_ENABLE				(1)
+#define LIMIT_DISTANCE_ENABLE				(0)
+#define EXPLORE_SCOPE_ENABLE				(0)
 
 /* Define the display mode in user interface routine*/
 #define ONE_KEY_DISPLAY                     (1)
