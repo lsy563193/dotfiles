@@ -76,9 +76,8 @@ void Random_Running_Mode(void)
 #endif
 
         if (Get_IMU_Status() == 0){
-  		set_gyro(1, 0);
+  		    Set_gyro_on();
        		Set_IMU_Status();
-        	usleep(2000000);
         	//printf("IMU_Status%d\n", Get_IMU_Status());
         }
 

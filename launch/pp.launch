@@ -7,9 +7,8 @@
 		<param name="serial_port" type="string" value="/dev/ttyUSB0" />
 		<param name="baudrate" type="int" value="115200" />
 		<param name="line_align" type="bool" value="true" />
-		<!-- gmapping 0-->
-		<!-- karto 1-->
-		<!--<param name="slam_type" type="int" value="0" /> -->
+
+		<!-- 0: gmapping, 1: karto, 2: goole cartographe -->
 		<param name="slam_type" type="int" value="0" />
 	</node>
 </launch>

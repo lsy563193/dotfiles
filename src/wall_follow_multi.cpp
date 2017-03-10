@@ -130,6 +130,7 @@ void *WFM_check_trapped(void *data)
 		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
 		if (abs(current_x - Map_GetXPos()) >= 2 || abs(current_y - Map_GetYPos()) >= 2) {
+			path_set_current_pos();
 			printf("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
 			val = path_escape_trapped();
 			if (val == 1) {
@@ -523,9 +524,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	static volatile int32_t	Wall_Distance = Wall_High_Limit;
 	//pthread_t	escape_thread_id;
 	if (Get_IMU_Status() == 0){
-        	set_gyro(1, 0);
-		Set_IMU_Status();
-        	usleep(2000000);
+        	Set_gyro_on();
+					Set_IMU_Status();
 		//printf("IMU_Status%d\n", Get_IMU_Status());
 	}
 	

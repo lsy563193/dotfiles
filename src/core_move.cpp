@@ -979,8 +979,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 	//uint32_t Temp_Mobility_Distance = Get_Move_Distance();
 	//uint8_t Mobility_Temp_Error = 0;
-	set_gyro(0, 0);
-	Reset_IMU_Status();
 	set_gyro(1, 0);
 	usleep(10000);
 	Set_IMU_Status();
@@ -1819,6 +1817,7 @@ public:
 
 	  show_time(Set_gyro_off);
 	  show_time(Set_gyro_on);
+	  Set_IMU_Status();
 //	  robot::instance()->Subscriber();
 		obstacles_count = 40;
 		Work_Motor_Configure();
@@ -1831,11 +1830,10 @@ public:
     robot::instance()->stop_lidar();
 	  robot::instance()->align_exit();
 	  show_time(Set_gyro_off);
+	  Reset_IMU_Status();
 	  is_line_angle_offset = false;
 	  enable_slam_offset = false;
   }
-
-private:
 };
 uint8_t CM_Touring(void)
 {
@@ -2479,9 +2477,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		printf("%s %d Path Find: Escape Mode\n", __FUNCTION__, __LINE__);
 
 		LED_Blink = (remote_go_home != 1 ? 1 : 2);
-		pos.X = Map_GetXPos();
-		pos.Y = Map_GetYPos();
-		pathFind = path_move_to_unclean_area(pos, x, y, &tmp.X, &tmp.Y, 0 );
+		pos.X = x;
+		pos.Y = y;
+		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),  &tmp.X, &tmp.Y, 0 );
 		LED_Blink = 0;
 
 		return 0;
@@ -2540,10 +2538,10 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
-		pos.X = Map_GetXPos();
-		pos.Y = Map_GetYPos();
+		pos.X = x + relativePos[0].X;
+		pos.Y = y + relativePos[0].Y;
 //		Set_Run_HS_Timer(1);
-		pathFind = path_move_to_unclean_area(pos, x + relativePos[0].X, y + relativePos[0].Y, &tmp.X, &tmp.Y, 0 );
+		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
 //		Set_Run_HS_Timer(0);
 		LED_Blink = 0;
 //		if(pathFind>-1)
@@ -2617,9 +2615,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
-				pos.X = Map_GetXPos();
-				pos.Y = Map_GetYPos();
-				pathFind = path_move_to_unclean_area(pos, x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y,
+				pos.X = x + relativePos[offsetIdx].X;
+				pos.Y = y + relativePos[offsetIdx].Y;
+				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
 				                                      &tmp.X, &tmp.Y, last_dir );
 				LED_Blink = 0;
 
@@ -2647,9 +2645,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
-				pos.X = Map_GetXPos();
-				pos.Y = Map_GetYPos();
-				pathFind = path_move_to_unclean_area(pos, x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y,
+				pos.X = x + relativePos[offsetIdx].X;
+				pos.Y = y + relativePos[offsetIdx].Y;
+				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
 				                                      &tmp.X, &tmp.Y, last_dir );
 				LED_Blink = 0;
 
@@ -2681,9 +2679,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		printf("%s %d Path Find: Normal Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
 		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
-		pos.X = Map_GetXPos();
-		pos.Y = Map_GetYPos();
-		pathFind = path_move_to_unclean_area(pos, x, y, &tmp.X, &tmp.Y, 0 );
+		pos.X = x;
+		pos.Y = y;
+		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
 		LED_Blink = 0;
 
 		printf("%s %d Path Find: %d\n", __FUNCTION__, __LINE__, pathFind);
@@ -2736,9 +2734,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 			LED_Blink = (remote_go_home != 1 ? 1 : 2);
 			last_dir = path_get_robot_direction();
-			pos.X = Map_GetXPos();
-			pos.Y = Map_GetYPos();
-			pathFind = path_move_to_unclean_area(pos, x, y, &tmp.X, &tmp.Y, last_dir );
+			pos.X = x;
+			pos.Y = y;
+			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, last_dir );
 			LED_Blink = 0;
 
 			printf("%s %d Path Find: %d, target: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, x, y);

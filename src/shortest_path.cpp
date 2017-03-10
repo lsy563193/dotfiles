@@ -1194,16 +1194,8 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	}
 #endif
 
-	/* Robot is blocked by obstcal. */
 	if (Map_GetCell(SPMAP, endx, endy) == COST_HIGH) {
-		printf("shortest path 1\n");
-#ifdef	DEBUG_SM_MAP
-		debug_sm_map(SPMAP, endx, endy);
-#endif
-#ifdef	DEBUG_MAP
-		debug_map(MAP, endx, endy);
-#endif
-		return -1;
+		Map_SetCell(SPMAP, endx, endy, COST_NO);
 	}
 
 	/* Set the current robot position has the cost value of 1. */
@@ -1345,6 +1337,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	tracex = endx;
 	tracey = endy;
 	next = 0;
+	dest_dir = (last_dir == EAST || last_dir == WEST) ? 1: 0;
 	while (tracex != xID || tracey != yID) {
 		costAtCell = Map_GetCell(SPMAP, tracex, tracey);
 		targetCost = costAtCell - 1;
@@ -1360,6 +1353,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && (Map_GetCell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
 					tracex--;								\
 					next = 1;								\
+					dest_dir = 1;								\
 				}										\
 			}
 
@@ -1367,6 +1361,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && (Map_GetCell(SPMAP, tracex, tracey - 1) == targetCost)) {	\
 					tracey--;								\
 					next = 1;								\
+					dest_dir = 0;								\
 				}										\
 			}
 
@@ -1374,6 +1369,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && (Map_GetCell(SPMAP, tracex, tracey + 1) == targetCost)) {	\
 					tracey++;								\
 					next = 1;								\
+					dest_dir = 0;								\
 				}										\
 			}
 
@@ -1381,30 +1377,21 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 				if (next == 0 && Map_GetCell(SPMAP, tracex + 1, tracey) == targetCost) {	\
 					tracex++;								\
 					next = 1;								\
+					dest_dir = 1;								\
 				}										\
 			}
 
 		next = 0;
-		if (last_dir == NORTH) {
-			COST_SOUTH
-			COST_WEST
-			COST_EAST
-			COST_NORTH
-		} else if (last_dir == SOUTH) {
-			COST_NORTH
+		if (dest_dir == 0) {
 			COST_WEST
 			COST_EAST
 			COST_SOUTH
-		} else if (last_dir == EAST) {
-			COST_WEST
-			COST_SOUTH
 			COST_NORTH
-			COST_EAST
 		} else {
-			COST_EAST
 			COST_SOUTH
 			COST_NORTH
 			COST_WEST
+			COST_EAST
 		}
 
 #undef COST_EAST
@@ -1414,6 +1401,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 
 		totalCost++;
 	}
+	Map_SetCell(SPMAP, (int32_t)tracex, (int32_t)tracey, COST_PATH);
 
 	return totalCost;
 }
@@ -1479,13 +1467,15 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir) {
+int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
 
+	Point16_t pos;
+
 	/* Find the shortest path to the target by using shorest path grid map. */
-	retval = path_find_shortest_path(pos.X, pos.Y, x, y, 0, last_dir);
+	retval = path_find_shortest_path(position.X, position.Y, x, y, 0, last_dir);
 	if (retval < 0)
 		return retval;
 
@@ -1560,6 +1550,8 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 		*y_next = y_path;
 	} else {
 		/* direct_go flag is disabled. */
+		pos.X = x;
+		pos.Y = y;
 		*x_next = pos.X;
 		*y_next = pos.Y;
 
