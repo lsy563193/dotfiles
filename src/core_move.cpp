@@ -1826,6 +1826,7 @@ public:
     Disable_Motors();
     robot::instance()->stop_lidar();
 	  robot::instance()->align_exit();
+	  show_time(Set_gyro_off);
   }
 };
 uint8_t CM_Touring(void)
