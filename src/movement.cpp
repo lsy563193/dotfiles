@@ -192,7 +192,6 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	}
 }
 
-
 void Turn_Left(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
@@ -229,7 +228,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		if(Is_Turn_Remote())
 			break;
 		usleep(10000);
-		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
@@ -274,7 +273,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		if(Is_Turn_Remote())
 			break;
 		usleep(10000);
-		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;

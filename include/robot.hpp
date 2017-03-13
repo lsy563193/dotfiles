@@ -23,6 +23,7 @@ public:
 	static robot *instance();
 	void init();
 	void Subscriber(void);
+	void UnSubscriber(void);
 	bool robot_is_all_ready();
 	uint8_t robot_get_workmode();
 	float robot_get_angle();
@@ -91,6 +92,10 @@ public:
 
 	void start_lidar(void);
 	void stop_lidar(void);
+	void start_slam(void);
+//	void start_obstacle_detector(void);
+//	void stop_obstacle_detector(void);
+  void stop_slam(void);
 //	typedef enum class _Slam_type{
 //		GMAPPING,
 //		OPEN_KARTO,
@@ -99,6 +104,9 @@ public:
 	void slam_type(int type);
 	void map_ready(bool);
 	bool map_ready(void);
+	bool align_active(void){
+		return is_align_active_;
+	}
 private:
 	bool	is_sensor_ready;
 	bool	is_odom_ready;

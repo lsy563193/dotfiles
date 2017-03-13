@@ -22,6 +22,8 @@
 #include <vector>
 #include <chrono>
 #include <functional>
+#include <future>
+
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
 //1 1 1
@@ -58,7 +60,6 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH (2 * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH / MOVE_TO_CELL_SEARCH_INCREMENT + 1)
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
-extern int obstacles_count;//5s
 extern bool is_line_angle_offset;
 bool enable_slam_offset{false};
 typedef enum {
@@ -1802,7 +1803,20 @@ uint16_t CM_get_robot_direction()
 }
 #endif
 
-//typedef void func(void) func;
+void start_obstacle_detector(void)
+{
+	system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
+}
+
+void stop_obstacle_detector(void)
+{
+	system("rosnode kill /obstacle_detector 2>/dev/null &");
+}
+
+void start_slam(void)
+{
+	robot::instance()->start_slam();
+}
 
 void show_time(std::function<void(void)> task){
 	auto gyro_start = std::chrono::system_clock::now();
@@ -1815,24 +1829,40 @@ class Motion_controller {
 public:
   Motion_controller(){
 
-	  show_time(Set_gyro_off);
+	  Set_gyro_off();
+		start_obstacle_detector();
 	  show_time(Set_gyro_on);
 	  Set_IMU_Status();
-//	  robot::instance()->Subscriber();
-		obstacles_count = 40;
+
+	  robot::instance()->Subscriber();
 		Work_Motor_Configure();
     robot::instance()->start_lidar();
-	  robot::instance()->align();
+
+	  if(robot::instance()->align_active() == true){
+		  robot::instance()->align();
+		  stop_obstacle_detector();
+	  }
+
+	  start_slam();
 	  enable_slam_offset = true;
+	  while(robot::instance()->map_ready() == false){
+		  usleep(100000);
+	  }
   };
-  ~Motion_controller(){
+
+	~Motion_controller(){
     Disable_Motors();
     robot::instance()->stop_lidar();
-	  robot::instance()->align_exit();
+	  if(robot::instance()->align_active()){
+		  robot::instance()->align_exit();
+		  stop_obstacle_detector();
+	  }
 	  show_time(Set_gyro_off);
 	  Reset_IMU_Status();
 	  is_line_angle_offset = false;
 	  enable_slam_offset = false;
+	  robot::instance()->stop_slam();
+	  robot::instance()->UnSubscriber();
   }
 };
 uint8_t CM_Touring(void)

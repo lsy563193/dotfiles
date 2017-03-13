@@ -371,7 +371,8 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-		odom_pub.publish(odom);
+		if(enable_slam_offset)
+			odom_pub.publish(odom);
 		sensor_pub.publish(sensor);
 	}
 	//pthread_exit(NULL);

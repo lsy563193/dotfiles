@@ -7,7 +7,6 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 #include <movement.h>
-#include <core_move.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
@@ -19,7 +18,6 @@ static	robot *robot_obj = NULL;
 
 time_t	start_time;
 
-int obstacles_count = 0;//5s
 //extern pp::x900sensor sensor;
 robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
 {
@@ -34,8 +32,6 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	this->is_moving = false;
 	this->is_sensor_ready = false;
 	this->is_odom_ready = false;
-	//this->is_map_ready = false;
-//	this->is_map_ready = true;
 
 	this->bumper_left = 0;
 	this->bumper_right = 0;
@@ -45,10 +41,9 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	this->linear_z = 0.0;
 
 	this->line_angle = 0;
-	this->obstacles_sub = this->robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
-	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
+//	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
+//	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
 	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
@@ -334,15 +329,6 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
     return;
 
   if(line_align_ == detecting) {
-      obstacles_count--;
-	    if (obstacles_count % 10 == 0) {
-		    ROS_INFO("obstacles_count %d s",obstacles_count/10);
-	    }
-      if (obstacles_count == 0) {
-        ROS_WARN("line detect timeout");
-        line_align_ = finish;
-        return;
-      }
       if (msg->segments.size() != 0) {
         for (auto &s : msg->segments) {
           i++;
@@ -363,8 +349,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
             line_angle += 1800;
           }
 
-	        ROS_INFO("line detect timeout");
-          if (abs(line_angle) < 50) {
+          if (abs(line_angle) < 30) {
             ROS_INFO("abs(line_angle) < 50(%d)\n", line_angle);
             line_align_ = finish;
             obstacles_sub.shutdown();
@@ -702,6 +687,40 @@ void robot::pub_bumper_markers(){
 	this->send_bumper_marker_pub.publish(this->bumper_markers);
 }
 
+void robot::start_slam(void)
+{
+	is_map_ready = false;
+	if (slam_type_ == 0)
+		system("roslaunch pp gmapping.launch 2>/dev/null &");
+	else if (slam_type_ == 1)
+		system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null &");
+	else if (slam_type_ == 2)
+		system("roslaunch pp cartographer_slam.launch 2>/dev/null &");
+}
+
+//void start_obstacle_detector(void)
+//{
+//	system("roslaunch obstacle_detector single_scanner.launch 2>/dev/null&");
+//}
+
+/*
+void robot::stop_obstacle_detector(void)
+{
+	system("rosnode kill /obstacle_detector");
+}
+*/
+
+void robot::stop_slam(void)
+{
+	is_map_ready = false;
+	if (slam_type_ == 0)
+		system("rosnode kill /slam_gmapping 2>/dev/null &");
+	else if (slam_type_ == 1)
+		system("rosnode kill /slam_karto 2>/dev/null &");
+	else if (slam_type_ == 2)
+		system("rosnode kill /cartographer_node 2>/dev/null &");
+}
+
 void robot::align(void)
 {
 
@@ -711,41 +730,33 @@ void robot::align(void)
 	line_align_ = detecting;
 	is_odom_ready = false;
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-	while (line_align_ == detecting){
-//		ROS_WARN("line_align_ = %d\n", static_cast<int>(line_align_));
-		usleep(1000);
+	auto count_n_10ms = 500;
+	while (line_align_ == detecting && --count_n_10ms>0){
+		if(count_n_10ms%100 == 0)
+			ROS_WARN("detecting time remain %d s\n", count_n_10ms/100);
+		usleep(10000);
 	}
 
 	if(line_align_ == rotating)
 	{
 		ROS_WARN("line detect: rotating line_angle(%d)", line_angle);
-//		auto angle = static_cast<int16_t>(abs(line_angle));
-		CM_HeadToCourse(ROTATE_TOP_SPEED,line_angle);
+		auto angle = static_cast<int16_t>(abs(line_angle));
 
+		if (line_angle > 0)
+		{
+			ROS_WARN("Turn_Left %d", angle);
+			Turn_Left(BASE_SPEED/5, angle);
+		} else if (line_angle < 0)
+		{
+			ROS_WARN("Turn_Right %d", angle);
+			Turn_Right(BASE_SPEED/5, angle);
+		}
 		is_line_angle_offset = true;
-
 		line_align_ = finish;
-		if(slam_type_ == 0){
-			system("rosnode kill /slam_gmapping 2>/dev/null");
-			system("roslaunch pp gmapping.launch 2>/dev/null&");
-		}
-		else if (slam_type_ == 1){
-			system("rosnode kill /slam_karto 2>/dev/null");
-			system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null&");
-		} else if (slam_type_ == 2){
-			system("rosnode kill /cartographer_node 2>/dev/null");
-			system("roslaunch pp cartographer_slam.launch 2>/dev/null&");
-		}
-//		system("rosnode kill /obstacle_visualizer");
-//		system("rosnode kill /obstacle_detector");
-		sleep(5);
 	}
 
-
 }
-
-void robot::align_exit(void){
-	is_align_active_ =  true;
+void robot::align_exit(void){ is_align_active_ =  true;
 	line_align_ = detecting;
 }
 
@@ -763,7 +774,7 @@ void robot::start_lidar(void){
 			printf("start_lidar ok\n");
 		else
 			printf("start_lidar false\n");
-		usleep(10000);
+		sleep(1);
 	} while(laser::instance()->laser_is_ready() !=true);
 }
 
@@ -802,4 +813,15 @@ void robot::Subscriber(void)
 {
 	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
+
+	if(is_align_active_)
+	  obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+}
+void robot::UnSubscriber(void)
+{
+	map_sub.shutdown();
+	odom_sub.shutdown();
+
+	if(is_align_active_)
+	  obstacles_sub.shutdown();
 }
