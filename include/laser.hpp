@@ -14,9 +14,11 @@ public:
 
 	void init();
 
-	bool laser_is_ready();
-
 	bool laser_obstcal_detected(double distance, int angle, double range);
+
+	void is_ready(bool val);
+
+	bool is_ready();
 
 private:
 	bool is_laser_ready;

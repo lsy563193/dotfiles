@@ -325,7 +325,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
   double last_distant = 0;
   auto i = 0;
   double detalx = 0, detaly = 0;
-  if (laser::instance()->laser_is_ready() == false || is_sensor_ready == false)
+  if (laser::instance()->is_ready() == false || is_sensor_ready == false)
     return;
 
   if(line_align_ == detecting) {
@@ -739,16 +739,16 @@ void robot::align(void)
 
 	if(line_align_ == rotating)
 	{
-		ROS_WARN("line detect: rotating line_angle(%d)", line_angle);
+		ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
 		auto angle = static_cast<int16_t>(abs(line_angle));
 
 		if (line_angle > 0)
 		{
-			ROS_WARN("Turn_Left %d", angle);
+			ROS_INFO("Turn_Left %d", angle);
 			Turn_Left(BASE_SPEED/5, angle);
 		} else if (line_angle < 0)
 		{
-			ROS_WARN("Turn_Right %d", angle);
+			ROS_INFO("Turn_Right %d", angle);
 			Turn_Right(BASE_SPEED/5, angle);
 		}
 		is_line_angle_offset = true;
@@ -767,30 +767,38 @@ void robot::align_active(bool active){
 	}
 }
 
-void robot::start_lidar(void){
+void robot::start_lidar(void)
+{
 	std_srvs::Empty empty;
-	do{
-		if(start_mator_cli_.call(empty))
-			printf("start_lidar ok\n");
-		else
-			printf("start_lidar false\n");
-		sleep(1);
-	} while(laser::instance()->laser_is_ready() !=true);
+	auto count_5s = 0;
+	do
+	{
+
+		ROS_INFO("start_mator");
+		start_mator_cli_.call(empty);
+		count_5s = 300;
+		laser::instance()->is_ready(false);
+		while (laser::instance()->is_ready() == false && --count_5s > 0)
+		{
+			if (count_5s % 100 == 0)
+				ROS_INFO("start_lidar time remain %d", count_5s / 100);
+			usleep(10000);
+		}
+	}while (count_5s == 0);
+
+//	ROS_INFO("start_mator success!!!");
 }
 
 void robot::stop_lidar(void){
 	std_srvs::Empty empty;
 //	is_odom_ready = false;
-//	do
-//	{
-//		printf("is_odom_ready(%d)\n", is_odom_ready);
-		if (stop_mator_cli_.call(empty))
-			printf("stop_lidar ok\n");
-		else
-			printf("stop_lidar false\n");
-//		usleep(2000);
-//		printf("is_odom_ready(%d)\n", is_odom_ready);
-//	}while (is_odom_ready != false);
+	do
+	{
+		laser::instance()->is_ready(false);
+		ROS_INFO("stop_lidar");
+		stop_mator_cli_.call(empty);
+		sleep(2);
+	}while (laser::instance()->is_ready() == true);
 
 }
 

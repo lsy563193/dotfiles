@@ -1830,7 +1830,7 @@ public:
   Motion_controller(){
 
 	  Set_gyro_off();
-		start_obstacle_detector();
+	  std::async(std::launch::async, start_obstacle_detector);
 	  show_time(Set_gyro_on);
 	  Set_IMU_Status();
 
@@ -1840,11 +1840,12 @@ public:
 
 	  if(robot::instance()->align_active() == true){
 		  robot::instance()->align();
-		  stop_obstacle_detector();
+		  std::async(std::launch::async, stop_obstacle_detector);
 	  }
 
-	  start_slam();
+	  std::async(std::launch::async, start_slam);
 	  enable_slam_offset = true;
+	  auto count_n_10ms = 500;
 	  while(robot::instance()->map_ready() == false){
 		  usleep(100000);
 	  }

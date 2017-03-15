@@ -38,7 +38,7 @@ void laser::init()
 	}
 }
 
-bool laser::laser_is_ready()
+bool laser::is_ready()
 {
 	return (this->is_laser_ready) ? true : false;
 }
@@ -49,11 +49,10 @@ void laser::laser_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg)
 
 	this->laser_scan_data = *msg;
 	count = (int)((msg->angle_max - msg->angle_min) / msg->angle_increment);
-	//printf("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f\n", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
+//	printf("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f\n", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
 
-	if (this->is_laser_ready == false) {
-		this->is_laser_ready = true;
-	}
+//	ROS_INFO("LASER_SCAN_CB!!!!!!!!");
+	this->is_laser_ready = true;
 }
 
 bool laser::laser_obstcal_detected(double distance, int angle, double range)
@@ -84,3 +83,7 @@ bool laser::laser_obstcal_detected(double distance, int angle, double range)
 	return found;
 }
 
+void laser::is_ready(bool val)
+{
+	is_laser_ready = val;
+}
