@@ -101,6 +101,7 @@ public:
 //		OPEN_KARTO,
 //	}Slam_type;
 
+	void init_mumber();
 	void slam_type(int type);
 	void map_ready(bool);
 	bool map_ready(void);
@@ -251,8 +252,8 @@ private:
 	float	position_x;
 	float	position_y;
 	float	position_z;
-	float 	odom_pose_x;
-	float   odom_pose_y;
+	float odom_pose_x;
+	float  odom_pose_y;
 	float	position_map_x;
 	float	position_map_y;
 	float	position_x_off;

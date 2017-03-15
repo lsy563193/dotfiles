@@ -23,8 +23,6 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 {
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
-	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
-	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
 	/*map subscriber for exploration*/
 //	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
@@ -49,7 +47,6 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
-	visualize_marker_init();
 }
 
 robot::~robot()
@@ -647,6 +644,7 @@ void robot::visualize_marker_init(){
 	this->m_points.x = 0.0;
 	this->m_points.y = 0.0;
 	this->m_points.z = 0.0;
+	this->clean_markers.points.clear();
 	this->clean_markers.points.push_back(m_points);
 
 	this->bumper_markers.id=1;
@@ -770,21 +768,21 @@ void robot::align_active(bool active){
 void robot::start_lidar(void)
 {
 	std_srvs::Empty empty;
-	auto count_5s = 0;
+	auto count_3s = 0;
 	do
 	{
 
 		ROS_INFO("start_mator");
 		start_mator_cli_.call(empty);
-		count_5s = 300;
+		count_3s = 300;
 		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_5s > 0)
+		while (laser::instance()->is_ready() == false && --count_3s > 0)
 		{
-			if (count_5s % 100 == 0)
-				ROS_INFO("start_lidar time remain %d", count_5s / 100);
+			if (count_3s % 100 == 0)
+				ROS_INFO("start_lidar time remain %d", count_3s / 100);
 			usleep(10000);
 		}
-	}while (count_5s == 0);
+	}while (count_3s == 0);
 
 //	ROS_INFO("start_mator success!!!");
 }
@@ -822,8 +820,12 @@ void robot::Subscriber(void)
 	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
+	visualize_marker_init();
+	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
+	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	if(is_align_active_)
 	  obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+
 }
 void robot::UnSubscriber(void)
 {
@@ -832,4 +834,18 @@ void robot::UnSubscriber(void)
 
 	if(is_align_active_)
 	  obstacles_sub.shutdown();
+}
+void robot::init_mumber()
+{
+	is_odom_ready = false;
+	position_x=0;
+	position_y=0;
+	position_z=0;
+	odom_pose_x=0;
+	odom_pose_y=0;
+	position_map_x=0;
+	position_map_y=0;
+	position_x_off=0;
+	position_y_off=0;
+	position_z_off=0;
 }

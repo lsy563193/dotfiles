@@ -1983,6 +1983,7 @@ uint8_t CM_Touring(void)
 	/* usleep for checking whether robot is in the station */
 	usleep(700);
 
+	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
 
 	/*****************************************************Cleaning*****************************************************/

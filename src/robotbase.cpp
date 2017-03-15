@@ -272,6 +272,7 @@ void *robotbase_routine(void*)
 		else{
 			previous_angle = std::numeric_limits<float>::max();
 			slam_angle_offset=0;
+			pose_x = pose_y = 0;
 		}
 
 //		ROS_WARN("angle(%d),\n",angle);
@@ -348,6 +349,7 @@ void *robotbase_routine(void*)
 		//sensor.angle = th;
 		//sensor.angle_v = vth;
 		//th_last = th;
+
 
 		pose_x += (vx * cos(th) - 0 * sin(th)) * dt;
 		pose_y += (vx * sin(th) + 0 * cos(th)) * dt;
