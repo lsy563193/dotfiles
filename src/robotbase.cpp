@@ -272,7 +272,6 @@ void *robotbase_routine(void*)
 		else{
 			previous_angle = std::numeric_limits<float>::max();
 			slam_angle_offset=0;
-			pose_x = pose_y = 0;
 		}
 
 //		ROS_WARN("angle(%d),\n",angle);
@@ -373,8 +372,8 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-		if(enable_slam_offset)
-			odom_pub.publish(odom);
+		//if(enable_slam_offset)
+		odom_pub.publish(odom);
 		sensor_pub.publish(sensor);
 	}
 	//pthread_exit(NULL);

@@ -14,6 +14,7 @@
 #include "std_srvs/Empty.h"
 
 extern bool is_line_angle_offset;
+extern bool enable_slam_offset;
 static	robot *robot_obj = NULL;
 
 time_t	start_time;
@@ -41,7 +42,7 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	this->line_angle = 0;
 
 //	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-//	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
+	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
 	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
@@ -205,28 +206,56 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	ident.setIdentity();
 	ident.frame_id_ = "base_link";
 	ident.stamp_ = msg->header.stamp;
+	if (enable_slam_offset == 1){
+		//ROS_INFO("SLAM = 1");
+		try {
+			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
+			this->yaw = tf::getYaw(transform.getRotation());
 
-	try {
-		this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
-		this->yaw = tf::getYaw(transform.getRotation());
+			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
+			//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+		} catch(tf::TransformException e) {
+			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
+			return;
+		}
+	
 
-		Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-		//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
-	} catch(tf::TransformException e) {
-		ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
-		return;
-	}
+		try {
+			this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+			this->robot_tf->transformPose("/map", ident, map_pose);
+			mat = odom_pose.getBasis();
+			mat.getEulerYPR(map_yaw, pitch, roll);
+			this->map_yaw = map_yaw;
+			this->map_pose = map_pose;
+		} catch(tf::TransformException e) {
+			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
+			return;
+		}
+	}else{
+		//ROS_INFO("SLAM = 0");
+		try {
+			this->robot_tf->lookupTransform("/odom", "base_link", ros::Time(0), transform);
+			this->yaw = tf::getYaw(transform.getRotation());
 
-	try {
-		this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-		this->robot_tf->transformPose("/map", ident, map_pose);
-		mat = odom_pose.getBasis();
-		mat.getEulerYPR(map_yaw, pitch, roll);
-		this->map_yaw = map_yaw;
-		this->map_pose = map_pose;
-	} catch(tf::TransformException e) {
-		ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
-		return;
+			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
+			//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+		} catch(tf::TransformException e) {
+			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
+			return;
+		}
+	
+
+		try {
+			this->robot_tf->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+			this->robot_tf->transformPose("/odom", ident, map_pose);
+			mat = odom_pose.getBasis();
+			mat.getEulerYPR(map_yaw, pitch, roll);
+			this->map_yaw = map_yaw;
+			this->map_pose = map_pose;
+		} catch(tf::TransformException e) {
+			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
+			return;
+		}
 	}
 
   if (!this->is_odom_ready) {
@@ -818,7 +847,7 @@ bool robot::map_ready(void)
 void robot::Subscriber(void)
 {
 	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
+	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
 	visualize_marker_init();
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
@@ -830,7 +859,7 @@ void robot::Subscriber(void)
 void robot::UnSubscriber(void)
 {
 	map_sub.shutdown();
-	odom_sub.shutdown();
+	//odom_sub.shutdown();
 
 	if(is_align_active_)
 	  obstacles_sub.shutdown();
