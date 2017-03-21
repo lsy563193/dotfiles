@@ -46,7 +46,8 @@ pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
 pthread_t sendPortThread_id;
 pthread_mutex_t send_lock;
-pp::x900sensor	sensor;
+//pp::x900sensor	sensor;
+extern pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
 //When you restart gmapping, gyro may be have a angle offset, compensate it

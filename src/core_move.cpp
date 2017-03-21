@@ -1096,11 +1096,12 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		}
 
 		if (Get_Cliff_Trig()) {
+			ROS_INFO("Cliff Trig");
 			Set_Wheel_Speed(0, 0);
 			Set_Dir_Backward();
 			usleep(300);
 			if (Get_Cliff_Trig()) {
-
+				ROS_INFO("Cliff back 1st time.");
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
 
@@ -1109,6 +1110,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 #ifdef CLIFF_ERROR
 
 				if (Get_Cliff_Trig()) {
+					ROS_INFO("Cliff back 2nd time.");
 					if (Get_Cliff_Trig() == Status_Cliff_All) {
 						Stop_Brifly();
 						retval = MT_Key_Clean;
@@ -1117,6 +1119,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 					printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 					CM_CorBack(COR_BACK_20MM);
 					if (Get_Cliff_Trig()) {
+						ROS_INFO("Cliff back 3rd time.");
 						if (Get_Cliff_Trig() == Status_Cliff_All) {
 							Stop_Brifly();
 							retval = MT_Key_Clean;
@@ -2795,11 +2798,18 @@ void CM_CorBack(uint16_t dist)
 	Counter_Watcher = 0;
 //	Reset_Touch();
 
+	/*
 	pos_x = robot::instance()->robot_get_position_x();
 	pos_y = robot::instance()->robot_get_position_y();
+	*/
+
+	pos_x = robot::instance()->robot_get_odom_position_x();
+	pos_y = robot::instance()->robot_get_odom_position_y();
+
 	//while ((Get_LeftWheel_Step() < dist) || (Get_RightWheel_Step() < dist)) {
 	while (1) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_position_y(), 2));
+		//distance = sqrtf(powf(pos_x - robot::instance()->robot_get_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_odom_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_odom_position_y(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
