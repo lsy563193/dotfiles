@@ -112,7 +112,7 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->charge_stub = msg->c_stub;//charge stub signal
 	Rcon_Status |= this->charge_stub;
-	//printf("[robot.cpp] Rcon info:%x.\n", this->charge_stub);
+	//printf("[robot.cpp] Rcon info:%x.\n", Rcon_Status);
 
 	this->key = msg->key;
 

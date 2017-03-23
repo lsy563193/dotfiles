@@ -53,37 +53,37 @@
 #define Rcon_HomeT 					((uint32_t) 0x00000002)
 #define Rcon_HomeR 					((uint32_t) 0x00000001)
 
-#define RconL_HomeL					((uint32_t) 0x00000080)
-#define RconL_HomeR					((uint32_t) 0x00000040)
+#define RconL_HomeL					((uint32_t) 0x00004000)
+#define RconL_HomeR					((uint32_t) 0x00001000)
 
-#define RconFL_HomeL				((uint32_t) 0x00000020)
-#define RconFL_HomeR				((uint32_t) 0x00000010)
+#define RconFL_HomeL				((uint32_t) 0x00400000)
+#define RconFL_HomeR				((uint32_t) 0x00100000)
 
-#define RconFR_HomeL				((uint32_t) 0x00000008)
-#define RconFR_HomeR				((uint32_t) 0x00000004)
+#define RconFR_HomeL				((uint32_t) 0x00040000)
+#define RconFR_HomeR				((uint32_t) 0x00010000)
 
-#define RconR_HomeL					((uint32_t) 0x00000002)
-#define RconR_HomeR					((uint32_t) 0x00000001)
+#define RconR_HomeL					((uint32_t) 0x00000400)
+#define RconR_HomeR					((uint32_t) 0x00000100)
 
-#define RconR_HomeT					((uint32_t) 0x00000100)
-#define RconFR_HomeT				((uint32_t) 0x00000200)
-#define RconFL_HomeT				((uint32_t) 0x00000400)
-#define RconL_HomeT					((uint32_t) 0x00000800)
+#define RconR_HomeT					((uint32_t) 0x00000200)
+#define RconFR_HomeT				((uint32_t) 0x00020000)
+#define RconFL_HomeT				((uint32_t) 0x00200000)
+#define RconL_HomeT					((uint32_t) 0x00002000)
 
-#define RconBR_HomeL				((uint32_t) 0x00001000)
-#define RconBR_HomeR				((uint32_t) 0x00002000)
-#define RconBR_HomeT				((uint32_t) 0x00004000)
+#define RconBR_HomeL				((uint32_t) 0x00000004)
+#define RconBR_HomeR				((uint32_t) 0x00000001)
+#define RconBR_HomeT				((uint32_t) 0x00000002)
 
-#define RconBL_HomeL				((uint32_t) 0x00010000)
-#define RconBL_HomeR				((uint32_t) 0x00020000)
-#define RconBL_HomeT				((uint32_t) 0x00040000)
+#define RconBL_HomeL				((uint32_t) 0x00000040)
+#define RconBL_HomeR				((uint32_t) 0x00000010)
+#define RconBL_HomeT				((uint32_t) 0x00000020)
 
-#define RconR_Wall					((uint32_t) 0x00000000)
-#define RconFR_Wall					((uint32_t) 0x00000000)
-#define RconFL_Wall					((uint32_t) 0x00000000)
-#define RconL_Wall					((uint32_t) 0x00000000)
-#define RconBL_Wall					((uint32_t) 0x00000000)
-#define RconBR_Wall					((uint32_t) 0x00000000)
+#define RconR_Wall					((uint32_t) 0x00000700)
+#define RconFR_Wall					((uint32_t) 0x00070000)
+#define RconFL_Wall					((uint32_t) 0x00700000)
+#define RconL_Wall					((uint32_t) 0x00007000)
+#define RconBL_Wall					((uint32_t) 0x00000070)
+#define RconBR_Wall					((uint32_t) 0x00000007)
 
 
 #define Remote_Clean				((uint32_t) 0X02AA22DD)
@@ -277,6 +277,10 @@ void SetHomeRemote(void);
 
 void Reset_HomeRemote(void);
 
+uint8_t IsHomeRemote(void);
+
+void Display_Home_LED(void);
+
 uint8_t Is_OBS_Near(void);
 
 uint32_t Get_Rcon_Status(void);
@@ -314,6 +318,8 @@ void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed);
 uint8_t Get_VacMode(void);
 
 void Switch_VacMode(void);
+
+uint8_t Is_Remote(void);
 
 uint32_t Get_Rcon_Remote(void);
 
@@ -371,7 +377,7 @@ void Set_Clean_Mode(uint8_t mode);
 
 void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
 
-void Initialize_Motors(void);
+void Initialize_Motor(void);
 
 void Disable_Motors(void);
 
@@ -436,6 +442,10 @@ void ResetSendFlag(void);
 uint8_t Is_VirtualWall(void);
 
 uint8_t Is_Bumper_Jamed(void);
+
+void Reset_Bumper_Error(void);
+
+uint8_t Is_Bumper_Fail(void);
 
 uint8_t Is_Turn_Remote(void);
 
