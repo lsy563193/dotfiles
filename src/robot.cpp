@@ -18,6 +18,7 @@ extern bool is_line_angle_offset;
 extern bool enable_slam_offset;
 static	robot *robot_obj = NULL;
 //typedef double Angle;
+pp::x900sensor   sensor;
 Angles<std::pair<int16_t,double>> angles;
 
 time_t	start_time;
@@ -222,7 +223,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
 		}
-
+	
 
 		try {
 			this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
@@ -247,7 +248,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
 		}
-
+	
 
 		try {
 			this->robot_tf->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
@@ -432,7 +433,7 @@ float robot::robot_get_angle_v()
 {
 	return this->angle_v;
 }
-
+/*
 int16_t robot::robot_get_cliff_right()
 {
 	return this->cliff_right;
@@ -447,10 +448,34 @@ int16_t robot::robot_get_cliff_front()
 {
 	return this->cliff_front;
 }
+*/
+int16_t robot::robot_get_cliff_right()
+{
+	return sensor.rcliff;
+}
 
+int16_t robot::robot_get_cliff_left()
+{
+	return sensor.lcliff;
+}
+
+int16_t robot::robot_get_cliff_front()
+{
+	//ROS_INFO("Cliff_Front = %d", sensor.fcliff);
+	//ROS_INFO("Topic_Cliff_Front = %d", this->cliff_front);
+	return sensor.fcliff;
+}
+
+/*
 int16_t robot::robot_get_wall()
 {
 	return this->left_wall;
+}
+*/
+
+int16_t robot::robot_get_wall()
+{
+	return sensor.left_wall;
 }
 
 bool robot::robot_get_lbrush_oc()//oc : over current
@@ -558,6 +583,20 @@ bool robot::robot_get_bumper_left()
 	return this->bumper_left;
 }
 
+*/
+bool robot::robot_get_bumper_right()
+{
+	//ROS_INFO("rbumper = %d",sensor.rbumper);
+	//ROS_INFO("topic_rbumper = %d",this->bumper_right);
+	return sensor.rbumper;
+}
+
+bool robot::robot_get_bumper_left()
+{
+	//ROS_INFO("lbumper = %d",sensor.lbumper);
+	return sensor.lbumper;
+}
+/*
 int16_t robot::robot_get_obs_left()
 {
 	#if ROBOT_X600
@@ -601,6 +640,52 @@ int16_t robot::robot_get_obs_front()
 		return this->obs4;
 	#elif ROBOT_X400
 	return this->obs_front;
+	#endif
+}
+*/
+int16_t robot::robot_get_obs_left()
+{
+	#if ROBOT_X600
+	if(this->obs0 >= this->obs1)
+		if(this->obs0 >= this->obs2)
+			return this->obs0;
+		else
+			return this->obs2;
+	else if(this->obs1	>= this->obs2)
+			return this->obs1;
+	else
+		return this->obs2;
+	#elif ROBOT_X400
+	return sensor.l_obs;
+	#endif
+}
+
+int16_t robot::robot_get_obs_right()
+{
+	#if ROBOT_X600
+	if(this->obs5 >= this->obs6)
+		if(this->obs5 >= this->obs7)
+			return this->obs5;
+		else
+			return this->obs7;
+	else if(this->obs6	>= this->obs7)
+			return this->obs6;
+	else
+		return this->obs7;
+	#elif ROBOT_X400
+	return sensor.r_obs;
+	#endif
+}
+
+int16_t robot::robot_get_obs_front()
+{
+	#if ROBOT_X600
+	if(this->obs3>=this->obs4)
+		return this->obs3;
+	else
+		return this->obs4;
+	#elif ROBOT_X400
+	return sensor.f_obs;
 	#endif
 }
 
@@ -647,6 +732,16 @@ float robot::robot_get_position_y()
 float robot::robot_get_position_z()
 {
 	return this->position_z;
+}
+
+float robot::robot_get_odom_position_x()
+{
+	return this->odom_pose_x;
+}
+
+float robot::robot_get_odom_position_y()
+{
+	return this->odom_pose_y;
 }
 
 int16_t robot::robot_get_yaw()

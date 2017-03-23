@@ -6,7 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <ros/ros.h>
-#include "gotocharger.hpp"
+#include "charger.hpp"
 #include "core_move.h"
 #include "gyro.h"
 #include "movement.h"
@@ -30,7 +30,7 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	//Set_Clean_Mode(Clean_Mode_Navigation);
-	Set_Clean_Mode(Clean_Mode_Userinterface);
+	//Set_Clean_Mode(Clean_Mode_GoHome);
 
 	while(ros::ok()){
 		usleep(20000);
@@ -61,7 +61,12 @@ void *core_move_thread(void *)
 				Charge_Function();
 				break;
 			case Clean_Mode_GoHome:
-				goto_charger();
+				//goto_charger();
+#if Random_Find_Charger_Stub
+				HomeStraight_Mode();
+#else
+				GoHome();
+#endif
 				//Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:

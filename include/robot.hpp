@@ -75,6 +75,8 @@ public:
 	int16_t robot_get_home_angle();
 	float robot_get_position_x();
 	float robot_get_position_y();
+	float robot_get_odom_position_x();
+	float robot_get_odom_position_y();
 	float robot_get_position_z();
 
 	float robot_get_map_position_x();

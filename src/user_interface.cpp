@@ -248,7 +248,7 @@ void User_Interface(void)
 						Beep(3,25,25,2);
 					}
 					if(!Is_ChargerOn()&&(Temp_Mode!=Clean_Mode_Navigation)){
-						Initialize_Motors();
+						Initialize_Motor();
 						ROS_DEBUG_NAMED(USER_INTERFACE," init motors.");
 					}
 					Set_Clean_Mode(Temp_Mode);

@@ -638,7 +638,7 @@ uint8_t path_lane_is_cleaned(int16_t *x, int16_t *y) {
 void path_find_all_targets()
 {
 	bool		all_set;
-	int16_t		target_x, target_y, i, j, x, y, offset, passValue, nextPassValue, passSet, tracex, tracey, costAtCell, targetCost;
+	int16_t		i, j, x, y, offset, passValue, nextPassValue, passSet, tracex, tracey, targetCost;
 	CellState	cs;
 
 	Map_Reset(SPMAP);
@@ -702,10 +702,7 @@ void path_find_all_targets()
 
 		all_set = true;
 		for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-			target_x = it->target.X;
-			target_y = it->target.Y;
-
-			if (Map_GetCell(SPMAP, target_x, target_y) == COST_NO) {
+			if (Map_GetCell(SPMAP, it->target.X, it->target.Y) == COST_NO) {
 				all_set = false;
 			}
 		}
@@ -724,46 +721,49 @@ void path_find_all_targets()
 	debug_sm_map(SPMAP, 0, 0);
 
 	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-		target_x = it->target.X;
-		target_y = it->target.Y;
-		if (Map_GetCell(SPMAP, target_x, target_y) == COST_NO || Map_GetCell(SPMAP, target_x, target_y) == COST_HIGH) {
+		if (Map_GetCell(SPMAP, it->target.X, it->target.Y) == COST_NO || Map_GetCell(SPMAP, it->target.X, it->target.Y) == COST_HIGH) {
 			continue;
 		}
 
-		tracex = target_x;
-		tracey = target_y;
+		Point16_t	t;
+		tracex = it->target.X;
+		tracey = it->target.Y;
 		while (tracex != x || tracey != y) {
 			//printf("%s %d\n", __FUNCTION__, __LINE__);
-			costAtCell = Map_GetCell(SPMAP, tracex, tracey);
-			targetCost = costAtCell - 1;
+			targetCost = Map_GetCell(SPMAP, tracex, tracey) - 1;
 
-			if (targetCost == 0)
+			if (targetCost == 0) {
 				targetCost = COST_5;
+			}
 
-			Point16_t	t;
 			t.X = tracex;
 			t.Y = tracey;
 			it->points.push_back(t);
 
-			if ((tracex -1  >= xMin) && (Map_GetCell(SPMAP, tracex - 1, tracey) == targetCost)) {
+			if ((tracex - 1 >= xMin) && (Map_GetCell(SPMAP, tracex - 1, tracey) == targetCost)) {
 				tracex--;
 				continue;
 			}
 
-			if ((tracex + 1 <= xMax) && Map_GetCell(SPMAP, tracex + 1, tracey) == targetCost) {
+			if ((tracex + 1 <= xMax) && (Map_GetCell(SPMAP, tracex + 1, tracey) == targetCost)) {
 				tracex++;
 				continue;
 			}
 
-			if ((tracey -1 >= yMin) && (Map_GetCell(SPMAP, tracex, tracey - 1) == targetCost)) {
+			if ((tracey - 1 >= yMin) && (Map_GetCell(SPMAP, tracex, tracey - 1) == targetCost)) {
 				tracey--;
 				continue;
 			}
 
-			if ((tracey + 1<= yMax) && (Map_GetCell(SPMAP, tracex, tracey + 1) == targetCost)) {
+			if ((tracey + 1 <= yMax) && (Map_GetCell(SPMAP, tracex, tracey + 1) == targetCost)) {
 				tracey++;
 				continue;
 			}
+		}
+		if (tracex == x || tracey == y) {
+			t.X = tracex;
+			t.Y = tracey;
+			it->points.push_back(t);
 		}
 	}
 }
@@ -938,18 +938,27 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		for (list<Point16_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
 			printf("(%d, %d)->", i->X, i->Y);
 		}
-		printf("(%d, %d)\n\n", Map_GetXPos(), Map_GetYPos());
+		printf("\n\n");
 	}
 
 #if 1
 	stop = 0;
 	printf("%s %d: case 1, towards Y+ only\n", __FUNCTION__, __LINE__);
-	for (d = Map_GetYPos() + 2; d <= y_max; ++d) {
+	for (d = y_max; d >= Map_GetYPos(); --d) {
+		if (stop == 1 && d <= Map_GetYPos() + 1) {
+			break;
+		}
+
 		for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-			if (Map_GetCell(MAP, it->target.X, it->target.Y - 1) != CLEANED)
+			if (Map_GetCell(MAP, it->target.X, it->target.Y - 1) != CLEANED) {
 				continue;
+			}
 
 			if (it->target.Y == d) {
+				if (it->points.size() > final_cost) {
+					continue;
+				}
+
 				last_y = it->points.front().Y;
 				within_range = true;
 				for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
@@ -962,42 +971,11 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 						last_y = i->Y;
 					}
 				}
-				if (within_range == true && it->points.size() < final_cost) {
+				if (within_range == true) {
 					*x = it->target.X;
 					*y = it->target.Y;
 					final_cost = it->points.size();
 					stop = 1;
-				}
-			}
-		}
-	}
-
-	printf("%s %d: case 1.1, towards Y+ only, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
-	if (stop == 0) {
-		for (d = Map_GetYPos(); d <= Map_GetYPos() + 1; ++d) {
-			for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-				if (Map_GetCell(MAP, it->target.X, it->target.Y - 1) != CLEANED)
-					continue;
-
-				if (it->target.Y == d) {
-					last_y = it->points.front().Y;
-					within_range = true;
-					for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
-						if (i->Y < Map_GetYPos() || i->Y > d) {
-							within_range = false;
-						}
-						if (i->Y > last_y) {
-							within_range = false;
-						} else {
-							last_y = i->Y;
-						}
-					}
-					if (within_range == true && it->points.size() < final_cost) {
-						*x = it->target.X;
-						*y = it->target.Y;
-						final_cost = it->points.size();
-						stop = 1;
-					}
 				}
 			}
 		}
@@ -1009,6 +987,10 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 			for (d = a; d <= y_max && stop == 0; ++d) {
 				for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
 					if (it->target.Y == d) {
+						if (it->points.size() > final_cost) {
+							continue;
+						}
+
 						within_range = true;
 						last_y = it->points.front().Y;
 						bool turn = false;
@@ -1033,7 +1015,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 								turn = true;
 							}
 						}
-						if (within_range == true && it->points.size() < final_cost) {
+						if (within_range == true) {
 							*x = it->target.X;
 							*y = it->target.Y;
 							final_cost = it->points.size();
@@ -1047,12 +1029,21 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 
 	printf("%s %d: case 3, towards Y- only, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
-		for (d = Map_GetYPos() - 2; d >= y_min && stop == 0; --d) {
+		for (d = y_min; d >= Map_GetYPos(); ++d) {
+			if (stop == 1 && d >= Map_GetYPos() - 1) {
+				break;
+			}
+
 			for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-				if (Map_GetCell(MAP, it->target.X, it->target.Y + 1) != CLEANED)
+				if (Map_GetCell(MAP, it->target.X, it->target.Y + 1) != CLEANED) {
 					continue;
+				}
 
 				if (it->target.Y == d) {
+					if (it->points.size() > final_cost) {
+						continue;
+					}
+
 					last_y = it->points.front().Y;
 					within_range = true;
 					for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
@@ -1065,7 +1056,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 							last_y = i->Y;
 						}
 					}
-					if (within_range == true && it->points.size() < final_cost) {
+					if (within_range == true) {
 						*x = it->target.X;
 						*y = it->target.Y;
 						final_cost = it->points.size();
@@ -1076,42 +1067,16 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		}
 	}
 
-	printf("%s %d: case 3.1, towards Y- only, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
-	if (stop == 0) {
-		for (d = Map_GetYPos(); d >= y_min - 1 && stop == 0; --d) {
-			for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-				if (Map_GetCell(MAP, it->target.X, it->target.Y + 1) != CLEANED)
-					continue;
-
-				if (it->target.Y == d) {
-					last_y = it->points.front().Y;
-					within_range = true;
-					for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
-						if (i->Y > Map_GetYPos() || i->Y < d) {
-							within_range = false;
-						}
-						if (i->Y < last_y) {
-							within_range = false;
-						} else {
-							last_y = i->Y;
-						}
-					}
-					if (within_range == true && it->points.size() < final_cost) {
-						*x = it->target.X;
-						*y = it->target.Y;
-						final_cost = it->points.size();
-						stop = 1;
-					}
-				}
-			}
-		}
-	}
 	printf("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
 		for (a = Map_GetYPos(); a <= y_max && stop == 0; ++a) {
 			for (d = a; d >= y_min && stop == 0; --d) {
 				for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
 					if (it->target.Y == d) {
+						if (it->points.size() > final_cost) {
+							continue;
+						}
+
 						within_range = true;
 						last_y = it->points.front().Y;
 						bool turn = false;
@@ -1136,7 +1101,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 								turn = true;
 							}
 						}
-						if (within_range == true && it->points.size() < final_cost) {
+						if (within_range == true) {
 							*x = it->target.X;
 							*y = it->target.Y;
 							final_cost = it->points.size();

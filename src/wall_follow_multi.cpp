@@ -193,7 +193,6 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 	volatile int32_t		Wall_Straight_Distance = 100, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
 	static volatile int32_t	Wall_Distance = Wall_High_Limit;
-
 	pthread_t	escape_thread_id;
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
@@ -256,15 +255,14 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 #ifdef OBS_DYNAMIC
 		//if (Get_Bumper_Status() || Is_FrontOBS_Trig()) {
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value())) {
+		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
 		
 #else
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value())) {
+		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
 #endif
 			printf("%s %d: Check: Get_Bumper_Status! Break!\n", __FUNCTION__, __LINE__);
 			break;
 		}
-
 		usleep(10000);
 	}
 
@@ -289,7 +287,39 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 
 		//WFM_boundary_check();
+                /*------------------------------------------------------Cliff Event-----------------------*/
+    if(Get_Cliff_Trig())
+    {
+                  Set_Wheel_Speed(0,0);
+      Set_Dir_Backward();
+            usleep(15000);
+//                      if(Get_Cliff_Trig())
+//                      {
+                          Cliff_Move_Back();
+                                if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+                                {
+                                        Set_Clean_Mode(Clean_Mode_Userinterface);
+                                  break;
+                                }
+                                if(Get_Cliff_Trig())
+                          {
+                                  if(Cliff_Escape())
+                                        {
+                                          Set_Clean_Mode(Clean_Mode_Userinterface);
+            return 1;
+                                        }
+                                }
 
+                                Turn_Right(Turn_Speed-10,750);
+                                Stop_Brifly();
+                                Move_Forward(15,15);
+                                Reset_WallAccelerate();
+                                //Reset_Wheel_Step();
+                                Wall_Straight_Distance=375;
+
+//                              break;
+//                      }
+    }
 		/*---------------------------------------------------Bumper Event-----------------------*/
 		if (Get_Bumper_Status() & RightBumperTrig) {
 			printf("%s %d:\n", __FUNCTION__, __LINE__);
@@ -591,10 +621,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 #ifdef OBS_DYNAMIC
 		//if (Get_Bumper_Status() || Is_FrontOBS_Trig()) {
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value())) {
+		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
 		
 #else
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value())) {
+		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
 #endif
 			printf("%s %d: Check: Get_Bumper_Status! Break!\n", __FUNCTION__, __LINE__);
 			break;
@@ -680,6 +710,39 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				break;
 			}
                 }
+                /*------------------------------------------------------Cliff Event-----------------------*/
+    if(Get_Cliff_Trig())
+    {
+                  Set_Wheel_Speed(0,0);
+      Set_Dir_Backward();
+            usleep(15000);
+//                      if(Get_Cliff_Trig())
+//                      {
+                          Cliff_Move_Back();
+                                if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+                                {
+                                        Set_Clean_Mode(Clean_Mode_Userinterface);
+                                  break;
+                                }
+                                if(Get_Cliff_Trig())
+                          {
+                                  if(Cliff_Escape())
+                                        {
+                                          Set_Clean_Mode(Clean_Mode_Userinterface);
+            return 1;
+                                        }
+                                }
+
+                                Turn_Right(Turn_Speed-10,750);
+                                Stop_Brifly();
+                                Move_Forward(15,15);
+                                Reset_WallAccelerate();
+                                //Reset_Wheel_Step();
+                                Wall_Straight_Distance=375;
+
+//                              break;
+//                      }
+    }
 
 
 		/*---------------------------------------------------Bumper Event-----------------------*/

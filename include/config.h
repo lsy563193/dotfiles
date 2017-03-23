@@ -369,3 +369,6 @@
 #define ROBOT_X400							(1)
 
 #define STANDARD_REMOTE   (1)
+
+// This config is for deciding how the robot find the charger stub.
+#define Random_Find_Charger_Stub			(0)

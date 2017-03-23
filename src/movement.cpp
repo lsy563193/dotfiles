@@ -50,6 +50,13 @@ static uint8_t Cleaning_mode = 0;
 static uint8_t sendflag=0;
 static time_t work_time;
 ros::Time lw_t,rw_t; // these variable is used for calculate wheel step
+
+// Flag for homeremote
+volatile uint8_t R_H_Flag=0;
+
+// Counter for bumper error
+volatile uint8_t Bumper_Error = 0;
+
 /*----------------------- Work Timer functions--------------------------*/
 
 static inline int16_t Gyro_GetAngle(){
@@ -189,7 +196,12 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
 		usleep(1000);
+		if (Touch_Detect() || Remote_Key(Remote_Clean))
+		{
+			break;
+		}
 	}
+	ROS_INFO("Quick_Back finished.");
 }
 
 void Turn_Left(uint16_t speed, int16_t angle)
@@ -205,8 +217,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	}
 	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
-	wheel_left_direction = 1;
-	wheel_right_direction = 0;
+	Set_Dir_Left();
 
 	Set_Wheel_Speed(speed, speed);
 	
@@ -251,8 +262,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	}
 	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
-	wheel_left_direction = 0;
-	wheel_right_direction = 1;
+	Set_Dir_Right();
 
 	Set_Wheel_Speed(speed, speed);
 	uint8_t oc=0;
@@ -370,16 +380,16 @@ uint8_t Cliff_Escape(void)
 			}
 			switch(count++){
 				case 1:
-						Cliff_Turn_Right(100,300);
+						Cliff_Turn_Right(30,300);
 						break;
 				case 2:
-						Cliff_Turn_Left(100,300);
+						Cliff_Turn_Left(30,300);
 						break;
 				case 3:
-						Cliff_Turn_Right(100,300);
+						Cliff_Turn_Right(30,300);
 						break;
 				case 4:
-						Cliff_Turn_Left(100,300);
+						Cliff_Turn_Left(30,300);
 						break;
 				case 5:
 						Move_Back();
@@ -393,15 +403,20 @@ uint8_t Cliff_Escape(void)
 		else
 			return 0;
 	}
+	return 0;
 }
 
 uint8_t Cliff_Event(uint8_t event)
 {
 	uint16_t temp_adjust=0,random_factor=0;
 	uint8_t d_flag = 0;
-	if(left_wheel_step%2)temp_adjust = 450;
+	// There is 50% chance that the temp_adjust = 450.
+	//if(left_wheel_step%2)temp_adjust = 450;
+	if(((int)ros::Time::now().toSec())%2)temp_adjust = 450;
 	else temp_adjust = 0;
-	if(right_wheel_step%3)random_factor = 1;
+	// There is 33% chance that the random_factor = 1.
+	//if(right_wheel_step%3)random_factor = 1;
+	if(((int)ros::Time::now().toSec())%3)random_factor = 1;
 	else random_factor = 0;
 
 	switch(event){
@@ -483,6 +498,8 @@ uint8_t Turn_Connect(void)
 		{
 			Disable_Motors();
 			Stop_Brifly();
+			// Wait for a while to decide if it is really on the charger stub.
+			usleep(500000);
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("[movement.cpp] Turn left reach charger.");
@@ -498,9 +515,9 @@ uint8_t Turn_Connect(void)
 	}
 	Stop_Brifly();
 	// Start turning right.
-	target_angle = Gyro_GetAngle() + 240;
-	if (target_angle < 0) {
-		target_angle = 3600 + target_angle;
+	target_angle = Gyro_GetAngle(0) + 240;
+	if (target_angle > 3600) {
+		target_angle = target_angle - 3600;
 	}
 	wheel_left_direction = 1;
 	wheel_right_direction = 0;
@@ -538,6 +555,23 @@ void Reset_HomeRemote(void)
 	home_remote_flag = 0;
 }
 
+uint8_t IsHomeRemote(void)
+{
+	return R_H_Flag;
+}
+
+void Display_Home_LED(void)
+{
+	if(IsHomeRemote())
+	{
+		Set_LED(100,100);
+	}
+	else
+	{
+		Set_LED(100,0);
+	}
+}
+
 uint8_t  Is_MoveWithRemote(void){
 	return remote_move_flag;	
 }
@@ -556,6 +590,7 @@ void Reset_TempPWM(void)
 
 void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 {
+	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
 	Left = Left < RUN_TOP_SPEED ? Left : RUN_TOP_SPEED;
 	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
 	Set_LeftWheel_Speed(Left);
@@ -641,10 +676,143 @@ uint8_t Check_Motor_Current(void)
 	return 0;
 }
 
+/*-----------------------------------------------------------Self Check-------------------*/
 uint8_t Self_Check(uint8_t Check_Code)
 {
-	Check_Code = Check_Code;
 	return 0;
+////	static uint8_t
+////	uint32_t Temp_Brush_Current=0;
+////	uint8_t Temp_Brush_Current_Count=0;
+//	uint8_t Time_Out=0;
+//	int32_t Wheel_Current_Summary=0;
+//	Left_Wheel_Slow=0;
+//	Right_Wheel_Slow=0;
+//
+//
+//	CM_CorBack(COR_BACK_20MM);
+//	Disable_Motors();
+//	delay(10000);
+//	/*-----------------------------------------------------------Self Check-------------------*/
+//	if(Check_Code==Check_Right_Wheel)
+//	{
+//		Right_Wheel_Slow=0;
+//		if(GPIOB->IDR&MCU_RW_DIR)
+//		{
+//			Set_Dir_Right();
+//		}
+//		else
+//		{
+//			Set_Dir_Left();
+//		}
+//		Set_Wheel_Speed(30,30);
+//		delay(5000);
+//		Time_Out=10;
+//		Wheel_Current_Summary=0;
+//		while(Time_Out--)
+//		{
+//			Wheel_Current_Summary += ADC_Value.Right_Wheel_Current;
+//			delay(1000);
+//		}
+//		Wheel_Current_Summary/=10;
+//		if(Wheel_Current_Summary>Wheel_Stall_Limit)
+//		{
+//			Disable_Motors();
+//			Set_Error_Code(Error_Code_RightWheel);
+//			return 1;
+//
+//		}
+////		if(Right_Wheel_Slow>100)
+////		{
+////			Disable_Motors();
+////			Set_Error_Code(Error_Code_RightWheel);
+////			return 1;
+////		}
+//		Stop_Brifly();
+//		Turn_Right(Turn_Speed,1800);
+//	}
+//	/*-----------------------------------------------------------Self Check-------------------*/
+//	else if(Check_Code==Check_Left_Wheel)
+//	{
+//		Left_Wheel_Slow=0;
+//		if(GPIOE->IDR&MCU_LW_DIR)
+//		{
+//			Set_Dir_Left();
+//		}
+//		else
+//		{
+//			Set_Dir_Right();
+//		}
+//		Set_Wheel_Speed(30,30);
+//		delay(5000);
+//		Time_Out=10;
+//		Wheel_Current_Summary=0;
+//		while(Time_Out--)
+//		{
+//			Wheel_Current_Summary += ADC_Value.Left_Wheel_Current;
+//			delay(1000);
+//		}
+//		Wheel_Current_Summary/=10;
+//		if(Wheel_Current_Summary>Wheel_Stall_Limit)
+//		{
+//			Disable_Motors();
+//			Set_Error_Code(Error_Code_RightWheel);
+//			return 1;
+//		}
+////		if(Left_Wheel_Slow>100)
+////		{
+////			Disable_Motors();
+////			Set_Error_Code(Error_Code_RightWheel);
+////			return 1;
+////		}
+//		Stop_Brifly();
+//		Turn_Left(Turn_Speed,1800);
+//	}
+//	else if(Check_Code==Check_Main_Brush)
+//	{
+//		CM_CorBack(COR_BACK_20MM);
+//		Turn_Right(Turn_Speed,1800);
+//		Set_MainBrush_PWM(60);
+//		delay(10000);
+//		if(GPIOD->IDR&MCU_MAINBRUSH_I_DET)
+//		{
+//			Set_Error_Code(Error_Code_MainBrush);
+//			Disable_Motors();
+//			return 1;
+//		}
+//		Reset_MainStall();
+//	}
+//	else if(Check_Code==Check_Vacuum)
+//	{
+//		#ifdef BLDC_INSTALL
+//		BLDC_OFF;
+//		delay(1000);
+//		Set_BLDC_TPWM(30);
+//		Set_Vac_Speed();
+//		BLDC_ON;
+//		delay(10000);
+//		if(GPIOD->IDR&MCU_VACUUM_I_DET)
+//		{
+//			Set_Error_Code(Error_Code_Fan_H);
+//			Disable_Motors();
+//			return 1;
+//		}
+//		#else
+//		Set_Vacuum_PWM(80);
+//		delay(10000);
+//		if(GPIOD->IDR&MCU_VACUUM_I_DET)
+//		{
+//			Set_Error_Code(Error_Code_Fan_H);
+//			Disable_Motors();
+//			return 1;
+//		}
+//		#endif
+//	}
+//	Stop_Brifly();
+//	Left_Wheel_Slow=0;
+//	Right_Wheel_Slow=0;
+//	Work_Motor_Configure();
+//	Move_Forward(5,5);
+//	return 0;
 }
 
 uint8_t Check_Bat_Home(void)
@@ -782,6 +950,16 @@ void Reset_Rcon_Status(void)
 uint32_t Get_Rcon_Status(){
 	//Rcon_Status = robot::instance()->robot_get_rcon();
 	return Rcon_Status;
+}
+
+/*----------------------------------------Remote--------------------------------*/
+uint8_t Is_Remote(void)
+{
+	if(Get_Rcon_Remote())
+	{
+		return 1;
+	}
+	return 0;
 }
 
 uint32_t Get_Rcon_Remote(void)
@@ -987,6 +1165,10 @@ uint8_t Touch_Detect(void)
 
 uint8_t Is_Station(void)
 {
+	if (Get_Rcon_Status() & 0x777777) // It means six rcon accepters receive any of the charger stub signal.
+	{
+		return 1;
+	}
 	return 0;
 }
 
@@ -1025,7 +1207,7 @@ void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int 
 	robotbase_beep_update_flag = true;
 }
 
-void Initialize_Motors(void)
+void Initialize_Motor(void)
 {
 #ifdef BLDC_INSTALL
 	Clear_BLDC_Fail();
@@ -1150,7 +1332,7 @@ void ResetSendFlag(void)
 void Random_Back(void)
 {
 	Stop_Brifly();
-	Quick_Back(8,30);
+	Quick_Back(12,30);
 	
 }
 
@@ -1233,10 +1415,6 @@ uint8_t Is_Front_Close(){
 }
 
 uint8_t Is_virtualWall(void){
-	return 0;
-}
-
-uint8_t Is_BumperJamed(void){
 	return 0;
 }
 
@@ -1367,12 +1545,15 @@ void OBS_Turn_Right(uint16_t speed,uint16_t angle)
 	while(ros::ok()&&right_wheel_step <angle){
 		counter++;
 		if(counter>3000)
-			return;
+			//return;
+			break;
 		if(Is_Turn_Remote())
-			return;
+			//return;
+			break;
 		oc = Check_Motor_Current();
 		if(oc== Check_Left_Wheel || oc==Check_Right_Wheel)
-			return;
+			//return;
+			break;
 		usleep(1000);
 	}
 
@@ -1380,12 +1561,110 @@ void OBS_Turn_Right(uint16_t speed,uint16_t angle)
 
 void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 {
-	OBS_Turn_Left(speed,angle);
+	uint16_t Counter_Watcher=0;
+	//Left_Wheel_Step=0;
+	Reset_TempPWM();
+	Set_Wheel_Speed(speed,speed);
+	Counter_Watcher=0;
+	Reset_Rcon_Remote();
+	int16_t target_angle;
+	uint16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle(0);
+
+	target_angle = gyro_angle + angle;
+	if (target_angle >= 3600) {
+		target_angle = target_angle - 3600;
+	}
+
+	Set_Dir_Left();
+	Set_Wheel_Speed(speed, speed);
+
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	while(ros::ok())
+	{
+		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+			Set_Wheel_Speed(speed / 2, speed / 2);
+		} else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		//delay(10);
+		usleep(1000);
+		Counter_Watcher++;
+		if(Counter_Watcher>3000)
+		{
+			if(Is_Encoder_Fail())
+			{
+				Set_Error_Code(Error_Code_Encoder);
+				Set_Touch();
+			}
+			return;
+		}
+		if(Is_Turn_Remote())return;
+//		if(Get_Cliff_Trig())return;
+		if(Touch_Detect())
+		{
+			return;
+		}
+		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))return;
+	}
 }
 
 void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 {
-	OBS_Turn_Right(speed,angle);
+	uint16_t Counter_Watcher=0;
+	//Left_Wheel_Step=0;
+	Reset_TempPWM();
+	Set_Wheel_Speed(speed,speed);
+	Counter_Watcher=0;
+	Reset_Rcon_Remote();
+	int16_t target_angle;
+	uint16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle(0);
+
+	target_angle = gyro_angle - angle;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+
+	Set_Dir_Right();
+	Set_Wheel_Speed(speed, speed);
+
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	while(ros::ok())
+	{
+		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+			Set_Wheel_Speed(speed / 2, speed / 2);
+		} else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		//delay(10);
+		usleep(1000);
+		Counter_Watcher++;
+		if(Counter_Watcher>3000)
+		{
+			if(Is_Encoder_Fail())
+			{
+				Set_Error_Code(Error_Code_Encoder);
+				Set_Touch();
+			}
+			return;
+		}
+		if(Is_Turn_Remote())return;
+//		if(Get_Cliff_Trig())return;
+		if(Touch_Detect())
+		{
+			return;
+		}
+		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))return;
+	}
 }
 
 uint8_t Get_Random_Factor(void){
@@ -1527,9 +1806,50 @@ uint32_t Get_WallAccelerate()
 	return Wall_Accelerate=Get_RightWheel_Step(); 
 }
 
+/*---------------------------------Bumper Error ----------------------------------------*/
 uint8_t Is_Bumper_Jamed()
 {
+	if(Get_Bumper_Status())
+	{
+		Move_Back();
+		if(Get_Bumper_Status())
+		{
+			// Quick back will not set speed to 100, it will be limited by the RUN_TOP_SPEED.
+			Quick_Back(100,200);
+			if(Get_Bumper_Status())
+			{
+				if(Get_Bumper_Status()&LeftBumperTrig)
+				{
+					Turn_Right(60,2200);
+				}
+				else if(Get_Bumper_Status()&RightBumperTrig)
+				{
+					Turn_Left(60,2200);
+				}
+				if(Get_Bumper_Status())
+				{
+					if(Is_Bumper_Fail())
+					{
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						Set_Error_Code(Error_Code_Bumper);
+						return 1;
+					}
+				}
+			}
+		}
+	}
 	return 0;
+}
+
+void Reset_Bumper_Error(void)
+{
+	Bumper_Error=0;
+}
+uint8_t Is_Bumper_Fail(void)
+{
+	Bumper_Error++;
+	if(Bumper_Error>3)return 1;
+	else return 0;
 }
 
 uint8_t Is_VirtualWall()
