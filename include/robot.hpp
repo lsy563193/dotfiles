@@ -27,6 +27,7 @@ public:
 	bool robot_is_all_ready();
 	uint8_t robot_get_workmode();
 	float robot_get_angle();
+	void set_angle(float angle_);
 	float robot_get_angle_v();
 	int16_t robot_get_cliff_right();
 	int16_t robot_get_cliff_left();

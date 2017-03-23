@@ -187,7 +187,7 @@ void Random_Running_Mode(void)
 			Low_Power_Counter++;
 			if(Low_Power_Counter>10)
 			{
-				Display_Battery_Status(Display_Low);//display low
+				Display_Battery_Status(Display_Low);//max_distant_angle low
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}

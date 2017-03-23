@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
+#include <robot.hpp>
 
 #include "movement.h"
 #include "crc8.h"
@@ -273,7 +274,7 @@ void *robotbase_routine(void*)
 			previous_angle = std::numeric_limits<float>::max();
 			slam_angle_offset=0;
 		}
-
+		robot::instance()->set_angle(sensor.angle);
 //		ROS_WARN("angle(%d),\n",angle);
 //		ROS_INFO("previous_angle(%f),\n",previous_angle);
 //		ROS_WARN("line_angle_offset(%f)\n",line_angle_offset);

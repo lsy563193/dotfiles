@@ -273,7 +273,7 @@ void User_Interface(void)
 #ifdef ONE_KEY_DISPLAY
 		usleep(8000);
 
-		//ROS_INFO("One key display logic. odc = %d", ONE_Display_Counter);
+		//ROS_INFO("One key max_distant_angle logic. odc = %d", ONE_Display_Counter);
 		ONE_Display_Counter++;
 		if(ONE_Display_Counter>99)
 		{
@@ -317,17 +317,17 @@ void User_Interface(void)
 			BTA_Power_Dis=0;
 		}
 		
-//		if(Get_Error_Code())//display Error = red led full
+//		if(Get_Error_Code())//max_distant_angle Error = red led full
 //		{
 //			Set_LED(0,100);
 //		}
-		if(BTA_Power_Dis)//display low battery = red & green
+		if(BTA_Power_Dis)//max_distant_angle low battery = red & green
 		{
 			Set_LED(ONE_Display_Counter,ONE_Display_Counter);
 		}
 		else
 		{
-			Set_LED(ONE_Display_Counter,0);//display normal green
+			Set_LED(ONE_Display_Counter,0);//max_distant_angle normal green
 		}
 
 #endif

@@ -212,7 +212,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	
 	uint8_t oc=0;
 	while (ros::ok()) {
-		if (abs(target_angle - Gyro_GetAngle()) < 20) {
+		if (abs(target_angle - Gyro_GetAngle()) < 5) {
 			break;
 		}
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
@@ -257,7 +257,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	Set_Wheel_Speed(speed, speed);
 	uint8_t oc=0;
 	while (ros::ok()) {
-		if (abs(target_angle - Gyro_GetAngle()) < 30) {
+		if (abs(target_angle - Gyro_GetAngle()) < 5) {
 			break;
 		}
 		if (abs(target_angle - Gyro_GetAngle()) < 60) {

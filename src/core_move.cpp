@@ -1845,10 +1845,7 @@ public:
 
 	  std::async(std::launch::async, start_slam);
 	  enable_slam_offset = true;
-	  auto count_n_10ms = 500;
-	  while(robot::instance()->map_ready() == false){
-		  usleep(100000);
-	  }
+
   };
 
 	~Motion_controller(){
@@ -1985,7 +1982,10 @@ uint8_t CM_Touring(void)
 
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
-
+	auto count_n_10ms = 1000;
+	while(robot::instance()->map_ready() == false||count_n_10ms-- == 0){
+		  usleep(100000);
+	}
 	/*****************************************************Cleaning*****************************************************/
 	while (ros::ok()) {
 
