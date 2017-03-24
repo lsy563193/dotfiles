@@ -1632,6 +1632,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y) {
 	return val;
 }
 
+#if 0
 /*
  * Function for the robot to go back to its starting point. If its
  * starting point is blocked or somehow not accessible, it will try
@@ -1768,6 +1769,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 
 	return retval;
 }
+#endif
 
 void path_escape_set_trapped_cell( Point16_t *cell, uint8_t size ) {
 	uint8_t i = 0;
