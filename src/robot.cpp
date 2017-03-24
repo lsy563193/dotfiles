@@ -572,7 +572,7 @@ uint32_t robot::robot_get_rcon()
 //	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0x000f00) >> 8);
 //	return this->rcon_right = (this->charge_stub & 0x000f00) >> 8;
 //}
-
+/*
 bool robot::robot_get_bumper_right()
 {
 	return this->bumper_right;
@@ -796,7 +796,6 @@ double robot::robot_get_map_yaw()
 {
 	return this->yaw;
 }
-
 void robot::pub_clean_markers(){
 	this->m_points.x = this->position_x;
 	this->m_points.y = this->position_y;
@@ -876,11 +875,11 @@ void robot::align(void)
 		if (line_angle > 0)
 		{
 			ROS_INFO("Turn_Left %d", angle);
-			Turn_Left(2, angle);
+			Turn_Left(3, angle);
 		} else if (line_angle < 0)
 		{
 			ROS_INFO("Turn_Right %d", angle);
-			Turn_Right(2, angle);
+			Turn_Right(3, angle);
 		}
 		line_align_ = finish;
 //	ros::WallDuration(100).sleep();
