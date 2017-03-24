@@ -56,7 +56,7 @@ void CM_TouringCancel(void);
 void CM_SetGyroOffset(int16_t offset);
 
 void CM_SetHome(int32_t x, int32_t y);
-void CM_SetStationHome(void);
+//void CM_SetStationHome(void);
 
 void CM_ResetBoundaryBlocks(void);
 

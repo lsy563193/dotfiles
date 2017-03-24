@@ -23,6 +23,8 @@
 #include <chrono>
 #include <functional>
 #include <future>
+#include <list>
+#include <charger.hpp>
 
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
@@ -70,7 +72,10 @@ typedef enum {
 	ACTION_RT	= 0x10,
 } ActionType;
 
-Point32_t	Home_Point, charger_point;
+// This list is for storing the position that robot sees the charger stub.
+std::list <Point32_t> Home_Point;
+// This is for adding new point to Home Point list.
+Point32_t New_Home_Point;
 
 uint8_t map_touring_cancel = 0;
 
@@ -1206,7 +1211,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT);
 //		if (go_home == 0){
 		if (go_home == 0 && Temp_Rcon_Status) {
-			// The return rcon info is at lowest 4 bits
+			// It just clear the bits that are 1 in Temp_Rcon_Status has.
 			Set_Rcon_Status(Get_Rcon_Status() & (~Temp_Rcon_Status));
 			if (Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT)) {
 				HomeT++;
@@ -1217,22 +1222,13 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 			if (Temp_Rcon_Status & RconR_HomeT) {
 				HomeR++;
 			}
-			//if ((robot::instance()->robot_get_rcon_front_left() & Rcon_HomeT) || (robot::instance()->robot_get_rcon_front_right() & Rcon_HomeT)) {
-			//	HomeT++;
-			//}
-			//if (robot::instance()->robot_get_rcon_left() & Rcon_HomeT) {
-			//	HomeL++;
-			//}
-			//if (robot::instance()->robot_get_rcon_right() & Rcon_HomeT) {
-			//	HomeR++;
-			//}
 
 			// If detect charger stub then print the detection info
 			if (HomeL || HomeR || HomeT){
 				printf("%s %d: home detected (%d %d %d)\n", __FUNCTION__, __LINE__, HomeL, HomeT, HomeR);
 			}
 
-			if (HomeR + HomeL + HomeT > 6) {
+			if (HomeR + HomeL + HomeT > 4) {
 				home_hit = HomeR > HomeL ? HomeR : HomeL;
 				home_hit = home_hit > HomeT ? home_hit : HomeT;
 
@@ -1264,9 +1260,10 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				Stop_Brifly();
 				retval = MT_None;
 				// Update the location of charger stub
-				CM_SetStationHome();
+				CM_SetHome(Map_GetXCount(), Map_GetYCount());
+
 				break;
-			} else if (HomeT == 0 && (HomeR > 3 || HomeL > 3)) {
+			} else if (HomeT == 0 && (HomeR > 2 || HomeL > 2)) {
 				Stop_Brifly();
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
@@ -1289,7 +1286,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				Stop_Brifly();
 				retval = MT_None;
 				// Update the location of charger stub
-				CM_SetStationHome();
+				CM_SetHome(Map_GetXCount(), Map_GetYCount());
 				break;
 			} else if (HomeR == 0 && HomeL == 0 && HomeT > 3) {
 				Stop_Brifly();
@@ -1308,13 +1305,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 				Stop_Brifly();
 				retval = MT_None;
 				// Update the location of charger stub
-				CM_SetStationHome();
+				CM_SetHome(Map_GetXCount(), Map_GetYCount());
 				break;
 			}
-		}else if (go_home == 1 && Is_Station() == 1 ) {
-			Stop_Brifly();
-			retval = MT_None;
-			break;
 		}
 
 		Reset_Rcon_Status();
@@ -1407,6 +1400,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		//printf("%s %d: Gyro: %d\tX: %d(%d) %d\tY: %d(%d) %d\n", __FUNCTION__, __LINE__, Gyro_GetAngle(0), Target.X, Map_GetXCount(), CM_ABS(Map_GetXCount(), Target.X), Target.Y, Map_GetYCount(), CM_ABS(Map_GetYCount(), Target.Y));
 		//if (CM_ABS(Map_GetXCount(), Target.X) < 30 && CM_ABS(Map_GetYCount(), Target.Y) < 30) {
 		if (CM_ABS(Map_GetXCount(), Target.X) < 150 && CM_ABS(Map_GetYCount(), Target.Y) < 150) {
+			ROS_INFO("%s, %d: Reach target.", __FUNCTION__, __LINE__);
 			isBumperTriggered = Get_Bumper_Status();
 			CM_update_map(action, isBumperTriggered);
 			Stop_Brifly();
@@ -1487,6 +1481,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 #endif
 
 			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
+				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
 				boundary_reach = 1;
 				Stop_Brifly();
 				isBumperTriggered = Get_Bumper_Status();
@@ -1969,14 +1964,14 @@ uint8_t CM_Touring(void)
 	Reset_Work_Time();
 
 	//Initital home point
-	Home_Point.X = Home_Point.Y = 0;
-	charger_point.X = 3100; //Map_GetXCount();
-	charger_point.Y =  0; //Map_GetYCount();
-	printf("New Home Point: (%d, %d) (%d, %d)\n", charger_point.X, charger_point.Y, countToCell(charger_point.X), countToCell(charger_point.Y));
+	Home_Point.clear();
+	New_Home_Point.X = New_Home_Point.Y = 0;
+	// Push the start point into the home point list
+	Home_Point.push_front(New_Home_Point);
 
 	ROS_DEBUG("Map_Initialize-----------------------------");
 	Map_Initialize();
-	PathPlanning_Initialize(&Home_Point.X, &Home_Point.Y);
+	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 
 	//FIXME
 	//Map_Wall_Follow_Initialize();
@@ -2009,13 +2004,15 @@ uint8_t CM_Touring(void)
 			/***************************2.2-1 Go Home***************************/
 			if (go_home == 1) {
 				//2.2-1.1 Common process
-				tmpPnt.X = countToCell(Home_Point.X);
-				tmpPnt.Y = countToCell(Home_Point.Y);
+				tmpPnt.X = countToCell(Home_Point.front().X);
+				tmpPnt.Y = countToCell(Home_Point.front().Y);
 				pnt16ArTmp[0] = tmpPnt;
 				path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
+#if 0
 				Next_Point.X = Home_Point.X;
 				Next_Point.Y = Home_Point.Y;
+#endif
 
 				k = 0;
 				while ((k++ < 10000) && (LED_Blink_State != LED_Blink)) {
@@ -2088,104 +2085,116 @@ uint8_t CM_Touring(void)
 					}
 				}
 
-#ifdef GO_HOME_METHOD_2
-				printf("Go home Target: (%d, %d)\n", tmpPnt.X, tmpPnt.Y);
-				state = CM_MoveToCell( tmpPnt.X, tmpPnt.Y, 2, 6, 3 );
-				if ( state == -2 ) {
-					Disable_Motors();
-					// Beep for 2.4s
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 6, 1);
-					}
+				// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
+				tmpPnt.X = countToCell(Home_Point.front().X);
+				tmpPnt.Y = countToCell(Home_Point.front().Y);
+				// Delete the first home point, it works like a stack.
+				Home_Point.pop_front();
+				while (ros::ok())
+				{
+					ROS_INFO("Go home Target: (%d, %d), %u targets left.", tmpPnt.X, tmpPnt.Y, Home_Point.size());
+					// Try go to exactly this home point.
+					state = CM_MoveToCell( tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
+					ROS_INFO("CM_MoveToCell return %d.", state);
 
-					if (from_station >= 1) {
-						Set_Clean_Mode(Clean_Mode_GoHome);
-					} else {
+					if ( state == -2 && Home_Point.empty()) {
+						// If it is the last saved home point, stop the robot.
+						Disable_Motors();
+						// Beep for the finish signal.
+						for (i = 10; i > 0; i--) {
+							Beep(i, 6, 0, 1);
+							usleep(100000);
+						}
+
+						if (from_station >= 1) {
+							Set_Clean_Mode(Clean_Mode_GoHome);
+						} else {
+							Set_Clean_Mode(Clean_Mode_Userinterface);
+						}
+
+						printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+						return 0;
+
+					} else if (state == -3 && Home_Point.empty()) {
+						// If it is the last saved home point, stop the robot.
+						Disable_Motors();
+						mt_state = MT_Battery;
+						return 0;
+					} else if (state == -5 && Home_Point.empty()) {
+						// If it is the last saved home point, stop the robot.
+						Disable_Motors();
+						// Beep for the finish signal.
+						for (i = 10; i > 0; i--) {
+							Beep(i, 6, 0, 1);
+							usleep(100000);
+						}
 						Set_Clean_Mode(Clean_Mode_Userinterface);
-					}
+						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+						return 0;
+					} else if ( state == -7 && Home_Point.empty()) {
+						// If it is the last saved home point, stop the robot.
+						Disable_Motors();
+						// Beep for the finish signal.
+						for (i = 10; i > 0; i--) {
+							Beep(i, 6, 0, 1);
+							usleep(100000);
+						}
+						Set_Clean_Mode(Clean_Mode_GoHome);
+						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+						return 0;
+					} else if ( state == 1 ) {
+						// Call GoHome() function to try to go to charger stub.
+						GoHome();
 
-					printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-					return 0;
-
-				} else if (state == -3) {
-					Disable_Motors();
-					mt_state = MT_Battery;
-					return 0;
-				} else if (state == -5) {
-					Disable_Motors();
-					// Beep for 2.4s
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 6, 1);
-					}
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-					return 0;
-				} else if ( state == -7 ) {
-					Disable_Motors();
-					// Beep for 2.4s
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 6, 1);
-					}
-					Set_Clean_Mode(Clean_Mode_GoHome);
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-					return 0;
-				} else if ( state == 1 ) {
-					if (from_station == 0) {
-						CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
-
-						if (Touch_Detect()) {
+						// Check the clean mode to find out whether it has reach the charger.
+						if (Get_Clean_Mode() == Clean_Mode_Charging)
+						{
+							printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 							return 0;
 						}
-					}
+						else if (Home_Point.empty())
+						{
+							// If it is the last point, it means it it now at (0, 0).
+							if (from_station == 0) {
+								CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
 
-					Disable_Motors();
-					// Beep for 2.4s
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 6, 1);
-					}
+								if (Touch_Detect()) {
+									return 0;
+								}
+							}
 
-					if (from_station >= 1) {
-						Set_Clean_Mode(Clean_Mode_GoHome);
-					} else {
-						Set_Clean_Mode(Clean_Mode_Userinterface);
-					}
+							Disable_Motors();
+							// Beep for the finish signal.
+							for (i = 10; i > 0; i--) {
+								Beep(i, 6, 0, 1);
+								usleep(100000);
+							}
 
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-					return 0;
+							if (from_station >= 1) {
+								Set_Clean_Mode(Clean_Mode_GoHome);
+							} else {
+								Set_Clean_Mode(Clean_Mode_Userinterface);
+							}
 
-				}
-#else
-				//2.2-1.4 Path home
-				state = path_home(&Next_Point.X, &Next_Point.Y);
-
-				//2.2-1.5 Check state
-				if (state == 0) {
-					if (from_station == 0) {
-						CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
-
-						if (Touch_Detect()) {
+							printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 							return 0;
 						}
+
 					}
 
-					Disable_Motors();
-					// Beep for 2.4s
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 6, 1);
+					if (!Home_Point.empty())
+					{
+						// Get next home point 
+						tmpPnt.X = countToCell(Home_Point.front().X);
+						tmpPnt.Y = countToCell(Home_Point.front().Y);
+						Home_Point.pop_front();
 					}
-
-					if (from_station >= 1) {
-						Set_Clean_Mode(Clean_Mode_GoHome);
-					} else {
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+					else
+					{
+						ROS_INFO("No home targets left and last target return %d, this message should not be printed, please check.", state);
+						break;
 					}
-
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-					return 0;
-				} else {
-					mt_state = CM_MoveToPoint(Next_Point);
 				}
-#endif
 
 			}
 			/***************************2.2-1 Go Home End***************************/
@@ -2860,18 +2869,13 @@ void CM_SetGyroOffset(int16_t offset)
 }
 
 void CM_SetHome(int32_t x, int32_t y) {
-	printf("%s %d: set new reachable home: (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
-	Home_Point.X = x;
-	Home_Point.Y = y;
+	printf("%s %d: Push new reachable home: (%d, %d) to home point list.\n", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
+	New_Home_Point.X = x;
+	New_Home_Point.Y = y;
+	Home_Point.push_front(New_Home_Point);
 }
 
 
-void CM_SetStationHome(void) {
-
-	Home_Point.X = Map_GetXCount();
-	Home_Point.Y = Map_GetYCount();
-	printf("%s %d: set new station position: (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(Home_Point.X), countToCell(Home_Point.Y));
-}
 
 uint8_t CM_IsLowBattery(void) {
 	return lowBattery;

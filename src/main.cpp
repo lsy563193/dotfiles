@@ -55,7 +55,7 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1000);
 				*/
 				CM_Touring();
-				Set_Clean_Mode(Clean_Mode_GoHome);
+				//Set_Clean_Mode(Clean_Mode_GoHome);
 				break;
 			case Clean_Mode_Charging:
 				Charge_Function();
