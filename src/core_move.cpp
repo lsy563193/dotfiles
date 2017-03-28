@@ -1530,11 +1530,13 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 
 		if (Get_OBS_Status()) {
 			Integrated = 0;
+			Rotate_Angle = 0;
 			Base_Speed -= 5;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
 		else if (Is_OBS_Near()) {
 			Integrated = 0;
+			Rotate_Angle = 0;
 			Base_Speed -= 4;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
@@ -1548,12 +1550,13 @@ MapTouringType CM_MoveToPoint(Point32_t Target)
 		else if (laser::instance()->laser_obstcal_detected(0.2, 0, -1.0) == true) {
 			//printf("%s %d: laser detected obstcal, slow down!\n", __FUNCTION__, __LINE__);
 			Integrated = 0;
+			Rotate_Angle = 0;
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
 		else if (Base_Speed < (int32_t) RUN_TOP_SPEED) {
 			Tick++;
-			if (Tick > 0) {
+			if (Tick > 5) {
 				Tick = 0;
 				Base_Speed += 1;
 			}
