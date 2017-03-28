@@ -1825,41 +1825,44 @@ void show_time(std::function<void(void)> task){
 }
 class Motion_controller {
 public:
-  Motion_controller(){
+	Motion_controller()
+	{
+		Set_gyro_off();
+		std::async(std::launch::async, start_obstacle_detector);
+		show_time(Set_gyro_on);
+		Set_IMU_Status();
 
-	  Set_gyro_off();
-	  std::async(std::launch::async, start_obstacle_detector);
-	  show_time(Set_gyro_on);
-	  Set_IMU_Status();
-
-	  robot::instance()->Subscriber();
+		robot::instance()->Subscriber();
 		Work_Motor_Configure();
-    robot::instance()->start_lidar();
+		robot::instance()->start_lidar();
 
-	  if(robot::instance()->align_active() == true){
-		  robot::instance()->align();
-		  std::async(std::launch::async, stop_obstacle_detector);
-	  }
+		if (robot::instance()->align_active() == true)
+		{
+			robot::instance()->align();
+//			std::async(std::launch::async, stop_obstacle_detector);
+		}
 
-	  std::async(std::launch::async, start_slam);
-	  enable_slam_offset = true;
+		std::async(std::launch::async, start_slam);
+		enable_slam_offset = true;
 
-  };
+	};
 
-	~Motion_controller(){
-    Disable_Motors();
-    robot::instance()->stop_lidar();
-	  if(robot::instance()->align_active()){
-		  robot::instance()->align_exit();
-		  stop_obstacle_detector();
-	  }
-	  show_time(Set_gyro_off);
-	  Reset_IMU_Status();
-	  is_line_angle_offset = false;
-	  enable_slam_offset = false;
-	  robot::instance()->stop_slam();
-	  robot::instance()->UnSubscriber();
-  }
+	~Motion_controller()
+	{
+		Disable_Motors();
+		robot::instance()->stop_lidar();
+		if (robot::instance()->align_active())
+		{
+			robot::instance()->align_exit();
+			stop_obstacle_detector();
+		}
+		show_time(Set_gyro_off);
+		Reset_IMU_Status();
+		is_line_angle_offset = false;
+		enable_slam_offset = false;
+		robot::instance()->stop_slam();
+		robot::instance()->UnSubscriber();
+	}
 };
 uint8_t CM_Touring(void)
 {
@@ -1980,10 +1983,13 @@ uint8_t CM_Touring(void)
 
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
+	while (1);
 	auto count_n_10ms = 1000;
-	while(robot::instance()->map_ready() == false||count_n_10ms-- == 0){
-		  usleep(100000);
+	while(robot::instance()->map_ready() == false||--count_n_10ms == 0){
+		  usleep(10000);
 	}
+	if(count_n_10ms == 0)
+		return 0;
 	/*****************************************************Cleaning*****************************************************/
 	while (ros::ok()) {
 

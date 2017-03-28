@@ -1,14 +1,14 @@
 <!-- Runs obstacle detector and tracker with a single Hokuyo laser scanner. -->
 <launch>
-  <node pkg="obstacle_detector" type="obstacle_detector" name="obstacle_detector" output="log">
-    <param name="min_group_points"     value="5"/>
+  <node pkg="obstacle_detector" type="obstacle_detector" name="obstacle_detector" output="screen">
+    <param name="min_group_points"     value="10"/>
 
     <param name="active"               value="true"/>
     <param name="use_scan"             value="true"/>
     <param name="use_pcl"              value="false"/>
     <param name="use_split_and_merge"  value="false"/>
     <param name="discard_converted_segments" value="true"/>
-    <param name="transform_coordinates"      value="true"/>
+    <param name="transform_coordinates"      value="false"/>
 
     <param name="max_group_distance"   value="0.100"/>    
     <param name="distance_proportion"  value="0.006136"/>
@@ -23,17 +23,17 @@
     <remap from="raw_obstacles" to="obstacles"/>
   </node>
 
-  <!--<node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen">-->
-    <!--<param name="tracked_circles_color"   value="3"/>-->
-    <!--<param name="untracked_circles_color" value="2"/>-->
-    <!--<param name="segments_color"          value="7"/>-->
+  <node pkg="obstacle_detector" type="obstacle_visualizer" name="obstacle_visualizer" output="screen">
+    <param name="tracked_circles_color"   value="3"/>
+    <param name="untracked_circles_color" value="2"/>
+    <param name="segments_color"          value="7"/>
 
-    <!--<param name="active"                  value="true"/>-->
-    <!--<param name="show_labels"             value="false"/>-->
+    <param name="active"                  value="true"/>
+    <param name="show_labels"             value="false"/>
 
-    <!--<param name="alpha"                   value="0.7"/>-->
-    <!--<param name="z_layer"                 value="0.0"/>-->
-  <!--</node>-->
+    <param name="alpha"                   value="0.7"/>
+    <param name="z_layer"                 value="0.0"/>
+  </node>
 
 </launch>
 

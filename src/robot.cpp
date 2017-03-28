@@ -344,48 +344,56 @@ std::vector<int8_t> *robot::robot_get_map_data()
 	return this->ptr;
 }
 
-double distance(double x1, double y1, double x2, double y2) {
-  double d = x2 - x1;
-  double e = y2 - y1;
-  d *= d;
-  e *= e;
-  return sqrt(d + e);
+double distance(double x1, double y1, double x2, double y2)
+{
+	double d = x2 - x1;
+	double e = y2 - y1;
+	d *= d;
+	e *= e;
+	return sqrt(d + e);
 }
 
-void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg) {
-  double last_distant = 0;
-  double detalx = 0, detaly = 0;
-  if (laser::instance()->is_ready() == false || is_sensor_ready == false)
-    return;
+void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
+{
+	double detalx = 0, detaly = 0;
+	if (laser::instance()->is_ready() == false || is_sensor_ready == false)
+		return;
 
-  if(line_align_ == detecting)
-  {
-	  if (msg->segments.size() != 0)
-	  {
-		  for (auto &s : msg->segments)
-		  {
-			  auto dist = distance(s.first_point.x, s.first_point.y, s.last_point.x, s.last_point.y);
-			  if (dist < 1)
-				  return;
+	if (line_align_ == detecting)
+	{
+		if (msg->segments.size() != 0)
+		{
+//			ROS_INFO("size = %d", msg->segments.size());
+			for (auto &s : msg->segments)
+			{
+				auto dist = distance(s.first_point.x, s.first_point.y, s.last_point.x, s.last_point.y);
 
-//			  ROS_INFO("dist ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-			  detalx = s.last_point.x - s.first_point.x;
-			  detaly = s.last_point.y - s.first_point.y;
+				if (dist < 1)
+					ROS_INFO("dist = %f", dist);
+				else
+					ROS_INFO("dist = %f >1", dist);
 
-			  double yaw = arctan(detaly, detalx);
+				if (dist < 1)
+					break;
 
-			  int16_t line_angle = ((int16_t) (yaw * 1800 / M_PI) % 3600);
-			  if (line_angle > 900)
-			  {
-				  line_angle -= 1800;
-			  } else if (line_angle < -900)
-			  {
-				  line_angle += 1800;
-			  }
-			  auto pair = std::make_pair(line_angle, dist);
-			  angles.classify(pair);
+				detalx = s.last_point.x - s.first_point.x;
+				detaly = s.last_point.y - s.first_point.y;
+
+				double yaw = arctan(detaly, detalx);
+
+				int16_t line_angle = ((int16_t) (yaw * 1800 / M_PI) % 3600);
+				if (line_angle > 900)
+				{
+					line_angle -= 1800;
+				} else if (line_angle < -900)
+				{
+					line_angle += 1800;
+				}
+				auto pair = std::make_pair(line_angle, dist);
+				angles.classify(pair);
 //			  angles.longest();
-		  }
+			}
+			ROS_INFO("+++++++++++++++++++++++++++++");
 //    case rotating:
 //      if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
 
@@ -393,10 +401,10 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
 //	      line_align_ = finish;
 //      }
 //      break;
-	  }
+		}
 
-  }
-  /*else {//(is_obstacles_ready == true)
+	}
+	/*else {//(is_obstacles_ready == true)
 		static int count = 0;
 		if(count++%300==0) {
 			for (auto &s : msg->segments) {
@@ -420,7 +428,6 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
 		}
 	}*/
 }
-
 float robot::robot_get_angle() {
   return this->angle;
 }
@@ -965,6 +972,7 @@ void robot::Subscriber(void)
 	  obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 }
+
 void robot::UnSubscriber(void)
 {
 	map_sub.shutdown();

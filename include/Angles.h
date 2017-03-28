@@ -42,6 +42,7 @@ int16_t Angles<T>::average(std::vector<T> L,bool n)
 template <class T>
 void Angles<T>::classify(T pair)
 {
+  angles_set.clear();
   auto pair_iter = angles_set.begin();
 
   for (pair_iter; pair_iter != angles_set.end(); ++pair_iter)
