@@ -55,6 +55,14 @@ uint8_t CM_MoveForward(void);
 
 uint8_t CM_Touring(void);
 
+void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int16_t right);
+void CM_update_map(ActionType action, uint8_t bumper);
+void CM_update_map_bumper(ActionType action, uint8_t bumper);
+
+void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+
+int32_t CM_ABS(int32_t A, int32_t B);
+
 int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_t step );
 
 void CM_CorBack(uint16_t dist);

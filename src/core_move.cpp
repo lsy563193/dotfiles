@@ -96,7 +96,7 @@ int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
 
 extern volatile uint8_t cleaning_mode;
 
-static inline void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
+void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
 	*y = cellToCount(countToCell(Map_GetRelativeY(heading, offset_lat, offset_long)));
