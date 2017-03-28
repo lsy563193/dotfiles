@@ -1590,4 +1590,20 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 	retval = 1;
 	return retval;
 }
+
+int path_get_path_points_count()
+{
+	return path_points.size();
+}
+
+list<Point16_t> *path_get_path_points()
+{
+	return &path_points;
+}
+
+void path_reset_path_points()
+{
+	path_points.clear();
+}
+
 #endif
