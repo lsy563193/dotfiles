@@ -1,11 +1,15 @@
 #ifndef __SHORTESTPATH_H__
 #define __SHORTESTPATH_H__
 
+#include <list>
+
 #include "config.h"
 
 #include "stdlib.h"
 #include "map.h"
 #include "path_planning.h"
+
+using namespace std;
 
 typedef struct{
 	int16_t	x;
