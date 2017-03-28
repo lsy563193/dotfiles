@@ -1469,7 +1469,7 @@ int16_t path_escape_trapped() {
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(int32_t *target_x, int32_t *target_y) {
+int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_cell) {
 	int16_t	val;
 	uint8_t status;
 	int16_t	x, y, cnt, x_next_area, y_next_area, offset;
@@ -1569,6 +1569,8 @@ int8_t path_next(int32_t *target_x, int32_t *target_y) {
 
 			positions[0].x_target = x_next_area;
 			positions[0].y_target = y_next_area;
+			(*final_target_cell).X = cellToCount(x_next_area);
+			(*final_target_cell).Y = cellToCount(y_next_area);
 
 			/* Find the path to the next target to clean. */
 			//pos.X = Map_GetXPos();

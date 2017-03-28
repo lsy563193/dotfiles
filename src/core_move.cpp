@@ -1864,7 +1864,8 @@ uint8_t CM_Touring(void)
 	int16_t	i, k, j, x, y, x_current, y_current, start, end;
 	float	slop, intercept;
 
-	Point32_t	Next_Point;
+	// X, Y in Target_Point are all counts.
+	Point32_t	Next_Point, Target_Point;
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 
 #ifdef PP_ROUNDING_OBSTCAL
@@ -2214,7 +2215,8 @@ uint8_t CM_Touring(void)
 //					Set_Run_HS_Timer(1);
 					x_current = Map_GetXPos();
 					y_current = Map_GetYPos();
-					state = path_next(&Next_Point.X, &Next_Point.Y);
+					state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
+					ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 //					Set_Run_HS_Timer(0);
 //					if(state>-1)
 //					{
