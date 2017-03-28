@@ -220,15 +220,26 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	Set_Dir_Left();
 
 	Set_Wheel_Speed(speed, speed);
-	
+
 	uint8_t oc=0;
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
-		if (abs(target_angle - Gyro_GetAngle()) < 20) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
-			Set_Wheel_Speed(speed / 2, speed / 2);
-		} else {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
 			Set_Wheel_Speed(speed, speed);
 		}
 		oc= Check_Motor_Current();
@@ -239,7 +250,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		if(Is_Turn_Remote())
 			break;
 		usleep(10000);
-//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff=%d \n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
@@ -266,13 +277,25 @@ void Turn_Right(uint16_t speed, int16_t angle)
 
 	Set_Wheel_Speed(speed, speed);
 	uint8_t oc=0;
+
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
-		if (abs(target_angle - Gyro_GetAngle()) < 30) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < 60) {
-			Set_Wheel_Speed(speed / 2, speed / 2);
-		} else {
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
 			Set_Wheel_Speed(speed, speed);
 		}
 		oc= Check_Motor_Current();
@@ -308,6 +331,7 @@ uint8_t Get_OBS_Status(void)
 
 	return Status;
 }
+
 uint8_t Spot_OBS_Status(void)
 {
 	uint8_t status =0;

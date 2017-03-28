@@ -163,7 +163,7 @@
 #define RightBumperTrig				2
 #define AllBumperTrig				3
 
-#define Turn_Speed					33
+#define Turn_Speed				33
 
 #define Power_On					0x01
 #define Power_Off					0x00
