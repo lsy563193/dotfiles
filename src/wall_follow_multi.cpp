@@ -218,6 +218,11 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 	
 	while (ros::ok()) {
+		if (escape_thread_running == false) {
+			printf("%s %d: quit due to thread exit\n", __FUNCTION__, __LINE__);
+			break;
+		}
+
 		if(Is_OBS_Near()) {
 			Left_Wall_Speed = 15;
 		} else {
