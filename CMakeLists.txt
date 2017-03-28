@@ -54,8 +54,8 @@ catkin_package(
 add_executable(pp  ${PP_SRC} )
 target_link_libraries(pp ${catkin_LIBRARIES} -lm -lpthread)
 
-add_executable(angle_test test/angle_test.cpp )
-target_link_libraries(angle_test ${catkin_LIBRARIES} -lm -lpthread)
+#add_executable(angle_test test/angle_test.cpp )
+#target_link_libraries(angle_test ${catkin_LIBRARIES} -lm -lpthread)
 
 install(TARGETS pp
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
