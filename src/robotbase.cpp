@@ -180,11 +180,11 @@ void *serial_receive_routine(void *)
 					for (j = 0; j < wht_len; j++) {
 						receiStream[j + 2] = receiData[j];
 					}
-				} else {
-					ROS_DEBUG_NAMED(ROBOTBASE," tail incorret\n");
+//				} else {
+//					ROS_INFO(" tail incorret");
 				}
-			} else {
-				ROS_DEBUG_NAMED(ROBOTBASE, "crc incorret\n");
+//			} else {
+//				ROS_INFO("crc incorret");
 			}
 		}
 	}

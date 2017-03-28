@@ -29,7 +29,8 @@
 #undef TURN_SPEED
 #endif
 
-#define TURN_SPEED	17
+//#define TURN_SPEED	17
+#define TURN_SPEED	23
 
 uint8_t	should_mark = 0;
 
@@ -217,9 +218,9 @@ uint8_t rounding_boundary_check()
 	return boundary_reach;
 }
 
-uint8_t rounding(RoundingType type, Point32_t target)
+uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
 {
-	uint8_t		Jam = 0, Temp_Counter = 0, RandomRemoteWall_Flag = 0, Mobility_Temp_Error = 0;
+	uint8_t		Jam = 0, Temp_Counter = 0, RandomRemoteWall_Flag = 0, Mobility_Temp_Error = 0, Temp_Bumper_Status;
 	int16_t		Left_Wall_Buffer[3] = { 0 };
 	int32_t		y_start, R = 0, Proportion = 0, Delta = 0, Previous = 0;
 	uint32_t	WorkTime_Buffer = 0, Temp_Status = 0;
@@ -231,7 +232,47 @@ uint8_t rounding(RoundingType type, Point32_t target)
 	y_start = Map_GetYCount();
 	printf("%s %d: %d %d %d %d\n", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
 
-	rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
+	if ((Origin_Bumper_Status & LeftBumperTrig) && !(Origin_Bumper_Status & RightBumperTrig))
+	{
+		// Debug
+		if (type == ROUNDING_LEFT)
+		{
+			printf("%s %d: Left bumper ROUNDING_LEFT and turn 45 degrees.\n", __FUNCTION__, __LINE__);
+		}
+		else
+		{
+			printf("%s %d: Left bumper ROUNDING_RIGHT and turn 135 degrees.\n", __FUNCTION__, __LINE__);
+		}
+		//rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
+		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 450 : 1350));
+	}
+	else if (!(Origin_Bumper_Status & LeftBumperTrig) && (Origin_Bumper_Status & RightBumperTrig))
+	{
+		// Debug
+		if (type == ROUNDING_LEFT)
+		{
+			printf("%s %d: Right bumper ROUNDING_LEFT and turn 135 degrees.\n", __FUNCTION__, __LINE__);
+		}
+		else
+		{
+			printf("%s %d: Right bumper ROUNDING_RIGHT and turn 45 degrees.\n", __FUNCTION__, __LINE__);
+		}
+		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 1350 : 450));
+	}
+	else
+	{
+		// If bumper not hit or it just hit the front (Both left and right bumper triggered, robot should turn 90 degrees.
+		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
+		// Debug
+		if (type == ROUNDING_LEFT)
+		{
+			printf("%s %d: Same bumper ROUNDING_LEFT and turn 90 degrees.\n", __FUNCTION__, __LINE__);
+		}
+		else
+		{
+			printf("%s %d: Same bumper ROUNDING_RIGHT and turn 90 degrees.\n", __FUNCTION__, __LINE__);
+		}
+	}
 
 	Wall_Straight_Distance = 300;
 
@@ -246,6 +287,7 @@ uint8_t rounding(RoundingType type, Point32_t target)
 
 		//printf("%s %d: %d (%d, %d)\n", __FUNCTION__, __LINE__, target.Y, Map_GetXCount(), Map_GetYCount());
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
+			// Robot has reach the target.
 			printf("%s %d: %d %d %d %d\n", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
 			Stop_Brifly();
 			return 0;
@@ -253,6 +295,7 @@ uint8_t rounding(RoundingType type, Point32_t target)
 
 		/* Tolerance of distance allow to move back when roundinging the obstcal. */
 		if ((target.Y > y_start && (y_start - Map_GetYCount()) > 120) || (target.Y < y_start && (Map_GetYCount() - y_start) > 120)) {
+			// Robot has round to the opposite direcition.
 			printf("%s %d: %d (%d, %d)\n", __FUNCTION__, __LINE__, target.Y, Map_GetXCount(), Map_GetYCount());
 
 			Map_SetCell(MAP, Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_3, 0), Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_3, 0), CLEANED);
@@ -261,17 +304,20 @@ uint8_t rounding(RoundingType type, Point32_t target)
 			return 0;
 		}
 
+		Temp_Bumper_Status = Get_Bumper_Status();
+		// Use the left wall sensor.
 		if (type == ROUNDING_LEFT) {
-			if (Get_Bumper_Status() & RightBumperTrig) {
-				Stop_Brifly();
+			if (Temp_Bumper_Status & RightBumperTrig) {
+				//Stop_Brifly();
 				rounding_move_back(100);
 				Stop_Brifly();
+				// Turn right for 90 degrees.
 				rounding_turn(1, TURN_SPEED, 900);
 				Move_Forward(15, 15);
 				Wall_Straight_Distance = 375;
 			}
 
-			if (Get_Bumper_Status() & LeftBumperTrig) {
+			if (Temp_Bumper_Status & LeftBumperTrig) {
 				Set_Wheel_Speed(0, 0);
 				usleep(300000);
 				if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
@@ -287,13 +333,17 @@ uint8_t rounding(RoundingType type, Point32_t target)
 					Wall_Distance = Wall_High_Limit;
 				}
 
-				if (Get_Bumper_Status() & RightBumperTrig) {
+				if (Temp_Bumper_Status & RightBumperTrig) {
 					rounding_move_back(350);
-					rounding_turn(1, TURN_SPEED - 5, 600);
+					// Turn right for 60 degrees.
+					//rounding_turn(1, TURN_SPEED - 5, 600);
+					rounding_turn(1, TURN_SPEED, 600);
 					Wall_Straight_Distance = 150;
 				} else {
 					rounding_move_back(350);
-					rounding_turn(1, TURN_SPEED - 10, 150);
+					// Turn right for 15 degrees.
+					//rounding_turn(1, TURN_SPEED - 10, 150);
+					rounding_turn(1, TURN_SPEED, 300);
 					Wall_Straight_Distance = 250;
 				}
 				Move_Forward(10, 10);
@@ -312,6 +362,7 @@ uint8_t rounding(RoundingType type, Point32_t target)
 						if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
 							//if (Get_WallAccelerate()>300) {
 								//if ((Get_RightWheel_Speed()-Get_LeftWheel_Speed()) >= -3) {
+									// Away from the wall.
 									Move_Forward(18, 16);
 									usleep(100000);
 									Wall_Straight_Distance = 300;
@@ -396,16 +447,20 @@ uint8_t rounding(RoundingType type, Point32_t target)
 				Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
 			} else {
 				Stop_Brifly();
+				// 12500 steps means around 2 meters.
 				if (Get_LeftWheel_Step() < 12500) {
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
-						rounding_turn(1, TURN_SPEED - 5, 880);
+						// Turn right for 80 degrees.
+						rounding_turn(1, TURN_SPEED, 800);
 						Move_Forward(15, 15);
 					} else {
-						rounding_turn(1, TURN_SPEED - 5, 400);
+						// Turn right for 40 degrees.
+						rounding_turn(1, TURN_SPEED, 400);
 						Move_Forward(15, 15);
 					}
 				} else {
-					rounding_turn(1, TURN_SPEED - 5, 900);
+					// Turn right for 90 degrees.
+					rounding_turn(1, TURN_SPEED, 900);
 					Move_Forward(15, 15);
 					/*
 					if (!Is_MoveWithRemote()) {
@@ -416,16 +471,17 @@ uint8_t rounding(RoundingType type, Point32_t target)
 				Wall_Distance = Wall_High_Limit;
 			}
 		} else {		/* ROUNDING_RIGHT */
-			if (Get_Bumper_Status() & LeftBumperTrig) {
-				Stop_Brifly();
+			if (Temp_Bumper_Status & LeftBumperTrig) {
+				//Stop_Brifly();
 				rounding_move_back(100);
 
+				// Turn left for 90 degrees.
 				rounding_turn(0, TURN_SPEED, 900);
 				Move_Forward(15, 15);
 				Wall_Straight_Distance = 375;
 			}
 
-			if (Get_Bumper_Status() & RightBumperTrig) {
+			if (Temp_Bumper_Status & RightBumperTrig) {
 				Set_Wheel_Speed(0, 0);
 				usleep(300000);
 				Wall_Distance += 200;
@@ -437,13 +493,15 @@ uint8_t rounding(RoundingType type, Point32_t target)
 					Wall_Distance = Wall_High_Limit;
 				}
 
-				if (Get_Bumper_Status() & LeftBumperTrig) {
+				if (Temp_Bumper_Status & LeftBumperTrig) {
 					rounding_move_back(350);
+					// Turn left for 60 degrees.
 					rounding_turn(0, TURN_SPEED - 5, 600);
 					Wall_Straight_Distance = 150;
 				} else {
 					rounding_move_back(350);
-					rounding_turn(0, TURN_SPEED - 10, 150);
+					// Turn left for 15 degrees.
+					rounding_turn(0, TURN_SPEED - 10, 300);
 					Wall_Straight_Distance = 250;
 				}
 

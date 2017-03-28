@@ -40,7 +40,8 @@
 /*
  * Definition to enable/disable robot rounding the obstcal or not.
  */
-//#define PP_ROUNDING_OBSTCAL		(1)
+#define PP_ROUNDING_OBSTCAL_LEFT		(1)
+#define PP_ROUNDING_OBSTCAL_RIGHT		(0)
 
 /*
  * Definition to force robot to move the center of a cell.
