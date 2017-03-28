@@ -904,12 +904,8 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 	}
 
 	debug_map(MAP, home_x, home_y);
-	for (c = x_min; c <= x_max; ++c) {
-		for (d = y_min; d <= y_max; ++d) {
-			if (Map_GetCell(MAP, c, d) == TARGET) {
-				Map_SetCell(MAP, cellToCount(c), cellToCount(d), UNCLEAN);
-			}
-		}
+	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
+		Map_SetCell(MAP, cellToCount(it->target.X), cellToCount(it->target.Y), UNCLEAN);
 	}
 
 	path_find_all_targets();
