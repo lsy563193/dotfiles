@@ -38,15 +38,6 @@ bool	escape_thread_running = false;
 //Timer
 uint32_t escape_trapped_timer;
 
-//ACTION TYPE
-typedef enum {
-	ACTION_NONE	= 0x01,
-	ACTION_GO	= 0x02,
-	ACTION_BACK	= 0x04,
-	ACTION_LT	= 0x08,
-	ACTION_RT	= 0x10,
-} ActionType;
-
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 							{1200, 250, 150},

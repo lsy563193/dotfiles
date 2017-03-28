@@ -32,6 +32,14 @@ typedef enum {
 	MT_Battery_Home,
 } MapTouringType;
 
+typedef enum {
+	ACTION_NONE	= 0x01,
+	ACTION_GO	= 0x02,
+	ACTION_BACK	= 0x04,
+	ACTION_LT	= 0x08,
+	ACTION_RT	= 0x10,
+} ActionType;
+
 typedef struct {
 	Point16_t	pos;
 } VWType;
