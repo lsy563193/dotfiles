@@ -339,8 +339,8 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
 
-			if (robot::instance()->robot_get_wall() > (Wall_Low_Limit)) {
-				Wall_Distance = robot::instance()->robot_get_wall()  / 3;
+			if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
+				Wall_Distance = robot::instance()->robot_get_left_wall()  / 3;
 			} else {
 				Wall_Distance += 200;
 			}
@@ -380,7 +380,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		if (Wall_Distance >= 200) {
 			Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 			Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
-			Left_Wall_Buffer[0] = robot::instance()->robot_get_wall();
+			Left_Wall_Buffer[0] = robot::instance()->robot_get_left_wall();
 			if (Left_Wall_Buffer[0] < 100) {
 				if ((Left_Wall_Buffer[1] - Left_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 					if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -416,7 +416,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			if (Get_FrontOBS() < MFW_Setting[follow_type].front_obs_val) {
 #endif
 
-				Proportion = robot::instance()->robot_get_wall();
+				Proportion = robot::instance()->robot_get_left_wall();
 
 				Proportion = Proportion * 100 / Wall_Distance;
 
@@ -764,8 +764,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
 
-			if (robot::instance()->robot_get_wall() > (Wall_Low_Limit)) {
-				Wall_Distance = robot::instance()->robot_get_wall()  / 3;
+			if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
+				Wall_Distance = robot::instance()->robot_get_left_wall()  / 3;
 			} else {
 				Wall_Distance += 200;
 			}
@@ -805,7 +805,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		if (Wall_Distance >= 200) {
 			Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 			Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
-			Left_Wall_Buffer[0] = robot::instance()->robot_get_wall();
+			Left_Wall_Buffer[0] = robot::instance()->robot_get_left_wall();
 			if (Left_Wall_Buffer[0] < 100) {
 				if ((Left_Wall_Buffer[1] - Left_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 					if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -841,7 +841,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			if (Get_FrontOBS() < MFW_Setting[follow_type].front_obs_val) {
 #endif
 
-				Proportion = robot::instance()->robot_get_wall();
+				Proportion = robot::instance()->robot_get_left_wall();
 
 				Proportion = Proportion * 100 / Wall_Distance;
 

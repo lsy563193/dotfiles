@@ -153,7 +153,7 @@ void Set_Wheel_Step(uint32_t Left, uint32_t Right)
 
 int32_t Get_Wall_ADC(void)
 {
-	return (int32_t)robot::instance()->robot_get_wall();
+	return (int32_t)robot::instance()->robot_get_left_wall();
 }
 
 void Set_Dir_Backward(void)
@@ -915,7 +915,7 @@ uint8_t Is_WallOBS_Near(void)
     if (robot::instance()->robot_get_obs_left() > (Front_OBSTrig_Value + 1000)) {
 		return 1;
 	}
-	if (robot::instance()->robot_get_wall() > (Leftwall_OBSTrig_Vale +500)){
+	if (robot::instance()->robot_get_left_wall() > (Leftwall_OBSTrig_Vale +500)){
 		return 1;
 	}
     return 0;

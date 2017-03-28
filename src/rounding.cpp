@@ -274,8 +274,8 @@ uint8_t rounding(RoundingType type, Point32_t target)
 			if (Get_Bumper_Status() & LeftBumperTrig) {
 				Set_Wheel_Speed(0, 0);
 				usleep(300000);
-				if (robot::instance()->robot_get_wall() > (Wall_Low_Limit)) {
-					Wall_Distance = robot::instance()->robot_get_wall() / 3;
+				if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
+					Wall_Distance = robot::instance()->robot_get_left_wall() / 3;
 				} else {
 					Wall_Distance += 200;
 				}
@@ -306,7 +306,7 @@ uint8_t rounding(RoundingType type, Point32_t target)
 			if (Wall_Distance >= 200) {
 				Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 				Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
-				Left_Wall_Buffer[0] = robot::instance()->robot_get_wall();
+				Left_Wall_Buffer[0] = robot::instance()->robot_get_left_wall();
 				if (Left_Wall_Buffer[0] < 100) {
 					if ((Left_Wall_Buffer[1] - Left_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 						if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -324,7 +324,7 @@ uint8_t rounding(RoundingType type, Point32_t target)
 
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-				Proportion = robot::instance()->robot_get_wall();
+				Proportion = robot::instance()->robot_get_left_wall();
 
 				Proportion = Proportion * 100 / Wall_Distance;
 
