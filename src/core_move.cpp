@@ -976,6 +976,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max)
 	position.X = Map_GetXCount();
 	position.Y = Map_GetYCount();
 
+	// Reset the Bumper_Status_For_Rounding.
+	Bumper_Status_For_Rounding = 0;
+
 	should_follow_wall = 0;
 	//int32_t	x_tmp, y_tmp;
 
