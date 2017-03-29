@@ -29,8 +29,7 @@
 #undef TURN_SPEED
 #endif
 
-//#define TURN_SPEED	17
-#define TURN_SPEED	23
+#define TURN_SPEED	17
 
 uint8_t	should_mark = 0;
 
@@ -307,12 +306,13 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 		Temp_Bumper_Status = Get_Bumper_Status();
 		// Use the left wall sensor.
 		if (type == ROUNDING_LEFT) {
-			if (Temp_Bumper_Status & RightBumperTrig) {
+			if (!(Temp_Bumper_Status & LeftBumperTrig) && (Temp_Bumper_Status & RightBumperTrig)) {
+				// Only right bumper is triggered.
 				//Stop_Brifly();
 				rounding_move_back(100);
 				Stop_Brifly();
-				// Turn right for 90 degrees.
-				rounding_turn(1, TURN_SPEED, 900);
+				// Turn right for 135 degrees.
+				rounding_turn(1, TURN_SPEED, 1350);
 				Move_Forward(15, 15);
 				Wall_Straight_Distance = 375;
 			}
@@ -334,16 +334,16 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 
 				if (Temp_Bumper_Status & RightBumperTrig) {
+					// Both left and right bumper are triggered.
 					rounding_move_back(350);
-					// Turn right for 60 degrees.
-					//rounding_turn(1, TURN_SPEED - 5, 600);
-					rounding_turn(1, TURN_SPEED, 600);
+					// Turn right for 90 degrees.
+					rounding_turn(1, TURN_SPEED, 900);
 					Wall_Straight_Distance = 150;
 				} else {
+					// Only left bumper is triggered.
 					rounding_move_back(350);
-					// Turn right for 15 degrees.
-					//rounding_turn(1, TURN_SPEED - 10, 150);
-					rounding_turn(1, TURN_SPEED, 300);
+					// Turn right for 45 degrees.
+					rounding_turn(1, TURN_SPEED, 450);
 					Wall_Straight_Distance = 250;
 				}
 				Move_Forward(10, 10);
