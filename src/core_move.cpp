@@ -2247,7 +2247,7 @@ uint8_t CM_Touring(void)
 										} else {
 #if PP_ROUNDING_OBSTACLE_RIGHT
 											//if (tmpPnt.Y == Map_GetYPos() + 1 || tmpPnt.Y == Map_GetYPos() + 2) {
-											if (Target_Point.Y == Map_GetYPos() + 1 || Target_Point.Y == Map_GetYPos() + 2) {
+											if (countToCell(Target_Point.Y) == Map_GetYPos() + 1 || countToCell(Target_Point.Y) == Map_GetYPos() + 2) {
 												printf("%s %d: Rounding right.\n", __FUNCTION__, __LINE__);
 												//Next_Point.Y = cellToCount(tmpPnt.Y);
 												Next_Point.Y = Target_Point.Y;
