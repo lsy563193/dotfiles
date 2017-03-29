@@ -944,7 +944,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 }
 
 // Target:	robot coordinate
-MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max)
+MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
 {
 	int32_t Target_Course, Rotate_Angle, Integrated, Left_Speed, Right_Speed, Base_Speed, distance, Dis_From_Init;
 	uint8_t Adjust_Left, Adjust_Right, Integration_Cycle, boundary_reach;
@@ -997,11 +997,12 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max)
 
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
-	Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
-//	Target_Course += robot::instance()->robot_get_home_angle();
-	printf("Target_Course(%d)\n",Target_Course);
-	CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
-	printf("leave CM_HeadToCourse\n");
+	if (rotate_is_needed == true) {
+		Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
+		printf("Target_Course(%d)\n",Target_Course);
+		CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
+		printf("leave CM_HeadToCourse\n");
+	}
 
 	if (position.X != Map_GetXCount() && position.X == Target.X) {
 		Target.X = Map_GetXCount();
@@ -1029,7 +1030,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max)
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 	WheelCount_Left = WheelCount_Right = 0;
-	Stop_Brifly();
+	if (stop_is_needed == true) {
+		Stop_Brifly();
+	}
 
 	if (Get_LeftBrush_Stall())Set_LeftBrush_Stall(0);
 	if (Get_RightBrush_Stall())Set_RightBrush_Stall(0);
@@ -1405,7 +1408,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max)
 			ROS_INFO("%s, %d: Reach target.", __FUNCTION__, __LINE__);
 			isBumperTriggered = Get_Bumper_Status();
 			CM_update_map(action, isBumperTriggered);
-			Stop_Brifly();
+
 			retval = MT_None;
 			break;
 		}
@@ -1623,7 +1626,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max)
 		usleep(10000);
 	}
 
-	Stop_Brifly();
+	if (stop_is_needed == true) {
+		Stop_Brifly();
+	}
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 	printf("%s %d: move to point: %d\tGyro Calibration: %d\n", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
@@ -2154,11 +2159,11 @@ uint8_t CM_Touring(void)
 										Bumper_Status_For_Rounding = 0;
 									} else {
 										printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 									}
 #else
 									printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 								} else {
 #if PP_ROUNDING_OBSTACLE_RIGHT
@@ -2169,11 +2174,11 @@ uint8_t CM_Touring(void)
 										Bumper_Status_For_Rounding = 0;
 									} else {
 										printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 									}
 #else
 									printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 								}
 							} else if (dir == SOUTH) {
@@ -2186,11 +2191,11 @@ uint8_t CM_Touring(void)
 										Bumper_Status_For_Rounding = 0;
 									} else {
 										printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 									}
 #else
 									printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 								} else {
 #if PP_ROUNDING_OBSTACLE_LEFT
@@ -2201,20 +2206,20 @@ uint8_t CM_Touring(void)
 										Bumper_Status_For_Rounding = 0;
 									} else {
 										printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 									}
 #else
 									printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 								}
 							} else {
 								printf("%s %d\n", __FUNCTION__, __LINE__);
-								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 							}
 						} else {
 							printf("%s %d Robot don't need to go to new line.%d %d %d\n", __FUNCTION__, __LINE__, countToCell(Next_Point.X), SHRT_MAX, SHRT_MIN);
-							//mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+							//mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 							//if (path_targets_get_last(&tmpPnt.X, &tmpPnt.Y) == 1 && !(countToCell(Next_Point.X) == SHRT_MAX || countToCell(Next_Point.X) == SHRT_MIN)) {
 							if (!(countToCell(Next_Point.X) == SHRT_MAX || countToCell(Next_Point.X) == SHRT_MIN)) {
 								//if (abs(tmpPnt.Y) != abs(Map_GetYPos())) {
@@ -2233,11 +2238,11 @@ uint8_t CM_Touring(void)
 												Bumper_Status_For_Rounding = 0;
 											} else {
 												printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 											}
 #else
 											printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 										} else {
 #if PP_ROUNDING_OBSTACLE_RIGHT
@@ -2251,11 +2256,11 @@ uint8_t CM_Touring(void)
 												Bumper_Status_For_Rounding = 0;
 											} else {
 												printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 											}
 #else
 											printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 										}
 									} else if (dir == SOUTH) {
@@ -2272,11 +2277,11 @@ uint8_t CM_Touring(void)
 												Bumper_Status_For_Rounding = 0;
 											} else {
 												printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 											}
 #else
 											printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 										} else {
 #if PP_ROUNDING_OBSTACLE_LEFT
@@ -2290,33 +2295,33 @@ uint8_t CM_Touring(void)
 												Bumper_Status_For_Rounding = 0;
 											} else {
 												printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 											}
 #else
 											printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 										}
 									} else {
 										printf("%s %d\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 									}
 								} else {
 									printf("%s %d\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 								}
 							} else {
 								printf("%s %d\n", __FUNCTION__, __LINE__);
-								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 							}
 						}
 					} else {
 						printf("%s %d\n", __FUNCTION__, __LINE__);
-						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 					}
 
 #else
-					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 #endif
 
 					if (y_current == countToCell(Next_Point.Y)) {
@@ -2563,7 +2568,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				debug_map(MAP, tmp.X, tmp.Y);
 #endif
 
-				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 
 				printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
@@ -2683,7 +2688,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 #if ENABLE_DEBUG
 			debug_map(MAP, tmp.X, tmp.Y);
 #endif
-			mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED);
+			mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 
 			printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
