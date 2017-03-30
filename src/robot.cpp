@@ -843,8 +843,7 @@ void robot::align(void)
 		usleep(10000);
 	}
 
-	auto seg = segmentss.min_distant_segment();
-	line_angle = static_cast<int16_t>((seg.last_point - seg.first_point).angleDeg() * 10);
+	line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	auto angle = static_cast<int16_t>(std::abs(line_angle));
 	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
 

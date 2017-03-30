@@ -14,7 +14,7 @@ class Segment_set
 {
 public:
   void classify(Segment& t);
-  Segment min_distant_segment();
+  double min_distant_segment_angle();
   void clear();
 private:
   std::vector<std::vector<Segment>> segmentss;
@@ -81,7 +81,7 @@ void Segment_set::classify(Segment& seg)
   }
 }
 
-Segment Segment_set::min_distant_segment()
+double Segment_set::min_distant_segment_angle()
 {
   std::cout << "-----Segment_set display------" << std::endl;
   auto min_dist = std::numeric_limits<double>::max();
@@ -108,8 +108,10 @@ Segment Segment_set::min_distant_segment()
     }
     it++;
   }
-
-  return Segment( average(get_first(segmentss[index])),average(get_last(segmentss[index])) );
+  auto angle = 0.0;
+  if(it != 0)
+    angle = ( average(get_last(segmentss[index])) - average(get_first(segmentss[index])) ).angleDeg();
+  return angle;
 }
 
 void Segment_set::clear()
