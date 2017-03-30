@@ -1034,9 +1034,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 
 	WheelCount_Left = WheelCount_Right = 0;
-	if (stop_is_needed == true) {
-		Stop_Brifly();
-	}
 
 	if (Get_LeftBrush_Stall())Set_LeftBrush_Stall(0);
 	if (Get_RightBrush_Stall())Set_RightBrush_Stall(0);
