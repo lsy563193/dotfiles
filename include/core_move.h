@@ -28,6 +28,10 @@ typedef enum {
 	MT_Remote_Clean,
 	MT_Remote_Spot,
 	MT_Cliff,
+	MT_Bumper,
+	MT_OBS,
+	MT_Boundary,
+	MT_CurveMove,
 	MT_Key_Clean,
 	MT_Battery_Home,
 } MapTouringType;

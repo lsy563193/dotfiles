@@ -43,6 +43,11 @@
 #define PP_ROUNDING_OBSTACAL_LFET (1) 
 #define PP_ROUNDING_OBSTACAL_RIGHT (1)
 /*
+ * Definition to enable/disable robot curve move support.
+ */
+#define PP_CURVE_MOVE			(1)
+
+/*
  * Definition to force robot to move the center of a cell.
  *
  * If not defined, when moving to a cell, it will just use the

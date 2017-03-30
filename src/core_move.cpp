@@ -16,6 +16,10 @@
 #include "rounding.h"
 #include "shortest_path.h"
 
+#ifdef PP_CURVE_MOVE
+#include "curve_move.h"
+#endif
+
 #include "movement.h"
 #include "wall_follow_multi.h"
 #include <ros/ros.h>
@@ -1664,6 +1668,85 @@ uint16_t CM_get_robot_direction()
 	}
 	return dir;
 }
+
+RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_Point) {
+	int32_t		y_coordinate;
+	uint16_t	dir;
+	RoundingType	rounding_type = ROUNDING_NONE;
+
+	ROS_INFO("Enter rounding detection.");
+	dir = CM_get_robot_direction();
+	if (should_follow_wall == 0) {
+		return rounding_type;
+	}
+
+	if (Get_Cliff_Trig()) {
+		printf("%s %d, cliff triggered.\n", __FUNCTION__, __LINE__);
+	} else if (Get_Bumper_Status()) {
+		printf("%s %d, bumper event.\n", __FUNCTION__, __LINE__);
+	} else if (Get_OBS_Status()) {
+		printf("%s %d, OBS detected.\n", __FUNCTION__, __LINE__);
+	} else if (Get_FrontOBS() > Get_FrontOBST_Value()) {
+		printf("%s %d, front OBS detected.\n", __FUNCTION__, __LINE__);
+	} else if (Get_Wall_ADC() > 170) {
+		printf("%s %d, wall sensor exceed 170.\n", __FUNCTION__, __LINE__);
+	}
+	/*                South (Xmin)
+	 *                     |
+	 *  West (Ymin)  --  robot  --   East (Ymax)
+	 *                     |
+	 *                North (Xmax)
+	**/
+	y_coordinate = countToCell(Next_Point->Y);
+	if (y_coordinate != Map_GetYPos()) {
+		// Robot need to go to new line
+		ROS_INFO("Robot need to go to new line");
+
+#if PP_ROUNDING_OBSTACLE_LEFT
+		if ((dir == NORTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2)) ||
+			(dir == SOUTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2 ))) {
+
+			rounding_type = ROUNDING_LEFT;
+		}
+#endif
+
+#if PP_ROUNDING_OBSTACLE_RIGHT
+		if ((dir == NORTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2)) ||
+			(dir == SOUTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2))) {
+
+			rounding_type = ROUNDING_RIGHT;
+		}
+#endif
+	} else {
+		printf("%s %d Robot don't need to go to new line.%d %d %d\n", __FUNCTION__, __LINE__, y_coordinate, SHRT_MAX, SHRT_MIN);
+		if (!(y_coordinate == SHRT_MAX || y_coordinate == SHRT_MIN)) {
+			y_coordinate = countToCell(Target_Point.Y);
+			if (y_coordinate != Map_GetYPos()) {
+
+#if PP_ROUNDING_OBSTACLE_LEFT
+				if ((dir == NORTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2)) || 
+					(dir == SOUTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2 ))) {
+
+					rounding_type = ROUNDING_LEFT;
+					Next_Point->Y = Target_Point.Y;
+				}
+#endif
+
+#if PP_ROUNDING_OBSTACLE_RIGHT
+				if ((dir == NORTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2)) ||
+					(dir == SOUTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2))) {
+
+					rounding_type = ROUNDING_RIGHT;
+					Next_Point->Y = Target_Point.Y;
+				}
+#endif
+
+			}
+		}
+	}
+	return rounding_type;
+}
+
 #endif
 
 void start_obstacle_detector(void)
@@ -1737,13 +1820,10 @@ uint8_t CM_Touring(void)
 	Point32_t	Next_Point, Target_Point;
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 
-#if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
-	uint16_t dir;
-#endif
-
 	int16_t	home_angle = robot::instance()->robot_get_home_angle();
 
 	MapTouringType	mt_state = MT_None;
+	RoundingType	rounding_type;
 
 	// Reset battery status
 	lowBattery = 0;
@@ -2084,6 +2164,7 @@ uint8_t CM_Touring(void)
 //					Set_Run_HS_Timer(1);
 					x_current = Map_GetXPos();
 					y_current = Map_GetYPos();
+					path_reset_path_points();
 					state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
 					ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 //					Set_Run_HS_Timer(0);
@@ -2124,205 +2205,37 @@ uint8_t CM_Touring(void)
 
 					ROS_DEBUG("Move to target-----------------------------");
 
+					rounding_type = ROUNDING_NONE;
+
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
-					ROS_INFO("Enter rounding detection.");
-					dir = CM_get_robot_direction();
-					if (should_follow_wall == 1) {
-						if (Get_Cliff_Trig()) {
-							printf("%s %d, cliff triggered.\n", __FUNCTION__, __LINE__);
-						} else if (Get_Bumper_Status()) {
-							printf("%s %d, bumper event.\n", __FUNCTION__, __LINE__);
-						} else if (Get_OBS_Status()) {
-							printf("%s %d, OBS detected.\n", __FUNCTION__, __LINE__);
-						} else if (Get_FrontOBS() > Get_FrontOBST_Value()) {
-							printf("%s %d, front OBS detected.\n", __FUNCTION__, __LINE__);
-						} else if (Get_Wall_ADC() > 170) {
-							printf("%s %d, wall sensor exceed 170.\n", __FUNCTION__, __LINE__);
-						}
-						/*                South (Xmin)
-						 *                     |
-						 *  West (Ymin)  --  robot  --   East (Ymax)
-						 *                     |
-						 *                North (Xmax)
-						**/
-						//if (abs(countToCell(Next_Point.Y)) != abs(Map_GetYPos())) {
-						if (countToCell(Next_Point.Y) != Map_GetYPos()) {
-							// Robot need to go to new line
-							ROS_INFO("Robot need to go to new line");
-							if (dir == NORTH) {
-								if (countToCell(Next_Point.Y) < Map_GetYPos()) {
-#if PP_ROUNDING_OBSTACLE_LEFT
-									if (countToCell(Next_Point.Y) == Map_GetYPos() - 1 || countToCell(Next_Point.Y) == Map_GetYPos() - 2) {
-										printf("%s %d: Rounding left.\n", __FUNCTION__, __LINE__);
-										rounding(ROUNDING_LEFT, Next_Point, Bumper_Status_For_Rounding);
-										// Clear the Bumper_Status_For_Rounding for next move
-										Bumper_Status_For_Rounding = 0;
-									} else {
-										printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-									}
-#else
-									printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+					rounding_type = CM_get_rounding_direction(&Next_Point, Target_Point);
 #endif
-								} else {
-#if PP_ROUNDING_OBSTACLE_RIGHT
-									if (countToCell(Next_Point.Y) == Map_GetYPos() + 1 || countToCell(Next_Point.Y) == Map_GetYPos() + 2) {
-										printf("%s %d: Rounding right.\n", __FUNCTION__, __LINE__);
-										rounding(ROUNDING_RIGHT, Next_Point, Bumper_Status_For_Rounding);
-										// Clear the Bumper_Status_For_Rounding for next move
-										Bumper_Status_For_Rounding = 0;
-									} else {
-										printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-									}
-#else
-									printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-#endif
-								}
-							} else if (dir == SOUTH) {
-								if (countToCell(Next_Point.Y) < Map_GetYPos()) {
-#if PP_ROUNDING_OBSTACLE_RIGHT
-									if (countToCell(Next_Point.Y) == Map_GetYPos() - 1 || countToCell(Next_Point.Y) == Map_GetYPos() - 2) {
-										printf("%s %d: Rounding right.\n", __FUNCTION__, __LINE__);
-										rounding(ROUNDING_RIGHT, Next_Point, Bumper_Status_For_Rounding);
-										// Clear the Bumper_Status_For_Rounding for next move
-										Bumper_Status_For_Rounding = 0;
-									} else {
-										printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-									}
-#else
-									printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-#endif
-								} else {
-#if PP_ROUNDING_OBSTACLE_LEFT
-									if (countToCell(Next_Point.Y) == Map_GetYPos() + 1 || countToCell(Next_Point.Y) == Map_GetYPos() + 2 ) {
-										printf("%s %d: Rounding left.\n", __FUNCTION__, __LINE__);
-										rounding(ROUNDING_LEFT, Next_Point, Bumper_Status_For_Rounding);
-										// Clear the Bumper_Status_For_Rounding for next move
-										Bumper_Status_For_Rounding = 0;
-									} else {
-										printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-									}
-#else
-									printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-#endif
-								}
-							} else {
-								printf("%s %d\n", __FUNCTION__, __LINE__);
+
+					if (rounding_type != ROUNDING_NONE) {
+						printf("%s %d: Rounding %s.\n", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
+						rounding(rounding_type, Next_Point, Bumper_Status_For_Rounding);
+					} else {
+
+#ifdef PP_CURVE_MOVE
+
+						if (path_get_path_points_count() >= 3) {
+							mt_state = CurveMove_MoveToPoint();
+							if (mt_state == MT_CurveMove) {
 								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 							}
 						} else {
-							printf("%s %d Robot don't need to go to new line.%d %d %d\n", __FUNCTION__, __LINE__, countToCell(Next_Point.X), SHRT_MAX, SHRT_MIN);
-							//mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-							//if (path_targets_get_last(&tmpPnt.X, &tmpPnt.Y) == 1 && !(countToCell(Next_Point.X) == SHRT_MAX || countToCell(Next_Point.X) == SHRT_MIN)) {
-							if (!(countToCell(Next_Point.X) == SHRT_MAX || countToCell(Next_Point.X) == SHRT_MIN)) {
-								//if (abs(tmpPnt.Y) != abs(Map_GetYPos())) {
-								if (countToCell(Target_Point.Y) != Map_GetYPos()) {
-									if (dir == NORTH) {
-										//if (tmpPnt.Y < Map_GetYPos()) {
-										if (countToCell(Target_Point.Y) < Map_GetYPos()) {
-#if PP_ROUNDING_OBSTACLE_LEFT
-											//if (tmpPnt.Y == Map_GetYPos() - 1 || tmpPnt.Y == Map_GetYPos() - 2) {
-											if (countToCell(Target_Point.Y) == Map_GetYPos() - 1 || countToCell(Target_Point.Y) == Map_GetYPos() - 2) {
-												printf("%s %d: Rounding left.\n", __FUNCTION__, __LINE__);
-												//Next_Point.Y = cellToCount(tmpPnt.Y);
-												Next_Point.Y = Target_Point.Y;
-												rounding(ROUNDING_LEFT, Next_Point, Bumper_Status_For_Rounding);
-												// Clear the Bumper_Status_For_Rounding for next move
-												Bumper_Status_For_Rounding = 0;
-											} else {
-												printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-											}
-#else
-											printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-#endif
-										} else {
-#if PP_ROUNDING_OBSTACLE_RIGHT
-											//if (tmpPnt.Y == Map_GetYPos() + 1 || tmpPnt.Y == Map_GetYPos() + 2) {
-											if (countToCell(Target_Point.Y) == Map_GetYPos() + 1 || countToCell(Target_Point.Y) == Map_GetYPos() + 2) {
-												printf("%s %d: Rounding right.\n", __FUNCTION__, __LINE__);
-												//Next_Point.Y = cellToCount(tmpPnt.Y);
-												Next_Point.Y = Target_Point.Y;
-												rounding(ROUNDING_RIGHT, Next_Point, Bumper_Status_For_Rounding);
-												// Clear the Bumper_Status_For_Rounding for next move
-												Bumper_Status_For_Rounding = 0;
-											} else {
-												printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-											}
-#else
-											printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-#endif
-										}
-									} else if (dir == SOUTH) {
-										//if (tmpPnt.Y < Map_GetYPos()) {
-										if (countToCell(Target_Point.Y) < Map_GetYPos()) {
-#if PP_ROUNDING_OBSTACLE_RIGHT
-											//if (tmpPnt.Y == Map_GetYPos() - 1 || tmpPnt.Y == Map_GetYPos() - 2) {
-											if (countToCell(Target_Point.Y) == Map_GetYPos() - 1 || countToCell(Target_Point.Y) == Map_GetYPos() - 2) {
-												printf("%s %d: Rounding right\n", __FUNCTION__, __LINE__);
-												//Next_Point.Y = cellToCount(tmpPnt.Y);
-												Next_Point.Y = Target_Point.Y;
-												rounding(ROUNDING_RIGHT, Next_Point, Bumper_Status_For_Rounding);
-												// Clear the Bumper_Status_For_Rounding for next move
-												Bumper_Status_For_Rounding = 0;
-											} else {
-												printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-											}
-#else
-											printf("%s %d: Normal move to next point at west.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-#endif
-										} else {
-#if PP_ROUNDING_OBSTACLE_LEFT
-											//if (tmpPnt.Y == Map_GetYPos() + 1 || tmpPnt.Y == Map_GetYPos() + 2 ) {
-											if (countToCell(Target_Point.Y) == Map_GetYPos() + 1 || countToCell(Target_Point.Y) == Map_GetYPos() + 2 ) {
-												printf("%s %d: Rounding left\n", __FUNCTION__, __LINE__);
-												//Next_Point.Y = cellToCount(tmpPnt.Y);
-												Next_Point.Y = Target_Point.Y;
-												rounding(ROUNDING_LEFT, Next_Point, Bumper_Status_For_Rounding);
-												// Clear the Bumper_Status_For_Rounding for next move
-												Bumper_Status_For_Rounding = 0;
-											} else {
-												printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-												mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-											}
-#else
-											printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-											mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-#endif
-										}
-									} else {
-										printf("%s %d\n", __FUNCTION__, __LINE__);
-										mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-									}
-								} else {
-									printf("%s %d\n", __FUNCTION__, __LINE__);
-									mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-								}
-							} else {
-								printf("%s %d\n", __FUNCTION__, __LINE__);
-								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-							}
+							printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+							mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 						}
-					} else {
-						printf("%s %d\n", __FUNCTION__, __LINE__);
-						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-					}
 
 #else
-					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+
+						printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+
 #endif
+
+					}
 
 					if (y_current == countToCell(Next_Point.Y)) {
 						x = Map_GetXPos();
@@ -2528,6 +2441,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
+
+		path_reset_path_points();
+
 		pos.X = x + relativePos[0].X;
 		pos.Y = y + relativePos[0].Y;
 //		Set_Run_HS_Timer(1);
@@ -2568,8 +2484,23 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				debug_map(MAP, tmp.X, tmp.Y);
 #endif
 
+#ifdef PP_CURVE_MOVE
+
+				if (path_get_path_points_count() >= 3) {
+					mt_state = CurveMove_MoveToPoint();
+					if (mt_state == MT_CurveMove) {
+						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+					}
+				} else {
+					printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+				}
+
+#else
+
 				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 
+#endif
 				printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 				if (mt_state == MT_Battery) {
@@ -2605,6 +2536,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
+
+				path_reset_path_points();
+
 				pos.X = x + relativePos[offsetIdx].X;
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
@@ -2635,6 +2569,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
+
+				path_reset_path_points();
+
 				pos.X = x + relativePos[offsetIdx].X;
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
@@ -2669,6 +2606,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		printf("%s %d Path Find: Normal Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
 		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
+
+		path_reset_path_points();
+
 		pos.X = x;
 		pos.Y = y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
@@ -2688,7 +2628,24 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 #if ENABLE_DEBUG
 			debug_map(MAP, tmp.X, tmp.Y);
 #endif
+
+#ifdef PP_CURVE_MOVE
+
+			if (path_get_path_points_count() >= 3) {
+				mt_state = CurveMove_MoveToPoint();
+				if (mt_state == MT_CurveMove) {
+					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+				}
+			} else {
+				printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+			}
+
+#else
+
 			mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+
+#endif
 
 			printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
@@ -2724,6 +2681,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 			LED_Blink = (remote_go_home != 1 ? 1 : 2);
 			last_dir = path_get_robot_direction();
+
+			path_reset_path_points();
+
 			pos.X = x;
 			pos.Y = y;
 			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, last_dir );
