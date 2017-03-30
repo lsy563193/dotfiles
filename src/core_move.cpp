@@ -1008,11 +1008,13 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 		printf("leave CM_HeadToCourse\n");
 	}
 
+	ROS_DEBUG("%s %d: original target (%d, %d)\n", __FUNCTION__, __LINE__, Target.X, Target.Y);
 	if (position.X != Map_GetXCount() && position.X == Target.X) {
 		Target.X = Map_GetXCount();
 	} else if (position.Y != Map_GetYCount() && position.Y == Target.Y) {
 		Target.Y = Map_GetYCount();
 	}
+	ROS_DEBUG("%s %d: new target (%d, %d)\n", __FUNCTION__, __LINE__, Target.X, Target.Y);
 
 	if (Touch_Detect()) {
 		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
@@ -1062,7 +1064,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				Stop_Brifly();
 				CM_TouringCancel();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				//printf("%s %d: Check: Clean Mode! break\n", __FUNCTION__, __LINE__);
+				ROS_DEBUG("%s %d: Check: Clean Mode! break\n", __FUNCTION__, __LINE__);
 				retval = MT_Key_Clean;
 				break;
 			}
@@ -1100,6 +1102,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 		}
 
 		if ((retval = CM_handleExtEvent()) != MT_None) {
+			ROS_DEBUG("%s %d: Check: Clean Mode! break\n", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -1120,6 +1123,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				if (Get_Cliff_Trig()) {
 					ROS_INFO("Cliff back 2nd time.");
 					if (Get_Cliff_Trig() == Status_Cliff_All) {
+						ROS_DEBUG("%s %d: all cliffs are triggered\n", __FUNCTION__, __LINE__);
 						Stop_Brifly();
 						retval = MT_Key_Clean;
 						break;
@@ -1129,6 +1133,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 					if (Get_Cliff_Trig()) {
 						ROS_INFO("Cliff back 3rd time.");
 						if (Get_Cliff_Trig() == Status_Cliff_All) {
+							ROS_DEBUG("%s %d: all cliffs are triggered\n", __FUNCTION__, __LINE__);
 							Stop_Brifly();
 							retval = MT_Key_Clean;
 							break;
@@ -1199,6 +1204,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 
 #endif
 						} else {
+							ROS_DEBUG("%s %d: robot is not tiled anymore\n", __FUNCTION__, __LINE__);
 							break;
 						}
 						i++;
@@ -1265,6 +1271,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				// Update the location of charger stub
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
 
+				ROS_DEBUG("%s %d: all charge signal is detected\n", __FUNCTION__, __LINE__);
 				break;
 			} else if (HomeT == 0 && (HomeR > 2 || HomeL > 2)) {
 				Stop_Brifly();
@@ -1290,6 +1297,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				retval = MT_None;
 				// Update the location of charger stub
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
+
+				ROS_DEBUG("%s %d: left/right charger signal detected\n", __FUNCTION__, __LINE__);
 				break;
 			} else if (HomeR == 0 && HomeL == 0 && HomeT > 3) {
 				Stop_Brifly();
@@ -1309,6 +1318,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				retval = MT_None;
 				// Update the location of charger stub
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
+
+				ROS_DEBUG("%s %d: top charger signal is detected\n", __FUNCTION__, __LINE__);
 				break;
 			}
 		}
