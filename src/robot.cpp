@@ -7,19 +7,20 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 #include <movement.h>
+#include <Angles.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
-#include "Angles.h"
+#include "figures/segment.h"
 
 #include "std_srvs/Empty.h"
-
+using namespace obstacle_detector;
 extern bool is_line_angle_offset;
 extern bool enable_slam_offset;
 static	robot *robot_obj = NULL;
 //typedef double Angle;
 pp::x900sensor   sensor;
-Angles<std::pair<int16_t,double>> angles;
+Segment_set segmentss;
 
 time_t	start_time;
 
@@ -344,18 +345,8 @@ std::vector<int8_t> *robot::robot_get_map_data()
 	return this->ptr;
 }
 
-double distance(double x1, double y1, double x2, double y2)
-{
-	double d = x2 - x1;
-	double e = y2 - y1;
-	d *= d;
-	e *= e;
-	return sqrt(d + e);
-}
-
 void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
 {
-	double detalx = 0, detaly = 0;
 	if (laser::instance()->is_ready() == false || is_sensor_ready == false)
 		return;
 
@@ -364,45 +355,27 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
 		if (msg->segments.size() != 0)
 		{
 //			ROS_INFO("size = %d", msg->segments.size());
-			for (auto &s : msg->segments)
+			for (auto s : msg->segments)
 			{
-				auto dist = distance(s.first_point.x, s.first_point.y, s.last_point.x, s.last_point.y);
+				Point first(s.first_point.x, s.first_point.y);
+				Point last(s.last_point.x, s.last_point.y);
+				Segment seg(first, last);
+//				std::cout << "seg: " << seg << std::endl;
+
+				auto dist = seg.length();
+
+//				if (dist < 1)
+//					ROS_INFO("dist = %f", dist);
+//				else
+//					ROS_INFO("dist = %f >1", dist);
 
 				if (dist < 1)
-					ROS_INFO("dist = %f", dist);
-				else
-					ROS_INFO("dist = %f >1", dist);
+					continue;
 
-				if (dist < 1)
-					break;
-
-				detalx = s.last_point.x - s.first_point.x;
-				detaly = s.last_point.y - s.first_point.y;
-
-				double yaw = arctan(detaly, detalx);
-
-				int16_t line_angle = ((int16_t) (yaw * 1800 / M_PI) % 3600);
-				if (line_angle > 900)
-				{
-					line_angle -= 1800;
-				} else if (line_angle < -900)
-				{
-					line_angle += 1800;
-				}
-				auto pair = std::make_pair(line_angle, dist);
-				angles.classify(pair);
-//			  angles.longest();
+				segmentss.classify(seg);
 			}
-			ROS_INFO("+++++++++++++++++++++++++++++");
-//    case rotating:
-//      if (Turn_no_while(Turn_Speed / 5, line_angle) == true) {
-
-//	      is_line_angle_offset = true;
-//	      line_align_ = finish;
-//      }
-//      break;
 		}
-
+//		ROS_INFO("+++++++++++++++++++++++++++++");
 	}
 	/*else {//(is_obstacles_ready == true)
 		static int count = 0;
@@ -428,6 +401,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
 		}
 	}*/
 }
+
 float robot::robot_get_angle() {
   return this->angle;
 }
@@ -866,37 +840,39 @@ void robot::align(void)
 
 	line_align_ = detecting;
 	is_odom_ready = false;
+	segmentss.clear();
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 	auto count_n_10ms = 500;
-	while (line_align_ == detecting && --count_n_10ms>0){
-		if(count_n_10ms%100 == 0)
-			ROS_WARN("detecting time remain %d s\n", count_n_10ms/100);
+	while (line_align_ == detecting && --count_n_10ms > 0)
+	{
+		if (count_n_10ms % 100 == 0)
+			ROS_WARN("detecting time remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
 
-	line_angle = angles.max_distant_angle();
+	auto seg = segmentss.min_distant_segment();
+	line_angle = static_cast<int16_t>((seg.last_point - seg.first_point).angleDeg() * 10);
+	auto angle = static_cast<int16_t>(std::abs(line_angle));
+	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
 
-		ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
-		auto angle = static_cast<int16_t>(abs(line_angle));
-
-		if (line_angle > 0)
-		{
-			ROS_INFO("Turn_Left %d", angle);
-			Turn_Left(3, angle);
-		} else if (line_angle < 0)
-		{
-			ROS_INFO("Turn_Right %d", angle);
-			Turn_Right(3, angle);
-		}
-		line_align_ = finish;
+	if (line_angle > 0)
+	{
+		ROS_INFO("Turn_Left %d", angle);
+		Turn_Left(3, angle);
+	} else if (line_angle < 0)
+	{
+		ROS_INFO("Turn_Right %d", angle);
+		Turn_Right(3, angle);
+	}
+	line_align_ = finish;
 //	ros::WallDuration(100).sleep();
 	auto count = 2;
-	while(count-- != 0 ){
-		std::cout << robot::angle <<std::endl;
+	while (count-- != 0)
+	{
+		std::cout << robot::angle << std::endl;
 		sleep(1);
 	}
 	is_line_angle_offset = true;
-
 }
 
 void robot::align_exit(void){ is_align_active_ =  true;

@@ -7,111 +7,114 @@
 
 #include <vector>
 #include <iostream>
-template <class T>
-class Angles
+#include <figures/segment.h>
+using namespace obstacle_detector;
+
+class Segment_set
 {
 public:
-  void classify(T t);
-  int16_t max_distant_angle();
+  void classify(Segment& t);
+  Segment min_distant_segment();
   void clear();
-//  T longest();
 private:
-  std::vector<std::vector<T>> angles_set;
-  int16_t average(std::vector<T> L,bool n);
-//  T average(std::vector<T> L);
+  std::vector<std::vector<Segment>> segmentss;
 };
 
-template <class T>
-int16_t Angles<T>::average(std::vector<T> L,bool n)
+Point average(std::vector<Point> P)
 {
-  int16_t sum{};
+  Point sum(0, 0);
 
-  for(auto l:L){
-    if(n == false)
-      sum += l.first;
-    else{
-      sum += l.second;
-    }
+  for(Point& p : P){
+    sum += p;
   }
 
-  int16_t avr = sum / (int16_t)L.size();
+  Point avr = sum / (int16_t)P.size();
 
   return avr;
 }
-
-template <class T>
-void Angles<T>::classify(T pair)
+std::vector<Point> get_first(const std::vector<Segment> &segments)
 {
-  angles_set.clear();
-  auto pair_iter = angles_set.begin();
+  std::vector<Point> v_first;
 
-  for (pair_iter; pair_iter != angles_set.end(); ++pair_iter)
+  auto segment_it = segments.begin();
+  for (; segment_it != segments.end(); ++segment_it)
+    v_first.push_back((*segment_it).first_point);
+
+  return v_first;
+}
+
+std::vector<Point> get_last(const std::vector<Segment> &segments)
+{
+  std::vector<Point> v_last;
+
+  auto segment_it = segments.begin();
+  for (; segment_it != segments.end(); ++segment_it)
+    v_last.push_back((*segment_it).last_point);
+
+  return v_last;
+}
+
+void Segment_set::classify(Segment& seg)
+{
+  auto segments_it = segmentss.begin();
+
+  for (segments_it; segments_it != segmentss.end(); ++segments_it)
   {
-    std::vector<T> v(*pair_iter);
-    if (::abs(pair.first - average(v,false)) < 50)
+    std::vector<Point> v_first, v_last;
+    std::vector<Segment> segments(*segments_it);
+
+    v_first = get_first(segments);
+    v_last = get_last(segments);
+
+    if ( (seg.first_point - average(v_first)).length() < 0.2 &&
+         (seg.last_point - average(v_last)).length() < 0.2 )
     {
-      (*pair_iter).push_back(pair);
+      (*segments_it).push_back(seg);
       break;
     }
   }
-  if (pair_iter == angles_set.end())
+  if (segments_it == segmentss.end())
   {
-    std::vector<T> pairs;
-    pairs.push_back(pair);
-    angles_set.push_back(pairs);
+    std::vector<Segment> segs;
+    segs.push_back(seg);
+    segmentss.push_back(segs);
   }
 }
 
-template <class T>
-int16_t Angles<T>::max_distant_angle()
+Segment Segment_set::min_distant_segment()
 {
-  int16_t max_angle{}; double max_dist{};
-  auto best_val = std::make_pair(max_angle,max_dist);
-  std::cout << "-----Angles display------" << std::endl;
-  for (auto angles:angles_set)
+  std::cout << "-----Segment_set display------" << std::endl;
+  auto min_dist = std::numeric_limits<double>::max();
+  auto index = 0;
+  auto it = 0;
+
+  for (auto& segments : segmentss)
   {
+    if(segments.size()<5)
+      continue;
     std::cout << "--------------------" << std::endl;
+    std::cout << "segments: " <<std::endl;
+    for (auto& segment : segments)
+      std::cout << segment << std::endl;
 
-    double sum{},dist;
-    int16_t angle{};
-    for (auto angle:angles)
-    {
-      std::cout << "angle = " << angle.first << std::endl;
-      std::cout << "dist = " << angle.second << std::endl;
+    auto seg_arv = Segment( average(get_first(segments)),average(get_last(segments)) );
+    std::cout << "seg_arv: " << seg_arv << std::endl;
+    double dist = seg_arv.distanceTo(Point(0,0));
+    std::cout << "average dist:"<< dist << std::endl;
+    if(dist < min_dist){
+      min_dist = dist;
+      std::cout << "min_dist:"<< min_dist << std::endl;
+      index = it;
     }
-    angle = average(angles,false);
-    for(auto angle_:angles){
-      sum += angle_.second;
-    }
-    dist = sum/angles.size();
-    //----------------------------
-    if(dist > best_val.second){
-      best_val.first = angle;
-      best_val.second = dist;
-    }
-    std::cout << "angle average:" << angle << std::endl;
-    std::cout << "dist average:" << dist << std::endl;
-    std::cout << "max_angle average:" << best_val.first << std::endl;
-    std::cout << "max_distant average:" << best_val.second << std::endl;
-    std::cout << "$$$$$$$$$$$$$$$$$$$$$" << std::endl;
-    return best_val.first;
+    it++;
   }
-  return 0;
+
+  return Segment( average(get_first(segmentss[index])),average(get_last(segmentss[index])) );
 }
 
-template <class T>
-void Angles<T>::clear()
+void Segment_set::clear()
 {
-  angles_set.clear();
+  segmentss.clear();
 }
 
-//template <class T>
-//T Angles<T>:: longest()
-//{
-//  for(auto angle:angles_set){
-//    if(angle.size()>3){
-//      if(angle.)
-//    }
-//  }
-//}
 #endif //PP_ANGLES_H

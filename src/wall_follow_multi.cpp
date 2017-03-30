@@ -701,7 +701,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
                 /*------------------------------------------------------Check Battery-----------------------*/
                 if (Check_Bat_SetMotors(135000, 80000, 100000)) {       //Low Battery Event
 			if(Is_MoveWithRemote()){
-				Display_Battery_Status(Display_Low);//max_distant_angle low
+				Display_Battery_Status(Display_Low);//min_distant_segment low
 				usleep(30000);
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				break;

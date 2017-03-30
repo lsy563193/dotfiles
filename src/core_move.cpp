@@ -1839,7 +1839,7 @@ public:
 		if (robot::instance()->align_active() == true)
 		{
 			robot::instance()->align();
-//			std::async(std::launch::async, stop_obstacle_detector);
+			std::async(std::launch::async, stop_obstacle_detector);
 		}
 
 		std::async(std::launch::async, start_slam);
@@ -1983,7 +1983,6 @@ uint8_t CM_Touring(void)
 
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
-	while (1);
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false||--count_n_10ms == 0){
 		  usleep(10000);
