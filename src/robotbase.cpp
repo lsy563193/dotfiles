@@ -13,30 +13,34 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
-#include <robot.hpp>
 
 #include "movement.h"
 #include "crc8.h"
 #include "serial.h"
 #include "robotbase.h"
 #include "config.h"
+#include "robot.hpp"
 
 #define ROBOTBASE "robotbase"
-
-#if ROBOT_X400
+#define _H_LEN 2
+#if __ROBOT_X400
 uint8_t receiStream[50]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
-#elif ROBOT_X600
-uint8_t receiStream[60]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+uint8_t sendStream[19]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
+
+#elif __ROBOT_X900
+uint8_t receiStream[55]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
+										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+										0x00,0x00,0x00,0xcc,0x33};
+uint8_t sendStream[20]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
 #endif
 
-uint8_t sendStream[19]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
+
 
 #define  _RATE 50 
 
@@ -46,9 +50,10 @@ bool send_stream_thread = false;
 pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
 pthread_t sendPortThread_id;
-pthread_mutex_t send_lock;
-//pp::x900sensor	sensor;
-extern pp::x900sensor	sensor;
+pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
+
+pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
 //When you restart gmapping, gyro may be have a angle offset, compensate it
@@ -108,9 +113,6 @@ int robotbase_init(void)
 		return -1;
 	}
 	is_robotbase_init = true;
-	int mutex_ret = pthread_mutex_init(&send_lock,NULL);
-	if(mutex_ret <0)
-		ROS_INFO("mutex lock crate fail\n");
 	return 0;
 }
 
@@ -124,7 +126,7 @@ void robotbase_deinit(void)
 	uint8_t buf[2];
 
 	if (is_robotbase_init) {
-		printf("[robotbase]deinit...\n");
+		ROS_INFO("[robotbase]deinit...\n");
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		printf("\tshutdown robotbase power \n");
@@ -139,10 +141,13 @@ void robotbase_deinit(void)
 		send_stream_thread = false;
 		usleep(40000);
 		serial_close();
-		printf("[robotbase.cpp] Stop ok\n");
-		int mutex_ret = pthread_mutex_destroy(&send_lock);
+		ROS_INFO("[robotbase] Stop ok\n");
+		int mutex_ret = pthread_mutex_destroy(&recev_lock);
 		if(mutex_ret<0)
-			printf("[robotbase] mutex destroy fail\n");
+			ROS_WARN_NAMED(ROBOTBASE,"pthread mutex destroy fail\n");
+		int cond_ret = pthread_cond_destroy(&recev_cond);
+		if(cond_ret<0)
+			ROS_WARN_NAMED(ROBOTBASE,"pthread cond destroy fail\n");
 	}
 }
 
@@ -155,19 +160,23 @@ void *serial_receive_routine(void *)
 	uint8_t	h1 = 0xaa, h2 = 0x55, header[2], t1 = 0xcc, t2 = 0x33;
 	uint8_t tmpSet[RECEI_LEN], receiData[RECEI_LEN];
 
-	wh_len = RECEI_LEN - 2;
-	wht_len = wh_len - 2;
-	whtc_len = wht_len - 1;
+	wh_len = RECEI_LEN - 2; //length without header bytes
+	wht_len = wh_len - 2; //length without header and tail bytes
+	whtc_len = wht_len - 1; //lenght without header and tail and crc bytes
 
 	while (ros::ok() && (!robotbase_thread_stop)) {
-		ret = serial_read(2, header);
-		if (ret == 0)
+		ret = serial_read(_H_LEN, header);
+		if (ret != _H_LEN ){
+			ROS_WARN("serial read length %d bytes, whitch requst %d ",ret,_H_LEN);
 			continue;
-
+		}
 		if (header[0] == h1 && header[1] == h2) {
 			ret = serial_read(wh_len, receiData);
+			if(ret != wh_len){
+				ROS_WARN("serial read length %d bytes,whitch requst %d bytes",ret,wh_len);
+				continue;
+			}
 			r_crc = receiData[whtc_len];
-
 			tmpSet[0] = h1;
 			tmpSet[1] = h2;
 			for (i = 0; i < whtc_len; i++){
@@ -180,11 +189,12 @@ void *serial_receive_routine(void *)
 					for (j = 0; j < wht_len; j++) {
 						receiStream[j + 2] = receiData[j];
 					}
-//				} else {
-//					ROS_INFO(" tail incorret");
+					if(pthread_cond_signal(&recev_cond)<0)ROS_WARN(" in serial read, pthread signal fail !");//if receive data corret than send signal 	
+				} else {
+					ROS_WARN(" in serial read ,data tail error\n");
 				}
-//			} else {
-//				ROS_INFO("crc incorret");
+			} else {
+				ROS_WARN( " in serial read ,data crc error\n");
 			}
 		}
 	}
@@ -229,18 +239,19 @@ void *robotbase_routine(void*)
 	last_time  = cur_time;
 
 	while (ros::ok() && !robotbase_thread_stop) {
-		r.sleep();
-		// Spin once to get the updated slam_angle_offset
-		ros::spinOnce();
+		
+		if(pthread_mutex_lock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive lock fail");
+		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_WARN("robotbase pthread receive cond wait fail");	
+		//ros::spinOnce();
 
 		lw_speed = (receiStream[2] << 8) | receiStream[3];
 		rw_speed = (receiStream[4] << 8) | receiStream[5];
 		sensor.lw_vel = (lw_speed > 0x7fff) ? -((float)(lw_speed - 0x8000) / 1000.0) : (float)(lw_speed) / 1000.0;
 		sensor.rw_vel = (rw_speed > 0x7fff) ? -((float)(rw_speed - 0x8000) / 1000.0) : (float)(rw_speed) / 1000.0;
-
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
 
+		/*---------------angle offset process ---------------*/
 		if(is_line_angle_offset == true){
 			if(line_angle_offset == std::numeric_limits<float>::max())
 				line_angle_offset = sensor.angle;
@@ -275,35 +286,47 @@ void *robotbase_routine(void*)
 			previous_angle = std::numeric_limits<float>::max();
 			slam_angle_offset=0;
 		}
-		robot::instance()->set_angle(sensor.angle);
-//		ROS_WARN("angle(%d),\n",angle);
-//		ROS_INFO("previous_angle(%f),\n",previous_angle);
-//		ROS_WARN("line_angle_offset(%f)\n",line_angle_offset);
-//		ROS_INFO("sensor.angle(%f),\n", sensor.angle);
+		/*-----------------angle offset end-----------------------------*/
+		
+		robot::instance()->set_angle(sensor.angle); //
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
-
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
 		sensor.rw_crt = (((receiStream[12] << 8) | receiStream[13]) & 0x7fff) * 1.622;
-
 		sensor.left_wall = ((receiStream[14] << 8)| receiStream[15]);
-		#if ROBOT_X600
-		sensor.obs0 = ((receiStream[16]<<8) | receiStream[17]);
-		sensor.obs1 = ((receiStream[18] << 8) | receiStream[19]);
-		sensor.obs2 = ((receiStream[20] << 8) | receiStream[21]);
-		#elif ROBOT_X400
 		sensor.l_obs = ((receiStream[16] << 8) | receiStream[17]);
 		sensor.f_obs = ((receiStream[18] << 8) | receiStream[19]);
 		sensor.r_obs = ((receiStream[20] << 8) | receiStream[21]);
-		#endif
-		sensor.lbumper = (receiStream[22] & 0xf0) ? true : false;
-		sensor.rbumper = (receiStream[22] & 0x0f) ? true : false;
-
+#if __ROBOT_X900
+		sensor.right_wall = ((receiStream[22]<<8)|receiStream[23]);		
+		sensor.lbumper = (receiStream[24] & 0xf0) ? true : false;
+		sensor.rbumper = (receiStream[24] & 0x0f) ? true : false;
+		sensor.ir_ctrl = receiStream[25];
+		sensor.c_stub = (receiStream[26] << 24 ) | (receiStream[27] << 16) | (receiStream[28] << 8) | receiStream[29];
+		sensor.visual_wall = (receiStream[30] << 8)| receiStream[31];
+		sensor.key = receiStream[32];
+		sensor.c_s = receiStream[33];
+		sensor.w_tank = (receiStream[34]>0)?true:false;
+		sensor.batv = (receiStream[35]);
+		sensor.lcliff = ((receiStream[36] << 8) | receiStream[37]);
+		sensor.fcliff = ((receiStream[38] << 8) | receiStream[39]);
+		sensor.rcliff = ((receiStream[40] << 8) | receiStream[41]);
+		sensor.lbrush_oc = (receiStream[42] & 0x08) ? true : false;		// left brush over current
+		sensor.mbrush_oc = (receiStream[42] & 0x04) ? true : false;		// main brush over current
+		sensor.rbrush_oc = (receiStream[42] & 0x02) ? true : false;		// right brush over current
+		sensor.vcum_oc = (receiStream[42] & 0x01) ? true : false;		// vaccum over current
+		sensor.gyro_dymc = receiStream[43];
+		sensor.omni_wheel = (receiStream[44]<<8)|receiStream[45];
+		sensor.x_acc = ((receiStream[46]<<8)|receiStream[47])/258.0f; //in mG
+		sensor.y_acc = ((receiStream[48]<<8)|receiStream[49])/258.0f; //in mG
+		sensor.z_acc = ((receiStream[50]<<8)|receiStream[51])/258.0f; //in mG
+#elif __ROBOT_X400
+		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
+		sensor.rbumper = (receiStream[22] & 0x0f)?true:false;
 		sensor.ir_ctrl = receiStream[23];
 		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
 		sensor.key = receiStream[27];
 		sensor.c_s = receiStream[28];
-//		ROS_INFO("charge status: %x.", sensor.c_s);
 		sensor.w_tank = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
 
@@ -317,44 +340,18 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc = receiStream[38];
 		sensor.right_wall = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc = ((receiStream[41]<<8)|receiStream[42])/66564.0f; //in G
-		sensor.y_acc = ((receiStream[43]<<8)|receiStream[44])/66564.0f; //in G
-		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/66564.0f; //in G
-
-		#if ROBOT_X600
-		sensor.obs3 = ((receiStream[47]<<8)|receiStream[48]);
-		sensor.obs4 = ((receiStream[49]<<8)|receiStream[50]);
-		sensor.obs5 = ((receiStream[51]<<8)|receiStream[52]);
-		sensor.obs6 = ((receiStream[53]<<8)|receiStream[54]);
-		sensor.obs7 = ((receiStream[55]<<8)|receiStream[56]);
-		#endif
-	
+		sensor.x_acc = ((receiStream[41]<<8)|receiStream[42])/258.0f; //in mG
+		sensor.y_acc = ((receiStream[43]<<8)|receiStream[44])/258.0f; //in mG
+		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/258.0f; //in mG
+#endif	
+		/*------------publish odom and robot_sensor topic -----------------------*/
 		cur_time = ros::Time::now();
-
-		if(sensor.right_wall>0)
-		{
-			ROS_DEBUG_NAMED(ROBOTBASE,"on stm32 crc calculate bad time %d ",sensor.right_wall);
-			error_count++;
-			ROS_WARN("[robotbase.cpp] sensor.right_wall value: %d, error count: %d.", sensor.right_wall, error_count);
-		}
-		else{
-			error_count = 0;
-		}
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
 		float th = sensor.angle * 0.01745;					//turn degrees into radians
 		float dt = (cur_time - last_time).toSec();
-
 		last_time = cur_time;
-		//vth = (th - th_last) / dt;
-		//sensor.angle_v = vth * 57.3;
-		//sensor.angle = th;
-		//sensor.angle_v = vth;
-		//th_last = th;
-
-
 		pose_x += (vx * cos(th) - 0 * sin(th)) * dt;
 		pose_y += (vx * sin(th) + 0 * cos(th)) * dt;
-
 		odom_quat = tf::createQuaternionMsgFromYaw(th);
 		odom.header.stamp = cur_time;
 		odom.header.frame_id = "odom";
@@ -374,9 +371,11 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-		//if(enable_slam_offset)
 		odom_pub.publish(odom);
 		sensor_pub.publish(sensor);
+		/*---------------publish end --------------------------*/
+
+		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 	}
 	//pthread_exit(NULL);
 }
@@ -391,6 +390,8 @@ void *serial_send_routine(void*){
 	while(send_stream_thread){
 		start_t =  ros::Time::now();
 		r.sleep();
+
+		/*-------------------speaker variable counter -----------------------*/
 		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
 		if (robotbase_beep_update_flag){
 			temp_speaker_sound_time_count = -1;
@@ -408,18 +409,12 @@ void *serial_send_routine(void*){
 				Beep(3, 25, 25, -1);
 			}
 		}
+		/*-------------------counter end-------------------------------------*/
 
 		SetSendFlag();
-		//pthread_mutex_lock(&send_lock);
 		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
-		//pthread_mutex_unlock(&send_lock);
 		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
-		if(buf[CTL_CRC] != calcBufCrc8((char*)sendStream,sl))
-			ROS_DEBUG_NAMED(ROBOTBASE,"on send process crc incorret!!");
 		serial_write(SEND_LEN, buf);
-		proc_t = (ros::Time::now()-start_t).toSec();
-		if(proc_t>0.025)
-			ROS_DEBUG_NAMED(ROBOTBASE,"process time %f",proc_t);
 		ResetSendFlag();
 	}
 	//pthread_exit(NULL);
@@ -433,6 +428,9 @@ void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
 	}
 	ROS_INFO("[robotbase] Get slam_angle_offset as: %f.\n", slam_angle_offset);
 }
+
+/*---------process_beep()---------------*/
+/*--------author: austin---------------*/
 
 void process_beep(){
 	// This routine handles the speaker sounding logic

@@ -225,7 +225,6 @@ private:
 
 	/* 1 byte */
 	bool bumper_left;
-	#if ROBOT_X400
 	/* 1 byte */
 	int16_t obs_left;
 
@@ -235,17 +234,12 @@ private:
 	/* 1 byte */
 	int16_t obs_front;
 
-	#elif ROBOT_X600
-	int16_t obs0;
-	int16_t obs1;
-	int16_t obs2;
-	int16_t obs3;
-	int16_t obs4;
-	int16_t obs5;
-	int16_t obs6;
-	int16_t obs7;
+	#if __ROBOT_X900
+	//new variable visual wall
+	int16_t visual_wall;
+	//new variable in x900 robot
+	int16_t omni_wheel;
 	#endif
-
 	bool	is_moving;
 
 	float	linear_x;
