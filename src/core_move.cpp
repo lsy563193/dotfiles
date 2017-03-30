@@ -90,9 +90,6 @@ uint8_t	should_follow_wall = 0;
 
 Point16_t relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
-//FIXME
-//extern volatile int16_t Temp_Right_Wheel_PWM, Temp_Left_Wheel_PWM;
-
 extern PositionType positions[];
 
 extern int16_t xMin, xMax, yMin, yMax;
@@ -951,7 +948,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
 {
 	int32_t Target_Course, Rotate_Angle, Integrated, Left_Speed, Right_Speed, Base_Speed, distance, Dis_From_Init;
-	uint8_t Adjust_Left, Adjust_Right, Integration_Cycle, boundary_reach;
+	uint8_t Integration_Cycle, boundary_reach;
 	uint32_t Tick = 0;
 	ActionType action = ACTION_NONE;
 
@@ -984,10 +981,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	Bumper_Status_For_Rounding = 0;
 
 	should_follow_wall = 0;
-	//int32_t	x_tmp, y_tmp;
 
-	//uint32_t Temp_Mobility_Distance = Get_Move_Distance();
-	//uint8_t Mobility_Temp_Error = 0;
 	set_gyro(1, 0);
 	usleep(10000);
 	Set_IMU_Status();
@@ -995,7 +989,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 
 	Reset_Rcon_Status();
 	HomeT = HomeL = HomeR = home_hit = slow_down = 0;
-	Adjust_Left = Adjust_Right = Integration_Cycle = 0;
+	Integration_Cycle = 0;
 	Target_Course = Rotate_Angle = Integrated = Left_Speed = Right_Speed = 0;
 	Base_Speed = BASE_SPEED;
 
@@ -1073,16 +1067,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				Base_Speed = BASE_SPEED;
 			}
 		}
-
-		/* Timer for CM_MoveToPoint, 40 seconds, to prevent non-stop turn, due to bumper hitted but not triggered. */
-		//FIXME
-		/*
-		if (Work_Timer > move_timer + 80) {
-			Stop_Brifly();
-			retval = MT_None;
-			break;
-		}
-		*/
 
 		/* Check low battery event, if battery is low, stop. */
 		if (go_home == 1) {
@@ -1218,7 +1202,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 #endif
 
 		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT);
-//		if (go_home == 0){
 		if (go_home == 0 && Temp_Rcon_Status) {
 			// It just clear the bits that are 1 in Temp_Rcon_Status has.
 			Set_Rcon_Status(Get_Rcon_Status() & (~Temp_Rcon_Status));
@@ -1329,21 +1312,13 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 		/* Check bumper & cliff event.*/
 #ifdef OBS_DYNAMIC
 		if (Get_FrontOBS() > Get_FrontOBST_Value()) {
-//			if (front_obs_val == 0) {
-//				front_obs_val = Get_FrontOBST_Value();
-//			} else {
-//				if (Get_FrontOBST_Value() - front_obs_val > 50) {
-//					front_obs_val = Get_FrontOBST_Value();
-//				} else {
-					Stop_Brifly();
-					isBumperTriggered = Get_Bumper_Status();
-					CM_update_map(action, isBumperTriggered);
-					retval = MT_None;
-					should_follow_wall = 1;
-					printf("%s %d: OBS break, val: %d(%d)\n", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
-					break;
-//				}
-//			}
+			Stop_Brifly();
+			isBumperTriggered = Get_Bumper_Status();
+			CM_update_map(action, isBumperTriggered);
+			retval = MT_None;
+			should_follow_wall = 1;
+			printf("%s %d: OBS break, val: %d(%d)\n", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
+			break;
 		}
 #else
 		if (Get_FrontOBS() > 5 * Get_OBST_Value()) {
@@ -1373,8 +1348,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 			Stop_Brifly();
 			CM_update_map_bumper(action, isBumperTriggered);
 			robot::instance()->pub_bumper_markers();
-			//isBumperTriggered = Get_Bumper_Status();
-			//CM_update_map(action, isBumperTriggered);
 
 			printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
@@ -1414,8 +1387,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 			break;
 		}
 
-		//printf("%s %d: Gyro: %d\tX: %d(%d) %d\tY: %d(%d) %d\n", __FUNCTION__, __LINE__, Gyro_GetAngle(0), Target.X, Map_GetXCount(), CM_ABS(Map_GetXCount(), Target.X), Target.Y, Map_GetYCount(), CM_ABS(Map_GetYCount(), Target.Y));
-		//if (CM_ABS(Map_GetXCount(), Target.X) < 30 && CM_ABS(Map_GetYCount(), Target.Y) < 30) {
 		if (CM_ABS(Map_GetXCount(), Target.X) < 150 && CM_ABS(Map_GetYCount(), Target.Y) < 150) {
 			ROS_INFO("%s, %d: Reach target.", __FUNCTION__, __LINE__);
 			isBumperTriggered = Get_Bumper_Status();
@@ -1427,15 +1398,10 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 #if LIMIT_DISTANCE_ENABLE
 		/*Check limited distance in one straight movement*/
 		if ((Dis_From_Init = TwoPointsDistance(Map_GetXCount(), Map_GetYCount(), Init_Pose_X, Init_Pose_Y)) > Limited_Distance) {
-			//Stop_Brifly();
 			printf("reach the limited distance\n");
 			printf("Map_XCount=%d,Map_YCount=%d,Init_Pose_X=%d,Init_Pose_Y=%d,Dis_From_Init=%d,Limited_Distance=%d\n",Map_GetXCount(),Map_GetYCount(),Init_Pose_X, Init_Pose_Y, Dis_From_Init, Limited_Distance);
 			Limited_Flag = 3;//Limit distance flag
-			//sleep(1);
 			printf("after sleep");
-			//std::vector<int8_t> *p1;
-			//p1 = robot::instance()->robot_get_map_data();
-			//printf("map_data_coremove=%d\n", (*p1)[0]);
 			Init_Pose_X = Map_GetXCount();
 			Init_Pose_Y = Map_GetYCount();
 		}
@@ -1447,15 +1413,12 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 			if (Limited_Flag != 3){//not in distance limit
 				if (bool Explore_Flag = CM_Check_is_exploring() == 1){
 					Limited_Flag = 1;
-					//printf("1\n");
 				}
 				else if(Explore_Flag == 2){
 					Limited_Flag = 2;
-					//printf("2\n");
 				}
 				else if(Explore_Flag == 0){
 					Limited_Flag = 0;
-					//printf("0\n");
 				}
 			}
 		}
@@ -1464,15 +1427,12 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				if (Limited_Flag != 3){//not in distance limit
 					if (bool Explore_Flag = CM_Check_is_exploring() == 1){
 						Limited_Flag = 1;
-						//printf("1\n");
 					}
 					else if(Explore_Flag == 2){
 						Limited_Flag = 2;
-						//printf("2\n");
 					}
 					else if(Explore_Flag == 0){
 						Limited_Flag = 0;
-						//printf("0\n");
 					}
 				}
 			}
@@ -1503,10 +1463,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				Stop_Brifly();
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
-				//CM_CorBack(COR_BACK_20MM);
-				//Stop_Brifly();
-				//isBumperTriggered = Get_Bumper_Status();
-				//CM_update_map(action, isBumperTriggered);
 				retval = MT_None;
 				break;
 			}
@@ -1520,7 +1476,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 
 		/*--------------------------Adjust Move ------------------------------------*/
 		Rotate_Angle = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y) - Gyro_GetAngle(0);
-		//printf("%s %d: cour: %d\tGyro: %d\tangle: %d\n", __FUNCTION__, __LINE__, course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y), Gyro_GetAngle(0), Rotate_Angle);
 
 		if (Rotate_Angle >= 1800) {
 			Rotate_Angle -= 3600;
@@ -1560,7 +1515,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 		else if ((distance < SLOW_DOWN_DISTANCE) || slow_down) {
 			Integrated = 0;
 			Rotate_Angle = 0;
-			//Rotate_Angle=Rotate_Angle*Base_Speed/speed_max;
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
@@ -1582,7 +1536,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 
 		Left_Speed = Base_Speed - Rotate_Angle / 10 - Integrated / 150; // - Delta / 20; // - Delta * 10 ; // - Integrated / 2500;
 		Right_Speed = Base_Speed + Rotate_Angle / 10 + Integrated / 150; // + Delta / 20;// + Delta * 10 ; // + Integrated / 2500;
-		//printf("%s %d: base: %d\tangle: %d\tint: %d\tleft: %d\tright: %d\n", __FUNCTION__, __LINE__, Base_Speed, Rotate_Angle, Integrated, Left_Speed, Right_Speed);
 
 		if (Left_Speed < BASE_SPEED) {
 			Left_Speed = BASE_SPEED;
@@ -1595,8 +1548,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 		} else if (Right_Speed > speed_max) {
 			Right_Speed = speed_max;
 		}
-		//printf("%s %d: left: %d\tright: %d\tbumper left: %d\tright: %d\n", __FUNCTION__, __LINE__, (int16_t)(Left_Speed * 7.23), (int16_t) (Right_Speed * 7.23), robot::instance()->robot_get_bumper_left(), robot::instance()->robot_get_bumper_right());
-		//printf("Limited_Flag = %d\n",Limited_Flag);
+
 		if (Limited_Flag == 3){
 			Move_Forward(Left_Speed / 2, Right_Speed / 2);
 		}
@@ -1610,30 +1562,6 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 			} 
 		}
 		Base_Speed = (Left_Speed + Right_Speed) / 2;
-
-		if (Rotate_Angle > 0) {
-			Adjust_Left++;
-			if (Adjust_Left > 20) {
-				Adjust_Left = 0;
-				//FIXME
-				//Temp_Left_Wheel_PWM--;
-				//Temp_Right_Wheel_PWM++;
-			}
-		} else {
-			Adjust_Left = 0;
-		}
-
-		if (Rotate_Angle < 0) {
-			Adjust_Right++;
-			if (Adjust_Right > 20) {
-				Adjust_Right = 0;
-				//FIXME
-				//Temp_Left_Wheel_PWM++;
-				//Temp_Right_Wheel_PWM--;
-			}
-		} else {
-			Adjust_Right = 0;
-		}
 
 		usleep(10000);
 	}
@@ -1838,11 +1766,9 @@ uint8_t CM_Touring(void)
 
 	// Reset battery status
 	lowBattery = 0;
-	//Reset_WorkTimer();
 	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
 
-//	Work_Motor_Configure();
 	Reset_Rcon_Status();
 	Reset_Touch();
 
@@ -1911,9 +1837,6 @@ uint8_t CM_Touring(void)
 		usleep(200000);
 	}
 
-	//usleep(100);
-	//Gyro_Debug_Cmd();
-
 	// Set the Work_Timer_Start as current time
 	Reset_Work_Time();
 
@@ -1926,9 +1849,6 @@ uint8_t CM_Touring(void)
 	ROS_DEBUG("Map_Initialize-----------------------------");
 	Map_Initialize();
 	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
-
-	//FIXME
-	//Map_Wall_Follow_Initialize();
 
 	Reset_Rcon_Status();
 
@@ -1968,11 +1888,6 @@ uint8_t CM_Touring(void)
 				pnt16ArTmp[0] = tmpPnt;
 				path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
-#if 0
-				Next_Point.X = Home_Point.X;
-				Next_Point.Y = Home_Point.Y;
-#endif
-
 				k = 0;
 				while ((k++ < 10000) && (LED_Blink_State != LED_Blink)) {
 					usleep(1);
@@ -1984,20 +1899,6 @@ uint8_t CM_Touring(void)
 				
 
 				//2.2-1.3 Path to unclean area
-#if 0
-				entrCellTmp.X = Map_GetXPos();
-				entrCellTmp.Y = Map_GetYPos();
-				state = path_move_to_unclean_area(entrCellTmp, countToCell(Next_Point.X), countToCell(Next_Point.Y), &tmpPoint16.X, &tmpPoint16.Y, 0);
-				if (!(state == 1 || state == SCHAR_MAX)) {
-					state = Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
-					if (state == 2) {
-						Disable_Motors();
-						Set_Clean_Mode(Clean_Mode_Userinterface);
-						return 0;
-					}
-				}
-#endif
-
 				k = 3;
 				xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
 				for (i = xMin; xMinSearch == SHRT_MAX; i++) {
@@ -2174,24 +2075,11 @@ uint8_t CM_Touring(void)
 					ROS_DEBUG("Find path-----------------------------");
 					LED_Blink = 1;
 
-//					Set_Run_HS_Timer(1);
 					x_current = Map_GetXPos();
 					y_current = Map_GetYPos();
 					path_reset_path_points();
 					state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
 					ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
-//					Set_Run_HS_Timer(0);
-//					if(state>-1)
-//					{
-//						Set_HS_Timer(0);
-//					}
-//					if(Get_HS_Timer()>120)
-//					{
-//						Set_HS_Timer(0);
-//						path_targets_clear_list();
-//						printf("path_next long time! Start new wall follow!\n");
-//						break;
-//					}
 
 					printf("State: %d", state);
 					LED_Blink = 0;
@@ -2270,13 +2158,6 @@ uint8_t CM_Touring(void)
 							}
 						}
 					}
-					//FIXME
-					/*
-					if (Work_Timer - work_timer_start > cleanning_time_allowed) {
-						printf("Cleanning timeout %d.\n", cleanning_time_allowed);
-						go_home = 1;
-					}
-					*/
 
 					if (mt_state == MT_Battery) {
 						return 0;
@@ -2330,14 +2211,6 @@ uint8_t CM_Touring(void)
 			/***************************2.2-2 Normal Cleaning End***************************/
 
 			/***************************2.3 Last Common Process*************************/
-			//FIXME
-			/*
-			if (Work_Timer - work_timer_start > cleanning_time_allowed) {
-				printf("Cleanning timeout %d.\n", cleanning_time_allowed);
-				go_home = 1;
-			}
-			*/
-
 			if (mt_state == MT_Battery) {
 				return 0;
 			} else if (mt_state == MT_Remote_Home) {
@@ -2402,17 +2275,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	} else if ( mode == 2 ) {
 		i = j = k = offsetIdx = 0;
 
-		//uint16_t dis[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {0}, disTmp = 0;
-		//int16_t searchArrayLength = 2 * length / step + 1,
-		//        searchArrayMidIdx = ( searchArrayLength * searchArrayLength - 1 ) / 2;
-
-		//Point16_t relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 		Point16_t relativePosTmp = {0, 0};
 		printf("%s %d Path Find: Dynamic Target Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
-		// printf("Current Position: (%d, %d)\n", Map_GetXPos(), Map_GetYPos());
-		// printf("Distance and Position: \n");
 
-		//dis[0] = (uint16_t)(TwoPointsDistance( Map_GetXPos(), Map_GetYPos(), x, y ));
 		relativePos[k].X = 0;
 		relativePos[k].Y = 0;
 		k = 1;
@@ -2422,10 +2287,8 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					if ( i == 0 && j == 0 ) {
 						continue;
 					}
-					//dis[k] = (uint16_t)(TwoPointsDistance( Map_GetXPos(), Map_GetYPos(), x + i, y + j ));
 					relativePos[k].X = i;
 					relativePos[k].Y = j;
-					//printf("Id: %d\tPoint: (%d, %d) Distance: %d\n", k, relativePos[k].X, relativePos[k].Y, dis[k]);
 					printf("Id: %d\tPoint: (%d, %d)\n", k, relativePos[k].X, relativePos[k].Y);
 					++k;
 				}
@@ -2459,25 +2322,8 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 		pos.X = x + relativePos[0].X;
 		pos.Y = y + relativePos[0].Y;
-//		Set_Run_HS_Timer(1);
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
-//		Set_Run_HS_Timer(0);
 		LED_Blink = 0;
-//		if(pathFind>-1)
-//		{
-//			Set_HS_Timer(0);
-//		}
-//		if(Get_HS_Timer()>120)
-//		{
-//			Set_HS_Timer(0);
-//			if(go_home==1)
-//			{				
-//				CM_TouringCancel();
-//				Set_Clean_Mode(Clean_Mode_GoHome);
-//				printf("CM_MoveToCell long time! Set Clean_Mode_GoHome!\n");
-//				return -2;
-//			}			
-//		}
 
 		//Set cell
 		Map_Set_Cells(ROBOT_SIZE, x + relativePos[0].X, y + relativePos[0].Y, CLEANED);
@@ -2574,11 +2420,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				if ( offsetIdx >= k ) {
 					return -2;
 				}
-
-				// if (is_block_accessible(x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y) == 0) {
-				// 	printf("%s %d: Target is blocked. Set cell!\n", __FUNCTION__, __LINE__);
-				// 	Map_Set_Cells(ROBOT_SIZE, x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y, CLEANED);
-				// }
 
 				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
@@ -2724,19 +2565,11 @@ void CM_CorBack(uint16_t dist)
 	Set_Wheel_Speed(8, 8);
 	Reset_Wheel_Step();
 	Counter_Watcher = 0;
-//	Reset_Touch();
-
-	/*
-	pos_x = robot::instance()->robot_get_position_x();
-	pos_y = robot::instance()->robot_get_position_y();
-	*/
 
 	pos_x = robot::instance()->robot_get_odom_position_x();
 	pos_y = robot::instance()->robot_get_odom_position_y();
 
-	//while ((Get_LeftWheel_Step() < dist) || (Get_RightWheel_Step() < dist)) {
 	while (1) {
-		//distance = sqrtf(powf(pos_x - robot::instance()->robot_get_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_position_y(), 2));
 		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_odom_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_odom_position_y(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
