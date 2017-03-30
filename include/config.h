@@ -68,6 +68,7 @@
 
 /* OBS setting */
 #define OBS_DYNAMIC			(1)
+#define OBS_DYNAMIC_MOVETOTARGET (1)
 #define WALL_DYNAMIC    (1)
 
 /*
@@ -82,7 +83,6 @@
  */
 #define VIRTUAL_WALL_MAX_SEGMENT_DISTANCE	(6)
 
-#define OBS_DYNAMIC_MOVETOTARGET (1)
 /* Bumper and Cliff Error */
 #define CLIFF_ERROR    (1)
 #define BUMPER_ERROR   (1)

@@ -17,6 +17,7 @@ extern uint8_t sendStream[SEND_LEN];
 static int16_t Left_OBSTrig_Value = 500;
 static int16_t Front_OBSTrig_Value = 500;
 static int16_t Right_OBSTrig_Value = 500;
+volatile int16_t OBS_Trig_Value = 800;
 static int16_t Leftwall_OBSTrig_Vale = 500;
 static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
@@ -316,31 +317,6 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
-uint8_t Get_OBS_Status(void)
-{
-	uint8_t Status = 0;
-
-	if (robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
-		Status |= Status_Left_OBS;
-
-	if (robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value)
-		Status |= Status_Front_OBS;
-
-	if (robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
-		Status |= Status_Right_OBS;
-
-	return Status;
-}
-
-uint8_t Spot_OBS_Status(void)
-{
-	uint8_t status =0;
-	if(robot::instance()->robot_get_obs_left() > 1500)status |=Status_Left_OBS;
-	if(robot::instance()->robot_get_obs_right() > 1500)status |=Status_Right_OBS;
-	if(robot::instance()->robot_get_obs_front() >2000)status |=Status_Front_OBS;
-	return status;
-}
-
 int32_t Get_FrontOBS(void)
 {
 	return (int32_t)robot::instance()->robot_get_obs_front();
@@ -350,7 +326,7 @@ int32_t Get_LeftOBS(void)
 {
 	return (int32_t)robot::instance()->robot_get_obs_left();
 }
-int32_t Get_rightOBS(void)
+int32_t Get_RightOBS(void)
 {
 	return (int32_t)robot::instance()->robot_get_obs_right();
 }
@@ -889,9 +865,79 @@ void Set_Vac_Speed(void)
 	}
 }
 
+/*--------------------------------------Obs Dynamic adjust----------------------*/
 void OBS_Dynamic_Base(uint16_t Cy)
 {
-	Cy = Cy;
+	static int32_t Front_OBS_Buffer = 0, Left_OBS_Buffer = 0, Right_OBS_Buffer = 0;
+	static uint32_t FrontOBS_E_Counter = 0,LeftOBS_E_Counter = 0,RightOBS_E_Counter = 0;
+	static int32_t FrontOBS_Everage = 0,LeftOBS_Everage = 0, RightOBS_Everage = 0;
+	static int32_t FrontOBS_Sum = 0, LeftOBS_Sum = 0, RightOBS_Sum = 0;
+	int16_t OBS_Diff = 350;
+
+	/*---------------Front-----------------------*/
+	Front_OBS_Buffer = Get_FrontOBS();
+
+	FrontOBS_Sum += Front_OBS_Buffer;
+	FrontOBS_E_Counter++;
+	FrontOBS_Everage = FrontOBS_Sum / FrontOBS_E_Counter;
+	if (ABS_Minus(FrontOBS_Everage, Front_OBS_Buffer) > 50) {
+		FrontOBS_E_Counter = 0;
+		FrontOBS_Sum = 0;
+	}
+	if (FrontOBS_E_Counter > Cy) {
+		FrontOBS_E_Counter = 0;
+		Front_OBS_Buffer = Front_OBSTrig_Value - OBS_Diff;
+		Front_OBS_Buffer = (FrontOBS_Everage + Front_OBS_Buffer) / 2;
+		if (Front_OBS_Buffer < 100) {
+			Front_OBS_Buffer = 100;
+		}
+		Front_OBSTrig_Value = Front_OBS_Buffer + OBS_Diff;
+		//Beep(1, 10, 0, 1);
+		//ROS_INFO("Update Front_OBSTrig_Value = %d.", Front_OBSTrig_Value);
+	}
+
+	/*---------------Left-----------------------*/
+	Left_OBS_Buffer = Get_LeftOBS();
+
+	LeftOBS_Sum += Left_OBS_Buffer;
+	LeftOBS_E_Counter++;
+	LeftOBS_Everage = LeftOBS_Sum / LeftOBS_E_Counter;
+	if (ABS_Minus(LeftOBS_Everage, Left_OBS_Buffer) > 50) {
+		LeftOBS_E_Counter = 0;
+		LeftOBS_Sum = 0;
+	}
+	if (LeftOBS_E_Counter > Cy) {
+		LeftOBS_E_Counter = 0;
+		Left_OBS_Buffer = Left_OBSTrig_Value - OBS_Diff;
+		Left_OBS_Buffer = (LeftOBS_Everage + Left_OBS_Buffer) / 2;
+		if (Left_OBS_Buffer < 100) {
+			Left_OBS_Buffer = 100;
+		}
+		Left_OBSTrig_Value = Left_OBS_Buffer + OBS_Diff;
+		//Beep(4, 10, 0, 1);
+		//ROS_INFO("Update Left_OBSTrig_Value = %d.", Left_OBSTrig_Value);
+	}
+	/*---------------Right-----------------------*/
+	Right_OBS_Buffer = Get_RightOBS();
+
+	RightOBS_Sum += Right_OBS_Buffer;
+	RightOBS_E_Counter++;
+	RightOBS_Everage = RightOBS_Sum / RightOBS_E_Counter;
+	if (ABS_Minus(RightOBS_Everage, Right_OBS_Buffer) > 50) {
+		RightOBS_E_Counter = 0;
+		RightOBS_Sum = 0;
+	}
+	if (RightOBS_E_Counter > Cy) {
+		RightOBS_E_Counter = 0;
+		Right_OBS_Buffer = Right_OBSTrig_Value - OBS_Diff;
+		Right_OBS_Buffer = (RightOBS_Everage + Right_OBS_Buffer) / 2;
+		if (Right_OBS_Buffer < 100) {
+			Right_OBS_Buffer = 100;
+		}
+		Right_OBSTrig_Value = Right_OBS_Buffer + OBS_Diff;
+		//Beep(8, 10, 0, 1);
+		//ROS_INFO("Update Right_OBSTrig_Value = %d.", Right_OBSTrig_Value);
+	}
 }
 
 int16_t Get_FrontOBST_Value(void)
@@ -919,6 +965,48 @@ uint8_t Is_WallOBS_Near(void)
 		return 1;
 	}
     return 0;
+}
+
+void Adjust_OBST_Value(void)
+{
+	if(robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value )
+		Front_OBSTrig_Value += 800;
+	if(robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
+		Left_OBSTrig_Value  += 800;
+	if(robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
+		Right_OBSTrig_Value += 800;
+}
+
+void Reset_OBST_Value(void)
+{
+	Left_OBSTrig_Value = robot::instance()->robot_get_obs_front() + 1000;
+	Front_OBSTrig_Value = robot::instance()->robot_get_obs_left() + 1000;
+	Right_OBSTrig_Value = robot::instance()->robot_get_obs_right() + 1000;
+}
+
+uint8_t Spot_OBS_Status(void)
+{
+	uint8_t status =0;
+	if(robot::instance()->robot_get_obs_left() > 1000)status |=Status_Left_OBS;
+	if(robot::instance()->robot_get_obs_right() > 1000)status |=Status_Right_OBS;
+	if(robot::instance()->robot_get_obs_front() >1500)status |=Status_Front_OBS;
+	return status;
+}
+
+uint8_t Get_OBS_Status(void)
+{
+	uint8_t Status = 0;
+
+	if (robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
+		Status |= Status_Left_OBS;
+
+	if (robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value)
+		Status |= Status_Front_OBS;
+
+	if (robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
+		Status |= Status_Right_OBS;
+
+	return Status;
 }
 
 void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed)
@@ -1739,17 +1827,6 @@ uint32_t  Get_Mobility_Step()
 	return Mobility_Step;
 }
 
-void Adjust_OBST_Value(void)
-{
-	
-	if(robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value )
-		Front_OBSTrig_Value += 800;
-	if(robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
-		Left_OBSTrig_Value  += 800;
-	if(robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
-		Right_OBSTrig_Value += 800;
-}
-
 void Check_Mobility(void)
 {
 	
@@ -2015,4 +2092,13 @@ void Set_gyro_off()
 //		ROS_INFO("gyro stop ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
 	ROS_INFO("gyro stop ok");
+}
+
+int32_t ABS_Minus(int32_t A,int32_t B)
+{
+	if(A>B)
+	{
+		return A-B;
+	}
+	return B-A;
 }

@@ -249,13 +249,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 		//WFM_boundary_check();
 
-#ifdef OBS_DYNAMIC
-		//if (Get_Bumper_Status() || Is_FrontOBS_Trig()) {
 		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
-		
-#else
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
-#endif
 			printf("%s %d: Check: Get_Bumper_Status! Break!\n", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -410,11 +404,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			}
 		} else */ {
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
-#ifdef OBS_DYNAMIC
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-#else
-			if (Get_FrontOBS() < MFW_Setting[follow_type].front_obs_val) {
-#endif
 
 				Proportion = robot::instance()->robot_get_left_wall();
 
@@ -615,13 +605,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 		//WFM_boundary_check();
 
-#ifdef OBS_DYNAMIC
-		//if (Get_Bumper_Status() || Is_FrontOBS_Trig()) {
 		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
-		
-#else
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
-#endif
 			printf("%s %d: Check: Get_Bumper_Status! Break!\n", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -835,11 +819,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 		} else */ {
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
-#ifdef OBS_DYNAMIC
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-#else
-			if (Get_FrontOBS() < MFW_Setting[follow_type].front_obs_val) {
-#endif
 
 				Proportion = robot::instance()->robot_get_left_wall();
 
