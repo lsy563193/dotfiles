@@ -1090,6 +1090,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 			break;
 		}
 
+		/* Check cliff event.*/
 		if (Get_Cliff_Trig()) {
 			ROS_INFO("Cliff Trig");
 			Set_Wheel_Speed(0, 0);
@@ -1309,8 +1310,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 
 		Reset_Rcon_Status();
 
-		/* Check bumper & cliff event.*/
-#ifdef OBS_DYNAMIC
+
 		if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 			Stop_Brifly();
 			isBumperTriggered = Get_Bumper_Status();
@@ -1320,26 +1320,8 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 			printf("%s %d: OBS break, val: %d(%d)\n", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
 			break;
 		}
-#else
-		if (Get_FrontOBS() > 5 * Get_OBST_Value()) {
-			if (front_obs_val == 0) {
-				front_obs_val = Get_OBST_Value();
-			} else {
-				if (Get_OBST_Value() - front_obs_val > 50) {
-					front_obs_val = Get_OBST_Value();
-				} else {
-					Stop_Brifly();
-					isBumperTriggered = Get_Bumper_Status();
-					CM_update_map(action, isBumperTriggered);
-					retval = MT_None;
-					should_follow_wall = 1;
-					printf("%s %d: OBS break!\n", __FUNCTION__, __LINE__);
-					break;
-				}
-			}
-		}
-#endif
 
+		/* Check bumper event.*/
 		isBumperTriggered = Get_Bumper_Status();
 		if (isBumperTriggered) {
 			// Mark the status for rounding function.
