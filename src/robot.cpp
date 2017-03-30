@@ -22,7 +22,6 @@ static	robot *robot_obj = NULL;
 
 extern pp::x900sensor   sensor;
 
-Angles<std::pair<int16_t,double>> angles;
 Segment_set segmentss;
 
 time_t	start_time;
