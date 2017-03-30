@@ -269,6 +269,7 @@ uint8_t Get_OBS_Status(void);
 
 int32_t Get_FrontOBS(void);
 int32_t Get_LeftOBS(void);
+int32_t Get_RightOBS(void);
 
 uint8_t Get_Bumper_Status(void);
 
@@ -313,10 +314,13 @@ void Set_BLDC_Speed(uint32_t S);
 void Set_Vac_Speed(void);
 
 void OBS_Dynamic_Base(uint16_t Cy);
-
 int16_t Get_FrontOBST_Value(void);
 int16_t Get_LeftOBST_Value(void);
 uint8_t Is_WallOBS_Near(void);
+void Adjust_OBST_Value(void);
+void Reset_OBST_Value(void);
+uint8_t Spot_OBS_Status(void);
+uint8_t Get_OBS_Status(void);
 
 void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
@@ -435,8 +439,6 @@ uint8_t Get_Key_Press(void);
 uint16_t GetBatteryVoltage();
 
 uint8_t Get_Key_Time(uint16_t key);
-
-uint8_t Spot_OBS_Status(void);
 	
 uint8_t IsSendBusy(void);
 
@@ -536,7 +538,7 @@ void Reset_IMU_Status(void);
 
 uint8_t Get_IMU_Status(void);
 
-
+int32_t ABS_Minus(int32_t A,int32_t B);
 #endif
 
 

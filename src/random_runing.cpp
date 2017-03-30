@@ -144,7 +144,9 @@ void Random_Running_Mode(void)
 		usleep(10000);
 		Wall_Dynamic_Base(400);
 		
+#ifdef OBS_DYNAMIC
 		OBS_Dynamic_Base(300);
+#endif
 
 		/*if(Get_Room_Mode())//small room
 		{
@@ -1069,17 +1071,6 @@ void Random_Running_Mode(void)
 				Set_RightWheel_Step(400);
 			}
 
-
-#ifndef OBS_DYNAMIC
-			if(Is_OBS_Near2())
-			{
-				if(Moving_Speed>25)
-				{
-					Moving_Speed--;
-				}
-				Set_RightWheel_Step(300);
-			}
-#endif
 
 			if(Get_OBS_Status())
 			{
