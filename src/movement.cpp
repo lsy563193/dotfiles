@@ -191,7 +191,7 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	Reset_Wheel_Step();
 	Set_Wheel_Speed(Speed, Speed);
 	// This count is for how many milliseconds it should take. The Distance is in mm.
-	int back_count = int(1000 * Distance / (Speed * 7.23));
+	int back_count = int(1000 * Distance / (Speed * SPEED_ALF));
 	//printf("[movement.cpp] Quick_back for %dms.\n", back_count);
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
@@ -625,7 +625,7 @@ void Set_LeftWheel_Speed(uint8_t speed)
 {
 	int16_t l_speed;
 	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
-	l_speed = (int16_t)(speed*7.23);
+	l_speed = (int16_t)(speed*SPEED_ALF);
 	if(wheel_left_direction == 1)
 		l_speed |=0x8000;
 	Left_Wheel_Speed = l_speed;
@@ -638,7 +638,7 @@ void Set_RightWheel_Speed(uint8_t speed)
 {
 	int16_t r_speed;
 	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
-	r_speed = (int16_t)(speed*7.23);
+	r_speed = (int16_t)(speed*SPEED_ALF);
 	if(wheel_right_direction == 1)
 		r_speed |=0x8000;
 	Right_Wheel_Speed = r_speed;
