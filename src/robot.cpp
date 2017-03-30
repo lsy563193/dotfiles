@@ -18,7 +18,7 @@ extern bool is_line_angle_offset;
 extern bool enable_slam_offset;
 static	robot *robot_obj = NULL;
 //typedef double Angle;
-pp::x900sensor   sensor;
+extern pp::x900sensor   sensor;
 Angles<std::pair<int16_t,double>> angles;
 
 time_t	start_time;
@@ -99,13 +99,11 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->gyro_dymc = msg->gyro_dymc;
 
-	#if ROBOT_X400
 	this->obs_left = msg->l_obs;
 
 	this->obs_right = msg->r_obs;
 
 	this->obs_front = msg->f_obs;
-	#endif
 
 	this->bumper_right = msg->rbumper;
 
@@ -142,16 +140,6 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->vacuum_oc = msg->vcum_oc;
 
-	#if ROBOT_X600
-	this->obs0 = msg->obs0;
-	this->obs1 = msg->obs1;
-	this->obs2 = msg->obs2;
-	this->obs3 = msg->obs3;
-	this->obs4 = msg->obs4;
-	this->obs5 = msg->obs5;
-	this->obs6 = msg->obs6;
-	this->obs7 = msg->obs7;
-	#endif
 
 	this->is_sensor_ready = true;
 //	if (this->is_sensor_ready == false) {
@@ -426,7 +414,7 @@ float robot::robot_get_angle() {
 }
 
 void robot::set_angle(float angle_) {
-	angle = angle_;
+	this->angle = angle_;
 }
 
 float robot::robot_get_angle_v()
@@ -589,97 +577,19 @@ bool robot::robot_get_bumper_left()
 	//ROS_INFO("lbumper = %d",sensor.lbumper);
 	return sensor.lbumper;
 }
-/*
 int16_t robot::robot_get_obs_left()
 {
-	#if ROBOT_X600
-	if(this->obs0 >= this->obs1)
-		if(this->obs0 >= this->obs2)
-			return this->obs0;
-		else
-			return this->obs2;
-	else if(this->obs1	>= this->obs2)
-			return this->obs1;
-	else
-		return this->obs2;
-	#elif ROBOT_X400
-	return this->obs_left;
-	#endif
-}
-
-int16_t robot::robot_get_obs_right()
-{
-	#if ROBOT_X600
-	if(this->obs5 >= this->obs6)
-		if(this->obs5 >= this->obs7)
-			return this->obs5;
-		else
-			return this->obs7;
-	else if(this->obs6	>= this->obs7)
-			return this->obs6;
-	else
-		return this->obs7;
-	#elif ROBOT_X400
-	return this->obs_right;
-	#endif
-}
-
-int16_t robot::robot_get_obs_front()
-{
-	#if ROBOT_X600
-	if(this->obs3>=this->obs4)
-		return this->obs3;
-	else
-		return this->obs4;
-	#elif ROBOT_X400
-	return this->obs_front;
-	#endif
-}
-*/
-int16_t robot::robot_get_obs_left()
-{
-	#if ROBOT_X600
-	if(this->obs0 >= this->obs1)
-		if(this->obs0 >= this->obs2)
-			return this->obs0;
-		else
-			return this->obs2;
-	else if(this->obs1	>= this->obs2)
-			return this->obs1;
-	else
-		return this->obs2;
-	#elif ROBOT_X400
 	return sensor.l_obs;
-	#endif
 }
 
 int16_t robot::robot_get_obs_right()
 {
-	#if ROBOT_X600
-	if(this->obs5 >= this->obs6)
-		if(this->obs5 >= this->obs7)
-			return this->obs5;
-		else
-			return this->obs7;
-	else if(this->obs6	>= this->obs7)
-			return this->obs6;
-	else
-		return this->obs7;
-	#elif ROBOT_X400
 	return sensor.r_obs;
-	#endif
 }
 
 int16_t robot::robot_get_obs_front()
 {
-	#if ROBOT_X600
-	if(this->obs3>=this->obs4)
-		return this->obs3;
-	else
-		return this->obs4;
-	#elif ROBOT_X400
 	return sensor.f_obs;
-	#endif
 }
 
 bool robot::robot_get_water_tank()

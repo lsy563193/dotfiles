@@ -40,9 +40,8 @@
 /*
  * Definition to enable/disable robot rounding the obstcal or not.
  */
-#define PP_ROUNDING_OBSTACLE_LEFT		(1)
-#define PP_ROUNDING_OBSTACLE_RIGHT		(0)
-
+#define PP_ROUNDING_OBSTACAL_LFET (1) 
+#define PP_ROUNDING_OBSTACAL_RIGHT (1)
 /*
  * Definition to force robot to move the center of a cell.
  *
@@ -365,11 +364,8 @@
 /* Define the display mode in user interface routine*/
 #define ONE_KEY_DISPLAY                     (1)
 
-/*robot type define,currently got two type "ROBOT_X600" "ROBOT_X400"*/
-#define ROBOT_X600 							(0)
-#define ROBOT_X400							(1)
+/*robot type define,currently got two type "ROBOT_X900" "ROBOT_X400"*/
+#define __ROBOT_X900 							(1)
+#define __ROBOT_X400							(0)
 
 #define STANDARD_REMOTE   (1)
-
-// This config is for deciding how the robot find the charger stub.
-#define Random_Find_Charger_Stub			(0)

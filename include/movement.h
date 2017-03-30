@@ -196,9 +196,14 @@
 #define	CTL_CHARGER 12
 #define	CTL_LED_RED 13
 #define	CTL_LED_GREEN 14
+#if __ROBOT_X400
 #define	CTL_GYRO 15
 #define	CTL_CRC 16
-
+#elif __ROBOT_X900
+#define CTL_OMNI_RESET 15
+#define CTL_GYRO 16
+#define CTL_CRC 17
+#endif
 #define Direction_Flag_Right 0x01
 #define Direction_Flag_Left  0x02
 

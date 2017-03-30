@@ -6,16 +6,17 @@
 #include <pp/slam_angle_offset.h>
 #include "config.h"
 
-#if ROBOT_X600
-#define RECEI_LEN 60
+#if __ROBOT_X900
+#define RECEI_LEN 55
 extern uint8_t receiStream[RECEI_LEN];
-
-#elif ROBOT_X400
+#define SEND_LEN 20
+#elif __ROBOT_X400
 #define RECEI_LEN	50
 extern uint8_t receiStream[RECEI_LEN];
+#define SEND_LEN 19
 #endif
 
-#define SEND_LEN 19
+
 
 extern uint8_t sendStream[SEND_LEN] ;
 extern bool robotbase_beep_update_flag;
