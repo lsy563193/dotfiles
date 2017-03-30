@@ -4,10 +4,11 @@
 #include "map.h"
 
 typedef enum {
-	ROUNDING_LEFT = 0,
+	ROUNDING_NONE = 0,
+	ROUNDING_LEFT,
 	ROUNDING_RIGHT,
 } RoundingType;
 
-uint8_t rounding(RoundingType type, Point32_t target);
+uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status);
 
 #endif

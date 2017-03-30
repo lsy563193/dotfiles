@@ -40,7 +40,13 @@
 /*
  * Definition to enable/disable robot rounding the obstcal or not.
  */
-//#define PP_ROUNDING_OBSTCAL		(1)
+#define PP_ROUNDING_OBSTACLE_LEFT		(1)
+#define PP_ROUNDING_OBSTACLE_RIGHT		(0)
+
+/*
+ * Definition to enable/disable robot curve move support.
+ */
+#define PP_CURVE_MOVE			(1)
 
 /*
  * Definition to force robot to move the center of a cell.

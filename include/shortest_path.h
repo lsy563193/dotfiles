@@ -1,11 +1,15 @@
 #ifndef __SHORTESTPATH_H__
 #define __SHORTESTPATH_H__
 
+#include <list>
+
 #include "config.h"
 
 #include "stdlib.h"
 #include "map.h"
 #include "path_planning.h"
+
+using namespace std;
 
 typedef struct{
 	int16_t	x;
@@ -32,6 +36,9 @@ uint16_t path_line_get_count(void);
 int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir);
 int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir);
 
-int16_t path_move_to_cell( int16_t x, int16_t y, uint8_t mode );
+int path_get_path_points_count();
+
+list<Point16_t> *path_get_path_points();
+void path_reset_path_points();
 
 #endif

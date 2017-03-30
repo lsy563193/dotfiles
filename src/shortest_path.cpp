@@ -1063,6 +1063,8 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 
 #else
 
+list <Point16_t> path_points;
+
 /*
  * Give a target point, find the shorest path from the current robot position to the
  * target position. It use the grid map for shorest path searching, before searching,
@@ -1097,8 +1099,10 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max, uint16_t last_dir) {
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
-	int16_t i, j, m, n, tracex, tracey, passValue, nextPassValue, passSet, offset;
+	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
 	CellState cs;
+
+	path_points.clear();
 
 	/* Find the direction of target with reference to the current robot position. */
 	if (xID == endx) {
@@ -1334,10 +1338,14 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	 * The last robot direction is use, this is to avoid using the path that
 	 * have the same direction as previous action.
 	 */
-	tracex = endx;
-	tracey = endy;
+	Point16_t t;
+	t.X = tracex = tracex_tmp = endx;
+	t.Y = tracey = tracey_tmp = endy;
+	path_points.push_back(t);
+
 	next = 0;
 	dest_dir = (last_dir == EAST || last_dir == WEST) ? 1: 0;
+	printf("%s %d: dest dir: %d\n", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != xID || tracey != yID) {
 		costAtCell = Map_GetCell(SPMAP, tracex, tracey);
 		targetCost = costAtCell - 1;
@@ -1400,9 +1408,23 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 #undef COST_NORTH
 
 		totalCost++;
+		if (path_points.back().X != tracex && path_points.back().Y != tracey) {
+			t.X = tracex_tmp;
+			t.Y = tracey_tmp;
+			path_points.push_back(t);
+		}
+		tracex_tmp = tracex;
+		tracey_tmp = tracey;
 	}
 	Map_SetCell(SPMAP, (int32_t)tracex, (int32_t)tracey, COST_PATH);
 
+	t.X = tracex_tmp;
+	t.Y = tracey_tmp;
+	path_points.push_back(t);
+	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
+		printf("(%d, %d)->", it->X, it->Y);
+	}
+	printf("\n\n");
 	return totalCost;
 }
 
@@ -1549,74 +1571,39 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 		*x_next = x_path;
 		*y_next = y_path;
 	} else {
-		/* direct_go flag is disabled. */
-		pos.X = x;
-		pos.Y = y;
-		*x_next = pos.X;
-		*y_next = pos.Y;
+		*x_next = x;
+		*y_next = y;
 
-		if (Map_GetCell(SPMAP, pos.X - 1, pos.Y) == COST_PATH) {
-			/*
-			 * Next point to move is on the SOUTH direction of the current robot position.
-			 */
-			Map_SetCell(SPMAP, (int32_t)(pos.X - 1), (int32_t)pos.Y, COST_NO);
-			offset--;
-			for (i = 1;; i++) {
-				if (Map_GetCell(SPMAP, pos.X - 1 - i, pos.Y) == COST_PATH) {
-					offset--;
-					Map_SetCell(SPMAP, (int32_t)(pos.X - 1 - i), (int32_t)pos.Y, COST_NO);
+		if (path_points.size() > 1) {
+			i = 0;
+			for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end() && i <= 1; ++it, ++i) {
+				if (i != 1) {
+					continue;
 				} else {
-					break;
+					*x_next = it->X;
+					*y_next = it->Y;
 				}
 			}
-			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, *x_next, *y_next, offset);
-			*x_next += offset;
-		} else if (Map_GetCell(SPMAP, pos.X, pos.Y + 1) == COST_PATH) {
-			/* Next point to move is on the EAST direction of the current robot position. */
-			offset++;
-			Map_SetCell(SPMAP, (int32_t)pos.X, (int32_t)(pos.Y + 1), COST_NO);
-			for (i = 1;; i++) {
-				if (Map_GetCell(SPMAP, pos.X, pos.Y + 1 + i) == COST_PATH) {
-					offset++;
-					Map_SetCell(SPMAP, (int32_t)pos.X, (int32_t)(pos.Y + 1 + i), COST_NO);
-				} else {
-					break;
-				}
-			}
-			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, *x_next, *y_next, offset);
-			*y_next += offset;
-		} else if (Map_GetCell(SPMAP, pos.X + 1, pos.Y) == COST_PATH) {
-			/* Next point to move is on the NORTH direction of the current robot position. */
-			Map_SetCell(SPMAP, (int32_t)(pos.X + 1), (int32_t)(pos.Y), COST_NO);
-			offset++;
-			for (i = 1;; i++) {
-				if (Map_GetCell(SPMAP, pos.X + 1 + i, pos.Y) == COST_PATH) {
-					offset++;
-					Map_SetCell(SPMAP, (int32_t)(pos.X + 1 + i), (int32_t)pos.Y, COST_NO);
-				} else {
-					break;
-				}
-			}
-			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, *x_next, *y_next, offset);
-			*x_next += offset;
-		} else if (Map_GetCell(SPMAP, pos.X, pos.Y - 1) == COST_PATH) {
-			/* Next point to move is on the WEST direction of the current robot position. */
-			offset--;
-			Map_SetCell(SPMAP, (int32_t)pos.X, (int32_t)(pos.Y - 1), COST_NO);
-			for (i = 1;; i++) {
-				if (Map_GetCell(SPMAP, pos.X, pos.Y - 1 -  i) == COST_PATH) {
-					offset--;
-					Map_SetCell(SPMAP, (int32_t)pos.X, (int32_t)(pos.Y - 1 - i), COST_NO);
-				} else {
-					break;
-				}
-			}
-			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, *x_next, *y_next, offset);
-			*y_next += offset;
 		}
 	}
 
 	retval = 1;
 	return retval;
 }
+
+int path_get_path_points_count()
+{
+	return path_points.size();
+}
+
+list<Point16_t> *path_get_path_points()
+{
+	return &path_points;
+}
+
+void path_reset_path_points()
+{
+	path_points.clear();
+}
+
 #endif

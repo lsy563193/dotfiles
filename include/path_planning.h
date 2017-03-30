@@ -25,7 +25,7 @@ typedef struct {
 } TargetType;
 
 void PathPlanning_Initialize(int32_t *x, int32_t *y);
-int8_t path_next(int32_t *x, int32_t *y);
+int8_t path_next(int32_t *x, int32_t *y, Point32_t *final_target_cell);
 uint8_t path_home(int32_t *x, int32_t *y);
 
 void path_set_current_pos(void);

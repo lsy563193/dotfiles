@@ -28,9 +28,21 @@ typedef enum {
 	MT_Remote_Clean,
 	MT_Remote_Spot,
 	MT_Cliff,
+	MT_Bumper,
+	MT_OBS,
+	MT_Boundary,
+	MT_CurveMove,
 	MT_Key_Clean,
 	MT_Battery_Home,
 } MapTouringType;
+
+typedef enum {
+	ACTION_NONE	= 0x01,
+	ACTION_GO	= 0x02,
+	ACTION_BACK	= 0x04,
+	ACTION_LT	= 0x08,
+	ACTION_RT	= 0x10,
+} ActionType;
 
 typedef struct {
 	Point16_t	pos;
@@ -40,12 +52,20 @@ extern uint8_t lowBattery;
 
 void CM_HeadToCourse(uint8_t Speed,int16_t Angle);
 
-MapTouringType CM_MoveToPoint(Point32_t Target);
+MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
 bool CM_Check_is_exploring();
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y);
 uint8_t CM_MoveForward(void);
 
 uint8_t CM_Touring(void);
+
+void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int16_t right);
+void CM_update_map(ActionType action, uint8_t bumper);
+void CM_update_map_bumper(ActionType action, uint8_t bumper);
+
+void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+
+int32_t CM_ABS(int32_t A, int32_t B);
 
 int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_t step );
 

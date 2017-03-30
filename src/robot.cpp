@@ -447,14 +447,7 @@ int16_t robot::robot_get_cliff_front()
 	return sensor.fcliff;
 }
 
-/*
-int16_t robot::robot_get_wall()
-{
-	return this->left_wall;
-}
-*/
-
-int16_t robot::robot_get_wall()
+int16_t robot::robot_get_left_wall()
 {
 	return sensor.left_wall;
 }
