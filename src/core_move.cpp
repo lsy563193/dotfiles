@@ -81,7 +81,6 @@ uint8_t	go_home = 0;
 uint8_t	remote_go_home = 0;
 uint8_t	from_station = 0;
 int16_t station_zone = -1;
-int16_t WheelCount_Left = 0, WheelCount_Right = 0;
 uint8_t lowBattery = 0;
 int16_t map_gyro_offset = 0;
 uint8_t tiledUpCount = 0;
@@ -106,18 +105,17 @@ void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_lon
 	*y = cellToCount(countToCell(Map_GetRelativeY(heading, offset_lat, offset_long)));
 }
 
-bool CM_Check_is_exploring()//not yet minus the x_off
+//not yet minus the x_off
+bool CM_Check_is_exploring()
 {
-	float search_length = 0.10, search_width = 0.303;//unit for meter
-	std::vector<int8_t> *p_map_data;
-	int index;
-	double yaw;
-	float position_x, position_y;
-	uint32_t width,  height;
-	float resolution;
-	double origin_x, origin_y;
-	int plus_sign;
-	int a_max;
+	int	index, plus_sign, a_max;
+	float	position_x, position_y, resolution, search_length = 0.10, search_width = 0.303; //unit for meter
+	double	yaw, origin_x, origin_y;
+
+	uint32_t	width,  height;
+
+	std::vector<int8_t>	*p_map_data;
+
 	position_x = robot::instance()->robot_get_position_x();
 	position_y = robot::instance()->robot_get_position_y();
 	yaw = robot::instance()->robot_get_map_yaw();
@@ -131,132 +129,77 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 	
 
 	p_map_data = robot::instance()->robot_get_map_data();
-	//index = CM_Get_grid_index();
-	/*main search*/
-	//printf("/*main search*/\n");
 	if (abs(yaw) <= (M_PI / 2) ){
 		plus_sign = 1;
-		//printf("+yaw=%lf\n",yaw);
 		a_max = (plus_sign * abs(int(round(search_length * sin(abs(yaw)) / 0.05))));
-		//printf("before_a_max=%d\n", a_max);
-		//for (int a = 0; a <= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
-		//for (int a = 0; a <= (plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
-		for (int a = 0; a <= a_max; a = a + 1){//n = (search_length * cos(yaw)) / resolution
-			//printf("a_max=%d\n",(plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))));
-			//printf("a = %d\n", a);
+		for (int a = 0; a <= a_max; a = a + 1) {		//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
 			float x = position_x + (a / tan(abs(yaw))) * 0.05;
-			//float y = position_y + a * tan(abs(yaw)) * 0.05;
 			float y = position_y + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
 				float x_1 = x + b * 0.05;
-				//printf("x_1=%f ,y=%f\n",x_1,y);
-				//printf("a=%d b=%d c=%d\n", a, b, c);
 				/*over map scope*/
-				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05) )){
-					//printf("x_1=%f ,y=%f\n",x_1,y);
+				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))){
 					printf("over scope\n");
-					//return 0;
-				}else{
-					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100){
-						//printf("x_1=%f ,y=%f\n",x_1,y);
-						c++;//add one grid wall
+				} else {
+					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100) {
+						c++;	//add one grid wall
 						if (c >= (search_width / 0.05)){
-						printf("exist wall\n");
+							printf("exist wall\n");
 							return 2;
 						}
-					}else{
-						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
-							//printf("x_1=%f ,y=%f\n",x_1,y);
-							//printf("exist unkown\n");
+					} else {
+						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1) {
 							return 1;
 						}
 					}
 				}
-
 			}
-			
 		}
 
-	}
-	else{
+	} else{
 		plus_sign = -1;
-		//printf("-yaw=%lf\n",yaw);
 		a_max = (plus_sign * abs(int(round(search_length * sin(abs(yaw)) / 0.05))));
-		//printf("before_a_max=%d\n", a_max);
-		//for (int a = 0; a >= (plus_sign * int(round(search_length * cos(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
-		//for (int a = 0; a >= (plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))); a = a + plus_sign * 1){//n = (search_length * cos(yaw)) / resolution
-		for (int a = 0; a >= a_max; a = a - 1){//n = (search_length * cos(yaw)) / resolution
-			//printf("a_max=%d\n",(plus_sign * int(round(search_length * sin(abs(yaw)) / 0.05))));
-			//printf("a = %d\n", a);
+		for (int a = 0; a >= a_max; a = a - 1) {	//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
 			float x = position_x + (a / tan(abs(yaw))) * 0.05;
-			//float y = position_y + a * tan(abs(yaw)) * 0.05;
 			float y = position_y + a * 0.05;
-			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
+			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1) {
 				float x_1 = x + b * 0.05;
-				//printf("x_1=%f ,y=%f\n",x_1,y);
-				//printf("a=%d b=%d c=%d\n", a, b, c);
 				/*over map scope*/
-				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05) )){
-					//printf("x_1=%f ,y=%f\n",x_1,y);
+				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))) {
 					printf("over scope\n");
-					//return 0;
-				}else{
-					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100){
-						//printf("x_1=%f ,y=%f\n",x_1,y);
-						//printf("exist wall\n");
+				} else {
+					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100) {
 						c++;
-						if (c >= (search_width / 0.05)){
-						printf("exist wall\n");
+						if (c >= (search_width / 0.05)) {
+							printf("exist wall\n");
 							return 2;
 						}
-					}else{
-						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
-							//printf("x_1=%f ,y=%f\n",x_1,y);
+					} else {
+						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1) {
 							printf("exist unkown\n");
 							return 1;
 						}
 					}
 				}
-
 			}
-			
 		}
-
 	}
 
-	//printf("known\n");
 	return 0;
 }
 
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y )
 {
-	/*
-	uint32_t width,  height;
-	float resolution, position_x, position_y;
-	double origin_x, origin_y;
-	int index,grid_x,grid_y;
-	width = robot::instance()->robot_get_width();
-	height = robot::instance()->robot_get_height();
-	resolution = robot::instance()->robot_get_resolution();
-	origin_x = robot::instance()->robot_get_origin_x();
-	origin_y = robot::instance()->robot_get_origin_y();
-	position_x = x;
-	position_y = y;
-	*/
-	
-	int index,grid_x,grid_y;
+	int index, grid_x, grid_y;
 
 	/*get index*/
 	grid_x = int(round((position_x - origin_x) / resolution));
 	grid_y = int(round((position_y - origin_y) / resolution));
 	index = grid_x + grid_y * width;
-	//printf("width=%d height=%d resolution=%f origin_x%lf =origin_y%lf =position_x=%f position_=%f yaw=%lf\n", width, height, resolution, origin_x,origin_y, position_x, position_y, yaw);
-	//printf("grid_x=%d grid_y=%d index=%d origin_x=%lf origin_y=%lf \n", grid_x, grid_y, index, origin_x, origin_y);
 	
 	return index;
-	
 }
 
 int32_t CM_ABS(int32_t A, int32_t B)
@@ -264,27 +207,12 @@ int32_t CM_ABS(int32_t A, int32_t B)
 	return ((A > B) ? (A - B) : (B - A));
 }
 
-void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int16_t right) {
+void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 	int8_t	e;
-	double	dd;
 	int16_t c, d, x, y, path_heading;
 	int32_t i, j, k;
 
 	float	pos_x, pos_y;
-
-	extern int16_t WheelCount_Left, WheelCount_Right;
-
-	//if (left == 0 && right == 0) {
-	//	return;
-	//}
-
-#if 0
-	int16_t	delta_theta, delta_theta_wheel;
-	delta_theta = (3600 + heading_0 - heading_1) % 3600;
-	if (delta_theta > 1800) {
-		delta_theta -= 3600;
-	}
-#endif
 
 	if (heading_0 > heading_1 && heading_0 - heading_1 > 1800) {
 		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
@@ -294,65 +222,12 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int
 		path_heading = (uint16_t)(heading_0 + heading_1) >> 1;
 	}
 
-	WheelCount_Left -= left;
-	WheelCount_Right -= right;
-
-#if 0
-	dd = (right - left) * CELL_SIZE;
-	dd /= CELL_COUNT_MUL * WHEEL_BASE;
-
-	delta_theta_wheel = 18000 * atan(dd) / 3.141592653589793;
-	delta_theta_wheel += (delta_theta_wheel >= 0 ? 5 : -5);
-	delta_theta_wheel /= 10;
-
-	i = delta_theta_wheel - delta_theta;
-
-	if (i < -1 || i > 1) {
-		if (delta_theta == 0) {
-			if (left * right >= 0) {
-				if (left > right) {
-					left = right;
-				} else {
-					right = left;
-				}
-			} else {
-				left = right = 0;
-			}
-		} else {
-			if (left >= 0 && right >= 0) {		//Go straight
-				if (right - 2 * delta_theta > left) {
-					right = left + 2 * delta_theta;
-				} else {
-					left = right - 2 * delta_theta;
-				}
-			} else if (left < 0 && right < 0) {	//Go Back
-				if (left - 2 * delta_theta > right) {
-					left = right + 2 * delta_theta;
-				} else {
-					right = left - 2 * delta_theta;
-				}
-			} else if (left >= 0 && right < 0) {	//Turnning
-				left = delta_theta;
-				right = -1 * delta_theta;
-			} if (left < 0 && right >= 0) {		//Turnning
-				left = -1 * delta_theta;
-				right = delta_theta;
-			}
-		}
-	}
-#endif
-
-	dd = left + right;
-	dd /= 2;
-
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
-	//Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
 	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
-	//printf("%s %d: robot positions: (%f, %f) (%f, %f)\n", __FUNCTION__, __LINE__, pos_x, pos_y, robot::instance()->robot_get_position_x(), robot::instance()->robot_get_position_y());
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
@@ -450,8 +325,6 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int
 				break;
 		}
 
-		//printf("%s %d: %d\n", __FUNCTION__, __LINE__, i);
-
 #if (ROBOT_SIZE == 5)
 		CM_count_normalize(Gyro_GetAngle(0), (c - 1) * CELL_SIZE, CELL_SIZE_3, &j, &k);
 		if (i && Map_GetCell(MAP, countToCell(j), countToCell(k)) != BLOCKED_BUMPER) {
@@ -463,7 +336,6 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int
 #else
 		CM_count_normalize(Gyro_GetAngle(0), (c - 1) * CELL_SIZE, CELL_SIZE_2, &j, &k);
 		if (i && Map_GetCell(MAP, countToCell(j), countToCell(k)) != BLOCKED_BUMPER) {
-			//printf("%s %d: c: %d\ti: %d\tmarking (%d, %d) (%d, %d)\tGyro: %d\tPos: (%d, %d)\n", __FUNCTION__, __LINE__, c, i, j, k, countToCell(j), countToCell(k), Gyro_GetAngle(0), Map_GetXCount(), Map_GetYCount());
 			Map_SetCell(MAP, j, k, BLOCKED_OBS);
 		} else if (Map_GetCell(MAP, countToCell(j), countToCell(k)) == BLOCKED_OBS) {
 			Map_SetCell(MAP, j, k, UNCLEAN);
@@ -747,11 +619,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			action = ACTION_RT;
 		}
 		angle_turned += Diff;
-//		else {
-//			Display_Content(LED_Clean, 100, 100, 8, 6);
-//			Stop_Brifly();
-//			while (1);
-//		}
 	}
 
 	Stop_Brifly();
@@ -760,18 +627,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 	SpeedUp = 4;
 	while (1) {
-		//FIXME
-		/*
-		if (Work_Timer - turnning_time > 120) {
-			Stop_Brifly();
-			CM_TouringCancel();
-			Set_Touch();
-			cleaning_mode = Clean_Mode_Navigation;
-			printf("%s %d: work timeout break!\n", __FUNCTION__, __LINE__);
-			return;
-		}
-		*/
-
 		Motor_Check_Code = Check_Motor_Current();
 		if (Motor_Check_Code) {
 			if (Self_Check(Motor_Check_Code)) {
@@ -815,7 +670,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		isBumperTriggered = Get_Bumper_Status();
 		if (isBumperTriggered) {
 			Stop_Brifly();
-			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 			CM_update_map(action, isBumperTriggered);
 
 			printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
@@ -844,11 +699,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				Set_Dir_Right();
 				action = ACTION_RT;
 			}
-//			else {
-//				Display_Content(LED_Clean, 100, 100, 8, 6);
-//				Stop_Brifly();
-//				while (1);
-//			}
 
 			Reset_TempPWM();
 			Set_Wheel_Speed(0, 0);
@@ -920,9 +770,8 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		Diff = Diff > 1800 ? 3600 - Diff : Diff;
 		if ((Diff < 10) && (Diff > (-10))) {
 			Stop_Brifly();
-			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
-			//usleep(1000);
 			printf("%s %d: Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
 			return;
 		}
@@ -993,7 +842,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	Target_Course = Rotate_Angle = Integrated = Left_Speed = Right_Speed = 0;
 	Base_Speed = BASE_SPEED;
 
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
 	if (rotate_is_needed == true) {
 		Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
@@ -1027,9 +876,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	}
 
 	//usleep(1000);
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
-
-	WheelCount_Left = WheelCount_Right = 0;
+	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
 	if (Get_LeftBrush_Stall())Set_LeftBrush_Stall(0);
 	if (Get_RightBrush_Stall())Set_RightBrush_Stall(0);
@@ -1158,7 +1005,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 				Set_Wheel_Speed(0, 0);
 				Set_Dir_Backward();
 				usleep(300);
-				CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+				CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
 				if (abs((int) (atan(((double)Gyro_GetXAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT ||
 					abs((int) (atan(((double)Gyro_GetYAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT) {
@@ -1394,29 +1241,24 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 
 #if EXPLORE_SCOPE_ENABLE 
 		/*Check if in exploring status*/
-		if (Dynamic_Flag == 1){//Dynamic adjust speed when exploring
-			if (Limited_Flag != 3){//not in distance limit
-				if (bool Explore_Flag = CM_Check_is_exploring() == 1){
+		if (Dynamic_Flag == 1) {//Dynamic adjust speed when exploring
+			if (Limited_Flag != 3) {//not in distance limit
+				if (bool Explore_Flag = CM_Check_is_exploring() == 1) {
 					Limited_Flag = 1;
-				}
-				else if(Explore_Flag == 2){
+				} else if (Explore_Flag == 2) {
 					Limited_Flag = 2;
-				}
-				else if(Explore_Flag == 0){
+				} else if (Explore_Flag == 0) {
 					Limited_Flag = 0;
 				}
 			}
-		}
-		else{//Adjust once when exploring
-			if (Limited_Flag != 1){
-				if (Limited_Flag != 3){//not in distance limit
-					if (bool Explore_Flag = CM_Check_is_exploring() == 1){
+		} else {	//Adjust once when exploring
+			if (Limited_Flag != 1) {
+				if (Limited_Flag != 3) {	//not in distance limit
+					if (bool Explore_Flag = CM_Check_is_exploring() == 1) {
 						Limited_Flag = 1;
-					}
-					else if(Explore_Flag == 2){
+					} else if (Explore_Flag == 2) {
 						Limited_Flag = 2;
-					}
-					else if(Explore_Flag == 0){
+					} else if (Explore_Flag == 0) {
 						Limited_Flag = 0;
 					}
 				}
@@ -1424,7 +1266,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 		}
 #endif
 
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
 #if 1
 		/* Check map boundary. */
@@ -1554,7 +1396,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	if (stop_is_needed == true) {
 		Stop_Brifly();
 	}
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
 	printf("%s %d: move to point: %d\tGyro Calibration: %d\n", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
 	set_gyro(1, 1);
@@ -1692,6 +1534,7 @@ void show_time(std::function<void(void)> task){
 	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
 	std::cout <<"this task runs:" << ms.count() << " ms" << std::endl;
 }
+
 class Motion_controller {
 public:
 	Motion_controller()
@@ -1751,7 +1594,6 @@ uint8_t CM_Touring(void)
 
 	// Reset battery status
 	lowBattery = 0;
-	WheelCount_Left = WheelCount_Right = 0;
 	tiledUpCount = 0;
 
 	Reset_Rcon_Status();
@@ -2421,13 +2263,13 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					Set_Touch();
 					CM_TouringCancel();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return -2;
+					return -5;
 				}
 
 				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
 					printf("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__);
 					Stop_Brifly();
-					return -2;
+					return -5;
 				}
 
 				printf("%s %d Path Find: %d, %d Target Offset: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, offsetIdx,
@@ -2545,7 +2387,7 @@ void CM_CorBack(uint16_t dist)
 
 	printf("%s %d: Moving back...\n", __FUNCTION__, __LINE__);
 	Stop_Brifly();
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 	Set_Dir_Backward();
 	Set_Wheel_Speed(8, 8);
 	Reset_Wheel_Step();
@@ -2560,7 +2402,7 @@ void CM_CorBack(uint16_t dist)
 			break;
 		}
 
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		usleep(10000);
 		Counter_Watcher++;
 		SP = 8 + Counter_Watcher / 100;
@@ -2582,7 +2424,7 @@ void CM_CorBack(uint16_t dist)
 			break;
 		}
 	}
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 	Reset_TempPWM();
 	Stop_Brifly();
 	printf("%s %d: Moving back done!\n", __FUNCTION__, __LINE__);

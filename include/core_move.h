@@ -59,7 +59,7 @@ uint8_t CM_MoveForward(void);
 
 uint8_t CM_Touring(void);
 
-void CM_update_position(uint16_t heading_0, int16_t heading_1, int16_t left, int16_t right);
+void CM_update_position(uint16_t heading_0, int16_t heading_1);
 void CM_update_map(ActionType action, uint8_t bumper);
 void CM_update_map_bumper(ActionType action, uint8_t bumper);
 
