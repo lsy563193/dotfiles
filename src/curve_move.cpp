@@ -22,8 +22,6 @@ using namespace std;
 #define WHEEL_BASE_HALF			(((double)(WHEEL_BASE)) / 2)
 #define CELL_COUNT_MUL_TO_CELL_SIZE	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
 
-extern int16_t WheelCount_Left, WheelCount_Right;
-
 MapTouringType CurveMove_MoveToPoint()
 {
 	int	i;
@@ -101,7 +99,7 @@ MapTouringType CurveMove_MoveToPoint()
 
 	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)\n", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(0), angle_start);
 	while (1) {
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
+		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
 		angle_diff = Gyro_GetAngle(0) - angle_start;
 		if (angle_diff >= 1800) {

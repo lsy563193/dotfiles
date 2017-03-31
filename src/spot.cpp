@@ -28,9 +28,6 @@
 
 #define SPOT_MODE "spot mode"
 
-extern int16_t WheelCount_Left, WheelCount_Right;
-
-
 /* --------------------------------------------------Random Runnincg mode----------------------*/
 void Spot_Mode(void)
 {
@@ -41,8 +38,6 @@ void Spot_Mode(void)
 	uint8_t OBS_Counter = 0;
 	uint8_t Stunk = 0;
 	uint16_t Counter_Watcher = 0;
-
-	WheelCount_Left = WheelCount_Right = 0;
 
 	Move_Style = Spiral_Right_Out;
 
