@@ -5,7 +5,8 @@
 
 #include "mathematics.h"
 #include "debug.h"
-
+#include <functional>
+#include <future>
 typedef enum {
 	Map_Wall_Follow_None = 0,
 	Map_Wall_Follow_Escape_Trapped,
@@ -25,5 +26,5 @@ typedef struct {
 
 uint8_t Map_Wall_Follow(MapWallFollowType follow_type);
 uint8_t Wall_Follow(MapWallFollowType follow_type);
-
+void Wall_Follow_Init_Slam(void);
 #endif

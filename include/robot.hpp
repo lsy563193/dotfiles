@@ -75,6 +75,8 @@ public:
 	int16_t robot_get_home_angle();
 	float robot_get_position_x();
 	float robot_get_position_y();
+	float robot_get_WF_position_x();
+	float robot_get_WF_position_y();
 	float robot_get_odom_position_x();
 	float robot_get_odom_position_y();
 	float robot_get_position_z();
@@ -249,8 +251,10 @@ private:
 	float	position_x;
 	float	position_y;
 	float	position_z;
-	float odom_pose_x;
-	float  odom_pose_y;
+	float	WF_position_x;
+	float	WF_position_y;
+	float	odom_pose_x;
+	float	odom_pose_y;
 	float	position_map_x;
 	float	position_map_y;
 	float	position_x_off;
@@ -281,7 +285,9 @@ private:
 	geometry_msgs::Point m_points;
 
 	tf::TransformListener		*robot_tf;
+	tf::TransformListener		*robot_WF_tf;
 	tf::Stamped<tf::Transform>	map_pose;
+	tf::Stamped<tf::Transform>	WF_map_pose;
 
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
