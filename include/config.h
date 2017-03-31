@@ -370,7 +370,7 @@
 #define ONE_KEY_DISPLAY                     (1)
 
 /*robot type define,currently got two type "ROBOT_X900" "ROBOT_X400"*/
-#define __ROBOT_X900 							(1)
-#define __ROBOT_X400							(0)
+#define __ROBOT_X900 							(0)
+#define __ROBOT_X400							(1)
 
 #define STANDARD_REMOTE   (1)
