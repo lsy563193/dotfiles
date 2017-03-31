@@ -2421,13 +2421,13 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					Set_Touch();
 					CM_TouringCancel();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return -2;
+					return -5;
 				}
 
 				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
 					printf("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__);
 					Stop_Brifly();
-					return -2;
+					return -5;
 				}
 
 				printf("%s %d Path Find: %d, %d Target Offset: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, offsetIdx,
