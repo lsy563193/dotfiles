@@ -214,6 +214,8 @@
 
 extern uint32_t Rcon_Status;
 
+extern volatile int16_t Wall_BaseLine;
+
 void Reset_Work_Time();
 uint32_t Get_Work_Time();
 
@@ -241,6 +243,8 @@ uint8_t Is_Encoder_Fail(void);
 void Set_RightBrush_Stall(uint8_t R);
 
 void Wall_Dynamic_Base(uint32_t Cy);
+void Set_Wall_Base(int32_t data);
+int32_t Get_Wall_Base(void);
 
 void Quick_Back(uint8_t Speed,uint16_t Distance);
 

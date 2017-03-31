@@ -58,6 +58,12 @@ volatile uint8_t R_H_Flag=0;
 // Counter for bumper error
 volatile uint8_t Bumper_Error = 0;
 
+// Value for wall sensor offset.
+volatile int16_t Wall_BaseLine = 50;
+
+// Value for saving the average value of wall sensor.
+int32_t Saved_Wall_Everage = -99;
+
 /*----------------------- Work Timer functions--------------------------*/
 
 static inline int16_t Gyro_GetAngle(){
@@ -154,7 +160,7 @@ void Set_Wheel_Step(uint32_t Left, uint32_t Right)
 
 int32_t Get_Wall_ADC(void)
 {
-	return (int32_t)robot::instance()->robot_get_left_wall();
+	return (int32_t)(int16_t)robot::instance()->robot_get_left_wall();
 }
 
 void Set_Dir_Backward(void)
@@ -181,7 +187,45 @@ void Set_RightBrush_Stall(uint8_t R)
 
 void Wall_Dynamic_Base(uint32_t Cy)
 {
-	Cy = Cy;
+	//ROS_INFO("Run Wall_Dynamic_Base.");
+	static int32_t Wall_Sum_Value=0;
+	static int32_t Wall_Everage_Value=0;
+	static int32_t Wall_E_Counter=0;
+	static int32_t Temp_Wall_Buffer=0;
+
+	Temp_Wall_Buffer = Get_Wall_ADC();
+	Wall_Sum_Value+=Temp_Wall_Buffer;
+	Wall_E_Counter++;
+	Wall_Everage_Value=Wall_Sum_Value/Wall_E_Counter;
+
+	if(ABS_Minus(Wall_Everage_Value,Temp_Wall_Buffer)>20)
+	{
+		Wall_Everage_Value=0;
+		Wall_E_Counter=0;
+		Wall_Sum_Value=0;
+		Temp_Wall_Buffer=0;
+	}
+	if ((uint32_t) Wall_E_Counter > Cy)
+	{
+		Wall_Everage_Value += Get_Wall_Base();
+		if(Wall_Everage_Value>300)Wall_Everage_Value=300;//set a limit
+		Set_Wall_Base(Wall_Everage_Value);
+		Wall_Everage_Value=0;
+		Wall_E_Counter=0;
+		Wall_Sum_Value=0;
+		Temp_Wall_Buffer=0;
+		//Beep(1, 10, 0, 1);
+		//ROS_INFO("Set Wall base value as: %d.", Get_Wall_Base());
+	}
+}
+
+void Set_Wall_Base(int32_t data)
+{
+	Wall_BaseLine = data;
+}
+int32_t Get_Wall_Base(void)
+{
+	return Wall_BaseLine;
 }
 
 void Quick_Back(uint8_t Speed, uint16_t Distance)
