@@ -33,6 +33,9 @@ public:
 	int16_t robot_get_cliff_left();
 	int16_t robot_get_cliff_front();
 	int16_t robot_get_left_wall();
+	int16_t robot_get_right_wall();
+	int16_t robot_get_omni_wheel();
+	int16_t robot_get_visual_wall();
 	bool robot_get_lbrush_oc();
 	bool robot_get_rbrush_oc();
 	bool robot_get_mbrush_oc();

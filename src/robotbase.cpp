@@ -198,6 +198,7 @@ void *serial_receive_routine(void *)
 			}
 		}
 	}
+	ROS_INFO("pthread serial read exit!");
 	//pthread_exit(NULL);
 }
 
@@ -377,6 +378,7 @@ void *robotbase_routine(void*)
 
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 	}
+	ROS_INFO("robotbase thread exit");
 	//pthread_exit(NULL);
 }
 
@@ -417,6 +419,7 @@ void *serial_send_routine(void*){
 		serial_write(SEND_LEN, buf);
 		ResetSendFlag();
 	}
+	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);
 }
 

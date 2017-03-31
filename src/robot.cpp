@@ -112,6 +112,10 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->bumper_left = msg->lbumper;
 
+	this->omni_wheel = msg->omni_wheel;
+
+	this->visual_wall = msg->visual_wall;
+
 	if(msg->ir_ctrl>0)
 		this->ir_ctrl = msg->ir_ctrl;
 
@@ -425,6 +429,33 @@ int16_t robot::robot_get_cliff_front()
 int16_t robot::robot_get_left_wall()
 {
 	return sensor.left_wall - Wall_BaseLine;
+}
+
+int16_t robot::robot_get_right_wall()
+{
+#if __ROBOT_X900
+	return sensor.right_wall;
+#elif __ROBOT_X400
+	return 0;
+#endif
+}
+
+int16_t robot::robot_get_omni_wheel()
+{
+#if __ROBOT_X9000
+	   return sensor.omni_wheel;
+#elif __ROBOT_X400
+	   return 0;
+#endif
+}
+
+int16_t robot::robot_get_visual_wall()
+{
+#if __ROBOT_X900
+	return sensor.visual_wall;
+#elif __ROBOT_X400
+	return 0;
+#endif
 }
 
 bool robot::robot_get_lbrush_oc()//oc : over current
