@@ -1046,6 +1046,9 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	Init_Pose_Y = Map_GetYCount();
 	while (1) {
 		
+#ifdef WALL_DYNAMIC
+		Wall_Dynamic_Base(30);
+#endif
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
 		OBS_Dynamic_Base(100);

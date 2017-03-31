@@ -424,7 +424,7 @@ int16_t robot::robot_get_cliff_front()
 
 int16_t robot::robot_get_left_wall()
 {
-	return sensor.left_wall;
+	return sensor.left_wall - Wall_BaseLine;
 }
 
 bool robot::robot_get_lbrush_oc()//oc : over current

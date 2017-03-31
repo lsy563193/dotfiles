@@ -309,6 +309,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if (!(Temp_Bumper_Status & LeftBumperTrig) && (Temp_Bumper_Status & RightBumperTrig)) {
 				// Only right bumper is triggered.
 				//Stop_Brifly();
+				printf("%s %d, move back for right bumper.\n", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
 				Stop_Brifly();
 				// Turn right for 135 degrees.
@@ -342,8 +343,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				} else {
 					// Only left bumper is triggered.
 					rounding_move_back(350);
-					// Turn right for 45 degrees.
-					rounding_turn(1, TURN_SPEED, 450);
+					// Turn right for 30 degrees.
+					rounding_turn(1, TURN_SPEED, 300);
 					Wall_Straight_Distance = 250;
 				}
 				Move_Forward(10, 10);
