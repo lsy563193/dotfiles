@@ -76,7 +76,7 @@ int temp_speaker_silence_time_count = 0;
 
 // Low battery flag
 extern uint8_t lowBattery;
-extern bool enable_slam_offset;
+extern int8_t enable_slam_offset;
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret,sers_ret;

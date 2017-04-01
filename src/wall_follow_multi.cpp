@@ -26,6 +26,7 @@
 #include "path_planning.h"
 #include "wall_follow_multi.h"
 #include <ros/ros.h>
+#include "debug.h"
 //Turn speed
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -45,6 +46,10 @@ static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 							{1200, 250, 70},
 							{1200, 250, 150},
 							{1200, 250, 150},};
+
+
+extern int16_t WheelCount_Left, WheelCount_Right;
+
 
 /************************************************************************
  * Normal End
@@ -538,6 +543,27 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 	volatile int32_t		Wall_Straight_Distance = 100, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
 	static volatile int32_t	Wall_Distance = Wall_High_Limit;
+	float Start_Pose_X, Start_Pose_Y;
+	float Distance_From_Start;
+	uint8_t		First_Time_Flag;
+	// This list is for storing the position that robot sees the charger stub.
+	extern std::list <Point32_t> Home_Point;
+	// This is for adding new point to Home Point list.
+	extern Point32_t New_Home_Point;
+
+	Wall_Follow_Init_Slam();
+
+	//Initital home point
+	Home_Point.clear();
+	New_Home_Point.X = New_Home_Point.Y = 0;
+	// Push the start point into the home point list
+	Home_Point.push_front(New_Home_Point);
+
+	Map_Initialize();
+	ROS_INFO("grid map initialized");
+	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
+	ROS_INFO("path planning initialized");
+
 	//pthread_t	escape_thread_id;
 	if (Get_IMU_Status() == 0){
         	Set_gyro_on();
@@ -578,7 +604,12 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Left_Wall_Speed = 15;
 
 	
-	while (1) {
+	while (ros::ok()) {
+		/*------------------------------------WF_Map_Update---------------------------------------------------*/
+		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));		
+		//debug_WF_map(MAP, 0, 0);
+		//debug_sm_map(SPMAP, 0, 0);
+
 		if(Is_OBS_Near()) {
 			Left_Wall_Speed = 15;
 		} else {
@@ -617,6 +648,9 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 	/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 	escape_trapped_timer = time(NULL);
+	Start_Pose_X =  robot::instance()->robot_get_position_x();
+	Start_Pose_Y =  robot::instance()->robot_get_position_y();
+	First_Time_Flag = 1;
 	while (ros::ok()) {
 		/*
 		if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME || escape_thread_running == false) {
@@ -624,12 +658,48 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			break;
 		}
 		*/
+		/*-------------------------------------------------Start Pose Check------------------------------*/
+		if (First_Time_Flag == 0){
+				if ((Distance_From_Start = (sqrtf(powf(Start_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) < 0.303 ){
+					CM_MoveToCell(0, 0, 2, 0, 1);
+					ROS_INFO("In Start Pose, finish wall follow.");
+					// Beep for the finish signal.
+					for (i = 10; i > 0; i--) {
+						Beep(i, 6, 0, 1);
+						usleep(100000);
+					}
+					Wall_Follow_Stop_Slam();
+					debug_WF_map(MAP, 0, 0);
+					debug_sm_map(SPMAP, 0, 0);
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					break;
+				}
+		}
+		else{
+				if ((Distance_From_Start = (sqrtf(powf(Start_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) > 0.303 ){
+					ROS_INFO("Out Start Pose");
+					First_Time_Flag = 0;
+			}
+		}
+		//ROS_INFO("Distance_From_Start = %f", Distance_From_Start);
+
+		/*------------------------------------WF_Map_Update---------------------------------------------------*/
+		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		//debug_WF_map(MAP, 0, 0);
+		//debug_sm_map(SPMAP, 0, 0);
 
 #ifdef OBS_DYNAMIC
 
 		OBS_Dynamic_Base(100);
 
 #endif
+		/*
+		printf("WF_position_x = %f\n", robot::instance()->robot_get_WF_position_x());
+		printf("WF_position_y = %f\n", robot::instance()->robot_get_WF_position_y());
+		printf("position_x = %f\n", robot::instance()->robot_get_position_x());
+		printf("position_y = %f\n", robot::instance()->robot_get_position_y());
+		*/
+
 		//printf("wall_following\n");
 		//WFM_boundary_check();
 		/*------------------------------------------------------Check Current--------------------------------*/
@@ -938,4 +1008,34 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Stop_Brifly();
 	Move_Forward(0, 0);
 	return ret;
+}
+
+void Wall_Follow_Init_Slam(void){
+	extern int8_t enable_slam_offset;
+	extern void start_slam(void);
+	robot::instance()->Subscriber();
+	robot::instance()->start_lidar();
+	//std::async(std::launch::async, start_slam);
+	start_slam();
+	/*while (robot::instance()->map_ready() == false || ros::ok()){
+		usleep(100);
+		ROS_WARN("waiting for map");
+	}*/
+	sleep(5);
+	enable_slam_offset = 2;
+}
+	
+void Wall_Follow_Stop_Slam(void){
+	extern int8_t enable_slam_offset;
+	extern void start_slam(void);
+	robot::instance()->UnSubscriber();
+	Disable_Motors();
+	robot::instance()->stop_lidar();
+	//std::async(std::launch::async, start_slam);
+	robot::instance()->stop_slam();
+	/*while (robot::instance()->map_ready() == false || ros::ok()){
+		usleep(100);
+		ROS_WARN("waiting for map");
+	}*/
+	enable_slam_offset = 0;
 }

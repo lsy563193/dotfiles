@@ -67,7 +67,8 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
 extern bool is_line_angle_offset;
-bool enable_slam_offset{false};
+int8_t enable_slam_offset = 0;
+
 
 // This list is for storing the position that robot sees the charger stub.
 std::list <Point32_t> Home_Point;
@@ -1553,7 +1554,7 @@ public:
 			stop_obstacle_detector();
 		}
 
-		enable_slam_offset = true;
+		enable_slam_offset = 1;
 		start_slam();
 
 	};
@@ -1570,7 +1571,7 @@ public:
 		show_time(Set_gyro_off);
 		Reset_IMU_Status();
 		is_line_angle_offset = false;
-		enable_slam_offset = false;
+		enable_slam_offset = 0;
 		robot::instance()->stop_slam();
 		robot::instance()->UnSubscriber();
 	}

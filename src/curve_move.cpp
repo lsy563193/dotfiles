@@ -90,7 +90,7 @@ MapTouringType CurveMove_MoveToPoint()
 	}
 	ROS_WARN("%s %d: speed(%d, %d)\n", __FUNCTION__, __LINE__, speed_left, speed_right);
 	if ( speed_left < 0 || speed_left > PATH_PLANNER_MAX_SPEED || speed_right < 0 || speed_right > PATH_PLANNER_MAX_SPEED) {
-		ROS_WARN("%s %d: left/right speed error (%d, %d)", speed_left, speed_right);
+		ROS_WARN("%s %d: left/right speed error (%d, %d)", __FUNCTION__, __LINE__, speed_left, speed_right);
 		return MT_CurveMove;
 	}
 
