@@ -668,6 +668,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						Beep(i, 6, 0, 1);
 						usleep(100000);
 					}
+					Wall_Follow_Stop_Slam();
 					debug_WF_map(MAP, 0, 0);
 					debug_sm_map(SPMAP, 0, 0);
 					Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1014,7 +1015,8 @@ void Wall_Follow_Init_Slam(void){
 	extern void start_slam(void);
 	robot::instance()->Subscriber();
 	robot::instance()->start_lidar();
-	std::async(std::launch::async, start_slam);
+	//std::async(std::launch::async, start_slam);
+	start_slam();
 	/*while (robot::instance()->map_ready() == false || ros::ok()){
 		usleep(100);
 		ROS_WARN("waiting for map");
@@ -1022,4 +1024,18 @@ void Wall_Follow_Init_Slam(void){
 	sleep(5);
 	enable_slam_offset = 2;
 }
-
+	
+void Wall_Follow_Stop_Slam(void){
+	extern int8_t enable_slam_offset;
+	extern void start_slam(void);
+	robot::instance()->UnSubscriber();
+	Disable_Motors();
+	robot::instance()->stop_lidar();
+	//std::async(std::launch::async, start_slam);
+	robot::instance()->stop_slam();
+	/*while (robot::instance()->map_ready() == false || ros::ok()){
+		usleep(100);
+		ROS_WARN("waiting for map");
+	}*/
+	enable_slam_offset = 0;
+}

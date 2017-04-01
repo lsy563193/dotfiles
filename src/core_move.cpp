@@ -1556,7 +1556,7 @@ public:
 		}
 
 		std::async(std::launch::async, start_slam);
-		enable_slam_offset = true;
+		enable_slam_offset = 1;
 
 	};
 
@@ -1572,7 +1572,7 @@ public:
 		show_time(Set_gyro_off);
 		Reset_IMU_Status();
 		is_line_angle_offset = false;
-		enable_slam_offset = false;
+		enable_slam_offset = 0;
 		robot::instance()->stop_slam();
 		robot::instance()->UnSubscriber();
 	}
