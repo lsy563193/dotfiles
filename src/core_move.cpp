@@ -1540,10 +1540,9 @@ public:
 	Motion_controller()
 	{
 		Set_gyro_off();
-		std::async(std::launch::async, start_obstacle_detector);
 		show_time(Set_gyro_on);
+		start_obstacle_detector();
 		Set_IMU_Status();
-
 		robot::instance()->Subscriber();
 		Work_Motor_Configure();
 		robot::instance()->start_lidar();
@@ -1551,11 +1550,11 @@ public:
 		if (robot::instance()->align_active() == true)
 		{
 			robot::instance()->align();
-			std::async(std::launch::async, stop_obstacle_detector);
+			stop_obstacle_detector();
 		}
 
-		start_slam();
 		enable_slam_offset = true;
+		start_slam();
 
 	};
 
@@ -1685,7 +1684,7 @@ uint8_t CM_Touring(void)
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
-	while(robot::instance()->map_ready() == false||--count_n_10ms == 0){
+	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
 		  usleep(10000);
 	}
 	if(count_n_10ms == 0)
