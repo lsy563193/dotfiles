@@ -1554,7 +1554,7 @@ public:
 			std::async(std::launch::async, stop_obstacle_detector);
 		}
 
-		std::async(std::launch::async, start_slam);
+		start_slam();
 		enable_slam_offset = true;
 
 	};
