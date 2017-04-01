@@ -27,6 +27,7 @@
 #include "wall_follow_multi.h"
 #include <ros/ros.h>
 #include "debug.h"
+#include "rounding.h"
 //Turn speed
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -66,10 +67,10 @@ void WFM_move_back(uint16_t dist)
 	Set_Wheel_Speed(5, 5);
 	Counter_Watcher = 0;
 
-	pos_x = robot::instance()->robot_get_position_x();
-	pos_y = robot::instance()->robot_get_position_y();
+	pos_x = robot::instance()->robot_get_odom_position_x();
+	pos_y = robot::instance()->robot_get_odom_position_y();
 	while (ros::ok()) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_odom_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_odom_position_y(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -685,6 +686,9 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 		/*------------------------------------WF_Map_Update---------------------------------------------------*/
 		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		//update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		//rounding_update();
 		//debug_WF_map(MAP, 0, 0);
 		//debug_sm_map(SPMAP, 0, 0);
 
@@ -1039,3 +1043,84 @@ void Wall_Follow_Stop_Slam(void){
 	}*/
 	enable_slam_offset = 0;
 }
+
+
+void WF_update_position(uint16_t heading_0, int16_t heading_1) {
+	float   pos_x, pos_y;
+	int8_t	c, d, e;
+	int16_t	x, y;
+	uint16_t	path_heading;
+	int32_t	i, j;
+
+	if (heading_0 > heading_1 && heading_0 - heading_1 > 1800) {
+		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
+	} else if (heading_1 > heading_0 && heading_1 - heading_0 > 1800) {
+		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
+	} else {
+		path_heading = (uint16_t)(heading_0 + heading_1) >> 1;
+	}
+
+	x = Map_GetXPos();
+	y = Map_GetYPos();
+
+	//Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
+	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	Map_SetPosition(pos_x, pos_y);
+
+#if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
+
+	if (x != Map_GetXPos() || y != Map_GetYPos()) {
+		for (c = 1; c >= -1; --c) {
+			for (d = 1; d >= -1; --d) {
+				i = Map_GetRelativeX(path_heading, CELL_SIZE * c, CELL_SIZE * d);
+				j = Map_GetRelativeY(path_heading, CELL_SIZE * c, CELL_SIZE * d);
+				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
+
+				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER || e == BLOCKED_BOUNDARY ) {
+					Map_SetCell(MAP, i, j, CLEANED);
+				}
+			}
+		}
+	}
+
+	Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, CELL_SIZE), CLEANED);
+	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
+	Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), CLEANED);
+
+	//if (should_mark == 1) {
+		//if (rounding_type == ROUNDING_LEFT) {
+			i = Map_GetRelativeX(heading_0, CELL_SIZE_3, 0);
+			j = Map_GetRelativeY(heading_0, CELL_SIZE_3, 0);
+			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
+				Map_SetCell(MAP, i, j, BLOCKED_OBS);
+			}
+		/*} else if (rounding_type == ROUNDING_RIGHT) {
+			i = Map_GetRelativeX(heading_0, -CELL_SIZE_3, 0);
+			j = Map_GetRelativeY(heading_0, -CELL_SIZE_3, 0);
+			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
+				Map_SetCell(MAP, i, j, BLOCKED_OBS);
+			}
+		*/
+		//}
+	//}
+
+#else
+
+	i = Map_GetRelativeX(path_heading, 0, 0);
+	j = Map_GetRelativeY(path_heading, 0, 0);
+	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
+
+	//if (should_mark == 1) {
+		//if (rounding_type == ROUNDING_LEFT && Get_Wall_ADC() > 200) {
+		//if (rounding_type == ROUNDING_LEFT) {
+			Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, 0), Map_GetRelativeY(heading_0, CELL_SIZE, 0), BLOCKED_OBS);
+			//Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), BLOCKED_OBS);
+		/*} else if (rounding_type == ROUNDING_RIGHT) {
+			Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, 0), Map_GetRelativeY(heading_0, -CELL_SIZE, 0), BLOCKED_OBS);
+			//Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, -CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, -CELL_SIZE), BLOCKED_OBS);
+		}*/
+	//}
+#endif
+}
+
