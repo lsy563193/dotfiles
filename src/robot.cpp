@@ -853,13 +853,13 @@ void robot::start_lidar(void)
 void robot::stop_lidar(void){
 	std_srvs::Empty empty;
 //	is_odom_ready = false;
-	do
-	{
+//	do
+//	{
 		laser::instance()->is_ready(false);
 		ROS_INFO("stop_lidar");
 		stop_mator_cli_.call(empty);
-		sleep(2);
-	}while (laser::instance()->is_ready() == true);
+//		sleep(2);
+//	}while (laser::instance()->is_ready() == true);
 
 }
 
