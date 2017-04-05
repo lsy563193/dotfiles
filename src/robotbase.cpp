@@ -76,7 +76,7 @@ int temp_speaker_silence_time_count = 0;
 
 // Low battery flag
 extern uint8_t lowBattery;
-extern bool enable_slam_offset;
+extern int8_t enable_slam_offset;
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret,sers_ret;
@@ -95,11 +95,11 @@ int robotbase_init(void)
 	Set_LED(100,0);
 	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
-	do {
-		serial_write(SEND_LEN,sendStream);
-		usleep(20000);
-	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
-	printf("OK!\n");
+//	do {
+//		serial_write(SEND_LEN,sendStream);
+//		usleep(20000);
+//	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
+//	printf("OK!\n");
 	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);

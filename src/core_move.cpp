@@ -67,7 +67,8 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
 extern bool is_line_angle_offset;
-bool enable_slam_offset{false};
+int8_t enable_slam_offset = 0;
+
 
 // This list is for storing the position that robot sees the charger stub.
 std::list <Point32_t> Home_Point;
@@ -1539,10 +1540,9 @@ public:
 	Motion_controller()
 	{
 		Set_gyro_off();
-		std::async(std::launch::async, start_obstacle_detector);
 		show_time(Set_gyro_on);
+		start_obstacle_detector();
 		Set_IMU_Status();
-
 		robot::instance()->Subscriber();
 		Work_Motor_Configure();
 		robot::instance()->start_lidar();
@@ -1550,11 +1550,11 @@ public:
 		if (robot::instance()->align_active() == true)
 		{
 			robot::instance()->align();
-			std::async(std::launch::async, stop_obstacle_detector);
+			stop_obstacle_detector();
 		}
 
-		std::async(std::launch::async, start_slam);
-		enable_slam_offset = true;
+		enable_slam_offset = 1;
+		start_slam();
 
 	};
 
@@ -1570,7 +1570,7 @@ public:
 		show_time(Set_gyro_off);
 		Reset_IMU_Status();
 		is_line_angle_offset = false;
-		enable_slam_offset = false;
+		enable_slam_offset = 0;
 		robot::instance()->stop_slam();
 		robot::instance()->UnSubscriber();
 	}
@@ -1684,7 +1684,7 @@ uint8_t CM_Touring(void)
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
-	while(robot::instance()->map_ready() == false||--count_n_10ms == 0){
+	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
 		  usleep(10000);
 	}
 	if(count_n_10ms == 0)
