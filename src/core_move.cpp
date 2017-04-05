@@ -76,7 +76,6 @@ Point32_t New_Home_Point;
 
 uint8_t map_touring_cancel = 0;
 
-uint8_t LED_Blink = 0, LED_Blink_State = 0;
 uint8_t	go_home = 0;
 uint8_t	remote_go_home = 0;
 uint8_t	from_station = 0;
@@ -1601,7 +1600,7 @@ uint8_t CM_Touring(void)
 
 	station_zone = -1;
 	from_station = 0;
-	map_touring_cancel = LED_Blink = LED_Blink_State = go_home = remote_go_home = 0;
+	map_touring_cancel = go_home = remote_go_home = 0;
 
 	Reset_Touch();
 	Reset_MoveWithRemote();
@@ -1715,10 +1714,6 @@ uint8_t CM_Touring(void)
 				pnt16ArTmp[0] = tmpPnt;
 				path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
-				k = 0;
-				while ((k++ < 10000) && (LED_Blink_State != LED_Blink)) {
-					usleep(1);
-				}
 				if (remote_go_home == 1) {
 					Set_LED(100, 100);
 					SetHomeRemote();
@@ -1900,7 +1895,6 @@ uint8_t CM_Touring(void)
 				if (state == -1) {
 
 					ROS_DEBUG("Find path-----------------------------");
-					LED_Blink = 1;
 
 					x_current = Map_GetXPos();
 					y_current = Map_GetYPos();
@@ -1909,7 +1903,6 @@ uint8_t CM_Touring(void)
 					ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 
 					printf("State: %d", state);
-					LED_Blink = 0;
 					if (CM_handleExtEvent() != MT_None) {
 						return 0;
 					}
@@ -2080,8 +2073,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	Point16_t	tmp, pos;
 	MapTouringType	mt_state = MT_None;
 
-	LED_Blink = 0;
-
 	if (is_block_accessible(x, y) == 0) {
 		printf("%s %d: target is blocked.\n\n", __FUNCTION__, __LINE__);
 		Map_Set_Cells(ROBOT_SIZE, x, y, CLEANED);
@@ -2092,11 +2083,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	if ( mode ==  1 ) {
 		printf("%s %d Path Find: Escape Mode\n", __FUNCTION__, __LINE__);
 
-		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		pos.X = x;
 		pos.Y = y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),  &tmp.X, &tmp.Y, 0 );
-		LED_Blink = 0;
 
 		return 0;
 	} else if ( mode == 2 ) {
@@ -2142,7 +2131,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			         TwoPointsDistance( relativePos[i].X * 1000, relativePos[i].Y * 1000, 0, 0 ));
 		}
 
-		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
 
 		path_reset_path_points();
@@ -2150,7 +2138,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		pos.X = x + relativePos[0].X;
 		pos.Y = y + relativePos[0].Y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
-		LED_Blink = 0;
 
 		//Set cell
 		Map_Set_Cells(ROBOT_SIZE, x + relativePos[0].X, y + relativePos[0].Y, CLEANED);
@@ -2220,7 +2207,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					continue;
 				}
 
-				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
 
 				path_reset_path_points();
@@ -2229,7 +2215,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
 				                                      &tmp.X, &tmp.Y, last_dir );
-				LED_Blink = 0;
 
 				if (CM_CheckLoopBack(tmp) == 1) {
 					pathFind = -2;
@@ -2248,7 +2233,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					return -2;
 				}
 
-				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
 
 				path_reset_path_points();
@@ -2257,7 +2241,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
 				                                      &tmp.X, &tmp.Y, last_dir );
-				LED_Blink = 0;
 
 				if (Touch_Detect()) {
 					Set_Touch();
@@ -2285,7 +2268,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	//Normal mode
 	else {
 		printf("%s %d Path Find: Normal Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
-		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
 
 		path_reset_path_points();
@@ -2293,7 +2275,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		pos.X = x;
 		pos.Y = y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
-		LED_Blink = 0;
 
 		printf("%s %d Path Find: %d\n", __FUNCTION__, __LINE__, pathFind);
 		printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
@@ -2360,7 +2341,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				return 0;
 			}
 
-			LED_Blink = (remote_go_home != 1 ? 1 : 2);
 			last_dir = path_get_robot_direction();
 
 			path_reset_path_points();
@@ -2368,7 +2348,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			pos.X = x;
 			pos.Y = y;
 			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, last_dir );
-			LED_Blink = 0;
 
 			printf("%s %d Path Find: %d, target: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, x, y);
 			printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
