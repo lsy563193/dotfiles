@@ -831,21 +831,29 @@ void robot::align_active(bool active){
 void robot::start_lidar(void)
 {
 	std_srvs::Empty empty;
-	auto count_3s = 0;
+	auto count_6s = 0;
+	bool  first_start = true;
 	do
 	{
-
+		if (! first_start)
+		{
+			// todo pull down gpio
+			ROS_INFO("lidar start false, power off and try again!!!");
+			stop_mator_cli_.call(empty);
+			sleep(2);
+		}
+		first_start = false;
 		ROS_INFO("start_mator");
 		start_mator_cli_.call(empty);
-		count_3s = 300;
+		count_6s = 600;
 		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_3s > 0)
+		while (laser::instance()->is_ready() == false && --count_6s > 0)
 		{
-			if (count_3s % 100 == 0)
-				ROS_INFO("start_lidar time remain %d", count_3s / 100);
+			if (count_6s % 100 == 0)
+				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
 			usleep(10000);
 		}
-	}while (count_3s == 0);
+	}while (count_6s == 0);
 
 //	ROS_INFO("start_mator success!!!");
 }
