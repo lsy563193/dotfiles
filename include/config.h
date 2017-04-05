@@ -238,8 +238,12 @@
  */
 #define BASE_SPEED						((int32_t) 15) // 15)
 #define ROTATE_TOP_SPEED				((uint32_t) 16) // 22)
-#define RUN_TOP_SPEED					((int32_t) 43) // 45)
+#if __ROBOT_X900
+#define RUN_TOP_SPEED					((int32_t) 40) // 45)
+#elif __ROBOT_X400
 
+#define RUN_TOP_SPEED					((int32_t) 43) // 45)
+#endif
 /*
  * Go home using CM_MoveToCell function
  */

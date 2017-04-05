@@ -92,7 +92,7 @@ bool is_serial_ready(){
 	return serial_init_done;
 }		
 int serial_flush(){
-	return fsync(crport_fd);
+	return tcflush(crport_fd,TCIFLUSH);
 }
 int serial_close()
 {
