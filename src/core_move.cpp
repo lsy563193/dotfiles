@@ -67,7 +67,8 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
 extern bool is_line_angle_offset;
-bool enable_slam_offset{false};
+int8_t enable_slam_offset = 0;
+
 
 // This list is for storing the position that robot sees the charger stub.
 std::list <Point32_t> Home_Point;
@@ -76,7 +77,6 @@ Point32_t New_Home_Point;
 
 uint8_t map_touring_cancel = 0;
 
-uint8_t LED_Blink = 0, LED_Blink_State = 0;
 uint8_t	go_home = 0;
 uint8_t	remote_go_home = 0;
 uint8_t	from_station = 0;
@@ -92,7 +92,6 @@ Point16_t relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARR
 extern PositionType positions[];
 
 extern int16_t xMin, xMax, yMin, yMax;
-int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
 
 extern volatile uint8_t cleaning_mode;
 
@@ -1540,10 +1539,9 @@ public:
 	Motion_controller()
 	{
 		Set_gyro_off();
-		std::async(std::launch::async, start_obstacle_detector);
 		show_time(Set_gyro_on);
+		start_obstacle_detector();
 		Set_IMU_Status();
-
 		robot::instance()->Subscriber();
 		Work_Motor_Configure();
 		robot::instance()->start_lidar();
@@ -1551,11 +1549,11 @@ public:
 		if (robot::instance()->align_active() == true)
 		{
 			robot::instance()->align();
-			std::async(std::launch::async, stop_obstacle_detector);
+			stop_obstacle_detector();
 		}
 
-		std::async(std::launch::async, start_slam);
-		enable_slam_offset = true;
+		enable_slam_offset = 1;
+		start_slam();
 
 	};
 
@@ -1571,7 +1569,7 @@ public:
 		show_time(Set_gyro_off);
 		Reset_IMU_Status();
 		is_line_angle_offset = false;
-		enable_slam_offset = false;
+		enable_slam_offset = 0;
 		robot::instance()->stop_slam();
 		robot::instance()->UnSubscriber();
 	}
@@ -1580,7 +1578,7 @@ uint8_t CM_Touring(void)
 {
 	int8_t	state;
 	uint8_t Blink_LED = 0;
-	int16_t	i, k, j, x, y, x_current, y_current, start, end;
+	int16_t	i, x, y, x_current, y_current, start, end;
 	float	slop, intercept;
 
 	// X, Y in Target_Point are all counts.
@@ -1601,7 +1599,7 @@ uint8_t CM_Touring(void)
 
 	station_zone = -1;
 	from_station = 0;
-	map_touring_cancel = LED_Blink = LED_Blink_State = go_home = remote_go_home = 0;
+	map_touring_cancel = go_home = remote_go_home = 0;
 
 	Reset_Touch();
 	Reset_MoveWithRemote();
@@ -1685,7 +1683,7 @@ uint8_t CM_Touring(void)
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
-	while(robot::instance()->map_ready() == false||--count_n_10ms == 0){
+	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
 		  usleep(10000);
 	}
 	if(count_n_10ms == 0)
@@ -1715,10 +1713,6 @@ uint8_t CM_Touring(void)
 				pnt16ArTmp[0] = tmpPnt;
 				path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
-				k = 0;
-				while ((k++ < 10000) && (LED_Blink_State != LED_Blink)) {
-					usleep(1);
-				}
 				if (remote_go_home == 1) {
 					Set_LED(100, 100);
 					SetHomeRemote();
@@ -1726,51 +1720,7 @@ uint8_t CM_Touring(void)
 				
 
 				//2.2-1.3 Path to unclean area
-				k = 3;
-				xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
-				for (i = xMin; xMinSearch == SHRT_MAX; i++) {
-					for (j = yMin; j <= yMax; j++) {
-						if (Map_GetCell(MAP, i, j) != UNCLEAN) {
-							xMinSearch = i - k;
-							break;
-						}
-					}
-				}
-				for (i = xMax; xMaxSearch == SHRT_MAX; i--) {
-					for (j = yMin; j <= yMax; j++) {
-						if (Map_GetCell(MAP, i, j) != UNCLEAN) {
-							xMaxSearch = i + k;
-							break;
-						}
-					}
-				}
-				for (i = yMin; yMinSearch == SHRT_MAX; i++) {
-					for (j = xMin; j <= xMax; j++) {
-						if (Map_GetCell(MAP, j, i) != UNCLEAN) {
-							yMinSearch = i - k;
-							break;
-						}
-					}
-				}
-				for (i = yMax; yMaxSearch == SHRT_MAX; i--) {
-					for (j = xMin; j <= xMax; j++) {
-						if (Map_GetCell(MAP, j, i) != UNCLEAN) {
-							yMaxSearch = i + k;
-							break;
-						}
-					}
-				}
-				printf("%s %d: x: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
-				for (i = xMinSearch; i <= xMaxSearch; i++) {
-					if (i == xMinSearch || i == xMaxSearch) {
-						for (j = yMinSearch; j <= yMaxSearch; j++) {
-							Map_SetCell(MAP, cellToCount(i), cellToCount(j), BLOCKED_BUMPER);
-						}
-					} else {
-						Map_SetCell(MAP, cellToCount(i), cellToCount(yMinSearch), BLOCKED_BUMPER);
-						Map_SetCell(MAP, cellToCount(i), cellToCount(yMaxSearch), BLOCKED_BUMPER);
-					}
-				}
+				CM_create_home_boundary();
 
 				// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
 				tmpPnt.X = countToCell(Home_Point.front().X);
@@ -1900,7 +1850,6 @@ uint8_t CM_Touring(void)
 				if (state == -1) {
 
 					ROS_DEBUG("Find path-----------------------------");
-					LED_Blink = 1;
 
 					x_current = Map_GetXPos();
 					y_current = Map_GetYPos();
@@ -1909,7 +1858,6 @@ uint8_t CM_Touring(void)
 					ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 
 					printf("State: %d", state);
-					LED_Blink = 0;
 					if (CM_handleExtEvent() != MT_None) {
 						return 0;
 					}
@@ -2080,8 +2028,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	Point16_t	tmp, pos;
 	MapTouringType	mt_state = MT_None;
 
-	LED_Blink = 0;
-
 	if (is_block_accessible(x, y) == 0) {
 		printf("%s %d: target is blocked.\n\n", __FUNCTION__, __LINE__);
 		Map_Set_Cells(ROBOT_SIZE, x, y, CLEANED);
@@ -2092,11 +2038,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	if ( mode ==  1 ) {
 		printf("%s %d Path Find: Escape Mode\n", __FUNCTION__, __LINE__);
 
-		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		pos.X = x;
 		pos.Y = y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),  &tmp.X, &tmp.Y, 0 );
-		LED_Blink = 0;
 
 		return 0;
 	} else if ( mode == 2 ) {
@@ -2142,7 +2086,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			         TwoPointsDistance( relativePos[i].X * 1000, relativePos[i].Y * 1000, 0, 0 ));
 		}
 
-		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
 
 		path_reset_path_points();
@@ -2150,7 +2093,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		pos.X = x + relativePos[0].X;
 		pos.Y = y + relativePos[0].Y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
-		LED_Blink = 0;
 
 		//Set cell
 		Map_Set_Cells(ROBOT_SIZE, x + relativePos[0].X, y + relativePos[0].Y, CLEANED);
@@ -2220,7 +2162,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					continue;
 				}
 
-				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
 
 				path_reset_path_points();
@@ -2229,7 +2170,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
 				                                      &tmp.X, &tmp.Y, last_dir );
-				LED_Blink = 0;
 
 				if (CM_CheckLoopBack(tmp) == 1) {
 					pathFind = -2;
@@ -2248,7 +2188,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					return -2;
 				}
 
-				LED_Blink = (remote_go_home != 1 ? 1 : 2);
 				last_dir = path_get_robot_direction();
 
 				path_reset_path_points();
@@ -2257,7 +2196,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
 				                                      &tmp.X, &tmp.Y, last_dir );
-				LED_Blink = 0;
 
 				if (Touch_Detect()) {
 					Set_Touch();
@@ -2285,7 +2223,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	//Normal mode
 	else {
 		printf("%s %d Path Find: Normal Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
-		LED_Blink = (remote_go_home != 1 ? 1 : 2);
 		last_dir = path_get_robot_direction();
 
 		path_reset_path_points();
@@ -2293,7 +2230,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		pos.X = x;
 		pos.Y = y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
-		LED_Blink = 0;
 
 		printf("%s %d Path Find: %d\n", __FUNCTION__, __LINE__, pathFind);
 		printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
@@ -2360,7 +2296,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				return 0;
 			}
 
-			LED_Blink = (remote_go_home != 1 ? 1 : 2);
 			last_dir = path_get_robot_direction();
 
 			path_reset_path_points();
@@ -2368,7 +2303,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			pos.X = x;
 			pos.Y = y;
 			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, last_dir );
-			LED_Blink = 0;
 
 			printf("%s %d Path Find: %d, target: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, x, y);
 			printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
@@ -2559,4 +2493,56 @@ MapTouringType CM_handleExtEvent()
 	}
 
 	return MT_None;
+}
+
+void CM_create_home_boundary(void)
+{
+	int16_t i, j, k;
+	int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
+
+	k = 3;
+	xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
+	for (i = xMin; xMinSearch == SHRT_MAX; i++) {
+		for (j = yMin; j <= yMax; j++) {
+			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
+				xMinSearch = i - k;
+				break;
+			}
+		}
+	}
+	for (i = xMax; xMaxSearch == SHRT_MAX; i--) {
+		for (j = yMin; j <= yMax; j++) {
+			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
+				xMaxSearch = i + k;
+				break;
+			}
+		}
+	}
+	for (i = yMin; yMinSearch == SHRT_MAX; i++) {
+		for (j = xMin; j <= xMax; j++) {
+			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
+				yMinSearch = i - k;
+				break;
+			}
+		}
+	}
+	for (i = yMax; yMaxSearch == SHRT_MAX; i--) {
+		for (j = xMin; j <= xMax; j++) {
+			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
+				yMaxSearch = i + k;
+				break;
+			}
+		}
+	}
+	printf("%s %d: x: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
+	for (i = xMinSearch; i <= xMaxSearch; i++) {
+		if (i == xMinSearch || i == xMaxSearch) {
+			for (j = yMinSearch; j <= yMaxSearch; j++) {
+				Map_SetCell(MAP, cellToCount(i), cellToCount(j), BLOCKED_BUMPER);
+			}
+		} else {
+			Map_SetCell(MAP, cellToCount(i), cellToCount(yMinSearch), BLOCKED_BUMPER);
+			Map_SetCell(MAP, cellToCount(i), cellToCount(yMaxSearch), BLOCKED_BUMPER);
+		}
+	}
 }

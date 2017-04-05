@@ -384,5 +384,4 @@
 #define ONE_KEY_DISPLAY                     (1)
 
 
-
 #define STANDARD_REMOTE   (1)

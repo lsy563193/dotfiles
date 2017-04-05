@@ -89,5 +89,7 @@ void CM_Matrix_Rotate(int32_t x_in, int32_t y_in, int32_t *x_out, int32_t *y_out
 
 MapTouringType CM_handleExtEvent(void);
 
+void CM_create_home_boundary(void);
+
 #endif
 
