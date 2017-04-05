@@ -1541,10 +1541,14 @@ public:
 	{
 		Set_gyro_off();
 		show_time(Set_gyro_on);
-		start_obstacle_detector();
 		Set_IMU_Status();
 		robot::instance()->Subscriber();
 		Work_Motor_Configure();
+		if (robot::instance()->align_active() == true)
+		{
+			start_obstacle_detector();
+		}
+
 		robot::instance()->start_lidar();
 
 		if (robot::instance()->align_active() == true)
