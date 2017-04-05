@@ -92,7 +92,6 @@ Point16_t relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARR
 extern PositionType positions[];
 
 extern int16_t xMin, xMax, yMin, yMax;
-int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
 
 extern volatile uint8_t cleaning_mode;
 
@@ -1579,7 +1578,7 @@ uint8_t CM_Touring(void)
 {
 	int8_t	state;
 	uint8_t Blink_LED = 0;
-	int16_t	i, k, j, x, y, x_current, y_current, start, end;
+	int16_t	i, x, y, x_current, y_current, start, end;
 	float	slop, intercept;
 
 	// X, Y in Target_Point are all counts.
@@ -1721,51 +1720,7 @@ uint8_t CM_Touring(void)
 				
 
 				//2.2-1.3 Path to unclean area
-				k = 3;
-				xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
-				for (i = xMin; xMinSearch == SHRT_MAX; i++) {
-					for (j = yMin; j <= yMax; j++) {
-						if (Map_GetCell(MAP, i, j) != UNCLEAN) {
-							xMinSearch = i - k;
-							break;
-						}
-					}
-				}
-				for (i = xMax; xMaxSearch == SHRT_MAX; i--) {
-					for (j = yMin; j <= yMax; j++) {
-						if (Map_GetCell(MAP, i, j) != UNCLEAN) {
-							xMaxSearch = i + k;
-							break;
-						}
-					}
-				}
-				for (i = yMin; yMinSearch == SHRT_MAX; i++) {
-					for (j = xMin; j <= xMax; j++) {
-						if (Map_GetCell(MAP, j, i) != UNCLEAN) {
-							yMinSearch = i - k;
-							break;
-						}
-					}
-				}
-				for (i = yMax; yMaxSearch == SHRT_MAX; i--) {
-					for (j = xMin; j <= xMax; j++) {
-						if (Map_GetCell(MAP, j, i) != UNCLEAN) {
-							yMaxSearch = i + k;
-							break;
-						}
-					}
-				}
-				printf("%s %d: x: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
-				for (i = xMinSearch; i <= xMaxSearch; i++) {
-					if (i == xMinSearch || i == xMaxSearch) {
-						for (j = yMinSearch; j <= yMaxSearch; j++) {
-							Map_SetCell(MAP, cellToCount(i), cellToCount(j), BLOCKED_BUMPER);
-						}
-					} else {
-						Map_SetCell(MAP, cellToCount(i), cellToCount(yMinSearch), BLOCKED_BUMPER);
-						Map_SetCell(MAP, cellToCount(i), cellToCount(yMaxSearch), BLOCKED_BUMPER);
-					}
-				}
+				CM_create_home_boundary();
 
 				// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
 				tmpPnt.X = countToCell(Home_Point.front().X);
@@ -2538,4 +2493,56 @@ MapTouringType CM_handleExtEvent()
 	}
 
 	return MT_None;
+}
+
+void CM_create_home_boundary(void)
+{
+	int16_t i, j, k;
+	int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
+
+	k = 3;
+	xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
+	for (i = xMin; xMinSearch == SHRT_MAX; i++) {
+		for (j = yMin; j <= yMax; j++) {
+			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
+				xMinSearch = i - k;
+				break;
+			}
+		}
+	}
+	for (i = xMax; xMaxSearch == SHRT_MAX; i--) {
+		for (j = yMin; j <= yMax; j++) {
+			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
+				xMaxSearch = i + k;
+				break;
+			}
+		}
+	}
+	for (i = yMin; yMinSearch == SHRT_MAX; i++) {
+		for (j = xMin; j <= xMax; j++) {
+			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
+				yMinSearch = i - k;
+				break;
+			}
+		}
+	}
+	for (i = yMax; yMaxSearch == SHRT_MAX; i--) {
+		for (j = xMin; j <= xMax; j++) {
+			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
+				yMaxSearch = i + k;
+				break;
+			}
+		}
+	}
+	printf("%s %d: x: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
+	for (i = xMinSearch; i <= xMaxSearch; i++) {
+		if (i == xMinSearch || i == xMaxSearch) {
+			for (j = yMinSearch; j <= yMaxSearch; j++) {
+				Map_SetCell(MAP, cellToCount(i), cellToCount(j), BLOCKED_BUMPER);
+			}
+		} else {
+			Map_SetCell(MAP, cellToCount(i), cellToCount(yMinSearch), BLOCKED_BUMPER);
+			Map_SetCell(MAP, cellToCount(i), cellToCount(yMaxSearch), BLOCKED_BUMPER);
+		}
+	}
 }

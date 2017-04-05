@@ -69,7 +69,7 @@ static uint16_t line_cnt = 0;
 
 extern PositionType positions[];
 extern int16_t xMin, xMax, yMin, yMax;
-extern int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
+
 /*
  * Free the line segments.
  *
