@@ -1678,8 +1678,6 @@ uint8_t CM_Touring(void)
 
 	Reset_Rcon_Status();
 
-	/* usleep for checking whether robot is in the station */
-	usleep(700);
 
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
@@ -1689,6 +1687,22 @@ uint8_t CM_Touring(void)
 	}
 	if(count_n_10ms == 0)
 		return 0;
+		/* usleep for checking whether robot is in the station */
+	usleep(700);
+	if (from_station == 1 && !robot::instance()->align_active()) {
+		printf("%s %d: Turn 45 degree to the wall\n", __FUNCTION__, __LINE__);
+
+		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle(0) - 450);
+
+		if (Touch_Detect()) {
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			printf("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+			return 0;
+		}
+
+		from_station = 1;
+		station_zone = 0;
+	}
 	/*****************************************************Cleaning*****************************************************/
 	while (ros::ok()) {
 
