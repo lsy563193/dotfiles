@@ -793,7 +793,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 }
 
 // Target:	robot coordinate
-MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
+MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
 {
 	int32_t Target_Course, Rotate_Angle, Integrated, Left_Speed, Right_Speed, Base_Speed, distance, Dis_From_Init;
 	uint8_t Integration_Cycle, boundary_reach;
@@ -1897,17 +1897,17 @@ uint8_t CM_Touring(void)
 						if (path_get_path_points_count() >= 3) {
 							mt_state = CurveMove_MoveToPoint();
 							if (mt_state == MT_CurveMove) {
-								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+								mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 							}
 						} else {
 							printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-							mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+							mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 						}
 
 #else
 
 						printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+						mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 
 #endif
 
@@ -2117,16 +2117,16 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				if (path_get_path_points_count() >= 3) {
 					mt_state = CurveMove_MoveToPoint();
 					if (mt_state == MT_CurveMove) {
-						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+						mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 					}
 				} else {
 					printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+					mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 				}
 
 #else
 
-				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+				mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 
 #endif
 				printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
@@ -2251,16 +2251,16 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			if (path_get_path_points_count() >= 3) {
 				mt_state = CurveMove_MoveToPoint();
 				if (mt_state == MT_CurveMove) {
-					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+					mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 				}
 			} else {
 				printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+				mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 			}
 
 #else
 
-			mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
+			mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
 
 #endif
 
