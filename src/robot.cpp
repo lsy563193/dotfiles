@@ -481,7 +481,7 @@ int16_t robot::robot_get_left_wall()
 int16_t robot::robot_get_right_wall()
 {
 #if __ROBOT_X900
-	return sensor.right_wall;
+	return sensor.right_wall - Wall_BaseLine;
 #elif __ROBOT_X400
 	return 0;
 #endif
@@ -503,6 +503,7 @@ int16_t robot::robot_get_visual_wall()
 #elif __ROBOT_X400
 	return 0;
 #endif
+=======
 }
 
 bool robot::robot_get_lbrush_oc()//oc : over current

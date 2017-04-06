@@ -220,7 +220,7 @@ uint8_t rounding_boundary_check()
 uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
 {
 	uint8_t		Jam = 0, Temp_Counter = 0, RandomRemoteWall_Flag = 0, Mobility_Temp_Error = 0, Temp_Bumper_Status;
-	int16_t		Left_Wall_Buffer[3] = { 0 };
+	int16_t		Left_Wall_Buffer[3] = { 0 }, Right_Wall_Buffer[3] = { 0 };
 	int32_t		y_start, R = 0, Proportion = 0, Delta = 0, Previous = 0;
 	uint32_t	WorkTime_Buffer = 0, Temp_Status = 0;
 
@@ -391,14 +391,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						Left_Wall_Speed = 5; //9;
 						Right_Wall_Speed = 33;
 					}
-				} else if (0 && Wall_Distance > 150){	//over left
-					Left_Wall_Speed = 22 + Proportion / 15 + Delta / 7;
-					Right_Wall_Speed = 22 - Proportion / 12 - Delta / 7;
-
-					if (Right_Wall_Speed > 27) {
-						Left_Wall_Speed = 5; //8;
-						Right_Wall_Speed = 30;
-					}
 				} else {
 					Left_Wall_Speed = 15 + Proportion / 22 + Delta / 10;
 					Right_Wall_Speed = 15 - Proportion / 18 - Delta / 10;
@@ -472,12 +464,14 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				Wall_Distance = Wall_High_Limit;
 			}
 		} else {		/* ROUNDING_RIGHT */
-			if (Temp_Bumper_Status & LeftBumperTrig) {
+			if ((Temp_Bumper_Status & LeftBumperTrig) && !(Temp_Bumper_Status & RightBumperTrig)) {
+				// Only left bumper is triggered.
 				//Stop_Brifly();
+				printf("%s %d, move back for left bumper.\n", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
-
-				// Turn left for 90 degrees.
-				rounding_turn(0, TURN_SPEED, 900);
+				Stop_Brifly();
+				// Turn left for 135 degrees.
+				rounding_turn(0, TURN_SPEED, 1350);
 				Move_Forward(15, 15);
 				Wall_Straight_Distance = 375;
 			}
@@ -485,7 +479,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if (Temp_Bumper_Status & RightBumperTrig) {
 				Set_Wheel_Speed(0, 0);
 				usleep(300000);
-				Wall_Distance += 200;
+				if (robot::instance()->robot_get_right_wall() > (Wall_Low_Limit)) {
+					Wall_Distance = robot::instance()->robot_get_right_wall() / 3;
+				} else {
+					Wall_Distance += 200;
+				}
 
 				if (Wall_Distance < Wall_Low_Limit) {
 					Wall_Distance = Wall_Low_Limit;
@@ -495,33 +493,132 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 
 				if (Temp_Bumper_Status & LeftBumperTrig) {
+					// Both left and right bumper are triggered.
 					rounding_move_back(350);
-					// Turn left for 60 degrees.
-					rounding_turn(0, TURN_SPEED - 5, 600);
+					// Turn left for 90 degrees.
+					rounding_turn(0, TURN_SPEED, 900);
 					Wall_Straight_Distance = 150;
 				} else {
+					// Only right bumper is triggered.
 					rounding_move_back(350);
-					// Turn left for 15 degrees.
-					rounding_turn(0, TURN_SPEED - 10, 300);
+					// Turn left for 30 degrees.
+					rounding_turn(0, TURN_SPEED, 300);
 					Wall_Straight_Distance = 250;
 				}
-
 				Move_Forward(10, 10);
+
+				for (Temp_Counter = 0; Temp_Counter < 3; Temp_Counter++) {
+					Right_Wall_Buffer[Temp_Counter] = 0;
+				}
+			}
+
+			if (Wall_Distance >= 200) {
+				Right_Wall_Buffer[2] = Right_Wall_Buffer[1];
+				Right_Wall_Buffer[1] = Right_Wall_Buffer[0];
+				Right_Wall_Buffer[0] = robot::instance()->robot_get_right_wall();
+				if (Right_Wall_Buffer[0] < 100) {
+					if ((Right_Wall_Buffer[1] - Right_Wall_Buffer[0]) > (Wall_Distance / 25)) {
+						if ((Right_Wall_Buffer[2] - Right_Wall_Buffer[1]) > (Wall_Distance / 25)) {
+							//if (Get_WallAccelerate()>300) {
+								//if ((Get_RightWheel_Speed()-Get_LeftWheel_Speed()) >= -3) {
+									// Away from the wall.
+									Move_Forward(18, 16);
+									usleep(100000);
+									Wall_Straight_Distance = 300;
+								//}
+							//}
+						}
+					}
+				}
 			}
 
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-				Right_Wall_Speed = 5; // 9;
-				Left_Wall_Speed = 33;
+				Proportion = robot::instance()->robot_get_right_wall();
 
-				//Set_Dir_Forward();
-				//printf("%s %d: %d %d\n", __FUNCTION__, __LINE__, Left_Wall_Speed, Right_Wall_Speed);
+				Proportion = Proportion * 100 / Wall_Distance;
+
+				Proportion -= 100;
+
+				Delta = Proportion - Previous;
+
+				if (Wall_Distance > 300) {	//over right
+					Right_Wall_Speed = 25 + Proportion / 12 + Delta / 5;
+					Left_Wall_Speed = 25 - Proportion / 10 - Delta / 5;
+					if (Left_Wall_Speed > 33) {
+						Right_Wall_Speed = 5; //9;
+						Left_Wall_Speed = 33;
+					}
+				} else {
+					Right_Wall_Speed = 15 + Proportion / 22 + Delta / 10;
+					Left_Wall_Speed = 15 - Proportion / 18 - Delta / 10;
+
+					if (Left_Wall_Speed > 18) {
+						Right_Wall_Speed = 5;
+						Left_Wall_Speed = 18;
+					}
+
+					if (Right_Wall_Speed > 20) {
+						Right_Wall_Speed = 20;
+					}
+					if (Right_Wall_Speed < 4) {
+						Right_Wall_Speed = 4;
+					}
+					if (Left_Wall_Speed < 4) {
+						Left_Wall_Speed = 4;
+					}
+					if ((Right_Wall_Speed - Left_Wall_Speed) > 5) {
+						Right_Wall_Speed = Left_Wall_Speed+5;
+					}
+				}
+
+				/*slow move if left obs near a wall*/
+				if (Get_LeftOBS() > Get_LeftOBST_Value()) {
+					if (Wall_Distance < Wall_High_Limit) {
+						Wall_Distance++;
+					}
+				}
+				if (Is_WallOBS_Near()){
+					Right_Wall_Speed = Right_Wall_Speed / 2;
+					Left_Wall_Speed = Left_Wall_Speed / 2;
+				}
+
+				Previous = Proportion;
+
+				if (Right_Wall_Speed < 0) {
+					Right_Wall_Speed = 0;
+				}
+				if (Right_Wall_Speed > 40) {
+					Right_Wall_Speed = 40;
+				}
+				if (Left_Wall_Speed < 0) {
+					Left_Wall_Speed = 0;
+				}
+
 				Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
-
 			} else {
 				Stop_Brifly();
-				rounding_turn(0, TURN_SPEED - 5, 900);
-				Move_Forward(15, 15);
+				// 12500 steps means around 2 meters.
+				if (Get_RightWheel_Step() < 12500) {
+					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
+						// Turn left for 80 degrees.
+						rounding_turn(0, TURN_SPEED, 800);
+						Move_Forward(15, 15);
+					} else {
+						// Turn left for 40 degrees.
+						rounding_turn(0, TURN_SPEED, 400);
+						Move_Forward(15, 15);
+					}
+				} else {
+					// Turn left for 90 degrees.
+					rounding_turn(0, TURN_SPEED, 900);
+					Move_Forward(15, 15);
+					/*
+					if (!Is_MoveWithRemote()) {
+						Set_Clean_Mode(Clean_Mode_RandomMode);
+					}
+					*/
+				}
 				Wall_Distance = Wall_High_Limit;
 			}
 		}

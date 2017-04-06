@@ -1496,6 +1496,8 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 
 	Point16_t pos;
 
+	path_reset_path_points();
+
 	/* Find the shortest path to the target by using shorest path grid map. */
 	retval = path_find_shortest_path(position.X, position.Y, x, y, 0, last_dir);
 	if (retval < 0)
