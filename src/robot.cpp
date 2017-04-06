@@ -475,13 +475,13 @@ int16_t robot::robot_get_cliff_front()
 
 int16_t robot::robot_get_left_wall()
 {
-	return sensor.left_wall - Wall_BaseLine;
+	return sensor.left_wall - Left_Wall_BaseLine;
 }
 
 int16_t robot::robot_get_right_wall()
 {
 #if __ROBOT_X900
-	return sensor.right_wall - Wall_BaseLine;
+	return sensor.right_wall - Right_Wall_BaseLine;
 #elif __ROBOT_X400
 	return 0;
 #endif

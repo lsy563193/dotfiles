@@ -265,7 +265,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 	if (Get_OBS_Status() & Status_Left_OBS) {
 		CM_count_normalize(0, heading_0, CELL_SIZE_3, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC() > 200) {
+		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
 			}
@@ -294,7 +294,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 	if (Get_OBS_Status() & Status_Left_OBS) {
 		CM_count_normalize(heading_0, CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC() > 200) {
+		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
 			}
@@ -893,7 +893,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	while (1) {
 		
 #ifdef WALL_DYNAMIC
-		Wall_Dynamic_Base(30);
+		Wall_Dynamic_Base(50);
 #endif
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
@@ -1477,7 +1477,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 		printf("%s %d, OBS detected.\n", __FUNCTION__, __LINE__);
 	} else if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 		printf("%s %d, front OBS detected.\n", __FUNCTION__, __LINE__);
-	} else if (Get_Wall_ADC() > 170) {
+	} else if (Get_Wall_ADC(0) > 170) {
 		printf("%s %d, wall sensor exceed 170.\n", __FUNCTION__, __LINE__);
 	}
 	/*                South (Xmin)
