@@ -1539,9 +1539,6 @@ class Motion_controller {
 public:
 	Motion_controller()
 	{
-		Set_gyro_off();
-		show_time(Set_gyro_on);
-		Set_IMU_Status();
 		robot::instance()->Subscriber();
 		Work_Motor_Configure();
 		if (robot::instance()->align_active() == true)
@@ -1684,13 +1681,26 @@ uint8_t CM_Touring(void)
 
 
 	robot::instance()->init_mumber();// for init robot member
+
+	//open gyro, wait for 3s ,if have any stop event (remote clean ...)stop ant return;
+	Set_gyro_off();
+	if(!Set_gyro_on()){
+		Set_gyro_off();
+		ROS_INFO("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return 0;
+	}
+	Set_IMU_Status();
+
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
 		  usleep(10000);
 	}
-	if(count_n_10ms == 0)
+	if(count_n_10ms == 0){
+		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return 0;
+	}
 		/* usleep for checking whether robot is in the station */
 	usleep(700);
 	if (from_station == 1 && !robot::instance()->align_active()) {
