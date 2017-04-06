@@ -470,6 +470,11 @@ int16_t robot::robot_get_left_wall()
 	return sensor.left_wall - Wall_BaseLine;
 }
 
+int16_t robot::robot_get_right_wall()
+{
+	return sensor.right_wall - Wall_BaseLine;
+}
+
 bool robot::robot_get_lbrush_oc()//oc : over current
 {
 	return this->lbrush_oc;

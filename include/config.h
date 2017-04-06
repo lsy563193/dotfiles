@@ -41,7 +41,7 @@
  * Definition to enable/disable robot rounding the obstcal or not.
  */
 #define PP_ROUNDING_OBSTACLE_LEFT	(1)
-#define PP_ROUNDING_OBSTACLE_RIGHT	(0)
+#define PP_ROUNDING_OBSTACLE_RIGHT	(1)
 /*
  * Definition to enable/disable robot curve move support.
  */
