@@ -1405,6 +1405,33 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	return retval;
 }
 
+
+MapTouringType CM_MoveToPoint(Point32_t target)
+{
+	MapTouringType mt_state = MT_None;
+
+#ifdef PP_CURVE_MOVE
+
+	if (path_get_path_points_count() >= 3) {
+		mt_state = CurveMove_MoveToPoint();
+		if (mt_state == MT_CurveMove) {
+			mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+		}
+	} else {
+		printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+		mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+	}
+
+#else
+
+	printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+	mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+
+#endif
+
+	return mt_state;
+}
+
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
 uint16_t CM_get_robot_direction()
 {
@@ -1891,26 +1918,7 @@ uint8_t CM_Touring(void)
 						printf("%s %d: Rounding %s.\n", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
 						rounding(rounding_type, Next_Point, Bumper_Status_For_Rounding);
 					} else {
-
-#ifdef PP_CURVE_MOVE
-
-						if (path_get_path_points_count() >= 3) {
-							mt_state = CurveMove_MoveToPoint();
-							if (mt_state == MT_CurveMove) {
-								mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-							}
-						} else {
-							printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-							mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-						}
-
-#else
-
-						printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-						mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-
-#endif
-
+						mt_state = CM_MoveToPoint(Next_Point);
 					}
 
 					if (y_current == countToCell(Next_Point.Y)) {
@@ -2112,23 +2120,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				debug_map(MAP, tmp.X, tmp.Y);
 #endif
 
-#ifdef PP_CURVE_MOVE
-
-				if (path_get_path_points_count() >= 3) {
-					mt_state = CurveMove_MoveToPoint();
-					if (mt_state == MT_CurveMove) {
-						mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-					}
-				} else {
-					printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-					mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-				}
-
-#else
-
-				mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-
-#endif
+				mt_state = CM_MoveToPoint(Next_Point);
 				printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 				if (mt_state == MT_Battery) {
@@ -2246,24 +2238,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			debug_map(MAP, tmp.X, tmp.Y);
 #endif
 
-#ifdef PP_CURVE_MOVE
-
-			if (path_get_path_points_count() >= 3) {
-				mt_state = CurveMove_MoveToPoint();
-				if (mt_state == MT_CurveMove) {
-					mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-				}
-			} else {
-				printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-				mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-			}
-
-#else
-
-			mt_state = CM_LinearMoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-
-#endif
-
+			mt_state = CM_MoveToPoint(Next_Point);
 			printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 			if (mt_state == MT_Battery) {

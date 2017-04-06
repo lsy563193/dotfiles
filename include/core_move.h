@@ -52,7 +52,9 @@ extern uint8_t lowBattery;
 
 void CM_HeadToCourse(uint8_t Speed,int16_t Angle);
 
+MapTouringType CM_LinearMoveToPoint(Point32_t target);
 MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
+
 bool CM_Check_is_exploring();
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y);
 uint8_t CM_MoveForward(void);
