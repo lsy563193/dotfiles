@@ -2483,6 +2483,7 @@ MapTouringType CM_handleExtEvent()
 			printf("%s %d: remote clean is pressed.\n", __FUNCTION__, __LINE__);
 			return MT_Remote_Clean;
 		}
+		Reset_Rcon_Remote();
 	}
 
 	/* Check whether robot is taken up. */

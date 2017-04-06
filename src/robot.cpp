@@ -724,7 +724,11 @@ void robot::visualize_marker_init(){
 	this->clean_markers.type = visualization_msgs::Marker::LINE_STRIP;
 	this->clean_markers.action= 0;//add
 	this->clean_markers.lifetime=ros::Duration(0);
+#if __ROBOT_X400
 	this->clean_markers.scale.x = 0.31;
+#elif __ROBOT_X900
+	this->clean_markers.scale.x = 0.33;
+#endif
 //	this->clean_markers.scale.y = 0.31;
 	this->clean_markers.color.r = 0.0;
 	this->clean_markers.color.g = 1.0;
@@ -749,12 +753,14 @@ void robot::visualize_marker_init(){
 	this->bumper_markers.color.a =1.0;
 	this->bumper_markers.header.frame_id = "/map";
 	this->bumper_markers.header.stamp = ros::Time::now();
+
 }
 
 double robot::robot_get_map_yaw()
 {
 	return this->yaw;
 }
+
 void robot::pub_clean_markers(){
 	this->m_points.x = this->position_x;
 	this->m_points.y = this->position_y;
