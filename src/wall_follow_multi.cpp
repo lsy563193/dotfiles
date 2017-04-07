@@ -28,12 +28,16 @@
 #include <ros/ros.h>
 #include "debug.h"
 #include "rounding.h"
+#include <vector>
+
 //Turn speed
 #ifdef Turn_Speed
 #undef Turn_Speed
 #define Turn_Speed	18
 #endif
 
+std::vector<Point32_t> WF_Point;
+Point32_t New_WF_Point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
 
 bool	escape_thread_running = false;
@@ -551,11 +555,11 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	extern std::list <Point32_t> Home_Point;
 	// This is for adding new point to Home Point list.
 	extern Point32_t New_Home_Point;
-
 	Wall_Follow_Init_Slam();
 
 	//Initital home point
 	Home_Point.clear();
+	WF_Point.clear();
 	New_Home_Point.X = New_Home_Point.Y = 0;
 	// Push the start point into the home point list
 	Home_Point.push_front(New_Home_Point);
@@ -659,6 +663,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			break;
 		}
 		*/
+#if 0
 		/*-------------------------------------------------Start Pose Check------------------------------*/
 		if (First_Time_Flag == 0){
 				if ((Distance_From_Start = (sqrtf(powf(Start_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) < 0.303 ){
@@ -682,11 +687,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					First_Time_Flag = 0;
 			}
 		}
+#endif
 		//ROS_INFO("Distance_From_Start = %f", Distance_From_Start);
-
+		
+		WF_Is_Reach_Cleaned();
 		/*------------------------------------WF_Map_Update---------------------------------------------------*/
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		//CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		//update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		//rounding_update();
 		//debug_WF_map(MAP, 0, 0);
@@ -1067,7 +1074,6 @@ void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
-
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
 
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
@@ -1084,9 +1090,13 @@ void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 		}
 	}
 
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, CELL_SIZE), CLEANED);
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), CLEANED);
+	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, CELL_SIZE), CLEANED);
+	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
+	i = Map_GetRelativeX(heading_0, 0, 0);
+	j = Map_GetRelativeY(heading_0, 0, 0);
+	WF_Push_Point(countToCell(i),countToCell(j));
+	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, 0), Map_GetRelativeY(heading_0, 0, 0), CLEANED);
+	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), CLEANED);
 
 	//if (should_mark == 1) {
 		//if (rounding_type == ROUNDING_LEFT) {
@@ -1124,3 +1134,34 @@ void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 #endif
 }
 
+
+bool WF_Is_Reach_Cleaned(void){
+	int32_t x,y;
+	//x = Map_GetXPos();
+	//y = Map_GetYPos();
+
+	//CM_count_normalize(Gyro_GetAngle(0), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
+	CM_count_normalize(Gyro_GetAngle(0), 0,  0, &x, &y);
+	//Map_SetCell(MAP, x, y, 6);
+	if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == CLEANED) {
+		ROS_INFO("Reach cleaned");
+		//Beep(3, 25, 25, 1);
+		return true;
+	}
+	return false;
+}
+void WF_Push_Point(int32_t x, int32_t y){
+	if (WF_Point.empty() == 0){
+			if(WF_Point.back().X != x || WF_Point.back().Y != y){
+				New_WF_Point.X = x;
+				New_WF_Point.Y = y;
+				WF_Point.push_back(New_WF_Point);
+			}
+	}
+	else{
+			New_WF_Point.X = x;
+			New_WF_Point.Y = y;
+			WF_Point.push_back(New_WF_Point);
+	}
+	ROS_INFO("WF_Point.X = %d, WF_Point.y = %d", WF_Point.back().X, WF_Point.back().Y);
+}
