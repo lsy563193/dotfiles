@@ -1143,10 +1143,16 @@ bool WF_Is_Reach_Cleaned(void){
 	//CM_count_normalize(Gyro_GetAngle(0), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
 	CM_count_normalize(Gyro_GetAngle(0), 0,  0, &x, &y);
 	//Map_SetCell(MAP, x, y, 6);
-	if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == CLEANED) {
-		ROS_INFO("Reach cleaned");
-		//Beep(3, 25, 25, 1);
-		return true;
+	//if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == CLEANED) {
+	try{
+			if (Map_GetCell(MAP, (WF_Point.at(WF_Point.size() - 2)).X, (WF_Point.at(WF_Point.size() - 2)).X) == CLEANED) {//size() - 2 means last one
+				ROS_INFO("Reach cleaned");
+				//Beep(3, 25, 25, 1);
+				return true;
+			}
+	}
+	catch(const std::out_of_range& oor){
+		std::cerr << "Out of range error:" << oor.what() << '\n';
 	}
 	return false;
 }
@@ -1163,5 +1169,5 @@ void WF_Push_Point(int32_t x, int32_t y){
 			New_WF_Point.Y = y;
 			WF_Point.push_back(New_WF_Point);
 	}
-	ROS_INFO("WF_Point.X = %d, WF_Point.y = %d", WF_Point.back().X, WF_Point.back().Y);
+	ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
 }
