@@ -80,6 +80,11 @@ void CM_SetGyroOffset(int16_t offset);
 void CM_SetHome(int32_t x, int32_t y);
 //void CM_SetStationHome(void);
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
+// This function is for setting the continue point for robot to go after charge.
+void CM_SetContinuePoint(int32_t x, int32_t y);
+#endif
+
 void CM_ResetBoundaryBlocks(void);
 
 void CM_AddTargets(Point16_t zone);

@@ -56,6 +56,9 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
+
+	// Initialize the pause variable.
+	this->pause_cleaning = false;
 }
 
 robot::~robot()
@@ -962,3 +965,19 @@ void robot::init_mumber()
 	position_y_off=0;
 	position_z_off=0;
 }
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+// This 3 functions is for declaring whether the robot is at status of pausing for charge.
+bool robot::Is_Cleaning_Paused(void)
+{
+	return this->pause_cleaning;
+}
+void robot::Set_Cleaning_Pause(void)
+{
+	this->pause_cleaning = true;
+}
+void robot::Reset_Cleaning_Pause(void)
+{
+	this->pause_cleaning = false;
+}
+#endif
