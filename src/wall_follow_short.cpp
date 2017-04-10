@@ -261,7 +261,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
      	Reset_TempPWM();
       	usleep(30000);
 			
-//      if(Get_Wall_ADC()>200)
+//      if(Get_Wall_ADC(0)>200)
 //			{
 //				Wall_Distance-=100;
 //			}
@@ -355,7 +355,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		{
 			Left_Wall_Buffer[2]=Left_Wall_Buffer[1];
 			Left_Wall_Buffer[1]=Left_Wall_Buffer[0];
-			Left_Wall_Buffer[0]=Get_Wall_ADC();
+			Left_Wall_Buffer[0]=Get_Wall_ADC(0);
 			if(Left_Wall_Buffer[0]<100)
 			{
 			  if((Left_Wall_Buffer[1]-Left_Wall_Buffer[0])>(Wall_Distance/25))
@@ -401,7 +401,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 	    	if(Get_FrontOBS()<Get_FrontOBST_Value())
 	    	{
-			  	Proportion = Get_Wall_ADC();
+					Proportion = Get_Wall_ADC(0);
 					
 					Proportion = Proportion*100/Wall_Distance;
 					

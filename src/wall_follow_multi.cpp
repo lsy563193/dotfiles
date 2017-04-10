@@ -1246,7 +1246,7 @@ void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1) {
 	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
 
 	//if (should_mark == 1) {
-		//if (rounding_type == ROUNDING_LEFT && Get_Wall_ADC() > 200) {
+		//if (rounding_type == ROUNDING_LEFT && Get_Wall_ADC(0) > 200) {
 		//if (rounding_type == ROUNDING_LEFT) {
 			Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, 0), Map_GetRelativeY(heading_0, CELL_SIZE, 0), BLOCKED_OBS);
 			//Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), BLOCKED_OBS);
