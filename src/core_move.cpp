@@ -1795,18 +1795,7 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 						return 0;
-					} else if ( state == -7 && Home_Point.empty()) {
-						// If it is the last saved home point, stop the robot.
-						Disable_Motors();
-						// Beep for the finish signal.
-						for (i = 10; i > 0; i--) {
-							Beep(i, 6, 0, 1);
-							usleep(100000);
-						}
-						Set_Clean_Mode(Clean_Mode_GoHome);
-						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-						return 0;
-					} else if ( state == 1 ) {
+					} else if (state == 1 || state == -7) {
 						// Call GoHome() function to try to go to charger stub.
 						GoHome();
 
