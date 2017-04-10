@@ -818,9 +818,9 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	//int8_t c;
 	int32_t x, y;
 
-        int32_t Init_Pose_X, Init_Pose_Y;
-        int16_t Limited_Distance = 16107;//21476 = 4M 16107 = 3M
-        int8_t Limited_Flag = 0;
+	int32_t Init_Pose_X, Init_Pose_Y;
+	int16_t Limited_Distance = 16107;//21476 = 4M 16107 = 3M
+	int8_t Limited_Flag = 0;
 	bool Dynamic_Flag = 1;//Dynamic adjust speed when exploring
 
 	MapTouringType	retval = MT_None;
