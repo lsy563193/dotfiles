@@ -1717,7 +1717,14 @@ uint8_t CM_Touring(void)
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			Quick_Back(20, 72);
 			if (Touch_Detect() || Is_AtHomeBase()) {
-				printf("%s %d: move back 100mm and still detect charger or touch event! return 0\n", __FUNCTION__, __LINE__);
+				if (Touch_Detect())
+				{
+					printf("%s %d: touch event! return 0\n", __FUNCTION__, __LINE__);
+				}
+				else
+				{
+					printf("%s %d: move back 100mm and still detect charger! return 0\n", __FUNCTION__, __LINE__);
+				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
@@ -1725,7 +1732,7 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 				if (robot::instance()->Is_Cleaning_Paused())
 				{
-					printf("%s %d: fail to leave charger stub when continue to clean, return 0.\n", __FUNCTION__, __LINE__);
+					printf("%s %d: fail to leave charger stub when continue to clean.\n", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
 					robot::instance()->Reset_Cleaning_Pause();
 				}
@@ -1917,7 +1924,7 @@ uint8_t CM_Touring(void)
 				Home_Point.pop_front();
 				while (ros::ok())
 				{
-					ROS_INFO("%s, %d: Go home Target: (%d, %d), %lu targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
+					ROS_INFO("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
 					// Try go to exactly this home point.
 					state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
 					ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
