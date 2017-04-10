@@ -1069,6 +1069,7 @@ void WF_End_Wall_Follow(void){
 		usleep(100000);
 	}
 	Wall_Follow_Stop_Slam();
+	std::vector<Point32_t>(WF_Point).swap(WF_Point);
 	debug_WF_map(MAP, 0, 0);
 	debug_sm_map(SPMAP, 0, 0);
 	Set_Clean_Mode(Clean_Mode_Userinterface);
