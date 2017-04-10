@@ -1587,7 +1587,6 @@ uint8_t CM_Touring(void)
 	Point32_t	Next_Point, Target_Point;
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 
-	int16_t	home_angle = robot::instance()->robot_get_home_angle();
 
 	MapTouringType	mt_state = MT_None;
 	RoundingType	rounding_type;
@@ -1701,6 +1700,8 @@ uint8_t CM_Touring(void)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return 0;
 	}
+
+	int16_t	home_angle = robot::instance()->robot_get_home_angle();
 		/* usleep for checking whether robot is in the station */
 	usleep(700);
 	if (from_station == 1 && !robot::instance()->align_active()) {
@@ -1866,7 +1867,7 @@ uint8_t CM_Touring(void)
 						{
 							// If it is the last point, it means it it now at (0, 0).
 							if (from_station == 0) {
-								CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
+								CM_HeadToCourse(ROTATE_TOP_SPEED, -home_angle);
 
 								if (Touch_Detect()) {
 									return 0;
