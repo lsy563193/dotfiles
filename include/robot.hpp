@@ -116,7 +116,20 @@ public:
 	bool align_active(void){
 		return is_align_active_;
 	}
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+// These 3 functions are for continue cleaning after charge.
+	bool Is_Cleaning_Paused(void);
+	void Set_Cleaning_Pause(void);
+	void Reset_Cleaning_Pause(void);
+#endif
+
 private:
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+// These variable is for continue cleaning after charge.
+	bool	pause_cleaning;
+#endif
 	bool	is_sensor_ready;
 	bool	is_odom_ready;
 	std::vector<int8_t> map_data;

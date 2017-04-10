@@ -223,7 +223,7 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Left_Wall_Sum_Value=0;
 		Left_Temp_Wall_Buffer=0;
 		//Beep(1, 10, 0, 1);
-		ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
+		//ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
 	// Dynamic adjust for right wall sensor.
@@ -251,7 +251,7 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Right_Wall_Sum_Value=0;
 		Right_Temp_Wall_Buffer=0;
 		//Beep(1, 10, 0, 1);
-		ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
+		//ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
 }
@@ -1175,6 +1175,10 @@ uint32_t Get_Rcon_Remote(void)
 //	return 0;
 	uint8_t ir_cmd;
 	ir_cmd = robot::instance()->robot_get_ir_ctrl();
+	if (ir_cmd != 0)
+	{
+		ROS_INFO("%s: ir_cmd = %x.", __FUNCTION__, ir_cmd);
+	}
 	if(ir_cmd == 0x80)
 		return Remote_Forward;
 	else if(ir_cmd == 0x40)

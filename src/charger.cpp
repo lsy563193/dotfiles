@@ -29,6 +29,11 @@ void Charge_Function(void)
 	// This counter is for debug message.
 	uint8_t Show_Batv_Counter=0;
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	// This counter is for checking if battery enough to continue cleaning.
+	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
+#endif
+
 	set_start_charge();
 	uint16_t bat_v;
 	ROS_INFO("[gotocharger.cpp] Start charger mode.");
@@ -37,6 +42,23 @@ void Charge_Function(void)
 		usleep(20000);
 		bat_v = robot::instance()->robot_get_battery_voltage();
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		if (robot::instance()->Is_Cleaning_Paused())
+		{
+			if (bat_v > CONTINUE_CLEANING_VOLTAGE)
+			{
+				Bat_Enough_To_Continue_Cleaning_Counter++;
+				//ROS_INFO("Bat_Enough_To_Continue_Cleaning_Counter = %d.", Bat_Enough_To_Continue_Cleaning_Counter);
+			}
+
+			if (Bat_Enough_To_Continue_Cleaning_Counter > 500)// About 10 seconds.
+			{
+				ROS_INFO("Robot finish charging, continue cleaning.");
+				Set_Clean_Mode(Clean_Mode_Navigation);
+				break;
+			}
+		}
+#endif
 		ROS_DEBUG_NAMED("charger"," Loop for charger mode,voltage %f.",bat_v/100.0);
 		if(Show_Batv_Counter > 100)
 		{
@@ -56,6 +78,14 @@ void Charge_Function(void)
 
 		if(!Is_ChargerOn())//check if charger unplug
 		{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+			if (robot::instance()->Is_Cleaning_Paused())
+			{
+				ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
+				Set_Clean_Mode(Clean_Mode_Navigation);
+				break;
+			}
+#endif
 			ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;

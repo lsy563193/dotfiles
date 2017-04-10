@@ -75,6 +75,11 @@ std::list <Point32_t> Home_Point;
 // This is for adding new point to Home Point list.
 Point32_t New_Home_Point;
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
+// This is for the continue point for robot to go after charge.
+Point32_t Continue_Point;
+#endif
+
 uint8_t map_touring_cancel = 0;
 
 uint8_t	go_home = 0;
@@ -935,7 +940,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 
 		if ((retval = CM_handleExtEvent()) != MT_None) {
-			ROS_DEBUG("%s %d: Check: Clean Mode! break\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Check: Clean Mode! break.", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -1565,6 +1570,34 @@ class Motion_controller {
 public:
 	Motion_controller()
 	{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		if (robot::instance()->Is_Cleaning_Paused())
+		{
+			Work_Motor_Configure();
+			robot::instance()->start_lidar();
+			enable_slam_offset = 1;
+		}
+		else
+		{
+			Set_gyro_off();
+			start_obstacle_detector();
+			show_time(Set_gyro_on);
+			Set_IMU_Status();
+
+			robot::instance()->Subscriber();
+			Work_Motor_Configure();
+			robot::instance()->start_lidar();
+
+			if (robot::instance()->align_active() == true)
+			{
+				robot::instance()->align();
+				stop_obstacle_detector();
+			}
+
+			start_slam();
+			enable_slam_offset = 1;
+		}
+#else
 		Set_gyro_off();
 		show_time(Set_gyro_on);
 		start_obstacle_detector();
@@ -1582,10 +1615,35 @@ public:
 		enable_slam_offset = 1;
 		start_slam();
 
+#endif
 	};
 
 	~Motion_controller()
 	{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		if (robot::instance()->Is_Cleaning_Paused())
+		{
+			Disable_Motors();
+			robot::instance()->stop_lidar();
+			enable_slam_offset = 0;
+		}
+		else
+		{
+			Disable_Motors();
+			robot::instance()->stop_lidar();
+			if (robot::instance()->align_active())
+			{
+				robot::instance()->align_exit();
+				stop_obstacle_detector();
+			}
+			show_time(Set_gyro_off);
+			Reset_IMU_Status();
+			is_line_angle_offset = false;
+			enable_slam_offset = 0;
+			robot::instance()->stop_slam();
+			robot::instance()->UnSubscriber();
+		}
+#else
 		Disable_Motors();
 		robot::instance()->stop_lidar();
 		if (robot::instance()->align_active())
@@ -1599,11 +1657,15 @@ public:
 		enable_slam_offset = 0;
 		robot::instance()->stop_slam();
 		robot::instance()->UnSubscriber();
+#endif
 	}
 };
 uint8_t CM_Touring(void)
 {
 	int8_t	state;
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	int8_t	state_for_continue_cleaning;
+#endif
 	uint8_t Blink_LED = 0;
 	int16_t	i, x, y, x_current, y_current, start, end;
 	float	slop, intercept;
@@ -1660,6 +1722,14 @@ uint8_t CM_Touring(void)
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
 				Beep(3, 100, 25, 5);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (robot::instance()->Is_Cleaning_Paused())
+				{
+					printf("%s %d: fail to leave charger stub when continue to clean, return 0.\n", __FUNCTION__, __LINE__);
+					// Quit continue cleaning.
+					robot::instance()->Reset_Cleaning_Pause();
+				}
+#endif
 				return 0;
 			}
 		}
@@ -1689,12 +1759,55 @@ uint8_t CM_Touring(void)
 		usleep(200000);
 	}
 
+	New_Home_Point.X = New_Home_Point.Y = 0;
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Paused())
+	{
+		if (Get_Rcon_Status())
+		{
+			// Save the current coordinate as a new home point.
+			New_Home_Point.X = Map_GetXCount();
+			New_Home_Point.Y = Map_GetYCount();
+
+			// Push the start point into the home point list.
+			Home_Point.push_front(New_Home_Point);
+		}
+
+		Reset_Rcon_Status();
+	}
+	else
+	{
+		// Set the Work_Timer_Start as current time
+		Reset_Work_Time();
+
+		//Initital home point
+		Home_Point.clear();
+
+		// Push the start point into the home point list
+		Home_Point.push_front(New_Home_Point);
+
+		ROS_DEBUG("Map_Initialize-----------------------------");
+		Map_Initialize();
+		PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
+
+		Reset_Rcon_Status();
+
+		/* usleep for checking whether robot is in the station */
+		usleep(700);
+
+		robot::instance()->init_mumber();// for init robot member
+
+		// If it it the first time cleaning, initialize the Continue_Point.
+		Continue_Point.X = Continue_Point.Y = 0;
+	}
+#else
 	// Set the Work_Timer_Start as current time
 	Reset_Work_Time();
 
 	//Initital home point
 	Home_Point.clear();
-	New_Home_Point.X = New_Home_Point.Y = 0;
+
 	// Push the start point into the home point list
 	Home_Point.push_front(New_Home_Point);
 
@@ -1708,6 +1821,7 @@ uint8_t CM_Touring(void)
 	usleep(700);
 
 	robot::instance()->init_mumber();// for init robot member
+#endif
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
@@ -1729,6 +1843,46 @@ uint8_t CM_Touring(void)
 			if (map_touring_cancel == 1) {
 				return 0;
 			}
+#if CONTINUE_CLEANING_AFTER_CHARGE
+			// Handle Continue Cleaning
+			if (go_home == 0 && robot::instance()->Is_Cleaning_Paused())
+			{
+				ROS_INFO("Go to continue point: (%d, %d), targets left.", countToCell(Continue_Point.X), countToCell(Continue_Point.Y));
+				lowBattery = 0;
+
+				// Reset the cleaning pause flag.
+				robot::instance()->Reset_Cleaning_Pause();
+				// Try go to exactly this home point.
+				state_for_continue_cleaning = CM_MoveToCell(countToCell(Continue_Point.X), countToCell(Continue_Point.Y), 2, 0, 1 );
+				ROS_INFO("CM_MoveToCell return %d.", state_for_continue_cleaning);
+
+				if (state_for_continue_cleaning == 1)
+				{
+					ROS_INFO("Robot has reach the continue point, continue cleaning.");
+				}
+				else if (state_for_continue_cleaning == -1 || state_for_continue_cleaning == -2 || state_for_continue_cleaning == -3 || state_for_continue_cleaning == -5)
+				{
+					ROS_INFO("Robot can't reach the continue point, directly continue cleaning.");
+				}
+				else if (state_for_continue_cleaning == -4)
+				{
+					ROS_INFO("Remote home pressed, go home.");
+					remote_go_home = 1;
+					go_home = 1;
+				}
+				else if (state_for_continue_cleaning == -6)
+				{
+					ROS_INFO("Low battery go home. go_home = %d", go_home);
+					// go_home has been set to 1.
+				}
+				else if (state_for_continue_cleaning == -7)
+				{
+					ROS_INFO("Go home and near home now.");
+					// go_home has been set to 1.
+				}
+			}
+#endif
+
 
 			/***************************2.1 Common Process End***************************/
 
@@ -1745,9 +1899,16 @@ uint8_t CM_Touring(void)
 					SetHomeRemote();
 				}
 				
-
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (!robot::instance()->Is_Cleaning_Paused())
+				{
+					//2.2-1.3 Path to unclean area
+					CM_create_home_boundary();
+				}
+#else
 				//2.2-1.3 Path to unclean area
 				CM_create_home_boundary();
+#endif
 
 				// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
 				tmpPnt.X = countToCell(Home_Point.front().X);
@@ -1756,12 +1917,13 @@ uint8_t CM_Touring(void)
 				Home_Point.pop_front();
 				while (ros::ok())
 				{
-					ROS_INFO("Go home Target: (%d, %d), %u targets left.", tmpPnt.X, tmpPnt.Y, Home_Point.size());
+					ROS_INFO("%s, %d: Go home Target: (%d, %d), %lu targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
 					// Try go to exactly this home point.
-					state = CM_MoveToCell( tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
-					ROS_INFO("CM_MoveToCell return %d.", state);
+					state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
+					ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
 
 					if ( state == -2 && Home_Point.empty()) {
+						// state == -2 means it is trapped and can't go to the saved point.
 						// If it is the last saved home point, stop the robot.
 						Disable_Motors();
 						// Beep for the finish signal.
@@ -1776,15 +1938,18 @@ uint8_t CM_Touring(void)
 							Set_Clean_Mode(Clean_Mode_Userinterface);
 						}
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
+						if (robot::instance()->Is_Cleaning_Paused())
+						{
+							// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
+							robot::instance()->Reset_Cleaning_Pause();
+						}
+#endif
 						printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 						return 0;
 
 					} else if (state == -3 && Home_Point.empty()) {
-						// If it is the last saved home point, stop the robot.
-						Disable_Motors();
-						mt_state = MT_Battery;
-						return 0;
-					} else if (state == -5 && Home_Point.empty()) {
+						// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
 						// If it is the last saved home point, stop the robot.
 						Disable_Motors();
 						// Beep for the finish signal.
@@ -1793,9 +1958,37 @@ uint8_t CM_Touring(void)
 							usleep(100000);
 						}
 						Set_Clean_Mode(Clean_Mode_Userinterface);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+						if (robot::instance()->Is_Cleaning_Paused())
+						{
+							// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
+							robot::instance()->Reset_Cleaning_Pause();
+						}
+#endif
+						printf("%s %d: Battery too low, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+						return 0;
+					} else if (state == -5 && Home_Point.empty()) {
+						// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
+						// If it is the last saved home point, stop the robot.
+						Disable_Motors();
+						// Beep for the finish signal.
+						for (i = 10; i > 0; i--) {
+							Beep(i, 6, 0, 1);
+							usleep(100000);
+						}
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+						if (robot::instance()->Is_Cleaning_Paused())
+						{
+							// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
+							robot::instance()->Reset_Cleaning_Pause();
+						}
+#endif
 						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 						return 0;
 					} else if (state == 1 || state == -7) {
+						// state == 1 means robot has reached the saved point.
+						// state = -7 means go_home == 1 and it is near the charger stub.
 						// Call GoHome() function to try to go to charger stub.
 						GoHome();
 
@@ -1807,7 +2000,14 @@ uint8_t CM_Touring(void)
 						// Check the clean mode to find out whether it has reach the charger.
 						if (Get_Clean_Mode() == Clean_Mode_Charging)
 						{
-							printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+#if CONTINUE_CLEANING_AFTER_CHARGE
+							if (robot::instance()->Is_Cleaning_Paused())
+							{
+								printf("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+								return 0;
+							}
+#endif
+							printf("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 							return 0;
 						}
 						else if (Home_Point.empty())
@@ -1834,7 +2034,14 @@ uint8_t CM_Touring(void)
 								Set_Clean_Mode(Clean_Mode_Userinterface);
 							}
 
-							printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+#if CONTINUE_CLEANING_AFTER_CHARGE
+							if (robot::instance()->Is_Cleaning_Paused())
+							{
+								printf("%s %d: Pause cleaning for low battery, will continue cleaning when charge finish. Current cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+								return 0;
+							}
+#endif
+							printf("%s %d: Finish cleaning but can't go to charger stub, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 							return 0;
 						}
 					}
@@ -2363,7 +2570,14 @@ void CM_SetHome(int32_t x, int32_t y) {
 	Home_Point.push_front(New_Home_Point);
 }
 
-
+#if CONTINUE_CLEANING_AFTER_CHARGE
+void CM_SetContinuePoint(int32_t x, int32_t y)
+{
+	printf("%s %d: Set continue point: (%d, %d).\n", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
+	Continue_Point.X = x;
+	Continue_Point.Y = y;
+}
+#endif
 
 uint8_t CM_IsLowBattery(void) {
 	return lowBattery;
@@ -2397,13 +2611,34 @@ MapTouringType CM_handleExtEvent()
 {
 	/* Check low battery event, if battery is low, go home directly. */
 	if ((Check_Bat_Home() == 1) && go_home != 1) {
+		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
 		lowBattery = 1;
 		if ( Get_VacMode() == Vac_Max ) {
 			Switch_VacMode();
 		}
 		Stop_Brifly();
 		printf("%s %d: low battery, battery < 13.2v is detected.\n", __FUNCTION__, __LINE__);
-		remote_go_home = 1;
+		CM_SetGoHome(0);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
+		robot::instance()->Set_Cleaning_Pause();
+#endif
+		return MT_Battery_Home;
+	}
+	/*for testing*/
+	if (Remote_Key(Remote_Left) && go_home != 1) {
+		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
+		lowBattery = 1;
+		if ( Get_VacMode() == Vac_Max ) {
+			Switch_VacMode();
+		}
+		Stop_Brifly();
+		printf("%s %d: (For test, left key pressed) low battery, battery < 13.2v is detected.\n", __FUNCTION__, __LINE__);
+		CM_SetGoHome(0);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
+		robot::instance()->Set_Cleaning_Pause();
+#endif
 		return MT_Battery_Home;
 	}
 
@@ -2425,7 +2660,7 @@ MapTouringType CM_handleExtEvent()
 			Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
 			Stop_Brifly();
 			printf("%s %d: remote home is pressed.\n", __FUNCTION__, __LINE__);
-			remote_go_home = 1;
+			CM_SetGoHome(1);
 			return MT_Remote_Home;
 		}
 

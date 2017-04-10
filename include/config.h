@@ -256,6 +256,15 @@
 #define ADD_TARGET_BY_PATH		(1)
 #define ADD_TARGET_BY_PATH_ONLY		(1)
 
+
+// Config for whether enable the function of continuing cleanning after charge
+#define CONTINUE_CLEANING_AFTER_CHARGE	(1)
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+/* Continue cleaning voltage value */
+#define CONTINUE_CLEANING_VOLTAGE	(1600)
+#endif
+
 /* ------------------------------------- Path Planning Map ------------------------------------- */
 
 /*
