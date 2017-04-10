@@ -1857,6 +1857,12 @@ uint8_t CM_Touring(void)
 						tmpPnt.X = countToCell(Home_Point.front().X);
 						tmpPnt.Y = countToCell(Home_Point.front().Y);
 						Home_Point.pop_front();
+
+						// In GoHome() function, it may set the clean mode to Clean_Mode_GoHome. But it is not appropriate here, because it might affect the mode detection in CM_MoveToCell() and make it return -4.
+						if (Get_Clean_Mode() == Clean_Mode_GoHome)
+						{
+							Set_Clean_Mode(Clean_Mode_Navigation);
+						}
 					}
 					else
 					{
