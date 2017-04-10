@@ -669,6 +669,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		/*-------------------------------------------------Start Pose Check------------------------------*/
 		if (First_Time_Flag == 0){
 				if ((Distance_From_Start = (sqrtf(powf(Start_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) < 0.303 ){
+					/*
 					CM_MoveToCell(0, 0, 2, 0, 1);
 					ROS_INFO("In Start Pose, finish wall follow.");
 					// Beep for the finish signal.
@@ -680,6 +681,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					debug_WF_map(MAP, 0, 0);
 					debug_sm_map(SPMAP, 0, 0);
 					Set_Clean_Mode(Clean_Mode_Userinterface);
+					*/
+					WF_End_Wall_Follow();
 					break;
 				}
 		}
@@ -695,7 +698,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		/*------------------------------------WF_Map_Update---------------------------------------------------*/
 		//WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
-
+		if(reach_count >= 10){
+			WF_End_Wall_Follow();
+			break;
+		}
 		//CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		//update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		//rounding_update();
@@ -725,7 +731,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
                 /*------------------------------------------------------Touch and Remote event-----------------------*/
                 if (Touch_Detect()) {
-			printf("Touch\n");
+						printf("Touch\n");
                         Reset_Touch();
                         Set_Clean_Mode(Clean_Mode_Userinterface);
                         break;
@@ -738,7 +744,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
                         break;
                 }*/
                 if (Get_Rcon_Remote()) {
-			printf("Rcon\n");
+						printf("Rcon\n");
                         if(Is_MoveWithRemote())
                         {
                                 if (Remote_Key(Remote_Random)) {
@@ -760,7 +766,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
                         }
                         Reset_Rcon_Remote();
                         Set_Clean_Mode(Clean_Mode_Userinterface);
-			break;
+						break;
                 }
                 /*------------------------------------------------------Check Battery-----------------------*/
                 if (Check_Bat_SetMotors(135000, 80000, 100000)) {       //Low Battery Event
@@ -777,9 +783,9 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
                 /*------------------------------------------------------Cliff Event-----------------------*/
     if(Get_Cliff_Trig())
     {
-                  Set_Wheel_Speed(0,0);
-      Set_Dir_Backward();
-            usleep(15000);
+		Set_Wheel_Speed(0,0);
+		Set_Dir_Backward();
+		usleep(15000);
 //                      if(Get_Cliff_Trig())
 //                      {
                           Cliff_Move_Back();
@@ -1053,7 +1059,20 @@ void Wall_Follow_Stop_Slam(void){
 	}*/
 	enable_slam_offset = 0;
 }
-
+void WF_End_Wall_Follow(void){
+	int16_t i;
+	CM_MoveToCell(0, 0, 2, 0, 1);
+	ROS_INFO("In Start Pose, finish wall follow.");
+	// Beep for the finish signal.
+	for (i = 10; i > 0; i--) {
+		Beep(i, 6, 0, 1);
+		usleep(100000);
+	}
+	Wall_Follow_Stop_Slam();
+	debug_WF_map(MAP, 0, 0);
+	debug_sm_map(SPMAP, 0, 0);
+	Set_Clean_Mode(Clean_Mode_Userinterface);
+}
 void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 	float   pos_x, pos_y;
 	int8_t	c, d, e;
