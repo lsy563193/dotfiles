@@ -1799,6 +1799,11 @@ uint8_t CM_Touring(void)
 						// Call GoHome() function to try to go to charger stub.
 						GoHome();
 
+						// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, but it is not appropriate right here, it will change the state returned by CM_MoveToCell() for next home point to -4 and stop robot from moving to next home point.
+						if (Get_Clean_Mode() == Clean_Mode_GoHome)
+						{
+							Set_Clean_Mode(Clean_Mode_Navigation);
+						}
 						// Check the clean mode to find out whether it has reach the charger.
 						if (Get_Clean_Mode() == Clean_Mode_Charging)
 						{
@@ -1832,7 +1837,18 @@ uint8_t CM_Touring(void)
 							printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 							return 0;
 						}
-
+					}
+					else if (state == -4)
+					{
+						// state == -4 means home key was pressed. It continues going to current target home point.
+						ROS_INFO("%s %d: Home key was pressed, keep going to this target.", __FUNCTION__, __LINE__);
+						continue;
+					}
+					else if (state == -6)
+					{
+						// state == -6 means it detecteds low battery go home when go_home != 1, that's not possible.
+						ROS_INFO("%s %d: Robot detecteds low battery go home when go_home != 1, this message should not be printed, please check.", __FUNCTION__, __LINE__);
+						continue;
 					}
 
 					if (!Home_Point.empty())
