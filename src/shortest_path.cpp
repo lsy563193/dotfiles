@@ -69,7 +69,7 @@ static uint16_t line_cnt = 0;
 
 extern PositionType positions[];
 extern int16_t xMin, xMax, yMin, yMax;
-extern int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
+
 /*
  * Free the line segments.
  *
@@ -1495,6 +1495,8 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
 
 	Point16_t pos;
+
+	path_reset_path_points();
 
 	/* Find the shortest path to the target by using shorest path grid map. */
 	retval = path_find_shortest_path(position.X, position.Y, x, y, 0, last_dir);

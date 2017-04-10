@@ -1,6 +1,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
-
+/*robot type define,currently got two type "ROBOT_X900" "ROBOT_X400"*/
+#define __ROBOT_X900 							(1)
+#define __ROBOT_X400							(0)
 /* ------------------------------------- System Setting ------------------------------------- */
 
 /*
@@ -41,7 +43,7 @@
  * Definition to enable/disable robot rounding the obstcal or not.
  */
 #define PP_ROUNDING_OBSTACLE_LEFT	(1)
-#define PP_ROUNDING_OBSTACLE_RIGHT	(0)
+#define PP_ROUNDING_OBSTACLE_RIGHT	(1)
 /*
  * Definition to enable/disable robot curve move support.
  */
@@ -227,7 +229,7 @@
 /*
  * Distance between left & right wheel in mm.
  */
-#define WHEEL_BASE			(201)
+#define WHEEL_BASE			(218)
 
 /*
  * Range of BASE_SPEED should be better within 12 to 15.
@@ -236,8 +238,12 @@
  */
 #define BASE_SPEED						((int32_t) 15) // 15)
 #define ROTATE_TOP_SPEED				((uint32_t) 16) // 22)
-#define RUN_TOP_SPEED					((int32_t) 43) // 45)
+#if __ROBOT_X900
+#define RUN_TOP_SPEED					((int32_t) 40) // 45)
+#elif __ROBOT_X400
 
+#define RUN_TOP_SPEED					((int32_t) 43) // 45)
+#endif
 /*
  * Go home using CM_MoveToCell function
  */
@@ -262,7 +268,6 @@
  * Definition relates to a grid cell.
  */
 #if (ROBOT_SIZE == 5)
-
 #define CELL_SIZE			(65) // 65
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
@@ -271,12 +276,21 @@
 
 #else
 
+#if __ROBOT_X900
+#define SPEED_ALF    (7.83)
+#define CELL_SIZE			(112) // 65
+#define CELL_SIZE_2			(2 * CELL_SIZE) // 65
+#define CELL_SIZE_3			(3 * CELL_SIZE) // 65
+#define CELL_COUNT_MUL			(573) // 375  // 207
+#define CELL_COUNT_MUL_1_2		(286) // 187  // 103
+#elif __ROBOT_X400
+#define SPEED_ALF    (7.23)
 #define CELL_SIZE			(103) // 65
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
 #define CELL_COUNT_MUL			(553) // 375  // 207
 #define CELL_COUNT_MUL_1_2		(276) // 187  // 103
-
+#endif
 #endif
 
 /* ------------------------------------- Zone Wall Follow ------------------------------------- */
@@ -369,8 +383,5 @@
 /* Define the display mode in user interface routine*/
 #define ONE_KEY_DISPLAY                     (1)
 
-/*robot type define,currently got two type "ROBOT_X900" "ROBOT_X400"*/
-#define __ROBOT_X900 							(1)
-#define __ROBOT_X400							(0)
 
 #define STANDARD_REMOTE   (1)

@@ -114,6 +114,10 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->bumper_left = msg->lbumper;
 
+	this->omni_wheel = msg->omni_wheel;
+
+	this->visual_wall = msg->visual_wall;
+
 	if(msg->ir_ctrl>0)
 		this->ir_ctrl = msg->ir_ctrl;
 
@@ -207,6 +211,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	ident.stamp_ = msg->header.stamp;
 	if (enable_slam_offset == 1){
 		//ROS_INFO("SLAM = 1");
+		if(map_ready()){
 		try {
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->yaw = tf::getYaw(transform.getRotation());
@@ -229,6 +234,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 			return;
+		}
 		}
 	}else if (enable_slam_offset == 0){
 		//ROS_INFO("SLAM = 0");
@@ -257,6 +263,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		}
 	}else if (enable_slam_offset == 2){//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
+		if(map_ready()){
 		try {
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
@@ -291,6 +298,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 			return;
+		}
 		}
 	}
 
@@ -467,7 +475,34 @@ int16_t robot::robot_get_cliff_front()
 
 int16_t robot::robot_get_left_wall()
 {
-	return sensor.left_wall - Wall_BaseLine;
+	return sensor.left_wall - Left_Wall_BaseLine;
+}
+
+int16_t robot::robot_get_right_wall()
+{
+#if __ROBOT_X900
+	return sensor.right_wall - Right_Wall_BaseLine;
+#elif __ROBOT_X400
+	return 0;
+#endif
+}
+
+int16_t robot::robot_get_omni_wheel()
+{
+#if __ROBOT_X9000
+	   return sensor.omni_wheel;
+#elif __ROBOT_X400
+	   return 0;
+#endif
+}
+
+int16_t robot::robot_get_visual_wall()
+{
+#if __ROBOT_X900
+	return sensor.visual_wall;
+#elif __ROBOT_X400
+	return 0;
+#endif
 }
 
 bool robot::robot_get_lbrush_oc()//oc : over current
@@ -689,7 +724,11 @@ void robot::visualize_marker_init(){
 	this->clean_markers.type = visualization_msgs::Marker::LINE_STRIP;
 	this->clean_markers.action= 0;//add
 	this->clean_markers.lifetime=ros::Duration(0);
+#if __ROBOT_X400
 	this->clean_markers.scale.x = 0.31;
+#elif __ROBOT_X900
+	this->clean_markers.scale.x = 0.33;
+#endif
 //	this->clean_markers.scale.y = 0.31;
 	this->clean_markers.color.r = 0.0;
 	this->clean_markers.color.g = 1.0;
@@ -714,12 +753,14 @@ void robot::visualize_marker_init(){
 	this->bumper_markers.color.a =1.0;
 	this->bumper_markers.header.frame_id = "/map";
 	this->bumper_markers.header.stamp = ros::Time::now();
+
 }
 
 double robot::robot_get_map_yaw()
 {
 	return this->yaw;
 }
+
 void robot::pub_clean_markers(){
 	this->m_points.x = this->position_x;
 	this->m_points.y = this->position_y;

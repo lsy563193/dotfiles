@@ -162,64 +162,52 @@ void *serial_receive_routine(void *)
 
 	wh_len = RECEI_LEN - 2; //length without header bytes
 	wht_len = wh_len - 2; //length without header and tail bytes
-	whtc_len = wht_len - 1; //lenght without header and tail and crc bytes
+	whtc_len = wht_len - 1; //length without header and tail and crc bytes
 
-	while (ros::ok() && (!robotbase_thread_stop))
-	{
+	while (ros::ok() && (!robotbase_thread_stop)) {
 		ret = serial_read(1, &header[0]);
-		if (ret != 1)
-		{
-			ROS_WARN("serial read length %d bytes, whitch requst %d ", ret, 1);
+		if (ret != 1 ){
+			ROS_WARN("serial read length %d bytes, whitch requst %d ",ret,1);
 			continue;
 		}
-		if (header[0] != h1)
+		if(header[0] != h1)
 			continue;
-
-		ret = serial_read(1, &header[1]);
-		if (ret != 1)
-		{
-			ROS_WARN("serial read length %d bytes, whitch requst %d ", ret, 1);
+		ret= serial_read(1,&header[1]);
+		if (ret != 1 ){
+			ROS_WARN("serial read length %d bytes, whitch requst %d ",ret,1);
 			continue;
 		}
-
-		if (header[1] != h2)
+		if(header[1] != h2){
 			continue;
-
+		}
 		ret = serial_read(wh_len, receiData);
-		if (ret != wh_len)
-		{
-			ROS_WARN("serial read length %d bytes,whitch requst %d bytes", ret, wh_len);
+		if(ret != wh_len){
+			ROS_WARN("serial read length %d bytes,whitch requst %d bytes",ret,wh_len);
 			continue;
 		}
 		r_crc = receiData[whtc_len];
 		tmpSet[0] = h1;
 		tmpSet[1] = h2;
-		for (i = 0; i < whtc_len; i++)
-		{
+		for (i = 0; i < whtc_len; i++){
 			tmpSet[i + 2] = receiData[i];
 		}
 
-		c_crc = calcBufCrc8((char *) tmpSet, wh_len - 1);
-		if (r_crc == c_crc)
-		{
-			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1)
-			{
-				for (j = 0; j < wht_len; j++)
-				{
+		c_crc = calcBufCrc8((char *)tmpSet, wh_len - 1);
+		if (r_crc == c_crc){
+			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
+				for (j = 0; j < wht_len; j++) {
 					receiStream[j + 2] = receiData[j];
 				}
-				if (pthread_cond_signal(&recev_cond) < 0)
+				if(pthread_cond_signal(&recev_cond)<0)
 					ROS_WARN(" in serial read, pthread signal fail !");//if receive data corret than send signal
-			} else
-			{
+			} else {
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
-		} else
-		{
-			ROS_WARN(" in serial read ,data crc error\n");
+		} else {
+			ROS_WARN( " in serial read ,data crc error\n");
 		}
 	}
-	//pthread_exit(NULL);
+	ROS_INFO("pthread serial read exit!");
 }
 
 void *robotbase_routine(void*)
@@ -398,6 +386,7 @@ void *robotbase_routine(void*)
 
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 	}
+	ROS_INFO("robotbase thread exit");
 	//pthread_exit(NULL);
 }
 
@@ -438,6 +427,7 @@ void *serial_send_routine(void*){
 		serial_write(SEND_LEN, buf);
 		ResetSendFlag();
 	}
+	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);
 }
 

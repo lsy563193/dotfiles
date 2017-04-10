@@ -1483,6 +1483,8 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 	/* Update the Map cells to avoid cells passed by the robot are marked as obstcals. */
 	path_update_cells();
 
+	path_reset_path_points();
+
 	printf("\r\npath_next\tx: %d\ty: %d\tlx: %d\tly: %d\n", positions[0].x, positions[0].y, last_x_pos, last_y_pos);
 
 	/*

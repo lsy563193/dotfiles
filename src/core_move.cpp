@@ -92,7 +92,6 @@ Point16_t relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARR
 extern PositionType positions[];
 
 extern int16_t xMin, xMax, yMin, yMax;
-int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
 
 extern volatile uint8_t cleaning_mode;
 
@@ -266,7 +265,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 	if (Get_OBS_Status() & Status_Left_OBS) {
 		CM_count_normalize(0, heading_0, CELL_SIZE_3, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC() > 200) {
+		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
 			}
@@ -295,7 +294,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 	if (Get_OBS_Status() & Status_Left_OBS) {
 		CM_count_normalize(heading_0, CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC() > 200) {
+		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
 			}
@@ -794,7 +793,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 }
 
 // Target:	robot coordinate
-MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
+MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
 {
 	int32_t Target_Course, Rotate_Angle, Integrated, Left_Speed, Right_Speed, Base_Speed, distance, Dis_From_Init;
 	uint8_t Integration_Cycle, boundary_reach;
@@ -894,7 +893,7 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	while (1) {
 		
 #ifdef WALL_DYNAMIC
-		Wall_Dynamic_Base(30);
+		Wall_Dynamic_Base(50);
 #endif
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
@@ -1406,6 +1405,33 @@ MapTouringType CM_MoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_
 	return retval;
 }
 
+
+MapTouringType CM_MoveToPoint(Point32_t target)
+{
+	MapTouringType mt_state = MT_None;
+
+#ifdef PP_CURVE_MOVE
+
+	if (path_get_path_points_count() >= 3) {
+		mt_state = CurveMove_MoveToPoint();
+		if (mt_state == MT_CurveMove) {
+			mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+		}
+	} else {
+		printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+		mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+	}
+
+#else
+
+	printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+	mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+
+#endif
+
+	return mt_state;
+}
+
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
 uint16_t CM_get_robot_direction()
 {
@@ -1451,7 +1477,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 		printf("%s %d, OBS detected.\n", __FUNCTION__, __LINE__);
 	} else if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 		printf("%s %d, front OBS detected.\n", __FUNCTION__, __LINE__);
-	} else if (Get_Wall_ADC() > 170) {
+	} else if (Get_Wall_ADC(0) > 170) {
 		printf("%s %d, wall sensor exceed 170.\n", __FUNCTION__, __LINE__);
 	}
 	/*                South (Xmin)
@@ -1580,7 +1606,7 @@ uint8_t CM_Touring(void)
 {
 	int8_t	state;
 	uint8_t Blink_LED = 0;
-	int16_t	i, k, j, x, y, x_current, y_current, start, end;
+	int16_t	i, x, y, x_current, y_current, start, end;
 	float	slop, intercept;
 
 	// X, Y in Target_Point are all counts.
@@ -1750,51 +1776,7 @@ uint8_t CM_Touring(void)
 				
 
 				//2.2-1.3 Path to unclean area
-				k = 3;
-				xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
-				for (i = xMin; xMinSearch == SHRT_MAX; i++) {
-					for (j = yMin; j <= yMax; j++) {
-						if (Map_GetCell(MAP, i, j) != UNCLEAN) {
-							xMinSearch = i - k;
-							break;
-						}
-					}
-				}
-				for (i = xMax; xMaxSearch == SHRT_MAX; i--) {
-					for (j = yMin; j <= yMax; j++) {
-						if (Map_GetCell(MAP, i, j) != UNCLEAN) {
-							xMaxSearch = i + k;
-							break;
-						}
-					}
-				}
-				for (i = yMin; yMinSearch == SHRT_MAX; i++) {
-					for (j = xMin; j <= xMax; j++) {
-						if (Map_GetCell(MAP, j, i) != UNCLEAN) {
-							yMinSearch = i - k;
-							break;
-						}
-					}
-				}
-				for (i = yMax; yMaxSearch == SHRT_MAX; i--) {
-					for (j = xMin; j <= xMax; j++) {
-						if (Map_GetCell(MAP, j, i) != UNCLEAN) {
-							yMaxSearch = i + k;
-							break;
-						}
-					}
-				}
-				printf("%s %d: x: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
-				for (i = xMinSearch; i <= xMaxSearch; i++) {
-					if (i == xMinSearch || i == xMaxSearch) {
-						for (j = yMinSearch; j <= yMaxSearch; j++) {
-							Map_SetCell(MAP, cellToCount(i), cellToCount(j), BLOCKED_BUMPER);
-						}
-					} else {
-						Map_SetCell(MAP, cellToCount(i), cellToCount(yMinSearch), BLOCKED_BUMPER);
-						Map_SetCell(MAP, cellToCount(i), cellToCount(yMaxSearch), BLOCKED_BUMPER);
-					}
-				}
+				CM_create_home_boundary();
 
 				// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
 				tmpPnt.X = countToCell(Home_Point.front().X);
@@ -1842,21 +1824,15 @@ uint8_t CM_Touring(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 						return 0;
-					} else if ( state == -7 && Home_Point.empty()) {
-						// If it is the last saved home point, stop the robot.
-						Disable_Motors();
-						// Beep for the finish signal.
-						for (i = 10; i > 0; i--) {
-							Beep(i, 6, 0, 1);
-							usleep(100000);
-						}
-						Set_Clean_Mode(Clean_Mode_GoHome);
-						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-						return 0;
-					} else if ( state == 1 ) {
+					} else if (state == 1 || state == -7) {
 						// Call GoHome() function to try to go to charger stub.
 						GoHome();
 
+						// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, but it is not appropriate right here, it will change the state returned by CM_MoveToCell() for next home point to -4 and stop robot from moving to next home point.
+						if (Get_Clean_Mode() == Clean_Mode_GoHome)
+						{
+							Set_Clean_Mode(Clean_Mode_Navigation);
+						}
 						// Check the clean mode to find out whether it has reach the charger.
 						if (Get_Clean_Mode() == Clean_Mode_Charging)
 						{
@@ -1890,7 +1866,18 @@ uint8_t CM_Touring(void)
 							printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 							return 0;
 						}
-
+					}
+					else if (state == -4)
+					{
+						// state == -4 means home key was pressed. It continues going to current target home point.
+						ROS_INFO("%s %d: Home key was pressed, keep going to this target.", __FUNCTION__, __LINE__);
+						continue;
+					}
+					else if (state == -6)
+					{
+						// state == -6 means it detecteds low battery go home when go_home != 1, that's not possible.
+						ROS_INFO("%s %d: Robot detecteds low battery go home when go_home != 1, this message should not be printed, please check.", __FUNCTION__, __LINE__);
+						continue;
 					}
 
 					if (!Home_Point.empty())
@@ -1899,6 +1886,12 @@ uint8_t CM_Touring(void)
 						tmpPnt.X = countToCell(Home_Point.front().X);
 						tmpPnt.Y = countToCell(Home_Point.front().Y);
 						Home_Point.pop_front();
+
+						// In GoHome() function, it may set the clean mode to Clean_Mode_GoHome. But it is not appropriate here, because it might affect the mode detection in CM_MoveToCell() and make it return -4.
+						if (Get_Clean_Mode() == Clean_Mode_GoHome)
+						{
+							Set_Clean_Mode(Clean_Mode_Navigation);
+						}
 					}
 					else
 					{
@@ -1927,7 +1920,6 @@ uint8_t CM_Touring(void)
 
 					x_current = Map_GetXPos();
 					y_current = Map_GetYPos();
-					path_reset_path_points();
 					state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
 					ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 
@@ -1965,26 +1957,7 @@ uint8_t CM_Touring(void)
 						printf("%s %d: Rounding %s.\n", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
 						rounding(rounding_type, Next_Point, Bumper_Status_For_Rounding);
 					} else {
-
-#ifdef PP_CURVE_MOVE
-
-						if (path_get_path_points_count() >= 3) {
-							mt_state = CurveMove_MoveToPoint();
-							if (mt_state == MT_CurveMove) {
-								mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-							}
-						} else {
-							printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-							mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-						}
-
-#else
-
-						printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-
-#endif
-
+						mt_state = CM_MoveToPoint(Next_Point);
 					}
 
 					if (y_current == countToCell(Next_Point.Y)) {
@@ -2162,8 +2135,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 		last_dir = path_get_robot_direction();
 
-		path_reset_path_points();
-
 		pos.X = x + relativePos[0].X;
 		pos.Y = y + relativePos[0].Y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
@@ -2186,23 +2157,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				debug_map(MAP, tmp.X, tmp.Y);
 #endif
 
-#ifdef PP_CURVE_MOVE
-
-				if (path_get_path_points_count() >= 3) {
-					mt_state = CurveMove_MoveToPoint();
-					if (mt_state == MT_CurveMove) {
-						mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-					}
-				} else {
-					printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-				}
-
-#else
-
-				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-
-#endif
+				mt_state = CM_MoveToPoint(Next_Point);
 				printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 				if (mt_state == MT_Battery) {
@@ -2238,8 +2193,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 				last_dir = path_get_robot_direction();
 
-				path_reset_path_points();
-
 				pos.X = x + relativePos[offsetIdx].X;
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
@@ -2263,8 +2216,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				}
 
 				last_dir = path_get_robot_direction();
-
-				path_reset_path_points();
 
 				pos.X = x + relativePos[offsetIdx].X;
 				pos.Y = y + relativePos[offsetIdx].Y;
@@ -2299,8 +2250,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		printf("%s %d Path Find: Normal Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
 		last_dir = path_get_robot_direction();
 
-		path_reset_path_points();
-
 		pos.X = x;
 		pos.Y = y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
@@ -2320,24 +2269,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			debug_map(MAP, tmp.X, tmp.Y);
 #endif
 
-#ifdef PP_CURVE_MOVE
-
-			if (path_get_path_points_count() >= 3) {
-				mt_state = CurveMove_MoveToPoint();
-				if (mt_state == MT_CurveMove) {
-					mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-				}
-			} else {
-				printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
-				mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-			}
-
-#else
-
-			mt_state = CM_MoveToPoint(Next_Point, RUN_TOP_SPEED, true, true);
-
-#endif
-
+			mt_state = CM_MoveToPoint(Next_Point);
 			printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 			if (mt_state == MT_Battery) {
@@ -2371,8 +2303,6 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			}
 
 			last_dir = path_get_robot_direction();
-
-			path_reset_path_points();
 
 			pos.X = x;
 			pos.Y = y;
@@ -2557,6 +2487,7 @@ MapTouringType CM_handleExtEvent()
 			printf("%s %d: remote clean is pressed.\n", __FUNCTION__, __LINE__);
 			return MT_Remote_Clean;
 		}
+		Reset_Rcon_Remote();
 	}
 
 	/* Check whether robot is taken up. */
@@ -2567,4 +2498,56 @@ MapTouringType CM_handleExtEvent()
 	}
 
 	return MT_None;
+}
+
+void CM_create_home_boundary(void)
+{
+	int16_t i, j, k;
+	int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
+
+	k = 3;
+	xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
+	for (i = xMin; xMinSearch == SHRT_MAX; i++) {
+		for (j = yMin; j <= yMax; j++) {
+			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
+				xMinSearch = i - k;
+				break;
+			}
+		}
+	}
+	for (i = xMax; xMaxSearch == SHRT_MAX; i--) {
+		for (j = yMin; j <= yMax; j++) {
+			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
+				xMaxSearch = i + k;
+				break;
+			}
+		}
+	}
+	for (i = yMin; yMinSearch == SHRT_MAX; i++) {
+		for (j = xMin; j <= xMax; j++) {
+			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
+				yMinSearch = i - k;
+				break;
+			}
+		}
+	}
+	for (i = yMax; yMaxSearch == SHRT_MAX; i--) {
+		for (j = xMin; j <= xMax; j++) {
+			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
+				yMaxSearch = i + k;
+				break;
+			}
+		}
+	}
+	printf("%s %d: x: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
+	for (i = xMinSearch; i <= xMaxSearch; i++) {
+		if (i == xMinSearch || i == xMaxSearch) {
+			for (j = yMinSearch; j <= yMaxSearch; j++) {
+				Map_SetCell(MAP, cellToCount(i), cellToCount(j), BLOCKED_BUMPER);
+			}
+		} else {
+			Map_SetCell(MAP, cellToCount(i), cellToCount(yMinSearch), BLOCKED_BUMPER);
+			Map_SetCell(MAP, cellToCount(i), cellToCount(yMaxSearch), BLOCKED_BUMPER);
+		}
+	}
 }

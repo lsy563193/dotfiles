@@ -59,10 +59,8 @@ volatile uint8_t R_H_Flag=0;
 volatile uint8_t Bumper_Error = 0;
 
 // Value for wall sensor offset.
-volatile int16_t Wall_BaseLine = 50;
-
-// Value for saving the average value of wall sensor.
-int32_t Saved_Wall_Everage = -99;
+volatile int16_t Left_Wall_BaseLine = 50;
+volatile int16_t Right_Wall_BaseLine = 50;
 
 /*----------------------- Work Timer functions--------------------------*/
 
@@ -158,9 +156,16 @@ void Set_Wheel_Step(uint32_t Left, uint32_t Right)
 	right_wheel_step = Right;
 }
 
-int32_t Get_Wall_ADC(void)
+int32_t Get_Wall_ADC(int8_t dir)
 {
-	return (int32_t)(int16_t)robot::instance()->robot_get_left_wall();
+	if (dir == 0)
+	{
+		return (int32_t)(int16_t)robot::instance()->robot_get_left_wall();
+	}
+	else
+	{
+		return (int32_t)(int16_t)robot::instance()->robot_get_right_wall();
+	}
 }
 
 void Set_Dir_Backward(void)
@@ -188,44 +193,90 @@ void Set_RightBrush_Stall(uint8_t R)
 void Wall_Dynamic_Base(uint32_t Cy)
 {
 	//ROS_INFO("Run Wall_Dynamic_Base.");
-	static int32_t Wall_Sum_Value=0;
-	static int32_t Wall_Everage_Value=0;
-	static int32_t Wall_E_Counter=0;
-	static int32_t Temp_Wall_Buffer=0;
+	static int32_t Left_Wall_Sum_Value=0, Right_Wall_Sum_Value=0;
+	static int32_t Left_Wall_Everage_Value=0, Right_Wall_Everage_Value=0;
+	static int32_t Left_Wall_E_Counter=0, Right_Wall_E_Counter=0;
+	static int32_t Left_Temp_Wall_Buffer=0, Right_Temp_Wall_Buffer=0;
 
-	Temp_Wall_Buffer = Get_Wall_ADC();
-	Wall_Sum_Value+=Temp_Wall_Buffer;
-	Wall_E_Counter++;
-	Wall_Everage_Value=Wall_Sum_Value/Wall_E_Counter;
+	// Dynamic adjust for left wall sensor.
+	Left_Temp_Wall_Buffer = Get_Wall_ADC(0);
+	Left_Wall_Sum_Value+=Left_Temp_Wall_Buffer;
+	Left_Wall_E_Counter++;
+	Left_Wall_Everage_Value=Left_Wall_Sum_Value/Left_Wall_E_Counter;
 
-	if(ABS_Minus(Wall_Everage_Value,Temp_Wall_Buffer)>20)
+	if(ABS_Minus(Left_Wall_Everage_Value,Left_Temp_Wall_Buffer)>20)
 	{
-		Wall_Everage_Value=0;
-		Wall_E_Counter=0;
-		Wall_Sum_Value=0;
-		Temp_Wall_Buffer=0;
+		Left_Wall_Everage_Value=0;
+		Left_Wall_E_Counter=0;
+		Left_Wall_Sum_Value=0;
+		Left_Temp_Wall_Buffer=0;
 	}
-	if ((uint32_t) Wall_E_Counter > Cy)
+	if ((uint32_t) Left_Wall_E_Counter > Cy)
 	{
-		Wall_Everage_Value += Get_Wall_Base();
-		if(Wall_Everage_Value>300)Wall_Everage_Value=300;//set a limit
-		Set_Wall_Base(Wall_Everage_Value);
-		Wall_Everage_Value=0;
-		Wall_E_Counter=0;
-		Wall_Sum_Value=0;
-		Temp_Wall_Buffer=0;
+		// Get the wall base line for left wall sensor.
+		Left_Wall_Everage_Value += Get_Wall_Base(0);
+		if(Left_Wall_Everage_Value>300)Left_Wall_Everage_Value=300;//set a limit
+		// Adjust the wall base line for left wall sensor.
+		Set_Wall_Base(0, Left_Wall_Everage_Value);
+		Left_Wall_Everage_Value=0;
+		Left_Wall_E_Counter=0;
+		Left_Wall_Sum_Value=0;
+		Left_Temp_Wall_Buffer=0;
 		//Beep(1, 10, 0, 1);
-		//ROS_INFO("Set Wall base value as: %d.", Get_Wall_Base());
+		ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
 	}
+
+	// Dynamic adjust for right wall sensor.
+	Right_Temp_Wall_Buffer = Get_Wall_ADC(1);
+	Right_Wall_Sum_Value+=Right_Temp_Wall_Buffer;
+	Right_Wall_E_Counter++;
+	Right_Wall_Everage_Value=Right_Wall_Sum_Value/Right_Wall_E_Counter;
+
+	if(ABS_Minus(Right_Wall_Everage_Value,Right_Temp_Wall_Buffer)>20)
+	{
+		Right_Wall_Everage_Value=0;
+		Right_Wall_E_Counter=0;
+		Right_Wall_Sum_Value=0;
+		Right_Temp_Wall_Buffer=0;
+	}
+	if ((uint32_t) Right_Wall_E_Counter > Cy)
+	{
+		// Get the wall base line for right wall sensor.
+		Right_Wall_Everage_Value += Get_Wall_Base(1);
+		if(Right_Wall_Everage_Value>300)Right_Wall_Everage_Value=300;//set a limit
+		// Adjust the wall base line for right wall sensor.
+		Set_Wall_Base(1, Right_Wall_Everage_Value);
+		Right_Wall_Everage_Value=0;
+		Right_Wall_E_Counter=0;
+		Right_Wall_Sum_Value=0;
+		Right_Temp_Wall_Buffer=0;
+		//Beep(1, 10, 0, 1);
+		ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
+	}
+
 }
 
-void Set_Wall_Base(int32_t data)
+void Set_Wall_Base(int8_t dir, int32_t data)
 {
-	Wall_BaseLine = data;
+	if (dir == 0)
+	{
+		Left_Wall_BaseLine = data;
+	}
+	else
+	{
+		Right_Wall_BaseLine = data;
+	}
 }
-int32_t Get_Wall_Base(void)
+int32_t Get_Wall_Base(int8_t dir)
 {
-	return Wall_BaseLine;
+	if(dir == 0)
+	{
+		return Left_Wall_BaseLine;
+	}
+	else
+	{
+		return Right_Wall_BaseLine;
+	}
 }
 
 void Quick_Back(uint8_t Speed, uint16_t Distance)
@@ -236,7 +287,7 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	Reset_Wheel_Step();
 	Set_Wheel_Speed(Speed, Speed);
 	// This count is for how many milliseconds it should take. The Distance is in mm.
-	int back_count = int(1000 * Distance / (Speed * 7.23));
+	int back_count = int(1000 * Distance / (Speed * SPEED_ALF));
 	//printf("[movement.cpp] Quick_back for %dms.\n", back_count);
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
@@ -657,7 +708,7 @@ void Set_LeftWheel_Speed(uint8_t speed)
 {
 	int16_t l_speed;
 	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
-	l_speed = (int16_t)(speed*7.23);
+	l_speed = (int16_t)(speed*SPEED_ALF);
 	if(wheel_left_direction == 1)
 		l_speed |=0x8000;
 	Left_Wheel_Speed = l_speed;
@@ -670,7 +721,7 @@ void Set_RightWheel_Speed(uint8_t speed)
 {
 	int16_t r_speed;
 	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
-	r_speed = (int16_t)(speed*7.23);
+	r_speed = (int16_t)(speed*SPEED_ALF);
 	if(wheel_right_direction == 1)
 		r_speed |=0x8000;
 	Right_Wheel_Speed = r_speed;
