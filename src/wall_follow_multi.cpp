@@ -43,6 +43,8 @@ volatile int32_t Map_Wall_Follow_Distance = 0;
 bool	escape_thread_running = false;
 //Timer
 uint32_t escape_trapped_timer;
+bool reach_continuous_state;
+int32_t reach_count = 0;
 
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
@@ -611,7 +613,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	
 	while (ros::ok()) {
 		/*------------------------------------WF_Map_Update---------------------------------------------------*/
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));		
+		//CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));		
 		//debug_WF_map(MAP, 0, 0);
 		//debug_sm_map(SPMAP, 0, 0);
 
@@ -690,9 +692,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 #endif
 		//ROS_INFO("Distance_From_Start = %f", Distance_From_Start);
 		
-		WF_Is_Reach_Cleaned();
 		/*------------------------------------WF_Map_Update---------------------------------------------------*/
-		WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		//WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+
 		//CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		//update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		//rounding_update();
@@ -1051,7 +1054,6 @@ void Wall_Follow_Stop_Slam(void){
 	enable_slam_offset = 0;
 }
 
-
 void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 	float   pos_x, pos_y;
 	int8_t	c, d, e;
@@ -1094,8 +1096,130 @@ void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
 	i = Map_GetRelativeX(heading_0, 0, 0);
 	j = Map_GetRelativeY(heading_0, 0, 0);
-	WF_Push_Point(countToCell(i),countToCell(j));
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, 0), Map_GetRelativeY(heading_0, 0, 0), CLEANED);
+	if(WF_Push_Point(countToCell(i),countToCell(j)) == 0){//mark after letf the same cell
+		Map_SetCell(MAP, i, j, CLEANED);
+	}
+	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), CLEANED);
+
+	//if (should_mark == 1) {
+		//if (rounding_type == ROUNDING_LEFT) {
+			i = Map_GetRelativeX(heading_0, CELL_SIZE_3, 0);
+			j = Map_GetRelativeY(heading_0, CELL_SIZE_3, 0);
+			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
+				Map_SetCell(MAP, i, j, BLOCKED_OBS);
+			}
+		/*} else if (rounding_type == ROUNDING_RIGHT) {
+			i = Map_GetRelativeX(heading_0, -CELL_SIZE_3, 0);
+			j = Map_GetRelativeY(heading_0, -CELL_SIZE_3, 0);
+			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
+				Map_SetCell(MAP, i, j, BLOCKED_OBS);
+			}
+		*/
+		//}
+	//}
+
+#else
+
+	i = Map_GetRelativeX(path_heading, 0, 0);
+	j = Map_GetRelativeY(path_heading, 0, 0);
+	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
+
+	//if (should_mark == 1) {
+		//if (rounding_type == ROUNDING_LEFT && Get_Wall_ADC() > 200) {
+		//if (rounding_type == ROUNDING_LEFT) {
+			Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, 0), Map_GetRelativeY(heading_0, CELL_SIZE, 0), BLOCKED_OBS);
+			//Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), BLOCKED_OBS);
+		/*} else if (rounding_type == ROUNDING_RIGHT) {
+			Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, 0), Map_GetRelativeY(heading_0, -CELL_SIZE, 0), BLOCKED_OBS);
+			//Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, -CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, -CELL_SIZE), BLOCKED_OBS);
+		}*/
+	//}
+#endif
+}
+/**************************************************************
+Function:WF_Check_Loop_Closed
+Description:
+*1.push a point
+*2.check last cell if cleaned, cleaned->break, uncleaned->continue
+*3.check if in same cell, same->loop until leave this cell, not same-> marked last cell as cleaned
+***************************************************************/
+void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1) {
+	float	pos_x, pos_y;
+	int8_t	c, d, e;
+	int16_t	x, y;
+	uint16_t	path_heading;
+	int32_t	i, j;
+	int8_t	push_state;
+	bool	reach_state;
+	if (heading_0 > heading_1 && heading_0 - heading_1 > 1800) {
+		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
+	} else if (heading_1 > heading_0 && heading_1 - heading_0 > 1800) {
+		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
+	} else {
+		path_heading = (uint16_t)(heading_0 + heading_1) >> 1;
+	}
+
+	x = Map_GetXPos();
+	y = Map_GetYPos();
+
+	//Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
+	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	Map_SetPosition(pos_x, pos_y);
+
+#if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
+
+	if (x != Map_GetXPos() || y != Map_GetYPos()) {
+		for (c = 1; c >= -1; --c) {
+			for (d = 1; d >= -1; --d) {
+				i = Map_GetRelativeX(path_heading, CELL_SIZE * c, CELL_SIZE * d);
+				j = Map_GetRelativeY(path_heading, CELL_SIZE * c, CELL_SIZE * d);
+				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
+
+				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER || e == BLOCKED_BOUNDARY ) {
+					Map_SetCell(MAP, i, j, CLEANED);
+				}
+			}
+		}
+	}
+
+	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, CELL_SIZE), CLEANED);
+	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
+	i = Map_GetRelativeX(heading_0, 0, 0);
+	j = Map_GetRelativeY(heading_0, 0, 0);
+	push_state = WF_Push_Point(countToCell(i),countToCell(j));//push a cell
+	if(push_state == 1){
+		reach_state = WF_Is_Reach_Cleaned();//check this cell if reached
+		if(reach_state == true){//add reach_count
+			if (reach_count == 0){
+				reach_continuous_state = true;
+			}
+			if(reach_continuous_state = true){
+				reach_count++;
+				ROS_INFO("reach_count = %d", reach_count);
+			}
+		}
+		else{
+			reach_continuous_state = false;
+			reach_count = 0;
+		}
+	}
+	
+
+	if(push_state == 1){//mark after letf the same cell
+		//Map_SetCell(MAP, i, j, CLEANED);
+		int size = (WF_Point.size() - 2);
+		if(size >= 0){
+			ROS_INFO("WF_Point.size() - 2 = %d", size);
+			try{
+				Map_SetCell(MAP, cellToCount((WF_Point.at(WF_Point.size() - 2)).X), cellToCount((WF_Point.at(WF_Point.size() - 2)).Y), CLEANED);
+			}
+			catch(const std::out_of_range& oor){
+				std::cerr << "Out of range error:" << oor.what() << '\n';
+			}
+			
+		}
+	}
 	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), CLEANED);
 
 	//if (should_mark == 1) {
@@ -1134,7 +1258,6 @@ void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 #endif
 }
 
-
 bool WF_Is_Reach_Cleaned(void){
 	int32_t x,y;
 	//x = Map_GetXPos();
@@ -1145,29 +1268,49 @@ bool WF_Is_Reach_Cleaned(void){
 	//Map_SetCell(MAP, x, y, 6);
 	//if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == CLEANED) {
 	try{
-			if (Map_GetCell(MAP, (WF_Point.at(WF_Point.size() - 2)).X, (WF_Point.at(WF_Point.size() - 2)).X) == CLEANED) {//size() - 2 means last one
-				ROS_INFO("Reach cleaned");
-				//Beep(3, 25, 25, 1);
-				return true;
+		if(WF_Point.empty() == false){
+			//if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == CLEANED) {
+			if((WF_Point.size() - 1) >= 0){
+				if (Map_GetCell(MAP, (WF_Point.at(WF_Point.size() - 1)).X, (WF_Point.at(WF_Point.size() - 1)).Y) == CLEANED) {//size() - 2 means last two
+					ROS_INFO("Reach X = %d, Reach Y = %d",  countToCell(x), countToCell(y));
+					Beep(3, 25, 25, 1);
+					return true;
+				}
+				else{
+					return false;
+				}
 			}
+			else{
+				return false;
+			}
+		}
+		else{
+			return false;
+		}
 	}
 	catch(const std::out_of_range& oor){
 		std::cerr << "Out of range error:" << oor.what() << '\n';
 	}
 	return false;
 }
-void WF_Push_Point(int32_t x, int32_t y){
-	if (WF_Point.empty() == 0){
+int8_t WF_Push_Point(int32_t x, int32_t y){
+	if (WF_Point.empty() == false){
 			if(WF_Point.back().X != x || WF_Point.back().Y != y){
 				New_WF_Point.X = x;
 				New_WF_Point.Y = y;
 				WF_Point.push_back(New_WF_Point);
+				ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
+				return 1;
+			}
+			else{
+				return 0;//it means still in the same cell
 			}
 	}
 	else{
 			New_WF_Point.X = x;
 			New_WF_Point.Y = y;
 			WF_Point.push_back(New_WF_Point);
+			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
+			return 1;
 	}
-	ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
 }
