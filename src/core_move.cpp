@@ -1056,17 +1056,17 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 #endif
 
-		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT);
+		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT);
 		if (go_home == 0 && Temp_Rcon_Status) {
 			// It just clear the bits that are 1 in Temp_Rcon_Status has.
 			Set_Rcon_Status(Get_Rcon_Status() & (~Temp_Rcon_Status));
 			if (Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT)) {
 				HomeT++;
 			}
-			if (Temp_Rcon_Status & RconL_HomeT) {
+			if (Temp_Rcon_Status & (RconFL2_HomeT | RconL_HomeT)) {
 				HomeL++;
 			}
-			if (Temp_Rcon_Status & RconR_HomeT) {
+			if (Temp_Rcon_Status & (RconFR2_HomeT | RconR_HomeT)) {
 				HomeR++;
 			}
 
