@@ -62,6 +62,9 @@ volatile uint8_t Bumper_Error = 0;
 volatile int16_t Left_Wall_BaseLine = 50;
 volatile int16_t Right_Wall_BaseLine = 50;
 
+// Variable for touch status
+volatile uint8_t Touch_Status = 0;
+
 /*----------------------- Work Timer functions--------------------------*/
 
 static inline int16_t Gyro_GetAngle(){
@@ -1348,10 +1351,12 @@ uint8_t Remote_Key(uint32_t key)
 
 void Reset_Touch(void)
 {
+	Touch_Status = 0;
 }
 
 void Set_Touch(void)
 {
+	Touch_Status = 1;
 }
 
 void Deceleration(void)
@@ -1361,7 +1366,8 @@ void Deceleration(void)
 uint8_t Touch_Detect(void)
 {
 	// Get the key value from robot sensor
-	if (robot::instance()->robot_get_key() == 1){
+	if (Touch_Status == 1){
+		Reset_Touch();
 		return 1;
 	}
 	if (Remote_Key(Remote_Clean)){

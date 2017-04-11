@@ -129,6 +129,11 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	//printf("[robot.cpp] Rcon info:%x.\n", this->charge_stub);
 
 	this->key = msg->key;
+	// Mark down the key if it is pressed.
+	if (this->key == 1)
+	{
+		Set_Touch();
+	}
 
 	this->charge_status =msg->c_s; //charge status
 	// Debug
