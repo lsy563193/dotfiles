@@ -416,7 +416,7 @@ void *serial_send_routine(void*){
 		}else{
 			// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
 			if (lowBattery){
-				Beep(3, 25, 25, -1);
+				Beep(3, 25, 25, 40);
 			}
 		}
 		/*-------------------counter end-------------------------------------*/
