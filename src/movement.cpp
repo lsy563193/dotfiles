@@ -11,6 +11,8 @@
 #include "serial.h"
 #include "robotbase.h"
 #include "config.h"
+#include "core_move.h"
+#include "wall_follow_multi.h"
 #define MOVEMENT "movement"
 extern uint8_t sendStream[SEND_LEN];
 
@@ -345,6 +347,13 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			break;
 		if(Is_Turn_Remote())
 			break;
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Left();
+			ROS_INFO("Bumper triged when turn left, back 20mm.");
+		}
 		usleep(10000);
 //		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff=%d \n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
@@ -401,6 +410,13 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Is_Turn_Remote())
 			break;
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Right();
+			ROS_INFO("Bumper triged when turn right, back 20mm.");
+		}
 		usleep(10000);
 //		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
