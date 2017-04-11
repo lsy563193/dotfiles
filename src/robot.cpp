@@ -26,6 +26,9 @@ Segment_set segmentss;
 
 time_t	start_time;
 
+// For avoid key value palse.
+int8_t key_press_count;
+
 //extern pp::x900sensor sensor;
 robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
 {
@@ -59,6 +62,8 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 
 	// Initialize the pause variable.
 	this->pause_cleaning = false;
+	// Initialize the key press count.
+	key_press_count = 0;
 }
 
 robot::~robot()
@@ -132,7 +137,16 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	// Mark down the key if it is pressed.
 	if (this->key == 1)
 	{
-		Set_Touch();
+		key_press_count++;
+		if (key_press_count > 10)
+		{
+			Set_Touch();
+			key_press_count = 0;
+		}
+	}
+	else
+	{
+		key_press_count = 0;
 	}
 
 	this->charge_status =msg->c_s; //charge status
