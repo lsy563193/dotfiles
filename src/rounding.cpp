@@ -79,15 +79,9 @@ void update_position(uint16_t heading_0, int16_t heading_1) {
 	Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), CLEANED);
 
 	if (should_mark == 1) {
-		if (rounding_type == ROUNDING_LEFT) {
-			i = Map_GetRelativeX(heading_0, CELL_SIZE_3, 0);
-			j = Map_GetRelativeY(heading_0, CELL_SIZE_3, 0);
-			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
-				Map_SetCell(MAP, i, j, BLOCKED_OBS);
-			}
-		} else if (rounding_type == ROUNDING_RIGHT) {
-			i = Map_GetRelativeX(heading_0, -CELL_SIZE_3, 0);
-			j = Map_GetRelativeY(heading_0, -CELL_SIZE_3, 0);
+		if (rounding_type == ROUNDING_LEFT || rounding_type == ROUNDING_RIGHT) {
+			i = Map_GetRelativeX(heading_0, rounding_type == ROUNDING_LEFT ? CELL_SIZE_2 : -CELL_SIZE_2, 0);
+			j = Map_GetRelativeY(heading_0, rounding_type == ROUNDING_LEFT ? CELL_SIZE_2 : -CELL_SIZE_2, 0);
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 				Map_SetCell(MAP, i, j, BLOCKED_OBS);
 			}
