@@ -57,6 +57,12 @@
  */
 #define PP_MOVE_TO_CELL_CENTER		(1)
 
+/*
+ * Definition to try to modify the path obtained from A-start to a target,
+ * so that the robot can better avoid the obstacles.
+ */
+#define PP_MOVE_TO_MIDDLE_OF_PATH	(1)
+
 /* Zig-Zag cleanning time 120 minutes */
 #define CLEANNING_TIME			(14400)
 

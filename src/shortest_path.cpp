@@ -1567,6 +1567,93 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 		*x_next = x;
 		*y_next = y;
 
+#ifdef	PP_MOVE_TO_MIDDLE_OF_PATH
+		if (path_points.size() > 3) {
+			list<Point16_t>::iterator it = path_points.begin();
+			for (i = 0; i < path_points.size() - 3; i++) {
+				list<Point16_t>::iterator it_ptr1 = it;
+
+				list<Point16_t>::iterator it_ptr2 = it_ptr1;
+				it_ptr2++;
+
+				list<Point16_t>::iterator it_ptr3 = it_ptr2;
+				it_ptr3++;
+
+				bool blocked_min, blocked_max;
+				blocked_min = blocked_max = false;
+				if (it_ptr2->X == it_ptr3->X) {		// X coordinates are the same for p1, p2, find a better Y coordinate.
+					int16_t x_min, x_max;
+					x_min = x_max = it_ptr2->X;
+
+					sj = it_ptr1->X > it_ptr2->X ? it_ptr2->X : it_ptr1->X;
+					ej = it_ptr1->X > it_ptr2->X ? it_ptr1->X : it_ptr2->X;
+					si = it_ptr2->Y > it_ptr3->Y ? it_ptr3->Y : it_ptr2->Y;
+					ei = it_ptr2->Y > it_ptr3->Y ? it_ptr2->Y : it_ptr3->Y;
+
+					while (blocked_min == false || blocked_max == false) {
+						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
+							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
+								if (blocked_min == false && (x_min - 1 < sj || Map_GetCell(SPMAP, x_min - 1, i) == COST_HIGH)) {
+									blocked_min = true;
+								}
+								if (blocked_max == false && (x_max + 1 > ej || Map_GetCell(SPMAP, x_max + 1, i) == COST_HIGH)) {
+									blocked_max = true;
+								}
+							}
+						}
+						if (blocked_min == false) {
+							x_min--;
+						}
+						if (blocked_max == false) {
+							x_max++;
+						}
+					}
+
+					printf("%s %d: x_min: %d\tx_max: %d\n", __FUNCTION__, __LINE__, x_min, x_max);
+					if (x != (x_min + x_max) / 2) {
+						it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
+					}
+				} else {
+					int16_t y_min, y_max;
+					y_min = y_max = it_ptr2->Y;
+
+					sj = it_ptr1->Y > it_ptr2->Y ? it_ptr2->Y : it_ptr1->Y;
+					ej = it_ptr1->Y > it_ptr2->Y ? it_ptr1->Y : it_ptr2->Y;
+					si = it_ptr2->X > it_ptr3->X ? it_ptr3->X : it_ptr2->X;
+					ei = it_ptr2->X > it_ptr3->X ? it_ptr2->X : it_ptr3->X;
+					while (blocked_min == false || blocked_max == false) {
+						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
+							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
+								if (blocked_min == false && (y_min - 1 < sj || Map_GetCell(SPMAP, i, y_min - 1) == COST_HIGH)) {
+									blocked_min = true;
+								}
+								if (blocked_max == false && (y_max + 1 > ej || Map_GetCell(SPMAP, i, y_max + 1) == COST_HIGH)) {
+									blocked_max = true;
+								}
+							}
+						}
+						if (blocked_min == false) {
+							y_min--;
+						}
+						if (blocked_max == false) {
+							y_max++;
+						}
+					}
+
+					printf("%s %d: y_min: %d\ty_max: %d\n", __FUNCTION__, __LINE__, y_min, y_max);
+					if (y != (y_min + y_max) / 2) {
+						it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
+					}
+				}
+
+				it++;
+			}
+		}
+
+		path_display_path_points();
+
+#endif
+
 		if (path_points.size() > 1) {
 			i = 0;
 			for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end() && i <= 1; ++it, ++i) {
