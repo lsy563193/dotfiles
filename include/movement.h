@@ -48,6 +48,87 @@
 #define Charge_Home_Top				((uint8_t) 0x0c)
 #define Vitual_Wall_Code			((uint8_t) 0x24)
 
+#if __ROBOT_X900
+
+#define RconBL_HomeL		(uint32_t)0x40000000
+#define RconBL_HomeT		(uint32_t)0x20000000
+#define RconBL_HomeR		(uint32_t)0x10000000
+
+#define RconL_HomeL			(uint32_t)0x04000000
+#define RconL_HomeT			(uint32_t)0x02000000
+#define RconL_HomeR			(uint32_t)0x01000000
+
+#define RconFL2_HomeL		(uint32_t)0x00400000
+#define RconFL2_HomeT		(uint32_t)0x00200000
+#define RconFL2_HomeR		(uint32_t)0x00100000
+
+#define RconFL_HomeL		(uint32_t)0x00040000
+#define RconFL_HomeT		(uint32_t)0x00020000
+#define RconFL_HomeR		(uint32_t)0x00010000
+
+#define RconFR_HomeL		(uint32_t)0x00004000
+#define RconFR_HomeT		(uint32_t)0x00002000
+#define RconFR_HomeR		(uint32_t)0x00001000
+
+#define RconFR2_HomeL		(uint32_t)0x00000400
+#define RconFR2_HomeT		(uint32_t)0x00000200
+#define RconFR2_HomeR		(uint32_t)0x00000100
+
+#define RconR_HomeL			(uint32_t)0x00000040
+#define RconR_HomeT			(uint32_t)0x00000020
+#define RconR_HomeR			(uint32_t)0x00000010
+
+#define RconBR_HomeL		(uint32_t)0x00000004
+#define RconBR_HomeT		(uint32_t)0x00000002
+#define RconBR_HomeR		(uint32_t)0x00000001
+
+#define RconFrontAll_Home_T		(uint32_t)0x02222220
+#define RconAll_Home_T			(uint32_t)0x22222222
+#define RconFrontAlL_Home_LR	(uint32_t)0x05555550
+#define RconAll_Home_TLR		(uint32_t)0x77777777
+#define RconFrontAll_Home_TLR	(uint32_t)0x07777770
+
+#ifdef VIRTUAL_WALL
+
+#define RconBL_Wall          	(uint16_t)0x8000
+#define RconL_Wall           	(uint16_t)0x4000
+#define RconFL2_Wall           	(uint16_t)0x2000
+#define RconFL_Wall           	(uint16_t)0x1000
+#define RconFR_Wall           	(uint16_t)0x0800
+#define RconFR2_Wall           	(uint16_t)0x0400
+#define RconR_Wall           	(uint16_t)0x0200
+#define RconBR_Wall           	(uint16_t)0x0100
+#define RconBL_Wall_T           (uint16_t)0x0080
+#define RconL_Wall_T           	(uint16_t)0x0040
+#define RconFL2_Wall_T          (uint16_t)0x0020
+#define RconFL_Wall_T           (uint16_t)0x0010
+#define RconFR_Wall_T           (uint16_t)0x0008
+#define RconFR2_Wall_T          (uint16_t)0x0004
+#define RconR_Wall_T           	(uint16_t)0x0002
+#define RconBR_Wall_T           (uint16_t)0x0001
+
+#else
+
+#define RconFL_Wall          	(uint16_t)0x0000
+#define RconFL_Wall_T         (uint16_t)0x0000
+#define RconFR_Wall          	(uint16_t)0x0000
+#define RconFR_Wall_T         (uint16_t)0x0000
+#define RconFL2_Wall         	(uint16_t)0x0000
+#define RconFL2_Wall_T        (uint16_t)0x0000
+#define RconFR2_Wall         	(uint16_t)0x0000
+#define RconFR2_Wall_T        (uint16_t)0x0000
+#define RconL_Wall           	(uint16_t)0x0000
+#define RconL_Wall_T          (uint16_t)0x0000
+#define RconR_Wall           	(uint16_t)0x0000
+#define RconR_Wall_T          (uint16_t)0x0000
+#define RconBL_Wall          	(uint16_t)0x0000
+#define RconBL_Wall_T         (uint16_t)0x0000
+#define RconBR_Wall          	(uint16_t)0x0000
+#define RconBR_Wall_T         (uint16_t)0x0000
+#endif
+
+#else
+
 #define Rcon_Wall 					((uint32_t) 0x00000008)
 #define Rcon_HomeL 					((uint32_t) 0x00000004)
 #define Rcon_HomeT 					((uint32_t) 0x00000002)
@@ -84,7 +165,7 @@
 #define RconL_Wall					((uint32_t) 0x00007000)
 #define RconBL_Wall					((uint32_t) 0x00000070)
 #define RconBR_Wall					((uint32_t) 0x00000007)
-
+#endif
 
 #define Remote_Clean				((uint32_t) 0X02AA22DD)
 #define Remote_Forward				((uint32_t) 0X02AA55AA)

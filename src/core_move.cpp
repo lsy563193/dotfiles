@@ -30,6 +30,8 @@
 #include <list>
 #include <charger.hpp>
 
+#include <wav.h>
+
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
 //1 1 1
@@ -1056,17 +1058,17 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 #endif
 
-		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT);
+		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT);
 		if (go_home == 0 && Temp_Rcon_Status) {
 			// It just clear the bits that are 1 in Temp_Rcon_Status has.
 			Set_Rcon_Status(Get_Rcon_Status() & (~Temp_Rcon_Status));
 			if (Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT)) {
 				HomeT++;
 			}
-			if (Temp_Rcon_Status & RconL_HomeT) {
+			if (Temp_Rcon_Status & (RconFL2_HomeT | RconL_HomeT)) {
 				HomeL++;
 			}
-			if (Temp_Rcon_Status & RconR_HomeT) {
+			if (Temp_Rcon_Status & (RconFR2_HomeT | RconR_HomeT)) {
 				HomeR++;
 			}
 
@@ -1578,6 +1580,7 @@ public:
 			enable_slam_offset = 1;
 		}
 		else
+#endif
 		{
 			Set_gyro_off();
 			start_obstacle_detector();
@@ -1597,25 +1600,6 @@ public:
 			start_slam();
 			enable_slam_offset = 1;
 		}
-#else
-		Set_gyro_off();
-		show_time(Set_gyro_on);
-		start_obstacle_detector();
-		Set_IMU_Status();
-		robot::instance()->Subscriber();
-		Work_Motor_Configure();
-		robot::instance()->start_lidar();
-
-		if (robot::instance()->align_active() == true)
-		{
-			robot::instance()->align();
-			stop_obstacle_detector();
-		}
-
-		enable_slam_offset = 1;
-		start_slam();
-
-#endif
 	};
 
 	~Motion_controller()
@@ -1628,6 +1612,7 @@ public:
 			enable_slam_offset = 0;
 		}
 		else
+#endif
 		{
 			Disable_Motors();
 			robot::instance()->stop_lidar();
@@ -1643,21 +1628,6 @@ public:
 			robot::instance()->stop_slam();
 			robot::instance()->UnSubscriber();
 		}
-#else
-		Disable_Motors();
-		robot::instance()->stop_lidar();
-		if (robot::instance()->align_active())
-		{
-			robot::instance()->align_exit();
-			stop_obstacle_detector();
-		}
-		show_time(Set_gyro_off);
-		Reset_IMU_Status();
-		is_line_angle_offset = false;
-		enable_slam_offset = 0;
-		robot::instance()->stop_slam();
-		robot::instance()->UnSubscriber();
-#endif
 	}
 };
 uint8_t CM_Touring(void)
@@ -1771,6 +1741,7 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Paused())
 	{
+		wav_play(WAV_CONTINUE_CLEANING);
 		if (Get_Rcon_Status())
 		{
 			// Save the current coordinate as a new home point.
@@ -1784,7 +1755,9 @@ uint8_t CM_Touring(void)
 		Reset_Rcon_Status();
 	}
 	else
+#endif
 	{
+		wav_play(WAV_START_CLEANING);
 		// Set the Work_Timer_Start as current time
 		Reset_Work_Time();
 
@@ -1805,30 +1778,12 @@ uint8_t CM_Touring(void)
 
 		robot::instance()->init_mumber();// for init robot member
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
 		// If it it the first time cleaning, initialize the Continue_Point.
 		Continue_Point.X = Continue_Point.Y = 0;
-	}
-#else
-	// Set the Work_Timer_Start as current time
-	Reset_Work_Time();
-
-	//Initital home point
-	Home_Point.clear();
-
-	// Push the start point into the home point list
-	Home_Point.push_front(New_Home_Point);
-
-	ROS_DEBUG("Map_Initialize-----------------------------");
-	Map_Initialize();
-	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
-
-	Reset_Rcon_Status();
-
-	/* usleep for checking whether robot is in the station */
-	usleep(700);
-
-	robot::instance()->init_mumber();// for init robot member
 #endif
+	}
+
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
@@ -2620,7 +2575,8 @@ MapTouringType CM_handleExtEvent()
 #endif
 		return MT_Battery_Home;
 	}
-	/*for testing*/
+	/*
+	//for testing
 	if (Remote_Key(Remote_Left) && go_home != 1) {
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
 		lowBattery = 1;
@@ -2636,6 +2592,7 @@ MapTouringType CM_handleExtEvent()
 #endif
 		return MT_Battery_Home;
 	}
+	*/
 
 	/* Check key press events. */
 	if (Touch_Detect()) {

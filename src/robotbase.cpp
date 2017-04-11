@@ -413,11 +413,11 @@ void *serial_send_routine(void*){
 		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
 			process_beep();
-		}else{
-			// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
-			if (lowBattery){
-				Beep(3, 25, 25, -1);
-			}
+		//}else{
+		//	// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
+		//	if (lowBattery){
+		//		Beep(3, 25, 25, 40);
+		//	}
 		}
 		/*-------------------counter end-------------------------------------*/
 

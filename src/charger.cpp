@@ -7,6 +7,7 @@
 #include "robot.hpp"
 #include "gyro.h"
 #include "random_runing.h"
+#include "core_move.h"
 
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -33,6 +34,10 @@ void Charge_Function(void)
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
 #endif
+
+	// Reset the lowBattery flag in core_move.cpp and stop beeping.
+	Beep(0, 0, 0, 1);
+	lowBattery = 0;
 
 	set_start_charge();
 	uint16_t bat_v;
