@@ -2256,7 +2256,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	Point32_t		Next_Point;
 	int8_t		pathFind;
 	int16_t		i, j, k;
-	uint16_t	last_dir, offsetIdx = 0;
+	uint16_t	offsetIdx = 0;
 	Point16_t	tmp, pos;
 	MapTouringType	mt_state = MT_None;
 
@@ -2272,7 +2272,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 		pos.X = x;
 		pos.Y = y;
-		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),  &tmp.X, &tmp.Y, 0 );
+		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),  &tmp.X, &tmp.Y);
 
 		return 0;
 	} else if ( mode == 2 ) {
@@ -2318,11 +2318,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			         TwoPointsDistance( relativePos[i].X * 1000, relativePos[i].Y * 1000, 0, 0 ));
 		}
 
-		last_dir = path_get_robot_direction();
-
 		pos.X = x + relativePos[0].X;
 		pos.Y = y + relativePos[0].Y;
-		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
+		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 		//Set cell
 		Map_Set_Cells(ROBOT_SIZE, x + relativePos[0].X, y + relativePos[0].Y, CLEANED);
@@ -2376,12 +2374,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					continue;
 				}
 
-				last_dir = path_get_robot_direction();
-
 				pos.X = x + relativePos[offsetIdx].X;
 				pos.Y = y + relativePos[offsetIdx].Y;
-				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
-				                                      &tmp.X, &tmp.Y, last_dir );
+				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 				if (CM_CheckLoopBack(tmp) == 1) {
 					pathFind = -2;
@@ -2400,12 +2395,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					return -2;
 				}
 
-				last_dir = path_get_robot_direction();
-
 				pos.X = x + relativePos[offsetIdx].X;
 				pos.Y = y + relativePos[offsetIdx].Y;
-				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),
-				                                      &tmp.X, &tmp.Y, last_dir );
+				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 				if (Touch_Detect()) {
 					Set_Touch();
@@ -2433,11 +2425,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	//Normal mode
 	else {
 		printf("%s %d Path Find: Normal Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
-		last_dir = path_get_robot_direction();
-
 		pos.X = x;
 		pos.Y = y;
-		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, 0 );
+		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 		printf("%s %d Path Find: %d\n", __FUNCTION__, __LINE__, pathFind);
 		printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
@@ -2487,11 +2477,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				return 0;
 			}
 
-			last_dir = path_get_robot_direction();
-
 			pos.X = x;
 			pos.Y = y;
-			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y, last_dir );
+			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 			printf("%s %d Path Find: %d, target: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, x, y);
 			printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
