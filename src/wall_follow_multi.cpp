@@ -408,7 +408,6 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 								}
 						}
 				}
-
 				/*------------------------------------------------------Short Distance Move-----------------------*/
 				/*		if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance) {
 						if (Get_LeftWheel_Step() < 500) {
@@ -547,9 +546,9 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 uint8_t Wall_Follow(MapWallFollowType follow_type)
 {
 
-		uint8_t		Temp_Counter = 0;
+		uint8_t		Temp_Counter = 0, Jam = 0;
 		uint16_t	i = 0;
-
+		int32_t		Wheel_Speed_Base = 0;
 		int			ret;
 		int16_t		Left_Wall_Buffer[3] = {0};
 		int32_t		Proportion = 0, Delta = 0, Previous = 0, R = 0;
@@ -560,7 +559,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		float Distance_From_Start;
 		uint8_t		First_Time_Flag;
 		uint32_t Temp_Rcon_Status;
-
 		Wall_Follow_Init_Slam();
 
 		//Initital home point
@@ -913,6 +911,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						}
 				}
 
+#if 0
 				/*------------------------------------------------------Short Distance Move-----------------------*/
 				/*		if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance) {
 						if (Get_LeftWheel_Step() < 500) {
@@ -1021,6 +1020,173 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 								}
 						}
+#endif
+		/*------------------------------------------------------Short Distance Move-----------------------*/
+		if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance) 
+		{
+				//WFM_update();
+				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				if (Get_LeftWheel_Step() < 500) {
+						if (Get_WallAccelerate() < 100) {
+								Move_Forward(10, 10);
+						} else {
+								Move_Forward(15, 15);
+						}
+				} else {
+						Move_Forward(23, 23);
+				}
+				//WFM_update();
+				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		} 
+		else 
+		{
+				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
+
+
+#ifdef OBS_DYNAMIC
+				if (Get_FrontOBS() < Get_FrontOBST_Value()) 
+				{
+#else
+						if (Get_FrontOBS() < MFW_Setting[follow_type].front_obs_val)
+						{
+#endif
+
+								Wheel_Speed_Base = 15 + Get_WallAccelerate() / 150;
+								if(Wheel_Speed_Base>28)Wheel_Speed_Base = 28;
+
+								Proportion = robot::instance()->robot_get_left_wall();
+
+								Proportion = Proportion*100/Wall_Distance;
+
+								Proportion-=100;
+
+								Delta = Proportion - Previous;
+
+								if(Wall_Distance>200)//over left
+								{
+										Left_Wall_Speed = Wheel_Speed_Base + Proportion/8 + Delta/3; //12
+										Right_Wall_Speed = Wheel_Speed_Base - Proportion/9 - Delta/3; //10
+
+										if(Wheel_Speed_Base<26)
+										{
+												if(Right_Wall_Speed > Wheel_Speed_Base+6)
+												{
+														Right_Wall_Speed = 34;
+														Left_Wall_Speed = 4;
+												}
+												else if(Left_Wall_Speed > Wheel_Speed_Base+10)
+												{
+														Right_Wall_Speed = 5;		
+														Left_Wall_Speed = 30;
+
+												}
+										}
+										else
+										{
+												if(Right_Wall_Speed > 35)
+												{
+														Right_Wall_Speed = 35;
+														Left_Wall_Speed = 4;
+												}
+										}				
+								}
+								else 
+								{
+										Left_Wall_Speed = Wheel_Speed_Base + Proportion/10 + Delta/3;  //16
+										Right_Wall_Speed = Wheel_Speed_Base - Proportion/10 - Delta/4; //11
+
+										if(Wheel_Speed_Base<26)
+										{
+												if(Right_Wall_Speed > Wheel_Speed_Base+4)
+												{
+														Right_Wall_Speed = 34;
+														Left_Wall_Speed = 4;
+												}
+
+										}
+										else
+										{
+												if(Right_Wall_Speed > 32)
+												{
+														Right_Wall_Speed = 36;
+														Left_Wall_Speed = 4;
+												}
+										}
+								}
+
+								Previous = Proportion;
+
+								if(Left_Wall_Speed>39)Left_Wall_Speed=39;
+								if(Left_Wall_Speed<0)Left_Wall_Speed=0;
+								if(Right_Wall_Speed > 35)Right_Wall_Speed = 35;
+								if(Right_Wall_Speed < 5)Right_Wall_Speed = 5;
+
+
+								Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
+								/*
+								//If wall follow a long distance, then save offset
+								if ( TwoPointsDistance(tmpCell2.X, tmpCell2.Y, Map_GetXPos(), Map_GetYPos()) > 5 ) 
+								{
+										tmpCell2.X = Map_GetXPos();
+										tmpCell2.Y = Map_GetYPos();
+										rightWheelOffset = Get_RightWall_Step();
+										leftWheelOffset = Get_LeftWall_Step();
+								}*/
+								
+								/*
+								//Rotating in a short distance area
+								if (Get_RightWall_Step() - rightWheelOffset > Get_LeftWall_Step() - leftWheelOffset)
+								{
+										R = Get_RightWall_Step() - rightWheelOffset - ( Get_LeftWall_Step() - leftWheelOffset );
+								}
+								//USPRINTF("%s %d: R: %d\n", __FUNCTION__, __LINE__, R);
+
+								//If turing around at the same point
+								if (R > 7500)
+								{
+										USPRINTF("Isolated Wall Follow!\n");
+										isIsolatedWallFollow = 1;
+										USPRINTF_ZZ("%s %d: Check: Isolated Wall Follow! break\n", __FUNCTION__, __LINE__);
+										break;
+								}*/
+#if 0
+								if ((Get_RightWall_Step() > Map_Wall_Follow_Distance) ||(Get_LeftWall_Step() > Map_Wall_Follow_Distance)
+												/*||
+												  (TwoPointsDistance(startCell.X, startCell.Y, Map_GetXPos(), Map_GetYPos()) > 9)*/)
+								{	//about 5 Meter, 6000 = 1 m
+										Reset_Wall_Step();
+										//					if (!Is_MoveWithRemote()) {
+										//						Set_Clean_Mode(Clean_Mode_RandomMode);
+										//						USPRINTF("%s %d: Check: Short Distance 3! break\n", __FUNCTION__, __LINE__);
+										//						break;
+										//					}
+										//				}
+						}
+#endif
+						/*if (Get_WallAccelerate() > 750) 
+						{
+								Set_Left_Brush(ENABLE);
+								Set_Right_Brush(ENABLE);
+						}*/
+				} 
+				else 
+				{		
+						Stop_Brifly();
+						if (Get_WallAccelerate() < 2000)
+						{
+								Jam++;
+						}
+						Turn_Right(Turn_Speed - 5, 920);
+						Stop_Brifly();
+						//WFM_update();
+						WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+						Move_Forward(15, 15);
+						Reset_Wheel_Step();
+
+						Wall_Distance = Wall_High_Limit;
+
+				}
+		}
 		usleep(10000);
 		}
 
