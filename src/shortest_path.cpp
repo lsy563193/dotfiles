@@ -1608,4 +1608,12 @@ void path_reset_path_points()
 	path_points.clear();
 }
 
+void path_display_path_points()
+{
+	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
+		printf("(%d, %d)->", it->X, it->Y);
+	}
+	printf("\n\n");
+}
+
 #endif

@@ -41,4 +41,6 @@ int path_get_path_points_count();
 list<Point16_t> *path_get_path_points();
 void path_reset_path_points();
 
+void path_display_path_points();
+
 #endif
