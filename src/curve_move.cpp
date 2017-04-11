@@ -111,6 +111,13 @@ MapTouringType CurveMove_MoveToPoint()
 			break;
 		}
 
+		if ((points[1].X == points[2].X && abs(cellToCount(points[2].X) - Map_GetXCount()) < 100) ||
+			(points[1].Y == points[2].Y && abs(cellToCount(points[2].Y) - Map_GetYCount()) < 100))
+		{
+			ROS_WARN("%s %d: reach line between point 1 & 2: %d\n", __FUNCTION__, __LINE__, cellToCount(points[1].X == points[2].X ? points[2].X : points[2].Y));
+			break;
+		}
+
 		/* Check bumper & cliff event.*/
 		if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 			Stop_Brifly();
