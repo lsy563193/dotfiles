@@ -66,8 +66,12 @@ void User_Interface(void)
 	{
 		usleep(2000);	
 		uint32_t remote_cmd = Get_Rcon_Remote();
-		/*if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
-		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)*/
+		if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
+		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)
+		{
+			Set_Clean_Mode(Clean_Mode_Remote);
+			return;
+	  	}
 		/*
 		if (Get_IMU_Status() == 0){
 			set_gyro(1, 0);
@@ -75,12 +79,12 @@ void User_Interface(void)
 			usleep(2000000);
 			//printf("IMU_Status%d\n", Get_IMU_Status());
 		}*/
-
+		/*
 		if(remote_cmd == Remote_Right|| remote_cmd ==Remote_Left||remote_cmd == Remote_Forward)
 	  	{
 			Set_Clean_Mode(Clean_Mode_Remote);
 			return;
-	  	}
+	  	}*/
 
 
 		#ifdef SCREEN_REMOTE
@@ -114,14 +118,14 @@ void User_Interface(void)
 				SetHomeRemote();
 			}
 			/* -----------------------------Check if Random event ----------------------------------*/
+			/*
 			if(Remote_Key(Remote_Random))//                                  Check Remote Key Random
 			{
 			  	Set_MoveWithRemote();
 				Temp_Mode=Clean_Mode_RandomMode;
-			}
+			}*/
 			/* -----------------------------Check if wall follow event ----------------------------------*/
-			//if(Remote_Key(Remote_Wallfollow))//                                  Check Remote Key Wallfollow
-			if(Remote_Key(Remote_Max))//                                  Check Remote Key Wallfollow
+			if(Remote_Key(Remote_Wall_Follow))//                                  Check Remote Key Wallfollow
 			{
 			  	Set_MoveWithRemote();
 				Temp_Mode=Clean_Mode_WallFollow;

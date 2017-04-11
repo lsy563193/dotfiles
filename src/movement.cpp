@@ -1192,7 +1192,7 @@ uint32_t Get_Rcon_Remote(void)
 	else if(ir_cmd == 0x04)
 		return Remote_Home;
 	else if(ir_cmd == 0x02)
-		return Remote_Random;
+		return Remote_Wall_Follow;
 	else if(ir_cmd == 0x01)
 		return Remote_Spot;
 	else 

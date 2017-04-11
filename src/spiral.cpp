@@ -94,6 +94,7 @@ uint8_t Spiral(void)
 				SetHomeRemote();
 				return 1;
 			}
+			/*
 			if(Remote_Key(Remote_Random)) //                                    Check Key Home
 			{
 				Turn_Right(Turn_Speed,560);
@@ -101,7 +102,7 @@ uint8_t Spiral(void)
 				Set_Clean_Mode(Clean_Mode_RandomMode);
 				Reset_Rcon_Remote();
 				return 1;
-			}
+			}*/
 		}
 
 		Right_Wheel_Speed = (42*Radius)/(Radius+100);

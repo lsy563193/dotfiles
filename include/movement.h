@@ -92,7 +92,8 @@
 #define Remote_Max					((uint32_t) 0X02AA6699)
 #define Remote_Right				((uint32_t) 0X02AA44BB)
 #define Remote_Home					((uint32_t) 0X02AA8877)
-#define Remote_Random				((uint32_t) 0X02AA9966)
+//#define Remote_Random				((uint32_t) 0X02AA9966)
+#define Remote_Wall_Follow			((uint32_t) 0X02AA9966)
 #define Remote_Spot					((uint32_t) 0X02AA7788)
 
 #define Rcon_Virtualwall			((uint8_t) 0xaa)

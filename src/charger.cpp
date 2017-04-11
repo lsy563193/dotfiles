@@ -102,8 +102,7 @@ void Charge_Function(void)
 				break;
 			}
 		}
-
-		if(Remote_Key(Remote_Random))//                                       Check Remote Key Clean
+		/*if(Remote_Key(Remote_Random))//                                       Check Remote Key Clean
 		{
 			set_stop_charge();
 			Reset_Rcon_Remote();
@@ -130,7 +129,7 @@ void Charge_Function(void)
 				Set_Clean_Mode(Clean_Mode_RandomMode);
 				break;
 			}
-		}
+		}*/
 		if (Remote_Key(Remote_Clean)) {
 			set_stop_charge();
 			Reset_Rcon_Remote();

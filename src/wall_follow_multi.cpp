@@ -763,10 +763,11 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						printf("Rcon\n");
 						if(Is_MoveWithRemote())
 						{
-								if (Remote_Key(Remote_Random)) {
+								/*if (Remote_Key(Remote_Random)) {
 										Set_Clean_Mode(Clean_Mode_RandomMode);
 										break;
-								}
+								}*/
+						
 						}
 						if (Remote_Key(Remote_Home)) {
 								Set_MoveWithRemote();
