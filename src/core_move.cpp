@@ -1580,6 +1580,7 @@ public:
 			enable_slam_offset = 1;
 		}
 		else
+#endif
 		{
 			Set_gyro_off();
 			start_obstacle_detector();
@@ -1599,25 +1600,6 @@ public:
 			start_slam();
 			enable_slam_offset = 1;
 		}
-#else
-		Set_gyro_off();
-		show_time(Set_gyro_on);
-		start_obstacle_detector();
-		Set_IMU_Status();
-		robot::instance()->Subscriber();
-		Work_Motor_Configure();
-		robot::instance()->start_lidar();
-
-		if (robot::instance()->align_active() == true)
-		{
-			robot::instance()->align();
-			stop_obstacle_detector();
-		}
-
-		enable_slam_offset = 1;
-		start_slam();
-
-#endif
 	};
 
 	~Motion_controller()
@@ -1630,6 +1612,7 @@ public:
 			enable_slam_offset = 0;
 		}
 		else
+#endif
 		{
 			Disable_Motors();
 			robot::instance()->stop_lidar();
@@ -1645,21 +1628,6 @@ public:
 			robot::instance()->stop_slam();
 			robot::instance()->UnSubscriber();
 		}
-#else
-		Disable_Motors();
-		robot::instance()->stop_lidar();
-		if (robot::instance()->align_active())
-		{
-			robot::instance()->align_exit();
-			stop_obstacle_detector();
-		}
-		show_time(Set_gyro_off);
-		Reset_IMU_Status();
-		is_line_angle_offset = false;
-		enable_slam_offset = 0;
-		robot::instance()->stop_slam();
-		robot::instance()->UnSubscriber();
-#endif
 	}
 };
 uint8_t CM_Touring(void)
