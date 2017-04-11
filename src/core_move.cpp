@@ -30,6 +30,8 @@
 #include <list>
 #include <charger.hpp>
 
+#include <wav.h>
+
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
 //1 1 1
@@ -1771,6 +1773,7 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Paused())
 	{
+		wav_play(WAV_CONTINUE_CLEANING);
 		if (Get_Rcon_Status())
 		{
 			// Save the current coordinate as a new home point.
@@ -1786,6 +1789,7 @@ uint8_t CM_Touring(void)
 	else
 #endif
 	{
+		wav_play(WAV_START_CLEANING);
 		// Set the Work_Timer_Start as current time
 		Reset_Work_Time();
 
