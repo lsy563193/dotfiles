@@ -1784,6 +1784,7 @@ uint8_t CM_Touring(void)
 		Reset_Rcon_Status();
 	}
 	else
+#endif
 	{
 		// Set the Work_Timer_Start as current time
 		Reset_Work_Time();
@@ -1805,30 +1806,12 @@ uint8_t CM_Touring(void)
 
 		robot::instance()->init_mumber();// for init robot member
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
 		// If it it the first time cleaning, initialize the Continue_Point.
 		Continue_Point.X = Continue_Point.Y = 0;
-	}
-#else
-	// Set the Work_Timer_Start as current time
-	Reset_Work_Time();
-
-	//Initital home point
-	Home_Point.clear();
-
-	// Push the start point into the home point list
-	Home_Point.push_front(New_Home_Point);
-
-	ROS_DEBUG("Map_Initialize-----------------------------");
-	Map_Initialize();
-	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
-
-	Reset_Rcon_Status();
-
-	/* usleep for checking whether robot is in the station */
-	usleep(700);
-
-	robot::instance()->init_mumber();// for init robot member
 #endif
+	}
+
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
