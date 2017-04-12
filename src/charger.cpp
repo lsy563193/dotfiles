@@ -50,10 +50,14 @@ void Charge_Function(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (robot::instance()->Is_Cleaning_Paused())
 		{
-			if (bat_v > CONTINUE_CLEANING_VOLTAGE)
+			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
 			{
 				Bat_Enough_To_Continue_Cleaning_Counter++;
 				//ROS_INFO("Bat_Enough_To_Continue_Cleaning_Counter = %d.", Bat_Enough_To_Continue_Cleaning_Counter);
+			}
+			else
+			{
+				Bat_Enough_To_Continue_Cleaning_Counter = 0;
 			}
 
 			if (Bat_Enough_To_Continue_Cleaning_Counter > 500)// About 10 seconds.
@@ -65,7 +69,7 @@ void Charge_Function(void)
 		}
 #endif
 		ROS_DEBUG_NAMED("charger"," Loop for charger mode,voltage %f.",bat_v/100.0);
-		if(Show_Batv_Counter > 100)
+		if(Show_Batv_Counter > 250)
 		{
 			ROS_INFO(" Loop for charger mode,voltage %f.",bat_v/100.0);
 			Show_Batv_Counter = 0;
@@ -502,7 +506,8 @@ void Around_ChargerStation(uint8_t Dir)
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if(Touch_Detect() || Remote_Key(Remote_Clean))
 		{
-			//Reset_Touch();
+			// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+			Set_Touch();
 			// If key pressed, go back to user interface mode.
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
@@ -683,7 +688,8 @@ void Around_ChargerStation(uint8_t Dir)
 					if(Temp_Position==1)
 					{
 						//Reset_Error_Code();
-						//Reset_Touch();
+						// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+						Set_Touch();
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						return;
@@ -797,7 +803,8 @@ void Around_ChargerStation(uint8_t Dir)
 					if(Temp_Position==1)
 					{
 						//Reset_Error_Code();
-						Reset_Touch();
+						// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+						Set_Touch();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
 						return;
@@ -1171,7 +1178,8 @@ void By_Path(void)
 			/*------------------------------------------------------Touch and Remote event-----------------------*/
 			if(Touch_Detect())
 			{
-				//Reset_Touch();
+				// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+				Set_Touch();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}
@@ -1259,6 +1267,8 @@ void By_Path(void)
 				ROS_INFO("%s %d Check position return %d.", __FUNCTION__, __LINE__, Temp_Check_Position);
 				if(Temp_Check_Position==1)
 				{
+					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+					Set_Touch();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return;
 				}
@@ -1269,7 +1279,8 @@ void By_Path(void)
 					Turn_Right(Turn_Speed,1000);
 					Stop_Brifly();
 					Move_Forward(10,10);
-					Set_Clean_Mode(Clean_Mode_GoHome);
+					//Set_Clean_Mode(Clean_Mode_GoHome);
+					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return;
 				}
 			}

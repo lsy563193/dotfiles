@@ -55,6 +55,7 @@ void User_Interface(void)
 
 	Reset_Rcon_Remote();
 
+	Reset_Touch();
 	//Enable_PPower();
 	//Disable_Motors();
 	Reset_Rcon_Status();
