@@ -506,7 +506,8 @@ void Around_ChargerStation(uint8_t Dir)
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if(Touch_Detect() || Remote_Key(Remote_Clean))
 		{
-			//Reset_Touch();
+			// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+			Set_Touch();
 			// If key pressed, go back to user interface mode.
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
@@ -687,7 +688,8 @@ void Around_ChargerStation(uint8_t Dir)
 					if(Temp_Position==1)
 					{
 						//Reset_Error_Code();
-						//Reset_Touch();
+						// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+						Set_Touch();
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						return;
@@ -801,7 +803,8 @@ void Around_ChargerStation(uint8_t Dir)
 					if(Temp_Position==1)
 					{
 						//Reset_Error_Code();
-						Reset_Touch();
+						// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+						Set_Touch();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
 						return;
@@ -1175,7 +1178,8 @@ void By_Path(void)
 			/*------------------------------------------------------Touch and Remote event-----------------------*/
 			if(Touch_Detect())
 			{
-				//Reset_Touch();
+				// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+				Set_Touch();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}
@@ -1263,6 +1267,8 @@ void By_Path(void)
 				ROS_INFO("%s %d Check position return %d.", __FUNCTION__, __LINE__, Temp_Check_Position);
 				if(Temp_Check_Position==1)
 				{
+					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+					Set_Touch();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return;
 				}
@@ -1273,7 +1279,8 @@ void By_Path(void)
 					Turn_Right(Turn_Speed,1000);
 					Stop_Brifly();
 					Move_Forward(10,10);
-					Set_Clean_Mode(Clean_Mode_GoHome);
+					//Set_Clean_Mode(Clean_Mode_GoHome);
+					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return;
 				}
 			}

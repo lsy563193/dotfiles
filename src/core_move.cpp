@@ -1942,7 +1942,7 @@ uint8_t CM_Touring(void)
 						printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 						return 0;
 
-					} else if (state == -3 && Home_Point.empty()) {
+					} else if (state == -3) {
 						// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
 						// If it is the last saved home point, stop the robot.
 						Disable_Motors();
@@ -1951,7 +1951,7 @@ uint8_t CM_Touring(void)
 							Beep(i, 6, 0, 1);
 							usleep(100000);
 						}
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						Set_Clean_Mode(Clean_Mode_Sleep);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 						if (robot::instance()->Is_Cleaning_Paused())
 						{
@@ -1986,10 +1986,10 @@ uint8_t CM_Touring(void)
 						// Call GoHome() function to try to go to charger stub.
 						GoHome();
 
-						// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, but it is not appropriate right here, it will change the state returned by CM_MoveToCell() for next home point to -4 and stop robot from moving to next home point.
-						if (Get_Clean_Mode() == Clean_Mode_GoHome)
+						// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
+						while (Get_Clean_Mode() == Clean_Mode_GoHome)
 						{
-							Set_Clean_Mode(Clean_Mode_Navigation);
+							GoHome();
 						}
 						// Check the clean mode to find out whether it has reach the charger.
 						if (Get_Clean_Mode() == Clean_Mode_Charging)
@@ -2002,6 +2002,45 @@ uint8_t CM_Touring(void)
 							}
 #endif
 							printf("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+							return 0;
+						}
+						else if (Get_Clean_Mode() == Clean_Mode_Sleep)
+						{
+							// Battery too low.
+							Disable_Motors();
+							// Beep for the finish signal.
+							for (i = 10; i > 0; i--) {
+								Beep(i, 6, 0, 1);
+								usleep(100000);
+							}
+							Set_Clean_Mode(Clean_Mode_Sleep);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+							if (robot::instance()->Is_Cleaning_Paused())
+							{
+								// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
+								robot::instance()->Reset_Cleaning_Pause();
+							}
+#endif
+							printf("%s %d: Battery too low, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+							return 0;
+						}
+						else if (Touch_Detect())
+						{
+							Disable_Motors();
+							// Beep for the finish signal.
+							for (i = 10; i > 0; i--) {
+								Beep(i, 6, 0, 1);
+								usleep(100000);
+							}
+							Set_Clean_Mode(Clean_Mode_Userinterface);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+							if (robot::instance()->Is_Cleaning_Paused())
+							{
+								// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
+								robot::instance()->Reset_Cleaning_Pause();
+							}
+#endif
+							printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
 							return 0;
 						}
 						else if (Home_Point.empty())
