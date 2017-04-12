@@ -1700,7 +1700,6 @@ uint8_t WF_End_Wall_Follow(void){
 		usleep(100000);
 		}*/
 		/**************************Go Home***************************/
-		//2.2-1.1 Common process
 		tmpPnt.X = countToCell(Home_Point.front().X);
 		tmpPnt.Y = countToCell(Home_Point.front().Y);
 		pnt16ArTmp[0] = tmpPnt;
@@ -1742,13 +1741,13 @@ uint8_t WF_End_Wall_Follow(void){
 						}
 
 						printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-						return 0;
+						break;
 
 				} else if (state == -3 && Home_Point.empty()) {
 						// If it is the last saved home point, stop the robot.
 						Disable_Motors();
 						mt_state = MT_Battery;
-						return 0;
+						break;
 				} else if (state == -5 && Home_Point.empty()) {
 						// If it is the last saved home point, stop the robot.
 						Disable_Motors();
@@ -1759,7 +1758,7 @@ uint8_t WF_End_Wall_Follow(void){
 						}
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-						return 0;
+						break;
 				} else if (state == 1 || state == -7) {
 						// Call GoHome() function to try to go to charger stub.
 						GoHome();
@@ -1768,7 +1767,7 @@ uint8_t WF_End_Wall_Follow(void){
 						if (Get_Clean_Mode() == Clean_Mode_Charging)
 						{
 								printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-								return 0;
+								break;
 						}
 						else if (Home_Point.empty())
 						{
@@ -1777,7 +1776,7 @@ uint8_t WF_End_Wall_Follow(void){
 										CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
 
 										if (Touch_Detect()) {
-												return 0;
+												break;
 										}
 								}
 
@@ -1795,7 +1794,7 @@ uint8_t WF_End_Wall_Follow(void){
 								}
 
 								printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-								return 0;
+								break;
 						}
 
 				}
@@ -1826,6 +1825,7 @@ uint8_t WF_End_Wall_Follow(void){
 		debug_WF_map(MAP, 0, 0);
 		debug_sm_map(SPMAP, 0, 0);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return 0;
 }
 void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 		float   pos_x, pos_y;
