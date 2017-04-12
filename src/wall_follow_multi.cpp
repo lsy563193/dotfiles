@@ -670,8 +670,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		while (ros::ok()) {
 
 				//if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME || escape_thread_running == false) {
-				if ((time(NULL) - escape_trapped_timer) > 1200) {
-						ROS_INFO("Wall Follow time longer than 20 minutes");
+				if ((time(NULL) - escape_trapped_timer) > 3600) {
+						ROS_INFO("Wall Follow time longer than 60 minutes");
 						ROS_INFO("time now : %d", (int(time(NULL)) - escape_trapped_timer));
 						WF_End_Wall_Follow();
 						break;
