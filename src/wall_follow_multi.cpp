@@ -559,6 +559,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		float Distance_From_Start;
 		uint8_t		First_Time_Flag;
 		uint32_t Temp_Rcon_Status;
+		Reset_MoveWithRemote();
 		Wall_Follow_Init_Slam();
 
 		//Initital home point
@@ -911,6 +912,222 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						}
 				}
 #endif
+
+		/*------------------------------------------------------Home Station Event------------------------*/
+		//Temp_Rcon_Status = Get_Rcon_Status();  
+		Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+		
+		if (Temp_Rcon_Status)
+		{
+			Reset_Rcon_Status();
+#if 0
+			if (follow_type == Map_Wall_Follow_Left_Target || follow_type == Map_Wall_Follow_Left_Zone) 
+			{
+#ifdef ZONE_WALLFOLLOW
+				if ( Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT ) ) 	//Wait for modification
+				{  
+					CM_SetStationHome();
+					bumperCount = COMPLICATED_AREA_BUMPER_MAX_COUNT + 1;
+					USPRINTF("%s %d: BumperCount = COMPLICATED_AREA_BUMPER_MAX_COUNT + 1!\n", __FUNCTION__, __LINE__);
+					USPRINTF_ZZ("%s %d: Home detected!\n", __FUNCTION__, __LINE__);
+				}
+
+				if (Temp_Rcon_Status & RconFrontAll_Home_T) 
+				{
+					x = Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_2, 0);
+					y = Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_2, 0);
+					/*------------------ Edit By ZZ ----------------------*/
+					Map_SetCell(MAP, x, y, BLOCKED_OBS);
+//					Map_SetCell(MAP, x, y, BLOCKED_BOUNDARY);
+					/**********************************************************/
+					if(Temp_Rcon_Status & RconFR_HomeT)
+					{
+						Turn_Right(Turn_Speed,850);
+					}
+					else if(Temp_Rcon_Status & RconFL_HomeT)
+					{
+						Turn_Right(Turn_Speed,850);
+					}
+					else if(Temp_Rcon_Status & RconL_HomeT)
+					{
+						Turn_Right(Turn_Speed,300);
+					}
+					else if(Temp_Rcon_Status & RconFL2_HomeT)
+					{
+						Turn_Right(Turn_Speed,600);
+					}
+					else if(Temp_Rcon_Status & RconFR2_HomeT)
+					{
+						Turn_Right(Turn_Speed,950);
+					}
+					else if(Temp_Rcon_Status & RconR_HomeT)
+					{
+						Turn_Right(Turn_Speed,1100);
+					}	
+				}
+
+#ifdef VIRTUAL_WALL   
+				/*
+				 * When checking virtual wall signals, ignore the RconBL_Wall signal.
+				 */
+				Temp_Rcon_Status = Get_VirtualWall_Value();
+				if (Temp_Rcon_Status & (RconL_Wall_T | RconR_Wall_T | RconBR_Wall_T | RconFR_Wall_T | RconFL_Wall_T | RconFL2_Wall_T | RconFR2_Wall_T))
+				{
+					bumperCount = COMPLICATED_AREA_BUMPER_MAX_COUNT + 1;
+					x = Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_2, 0);
+					y = Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_2, 0);
+					Map_SetCell(MAP, x, y, BLOCKED_OBS);	
+					
+					if (Temp_Rcon_Status & (RconFR_Wall_T | RconFL_Wall_T))
+					{
+						Turn_Right(Turn_Speed, 800);
+					} 
+					else if (Temp_Rcon_Status & RconR_Wall_T) 
+					{
+						Turn_Right(Turn_Speed, 1400);
+					}
+					else if (Temp_Rcon_Status & RconBR_Wall_T)
+					{
+						Turn_Right(Turn_Speed, 1500);
+					} 
+					else if (Temp_Rcon_Status & RconFR2_Wall_T)
+					{
+						Turn_Right(Turn_Speed, 1300);
+					} 
+					else if	(Temp_Rcon_Status & RconFL2_Wall_T)
+					{
+						Turn_Right(Turn_Speed, 450);
+					}
+					else if (Temp_Rcon_Status & RconL_Wall_T)
+					{
+						Turn_Right(Turn_Speed, 300);
+					}
+					Reset_VirtualWall_Value(RconL_Wall_T | RconR_Wall_T | RconBR_Wall_T | RconFR_Wall_T | RconFL_Wall_T | RconFL2_Wall_T | RconFR2_Wall_T);				
+				}
+				
+				if (Temp_Rcon_Status & (RconL_Wall | RconR_Wall | RconBR_Wall | RconFR_Wall | RconFL_Wall | RconFL2_Wall | RconFR2_Wall))
+				{
+					bumperCount = COMPLICATED_AREA_BUMPER_MAX_COUNT + 1;
+					USPRINTF_ZZ("%s %d: virtual wall detected! BumperCount = COMPLICATED_AREA_BUMPER_MAX_COUNT + 1! %d\n", __FUNCTION__, __LINE__, Temp_Rcon_Status);
+
+					x = Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_2, 0);
+					y = Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_2, 0);
+					Map_SetCell(MAP, x, y, BLOCKED_OBS);
+					if (Temp_Rcon_Status & (RconFR_Wall | RconFL_Wall))
+					{
+						Turn_Right(Turn_Speed, 450);
+					} 
+					else if (Temp_Rcon_Status & RconR_Wall) 
+					{
+						Turn_Right(Turn_Speed, 300);
+					}
+					else if (Temp_Rcon_Status & RconFR2_Wall) 
+					{
+						Turn_Right(Turn_Speed, 400);
+					}
+					else if (Temp_Rcon_Status & RconBR_Wall)
+					{
+						Turn_Right(Turn_Speed, 300);
+					} 
+					else if (Temp_Rcon_Status & RconFL2_Wall)
+					{
+						Turn_Right(Turn_Speed, 500);
+					}				
+					else if (Temp_Rcon_Status & RconL_Wall)
+					{
+						Turn_Right(Turn_Speed, 600);
+					}
+					Reset_VirtualWall();
+				}
+
+#endif
+
+#endif
+			}
+
+			else
+#endif
+			{
+				if (Temp_Rcon_Status &  RconFrontAll_Home_TLR) 
+				{	
+					/*
+					if (Is_WorkFinish(Get_Room_Mode())) 
+					{
+						Set_Clean_Mode(Clean_Mode_GoHome);
+						ResetHomeRemote();
+						USPRINTF_ZZ("%s %d: Check: Virtual! break\n", __FUNCTION__, __LINE__);
+						break;
+					}
+					*/
+				}
+				if (Temp_Rcon_Status & RconFrontAll_Home_T) 
+				{
+					
+					if (Is_MoveWithRemote())
+					{
+						Set_Clean_Mode(Clean_Mode_GoHome);
+						//ResetHomeRemote();
+						//USPRINTF_ZZ("%s %d: Check: Virtual 2! break\n", __FUNCTION__, __LINE__);
+						break;
+					}
+					Stop_Brifly();
+					if(Temp_Rcon_Status & RconFR_HomeT)
+					{
+						Turn_Right(Turn_Speed,850);
+					}
+					else if(Temp_Rcon_Status & RconFL_HomeT)
+					{
+						Turn_Right(Turn_Speed,850);
+					}
+					else if(Temp_Rcon_Status & RconL_HomeT)
+					{
+						Turn_Right(Turn_Speed,300);
+					}
+					else if(Temp_Rcon_Status & RconFL2_HomeT)
+					{
+						Turn_Right(Turn_Speed,600);
+					}
+					else if(Temp_Rcon_Status & RconFR2_HomeT)
+					{
+						Turn_Right(Turn_Speed,950);
+					}
+					else if(Temp_Rcon_Status & RconR_HomeT)
+					{
+						Turn_Right(Turn_Speed,1100);
+					}	
+					Stop_Brifly();
+					Move_Forward(10, 10);
+					Reset_Rcon_Status();
+					Wall_Straight_Distance = 80;
+					Reset_WallAccelerate();
+				}
+			}
+		}
+#if 0
+#ifdef ZONE_WALLFOLLOW
+		/*------------------------------------- Map Boundary -------------------------------------*/
+		if ( wallFoundStatus != Map_Find_Wall_Not_Found ) 							//»¹Ã»ÓÐÕÒµ½µÚÒ»ÌõÖ±Ïß±ß¾Í²»ÊÜ±ß½çÓ°Ïì
+		{
+			if (follow_type != Map_Wall_Follow_Left_Target && follow_type != Map_Wall_Follow_Left_Zone) 
+			{
+				WFM_boundary_check();
+			}
+			else 
+			{
+				if ( xMax - xMin >= MAP_SIZE - 5 || yMax - yMin >= MAP_SIZE - 5 ) 
+				{
+					if ( xMax - Map_GetXPos() < 5 || Map_GetXPos() - xMin < 5 ||  yMax - Map_GetYPos() < 5 || Map_GetYPos() - yMin < 5 ) 
+					{
+						WFM_boundary_check();
+					}
+				}
+			}
+		}
+#else
+		WFM_boundary_check();
+#endif
+#endif
+
 		/*---------------------------------------------------Bumper Event-----------------------*/
 		if (Get_Bumper_Status() & RightBumperTrig) 
 		{
@@ -956,7 +1173,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		if (Get_Bumper_Status() & LeftBumperTrig) 
 		{
 			//Base_Speed = BASE_SPEED;
-//			L_B_Counter++;
+			//L_B_Counter++;
 			Set_Wheel_Speed(0, 0);
 			Reset_TempPWM();
 			//delay(10);
@@ -1482,8 +1699,7 @@ uint8_t WF_End_Wall_Follow(void){
 		Beep(i, 6, 0, 1);
 		usleep(100000);
 		}*/
-		/***************************2.2-1 Go Home***************************/
-		//2.2-1.1 Common process
+		/**************************Go Home***************************/
 		tmpPnt.X = countToCell(Home_Point.front().X);
 		tmpPnt.Y = countToCell(Home_Point.front().Y);
 		pnt16ArTmp[0] = tmpPnt;
@@ -1495,7 +1711,6 @@ uint8_t WF_End_Wall_Follow(void){
 		}
 
 
-		//2.2-1.3 Path to unclean area
 		CM_create_home_boundary();
 
 		// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
@@ -1526,13 +1741,13 @@ uint8_t WF_End_Wall_Follow(void){
 						}
 
 						printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-						return 0;
+						break;
 
 				} else if (state == -3 && Home_Point.empty()) {
 						// If it is the last saved home point, stop the robot.
 						Disable_Motors();
 						mt_state = MT_Battery;
-						return 0;
+						break;
 				} else if (state == -5 && Home_Point.empty()) {
 						// If it is the last saved home point, stop the robot.
 						Disable_Motors();
@@ -1543,7 +1758,7 @@ uint8_t WF_End_Wall_Follow(void){
 						}
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-						return 0;
+						break;
 				} else if (state == 1 || state == -7) {
 						// Call GoHome() function to try to go to charger stub.
 						GoHome();
@@ -1552,7 +1767,7 @@ uint8_t WF_End_Wall_Follow(void){
 						if (Get_Clean_Mode() == Clean_Mode_Charging)
 						{
 								printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-								return 0;
+								break;
 						}
 						else if (Home_Point.empty())
 						{
@@ -1561,7 +1776,7 @@ uint8_t WF_End_Wall_Follow(void){
 										CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
 
 										if (Touch_Detect()) {
-												return 0;
+												break;
 										}
 								}
 
@@ -1579,7 +1794,7 @@ uint8_t WF_End_Wall_Follow(void){
 								}
 
 								printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
-								return 0;
+								break;
 						}
 
 				}
@@ -1610,6 +1825,7 @@ uint8_t WF_End_Wall_Follow(void){
 		debug_WF_map(MAP, 0, 0);
 		debug_sm_map(SPMAP, 0, 0);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return 0;
 }
 void WF_update_position(uint16_t heading_0, int16_t heading_1) {
 		float   pos_x, pos_y;
