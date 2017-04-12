@@ -712,6 +712,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
 				if(reach_count >= 10){
 						WF_End_Wall_Follow();
+						ROS_INFO("reach_count >= 10");
 						break;
 				}
 
@@ -811,6 +812,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 						{
 								Set_Clean_Mode(Clean_Mode_Userinterface);
+								ROS_INFO("Get_Cliff_Trig");
 								break;
 						}
 						if(Get_Cliff_Trig())
@@ -818,6 +820,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 								if(Cliff_Escape())
 								{
 										Set_Clean_Mode(Clean_Mode_Userinterface);
+										ROS_INFO("Cliff_Escape");
 										return 1;
 								}
 						}
@@ -1071,6 +1074,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						Set_Clean_Mode(Clean_Mode_GoHome);
 						//ResetHomeRemote();
 						//USPRINTF_ZZ("%s %d: Check: Virtual 2! break\n", __FUNCTION__, __LINE__);
+						ROS_INFO("Check: Virtual 2! break");
 						break;
 					}
 					Stop_Brifly();
@@ -1198,6 +1202,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 							CM_TouringCancel();
 							Set_Clean_Mode(Clean_Mode_Userinterface);
 							//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
+							ROS_INFO(" Check: Bumper 2! break");
 							break;
 					}
 					//STOP_BRIFLY;
@@ -1237,6 +1242,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						Reset_Touch();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						//USPRINTF("%s %d: Check: Bumper 3! break\n", __FUNCTION__, __LINE__);
+						ROS_INFO("Check: Bumper 3! break");
 						break;
 					}
 
@@ -1331,15 +1337,16 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 				Reset_Wheel_Step();
 			}
-
+			/*
 			if (Jam > 80) 
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Set_Error_Code(Error_Code_Encoder);
 				//CM_TouringCancel();
 				//USPRINTF("%s %d: Check: Bumper 4! break\n", __FUNCTION__, __LINE__);
+				ROS_INFO("Check: Bumper 4! break");
 				break;
-			}
+			}*/
 //			if ( L_B_Counter > 10 ) {
 //				if (!Is_MoveWithRemote()) {
 //					if (!(follow_type == Map_Wall_Follow_Left_Zone || follow_type == Map_Wall_Follow_Left_Target || follow_type == Map_Wall_Follow_Find_Wall)) {
