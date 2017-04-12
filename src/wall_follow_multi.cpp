@@ -559,6 +559,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		float Distance_From_Start;
 		uint8_t		First_Time_Flag;
 		uint32_t Temp_Rcon_Status;
+		Reset_MoveWithRemote();
 		Wall_Follow_Init_Slam();
 
 		//Initital home point
@@ -1061,14 +1062,14 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 				if (Temp_Rcon_Status & RconFrontAll_Home_T) 
 				{
-					/*
+					
 					if (Is_MoveWithRemote())
 					{
 						Set_Clean_Mode(Clean_Mode_GoHome);
 						//ResetHomeRemote();
 						//USPRINTF_ZZ("%s %d: Check: Virtual 2! break\n", __FUNCTION__, __LINE__);
 						break;
-					}*/
+					}
 					Stop_Brifly();
 					if(Temp_Rcon_Status & RconFR_HomeT)
 					{
