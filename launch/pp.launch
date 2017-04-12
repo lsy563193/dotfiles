@@ -9,7 +9,7 @@
 		<param name="line_align" type="bool" value="true" />
 
 		<!-- 0: gmapping, 1: karto, 2: goole cartographe -->
-		<param name="slam_type" type="int" value="2" />
+		<param name="slam_type" type="int" value="1" />
 		<param name="angle_sample_average" type="int" value="30" />
 	</node>
 </launch>

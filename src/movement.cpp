@@ -520,6 +520,18 @@ uint8_t Cliff_Escape(void)
 	return 0;
 }
 
+bool except_event()
+{
+	uint8_t oc = Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			return true;
+		if(Touch_Detect())
+			return true;
+		if(Is_Turn_Remote())
+			return true;
+	return false;
+}
+
 uint8_t Cliff_Event(uint8_t event)
 {
 	uint16_t temp_adjust=0,random_factor=0;
@@ -2174,7 +2186,7 @@ void movement_stop()
 	movement_turn(0,0);
 }
 
-void Set_gyro_on(void)
+bool Set_gyro_on(void)
 {
 	static int count=0;
 	set_gyro(1,0);
@@ -2182,7 +2194,7 @@ void Set_gyro_on(void)
 
 	count = 0;
 	auto stop_angle_v = robot::instance()->robot_get_angle_v();
-	while (count<10)
+	while (count<10 && !except_event())
 	{
 		usleep(10000);
 
@@ -2191,6 +2203,9 @@ void Set_gyro_on(void)
 		}
 //		ROS_INFO("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
+	if(count == 10)
+		return true;
+	return false;
 //	ROS_INFO("gyro start ok");
 }
 

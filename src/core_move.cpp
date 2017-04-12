@@ -1572,7 +1572,7 @@ class Motion_controller {
 public:
 	Motion_controller()
 	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
+	#if CONTINUE_CLEANING_AFTER_CHARGE
 		if (robot::instance()->Is_Cleaning_Paused())
 		{
 			Work_Motor_Configure();
@@ -1580,31 +1580,31 @@ public:
 			enable_slam_offset = 1;
 		}
 		else
-#endif
+  #endif
+    {
+		robot::instance()->Subscriber();
+		Work_Motor_Configure();
+		if (robot::instance()->align_active() == true)
 		{
-			Set_gyro_off();
 			start_obstacle_detector();
-			show_time(Set_gyro_on);
-			Set_IMU_Status();
-
-			robot::instance()->Subscriber();
-			Work_Motor_Configure();
-			robot::instance()->start_lidar();
-
-			if (robot::instance()->align_active() == true)
-			{
-				robot::instance()->align();
-				stop_obstacle_detector();
-			}
-
-			start_slam();
-			enable_slam_offset = 1;
 		}
+
+		robot::instance()->start_lidar();
+
+		if (robot::instance()->align_active() == true)
+		{
+			robot::instance()->align();
+			stop_obstacle_detector();
+		}
+
+		start_slam();
+		enable_slam_offset = 1;
+    }
 	};
 
 	~Motion_controller()
 	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
+	#if CONTINUE_CLEANING_AFTER_CHARGE
 		if (robot::instance()->Is_Cleaning_Paused())
 		{
 			Disable_Motors();
@@ -1614,19 +1614,19 @@ public:
 		else
 #endif
 		{
-			Disable_Motors();
-			robot::instance()->stop_lidar();
-			if (robot::instance()->align_active())
-			{
-				robot::instance()->align_exit();
-				stop_obstacle_detector();
-			}
-			show_time(Set_gyro_off);
-			Reset_IMU_Status();
-			is_line_angle_offset = false;
-			enable_slam_offset = 0;
-			robot::instance()->stop_slam();
-			robot::instance()->UnSubscriber();
+		Disable_Motors();
+		robot::instance()->stop_lidar();
+		if (robot::instance()->align_active())
+		{
+			robot::instance()->align_exit();
+			stop_obstacle_detector();
+		}
+		show_time(Set_gyro_off);
+		Reset_IMU_Status();
+		is_line_angle_offset = false;
+		enable_slam_offset = 0;
+		robot::instance()->stop_slam();
+		robot::instance()->UnSubscriber();
 		}
 	}
 };
@@ -1644,7 +1644,6 @@ uint8_t CM_Touring(void)
 	Point32_t	Next_Point, Target_Point;
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 
-	int16_t	home_angle = robot::instance()->robot_get_home_angle();
 
 	MapTouringType	mt_state = MT_None;
 	RoundingType	rounding_type;
@@ -1784,13 +1783,46 @@ uint8_t CM_Touring(void)
 #endif
 	}
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (!robot::instance()->Is_Cleaning_Paused())
+#endif
+	{
+		if (!Set_gyro_on())
+		{
+			Set_gyro_off();
+			ROS_INFO("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			return 0;
+		}
+		Set_IMU_Status();
+	}
 	Motion_controller motion;
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
 		  usleep(10000);
 	}
-	if(count_n_10ms == 0)
+	if(count_n_10ms == 0){
+		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return 0;
+	}
+
+	int16_t	home_angle = robot::instance()->robot_get_home_angle();
+		/* usleep for checking whether robot is in the station */
+	usleep(700);
+	if (from_station == 1 && !robot::instance()->align_active()) {
+		printf("%s %d: Turn 45 degree to the wall\n", __FUNCTION__, __LINE__);
+
+		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle(0) - 450);
+
+		if (Touch_Detect()) {
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			printf("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+			return 0;
+		}
+
+		from_station = 1;
+		station_zone = 0;
+	}
 	/*****************************************************Cleaning*****************************************************/
 	while (ros::ok()) {
 
@@ -1976,7 +2008,7 @@ uint8_t CM_Touring(void)
 						{
 							// If it is the last point, it means it it now at (0, 0).
 							if (from_station == 0) {
-								CM_HeadToCourse(ROTATE_TOP_SPEED, home_angle);
+								CM_HeadToCourse(ROTATE_TOP_SPEED, -home_angle);
 
 								if (Touch_Detect()) {
 									return 0;
