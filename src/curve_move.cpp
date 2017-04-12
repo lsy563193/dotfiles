@@ -74,7 +74,7 @@ MapTouringType CurveMove_MoveToPoint()
 	}
 	ROS_WARN("%s %d: current position: (%d, %d)\tradius: %f", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), radius);
 
-	speed = PATH_PLANNER_MAX_SPEED * (((double)radius) / CELL_COUNT_MUL_TO_CELL_SIZE - WHEEL_BASE_HALF) / (((double)radius) / CELL_COUNT_MUL_TO_CELL_SIZE + WHEEL_BASE_HALF);
+	speed = (uint8_t) ceil(PATH_PLANNER_MAX_SPEED * (((double)radius) / CELL_COUNT_MUL_TO_CELL_SIZE - WHEEL_BASE_HALF) / (((double)radius) / CELL_COUNT_MUL_TO_CELL_SIZE + WHEEL_BASE_HALF));
 	if (points[1].X == points[2].X) {
 		if (points[0].X > points[1].X) {
 			points[1].Y < points[2].Y ? speed_right = speed : speed_left = speed; 
@@ -108,6 +108,13 @@ MapTouringType CurveMove_MoveToPoint()
 			angle_diff += 3600;
 		}
 		if (abs(angle_diff) > 900) {
+			break;
+		}
+
+		if ((points[1].X == points[2].X && abs(cellToCount(points[2].X) - Map_GetXCount()) < 100) ||
+			(points[1].Y == points[2].Y && abs(cellToCount(points[2].Y) - Map_GetYCount()) < 100))
+		{
+			ROS_WARN("%s %d: reach line between point 1 & 2: %d\n", __FUNCTION__, __LINE__, cellToCount(points[1].X == points[2].X ? points[2].X : points[2].Y));
 			break;
 		}
 

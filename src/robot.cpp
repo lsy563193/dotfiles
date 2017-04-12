@@ -26,6 +26,9 @@ Segment_set segmentss;
 
 time_t	start_time;
 
+// For avoid key value palse.
+int8_t key_press_count;
+
 //extern pp::x900sensor sensor;
 robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
 {
@@ -56,6 +59,11 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
 	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
+
+	// Initialize the pause variable.
+	this->pause_cleaning = false;
+	// Initialize the key press count.
+	key_press_count = 0;
 }
 
 robot::~robot()
@@ -126,6 +134,20 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	//printf("[robot.cpp] Rcon info:%x.\n", this->charge_stub);
 
 	this->key = msg->key;
+	// Mark down the key if it is pressed.
+	if (this->key == 1)
+	{
+		key_press_count++;
+		if (key_press_count > 10)
+		{
+			Set_Touch();
+			key_press_count = 0;
+		}
+	}
+	else
+	{
+		key_press_count = 0;
+	}
 
 	this->charge_status =msg->c_s; //charge status
 	// Debug
@@ -962,3 +984,19 @@ void robot::init_mumber()
 	position_y_off=0;
 	position_z_off=0;
 }
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+// This 3 functions is for declaring whether the robot is at status of pausing for charge.
+bool robot::Is_Cleaning_Paused(void)
+{
+	return this->pause_cleaning;
+}
+void robot::Set_Cleaning_Pause(void)
+{
+	this->pause_cleaning = true;
+}
+void robot::Reset_Cleaning_Pause(void)
+{
+	this->pause_cleaning = false;
+}
+#endif

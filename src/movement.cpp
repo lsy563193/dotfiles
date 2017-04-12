@@ -11,6 +11,8 @@
 #include "serial.h"
 #include "robotbase.h"
 #include "config.h"
+#include "core_move.h"
+#include "wall_follow_multi.h"
 #define MOVEMENT "movement"
 extern uint8_t sendStream[SEND_LEN];
 
@@ -61,6 +63,9 @@ volatile uint8_t Bumper_Error = 0;
 // Value for wall sensor offset.
 volatile int16_t Left_Wall_BaseLine = 50;
 volatile int16_t Right_Wall_BaseLine = 50;
+
+// Variable for touch status
+volatile uint8_t Touch_Status = 0;
 
 /*----------------------- Work Timer functions--------------------------*/
 
@@ -223,7 +228,7 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Left_Wall_Sum_Value=0;
 		Left_Temp_Wall_Buffer=0;
 		//Beep(1, 10, 0, 1);
-		ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
+		//ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
 	// Dynamic adjust for right wall sensor.
@@ -251,7 +256,7 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Right_Wall_Sum_Value=0;
 		Right_Temp_Wall_Buffer=0;
 		//Beep(1, 10, 0, 1);
-		ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
+		//ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
 }
@@ -345,6 +350,13 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			break;
 		if(Is_Turn_Remote())
 			break;
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Left();
+			ROS_INFO("Bumper triged when turn left, back 20mm.");
+		}
 		usleep(10000);
 //		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff=%d \n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
@@ -401,6 +413,13 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Is_Turn_Remote())
 			break;
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Right();
+			ROS_INFO("Bumper triged when turn right, back 20mm.");
+		}
 		usleep(10000);
 //		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
@@ -1187,6 +1206,10 @@ uint32_t Get_Rcon_Remote(void)
 //	return 0;
 	uint8_t ir_cmd;
 	ir_cmd = robot::instance()->robot_get_ir_ctrl();
+	if (ir_cmd != 0)
+	{
+		ROS_INFO("%s: ir_cmd = %x.", __FUNCTION__, ir_cmd);
+	}
 	if(ir_cmd == 0x80)
 		return Remote_Forward;
 	else if(ir_cmd == 0x40)
@@ -1200,7 +1223,7 @@ uint32_t Get_Rcon_Remote(void)
 	else if(ir_cmd == 0x04)
 		return Remote_Home;
 	else if(ir_cmd == 0x02)
-		return Remote_Random;
+		return Remote_Wall_Follow;
 	else if(ir_cmd == 0x01)
 		return Remote_Spot;
 	else 
@@ -1356,10 +1379,12 @@ uint8_t Remote_Key(uint32_t key)
 
 void Reset_Touch(void)
 {
+	Touch_Status = 0;
 }
 
 void Set_Touch(void)
 {
+	Touch_Status = 1;
 }
 
 void Deceleration(void)
@@ -1369,7 +1394,8 @@ void Deceleration(void)
 uint8_t Touch_Detect(void)
 {
 	// Get the key value from robot sensor
-	if (robot::instance()->robot_get_key() == 1){
+	if (Touch_Status == 1){
+		Reset_Touch();
 		return 1;
 	}
 	if (Remote_Key(Remote_Clean)){

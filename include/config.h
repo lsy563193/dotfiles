@@ -57,6 +57,12 @@
  */
 #define PP_MOVE_TO_CELL_CENTER		(1)
 
+/*
+ * Definition to try to modify the path obtained from A-start to a target,
+ * so that the robot can better avoid the obstacles.
+ */
+#define PP_MOVE_TO_MIDDLE_OF_PATH	(1)
+
 /* Zig-Zag cleanning time 120 minutes */
 #define CLEANNING_TIME			(14400)
 
@@ -255,6 +261,15 @@
  */
 #define ADD_TARGET_BY_PATH		(1)
 #define ADD_TARGET_BY_PATH_ONLY		(1)
+
+
+// Config for whether enable the function of continuing cleanning after charge
+#define CONTINUE_CLEANING_AFTER_CHARGE	(1)
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+/* Continue cleaning voltage value */
+#define CONTINUE_CLEANING_VOLTAGE	(1530)
+#endif
 
 /* ------------------------------------- Path Planning Map ------------------------------------- */
 

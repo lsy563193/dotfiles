@@ -29,4 +29,9 @@ uint8_t Wall_Follow(MapWallFollowType follow_type);
 void Wall_Follow_Init_Slam(void);
 void Wall_Follow_Stop_Slam(void);
 void WF_update_position(uint16_t heading_0, int16_t heading_1);
+void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1);
+bool WF_Is_Reach_Cleaned(void);
+int8_t WF_Push_Point(int32_t x, int32_t y);
+uint8_t WF_End_Wall_Follow(void);
+void WFM_move_back(uint16_t dist);
 #endif

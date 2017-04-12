@@ -18,9 +18,13 @@ find_package(catkin REQUIRED COMPONENTS
 	tf
 )
 
+find_package(PkgConfig)
+pkg_check_modules(ALSA alsa REQUIRED)
+
 include_directories(
   ./include
   ${catkin_INCLUDE_DIRS}
+  ${ALSA_INCLUDE_DIRS}
 )
 
 add_message_files(
@@ -52,7 +56,7 @@ catkin_package(
 )
 
 add_executable(pp  ${PP_SRC} )
-target_link_libraries(pp ${catkin_LIBRARIES} -lm -lpthread)
+target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} -lm -lpthread)
 
 #add_executable(angle_test test/angle_test.cpp )
 #target_link_libraries(angle_test ${catkin_LIBRARIES} -lm -lpthread)

@@ -96,11 +96,17 @@ void Spot_Mode(void)
 		if (Get_Rcon_Remote()) {
 			if(Is_MoveWithRemote())
 			{
+				if (Remote_Key(Remote_Wall_Follow)) {
+					Set_Clean_Mode(Clean_Mode_WallFollow);
+					//Move_Forward(10, 10);
+					return;
+				}
+				/*
 				if (Remote_Key(Remote_Random)) {
 					Set_Clean_Mode(Clean_Mode_RandomMode);
 					//Move_Forward(10, 10);
 					return;
-				}
+				}*/
 			}
 			if (Remote_Key(Remote_Home)) {
 				Set_MoveWithRemote();
@@ -160,10 +166,10 @@ void Spot_Mode(void)
 		if (Get_Rcon_Remote()) {
 			if(Is_MoveWithRemote())
 			{
-				if (Remote_Key(Remote_Random)) {
+				/*if (Remote_Key(Remote_Random)) {
 					Set_Clean_Mode(Clean_Mode_RandomMode);
 					return;
-				}
+				}*/
 			}
 			if (Remote_Key(Remote_Home)) {
 				Set_MoveWithRemote();

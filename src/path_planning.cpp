@@ -239,49 +239,15 @@ void path_set_max_try_cnt(uint8_t val)
 }
 
 /*
- * Function to get the current robot direction.
- * The direction is obtained by using the Gyro value, only 0(360), 90, 180 & 270 will
- * return by using the Gyro value. When fails to use the Gyro value, it will return
- * the vertical direction only.
+ * Function to get the last robot movement's direction.
  *
  * @param
  *
- * @return	Current robot direction
+ * @return	Last robot direction
  */
 uint16_t path_get_robot_direction()
 {
-	uint16_t	dir;
-
-	dir = (uint16_t) round(((double)Gyro_GetAngle(0)) / 100);
-	switch(dir) {
-		case 0:
-		case 36:
-			dir = NORTH;
-			break;
-		case 9:
-			dir = EAST;
-			break;
-		case 18:
-			dir = SOUTH;
-			break;
-		case 27:
-			dir = WEST;
-			break;
-		default:
-			/*
-			 * Failed to use the Gyro value, use the robot displacement to find the direction.
-			 * Only handle NORTH & SOUTH direction.
-			 */
-			if (positions[0].x != positions[1].x && positions[0].y == positions[1].y) {
-				if (positions[0].x > positions[1].x) {
-					dir = NORTH;
-				} else if (positions[0].x < positions[1].x) {
-					dir = SOUTH;
-				}
-			}
-			break;
-	}
-	return dir;
+	return last_dir;
 }
 
 /*
@@ -318,7 +284,6 @@ void path_reset_last_position(void)
 {
 	last_x_pos = Map_GetXPos();
 	last_y_pos = Map_GetYPos();
-	last_dir = path_get_robot_direction();
 }
 
 /*
@@ -1215,7 +1180,7 @@ void path_update_cells()
 	CellState	cs;
 
 	/* Skip, if robot is not moving towards NORTH or SOUTH. */
-	if ((path_get_robot_direction() % 1800) != 0)
+	if ((last_dir % 1800) != 0)
 		return;
 
 	start = positions[1].x > positions[0].x ? positions[0].x : positions[1].x;
@@ -1322,8 +1287,8 @@ void path_update_cells()
 	 * e is the target position. With the above changes, the movement of the
 	 * robot will be looks nicer.
 	 */
-	if (path_get_robot_direction() == NORTH || path_get_robot_direction() == SOUTH) {
-		if (path_get_robot_direction() == NORTH && positions[0].x > positions[1].x) {
+	if (last_dir == NORTH || last_dir == SOUTH) {
+		if (last_dir == NORTH && positions[0].x > positions[1].x) {
 			if (positions[0].y >= 0 && Map_GetCell(MAP, positions[0].x, positions[0].y + 2) == UNCLEAN) {
 				for (i = 0; i < 3; i++) {
 					cs = Map_GetCell(MAP, positions[0].x + 2, positions[0].y + i);
@@ -1347,7 +1312,7 @@ void path_update_cells()
 					}
 				}
 			}
-		} else if (path_get_robot_direction() == SOUTH && positions[0].x < positions[1].x) {
+		} else if (last_dir == SOUTH && positions[0].x < positions[1].x) {
 			if (positions[0].y >= 0 && Map_GetCell(MAP, positions[0].x, positions[0].y + 2) == UNCLEAN) {
 				for (i = 0; i < 3; i++) {
 					cs = Map_GetCell(MAP, positions[0].x - 2, positions[0].y + i);
@@ -1397,7 +1362,7 @@ int16_t path_escape_trapped() {
 				Map_Set_Cells(ROBOT_SIZE, trappedCell[i].X, trappedCell[i].Y, CLEANED);
 			}
 
-			val = path_find_shortest_path( positions[0].x, positions[0].y, trappedCell[i].X, trappedCell[i].Y, 0, last_dir );
+			val = path_find_shortest_path( positions[0].x, positions[0].y, trappedCell[i].X, trappedCell[i].Y, 0);
 			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* No path to home, which is set when path planning is initialized. */
@@ -1409,14 +1374,14 @@ int16_t path_escape_trapped() {
 		}
 	} else {
 		if (is_block_accessible(0, 0) == 1) {
-			val = path_find_shortest_path(positions[0].x, positions[0].y, 0, 0, 0, last_dir);
+			val = path_find_shortest_path(positions[0].x, positions[0].y, 0, 0, 0);
 #if DEBUG_SM_MAP
 			debug_sm_map(SPMAP, 0, 0);
 #endif
 			printf("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
-				val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0, last_dir);
+				val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0);
 				printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_MAP
@@ -1432,7 +1397,7 @@ int16_t path_escape_trapped() {
 				val = 1;
 			}
 		} else {
-			val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0, last_dir);
+			val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0);
 			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_SM_MAP
@@ -1485,7 +1450,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 
 	path_reset_path_points();
 
-	printf("\r\npath_next\tx: %d\ty: %d\tlx: %d\tly: %d\n", positions[0].x, positions[0].y, last_x_pos, last_y_pos);
+	printf("\r\npath_next\tx: %d\ty: %d\tlx: %d\tly: %d\tlast_dir: %d\n", positions[0].x, positions[0].y, last_x_pos, last_y_pos, last_dir);
 
 	/*
 	 * Check the current lane is clean or not and make sure the robot
@@ -1560,6 +1525,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 
 		positions[0].x_target = x_next_area;
 		positions[0].y_target = y_next_area;
+		last_dir = Map_GetXPos() > x_next_area ? SOUTH : NORTH;
 	} else {
 		/* Get the next target to clean. */
 		debug_map(MAP, home_x, home_y);
@@ -1579,8 +1545,13 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 			//pos.Y = Map_GetYPos();
 			pos.X = x_next_area;
 			pos.Y = y_next_area;
-			val = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x, &y, last_dir);
-			printf("%s %d %d %d %d %d\n", __FUNCTION__, __LINE__, x_next_area, y_next_area, x, y);
+			val = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x, &y);
+			if (Map_GetXPos() == x) {
+				last_dir = Map_GetYPos() > y ? WEST : EAST;
+			} else {
+				last_dir = Map_GetXPos() > x ? SOUTH : NORTH;
+			}
+			printf("%s %d %d %d %d %d %d %d\n", __FUNCTION__, __LINE__, x_next_area, y_next_area, x, y, last_dir);
 		} else {
 			printf("%s %d %d %d %d %d %d\n", __FUNCTION__, __LINE__, val, x_next_area, y_next_area, x, y);
 		}
@@ -1654,13 +1625,12 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 	if (home_try_cnt == 0) {
 		Map_ClearBlocks();
 		Map_Set_Cells(ROBOT_SIZE, countToCell(*target_x), countToCell(*target_y), CLEANED);
-		last_dir = path_get_robot_direction();
 	}
 
 	path_set_current_pos();
 
 	printf("path_home: current: (%d, %d) (%d, %d) \thome: (%d, %d)\tdir: %d\n",
-			positions[0].x, positions[0].y, Map_GetXCount(), Map_GetYCount(), countToCell(*target_x), countToCell(*target_y), last_dir);
+			positions[0].x, positions[0].y, Map_GetXCount(), Map_GetYCount(), countToCell(*target_x), countToCell(*target_y));
 
 #if DEBUG_MAP
 	/* If the flag DEBUG_MAP is set, print the map for debugging. */
@@ -1691,7 +1661,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 					}
 
 					/* If no path found, clear the blocks. */
-					if (path_find_shortest_path(positions[0].x, positions[0].y, i, j, 0, last_dir) < 0) {
+					if (path_find_shortest_path(positions[0].x, positions[0].y, i, j, 0) < 0) {
 						//Map_ClearBlocks();
 						continue;
 					}
@@ -1727,7 +1697,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 				//pos.Y = Map_GetYPos();
 				pos.X = x_next;
 				pos.Y = y_next;
-				if ((retval = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x, &y, last_dir)) <= 0) {
+				if ((retval = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x, &y)) <= 0) {
 					printf("%s %d: stop robot, no path to home (%d, %d)\n", __FUNCTION__, __LINE__, x_next, y_next);
 					retval = 0;
 					*target_x = Map_GetXCount();
@@ -1753,7 +1723,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 	}
 
 	/* If the robot movement is only 1 cells, increase the try count. */
-	if (((abs(positions[0].x - positions[1].x) <= 1) && (abs(positions[0].y - positions[1].y) <= 1) && last_dir == path_get_robot_direction())) {
+	if (((abs(positions[0].x - positions[1].x) <= 1) && (abs(positions[0].y - positions[1].y) <= 1))) {
 		home_try_cnt++;
 	}
 
@@ -1765,7 +1735,6 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 	}
 
 	printf("home next dest:\t%d\tx: %d(%d)\ty: %d(%d)\tcnt: %d\n", retval, countToCell(*target_x), *target_x, countToCell(*target_y), *target_y, home_try_cnt);
-	last_dir = path_get_robot_direction();
 
 	return retval;
 }

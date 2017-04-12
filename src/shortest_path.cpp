@@ -394,20 +394,17 @@ void path_trace_path(int16_t line_idx, int16_t cur_idx)
  * @param y	The target Y Coordinate that the robot wants to go
  * @param *x_next	The next X Coordinate that the robot should go before reaching the target
  * @param *y_next	The next Y Coordinate that the robot should go before reaching the target
- * @param last_dir	Last robot direction
  *
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
  */
-int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir)
+int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next)
 {
 	uint8_t	level_cur, level_target, level_next, level_set, should_trace, found, blocked;
 
 	int16_t	line_idx, cur_idx, next_idx;
 	int16_t	i, j, k, dist, dist_min, x_tmp, y_tmp, offset, x1, x2, x_pos, y_pos, x_min, x_max, y_min, y_max;
-
-	last_dir = last_dir;
 
 	x_pos = pos.X;
 	y_pos = pos.Y;
@@ -640,7 +637,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 		}
 
 		/* Try to avoid repeatly hit the obstcal ahead. */
-		if (positions[0].x == positions[1].x && positions[0].y == positions[1].y && last_dir == path_get_robot_direction()) {
+		if (positions[0].x == positions[1].x && positions[0].y == positions[1].y) {
 			path_trace_path(line_idx, cur_idx);
 			path_line_dump();
 
@@ -978,7 +975,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 						printf("%s %d: %d %d %d %d %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, positions[1].x,  positions[1].y, path_get_robot_direction());
 
 						/* Try to avoid repeatly hit the obstcal ahead. */
-						if (positions[0].x == positions[1].x && positions[0].y == positions[1].y && last_dir == path_get_robot_direction()) {
+						if (positions[0].x == positions[1].x && positions[0].y == positions[1].y) {
 							/* Possibly ahead is blocked */
 							printf("%s %d: level cur: %d\tlevel next: %d\n", __FUNCTION__, __LINE__, level_cur, level_next);
 							if (level_cur - 1 == level_next + 1 && abs(*y_next - y_pos) <= 2) {
@@ -995,7 +992,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 								}
 							}
 						}
-						printf("%s %d: no further point to move, dest (%d,%d), last dir: %d\n", __FUNCTION__, __LINE__, *x_next, *y_next, last_dir);
+						printf("%s %d: no further point to move, dest (%d,%d), last dir: %d\n", __FUNCTION__, __LINE__, *x_next, *y_next);
 						lines_free();
 						return 1;
 					}
@@ -1041,16 +1038,14 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
  * @param y	The target Y Coordinate that the robot wants to go
  * @param *x_next	The next X Coordinate that the robot should go before reaching the target
  * @param *y_next	The next Y Coordinate that the robot should go before reaching the target
- * @param last_dir	Last robot direction
  *
  * @return
  */
-int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir)
+int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound)
 {
 	int16_t *x_next, *y_next;
 	Point16_t	pos;
 
-	last_dir = last_dir;
 	bound = bound;
 	pos.X = xID;
 	pos.Y = yID;
@@ -1058,7 +1053,7 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 	x_next = &xID;
 	y_next = &yID;
 
-	return path_move_to_unclean_area(pos, endx, endy, x_next, y_next, last_dir);
+	return path_move_to_unclean_area(pos, endx, endy, x_next, y_next);
 }
 
 #else
@@ -1088,7 +1083,6 @@ list <Point16_t> path_points;
  * @param x_max The maxmum range for X coordinate
  * @param y_min The minimum range for Y coordinate
  * @param y_max The maxmum range for Y coordinate
- * @param last_dir	Last robot direction
  *
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
@@ -1096,7 +1090,7 @@ list <Point16_t> path_points;
  * 		totalCost: Total cost
  *
  */
-int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max, uint16_t last_dir) {
+int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -1344,7 +1338,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	path_points.push_back(t);
 
 	next = 0;
-	dest_dir = (last_dir == EAST || last_dir == WEST) ? 1: 0;
+	dest_dir = (path_get_robot_direction() == EAST || path_get_robot_direction() == WEST) ? 1: 0;
 	printf("%s %d: dest dir: %d\n", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != xID || tracey != yID) {
 		costAtCell = Map_GetCell(SPMAP, tracex, tracey);
@@ -1421,10 +1415,9 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	t.X = tracex_tmp;
 	t.Y = tracey_tmp;
 	path_points.push_back(t);
-	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
-		printf("(%d, %d)->", it->X, it->Y);
-	}
-	printf("\n\n");
+
+	path_display_path_points();
+
 	return totalCost;
 }
 
@@ -1437,7 +1430,6 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
  * @param endx	Target X Coordinate
  * @param endy	Target Y Coordinate
  * @param bound	Limit to the search range to (xID, yID) and (endx, endy)
- * @param last_dir	Last robot direction
  *
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
@@ -1445,7 +1437,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
  * 		(totalCost: from function path_find_shortest_path_ranged)
  *
  */
-int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, uint16_t last_dir) {
+int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
@@ -1456,11 +1448,11 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 		y_min = (yID > endy ? endy : yID) - 8;
 		y_max = (yID > endy ? yID : endy) + 8;
 		printf("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
-		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max, last_dir);
+		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
 		path_get_range(&x_min, &x_max, &y_min, &y_max);
-		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max, last_dir);
+		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 		printf("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
@@ -1482,14 +1474,13 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
  * @param y	The target Y Coordinate that the robot wants to go
  * @param *x_next	The next X Coordinate that the robot should go before reaching the target
  * @param *y_next	The next Y Coordinate that the robot should go before reaching the target
- * @param last_dir	Last robot direction
  *
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next, uint16_t last_dir) {
+int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
@@ -1499,7 +1490,7 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 	path_reset_path_points();
 
 	/* Find the shortest path to the target by using shorest path grid map. */
-	retval = path_find_shortest_path(position.X, position.Y, x, y, 0, last_dir);
+	retval = path_find_shortest_path(position.X, position.Y, x, y, 0);
 	if (retval < 0)
 		return retval;
 
@@ -1576,6 +1567,93 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 		*x_next = x;
 		*y_next = y;
 
+#ifdef	PP_MOVE_TO_MIDDLE_OF_PATH
+		if (path_points.size() > 3) {
+			list<Point16_t>::iterator it = path_points.begin();
+			for (i = 0; i < path_points.size() - 3; i++) {
+				list<Point16_t>::iterator it_ptr1 = it;
+
+				list<Point16_t>::iterator it_ptr2 = it_ptr1;
+				it_ptr2++;
+
+				list<Point16_t>::iterator it_ptr3 = it_ptr2;
+				it_ptr3++;
+
+				bool blocked_min, blocked_max;
+				blocked_min = blocked_max = false;
+				if (it_ptr2->X == it_ptr3->X) {		// X coordinates are the same for p1, p2, find a better Y coordinate.
+					int16_t x_min, x_max;
+					x_min = x_max = it_ptr2->X;
+
+					sj = it_ptr1->X > it_ptr2->X ? it_ptr2->X : it_ptr1->X;
+					ej = it_ptr1->X > it_ptr2->X ? it_ptr1->X : it_ptr2->X;
+					si = it_ptr2->Y > it_ptr3->Y ? it_ptr3->Y : it_ptr2->Y;
+					ei = it_ptr2->Y > it_ptr3->Y ? it_ptr2->Y : it_ptr3->Y;
+
+					while (blocked_min == false || blocked_max == false) {
+						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
+							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
+								if (blocked_min == false && (x_min - 1 < sj || Map_GetCell(SPMAP, x_min - 1, i) == COST_HIGH)) {
+									blocked_min = true;
+								}
+								if (blocked_max == false && (x_max + 1 > ej || Map_GetCell(SPMAP, x_max + 1, i) == COST_HIGH)) {
+									blocked_max = true;
+								}
+							}
+						}
+						if (blocked_min == false) {
+							x_min--;
+						}
+						if (blocked_max == false) {
+							x_max++;
+						}
+					}
+
+					printf("%s %d: x_min: %d\tx_max: %d\n", __FUNCTION__, __LINE__, x_min, x_max);
+					if (x != (x_min + x_max) / 2) {
+						it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
+					}
+				} else {
+					int16_t y_min, y_max;
+					y_min = y_max = it_ptr2->Y;
+
+					sj = it_ptr1->Y > it_ptr2->Y ? it_ptr2->Y : it_ptr1->Y;
+					ej = it_ptr1->Y > it_ptr2->Y ? it_ptr1->Y : it_ptr2->Y;
+					si = it_ptr2->X > it_ptr3->X ? it_ptr3->X : it_ptr2->X;
+					ei = it_ptr2->X > it_ptr3->X ? it_ptr2->X : it_ptr3->X;
+					while (blocked_min == false || blocked_max == false) {
+						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
+							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
+								if (blocked_min == false && (y_min - 1 < sj || Map_GetCell(SPMAP, i, y_min - 1) == COST_HIGH)) {
+									blocked_min = true;
+								}
+								if (blocked_max == false && (y_max + 1 > ej || Map_GetCell(SPMAP, i, y_max + 1) == COST_HIGH)) {
+									blocked_max = true;
+								}
+							}
+						}
+						if (blocked_min == false) {
+							y_min--;
+						}
+						if (blocked_max == false) {
+							y_max++;
+						}
+					}
+
+					printf("%s %d: y_min: %d\ty_max: %d\n", __FUNCTION__, __LINE__, y_min, y_max);
+					if (y != (y_min + y_max) / 2) {
+						it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
+					}
+				}
+
+				it++;
+			}
+		}
+
+		path_display_path_points();
+
+#endif
+
 		if (path_points.size() > 1) {
 			i = 0;
 			for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end() && i <= 1; ++it, ++i) {
@@ -1606,6 +1684,14 @@ list<Point16_t> *path_get_path_points()
 void path_reset_path_points()
 {
 	path_points.clear();
+}
+
+void path_display_path_points()
+{
+	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
+		printf("(%d, %d)->", it->X, it->Y);
+	}
+	printf("\n\n");
 }
 
 #endif
