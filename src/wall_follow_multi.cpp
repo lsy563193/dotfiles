@@ -668,12 +668,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Start_Pose_Y =  robot::instance()->robot_get_position_y();
 		First_Time_Flag = 1;
 		while (ros::ok()) {
-				/*
-				   if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME || escape_thread_running == false) {
-				   printf("%s %d: quit due to %s\n", __FUNCTION__, __LINE__, escape_thread_running == false ? "thread exit" : "timeout");
-				   break;
-				   }
-				 */
+
+				//if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME || escape_thread_running == false) {
+				if ((time(NULL) - escape_trapped_timer) > 1200) {
+						ROS_INFO("Wall Follow time longer than 20 minutes");
+						ROS_INFO("time now : %d", (int(time(NULL)) - escape_trapped_timer));
+						WF_End_Wall_Follow();
+						break;
+				}
+
 #if 0
 				/*-------------------------------------------------Start Pose Check------------------------------*/
 				if (First_Time_Flag == 0){
@@ -703,7 +706,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 #endif
 				//ROS_INFO("Distance_From_Start = %f", Distance_From_Start);
-
+				//ROS_INFO("time now : %d", int(time(NULL)));
 				/*------------------------------------WF_Map_Update---------------------------------------------------*/
 				//WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
@@ -1814,10 +1817,6 @@ uint8_t WF_End_Wall_Follow(void){
 		}
 
 		/***************************2.2-1 Go Home End***************************/
-
-
-
-
 
 		/*****************************************Release Memory************************************/
 		Wall_Follow_Stop_Slam();
