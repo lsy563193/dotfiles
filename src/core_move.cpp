@@ -1515,7 +1515,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 #endif
 	} else {
 		printf("%s %d Robot don't need to go to new line.%d %d %d\n", __FUNCTION__, __LINE__, y_coordinate, SHRT_MAX, SHRT_MIN);
-		if (!(y_coordinate == SHRT_MAX || y_coordinate == SHRT_MIN)) {
+		if (!(countToCell(Next_Point->X) == SHRT_MAX || countToCell(Next_Point->X) == SHRT_MIN)) {
 			y_coordinate = countToCell(Target_Point.Y);
 			if (y_coordinate != Map_GetYPos()) {
 
