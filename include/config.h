@@ -268,7 +268,7 @@
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 /* Continue cleaning voltage value */
-#define CONTINUE_CLEANING_VOLTAGE	(1600)
+#define CONTINUE_CLEANING_VOLTAGE	(1530)
 #endif
 
 /* ------------------------------------- Path Planning Map ------------------------------------- */
