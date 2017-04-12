@@ -50,10 +50,14 @@ void Charge_Function(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (robot::instance()->Is_Cleaning_Paused())
 		{
-			if (bat_v > CONTINUE_CLEANING_VOLTAGE)
+			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
 			{
 				Bat_Enough_To_Continue_Cleaning_Counter++;
 				//ROS_INFO("Bat_Enough_To_Continue_Cleaning_Counter = %d.", Bat_Enough_To_Continue_Cleaning_Counter);
+			}
+			else
+			{
+				Bat_Enough_To_Continue_Cleaning_Counter = 0;
 			}
 
 			if (Bat_Enough_To_Continue_Cleaning_Counter > 500)// About 10 seconds.
@@ -65,7 +69,7 @@ void Charge_Function(void)
 		}
 #endif
 		ROS_DEBUG_NAMED("charger"," Loop for charger mode,voltage %f.",bat_v/100.0);
-		if(Show_Batv_Counter > 100)
+		if(Show_Batv_Counter > 250)
 		{
 			ROS_INFO(" Loop for charger mode,voltage %f.",bat_v/100.0);
 			Show_Batv_Counter = 0;
