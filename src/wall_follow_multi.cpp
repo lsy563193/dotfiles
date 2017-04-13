@@ -767,13 +767,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						break;
 				}
 				/*
-				   if (Get_Rcon_Remote()) {
+				   if (Remote_Key(Remote_All) {
 				   printf("Rcon\n");
 				   Reset_Touch();
 				   Set_Clean_Mode(Clean_Mode_Userinterface);
 				   break;
 				   }*/
-				if (Get_Rcon_Remote()) {
+				if (Remote_Key(Remote_All)) {
 						printf("Rcon\n");
 						if(Is_MoveWithRemote())
 						{

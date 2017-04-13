@@ -93,7 +93,7 @@ void Spot_Mode(void)
 			Motor_OC_Counter = 0;
 		}
 
-		if (Get_Rcon_Remote()) {
+		if (Remote_Key(Remote_All)) {
 			if(Is_MoveWithRemote())
 			{
 				if (Remote_Key(Remote_Wall_Follow)) {
@@ -163,7 +163,7 @@ void Spot_Mode(void)
 			Motor_OC_Counter = 0;
 		}
 
-		if (Get_Rcon_Remote()) {
+		if (Remote_Key(Remote_All)) {
 			if(Is_MoveWithRemote())
 			{
 				/*if (Remote_Key(Remote_Random)) {
@@ -388,7 +388,7 @@ uint8_t Random_Dirt_Event(void)
 			}
 		}
 
-		if (Get_Rcon_Remote() != 0) {
+		if (Remote_Key(Remote_All)) {
 			//Main_Brush_PWM = MainBrush_Power;
 			Move_Forward(30, 30);
 			return 0;

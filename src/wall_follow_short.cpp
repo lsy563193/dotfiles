@@ -160,12 +160,12 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		{
 			Switch_VacMode();
 		}
-		else if(Get_Rcon_Remote()!=0)
+		else if(Remote_Key(Remote_All))
 		{
 			break;
 		}
 		#else
-		if(Get_Rcon_Remote()!=0)
+		if(Remote_Key(Remote_All))
 		{
 			break;
 		}

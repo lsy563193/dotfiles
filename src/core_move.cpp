@@ -2749,7 +2749,7 @@ MapTouringType CM_handleExtEvent()
 	}
 
 	/* Check remote events. */
-	if (Get_Rcon_Remote() != 0) {
+	if (Remote_Key(Remote_All)) {
 		/* Check remote home key press event, if home key is pressed, go home directly. */
 		if (Remote_Key(Remote_Home) && (go_home == 0)) {
 			Set_BLDC_Speed(Vac_Speed_NormalL);

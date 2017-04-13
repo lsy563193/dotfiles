@@ -1195,27 +1195,14 @@ uint32_t Get_Rcon_Status(){
 }
 
 /*----------------------------------------Remote--------------------------------*/
-uint8_t Is_Remote(void)
+uint8_t Remote_Key(uint8_t key)
 {
-	if(Get_Rcon_Remote())
-	{
-		return 1;
-	}
-	return 0;
-}
-
-uint32_t Get_Rcon_Remote(void)
-{
+	// Debug
 	//if (Remote_Status > 0)
 	//{
-	//	ROS_INFO("Remote_Status = %x.", Remote_Status);
+	//	ROS_INFO("Remote_Status = %x", Remote_Status);
 	//}
-	return Remote_Status;
-}
-
-uint8_t Remote_Key(uint32_t key)
-{
-	if(Get_Rcon_Remote() == key)
+	if(Remote_Status & key)
 		return 1;
 	else
 		return 0;
@@ -1658,12 +1645,16 @@ uint8_t Is_virtualWall(void){
 	return 0;
 }
 
-uint8_t Is_Turn_Remote(void){
-	uint32_t rectrl = Get_Rcon_Remote();
-	if(rectrl == Remote_Max)return 1;
-	else if(rectrl == Remote_Home)return 1;
-	else if(rectrl == Remote_Spot)return 1;
-	else return 0;	
+uint8_t Is_Turn_Remote(void)
+{
+	if (Remote_Key(Remote_Max | Remote_Home | Remote_Spot))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 uint8_t Get_Direction_Flag(void)
