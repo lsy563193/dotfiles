@@ -36,6 +36,7 @@ void *core_move_thread(void *)
 		usleep(20000);
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
+				ROS_INFO("\n-------User_Interface mode------\n");
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
@@ -43,6 +44,7 @@ void *core_move_thread(void *)
 				Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 				break;
 			case Clean_Mode_RandomMode:
+				ROS_INFO("\n-------Random_Running mode------\n");
 				Random_Running_Mode();
 				break;
 			case Clean_Mode_Navigation:
@@ -54,14 +56,17 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1750);
 					Turn_Left(10, 1000);
 				*/
+				ROS_INFO("\n-------Navigation mode------\n");
 				CM_Touring();
 				//Set_Clean_Mode(Clean_Mode_GoHome);
 				break;
 			case Clean_Mode_Charging:
+				ROS_INFO("\n-------Charge mode------\n");
 				Charge_Function();
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();
+				ROS_INFO("\n-------GoHome mode------\n");
 #if Random_Find_Charger_Stub
 				HomeStraight_Mode();
 #else
@@ -73,9 +78,11 @@ void *core_move_thread(void *)
 
 				break;
 			case Clean_Mode_Remote:
+				ROS_INFO("\n-------Remote mode------\n");
 				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:
+				ROS_INFO("\n-------Spot mode------\n");
 				Spot_Mode();
 				Disable_Motors();
 				usleep(200000);
@@ -86,6 +93,7 @@ void *core_move_thread(void *)
 
 				break;
 			case Clean_Mode_Sleep:
+				ROS_INFO("\n-------Sleep mode------\n");
 				Disable_Motors();
 //				while(ros::ok()){
 //					usleep(10000);
