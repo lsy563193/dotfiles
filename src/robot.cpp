@@ -127,8 +127,11 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->visual_wall = msg->visual_wall;
 
-	if(msg->ir_ctrl>0)
-		this->ir_ctrl = msg->ir_ctrl;
+	this->ir_ctrl = msg->ir_ctrl;
+	if (this->ir_ctrl > 0)
+	{
+		Set_Rcon_Remote(this->ir_ctrl);
+	}
 
 	this->charge_stub = msg->c_stub;//charge stub signal
 	Rcon_Status |= this->charge_stub;
@@ -572,12 +575,7 @@ uint8_t robot::robot_get_ir_ctrl()
 {
 	return  this->ir_ctrl;
 }
-void robot::robot_set_ir_cmd(uint8_t cmd)
-{
-	if(cmd>0xff)
-		return;
-	this->ir_ctrl = cmd;
-}
+
 float robot::robot_get_lwheel_current()
 {
 	return this->lw_crt;
