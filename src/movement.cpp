@@ -1212,26 +1212,36 @@ uint32_t Get_Rcon_Remote(void)
 	{
 		ROS_INFO("%s: ir_cmd = %x.", __FUNCTION__, ir_cmd);
 	}
-	if(ir_cmd == 0x80)
+	if(ir_cmd == Remote_Forward)
 		return Remote_Forward;
-	else if(ir_cmd == 0x40)
+	else if(ir_cmd == Remote_Left)
 		return Remote_Left;
-	else if(ir_cmd == 0x20)
+	else if(ir_cmd == Remote_Right)
 		return Remote_Right;
-	else if(ir_cmd == 0x10)
+	else if(ir_cmd == Remote_Max)
 		return Remote_Max;
-	else if(ir_cmd == 0x08)
+	else if(ir_cmd == Remote_Backward)
+		return Remote_Backward;
+	else if(ir_cmd == Remote_Clean)
 		return Remote_Clean;
-	else if(ir_cmd == 0x04)
+	else if(ir_cmd == Remote_Home)
 		return Remote_Home;
-	else if(ir_cmd == 0x02)
+	else if(ir_cmd == Remote_Wall_Follow)
 		return Remote_Wall_Follow;
-	else if(ir_cmd == 0x01)
+	else if(ir_cmd == Remote_Spot)
 		return Remote_Spot;
 	else 
 		return 0;
 }
 
+uint8_t Remote_Key(uint32_t key)
+{
+	if(Get_Rcon_Remote() == key)
+		return 1;
+	else
+		return 0;
+
+}
 void Set_Rcon_Remote(uint8_t cmd)
 {
 	robot::instance()->robot_set_ir_cmd(cmd);
@@ -1369,15 +1379,7 @@ uint8_t Get_RightBrush_Stall(void)
 }
 
 
-uint8_t Remote_Key(uint32_t key)
-{
-	
-	if(Get_Rcon_Remote() == key)
-		return 1;
-	else
-		return 0;
 
-}
 
 uint8_t Get_Touch_Status(void)
 {
