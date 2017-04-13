@@ -100,7 +100,7 @@ void Charge_Function(void)
 			break;
 		}
 		/*----------------------------------------------------Check Key---------------------*/
-		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean
+		if(Get_Key_Press() & KEY_CLEAN)//							Check Key Clean
 		{
 			Beep(5, 20, 0, 1);
 //			Reset_Error_Code();
@@ -117,7 +117,7 @@ void Charge_Function(void)
 				break;
 			}
 		}
-		/*if(Remote_Key(Remote_Random))//                                       Check Remote Key Clean
+		/*if(Remote_Key(Remote_Random))//							Check Remote Key Clean
 		{
 			set_stop_charge();
 			Reset_Rcon_Remote();
@@ -159,7 +159,7 @@ void Charge_Function(void)
 //		if(Is_Alarm())
 //		{
 //			Reset_Alarm();
-//      		if(Is_AtHomeBase())
+//			if(Is_AtHomeBase())
 //			{
 //				Set_VacMode(Vac_Normal);
 //				Set_Room_Mode(Room_Mode_Large);
@@ -194,17 +194,17 @@ void Charge_Function(void)
 		}
 		#endif
 
-  }
+	}
 }
 
 /*----------------------------------------------------------------GO Home  ----------------*/
 void GoHome(void)
 {
-	uint32_t Receive_Code=0;
+	uint32_t Receive_Code = 0;
 //	Move_Forward(9,9);
 //  Set_SideBrush_PWM(30,30);
 //  Set_MainBrush_PWM(30);
-//	Display_Home_LED();
+	//Display_Home_LED();
 	Reset_Rcon_Status();
 	//delay(1500);
 
@@ -231,71 +231,11 @@ void GoHome(void)
 
 	// Save the start angle.
 	Last_Angle = Gyro_GetAngle(0);
-
 	while(Gyro_Step < 3600)
 	{
 		Receive_Code = Get_Rcon_Status();
 		Reset_Rcon_Status();
-		if(Receive_Code&RconFR_HomeT)//fr ht
-		{
-			ROS_INFO("Start with FR-T.");
-			//Turn_Left(Turn_Speed,1000);
-			Turn_Left(Turn_Speed,300);
-			Stop_Brifly();
-			Around_ChargerStation(0);
-			return;
-		}
-		if(Receive_Code&RconFL_HomeT)//fl ht
-		{
-			ROS_INFO("Start with FL-T.");
-			//Turn_Right(Turn_Speed,1000);
-			Turn_Right(Turn_Speed,300);
-			Stop_Brifly();
-			Around_ChargerStation(1);
-			return;
-		}
-		if(Receive_Code&RconL_HomeT)//l t
-		{
-			ROS_INFO("Start with L-T.");
-			Turn_Right(Turn_Speed,1200);
-			Stop_Brifly();
-			Around_ChargerStation(1);
-			return;
-		}
-		if(Receive_Code&RconR_HomeT)//r t
-		{
-			ROS_INFO("Start with R-T.");
-			Turn_Left(Turn_Speed,1200);
-			Stop_Brifly();
-			Around_ChargerStation(0);
-			return;
-		}
-		if(Receive_Code&RconR_HomeR)//r t
-		{
-			ROS_INFO("Start with R-R.");
-			//Turn_Right(Turn_Speed,1200);
-			//Stop_Brifly();
-			Around_ChargerStation(0);
-			return;
-		}
-		if(Receive_Code&RconL_HomeL)//r t
-		{
-			ROS_INFO("Start with L-L.");
-			//Turn_Right(Turn_Speed,1200);
-			//Stop_Brifly();
-			Around_ChargerStation(1);
-			return;
-		}
-		/*-----------------------------------------*/
-		if(Receive_Code&RconFR_HomeL)//r t
-		{
-			ROS_INFO("Start with FR-L.");
-			Turn_Right(Turn_Speed,900);
-			Stop_Brifly();
-			Around_ChargerStation(1);
-			return;
-		}
-		if(Receive_Code&RconFL_HomeR)//r t
+		if(Receive_Code&RconFL_HomeR)//FL H_R
 		{
 			ROS_INFO("Start with FL-R.");
 			Turn_Left(Turn_Speed,900);
@@ -303,8 +243,16 @@ void GoHome(void)
 			Around_ChargerStation(0);
 			return;
 		}
-		/*-----------------------------------------*/
-		if(Receive_Code&RconFL_HomeL)//r t
+		if(Receive_Code&RconFR_HomeL)//FR H_L
+		{
+			ROS_INFO("Start with FR-L.");
+			Turn_Right(Turn_Speed,900);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+
+		if(Receive_Code&RconFL_HomeL)//FL H_L
 		{
 			ROS_INFO("Start with FL-L.");
 			Turn_Right(Turn_Speed,900);
@@ -312,7 +260,7 @@ void GoHome(void)
 			Around_ChargerStation(1);
 			return;
 		}
-		if(Receive_Code&RconFR_HomeR)//r t
+		if(Receive_Code&RconFR_HomeR)//FR H_R
 		{
 			ROS_INFO("Start with FR-R.");
 			Turn_Left(Turn_Speed,900);
@@ -320,108 +268,168 @@ void GoHome(void)
 			Around_ChargerStation(0);
 			return;
 		}
-
-		//if((Receive_Code&0x000000ff))// infront of : straight
-		if((Receive_Code&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR)))// infront of : straight
+		if(Receive_Code&RconFL2_HomeR)//FL2 H_R
 		{
-			//Receive_Code&=0x000000ff;
-			Receive_Code&=(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR);
-			ROS_INFO("Start switch.");
-			switch(Receive_Code)
-			{
-				//case 0x00000008:Turn_Right(20,900);break;//		if(Receive_Code==RconFR_HomeL)
-				case RconFR_HomeL:
-					Turn_Right(20,900);
-					break;//		if(Receive_Code==RconFR_HomeL)
-			    //case 0x00000010:Turn_Left(20,900);break;//		if(Receive_Code==RconFL_HomeR)
-			    case RconFL_HomeR:
-					Turn_Left(20,900);
-					break;//		if(Receive_Code==RconFL_HomeR)
-				//case 0x0000000c:Turn_Right(20,400);break;//		if(Receive_Code==(RconFR_HomeR|RconFR_HomeL))
-				case (RconFR_HomeL|RconFR_HomeR):
-					Turn_Right(20,400);
-					break;//		if(Receive_Code==(RconFR_HomeR|RconFR_HomeL))
-				//case 0x00000030:Turn_Left(20,400);break;//		if(Receive_Code==(RconFL_HomeR|RconFL_HomeL))
-				case (RconFL_HomeL|RconFL_HomeR):
-					Turn_Left(20,400);
-					break;//		if(Receive_Code==(RconFL_HomeR|RconFL_HomeL))
-				//case 0x00000014:Turn_Left(20,700);break;//		if(Receive_Code==(RconFL_HomeR|RconFR_HomeR))
-				case (RconFL_HomeR|RconFR_HomeR):
-					Turn_Left(20,700);
-					break;//		if(Receive_Code==(RconFL_HomeR|RconFR_HomeR))
-				//case 0x00000028:Turn_Right(20,700);break;//		if(Receive_Code==(RconFL_HomeL|RconFR_HomeL))
-				case (RconFL_HomeL|RconFR_HomeL):
-					Turn_Right(20,700);
-					break;//		if(Receive_Code==(RconFL_HomeL|RconFR_HomeL))
-				//case 0x00000020:Turn_Right(20,700);break;//		if(Receive_Code==RconFL_HomeL)
-				case RconFL_HomeL:
-					Turn_Right(20,700);
-					break;//		if(Receive_Code==RconFL_HomeL)
-				//case 0x00000004:Turn_Left(20,700);break;//		if(Receive_Code==RconFR_HomeR)
-				case RconFR_HomeR:
-					Turn_Left(20,700);
-					break;//		if(Receive_Code==RconFR_HomeR)
-				//case 0x0000002c:Turn_Right(20,700);break;//		if(Receive_Code==(RconFR_HomeL|RconFL_HomeL|RconFR_HomeR))
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
-					Turn_Right(20,700);
-					break;//		if(Receive_Code==(RconFR_HomeL|RconFL_HomeL|RconFR_HomeR))
-				//case 0x00000034:Turn_Left(20,700);break;//		if(Receive_Code==(RconFR_HomeR|RconFL_HomeR|RconFL_HomeL))
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
-					Turn_Left(20,700);
-					break;//		if(Receive_Code==(RconFR_HomeR|RconFL_HomeR|RconFL_HomeL))
-				//case 0x00000001:Turn_Left(20,700);break;//		if(Receive_Code==(RconFR_HomeR|RconFL_HomeR|RconFL_HomeL))
-				//case 0x00000002:Turn_Right(20,1300);break;//		if(Receive_Code==(RconR_HomeL))
-				case RconR_HomeL:
-					Turn_Right(20,1300);
-					break;//		if(Receive_Code==(RconR_HomeL))
-				//case 0x00000040:Turn_Left(20,1300);break;//		if(Receive_Code==(RconL_HomeR))
-				case RconL_HomeR:
-					Turn_Left(20,1300);
-					break;//		if(Receive_Code==(RconL_HomeR))
-				//case 0x00000080:Turn_Left(20,700);break;//		if(Receive_Code==(RconFR_HomeR|RconFL_HomeR|RconFL_HomeL))
-				default:
-					Turn_Right(20,900);
-					break;
-			}
-			Stop_Brifly();
-			//Move_Forward(10,10);
-			By_Path();
-			return;
-		}
-		//if((Receive_Code&0x3000))//br hlr
-		if(Receive_Code&(RconBR_HomeL|RconBR_HomeR))//br hlr
-		{
-			ROS_INFO("Start with BR-LR.");
-			Turn_Right(30,900);
-			Stop_Brifly();
-			By_Path();
-			return;
-		}
-		//if((Receive_Code&0x30000))//bl hlr
-		if(Receive_Code&(RconBL_HomeL|RconBL_HomeR))//bl hlr
-		{
-			ROS_INFO("Start with BL-LR.");
-			Turn_Left(30,900);
-			Stop_Brifly();
-			By_Path();
-			return;
-		}
-		if((Receive_Code&RconBL_HomeT))//bl hlr
-		{
-			ROS_INFO("Start with BL-T.");
-			Turn_Left(30,1300);
+			ROS_INFO("Start with FL2-R.");
+			Turn_Left(Turn_Speed,850);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			//By_Path();
 			return;
 		}
-		if((Receive_Code&RconBR_HomeT))//bl hlr
+		if(Receive_Code&RconFR2_HomeL)//FR2 H_L
 		{
-			ROS_INFO("Start with BR-T.");
-			Turn_Right(30,1300);
+			ROS_INFO("Start with FR2-L.");
+			Turn_Right(Turn_Speed,850);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			//By_Path();
+			return;
+		}
+
+		if(Receive_Code&RconFL2_HomeL)//FL2 H_L
+		{
+			ROS_INFO("Start with FL2-L.");
+			Turn_Right(Turn_Speed,600);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+		if(Receive_Code&RconFR2_HomeR)//FR2 H_R
+		{
+			ROS_INFO("Start with FR2-R.");
+			Turn_Left(Turn_Speed,600);
+			Stop_Brifly();
+			Around_ChargerStation(0);
+			return;
+		}
+
+		if(Receive_Code&RconL_HomeL)// L  H_L
+		{
+			ROS_INFO("Start with L-L.");
+			Around_ChargerStation(1);
+			return;
+		}
+		if(Receive_Code&RconR_HomeR)// R  H_R
+		{
+			ROS_INFO("Start with R-R.");
+			Around_ChargerStation(0);
+			return;
+		}
+
+		if(Receive_Code&RconL_HomeR)// L  H_R
+		{
+			ROS_INFO("Start with L-R.");
+			Turn_Left(Turn_Speed,1500);
+			Around_ChargerStation(0);
+			return;
+		}
+		if(Receive_Code&RconR_HomeL)// R  H_L
+		{
+			ROS_INFO("Start with R-L.");
+			Turn_Right(Turn_Speed,1500);
+			Around_ChargerStation(1);
+			return;
+		}
+/*--------------------------HomeT-----------------*/
+		if(Receive_Code&RconFL_HomeT)//FL H_T
+		{
+			ROS_INFO("Start with FL-T.");
+			Turn_Right(Turn_Speed,600);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+		if(Receive_Code&RconFR_HomeT)//FR H_T
+		{
+			ROS_INFO("Start with FR-T.");
+			Turn_Right(Turn_Speed,800);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+
+		if(Receive_Code&RconFL2_HomeT)//FL2 H_T
+		{
+			ROS_INFO("Start with FL2-T.");
+			Turn_Right(Turn_Speed,600);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+		if(Receive_Code&RconFR2_HomeT)//FR2 H_T
+		{
+			ROS_INFO("Start with FR2-T.");
+			Turn_Right(Turn_Speed,800);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+
+		if(Receive_Code&RconL_HomeT)// L  H_T
+		{
+			ROS_INFO("Start with L-T.");
+			Turn_Right(Turn_Speed,1200);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+		if(Receive_Code&RconR_HomeT)// R  H_T
+		{
+			ROS_INFO("Start with R-T.");
+			Turn_Right(Turn_Speed,1200);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+
+/*--------------BL BR---------------------*/
+		if((Receive_Code&RconBL_HomeL))//BL H_L    //OK
+		{
+			ROS_INFO("Start with BL-L.");
+			Turn_Left(30,800);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+		if((Receive_Code&RconBR_HomeR))//BR H_L R  //OK
+		{
+			ROS_INFO("Start with BR-R.");
+			Turn_Right(30,800);
+			Stop_Brifly();
+			Around_ChargerStation(0);
+			return;
+		}
+
+		if((Receive_Code&RconBL_HomeR))//BL H_R
+		{
+			ROS_INFO("Start with BL-R.");
+			Turn_Left(30,800);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+		if((Receive_Code&RconBR_HomeL))//BL H_L R
+		{
+			ROS_INFO("Start with BR-L.");
+			Turn_Right(30,800);
+			Stop_Brifly();
+			Around_ChargerStation(0);
+			return;
+		}
+
+		if((Receive_Code&RconBL_HomeT))//BL H_T
+		{
+			ROS_INFO("Start with BL-T.");
+			Turn_Left(30,300);
+			Stop_Brifly();
+			Around_ChargerStation(1);
+			return;
+		}
+		if((Receive_Code&RconBR_HomeT))//BR H_T
+		{
+			ROS_INFO("Start with BR-T.");
+			Turn_Right(30,300);
+			Stop_Brifly();
+			Around_ChargerStation(0);
 			return;
 		}
 		usleep(50000);
@@ -443,25 +451,26 @@ void GoHome(void)
 	{
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 	}
+
 }
 
 void Around_ChargerStation(uint8_t Dir)
 {
-// Dir == 0 means robot is at the right side of the charger stub.
-// Dir == 1 means robot is at the left side of the charger stub.
-//  uint32_t Temp_Steps=0;
+//	uint32_t Temp_Steps=0;
 	uint8_t Temp_Position=0;
-	//uint8_t Mobility_Temp_Error=0;
-	//uint32_t Temp_Mobility_Distance=0;
+//	uint8_t Mobility_Temp_Error=0;
+//	uint32_t Temp_Mobility_Distance=0;
 	uint32_t Temp_Rcon_Status=0;
 	uint8_t Signal_Counter=0;
 	uint32_t No_Signal_Counter=0;
 	uint32_t N_Around_LRSignal=0;
 	uint8_t Bumper_Counter=0;
+	static uint8_t LLSignal_Count = 0,RRSignal_Count = 0, RTSignal_Count = 0,LTSignal_Count = 0;
 	Move_Forward(9,9);
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
 	Set_BLDC_Speed(Vac_Speed_NormalL);
+	//delay(500);
 	Reset_Rcon_Status();
 //	Display_Home_LED();
 	Reset_Wheel_Step();
@@ -478,21 +487,21 @@ void Around_ChargerStation(uint8_t Dir)
 //		{
 //			if((Get_Move_Distance()-Temp_Mobility_Distance)>500)
 //			{
-//			  Temp_Mobility_Distance = Get_Move_Distance();
-//			  if(Get_Mobility_Step()<1)
-//			  {
-//			    Mobility_Temp_Error++;
-//			    if(Mobility_Temp_Error>3)
-//			    {
-//			      Set_Clean_Mode(Clean_Mode_GoHome);
-//			      return;
-//			    }
-//			  }
-//			  else
-//			  {
-//			    Mobility_Temp_Error=0;
-//			  }
-//			  Reset_Mobility_Step();
+//				Temp_Mobility_Distance = Get_Move_Distance();
+//				if(Get_Mobility_Step()<1)
+//				{
+//					Mobility_Temp_Error++;
+//					if(Mobility_Temp_Error>3)
+//					{
+//						Set_Clean_Mode(Clean_Mode_GoHome);
+//						return;
+//					}
+//				}
+//				else
+//				{
+//					Mobility_Temp_Error=0;
+//				}
+//				Reset_Mobility_Step();
 //			}
 //		}
 
@@ -509,8 +518,8 @@ void Around_ChargerStation(uint8_t Dir)
 			return;
 		}
 
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect() || Remote_Key(Remote_Clean))
+//		/*------------------------------------------------------Touch and Remote event-----------------------*/
+		if(Touch_Detect())
 		{
 			Stop_Brifly();
 			if (Touch_Detect())
@@ -538,7 +547,6 @@ void Around_ChargerStation(uint8_t Dir)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
 		}
-		/*------------------------------------------------------Low battery event-----------------------*/
 		if(GetBatteryVoltage()<Low_Battery_Limit)
 		{
 			Display_Battery_Status(Display_Low);
@@ -550,7 +558,6 @@ void Around_ChargerStation(uint8_t Dir)
 
 //		if(Home_Check_Current())return;
 
-		/*------------------------------------------------------Bumper event-----------------------*/
 		if(Get_Bumper_Status())
 		{
 			Bumper_Counter++;
@@ -561,7 +568,8 @@ void Around_ChargerStation(uint8_t Dir)
 				if(Get_Bumper_Status())
 				{
 					// Bumper jamed.
-					while (Get_Bumper_Status()){
+					while (Get_Bumper_Status())
+					{
 						// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
 						Beep(3, 25, 0, 1);
 						usleep(2000000);
@@ -585,8 +593,8 @@ void Around_ChargerStation(uint8_t Dir)
 			Dir = 1-Dir;
 			if(Bumper_Counter>1)
 			{
-			  Set_Clean_Mode(Clean_Mode_GoHome);
-			  return ;
+				Set_Clean_Mode(Clean_Mode_GoHome);
+				return ;
 			}
 			//Reset_Wheel_Step();
 			No_Signal_Counter=0;
@@ -605,103 +613,154 @@ void Around_ChargerStation(uint8_t Dir)
 			{
 				Beep(1, 25, 75, 3);
 				ROS_INFO("No charger signal received.");
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				//Set_Clean_Mode(Clean_Mode_GoHome);
-				return;
+				Set_Clean_Mode(Clean_Mode_GoHome);
+				return ;
 			}
-			//Display_TM1618(No_Signal_Counter,0);
 		}
 		/*
 		if(Temp_Rcon_Status&0x4000)
 		{
-		  Turn_Right(30,2200);
-		  Move_Forward(10,10);
-		  Dir=1-Dir;
+			Turn_Right(30,2200);
+			Move_Forward(10,10);
+			Dir=1-Dir;
 		}*/
-
 		ROS_INFO("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, Dir);
-		if(Dir == 1)//10.30
+		if(Dir == 1)//10.30  ×ó±ß£¬ÄæÊ±Õë
 		{
-			//if(Get_RightWheel_Step()>20000)
-			//{
-			//	Stop_Brifly();
-			//	Turn_Right(Turn_Speed,2200);
-			//	Set_Clean_Mode(Clean_Mode_GoHome);
-			//	return ;
-			//}
+//			if(Get_RightWheel_Step()>20000)
+//			{
+//				Stop_Brifly();
+//				Turn_Right(Turn_Speed,2200);
+//				Set_Clean_Mode(Clean_Mode_GoHome);
+//				return ;
+//			}
 
-			// If still detects HomeT or HomeL, keep rounding to adjust the pose.
-			if(Temp_Rcon_Status&RconL_HomeT)
+			if(Temp_Rcon_Status&RconL_HomeT)  //L_T
 			{
-				ROS_INFO("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
-				Move_Forward(30,4);
-				//delay(1000);
+//				if((++LTSignal_Count)>=3)
+//				{
+//					LTSignal_Count = 0;
+//					LLSignal_Count = 0;
+					ROS_INFO("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
+					Move_Forward(19,5);
+//					Uniform_Forward(32,22);	//OK(19,5)
+//					Delay_Arounding(50);
+					usleep(100000);
+//				}
+			}
+			else if(Temp_Rcon_Status&RconL_HomeL)  //L_L  9 18
+			{
+//				if((++LLSignal_Count)>=3)
+//				{
+//					LLSignal_Count = 0;
+					ROS_INFO("%s, %d: Detect L-L.", __FUNCTION__, __LINE__);
+					Move_Forward(19,5);
+//					Uniform_Forward(28,22);
+//					Delay_Arounding(50);
+					usleep(100000);
+//				}
+			}
+			else if(Temp_Rcon_Status&RconL_HomeR)  //L_R  9 18
+			{
+				ROS_INFO("%s, %d: Detect L-R.", __FUNCTION__, __LINE__);
+				Move_Forward(17,9);
+//				Uniform_Forward(25,10);
+//				Delay_Arounding(100);
 				usleep(100000);
 			}
-			else if(Temp_Rcon_Status&RconL_HomeL)
+			else if(Temp_Rcon_Status&RconFL2_HomeT)  //FL2_T
 			{
-				ROS_INFO("%s, %d: Detect L-L.", __FUNCTION__, __LINE__);
-				Move_Forward(16,12);
-				//delay(1000);
+				ROS_INFO("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
+				Move_Forward(16,19);
+//				Uniform_Forward(25,10);
+//				Delay_Arounding(100);
 				usleep(100000);
 			}
-			else if(Temp_Rcon_Status&RconFL_HomeL)
+			else if(Temp_Rcon_Status&RconFL2_HomeL)  //FL_HL
+			{
+				ROS_INFO("%s, %d: Detect FL2-L.", __FUNCTION__, __LINE__);
+				Move_Forward(15,11);
+//				Uniform_Forward(25,10);
+//				Delay_Arounding(100);
+				usleep(100000);
+			}
+			else  if(Temp_Rcon_Status&RconFL2_HomeR)//FL2_HR
+			{
+				ROS_INFO("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
+				Move_Forward(9,15);
+//				Uniform_Forward(25,10);
+//				Delay_Arounding(100);
+				usleep(100000);
+			}
+			else if(Temp_Rcon_Status&RconFL_HomeL)	//FR_HL
 			{
 				ROS_INFO("%s, %d: Detect FL-L.", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
+//				Stop_Brifly();
 				Turn_Right(Turn_Speed,500);
 				Move_Forward(5,5);
 			}
-			else if(Temp_Rcon_Status&RconFL_HomeT)
+			else if(Temp_Rcon_Status&RconFL_HomeR)   //FR_HL
+			{
+				ROS_INFO("%s, %d: Detect FL-R.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
+				Turn_Left(Turn_Speed,600);
+				Move_Forward(5,5);
+			}
+			else if(Temp_Rcon_Status&RconFL_HomeT)   //FR_HT
 			{
 				ROS_INFO("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
+//				Stop_Brifly();
 				Turn_Right(Turn_Speed,500);
 				Move_Forward(5,5);
 			}
-			else if(Temp_Rcon_Status&RconFR_HomeT)
+			else if(Temp_Rcon_Status&RconFR_HomeT)   //R_HT
 			{
 				ROS_INFO("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
+//				Stop_Brifly();
 				Turn_Right(Turn_Speed,800);
 				Move_Forward(5,5);
 			}
-			else if(Temp_Rcon_Status&RconR_HomeT)
+			else if(Temp_Rcon_Status&RconFR2_HomeT) //FR2_T //OK
+			{
+				ROS_INFO("%s, %d: Detect FR2-T.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
+				Turn_Right(Turn_Speed,900);
+				Move_Forward(5,5);
+			}
+			else if(Temp_Rcon_Status&RconR_HomeT)  //OK
 			{
 				ROS_INFO("%s, %d: Detect R-T.", __FUNCTION__, __LINE__);
-				//Stop_Brifly();
-				Turn_Right(Turn_Speed,1000);
+//				Stop_Brifly();
+				Turn_Right(Turn_Speed,1100);
 				Move_Forward(5,5);
+				Dir = 0;
 			}
 			else
 			{
 				ROS_INFO("%s, %d: Else.", __FUNCTION__, __LINE__);
-				Move_Forward(6,30);
+				Move_Forward(16,34);  //0K (16,35)    1100
+//				Uniform_Forward(14,31);
+//				Delay_Arounding(110);
+				usleep(100000);
 			}
 
-			// Once detects HomeR, robot should be at the right pose infront of the charge stub.
 			if(Temp_Rcon_Status&(RconFR_HomeR))
 			{
 				ROS_INFO("%s, %d: Detect FR-R, call By_Path().", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
-				//Turn_Left(Turn_Speed,300);
+//				Stop_Brifly();
 				By_Path();
 				return;
 			}
 			if(Temp_Rcon_Status&(RconFL_HomeR))
 			{
-				ROS_INFO("%s %d Detect FL-R, call By_Path()", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
-				Turn_Left(Turn_Speed,300);
+				ROS_INFO("%s, %d: Detect FL-R, call By_Path().", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
 				By_Path();
 				return;
 			}
-			//if(Temp_Rcon_Status&(RconL_HomeR))
-			if(Temp_Rcon_Status&(RconBL_HomeR))
+			if(Temp_Rcon_Status&(RconL_HomeR))
 			{
-				// Maybe over go a little bit, turn around and check if at the front of charge stub.
-				//ROS_INFO("%s %d Detect L-R.", __FUNCTION__, __LINE__);
-				ROS_INFO("%s %d Detect BL-R.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s, %d: Detect L-R, call By_Path().", __FUNCTION__, __LINE__);
 				Signal_Counter++;
 				N_Around_LRSignal=0;
 				if(Signal_Counter>0)
@@ -711,11 +770,12 @@ void Around_ChargerStation(uint8_t Dir)
 					Stop_Brifly();
 					Temp_Position = Check_Position(Round_Left);
 					ROS_INFO("%s %d Check position return %d.", __FUNCTION__, __LINE__, Temp_Position);
+					Stop_Brifly();
 					if(Temp_Position==1)
 					{
-						//Reset_Error_Code();
-						// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-						Set_Touch();
+//						Reset_Error_Code();
+//						SetDisplayError(Error_Code_None);
+//						Reset_Touch();
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						return;
@@ -740,85 +800,142 @@ void Around_ChargerStation(uint8_t Dir)
 		}
 		else//30.10
 		{
-			//if(Get_LeftWheel_Step()>20000)
-			//{
-			//	Stop_Brifly();
-			//	Turn_Left(Turn_Speed,2200);
-			//	Set_Clean_Mode(Clean_Mode_GoHome);
-			//	ROS_INFO("%s %d return to Clean_Mode_GoHome", __FUNCTION__, __LINE__);
-			//	return ;
-			//}
-			if(Temp_Rcon_Status&RconR_HomeT)
+//			if(Get_LeftWheel_Step()>20000)
+//			{
+//				Stop_Brifly();
+//				Turn_Left(Turn_Speed,2200);
+//				Set_Clean_Mode(Clean_Mode_GoHome);
+//				return ;
+//			}
+			if(Temp_Rcon_Status&RconR_HomeT)   // OK ,(10,26)
 			{
 				ROS_INFO("%s %d Detect R-T.", __FUNCTION__, __LINE__);
-				Move_Forward(4,30);
-				//delay(1000);
+				Move_Forward(5,19);
 				usleep(100000);
+//				if((++RTSignal_Count)>=4)
+//				{
+//					RTSignal_Count = 0;
+//					RRSignal_Count = 0;
+//					Uniform_Forward(22,32);  //13 18
+//					Delay_Arounding(60);
+//				}
 			}
-			else if(Temp_Rcon_Status&RconR_HomeR)
+			else if(Temp_Rcon_Status&RconR_HomeR)  //ok 18 13
 			{
 				ROS_INFO("%s %d Detect R-R.", __FUNCTION__, __LINE__);
-				Move_Forward(12,16);
-				//delay(1000);
+				Move_Forward(5,19);
+				usleep(100000);
+//				if((++RRSignal_Count)>=4)
+//				{
+//					RRSignal_Count = 0;
+//					Uniform_Forward(22,28);
+//					Delay_Arounding(60);
+//				}
+			}
+			else if(Temp_Rcon_Status&RconR_HomeL)  //ok 18 13
+			{
+				ROS_INFO("%s %d Detect R-L.", __FUNCTION__, __LINE__);
+				Move_Forward(9,17);
+				usleep(100000);
+//				Delay_Arounding(100);
+			}
+			else if(Temp_Rcon_Status&RconFR2_HomeT)   //turn left
+			{
+				ROS_INFO("%s %d Detect FR2-T.", __FUNCTION__, __LINE__);
+				Move_Forward(19,17);
+//				Uniform_Forward(10,25);
+				usleep(100000);
+//				Delay_Arounding(60);
+			}
+			else if(Temp_Rcon_Status&RconFR2_HomeR)  //OK
+			{
+				ROS_INFO("%s %d Detect FR2-R.", __FUNCTION__, __LINE__);
+				Move_Forward(11,15);
+//				Uniform_Forward(10,25);
+//				Delay_Arounding(100);
 				usleep(100000);
 			}
-			else if(Temp_Rcon_Status&RconFR_HomeR)
+			else if(Temp_Rcon_Status&RconFR2_HomeL)  //
 			{
-				ROS_INFO("%s %d Detect FR-R.", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
+				ROS_INFO("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
+				Move_Forward(15,9);
+				usleep(100000);
+//				Uniform_Forward(10,25);
+//				Delay_Arounding(100);
+			}
+			else if(Temp_Rcon_Status&RconFR_HomeR)  //OK
+			{
+				ROS_INFO("%s, %d: Detect FR-R.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
 				Turn_Left(Turn_Speed,500);
 				Move_Forward(5,5);
 			}
-			else if(Temp_Rcon_Status&RconFR_HomeT)
+			else if(Temp_Rcon_Status&RconFR_HomeL)  //OK
 			{
-				ROS_INFO("%s %d Detect FR-T.", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
+				ROS_INFO("%s, %d: Detect FR-L.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
+				Turn_Right(Turn_Speed,600);
+				Move_Forward(5,5);
+			}
+			else if(Temp_Rcon_Status&RconFR_HomeT)  //ok
+			{
+				ROS_INFO("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
 				Turn_Left(Turn_Speed,500);
 				Move_Forward(5,5);
 			}
-			else if(Temp_Rcon_Status&RconFL_HomeT)
+			else if(Temp_Rcon_Status&RconFL_HomeT)  //OK
 			{
-				ROS_INFO("%s %d Detect FL-T.", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
+				ROS_INFO("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
 				Turn_Left(Turn_Speed,800);
 				Move_Forward(5,5);
 			}
-			else if(Temp_Rcon_Status&RconL_HomeT)
+			else if(Temp_Rcon_Status&RconFL2_HomeT)  //OK
 			{
-				ROS_INFO("%s %d Detect L-T.", __FUNCTION__, __LINE__);
-				//Stop_Brifly();
-				Turn_Left(Turn_Speed,1000);
+				ROS_INFO("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
+				Turn_Left(Turn_Speed,900);
 				Move_Forward(5,5);
-				Dir=1;
+			}
+			else if(Temp_Rcon_Status&RconL_HomeT)  //OK
+			{
+				ROS_INFO("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
+				Turn_Left(Turn_Speed,1100);
+				Move_Forward(5,5);
+				Dir = 1;
 			}
 			else
 			{
-				ROS_INFO("%s %d Else.", __FUNCTION__, __LINE__);
-				Move_Forward(30,6);
+				ROS_INFO("%s, %d: Else.", __FUNCTION__, __LINE__);
+				Move_Forward(34,16);
+//				Move_Forward(31,14);  //0K (35,13)
+//				Delay_Arounding(110);
+				usleep(100000);
 			}
 
 			if(Temp_Rcon_Status&(RconFL_HomeL))
 			{
-				ROS_INFO("%s %d Detect FL-L, call By_Path()", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
-				//Turn_Right(30,500);
+				ROS_INFO("%s, %d: Detect FL-L, call By_Path().", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
+//				Turn_Right(30,500);
 				By_Path();
 				return;
 			}
 			if(Temp_Rcon_Status&(RconFR_HomeL))
 			{
-				ROS_INFO("%s %d Detect FR-L, call By_Path()", __FUNCTION__, __LINE__);
-				////Stop_Brifly();
-				Turn_Right(Turn_Speed,300);
+				ROS_INFO("%s, %d: Detect FR-L, call By_Path().", __FUNCTION__, __LINE__);
+//				Stop_Brifly();
+//				Turn_Right(Turn_Speed,300);
 				By_Path();
 				return;
 			}
-			//if((Temp_Rcon_Status&(RconR_HomeL)))
-			if((Temp_Rcon_Status&(RconBR_HomeL)))
+			if((Temp_Rcon_Status&(RconR_HomeL)))
 			{
-				ROS_INFO("%s %d Detect BR-L.", __FUNCTION__, __LINE__);
-				Signal_Counter++;
+				ROS_INFO("%s, %d: Detect R-L, call By_Path().", __FUNCTION__, __LINE__);
 				N_Around_LRSignal=0;
+				Signal_Counter++;
 				if(Signal_Counter>0)
 				{
 					ROS_INFO("%s %d Signal_Counter>0, check position.", __FUNCTION__, __LINE__);
@@ -826,19 +943,20 @@ void Around_ChargerStation(uint8_t Dir)
 					Stop_Brifly();
 					Temp_Position = Check_Position(Round_Right);
 					ROS_INFO("%s %d Check position return %d.", __FUNCTION__, __LINE__, Temp_Position);
+					Stop_Brifly();
 					if(Temp_Position==1)
 					{
-						//Reset_Error_Code();
-						// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-						Set_Touch();
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+//						Reset_Error_Code();
+//						SetDisplayError(Error_Code_None);
+//						Reset_Touch();
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
+						Set_Clean_Mode(Clean_Mode_Userinterface);
 						return;
 					}
 					if(Temp_Position==2)
 					{
-						Move_Forward(1,1);
 						ROS_INFO("%s %d call By_Path()", __FUNCTION__, __LINE__);
+						Move_Forward(1,1);
 						By_Path();
 						return;
 					}
@@ -854,7 +972,6 @@ void Around_ChargerStation(uint8_t Dir)
 			}
 		}
 
-		//delay(500);
 		usleep(50000);
 	}
 }
@@ -862,7 +979,7 @@ void Around_ChargerStation(uint8_t Dir)
 /*------------------------------------------------*/
 uint8_t Check_Position(uint8_t Dir)
 {
-	//uint32_t Counter_Watcher=0;
+//	uint32_t Counter_Watcher=0;
 	uint32_t Receive_Code = 0;
 	// This angle is for counting angle change when the robot turns.
 	uint16_t Current_Angle;
@@ -881,21 +998,15 @@ uint8_t Check_Position(uint8_t Dir)
 		ROS_INFO("Dir = right");
 		Set_Dir_Right();
 	}
-	//Set_Wheel_Speed(17,17);
 	Set_Wheel_Speed(10,10);
-	//Reset_LeftWheel_Step();
-	//Reset_TempPWM();
-	//Counter_Watcher=0;
-	//Reset_Touch();
-	// Save the start angle
+
 	Last_Angle = Gyro_GetAngle(0);
 	ROS_INFO("Last_Angle = %d.", Last_Angle);
 
-	//while(Get_LeftWheel_Step()<3600)
+//	while(Get_LeftWheel_Step()<3600)
 	while(Gyro_Step < 3600)
-	//while(Gyro_Step < 36000)
 	{
-		//delay(1);
+//		delay(1);
 		usleep(50000);
 		Current_Angle = Gyro_GetAngle(0);
 		Angle_Offset = Current_Angle - Last_Angle;
@@ -915,8 +1026,8 @@ uint8_t Check_Position(uint8_t Dir)
 		//{
 		//	if(Is_Encoder_Fail())
 		//	{
-		//	  Set_Error_Code(Error_Code_Encoder);
-		//	  Set_Touch();
+		//		Set_Error_Code(Error_Code_Encoder);
+		//		Set_Touch();
 		//	}
 		//	return 1;
 		//}
@@ -934,11 +1045,11 @@ uint8_t Check_Position(uint8_t Dir)
 			if (Receive_Code & RconFR_HomeL)ROS_INFO("Check_Position get FR-L");
 			if (Receive_Code & RconFR_HomeR)ROS_INFO("Check_Position get FR-R");
 		}
+
 		if(Dir == Round_Left)
 		{
 			if(Receive_Code & (RconFR_HomeL|RconFR_HomeR))
 			{
-				// Robot has turned back heading towards charge stub.
 				ROS_INFO("Check position left and return 2.");
 				return 2;
 			}
@@ -947,12 +1058,11 @@ uint8_t Check_Position(uint8_t Dir)
 		{
 			if(Receive_Code & (RconFL_HomeL|RconFL_HomeR))
 			{
-				// Robot has turned back heading towards charge stub.
 				ROS_INFO("Check position right and return 2.");
 				return 2;
 			}
 		}
-		// if(Is_Remote())return 1;
+//		if(Is_Remote())return 1;
 		if(Touch_Detect())
 		{
 			Beep(5, 20, 0, 1);
@@ -978,29 +1088,30 @@ uint8_t Check_Position(uint8_t Dir)
 		}
 		//if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))return 1;
 	}
-	//Reset_TempPWM();
+//	Reset_TempPWM();
 	return 0;
 }
 
 void By_Path(void)
 {
 	uint8_t Cycle=0;
-	//uint8_t Mobility_Temp_Error=0;
-	//uint32_t Temp_Mobility_Distance=0;
+//	uint8_t Mobility_Temp_Error=0;
+//	uint32_t Temp_Mobility_Distance=0;
 	uint32_t Receive_Code=0;
 	uint32_t Temp_Code =0 ;
 	uint8_t Position_Far=1;
 	uint16_t NoSignal_Counter=0;
 	uint8_t Temp_Check_Position=0;
 	uint8_t Near_Counter=0;
-	volatile uint8_t Bumper_Counter=0;
+	uint8_t Bumper_Counter=0;
 	uint8_t Side_Counter=0;
-	//Reset_Wheel_Step();
+
+//	Reset_Wheel_Step();
 
 	Reset_Touch();
-	//Display_Content(LED_Home,100,100,0,7);
+//	Display_Content(LED_Home,100,100,0,7);
 
-	// Enable the charge function
+//	Enable the charge function
 	set_start_charge();
 
 	Move_Forward(9,9);
@@ -1010,9 +1121,12 @@ void By_Path(void)
 //  Set_LED(100,100);
 //	SetHomeRemote();
 //	Display_Home_LED();
+
+//	Beep(1);
+
 	while(1)
 	{
-		Receive_Code=0;
+		Receive_Code = 0;
 //		if(Get_LeftWheel_Step()<500)
 //		{
 //			Mobility_Temp_Error=0;
@@ -1020,24 +1134,24 @@ void By_Path(void)
 //		}
 //		else
 //		{
-//		  if((Get_Move_Distance()-Temp_Mobility_Distance)>500)
-//		  {
-//		    Temp_Mobility_Distance = Get_Move_Distance();
-//		    if(Get_Mobility_Step()<1)
-//		    {
-//		      Mobility_Temp_Error++;
-//		      if(Mobility_Temp_Error>3)
-//		      {
-//		        Set_Clean_Mode(Clean_Mode_GoHome);
-//		        return;
-//		      }
-//		    }
-//		    else
-//		    {
-//		      Mobility_Temp_Error=0;
-//		    }
-//		    Reset_Mobility_Step();
-//		  }
+//			if((Get_Move_Distance()-Temp_Mobility_Distance)>500)
+//			{
+//				Temp_Mobility_Distance = Get_Move_Distance();
+//				if(Get_Mobility_Step()<1)
+//				{
+//					Mobility_Temp_Error++;
+//					if(Mobility_Temp_Error>3)
+//					{
+//						Set_Clean_Mode(Clean_Mode_GoHome);
+//						return;
+//					}
+//				}
+//				else
+//				{
+//					Mobility_Temp_Error=0;
+//				}
+//				Reset_Mobility_Step();
+//			}
 //		}
 
 		Cycle=10;
@@ -1049,7 +1163,7 @@ void By_Path(void)
 			{
 				ROS_INFO("Is_ChargerOn!!");
 				Stop_Brifly();
-				//delay(2000);
+//				delay(2000);
 				usleep(200000);
 				if(Is_ChargerOn())
 				{
@@ -1057,17 +1171,17 @@ void By_Path(void)
 					usleep(200000);
 					if(Is_ChargerOn())
 					{
-						//Reset_Error_Code();
+//						Reset_Error_Code();
 						Set_Clean_Mode(Clean_Mode_Charging);
 						Beep(2, 15, 0, 1);
-						//Reset_Rcon_Remote();
+//						Reset_Rcon_Remote();
 						return;
 					}
 				}
 				else if(Turn_Connect())
 				{
 					Set_Clean_Mode(Clean_Mode_Charging);
-					//Reset_Rcon_Remote();
+//					Reset_Rcon_Remote();
 					return;
 				}
 				else
@@ -1083,9 +1197,9 @@ void By_Path(void)
 			}
 			/*----------------------------------------------OBS------------------Event---------------*/
 			ROS_INFO("get_Left_bumper_Status");
-			if(Get_Bumper_Status()&&LeftBumperTrig)//waiting for modify
+			if(Get_Bumper_Status()&LeftBumperTrig)
 			{
-				//Random_Back();
+//				Random_Back();
 				Reset_Rcon_Status();
 				if(!Position_Far)
 				{
@@ -1098,7 +1212,7 @@ void By_Path(void)
 					}
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(0);
-					//Back(30,2500);//waiting
+//					Back(30,2500);//waiting
 					Quick_Back(30,300);//waiting
 					ROS_INFO("%d: Quick_Back in !position_far", __LINE__);
 					Set_MainBrush_PWM(30);
@@ -1111,7 +1225,7 @@ void By_Path(void)
 						return;
 					}
 				}
-				else if((Get_Rcon_Status()&(RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR))==0)
+				else if((Get_Rcon_Status()&(RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR))==0)
 				{
 					Random_Back();
 					Turn_Right(Turn_Speed,1100);
@@ -1138,7 +1252,7 @@ void By_Path(void)
 			ROS_INFO("Get_Right_Bumper_Status");
 			if(Get_Bumper_Status()&RightBumperTrig)
 			{
-				//Random_Back();
+//				Random_Back();
 				Reset_Rcon_Status();
 				if(!Position_Far)
 				{
@@ -1161,8 +1275,7 @@ void By_Path(void)
 						return;
 					}
 				}
-				//else if((Get_Rcon_Status()&0X00FF)==0)
-				else if((Get_Rcon_Status()&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR))==0)
+				else if((Get_Rcon_Status()&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR))==0)
 				{
 					Random_Back();
 					Turn_Left(Turn_Speed,1100);
@@ -1179,9 +1292,7 @@ void By_Path(void)
 					Set_MainBrush_PWM(30);
 					Move_Forward(8,8);
 				}
-
 				if(Is_Bumper_Jamed())return;
-
 				Bumper_Counter++;
 				ROS_INFO("%d, Right bumper count =%d.", __LINE__, Bumper_Counter);
 			}
@@ -1204,7 +1315,7 @@ void By_Path(void)
 				{
 					Set_Wheel_Speed(0,0);
 					Set_Dir_Backward();
-					//delay(300);
+//					delay(300);
 					usleep(30000);
 					if(Get_Cliff_Trig())
 					{
@@ -1248,53 +1359,56 @@ void By_Path(void)
 			if(GetBatteryVoltage()<Low_Battery_Limit)
 			{
 				Display_Battery_Status(Display_Low);
-				//delay(10000);
+//				delay(10000);
 				usleep(1000000);
 				Set_Clean_Mode(Clean_Mode_Sleep);
 				return;
 			}
-
 			if(Home_Check_Current())return;
-			//delay(100);
+//			delay(100);
 			usleep(10000);
-
 		}
 
-		//delay(500);
 
 		Receive_Code = Get_Rcon_Status();
 		Temp_Code = Receive_Code;
-		//Temp_Code &= 0x000330ff;
-		Temp_Code &= (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR|RconBL_HomeL|RconBL_HomeR|RconBR_HomeL|RconBR_HomeR);
+//		Temp_Code &= 0x003f0fff;
+		Temp_Code &= (	RconL_HomeL|RconL_HomeT|RconL_HomeR| \
+						RconFL2_HomeL|RconFL2_HomeT|RconFL2_HomeR| \
+						RconFL_HomeL|RconFL_HomeT|RconFL_HomeR| \
+						RconFR_HomeL|RconFR_HomeT|RconFR_HomeR| \
+						RconFR2_HomeL|RconFR2_HomeT|RconFR2_HomeR| \
+						RconR_HomeL|RconR_HomeT|RconR_HomeR \
+					 );
+//		Reset_Rcon_Status();
 		if(Receive_Code)
 		{
-			//if((Receive_Code&0x00000600)==0x00000600)Position_Far=0;
-			if((Receive_Code&(RconFL_HomeT|RconFR_HomeT))==(RconFL_HomeT|RconFR_HomeT))
+//			if((Receive_Code&0x00060000) == 0x00060000)Position_Far = 0;
+			if((Receive_Code&(RconFR_HomeT|RconFL_HomeT)) == (RconFR_HomeT|RconFL_HomeT))
 			{
-				Position_Far=0;
+				Position_Far = 0;
 				ROS_INFO("%s, %d: Robot face HomeT, Position_Far = 0.", __FUNCTION__, __LINE__);
 			}
-			//if(Receive_Code&0x00000900)Position_Far=0;
-			if(Receive_Code&(RconL_HomeT|RconR_HomeT))
+//			if(Receive_Code&0x00390000)Position_Far = 0;
+			if(Receive_Code&(RconFR2_HomeT|RconFL2_HomeT|RconR_HomeT|RconL_HomeT))
 			{
-				Position_Far=0;
+				Position_Far = 0;
 				ROS_INFO("%s, %d: Robot side face HomeT, Position_Far = 0.", __FUNCTION__, __LINE__);
 			}
-			//if(Receive_Code&0x00000f00)
-			if(Receive_Code&(RconL_HomeT|RconR_HomeT|RconFL_HomeT|RconFR_HomeT))
+//			if(Receive_Code&0x003f0000)
+			if(Receive_Code&(RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT|RconFL2_HomeT|RconR_HomeT|RconL_HomeT))
 			{
-				// If robot sees the HomeT signal.
 				Near_Counter++;
-				if(Near_Counter>1)
+				if(Near_Counter > 1)
 				{
-					Position_Far=0;
+					Position_Far = 0;
 					ROS_INFO("%s, %d: Robot near HomeT counter > 1, Position_Far = 0.", __FUNCTION__, __LINE__);
 				}
-				//if((Receive_Code&0x000000ff)==0)
-				if((Receive_Code&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR))==0)
+//				if((Receive_Code&0x000000ff) == 0)
+				if((Receive_Code&(RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR)) == 0)
 				{
 					Side_Counter++;
-					if(Side_Counter>5)
+					if(Side_Counter > 5)
 					{
 						Move_Forward(9,9);
 						ROS_INFO("%s, %d: Robot goes far, back to gohome mode.", __FUNCTION__, __LINE__);
@@ -1304,33 +1418,31 @@ void By_Path(void)
 				}
 				else
 				{
-					Side_Counter=0;
+					Side_Counter = 0;
 				}
 			}
 
-			//if((Receive_Code&0x00000024)==0x00000024)Position_Far=0;
+//			if((Receive_Code&0x00000024) == 0x00000024)Position_Far = 0;
 			if((Receive_Code&(RconFL_HomeL|RconFR_HomeR))==(RconFL_HomeL|RconFR_HomeR))
 			{
 				ROS_INFO("%s, %d: Robot sees HomeL or HomeR, Position_Far = 0.", __FUNCTION__, __LINE__);
 				Position_Far=0;
 			}
 			Reset_Rcon_Status();
-			NoSignal_Counter=0;
+			NoSignal_Counter = 0;
 		}
 		else
 		{
-			Near_Counter=0;
+			Near_Counter = 0;
 			NoSignal_Counter++;
 			if(NoSignal_Counter>50)
 			{
-				NoSignal_Counter=0;
+				NoSignal_Counter = 0;
 				Stop_Brifly();
 				Temp_Check_Position = Check_Position(Round_Left);
 				ROS_INFO("%s %d Check position return %d.", __FUNCTION__, __LINE__, Temp_Check_Position);
-				if(Temp_Check_Position==1)
+				if(Temp_Check_Position == 1)
 				{
-					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-					Set_Touch();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return;
 				}
@@ -1341,694 +1453,1441 @@ void By_Path(void)
 					Turn_Right(Turn_Speed,1000);
 					Stop_Brifly();
 					Move_Forward(10,10);
-					//Set_Clean_Mode(Clean_Mode_GoHome);
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					Set_Clean_Mode(Clean_Mode_GoHome);
 					return;
 				}
 			}
 		}
 
+//		Temp_Code &= 0x00000fff;
+		Temp_Code &= (RconL_HomeL|RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL|RconR_HomeL| \
+					RconL_HomeR|RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR|RconR_HomeR);
 		if(Position_Far)
 		{
 			switch(Temp_Code)
 			{
-				//case 0x0000003c:Move_Forward(14,14);break;//00 11 11 00
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, F-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(14,14);
-					break;//00 11 11 00
-				//case 0x00000024:Move_Forward(13,13);break;//00 10 01 00
+//				case 0x024:   Move_Forward(12,12);break;            //FL_L/FR_R
 				case (RconFL_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-L, FR_R.", __FUNCTION__, __LINE__);
-					Move_Forward(13,13);
-					break;//00 10 01 00
-
-				//case 0x000000ff:Move_Forward(12,12);break;//11 11 11 11*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/L/R-LR.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_R.", __FUNCTION__, __LINE__);
 					Move_Forward(12,12);
-					break;//11 11 11 11*
+					break;
 
-				//case 0x000000fc:Move_Forward(8,15);break;//11 11 11 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(8,15);
-					break;//11 11 11 00*
-				//case 0x0000003f:Move_Forward(15,8);break;//00 11 11 11*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(15,8);
-					break;//00 11 11 11*
+//				case 0x03c:   Move_Forward(12,12);break;          //FL_L/FL_R/FR_L/FR_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,12);
+					break;
 
-				//case 0x000000fd:Move_Forward(8,15);break;//11 11 11 01*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/L-LR, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(8,15);
-					break;//11 11 11 01*
-				//case 0x000000bf:Move_Forward(15,8);break;//10 11 11 11*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/R-LR, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(15,8);
-					break;//10 11 11 11*
+//				case 0xbd:    Move_Forward(12,12);break;            //FL2_L/FL_L/FL_R/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR2_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,12);
+					break;
 
-				//case 0x000000f0:Move_Forward(8,15);break;//11 11 00 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(8,15);
-					break;//11 11 00 00*
-				//case 0x0000000f:Move_Forward(15,8);break;//00 00 11 11*
-				case (RconFR_HomeL|RconFR_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FR/R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(15,8);
-					break;//00 00 11 11*
+//				case 0xA5:    Move_Forward(12,12);break;            //FL2_L/FL_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR2_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,12);
+					break;
 
-				//case 0x00000034:Move_Forward(10,13);break;//00 11 01 00
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-LR, FR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(10,13);
-					break;//00 11 01 00
-				//case 0x00000014:Move_Forward(10,15);break;//00 01 01 00
-				case (RconFL_HomeR|RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(10,15);
-					break;//00 01 01 00
-				//case 0x00000010:Move_Forward(5,15);break; //00 01 00 00
-				case (RconFL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-R.", __FUNCTION__, __LINE__);
-					Move_Forward(5,15);
-					break; //00 01 00 00
+//				case 0X0AD:   Move_Forward(13,11);break;            //FL2_L/FL_L/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(13,11);
+					break;
 
-				//case 0x00000074:Move_Forward(11,15);break;//01 11 01 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-LR, FR/L-R.", __FUNCTION__, __LINE__);
-					Move_Forward(11,15);
-					break;//01 11 01 00*
-				//case 0x000000f4:Move_Forward(11,15);break;//11 11 01 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/L-LR, FR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(11,15);
-					break;//11 11 01 00*
-				//case 0x000000d4:Move_Forward(10,15);break;//11 01 01 00*
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR-R, L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(10,15);
-					break;//11 01 01 00*
-				//case 0x000000d0:Move_Forward(3,8);break; //11 01 00 00*
-				case (RconFL_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-R, L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(3,8);
-					break; //11 01 00 00*
+//				case 0x08D:   Move_Forward(13,9);break;             //FL2_L/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(13,9);
+					break;
 
-				//case 0x0000002c:Move_Forward(13,10);break;//00 10 11 00
+//				case 0x089:   Move_Forward(12,9);break;             //FL2_L/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,9);
+					break;
+
+//				case 0x02C:   Move_Forward(11,9);break;             //FL_L/FR_L/FR_R
 				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-L, FR-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(13,10);
-					break;//00 10 11 00
-				//case 0x00000028:Move_Forward(15,10);break;//00 10 10 00
-				case (RconFL_HomeL|RconFR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL/FR-L.", __FUNCTION__, __LINE__);
-					Move_Forward(15,10);
-					break;//00 10 10 00
-				//case 0x00000008:Move_Forward(15,5);break; //00 00 10 00
-				case (RconFR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FR-L.", __FUNCTION__, __LINE__);
-					Move_Forward(15,5);
-					break; //00 00 10 00
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,9);
+					break;
 
-				//case 0x0000002e:Move_Forward(15,11);break;//00 10 11 10*
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL/R-L, FR-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(15,11);
-					break;//00 10 11 10*
-				//case 0x0000002f:Move_Forward(15,11);break;//00 10 11 11*
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-L, FR/R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(15,11);
-					break;//00 10 11 11*
-				//case 0x0000002b:Move_Forward(15,10);break;//00 10 10 11*
-				case (RconFL_HomeL|RconFR_HomeL|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/R-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(15,10);
-					break;//00 10 10 11*
-				//case 0x0000000b:Move_Forward(8,3);break; //00 00 10 11*
-				case (RconFR_HomeL|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FR/R-L, R-R.", __FUNCTION__, __LINE__);
+//				case 0x00D:   Move_Forward(12,8);break;             //FR_L/FR_R/FR2_R
+				case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,8);
+					break;
+
+//				case 0x00C:   Move_Forward(12,8);break;             //FR_L/FR_R
+				case (RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,8);
+					break;
+
+//				case 0x008:   Move_Forward(11,8);break;             //FR_L
+				case (RconFR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(11,8);
+					break;
+
+//				case 0x00F:   Move_Forward(11,7);break;             //FR_L/FR_R/FR2_L/FR2_R
+				case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,7);
+					break;
+
+//				case 0x009:   Move_Forward(13,7);break;             //FR_L/FR2_R
+				case (RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,7);
+					break;
+
+//				case 0x00B:   Move_Forward(12,7);break;             //FR_L/FR2_L/FR2_R
+				case (RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,7);
+					break;
+
+//				case 0x001:   Move_Forward(12,6);break;             //FR2_R
+				case (RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,6);
+					break;
+
+//				case 0x002:   Turn_Right(20,250);				   //FRR_L
+				case (RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,250);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0x003:   Turn_Right(20,350);				   //FR2_L/FR2_R
+				case (RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Turn_Right(20,350);
+					Stop_Brifly();
+					Move_Forward(10,3);
+					break;
+
+//				case 0x28:    Move_Forward(11,10);break;             //FL_L/FR_L
+				case (RconFL_HomeL|RconFR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(11,10);
+					break;
+
+//				case 0x2B:    Move_Forward(11,9);break;              //FL_L/FR_L/FR2_L/FR2_R
+				case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,9);
+					break;
+
+//				case 0x29:    Move_Forward(12,10);break;             //FL_L/FR_L/FR2_R
+				case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,10);
+					break;
+
+//				case 0X0A:    Move_Forward(12,7);break;              //FR_L/FR2_L
+				case (RconFR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FR_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(12,7);
+					break;
+
+//				case 0X54:    Move_Forward(12,11);break;             //FL_L/FR_L/FR2_L
+				case (RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0X2D:    Move_Forward(13,10);break;             //FL_L/FR_L/FR_R/FR2_R
+				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,10);
+					break;
+
+//				case 0X05:    Move_Forward(13,8);break;              //FR_R/FR2_R
+				case (RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,8);
+					break;
+
+//				case 0x04:    Move_Forward(12,11);break;
+				case (RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0x45:    Move_Forward(12,10);break;             //FL2_R/FR_R/FR2_R
+				case (RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,10);
+					break;
+
+//				case 0xc5:    Move_Forward(12,10);break;             //FL2_L/FL2_R/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,10);
+					break;
+
+//				case 0xCD:    Move_Forward(13,7);break;  	           //FL2_L/FL2_R/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,7);
+					break;
+
+//				case 0xcf:    Move_Forward(13,7);break;              //FL2_L/FL2_R/FR_L/FR_R/FR2_L/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,7);
+					break;
+
+//				case 0xA9:    Move_Forward(12,11);break;             //FL2_L/FL_L/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0x85:    Move_Forward(13,9);break;
+				case (RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,9);
+					break;
+
+//				case 0x8f:    Move_Forward(13,8);break;              //FL2_L/FR_L/FR_R/FR2_L/FR2_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,8);
+					break;
+
+//				case 0x84:    Move_Forward(13,9);break;
+				case (RconFL2_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,9);
+					break;
+
+//				case 0x31:    Move_Forward(12,11);break;             //FL_L/FL_R/FR2_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0x9D:    Move_Forward(12,11);break;             //FL2_L/FL_R/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0xAC:    Move_Forward(12,11);break;             //FL2_L/FL_L/FR_L/FR_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0xbc:    Move_Forward(12,11);break;             //FL2_L/FL_L/FL_R/FR_L/FR_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0x25:    Move_Forward(12,11);break;             //FL_L/FR_R/FR2_R
+				case (RconFL_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0xb8:    Move_Forward(13,12);break;             //FL2_L/FL_L/FL_R/FR_L
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(13,12);
+					break;
+
+//				case 0xA8:    Move_Forward(13,12);break;             //FL2_L/FL_L/FR_l
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(13,12);
+					break;
+
+//				case 0x803:   Turn_Right(20,250);
+				case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_INFO("%s, %d: Position_Far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						Turn_Right(20,250);
+						Stop_Brifly();
+						Move_Forward(9,3);
+						break;
+
+//				case 0x802:   Turn_Right(20,400);
+				case (RconR_HomeR|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, R_R/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,400);
+					Stop_Brifly();
 					Move_Forward(8,3);
-					break; //00 00 10 11*
-				//right
-				//case 0x00000001:Move_Forward(15,0);break;      //00 00 00 01#
-				case (RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/R-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(15,0);
-					break;      //00 00 00 01#
-//  		    case 0x0001:Turn_Right(20,300);       //00 00 00 01
-//  		                Stop_Brifly();
-//  		                Move_Forward(30,0);
-//  		                break;                    //00 00 00 10
-				//case 0x00000002:Turn_Right(20,500);
-				case (RconR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, R-L.", __FUNCTION__, __LINE__);
+					break;
+
+//				case 0x80b:   Turn_Right(20,250);
+				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Turn_Right(20,250);
+					Stop_Brifly();
+					Move_Forward(10,4);
+					break;
+
+//				case 0xC02:	  Turn_Right(20,450);
+				case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,450);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0xC00 :  Turn_Right(20,500);
+				case (RconR_HomeR|RconR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, R_R/R_L.", __FUNCTION__, __LINE__);
 					Turn_Right(20,500);
 					Stop_Brifly();
-					Move_Forward(30,0);
+					Move_Forward(9,6);
 					break;
-				//case 0x00000003:Move_Forward(15,0);break;       //00 00 00 11
-				case (RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(15,0);
-					break;       //00 00 00 11
 
-				//case 0x00000080:Move_Forward(0,15);break;        //10 00 00 00
-				case (RconL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(0,15);
-					break;        //10 00 00 00
-//    	    case 0x0080:Turn_Left(20,300);        //10 00 00 00
-//    	                Stop_Brifly();
-//    	                Move_Forward(0,30);
-//    	                break;
-				//case 0x00000040:Turn_Left(20,500);        //01 00 00 00
-				case (RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, L-R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,500);        //01 00 00 00
+//				case 0x400 :  Turn_Right(20,550);
+				case (RconR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, R_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,550);
 					Stop_Brifly();
-					Move_Forward(0,30);
+					Move_Forward(9,3);
 					break;
-				//case 0x000000c0:Move_Forward(0,15);break;        // 11 00 00 00
-				case (RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(0,15);
-					break;        // 11 00 00 00
 
-				/*----------------------*/
-				//case 0x00000009:Move_Forward(15,8);break; //00 00 10 01
-				case (RconFR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FR-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(15,8);
-					break; //00 00 10 01
-				//case 0x00000090:Move_Forward(8,15);break; //10 01 00 00
-				case (RconFL_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL-R, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(8,15);
-					break; //10 01 00 00
-
-				//case 0x00000094:Move_Forward(8,13);break; //10 01 01 00
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL/FR-R, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(8,13);
-					break; //10 01 01 00
-				//case 0x00000029:Move_Forward(13,8);break; //00 01 10 01
-				case (RconFL_HomeL|RconFR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(13,8);
-					break; //00 01 10 01
-
-				//case 0x0000000d:Move_Forward(14,10);break; //00 00 11 01
-				case (RconFR_HomeL|RconFR_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FR-LR, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(14,10);
-					break; //00 00 11 01
-				//case 0x000000b0:Move_Forward(10,14);break; //10 11 00 00
-				case (RconFL_HomeL|RconFL_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL-LR, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(10,14);
-					break; //10 11 00 00
-
-				//case 0x0000000A:Move_Forward(15,8);break; //00 00 10 10
-				case (RconFR_HomeL|RconR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FR-L, R-L.", __FUNCTION__, __LINE__);
-					Move_Forward(15,8);
-					break; //00 00 10 10
-				//case 0x00000050:Move_Forward(8,15);break; //01 01 00 00
-				case (RconFL_HomeR|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-L, L-R.", __FUNCTION__, __LINE__);
-					Move_Forward(8,15);
-					break; //01 01 00 00
-
-				//case 0x0000002A:Move_Forward(15,8);break; //00 10 10 10
-				case (RconFL_HomeL|RconFR_HomeL|RconR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL/FR-L, R-L.", __FUNCTION__, __LINE__);
-					Move_Forward(15,8);
-					break; //00 10 10 10
-				//case 0x00000054:Move_Forward(8,15);break; //01 01 01 00
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR-R, L-R.", __FUNCTION__, __LINE__);
-					Move_Forward(8,15);
-					break; //01 01 01 00
-
-				//case 0x0000002D:Move_Forward(12,9);break; //00 10 11 01
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-L, FR-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(12,9);
-					break; //00 10 11 01
-				//case 0x000000B4:Move_Forward(9,12);break; //10 11 01 00
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL-LR, FR-R, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(9,12);
-					break; //10 11 01 00
-
-				//case 0x00000041:Move_Forward(15,9);break; //01 00 00 01
-				case (RconL_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, LR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(15,9);
-					break; //01 00 00 01
-				//case 0x00000082:Move_Forward(9,15);break; //10 00 00 10
-				case (RconL_HomeL|RconR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, LR-L.", __FUNCTION__, __LINE__);
-					Move_Forward(9,15);
-					break; //10 00 00 10
-
-				//case 0x0000000c:Move_Forward(12,8);break; //00 00 11 00
-				case (RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, LR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(12,8);
-					break; //00 00 11 00
-				//case 0x00000030:Move_Forward(8,12);break; //00 11 00 00
-				case (RconFL_HomeL|RconFL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(8,12);
-					break; //00 11 00 00
-
-				//case 0x00000005:Move_Forward(15,4);break; //00 00 01 01
-				case (RconFR_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FR/R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(15,4);
-					break; //00 00 01 01
-				//case 0x000000a0:Move_Forward(4,15);break; //10 10 00 00
-				case (RconFL_HomeL|RconL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL/L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(4,15);
-					break; //10 10 00 00
-
-				//case 0x00000004:Move_Forward(8,15);break; //00 00 01 00*
-				case (RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(8,15);
-					break; //00 00 01 00*
-				//case 0x00000020:Move_Forward(15,8);break; //00 10 00 00*
-				case (RconFL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL-L.", __FUNCTION__, __LINE__);
-					Move_Forward(15,8);
-					break; //00 10 00 00*
-
-				//case 0x00000095:Move_Forward(11,13);break;//10 01 01 01
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/R-R, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(11,13);
-					break;//10 01 01 01
-				//case 0x000000A9:Move_Forward(13,11);break;//10 10 10 01
-				case (RconFL_HomeL|RconFR_HomeL|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL/FR/L-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(13,11);
-					break;//10 10 10 01
-
-				//case 0x000000B5:Move_Forward(12,14);break;//10 11 01 01
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-LR, FR-R, L-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(12,14);
-					break;//10 11 01 01
-				//case 0x000000AD:Move_Forward(14,12);break;//10 10 11 01
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-L, FR-LR, L-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(14,12);
-					break;//10 10 11 01
-
-				//case 0x0000001c:Move_Forward(10,8);break; //00 01 11 00
-				case (RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, FL-R, FR-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(10,8);
-					break; //00 01 11 00
-				//case 0x00000038:Move_Forward(8,10);break; //00 11 10 00
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, FL-LR, FR-L.", __FUNCTION__, __LINE__);
-					Move_Forward(8,10);
-					break; //00 11 10 00
-
-				//case 0x00001000: Turn_Right(20,1100);         //00 00 00 00 00 10
-				case (RconBR_HomeL):
-					ROS_INFO("%s, %d: Position_Far, BR-L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,1100);         //00 00 00 00 00 10
+//				case 0x80A:   Turn_Right(20,250);
+				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,250);
 					Stop_Brifly();
-					Move_Forward(12,12);
-					break;
-				//case 0x00020000:Turn_Left(20,1100);         //01 00 00 00 00 00
-				case (RconBL_HomeR):
-					ROS_INFO("%s, %d: Position_Far, BL-R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,1100);         //01 00 00 00 00 00
-					Stop_Brifly();
-					Move_Forward(12,12);
+					Move_Forward(9,3);
 					break;
 
-				//case 0x00002000:Move_Forward(10,0);break; //00 00 00 00 00 01
-				case (RconBR_HomeR):
-					ROS_INFO("%s, %d: Position_Far, BL-R.", __FUNCTION__, __LINE__);
+//				case 0x402:   Turn_Right(20,500);
+				case (RconR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, R_L/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,500);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0x805:
+				case (RconR_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, R_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,2);
+					break;
+
+//				case 0x801:   Move_Forward(9,0);
+				case (RconR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, R_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,0);
+					break;
+
+//				case 0x101:   Move_Forward(9,1);
+				case (RconL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,1);
+					break;
+
+//				case 0x185:   Move_Forward(9,6);
+				case (RconL_HomeL|RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_L/FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,6);
+					break;
+
+//				case 0x800:   Move_Forward(10,0);
+				case (RconR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, R_R.", __FUNCTION__, __LINE__);
 					Move_Forward(10,0);
-					break; //00 00 00 00 00 01
-				//case 0x00010000:Move_Forward(0,10);break; //10 00 00 00 00 00
-				case (RconBL_HomeL):
-					ROS_INFO("%s, %d: Position_Far, BL-L.", __FUNCTION__, __LINE__);
+					break;
+
+//				case 0x8B:    Move_Forward(13,12);break; 						//FL2_L/FR_L/FR2_L/FR2_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(13,12);
+					break;
+
+//				case 0x22:    Move_Forward(13,12);break;            //FL2_R/FR_R
+				case (RconFL_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(13,12);
+					break;
+
+//				case 0x81:    Move_Forward(14,4);break;
+				case (RconFL2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(14,4);
+					break;
+
+//				case 0x23:    Move_Forward(12,11);break;
+				case (RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(12,11);
+					break;
+
+//				case 0Xb5:    Move_Forward(10,12);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0xb1:    Move_Forward(8,12);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,12);
+					break;
+
+//				case 0x91:    Move_Forward(11,13);break;
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,13);
+					break;
+
+//				case 0x34:    Move_Forward(10,12);break;
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0xb0:    Move_Forward(9,13);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,13);
+					break;
+
+//				case 0x30:    Move_Forward(10,12);break;
+				case (RconFL_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0x10:    Move_Forward(7,11);break;
+				case (RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,11);
+					break;
+
+//				case 0xf0:    Move_Forward(7,12);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FL_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0x90:    Move_Forward(9,13);break;
+				case (RconFL2_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,13);
+					break;
+
+//				case 0xD0:    Move_Forward(8,13);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,13);
+					break;
+
+//				case 0x80:    Move_Forward(8,14);break;
+				case (RconFL2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(8,14);
+					break;
+
+//				case 0x40:    Turn_Left(20,250);
+				case (RconFL2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0xC0:    Turn_Left(20,350);
+				case (RconFL2_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,350);
+					Stop_Brifly();
+					Move_Forward(3,10);
+					break;
+
+//				case 0x14:    Move_Forward(11,12);break;
+				case (RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0xD4:    Move_Forward(10,12);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0x94:    Move_Forward(10,12);break;
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0X50:    Move_Forward(7,12);break;
+				case (RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0X2A:    Move_Forward(11,12);break;
+				case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0XB4:    Move_Forward(9,12);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,12);
+					break;
+
+//				case 0XA0:    Move_Forward(7,12);break;
+				case (RconFL2_HomeL|RconFL_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0x20:    Move_Forward(11,12);break;
+				case (RconFL_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL_L.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0xA2:    Move_Forward(10,12);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0xA3:    Move_Forward(10,12);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0xB3:    Move_Forward(7,12);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0xF3:    Move_Forward(7,12);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0x95:    Move_Forward(11,12);break;            //FL2_L/FL_L/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0xA1:    Move_Forward(7,12);break;             //FL2_L/FL_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0xF1:    Move_Forward(7,12);break;             //FL2_L/FL2_R/FL_L/FL_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0x21:    Move_Forward(10,12);break;            //FL2_L/FL_L/FR2_R //FL2_L/FR_R
+				case (RconFL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,12);
+					break;
+
+//				case 0x8c:    Move_Forward(11,12);break;            //FL2_L/FL_L/FR2_R //FL2_L/FR_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0xb9:    Move_Forward(11,12);break;            //FL2_L/FL_R/FL_R/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FL_R/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0x35:    Move_Forward(11,12);break;            //FL_L/FL_R/FR_R/FR2_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0x3d:    Move_Forward(11,12);break;            //FL_L/FL_R/FR_L/FR_R/FR2_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0xa4:    Move_Forward(11,12);break;            //FL2_L/FL_L/FR_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0x1d:    Move_Forward(11,12);break;            //FL_R/FR_L/FR_R/FR2_R
+				case (RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0x15:    Move_Forward(9,12);break;             //FL_R/FR_R/FR2_R
+				case (RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,12);
+					break;
+
+//				case 0x1C0:   Turn_Left(20,250);
+				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x140:   Turn_Left(20,400);
+				case (RconL_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_L/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,400);
+					Stop_Brifly();
+					Move_Forward(3,8);
+					break;
+
+//				case 0x1d0:   Turn_Left(20,250);
+				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(4,10);
+					break;
+
+//				case 0x340:   Turn_Left(20,450);
+				case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,450);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x300 :  Turn_Left(20,500);
+				case (RconL_HomeR|RconL_HomeL):
+					ROS_INFO("%s, %d: Position_Far, L_R/L_L.", __FUNCTION__, __LINE__);
+					Turn_Left(20,500);
+					Stop_Brifly();
+					Move_Forward(6,9);
+					break;
+
+//				case 0x200:   Turn_Left(20,550);
+				case (RconL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,550);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x150:   Turn_Left(20,250);
+				case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x240:   Turn_Left(20,500);
+				case (RconL_HomeR|RconFL2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, L_R/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,500);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x1A0:
+				case (RconL_HomeL|RconFL2_HomeL|RconFL_HomeL):
+					ROS_INFO("%s, %d: Position_Far, L_L/FL2_L/FL_L.", __FUNCTION__, __LINE__);
+					Move_Forward(2,9);
+					break;
+
+//				case 0x180:   Move_Forward(0,9);
+				case (RconL_HomeL|RconFL2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, L_L/FL2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(0,9);
+					break;
+
+//				case 0x880:   Move_Forward(1,9);
+				case (RconR_HomeR|RconFL2_HomeL):
+					ROS_INFO("%s, %d: Position_Far, R_R/FL2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(1,9);
+					break;
+
+//				case 0x8A1:   Move_Forward(6,9);
+				case (RconR_HomeR|RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, R_R/FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(6,9);
+					break;
+
+//				case 0x100:   Move_Forward(0,10);break;
+				case (RconL_HomeL):
+					ROS_INFO("%s, %d: Position_Far, L_L.", __FUNCTION__, __LINE__);
 					Move_Forward(0,10);
-					break; //10 00 00 00 00 00
+					break;
+
+//				case 0xD1:    Move_Forward(11,12);break;          //FL_R/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0x44:    Move_Forward(11,12);break;          //FL_L/FR2_L
+				case (RconFL2_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
+
+//				case 0x18:   	Move_Forward(7,12);break;
+				case (RconFL_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: Position_Far, FL_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(7,12);
+					break;
+
+//				case 0xC4:   	Move_Forward(11,12);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: Position_Far, FL2_L/FL2_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(11,12);
+					break;
 
 				default:
 					ROS_INFO("%s, %d: Position_Far, else:%x.", __FUNCTION__, __LINE__, Temp_Code);
-					Move_Forward(12,15);
+					Move_Forward(10,11);
+//					USPRINTF("**************default angle is ,default code  is 0x%x\n",Temp_Code);
 					break;
 			}
 		}
 		else
 		{
-			//Temp_Code&=0x000000ff;
-			Temp_Code&=(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR);
 			switch(Temp_Code)
 			{
-				//case 0x0000003c:Move_Forward(10,10);break;// 00 11 11 00
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(10,10);
-					break;// 00 11 11 00
-				//case 0x00000024:Move_Forward(9,9);break;// 00 10 01 00
+//				case 0x024: 	Move_Forward(8,8);	break;          //FL_L/FR_R
 				case (RconFL_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-L, FR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(9,9);
-					break;// 00 10 01 00
-
-				//case 0x000000ff:Move_Forward(8,8);break;//11 11 11 11*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/L/R-LR.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s, %d: !Position_Far, FL-L/FR_R.", __FUNCTION__, __LINE__);
 					Move_Forward(8,8);
-					break;//11 11 11 11*
+					break;
 
-				//case 0x000000fc:Move_Forward(3,7);break;//11 11 11 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(3,7);
-					break;//11 11 11 00*
-				//case 0x0000003f:Move_Forward(7,3);break;//00 11 11 11*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(7,3);
-					break;//00 11 11 11*
+//				case 0x3c:   Move_Forward(9,9);break;	          //FL_L/FL_R/FR_L/FR_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,9);
+					break;
+//				case 0xbd:    Move_Forward(8,8);break;            //FL2_L/FL_L/FL_R/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR2_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,8);
+					break;
 
-				//case 0x000000fd:Move_Forward(5,7);break;//11 11 11 01*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconL_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/L-LR, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(5,7);
-					break;//11 11 11 01*
-				//case 0x000000bf:Move_Forward(7,5);break;//10 11 11 11*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/R-LR, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(7,5);
-					break;//10 11 11 11*
+//				case 0xA5:    Move_Forward(9,9);break;            //FL2_L/FL_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR2_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,9);
+					break;
 
-				//case 0x000000f0:Move_Forward(3,7);break;//11 11 00 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(3,7);
-					break;//11 11 00 00*
-				//case 0x0000000f:Move_Forward(7,3);break;//00 00 11 11*
-				case (RconFR_HomeL|RconFR_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FR/R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(7,3);
-					break;//00 00 11 11*
+//				case 0X0AD:   Move_Forward(9,8);break;             //FL2_L/FL_L/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(9,8);
+					break;
 
-				//case 0x00000034:Move_Forward(4,7);break;// 00 11 01 00
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR, FR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(3,8);
-					break;// 00 11 01 00
-				//case 0x00000014:Move_Forward(2,6);break;// 00 01 01 00
-				case (RconFL_HomeR|RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR-R.", __FUNCTION__, __LINE__);
-					Move_Forward(1,6);
-					break;// 00 01 01 00
-				//case 0x00000010:Move_Forward(2,6);break;// 00 01 00 00
-				case (RconFL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-R.", __FUNCTION__, __LINE__);
-					Move_Forward(1,6);
-					break;// 00 01 00 00
+//				case 0x08D:   Move_Forward(10,8);break;            //FL2_L/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(10,8);
+					break;
 
-				//case 0x00000074:Move_Forward(4,7);break;//01 11 01 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR, FR/L-R.", __FUNCTION__, __LINE__);
-					Move_Forward(3,8);
-					break;//01 11 01 00*
-				//case 0x000000f4:Move_Forward(4,7);break;//11 11 01 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR, FR-R, L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(3,8);
-					break;//11 11 01 00*
-				//case 0x000000d4:Move_Forward(6,8);break;//11 01 01 00*
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR-R, L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(6,8);
-					break;//11 01 01 00*
-				//case 0x000000d0:Move_Forward(3,8);break; //11 01 00 00*
-				case (RconFL_HomeR|RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-R, L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(3,8);
-					break; //11 01 00 00*
+//				case 0x089:   Move_Forward(9,7);break;             //FL2_L/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,7);
+					break;
 
-				//case 0x0000002c:Move_Forward(7,5);break; // 00 10 11 00
+//				case 0x02C:   Move_Forward(8,6);break;             //FL_L/FR_L/FR_R
 				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR-R, L-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(7,5);
-					break; // 00 10 11 00
-				//case 0x00000028:Move_Forward(6,2);break; // 00 10 10 00
-				case (RconFL_HomeL|RconFR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR-L.", __FUNCTION__, __LINE__);
-					Move_Forward(6,1);
-					break; // 00 10 10 00
-				//case 0x00000008:Move_Forward(6,2);break;// 00 00 10 00
-				case (RconFR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FR-L.", __FUNCTION__, __LINE__);
-					Move_Forward(6,1);
-					break;// 00 00 10 00
-
-				//case 0x0000002e:Move_Forward(7,5);break;//00 10 11 10*
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL-L, FR-LR, R-L.", __FUNCTION__, __LINE__);
-					Move_Forward(7,5);
-					break;//00 10 11 10*
-				//case 0x0000002f:Move_Forward(7,4);break;//00 10 11 11*
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-L, FR-LR, R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(7,4);
-					break;//00 10 11 11*
-				//case 0x0000002b:Move_Forward(8,6);break;//00 10 10 11*
-				case (RconFL_HomeL|RconFR_HomeL|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR-L, R-LR.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
 					Move_Forward(8,6);
-					break;//00 10 10 11*
-				//case 0x0000000b:Move_Forward(8,3);break; //00 00 10 11*
-				case (RconFR_HomeL|RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FR-L, R-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(8,3);
-					break; //00 00 10 11*
-				//right
-				//case 0x00000001:Move_Forward(12,0);break;      //00 00 00 01#
-				case (RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(12,0);
-					break; // 00 00 00 01#
-//         		case 0x0001:Turn_Right(20,300);      // 00 00 00 01
-//         		       Stop_Brifly();
-//         		       Move_Forward(14,0);
-//         		       break;
-				//case 0x00000002:Turn_Right(20,500);      // 00 00 00 10
-				case (RconR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, R-L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,500);      // 00 00 00 10
-					Stop_Brifly();
-					Move_Forward(14,0);
 					break;
-				//case 0x00000003:Turn_Right(20,400);      // 00 00 00 11
-				case (RconR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, R-LR.", __FUNCTION__, __LINE__);
-					Turn_Right(20,400);      // 00 00 00 11
-					Stop_Brifly();
-					Move_Forward(14,0);
-					break;
-				//case 0x00000080:Move_Forward(0,12);break;   // 10 00 00 00#
-				case (RconL_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(0,12);
-					break;   // 10 00 00 00#
-//         0x0	080:Turn_Left(20,300);        // 10 00 00 00
-//            	    Stop_Brifly();
-//            	    Move_Forward(0,14);
-//            	    break;
-				//case 0x00000040:Turn_Left(20,500);        // 01 00 00 00
-				case (RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, L-R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,500);        // 01 00 00 00
-					Stop_Brifly();
-					Move_Forward(0,14);
-					break;
-				//case 0x000000c0:Turn_Left(20,400);        // 11 00 00 00
-				case (RconL_HomeL|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, L-LR.", __FUNCTION__, __LINE__);
-					Turn_Left(20,400);        // 11 00 00 00
-					Stop_Brifly();
-					Move_Forward(0,14);
-					break;
-				/*----------------------*/
-				//case 0x00000009:Move_Forward(10,3);break;// 00 00 10 01
-				case (RconFR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FR-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(10,3);
-					break;// 00 00 10 01
-				//case 0x00000090:Move_Forward(3,10);break;// 10 01 00 00
-				case (RconFL_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL-R, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(3,10);
-					break;// 10 01 00 00
 
-				//case 0x00000094:Move_Forward(4,8);break;// 10 01 01 00
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL-R, FR-R, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(4,8);
-					break;// 10 01 01 00
-				case (RconFL_HomeL|RconFR_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-L, FR-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(8,4);
-					break;// 00 10 10 01
-
-				//case 0x0000000d:Move_Forward(12,7);break; // 00 00 11 01
-				case (RconFR_HomeL|RconFR_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FR-LR, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(12,7);
-					break; // 00 00 11 01
-				//case 0x000000b0:Move_Forward(7,12);break; // 10 11 00 00
-				case (RconFL_HomeL|RconFL_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(7,12);
-					break; // 10 11 00 00
-
-				//case 0x0000000A:Move_Forward(12,5);break; // 00 00 10 10
-				case (RconFR_HomeL|RconR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FR/R-L.", __FUNCTION__, __LINE__);
-					Move_Forward(12,5);
-					break; // 00 00 10 10
-				//case 0x00000050:Move_Forward(5,12);break; // 01 01 00 00
-				case (RconFL_HomeR|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/L-R.", __FUNCTION__, __LINE__);
-					Move_Forward(5,12);
-					break; // 01 01 00 00
-
-				//case 0x0000002A:Move_Forward(8,7);break; // 00 10 10 10
-				case (RconFL_HomeL|RconFR_HomeL|RconR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/R-L.", __FUNCTION__, __LINE__);
-					Move_Forward(8,6);
-					break; // 00 10 10 10
-				//case 0x00000054:Move_Forward(7,8);break; // 01 01 01 00
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/L-R.", __FUNCTION__, __LINE__);
-					Move_Forward(6,8);
-					break; // 01 01 01 00
-
-				//case 0x0000002D:Move_Forward(9,5);break;  // 00 10 11 01
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-L, FR-LR, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(9,5);
-					break;  // 00 10 11 01
-				//case 0x000000B4:Move_Forward(5,9);break;  // 10 11 01 00
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR, FR-R, L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(5,9);
-					break;  // 10 11 01 00
-
-				//case 0x00000041:Move_Forward(9,5);break; // 01 00 00 01
-				case (RconL_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, R/R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(9,5);
-					break; // 01 00 00 01
-				//case 0x00000082:Move_Forward(5,9);break; // 10 00 00 10
-				case (RconL_HomeL|RconR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FR/R-L.", __FUNCTION__, __LINE__);
-					Move_Forward(5,9);
-					break; // 10 00 00 10
-
-				//case 0x0000000c:Move_Forward(9,7);break; // 00 00 11 00
-				case (RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FR-LR.", __FUNCTION__, __LINE__);
+//				case 0x00D:   Move_Forward(9,6);break;             //FR_L/FR_R/FR2_R
+				case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
 					Move_Forward(9,6);
-					break; // 00 00 11 00
-				//case 0x00000030:Move_Forward(6,8);break;// 00 11 00 00
-				case (RconFL_HomeL|RconFL_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(6,8);
-					break;// 00 11 00 00
+					break;
 
-				//case 0x00000005:Move_Forward(11,6);break;// 00 00 01 01
-				case (RconFR_HomeR|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FR/R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(11,6);
-					break;// 00 00 01 01
-				//case 0x000000a0:Move_Forward(6,11);break; // 10 10 00 00
-				case (RconFL_HomeL|RconL_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL/L-L.", __FUNCTION__, __LINE__);
-					Move_Forward(6,11);
-					break; // 10 10 00 00
+//				case 0x00C:   Move_Forward(8,6);break;             //FR_L/FR_R
+				case (RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,6);
+					break;
 
-				//case 0x00000004:Move_Forward(7,9);break; // 00 00 01 00*
+//				case 0x008:   Move_Forward(7,4);break;             //FR_L
+				case (RconFR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(7,4);
+					break;
+
+//				case 0x00F:   Move_Forward(7,3);break;             //FR_L/FR_R/FR2_L/FR2_R
+				case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,3);
+					break;
+
+//				case 0x009:   Move_Forward(9,5);break;             //FR_L/FR2_R
+				case (RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,5);
+					break;
+
+//				case 0x00B:   Move_Forward(8,3);break;             //FR_L/FR2_L/FR2_R
+				case (RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,3);
+					break;
+
+//				case 0x001:   Move_Forward(9,3);break;             //FR2_R
+				case (RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,3);
+					break;
+
+//				case 0x002:
+				case (RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,250);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0x003:   Turn_Right(20,350);				  //FR2_L/FR2_R
+				case (RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Turn_Right(20,350);
+					Stop_Brifly();
+					Move_Forward(10,3);
+					break;
+
+//				case 0x28:    Move_Forward(8,7);break;              //FL_L/FR_L
+				case (RconFL_HomeL|RconFR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0x2B:    Move_Forward(8,6);break;              //FL_L/FR_L/FR2_L/FR2_R
+				case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,6);
+					break;
+
+//				case 0x29:    Move_Forward(9,7);break;              //FL_L/FR_L/FR2_R
+				case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,7);
+					break;
+
+//				case 0X0A:    Move_Forward(9,4);break;              //FR_L/FR2_L
+				case (RconFR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FR_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(9,4);
+					break;
+
+//				case 0X54:    Move_Forward(8,7);break;              //FL_L/FR_L/FR2_L
+				case (RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0X2D:    Move_Forward(8,6);break;              //FL_L/FR_L/FR_R/FR2_R
+				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,6);
+					break;
+
+//				case 0X05:    Move_Forward(9,7);break;              //FR_R/FR2_R
+				case (RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,7);
+					break;
+
+//				case 0x04:    Move_Forward(8,7);break;              //
 				case (RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FR-R.", __FUNCTION__, __LINE__);
-					//Move_Forward(7,9);
+					ROS_INFO("%s, %d: !Position_Far, FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0x45:    Move_Forward(8,7);break;              //FL2_R/FR_R/FR2_R
+				case (RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0xc5:    Move_Forward(8,6);break;              //FL2_L/FL2_R/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,6);
+					break;
+
+//				case 0xCD:    Move_Forward(8,3);break;  	          //FL2_L/FL2_R/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,3);
+					break;
+
+//				case 0xcf:    Move_Forward(8,3);break;              //FL2_L/FL2_R/FR_L/FR_R/FR2_L/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,3);
+					break;
+
+//				case 0xA9:    Move_Forward(8,7);break;             //FL2_L/FL_L/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0x85:    Move_Forward(9,8);break;             //
+				case (RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,8);
+					break;
+
+//				case 0x8f:    Move_Forward(8,7);break;             //FL2_L/FL_L/FR2_R//FL2_L/FR_L/FR_R/FR2_L/FR2_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0x84:    Move_Forward(9,8);break;             //
+				case (RconFL2_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,8);
+					break;
+
+//				case 0x31:    Move_Forward(9,8);break;             //FL_L/FL_R/FR2_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,8);
+					break;
+
+//				case 0x9D:    Move_Forward(8,7);break;             //FL2_L/FL_R/FR_L/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0xAC:    Move_Forward(8,7);break;             //FL2_L/FL_L/FR_L/FR_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0xbc:    Move_Forward(8,7);break;             //FL2_L/FL_L/FL_R/FR_L/FR_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0x25:    Move_Forward(8,7);break;             //FL_L/FR_R/FR2_R
+				case (RconFL_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0xb8:    Move_Forward(9,8);break;             //FL2_L/FL_L/FL_R/FR_L
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(9,8);
+					break;
+
+//				case 0xA8:    Move_Forward(9,6);break;             //FL2_L/FL_L/FR_l
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(9,6);
+					break;
+
+//				case 0x803:   Turn_Right(20,250);
+				case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Turn_Right(20,250);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0x802:   Turn_Right(20,400);
+				case (RconR_HomeR|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,400);
+					Stop_Brifly();
+					Move_Forward(8,3);
+					break;
+
+//				case 0x80b:   Turn_Right(20,250);
+				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Turn_Right(20,250);
+					Stop_Brifly();
+					Move_Forward(10,4);
+					break;
+
+//				case 0xC02:	  Turn_Right(20,450);
+				case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,450);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0xC00 :  Turn_Right(20,500);
+				case (RconR_HomeR|RconR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, R_R/R_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,500);
+					Stop_Brifly();
+					Move_Forward(9,6);
+					break;
+
+//				case 0x400 :  Turn_Right(20,550);
+				case (RconR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, R_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,550);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0x80A:   Turn_Right(20,250);
+				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,250);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0x402:   Turn_Right(20,500);
+				case (RconR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, R_L/FR2_L.", __FUNCTION__, __LINE__);
+					Turn_Right(20,500);
+					Stop_Brifly();
+					Move_Forward(9,3);
+					break;
+
+//				case 0x805:
+				case (RconR_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,2);
+					break;
+
+//				case 0x801:   Move_Forward(9,0);
+				case (RconR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,0);
+					break;
+
+//				case 0x101:   Move_Forward(9,1);
+				case (RconL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,1);
+					break;
+
+//				case 0x185:   Move_Forward(9,6);
+				case (RconL_HomeL|RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,6);
+					break;
+
+//				case 0x800:   Move_Forward(10,0);
+				case (RconR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, R_R.", __FUNCTION__, __LINE__);
+					Move_Forward(10,0);
+					break;
+
+//				case 0x8B:    Move_Forward(8,7);break;            //FL2_L/FR_L/FR2_L/FR2_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,7);
+					break;
+
+//				case 0x22:    Move_Forward(9,8);break;            //FL2_R/FR_R
+				case (RconFL_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(9,8);
+					break;
+
+//				case 0x81:    Move_Forward(9,2);break;
+				case (RconFL2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,2);
+					break;
+
+//				case 0x23:    Move_Forward(9,8);break;
+				case (RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(9,8);
+					break;
+
+//				case 0Xb5:    Move_Forward(8,9);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,9);
+					break;
+
+//				case 0xb1:    Move_Forward(8,10);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,10);
+					break;
+
+//				case 0x91:    Move_Forward(7,9);break;
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,9);
+					break;
+
+//				case 0x34:    Move_Forward(6,8);break;
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
 					Move_Forward(6,8);
-					break; // 00 00 01 00*
-				//case 0x00000020:Move_Forward(8,6);break; // 00 10 00 00*
+					break;
+
+//				case 0xb0:    Move_Forward(6,9);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(6,9);
+					break;
+
+//				case 0x30:    Move_Forward(6,8);break;
+				case (RconFL_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(6,8);
+					break;
+
+//				case 0x10:    Move_Forward(4,7);break;
+				case (RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(4,7);
+					break;
+
+//				case 0xf0:    Move_Forward(3,7);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FL_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(3,7);
+					break;
+
+//				case 0x90:    Move_Forward(5,9);break;
+				case (RconFL2_HomeL|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(5,9);
+					break;
+
+//				case 0xD0:    Move_Forward(3,8);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(3,8);
+					break;
+
+//				case 0x80:    Move_Forward(3,9);break;
+				case (RconFL2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(3,9);
+					break;
+
+//				case 0x40:    Turn_Left(20,250);
+				case (RconFL2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0xC0:    Turn_Left(20,350);
+				case (RconFL2_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,350);
+					Stop_Brifly();
+					Move_Forward(3,10);
+					break;
+
+//				case 0x14:    Move_Forward(7,8);break;
+				case (RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0xD4:    Move_Forward(6,8);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(6,8);
+					break;
+
+//				case 0x94:    Move_Forward(7,9);break;
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,9);
+					break;
+
+//				case 0X50:    Move_Forward(4,9);break;
+				case (RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Move_Forward(4,9);
+					break;
+
+//				case 0X2A:    Move_Forward(7,8);break;
+				case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0XB4:    Move_Forward(6,8);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(6,8);
+					break;
+
+//				case 0XA0:    Move_Forward(7,9);break;
+				case (RconFL2_HomeL|RconFL_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L.", __FUNCTION__, __LINE__);
+					Move_Forward(7,9);
+					break;
+
+//				case 0x20:    Move_Forward(7,8);break;
 				case (RconFL_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL-L.", __FUNCTION__, __LINE__);
-					Move_Forward(8,6);
-					break; // 00 10 00 00*
+					ROS_INFO("%s, %d: !Position_Far, FL_L.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
 
-				//case 0x00000095:Move_Forward(7,8);break; // 10 01 01 01
-				case (RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR-R, L-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(6,8);
-					break; // 10 01 01 01
-				//case 0x000000A9:Move_Forward(8,7);break; // 10 10 10 01
-				case (RconFL_HomeL|RconFR_HomeL|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL/FR/L-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(8,6);
-					break; // 10 10 10 01
+//				case 0xA2:    Move_Forward(7,8);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
 
-				//case 0x000000B5:Move_Forward(7,8);break; // 10 11 01 01
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR, FR-R, L-L, R-R.", __FUNCTION__, __LINE__);
+//				case 0xA3:    Move_Forward(6,8);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
 					Move_Forward(6,8);
-					break; // 10 11 01 01
-				//case 0x000000AD:Move_Forward(8,7);break; // 10 10 11 01
-				case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconL_HomeL|RconR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-L, FR-LR, L-L, R-R.", __FUNCTION__, __LINE__);
-					Move_Forward(8,6);
-					break; // 10 10 11 01
+					break;
 
-				//case 0x0000001c:Move_Forward(7,8);break;// 00 01 11 00*
-				case (RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
-					ROS_INFO("%s, %d: !Position_Far, FL-R, FR-LR.", __FUNCTION__, __LINE__);
-					Move_Forward(6,8);
-					break;// 00 01 11 00*
-				//case 0x00000038:Move_Forward(8,7);break;// 00 11 10 00*
-				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL):
-					ROS_INFO("%s, %d: !Position_Far, FL-LR, FR-L.", __FUNCTION__, __LINE__);
-					Move_Forward(8,6);
-					break;// 00 11 10 00*
+//				case 0xB3:    Move_Forward(3,8);break;
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(3,8);
+					break;
+
+//				case 0xF3:    Move_Forward(3,8);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(3,8);
+					break;
+
+//				case 0x95:    Move_Forward(7,8);break;//FL2_L/FL_L/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0xA1:    Move_Forward(8,9);break;            //FL2_L/FL_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,9);
+					break;
+
+//				case 0xF1:    Move_Forward(7,8);break;            //FL2_L/FL2_R/FL_L/FL_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0x21:    Move_Forward(8,9);break;            //FL2_L/FL_L/FR2_R //FL2_L/FR_R
+				case (RconFL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,9);
+					break;
+
+//				case 0x8c:    Move_Forward(8,9);break;            //FL2_L/FL_L/FR2_R //FL2_L/FR_R
+				case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,9);
+					break;
+
+//				case 0xb9:    Move_Forward(7,8);break;            //FL2_L/FL_R/FL_R/FR_L/FR2_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FL_R/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0x35:    Move_Forward(7,8);break;            //FL_L/FL_R/FR_R/FR2_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0x3d:    Move_Forward(7,8);break;            //FL_L/FL_R/FR_L/FR_R/FR2_R
+				case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0xa4:    Move_Forward(7,8);break;            //FL2_L/FL_L/FR_R
+				case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL_L/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0x1d:    Move_Forward(8,9);break;            //FL_R/FR_L/FR_R/FR2_R
+				case (RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,9);
+					break;
+
+				case 0x15:    Move_Forward(6,9);break;            //FL_R/FR_R/FR2_R
+				case (RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(6,9);
+					break;
+
+//				case 0x1C0:   Turn_Left(20,250);
+				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x140:   Turn_Left(20,400);
+				case (RconL_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,400);
+					Stop_Brifly();
+					Move_Forward(3,8);
+					break;
+
+//				case 0x1d0:   Turn_Left(20,250);
+				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(4,10);
+					break;
+
+//				case 0x340:   Turn_Left(20,450);
+				case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,450);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x300 :  Turn_Left(20,500);
+				case (RconL_HomeR|RconL_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, L_R/L_L.", __FUNCTION__, __LINE__);
+					Turn_Left(20,500);
+					Stop_Brifly();
+					Move_Forward(6,9);
+					break;
+
+//				case 0x200:   Turn_Left(20,550);
+				case (RconL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,550);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x150:   Turn_Left(20,250);
+				case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,250);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x240:   Turn_Left(20,500);
+				case (RconL_HomeR|RconFL2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, L_R/FL2_R.", __FUNCTION__, __LINE__);
+					Turn_Left(20,500);
+					Stop_Brifly();
+					Move_Forward(3,9);
+					break;
+
+//				case 0x1A0:
+				case (RconL_HomeL|RconFL2_HomeL|RconFL_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FL2_L/FL_L.", __FUNCTION__, __LINE__);
+					Move_Forward(2,9);
+					break;
+
+//				case 0x180:   Move_Forward(0,9);
+				case (RconL_HomeL|RconFL2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, L_L/FL2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(0,9);
+					break;
+
+//				case 0x880:   Move_Forward(1,9);
+				case (RconR_HomeR|RconFL2_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FL2_L.", __FUNCTION__, __LINE__);
+					Move_Forward(1,9);
+					break;
+
+//				case 0x8A1:   Move_Forward(6,9);
+				case (RconR_HomeR|RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, R_R/FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(6,9);
+					break;
+
+//				case 0x100:   Move_Forward(0,10);break;
+				case (RconL_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, L_L.", __FUNCTION__, __LINE__);
+					Move_Forward(0,10);
+					break;
+
+//				case 0xD1:    Move_Forward(7,8);break;            //FL_R/FR_R/FR2_R
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR2_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+					Move_Forward(7,8);
+					break;
+
+//				case 0x44:    Move_Forward(8,9);break;            //FL_L/FR2_L
+				case (RconFL2_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,9);
+					break;
+
+//				case 0x18:    Move_Forward(2,9);break;
+				case (RconFL_HomeR|RconFR_HomeL):
+					ROS_INFO("%s, %d: !Position_Far, FL_R/FR_L.", __FUNCTION__, __LINE__);
+					Move_Forward(2,9);
+					break;
+
+//				case 0xC4:    Move_Forward(8,9);break;
+				case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR):
+					ROS_INFO("%s, %d: !Position_Far, FL2_L/FL2_R/FR_R.", __FUNCTION__, __LINE__);
+					Move_Forward(8,9);
+					break;
 
 				default:
+//					USPRINTF("**************default angle is %d, default code  is 0x%x\n",angle,Temp_Code);
 					ROS_INFO("%s, %d: !Position_Far, else:%x.", __FUNCTION__, __LINE__, Temp_Code);
-					//Move_Forward(7,8);
-					Move_Forward(7,7);
+					Move_Forward(7,8);
 					break;
 			}
 		}
-//
 //		USART_DMA_String(11,"\n\n\r HOME   ");//left cliff
-//USART_DMA_Numbers(Temp_Code);
-		//Display_TM1618(Temp_Code,1);
-//Display_Content(0,Temp_Code/100,Temp_Code%100,0,1);
-				//delay(500);
+//		USART_DMA_Numbers(Temp_Code);
+//		Display_TM1618(Temp_Code,1);
+//		Display_Content(0,Temp_Code/100,Temp_Code%100,0,1);
+//		delay(500);
 		usleep(50000);
 	}
 }
