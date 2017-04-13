@@ -555,8 +555,11 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 		volatile int32_t		Wall_Straight_Distance = 100, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
 		static volatile int32_t	Wall_Distance = Wall_High_Limit;
-		float Start_Pose_X, Start_Pose_Y;
+		float Start_WF_Pose_X, Start_WF_Pose_Y;//the first pose when the wall mode start
+		float Start_Pose_X, Start_Pose_Y;//the first pose hit the wall
+		float Distance_From_WF_Start;
 		float Distance_From_Start;
+		float Find_Wall_Distance = 8;
 		uint8_t		First_Time_Flag;
 		uint32_t Temp_Rcon_Status;
 		Reset_MoveWithRemote();
@@ -606,6 +609,9 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		if (Wall_Distance < Wall_Low_Limit) {
 				Wall_Distance = Wall_Low_Limit;
 		}
+
+		Start_WF_Pose_X =  robot::instance()->robot_get_position_x();
+		Start_WF_Pose_Y =  robot::instance()->robot_get_position_y();
 
 		Move_Forward(25, 25);
 
@@ -657,7 +663,12 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						break;
 				}
 
-				usleep(10000);
+				if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_WF_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) > Find_Wall_Distance ){
+						ROS_INFO("Find wall over the limited distance : %f", Find_Wall_Distance);
+						WF_End_Wall_Follow();
+						return 0;
+				}
+						
 		}
 
 		//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle(0) + 900);
@@ -1697,6 +1708,7 @@ uint8_t WF_End_Wall_Follow(void){
 		MapTouringType  mt_state = MT_None;
 		int16_t home_angle = robot::instance()->robot_get_home_angle();
 
+		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 		//CM_MoveToCell(0, 0, 2, 0, 1);
 		/*
 		   tmpPnt.X = countToCell(Home_Point.front().X);
