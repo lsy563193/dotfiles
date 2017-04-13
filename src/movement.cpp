@@ -64,7 +64,9 @@ volatile uint8_t Bumper_Error = 0;
 volatile int16_t Left_Wall_BaseLine = 50;
 volatile int16_t Right_Wall_BaseLine = 50;
 
-// Variable for touch status
+// Variable for key status, key may have many key types.
+volatile uint8_t Key_Status = 0;
+// Variable for touch status, touch status is just for KEY_CLEAN.
 volatile uint8_t Touch_Status = 0;
 
 /*----------------------- Work Timer functions--------------------------*/
@@ -1377,6 +1379,11 @@ uint8_t Remote_Key(uint32_t key)
 
 }
 
+uint8_t Get_Touch_Status(void)
+{
+	return Touch_Status;
+}
+
 void Reset_Touch(void)
 {
 	Touch_Status = 0;
@@ -1394,8 +1401,7 @@ void Deceleration(void)
 uint8_t Touch_Detect(void)
 {
 	// Get the key value from robot sensor
-	if (Touch_Status == 1){
-		Reset_Touch();
+	if (Get_Touch_Status()){
 		return 1;
 	}
 	if (Remote_Key(Remote_Clean)){
@@ -1632,21 +1638,29 @@ uint8_t  Check_Battery()
 		return 1;
 }
 
+void Set_Key_Press(uint8_t key)
+{
+	Key_Status |= key;
+}
+
+void Reset_Key_Press(uint8_t key)
+{
+	Key_Status &= ~key;
+}
+
 uint8_t Get_Key_Press(void)
 {	
-	uint8_t status=0;
-	if(robot::instance()->robot_get_key())
-		return status |= KEY_CLEAN;
-	return status;
+	return Key_Status;
 }
 
 uint8_t Get_Key_Time(uint16_t key)
 {
+	// This time is count for 100ms.
 	uint8_t time = 0;
 	while(ros::ok()){
 		time++;
-		if(time>200)break;
-		usleep(10000);
+		if(time>20)break;
+		usleep(100000);
 		if(Get_Key_Press()!=key)break;
 	}
 	return time;

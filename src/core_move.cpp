@@ -646,10 +646,18 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		}
 
 		if (Touch_Detect()) {
-			Set_Touch();
 			CM_TouringCancel();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
+			Stop_Brifly();
+			Beep(5, 20, 0, 1);
 			printf("%s %d: touch detect break!\n", __FUNCTION__, __LINE__);
+			// Key release detection, if user has not release the key, don't do anything.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				usleep(20000);
+			}
+			Reset_Touch();
 			return;
 		}
 		if (Remote_Key(Remote_Max)) {
@@ -869,6 +877,15 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
 		set_gyro(1, 1);
 		usleep(10000);
+		Stop_Brifly();
+		Beep(5, 20, 0, 1);
+		// Key release detection, if user has not release the key, don't do anything.
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			usleep(20000);
+		}
+		Reset_Touch();
 
 		return MT_Key_Clean;
 	}
@@ -1653,17 +1670,25 @@ uint8_t CM_Touring(void)
 	tiledUpCount = 0;
 
 	Reset_Rcon_Status();
-	Reset_Touch();
 
 	station_zone = -1;
 	from_station = 0;
 	map_touring_cancel = go_home = remote_go_home = 0;
 
-	Reset_Touch();
 	Reset_MoveWithRemote();
 	Set_LED(100, 0);
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
+		// Beep while moving back.
+		Beep(3, 25, 25, 6);
+		// Key release detection, if user has not release the key, don't do anything.
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			usleep(20000);
+		}
+		// Key relaesed, then the touch status should be cleared.
+		Reset_Touch();
 		printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
 		// Reset the robot to non charge mode.
@@ -1679,25 +1704,31 @@ uint8_t CM_Touring(void)
 		if (Is_ChargerOn()){
 			printf("[core_move.cpp] Still charging.\n");
 		}
-		// Beep while moving back.
-		Beep(3, 25, 25, 6);
 		// Set i < 7 for robot to move back for approximately 500mm.
 		for (i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			Quick_Back(20, 72);
 			if (Touch_Detect() || Is_AtHomeBase()) {
-				if (Touch_Detect())
-				{
-					printf("%s %d: touch event! return 0\n", __FUNCTION__, __LINE__);
-				}
-				else
-				{
-					printf("%s %d: move back 100mm and still detect charger! return 0\n", __FUNCTION__, __LINE__);
-				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
-				Beep(3, 100, 25, 5);
+				Beep(5, 20, 0, 1);
+				if (!Touch_Detect())
+				{
+					printf("%s %d: move back 100mm and still detect charger! return 0\n", __FUNCTION__, __LINE__);
+				}
+				else
+				{
+					printf("%s %d: touch event! return 0\n", __FUNCTION__, __LINE__);
+					Stop_Brifly();
+					// Key release detection, if user has not release the key, don't do anything.
+					while (Get_Key_Press() & KEY_CLEAN)
+					{
+						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+						usleep(20000);
+					}
+					Reset_Touch();
+				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 				if (robot::instance()->Is_Cleaning_Paused())
 				{
@@ -1713,10 +1744,21 @@ uint8_t CM_Touring(void)
 		Stop_Brifly();
 		from_station = 1;
 	}
+	else
+	{
+		// Key release detection, if user has not release the key, don't do anything.
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			usleep(20000);
+		}
+		// Key relaesed, then the touch status should be cleared.
+		Reset_Touch();
+	}
 
 	Blink_LED = 8;
 	Reset_Touch();
-	/*wati for gyro initialize*/
+	/*
 	ROS_DEBUG("while Blink_LED-----------------------------");
 	while (Blink_LED--) {
 		if (Touch_Detect()) {
@@ -1734,6 +1776,7 @@ uint8_t CM_Touring(void)
 		Set_LED(100, 0);
 		usleep(200000);
 	}
+	*/
 
 	New_Home_Point.X = New_Home_Point.Y = 0;
 
@@ -1803,6 +1846,7 @@ uint8_t CM_Touring(void)
 	}
 	if(count_n_10ms == 0){
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 		return 0;
 	}
 
@@ -1817,6 +1861,15 @@ uint8_t CM_Touring(void)
 		if (Touch_Detect()) {
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			printf("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+			Beep(5, 20, 0, 1);
+			Stop_Brifly();
+			// Key release detection, if user has not release the key, don't do anything.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				usleep(20000);
+			}
+			Reset_Touch();
 			return 0;
 		}
 
@@ -2048,10 +2101,6 @@ uint8_t CM_Touring(void)
 							// If it is the last point, it means it it now at (0, 0).
 							if (from_station == 0) {
 								CM_HeadToCourse(ROTATE_TOP_SPEED, -home_angle);
-
-								if (Touch_Detect()) {
-									return 0;
-								}
 							}
 
 							Disable_Motors();
@@ -2426,8 +2475,16 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 				if (Touch_Detect()) {
-					Set_Touch();
 					CM_TouringCancel();
+					Beep(5, 20, 0, 1);
+					Stop_Brifly();
+					// Key release detection, if user has not release the key, don't do anything.
+					while (Get_Key_Press() & KEY_CLEAN)
+					{
+						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+						usleep(20000);
+					}
+					Reset_Touch();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return -5;
 				}
@@ -2554,6 +2611,16 @@ void CM_CorBack(uint16_t dist)
 			break;
 		}
 		if (Touch_Detect()) {
+			ROS_INFO("%s %d: Touch detected!", __FUNCTION__, __LINE__);
+			Beep(5, 20, 0, 1);
+			Stop_Brifly();
+			// Key release detection, if user has not release the key, don't do anything.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				usleep(20000);
+			}
+			Reset_Touch();
 			break;
 		}
 
@@ -2669,7 +2736,13 @@ MapTouringType CM_handleExtEvent()
 	if (Touch_Detect()) {
 		Stop_Brifly();
 		printf("%s %d: clean key is pressed.\n", __FUNCTION__, __LINE__);
-		Beep(5, 6, 6, 1);
+		Beep(5, 20, 0, 1);
+		// Key release detection, if user has not release the key, don't do anything.
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			usleep(20000);
+		}
 		Reset_Touch();
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return MT_Key_Clean;

@@ -100,12 +100,18 @@ void Charge_Function(void)
 			break;
 		}
 		/*----------------------------------------------------Check Key---------------------*/
-		if(Get_Key_Press() == KEY_CLEAN)//                                    Check Key Clean
+		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean
 		{
-			Get_Key_Time(KEY_CLEAN);
+			Beep(5, 20, 0, 1);
 //			Reset_Error_Code();
 			if(Is_AtHomeBase()) {
 				ROS_INFO("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
+				// Key release detection, if user has not release the key, don't do anything.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+					usleep(20000);
+				}
 //				Set_Room_Mode(Room_Mode_Large);
 				Set_Clean_Mode(Clean_Mode_Navigation);
 				break;
@@ -506,8 +512,28 @@ void Around_ChargerStation(uint8_t Dir)
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if(Touch_Detect() || Remote_Key(Remote_Clean))
 		{
-			// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-			Set_Touch();
+			Stop_Brifly();
+			if (Touch_Detect())
+			{
+				Beep(5, 20, 0, 1);
+				// Key release detection, if user has not release the key, don't do anything.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+					usleep(20000);
+				}
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (robot::instance()->Is_Cleaning_Paused())
+				{
+					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+					Set_Touch();
+				}
+				else
+#endif
+				{
+					Reset_Touch();
+				}
+			}
 			// If key pressed, go back to user interface mode.
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
@@ -929,6 +955,25 @@ uint8_t Check_Position(uint8_t Dir)
 		// if(Is_Remote())return 1;
 		if(Touch_Detect())
 		{
+			Beep(5, 20, 0, 1);
+			Stop_Brifly();
+			// Key release detection, if user has not release the key, don't do anything.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				usleep(20000);
+			}
+#if CONTINUE_CLEANING_AFTER_CHARGE
+			if (robot::instance()->Is_Cleaning_Paused())
+			{
+				// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+				Set_Touch();
+			}
+			else
+#endif
+			{
+				Reset_Touch();
+			}
 			return 1;
 		}
 		//if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))return 1;
@@ -1178,8 +1223,25 @@ void By_Path(void)
 			/*------------------------------------------------------Touch and Remote event-----------------------*/
 			if(Touch_Detect())
 			{
-				// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-				Set_Touch();
+				Beep(5, 20, 0, 1);
+				Stop_Brifly();
+				// Key release detection, if user has not release the key, don't do anything.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+					usleep(20000);
+				}
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (robot::instance()->Is_Cleaning_Paused())
+				{
+					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
+					Set_Touch();
+				}
+				else
+#endif
+				{
+					Reset_Touch();
+				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}

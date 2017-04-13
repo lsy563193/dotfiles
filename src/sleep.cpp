@@ -29,25 +29,24 @@ void Sleep_Mode(void)
 		// Time for key pressing
 		time=0;
 		//judge which wakeup signal
-		while(Get_Key_Press() == KEY_CLEAN)
+		if (Get_Key_Press() & KEY_CLEAN)
 		{
-			usleep(100000);// Wait for 100ms.
-			time++;
-			if(time>15)
+			time = Get_Key_Time(KEY_CLEAN);
+			if (time > 20)
 			{
-				break;
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				Beep(3, 50, 0, 1);
+				// Wait for user to release the key.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_INFO("%s %d: User still holds the key.", __FUNCTION__, __LINE__);
+					usleep(100000);
+				}
+				Reset_Touch();
+				return;
 			}
 		}
-		if(time>15) // Over 1500ms.
-		{
-			Ch_WP_Counter=0;
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			Beep(3, 50, 0, 1);
-			Set_LED(100, 0);
-			// Wait for 2s before it wakes. So that it won't directly go to navigation mode.
-			usleep(2000000);
-			return;
-		}
+
 		if(Remote_Key(Remote_Clean))
 		{
 			Ch_WP_Counter=0;

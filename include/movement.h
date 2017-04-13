@@ -259,7 +259,11 @@
 #define Display_Full				4
 #define Display_Low					5
 
+#if __ROBOT_X900
+#define KEY_CLEAN 1
+#else
 #define KEY_CLEAN 0x02
+#endif
 #define KEY_CLOCK 0x01
 #define KEY_SPOT  0x04
 #define KEY_HOME  0x08
@@ -452,6 +456,8 @@ uint8_t Remote_Key(uint32_t Key);
 
 uint8_t Is_MoveWithRemote(void);
 
+uint8_t Get_Touch_Status(void);
+
 void Reset_Touch(void);
 
 void Set_Touch(void);
@@ -517,6 +523,10 @@ int16_t Get_LeftWheel_Speed(void);
 int16_t Get_RightWheel_Speed(void);
 
 uint8_t  Check_Battery();
+
+void Set_Key_Press(uint8_t key);
+
+void Reset_Key_Press(uint8_t key);
 
 uint8_t Get_Key_Press(void);
 

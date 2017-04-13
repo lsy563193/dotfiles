@@ -60,7 +60,8 @@ void User_Interface(void)
 	//Disable_Motors();
 	Reset_Rcon_Status();
 //	Clear_Clcok_Receive();
-	Set_Room_Mode(Room_Mode_Large);
+	// Reset touch to avoid previous touch leads to directly go to navigation mode.
+	Reset_Touch();
 //	ResetHomeRemote();
 	Set_VacMode(Vac_Normal);
 	while(ros::ok())
@@ -145,50 +146,36 @@ void User_Interface(void)
 		if(Remote_Key(Remote_Clean))//                                       Check Remote Key Clean
 		{
 			Reset_Rcon_Remote();
-			Set_Room_Mode(Room_Mode_Large);
-//			Press_time=10;
-//			while(Press_time--)
-//			{
-//				if(Remote_Key(Remote_Clean))
-//				{
-					Set_Room_Mode(Room_Mode_Auto);
-//					break;
-//				}
-//				usleep(50000);
-//			}
      		Temp_Mode=Clean_Mode_Navigation;
 			Reset_Rcon_Remote();
 			Reset_MoveWithRemote();
 		}
-		if(Get_Key_Press()==KEY_CLEAN)//                                    Check Key Clean
+		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean
 		{
 			Set_LED(100,0);
-			Beep(2,25,25,2);
+			//Beep(2,25,25,2);
 			//TX_D();
 		  	Press_time=Get_Key_Time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
-			if(Press_time>100)
+			if(Press_time>20)
 			{
-				Beep(3,25,25,2);
+				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
+				Beep(6,25,25,2);
+				// Wait for user to release the key.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_INFO("User still holds the key.");
+					usleep(100000);
+				}
+				// Key relaesed, then the touch status should be cleared.
+				Reset_Touch();
 				Set_LED(0,0);
 			  	Temp_Mode=Clean_Mode_Sleep;
 			}
 			else
 			{
-				Set_Room_Mode(Room_Mode_Large);
-//				Press_time=5;
-//				while(Press_time--)
-//				{
-//					if(Get_Key_Press()==KEY_CLEAN)
-//					{
-//						Beep(2,25,25,2);
-						Set_Room_Mode(Room_Mode_Auto);
-//						break;
-//					}
-//					usleep(50000);
-//				}
-				Beep(2, 25, 25, 2);
-			  	Temp_Mode=Clean_Mode_Navigation;
+				Beep(4,25,25,2);
+				Temp_Mode=Clean_Mode_Navigation;
         		Reset_Work_Time();
 			}
 			Reset_MoveWithRemote();
@@ -221,6 +208,7 @@ void User_Interface(void)
 				{
 //					Set_Error_Code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
+					ROS_INFO("%s %d: Cliff triggered, can't change mode.", __FUNCTION__, __LINE__);
 					Temp_Mode=0;
 				}
 				//else if(GetBatteryVoltage() < 1520)
@@ -236,22 +224,22 @@ void User_Interface(void)
 				else
 				{
 //					Reset_Error_Code();
-					Set_LED(100,0);
-					if(Get_Room_Mode()==Room_Mode_Auto)
-					{
-						Set_LED(100,0);
-						Beep(1,25,25,2);
-						Set_LED(0,0);
-						Beep(3,25,25,2);
-						Set_LED(100,0);
-						Beep(5,25,25,2);
-					}
-					else
-					{
-	          			Set_LED(100,0);
-						Beep(5,25,25,2);
-						Beep(3,25,25,2);
-					}
+//					Set_LED(100,0);
+//					if(Get_Room_Mode()==Room_Mode_Auto)
+//					{
+//						Set_LED(100,0);
+//						Beep(1,25,25,2);
+//						Set_LED(0,0);
+//						Beep(3,25,25,2);
+//						Set_LED(100,0);
+//						Beep(5,25,25,2);
+//					}
+//					else
+//					{
+//	          			Set_LED(100,0);
+//						Beep(5,25,25,2);
+//						Beep(3,25,25,2);
+//					}
 					if(!Is_ChargerOn()&&(Temp_Mode!=Clean_Mode_Navigation)){
 						Initialize_Motor();
 						ROS_DEBUG_NAMED(USER_INTERFACE," init motors.");

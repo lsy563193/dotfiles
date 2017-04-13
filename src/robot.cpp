@@ -28,6 +28,7 @@ time_t	start_time;
 
 // For avoid key value palse.
 int8_t key_press_count;
+int8_t key_release_count;
 
 //extern pp::x900sensor sensor;
 robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
@@ -134,19 +135,31 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	//printf("[robot.cpp] Rcon info:%x.\n", this->charge_stub);
 
 	this->key = msg->key;
-	// Mark down the key if it is pressed.
-	if (this->key == 1)
+	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
+	if ((this->key & KEY_CLEAN) && !(Get_Key_Press() & KEY_CLEAN))
 	{
 		key_press_count++;
-		if (key_press_count > 10)
+		if (key_press_count > 5)
 		{
-			Set_Touch();
+			Set_Key_Press(KEY_CLEAN);
 			key_press_count = 0;
+			// When key 'clean' is triggered, it will set touch status.
+			Set_Touch();
+		}
+	}
+	else if (!(this->key & KEY_CLEAN) && (Get_Key_Press() & KEY_CLEAN))
+	{
+		key_release_count++;
+		if (key_release_count > 5)
+		{
+			Reset_Key_Press(KEY_CLEAN);
+			key_release_count = 0;
 		}
 	}
 	else
 	{
 		key_press_count = 0;
+		key_release_count = 0;
 	}
 
 	this->charge_status =msg->c_s; //charge status
