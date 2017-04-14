@@ -70,6 +70,7 @@ void User_Interface(void)
 		if(Remote_Key(Remote_Forward | Remote_Right | Remote_Left | Remote_Backward))
 		{
 			Set_Clean_Mode(Clean_Mode_Remote);
+			Reset_Rcon_Remote();
 			return;
 	  	}
 		/*
@@ -104,6 +105,7 @@ void User_Interface(void)
 			{
 				//Transmite_BAT();
 			 	Set_MoveWithRemote();
+				Reset_Rcon_Remote();
 				Temp_Mode=Clean_Mode_Spot;
 			}
 
@@ -116,18 +118,21 @@ void User_Interface(void)
 			//	Reset_MoveWithRemote();
 				Set_MoveWithRemote();
 				SetHomeRemote();
+				Reset_Rcon_Remote();
 			}
 			/* -----------------------------Check if Random event ----------------------------------*/
 			/*
 			if(Remote_Key(Remote_Random))//                                  Check Remote Key Random
 			{
 			  	Set_MoveWithRemote();
+				Reset_Rcon_Remote();
 				Temp_Mode=Clean_Mode_RandomMode;
 			}*/
 			/* -----------------------------Check if wall follow event ----------------------------------*/
 			if(Remote_Key(Remote_Wall_Follow))//                                  Check Remote Key Wallfollow
 			{
 			  	Set_MoveWithRemote();
+				Reset_Rcon_Remote();
 				Temp_Mode=Clean_Mode_WallFollow;
 			}
 		}
@@ -145,7 +150,6 @@ void User_Interface(void)
 		{
 			Reset_Rcon_Remote();
      		Temp_Mode=Clean_Mode_Navigation;
-			Reset_Rcon_Remote();
 			Reset_MoveWithRemote();
 		}
 		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean

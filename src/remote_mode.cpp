@@ -146,6 +146,7 @@ void Remote_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Spot);
 //			Initialize_Motor();
 			Set_MoveWithRemote();
+			Reset_Rcon_Remote();
 			return;
 		}
 
@@ -160,6 +161,7 @@ void Remote_Mode(void)
 		{
 			Disable_Motors();
 			Set_Clean_Mode(Clean_Mode_WallFollow);
+			Reset_Rcon_Remote();
 			return;
 		}
 		/*
@@ -169,6 +171,7 @@ void Remote_Mode(void)
 			Set_Clean_Mode(Clean_Mode_RandomMode);
 //			Initialize_Motor();
 //			Set_MoveWithRemote();
+			Reset_Rcon_Remote();
 			return;
 		}
 		*/
@@ -176,6 +179,7 @@ void Remote_Mode(void)
 		{
 			Set_Clean_Mode(Clean_Mode_GoHome);
 			SetHomeRemote();
+			Reset_Rcon_Remote();
 			return;
 		}
 

@@ -63,6 +63,7 @@ uint8_t Spiral(void)
 				Temp_Dirt_Status=Random_Dirt_Event();
 				Set_VacMode(Vac_Mode_Buffer);
 				Set_Vac_Speed();
+				Reset_Rcon_Remote();
 				if(Temp_Dirt_Status==1)
 				{
 					Set_Clean_Mode(Clean_Mode_Userinterface);

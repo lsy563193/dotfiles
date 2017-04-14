@@ -109,17 +109,33 @@ void Random_Running_Mode(void)
 		Set_BLDC_Speed(30);
 		Stop_Brifly();
 		Quick_Back(30,750);
-		if(Touch_Detect()||Remote_Key(Remote_Clean)||Is_ChargerOn())return;
+		if(Touch_Detect()||Remote_Key(Remote_Clean)||Is_ChargerOn())
+		{
+			Reset_Rcon_Remote();
+			return;
+		}
 		Beep(2,25,25,1);
 		Quick_Back(30,750);
-		if(Touch_Detect()||Remote_Key(Remote_Clean))return;
+		if(Touch_Detect()||Remote_Key(Remote_Clean))
+		{
+			Reset_Rcon_Remote();
+			return;
+		}
 		Beep(2,25,25,1);
 		Quick_Back(30,750);
-		if(Touch_Detect()||Remote_Key(Remote_Clean))return;
+		if(Touch_Detect()||Remote_Key(Remote_Clean))
+		{
+			Reset_Rcon_Remote();
+			return;
+		}
 		Beep(2,25,25,1);
 		Deceleration();
 		Turn_Right(Turn_Speed,1120+Get_Random_Factor()*10);
-		if(Touch_Detect()||Remote_Key(Remote_Clean))return;
+		if(Touch_Detect()||Remote_Key(Remote_Clean))
+		{
+			Reset_Rcon_Remote();
+			return;
+		}
 		Stop_Brifly();
 		//Initialize_Motor();
 		Base_Wall_On=0;
@@ -273,7 +289,7 @@ void Random_Running_Mode(void)
 //			Stop_Brifly();
 //			Turn_Right(Turn_Speed,1800);
 //			Stop_Brifly();
-//			Reset_Rcon_Remote();
+				Reset_Rcon_Remote();
 //			Reset_Wheel_Step();
 //			Move_Forward(10,10);
 			}
@@ -295,16 +311,19 @@ void Random_Running_Mode(void)
 				Set_LED(100,100);
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				SetHomeRemote();
+				Reset_Rcon_Remote();
 				return;
 			}
 //		if(Remote_Key(Remote_Random)) //                                    Check Key Home
 //		{
 //			Set_Clean_Mode(Clean_Mode_WallFollow);
 //				Move_Forward(10,10);
+//				Reset_Rcon_Remote();
 //				break;
 //		}
 			if(Remote_Key(Remote_Spot))
 			{
+				Reset_Rcon_Remote();
 				Vac_Mode_Buffer = Get_VacMode();
 				Temp_Dirt_Status=Random_Dirt_Event();
 				Set_VacMode(Vac_Mode_Buffer);
@@ -316,6 +335,7 @@ void Random_Running_Mode(void)
 				}
 				Reset_Wheel_Step();
 			}
+			Reset_Rcon_Remote();
 		}
 		/*------------------------------------------------------Virtual wall Event-----------------------*/
 #ifdef VIRTUAL_WALL
@@ -1362,7 +1382,11 @@ uint8_t Left_Bumper_Avoiding(void)
 		{
 			return 0;
 		}
-		if(Remote_Key(Remote_All))return 0;
+		if(Remote_Key(Remote_All))
+		{
+			Reset_Rcon_Remote();
+			return 0;
+		}
 		if(Get_Bumper_Status())break;
 		if(Get_OBS_Status())break;
 		if(Get_Cliff_Trig())break;
@@ -1411,7 +1435,11 @@ uint8_t Right_Bumper_Avoiding(void)
 		{
 			return 0;
 		}
-		if(Remote_Key(Remote_All))return 0;
+		if(Remote_Key(Remote_All))
+		{
+			Reset_Rcon_Remote();
+			return 0;
+		}
 		if(Get_Bumper_Status())break;
 		if(Get_OBS_Status())break;
 		if(Get_Cliff_Trig())break;
@@ -1438,7 +1466,11 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	Turn_Left(speed,angle/2);
-	if(Remote_Key(Remote_All))return;
+	if(Remote_Key(Remote_All))
+	{
+		Reset_Rcon_Remote();
+		return;
+	}
 	//Set_Dir_Forward();
 	//Set_LeftTPWM(0);
 	
@@ -1504,7 +1536,11 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	Turn_Right(speed,angle/2);
-	if(Remote_Key(Remote_All))return;
+	if(Remote_Key(Remote_All))
+	{
+		Reset_Rcon_Remote();
+		return;
+	}
 //	Set_Dir_Forward();
 //	Set_TempPWM(20,0);
 	//Set_RightTPWM(0);

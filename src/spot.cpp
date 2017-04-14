@@ -97,12 +97,14 @@ void Spot_Mode(void)
 			{
 				if (Remote_Key(Remote_Wall_Follow)) {
 					Set_Clean_Mode(Clean_Mode_WallFollow);
+					Reset_Rcon_Remote();
 					//Move_Forward(10, 10);
 					return;
 				}
 				/*
 				if (Remote_Key(Remote_Random)) {
 					Set_Clean_Mode(Clean_Mode_RandomMode);
+					Reset_Rcon_Remote();
 					//Move_Forward(10, 10);
 					return;
 				}*/
@@ -112,6 +114,7 @@ void Spot_Mode(void)
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				Move_Forward(10, 10);
 				SetHomeRemote();
+				Reset_Rcon_Remote();
 				return;
 			}
 			Reset_Rcon_Remote();
@@ -167,6 +170,7 @@ void Spot_Mode(void)
 			{
 				/*if (Remote_Key(Remote_Random)) {
 					Set_Clean_Mode(Clean_Mode_RandomMode);
+					Reset_Rcon_Remote();
 					return;
 				}*/
 			}
@@ -175,6 +179,7 @@ void Spot_Mode(void)
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				Move_Forward(10, 10);
 				SetHomeRemote();
+				Reset_Rcon_Remote();
 				return;
 			}
 			Reset_Rcon_Remote();
@@ -390,6 +395,7 @@ uint8_t Random_Dirt_Event(void)
 		if (Remote_Key(Remote_All)) {
 			//Main_Brush_PWM = MainBrush_Power;
 			Move_Forward(30, 30);
+			Reset_Rcon_Remote();
 			return 0;
 		}
 
