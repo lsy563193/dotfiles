@@ -17,7 +17,9 @@
 #include "user_interface.h"
 #include <ros/ros.h>
 #include "config.h"
+#include "wav.h"
 //extern volatile ADC_Value_Struct ADC_Value;
+
 
 #define USER_INTERFACE "user interface"
 /*------------------------------------------------------------User Interface ----------------------------------*/
@@ -48,7 +50,6 @@ void User_Interface(void)
 
 	Disable_Motors();
 	Beep(3,25,25,1);
-	ROS_DEBUG_NAMED(USER_INTERFACE,"in user interface mode");
 	usleep(600000);
 
 //	Reset_Encoder_Error();
@@ -256,7 +257,13 @@ void User_Interface(void)
 			Disable_Motors();
 			Temp_Mode=0;
 		}
-
+        if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right)){
+            Disable_Motors();
+            ROS_INFO("%s ,%d robot lift up\n",__FUNCTION__,__LINE__);
+            wav_play(WAV_TAKEN_UP);
+            Beep(1,10,25,1);
+            usleep(20000);
+        }
 		Error_Show_Counter++;
 	  	if(Error_Show_Counter>500)
 	  	{
@@ -264,7 +271,7 @@ void User_Interface(void)
 			Error_Show_Counter=0;
 //			Sound_Out_Error(Get_Error_Code());
 		}
-
+        
 #ifdef ONE_KEY_DISPLAY
 		usleep(8000);
 

@@ -2765,7 +2765,7 @@ MapTouringType CM_handleExtEvent()
 		/* Check remote clean key press event, if clean key is pressed, stop robot directly. */
 		if (Remote_Key(Remote_Clean)) {
 			Stop_Brifly();
-			printf("%s %d: remote clean is pressed.\n", __FUNCTION__, __LINE__);
+			printf("%s %d: remote clean key pressed.\n", __FUNCTION__, __LINE__);
 			Reset_Rcon_Remote();
 			return MT_Remote_Clean;
 		}
@@ -2774,8 +2774,9 @@ MapTouringType CM_handleExtEvent()
 
 	/* Check whether robot is taken up. */
 	if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-		printf("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__);
-		Stop_Brifly();
+		ROS_INFO("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__); 
+        Stop_Brifly(); 
+        wav_play(WAV_TAKEN_UP);
 		return MT_Cliff;
 	}
 

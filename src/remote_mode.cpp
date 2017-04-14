@@ -90,13 +90,13 @@ void Remote_Mode(void)
 
 			Deceleration();
 			Work_Motor_Configure();
+			Reset_Rcon_Remote();
 			Turn_Left(Turn_Speed,320);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
 			Set_BLDC_Speed(30);
 			No_Command_Counter=0;
 			Reset_TempPWM();
-			Reset_Rcon_Remote();
 			Reset_Wheel_Step();
 			Forward_Flag=0;
 		}
@@ -105,13 +105,13 @@ void Remote_Mode(void)
 	
 			Deceleration();
 			Work_Motor_Configure();
+            Reset_Rcon_Remote();
 			Turn_Right(Turn_Speed,320);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
 			Set_BLDC_Speed(30);
 			No_Command_Counter=0;
 			Reset_Wheel_Step();
-			Reset_Rcon_Remote();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Max))

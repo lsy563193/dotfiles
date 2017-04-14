@@ -13,7 +13,6 @@
 #include "config.h"
 #include "core_move.h"
 #include "wall_follow_multi.h"
-#define MOVEMENT "movement"
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -325,7 +324,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	if (target_angle >= 3600) {
 		target_angle -= 3600;
 	}
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	Set_Dir_Left();
 
@@ -374,7 +373,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 
 	Set_Wheel_Speed(0, 0);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
 void Turn_Right(uint16_t speed, int16_t angle)
@@ -388,7 +387,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	Set_Dir_Right();
 
@@ -437,7 +436,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 
 	Set_Wheel_Speed(0, 0);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
 int32_t Get_FrontOBS(void)
@@ -474,20 +473,22 @@ uint8_t Get_Cliff_Trig(void)
 	cr = robot::instance()->robot_get_cliff_right();
 	cf = robot::instance()->robot_get_cliff_front();	
 	if (cl < Cliff_Limit){
-		ROS_INFO("Left cliff is detected:%d", cl);
+		ROS_DEBUG("Left cliff is detected:%d", cl);
 		Cliff_Status += 0x01;
 	}
 	if (cr< Cliff_Limit){
-		ROS_INFO("Right cliff is detected:%d", cr);
+		ROS_DEBUG("Right cliff is detected:%d", cr);
 		Cliff_Status += 0x02;
 	}
 	if (cf < Cliff_Limit){
-		ROS_INFO("Front cliff is detected:%d", cf);
+		ROS_DEBUG("Front cliff is detected:%d", cf);
 		Cliff_Status += 0x04;
 	}
+    /*
 	if (Cliff_Status != 0x00){
-		ROS_INFO("Return Cliff status:%x.", Cliff_Status);
+		ROS_DEBUG("Return Cliff status:%x.", Cliff_Status);
 	}
+    */
 	return Cliff_Status;
 }
 
@@ -596,7 +597,6 @@ uint8_t Is_AtHomeBase(void)
 {
 	// If the charge status is true, it means it is at home base charging.
 	//Debug
-	ROS_DEBUG_NAMED(MOVEMENT,"Get charge status: %d.\n", robot::instance()->robot_get_charge_status());
 	if (robot::instance()->robot_get_charge_status() == 2 || robot::instance()->robot_get_charge_status() == 1){
 		return 1;
 	}else{
@@ -786,7 +786,7 @@ uint8_t Check_Motor_Current(void)
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
 			lwheel_oc_count =0;
-            ROS_INFO("%s,%d,left wheel over current\n",__FUNCTION__,__LINE__);
+            ROS_DEBUG("%s,%d,left wheel over current\n",__FUNCTION__,__LINE__);
 			return Check_Left_Wheel;
 		}
 	}
@@ -796,26 +796,26 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
-            ROS_INFO("%s,%d,right wheel over current\n",__FUNCTION__,__LINE__);
+            ROS_DEBUG("%s,%d,right wheel over current\n",__FUNCTION__,__LINE__);
 			return Check_Right_Wheel;
 		}
 	}
 	else
 		rwheel_oc_count = 0;
 	if(robot::instance()->robot_get_rbrush_oc()){
-        ROS_INFO("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
     }
 	if(robot::instance()->robot_get_lbrush_oc()){
-        ROS_INFO("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
     }
 	if(robot::instance()->robot_get_mbrush_oc()){
-        ROS_INFO("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Main_Brush;
     }
 	if(robot::instance()->robot_get_vacuum_oc()){
-        ROS_INFO("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
 		return Check_Vacuum;	
     }
 	return 0;
@@ -1215,7 +1215,7 @@ uint8_t Remote_Key(uint8_t key)
 	// Debug
 	if (Remote_Status > 0)
 	{
-		ROS_INFO("Remote_Status = %x", Remote_Status);
+		ROS_INFO("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
 	}
 	if(Remote_Status & key)
 		return 1;
@@ -1828,7 +1828,7 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 	Set_Dir_Left();
 	Set_Wheel_Speed(speed, speed);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
 	while(ros::ok())
 	{
 		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
@@ -1882,7 +1882,7 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 	Set_Dir_Right();
 	Set_Wheel_Speed(speed, speed);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
 	while(ros::ok())
 	{
 		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {

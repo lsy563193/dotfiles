@@ -17,6 +17,7 @@
 #include "path_planning.h"
 #include "map.h"
 #include "gyro.h"
+#include "wav.h"
 #include <ros/ros.h>
 
 #ifdef Turn_Speed
@@ -337,6 +338,13 @@ void Spot_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
+        if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right)){
+            Disable_Motors();
+            ROS_INFO("%s ,%d robot lift up\n",__FUNCTION__,__LINE__);
+            wav_play(WAV_TAKEN_UP);
+            Beep(1,5,25,1);
+            usleep(20000);
+        } 
 	}
 }
 

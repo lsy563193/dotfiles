@@ -30,6 +30,7 @@
 #include "rounding.h"
 #include <vector>
 #include "charger.hpp"
+#include "wav.h"
 //Turn speed
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -306,6 +307,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 						Cliff_Move_Back();
 						if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 						{
+                                Stop_Brifly();
 								Set_Clean_Mode(Clean_Mode_Userinterface);
 								break;
 						}
