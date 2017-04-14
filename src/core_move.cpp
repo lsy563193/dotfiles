@@ -87,7 +87,6 @@ uint8_t map_touring_cancel = 0;
 uint8_t	go_home = 0;
 uint8_t	remote_go_home = 0;
 uint8_t	from_station = 0;
-int16_t station_zone = -1;
 uint8_t lowBattery = 0;
 int16_t map_gyro_offset = 0;
 uint8_t tiledUpCount = 0;
@@ -1647,7 +1646,6 @@ uint8_t CM_Touring(void)
 
 	Reset_Rcon_Status();
 
-	station_zone = -1;
 	from_station = 0;
 	map_touring_cancel = go_home = remote_go_home = 0;
 
@@ -1850,7 +1848,6 @@ uint8_t CM_Touring(void)
 		}
 
 		from_station = 1;
-		station_zone = 0;
 	}
 	/*****************************************************Cleaning*****************************************************/
 	while (ros::ok()) {
