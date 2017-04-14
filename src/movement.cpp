@@ -1384,7 +1384,6 @@ void Deceleration(void)
 uint8_t Touch_Detect(void)
 {
 	// Get the key value from robot sensor
-    ROS_INFO("%s ,%d touch detect ",__FUNCTION__,__LINE__);
 	if (Get_Touch_Status()){
 		return 1;
 	}
