@@ -2185,7 +2185,7 @@ uint8_t CM_Touring(void)
 					rounding_type = ROUNDING_NONE;
 
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
-					rounding_type = CM_get_rounding_direction(&Next_Point, Target_Point);
+					rounding_type = CM_get_rounding_direction(&Next_Point, Target_Point, last_dir);
 #endif
 
 					if (rounding_type != ROUNDING_NONE) {
