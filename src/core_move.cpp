@@ -662,6 +662,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			if (lowBattery == 0) {
 				Switch_VacMode();
 			}
+			Reset_Rcon_Remote();
 		}
 		if (Remote_Key(Remote_Home) && go_home == 0) {
 			Stop_Brifly();
@@ -671,6 +672,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			printf("%s %d: remote home is pressed.\n", __FUNCTION__, __LINE__);
 
 			CM_SetGoHome(1);
+			Reset_Rcon_Remote();
 			return;
 		}
 
@@ -2699,6 +2701,7 @@ MapTouringType CM_handleExtEvent()
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
 		robot::instance()->Set_Cleaning_Pause();
 #endif
+		Reset_Rcon_Remote();
 		return MT_Battery_Home;
 	}
 	*/
@@ -2728,6 +2731,7 @@ MapTouringType CM_handleExtEvent()
 			Stop_Brifly();
 			printf("%s %d: remote home is pressed.\n", __FUNCTION__, __LINE__);
 			CM_SetGoHome(1);
+			Reset_Rcon_Remote();
 			return MT_Remote_Home;
 		}
 
@@ -2743,6 +2747,7 @@ MapTouringType CM_handleExtEvent()
 			Spot_Mode();
 			Switch_VacMode();
 			printf("%s %d: remote spot ends.\n", __FUNCTION__, __LINE__);
+			Reset_Rcon_Remote();
 			return MT_None;
 		}
 #endif
@@ -2751,6 +2756,7 @@ MapTouringType CM_handleExtEvent()
 			if (lowBattery == 0) {
 				Switch_VacMode();
 			}
+			Reset_Rcon_Remote();
 		}
 
 
@@ -2758,6 +2764,7 @@ MapTouringType CM_handleExtEvent()
 		if (Remote_Key(Remote_Clean)) {
 			Stop_Brifly();
 			printf("%s %d: remote clean is pressed.\n", __FUNCTION__, __LINE__);
+			Reset_Rcon_Remote();
 			return MT_Remote_Clean;
 		}
 		Reset_Rcon_Remote();

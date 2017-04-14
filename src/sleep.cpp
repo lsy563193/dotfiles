@@ -51,6 +51,7 @@ void Sleep_Mode(void)
 		{
 			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Userinterface);
+			Reset_Rcon_Remote();
 			return;
 		}
 		if(Is_ChargerOn())
@@ -73,12 +74,6 @@ void Sleep_Mode(void)
 				//Wake_Up_Adjust();
 	  			return;
 			}
-		}
-		if(Remote_Key(Remote_Clean))
-		{
-			Ch_WP_Counter=0;
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return;
 		}
 		if(Is_ChargerOn())
 		{

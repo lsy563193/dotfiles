@@ -301,8 +301,13 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
 		usleep(1000);
-		if (Touch_Detect() || Remote_Key(Remote_Clean))
+		if (Touch_Detect())
 		{
+			break;
+		}
+		if (Remote_Key(Remote_Clean))
+		{
+			Reset_Rcon_Remote();
 			break;
 		}
 	}
@@ -1198,10 +1203,10 @@ uint32_t Get_Rcon_Status(){
 uint8_t Remote_Key(uint8_t key)
 {
 	// Debug
-	//if (Remote_Status > 0)
-	//{
-	//	ROS_INFO("Remote_Status = %x", Remote_Status);
-	//}
+	if (Remote_Status > 0)
+	{
+		ROS_INFO("Remote_Status = %x", Remote_Status);
+	}
 	if(Remote_Status & key)
 		return 1;
 	else
@@ -1373,6 +1378,7 @@ uint8_t Touch_Detect(void)
 		return 1;
 	}
 	if (Remote_Key(Remote_Clean)){
+		Reset_Rcon_Remote();
 		return 1;
 	}
 	if (Get_Cliff_Trig() == 0x07){
@@ -1649,6 +1655,7 @@ uint8_t Is_Turn_Remote(void)
 {
 	if (Remote_Key(Remote_Max | Remote_Home | Remote_Spot))
 	{
+		Reset_Rcon_Remote();
 		return 1;
 	}
 	else

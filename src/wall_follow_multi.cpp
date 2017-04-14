@@ -770,6 +770,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				   if (Remote_Key(Remote_All) {
 				   printf("Rcon\n");
 				   Reset_Touch();
+				   Reset_Rcon_Remote();
 				   Set_Clean_Mode(Clean_Mode_Userinterface);
 				   break;
 				   }*/
@@ -778,6 +779,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						if(Is_MoveWithRemote())
 						{
 								/*if (Remote_Key(Remote_Random)) {
+										Reset_Rcon_Remote();
 										Set_Clean_Mode(Clean_Mode_RandomMode);
 										break;
 								}*/
@@ -785,6 +787,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						}
 						if (Remote_Key(Remote_Home)) {
 								Set_MoveWithRemote();
+								Reset_Rcon_Remote();
 								Set_Clean_Mode(Clean_Mode_GoHome);
 								Move_Forward(10, 10);
 								SetHomeRemote();
@@ -792,6 +795,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						}
 						if (Remote_Key(Remote_Spot)) {
 								Set_MoveWithRemote();
+								Reset_Rcon_Remote();
 								Set_Clean_Mode(Clean_Mode_Spot);
 								break;
 						}
