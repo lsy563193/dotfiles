@@ -127,6 +127,17 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 		Turn_Right(speed, angle);
 	}
 
+	if (Remote_Key(Remote_Clean | Remote_Home))
+	{
+		// This remote command should change the behavior of robot.
+		Stop_Brifly();
+	}
+	if (Remote_Key(Remote_Max) && !lowBattery)
+	{
+		Switch_VacMode();
+		Reset_Rcon_Remote();
+	}
+
 	rounding_update();
 
 	should_mark = 1;
@@ -278,6 +289,17 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 		rounding_update();
 
+		if (Remote_Key(Remote_Clean | Remote_Home))
+		{
+			// This remote command should change the behavior of robot.
+			Stop_Brifly();
+			return 0;
+		}
+		if (Remote_Key(Remote_Max) && !lowBattery)
+		{
+			Switch_VacMode();
+			Reset_Rcon_Remote();
+		}
 		//printf("%s %d: %d (%d, %d)\n", __FUNCTION__, __LINE__, target.Y, Map_GetXCount(), Map_GetYCount());
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
 			// Robot has reach the target.
@@ -305,7 +327,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				//Stop_Brifly();
 				printf("%s %d, move back for right bumper.\n", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
-				Stop_Brifly();
 				// Turn right for 135 degrees.
 				rounding_turn(1, TURN_SPEED, 1350);
 				Move_Forward(15, 15);
@@ -433,7 +454,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 				Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
 			} else {
-				Stop_Brifly();
 				// 12500 steps means around 2 meters.
 				if (Get_LeftWheel_Step() < 12500) {
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
@@ -463,7 +483,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				//Stop_Brifly();
 				printf("%s %d, move back for left bumper.\n", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
-				Stop_Brifly();
 				// Turn left for 135 degrees.
 				rounding_turn(0, TURN_SPEED, 1350);
 				Move_Forward(15, 15);
@@ -591,7 +610,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 				Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
 			} else {
-				Stop_Brifly();
 				// 12500 steps means around 2 meters.
 				if (Get_RightWheel_Step() < 12500) {
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
