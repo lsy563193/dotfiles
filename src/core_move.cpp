@@ -89,7 +89,6 @@ uint8_t	remote_go_home = 0;
 uint8_t	from_station = 0;
 uint8_t lowBattery = 0;
 int16_t map_gyro_offset = 0;
-uint8_t tiledUpCount = 0;
 
 uint8_t	should_follow_wall = 0;
 
@@ -1642,7 +1641,6 @@ uint8_t CM_Touring(void)
 
 	// Reset battery status
 	lowBattery = 0;
-	tiledUpCount = 0;
 
 	Reset_Rcon_Status();
 
