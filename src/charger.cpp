@@ -137,6 +137,7 @@ void Charge_Function(void)
 //						Set_LED(100,0);
 //						Beep(5);
 //						Set_Room_Mode(Room_Mode_Auto);
+//						Reset_Rcon_Remote();
 //						break;
 //					}
 //					delay(500);
