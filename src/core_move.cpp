@@ -1489,7 +1489,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 
 	ROS_INFO("Enter rounding detection.");
 	dir = CM_get_robot_direction();
-	if (should_follow_wall == 0) {
+	if (should_follow_wall == 0 || Next_Point->Y == Map_GetYCount()) {
 		return rounding_type;
 	}
 
