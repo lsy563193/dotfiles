@@ -1456,13 +1456,11 @@ MapTouringType CM_MoveToPoint(Point32_t target)
 
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
 
-RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_Point) {
+RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_Point, uint16_t dir) {
 	int32_t		y_coordinate;
-	uint16_t	dir;
 	RoundingType	rounding_type = ROUNDING_NONE;
 
 	ROS_INFO("Enter rounding detection.");
-	dir = path_get_robot_direction();
 	if (should_follow_wall == 0 || Next_Point->Y == Map_GetYCount()) {
 		return rounding_type;
 	}
@@ -1630,6 +1628,8 @@ uint8_t CM_Touring(void)
 	uint8_t Blink_LED = 0;
 	int16_t	i, x, y, x_current, y_current, start, end;
 	float	slop, intercept;
+
+	uint16_t	last_dir;
 
 	// X, Y in Target_Point are all counts.
 	Point32_t	Next_Point, Target_Point;
@@ -2148,6 +2148,8 @@ uint8_t CM_Touring(void)
 				if (state == -1) {
 
 					ROS_DEBUG("Find path-----------------------------");
+
+					last_dir = path_get_robot_direction();
 
 					x_current = Map_GetXPos();
 					y_current = Map_GetYPos();
