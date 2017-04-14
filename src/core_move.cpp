@@ -1457,30 +1457,6 @@ MapTouringType CM_MoveToPoint(Point32_t target)
 }
 
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
-uint16_t CM_get_robot_direction()
-{
-	uint16_t	dir;
-
-	dir = (uint16_t) round(((double)Gyro_GetAngle(0)) / 100);
-	switch(dir) {
-		case 0:
-		case 36:
-			dir = NORTH;
-			break;
-		case 9:
-			dir = EAST;
-			break;
-		case 18:
-			dir = SOUTH;
-			break;
-		case 27:
-			dir = WEST;
-			break;
-		default:
-			break;
-	}
-	return dir;
-}
 
 RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_Point) {
 	int32_t		y_coordinate;
@@ -1488,7 +1464,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 	RoundingType	rounding_type = ROUNDING_NONE;
 
 	ROS_INFO("Enter rounding detection.");
-	dir = CM_get_robot_direction();
+	dir = path_get_robot_direction();
 	if (should_follow_wall == 0 || Next_Point->Y == Map_GetYCount()) {
 		return rounding_type;
 	}
