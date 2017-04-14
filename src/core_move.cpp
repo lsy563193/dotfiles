@@ -2243,6 +2243,12 @@ uint8_t CM_Touring(void)
 		CM_go_home();
 	}
 
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (!robot::instance()->Is_Cleaning_Paused())
+#endif
+	{
+		Home_Point.clear();
+	}
 	return 0;
 }
 
@@ -2583,10 +2589,19 @@ void CM_SetGyroOffset(int16_t offset)
 }
 
 void CM_SetHome(int32_t x, int32_t y) {
+	bool found = false;
 	printf("%s %d: Push new reachable home: (%d, %d) to home point list.\n", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
 	New_Home_Point.X = x;
 	New_Home_Point.Y = y;
-	Home_Point.push_front(New_Home_Point);
+
+	for (list<Point32_t>::iterator it = Home_Point.begin(); found == false && it != Home_Point.end(); ++it) {
+		if (it->X == x && it->Y == y) {
+			found = true;
+		}
+	}
+	if (found == false) {
+		Home_Point.push_front(New_Home_Point);
+	}
 }
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
