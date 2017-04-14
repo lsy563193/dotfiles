@@ -469,19 +469,19 @@ uint8_t Get_Cliff_Trig(void)
 	cr = robot::instance()->robot_get_cliff_right();
 	cf = robot::instance()->robot_get_cliff_front();	
 	if (cl < Cliff_Limit){
-		ROS_DEBUG_NAMED(MOVEMENT,"Left cliff is detected:%d", cl);
+		ROS_INFO("Left cliff is detected:%d", cl);
 		Cliff_Status += 0x01;
 	}
 	if (cr< Cliff_Limit){
-		ROS_DEBUG_NAMED(MOVEMENT,"Right cliff is detected:%d", cr);
+		ROS_INFO("Right cliff is detected:%d", cr);
 		Cliff_Status += 0x02;
 	}
 	if (cf < Cliff_Limit){
-		ROS_DEBUG_NAMED(MOVEMENT,"Front cliff is detected:%d", cf);
+		ROS_INFO("Front cliff is detected:%d", cf);
 		Cliff_Status += 0x04;
 	}
 	if (Cliff_Status != 0x00){
-		ROS_DEBUG_NAMED(MOVEMENT,"Return Cliff status:%x.", Cliff_Status);
+		ROS_INFO("Return Cliff status:%x.", Cliff_Status);
 	}
 	return Cliff_Status;
 }
@@ -781,6 +781,7 @@ uint8_t Check_Motor_Current(void)
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
 			lwheel_oc_count =0;
+            ROS_INFO("%s,%d,left wheel over current\n",__FUNCTION__,__LINE__);
 			return Check_Left_Wheel;
 		}
 	}
@@ -790,19 +791,28 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
+            ROS_INFO("%s,%d,right wheel over current\n",__FUNCTION__,__LINE__);
 			return Check_Right_Wheel;
 		}
 	}
 	else
 		rwheel_oc_count = 0;
-	if(robot::instance()->robot_get_rbrush_oc())
+	if(robot::instance()->robot_get_rbrush_oc()){
+        ROS_INFO("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
-	if(robot::instance()->robot_get_lbrush_oc())
+    }
+	if(robot::instance()->robot_get_lbrush_oc()){
+        ROS_INFO("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
-	if(robot::instance()->robot_get_mbrush_oc())
+    }
+	if(robot::instance()->robot_get_mbrush_oc()){
+        ROS_INFO("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Main_Brush;
-	if(robot::instance()->robot_get_vacuum_oc())
+    }
+	if(robot::instance()->robot_get_vacuum_oc()){
+        ROS_INFO("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
 		return Check_Vacuum;	
+    }
 	return 0;
 }
 
@@ -1369,6 +1379,7 @@ void Deceleration(void)
 uint8_t Touch_Detect(void)
 {
 	// Get the key value from robot sensor
+    ROS_INFO("%s ,%d touch detect ",__FUNCTION__,__LINE__);
 	if (Get_Touch_Status()){
 		return 1;
 	}
