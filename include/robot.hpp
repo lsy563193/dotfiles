@@ -43,7 +43,6 @@ public:
 	uint8_t robot_get_key();
 	int robot_get_charge_status();
 	uint8_t robot_get_ir_ctrl();
-	void robot_set_ir_cmd(uint8_t cmd);
 	float robot_get_lwheel_current();
 	float robot_get_rwheel_current();
 	uint32_t robot_get_rcon();

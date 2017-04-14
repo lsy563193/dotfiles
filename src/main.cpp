@@ -95,13 +95,6 @@ void *core_move_thread(void *)
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
 				Disable_Motors();
-//				while(ros::ok()){
-//					usleep(10000);
-//					if(Get_Rcon_Remote())
-//					{
-//						Set_Clean_Mode(Clean_Mode_Userinterface);
-//						break;
-//				}
 				Sleep_Mode();
 				break;
 			default:

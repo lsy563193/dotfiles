@@ -55,7 +55,7 @@ uint8_t Spiral(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 1;
 		}
-		if(Get_Rcon_Remote()!=0)
+		if(Remote_Key(Remote_All))
 		{
 			if(Remote_Key(Remote_Spot))
 			{

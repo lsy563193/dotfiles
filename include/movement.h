@@ -417,10 +417,6 @@ uint8_t Get_VacMode(void);
 
 void Switch_VacMode(void);
 
-uint8_t Is_Remote(void);
-
-uint32_t Get_Rcon_Remote(void);
-
 void Set_Rcon_Remote(uint8_t cmd);
 
 void Reset_Rcon_Remote(void);
@@ -453,7 +449,7 @@ uint8_t Get_LeftBrush_Stall(void);
 
 uint8_t Get_RightBrush_Stall(void);
 
-uint8_t Remote_Key(uint32_t Key);
+uint8_t Remote_Key(uint8_t Key);
 
 uint8_t Is_MoveWithRemote(void);
 

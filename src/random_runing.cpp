@@ -205,7 +205,7 @@ void Random_Running_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		if(Get_Rcon_Remote())
+		if(Remote_Key(Remote_All))
 		{
 			#ifdef STANDARD_REMOTE
 			if(Remote_Key(Remote_Left))
@@ -215,7 +215,7 @@ void Random_Running_Mode(void)
 				Set_Wheel_Speed(30,30);
 				//Set_SideBrush_PWM(60,60);
 				usleep(100000);
-				while(Get_Rcon_Remote()==Remote_Left)
+				while(Remote_Key(Remote_Left))
 				{
 					Reset_Rcon_Remote();
 					usleep(100000);
@@ -233,7 +233,7 @@ void Random_Running_Mode(void)
 				Set_Wheel_Speed(30,30);
 				//Set_SideBrush_PWM(60,60);
 				usleep(100000);
-				while(Get_Rcon_Remote()==Remote_Right)
+				while(Remote_Key(Remote_Right))
 				{
 					Reset_Rcon_Remote();
 					usleep(100000);
@@ -936,7 +936,7 @@ void Random_Running_Mode(void)
 			}
 			OBS_Cycle = 0;
 			On_TrapOut_Flag=0;
-			if(Get_Rcon_Remote()==0)
+			if(!Remote_Key(Remote_All))
 			{
 				if(Get_OBS_Status())
 				{
@@ -1362,7 +1362,7 @@ uint8_t Left_Bumper_Avoiding(void)
 		{
 			return 0;
 		}
-		if(Get_Rcon_Remote())return 0;
+		if(Remote_Key(Remote_All))return 0;
 		if(Get_Bumper_Status())break;
 		if(Get_OBS_Status())break;
 		if(Get_Cliff_Trig())break;
@@ -1411,7 +1411,7 @@ uint8_t Right_Bumper_Avoiding(void)
 		{
 			return 0;
 		}
-		if(Get_Rcon_Remote())return 0;
+		if(Remote_Key(Remote_All))return 0;
 		if(Get_Bumper_Status())break;
 		if(Get_OBS_Status())break;
 		if(Get_Cliff_Trig())break;
@@ -1438,7 +1438,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	Turn_Left(speed,angle/2);
-	if(Get_Rcon_Remote())return;
+	if(Remote_Key(Remote_All))return;
 	//Set_Dir_Forward();
 	//Set_LeftTPWM(0);
 	
@@ -1504,7 +1504,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	Turn_Right(speed,angle/2);
-	if(Get_Rcon_Remote())return;
+	if(Remote_Key(Remote_All))return;
 //	Set_Dir_Forward();
 //	Set_TempPWM(20,0);
 	//Set_RightTPWM(0);

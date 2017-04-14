@@ -128,7 +128,7 @@ void Charge_Function(void)
 //				Press_time=10;
 //				while(Press_time--)
 //				{
-//					if(Get_Rcon_Remote()==Remote_Wallfollow)
+//					if(Remote_Key(Remote_Wallfollow))
 //					{
 //						Set_LED(100,0);
 //						Beep(1);
@@ -1062,7 +1062,6 @@ uint8_t Check_Position(uint8_t Dir)
 				return 2;
 			}
 		}
-//		if(Is_Remote())return 1;
 		if(Touch_Detect())
 		{
 			Beep(5, 20, 0, 1);

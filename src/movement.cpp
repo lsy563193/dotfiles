@@ -68,6 +68,8 @@ volatile int16_t Right_Wall_BaseLine = 50;
 volatile uint8_t Key_Status = 0;
 // Variable for touch status, touch status is just for KEY_CLEAN.
 volatile uint8_t Touch_Status = 0;
+// Variable for remote status, remote status is just for remote controller.
+volatile uint8_t Remote_Status = 0;
 
 /*----------------------- Work Timer functions--------------------------*/
 
@@ -1193,50 +1195,14 @@ uint32_t Get_Rcon_Status(){
 }
 
 /*----------------------------------------Remote--------------------------------*/
-uint8_t Is_Remote(void)
+uint8_t Remote_Key(uint8_t key)
 {
-	if(Get_Rcon_Remote())
-	{
-		return 1;
-	}
-	return 0;
-}
-
-uint32_t Get_Rcon_Remote(void)
-{
-//	Debug
-//	return 0;
-	uint8_t ir_cmd;
-	ir_cmd = robot::instance()->robot_get_ir_ctrl();
-	if (ir_cmd != 0)
-	{
-		ROS_INFO("%s: ir_cmd = %x.", __FUNCTION__, ir_cmd);
-	}
-	if(ir_cmd == Remote_Forward)
-		return Remote_Forward;
-	else if(ir_cmd == Remote_Left)
-		return Remote_Left;
-	else if(ir_cmd == Remote_Right)
-		return Remote_Right;
-	else if(ir_cmd == Remote_Max)
-		return Remote_Max;
-	else if(ir_cmd == Remote_Backward)
-		return Remote_Backward;
-	else if(ir_cmd == Remote_Clean)
-		return Remote_Clean;
-	else if(ir_cmd == Remote_Home)
-		return Remote_Home;
-	else if(ir_cmd == Remote_Wall_Follow)
-		return Remote_Wall_Follow;
-	else if(ir_cmd == Remote_Spot)
-		return Remote_Spot;
-	else 
-		return 0;
-}
-
-uint8_t Remote_Key(uint32_t key)
-{
-	if(Get_Rcon_Remote() == key)
+	// Debug
+	//if (Remote_Status > 0)
+	//{
+	//	ROS_INFO("Remote_Status = %x", Remote_Status);
+	//}
+	if(Remote_Status & key)
 		return 1;
 	else
 		return 0;
@@ -1244,11 +1210,11 @@ uint8_t Remote_Key(uint32_t key)
 }
 void Set_Rcon_Remote(uint8_t cmd)
 {
-	robot::instance()->robot_set_ir_cmd(cmd);
+	Remote_Status |= cmd;
 }
 void Reset_Rcon_Remote(void)
 {
-	Set_Rcon_Remote(0);
+	Remote_Status = 0;
 }
 
 void Set_MoveWithRemote(void)
@@ -1679,12 +1645,16 @@ uint8_t Is_virtualWall(void){
 	return 0;
 }
 
-uint8_t Is_Turn_Remote(void){
-	uint32_t rectrl = Get_Rcon_Remote();
-	if(rectrl == Remote_Max)return 1;
-	else if(rectrl == Remote_Home)return 1;
-	else if(rectrl == Remote_Spot)return 1;
-	else return 0;	
+uint8_t Is_Turn_Remote(void)
+{
+	if (Remote_Key(Remote_Max | Remote_Home | Remote_Spot))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 uint8_t Get_Direction_Flag(void)

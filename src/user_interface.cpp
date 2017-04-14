@@ -67,9 +67,7 @@ void User_Interface(void)
 	while(ros::ok())
 	{
 		usleep(2000);	
-		uint32_t remote_cmd = Get_Rcon_Remote();
-		if(remote_cmd == Remote_Forward|| remote_cmd == Remote_Right
-		    || remote_cmd ==Remote_Left||remote_cmd == Remote_Max)
+		if(Remote_Key(Remote_Forward | Remote_Right | Remote_Left | Remote_Backward))
 		{
 			Set_Clean_Mode(Clean_Mode_Remote);
 			return;
