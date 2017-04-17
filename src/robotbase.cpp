@@ -99,7 +99,7 @@ int robotbase_init(void)
 //		serial_write(SEND_LEN,sendStream);
 //		usleep(20000);
 //	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
-//	printf("OK!\n");
+	//ROS_INFO("OK!");
 	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);
@@ -129,7 +129,7 @@ void robotbase_deinit(void)
 		ROS_INFO("[robotbase]deinit...\n");
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
-		printf("\tshutdown robotbase power \n");
+		ROS_INFO("\tshutdown robotbase power");
 		Set_LED(0,0);
 		control_set(CTL_BUZZER, 0x00);
 		set_gyro(0,0);
@@ -408,7 +408,7 @@ void *serial_send_routine(void*){
 			temp_speaker_silence_time_count = 0;
 			robotbase_beep_update_flag = false;
 		}
-		//printf("[robotbase.cpp] tmp_sound_count:%d, tmp_silence_count:%d, sound_loop_count:%d.\n", temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
+		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
 		// If beep_time_count has ran out, it will not sound anymore and check the battary status. If low battary, it will constantly beep to alarm.
 		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
