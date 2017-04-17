@@ -897,7 +897,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, targets.size());
 	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
 		std::string	msg;
-		msg =  __FUNCTION__ + " "  + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
+		msg =  __FUNCTION__ + std::to_string(' ') + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
 
 		for (list<Point16_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
 			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
@@ -1101,7 +1101,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		}
 	}
 #endif
-	ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, cost, stop);
+	ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	/* fallback to find unclean area */
 	if (stop == 0) {
 		for (c = x_min; c <= x_max; ++c) {
@@ -1602,7 +1602,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 		debug_map(MAP, x, y);
 #endif
 
-	ROS_INFO("%s %d: x: %d(%d)\ty: %d(%d)\t next dest: %d\tx: %d(%d)\ty: %d(%d)\n", __FUNCTION__, __LINE__
+	ROS_INFO("%s %d: x: %d(%d)\ty: %d(%d)\t next dest: %d\tx: %d(%d)\ty: %d(%d)\n", __FUNCTION__, __LINE__,
 		positions[0].x, Map_GetXCount(), positions[0].y, Map_GetYCount(), val, countToCell(*target_x), *target_x, countToCell(*target_y), *target_y);
 
 	return val;
