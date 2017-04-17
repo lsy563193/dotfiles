@@ -646,18 +646,8 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		}
 
 		if (Touch_Detect()) {
-			CM_TouringCancel();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Stop_Brifly();
-			Beep(5, 20, 0, 1);
 			ROS_WARN("%s %d: touch detect break!", __FUNCTION__, __LINE__);
-			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
-			{
-				ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-				usleep(20000);
-			}
-			Reset_Touch();
 			return;
 		}
 		if (Remote_Key(Remote_Max)) {
@@ -691,6 +681,13 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
+
+			if (Touch_Detect())
+			{
+				Stop_Brifly();
+				printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+				return;
+			}
 			Stop_Brifly();
 			CM_update_map(action, isBumperTriggered);
 
@@ -724,6 +721,13 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
 
+				if (Touch_Detect())
+				{
+					Stop_Brifly();
+					printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+					return;
+				}
+
 				Diff = Angle - Gyro_GetAngle(0);
 				while (Diff >= 1800) {
 					Diff = Diff - 3600;
@@ -747,6 +751,13 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				}
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
+
+					if (Touch_Detect())
+					{
+						Stop_Brifly();
+						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						return;
+					}
 
 					Diff = Angle - Gyro_GetAngle(0);
 					while (Diff >= 1800) {
@@ -772,6 +783,14 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					if (Get_Bumper_Status()) {
 						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
+
+						if (Touch_Detect())
+						{
+							Stop_Brifly();
+							printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+							return;
+						}
+
 						Set_Error_Code(Error_Code_Bumper);
 						Stop_Brifly();
 						return;
@@ -877,18 +896,10 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 	if (Touch_Detect()) {
 		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
+		ROS_INFO("%s %d: Touch_Detect in CM_HeadToCourse()", __FUNCTION__, __LINE__);
 		set_gyro(1, 1);
 		usleep(10000);
 		Stop_Brifly();
-		Beep(5, 20, 0, 1);
-		// Key release detection, if user has not release the key, don't do anything.
-		while (Get_Key_Press() & KEY_CLEAN)
-		{
-			ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-			usleep(20000);
-		}
-		Reset_Touch();
-
 		return MT_Key_Clean;
 	}
 	if (Get_Clean_Mode() == Clean_Mode_GoHome) {
@@ -978,6 +989,14 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
+				if (Touch_Detect())
+				{
+					Stop_Brifly();
+					printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+					retval = MT_Key_Clean;
+					break;
+				}
+
 #ifdef CLIFF_ERROR
 
 				if (Get_Cliff_Trig()) {
@@ -990,6 +1009,13 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 					}
 					ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 					CM_CorBack(COR_BACK_20MM);
+					if (Touch_Detect())
+					{
+						Stop_Brifly();
+						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						retval = MT_Key_Clean;
+						break;
+					}
 					if (Get_Cliff_Trig()) {
 						ROS_INFO("Cliff back 3rd time.");
 						if (Get_Cliff_Trig() == Status_Cliff_All) {
@@ -1000,6 +1026,10 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						}
 						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
+						if (Touch_Detect())
+						{
+							printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						}
 						Set_Error_Code(Error_Code_Cliff);
 						Stop_Brifly();
 						retval = MT_Key_Clean;
@@ -1042,6 +1072,12 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						if (abs((int) (atan(((double)Gyro_GetXAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT ||
 							abs((int) (atan(((double)Gyro_GetYAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT) {
 							CM_CorBack(COR_BACK_100MM);
+							if (Touch_Detect())
+							{
+								Stop_Brifly();
+								printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+								break;
+							}
 							Stop_Brifly();
 
 #if (ROBOT_SIZE == 5)
@@ -1070,6 +1106,12 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						i++;
 					} while (i < 5);
 
+					if (Touch_Detect())
+					{
+						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						retval = MT_Key_Clean;
+						break;
+					}
 					retval = MT_None;
 					break;
 				}
@@ -1208,16 +1250,40 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
+			if (Touch_Detect())
+			{
+				printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+				retval = MT_Key_Clean;
+				break;
+			}
 
 #ifdef BUMPER_ERROR
 			if (Get_Bumper_Status()) {
 				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
+				if (Touch_Detect())
+				{
+					printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+					retval = MT_Key_Clean;
+					break;
+				}
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
+					if (Touch_Detect())
+					{
+						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						retval = MT_Key_Clean;
+						break;
+					}
 					if (Get_Bumper_Status()) {
 						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
+						if (Touch_Detect())
+						{
+							printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+							retval = MT_Key_Clean;
+							break;
+						}
 						Set_Error_Code(Error_Code_Bumper);
 						Stop_Brifly();
 						// If bumper jam, wait for manual release and it can keep on.(Convenient for testing)
@@ -1562,7 +1628,7 @@ void CM_resume_cleaning()
 		}
 		else if (state_for_continue_cleaning == -1 || state_for_continue_cleaning == -2 || state_for_continue_cleaning == -3 || state_for_continue_cleaning == -5)
 		{
-			ROS_INFO("Robot can't reach the continue point, directly continue cleaning.");
+			ROS_INFO("Robot can't reach the continue point, directly continue cleaning, low battery or touch detect will be processed in CM_cleaning().");
 		}
 		else if (state_for_continue_cleaning == -4)
 		{
@@ -1880,6 +1946,21 @@ void CM_go_home()
 					// If it is the last point, it means it it now at (0, 0).
 					if (from_station == 0) {
 						CM_HeadToCourse(ROTATE_TOP_SPEED, -robot::instance()->robot_get_home_angle());
+
+						if (Touch_Detect())
+						{
+							Stop_Brifly();
+							Beep(5, 20, 0, 1);
+							ROS_INFO("%s %d: Touch detected in CM_HeadToCourse().", __FUNCTION__, __LINE__);
+							// Key release detection, if user has not release the key, don't do anything.
+							while (Get_Key_Press() & KEY_CLEAN)
+							{
+								ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+								usleep(20000);
+							}
+							// Key relaesed, then the touch status should be cleared.
+							Reset_Touch();
+						}
 					}
 
 					Disable_Motors();
@@ -1926,11 +2007,13 @@ void CM_go_home()
 				tmpPnt.Y = countToCell(Home_Point.front().Y);
 				Home_Point.pop_front();
 
+				/*
 				// In GoHome() function, it may set the clean mode to Clean_Mode_GoHome. But it is not appropriate here, because it might affect the mode detection in CM_MoveToCell() and make it return -4.
 				if (Get_Clean_Mode() == Clean_Mode_GoHome)
 				{
 					Set_Clean_Mode(Clean_Mode_Navigation);
 				}
+				*/
 			}
 			else
 			{
@@ -2415,17 +2498,8 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 				if (Touch_Detect()) {
-					CM_TouringCancel();
-					Beep(5, 20, 0, 1);
+					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
 					Stop_Brifly();
-					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
-					{
-						ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-						usleep(20000);
-					}
-					Reset_Touch();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return -5;
 				}
 
@@ -2552,15 +2626,7 @@ void CM_CorBack(uint16_t dist)
 		}
 		if (Touch_Detect()) {
 			ROS_INFO("%s %d: Touch detected!", __FUNCTION__, __LINE__);
-			Beep(5, 20, 0, 1);
 			Stop_Brifly();
-			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
-			{
-				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-				usleep(20000);
-			}
-			Reset_Touch();
 			break;
 		}
 
