@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 	if (ret1 != 0) {
 		core_move_thread_state = 0;
 	} else {
-		printf("%s %d: core_move thread is up!\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: core_move thread is up!", __FUNCTION__, __LINE__);
 		core_move_thread_state = 1;
 	}
 #endif
