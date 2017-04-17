@@ -296,7 +296,7 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	Set_Wheel_Speed(Speed, Speed);
 	// This count is for how many milliseconds it should take. The Distance is in mm.
 	int back_count = int(1000 * Distance / (Speed * SPEED_ALF));
-	//printf("[movement.cpp] Quick_back for %dms.\n", back_count);
+	//ROS_INFO("%s %d Quick_back for %dms.", __FUNCTION__, __LINE__, back_count);
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
 		usleep(1000);
@@ -341,12 +341,12 @@ void Turn_Left_At_Init(uint16_t speed, int16_t angle)
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
 		}
 		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
 		}
 		else {
 			Set_Wheel_Speed(speed, speed);
@@ -366,7 +366,7 @@ void Turn_Left_At_Init(uint16_t speed, int16_t angle)
 //			ROS_INFO("Bumper triged when turn left, back 20mm.");
 //		}
 		usleep(10000);
-//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff=%d \n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d, diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
@@ -404,12 +404,12 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
 		}
 		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
 		}
 		else {
 			Set_Wheel_Speed(speed, speed);
@@ -429,7 +429,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			ROS_INFO("Bumper triged when turn left, back 20mm.");
 		}
 		usleep(10000);
-//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff=%d \n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
@@ -467,12 +467,12 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
 		}
 		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
 		}
 		else {
 			Set_Wheel_Speed(speed, speed);
@@ -492,7 +492,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			ROS_INFO("Bumper triged when turn right, back 20mm.");
 		}
 		usleep(10000);
-//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
@@ -514,7 +514,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	Set_Dir_Right();
 
@@ -541,12 +541,12 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
 		}
 		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
 		}
 		else {
 			Set_Wheel_Speed(speed, speed);
@@ -566,14 +566,14 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 			ROS_INFO("Bumper triged when turn right, back 20mm.");
 		}
 		usleep(10000);
-//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
 int32_t Get_FrontOBS(void)
@@ -1140,7 +1140,7 @@ void Set_Vac_Speed(void)
 			if (Get_Work_Time() < Two_Hours){
 				Set_BLDC_Speed(Vac_Speed_Normal);
 			}else{
-				//printf("[movement.cpp] Work time more than 2 hours.\n");
+				//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
 				Set_BLDC_Speed(Vac_Speed_NormalL);
 			}
 		}
@@ -1460,14 +1460,14 @@ void Set_LED(uint16_t G, uint16_t R)
 
 void Stop_Brifly(void)
 {
-	//printf("%s %d: stopping robot.\n", __FUNCTION__, __LINE__);
+	//ROS_INFO("%s %d: stopping robot.", __FUNCTION__, __LINE__);
 	do {
 		Set_Wheel_Speed(0, 0);
 		usleep(15000);
-		//printf("%s %d: linear speed: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
+		//ROS_INFO("%s %d: linear speed: (%f, %f, %f)", __FUNCTION__, __LINE__,
 		//	robot::instance()->robot_get_linear_x(), robot::instance()->robot_get_linear_y(), robot::instance()->robot_get_linear_z());
 	} while (robot::instance()->robot_is_moving());
-	//printf("%s %d: robot is stopped.\n", __FUNCTION__, __LINE__);
+	//ROS_INFO("%s %d: robot is stopped.", __FUNCTION__, __LINE__);
 }
 
 void Set_MainBrush_PWM(uint16_t PWM)
