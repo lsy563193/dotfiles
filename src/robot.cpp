@@ -14,11 +14,11 @@
 #include "figures/segment.h"
 
 #include "std_srvs/Empty.h"
+
 using namespace obstacle_detector;
 extern bool is_line_angle_offset;
 extern int8_t enable_slam_offset;
 static	robot *robot_obj = NULL;
-//typedef double Angle;
 
 extern pp::x900sensor   sensor;
 
@@ -30,15 +30,12 @@ time_t	start_time;
 int8_t key_press_count;
 int8_t key_release_count;
 
-//extern pp::x900sensor sensor;
 robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
 {
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
 	this->robot_WF_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
-	/*map subscriber for exploration*/
-//	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	this->is_moving = false;
 	this->is_sensor_ready = false;
@@ -53,7 +50,6 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 
 	this->line_angle = 0;
 
-//	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
 	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
@@ -63,6 +59,7 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 
 	// Initialize the pause variable.
 	this->pause_cleaning = false;
+
 	// Initialize the key press count.
 	key_press_count = 0;
 }
@@ -88,13 +85,11 @@ void robot::init()
 }
 
 bool robot::robot_is_all_ready() {
-  return (is_sensor_ready ) ? true : false;
+	return (is_sensor_ready ) ? true : false;
 }
 
 void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 {
-//	this->angle = msg->angle;
-
 	this->angle_v = msg->angle_v;
 
 	this->lw_crt = msg->lw_crt;
@@ -165,7 +160,6 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	}
 
 	this->charge_status =msg->c_s; //charge status
-	// Debug
 	//ROS_INFO("Subscribe charger status: %d.", this->charge_status);
 
 	this->w_tank = msg->w_tank;
@@ -188,24 +182,12 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->is_sensor_ready = true;
 }
-/*
-
-void robot::robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg)
-{
-	static int count = 0;
-
-	count++;
-	if (count > 1) {
-		this->is_map_ready = true;
-	}
-}
-*/
 
 void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 {
 	double map_yaw, pitch, roll;
 
-	tf::Matrix3x3				mat;
+	tf::Matrix3x3			mat;
 	tf::Stamped<tf::Pose>		ident;
 	tf::StampedTransform		transform;
 	tf::StampedTransform		WF_transform;
@@ -216,7 +198,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	this->linear_z = msg->twist.twist.linear.z;
 	this->odom_pose_x = msg->pose.pose.position.x;
 	this->odom_pose_y = msg->pose.pose.position.y;
-	//this->odom_eualr_angle;
+
 	if (this->linear_x == 0.0 && this->linear_y == 0.0 && this->linear_z == 0.0) {
 		this->is_moving = false;
 	} else {
@@ -227,33 +209,31 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	ident.frame_id_ = "base_link";
 	ident.stamp_ = msg->header.stamp;
 	if (enable_slam_offset == 1){
-		//ROS_INFO("SLAM = 1");
 		if(map_ready()){
-		try {
-			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
-			this->yaw = tf::getYaw(transform.getRotation());
+			try {
+				this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
+				this->yaw = tf::getYaw(transform.getRotation());
 
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-		} catch(tf::TransformException e) {
-			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
-			return;
-		}
+				Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
+			} catch(tf::TransformException e) {
+				ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
+				return;
+			}
 	
 
-		try {
-			this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-			this->robot_tf->transformPose("/map", ident, map_pose);
-			mat = odom_pose.getBasis();
-			mat.getEulerYPR(map_yaw, pitch, roll);
-			this->map_yaw = map_yaw;
-			this->map_pose = map_pose;
-		} catch(tf::TransformException e) {
-			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
-			return;
+			try {
+				this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				this->robot_tf->transformPose("/map", ident, map_pose);
+				mat = odom_pose.getBasis();
+				mat.getEulerYPR(map_yaw, pitch, roll);
+				this->map_yaw = map_yaw;
+				this->map_pose = map_pose;
+			} catch(tf::TransformException e) {
+				ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
+				return;
+			}
 		}
-		}
-	}else if (enable_slam_offset == 0){
-		//ROS_INFO("SLAM = 0");
+	} else if (enable_slam_offset == 0){
 		try {
 			this->robot_tf->lookupTransform("/odom", "base_link", ros::Time(0), transform);
 			this->yaw = tf::getYaw(transform.getRotation());
@@ -277,60 +257,59 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			return;
 		}
 	}else if (enable_slam_offset == 2){//Wall_Follow_Mode
-		//ROS_INFO("SLAM = 2");
 		if(map_ready()){
-		try {
-			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
-			this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
-			this->yaw = tf::getYaw(transform.getRotation());
+			try {
+				this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
+				this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
+				this->yaw = tf::getYaw(transform.getRotation());
 
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-		} catch(tf::TransformException e) {
-			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
-			return;
-		}
+				Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
+			} catch(tf::TransformException e) {
+				ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
+				return;
+			}
 	
 
-		try {
-			this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-			this->robot_tf->transformPose("/map", ident, map_pose);
-			mat = odom_pose.getBasis();
-			mat.getEulerYPR(map_yaw, pitch, roll);
-			this->map_yaw = map_yaw;
-			this->map_pose = map_pose;
-		} catch(tf::TransformException e) {
-			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
-			return;
-		}
-		try {
-			this->robot_tf->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-			this->robot_tf->transformPose("/odom", ident, WF_map_pose);
-			mat = odom_pose.getBasis();
-			mat.getEulerYPR(map_yaw, pitch, roll);
-			this->map_yaw = map_yaw;
-			this->WF_map_pose = WF_map_pose;
-		} catch(tf::TransformException e) {
-			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
-			return;
-		}
+			try {
+				this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				this->robot_tf->transformPose("/map", ident, map_pose);
+				mat = odom_pose.getBasis();
+				mat.getEulerYPR(map_yaw, pitch, roll);
+				this->map_yaw = map_yaw;
+				this->map_pose = map_pose;
+			} catch(tf::TransformException e) {
+				ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
+				return;
+			}
+			try {
+				this->robot_tf->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				this->robot_tf->transformPose("/odom", ident, WF_map_pose);
+				mat = odom_pose.getBasis();
+				mat.getEulerYPR(map_yaw, pitch, roll);
+				this->map_yaw = map_yaw;
+				this->WF_map_pose = WF_map_pose;
+			} catch(tf::TransformException e) {
+				ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
+				return;
+			}
 		}
 	}
 
-  if (!this->is_odom_ready) {
-    this->position_x_off = map_pose.getOrigin().x();
-    this->position_y_off = map_pose.getOrigin().y();
-    this->position_z_off = map_pose.getOrigin().z();
-  }
+	if (!this->is_odom_ready) {
+		this->position_x_off = map_pose.getOrigin().x();
+		this->position_y_off = map_pose.getOrigin().y();
+		this->position_z_off = map_pose.getOrigin().z();
+	}
 
-  this->position_x = map_pose.getOrigin().x() - position_x_off;
-  this->position_y = map_pose.getOrigin().y() - position_y_off;
+	this->position_x = map_pose.getOrigin().x() - position_x_off;
+	this->position_y = map_pose.getOrigin().y() - position_y_off;
 	if (enable_slam_offset == 2){
 		this->WF_position_x = WF_map_pose.getOrigin().x() - position_x_off;
 		this->WF_position_y = WF_map_pose.getOrigin().y() - position_y_off;
 	}
-  if (this->is_odom_ready == false) {
-    this->is_odom_ready = true;
-  }
+	if (this->is_odom_ready == false) {
+		this->is_odom_ready = true;
+	}
 }
 
 #if EXPLORE_SCOPE_ENABLE
@@ -443,7 +422,7 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
 }
 
 float robot::robot_get_angle() {
-  return this->angle;
+	return this->angle;
 }
 
 void robot::set_angle(float angle_) {
@@ -670,7 +649,6 @@ void robot::visualize_marker_init(){
 #elif __ROBOT_X900
 	this->clean_markers.scale.x = 0.33;
 #endif
-//	this->clean_markers.scale.y = 0.31;
 	this->clean_markers.color.r = 0.0;
 	this->clean_markers.color.g = 1.0;
 	this->clean_markers.color.b = 0.0;
@@ -733,18 +711,6 @@ void robot::start_slam(void)
 	else if (slam_type_ == 2)
 		system("roslaunch pp cartographer_slam.launch 2>/dev/null &");
 }
-
-//void start_obstacle_detector(void)
-//{
-//	system("roslaunch obstacle_detector single_scanner.launch 2>/dev/null&");
-//}
-
-/*
-void robot::stop_obstacle_detector(void)
-{
-	system("rosnode kill /obstacle_detector");
-}
-*/
 
 void robot::stop_slam(void)
 {
