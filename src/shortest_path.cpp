@@ -1358,6 +1358,50 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 }
 
 /*
+ * Give a target point, find the shorest path from the current robot position to the
+ * target position.
+ *
+ * @param xID	Robot X Coordinate
+ * @param yID	Robot Y Coordinate
+ * @param endx	Target X Coordinate
+ * @param endy	Target Y Coordinate
+ * @param bound	Limit to the search range to (xID, yID) and (endx, endy)
+ *
+ * @return	-2: Robot is trapped
+ * 		-1: Path to target is not found
+ * 		1:  Path to target is found
+ * 		(totalCost: from function path_find_shortest_path_ranged)
+ *
+ */
+int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
+	int16_t val;
+	int16_t x_min, x_max, y_min, y_max;
+
+	if (bound == 1) {
+		/* If bound is set, set the search range. */
+		x_min = (xID > endx ? endx : xID) - 8;
+		x_max = (xID > endx ? xID : endx) + 8;
+		y_min = (yID > endy ? endy : yID) - 8;
+		y_max = (yID > endy ? yID : endy) + 8;
+		printf("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
+		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+	} else {
+		/* If bound is not set, set the search range to the whole map. */
+		path_get_range(&x_min, &x_max, &y_min, &y_max);
+		//x_min = -100;
+		x_max = x_max + 4;
+		//y_min = -100;
+		y_max = y_max + 4;
+		
+		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		printf("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
+	}
+
+	debug_map(SPMAP, endx, endy);
+	return val;
+}
+
+/*
  * By given a target, find the shortest path to the target. When finding the shorest path,
  * a grid map is used, and starting form the target position, this function will trace back
  * the path of which values are marked as 6 in the shorest path map. It will return the
