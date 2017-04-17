@@ -1369,14 +1369,14 @@ int16_t WF_path_escape_trapped() {
 	path_get_range(&x_min, &x_max, &y_min, &y_max);
 	tmpPnt.X = x_max + 1;
 	tmpPnt.Y = y_max + 1;
-	printf("tmpPnt.X = %d, tmpPnt.Y = %d\n",tmpPnt.X, tmpPnt.Y);
+	ROS_INFO("tmpPnt.X = %d, tmpPnt.Y = %d\n",tmpPnt.X, tmpPnt.Y);
 	pnt16ArTmp[0] = tmpPnt;
 
 	path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
 	if ( trappedCell[0].X != remote_x || trappedCell[0].Y != remote_y ){
 		for ( i = 0; i < trappedCellSize; ++i ) {
-			printf("%s %d Check %d trapped reference cell: x: %d, y: %d\n", __FUNCTION__, __LINE__,
+			ROS_INFO("%s %d Check %d trapped reference cell: x: %d, y: %d\n", __FUNCTION__, __LINE__,
 			         i, trappedCell[i].X, trappedCell[i].Y);
 			/*if (is_block_accessible(trappedCell[i].X, trappedCell[i].Y) == 0) {
 				Map_Set_Cells(ROBOT_SIZE, trappedCell[i].X, trappedCell[i].Y, CLEANED);
@@ -1384,8 +1384,8 @@ int16_t WF_path_escape_trapped() {
 
 			//val = WF_path_find_shortest_path( positions[0].x, positions[0].y, trappedCell[i].X, trappedCell[i].Y, 0);
 			val = WF_path_find_shortest_path( positions[0].x, positions[0].y, trappedCell[i].X, trappedCell[i].Y, 0);
-			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-			printf("SCHAR_MAX = %d\n", SCHAR_MAX);
+			ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+			ROS_INFO("SCHAR_MAX = %d\n", SCHAR_MAX);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* No path to home, which is set when path planning is initialized. */
 				val = 0;//not isolated
@@ -1400,11 +1400,11 @@ int16_t WF_path_escape_trapped() {
 #if DEBUG_SM_MAP
 			debug_map(SPMAP, 0, 0);
 #endif
-			printf("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, val);
+			ROS_INFO("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
 				val = WF_path_find_shortest_path(positions[0].x, positions[0].y, remote_x, remote_y, 0);
-				printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+				ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_MAP
 				debug_map(MAP, remote_x, remote_y);
@@ -1420,7 +1420,7 @@ int16_t WF_path_escape_trapped() {
 			}
 		} else {
 			val = WF_path_find_shortest_path(positions[0].x, positions[0].y, remote_x, remote_y, 0);
-			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+			ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_SM_MAP
 			debug_map(SPMAP, 0, 0);
@@ -1438,7 +1438,7 @@ int16_t WF_path_escape_trapped() {
 		}
 	}
 
-	printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+	ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 	return val;
 }
 /*
