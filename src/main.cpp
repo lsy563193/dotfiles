@@ -24,6 +24,17 @@
 #include "wall_follow_multi.h"
 #include "wav.h"
 
+void protect_function()
+{
+	//Bumper protect
+  Set_gyro_on();
+  ROS_INFO("Bumper protect  check");
+	if(Get_Bumper_Status())
+		Turn_Left_At_Init(Max_Speed, 1800);//save itself
+  if(Get_Bumper_Status())
+		Beep(5,20,0,1); //can't save itself, stop and give an alarm by beep
+
+}
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
@@ -32,6 +43,7 @@ void *core_move_thread(void *)
 	}
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
+	protect_function();
 
 	while(ros::ok()){
 		usleep(20000);
