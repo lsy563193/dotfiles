@@ -896,8 +896,8 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 
 	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, targets.size());
 	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-		std::string	msg;
-		msg =  __FUNCTION__ + std::to_string(' ') + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
+		std::string	msg = __FUNCTION__;
+		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
 
 		for (list<Point16_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
 			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
@@ -1118,7 +1118,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 	}
 
 	found = (final_cost != 1000) ? final_cost : 0 ;
-	ROS_INFO("%s %d found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, *x, *y);
+	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, *x, *y);
 
 	return found;
 }
