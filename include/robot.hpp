@@ -46,12 +46,7 @@ public:
 	float robot_get_lwheel_current();
 	float robot_get_rwheel_current();
 	uint32_t robot_get_rcon();
-	//uint32_t robot_get_rcon_front_left();
-	//uint32_t robot_get_rcon_front_right();
-	//uint32_t robot_get_rcon_back_left();
-	//uint32_t robot_get_rcon_back_right();
-	//uint32_t robot_get_rcon_left();
-	//uint32_t robot_get_rcon_right();
+
 	bool robot_get_bumper_right();
 	bool robot_get_bumper_left();
 	int16_t robot_get_obs_left();
@@ -60,7 +55,10 @@ public:
 	bool robot_get_water_tank();
 	uint16_t robot_get_battery_voltage();
 
+#if EXPLORE_SCOPE_ENABLE
         std::vector<int8_t> *robot_get_map_data();
+#endif
+
         uint32_t robot_get_width();
         uint32_t robot_get_height();
         float robot_get_resolution();
@@ -100,13 +98,7 @@ public:
 	void start_lidar(void);
 	void stop_lidar(void);
 	void start_slam(void);
-//	void start_obstacle_detector(void);
-//	void stop_obstacle_detector(void);
-  void stop_slam(void);
-//	typedef enum class _Slam_type{
-//		GMAPPING,
-//		OPEN_KARTO,
-//	}Slam_type;
+	void stop_slam(void);
 
 	void init_mumber();
 	void slam_type(int type);
@@ -117,7 +109,7 @@ public:
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-// These 3 functions are for continue cleaning after charge.
+	// These 3 functions are for continue cleaning after charge.
 	bool Is_Cleaning_Paused(void);
 	void Set_Cleaning_Pause(void);
 	void Reset_Cleaning_Pause(void);
@@ -126,7 +118,7 @@ public:
 private:
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-// These variable is for continue cleaning after charge.
+	// These variable is for continue cleaning after charge.
 	bool	pause_cleaning;
 #endif
 	bool	is_sensor_ready;
@@ -140,11 +132,13 @@ private:
 	double origin_x;
 	double origin_y;
 	bool	is_map_ready;
+
 	enum align_state{
-		detecting=0,
-		rotating=1,
-		finish=2,
-	}line_align_;
+		detecting = 0,
+		rotating = 1,
+		finish = 2,
+	} line_align_;
+
 	/* 1 byte */
 	float	angle;
 
@@ -307,8 +301,10 @@ private:
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
 	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr& obstacles);
-//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
+
+#if EXPLORE_SCOPE_ENABLE
 	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& msg);
+#endif
 };
 
 #endif

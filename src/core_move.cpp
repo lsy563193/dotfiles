@@ -109,6 +109,7 @@ void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_lon
 	*y = cellToCount(countToCell(Map_GetRelativeY(heading, offset_lat, offset_long)));
 }
 
+#if EXPLORE_SCOPE_ENABLE
 //not yet minus the x_off
 bool CM_Check_is_exploring()
 {
@@ -205,6 +206,7 @@ int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32
 	
 	return index;
 }
+#endif
 
 int32_t CM_ABS(int32_t A, int32_t B)
 {
