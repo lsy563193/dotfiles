@@ -1586,8 +1586,9 @@ void path_reset_path_points()
 
 void path_display_path_points()
 {
-	std::string     msg;
-	msg += __FUNCTION__ + std::to_string(__LINE__) + ": ";
+	std::string     msg = __FUNCTION__;
+
+	msg += " " + std::to_string(__LINE__) + ": ";
 	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
