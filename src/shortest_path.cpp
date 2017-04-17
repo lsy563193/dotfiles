@@ -47,6 +47,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include <ros/ros.h>
+
 #include "core_move.h"
 #include "mathematics.h"
 #include "shortest_path.h"
@@ -1309,7 +1311,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	/* The target position still have a cost of 0, which mean it is not reachable. */
 	totalCost = 0;
 	if (Map_GetCell(SPMAP, endx, endy) == COST_NO) {
-		printf("shortest path 2\n");
+		ROS_WARN("target point (%d, %d) is not reachable(0), return -2.", endx, endy);
 #ifdef	DEBUG_SM_MAP
 		debug_map(SPMAP, endx, endy);
 #endif
@@ -1339,7 +1341,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 
 	next = 0;
 	dest_dir = (path_get_robot_direction() == EAST || path_get_robot_direction() == WEST) ? 1: 0;
-	printf("%s %d: dest dir: %d\n", __FUNCTION__, __LINE__, dest_dir);
+	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != xID || tracey != yID) {
 		costAtCell = Map_GetCell(SPMAP, tracex, tracey);
 		targetCost = costAtCell - 1;
@@ -1447,13 +1449,13 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 		x_max = (xID > endx ? xID : endx) + 8;
 		y_min = (yID > endy ? endy : yID) - 8;
 		y_max = (yID > endy ? yID : endy) + 8;
-		printf("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
+		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
 		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
 		path_get_range(&x_min, &x_max, &y_min, &y_max);
 		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
-		printf("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
+		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
 	return val;
@@ -1609,7 +1611,7 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 						}
 					}
 
-					printf("%s %d: x_min: %d\tx_max: %d\n", __FUNCTION__, __LINE__, x_min, x_max);
+					ROS_INFO("%s %d: x_min: %d\tx_max: %d\n", __FUNCTION__, __LINE__, x_min, x_max);
 					if (x != (x_min + x_max) / 2) {
 						it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
 					}
@@ -1640,7 +1642,7 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 						}
 					}
 
-					printf("%s %d: y_min: %d\ty_max: %d\n", __FUNCTION__, __LINE__, y_min, y_max);
+					ROS_INFO("%s %d: y_min: %d\ty_max: %d\n", __FUNCTION__, __LINE__, y_min, y_max);
 					if (y != (y_min + y_max) / 2) {
 						it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
 					}
@@ -1689,9 +1691,9 @@ void path_reset_path_points()
 void path_display_path_points()
 {
 	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
-		printf("(%d, %d)->", it->X, it->Y);
+		ROS_INFO("(%d, %d)->", it->X, it->Y);
 	}
-	printf("\n\n");
+	ROS_INFO("\n\n");
 }
 
 #endif
