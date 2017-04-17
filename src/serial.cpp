@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <ros/ros.h>
+
 #include "serial.h"
 
 #ifndef CR_PORT
@@ -81,7 +83,7 @@ void serial_init(const char* port,int baudrate) {
 
 	if (tcsetattr(crport_fd, TCSANOW, &curopt) == 0){
 		serial_init_done = true;
-		printf("serial init done...\n");
+		ROS_INFO("serial init done...\n");
 	}
 
 	//log_msg(LOG_TRACE, "Serial port (%s): initialized, fd(%d)!\n", buf, crport_fd);
@@ -147,11 +149,11 @@ int serial_read(int len,uint8_t *buf){
 
 		s_ret = select(crport_fd+1,&read_serial_fds,NULL,NULL,&timeout);
 		if (s_ret <0){
-			fprintf(stderr,"[serial.cpp] -------select error------------\n");
+			ROS_ERROR("%s %d: -------select error------------", __FUNCTION__, __LINE__);
 			return -1;
 		}
 		else if(s_ret ==0){
-			fprintf(stderr,"[serial.cpp]--------select function timeout!!-------------\n");
+			ROS_ERROR("%s %d: --------select function timeout!!-------------", __FUNCTION__, __LINE__);
 			return 0;
 		}
 		else if(s_ret >0){
