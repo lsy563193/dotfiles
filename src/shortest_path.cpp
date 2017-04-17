@@ -1345,13 +1345,13 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 		x_max = (xID > endx ? xID : endx) + 8;
 		y_min = (yID > endy ? endy : yID) - 8;
 		y_max = (yID > endy ? yID : endy) + 8;
-		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
+		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
 		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
 		path_get_range(&x_min, &x_max, &y_min, &y_max);
 		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
-		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
+		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
 	return val;
@@ -1586,10 +1586,13 @@ void path_reset_path_points()
 
 void path_display_path_points()
 {
+	std::string     msg;
+	msg += __FUNCTION__ + std::to_string(__LINE__) + ": ";
 	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
-		ROS_INFO("(%d, %d)->", it->X, it->Y);
+		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
-	ROS_INFO("\n\n");
+	msg += "\n";
+	ROS_INFO(msg.c_str());
 }
 
 #endif
