@@ -683,7 +683,7 @@ void path_find_all_targets()
 	}
 
 	printf("%s %d: offset: %d\tx: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
-	debug_sm_map(SPMAP, 0, 0);
+	debug_map(SPMAP, 0, 0);
 
 	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
 		if (Map_GetCell(SPMAP, it->target.X, it->target.Y) == COST_NO || Map_GetCell(SPMAP, it->target.X, it->target.Y) == COST_HIGH) {
@@ -1376,7 +1376,7 @@ int16_t path_escape_trapped() {
 		if (is_block_accessible(0, 0) == 1) {
 			val = path_find_shortest_path(positions[0].x, positions[0].y, 0, 0, 0);
 #if DEBUG_SM_MAP
-			debug_sm_map(SPMAP, 0, 0);
+			debug_map(SPMAP, 0, 0);
 #endif
 			printf("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, val);
 			if (val < 0 || val == SCHAR_MAX) {
@@ -1401,7 +1401,7 @@ int16_t path_escape_trapped() {
 			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_SM_MAP
-			debug_sm_map(SPMAP, 0, 0);
+			debug_map(SPMAP, 0, 0);
 #endif
 #if DEBUG_MAP
 			debug_map(MAP, home_x, home_y);
@@ -1584,7 +1584,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 //done:
 #ifdef	DEBUG_SM_MAP
 	/* If the flag DEBUG_SM_MAP is set, print the shorest path map for debugging. */
-	debug_sm_map(SPMAP, countToCell(*target_x), countToCell(*target_y));
+	debug_map(SPMAP, countToCell(*target_x), countToCell(*target_y));
 #endif
 
 #if DEBUG_MAP

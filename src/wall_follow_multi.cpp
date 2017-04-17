@@ -625,7 +625,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		while (ros::ok()) {
 				/*------------------------------------WF_Map_Update---------------------------------------------------*/
 				//debug_map(MAP, 0, 0);
-				//debug_sm_map(SPMAP, 0, 0);
+				//debug_map(SPMAP, 0, 0);
 
 				if(Is_OBS_Near()) {
 						Left_Wall_Speed = 15;
@@ -704,7 +704,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 								}
 								Wall_Follow_Stop_Slam();
 								debug_map(MAP, 0, 0);
-								debug_sm_map(SPMAP, 0, 0);
+								debug_map(SPMAP, 0, 0);
 								Set_Clean_Mode(Clean_Mode_Userinterface);
 								 */
 								WF_End_Wall_Follow();
@@ -738,7 +738,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 				//rounding_update();
 				//debug_map(MAP, 0, 0);
-				//debug_sm_map(SPMAP, 0, 0);
+				//debug_map(SPMAP, 0, 0);
 
 #ifdef OBS_DYNAMIC
 
@@ -1847,7 +1847,7 @@ uint8_t WF_End_Wall_Follow(void){
 		Wall_Follow_Stop_Slam();
 		std::vector<Point32_t>(WF_Point).swap(WF_Point);
 		debug_map(MAP, 0, 0);
-		debug_sm_map(SPMAP, 0, 0);
+		debug_map(SPMAP, 0, 0);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return 0;
 }

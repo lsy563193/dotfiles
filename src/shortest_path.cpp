@@ -1311,7 +1311,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	if (Map_GetCell(SPMAP, endx, endy) == COST_NO) {
 		printf("shortest path 2\n");
 #ifdef	DEBUG_SM_MAP
-		debug_sm_map(SPMAP, endx, endy);
+		debug_map(SPMAP, endx, endy);
 #endif
 #ifdef	DEBUG_MAP
 		debug_map(MAP, endx, endy);
