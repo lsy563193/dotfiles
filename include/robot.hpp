@@ -302,9 +302,7 @@ private:
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
 	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr& obstacles);
 
-#if EXPLORE_SCOPE_ENABLE
 	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& msg);
-#endif
 };
 
 #endif

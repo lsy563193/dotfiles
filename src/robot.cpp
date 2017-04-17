@@ -312,7 +312,6 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	}
 }
 
-#if EXPLORE_SCOPE_ENABLE
 void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
 {
 	int map_size, vector_size;
@@ -333,6 +332,7 @@ void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
 	is_map_ready=true;
 }
 
+#if EXPLORE_SCOPE_ENABLE
 std::vector<int8_t> *robot::robot_get_map_data()
 {
 	return this->ptr;
@@ -836,9 +836,8 @@ bool robot::map_ready(void)
 
 void robot::Subscriber(void)
 {
-#if robot_map_cb
 	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-#endif
+
 	ROS_INFO("subscribed");
 	visualize_marker_init();
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
