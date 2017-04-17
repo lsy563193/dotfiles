@@ -683,7 +683,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			if (Touch_Detect())
 			{
 				Stop_Brifly();
-				printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 				return;
 			}
 			Stop_Brifly();
@@ -722,7 +722,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				if (Touch_Detect())
 				{
 					Stop_Brifly();
-					printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 					return;
 				}
 
@@ -753,7 +753,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					if (Touch_Detect())
 					{
 						Stop_Brifly();
-						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 						return;
 					}
 
@@ -785,7 +785,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 						if (Touch_Detect())
 						{
 							Stop_Brifly();
-							printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 							return;
 						}
 
@@ -990,7 +990,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				if (Touch_Detect())
 				{
 					Stop_Brifly();
-					printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 					retval = MT_Key_Clean;
 					break;
 				}
@@ -1010,7 +1010,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 					if (Touch_Detect())
 					{
 						Stop_Brifly();
-						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 						retval = MT_Key_Clean;
 						break;
 					}
@@ -1026,7 +1026,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						CM_CorBack(COR_BACK_20MM);
 						if (Touch_Detect())
 						{
-							printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 						}
 						Set_Error_Code(Error_Code_Cliff);
 						Stop_Brifly();
@@ -1073,7 +1073,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 							if (Touch_Detect())
 							{
 								Stop_Brifly();
-								printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+								ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 								break;
 							}
 							Stop_Brifly();
@@ -1106,7 +1106,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 					if (Touch_Detect())
 					{
-						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 						retval = MT_Key_Clean;
 						break;
 					}
@@ -1250,7 +1250,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			CM_CorBack(COR_BACK_20MM);
 			if (Touch_Detect())
 			{
-				printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 				retval = MT_Key_Clean;
 				break;
 			}
@@ -1261,7 +1261,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				CM_CorBack(COR_BACK_20MM);
 				if (Touch_Detect())
 				{
-					printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 					retval = MT_Key_Clean;
 					break;
 				}
@@ -1269,7 +1269,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 					CM_CorBack(COR_BACK_20MM);
 					if (Touch_Detect())
 					{
-						printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 						retval = MT_Key_Clean;
 						break;
 					}
@@ -1278,7 +1278,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						CM_CorBack(COR_BACK_20MM);
 						if (Touch_Detect())
 						{
-							printf("%s %d: Touch detect in CM_CorBack!\n", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 							retval = MT_Key_Clean;
 							break;
 						}
