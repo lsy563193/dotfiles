@@ -502,6 +502,80 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
+void WF_Turn_Right(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+	int32_t i, j;
+	float pos_x, pos_y;
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle - angle;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Right();
+
+	Set_Wheel_Speed(speed, speed);
+	uint8_t oc=0;
+
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		Map_SetPosition(pos_x, pos_y);
+
+		i = Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_3, 0);
+		j = Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_3, 0);
+		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
+			Map_SetCell(MAP, i, j, BLOCKED_OBS);
+		}
+
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		if(Is_Turn_Remote())
+			break;
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Right();
+			ROS_INFO("Bumper triged when turn right, back 20mm.");
+		}
+		usleep(10000);
+//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
 int32_t Get_FrontOBS(void)
 {
 	return (int32_t)robot::instance()->robot_get_obs_front();
