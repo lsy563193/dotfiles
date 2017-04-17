@@ -27,6 +27,9 @@
 #include <math.h>
 
 #include <list>
+#include <string>
+
+#include <ros/ros.h>
 
 #include "core_move.h"
 #include "gyro.h"
@@ -268,7 +271,7 @@ void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range
 	*y_range_min = yMin - (abs(yMin - yMax) <= 3? 3 : 1);
 	*y_range_max = yMax + (abs(yMin - yMax) <= 3 ? 3 : 1);
 
-	printf("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d\n",
+	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
 		xMin, xMax, yMin, yMax, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
 }
 
@@ -547,7 +550,7 @@ uint8_t path_lane_is_cleaned(int16_t *x, int16_t *y) {
 		}
 	}
 
-	printf("%s %d %d %d\n", __FUNCTION__, __LINE__, min, max);
+	ROS_INFO("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, min, max);
 	/* Both ends are not cleaned. */
 	if (min != SHRT_MAX && max != SHRT_MAX) {
 		/*
@@ -672,7 +675,7 @@ void path_find_all_targets()
 			}
 		}
 		if (all_set == true) {
-			printf("%s %d\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: all possible target are checked & reachable.", __FUNCTION__, __LINE__);
 			passSet = 0;
 		}
 
@@ -682,7 +685,7 @@ void path_find_all_targets()
 			nextPassValue = 1;
 	}
 
-	printf("%s %d: offset: %d\tx: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
+	ROS_INFO("%s %d: offset: %d\tx: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
 	debug_map(SPMAP, 0, 0);
 
 	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
@@ -694,7 +697,6 @@ void path_find_all_targets()
 		tracex = it->target.X;
 		tracey = it->target.Y;
 		while (tracex != x || tracey != y) {
-			//printf("%s %d\n", __FUNCTION__, __LINE__);
 			targetCost = Map_GetCell(SPMAP, tracex, tracey) - 1;
 
 			if (targetCost == 0) {
@@ -886,25 +888,27 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 	/* No more target to clean */
 	if (targets.empty() == true) {
 		if (path_escape_trapped() <= 0) {
-			printf("%s %d: trapped\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: trapped", __FUNCTION__, __LINE__);
 			return -2;
 		}
 		return 0;
 	}
 
-	printf("%s %d: targets count: %d\n", __FUNCTION__, __LINE__, targets.size());
+	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, targets.size());
 	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
-		printf("%s %d: target (%d, %d) %d: ", __FUNCTION__, __LINE__, it->target.X, it->target.Y, it->points.size());
+		std::string	msg;
+		msg =  __FUNCTION__ + " "  + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
 
 		for (list<Point16_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
-			printf("(%d, %d)->", i->X, i->Y);
+			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
 		}
-		printf("\n\n");
+		msg += "\n";
+		ROS_INFO(msg.c_str());
 	}
 
 #if 1
 	stop = 0;
-	printf("%s %d: case 1, towards Y+ only\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
 	for (d = y_max; d >= Map_GetYPos(); --d) {
 		if (stop == 1 && d <= Map_GetYPos() + 1) {
 			break;
@@ -942,7 +946,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		}
 	}
 
-	printf("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
+	ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
 		for (a = Map_GetYPos(); a >= y_min && stop == 0; --a) {
 			for (d = a; d <= y_max && stop == 0; ++d) {
@@ -988,7 +992,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		}
 	}
 
-	printf("%s %d: case 3, towards Y- only, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
+	ROS_INFO("%s %d: case 3, towards Y- only, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
 		for (d = y_min; d >= Map_GetYPos(); ++d) {
 			if (stop == 1 && d >= Map_GetYPos() - 1) {
@@ -1028,7 +1032,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		}
 	}
 
-	printf("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
+	ROS_INFO("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
 		for (a = Map_GetYPos(); a <= y_max && stop == 0; ++a) {
 			for (d = a; d >= y_min && stop == 0; --d) {
@@ -1073,10 +1077,10 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 			}
 		}
 	}
-	printf("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)\n", __FUNCTION__, __LINE__, final_cost, stop);
+	ROS_INFO("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
-        for (a = Map_GetYPos(); a <= y_max  && stop == 0; ++a) {
-            for (d = Map_GetYPos(); d <= a && stop == 0; ++d) {
+		for (a = Map_GetYPos(); a <= y_max  && stop == 0; ++a) {
+	            for (d = Map_GetYPos(); d <= a && stop == 0; ++d) {
 				for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
 					if (it->target.Y == d) {
 						within_range = true;
@@ -1097,7 +1101,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		}
 	}
 #endif
-	printf("%s %d: case 6, fallback to A-start the nearest target\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, cost, stop);
 	/* fallback to find unclean area */
 	if (stop == 0) {
 		for (c = x_min; c <= x_max; ++c) {
@@ -1114,7 +1118,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 	}
 
 	found = (final_cost != 1000) ? final_cost : 0 ;
-	printf("%s %d found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, *x, *y);
+	ROS_INFO("%s %d found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, *x, *y);
 
 	return found;
 }
@@ -1158,7 +1162,7 @@ int16_t path_ahead_to_clean(int16_t x, int16_t y, int16_t x_next)
 		}
 	}
 
-	//printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, x, y, offset);
+	//ROS_INFO("%s %d: x: %d\ty: %d\toffset: %d", __FUNCTION__, __LINE__, x, y, offset);
 	return offset;
 }
 
@@ -1185,7 +1189,7 @@ void path_update_cells()
 
 	start = positions[1].x > positions[0].x ? positions[0].x : positions[1].x;
 	end = positions[1].x > positions[0].x ? positions[1].x : positions[0].x;
-	printf("%s %d: start: %d\tend: %d\n", __FUNCTION__, __LINE__, start, end);
+	ROS_INFO("%s %d: start: %d\tend: %d", __FUNCTION__, __LINE__, start, end);
 	for (i = start; i <= end; i++) {
 		/* Check the Map cells which Y coordinate equal (y - 2). */
 
@@ -1202,26 +1206,26 @@ void path_update_cells()
 		if (Map_GetCell(MAP, i, y) == BLOCKED_OBS || Map_GetCell(MAP, i, positions[0].y - 2) == BLOCKED_BUMPER) {
 			if ( i == start) {
 				if (Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					printf("%s %d: reset (%d, %d) to cleaned.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
 				} else {
-					printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
 				}
 			} else if (i == end) {
 				if (Map_GetCell(MAP, i - 1, y) == CLEANED) {
-					printf("%s %d: reset (%d, %d) to cleaned.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
 				} else {
-					printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
 				}
 			} else {
 				if (Map_GetCell(MAP, i - 1, y) == CLEANED || Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					printf("%s %d: reset (%d, %d) to cleaned.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
 				} else {
-					printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
 				}
 			}
@@ -1240,26 +1244,26 @@ void path_update_cells()
 		if (Map_GetCell(MAP, i, y) == BLOCKED_OBS || Map_GetCell(MAP, i, y) == BLOCKED_BUMPER) {
 			if ( i == start) {
 				if (Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					printf("%s %d: reset (%d, %d) to cleaned.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
 				} else {
-					printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
 				}
 			} else if (i == end) {
 				if (Map_GetCell(MAP, i - 1, y) == CLEANED) {
-					printf("%s %d: reset (%d, %d) to cleaned.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
 				} else {
-					printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
 				}
 			} else {
 				if (Map_GetCell(MAP, i - 1, y) == CLEANED || Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					printf("%s %d: reset (%d, %d) to cleaned.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
 				} else {
-					printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, i, y);
+					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
 					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
 				}
 			}
@@ -1293,10 +1297,10 @@ void path_update_cells()
 				for (i = 0; i < 3; i++) {
 					cs = Map_GetCell(MAP, positions[0].x + 2, positions[0].y + i);
 					if (cs != CLEANED && cs != UNCLEAN) {
-						printf("%s %d: reset (%d, %d) to %d.\n", __FUNCTION__, __LINE__, positions[0].x + 3, positions[0].y + i, cs);
+						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, positions[0].x + 3, positions[0].y + i, cs);
 						Map_SetCell(MAP, cellToCount(positions[0].x + 3), cellToCount(positions[0].y + i), cs);
 
-						printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, positions[0].x + 2, positions[0].y + i);
+						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, positions[0].x + 2, positions[0].y + i);
 						Map_SetCell(MAP, cellToCount(positions[0].x + 2), cellToCount(positions[0].y + i), UNCLEAN);
 					}
 				}
@@ -1304,10 +1308,10 @@ void path_update_cells()
 				for (i = 0; i < 3; i++) {
 					cs = Map_GetCell(MAP, positions[0].x + 2, positions[0].y - i);
 					if (cs != CLEANED && cs!= UNCLEAN) {
-						printf("%s %d: reset (%d, %d) to %d.\n", __FUNCTION__, __LINE__, positions[0].x + 3, positions[0].y - i, cs);
+						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, positions[0].x + 3, positions[0].y - i, cs);
 						Map_SetCell(MAP, cellToCount(positions[0].x + 3), cellToCount(positions[0].y - i), cs);
 
-						printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, positions[0].x + 2, positions[0].y - i);
+						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, positions[0].x + 2, positions[0].y - i);
 						Map_SetCell(MAP, cellToCount(positions[0].x + 2), cellToCount(positions[0].y - i), UNCLEAN);
 					}
 				}
@@ -1317,10 +1321,10 @@ void path_update_cells()
 				for (i = 0; i < 3; i++) {
 					cs = Map_GetCell(MAP, positions[0].x - 2, positions[0].y + i);
 					if (cs != CLEANED && cs!= UNCLEAN) {
-						printf("%s %d: reset (%d, %d) to %d.\n", __FUNCTION__, __LINE__, positions[0].x - 3, positions[0].y + i, cs);
+						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, positions[0].x - 3, positions[0].y + i, cs);
 						Map_SetCell(MAP, cellToCount(positions[0].x - 3), cellToCount(positions[0].y + i), cs);
 
-						printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, positions[0].x - 2, positions[0].y + i);
+						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, positions[0].x - 2, positions[0].y + i);
 						Map_SetCell(MAP, cellToCount(positions[0].x - 2), cellToCount(positions[0].y + i), UNCLEAN);
 					}
 				}
@@ -1328,10 +1332,10 @@ void path_update_cells()
 				for (i = 0; i < 3; i++) {
 					cs = Map_GetCell(MAP, positions[0].x - 2, positions[0].y - i);
 					if (cs != CLEANED && cs!= UNCLEAN) {
-						printf("%s %d: reset (%d, %d) to %d.\n", __FUNCTION__, __LINE__, positions[0].x - 3, positions[0].y - i, cs);
+						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, positions[0].x - 3, positions[0].y - i, cs);
 						Map_SetCell(MAP, cellToCount(positions[0].x - 3), cellToCount(positions[0].y - i), cs);
 
-						printf("%s %d: reset (%d, %d) to unclean.\n", __FUNCTION__, __LINE__, positions[0].x - 2, positions[0].y - i);
+						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, positions[0].x - 2, positions[0].y - i);
 						Map_SetCell(MAP, cellToCount(positions[0].x - 2), cellToCount(positions[0].y - i), UNCLEAN);
 					}
 				}
@@ -1356,14 +1360,14 @@ int16_t path_escape_trapped() {
 
 	if ( trappedCell[0].X != home_x || trappedCell[0].Y != home_y ){
 		for ( i = 0; i < trappedCellSize; ++i ) {
-			printf("%s %d Check %d trapped reference cell: x: %d, y: %d\n", __FUNCTION__, __LINE__,
+			ROS_WARN("%s %d Check %d trapped reference cell: x: %d, y: %d", __FUNCTION__, __LINE__,
 			         i, trappedCell[i].X, trappedCell[i].Y);
 			if (is_block_accessible(trappedCell[i].X, trappedCell[i].Y) == 0) {
 				Map_Set_Cells(ROBOT_SIZE, trappedCell[i].X, trappedCell[i].Y, CLEANED);
 			}
 
 			val = path_find_shortest_path( positions[0].x, positions[0].y, trappedCell[i].X, trappedCell[i].Y, 0);
-			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* No path to home, which is set when path planning is initialized. */
 				val = 0;
@@ -1378,11 +1382,11 @@ int16_t path_escape_trapped() {
 #if DEBUG_SM_MAP
 			debug_map(SPMAP, 0, 0);
 #endif
-			printf("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, val);
+			ROS_WARN("%s %d: pos (%d, %d)\tval: %d", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
 				val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0);
-				printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+				ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_MAP
 				debug_map(MAP, home_x, home_y);
@@ -1398,7 +1402,7 @@ int16_t path_escape_trapped() {
 			}
 		} else {
 			val = path_find_shortest_path(positions[0].x, positions[0].y, home_x, home_y, 0);
-			printf("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
+			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_SM_MAP
 			debug_map(SPMAP, 0, 0);
@@ -1450,7 +1454,8 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 
 	path_reset_path_points();
 
-	printf("\r\npath_next\tx: %d\ty: %d\tlx: %d\tly: %d\tlast_dir: %d\n", positions[0].x, positions[0].y, last_x_pos, last_y_pos, last_dir);
+	ROS_INFO("\n");
+	ROS_INFO("%s %d: x: %d\ty: %d\tlx: %d\tly: %d\tlast_dir: %d", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, last_x_pos, last_y_pos, last_dir);
 
 	/*
 	 * Check the current lane is clean or not and make sure the robot
@@ -1478,7 +1483,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 		}
 	}
 
-	printf("status: %d\tx next: %d\ty next: %d\tcell: %d\n",
+	ROS_INFO("status: %d\tx next: %d\ty next: %d\tcell: %d",
 			status, x_next_area, y_next_area, Map_GetCell(MAP, x_next_area, y_next_area));
 
 	/*
@@ -1497,26 +1502,26 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 	 */
 
 	if (clear_block == 1) {
-		printf("Clear block\r\n");
+		ROS_WARN("Clear block\n");
 		clear_block = 0;
 		//return -1;
 	}
 
 	if (status > 0) {
 		y = positions[0].y;
-		printf("%s %d %d %d\n", __FUNCTION__, __LINE__, positions[1].x, positions[2].x);
+		ROS_INFO("%s %d: x1: %d\tx2: %d", __FUNCTION__, __LINE__, positions[1].x, positions[2].x);
 		if (x_next_area > positions[0].x) {
 			x = (is_block_cleaned(x_next_area + 1, y_next_area) == 0) ? SHRT_MAX : x_next_area;
 
 			if ((offset = path_ahead_to_clean(x, y_next_area, x_next_area)) != 0) {
-				printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, x, x_next_area, offset);
+				ROS_INFO("%s %d: x: %d\tx_next_area: %d\toffset: %d", __FUNCTION__, __LINE__, x, x_next_area, offset);
 				x = x_next_area + offset;// + (x == SHRT_MAX ? 2 : -2);
 			}
 		} else {
 			x = (is_block_cleaned(x_next_area - 1, y_next_area) == 0) ? SHRT_MIN : x_next_area;
 
 			if ((offset = path_ahead_to_clean(x, y_next_area, x_next_area)) != 0) {
-				printf("%s %d %d %d %d\n", __FUNCTION__, __LINE__, x, x_next_area, offset);
+				ROS_INFO("%s %d: x: %d\tx_next_area: %d\toffset: %d", __FUNCTION__, __LINE__, x, x_next_area, offset);
 				x = x_next_area + offset;// + (x == SHRT_MIN ? -2 : 2);
 			}
 		}
@@ -1530,7 +1535,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 		/* Get the next target to clean. */
 		debug_map(MAP, home_x, home_y);
 		val = find_next_unclean_with_approaching(&x_next_area, &y_next_area);
-		printf("%s %d: val: %d\t target: (%d, %d)\n\n", __FUNCTION__, __LINE__, val, x_next_area, y_next_area);
+		ROS_INFO("%s %d: val: %d\t target: (%d, %d)\n", __FUNCTION__, __LINE__, val, x_next_area, y_next_area);
 		if (val > 0) {
 			if (first_start == 1)
 				first_start++;
@@ -1551,9 +1556,9 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 			} else {
 				last_dir = Map_GetXPos() > x ? SOUTH : NORTH;
 			}
-			printf("%s %d %d %d %d %d %d %d\n", __FUNCTION__, __LINE__, x_next_area, y_next_area, x, y, last_dir);
+			ROS_INFO("%s %d: x_next_area: %d\ty_next_area: %d\tx: %d\ty: %d\tlast_dir: %d", __FUNCTION__, __LINE__, x_next_area, y_next_area, x, y, last_dir);
 		} else {
-			printf("%s %d %d %d %d %d %d\n", __FUNCTION__, __LINE__, val, x_next_area, y_next_area, x, y);
+			ROS_INFO("%s %d: val: %d\tx_next_area: %d\ty_next_area: %d\tx: %d\ty: %d", __FUNCTION__, __LINE__, val, x_next_area, y_next_area, x, y);
 		}
 		if (val == -2) {
 			/* Robot is trapped and no path to starting point or home. */
@@ -1597,7 +1602,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 		debug_map(MAP, x, y);
 #endif
 
-	printf("path_next\tx: %d(%d)\ty: %d(%d)\t next dest: %d\tx: %d(%d)\ty: %d(%d)\n",
+	ROS_INFO("%s %d: x: %d(%d)\ty: %d(%d)\t next dest: %d\tx: %d(%d)\ty: %d(%d)\n", __FUNCTION__, __LINE__
 		positions[0].x, Map_GetXCount(), positions[0].y, Map_GetYCount(), val, countToCell(*target_x), *target_x, countToCell(*target_y), *target_y);
 
 	return val;
@@ -1629,7 +1634,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 
 	path_set_current_pos();
 
-	printf("path_home: current: (%d, %d) (%d, %d) \thome: (%d, %d)\tdir: %d\n",
+	ROS_INFO("path_home: current: (%d, %d) (%d, %d) \thome: (%d, %d)\tdir: %d",
 			positions[0].x, positions[0].y, Map_GetXCount(), Map_GetYCount(), countToCell(*target_x), countToCell(*target_y));
 
 #if DEBUG_MAP
@@ -1665,7 +1670,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 						//Map_ClearBlocks();
 						continue;
 					}
-					printf("%s %d: %d %d\n", __FUNCTION__, __LINE__, cost, abs(i - countToCell(*target_x)) + abs(j - countToCell(*target_y)));
+					ROS_INFO("%s %d: cost: %d\toffset: %d", __FUNCTION__, __LINE__, cost, abs(i - countToCell(*target_x)) + abs(j - countToCell(*target_y)));
 					if (cost == -1 || cost > (abs(i - countToCell(*target_x)) + abs(j - countToCell(*target_y)))) {
 						cost = abs(i- countToCell(*target_x)) + abs(j - countToCell(*target_y));
 						x_next = i;
@@ -1679,13 +1684,13 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 					offset += 2;
 					/* If over the offset limit, stop. */
 					if (offset > 10) {
-						printf("%s %d: stop robot, offset is too large, home (%d, %d)\n", __FUNCTION__, __LINE__, x_next, y_next);
+						ROS_WARN("%s %d: stop robot, offset is too large, home (%d, %d)", __FUNCTION__, __LINE__, x_next, y_next);
 						retval = 0;
 						*target_x = Map_GetXCount();
 						*target_y = Map_GetYCount();
 					}
 				} else {
-					printf("%s %d: stop robot, no path to home (%d, %d)\n", __FUNCTION__, __LINE__, x_next, y_next);
+					ROS_WARN("%s %d: stop robot, no path to home (%d, %d)", __FUNCTION__, __LINE__, x_next, y_next);
 					retval = 0;
 					*target_x = Map_GetXCount();
 					*target_y = Map_GetYCount();
@@ -1698,7 +1703,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 				pos.X = x_next;
 				pos.Y = y_next;
 				if ((retval = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x, &y)) <= 0) {
-					printf("%s %d: stop robot, no path to home (%d, %d)\n", __FUNCTION__, __LINE__, x_next, y_next);
+					ROS_WARN("%s %d: stop robot, no path to home (%d, %d)", __FUNCTION__, __LINE__, x_next, y_next);
 					retval = 0;
 					*target_x = Map_GetXCount();
 					*target_y = Map_GetYCount();
@@ -1734,7 +1739,7 @@ uint8_t path_home(int32_t *target_x, int32_t *target_y) {
 		*target_y = Map_GetYCount();
 	}
 
-	printf("home next dest:\t%d\tx: %d(%d)\ty: %d(%d)\tcnt: %d\n", retval, countToCell(*target_x), *target_x, countToCell(*target_y), *target_y, home_try_cnt);
+	ROS_INFO("home next dest:\t%d\tx: %d(%d)\ty: %d(%d)\tcnt: %d", retval, countToCell(*target_x), *target_x, countToCell(*target_y), *target_y, home_try_cnt);
 
 	return retval;
 }
@@ -1745,8 +1750,7 @@ void path_escape_set_trapped_cell( Point16_t *cell, uint8_t size ) {
 	trappedCellSize = size;
 	for ( i = 0; i < trappedCellSize; ++i ) {
 		trappedCell[i] = cell[i];
-		printf("%s %d Set %d trapped reference cell: x: %d\ty:%d\n", __FUNCTION__, __LINE__,
-	           i, trappedCell[i].X, trappedCell[i].Y);
+		ROS_INFO("%s %d Set %d trapped reference cell: x: %d\ty:%d", __FUNCTION__, __LINE__, i, trappedCell[i].X, trappedCell[i].Y);
 	}
 }
 
