@@ -414,7 +414,6 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 	x_max = xMax;
 	y_min = yMin;
 	y_max = yMax;
-	//debug_map(MAP, x, y);
 
 	printf("%s %d: (%d, %d) (%d, %d)\n", __FUNCTION__, __LINE__, x, y, *x_next, *y_next);
 
@@ -1133,112 +1132,12 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 		}
 	}
 
-#if 0
-	/*
-	 * Try to handle the following cases:
-	 *
-	 * 		D		R
-	 * 	R7D	7	D7R	7
-	 *		R		D
-	 *
-	 * Where D is the target position, 7 is the obstcal, and R is the robot position.
-	 *
-	 * If the above case is found, clear the obstcal.
-	 */
-	switch(dest_dir) {
-		case EAST:
-			if (Map_GetCell(SPMAP, (int32_t)(xID), (int32_t)(yID + 1)) == COST_HIGH) {
-				if (endx == xID && endy == yID + 2) {// && ((Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID + 1)) == COST_NO) ||
-									//(Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID + 1)) == COST_NO))) {
-					Map_SetCell(SPMAP, (int32_t)(xID), (int32_t)(yID + 1), COST_NO);
-				}
-			}
-			break;
-		case SOUTH:
-			if (Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID)) == COST_HIGH) {
-				if (endx == (xID - 2) && endy == yID) {// && ((Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID - 1)) == COST_NO) ||
-									//(Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID + 1)) == COST_NO))) {
-					Map_SetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID), COST_NO);
-				}
-			}
-			break;
-		case WEST:
-			if (Map_GetCell(SPMAP, (int32_t)(xID), (int32_t)(yID - 1)) == COST_HIGH) {
-				if (endx == xID && endy == (yID - 2)) {// && ((Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID - 1)) == COST_NO) ||
-									//(Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID - 1)) == COST_NO))) {
-					Map_SetCell(SPMAP, (int32_t)(xID), (int32_t)(yID - 1), COST_NO);
-				}
-			}
-			break;
-		case NORTH:
-			if (Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID)) == COST_HIGH) {
-				if (endx == (xID + 2) && endy == yID) {// && ((Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID - 1)) == COST_NO) ||
-									//(Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID + 1)) == COST_NO))) {
-					Map_SetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID), COST_NO);
-				}
-			}
-			break;
-	}
-#endif
-
-#if 0
-	if (abs(yID - endy) == 2 && Map_GetCell(MAP, (int32_t)(endx), (int32_t)(endy)) == UNCLEAN) {
-		printf("%s %d\n", __FUNCTION__, __LINE__);
-		if (xID > endx && Map_GetCell(SPMAP, (int32_t)(endx + 1), (int32_t) endy + (endy > yID ? - 1 : 1)) == COST_HIGH) {
-			printf("%s %d\n", __FUNCTION__, __LINE__);
-			Map_SetCell(SPMAP, (int32_t)(endx + 1), (int32_t)(endy + (endy > yID ? - 1 : 1)), COST_NO);
-		} else if (xID < endx && Map_GetCell(SPMAP, (int32_t)(endx - 1), (int32_t) (endy + (endy > yID ? - 1 : 1))) == COST_HIGH) {
-			printf("%s %d\n", __FUNCTION__, __LINE__);
-			Map_SetCell(SPMAP, (int32_t)(endx - 1), (int32_t)(endy + (endy > yID ? - 1 : 1)), COST_NO);
-		}
-	}
-#endif
-
 	if (Map_GetCell(SPMAP, endx, endy) == COST_HIGH) {
 		Map_SetCell(SPMAP, endx, endy, COST_NO);
 	}
 
 	/* Set the current robot position has the cost value of 1. */
 	Map_SetCell(SPMAP, (int32_t)xID, (int32_t)yID, COST_1);
-
-#if 0
-	/*
-	 * If the cells on lower, upper, right & left is marked as obstcal,
-	 * try to clear them according to obstcal's coordinate.
-	 */
-	if (Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)yID) == COST_HIGH && Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)yID) == COST_HIGH &&
-		Map_GetCell(SPMAP, (int32_t)xID, (int32_t)(yID + 1)) == COST_HIGH && Map_GetCell(SPMAP, (int32_t)xID, (int32_t)(yID - 1)) == COST_HIGH) {
-		if (Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID - 1)) == COST_NO) {
-
-			Map_SetCell(SPMAP, (int32_t)(xID), (int32_t)(yID - 1), COST_NO);
-			Map_SetCell(SPMAP, (int32_t)(xID - 1), (int32_t)yID, COST_NO);
-
-		} else if (Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID - 1)) == COST_NO) {
-
-			Map_SetCell(SPMAP, (int32_t)(xID), (int32_t)(yID - 1), COST_NO);
-			Map_SetCell(SPMAP, (int32_t)(xID + 1), (int32_t)yID, COST_NO);
-
-		} else if (Map_GetCell(SPMAP, (int32_t)(xID - 1), (int32_t)(yID + 1)) == COST_NO) {
-
-			Map_SetCell(SPMAP, (int32_t)(xID), (int32_t)(yID + 1), COST_NO);
-			Map_SetCell(SPMAP, (int32_t)(xID - 1), (int32_t)yID, COST_NO);
-
-		} else if (Map_GetCell(SPMAP, (int32_t)(xID + 1), (int32_t)(yID + 1)) == COST_NO) {
-
-			Map_SetCell(SPMAP, (int32_t)(xID), (int32_t)(yID + 1), COST_NO);
-			Map_SetCell(SPMAP, (int32_t)(xID + 1), (int32_t)yID, COST_NO);
-
-		} else if (Map_GetCell(SPMAP, (int32_t)(xID + 2), (int32_t)yID) == COST_NO) {
-			Map_SetCell(SPMAP, (int32_t)(xID + 1), (int32_t)yID, COST_NO);
-		} else if (Map_GetCell(SPMAP, (int32_t)(xID - 2), (int32_t)yID) == COST_NO) {
-			Map_SetCell(SPMAP, (int32_t)(xID - 1), (int32_t)yID, COST_NO);
-		} else if (Map_GetCell(SPMAP, (int32_t)xID, (int32_t)(yID + 2)) == COST_NO) {
-			Map_SetCell(SPMAP, (int32_t)xID, (int32_t)(yID + 1), COST_NO);
-		} else if (Map_GetCell(SPMAP, (int32_t)xID, (int32_t)(yID - 2)) == COST_NO) {
-			Map_SetCell(SPMAP, (int32_t)xID, (int32_t)(yID - 1), COST_NO);
-		}
-	}
-#endif
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -1314,9 +1213,6 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 		ROS_WARN("target point (%d, %d) is not reachable(0), return -2.", endx, endy);
 #ifdef	DEBUG_SM_MAP
 		debug_map(SPMAP, endx, endy);
-#endif
-#ifdef	DEBUG_MAP
-		debug_map(MAP, endx, endy);
 #endif
 		return -2;
 	}
