@@ -257,13 +257,15 @@ void User_Interface(void)
 			Disable_Motors();
 			Temp_Mode=0;
 		}
-        if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right)){
-            Disable_Motors();
-            ROS_INFO("%s ,%d robot lift up\n",__FUNCTION__,__LINE__);
-            wav_play(WAV_TAKEN_UP);
-            Beep(1,10,25,1);
-            usleep(20000);
-        }
+
+		if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
+			Disable_Motors();
+			ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+			wav_play(WAV_ERROR_LIFT_UP);
+			Beep(1, 10, 25, 1);
+			usleep(20000);
+		}
+
 		Error_Show_Counter++;
 	  	if(Error_Show_Counter>500)
 	  	{

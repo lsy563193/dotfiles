@@ -11,15 +11,7 @@
 
 using namespace std;
 
-#define PP_PACKAGE_PATH	"/opt/ros/indigo/share/pp/audio/"
-
-const string audio_files[] = {
-				PP_PACKAGE_PATH"startcleaning.wav",
-				PP_PACKAGE_PATH"backtocharger.wav",
-				PP_PACKAGE_PATH"continuecleaning.wav",
-				PP_PACKAGE_PATH"machinehang.wav",
-				PP_PACKAGE_PATH"error.wav",
-				};
+#define PP_PACKAGE_PATH	"/opt/ros/indigo/share/pp/audio/%02d.wav"
 
 struct WAV_HEADER
 {
@@ -41,7 +33,7 @@ struct WAV_HEADER
 void wav_play(WavType action)
 {
 	int	rc, ret, size, dir, channels, frequency, bit, datablock, nread;
-	char	*buffer;
+	char	*buffer, audio_file[64];
 	FILE	*fp;
 
 	unsigned int	val;
@@ -52,9 +44,10 @@ void wav_play(WavType action)
 	snd_pcm_hw_params_t	*params;
 
 	dir = 0;
-	fp = fopen(audio_files[action].c_str(), "rb");
+	snprintf(audio_file, 38, PP_PACKAGE_PATH, action);
+	fp = fopen(audio_file, "rb");
 	if (fp == NULL) {
-		ROS_ERROR("open file failed:\n");
+		ROS_ERROR("open file failed: %s\n", audio_file);
 		return;
 	}
 

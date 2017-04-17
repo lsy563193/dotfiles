@@ -22,6 +22,7 @@
 #include "random_runing.h"
 #include "sleep.h"
 #include "wall_follow_multi.h"
+#include "wav.h"
 
 void *core_move_thread(void *)
 {
@@ -127,6 +128,8 @@ int main(int argc, char **argv)
 	nh_private.param<bool>("line_align", line_align_active, false);
 //	nh_private.param<robot::Slam_type>("slam_type", slam_type, robot::Slam_type::GMAPPING);
 	nh_private.param<int>("slam_type", slam_type, 0);
+
+	wav_play(WAV_WELCOME_ILIFE);
 
 	serial_init(serial_port.c_str(), baudrate);
 	robot::instance()->align_active(line_align_active);

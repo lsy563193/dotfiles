@@ -2145,7 +2145,7 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Paused())
 	{
-		wav_play(WAV_CONTINUE_CLEANING);
+		wav_play(WAV_CLEANING_START);
 		if (Get_Rcon_Status())
 		{
 			// Save the current coordinate as a new home point.
@@ -2161,7 +2161,7 @@ uint8_t CM_Touring(void)
 	else
 #endif
 	{
-		wav_play(WAV_START_CLEANING);
+		wav_play(WAV_CLEANING_START);
 		// Set the Work_Timer_Start as current time
 		Reset_Work_Time();
 
@@ -2746,8 +2746,8 @@ MapTouringType CM_handleExtEvent()
 	/* Check whether robot is taken up. */
 	if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
 		ROS_INFO("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__); 
-        Stop_Brifly(); 
-        wav_play(WAV_TAKEN_UP);
+		Stop_Brifly();
+		wav_play(WAV_ERROR_LIFT_UP);
 		return MT_Cliff;
 	}
 
