@@ -18,7 +18,7 @@ laser::laser()
 
 	this->is_laser_ready = false;
 
-	printf("%s %d: laser init done!\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: laser init done!", __FUNCTION__, __LINE__);
 }
 
 laser::~laser()
@@ -49,9 +49,8 @@ void laser::laser_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg)
 
 	this->laser_scan_data = *msg;
 	count = (int)((msg->angle_max - msg->angle_min) / msg->angle_increment);
-//	printf("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f\n", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
+//	ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
 
-//	ROS_INFO("LASER_SCAN_CB!!!!!!!!");
 	this->is_laser_ready = true;
 }
 
@@ -70,12 +69,12 @@ bool laser::laser_obstcal_detected(double distance, int angle, double range)
 	angle_max = deg2rad((double) (angle % 360), 1) + atan(range_tmp / (distance + 0.155));
 
 	count = (int)((laser_scan_data.angle_max - laser_scan_data.angle_min) / laser_scan_data.angle_increment);
-	//printf("%s %d %f %f %f %f\n", __FUNCTION__, __LINE__, range_tmp, distance + 0.155, range_tmp / (distance + 0.155), atan(range_tmp / (distance + 0.155)));
-	//printf("%s %d: angle min: %f max: %f\tcount: %d\tdtor: %f\ttan: %f\n", __FUNCTION__, __LINE__, angle_min, angle_max, count, deg2rad((double) (angle % 360), 1),  atan(range_tmp / (distance + 0.155)));
+	//ROS_INFO("%s %d %f %f %f %f", __FUNCTION__, __LINE__, range_tmp, distance + 0.155, range_tmp / (distance + 0.155), atan(range_tmp / (distance + 0.155)));
+	//ROS_INFO("%s %d: angle min: %f max: %f\tcount: %d\tdtor: %f\ttan: %f", __FUNCTION__, __LINE__, angle_min, angle_max, count, deg2rad((double) (angle % 360), 1),  atan(range_tmp / (distance + 0.155)));
 	for (i = 0; found == false && i < count; i++) {
 		tmp = this->laser_scan_data.angle_min + i * this->laser_scan_data.angle_increment;
 		if (tmp > angle_min && tmp < angle_max && laser_scan_data.ranges[i] < distance + 0.155) {
-			//printf("%s %d: i: %d\ttmp: %f(%f, %f)\tdist: %f(%f)\n", __FUNCTION__, __LINE__, i, tmp, angle_min, angle_max, laser_scan_data.ranges[i], distance + 0.155);
+			//ROS_INFO("%s %d: i: %d\ttmp: %f(%f, %f)\tdist: %f(%f)", __FUNCTION__, __LINE__, i, tmp, angle_min, angle_max, laser_scan_data.ranges[i], distance + 0.155);
 			found = true;
 		}
 	}
