@@ -942,7 +942,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 					if (Is_Bumper_Jamed()){
 						Reset_Touch();
-						CM_TouringCancel();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
 						ROS_INFO("%s %d: Check: Bumper 2! break", __FUNCTION__, __LINE__);
