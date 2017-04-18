@@ -36,6 +36,9 @@ void Charge_Function(void)
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
 #endif
 
+	// This counter is for avoiding occasionly Is_ChargerOn return 0 when robot is charging, cause it will stop charger mode.
+	uint8_t Stop_Charge_Counter = 0;
+
 	// Reset the lowBattery flag in core_move.cpp and stop beeping.
 	Beep(0, 0, 0, 1);
 	lowBattery = 0;
@@ -88,17 +91,29 @@ void Charge_Function(void)
 
 		if(!Is_ChargerOn())//check if charger unplug
 		{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-			if (robot::instance()->Is_Cleaning_Paused())
+			if (Stop_Charge_Counter > 50)
 			{
-				ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
-				Set_Clean_Mode(Clean_Mode_Navigation);
+				// Stop_Charge_Counter > 50 means robot has left charger stub for 1s.
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (robot::instance()->Is_Cleaning_Paused())
+				{
+					ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
+					Set_Clean_Mode(Clean_Mode_Navigation);
+					break;
+				}
+#endif
+				ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
-#endif
-			ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			break;
+			else
+			{
+				Stop_Charge_Counter++;
+			}
+		}
+		else
+		{
+			Stop_Charge_Counter = 0;
 		}
 		/*----------------------------------------------------Check Key---------------------*/
 		if(Get_Key_Press() & KEY_CLEAN)//							Check Key Clean
