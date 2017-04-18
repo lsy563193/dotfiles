@@ -74,7 +74,7 @@ void WFM_move_back(uint16_t dist)
 	uint16_t Counter_Watcher = 0;
 	uint16_t Temp_Speed = 10;
 
-	printf("%s %d: \n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	Stop_Brifly();
 	Set_Dir_Backward();
 	Set_Wheel_Speed(5, 5);
@@ -132,7 +132,7 @@ void *WFM_check_trapped(void *data)
 	current_y = Map_GetYPos();
 	escape_thread_running = true;
 
-	printf("%s %d: escape thread is up!\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 	while (escape_thread_running == true) {
 		pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -141,10 +141,10 @@ void *WFM_check_trapped(void *data)
 
 		if (abs(current_x - Map_GetXPos()) >= 2 || abs(current_y - Map_GetYPos()) >= 2) {
 			path_set_current_pos();
-			printf("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
+			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
 			val = path_escape_trapped();
 			if (val == 1) {
-				printf("%s %d: escaped, thread is existing!\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 				data = (void *) (&escaped);
 				escape_thread_running = false;
 			}
@@ -176,7 +176,7 @@ bool WF_check_isolate(void)
 	current_y = Map_GetYPos();
 //escape_thread_running = true;
 
-//printf("%s %d: escape thread is up!\n", __FUNCTION__, __LINE__);
+//ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 //while (escape_thread_running == true) {
 	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -185,7 +185,7 @@ bool WF_check_isolate(void)
 
 
 	path_set_current_pos();
-//printf("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
+//ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
 	val = WF_path_escape_trapped();
 	if (val == 0) {
 		return 0;//not isolated
@@ -247,13 +247,13 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 	escape_thread_running = false;
 	ret = pthread_create(&escape_thread_id, 0, WFM_check_trapped, &escape_state);
 	if (ret != 0) {
-		printf("%s %d: failed to create escape thread!\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: failed to create escape thread!", __FUNCTION__, __LINE__);
 		return 2;
 	} else {
 		while (escape_thread_running == false) {
 			usleep(10000);
 		}
-		printf("%s %d: escape thread is running!\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: escape thread is running!", __FUNCTION__, __LINE__);
 	}
 
 	Wall_Distance = Wall_High_Limit;
@@ -275,7 +275,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 	while (ros::ok()) {
 		if (escape_thread_running == false) {
-			printf("%s %d: quit due to thread exit\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: quit due to thread exit", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -306,7 +306,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 //WFM_boundary_check();
 
 		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
-			printf("%s %d: Check: Get_Bumper_Status! Break!\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 			break;
 		}
 		usleep(10000);
@@ -319,7 +319,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 	while (ros::ok()) {
 		if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME || escape_thread_running == false) {
-			printf("%s %d: quit due to %s\n", __FUNCTION__, __LINE__, escape_thread_running == false ? "thread exit" : "timeout");
+			ROS_INFO("%s %d: quit due to %s", __FUNCTION__, __LINE__, escape_thread_running == false ? "thread exit" : "timeout");
 			break;
 		}
 
@@ -365,16 +365,14 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		}
 /*---------------------------------------------------Bumper Event-----------------------*/
 		if (Get_Bumper_Status() & RightBumperTrig) {
-			printf("%s %d:\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 
 			WFM_move_back(350);
 
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			Turn_Right(Turn_Speed, 700);
 
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 
 			Move_Forward(15, 15);
@@ -382,7 +380,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		}
 
 		if (Get_Bumper_Status() & LeftBumperTrig) {
-			printf("%s %d:\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: left bumper triggered", __FUNCTION__, __LINE__);
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
 
@@ -401,7 +399,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 			if (Get_Bumper_Status() & RightBumperTrig) {
 				WFM_move_back(100);
-				printf("%s %d: \n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				Stop_Brifly();
 				Turn_Right(Turn_Speed, 600);
 
@@ -409,14 +407,13 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			} 
 			else {
 				WFM_move_back(350);
-				printf("%s %d: \n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: left bumper triggered", __FUNCTION__, __LINE__);
 				Stop_Brifly();
 				Turn_Right(Turn_Speed, 150);
 				Wall_Straight_Distance = MFW_Setting[follow_type].left_bumper_val; //250;
 			}
 
 			Wall_Straight_Distance = 200;
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			Move_Forward(10, 10);
 
@@ -434,7 +431,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 					if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
 		//if (Get_WallAccelerate() > 300) {
 		//if ((Get_RightWheel_Speed() - Get_LeftWheel_Speed()) >= -3) {
-						printf("%s %d:\n", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: set wall distance to 350", __FUNCTION__, __LINE__);
 						Move_Forward(18, 16);
 						usleep(10000);
 						Wall_Straight_Distance = 350;
@@ -530,22 +527,21 @@ Move_Forward(25, 25);
 			Right_Wall_Speed = 0;
 		}
 
-		//printf("%s %d: %d %d\n", __FUNCTION__, __LINE__, Left_Wall_Speed, Right_Wall_Speed);
+		//ROS_INFO("%s %d: left wall speed: %d\tright wall speed: %d", __FUNCTION__, __LINE__, Left_Wall_Speed, Right_Wall_Speed);
 		Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
 
 		//If turing around at the same point
 		if (R > 7500) {
-			printf("Isolated Wall Follow!\n");
+			ROS_WARN("%s %d: Isolated Wall Follow!", __FUNCTION__, __LINE__);
 
-			printf("%s %d: Check: Isolated Wall Follow! break\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Check: Isolated Wall Follow! break", __FUNCTION__, __LINE__);
 			break;
 		}
 
 		} else {
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			Turn_Right(Turn_Speed, 750);
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			Move_Forward(15, 15);
 
@@ -563,13 +559,13 @@ Move_Forward(25, 25);
 
 	ret = 0;
 	if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME) {
-		printf("%s %d: escape timeout %d(%d, %d), state 2\n", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
+		ROS_WARN("%s %d: escape timeout %d(%d, %d), state 2", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
 		ret = 2;
 	} else if (escape_state == Map_Escape_Trapped_Escaped) {
-		printf("%s %d: escaped, state 0\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: escaped, state 0", __FUNCTION__, __LINE__);
 		ret = 0;;
 	} else {
-		printf("%s %d: escaped, state 1\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: escaped, state 1", __FUNCTION__, __LINE__);
 		ret = 1;
 	}
 
@@ -610,15 +606,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Home_Point.push_front(New_Home_Point);
 
 	Map_Initialize();
-	ROS_INFO("grid map initialized");
+	ROS_INFO("%s %d: grid map initialized", __FUNCTION__, __LINE__);
 	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
-	ROS_INFO("path planning initialized");
+	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 
 	//pthread_t	escape_thread_id;
 	if (Get_IMU_Status() == 0){
 		Set_gyro_on();
 		Set_IMU_Status();
-	//printf("IMU_Status%d\n", Get_IMU_Status());
+		//ROS_INFO("%s %d: IMU_Status %d", __FUNCTION__, __LINE__, Get_IMU_Status());
 	}
 
 
@@ -628,13 +624,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	//ret = pthread_create(&escape_thread_id, 0, WFM_check_trapped, &escape_state);
 	/*
 	if (ret != 0) {
-	printf("%s %d: failed to create escape thread!\n", __FUNCTION__, __LINE__);
-	return 2;
+		ROS_WARN("%s %d: failed to create escape thread!", __FUNCTION__, __LINE__);
+		return 2;
 	} else {
-	while (escape_thread_running == false) {
-	usleep(10000);
-	}
-	printf("%s %d: escape thread is running!\n", __FUNCTION__, __LINE__);
+		while (escape_thread_running == false) {
+			usleep(10000);
+		}
+		ROS_INFO("%s %d: escape thread is running!", __FUNCTION__, __LINE__);
 	}*/
 
 	Wall_Distance = Wall_High_Limit;
@@ -696,7 +692,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 
 			if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
-				printf("%s %d: Check: Get_Bumper_Status! Break!\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 				break;
 			}
 
@@ -792,37 +788,37 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 	#endif
 			/*
-			printf("WF_position_x = %f\n", robot::instance()->robot_get_WF_position_x());
-			printf("WF_position_y = %f\n", robot::instance()->robot_get_WF_position_y());
-			printf("position_x = %f\n", robot::instance()->robot_get_position_x());
-			printf("position_y = %f\n", robot::instance()->robot_get_position_y());
+			ROS_INFO("%s %d: WF_position_x = %f", __FUNCTION__, __LINE__, robot::instance()->robot_get_WF_position_x());
+			ROS_INFO("%s %d: WF_position_y = %f", __FUNCTION__, __LINE__, robot::instance()->robot_get_WF_position_y());
+			ROS_INFO("%s %d: position_x = %f", __FUNCTION__, __LINE__, robot::instance()->robot_get_position_x());
+			ROS_INFO("%s %d: position_y = %f", __FUNCTION__, __LINE__, robot::instance()->robot_get_position_y());
 			*/
 
-			//printf("wall_following\n");
+			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);
 			//WFM_boundary_check();
 			/*------------------------------------------------------Check Current--------------------------------*/
 			if (Check_Motor_Current()) {
-				printf("Check_Motor_Current_Error\n");
+				ROS_WARN("%s %d: Check_Motor_Current_Error", __FUNCTION__, __LINE__);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
 
 			/*------------------------------------------------------Touch and Remote event-----------------------*/
 			if (Touch_Detect()) {
-				printf("Touch\n");
+				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
 				Reset_Touch();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
 			/*
 			if (Get_Rcon_Remote()) {
-			printf("Rcon\n");
-			Reset_Touch();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			break;
+				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+				Reset_Touch();
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				break;
 			}*/
 			if (Remote_Key(Remote_All)) {
-				printf("Rcon\n");
+				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 				if(Is_MoveWithRemote())
 				{
 					/*if (Remote_Key(Remote_Random)) {
@@ -895,16 +891,14 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			#if 0
 			/*---------------------------------------------------Bumper Event-----------------------*/
 			if (Get_Bumper_Status() & RightBumperTrig) {
-			printf("%s %d:\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 
 			WFM_move_back(350);
 
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			WF_Turn_Right(Turn_Speed, 700);
 
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 
 			Move_Forward(15, 15);
@@ -912,7 +906,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 
 			if (Get_Bumper_Status() & LeftBumperTrig) {
-			printf("%s %d:\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: left bumper triggered", __FUNCTION__, __LINE__);
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
 
@@ -931,21 +925,19 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 			if (Get_Bumper_Status() & RightBumperTrig) {
 			WFM_move_back(100);
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			WF_Turn_Right(Turn_Speed, 600);
 
 			Wall_Straight_Distance = MFW_Setting[follow_type].right_bumper_val; //150;
 			} else {
 			WFM_move_back(350);
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			WF_Turn_Right(Turn_Speed, 150);
 			Wall_Straight_Distance = MFW_Setting[follow_type].left_bumper_val; //250;
 			}
 
 			Wall_Straight_Distance = 200;
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			Move_Forward(10, 10);
 
@@ -963,7 +955,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
 				//if (Get_WallAccelerate() > 300) {
 				//if ((Get_RightWheel_Speed() - Get_LeftWheel_Speed()) >= -3) {
-				printf("%s %d:\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: reset wall distance to 350", __FUNCTION__, __LINE__);
 				Move_Forward(18, 16);
 				usleep(10000);
 				Wall_Straight_Distance = 350;
@@ -1499,22 +1491,21 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Right_Wall_Speed = 0;
 			}
 
-			//printf("%s %d: %d %d\n", __FUNCTION__, __LINE__, Left_Wall_Speed, Right_Wall_Speed);
+			//ROS_INFO("%s %d: left wall speed: %d\tright wall speed%d", __FUNCTION__, __LINE__, Left_Wall_Speed, Right_Wall_Speed);
 			Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
 
 			//If turing around at the same point
 			if (R > 7500) {
-				printf("Isolated Wall Follow!\n");
+				ROS_WARN("%s %d: Isolated Wall Follow!", __FUNCTION__, __LINE__);
 
-				printf("%s %d: Check: Isolated Wall Follow! break\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Check: Isolated Wall Follow! break", __FUNCTION__, __LINE__);
 				break;
 			}
 
 			} else {
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			WF_Turn_Right(Turn_Speed, 750);
-			printf("%s %d: \n", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			Move_Forward(15, 15);
 
@@ -1694,13 +1685,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 	ret = 0;
 	if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME) {
-		printf("%s %d: escape timeout %d(%d, %d), state 2\n", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
+		ROS_WARN("%s %d: escape timeout %d(%d, %d), state 2", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
 		ret = 2;
 	} else if (escape_state == Map_Escape_Trapped_Escaped) {
-		printf("%s %d: escaped, state 0\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: escaped, state 0", __FUNCTION__, __LINE__);
 		ret = 0;;
 	} else {
-		printf("%s %d: escaped, state 1\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: escaped, state 1", __FUNCTION__, __LINE__);
 		ret = 1;
 	}
 
@@ -1801,7 +1792,7 @@ usleep(100000);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 			}
 
-			printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+			ROS_INFO("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 			break;
 
 		} else if (state == -3 && Home_Point.empty()) {
@@ -1818,7 +1809,7 @@ usleep(100000);
 				usleep(100000);
 			}
 			Set_Clean_Mode(Clean_Mode_Userinterface);
-			printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+			ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 			break;
 		} else if (state == 1 || state == -7) {
 // Call GoHome() function to try to go to charger stub.
@@ -1827,7 +1818,7 @@ usleep(100000);
 // Check the clean mode to find out whether it has reach the charger.
 			if (Get_Clean_Mode() == Clean_Mode_Charging)
 			{
-				printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+				ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				break;
 			}
 			else if (Home_Point.empty())
@@ -1854,7 +1845,7 @@ usleep(100000);
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 				}
 
-				printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+				ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				break;
 			}
 
