@@ -78,6 +78,7 @@ void CM_TouringCancel(void);
 void CM_SetGyroOffset(int16_t offset);
 
 void CM_SetHome(int32_t x, int32_t y);
+void CM_go_home(void);
 //void CM_SetStationHome(void);
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
