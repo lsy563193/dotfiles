@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <stdio.h>
+#include <wav.h>
 
 #include "movement.h"
 #include "charger.hpp"
@@ -508,6 +509,15 @@ void Around_ChargerStation(uint8_t Dir)
 
 		if(Get_Cliff_Trig())
 		{
+			if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+			{
+				Disable_Motors();
+				ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+				wav_play(WAV_ERROR_LIFT_UP);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				return;
+			}
+
 			while (Get_Cliff_Trig())
 			{
 				// Move back until escape cliff triggered.
