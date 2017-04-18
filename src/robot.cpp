@@ -983,7 +983,7 @@ void robot::UnSubscriber(void)
 }
 void robot::init_mumber()
 {
-	is_odom_ready = false;
+	//is_odom_ready = false;
 	position_x=0;
 	position_y=0;
 	position_z=0;
@@ -994,6 +994,8 @@ void robot::init_mumber()
 	position_x_off=0;
 	position_y_off=0;
 	position_z_off=0;
+	robotbase_reset_odom_pose();
+	this->visualize_marker_init();
 }
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
