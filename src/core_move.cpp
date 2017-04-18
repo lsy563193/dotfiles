@@ -1613,7 +1613,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 
 #endif
 
-void CM_resume_cleaning()
+uint8_t CM_resume_cleaning()
 {
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	int8_t	state_for_continue_cleaning;
@@ -1634,10 +1634,24 @@ void CM_resume_cleaning()
 		{
 			ROS_INFO("Robot has reach the continue point, continue cleaning.");
 		}
-		else if (state_for_continue_cleaning == -1 || state_for_continue_cleaning == -2 || state_for_continue_cleaning == -3 || state_for_continue_cleaning == -5)
+		else if (state_for_continue_cleaning == -1 || state_for_continue_cleaning == -2)
 		{
-			ROS_INFO("Robot can't reach the continue point, directly continue cleaning, low battery or touch detect will be processed in CM_cleaning().");
+			ROS_INFO("Robot can't reach the continue point, directly continue cleaning.");
 		}
+		else if (state_for_continue_cleaning == -3 || state_for_continue_cleaning == -5)
+		{
+			if (state_for_continue_cleaning == -3)
+			{
+				ROS_INFO("Robot battery < 1200, stop it.");
+				return 0;
+			}
+			else
+			{
+				ROS_INFO("Touch_Detect.");
+				return 0;
+			}
+		}
+
 		else if (state_for_continue_cleaning == -4)
 		{
 			ROS_INFO("Remote home pressed, go home.");
@@ -1656,6 +1670,7 @@ void CM_resume_cleaning()
 		}
 	}
 #endif
+	return 1;
 }
 
 int CM_cleaning()
@@ -1866,7 +1881,6 @@ void CM_go_home()
 				return;
 			} else if (state == -3) {
 				// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
-				// If it is the last saved home point, stop the robot.
 				Disable_Motors();
 				// Beep for the finish signal.
 				for (i = 10; i > 0; i--) {
@@ -1881,7 +1895,6 @@ void CM_go_home()
 				return;
 			} else if (state == -5) {
 				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
-				// If it is the last saved home point, stop the robot.
 				Disable_Motors();
 				// Beep for the finish signal.
 				for (i = 10; i > 0; i--) {
@@ -2332,10 +2345,16 @@ uint8_t CM_Touring(void)
 		from_station = 1;
 	}
 
-	CM_resume_cleaning();
-
-	if (CM_cleaning() == 0) {
-		CM_go_home();
+	if (CM_resume_cleaning())
+	{
+		if (CM_cleaning() == 0) {
+			CM_go_home();
+		}
+	}
+	else
+	{
+		// Resume cleaning failed, battery too low or touch detected.
+		Set_Clean_Mode(Clean_Mode_Userinterface);
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -2742,7 +2761,7 @@ MapTouringType CM_handleExtEvent()
 #endif
 		return MT_Battery_Home;
 	}
-	/*
+	///*
 	//for testing
 	if (Remote_Key(Remote_Left) && go_home != 1) {
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
@@ -2760,7 +2779,7 @@ MapTouringType CM_handleExtEvent()
 		Reset_Rcon_Remote();
 		return MT_Battery_Home;
 	}
-	*/
+	//*/
 
 	/* Check key press events. */
 	if (Touch_Detect()) {
