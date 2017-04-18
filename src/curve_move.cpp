@@ -68,9 +68,9 @@ MapTouringType CurveMove_MoveToPoint()
         CM_HeadToCourse(ROTATE_TOP_SPEED, course);
 
 	ROS_WARN("%s %d: target: (%d, %d)\tradius: %f\n", __FUNCTION__, __LINE__, target.X, target.Y, radius);
-	if (CM_LinearMoveToPoint(target, PATH_PLANNER_MAX_SPEED, false, true) != MT_None) {
-		ROS_WARN("%s %d\n", __FUNCTION__, __LINE__);
-		return MT_None;
+	if ((retval = CM_LinearMoveToPoint(target, PATH_PLANNER_MAX_SPEED, false, true)) != MT_None) {
+		ROS_WARN("%s %d: linear move to point error: %d\n", __FUNCTION__, __LINE__, retval);
+		return retval;
 	}
 	ROS_WARN("%s %d: current position: (%d, %d)\tradius: %f", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), radius);
 
@@ -168,9 +168,9 @@ MapTouringType CurveMove_MoveToPoint()
 	target.X = cellToCount(points[2].X);
 	target.Y = cellToCount(points[2].Y);
 	
-	if (retval == MT_None && CM_LinearMoveToPoint(target, PATH_PLANNER_MAX_SPEED, true, false) != MT_None) {
-		ROS_WARN("%s %d", __FUNCTION__, __LINE__);
-		retval = MT_None;
+	if (retval == MT_None) {
+		ROS_WARN("%s %d: continue to move to target", __FUNCTION__, __LINE__);
+		retval = CM_LinearMoveToPoint(target, PATH_PLANNER_MAX_SPEED, true, false);
 	}
 
 	Stop_Brifly();
