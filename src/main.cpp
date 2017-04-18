@@ -22,7 +22,19 @@
 #include "random_runing.h"
 #include "sleep.h"
 #include "wall_follow_multi.h"
+#include "wav.h"
 
+void protect_function()
+{
+	//Bumper protect
+  Set_gyro_on();
+  ROS_INFO("Bumper protect  check");
+	if(Get_Bumper_Status())
+		Turn_Left_At_Init(Max_Speed, 1800);//save itself
+  if(Get_Bumper_Status())
+		Beep(5,20,0,1); //can't save itself, stop and give an alarm by beep
+
+}
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
@@ -31,6 +43,7 @@ void *core_move_thread(void *)
 	}
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
+	protect_function();
 
 	while(ros::ok()){
 		usleep(20000);
@@ -128,6 +141,8 @@ int main(int argc, char **argv)
 //	nh_private.param<robot::Slam_type>("slam_type", slam_type, robot::Slam_type::GMAPPING);
 	nh_private.param<int>("slam_type", slam_type, 0);
 
+	wav_play(WAV_WELCOME_ILIFE);
+
 	serial_init(serial_port.c_str(), baudrate);
 	robot::instance()->align_active(line_align_active);
 	robot::instance()->slam_type(slam_type);
@@ -138,7 +153,7 @@ int main(int argc, char **argv)
 	if (ret1 != 0) {
 		core_move_thread_state = 0;
 	} else {
-		printf("%s %d: core_move thread is up!\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: core_move thread is up!", __FUNCTION__, __LINE__);
 		core_move_thread_state = 1;
 	}
 #endif

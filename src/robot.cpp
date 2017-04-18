@@ -58,7 +58,7 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 
 	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
-	printf("%s %d: robot init done!\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 
 	// Initialize the pause variable.
@@ -135,7 +135,7 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->charge_stub = msg->c_stub;//charge stub signal
 	Rcon_Status |= this->charge_stub;
-	//printf("[robot.cpp] Rcon info:%x.\n", this->charge_stub);
+	//ROS_INFO("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, this->charge_stub);
 
 	this->key = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
@@ -191,7 +191,7 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	this->is_sensor_ready = true;
 //	if (this->is_sensor_ready == false) {
 //		if (time(NULL) - start_time > 2) {
-//			printf("%s %d: Gyro starting angle: %d\n", __FUNCTION__, __LINE__, (int16_t)((this->angle * 10 + 3600)) % 3600);
+//			ROS_INFO("%s %d: Gyro starting angle: %d", __FUNCTION__, __LINE__, (int16_t)((this->angle * 10 + 3600)) % 3600);
 
 //			Gyro_SetImuOffset(((int16_t)(this->angle * 10 + 3600)) % 3600);
 //			Gyro_SetImuAngle(((int16_t)(this->angle * 10 + 3600)) % 3600, this->angle_v);
@@ -202,11 +202,11 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 //	}
 
 #if 0
-	printf("%s %d:\n\t\tangle: %f\tangle_v: %f\n", __FUNCTION__, __LINE__, angle, angle_v);
-	printf("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d\n", vaccum, box, battery_voltage, brush_left, brush_right, brush_main);
-	printf("\t\tbumper_right: %d\tbumper_left: %d\tobs_left: %d\tobs_right: %d\tobs_front: %d\n", bumper_right, bumper_left, obs_left, obs_right , obs_front);
-	printf("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d\n", cliff_right, cliff_left, cliff_front, wall);
-	printf("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d\n", rcon_left, rcon_right, rcon_front_left, rcon_front_right, rcon_back_left, rcon_back_right);
+	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v: %f", __FUNCTION__, __LINE__, angle, angle_v);
+	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage, brush_left, brush_right, brush_main);
+	ROS_INFO("\t\tbumper_right: %d\tbumper_left: %d\tobs_left: %d\tobs_right: %d\tobs_front: %d", bumper_right, bumper_left, obs_left, obs_right , obs_front);
+	ROS_INFO("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d", cliff_right, cliff_left, cliff_front, wall);
+	ROS_INFO("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d", rcon_left, rcon_right, rcon_front_left, rcon_front_right, rcon_back_left, rcon_back_right);
 #endif
 }
 /*
@@ -255,7 +255,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			this->yaw = tf::getYaw(transform.getRotation());
 
 			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-			//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -281,7 +281,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			this->yaw = tf::getYaw(transform.getRotation());
 
 			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-			//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -308,7 +308,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			this->yaw = tf::getYaw(transform.getRotation());
 
 			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-			//printf("%s %d: offset: %d\n", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -380,13 +380,13 @@ void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
 
 	//v1.swap(map->data);
 	//memcpy(map_data, &map->data, sizeof(map->data));
-	//printf("width=%dheight=%dresolution=%fseq=%d\n",width,height,resolution,seq);
-	//printf("map_size=%d\nvector_size=%d", map_size, vector_size);
-	//printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",map_data[0],map_data[1],map_data[2],map_data[3],map_data[4],map_data[5],map_data[6],map_data[7],map_data[8],map_data[9],map_data[10],map_data[11]);
-	//printf("map->data=%d,%d,%d,%d,%d,%d\n",(map->data)[0],(map->data)[1],(map->data)[2],(map->data)[3],(map->data)[4],(map->data)[5]);
-	printf("vector=%d,%d,%d\n",map_data[0],map_data[1],map_data[2]);
-	printf("vector_pointer=%d\n",(*(this->ptr))[0]);
-	printf("finished map callback\n");
+	//ROS_INFO("width = %d\theight = %d\tresolution = %f\tseq = %d", width, height, resolution, seq);
+	//ROS_INFO("map_size=%d\tvector_size = %d", map_size, vector_size);
+	//ROS_INFO("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d", map_data[0], map_data[1], map_data[2], map_data[3], map_data[4], map_data[5], map_data[6], map_data[7], map_data[8], map_data[9], map_data[10], map_data[11]);
+	//ROS_INFO("map->data = %d, %d, %d, %d, %d, %d", (map->data)[0], (map->data)[1], (map->data)[2], (map->data)[3], (map->data)[4], (map->data)[5]);
+	ROS_INFO("%s %d: vector = %d, %d, %d", __FUNCTION__, __LINE__, map_data[0], map_data[1], map_data[2]);
+	ROS_INFO("%s %d: vector_pointer = %d", __FUNCTION__, __LINE__, (*(this->ptr))[0]);
+	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
 	is_map_ready=true;
 
 }
@@ -418,9 +418,9 @@ double robot::robot_get_origin_y()
 
 std::vector<int8_t> *robot::robot_get_map_data()
 {
-	//printf("return the ptr address\n");
-	//printf("vector_pointer_address=%d\n",(*(this->ptr))[0]);
-	//printf("seq=%d\n",this->seq);
+	//ROS_INFO("%s %d: return the ptr address", __FUNCTION__, __LINE__);
+	//ROS_INFO("%s %d: vector_pointer_address = %d", __FUNCTION__, __LINE__, (*(this->ptr))[0]);
+	//ROS_INFO("%s %d: seq = %d", __FUNCTION__, __LINE__, this->seq);
 	return this->ptr;
 }
 
@@ -594,42 +594,42 @@ uint32_t robot::robot_get_rcon()
 //uint32_t robot::robot_get_rcon_front_left()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0xf00000) >> 20);
+//	//ROS_INFO("%s %d: charge_stub: %x.", __FUNCTION__, __LINE__, (this->charge_stub & 0xf00000) >> 20);
 //	return this -> rcon_front_left = (this->charge_stub & 0xf00000) >> 20;
 //}
 //
 //uint32_t robot::robot_get_rcon_front_right()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0x0f0000) >> 16);
+//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this->charge_stub & 0x0f0000) >> 16);
 //	return this->rcon_front_right = (this->charge_stub & 0x0f0000) >> 16;
 //}
 //
 //uint32_t robot::robot_get_rcon_back_left()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0x0000f0) >> 4);
+//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this->charge_stub & 0x0000f0) >> 4);
 //	return this->rcon_back_left = (this->charge_stub & 0x0000f0) >> 4;
 //}
 //
 //uint32_t robot::robot_get_rcon_back_right()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//printf("[robot.cpp] charge_stub:%x.\n", (this-> charge_stub & 0x00000f) >> 0);
+//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this-> charge_stub & 0x00000f) >> 0);
 //	return this->rcon_back_right = (this-> charge_stub & 0x00000f) >> 0;
 //}
 //
 //uint32_t robot::robot_get_rcon_left()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//printf("[robot.cpp] charge_stub:%x.\n", (this-> charge_stub & 0x00f000) >> 12);
+//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this-> charge_stub & 0x00f000) >> 12);
 //	return this->rcon_left = (this-> charge_stub & 0x00f000) >> 12;
 //}
 //
 //uint32_t robot::robot_get_rcon_right()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//printf("[robot.cpp] charge_stub:%x.\n", (this->charge_stub & 0x000f00) >> 8);
+//	//ROS_INFO("%s %d: charge_stub:%x.",  __FUNCTION__, __LINE__, (this->charge_stub & 0x000f00) >> 8);
 //	return this->rcon_right = (this->charge_stub & 0x000f00) >> 8;
 //}
 /*
@@ -746,9 +746,9 @@ int16_t robot::robot_get_home_angle() {
 }
 
 void robot::robot_display_positions() {
-  printf("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)\n",
-         this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI,
-         Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
+	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)",
+		this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI,
+		Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
 }
 
 void robot::visualize_marker_init(){

@@ -127,10 +127,21 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 		Turn_Right(speed, angle);
 	}
 
+	if (Remote_Key(Remote_Clean | Remote_Home))
+	{
+		// This remote command should change the behavior of robot.
+		Stop_Brifly();
+	}
+	if (Remote_Key(Remote_Max) && !lowBattery)
+	{
+		Switch_VacMode();
+		Reset_Rcon_Remote();
+	}
+
 	rounding_update();
 
 	should_mark = 1;
-	printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, dir, speed, angle);
+	ROS_INFO("%s %d: %d %d %d", __FUNCTION__, __LINE__, dir, speed, angle);
 }
 
 void rounding_move_back(uint16_t dist)
@@ -223,18 +234,18 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 	rounding_type = type;
 	y_start = Map_GetYCount();
-	printf("%s %d: %d %d %d %d\n", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
+	ROS_INFO("%s %d: Y: %d\tY abs: %d\ttarget Y: %d\ttarget Y abs: %d", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
 
 	if ((Origin_Bumper_Status & LeftBumperTrig) && !(Origin_Bumper_Status & RightBumperTrig))
 	{
 		// Debug
 		if (type == ROUNDING_LEFT)
 		{
-			printf("%s %d: Left bumper ROUNDING_LEFT and turn 45 degrees.\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Left bumper ROUNDING_LEFT and turn 45 degrees.", __FUNCTION__, __LINE__);
 		}
 		else
 		{
-			printf("%s %d: Left bumper ROUNDING_RIGHT and turn 135 degrees.\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Left bumper ROUNDING_RIGHT and turn 135 degrees.", __FUNCTION__, __LINE__);
 		}
 		//rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 450 : 1350));
@@ -244,11 +255,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 		// Debug
 		if (type == ROUNDING_LEFT)
 		{
-			printf("%s %d: Right bumper ROUNDING_LEFT and turn 135 degrees.\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Right bumper ROUNDING_LEFT and turn 135 degrees.", __FUNCTION__, __LINE__);
 		}
 		else
 		{
-			printf("%s %d: Right bumper ROUNDING_RIGHT and turn 45 degrees.\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Right bumper ROUNDING_RIGHT and turn 45 degrees.", __FUNCTION__, __LINE__);
 		}
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 1350 : 450));
 	}
@@ -259,11 +270,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 		// Debug
 		if (type == ROUNDING_LEFT)
 		{
-			printf("%s %d: Same bumper ROUNDING_LEFT and turn 90 degrees.\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Same bumper ROUNDING_LEFT and turn 90 degrees.", __FUNCTION__, __LINE__);
 		}
 		else
 		{
-			printf("%s %d: Same bumper ROUNDING_RIGHT and turn 90 degrees.\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Same bumper ROUNDING_RIGHT and turn 90 degrees.", __FUNCTION__, __LINE__);
 		}
 	}
 
@@ -278,10 +289,20 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 		rounding_update();
 
-		//printf("%s %d: %d (%d, %d)\n", __FUNCTION__, __LINE__, target.Y, Map_GetXCount(), Map_GetYCount());
+		if (Remote_Key(Remote_Clean | Remote_Home))
+		{
+			// This remote command should change the behavior of robot.
+			Stop_Brifly();
+			return 0;
+		}
+		if (Remote_Key(Remote_Max) && !lowBattery)
+		{
+			Switch_VacMode();
+			Reset_Rcon_Remote();
+		}
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
 			// Robot has reach the target.
-			printf("%s %d: %d %d %d %d\n", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
+			ROS_INFO("%s %d: Y: %d\tY abs: %d\ttarget Y: %d\ttarget Y abs: %d", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
 			Stop_Brifly();
 			return 0;
 		}
@@ -289,7 +310,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 		/* Tolerance of distance allow to move back when roundinging the obstcal. */
 		if ((target.Y > y_start && (y_start - Map_GetYCount()) > 120) || (target.Y < y_start && (Map_GetYCount() - y_start) > 120)) {
 			// Robot has round to the opposite direcition.
-			printf("%s %d: %d (%d, %d)\n", __FUNCTION__, __LINE__, target.Y, Map_GetXCount(), Map_GetYCount());
+			ROS_INFO("%s %d: Y: %d position: (%d, %d)", __FUNCTION__, __LINE__, target.Y, Map_GetXCount(), Map_GetYCount());
 
 			Map_SetCell(MAP, Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_3, 0), Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_3, 0), CLEANED);
 
@@ -303,9 +324,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if (!(Temp_Bumper_Status & LeftBumperTrig) && (Temp_Bumper_Status & RightBumperTrig)) {
 				// Only right bumper is triggered.
 				//Stop_Brifly();
-				printf("%s %d, move back for right bumper.\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: move back for right bumper.", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
-				Stop_Brifly();
 				// Turn right for 135 degrees.
 				rounding_turn(1, TURN_SPEED, 1350);
 				Move_Forward(15, 15);
@@ -433,7 +453,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 				Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
 			} else {
-				Stop_Brifly();
 				// 12500 steps means around 2 meters.
 				if (Get_LeftWheel_Step() < 12500) {
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
@@ -461,9 +480,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if ((Temp_Bumper_Status & LeftBumperTrig) && !(Temp_Bumper_Status & RightBumperTrig)) {
 				// Only left bumper is triggered.
 				//Stop_Brifly();
-				printf("%s %d, move back for left bumper.\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: move back for left bumper.", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
-				Stop_Brifly();
 				// Turn left for 135 degrees.
 				rounding_turn(0, TURN_SPEED, 1350);
 				Move_Forward(15, 15);
@@ -591,7 +609,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 				Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
 			} else {
-				Stop_Brifly();
 				// 12500 steps means around 2 meters.
 				if (Get_RightWheel_Step() < 12500) {
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {

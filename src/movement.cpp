@@ -13,7 +13,6 @@
 #include "config.h"
 #include "core_move.h"
 #include "wall_follow_multi.h"
-#define MOVEMENT "movement"
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -297,7 +296,7 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	Set_Wheel_Speed(Speed, Speed);
 	// This count is for how many milliseconds it should take. The Distance is in mm.
 	int back_count = int(1000 * Distance / (Speed * SPEED_ALF));
-	//printf("[movement.cpp] Quick_back for %dms.\n", back_count);
+	//ROS_INFO("%s %d Quick_back for %dms.", __FUNCTION__, __LINE__, back_count);
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
 		usleep(1000);
@@ -314,7 +313,7 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	ROS_INFO("Quick_Back finished.");
 }
 
-void Turn_Left(uint16_t speed, int16_t angle)
+void Turn_Left_At_Init(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
 	int16_t gyro_angle;
@@ -325,7 +324,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	if (target_angle >= 3600) {
 		target_angle -= 3600;
 	}
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	Set_Dir_Left();
 
@@ -342,12 +341,75 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
 		}
 		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		if(Is_Turn_Remote())
+			break;
+//		if(Get_Bumper_Status()){
+//			Stop_Brifly();
+//			WFM_move_back(120);
+//			Stop_Brifly();
+//			Set_Dir_Left();
+//			ROS_INFO("Bumper triged when turn left, back 20mm.");
+//		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d, diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
+void Turn_Left(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle + angle;
+	if (target_angle >= 3600) {
+		target_angle -= 3600;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Left();
+
+	Set_Wheel_Speed(speed, speed);
+
+	uint8_t oc=0;
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
 		}
 		else {
 			Set_Wheel_Speed(speed, speed);
@@ -367,14 +429,14 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			ROS_INFO("Bumper triged when turn left, back 20mm.");
 		}
 		usleep(10000);
-//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff=%d \n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
 void Turn_Right(uint16_t speed, int16_t angle)
@@ -388,7 +450,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	Set_Dir_Right();
 
@@ -405,12 +467,12 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
 		}
 		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
 			auto speed_ = std::min((uint16_t)5,speed);
 			Set_Wheel_Speed(speed_, speed_);
-//			printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
 		}
 		else {
 			Set_Wheel_Speed(speed, speed);
@@ -430,14 +492,88 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			ROS_INFO("Bumper triged when turn right, back 20mm.");
 		}
 		usleep(10000);
-//		printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 	wheel_left_direction = 0;
 	wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
+void WF_Turn_Right(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+	int32_t i, j;
+	float pos_x, pos_y;
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle - angle;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Right();
+
+	Set_Wheel_Speed(speed, speed);
+	uint8_t oc=0;
+
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		Map_SetPosition(pos_x, pos_y);
+
+		i = Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_3, 0);
+		j = Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_3, 0);
+		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
+			Map_SetCell(MAP, i, j, BLOCKED_OBS);
+		}
+
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		if(Is_Turn_Remote())
+			break;
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Right();
+			ROS_INFO("Bumper triged when turn right, back 20mm.");
+		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
 int32_t Get_FrontOBS(void)
@@ -474,20 +610,22 @@ uint8_t Get_Cliff_Trig(void)
 	cr = robot::instance()->robot_get_cliff_right();
 	cf = robot::instance()->robot_get_cliff_front();	
 	if (cl < Cliff_Limit){
-		ROS_INFO("Left cliff is detected:%d", cl);
+		ROS_DEBUG("Left cliff is detected:%d", cl);
 		Cliff_Status += 0x01;
 	}
 	if (cr< Cliff_Limit){
-		ROS_INFO("Right cliff is detected:%d", cr);
+		ROS_DEBUG("Right cliff is detected:%d", cr);
 		Cliff_Status += 0x02;
 	}
 	if (cf < Cliff_Limit){
-		ROS_INFO("Front cliff is detected:%d", cf);
+		ROS_DEBUG("Front cliff is detected:%d", cf);
 		Cliff_Status += 0x04;
 	}
+    /*
 	if (Cliff_Status != 0x00){
-		ROS_INFO("Return Cliff status:%x.", Cliff_Status);
+		ROS_DEBUG("Return Cliff status:%x.", Cliff_Status);
 	}
+    */
 	return Cliff_Status;
 }
 
@@ -596,7 +734,6 @@ uint8_t Is_AtHomeBase(void)
 {
 	// If the charge status is true, it means it is at home base charging.
 	//Debug
-	ROS_DEBUG_NAMED(MOVEMENT,"Get charge status: %d.\n", robot::instance()->robot_get_charge_status());
 	if (robot::instance()->robot_get_charge_status() == 2 || robot::instance()->robot_get_charge_status() == 1){
 		return 1;
 	}else{
@@ -786,7 +923,7 @@ uint8_t Check_Motor_Current(void)
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
 			lwheel_oc_count =0;
-            ROS_INFO("%s,%d,left wheel over current\n",__FUNCTION__,__LINE__);
+            ROS_DEBUG("%s,%d,left wheel over current\n",__FUNCTION__,__LINE__);
 			return Check_Left_Wheel;
 		}
 	}
@@ -796,26 +933,26 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
-            ROS_INFO("%s,%d,right wheel over current\n",__FUNCTION__,__LINE__);
+            ROS_DEBUG("%s,%d,right wheel over current\n",__FUNCTION__,__LINE__);
 			return Check_Right_Wheel;
 		}
 	}
 	else
 		rwheel_oc_count = 0;
 	if(robot::instance()->robot_get_rbrush_oc()){
-        ROS_INFO("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
     }
 	if(robot::instance()->robot_get_lbrush_oc()){
-        ROS_INFO("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
     }
 	if(robot::instance()->robot_get_mbrush_oc()){
-        ROS_INFO("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Main_Brush;
     }
 	if(robot::instance()->robot_get_vacuum_oc()){
-        ROS_INFO("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
+        ROS_DEBUG("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
 		return Check_Vacuum;	
     }
 	return 0;
@@ -1003,7 +1140,7 @@ void Set_Vac_Speed(void)
 			if (Get_Work_Time() < Two_Hours){
 				Set_BLDC_Speed(Vac_Speed_Normal);
 			}else{
-				//printf("[movement.cpp] Work time more than 2 hours.\n");
+				//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
 				Set_BLDC_Speed(Vac_Speed_NormalL);
 			}
 		}
@@ -1215,7 +1352,7 @@ uint8_t Remote_Key(uint8_t key)
 	// Debug
 	if (Remote_Status > 0)
 	{
-		ROS_INFO("Remote_Status = %x", Remote_Status);
+		ROS_INFO("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
 	}
 	if(Remote_Status & key)
 		return 1;
@@ -1323,14 +1460,14 @@ void Set_LED(uint16_t G, uint16_t R)
 
 void Stop_Brifly(void)
 {
-	//printf("%s %d: stopping robot.\n", __FUNCTION__, __LINE__);
+	//ROS_INFO("%s %d: stopping robot.", __FUNCTION__, __LINE__);
 	do {
 		Set_Wheel_Speed(0, 0);
 		usleep(15000);
-		//printf("%s %d: linear speed: (%f, %f, %f)\n", __FUNCTION__, __LINE__,
+		//ROS_INFO("%s %d: linear speed: (%f, %f, %f)", __FUNCTION__, __LINE__,
 		//	robot::instance()->robot_get_linear_x(), robot::instance()->robot_get_linear_y(), robot::instance()->robot_get_linear_z());
 	} while (robot::instance()->robot_is_moving());
-	//printf("%s %d: robot is stopped.\n", __FUNCTION__, __LINE__);
+	//ROS_INFO("%s %d: robot is stopped.", __FUNCTION__, __LINE__);
 }
 
 void Set_MainBrush_PWM(uint16_t PWM)
@@ -1828,7 +1965,7 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 	Set_Dir_Left();
 	Set_Wheel_Speed(speed, speed);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
 	while(ros::ok())
 	{
 		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
@@ -1882,7 +2019,7 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 	Set_Dir_Right();
 	Set_Wheel_Speed(speed, speed);
 
-	printf("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
 	while(ros::ok())
 	{
 		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {

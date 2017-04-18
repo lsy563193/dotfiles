@@ -144,12 +144,12 @@ bool CM_Check_is_exploring()
 				float x_1 = x + b * 0.05;
 				/*over map scope*/
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))){
-					printf("over scope\n");
+					ROS_WARN("over scope");
 				} else {
 					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100) {
 						c++;	//add one grid wall
 						if (c >= (search_width / 0.05)){
-							printf("exist wall\n");
+							ROS_INFO("exist wall");
 							return 2;
 						}
 					} else {
@@ -172,17 +172,17 @@ bool CM_Check_is_exploring()
 				float x_1 = x + b * 0.05;
 				/*over map scope*/
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))) {
-					printf("over scope\n");
+					ROS_WARN("over scope");
 				} else {
 					if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == 100) {
 						c++;
 						if (c >= (search_width / 0.05)) {
-							printf("exist wall\n");
+							ROS_INFO("exist wall");
 							return 2;
 						}
 					} else {
 						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1) {
-							printf("exist unkown\n");
+							ROS_WARN("exist unkown");
 							return 1;
 						}
 					}
@@ -239,7 +239,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
 
 				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER) {
-					printf("%s, %d: warning, reset bumper/obs value, (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(i), countToCell(j));
+					ROS_WARN("%s %d: warning, reset bumper/obs value, (%d, %d)", __FUNCTION__, __LINE__, countToCell(i), countToCell(j));
 					Map_SetCell(MAP, i, j, CLEANED);
 				}
 			}
@@ -251,7 +251,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 	CM_count_normalize(heading_0, -CELL_SIZE_2, CELL_SIZE, &i, &j);
 	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
-		//printf("%s, %d: warning, setting boundary.\n", __FUNCTION__, __LINE__);
+		//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
 	} else {
 		Map_SetCell(MAP, i, j, CLEANED);
 	}
@@ -263,7 +263,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 	CM_count_normalize(heading_0, CELL_SIZE_2, CELL_SIZE, &i, &j);
 	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
-		//printf("%s, %d: warning, setting boundary.\n", __FUNCTION__, __LINE__);
+		//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
 	} else {
 		Map_SetCell(MAP, i, j, CLEANED);
 	}
@@ -288,10 +288,10 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 	for (c = 1; c >= -1; --c) {
 		CM_count_normalize(heading_0, c * CELL_SIZE, CELL_SIZE, &i, &j);
 		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
-			//printf("%s, %d: warning, setting boundary.\n", __FUNCTION__, __LINE__);
+			//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
 		} else {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BUMPER) {
-				printf("%s, %d: warning, setting bumper (%d, %d).\n", __FUNCTION__, __LINE__, countToCell(i), countToCell(j));
+				ROS_WARN("%s %d: warning, setting bumper (%d, %d).", __FUNCTION__, __LINE__, countToCell(i), countToCell(j));
 			}
 			Map_SetCell(MAP, i, j, CLEANED);
 		}
@@ -393,12 +393,12 @@ void CM_update_map_bumper(ActionType action, uint8_t bumper)
 	if ((bumper & RightBumperTrig) && (bumper & LeftBumperTrig)) {
 		for (c = -1; c <= 1; ++c) {
 			CM_count_normalize(Gyro_GetAngle(0), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 		}
 	} else if (bumper & LeftBumperTrig) {
 		CM_count_normalize(Gyro_GetAngle(0), CELL_SIZE_2, CELL_SIZE_2, &x_tmp, &y_tmp);
-		printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
 		if (action == ACTION_LT) {
@@ -406,40 +406,40 @@ void CM_update_map_bumper(ActionType action, uint8_t bumper)
 			//Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 		} else {
 			CM_count_normalize(Gyro_GetAngle(0), CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
 			CM_count_normalize(Gyro_GetAngle(0), CELL_SIZE_2, CELL_SIZE, &x_tmp, &y_tmp);
-			printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
 			if ((positions[0].x == positions[1].x) && (positions[0].y == positions[1].y) && (positions[0].dir == positions[1].dir) &&
 			    (positions[0].x == positions[2].x) && (positions[0].y == positions[2].y) && (positions[0].dir == positions[2].dir)) {
 				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
-				printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 			}
 		}
 	} else if (bumper & RightBumperTrig) {
 		CM_count_normalize(Gyro_GetAngle(0), -CELL_SIZE_2, CELL_SIZE_2, &x_tmp, &y_tmp);
-		printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 		if (action == ACTION_RT) {
 			//CM_count_normalize(Gyro_GetAngle(0), -CELL_SIZE_2, CELL_SIZE, &x_tmp, &y_tmp);
 			//Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 		} else {
 			CM_count_normalize(Gyro_GetAngle(0), -CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
 			CM_count_normalize(Gyro_GetAngle(0), -CELL_SIZE_2, CELL_SIZE, &x_tmp, &y_tmp);
-			printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
 			if ((positions[0].x == positions[1].x) && (positions[0].y == positions[1].y) && (positions[0].dir == positions[1].dir) &&
 			    (positions[0].x == positions[2].x) && (positions[0].y == positions[2].y) && (positions[0].dir == positions[2].dir)) {
 				CM_count_normalize(Gyro_GetAngle(0), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
-				printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 			}
 		}
@@ -514,7 +514,7 @@ void CM_update_map(ActionType action, uint8_t bumper) {
 #else
 			CM_count_normalize(Gyro_GetAngle(0), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) != BLOCKED_BUMPER) {
-				printf("%s %d: marking (%d, %d)\n", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
 			}
 		} else {
@@ -562,7 +562,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 	Diff = Angle - Gyro_GetAngle(0);
 
-	printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tBias: %d\tTemp: %d\tScale: %d\n",
+	ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tBias: %d\tTemp: %d\tScale: %d",
 	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	while (Diff >= 1800) {
@@ -577,19 +577,19 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		return;
 	}
 
-	printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tangle_turned: %d\tBias: %d\tTemp: %d\tScale: %d\n",
+	ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tangle_turned: %d\tBias: %d\tTemp: %d\tScale: %d",
 	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)), angle_turned, Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	if (((Diff <= 1800 && Diff >= 1700) || (Diff >= -1800 && Diff <= -1700))) {
 		if (Diff <= 1800 && Diff >= 1700) {
 			if (angle_turned < 0) {
-				printf("%s %d: Turn Left\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: Turn Left", __FUNCTION__, __LINE__);
 
 				Set_Dir_Left();
 				action = ACTION_LT;
 				angle_turned += Diff;
 			} else {
-				printf("%s %d: Turn Right\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: Turn Right", __FUNCTION__, __LINE__);
 
 				Set_Dir_Right();
 				action = ACTION_RT;
@@ -597,13 +597,13 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			}
 		} else {
 			if (angle_turned > 0) {
-				printf("%s %d: Turn Right\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: Turn Right", __FUNCTION__, __LINE__);
 
 				Set_Dir_Right();
 				action = ACTION_RT;
 				angle_turned += Diff;
 			} else {
-				printf("%s %d: Turn Left\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: Turn Left", __FUNCTION__, __LINE__);
 
 				Set_Dir_Left();
 				action = ACTION_LT;
@@ -612,12 +612,12 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		}
 	} else {
 		if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
-			printf("%s %d: Turn Left\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Turn Left", __FUNCTION__, __LINE__);
 
 			Set_Dir_Left();
 			action = ACTION_LT;
 		} else if ((Diff <= 0) && (Diff >= (-1800))) {
-			printf("%s %d: Turn Right\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Turn Right", __FUNCTION__, __LINE__);
 
 			Set_Dir_Right();
 			action = ACTION_RT;
@@ -638,24 +638,16 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				CM_TouringCancel();
 				Set_Touch();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				printf("%s %d: motor(s) error break!\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: motor(s) error break!", __FUNCTION__, __LINE__);
 				return;
 			}
 		}
 
 		if (Touch_Detect()) {
-			CM_TouringCancel();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Stop_Brifly();
-			Beep(5, 20, 0, 1);
-			printf("%s %d: touch detect break!\n", __FUNCTION__, __LINE__);
-			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
-			{
-				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-				usleep(20000);
-			}
-			Reset_Touch();
+			// Set touch status to make sure this event can be detected by main process while loop.
+			Set_Touch();
+			ROS_WARN("%s %d: touch detect break!", __FUNCTION__, __LINE__);
 			return;
 		}
 		if (Remote_Key(Remote_Max)) {
@@ -669,7 +661,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			Set_BLDC_Speed(Vac_Speed_NormalL);
 			Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
 			Set_Clean_Mode(Clean_Mode_GoHome);
-			printf("%s %d: remote home is pressed.\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: remote home is pressed.", __FUNCTION__, __LINE__);
 
 			CM_SetGoHome(1);
 			Reset_Rcon_Remote();
@@ -677,7 +669,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		}
 
 		if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-			printf("%s %d: robot is taken up break! \n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: robot is taken up break!", __FUNCTION__, __LINE__);
 			return;
 		}
 
@@ -687,8 +679,17 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 			CM_update_map(action, isBumperTriggered);
 
-			printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
+
+			if (Touch_Detect())
+			{
+				// Set touch status to make sure this event can be detected by main process while loop.
+				Set_Touch();
+				Stop_Brifly();
+				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+				return;
+			}
 			Stop_Brifly();
 			CM_update_map(action, isBumperTriggered);
 
@@ -701,14 +702,14 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				Diff = Diff + 3600;
 			}
 
-			printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+			ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
 			if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
-				printf("Turn Left\n");
+				ROS_INFO("Turn Left");
 
 				Set_Dir_Left();
 				action = ACTION_LT;
 			} else if ((Diff <= 0) && (Diff >= (-1800))) {
-				printf("Turn Right\n");
+				ROS_INFO("Turn Right");
 
 				Set_Dir_Right();
 				action = ACTION_RT;
@@ -719,8 +720,17 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 #ifdef BUMPER_ERROR
 			if (Get_Bumper_Status()) {
-				printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
+
+				if (Touch_Detect())
+				{
+					// Set touch status to make sure this event can be detected by main process while loop.
+					Set_Touch();
+					Stop_Brifly();
+					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+					return;
+				}
 
 				Diff = Angle - Gyro_GetAngle(0);
 				while (Diff >= 1800) {
@@ -731,20 +741,29 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					Diff = Diff + 3600;
 				}
 
-				printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+				ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
 				if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
-					printf("Turn Left\n");
+					ROS_INFO("Turn Left");
 
 					Set_Dir_Left();
 					action = ACTION_LT;
 				} else if ((Diff <= 0) && (Diff >= (-1800))) {
-					printf("Turn Right\n");
+					ROS_INFO("Turn Right");
 
 					Set_Dir_Right();
 					action = ACTION_RT;
 				}
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
+
+					if (Touch_Detect())
+					{
+						// Set touch status to make sure this event can be detected by main process while loop.
+						Set_Touch();
+						Stop_Brifly();
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						return;
+					}
 
 					Diff = Angle - Gyro_GetAngle(0);
 					while (Diff >= 1800) {
@@ -755,21 +774,31 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 						Diff = Diff + 3600;
 					}
 
-					printf("\n%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
+					ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff, (Angle - Gyro_GetAngle(0)));
 					if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
-						printf("Turn Left\n");
+						ROS_INFO("Turn Left");
 
 						Set_Dir_Left();
 						action = ACTION_LT;
 					} else if ((Diff <= 0) && (Diff >= (-1800))) {
-						printf("Turn Right\n");
+						ROS_INFO("Turn Right");
 
 						Set_Dir_Right();
 						action = ACTION_RT;
 					}
 					if (Get_Bumper_Status()) {
-						printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
+
+						if (Touch_Detect())
+						{
+							// Set touch status to make sure this event can be detected by main process while loop.
+							Set_Touch();
+							Stop_Brifly();
+							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+							return;
+						}
+
 						Set_Error_Code(Error_Code_Bumper);
 						Stop_Brifly();
 						return;
@@ -786,7 +815,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			Stop_Brifly();
 			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
-			printf("%s %d: Angle: %d\tGyro: %d\tDiff: %d\n", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
+			ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
 			return;
 		}
 
@@ -860,37 +889,29 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 	if (rotate_is_needed == true) {
 		Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
-		printf("Target_Course(%d)\n",Target_Course);
+		ROS_INFO("Target_Course: %d", Target_Course);
 		CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
-		printf("leave CM_HeadToCourse\n");
+		ROS_INFO("leave CM_HeadToCourse");
 	}
 
-	ROS_DEBUG("%s %d: original target (%d, %d)\n", __FUNCTION__, __LINE__, Target.X, Target.Y);
+	ROS_INFO("%s %d: original target (%d, %d)", __FUNCTION__, __LINE__, Target.X, Target.Y);
 	if (position.X != Map_GetXCount() && position.X == Target.X) {
 		Target.X = Map_GetXCount();
 	} else if (position.Y != Map_GetYCount() && position.Y == Target.Y) {
 		Target.Y = Map_GetYCount();
 	}
-	ROS_DEBUG("%s %d: new target (%d, %d)\n", __FUNCTION__, __LINE__, Target.X, Target.Y);
+	ROS_INFO("%s %d: new target (%d, %d)", __FUNCTION__, __LINE__, Target.X, Target.Y);
 
 	if (Touch_Detect()) {
-		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
+		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
+		ROS_INFO("%s %d: Touch_Detect in CM_HeadToCourse()", __FUNCTION__, __LINE__);
 		set_gyro(1, 1);
 		usleep(10000);
 		Stop_Brifly();
-		Beep(5, 20, 0, 1);
-		// Key release detection, if user has not release the key, don't do anything.
-		while (Get_Key_Press() & KEY_CLEAN)
-		{
-			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-			usleep(20000);
-		}
-		Reset_Touch();
-
 		return MT_Key_Clean;
 	}
 	if (Get_Clean_Mode() == Clean_Mode_GoHome) {
-		printf("%s %d: Gyro Calibration: %d\n", __FUNCTION__, __LINE__, Gyro_GetCalibration());
+		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
 		set_gyro(1, 1);
 		usleep(10000);
 
@@ -931,7 +952,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				Stop_Brifly();
 				CM_TouringCancel();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				ROS_DEBUG("%s %d: Check: Clean Mode! break\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Check: Clean Mode! break", __FUNCTION__, __LINE__);
 				retval = MT_Key_Clean;
 				break;
 			}
@@ -945,21 +966,21 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		if (go_home == 1) {
 			if (Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power) && go_home != 1 ) {
 				Stop_Brifly();
-				printf("%s %d: low battery, battery < 1200 is detected.\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
 				retval = MT_Battery;
 				break;
 			}
 		} else {
 			if (Check_Bat_SetMotors(Clean_Vac_Power, Clean_SideBrush_Power, Clean_MainBrush_Power) && go_home != 1 ) {
 				Stop_Brifly();
-				printf("%s %d: low battery, battery < 1200 is detected.\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
 				retval = MT_Battery;
 				break;
 			}
 		}
 
 		if ((retval = CM_handleExtEvent()) != MT_None) {
-			ROS_INFO("%s %d: Check: Clean Mode! break.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Check: Clean Mode! break.", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -974,30 +995,49 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
 
-				printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
+				if (Touch_Detect())
+				{
+					Stop_Brifly();
+					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+					retval = MT_Key_Clean;
+					break;
+				}
+
 #ifdef CLIFF_ERROR
 
 				if (Get_Cliff_Trig()) {
 					ROS_INFO("Cliff back 2nd time.");
 					if (Get_Cliff_Trig() == Status_Cliff_All) {
-						ROS_DEBUG("%s %d: all cliffs are triggered\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: all cliffs are triggered", __FUNCTION__, __LINE__);
 						Stop_Brifly();
 						retval = MT_Key_Clean;
 						break;
 					}
-					printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 					CM_CorBack(COR_BACK_20MM);
+					if (Touch_Detect())
+					{
+						Stop_Brifly();
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						retval = MT_Key_Clean;
+						break;
+					}
 					if (Get_Cliff_Trig()) {
 						ROS_INFO("Cliff back 3rd time.");
 						if (Get_Cliff_Trig() == Status_Cliff_All) {
-							ROS_DEBUG("%s %d: all cliffs are triggered\n", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: all cliffs are triggered", __FUNCTION__, __LINE__);
 							Stop_Brifly();
 							retval = MT_Key_Clean;
 							break;
 						}
-						printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
+						if (Touch_Detect())
+						{
+							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						}
 						Set_Error_Code(Error_Code_Cliff);
 						Stop_Brifly();
 						retval = MT_Key_Clean;
@@ -1012,7 +1052,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
 				retval = MT_None;
-				printf("%s %d: cliff break!\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: cliff break!", __FUNCTION__, __LINE__);
 				break;
 			}
 		}
@@ -1023,7 +1063,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			if (abs((int) (atan(((double)Gyro_GetXAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT ||
 				abs((int) (atan(((double)Gyro_GetYAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT) {
 
-				printf("%s %d: possible tiled.\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: possible tiled.", __FUNCTION__, __LINE__);
 
 				Set_Wheel_Speed(0, 0);
 				Set_Dir_Backward();
@@ -1033,13 +1073,19 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				if (abs((int) (atan(((double)Gyro_GetXAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT ||
 					abs((int) (atan(((double)Gyro_GetYAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT) {
 
-					printf("%s %d: confirmed tiled.\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: confirmed tiled.", __FUNCTION__, __LINE__);
 					i = 0;
 					do {
-						printf("%s %d: moving back count: %d\n", __FUNCTION__, __LINE__, i);
+						ROS_WARN("%s %d: moving back count: %d", __FUNCTION__, __LINE__, i);
 						if (abs((int) (atan(((double)Gyro_GetXAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT ||
 							abs((int) (atan(((double)Gyro_GetYAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT) {
 							CM_CorBack(COR_BACK_100MM);
+							if (Touch_Detect())
+							{
+								Stop_Brifly();
+								ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+								break;
+							}
 							Stop_Brifly();
 
 #if (ROBOT_SIZE == 5)
@@ -1062,12 +1108,18 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 #endif
 						} else {
-							ROS_DEBUG("%s %d: robot is not tiled anymore\n", __FUNCTION__, __LINE__);
+							ROS_INFO("%s %d: robot is not tiled anymore", __FUNCTION__, __LINE__);
 							break;
 						}
 						i++;
 					} while (i < 5);
 
+					if (Touch_Detect())
+					{
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						retval = MT_Key_Clean;
+						break;
+					}
 					retval = MT_None;
 					break;
 				}
@@ -1091,7 +1143,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 			// If detect charger stub then print the detection info
 			if (HomeL || HomeR || HomeT){
-				printf("%s %d: home detected (%d %d %d)\n", __FUNCTION__, __LINE__, HomeL, HomeT, HomeR);
+				ROS_WARN("%s %d: home detected (%d %d %d)", __FUNCTION__, __LINE__, HomeL, HomeT, HomeR);
 			}
 
 			if (HomeR + HomeL + HomeT > 4) {
@@ -1128,7 +1180,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				// Update the location of charger stub
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
 
-				ROS_DEBUG("%s %d: all charge signal is detected\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: all charge signal is detected", __FUNCTION__, __LINE__);
 				break;
 			} else if (HomeT == 0 && (HomeR > 2 || HomeL > 2)) {
 				Stop_Brifly();
@@ -1155,7 +1207,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				// Update the location of charger stub
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
 
-				ROS_DEBUG("%s %d: left/right charger signal detected\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: left/right charger signal detected", __FUNCTION__, __LINE__);
 				break;
 			} else if (HomeR == 0 && HomeL == 0 && HomeT > 3) {
 				Stop_Brifly();
@@ -1176,7 +1228,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				// Update the location of charger stub
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
 
-				ROS_DEBUG("%s %d: top charger signal is detected\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: top charger signal is detected", __FUNCTION__, __LINE__);
 				break;
 			}
 		}
@@ -1190,7 +1242,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			CM_update_map(action, isBumperTriggered);
 			retval = MT_None;
 			should_follow_wall = 1;
-			printf("%s %d: OBS break, val: %d(%d)\n", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
+			ROS_WARN("%s %d: OBS break, val: %d(%d)", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
 			break;
 		}
 
@@ -1204,23 +1256,47 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			CM_update_map_bumper(action, isBumperTriggered);
 			robot::instance()->pub_bumper_markers();
 
-			printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
+			if (Touch_Detect())
+			{
+				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+				retval = MT_Key_Clean;
+				break;
+			}
 
 #ifdef BUMPER_ERROR
 			if (Get_Bumper_Status()) {
-				printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
+				if (Touch_Detect())
+				{
+					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+					retval = MT_Key_Clean;
+					break;
+				}
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
+					if (Touch_Detect())
+					{
+						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						retval = MT_Key_Clean;
+						break;
+					}
 					if (Get_Bumper_Status()) {
-						printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
+						if (Touch_Detect())
+						{
+							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+							retval = MT_Key_Clean;
+							break;
+						}
 						Set_Error_Code(Error_Code_Bumper);
 						Stop_Brifly();
 						// If bumper jam, wait for manual release and it can keep on.(Convenient for testing)
 						//retval = MT_Key_Clean;
-						printf("%s %d: bumper jam break! Please manual release the bumper!\n", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: bumper jam break! Please manual release the bumper!", __FUNCTION__, __LINE__);
 						while (Get_Bumper_Status()){
 							// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
 							Beep(3, 25, 0, 1);
@@ -1238,7 +1314,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			CM_update_map(action, isBumperTriggered);
 			retval = MT_None;
 			should_follow_wall = 1;
-			printf("%s %d: bumper break!\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: bumper break!", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -1253,10 +1329,11 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 #if LIMIT_DISTANCE_ENABLE
 		/*Check limited distance in one straight movement*/
 		if ((Dis_From_Init = TwoPointsDistance(Map_GetXCount(), Map_GetYCount(), Init_Pose_X, Init_Pose_Y)) > Limited_Distance) {
-			printf("reach the limited distance\n");
-			printf("Map_XCount=%d,Map_YCount=%d,Init_Pose_X=%d,Init_Pose_Y=%d,Dis_From_Init=%d,Limited_Distance=%d\n",Map_GetXCount(),Map_GetYCount(),Init_Pose_X, Init_Pose_Y, Dis_From_Init, Limited_Distance);
+			ROS_INFO("reach the limited distance");
+			ROS_INFO("Map_XCount = %d, Map_YCount = %d, Init_Pose_X = %d, Init_Pose_Y = %d, Dis_From_Init = %d, Limited_Distance = %d",
+				Map_GetXCount(), Map_GetYCount(), Init_Pose_X, Init_Pose_Y, Dis_From_Init, Limited_Distance);
+
 			Limited_Flag = 3;//Limit distance flag
-			printf("after sleep");
 			Init_Pose_X = Map_GetXCount();
 			Init_Pose_Y = Map_GetYCount();
 		}
@@ -1319,7 +1396,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 
 		if (boundary_reach == 1) {
-			printf("%s %d: boundary break!\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: boundary break!", __FUNCTION__, __LINE__);
 			break;
 		}
 #endif
@@ -1333,7 +1410,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			Rotate_Angle += 3600;
 		}
 		if (abs(Rotate_Angle) > 300) {
-			printf("%s %d: warning: angle is too big, angle: %d\n\n", __FUNCTION__, __LINE__, Rotate_Angle);
+			ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, Rotate_Angle);
 			break;
 		}
 
@@ -1369,7 +1446,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
 		else if (laser::instance()->laser_obstcal_detected(0.2, 0, -1.0) == true) {
-			//printf("%s %d: laser detected obstcal, slow down!\n", __FUNCTION__, __LINE__);
+			//ROS_INFO("%s %d: laser detected obstcal, slow down!", __FUNCTION__, __LINE__);
 			Integrated = 0;
 			Rotate_Angle = 0;
 			Base_Speed -= 3;
@@ -1421,7 +1498,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	}
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 
-	printf("%s %d: move to point: %d\tGyro Calibration: %d\n", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
+	ROS_INFO("%s %d: move to point: %d\tGyro Calibration: %d", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
 	set_gyro(1, 1);
 	robot::instance()->robot_display_positions();
 	usleep(10000);
@@ -1442,13 +1519,13 @@ MapTouringType CM_MoveToPoint(Point32_t target)
 			mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
 		}
 	} else {
-		printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Normal move to next point at east.", __FUNCTION__, __LINE__);
 		mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
 	}
 
 #else
 
-	printf("%s %d: Normal move to next point at east.\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Normal move to next point at east.", __FUNCTION__, __LINE__);
 	mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
 
 #endif
@@ -1468,15 +1545,15 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 	}
 
 	if (Get_Cliff_Trig()) {
-		printf("%s %d, cliff triggered.\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d, cliff triggered.", __FUNCTION__, __LINE__);
 	} else if (Get_Bumper_Status()) {
-		printf("%s %d, bumper event.\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d, bumper event.", __FUNCTION__, __LINE__);
 	} else if (Get_OBS_Status()) {
-		printf("%s %d, OBS detected.\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d, OBS detected.", __FUNCTION__, __LINE__);
 	} else if (Get_FrontOBS() > Get_FrontOBST_Value()) {
-		printf("%s %d, front OBS detected.\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d, front OBS detected.", __FUNCTION__, __LINE__);
 	} else if (Get_Wall_ADC(0) > 170) {
-		printf("%s %d, wall sensor exceed 170.\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d, wall sensor exceed 170.", __FUNCTION__, __LINE__);
 	}
 	/*                South (Xmin)
 	 *                     |
@@ -1505,7 +1582,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 		}
 #endif
 	} else {
-		printf("%s %d Robot don't need to go to new line.%d %d %d\n", __FUNCTION__, __LINE__, y_coordinate, SHRT_MAX, SHRT_MIN);
+		ROS_INFO("%s %d Robot don't need to go to new line. y: %d", __FUNCTION__, __LINE__, y_coordinate);
 		if (!(countToCell(Next_Point->X) == SHRT_MAX || countToCell(Next_Point->X) == SHRT_MIN)) {
 			y_coordinate = countToCell(Target_Point.Y);
 			if (y_coordinate != Map_GetYPos()) {
@@ -1559,7 +1636,7 @@ void CM_resume_cleaning()
 		}
 		else if (state_for_continue_cleaning == -1 || state_for_continue_cleaning == -2 || state_for_continue_cleaning == -3 || state_for_continue_cleaning == -5)
 		{
-			ROS_INFO("Robot can't reach the continue point, directly continue cleaning.");
+			ROS_INFO("Robot can't reach the continue point, directly continue cleaning, low battery or touch detect will be processed in CM_cleaning().");
 		}
 		else if (state_for_continue_cleaning == -4)
 		{
@@ -1608,7 +1685,7 @@ int CM_cleaning()
 		//State -1: Path next
 		//State  0: Target list is empty
 		//State  2: Robot is trapped
-		ROS_DEBUG("Find path-----------------------------");
+		ROS_INFO("Find path-----------------------------");
 
 		last_dir = path_get_robot_direction();
 
@@ -1617,9 +1694,9 @@ int CM_cleaning()
 		state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
 		ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 
-		printf("State: %d", state);
-		printf("[core_move.cpp] %s %d: Current Battery level: %d.\n", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
-		printf("[core_move.cpp] %s %d: Current work time: %d(s).\n", __FUNCTION__, __LINE__, Get_Work_Time());
+		ROS_INFO("State: %d", state);
+		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 		if (CM_handleExtEvent() != MT_None) {
 			quit = true;
@@ -1631,7 +1708,7 @@ int CM_cleaning()
 			go_home = 1;
 			quit = true;
 		} else if (state == 1) {
-			ROS_DEBUG("Move to target-----------------------------");
+			ROS_INFO("Move to target-----------------------------");
 
 			rounding_type = ROUNDING_NONE;
 
@@ -1640,7 +1717,7 @@ int CM_cleaning()
 #endif
 
 			if (rounding_type != ROUNDING_NONE) {
-				printf("%s %d: Rounding %s.\n", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
+				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
 				rounding(rounding_type, Next_Point, Bumper_Status_For_Rounding);
 			} else {
 				mt_state = CM_MoveToPoint(Next_Point);
@@ -1658,7 +1735,7 @@ int CM_cleaning()
 					for (x = start; x <= end; x++) {
 						y = (int16_t) (slop * (x) + intercept);
 
-						printf("%s %d: marking (%d, %d) (%d, %d) (%d, %d)\n", __FUNCTION__, __LINE__, x, y - 1, x, y, x, y + 1);
+						ROS_INFO("%s %d: marking (%d, %d) (%d, %d) (%d, %d)", __FUNCTION__, __LINE__, x, y - 1, x, y, x, y + 1);
 						Map_SetCell(MAP, cellToCount(x), cellToCount(y - 1), CLEANED);
 						Map_SetCell(MAP, cellToCount(x), cellToCount(y), CLEANED);
 						Map_SetCell(MAP, cellToCount(x), cellToCount(y + 1), CLEANED);
@@ -1764,8 +1841,8 @@ void CM_go_home()
 			// Try go to exactly this home point.
 			state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
 			ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
-			printf("[core_move.cpp] %s %d: Current Battery level: %d.\n", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
-			printf("[core_move.cpp] %s %d: Current work time: %d(s).\n", __FUNCTION__, __LINE__, Get_Work_Time());
+			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+			ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 			if ( state == -2 && Home_Point.empty()) {
 				// state == -2 means it is trapped and can't go to the saved point.
@@ -1785,7 +1862,7 @@ void CM_go_home()
 
 				CM_reset_cleaning_pause();
 
-				printf("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				return;
 			} else if (state == -3) {
 				// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
@@ -1800,9 +1877,9 @@ void CM_go_home()
 
 				CM_reset_cleaning_pause();
 
-				printf("%s %d: Battery too low, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+				ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				return;
-			} else if (state == -5 && Home_Point.empty()) {
+			} else if (state == -5) {
 				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
 				// If it is the last saved home point, stop the robot.
 				Disable_Motors();
@@ -1815,7 +1892,7 @@ void CM_go_home()
 
 				CM_reset_cleaning_pause();
 
-				printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+				ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				return;
 			} else if (state == 1 || state == -7) {
 				// state == 1 means robot has reached the saved point.
@@ -1834,11 +1911,11 @@ void CM_go_home()
 #if CONTINUE_CLEANING_AFTER_CHARGE
 					if (robot::instance()->Is_Cleaning_Paused())
 					{
-						printf("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 						return;
 					}
 #endif
-					printf("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+					ROS_INFO("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 					return;
 				}
 				else if (Get_Clean_Mode() == Clean_Mode_Sleep)
@@ -1854,7 +1931,7 @@ void CM_go_home()
 
 					CM_reset_cleaning_pause();
 
-					printf("%s %d: Battery too low, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+					ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 					return;
 				}
 				else if (Touch_Detect())
@@ -1869,7 +1946,8 @@ void CM_go_home()
 
 					CM_reset_cleaning_pause();
 
-					printf("%s %d: Finish cleanning, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+					Reset_Touch();
+					ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 					return;
 				}
 				else if (Home_Point.empty())
@@ -1877,6 +1955,21 @@ void CM_go_home()
 					// If it is the last point, it means it it now at (0, 0).
 					if (from_station == 0) {
 						CM_HeadToCourse(ROTATE_TOP_SPEED, -robot::instance()->robot_get_home_angle());
+
+						if (Touch_Detect())
+						{
+							Stop_Brifly();
+							Beep(5, 20, 0, 1);
+							ROS_INFO("%s %d: Touch detected in CM_HeadToCourse().", __FUNCTION__, __LINE__);
+							// Key release detection, if user has not release the key, don't do anything.
+							while (Get_Key_Press() & KEY_CLEAN)
+							{
+								ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+								usleep(20000);
+							}
+							// Key relaesed, then the touch status should be cleared.
+							Reset_Touch();
+						}
 					}
 
 					Disable_Motors();
@@ -1895,11 +1988,11 @@ void CM_go_home()
 #if CONTINUE_CLEANING_AFTER_CHARGE
 					if (robot::instance()->Is_Cleaning_Paused())
 					{
-						printf("%s %d: Pause cleaning for low battery, will continue cleaning when charge finish. Current cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finish. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 						return;
 					}
 #endif
-					printf("%s %d: Finish cleaning but can't go to charger stub, cleaning time: %d(s)\n", __FUNCTION__, __LINE__, Get_Work_Time());
+					ROS_INFO("%s %d: Finish cleaning but can't go to charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 					return;
 				}
 			}
@@ -1923,11 +2016,13 @@ void CM_go_home()
 				tmpPnt.Y = countToCell(Home_Point.front().Y);
 				Home_Point.pop_front();
 
+				/*
 				// In GoHome() function, it may set the clean mode to Clean_Mode_GoHome. But it is not appropriate here, because it might affect the mode detection in CM_MoveToCell() and make it return -4.
 				if (Get_Clean_Mode() == Clean_Mode_GoHome)
 				{
 					Set_Clean_Mode(Clean_Mode_Navigation);
 				}
+				*/
 			}
 			else
 			{
@@ -2051,7 +2146,7 @@ uint8_t CM_Touring(void)
 		}
 		// Key relaesed, then the touch status should be cleared.
 		Reset_Touch();
-		printf("%s %d: calling moving back\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
 		// Reset the robot to non charge mode.
 		set_stop_charge();
@@ -2064,7 +2159,7 @@ uint8_t CM_Touring(void)
 		// Sleep for 30ms to make sure it has sent at least one control message to stop charging.
 		usleep(30000);
 		if (Is_ChargerOn()){
-			printf("[core_move.cpp] Still charging.\n");
+			ROS_WARN("[core_move.cpp] Still charging.");
 		}
 		// Set i < 7 for robot to move back for approximately 500mm.
 		for (i = 0; i < 7; i++) {
@@ -2075,13 +2170,13 @@ uint8_t CM_Touring(void)
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
 				Beep(5, 20, 0, 1);
-				if (!Touch_Detect())
+				if (Is_AtHomeBase())
 				{
-					printf("%s %d: move back 100mm and still detect charger! return 0\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: move back 100mm and still detect charger! Or touch event. return 0", __FUNCTION__, __LINE__);
 				}
-				else
+				if (Get_Key_Press() & KEY_CLEAN)
 				{
-					printf("%s %d: touch event! return 0\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: touch event! return 0", __FUNCTION__, __LINE__);
 					Stop_Brifly();
 					// Key release detection, if user has not release the key, don't do anything.
 					while (Get_Key_Press() & KEY_CLEAN)
@@ -2094,7 +2189,7 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 				if (robot::instance()->Is_Cleaning_Paused())
 				{
-					printf("%s %d: fail to leave charger stub when continue to clean.\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
 					robot::instance()->Reset_Cleaning_Pause();
 				}
@@ -2121,17 +2216,17 @@ uint8_t CM_Touring(void)
 	Blink_LED = 8;
 	Reset_Touch();
 	/*
-	ROS_DEBUG("while Blink_LED-----------------------------");
+	ROS_INFO("while Blink_LED-----------------------------");
 	while (Blink_LED--) {
 		if (Touch_Detect()) {
-			ROS_DEBUG("Touch_Detect1-----------------------------");
+			ROS_INFO("Touch_Detect1-----------------------------");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
 		Set_LED(0, 0);
 		usleep(200000);
 		if (Touch_Detect()) {
-			ROS_DEBUG("Touch_Detect2-----------------------------");
+			ROS_INFO("Touch_Detect2-----------------------------");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
@@ -2145,7 +2240,7 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Paused())
 	{
-		wav_play(WAV_CONTINUE_CLEANING);
+		wav_play(WAV_CLEANING_START);
 		if (Get_Rcon_Status())
 		{
 			// Save the current coordinate as a new home point.
@@ -2161,7 +2256,7 @@ uint8_t CM_Touring(void)
 	else
 #endif
 	{
-		wav_play(WAV_START_CLEANING);
+		wav_play(WAV_CLEANING_START);
 		// Set the Work_Timer_Start as current time
 		Reset_Work_Time();
 
@@ -2171,7 +2266,7 @@ uint8_t CM_Touring(void)
 		// Push the start point into the home point list
 		Home_Point.push_front(New_Home_Point);
 
-		ROS_DEBUG("Map_Initialize-----------------------------");
+		ROS_INFO("Map_Initialize-----------------------------");
 		Map_Initialize();
 		PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 
@@ -2215,13 +2310,13 @@ uint8_t CM_Touring(void)
 		/* usleep for checking whether robot is in the station */
 	usleep(700);
 	if (from_station == 1 && !robot::instance()->align_active()) {
-		printf("%s %d: Turn 45 degree to the wall\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Turn 45 degree to the wall", __FUNCTION__, __LINE__);
 
 		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle(0) - 450);
 
 		if (Touch_Detect()) {
 			Set_Clean_Mode(Clean_Mode_Userinterface);
-			printf("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Check: Touch Clean Mode! return 0", __FUNCTION__, __LINE__);
 			Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -2273,14 +2368,14 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	MapTouringType	mt_state = MT_None;
 
 	if (is_block_accessible(x, y) == 0) {
-		printf("%s %d: target is blocked.\n\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
 		Map_Set_Cells(ROBOT_SIZE, x, y, CLEANED);
 	}
 
 	//Escape mode
 	//TODO: Escape
 	if ( mode ==  1 ) {
-		printf("%s %d Path Find: Escape Mode\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Path Find: Escape Mode", __FUNCTION__, __LINE__);
 
 		pos.X = x;
 		pos.Y = y;
@@ -2291,7 +2386,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		i = j = k = offsetIdx = 0;
 
 		Point16_t relativePosTmp = {0, 0};
-		printf("%s %d Path Find: Dynamic Target Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
+		ROS_INFO("%s %d: Path Find: Dynamic Target Mode, target: (%d, %d)", __FUNCTION__, __LINE__, x, y);
 
 		relativePos[k].X = 0;
 		relativePos[k].Y = 0;
@@ -2304,12 +2399,12 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					}
 					relativePos[k].X = i;
 					relativePos[k].Y = j;
-					printf("Id: %d\tPoint: (%d, %d)\n", k, relativePos[k].X, relativePos[k].Y);
+					ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)", __FUNCTION__, __LINE__, k, relativePos[k].X, relativePos[k].Y);
 					++k;
 				}
 			}
 		}
-		printf("%s %d Size: %d\n", __FUNCTION__, __LINE__, k);
+		ROS_INFO("%s %d: Size: %d", __FUNCTION__, __LINE__, k);
 
 		//Position sort, two case: 1. sort for the previous half size of point; 2. sort the rest.
 		//Sort from the nearest point to the farest point, refer to the middle point
@@ -2324,9 +2419,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			}
 		}
 
-		printf("Bubble sort:\n");
+		ROS_INFO("%s %d: Bubble sort:", __FUNCTION__, __LINE__);
 		for ( i = 0; i < k; i++ ) {
-			printf("Id: %d\tPoint: (%d, %d)\tDis:%d\n", i, relativePos[i].X, relativePos[i].Y,
+			ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)\tDis: %d", __FUNCTION__, __LINE__, i, relativePos[i].X, relativePos[i].Y,
 			         TwoPointsDistance( relativePos[i].X * 1000, relativePos[i].Y * 1000, 0, 0 ));
 		}
 
@@ -2337,14 +2432,14 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		//Set cell
 		Map_Set_Cells(ROBOT_SIZE, x + relativePos[0].X, y + relativePos[0].Y, CLEANED);
 
-		printf("%s %d Path Find: %d\n", __FUNCTION__, __LINE__, pathFind);
-		printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-		printf("%s %d Now: x:%d\ty:%d\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
+		ROS_INFO("%s %d: Path Find: %d", __FUNCTION__, __LINE__, pathFind);
+		ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
+		ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 		while (1) {
 			if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
 				path_set_current_pos();
 
-				printf("%s %d Move to target...\n", __FUNCTION__, __LINE__ );
+				ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
 				Next_Point.X = cellToCount(tmp.X);
 				Next_Point.Y = cellToCount(tmp.Y);
 
@@ -2353,19 +2448,19 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 #endif
 
 				mt_state = CM_MoveToPoint(Next_Point);
-				printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
+				ROS_INFO("%s %d: Arrive Target! Now: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 				if (mt_state == MT_Battery) {
-					printf("%s %d: low battery is detected, battery < 1200\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: low battery is detected, battery < 1200", __FUNCTION__, __LINE__);
 					return -3;
 				} else if (mt_state == MT_Remote_Home) {
-					printf("%s %d: home is pressed\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: home is pressed", __FUNCTION__, __LINE__);
 					return -4;
 				} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
-					printf("%s %d: remote is pressed, clean key is pressed,  or cliff is reached\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: remote is pressed, clean key is pressed,  or cliff is reached", __FUNCTION__, __LINE__);
 					return -5;
 				} else if (mt_state == MT_Battery_Home) {
-					printf("%s %d: low battery is detected, battery < 1300\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: low battery is detected, battery < 1300", __FUNCTION__, __LINE__);
 					return -6;
 				} else if ( mt_state == MT_None ) {
 					if ( go_home == 1 && Is_Station() == 1 ) {
@@ -2375,13 +2470,13 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 				//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
 				if ( TwoPointsDistance( x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y, Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
-					printf("%s %d Now: x:%d\ty:%d\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
-					printf("%s %d Destination: x:%d\ty:%d\n", __FUNCTION__, __LINE__, x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
+					ROS_WARN("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
+					ROS_WARN("%s %d: Destination: x: %d\ty: %d", __FUNCTION__, __LINE__, x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
 					return 1;
 				}
 
 				if (is_block_accessible(x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y) == 0) {
-					printf("%s %d: Target is blocked. Try to find new target.\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Target is blocked. Try to find new target.", __FUNCTION__, __LINE__);
 					pathFind = -2;
 					continue;
 				}
@@ -2393,10 +2488,10 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				if (CM_CheckLoopBack(tmp) == 1) {
 					pathFind = -2;
 				}
-				printf("%s %d Path Find: %d, target: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind,
+				ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
 				         x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
-				printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-				printf("%s %d Now: x:%d\ty:%d\n", __FUNCTION__, __LINE__, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
+				ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
+				ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
 			} else if ( pathFind == -2 || pathFind == -1 ) {
 				//Add offset
 				offsetIdx++;
@@ -2412,29 +2507,22 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 				if (Touch_Detect()) {
-					CM_TouringCancel();
-					Beep(5, 20, 0, 1);
+					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					// Set touch status to make sure this event can be detected by main process while loop.
 					Stop_Brifly();
-					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
-					{
-						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-						usleep(20000);
-					}
-					Reset_Touch();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					Set_Touch();
 					return -5;
 				}
 
 				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-					printf("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: robot is taken up.", __FUNCTION__, __LINE__);
 					Stop_Brifly();
 					return -5;
 				}
 
-				printf("%s %d Path Find: %d, %d Target Offset: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, offsetIdx,
+				ROS_INFO("%s %d: Path Find: %d, %d Target Offset: (%d, %d)", __FUNCTION__, __LINE__, pathFind, offsetIdx,
 				         relativePos[offsetIdx].X, relativePos[offsetIdx].Y);
-				printf("%s %d Path Find: %d, target: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind,
+				ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
 				         x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
 
 			} else {
@@ -2444,20 +2532,20 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 	}
 	//Normal mode
 	else {
-		printf("%s %d Path Find: Normal Mode, target: (%d, %d)\n", __FUNCTION__, __LINE__, x, y);
+		ROS_INFO("%s %d: Path Find: Normal Mode, target: (%d, %d)", __FUNCTION__, __LINE__, x, y);
 		pos.X = x;
 		pos.Y = y;
 		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
-		printf("%s %d Path Find: %d\n", __FUNCTION__, __LINE__, pathFind);
-		printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-		printf("%s %d Now: x:%d\ty:%d\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
+		ROS_INFO("%s %d: Path Find: %d", __FUNCTION__, __LINE__, pathFind);
+		ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
+		ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 		//Note that path_move_to_unclean_area only can get the next cell to the destination cell
 		while ( pathFind == 1 || pathFind == SCHAR_MAX ) {
 			path_set_current_pos();
 
-			printf("%s %d Move to target...\n", __FUNCTION__, __LINE__ );
+			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
 			Next_Point.X = cellToCount(tmp.X);
 			Next_Point.Y = cellToCount(tmp.Y);
 #if ENABLE_DEBUG
@@ -2465,19 +2553,19 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 #endif
 
 			mt_state = CM_MoveToPoint(Next_Point);
-			printf("%s %d Arrive Target! Now: (%d, %d)\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
+			ROS_INFO("%s %d: Arrive Target! Now: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 			if (mt_state == MT_Battery) {
-				printf("%s %d: low battery is detected, battery < 1200\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: low battery is detected, battery < 1200", __FUNCTION__, __LINE__);
 				return -3;
 			} else if (mt_state == MT_Remote_Home) {
-				printf("%s %d: home is pressed\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: home is pressed", __FUNCTION__, __LINE__);
 				return -4;
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
-				printf("%s %d: remote is pressed, clean key is pressed,  or cliff is reached\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: remote is pressed, clean key is pressed,  or cliff is reached", __FUNCTION__, __LINE__);
 				return -5;
 			} else if (mt_state == MT_Battery_Home) {
-				printf("%s %d: low battery is detected, battery < 1300\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: low battery is detected, battery < 1300", __FUNCTION__, __LINE__);
 				return -6;
 			} else if ( mt_state == MT_None ) {
 				if ( go_home == 1 && Is_Station() == 1 ) {
@@ -2487,13 +2575,13 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
 			if ( TwoPointsDistance( x, y, Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
-				printf("%s %d Now: x:%d\ty:%d\n", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
-				printf("%s %d Destination: x:%d\ty:%d\n", __FUNCTION__, __LINE__, x, y);
+				ROS_INFO("%s %d: Now: x:%d \ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
+				ROS_INFO("%s %d: Destination: x: %d\ty: %d", __FUNCTION__, __LINE__, x, y);
 				return 1;
 			}
 
 			if (is_block_accessible(x, y) == 0) {
-				printf("%s %d: target is blocked\n", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: target is blocked", __FUNCTION__, __LINE__);
 				return 0;
 			}
 
@@ -2501,9 +2589,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			pos.Y = y;
 			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
-			printf("%s %d Path Find: %d, target: (%d, %d)\n", __FUNCTION__, __LINE__, pathFind, x, y);
-			printf("%s %d Target need to go: x:%d\ty:%d\n", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-			printf("%s %d Now: x:%d\ty:%d\n", __FUNCTION__, __LINE__, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
+			ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind, x, y);
+			ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
+			ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
 		}
 		return pathFind;
 	}
@@ -2516,7 +2604,7 @@ void CM_CorBack(uint16_t dist)
 	uint32_t SP = 10;
 	uint16_t Counter_Watcher = 0;
 
-	printf("%s %d: Moving back...\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
 	Stop_Brifly();
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 	Set_Dir_Backward();
@@ -2549,15 +2637,9 @@ void CM_CorBack(uint16_t dist)
 		}
 		if (Touch_Detect()) {
 			ROS_INFO("%s %d: Touch detected!", __FUNCTION__, __LINE__);
-			Beep(5, 20, 0, 1);
 			Stop_Brifly();
-			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
-			{
-				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-				usleep(20000);
-			}
-			Reset_Touch();
+			// Set touch status to make sure this event can be detected by main process while loop.
+			Set_Touch();
 			break;
 		}
 
@@ -2568,7 +2650,7 @@ void CM_CorBack(uint16_t dist)
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
 	Reset_TempPWM();
 	Stop_Brifly();
-	printf("%s %d: Moving back done!\n", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);
 }
 
 void CM_SetGoHome(uint8_t remote) {
@@ -2590,7 +2672,8 @@ void CM_SetGyroOffset(int16_t offset)
 
 void CM_SetHome(int32_t x, int32_t y) {
 	bool found = false;
-	printf("%s %d: Push new reachable home: (%d, %d) to home point list.\n", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
+
+	ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
 	New_Home_Point.X = x;
 	New_Home_Point.Y = y;
 
@@ -2607,7 +2690,7 @@ void CM_SetHome(int32_t x, int32_t y) {
 #if CONTINUE_CLEANING_AFTER_CHARGE
 void CM_SetContinuePoint(int32_t x, int32_t y)
 {
-	printf("%s %d: Set continue point: (%d, %d).\n", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
+	ROS_INFO("%s %d: Set continue point: (%d, %d).", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
 	Continue_Point.X = x;
 	Continue_Point.Y = y;
 }
@@ -2621,7 +2704,7 @@ uint8_t CM_CheckLoopBack( Point16_t target ) {
 	uint8_t retval = 0;
 	if ( target.X == positions[1].x && target.Y == positions[1].y &&
 	     target.X == positions[3].x && target.Y == positions[3].y ) {
-		printf("%s %d Possible loop back (%d, %d)\n", __FUNCTION__, __LINE__, target.X, target.Y);
+		ROS_WARN("%s %d Possible loop back (%d, %d)", __FUNCTION__, __LINE__, target.X, target.Y);
 		retval  = 1;
 	}
 
@@ -2651,7 +2734,7 @@ MapTouringType CM_handleExtEvent()
 			Switch_VacMode();
 		}
 		Stop_Brifly();
-		printf("%s %d: low battery, battery < 13.2v is detected.\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: low battery, battery < 13.2v is detected.", __FUNCTION__, __LINE__);
 		CM_SetGoHome(0);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
@@ -2668,7 +2751,7 @@ MapTouringType CM_handleExtEvent()
 			Switch_VacMode();
 		}
 		Stop_Brifly();
-		printf("%s %d: (For test, left key pressed) low battery, battery < 13.2v is detected.\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: (For test, left key pressed) low battery, battery < 13.2v is detected.", __FUNCTION__, __LINE__);
 		CM_SetGoHome(0);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
@@ -2682,7 +2765,7 @@ MapTouringType CM_handleExtEvent()
 	/* Check key press events. */
 	if (Touch_Detect()) {
 		Stop_Brifly();
-		printf("%s %d: clean key is pressed.\n", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: clean key is pressed.", __FUNCTION__, __LINE__);
 		Beep(5, 20, 0, 1);
 		// Key release detection, if user has not release the key, don't do anything.
 		while (Get_Key_Press() & KEY_CLEAN)
@@ -2702,7 +2785,7 @@ MapTouringType CM_handleExtEvent()
 			Set_BLDC_Speed(Vac_Speed_NormalL);
 			Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
 			Stop_Brifly();
-			printf("%s %d: remote home is pressed.\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: remote home is pressed.", __FUNCTION__, __LINE__);
 			CM_SetGoHome(1);
 			Reset_Rcon_Remote();
 			return MT_Remote_Home;
@@ -2716,10 +2799,10 @@ MapTouringType CM_handleExtEvent()
 #if 0
 		if (Remote_Key(Remote_Spot)) {
 			Stop_Brifly();
-			printf("%s %d: remote spot is pressed.\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
 			Spot_Mode();
 			Switch_VacMode();
-			printf("%s %d: remote spot ends.\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
 			Reset_Rcon_Remote();
 			return MT_None;
 		}
@@ -2736,7 +2819,7 @@ MapTouringType CM_handleExtEvent()
 		/* Check remote clean key press event, if clean key is pressed, stop robot directly. */
 		if (Remote_Key(Remote_Clean)) {
 			Stop_Brifly();
-			printf("%s %d: remote clean is pressed.\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: remote clean key pressed.", __FUNCTION__, __LINE__);
 			Reset_Rcon_Remote();
 			return MT_Remote_Clean;
 		}
@@ -2745,8 +2828,9 @@ MapTouringType CM_handleExtEvent()
 
 	/* Check whether robot is taken up. */
 	if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-		printf("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__); 
 		Stop_Brifly();
+		wav_play(WAV_ERROR_LIFT_UP);
 		return MT_Cliff;
 	}
 
@@ -2792,7 +2876,7 @@ void CM_create_home_boundary(void)
 			}
 		}
 	}
-	printf("%s %d: x: %d - %d\ty: %d - %d\n", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
+	ROS_INFO("%s %d: x: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
 	for (i = xMinSearch; i <= xMaxSearch; i++) {
 		if (i == xMinSearch || i == xMaxSearch) {
 			for (j = yMinSearch; j <= yMaxSearch; j++) {
