@@ -51,8 +51,9 @@ uint8_t Spiral(void)
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if(Touch_Detect())
 		{
-			Reset_Touch();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			Stop_Brifly();
+			// Set touch status to make sure this event can be detected by main process while loop.
+			Set_Touch();
 			return 1;
 		}
 		if(Remote_Key(Remote_All))

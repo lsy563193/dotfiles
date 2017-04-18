@@ -78,6 +78,15 @@ void Spot_Mode(void)
 
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
+			Beep(5, 20, 0, 1);
+			Stop_Brifly();
+			// Key release detection, if user has not release the key, don't do anything.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				usleep(20000);
+			}
+			// Key relaesed, then the touch status should be cleared.
 			Reset_Touch();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
@@ -150,6 +159,15 @@ void Spot_Mode(void)
 		//Set_MainBrush_PWM(80);
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
+			Beep(5, 20, 0, 1);
+			Stop_Brifly();
+			// Key release detection, if user has not release the key, don't do anything.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				usleep(20000);
+			}
+			// Key relaesed, then the touch status should be cleared.
 			Reset_Touch();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
@@ -434,6 +452,9 @@ uint8_t Random_Dirt_Event(void)
 		}
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
+			Stop_Brifly();
+			ROS_INFO("%s %d: Touch detect!", __FUNCTION__, __LINE__);
+			Set_Touch();
 			return 1;
 		}
 		/*------------------------------------------------------Runing Path-----------------------*/

@@ -186,6 +186,14 @@ void Remote_Mode(void)
 	  /*------------------------------------------------------Touch and Remote event-----------------------*/
 		if(Touch_Detect())
 		{
+			Beep(5, 20, 0, 1);
+			// Key release detection, if user has not release the key, don't do anything.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				usleep(20000);
+			}
+			// Key relaesed, then the touch status should be cleared.
 		  Reset_Touch();
 		  Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
