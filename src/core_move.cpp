@@ -645,6 +645,8 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 		if (Touch_Detect()) {
 			Stop_Brifly();
+			// Set touch status to make sure this event can be detected by main process while loop.
+			Set_Touch();
 			ROS_WARN("%s %d: touch detect break!", __FUNCTION__, __LINE__);
 			return;
 		}
@@ -682,6 +684,8 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 			if (Touch_Detect())
 			{
+				// Set touch status to make sure this event can be detected by main process while loop.
+				Set_Touch();
 				Stop_Brifly();
 				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 				return;
@@ -721,6 +725,8 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 				if (Touch_Detect())
 				{
+					// Set touch status to make sure this event can be detected by main process while loop.
+					Set_Touch();
 					Stop_Brifly();
 					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 					return;
@@ -752,6 +758,8 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 					if (Touch_Detect())
 					{
+						// Set touch status to make sure this event can be detected by main process while loop.
+						Set_Touch();
 						Stop_Brifly();
 						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 						return;
@@ -784,6 +792,8 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 						if (Touch_Detect())
 						{
+							// Set touch status to make sure this event can be detected by main process while loop.
+							Set_Touch();
 							Stop_Brifly();
 							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 							return;
@@ -1869,7 +1879,7 @@ void CM_go_home()
 
 				ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				return;
-			} else if (state == -5 && Home_Point.empty()) {
+			} else if (state == -5) {
 				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
 				// If it is the last saved home point, stop the robot.
 				Disable_Motors();
@@ -1936,6 +1946,7 @@ void CM_go_home()
 
 					CM_reset_cleaning_pause();
 
+					Reset_Touch();
 					ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 					return;
 				}
@@ -2159,11 +2170,11 @@ uint8_t CM_Touring(void)
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
 				Beep(5, 20, 0, 1);
-				if (!Touch_Detect())
+				if (Is_AtHomeBase())
 				{
-					ROS_WARN("%s %d: move back 100mm and still detect charger! return 0", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: move back 100mm and still detect charger! Or touch event. return 0", __FUNCTION__, __LINE__);
 				}
-				else
+				if (Get_Key_Press() & KEY_CLEAN)
 				{
 					ROS_WARN("%s %d: touch event! return 0", __FUNCTION__, __LINE__);
 					Stop_Brifly();
@@ -2497,7 +2508,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 
 				if (Touch_Detect()) {
 					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					// Set touch status to make sure this event can be detected by main process while loop.
 					Stop_Brifly();
+					Set_Touch();
 					return -5;
 				}
 
@@ -2625,6 +2638,8 @@ void CM_CorBack(uint16_t dist)
 		if (Touch_Detect()) {
 			ROS_INFO("%s %d: Touch detected!", __FUNCTION__, __LINE__);
 			Stop_Brifly();
+			// Set touch status to make sure this event can be detected by main process while loop.
+			Set_Touch();
 			break;
 		}
 
