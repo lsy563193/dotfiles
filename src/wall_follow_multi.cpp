@@ -236,6 +236,9 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 	volatile int32_t		Wall_Straight_Distance = 100, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
 	static volatile int32_t	Wall_Distance = Wall_High_Limit;
+
+	uint32_t Temp_Rcon_Status;
+
 	pthread_t	escape_thread_id;
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
@@ -303,6 +306,11 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 		//WFM_boundary_check();
 
+		Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+		if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT)){
+			break;
+		}
+
 		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
 			ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 			break;
@@ -351,6 +359,57 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			//Reset_Wheel_Step();
 			Wall_Straight_Distance=375;
 		}
+
+		/*------------------------------------------------------Home Station Event------------------------*/
+		//Temp_Rcon_Status = Get_Rcon_Status();
+		Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+		if (Temp_Rcon_Status){
+			Reset_Rcon_Status();
+			if (Temp_Rcon_Status & RconFrontAll_Home_TLR) {	
+				/*
+				if (Is_WorkFinish(Get_Room_Mode())) {
+					Set_Clean_Mode(Clean_Mode_GoHome);
+					ResetHomeRemote();
+					USPRINTF_ZZ("%s %d: Check: Virtual! break\n", __FUNCTION__, __LINE__);
+					break;
+				}
+				*/
+			}
+			if (Temp_Rcon_Status & RconFrontAll_Home_T) {
+				if (Is_MoveWithRemote()){
+					Set_Clean_Mode(Clean_Mode_GoHome);
+					//ResetHomeRemote();
+					//USPRINTF_ZZ("%s %d: Check: Virtual 2! break\n", __FUNCTION__, __LINE__);
+					ROS_INFO("Check: Virtual 2! break");
+					break;
+				}
+				Stop_Brifly();
+				if(Temp_Rcon_Status & RconFR_HomeT){
+					WF_Turn_Right(Turn_Speed,850);
+				}
+				else if(Temp_Rcon_Status & RconFL_HomeT){
+					WF_Turn_Right(Turn_Speed,850);
+				}
+				else if(Temp_Rcon_Status & RconL_HomeT){
+					WF_Turn_Right(Turn_Speed,300);
+				}
+				else if(Temp_Rcon_Status & RconFL2_HomeT){
+					WF_Turn_Right(Turn_Speed,600);
+				}
+				else if(Temp_Rcon_Status & RconFR2_HomeT){
+					WF_Turn_Right(Turn_Speed,950);
+				}
+				else if(Temp_Rcon_Status & RconR_HomeT){
+					WF_Turn_Right(Turn_Speed,1100);
+				}
+				Stop_Brifly();
+				Move_Forward(10, 10);
+				Reset_Rcon_Status();
+				Wall_Straight_Distance = 80;
+				Reset_WallAccelerate();
+			}
+		}
+
 		/*---------------------------------------------------Bumper Event-----------------------*/
 		if (Get_Bumper_Status() & RightBumperTrig) {
 			ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
@@ -661,6 +720,9 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
 			}
 
+			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT)){
+				break;
+			}
 			if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
 				ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 				break;
