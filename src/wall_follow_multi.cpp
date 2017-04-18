@@ -1021,195 +1021,195 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Wall_Distance-=100;
 					if(Wall_Distance<Wall_Low_Limit)Wall_Distance=Wall_Low_Limit;
 
-						//WFM_wall_move_back();
-						WFM_move_back(350);
-						//WFM_update();
-						WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
-						if (Is_Bumper_Jamed()) {
-							Reset_Touch();
-							Set_Clean_Mode(Clean_Mode_Userinterface);
-							//USPRINTF("%s %d: Check: Bumper 3! break\n", __FUNCTION__, __LINE__);
-							ROS_INFO("%s %d: Check: Bumper 3! break", __FUNCTION__, __LINE__);
-							break;
-						}
-
-						//STOP_BRIFLY;
-						Stop_Brifly();
-						if (Jam < 3) {
-							if(Wall_Distance<200){
-								if(Get_LeftOBS()>(Get_LeftOBST_Value()-200)){
-									Wall_Distance=Wall_High_Limit;
-									WF_Turn_Right(Turn_Speed-5, 300);
-								}
-								else{
-									WF_Turn_Right(Turn_Speed-5, 200);
-								}
-							}
-							else{
-								WF_Turn_Right(Turn_Speed-5, 300);
-							}
-						}
-						else {
-							WF_Turn_Right(Turn_Speed-5, 200);
-						}
-						Wall_Straight_Distance = MFW_Setting[follow_type].left_bumper_val; //250;
+					//WFM_wall_move_back();
+					WFM_move_back(350);
+					//WFM_update();
+					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+					if (Is_Bumper_Jamed()) {
+						Reset_Touch();
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						//USPRINTF("%s %d: Check: Bumper 3! break\n", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Check: Bumper 3! break", __FUNCTION__, __LINE__);
+						break;
 					}
 
-					if (Get_WallAccelerate() < 2000){
-						Jam++;
-					}
-					else {
-						Jam = 0;
-					}
-
-					Reset_WallAccelerate();
-					Wall_Straight_Distance = 200;
 					//STOP_BRIFLY;
 					Stop_Brifly();
-					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
-
-					Move_Forward(10, 10);
-
-					for (Temp_Counter = 0; Temp_Counter < 3; Temp_Counter++){
-						Left_Wall_Buffer[Temp_Counter] = 0;
-					}
-					Reset_Wheel_Step();
-				}
-				/*------------------------------------------------------Short Distance Move-----------------------*/
-				if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance) {
-					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
-					if (Get_LeftWheel_Step() < 500) {
-						if (Get_WallAccelerate() < 100) {
-							Move_Forward(10, 10);
-						} 
-						else {
-							Move_Forward(15, 15);
+					if (Jam < 3) {
+						if(Wall_Distance<200){
+							if(Get_LeftOBS()>(Get_LeftOBST_Value()-200)){
+								Wall_Distance=Wall_High_Limit;
+								WF_Turn_Right(Turn_Speed-5, 300);
+							}
+							else{
+								WF_Turn_Right(Turn_Speed-5, 200);
+							}
 						}
+						else{
+							WF_Turn_Right(Turn_Speed-5, 300);
+						}
+					}
+					else {
+						WF_Turn_Right(Turn_Speed-5, 200);
+					}
+					Wall_Straight_Distance = MFW_Setting[follow_type].left_bumper_val; //250;
+				}
+
+				if (Get_WallAccelerate() < 2000){
+					Jam++;
+				}
+				else {
+					Jam = 0;
+				}
+
+				Reset_WallAccelerate();
+				Wall_Straight_Distance = 200;
+				//STOP_BRIFLY;
+				Stop_Brifly();
+				//WFM_update();
+				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+
+				Move_Forward(10, 10);
+
+				for (Temp_Counter = 0; Temp_Counter < 3; Temp_Counter++){
+					Left_Wall_Buffer[Temp_Counter] = 0;
+				}
+				Reset_Wheel_Step();
+			}
+			/*------------------------------------------------------Short Distance Move-----------------------*/
+			if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance) {
+				//WFM_update();
+				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				if (Get_LeftWheel_Step() < 500) {
+					if (Get_WallAccelerate() < 100) {
+						Move_Forward(10, 10);
 					} 
 					else {
-						Move_Forward(23, 23);
+						Move_Forward(15, 15);
 					}
-					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
 				} 
 				else {
-					/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
+					Move_Forward(23, 23);
+				}
+				//WFM_update();
+				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+			} 
+			else {
+				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 
 
 #ifdef OBS_DYNAMIC
-					if (Get_FrontOBS() < Get_FrontOBST_Value()) {
+				if (Get_FrontOBS() < Get_FrontOBST_Value()) {
 #else
-					if (Get_FrontOBS() < MFW_Setting[follow_type].front_obs_val){
+				if (Get_FrontOBS() < MFW_Setting[follow_type].front_obs_val){
 #endif
 
-						Wheel_Speed_Base = 15 + Get_WallAccelerate() / 150;
-						if(Wheel_Speed_Base>28)Wheel_Speed_Base = 28;
+					Wheel_Speed_Base = 15 + Get_WallAccelerate() / 150;
+					if(Wheel_Speed_Base>28)Wheel_Speed_Base = 28;
 
-						Proportion = robot::instance()->robot_get_left_wall();
+					Proportion = robot::instance()->robot_get_left_wall();
 
-						Proportion = Proportion*100/Wall_Distance;
+					Proportion = Proportion*100/Wall_Distance;
 
-						Proportion-=100;
+					Proportion-=100;
 
-						Delta = Proportion - Previous;
+					Delta = Proportion - Previous;
 
-						if(Wall_Distance>200){//over left
-							Left_Wall_Speed = Wheel_Speed_Base + Proportion/8 + Delta/3; //12
-							Right_Wall_Speed = Wheel_Speed_Base - Proportion/9 - Delta/3; //10
+					if(Wall_Distance>200){//over left
+						Left_Wall_Speed = Wheel_Speed_Base + Proportion/8 + Delta/3; //12
+						Right_Wall_Speed = Wheel_Speed_Base - Proportion/9 - Delta/3; //10
 
-							if(Wheel_Speed_Base<26){
-								if(Right_Wall_Speed > Wheel_Speed_Base+6){
-									Right_Wall_Speed = 34;
-									Left_Wall_Speed = 4;
-								}
-								else if(Left_Wall_Speed > Wheel_Speed_Base+10){
-									Right_Wall_Speed = 5;
-									Left_Wall_Speed = 30;
-								}
+						if(Wheel_Speed_Base<26){
+							if(Right_Wall_Speed > Wheel_Speed_Base+6){
+								Right_Wall_Speed = 34;
+								Left_Wall_Speed = 4;
 							}
-							else{
-								if(Right_Wall_Speed > 35){
-									Right_Wall_Speed = 35;
-									Left_Wall_Speed = 4;
-								}
+							else if(Left_Wall_Speed > Wheel_Speed_Base+10){
+								Right_Wall_Speed = 5;
+								Left_Wall_Speed = 30;
 							}
 						}
-						else {
-							Left_Wall_Speed = Wheel_Speed_Base + Proportion/10 + Delta/3;//16
-							Right_Wall_Speed = Wheel_Speed_Base - Proportion/10 - Delta/4; //11
-
-							if(Wheel_Speed_Base<26){
-								if(Right_Wall_Speed > Wheel_Speed_Base+4){
-									Right_Wall_Speed = 34;
-									Left_Wall_Speed = 4;
-								}
-							}
-							else{
-								if(Right_Wall_Speed > 32){
-									Right_Wall_Speed = 36;
-									Left_Wall_Speed = 4;
-								}
+						else{
+							if(Right_Wall_Speed > 35){
+								Right_Wall_Speed = 35;
+								Left_Wall_Speed = 4;
 							}
 						}
-
-						Previous = Proportion;
-
-						if(Left_Wall_Speed>39)Left_Wall_Speed=39;
-						if(Left_Wall_Speed<0)Left_Wall_Speed=0;
-						if(Right_Wall_Speed > 35)Right_Wall_Speed = 35;
-						if(Right_Wall_Speed < 5)Right_Wall_Speed = 5;
-
-						Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
-						WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
-					} 
-					else {
-						Stop_Brifly();
-						if (Get_WallAccelerate() < 2000){
-							Jam++;
-						}
-						WF_Turn_Right(Turn_Speed - 5, 920);
-						Stop_Brifly();
-						//WFM_update();
-						WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
-						Move_Forward(15, 15);
-						Reset_Wheel_Step();
-
-						Wall_Distance = Wall_High_Limit;
 					}
+					else {
+						Left_Wall_Speed = Wheel_Speed_Base + Proportion/10 + Delta/3;//16
+						Right_Wall_Speed = Wheel_Speed_Base - Proportion/10 - Delta/4; //11
+
+						if(Wheel_Speed_Base<26){
+							if(Right_Wall_Speed > Wheel_Speed_Base+4){
+								Right_Wall_Speed = 34;
+								Left_Wall_Speed = 4;
+							}
+						}
+						else{
+							if(Right_Wall_Speed > 32){
+								Right_Wall_Speed = 36;
+								Left_Wall_Speed = 4;
+							}
+						}
+					}
+
+					Previous = Proportion;
+
+					if(Left_Wall_Speed>39)Left_Wall_Speed=39;
+					if(Left_Wall_Speed<0)Left_Wall_Speed=0;
+					if(Right_Wall_Speed > 35)Right_Wall_Speed = 35;
+					if(Right_Wall_Speed < 5)Right_Wall_Speed = 5;
+
+					Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
+					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				} 
+				else {
+					Stop_Brifly();
+					if (Get_WallAccelerate() < 2000){
+						Jam++;
+					}
+					WF_Turn_Right(Turn_Speed - 5, 920);
+					Stop_Brifly();
+					//WFM_update();
+					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+					Move_Forward(15, 15);
+					Reset_Wheel_Step();
+
+					Wall_Distance = Wall_High_Limit;
 				}
-				usleep(10000);
 			}
-			if(Isolated_Flag){
-				Isolated_Flag = 0;
-				continue;
-			}
-			else{
-				break;
-			}
+			usleep(10000);
 		}
-		if (escape_thread_running == true) {
-			escape_thread_running = false;
+		if(Isolated_Flag){
+			Isolated_Flag = 0;
+			continue;
 		}
-
-		//pthread_join(escape_thread_id, NULL);
-
-		ret = 0;
-		if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME) {
-			ROS_WARN("%s %d: escape timeout %d(%d, %d), state 2", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
-			ret = 2;
-		} else if (escape_state == Map_Escape_Trapped_Escaped) {
-			ROS_INFO("%s %d: escaped, state 0", __FUNCTION__, __LINE__);
-			ret = 0;;
-		} else {
-			ROS_INFO("%s %d: escaped, state 1", __FUNCTION__, __LINE__);
-			ret = 1;
+		else{
+			break;
 		}
+	}
+	if (escape_thread_running == true) {
+		escape_thread_running = false;
+	}
 
-		Stop_Brifly();
-		Move_Forward(0, 0);
-		return ret;
+	//pthread_join(escape_thread_id, NULL);
+
+	ret = 0;
+	if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME) {
+		ROS_WARN("%s %d: escape timeout %d(%d, %d), state 2", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
+		ret = 2;
+	} else if (escape_state == Map_Escape_Trapped_Escaped) {
+		ROS_INFO("%s %d: escaped, state 0", __FUNCTION__, __LINE__);
+		ret = 0;;
+	} else {
+		ROS_INFO("%s %d: escaped, state 1", __FUNCTION__, __LINE__);
+		ret = 1;
+	}
+
+	Stop_Brifly();
+	Move_Forward(0, 0);
+	return ret;
 }
 
 void Wall_Follow_Init_Slam(void){
