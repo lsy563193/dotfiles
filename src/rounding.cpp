@@ -137,6 +137,13 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 		Switch_VacMode();
 		Reset_Rcon_Remote();
 	}
+	if (Touch_Detect())
+	{
+		ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+		// If touch detected, should change the behavior of robot.
+		Stop_Brifly();
+		Set_Touch();
+	}
 
 	rounding_update();
 
@@ -175,6 +182,8 @@ void rounding_move_back(uint16_t dist)
 			break;
 		}
 		if (Touch_Detect()) {
+			ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+			Set_Touch();
 			break;
 		}
 		if ((Check_Motor_Current() == Check_Left_Wheel) || (Check_Motor_Current() == Check_Right_Wheel)) {
@@ -213,8 +222,18 @@ uint8_t rounding_boundary_check()
 			rounding_update();
 			rounding_move_back(350);
 			rounding_update();
+			if (Touch_Detect())
+			{
+				ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+				return boundary_reach;
+			}
 
 			rounding_turn((rounding_type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 600);
+			if (Touch_Detect())
+			{
+				ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+				return boundary_reach;
+			}
 
 			rounding_update();
 		}
@@ -277,6 +296,12 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			ROS_INFO("%s %d: Same bumper ROUNDING_RIGHT and turn 90 degrees.", __FUNCTION__, __LINE__);
 		}
 	}
+	if (Touch_Detect())
+	{
+		Stop_Brifly();
+		Set_Touch();
+		return 0;
+	}
 
 	Wall_Straight_Distance = 300;
 
@@ -293,6 +318,12 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 		{
 			// This remote command should change the behavior of robot.
 			Stop_Brifly();
+			return 0;
+		}
+		if (Touch_Detect())
+		{
+			Stop_Brifly();
+			Set_Touch();
 			return 0;
 		}
 		if (Remote_Key(Remote_Max) && !lowBattery)
@@ -326,8 +357,18 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				//Stop_Brifly();
 				ROS_INFO("%s %d: move back for right bumper.", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
+				if (Touch_Detect())
+				{
+					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					break;
+				}
 				// Turn right for 135 degrees.
 				rounding_turn(1, TURN_SPEED, 1350);
+				if (Touch_Detect())
+				{
+					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					break;
+				}
 				Move_Forward(15, 15);
 				Wall_Straight_Distance = 375;
 			}
@@ -351,14 +392,34 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				if (Temp_Bumper_Status & RightBumperTrig) {
 					// Both left and right bumper are triggered.
 					rounding_move_back(350);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					// Turn right for 90 degrees.
 					rounding_turn(1, TURN_SPEED, 900);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					Wall_Straight_Distance = 150;
 				} else {
 					// Only left bumper is triggered.
 					rounding_move_back(350);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					// Turn right for 30 degrees.
 					rounding_turn(1, TURN_SPEED, 300);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					Wall_Straight_Distance = 250;
 				}
 				Move_Forward(10, 10);
@@ -482,8 +543,18 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				//Stop_Brifly();
 				ROS_WARN("%s %d: move back for left bumper.", __FUNCTION__, __LINE__);
 				rounding_move_back(100);
+				if (Touch_Detect())
+				{
+					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					break;
+				}
 				// Turn left for 135 degrees.
 				rounding_turn(0, TURN_SPEED, 1350);
+				if (Touch_Detect())
+				{
+					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					break;
+				}
 				Move_Forward(15, 15);
 				Wall_Straight_Distance = 375;
 			}
@@ -507,14 +578,34 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				if (Temp_Bumper_Status & LeftBumperTrig) {
 					// Both left and right bumper are triggered.
 					rounding_move_back(350);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					// Turn left for 90 degrees.
 					rounding_turn(0, TURN_SPEED, 900);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					Wall_Straight_Distance = 150;
 				} else {
 					// Only right bumper is triggered.
 					rounding_move_back(350);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					// Turn left for 30 degrees.
 					rounding_turn(0, TURN_SPEED, 300);
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						break;
+					}
 					Wall_Straight_Distance = 250;
 				}
 				Move_Forward(10, 10);
