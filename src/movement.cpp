@@ -1629,14 +1629,6 @@ void set_stop_charge(void)
 	control_set(CTL_CHARGER, 0x00);
 }
 
-void set_gyro(uint8_t state, uint8_t calibration)
-{
-	//control_set(CTL_GYRO, (state ? 0x02 : 0x0) | (calibration ? 0x01 : 0x00));
-	uint8_t du = calibration;
-	control_set(CTL_GYRO, (state ? 0x02 : 0x00));
-
-}
-
 void set_main_pwr(uint8_t val)
 {
 	control_set(CTL_MAIN_PWR, val & 0xff);
@@ -2236,11 +2228,11 @@ uint8_t Is_VirtualWall()
 	return 0;
 }
 
-bool Set_gyro_on(void)
+bool Set_Gyro_On(void)
 {
 	static int count=0;
 	if (Get_Gyro_Status());
-	set_gyro(1,0);
+	control_set(CTL_GYRO, 0x02);
 	ROS_INFO("waiting for gyro start");
 
 	count = 0;
@@ -2255,15 +2247,19 @@ bool Set_gyro_on(void)
 //		ROS_INFO("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
 	if(count == 10)
+	{
+		Set_Gyro_Status();
 		return true;
+	}
+	Reset_Gyro_Status();
 	return false;
 //	ROS_INFO("gyro start ok");
 }
 
-void Set_gyro_off()
+void Set_Gyro_Off()
 {
 	static int count=0;
-	set_gyro(0,0);
+	control_set(CTL_GYRO, 0x00);
 	ROS_INFO("waiting for gyro stop");
 	count = 0;
 	auto angle_v = robot::instance()->robot_get_angle_v();
@@ -2278,6 +2274,7 @@ void Set_gyro_off()
 		}
 //		ROS_INFO("gyro stop ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
+	Reset_Gyro_Status();
 	ROS_INFO("gyro stop ok");
 }
 

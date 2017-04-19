@@ -865,7 +865,6 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 	should_follow_wall = 0;
 
-	set_gyro(1, 0);
 	usleep(10000);
 	Set_Gyro_Status();
 	//10 second
@@ -896,14 +895,12 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	if (Touch_Detect()) {
 		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
 		ROS_INFO("%s %d: Touch_Detect in CM_HeadToCourse()", __FUNCTION__, __LINE__);
-		set_gyro(1, 1);
 		usleep(10000);
 		Stop_Brifly();
 		return MT_Key_Clean;
 	}
 	if (Get_Clean_Mode() == Clean_Mode_GoHome) {
 		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
-		set_gyro(1, 1);
 		usleep(10000);
 
 		Set_Clean_Mode(Clean_Mode_Navigation);
@@ -1490,7 +1487,6 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	CM_update_position(Gyro_GetAngle());
 
 	ROS_INFO("%s %d: move to point: %d\tGyro Calibration: %d", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
-	set_gyro(1, 1);
 	robot::instance()->robot_display_positions();
 	usleep(10000);
 
@@ -2114,7 +2110,7 @@ public:
 			robot::instance()->align_exit();
 			stop_obstacle_detector();
 		}
-		show_time(Set_gyro_off);
+		show_time(Set_Gyro_Off);
 		Reset_Gyro_Status();
 		is_line_angle_offset = false;
 		enable_slam_offset = 0;
@@ -2292,9 +2288,9 @@ uint8_t CM_Touring(void)
 	if (!robot::instance()->Is_Cleaning_Paused())
 #endif
 	{
-		if (!Set_gyro_on())
+		if (!Set_Gyro_On())
 		{
-			Set_gyro_off();
+			Set_Gyro_Off();
 			ROS_INFO("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;

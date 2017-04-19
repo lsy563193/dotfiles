@@ -18,6 +18,7 @@
 #include <ros/ros.h>
 #include "config.h"
 #include "wav.h"
+#include "robot.hpp"
 //extern volatile ADC_Value_Struct ADC_Value;
 
 
@@ -65,6 +66,13 @@ void User_Interface(void)
 	Reset_Touch();
 //	ResetHomeRemote();
 	Set_VacMode(Vac_Normal);
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (!robot::instance()->Is_Cleaning_Paused())
+	{
+		Set_Gyro_Off();
+	}
+#endif
 	while(ros::ok())
 	{
 		usleep(2000);	
@@ -76,7 +84,7 @@ void User_Interface(void)
 	  	}
 		/*
 		if (Get_Gyro_Status() == 0){
-			set_gyro(1, 0);
+			Set_Gyro_On();
 			Set_Gyro_Status();
 			usleep(2000000);
 			//printf("Gyro_Status%d\n", Get_Gyro_Status());

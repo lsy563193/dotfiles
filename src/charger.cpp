@@ -234,7 +234,6 @@ void GoHome(void)
 
 	// Stop all the motors to keep the robot at peace, so that it can successfully open the gyrp.
 	Disable_Motors();
-	set_gyro(1, 0);
 	ROS_INFO("GoHome function opening gyro.");
 	while(robot::instance()->robot_get_angle_v() == 0)
 	{

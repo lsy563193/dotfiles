@@ -76,7 +76,7 @@ void Random_Running_Mode(void)
 #endif
 
         if (Get_Gyro_Status() == 0){
-  		    Set_gyro_on();
+			Set_Gyro_On();
        		Set_Gyro_Status();
         	//printf("Gyro_Status%d\n", Get_Gyro_Status());
         }

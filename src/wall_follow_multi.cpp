@@ -650,7 +650,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 	if (Get_Gyro_Status() == 0){
-		Set_gyro_on();
+		Set_Gyro_On();
 		Set_Gyro_Status();
 		//ROS_INFO("%s %d: Gyro_Status %d", __FUNCTION__, __LINE__, Get_Gyro_Status());
 	}
