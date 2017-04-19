@@ -46,7 +46,7 @@ extern Point32_t New_Home_Point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
 extern uint8_t remote_go_home;
 extern uint8_t from_station;
-
+extern int16_t xMin, xMax, yMin, yMax;
 bool	escape_thread_running = false;
 //Timer
 uint32_t escape_trapped_timer;
@@ -616,23 +616,24 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 uint8_t Wall_Follow(MapWallFollowType follow_type)
 {
 
-	uint8_t		Temp_Counter = 0, Jam = 0;
-	uint16_t	i = 0;
-	int32_t		Wheel_Speed_Base = 0;
-	int			ret;
-	int16_t		Left_Wall_Buffer[3] = {0};
-	int32_t		Proportion = 0, Delta = 0, Previous = 0, R = 0;
+	uint8_t					Temp_Counter = 0, Jam = 0;
+	uint16_t				i = 0;
+	int32_t					Wheel_Speed_Base = 0;
+	int						ret;
+	int16_t					Left_Wall_Buffer[3] = {0};
+	int32_t					Proportion = 0, Delta = 0, Previous = 0, R = 0;
 
 	volatile int32_t		Wall_Straight_Distance = 100, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
 	static volatile int32_t	Wall_Distance = Wall_High_Limit;
-	float Start_WF_Pose_X, Start_WF_Pose_Y;//the first pose when the wall mode start
-	float Start_Pose_X, Start_Pose_Y;//the first pose hit the wall
-	float Distance_From_WF_Start;
-	float Distance_From_Start;
-	float Find_Wall_Distance = 8;
-	uint8_t		First_Time_Flag;
-	uint8_t		Isolated_Flag;
-	uint32_t Temp_Rcon_Status;
+	float					Start_WF_Pose_X, Start_WF_Pose_Y;//the first pose when the wall mode start
+	float					Start_Pose_X, Start_Pose_Y;//the first pose hit the wall
+	float					Distance_From_WF_Start;
+	float					Distance_From_Start;
+	float					Find_Wall_Distance = 8;
+	uint8_t					First_Time_Flag;
+	uint8_t					Isolated_Flag;
+	uint32_t				Temp_Rcon_Status;
+	int16_t					Isolated_Count = 0;
 	Reset_MoveWithRemote();
 	Wall_Follow_Init_Slam();
 
@@ -1183,12 +1184,22 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		}
 		if(Isolated_Flag){
 			Isolated_Flag = 0;
+			Isolated_Count++;
+			if (Isolated_Count > 3){
+				ROS_WARN("%s %d: Isolate islands more than 3, break", __FUNCTION__, __LINE__);
+				WF_End_Wall_Follow();
+				break;
+			}
+			//Map_Initialize();
+			Map_Reset(MAP);
 			continue;
 		}
 		else{
+			ROS_INFO("%s %d: Not in isolate island, finish, break", __FUNCTION__, __LINE__);
 			break;
 		}
-	}
+	}//the biggest loop end
+
 	if (escape_thread_running == true) {
 		escape_thread_running = false;
 	}
@@ -1251,6 +1262,7 @@ uint8_t WF_End_Wall_Follow(void){
 	int16_t home_angle = robot::instance()->robot_get_home_angle();
 
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	WF_Mark_Home_Point();
 	CM_go_home();
 
 	/*****************************************Release Memory************************************/
@@ -1401,7 +1413,7 @@ bool WF_Is_Reach_Cleaned(void){
 			if((WF_Point.size() - 1) >= 0){
 				if (Map_GetCell(MAP, (WF_Point.at(WF_Point.size() - 1)).X, (WF_Point.at(WF_Point.size() - 1)).Y) == CLEANED) {//size() - 2 means last two
 					ROS_INFO("Reach X = %d, Reach Y = %d", countToCell(x), countToCell(y));
-					Beep(3, 25, 25, 1);
+					//Beep(3, 25, 25, 1);//Beep when it was coincide
 					return true;
 				}
 				else{
@@ -1441,5 +1453,32 @@ int8_t WF_Push_Point(int32_t x, int32_t y){
 		WF_Point.push_back(New_WF_Point);
 		//ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
 		return 1;
+	}
+}
+
+void WF_Mark_Home_Point(void){
+	//PathPlanning_Initialize(&, &Home_Point.front().Y);
+	int32_t x, y;
+	int i;
+	std::list <Point32_t> WF_Home_Point;
+
+	WF_Home_Point = Home_Point;
+
+	while (!WF_Home_Point.empty()){
+		x = WF_Home_Point.front().X;
+		y = WF_Home_Point.front().Y;
+		ROS_INFO("%s %d: WF_Home_Point.front().X = %d, WF_Home_Point.front().Y = %d, WF_Home_Point.size() = %d", __FUNCTION__, __LINE__, x, y, WF_Home_Point.size());
+		ROS_INFO("%s %d: xMin = %d, xMax = %d", __FUNCTION__, __LINE__, xMin, xMax);
+		WF_Home_Point.pop_front();
+
+		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y - 1) , CLEANED);//-1, -1
+		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y) , CLEANED);//-1, 0
+		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y + 1) , CLEANED);//-1, 1
+		Map_SetCell(MAP, cellToCount(x), cellToCount(y - 1) , CLEANED);//0, -1
+		Map_SetCell(MAP, cellToCount(x), cellToCount(y) , CLEANED);//0, 0
+		Map_SetCell(MAP, cellToCount(x), cellToCount(y + 1) , CLEANED);//0, 1
+		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y - 1) , CLEANED);//1, -1
+		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y) , CLEANED);//1, 0
+		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y + 1) , CLEANED);//1, 1
 	}
 }

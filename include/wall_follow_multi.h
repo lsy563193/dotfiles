@@ -35,4 +35,5 @@ int8_t WF_Push_Point(int32_t x, int32_t y);
 uint8_t WF_End_Wall_Follow(void);
 void WFM_move_back(uint16_t dist);
 bool WF_check_isolate(void);
+void WF_Mark_Home_Point(void);
 #endif
