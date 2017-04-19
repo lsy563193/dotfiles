@@ -2049,6 +2049,8 @@ void CM_go_home()
 
 bool start_obstacle_detector(void)
 {
+	if(Get_Clean_Mode() == Clean_Mode_WallFollow)
+		return false;
 
 	if (robot::instance()->align_active() == true)
 	{
@@ -2086,72 +2088,65 @@ void show_time(std::function<void(void)> task){
 	std::cout <<"this task runs:" << ms.count() << " ms" << std::endl;
 }
 
-class Motion_controller {
-public:
-	Motion_controller()
+Motion_controller::Motion_controller()
+{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Paused())
 	{
-	#if CONTINUE_CLEANING_AFTER_CHARGE
-		if (robot::instance()->Is_Cleaning_Paused())
-		{
-			Work_Motor_Configure();
-			robot::instance()->start_lidar();
-			enable_slam_offset = 1;
-		}
-		else
-	#endif
-		{
-			Work_Motor_Configure();
-			if (robot::instance()->start_lidar())
-				start_bit.set(lidar);
-
-			if (start_bit[lidar] && start_obstacle_detector())
-				start_bit.set(obs_det);
-
-			if (start_bit[lidar] && robot::instance()->align())
-				start_bit.set(align);
-
-			if (start_bit[align] && start_slam())
-				start_bit.set(slam);
-		}
-	};
-
-	~Motion_controller()
-	{
-	#if CONTINUE_CLEANING_AFTER_CHARGE
-		if (robot::instance()->Is_Cleaning_Paused())
-		{
-			Disable_Motors();
-			robot::instance()->stop_lidar();
-			enable_slam_offset = 0;
-		}
-		else
+		Work_Motor_Configure();
+		robot::instance()->start_lidar();
+		enable_slam_offset = 1;
+	} else
 #endif
-		{
+	{
+		if (Set_gyro_on())
+			start_bit.set(gyro);
+
+		Work_Motor_Configure();
+		if (start_bit[gyro] && robot::instance()->start_lidar())
+			start_bit.set(lidar);
+
+		if (start_bit[lidar] && start_obstacle_detector())
+			start_bit.set(obs_det);
+
+		if (start_bit[lidar] && robot::instance()->align())
+			start_bit.set(align);
+
+		if (start_bit[align] && start_slam())
+			start_bit.set(slam);
+	}
+};
+
+Motion_controller::~Motion_controller()
+{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Paused())
+	{
+		Disable_Motors();
+		robot::instance()->stop_lidar();
+		enable_slam_offset = 0;
+	} else
+#endif
+	{
 		Disable_Motors();
 
 //		if(start_bit[lidar])
-			//try 3times;make sure to stop
-			robot::instance()->stop_lidar();
-			robot::instance()->stop_lidar();
-			robot::instance()->stop_lidar();
+		//try 3times;make sure to stop
+		robot::instance()->stop_lidar();
+		robot::instance()->stop_lidar();
+		robot::instance()->stop_lidar();
 
 //		if(start_bit[align])
-			robot::instance()->align_exit();
+		robot::instance()->align_exit();
 
 
 //		if(start_bit[slam])
-			robot::instance()->stop_slam();
+		robot::instance()->stop_slam();
 
 //		if(start_bit[obs_det])
-			stop_obstacle_detector();
-
-		}
-
+		stop_obstacle_detector();
 
 	}
-private:
-	enum start_object {lidar, obs_det, align, slam,start_obs};
-	std::bitset<start_obs> start_bit;
 };
 
 uint8_t CM_Touring(void)
@@ -2318,19 +2313,6 @@ uint8_t CM_Touring(void)
 #endif
 	}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->Is_Cleaning_Paused())
-#endif
-	{
-		if (!Set_gyro_on())
-		{
-			Set_gyro_off();
-			ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return 0;
-		}
-		Set_IMU_Status();
-	}
 	Motion_controller motion;
 	if(except_event()){
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);

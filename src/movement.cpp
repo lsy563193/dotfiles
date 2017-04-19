@@ -2347,9 +2347,11 @@ bool Set_gyro_on(void)
 	}
 	if(count == 10){
 		ROS_INFO("gyro start ok");
+		Set_IMU_Status();
 		return true;
 	}
-
+	Reset_IMU_Status();
+	Set_gyro_off();
 	return false;
 }
 

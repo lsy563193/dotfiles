@@ -196,6 +196,7 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 
 	this->is_sensor_ready = true;
+
 //	if (this->is_sensor_ready == false) {
 //		if (time(NULL) - start_time > 2) {
 //			ROS_INFO("%s %d: Gyro starting angle: %d", __FUNCTION__, __LINE__, (int16_t)((this->angle * 10 + 3600)) % 3600);
@@ -436,7 +437,9 @@ void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg
 	if (laser::instance()->is_ready() == false || is_sensor_ready == false)
 		return;
 
-	if (line_align_ == detecting)
+	line_align_ = begin;
+
+	if (line_align_ == begin)
 	{
 		if (msg->segments.size() != 0)
 		{
@@ -860,6 +863,9 @@ void robot::stop_slam(void)
 bool robot::align(void)
 {
 
+	if(Get_Clean_Mode() == Clean_Mode_WallFollow)
+		return false;
+
 	if (is_align_active_ != true)
 		return false;
 
@@ -867,11 +873,24 @@ bool robot::align(void)
 	is_odom_ready = false;
 	segmentss.clear();
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-	auto count_n_10ms = 500;
-	while (line_align_ == detecting && --count_n_10ms > 0 && !except_event())
+
+	//wait for start obstacle_detector
+	auto count_n_10ms = 1000;
+	while (line_align_ != begin && --count_n_10ms > 0 && !except_event()){
+		if (count_n_10ms % 100 == 0)
+			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
+		usleep(10000);
+	}
+	if(except_event())
+		return false;
+
+	count_n_10ms = 500;
+
+	//wait for detecting line
+	while (--count_n_10ms > 0 && !except_event())
 	{
 		if (count_n_10ms % 100 == 0)
-			ROS_WARN("detecting time remain %d s\n", count_n_10ms / 100);
+			ROS_WARN("detecting line time remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
 	if(except_event())

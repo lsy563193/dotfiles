@@ -142,7 +142,7 @@ private:
 	bool	is_map_ready;
 	enum align_state{
 		detecting=0,
-		rotating=1,
+		begin=1,
 		finish=2,
 	}line_align_;
 	/* 1 byte */
