@@ -247,7 +247,7 @@ void GoHome(void)
 	Stop_Brifly();
 
 	// Save the start angle.
-	Last_Angle = Gyro_GetAngle(0);
+	Last_Angle = Gyro_GetAngle();
 	while(Gyro_Step < 3600)
 	{
 		if (Touch_Detect())
@@ -456,7 +456,7 @@ void GoHome(void)
 			return;
 		}
 		usleep(50000);
-		Current_Angle = Gyro_GetAngle(0);
+		Current_Angle = Gyro_GetAngle();
 		Angle_Offset = Current_Angle - Last_Angle;
 		//ROS_INFO("Current_Angle = %d, Last_Angle = %d, Angle_Offset = %d, Gyro_Step = %ld.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
 		if (Angle_Offset > 0)
@@ -1032,7 +1032,7 @@ uint8_t Check_Position(uint8_t Dir)
 	}
 	Set_Wheel_Speed(10,10);
 
-	Last_Angle = Gyro_GetAngle(0);
+	Last_Angle = Gyro_GetAngle();
 	ROS_INFO("Last_Angle = %d.", Last_Angle);
 
 //	while(Get_LeftWheel_Step()<3600)
@@ -1040,7 +1040,7 @@ uint8_t Check_Position(uint8_t Dir)
 	{
 //		delay(1);
 		usleep(50000);
-		Current_Angle = Gyro_GetAngle(0);
+		Current_Angle = Gyro_GetAngle();
 		Angle_Offset = Current_Angle - Last_Angle;
 		ROS_INFO("Current_Angle = %d, Last_Angle = %d, Angle_Offset = %d, Gyro_Step = %ld.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
 		if (Angle_Offset < 0 && Dir == Round_Left)

@@ -24,6 +24,7 @@
 #include "core_move.h"
 
 #include "rounding.h"
+#include "movement.h"
 
 #ifdef TURN_SPEED
 #undef TURN_SPEED
@@ -100,7 +101,7 @@ void update_position(uint16_t heading) {
 
 int8_t rounding_update()
 {
-	update_position(Gyro_GetAngle(0));
+	update_position(Gyro_GetAngle());
 
 	return 0;
 }
@@ -194,13 +195,13 @@ uint8_t rounding_boundary_check()
 	for (j = -1; boundary_reach == 0 && j <= 1; j++) {
 #if (ROBOT_SIZE == 5)
 
-		x = Map_GetRelativeX(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_3);
-		y = Map_GetRelativeY(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_3);
+		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_3);
+		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_3);
 
 #else
 
-		x = Map_GetRelativeX(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_3);
-		y = Map_GetRelativeY(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_3);
+		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_3);
+		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_3);
 
 #endif
 
@@ -334,7 +335,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			// Robot has round to the opposite direcition.
 			ROS_INFO("%s %d: Y: %d position: (%d, %d)", __FUNCTION__, __LINE__, target.Y, Map_GetXCount(), Map_GetYCount());
 
-			Map_SetCell(MAP, Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_3, 0), Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_3, 0), CLEANED);
+			Map_SetCell(MAP, Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_3, 0), Map_GetRelativeY(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
 
 			Stop_Brifly();
 			return 0;

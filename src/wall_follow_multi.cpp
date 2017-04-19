@@ -205,11 +205,11 @@ void WFM_boundary_check()
 
 	for (j = -1; boundary_reach == 0 && j <= 1; j++) {
 #if (ROBOT_SIZE == 5)
-		x = Map_GetRelativeX(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_2);
-		y = Map_GetRelativeY(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_2);
+		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 #else
-		x = Map_GetRelativeX(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_2);
-		y = Map_GetRelativeY(Gyro_GetAngle(0), j * CELL_SIZE, CELL_SIZE_2);
+		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 #endif
 
 		if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
@@ -318,7 +318,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		usleep(10000);
 	}
 
-	//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle(0) + 900);
+	//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 
 	/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 	escape_trapped_timer = time(NULL);
@@ -736,7 +736,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 		}
 
-		//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle(0) + 900);
+		//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 		escape_trapped_timer = time(NULL);
@@ -784,7 +784,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 #endif
 			/*------------------------------------WF_Map_Update---------------------------------------------------*/
 			//WF_update_position();
-			WF_Check_Loop_Closed(Gyro_GetAngle(0));
+			WF_Check_Loop_Closed(Gyro_GetAngle());
 			if(reach_count >= 10){
 				reach_count = 0;
 				Stop_Brifly();
@@ -956,13 +956,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//STOP_BRIFLY;
 				Stop_Brifly();
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0));
+				WF_Check_Loop_Closed(Gyro_GetAngle());
 
 				//WFM_wall_move_back();
 				WFM_move_back(350);
 
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0));
+				WF_Check_Loop_Closed(Gyro_GetAngle());
 
 				Wall_Distance+=300;
 				if(Wall_Distance>Wall_High_Limit)Wall_Distance=Wall_High_Limit;	
@@ -977,7 +977,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Stop_Brifly();
 
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0));
+				WF_Check_Loop_Closed(Gyro_GetAngle());
 
 				Move_Forward(10, 10);
 				Reset_WallAccelerate();
@@ -995,14 +995,14 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//delay(10);
 				usleep(1000);
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0));
+				WF_Check_Loop_Closed(Gyro_GetAngle());
 				if (Get_Bumper_Status() & RightBumperTrig){
 					ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 					//USPRINTF_ZZ("%s %d:Double bumper are trigged!",__func__,__LINE__);
 					WFM_move_back(100);
 
 					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0));
+					WF_Check_Loop_Closed(Gyro_GetAngle());
 
 					if (Is_Bumper_Jamed()){
 						Reset_Touch();
@@ -1026,7 +1026,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					//WFM_wall_move_back();
 					WFM_move_back(350);
 					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0));
+					WF_Check_Loop_Closed(Gyro_GetAngle());
 					if (Is_Bumper_Jamed()) {
 						Reset_Touch();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1069,7 +1069,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//STOP_BRIFLY;
 				Stop_Brifly();
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0));
+				WF_Check_Loop_Closed(Gyro_GetAngle());
 
 				Move_Forward(10, 10);
 
@@ -1081,7 +1081,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			/*------------------------------------------------------Short Distance Move-----------------------*/
 			if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance) {
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0));
+				WF_Check_Loop_Closed(Gyro_GetAngle());
 				if (Get_LeftWheel_Step() < 500) {
 					if (Get_WallAccelerate() < 100) {
 						Move_Forward(10, 10);
@@ -1094,7 +1094,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Move_Forward(23, 23);
 				}
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0));
+				WF_Check_Loop_Closed(Gyro_GetAngle());
 			} 
 			else {
 				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
@@ -1164,7 +1164,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					if(Right_Wall_Speed < 5)Right_Wall_Speed = 5;
 
 					Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
-					WF_Check_Loop_Closed(Gyro_GetAngle(0));
+					WF_Check_Loop_Closed(Gyro_GetAngle());
 				} 
 				else {
 					Stop_Brifly();
@@ -1174,7 +1174,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					WF_Turn_Right(Turn_Speed - 5, 920);
 					Stop_Brifly();
 					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0));
+					WF_Check_Loop_Closed(Gyro_GetAngle());
 					Move_Forward(15, 15);
 					Reset_Wheel_Step();
 
@@ -1262,7 +1262,7 @@ uint8_t WF_End_Wall_Follow(void){
 	MapTouringType	mt_state = MT_None;
 	int16_t home_angle = robot::instance()->robot_get_home_angle();
 
-	CM_update_position(Gyro_GetAngle(0));
+	CM_update_position(Gyro_GetAngle());
 	WF_Mark_Home_Point();
 	CM_go_home();
 
@@ -1384,8 +1384,8 @@ bool WF_Is_Reach_Cleaned(void){
 	//x = Map_GetXPos();
 	//y = Map_GetYPos();
 
-	//CM_count_normalize(Gyro_GetAngle(0), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
-	CM_count_normalize(Gyro_GetAngle(0), 0, 0, &x, &y);
+	//CM_count_normalize(Gyro_GetAngle(), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
+	CM_count_normalize(Gyro_GetAngle(), 0, 0, &x, &y);
 	try{
 		if(WF_Point.empty() == false){
 			if((WF_Point.size() - 1) >= 0){

@@ -72,15 +72,6 @@ volatile uint8_t Touch_Status = 0;
 volatile uint8_t Remote_Status = 0;
 
 /*----------------------- Work Timer functions--------------------------*/
-
-static inline int16_t Gyro_GetAngle(){
-	auto angle = static_cast<int16_t>( (robot::instance()->robot_get_angle()) * 10);
-	if(angle <0)
-		angle += 3600;
-
-	return angle;
-}
-
 void Reset_Work_Time()
 {
 	work_time = time(NULL);
@@ -530,8 +521,8 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		Map_SetPosition(pos_x, pos_y);
 
-		i = Map_GetRelativeX(Gyro_GetAngle(0), CELL_SIZE_3, 0);
-		j = Map_GetRelativeY(Gyro_GetAngle(0), CELL_SIZE_3, 0);
+		i = Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_3, 0);
+		j = Map_GetRelativeY(Gyro_GetAngle(), CELL_SIZE_3, 0);
 		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 			Map_SetCell(MAP, i, j, BLOCKED_OBS);
 		}
@@ -791,7 +782,7 @@ uint8_t Turn_Connect(void)
 	}
 	Stop_Brifly();
 	// Start turning right.
-	target_angle = Gyro_GetAngle(0) + 240;
+	target_angle = Gyro_GetAngle() + 240;
 	if (target_angle > 3600) {
 		target_angle = target_angle - 3600;
 	}
@@ -1969,7 +1960,7 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 	int16_t target_angle;
 	uint16_t gyro_angle;
 
-	gyro_angle = Gyro_GetAngle(0);
+	gyro_angle = Gyro_GetAngle();
 
 	target_angle = gyro_angle + angle;
 	if (target_angle >= 3600) {
@@ -1979,13 +1970,13 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 	Set_Dir_Left();
 	Set_Wheel_Speed(speed, speed);
 
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	while(ros::ok())
 	{
-		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+		if (abs(target_angle - Gyro_GetAngle()) < 20) {
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			Set_Wheel_Speed(speed / 2, speed / 2);
 		} else {
 			Set_Wheel_Speed(speed, speed);
@@ -2023,7 +2014,7 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 	int16_t target_angle;
 	uint16_t gyro_angle;
 
-	gyro_angle = Gyro_GetAngle(0);
+	gyro_angle = Gyro_GetAngle();
 
 	target_angle = gyro_angle - angle;
 	if (target_angle < 0) {
@@ -2033,13 +2024,13 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 	Set_Dir_Right();
 	Set_Wheel_Speed(speed, speed);
 
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(0), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	while(ros::ok())
 	{
-		if (abs(target_angle - Gyro_GetAngle(0)) < 20) {
+		if (abs(target_angle - Gyro_GetAngle()) < 20) {
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle(0)) < 50) {
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			Set_Wheel_Speed(speed / 2, speed / 2);
 		} else {
 			Set_Wheel_Speed(speed, speed);
@@ -2343,6 +2334,7 @@ void movement_stop()
 bool Set_gyro_on(void)
 {
 	static int count=0;
+	if (Get_IMU_Status());
 	set_gyro(1,0);
 	ROS_INFO("waiting for gyro start");
 
