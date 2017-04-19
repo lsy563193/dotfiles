@@ -35,25 +35,16 @@ uint8_t	should_mark = 0;
 
 RoundingType	rounding_type;
 
-void update_position(uint16_t heading_0, int16_t heading_1) {
+void update_position(uint16_t heading) {
 	float   pos_x, pos_y;
 	int8_t	c, d, e;
 	int16_t	x, y;
-	uint16_t	path_heading;
 	int32_t	i, j;
-
-	if (heading_0 > heading_1 && heading_0 - heading_1 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} else if (heading_1 > heading_0 && heading_1 - heading_0 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} else {
-		path_heading = (uint16_t)(heading_0 + heading_1) >> 1;
-	}
 
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
-	//Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
+	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
@@ -63,8 +54,8 @@ void update_position(uint16_t heading_0, int16_t heading_1) {
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
-				i = Map_GetRelativeX(path_heading, CELL_SIZE * c, CELL_SIZE * d);
-				j = Map_GetRelativeY(path_heading, CELL_SIZE * c, CELL_SIZE * d);
+				i = Map_GetRelativeX(heading, CELL_SIZE * c, CELL_SIZE * d);
+				j = Map_GetRelativeY(heading, CELL_SIZE * c, CELL_SIZE * d);
 				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
 
 				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER || e == BLOCKED_BOUNDARY ) {
@@ -74,14 +65,14 @@ void update_position(uint16_t heading_0, int16_t heading_1) {
 		}
 	}
 
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, CELL_SIZE), CLEANED);
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), CLEANED);
+	Map_SetCell(MAP, Map_GetRelativeX(heading, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading, -CELL_SIZE, CELL_SIZE), CLEANED);
+	Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
+	Map_SetCell(MAP, Map_GetRelativeX(heading, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading, CELL_SIZE, CELL_SIZE), CLEANED);
 
 	if (should_mark == 1) {
 		if (rounding_type == ROUNDING_LEFT || rounding_type == ROUNDING_RIGHT) {
-			i = Map_GetRelativeX(heading_0, rounding_type == ROUNDING_LEFT ? CELL_SIZE_2 : -CELL_SIZE_2, 0);
-			j = Map_GetRelativeY(heading_0, rounding_type == ROUNDING_LEFT ? CELL_SIZE_2 : -CELL_SIZE_2, 0);
+			i = Map_GetRelativeX(heading, rounding_type == ROUNDING_LEFT ? CELL_SIZE_2 : -CELL_SIZE_2, 0);
+			j = Map_GetRelativeY(heading, rounding_type == ROUNDING_LEFT ? CELL_SIZE_2 : -CELL_SIZE_2, 0);
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 				Map_SetCell(MAP, i, j, BLOCKED_OBS);
 			}
@@ -90,18 +81,18 @@ void update_position(uint16_t heading_0, int16_t heading_1) {
 
 #else
 
-	i = Map_GetRelativeX(path_heading, 0, 0);
-	j = Map_GetRelativeY(path_heading, 0, 0);
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
+	i = Map_GetRelativeX(heading, 0, 0);
+	j = Map_GetRelativeY(heading, 0, 0);
+	Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
 
 	if (should_mark == 1) {
 		//if (rounding_type == ROUNDING_LEFT && Get_Wall_ADC(0) > 200) {
 		if (rounding_type == ROUNDING_LEFT) {
-			Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, 0), Map_GetRelativeY(heading_0, CELL_SIZE, 0), BLOCKED_OBS);
-			//Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, CELL_SIZE, CELL_SIZE), BLOCKED_OBS);
+			Map_SetCell(MAP, Map_GetRelativeX(heading, CELL_SIZE, 0), Map_GetRelativeY(heading, CELL_SIZE, 0), BLOCKED_OBS);
+			//Map_SetCell(MAP, Map_GetRelativeX(heading, CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading, CELL_SIZE, CELL_SIZE), BLOCKED_OBS);
 		} else if (rounding_type == ROUNDING_RIGHT) {
-			Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, 0), Map_GetRelativeY(heading_0, -CELL_SIZE, 0), BLOCKED_OBS);
-			//Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, -CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, -CELL_SIZE), BLOCKED_OBS);
+			Map_SetCell(MAP, Map_GetRelativeX(heading, -CELL_SIZE, 0), Map_GetRelativeY(heading, -CELL_SIZE, 0), BLOCKED_OBS);
+			//Map_SetCell(MAP, Map_GetRelativeX(heading, -CELL_SIZE, -CELL_SIZE), Map_GetRelativeY(heading, -CELL_SIZE, -CELL_SIZE), BLOCKED_OBS);
 		}
 	}
 #endif
@@ -109,7 +100,7 @@ void update_position(uint16_t heading_0, int16_t heading_1) {
 
 int8_t rounding_update()
 {
-	update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	update_position(Gyro_GetAngle(0));
 
 	return 0;
 }
