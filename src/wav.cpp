@@ -73,7 +73,7 @@ void wav_play(WavType action)
 	bit = wav_header.bitsPerSample;
 	datablock = wav_header.blockAlign;
 
-	rc = snd_pcm_open(&handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+	rc = snd_pcm_open(&handle, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
 	if (rc < 0)	{
 		ROS_ERROR("open PCM device failed:");
 		return;

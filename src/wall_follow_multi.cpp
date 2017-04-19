@@ -714,7 +714,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 			//WFM_boundary_check();
 
-			WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+			WF_update_position();
 			Temp_Rcon_Status = robot::instance()->robot_get_rcon();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT)){
@@ -783,8 +783,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//ROS_INFO("time now : %d", int(time(NULL)));
 #endif
 			/*------------------------------------WF_Map_Update---------------------------------------------------*/
-			//WF_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
-			WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+			//WF_update_position();
+			WF_Check_Loop_Closed(Gyro_GetAngle(0));
 			if(reach_count >= 10){
 				reach_count = 0;
 				Stop_Brifly();
@@ -956,13 +956,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//STOP_BRIFLY;
 				Stop_Brifly();
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				WF_Check_Loop_Closed(Gyro_GetAngle(0));
 
 				//WFM_wall_move_back();
 				WFM_move_back(350);
 
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				WF_Check_Loop_Closed(Gyro_GetAngle(0));
 
 				Wall_Distance+=300;
 				if(Wall_Distance>Wall_High_Limit)Wall_Distance=Wall_High_Limit;	
@@ -977,7 +977,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Stop_Brifly();
 
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				WF_Check_Loop_Closed(Gyro_GetAngle(0));
 
 				Move_Forward(10, 10);
 				Reset_WallAccelerate();
@@ -995,14 +995,14 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//delay(10);
 				usleep(1000);
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				WF_Check_Loop_Closed(Gyro_GetAngle(0));
 				if (Get_Bumper_Status() & RightBumperTrig){
 					ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 					//USPRINTF_ZZ("%s %d:Double bumper are trigged!",__func__,__LINE__);
 					WFM_move_back(100);
 
 					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+					WF_Check_Loop_Closed(Gyro_GetAngle(0));
 
 					if (Is_Bumper_Jamed()){
 						Reset_Touch();
@@ -1026,7 +1026,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					//WFM_wall_move_back();
 					WFM_move_back(350);
 					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+					WF_Check_Loop_Closed(Gyro_GetAngle(0));
 					if (Is_Bumper_Jamed()) {
 						Reset_Touch();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1069,7 +1069,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//STOP_BRIFLY;
 				Stop_Brifly();
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				WF_Check_Loop_Closed(Gyro_GetAngle(0));
 
 				Move_Forward(10, 10);
 
@@ -1081,7 +1081,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			/*------------------------------------------------------Short Distance Move-----------------------*/
 			if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance) {
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				WF_Check_Loop_Closed(Gyro_GetAngle(0));
 				if (Get_LeftWheel_Step() < 500) {
 					if (Get_WallAccelerate() < 100) {
 						Move_Forward(10, 10);
@@ -1094,7 +1094,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Move_Forward(23, 23);
 				}
 				//WFM_update();
-				WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				WF_Check_Loop_Closed(Gyro_GetAngle(0));
 			} 
 			else {
 				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
@@ -1164,7 +1164,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					if(Right_Wall_Speed < 5)Right_Wall_Speed = 5;
 
 					Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
-					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+					WF_Check_Loop_Closed(Gyro_GetAngle(0));
 				} 
 				else {
 					Stop_Brifly();
@@ -1174,7 +1174,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					WF_Turn_Right(Turn_Speed - 5, 920);
 					Stop_Brifly();
 					//WFM_update();
-					WF_Check_Loop_Closed(Gyro_GetAngle(0), Gyro_GetAngle(1));
+					WF_Check_Loop_Closed(Gyro_GetAngle(0));
 					Move_Forward(15, 15);
 					Reset_Wheel_Step();
 
@@ -1262,7 +1262,7 @@ uint8_t WF_End_Wall_Follow(void){
 	MapTouringType	mt_state = MT_None;
 	int16_t home_angle = robot::instance()->robot_get_home_angle();
 
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	CM_update_position(Gyro_GetAngle(0));
 	WF_Mark_Home_Point();
 	CM_go_home();
 
@@ -1275,27 +1275,14 @@ uint8_t WF_End_Wall_Follow(void){
 	return 0;
 }
 
-void WF_update_position(uint16_t heading_0, int16_t heading_1) {
+void WF_update_position(void) {
 	float	pos_x, pos_y;
-	int8_t	c, d, e;
 	int16_t	x, y;
-	uint16_t	path_heading;
-	int32_t	i, j;
-
-	if (heading_0 > heading_1 && heading_0 - heading_1 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} 
-	else if (heading_1 > heading_0 && heading_1 - heading_0 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} 
-	else {
-		path_heading = (uint16_t)(heading_0 + heading_1) >> 1;
-	}
 
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
-	//Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
+	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
@@ -1308,28 +1295,18 @@ Description:
  *2.check last cell if cleaned, cleaned->break, uncleaned->continue
  *3.check if in same cell, same->loop until leave this cell, not same-> marked last cell as cleaned
  ***************************************************************/
-void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1) {
+void WF_Check_Loop_Closed(uint16_t heading) {
 	float	pos_x, pos_y;
 	int8_t	c, d, e;
 	int16_t	x, y;
-	uint16_t	path_heading;
 	int32_t	i, j;
 	int8_t	push_state;
 	bool	reach_state;
-	if (heading_0 > heading_1 && heading_0 - heading_1 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} 
-	else if (heading_1 > heading_0 && heading_1 - heading_0 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} 
-	else {
-		path_heading = (uint16_t)(heading_0 + heading_1) >> 1;
-	}
 
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
-	//Map_MoveTo(dd * cos(deg2rad(path_heading, 10)), dd * sin(deg2rad(path_heading, 10)));
+	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
@@ -1339,8 +1316,8 @@ void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1) {
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
-				i = Map_GetRelativeX(path_heading, CELL_SIZE * c, CELL_SIZE * d);
-				j = Map_GetRelativeY(path_heading, CELL_SIZE * c, CELL_SIZE * d);
+				i = Map_GetRelativeX(heading, CELL_SIZE * c, CELL_SIZE * d);
+				j = Map_GetRelativeY(heading, CELL_SIZE * c, CELL_SIZE * d);
 				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
 
 				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER || e == BLOCKED_BOUNDARY ) {
@@ -1350,10 +1327,10 @@ void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1) {
 		}
 	}
 
-	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading_0, -CELL_SIZE, CELL_SIZE), CLEANED);
-	//Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
-	i = Map_GetRelativeX(heading_0, 0, 0);
-	j = Map_GetRelativeY(heading_0, 0, 0);
+	//Map_SetCell(MAP, Map_GetRelativeX(heading, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading, -CELL_SIZE, CELL_SIZE), CLEANED);
+	//Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
+	i = Map_GetRelativeX(heading, 0, 0);
+	j = Map_GetRelativeY(heading, 0, 0);
 	push_state = WF_Push_Point(countToCell(i),countToCell(j));//push a cell
 	if(push_state == 1){
 		reach_state = WF_Is_Reach_Cleaned();//check this cell if reached
@@ -1386,19 +1363,19 @@ void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1) {
 			}
 		}
 	}
-	i = Map_GetRelativeX(heading_0, CELL_SIZE_3, 0);
-	j = Map_GetRelativeY(heading_0, CELL_SIZE_3, 0);
+	i = Map_GetRelativeX(heading, CELL_SIZE_3, 0);
+	j = Map_GetRelativeY(heading, CELL_SIZE_3, 0);
 	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 		Map_SetCell(MAP, i, j, BLOCKED_OBS);
 	}
 
 #else
 
-	i = Map_GetRelativeX(path_heading, 0, 0);
-	j = Map_GetRelativeY(path_heading, 0, 0);
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, 0, CELL_SIZE), Map_GetRelativeY(heading_0, 0, CELL_SIZE), CLEANED);
+	i = Map_GetRelativeX(heading, 0, 0);
+	j = Map_GetRelativeY(heading, 0, 0);
+	Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
 
-	Map_SetCell(MAP, Map_GetRelativeX(heading_0, CELL_SIZE, 0), Map_GetRelativeY(heading_0, CELL_SIZE, 0), BLOCKED_OBS);
+	Map_SetCell(MAP, Map_GetRelativeX(heading, CELL_SIZE, 0), Map_GetRelativeY(heading, CELL_SIZE, 0), BLOCKED_OBS);
 #endif
 }
 
