@@ -503,16 +503,6 @@ void Move_Back(void);
 
 void Cliff_Move_Back(void);
 
-void movement_go(int16_t speed);
-
-void movement_stop();
-
-void movement_turn(int16_t left_speed,int16_t right_speed);
-
-void movement_rot_left(int16_t speed);
-
-void movement_rot_right(int16_t speed);
-
 void Set_LeftWheel_Speed(uint8_t speed);
 
 void Set_RightWheel_Speed(uint8_t speed);
