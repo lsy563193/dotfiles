@@ -867,7 +867,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 	set_gyro(1, 0);
 	usleep(10000);
-	Set_IMU_Status();
+	Set_Gyro_Status();
 	//10 second
 
 	Reset_Rcon_Status();
@@ -2115,7 +2115,7 @@ public:
 			stop_obstacle_detector();
 		}
 		show_time(Set_gyro_off);
-		Reset_IMU_Status();
+		Reset_Gyro_Status();
 		is_line_angle_offset = false;
 		enable_slam_offset = 0;
 		robot::instance()->stop_slam();
@@ -2299,7 +2299,7 @@ uint8_t CM_Touring(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
-		Set_IMU_Status();
+		Set_Gyro_Status();
 	}
 	Motion_controller motion;
 	auto count_n_10ms = 1000;

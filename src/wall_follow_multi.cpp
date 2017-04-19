@@ -649,10 +649,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
-	if (Get_IMU_Status() == 0){
+	if (Get_Gyro_Status() == 0){
 		Set_gyro_on();
-		Set_IMU_Status();
-		//ROS_INFO("%s %d: IMU_Status %d", __FUNCTION__, __LINE__, Get_IMU_Status());
+		Set_Gyro_Status();
+		//ROS_INFO("%s %d: Gyro_Status %d", __FUNCTION__, __LINE__, Get_Gyro_Status());
 	}
 
 

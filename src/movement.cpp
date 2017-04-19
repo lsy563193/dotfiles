@@ -25,7 +25,7 @@ static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
-static uint8_t IMU_Status = 0;
+static uint8_t Gyro_Status = 0;
 uint32_t Rcon_Status;
 
 uint32_t Average_Move = 0;
@@ -1320,18 +1320,18 @@ void Switch_VacMode(void)
 	Set_Vac_Speed();
 }
 
-void Set_IMU_Status(void)
+void Set_Gyro_Status(void)
 {
-	IMU_Status = 1;
+	Gyro_Status = 1;
 }
 
-void Reset_IMU_Status(void)
+void Reset_Gyro_Status(void)
 {
-	IMU_Status = 0;
+	Gyro_Status = 0;
 }
 
-uint8_t Get_IMU_Status(void){
-	return IMU_Status;
+uint8_t Get_Gyro_Status(void){
+	return Gyro_Status;
 }
 
 void Set_Rcon_Status(uint32_t code)
@@ -2334,7 +2334,7 @@ void movement_stop()
 bool Set_gyro_on(void)
 {
 	static int count=0;
-	if (Get_IMU_Status());
+	if (Get_Gyro_Status());
 	set_gyro(1,0);
 	ROS_INFO("waiting for gyro start");
 

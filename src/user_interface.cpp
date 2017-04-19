@@ -75,11 +75,11 @@ void User_Interface(void)
 			return;
 	  	}
 		/*
-		if (Get_IMU_Status() == 0){
+		if (Get_Gyro_Status() == 0){
 			set_gyro(1, 0);
-			Set_IMU_Status();
+			Set_Gyro_Status();
 			usleep(2000000);
-			//printf("IMU_Status%d\n", Get_IMU_Status());
+			//printf("Gyro_Status%d\n", Get_Gyro_Status());
 		}*/
 		/*
 		if(remote_cmd == Remote_Right|| remote_cmd ==Remote_Left||remote_cmd == Remote_Forward)

@@ -32,12 +32,12 @@ void Remote_Mode(void)
 
   //Display_Clean_Status(Display_Remote);
 
-	if (Get_IMU_Status() == 0){
+	if (Get_Gyro_Status() == 0){
 		Set_LED(100,0);
 		Beep(3,25,25,2);
 		Set_gyro_on();
-		Set_IMU_Status();
-		//printf("IMU_Status%d\n", Get_IMU_Status());
+		Set_Gyro_Status();
+		//printf("Gyro_Status%d\n", Get_Gyro_Status());
 	}
 
 	Reset_Wheel_Step();
