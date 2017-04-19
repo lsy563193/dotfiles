@@ -77,6 +77,10 @@ int temp_speaker_silence_time_count = 0;
 // Low battery flag
 extern uint8_t lowBattery;
 extern int8_t enable_slam_offset;
+
+// Odom coordinate
+float pose_x, pose_y;
+
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret,sers_ret;
@@ -213,7 +217,7 @@ void *serial_receive_routine(void *)
 void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
-	float	th_last, vth, pose_x, pose_y;
+	float	th_last, vth;
 	float	previous_angle = std::numeric_limits<float>::max();
 	float	delta_angle = 0;
 	int16_t	angle;
@@ -470,4 +474,10 @@ void process_beep(){
 	if (temp_speaker_sound_time_count == -1){
 		temp_speaker_silence_time_count--;
 	}
+}
+
+void robotbase_reset_odom_pose(void)
+{
+	// Reset the odom pose to (0, 0)
+	pose_x = pose_y = 0;
 }

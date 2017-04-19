@@ -2001,7 +2001,8 @@ void CM_go_home()
 #if CONTINUE_CLEANING_AFTER_CHARGE
 					if (robot::instance()->Is_Cleaning_Paused())
 					{
-						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finish. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+						ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
+						CM_reset_cleaning_pause();
 						return;
 					}
 #endif

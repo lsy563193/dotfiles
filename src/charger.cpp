@@ -36,6 +36,9 @@ void Charge_Function(void)
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
 #endif
 
+	// This counter is for avoiding occasionly Is_ChargerOn return 0 when robot is charging, cause it will stop charger mode.
+	uint8_t Stop_Charge_Counter = 0;
+
 	// Reset the lowBattery flag in core_move.cpp and stop beeping.
 	Beep(0, 0, 0, 1);
 	lowBattery = 0;
@@ -88,17 +91,29 @@ void Charge_Function(void)
 
 		if(!Is_ChargerOn())//check if charger unplug
 		{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-			if (robot::instance()->Is_Cleaning_Paused())
+			if (Stop_Charge_Counter > 50)
 			{
-				ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
-				Set_Clean_Mode(Clean_Mode_Navigation);
+				// Stop_Charge_Counter > 50 means robot has left charger stub for 1s.
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (robot::instance()->Is_Cleaning_Paused())
+				{
+					ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
+					Set_Clean_Mode(Clean_Mode_Navigation);
+					break;
+				}
+#endif
+				ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
-#endif
-			ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			break;
+			else
+			{
+				Stop_Charge_Counter++;
+			}
+		}
+		else
+		{
+			Stop_Charge_Counter = 0;
 		}
 		/*----------------------------------------------------Check Key---------------------*/
 		if(Get_Key_Press() & KEY_CLEAN)//							Check Key Clean
@@ -235,6 +250,12 @@ void GoHome(void)
 	Last_Angle = Gyro_GetAngle(0);
 	while(Gyro_Step < 3600)
 	{
+		if (Touch_Detect())
+		{
+			ROS_INFO("%s %d: Touch_Detect in turning 360 degrees to find charger signal.", __FUNCTION__, __LINE__);
+			Disable_Motors();
+			break;
+		}
 		Receive_Code = Get_Rcon_Status();
 		Reset_Rcon_Status();
 		if(Receive_Code&RconFL_HomeR)//FL H_R
@@ -1168,7 +1189,7 @@ void By_Path(void)
 		ROS_INFO("%s, %d: Refresh cycle.", __FUNCTION__, __LINE__);
 		while(Cycle--)
 		{
-			ROS_INFO("new round, Bumper_Counter = %d.", Bumper_Counter);
+			//ROS_INFO("new round, Bumper_Counter = %d.", Bumper_Counter);
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("Is_ChargerOn!!");
@@ -1183,7 +1204,7 @@ void By_Path(void)
 					{
 //						Reset_Error_Code();
 						Set_Clean_Mode(Clean_Mode_Charging);
-						Beep(2, 15, 0, 1);
+						Beep(2, 25, 0, 1);
 //						Reset_Rcon_Remote();
 						return;
 					}
@@ -1204,9 +1225,15 @@ void By_Path(void)
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 				}
+				if (Touch_Detect())
+				{
+					ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
+					Disable_Motors();
+					return;
+				}
 			}
 			/*----------------------------------------------OBS------------------Event---------------*/
-			ROS_INFO("get_Left_bumper_Status");
+			//ROS_INFO("get_Left_bumper_Status");
 			if(Get_Bumper_Status()&LeftBumperTrig)
 			{
 //				Random_Back();
@@ -1218,6 +1245,12 @@ void By_Path(void)
 					{
 						Set_Clean_Mode(Clean_Mode_Charging);
 						ROS_INFO("Set Clean_Mode_Charging and return");
+						return;
+					}
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
+						Disable_Motors();
 						return;
 					}
 					Set_SideBrush_PWM(30,30);
@@ -1259,7 +1292,7 @@ void By_Path(void)
 				Bumper_Counter++;
 				ROS_INFO("%d, Left bumper count =%d.", __LINE__, Bumper_Counter);
 			}
-			ROS_INFO("Get_Right_Bumper_Status");
+			//ROS_INFO("Get_Right_Bumper_Status");
 			if(Get_Bumper_Status()&RightBumperTrig)
 			{
 //				Random_Back();
@@ -1270,6 +1303,12 @@ void By_Path(void)
 					if(Turn_Connect())
 					{
 						Set_Clean_Mode(Clean_Mode_Charging);
+						return;
+					}
+					if (Touch_Detect())
+					{
+						ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
+						Disable_Motors();
 						return;
 					}
 					Set_SideBrush_PWM(30,30);
