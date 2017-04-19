@@ -754,6 +754,7 @@ uint8_t Turn_Connect(void)
 	if (Is_ChargerOn())
 	{
 		ROS_INFO("[movement.cpp] Reach charger without turning.");
+		Beep(2, 25, 0, 1);
 		return 1;
 	}
 	// Start turning left.
@@ -775,12 +776,14 @@ uint8_t Turn_Connect(void)
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("[movement.cpp] Turn left reach charger.");
+				Beep(2, 25, 0, 1);
 				return 1;
 			}
-			break;
+			Set_Wheel_Speed(speed, speed);
 		}
 		if(Touch_Detect())
 		{
+			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			return 0;
 		}
@@ -803,17 +806,18 @@ uint8_t Turn_Connect(void)
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("[movement.cpp] Turn right reach charger.");
+				Beep(2, 25, 0, 1);
 				return 1;
 			}
-			break;
+			Set_Wheel_Speed(speed, speed);
 		}
 		if(Touch_Detect())
 		{
+			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			return 0;
 		}
 	}
-	Disable_Motors();
 	return 0;
 }
 
