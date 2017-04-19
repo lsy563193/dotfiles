@@ -2345,10 +2345,12 @@ bool Set_gyro_on(void)
 		}
 //		ROS_INFO("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
-	if(count == 10)
+	if(count == 10){
+		ROS_INFO("gyro start ok");
 		return true;
+	}
+
 	return false;
-//	ROS_INFO("gyro start ok");
 }
 
 void Set_gyro_off()

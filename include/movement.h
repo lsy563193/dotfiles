@@ -483,6 +483,7 @@ void set_start_charge(void);
 
 void set_stop_charge(void);
 
+bool except_event();
 void set_gyro(uint8_t state, uint8_t calibration);
 bool Set_gyro_on(void);
 void Set_gyro_off(void);

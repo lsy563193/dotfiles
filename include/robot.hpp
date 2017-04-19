@@ -22,7 +22,7 @@ public:
 
 	static robot *instance();
 	void init();
-	void Subscriber(void);
+//	void Subscriber(void);
 	void UnSubscriber(void);
 	bool robot_is_all_ready();
 	uint8_t robot_get_workmode();
@@ -93,11 +93,11 @@ public:
 	void pub_bumper_markers(void);
 	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
-	void align(void);
+	bool align(void);
 	void align_exit(void);
 	void align_active(bool);
 
-	void start_lidar(void);
+	bool start_lidar(void);
 	void stop_lidar(void);
 	void start_slam(void);
 //	void start_obstacle_detector(void);

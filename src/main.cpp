@@ -43,7 +43,7 @@ void *core_move_thread(void *)
 	}
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
-	protect_function();
+//	protect_function();
 
 	while(ros::ok()){
 		usleep(20000);

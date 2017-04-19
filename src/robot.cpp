@@ -40,6 +40,13 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	/*map subscriber for exploration*/
 //	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
+	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
+	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
+	visualize_marker_init();
+	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
+	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
+	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+
 	this->is_moving = false;
 	this->is_sensor_ready = false;
 	this->is_odom_ready = false;
@@ -840,6 +847,7 @@ void robot::stop_obstacle_detector(void)
 
 void robot::stop_slam(void)
 {
+	enable_slam_offset = 0;
 	is_map_ready = false;
 	if (slam_type_ == 0)
 		system("rosnode kill /slam_gmapping 2>/dev/null &");
@@ -849,23 +857,25 @@ void robot::stop_slam(void)
 		system("rosnode kill /cartographer_node 2>/dev/null &");
 }
 
-void robot::align(void)
+bool robot::align(void)
 {
 
 	if (is_align_active_ != true)
-		return;
+		return false;
 
 	line_align_ = detecting;
 	is_odom_ready = false;
 	segmentss.clear();
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 	auto count_n_10ms = 500;
-	while (line_align_ == detecting && --count_n_10ms > 0)
+	while (line_align_ == detecting && --count_n_10ms > 0 && !except_event())
 	{
 		if (count_n_10ms % 100 == 0)
 			ROS_WARN("detecting time remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
+	if(except_event())
+		return false;
 
 	line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	auto angle = static_cast<int16_t>(std::abs(line_angle));
@@ -882,6 +892,10 @@ void robot::align(void)
 	}
 	line_align_ = finish;
 //	ros::WallDuration(100).sleep();
+
+	if(except_event())
+		return false;
+
 	auto count = 2;
 	while (count-- != 0)
 	{
@@ -889,9 +903,15 @@ void robot::align(void)
 		sleep(1);
 	}
 	is_line_angle_offset = true;
+
+	ROS_WARN("rosnode kill /obstacle_detector ");
+	system("rosnode kill /obstacle_detector");
+	return true;
 }
 
 void robot::align_exit(void){ is_align_active_ =  true;
+
+	is_line_angle_offset = false;
 	line_align_ = detecting;
 }
 
@@ -902,13 +922,15 @@ void robot::align_active(bool active){
 	}
 }
 
-void robot::start_lidar(void)
+bool robot::start_lidar(void)
 {
 	std_srvs::Empty empty;
 	auto count_6s = 0;
+	auto try_times = 3;
 	bool  first_start = true;
 	do
 	{
+		try_times--;
 		if (! first_start)
 		{
 			// todo pull down gpio
@@ -917,19 +939,21 @@ void robot::start_lidar(void)
 			sleep(2);
 		}
 		first_start = false;
-		ROS_INFO("start_mator");
+		ROS_INFO("start_motor");
 		start_mator_cli_.call(empty);
 		count_6s = 600;
 		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_6s > 0)
+		while (laser::instance()->is_ready() == false && --count_6s > 0 && !except_event())
 		{
 			if (count_6s % 100 == 0)
 				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
 			usleep(10000);
 		}
-	}while (count_6s == 0);
+	}while (count_6s == 0 && try_times == 0 && !except_event());
 
-//	ROS_INFO("start_mator success!!!");
+	ROS_INFO("start_motor: %d", laser::instance()->is_ready());
+
+	return (laser::instance()->is_ready());//check try_times first
 }
 
 void robot::stop_lidar(void){
@@ -960,18 +984,18 @@ bool robot::map_ready(void)
 	return is_map_ready;
 }
 
+/*
 void robot::Subscriber(void)
 {
 	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
 	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
-	ROS_INFO("subscribed");
 	visualize_marker_init();
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
-	if(is_align_active_)
-	  obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 }
+*/
 
 void robot::UnSubscriber(void)
 {

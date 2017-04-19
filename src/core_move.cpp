@@ -2047,9 +2047,19 @@ void CM_go_home()
 	}
 }
 
-void start_obstacle_detector(void)
+bool start_obstacle_detector(void)
 {
-	system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
+
+	if (robot::instance()->align_active() == true)
+	{
+		system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
+		if (!except_event())
+			return true;
+
+		ROS_WARN("rosnode kill /obstacle_detector ");
+		system("rosnode kill /obstacle_detector 2>/dev/null &");
+	}
+	return false;
 }
 
 void stop_obstacle_detector(void)
@@ -2057,9 +2067,15 @@ void stop_obstacle_detector(void)
 	system("rosnode kill /obstacle_detector 2>/dev/null &");
 }
 
-void start_slam(void)
+bool start_slam(void)
 {
 	robot::instance()->start_slam();
+	if(!except_event()){
+		enable_slam_offset = 1;
+		return true;
+	}
+	robot::instance()->stop_slam();
+	return false;
 }
 
 void show_time(std::function<void(void)> task){
@@ -2082,26 +2098,21 @@ public:
 			enable_slam_offset = 1;
 		}
 		else
-  #endif
-    {
-		robot::instance()->Subscriber();
-		Work_Motor_Configure();
-		if (robot::instance()->align_active() == true)
+	#endif
 		{
-			start_obstacle_detector();
+			Work_Motor_Configure();
+			if (robot::instance()->start_lidar())
+				start_bit.set(lidar);
+
+			if (start_bit[lidar] && start_obstacle_detector())
+				start_bit.set(obs_det);
+
+			if (start_bit[lidar] && robot::instance()->align())
+				start_bit.set(align);
+
+			if (start_bit[align] && start_slam())
+				start_bit.set(slam);
 		}
-
-		robot::instance()->start_lidar();
-
-		if (robot::instance()->align_active() == true)
-		{
-			robot::instance()->align();
-			stop_obstacle_detector();
-		}
-
-		start_slam();
-		enable_slam_offset = 1;
-    }
 	};
 
 	~Motion_controller()
@@ -2117,20 +2128,30 @@ public:
 #endif
 		{
 		Disable_Motors();
-		robot::instance()->stop_lidar();
-		if (robot::instance()->align_active())
-		{
+
+//		if(start_bit[lidar])
+			//try 3times;make sure to stop
+			robot::instance()->stop_lidar();
+			robot::instance()->stop_lidar();
+			robot::instance()->stop_lidar();
+
+//		if(start_bit[align])
 			robot::instance()->align_exit();
+
+
+//		if(start_bit[slam])
+			robot::instance()->stop_slam();
+
+//		if(start_bit[obs_det])
 			stop_obstacle_detector();
+
 		}
-		show_time(Set_gyro_off);
-		Reset_IMU_Status();
-		is_line_angle_offset = false;
-		enable_slam_offset = 0;
-		robot::instance()->stop_slam();
-		robot::instance()->UnSubscriber();
-		}
+
+
 	}
+private:
+	enum start_object {lidar, obs_det, align, slam,start_obs};
+	std::bitset<start_obs> start_bit;
 };
 
 uint8_t CM_Touring(void)
@@ -2304,13 +2325,18 @@ uint8_t CM_Touring(void)
 		if (!Set_gyro_on())
 		{
 			Set_gyro_off();
-			ROS_INFO("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
 		Set_IMU_Status();
 	}
 	Motion_controller motion;
+	if(except_event()){
+		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return 0;
+	}
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
 		  usleep(10000);

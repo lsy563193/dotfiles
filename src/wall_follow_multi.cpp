@@ -1215,7 +1215,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 void Wall_Follow_Init_Slam(void){
 	extern int8_t enable_slam_offset;
 	extern void start_slam(void);
-	robot::instance()->Subscriber();
+//	robot::instance()->Subscriber();
 	robot::instance()->start_lidar();
 	//std::async(std::launch::async, start_slam);
 	start_slam();
