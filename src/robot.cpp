@@ -34,7 +34,7 @@ int8_t key_release_count;
 robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
 {
 	this->init();
-	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
+	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 100, &robot::robot_robot_sensor_cb, this);
 	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
 	this->robot_WF_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
 	/*map subscriber for exploration*/
@@ -54,7 +54,7 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	this->line_angle = 0;
 
 //	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
+	this->odom_sub = this->robot_node_handler.subscribe("/odom", 100, &robot::robot_odom_cb, this);
 
 	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");

@@ -13,6 +13,7 @@
 #include "config.h"
 #include "core_move.h"
 #include "wall_follow_multi.h"
+#include "wav.h"
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -610,22 +611,22 @@ uint8_t Get_Cliff_Trig(void)
 	cr = robot::instance()->robot_get_cliff_right();
 	cf = robot::instance()->robot_get_cliff_front();	
 	if (cl < Cliff_Limit){
-		ROS_DEBUG("Left cliff is detected:%d", cl);
+		ROS_WARN("Left cliff is detected:%d", cl);
 		Cliff_Status += 0x01;
 	}
 	if (cr< Cliff_Limit){
-		ROS_DEBUG("Right cliff is detected:%d", cr);
+		ROS_WARN("Right cliff is detected:%d", cr);
 		Cliff_Status += 0x02;
 	}
 	if (cf < Cliff_Limit){
-		ROS_DEBUG("Front cliff is detected:%d", cf);
+		ROS_WARN("Front cliff is detected:%d", cf);
 		Cliff_Status += 0x04;
 	}
-    /*
+	/*
 	if (Cliff_Status != 0x00){
-		ROS_DEBUG("Return Cliff status:%x.", Cliff_Status);
+		ROS_WARN("Return Cliff status:%x.", Cliff_Status);
 	}
-    */
+	*/
 	return Cliff_Status;
 }
 
@@ -927,7 +928,7 @@ uint8_t Check_Motor_Current(void)
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
 			lwheel_oc_count =0;
-            ROS_DEBUG("%s,%d,left wheel over current\n",__FUNCTION__,__LINE__);
+			ROS_WARN("%s,%d,left wheel over current,%lu mA\n",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_lwheel_current());
 			return Check_Left_Wheel;
 		}
 	}
@@ -937,168 +938,175 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
-            ROS_DEBUG("%s,%d,right wheel over current\n",__FUNCTION__,__LINE__);
+			ROS_WARN("%s,%d,right wheel over current,%lu mA\n",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
 			return Check_Right_Wheel;
 		}
 	}
 	else
 		rwheel_oc_count = 0;
 	if(robot::instance()->robot_get_rbrush_oc()){
-        ROS_DEBUG("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
-    }
+	}
 	if(robot::instance()->robot_get_lbrush_oc()){
-        ROS_DEBUG("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
-    }
+	}
 	if(robot::instance()->robot_get_mbrush_oc()){
-        ROS_DEBUG("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Main_Brush;
-    }
+	}
 	if(robot::instance()->robot_get_vacuum_oc()){
-        ROS_DEBUG("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
 		return Check_Vacuum;	
-    }
+	}
 	return 0;
 }
 
 /*-----------------------------------------------------------Self Check-------------------*/
 uint8_t Self_Check(uint8_t Check_Code)
 {
-	return 0;
 ////	static uint8_t
 ////	uint32_t Temp_Brush_Current=0;
 ////	uint8_t Temp_Brush_Current_Count=0;
-//	uint8_t Time_Out=0;
-//	int32_t Wheel_Current_Summary=0;
-//	Left_Wheel_Slow=0;
-//	Right_Wheel_Slow=0;
-//
-//
-//	CM_CorBack(COR_BACK_20MM);
-//	Disable_Motors();
-//	delay(10000);
-//	/*-----------------------------------------------------------Self Check-------------------*/
-//	if(Check_Code==Check_Right_Wheel)
-//	{
-//		Right_Wheel_Slow=0;
-//		if(GPIOB->IDR&MCU_RW_DIR)
-//		{
-//			Set_Dir_Right();
-//		}
-//		else
-//		{
-//			Set_Dir_Left();
-//		}
-//		Set_Wheel_Speed(30,30);
-//		delay(5000);
-//		Time_Out=10;
-//		Wheel_Current_Summary=0;
-//		while(Time_Out--)
-//		{
-//			Wheel_Current_Summary += ADC_Value.Right_Wheel_Current;
-//			delay(1000);
-//		}
-//		Wheel_Current_Summary/=10;
-//		if(Wheel_Current_Summary>Wheel_Stall_Limit)
-//		{
-//			Disable_Motors();
-//			Set_Error_Code(Error_Code_RightWheel);
-//			return 1;
-//
-//		}
-////		if(Right_Wheel_Slow>100)
-////		{
-////			Disable_Motors();
+	uint8_t Time_Out=0;
+	int32_t Wheel_Current_Summary=0;
+	uint8_t Left_Wheel_Slow=0;
+	uint8_t Right_Wheel_Slow=0;
+
+	if(Get_Clean_Mode() == Clean_Mode_Navigation)
+		CM_CorBack(COR_BACK_20MM);
+	else
+		Quick_Back(20,20);
+	Disable_Motors();
+	usleep(100000);
+	/*------------------------------Self Check right wheel -------------------*/
+	if(Check_Code==Check_Right_Wheel)
+	{
+		Right_Wheel_Slow=0;
+		if(Get_Direction_Flag() == Direction_Flag_Left)
+		{
+			Set_Dir_Right();
+		}
+		else
+		{
+			Set_Dir_Left();
+		}
+		Set_Wheel_Speed(30,30);
+		usleep(50000);
+		Time_Out=10;
+		Wheel_Current_Summary=0;
+		while(Time_Out--)
+		{
+			Wheel_Current_Summary += robot::instance()->robot_get_rwheel_current();
+			usleep(20000);
+		}
+		Wheel_Current_Summary/=10;
+		if(Wheel_Current_Summary>Wheel_Stall_Limit)
+		{
+			Disable_Motors();
+			wav_play(WAV_ERROR_RIGHT_WHEEL);
+			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n",__FUNCTION__,__LINE__);
+			//Set_Error_Code(Error_Code_RightWheel);
+			return 1;
+
+		}
+		if(Right_Wheel_Slow>100)
+		{
+			Disable_Motors();
 ////			Set_Error_Code(Error_Code_RightWheel);
-////			return 1;
-////		}
-//		Stop_Brifly();
-//		Turn_Right(Turn_Speed,1800);
-//	}
-//	/*-----------------------------------------------------------Self Check-------------------*/
-//	else if(Check_Code==Check_Left_Wheel)
-//	{
-//		Left_Wheel_Slow=0;
-//		if(GPIOE->IDR&MCU_LW_DIR)
-//		{
-//			Set_Dir_Left();
-//		}
-//		else
-//		{
-//			Set_Dir_Right();
-//		}
-//		Set_Wheel_Speed(30,30);
-//		delay(5000);
-//		Time_Out=10;
-//		Wheel_Current_Summary=0;
-//		while(Time_Out--)
-//		{
-//			Wheel_Current_Summary += ADC_Value.Left_Wheel_Current;
-//			delay(1000);
-//		}
-//		Wheel_Current_Summary/=10;
-//		if(Wheel_Current_Summary>Wheel_Stall_Limit)
-//		{
-//			Disable_Motors();
-//			Set_Error_Code(Error_Code_RightWheel);
-//			return 1;
-//		}
-////		if(Left_Wheel_Slow>100)
-////		{
-////			Disable_Motors();
-////			Set_Error_Code(Error_Code_RightWheel);
-////			return 1;
-////		}
-//		Stop_Brifly();
-//		Turn_Left(Turn_Speed,1800);
-//	}
-//	else if(Check_Code==Check_Main_Brush)
-//	{
-//		CM_CorBack(COR_BACK_20MM);
-//		Turn_Right(Turn_Speed,1800);
-//		Set_MainBrush_PWM(60);
-//		delay(10000);
-//		if(GPIOD->IDR&MCU_MAINBRUSH_I_DET)
-//		{
-//			Set_Error_Code(Error_Code_MainBrush);
-//			Disable_Motors();
-//			return 1;
-//		}
-//		Reset_MainStall();
-//	}
-//	else if(Check_Code==Check_Vacuum)
-//	{
-//		#ifdef BLDC_INSTALL
-//		BLDC_OFF;
-//		delay(1000);
-//		Set_BLDC_TPWM(30);
-//		Set_Vac_Speed();
-//		BLDC_ON;
-//		delay(10000);
-//		if(GPIOD->IDR&MCU_VACUUM_I_DET)
-//		{
-//			Set_Error_Code(Error_Code_Fan_H);
-//			Disable_Motors();
-//			return 1;
-//		}
-//		#else
-//		Set_Vacuum_PWM(80);
-//		delay(10000);
-//		if(GPIOD->IDR&MCU_VACUUM_I_DET)
-//		{
-//			Set_Error_Code(Error_Code_Fan_H);
-//			Disable_Motors();
-//			return 1;
-//		}
-//		#endif
-//	}
-//	Stop_Brifly();
-//	Left_Wheel_Slow=0;
-//	Right_Wheel_Slow=0;
-//	Work_Motor_Configure();
-//	Move_Forward(5,5);
-//	return 0;
+			return 1;
+		}
+		Stop_Brifly();
+		Turn_Right(Turn_Speed,1800);
+	}
+	/*---------------------------Self Check left wheel -------------------*/
+	else if(Check_Code==Check_Left_Wheel)
+	{
+		Left_Wheel_Slow=0;
+		if(Get_Direction_Flag() == Direction_Flag_Right)
+		{
+			Set_Dir_Left();
+		}
+		else
+		{
+			Set_Dir_Right();
+		}
+		Set_Wheel_Speed(30,30);
+		usleep(50000);
+		Time_Out=10;
+		Wheel_Current_Summary=0;
+		while(Time_Out--)
+		{
+			Wheel_Current_Summary += robot::instance()->robot_get_lwheel_current();
+			usleep(20000);
+		}
+		Wheel_Current_Summary/=10;
+		if(Wheel_Current_Summary>Wheel_Stall_Limit)
+		{
+			Disable_Motors();
+			wav_play(WAV_ERROR_LEFT_WHEEL);
+			ROS_WARN("%s %d,left wheel stall maybe, please check!!\n");
+			//Set_Error_Code(Error_Code_RightWheel);
+			return 1;
+		}
+		if(Left_Wheel_Slow>100)
+		{
+			Disable_Motors();
+			//Set_Error_Code(Error_Code_RightWheel);
+			return 1;
+		}
+		Stop_Brifly();
+		Turn_Left(Turn_Speed,1800);
+	}
+	else if(Check_Code==Check_Main_Brush)
+	{
+		CM_CorBack(COR_BACK_20MM);
+		Turn_Right(Turn_Speed,1800);
+		Set_MainBrush_PWM(60);
+		usleep(100000);
+		//if(GPIOD->IDR&MCU_MAINBRUSH_I_DET)
+		//{
+			//Set_Error_Code(Error_Code_MainBrush);
+			Disable_Motors();
+			wav_play(WAV_ERROR_MAIN_BRUSH);
+			return 1;
+		//}
+		//Reset_MainStall();
+	}
+	else if(Check_Code==Check_Vacuum)
+	{
+		#ifdef BLDC_INSTALL
+		BLDC_OFF;
+		usleep(10000);
+		Set_BLDC_TPWM(30);
+		Set_Vac_Speed();
+		BLDC_ON;
+		usleep(100000);
+		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
+		//{
+			//Set_Error_Code(Error_Code_Fan_H);
+			Disable_Motors();
+			return 1;
+		//}
+		#else
+		Set_BLDC_Speed(80);
+		sleep(1);
+		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
+		//{
+			//Set_Error_Code(Error_Code_Fan_H);
+			Disable_Motors();
+			wav_play(WAV_ERROR_SUCTION_FAN);
+			return 1;
+		//}
+		#endif
+	}
+	Stop_Brifly();
+	Left_Wheel_Slow=0;
+	Right_Wheel_Slow=0;
+	Work_Motor_Configure();
+	Move_Forward(5,5);
+	return 0;
 }
 
 uint8_t Check_Bat_Home(void)
@@ -1233,24 +1241,24 @@ int16_t Get_FrontOBST_Value(void)
 
 int16_t Get_LeftOBST_Value(void)
 {
-    return Left_OBSTrig_Value + 200;
+	return Left_OBSTrig_Value + 200;
 }
 
 uint8_t Is_WallOBS_Near(void)
 {
-    if (robot::instance()->robot_get_obs_front() > (Front_OBSTrig_Value + 500)) {
+	if (robot::instance()->robot_get_obs_front() > (Front_OBSTrig_Value + 500)) {
 		return 1;
 	}
-    if (robot::instance()->robot_get_obs_right() > (Right_OBSTrig_Value + 500)) {
+	if (robot::instance()->robot_get_obs_right() > (Right_OBSTrig_Value + 500)) {
 		return 1;
 	}
-    if (robot::instance()->robot_get_obs_left() > (Front_OBSTrig_Value + 1000)) {
+	if (robot::instance()->robot_get_obs_left() > (Front_OBSTrig_Value + 1000)) {
 		return 1;
 	}
 	if (robot::instance()->robot_get_left_wall() > (Leftwall_OBSTrig_Vale +500)){
 		return 1;
 	}
-    return 0;
+	return 0;
 }
 
 void Adjust_OBST_Value(void)
@@ -1258,7 +1266,7 @@ void Adjust_OBST_Value(void)
 	if(robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value )
 		Front_OBSTrig_Value += 800;
 	if(robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
-		Left_OBSTrig_Value  += 800;
+		Left_OBSTrig_Value	+= 800;
 	if(robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
 		Right_OBSTrig_Value += 800;
 }

@@ -1,10 +1,10 @@
 /*
  ******************************************************************************
- * @file    AI Cleaning Robot
- * @author  ILife Team Dxsong
+ * @file	AI Cleaning Robot
+ * @author	ILife Team Dxsong
  * @version V1.0
- * @date    17-Nov-2011
- * @brief   Move near the wall on the left in a certain distance
+ * @date	17-Nov-2011
+ * @brief	Move near the wall on the left in a certain distance
  ******************************************************************************
  * <h2><center>&copy; COPYRIGHT 2011 ILife CO.LTD</center></h2>
  ******************************************************************************
@@ -819,6 +819,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			/*------------------------------------------------------Check Current--------------------------------*/
 			if (Check_Motor_Current()) {
 				ROS_WARN("%s %d: Check_Motor_Current_Error", __FUNCTION__, __LINE__);
+				Self_Check(Check_Motor_Current());
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
