@@ -1261,7 +1261,7 @@ uint8_t WF_End_Wall_Follow(void){
 	MapTouringType	mt_state = MT_None;
 	int16_t home_angle = robot::instance()->robot_get_home_angle();
 
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	CM_update_position(Gyro_GetAngle(0));
 	WF_Mark_Home_Point();
 	CM_go_home();
 

@@ -211,21 +211,12 @@ int32_t CM_ABS(int32_t A, int32_t B)
 	return ((A > B) ? (A - B) : (B - A));
 }
 
-void CM_update_position(uint16_t heading_0, int16_t heading_1) {
+void CM_update_position(uint16_t heading) {
 	int8_t	e;
-	int16_t c, d, x, y, path_heading;
+	int16_t c, d, x, y;
 	int32_t i, j, k;
 
 	float	pos_x, pos_y;
-
-	if (heading_0 > heading_1 && heading_0 - heading_1 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} else if (heading_1 > heading_0 && heading_1 - heading_0 > 1800) {
-		path_heading = (uint16_t)((heading_0 + heading_1 + 3600) >> 1) % 3600;
-	} else {
-		path_heading = (uint16_t)(heading_0 + heading_1) >> 1;
-	}
-
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
@@ -235,7 +226,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
-				CM_count_normalize(path_heading, CELL_SIZE * c, CELL_SIZE * d, &i, &j);
+				CM_count_normalize(heading, CELL_SIZE * c, CELL_SIZE * d, &i, &j);
 				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
 
 				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER) {
@@ -249,7 +240,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 #if (ROBOT_SIZE == 5)
 
-	CM_count_normalize(heading_0, -CELL_SIZE_2, CELL_SIZE, &i, &j);
+	CM_count_normalize(heading, -CELL_SIZE_2, CELL_SIZE, &i, &j);
 	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
 		//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
 	} else {
@@ -257,11 +248,11 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 	}
 
 	for (c = 1; c >= -1; --c) {
-		CM_count_normalize(heading_0, c * CELL_SIZE, CELL_SIZE, &i, &j);
+		CM_count_normalize(heading, c * CELL_SIZE, CELL_SIZE, &i, &j);
 		Map_SetCell(MAP, i, j, CLEANED);
 	}
 
-	CM_count_normalize(heading_0, CELL_SIZE_2, CELL_SIZE, &i, &j);
+	CM_count_normalize(heading, CELL_SIZE_2, CELL_SIZE, &i, &j);
 	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
 		//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
 	} else {
@@ -269,7 +260,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 	}
 
 	if (Get_OBS_Status() & Status_Left_OBS) {
-		CM_count_normalize(0, heading_0, CELL_SIZE_3, CELL_SIZE, &i, &j);
+		CM_count_normalize(0, heading, CELL_SIZE_3, CELL_SIZE, &i, &j);
 		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
@@ -286,7 +277,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 
 #else
 	for (c = 1; c >= -1; --c) {
-		CM_count_normalize(heading_0, c * CELL_SIZE, CELL_SIZE, &i, &j);
+		CM_count_normalize(heading, c * CELL_SIZE, CELL_SIZE, &i, &j);
 		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
 			//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
 		} else {
@@ -298,7 +289,7 @@ void CM_update_position(uint16_t heading_0, int16_t heading_1) {
 	}
 
 	if (Get_OBS_Status() & Status_Left_OBS) {
-		CM_count_normalize(heading_0, CELL_SIZE_2, CELL_SIZE, &i, &j);
+		CM_count_normalize(heading, CELL_SIZE_2, CELL_SIZE, &i, &j);
 		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
@@ -676,7 +667,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		isBumperTriggered = Get_Bumper_Status();
 		if (isBumperTriggered) {
 			Stop_Brifly();
-			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+			CM_update_position(Gyro_GetAngle(0));
 			CM_update_map(action, isBumperTriggered);
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
@@ -813,7 +804,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 		Diff = Diff > 1800 ? 3600 - Diff : Diff;
 		if ((Diff < 10) && (Diff > (-10))) {
 			Stop_Brifly();
-			CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+			CM_update_position(Gyro_GetAngle(0));
 
 			ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(0), Diff);
 			return;
@@ -885,7 +876,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	Target_Course = Rotate_Angle = Integrated = Left_Speed = Right_Speed = 0;
 	Base_Speed = BASE_SPEED;
 
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	CM_update_position(Gyro_GetAngle(0));
 
 	if (rotate_is_needed == true) {
 		Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
@@ -920,7 +911,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	}
 
 	//usleep(1000);
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	CM_update_position(Gyro_GetAngle(0));
 
 	if (Get_LeftBrush_Stall())Set_LeftBrush_Stall(0);
 	if (Get_RightBrush_Stall())Set_RightBrush_Stall(0);
@@ -1068,7 +1059,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 				Set_Wheel_Speed(0, 0);
 				Set_Dir_Backward();
 				usleep(300);
-				CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+				CM_update_position(Gyro_GetAngle(0));
 
 				if (abs((int) (atan(((double)Gyro_GetXAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT ||
 					abs((int) (atan(((double)Gyro_GetYAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT) {
@@ -1366,7 +1357,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 #endif
 
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		CM_update_position(Gyro_GetAngle(0));
 
 #if 1
 		/* Check map boundary. */
@@ -1496,7 +1487,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	if (stop_is_needed == true) {
 		Stop_Brifly();
 	}
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	CM_update_position(Gyro_GetAngle(0));
 
 	ROS_INFO("%s %d: move to point: %d\tGyro Calibration: %d", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
 	set_gyro(1, 1);
@@ -2626,7 +2617,7 @@ void CM_CorBack(uint16_t dist)
 
 	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
 	Stop_Brifly();
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	CM_update_position(Gyro_GetAngle(0));
 	Set_Dir_Backward();
 	Set_Wheel_Speed(8, 8);
 	Reset_Wheel_Step();
@@ -2641,7 +2632,7 @@ void CM_CorBack(uint16_t dist)
 			break;
 		}
 
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		CM_update_position(Gyro_GetAngle(0));
 		usleep(10000);
 		Counter_Watcher++;
 		SP = 8 + Counter_Watcher / 100;
@@ -2667,7 +2658,7 @@ void CM_CorBack(uint16_t dist)
 			break;
 		}
 	}
-	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+	CM_update_position(Gyro_GetAngle(0));
 	Reset_TempPWM();
 	Stop_Brifly();
 	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);

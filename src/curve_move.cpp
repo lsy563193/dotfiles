@@ -99,7 +99,7 @@ MapTouringType CurveMove_MoveToPoint()
 
 	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)\n", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(0), angle_start);
 	while (1) {
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		CM_update_position(Gyro_GetAngle(0));
 
 		angle_diff = Gyro_GetAngle(0) - angle_start;
 		if (angle_diff >= 1800) {
