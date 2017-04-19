@@ -189,17 +189,6 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 
 	this->is_sensor_ready = true;
-//	if (this->is_sensor_ready == false) {
-//		if (time(NULL) - start_time > 2) {
-//			ROS_INFO("%s %d: Gyro starting angle: %d", __FUNCTION__, __LINE__, (int16_t)((this->angle * 10 + 3600)) % 3600);
-
-//			Gyro_SetImuOffset(((int16_t)(this->angle * 10 + 3600)) % 3600);
-//			Gyro_SetImuAngle(((int16_t)(this->angle * 10 + 3600)) % 3600, this->angle_v);
-//			this->is_sensor_ready = true;
-//		}
-//	} else {
-//		Gyro_SetImuAngle(((int16_t)(this->angle * 10 + 3600)) % 3600, this->angle_v);
-//	}
 
 #if 0
 	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v: %f", __FUNCTION__, __LINE__, angle, angle_v);
