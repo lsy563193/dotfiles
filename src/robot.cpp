@@ -878,7 +878,7 @@ bool robot::align(void)
 			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
-	if(except_event())
+	if(except_event() || count_n_10ms == 0)
 		return false;
 
 	count_n_10ms = 500;
