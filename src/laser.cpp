@@ -14,7 +14,7 @@ laser::laser()
 {
 	this->init();
 
-	this->scan_sub = this->laser_node_handler.subscribe("scan", 20, &laser::laser_scan_cb, this);
+	this->scan_sub = this->laser_node_handler.subscribe("scan", 1, &laser::laser_scan_cb, this);
 
 	this->is_laser_ready = false;
 
