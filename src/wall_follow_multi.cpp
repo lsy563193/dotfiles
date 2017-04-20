@@ -835,15 +835,17 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					}
 				}*/
 				if (Remote_Key(Remote_Home)) {
+					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
 					WF_End_Wall_Follow();
 					return 0;
 				}
-				/*if (Remote_Key(Remote_Spot)) {
+				if (Remote_Key(Remote_Spot)) {
+					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
-					Set_Clean_Mode(Clean_Mode_Spot);
-					break;
-				}*/
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
 				Reset_Rcon_Remote();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
