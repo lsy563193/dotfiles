@@ -2233,7 +2233,11 @@ uint8_t Is_VirtualWall()
 bool Set_Gyro_On(void)
 {
 	static int count=0;
-	if (Is_Gyro_On());
+	if (Is_Gyro_On()){
+		ROS_INFO("gyro start already");
+		return true;
+	}
+
 	control_set(CTL_GYRO, 0x02);
 	ROS_INFO("waiting for gyro start");
 
@@ -2250,14 +2254,11 @@ bool Set_Gyro_On(void)
 	}
 	if(count == 10)
 	{
-		Set_Gyro_Status();
-	if(count == 10){
 		ROS_INFO("gyro start ok");
 		Set_Gyro_Status();
 		return true;
 	}
-	Set_Gyro_Status();
-	}
+	ROS_INFO("gyro start fail");
 	Reset_Gyro_Status();
 	Set_Gyro_Off();
 	return false;
