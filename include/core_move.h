@@ -104,9 +104,9 @@ public:
 
 	~Motion_controller();
 private:
-	enum start_object {gyro, lidar, obs_det, align, slam,start_obs};
+//	enum start_object {gyro, lidar, obs_det, align, slam,start_obs};
 
-	std::bitset<start_obs> start_bit;
+//	std::bitset<start_obs> start_bit;
 };
 #endif
 

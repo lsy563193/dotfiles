@@ -2036,18 +2036,12 @@ void CM_go_home()
 
 bool start_obstacle_detector(void)
 {
-	if(Get_Clean_Mode() == Clean_Mode_WallFollow)
-		return false;
+	system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
+	if (!except_event())
+		return true;
 
-	if (robot::instance()->align_active() == true)
-	{
-		system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
-		if (!except_event())
-			return true;
-
-		ROS_WARN("rosnode kill /obstacle_detector ");
-		system("rosnode kill /obstacle_detector 2>/dev/null &");
-	}
+	ROS_WARN("rosnode kill /obstacle_detector ");
+	system("rosnode kill /obstacle_detector 2>/dev/null &");
 	return false;
 }
 
@@ -2066,6 +2060,7 @@ bool start_slam(void)
 	robot::instance()->stop_slam();
 	return false;
 }
+/*
 
 void show_time(std::function<void(void)> task){
 	auto gyro_start = std::chrono::system_clock::now();
@@ -2074,6 +2069,7 @@ void show_time(std::function<void(void)> task){
 	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
 	std::cout <<"this task runs:" << ms.count() << " ms" << std::endl;
 }
+*/
 
 Motion_controller::Motion_controller()
 {
@@ -2086,23 +2082,22 @@ Motion_controller::Motion_controller()
 	} else
 #endif
 	{
-		if (Set_Gyro_On())
-			start_bit.set(gyro);
+		if (!Set_Gyro_On())
+			return;
 
 		Work_Motor_Configure();
-		if (start_bit[gyro] && robot::instance()->start_lidar())
-			start_bit.set(lidar);
 
-		if (start_bit[lidar] && start_obstacle_detector())
-			start_bit.set(obs_det);
+		if (!robot::instance()->start_lidar())
+			return;
 
-		if (start_bit[lidar] && robot::instance()->align())
-			start_bit.set(align);
-
-		if (start_bit[lidar] && start_slam())
-			start_bit.set(slam);
+		if (Get_Clean_Mode() == Clean_Mode_Navigation && robot::instance()->align_active())
+		{
+			if (!start_obstacle_detector()) return;
+			if (!robot::instance()->align()) return;
+		}
+		start_slam();
 	}
-};
+}
 
 Motion_controller::~Motion_controller()
 {
