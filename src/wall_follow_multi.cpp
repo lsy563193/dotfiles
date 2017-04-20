@@ -833,24 +833,22 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 			if (Remote_Key(Remote_All)) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				if(Is_MoveWithRemote()){
-					/*if (Remote_Key(Remote_Random)) {
+				/*if(Is_MoveWithRemote()){
+					if (Remote_Key(Remote_Random)) {
 						Set_Clean_Mode(Clean_Mode_RandomMode);
 						break;
-					}*/
-				}
+					}
+				}*/
 				if (Remote_Key(Remote_Home)) {
 					Set_MoveWithRemote();
-					Set_Clean_Mode(Clean_Mode_GoHome);
-					Move_Forward(10, 10);
-					SetHomeRemote();
-					break;
+					WF_End_Wall_Follow();
+					return 0;
 				}
-				if (Remote_Key(Remote_Spot)) {
+				/*if (Remote_Key(Remote_Spot)) {
 					Set_MoveWithRemote();
 					Set_Clean_Mode(Clean_Mode_Spot);
 					break;
-				}
+				}*/
 				Reset_Rcon_Remote();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
