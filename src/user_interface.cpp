@@ -83,11 +83,11 @@ void User_Interface(void)
 			return;
 	  	}
 		/*
-		if (Get_Gyro_Status() == 0){
+		if (!Is_Gyro_On()){
 			Set_Gyro_On();
 			Set_Gyro_Status();
 			usleep(2000000);
-			//printf("Gyro_Status%d\n", Get_Gyro_Status());
+			//printf("Gyro_Status%d\n", Is_Gyro_On());
 		}*/
 		/*
 		if(remote_cmd == Remote_Right|| remote_cmd ==Remote_Left||remote_cmd == Remote_Forward)

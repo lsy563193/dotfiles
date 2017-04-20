@@ -4,14 +4,14 @@
 #include "mathematics.h"
 #include "debug.h"
 #include <vector>
+#include <bitset>
 #define MS_Clear 		0x00
 #define MS_OBS   		0x01
 #define MS_Bumper		0x02
 #define MS_Cliff 		0x04
 #define MS_User 		0x08
 #define MS_Home			0x10
-#define MS_Clean 		0x20
-#define MS_Spot 		0x40
+#define MS_Clean 		0x20 #define MS_Spot 		0x40
 #define MS_Error 		0x80
 
 #define TILT_PITCH_LIMIT	(100)
@@ -98,6 +98,15 @@ void CM_Matrix_Rotate(int32_t x_in, int32_t y_in, int32_t *x_out, int32_t *y_out
 MapTouringType CM_handleExtEvent(void);
 
 void CM_create_home_boundary(void);
+class Motion_controller {
+public:
+	Motion_controller();
 
+	~Motion_controller();
+private:
+	enum start_object {gyro, lidar, obs_det, align, slam,start_obs};
+
+	std::bitset<start_obs> start_bit;
+};
 #endif
 

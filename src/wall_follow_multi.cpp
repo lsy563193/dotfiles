@@ -635,7 +635,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
 	Reset_MoveWithRemote();
-	Wall_Follow_Init_Slam();
 
 	//Initital home point
 	Home_Point.clear();
@@ -649,12 +648,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
-	if (Get_Gyro_Status() == 0){
-		Set_Gyro_On();
-		Set_Gyro_Status();
-		//ROS_INFO("%s %d: Gyro_Status %d", __FUNCTION__, __LINE__, Get_Gyro_Status());
-	}
 
+	Motion_controller motion;
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
 
@@ -1083,17 +1078,17 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				if (Get_LeftWheel_Step() < 500) {
 					if (Get_WallAccelerate() < 100) {
 						Move_Forward(10, 10);
-					} 
+					}
 					else {
 						Move_Forward(15, 15);
 					}
-				} 
+				}
 				else {
 					Move_Forward(23, 23);
 				}
 				//WFM_update();
 				WF_Check_Loop_Closed(Gyro_GetAngle());
-			} 
+			}
 			else {
 				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 
@@ -1163,7 +1158,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 					Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
 					WF_Check_Loop_Closed(Gyro_GetAngle());
-				} 
+				}
 				else {
 					Stop_Brifly();
 					if (Get_WallAccelerate() < 2000){
@@ -1225,7 +1220,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 void Wall_Follow_Init_Slam(void){
 	extern int8_t enable_slam_offset;
 	extern void start_slam(void);
-	robot::instance()->Subscriber();
+//	robot::instance()->Subscriber();
 	robot::instance()->start_lidar();
 	//std::async(std::launch::async, start_slam);
 	start_slam();

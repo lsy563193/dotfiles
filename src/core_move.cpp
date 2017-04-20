@@ -2034,9 +2034,21 @@ void CM_go_home()
 	}
 }
 
-void start_obstacle_detector(void)
+bool start_obstacle_detector(void)
 {
-	system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
+	if(Get_Clean_Mode() == Clean_Mode_WallFollow)
+		return false;
+
+	if (robot::instance()->align_active() == true)
+	{
+		system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
+		if (!except_event())
+			return true;
+
+		ROS_WARN("rosnode kill /obstacle_detector ");
+		system("rosnode kill /obstacle_detector 2>/dev/null &");
+	}
+	return false;
 }
 
 void stop_obstacle_detector(void)
@@ -2044,9 +2056,15 @@ void stop_obstacle_detector(void)
 	system("rosnode kill /obstacle_detector 2>/dev/null &");
 }
 
-void start_slam(void)
+bool start_slam(void)
 {
 	robot::instance()->start_slam();
+	if(!except_event()){
+		enable_slam_offset = 1;
+		return true;
+	}
+	robot::instance()->stop_slam();
+	return false;
 }
 
 void show_time(std::function<void(void)> task){
@@ -2057,66 +2075,64 @@ void show_time(std::function<void(void)> task){
 	std::cout <<"this task runs:" << ms.count() << " ms" << std::endl;
 }
 
-class Motion_controller {
-public:
-	Motion_controller()
+Motion_controller::Motion_controller()
+{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Paused())
 	{
-	#if CONTINUE_CLEANING_AFTER_CHARGE
-		if (robot::instance()->Is_Cleaning_Paused())
-		{
-			Work_Motor_Configure();
-			robot::instance()->start_lidar();
-			enable_slam_offset = 1;
-		}
-		else
-  #endif
-    {
-		robot::instance()->Subscriber();
 		Work_Motor_Configure();
-		if (robot::instance()->align_active() == true)
-		{
-			start_obstacle_detector();
-		}
-
 		robot::instance()->start_lidar();
-
-		if (robot::instance()->align_active() == true)
-		{
-			robot::instance()->align();
-			stop_obstacle_detector();
-		}
-
-		start_slam();
 		enable_slam_offset = 1;
-    }
-	};
-
-	~Motion_controller()
-	{
-	#if CONTINUE_CLEANING_AFTER_CHARGE
-		if (robot::instance()->Is_Cleaning_Paused())
-		{
-			Disable_Motors();
-			robot::instance()->stop_lidar();
-			enable_slam_offset = 0;
-		}
-		else
+	} else
 #endif
-		{
+	{
+		if (Set_Gyro_On())
+			start_bit.set(gyro);
+
+		Work_Motor_Configure();
+		if (start_bit[gyro] && robot::instance()->start_lidar())
+			start_bit.set(lidar);
+
+		if (start_bit[lidar] && start_obstacle_detector())
+			start_bit.set(obs_det);
+
+		if (start_bit[lidar] && robot::instance()->align())
+			start_bit.set(align);
+
+		if (start_bit[align] && start_slam())
+			start_bit.set(slam);
+	}
+};
+
+Motion_controller::~Motion_controller()
+{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Paused())
+	{
 		Disable_Motors();
 		robot::instance()->stop_lidar();
-		if (robot::instance()->align_active())
-		{
-			robot::instance()->align_exit();
-			stop_obstacle_detector();
-		}
-		show_time(Set_Gyro_Off);
-		Reset_Gyro_Status();
-		is_line_angle_offset = false;
 		enable_slam_offset = 0;
+	} else
+#endif
+	{
+		Disable_Motors();
+
+//		if(start_bit[lidar])
+		//try 3times;make sure to stop
+		robot::instance()->stop_lidar();
+		robot::instance()->stop_lidar();
+		robot::instance()->stop_lidar();
+
+//		if(start_bit[align])
+		robot::instance()->align_exit();
+
+
+//		if(start_bit[slam])
 		robot::instance()->stop_slam();
-		robot::instance()->UnSubscriber();
-		}
+
+//		if(start_bit[obs_det])
+		stop_obstacle_detector();
+
 	}
 };
 
@@ -2284,20 +2300,12 @@ uint8_t CM_Touring(void)
 #endif
 	}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->Is_Cleaning_Paused())
-#endif
-	{
-		if (!Set_Gyro_On())
-		{
-			Set_Gyro_Off();
-			ROS_INFO("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return 0;
-		}
-		Set_Gyro_Status();
-	}
 	Motion_controller motion;
+	if(except_event()){
+		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return 0;
+	}
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
 		  usleep(10000);

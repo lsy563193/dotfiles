@@ -483,6 +483,7 @@ void set_start_charge(void);
 
 void set_stop_charge(void);
 
+bool except_event();
 bool Set_Gyro_On(void);
 void Set_Gyro_Off(void);
 
@@ -618,7 +619,7 @@ void Set_Gyro_Status(void);
 
 void Reset_Gyro_Status(void);
 
-uint8_t Get_Gyro_Status(void);
+uint8_t Is_Gyro_On(void);
 
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif

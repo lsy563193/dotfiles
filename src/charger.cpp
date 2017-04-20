@@ -232,7 +232,7 @@ void GoHome(void)
 	// This step is for counting angle change when the robot turns.
 	long Gyro_Step = 0;
 
-	if (!Get_Gyro_Status())
+	if (!Is_Gyro_On())
 	{
 		// Stop all the motors to keep the robot at peace, so that it can successfully open the gyrp.
 		Disable_Motors();
