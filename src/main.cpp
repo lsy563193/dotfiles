@@ -27,10 +27,11 @@
 void protect_function()
 {
 	//Bumper protect
-	Set_Gyro_On();
-	ROS_INFO("Bumper protect  check");
-	if (Get_Bumper_Status())
+	if (Get_Bumper_Status()){
+		ROS_INFO("Bumper protect  check");
+		Set_Gyro_On();
 		Turn_Left_At_Init(Max_Speed, 1800);//save itself
+	}
 	if (Get_Bumper_Status())
 		Beep(5, 20, 0, 1); //can't save itself, stop and give an alarm by beep
 }
