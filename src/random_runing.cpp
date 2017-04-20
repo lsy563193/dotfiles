@@ -75,10 +75,10 @@ void Random_Running_Mode(void)
 	uint8_t Virtual_Wall_C = 0, Virtual_Wall_NG = 0;
 #endif
 
-        if (Get_Gyro_Status() == 0){
+        if (!Is_Gyro_On()){
 			Set_Gyro_On();
        		Set_Gyro_Status();
-        	//printf("Gyro_Status%d\n", Get_Gyro_Status());
+			//printf("Gyro_Status%d\n", Is_Gyro_On());
         }
 
 	Reset_Work_Time();

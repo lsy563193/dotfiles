@@ -1330,7 +1330,8 @@ void Reset_Gyro_Status(void)
 	Gyro_Status = 0;
 }
 
-uint8_t Get_Gyro_Status(void){
+uint8_t Is_Gyro_On(void)
+{
 	return Gyro_Status;
 }
 
@@ -2231,7 +2232,7 @@ uint8_t Is_VirtualWall()
 bool Set_Gyro_On(void)
 {
 	static int count=0;
-	if (Get_Gyro_Status());
+	if (Is_Gyro_On());
 	control_set(CTL_GYRO, 0x02);
 	ROS_INFO("waiting for gyro start");
 

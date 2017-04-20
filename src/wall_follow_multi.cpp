@@ -828,27 +828,40 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 			if (Remote_Key(Remote_All)) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				if(Is_MoveWithRemote()){
-					/*if (Remote_Key(Remote_Random)) {
+				/*if(Is_MoveWithRemote()){
+					if (Remote_Key(Remote_Random)) {
 						Set_Clean_Mode(Clean_Mode_RandomMode);
 						break;
-					}*/
-				}
+					}
+				}*/
 				if (Remote_Key(Remote_Home)) {
+					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
-					Set_Clean_Mode(Clean_Mode_GoHome);
-					Move_Forward(10, 10);
-					SetHomeRemote();
-					break;
+					WF_End_Wall_Follow();
+					return 0;
 				}
 				if (Remote_Key(Remote_Spot)) {
+					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
-					Set_Clean_Mode(Clean_Mode_Spot);
-					break;
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
 				}
-				Reset_Rcon_Remote();
+				if (Remote_Key(Remote_Clean)) {
+					Reset_Rcon_Remote();
+					Set_MoveWithRemote();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
+				if (Remote_Key(Remote_Wall_Follow)) {
+					Reset_Rcon_Remote();
+					Set_MoveWithRemote();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
+				
+				/*Reset_Rcon_Remote();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				break;
+				break;*/
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
 			if (Check_Bat_SetMotors(135000, 80000, 100000)) {//Low Battery Event
