@@ -140,7 +140,7 @@ private:
 	double origin_x;
 	double origin_y;
 	bool	is_map_ready;
-	enum align_state{
+	volatile enum align_state{
 		detecting=0,
 		begin=1,
 		finish=2,

@@ -431,35 +431,34 @@ std::vector<int8_t> *robot::robot_get_map_data()
 
 void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
 {
+//	ROS_WARN("robot_obstacles_cb");
 	if (laser::instance()->is_ready() == false || is_sensor_ready == false)
 		return;
 
+//	ROS_WARN("2robot_obstacles_cb");
 	line_align_ = begin;
 
-	if (line_align_ == begin)
+	if (msg->segments.size() != 0)
 	{
-		if (msg->segments.size() != 0)
-		{
 //			ROS_INFO("size = %d", msg->segments.size());
-			for (auto s : msg->segments)
-			{
-				Point first(s.first_point.x, s.first_point.y);
-				Point last(s.last_point.x, s.last_point.y);
-				Segment seg(first, last);
+		for (auto s : msg->segments)
+		{
+			Point first(s.first_point.x, s.first_point.y);
+			Point last(s.last_point.x, s.last_point.y);
+			Segment seg(first, last);
 //				std::cout << "seg: " << seg << std::endl;
 
-				auto dist = seg.length();
+			auto dist = seg.length();
 
 //				if (dist < 1)
 //					ROS_INFO("dist = %f", dist);
 //				else
 //					ROS_INFO("dist = %f >1", dist);
 
-				if (dist < 1)
-					continue;
+			if (dist < 1)
+				continue;
 
-				segmentss.classify(seg);
-			}
+			segmentss.classify(seg);
 		}
 //		ROS_INFO("+++++++++++++++++++++++++++++");
 	}
