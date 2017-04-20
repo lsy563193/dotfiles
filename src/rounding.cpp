@@ -367,7 +367,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			if (Temp_Bumper_Status & LeftBumperTrig) {
 				Set_Wheel_Speed(0, 0);
-				usleep(300000);
 				if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
 					Wall_Distance = robot::instance()->robot_get_left_wall() / 3;
 				} else {
@@ -553,7 +552,6 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			if (Temp_Bumper_Status & RightBumperTrig) {
 				Set_Wheel_Speed(0, 0);
-				usleep(300000);
 				if (robot::instance()->robot_get_right_wall() > (Wall_Low_Limit)) {
 					Wall_Distance = robot::instance()->robot_get_right_wall() / 3;
 				} else {
