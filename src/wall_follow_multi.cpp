@@ -846,9 +846,22 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return 0;
 				}
-				Reset_Rcon_Remote();
+				if (Remote_Key(Remote_Clean)) {
+					Reset_Rcon_Remote();
+					Set_MoveWithRemote();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
+				if (Remote_Key(Remote_Wall_Follow)) {
+					Reset_Rcon_Remote();
+					Set_MoveWithRemote();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
+				
+				/*Reset_Rcon_Remote();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				break;
+				break;*/
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
 			if (Check_Bat_SetMotors(135000, 80000, 100000)) {//Low Battery Event
