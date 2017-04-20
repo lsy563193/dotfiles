@@ -232,14 +232,18 @@ void GoHome(void)
 	// This step is for counting angle change when the robot turns.
 	long Gyro_Step = 0;
 
-	// Stop all the motors to keep the robot at peace, so that it can successfully open the gyrp.
-	Disable_Motors();
-	ROS_INFO("GoHome function opening gyro.");
-	while(robot::instance()->robot_get_angle_v() == 0)
+	if (!Get_Gyro_Status())
 	{
-		usleep(100000);
+		// Stop all the motors to keep the robot at peace, so that it can successfully open the gyrp.
+		Disable_Motors();
+		ROS_INFO("GoHome function opening gyro.");
+		while(!Set_Gyro_On())
+		{
+			ROS_INFO("GoHome function open gyro failed, retry.");
+			usleep(1000);
+		}
+		ROS_INFO("GoHome function open gyro succeeded.");
 	}
-	ROS_INFO("GoHome function open gyro succeeded.");
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
 
