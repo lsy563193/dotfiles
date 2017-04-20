@@ -10,6 +10,7 @@
 
 static	laser *laser_obj = NULL;
 
+void ladar_gpio(char);
 laser::laser()
 {
 	this->init();
@@ -18,12 +19,14 @@ laser::laser()
 
 	this->is_laser_ready = false;
 
+	ladar_gpio('1');
 	ROS_INFO("%s %d: laser init done!", __FUNCTION__, __LINE__);
 }
 
 laser::~laser()
 {
 	laser_obj = NULL;
+	ladar_gpio('0');
 }
 
 laser *laser::instance()
