@@ -622,6 +622,8 @@ void Reset_Gyro_Status(void);
 uint8_t Is_Gyro_On(void);
 
 int32_t ABS_Minus(int32_t A,int32_t B);
+
+void ladar_gpio(char val);
 #endif
 
 

@@ -2062,7 +2062,8 @@ bool start_slam(void)
 
 	auto count_n_10ms = 1000;
 	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
-		  usleep(10000);
+//		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+		usleep(10000);
 	}
 	if(count_n_10ms == 0){
 		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
@@ -2125,8 +2126,6 @@ Motion_controller::~Motion_controller()
 
 //		if(start_bit[lidar])
 		//try 3times;make sure to stop
-		robot::instance()->stop_lidar();
-		robot::instance()->stop_lidar();
 		robot::instance()->stop_lidar();
 
 //		if(start_bit[align])

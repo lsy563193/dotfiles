@@ -950,11 +950,13 @@ bool robot::start_lidar(void)
 		{
 			// todo pull down gpio
 			ROS_INFO("lidar start false, power off and try again!!!");
-			stop_mator_cli_.call(empty);
+			stop_lidar();
 			sleep(2);
 		}
 		first_start = false;
-		ROS_INFO("start_motor");
+		ladar_gpio('1');
+		usleep(2000);
+		ROS_INFO("start_lidar");
 		start_mator_cli_.call(empty);
 		count_6s = 600;
 		laser::instance()->is_ready(false);
@@ -979,6 +981,7 @@ void robot::stop_lidar(void){
 		laser::instance()->is_ready(false);
 		ROS_INFO("stop_lidar");
 		stop_mator_cli_.call(empty);
+		ladar_gpio('0');
 //		sleep(2);
 //	}while (laser::instance()->is_ready() == true);
 

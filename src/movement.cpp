@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include "robot.hpp"
 #include <time.h>
+#include <fcntl.h>
 
 #include "gyro.h"
 #include "movement.h"
@@ -2292,3 +2293,12 @@ int32_t ABS_Minus(int32_t A,int32_t B)
 	}
 	return B-A;
 }
+
+void ladar_gpio(char val)
+{
+	int fd = open("/proc/driver/wifi-pm/power", O_WRONLY);
+	char buf[] = {val};
+	write(fd,buf,1);
+	close(fd);
+}
+
