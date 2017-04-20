@@ -743,7 +743,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				ROS_INFO("Wall Follow time longer than 60 minutes");
 				ROS_INFO("time now : %d", (int(time(NULL)) - escape_trapped_timer));
 				WF_End_Wall_Follow();
-				break;
+				return 1;
 			}
 
 #if 0
@@ -815,16 +815,18 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			if (Check_Motor_Current()) {
 				ROS_WARN("%s %d: Check_Motor_Current_Error", __FUNCTION__, __LINE__);
 				Self_Check(Check_Motor_Current());
+				WF_Break_Wall_Follow();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				break;
+				return 0;
 			}
 
 			/*------------------------------------------------------Touch and Remote event-----------------------*/
 			if (Touch_Detect()) {
 				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
 				Reset_Touch();
+				WF_Break_Wall_Follow();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				break;
+				return 0;
 			}
 			if (Remote_Key(Remote_All)) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
@@ -843,18 +845,21 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				if (Remote_Key(Remote_Spot)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					WF_Break_Wall_Follow();
+					Set_Clean_Mode(Clean_Mode_Spot);
 					return 0;
 				}
 				if (Remote_Key(Remote_Clean)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
+					WF_Break_Wall_Follow();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return 0;
 				}
 				if (Remote_Key(Remote_Wall_Follow)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
+					WF_Break_Wall_Follow();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return 0;
 				}
@@ -884,14 +889,16 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Cliff_Move_Back();
 				if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right)){
 					Set_Clean_Mode(Clean_Mode_Userinterface);
+					WF_Break_Wall_Follow();
 					ROS_INFO("Get_Cliff_Trig");
-					break;
+					return 0;
 				}
 				if(Get_Cliff_Trig()){
 					if(Cliff_Escape()){
 						Set_Clean_Mode(Clean_Mode_Userinterface);
+						WF_Break_Wall_Follow();
 						ROS_INFO("Cliff_Escape");
-						return 1;
+						return 0;
 					}
 				}
 
@@ -1016,8 +1023,9 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						Reset_Touch();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
+						WF_Break_Wall_Follow();
 						ROS_INFO("%s %d: Check: Bumper 2! break", __FUNCTION__, __LINE__);
-						break;
+						return 0;
 					}
 					//STOP_BRIFLY;
 					Stop_Brifly();
@@ -1038,9 +1046,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					if (Is_Bumper_Jamed()) {
 						Reset_Touch();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
+						WF_Break_Wall_Follow();
 						//USPRINTF("%s %d: Check: Bumper 3! break\n", __FUNCTION__, __LINE__);
 						ROS_INFO("%s %d: Check: Bumper 3! break", __FUNCTION__, __LINE__);
-						break;
+						return 0;
 					}
 
 					//STOP_BRIFLY;
@@ -1275,7 +1284,8 @@ uint8_t WF_End_Wall_Follow(void){
 	CM_go_home();
 
 	/*****************************************Release Memory************************************/
-	Wall_Follow_Stop_Slam();
+	Home_Point.clear();
+	WF_Point.clear();
 	std::vector<Point32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
@@ -1283,6 +1293,16 @@ uint8_t WF_End_Wall_Follow(void){
 	return 0;
 }
 
+uint8_t WF_Break_Wall_Follow(void){
+	/*****************************************Release Memory************************************/
+	Home_Point.clear();
+	WF_Point.clear();
+	std::vector<Point32_t>(WF_Point).swap(WF_Point);
+	debug_map(MAP, 0, 0);
+	debug_map(SPMAP, 0, 0);
+	Set_Clean_Mode(Clean_Mode_Userinterface);
+	return 0;
+}
 void WF_update_position(void) {
 	float	pos_x, pos_y;
 	int16_t	x, y;
