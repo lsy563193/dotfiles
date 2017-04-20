@@ -2254,7 +2254,7 @@ bool Set_Gyro_On(void)
 		Set_Gyro_Status();
 		return true;
 	}
-	Reset_Gyro_Status();
+	Set_Gyro_Status();
 	}
 	Reset_Gyro_Status();
 	Set_Gyro_Off();
