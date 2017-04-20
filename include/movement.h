@@ -484,9 +484,8 @@ void set_start_charge(void);
 void set_stop_charge(void);
 
 bool except_event();
-void set_gyro(uint8_t state, uint8_t calibration);
-bool Set_gyro_on(void);
-void Set_gyro_off(void);
+bool Set_Gyro_On(void);
+void Set_Gyro_Off(void);
 
 void set_main_pwr(uint8_t val);
 
@@ -503,16 +502,6 @@ void Random_Back(void);
 void Move_Back(void);
 
 void Cliff_Move_Back(void);
-
-void movement_go(int16_t speed);
-
-void movement_stop();
-
-void movement_turn(int16_t left_speed,int16_t right_speed);
-
-void movement_rot_left(int16_t speed);
-
-void movement_rot_right(int16_t speed);
 
 void Set_LeftWheel_Speed(uint8_t speed);
 
@@ -626,11 +615,11 @@ uint8_t VirtualWall_TurnRight();
 
 uint8_t VirtualWall_TurnLeft();
 
-void Set_IMU_Status(void);
+void Set_Gyro_Status(void);
 
-void Reset_IMU_Status(void);
+void Reset_Gyro_Status(void);
 
-uint8_t Get_IMU_Status(void);
+uint8_t Get_Gyro_Status(void);
 
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif

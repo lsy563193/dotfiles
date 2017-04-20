@@ -75,10 +75,10 @@ void Random_Running_Mode(void)
 	uint8_t Virtual_Wall_C = 0, Virtual_Wall_NG = 0;
 #endif
 
-        if (Get_IMU_Status() == 0){
-  		    Set_gyro_on();
-       		Set_IMU_Status();
-        	//printf("IMU_Status%d\n", Get_IMU_Status());
+        if (Get_Gyro_Status() == 0){
+			Set_Gyro_On();
+       		Set_Gyro_Status();
+        	//printf("Gyro_Status%d\n", Get_Gyro_Status());
         }
 
 	Reset_Work_Time();

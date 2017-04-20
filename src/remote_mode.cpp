@@ -1,12 +1,12 @@
 
  /**
   ******************************************************************************
-  * @file    AI Cleaning Robot
+  * @file	 AI Cleaning Robot
   * @author  ILife Team Dxsong
   * @version V1.0
-  * @date    17-Nov-2011
-  * @brief   this mode the robot follows the command of the remote ,
-	           Upkey : move forward untill stop command or obstacle event
+  * @date	 17-Nov-2011
+  * @brief	 this mode the robot follows the command of the remote ,
+			   Upkey : move forward untill stop command or obstacle event
   ******************************************************************************
   * <h2><center>&copy; COPYRIGHT 2011 ILife CO.LTD</center></h2>
   ******************************************************************************
@@ -24,23 +24,23 @@ extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 void Remote_Mode(void)
 {
 	uint32_t Moving_Speed=0;
-  	uint16_t No_Command_Counter=0;
+	uint16_t No_Command_Counter=0;
 	uint8_t Forward_Flag=0;
 	uint8_t Dec_Counter=0;
 	uint32_t OBS_Stop=0;
-
+	uint8_t mccount = 0;
 
   //Display_Clean_Status(Display_Remote);
 
-	if (Get_IMU_Status() == 0){
+	if (Get_Gyro_Status() == 0){
 		Set_LED(100,0);
 		Beep(3,25,25,2);
-		Set_gyro_on();
-		Set_IMU_Status();
-		//printf("IMU_Status%d\n", Get_IMU_Status());
+		Set_Gyro_On();
+		Set_Gyro_Status();
+		//printf("Gyro_Status%d\n", Get_Gyro_Status());
 	}
 
-  	Reset_Wheel_Step();
+	Reset_Wheel_Step();
 	Reset_Touch();
 	Set_BLDC_Speed(40);
 	Set_Vac_Speed();
@@ -105,7 +105,7 @@ void Remote_Mode(void)
 	
 			Deceleration();
 			Work_Motor_Configure();
-            Reset_Rcon_Remote();
+			Reset_Rcon_Remote();
 			Turn_Right(Turn_Speed,320);
 			Set_SideBrush_PWM(30,30);
 			Set_MainBrush_PWM(30);
@@ -134,11 +134,11 @@ void Remote_Mode(void)
 
 		No_Command_Counter++;
 		if(No_Command_Counter>100)
-    	{
+		{
 			No_Command_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
-    	}
+		}
 
 		if(Remote_Key(Remote_Spot))
 		{
@@ -200,19 +200,30 @@ void Remote_Mode(void)
 		}
 
 		/*------------------------------------------------------Check Battery-----------------------*/
-    	if(Check_Battery()==0)
+		if(Check_Battery()==0)
 		{
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
-    	}
+		}
 		/*------------------------------------------------------Bumper Event-----------------------*/
-    	if(Get_Bumper_Status()||Get_Cliff_Trig())
-    	{
+		if(Get_Bumper_Status()||Get_Cliff_Trig())
+		{
 			Move_Back();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-
+		/*------------------------------------------------check motor over current event ---------*/
+		uint8_t octype =0;
+		octype = Check_Motor_Current();
+		if(octype){
+			mccount=mccount+1;
+			if(mccount >= 10){
+				Self_Check(octype);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				mccount = 0;
+				break;
+			}
+		}
 	}
 	Disable_Motors();
 }

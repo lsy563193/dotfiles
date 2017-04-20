@@ -28,11 +28,12 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type);
 uint8_t Wall_Follow(MapWallFollowType follow_type);
 void Wall_Follow_Init_Slam(void);
 void Wall_Follow_Stop_Slam(void);
-void WF_update_position(uint16_t heading_0, int16_t heading_1);
-void WF_Check_Loop_Closed(uint16_t heading_0, int16_t heading_1);
+void WF_update_position(void);
+void WF_Check_Loop_Closed(uint16_t heading);
 bool WF_Is_Reach_Cleaned(void);
 int8_t WF_Push_Point(int32_t x, int32_t y);
 uint8_t WF_End_Wall_Follow(void);
 void WFM_move_back(uint16_t dist);
 bool WF_check_isolate(void);
+void WF_Mark_Home_Point(void);
 #endif

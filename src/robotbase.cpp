@@ -95,7 +95,7 @@ int robotbase_init(void)
 		return -1;
 	}
 	set_main_pwr(0);
-	set_gyro(0, 0);
+	Set_Gyro_Off();
 	Set_LED(100,0);
 	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
@@ -136,7 +136,7 @@ void robotbase_deinit(void)
 		ROS_INFO("\tshutdown robotbase power");
 		Set_LED(0,0);
 		control_set(CTL_BUZZER, 0x00);
-		set_gyro(0,0);
+		Set_Gyro_Off();
 		usleep(40000);
 		Disable_Motors();
 		usleep(40000);

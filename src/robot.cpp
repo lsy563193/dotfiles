@@ -262,8 +262,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->yaw = tf::getYaw(transform.getRotation());
 
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -288,8 +287,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			this->robot_tf->lookupTransform("/odom", "base_link", ros::Time(0), transform);
 			this->yaw = tf::getYaw(transform.getRotation());
 
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -315,8 +313,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
 			this->yaw = tf::getYaw(transform.getRotation());
 
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600, this->angle_v);
-			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle(0));
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -758,7 +755,7 @@ int16_t robot::robot_get_home_angle() {
 void robot::robot_display_positions() {
 	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)",
 		this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI,
-		Gyro_GetAngle(0), this->yaw, this->yaw * 1800 / M_PI);
+		Gyro_GetAngle(), this->yaw, this->yaw * 1800 / M_PI);
 }
 
 void robot::visualize_marker_init(){

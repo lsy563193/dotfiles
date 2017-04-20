@@ -27,7 +27,7 @@
 void protect_function()
 {
 	//Bumper protect
-	Set_gyro_on();
+	Set_Gyro_On();
 	ROS_INFO("Bumper protect  check");
 	if (Get_Bumper_Status())
 		Turn_Left_At_Init(Max_Speed, 1800);//save itself

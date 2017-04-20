@@ -177,8 +177,9 @@ void Spot_Mode(void)
 			Motor_OC_Counter++;
 			if (Motor_OC_Counter > 100) {
 				Motor_OC_Counter = 0;
-				//Set_Clean_Mode(Clean_Mode_Userinterface);
-				//return;
+                Self_Check(Check_Motor_Current());
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				return;
 			}
 		} else {
 			Motor_OC_Counter = 0;

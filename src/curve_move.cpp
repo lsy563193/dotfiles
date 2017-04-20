@@ -94,14 +94,14 @@ MapTouringType CurveMove_MoveToPoint()
 		return MT_CurveMove;
 	}
 
-	angle_start = Gyro_GetAngle(0);
+	angle_start = Gyro_GetAngle();
 	Move_Forward(speed_left, speed_right);
 
-	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)\n", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(0), angle_start);
+	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)\n", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(), angle_start);
 	while (1) {
-		CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1));
+		CM_update_position(Gyro_GetAngle());
 
-		angle_diff = Gyro_GetAngle(0) - angle_start;
+		angle_diff = Gyro_GetAngle() - angle_start;
 		if (angle_diff >= 1800) {
 			angle_diff -= 3600;
 		} else if (angle_diff <= -1800) {
@@ -162,7 +162,7 @@ MapTouringType CurveMove_MoveToPoint()
 		}
 		usleep(10000);
 	}
-	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(0), angle_start);
+	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(), angle_start);
 
 	ROS_WARN("%s %d: current position: (%d, %d) (%d, %d)\tradius: %f", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), Map_GetXCount(), Map_GetYCount(), radius);
 	target.X = cellToCount(points[2].X);
