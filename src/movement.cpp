@@ -864,6 +864,20 @@ void Set_Wheel_Speed(uint8_t Left, uint8_t Right)
 	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
 	Set_LeftWheel_Speed(Left);
 	Set_RightWheel_Speed(Right);
+
+#if GYRO_DYNAMIC_ADJUSTMENT
+	// Add handling for gyro dynamic adjustment.
+	// If robot going straight, should turn off gyro dynamic adjustment.
+	// If robot turning, should turn on gyro dynamic adjustment.
+	if (abs(Left - Right) > 1)
+	{
+		Set_Gyro_Dynamic_On();
+	}
+	else
+	{
+		Set_Gyro_Dynamic_Off();
+	}
+#endif
 }
 
 void Set_LeftWheel_Speed(uint8_t speed)
@@ -2285,6 +2299,32 @@ void Set_Gyro_Off()
 	Reset_Gyro_Status();
 	ROS_INFO("gyro stop ok");
 }
+
+#if GYRO_DYNAMIC_ADJUSTMENT
+void Set_Gyro_Dynamic_On(void)
+{
+	if (Is_Gyro_On())
+	{
+		control_set(CTL_GYRO, 0x03);
+	}
+	else
+	{
+		control_set(CTL_GYRO, 0x01);
+	}
+}
+
+void Set_Gyro_Dynamic_Off(void)
+{
+	if (Is_Gyro_On())
+	{
+		control_set(CTL_GYRO, 0x02);
+	}
+	else
+	{
+		control_set(CTL_GYRO, 0x00);
+	}
+}
+#endif
 
 int32_t ABS_Minus(int32_t A,int32_t B)
 {

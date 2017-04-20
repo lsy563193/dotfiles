@@ -15,6 +15,10 @@
  */
 #define BUILD_ON_LINUX			(1)
 
+/*
+ * Gyro dynamic setting. If on, it will enable gyro dynamic adjustment while robot turning.
+ */
+#define GYRO_DYNAMIC_ADJUSTMENT	(1)
 
 /* ------------------------------------- Path Planning ------------------------------------- */
 
