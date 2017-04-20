@@ -964,7 +964,7 @@ bool robot::start_lidar(void)
 				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
 			usleep(10000);
 		}
-	}while (count_6s == 0 && try_times == 0 && !except_event());
+	}while ((count_6s == 0 && try_times != 0) && !except_event());
 
 	ROS_INFO("start_motor: %d", laser::instance()->is_ready());
 

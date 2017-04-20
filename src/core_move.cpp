@@ -2053,12 +2053,23 @@ void stop_obstacle_detector(void)
 bool start_slam(void)
 {
 	robot::instance()->start_slam();
-	if(!except_event()){
-		enable_slam_offset = 1;
-		return true;
+	if(except_event()){
+		robot::instance()->stop_slam();
+		return false;
 	}
-	robot::instance()->stop_slam();
-	return false;
+
+	enable_slam_offset = 1;
+
+	auto count_n_10ms = 1000;
+	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
+		  usleep(10000);
+	}
+	if(count_n_10ms == 0){
+		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+		return false;
+	}
+	return true;
+
 }
 /*
 
@@ -2299,15 +2310,6 @@ uint8_t CM_Touring(void)
 	if(except_event()){
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
-		return 0;
-	}
-	auto count_n_10ms = 1000;
-	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
-		  usleep(10000);
-	}
-	if(count_n_10ms == 0){
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 		return 0;
 	}
 
