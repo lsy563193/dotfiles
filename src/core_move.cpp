@@ -2099,7 +2099,7 @@ Motion_controller::Motion_controller()
 		if (start_bit[lidar] && robot::instance()->align())
 			start_bit.set(align);
 
-		if (start_bit[align] && start_slam())
+		if (start_bit[lidar] && start_slam())
 			start_bit.set(slam);
 	}
 };
