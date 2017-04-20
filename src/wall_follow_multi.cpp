@@ -843,18 +843,21 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				if (Remote_Key(Remote_Spot)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
+					WF_Break_Wall_Follow();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return 0;
 				}
 				if (Remote_Key(Remote_Clean)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
+					WF_Break_Wall_Follow();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return 0;
 				}
 				if (Remote_Key(Remote_Wall_Follow)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
+					WF_Break_Wall_Follow();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return 0;
 				}
@@ -1275,7 +1278,8 @@ uint8_t WF_End_Wall_Follow(void){
 	CM_go_home();
 
 	/*****************************************Release Memory************************************/
-	Wall_Follow_Stop_Slam();
+	Home_Point.clear();
+	WF_Point.clear();
 	std::vector<Point32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
@@ -1283,6 +1287,16 @@ uint8_t WF_End_Wall_Follow(void){
 	return 0;
 }
 
+uint8_t WF_Break_Wall_Follow(void){
+	/*****************************************Release Memory************************************/
+	Home_Point.clear();
+	WF_Point.clear();
+	std::vector<Point32_t>(WF_Point).swap(WF_Point);
+	debug_map(MAP, 0, 0);
+	debug_map(SPMAP, 0, 0);
+	Set_Clean_Mode(Clean_Mode_Userinterface);
+	return 0;
+}
 void WF_update_position(void) {
 	float	pos_x, pos_y;
 	int16_t	x, y;
