@@ -1199,6 +1199,7 @@ void By_Path(void)
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("Is_ChargerOn!!");
+				Disable_Motors();
 				Stop_Brifly();
 //				delay(2000);
 				usleep(200000);
