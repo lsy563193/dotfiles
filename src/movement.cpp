@@ -661,13 +661,13 @@ uint8_t Cliff_Escape(void)
 
 bool except_event()
 {
-	uint8_t oc = Check_Motor_Current();
-		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
-			return true;
+//	uint8_t oc = Check_Motor_Current();
+//		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+//			return true;
 		if(Touch_Detect())
 			return true;
-		if(Is_Turn_Remote())
-			return true;
+//		if(Is_Turn_Remote())
+//			return true;
 	return false;
 }
 
