@@ -876,18 +876,18 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				break;*/
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
-			if (Check_Bat_SetMotors(135000, 80000, 100000)) {//Low Battery Event
-				if(Is_MoveWithRemote()){
-					Display_Battery_Status(Display_Low);//min_distant_segment low
-					usleep(30000);
-					Set_Clean_Mode(Clean_Mode_GoHome);
-					break;
-				}
-				else{
-					Set_Clean_Mode(Clean_Mode_GoHome);
-					break;
-				}
+			if (Check_Bat_Home() == 1) {
+				ROS_WARN("%s %d: low battery, battery < 13.2v is detected, go home.", __FUNCTION__, __LINE__);
+				WF_End_Wall_Follow();
+				return 0;
 			}
+			if (Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power)) {
+				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				return 0;
+
+			}
+
 			/*------------------------------------------------------Cliff Event-----------------------*/
 			if(Get_Cliff_Trig()){
 				Set_Wheel_Speed(0,0);
