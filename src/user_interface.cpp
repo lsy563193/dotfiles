@@ -50,7 +50,7 @@ void User_Interface(void)
 	TimeOutCounter=0;
 
 	Disable_Motors();
-	Beep(3,25,25,1);
+//	Beep(3,25,25,1);
 	usleep(600000);
 
 //	Reset_Encoder_Error();
@@ -270,7 +270,7 @@ void User_Interface(void)
 			Disable_Motors();
 			ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 			wav_play(WAV_ERROR_LIFT_UP);
-			Beep(1, 10, 25, 1);
+//			Beep(1, 10, 25, 1);
 			usleep(20000);
 		}
 
