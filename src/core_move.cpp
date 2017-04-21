@@ -1287,7 +1287,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						ROS_WARN("%s %d: bumper jam break! Please manual release the bumper!", __FUNCTION__, __LINE__);
 						while (Get_Bumper_Status()){
 							// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
-							Beep(3, 25, 0, 1);
+//							Beep(3, 25, 0, 1);
 							usleep(2000000);
 						}
 						//break;
@@ -1852,7 +1852,7 @@ void CM_go_home()
 				Disable_Motors();
 				// Beep for the finish signal.
 				for (i = 10; i > 0; i--) {
-					Beep(i, 6, 0, 1);
+//					Beep(i, 6, 0, 1);
 					usleep(100000);
 				}
 
@@ -1870,10 +1870,10 @@ void CM_go_home()
 				// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
 				Disable_Motors();
 				// Beep for the finish signal.
-				for (i = 10; i > 0; i--) {
-					Beep(i, 6, 0, 1);
-					usleep(100000);
-				}
+//				for (i = 10; i > 0; i--) {
+//					Beep(i, 6, 0, 1);
+//					usleep(100000);
+//				}
 				Set_Clean_Mode(Clean_Mode_Sleep);
 
 				CM_reset_cleaning_pause();
@@ -1884,10 +1884,10 @@ void CM_go_home()
 				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
 				Disable_Motors();
 				// Beep for the finish signal.
-				for (i = 10; i > 0; i--) {
-					Beep(i, 6, 0, 1);
-					usleep(100000);
-				}
+//				for (i = 10; i > 0; i--) {
+//					Beep(i, 6, 0, 1);
+//					usleep(100000);
+//				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 
 				CM_reset_cleaning_pause();
@@ -1923,10 +1923,10 @@ void CM_go_home()
 					// Battery too low.
 					Disable_Motors();
 					// Beep for the finish signal.
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 0, 1);
-						usleep(100000);
-					}
+//					for (i = 10; i > 0; i--) {
+//						Beep(i, 6, 0, 1);
+//						usleep(100000);
+//					}
 					Set_Clean_Mode(Clean_Mode_Sleep);
 
 					CM_reset_cleaning_pause();
@@ -1938,10 +1938,10 @@ void CM_go_home()
 				{
 					Disable_Motors();
 					// Beep for the finish signal.
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 0, 1);
-						usleep(100000);
-					}
+//					for (i = 10; i > 0; i--) {
+//						Beep(i, 6, 0, 1);
+//						usleep(100000);
+//					}
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 
 					CM_reset_cleaning_pause();
@@ -1959,7 +1959,7 @@ void CM_go_home()
 						if (Touch_Detect())
 						{
 							Stop_Brifly();
-							Beep(5, 20, 0, 1);
+//							Beep(5, 20, 0, 1);
 							ROS_INFO("%s %d: Touch detected in CM_HeadToCourse().", __FUNCTION__, __LINE__);
 							// Key release detection, if user has not release the key, don't do anything.
 							while (Get_Key_Press() & KEY_CLEAN)
@@ -1974,10 +1974,10 @@ void CM_go_home()
 
 					Disable_Motors();
 					// Beep for the finish signal.
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 0, 1);
-						usleep(100000);
-					}
+//					for (i = 10; i > 0; i--) {
+//						Beep(i, 6, 0, 1);
+//						usleep(100000);
+//					}
 
 					if (from_station >= 1) {
 						Set_Clean_Mode(Clean_Mode_GoHome);
@@ -2160,7 +2160,7 @@ uint8_t CM_Touring(void)
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
 		// Beep while moving back.
-		Beep(3, 25, 25, 6);
+//		Beep(3, 25, 25, 6);
 		// Key release detection, if user has not release the key, don't do anything.
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
@@ -2192,7 +2192,7 @@ uint8_t CM_Touring(void)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
-				Beep(5, 20, 0, 1);
+//				Beep(5, 20, 0, 1);
 				if (Is_AtHomeBase())
 				{
 					ROS_WARN("%s %d: move back 100mm and still detect charger! Or touch event. return 0", __FUNCTION__, __LINE__);
@@ -2323,7 +2323,7 @@ uint8_t CM_Touring(void)
 		if (Touch_Detect()) {
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			ROS_WARN("%s %d: Check: Touch Clean Mode! return 0", __FUNCTION__, __LINE__);
-			Beep(5, 20, 0, 1);
+//			Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
@@ -2778,7 +2778,7 @@ MapTouringType CM_handleExtEvent()
 	if (Touch_Detect()) {
 		Stop_Brifly();
 		ROS_WARN("%s %d: clean key is pressed.", __FUNCTION__, __LINE__);
-		Beep(5, 20, 0, 1);
+//		Beep(5, 20, 0, 1);
 		// Key release detection, if user has not release the key, don't do anything.
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
