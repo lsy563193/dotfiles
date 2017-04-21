@@ -1242,7 +1242,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 			Stop_Brifly();
 			CM_update_map_bumper(action, isBumperTriggered);
-			robot::instance()->pub_bumper_markers();
+			//robot::instance()->pub_bumper_markers();
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);

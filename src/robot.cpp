@@ -44,7 +44,7 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 	visualize_marker_init();
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
-	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
+	//this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 	this->is_moving = false;
@@ -780,7 +780,7 @@ void robot::visualize_marker_init(){
 	this->m_points.z = 0.0;
 	this->clean_markers.points.clear();
 	this->clean_markers.points.push_back(m_points);
-
+/*
 	this->bumper_markers.id=1;
 	this->bumper_markers.type=visualization_msgs::Marker::POINTS;
 	this->bumper_markers.action=0;
@@ -792,7 +792,7 @@ void robot::visualize_marker_init(){
 	this->bumper_markers.color.a =1.0;
 	this->bumper_markers.header.frame_id = "/map";
 	this->bumper_markers.header.stamp = ros::Time::now();
-
+*/
 }
 
 double robot::robot_get_map_yaw()
