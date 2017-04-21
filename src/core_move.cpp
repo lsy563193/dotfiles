@@ -2128,9 +2128,9 @@ Motion_controller::~Motion_controller()
 		//try 3times;make sure to stop
 		robot::instance()->stop_lidar();
 
+		wav_play(WAV_CLEANING_FINISHED);
 //		if(start_bit[align])
 		robot::instance()->align_exit();
-
 
 //		if(start_bit[slam])
 		robot::instance()->stop_slam();
