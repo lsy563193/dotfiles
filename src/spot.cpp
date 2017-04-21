@@ -40,6 +40,7 @@ void Spot_Mode(void)
 	uint8_t Stunk = 0;
 	uint16_t Counter_Watcher = 0;
 
+	wav_play(WAV_CLEANING_SPOT);
 	Move_Style = Spiral_Right_Out;
 
 	Reset_Touch();
@@ -65,6 +66,7 @@ void Spot_Mode(void)
 	Reset_Work_Time();
 	uint32_t step;
 //	while (Get_LeftWheel_Step() < 6900 && ros::ok()) {
+
 	while(ros::ok()){
 		step =Get_LeftWheel_Step();
 		if(step >=6900)break;
@@ -78,8 +80,9 @@ void Spot_Mode(void)
 
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
-			Beep(5, 20, 0, 1);
+//			Beep(5, 20, 0, 1);
 			Stop_Brifly();
+			wav_play(WAV_CLEANING_FINISHED);
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
@@ -146,7 +149,6 @@ void Spot_Mode(void)
 	Set_BLDC_Speed(90);
 	Set_LED(100,0);
 	Motor_OC_Counter = 0;
-
 	while (ros::ok()) {
 		usleep(1000);
 		/*------------------------------------------------------Check Battery-----------------------*/
@@ -159,7 +161,8 @@ void Spot_Mode(void)
 		//Set_MainBrush_PWM(80);
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
-			Beep(5, 20, 0, 1);
+//			Beep(5, 20, 0, 1);
+			wav_play(WAV_CLEANING_FINISHED);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
@@ -362,7 +365,7 @@ void Spot_Mode(void)
 			Disable_Motors();
 			ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 			wav_play(WAV_ERROR_LIFT_UP);
-			Beep(1, 5, 25, 1);
+//			Beep(1, 5, 25, 1);
 			usleep(20000);
 		}
 	}
