@@ -51,6 +51,7 @@ void *core_move_thread(void *)
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------User_Interface mode------\n");
+//				wav_play(WAV_TEST_MODE);
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
@@ -100,8 +101,8 @@ void *core_move_thread(void *)
 				Spot_Mode();
 				Disable_Motors();
 				usleep(200000);
-				Beep(1,25,25,2);
-				Beep(2,25,25,2);
+//				Beep(1,25,25,2);
+//				Beep(2,25,25,2);
 				break;
 			case Clean_Mode_Mobility:
 
