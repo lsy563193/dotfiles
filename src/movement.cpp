@@ -1118,7 +1118,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 uint8_t Check_Bat_Home(void)
 {
 	// Check if battary is lower than the low battery go home voltage value.
-	if (robot::instance()->robot_get_battery_voltage() > 0 && robot::instance()->robot_get_battery_voltage() < LOW_BATTERY_GO_HOME_VOLTAGE){
+	if (GetBatteryVoltage() > 0 && GetBatteryVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE){
 		return 1;
 	}
 	return 0;
@@ -1766,7 +1766,7 @@ uint16_t GetBatteryVoltage()
 
 uint8_t  Check_Battery()
 {
-	if(robot::instance()->robot_get_battery_voltage()<LOW_BATTERY_STOP_VOLTAGE)
+	if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
 		return 0;
 	else
 		return 1;
@@ -2161,7 +2161,7 @@ uint8_t Is_WorkFinish(uint8_t m)
 		if(wt>Auto_Work_Time)return 1;
 	}
 	else if(wt>Const_Work_Time)return 1;
-	if(robot::instance()->robot_get_battery_voltage()<1420)
+	if(GetBatteryVoltage()<1420)
 	{
 		bat_count++;
 		if(bat_count>50)return 1;

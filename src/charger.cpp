@@ -49,7 +49,7 @@ void Charge_Function(void)
 	while(ros::ok())
 	{
 		usleep(20000);
-		bat_v = robot::instance()->robot_get_battery_voltage();
+		bat_v = GetBatteryVoltage();
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (robot::instance()->Is_Cleaning_Paused())
@@ -186,7 +186,7 @@ void Charge_Function(void)
 //		}
 
 		#ifdef ONE_KEY_DISPLAY
-		if(robot::instance()->robot_get_battery_voltage())
+		if(GetBatteryVoltage())
 		{
 			// For displaying breathing LED
 			if(Display_Switch)

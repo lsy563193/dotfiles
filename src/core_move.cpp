@@ -1697,7 +1697,7 @@ int CM_cleaning()
 		ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 
 		ROS_INFO("State: %d", state);
-		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
 		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 		if (CM_handleExtEvent() != MT_None) {
@@ -1843,7 +1843,7 @@ void CM_go_home()
 			// Try go to exactly this home point.
 			state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
 			ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
-			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
 			ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 			if ( state == -2 && Home_Point.empty()) {
