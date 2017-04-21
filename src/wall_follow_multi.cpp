@@ -1468,7 +1468,7 @@ int8_t WF_Push_Point(int32_t x, int32_t y){
 void WF_Mark_Home_Point(void){
 	//PathPlanning_Initialize(&, &Home_Point.front().Y);
 	int32_t x, y;
-	int i;
+	int i, j;
 	std::list <Point32_t> WF_Home_Point;
 
 	WF_Home_Point = Home_Point;
@@ -1480,6 +1480,13 @@ void WF_Mark_Home_Point(void){
 		ROS_INFO("%s %d: xMin = %d, xMax = %d", __FUNCTION__, __LINE__, xMin, xMax);
 		WF_Home_Point.pop_front();
 
+		for (i = -2; i <= 2; i++) {
+			for (j = -2;j <= 2; j++) {
+					Map_SetCell(MAP, cellToCount(x + i), cellToCount(y + j) , CLEANED);//0, -1
+					//ROS_INFO("%s %d: x + i = %d, y + j = %d", __FUNCTION__, __LINE__, x + i, y + j);
+				}
+		}
+		/*
 		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y - 1) , CLEANED);//-1, -1
 		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y) , CLEANED);//-1, 0
 		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y + 1) , CLEANED);//-1, 1
@@ -1489,5 +1496,6 @@ void WF_Mark_Home_Point(void){
 		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y - 1) , CLEANED);//1, -1
 		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y) , CLEANED);//1, 0
 		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y + 1) , CLEANED);//1, 1
+		*/
 	}
 }
