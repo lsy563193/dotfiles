@@ -873,9 +873,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Reset_Rcon_Remote();
 					Switch_VacMode();
 				}
-				/*Reset_Rcon_Remote();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				break;*/
+				Reset_Rcon_Remote();
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
 			if (Check_Bat_Home() == 1) {
