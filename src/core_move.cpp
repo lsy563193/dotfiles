@@ -1754,7 +1754,6 @@ int CM_cleaning()
 				quit = true;
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
 				Disable_Motors();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Battery_Home) {
@@ -1777,7 +1776,6 @@ int CM_cleaning()
 
 			if (state == 2) {
 				Disable_Motors();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				quit = true;
 				retval = -1;
 			}
@@ -2341,6 +2339,11 @@ uint8_t CM_Touring(void)
 	{
 		if (CM_cleaning() == 0) {
 			CM_go_home();
+		}
+		else
+		{
+			// Cleaning shuted down, battery too low or touch detected.
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 		}
 	}
 	else
