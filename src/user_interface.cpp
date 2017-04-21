@@ -26,7 +26,7 @@
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
-  	static volatile uint8_t Press_time=0;
+	static volatile uint8_t Press_time=0;
 	static volatile uint8_t Temp_Mode=0;
 	static volatile uint16_t Error_Show_Counter=400;
 	static volatile uint16_t TimeOutCounter=0;
@@ -41,7 +41,7 @@ void User_Interface(void)
 #endif
 
 #ifdef ONE_KEY_DISPLAY
-  uint8_t ONE_Display_Counter=20;
+	uint8_t ONE_Display_Counter=20;
 #endif
 
 	Press_time=0;
@@ -158,7 +158,7 @@ void User_Interface(void)
 		if(Remote_Key(Remote_Clean))//                                       Check Remote Key Clean
 		{
 			Reset_Rcon_Remote();
-     		Temp_Mode=Clean_Mode_Navigation;
+			Temp_Mode=Clean_Mode_Navigation;
 			Reset_MoveWithRemote();
 		}
 		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean
@@ -166,7 +166,7 @@ void User_Interface(void)
 			Set_LED(100,0);
 			//Beep(2,25,25,2);
 			//TX_D();
-		  	Press_time=Get_Key_Time(KEY_CLEAN);
+			Press_time=Get_Key_Time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
 			if(Press_time>20)
 			{
@@ -187,7 +187,7 @@ void User_Interface(void)
 			{
 				Beep(4,25,25,2);
 				Temp_Mode=Clean_Mode_Navigation;
-        		Reset_Work_Time();
+				Reset_Work_Time();
 			}
 			Reset_MoveWithRemote();
 		//	Reset_Error_Code();
@@ -196,7 +196,7 @@ void User_Interface(void)
 		/* ----------------------------- ----------------------------------*/
 		if(Temp_Mode)
 		{
-      		//Reset_Error_Code();
+			//Reset_Error_Code();
 			if(Is_ChargerOn())
 			{
 			  	if(!Is_AtHomeBase())
@@ -281,7 +281,7 @@ void User_Interface(void)
 			Error_Show_Counter=0;
 //			Sound_Out_Error(Get_Error_Code());
 		}
-        
+
 #ifdef ONE_KEY_DISPLAY
 		usleep(8000);
 
