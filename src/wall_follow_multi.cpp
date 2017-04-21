@@ -651,6 +651,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
+	robot::instance()->init_mumber();// for init robot member
+
 	Motion_controller motion;
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
