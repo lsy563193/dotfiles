@@ -648,7 +648,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
-
+  wav_play(WAV_CLEANING_WALL_FOLLOW);
 	Motion_controller motion;
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
