@@ -983,7 +983,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
 		CM_CorBack(COR_BACK_20MM);
 	else
-		Quick_Back(20,20);
+		Quick_Back(30,20);
 	Disable_Motors();
 	usleep(100000);
 	/*------------------------------Self Check right wheel -------------------*/

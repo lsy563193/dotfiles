@@ -106,7 +106,9 @@ void WFM_move_back(uint16_t dist)
 		if (Touch_Detect()) {
 			return;
 		}
-		if ((Check_Motor_Current() == Check_Left_Wheel) || (Check_Motor_Current() == Check_Right_Wheel)) {
+		uint8_t octype = Check_Motor_Current();
+		if ((octype == Check_Left_Wheel) || ( octype == Check_Right_Wheel)) {
+			ROS_INFO("%s,%d,motor over current",__FUNCTION__,__LINE__);
 			return;
 		}
 	}
@@ -812,12 +814,14 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);
 			//WFM_boundary_check();
 			/*------------------------------------------------------Check Current--------------------------------*/
-			if (Check_Motor_Current()) {
-				ROS_WARN("%s %d: Check_Motor_Current_Error", __FUNCTION__, __LINE__);
-				Self_Check(Check_Motor_Current());
-				WF_Break_Wall_Follow();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				return 0;
+			uint8_t octype = Check_Motor_Current();
+			if (octype) {
+				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
+				if(Self_Check(octype)){
+					WF_Break_Wall_Follow();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
 			}
 
 			/*------------------------------------------------------Touch and Remote event-----------------------*/

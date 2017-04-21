@@ -44,12 +44,12 @@ void Spot_Mode(void)
 
 	Reset_Touch();
 
-
+	wav_play(WAV_CLEANING_SPOT);
 	Set_LED(100,0);
 	Set_SideBrush_PWM(60, 60);
 	Set_MainBrush_PWM(90);
 	Set_BLDC_Speed(90);
-
+	Set_Gyro_On();
 #ifdef BLDC_INSTALL
 	usleep(10000);
 	Set_VacMode(Vac_Max);
@@ -172,19 +172,13 @@ void Spot_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-
-		if (Check_Motor_Current()) {
-			Motor_OC_Counter++;
-			if (Motor_OC_Counter > 100) {
-				Motor_OC_Counter = 0;
-                Self_Check(Check_Motor_Current());
+		uint8_t octype = Check_Motor_Current();
+		if (octype) {
+			if(Self_Check(octype)){
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}
-		} else {
-			Motor_OC_Counter = 0;
 		}
-
 		if (Remote_Key(Remote_All)) {
 			if(Is_MoveWithRemote())
 			{
@@ -362,10 +356,11 @@ void Spot_Mode(void)
 			Disable_Motors();
 			ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 			wav_play(WAV_ERROR_LIFT_UP);
-			Beep(1, 5, 25, 1);
-			usleep(20000);
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			break;
 		}
 	}
+	Set_Gyro_Off();
 }
 
 /*----------------------------------------------------------------Random Dirt Event---------------------------------*/
