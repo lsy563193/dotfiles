@@ -1612,7 +1612,7 @@ uint8_t CM_resume_cleaning()
 		lowBattery = 0;
 
 		// Reset the cleaning pause flag.
-		robot::instance()->Reset_Cleaning_Pause();
+		CM_reset_cleaning_pause();
 		// Try go to exactly this home point.
 		state_for_continue_cleaning = CM_MoveToCell(countToCell(Continue_Point.X), countToCell(Continue_Point.Y), 2, 0, 1 );
 		ROS_INFO("CM_MoveToCell return %d.", state_for_continue_cleaning);
@@ -2211,7 +2211,7 @@ uint8_t CM_Touring(void)
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
-					robot::instance()->Reset_Cleaning_Pause();
+					CM_reset_cleaning_pause();
 				}
 #endif
 				return 0;
