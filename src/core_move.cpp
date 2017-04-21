@@ -1867,7 +1867,7 @@ void CM_go_home()
 				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				return;
 			} else if (state == -3) {
-				// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
+				// state == -3 means battery too low, battery < LOW_BATTERY_STOP_VOLTAGE (1200)
 				Disable_Motors();
 				// Beep for the finish signal.
 				for (i = 10; i > 0; i--) {

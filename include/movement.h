@@ -191,7 +191,6 @@
 #define Charge_Current_500mA		((uint16_t) 400)
 #define Left_Brush_Limit			((uint16_t) 900)
 #define Right_Brush_Limit			((uint16_t) 900)
-#define Low_Battery_Limit			((uint16_t) 1200)
 #define MainBrush_Stall_Current		((uint16_t) 1000)
 
 #define Clean_Vac_Power				120000

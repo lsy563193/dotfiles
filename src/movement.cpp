@@ -1766,7 +1766,7 @@ uint16_t GetBatteryVoltage()
 
 uint8_t  Check_Battery()
 {
-	if(robot::instance()->robot_get_battery_voltage()<Low_Battery_Limit)
+	if(robot::instance()->robot_get_battery_voltage()<LOW_BATTERY_STOP_VOLTAGE)
 		return 0;
 	else
 		return 1;

@@ -582,7 +582,7 @@ void Around_ChargerStation(uint8_t Dir)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
 		}
-		if(GetBatteryVoltage()<Low_Battery_Limit)
+		if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
 		{
 			Display_Battery_Status(Display_Low);
 			//delay(10000);
@@ -1415,7 +1415,7 @@ void By_Path(void)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}
-			if(GetBatteryVoltage()<Low_Battery_Limit)
+			if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
 			{
 				Display_Battery_Status(Display_Low);
 //				delay(10000);
