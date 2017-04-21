@@ -636,6 +636,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint8_t					Isolated_Flag;
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
+	extern int8_t			enable_slam_offset;
 	Reset_MoveWithRemote();
 
 	//Initital home point
@@ -654,6 +655,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	robot::instance()->init_mumber();// for init robot member
 
 	Motion_controller motion;
+
+	enable_slam_offset = 2;//2 for wall follow mode
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
 
