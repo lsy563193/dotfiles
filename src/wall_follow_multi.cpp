@@ -1482,20 +1482,9 @@ void WF_Mark_Home_Point(void){
 
 		for (i = -2; i <= 2; i++) {
 			for (j = -2;j <= 2; j++) {
-					Map_SetCell(MAP, cellToCount(x + i), cellToCount(y + j) , CLEANED);//0, -1
-					//ROS_INFO("%s %d: x + i = %d, y + j = %d", __FUNCTION__, __LINE__, x + i, y + j);
-				}
+				Map_SetCell(MAP, cellToCount(x + i), cellToCount(y + j) , CLEANED);//0, -1
+				//ROS_INFO("%s %d: x + i = %d, y + j = %d", __FUNCTION__, __LINE__, x + i, y + j);
+			}
 		}
-		/*
-		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y - 1) , CLEANED);//-1, -1
-		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y) , CLEANED);//-1, 0
-		Map_SetCell(MAP, cellToCount(x - 1), cellToCount(y + 1) , CLEANED);//-1, 1
-		Map_SetCell(MAP, cellToCount(x), cellToCount(y - 1) , CLEANED);//0, -1
-		Map_SetCell(MAP, cellToCount(x), cellToCount(y) , CLEANED);//0, 0
-		Map_SetCell(MAP, cellToCount(x), cellToCount(y + 1) , CLEANED);//0, 1
-		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y - 1) , CLEANED);//1, -1
-		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y) , CLEANED);//1, 0
-		Map_SetCell(MAP, cellToCount(x + 1), cellToCount(y + 1) , CLEANED);//1, 1
-		*/
 	}
 }
