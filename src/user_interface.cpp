@@ -59,6 +59,13 @@ void User_Interface(void)
 
 	Set_Gyro_Off();
 
+	// Check the battery to warn the user.
+	if(!Check_Bat_Ready_To_Clean())
+	{
+		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400).", __FUNCTION__, __LINE__);
+		wav_play(WAV_BATTERY_LOW);
+	}
+
 	while(ros::ok())
 	{
 		usleep(10000);
@@ -170,7 +177,7 @@ void User_Interface(void)
 			}
 			if((Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
-				//ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
+				ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
 				if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 //					Set_Error_Code(Error_Code_Cliff);
@@ -178,10 +185,10 @@ void User_Interface(void)
 					ROS_WARN("%s %d: Cliff triggered, can't change mode.", __FUNCTION__, __LINE__);
 					Temp_Mode=0;
 				}
-				else if(Check_Bat_Home())
+				else if(!Check_Bat_Ready_To_Clean())
 				{
-					ROS_WARN("%s %d: Battery below LOW_BATTERY_GO_HOME_VOLTAGE(1320).", __FUNCTION__, __LINE__);
-					Beep(6,25,25,40);
+					ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400).", __FUNCTION__, __LINE__);
+					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 				}
 				else

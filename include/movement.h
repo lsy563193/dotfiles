@@ -397,6 +397,8 @@ uint8_t Self_Check(uint8_t Check_Code);
 
 uint8_t Check_Bat_Home(void);
 
+uint8_t Check_Bat_Ready_To_Clean(void);
+
 uint8_t Get_Clean_Mode(void);
 
 void Set_VacMode(uint8_t data);
