@@ -44,6 +44,10 @@ static uint32_t right_wheel_step = 0;
 static uint32_t leftwall_step = 0;
 static uint32_t rightwall_step = 0;
 
+//Value for saving SideBrush_PWM
+static uint16_t LBrush_PWM = 0;
+static uint16_t RBrush_PWM = 0;
+
 static int32_t MoveStepCounter = 0;
 static uint32_t Mobility_Step = 0;
 static uint8_t Direction_Flag=0;
@@ -950,6 +954,7 @@ uint8_t Check_Motor_Current(void)
 	}
 	else
 		rwheel_oc_count = 0;
+	Check_SideBrush_Stall();
 	if(robot::instance()->robot_get_rbrush_oc()){
 		ROS_WARN("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
@@ -1500,8 +1505,10 @@ void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 {
 	// Set left and right brush PWM, the value of L/R should be in range (0, 100).
 	L = L < 100 ? L : 100 ;
+	LBrush_PWM = L;
 	control_set(CTL_BRUSH_LEFT, L & 0xff);
 	R = R < 100 ? R : 100 ;
+	RBrush_PWM = R;
 	control_set(CTL_BRUSH_RIGHT, R & 0xff);
 }
 
@@ -2341,5 +2348,74 @@ void ladar_gpio(char val)
 	char buf[] = {val};
 	write(fd,buf,1);
 	close(fd);
+}
+void Check_SideBrush_Stall(void)
+{
+	static uint32_t Time_LBrush_Stop = 0, Time_RBrush_Stop = 0;
+	static uint8_t LBrush_Stall_Counter = 0, RBrush_Stall_Counter = 0, Flag_LBrush_Is_Stall = 0, Flag_RBrush_Is_Stall = 0;
+
+	/*---------------------------------Left Brush Stall---------------------------------*/
+	if(Flag_LBrush_Is_Stall == 0 || (time(NULL) - Time_LBrush_Stop) > 5)
+	{
+		if(robot::instance()->robot_get_lbrush_oc())
+		{
+			if(LBrush_Stall_Counter < 200)
+				LBrush_Stall_Counter++;
+		}
+		else
+		{
+			LBrush_Stall_Counter = 0;
+			Flag_LBrush_Is_Stall = 0;
+		}
+
+		if(LBrush_Stall_Counter >= 10)
+		{
+			control_set(CTL_BRUSH_LEFT, 0);
+			Flag_LBrush_Is_Stall = 1;
+			Time_LBrush_Stop = time(NULL);
+			wav_play(WAV_ERROR_LEFT_BRUSH);
+		}
+		else
+		{
+			Flag_LBrush_Is_Stall = 0;
+			control_set(CTL_BRUSH_LEFT, LBrush_PWM);
+		}
+	}
+	else
+	{
+		control_set(CTL_BRUSH_LEFT, 0);
+	}
+
+	/*-------------------------------Rigth Brush Stall---------------------------------*/
+	if(Flag_RBrush_Is_Stall == 0 || (time(NULL) - Time_RBrush_Stop) > 5)
+	{
+		if(robot::instance()->robot_get_rbrush_oc())
+		{
+			if(RBrush_Stall_Counter < 200)
+				RBrush_Stall_Counter++;
+		}
+		else
+		{
+			RBrush_Stall_Counter = 0;
+			Flag_RBrush_Is_Stall = 0;
+		}
+
+		if(RBrush_Stall_Counter >= 10)
+		{
+			control_set(CTL_BRUSH_RIGHT, 0);
+			Flag_RBrush_Is_Stall = 1;
+			Time_RBrush_Stop = time(NULL);
+			wav_play(WAV_ERROR_RIGHT_BRUSH);
+		}
+		else
+		{
+			Flag_RBrush_Is_Stall = 0;
+			control_set(CTL_BRUSH_RIGHT, RBrush_PWM);
+		}
+	}
+	else
+	{
+		control_set(CTL_BRUSH_RIGHT, 0);
+	}
 }
 

@@ -391,6 +391,8 @@ void Work_Motor_Configure(void);
 
 uint8_t Check_Motor_Current(void);
 
+void Check_SideBrush_Stall(void);
+
 uint8_t Self_Check(uint8_t Check_Code);
 
 uint8_t Check_Bat_Home(void);
