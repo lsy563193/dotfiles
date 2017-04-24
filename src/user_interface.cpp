@@ -39,7 +39,7 @@ void User_Interface(void)
 	TimeOutCounter=0;
 
 	Disable_Motors();
-	Beep(3,25,25,1);
+//	Beep(3,25,25,1);
 	//usleep(600000);
 //	Beep(3,25,25,1);
 	usleep(600000);
@@ -182,8 +182,8 @@ void User_Interface(void)
 				else if(Check_Bat_Home())
 				{
 					ROS_WARN("%s %d: Battery below LOW_BATTERY_GO_HOME_VOLTAGE(1320).", __FUNCTION__, __LINE__);
-					Beep(6,25,25,40);
-//					wav_play(WAV_BATTERY_LOW);
+//					Beep(6,25,25,40);
+					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 				}
 				else
