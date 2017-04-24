@@ -261,7 +261,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		try {
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->yaw = tf::getYaw(transform.getRotation());
-
+			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600);
 			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
@@ -286,7 +286,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		try {
 			this->robot_tf->lookupTransform("/odom", "base_link", ros::Time(0), transform);
 			this->yaw = tf::getYaw(transform.getRotation());
-
+			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600);
 			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
@@ -312,7 +312,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
 			this->yaw = tf::getYaw(transform.getRotation());
-
+			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600);
 			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());

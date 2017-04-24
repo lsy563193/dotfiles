@@ -8,8 +8,7 @@
 #include "mathematics.h"
 #include "robot.hpp"
 
-uint16_t gyro_angle[2];   //[3:3]   = Angle
-int16_t gyro_rate[2];     //[5:6]   = Rate
+uint16_t gyro_angle;   //[3:3]   = Angle
 int16_t gyro_xacc;        //[7:8]   = X Acceleration
 int16_t gyro_yacc;        //[9:10]  = Y Acceleration
 int16_t gyro_zacc;        //[11:12] = Z Acceleration
@@ -32,10 +31,15 @@ uint8_t Gyro_GetCalibration(void) {
 	return gyro_calibration;
 }
 
-int16_t Gyro_GetAngle(void){
-	auto angle = static_cast<int16_t>( (robot::instance()->robot_get_angle()) * 10);
+int16_t Gyro_GetAngle(void)
+{
+	return gyro_angle;
+}
+
+void Gyro_SetAngle(int16_t angle)
+{
 	if(angle <0)
 		angle += 3600;
 
-	return angle;
+	gyro_angle = angle;
 }
