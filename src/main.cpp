@@ -46,6 +46,7 @@ void *core_move_thread(void *)
 	//Set_Clean_Mode(Clean_Mode_GoHome);
 	protect_function();
 
+//	wav_play(WAV_BATTERY_CHARGE_DONE);
 	while(ros::ok()){
 		usleep(20000);
 		switch(Get_Clean_Mode()){
@@ -77,11 +78,14 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
+				wav_play(WAV_BATTERY_CHARGE);
 				Charge_Function();
+
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
+				wav_play(WAV_BACK_TO_CHARGER);
 #if Random_Find_Charger_Stub
 				HomeStraight_Mode();
 #else

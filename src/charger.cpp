@@ -40,7 +40,7 @@ void Charge_Function(void)
 	uint8_t Stop_Charge_Counter = 0;
 
 	// Reset the lowBattery flag in core_move.cpp and stop beeping.
-	Beep(0, 0, 0, 1);
+//	Beep(0, 0, 0, 1);
 	lowBattery = 0;
 
 	set_start_charge();
@@ -217,6 +217,7 @@ void Charge_Function(void)
 /*----------------------------------------------------------------GO Home  ----------------*/
 void GoHome(void)
 {
+
 	uint32_t Receive_Code = 0;
 //	Move_Forward(9,9);
 //	Set_SideBrush_PWM(30,30);
@@ -1211,7 +1212,7 @@ void By_Path(void)
 					{
 //						Reset_Error_Code();
 						Set_Clean_Mode(Clean_Mode_Charging);
-						Beep(2, 25, 0, 1);
+//						Beep(2, 25, 0, 1);
 //						Reset_Rcon_Remote();
 						return;
 					}

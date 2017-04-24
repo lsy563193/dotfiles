@@ -1799,6 +1799,11 @@ static inline void CM_reset_cleaning_pause()
 
 void CM_go_home()
 {
+
+	if(robot::instance()->Is_Cleaning_Paused())
+		wav_play(WAV_BATTERY_LOW);
+	wav_play(WAV_BACK_TO_CHARGER);
+
 	int8_t	state;
 	int16_t	i;
 
