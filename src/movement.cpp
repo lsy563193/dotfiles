@@ -1993,6 +1993,13 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 	Reset_Rcon_Remote();
 	int16_t target_angle;
 	uint16_t gyro_angle;
+	// This decides whether robot should stop when left cliff triggered.
+	bool right_cliff_triggered = false;
+
+	if (Get_Cliff_Trig() & Status_Cliff_Right)
+	{
+		right_cliff_triggered = true;
+	}
 
 	gyro_angle = Gyro_GetAngle();
 
@@ -2028,7 +2035,11 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 			return;
 		}
 		if(Is_Turn_Remote())return;
-//		if(Get_Cliff_Trig())return;
+		if(!right_cliff_triggered && (Get_Cliff_Trig() & Status_Cliff_Right))
+		{
+			Stop_Brifly();
+			return;
+		}
 		if(Touch_Detect())
 		{
 			return;
@@ -2047,6 +2058,13 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 	Reset_Rcon_Remote();
 	int16_t target_angle;
 	uint16_t gyro_angle;
+	// This decides whether robot should stop when left cliff triggered.
+	bool left_cliff_triggered = false;
+
+	if (Get_Cliff_Trig() & Status_Cliff_Left)
+	{
+		left_cliff_triggered = true;
+	}
 
 	gyro_angle = Gyro_GetAngle();
 
@@ -2082,7 +2100,11 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 			return;
 		}
 		if(Is_Turn_Remote())return;
-//		if(Get_Cliff_Trig())return;
+		if(!left_cliff_triggered && (Get_Cliff_Trig() & Status_Cliff_Left))
+		{
+			Stop_Brifly();
+			return;
+		}
 		if(Touch_Detect())
 		{
 			return;

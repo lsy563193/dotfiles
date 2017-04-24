@@ -443,7 +443,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				{
 					case (Status_Cliff_Left):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(1, TURN_SPEED, 300);
@@ -452,7 +452,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Left | Status_Cliff_Front):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(1, TURN_SPEED, 600);
@@ -471,7 +471,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Front | Status_Cliff_Right):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
@@ -480,7 +480,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Front):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(1, TURN_SPEED, 900);
@@ -489,7 +489,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Right):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
@@ -710,7 +710,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				{
 					case (Status_Cliff_Left):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(0, TURN_SPEED, 300);
@@ -719,7 +719,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Left | Status_Cliff_Front):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(0, TURN_SPEED, 600);
@@ -738,7 +738,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Front | Status_Cliff_Right):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
@@ -747,7 +747,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Front):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(0, TURN_SPEED, 900);
@@ -756,7 +756,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Right):
 					{
-						Move_Back();
+						Cliff_Move_Back();
 						if (!Touch_Detect())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
