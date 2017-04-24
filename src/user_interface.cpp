@@ -169,7 +169,7 @@ void User_Interface(void)
 
 		if(Temp_Mode)
 		{
-			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_Sleep)||(Temp_Mode==Clean_Mode_Charging))
+			if((Temp_Mode==Clean_Mode_Sleep)||(Temp_Mode==Clean_Mode_Charging))
 			{
 //				Reset_Bumper_Error();
 //				Reset_Error_Code();
@@ -177,7 +177,7 @@ void User_Interface(void)
 //				Set_CleanKeyDelay(0);
 				return;
 			}
-			if((Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
+			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
 				ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
 				if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
@@ -185,9 +185,10 @@ void User_Interface(void)
 //					Set_Error_Code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
 					ROS_WARN("%s %d: Cliff triggered, can't change mode.", __FUNCTION__, __LINE__);
+					wav_play(WAV_ERROR_LIFT_UP);
 					Temp_Mode=0;
 				}
-				else if(!Check_Bat_Ready_To_Clean())
+				else if((Temp_Mode != Clean_Mode_GoHome) && !Check_Bat_Ready_To_Clean())
 				{
 					ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400).", __FUNCTION__, __LINE__);
 					wav_play(WAV_BATTERY_LOW);
