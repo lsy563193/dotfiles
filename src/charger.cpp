@@ -120,7 +120,13 @@ void Charge_Function(void)
 		{
 			Beep(5, 20, 0, 1);
 //			Reset_Error_Code();
-			if(Is_AtHomeBase()) {
+			if (!Check_Bat_Ready_To_Clean())
+			{
+				ROS_INFO("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
+				wav_play(WAV_BATTERY_LOW);
+			}
+			else if (Is_AtHomeBase())
+			{
 				ROS_INFO("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
 				// Key release detection, if user has not release the key, don't do anything.
 				while (Get_Key_Press() & KEY_CLEAN)
@@ -165,7 +171,13 @@ void Charge_Function(void)
 		if (Remote_Key(Remote_Clean)) {
 			set_stop_charge();
 			Reset_Rcon_Remote();
-			if(Is_AtHomeBase()) {
+			if (!Check_Bat_Ready_To_Clean())
+			{
+				ROS_INFO("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
+				wav_play(WAV_BATTERY_LOW);
+			}
+			else if (Is_AtHomeBase())
+			{
 //				Set_VacMode(Vac_Normal);
 //				Set_Room_Mode(Room_Mode_Large);
 				Set_Clean_Mode(Clean_Mode_Navigation);

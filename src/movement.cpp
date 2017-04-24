@@ -1129,6 +1129,25 @@ uint8_t Check_Bat_Home(void)
 	return 0;
 }
 
+uint8_t Check_Bat_Ready_To_Clean(void)
+{
+	uint16_t battery_limit;
+	if (Get_Clean_Mode() == Clean_Mode_Charging)
+	{
+		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE + 60;
+	}
+	else
+	{
+		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE;
+	}
+	ROS_INFO("%s %d: Battery limit is %d.", __FUNCTION__, __LINE__, battery_limit);
+	// Check if battary is lower than the low battery go home voltage value.
+	if (GetBatteryVoltage() > battery_limit){
+		return 1;
+	}
+	return 0;
+}
+
 uint8_t Get_Clean_Mode(void)
 {
 	return Cleaning_mode;

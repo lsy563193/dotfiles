@@ -79,6 +79,9 @@
 /* Low battery stop robot voltage value */
 #define LOW_BATTERY_STOP_VOLTAGE		(1200)
 
+/* Ready to clean battery voltage value */
+#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
+
 /* OBS setting */
 #define OBS_DYNAMIC			(1)
 #define OBS_DYNAMIC_MOVETOTARGET (1)
