@@ -86,11 +86,15 @@ void *core_move_thread(void *)
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
 				wav_play(WAV_BACK_TO_CHARGER);
+				while (Get_Clean_Mode()==Clean_Mode_GoHome)
+				{
+					// If GoHome() set clean mode as Clean_Mode_GoHome, it means it still needs to go to charger stub.
 #if Random_Find_Charger_Stub
-				HomeStraight_Mode();
+					HomeStraight_Mode();
 #else
-				GoHome();
+					GoHome();
 #endif
+				}
 				//Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:
