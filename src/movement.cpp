@@ -773,7 +773,7 @@ uint8_t Turn_Connect(void)
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("[movement.cpp] Turn left reach charger.");
-				Beep(2, 25, 0, 1);
+//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
@@ -803,7 +803,7 @@ uint8_t Turn_Connect(void)
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("[movement.cpp] Turn right reach charger.");
-				Beep(2, 25, 0, 1);
+//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
