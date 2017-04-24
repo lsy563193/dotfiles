@@ -28,7 +28,6 @@ void Remote_Mode(void)
 	uint8_t Forward_Flag=0;
 	uint8_t Dec_Counter=0;
 	uint32_t OBS_Stop=0;
-	uint8_t mccount = 0;
 
   //Display_Clean_Status(Display_Remote);
 
@@ -133,7 +132,7 @@ void Remote_Mode(void)
 		}
 
 		No_Command_Counter++;
-		if(No_Command_Counter>100)
+		if(No_Command_Counter>200)
 		{
 			No_Command_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -194,8 +193,8 @@ void Remote_Mode(void)
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status should be cleared.
-		  Reset_Touch();
-		  Set_Clean_Mode(Clean_Mode_Userinterface);
+			Reset_Touch();
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
 
@@ -216,11 +215,8 @@ void Remote_Mode(void)
 		uint8_t octype =0;
 		octype = Check_Motor_Current();
 		if(octype){
-			mccount=mccount+1;
-			if(mccount >= 10){
-				Self_Check(octype);
+			if(Self_Check(octype)){
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				mccount = 0;
 				break;
 			}
 		}

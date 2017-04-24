@@ -116,7 +116,7 @@ bool CM_Check_is_exploring()
 	float	position_x, position_y, resolution, search_length = 0.10, search_width = 0.303; //unit for meter
 	double	yaw, origin_x, origin_y;
 
-	uint32_t	width,  height;
+	uint32_t	width,	height;
 
 	std::vector<int8_t>	*p_map_data;
 
@@ -405,7 +405,7 @@ void CM_update_map_bumper(ActionType action, uint8_t bumper)
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
 			if ((positions[0].x == positions[1].x) && (positions[0].y == positions[1].y) && (positions[0].dir == positions[1].dir) &&
-			    (positions[0].x == positions[2].x) && (positions[0].y == positions[2].y) && (positions[0].dir == positions[2].dir)) {
+				(positions[0].x == positions[2].x) && (positions[0].y == positions[2].y) && (positions[0].dir == positions[2].dir)) {
 				CM_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
 				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
@@ -428,7 +428,7 @@ void CM_update_map_bumper(ActionType action, uint8_t bumper)
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
 			if ((positions[0].x == positions[1].x) && (positions[0].y == positions[1].y) && (positions[0].dir == positions[1].dir) &&
-			    (positions[0].x == positions[2].x) && (positions[0].y == positions[2].y) && (positions[0].dir == positions[2].dir)) {
+				(positions[0].x == positions[2].x) && (positions[0].y == positions[2].y) && (positions[0].dir == positions[2].dir)) {
 				CM_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
 				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
@@ -554,7 +554,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 	Diff = Angle - Gyro_GetAngle();
 
 	ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tBias: %d\tTemp: %d\tScale: %d",
-	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
+			 __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	while (Diff >= 1800) {
 		Diff = Diff - 3600;
@@ -569,7 +569,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 	}
 
 	ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tangle_turned: %d\tBias: %d\tTemp: %d\tScale: %d",
-	         __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()), angle_turned, Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
+			 __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()), angle_turned, Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
 
 	if (((Diff <= 1800 && Diff >= 1700) || (Diff >= -1800 && Diff <= -1700))) {
 		if (Diff <= 1800 && Diff >= 1700) {
@@ -1542,11 +1542,11 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 	} else if (Get_Wall_ADC(0) > 170) {
 		ROS_INFO("%s %d, wall sensor exceed 170.", __FUNCTION__, __LINE__);
 	}
-	/*                South (Xmin)
-	 *                     |
-	 *  West (Ymin)  --  robot  --   East (Ymax)
-	 *                     |
-	 *                North (Xmax)
+	/*					South (Xmin)
+	 *						|
+	 *	West (Ymin)  --  robot	--	 East (Ymax)
+	 *						|
+	 *					North (Xmax)
 	**/
 	y_coordinate = countToCell(Next_Point->Y);
 	if (y_coordinate != Map_GetYPos()) {
@@ -1612,7 +1612,7 @@ uint8_t CM_resume_cleaning()
 		lowBattery = 0;
 
 		// Reset the cleaning pause flag.
-		robot::instance()->Reset_Cleaning_Pause();
+		CM_reset_cleaning_pause();
 		// Try go to exactly this home point.
 		state_for_continue_cleaning = CM_MoveToCell(countToCell(Continue_Point.X), countToCell(Continue_Point.Y), 2, 0, 1 );
 		ROS_INFO("CM_MoveToCell return %d.", state_for_continue_cleaning);
@@ -1697,7 +1697,7 @@ int CM_cleaning()
 		ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 
 		ROS_INFO("State: %d", state);
-		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
 		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 		if (CM_handleExtEvent() != MT_None) {
@@ -1754,7 +1754,6 @@ int CM_cleaning()
 				quit = true;
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
 				Disable_Motors();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Battery_Home) {
@@ -1777,7 +1776,6 @@ int CM_cleaning()
 
 			if (state == 2) {
 				Disable_Motors();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				quit = true;
 				retval = -1;
 			}
@@ -1848,7 +1846,7 @@ void CM_go_home()
 			// Try go to exactly this home point.
 			state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
 			ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
-			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
 			ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 			if ( state == -2 && Home_Point.empty()) {
@@ -1872,7 +1870,7 @@ void CM_go_home()
 				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				return;
 			} else if (state == -3) {
-				// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
+				// state == -3 means battery too low, battery < LOW_BATTERY_STOP_VOLTAGE (1200)
 				Disable_Motors();
 				// Beep for the finish signal.
 //				for (i = 10; i > 0; i--) {
@@ -2219,7 +2217,7 @@ uint8_t CM_Touring(void)
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
-					robot::instance()->Reset_Cleaning_Pause();
+					CM_reset_cleaning_pause();
 				}
 #endif
 				return 0;
@@ -2348,6 +2346,11 @@ uint8_t CM_Touring(void)
 		if (CM_cleaning() == 0) {
 			CM_go_home();
 		}
+		else
+		{
+			// Cleaning shuted down, battery too low or touch detected.
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+		}
 	}
 	else
 	{
@@ -2369,8 +2372,8 @@ uint8_t CM_Touring(void)
  * @param x	cell x
  * @param y	cell y
  * @param mode 2: Dynamic change cells near target cell
- *             1: with escape mode, not finish
- *             0: no escape mode
+ *			   1: with escape mode, not finish
+ *			   0: no escape mode
  * @return	-2: Robot is trapped
  *		-1: Robot cannot move to target cell
  *		1: Robot arrive target cell
@@ -2410,7 +2413,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		k = 1;
 		for ( i = -length; i <= length; i += step ) {
 			for ( j = -length; j <= length; j += step ) {
-				if ( x + i <= xMax && x + i >= xMin &&  y + j <= yMax && y + j >= yMin ) {
+				if ( x + i <= xMax && x + i >= xMin &&	y + j <= yMax && y + j >= yMin ) {
 					if ( i == 0 && j == 0 ) {
 						continue;
 					}
@@ -2427,8 +2430,8 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		//Sort from the nearest point to the farest point, refer to the middle point
 		for ( i = 1 ; i < k; ++i) {
 			for ( j = 1; j < k - i; ++j ) {
-				if ( TwoPointsDistance( relativePos[j].X * 1000,     relativePos[j].Y * 1000,     0, 0 ) >
-				     TwoPointsDistance( relativePos[j + 1].X * 1000, relativePos[j + 1].Y * 1000, 0, 0 ) ) {
+				if ( TwoPointsDistance( relativePos[j].X * 1000,	 relativePos[j].Y * 1000,	  0, 0 ) >
+					 TwoPointsDistance( relativePos[j + 1].X * 1000, relativePos[j + 1].Y * 1000, 0, 0 ) ) {
 					relativePosTmp = relativePos[j + 1];
 					relativePos[j + 1] = relativePos[j];
 					relativePos[j] = relativePosTmp;
@@ -2439,7 +2442,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 		ROS_INFO("%s %d: Bubble sort:", __FUNCTION__, __LINE__);
 		for ( i = 0; i < k; i++ ) {
 			ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)\tDis: %d", __FUNCTION__, __LINE__, i, relativePos[i].X, relativePos[i].Y,
-			         TwoPointsDistance( relativePos[i].X * 1000, relativePos[i].Y * 1000, 0, 0 ));
+					 TwoPointsDistance( relativePos[i].X * 1000, relativePos[i].Y * 1000, 0, 0 ));
 		}
 
 		pos.X = x + relativePos[0].X;
@@ -2506,7 +2509,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					pathFind = -2;
 				}
 				ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
-				         x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
+						 x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
 				ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
 				ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
 			} else if ( pathFind == -2 || pathFind == -1 ) {
@@ -2538,9 +2541,9 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				}
 
 				ROS_INFO("%s %d: Path Find: %d, %d Target Offset: (%d, %d)", __FUNCTION__, __LINE__, pathFind, offsetIdx,
-				         relativePos[offsetIdx].X, relativePos[offsetIdx].Y);
+						 relativePos[offsetIdx].X, relativePos[offsetIdx].Y);
 				ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
-				         x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
+						 x + relativePos[offsetIdx].X, y + relativePos[offsetIdx].Y);
 
 			} else {
 				return pathFind;
@@ -2659,8 +2662,9 @@ void CM_CorBack(uint16_t dist)
 			Set_Touch();
 			break;
 		}
-
-		if ((Check_Motor_Current() == Check_Left_Wheel) || (Check_Motor_Current() == Check_Right_Wheel)) {
+		uint8_t octype = Check_Motor_Current();
+		if ((octype == Check_Left_Wheel) || ( octype  == Check_Right_Wheel)) {
+			ROS_INFO("%s ,%d, motor over current",__FUNCTION__,__LINE__);
 			break;
 		}
 	}
@@ -2720,9 +2724,9 @@ uint8_t CM_IsLowBattery(void) {
 uint8_t CM_CheckLoopBack( Point16_t target ) {
 	uint8_t retval = 0;
 	if ( target.X == positions[1].x && target.Y == positions[1].y &&
-	     target.X == positions[3].x && target.Y == positions[3].y ) {
+		 target.X == positions[3].x && target.Y == positions[3].y ) {
 		ROS_WARN("%s %d Possible loop back (%d, %d)", __FUNCTION__, __LINE__, target.X, target.Y);
-		retval  = 1;
+		retval	= 1;
 	}
 
 	return retval;

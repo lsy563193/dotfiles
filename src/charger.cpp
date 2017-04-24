@@ -49,7 +49,7 @@ void Charge_Function(void)
 	while(ros::ok())
 	{
 		usleep(20000);
-		bat_v = robot::instance()->robot_get_battery_voltage();
+		bat_v = GetBatteryVoltage();
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (robot::instance()->Is_Cleaning_Paused())
@@ -186,7 +186,7 @@ void Charge_Function(void)
 //		}
 
 		#ifdef ONE_KEY_DISPLAY
-		if(robot::instance()->robot_get_battery_voltage())
+		if(GetBatteryVoltage())
 		{
 			// For displaying breathing LED
 			if(Display_Switch)
@@ -225,7 +225,7 @@ void GoHome(void)
 	//Display_Home_LED();
 	Reset_Rcon_Status();
 	//delay(1500);
-
+	wav_play(WAV_BACK_TO_CHARGER);
 	// This is for calculating the robot turning.
 	uint16_t Current_Angle;
 	uint16_t Last_Angle;
@@ -583,7 +583,7 @@ void Around_ChargerStation(uint8_t Dir)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
 		}
-		if(GetBatteryVoltage()<Low_Battery_Limit)
+		if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
 		{
 			Display_Battery_Status(Display_Low);
 			//delay(10000);
@@ -1121,10 +1121,13 @@ uint8_t Check_Position(uint8_t Dir)
 			}
 			return 1;
 		}
-		if(Check_Motor_Current()){
-			if(Self_Check(Check_Motor_Current()))
+		uint8_t octype = Check_Motor_Current();
+		if(octype){
+			if(Self_Check(octype)){
+				ROS_INFO("%s ,%d motor over current ",__FUNCTION__,__LINE__);
 				return 1;
-		} 
+			}
+		}
 	}
 //	Reset_TempPWM();
 	return 0;
@@ -1413,7 +1416,7 @@ void By_Path(void)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}
-			if(GetBatteryVoltage()<Low_Battery_Limit)
+			if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
 			{
 				Display_Battery_Status(Display_Low);
 //				delay(10000);

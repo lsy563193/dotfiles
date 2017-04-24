@@ -143,7 +143,7 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 	ROS_INFO("%s %d: %d %d %d", __FUNCTION__, __LINE__, dir, speed, angle);
 }
 
-void rounding_move_back(uint16_t dist)
+void rounding_move_back()
 {
 	float pos_x, pos_y, distance;
 	uint16_t Counter_Watcher = 0;
@@ -212,7 +212,7 @@ uint8_t rounding_boundary_check()
 			usleep(10000);
 
 			rounding_update();
-			rounding_move_back(350);
+			rounding_move_back();
 			rounding_update();
 			if (Touch_Detect())
 			{
@@ -235,7 +235,7 @@ uint8_t rounding_boundary_check()
 
 uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
 {
-	uint8_t		Jam = 0, Temp_Counter = 0, RandomRemoteWall_Flag = 0, Mobility_Temp_Error = 0, Temp_Bumper_Status;
+	uint8_t		Jam = 0, Temp_Counter = 0, RandomRemoteWall_Flag = 0, Mobility_Temp_Error = 0, Temp_Bumper_Status, Temp_Cliff_Status;
 	int16_t		Left_Wall_Buffer[3] = { 0 }, Right_Wall_Buffer[3] = { 0 };
 	int32_t		y_start, R = 0, Proportion = 0, Delta = 0, Previous = 0;
 	uint32_t	WorkTime_Buffer = 0, Temp_Status = 0;
@@ -348,7 +348,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				// Only right bumper is triggered.
 				//Stop_Brifly();
 				ROS_INFO("%s %d: move back for right bumper.", __FUNCTION__, __LINE__);
-				rounding_move_back(100);
+				rounding_move_back();
 				if (Touch_Detect())
 				{
 					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
@@ -382,7 +382,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 				if (Temp_Bumper_Status & RightBumperTrig) {
 					// Both left and right bumper are triggered.
-					rounding_move_back(350);
+					rounding_move_back();
 					if (Touch_Detect())
 					{
 						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
@@ -398,7 +398,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					Wall_Straight_Distance = 150;
 				} else {
 					// Only left bumper is triggered.
-					rounding_move_back(350);
+					rounding_move_back();
 					if (Touch_Detect())
 					{
 						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
@@ -420,6 +420,88 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 			}
 
+			// Check for cliff.
+			if (Get_Cliff_Trig())
+			{
+				ROS_WARN("%s %d: Rounding left detects cliff for the 1st time.", __FUNCTION__, __LINE__);
+				Stop_Brifly();
+
+				/*
+				 * 	Checking for cliff:
+				 * 	{
+				 * 		L: Moveback and turn right for 30 degrees.
+				 * 		LF: Moveback and turn right for 60 degrees.
+				 * 		LFR: Robot lifted, return.
+				 * 		LR: Robot lifted, return.
+				 * 		FR: Moveback and turn right for 135 degrees.
+				 * 		R: Moveback and turn right for 135 degrees.
+				 * 		F: Moveback and turn right for 90 degrees.
+				 * 	}
+				 */
+				Temp_Cliff_Status = Get_Cliff_Trig();
+				switch (Temp_Cliff_Status)
+				{
+					case (Status_Cliff_Left):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(1, TURN_SPEED, 300);
+						}
+						break;
+					}
+					case (Status_Cliff_Left | Status_Cliff_Front):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(1, TURN_SPEED, 600);
+						}
+						break;
+					}
+					case (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right):
+					{
+						Set_Touch();
+						break;
+					}
+					case (Status_Cliff_Left | Status_Cliff_Right):
+					{
+						Set_Touch();
+						break;
+					}
+					case (Status_Cliff_Front | Status_Cliff_Right):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(1, TURN_SPEED, 1350);
+						}
+						break; 
+					}
+					case (Status_Cliff_Front):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(1, TURN_SPEED, 900);
+						}
+						break; 
+					}
+					case (Status_Cliff_Right):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(1, TURN_SPEED, 1350);
+						}
+						break; 
+					}
+					default:
+					{
+						break;
+					}
+				}
+			}
 			if (Wall_Distance >= 200) {
 				Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 				Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
@@ -533,7 +615,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				// Only left bumper is triggered.
 				//Stop_Brifly();
 				ROS_WARN("%s %d: move back for left bumper.", __FUNCTION__, __LINE__);
-				rounding_move_back(100);
+				rounding_move_back();
 				if (Touch_Detect())
 				{
 					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
@@ -567,7 +649,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 				if (Temp_Bumper_Status & LeftBumperTrig) {
 					// Both left and right bumper are triggered.
-					rounding_move_back(350);
+					rounding_move_back();
 					if (Touch_Detect())
 					{
 						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
@@ -583,7 +665,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					Wall_Straight_Distance = 150;
 				} else {
 					// Only right bumper is triggered.
-					rounding_move_back(350);
+					rounding_move_back();
 					if (Touch_Detect())
 					{
 						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
@@ -605,6 +687,88 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 			}
 
+			// Check for cliff.
+			if (Get_Cliff_Trig())
+			{
+				ROS_WARN("%s %d: Rounding right detects cliff for the 1st time.", __FUNCTION__, __LINE__);
+				Stop_Brifly();
+
+				/*
+				 * 	Checking for cliff:
+				 * 	{
+				 * 		L: Moveback and turn left for 30 degrees.
+				 * 		LF: Moveback and turn left for 60 degrees.
+				 * 		LFR: Robot lifted, return.
+				 * 		LR: Robot lifted, return.
+				 * 		FR: Moveback and turn left for 135 degrees.
+				 * 		R: Moveback and turn left for 135 degrees.
+				 * 		F: Moveback and turn left for 90 degrees.
+				 * 	}
+				 */
+				Temp_Cliff_Status = Get_Cliff_Trig();
+				switch (Temp_Cliff_Status)
+				{
+					case (Status_Cliff_Left):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(0, TURN_SPEED, 300);
+						}
+						break;
+					}
+					case (Status_Cliff_Left | Status_Cliff_Front):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(0, TURN_SPEED, 600);
+						}
+						break;
+					}
+					case (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right):
+					{
+						Set_Touch();
+						break;
+					}
+					case (Status_Cliff_Left | Status_Cliff_Right):
+					{
+						Set_Touch();
+						break;
+					}
+					case (Status_Cliff_Front | Status_Cliff_Right):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(0, TURN_SPEED, 1350);
+						}
+						break; 
+					}
+					case (Status_Cliff_Front):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(0, TURN_SPEED, 900);
+						}
+						break; 
+					}
+					case (Status_Cliff_Right):
+					{
+						Move_Back();
+						if (!Touch_Detect())
+						{
+							rounding_turn(0, TURN_SPEED, 1350);
+						}
+						break; 
+					}
+					default:
+					{
+						break;
+					}
+				}
+			}
 			if (Wall_Distance >= 200) {
 				Right_Wall_Buffer[2] = Right_Wall_Buffer[1];
 				Right_Wall_Buffer[1] = Right_Wall_Buffer[0];
