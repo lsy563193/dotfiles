@@ -1700,12 +1700,6 @@ int CM_cleaning()
 		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
 		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
-		if (CM_handleExtEvent() != MT_None) {
-			quit = true;
-			retval = -1;
-			continue;
-		}
-
 		if (state == 0) {		//No target point
 			go_home = 1;
 			quit = true;
@@ -2353,12 +2347,16 @@ uint8_t CM_Touring(void)
 		{
 			// Cleaning shuted down, battery too low or touch detected.
 			Set_Clean_Mode(Clean_Mode_Userinterface);
+			// Reset continue cleaning status
+			CM_reset_cleaning_pause();
 		}
 	}
 	else
 	{
 		// Resume cleaning failed, battery too low or touch detected.
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		// Reset continue cleaning status
+		CM_reset_cleaning_pause();
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
