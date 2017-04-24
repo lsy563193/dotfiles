@@ -2091,6 +2091,8 @@ Motion_controller::Motion_controller()
 	} else
 #endif
 	{
+		if(Is_Gyro_On())
+			Set_Gyro_Off();
 		if (!Set_Gyro_On())
 			return;
 

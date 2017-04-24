@@ -49,7 +49,9 @@ void Spot_Mode(void)
 	Set_SideBrush_PWM(60, 60);
 	Set_MainBrush_PWM(90);
 	Set_BLDC_Speed(90);
-	Set_Gyro_On();
+	if(!Is_Gyro_On())
+		Set_Gyro_On();
+
 #ifdef BLDC_INSTALL
 	usleep(10000);
 	Set_VacMode(Vac_Max);

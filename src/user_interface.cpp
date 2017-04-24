@@ -57,8 +57,10 @@ void User_Interface(void)
 //	ResetHomeRemote();
 	Set_VacMode(Vac_Normal);
 
-	Set_Gyro_Off();
-
+	//Set_Gyro_Off();
+	if(!Is_Gyro_On()){
+		Set_Gyro_On();
+	}
 	while(ros::ok())
 	{
 		usleep(10000);
