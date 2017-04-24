@@ -176,12 +176,14 @@ void User_Interface(void)
 //					Set_Error_Code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
 					ROS_WARN("%s %d: Cliff triggered, can't change mode.", __FUNCTION__, __LINE__);
+					wav_play(WAV_ERROR_LIFT_UP);
 					Temp_Mode=0;
 				}
 				else if(Check_Bat_Home())
 				{
 					ROS_WARN("%s %d: Battery below LOW_BATTERY_GO_HOME_VOLTAGE(1320).", __FUNCTION__, __LINE__);
 					Beep(6,25,25,40);
+//					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 				}
 				else
