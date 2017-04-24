@@ -2352,12 +2352,16 @@ uint8_t CM_Touring(void)
 		{
 			// Cleaning shuted down, battery too low or touch detected.
 			Set_Clean_Mode(Clean_Mode_Userinterface);
+			// Reset continue cleaning status
+			CM_reset_cleaning_pause();
 		}
 	}
 	else
 	{
 		// Resume cleaning failed, battery too low or touch detected.
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		// Reset continue cleaning status
+		CM_reset_cleaning_pause();
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
