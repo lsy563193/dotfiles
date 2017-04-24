@@ -78,8 +78,9 @@ void Spot_Mode(void)
 
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
-			Beep(5, 20, 0, 1);
+//			Beep(5, 20, 0, 1);
 			Stop_Brifly();
+			wav_play(WAV_CLEANING_FINISHED);
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
@@ -159,7 +160,8 @@ void Spot_Mode(void)
 		//Set_MainBrush_PWM(80);
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
-			Beep(5, 20, 0, 1);
+//			Beep(5, 20, 0, 1);
+			wav_play(WAV_CLEANING_FINISHED);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)

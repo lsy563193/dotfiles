@@ -33,9 +33,9 @@ void Remote_Mode(void)
 
 	if (!Is_Gyro_On()){
 		Set_LED(100,0);
-		Beep(3,25,25,2);
+//		Beep(3,25,25,2);
 		Set_Gyro_On();
-		Set_Gyro_Status();
+//		Set_Gyro_Status();
 		//printf("Gyro_Status%d\n", Is_Gyro_On());
 	}
 

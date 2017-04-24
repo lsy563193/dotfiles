@@ -636,6 +636,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint8_t					Isolated_Flag;
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
+	extern int8_t			enable_slam_offset;
 	Reset_MoveWithRemote();
 
 	//Initital home point
@@ -651,7 +652,11 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
+  wav_play(WAV_CLEANING_WALL_FOLLOW);
+	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
+
+	enable_slam_offset = 2;//2 for wall follow mode
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
 
@@ -871,23 +876,21 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Reset_Rcon_Remote();
 					Switch_VacMode();
 				}
-				/*Reset_Rcon_Remote();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				break;*/
+				Reset_Rcon_Remote();
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
-			if (Check_Bat_SetMotors(135000, 80000, 100000)) {//Low Battery Event
-				if(Is_MoveWithRemote()){
-					Display_Battery_Status(Display_Low);//min_distant_segment low
-					usleep(30000);
-					Set_Clean_Mode(Clean_Mode_GoHome);
-					break;
-				}
-				else{
-					Set_Clean_Mode(Clean_Mode_GoHome);
-					break;
-				}
+			if (Check_Bat_Home() == 1) {
+				ROS_WARN("%s %d: low battery, battery < 13.2v is detected, go home.", __FUNCTION__, __LINE__);
+				WF_End_Wall_Follow();
+				return 0;
 			}
+			if (Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power)) {
+				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				return 0;
+
+			}
+
 			/*------------------------------------------------------Cliff Event-----------------------*/
 			if(Get_Cliff_Trig()){
 				Set_Wheel_Speed(0,0);

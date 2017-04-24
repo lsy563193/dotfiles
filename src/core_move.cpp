@@ -1287,7 +1287,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						ROS_WARN("%s %d: bumper jam break! Please manual release the bumper!", __FUNCTION__, __LINE__);
 						while (Get_Bumper_Status()){
 							// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
-							Beep(3, 25, 0, 1);
+//							Beep(3, 25, 0, 1);
 							usleep(2000000);
 						}
 						//break;
@@ -1612,7 +1612,7 @@ uint8_t CM_resume_cleaning()
 		lowBattery = 0;
 
 		// Reset the cleaning pause flag.
-		robot::instance()->Reset_Cleaning_Pause();
+		CM_reset_cleaning_pause();
 		// Try go to exactly this home point.
 		state_for_continue_cleaning = CM_MoveToCell(countToCell(Continue_Point.X), countToCell(Continue_Point.Y), 2, 0, 1 );
 		ROS_INFO("CM_MoveToCell return %d.", state_for_continue_cleaning);
@@ -1697,7 +1697,7 @@ int CM_cleaning()
 		ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 
 		ROS_INFO("State: %d", state);
-		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
 		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 		if (CM_handleExtEvent() != MT_None) {
@@ -1754,7 +1754,6 @@ int CM_cleaning()
 				quit = true;
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
 				Disable_Motors();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Battery_Home) {
@@ -1777,7 +1776,6 @@ int CM_cleaning()
 
 			if (state == 2) {
 				Disable_Motors();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				quit = true;
 				retval = -1;
 			}
@@ -1799,6 +1797,11 @@ static inline void CM_reset_cleaning_pause()
 
 void CM_go_home()
 {
+
+	if(robot::instance()->Is_Cleaning_Paused())
+		wav_play(WAV_BATTERY_LOW);
+	wav_play(WAV_BACK_TO_CHARGER);
+
 	int8_t	state;
 	int16_t	i;
 
@@ -1843,7 +1846,7 @@ void CM_go_home()
 			// Try go to exactly this home point.
 			state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
 			ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
-			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, robot::instance()->robot_get_battery_voltage());
+			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
 			ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
 
 			if ( state == -2 && Home_Point.empty()) {
@@ -1852,7 +1855,7 @@ void CM_go_home()
 				Disable_Motors();
 				// Beep for the finish signal.
 				for (i = 10; i > 0; i--) {
-					Beep(i, 6, 0, 1);
+//					Beep(i, 6, 0, 1);
 					usleep(100000);
 				}
 
@@ -1867,13 +1870,13 @@ void CM_go_home()
 				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 				return;
 			} else if (state == -3) {
-				// state == -3 means battery too low, battery < Low_Battery_Limit (1200)
+				// state == -3 means battery too low, battery < LOW_BATTERY_STOP_VOLTAGE (1200)
 				Disable_Motors();
 				// Beep for the finish signal.
-				for (i = 10; i > 0; i--) {
-					Beep(i, 6, 0, 1);
-					usleep(100000);
-				}
+//				for (i = 10; i > 0; i--) {
+//					Beep(i, 6, 0, 1);
+//					usleep(100000);
+//				}
 				Set_Clean_Mode(Clean_Mode_Sleep);
 
 				CM_reset_cleaning_pause();
@@ -1884,10 +1887,10 @@ void CM_go_home()
 				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
 				Disable_Motors();
 				// Beep for the finish signal.
-				for (i = 10; i > 0; i--) {
-					Beep(i, 6, 0, 1);
-					usleep(100000);
-				}
+//				for (i = 10; i > 0; i--) {
+//					Beep(i, 6, 0, 1);
+//					usleep(100000);
+//				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 
 				CM_reset_cleaning_pause();
@@ -1923,10 +1926,10 @@ void CM_go_home()
 					// Battery too low.
 					Disable_Motors();
 					// Beep for the finish signal.
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 0, 1);
-						usleep(100000);
-					}
+//					for (i = 10; i > 0; i--) {
+//						Beep(i, 6, 0, 1);
+//						usleep(100000);
+//					}
 					Set_Clean_Mode(Clean_Mode_Sleep);
 
 					CM_reset_cleaning_pause();
@@ -1938,10 +1941,10 @@ void CM_go_home()
 				{
 					Disable_Motors();
 					// Beep for the finish signal.
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 0, 1);
-						usleep(100000);
-					}
+//					for (i = 10; i > 0; i--) {
+//						Beep(i, 6, 0, 1);
+//						usleep(100000);
+//					}
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 
 					CM_reset_cleaning_pause();
@@ -1959,7 +1962,7 @@ void CM_go_home()
 						if (Touch_Detect())
 						{
 							Stop_Brifly();
-							Beep(5, 20, 0, 1);
+//							Beep(5, 20, 0, 1);
 							ROS_INFO("%s %d: Touch detected in CM_HeadToCourse().", __FUNCTION__, __LINE__);
 							// Key release detection, if user has not release the key, don't do anything.
 							while (Get_Key_Press() & KEY_CLEAN)
@@ -1974,10 +1977,10 @@ void CM_go_home()
 
 					Disable_Motors();
 					// Beep for the finish signal.
-					for (i = 10; i > 0; i--) {
-						Beep(i, 6, 0, 1);
-						usleep(100000);
-					}
+//					for (i = 10; i > 0; i--) {
+//						Beep(i, 6, 0, 1);
+//						usleep(100000);
+//					}
 
 					if (from_station >= 1) {
 						Set_Clean_Mode(Clean_Mode_GoHome);
@@ -2126,11 +2129,14 @@ Motion_controller::~Motion_controller()
 
 //		if(start_bit[lidar])
 		//try 3times;make sure to stop
-		robot::instance()->stop_lidar();
+		if(Get_Cliff_Trig())
+			wav_play(WAV_ERROR_LIFT_UP);
 
+		wav_play(WAV_CLEANING_FINISHED);
+
+		robot::instance()->stop_lidar();
 //		if(start_bit[align])
 		robot::instance()->align_exit();
-
 
 //		if(start_bit[slam])
 		robot::instance()->stop_slam();
@@ -2159,7 +2165,7 @@ uint8_t CM_Touring(void)
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
 		// Beep while moving back.
-		Beep(3, 25, 25, 6);
+//		Beep(3, 25, 25, 6);
 		// Key release detection, if user has not release the key, don't do anything.
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
@@ -2191,7 +2197,7 @@ uint8_t CM_Touring(void)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
-				Beep(5, 20, 0, 1);
+//				Beep(5, 20, 0, 1);
 				if (Is_AtHomeBase())
 				{
 					ROS_WARN("%s %d: move back 100mm and still detect charger! Or touch event. return 0", __FUNCTION__, __LINE__);
@@ -2213,7 +2219,7 @@ uint8_t CM_Touring(void)
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
-					robot::instance()->Reset_Cleaning_Pause();
+					CM_reset_cleaning_pause();
 				}
 #endif
 				return 0;
@@ -2322,7 +2328,7 @@ uint8_t CM_Touring(void)
 		if (Touch_Detect()) {
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			ROS_WARN("%s %d: Check: Touch Clean Mode! return 0", __FUNCTION__, __LINE__);
-			Beep(5, 20, 0, 1);
+//			Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
@@ -2341,6 +2347,11 @@ uint8_t CM_Touring(void)
 	{
 		if (CM_cleaning() == 0) {
 			CM_go_home();
+		}
+		else
+		{
+			// Cleaning shuted down, battery too low or touch detected.
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 		}
 	}
 	else
@@ -2778,7 +2789,7 @@ MapTouringType CM_handleExtEvent()
 	if (Touch_Detect()) {
 		Stop_Brifly();
 		ROS_WARN("%s %d: clean key is pressed.", __FUNCTION__, __LINE__);
-		Beep(5, 20, 0, 1);
+//		Beep(5, 20, 0, 1);
 		// Key release detection, if user has not release the key, don't do anything.
 		while (Get_Key_Press() & KEY_CLEAN)
 		{

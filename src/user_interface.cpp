@@ -27,7 +27,7 @@ void User_Interface(void)
 	static volatile uint8_t Temp_Mode=0;
 	static volatile uint16_t Error_Show_Counter=400;
 	static volatile uint16_t TimeOutCounter=0;
-	
+
 #ifdef ONE_KEY_DISPLAY
 	uint8_t BTA_Power_Dis=0;
 	uint8_t ONE_Display_Counter=20;
@@ -41,6 +41,8 @@ void User_Interface(void)
 	Disable_Motors();
 	Beep(3,25,25,1);
 	//usleep(600000);
+//	Beep(3,25,25,1);
+	usleep(600000);
 
 //	Reset_Encoder_Error();
 
@@ -129,7 +131,7 @@ void User_Interface(void)
 		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean
 		{
 			Set_LED(100,0);
-			Beep(2, 15, 0, 1);
+//			Beep(2, 15, 0, 1);
 			Press_time=Get_Key_Time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
 			if(Press_time>20)
@@ -169,7 +171,7 @@ void User_Interface(void)
 			if((Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
 				//ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
-				if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 //					Set_Error_Code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
