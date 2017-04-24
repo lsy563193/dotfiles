@@ -225,7 +225,7 @@ void GoHome(void)
 	//Display_Home_LED();
 	Reset_Rcon_Status();
 	//delay(1500);
-	wav_play(WAV_BACK_TO_CHARGER);
+//	wav_play(WAV_BACK_TO_CHARGER);
 	// This is for calculating the robot turning.
 	uint16_t Current_Angle;
 	uint16_t Last_Angle;
