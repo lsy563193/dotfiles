@@ -751,7 +751,7 @@ uint8_t Turn_Connect(void)
 	if (Is_ChargerOn())
 	{
 		ROS_INFO("[movement.cpp] Reach charger without turning.");
-		Beep(2, 25, 0, 1);
+//		Beep(2, 25, 0, 1);
 		return 1;
 	}
 	// Start turning left.
