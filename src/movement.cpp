@@ -2287,6 +2287,10 @@ bool Set_Gyro_On(void)
 
 void Set_Gyro_Off()
 {
+	if (!Is_Gyro_On()){
+		ROS_INFO("gyro stop already");
+		return;
+	}
 	static int count=0;
 	control_set(CTL_GYRO, 0x00);
 	ROS_INFO("waiting for gyro stop");
