@@ -2129,6 +2129,8 @@ Motion_controller::~Motion_controller()
 
 //		if(start_bit[lidar])
 		//try 3times;make sure to stop
+		if(Get_Cliff_Trig())
+			wav_play(WAV_ERROR_LIFT_UP);
 
 		wav_play(WAV_CLEANING_FINISHED);
 
