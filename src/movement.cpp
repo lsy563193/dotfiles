@@ -75,6 +75,8 @@ volatile uint8_t Key_Status = 0;
 volatile uint8_t Touch_Status = 0;
 // Variable for remote status, remote status is just for remote controller.
 volatile uint8_t Remote_Status = 0;
+// Variable for plan status
+volatile bool Plan_Status = false;
 
 /*----------------------- Work Timer functions--------------------------*/
 void Reset_Work_Time()
@@ -2511,5 +2513,15 @@ void Check_SideBrush_Stall(void)
 	{
 		control_set(CTL_BRUSH_RIGHT, 0);
 	}
+}
+
+void Set_Plan_Status(bool Status)
+{
+	Plan_Status = Status;
+}
+
+bool Get_Plan_Status()
+{
+	return Plan_Status;
 }
 

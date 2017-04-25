@@ -194,6 +194,9 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->vacuum_oc = msg->vcum_oc;
 
+	this->plan = msg->plan;
+	if(this->plan != 0)
+		Set_Plan_Status(true);
 
 	this->is_sensor_ready = true;
 

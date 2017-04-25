@@ -254,6 +254,8 @@ private:
 	int16_t visual_wall;
 	//new variable in x900 robot
 	int16_t omni_wheel;
+	//new variable plan
+	bool plan;
 	#endif
 	bool	is_moving;
 

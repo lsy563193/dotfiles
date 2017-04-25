@@ -7,7 +7,7 @@
 #include "config.h"
 
 #if __ROBOT_X900
-#define RECEI_LEN 55
+#define RECEI_LEN 56
 extern uint8_t receiStream[RECEI_LEN];
 #define SEND_LEN 20
 #elif __ROBOT_X400

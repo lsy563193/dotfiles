@@ -637,3 +637,6 @@ void Set_Gyro_Dynamic_Off(void);
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif
 
+void Set_Plan_Status(bool Status);
+bool Get_Plan_Status(void);
+

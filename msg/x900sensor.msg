@@ -62,3 +62,6 @@ int16 omni_wheel
 int16 visual_wall
 #gyroscope dynamic ragulate
 int8 gyro_dymc
+
+#plan, true: robot got a plan, false: nothing had happened
+bool plan
