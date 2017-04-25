@@ -113,7 +113,7 @@ uint32_t Get_RightWheel_Step(void)
 	else
 		rwsp = (double)Right_Wheel_Speed;
 	t = (double)(ros::Time::now()-rw_t).toSec();
-	step = rwsp*t/0.12;//0.181
+	step = rwsp*t/0.12;//origin 0.181
 	right_wheel_step = (uint32_t)step;
 	return right_wheel_step;
 }
@@ -126,7 +126,7 @@ uint32_t Get_LeftWheel_Step(void)
 	else
 		lwsp = (double)Left_Wheel_Speed;
 	t=(double)(ros::Time::now()-lw_t).toSec();
-	step = lwsp*t/0.120;//0.181
+	step = lwsp*t/0.12;//origin 0.181
 	left_wheel_step = (uint32_t)step;
 	return left_wheel_step;
 }

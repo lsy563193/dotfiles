@@ -261,7 +261,7 @@ void GoHome(void)
 	Set_MainBrush_PWM(30);
 
 	Stop_Brifly();
-
+	Reset_Rcon_Status();
 	// Save the start angle.
 	Last_Angle = Gyro_GetAngle();
 	while(Gyro_Step < 3600)

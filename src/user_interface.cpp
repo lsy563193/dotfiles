@@ -188,7 +188,7 @@ void User_Interface(void)
 					wav_play(WAV_ERROR_LIFT_UP);
 					Temp_Mode=0;
 				}
-				else if((Temp_Mode != Clean_Mode_GoHome) && !Check_Bat_Ready_To_Clean())
+				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Check_Bat_Ready_To_Clean())
 				{
 					ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400).", __FUNCTION__, __LINE__);
 					wav_play(WAV_BATTERY_LOW);
@@ -215,7 +215,7 @@ void User_Interface(void)
 		//	Error_Show_Counter=0;
 		//	Sound_Out_Error(Get_Error_Code());
 		//}
-        
+ 
 #ifdef ONE_KEY_DISPLAY
 
 		//ROS_INFO("One key min_distant_segment logic. odc = %d", ONE_Display_Counter);

@@ -9,8 +9,6 @@ void Sleep_Mode(void)
 {
   	uint8_t time=0;
 	static uint32_t Ch_WP_Counter=0;
-
-	ROS_DEBUG_NAMED("sleep","-----in sleep mode-----");	
 	
 	/*---------------------------------Wake Up-------------------------------*/
 	Reset_Touch();
@@ -54,6 +52,7 @@ void Sleep_Mode(void)
 			Reset_Rcon_Remote();
 			return;
 		}
+		Reset_Rcon_Remote();
 		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
 		{
 			if(Turn_Connect())
@@ -82,19 +81,6 @@ void Sleep_Mode(void)
 			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Charging);
 			return;
-		}
-		/*-----------------Check if near the charging base-----------------------------*/
-		if(Get_Rcon_Status()&0x777777)
-		{
-			Ch_WP_Counter++;
-			if(Ch_WP_Counter>50)
-			{
-				Ch_WP_Counter=0;
-				Set_Clean_Mode(Clean_Mode_GoHome);
-				SetHomeRemote();
-				Set_LED(100,100);
-			  return;
-			}
 		}
 	}
 }

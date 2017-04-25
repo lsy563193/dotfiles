@@ -141,9 +141,7 @@ void Remote_Mode(void)
 		if(Remote_Key(Remote_Spot))
 		{
 			Disable_Motors();
-			Set_Clean_Mode(Clean_Mode_Spot);
-//			Initialize_Motor();
-			Set_MoveWithRemote();
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Reset_Rcon_Remote();
 			return;
 		}
@@ -158,7 +156,7 @@ void Remote_Mode(void)
 		if(Remote_Key(Remote_Wall_Follow))
 		{
 			Disable_Motors();
-			Set_Clean_Mode(Clean_Mode_WallFollow);
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Reset_Rcon_Remote();
 			return;
 		}

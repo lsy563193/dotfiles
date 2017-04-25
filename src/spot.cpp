@@ -99,6 +99,7 @@ void Spot_Mode(void)
 			if (Motor_OC_Counter > 100) {
 				Motor_OC_Counter = 0;
 				Set_Clean_Mode(Clean_Mode_Userinterface);
+				wav_play(WAV_CLEANING_FINISHED);
 				return;
 			}
 		} else {
@@ -109,9 +110,10 @@ void Spot_Mode(void)
 			if(Is_MoveWithRemote())
 			{
 				if (Remote_Key(Remote_Wall_Follow)) {
-					Set_Clean_Mode(Clean_Mode_WallFollow);
+					Set_Clean_Mode(Clean_Mode_Userinterface);
 					Reset_Rcon_Remote();
 					//Move_Forward(10, 10);
+					wav_play(WAV_CLEANING_FINISHED);
 					return;
 				}
 				/*
@@ -124,10 +126,10 @@ void Spot_Mode(void)
 			}
 			if (Remote_Key(Remote_Home)) {
 				Set_MoveWithRemote();
-				Set_Clean_Mode(Clean_Mode_GoHome);
-				Move_Forward(10, 10);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				SetHomeRemote();
 				Reset_Rcon_Remote();
+				wav_play(WAV_CLEANING_FINISHED);
 				return;
 			}
 			Reset_Rcon_Remote();
@@ -151,7 +153,7 @@ void Spot_Mode(void)
 	Motor_OC_Counter = 0;
 
 	while (ros::ok()) {
-		usleep(1000);
+		usleep(10000);
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if (Check_Bat_SetMotors(135000, 80000, 100000)) {	//Low Battery Event
 			Display_Battery_Status(Display_Low);//min_distant_segment low
@@ -163,7 +165,6 @@ void Spot_Mode(void)
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
 //			Beep(5, 20, 0, 1);
-			wav_play(WAV_CLEANING_FINISHED);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
@@ -180,25 +181,17 @@ void Spot_Mode(void)
 		if (octype) {
 			if(Self_Check(octype)){
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				return;
+				break;
 			}
 		}
 		if (Remote_Key(Remote_All)) {
-			if(Is_MoveWithRemote())
-			{
-				/*if (Remote_Key(Remote_Random)) {
-					Set_Clean_Mode(Clean_Mode_RandomMode);
-					Reset_Rcon_Remote();
-					return;
-				}*/
-			}
 			if (Remote_Key(Remote_Home)) {
 				Set_MoveWithRemote();
 				Set_Clean_Mode(Clean_Mode_GoHome);
-				Move_Forward(10, 10);
+				//Move_Forward(10, 10);
 				SetHomeRemote();
 				Reset_Rcon_Remote();
-				return;
+				break;
 			}
 			Reset_Rcon_Remote();
 		}
@@ -207,7 +200,7 @@ void Spot_Mode(void)
 		switch (Move_Style) {
 			case Spiral_Right_Out:
 				step = Get_LeftWheel_Step();
-				if (step > (Radius * 3)) {
+				if (step > (Radius * 4)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 100) {
 						Radius += 1;
@@ -241,7 +234,7 @@ void Spot_Mode(void)
 
 			case Spiral_Right_In:
 				step = Get_LeftWheel_Step();
-				if (step > (Radius * 3)) {
+				if (step > (Radius * 4)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -275,7 +268,7 @@ void Spot_Mode(void)
 
 			case Spiral_Left_Out:
 				step = Get_RightWheel_Step();
-				if (step > (Radius * 3)) {
+				if (step > (Radius * 4)) {
 					Reset_RightWheel_Step();
 					if (Radius < 100) {
 						Radius += 1;
@@ -310,7 +303,7 @@ void Spot_Mode(void)
 
 			case Spiral_Left_In:
 				step = Get_RightWheel_Step();
-				if (step > (Radius * 2)) {
+				if (step > (Radius * 4)) {
 					Reset_RightWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -364,6 +357,7 @@ void Spot_Mode(void)
 			break;
 		}
 	}
+	wav_play(WAV_CLEANING_FINISHED);
 	Set_Gyro_Off();
 }
 
