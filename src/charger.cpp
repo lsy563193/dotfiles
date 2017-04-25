@@ -167,20 +167,25 @@ void Charge_Function(void)
 				break;
 			}
 		}*/
-		if (Remote_Key(Remote_Clean)) {
-			set_stop_charge();
-			Reset_Rcon_Remote();
-			if (!Check_Bat_Ready_To_Clean())
-			{
-				ROS_INFO("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
-				wav_play(WAV_BATTERY_LOW);
+		if(Remote_Key(Remote_All)){
+			if (Remote_Key(Remote_Clean)) {
+				set_stop_charge();
+				Reset_Rcon_Remote();
+				if (!Check_Bat_Ready_To_Clean())
+				{
+					ROS_INFO("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
+					wav_play(WAV_BATTERY_LOW);
+				}
+				else if (Is_AtHomeBase())
+				{
+//					Set_VacMode(Vac_Normal);
+//					Set_Room_Mode(Room_Mode_Large);
+					Set_Clean_Mode(Clean_Mode_Navigation);
+					break;
+				}
 			}
-			else if (Is_AtHomeBase())
-			{
-//				Set_VacMode(Vac_Normal);
-//				Set_Room_Mode(Room_Mode_Large);
-				Set_Clean_Mode(Clean_Mode_Navigation);
-				break;
+			else{
+				Reset_Rcon_Remote();
 			}
 		}
 		/*-----------------------------------------------------Schedul Timer Up-----------------*/
