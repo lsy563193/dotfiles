@@ -116,7 +116,11 @@ void User_Interface(void)
 			Reset_Rcon_Remote();
 			Temp_Mode=Clean_Mode_WallFollow;
 		}
-
+		if(Get_Plan_Status()){
+			wav_play(WAV_APPOINTMENT_DONE);
+			ROS_INFO("%s ,%d, appointment success ",__FUNCTION__,__LINE__);
+			Set_Plan_Status(false);
+		}
 		/* -----------------------------Check if Clean event ----------------------------------*/
 //		if(Is_Alarm())
 //		{
