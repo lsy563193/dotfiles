@@ -416,8 +416,8 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
-		if(Is_Turn_Remote())
-			break;
+		/*if(Is_Turn_Remote())
+			break;*/
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
 			WFM_move_back(120);
@@ -479,8 +479,8 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
-		if(Is_Turn_Remote())
-			break;
+		/*if(Is_Turn_Remote())
+			break;*/
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
 			WFM_move_back(120);
