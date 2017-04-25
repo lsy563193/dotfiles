@@ -621,6 +621,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
 	extern int8_t			enable_slam_offset;
+	uint8_t					octype;//for current check
 	Reset_MoveWithRemote();
 
 	//Initital home point
@@ -764,6 +765,17 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Reset_Rcon_Remote();
 			}
 
+			/*------------------------------------------------------Check Current--------------------------------*/
+			octype = Check_Motor_Current();
+			if (octype) {
+				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
+				if(Self_Check(octype)){
+					WF_Break_Wall_Follow();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
+			}
+
 			/*------------------------------------------------------Distance Check-----------------------*/
 			if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_WF_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) > Find_Wall_Distance ){
 				ROS_INFO("Find wall over the limited distance : %f", Find_Wall_Distance);
@@ -851,7 +863,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);
 			//WFM_boundary_check();
 			/*------------------------------------------------------Check Current--------------------------------*/
-			uint8_t octype = Check_Motor_Current();
+			octype = Check_Motor_Current();
 			if (octype) {
 				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
 				if(Self_Check(octype)){
