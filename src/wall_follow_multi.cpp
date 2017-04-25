@@ -1031,6 +1031,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//WFM_wall_move_back();
 				WFM_move_back(350);
 
+				if (Is_Bumper_Jamed()){
+					Reset_Touch();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
+					WF_Break_Wall_Follow();
+					ROS_INFO("%s %d: Check: Bumper 2! break", __FUNCTION__, __LINE__);
+					return 0;
+				}
+
 				//WFM_update();
 				WF_Check_Loop_Closed(Gyro_GetAngle());
 
