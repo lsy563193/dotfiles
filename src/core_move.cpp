@@ -2765,7 +2765,7 @@ MapTouringType CM_handleExtEvent()
 #endif
 		return MT_Battery_Home;
 	}
-	///*
+	/*
 	//for testing
 	if (Remote_Key(Remote_Left) && go_home != 1) {
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
@@ -2783,7 +2783,7 @@ MapTouringType CM_handleExtEvent()
 		Reset_Rcon_Remote();
 		return MT_Battery_Home;
 	}
-	//*/
+	*/
 
 	/* Check key press events. */
 	if (Touch_Detect()) {
