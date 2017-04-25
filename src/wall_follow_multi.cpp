@@ -632,7 +632,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 	Map_Initialize();
 	ROS_INFO("%s %d: grid map initialized", __FUNCTION__, __LINE__);
-	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
+	WF_PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
