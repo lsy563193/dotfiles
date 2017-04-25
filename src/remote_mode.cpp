@@ -36,7 +36,6 @@ void Remote_Mode(void)
 //		Beep(3,25,25,2);
 		Set_Gyro_On();
 //		Set_Gyro_Status();
-		//printf("Gyro_Status%d\n", Is_Gyro_On());
 	}
 
 	Reset_Wheel_Step();
@@ -207,7 +206,11 @@ void Remote_Mode(void)
 		/*------------------------------------------------------Bumper Event-----------------------*/
 		if(Get_Bumper_Status()||Get_Cliff_Trig())
 		{
-			Move_Back();
+			Stop_Brifly();
+			Quick_Back(20,40);
+			if(Get_Bumper_Status()||Get_Cliff_Trig()){
+				Move_Back();
+			}
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}

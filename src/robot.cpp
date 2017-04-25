@@ -924,8 +924,8 @@ bool robot::align(void)
 	return true;
 }
 
-void robot::align_exit(void){ is_align_active_ =  true;
-
+void robot::align_exit(void)
+{
 	is_line_angle_offset = false;
 	line_align_ = detecting;
 }
@@ -935,6 +935,11 @@ void robot::align_active(bool active){
 	if(is_align_active_ == true){
 		line_align_ = detecting;
 	}
+}
+
+bool robot::align_active(void)
+{
+	return is_align_active_;
 }
 
 bool robot::start_lidar(void)

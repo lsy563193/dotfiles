@@ -112,9 +112,7 @@ public:
 	void slam_type(int type);
 	void map_ready(bool);
 	bool map_ready(void);
-	bool align_active(void){
-		return is_align_active_;
-	}
+	bool align_active(void);
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.

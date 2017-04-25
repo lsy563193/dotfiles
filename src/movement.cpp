@@ -416,8 +416,8 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
-		if(Is_Turn_Remote())
-			break;
+		/*if(Is_Turn_Remote())
+			break;*/
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
 			WFM_move_back(120);
@@ -479,8 +479,8 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
-		if(Is_Turn_Remote())
-			break;
+		/*if(Is_Turn_Remote())
+			break;*/
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
 			WFM_move_back(120);
@@ -553,8 +553,15 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
-		if(Is_Turn_Remote())
+		/*if(Is_Turn_Remote())
 			break;
+		 */
+
+		if (Get_Rcon_Remote() & (Remote_Home | Remote_Spot | Remote_Wall_Follow | Remote_Clean))
+		{
+			break;
+		}
+
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
 			WFM_move_back(120);
@@ -754,7 +761,7 @@ uint8_t Turn_Connect(void)
 //		Beep(2, 25, 0, 1);
 		return 1;
 	}
-	// Start turning left.
+	// Start turning right.
 	target_angle = Gyro_GetAngle() - 120;
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
@@ -786,7 +793,7 @@ uint8_t Turn_Connect(void)
 		}
 	}
 	Stop_Brifly();
-	// Start turning right.
+	// Start turning left.
 	target_angle = Gyro_GetAngle() + 240;
 	if (target_angle > 3600) {
 		target_angle = target_angle - 3600;
@@ -815,6 +822,39 @@ uint8_t Turn_Connect(void)
 			return 0;
 		}
 	}
+	// Start turning right.
+	target_angle = Gyro_GetAngle() - 120;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 1;
+	Set_Wheel_Speed(speed, speed);
+	while(abs(target_angle - Gyro_GetAngle()) > 20)
+	{
+		if(Is_ChargerOn())
+		{
+			Disable_Motors();
+			Stop_Brifly();
+			// Wait for a while to decide if it is really on the charger stub.
+			usleep(500000);
+			if(Is_ChargerOn())
+			{
+				ROS_INFO("[movement.cpp] Turn left reach charger.");
+				Beep(2, 25, 0, 1);
+				return 1;
+			}
+			Set_Wheel_Speed(speed, speed);
+		}
+		if(Touch_Detect())
+		{
+			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
+			Disable_Motors();
+			return 0;
+		}
+	}
+	Stop_Brifly();
+
 	return 0;
 }
 
@@ -1129,6 +1169,25 @@ uint8_t Check_Bat_Home(void)
 	return 0;
 }
 
+uint8_t Check_Bat_Ready_To_Clean(void)
+{
+	uint16_t battery_limit;
+	if (Get_Clean_Mode() == Clean_Mode_Charging)
+	{
+		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE + 60;
+	}
+	else
+	{
+		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE;
+	}
+	ROS_INFO("%s %d: Battery limit is %d.", __FUNCTION__, __LINE__, battery_limit);
+	// Check if battary is lower than the low battery go home voltage value.
+	if (GetBatteryVoltage() > battery_limit){
+		return 1;
+	}
+	return 0;
+}
+
 uint8_t Get_Clean_Mode(void)
 {
 	return Cleaning_mode;
@@ -1379,10 +1438,14 @@ uint8_t Remote_Key(uint8_t key)
 		ROS_INFO("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
 	}
 	if(Remote_Status & key)
+	{
+		Beep(2, 2, 0, 1);
 		return 1;
+	}
 	else
+	{
 		return 0;
-
+	}
 }
 void Set_Rcon_Remote(uint8_t cmd)
 {
@@ -1391,6 +1454,11 @@ void Set_Rcon_Remote(uint8_t cmd)
 void Reset_Rcon_Remote(void)
 {
 	Remote_Status = 0;
+}
+
+uint8_t Get_Rcon_Remote(void)
+{
+	return Remote_Status;
 }
 
 void Set_MoveWithRemote(void)
@@ -1820,7 +1888,7 @@ uint8_t Is_virtualWall(void){
 
 uint8_t Is_Turn_Remote(void)
 {
-	if (Remote_Key(Remote_Max | Remote_Home | Remote_Spot))
+	if (Remote_Key(Remote_Max | Remote_Home | Remote_Spot | Remote_Wall_Follow))
 	{
 		Reset_Rcon_Remote();
 		return 1;
@@ -1974,6 +2042,13 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 	Reset_Rcon_Remote();
 	int16_t target_angle;
 	uint16_t gyro_angle;
+	// This decides whether robot should stop when left cliff triggered.
+	bool right_cliff_triggered = false;
+
+	if (Get_Cliff_Trig() & Status_Cliff_Right)
+	{
+		right_cliff_triggered = true;
+	}
 
 	gyro_angle = Gyro_GetAngle();
 
@@ -2009,7 +2084,11 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 			return;
 		}
 		if(Is_Turn_Remote())return;
-//		if(Get_Cliff_Trig())return;
+		if(!right_cliff_triggered && (Get_Cliff_Trig() & Status_Cliff_Right))
+		{
+			Stop_Brifly();
+			return;
+		}
 		if(Touch_Detect())
 		{
 			return;
@@ -2028,6 +2107,13 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 	Reset_Rcon_Remote();
 	int16_t target_angle;
 	uint16_t gyro_angle;
+	// This decides whether robot should stop when left cliff triggered.
+	bool left_cliff_triggered = false;
+
+	if (Get_Cliff_Trig() & Status_Cliff_Left)
+	{
+		left_cliff_triggered = true;
+	}
 
 	gyro_angle = Gyro_GetAngle();
 
@@ -2063,7 +2149,11 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 			return;
 		}
 		if(Is_Turn_Remote())return;
-//		if(Get_Cliff_Trig())return;
+		if(!left_cliff_triggered && (Get_Cliff_Trig() & Status_Cliff_Left))
+		{
+			Stop_Brifly();
+			return;
+		}
 		if(Touch_Detect())
 		{
 			return;

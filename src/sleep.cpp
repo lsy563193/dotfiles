@@ -54,11 +54,13 @@ void Sleep_Mode(void)
 			Reset_Rcon_Remote();
 			return;
 		}
-		if(Is_ChargerOn())
+		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
 		{
-			Ch_WP_Counter=0;
-			Set_Clean_Mode(Clean_Mode_Charging);
-			return;
+			if(Turn_Connect())
+			{
+				Set_Clean_Mode(Clean_Mode_Charging);
+				return;
+			}
 		}
 		/*-----------------Check if near the charging base-----------------------------*/
 		if(Get_Rcon_Status()&0x777777)

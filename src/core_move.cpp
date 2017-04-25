@@ -2091,7 +2091,8 @@ Motion_controller::Motion_controller()
 	} else
 #endif
 	{
-		Set_Gyro_Off();
+		if(Is_Gyro_On())
+			Set_Gyro_Off();
 		if (!Set_Gyro_On())
 			return;
 
@@ -2764,7 +2765,7 @@ MapTouringType CM_handleExtEvent()
 #endif
 		return MT_Battery_Home;
 	}
-	///*
+	/*
 	//for testing
 	if (Remote_Key(Remote_Left) && go_home != 1) {
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
@@ -2782,7 +2783,7 @@ MapTouringType CM_handleExtEvent()
 		Reset_Rcon_Remote();
 		return MT_Battery_Home;
 	}
-	//*/
+	*/
 
 	/* Check key press events. */
 	if (Touch_Detect()) {
@@ -2801,7 +2802,7 @@ MapTouringType CM_handleExtEvent()
 	}
 
 	/* Check remote events. */
-	if (Remote_Key(Remote_All)) {
+	if (Get_Rcon_Remote() > 0) {
 		/* Check remote home key press event, if home key is pressed, go home directly. */
 		if (Remote_Key(Remote_Home) && (go_home == 0)) {
 			Set_BLDC_Speed(Vac_Speed_NormalL);

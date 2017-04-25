@@ -397,6 +397,8 @@ uint8_t Self_Check(uint8_t Check_Code);
 
 uint8_t Check_Bat_Home(void);
 
+uint8_t Check_Bat_Ready_To_Clean(void);
+
 uint8_t Get_Clean_Mode(void);
 
 void Set_VacMode(uint8_t data);
@@ -423,6 +425,8 @@ void Switch_VacMode(void);
 void Set_Rcon_Remote(uint8_t cmd);
 
 void Reset_Rcon_Remote(void);
+
+uint8_t Get_Rcon_Remote(void);
 
 void Reset_MoveWithRemote(void);
 

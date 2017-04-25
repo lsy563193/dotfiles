@@ -152,8 +152,7 @@ void *WFM_check_trapped(void *data)
 			}
 			current_x = Map_GetXPos();
 			current_y = Map_GetYPos();
-			} 
-			else {
+			} else {
 				usleep(100000);
 			}
 		}
@@ -191,8 +190,7 @@ bool WF_check_isolate(void)
 	val = WF_path_escape_trapped();
 	if (val == 0) {
 		return 0;//not isolated
-	}
-	else{
+	} else {
 		return 1;//isolated
 	}
 	current_x = Map_GetXPos();
@@ -250,8 +248,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 	if (ret != 0) {
 		ROS_WARN("%s %d: failed to create escape thread!", __FUNCTION__, __LINE__);
 		return 2;
-	} 
-	else {
+	} else {
 		while (escape_thread_running == false) {
 			usleep(10000);
 		}
@@ -283,8 +280,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 		if(Is_OBS_Near()) {
 			Left_Wall_Speed = 15;
-		} 
-		else {
+		} else {
 			i++;
 			if (i > 10) {
 				i = 0;
@@ -388,20 +384,15 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 				Stop_Brifly();
 				if(Temp_Rcon_Status & RconFR_HomeT){
 					WF_Turn_Right(Turn_Speed,850);
-				}
-				else if(Temp_Rcon_Status & RconFL_HomeT){
+				} else if(Temp_Rcon_Status & RconFL_HomeT){
 					WF_Turn_Right(Turn_Speed,850);
-				}
-				else if(Temp_Rcon_Status & RconL_HomeT){
+				} else if(Temp_Rcon_Status & RconL_HomeT){
 					WF_Turn_Right(Turn_Speed,300);
-				}
-				else if(Temp_Rcon_Status & RconFL2_HomeT){
+				} else if(Temp_Rcon_Status & RconFL2_HomeT){
 					WF_Turn_Right(Turn_Speed,600);
-				}
-				else if(Temp_Rcon_Status & RconFR2_HomeT){
+				} else if(Temp_Rcon_Status & RconFR2_HomeT){
 					WF_Turn_Right(Turn_Speed,950);
-				}
-				else if(Temp_Rcon_Status & RconR_HomeT){
+				} else if(Temp_Rcon_Status & RconR_HomeT){
 					WF_Turn_Right(Turn_Speed,1100);
 				}
 				Stop_Brifly();
@@ -435,8 +426,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 			if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
 				Wall_Distance = robot::instance()->robot_get_left_wall() / 3;
-			} 
-			else {
+			} else {
 				Wall_Distance += 200;
 			}
 
@@ -455,8 +445,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 				Turn_Right(Turn_Speed, 600);
 
 				Wall_Straight_Distance = MFW_Setting[follow_type].right_bumper_val; //150;
-			} 
-			else {
+			} else {
 				WFM_move_back(350);
 				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				Stop_Brifly();
@@ -509,8 +498,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 					Left_Wall_Speed = 9;
 					Right_Wall_Speed = 33;
 				}
-			} 
-			else if (Wall_Distance > 150){//over left
+			} else if (Wall_Distance > 150){//over left
 				Left_Wall_Speed = 22 + Proportion / 15 + Delta / 7;
 				Right_Wall_Speed = 22 - Proportion / 12 - Delta / 7;
 
@@ -518,8 +506,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 					Left_Wall_Speed = 8;
 					Right_Wall_Speed = 30;
 				}
-			}
-			else{
+			} else{
 				Left_Wall_Speed = 15 + Proportion / 22 + Delta / 10;
 				Right_Wall_Speed = 15 - Proportion / 18 - Delta / 10;
 
@@ -574,8 +561,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 				break;
 			}
 
-		} 
-		else {
+		} else {
 			ROS_INFO("%s %d: ", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			Turn_Right(Turn_Speed, 750);
@@ -599,12 +585,10 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 	if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME) {
 		ROS_WARN("%s %d: escape timeout %d(%d, %d), state 2", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
 		ret = 2;
-	} 
-	else if (escape_state == Map_Escape_Trapped_Escaped) {
+	} else if (escape_state == Map_Escape_Trapped_Escaped) {
 		ROS_WARN("%s %d: escaped, state 0", __FUNCTION__, __LINE__);
 		ret = 0;;
-	} 
-	else {
+	} else {
 		ROS_WARN("%s %d: escaped, state 1", __FUNCTION__, __LINE__);
 		ret = 1;
 	}
@@ -691,8 +675,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 			if(Is_OBS_Near()) {
 				Left_Wall_Speed = 15;
-			} 
-			else {
+			} else {
 				i++;
 				if (i > 10) {
 					i = 0;
@@ -739,7 +722,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
 			}
-			if (Remote_Key(Remote_All)) {
+			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 				/*if(Is_MoveWithRemote()){
 					if (Remote_Key(Remote_Random)) {
@@ -824,8 +807,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					WF_End_Wall_Follow();
 					break;
 				}
-			}
-			else{
+			} else{
 				if ((Distance_From_Start = (sqrtf(powf(Start_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) > 0.303 ){
 					ROS_INFO("Out Start Pose");
 					First_Time_Flag = 0;
@@ -845,8 +827,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					ROS_INFO("Isolated");
 					Isolated_Flag = 1;
 					break;
-				}
-				else{
+				} else{
 					ROS_INFO("Not Isolated");
 					Isolated_Flag = 0;
 				}
@@ -888,7 +869,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
 			}
-			if (Remote_Key(Remote_All)) {
+			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 				/*if(Is_MoveWithRemote()){
 					if (Remote_Key(Remote_Random)) {
@@ -998,20 +979,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Stop_Brifly();
 					if(Temp_Rcon_Status & RconFR_HomeT){
 						WF_Turn_Right(Turn_Speed,850);
-					}
-					else if(Temp_Rcon_Status & RconFL_HomeT){
+					} else if(Temp_Rcon_Status & RconFL_HomeT){
 						WF_Turn_Right(Turn_Speed,850);
-					}
-					else if(Temp_Rcon_Status & RconL_HomeT){
+					} else if(Temp_Rcon_Status & RconL_HomeT){
 						WF_Turn_Right(Turn_Speed,300);
-					}
-					else if(Temp_Rcon_Status & RconFL2_HomeT){
+					} else if(Temp_Rcon_Status & RconFL2_HomeT){
 						WF_Turn_Right(Turn_Speed,600);
-					}
-					else if(Temp_Rcon_Status & RconFR2_HomeT){
+					} else if(Temp_Rcon_Status & RconFR2_HomeT){
 						WF_Turn_Right(Turn_Speed,950);
-					}
-					else if(Temp_Rcon_Status & RconR_HomeT){
+					} else if(Temp_Rcon_Status & RconR_HomeT){
 						WF_Turn_Right(Turn_Speed,1100);
 					}
 					Stop_Brifly();
@@ -1095,8 +1071,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Wall_Straight_Distance = MFW_Setting[follow_type].right_bumper_val; //150;
 					Wall_Distance+=300;
 					if(Wall_Distance>Wall_High_Limit)Wall_Distance=Wall_High_Limit;
-				} 
-				else {
+				} else {
 					Wall_Distance-=100;
 					if(Wall_Distance<Wall_Low_Limit)Wall_Distance=Wall_Low_Limit;
 
@@ -1120,16 +1095,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 							if(Get_LeftOBS()>(Get_LeftOBST_Value()-200)){
 								Wall_Distance=Wall_High_Limit;
 								WF_Turn_Right(Turn_Speed-5, 300);
-							}
-							else{
+							} else{
 								WF_Turn_Right(Turn_Speed-5, 200);
 							}
-						}
-						else{
+						} else{
 							WF_Turn_Right(Turn_Speed-5, 300);
 						}
-					}
-					else {
+					} else {
 						WF_Turn_Right(Turn_Speed-5, 200);
 					}
 					Wall_Straight_Distance = MFW_Setting[follow_type].left_bumper_val; //250;
@@ -1137,8 +1109,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 				if (Get_WallAccelerate() < 2000){
 					Jam++;
-				}
-				else {
+				} else {
 					Jam = 0;
 				}
 
@@ -1163,18 +1134,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				if (Get_LeftWheel_Step() < 500) {
 					if (Get_WallAccelerate() < 100) {
 						Move_Forward(10, 10);
-					}
-					else {
+					} else {
 						Move_Forward(15, 15);
 					}
-				}
-				else {
+				} else {
 					Move_Forward(23, 23);
 				}
 				//WFM_update();
 				WF_Check_Loop_Closed(Gyro_GetAngle());
-			}
-			else {
+			} else {
 				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 
 
@@ -1203,20 +1171,17 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 							if(Right_Wall_Speed > Wheel_Speed_Base+6){
 								Right_Wall_Speed = 34;
 								Left_Wall_Speed = 4;
-							}
-							else if(Left_Wall_Speed > Wheel_Speed_Base+10){
+							} else if(Left_Wall_Speed > Wheel_Speed_Base+10){
 								Right_Wall_Speed = 5;
 								Left_Wall_Speed = 30;
 							}
-						}
-						else{
+						} else{
 							if(Right_Wall_Speed > 35){
 								Right_Wall_Speed = 35;
 								Left_Wall_Speed = 4;
 							}
 						}
-					}
-					else {
+					} else {
 						Left_Wall_Speed = Wheel_Speed_Base + Proportion/10 + Delta/3;//16
 						Right_Wall_Speed = Wheel_Speed_Base - Proportion/10 - Delta/4; //11
 
@@ -1225,8 +1190,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 								Right_Wall_Speed = 34;
 								Left_Wall_Speed = 4;
 							}
-						}
-						else{
+						} else{
 							if(Right_Wall_Speed > 32){
 								Right_Wall_Speed = 36;
 								Left_Wall_Speed = 4;
@@ -1243,8 +1207,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 					Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
 					WF_Check_Loop_Closed(Gyro_GetAngle());
-				}
-				else {
+				} else {
 					Stop_Brifly();
 					if (Get_WallAccelerate() < 2000){
 						Jam++;
@@ -1272,8 +1235,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//Map_Initialize();
 			Map_Reset(MAP);
 			continue;
-		}
-		else{
+		} else{
 			ROS_INFO("%s %d: Not in isolate island, finish, break", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -1431,8 +1393,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 				reach_count++;
 				ROS_INFO("reach_count = %d", reach_count);
 			}
-		}
-		else{
+		} else{
 			reach_continuous_state = false;
 			reach_count = 0;
 		}
@@ -1482,16 +1443,13 @@ bool WF_Is_Reach_Cleaned(void){
 					ROS_INFO("Reach X = %d, Reach Y = %d", countToCell(x), countToCell(y));
 					//Beep(3, 25, 25, 1);//Beep when it was coincide
 					return true;
-				}
-				else{
+				} else{
 					return false;
 				}
-			}
-			else{
+			} else{
 				return false;
 			}
-		}
-		else{
+		} else{
 			return false;
 		}
 	}
@@ -1509,12 +1467,10 @@ int8_t WF_Push_Point(int32_t x, int32_t y){
 			WF_Point.push_back(New_WF_Point);
 			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
 			return 1;
-		}
-		else{
+		} else{
 			return 0;//it means still in the same cell
 		}
-	}
-	else{
+	} else{
 		New_WF_Point.X = x;
 		New_WF_Point.Y = y;
 		WF_Point.push_back(New_WF_Point);
