@@ -2033,6 +2033,7 @@ void CM_go_home()
 
 bool start_obstacle_detector(void)
 {
+	ROS_WARN("Launch obstacle detector");
 	system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
 	if (!except_event())
 		return true;
@@ -2098,13 +2099,16 @@ Motion_controller::Motion_controller()
 
 		Work_Motor_Configure();
 
-		if (!robot::instance()->start_lidar())
-			return;
 
 		if (Get_Clean_Mode() == Clean_Mode_Navigation && robot::instance()->align_active())
 		{
 			if (!start_obstacle_detector()) return;
+			if (!robot::instance()->start_lidar())return;
 			if (!robot::instance()->align()) return;
+		}
+		else
+		{
+			if (!robot::instance()->start_lidar())return;
 		}
 		start_slam();
 	}
