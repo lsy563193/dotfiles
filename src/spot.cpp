@@ -106,7 +106,7 @@ void Spot_Mode(void)
 			Motor_OC_Counter = 0;
 		}
 
-		if (Remote_Key(Remote_All)) {
+		if (Get_Rcon_Remote() > 0) {
 			if(Is_MoveWithRemote())
 			{
 				if (Remote_Key(Remote_Wall_Follow)) {
@@ -116,13 +116,14 @@ void Spot_Mode(void)
 					wav_play(WAV_CLEANING_FINISHED);
 					return;
 				}
-				/*
-				if (Remote_Key(Remote_Random)) {
-					Set_Clean_Mode(Clean_Mode_RandomMode);
+				
+				if (Remote_Key(Remote_Spot)) {
+					Set_Clean_Mode(Clean_Mode_Userinterface);
 					Reset_Rcon_Remote();
+					wav_play(WAV_CLEANING_FINISHED);
 					//Move_Forward(10, 10);
 					return;
-				}*/
+				}
 			}
 			if (Remote_Key(Remote_Home)) {
 				Set_MoveWithRemote();
@@ -184,14 +185,33 @@ void Spot_Mode(void)
 				break;
 			}
 		}
-		if (Remote_Key(Remote_All)) {
+
+		if (Get_Rcon_Remote() > 0) {
+			if(Is_MoveWithRemote())
+			{
+				if (Remote_Key(Remote_Wall_Follow)) {
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					Reset_Rcon_Remote();
+					//Move_Forward(10, 10);
+					wav_play(WAV_CLEANING_FINISHED);
+					return;
+				}
+				
+				if (Remote_Key(Remote_Spot)) {
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					Reset_Rcon_Remote();
+					wav_play(WAV_CLEANING_FINISHED);
+					//Move_Forward(10, 10);
+					return;
+				}
+			}
 			if (Remote_Key(Remote_Home)) {
 				Set_MoveWithRemote();
-				Set_Clean_Mode(Clean_Mode_GoHome);
-				//Move_Forward(10, 10);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				SetHomeRemote();
 				Reset_Rcon_Remote();
-				break;
+				wav_play(WAV_CLEANING_FINISHED);
+				return;
 			}
 			Reset_Rcon_Remote();
 		}
