@@ -219,7 +219,6 @@ void *serial_receive_routine(void *)
 void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
-	wav_play(WAV_WELCOME_ILIFE);
 	ROS_INFO("%s.%d, thread running",__FUNCTION__,__LINE__);
 	float	th_last, vth;
 	float	previous_angle = std::numeric_limits<float>::max();

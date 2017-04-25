@@ -130,7 +130,7 @@ int serial_read(int len,uint8_t *buf){
 	memset(t_buf,0,len);
 	fd_set read_serial_fds;
 	struct timeval timeout;
-	timeout.tv_sec = 2;
+	timeout.tv_sec = 4;
 	timeout.tv_usec = 0;// ms
 	size_t *return_size;
 	size_t length = 0;
@@ -153,7 +153,7 @@ int serial_read(int len,uint8_t *buf){
 			return -1;
 		}
 		else if(s_ret ==0){
-			ROS_WARN("%s %d: --------select function timeout!!-------------", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: ----select function timeout!!----------", __FUNCTION__, __LINE__);
 			return 0;
 		}
 		else if(s_ret >0){

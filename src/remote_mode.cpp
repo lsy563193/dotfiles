@@ -17,6 +17,7 @@
 #include "movement.h"
 #include "remote_mode.h"
 #include <ros/ros.h>
+#include "wav.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
@@ -220,6 +221,12 @@ void Remote_Mode(void)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
+		}
+		/* check plan set */
+		if(Get_Plan_Status())
+		{
+			Set_Plan_Status(false);
+			wav_play(WAV_APPOINTMENT_DONE);
 		}
 	}
 	Disable_Motors();

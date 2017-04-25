@@ -2856,7 +2856,12 @@ MapTouringType CM_handleExtEvent()
 		wav_play(WAV_ERROR_LIFT_UP);
 		return MT_Cliff;
 	}
-
+    /* check plan setting*/
+	if(Get_Plan_Status())
+	{
+		Set_Plan_Status(false);
+		wav_play(WAV_APPOINTMENT_DONE);
+	}
 	return MT_None;
 }
 

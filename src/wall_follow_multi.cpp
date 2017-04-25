@@ -923,7 +923,12 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				return 0;
 
 			}
-
+			/* check plan setting*/
+			if(Get_Plan_Status())
+			{
+				Set_Plan_Status(false);
+				wav_play(WAV_APPOINTMENT_DONE);
+			}
 			/*------------------------------------------------------Cliff Event-----------------------*/
 			if(Get_Cliff_Trig()){
 				Set_Wheel_Speed(0,0);

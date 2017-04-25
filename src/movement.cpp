@@ -386,7 +386,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	if (target_angle >= 3600) {
 		target_angle -= 3600;
 	}
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	Set_Dir_Left();
 
@@ -449,7 +449,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	Set_Dir_Right();
 
@@ -1047,14 +1047,14 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		Set_Wheel_Speed(30,30);
 		usleep(50000);
-		Time_Out=10;
+		Time_Out=4;
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
 			Wheel_Current_Summary += robot::instance()->robot_get_rwheel_current();
 			usleep(20000);
 		}
-		Wheel_Current_Summary/=10;
+		Wheel_Current_Summary/=4;
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
@@ -1087,14 +1087,14 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		Set_Wheel_Speed(30,30);
 		usleep(50000);
-		Time_Out=10;
+		Time_Out=4;
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
 			Wheel_Current_Summary += robot::instance()->robot_get_lwheel_current();
 			usleep(20000);
 		}
-		Wheel_Current_Summary/=10;
+		Wheel_Current_Summary/=4;
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
