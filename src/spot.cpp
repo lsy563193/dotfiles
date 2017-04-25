@@ -142,6 +142,10 @@ void Spot_Mode(void)
 			Move_Style = Spiral_Left_Out;
 			break;
 		}
+		if(Get_Plan_Status()){
+			Set_Plan_Status(false);
+			wav_play(WAV_APPOINTMENT_DONE);
+		}
 	}
 
 	Move_Forward(5, 5);
@@ -155,6 +159,10 @@ void Spot_Mode(void)
 
 	while (ros::ok()) {
 		usleep(10000);
+		if(Get_Plan_Status()){
+			Set_Plan_Status(false);
+			wav_play(WAV_APPOINTMENT_DONE);
+		}
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if (Check_Bat_SetMotors(135000, 80000, 100000)) {	//Low Battery Event
 			Display_Battery_Status(Display_Low);//min_distant_segment low
