@@ -153,7 +153,7 @@ int serial_read(int len,uint8_t *buf){
 			return -1;
 		}
 		else if(s_ret ==0){
-			ROS_ERROR("%s %d: --------select function timeout!!-------------", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: --------select function timeout!!-------------", __FUNCTION__, __LINE__);
 			return 0;
 		}
 		else if(s_ret >0){

@@ -72,10 +72,9 @@ void Charge_Function(void)
 			}
 		}
 #endif
-		ROS_DEBUG_NAMED("charger"," Loop for charger mode,voltage %f.",bat_v/100.0);
 		if(Show_Batv_Counter > 250)
 		{
-			ROS_INFO(" Loop for charger mode,voltage %f.",bat_v/100.0);
+			ROS_INFO(" In charge mode looping , battery voltage %5.2f V.",bat_v/100.0);
 			Show_Batv_Counter = 0;
 		}
 		else

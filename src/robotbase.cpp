@@ -20,6 +20,7 @@
 #include "robotbase.h"
 #include "config.h"
 #include "robot.hpp"
+#include "wav.h"
 
 #define ROBOTBASE "robotbase"
 #define _H_LEN 2
@@ -158,6 +159,7 @@ void robotbase_deinit(void)
 void *serial_receive_routine(void *)
 {
 	pthread_detach(pthread_self());
+	ROS_INFO("%s,%d thread running",__FUNCTION__,__LINE__);
 	int i, j, ret, wh_len, wht_len, whtc_len;
 
 	uint8_t r_crc, c_crc;
@@ -171,14 +173,14 @@ void *serial_receive_routine(void *)
 	while (ros::ok() && (!robotbase_thread_stop)) {
 		ret = serial_read(1, &header[0]);
 		if (ret != 1 ){
-			ROS_WARN("serial read length %d bytes, whitch requst %d ",ret,1);
+			ROS_WARN("serial read length %d bytes,  requst %d ",ret,1);
 			continue;
 		}
 		if(header[0] != h1)
 			continue;
 		ret= serial_read(1,&header[1]);
 		if (ret != 1 ){
-			ROS_WARN("serial read length %d bytes, whitch requst %d ",ret,1);
+			ROS_WARN("serial read length %d bytes, requst %d ",ret,1);
 			continue;
 		}
 		if(header[1] != h2){
@@ -186,7 +188,7 @@ void *serial_receive_routine(void *)
 		}
 		ret = serial_read(wh_len, receiData);
 		if(ret != wh_len){
-			ROS_WARN("serial read length %d bytes,whitch requst %d bytes",ret,wh_len);
+			ROS_WARN("serial read length %d bytes, requst %d bytes",ret,wh_len);
 			continue;
 		}
 		r_crc = receiData[whtc_len];
@@ -217,6 +219,8 @@ void *serial_receive_routine(void *)
 void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
+	wav_play(WAV_WELCOME_ILIFE);
+	ROS_INFO("%s.%d, thread running",__FUNCTION__,__LINE__);
 	float	th_last, vth;
 	float	previous_angle = std::numeric_limits<float>::max();
 	float	delta_angle = 0;
@@ -397,6 +401,7 @@ void *robotbase_routine(void*)
 
 void *serial_send_routine(void*){
 	pthread_detach(pthread_self());
+	ROS_INFO("%s,%d thread running",__FUNCTION__,__LINE__);
 	ros::Time start_t;
 	ros::Rate r(_RATE);double proc_t;
 	uint8_t buf[SEND_LEN];
