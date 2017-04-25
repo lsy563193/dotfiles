@@ -758,7 +758,7 @@ uint8_t Turn_Connect(void)
 	if (Is_ChargerOn())
 	{
 		ROS_INFO("[movement.cpp] Reach charger without turning.");
-		Beep(2, 25, 0, 1);
+//		Beep(2, 25, 0, 1);
 		return 1;
 	}
 	// Start turning right.
@@ -780,7 +780,7 @@ uint8_t Turn_Connect(void)
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("[movement.cpp] Turn left reach charger.");
-				Beep(2, 25, 0, 1);
+//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
@@ -810,7 +810,7 @@ uint8_t Turn_Connect(void)
 			if(Is_ChargerOn())
 			{
 				ROS_INFO("[movement.cpp] Turn right reach charger.");
-				Beep(2, 25, 0, 1);
+//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
@@ -2377,6 +2377,10 @@ bool Set_Gyro_On(void)
 
 void Set_Gyro_Off()
 {
+	if (!Is_Gyro_On()){
+		ROS_INFO("gyro stop already");
+		return;
+	}
 	static int count=0;
 	control_set(CTL_GYRO, 0x00);
 	ROS_INFO("waiting for gyro stop");
