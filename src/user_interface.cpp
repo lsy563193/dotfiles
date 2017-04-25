@@ -39,7 +39,7 @@ void User_Interface(void)
 	TimeOutCounter=0;
 
 	Disable_Motors();
-	Beep(3,25,25,1);
+//	Beep(3,25,25,1);
 	//usleep(600000);
 //	Beep(3,25,25,1);
 	usleep(600000);
