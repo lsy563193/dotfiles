@@ -1888,7 +1888,7 @@ uint8_t Is_virtualWall(void){
 
 uint8_t Is_Turn_Remote(void)
 {
-	if (Remote_Key(Remote_Max | Remote_Home | Remote_Spot))
+	if (Remote_Key(Remote_Max | Remote_Home | Remote_Spot | Remote_Wall_Follow))
 	{
 		Reset_Rcon_Remote();
 		return 1;
