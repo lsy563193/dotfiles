@@ -553,8 +553,15 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
-		if(Is_Turn_Remote())
+		/*if(Is_Turn_Remote())
 			break;
+		 */
+
+		if (Get_Rcon_Remote() & (Remote_Max | Remote_Home | Remote_Spot | Remote_Wall_Follow | Remote_Clean))
+		{
+			break;
+		}
+
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
 			WFM_move_back(120);
@@ -1398,10 +1405,14 @@ uint8_t Remote_Key(uint8_t key)
 		ROS_INFO("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
 	}
 	if(Remote_Status & key)
+	{
+		Beep(2, 2, 0, 1);
 		return 1;
+	}
 	else
+	{
 		return 0;
-
+	}
 }
 void Set_Rcon_Remote(uint8_t cmd)
 {
@@ -1410,6 +1421,11 @@ void Set_Rcon_Remote(uint8_t cmd)
 void Reset_Rcon_Remote(void)
 {
 	Remote_Status = 0;
+}
+
+uint8_t Get_Rcon_Remote(void)
+{
+	return Remote_Status;
 }
 
 void Set_MoveWithRemote(void)

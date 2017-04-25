@@ -426,6 +426,8 @@ void Set_Rcon_Remote(uint8_t cmd);
 
 void Reset_Rcon_Remote(void);
 
+uint8_t Get_Rcon_Remote(void);
+
 void Reset_MoveWithRemote(void);
 
 void Set_MoveWithRemote(void);

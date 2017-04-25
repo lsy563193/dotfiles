@@ -722,7 +722,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
 			}
-			if (Remote_Key(Remote_All)) {
+			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 				/*if(Is_MoveWithRemote()){
 					if (Remote_Key(Remote_Random)) {
@@ -869,7 +869,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
 			}
-			if (Remote_Key(Remote_All)) {
+			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 				/*if(Is_MoveWithRemote()){
 					if (Remote_Key(Remote_Random)) {
