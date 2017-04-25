@@ -62,7 +62,7 @@ void Remote_Mode(void)
 				if(Moving_Speed>10)Moving_Speed--;
 				Move_Forward(Moving_Speed,Moving_Speed);
 				OBS_Stop++;
-				if(OBS_Stop>15)Forward_Flag=0;
+				if(OBS_Stop>8)Forward_Flag=0;
 			}
 			else
 			{
