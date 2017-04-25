@@ -167,7 +167,7 @@ void Charge_Function(void)
 				break;
 			}
 		}*/
-		if(Remote_Key(Remote_All)){
+		if(Get_Rcon_Remote()){
 			if (Remote_Key(Remote_Clean)) {
 				set_stop_charge();
 				Reset_Rcon_Remote();
