@@ -119,7 +119,7 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 		Turn_Right(speed, angle);
 	}
 
-	if (Remote_Key(Remote_Clean | Remote_Home))
+	if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home))
 	{
 		// This remote command should change the behavior of robot.
 		Stop_Brifly();
@@ -306,7 +306,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 		rounding_update();
 
-		if (Remote_Key(Remote_Clean | Remote_Home))
+		if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home))
 		{
 			// This remote command should change the behavior of robot.
 			Stop_Brifly();
