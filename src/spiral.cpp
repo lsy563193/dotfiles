@@ -56,7 +56,7 @@ uint8_t Spiral(void)
 			Set_Touch();
 			return 1;
 		}
-		if(Remote_Key(Remote_All))
+		if(Get_Rcon_Remote() > 0)
 		{
 			if(Remote_Key(Remote_Spot))
 			{
