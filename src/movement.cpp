@@ -945,37 +945,6 @@ uint8_t Turn_Connect(void)
 			return 0;
 		}
 	}
-	// Start turning right.
-	target_angle = Gyro_GetAngle() - 120;
-	if (target_angle < 0) {
-		target_angle = 3600 + target_angle;
-	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 1;
-	Set_Wheel_Speed(speed, speed);
-	while(abs(target_angle - Gyro_GetAngle()) > 20)
-	{
-		if(Is_ChargerOn())
-		{
-			Disable_Motors();
-			Stop_Brifly();
-			// Wait for a while to decide if it is really on the charger stub.
-			usleep(500000);
-			if(Is_ChargerOn())
-			{
-				ROS_INFO("[movement.cpp] Turn left reach charger.");
-				Beep(2, 25, 0, 1);
-				return 1;
-			}
-			Set_Wheel_Speed(speed, speed);
-		}
-		if(Touch_Detect())
-		{
-			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
-			Disable_Motors();
-			return 0;
-		}
-	}
 	Stop_Brifly();
 
 	return 0;
