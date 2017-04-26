@@ -35,35 +35,74 @@
 
 #pragma once
 
-#include "point.h"
-#include "segment.h"
+#include <armadillo>
 
-namespace obstacle_detector
-{
-
-class Circle
+class KalmanFilter
 {
 public:
-  Circle(const Point& p = Point(), const double r = 0.0) : center(p), radius(r) { }
+  KalmanFilter(uint dim_in, uint dim_out, uint dim_state) : l(dim_in), m(dim_out), n(dim_state) {
+    using arma::mat;
+    using arma::vec;
 
-  /*
-   * Create a circle by taking the segment as a base of equilateral
-   * triangle. The circle is circumscribed on this triangle.
-   */
-  Circle(const Segment& s) {
-    radius = 0.5773502 * s.length();  // sqrt(3)/3 * length
-    center = (s.first_point + s.last_point - radius * s.normal()) / 2.0;
-    point_sets = s.point_sets;
+    A = mat(n,n).eye();
+    B = mat(n,l).zeros();
+    C = mat(m,n).zeros();
+
+    Q = mat(n,n).eye();
+    R = mat(m,m).eye();
+    P = mat(n,n).eye();
+
+    K = mat(n,m).eye();
+    I = arma::eye<mat>(n,n);
+
+    u = vec(l).zeros();
+    q_pred = vec(n).zeros();
+    q_est = vec(n).zeros();
+    y = vec(m).zeros();
   }
 
-  double distanceTo(const Point& p) { return (p - center).length() - radius; }
+  void predictState() {
+    q_pred = A * q_est + B * u;
+    P = A * P * trans(A) + Q;
+  }
 
-  friend std::ostream& operator<<(std::ostream& out, const Circle& c)
-  { out << "C: " << c.center << ", R: " << c.radius; return out; }
+  void correctState() {
+    K = P * trans(C) * inv(C * P * trans(C) + R);
+    q_est = q_pred + K * (y - C * q_pred);
+    P = (I - K * C) * P;
+  }
 
-  Point center;
-  double radius;
-  std::vector<PointSet> point_sets;
+  void updateState() {
+    predictState();
+    correctState();
+  }
+
+public:
+  // System matrices:
+  arma::mat A;       // State
+  arma::mat B;       // Input
+  arma::mat C;       // Output
+
+  // Covariance matrices:
+  arma::mat Q;       // Process
+  arma::mat R;       // Measurement
+  arma::mat P;       // Estimate error
+
+  // Kalman gain matrix:
+  arma::mat K;
+
+  // Identity matrix
+  arma::mat I;
+
+  // Signals:
+  arma::vec u;       // Input
+  arma::vec q_pred;  // Predicted state
+  arma::vec q_est;   // Estimated state
+  arma::vec y;       // Measurement
+
+private:
+  // Dimensions:
+  uint l;             // Input
+  uint m;             // Output
+  uint n;             // State
 };
-
-} // namespace obstacle_detector

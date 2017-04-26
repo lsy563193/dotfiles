@@ -835,18 +835,6 @@ void robot::start_slam(void)
 		system("roslaunch pp cartographer_slam.launch 2>/dev/null &");
 }
 
-//void start_obstacle_detector(void)
-//{
-//	system("roslaunch obstacle_detector single_scanner.launch 2>/dev/null&");
-//}
-
-/*
-void robot::stop_obstacle_detector(void)
-{
-	system("rosnode kill /obstacle_detector");
-}
-*/
-
 void robot::stop_slam(void)
 {
 	enable_slam_offset = 0;
@@ -884,8 +872,8 @@ bool robot::align(void)
 	if(except_event() || count_n_10ms == 0)
 		return false;
 
+	count_n_10ms = 200;
 	ROS_WARN("Obstacle detector launch finishd.");
-	count_n_10ms = 100;
 
 	//wait for detecting line
 	while (--count_n_10ms > 0 && !except_event())
@@ -925,8 +913,6 @@ bool robot::align(void)
 	}
 	is_line_angle_offset = true;
 
-	ROS_WARN("rosnode kill /obstacle_detector ");
-	system("rosnode kill /obstacle_detector");
 	return true;
 }
 

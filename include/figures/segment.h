@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "point.h"
-//#include "../utilities/point_set.h"
+#include "../utilities/point_set.h"
 
 namespace obstacle_detector
 {
@@ -114,7 +114,7 @@ public:
 
   Point first_point;
   Point last_point;
-//  std::vector<PointSet> point_sets;
+  std::vector<PointSet> point_sets;
 };
 
 } // namespace obstacle_detector

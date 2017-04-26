@@ -32,6 +32,10 @@
 #include <charger.hpp>
 
 #include <wav.h>
+//#include "../include/obstacle_detector.h"
+#include <motion_controler.h>
+//#include "obstacle_detector.h"
+//using namespace obstacle_detector;
 
 //Note that these two value should meet that length can be divided by increment, for example:
 //MOVE_TO_CELL_SEARCH_INCREMENT 1, MOVE_TO_CELL_SEARCH_INCREMENT 1
@@ -70,7 +74,6 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
 extern bool is_line_angle_offset;
-int8_t enable_slam_offset = 0;
 
 
 // This list is for storing the position that robot sees the charger stub.
@@ -134,12 +137,12 @@ bool CM_Check_is_exploring()
 	
 
 	p_map_data = robot::instance()->robot_get_map_data();
-	if (abs(yaw) <= (M_PI / 2) ){
+	if (std::abs(yaw) <= (M_PI / 2) ){
 		plus_sign = 1;
-		a_max = (plus_sign * abs(int(round(search_length * sin(abs(yaw)) / 0.05))));
+		a_max = (plus_sign * std::abs(int(round(search_length * sin(std::abs(yaw)) / 0.05))));
 		for (int a = 0; a <= a_max; a = a + 1) {		//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
-			float x = position_x + (a / tan(abs(yaw))) * 0.05;
+			float x = position_x + (a / tan(std::abs(yaw))) * 0.05;
 			float y = position_y + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
 				float x_1 = x + b * 0.05;
@@ -164,10 +167,10 @@ bool CM_Check_is_exploring()
 
 	} else{
 		plus_sign = -1;
-		a_max = (plus_sign * abs(int(round(search_length * sin(abs(yaw)) / 0.05))));
+		a_max = (plus_sign * std::abs(int(round(search_length * sin(std::abs(yaw)) / 0.05))));
 		for (int a = 0; a >= a_max; a = a - 1) {	//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
-			float x = position_x + (a / tan(abs(yaw))) * 0.05;
+			float x = position_x + (a / tan(std::abs(yaw))) * 0.05;
 			float y = position_y + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1) {
 				float x_1 = x + b * 0.05;
@@ -1397,7 +1400,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		} else if (Rotate_Angle <= -1800) {
 			Rotate_Angle += 3600;
 		}
-		if (abs(Rotate_Angle) > 300) {
+		if (std::abs(Rotate_Angle) > 300) {
 			ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, Rotate_Angle);
 			break;
 		}
@@ -2030,117 +2033,6 @@ void CM_go_home()
 		}
 	}
 }
-
-bool start_obstacle_detector(void)
-{
-	ROS_WARN("Launch obstacle detector");
-	system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
-	if (!except_event())
-		return true;
-
-	ROS_WARN("rosnode kill /obstacle_detector ");
-	system("rosnode kill /obstacle_detector 2>/dev/null &");
-	return false;
-}
-
-void stop_obstacle_detector(void)
-{
-	system("rosnode kill /obstacle_detector 2>/dev/null &");
-}
-
-bool start_slam(void)
-{
-	robot::instance()->start_slam();
-	if(except_event()){
-		robot::instance()->stop_slam();
-		return false;
-	}
-
-	enable_slam_offset = 1;
-
-	auto count_n_10ms = 1000;
-	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
-//		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		usleep(10000);
-	}
-	if(count_n_10ms == 0){
-		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		return false;
-	}
-	return true;
-
-}
-/*
-
-void show_time(std::function<void(void)> task){
-	auto gyro_start = std::chrono::system_clock::now();
-	task();
-	auto diff = std::chrono::system_clock::now() - gyro_start;
-	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
-	std::cout <<"this task runs:" << ms.count() << " ms" << std::endl;
-}
-*/
-
-Motion_controller::Motion_controller()
-{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Paused())
-	{
-		Work_Motor_Configure();
-		robot::instance()->start_lidar();
-		enable_slam_offset = 1;
-	} else
-#endif
-	{
-		Work_Motor_Configure();
-
-
-		if (Get_Clean_Mode() == Clean_Mode_Navigation && robot::instance()->align_active())
-		{
-			if (!start_obstacle_detector()) return;
-			if (!robot::instance()->start_lidar())return;
-			if (!robot::instance()->align()) return;
-		}
-		else
-		{
-			if (!robot::instance()->start_lidar())return;
-		}
-		start_slam();
-	}
-}
-
-Motion_controller::~Motion_controller()
-{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Paused())
-	{
-		Disable_Motors();
-		robot::instance()->stop_lidar();
-		enable_slam_offset = 0;
-	} else
-#endif
-	{
-		Disable_Motors();
-
-//		if(start_bit[lidar])
-		//try 3times;make sure to stop
-		if(Get_Cliff_Trig())
-			wav_play(WAV_ERROR_LIFT_UP);
-
-		wav_play(WAV_CLEANING_FINISHED);
-
-		robot::instance()->stop_lidar();
-//		if(start_bit[align])
-		robot::instance()->align_exit();
-
-//		if(start_bit[slam])
-		robot::instance()->stop_slam();
-
-//		if(start_bit[obs_det])
-		stop_obstacle_detector();
-
-	}
-};
 
 uint8_t CM_Touring(void)
 {
