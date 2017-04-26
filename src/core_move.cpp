@@ -1754,7 +1754,6 @@ int CM_cleaning()
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Battery_Home) {
-				Display_Battery_Status(Display_Low);
 				go_home = 1;
 				Stop_Brifly();
 				quit = true;
@@ -1818,7 +1817,6 @@ void CM_go_home()
 		path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
 		if (remote_go_home == 1) {
-			Set_LED(100, 100);
 			SetHomeRemote();
 		}
 
@@ -2047,6 +2045,7 @@ uint8_t CM_Touring(void)
 	from_station = 0;
 	map_touring_cancel = go_home = remote_go_home = 0;
 
+	Set_LED(100,0);
 	Reset_MoveWithRemote();
 	Reset_Touch();
 
@@ -2073,7 +2072,6 @@ uint8_t CM_Touring(void)
 		}
 	}
 
-	Set_LED(100, 0);
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
 		// Beep while moving back.
@@ -2163,14 +2161,12 @@ uint8_t CM_Touring(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
-		Set_LED(0, 0);
 		usleep(200000);
 		if (Touch_Detect()) {
 			ROS_INFO("Touch_Detect2-----------------------------");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
-		Set_LED(100, 0);
 		usleep(200000);
 	}
 	*/

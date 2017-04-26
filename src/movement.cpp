@@ -78,6 +78,8 @@ volatile uint8_t Remote_Status = 0;
 // Variable for plan status
 volatile bool Plan_Status = false;
 
+// Error code for exception case
+volatile uint8_t Error_Code = 0;
 /*----------------------- Work Timer functions--------------------------*/
 void Reset_Work_Time()
 {
@@ -97,7 +99,12 @@ void Set_Work_Time(time_t time)
 /*----------------------- Set error functions--------------------------*/
 void Set_Error_Code(uint8_t code)
 {
-	code = code;
+	Error_Code = code;
+}
+
+uint8_t Get_Error_Code()
+{
+	return Error_Code;
 }
 
 void Set_LeftBrush_Stall(uint8_t L)
@@ -989,18 +996,6 @@ uint8_t IsHomeRemote(void)
 	return R_H_Flag;
 }
 
-void Display_Home_LED(void)
-{
-	if(IsHomeRemote())
-	{
-		Set_LED(100,100);
-	}
-	else
-	{
-		Set_LED(100,0);
-	}
-}
-
 uint8_t  Is_MoveWithRemote(void){
 	return remote_move_flag;	
 }
@@ -1174,14 +1169,14 @@ uint8_t Self_Check(uint8_t Check_Code)
 			Disable_Motors();
 			wav_play(WAV_ERROR_RIGHT_WHEEL);
 			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n",__FUNCTION__,__LINE__);
-			//Set_Error_Code(Error_Code_RightWheel);
+			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 
 		}
 		if(Right_Wheel_Slow>100)
 		{
 			Disable_Motors();
-////			Set_Error_Code(Error_Code_RightWheel);
+			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
 		Stop_Brifly();
@@ -1214,13 +1209,13 @@ uint8_t Self_Check(uint8_t Check_Code)
 			Disable_Motors();
 			wav_play(WAV_ERROR_LEFT_WHEEL);
 			ROS_WARN("%s %d,left wheel stall maybe, please check!!\n");
-			//Set_Error_Code(Error_Code_RightWheel);
+			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
 		if(Left_Wheel_Slow>100)
 		{
 			Disable_Motors();
-			//Set_Error_Code(Error_Code_RightWheel);
+			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
 		Stop_Brifly();
@@ -1234,7 +1229,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		usleep(100000);
 		//if(GPIOD->IDR&MCU_MAINBRUSH_I_DET)
 		//{
-			//Set_Error_Code(Error_Code_MainBrush);
+			Set_Error_Code(Error_Code_MainBrush);
 			Disable_Motors();
 			wav_play(WAV_ERROR_MAIN_BRUSH);
 			return 1;
@@ -1252,7 +1247,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		usleep(100000);
 		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
 		//{
-			//Set_Error_Code(Error_Code_Fan_H);
+			Set_Error_Code(Error_Code_Fan_H);
 			Disable_Motors();
 			return 1;
 		//}
@@ -1261,7 +1256,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		sleep(1);
 		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
 		//{
-			//Set_Error_Code(Error_Code_Fan_H);
+			Set_Error_Code(Error_Code_Fan_H);
 			Disable_Motors();
 			wav_play(WAV_ERROR_SUCTION_FAN);
 			return 1;
@@ -1296,7 +1291,7 @@ uint8_t Check_Bat_Ready_To_Clean(void)
 	{
 		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE;
 	}
-	ROS_INFO("%s %d: Battery limit is %d.", __FUNCTION__, __LINE__, battery_limit);
+	//ROS_INFO("%s %d: Battery limit is %d.", __FUNCTION__, __LINE__, battery_limit);
 	// Check if battary is lower than the low battery go home voltage value.
 	if (GetBatteryVoltage() > battery_limit){
 		return 1;
@@ -1614,36 +1609,6 @@ uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32
 	}
 }
 
-
-void Display_Battery_Status(uint8_t display_mode)
-{
-	// Change the LED according to the display_mode.
-	switch (display_mode){
-		case Display_Clean:{
-			break;
-		}
-		case Display_Wall:{
-			break;
-		}
-		case Display_Zizag:{
-			break;
-		}
-		case Display_Remote:{
-			break;
-		}
-		case Display_Full:{
-			Set_LED(100, 0);
-			break;
-		}
-		case Display_Low:{
-			Set_LED(50, 100);
-			break;
-		}
-		default:{
-			break;
-		}
-	}
-}
 
 void Set_Dir_Left(void)
 {

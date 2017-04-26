@@ -250,11 +250,24 @@
 #define Power_On					0x01
 #define Power_Off					0x00
 
-#define Error_Code_Bumper			0x02
-#define Error_Code_Cliff			0x02
-
-#define Error_Code_Encoder			0x0C
-
+#define Error_Code_None			((uint8_t)0x00)
+#define Error_Code_LeftWheel	((uint8_t)0x01)
+#define Error_Code_RightWheel	((uint8_t)0x02)
+#define Error_Code_SideBrush	((uint8_t)0x03)
+#define Error_Code_PickUp		((uint8_t)0x04)
+#define Error_Code_Cliff		((uint8_t)0x05)
+#define Error_Code_Bumper		((uint8_t)0x06)
+#define Error_Code_Stuck		((uint8_t)0x07)
+#define Error_Code_MainBrush	((uint8_t)0x08)
+#define Error_Code_Fan_H		((uint8_t)0x09)
+#define Error_Code_WaterTank	((uint8_t)0x0A)
+#define Error_Code_BTA			((uint8_t)0x0B)
+#define Error_Code_Obs			((uint8_t)0x0C)
+#define Error_Code_BatteryLow	((uint8_t)0x0D)
+#define Error_Code_Dustbin		((uint8_t)0x0E)
+#define Error_Code_Test			((uint8_t)0xff)
+#define Error_Code_Test_Null	((uint8_t)0xfe)
+#define Error_Code_Encoder		((uint8_t)0xFC)
 
 #define Display_Full				4
 #define Display_Low					5
@@ -307,6 +320,7 @@ void Reset_Work_Time();
 uint32_t Get_Work_Time();
 
 void Set_Error_Code(uint8_t Code);
+uint8_t Get_Error_Code(void);
 
 void Set_LeftBrush_Stall(uint8_t L);
 
@@ -342,7 +356,6 @@ void Jam_Turn_Left(uint16_t speed,int16_t angle);
 void Jam_Turn_Right(uint16_t speed,int16_t angle);
 void WF_Turn_Right(uint16_t speed,int16_t angle);
 
-void Set_Error_Code(uint8_t code);
 void Set_LeftBrush_Stall(uint8_t L);
 
 void Set_Dir_Backward(void);
@@ -376,8 +389,6 @@ void SetHomeRemote(void);
 void Reset_HomeRemote(void);
 
 uint8_t IsHomeRemote(void);
-
-void Display_Home_LED(void);
 
 uint8_t Is_OBS_Near(void);
 
@@ -439,8 +450,6 @@ uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32
 void Reset_WorkTimer(void);
 
 void Reset_Rcon_Status(void);
-
-void Display_Battery_Status(uint8_t display_mode);
 
 void Set_Dir_Left(void);
 

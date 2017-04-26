@@ -170,7 +170,6 @@ void Spot_Mode(void)
 	Set_MainBrush_PWM(90);
 	Set_SideBrush_PWM(60, 60);
 	Set_BLDC_Speed(90);
-	Set_LED(100,0);
 	Motor_OC_Counter = 0;
 
 	while (ros::ok()) {
@@ -181,7 +180,7 @@ void Spot_Mode(void)
 		}
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if (Check_Bat_SetMotors(135000, 80000, 100000)) {	//Low Battery Event
-			Display_Battery_Status(Display_Low);//min_distant_segment low
+			ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
 			usleep(30000);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
@@ -514,7 +513,6 @@ uint8_t Random_Dirt_Event(void)
 						Move_Back();
 					}
 					Stop_Brifly();
-					Set_LED(100,0);
 					Turn_Left(Turn_Speed, 2500);
 					Move_Forward(10, 10);
 					Move_Style = Spiral_Left_Out;
@@ -547,7 +545,6 @@ uint8_t Random_Dirt_Event(void)
 						Move_Back();
 					}
 					Stop_Brifly();
-					Set_LED(100,0);
 					Turn_Left(Turn_Speed, 2500);
 					Move_Style = Spiral_Left_Out;
 					Reset_Wheel_Step();
@@ -618,7 +615,6 @@ uint8_t Random_Dirt_Event(void)
 						Move_Back();
 					}
 					Stop_Brifly();
-					Set_LED(100,0);
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_Out;
 					Reset_Wheel_Step();
@@ -654,7 +650,6 @@ uint8_t Random_Dirt_Event(void)
 						Move_Back();
 					}
 					Stop_Brifly();
-					Set_LED(100,0);
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_In;
 					Reset_Wheel_Step();

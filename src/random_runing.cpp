@@ -232,7 +232,6 @@ void Random_Running_Mode(void)
 			if(Self_Check(Motor_Check_Code))
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				Set_LED(0,100);
 				break;
 			}
 			//Initialize_Motor();	  
@@ -243,7 +242,7 @@ void Random_Running_Mode(void)
 			Low_Power_Counter++;
 			if(Low_Power_Counter>10)
 			{
-				Display_Battery_Status(Display_Low);//min_distant_segment low
+				ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
@@ -381,7 +380,6 @@ void Random_Running_Mode(void)
 			if(Remote_Key(Remote_Home)) //                                    Check Key Home
 			{
 				usleep(50000);
-				Set_LED(100,100);
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				SetHomeRemote();
 				Reset_Rcon_Remote();
@@ -1353,7 +1351,6 @@ uint8_t Out_Trap_Right(void)
 			if(Self_Check(Motor_Check_Code))
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				Set_LED(0,1007);
 				return 1;
 			}
 			//Initialize_Motor();	  
@@ -1461,7 +1458,6 @@ uint8_t Out_Trap_Left(void)
 			if(Self_Check(Motor_Check_Code))
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				Set_LED(0,100);
 				return 1;
 			}
 		//Initialize_Motor();	  

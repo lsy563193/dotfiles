@@ -97,7 +97,6 @@ void User_Interface(void)
 		/* -----------------------------Check if Home event ----------------------------------*/
 		if(Remote_Key(Remote_Home)) //                                    Check Key Home
 		{
-			Set_LED(100,100);
 			Temp_Mode=Clean_Mode_GoHome;
 		//	Reset_MoveWithRemote();
 			Set_MoveWithRemote();
@@ -139,7 +138,6 @@ void User_Interface(void)
 		/* -----------------------------Check if key clean event ----------------------------*/
 		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean
 		{
-			Set_LED(100,0);
 //			Beep(2, 15, 0, 1);
 			Press_time=Get_Key_Time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
@@ -155,7 +153,6 @@ void User_Interface(void)
 				}
 				// Key relaesed, then the touch status should be cleared.
 				Reset_Touch();
-				Set_LED(0,0);
 				Temp_Mode=Clean_Mode_Sleep;
 			}
 			else
@@ -175,7 +172,7 @@ void User_Interface(void)
 //				Reset_Error_Code();
 				Set_Clean_Mode(Temp_Mode);
 //				Set_CleanKeyDelay(0);
-				return;
+				break;
 			}
 			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
@@ -197,12 +194,11 @@ void User_Interface(void)
 				else
 				{
 //					Reset_Error_Code();
-//					Set_LED(100,0);
 					Set_Clean_Mode(Temp_Mode);
 //					Set_CleanKeyDelay(0);
 					Reset_Rcon_Remote();
 //					Reset_Bumper_Error();
-					return;
+					break;
 				}
 			}
 			Temp_Mode=0;
@@ -233,7 +229,7 @@ void User_Interface(void)
 			}
 		}
 
-		if(Check_Bat_Home())
+		if(!Check_Bat_Ready_To_Clean())
 		{
 			BTA_Power_Dis=1;
 		}
@@ -242,11 +238,11 @@ void User_Interface(void)
 			BTA_Power_Dis=0;
 		}
 		
-//		if(Get_Error_Code())//min_distant_segment Error = red led full
-//		{
-//			Set_LED(0,100);
-//		}
-		if(BTA_Power_Dis)//min_distant_segment low battery = red & green
+		if(Get_Error_Code())//min_distant_segment Error = red led full
+		{
+			Set_LED(0,100);
+		}
+		else if(BTA_Power_Dis)//min_distant_segment low battery = red & green
 		{
 			Set_LED(ONE_Display_Counter,ONE_Display_Counter);
 		}
@@ -256,5 +252,12 @@ void User_Interface(void)
 		}
 
 #endif
+	}
+
+	if (Get_Clean_Mode() != Clean_Mode_Sleep)
+	{
+		// Any manual operation will reset the error status.
+		ROS_INFO("Reset the error code,");
+		Set_Error_Code(Error_Code_None);
 	}
 }

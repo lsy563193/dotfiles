@@ -23,7 +23,6 @@ void Sleep_Mode(void)
 	{
 		usleep(200000);
 		/*---------------------------------Wake Up-------------------------------*/
-		Set_LED(0,0);
 
 		// Time for key pressing
 		time=0;
@@ -67,7 +66,7 @@ void Sleep_Mode(void)
 			}
 		}
 		/*-----------------Check if near the charging base-----------------------------*/
-		if(Get_Rcon_Status()&0x777777)
+		if(Get_Rcon_Status()&0x777777 && !Get_Error_Code())
 		{
 			Ch_WP_Counter++;
 			if(Ch_WP_Counter>50)
@@ -76,7 +75,6 @@ void Sleep_Mode(void)
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				//Enable_PPower();
 				SetHomeRemote();
-				Set_LED(100,100);
 				//Wake_Up_Adjust();
 	  			return;
 			}

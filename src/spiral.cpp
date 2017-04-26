@@ -90,7 +90,6 @@ uint8_t Spiral(void)
 			}
 			if(Remote_Key(Remote_Home)) //                                    Check Key Home
 			{
-				Set_LED(100,100);
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				Reset_Rcon_Remote();
 				SetHomeRemote();

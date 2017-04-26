@@ -151,12 +151,6 @@ void Charge_Function(void)
 //				{
 //					if(Remote_Key(Remote_Wallfollow))
 //					{
-//						Set_LED(100,0);
-//						Beep(1);
-//						Set_LED(0,0);
-//						Beep(3);
-//						Set_LED(100,0);
-//						Beep(5);
 //						Set_Room_Mode(Room_Mode_Auto);
 //						Reset_Rcon_Remote();
 //						break;
@@ -216,14 +210,7 @@ void Charge_Function(void)
 				if(One_Display_Counter<2)Display_Switch=1;
 			}
 
-			if(Display_Full_Switch)
-			{
-				Set_LED(100,0);
-			}
-			else
-			{
-				Set_LED(One_Display_Counter,One_Display_Counter);
-			}
+			Set_LED(One_Display_Counter,One_Display_Counter);
 		}
 		#endif
 
@@ -238,7 +225,6 @@ void GoHome(void)
 //	Move_Forward(9,9);
 //	Set_SideBrush_PWM(30,30);
 //	Set_MainBrush_PWM(30);
-	//Display_Home_LED();
 	Reset_Rcon_Status();
 	//delay(1500);
 //	wav_play(WAV_BACK_TO_CHARGER);
@@ -249,6 +235,7 @@ void GoHome(void)
 	// This step is for counting angle change when the robot turns.
 	long Gyro_Step = 0;
 
+	Set_LED(100,100);
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
 
@@ -503,7 +490,6 @@ void Around_ChargerStation(uint8_t Dir)
 	Set_BLDC_Speed(Vac_Speed_NormalL);
 	//delay(500);
 	Reset_Rcon_Status();
-//	Display_Home_LED();
 	Reset_Wheel_Step();
 	Reset_Move_Distance();
 	ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, Dir);
@@ -589,7 +575,7 @@ void Around_ChargerStation(uint8_t Dir)
 		}
 		if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
 		{
-			Display_Battery_Status(Display_Low);
+			ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
 			//delay(10000);
 			usleep(1000000);
 			Set_Clean_Mode(Clean_Mode_Sleep);
@@ -1163,9 +1149,7 @@ void By_Path(void)
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
 	Set_BLDC_Speed(Vac_Speed_NormalL);
-//	Set_LED(100,100);
 //	SetHomeRemote();
-//	Display_Home_LED();
 
 //	Beep(1);
 
@@ -1422,10 +1406,9 @@ void By_Path(void)
 			}
 			if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
 			{
-				Display_Battery_Status(Display_Low);
 //				delay(10000);
 				usleep(1000000);
-				Set_Clean_Mode(Clean_Mode_Sleep);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}
 			if(Home_Check_Current())return;
