@@ -15,16 +15,25 @@ find_package(catkin REQUIRED COMPONENTS
 	std_msgs
 	geometry_msgs
 	visualization_msgs
+    cmake_modules
 	tf
 )
 
 find_package(PkgConfig)
+find_package(Eigen REQUIRED)
+find_package(Boost REQUIRED)
 pkg_check_modules(ALSA alsa REQUIRED)
+
+include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
+include_directories(/usr/include/eigen3)
+include_directories(include ${catkin_INCLUDE_DIRS} ${Eigin3_INCLUDE_DIRS})
+link_directories(${catkin_LIBRARY_DIRS} ${Eigen3_LIBRARY_DIRS})
 
 include_directories(
   ./include
   ${catkin_INCLUDE_DIRS}
   ${ALSA_INCLUDE_DIRS}
+  ${EIGEN_INCLUDE_DIRS}
 )
 
 add_message_files(
@@ -53,10 +62,11 @@ catkin_package(
 	geometry_msgs
 	sensor_msgs
 	tf
+	DEPENDS Eigen3
 )
 
 add_executable(pp  ${PP_SRC} )
-target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} -lm -lpthread)
+target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 
 #add_executable(angle_test test/angle_test.cpp )
 #target_link_libraries(angle_test ${catkin_LIBRARIES} -lm -lpthread)

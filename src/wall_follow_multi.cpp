@@ -31,6 +31,8 @@
 #include <vector>
 #include "charger.hpp"
 #include "wav.h"
+
+#include "motion_controler.h"
 //Turn speed
 #ifdef Turn_Speed
 #undef Turn_Speed

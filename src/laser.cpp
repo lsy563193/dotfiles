@@ -7,6 +7,10 @@
 #include "mathematics.h"
 
 #include "laser.hpp"
+//#include <obstacle_detector.h>
+//#include <figures/point.h>
+
+//using namespace obstacle_detector;
 
 static	laser *laser_obj = NULL;
 
@@ -46,15 +50,16 @@ bool laser::is_ready()
 	return (this->is_laser_ready) ? true : false;
 }
 
-void laser::laser_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg)
+void laser::laser_scan_cb(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
 	int i, count = 0;
 
-	this->laser_scan_data = *msg;
-	count = (int)((msg->angle_max - msg->angle_min) / msg->angle_increment);
+	this->laser_scan_data = *scan;
+	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 //	ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
 
 	this->is_laser_ready = true;
+
 }
 
 bool laser::laser_obstcal_detected(double distance, int angle, double range)
