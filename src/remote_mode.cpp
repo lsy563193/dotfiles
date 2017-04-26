@@ -17,6 +17,7 @@
 #include "movement.h"
 #include "remote_mode.h"
 #include <ros/ros.h>
+#include "wav.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
@@ -32,12 +33,17 @@ void Remote_Mode(void)
   //Display_Clean_Status(Display_Remote);
 
 	if (!Is_Gyro_On()){
-		Set_LED(100,0);
 //		Beep(3,25,25,2);
 		Set_Gyro_On();
+		if (!Wait_For_Gyro_On())
+		{
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			return;
+		}
 //		Set_Gyro_Status();
 	}
 
+	Set_LED(100,0);
 	Reset_Wheel_Step();
 	Reset_Touch();
 	Set_BLDC_Speed(40);
@@ -62,7 +68,7 @@ void Remote_Mode(void)
 				if(Moving_Speed>10)Moving_Speed--;
 				Move_Forward(Moving_Speed,Moving_Speed);
 				OBS_Stop++;
-				if(OBS_Stop>15)Forward_Flag=0;
+				if(OBS_Stop>8)Forward_Flag=0;
 			}
 			else
 			{
@@ -220,6 +226,12 @@ void Remote_Mode(void)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
+		}
+		/* check plan set */
+		if(Get_Plan_Status())
+		{
+			Set_Plan_Status(false);
+			wav_play(WAV_APPOINTMENT_DONE);
 		}
 	}
 	Disable_Motors();

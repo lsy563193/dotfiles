@@ -623,6 +623,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
 	extern int8_t			enable_slam_offset;
+	uint8_t					octype;//for current check
 	Reset_MoveWithRemote();
 
 	//Initital home point
@@ -634,11 +635,22 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 	Map_Initialize();
 	ROS_INFO("%s %d: grid map initialized", __FUNCTION__, __LINE__);
-	PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
+	WF_PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
+	if (!Wait_For_Gyro_On())
+	{
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return 0;
+	}
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
 
@@ -766,6 +778,17 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Reset_Rcon_Remote();
 			}
 
+			/*------------------------------------------------------Check Current--------------------------------*/
+			octype = Check_Motor_Current();
+			if (octype) {
+				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
+				if(Self_Check(octype)){
+					WF_Break_Wall_Follow();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
+			}
+
 			/*------------------------------------------------------Distance Check-----------------------*/
 			if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_WF_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) > Find_Wall_Distance ){
 				ROS_INFO("Find wall over the limited distance : %f", Find_Wall_Distance);
@@ -853,7 +876,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);
 			//WFM_boundary_check();
 			/*------------------------------------------------------Check Current--------------------------------*/
-			uint8_t octype = Check_Motor_Current();
+			octype = Check_Motor_Current();
 			if (octype) {
 				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
 				if(Self_Check(octype)){
@@ -925,7 +948,12 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				return 0;
 
 			}
-
+			/* check plan setting*/
+			if(Get_Plan_Status())
+			{
+				Set_Plan_Status(false);
+				wav_play(WAV_APPOINTMENT_DONE);
+			}
 			/*------------------------------------------------------Cliff Event-----------------------*/
 			if(Get_Cliff_Trig()){
 				Set_Wheel_Speed(0,0);
@@ -1015,6 +1043,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 				//WFM_wall_move_back();
 				WFM_move_back(350);
+
+				if (Is_Bumper_Jamed()){
+					Reset_Touch();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
+					WF_Break_Wall_Follow();
+					ROS_INFO("%s %d: Check: Bumper 2! break", __FUNCTION__, __LINE__);
+					return 0;
+				}
 
 				//WFM_update();
 				WF_Check_Loop_Closed(Gyro_GetAngle());

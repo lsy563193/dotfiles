@@ -15,6 +15,7 @@
 #include "path_planning.h"
 #include "rounding.h"
 #include "shortest_path.h"
+#include "spot.h"
 
 #ifdef PP_CURVE_MOVE
 #include "curve_move.h"
@@ -869,7 +870,6 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	should_follow_wall = 0;
 
 	usleep(10000);
-	Set_Gyro_Status();
 	//10 second
 
 	Reset_Rcon_Status();
@@ -2048,6 +2048,31 @@ uint8_t CM_Touring(void)
 	map_touring_cancel = go_home = remote_go_home = 0;
 
 	Reset_MoveWithRemote();
+	Reset_Touch();
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Paused())
+	{
+		wav_play(WAV_CLEANING_START);
+	}
+	else
+#endif
+	{
+		// Restart the gyro.
+		Set_Gyro_Off();
+		// Wait for 30ms to make sure the off command has been effectived.
+		usleep(30000);
+		// Set gyro on before wav_play can save the time for opening the gyro.
+		Set_Gyro_On();
+		wav_play(WAV_CLEANING_START);
+
+		if (!Wait_For_Gyro_On())
+		{
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			return 0;
+		}
+	}
+
 	Set_LED(100, 0);
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
@@ -2155,7 +2180,6 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Paused())
 	{
-		wav_play(WAV_CLEANING_START);
 		if (Get_Rcon_Status())
 		{
 			// Save the current coordinate as a new home point.
@@ -2171,7 +2195,6 @@ uint8_t CM_Touring(void)
 	else
 #endif
 	{
-		wav_play(WAV_CLEANING_START);
 		// Set the Work_Timer_Start as current time
 		Reset_Work_Time();
 
@@ -2202,6 +2225,8 @@ uint8_t CM_Touring(void)
 	if(except_event()){
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		// Reset continue cleaning status
+		CM_reset_cleaning_pause();
 		return 0;
 	}
 
@@ -2710,7 +2735,7 @@ MapTouringType CM_handleExtEvent()
 		 * Check remote spot key press event, if spot key is pressed,
 		 * change to spot mode, after spot mode finished, back to zig-zag clean.
 		 */
-#if 0
+#if 1
 		if (Remote_Key(Remote_Spot)) {
 			Stop_Brifly();
 			ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
@@ -2747,7 +2772,12 @@ MapTouringType CM_handleExtEvent()
 		wav_play(WAV_ERROR_LIFT_UP);
 		return MT_Cliff;
 	}
-
+    /* check plan setting*/
+	if(Get_Plan_Status())
+	{
+		Set_Plan_Status(false);
+		wav_play(WAV_APPOINTMENT_DONE);
+	}
 	return MT_None;
 }
 

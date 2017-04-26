@@ -75,11 +75,17 @@ void Random_Running_Mode(void)
 	uint8_t Virtual_Wall_C = 0, Virtual_Wall_NG = 0;
 #endif
 
-        if (!Is_Gyro_On()){
-			Set_Gyro_On();
-       		Set_Gyro_Status();
-			//printf("Gyro_Status%d\n", Is_Gyro_On());
-        }
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
+	if (!Wait_For_Gyro_On())
+	{
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return;
+	}
 
 	Reset_Work_Time();
 	Wall_Bumper_Factor = Get_Random_Factor()/15;
@@ -261,7 +267,7 @@ void Random_Running_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		if(Remote_Key(Remote_All))
+		if(Get_Rcon_Remote() > 0)
 		{
 			#ifdef STANDARD_REMOTE
 			if(Remote_Key(Remote_Left))
@@ -1119,7 +1125,7 @@ void Random_Running_Mode(void)
 			}
 			OBS_Cycle = 0;
 			On_TrapOut_Flag=0;
-			if(!Remote_Key(Remote_All))
+			if(Get_Rcon_Remote() <= 0)
 			{
 				if(Get_OBS_Status())
 				{
@@ -1577,7 +1583,7 @@ uint8_t Left_Bumper_Avoiding(void)
 			Set_Touch();
 			return 0;
 		}
-		if(Remote_Key(Remote_All))
+		if(Get_Rcon_Remote() > 0)
 		{
 			Reset_Rcon_Remote();
 			return 0;
@@ -1633,7 +1639,7 @@ uint8_t Right_Bumper_Avoiding(void)
 			Set_Touch();
 			return 0;
 		}
-		if(Remote_Key(Remote_All))
+		if(Get_Rcon_Remote() > 0)
 		{
 			Reset_Rcon_Remote();
 			return 0;
@@ -1664,7 +1670,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	Turn_Left(speed,angle/2);
-	if(Remote_Key(Remote_All))
+	if(Get_Rcon_Remote() > 0)
 	{
 		Reset_Rcon_Remote();
 		return;
@@ -1735,7 +1741,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	Turn_Right(speed,angle/2);
-	if(Remote_Key(Remote_All))
+	if(Get_Rcon_Remote() > 0)
 	{
 		Reset_Rcon_Remote();
 		return;

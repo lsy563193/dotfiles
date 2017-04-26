@@ -338,6 +338,8 @@ void Quick_Back(uint8_t Speed,uint16_t Distance);
 void Turn_Left_At_Init(uint16_t speed,int16_t angle);
 void Turn_Left(uint16_t speed,int16_t angle);
 void Turn_Right(uint16_t speed,int16_t angle);
+void Jam_Turn_Left(uint16_t speed,int16_t angle);
+void Jam_Turn_Right(uint16_t speed,int16_t angle);
 void WF_Turn_Right(uint16_t speed,int16_t angle);
 
 void Set_Error_Code(uint8_t code);
@@ -489,7 +491,8 @@ void set_start_charge(void);
 void set_stop_charge(void);
 
 bool except_event();
-bool Set_Gyro_On(void);
+void Set_Gyro_On(void);
+bool Wait_For_Gyro_On(void);
 void Set_Gyro_Off(void);
 
 void set_main_pwr(uint8_t val);

@@ -29,7 +29,6 @@ void protect_function()
 	//Bumper protect
 	if (Get_Bumper_Status()){
 		ROS_INFO("Bumper protect  check");
-		Set_Gyro_On();
 		Turn_Left_At_Init(Max_Speed, 1800);//save itself
 	}
 	if (Get_Bumper_Status())
@@ -39,11 +38,30 @@ void protect_function()
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
+	ROS_INFO("Waiting for robot sensor ready.");
 	while (!robot::instance()->robot_is_all_ready()) {
 		usleep(1000);
 	}
+	ROS_INFO("Robot sensor ready.");
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
+
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
+	// Wait for 0.5s to make sure gyro should be on after the wav_play().
+	usleep(500000);
+	wav_play(WAV_WELCOME_ILIFE);
+	while (!Wait_For_Gyro_On())
+	{
+		usleep(100000);
+		Reset_Rcon_Remote();
+		Reset_Touch();
+	}
+
 	protect_function();
 
 //	wav_play(WAV_BATTERY_CHARGE_DONE);
@@ -85,7 +103,28 @@ void *core_move_thread(void *)
 			case Clean_Mode_GoHome:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
-				wav_play(WAV_BACK_TO_CHARGER);
+
+				if (!Is_Gyro_On())
+				{
+					// Restart the gyro.
+					Set_Gyro_Off();
+					// Wait for 30ms to make sure the off command has been effectived.
+					usleep(30000);
+					// Set gyro on before wav_play can save the time for opening the gyro.
+					Set_Gyro_On();
+					wav_play(WAV_BACK_TO_CHARGER);
+
+					if (!Wait_For_Gyro_On())
+					{
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						break;
+					}
+				}
+				else
+				{
+					wav_play(WAV_BACK_TO_CHARGER);
+				}
+
 				while (Get_Clean_Mode()==Clean_Mode_GoHome)
 				{
 					// If GoHome() set clean mode as Clean_Mode_GoHome, it means it still needs to go to charger stub.
@@ -151,7 +190,6 @@ int main(int argc, char **argv)
 //	nh_private.param<robot::Slam_type>("slam_type", slam_type, robot::Slam_type::GMAPPING);
 	nh_private.param<int>("slam_type", slam_type, 0);
 
-	wav_play(WAV_WELCOME_ILIFE);
 
 	serial_init(serial_port.c_str(), baudrate);
 	robot::instance()->align_active(line_align_active);

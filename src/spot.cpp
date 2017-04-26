@@ -44,13 +44,29 @@ void Spot_Mode(void)
 
 	Reset_Touch();
 
-	wav_play(WAV_CLEANING_SPOT);
+	if (!Is_Gyro_On())
+	{
+		// Restart the gyro.
+		Set_Gyro_Off();
+		// Wait for 30ms to make sure the off command has been effectived.
+		usleep(30000);
+		// Set gyro on before wav_play can save the time for opening the gyro.
+		Set_Gyro_On();
+		wav_play(WAV_CLEANING_SPOT);
+		if (!Wait_For_Gyro_On())
+		{
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			return;
+		}
+	}
+	else
+	{
+		wav_play(WAV_CLEANING_SPOT);
+	}
 	Set_LED(100,0);
 	Set_SideBrush_PWM(60, 60);
 	Set_MainBrush_PWM(90);
 	Set_BLDC_Speed(90);
-	if(!Is_Gyro_On())
-		Set_Gyro_On();
 
 #ifdef BLDC_INSTALL
 	usleep(10000);
@@ -142,6 +158,10 @@ void Spot_Mode(void)
 			Move_Style = Spiral_Left_Out;
 			break;
 		}
+		if(Get_Plan_Status()){
+			Set_Plan_Status(false);
+			wav_play(WAV_APPOINTMENT_DONE);
+		}
 	}
 
 	Move_Forward(5, 5);
@@ -155,6 +175,10 @@ void Spot_Mode(void)
 
 	while (ros::ok()) {
 		usleep(10000);
+		if(Get_Plan_Status()){
+			Set_Plan_Status(false);
+			wav_play(WAV_APPOINTMENT_DONE);
+		}
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if (Check_Bat_SetMotors(135000, 80000, 100000)) {	//Low Battery Event
 			Display_Battery_Status(Display_Low);//min_distant_segment low
@@ -378,7 +402,6 @@ void Spot_Mode(void)
 		}
 	}
 	wav_play(WAV_CLEANING_FINISHED);
-	Set_Gyro_Off();
 }
 
 /*----------------------------------------------------------------Random Dirt Event---------------------------------*/

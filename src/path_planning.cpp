@@ -1862,3 +1862,61 @@ int16_t path_get_home_x() {
 int16_t path_get_home_y() {
 	return home_y;
 }
+
+
+/*
+ * Initialization function for path planning in wall follow mode, it sets the starting
+ * point as the home of the robot.
+ *
+ * @param *x	Pointer to robot home X coordinate
+ * @param *y	Pointer to robot home Y coordinate
+ *
+ * @return
+ */
+void WF_PathPlanning_Initialize(int32_t *x, int32_t *y) {
+	int16_t i;
+
+	/* Save the starting point as home. */
+	home_x = countToCell(*x);
+	home_y = countToCell(*y);
+
+	/* Initialize the default settings. */
+	preset_action_count = 0;
+
+	weight_enabled = 1;
+
+	for ( i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
+		trappedCell[i].X = home_x;
+		trappedCell[i].Y = home_y;
+	}
+	trappedCellSize = 1;
+
+#if (ROBOT_SIZE == 5)
+
+	weight_cnt_threshold = 4;
+
+#else
+
+	weight_cnt_threshold = 3;
+
+#endif
+
+	direct_go = 0;
+
+	max_try_cnt = 1;
+	home_try_cnt = 0;
+
+	positions[0].x = positions[0].y = 0;
+	last_dir = 0;
+
+	try_entrance = 0;
+	first_start = last_x_pos = last_y_pos = 0;
+
+	/* Reset the poisition list. */
+	for (i = 0; i < 3; i++) {
+		positions[i].x = positions[i].y = i + 1;
+	}
+
+	/* Initialize the shortest path. */
+	path_position_init(direct_go);
+}

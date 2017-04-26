@@ -859,6 +859,7 @@ bool robot::align(void)
 	line_align_ = detecting;
 	is_odom_ready = false;
 	segmentss.clear();
+	ROS_WARN("Start subscribe to /obstacles");
 	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 	//wait for start obstacle_detector
@@ -872,6 +873,7 @@ bool robot::align(void)
 		return false;
 
 	count_n_10ms = 200;
+	ROS_WARN("Obstacle detector launch finishd.");
 
 	//wait for detecting line
 	while (--count_n_10ms > 0 && !except_event())
@@ -883,6 +885,7 @@ bool robot::align(void)
 	if(except_event())
 		return false;
 
+	ROS_WARN("Get the line");
 	line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	auto angle = static_cast<int16_t>(std::abs(line_angle));
 	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
@@ -890,11 +893,11 @@ bool robot::align(void)
 	if (line_angle > 0)
 	{
 		ROS_INFO("Turn_Left %d", angle);
-		Turn_Left(3, angle);
+		Turn_Left(13, angle);
 	} else if (line_angle < 0)
 	{
 		ROS_INFO("Turn_Right %d", angle);
-		Turn_Right(3, angle);
+		Turn_Right(13, angle);
 	}
 	line_align_ = finish;
 //	ros::WallDuration(100).sleep();

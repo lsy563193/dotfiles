@@ -72,10 +72,9 @@ void Charge_Function(void)
 			}
 		}
 #endif
-		ROS_DEBUG_NAMED("charger"," Loop for charger mode,voltage %f.",bat_v/100.0);
 		if(Show_Batv_Counter > 250)
 		{
-			ROS_INFO(" Loop for charger mode,voltage %f.",bat_v/100.0);
+			ROS_INFO(" In charge mode looping , battery voltage %5.2f V.",bat_v/100.0);
 			Show_Batv_Counter = 0;
 		}
 		else
@@ -168,20 +167,25 @@ void Charge_Function(void)
 				break;
 			}
 		}*/
-		if (Remote_Key(Remote_Clean)) {
-			set_stop_charge();
-			Reset_Rcon_Remote();
-			if (!Check_Bat_Ready_To_Clean())
-			{
-				ROS_INFO("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
-				wav_play(WAV_BATTERY_LOW);
+		if(Get_Rcon_Remote()){
+			if (Remote_Key(Remote_Clean)) {
+				set_stop_charge();
+				Reset_Rcon_Remote();
+				if (!Check_Bat_Ready_To_Clean())
+				{
+					ROS_INFO("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
+					wav_play(WAV_BATTERY_LOW);
+				}
+				else if (Is_AtHomeBase())
+				{
+//					Set_VacMode(Vac_Normal);
+//					Set_Room_Mode(Room_Mode_Large);
+					Set_Clean_Mode(Clean_Mode_Navigation);
+					break;
+				}
 			}
-			else if (Is_AtHomeBase())
-			{
-//				Set_VacMode(Vac_Normal);
-//				Set_Room_Mode(Room_Mode_Large);
-				Set_Clean_Mode(Clean_Mode_Navigation);
-				break;
+			else{
+				Reset_Rcon_Remote();
 			}
 		}
 		/*-----------------------------------------------------Schedul Timer Up-----------------*/
@@ -245,18 +249,6 @@ void GoHome(void)
 	// This step is for counting angle change when the robot turns.
 	long Gyro_Step = 0;
 
-	if (!Is_Gyro_On())
-	{
-		// Stop all the motors to keep the robot at peace, so that it can successfully open the gyrp.
-		Disable_Motors();
-		ROS_INFO("GoHome function opening gyro.");
-		while(!Set_Gyro_On())
-		{
-			ROS_INFO("GoHome function open gyro failed, retry.");
-			usleep(1000);
-		}
-		ROS_INFO("GoHome function open gyro succeeded.");
-	}
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
 

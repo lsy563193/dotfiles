@@ -57,14 +57,10 @@ void User_Interface(void)
 //	ResetHomeRemote();
 	Set_VacMode(Vac_Normal);
 
-	if(!Is_Gyro_On()){
-		Set_Gyro_On();
-	}
-
 	// Check the battery to warn the user.
 	if(!Check_Bat_Ready_To_Clean())
 	{
-		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400).", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Battery level low (limit in %d) robot hungry ~_~.", __FUNCTION__, __LINE__,(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		wav_play(WAV_BATTERY_LOW);
 	}
 
@@ -116,7 +112,11 @@ void User_Interface(void)
 			Reset_Rcon_Remote();
 			Temp_Mode=Clean_Mode_WallFollow;
 		}
-
+		if(Get_Plan_Status()){
+			wav_play(WAV_APPOINTMENT_DONE);
+			ROS_INFO("%s ,%d, appointment success ",__FUNCTION__,__LINE__);
+			Set_Plan_Status(false);
+		}
 		/* -----------------------------Check if Clean event ----------------------------------*/
 //		if(Is_Alarm())
 //		{
@@ -190,7 +190,7 @@ void User_Interface(void)
 				}
 				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Check_Bat_Ready_To_Clean())
 				{
-					ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400).", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Battery level low (limit in %4d V),robot is hungry ~_~.", __FUNCTION__, __LINE__,(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 				}

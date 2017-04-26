@@ -13,22 +13,6 @@
 
 int8_t enable_slam_offset = 0;
 
-bool start_obstacle_detector(void)
-{
-	system("roslaunch pp obstacle_detector.launch 2>/dev/null &");
-	if (!except_event())
-		return true;
-
-	ROS_WARN("rosnode kill /obstacle_detector ");
-	system("rosnode kill /obstacle_detector 2>/dev/null &");
-	return false;
-}
-
-void stop_obstacle_detector(void)
-{
-	system("rosnode kill /obstacle_detector 2>/dev/null &");
-}
-
 bool start_slam(void)
 {
 	robot::instance()->start_slam();
@@ -51,6 +35,7 @@ bool start_slam(void)
 	return true;
 
 }
+
 /*
 
 void show_time(std::function<void(void)> task){
@@ -73,11 +58,6 @@ Motion_controller::Motion_controller()
 	} else
 #endif
 	{
-		if(Is_Gyro_On())
-			Set_Gyro_Off();
-		if (!Set_Gyro_On())
-			return;
-
 		Work_Motor_Configure();
 
 		if (!robot::instance()->start_lidar())
@@ -119,9 +99,6 @@ Motion_controller::~Motion_controller()
 
 //		if(start_bit[slam])
 		robot::instance()->stop_slam();
-
-//		if(start_bit[obs_det])
-		stop_obstacle_detector();
 
 	}
 };
