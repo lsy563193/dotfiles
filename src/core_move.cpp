@@ -15,6 +15,7 @@
 #include "path_planning.h"
 #include "rounding.h"
 #include "shortest_path.h"
+#include "spot.h"
 
 #ifdef PP_CURVE_MOVE
 #include "curve_move.h"
@@ -2823,7 +2824,7 @@ MapTouringType CM_handleExtEvent()
 		 * Check remote spot key press event, if spot key is pressed,
 		 * change to spot mode, after spot mode finished, back to zig-zag clean.
 		 */
-#if 0
+#if 1
 		if (Remote_Key(Remote_Spot)) {
 			Stop_Brifly();
 			ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
