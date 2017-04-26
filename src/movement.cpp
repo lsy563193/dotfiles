@@ -789,8 +789,11 @@ bool except_event()
 //	uint8_t oc = Check_Motor_Current();
 //		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 //			return true;
-		if(Touch_Detect())
-			return true;
+	if(Touch_Detect())
+	{
+		ROS_WARN("Touch_Detect in except_event!");
+		return true;
+	}
 //		if(Is_Turn_Remote())
 //			return true;
 	return false;
@@ -1729,14 +1732,17 @@ uint8_t Touch_Detect(void)
 {
 	// Get the key value from robot sensor
 	if (Get_Touch_Status()){
+		ROS_WARN("Touch status == 1");
 		return 1;
 	}
 	if (Remote_Key(Remote_Clean)){
+		ROS_WARN("Remote_Key clean.");
 		Reset_Rcon_Remote();
 		Set_Touch();
 		return 1;
 	}
 	if (Get_Cliff_Trig() == 0x07){
+		ROS_WARN("Cliff triggered.");
 		Set_Touch();
 		return 1;
 	}
@@ -2460,18 +2466,22 @@ uint8_t Is_VirtualWall()
 	return 0;
 }
 
-bool Set_Gyro_On(void)
+void Set_Gyro_On(void)
+{
+	if (Is_Gyro_On()){
+		ROS_INFO("gyro on already");
+	}
+	else
+	{
+		control_set(CTL_GYRO, 0x02);
+	}
+}
+
+bool Wait_For_Gyro_On(void)
 {
 	static int count=0;
-	if (Is_Gyro_On()){
-		ROS_INFO("gyro start already");
-		return true;
-	}
-
-	control_set(CTL_GYRO, 0x02);
-	ROS_INFO("waiting for gyro start");
-
 	count = 0;
+	ROS_INFO("waiting for gyro start");
 	auto stop_angle_v = robot::instance()->robot_get_angle_v();
 	while (count<10 && !except_event())
 	{

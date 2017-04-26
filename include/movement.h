@@ -491,7 +491,8 @@ void set_start_charge(void);
 void set_stop_charge(void);
 
 bool except_event();
-bool Set_Gyro_On(void);
+void Set_Gyro_On(void);
+bool Wait_For_Gyro_On(void);
 void Set_Gyro_Off(void);
 
 void set_main_pwr(uint8_t val);

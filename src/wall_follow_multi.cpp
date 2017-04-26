@@ -637,7 +637,18 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
+	if (!Wait_For_Gyro_On())
+	{
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return 0;
+	}
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
 

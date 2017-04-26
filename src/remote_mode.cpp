@@ -33,12 +33,17 @@ void Remote_Mode(void)
   //Display_Clean_Status(Display_Remote);
 
 	if (!Is_Gyro_On()){
-		Set_LED(100,0);
 //		Beep(3,25,25,2);
 		Set_Gyro_On();
+		if (!Wait_For_Gyro_On())
+		{
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			return;
+		}
 //		Set_Gyro_Status();
 	}
 
+	Set_LED(100,0);
 	Reset_Wheel_Step();
 	Reset_Touch();
 	Set_BLDC_Speed(40);

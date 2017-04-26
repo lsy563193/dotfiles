@@ -96,8 +96,6 @@ int robotbase_init(void)
 		return -1;
 	}
 	set_main_pwr(0);
-	//Set_Gyro_Off();
-	Set_LED(100,0);
 	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 //	do {

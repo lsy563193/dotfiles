@@ -75,11 +75,17 @@ void Random_Running_Mode(void)
 	uint8_t Virtual_Wall_C = 0, Virtual_Wall_NG = 0;
 #endif
 
-        if (!Is_Gyro_On()){
-			Set_Gyro_On();
-       		Set_Gyro_Status();
-			//printf("Gyro_Status%d\n", Is_Gyro_On());
-        }
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
+	if (!Wait_For_Gyro_On())
+	{
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return;
+	}
 
 	Reset_Work_Time();
 	Wall_Bumper_Factor = Get_Random_Factor()/15;

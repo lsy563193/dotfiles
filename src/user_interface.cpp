@@ -57,10 +57,6 @@ void User_Interface(void)
 //	ResetHomeRemote();
 	Set_VacMode(Vac_Normal);
 
-	if(!Is_Gyro_On()){
-		Set_Gyro_On();
-	}
-
 	// Check the battery to warn the user.
 	if(!Check_Bat_Ready_To_Clean())
 	{
