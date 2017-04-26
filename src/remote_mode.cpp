@@ -202,7 +202,7 @@ void Remote_Mode(void)
 		}
 
 		/*------------------------------------------------------Check Battery-----------------------*/
-		if(Check_Battery()==0)
+		if(Check_Bat_Stop())
 		{
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;

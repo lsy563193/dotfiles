@@ -573,7 +573,7 @@ void Around_ChargerStation(uint8_t Dir)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
 		}
-		if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
+		if(Check_Bat_Stop())
 		{
 			ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
 			//delay(10000);
@@ -1404,7 +1404,7 @@ void By_Path(void)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}
-			if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
+			if(Check_Bat_Stop())
 			{
 //				delay(10000);
 				usleep(1000000);

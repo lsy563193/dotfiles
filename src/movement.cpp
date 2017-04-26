@@ -1554,7 +1554,7 @@ void Reset_MoveWithRemote(void)
 uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush)
 {
 	static uint8_t low_acc=0;
-	if(Check_Battery()==0){
+	if(Check_Bat_Stop()){
 		if(low_acc<255)
 			low_acc++;
 		if(low_acc>50){
@@ -1892,12 +1892,12 @@ uint16_t GetBatteryVoltage()
 	return robot::instance()->robot_get_battery_voltage();
 }
 
-uint8_t  Check_Battery()
+uint8_t  Check_Bat_Stop()
 {
 	if(GetBatteryVoltage()<LOW_BATTERY_STOP_VOLTAGE)
-		return 0;
-	else
 		return 1;
+	else
+		return 0;
 }
 
 void Set_Key_Press(uint8_t key)

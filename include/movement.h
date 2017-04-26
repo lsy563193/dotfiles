@@ -528,7 +528,7 @@ int16_t Get_LeftWheel_Speed(void);
 
 int16_t Get_RightWheel_Speed(void);
 
-uint8_t  Check_Battery();
+uint8_t  Check_Bat_Stop();
 
 void Set_Key_Press(uint8_t key);
 
