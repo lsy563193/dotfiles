@@ -82,6 +82,9 @@
 /* Ready to clean battery voltage value */
 #define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
 
+/* Fully charged battery voltage value */
+#define BATTERY_FULL_VOLTAGE	(1600)
+
 /* OBS setting */
 #define OBS_DYNAMIC			(1)
 #define OBS_DYNAMIC_MOVETOTARGET (1)

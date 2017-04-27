@@ -96,7 +96,6 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
-				wav_play(WAV_BATTERY_CHARGE);
 				Charge_Function();
 
 				break;

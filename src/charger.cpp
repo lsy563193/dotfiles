@@ -20,7 +20,7 @@ void Charge_Function(void)
 
 	volatile uint8_t Display_Switch=1;
 
-	uint8_t Display_Full_Switch=0;
+	bool Battery_Full = false;
 
 	#ifdef ONE_KEY_DISPLAY
 
@@ -43,7 +43,9 @@ void Charge_Function(void)
 //	Beep(0, 0, 0, 1);
 	lowBattery = 0;
 
+	Set_LED(100,100);
 	set_start_charge();
+	wav_play(WAV_BATTERY_CHARGE);
 	uint16_t bat_v;
 	ROS_INFO("[gotocharger.cpp] Start charger mode.");
 	while(ros::ok())
@@ -196,7 +198,14 @@ void Charge_Function(void)
 //		}
 
 		#ifdef ONE_KEY_DISPLAY
-		if(GetBatteryVoltage())
+		if (Check_Bat_Full() && !Battery_Full)
+		{
+			Battery_Full = true;
+			Set_LED(100,0);
+			wav_play(WAV_BATTERY_CHARGE_DONE);
+		}
+
+		if (!Battery_Full)
 		{
 			// For displaying breathing LED
 			if(Display_Switch)

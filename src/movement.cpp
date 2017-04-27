@@ -1249,6 +1249,15 @@ uint8_t Check_Bat_Home(void)
 	return 0;
 }
 
+uint8_t Check_Bat_Full(void)
+{
+	// Check if battary is higher than the battery full voltage value.
+	if (GetBatteryVoltage() > BATTERY_FULL_VOLTAGE){
+		return 1;
+	}
+	return 0;
+}
+
 uint8_t Check_Bat_Ready_To_Clean(void)
 {
 	uint16_t battery_limit;
