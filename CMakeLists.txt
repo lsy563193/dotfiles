@@ -102,7 +102,7 @@ target_link_libraries(syscheck ${catkin_LIBRARIES} -lm "-T ../ilife_ldscript.lds
 #add_executable(angle_test test/angle_test.cpp )
 #target_link_libraries(angle_test ${catkin_LIBRARIES} -lm -lpthread)
 
-install(TARGETS pp
+install(TARGETS pp syscheck
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
