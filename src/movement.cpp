@@ -566,7 +566,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		 */
 
-		if (Get_Rcon_Remote() & (Remote_Home | Remote_Spot | Remote_Wall_Follow | Remote_Clean))
+		if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean))
 		{
 			break;
 		}
