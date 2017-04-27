@@ -46,8 +46,8 @@ void Remote_Mode(void)
 	Set_LED(100,0);
 	Reset_Wheel_Step();
 	Reset_Touch();
-	Set_BLDC_Speed(40);
-	Set_Vac_Speed();
+	Work_Motor_Configure();
+    Set_VacMode(Vac_Normal);
 	while(ros::ok())
 	{
 		usleep(20000);
@@ -76,7 +76,7 @@ void Remote_Mode(void)
 				if(Moving_Speed<25)Moving_Speed=25;
 				if(Moving_Speed>42)Moving_Speed=42;
 				Move_Forward(Moving_Speed,Moving_Speed);
-				Work_Motor_Configure();
+				//Work_Motor_Configure();
 				OBS_Stop=0;
 			}
 			No_Command_Counter=0;
@@ -84,7 +84,7 @@ void Remote_Mode(void)
 		else
 		{
 			Stop_Brifly();
-			Work_Motor_Configure();
+			//Work_Motor_Configure();
 		}
 
 
@@ -93,14 +93,11 @@ void Remote_Mode(void)
 		{
 
 			Deceleration();
-			Work_Motor_Configure();
 			Reset_Rcon_Remote();
 			Turn_Left(Turn_Speed,320);
-			Set_SideBrush_PWM(30,30);
-			Set_MainBrush_PWM(30);
-			Set_BLDC_Speed(30);
+			//Set_SideBrush_PWM(30,30);
+			//Set_MainBrush_PWM(30);
 			No_Command_Counter=0;
-			Reset_TempPWM();
 			Reset_Wheel_Step();
 			Forward_Flag=0;
 		}
@@ -108,28 +105,30 @@ void Remote_Mode(void)
 		{
 	
 			Deceleration();
-			Work_Motor_Configure();
+			//Work_Motor_Configure();
 			Reset_Rcon_Remote();
 			Turn_Right(Turn_Speed,320);
-			Set_SideBrush_PWM(30,30);
-			Set_MainBrush_PWM(30);
-			Set_BLDC_Speed(30);
+			//Set_SideBrush_PWM(30,30);
+			//Set_MainBrush_PWM(30);
+			//Set_BLDC_Speed(30);
 			No_Command_Counter=0;
 			Reset_Wheel_Step();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Max))
 		{
-
-//			Switch_VacMode();
-			Deceleration();
+			if(Get_VacMode() == Vac_Normal){
+				Set_VacMode(Vac_Max);
+				Set_BLDC_Speed(90);
+			}
+			else{
+				Set_VacMode(Vac_Normal);
+				Set_BLDC_Speed(Vac_Speed_Normal);
+			}
 			Reset_Rcon_Remote();
-			Work_Motor_Configure();
-			Turn_Right(Turn_Speed,1800);
-			Set_SideBrush_PWM(30,30);
-			Set_MainBrush_PWM(30);
-			Set_BLDC_Speed(30);
-			Reset_TempPWM();
+			//Turn_Right(Turn_Speed,1800);
+			//Set_SideBrush_PWM(30,30);
+			//Set_MainBrush_PWM(30);
 			No_Command_Counter=0;
 			Forward_Flag=0;
 			Reset_Rcon_Remote();
@@ -154,6 +153,7 @@ void Remote_Mode(void)
 
 		if(Remote_Key(Remote_Clean))
 		{
+			Disable_Motors();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Reset_Rcon_Remote();
 			return;
@@ -179,6 +179,7 @@ void Remote_Mode(void)
 		*/
 		if(Remote_Key(Remote_Home))
 		{
+			Disable_Motors();
 			Set_Clean_Mode(Clean_Mode_GoHome);
 			SetHomeRemote();
 			Reset_Rcon_Remote();

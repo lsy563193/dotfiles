@@ -60,7 +60,7 @@ void User_Interface(void)
 	// Check the battery to warn the user.
 	if(!Check_Bat_Ready_To_Clean())
 	{
-		ROS_WARN("%s %d: Battery level low (limit in %d) robot hungry ~_~.", __FUNCTION__, __LINE__,(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		wav_play(WAV_BATTERY_LOW);
 	}
 
@@ -181,13 +181,13 @@ void User_Interface(void)
 				{
 //					Set_Error_Code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
-					ROS_WARN("%s %d: Cliff triggered, can't change mode.", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Robot lift up.", __FUNCTION__, __LINE__);
 					wav_play(WAV_ERROR_LIFT_UP);
 					Temp_Mode=0;
 				}
 				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Check_Bat_Ready_To_Clean())
 				{
-					ROS_WARN("%s %d: Battery level low (limit in %4d V),robot is hungry ~_~.", __FUNCTION__, __LINE__,(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 				}
@@ -219,9 +219,9 @@ void User_Interface(void)
 		if(ONE_Display_Counter>99)
 		{
 			ONE_Display_Counter=0;
-			// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 15s.
+			// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 60s.
 			TimeOutCounter++;
-			if(TimeOutCounter>15)
+			if(TimeOutCounter>60)
 			{
 				TimeOutCounter=0;
 				Set_Clean_Mode(Clean_Mode_Sleep);
