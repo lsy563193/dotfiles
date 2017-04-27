@@ -75,10 +75,12 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
+				CM_reset_cleaning_pause();
 				Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");
+				CM_reset_cleaning_pause();
 				Random_Running_Mode();
 				break;
 			case Clean_Mode_Navigation:
@@ -102,7 +104,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_GoHome:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
-
+				CM_reset_cleaning_pause();
 				if (!Is_Gyro_On())
 				{
 					// Restart the gyro.
@@ -140,10 +142,12 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
+				CM_reset_cleaning_pause();
 				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
+				CM_reset_cleaning_pause();
 				Spot_Mode(NormalSpot);
 				Disable_Motors();
 				usleep(200000);
@@ -155,6 +159,7 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
+				CM_reset_cleaning_pause();
 				Disable_Motors();
 				Sleep_Mode();
 				break;

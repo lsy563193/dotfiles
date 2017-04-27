@@ -751,13 +751,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					WF_End_Wall_Follow();
 					return 0;
 				}
-				if (Remote_Key(Remote_Spot)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Spot);
-					return 0;
-				}
 				if (Remote_Key(Remote_Clean)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
@@ -765,13 +758,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return 0;
 				}
-				if (Remote_Key(Remote_Wall_Follow)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return 0;
-				}
+				
 				if (Remote_Key(Remote_Max)) {
 					Reset_Rcon_Remote();
 					Switch_VacMode();
@@ -904,21 +891,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					WF_End_Wall_Follow();
 					return 0;
 				}
-				if (Remote_Key(Remote_Spot)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Spot);
-					return 0;
-				}
 				if (Remote_Key(Remote_Clean)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return 0;
-				}
-				if (Remote_Key(Remote_Wall_Follow)) {
 					Reset_Rcon_Remote();
 					Set_MoveWithRemote();
 					WF_Break_Wall_Follow();

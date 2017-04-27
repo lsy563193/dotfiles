@@ -110,6 +110,14 @@ void Charge_Function(void)
 			else
 			{
 				Stop_Charge_Counter++;
+				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				{
+					ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+					wav_play(WAV_ERROR_LIFT_UP);
+					CM_reset_cleaning_pause();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					break;
+				}
 			}
 		}
 		else

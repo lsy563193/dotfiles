@@ -1781,7 +1781,7 @@ int CM_cleaning()
 	return retval;
 }
 
-static inline void CM_reset_cleaning_pause()
+void CM_reset_cleaning_pause()
 {
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Paused()) {
