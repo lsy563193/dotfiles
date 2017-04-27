@@ -219,9 +219,9 @@ void User_Interface(void)
 		if(ONE_Display_Counter>99)
 		{
 			ONE_Display_Counter=0;
-			// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 15s.
+			// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 600s(10min).
 			TimeOutCounter++;
-			if(TimeOutCounter>15)
+			if(TimeOutCounter>600)
 			{
 				TimeOutCounter=0;
 				Set_Clean_Mode(Clean_Mode_Sleep);
