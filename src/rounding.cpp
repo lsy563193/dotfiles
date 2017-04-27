@@ -422,7 +422,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			// Check if near the charger stub
 			Temp_Rcon_Status = Get_Rcon_Status();
-			ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
+			//ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
 			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
 			{
 				if((Temp_Rcon_Status & RconFR_HomeT) || (Temp_Rcon_Status & RconFL_HomeT)){
@@ -725,7 +725,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			// Check if near the charger stub
 			Temp_Rcon_Status = Get_Rcon_Status();
-			ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
+			//ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
 			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
 			{
 				if((Temp_Rcon_Status & RconFR_HomeT) || (Temp_Rcon_Status & RconFL_HomeT)){
