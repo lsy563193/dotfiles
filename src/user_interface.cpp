@@ -26,11 +26,12 @@ void User_Interface(void)
 	static volatile uint8_t Press_time=0;
 	static volatile uint8_t Temp_Mode=0;
 	static volatile uint16_t Error_Show_Counter=400;
-	static volatile uint16_t TimeOutCounter=0;
+	static volatile uint32_t TimeOutCounter=0;
 
 #ifdef ONE_KEY_DISPLAY
 	uint8_t BTA_Power_Dis=0;
-	uint8_t ONE_Display_Counter=20;
+	uint16_t LedBreathCount=0;
+	uint8_t breath =0;
 #endif
 
 	Press_time=0;
@@ -214,19 +215,24 @@ void User_Interface(void)
  
 #ifdef ONE_KEY_DISPLAY
 
-		//ROS_INFO("One key min_distant_segment logic. odc = %d", ONE_Display_Counter);
-		ONE_Display_Counter++;
-		if(ONE_Display_Counter>99)
+		//ROS_INFO("One key min_distant_segment logic. odc = %d", LedBreathCount);
+		if(breath){
+			LedBreathCount--;
+			if(LedBreathCount<=0)
+				breath = 0;
+		}
+		else{
+			LedBreathCount++;
+			if(LedBreathCount >=100)
+				breath = 1;
+		}
+		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 60s.
+		TimeOutCounter++;
+		if(TimeOutCounter>6000)
 		{
-			ONE_Display_Counter=0;
-			// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 60s.
-			TimeOutCounter++;
-			if(TimeOutCounter>60)
-			{
-				TimeOutCounter=0;
-				Set_Clean_Mode(Clean_Mode_Sleep);
-				break;
-			}
+			TimeOutCounter=0;
+			Set_Clean_Mode(Clean_Mode_Sleep);
+			break;
 		}
 
 		if(!Check_Bat_Ready_To_Clean())
@@ -244,11 +250,11 @@ void User_Interface(void)
 		}
 		else if(BTA_Power_Dis)//min_distant_segment low battery = red & green
 		{
-			Set_LED(ONE_Display_Counter,ONE_Display_Counter);
+			Set_LED(LedBreathCount,LedBreathCount);
 		}
 		else
 		{
-			Set_LED(ONE_Display_Counter,0);//min_distant_segment normal green
+			Set_LED(LedBreathCount,0);//min_distant_segment normal green
 		}
 
 #endif
