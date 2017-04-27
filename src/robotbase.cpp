@@ -154,6 +154,17 @@ void robotbase_deinit(void)
 	}
 }
 
+void robotbase_reset_send_stream(void)
+{
+	for (int i = 0; i < SEND_LEN; i++) {
+		sendStream[i] = 0x0;
+	}
+	sendStream[0] = 0xaa;
+	sendStream[1] = 0x55;
+	sendStream[SEND_LEN - 2] = 0xcc;
+	sendStream[SEND_LEN - 1] = 0x33;
+}
+
 void *serial_receive_routine(void *)
 {
 	pthread_detach(pthread_self());
