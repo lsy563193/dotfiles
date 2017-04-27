@@ -24,6 +24,10 @@
 #include "wall_follow_multi.h"
 #include "wav.h"
 
+#if VERIFY_CPU_ID || VERIFY_KEY
+#include "verify.h"
+#endif
+
 void protect_function()
 {
 	//Bumper protect
@@ -177,11 +181,11 @@ void *core_move_thread(void *)
 
 int main(int argc, char **argv)
 {
-	int			baudrate, ret1, core_move_thread_state;
+	int			baudrate, ret1, core_move_thread_state, slam_type;
+	bool		line_align_active, verify_ok = true;
 	pthread_t	core_move_thread_id;
 	std::string	serial_port;
-	int slam_type;
-	bool line_align_active;
+
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
 
@@ -191,35 +195,43 @@ int main(int argc, char **argv)
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 57600);
 	nh_private.param<bool>("line_align", line_align_active, false);
-//	nh_private.param<robot::Slam_type>("slam_type", slam_type, robot::Slam_type::GMAPPING);
 	nh_private.param<int>("slam_type", slam_type, 0);
-
 
 	serial_init(serial_port.c_str(), baudrate);
 	robot::instance()->align_active(line_align_active);
 	robot::instance()->slam_type(slam_type);
-	robotbase_init();
 
-#if 1
-	ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
-	if (ret1 != 0) {
-		core_move_thread_state = 0;
-	} else {
-		ROS_INFO("%s %d: core_move thread is up!", __FUNCTION__, __LINE__);
-		core_move_thread_state = 1;
+
+#if VERIFY_CPU_ID
+	if (verify_cpu_id() < 0) {
+		verify_ok = false;
 	}
 #endif
-	//ros::MultiThreadedSpinner spiner(4);
-	//spiner.spin();
-	ros::spin();
 
-	if (core_move_thread_state == 1) {
-		//pthread_join(core_move_thread_id, NULL);
+#if VERIFY_KEY
+	if (verify_ok == true && verify_key() == 0) {
+		verify_ok = false;
+	}
+#endif
+
+	robotbase_reset_send_stream();
+	robotbase_init();
+
+	if (verify_ok == true) {
+		ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
+		if (ret1 != 0) {
+			core_move_thread_state = 0;
+		} else {
+			ROS_INFO("%s %d: core_move thread is up!", __FUNCTION__, __LINE__);
+			core_move_thread_state = 1;
+		}
+		ros::spin();
+	} else {
+		printf("turn on led\n");
+		Set_LED(100, 100);
+		sleep(10);
 	}
 
 	robotbase_deinit();
-//	serial_close();
-
-	//pthread_exit(NULL);
 	return 0;
 }

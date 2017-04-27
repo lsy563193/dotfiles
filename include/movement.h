@@ -301,7 +301,8 @@
 #elif __ROBOT_X900
 #define CTL_OMNI_RESET 15
 #define CTL_GYRO 16
-#define CTL_CRC 17
+#define CTL_CMD				17
+#define CTL_CRC				18
 #endif
 #define Direction_Flag_Right 0x01
 #define Direction_Flag_Left  0x02
@@ -515,6 +516,8 @@ void control_set(uint8_t type, uint8_t val);
 void control_append_crc(void);
 
 void control_stop_all(void);
+
+int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number);
 
 void Random_Back(void);
 

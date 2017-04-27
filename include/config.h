@@ -413,3 +413,8 @@
 
 
 #define STANDARD_REMOTE   (1)
+
+/* Define for checking CPU ID & key verification with robot's MCU. */
+#define	VERIFY_DEBUG						(1)
+#define VERIFY_CPU_ID						(0)
+#define VERIFY_KEY							(0)

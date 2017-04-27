@@ -66,7 +66,7 @@ catkin_package(
 )
 
 add_executable(pp  ${PP_SRC} )
-target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
+target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 
 #add_executable(angle_test test/angle_test.cpp )
 #target_link_libraries(angle_test ${catkin_LIBRARIES} -lm -lpthread)
