@@ -27,6 +27,7 @@ extern int robotbase_speaker_silence_time_count;
 extern bool key_or_clean_button_detected;
 int robotbase_init();
 void robotbase_deinit(void);
+void robotbase_reset_send_stream(void);
 bool is_robotbase_stop(void);
 void *serial_receive_routine(void*);
 void *robotbase_routine(void*);
