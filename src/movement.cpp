@@ -2367,14 +2367,8 @@ uint8_t Is_Bumper_Jamed()
 			if(Get_Bumper_Status())
 			{
 				ROS_INFO("JAM3");
-				if(Get_Bumper_Status()&LeftBumperTrig)
-				{
-					Jam_Turn_Right(60,2200);
-				}
-				else if(Get_Bumper_Status()&RightBumperTrig)
-				{
-					Jam_Turn_Left(60,2200);
-				}
+				Jam_Turn_Right(60, 900);
+				Jam_Turn_Left(60, 1800);
 				if(Get_Bumper_Status())
 				{
 					ROS_INFO("JAM4");
@@ -2383,6 +2377,7 @@ uint8_t Is_Bumper_Jamed()
 						ROS_INFO("JAM5");
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						Set_Error_Code(Error_Code_Bumper);
+						wav_play(WAV_ERROR_BUMPER);
 						return 1;
 					//}
 				}
