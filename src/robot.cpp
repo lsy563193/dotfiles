@@ -68,8 +68,8 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 
-	// Initialize the pause variable.
-	this->pause_cleaning = false;
+	// Initialize the low battery pause variable.
+	this->low_bat_pause_cleaning = false;
 	// Initialize the key press count.
 	key_press_count = 0;
 }
@@ -1039,16 +1039,16 @@ void robot::init_mumber()
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // This 3 functions is for declaring whether the robot is at status of pausing for charge.
-bool robot::Is_Cleaning_Paused(void)
+bool robot::Is_Cleaning_Low_Bat_Paused(void)
 {
-	return this->pause_cleaning;
+	return this->low_bat_pause_cleaning;
 }
-void robot::Set_Cleaning_Pause(void)
+void robot::Set_Cleaning_Low_Bat_Pause(void)
 {
-	this->pause_cleaning = true;
+	this->low_bat_pause_cleaning = true;
 }
-void robot::Reset_Cleaning_Pause(void)
+void robot::Reset_Cleaning_Low_Bat_Pause(void)
 {
-	this->pause_cleaning = false;
+	this->low_bat_pause_cleaning = false;
 }
 #endif

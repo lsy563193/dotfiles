@@ -84,7 +84,7 @@ void CM_go_home(void);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // This function is for setting the continue point for robot to go after charge.
 void CM_SetContinuePoint(int32_t x, int32_t y);
-void CM_reset_cleaning_pause();
+void CM_reset_cleaning_low_bat_pause();
 #endif
 
 void CM_ResetBoundaryBlocks(void);

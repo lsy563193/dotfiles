@@ -54,7 +54,7 @@ void Charge_Function(void)
 		bat_v = GetBatteryVoltage();
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		if (robot::instance()->Is_Cleaning_Paused())
+		if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 		{
 			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
 			{
@@ -96,7 +96,7 @@ void Charge_Function(void)
 			{
 				// Stop_Charge_Counter > 50 means robot has left charger stub for 1s.
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Paused())
+				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 				{
 					ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
 					Set_Clean_Mode(Clean_Mode_Navigation);
@@ -114,7 +114,7 @@ void Charge_Function(void)
 				{
 					ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 					wav_play(WAV_ERROR_LIFT_UP);
-					CM_reset_cleaning_pause();
+					CM_reset_cleaning_low_bat_pause();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					break;
 				}
@@ -575,7 +575,7 @@ void Around_ChargerStation(uint8_t Dir)
 					usleep(20000);
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Paused())
+				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 				{
 					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
 					Set_Touch();
@@ -1116,7 +1116,7 @@ uint8_t Check_Position(uint8_t Dir)
 				usleep(20000);
 			}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-			if (robot::instance()->Is_Cleaning_Paused())
+			if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 			{
 				// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
 				Set_Touch();
@@ -1408,7 +1408,7 @@ void By_Path(void)
 					usleep(20000);
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Paused())
+				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 				{
 					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
 					Set_Touch();

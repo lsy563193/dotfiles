@@ -50,7 +50,7 @@ void show_time(std::function<void(void)> task){
 Motion_controller::Motion_controller()
 {
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Paused())
+	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 	{
 		Work_Motor_Configure();
 		robot::instance()->start_lidar();
@@ -76,7 +76,7 @@ Motion_controller::Motion_controller()
 Motion_controller::~Motion_controller()
 {
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Paused())
+	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 	{
 		Disable_Motors();
 		robot::instance()->stop_lidar();
