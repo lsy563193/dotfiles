@@ -306,8 +306,9 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 		//WFM_boundary_check();
 
-		Temp_Rcon_Status = robot::instance()->robot_get_rcon();
-		if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT)){
+		Temp_Rcon_Status = Get_Rcon_Status();
+		Reset_Rcon_Status();
+		if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
 			break;
 		}
 
@@ -362,7 +363,8 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 		/*------------------------------------------------------Home Station Event------------------------*/
 		//Temp_Rcon_Status = Get_Rcon_Status();
-		Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+		Temp_Rcon_Status = Get_Rcon_Status();
+		Reset_Rcon_Status();
 		if (Temp_Rcon_Status){
 			Reset_Rcon_Status();
 			if (Temp_Rcon_Status & RconFrontAll_Home_TLR) {	
@@ -714,15 +716,14 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//WFM_boundary_check();
 
 			WF_update_position();
-			Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+			Temp_Rcon_Status = Get_Rcon_Status();
+			Reset_Rcon_Status();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
-			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT)){
+			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
-			}
-
-			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT)){
 				break;
 			}
+
 			if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
 				ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 				break;
@@ -861,11 +862,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				break;
 			}
 
-			Temp_Rcon_Status = robot::instance()->robot_get_rcon();
-			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
-			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconL_HomeT | RconR_HomeT)){
-				CM_SetHome(Map_GetXCount(), Map_GetYCount());
-			}
 			//debug_WF_map(MAP, 0, 0);
 			//debug_sm_map(SPMAP, 0, 0);
 
@@ -985,8 +981,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 
 			/*------------------------------------------------------Home Station Event------------------------*/
-			//Temp_Rcon_Status = Get_Rcon_Status();
-			Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+			Temp_Rcon_Status = Get_Rcon_Status();
+			Reset_Rcon_Status();
+			//Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
+			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
+				CM_SetHome(Map_GetXCount(), Map_GetYCount());
+			}
 			if (Temp_Rcon_Status){
 				Reset_Rcon_Status();
 				if (Temp_Rcon_Status & RconFrontAll_Home_TLR) {	
