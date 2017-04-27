@@ -1837,27 +1837,6 @@ void control_stop_all(void)
 	//serial_write(SEND_LEN, sendStream);
 }
 
-#define DUMMY_DOWNLINK_OFFSET		2
-#define KEY_DOWNLINK_OFFSET			9
-#define SEQUENCE_DOWNLINK_OFFSET	7
-
-#define DUMMY_DOWNLINK_LENGTH		5
-#define SEQUENCE_DOWNLINK_LENGTH	2
-#define KEY_DOWNLINK_LENGTH			8
-
-#define KEY_UPLINK_OFFSET			36
-#define KEY_UPLINK_LENGTH			16
-
-#define CMD_UPLINK_OFFSET			53
-
-#define	CMD_KEY1					0x40
-#define	CMD_KEY2					0x41
-#define	CMD_KEY3					0x42
-#define	CMD_ID						0x43
-
-#define CMD_ACK						0x23
-#define CMD_NCK						0x25
-
 int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number)
 {
 	int		num_send_packets = key_length / KEY_DOWNLINK_LENGTH;
