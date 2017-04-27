@@ -235,10 +235,10 @@ uint8_t rounding_boundary_check()
 
 uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
 {
-	uint8_t		Jam = 0, Temp_Counter = 0, RandomRemoteWall_Flag = 0, Mobility_Temp_Error = 0, Temp_Bumper_Status, Temp_Cliff_Status;
+	uint8_t		Jam = 0, Temp_Counter = 0, Temp_Bumper_Status, Temp_Cliff_Status, HomeFLRT = 0, HomeLT = 0, HomeRT = 0, HomeFL2T = 0, HomeFR2T = 0;
 	int16_t		Left_Wall_Buffer[3] = { 0 }, Right_Wall_Buffer[3] = { 0 };
 	int32_t		y_start, R = 0, Proportion = 0, Delta = 0, Previous = 0;
-	uint32_t	WorkTime_Buffer = 0, Temp_Status = 0;
+	uint32_t	WorkTime_Buffer = 0, Temp_Status = 0, Temp_Rcon_Status = 0;
 
 	volatile uint8_t	Motor_Check_Code = 0;
 	volatile int32_t	L_B_Counter = 0, Wall_Distance = 400, Wall_Straight_Distance, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
@@ -418,6 +418,42 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				for (Temp_Counter = 0; Temp_Counter < 3; Temp_Counter++) {
 					Left_Wall_Buffer[Temp_Counter] = 0;
 				}
+			}
+
+			// Check if near the charger stub
+			Temp_Rcon_Status = Get_Rcon_Status();
+			ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
+			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
+			{
+				if((Temp_Rcon_Status & RconFR_HomeT) || (Temp_Rcon_Status & RconFL_HomeT)){
+					HomeFLRT++;
+					if (HomeFLRT > 2)
+					{
+						CM_SetHome(Map_GetXCount(), Map_GetYCount());
+						rounding_turn(1, TURN_SPEED, 850);
+						HomeFLRT = 0;
+					}
+				} else if(Temp_Rcon_Status & RconL_HomeT){
+					HomeLT++;
+					if (HomeLT > 2)
+					{
+						CM_SetHome(Map_GetXCount(), Map_GetYCount());
+						rounding_turn(1, TURN_SPEED, 300);
+						HomeLT = 0;
+					}
+				} else if(Temp_Rcon_Status & RconFL2_HomeT){
+					HomeFL2T++;
+					if (HomeFL2T > 2)
+					{
+						CM_SetHome(Map_GetXCount(), Map_GetYCount());
+						rounding_turn(1, TURN_SPEED, 600);
+						HomeFL2T = 0;
+					}
+				// While rounding left, no need to detect right side rcon.
+				//} else if(Temp_Rcon_Status & RconFR2_HomeT){
+				//} else if(Temp_Rcon_Status & RconR_HomeT){
+				}
+				Reset_Rcon_Status();
 			}
 
 			// Check for cliff.
@@ -685,6 +721,42 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				for (Temp_Counter = 0; Temp_Counter < 3; Temp_Counter++) {
 					Right_Wall_Buffer[Temp_Counter] = 0;
 				}
+			}
+
+			// Check if near the charger stub
+			Temp_Rcon_Status = Get_Rcon_Status();
+			ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
+			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
+			{
+				if((Temp_Rcon_Status & RconFR_HomeT) || (Temp_Rcon_Status & RconFL_HomeT)){
+					HomeFLRT++;
+					if (HomeFLRT > 2)
+					{
+						CM_SetHome(Map_GetXCount(), Map_GetYCount());
+						rounding_turn(0, TURN_SPEED, 850);
+						HomeFLRT = 0;
+					}
+				// While rounding right, no need to detect left side rcon.
+				//} else if(Temp_Rcon_Status & RconL_HomeT){
+				//} else if(Temp_Rcon_Status & RconFL2_HomeT){
+				} else if(Temp_Rcon_Status & RconFR2_HomeT){
+					HomeFR2T++;
+					if (HomeFR2T > 2)
+					{
+						CM_SetHome(Map_GetXCount(), Map_GetYCount());
+						rounding_turn(0, TURN_SPEED, 950);
+						HomeFR2T = 0;
+					}
+				} else if(Temp_Rcon_Status & RconR_HomeT){
+					HomeRT++;
+					if (HomeRT > 2)
+					{
+						CM_SetHome(Map_GetXCount(), Map_GetYCount());
+						rounding_turn(0, TURN_SPEED, 1100);
+						HomeRT = 0;
+					}
+				}
+				Reset_Rcon_Status();
 			}
 
 			// Check for cliff.
