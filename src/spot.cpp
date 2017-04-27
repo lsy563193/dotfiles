@@ -27,10 +27,8 @@
 
 #define SPOT_MAX_SPEED	(20)
 
-#define SPOT_MODE "spot mode"
-
 /* --------------------------------------------------Random Runnincg mode----------------------*/
-void Spot_Mode(void)
+void Spot_Mode(SpotType ST)
 {
 	uint8_t Motor_OC_Counter = 0;
 	uint16_t Radius = 0;
@@ -39,7 +37,20 @@ void Spot_Mode(void)
 	uint8_t OBS_Counter = 0;
 	uint8_t Stunk = 0;
 	uint16_t Counter_Watcher = 0;
-
+	//these param for adjust spiral motion
+	uint8_t sn=2;
+    uint16_t rp=230;
+	uint16_t ran = 250;
+	if(ST == NormalSpot){
+		sn = 3;
+		rp = 230;
+		ran = 400;
+	}
+	else if(ST == CleanSpot || ST == WallSpot){
+		sn = 3;
+		rp = 230; 
+		ran = 200;
+	}
 	Move_Style = Spiral_Right_Out;
 
 	Reset_Touch();
@@ -98,7 +109,10 @@ void Spot_Mode(void)
 		if (Touch_Detect()) {
 //			Beep(5, 20, 0, 1);
 			Stop_Brifly();
-			wav_play(WAV_CLEANING_FINISHED);
+			if(ST == NormalSpot){
+				Set_Clean_Mode(Clean_Mode_Userinterface);	
+				wav_play(WAV_CLEANING_FINISHED);
+			}
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
@@ -107,49 +121,20 @@ void Spot_Mode(void)
 			}
 			// Key relaesed, then the touch status should be cleared.
 			Reset_Touch();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
 		}
 		if (Check_Motor_Current()) {
 			Motor_OC_Counter++;
-			if (Motor_OC_Counter > 100) {
+			if (Motor_OC_Counter > 10) {
 				Motor_OC_Counter = 0;
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				wav_play(WAV_CLEANING_FINISHED);
+				if(ST == NormalSpot){
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					wav_play(WAV_CLEANING_FINISHED);
+				}
 				return;
 			}
 		} else {
 			Motor_OC_Counter = 0;
-		}
-
-		if (Get_Rcon_Remote() > 0) {
-			if(Is_MoveWithRemote())
-			{
-				if (Remote_Key(Remote_Wall_Follow)) {
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Rcon_Remote();
-					//Move_Forward(10, 10);
-					wav_play(WAV_CLEANING_FINISHED);
-					return;
-				}
-				
-				if (Remote_Key(Remote_Spot)) {
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Rcon_Remote();
-					wav_play(WAV_CLEANING_FINISHED);
-					//Move_Forward(10, 10);
-					return;
-				}
-			}
-			if (Remote_Key(Remote_Home)) {
-				Set_MoveWithRemote();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				SetHomeRemote();
-				Reset_Rcon_Remote();
-				wav_play(WAV_CLEANING_FINISHED);
-				return;
-			}
-			Reset_Rcon_Remote();
 		}
 		if (Get_OBS_Status() || Get_Cliff_Trig()) {
 			Move_Back();
@@ -158,13 +143,33 @@ void Spot_Mode(void)
 			Move_Style = Spiral_Left_Out;
 			break;
 		}
-		if(Get_Plan_Status()){
-			Set_Plan_Status(false);
-			wav_play(WAV_APPOINTMENT_DONE);
+		if(Get_Rcon_Remote())
+		{
+			if(ST == NormalSpot){
+				if(Remote_Key(Remote_All)){
+					Reset_Rcon_Remote();	
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					wav_play(WAV_CLEANING_FINISHED);
+					return;
+				}
+			}
+			else if(ST == CleanSpot || ST == WallSpot){
+					if (Remote_Key(Remote_Left | Remote_Right | Remote_Forward)){
+						Reset_Rcon_Remote();
+						return;
+					}
+					else if(Remote_Key(Remote_Home)){
+						Set_MoveWithRemote();
+						SetHomeRemote();
+						Reset_Rcon_Remote();
+						return ;
+					}
+			}
+			Reset_Rcon_Remote();
 		}
 	}
 
-	Move_Forward(5, 5);
+	//Move_Forward(5, 5);
 	Reset_Wheel_Step();
 	Reset_Wall_Step();
 	Set_MainBrush_PWM(90);
@@ -174,22 +179,24 @@ void Spot_Mode(void)
 
 	while (ros::ok()) {
 		usleep(10000);
-		if(Get_Plan_Status()){
-			Set_Plan_Status(false);
-			wav_play(WAV_APPOINTMENT_DONE);
-		}
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if (Check_Bat_SetMotors(135000, 80000, 100000)) {	//Low Battery Event
 			ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
 			usleep(30000);
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			if(ST == NormalSpot){
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				wav_play(WAV_CLEANING_FINISHED);
+			}
 			break;
 		}
 		//Set_MainBrush_PWM(80);
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
+		/*------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
-//			Beep(5, 20, 0, 1);
 			Stop_Brifly();
+			if(ST == NormalSpot){
+				wav_play(WAV_CLEANING_FINISHED);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+			}
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
@@ -198,60 +205,57 @@ void Spot_Mode(void)
 			}
 			// Key relaesed, then the touch status should be cleared.
 			Reset_Touch();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
 		uint8_t octype = Check_Motor_Current();
 		if (octype) {
-			if(Self_Check(octype)){
+			if(Self_Check(octype) && (ST == NormalSpot)){
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
 		}
-
-		if (Get_Rcon_Remote() > 0) {
-			if(Is_MoveWithRemote())
-			{
-				if (Remote_Key(Remote_Wall_Follow)) {
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Rcon_Remote();
-					//Move_Forward(10, 10);
-					wav_play(WAV_CLEANING_FINISHED);
-					return;
-				}
-				
-				if (Remote_Key(Remote_Spot)) {
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+		if (Get_Rcon_Remote()) {
+			if(ST == NormalSpot){
+				if(Remote_Key(Remote_All)){
+					if(Get_Rcon_Remote() == Remote_Home){
+						Set_MoveWithRemote();
+						SetHomeRemote();
+					}
 					Reset_Rcon_Remote();
 					wav_play(WAV_CLEANING_FINISHED);
-					//Move_Forward(10, 10);
+					Set_Clean_Mode(Clean_Mode_Userinterface);
 					return;
 				}
 			}
-			if (Remote_Key(Remote_Home)) {
-				Set_MoveWithRemote();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				SetHomeRemote();
-				Reset_Rcon_Remote();
-				wav_play(WAV_CLEANING_FINISHED);
-				return;
+			else if(ST == CleanSpot || ST == WallSpot){
+				if(Remote_Key(Remote_Home)){
+					Reset_Rcon_Remote();
+					Set_MoveWithRemote();
+					SetHomeRemote();
+					return;
+				}
+				else if(Remote_Key(Remote_Left | Remote_Right | Remote_Forward)){
+					Reset_Rcon_Remote();	
+					return;
+				}
 			}
 			Reset_Rcon_Remote();
 		}
-		/*------------------------------------------------------Runing Path-----------------------*/
+		/*--------------------Runing Path-----------------------*/
 		Set_Dir_Forward();
 		switch (Move_Style) {
 			case Spiral_Right_Out:
 				step = Get_LeftWheel_Step();
-				if (step > (Radius * 4)) {
+				if (step > (Radius * sn)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 100) {
 						Radius += 1;
 					} else {
 						Radius += 3;
 					}
-					if (Radius > 250) {
+					if (Radius > ran) {
 						Move_Style = Spiral_Right_In;
+						ROS_INFO("%s ,%d ,SPIRAL RIGHT IN",__FUNCTION__,__LINE__);
 					}
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
@@ -272,12 +276,12 @@ void Spot_Mode(void)
 					OBS_Counter++;
 				}
 				Set_LeftWheel_Speed(SPOT_MAX_SPEED);
-				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + rp));
 				break;
 
 			case Spiral_Right_In:
 				step = Get_LeftWheel_Step();
-				if (step > (Radius * 4)) {
+				if (step > (Radius * sn)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -300,26 +304,28 @@ void Spot_Mode(void)
 					Stop_Brifly();
 					Turn_Left(Turn_Speed, 2500);
 					Move_Style = Spiral_Left_In;
+					ROS_INFO("%s ,%d ,SPIRAL LEFT IN",__FUNCTION__,__LINE__);
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
 				}
 				Set_LeftWheel_Speed(SPOT_MAX_SPEED);
-				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + rp));
 
 				break;
 
 			case Spiral_Left_Out:
 				step = Get_RightWheel_Step();
-				if (step > (Radius * 4)) {
+				if (step > (Radius * sn)) {
 					Reset_RightWheel_Step();
 					if (Radius < 100) {
 						Radius += 1;
 					} else {
 						Radius += 3;
 					}
-					if (Radius > 250) {
+					if (Radius > ran) {
 						Move_Style = Spiral_Left_In;
+						ROS_INFO("%s ,%d ,SPIRAL LEFT IN",__FUNCTION__,__LINE__);
 					}
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
@@ -335,18 +341,19 @@ void Spot_Mode(void)
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_Out;
+					ROS_INFO("%s ,%d ,SPIRAL RIGHT OUT",__FUNCTION__,__LINE__);
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
 				}
 				Set_RightWheel_Speed(SPOT_MAX_SPEED);
-				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + rp));
 
 				break;
 
 			case Spiral_Left_In:
 				step = Get_RightWheel_Step();
-				if (step > (Radius * 4)) {
+				if (step > (Radius * sn)) {
 					Reset_RightWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -370,12 +377,13 @@ void Spot_Mode(void)
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_In;
+					ROS_INFO("%s ,%d ,SPIRAL RIGHT IN",__FUNCTION__,__LINE__);
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
 				}
 				Set_RightWheel_Speed(SPOT_MAX_SPEED);
-				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + rp));
 
 				break;
 
@@ -383,12 +391,14 @@ void Spot_Mode(void)
 				break;
 		}
 		if ((OBS_Counter > 15) || (Stunk > 3)) {
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			if(ST == NormalSpot)
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
 		if (Spot_Flag) {
 			Spot_Flag = 0;
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			if(ST == NormalSpot)
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
 
@@ -396,11 +406,13 @@ void Spot_Mode(void)
 			Disable_Motors();
 			ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 			wav_play(WAV_ERROR_LIFT_UP);
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			if(ST == NormalSpot)
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
 	}
-	wav_play(WAV_CLEANING_FINISHED);
+	if(ST == NormalSpot)
+		wav_play(WAV_CLEANING_FINISHED);
 }
 
 /*----------------------------------------------------------------Random Dirt Event---------------------------------*/

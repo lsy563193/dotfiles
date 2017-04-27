@@ -21,9 +21,13 @@
 #define Spiral_Left_Out 	4
 #define Spiral_Left_In	  8
 #define First_Round       10
+typedef enum{
+	NormalSpot = 0,
+	CleanSpot = 1,
+	WallSpot = 2,
+}SpotType;
 
-
-void Spot_Mode(void);
+void Spot_Mode(SpotType spottype);
 uint8_t Random_Dirt_Event(void);
 
 #endif /*----Behaviors------*/

@@ -144,7 +144,7 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
-				Spot_Mode();
+				Spot_Mode(NormalSpot);
 				Disable_Motors();
 				usleep(200000);
 //				Beep(1,25,25,2);

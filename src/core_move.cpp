@@ -2731,17 +2731,18 @@ MapTouringType CM_handleExtEvent()
 		 * Check remote spot key press event, if spot key is pressed,
 		 * change to spot mode, after spot mode finished, back to zig-zag clean.
 		 */
-#if 1
+
 		if (Remote_Key(Remote_Spot)) {
 			Stop_Brifly();
+			Reset_Rcon_Remote();
 			ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
-			Spot_Mode();
+			Spot_Mode(CleanSpot);
+			Set_VacMode(Vac_Max);
 			Switch_VacMode();
 			ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
-			Reset_Rcon_Remote();
 			return MT_None;
 		}
-#endif
+		
 
 		if (Remote_Key(Remote_Max)) {
 			if (lowBattery == 0) {
@@ -2769,11 +2770,13 @@ MapTouringType CM_handleExtEvent()
 		return MT_Cliff;
 	}
     /* check plan setting*/
+    /*
 	if(Get_Plan_Status())
 	{
 		Set_Plan_Status(false);
 		wav_play(WAV_APPOINTMENT_DONE);
 	}
+    */
 	return MT_None;
 }
 
