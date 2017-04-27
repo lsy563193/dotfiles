@@ -40,6 +40,9 @@ typedef enum {
 	WAV_WIFI_CONNECTING		= 34,
 	WAV_WIFI_CONNECTED		= 35,
 	WAV_TEST_LIDAR			= 36,
+	WAV_CLEANING_CONTINUE		= 37,
+	WAV_SYSTEM_INITIALIZING		= 38,
+	WAV_BACK_TO_CHARGER_FAILED	= 39,
 }WavType;
 
 void wav_play(WavType action);
