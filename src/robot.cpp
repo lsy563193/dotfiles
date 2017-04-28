@@ -1052,3 +1052,19 @@ void robot::Reset_Cleaning_Low_Bat_Pause(void)
 	this->low_bat_pause_cleaning = false;
 }
 #endif
+
+#if MANUAL_PAUSE_CLEANING
+// These 3 functions are for manual pause cleaning.
+bool robot::Is_Cleaning_Manual_Paused(void)
+{
+	return this->manual_pause_cleaning;
+}
+void robot::Set_Cleaning_Manual_Pause(void)
+{
+	this->manual_pause_cleaning = true;
+}
+void robot::Reset_Cleaning_Manual_Pause(void)
+{
+	this->manual_pause_cleaning = false;
+}
+#endif

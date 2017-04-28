@@ -82,11 +82,16 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------wall follow mode------\n");
 				//Set_Main_PwrByte(Clean_Mode_WallFollow);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");
-				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Random_Running_Mode();
 				break;
 			case Clean_Mode_Navigation:
@@ -114,6 +119,9 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------GoHome mode------\n");
 				//Set_Main_PwrByte(Clean_Mode_GoHome);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				if (!Is_Gyro_On())
 				{
 					// Restart the gyro.
@@ -153,12 +161,19 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Remote mode------\n");
 				//Set_Main_PwrByte(Clean_Mode_Remote);
 				CM_reset_cleaning_low_bat_pause();
+				set_main_pwr(Clean_Mode_Remote);
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
 				//Set_Main_PwrByte(Clean_Mode_Spot);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Spot_Mode(NormalSpot);
 				Disable_Motors();
 				usleep(200000);
@@ -172,6 +187,9 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Sleep mode------\n");
 				//Set_Main_PwrByte(Clean_Mode_Sleep);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Disable_Motors();
 				Sleep_Mode();
 				break;

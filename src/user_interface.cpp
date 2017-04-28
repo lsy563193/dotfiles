@@ -69,6 +69,18 @@ void User_Interface(void)
 	{
 		usleep(10000);
 
+#if MANUAL_PAUSE_CLEANING
+		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		{
+			if (Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			{
+				ROS_WARN("Robot lifted up during manual pause, reset manual pause status.");
+				wav_play(WAV_ERROR_LIFT_UP);
+				Clear_Manual_Pause();
+			}
+		}
+#endif
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
 		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
 		{

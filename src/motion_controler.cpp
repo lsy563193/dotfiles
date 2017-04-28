@@ -57,20 +57,31 @@ Motion_controller::Motion_controller()
 		enable_slam_offset = 1;
 	} else
 #endif
+#if MANUAL_PAUSE_CLEANING
 	{
-		Work_Motor_Configure();
-
-		if (!robot::instance()->start_lidar())
-			return;
-
-		if (Get_Clean_Mode() == Clean_Mode_Navigation && robot::instance()->align_active())
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
-			ObstacleDetector od;
-//			if (!start_obstacle_detector()) return;
-			if (!robot::instance()->align()) return;
+			Work_Motor_Configure();
+			robot::instance()->start_lidar();
+			enable_slam_offset = 1;
 		}
-		start_slam();
+		else
+#endif
+		{
+			Work_Motor_Configure();
+			if (!robot::instance()->start_lidar())
+				return;
+			if (Get_Clean_Mode() == Clean_Mode_Navigation && robot::instance()->align_active())
+			{
+				ObstacleDetector od;
+//				if (!start_obstacle_detector()) return;
+				if (!robot::instance()->align()) return;
+			}
+			start_slam();
+		}
+#if MANUAL_PAUSE_CLEANING
 	}
+#endif
 }
 
 Motion_controller::~Motion_controller()
@@ -83,23 +94,37 @@ Motion_controller::~Motion_controller()
 		enable_slam_offset = 0;
 	} else
 #endif
+#if MANUAL_PAUSE_CLEANING
 	{
-		Disable_Motors();
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		{
+			Disable_Motors();
+			robot::instance()->stop_lidar();
+			enable_slam_offset = 0;
+			wav_play(WAV_TEST_FAIL);
+		}
+		else
+#endif
+		{
+			Disable_Motors();
 
-//		if(start_bit[lidar])
-		//try 3times;make sure to stop
-		if(Get_Cliff_Trig())
-			wav_play(WAV_ERROR_LIFT_UP);
+//			if(start_bit[lidar])
+			//try 3times;make sure to stop
+			if(Get_Cliff_Trig())
+				wav_play(WAV_ERROR_LIFT_UP);
 
-		wav_play(WAV_CLEANING_FINISHED);
+			wav_play(WAV_CLEANING_FINISHED);
 
-		robot::instance()->stop_lidar();
-//		if(start_bit[align])
-		robot::instance()->align_exit();
+			robot::instance()->stop_lidar();
+//			if(start_bit[align])
+			robot::instance()->align_exit();
 
-//		if(start_bit[slam])
-		robot::instance()->stop_slam();
+//			if(start_bit[slam])
+			robot::instance()->stop_slam();
 
+		}
+#if MANUAL_PAUSE_CLEANING
 	}
+#endif
 };
 
