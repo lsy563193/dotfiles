@@ -1054,6 +1054,8 @@ uint8_t Check_Motor_Current(void)
 {
 	static uint8_t lwheel_oc_count = 0;
 	static uint8_t rwheel_oc_count = 0;
+	static uint8_t vacuum_oc_count = 0;
+	static uint8_t mbrush_oc_count = 0;
 	if((uint32_t)robot::instance()->robot_get_lwheel_current() > Wheel_Stall_Limit){
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
@@ -1068,7 +1070,7 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
-			ROS_WARN("%s,%d,right wheel over current,%lu mA\n",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
+			ROS_WARN("%s,%d,right wheel over current,%lu mA",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
 			return Check_Right_Wheel;
 		}
 	}
@@ -1076,20 +1078,28 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count = 0;
 	Check_SideBrush_Stall();
 	if(robot::instance()->robot_get_rbrush_oc()){
-		ROS_WARN("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,right brush over current",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
 	}
 	if(robot::instance()->robot_get_lbrush_oc()){
-		ROS_WARN("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,left brush over current",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
 	}
 	if(robot::instance()->robot_get_mbrush_oc()){
-		ROS_WARN("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
-		return Check_Main_Brush;
+		mbrush_oc_count++;
+		if(mbrush_oc_count > 40){
+			mbrush_oc_count =0;
+			ROS_WARN("%s,%d,main brush over current",__FUNCTION__,__LINE__);
+			return Check_Main_Brush;
+		}
 	}
 	if(robot::instance()->robot_get_vacuum_oc()){
-		ROS_WARN("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
-		return Check_Vacuum;	
+		vacuum_oc_count++;
+		if(vacuum_oc_count>40){
+			vacuum_oc_count = 0;
+			ROS_WARN("%s,%d,vacuum over current",__FUNCTION__,__LINE__);
+			return Check_Vacuum;	
+		}
 	}
 	return 0;
 }
@@ -1097,20 +1107,22 @@ uint8_t Check_Motor_Current(void)
 /*-----------------------------------------------------------Self Check-------------------*/
 uint8_t Self_Check(uint8_t Check_Code)
 {
-////	static uint8_t
-////	uint32_t Temp_Brush_Current=0;
-////	uint8_t Temp_Brush_Current_Count=0;
+	static time_t mboctime;
+	static time_t vacoctime;
+	static uint8_t mbrushchecking = 0;
 	uint8_t Time_Out=0;
 	int32_t Wheel_Current_Summary=0;
 	uint8_t Left_Wheel_Slow=0;
 	uint8_t Right_Wheel_Slow=0;
 
+/*
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
 		CM_CorBack(COR_BACK_20MM);
 	else
 		Quick_Back(30,20);
+*/
 	Disable_Motors();
-	usleep(100000);
+	usleep(10000);
 	/*------------------------------Self Check right wheel -------------------*/
 	if(Check_Code==Check_Right_Wheel)
 	{
@@ -1125,14 +1137,14 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		Set_Wheel_Speed(30,30);
 		usleep(50000);
-		Time_Out=4;
+		Time_Out=50;
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
-			Wheel_Current_Summary += robot::instance()->robot_get_rwheel_current();
+			Wheel_Current_Summary += (uint32_t)robot::instance()->robot_get_rwheel_current();
 			usleep(20000);
 		}
-		Wheel_Current_Summary/=4;
+		Wheel_Current_Summary/=50;
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
@@ -1142,14 +1154,16 @@ uint8_t Self_Check(uint8_t Check_Code)
 			return 1;
 
 		}
+		/*
 		if(Right_Wheel_Slow>100)
 		{
 			Disable_Motors();
 			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
+		*/
 		Stop_Brifly();
-		Turn_Right(Turn_Speed,1800);
+		//Turn_Right(Turn_Speed,1800);
 	}
 	/*---------------------------Self Check left wheel -------------------*/
 	else if(Check_Code==Check_Left_Wheel)
@@ -1165,14 +1179,14 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		Set_Wheel_Speed(30,30);
 		usleep(50000);
-		Time_Out=4;
+		Time_Out=50;
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
-			Wheel_Current_Summary += robot::instance()->robot_get_lwheel_current();
+			Wheel_Current_Summary += (uint32_t)robot::instance()->robot_get_lwheel_current();
 			usleep(20000);
 		}
-		Wheel_Current_Summary/=4;
+		Wheel_Current_Summary/=50;
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
@@ -1181,62 +1195,75 @@ uint8_t Self_Check(uint8_t Check_Code)
 			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
+		/*
 		if(Left_Wheel_Slow>100)
 		{
 			Disable_Motors();
 			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
+		*/
 		Stop_Brifly();
-		Turn_Left(Turn_Speed,1800);
+		//Turn_Left(Turn_Speed,1800);
 	}
 	else if(Check_Code==Check_Main_Brush)
 	{
-		CM_CorBack(COR_BACK_20MM);
-		Turn_Right(Turn_Speed,1800);
-		Set_MainBrush_PWM(60);
-		usleep(100000);
-		//if(GPIOD->IDR&MCU_MAINBRUSH_I_DET)
-		//{
+		if(!mbrushchecking){
+			Set_MainBrush_PWM(0);
+			mbrushchecking = 1;
+			mboctime = time(NULL);
+		}
+		else if((uint32_t)difftime(time(NULL),mboctime)>=3){
+			mbrushchecking = 0;
 			Set_Error_Code(Error_Code_MainBrush);
-			Disable_Motors();
 			wav_play(WAV_ERROR_MAIN_BRUSH);
+			Disable_Motors();
 			return 1;
-		//}
-		//Reset_MainStall();
+		}
+		return 0;
 	}
 	else if(Check_Code==Check_Vacuum)
 	{
 		#ifdef BLDC_INSTALL
-		BLDC_OFF;
+		//BLDC_OFF;
 		usleep(10000);
 		Set_BLDC_TPWM(30);
 		Set_Vac_Speed();
-		BLDC_ON;
+		//BLDC_ON;
 		usleep(100000);
-		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
-		//{
-			Set_Error_Code(Error_Code_Fan_H);
-			Disable_Motors();
-			return 1;
-		//}
+		Set_Error_Code(Error_Code_Fan_H);
+		Disable_Motors();
+		wav_play(WAV_ERROR_SUCTION_FAN);
+		return 1;
 		#else
-		Set_BLDC_Speed(80);
-		sleep(1);
-		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
-		//{
-			Set_Error_Code(Error_Code_Fan_H);
-			Disable_Motors();
-			wav_play(WAV_ERROR_SUCTION_FAN);
-			return 1;
-		//}
+		Disable_Motors();
+		//Stop_Brifly();
+		Set_Vac_Speed();
+		usleep(100000);
+		vacoctime = time(NULL);
+		uint16_t tmpnoc_n = 0;
+		while((uint32_t)difftime(time(NULL),vacoctime)<=3){
+			if(!robot::instance()->robot_get_vacuum_oc()){
+				tmpnoc_n++;
+				if(tmpnoc_n>20){
+					Work_Motor_Configure();
+					tmpnoc_n = 0;
+					return 0;
+				}
+			}
+			usleep(50000);
+		}
+		Set_Error_Code(Error_Code_Fan_H);
+		Disable_Motors();
+		wav_play(WAV_ERROR_SUCTION_FAN);
+		return 1;
 		#endif
 	}
 	Stop_Brifly();
 	Left_Wheel_Slow=0;
 	Right_Wheel_Slow=0;
 	Work_Motor_Configure();
-	Move_Forward(5,5);
+	//Move_Forward(5,5);
 	return 0;
 }
 
