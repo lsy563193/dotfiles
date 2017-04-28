@@ -118,6 +118,13 @@ MapTouringType CurveMove_MoveToPoint()
 			break;
 		}
 
+		// Check for exception event.
+		retval = CM_handleExtEvent();
+		if (retval != MT_None)
+		{
+			break;
+		}
+
 		/* Check bumper & cliff event.*/
 		if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 			Stop_Brifly();
