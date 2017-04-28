@@ -1313,6 +1313,7 @@ uint8_t WF_End_Wall_Follow(void){
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 	MapTouringType	mt_state = MT_None;
 	int16_t home_angle = robot::instance()->robot_get_home_angle();
+	Stop_Brifly();
 	enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
 	WF_Mark_Home_Point();
