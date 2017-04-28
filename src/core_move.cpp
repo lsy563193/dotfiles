@@ -640,8 +640,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 		if (Touch_Detect()) {
 			Stop_Brifly();
-			// Set touch status to make sure this event can be detected by main process while loop.
-			Set_Touch();
 			ROS_WARN("%s %d: touch detect break!", __FUNCTION__, __LINE__);
 			return;
 		}
@@ -679,8 +677,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 			if (Touch_Detect())
 			{
-				// Set touch status to make sure this event can be detected by main process while loop.
-				Set_Touch();
 				Stop_Brifly();
 				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 				return;
@@ -720,8 +716,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 				if (Touch_Detect())
 				{
-					// Set touch status to make sure this event can be detected by main process while loop.
-					Set_Touch();
 					Stop_Brifly();
 					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 					return;
@@ -753,8 +747,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 					if (Touch_Detect())
 					{
-						// Set touch status to make sure this event can be detected by main process while loop.
-						Set_Touch();
 						Stop_Brifly();
 						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 						return;
@@ -787,8 +779,6 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 
 						if (Touch_Detect())
 						{
-							// Set touch status to make sure this event can be detected by main process while loop.
-							Set_Touch();
 							Stop_Brifly();
 							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
 							return;
@@ -1890,7 +1880,12 @@ void CM_go_home()
 
 				CM_reset_cleaning_low_bat_pause();
 
-				ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+				// The current target home point is still valid, so push it back to the home point list.
+				New_Home_Point.X = cellToCount(tmpPnt.X);
+				New_Home_Point.Y = cellToCount(tmpPnt.Y);
+				Home_Point.push_front(New_Home_Point);
+
+				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time(), Home_Point.size());
 				return;
 			} else if (state == 1 || state == -7) {
 				// state == 1 means robot has reached the saved point.
@@ -2052,25 +2047,37 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 	{
-		wav_play(WAV_CLEANING_START);
+		wav_play(WAV_CLEANING_CONTINUE);
 	}
 	else
 #endif
+#if MANUAL_PAUSE_CLEANING
 	{
-		// Restart the gyro.
-		Set_Gyro_Off();
-		// Wait for 30ms to make sure the off command has been effectived.
-		usleep(30000);
-		// Set gyro on before wav_play can save the time for opening the gyro.
-		Set_Gyro_On();
-		wav_play(WAV_CLEANING_START);
-
-		if (!Wait_For_Gyro_On())
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return 0;
+			ROS_WARN("Restore from manual pause");
+			wav_play(WAV_CLEANING_CONTINUE);
 		}
+		else
+#endif
+		{
+			// Restart the gyro.
+			Set_Gyro_Off();
+			// Wait for 30ms to make sure the off command has been effectived.
+			usleep(30000);
+			// Set gyro on before wav_play can save the time for opening the gyro.
+			Set_Gyro_On();
+			wav_play(WAV_CLEANING_START);
+
+			if (!Wait_For_Gyro_On())
+			{
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				return 0;
+			}
+		}
+#if MANUAL_PAUSE_CLEANING
 	}
+#endif
 
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
@@ -2190,32 +2197,44 @@ uint8_t CM_Touring(void)
 	}
 	else
 #endif
+#if MANUAL_PAUSE_CLEANING
 	{
-		// Set the Work_Timer_Start as current time
-		Reset_Work_Time();
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		{
+			// Don't initialize the map, etc.
+		}
+		else
+#endif
+		{
+			// Set the Work_Timer_Start as current time
+			Reset_Work_Time();
 
-		//Initital home point
-		Home_Point.clear();
+			//Initital home point
+			Home_Point.clear();
 
-		// Push the start point into the home point list
-		Home_Point.push_front(New_Home_Point);
+			// Push the start point into the home point list
+			Home_Point.push_front(New_Home_Point);
 
-		ROS_INFO("Map_Initialize-----------------------------");
-		Map_Initialize();
-		PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
+			ROS_INFO("Map_Initialize-----------------------------");
+			Map_Initialize();
+			PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
 
-		Reset_Rcon_Status();
+			Reset_Rcon_Status();
 
-		/* usleep for checking whether robot is in the station */
-		usleep(700);
+			/* usleep for checking whether robot is in the station */
+			usleep(20000);
 
-		robot::instance()->init_mumber();// for init robot member
+			robot::instance()->init_mumber();// for init robot member
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		// If it it the first time cleaning, initialize the Continue_Point.
-		Continue_Point.X = Continue_Point.Y = 0;
+			// If it it the first time cleaning, initialize the Continue_Point.
+			Continue_Point.X = Continue_Point.Y = 0;
 #endif
+		}
+
+#if MANUAL_PAUSE_CLEANING
 	}
+#endif
 
 	Motion_controller motion;
 	if(except_event()){
@@ -2276,7 +2295,12 @@ uint8_t CM_Touring(void)
 	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
 #endif
 	{
-		Home_Point.clear();
+#if MANUAL_PAUSE_CLEANING
+		if (!robot::instance()->Is_Cleaning_Manual_Paused())
+#endif
+		{
+			Home_Point.clear();
+		}
 	}
 	return 0;
 }
@@ -2700,12 +2724,12 @@ MapTouringType CM_handleExtEvent()
 	/* Check key press events. */
 	if (Touch_Detect()) {
 		Stop_Brifly();
-		ROS_WARN("%s %d: clean key is pressed.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Touch_Detect in CM_handleExtEvent.", __FUNCTION__, __LINE__);
 //		Beep(5, 20, 0, 1);
 		// Key release detection, if user has not release the key, don't do anything.
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
-			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 			usleep(20000);
 		}
 		Reset_Touch();

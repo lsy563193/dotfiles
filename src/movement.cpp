@@ -1703,11 +1703,23 @@ uint8_t Touch_Detect(void)
 	// Get the key value from robot sensor
 	if (Get_Touch_Status()){
 		ROS_WARN("Touch status == 1");
+#if MANUAL_PAUSE_CLEANING
+		if (Get_Clean_Mode() == Clean_Mode_Navigation)
+		{
+			robot::instance()->Set_Cleaning_Manual_Pause();
+		}
+#endif
 		return 1;
 	}
 	if (Remote_Key(Remote_Clean)){
 		ROS_WARN("Remote_Key clean.");
 		Reset_Rcon_Remote();
+#if MANUAL_PAUSE_CLEANING
+		if (Get_Clean_Mode() == Clean_Mode_Navigation)
+		{
+			robot::instance()->Set_Cleaning_Manual_Pause();
+		}
+#endif
 		Set_Touch();
 		return 1;
 	}
@@ -2812,3 +2824,15 @@ bool Get_Plan_Status()
 	return Plan_Status;
 }
 
+#if MANUAL_PAUSE_CLEANING
+void Clear_Manual_Pause(void)
+{
+	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	{
+		ROS_WARN("Reset manual pause status.");
+		robot::instance()->Reset_Cleaning_Manual_Pause();
+		robot::instance()->align_exit();
+		robot::instance()->stop_slam();
+	}
+}
+#endif

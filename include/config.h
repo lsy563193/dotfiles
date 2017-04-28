@@ -286,6 +286,9 @@
 #define CONTINUE_CLEANING_VOLTAGE	(1530)
 #endif
 
+// Config for whether enable the function of manual pause cleaning.
+#define MANUAL_PAUSE_CLEANING	(1)
+
 /* ------------------------------------- Path Planning Map ------------------------------------- */
 
 /*

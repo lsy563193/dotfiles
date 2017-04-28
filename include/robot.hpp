@@ -121,11 +121,22 @@ public:
 	void Reset_Cleaning_Low_Bat_Pause(void);
 #endif
 
+#if MANUAL_PAUSE_CLEANING
+// These 3 functions are for manual pause cleaning.
+	bool Is_Cleaning_Manual_Paused(void);
+	void Set_Cleaning_Manual_Pause(void);
+	void Reset_Cleaning_Manual_Pause(void);
+#endif
+
 private:
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These variable is for continue cleaning after charge.
 	bool	low_bat_pause_cleaning;
+#endif
+#if MANUAL_PAUSE_CLEANING
+// These variable is for continue cleaning after charge.
+	bool	manual_pause_cleaning;
 #endif
 	bool	is_sensor_ready;
 	bool	is_odom_ready;
