@@ -130,7 +130,7 @@ void Remote_Mode(void)
 			//Set_SideBrush_PWM(30,30);
 			//Set_MainBrush_PWM(30);
 			No_Command_Counter=0;
-			Forward_Flag=0;
+			//Forward_Flag=0;
 			Reset_Rcon_Remote();
 			Reset_Wheel_Step();
 		}
