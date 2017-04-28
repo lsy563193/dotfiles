@@ -2240,7 +2240,10 @@ uint8_t CM_Touring(void)
 
 	Motion_controller motion;
 
-	if (!Is_Slam_Ready) {
+	if (Is_Slam_Ready) {
+		Is_Slam_Ready = 0;
+	} else{
+		Is_Slam_Ready = 0;
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		wav_play(WAV_TEST_LIDAR);
 		return 0;

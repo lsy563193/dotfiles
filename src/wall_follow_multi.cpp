@@ -66,6 +66,7 @@ static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 
 extern int16_t WheelCount_Left, WheelCount_Right;
 
+extern bool Is_Slam_Ready;//For checking if the slam is initialized finish
 
 /************************************************************************
  * Normal End
@@ -654,6 +655,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	}
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
+
+	if (Is_Slam_Ready) {
+		Is_Slam_Ready = 0;
+	} else{
+		Is_Slam_Ready = 0;
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		wav_play(WAV_TEST_LIDAR);
+		return 0;
+	}
 
 	enable_slam_offset = 2;//2 for wall follow mode
 
