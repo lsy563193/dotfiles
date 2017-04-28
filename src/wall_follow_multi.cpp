@@ -54,7 +54,7 @@ bool	escape_thread_running = false;
 uint32_t escape_trapped_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
-
+extern int8_t enable_slam_offset;
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 	{1200, 250, 150},
@@ -624,7 +624,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint8_t					Isolated_Flag;
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
-	extern int8_t			enable_slam_offset;
 	uint8_t					octype;//for current check
 	Reset_MoveWithRemote();
 
@@ -1281,7 +1280,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 }
 
 void Wall_Follow_Init_Slam(void){
-	extern int8_t enable_slam_offset;
 	extern void start_slam(void);
 //	robot::instance()->Subscriber();
 	robot::instance()->start_lidar();
@@ -1296,7 +1294,6 @@ void Wall_Follow_Init_Slam(void){
 }
 
 void Wall_Follow_Stop_Slam(void){
-	extern int8_t enable_slam_offset;
 	extern void start_slam(void);
 	robot::instance()->UnSubscriber();
 	Disable_Motors();
@@ -1317,7 +1314,7 @@ uint8_t WF_End_Wall_Follow(void){
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 	MapTouringType	mt_state = MT_None;
 	int16_t home_angle = robot::instance()->robot_get_home_angle();
-
+	enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
 	WF_Mark_Home_Point();
 	CM_go_home();
