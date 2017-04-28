@@ -95,7 +95,7 @@ int robotbase_init(void)
 		ROS_INFO("[robotbase] serial not ready\n");
 		return -1;
 	}
-	set_main_pwr(0);
+	set_main_pwr(Clean_Mode_Userinterface);
 	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 //	do {
@@ -139,7 +139,7 @@ void robotbase_deinit(void)
 		usleep(40000);
 		Disable_Motors();
 		usleep(40000);
-		set_main_pwr(1);
+		set_main_pwr(Clean_Mode_Sleep);
 		usleep(40000);	
 		send_stream_thread = false;
 		usleep(40000);
