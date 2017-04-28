@@ -229,13 +229,12 @@ void Remote_Mode(void)
 			}
 		}
 		/* check plan set */
-		/*
 		if(Get_Plan_Status())
 		{
 			Set_Plan_Status(false);
-			wav_play(WAV_APPOINTMENT_DONE);
+	//		wav_play(WAV_APPOINTMENT_DONE);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
 		}
-		*/
 	}
 	Disable_Motors();
 }
