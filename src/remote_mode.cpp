@@ -52,6 +52,11 @@ void Remote_Mode(void)
 	{
 		usleep(20000);
 
+#ifdef OBS_DYNAMIC_MOVETOTARGET
+		/* Dyanmic adjust obs trigger val . */
+		OBS_Dynamic_Base(20);
+#endif
+
 		if(Remote_Key(Remote_Forward))
 		{
 			Forward_Flag=1-Forward_Flag;
