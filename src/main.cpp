@@ -161,7 +161,6 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Remote mode------\n");
 				//Set_Main_PwrByte(Clean_Mode_Remote);
 				CM_reset_cleaning_low_bat_pause();
-				set_main_pwr(Clean_Mode_Remote);
 #if MANUAL_PAUSE_CLEANING
 				Clear_Manual_Pause();
 #endif
