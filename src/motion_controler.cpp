@@ -58,6 +58,7 @@ Motion_controller::Motion_controller()
 			return;
 		}
 		enable_slam_offset = 1;
+		Is_Slam_Ready = 1;
 	} else
 #endif
 #if MANUAL_PAUSE_CLEANING
@@ -69,6 +70,7 @@ Motion_controller::Motion_controller()
 				Is_Slam_Ready = 0;
 				return;
 			}
+			Is_Slam_Ready = 1;
 			enable_slam_offset = 1;
 		}
 		else
