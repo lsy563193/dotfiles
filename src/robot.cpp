@@ -967,7 +967,7 @@ bool robot::start_lidar(void)
 
 	ROS_INFO("start_motor: %d", laser::instance()->is_ready());
 
-	return (laser::instance()->is_ready());//check try_times first
+	return (laser::instance()->is_ready());
 }
 
 void robot::stop_lidar(void){

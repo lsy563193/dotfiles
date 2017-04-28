@@ -53,7 +53,10 @@ Motion_controller::Motion_controller()
 	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 	{
 		Work_Motor_Configure();
-		robot::instance()->start_lidar();
+		if (!robot::instance()->start_lidar()) {
+			Is_Slam_Ready = 0;//start lidar false
+			return;
+		}
 		enable_slam_offset = 1;
 	} else
 #endif
@@ -62,15 +65,20 @@ Motion_controller::Motion_controller()
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
 			Work_Motor_Configure();
-			robot::instance()->start_lidar();
+			if (!robot::instance()->start_lidar()) {
+				Is_Slam_Ready = 0;
+				return;
+			}
 			enable_slam_offset = 1;
 		}
 		else
 #endif
 		{
 			Work_Motor_Configure();
-			if (!robot::instance()->start_lidar())
+			if (!robot::instance()->start_lidar()) {
+				Is_Slam_Ready = 0;
 				return;
+			}
 			if (Get_Clean_Mode() == Clean_Mode_Navigation && robot::instance()->align_active())
 			{
 				ObstacleDetector od;
