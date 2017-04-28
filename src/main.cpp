@@ -74,13 +74,13 @@ void *core_move_thread(void *)
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------User_Interface mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_Userinterface & 0xff);
+				set_main_pwr(Clean_Mode_Userinterface);
 //				wav_play(WAV_TEST_MODE);
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_WallFollow & 0xff);
+				set_main_pwr(Clean_Mode_WallFollow);
 				CM_reset_cleaning_low_bat_pause();
 				Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 				break;
@@ -99,20 +99,20 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1000);
 				*/
 				ROS_INFO("\n-------Navigation mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_Navigation & 0xff);
+				set_main_pwr(Clean_Mode_Navigation);
 				CM_Touring();
 				//Set_Clean_Mode(Clean_Mode_GoHome);
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_Charging & 0xff);
+				set_main_pwr(Clean_Mode_Charging);
 				Charge_Function();
 
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_GoHome & 0xff);
+				set_main_pwr(Clean_Mode_GoHome);
 				CM_reset_cleaning_low_bat_pause();
 				if (!Is_Gyro_On())
 				{
@@ -151,13 +151,13 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_Remote & 0xff);
+				set_main_pwr(Clean_Mode_Remote);
 				CM_reset_cleaning_low_bat_pause();
 				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_Spot & 0xff);
+				set_main_pwr(Clean_Mode_Spot);
 				CM_reset_cleaning_low_bat_pause();
 				Spot_Mode(NormalSpot);
 				Disable_Motors();
@@ -170,7 +170,7 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
-				control_set(CTL_MAIN_PWR, Clean_Mode_Sleep & 0xff);
+				set_main_pwr(Clean_Mode_Sleep);
 				CM_reset_cleaning_low_bat_pause();
 				Disable_Motors();
 				Sleep_Mode();
