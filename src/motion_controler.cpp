@@ -12,7 +12,7 @@
 #include "motion_controler.h"
 
 int8_t enable_slam_offset = 0;
-
+bool Is_Slam_Ready = 0;
 bool start_slam(void)
 {
 	robot::instance()->start_slam();
@@ -77,7 +77,11 @@ Motion_controller::Motion_controller()
 //				if (!start_obstacle_detector()) return;
 				if (!robot::instance()->align()) return;
 			}
-			start_slam();
+			if (start_slam()) {
+				Is_Slam_Ready = 1;
+			} else {
+				Is_Slam_Ready = 0;
+			}
 		}
 #if MANUAL_PAUSE_CLEANING
 	}
