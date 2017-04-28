@@ -95,7 +95,7 @@ int robotbase_init(void)
 		ROS_INFO("[robotbase] serial not ready\n");
 		return -1;
 	}
-	set_main_pwr(Clean_Mode_Userinterface);
+	Set_Main_PwrByte(POWER_ACTIVE);
 	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 //	do {
@@ -139,7 +139,7 @@ void robotbase_deinit(void)
 		usleep(40000);
 		Disable_Motors();
 		usleep(40000);
-		set_main_pwr(Clean_Mode_Sleep);
+		Set_Main_PwrByte(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
 		usleep(40000);
@@ -182,14 +182,14 @@ void *serial_receive_routine(void *)
 	while (ros::ok() && (!robotbase_thread_stop)) {
 		ret = serial_read(1, &header[0]);
 		if (ret != 1 ){
-			ROS_WARN("serial read length %d bytes,  requst %d ",ret,1);
+			ROS_WARN("%s, %d, serial read %d bytes,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
 		if(header[0] != h1)
 			continue;
 		ret= serial_read(1,&header[1]);
 		if (ret != 1 ){
-			ROS_WARN("serial read length %d bytes, requst %d ",ret,1);
+			ROS_WARN("%s,%d,serial read %d bytes, requst %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
 		if(header[1] != h2){
@@ -197,7 +197,7 @@ void *serial_receive_routine(void *)
 		}
 		ret = serial_read(wh_len, receiData);
 		if(ret != wh_len){
-			ROS_WARN("serial read length %d bytes, requst %d bytes",ret,wh_len);
+			ROS_WARN("%s,%d,serial read %d bytes, requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
 			continue;
 		}
 		r_crc = receiData[whtc_len];
@@ -410,15 +410,15 @@ void *robotbase_routine(void*)
 void *serial_send_routine(void*){
 	pthread_detach(pthread_self());
 	ROS_INFO("%s,%d thread running",__FUNCTION__,__LINE__);
-	ros::Time start_t;
-	ros::Rate r(_RATE);double proc_t;
+	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
 	ResetSendFlag();
 	while(send_stream_thread){
-		start_t =  ros::Time::now();
 		r.sleep();
-
+		//if(Get_Main_PwrByte()==POWER_DOWN){
+	//		continue;
+	//	}
 		/*-------------------speaker variable counter -----------------------*/
 		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
 		if (robotbase_beep_update_flag){
@@ -439,11 +439,12 @@ void *serial_send_routine(void*){
 		}
 		/*-------------------counter end-------------------------------------*/
 
-		SetSendFlag();
-		memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
-		buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
-		serial_write(SEND_LEN, buf);
-		ResetSendFlag();
+		if(!IsSendBusy()){
+			memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
+			buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
+			serial_write(SEND_LEN, buf);
+			ResetSendFlag();
+		}
 	}
 	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);

@@ -74,13 +74,14 @@ void *core_move_thread(void *)
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------User_Interface mode------\n");
-				set_main_pwr(Clean_Mode_Userinterface);
+				//Set_Main_PwrByte(Clean_Mode_Userinterface);
 //				wav_play(WAV_TEST_MODE);
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
-				set_main_pwr(Clean_Mode_WallFollow);
+				//Set_Main_PwrByte(Clean_Mode_WallFollow);
+				CM_reset_cleaning_low_bat_pause();
 #if MANUAL_PAUSE_CLEANING
 				Clear_Manual_Pause();
 #endif
@@ -103,20 +104,21 @@ void *core_move_thread(void *)
 					Turn_Left(10, 1000);
 				*/
 				ROS_INFO("\n-------Navigation mode------\n");
-				set_main_pwr(Clean_Mode_Navigation);
+				//Set_Main_PwrByte(Clean_Mode_Navigation);
 				CM_Touring();
 				//Set_Clean_Mode(Clean_Mode_GoHome);
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
-				set_main_pwr(Clean_Mode_Charging);
+				//Set_Main_PwrByte(Clean_Mode_Charging);
 				Charge_Function();
 
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
-				set_main_pwr(Clean_Mode_GoHome);
+				//Set_Main_PwrByte(Clean_Mode_GoHome);
+				CM_reset_cleaning_low_bat_pause();
 #if MANUAL_PAUSE_CLEANING
 				Clear_Manual_Pause();
 #endif
@@ -157,7 +159,8 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
-				set_main_pwr(Clean_Mode_Remote);
+				//Set_Main_PwrByte(Clean_Mode_Remote);
+				CM_reset_cleaning_low_bat_pause();
 #if MANUAL_PAUSE_CLEANING
 				Clear_Manual_Pause();
 #endif
@@ -165,7 +168,8 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
-				set_main_pwr(Clean_Mode_Spot);
+				//Set_Main_PwrByte(Clean_Mode_Spot);
+				CM_reset_cleaning_low_bat_pause();
 #if MANUAL_PAUSE_CLEANING
 				Clear_Manual_Pause();
 #endif
@@ -180,7 +184,8 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
-				set_main_pwr(Clean_Mode_Sleep);
+				//Set_Main_PwrByte(Clean_Mode_Sleep);
+				CM_reset_cleaning_low_bat_pause();
 #if MANUAL_PAUSE_CLEANING
 				Clear_Manual_Pause();
 #endif

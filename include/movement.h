@@ -237,6 +237,9 @@
 #define Clean_Mode_Mobility			13
 #define Clean_Mode_Navigation		14
 
+#define POWER_ACTIVE 1
+#define POWER_DOWN 7
+
 
 #define Const_160Min_Time			19200 //160 minutes
 #define Const_Work_Time				14400 //120 minutes
@@ -528,8 +531,6 @@ void Set_Gyro_On(void);
 bool Wait_For_Gyro_On(void);
 void Set_Gyro_Off(void);
 
-void set_main_pwr(uint8_t val);
-
 void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val);
 
 void control_set(uint8_t type, uint8_t val);
@@ -678,6 +679,8 @@ int32_t ABS_Minus(int32_t A,int32_t B);
 void Set_Plan_Status(bool Status);
 bool Get_Plan_Status(void);
 
+uint8_t Get_Main_PwrByte();
+void Set_Main_PwrByte(uint8_t val);
 #if MANUAL_PAUSE_CLEANING
 void Clear_Manual_Pause(void);
 #endif

@@ -1821,11 +1821,14 @@ void set_stop_charge(void)
 	control_set(CTL_CHARGER, 0x00);
 }
 
-void set_main_pwr(uint8_t val)
+void Set_Main_PwrByte(uint8_t val)
 {
 	control_set(CTL_MAIN_PWR, val & 0xff);
 }
 
+uint8_t Get_Main_PwrByte(){
+	return sendStream[CTL_MAIN_PWR];
+}
 
 void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val)
 {
@@ -1846,32 +1849,32 @@ void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right
 
 void control_set(uint8_t type, uint8_t val)
 {
-	if(!IsSendBusy()){
-		if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
-			sendStream[type] = val;
-			//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-			//serial_write(SEND_LEN, sendStream);
-		}
+	SetSendFlag();
+	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
+		sendStream[type] = val;
+		//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+		//serial_write(SEND_LEN, sendStream);
 	}
+	ResetSendFlag();
 }
 
 void control_append_crc(){
-	if(!IsSendBusy()){
-		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-	}	
+	SetSendFlag();
+	sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	ResetSendFlag();
 }
 
 void control_stop_all(void)
 {
 	uint8_t i;
-	if(!IsSendBusy()){
-		for(i = 2; i < (SEND_LEN)-2; i++) {
-			if (i == CTL_MAIN_PWR)
-				sendStream[i] = 0x01;
-			else
-				sendStream[i] = 0x00;
-		}
+	SetSendFlag();
+	for(i = 2; i < (SEND_LEN)-2; i++) {
+		if (i == CTL_MAIN_PWR)
+			sendStream[i] = 0x01;
+		else
+			sendStream[i] = 0x00;
 	}
+	ResetSendFlag();
 	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	//serial_write(SEND_LEN, sendStream);
 }
