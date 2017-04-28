@@ -107,6 +107,8 @@ extern volatile uint8_t cleaning_mode;
 // This status is for rounding function to decide the angle it should turn.
 uint8_t Bumper_Status_For_Rounding;
 
+extern bool Is_Slam_Ready;//For checking if the slam is initialized finish
+
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
@@ -2237,6 +2239,15 @@ uint8_t CM_Touring(void)
 #endif
 
 	Motion_controller motion;
+
+	if (Is_Slam_Ready) {
+		Is_Slam_Ready = 0;
+	} else{
+		Is_Slam_Ready = 0;
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		wav_play(WAV_TEST_LIDAR);
+		return 0;
+	}
 	if(except_event()){
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
