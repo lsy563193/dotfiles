@@ -2053,8 +2053,8 @@ uint8_t CM_Touring(void)
 	}
 	else
 #endif
-#if MANUAL_PAUSE_CLEANING
 	{
+#if MANUAL_PAUSE_CLEANING
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
 			ROS_WARN("Restore from manual pause");
@@ -2077,9 +2077,7 @@ uint8_t CM_Touring(void)
 				return 0;
 			}
 		}
-#if MANUAL_PAUSE_CLEANING
 	}
-#endif
 
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
@@ -2141,6 +2139,12 @@ uint8_t CM_Touring(void)
 					CM_reset_cleaning_low_bat_pause();
 				}
 #endif
+#if MANUAL_PAUSE_CLEANING
+				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				{
+					robot::instance()->Reset_Cleaning_Manual_Pause();
+				}
+#endif
 				return 0;
 			}
 		}
@@ -2199,8 +2203,8 @@ uint8_t CM_Touring(void)
 	}
 	else
 #endif
-#if MANUAL_PAUSE_CLEANING
 	{
+#if MANUAL_PAUSE_CLEANING
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
 			// Don't initialize the map, etc.
@@ -2234,11 +2238,17 @@ uint8_t CM_Touring(void)
 #endif
 		}
 
-#if MANUAL_PAUSE_CLEANING
 	}
-#endif
 
 	Motion_controller motion;
+
+#if MANUAL_PAUSE_CLEANING
+	// Clear the pause status.
+	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	{
+		robot::instance()->Reset_Cleaning_Manual_Pause();
+	}
+#endif
 
 	if (Is_Slam_Ready) {
 		Is_Slam_Ready = 0;
