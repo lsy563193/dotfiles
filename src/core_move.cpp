@@ -2053,8 +2053,8 @@ uint8_t CM_Touring(void)
 	}
 	else
 #endif
-#if MANUAL_PAUSE_CLEANING
 	{
+#if MANUAL_PAUSE_CLEANING
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
 			ROS_WARN("Restore from manual pause");
@@ -2077,9 +2077,7 @@ uint8_t CM_Touring(void)
 				return 0;
 			}
 		}
-#if MANUAL_PAUSE_CLEANING
 	}
-#endif
 
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
@@ -2141,6 +2139,12 @@ uint8_t CM_Touring(void)
 					CM_reset_cleaning_low_bat_pause();
 				}
 #endif
+#if MANUAL_PAUSE_CLEANING
+				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				{
+					robot::instance()->Reset_Cleaning_Manual_Pause();
+				}
+#endif
 				return 0;
 			}
 		}
@@ -2199,8 +2203,8 @@ uint8_t CM_Touring(void)
 	}
 	else
 #endif
-#if MANUAL_PAUSE_CLEANING
 	{
+#if MANUAL_PAUSE_CLEANING
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
 			// Don't initialize the map, etc.
@@ -2234,20 +2238,18 @@ uint8_t CM_Touring(void)
 #endif
 		}
 
-#if MANUAL_PAUSE_CLEANING
 	}
-#endif
 
 	Motion_controller motion;
 
-	if (Is_Slam_Ready) {
-		Is_Slam_Ready = 0;
-	} else{
-		Is_Slam_Ready = 0;
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		wav_play(WAV_TEST_LIDAR);
-		return 0;
+#if MANUAL_PAUSE_CLEANING
+	// Clear the pause status.
+	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	{
+		robot::instance()->Reset_Cleaning_Manual_Pause();
 	}
+#endif
+
 	if(except_event()){
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -2256,6 +2258,16 @@ uint8_t CM_Touring(void)
 		return 0;
 	}
 
+	//Check if slam is ok
+	if (Is_Slam_Ready) {
+		Is_Slam_Ready = 0;
+	} else {
+		Is_Slam_Ready = 0;
+		Set_Error_Code(Error_Code_Slam);
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		wav_play(WAV_TEST_LIDAR);
+		return 0;
+	}
 		/* usleep for checking whether robot is in the station */
 	usleep(700);
 	if (from_station == 1 && !robot::instance()->align_active()) {

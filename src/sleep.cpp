@@ -11,23 +11,18 @@ void Sleep_Mode(void)
   	uint8_t time=0;
 	static uint32_t Ch_WP_Counter=0;
 	
-	/*---------------------------------Wake Up-------------------------------*/
 	Reset_Touch();
 	Set_LED(0,0);
 	
-	/*--------------------------------ENTER LOW POWER--------------------------*/
-	
 	Disable_Motors();
-	Set_Main_PwrByte(POWER_DOWN);
     ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
+	Set_Main_PwrByte(POWER_DOWN);
 	while(ros::ok())
 	{
 		usleep(200000);
-		/*---------------------------------Wake Up-------------------------------*/
-
+		SetSleepModeFlag();
 		// Time for key pressing
 		time=0;
-		//judge which wakeup signal
 		if (Get_Key_Press() & KEY_CLEAN)
 		{
 			time = Get_Key_Time(KEY_CLEAN);
@@ -35,16 +30,16 @@ void Sleep_Mode(void)
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Set_Main_PwrByte(POWER_ACTIVE);
+				ResetSleepModeFlag();
 				Beep(3, 50, 0, 1);
-				// Wait for user to release the key.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
-					ROS_INFO("%s %d: User still holds the key.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s %d: Clean key pressed", __FUNCTION__, __LINE__);
 					usleep(100000);
 				}
 				Reset_Touch();
 				
-				return;
+				break;
 			}
 		}
 		if(Get_Plan_Status())
@@ -58,8 +53,9 @@ void Sleep_Mode(void)
 			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Set_Main_PwrByte(POWER_ACTIVE);
+			ResetSleepModeFlag();
 			Reset_Rcon_Remote();
-			return;
+			break;
 		}
 		Reset_Rcon_Remote();
 		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
@@ -68,7 +64,7 @@ void Sleep_Mode(void)
 			if(Turn_Connect())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
-				return;
+				break;
 			}
 		}
 		/*-----------------Check if near the charging base-----------------------------*/
@@ -83,7 +79,7 @@ void Sleep_Mode(void)
 				//Enable_PPower();
 				SetHomeRemote();
 				//Wake_Up_Adjust();
-				return;
+				break;
 			}
 		}
 		if(Is_ChargerOn())
@@ -91,7 +87,13 @@ void Sleep_Mode(void)
 			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Charging);
 			Set_Main_PwrByte(POWER_ACTIVE);
-			return;
+			break;
 		}
+	}
+	// Alarm for error.
+	if (Get_Clean_Mode() == Clean_Mode_Userinterface && Get_Error_Code())
+	{
+		Set_LED(0, 100);
+		Alarm_Error();
 	}
 }
