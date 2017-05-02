@@ -416,9 +416,9 @@ void *serial_send_routine(void*){
 	ResetSendFlag();
 	while(send_stream_thread){
 		r.sleep();
-		//if(Get_Main_PwrByte()==POWER_DOWN){
-	//		continue;
-	//	}
+		if(GetSleepModeFlag()){
+			continue;
+		}
 		/*-------------------speaker variable counter -----------------------*/
 		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
 		if (robotbase_beep_update_flag){

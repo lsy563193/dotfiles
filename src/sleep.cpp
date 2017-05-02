@@ -11,23 +11,18 @@ void Sleep_Mode(void)
   	uint8_t time=0;
 	static uint32_t Ch_WP_Counter=0;
 	
-	/*---------------------------------Wake Up-------------------------------*/
 	Reset_Touch();
 	Set_LED(0,0);
 	
-	/*--------------------------------ENTER LOW POWER--------------------------*/
-	
 	Disable_Motors();
-	Set_Main_PwrByte(POWER_DOWN);
     ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
+	Set_Main_PwrByte(POWER_DOWN);
 	while(ros::ok())
 	{
 		usleep(200000);
-		/*---------------------------------Wake Up-------------------------------*/
-
+		SetSleepModeFlag();
 		// Time for key pressing
 		time=0;
-		//judge which wakeup signal
 		if (Get_Key_Press() & KEY_CLEAN)
 		{
 			time = Get_Key_Time(KEY_CLEAN);
@@ -35,11 +30,11 @@ void Sleep_Mode(void)
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Set_Main_PwrByte(POWER_ACTIVE);
+				ResetSleepModeFlag();
 				Beep(3, 50, 0, 1);
-				// Wait for user to release the key.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
-					ROS_INFO("%s %d: User still holds the key.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s %d: Clean key pressed", __FUNCTION__, __LINE__);
 					usleep(100000);
 				}
 				Reset_Touch();

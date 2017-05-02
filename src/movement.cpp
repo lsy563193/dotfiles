@@ -35,6 +35,7 @@ uint32_t Max_Move = 0;
 uint32_t Auto_Work_Time = 2800;
 uint32_t Room_Work_Time = 3600;
 uint8_t Room_Mode = 0;
+uint8_t SleepModeFlag = 0;
 
 static uint32_t Wall_Accelerate =0;
 static int16_t Left_Wheel_Speed = 0;
@@ -2826,7 +2827,18 @@ bool Get_Plan_Status()
 {
 	return Plan_Status;
 }
-
+uint8_t GetSleepModeFlag()
+{
+	return SleepModeFlag;
+}
+void SetSleepModeFlag()
+{
+	SleepModeFlag = 1;
+}
+void ResetSleepModeFlag()
+{
+	SleepModeFlag = 0;
+}
 #if MANUAL_PAUSE_CLEANING
 void Clear_Manual_Pause(void)
 {

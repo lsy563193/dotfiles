@@ -681,6 +681,11 @@ bool Get_Plan_Status(void);
 
 uint8_t Get_Main_PwrByte();
 void Set_Main_PwrByte(uint8_t val);
+
+void SetSleepModeFlag();
+uint8_t GetSleepModeFlag();
+void ResetSleepModeFlag();
+
 #if MANUAL_PAUSE_CLEANING
 void Clear_Manual_Pause(void);
 #endif
