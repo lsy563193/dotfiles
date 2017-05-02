@@ -416,6 +416,8 @@
 /* Define the display mode in user interface routine*/
 #define ONE_KEY_DISPLAY                     (1)
 
+/* Timeout seconds setting in user interface routine*/
+#define USER_INTERFACE_TIMEOUT				(600)
 
 #define STANDARD_REMOTE   (1)
 

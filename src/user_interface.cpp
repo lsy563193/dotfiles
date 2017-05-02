@@ -238,11 +238,12 @@ void User_Interface(void)
 			if(LedBreathCount >=100)
 				breath = 1;
 		}
-		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 60s.
+		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 600s(10min).
 		TimeOutCounter++;
-		if(TimeOutCounter>6000)
+		if(TimeOutCounter > USER_INTERFACE_TIMEOUT * 100)
 		{
 			TimeOutCounter=0;
+			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
 			Set_Clean_Mode(Clean_Mode_Sleep);
 			break;
 		}
