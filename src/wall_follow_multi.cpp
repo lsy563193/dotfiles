@@ -661,6 +661,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	} else{
 		Is_Slam_Ready = 0;
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		Set_Error_Code(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
 		return 0;
 	}
