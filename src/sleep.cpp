@@ -53,6 +53,7 @@ void Sleep_Mode(void)
 			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Set_Main_PwrByte(POWER_ACTIVE);
+			ResetSleepModeFlag();
 			Reset_Rcon_Remote();
 			return;
 		}
