@@ -173,7 +173,6 @@ void Charge_Function(void)
 		}*/
 		if(Get_Rcon_Remote()){
 			if (Remote_Key(Remote_Clean)) {
-				set_stop_charge();
 				Reset_Rcon_Remote();
 				if (!Check_Bat_Ready_To_Clean())
 				{
@@ -184,6 +183,7 @@ void Charge_Function(void)
 				{
 //					Set_VacMode(Vac_Normal);
 //					Set_Room_Mode(Room_Mode_Large);
+					set_stop_charge();
 					Set_Clean_Mode(Clean_Mode_Navigation);
 					break;
 				}
