@@ -87,6 +87,7 @@ Motion_controller::Motion_controller()
 //				if (!start_obstacle_detector()) return;
 				if (!robot::instance()->align()) return;
 			}
+			ROS_INFO("align ok, start slam");
 			if (start_slam()) {
 				Is_Slam_Ready = 1;
 			} else {
