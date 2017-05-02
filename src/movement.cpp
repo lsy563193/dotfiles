@@ -834,19 +834,22 @@ uint8_t Cliff_Escape(void)
 	return 0;
 }
 
-bool except_event()
+uint8_t except_event()
 {
+	uint8_t retval = 0;
 //	uint8_t oc = Check_Motor_Current();
 //		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 //			return true;
-	if(Touch_Detect())
+	// Touch_Detect() could return 0, 1, 2, 3.
+	retval = Touch_Detect();
+	if(retval)
 	{
 		ROS_WARN("Touch_Detect in except_event!");
-		return true;
+		return retval;
 	}
 //		if(Is_Turn_Remote())
 //			return true;
-	return false;
+	return retval;
 }
 
 uint8_t Cliff_Event(uint8_t event)
@@ -1791,12 +1794,12 @@ uint8_t Touch_Detect(void)
 		}
 #endif
 		Set_Touch();
-		return 1;
+		return 2;
 	}
 	if (Get_Cliff_Trig() == 0x07){
 		ROS_WARN("Cliff triggered.");
 		Set_Touch();
-		return 1;
+		return 3;
 	}
 
 	return 0;
