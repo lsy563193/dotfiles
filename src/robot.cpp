@@ -904,13 +904,13 @@ bool robot::align(void)
 
 	if(except_event())
 		return false;
-
+/*
 	auto count = 2;
 	while (count-- != 0)
 	{
 		std::cout << robot::angle << std::endl;
 		sleep(1);
-	}
+	}*/
 	is_line_angle_offset = true;
 
 	return true;
