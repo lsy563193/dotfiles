@@ -948,7 +948,7 @@ bool robot::start_lidar(void)
 			// todo pull down gpio
 			ROS_INFO("lidar start false, power off and try again!!!");
 			stop_lidar();
-			sleep(2);
+			sleep(1);
 		}
 		first_start = false;
 		ladar_gpio('1');
