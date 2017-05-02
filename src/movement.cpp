@@ -108,6 +108,48 @@ uint8_t Get_Error_Code()
 	return Error_Code;
 }
 
+void Alarm_Error(void)
+{
+	switch (Get_Error_Code())
+	{
+		case Error_Code_LeftWheel:
+		{
+			wav_play(WAV_ERROR_LEFT_WHEEL);
+			break;
+		}
+		case Error_Code_RightWheel:
+		{
+			wav_play(WAV_ERROR_RIGHT_WHEEL);
+			break;
+		}
+		case Error_Code_LeftBrush:
+		{
+			wav_play(WAV_ERROR_LEFT_BRUSH);
+			break;
+		}
+		case Error_Code_RightBrush:
+		{
+			wav_play(WAV_ERROR_RIGHT_BRUSH);
+			break;
+		}
+		case Error_Code_MainBrush:
+		{
+			wav_play(WAV_ERROR_MAIN_BRUSH);
+			break;
+		}
+		case Error_Code_Fan_H:
+		{
+			wav_play(WAV_ERROR_SUCTION_FAN);
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+}
+
 void Set_LeftBrush_Stall(uint8_t L)
 {
 	// Actually not used in old code
@@ -1149,9 +1191,9 @@ uint8_t Self_Check(uint8_t Check_Code)
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
-			wav_play(WAV_ERROR_RIGHT_WHEEL);
 			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n",__FUNCTION__,__LINE__);
 			Set_Error_Code(Error_Code_RightWheel);
+			Alarm_Error();
 			return 1;
 
 		}
@@ -1191,9 +1233,9 @@ uint8_t Self_Check(uint8_t Check_Code)
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
-			wav_play(WAV_ERROR_LEFT_WHEEL);
-			ROS_WARN("%s %d,left wheel stall maybe, please check!!\n");
-			Set_Error_Code(Error_Code_RightWheel);
+			ROS_WARN("%s %d,left wheel stall maybe, please check!!", __FUNCTION__, __LINE__);
+			Set_Error_Code(Error_Code_LeftWheel);
+			Alarm_Error();
 			return 1;
 		}
 		/*
@@ -1217,8 +1259,8 @@ uint8_t Self_Check(uint8_t Check_Code)
 		else if((uint32_t)difftime(time(NULL),mboctime)>=3){
 			mbrushchecking = 0;
 			Set_Error_Code(Error_Code_MainBrush);
-			wav_play(WAV_ERROR_MAIN_BRUSH);
 			Disable_Motors();
+			Alarm_Error();
 			return 1;
 		}
 		return 0;
@@ -1234,7 +1276,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		usleep(100000);
 		Set_Error_Code(Error_Code_Fan_H);
 		Disable_Motors();
-		wav_play(WAV_ERROR_SUCTION_FAN);
+		Alarm_Error();
 		return 1;
 		#else
 		Disable_Motors();
@@ -1256,7 +1298,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		Set_Error_Code(Error_Code_Fan_H);
 		Disable_Motors();
-		wav_play(WAV_ERROR_SUCTION_FAN);
+		Alarm_Error();
 		return 1;
 		#endif
 	}

@@ -256,18 +256,19 @@
 #define Error_Code_None			((uint8_t)0x00)
 #define Error_Code_LeftWheel	((uint8_t)0x01)
 #define Error_Code_RightWheel	((uint8_t)0x02)
-#define Error_Code_SideBrush	((uint8_t)0x03)
-#define Error_Code_PickUp		((uint8_t)0x04)
-#define Error_Code_Cliff		((uint8_t)0x05)
-#define Error_Code_Bumper		((uint8_t)0x06)
-#define Error_Code_Stuck		((uint8_t)0x07)
-#define Error_Code_MainBrush	((uint8_t)0x08)
-#define Error_Code_Fan_H		((uint8_t)0x09)
-#define Error_Code_WaterTank	((uint8_t)0x0A)
-#define Error_Code_BTA			((uint8_t)0x0B)
-#define Error_Code_Obs			((uint8_t)0x0C)
-#define Error_Code_BatteryLow	((uint8_t)0x0D)
-#define Error_Code_Dustbin		((uint8_t)0x0E)
+#define Error_Code_LeftBrush	((uint8_t)0x03)
+#define Error_Code_RightBrush	((uint8_t)0x04)
+#define Error_Code_PickUp		((uint8_t)0x05)
+#define Error_Code_Cliff		((uint8_t)0x06)
+#define Error_Code_Bumper		((uint8_t)0x07)
+#define Error_Code_Stuck		((uint8_t)0x08)
+#define Error_Code_MainBrush	((uint8_t)0x09)
+#define Error_Code_Fan_H		((uint8_t)0x0A)
+#define Error_Code_WaterTank	((uint8_t)0x0B)
+#define Error_Code_BTA			((uint8_t)0x0C)
+#define Error_Code_Obs			((uint8_t)0x0D)
+#define Error_Code_BatteryLow	((uint8_t)0x0E)
+#define Error_Code_Dustbin		((uint8_t)0x0F)
 #define Error_Code_Test			((uint8_t)0xff)
 #define Error_Code_Test_Null	((uint8_t)0xfe)
 #define Error_Code_Encoder		((uint8_t)0xFC)
@@ -347,6 +348,7 @@ uint32_t Get_Work_Time();
 
 void Set_Error_Code(uint8_t Code);
 uint8_t Get_Error_Code(void);
+void Alarm_Error(void);
 
 void Set_LeftBrush_Stall(uint8_t L);
 

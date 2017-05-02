@@ -58,6 +58,9 @@ void User_Interface(void)
 //	ResetHomeRemote();
 	Set_VacMode(Vac_Normal);
 
+	// Count for error alarm.
+	uint8_t Error_Alarm_Counter = 2;
+
 	// Check the battery to warn the user.
 	if(!Check_Bat_Ready_To_Clean())
 	{
@@ -271,6 +274,14 @@ void User_Interface(void)
 		}
 
 #endif
+
+		// Alarm for error.
+		// The TimeOutCounter will be atleast 1 here.
+		if (Error_Alarm_Counter != 0 && Get_Error_Code() && (TimeOutCounter % 1000) == 0)
+		{
+			Error_Alarm_Counter--;
+			Alarm_Error();
+		}
 	}
 
 	if (Get_Clean_Mode() != Clean_Mode_Sleep)

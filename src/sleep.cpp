@@ -39,7 +39,7 @@ void Sleep_Mode(void)
 				}
 				Reset_Touch();
 				
-				return;
+				break;
 			}
 		}
 		if(Get_Plan_Status())
@@ -55,7 +55,7 @@ void Sleep_Mode(void)
 			Set_Main_PwrByte(POWER_ACTIVE);
 			ResetSleepModeFlag();
 			Reset_Rcon_Remote();
-			return;
+			break;
 		}
 		Reset_Rcon_Remote();
 		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
@@ -64,7 +64,7 @@ void Sleep_Mode(void)
 			if(Turn_Connect())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
-				return;
+				break;
 			}
 		}
 		/*-----------------Check if near the charging base-----------------------------*/
@@ -79,7 +79,7 @@ void Sleep_Mode(void)
 				//Enable_PPower();
 				SetHomeRemote();
 				//Wake_Up_Adjust();
-				return;
+				break;
 			}
 		}
 		if(Is_ChargerOn())
@@ -87,7 +87,13 @@ void Sleep_Mode(void)
 			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Charging);
 			Set_Main_PwrByte(POWER_ACTIVE);
-			return;
+			break;
 		}
+	}
+	// Alarm for error.
+	if (Get_Clean_Mode() == Clean_Mode_Userinterface && Get_Error_Code())
+	{
+		Set_LED(0, 100);
+		Alarm_Error();
 	}
 }
