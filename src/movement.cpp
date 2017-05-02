@@ -1099,6 +1099,7 @@ uint8_t Check_Motor_Current(void)
 	static uint8_t rwheel_oc_count = 0;
 	static uint8_t vacuum_oc_count = 0;
 	static uint8_t mbrush_oc_count = 0;
+	uint8_t sidebrush_oc_status = 0;
 	if((uint32_t)robot::instance()->robot_get_lwheel_current() > Wheel_Stall_Limit){
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
@@ -1119,12 +1120,12 @@ uint8_t Check_Motor_Current(void)
 	}
 	else
 		rwheel_oc_count = 0;
-	Check_SideBrush_Stall();
-	if(robot::instance()->robot_get_rbrush_oc()){
+	sidebrush_oc_status = Check_SideBrush_Stall();
+	if(sidebrush_oc_status == 2){
 		ROS_WARN("%s,%d,right brush over current",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
 	}
-	if(robot::instance()->robot_get_lbrush_oc()){
+	if(sidebrush_oc_status == 1){
 		ROS_WARN("%s,%d,left brush over current",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
 	}
@@ -1301,6 +1302,20 @@ uint8_t Self_Check(uint8_t Check_Code)
 		Alarm_Error();
 		return 1;
 		#endif
+	}
+	else if(Check_Code==Check_Left_Brush)
+	{
+		Set_Error_Code(Error_Code_LeftBrush);
+		Disable_Motors();
+		wav_play(WAV_ERROR_LEFT_BRUSH);
+		return 1;
+	}
+	else if(Check_Code==Check_Right_Brush)
+	{
+		Set_Error_Code(Error_Code_RightBrush);
+		Disable_Motors();
+		wav_play(WAV_ERROR_RIGHT_BRUSH);
+		return 1;
 	}
 	Stop_Brifly();
 	Left_Wheel_Slow=0;
@@ -1706,6 +1721,18 @@ void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 	control_set(CTL_BRUSH_LEFT, L & 0xff);
 	R = R < 100 ? R : 100 ;
 	RBrush_PWM = R;
+	control_set(CTL_BRUSH_RIGHT, R & 0xff);
+}
+
+void Set_LeftBrush_PWM(uint16_t L)
+{
+	L = L < 100 ? L : 100 ;
+	control_set(CTL_BRUSH_LEFT, L & 0xff);
+}
+
+void Set_RightBrush_PWM(uint16_t R)
+{
+	R = R < 100 ? R : 100 ;
 	control_set(CTL_BRUSH_RIGHT, R & 0xff);
 }
 
@@ -2790,74 +2817,168 @@ void ladar_gpio(char val)
 	write(fd,buf,1);
 	close(fd);
 }
-void Check_SideBrush_Stall(void)
+#define NORMAL	1
+#define STOP	2
+#define MAX		3
+uint8_t Check_SideBrush_Stall(void)
 {
-	static uint32_t Time_LBrush_Stop = 0, Time_RBrush_Stop = 0;
-	static uint8_t LBrush_Stall_Counter = 0, RBrush_Stall_Counter = 0, Flag_LBrush_Is_Stall = 0, Flag_RBrush_Is_Stall = 0;
+	static uint32_t Time_LBrush = 0, Time_RBrush = 0;
+	static uint8_t LBrush_Stall_Counter = 0, RBrush_Stall_Counter = 0, LBrush_Error_Counter = 0, RBrush_Error_Counter = 0;
+	static uint8_t LeftBrush_Status = NORMAL, RightBrush_Status = NORMAL;
 
 	/*---------------------------------Left Brush Stall---------------------------------*/
-	if(Flag_LBrush_Is_Stall == 0 || (time(NULL) - Time_LBrush_Stop) > 5)
+	switch(LeftBrush_Status)
 	{
-		if(robot::instance()->robot_get_lbrush_oc())
-		{
-			if(LBrush_Stall_Counter < 200)
-				LBrush_Stall_Counter++;
-		}
-		else
-		{
-			LBrush_Stall_Counter = 0;
-			Flag_LBrush_Is_Stall = 0;
-		}
+		case NORMAL:
+			ROS_INFO("LeftBrush Normal");
+			if(robot::instance()->robot_get_lbrush_oc())
+			{
+				if(LBrush_Stall_Counter < 200)
+					LBrush_Stall_Counter++;
+			}
+			else
+			{
+				LBrush_Stall_Counter = 0;
+			}
+			if(LBrush_Stall_Counter > 10)
+			{
+				/*-----Left Brush is stall in normal mode, stop the brush-----*/
+				Set_LeftBrush_PWM(0);
+				LeftBrush_Status = STOP;
+				Time_LBrush = time(NULL);
+			}
+			break;
 
-		if(LBrush_Stall_Counter >= 10)
-		{
-			control_set(CTL_BRUSH_LEFT, 0);
-			Flag_LBrush_Is_Stall = 1;
-			Time_LBrush_Stop = time(NULL);
-			wav_play(WAV_ERROR_LEFT_BRUSH);
-		}
-		else
-		{
-			Flag_LBrush_Is_Stall = 0;
-			control_set(CTL_BRUSH_LEFT, LBrush_PWM);
-		}
-	}
-	else
-	{
-		control_set(CTL_BRUSH_LEFT, 0);
-	}
+		case STOP:
+			ROS_INFO("LeftBrush Stop");
+			/*-----brush should stop for 5s-----*/
+			if((time(NULL) - Time_LBrush) > 5)
+			{
+				Set_LeftBrush_PWM(100);
+				LeftBrush_Status = MAX;
+				Time_LBrush = time(NULL);
+			}
+			break;
 
+		case MAX:
+			ROS_INFO("LeftBrush Max");
+			if(robot::instance()->robot_get_lbrush_oc())
+			{
+				if(LBrush_Stall_Counter < 200)
+					LBrush_Stall_Counter++;
+			}
+			else
+			{
+				LBrush_Stall_Counter = 0;
+			}
+
+			if(LBrush_Stall_Counter > 10)
+			{
+				/*-----brush is stall in max mode, stop the brush and increase error counter -----*/
+				Set_LeftBrush_PWM(0);
+				LeftBrush_Status = STOP;
+				Time_LBrush = time(NULL);
+				LBrush_Error_Counter++;
+				if(LBrush_Error_Counter > 2)
+				{
+					/*-----return error message-----*/
+					return 1;
+				}
+				break;
+			}
+			else
+			{
+				if((time(NULL) - Time_LBrush) < 5)
+				{
+					/*-----brush should works in max mode for 5s-----*/
+					LeftBrush_Status = MAX;
+				}
+				else
+				{
+					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
+					Set_LeftBrush_PWM(LBrush_PWM);
+					LBrush_Error_Counter = 0;
+					LeftBrush_Status = NORMAL;
+				}
+			}
+			break;
+	}
 	/*-------------------------------Rigth Brush Stall---------------------------------*/
-	if(Flag_RBrush_Is_Stall == 0 || (time(NULL) - Time_RBrush_Stop) > 5)
+	switch(RightBrush_Status)
 	{
-		if(robot::instance()->robot_get_rbrush_oc())
-		{
-			if(RBrush_Stall_Counter < 200)
-				RBrush_Stall_Counter++;
-		}
-		else
-		{
-			RBrush_Stall_Counter = 0;
-			Flag_RBrush_Is_Stall = 0;
-		}
+		case NORMAL:
+			if(robot::instance()->robot_get_rbrush_oc())
+			{
+				if(RBrush_Stall_Counter < 200)
+					RBrush_Stall_Counter++;
+			}
+			else
+			{
+				RBrush_Stall_Counter = 0;
+			}
+			if(RBrush_Stall_Counter > 10)
+			{
+				/*-----Right Brush is stall in normal mode, stop the brush-----*/
+				Set_RightBrush_PWM(0);
+				RightBrush_Status = STOP;
+				Time_RBrush = time(NULL);
+			}
+			break;
 
-		if(RBrush_Stall_Counter >= 10)
-		{
-			control_set(CTL_BRUSH_RIGHT, 0);
-			Flag_RBrush_Is_Stall = 1;
-			Time_RBrush_Stop = time(NULL);
-			wav_play(WAV_ERROR_RIGHT_BRUSH);
-		}
-		else
-		{
-			Flag_RBrush_Is_Stall = 0;
-			control_set(CTL_BRUSH_RIGHT, RBrush_PWM);
-		}
+		case STOP:
+			ROS_INFO("RightBrush Stop");
+			/*-----brush should stop for 5s-----*/
+			if((time(NULL) - Time_RBrush) > 5)
+			{
+				Set_RightBrush_PWM(100);
+				RightBrush_Status = MAX;
+				Time_RBrush = time(NULL);
+			}
+			break;
+
+		case MAX:
+			if(robot::instance()->robot_get_rbrush_oc())
+			{
+				if(RBrush_Stall_Counter < 200)
+					RBrush_Stall_Counter++;
+			}
+			else
+			{
+				RBrush_Stall_Counter = 0;
+			}
+
+			if(RBrush_Stall_Counter > 10)
+			{
+				/*-----brush is stall in max mode, stop the brush and increase error counter -----*/
+				Set_RightBrush_PWM(0);
+				RightBrush_Status = STOP;
+				Time_RBrush = time(NULL);
+				RBrush_Error_Counter++;
+				if(RBrush_Error_Counter > 2)
+				{
+					/*-----return error message-----*/
+					return 2;
+				}
+				break;
+			}
+			else
+			{
+				if((time(NULL) - Time_RBrush) < 5)
+				{
+					/*-----brush should works in max mode for 5s-----*/
+					RightBrush_Status = MAX;
+				}
+				else
+				{
+					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
+					Set_RightBrush_PWM(RBrush_PWM);
+					RBrush_Error_Counter = 0;
+					RightBrush_Status = NORMAL;
+				}
+			}
+			break;
 	}
-	else
-	{
-		control_set(CTL_BRUSH_RIGHT, 0);
-	}
+	return 0;
 }
 
 void Set_Plan_Status(bool Status)

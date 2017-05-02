@@ -432,7 +432,7 @@ void Work_Motor_Configure(void);
 
 uint8_t Check_Motor_Current(void);
 
-void Check_SideBrush_Stall(void);
+uint8_t Check_SideBrush_Stall(void);
 
 uint8_t Self_Check(uint8_t Check_Code);
 
@@ -492,6 +492,10 @@ void Stop_Brifly(void);
 void Set_MainBrush_PWM(uint16_t PWM);
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R);
+
+void Set_LeftBrush_PWM(uint16_t L);
+
+void Set_RightBrush_PWM(uint16_t R);
 
 uint8_t Get_LeftBrush_Stall(void);
 
