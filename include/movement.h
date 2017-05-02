@@ -271,6 +271,7 @@
 #define Error_Code_Test			((uint8_t)0xff)
 #define Error_Code_Test_Null	((uint8_t)0xfe)
 #define Error_Code_Encoder		((uint8_t)0xFC)
+#define Error_Code_Slam			((uint8_t)0xFD)
 
 #define Display_Full				4
 #define Display_Low					5

@@ -2244,6 +2244,7 @@ uint8_t CM_Touring(void)
 		Is_Slam_Ready = 0;
 	} else{
 		Is_Slam_Ready = 0;
+		Set_Error_Code(Error_Code_Slam);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		wav_play(WAV_TEST_LIDAR);
 		return 0;
