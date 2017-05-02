@@ -2250,15 +2250,6 @@ uint8_t CM_Touring(void)
 	}
 #endif
 
-	if (Is_Slam_Ready) {
-		Is_Slam_Ready = 0;
-	} else{
-		Is_Slam_Ready = 0;
-		Set_Error_Code(Error_Code_Slam);
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		wav_play(WAV_TEST_LIDAR);
-		return 0;
-	}
 	if(except_event()){
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -2267,6 +2258,16 @@ uint8_t CM_Touring(void)
 		return 0;
 	}
 
+	//Check if slam is ok
+	if (Is_Slam_Ready) {
+		Is_Slam_Ready = 0;
+	} else {
+		Is_Slam_Ready = 0;
+		Set_Error_Code(Error_Code_Slam);
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		wav_play(WAV_TEST_LIDAR);
+		return 0;
+	}
 		/* usleep for checking whether robot is in the station */
 	usleep(700);
 	if (from_station == 1 && !robot::instance()->align_active()) {
