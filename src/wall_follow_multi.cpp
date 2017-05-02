@@ -647,6 +647,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	Set_Gyro_On();
+	Set_LED(100, 0);
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
 	if (!Wait_For_Gyro_On())
 	{
