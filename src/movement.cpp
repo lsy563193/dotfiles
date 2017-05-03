@@ -2844,7 +2844,6 @@ uint8_t Check_SideBrush_Stall(void)
 	switch(LeftBrush_Status)
 	{
 		case NORMAL:
-			ROS_INFO("LeftBrush Normal");
 			if(robot::instance()->robot_get_lbrush_oc())
 			{
 				if(LBrush_Stall_Counter < 200)
@@ -2864,7 +2863,6 @@ uint8_t Check_SideBrush_Stall(void)
 			break;
 
 		case STOP:
-			ROS_INFO("LeftBrush Stop");
 			/*-----brush should stop for 5s-----*/
 			if((time(NULL) - Time_LBrush) > 5)
 			{
@@ -2875,7 +2873,6 @@ uint8_t Check_SideBrush_Stall(void)
 			break;
 
 		case MAX:
-			ROS_INFO("LeftBrush Max");
 			if(robot::instance()->robot_get_lbrush_oc())
 			{
 				if(LBrush_Stall_Counter < 200)
@@ -2940,7 +2937,6 @@ uint8_t Check_SideBrush_Stall(void)
 			break;
 
 		case STOP:
-			ROS_INFO("RightBrush Stop");
 			/*-----brush should stop for 5s-----*/
 			if((time(NULL) - Time_RBrush) > 5)
 			{
