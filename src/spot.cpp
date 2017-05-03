@@ -149,6 +149,8 @@ void Spot_Mode(SpotType ST)
 				if(Remote_Key(Remote_All)){
 					Reset_Rcon_Remote();	
 					Set_Clean_Mode(Clean_Mode_Userinterface);
+					Disable_Motors();
+					Stop_Brifly();
 					wav_play(WAV_CLEANING_FINISHED);
 					return;
 				}
@@ -193,6 +195,7 @@ void Spot_Mode(SpotType ST)
 		/*------------------------------------------------Touch and Remote event-----------------------*/
 		if (Touch_Detect()) {
 			Stop_Brifly();
+			Disable_Motors();
 			if(ST == NormalSpot){
 				//wav_play(WAV_CLEANING_FINISHED);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -210,6 +213,8 @@ void Spot_Mode(SpotType ST)
 		uint8_t octype = Check_Motor_Current();
 		if (octype) {
 			if(Self_Check(octype) && (ST == NormalSpot)){
+				Disable_Motors();
+				Stop_Brifly();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
@@ -221,6 +226,8 @@ void Spot_Mode(SpotType ST)
 						Set_MoveWithRemote();
 						SetHomeRemote();
 					}
+					Disable_Motors();
+					Stop_Brifly();
 					Reset_Rcon_Remote();
 					wav_play(WAV_CLEANING_FINISHED);
 					Set_Clean_Mode(Clean_Mode_Userinterface);
