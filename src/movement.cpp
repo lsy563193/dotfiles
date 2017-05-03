@@ -551,6 +551,162 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
+void Round_Turn_Left(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle + angle;
+	if (target_angle >= 3600) {
+		target_angle -= 3600;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Left();
+
+	Set_Wheel_Speed(speed, speed);
+
+	uint8_t oc=0;
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		/*if(Is_Turn_Remote())
+			break;*/
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode();
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Left();
+			ROS_INFO("Bumper triged when turn left, back 20mm.");
+		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
+void Round_Turn_Right(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle - angle;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Right();
+
+	Set_Wheel_Speed(speed, speed);
+	uint8_t oc=0;
+
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		/*if(Is_Turn_Remote())
+			break;*/
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode();
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Right();
+			ROS_INFO("Bumper triged when turn right, back 20mm.");
+		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
 void WF_Turn_Right(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;

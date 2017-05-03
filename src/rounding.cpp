@@ -114,9 +114,9 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 	Stop_Brifly();
 
 	if (dir == 0) {
-		Turn_Left(speed, angle);
+		Round_Turn_Left(speed, angle);
 	} else {
-		Turn_Right(speed, angle);
+		Round_Turn_Right(speed, angle);
 	}
 
 	if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home))
