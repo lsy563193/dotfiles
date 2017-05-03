@@ -189,6 +189,7 @@ void Charge_Function(void)
 				}
 			}
 			else{
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 				Reset_Rcon_Remote();
 			}
 		}
