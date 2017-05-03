@@ -185,7 +185,7 @@ void Spot_Mode(SpotType ST)
 			usleep(30000);
 			if(ST == NormalSpot){
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				wav_play(WAV_CLEANING_FINISHED);
+				//wav_play(WAV_CLEANING_FINISHED);
 			}
 			break;
 		}
@@ -194,7 +194,7 @@ void Spot_Mode(SpotType ST)
 		if (Touch_Detect()) {
 			Stop_Brifly();
 			if(ST == NormalSpot){
-				wav_play(WAV_CLEANING_FINISHED);
+				//wav_play(WAV_CLEANING_FINISHED);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 			}
 			// Key release detection, if user has not release the key, don't do anything.
@@ -371,7 +371,8 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
-					} else if (Get_Cliff_Trig()) {
+					}
+					if(Get_Cliff_Trig()){
 						Move_Back();
 					}
 					Stop_Brifly();
@@ -402,12 +403,23 @@ void Spot_Mode(SpotType ST)
 			break;
 		}
 
-		if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-			Disable_Motors();
-			ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
-			wav_play(WAV_ERROR_LIFT_UP);
-			if(ST == NormalSpot)
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+		if (Get_Cliff_Trig() == (Status_Cliff_All)) {
+			Quick_Back(20,20);
+			Stop_Brifly();
+			if(Get_Cliff_Trig() == (Status_Cliff_All)){
+				Quick_Back(20,20);
+				Stop_Brifly();
+			}
+			if(Get_Cliff_Trig() == Status_Cliff_All){
+				Quick_Back(20,20);
+				Stop_Brifly();
+				ROS_INFO("Cliff trigger three times ,robot lift up ");
+				if(ST == NormalSpot)
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+				Disable_Motors();
+				wav_play(WAV_ERROR_LIFT_UP);
+				break;
+			}
 			break;
 		}
 	}
