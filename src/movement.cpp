@@ -1012,6 +1012,7 @@ uint8_t except_event()
 	if(retval)
 	{
 		ROS_WARN("Touch_Detect in except_event!");
+		Reset_Touch();
 		return retval;
 	}
 //		if(Is_Turn_Remote())
@@ -2888,26 +2889,74 @@ void Set_Gyro_On(void)
 	}
 	else
 	{
+		//ROS_INFO("Set gyro on");
 		control_set(CTL_GYRO, 0x02);
 	}
 }
 
 bool Wait_For_Gyro_On(void)
 {
+	bool stop_waiting = false;
 	static int count=0;
 	count = 0;
+	uint8_t lift_up_skip_count = 0;
 	ROS_INFO("waiting for gyro start");
 	auto stop_angle_v = robot::instance()->robot_get_angle_v();
-	while (count<10 && !except_event())
+	while (count<5 && !stop_waiting)
 	{
-		usleep(10000);
+		usleep(20000);
 
-		if (robot::instance()->robot_get_angle_v() != stop_angle_v){
+		// This count is for how many count of looping should it skip after robot lifted up and put down during gyro opening.
+		if (lift_up_skip_count != 0)
+		{
+			lift_up_skip_count--;
+			// Update the stop_angle_v, it should be the updatest value just before start checking, also can't be update during checking.
+			stop_angle_v = robot::instance()->robot_get_angle_v();
+		}
+		else
+		{
+			Set_Gyro_On();
+		}
+
+		switch (except_event())
+		{
+			case 1:
+			{
+				stop_waiting = true;
+				break;
+			}
+			case 2:
+			{
+				stop_waiting = true;
+				break;
+			}
+			case 3:
+			{
+				Set_Gyro_Off();
+				wav_play(WAV_ERROR_LIFT_UP);
+				lift_up_skip_count = 25;
+				break;
+			}
+			case 0:
+			{
+				// Detect for robot lifted up.
+				if (Get_Cliff_Trig() & (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				{
+					Set_Gyro_Off();
+					wav_play(WAV_ERROR_LIFT_UP);
+					lift_up_skip_count = 25;
+				}
+				break;
+			}
+		}
+
+		//ROS_WARN("lift_up_skip_count = %d.", lift_up_skip_count);
+		if (lift_up_skip_count == 0 && robot::instance()->robot_get_angle_v() != stop_angle_v){
 			++count;
 		}
-//		ROS_INFO("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
+		//ROS_WARN("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
-	if(count == 10)
+	if(count == 5)
 	{
 		ROS_INFO("gyro start ok");
 		Set_Gyro_Status();
@@ -2921,19 +2970,19 @@ bool Wait_For_Gyro_On(void)
 
 void Set_Gyro_Off()
 {
+	control_set(CTL_GYRO, 0x00);
 	if (!Is_Gyro_On()){
 		ROS_INFO("gyro stop already");
 		return;
 	}
 	static int count=0;
-	control_set(CTL_GYRO, 0x00);
 	ROS_INFO("waiting for gyro stop");
 	count = 0;
 	auto angle_v = robot::instance()->robot_get_angle_v();
 
-	while(count <= 20)
+	while(count <= 10)
 	{
-		usleep(10000);
+		usleep(20000);
 		count++;
 		if (robot::instance()->robot_get_angle_v() != angle_v){
 			count=0;
