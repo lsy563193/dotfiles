@@ -380,6 +380,8 @@ void Quick_Back(uint8_t Speed,uint16_t Distance);
 void Turn_Left_At_Init(uint16_t speed,int16_t angle);
 void Turn_Left(uint16_t speed,int16_t angle);
 void Turn_Right(uint16_t speed,int16_t angle);
+void Round_Turn_Left(uint16_t speed,int16_t angle);
+void Round_Turn_Right(uint16_t speed,int16_t angle);
 void Jam_Turn_Left(uint16_t speed,int16_t angle);
 void Jam_Turn_Right(uint16_t speed,int16_t angle);
 void WF_Turn_Right(uint16_t speed,int16_t angle);

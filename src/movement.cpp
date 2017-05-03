@@ -551,6 +551,162 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
+void Round_Turn_Left(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle + angle;
+	if (target_angle >= 3600) {
+		target_angle -= 3600;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Left();
+
+	Set_Wheel_Speed(speed, speed);
+
+	uint8_t oc=0;
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		/*if(Is_Turn_Remote())
+			break;*/
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode();
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Left();
+			ROS_INFO("Bumper triged when turn left, back 20mm.");
+		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
+void Round_Turn_Right(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle - angle;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Right();
+
+	Set_Wheel_Speed(speed, speed);
+	uint8_t oc=0;
+
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Touch_Detect())
+			break;
+		/*if(Is_Turn_Remote())
+			break;*/
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode();
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Right();
+			ROS_INFO("Bumper triged when turn right, back 20mm.");
+		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
 void WF_Turn_Right(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
@@ -608,10 +764,21 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		/*if(Is_Turn_Remote())
 			break;
 		 */
-
-		if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean))
-		{
-			break;
+		
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode();
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
 
 		if(Get_Bumper_Status()){
@@ -845,6 +1012,7 @@ uint8_t except_event()
 	if(retval)
 	{
 		ROS_WARN("Touch_Detect in except_event!");
+		Reset_Touch();
 		return retval;
 	}
 //		if(Is_Turn_Remote())
@@ -2721,26 +2889,74 @@ void Set_Gyro_On(void)
 	}
 	else
 	{
+		//ROS_INFO("Set gyro on");
 		control_set(CTL_GYRO, 0x02);
 	}
 }
 
 bool Wait_For_Gyro_On(void)
 {
+	bool stop_waiting = false;
 	static int count=0;
 	count = 0;
+	uint8_t lift_up_skip_count = 0;
 	ROS_INFO("waiting for gyro start");
 	auto stop_angle_v = robot::instance()->robot_get_angle_v();
-	while (count<10 && !except_event())
+	while (count<5 && !stop_waiting)
 	{
-		usleep(10000);
+		usleep(20000);
 
-		if (robot::instance()->robot_get_angle_v() != stop_angle_v){
+		// This count is for how many count of looping should it skip after robot lifted up and put down during gyro opening.
+		if (lift_up_skip_count != 0)
+		{
+			lift_up_skip_count--;
+			// Update the stop_angle_v, it should be the updatest value just before start checking, also can't be update during checking.
+			stop_angle_v = robot::instance()->robot_get_angle_v();
+		}
+		else
+		{
+			Set_Gyro_On();
+		}
+
+		switch (except_event())
+		{
+			case 1:
+			{
+				stop_waiting = true;
+				break;
+			}
+			case 2:
+			{
+				stop_waiting = true;
+				break;
+			}
+			case 3:
+			{
+				Set_Gyro_Off();
+				wav_play(WAV_ERROR_LIFT_UP);
+				lift_up_skip_count = 25;
+				break;
+			}
+			case 0:
+			{
+				// Detect for robot lifted up.
+				if (Get_Cliff_Trig() & (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				{
+					Set_Gyro_Off();
+					wav_play(WAV_ERROR_LIFT_UP);
+					lift_up_skip_count = 25;
+				}
+				break;
+			}
+		}
+
+		//ROS_WARN("lift_up_skip_count = %d.", lift_up_skip_count);
+		if (lift_up_skip_count == 0 && robot::instance()->robot_get_angle_v() != stop_angle_v){
 			++count;
 		}
-//		ROS_INFO("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
+		//ROS_WARN("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
-	if(count == 10)
+	if(count == 5)
 	{
 		ROS_INFO("gyro start ok");
 		Set_Gyro_Status();
@@ -2754,19 +2970,19 @@ bool Wait_For_Gyro_On(void)
 
 void Set_Gyro_Off()
 {
+	control_set(CTL_GYRO, 0x00);
 	if (!Is_Gyro_On()){
 		ROS_INFO("gyro stop already");
 		return;
 	}
 	static int count=0;
-	control_set(CTL_GYRO, 0x00);
 	ROS_INFO("waiting for gyro stop");
 	count = 0;
 	auto angle_v = robot::instance()->robot_get_angle_v();
 
-	while(count <= 20)
+	while(count <= 10)
 	{
-		usleep(10000);
+		usleep(20000);
 		count++;
 		if (robot::instance()->robot_get_angle_v() != angle_v){
 			count=0;
