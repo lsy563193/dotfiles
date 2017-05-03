@@ -119,16 +119,6 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 		Round_Turn_Right(speed, angle);
 	}
 
-	if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home))
-	{
-		// This remote command should change the behavior of robot.
-		Stop_Brifly();
-	}
-	if (Remote_Key(Remote_Max) && !lowBattery)
-	{
-		Switch_VacMode();
-		Reset_Rcon_Remote();
-	}
 	if (Touch_Detect())
 	{
 		ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
@@ -306,23 +296,30 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 		rounding_update();
 
-		if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home))
-		{
-			// This remote command should change the behavior of robot.
-			Stop_Brifly();
-			return 0;
-		}
 		if (Touch_Detect())
 		{
 			Stop_Brifly();
 			Set_Touch();
 			return 0;
 		}
-		if (Remote_Key(Remote_Max) && !lowBattery)
-		{
-			Switch_VacMode();
-			Reset_Rcon_Remote();
+
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					Stop_Brifly();
+					return 0;
+				}
+				if (Remote_Key(Remote_Max) && !lowBattery) {
+					Reset_Rcon_Remote();
+					Switch_VacMode();
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
+
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
 			// Robot has reach the target.
 			ROS_INFO("%s %d: Y: %d\tY abs: %d\ttarget Y: %d\ttarget Y abs: %d", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
