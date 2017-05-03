@@ -608,10 +608,21 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		/*if(Is_Turn_Remote())
 			break;
 		 */
-
-		if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean))
-		{
-			break;
+		
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode();
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
 
 		if(Get_Bumper_Status()){
