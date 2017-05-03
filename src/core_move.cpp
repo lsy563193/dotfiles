@@ -109,6 +109,9 @@ uint8_t Bumper_Status_For_Rounding;
 
 extern bool Is_Slam_Ready;//For checking if the slam is initialized finish
 
+// This time count is for checking how many times of 20ms did the user press the key.
+uint16_t Press_Time = 0;
+
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
@@ -899,6 +902,31 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	if (Touch_Detect()) {
 		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
 		ROS_INFO("%s %d: Touch_Detect in CM_HeadToCourse()", __FUNCTION__, __LINE__);
+		// Key release detection, if user has not release the key, don't do anything.
+		//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
+			usleep(20000);
+#if MANUAL_PAUSE_CLEANING
+			Press_Time++;
+			if (Press_Time == 151)
+			{
+				Beep(1, 5, 0, 1);
+			}
+		}
+		if (Press_Time > 150)
+		{
+			if (robot::instance()->Is_Cleaning_Manual_Paused())
+			{
+				robot::instance()->Reset_Cleaning_Manual_Pause();
+			}
+		}
+		else
+		{
+			Press_Time = 0;
+#endif
+		}
 		usleep(10000);
 		Stop_Brifly();
 		return MT_Key_Clean;
@@ -1966,16 +1994,34 @@ void CM_go_home()
 //							Beep(5, 20, 0, 1);
 							ROS_INFO("%s %d: Touch detected in CM_HeadToCourse().", __FUNCTION__, __LINE__);
 							// Key release detection, if user has not release the key, don't do anything.
+							//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
 							while (Get_Key_Press() & KEY_CLEAN)
 							{
 								ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 								usleep(20000);
+#if MANUAL_PAUSE_CLEANING
+								Press_Time++;
+								if (Press_Time == 151)
+								{
+									Beep(1, 5, 0, 1);
+								}
+							}
+							if (Press_Time > 150)
+							{
+								if (robot::instance()->Is_Cleaning_Manual_Paused())
+								{
+									robot::instance()->Reset_Cleaning_Manual_Pause();
+								}
+							}
+							else
+							{
+								Press_Time = 0;
+#endif
 							}
 							// Key relaesed, then the touch status should be cleared.
 							Reset_Touch();
 						}
 					}
-
 					Disable_Motors();
 					// Beep for the finish signal.
 //					for (i = 10; i > 0; i--) {
@@ -2054,6 +2100,8 @@ uint8_t CM_Touring(void)
 	Set_LED(100,0);
 	Reset_MoveWithRemote();
 	Reset_Touch();
+
+	Press_Time = 0;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
@@ -2260,10 +2308,23 @@ uint8_t CM_Touring(void)
 #endif
 
 	if(except_event()){
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			usleep(20000);
+		}
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+#if CONTINUE_CLEANING_AFTER_CHARGE
 		// Reset continue cleaning status
 		CM_reset_cleaning_low_bat_pause();
+#endif
+#if MANUAL_PAUSE_CLEANING
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		{
+			robot::instance()->Reset_Cleaning_Manual_Pause();
+		}
+#endif
 		return 0;
 	}
 
@@ -2290,10 +2351,28 @@ uint8_t CM_Touring(void)
 //			Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
+			//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
+#if MANUAL_PAUSE_CLEANING
+				Press_Time++;
+				if (Press_Time == 151)
+				{
+					Beep(1, 5, 0, 1);
+				}
+			}
+			if (Press_Time > 150)
+			{
+				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				{
+					robot::instance()->Reset_Cleaning_Manual_Pause();
+				}
+			}else
+			{
+				Press_Time = 0;
+#endif
 			}
 			Reset_Touch();
 			return 0;
@@ -2759,10 +2838,29 @@ MapTouringType CM_handleExtEvent()
 		ROS_WARN("%s %d: Touch_Detect in CM_handleExtEvent.", __FUNCTION__, __LINE__);
 //		Beep(5, 20, 0, 1);
 		// Key release detection, if user has not release the key, don't do anything.
+		//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 			usleep(20000);
+#if MANUAL_PAUSE_CLEANING
+			Press_Time++;
+			if (Press_Time == 151)
+			{
+				Beep(1, 5, 0, 1);
+			}
+		}
+		if (Press_Time > 150)
+		{
+			if (robot::instance()->Is_Cleaning_Manual_Paused())
+			{
+				robot::instance()->Reset_Cleaning_Manual_Pause();
+			}
+		}
+		else
+		{
+			Press_Time = 0;
+#endif
 		}
 		Reset_Touch();
 		Set_Clean_Mode(Clean_Mode_Userinterface);

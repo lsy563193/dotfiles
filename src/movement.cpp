@@ -2402,14 +2402,18 @@ uint8_t Get_Key_Press(void)
 	return Key_Status;
 }
 
-uint8_t Get_Key_Time(uint16_t key)
+uint16_t Get_Key_Time(uint16_t key)
 {
-	// This time is count for 100ms.
-	uint8_t time = 0;
+	// This time is count for 20ms.
+	uint16_t time = 0;
 	while(ros::ok()){
 		time++;
-		if(time>20)break;
-		usleep(100000);
+		if (time == 151)
+		{
+			Beep(1, 5, 0, 1);
+		}
+		if(time>1500)break;
+		usleep(20000);
 		if(Get_Key_Press()!=key)break;
 	}
 	return time;
