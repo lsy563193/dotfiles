@@ -380,7 +380,7 @@ void ObstacleDetector::publishObstacles() {
     obstacles.circles.push_back(circle);
   }*/
 
-  if (p_transform_coordinates_) {
+  /*if (p_transform_coordinates_) {
     tf::StampedTransform transform;
 
     try {
@@ -404,7 +404,7 @@ void ObstacleDetector::publishObstacles() {
 
     obstacles.header.frame_id = p_frame_id_;
   }
-  else
+  else*/
     obstacles.header.frame_id = base_frame_id_;
 
   obstacles_pub_.publish(obstacles);

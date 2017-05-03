@@ -21,7 +21,7 @@
         <param name="use_pcl" value="false"/>
         <param name="use_split_and_merge" value="false"/>
         <param name="discard_converted_segments" value="true"/>
-        <param name="transform_coordinates" value="true"/>
+        <param name="transform_coordinates" value="false"/>
 
         <param name="max_group_distance" value="0.100"/>
         <param name="distance_proportion" value="0.006136"/>
