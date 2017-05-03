@@ -645,22 +645,31 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			ROS_WARN("%s %d: touch detect break!", __FUNCTION__, __LINE__);
 			return;
 		}
-		if (Remote_Key(Remote_Max)) {
-			if (lowBattery == 0) {
-				Switch_VacMode();
-			}
-			Reset_Rcon_Remote();
-		}
-		if (Remote_Key(Remote_Home) && go_home == 0) {
-			Stop_Brifly();
-			Set_BLDC_Speed(Vac_Speed_NormalL);
-			Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
-			Set_Clean_Mode(Clean_Mode_GoHome);
-			ROS_WARN("%s %d: remote home is pressed.", __FUNCTION__, __LINE__);
 
-			CM_SetGoHome(1);
-			Reset_Rcon_Remote();
-			return;
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Remote_Key(Remote_Max)) {
+					if (lowBattery == 0) {
+						Switch_VacMode();
+					}
+					Reset_Rcon_Remote();
+				}
+				if (Remote_Key(Remote_Home) && go_home == 0) {
+					Stop_Brifly();
+					Set_BLDC_Speed(Vac_Speed_NormalL);
+					Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
+					Set_Clean_Mode(Clean_Mode_GoHome);
+					ROS_WARN("%s %d: remote home is pressed.", __FUNCTION__, __LINE__);
+
+					CM_SetGoHome(1);
+					Reset_Rcon_Remote();
+					return;
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
 
 		if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
