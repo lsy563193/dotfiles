@@ -58,7 +58,9 @@ ObstacleDetector::ObstacleDetector() : nh_(""), nh_local_("~"), p_active_(false)
 
 //  ros::spin();
 }
-
+ObstacleDetector::~ObstacleDetector(){
+  ROS_INFO("~ObstacleDetector()");
+}
 bool ObstacleDetector::updateParams(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
   bool prev_active = p_active_;
 

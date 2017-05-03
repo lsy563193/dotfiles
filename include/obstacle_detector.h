@@ -57,6 +57,7 @@ class ObstacleDetector
 {
 public:
   ObstacleDetector();
+	~ObstacleDetector();
 
 private:
   bool updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
