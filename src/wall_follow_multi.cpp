@@ -750,31 +750,28 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				/*if(Is_MoveWithRemote()){
-					if (Remote_Key(Remote_Random)) {
-						Set_Clean_Mode(Clean_Mode_RandomMode);
-						break;
+				if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+					if (Remote_Key(Remote_Home)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_End_Wall_Follow();
+						return 0;
 					}
-				}*/
-				if (Remote_Key(Remote_Home)) {
+					if (Remote_Key(Remote_Clean)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_Break_Wall_Follow();
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return 0;
+					}
+					if (Remote_Key(Remote_Max)) {
+						Reset_Rcon_Remote();
+						Switch_VacMode();
+					}
+				} else {
+					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_End_Wall_Follow();
-					return 0;
 				}
-				if (Remote_Key(Remote_Clean)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return 0;
-				}
-				
-				if (Remote_Key(Remote_Max)) {
-					Reset_Rcon_Remote();
-					Switch_VacMode();
-				}
-				Reset_Rcon_Remote();
 			}
 
 			/*------------------------------------------------------Check Current--------------------------------*/
@@ -890,30 +887,28 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				/*if(Is_MoveWithRemote()){
-					if (Remote_Key(Remote_Random)) {
-						Set_Clean_Mode(Clean_Mode_RandomMode);
-						break;
+				if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+					if (Remote_Key(Remote_Home)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_End_Wall_Follow();
+						return 0;
 					}
-				}*/
-				if (Remote_Key(Remote_Home)) {
+					if (Remote_Key(Remote_Clean)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_Break_Wall_Follow();
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return 0;
+					}
+					if (Remote_Key(Remote_Max)) {
+						Reset_Rcon_Remote();
+						Switch_VacMode();
+					}
+				} else {
+					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_End_Wall_Follow();
-					return 0;
 				}
-				if (Remote_Key(Remote_Clean)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return 0;
-				}
-				if (Remote_Key(Remote_Max)) {
-					Reset_Rcon_Remote();
-					Switch_VacMode();
-				}
-				Reset_Rcon_Remote();
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
 			if (Check_Bat_Home() == 1) {
