@@ -213,16 +213,30 @@ void Remote_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		/*------------------------------------------------------Bumper Event-----------------------*/
+		/*-------------------------------------------Bumper  and cliff Event-----------------------*/
 		if(Get_Bumper_Status()||Get_Cliff_Trig())
 		{
-			Stop_Brifly();
-			Quick_Back(20,40);
+			Move_Back();
 			if(Get_Bumper_Status()||Get_Cliff_Trig()){
 				Move_Back();
 			}
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
+		}
+		if(Get_Cliff_Trig() == (Status_Cliff_All)){
+			Quick_Back(20,20);
+			Stop_Brifly();
+			if(Get_Cliff_Trig() == (Status_Cliff_All)){
+				Quick_Back(20,20);
+				Stop_Brifly();
+			}
+			if(Get_Cliff_Trig() == Status_Cliff_All){
+				Quick_Back(20,20);
+				Stop_Brifly();
+				ROS_INFO("Cliff trigger three times stop robot ");
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				break;
+			}
 		}
 		/*------------------------------------------------check motor over current event ---------*/
 		uint8_t octype =0;

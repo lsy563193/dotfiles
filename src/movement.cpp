@@ -1012,7 +1012,7 @@ uint8_t except_event()
 	if(retval)
 	{
 		ROS_WARN("Touch_Detect in except_event!");
-		Reset_Touch();
+		//Reset_Touch();
 		return retval;
 	}
 //		if(Is_Turn_Remote())
@@ -2923,11 +2923,13 @@ bool Wait_For_Gyro_On(void)
 			case 1:
 			{
 				stop_waiting = true;
+				Reset_Touch();
 				break;
 			}
 			case 2:
 			{
 				stop_waiting = true;
+				Reset_Touch();
 				break;
 			}
 			case 3:
@@ -2935,6 +2937,7 @@ bool Wait_For_Gyro_On(void)
 				Set_Gyro_Off();
 				wav_play(WAV_ERROR_LIFT_UP);
 				lift_up_skip_count = 25;
+				Reset_Touch();
 				break;
 			}
 			case 0:
