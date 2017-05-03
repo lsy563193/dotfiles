@@ -87,7 +87,7 @@ private:
   ros::ServiceServer params_srv_;
 
   std::string base_frame_id_;
-  tf::TransformListener tf_listener_;
+//  tf::TransformListener tf_listener_;
 
   std::list<Point> input_points_;
   std::list<Segment> segments_;

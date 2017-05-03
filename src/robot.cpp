@@ -902,10 +902,8 @@ bool robot::align(void)
 	line_align_ = finish;
 //	ros::WallDuration(100).sleep();
 
-	ROS_INFO("Turn ok");
 	if(except_event())
 		return false;
-	ROS_INFO("no except event");
 /*
 	auto count = 2;
 	while (count-- != 0)
@@ -915,7 +913,6 @@ bool robot::align(void)
 	}*/
 	is_line_angle_offset = true;
 
-	ROS_INFO("is_line_angle_offset");
 	return true;
 }
 
