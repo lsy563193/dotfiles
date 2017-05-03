@@ -2762,51 +2762,56 @@ MapTouringType CM_handleExtEvent()
 
 	/* Check remote events. */
 	if (Get_Rcon_Remote() > 0) {
-		/* Check remote home key press event, if home key is pressed, go home directly. */
-		if (Remote_Key(Remote_Home) && (go_home == 0)) {
-			Set_BLDC_Speed(Vac_Speed_NormalL);
-			Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
-			Stop_Brifly();
-			ROS_WARN("%s %d: remote home is pressed.", __FUNCTION__, __LINE__);
-			CM_SetGoHome(1);
-			Reset_Rcon_Remote();
-			return MT_Remote_Home;
-		}
-
-
-		/*
-		 * Check remote spot key press event, if spot key is pressed,
-		 * change to spot mode, after spot mode finished, back to zig-zag clean.
-		 */
-
-		if (Remote_Key(Remote_Spot)) {
-			Stop_Brifly();
-			Reset_Rcon_Remote();
-			ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
-			Spot_Mode(CleanSpot);
-			Set_VacMode(Vac_Max);
-			Switch_VacMode();
-			ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
-			return MT_None;
-		}
-		
-
-		if (Remote_Key(Remote_Max)) {
-			if (lowBattery == 0) {
-				Switch_VacMode();
+		ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+		if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max | Remote_Spot)) {
+			/* Check remote home key press event, if home key is pressed, go home directly. */
+			if (Remote_Key(Remote_Home) && (go_home == 0)) {
+				Set_BLDC_Speed(Vac_Speed_NormalL);
+				Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
+				Stop_Brifly();
+				ROS_WARN("%s %d: remote home is pressed.", __FUNCTION__, __LINE__);
+				CM_SetGoHome(1);
+				Reset_Rcon_Remote();
+				return MT_Remote_Home;
 			}
-			Reset_Rcon_Remote();
-		}
 
 
-		/* Check remote clean key press event, if clean key is pressed, stop robot directly. */
-		if (Remote_Key(Remote_Clean)) {
-			Stop_Brifly();
-			ROS_WARN("%s %d: remote clean key pressed.", __FUNCTION__, __LINE__);
+			/*
+			 * Check remote spot key press event, if spot key is pressed,
+			 * change to spot mode, after spot mode finished, back to zig-zag clean.
+			 */
+
+			if (Remote_Key(Remote_Spot)) {
+				Stop_Brifly();
+				Reset_Rcon_Remote();
+				ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
+				Spot_Mode(CleanSpot);
+				Set_VacMode(Vac_Max);
+				Switch_VacMode();
+				ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
+				return MT_None;
+			}
+	
+
+			if (Remote_Key(Remote_Max)) {
+				if (lowBattery == 0) {
+					Switch_VacMode();
+				}
+				Reset_Rcon_Remote();
+			}
+
+
+			/* Check remote clean key press event, if clean key is pressed, stop robot directly. */
+			if (Remote_Key(Remote_Clean)) {
+				Stop_Brifly();
+				ROS_WARN("%s %d: remote clean key pressed.", __FUNCTION__, __LINE__);
+				Reset_Rcon_Remote();
+				return MT_Remote_Clean;
+			}
+		} else {
+			Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 			Reset_Rcon_Remote();
-			return MT_Remote_Clean;
 		}
-		Reset_Rcon_Remote();
 	}
 
 	/* Check whether robot is taken up. */
