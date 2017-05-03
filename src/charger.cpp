@@ -193,6 +193,14 @@ void Charge_Function(void)
 				Reset_Rcon_Remote();
 			}
 		}
+		/* check plan setting*/
+		if(Get_Plan_Status())
+		{
+			Set_Plan_Status(false);
+			wav_play(WAV_APPOINTMENT_DONE);
+		//	Beep(Beep_Error_Sounds, 2, 0, 1);
+		}
+
 		/*-----------------------------------------------------Schedul Timer Up-----------------*/
 //		if(Is_Alarm())
 //		{
