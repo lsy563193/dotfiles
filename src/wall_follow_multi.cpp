@@ -313,7 +313,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			break;
 		}
 
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
+		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) || Get_Cliff_Trig()) {
 			ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 			break;
 		}
