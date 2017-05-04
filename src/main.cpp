@@ -32,11 +32,9 @@ void protect_function()
 {
 	//Bumper protect
 	if (Get_Bumper_Status()){
-		ROS_INFO("Bumper protect  check");
-		Turn_Left_At_Init(Max_Speed, 1800);//save itself
+		Random_Back();
+		Is_Bumper_Jamed();
 	}
-	if (Get_Bumper_Status())
-		wav_play(WAV_ERROR_BUMPER);//can't save itself, stop and give an alarm by beep
 }
 
 void *core_move_thread(void *)
