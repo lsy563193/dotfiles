@@ -17,7 +17,7 @@ bool Is_Slam_Ready = 0;
 bool start_slam(void)
 {
 	robot::instance()->start_slam();
-	if(except_event()){
+	if(Stop_Event()){
 		robot::instance()->stop_slam();
 		return false;
 	}

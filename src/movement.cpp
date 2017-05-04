@@ -1014,24 +1014,6 @@ uint8_t Cliff_Escape(void)
 	return 0;
 }
 
-uint8_t except_event()
-{
-	uint8_t retval = 0;
-//	uint8_t oc = Check_Motor_Current();
-//		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
-//			return true;
-	// Stop_Event() could return 0, 1, 2, 3.
-	retval = Stop_Event();
-	if(retval)
-	{
-		ROS_WARN("Stop_Event in except_event!");
-		return retval;
-	}
-//		if(Is_Turn_Remote())
-//			return true;
-	return retval;
-}
-
 uint8_t Cliff_Event(uint8_t event)
 {
 	uint16_t temp_adjust=0,random_factor=0;
@@ -2947,18 +2929,16 @@ bool Wait_For_Gyro_On(void)
 			Set_Gyro_On();
 		}
 
-		switch (except_event())
+		switch (Stop_Event())
 		{
 			case 1:
 			{
 				stop_waiting = true;
-				Reset_Stop_Event_Status();
 				break;
 			}
 			case 2:
 			{
 				stop_waiting = true;
-				Reset_Stop_Event_Status();
 				break;
 			}
 			case 3:
@@ -2966,7 +2946,6 @@ bool Wait_For_Gyro_On(void)
 				Set_Gyro_Off();
 				wav_play(WAV_ERROR_LIFT_UP);
 				lift_up_skip_count = 25;
-				Reset_Stop_Event_Status();
 				break;
 			}
 			case 0:

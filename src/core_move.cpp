@@ -2320,7 +2320,7 @@ uint8_t CM_Touring(void)
 	}
 #endif
 
-	if(except_event()){
+	if(Stop_Event()){
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
@@ -2328,6 +2328,7 @@ uint8_t CM_Touring(void)
 		}
 		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+		Reset_Stop_Event_Status();
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		// Reset continue cleaning status
 		CM_reset_cleaning_low_bat_pause();

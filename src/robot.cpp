@@ -864,25 +864,25 @@ bool robot::align(void)
 
 	//wait for start obstacle_detector
 	auto count_n_10ms = 1000;
-	while (line_align_ != begin && --count_n_10ms > 0 && !except_event()){
+	while (line_align_ != begin && --count_n_10ms > 0 && !Stop_Event()){
 		if (count_n_10ms % 100 == 0)
 			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
-	if(except_event() || count_n_10ms == 0)
+	if(Stop_Event() || count_n_10ms == 0)
 		return false;
 
 	count_n_10ms = 200;
 	ROS_WARN("Obstacle detector launch finishd.");
 
 	//wait for detecting line
-	while (--count_n_10ms > 0 && !except_event())
+	while (--count_n_10ms > 0 && !Stop_Event())
 	{
 		if (count_n_10ms % 100 == 0)
 			ROS_WARN("detecting line time remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
-	if(except_event())
+	if(Stop_Event())
 		return false;
 
 	ROS_WARN("Get the line");
@@ -904,7 +904,7 @@ bool robot::align(void)
 	line_align_ = finish;
 //	ros::WallDuration(100).sleep();
 
-	if(except_event())
+	if(Stop_Event())
 		return false;
 /*
 	auto count = 2;
@@ -959,13 +959,13 @@ bool robot::start_lidar(void)
 		start_mator_cli_.call(empty);
 		count_6s = 300;//set reboot lidar time to 3 seconds
 		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_6s > 0 && !except_event())
+		while (laser::instance()->is_ready() == false && --count_6s > 0 && !Stop_Event())
 		{
 			if (count_6s % 100 == 0)
 				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
 			usleep(10000);
 		}
-	}while ((count_6s == 0 && try_times != 0) && !except_event());
+	}while ((count_6s == 0 && try_times != 0) && !Stop_Event());
 
 	ROS_INFO("start_motor: %d", laser::instance()->is_ready());
 
