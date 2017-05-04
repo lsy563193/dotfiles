@@ -1859,14 +1859,24 @@ void CM_go_home()
 		CM_create_home_boundary();
 #endif
 
-		// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
-		tmpPnt.X = countToCell(Home_Point.front().X);
-		tmpPnt.Y = countToCell(Home_Point.front().Y);
-		// Delete the first home point, it works like a stack.
-		Home_Point.pop_front();
+		if (Home_Point.empty())
+		{
+			ROS_ERROR("Miss start point (0, 0). But will continue after 10s.");
+			tmpPnt.X = 0;
+			tmpPnt.Y = 0;
+			usleep(10000000);
+		}
+		else
+		{
+			// Try all the saved home point until it reach the charger stub. (There will be at least one home point (0, 0).)
+			tmpPnt.X = countToCell(Home_Point.front().X);
+			tmpPnt.Y = countToCell(Home_Point.front().Y);
+			// Delete the first home point, it works like a stack.
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
+			Home_Point.pop_front();
+		}
 		while (ros::ok())
 		{
-			ROS_INFO("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
 			// Try go to exactly this home point.
 			state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
 			ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
@@ -2066,6 +2076,7 @@ void CM_go_home()
 				tmpPnt.X = countToCell(Home_Point.front().X);
 				tmpPnt.Y = countToCell(Home_Point.front().Y);
 				Home_Point.pop_front();
+				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
 
 				/*
 				// In GoHome() function, it may set the clean mode to Clean_Mode_GoHome. But it is not appropriate here, because it might affect the mode detection in CM_MoveToCell() and make it return -4.
