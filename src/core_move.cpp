@@ -669,6 +669,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					Reset_Rcon_Remote();
 					return;
 				}
+				Reset_Rcon_Remote();
 			} else {
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 				Reset_Rcon_Remote();
@@ -2926,6 +2927,7 @@ MapTouringType CM_handleExtEvent()
 				Reset_Rcon_Remote();
 				return MT_Remote_Clean;
 			}
+			Reset_Rcon_Remote();
 		} else {
 			Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 			Reset_Rcon_Remote();
