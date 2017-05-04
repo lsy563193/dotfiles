@@ -165,7 +165,7 @@ void User_Interface(void)
 			if(Press_time>20)
 			{
 				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
-				Beep(6,25,25,1);
+				//Beep(6,25,25,1);
 				// Wait for user to release the key.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{

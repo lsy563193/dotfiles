@@ -269,6 +269,7 @@
 #define Error_Code_Obs			((uint8_t)0x0D)
 #define Error_Code_BatteryLow	((uint8_t)0x0E)
 #define Error_Code_Dustbin		((uint8_t)0x0F)
+#define Error_Code_Gyro			((uint8_t)0x10)
 #define Error_Code_Test			((uint8_t)0xff)
 #define Error_Code_Test_Null	((uint8_t)0xfe)
 #define Error_Code_Encoder		((uint8_t)0xFC)

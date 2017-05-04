@@ -2987,6 +2987,8 @@ void Set_Gyro_Off()
 		return;
 	}
 	static int count=0;
+	static int sum=0;
+
 	ROS_INFO("waiting for gyro stop");
 	count = 0;
 	auto angle_v = robot::instance()->robot_get_angle_v();
@@ -2997,7 +2999,13 @@ void Set_Gyro_Off()
 		count++;
 		if (robot::instance()->robot_get_angle_v() != angle_v){
 			count=0;
+			sum++;
 			angle_v = robot::instance()->robot_get_angle_v();
+			if (sum > 10) {
+				Set_Error_Code(Error_Code_Gyro);
+				ROS_WARN("%s,%d, gyro off failed!",__FUNCTION__,__LINE__);
+				return;
+			}
 		}
 //		ROS_INFO("gyro stop ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
 	}
