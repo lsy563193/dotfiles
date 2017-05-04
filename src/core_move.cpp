@@ -2242,6 +2242,8 @@ uint8_t CM_Touring(void)
 
 	Motion_controller motion;
 
+	Set_Clean_Mode(Clean_Mode_Navigation);
+	return 0;
 #if MANUAL_PAUSE_CLEANING
 	// Clear the pause status.
 	if (robot::instance()->Is_Cleaning_Manual_Paused())

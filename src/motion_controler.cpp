@@ -10,6 +10,7 @@
 #include "obstacle_detector.cpp"
 
 #include "motion_controler.h"
+#include "std_srvs/Empty.h"
 
 int8_t enable_slam_offset = 0;
 bool Is_Slam_Ready = 0;
@@ -21,18 +22,6 @@ bool start_slam(void)
 		return false;
 	}
 
-	enable_slam_offset = 1;
-
-	auto count_n_10ms = 1000;
-	while(robot::instance()->map_ready() == false && --count_n_10ms != 0){
-//		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		usleep(10000);
-	}
-	if(count_n_10ms == 0){
-		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		return false;
-	}
-	return true;
 
 }
 
@@ -53,7 +42,8 @@ Motion_controller::Motion_controller()
 	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 	{
 		Work_Motor_Configure();
-		if (!robot::instance()->start_lidar()) {
+		if (!robot::instance()->start_lidar())
+		{
 			Is_Slam_Ready = 0;//start lidar false
 			return;
 		}
@@ -66,21 +56,30 @@ Motion_controller::Motion_controller()
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
 			Work_Motor_Configure();
-			if (!robot::instance()->start_lidar()) {
+			if (!robot::instance()->start_lidar())
+			{
 				Is_Slam_Ready = 0;
 				return;
 			}
 			Is_Slam_Ready = 1;
 			enable_slam_offset = 1;
-		}
-		else
+		} else
 #endif
 		{
+			if (start_slam())
+			{
+				Is_Slam_Ready = 1;
+			} else
+			{
+				Is_Slam_Ready = 0;
+			}
 			Work_Motor_Configure();
-			if (!robot::instance()->start_lidar()) {
+			if (!robot::instance()->start_lidar())
+			{
 				Is_Slam_Ready = 0;
 				return;
 			}
+
 			if (Get_Clean_Mode() == Clean_Mode_Navigation && robot::instance()->align_active())
 			{
 				ObstacleDetector od;
@@ -88,11 +87,25 @@ Motion_controller::Motion_controller()
 				if (!robot::instance()->align()) return;
 			}
 			ROS_INFO("align ok, start slam");
-			if (start_slam()) {
-				Is_Slam_Ready = 1;
-			} else {
-				Is_Slam_Ready = 0;
+
+			//call start slam
+			enable_slam_offset = 1;
+			ros::NodeHandle node_handler;
+			align_cli_ = node_handler.serviceClient<std_srvs::Empty>("align");
+			std_srvs::Empty empty;
+			align_cli_.call(empty);
+
+			auto count_n_10ms = 1000;
+			while (robot::instance()->map_ready() == false && --count_n_10ms != 0)
+			{
+//		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+				usleep(10000);
 			}
+			if (count_n_10ms == 0)
+			{
+				ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+			}
+
 		}
 #if MANUAL_PAUSE_CLEANING
 	}

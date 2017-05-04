@@ -899,6 +899,8 @@ bool robot::align(void)
 		ROS_INFO("Turn_Right %d", angle);
 		Turn_Right(13, angle);
 	}
+	bool is_align=true;
+
 	line_align_ = finish;
 //	ros::WallDuration(100).sleep();
 

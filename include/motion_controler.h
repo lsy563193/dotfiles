@@ -20,6 +20,7 @@ public:
 
 //	std::bitset<start_obs> start_bit;
 //  ObstacleDetectorPtr od;
+	ros::ServiceClient align_cli_;
 };
 
 #endif //PP_MOTION_CONTROLER_H
