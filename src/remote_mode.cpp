@@ -45,7 +45,7 @@ void Remote_Mode(void)
 
 	Set_LED(100,0);
 	Reset_Wheel_Step();
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 	Work_Motor_Configure();
     Set_VacMode(Vac_Normal);
 	while(ros::ok())
@@ -191,8 +191,8 @@ void Remote_Mode(void)
 			return;
 		}
 
-	  /*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+	  /*------------------------------------------------------stop event-----------------------*/
+		if(Stop_Event())
 		{
 			Beep(5, 20, 0, 1);
 			// Key release detection, if user has not release the key, don't do anything.
@@ -201,8 +201,8 @@ void Remote_Mode(void)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}

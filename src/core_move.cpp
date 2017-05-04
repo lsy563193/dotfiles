@@ -636,16 +636,15 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			if (Self_Check(Motor_Check_Code)) {
 				Stop_Brifly();
 				CM_TouringCancel();
-				Set_Touch();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				ROS_WARN("%s %d: motor(s) error break!", __FUNCTION__, __LINE__);
 				return;
 			}
 		}
 
-		if (Touch_Detect()) {
+		if (Stop_Event()) {
 			Stop_Brifly();
-			ROS_WARN("%s %d: touch detect break!", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Stop event break!", __FUNCTION__, __LINE__);
 			return;
 		}
 
@@ -690,10 +689,10 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
 
-			if (Touch_Detect())
+			if (Stop_Event())
 			{
 				Stop_Brifly();
-				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 				return;
 			}
 			Stop_Brifly();
@@ -729,10 +728,10 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
 
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
 					Stop_Brifly();
-					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 					return;
 				}
 
@@ -760,10 +759,10 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
 
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
 						Stop_Brifly();
-						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 						return;
 					}
 
@@ -792,10 +791,10 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
 
-						if (Touch_Detect())
+						if (Stop_Event())
 						{
 							Stop_Brifly();
-							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 							return;
 						}
 
@@ -900,9 +899,9 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	}
 	ROS_INFO("%s %d: new target (%d, %d)", __FUNCTION__, __LINE__, Target.X, Target.Y);
 
-	if (Touch_Detect()) {
+	if (Stop_Event()) {
 		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
-		ROS_INFO("%s %d: Touch_Detect in CM_HeadToCourse()", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Stop_Event in CM_HeadToCourse()", __FUNCTION__, __LINE__);
 		// Key release detection, if user has not release the key, don't do anything.
 		//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
 		while (Get_Key_Press() & KEY_CLEAN)
@@ -1018,10 +1017,10 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
 					Stop_Brifly();
-					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 					retval = MT_Key_Clean;
 					break;
 				}
@@ -1038,10 +1037,10 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 					}
 					ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 					CM_CorBack(COR_BACK_20MM);
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
 						Stop_Brifly();
-						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 						retval = MT_Key_Clean;
 						break;
 					}
@@ -1055,9 +1054,9 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						}
 						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
-						if (Touch_Detect())
+						if (Stop_Event())
 						{
-							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 						}
 						Set_Error_Code(Error_Code_Cliff);
 						Stop_Brifly();
@@ -1101,10 +1100,10 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						if (abs((int) (atan(((double)Gyro_GetXAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT ||
 							abs((int) (atan(((double)Gyro_GetYAcc()) / Gyro_GetZAcc()) * 1800 / PI) * (-1)) > TILTED_ANGLE_LIMIT) {
 							CM_CorBack(COR_BACK_100MM);
-							if (Touch_Detect())
+							if (Stop_Event())
 							{
 								Stop_Brifly();
-								ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+								ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 								break;
 							}
 							Stop_Brifly();
@@ -1135,9 +1134,9 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 						i++;
 					} while (i < 5);
 
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 						retval = MT_Key_Clean;
 						break;
 					}
@@ -1279,9 +1278,9 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
-			if (Touch_Detect())
+			if (Stop_Event())
 			{
-				ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 				retval = MT_Key_Clean;
 				break;
 			}
@@ -1290,26 +1289,26 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			if (Get_Bumper_Status()) {
 				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 				CM_CorBack(COR_BACK_20MM);
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
-					ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 					retval = MT_Key_Clean;
 					break;
 				}
 				if (Get_Bumper_Status()) {
 					CM_CorBack(COR_BACK_20MM);
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 						retval = MT_Key_Clean;
 						break;
 					}
 					if (Get_Bumper_Status()) {
 						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 						CM_CorBack(COR_BACK_20MM);
-						if (Touch_Detect())
+						if (Stop_Event())
 						{
-							ROS_WARN("%s %d: Touch detect in CM_CorBack!", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
 							retval = MT_Key_Clean;
 							break;
 						}
@@ -1667,7 +1666,7 @@ uint8_t CM_resume_cleaning()
 			}
 			else
 			{
-				ROS_INFO("Touch_Detect.");
+				ROS_INFO("Stop_Event.");
 				return 0;
 			}
 		}
@@ -1977,7 +1976,7 @@ void CM_go_home()
 					ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 					return;
 				}
-				else if (Touch_Detect())
+				else if (Stop_Event())
 				{
 					Disable_Motors();
 					// Beep for the finish signal.
@@ -1989,7 +1988,7 @@ void CM_go_home()
 
 					CM_reset_cleaning_low_bat_pause();
 
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 					ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 					return;
 				}
@@ -1999,11 +1998,11 @@ void CM_go_home()
 					if (from_station == 0) {
 						CM_HeadToCourse(ROTATE_TOP_SPEED, -robot::instance()->robot_get_home_angle());
 
-						if (Touch_Detect())
+						if (Stop_Event())
 						{
 							Stop_Brifly();
 //							Beep(5, 20, 0, 1);
-							ROS_INFO("%s %d: Touch detected in CM_HeadToCourse().", __FUNCTION__, __LINE__);
+							ROS_INFO("%s %d: Stop evented in CM_HeadToCourse().", __FUNCTION__, __LINE__);
 							// Key release detection, if user has not release the key, don't do anything.
 							//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
 							while (Get_Key_Press() & KEY_CLEAN)
@@ -2029,8 +2028,8 @@ void CM_go_home()
 								Press_Time = 0;
 #endif
 							}
-							// Key relaesed, then the touch status should be cleared.
-							Reset_Touch();
+							// Key relaesed, then the touch status and stop event status should be cleared.
+							Reset_Stop_Event_Status();
 						}
 					}
 					Disable_Motors();
@@ -2111,7 +2110,7 @@ uint8_t CM_Touring(void)
 
 	Set_LED(100,0);
 	Reset_MoveWithRemote();
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 
 	Press_Time = 0;
 
@@ -2158,8 +2157,8 @@ uint8_t CM_Touring(void)
 			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 			usleep(20000);
 		}
-		// Key relaesed, then the touch status should be cleared.
-		Reset_Touch();
+		// Key relaesed, then the touch status and stop event status should be cleared.
+		Reset_Stop_Event_Status();
 		ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
 		// Reset the robot to non charge mode.
@@ -2179,7 +2178,7 @@ uint8_t CM_Touring(void)
 		for (i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			Quick_Back(20, 72);
-			if (Touch_Detect() || Is_AtHomeBase()) {
+			if (Stop_Event() || Is_AtHomeBase()) {
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Stop_Brifly();
 				Set_SideBrush_PWM(0, 0);
@@ -2198,7 +2197,7 @@ uint8_t CM_Touring(void)
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
@@ -2229,23 +2228,23 @@ uint8_t CM_Touring(void)
 			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 			usleep(20000);
 		}
-		// Key relaesed, then the touch status should be cleared.
-		Reset_Touch();
+		// Key relaesed, then the touch status and stop event status should be cleared.
+		Reset_Stop_Event_Status();
 	}
 
 	Blink_LED = 8;
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 	/*
 	ROS_INFO("while Blink_LED-----------------------------");
 	while (Blink_LED--) {
-		if (Touch_Detect()) {
-			ROS_INFO("Touch_Detect1-----------------------------");
+		if (Stop_Event()) {
+			ROS_INFO("Stop_Event1-----------------------------");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
 		usleep(200000);
-		if (Touch_Detect()) {
-			ROS_INFO("Touch_Detect2-----------------------------");
+		if (Stop_Event()) {
+			ROS_INFO("Stop_Event2-----------------------------");
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 0;
 		}
@@ -2359,9 +2358,9 @@ uint8_t CM_Touring(void)
 
 		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle() - 450);
 
-		if (Touch_Detect()) {
+		if (Stop_Event()) {
 			Set_Clean_Mode(Clean_Mode_Userinterface);
-			ROS_WARN("%s %d: Check: Touch Clean Mode! return 0", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Check: Stop event! return 0", __FUNCTION__, __LINE__);
 //			Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -2388,7 +2387,7 @@ uint8_t CM_Touring(void)
 				Press_Time = 0;
 #endif
 			}
-			Reset_Touch();
+			Reset_Stop_Event_Status();
 			return 0;
 		}
 
@@ -2402,7 +2401,7 @@ uint8_t CM_Touring(void)
 		}
 		else
 		{
-			// Cleaning shuted down, battery too low or touch detected.
+			// Cleaning shuted down, battery too low or Stop event.
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			// Reset continue cleaning status
 			CM_reset_cleaning_low_bat_pause();
@@ -2410,7 +2409,7 @@ uint8_t CM_Touring(void)
 	}
 	else
 	{
-		// Resume cleaning failed, battery too low or touch detected.
+		// Resume cleaning failed, battery too low or Stop event.
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		// Reset continue cleaning status
 		CM_reset_cleaning_low_bat_pause();
@@ -2589,11 +2588,10 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				pos.Y = y + relativePos[offsetIdx].Y;
 				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
-				if (Touch_Detect()) {
-					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+				if (Stop_Event()) {
+					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 					// Set touch status to make sure this event can be detected by main process while loop.
 					Stop_Brifly();
-					Set_Touch();
 					return -5;
 				}
 
@@ -2714,15 +2712,12 @@ void CM_CorBack(uint16_t dist)
 		if (Counter_Watcher > 3000) {
 			if (Is_Encoder_Fail()) {
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			break;
 		}
-		if (Touch_Detect()) {
-			ROS_INFO("%s %d: Touch detected!", __FUNCTION__, __LINE__);
+		if (Stop_Event()) {
+			ROS_INFO("%s %d: Stop event!", __FUNCTION__, __LINE__);
 			Stop_Brifly();
-			// Set touch status to make sure this event can be detected by main process while loop.
-			Set_Touch();
 			break;
 		}
 		uint8_t octype = Check_Motor_Current();
@@ -2846,10 +2841,10 @@ MapTouringType CM_handleExtEvent()
 	}
 	*/
 
-	/* Check key press events. */
-	if (Touch_Detect()) {
+	/* Check stop events. */
+	if (Stop_Event()) {
 		Stop_Brifly();
-		ROS_WARN("%s %d: Touch_Detect in CM_handleExtEvent.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Stop_Event in CM_handleExtEvent.", __FUNCTION__, __LINE__);
 //		Beep(5, 20, 0, 1);
 		// Key release detection, if user has not release the key, don't do anything.
 		//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
@@ -2876,7 +2871,7 @@ MapTouringType CM_handleExtEvent()
 			Press_Time = 0;
 #endif
 		}
-		Reset_Touch();
+		Reset_Stop_Event_Status();
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return MT_Key_Clean;
 	}

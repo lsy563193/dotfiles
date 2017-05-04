@@ -102,11 +102,10 @@ void WFM_move_back(uint16_t dist)
 		if (Counter_Watcher > 3000) {
 			if(Is_Encoder_Fail()) {
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			return;
 		}
-		if (Touch_Detect()) {
+		if (Stop_Event()) {
 			return;
 		}
 		uint8_t octype = Check_Motor_Current();
@@ -752,10 +751,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				break;
 			}
 
-			/*------------------------------------------------------Touch and Remote event-----------------------*/
-			if (Touch_Detect()) {
+			/*------------------------------------------------------Stop event-----------------------*/
+			if (Stop_Event()) {
 				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				WF_Break_Wall_Follow();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
@@ -889,10 +888,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 			}
 
-			/*------------------------------------------------------Touch and Remote event-----------------------*/
-			if (Touch_Detect()) {
+			/*------------------------------------------------------Stop event-----------------------*/
+			if (Stop_Event()) {
 				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				WF_Break_Wall_Follow();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
@@ -1038,7 +1037,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				WFM_move_back(350);
 
 				if (Is_Bumper_Jamed()){
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
 					WF_Break_Wall_Follow();
@@ -1090,7 +1089,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					WF_Check_Loop_Closed(Gyro_GetAngle());
 
 					if (Is_Bumper_Jamed()){
-						Reset_Touch();
+						Reset_Stop_Event_Status();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
 						WF_Break_Wall_Follow();
@@ -1113,7 +1112,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					//WFM_update();
 					WF_Check_Loop_Closed(Gyro_GetAngle());
 					if (Is_Bumper_Jamed()) {
-						Reset_Touch();
+						Reset_Stop_Event_Status();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						WF_Break_Wall_Follow();
 						//USPRINTF("%s %d: Check: Bumper 3! break\n", __FUNCTION__, __LINE__);

@@ -11,7 +11,7 @@ void Sleep_Mode(void)
   	uint8_t time=0;
 	static uint32_t Ch_WP_Counter=0;
 	
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 	Set_LED(0,0);
 	
 	Disable_Motors();
@@ -37,7 +37,7 @@ void Sleep_Mode(void)
 					ROS_INFO("%s %d: Clean key pressed", __FUNCTION__, __LINE__);
 					usleep(100000);
 				}
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				
 				break;
 			}

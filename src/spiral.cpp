@@ -48,12 +48,10 @@ uint8_t Spiral(void)
 		{
 			return 0;
 		}
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+		/*------------------------------------------------------Stop event-----------------------*/
+		if(Stop_Event())
 		{
 			Stop_Brifly();
-			// Set touch status to make sure this event can be detected by main process while loop.
-			Set_Touch();
 			return 1;
 		}
 		if(Get_Rcon_Remote() > 0)

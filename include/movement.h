@@ -513,9 +513,11 @@ void Reset_Touch(void);
 
 void Set_Touch(void);
 
+void Reset_Stop_Event_Status(void);
+
 void Deceleration(void);
 
-uint8_t Touch_Detect(void);
+uint8_t Stop_Event(void);
 
 uint8_t Is_Station(void);
 

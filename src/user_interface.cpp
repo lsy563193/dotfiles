@@ -49,7 +49,7 @@ void User_Interface(void)
 
 	Reset_Rcon_Remote();
 
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 	//Enable_PPower();
 	//Disable_Motors();
 	Reset_Rcon_Status();
@@ -172,8 +172,8 @@ void User_Interface(void)
 					ROS_INFO("User still holds the key.");
 					usleep(100000);
 				}
-				// Key relaesed, then the touch status should be cleared.
-				Reset_Touch();
+				// Key relaesed, then the touch status and stop event status should be cleared.
+				Reset_Stop_Event_Status();
 				Temp_Mode=Clean_Mode_Sleep;
 			}
 			else

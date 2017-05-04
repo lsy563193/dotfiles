@@ -61,7 +61,7 @@ void *core_move_thread(void *)
 	{
 		usleep(100000);
 		Reset_Rcon_Remote();
-		Reset_Touch();
+		Reset_Stop_Event_Status();
 	}
 
 	protect_function();

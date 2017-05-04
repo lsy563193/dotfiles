@@ -271,9 +271,9 @@ void GoHome(void)
 	Last_Angle = Gyro_GetAngle();
 	while(Gyro_Step < 3600)
 	{
-		if (Touch_Detect())
+		if (Stop_Event())
 		{
-			ROS_INFO("%s %d: Touch_Detect in turning 360 degrees to find charger signal.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Stop_Event in turning 360 degrees to find charger signal.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			break;
 		}
@@ -589,11 +589,11 @@ void Around_ChargerStation(uint8_t Dir)
 			return;
 		}
 
-//		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+//		/*------------------------------------------------------Stop event-----------------------*/
+		if(Stop_Event())
 		{
 			Stop_Brifly();
-			if (Touch_Detect())
+			if (Stop_Event())
 			{
 				//Beep(5, 20, 0, 1);
 				// Key release detection, if user has not release the key, don't do anything.
@@ -603,15 +603,11 @@ void Around_ChargerStation(uint8_t Dir)
 					usleep(20000);
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
-				{
-					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-					Set_Touch();
-				}
-				else
+				if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
+				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 				{
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 				}
 			}
 			// If key pressed, go back to user interface mode.
@@ -846,7 +842,7 @@ void Around_ChargerStation(uint8_t Dir)
 					{
 //						Reset_Error_Code();
 //						SetDisplayError(Error_Code_None);
-//						Reset_Touch();
+//						Reset_Stop_Event_Status();
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						return;
@@ -1019,7 +1015,7 @@ void Around_ChargerStation(uint8_t Dir)
 					{
 //						Reset_Error_Code();
 //						SetDisplayError(Error_Code_None);
-//						Reset_Touch();
+//						Reset_Stop_Event_Status();
 						ROS_INFO("%s %d return to Clean_Mode_Userinterface", __FUNCTION__, __LINE__);
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						return;
@@ -1098,7 +1094,6 @@ uint8_t Check_Position(uint8_t Dir)
 		//	if(Is_Encoder_Fail())
 		//	{
 		//		Set_Error_Code(Error_Code_Encoder);
-		//		Set_Touch();
 		//	}
 		//	return 1;
 		//}
@@ -1133,7 +1128,7 @@ uint8_t Check_Position(uint8_t Dir)
 				return 2;
 			}
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			//Beep(5, 20, 0, 1);
 			Stop_Brifly();
@@ -1144,15 +1139,11 @@ uint8_t Check_Position(uint8_t Dir)
 				usleep(20000);
 			}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-			if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
-			{
-				// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-				Set_Touch();
-			}
-			else
+			if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
+			// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 			{
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 			}
 			return 1;
 		}
@@ -1195,7 +1186,7 @@ void By_Path(void)
 
 //	Reset_Wheel_Step();
 
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 //	Display_Content(LED_Home,100,100,0,7);
 
 //	Enable the charge function
@@ -1280,9 +1271,9 @@ void By_Path(void)
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 				}
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
-					ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
 					Disable_Motors();
 					return;
 				}
@@ -1312,9 +1303,9 @@ void By_Path(void)
 						ROS_INFO("Set Clean_Mode_Charging and return");
 						return;
 					}
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
 						Disable_Motors();
 						return;
 					}
@@ -1380,9 +1371,9 @@ void By_Path(void)
 						Set_Clean_Mode(Clean_Mode_Charging);
 						return;
 					}
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
 						Disable_Motors();
 						return;
 					}
@@ -1465,8 +1456,8 @@ void By_Path(void)
 				}
 			}
 
-			/*------------------------------------------------------Touch and Remote event-----------------------*/
-			if(Touch_Detect())
+			/*------------------------------------------------------stop event-----------------------*/
+			if(Stop_Event())
 			{
 				//Beep(5, 20, 0, 1);
 				Stop_Brifly();
@@ -1478,14 +1469,10 @@ void By_Path(void)
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
-				{
-					// Set_Touch is for when robot is going home in navigation mode, when touch status is on, it will know and won't go to next home point.
-					Set_Touch();
-				}
-				else
+					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 				{
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;

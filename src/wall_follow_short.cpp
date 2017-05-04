@@ -149,7 +149,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
       break;
 		}
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 		  Set_Clean_Mode(Clean_Mode_Userinterface);
 			Beep(5, 20, 0, 1);
@@ -161,7 +161,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			Reset_Stop_Event_Status();
 		  return 1;
 		}
 		#ifdef BLDC_INSTALL

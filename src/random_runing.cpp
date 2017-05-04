@@ -92,7 +92,7 @@ void Random_Running_Mode(void)
 	Reset_MoveWithRemote();
 //	Reset_Bumper_Error();
 		Set_LED(100,0);
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 
 //  if(!Is_Dustbin_Install())
 //  {
@@ -115,7 +115,7 @@ void Random_Running_Mode(void)
 		Set_BLDC_Speed(30);
 		Stop_Brifly();
 		Quick_Back(30,750);
-		if(Touch_Detect()||Is_ChargerOn())
+		if(Stop_Event()||Is_ChargerOn())
 		{
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -124,13 +124,13 @@ void Random_Running_Mode(void)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			return;
 		}
 		Beep(2,25,25,1);
 		Quick_Back(30,750);
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -139,13 +139,13 @@ void Random_Running_Mode(void)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			return;
 		}
 		Beep(2,25,25,1);
 		Quick_Back(30,750);
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -154,14 +154,14 @@ void Random_Running_Mode(void)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			return;
 		}
 		Beep(2,25,25,1);
 		Deceleration();
 		Turn_Right(Turn_Speed,1120+Get_Random_Factor()*10);
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -170,8 +170,8 @@ void Random_Running_Mode(void)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			return;
 		}
 		Stop_Brifly();
@@ -184,7 +184,7 @@ void Random_Running_Mode(void)
 	Work_Motor_Configure();
 	Reset_Move_Distance();
 	Reset_Wheel_Step();
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 	Wall_Bumper_Counter=0;
 	Reset_Rcon_Remote();
 	Set_Direction_Flag(Direction_Flag_Right);
@@ -251,8 +251,8 @@ void Random_Running_Mode(void)
 		{
 			Low_Power_Counter=0;
 		}
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+		/*------------------------------------------------------Stop event-----------------------*/
+		if(Stop_Event())
 		{
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -261,8 +261,8 @@ void Random_Running_Mode(void)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
@@ -280,7 +280,7 @@ void Random_Running_Mode(void)
 				{
 					Reset_Rcon_Remote();
 					usleep(100000);
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
 						Stop_Brifly();
 						// Key release detection, if user has not release the key, don't do anything.
@@ -289,12 +289,10 @@ void Random_Running_Mode(void)
 							ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 							usleep(20000);
 						}
-						// Set touch status to pass this status to main while loop for Random_Running_Mode.
-						Set_Touch();
 						break;
 					}
 				}
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
 					continue;
 				}
@@ -314,7 +312,7 @@ void Random_Running_Mode(void)
 				{
 					Reset_Rcon_Remote();
 					usleep(100000);
-					if(Touch_Detect())
+					if(Stop_Event())
 					{
 						Stop_Brifly();
 						// Key release detection, if user has not release the key, don't do anything.
@@ -401,14 +399,14 @@ void Random_Running_Mode(void)
 				Set_Vac_Speed();
 				if(Temp_Dirt_Status==1)
 				{
-					// Touch_Detect triggered in Random_Dirt_Event
+					// Stop_Event triggered in Random_Dirt_Event
 					// Key release detection, if user has not release the key, don't do anything.
 					while (Get_Key_Press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
-					// Key relaesed, then the touch status should be cleared.
+					// Key relaesed, then the touch status and stop event status should be cleared.
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					break;
 				}
@@ -575,16 +573,16 @@ void Random_Running_Mode(void)
 				Move_Forward(10,10);
 				if(Out_Trap_Left())
 				{
-					// Out_Trap_Left() return 1 may be caused by Touch_Detect.
+					// Out_Trap_Left() return 1 may be caused by Stop_Event.
 					// Key release detection, if user has not release the key, don't do anything.
 					while (Get_Key_Press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
-					// Key relaesed, then the touch status should be cleared.
+					// Key relaesed, then the touch status and stop event should be cleared.
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 					break;
 				}
 				Stunk=0;
@@ -657,9 +655,9 @@ void Random_Running_Mode(void)
 							{
 								Turn_Right(Turn_Speed,800);
 								if(Left_Bumper_Avoiding())Avoid_Flag=1;
-								if (Touch_Detect())
+								if (Stop_Event())
 								{
-									// Continue to let the main while loop to process the touch status.
+									// Continue to let the main while loop to process the stop event status.
 									continue;
 								}
 							}
@@ -720,16 +718,16 @@ void Random_Running_Mode(void)
 				Move_Forward(10,10);
 				if(Out_Trap_Right())
 				{
-					// Out_Trap_Right() return 1 may be caused by Touch_Detect.
+					// Out_Trap_Right() return 1 may be caused by Stop_Event.
 					// Key release detection, if user has not release the key, don't do anything.
 					while (Get_Key_Press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
-					// Key relaesed, then the touch status should be cleared.
+					// Key relaesed, then the touch status and stop event status should be cleared.
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 					break;
 				}
 				Stunk=0;
@@ -800,9 +798,9 @@ void Random_Running_Mode(void)
 							{
 								Turn_Left(Turn_Speed,800);
 								if(Right_Bumper_Avoiding())Avoid_Flag=1;
-								if (Touch_Detect())
+								if (Stop_Event())
 								{
-									// Continue to let the main while loop to process the touch status.
+									// Continue to let the main while loop to process the stop event status.
 									continue;
 								}
 							}
@@ -927,16 +925,16 @@ void Random_Running_Mode(void)
 						{
 							if(Out_Trap_Right())
 							{
-								// Out_Trap_Right() return 1 may be caused by Touch_Detect.
+								// Out_Trap_Right() return 1 may be caused by Stop_Event.
 								// Key release detection, if user has not release the key, don't do anything.
 								while (Get_Key_Press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
-								// Key relaesed, then the touch status should be cleared.
+								// Key relaesed, then the touch status and stop event status should be cleared.
 								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Touch();
+								Reset_Stop_Event_Status();
 								break;
 							}
 							Stunk=0;
@@ -962,16 +960,16 @@ void Random_Running_Mode(void)
 						{
 							if(Out_Trap_Left())
 							{
-								// Out_Trap_Left() return 1 may be caused by Touch_Detect.
+								// Out_Trap_Left() return 1 may be caused by Stop_Event.
 								// Key release detection, if user has not release the key, don't do anything.
 								while (Get_Key_Press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
-								// Key relaesed, then the touch status should be cleared.
+								// Key relaesed, then the touch status and stop event status should be cleared.
 								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Touch();
+								Reset_Stop_Event_Status();
 								break;
 							}
 							Stunk=0;
@@ -1032,16 +1030,16 @@ void Random_Running_Mode(void)
 						{
 							if(Out_Trap_Left())
 							{
-								// Out_Trap_Left() return 1 may be caused by Touch_Detect.
+								// Out_Trap_Left() return 1 may be caused by Stop_Event.
 								// Key release detection, if user has not release the key, don't do anything.
 								while (Get_Key_Press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
-								// Key relaesed, then the touch status should be cleared.
+								// Key relaesed, then the touch status and stop event status should be cleared.
 								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Touch();
+								Reset_Stop_Event_Status();
 								break;
 							}
 							Stunk=0;
@@ -1068,16 +1066,16 @@ void Random_Running_Mode(void)
 						{
 							if(Out_Trap_Right())
 							{
-								// Out_Trap_Right() return 1 may be caused by Touch_Detect.
+								// Out_Trap_Right() return 1 may be caused by Stop_Event.
 								// Key release detection, if user has not release the key, don't do anything.
 								while (Get_Key_Press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
-								// Key relaesed, then the touch status should be cleared.
+								// Key relaesed, then the touch status and stop event status should be cleared.
 								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Touch();
+								Reset_Stop_Event_Status();
 								break;
 							}
 							Stunk=0;
@@ -1181,16 +1179,16 @@ void Random_Running_Mode(void)
 			{
 				if(Out_Trap_Right())
 				{
-					// Out_Trap_Right() return 1 may be caused by Touch_Detect.
+					// Out_Trap_Right() return 1 may be caused by Stop_Event.
 					// Key release detection, if user has not release the key, don't do anything.
 					while (Get_Key_Press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
-					// Key relaesed, then the touch status should be cleared.
+					// Key relaesed, then the touch status and stop event status should be cleared.
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 					break;
 				}
 				Turn_Right(Turn_Speed-5,240);
@@ -1201,16 +1199,16 @@ void Random_Running_Mode(void)
 			{
 				if(Out_Trap_Left())
 				{
-					// Out_Trap_Left() return 1 may be caused by Touch_Detect.
+					// Out_Trap_Left() return 1 may be caused by Stop_Event.
 					// Key release detection, if user has not release the key, don't do anything.
 					while (Get_Key_Press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
-					// Key relaesed, then the touch status should be cleared.
+					// Key relaesed, then the touch status and stop event status should be cleared.
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 					break;
 				}
 				Turn_Right(Turn_Speed-5,240);
@@ -1249,10 +1247,10 @@ void Random_Running_Mode(void)
 		if(Is_LeftWheel_Reach(29000))
 		{
 			if(Spiral()){
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
 					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 				}
 				break;
 			}
@@ -1364,8 +1362,8 @@ uint8_t Out_Trap_Right(void)
 				return 0;
 			}
 		}
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+		/*------------------------------------------------------Stop event-----------------------*/
+		if(Stop_Event())
 		{
 			Stop_Brifly();
 			return 1;
@@ -1471,8 +1469,8 @@ uint8_t Out_Trap_Left(void)
 				return 0;
 			}
 		}
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+		/*------------------------------------------------------Stop event-----------------------*/
+		if(Stop_Event())
 		{
 			Stop_Brifly();
 			return 1;
@@ -1566,17 +1564,14 @@ uint8_t Left_Bumper_Avoiding(void)
 		{
 			if(Is_Encoder_Fail())
 			{
-//			  Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
+				Set_Error_Code(Error_Code_Encoder);
 				return 0;
 			}
 			return 0;
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			Stop_Brifly();
-			// Set touch status to make sure this event can be detected by main process while loop.
-			Set_Touch();
 			return 0;
 		}
 		if(Get_Rcon_Remote() > 0)
@@ -1622,17 +1617,14 @@ uint8_t Right_Bumper_Avoiding(void)
 		{
 			if(Is_Encoder_Fail())
 			{
-//			  Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
+				Set_Error_Code(Error_Code_Encoder);
 				return 0;
 			}
 			return 0;
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			Stop_Brifly();
-			// Set touch status to make sure this event can be detected by main process while loop.
-			Set_Touch();
 			return 0;
 		}
 		if(Get_Rcon_Remote() > 0)
@@ -1689,8 +1681,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 		{
 			if(Is_Encoder_Fail())
 			{
-//			Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
+				Set_Error_Code(Error_Code_Encoder);
 			}
 			return;
 		}
@@ -1707,10 +1698,9 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 			Set_Wheel_Speed(0,H_S);
 		}
 		if(Get_Cliff_Trig())Temp_H_Flag=1;
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			Temp_H_Flag=1;
-			Set_Touch();
 		}
 		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))Temp_H_Flag=1;
 		if(Temp_H_Flag)break;
@@ -1761,8 +1751,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 		{
 			if(Is_Encoder_Fail())
 			{
-//			Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
+				Set_Error_Code(Error_Code_Encoder);
 			}
 			return;
 		}
@@ -1779,10 +1768,9 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 			Set_Wheel_Speed(H_S,0);
 		}
 		if(Get_Cliff_Trig())Temp_H_Flag=1;
-			if(Touch_Detect())
+		if(Stop_Event())
 		{
 			Temp_H_Flag=1;
-			Set_Touch();
 		}
 		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))Temp_H_Flag=1;
 		if(Temp_H_Flag)break;

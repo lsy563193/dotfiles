@@ -76,6 +76,8 @@ volatile uint8_t Key_Status = 0;
 volatile uint8_t Touch_Status = 0;
 // Variable for remote status, remote status is just for remote controller.
 volatile uint8_t Remote_Status = 0;
+// Variable for stop event status.
+volatile uint8_t Stop_Event_Status = 0;
 // Variable for plan status
 volatile bool Plan_Status = false;
 
@@ -349,7 +351,7 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
 		usleep(1000);
-		if (Touch_Detect())
+		if (Stop_Event())
 		{
 			break;
 		}
@@ -408,7 +410,7 @@ void Turn_Left_At_Init(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		if(Is_Turn_Remote())
 			break;
@@ -471,7 +473,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		//prompt for useless remote command
 		if (Get_Rcon_Remote() > 0) {
@@ -539,7 +541,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		//prompt for useless remote command
 		if (Get_Rcon_Remote() > 0) {
@@ -607,7 +609,7 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -685,7 +687,7 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -774,7 +776,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;
@@ -851,7 +853,7 @@ void Jam_Turn_Left(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -907,7 +909,7 @@ void Jam_Turn_Right(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -1018,12 +1020,11 @@ uint8_t except_event()
 //	uint8_t oc = Check_Motor_Current();
 //		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 //			return true;
-	// Touch_Detect() could return 0, 1, 2, 3.
-	retval = Touch_Detect();
+	// Stop_Event() could return 0, 1, 2, 3.
+	retval = Stop_Event();
 	if(retval)
 	{
-		ROS_WARN("Touch_Detect in except_event!");
-		//Reset_Touch();
+		ROS_WARN("Stop_Event in except_event!");
 		return retval;
 	}
 //		if(Is_Turn_Remote())
@@ -1133,9 +1134,9 @@ uint8_t Turn_Connect(void)
 			}
 			Set_Wheel_Speed(speed, speed);
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
-			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Stop_Event.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			return 0;
 		}
@@ -1163,9 +1164,9 @@ uint8_t Turn_Connect(void)
 			}
 			Set_Wheel_Speed(speed, speed);
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
-			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Stop_Event.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			return 0;
 		}
@@ -1946,42 +1947,57 @@ void Set_Touch(void)
 	Touch_Status = 1;
 }
 
+void Reset_Stop_Event_Status(void)
+{
+	Stop_Event_Status = 0;
+	// For key release checking.
+	Reset_Touch();
+}
+
 void Deceleration(void)
 {
 }
 
-uint8_t Touch_Detect(void)
+uint8_t Stop_Event(void)
 {
-	// Get the key value from robot sensor
-	if (Get_Touch_Status()){
-		ROS_WARN("Touch status == 1");
+	// If it has already had a Stop_Event_Status, then no need to check.
+	if (!Stop_Event_Status)
+	{
+		// Get the key value from robot sensor
+		if (Get_Touch_Status()){
+			ROS_WARN("Touch status == 1");
 #if MANUAL_PAUSE_CLEANING
-		if (Get_Clean_Mode() == Clean_Mode_Navigation)
-		{
-			robot::instance()->Set_Cleaning_Manual_Pause();
-		}
+			if (Get_Clean_Mode() == Clean_Mode_Navigation)
+			{
+				robot::instance()->Set_Cleaning_Manual_Pause();
+			}
 #endif
-		return 1;
-	}
-	if (Remote_Key(Remote_Clean)){
-		ROS_WARN("Remote_Key clean.");
-		Reset_Rcon_Remote();
+			Reset_Touch();
+			Stop_Event_Status = 1;
+		}
+		if (Remote_Key(Remote_Clean)){
+			ROS_WARN("Remote_Key clean.");
+			Reset_Rcon_Remote();
 #if MANUAL_PAUSE_CLEANING
-		if (Get_Clean_Mode() == Clean_Mode_Navigation)
-		{
-			robot::instance()->Set_Cleaning_Manual_Pause();
-		}
+			if (Get_Clean_Mode() == Clean_Mode_Navigation)
+			{
+				robot::instance()->Set_Cleaning_Manual_Pause();
+			}
 #endif
-		Set_Touch();
-		return 2;
-	}
-	if (Get_Cliff_Trig() == 0x07){
-		ROS_WARN("Cliff triggered.");
-		Set_Touch();
-		return 3;
-	}
+			Stop_Event_Status = 2;
+		}
+		if (Get_Cliff_Trig() == 0x07){
+			ROS_WARN("Cliff triggered.");
+			Stop_Event_Status = 3;
+		}
 
-	return 0;
+		if (Get_Error_Code())
+		{
+			ROS_WARN("Detects Error: %d!", Get_Error_Code());
+			Stop_Event_Status = 4;
+		}
+	}
+	return Stop_Event_Status;
 }
 
 uint8_t Is_Station(void)
@@ -2505,7 +2521,7 @@ void Wall_Move_Back(void)
 		Set_Wheel_Speed(tp,tp);
 		usleep(1000);
 	
-		if(Touch_Detect())
+		if(Stop_Event())
 			return;
 		count++;
 		if(count>3000);
@@ -2634,7 +2650,6 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 			if(Is_Encoder_Fail())
 			{
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			return;
 		}
@@ -2644,7 +2659,7 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 			Stop_Brifly();
 			return;
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			return;
 		}
@@ -2699,7 +2714,6 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 			if(Is_Encoder_Fail())
 			{
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			return;
 		}
@@ -2709,7 +2723,7 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 			Stop_Brifly();
 			return;
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			return;
 		}
@@ -2938,13 +2952,13 @@ bool Wait_For_Gyro_On(void)
 			case 1:
 			{
 				stop_waiting = true;
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				break;
 			}
 			case 2:
 			{
 				stop_waiting = true;
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				break;
 			}
 			case 3:
@@ -2952,7 +2966,7 @@ bool Wait_For_Gyro_On(void)
 				Set_Gyro_Off();
 				wav_play(WAV_ERROR_LIFT_UP);
 				lift_up_skip_count = 25;
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				break;
 			}
 			case 0:

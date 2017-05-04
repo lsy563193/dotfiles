@@ -53,7 +53,7 @@ void Spot_Mode(SpotType ST)
 	}
 	Move_Style = Spiral_Right_Out;
 
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 
 	if (!Is_Gyro_On())
 	{
@@ -105,8 +105,8 @@ void Spot_Mode(SpotType ST)
 		Set_Dir_Right();
 		Set_Wheel_Speed(25, 10);
 
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if (Touch_Detect()) {
+		/*------------------------------------------------------stop event-----------------------*/
+		if (Stop_Event()) {
 //			Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			if(ST == NormalSpot){
@@ -119,8 +119,8 @@ void Spot_Mode(SpotType ST)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			return;
 		}
 		if (Check_Motor_Current()) {
@@ -192,8 +192,8 @@ void Spot_Mode(SpotType ST)
 			break;
 		}
 		//Set_MainBrush_PWM(80);
-		/*------------------------------------------------Touch and Remote event-----------------------*/
-		if (Touch_Detect()) {
+		/*------------------------------------------------stop event-----------------------*/
+		if (Stop_Event()) {
 			Stop_Brifly();
 			Disable_Motors();
 			if(ST == NormalSpot){
@@ -206,8 +206,8 @@ void Spot_Mode(SpotType ST)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			break;
 		}
 		uint8_t octype = Check_Motor_Current();
@@ -451,7 +451,7 @@ uint8_t Random_Dirt_Event(void)
 
 	Move_Style = First_Round;
 
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 
 	Check_Bat_SetMotors(135000, 100000, 100000);
 
@@ -517,11 +517,10 @@ uint8_t Random_Dirt_Event(void)
 		} else {
 			Motor_OC_Counter = 0;
 		}
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if (Touch_Detect()) {
+		/*------------------------------------------------------stop event-----------------------*/
+		if (Stop_Event()) {
 			Stop_Brifly();
-			ROS_INFO("%s %d: Touch detect!", __FUNCTION__, __LINE__);
-			Set_Touch();
+			ROS_INFO("%s %d: Stop event!", __FUNCTION__, __LINE__);
 			return 1;
 		}
 		/*------------------------------------------------------Runing Path-----------------------*/
