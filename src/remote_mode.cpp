@@ -214,13 +214,19 @@ void Remote_Mode(void)
 			break;
 		}
 		/*-------------------------------------------Bumper  and cliff Event-----------------------*/
-		if(Get_Bumper_Status()||Get_Cliff_Trig())
+		if(Get_Cliff_Trig())
 		{
 			Move_Back();
-			if(Get_Bumper_Status()||Get_Cliff_Trig()){
+			if(Get_Cliff_Trig()){
 				Move_Back();
 			}
 			Set_Clean_Mode(Clean_Mode_Userinterface);
+			break;
+		}
+		if(Get_Bumper_Status())
+		{
+			Random_Back();
+			Is_Bumper_Jamed();
 			break;
 		}
 		if(Get_Cliff_Trig() == (Status_Cliff_All)){
