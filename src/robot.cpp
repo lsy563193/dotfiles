@@ -955,9 +955,9 @@ bool robot::start_lidar(void)
 		usleep(2000);
 		ROS_INFO("start_lidar");
 		start_mator_cli_.call(empty);
-		count_6s = 600;
+		count_6s = 200;//set reboot lidar time to 2 seconds
 		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_6s > 0 && !except_event())
+		while (laser::instance()->is_ready() == false && --count_6s > 0 && !except_event() && try_times != 0)
 		{
 			if (count_6s % 100 == 0)
 				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
