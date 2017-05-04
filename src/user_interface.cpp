@@ -29,10 +29,10 @@ void User_Interface(void)
 	static volatile uint32_t TimeOutCounter=0;
 
 #ifdef ONE_KEY_DISPLAY
-	uint8_t BTA_Power_Dis=0;
 	uint16_t LedBreathCount=0;
 	uint8_t breath =0;
 #endif
+	bool Battery_Ready_to_clean = true;
 
 	Press_time=0;
 	Temp_Mode=0;
@@ -65,13 +65,18 @@ void User_Interface(void)
 	if(!Check_Bat_Ready_To_Clean())
 	{
 		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		Battery_Ready_to_clean = false;
 		wav_play(WAV_BATTERY_LOW);
 	}
 
 	while(ros::ok())
 	{
 		usleep(10000);
-
+		// Check the battery to warn the user.
+		if(!Check_Bat_Ready_To_Clean())
+		{
+			Battery_Ready_to_clean = false;
+		}
 #if MANUAL_PAUSE_CLEANING
 		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
@@ -201,7 +206,7 @@ void User_Interface(void)
 					wav_play(WAV_ERROR_LIFT_UP);
 					Temp_Mode=0;
 				}
-				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Check_Bat_Ready_To_Clean())
+				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
 				{
 					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
@@ -251,20 +256,11 @@ void User_Interface(void)
 			break;
 		}
 
-		if(!Check_Bat_Ready_To_Clean())
-		{
-			BTA_Power_Dis=1;
-		}
-		else
-		{
-			BTA_Power_Dis=0;
-		}
-		
 		if(Get_Error_Code())//min_distant_segment Error = red led full
 		{
 			Set_LED(0,100);
 		}
-		else if(BTA_Power_Dis)//min_distant_segment low battery = red & green
+		else if(!Battery_Ready_to_clean)//min_distant_segment low battery = red & green
 		{
 			Set_LED(LedBreathCount,LedBreathCount);
 		}

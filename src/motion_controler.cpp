@@ -21,6 +21,7 @@ bool start_slam(void)
 		robot::instance()->stop_slam();
 		return false;
 	}
+	return true;
 
 
 }
@@ -66,13 +67,8 @@ Motion_controller::Motion_controller()
 		} else
 #endif
 		{
-			if (start_slam())
-			{
-				Is_Slam_Ready = 1;
-			} else
-			{
-				Is_Slam_Ready = 0;
-			}
+			start_slam();
+
 			Work_Motor_Configure();
 			if (!robot::instance()->start_lidar())
 			{
@@ -101,11 +97,12 @@ Motion_controller::Motion_controller()
 //		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 				usleep(10000);
 			}
+			Is_Slam_Ready = 1;
 			if (count_n_10ms == 0)
 			{
+				Is_Slam_Ready = 0;
 				ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 			}
-
 		}
 #if MANUAL_PAUSE_CLEANING
 	}

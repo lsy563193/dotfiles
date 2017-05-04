@@ -471,11 +471,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		/*if(Is_Turn_Remote())
 			break;*/
 		if(Get_Bumper_Status()){
-			Stop_Brifly();
-			WFM_move_back(120);
-			Stop_Brifly();
-			Set_Dir_Left();
-			ROS_INFO("Bumper triged when turn left, back 20mm.");
+			break;
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
@@ -534,11 +530,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		/*if(Is_Turn_Remote())
 			break;*/
 		if(Get_Bumper_Status()){
-			Stop_Brifly();
-			WFM_move_back(120);
-			Stop_Brifly();
-			Set_Dir_Right();
-			ROS_INFO("Bumper triged when turn right, back 20mm.");
+			break;
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
@@ -1012,7 +1004,7 @@ uint8_t except_event()
 	if(retval)
 	{
 		ROS_WARN("Touch_Detect in except_event!");
-		Reset_Touch();
+		//Reset_Touch();
 		return retval;
 	}
 //		if(Is_Turn_Remote())
@@ -2402,14 +2394,18 @@ uint8_t Get_Key_Press(void)
 	return Key_Status;
 }
 
-uint8_t Get_Key_Time(uint16_t key)
+uint16_t Get_Key_Time(uint16_t key)
 {
-	// This time is count for 100ms.
-	uint8_t time = 0;
+	// This time is count for 20ms.
+	uint16_t time = 0;
 	while(ros::ok()){
 		time++;
-		if(time>20)break;
-		usleep(100000);
+		if (time == 151)
+		{
+			Beep(1, 5, 0, 1);
+		}
+		if(time>1500)break;
+		usleep(20000);
 		if(Get_Key_Press()!=key)break;
 	}
 	return time;
@@ -2923,11 +2919,13 @@ bool Wait_For_Gyro_On(void)
 			case 1:
 			{
 				stop_waiting = true;
+				Reset_Touch();
 				break;
 			}
 			case 2:
 			{
 				stop_waiting = true;
+				Reset_Touch();
 				break;
 			}
 			case 3:
@@ -2935,6 +2933,7 @@ bool Wait_For_Gyro_On(void)
 				Set_Gyro_Off();
 				wav_play(WAV_ERROR_LIFT_UP);
 				lift_up_skip_count = 25;
+				Reset_Touch();
 				break;
 			}
 			case 0:

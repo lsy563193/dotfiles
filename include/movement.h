@@ -574,7 +574,7 @@ uint8_t Get_Key_Press(void);
 
 uint16_t GetBatteryVoltage();
 
-uint8_t Get_Key_Time(uint16_t key);
+uint16_t Get_Key_Time(uint16_t key);
 	
 uint8_t IsSendBusy(void);
 
