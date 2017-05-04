@@ -277,7 +277,7 @@ void GoHome(void)
 			Disable_Motors();
 			break;
 		}
-	
+
 		//prompt for useless remote command
 		if (Get_Rcon_Remote() > 0) {
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
@@ -288,6 +288,14 @@ void GoHome(void)
 			}
 		}
 
+		if(Get_Bumper_Status())
+		{
+			Random_Back();
+			if(Is_Bumper_Jamed())
+			{
+				break;
+			}
+		}
 		Receive_Code = Get_Rcon_Status();
 		Reset_Rcon_Status();
 		if(Receive_Code&RconFL_HomeR)//FL H_R
@@ -636,20 +644,9 @@ void Around_ChargerStation(uint8_t Dir)
 		{
 			Bumper_Counter++;
 			Random_Back();
-			if(Get_Bumper_Status())
+			if(Is_Bumper_Jamed())
 			{
-				Random_Back();
-				if(Get_Bumper_Status())
-				{
-					// Bumper jamed.
-					while (Get_Bumper_Status())
-					{
-						// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
-						Beep(3, 25, 0, 1);
-						usleep(2000000);
-					}
-					return;
-				}
+				return;
 			}
 			if(Dir)
 			{
