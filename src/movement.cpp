@@ -353,10 +353,15 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 		{
 			break;
 		}
-		if (Remote_Key(Remote_Clean))
-		{
-			Reset_Rcon_Remote();
-			break;
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+				Reset_Rcon_Remote();
+				break;
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
 	}
 	ROS_INFO("Quick_Back finished.");
