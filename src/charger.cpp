@@ -127,7 +127,7 @@ void Charge_Function(void)
 		/*----------------------------------------------------Check Key---------------------*/
 		if(Get_Key_Press() & KEY_CLEAN)//							Check Key Clean
 		{
-			Beep(5, 20, 0, 1);
+			//Beep(5, 20, 0, 1);
 //			Reset_Error_Code();
 			if (!Check_Bat_Ready_To_Clean())
 			{
@@ -277,6 +277,17 @@ void GoHome(void)
 			Disable_Motors();
 			break;
 		}
+	
+		//prompt for useless remote command
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+
 		Receive_Code = Get_Rcon_Status();
 		Reset_Rcon_Status();
 		if(Receive_Code&RconFL_HomeR)//FL H_R
@@ -576,7 +587,7 @@ void Around_ChargerStation(uint8_t Dir)
 			Stop_Brifly();
 			if (Touch_Detect())
 			{
-				Beep(5, 20, 0, 1);
+				//Beep(5, 20, 0, 1);
 				// Key release detection, if user has not release the key, don't do anything.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
@@ -599,6 +610,17 @@ void Around_ChargerStation(uint8_t Dir)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return;
 		}
+
+		//prompt for useless remote command
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+
 		if(Check_Bat_Stop())
 		{
 			ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
@@ -1116,7 +1138,7 @@ uint8_t Check_Position(uint8_t Dir)
 		}
 		if(Touch_Detect())
 		{
-			Beep(5, 20, 0, 1);
+			//Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
@@ -1137,6 +1159,17 @@ uint8_t Check_Position(uint8_t Dir)
 			}
 			return 1;
 		}
+
+		//prompt for useless remote command
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+
 		uint8_t octype = Check_Motor_Current();
 		if(octype){
 			if(Self_Check(octype)){
@@ -1256,6 +1289,16 @@ void By_Path(void)
 					Disable_Motors();
 					return;
 				}
+
+				//prompt for useless remote command
+				if (Get_Rcon_Remote() > 0) {
+					ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+					if (Get_Rcon_Remote() & (Remote_Clean)) {
+					} else {
+						Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+						Reset_Rcon_Remote();
+					}
+				}
 			}
 			/*----------------------------------------------OBS------------------Event---------------*/
 			//ROS_INFO("get_Left_bumper_Status");
@@ -1277,6 +1320,16 @@ void By_Path(void)
 						ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
 						Disable_Motors();
 						return;
+					}
+
+					//prompt for useless remote command
+					if (Get_Rcon_Remote() > 0) {
+						ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+						if (Get_Rcon_Remote() & (Remote_Clean)) {
+						} else {
+							Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+							Reset_Rcon_Remote();
+						}
 					}
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(0);
@@ -1335,6 +1388,16 @@ void By_Path(void)
 						ROS_INFO("%s %d: Touch_Detect in Turn_Connect.", __FUNCTION__, __LINE__);
 						Disable_Motors();
 						return;
+					}
+	
+					//prompt for useless remote command
+					if (Get_Rcon_Remote() > 0) {
+						ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+						if (Get_Rcon_Remote() & (Remote_Clean)) {
+						} else {
+							Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+							Reset_Rcon_Remote();
+						}
 					}
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(0);
@@ -1408,7 +1471,7 @@ void By_Path(void)
 			/*------------------------------------------------------Touch and Remote event-----------------------*/
 			if(Touch_Detect())
 			{
-				Beep(5, 20, 0, 1);
+				//Beep(5, 20, 0, 1);
 				Stop_Brifly();
 				// Key release detection, if user has not release the key, don't do anything.
 				while (Get_Key_Press() & KEY_CLEAN)
@@ -1429,6 +1492,15 @@ void By_Path(void)
 				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
+			}
+			//prompt for useless remote command
+			if (Get_Rcon_Remote() > 0) {
+				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+				if (Get_Rcon_Remote() & (Remote_Clean)) {
+				} else {
+					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+					Reset_Rcon_Remote();
+				}
 			}
 			if(Check_Bat_Stop())
 			{
