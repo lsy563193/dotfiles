@@ -416,6 +416,10 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			WFM_move_back(350);
 
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				return 2;
+			}
 			Turn_Right(Turn_Speed, 700);
 
 			Stop_Brifly();
@@ -445,6 +449,10 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 			if (Get_Bumper_Status() & RightBumperTrig) {
 				WFM_move_back(100);
+				if(Is_Bumper_Jamed())
+				{
+					return 2;
+				}
 				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				Stop_Brifly();
 				Turn_Right(Turn_Speed, 600);
@@ -452,6 +460,10 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 				Wall_Straight_Distance = MFW_Setting[follow_type].right_bumper_val; //150;
 			} else {
 				WFM_move_back(350);
+				if(Is_Bumper_Jamed())
+				{
+					return 2;
+				}
 				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				Stop_Brifly();
 				Turn_Right(Turn_Speed, 150);
