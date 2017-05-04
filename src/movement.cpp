@@ -468,6 +468,15 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
+		//prompt for useless remote command
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
 		/*if(Is_Turn_Remote())
 			break;*/
 		if(Get_Bumper_Status()){
@@ -531,6 +540,15 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Touch_Detect())
 			break;
+		//prompt for useless remote command
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
 		/*if(Is_Turn_Remote())
 			break;*/
 		if(Get_Bumper_Status()){
