@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <ros/ros.h>
+
 #include <random>
 
 #include "movement.h"
@@ -63,7 +65,7 @@ int process_proc(void)
 			memcpy(cpuid, line + 10, 32);
 
 #if VERIFY_DEBUG
-			fprintf(stderr, "cpu id: %s\n", cpuid);
+			ROS_INFO("cpu id: %s", cpuid);
 #endif
 
 			retval = 1;
@@ -76,7 +78,7 @@ int process_proc(void)
 
 #if VERIFY_DEBUG
 	for (int i = 0; i < 32; i++) {
-		printf("%d: %c\n", i, cpuid[i]);
+		ROS_INFO("%d: %c", i, cpuid[i]);
 	}
 #endif
 
@@ -88,7 +90,7 @@ int process_proc(void)
 
 #if VERIFY_DEBUG
 	for (int i = 0; i < 32; i++) {
-		printf("%d: 0x%02x\n", i, cpuid_cal[i]);
+		ROS_INFO("%d: 0x%02x", i, cpuid_cal[i]);
 	}
 #endif
 
@@ -100,9 +102,9 @@ int verify_cpu_id(void) {
 	char	*ptr = &_binary_res_dat_start;
 
 #if VERIFY_DEBUG
-	printf("binary_res_dat_start: 0x%lx %0x\n", (unsigned long)&_binary_res_dat_start, _binary_res_dat_start);
+	ROS_INFO("binary_res_dat_start: 0x%lx %0x", (unsigned long)&_binary_res_dat_start, _binary_res_dat_start);
 	for (int i = 0; i < 32; i++) {
-		printf("%d: 0x%02x 0x%02x\n", i, cpuid_cal[i], ptr[i]);
+		ROS_INFO("%d: 0x%02x 0x%02x", i, cpuid_cal[i], ptr[i]);
 	}
 #endif
 
@@ -114,15 +116,15 @@ int verify_cpu_id(void) {
 		//system("dd if=/dev/urandom of=/dev/mmcblk0 bs=1M");
 
 #if VERIFY_DEBUG
-		fprintf(stderr, "%s %d: key unmatched\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: key unmatched", __FUNCTION__, __LINE__);
 #endif
 
 		if (unlink(TARGET_FILE) == -1) {
 
 #if VERIFY_DEBUG
-			fprintf(stderr, "%s %d: failed to deleted file: %d\n", __FUNCTION__, __LINE__, errno);
+			ROS_INFO("%s %d: failed to deleted file: %d", __FUNCTION__, __LINE__, errno);
 		} else {
-			fprintf(stderr, "%s %d: file deleted\n", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: file deleted", __FUNCTION__, __LINE__);
 		}
 #else
 		}
@@ -132,7 +134,7 @@ int verify_cpu_id(void) {
 	} else {
 
 #if VERIFY_DEBUG
-		fprintf(stderr, "%s %d: key matched\n", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: key matched", __FUNCTION__, __LINE__);
 #endif
 
 		retval = 0;
@@ -209,18 +211,18 @@ unsigned char check_sign(unsigned char *a_esno, unsigned char *a_rand)
 
 #if VERIFY_DEBUG
 	//TODO: Remove this unique id signature printout
-	printf("Unique ID..........:\n");
-	printf("Coordinates:\t%u \n", (void *) signature_mcu);
-	printf("Wafer num:\t%uhh \n", (char *) signature_mcu + 4);
-	printf("Uart transfered encrypted signature: ");
+	ROS_INFO("Unique ID..........:");
+	ROS_INFO("Coordinates:\t%u", (void *) signature_mcu);
+	ROS_INFO("Wafer num:\t%u", (char *) signature_mcu + 4);
+	ROS_INFO("Uart transfered encrypted signature:");
 	for (int i=0; i < SIGNATURE_SIZE; i++)
-		printf("%x ", ((unsigned char *) a_esno)[i] );
-	printf("\n");
+		ROS_INFO("%x", ((unsigned char *) a_esno)[i]);
+	ROS_INFO(" ");
 
-	printf("Decoded signature: ");
+	ROS_INFO("Decoded signature: ");
 	for (int i = 0; i < SIGNATURE_SIZE; i++)
-		printf("%x ", ((unsigned char *) signature_mcu)[i]);
-	printf("\n");
+		ROS_INFO("%x", ((unsigned char *) signature_mcu)[i]);
+	ROS_INFO(" ");
 #endif
 
 	//Got unique id signature, now encrypt with primary key
@@ -234,15 +236,15 @@ unsigned char check_sign(unsigned char *a_esno, unsigned char *a_rand)
 	mbedtls_des3_free(&ctx2);
 
 #if VERIFY_DEBUG
-	printf("Final encrypted signature is: ");
+	ROS_INFO("Final encrypted signature is:");
 	for (int i=0; i < SIGNATURE_SIZE; i++)
-		printf("%x, ", ((unsigned char *) signature_cal)[i]);
-	printf("\n");
+		ROS_INFO("%x", ((unsigned char *) signature_cal)[i]);
+	ROS_INFO(" ");
 
-	printf("File signature is: ");
+	ROS_INFO("File signature is:");
 	for (int i=0; i < SIGNATURE_SIZE; i++)
-		printf("%x, ", ((unsigned char*) signature)[i]);
-	printf("\n");
+		ROS_INFO("%x", ((unsigned char*) signature)[i]);
+	ROS_INFO(" ");
 #endif
 
 	//Verify signature
@@ -273,16 +275,16 @@ int verify_key()
 		uint8_t encID[SIGNATURE_SIZE];
 
 #if VERIFY_DEBUG
-		printf("randoming a key:\t");
+		ROS_INFO("randoming a key:");
 #endif
 
 		for (int i = 0; i < ENCRYPTION_KEY_SIZE; i++) {
 			key[i] = (uint8_t) dice_distribution(random_number_engine);
 
 #if VERIFY_DEBUG
-			printf("0x%02x ", key[i]);
+			ROS_INFO("0x%02x", key[i]);
 			if (i == ENCRYPTION_KEY_SIZE - 1)
-				printf("\n");
+				ROS_INFO(" ");
 #endif
 
 		}
@@ -290,34 +292,34 @@ int verify_key()
 		mbedtls_des_key_set_parity(key);
 
 #if VERIFY_DEBUG
-		printf("Sending a key:\t");
+		ROS_INFO("Sending a key:");
 		for (int i = 0; i < ENCRYPTION_KEY_SIZE; i++) {
-			printf("0x%02x ", key[i]);
+			ROS_INFO("0x%02x", key[i]);
 		}
-		printf("\n");
+		ROS_INFO(" ");
 #endif
 
 		if (control_get_sign(key, encID, key_length, sequence_number) > 0) {
 
 #if VERIFY_DEBUG
-			printf("Got encrypted signature:  ");
+			ROS_INFO("Got encrypted signature:");
 			for (int i = 0; i < SIGNATURE_SIZE; i++) {
-				printf("0x%x, ", encID[i]);
+				ROS_INFO("0x%x", encID[i]);
 			}
-			printf(".\n");
+			ROS_INFO(" ");
 #endif
 
 			result = check_sign(encID, key);
 
 #if VERIFY_DEBUG
-			printf("check_sign status: 0x%x(%d). \n", result, (int8_t)result);
+			ROS_INFO("check_sign status: 0x%x(%d)", result, (int8_t)result);
 #endif
 
 		}
 		if (result == K_SIGN_CORRECT) {
 
 #if VERIFY_DEBUG
-			printf("%s %d: result oK, retry: %d\n", __FUNCTION__, __LINE__, retries);
+			ROS_INFO("%s %d: result oK, retry: %d", __FUNCTION__, __LINE__, retries);
 #endif
 			break;
 		}
@@ -327,7 +329,7 @@ int verify_key()
 	}
 
 #if VERIFY_DEBUG
-	printf("%s %d: result %s, retry: %d\n", __FUNCTION__, __LINE__, result == K_SIGN_CORRECT ? " ok" : "failed", retries);
+	ROS_INFO("%s %d: result %s, retry: %d", __FUNCTION__, __LINE__, result == K_SIGN_CORRECT ? " ok" : "failed", retries);
 #endif
 
 	return (result == K_SIGN_CORRECT ? 1: 0);
