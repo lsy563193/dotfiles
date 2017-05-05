@@ -2137,6 +2137,7 @@ uint8_t CM_Touring(void)
 			usleep(30000);
 			// Set gyro on before wav_play can save the time for opening the gyro.
 			Set_Gyro_On();
+			wav_play(WAV_SYSTEM_INITIALIZING);
 			wav_play(WAV_CLEANING_START);
 
 			if (!Wait_For_Gyro_On())
