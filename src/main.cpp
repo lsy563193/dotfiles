@@ -140,7 +140,6 @@ void *core_move_thread(void *)
 					GoHome();
 #endif
 				}
-				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:
 
