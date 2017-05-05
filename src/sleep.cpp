@@ -12,11 +12,12 @@ void Sleep_Mode(void)
 	static uint32_t Ch_WP_Counter=0;
 	
 	Reset_Stop_Event_Status();
+	Reset_Rcon_Status();
 	Set_LED(0,0);
 	
 	Disable_Motors();
-    ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
 	Set_Main_PwrByte(POWER_DOWN);
+	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
 	while(ros::ok())
 	{
 		usleep(200000);
@@ -71,14 +72,17 @@ void Sleep_Mode(void)
 		if(Get_Rcon_Status()&0x777777 && !Get_Error_Code())
 		{
 			Ch_WP_Counter++;
+			ROS_INFO("Rcon_Status = %x", Get_Rcon_Status());
+			Reset_Rcon_Status();
+			//ROS_INFO("Rcon_Status = %x", Get_Rcon_Status());
 			if(Ch_WP_Counter>50)
 			{
 				Ch_WP_Counter=0;
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				Set_Main_PwrByte(POWER_ACTIVE);
-				//Enable_PPower();
 				SetHomeRemote();
-				//Wake_Up_Adjust();
+				Set_Main_PwrByte(POWER_ACTIVE);
+				ResetSleepModeFlag();
 				break;
 			}
 		}

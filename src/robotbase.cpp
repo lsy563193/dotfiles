@@ -443,7 +443,6 @@ void *serial_send_routine(void*){
 			memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
 			buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 			serial_write(SEND_LEN, buf);
-			ResetSendFlag();
 		}
 	}
 	ROS_INFO("serial send pthread exit");
