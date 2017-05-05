@@ -2912,12 +2912,13 @@ void Set_Gyro_On(void)
 bool Wait_For_Gyro_On(void)
 {
 	bool stop_waiting = false;
+	uint8_t error_count = 0;
 	static int count=0;
 	count = 0;
 	uint8_t lift_up_skip_count = 0;
 	ROS_INFO("waiting for gyro start");
 	auto stop_angle_v = robot::instance()->robot_get_angle_v();
-	while (count<5 && !stop_waiting)
+	while (count<5 && !stop_waiting && error_count < 10)
 	{
 		usleep(20000);
 
@@ -2947,9 +2948,11 @@ bool Wait_For_Gyro_On(void)
 			}
 			case 3:
 			{
+				Reset_Stop_Event_Status();
 				Set_Gyro_Off();
 				wav_play(WAV_ERROR_LIFT_UP);
 				lift_up_skip_count = 25;
+				error_count++;
 				break;
 			}
 			case 0:
@@ -2960,6 +2963,7 @@ bool Wait_For_Gyro_On(void)
 					Set_Gyro_Off();
 					wav_play(WAV_ERROR_LIFT_UP);
 					lift_up_skip_count = 25;
+					error_count++;
 				}
 				break;
 			}
