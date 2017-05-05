@@ -75,6 +75,7 @@
 
 extern bool is_line_angle_offset;
 
+extern uint32_t cur_wtime;//temporary work time
 
 // This list is for storing the position that robot sees the charger stub.
 std::list <Point32_t> Home_Point;
@@ -1730,7 +1731,7 @@ int CM_cleaning()
 
 		ROS_INFO("State: %d", state);
 		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
-		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
+		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 
 		if (state == 0) {		//No target point
 			go_home = 1;
@@ -1881,7 +1882,7 @@ void CM_go_home()
 			state = CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1 );
 			ROS_INFO("%s, %d: CM_MoveToCell for home point return %d.", __FUNCTION__, __LINE__, state);
 			ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
-			ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
+			ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 
 			if ( state == -2 && Home_Point.empty()) {
 				// state == -2 means it is trapped and can't go to the saved point.
@@ -1895,13 +1896,16 @@ void CM_go_home()
 
 				if (from_station >= 1) {
 					Set_Clean_Mode(Clean_Mode_GoHome);
+					ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
 				} else {
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 				}
 
 				CM_reset_cleaning_low_bat_pause();
 
-				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
+				cur_wtime = 0;
+				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 				return;
 			} else if (state == -3) {
 				// state == -3 means battery too low, battery < LOW_BATTERY_STOP_VOLTAGE (1200)
@@ -1915,7 +1919,9 @@ void CM_go_home()
 
 				CM_reset_cleaning_low_bat_pause();
 
-				ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+				ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
+				cur_wtime = 0;
+				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 				return;
 			} else if (state == -5) {
 				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
@@ -1928,23 +1934,29 @@ void CM_go_home()
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 
 				CM_reset_cleaning_low_bat_pause();
+				cur_wtime = 0;
 
 				// The current target home point is still valid, so push it back to the home point list.
 				New_Home_Point.X = cellToCount(tmpPnt.X);
 				New_Home_Point.Y = cellToCount(tmpPnt.Y);
 				Home_Point.push_front(New_Home_Point);
 
-				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time(), Home_Point.size());
+				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, Home_Point.size());
+
+				cur_wtime = 0;
+				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 				return;
 			} else if (state == 1 || state == -7) {
 				// state == 1 means robot has reached the saved point.
 				// state = -7 means go_home == 1 and it is near the charger stub.
 				// Call GoHome() function to try to go to charger stub.
+				ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
 				GoHome();
 
 				// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
 				while (Get_Clean_Mode() == Clean_Mode_GoHome)
 				{
+					ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
 					GoHome();
 				}
 				// Check the clean mode to find out whether it has reach the charger.
@@ -1953,11 +1965,13 @@ void CM_go_home()
 #if CONTINUE_CLEANING_AFTER_CHARGE
 					if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 					{
-						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
+						cur_wtime = cur_wtime+Get_Work_Time();//store current time 
+						Reset_Work_Time();//reset current time 
 						return;
 					}
 #endif
-					ROS_INFO("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+					ROS_INFO("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 					return;
 				}
 				else if (Get_Clean_Mode() == Clean_Mode_Sleep)
@@ -1973,7 +1987,9 @@ void CM_go_home()
 
 					CM_reset_cleaning_low_bat_pause();
 
-					ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+					ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
+					cur_wtime = 0;
+					ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 					return;
 				}
 				else if (Stop_Event())
@@ -1987,9 +2003,12 @@ void CM_go_home()
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 
 					CM_reset_cleaning_low_bat_pause();
+					cur_wtime = 0;
 
 					Reset_Stop_Event_Status();
-					ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+					ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
+					cur_wtime = 0;
+					ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 					return;
 				}
 				else if (Home_Point.empty())
@@ -2041,6 +2060,7 @@ void CM_go_home()
 
 					if (from_station >= 1) {
 						Set_Clean_Mode(Clean_Mode_GoHome);
+						ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
 					} else {
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
@@ -2048,12 +2068,14 @@ void CM_go_home()
 #if CONTINUE_CLEANING_AFTER_CHARGE
 					if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 					{
-						ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
+						ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 						CM_reset_cleaning_low_bat_pause();
+						cur_wtime = 0;
+						ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 						return;
 					}
 #endif
-					ROS_INFO("%s %d: Finish cleaning but can't go to charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+					ROS_INFO("%s %d: Finish cleaning but can't go to charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 					return;
 				}
 			}
@@ -2205,6 +2227,8 @@ uint8_t CM_Touring(void)
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
 					CM_reset_cleaning_low_bat_pause();
+					cur_wtime = 0;
+					ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 				}
 #endif
 #if MANUAL_PAUSE_CLEANING
@@ -2275,6 +2299,7 @@ uint8_t CM_Touring(void)
 #if MANUAL_PAUSE_CLEANING
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
 		{
+			Reset_Work_Time();
 			// Don't initialize the map, etc.
 		}
 		else
@@ -2282,7 +2307,8 @@ uint8_t CM_Touring(void)
 		{
 			// Set the Work_Timer_Start as current time
 			Reset_Work_Time();
-
+			cur_wtime = 0;
+			ROS_INFO("%s ,%d ,set cur_wtime to zero ",__FUNCTION__,__LINE__);
 			//Initital home point
 			Home_Point.clear();
 
@@ -2332,6 +2358,8 @@ uint8_t CM_Touring(void)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		// Reset continue cleaning status
 		CM_reset_cleaning_low_bat_pause();
+		cur_wtime = 0;
+		ROS_INFO("%s ,%d ,set cur_wtime to zero ",__FUNCTION__,__LINE__);
 #endif
 #if MANUAL_PAUSE_CLEANING
 		if (robot::instance()->Is_Cleaning_Manual_Paused())
@@ -2349,6 +2377,17 @@ uint8_t CM_Touring(void)
 		Is_Slam_Ready = 0;
 		Set_Error_Code(Error_Code_Slam);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		CM_reset_cleaning_low_bat_pause();
+#endif
+#if MENUAL_PAUSE_CLEANING
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		{
+			robot::instance()->Reset_Cleaning_Manual_Pause();
+		}	
+#endif
+		cur_wtime = 0;
+		ROS_INFO("%s,%d,set cur_wtime to zero",__FUNCTION__,__LINE__);
 		wav_play(WAV_TEST_LIDAR);
 		return 0;
 	}
@@ -2414,6 +2453,8 @@ uint8_t CM_Touring(void)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		// Reset continue cleaning status
 		CM_reset_cleaning_low_bat_pause();
+		cur_wtime = 0;
+		ROS_INFO("%s ,%d ,set cur_wtime to zero ",__FUNCTION__,__LINE__);
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -2828,7 +2869,7 @@ MapTouringType CM_handleExtEvent()
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
 		lowBattery = 1;
 		if ( Get_VacMode() == Vac_Max ) {
-			Switch_VacMode();
+			Switch_VacMode(true);
 		}
 		Stop_Brifly();
 		ROS_WARN("%s %d: (For test, left key pressed) low battery, battery < 13.2v is detected.", __FUNCTION__, __LINE__);
@@ -2901,8 +2942,9 @@ MapTouringType CM_handleExtEvent()
 			if (Remote_Key(Remote_Spot)) {
 				Stop_Brifly();
 				Reset_Rcon_Remote();
-				ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: remote spot key is pressed.", __FUNCTION__, __LINE__);
 				Spot_Mode(CleanSpot);
+				Work_Motor_Configure();
 				Set_VacMode(Vac_Max,false);
 				Switch_VacMode(false);
 				ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);

@@ -20,6 +20,7 @@
 #include "wav.h"
 #include "robot.hpp"
 
+extern uint32_t cur_wtime;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -56,11 +57,12 @@ void User_Interface(void)
 //	Clear_Clcok_Receive();
 	// Reset touch to avoid previous touch leads to directly go to navigation mode.
 //	ResetHomeRemote();
-//	Set_VacMode(Vac_Save);
+	Set_VacMode(Vac_Save);
 
 	// Count for error alarm.
 	uint8_t Error_Alarm_Counter = 2;
 
+	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
 	// Check the battery to warn the user.
 	if(!Check_Bat_Ready_To_Clean())
 	{
@@ -87,6 +89,10 @@ void User_Interface(void)
 				wav_play(WAV_ERROR_LIFT_UP);
 				Clear_Manual_Pause();
 			}
+		}
+		else{
+			Reset_Work_Time();
+			cur_wtime = 0;
 		}
 #endif
 		/*--------------------------------------------------------Check if on the charger stub--------------*/

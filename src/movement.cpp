@@ -28,7 +28,7 @@ static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 static uint8_t Gyro_Status = 0;
 uint32_t Rcon_Status;
-
+uint32_t cur_wtime = 0;//temporary current  work time
 uint32_t Average_Move = 0;
 uint32_t Average_Counter =0;
 uint32_t Max_Move = 0;
@@ -1251,7 +1251,7 @@ int16_t Get_RightWheel_Speed(void)
 void Work_Motor_Configure(void)
 {
 	// Set the vacuum to a normal mode
-	Set_VacMode(Vac_Save);
+	Set_VacMode(Vac_Normal,false);
 	Set_Vac_Speed();
 
 	// Trun on the main brush and side brush
@@ -1535,12 +1535,14 @@ uint8_t Get_Clean_Mode(void)
 
 void Set_VacMode(uint8_t mode,bool is_save)
 {
+	// Set the mode for vacuum.
+	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
 	Vac_Mode = vacModeSave;
-	if(mode!=Vac_Save){
+    if(mode!=Vac_Save){
 		Vac_Mode = mode;
 		if(is_save)
-			vacModeSave=Vac_Mode;
-	}
+			vacModeSave = Vac_Mode;
+    }
 }
 
 void Set_BLDC_Speed(uint32_t S)
@@ -1956,6 +1958,9 @@ uint8_t Stop_Event(void)
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
 				robot::instance()->Set_Cleaning_Manual_Pause();
+				cur_wtime = Get_Work_Time()+cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				Reset_Work_Time();
 			}
 #endif
 			Reset_Touch();
@@ -1968,6 +1973,9 @@ uint8_t Stop_Event(void)
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
 				robot::instance()->Set_Cleaning_Manual_Pause();
+				cur_wtime = Get_Work_Time()+cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				Reset_Work_Time();
 			}
 #endif
 			Stop_Event_Status = 2;
