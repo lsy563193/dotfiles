@@ -12,6 +12,7 @@ void Sleep_Mode(void)
 	static uint32_t Ch_WP_Counter=0;
 	
 	Reset_Stop_Event_Status();
+	Reset_Rcon_Status();
 	Set_LED(0,0);
 	
 	Disable_Motors();
@@ -71,6 +72,9 @@ void Sleep_Mode(void)
 		if(Get_Rcon_Status()&0x777777 && !Get_Error_Code())
 		{
 			Ch_WP_Counter++;
+			ROS_INFO("Rcon_Status = %x", Get_Rcon_Status());
+			Reset_Rcon_Status();
+			//ROS_INFO("Rcon_Status = %x", Get_Rcon_Status());
 			if(Ch_WP_Counter>50)
 			{
 				Ch_WP_Counter=0;
