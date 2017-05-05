@@ -653,7 +653,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
 				if (Remote_Key(Remote_Max)) {
 					if (lowBattery == 0) {
-						Switch_VacMode();
+						Switch_VacMode(true);
 					}
 					Reset_Rcon_Remote();
 				}
@@ -946,7 +946,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	if (Get_RightBrush_Stall())Set_RightBrush_Stall(0);
 
 	if (go_home == 1) {
-		Set_VacMode(Vac_Normal);
+		Set_VacMode(Vac_Normal,false);
 		Set_BLDC_Speed(Vac_Speed_NormalL);
 	}
 	else {
@@ -2811,7 +2811,7 @@ MapTouringType CM_handleExtEvent()
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
 		lowBattery = 1;
 		if ( Get_VacMode() == Vac_Max ) {
-			Switch_VacMode();
+			Switch_VacMode(false);
 		}
 		Stop_Brifly();
 		ROS_WARN("%s %d: low battery, battery < 13.2v is detected.", __FUNCTION__, __LINE__);
@@ -2903,8 +2903,8 @@ MapTouringType CM_handleExtEvent()
 				Reset_Rcon_Remote();
 				ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
 				Spot_Mode(CleanSpot);
-				Set_VacMode(Vac_Max);
-				Switch_VacMode();
+				Set_VacMode(Vac_Max,false);
+//				Switch_VacMode(false);
 				ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
 				return MT_None;
 			}
@@ -2912,7 +2912,7 @@ MapTouringType CM_handleExtEvent()
 
 			if (Remote_Key(Remote_Max)) {
 				if (lowBattery == 0) {
-					Switch_VacMode();
+					Switch_VacMode(true);
 				}
 				Reset_Rcon_Remote();
 			}

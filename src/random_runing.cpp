@@ -395,7 +395,7 @@ void Random_Running_Mode(void)
 				Reset_Rcon_Remote();
 				Vac_Mode_Buffer = Get_VacMode();
 				Temp_Dirt_Status=Random_Dirt_Event();
-				Set_VacMode(Vac_Mode_Buffer);
+				Set_VacMode(Vac_Mode_Buffer,false);
 				Set_Vac_Speed();
 				if(Temp_Dirt_Status==1)
 				{

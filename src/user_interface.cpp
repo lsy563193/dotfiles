@@ -56,7 +56,7 @@ void User_Interface(void)
 //	Clear_Clcok_Receive();
 	// Reset touch to avoid previous touch leads to directly go to navigation mode.
 //	ResetHomeRemote();
-	Set_VacMode(Vac_Normal);
+//	Set_VacMode(Vac_Save);
 
 	// Count for error alarm.
 	uint8_t Error_Alarm_Counter = 2;

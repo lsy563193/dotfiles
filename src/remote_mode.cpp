@@ -47,7 +47,7 @@ void Remote_Mode(void)
 	Reset_Wheel_Step();
 	Reset_Stop_Event_Status();
 	Work_Motor_Configure();
-    Set_VacMode(Vac_Normal);
+//    Set_VacMode(Vac_Normal);
 	while(ros::ok())
 	{
 		usleep(20000);
@@ -122,14 +122,8 @@ void Remote_Mode(void)
 		}
 		if(Remote_Key(Remote_Max))
 		{
-			if(Get_VacMode() == Vac_Normal){
-				Set_VacMode(Vac_Max);
-				Set_BLDC_Speed(90);
-			}
-			else{
-				Set_VacMode(Vac_Normal);
-				Set_BLDC_Speed(Vac_Speed_Normal);
-			}
+
+			Switch_VacMode(true);
 			Reset_Rcon_Remote();
 			//Turn_Right(Turn_Speed,1800);
 			//Set_SideBrush_PWM(30,30);

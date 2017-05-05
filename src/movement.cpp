@@ -55,6 +55,7 @@ static uint8_t Direction_Flag=0;
 // Variable for vacuum mode
 
 volatile uint8_t Vac_Mode;
+volatile uint8_t vacModeSave;
 static uint8_t Cleaning_mode = 0;
 static uint8_t sendflag=0;
 static time_t work_time;
@@ -621,7 +622,7 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 				}
 				if (Remote_Key(Remote_Max)) {
 					Reset_Rcon_Remote();
-					Switch_VacMode();
+					Switch_VacMode(true);
 				}
 			} else {
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
@@ -699,7 +700,7 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 				}
 				if (Remote_Key(Remote_Max)) {
 					Reset_Rcon_Remote();
-					Switch_VacMode();
+					Switch_VacMode(true);
 				}
 			} else {
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
@@ -790,7 +791,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 				}
 				if (Remote_Key(Remote_Max)) {
 					Reset_Rcon_Remote();
-					Switch_VacMode();
+					Switch_VacMode(true);
 				}
 			} else {
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
@@ -1250,7 +1251,7 @@ int16_t Get_RightWheel_Speed(void)
 void Work_Motor_Configure(void)
 {
 	// Set the vacuum to a normal mode
-	Set_VacMode(Vac_Normal);
+	Set_VacMode(Vac_Save);
 	Set_Vac_Speed();
 
 	// Trun on the main brush and side brush
@@ -1532,11 +1533,14 @@ uint8_t Get_Clean_Mode(void)
 	return Cleaning_mode;
 }
 
-void Set_VacMode(uint8_t data)
+void Set_VacMode(uint8_t mode,bool is_save)
 {
-	// Set the mode for vacuum.
-	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
-	Vac_Mode = data;
+	Vac_Mode = vacModeSave;
+	if(mode!=Vac_Save){
+		Vac_Mode = mode;
+		if(is_save)
+			vacModeSave=Vac_Mode;
+	}
 }
 
 void Set_BLDC_Speed(uint32_t S)
@@ -1726,13 +1730,13 @@ uint8_t Get_VacMode(void)
 	return Vac_Mode;
 }
 
-void Switch_VacMode(void)
+void Switch_VacMode(bool is_save)
 {
 	// Switch the vacuum mode between Max and Normal
 	if (Get_VacMode() == Vac_Normal){
-		Set_VacMode(Vac_Max);
+		Set_VacMode(Vac_Max,is_save);
 	}else{
-		Set_VacMode(Vac_Normal);
+		Set_VacMode(Vac_Normal,is_save);
 	}
 	// Process the vacuum mode
 	Set_Vac_Speed();

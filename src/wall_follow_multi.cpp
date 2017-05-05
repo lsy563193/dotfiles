@@ -777,7 +777,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					}
 					if (Remote_Key(Remote_Max)) {
 						Reset_Rcon_Remote();
-						Switch_VacMode();
+						Switch_VacMode(true);
 					}
 				} else {
 					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
@@ -914,7 +914,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					}
 					if (Remote_Key(Remote_Max)) {
 						Reset_Rcon_Remote();
-						Switch_VacMode();
+						Switch_VacMode(true);
 					}
 				} else {
 					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command

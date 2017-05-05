@@ -307,7 +307,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 				if (Remote_Key(Remote_Max) && !lowBattery) {
 					Reset_Rcon_Remote();
-					Switch_VacMode();
+					Switch_VacMode(true);
 				}
 			} else {
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command

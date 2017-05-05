@@ -202,6 +202,7 @@
 
 #define Vac_Normal					0
 #define Vac_Max						1
+#define Vac_Save					2
 
 #define Clean_MainBrush_Power		8500
 #define Home_MainBrush_Power		4000
@@ -447,7 +448,14 @@ uint8_t Check_Bat_Ready_To_Clean(void);
 
 uint8_t Get_Clean_Mode(void);
 
-void Set_VacMode(uint8_t data);
+/*
+ * Set the mode for vacuum.
+ * The mode should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL/Vac_Save
+ * para
+ * mode: Vac_Normal Vac_Max Vac_Save(load mode save last time)
+ * save: if save is ture,save this mode,next time clean will reload at interface
+ * */
+void Set_VacMode(uint8_t mode,bool is_save=false);
 
 void Set_BLDC_Speed(uint32_t S);
 
@@ -466,7 +474,10 @@ void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
 uint8_t Get_VacMode(void);
 
-void Switch_VacMode(void);
+/*
+ * node:default is not save,go and spod mode is not save, key is save
+ */
+void Switch_VacMode(bool save);
 
 void Set_Rcon_Remote(uint8_t cmd);
 
