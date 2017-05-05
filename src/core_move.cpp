@@ -2904,7 +2904,7 @@ MapTouringType CM_handleExtEvent()
 				ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
 				Spot_Mode(CleanSpot);
 				Set_VacMode(Vac_Max,false);
-//				Switch_VacMode(false);
+				Switch_VacMode(false);
 				ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
 				return MT_None;
 			}
