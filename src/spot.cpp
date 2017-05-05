@@ -272,6 +272,10 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
 					} else if (Get_Cliff_Trig()) {
 						Move_Back();
 					}
@@ -305,6 +309,10 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
 					} else if (Get_Cliff_Trig()) {
 						Move_Back();
 					}
@@ -342,6 +350,10 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
 					} else if (Get_Cliff_Trig()) {
 						Move_Back();
 					}
@@ -378,6 +390,10 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
 					}
 					if(Get_Cliff_Trig()){
 						Move_Back();
