@@ -15,8 +15,8 @@ void Sleep_Mode(void)
 	Set_LED(0,0);
 	
 	Disable_Motors();
-    ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
 	Set_Main_PwrByte(POWER_DOWN);
+	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
 	while(ros::ok())
 	{
 		usleep(200000);
@@ -76,9 +76,9 @@ void Sleep_Mode(void)
 				Ch_WP_Counter=0;
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				Set_Main_PwrByte(POWER_ACTIVE);
-				//Enable_PPower();
 				SetHomeRemote();
-				//Wake_Up_Adjust();
+				Set_Main_PwrByte(POWER_ACTIVE);
+				ResetSleepModeFlag();
 				break;
 			}
 		}
