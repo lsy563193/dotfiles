@@ -13,6 +13,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "random_runing.h"
 #include "movement.h"
+#include "gyro.h"
 #include "spot.h"
 #include "config.h"
 #include "wall_follow_short.h"

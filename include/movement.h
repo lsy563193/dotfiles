@@ -549,10 +549,6 @@ void set_start_charge(void);
 
 void set_stop_charge(void);
 
-void Set_Gyro_On(void);
-bool Wait_For_Gyro_On(void);
-void Set_Gyro_Off(void);
-
 void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val);
 
 void control_set(uint8_t type, uint8_t val);
@@ -681,19 +677,7 @@ uint8_t VirtualWall_TurnRight();
 
 uint8_t VirtualWall_TurnLeft();
 
-void Set_Gyro_Status(void);
-
-void Reset_Gyro_Status(void);
-
-uint8_t Is_Gyro_On(void);
-
 void ladar_gpio(char val);
-
-#if GYRO_DYNAMIC_ADJUSTMENT
-void Set_Gyro_Dynamic_On(void);
-
-void Set_Gyro_Dynamic_Off(void);
-#endif
 
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif

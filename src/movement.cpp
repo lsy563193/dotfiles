@@ -26,7 +26,6 @@ static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
-static uint8_t Gyro_Status = 0;
 uint32_t Rcon_Status;
 uint32_t cur_wtime = 0;//temporary current  work time
 uint32_t Average_Move = 0;
@@ -1744,21 +1743,6 @@ void Switch_VacMode(bool is_save)
 	Set_Vac_Speed();
 }
 
-void Set_Gyro_Status(void)
-{
-	Gyro_Status = 1;
-}
-
-void Reset_Gyro_Status(void)
-{
-	Gyro_Status = 0;
-}
-
-uint8_t Is_Gyro_On(void)
-{
-	return Gyro_Status;
-}
-
 void Set_Rcon_Status(uint32_t code)
 {
 	Rcon_Status = code;
@@ -2904,156 +2888,6 @@ uint8_t Is_VirtualWall()
 {
 	return 0;
 }
-
-void Set_Gyro_On(void)
-{
-	if (Is_Gyro_On()){
-		ROS_INFO("gyro on already");
-	}
-	else
-	{
-		//ROS_INFO("Set gyro on");
-		control_set(CTL_GYRO, 0x02);
-	}
-}
-
-bool Wait_For_Gyro_On(void)
-{
-	bool stop_waiting = false;
-	uint8_t error_count = 0;
-	static int count=0;
-	count = 0;
-	uint8_t lift_up_skip_count = 0;
-	ROS_INFO("waiting for gyro start");
-	auto stop_angle_v = robot::instance()->robot_get_angle_v();
-	while (count<5 && !stop_waiting && error_count < 10)
-	{
-		usleep(20000);
-
-		// This count is for how many count of looping should it skip after robot lifted up and put down during gyro opening.
-		if (lift_up_skip_count != 0)
-		{
-			lift_up_skip_count--;
-			// Update the stop_angle_v, it should be the updatest value just before start checking, also can't be update during checking.
-			stop_angle_v = robot::instance()->robot_get_angle_v();
-		}
-		else
-		{
-			Set_Gyro_On();
-		}
-
-		switch (Stop_Event())
-		{
-			case 1:
-			{
-				stop_waiting = true;
-				break;
-			}
-			case 2:
-			{
-				stop_waiting = true;
-				break;
-			}
-			case 3:
-			{
-				Reset_Stop_Event_Status();
-				Set_Gyro_Off();
-				wav_play(WAV_ERROR_LIFT_UP);
-				lift_up_skip_count = 25;
-				error_count++;
-				break;
-			}
-			case 0:
-			{
-				// Detect for robot lifted up.
-				if (Get_Cliff_Trig() & (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
-				{
-					Set_Gyro_Off();
-					wav_play(WAV_ERROR_LIFT_UP);
-					lift_up_skip_count = 25;
-					error_count++;
-				}
-				break;
-			}
-		}
-
-		//ROS_WARN("lift_up_skip_count = %d.", lift_up_skip_count);
-		if (lift_up_skip_count == 0 && robot::instance()->robot_get_angle_v() != stop_angle_v){
-			++count;
-		}
-		//ROS_WARN("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
-	}
-	if(count == 5)
-	{
-		ROS_INFO("gyro start ok");
-		Set_Gyro_Status();
-		return true;
-	}
-	ROS_INFO("gyro start fail");
-	Reset_Gyro_Status();
-	Set_Gyro_Off();
-	return false;
-}
-
-void Set_Gyro_Off()
-{
-	control_set(CTL_GYRO, 0x00);
-	if (!Is_Gyro_On()){
-		ROS_INFO("gyro stop already");
-		return;
-	}
-	static int count=0;
-	static int sum=0;
-
-	ROS_INFO("waiting for gyro stop");
-	count = 0;
-	auto angle_v = robot::instance()->robot_get_angle_v();
-
-	while(count <= 10)
-	{
-		usleep(20000);
-		count++;
-		if (robot::instance()->robot_get_angle_v() != angle_v){
-			count=0;
-			sum++;
-			angle_v = robot::instance()->robot_get_angle_v();
-			if (sum > 10) {
-				Set_Error_Code(Error_Code_Gyro);
-				ROS_WARN("%s,%d, gyro off failed!",__FUNCTION__,__LINE__);
-				return;
-			}
-		}
-//		ROS_INFO("gyro stop ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
-	}
-	Reset_Gyro_Status();
-	ROS_INFO("gyro stop ok");
-}
-
-#if GYRO_DYNAMIC_ADJUSTMENT
-void Set_Gyro_Dynamic_On(void)
-{
-	if (Is_Gyro_On())
-	{
-		control_set(CTL_GYRO, 0x03);
-	}
-	else
-	{
-		control_set(CTL_GYRO, 0x01);
-	}
-}
-
-void Set_Gyro_Dynamic_Off(void)
-{
-	if (Is_Gyro_On())
-	{
-		control_set(CTL_GYRO, 0x02);
-	}
-	else
-	{
-		control_set(CTL_GYRO, 0x00);
-	}
-}
-#endif
 
 int32_t ABS_Minus(int32_t A,int32_t B)
 {

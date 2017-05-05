@@ -15,6 +15,7 @@
 #include <errno.h>
 
 #include "movement.h"
+#include "gyro.h"
 #include "crc8.h"
 #include "serial.h"
 #include "robotbase.h"

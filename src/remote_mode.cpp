@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "movement.h"
+#include "gyro.h"
 #include "remote_mode.h"
 #include <ros/ros.h>
 #include "wav.h"
