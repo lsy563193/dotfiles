@@ -2159,11 +2159,27 @@ uint8_t CM_Touring(void)
 			usleep(30000);
 			// Set gyro on before wav_play can save the time for opening the gyro.
 			Set_Gyro_On();
+			wav_play(WAV_SYSTEM_INITIALIZING);
 			wav_play(WAV_CLEANING_START);
 
 			if (!Wait_For_Gyro_On())
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+				{
+					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
+					// Quit continue cleaning.
+					CM_reset_cleaning_low_bat_pause();
+				}
+#endif
+#if MANUAL_PAUSE_CLEANING
+				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				{
+					robot::instance()->Reset_Cleaning_Manual_Pause();
+				}
+#endif
+				wav_play(WAV_CLEANING_FINISHED);
 				return 0;
 			}
 		}
@@ -2942,11 +2958,12 @@ MapTouringType CM_handleExtEvent()
 			if (Remote_Key(Remote_Spot)) {
 				Stop_Brifly();
 				Reset_Rcon_Remote();
-				ROS_WARN("%s %d: remote spot key is pressed.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
+				auto modeTemp = Get_VacMode();
 				Spot_Mode(CleanSpot);
 				Work_Motor_Configure();
-				Set_VacMode(Vac_Max,false);
-				Switch_VacMode(false);
+				Set_VacMode(modeTemp,false);
+//				Switch_VacMode(false);
 				ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
 				return MT_None;
 			}
