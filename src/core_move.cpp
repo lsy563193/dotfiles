@@ -2143,6 +2143,21 @@ uint8_t CM_Touring(void)
 			if (!Wait_For_Gyro_On())
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
+#if CONTINUE_CLEANING_AFTER_CHARGE
+				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+				{
+					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
+					// Quit continue cleaning.
+					CM_reset_cleaning_low_bat_pause();
+				}
+#endif
+#if MANUAL_PAUSE_CLEANING
+				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				{
+					robot::instance()->Reset_Cleaning_Manual_Pause();
+				}
+#endif
+				wav_play(WAV_CLEANING_FINISHED);
 				return 0;
 			}
 		}
