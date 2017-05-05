@@ -55,16 +55,16 @@ void *core_move_thread(void *)
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	Set_Gyro_On();
 	// Wait for 0.5s to make sure gyro should be on after the wav_play().
-	usleep(500000);
 	wav_play(WAV_WELCOME_ILIFE);
-	while (!Wait_For_Gyro_On())
-	{
-		usleep(100000);
-		Reset_Rcon_Remote();
-		Reset_Stop_Event_Status();
-	}
+
+	Wait_For_Gyro_On();
 
 	protect_function();
+
+	// Beep for initializing completed.
+	Beep(6, 5, 0, 1);
+	usleep(80000);
+	Beep(3, 5, 0, 1);
 
 //	wav_play(WAV_BATTERY_CHARGE_DONE);
 	while(ros::ok()){
