@@ -72,8 +72,10 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	this->low_bat_pause_cleaning = false;
 	// Initialize the key press count.
 	key_press_count = 0;
+#if MANUAL_PAUSE_CLEANING
 	// Initialize the manual pause variable.
 	this->manual_pause_cleaning = false;
+#endif
 }
 
 robot::~robot()
