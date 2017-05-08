@@ -65,11 +65,7 @@ bool ObstacleDetector::updateParams(std_srvs::Empty::Request &req, std_srvs::Emp
   bool prev_active = p_active_;
 
   nh_local_.param<bool>("active", p_active_, true);
-  nh_local_.param<bool>("use_scan", p_use_scan_, true);
-  nh_local_.param<bool>("use_pcl", p_use_pcl_, false);
   nh_local_.param<bool>("use_split_and_merge", p_use_split_and_merge_, false);
-  nh_local_.param<bool>("discard_converted_segments", p_discard_converted_segments_, true);
-  nh_local_.param<bool>("transform_coordinates", p_transform_coordinates_, true);
 
   nh_local_.param<int>("min_group_points", p_min_group_points_, 5);
 
@@ -78,17 +74,10 @@ bool ObstacleDetector::updateParams(std_srvs::Empty::Request &req, std_srvs::Emp
   nh_local_.param<double>("max_split_distance", p_max_split_distance_, 0.070);
   nh_local_.param<double>("max_merge_separation", p_max_merge_separation_, 0.150);
   nh_local_.param<double>("max_merge_spread", p_max_merge_spread_, 0.070);
-//  nh_local_.param<double>("max_circle_radius", p_max_circle_radius_, 0.300);
-  nh_local_.param<double>("radius_enlargement", p_radius_enlargement_, 0.030);
-
-  nh_local_.param<string>("frame_id", p_frame_id_, "world");
 
   if (p_active_ != prev_active) {
     if (p_active_) {
-      if (p_use_scan_)
-        scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
-      else if (p_use_pcl_)
-        pcl_sub_ = nh_.subscribe("pcl", 10, &ObstacleDetector::pclCallback, this);
+      scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
 
       obstacles_pub_ = nh_.advertise<Obstacles>("raw_obstacles", 10);
 
@@ -96,7 +85,6 @@ bool ObstacleDetector::updateParams(std_srvs::Empty::Request &req, std_srvs::Emp
     }
     else {
       scan_sub_.shutdown();
-      pcl_sub_.shutdown();
       obstacles_pub_.shutdown();
 
       ROS_INFO("Obstacle Detector [OFF]");
@@ -117,15 +105,6 @@ void ObstacleDetector::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan
 
     phi += scan->angle_increment;
   }
-
-  processPoints();
-}
-
-void ObstacleDetector::pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl) {
-  base_frame_id_ = pcl->header.frame_id;
-
-  for (const geometry_msgs::Point32& point : pcl->points)
-    input_points_.push_back(Point(point.x, point.y));
 
   processPoints();
 }
@@ -279,77 +258,6 @@ bool ObstacleDetector::checkSegmentsCollinearity(const Segment& segment, const S
           segment.distanceTo(s2.last_point)  < p_max_merge_spread_);
 }
 
-/*
-void ObstacleDetector::detectCircles() {
-  for (auto segment = segments_.begin(); segment != segments_.end(); ++segment) {
-    Circle circle(*segment);
-    circle.radius += p_radius_enlargement_;
-
-    if (circle.radius < p_max_circle_radius_) {
-      circles_.push_back(circle);
-
-      if (p_discard_converted_segments_) {
-        segment = segments_.erase(segment);
-        --segment;
-      }
-    }
-  }
-}
-*/
-
-/*void ObstacleDetector::mergeCircles() {
-  for (auto i = circles_.begin(); i != circles_.end(); ++i) {
-    for (auto j = i; j != circles_.end(); ++j) {
-      Circle merged_circle;
-
-      if (compareCircles(*i, *j, merged_circle)) {
-        auto temp_itr = circles_.insert(i, merged_circle);
-        circles_.erase(i);
-        circles_.erase(j);
-        i = --temp_itr;
-        break;
-      }
-    }
-  }
-}*/
-
-/*
-bool ObstacleDetector::compareCircles(const Circle& c1, const Circle& c2, Circle& merged_circle) {
-  if (&c1 == &c2)
-    return false;
-
-  // If circle c1 is fully inside c2 - merge and leave as c2
-  if (c2.radius - c1.radius >= (c2.center - c1.center).length()) {
-    merged_circle = c2;
-    return true;
-  }
-
-  // If circle c2 is fully inside c1 - merge and leave as c1
-  if (c1.radius - c2.radius >= (c2.center - c1.center).length()) {
-    merged_circle = c1;
-    return true;
-  }
-
-  // If circles intersect and are 'small' - merge
-  if (c1.radius + c2.radius >= (c2.center - c1.center).length()) {
-    Point center = c1.center + (c2.center - c1.center) * c1.radius / (c1.radius + c2.radius);
-    double radius = (c1.center - center).length() + c1.radius;
-
-    Circle circle(center, radius);
-    circle.radius += max(c1.radius, c2.radius);
-
-    if (circle.radius < p_max_circle_radius_) {
-      circle.point_sets.insert(circle.point_sets.end(), c1.point_sets.begin(), c1.point_sets.end());
-      circle.point_sets.insert(circle.point_sets.end(), c2.point_sets.begin(), c2.point_sets.end());
-      merged_circle = circle;
-      return true;
-    }
-  }
-
-  return false;
-}
-*/
-
 void ObstacleDetector::publishObstacles() {
   Obstacles obstacles;
   obstacles.header.stamp = ros::Time::now();
@@ -380,32 +288,7 @@ void ObstacleDetector::publishObstacles() {
     obstacles.circles.push_back(circle);
   }*/
 
-  /*if (p_transform_coordinates_) {
-    tf::StampedTransform transform;
-
-    try {
-      tf_listener_.lookupTransform(p_frame_id_, base_frame_id_, ros::Time(0), transform);
-    }
-    catch (tf::TransformException ex) {
-      ROS_ERROR("%s",ex.what());
-      return;
-    }
-
-    tf::Vector3 origin = transform.getOrigin();
-    double theta = tf::getYaw(transform.getRotation());
-
-    for (auto& s : obstacles.segments) {
-      s.first_point = transformPoint(s.first_point, origin.x(), origin.y(), theta);
-      s.last_point = transformPoint(s.last_point, origin.x(), origin.y(), theta);
-    }
-
-    for (auto& c : obstacles.circles)
-      c.center = transformPoint(c.center, origin.x(), origin.y(), theta);
-
-    obstacles.header.frame_id = p_frame_id_;
-  }
-  else*/
-    obstacles.header.frame_id = base_frame_id_;
+  obstacles.header.frame_id = base_frame_id_;
 
   obstacles_pub_.publish(obstacles);
 }
