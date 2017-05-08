@@ -2178,9 +2178,9 @@ uint8_t CM_Touring(void)
 					robot::instance()->Reset_Cleaning_Manual_Pause();
 				}
 #endif
-				Reset_Stop_Event_Status();
-				Set_Error_Code(Error_Code_None);
-				Set_Clean_Mode(Clean_Mode_Navigation);
+//				Reset_Stop_Event_Status();
+//				Set_Error_Code(Error_Code_None);
+//				Set_Clean_Mode(Clean_Mode_Navigation);
 				wav_play(WAV_CLEANING_FINISHED);
 				return 0;
 			}
@@ -2354,8 +2354,8 @@ uint8_t CM_Touring(void)
 
 	Motion_controller motion;
 
-	Set_Clean_Mode(Clean_Mode_Navigation);
-	return 0;
+//	Set_Clean_Mode(Clean_Mode_Navigation);
+//	return 0;
 #if MANUAL_PAUSE_CLEANING
 	// Clear the pause status.
 	if (robot::instance()->Is_Cleaning_Manual_Paused())

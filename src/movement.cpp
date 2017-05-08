@@ -1250,7 +1250,7 @@ int16_t Get_RightWheel_Speed(void)
 void Work_Motor_Configure(void)
 {
 	// Set the vacuum to a normal mode
-	Set_VacMode(Vac_Normal,false);
+	Set_VacMode(Vac_Save);
 	Set_Vac_Speed();
 
 	// Trun on the main brush and side brush
@@ -1537,11 +1537,13 @@ void Set_VacMode(uint8_t mode,bool is_save)
 	// Set the mode for vacuum.
 	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
 	Vac_Mode = vacModeSave;
-    if(mode!=Vac_Save){
+	if(mode!=Vac_Save){
 		Vac_Mode = mode;
 		if(is_save)
 			vacModeSave = Vac_Mode;
-    }
+	}
+
+	ROS_INFO("%s ,%d Vac_Mode(%d),vacModeSave(%d)",__FUNCTION__,__LINE__,Vac_Mode,vacModeSave);
 }
 
 void Set_BLDC_Speed(uint32_t S)
