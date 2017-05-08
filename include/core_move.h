@@ -74,6 +74,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 void CM_CorBack(uint16_t dist);
 
 void CM_SetGoHome(uint8_t remote);
+void CM_ResetGoHome(void);
 void CM_TouringCancel(void);
 void CM_SetGyroOffset(int16_t offset);
 

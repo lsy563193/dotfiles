@@ -3097,9 +3097,11 @@ void Clear_Manual_Pause(void)
 	if (robot::instance()->Is_Cleaning_Manual_Paused())
 	{
 		ROS_WARN("Reset manual pause status.");
+		wav_play(WAV_CLEANING_FINISHED);
 		robot::instance()->Reset_Cleaning_Manual_Pause();
 		robot::instance()->align_exit();
 		robot::instance()->stop_slam();
+		CM_ResetGoHome();
 	}
 }
 #endif
