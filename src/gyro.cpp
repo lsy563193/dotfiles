@@ -72,6 +72,7 @@ void Set_Gyro_On(void)
 	{
 		//ROS_INFO("Set gyro on");
 		control_set(CTL_GYRO, 0x02);
+		ROS_DEBUG("Set gyro on");
 	}
 }
 
@@ -101,7 +102,7 @@ bool Wait_For_Gyro_On(void)
 			skip_count--;
 			if (skip_count == 0)
 			{
-				ROS_INFO("restart gyro");
+				ROS_WARN("re-open gyro");
 			}
 		}
 		else
@@ -163,17 +164,17 @@ bool Wait_For_Gyro_On(void)
 		if (skip_count == 0 && robot::instance()->robot_get_angle_v() != 0){
 			success_count++;
 		}
-		ROS_WARN("Opening%d, angle_v = %f.angle = %f.", success_count, robot::instance()->robot_get_angle_v(), robot::instance()->robot_get_angle());
+		ROS_DEBUG("Opening%d, angle_v = %f.angle = %f.", success_count, robot::instance()->robot_get_angle_v(), robot::instance()->robot_get_angle());
 
 		if (success_count == 5)
 		{
-			ROS_WARN("Gyro open success, check stablization.");
+			ROS_DEBUG("Gyro open success, check stablization.");
 			// Wait for 1s to see if the angle change too much.
 			while (!Stop_Event() && check_stable_count < 50)
 			{
 				usleep(20000);
 				current_angle = robot::instance()->robot_get_angle();
-				ROS_WARN("Checking%d, angle_v = %f.angle = %f, average_angle = %f.", check_stable_count, robot::instance()->robot_get_angle_v(), current_angle, average_angle);
+				ROS_DEBUG("Checking%d, angle_v = %f.angle = %f, average_angle = %f.", check_stable_count, robot::instance()->robot_get_angle_v(), current_angle, average_angle);
 				if (current_angle > 0.02 || current_angle < -0.02)
 				{
 					Set_Gyro_Off();
@@ -188,7 +189,7 @@ bool Wait_For_Gyro_On(void)
 			{
 				if (average_angle > 0.002)
 				{
-					ROS_WARN("%s %d: Robot is moved when opening gyro, reopen gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
+					ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
 					Set_Gyro_Off();
 					skip_count = 25;
 					success_count = 0;
@@ -197,7 +198,7 @@ bool Wait_For_Gyro_On(void)
 				}
 				else
 				{
-					//ROS_WARN("%s %d: Robot succeeded opening gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
+					ROS_DEBUG("%s %d: Robot succeeded opening gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
 					// Gyro stable now, break the waiting loop.
 					break;
 				}
@@ -234,11 +235,10 @@ void Set_Gyro_Off()
 		ROS_INFO("gyro stop already");
 		return;
 	}
-	static int count=0;
-	static int sum=0;
+	uint8_t count = 0;
+	uint8_t sum = 0;
 
 	ROS_INFO("waiting for gyro stop");
-	count = 0;
 	auto angle_v = robot::instance()->robot_get_angle_v();
 
 	while(count <= 10)
@@ -250,6 +250,7 @@ void Set_Gyro_Off()
 			count=0;
 			sum++;
 			angle_v = robot::instance()->robot_get_angle_v();
+			ROS_DEBUG("Current angle_v = %f, angle_v = %f, sum = %d.", robot::instance()->robot_get_angle_v(), angle_v, sum);
 			if (sum > 10) {
 				Set_Error_Code(Error_Code_Gyro);
 				ROS_WARN("%s,%d, gyro off failed!",__FUNCTION__,__LINE__);
