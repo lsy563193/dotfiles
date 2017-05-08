@@ -197,6 +197,9 @@ void Remote_Mode(void)
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
+			if (Stop_Event() == 3) {
+				wav_play(WAV_ERROR_LIFT_UP);
+			}
 			Reset_Stop_Event_Status();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
