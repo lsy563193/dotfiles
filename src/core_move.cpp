@@ -113,6 +113,9 @@ extern bool Is_Slam_Ready;//For checking if the slam is initialized finish
 // This time count is for checking how many times of 20ms did the user press the key.
 uint16_t Press_Time = 0;
 
+// This flag is for checking whether map boundary is created.
+bool Map_Boundary_Created = false;
+
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
@@ -1710,8 +1713,15 @@ int CM_cleaning()
 
 	retval = 0;
 	quit = false;
+#if MANUAL_PAUSE_CLEANING
+	// Checking go_home is for case that manual pause when robot going home.
+	while (ros::ok() && quit == false && go_home == 0) {
+#else
 	while (ros::ok() && quit == false) {
+#endif
 		if (map_touring_cancel == 1) {
+			ROS_WARN("%s %d: map_touring_cancel = 1.", __FUNCTION__, __LINE__);
+			CM_ResetGoHome();
 			quit = true;
 			retval = -1;
 			continue;
@@ -1773,6 +1783,8 @@ int CM_cleaning()
 			}
 
 			if (mt_state == MT_Battery) {
+				CM_ResetGoHome();
+				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Remote_Home) {
@@ -1781,6 +1793,8 @@ int CM_cleaning()
 				quit = true;
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
 				Disable_Motors();
+				CM_ResetGoHome();
+				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Battery_Home) {
@@ -1792,6 +1806,8 @@ int CM_cleaning()
 			state = Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 
 			if ( map_touring_cancel == 1 ) {
+				CM_ResetGoHome();
+				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
 				quit = true;
 				retval = -1;
 			}
@@ -1801,6 +1817,8 @@ int CM_cleaning()
 			}
 
 			if (state == 2) {
+				CM_ResetGoHome();
+				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
 				Disable_Motors();
 				quit = true;
 				retval = -1;
@@ -1841,8 +1859,13 @@ void CM_go_home()
 		}
 
 		//2.2-1.1 Common process
-		tmpPnt.X = countToCell(Home_Point.front().X);
-		tmpPnt.Y = countToCell(Home_Point.front().Y);
+		if (!Home_Point.empty()) {
+			tmpPnt.X = countToCell(Home_Point.front().X);
+			tmpPnt.Y = countToCell(Home_Point.front().Y);
+		} else {
+			ROS_ERROR("Home_Point list is empty!");
+			return;
+		}
 		pnt16ArTmp[0] = tmpPnt;
 		path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
@@ -1851,13 +1874,16 @@ void CM_go_home()
 		}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
+		if (!robot::instance()->Is_Cleaning_Low_Bat_Paused() && !Map_Boundary_Created)
 		{
 			//2.2-1.3 Path to unclean area
 			CM_create_home_boundary();
 		}
 #else
-		CM_create_home_boundary();
+		if (!Map_Boundary_Created)
+		{
+			CM_create_home_boundary();
+		}
 #endif
 
 		if (Home_Point.empty())
@@ -1906,6 +1932,7 @@ void CM_go_home()
 				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 				cur_wtime = 0;
 				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
+				CM_ResetGoHome();
 				return;
 			} else if (state == -3) {
 				// state == -3 means battery too low, battery < LOW_BATTERY_STOP_VOLTAGE (1200)
@@ -1922,9 +1949,10 @@ void CM_go_home()
 				ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 				cur_wtime = 0;
 				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
+				CM_ResetGoHome();
 				return;
 			} else if (state == -5) {
-				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed.
+				// state = -5 means clean key is pressed or cliff is triggered or remote key clean is pressed. Could be Stop_Event() triggered.
 				Disable_Motors();
 				// Beep for the finish signal.
 //				for (i = 10; i > 0; i--) {
@@ -1933,24 +1961,36 @@ void CM_go_home()
 //				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 
+				CM_ResetGoHome();
 				CM_reset_cleaning_low_bat_pause();
 				cur_wtime = 0;
+				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 
+#if MANUAL_PAUSE_CLEANING
+				ROS_INFO("%s %d: Cliff triggered or error and finish cleanning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
+#else
+				ROS_INFO("%s %d: Cliff triggered or clean key pressed or remote clean key pressed or error and finish cleanning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
+#endif
+				return;
+#if MANUAL_PAUSE_CLEANING
+			} else if (state == -8) {
 				// The current target home point is still valid, so push it back to the home point list.
 				New_Home_Point.X = cellToCount(tmpPnt.X);
 				New_Home_Point.Y = cellToCount(tmpPnt.Y);
-				Home_Point.push_front(New_Home_Point);
+				CM_SetHome(New_Home_Point.X, New_Home_Point.Y);
 
+				Reset_Stop_Event_Status();
 				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, Home_Point.size());
 
 				cur_wtime = 0;
 				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
 				return;
+#endif
 			} else if (state == 1 || state == -7) {
 				// state == 1 means robot has reached the saved point.
 				// state = -7 means go_home == 1 and it is near the charger stub.
 				// Call GoHome() function to try to go to charger stub.
-				ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
+				ROS_WARN("Call GoHome()");
 				GoHome();
 
 				// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
@@ -1968,10 +2008,12 @@ void CM_go_home()
 						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 						cur_wtime = cur_wtime+Get_Work_Time();//store current time 
 						Reset_Work_Time();//reset current time 
+						CM_ResetGoHome();
 						return;
 					}
 #endif
 					ROS_INFO("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
+					CM_ResetGoHome();
 					return;
 				}
 				else if (Get_Clean_Mode() == Clean_Mode_Sleep)
@@ -1990,6 +2032,7 @@ void CM_go_home()
 					ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 					cur_wtime = 0;
 					ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
+					CM_ResetGoHome();
 					return;
 				}
 				else if (Stop_Event())
@@ -2000,6 +2043,21 @@ void CM_go_home()
 //						Beep(i, 6, 0, 1);
 //						usleep(100000);
 //					}
+#if MANUAL_PAUSE_CLEANING
+					if (Stop_Event() == 1 || Stop_Event() == 2)
+					{
+						// The current target home point is still valid, so push it back to the home point list.
+						New_Home_Point.X = cellToCount(tmpPnt.X);
+						New_Home_Point.Y = cellToCount(tmpPnt.Y);
+						CM_SetHome(New_Home_Point.X, New_Home_Point.Y);
+
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+
+						Reset_Stop_Event_Status();
+						ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, Home_Point.size());
+						return;
+					}
+#endif
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 
 					CM_reset_cleaning_low_bat_pause();
@@ -2009,6 +2067,7 @@ void CM_go_home()
 					ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 					cur_wtime = 0;
 					ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
+					CM_ResetGoHome();
 					return;
 				}
 				else if (Home_Point.empty())
@@ -2072,10 +2131,12 @@ void CM_go_home()
 						CM_reset_cleaning_low_bat_pause();
 						cur_wtime = 0;
 						ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
+						CM_ResetGoHome();
 						return;
 					}
 #endif
 					ROS_INFO("%s %d: Finish cleaning but can't go to charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
+					CM_ResetGoHome();
 					return;
 				}
 			}
@@ -2128,7 +2189,7 @@ uint8_t CM_Touring(void)
 	Reset_Rcon_Status();
 
 	from_station = 0;
-	map_touring_cancel = go_home = remote_go_home = 0;
+	map_touring_cancel = 0;
 
 	Set_LED(100,0);
 	Reset_MoveWithRemote();
@@ -2446,6 +2507,7 @@ uint8_t CM_Touring(void)
 #endif
 			}
 			Reset_Stop_Event_Status();
+			CM_ResetGoHome();
 			return 0;
 		}
 
@@ -2598,8 +2660,13 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				} else if (mt_state == MT_Remote_Home) {
 					ROS_WARN("%s %d: home is pressed", __FUNCTION__, __LINE__);
 					return -4;
+#if MANUAL_PAUSE_CLEANING
+				} else if (mt_state == MT_Cliff) {
+					ROS_WARN("%s %d: Cliff is triggered.", __FUNCTION__, __LINE__);
+#else
 				} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
 					ROS_WARN("%s %d: remote is pressed, clean key is pressed,  or cliff is reached", __FUNCTION__, __LINE__);
+#endif
 					return -5;
 				} else if (mt_state == MT_Battery_Home) {
 					ROS_WARN("%s %d: low battery is detected, battery < 1300", __FUNCTION__, __LINE__);
@@ -2608,6 +2675,11 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					if ( go_home == 1 && Is_Station() == 1 ) {
 						return -7;
 					}
+#if MANUAL_PAUSE_CLEANING
+				} else if (mt_state == MT_Remote_Clean || mt_state == MT_Key_Clean) {
+					ROS_WARN("%s %d: remote is pressed, clean key is pressed", __FUNCTION__, __LINE__);
+					return -8;
+#endif
 				}
 
 				//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
@@ -2702,8 +2774,13 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 			} else if (mt_state == MT_Remote_Home) {
 				ROS_INFO("%s %d: home is pressed", __FUNCTION__, __LINE__);
 				return -4;
+#if MANUAL_PAUSE_CLEANING
+			} else if (mt_state == MT_Cliff) {
+				ROS_WARN("%s %d: Cliff is triggered.", __FUNCTION__, __LINE__);
+#else
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
-				ROS_INFO("%s %d: remote is pressed, clean key is pressed,  or cliff is reached", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: remote is pressed, clean key is pressed,  or cliff is reached", __FUNCTION__, __LINE__);
+#endif
 				return -5;
 			} else if (mt_state == MT_Battery_Home) {
 				ROS_INFO("%s %d: low battery is detected, battery < 1300", __FUNCTION__, __LINE__);
@@ -2712,6 +2789,11 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				if ( go_home == 1 && Is_Station() == 1 ) {
 					return -7;
 				}
+#if MANUAL_PAUSE_CLEANING
+			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Key_Clean) {
+				ROS_WARN("%s %d: remote is pressed, clean key is pressed", __FUNCTION__, __LINE__);
+				return -8;
+#endif
 			}
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
@@ -2793,10 +2875,19 @@ void CM_CorBack(uint16_t dist)
 }
 
 void CM_SetGoHome(uint8_t remote) {
+	ROS_WARN("Set gohome flag.");
 	go_home = 1;
 	if (remote == 1) {
 		remote_go_home = 1;
 	}
+}
+
+void CM_ResetGoHome(void)
+{
+	ROS_WARN("Reset gohome flag.");
+	go_home = 0;
+	remote_go_home = 0;
+	Map_Boundary_Created = false;
 }
 
 void CM_TouringCancel(void)
@@ -3060,4 +3151,7 @@ void CM_create_home_boundary(void)
 			Map_SetCell(MAP, cellToCount(i), cellToCount(yMaxSearch), BLOCKED_BUMPER);
 		}
 	}
+
+	// Set the flag.
+	Map_Boundary_Created = true;
 }

@@ -607,7 +607,13 @@ void Around_ChargerStation(uint8_t Dir)
 				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 				{
-					Reset_Stop_Event_Status();
+#if MANUAL_PAUSE_CLEANING
+					if (!robot::instance()->Is_Cleaning_Manual_Paused())
+					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
+#endif
+					{
+						Reset_Stop_Event_Status();
+					}
 				}
 			}
 			// If key pressed, go back to user interface mode.
@@ -1143,7 +1149,13 @@ uint8_t Check_Position(uint8_t Dir)
 			// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 			{
-				Reset_Stop_Event_Status();
+#if MANUAL_PAUSE_CLEANING
+				if (!robot::instance()->Is_Cleaning_Manual_Paused())
+				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
+#endif
+				{
+					Reset_Stop_Event_Status();
+				}
 			}
 			return 1;
 		}
@@ -1472,7 +1484,13 @@ void By_Path(void)
 					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 				{
-					Reset_Stop_Event_Status();
+#if MANUAL_PAUSE_CLEANING
+					if (!robot::instance()->Is_Cleaning_Manual_Paused())
+					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
+#endif
+					{
+						Reset_Stop_Event_Status();
+					}
 				}
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;

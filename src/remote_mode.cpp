@@ -197,6 +197,9 @@ void Remote_Mode(void)
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
+			if (Stop_Event() == 3) {
+				wav_play(WAV_ERROR_LIFT_UP);
+			}
 			Reset_Stop_Event_Status();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
@@ -215,6 +218,8 @@ void Remote_Mode(void)
 			if(Get_Cliff_Trig()){
 				Move_Back();
 			}
+			Stop_Brifly();
+			wav_play(WAV_ERROR_LIFT_UP);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
@@ -235,6 +240,7 @@ void Remote_Mode(void)
 				Quick_Back(20,20);
 				Stop_Brifly();
 				ROS_INFO("Cliff trigger three times stop robot ");
+				wav_play(WAV_ERROR_LIFT_UP);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
