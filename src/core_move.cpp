@@ -1841,8 +1841,13 @@ void CM_go_home()
 		}
 
 		//2.2-1.1 Common process
-		tmpPnt.X = countToCell(Home_Point.front().X);
-		tmpPnt.Y = countToCell(Home_Point.front().Y);
+		if (!Home_Point.empty()) {
+			tmpPnt.X = countToCell(Home_Point.front().X);
+			tmpPnt.Y = countToCell(Home_Point.front().Y);
+		} else {
+			ROS_ERROR("Home_Point list is empty!");
+			return;
+		}
 		pnt16ArTmp[0] = tmpPnt;
 		path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
