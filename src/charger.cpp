@@ -92,9 +92,10 @@ void Charge_Function(void)
 
 		if(!Is_ChargerOn())//check if charger unplug
 		{
-			if (Stop_Charge_Counter > 50)
+			ROS_DEBUG("Leave charger");
+			if (Stop_Charge_Counter > 25)
 			{
-				// Stop_Charge_Counter > 50 means robot has left charger stub for 1s.
+				// Stop_Charge_Counter > 25 means robot has left charger stub for 0.5s.
 #if CONTINUE_CLEANING_AFTER_CHARGE
 				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 				{
@@ -113,7 +114,7 @@ void Charge_Function(void)
 				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 				{
 					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
-					wav_play(WAV_ERROR_LIFT_UP);
+					//wav_play(WAV_ERROR_LIFT_UP);
 					CM_reset_cleaning_low_bat_pause();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					break;
@@ -529,6 +530,7 @@ void Around_ChargerStation(uint8_t Dir)
 	uint32_t N_Around_LRSignal=0;
 	uint8_t Bumper_Counter=0;
 	static uint8_t LLSignal_Count = 0,RRSignal_Count = 0, RTSignal_Count = 0,LTSignal_Count = 0;
+	uint8_t Cliff_Counter = 0;
 	Move_Forward(9,9);
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
@@ -578,14 +580,31 @@ void Around_ChargerStation(uint8_t Dir)
 				return;
 			}
 
-			while (Get_Cliff_Trig())
+			while (Get_Cliff_Trig() && Cliff_Counter < 3)
 			{
 				// Move back until escape cliff triggered.
 				Move_Back();
+				Cliff_Counter++;
+				usleep(40000);
+				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				{
+					Disable_Motors();
+					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+					wav_play(WAV_ERROR_LIFT_UP);
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return;
+				}
 			}
-			Turn_Left(Turn_Speed,1750);
-			Move_Forward(9,9);
-			Set_Clean_Mode(Clean_Mode_GoHome);
+			if (Cliff_Counter == 3)
+			{
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+			}
+			else
+			{
+				Turn_Left(Turn_Speed,1750);
+				Move_Forward(9,9);
+				Set_Clean_Mode(Clean_Mode_GoHome);
+			}
 			return;
 		}
 
@@ -1141,7 +1160,7 @@ uint8_t Check_Position(uint8_t Dir)
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
-				ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -1438,6 +1457,14 @@ void By_Path(void)
 			{
 				if(Get_Cliff_Trig())
 				{
+					if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+					{
+						Disable_Motors();
+						ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+						wav_play(WAV_ERROR_LIFT_UP);
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return;
+					}
 					Move_Back();
 					Move_Back();
 					Turn_Left(Turn_Speed,1750);
@@ -1450,6 +1477,14 @@ void By_Path(void)
 			{
 				if(Get_Cliff_Trig())
 				{
+					if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+					{
+						Disable_Motors();
+						ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+						wav_play(WAV_ERROR_LIFT_UP);
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return;
+					}
 					Set_Wheel_Speed(0,0);
 					Set_Dir_Backward();
 //					delay(300);
