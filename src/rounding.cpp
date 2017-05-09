@@ -114,27 +114,16 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 	Stop_Brifly();
 
 	if (dir == 0) {
-		Turn_Left(speed, angle);
+		Round_Turn_Left(speed, angle);
 	} else {
-		Turn_Right(speed, angle);
+		Round_Turn_Right(speed, angle);
 	}
 
-	if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home))
+	if (Stop_Event())
 	{
-		// This remote command should change the behavior of robot.
+		ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
+		// If Stop evented, should change the behavior of robot.
 		Stop_Brifly();
-	}
-	if (Remote_Key(Remote_Max) && !lowBattery)
-	{
-		Switch_VacMode();
-		Reset_Rcon_Remote();
-	}
-	if (Touch_Detect())
-	{
-		ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
-		// If touch detected, should change the behavior of robot.
-		Stop_Brifly();
-		Set_Touch();
 	}
 
 	rounding_update();
@@ -169,13 +158,11 @@ void rounding_move_back()
 		if (Counter_Watcher > 3000) {
 			if(Is_Encoder_Fail()) {
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			break;
 		}
-		if (Touch_Detect()) {
-			ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
-			Set_Touch();
+		if (Stop_Event()) {
+			ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 			break;
 		}
 		if ((Check_Motor_Current() == Check_Left_Wheel) || (Check_Motor_Current() == Check_Right_Wheel)) {
@@ -214,16 +201,16 @@ uint8_t rounding_boundary_check()
 			rounding_update();
 			rounding_move_back();
 			rounding_update();
-			if (Touch_Detect())
+			if (Stop_Event())
 			{
-				ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 				return boundary_reach;
 			}
 
 			rounding_turn((rounding_type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 600);
-			if (Touch_Detect())
+			if (Stop_Event())
 			{
-				ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 				return boundary_reach;
 			}
 
@@ -288,10 +275,9 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			ROS_INFO("%s %d: Same bumper ROUNDING_RIGHT and turn 90 degrees.", __FUNCTION__, __LINE__);
 		}
 	}
-	if (Touch_Detect())
+	if (Stop_Event())
 	{
 		Stop_Brifly();
-		Set_Touch();
 		return 0;
 	}
 
@@ -306,23 +292,29 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 		rounding_update();
 
-		if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home))
+		if (Stop_Event())
 		{
-			// This remote command should change the behavior of robot.
 			Stop_Brifly();
 			return 0;
 		}
-		if (Touch_Detect())
-		{
-			Stop_Brifly();
-			Set_Touch();
-			return 0;
+
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					Stop_Brifly();
+					return 0;
+				}
+				if (Remote_Key(Remote_Max) && !lowBattery) {
+					Reset_Rcon_Remote();
+					Switch_VacMode(true);
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
-		if (Remote_Key(Remote_Max) && !lowBattery)
-		{
-			Switch_VacMode();
-			Reset_Rcon_Remote();
-		}
+
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
 			// Robot has reach the target.
 			ROS_INFO("%s %d: Y: %d\tY abs: %d\ttarget Y: %d\ttarget Y abs: %d", __FUNCTION__, __LINE__, Map_GetYCount(), abs(Map_GetYCount()), target.Y, abs(target.Y));
@@ -349,16 +341,16 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				//Stop_Brifly();
 				ROS_INFO("%s %d: move back for right bumper.", __FUNCTION__, __LINE__);
 				rounding_move_back();
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
-					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 					break;
 				}
 				// Turn right for 135 degrees.
 				rounding_turn(1, TURN_SPEED, 1350);
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
-					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 					break;
 				}
 				Move_Forward(15, 15);
@@ -383,32 +375,32 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				if (Temp_Bumper_Status & RightBumperTrig) {
 					// Both left and right bumper are triggered.
 					rounding_move_back();
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					// Turn right for 90 degrees.
 					rounding_turn(1, TURN_SPEED, 900);
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					Wall_Straight_Distance = 150;
 				} else {
 					// Only left bumper is triggered.
 					rounding_move_back();
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					// Turn right for 30 degrees.
 					rounding_turn(1, TURN_SPEED, 300);
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					Wall_Straight_Distance = 250;
@@ -422,7 +414,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			// Check if near the charger stub
 			Temp_Rcon_Status = Get_Rcon_Status();
-			ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
+			//ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
 			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
 			{
 				if((Temp_Rcon_Status & RconFR_HomeT) || (Temp_Rcon_Status & RconFL_HomeT)){
@@ -480,7 +472,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Left):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 300);
 						}
@@ -489,7 +481,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Left | Status_Cliff_Front):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 600);
 						}
@@ -497,18 +489,18 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right):
 					{
-						Set_Touch();
+						// Will handle by Stop_Event() in next while loop.
 						break;
 					}
 					case (Status_Cliff_Left | Status_Cliff_Right):
 					{
-						Set_Touch();
+						Cliff_Move_Back();
 						break;
 					}
 					case (Status_Cliff_Front | Status_Cliff_Right):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
 						}
@@ -517,7 +509,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Front):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 900);
 						}
@@ -526,7 +518,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Right):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
 						}
@@ -652,16 +644,16 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				//Stop_Brifly();
 				ROS_WARN("%s %d: move back for left bumper.", __FUNCTION__, __LINE__);
 				rounding_move_back();
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
-					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 					break;
 				}
 				// Turn left for 135 degrees.
 				rounding_turn(0, TURN_SPEED, 1350);
-				if (Touch_Detect())
+				if (Stop_Event())
 				{
-					ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 					break;
 				}
 				Move_Forward(15, 15);
@@ -686,32 +678,32 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				if (Temp_Bumper_Status & LeftBumperTrig) {
 					// Both left and right bumper are triggered.
 					rounding_move_back();
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					// Turn left for 90 degrees.
 					rounding_turn(0, TURN_SPEED, 900);
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					Wall_Straight_Distance = 150;
 				} else {
 					// Only right bumper is triggered.
 					rounding_move_back();
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					// Turn left for 30 degrees.
 					rounding_turn(0, TURN_SPEED, 300);
-					if (Touch_Detect())
+					if (Stop_Event())
 					{
-						ROS_INFO("%s %d: Touch detect.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
 						break;
 					}
 					Wall_Straight_Distance = 250;
@@ -725,7 +717,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			// Check if near the charger stub
 			Temp_Rcon_Status = Get_Rcon_Status();
-			ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
+			//ROS_INFO("%s %d: Temp_Rcon_Status = %d", __FUNCTION__, __LINE__, Temp_Rcon_Status);
 			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
 			{
 				if((Temp_Rcon_Status & RconFR_HomeT) || (Temp_Rcon_Status & RconFL_HomeT)){
@@ -783,7 +775,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Left):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 300);
 						}
@@ -792,7 +784,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Left | Status_Cliff_Front):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 600);
 						}
@@ -800,18 +792,18 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					case (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right):
 					{
-						Set_Touch();
+						// Will handle by Stop_Event() in next while loop.
 						break;
 					}
 					case (Status_Cliff_Left | Status_Cliff_Right):
 					{
-						Set_Touch();
+						Cliff_Move_Back();
 						break;
 					}
 					case (Status_Cliff_Front | Status_Cliff_Right):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
 						}
@@ -820,7 +812,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Front):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 900);
 						}
@@ -829,7 +821,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					case (Status_Cliff_Right):
 					{
 						Cliff_Move_Back();
-						if (!Touch_Detect())
+						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
 						}

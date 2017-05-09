@@ -45,8 +45,10 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	visualize_marker_init();
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	//this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+//	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
+//  obstacles_pub_ = robot_node_handler.advertise<Obstacles>("obstacles", 10);
+//  ROS_INFO("Obstacle Detector [ACTIVE]");
 	this->is_moving = false;
 	this->is_sensor_ready = false;
 	this->is_odom_ready = false;
@@ -72,6 +74,10 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	this->low_bat_pause_cleaning = false;
 	// Initialize the key press count.
 	key_press_count = 0;
+#if MANUAL_PAUSE_CLEANING
+	// Initialize the manual pause variable.
+	this->manual_pause_cleaning = false;
+#endif
 }
 
 robot::~robot()
@@ -314,7 +320,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		try {
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
-			this->yaw = tf::getYaw(transform.getRotation());
+			this->yaw = tf::getYaw(WF_transform.getRotation());
 			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600);
 			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
@@ -859,30 +865,30 @@ bool robot::align(void)
 	line_align_ = detecting;
 	is_odom_ready = false;
 	segmentss.clear();
-	ROS_WARN("Start subscribe to /obstacles");
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+//	ROS_WARN("Start subscribe to /obstacles");
+	auto obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 	//wait for start obstacle_detector
 	auto count_n_10ms = 1000;
-	while (line_align_ != begin && --count_n_10ms > 0 && !except_event()){
+	while (line_align_ != begin && --count_n_10ms > 0 && !Stop_Event()){
 		if (count_n_10ms % 100 == 0)
 			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
-	if(except_event() || count_n_10ms == 0)
+	if(Stop_Event() || count_n_10ms == 0)
 		return false;
 
 	count_n_10ms = 200;
 	ROS_WARN("Obstacle detector launch finishd.");
 
 	//wait for detecting line
-	while (--count_n_10ms > 0 && !except_event())
+	while (--count_n_10ms > 0 && !Stop_Event())
 	{
 		if (count_n_10ms % 100 == 0)
 			ROS_WARN("detecting line time remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
-	if(except_event())
+	if(Stop_Event())
 		return false;
 
 	ROS_WARN("Get the line");
@@ -899,18 +905,20 @@ bool robot::align(void)
 		ROS_INFO("Turn_Right %d", angle);
 		Turn_Right(13, angle);
 	}
+	bool is_align=true;
+
 	line_align_ = finish;
 //	ros::WallDuration(100).sleep();
 
-	if(except_event())
+	if(Stop_Event())
 		return false;
-
+/*
 	auto count = 2;
 	while (count-- != 0)
 	{
 		std::cout << robot::angle << std::endl;
 		sleep(1);
-	}
+	}*/
 	is_line_angle_offset = true;
 
 	return true;
@@ -948,26 +956,26 @@ bool robot::start_lidar(void)
 			// todo pull down gpio
 			ROS_INFO("lidar start false, power off and try again!!!");
 			stop_lidar();
-			sleep(2);
+			sleep(1);
 		}
 		first_start = false;
 		ladar_gpio('1');
 		usleep(2000);
 		ROS_INFO("start_lidar");
 		start_mator_cli_.call(empty);
-		count_6s = 600;
+		count_6s = 300;//set reboot lidar time to 3 seconds
 		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_6s > 0 && !except_event())
+		while (laser::instance()->is_ready() == false && --count_6s > 0 && !Stop_Event())
 		{
 			if (count_6s % 100 == 0)
 				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
 			usleep(10000);
 		}
-	}while ((count_6s == 0 && try_times != 0) && !except_event());
+	}while ((count_6s == 0 && try_times != 0) && !Stop_Event());
 
 	ROS_INFO("start_motor: %d", laser::instance()->is_ready());
 
-	return (laser::instance()->is_ready());//check try_times first
+	return (laser::instance()->is_ready());
 }
 
 void robot::stop_lidar(void){
@@ -1011,7 +1019,7 @@ void robot::Subscriber(void)
 
 }
 */
-
+/*
 void robot::UnSubscriber(void)
 {
 	map_sub.shutdown();
@@ -1019,7 +1027,7 @@ void robot::UnSubscriber(void)
 
 	if(is_align_active_)
 	  obstacles_sub.shutdown();
-}
+}*/
 void robot::init_mumber()
 {
 	//is_odom_ready = false;
@@ -1050,5 +1058,21 @@ void robot::Set_Cleaning_Low_Bat_Pause(void)
 void robot::Reset_Cleaning_Low_Bat_Pause(void)
 {
 	this->low_bat_pause_cleaning = false;
+}
+#endif
+
+#if MANUAL_PAUSE_CLEANING
+// These 3 functions are for manual pause cleaning.
+bool robot::Is_Cleaning_Manual_Paused(void)
+{
+	return this->manual_pause_cleaning;
+}
+void robot::Set_Cleaning_Manual_Pause(void)
+{
+	this->manual_pause_cleaning = true;
+}
+void robot::Reset_Cleaning_Manual_Pause(void)
+{
+	this->manual_pause_cleaning = false;
 }
 #endif

@@ -202,6 +202,7 @@
 
 #define Vac_Normal					0
 #define Vac_Max						1
+#define Vac_Save					2
 
 #define Clean_MainBrush_Power		8500
 #define Home_MainBrush_Power		4000
@@ -237,6 +238,9 @@
 #define Clean_Mode_Mobility			13
 #define Clean_Mode_Navigation		14
 
+#define POWER_ACTIVE 1
+#define POWER_DOWN 7
+
 
 #define Const_160Min_Time			19200 //160 minutes
 #define Const_Work_Time				14400 //120 minutes
@@ -253,21 +257,24 @@
 #define Error_Code_None			((uint8_t)0x00)
 #define Error_Code_LeftWheel	((uint8_t)0x01)
 #define Error_Code_RightWheel	((uint8_t)0x02)
-#define Error_Code_SideBrush	((uint8_t)0x03)
-#define Error_Code_PickUp		((uint8_t)0x04)
-#define Error_Code_Cliff		((uint8_t)0x05)
-#define Error_Code_Bumper		((uint8_t)0x06)
-#define Error_Code_Stuck		((uint8_t)0x07)
-#define Error_Code_MainBrush	((uint8_t)0x08)
-#define Error_Code_Fan_H		((uint8_t)0x09)
-#define Error_Code_WaterTank	((uint8_t)0x0A)
-#define Error_Code_BTA			((uint8_t)0x0B)
-#define Error_Code_Obs			((uint8_t)0x0C)
-#define Error_Code_BatteryLow	((uint8_t)0x0D)
-#define Error_Code_Dustbin		((uint8_t)0x0E)
+#define Error_Code_LeftBrush	((uint8_t)0x03)
+#define Error_Code_RightBrush	((uint8_t)0x04)
+#define Error_Code_PickUp		((uint8_t)0x05)
+#define Error_Code_Cliff		((uint8_t)0x06)
+#define Error_Code_Bumper		((uint8_t)0x07)
+#define Error_Code_Stuck		((uint8_t)0x08)
+#define Error_Code_MainBrush	((uint8_t)0x09)
+#define Error_Code_Fan_H		((uint8_t)0x0A)
+#define Error_Code_WaterTank	((uint8_t)0x0B)
+#define Error_Code_BTA			((uint8_t)0x0C)
+#define Error_Code_Obs			((uint8_t)0x0D)
+#define Error_Code_BatteryLow	((uint8_t)0x0E)
+#define Error_Code_Dustbin		((uint8_t)0x0F)
+#define Error_Code_Gyro			((uint8_t)0x10)
 #define Error_Code_Test			((uint8_t)0xff)
 #define Error_Code_Test_Null	((uint8_t)0xfe)
 #define Error_Code_Encoder		((uint8_t)0xFC)
+#define Error_Code_Slam			((uint8_t)0xFD)
 
 #define Display_Full				4
 #define Display_Low					5
@@ -343,6 +350,7 @@ uint32_t Get_Work_Time();
 
 void Set_Error_Code(uint8_t Code);
 uint8_t Get_Error_Code(void);
+void Alarm_Error(void);
 
 void Set_LeftBrush_Stall(uint8_t L);
 
@@ -374,6 +382,8 @@ void Quick_Back(uint8_t Speed,uint16_t Distance);
 void Turn_Left_At_Init(uint16_t speed,int16_t angle);
 void Turn_Left(uint16_t speed,int16_t angle);
 void Turn_Right(uint16_t speed,int16_t angle);
+void Round_Turn_Left(uint16_t speed,int16_t angle);
+void Round_Turn_Right(uint16_t speed,int16_t angle);
 void Jam_Turn_Left(uint16_t speed,int16_t angle);
 void Jam_Turn_Right(uint16_t speed,int16_t angle);
 void WF_Turn_Right(uint16_t speed,int16_t angle);
@@ -426,7 +436,7 @@ void Work_Motor_Configure(void);
 
 uint8_t Check_Motor_Current(void);
 
-void Check_SideBrush_Stall(void);
+uint8_t Check_SideBrush_Stall(void);
 
 uint8_t Self_Check(uint8_t Check_Code);
 
@@ -438,7 +448,14 @@ uint8_t Check_Bat_Ready_To_Clean(void);
 
 uint8_t Get_Clean_Mode(void);
 
-void Set_VacMode(uint8_t data);
+/*
+ * Set the mode for vacuum.
+ * The mode should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL/Vac_Save
+ * para
+ * mode: Vac_Normal Vac_Max Vac_Save(load mode save last time)
+ * save: if save is ture,save this mode,next time clean will reload at interface
+ * */
+void Set_VacMode(uint8_t mode,bool is_save=false);
 
 void Set_BLDC_Speed(uint32_t S);
 
@@ -457,7 +474,10 @@ void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
 uint8_t Get_VacMode(void);
 
-void Switch_VacMode(void);
+/*
+ * node:default is not save,go and spod mode is not save, key is save
+ */
+void Switch_VacMode(bool save);
 
 void Set_Rcon_Remote(uint8_t cmd);
 
@@ -487,6 +507,10 @@ void Set_MainBrush_PWM(uint16_t PWM);
 
 void Set_SideBrush_PWM(uint16_t L, uint16_t R);
 
+void Set_LeftBrush_PWM(uint16_t L);
+
+void Set_RightBrush_PWM(uint16_t R);
+
 uint8_t Get_LeftBrush_Stall(void);
 
 uint8_t Get_RightBrush_Stall(void);
@@ -501,9 +525,11 @@ void Reset_Touch(void);
 
 void Set_Touch(void);
 
+void Reset_Stop_Event_Status(void);
+
 void Deceleration(void);
 
-uint8_t Touch_Detect(void);
+uint8_t Stop_Event(void);
 
 uint8_t Is_Station(void);
 
@@ -522,13 +548,6 @@ void Disable_Motors(void);
 void set_start_charge(void);
 
 void set_stop_charge(void);
-
-bool except_event();
-void Set_Gyro_On(void);
-bool Wait_For_Gyro_On(void);
-void Set_Gyro_Off(void);
-
-void set_main_pwr(uint8_t val);
 
 void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val);
 
@@ -564,7 +583,7 @@ uint8_t Get_Key_Press(void);
 
 uint16_t GetBatteryVoltage();
 
-uint8_t Get_Key_Time(uint16_t key);
+uint16_t Get_Key_Time(uint16_t key);
 	
 uint8_t IsSendBusy(void);
 
@@ -658,19 +677,7 @@ uint8_t VirtualWall_TurnRight();
 
 uint8_t VirtualWall_TurnLeft();
 
-void Set_Gyro_Status(void);
-
-void Reset_Gyro_Status(void);
-
-uint8_t Is_Gyro_On(void);
-
 void ladar_gpio(char val);
-
-#if GYRO_DYNAMIC_ADJUSTMENT
-void Set_Gyro_Dynamic_On(void);
-
-void Set_Gyro_Dynamic_Off(void);
-#endif
 
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif
@@ -678,3 +685,13 @@ int32_t ABS_Minus(int32_t A,int32_t B);
 void Set_Plan_Status(bool Status);
 bool Get_Plan_Status(void);
 
+uint8_t Get_Main_PwrByte();
+void Set_Main_PwrByte(uint8_t val);
+
+void SetSleepModeFlag();
+uint8_t GetSleepModeFlag();
+void ResetSleepModeFlag();
+
+#if MANUAL_PAUSE_CLEANING
+void Clear_Manual_Pause(void);
+#endif

@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "movement.h"
+#include "gyro.h"
 #include "remote_mode.h"
 #include <ros/ros.h>
 #include "wav.h"
@@ -45,12 +46,17 @@ void Remote_Mode(void)
 
 	Set_LED(100,0);
 	Reset_Wheel_Step();
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 	Work_Motor_Configure();
-    Set_VacMode(Vac_Normal);
+//    Set_VacMode(Vac_Normal);
 	while(ros::ok())
 	{
 		usleep(20000);
+
+#ifdef OBS_DYNAMIC_MOVETOTARGET
+		/* Dyanmic adjust obs trigger val . */
+		OBS_Dynamic_Base(20);
+#endif
 
 		if(Remote_Key(Remote_Forward))
 		{
@@ -117,20 +123,14 @@ void Remote_Mode(void)
 		}
 		if(Remote_Key(Remote_Max))
 		{
-			if(Get_VacMode() == Vac_Normal){
-				Set_VacMode(Vac_Max);
-				Set_BLDC_Speed(90);
-			}
-			else{
-				Set_VacMode(Vac_Normal);
-				Set_BLDC_Speed(Vac_Speed_Normal);
-			}
+
+			Switch_VacMode(true);
 			Reset_Rcon_Remote();
 			//Turn_Right(Turn_Speed,1800);
 			//Set_SideBrush_PWM(30,30);
 			//Set_MainBrush_PWM(30);
 			No_Command_Counter=0;
-			Forward_Flag=0;
+			//Forward_Flag=0;
 			Reset_Rcon_Remote();
 			Reset_Wheel_Step();
 		}
@@ -186,8 +186,8 @@ void Remote_Mode(void)
 			return;
 		}
 
-	  /*------------------------------------------------------Touch and Remote event-----------------------*/
-		if(Touch_Detect())
+	  /*------------------------------------------------------stop event-----------------------*/
+		if(Stop_Event())
 		{
 			Beep(5, 20, 0, 1);
 			// Key release detection, if user has not release the key, don't do anything.
@@ -196,8 +196,11 @@ void Remote_Mode(void)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			if (Stop_Event() == 3) {
+				wav_play(WAV_ERROR_LIFT_UP);
+			}
+			Reset_Stop_Event_Status();
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
@@ -208,16 +211,39 @@ void Remote_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		/*------------------------------------------------------Bumper Event-----------------------*/
-		if(Get_Bumper_Status()||Get_Cliff_Trig())
+		/*-------------------------------------------Bumper  and cliff Event-----------------------*/
+		if(Get_Cliff_Trig())
 		{
-			Stop_Brifly();
-			Quick_Back(20,40);
-			if(Get_Bumper_Status()||Get_Cliff_Trig()){
+			Move_Back();
+			if(Get_Cliff_Trig()){
 				Move_Back();
 			}
+			Stop_Brifly();
+			wav_play(WAV_ERROR_LIFT_UP);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
+		}
+		if(Get_Bumper_Status())
+		{
+			Random_Back();
+			Is_Bumper_Jamed();
+			break;
+		}
+		if(Get_Cliff_Trig() == (Status_Cliff_All)){
+			Quick_Back(20,20);
+			Stop_Brifly();
+			if(Get_Cliff_Trig() == (Status_Cliff_All)){
+				Quick_Back(20,20);
+				Stop_Brifly();
+			}
+			if(Get_Cliff_Trig() == Status_Cliff_All){
+				Quick_Back(20,20);
+				Stop_Brifly();
+				ROS_INFO("Cliff trigger three times stop robot ");
+				wav_play(WAV_ERROR_LIFT_UP);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+				break;
+			}
 		}
 		/*------------------------------------------------check motor over current event ---------*/
 		uint8_t octype =0;
@@ -229,13 +255,12 @@ void Remote_Mode(void)
 			}
 		}
 		/* check plan set */
-		/*
 		if(Get_Plan_Status())
 		{
 			Set_Plan_Status(false);
-			wav_play(WAV_APPOINTMENT_DONE);
+	//		wav_play(WAV_APPOINTMENT_DONE);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
 		}
-		*/
 	}
 	Disable_Motors();
 }

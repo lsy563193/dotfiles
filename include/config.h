@@ -106,6 +106,8 @@
 #define CLIFF_ERROR    (1)
 #define BUMPER_ERROR   (1)
 
+/* Beep Error Sounds*/
+#define Beep_Error_Sounds		(5)
 /*
  * Definition relates to the robot.
  */
@@ -284,6 +286,9 @@
 #define CONTINUE_CLEANING_VOLTAGE	(1530)
 #endif
 
+// Config for whether enable the function of manual pause cleaning.
+#define MANUAL_PAUSE_CLEANING	(1)
+
 /* ------------------------------------- Path Planning Map ------------------------------------- */
 
 /*
@@ -411,6 +416,8 @@
 /* Define the display mode in user interface routine*/
 #define ONE_KEY_DISPLAY                     (1)
 
+/* Timeout seconds setting in user interface routine*/
+#define USER_INTERFACE_TIMEOUT				(600)
 
 #define STANDARD_REMOTE   (1)
 

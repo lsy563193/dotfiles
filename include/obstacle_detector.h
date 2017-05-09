@@ -36,7 +36,6 @@
 #pragma once
 
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
 #include <std_srvs/Empty.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
@@ -57,11 +56,11 @@ class ObstacleDetector
 {
 public:
   ObstacleDetector();
+	~ObstacleDetector();
 
 private:
   bool updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-  void pclCallback(const sensor_msgs::PointCloud::ConstPtr& pcl);
 
   void processPoints();
   void groupPoints();
@@ -81,12 +80,9 @@ private:
   ros::NodeHandle nh_local_;
 
   ros::Subscriber scan_sub_;
-  ros::Subscriber pcl_sub_;
   ros::Publisher obstacles_pub_;
-  ros::ServiceServer params_srv_;
 
   std::string base_frame_id_;
-  tf::TransformListener tf_listener_;
 
   std::list<Point> input_points_;
   std::list<Segment> segments_;
@@ -94,11 +90,8 @@ private:
 
   // Parameters
   bool p_active_;
-  bool p_use_scan_;
-  bool p_use_pcl_;
+//  bool p_use_scan_;
   bool p_use_split_and_merge_;
-  bool p_discard_converted_segments_;
-  bool p_transform_coordinates_;
 
   int p_min_group_points_;
 
@@ -108,9 +101,8 @@ private:
   double p_max_merge_separation_;
   double p_max_merge_spread_;
 //  double p_max_circle_radius_;
-  double p_radius_enlargement_;
+//  double p_radius_enlargement_;
 
-  std::string p_frame_id_;
 };
 
 }

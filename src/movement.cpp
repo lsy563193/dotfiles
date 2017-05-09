@@ -26,15 +26,15 @@ static uint8_t wheel_left_direction = 0;
 static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
-static uint8_t Gyro_Status = 0;
 uint32_t Rcon_Status;
-
+uint32_t cur_wtime = 0;//temporary current  work time
 uint32_t Average_Move = 0;
 uint32_t Average_Counter =0;
 uint32_t Max_Move = 0;
 uint32_t Auto_Work_Time = 2800;
 uint32_t Room_Work_Time = 3600;
 uint8_t Room_Mode = 0;
+uint8_t SleepModeFlag = 0;
 
 static uint32_t Wall_Accelerate =0;
 static int16_t Left_Wheel_Speed = 0;
@@ -54,6 +54,7 @@ static uint8_t Direction_Flag=0;
 // Variable for vacuum mode
 
 volatile uint8_t Vac_Mode;
+volatile uint8_t vacModeSave;
 static uint8_t Cleaning_mode = 0;
 static uint8_t sendflag=0;
 static time_t work_time;
@@ -75,6 +76,8 @@ volatile uint8_t Key_Status = 0;
 volatile uint8_t Touch_Status = 0;
 // Variable for remote status, remote status is just for remote controller.
 volatile uint8_t Remote_Status = 0;
+// Variable for stop event status.
+volatile uint8_t Stop_Event_Status = 0;
 // Variable for plan status
 volatile bool Plan_Status = false;
 
@@ -105,6 +108,48 @@ void Set_Error_Code(uint8_t code)
 uint8_t Get_Error_Code()
 {
 	return Error_Code;
+}
+
+void Alarm_Error(void)
+{
+	switch (Get_Error_Code())
+	{
+		case Error_Code_LeftWheel:
+		{
+			wav_play(WAV_ERROR_LEFT_WHEEL);
+			break;
+		}
+		case Error_Code_RightWheel:
+		{
+			wav_play(WAV_ERROR_RIGHT_WHEEL);
+			break;
+		}
+		case Error_Code_LeftBrush:
+		{
+			wav_play(WAV_ERROR_LEFT_BRUSH);
+			break;
+		}
+		case Error_Code_RightBrush:
+		{
+			wav_play(WAV_ERROR_RIGHT_BRUSH);
+			break;
+		}
+		case Error_Code_MainBrush:
+		{
+			wav_play(WAV_ERROR_MAIN_BRUSH);
+			break;
+		}
+		case Error_Code_Fan_H:
+		{
+			wav_play(WAV_ERROR_SUCTION_FAN);
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
 }
 
 void Set_LeftBrush_Stall(uint8_t L)
@@ -306,14 +351,19 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 	for (int i = 0; i < back_count; i++){
 		// Sleep for 1 millisecond
 		usleep(1000);
-		if (Touch_Detect())
+		if (Stop_Event())
 		{
 			break;
 		}
-		if (Remote_Key(Remote_Clean))
-		{
-			Reset_Rcon_Remote();
-			break;
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+				Reset_Rcon_Remote();
+				break;
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
 	}
 	ROS_INFO("Quick_Back finished.");
@@ -360,7 +410,7 @@ void Turn_Left_At_Init(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		if(Is_Turn_Remote())
 			break;
@@ -423,16 +473,21 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
+		//prompt for useless remote command
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
 		/*if(Is_Turn_Remote())
 			break;*/
 		if(Get_Bumper_Status()){
-			Stop_Brifly();
-			WFM_move_back(120);
-			Stop_Brifly();
-			Set_Dir_Left();
-			ROS_INFO("Bumper triged when turn left, back 20mm.");
+			break;
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
@@ -486,10 +541,171 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
+			break;
+		//prompt for useless remote command
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean)) {
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+		/*if(Is_Turn_Remote())
+			break;*/
+		if(Get_Bumper_Status()){
+			break;
+		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
+void Round_Turn_Left(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle + angle;
+	if (target_angle >= 3600) {
+		target_angle -= 3600;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Left();
+
+	Set_Wheel_Speed(speed, speed);
+
+	uint8_t oc=0;
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;*/
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode(true);
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
+		if(Get_Bumper_Status()){
+			Stop_Brifly();
+			WFM_move_back(120);
+			Stop_Brifly();
+			Set_Dir_Left();
+			ROS_INFO("Bumper triged when turn left, back 20mm.");
+		}
+		usleep(10000);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+	}
+	wheel_left_direction = 0;
+	wheel_right_direction = 0;
+
+	Set_Wheel_Speed(0, 0);
+
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+}
+
+void Round_Turn_Right(uint16_t speed, int16_t angle)
+{
+	int16_t target_angle;
+	int16_t gyro_angle;
+
+	gyro_angle = Gyro_GetAngle();
+
+	target_angle = gyro_angle - angle;
+	if (target_angle < 0) {
+		target_angle = 3600 + target_angle;
+	}
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+
+	Set_Dir_Right();
+
+	Set_Wheel_Speed(speed, speed);
+	uint8_t oc=0;
+
+	uint8_t accurate;
+	accurate = 10;
+	if(speed > 30) accurate  = 30;
+	while (ros::ok()) {
+		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+			break;
+		}
+		if (abs(target_angle - Gyro_GetAngle()) < 50) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
+		}
+		else if (abs(target_angle - Gyro_GetAngle()) < 200) {
+			auto speed_ = std::min((uint16_t)5,speed);
+			Set_Wheel_Speed(speed_, speed_);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+		}
+		else {
+			Set_Wheel_Speed(speed, speed);
+		}
+		oc= Check_Motor_Current();
+		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
+			break;
+		if(Stop_Event())
+			break;
+		/*if(Is_Turn_Remote())
+			break;*/
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode(true);
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
+		}
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
 			WFM_move_back(120);
@@ -560,23 +776,30 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;
 		 */
-
-		if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean))
-		{
-			break;
+		
+		if (Get_Rcon_Remote() > 0) {
+			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
+			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+				if (Get_Rcon_Remote() & (Remote_Home | Remote_Clean)) {
+					break;
+				}
+				if (Remote_Key(Remote_Max)) {
+					Reset_Rcon_Remote();
+					Switch_VacMode(true);
+				}
+			} else {
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+			}
 		}
 
 		if(Get_Bumper_Status()){
-			Stop_Brifly();
-			WFM_move_back(120);
-			Stop_Brifly();
-			Set_Dir_Right();
-			ROS_INFO("Bumper triged when turn right, back 20mm.");
+			break;
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
@@ -630,7 +853,7 @@ void Jam_Turn_Left(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -686,7 +909,7 @@ void Jam_Turn_Right(uint16_t speed, int16_t angle)
 		oc= Check_Motor_Current();
 		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
 			break;
-		if(Touch_Detect())
+		if(Stop_Event())
 			break;
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -791,21 +1014,6 @@ uint8_t Cliff_Escape(void)
 	return 0;
 }
 
-bool except_event()
-{
-//	uint8_t oc = Check_Motor_Current();
-//		if(oc == Check_Left_Wheel || oc== Check_Right_Wheel)
-//			return true;
-	if(Touch_Detect())
-	{
-		ROS_WARN("Touch_Detect in except_event!");
-		return true;
-	}
-//		if(Is_Turn_Remote())
-//			return true;
-	return false;
-}
-
 uint8_t Cliff_Event(uint8_t event)
 {
 	uint16_t temp_adjust=0,random_factor=0;
@@ -908,9 +1116,9 @@ uint8_t Turn_Connect(void)
 			}
 			Set_Wheel_Speed(speed, speed);
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
-			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Stop_Event.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			return 0;
 		}
@@ -938,9 +1146,9 @@ uint8_t Turn_Connect(void)
 			}
 			Set_Wheel_Speed(speed, speed);
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
-			ROS_INFO("%s %d: Touch_Detect.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Stop_Event.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			return 0;
 		}
@@ -1042,7 +1250,7 @@ int16_t Get_RightWheel_Speed(void)
 void Work_Motor_Configure(void)
 {
 	// Set the vacuum to a normal mode
-	Set_VacMode(Vac_Normal);
+	Set_VacMode(Vac_Save);
 	Set_Vac_Speed();
 
 	// Trun on the main brush and side brush
@@ -1054,6 +1262,9 @@ uint8_t Check_Motor_Current(void)
 {
 	static uint8_t lwheel_oc_count = 0;
 	static uint8_t rwheel_oc_count = 0;
+	static uint8_t vacuum_oc_count = 0;
+	static uint8_t mbrush_oc_count = 0;
+	uint8_t sidebrush_oc_status = 0;
 	if((uint32_t)robot::instance()->robot_get_lwheel_current() > Wheel_Stall_Limit){
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
@@ -1068,28 +1279,36 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
-			ROS_WARN("%s,%d,right wheel over current,%lu mA\n",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
+			ROS_WARN("%s,%d,right wheel over current,%lu mA",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
 			return Check_Right_Wheel;
 		}
 	}
 	else
 		rwheel_oc_count = 0;
-	Check_SideBrush_Stall();
-	if(robot::instance()->robot_get_rbrush_oc()){
-		ROS_WARN("%s,%d,right brush over current\n",__FUNCTION__,__LINE__);
+	sidebrush_oc_status = Check_SideBrush_Stall();
+	if(sidebrush_oc_status == 2){
+		ROS_WARN("%s,%d,right brush over current",__FUNCTION__,__LINE__);
 		return Check_Right_Brush;
 	}
-	if(robot::instance()->robot_get_lbrush_oc()){
-		ROS_WARN("%s,%d,left brush over current\n",__FUNCTION__,__LINE__);
+	if(sidebrush_oc_status == 1){
+		ROS_WARN("%s,%d,left brush over current",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
 	}
 	if(robot::instance()->robot_get_mbrush_oc()){
-		ROS_WARN("%s,%d,main brush over current\n",__FUNCTION__,__LINE__);
-		return Check_Main_Brush;
+		mbrush_oc_count++;
+		if(mbrush_oc_count > 40){
+			mbrush_oc_count =0;
+			ROS_WARN("%s,%d,main brush over current",__FUNCTION__,__LINE__);
+			return Check_Main_Brush;
+		}
 	}
 	if(robot::instance()->robot_get_vacuum_oc()){
-		ROS_WARN("%s,%d,vacuum over current\n",__FUNCTION__,__LINE__);
-		return Check_Vacuum;	
+		vacuum_oc_count++;
+		if(vacuum_oc_count>40){
+			vacuum_oc_count = 0;
+			ROS_WARN("%s,%d,vacuum over current",__FUNCTION__,__LINE__);
+			return Check_Vacuum;	
+		}
 	}
 	return 0;
 }
@@ -1097,20 +1316,22 @@ uint8_t Check_Motor_Current(void)
 /*-----------------------------------------------------------Self Check-------------------*/
 uint8_t Self_Check(uint8_t Check_Code)
 {
-////	static uint8_t
-////	uint32_t Temp_Brush_Current=0;
-////	uint8_t Temp_Brush_Current_Count=0;
+	static time_t mboctime;
+	static time_t vacoctime;
+	static uint8_t mbrushchecking = 0;
 	uint8_t Time_Out=0;
 	int32_t Wheel_Current_Summary=0;
 	uint8_t Left_Wheel_Slow=0;
 	uint8_t Right_Wheel_Slow=0;
 
+/*
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
 		CM_CorBack(COR_BACK_20MM);
 	else
 		Quick_Back(30,20);
+*/
 	Disable_Motors();
-	usleep(100000);
+	usleep(10000);
 	/*------------------------------Self Check right wheel -------------------*/
 	if(Check_Code==Check_Right_Wheel)
 	{
@@ -1125,31 +1346,33 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		Set_Wheel_Speed(30,30);
 		usleep(50000);
-		Time_Out=4;
+		Time_Out=50;
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
-			Wheel_Current_Summary += robot::instance()->robot_get_rwheel_current();
+			Wheel_Current_Summary += (uint32_t)robot::instance()->robot_get_rwheel_current();
 			usleep(20000);
 		}
-		Wheel_Current_Summary/=4;
+		Wheel_Current_Summary/=50;
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
-			wav_play(WAV_ERROR_RIGHT_WHEEL);
 			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n",__FUNCTION__,__LINE__);
 			Set_Error_Code(Error_Code_RightWheel);
+			Alarm_Error();
 			return 1;
 
 		}
+		/*
 		if(Right_Wheel_Slow>100)
 		{
 			Disable_Motors();
 			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
+		*/
 		Stop_Brifly();
-		Turn_Right(Turn_Speed,1800);
+		//Turn_Right(Turn_Speed,1800);
 	}
 	/*---------------------------Self Check left wheel -------------------*/
 	else if(Check_Code==Check_Left_Wheel)
@@ -1165,78 +1388,105 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		Set_Wheel_Speed(30,30);
 		usleep(50000);
-		Time_Out=4;
+		Time_Out=50;
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
-			Wheel_Current_Summary += robot::instance()->robot_get_lwheel_current();
+			Wheel_Current_Summary += (uint32_t)robot::instance()->robot_get_lwheel_current();
 			usleep(20000);
 		}
-		Wheel_Current_Summary/=4;
+		Wheel_Current_Summary/=50;
 		if(Wheel_Current_Summary>Wheel_Stall_Limit)
 		{
 			Disable_Motors();
-			wav_play(WAV_ERROR_LEFT_WHEEL);
-			ROS_WARN("%s %d,left wheel stall maybe, please check!!\n");
-			Set_Error_Code(Error_Code_RightWheel);
+			ROS_WARN("%s %d,left wheel stall maybe, please check!!", __FUNCTION__, __LINE__);
+			Set_Error_Code(Error_Code_LeftWheel);
+			Alarm_Error();
 			return 1;
 		}
+		/*
 		if(Left_Wheel_Slow>100)
 		{
 			Disable_Motors();
 			Set_Error_Code(Error_Code_RightWheel);
 			return 1;
 		}
+		*/
 		Stop_Brifly();
-		Turn_Left(Turn_Speed,1800);
+		//Turn_Left(Turn_Speed,1800);
 	}
 	else if(Check_Code==Check_Main_Brush)
 	{
-		CM_CorBack(COR_BACK_20MM);
-		Turn_Right(Turn_Speed,1800);
-		Set_MainBrush_PWM(60);
-		usleep(100000);
-		//if(GPIOD->IDR&MCU_MAINBRUSH_I_DET)
-		//{
+		if(!mbrushchecking){
+			Set_MainBrush_PWM(0);
+			mbrushchecking = 1;
+			mboctime = time(NULL);
+		}
+		else if((uint32_t)difftime(time(NULL),mboctime)>=3){
+			mbrushchecking = 0;
 			Set_Error_Code(Error_Code_MainBrush);
 			Disable_Motors();
-			wav_play(WAV_ERROR_MAIN_BRUSH);
+			Alarm_Error();
 			return 1;
-		//}
-		//Reset_MainStall();
+		}
+		return 0;
 	}
 	else if(Check_Code==Check_Vacuum)
 	{
 		#ifdef BLDC_INSTALL
-		BLDC_OFF;
+		//BLDC_OFF;
 		usleep(10000);
 		Set_BLDC_TPWM(30);
 		Set_Vac_Speed();
-		BLDC_ON;
+		//BLDC_ON;
 		usleep(100000);
-		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
-		//{
-			Set_Error_Code(Error_Code_Fan_H);
-			Disable_Motors();
-			return 1;
-		//}
+		Set_Error_Code(Error_Code_Fan_H);
+		Disable_Motors();
+		Alarm_Error();
+		return 1;
 		#else
-		Set_BLDC_Speed(80);
-		sleep(1);
-		//if(GPIOD->IDR&MCU_VACUUM_I_DET)
-		//{
-			Set_Error_Code(Error_Code_Fan_H);
-			Disable_Motors();
-			wav_play(WAV_ERROR_SUCTION_FAN);
-			return 1;
-		//}
+		Disable_Motors();
+		//Stop_Brifly();
+		Set_Vac_Speed();
+		usleep(100000);
+		vacoctime = time(NULL);
+		uint16_t tmpnoc_n = 0;
+		while((uint32_t)difftime(time(NULL),vacoctime)<=3){
+			if(!robot::instance()->robot_get_vacuum_oc()){
+				tmpnoc_n++;
+				if(tmpnoc_n>20){
+					Work_Motor_Configure();
+					tmpnoc_n = 0;
+					return 0;
+				}
+			}
+			usleep(50000);
+		}
+		Set_Error_Code(Error_Code_Fan_H);
+		Disable_Motors();
+		Alarm_Error();
+		return 1;
 		#endif
+	}
+	else if(Check_Code==Check_Left_Brush)
+	{
+		Set_Error_Code(Error_Code_LeftBrush);
+		Disable_Motors();
+		wav_play(WAV_ERROR_LEFT_BRUSH);
+		return 1;
+	}
+	else if(Check_Code==Check_Right_Brush)
+	{
+		Set_Error_Code(Error_Code_RightBrush);
+		Disable_Motors();
+		wav_play(WAV_ERROR_RIGHT_BRUSH);
+		return 1;
 	}
 	Stop_Brifly();
 	Left_Wheel_Slow=0;
 	Right_Wheel_Slow=0;
 	Work_Motor_Configure();
-	Move_Forward(5,5);
+	//Move_Forward(5,5);
 	return 0;
 }
 
@@ -1282,11 +1532,18 @@ uint8_t Get_Clean_Mode(void)
 	return Cleaning_mode;
 }
 
-void Set_VacMode(uint8_t data)
+void Set_VacMode(uint8_t mode,bool is_save)
 {
 	// Set the mode for vacuum.
 	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
-	Vac_Mode = data;
+	Vac_Mode = vacModeSave;
+	if(mode!=Vac_Save){
+		Vac_Mode = mode;
+		if(is_save)
+			vacModeSave = Vac_Mode;
+	}
+
+	ROS_INFO("%s ,%d Vac_Mode(%d),vacModeSave(%d)",__FUNCTION__,__LINE__,Vac_Mode,vacModeSave);
 }
 
 void Set_BLDC_Speed(uint32_t S)
@@ -1476,31 +1733,16 @@ uint8_t Get_VacMode(void)
 	return Vac_Mode;
 }
 
-void Switch_VacMode(void)
+void Switch_VacMode(bool is_save)
 {
 	// Switch the vacuum mode between Max and Normal
 	if (Get_VacMode() == Vac_Normal){
-		Set_VacMode(Vac_Max);
+		Set_VacMode(Vac_Max,is_save);
 	}else{
-		Set_VacMode(Vac_Normal);
+		Set_VacMode(Vac_Normal,is_save);
 	}
 	// Process the vacuum mode
 	Set_Vac_Speed();
-}
-
-void Set_Gyro_Status(void)
-{
-	Gyro_Status = 1;
-}
-
-void Reset_Gyro_Status(void)
-{
-	Gyro_Status = 0;
-}
-
-uint8_t Is_Gyro_On(void)
-{
-	return Gyro_Status;
 }
 
 void Set_Rcon_Status(uint32_t code)
@@ -1639,6 +1881,18 @@ void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 	control_set(CTL_BRUSH_RIGHT, R & 0xff);
 }
 
+void Set_LeftBrush_PWM(uint16_t L)
+{
+	L = L < 100 ? L : 100 ;
+	control_set(CTL_BRUSH_LEFT, L & 0xff);
+}
+
+void Set_RightBrush_PWM(uint16_t R)
+{
+	R = R < 100 ? R : 100 ;
+	control_set(CTL_BRUSH_RIGHT, R & 0xff);
+}
+
 uint8_t Get_LeftBrush_Stall(void)
 {
 	return 0;
@@ -1667,30 +1921,68 @@ void Set_Touch(void)
 	Touch_Status = 1;
 }
 
+void Reset_Stop_Event_Status(void)
+{
+	Stop_Event_Status = 0;
+	// For key release checking.
+	Reset_Touch();
+}
+
 void Deceleration(void)
 {
 }
 
-uint8_t Touch_Detect(void)
+uint8_t Stop_Event(void)
 {
-	// Get the key value from robot sensor
-	if (Get_Touch_Status()){
-		ROS_WARN("Touch status == 1");
-		return 1;
+	// If clean mode == 0, it means robot initializing, don't receive any command.
+	if (Get_Clean_Mode() == 0)
+	{
+		return 0;
 	}
-	if (Remote_Key(Remote_Clean)){
-		ROS_WARN("Remote_Key clean.");
-		Reset_Rcon_Remote();
-		Set_Touch();
-		return 1;
-	}
-	if (Get_Cliff_Trig() == 0x07){
-		ROS_WARN("Cliff triggered.");
-		Set_Touch();
-		return 1;
-	}
+	// If it has already had a Stop_Event_Status, then no need to check.
+	if (!Stop_Event_Status)
+	{
+		// Get the key value from robot sensor
+		if (Get_Touch_Status()){
+			ROS_WARN("Touch status == 1");
+#if MANUAL_PAUSE_CLEANING
+			if (Get_Clean_Mode() == Clean_Mode_Navigation)
+			{
+				robot::instance()->Set_Cleaning_Manual_Pause();
+				cur_wtime = Get_Work_Time()+cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				Reset_Work_Time();
+			}
+#endif
+			Reset_Touch();
+			Stop_Event_Status = 1;
+		}
+		if (Remote_Key(Remote_Clean)){
+			ROS_WARN("Remote_Key clean.");
+			Reset_Rcon_Remote();
+#if MANUAL_PAUSE_CLEANING
+			if (Get_Clean_Mode() == Clean_Mode_Navigation)
+			{
+				robot::instance()->Set_Cleaning_Manual_Pause();
+				cur_wtime = Get_Work_Time()+cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				Reset_Work_Time();
+			}
+#endif
+			Stop_Event_Status = 2;
+		}
+		if (Get_Cliff_Trig() == 0x07){
+			ROS_WARN("Cliff triggered.");
+			Stop_Event_Status = 3;
+		}
 
-	return 0;
+		if (Get_Error_Code())
+		{
+			ROS_WARN("Detects Error: %d!", Get_Error_Code());
+			Stop_Event_Status = 4;
+		}
+	}
+	return Stop_Event_Status;
 }
 
 uint8_t Is_Station(void)
@@ -1782,11 +2074,14 @@ void set_stop_charge(void)
 	control_set(CTL_CHARGER, 0x00);
 }
 
-void set_main_pwr(uint8_t val)
+void Set_Main_PwrByte(uint8_t val)
 {
 	control_set(CTL_MAIN_PWR, val & 0xff);
 }
 
+uint8_t Get_Main_PwrByte(){
+	return sendStream[CTL_MAIN_PWR];
+}
 
 void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val)
 {
@@ -1807,32 +2102,32 @@ void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right
 
 void control_set(uint8_t type, uint8_t val)
 {
-	if(!IsSendBusy()){
-		if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
-			sendStream[type] = val;
-			//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-			//serial_write(SEND_LEN, sendStream);
-		}
+	SetSendFlag();
+	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
+		sendStream[type] = val;
+		//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+		//serial_write(SEND_LEN, sendStream);
 	}
+	ResetSendFlag();
 }
 
 void control_append_crc(){
-	if(!IsSendBusy()){
-		sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-	}	
+	SetSendFlag();
+	sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	ResetSendFlag();
 }
 
 void control_stop_all(void)
 {
 	uint8_t i;
-	if(!IsSendBusy()){
-		for(i = 2; i < (SEND_LEN)-2; i++) {
-			if (i == CTL_MAIN_PWR)
-				sendStream[i] = 0x01;
-			else
-				sendStream[i] = 0x00;
-		}
+	SetSendFlag();
+	for(i = 2; i < (SEND_LEN)-2; i++) {
+		if (i == CTL_MAIN_PWR)
+			sendStream[i] = 0x01;
+		else
+			sendStream[i] = 0x00;
 	}
+	ResetSendFlag();
 	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
 	//serial_write(SEND_LEN, sendStream);
 }
@@ -2119,14 +2414,18 @@ uint8_t Get_Key_Press(void)
 	return Key_Status;
 }
 
-uint8_t Get_Key_Time(uint16_t key)
+uint16_t Get_Key_Time(uint16_t key)
 {
-	// This time is count for 100ms.
-	uint8_t time = 0;
+	// This time is count for 20ms.
+	uint16_t time = 0;
 	while(ros::ok()){
 		time++;
-		if(time>20)break;
-		usleep(100000);
+		if (time == 151)
+		{
+			Beep(1, 5, 0, 1);
+		}
+		if(time>1500)break;
+		usleep(20000);
 		if(Get_Key_Press()!=key)break;
 	}
 	return time;
@@ -2207,7 +2506,7 @@ void Wall_Move_Back(void)
 		Set_Wheel_Speed(tp,tp);
 		usleep(1000);
 	
-		if(Touch_Detect())
+		if(Stop_Event())
 			return;
 		count++;
 		if(count>3000);
@@ -2336,7 +2635,6 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 			if(Is_Encoder_Fail())
 			{
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			return;
 		}
@@ -2346,7 +2644,7 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 			Stop_Brifly();
 			return;
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			return;
 		}
@@ -2401,7 +2699,6 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 			if(Is_Encoder_Fail())
 			{
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			return;
 		}
@@ -2411,7 +2708,7 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 			Stop_Brifly();
 			return;
 		}
-		if(Touch_Detect())
+		if(Stop_Event())
 		{
 			return;
 		}
@@ -2599,96 +2896,6 @@ uint8_t Is_VirtualWall()
 	return 0;
 }
 
-void Set_Gyro_On(void)
-{
-	if (Is_Gyro_On()){
-		ROS_INFO("gyro on already");
-	}
-	else
-	{
-		control_set(CTL_GYRO, 0x02);
-	}
-}
-
-bool Wait_For_Gyro_On(void)
-{
-	static int count=0;
-	count = 0;
-	ROS_INFO("waiting for gyro start");
-	auto stop_angle_v = robot::instance()->robot_get_angle_v();
-	while (count<10 && !except_event())
-	{
-		usleep(10000);
-
-		if (robot::instance()->robot_get_angle_v() != stop_angle_v){
-			++count;
-		}
-//		ROS_INFO("gyro start ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
-	}
-	if(count == 10)
-	{
-		ROS_INFO("gyro start ok");
-		Set_Gyro_Status();
-		return true;
-	}
-	ROS_INFO("gyro start fail");
-	Reset_Gyro_Status();
-	Set_Gyro_Off();
-	return false;
-}
-
-void Set_Gyro_Off()
-{
-	if (!Is_Gyro_On()){
-		ROS_INFO("gyro stop already");
-		return;
-	}
-	static int count=0;
-	control_set(CTL_GYRO, 0x00);
-	ROS_INFO("waiting for gyro stop");
-	count = 0;
-	auto angle_v = robot::instance()->robot_get_angle_v();
-
-	while(count <= 20)
-	{
-		usleep(10000);
-		count++;
-		if (robot::instance()->robot_get_angle_v() != angle_v){
-			count=0;
-			angle_v = robot::instance()->robot_get_angle_v();
-		}
-//		ROS_INFO("gyro stop ready(%d),angle_v(%f)", count, robot::instance()->robot_get_angle_v());
-	}
-	Reset_Gyro_Status();
-	ROS_INFO("gyro stop ok");
-}
-
-#if GYRO_DYNAMIC_ADJUSTMENT
-void Set_Gyro_Dynamic_On(void)
-{
-	if (Is_Gyro_On())
-	{
-		control_set(CTL_GYRO, 0x03);
-	}
-	else
-	{
-		control_set(CTL_GYRO, 0x01);
-	}
-}
-
-void Set_Gyro_Dynamic_Off(void)
-{
-	if (Is_Gyro_On())
-	{
-		control_set(CTL_GYRO, 0x02);
-	}
-	else
-	{
-		control_set(CTL_GYRO, 0x00);
-	}
-}
-#endif
-
 int32_t ABS_Minus(int32_t A,int32_t B)
 {
 	if(A>B)
@@ -2705,74 +2912,164 @@ void ladar_gpio(char val)
 	write(fd,buf,1);
 	close(fd);
 }
-void Check_SideBrush_Stall(void)
+#define NORMAL	1
+#define STOP	2
+#define MAX		3
+uint8_t Check_SideBrush_Stall(void)
 {
-	static uint32_t Time_LBrush_Stop = 0, Time_RBrush_Stop = 0;
-	static uint8_t LBrush_Stall_Counter = 0, RBrush_Stall_Counter = 0, Flag_LBrush_Is_Stall = 0, Flag_RBrush_Is_Stall = 0;
+	static uint32_t Time_LBrush = 0, Time_RBrush = 0;
+	static uint8_t LBrush_Stall_Counter = 0, RBrush_Stall_Counter = 0, LBrush_Error_Counter = 0, RBrush_Error_Counter = 0;
+	static uint8_t LeftBrush_Status = NORMAL, RightBrush_Status = NORMAL;
 
 	/*---------------------------------Left Brush Stall---------------------------------*/
-	if(Flag_LBrush_Is_Stall == 0 || (time(NULL) - Time_LBrush_Stop) > 5)
+	switch(LeftBrush_Status)
 	{
-		if(robot::instance()->robot_get_lbrush_oc())
-		{
-			if(LBrush_Stall_Counter < 200)
-				LBrush_Stall_Counter++;
-		}
-		else
-		{
-			LBrush_Stall_Counter = 0;
-			Flag_LBrush_Is_Stall = 0;
-		}
+		case NORMAL:
+			if(robot::instance()->robot_get_lbrush_oc())
+			{
+				if(LBrush_Stall_Counter < 200)
+					LBrush_Stall_Counter++;
+			}
+			else
+			{
+				LBrush_Stall_Counter = 0;
+			}
+			if(LBrush_Stall_Counter > 10)
+			{
+				/*-----Left Brush is stall in normal mode, stop the brush-----*/
+				Set_LeftBrush_PWM(0);
+				LeftBrush_Status = STOP;
+				Time_LBrush = time(NULL);
+			}
+			break;
 
-		if(LBrush_Stall_Counter >= 10)
-		{
-			control_set(CTL_BRUSH_LEFT, 0);
-			Flag_LBrush_Is_Stall = 1;
-			Time_LBrush_Stop = time(NULL);
-			wav_play(WAV_ERROR_LEFT_BRUSH);
-		}
-		else
-		{
-			Flag_LBrush_Is_Stall = 0;
-			control_set(CTL_BRUSH_LEFT, LBrush_PWM);
-		}
-	}
-	else
-	{
-		control_set(CTL_BRUSH_LEFT, 0);
-	}
+		case STOP:
+			/*-----brush should stop for 5s-----*/
+			if((time(NULL) - Time_LBrush) > 5)
+			{
+				Set_LeftBrush_PWM(100);
+				LeftBrush_Status = MAX;
+				Time_LBrush = time(NULL);
+			}
+			break;
 
+		case MAX:
+			if(robot::instance()->robot_get_lbrush_oc())
+			{
+				if(LBrush_Stall_Counter < 200)
+					LBrush_Stall_Counter++;
+			}
+			else
+			{
+				LBrush_Stall_Counter = 0;
+			}
+
+			if(LBrush_Stall_Counter > 10)
+			{
+				/*-----brush is stall in max mode, stop the brush and increase error counter -----*/
+				Set_LeftBrush_PWM(0);
+				LeftBrush_Status = STOP;
+				Time_LBrush = time(NULL);
+				LBrush_Error_Counter++;
+				if(LBrush_Error_Counter > 2)
+				{
+					/*-----return error message-----*/
+					return 1;
+				}
+				break;
+			}
+			else
+			{
+				if((time(NULL) - Time_LBrush) < 5)
+				{
+					/*-----brush should works in max mode for 5s-----*/
+					LeftBrush_Status = MAX;
+				}
+				else
+				{
+					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
+					Set_LeftBrush_PWM(LBrush_PWM);
+					LBrush_Error_Counter = 0;
+					LeftBrush_Status = NORMAL;
+				}
+			}
+			break;
+	}
 	/*-------------------------------Rigth Brush Stall---------------------------------*/
-	if(Flag_RBrush_Is_Stall == 0 || (time(NULL) - Time_RBrush_Stop) > 5)
+	switch(RightBrush_Status)
 	{
-		if(robot::instance()->robot_get_rbrush_oc())
-		{
-			if(RBrush_Stall_Counter < 200)
-				RBrush_Stall_Counter++;
-		}
-		else
-		{
-			RBrush_Stall_Counter = 0;
-			Flag_RBrush_Is_Stall = 0;
-		}
+		case NORMAL:
+			if(robot::instance()->robot_get_rbrush_oc())
+			{
+				if(RBrush_Stall_Counter < 200)
+					RBrush_Stall_Counter++;
+			}
+			else
+			{
+				RBrush_Stall_Counter = 0;
+			}
+			if(RBrush_Stall_Counter > 10)
+			{
+				/*-----Right Brush is stall in normal mode, stop the brush-----*/
+				Set_RightBrush_PWM(0);
+				RightBrush_Status = STOP;
+				Time_RBrush = time(NULL);
+			}
+			break;
 
-		if(RBrush_Stall_Counter >= 10)
-		{
-			control_set(CTL_BRUSH_RIGHT, 0);
-			Flag_RBrush_Is_Stall = 1;
-			Time_RBrush_Stop = time(NULL);
-			wav_play(WAV_ERROR_RIGHT_BRUSH);
-		}
-		else
-		{
-			Flag_RBrush_Is_Stall = 0;
-			control_set(CTL_BRUSH_RIGHT, RBrush_PWM);
-		}
+		case STOP:
+			/*-----brush should stop for 5s-----*/
+			if((time(NULL) - Time_RBrush) > 5)
+			{
+				Set_RightBrush_PWM(100);
+				RightBrush_Status = MAX;
+				Time_RBrush = time(NULL);
+			}
+			break;
+
+		case MAX:
+			if(robot::instance()->robot_get_rbrush_oc())
+			{
+				if(RBrush_Stall_Counter < 200)
+					RBrush_Stall_Counter++;
+			}
+			else
+			{
+				RBrush_Stall_Counter = 0;
+			}
+
+			if(RBrush_Stall_Counter > 10)
+			{
+				/*-----brush is stall in max mode, stop the brush and increase error counter -----*/
+				Set_RightBrush_PWM(0);
+				RightBrush_Status = STOP;
+				Time_RBrush = time(NULL);
+				RBrush_Error_Counter++;
+				if(RBrush_Error_Counter > 2)
+				{
+					/*-----return error message-----*/
+					return 2;
+				}
+				break;
+			}
+			else
+			{
+				if((time(NULL) - Time_RBrush) < 5)
+				{
+					/*-----brush should works in max mode for 5s-----*/
+					RightBrush_Status = MAX;
+				}
+				else
+				{
+					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
+					Set_RightBrush_PWM(RBrush_PWM);
+					RBrush_Error_Counter = 0;
+					RightBrush_Status = NORMAL;
+				}
+			}
+			break;
 	}
-	else
-	{
-		control_set(CTL_BRUSH_RIGHT, 0);
-	}
+	return 0;
 }
 
 void Set_Plan_Status(bool Status)
@@ -2784,4 +3081,29 @@ bool Get_Plan_Status()
 {
 	return Plan_Status;
 }
-
+uint8_t GetSleepModeFlag()
+{
+	return SleepModeFlag;
+}
+void SetSleepModeFlag()
+{
+	SleepModeFlag = 1;
+}
+void ResetSleepModeFlag()
+{
+	SleepModeFlag = 0;
+}
+#if MANUAL_PAUSE_CLEANING
+void Clear_Manual_Pause(void)
+{
+	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	{
+		ROS_WARN("Reset manual pause status.");
+		wav_play(WAV_CLEANING_FINISHED);
+		robot::instance()->Reset_Cleaning_Manual_Pause();
+		robot::instance()->align_exit();
+		robot::instance()->stop_slam();
+		CM_ResetGoHome();
+	}
+}
+#endif

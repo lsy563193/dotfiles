@@ -121,11 +121,22 @@ public:
 	void Reset_Cleaning_Low_Bat_Pause(void);
 #endif
 
+#if MANUAL_PAUSE_CLEANING
+// These 3 functions are for manual pause cleaning.
+	bool Is_Cleaning_Manual_Paused(void);
+	void Set_Cleaning_Manual_Pause(void);
+	void Reset_Cleaning_Manual_Pause(void);
+#endif
+
 private:
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These variable is for continue cleaning after charge.
 	bool	low_bat_pause_cleaning;
+#endif
+#if MANUAL_PAUSE_CLEANING
+// These variable is for continue cleaning after charge.
+	bool	manual_pause_cleaning;
 #endif
 	bool	is_sensor_ready;
 	bool	is_odom_ready;
@@ -288,10 +299,11 @@ private:
 	ros::Subscriber odom_sub;
 	ros::Subscriber map_metadata_sub;
 	ros::Subscriber map_sub;
-	ros::Subscriber obstacles_sub;
+//	ros::Subscriber obstacles_sub;
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
 	ros::Publisher send_bumper_marker_pub;
+//	ros::Publisher obstacles_pub_;
 
 	ros::ServiceClient start_mator_cli_;
 	ros::ServiceClient stop_mator_cli_;

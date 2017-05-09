@@ -53,7 +53,7 @@ void Spot_Mode(SpotType ST)
 	}
 	Move_Style = Spiral_Right_Out;
 
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 
 	if (!Is_Gyro_On())
 	{
@@ -105,8 +105,8 @@ void Spot_Mode(SpotType ST)
 		Set_Dir_Right();
 		Set_Wheel_Speed(25, 10);
 
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if (Touch_Detect()) {
+		/*------------------------------------------------------stop event-----------------------*/
+		if (Stop_Event()) {
 //			Beep(5, 20, 0, 1);
 			Stop_Brifly();
 			if(ST == NormalSpot){
@@ -119,8 +119,8 @@ void Spot_Mode(SpotType ST)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			return;
 		}
 		if (Check_Motor_Current()) {
@@ -149,6 +149,8 @@ void Spot_Mode(SpotType ST)
 				if(Remote_Key(Remote_All)){
 					Reset_Rcon_Remote();	
 					Set_Clean_Mode(Clean_Mode_Userinterface);
+					Disable_Motors();
+					Stop_Brifly();
 					wav_play(WAV_CLEANING_FINISHED);
 					return;
 				}
@@ -185,16 +187,17 @@ void Spot_Mode(SpotType ST)
 			usleep(30000);
 			if(ST == NormalSpot){
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-				wav_play(WAV_CLEANING_FINISHED);
+				//wav_play(WAV_CLEANING_FINISHED);
 			}
 			break;
 		}
 		//Set_MainBrush_PWM(80);
-		/*------------------------------------------------Touch and Remote event-----------------------*/
-		if (Touch_Detect()) {
+		/*------------------------------------------------stop event-----------------------*/
+		if (Stop_Event()) {
 			Stop_Brifly();
+			Disable_Motors();
 			if(ST == NormalSpot){
-				wav_play(WAV_CLEANING_FINISHED);
+				//wav_play(WAV_CLEANING_FINISHED);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 			}
 			// Key release detection, if user has not release the key, don't do anything.
@@ -203,13 +206,15 @@ void Spot_Mode(SpotType ST)
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Key relaesed, then the touch status should be cleared.
-			Reset_Touch();
+			// Key relaesed, then the touch status and stop event status should be cleared.
+			Reset_Stop_Event_Status();
 			break;
 		}
 		uint8_t octype = Check_Motor_Current();
 		if (octype) {
 			if(Self_Check(octype) && (ST == NormalSpot)){
+				Disable_Motors();
+				Stop_Brifly();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
@@ -221,6 +226,8 @@ void Spot_Mode(SpotType ST)
 						Set_MoveWithRemote();
 						SetHomeRemote();
 					}
+					Disable_Motors();
+					Stop_Brifly();
 					Reset_Rcon_Remote();
 					wav_play(WAV_CLEANING_FINISHED);
 					Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -265,6 +272,10 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
 					} else if (Get_Cliff_Trig()) {
 						Move_Back();
 					}
@@ -298,6 +309,10 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
 					} else if (Get_Cliff_Trig()) {
 						Move_Back();
 					}
@@ -335,6 +350,10 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
 					} else if (Get_Cliff_Trig()) {
 						Move_Back();
 					}
@@ -371,7 +390,12 @@ void Spot_Mode(SpotType ST)
 					}
 					if (Get_Bumper_Status()) {
 						Random_Back();
-					} else if (Get_Cliff_Trig()) {
+						if(Is_Bumper_Jamed())
+						{
+							return ;
+						}
+					}
+					if(Get_Cliff_Trig()){
 						Move_Back();
 					}
 					Stop_Brifly();
@@ -402,12 +426,23 @@ void Spot_Mode(SpotType ST)
 			break;
 		}
 
-		if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-			Disable_Motors();
-			ROS_INFO("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
-			wav_play(WAV_ERROR_LIFT_UP);
-			if(ST == NormalSpot)
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+		if (Get_Cliff_Trig() == (Status_Cliff_All)) {
+			Quick_Back(20,20);
+			Stop_Brifly();
+			if(Get_Cliff_Trig() == (Status_Cliff_All)){
+				Quick_Back(20,20);
+				Stop_Brifly();
+			}
+			if(Get_Cliff_Trig() == Status_Cliff_All){
+				Quick_Back(20,20);
+				Stop_Brifly();
+				ROS_INFO("Cliff trigger three times ,robot lift up ");
+				if(ST == NormalSpot)
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+				Disable_Motors();
+				wav_play(WAV_ERROR_LIFT_UP);
+				break;
+			}
 			break;
 		}
 	}
@@ -432,7 +467,7 @@ uint8_t Random_Dirt_Event(void)
 
 	Move_Style = First_Round;
 
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 
 	Check_Bat_SetMotors(135000, 100000, 100000);
 
@@ -498,11 +533,10 @@ uint8_t Random_Dirt_Event(void)
 		} else {
 			Motor_OC_Counter = 0;
 		}
-		/*------------------------------------------------------Touch and Remote event-----------------------*/
-		if (Touch_Detect()) {
+		/*------------------------------------------------------stop event-----------------------*/
+		if (Stop_Event()) {
 			Stop_Brifly();
-			ROS_INFO("%s %d: Touch detect!", __FUNCTION__, __LINE__);
-			Set_Touch();
+			ROS_INFO("%s %d: Stop event!", __FUNCTION__, __LINE__);
 			return 1;
 		}
 		/*------------------------------------------------------Runing Path-----------------------*/

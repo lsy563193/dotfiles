@@ -20,6 +20,7 @@
 #include "wav.h"
 #include "robot.hpp"
 
+extern uint32_t cur_wtime;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -29,10 +30,10 @@ void User_Interface(void)
 	static volatile uint32_t TimeOutCounter=0;
 
 #ifdef ONE_KEY_DISPLAY
-	uint8_t BTA_Power_Dis=0;
 	uint16_t LedBreathCount=0;
 	uint8_t breath =0;
 #endif
+	bool Battery_Ready_to_clean = true;
 
 	Press_time=0;
 	Temp_Mode=0;
@@ -49,26 +50,51 @@ void User_Interface(void)
 
 	Reset_Rcon_Remote();
 
-	Reset_Touch();
+	Reset_Stop_Event_Status();
 	//Enable_PPower();
 	//Disable_Motors();
 	Reset_Rcon_Status();
 //	Clear_Clcok_Receive();
 	// Reset touch to avoid previous touch leads to directly go to navigation mode.
 //	ResetHomeRemote();
-	Set_VacMode(Vac_Normal);
+	Set_VacMode(Vac_Save);
 
+	// Count for error alarm.
+	uint8_t Error_Alarm_Counter = 2;
+
+	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
 	// Check the battery to warn the user.
 	if(!Check_Bat_Ready_To_Clean())
 	{
 		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		Battery_Ready_to_clean = false;
 		wav_play(WAV_BATTERY_LOW);
 	}
 
 	while(ros::ok())
 	{
 		usleep(10000);
-
+		// Check the battery to warn the user.
+		if(!Check_Bat_Ready_To_Clean())
+		{
+			Battery_Ready_to_clean = false;
+		}
+#if MANUAL_PAUSE_CLEANING
+		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
+		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		{
+			if (Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			{
+				ROS_WARN("Robot lifted up during manual pause, reset manual pause status.");
+				wav_play(WAV_ERROR_LIFT_UP);
+				Clear_Manual_Pause();
+			}
+		}
+		else{
+			Reset_Work_Time();
+			cur_wtime = 0;
+		}
+#endif
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
 		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
 		{
@@ -145,15 +171,22 @@ void User_Interface(void)
 			if(Press_time>20)
 			{
 				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
-				Beep(6,25,25,1);
+				//Beep(6,25,25,1);
+				Beep(1, 4, 0, 1);
+				usleep(100000);
+				Beep(2,4,0,1);
+				usleep(100000);
+				Beep(3,4,0,1);
+				usleep(100000);
+				Beep(5,4,4,1);
 				// Wait for user to release the key.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
 					ROS_INFO("User still holds the key.");
 					usleep(100000);
 				}
-				// Key relaesed, then the touch status should be cleared.
-				Reset_Touch();
+				// Key relaesed, then the touch status and stop event status should be cleared.
+				Reset_Stop_Event_Status();
 				Temp_Mode=Clean_Mode_Sleep;
 			}
 			else
@@ -186,7 +219,7 @@ void User_Interface(void)
 					wav_play(WAV_ERROR_LIFT_UP);
 					Temp_Mode=0;
 				}
-				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Check_Bat_Ready_To_Clean())
+				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
 				{
 					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
@@ -226,29 +259,21 @@ void User_Interface(void)
 			if(LedBreathCount >=100)
 				breath = 1;
 		}
-		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 60s.
+		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 600s(10min).
 		TimeOutCounter++;
-		if(TimeOutCounter>6000)
+		if(TimeOutCounter > USER_INTERFACE_TIMEOUT * 100)
 		{
 			TimeOutCounter=0;
+			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
 			Set_Clean_Mode(Clean_Mode_Sleep);
 			break;
 		}
 
-		if(!Check_Bat_Ready_To_Clean())
-		{
-			BTA_Power_Dis=1;
-		}
-		else
-		{
-			BTA_Power_Dis=0;
-		}
-		
 		if(Get_Error_Code())//min_distant_segment Error = red led full
 		{
 			Set_LED(0,100);
 		}
-		else if(BTA_Power_Dis)//min_distant_segment low battery = red & green
+		else if(!Battery_Ready_to_clean)//min_distant_segment low battery = red & green
 		{
 			Set_LED(LedBreathCount,LedBreathCount);
 		}
@@ -258,6 +283,14 @@ void User_Interface(void)
 		}
 
 #endif
+
+		// Alarm for error.
+		// The TimeOutCounter will be atleast 1 here.
+		if (Error_Alarm_Counter != 0 && Get_Error_Code() && (TimeOutCounter % 1000) == 0)
+		{
+			Error_Alarm_Counter--;
+			Alarm_Error();
+		}
 	}
 
 	if (Get_Clean_Mode() != Clean_Mode_Sleep)

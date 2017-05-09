@@ -54,7 +54,7 @@ bool	escape_thread_running = false;
 uint32_t escape_trapped_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
-
+extern int8_t enable_slam_offset;
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 	{1200, 250, 150},
@@ -66,6 +66,7 @@ static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 
 extern int16_t WheelCount_Left, WheelCount_Right;
 
+extern bool Is_Slam_Ready;//For checking if the slam is initialized finish
 
 /************************************************************************
  * Normal End
@@ -101,11 +102,10 @@ void WFM_move_back(uint16_t dist)
 		if (Counter_Watcher > 3000) {
 			if(Is_Encoder_Fail()) {
 				Set_Error_Code(Error_Code_Encoder);
-				Set_Touch();
 			}
 			return;
 		}
-		if (Touch_Detect()) {
+		if (Stop_Event()) {
 			return;
 		}
 		uint8_t octype = Check_Motor_Current();
@@ -312,7 +312,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			break;
 		}
 
-		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
+		if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) || Get_Cliff_Trig()) {
 			ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -415,6 +415,10 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			WFM_move_back(350);
 
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				return 2;
+			}
 			Turn_Right(Turn_Speed, 700);
 
 			Stop_Brifly();
@@ -444,6 +448,10 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 
 			if (Get_Bumper_Status() & RightBumperTrig) {
 				WFM_move_back(100);
+				if(Is_Bumper_Jamed())
+				{
+					return 2;
+				}
 				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				Stop_Brifly();
 				Turn_Right(Turn_Speed, 600);
@@ -451,6 +459,10 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 				Wall_Straight_Distance = MFW_Setting[follow_type].right_bumper_val; //150;
 			} else {
 				WFM_move_back(350);
+				if(Is_Bumper_Jamed())
+				{
+					return 2;
+				}
 				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				Stop_Brifly();
 				Turn_Right(Turn_Speed, 150);
@@ -624,7 +636,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint8_t					Isolated_Flag;
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
-	extern int8_t			enable_slam_offset;
 	uint8_t					octype;//for current check
 	Reset_MoveWithRemote();
 
@@ -647,6 +658,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	Set_Gyro_On();
+	Set_LED(100, 0);
+	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
 	if (!Wait_For_Gyro_On())
 	{
@@ -655,6 +668,16 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	}
 	robot::instance()->init_mumber();// for init robot member
 	Motion_controller motion;
+
+	if (Is_Slam_Ready) {
+		Is_Slam_Ready = 0;
+	} else{
+		Is_Slam_Ready = 0;
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		Set_Error_Code(Error_Code_Slam);
+		wav_play(WAV_TEST_LIDAR);
+		return 0;
+	}
 
 	enable_slam_offset = 2;//2 for wall follow mode
 
@@ -724,46 +747,43 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				break;
 			}
 
-			if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) | Get_Cliff_Trig()) {
+			if (Get_Bumper_Status()||(Get_FrontOBS() > Get_FrontOBST_Value()) || Get_Cliff_Trig()) {
 				ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 				break;
 			}
 
-			/*------------------------------------------------------Touch and Remote event-----------------------*/
-			if (Touch_Detect()) {
+			/*------------------------------------------------------Stop event-----------------------*/
+			if (Stop_Event()) {
 				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				WF_Break_Wall_Follow();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
 			}
 			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				/*if(Is_MoveWithRemote()){
-					if (Remote_Key(Remote_Random)) {
-						Set_Clean_Mode(Clean_Mode_RandomMode);
-						break;
+				if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+					if (Remote_Key(Remote_Home)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_End_Wall_Follow();
+						return 0;
 					}
-				}*/
-				if (Remote_Key(Remote_Home)) {
+					if (Remote_Key(Remote_Clean)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_Break_Wall_Follow();
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return 0;
+					}
+					if (Remote_Key(Remote_Max)) {
+						Reset_Rcon_Remote();
+						Switch_VacMode(true);
+					}
+				} else {
+					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_End_Wall_Follow();
-					return 0;
 				}
-				if (Remote_Key(Remote_Clean)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return 0;
-				}
-				
-				if (Remote_Key(Remote_Max)) {
-					Reset_Rcon_Remote();
-					Switch_VacMode();
-				}
-				Reset_Rcon_Remote();
 			}
 
 			/*------------------------------------------------------Check Current--------------------------------*/
@@ -869,40 +889,38 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 			}
 
-			/*------------------------------------------------------Touch and Remote event-----------------------*/
-			if (Touch_Detect()) {
+			/*------------------------------------------------------Stop event-----------------------*/
+			if (Stop_Event()) {
 				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
-				Reset_Touch();
+				Reset_Stop_Event_Status();
 				WF_Break_Wall_Follow();
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
 			}
 			if (Get_Rcon_Remote() > 0) {
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				/*if(Is_MoveWithRemote()){
-					if (Remote_Key(Remote_Random)) {
-						Set_Clean_Mode(Clean_Mode_RandomMode);
-						break;
+				if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
+					if (Remote_Key(Remote_Home)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_End_Wall_Follow();
+						return 0;
 					}
-				}*/
-				if (Remote_Key(Remote_Home)) {
+					if (Remote_Key(Remote_Clean)) {
+						Reset_Rcon_Remote();
+						Set_MoveWithRemote();
+						WF_Break_Wall_Follow();
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return 0;
+					}
+					if (Remote_Key(Remote_Max)) {
+						Reset_Rcon_Remote();
+						Switch_VacMode(true);
+					}
+				} else {
+					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_End_Wall_Follow();
-					return 0;
 				}
-				if (Remote_Key(Remote_Clean)) {
-					Reset_Rcon_Remote();
-					Set_MoveWithRemote();
-					WF_Break_Wall_Follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					return 0;
-				}
-				if (Remote_Key(Remote_Max)) {
-					Reset_Rcon_Remote();
-					Switch_VacMode();
-				}
-				Reset_Rcon_Remote();
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
 			if (Check_Bat_Home() == 1) {
@@ -918,13 +936,12 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 			}
 			/* check plan setting*/
-			/*
 			if(Get_Plan_Status())
 			{
 				Set_Plan_Status(false);
-				wav_play(WAV_APPOINTMENT_DONE);
+			//	wav_play(WAV_APPOINTMENT_DONE);
+				Beep(Beep_Error_Sounds, 2, 0, 1);
 			}
-			*/
 			/*------------------------------------------------------Cliff Event-----------------------*/
 			if(Get_Cliff_Trig()){
 				Set_Wheel_Speed(0,0);
@@ -1021,7 +1038,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				WFM_move_back(350);
 
 				if (Is_Bumper_Jamed()){
-					Reset_Touch();
+					Reset_Stop_Event_Status();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
 					WF_Break_Wall_Follow();
@@ -1073,7 +1090,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					WF_Check_Loop_Closed(Gyro_GetAngle());
 
 					if (Is_Bumper_Jamed()){
-						Reset_Touch();
+						Reset_Stop_Event_Status();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
 						WF_Break_Wall_Follow();
@@ -1096,7 +1113,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					//WFM_update();
 					WF_Check_Loop_Closed(Gyro_GetAngle());
 					if (Is_Bumper_Jamed()) {
-						Reset_Touch();
+						Reset_Stop_Event_Status();
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						WF_Break_Wall_Follow();
 						//USPRINTF("%s %d: Check: Bumper 3! break\n", __FUNCTION__, __LINE__);
@@ -1281,7 +1298,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 }
 
 void Wall_Follow_Init_Slam(void){
-	extern int8_t enable_slam_offset;
 	extern void start_slam(void);
 //	robot::instance()->Subscriber();
 	robot::instance()->start_lidar();
@@ -1294,21 +1310,20 @@ void Wall_Follow_Init_Slam(void){
 	sleep(5);
 	enable_slam_offset = 2;
 }
-
+/*
 void Wall_Follow_Stop_Slam(void){
-	extern int8_t enable_slam_offset;
 	extern void start_slam(void);
 	robot::instance()->UnSubscriber();
 	Disable_Motors();
 	robot::instance()->stop_lidar();
 	//std::async(std::launch::async, start_slam);
 	robot::instance()->stop_slam();
-	/*while (robot::instance()->map_ready() == false || ros::ok()){
+	*//*while (robot::instance()->map_ready() == false || ros::ok()){
 		usleep(100);
 		ROS_WARN("waiting for map");
-	}*/
+	}*//*
 	enable_slam_offset = 0;
-}
+}*/
 uint8_t WF_End_Wall_Follow(void){
 	int16_t i;
 	int8_t state;
@@ -1317,7 +1332,8 @@ uint8_t WF_End_Wall_Follow(void){
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 	MapTouringType	mt_state = MT_None;
 	int16_t home_angle = robot::instance()->robot_get_home_angle();
-
+	Stop_Brifly();
+	enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
 	WF_Mark_Home_Point();
 	CM_go_home();

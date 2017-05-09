@@ -32,11 +32,9 @@ void protect_function()
 {
 	//Bumper protect
 	if (Get_Bumper_Status()){
-		ROS_INFO("Bumper protect  check");
-		Turn_Left_At_Init(Max_Speed, 1800);//save itself
+		Random_Back();
+		Is_Bumper_Jamed();
 	}
-	if (Get_Bumper_Status())
-		wav_play(WAV_ERROR_BUMPER);//can't save itself, stop and give an alarm by beep
 }
 
 void *core_move_thread(void *)
@@ -57,16 +55,16 @@ void *core_move_thread(void *)
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	Set_Gyro_On();
 	// Wait for 0.5s to make sure gyro should be on after the wav_play().
-	usleep(500000);
 	wav_play(WAV_WELCOME_ILIFE);
-	while (!Wait_For_Gyro_On())
-	{
-		usleep(100000);
-		Reset_Rcon_Remote();
-		Reset_Touch();
-	}
+
+	Wait_For_Gyro_On();
 
 	protect_function();
+
+	// Beep for initializing completed.
+	Beep(6, 5, 0, 1);
+	usleep(80000);
+	Beep(3, 5, 0, 1);
 
 //	wav_play(WAV_BATTERY_CHARGE_DONE);
 	while(ros::ok()){
@@ -74,41 +72,44 @@ void *core_move_thread(void *)
 		switch(Get_Clean_Mode()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------User_Interface mode------\n");
+				Set_Main_PwrByte(Clean_Mode_Userinterface);
 //				wav_play(WAV_TEST_MODE);
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
+				Set_Main_PwrByte(Clean_Mode_WallFollow);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");
-				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Random_Running_Mode();
 				break;
 			case Clean_Mode_Navigation:
-				/*
-					Turn_Right(10, 850);
-					Turn_Right(10, 1750);
-					Turn_Right(10, 1000);
-					Turn_Left(10, 850);
-					Turn_Left(10, 1750);
-					Turn_Left(10, 1000);
-				*/
 				ROS_INFO("\n-------Navigation mode------\n");
+				Set_Main_PwrByte(Clean_Mode_Navigation);
 				CM_Touring();
-				//Set_Clean_Mode(Clean_Mode_GoHome);
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
+				Set_Main_PwrByte(Clean_Mode_Charging);
 				Charge_Function();
-
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
+				Set_Main_PwrByte(Clean_Mode_GoHome);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				if (!Is_Gyro_On())
 				{
 					// Restart the gyro.
@@ -139,19 +140,26 @@ void *core_move_thread(void *)
 					GoHome();
 #endif
 				}
-				//Set_Clean_Mode(Clean_Mode_Charging);
 				break;
 			case Clean_Mode_Test:
 
 				break;
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
+				Set_Main_PwrByte(Clean_Mode_Remote);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
+				Set_Main_PwrByte(Clean_Mode_Spot);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Spot_Mode(NormalSpot);
 				Disable_Motors();
 				usleep(200000);
@@ -163,7 +171,11 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
+				//Set_Main_PwrByte(Clean_Mode_Sleep);
 				CM_reset_cleaning_low_bat_pause();
+#if MANUAL_PAUSE_CLEANING
+				Clear_Manual_Pause();
+#endif
 				Disable_Motors();
 				Sleep_Mode();
 				break;
