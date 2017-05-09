@@ -299,10 +299,11 @@ private:
 	ros::Subscriber odom_sub;
 	ros::Subscriber map_metadata_sub;
 	ros::Subscriber map_sub;
-	ros::Subscriber obstacles_sub;
+//	ros::Subscriber obstacles_sub;
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
 	ros::Publisher send_bumper_marker_pub;
+//	ros::Publisher obstacles_pub_;
 
 	ros::ServiceClient start_mator_cli_;
 	ros::ServiceClient stop_mator_cli_;

@@ -1310,7 +1310,7 @@ void Wall_Follow_Init_Slam(void){
 	sleep(5);
 	enable_slam_offset = 2;
 }
-
+/*
 void Wall_Follow_Stop_Slam(void){
 	extern void start_slam(void);
 	robot::instance()->UnSubscriber();
@@ -1318,12 +1318,12 @@ void Wall_Follow_Stop_Slam(void){
 	robot::instance()->stop_lidar();
 	//std::async(std::launch::async, start_slam);
 	robot::instance()->stop_slam();
-	/*while (robot::instance()->map_ready() == false || ros::ok()){
+	*//*while (robot::instance()->map_ready() == false || ros::ok()){
 		usleep(100);
 		ROS_WARN("waiting for map");
-	}*/
+	}*//*
 	enable_slam_offset = 0;
-}
+}*/
 uint8_t WF_End_Wall_Follow(void){
 	int16_t i;
 	int8_t state;

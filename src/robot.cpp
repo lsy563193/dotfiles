@@ -45,8 +45,10 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	visualize_marker_init();
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	//this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+//	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
+//  obstacles_pub_ = robot_node_handler.advertise<Obstacles>("obstacles", 10);
+//  ROS_INFO("Obstacle Detector [ACTIVE]");
 	this->is_moving = false;
 	this->is_sensor_ready = false;
 	this->is_odom_ready = false;
@@ -863,8 +865,8 @@ bool robot::align(void)
 	line_align_ = detecting;
 	is_odom_ready = false;
 	segmentss.clear();
-	ROS_WARN("Start subscribe to /obstacles");
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+//	ROS_WARN("Start subscribe to /obstacles");
+	auto obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
 
 	//wait for start obstacle_detector
 	auto count_n_10ms = 1000;
@@ -1017,7 +1019,7 @@ void robot::Subscriber(void)
 
 }
 */
-
+/*
 void robot::UnSubscriber(void)
 {
 	map_sub.shutdown();
@@ -1025,7 +1027,7 @@ void robot::UnSubscriber(void)
 
 	if(is_align_active_)
 	  obstacles_sub.shutdown();
-}
+}*/
 void robot::init_mumber()
 {
 	//is_odom_ready = false;
