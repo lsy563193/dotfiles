@@ -116,6 +116,9 @@ uint16_t Press_Time = 0;
 // This flag is for checking whether map boundary is created.
 bool Map_Boundary_Created = false;
 
+// This pnt16ArTmp is for trapped reference point.
+Point16_t pnt16ArTmp[3];
+
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
@@ -1849,8 +1852,7 @@ void CM_go_home()
 	int8_t	state;
 	int16_t	i;
 
-	Point32_t	Next_Point, Target_Point;
-	Point16_t	tmpPnt, pnt16ArTmp[3];
+	Point16_t	tmpPnt;
 
 	state = -1;
 	while (ros::ok()) {
@@ -1866,8 +1868,6 @@ void CM_go_home()
 			ROS_ERROR("Home_Point list is empty!");
 			return;
 		}
-		pnt16ArTmp[0] = tmpPnt;
-		path_escape_set_trapped_cell(pnt16ArTmp, 1);
 
 		if (remote_go_home == 1) {
 			SetHomeRemote();
@@ -2197,6 +2197,8 @@ uint8_t CM_Touring(void)
 
 	Press_Time = 0;
 
+	Point16_t tmpPnt;
+
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 	{
@@ -2393,6 +2395,14 @@ uint8_t CM_Touring(void)
 
 			// Push the start point into the home point list
 			Home_Point.push_front(New_Home_Point);
+
+			// Mark all the trapped reference points as (0, 0).
+			tmpPnt.X = 0;
+			tmpPnt.Y = 0;
+			for ( int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
+				pnt16ArTmp[i] = tmpPnt;
+			}
+			path_escape_set_trapped_cell(pnt16ArTmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
 
 			ROS_INFO("Map_Initialize-----------------------------");
 			Map_Initialize();
@@ -2901,6 +2911,8 @@ void CM_SetGyroOffset(int16_t offset)
 }
 
 void CM_SetHome(int32_t x, int32_t y) {
+	Point16_t tmpPnt;
+
 	bool found = false;
 
 	ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
@@ -2914,6 +2926,21 @@ void CM_SetHome(int32_t x, int32_t y) {
 	}
 	if (found == false) {
 		Home_Point.push_front(New_Home_Point);
+		// If New_Home_Point near (0, 0)
+		if (abs(countToCell(x)) <= 5 && abs(countToCell(y)) <= 5)
+		{
+			// Update the trapped reference points
+			tmpPnt.X = countToCell(x);
+			tmpPnt.Y = countToCell(y);
+			for (int8_t i = ESCAPE_TRAPPED_REF_CELL_SIZE - 1; i > 0; i--)
+			{
+				pnt16ArTmp[i] = pnt16ArTmp[i-1];
+				ROS_DEBUG("i = %d, pnt16ArTmp[i].X = %d, pnt16ArTmp[i].Y = %d", i, pnt16ArTmp[i].X, pnt16ArTmp[i].Y);
+			}
+			pnt16ArTmp[0] = tmpPnt;
+			ROS_DEBUG("pnt16ArTmp[0].X = %d, pnt16ArTmp[0].Y = %d", pnt16ArTmp[0].X, pnt16ArTmp[0].Y);
+			path_escape_set_trapped_cell(pnt16ArTmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
+		}
 	}
 }
 

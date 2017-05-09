@@ -74,7 +74,7 @@ int16_t	last_y_pos;
 uint16_t last_dir;
 
 Point16_t trappedCell[ESCAPE_TRAPPED_REF_CELL_SIZE];
-uint8_t trappedCellSize = 1;
+uint8_t trappedCellSize = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 extern int16_t xMin, xMax, yMin, yMax;
 
@@ -113,7 +113,7 @@ void PathPlanning_Initialize(int32_t *x, int32_t *y) {
 		trappedCell[i].X = home_x;
 		trappedCell[i].Y = home_y;
 	}
-	trappedCellSize = 1;
+	trappedCellSize = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 #if (ROBOT_SIZE == 5)
 
@@ -1889,7 +1889,7 @@ void WF_PathPlanning_Initialize(int32_t *x, int32_t *y) {
 		trappedCell[i].X = home_x;
 		trappedCell[i].Y = home_y;
 	}
-	trappedCellSize = 1;
+	trappedCellSize = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 #if (ROBOT_SIZE == 5)
 

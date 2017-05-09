@@ -1,14 +1,13 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <ros/ros.h>
+
 #include "sleep.h"
 #include "movement.h"
 #include "wav.h"
-#include <ros/ros.h>
 /*----------------------------------------------------------------Sleep mode---------------------------*/
 void Sleep_Mode(void)
 {
-  	uint8_t time=0;
 	static uint32_t Ch_WP_Counter=0;
 	
 	Reset_Stop_Event_Status();
@@ -21,27 +20,24 @@ void Sleep_Mode(void)
 	while(ros::ok())
 	{
 		usleep(200000);
-		SetSleepModeFlag();
-		// Time for key pressing
-		time=0;
+		if(!GetSleepModeFlag())
+			SetSleepModeFlag();
+
 		if (Get_Key_Press() & KEY_CLEAN)
 		{
-			time = Get_Key_Time(KEY_CLEAN);
-			if (time > 20)
-			{
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				Set_Main_PwrByte(POWER_ACTIVE);
-				ResetSleepModeFlag();
-				Beep(3, 50, 0, 1);
-				while (Get_Key_Press() & KEY_CLEAN)
-				{
-					ROS_INFO("%s %d: Clean key pressed", __FUNCTION__, __LINE__);
-					usleep(100000);
-				}
-				Reset_Stop_Event_Status();
-				
-				break;
-			}
+			ROS_INFO("%s,%d, get key press ",__FUNCTION__,__LINE__);
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			Set_Main_PwrByte(POWER_ACTIVE);
+			ResetSleepModeFlag();
+			Beep(4, 4, 0, 1);
+			usleep(100000);
+			Beep(3,4,0,1);
+			usleep(100000);
+			Beep(2,4,0,1);
+			usleep(100000);
+			Beep(1,4,4,1);
+			Reset_Stop_Event_Status();
+			break;
 		}
 		if(Get_Plan_Status())
 		{
@@ -56,6 +52,13 @@ void Sleep_Mode(void)
 			Set_Main_PwrByte(POWER_ACTIVE);
 			ResetSleepModeFlag();
 			Reset_Rcon_Remote();
+			Beep(4, 4, 0, 1);
+			usleep(100000);
+			Beep(3,4,0,1);
+			usleep(100000);
+			Beep(2,4,0,1);
+			usleep(100000);
+			Beep(1,4,4,1);
 			break;
 		}
 		Reset_Rcon_Remote();
