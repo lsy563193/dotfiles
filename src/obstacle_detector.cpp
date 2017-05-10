@@ -61,12 +61,14 @@ ObstacleDetector::ObstacleDetector() : nh_(""), nh_local_("~"), p_active_(false)
 ObstacleDetector::~ObstacleDetector(){
   scan_sub_.shutdown();
   obstacles_pub_.shutdown();
+  nh_.shutdown();
+	nh_local_.shutdown();
   ROS_INFO("Obstacle Detector [OFF]");
 }
 bool ObstacleDetector::updateParams(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
   bool prev_active = p_active_;
 
-  nh_local_.param<bool>("active", p_active_, true);
+  nh_local_.param<bool>("is_active_align", p_active_, true);
   nh_local_.param<bool>("use_split_and_merge", p_use_split_and_merge_, false);
 
   nh_local_.param<int>("min_group_points", p_min_group_points_, 5);

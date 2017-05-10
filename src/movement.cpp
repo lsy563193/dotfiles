@@ -5,6 +5,7 @@
 #include "robot.hpp"
 #include <time.h>
 #include <fcntl.h>
+#include <motion_controler.h>
 
 #include "gyro.h"
 #include "movement.h"
@@ -15,6 +16,7 @@
 #include "core_move.h"
 #include "wall_follow_multi.h"
 #include "wav.h"
+#include "slam.h"
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -1269,7 +1271,7 @@ uint8_t Check_Motor_Current(void)
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
 			lwheel_oc_count =0;
-			ROS_WARN("%s,%d,left wheel over current,%lu mA\n",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_lwheel_current());
+			ROS_WARN("%s,%d,left wheel over current,%u mA\n",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_lwheel_current());
 			return Check_Left_Wheel;
 		}
 	}
@@ -1279,7 +1281,7 @@ uint8_t Check_Motor_Current(void)
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
-			ROS_WARN("%s,%d,right wheel over current,%lu mA",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
+			ROS_WARN("%s,%d,right wheel over current,%u mA",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
 			return Check_Right_Wheel;
 		}
 	}
@@ -2905,13 +2907,6 @@ int32_t ABS_Minus(int32_t A,int32_t B)
 	return B-A;
 }
 
-void ladar_gpio(char val)
-{
-	int fd = open("/proc/driver/wifi-pm/power", O_WRONLY);
-	char buf[] = {val};
-	write(fd,buf,1);
-	close(fd);
-}
 #define NORMAL	1
 #define STOP	2
 #define MAX		3
@@ -3101,8 +3096,11 @@ void Clear_Manual_Pause(void)
 		ROS_WARN("Reset manual pause status.");
 		wav_play(WAV_CLEANING_FINISHED);
 		robot::instance()->Reset_Cleaning_Manual_Pause();
-		robot::instance()->align_exit();
-		robot::instance()->stop_slam();
+
+		extern bool g_is_line_angle_offset;
+		g_is_line_angle_offset=false;
+
+		MotionManage::s_slam->stop();
 		CM_ResetGoHome();
 	}
 }

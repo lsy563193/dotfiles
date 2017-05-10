@@ -5,22 +5,40 @@
 #ifndef PP_MOTION_CONTROLER_H
 #define PP_MOTION_CONTROLER_H
 
-//#include "../include/obstacle_detector.h"
+#include "laser.hpp"
+#include "slam.h"
 
-//typedef boost::shared_ptr<obstacle_detector::ObstacleDetector> ObstacleDetectorPtr;
-
-class Motion_controller {
-
+class MotionManage {
 public:
-	Motion_controller();
+	MotionManage();
 
-	~Motion_controller();
+	~MotionManage();
 //private:
-//	enum start_object {gyro, lidar, obs_det, align, slam,start_obs};
+	bool is_align_active(){
+		return is_align_active_;
+	};
 
-//	std::bitset<start_obs> start_bit;
-//  ObstacleDetectorPtr od;
-	ros::ServiceClient align_cli_;
+	static Laser* s_laser;
+	static Slam* s_slam;
+private:
+
+	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg);
+	bool turn_to_align(void);
+
+	int slam_type_;
+	ros::NodeHandle nh_;
+	bool is_align_active_;
+
+	volatile enum align_state{
+		stop=0,
+		start=1,
+	}line_align_;
+	int16_t line_angle_;
+
+	//startup flag;
+//	enum start_object {laser,total};
+//	std::bitset<total> startup_flag;
+
 };
 
 #endif //PP_MOTION_CONTROLER_H

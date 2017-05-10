@@ -7,22 +7,21 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 #include <movement.h>
-#include <segment_set.h>
+#include <motion_controler.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
 #include "figures/segment.h"
+#include "slam.h"
 
 #include "std_srvs/Empty.h"
 using namespace obstacle_detector;
-extern bool is_line_angle_offset;
-extern int8_t enable_slam_offset;
+extern int8_t g_enable_slam_offset;
 static	robot *robot_obj = NULL;
 //typedef double Angle;
 
 extern pp::x900sensor   sensor;
 
-Segment_set segmentss;
 
 time_t	start_time;
 
@@ -31,7 +30,7 @@ int8_t key_press_count;
 int8_t key_release_count;
 
 //extern pp::x900sensor sensor;
-robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
+robot::robot()
 {
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
@@ -40,13 +39,10 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	/*map subscriber for exploration*/
 //	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
-	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
 	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 	visualize_marker_init();
 	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
 	//this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
-//	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-
 //  obstacles_pub_ = robot_node_handler.advertise<Obstacles>("obstacles", 10);
 //  ROS_INFO("Obstacle Detector [ACTIVE]");
 	this->is_moving = false;
@@ -60,13 +56,9 @@ robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_
 	this->linear_y = 0.0;
 	this->linear_z = 0.0;
 
-	this->line_angle = 0;
 
-//	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
 	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
 
-	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
-	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 
@@ -226,18 +218,6 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 	ROS_INFO("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d", rcon_left, rcon_right, rcon_front_left, rcon_front_right, rcon_back_left, rcon_back_right);
 #endif
 }
-/*
-
-void robot::robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg)
-{
-	static int count = 0;
-
-	count++;
-	if (count > 1) {
-		this->is_map_ready = true;
-	}
-}
-*/
 
 void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 {
@@ -264,9 +244,9 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	ident.setIdentity();
 	ident.frame_id_ = "base_link";
 	ident.stamp_ = msg->header.stamp;
-	if (enable_slam_offset == 1){
+	if (g_enable_slam_offset == 1){
 		//ROS_INFO("SLAM = 1");
-		if(map_ready()){
+		if(MotionManage::s_slam->is_map_ready()){
 		try {
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->yaw = tf::getYaw(transform.getRotation());
@@ -290,7 +270,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			return;
 		}
 		}
-	}else if (enable_slam_offset == 0){
+	}else if (g_enable_slam_offset == 0){
 		//ROS_INFO("SLAM = 0");
 		try {
 			this->robot_tf->lookupTransform("/odom", "base_link", ros::Time(0), transform);
@@ -314,9 +294,9 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 			return;
 		}
-	}else if (enable_slam_offset == 2){//Wall_Follow_Mode
+	}else if (g_enable_slam_offset == 2){//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(map_ready()){
+		if(MotionManage::s_slam->is_map_ready()){
 		try {
 			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
@@ -362,7 +342,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 
   this->position_x = map_pose.getOrigin().x() - position_x_off;
   this->position_y = map_pose.getOrigin().y() - position_y_off;
-	if (enable_slam_offset == 2){
+	if (g_enable_slam_offset == 2){
 		this->WF_position_x = WF_map_pose.getOrigin().x() - position_x_off;
 		this->WF_position_y = WF_map_pose.getOrigin().y() - position_y_off;
 	}
@@ -370,65 +350,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
     this->is_odom_ready = true;
   }
 }
-void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
-{
-	int map_size, vector_size;
-	//uint32_t seq;
-	//uint32_t width;
-	//uint32_t height;
-	//float resolution;
-	//std::vector<int8_t> *ptr;
-	this->width = map->info.width;
-	this->height = map->info.height;
-	this->resolution = map->info.resolution;
-	this->seq = map->header.seq;
-	this->origin_x = map->info.origin.position.x;
-	this->origin_y = map->info.origin.position.y;
-	//map_size = (width * height);
-	//int8_t map_data[n];
-	//std::vector<int8_t> map_data(map->data);
-	this->map_data = map->data;
-	//this->map_data(map->data);
-	this->ptr = &(map_data);
-	//vector_size = v1.size();
-
-	//v1.swap(map->data);
-	//memcpy(map_data, &map->data, sizeof(map->data));
-	//ROS_INFO("width = %d\theight = %d\tresolution = %f\tseq = %d", width, height, resolution, seq);
-	//ROS_INFO("map_size=%d\tvector_size = %d", map_size, vector_size);
-	//ROS_INFO("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d", map_data[0], map_data[1], map_data[2], map_data[3], map_data[4], map_data[5], map_data[6], map_data[7], map_data[8], map_data[9], map_data[10], map_data[11]);
-	//ROS_INFO("map->data = %d, %d, %d, %d, %d, %d", (map->data)[0], (map->data)[1], (map->data)[2], (map->data)[3], (map->data)[4], (map->data)[5]);
-	ROS_INFO("%s %d: vector = %d, %d, %d", __FUNCTION__, __LINE__, map_data[0], map_data[1], map_data[2]);
-	ROS_INFO("%s %d: vector_pointer = %d", __FUNCTION__, __LINE__, (*(this->ptr))[0]);
-	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
-	is_map_ready=true;
-
-}
-
-uint32_t robot::robot_get_width()
-{
-	return this->width;
-}
-
-uint32_t robot::robot_get_height()
-{
-	return this->height;
-}
-
-float robot::robot_get_resolution()
-{
-	return this->resolution;
-}
-
-double robot::robot_get_origin_x()
-{
-	return this->origin_x;
-}
-
-double robot::robot_get_origin_y()
-{
-	return this->origin_y;
-}
+/*
 
 std::vector<int8_t> *robot::robot_get_map_data()
 {
@@ -437,64 +359,7 @@ std::vector<int8_t> *robot::robot_get_map_data()
 	//ROS_INFO("%s %d: seq = %d", __FUNCTION__, __LINE__, this->seq);
 	return this->ptr;
 }
-
-void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
-{
-//	ROS_WARN("robot_obstacles_cb");
-	if (laser::instance()->is_ready() == false || is_sensor_ready == false)
-		return;
-
-//	ROS_WARN("2robot_obstacles_cb");
-	line_align_ = begin;
-
-	if (msg->segments.size() != 0)
-	{
-//			ROS_INFO("size = %d", msg->segments.size());
-		for (auto s : msg->segments)
-		{
-			Point first(s.first_point.x, s.first_point.y);
-			Point last(s.last_point.x, s.last_point.y);
-			Segment seg(first, last);
-//				std::cout << "seg: " << seg << std::endl;
-
-			auto dist = seg.length();
-
-//				if (dist < 1)
-//					ROS_INFO("dist = %f", dist);
-//				else
-//					ROS_INFO("dist = %f >1", dist);
-
-			if (dist < 1)
-				continue;
-
-			segmentss.classify(seg);
-		}
-//		ROS_INFO("+++++++++++++++++++++++++++++");
-	}
-	/*else {//(is_obstacles_ready == true)
-		static int count = 0;
-		if(count++%300==0) {
-			for (auto &s : msg->segments) {
-				std::cout << "first " << s.first_point << std::endl;
-				std::cout << "last " << s.last_point << std::endl;
-//			查找直线经过的格子
-				Point32_t p1, p2;
-				p1 = PointToCount(s.first_point);
-				p2 = PointToCount(s.last_point);
-				cout << "$$$$$$$$$p1:" << p1.X << "," << p1.Y << endl;
-				cout << "$$$$$$$$$p2:" << p2.X << "," << p2.Y << endl;
-				std::vector<Point16_t> cells = greds_of_line_pass(p1, p2);
-				for (auto &cell : cells) {
-					std::cout << "cell:" << cell.X << "," << cell.Y << "\t";
-					Point32_t p = Map_CellToPoint(cell);
-					Map_SetCell(MAP, p.X, p.Y, BLOCKED_OBS);
-				}
-				cout << endl;
-			}
-			debug_map(MAP,0,0);
-		}
-	}*/
-}
+*/
 
 float robot::robot_get_angle() {
   return this->angle;
@@ -756,10 +621,6 @@ int16_t robot::robot_get_yaw()
 	return ((int16_t)(this->yaw * 1800 / M_PI));
 }
 
-int16_t robot::robot_get_home_angle() {
-  return ((int16_t) (this->line_angle));
-}
-
 void robot::robot_display_positions() {
 	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)",
 		this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI,
@@ -830,204 +691,6 @@ void robot::pub_bumper_markers(){
 	this->send_bumper_marker_pub.publish(this->bumper_markers);
 }
 
-void robot::start_slam(void)
-{
-	is_map_ready = false;
-	if (slam_type_ == 0)
-		system("roslaunch pp gmapping.launch 2>/dev/null &");
-	else if (slam_type_ == 1)
-		system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null &");
-	else if (slam_type_ == 2)
-		system("roslaunch pp cartographer_slam.launch 2>/dev/null &");
-}
-
-void robot::stop_slam(void)
-{
-	enable_slam_offset = 0;
-	is_map_ready = false;
-	if (slam_type_ == 0)
-		system("rosnode kill /slam_gmapping 2>/dev/null &");
-	else if (slam_type_ == 1)
-		system("rosnode kill /slam_karto 2>/dev/null &");
-	else if (slam_type_ == 2)
-		system("rosnode kill /cartographer_node 2>/dev/null &");
-}
-
-bool robot::align(void)
-{
-
-	if(Get_Clean_Mode() == Clean_Mode_WallFollow)
-		return false;
-
-	if (is_align_active_ != true)
-		return false;
-
-	line_align_ = detecting;
-	is_odom_ready = false;
-	segmentss.clear();
-//	ROS_WARN("Start subscribe to /obstacles");
-	auto obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-
-	//wait for start obstacle_detector
-	auto count_n_10ms = 1000;
-	while (line_align_ != begin && --count_n_10ms > 0 && !Stop_Event()){
-		if (count_n_10ms % 100 == 0)
-			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
-		usleep(10000);
-	}
-	if(Stop_Event() || count_n_10ms == 0)
-		return false;
-
-	count_n_10ms = 200;
-	ROS_WARN("Obstacle detector launch finishd.");
-
-	//wait for detecting line
-	while (--count_n_10ms > 0 && !Stop_Event())
-	{
-		if (count_n_10ms % 100 == 0)
-			ROS_WARN("detecting line time remain %d s\n", count_n_10ms / 100);
-		usleep(10000);
-	}
-	if(Stop_Event())
-		return false;
-
-	ROS_WARN("Get the line");
-	line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
-	auto angle = static_cast<int16_t>(std::abs(line_angle));
-	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
-
-	if (line_angle > 0)
-	{
-		ROS_INFO("Turn_Left %d", angle);
-		Turn_Left(13, angle);
-	} else if (line_angle < 0)
-	{
-		ROS_INFO("Turn_Right %d", angle);
-		Turn_Right(13, angle);
-	}
-	bool is_align=true;
-
-	line_align_ = finish;
-//	ros::WallDuration(100).sleep();
-
-	if(Stop_Event())
-		return false;
-/*
-	auto count = 2;
-	while (count-- != 0)
-	{
-		std::cout << robot::angle << std::endl;
-		sleep(1);
-	}*/
-	is_line_angle_offset = true;
-
-	return true;
-}
-
-void robot::align_exit(void)
-{
-	is_line_angle_offset = false;
-	line_align_ = detecting;
-}
-
-void robot::align_active(bool active){
-	is_align_active_ =  active;
-	if(is_align_active_ == true){
-		line_align_ = detecting;
-	}
-}
-
-bool robot::align_active(void)
-{
-	return is_align_active_;
-}
-
-bool robot::start_lidar(void)
-{
-	std_srvs::Empty empty;
-	auto count_6s = 0;
-	auto try_times = 3;
-	bool  first_start = true;
-	do
-	{
-		try_times--;
-		if (! first_start)
-		{
-			// todo pull down gpio
-			ROS_INFO("lidar start false, power off and try again!!!");
-			stop_lidar();
-			sleep(1);
-		}
-		first_start = false;
-		ladar_gpio('1');
-		usleep(2000);
-		ROS_INFO("start_lidar");
-		start_mator_cli_.call(empty);
-		count_6s = 300;//set reboot lidar time to 3 seconds
-		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_6s > 0 && !Stop_Event())
-		{
-			if (count_6s % 100 == 0)
-				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
-			usleep(10000);
-		}
-	}while ((count_6s == 0 && try_times != 0) && !Stop_Event());
-
-	ROS_INFO("start_motor: %d", laser::instance()->is_ready());
-
-	return (laser::instance()->is_ready());
-}
-
-void robot::stop_lidar(void){
-	std_srvs::Empty empty;
-//	is_odom_ready = false;
-//	do
-//	{
-		laser::instance()->is_ready(false);
-		ROS_INFO("stop_lidar");
-		stop_mator_cli_.call(empty);
-		ladar_gpio('0');
-//		sleep(2);
-//	}while (laser::instance()->is_ready() == true);
-
-}
-
-void robot::slam_type(int type)
-{
-	slam_type_ = type;
-}
-
-void robot::map_ready(bool val)
-{
-	is_map_ready = val;
-}
-
-bool robot::map_ready(void)
-{
-	return is_map_ready;
-}
-
-/*
-void robot::Subscriber(void)
-{
-	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
-	visualize_marker_init();
-	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
-	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-
-}
-*/
-/*
-void robot::UnSubscriber(void)
-{
-	map_sub.shutdown();
-	//odom_sub.shutdown();
-
-	if(is_align_active_)
-	  obstacles_sub.shutdown();
-}*/
 void robot::init_mumber()
 {
 	//is_odom_ready = false;

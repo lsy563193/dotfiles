@@ -32,6 +32,7 @@ FILE(GLOB PP_SRC
 	src/wall_follow_multi.cpp
 	src/wall_follow_short.cpp
 	src/wav.cpp
+	src/slam.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

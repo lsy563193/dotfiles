@@ -4,15 +4,11 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 
-class laser
+class Laser
 {
 public:
-	laser();
-	~laser();
-
-	static laser *instance();
-
-	void init();
+	Laser();
+	~Laser();
 
 	bool laser_obstcal_detected(double distance, int angle, double range);
 
@@ -21,14 +17,19 @@ public:
 	bool is_ready();
 
 private:
-	bool is_laser_ready;
+	void stop(void);
+	void start(void);
+	bool is_ready_;
 
-	ros::NodeHandle	laser_node_handler;
-	ros::Subscriber	scan_sub;
+	ros::NodeHandle	nh_;
+	ros::Subscriber	scan_sub_;
 
-	sensor_msgs::LaserScan		laser_scan_data;
+	sensor_msgs::LaserScan laser_scan_data;
 
 	void laser_scan_cb(const sensor_msgs::LaserScan::ConstPtr& msg);
+
+	ros::ServiceClient start_mator_cli_;
+	ros::ServiceClient stop_mator_cli_;
 };
 
 #endif

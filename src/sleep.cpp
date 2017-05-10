@@ -76,7 +76,7 @@ void Sleep_Mode(void)
 		{
 			Ch_WP_Counter++;
 			Reset_Rcon_Status();
-			ROS_INFO("%d,%d,Rcon_status %d",__FUNCTION__,__LINE__,Get_Rcon_Status());
+			ROS_INFO("%s,%d,Rcon_status %u",__FUNCTION__,__LINE__,(uint32_t)Get_Rcon_Status());
 			if(Ch_WP_Counter>50)
 			{
 				Ch_WP_Counter=0;

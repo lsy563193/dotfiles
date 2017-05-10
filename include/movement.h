@@ -677,7 +677,7 @@ uint8_t VirtualWall_TurnRight();
 
 uint8_t VirtualWall_TurnLeft();
 
-void ladar_gpio(char val);
+void laser_pm_gpio(char val);
 
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif

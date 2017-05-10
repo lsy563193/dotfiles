@@ -34,6 +34,7 @@
 #include <wav.h>
 //#include "../include/obstacle_detector.h"
 #include <motion_controler.h>
+#include <slam.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -73,7 +74,7 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH (2 * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH / MOVE_TO_CELL_SEARCH_INCREMENT + 1)
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
-extern bool is_line_angle_offset;
+extern bool g_is_line_angle_offset;
 
 extern uint32_t cur_wtime;//temporary work time
 
@@ -108,8 +109,6 @@ extern volatile uint8_t cleaning_mode;
 // This status is for rounding function to decide the angle it should turn.
 uint8_t Bumper_Status_For_Rounding;
 
-extern bool Is_Slam_Ready;//For checking if the slam is initialized finish
-
 // This time count is for checking how many times of 20ms did the user press the key.
 uint16_t Press_Time = 0;
 
@@ -124,7 +123,7 @@ void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_lon
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
 	*y = cellToCount(countToCell(Map_GetRelativeY(heading, offset_lat, offset_long)));
 }
-
+/*
 //not yet minus the x_off
 bool CM_Check_is_exploring()
 {
@@ -158,7 +157,7 @@ bool CM_Check_is_exploring()
 			float y = position_y + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
 				float x_1 = x + b * 0.05;
-				/*over map scope*/
+				//over map scope
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))){
 					ROS_WARN("over scope");
 				} else {
@@ -186,7 +185,7 @@ bool CM_Check_is_exploring()
 			float y = position_y + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1) {
 				float x_1 = x + b * 0.05;
-				/*over map scope*/
+				//*over map scope
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))) {
 					ROS_WARN("over scope");
 				} else {
@@ -208,7 +207,7 @@ bool CM_Check_is_exploring()
 	}
 
 	return 0;
-}
+}*/
 
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y )
 {
@@ -1472,8 +1471,8 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
-		else if (laser::instance()->laser_obstcal_detected(0.2, 0, -1.0) == true) {
-			//ROS_INFO("%s %d: laser detected obstcal, slow down!", __FUNCTION__, __LINE__);
+		else if (MotionManage::s_laser->laser_obstcal_detected(0.2, 0, -1.0) == true) {
+			//ROS_INFO("%s %d: Laser detected obstcal, slow down!", __FUNCTION__, __LINE__);
 			Integrated = 0;
 			Rotate_Angle = 0;
 			Base_Speed -= 3;
@@ -1899,7 +1898,7 @@ void CM_go_home()
 			tmpPnt.X = countToCell(Home_Point.front().X);
 			tmpPnt.Y = countToCell(Home_Point.front().Y);
 			// Delete the first home point, it works like a stack.
-			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, (uint)Home_Point.size());
 			Home_Point.pop_front();
 		}
 		while (ros::ok())
@@ -1980,7 +1979,7 @@ void CM_go_home()
 				CM_SetHome(New_Home_Point.X, New_Home_Point.Y);
 
 				Reset_Stop_Event_Status();
-				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, Home_Point.size());
+				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, (uint)Home_Point.size());
 
 				cur_wtime = 0;
 				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
@@ -2054,7 +2053,7 @@ void CM_go_home()
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 
 						Reset_Stop_Event_Status();
-						ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, Home_Point.size());
+						ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, (uint)Home_Point.size());
 						return;
 					}
 #endif
@@ -2074,7 +2073,7 @@ void CM_go_home()
 				{
 					// If it is the last point, it means it it now at (0, 0).
 					if (from_station == 0) {
-						CM_HeadToCourse(ROTATE_TOP_SPEED, -robot::instance()->robot_get_home_angle());
+						CM_HeadToCourse(ROTATE_TOP_SPEED, -MotionManage::s_slam->robot_get_home_angle());
 
 						if (Stop_Event())
 						{
@@ -2159,7 +2158,7 @@ void CM_go_home()
 				tmpPnt.X = countToCell(Home_Point.front().X);
 				tmpPnt.Y = countToCell(Home_Point.front().Y);
 				Home_Point.pop_front();
-				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
+				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, (uint)Home_Point.size());
 
 				/*
 				// In GoHome() function, it may set the clean mode to Clean_Mode_GoHome. But it is not appropriate here, because it might affect the mode detection in CM_MoveToCell() and make it return -4.
@@ -2241,9 +2240,9 @@ uint8_t CM_Touring(void)
 					robot::instance()->Reset_Cleaning_Manual_Pause();
 				}
 #endif
-//				Reset_Stop_Event_Status();
-//				Set_Error_Code(Error_Code_None);
-//				Set_Clean_Mode(Clean_Mode_Navigation);
+				Reset_Stop_Event_Status();
+				Set_Error_Code(Error_Code_None);
+				Set_Clean_Mode(Clean_Mode_Navigation);
 				wav_play(WAV_CLEANING_FINISHED);
 				return 0;
 			}
@@ -2423,10 +2422,10 @@ uint8_t CM_Touring(void)
 
 	}
 
-	Motion_controller motion;
+	MotionManage motion;
 
-//	Set_Clean_Mode(Clean_Mode_Navigation);
-//	return 0;
+	Set_Clean_Mode(Clean_Mode_Navigation);
+	return 0;
 #if MANUAL_PAUSE_CLEANING
 	// Clear the pause status.
 	if (robot::instance()->Is_Cleaning_Manual_Paused())
@@ -2460,10 +2459,8 @@ uint8_t CM_Touring(void)
 	}
 
 	//Check if slam is ok
-	if (Is_Slam_Ready) {
-		Is_Slam_Ready = 0;
+	if (MotionManage::s_laser->is_ready()) {
 	} else {
-		Is_Slam_Ready = 0;
 		Set_Error_Code(Error_Code_Slam);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -2482,7 +2479,7 @@ uint8_t CM_Touring(void)
 	}
 		/* usleep for checking whether robot is in the station */
 	usleep(700);
-	if (from_station == 1 && !robot::instance()->align_active()) {
+	if (from_station == 1 && !motion.is_align_active()) {
 		ROS_INFO("%s %d: Turn 45 degree to the wall", __FUNCTION__, __LINE__);
 
 		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle() - 450);

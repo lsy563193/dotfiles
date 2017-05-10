@@ -61,11 +61,6 @@ public:
 	uint16_t robot_get_battery_voltage();
 
         std::vector<int8_t> *robot_get_map_data();
-        uint32_t robot_get_width();
-        uint32_t robot_get_height();
-        float robot_get_resolution();
-        double robot_get_origin_x();
-        double robot_get_origin_y();
 
 	bool robot_is_moving();
 	float robot_get_linear_x();
@@ -74,7 +69,6 @@ public:
 
 	int16_t robot_get_yaw();
 
-	int16_t robot_get_home_angle();
 	float robot_get_position_x();
 	float robot_get_position_y();
 	float robot_get_WF_position_x();
@@ -93,26 +87,8 @@ public:
 	void pub_bumper_markers(void);
 	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
-	bool align(void);
-	void align_exit(void);
-	void align_active(bool);
-
-	bool start_lidar(void);
-	void stop_lidar(void);
-	void start_slam(void);
-//	void start_obstacle_detector(void);
-//	void stop_obstacle_detector(void);
-  void stop_slam(void);
-//	typedef enum class _Slam_type{
-//		GMAPPING,
-//		OPEN_KARTO,
-//	}Slam_type;
 
 	void init_mumber();
-	void slam_type(int type);
-	void map_ready(bool);
-	bool map_ready(void);
-	bool align_active(void);
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
@@ -140,25 +116,11 @@ private:
 #endif
 	bool	is_sensor_ready;
 	bool	is_odom_ready;
-	std::vector<int8_t> map_data;
-	std::vector<int8_t> *ptr;
-	uint32_t seq;
-        uint32_t width;
-        uint32_t height;
-	float resolution;
-	double origin_x;
-	double origin_y;
-	bool	is_map_ready;
-	volatile enum align_state{
-		detecting=0,
-		begin=1,
-		finish=2,
-	}line_align_;
+
 	/* 1 byte */
 	float	angle;
 
 	bool	is_align_active_;
-	int16_t line_angle;
 	/* 1 byte */
 	float	angle_v;
 
@@ -293,20 +255,15 @@ private:
 
 	double	yaw;
 
-	int slam_type_;
 	ros::NodeHandle robot_node_handler;
 	ros::Subscriber robot_sensor_sub;
 	ros::Subscriber odom_sub;
 	ros::Subscriber map_metadata_sub;
-	ros::Subscriber map_sub;
 //	ros::Subscriber obstacles_sub;
 	ros::Publisher send_cmd_pub;
 	ros::Publisher send_clean_marker_pub;
 	ros::Publisher send_bumper_marker_pub;
 //	ros::Publisher obstacles_pub_;
-
-	ros::ServiceClient start_mator_cli_;
-	ros::ServiceClient stop_mator_cli_;
 
 	visualization_msgs::Marker clean_markers,bumper_markers;
 	geometry_msgs::Point m_points;
@@ -318,7 +275,6 @@ private:
 
 	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
 	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
-	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr& obstacles);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& msg);
 };

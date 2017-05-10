@@ -54,7 +54,7 @@ bool	escape_thread_running = false;
 uint32_t escape_trapped_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
-extern int8_t enable_slam_offset;
+extern int8_t g_enable_slam_offset;
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 	{1200, 250, 150},
@@ -667,19 +667,16 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		return 0;
 	}
 	robot::instance()->init_mumber();// for init robot member
-	Motion_controller motion;
+	MotionManage motion;
 
-	if (Is_Slam_Ready) {
-		Is_Slam_Ready = 0;
-	} else{
-		Is_Slam_Ready = 0;
+	if (!MotionManage::s_laser->is_ready()) {
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Set_Error_Code(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
 		return 0;
 	}
 
-	enable_slam_offset = 2;//2 for wall follow mode
+	g_enable_slam_offset = 2;//2 for wall follow mode
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
 
@@ -1296,33 +1293,33 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Move_Forward(0, 0);
 	return ret;
 }
-
+/*
 void Wall_Follow_Init_Slam(void){
 	extern void start_slam(void);
 //	robot::instance()->Subscriber();
 	robot::instance()->start_lidar();
 	//std::async(std::launch::async, start_slam);
 	start_slam();
-	/*while (robot::instance()->map_ready() == false || ros::ok()){
+	*//*while (robot::instance()->map_ready() == false || ros::ok()){
 		usleep(100);
 		ROS_WARN("waiting for map");
-	}*/
+	}*//*
 	sleep(5);
-	enable_slam_offset = 2;
-}
+	g_enable_slam_offset = 2;
+}*/
 /*
 void Wall_Follow_Stop_Slam(void){
 	extern void start_slam(void);
 	robot::instance()->UnSubscriber();
 	Disable_Motors();
-	robot::instance()->stop_lidar();
+	robot::instance()->stop_laser();
 	//std::async(std::launch::async, start_slam);
 	robot::instance()->stop_slam();
 	*//*while (robot::instance()->map_ready() == false || ros::ok()){
 		usleep(100);
 		ROS_WARN("waiting for map");
 	}*//*
-	enable_slam_offset = 0;
+	g_enable_slam_offset = 0;
 }*/
 uint8_t WF_End_Wall_Follow(void){
 	int16_t i;
@@ -1331,9 +1328,9 @@ uint8_t WF_End_Wall_Follow(void){
 	Point32_t	Next_Point, Target_Point;
 	Point16_t	tmpPnt, pnt16ArTmp[3];
 	MapTouringType	mt_state = MT_None;
-	int16_t home_angle = robot::instance()->robot_get_home_angle();
+	int16_t home_angle = MotionManage::s_slam->robot_get_home_angle();
 	Stop_Brifly();
-	enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
+	g_enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
 	WF_Mark_Home_Point();
 	CM_go_home();
@@ -1497,7 +1494,7 @@ int8_t WF_Push_Point(int32_t x, int32_t y){
 			New_WF_Point.X = x;
 			New_WF_Point.Y = y;
 			WF_Point.push_back(New_WF_Point);
-			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
+			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, (uint)WF_Point.size());
 			return 1;
 		} else{
 			return 0;//it means still in the same cell
@@ -1522,7 +1519,7 @@ void WF_Mark_Home_Point(void){
 	while (!WF_Home_Point.empty()){
 		x = WF_Home_Point.front().X;
 		y = WF_Home_Point.front().Y;
-		ROS_INFO("%s %d: WF_Home_Point.front().X = %d, WF_Home_Point.front().Y = %d, WF_Home_Point.size() = %d", __FUNCTION__, __LINE__, x, y, WF_Home_Point.size());
+		ROS_INFO("%s %d: WF_Home_Point.front().X = %d, WF_Home_Point.front().Y = %d, WF_Home_Point.size() = %d", __FUNCTION__, __LINE__, x, y, (uint)WF_Home_Point.size());
 		ROS_INFO("%s %d: xMin = %d, xMax = %d", __FUNCTION__, __LINE__, xMin, xMax);
 		WF_Home_Point.pop_front();
 
