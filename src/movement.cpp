@@ -632,8 +632,11 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 			Stop_Brifly();
 			WFM_move_back(120);
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				break;
+			}
 			Set_Dir_Left();
-			ROS_INFO("Bumper triged when turn left, back 20mm.");
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
@@ -710,8 +713,11 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 			Stop_Brifly();
 			WFM_move_back(120);
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				break;
+			}
 			Set_Dir_Right();
-			ROS_INFO("Bumper triged when turn right, back 20mm.");
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);

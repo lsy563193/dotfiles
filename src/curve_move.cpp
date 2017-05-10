@@ -141,23 +141,11 @@ MapTouringType CurveMove_MoveToPoint()
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
-
 #ifdef BUMPER_ERROR
-			if (Get_Bumper_Status()) {
-				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-				CM_CorBack(COR_BACK_20MM);
-				if (Get_Bumper_Status()) {
-					CM_CorBack(COR_BACK_20MM);
-					if (Get_Bumper_Status()) {
-						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-						CM_CorBack(COR_BACK_20MM);
-						Set_Error_Code(Error_Code_Bumper);
-						Stop_Brifly();
-						retval = MT_Key_Clean;
-						ROS_WARN("%s %d", __FUNCTION__, __LINE__);
-						break;
-					}
-				}
+			if(Is_Bumper_Jamed())
+			{
+				retval = MT_Key_Clean;
+				break;
 			}
 #endif
 
