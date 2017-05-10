@@ -1267,6 +1267,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 			//Map_Initialize();
 			Map_Reset(MAP);
+			Turn_Right(Turn_Speed, 900);
 			continue;
 		} else{
 			ROS_INFO("%s %d: Not in isolate island, finish, break", __FUNCTION__, __LINE__);
