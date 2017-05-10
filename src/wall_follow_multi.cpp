@@ -858,15 +858,15 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				Stop_Brifly();
 				WF_Check_Angle();
 				if (WF_check_isolate()){
-					ROS_INFO("Isolated");
+					ROS_WARN("Isolated");
 					Isolated_Flag = 1;
 					break;
 				} else{
-					ROS_INFO("Not Isolated");
+					ROS_WARN("Not Isolated");
 					Isolated_Flag = 0;
 				}
 				WF_End_Wall_Follow();
-				ROS_INFO("reach_count >= 10");
+				ROS_WARN("reach_count >= 10");
 				break;
 			}
 
@@ -1272,7 +1272,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			Turn_Right(Turn_Speed, 900);
 			continue;
 		} else{
-			ROS_INFO("%s %d: Not in isolate island, finish, break", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Not in isolate island, finish, break", __FUNCTION__, __LINE__);
 			break;
 		}
 	}//the biggest loop end
@@ -1555,6 +1555,7 @@ Description:
 bool WF_Check_Angle(void) {
 	int32_t x, y;
 	int16_t th, former_th;
+	int16_t	th_diff;
 	try{
 		x = (WF_Point.at(WF_Point.size() - 1)).X;
 		y = (WF_Point.at(WF_Point.size() - 1)).Y;
@@ -1565,6 +1566,14 @@ bool WF_Check_Angle(void) {
 				ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", iter->X, iter->Y, iter->TH);
 				break;
 			}
+		}
+		th_diff = (abs(former_th - th));
+		if (th_diff  <= 200) {
+			ROS_WARN("th_diff = %d, pass angle check!",th_diff);
+			return 1;
+		} else {
+			ROS_WARN("th_diff = %d, fail angle check!",th_diff);
+			return 0;
 		}
 
 	}
