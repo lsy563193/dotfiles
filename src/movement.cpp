@@ -454,6 +454,13 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	accurate = 10;
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
+		// For GoHome(), if reach the charger stub during turning, should stop immediately.
+		if (Is_ChargerOn())
+		{
+			ROS_DEBUG("Reach charger while turn left.");
+			Stop_Brifly();
+			break;
+		}
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
@@ -522,6 +529,13 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	accurate = 10;
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
+		// For GoHome(), if reach the charger stub during turning, should stop immediately.
+		if (Is_ChargerOn())
+		{
+			ROS_DEBUG("Reach charger while turn right.");
+			Stop_Brifly();
+			break;
+		}
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
