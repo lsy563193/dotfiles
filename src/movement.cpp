@@ -982,15 +982,15 @@ uint8_t Get_Cliff_Trig(void)
 	cf = robot::instance()->robot_get_cliff_front();	
 	if (cl < Cliff_Limit){
 		ROS_WARN("Left cliff is detected:%d", cl);
-		Cliff_Status += 0x01;
+		Cliff_Status |= 0x01;
 	}
 	if (cr< Cliff_Limit){
 		ROS_WARN("Right cliff is detected:%d", cr);
-		Cliff_Status += 0x02;
+		Cliff_Status |= 0x02;
 	}
 	if (cf < Cliff_Limit){
 		ROS_WARN("Front cliff is detected:%d", cf);
-		Cliff_Status += 0x04;
+		Cliff_Status |= 0x04;
 	}
 	/*
 	if (Cliff_Status != 0x00){
