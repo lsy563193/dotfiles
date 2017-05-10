@@ -80,7 +80,7 @@
 #define LOW_BATTERY_STOP_VOLTAGE		(1200)
 
 /* Ready to clean battery voltage value */
-#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
+#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1200)
 
 /* Fully charged battery voltage value */
 #define BATTERY_FULL_VOLTAGE	(1600)

@@ -39,8 +39,8 @@
 #define Turn_Speed	18
 #endif
 
-std::vector<Point32_t> WF_Point;
-Point32_t New_WF_Point;
+std::vector<Pose32_t> WF_Point;
+Pose32_t New_WF_Point;
 // This list is for storing the position that robot sees the charger stub.
 extern std::list <Point32_t> Home_Point;
 // This is for adding new point to Home Point list.
@@ -856,6 +856,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			if(reach_count >= 10){
 				reach_count = 0;
 				Stop_Brifly();
+				WF_Check_Angle();
 				if (WF_check_isolate()){
 					ROS_INFO("Isolated");
 					Isolated_Flag = 1;
@@ -1267,6 +1268,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 			//Map_Initialize();
 			Map_Reset(MAP);
+			WF_Point.clear();
 			Turn_Right(Turn_Speed, 900);
 			continue;
 		} else{
@@ -1329,10 +1331,10 @@ uint8_t WF_End_Wall_Follow(void){
 	int16_t i;
 	int8_t state;
 	// X, Y in Target_Point are all counts.
-	Point32_t	Next_Point, Target_Point;
-	Point16_t	tmpPnt, pnt16ArTmp[3];
-	MapTouringType	mt_state = MT_None;
-	int16_t home_angle = robot::instance()->robot_get_home_angle();
+	//Point32_t	Next_Point, Target_Point;
+	//Point16_t	tmpPnt, pnt16ArTmp[3];
+	//MapTouringType	mt_state = MT_None;
+	//int16_t home_angle = robot::instance()->robot_get_home_angle();
 	Stop_Brifly();
 	enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
@@ -1342,7 +1344,7 @@ uint8_t WF_End_Wall_Follow(void){
 	/*****************************************Release Memory************************************/
 	Home_Point.clear();
 	WF_Point.clear();
-	std::vector<Point32_t>(WF_Point).swap(WF_Point);
+	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
 	Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1353,7 +1355,7 @@ uint8_t WF_Break_Wall_Follow(void){
 	/*****************************************Release Memory************************************/
 	Home_Point.clear();
 	WF_Point.clear();
-	std::vector<Point32_t>(WF_Point).swap(WF_Point);
+	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
 	Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1415,7 +1417,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 	//Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
 	i = Map_GetRelativeX(heading, 0, 0);
 	j = Map_GetRelativeY(heading, 0, 0);
-	push_state = WF_Push_Point(countToCell(i),countToCell(j));//push a cell
+	push_state = WF_Push_Point(countToCell(i),countToCell(j), Gyro_GetAngle());//push a cell
 	if(push_state == 1){
 		reach_state = WF_Is_Reach_Cleaned();//check this cell if reached
 		if(reach_state == true){//add reach_count
@@ -1492,13 +1494,14 @@ bool WF_Is_Reach_Cleaned(void){
 	return false;
 }
 
-int8_t WF_Push_Point(int32_t x, int32_t y){
+int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 	if (WF_Point.empty() == false){
 		if(WF_Point.back().X != x || WF_Point.back().Y != y){
 			New_WF_Point.X = x;
 			New_WF_Point.Y = y;
+			New_WF_Point.TH = th;
 			WF_Point.push_back(New_WF_Point);
-			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
+			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, WF_Point.TH = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.back().TH, WF_Point.size());
 			return 1;
 		} else{
 			return 0;//it means still in the same cell
@@ -1506,7 +1509,9 @@ int8_t WF_Push_Point(int32_t x, int32_t y){
 	} else{
 		New_WF_Point.X = x;
 		New_WF_Point.Y = y;
+		New_WF_Point.TH = th;
 		WF_Point.push_back(New_WF_Point);
+		ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, WF_Point.TH = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.back().TH, WF_Point.size());
 		//ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
 		return 1;
 	}
@@ -1534,4 +1539,37 @@ void WF_Mark_Home_Point(void){
 			}
 		}
 	}
+}
+
+/**************************************************************
+Function:WF_Check_Check_Angle
+Description:
+ *It mainly for checking whether the angle is same when wall 
+ *follow end. When it check is loop closed, and is not isolated,
+ *it will check whether the angle of last 10 poses in WF_Point 
+ *is same as the other same pose in the WF_Point except the last
+ *10 point. It can prevent from the case that the robot is in the
+ *narrow and long space when wall follow, and it will be checked 
+ *as loop closed.
+ ***************************************************************/
+bool WF_Check_Angle(void) {
+	int32_t x, y;
+	int16_t th, former_th;
+	try{
+		x = (WF_Point.at(WF_Point.size() - 1)).X;
+		y = (WF_Point.at(WF_Point.size() - 1)).Y;
+		th = (WF_Point.at(WF_Point.size() - 1)).TH;
+		for (std::vector<Pose32_t>::iterator iter =  WF_Point.begin(); iter != WF_Point.end(); ++iter) {
+			if (iter->X == x && iter ->Y == y) {
+				former_th = iter->TH;
+				ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", iter->X, iter->Y, iter->TH);
+				break;
+			}
+		}
+
+	}
+	catch(const std::out_of_range& oor){
+		std::cerr << "Out of range error:" << oor.what() << '\n';
+	}
+	return 0;
 }
