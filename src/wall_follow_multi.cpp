@@ -1556,19 +1556,20 @@ bool WF_Check_Angle(void) {
 	int32_t x, y;
 	int16_t th, former_th;
 	int16_t	th_diff;
+	int16_t	diff_limit = 200;
 	try{
 		x = (WF_Point.at(WF_Point.size() - 1)).X;
 		y = (WF_Point.at(WF_Point.size() - 1)).Y;
 		th = (WF_Point.at(WF_Point.size() - 1)).TH;
-		for (std::vector<Pose32_t>::iterator iter =  WF_Point.begin(); iter != WF_Point.end(); ++iter) {
-			if (iter->X == x && iter ->Y == y) {
-				former_th = iter->TH;
-				ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", iter->X, iter->Y, iter->TH);
+		for (std::vector<Pose32_t>::reverse_iterator r_iter =  (WF_Point.rbegin() + 1); r_iter != WF_Point.rend(); ++r_iter) {
+			if (r_iter->X == x && r_iter ->Y == y) {
+				former_th = r_iter->TH;
+				ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
 				break;
 			}
 		}
 		th_diff = (abs(former_th - th));
-		if (th_diff  <= 200) {
+		if (th_diff  <= diff_limit) {
 			ROS_WARN("th_diff = %d, pass angle check!",th_diff);
 			return 1;
 		} else {
