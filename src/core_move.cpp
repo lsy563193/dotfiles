@@ -730,17 +730,13 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			Set_Wheel_Speed(0, 0);
 
 #ifdef BUMPER_ERROR
-			if (Get_Bumper_Status()) {
-				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-				CM_CorBack(COR_BACK_20MM);
-
-				if (Stop_Event())
-				{
-					Stop_Brifly();
-					ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-					return;
-				}
-
+			if (Is_Bumper_Jamed())
+			{
+				ROS_INFO("%s, %d: Bumper Jamed in CM_HeadToCourse!", __FUNCTION__, __LINE__);
+				return ;
+			}
+			else
+			{
 				Diff = Angle - Gyro_GetAngle();
 				while (Diff >= 1800) {
 					Diff = Diff - 3600;
@@ -762,53 +758,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					Set_Dir_Right();
 					action = ACTION_RT;
 				}
-				if (Get_Bumper_Status()) {
-					CM_CorBack(COR_BACK_20MM);
 
-					if (Stop_Event())
-					{
-						Stop_Brifly();
-						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-						return;
-					}
-
-					Diff = Angle - Gyro_GetAngle();
-					while (Diff >= 1800) {
-						Diff = Diff - 3600;
-					}
-
-					while (Diff <= (-1800)) {
-						Diff = Diff + 3600;
-					}
-
-					ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()));
-					if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
-						ROS_INFO("Turn Left");
-
-						Set_Dir_Left();
-						action = ACTION_LT;
-					} else if ((Diff <= 0) && (Diff >= (-1800))) {
-						ROS_INFO("Turn Right");
-
-						Set_Dir_Right();
-						action = ACTION_RT;
-					}
-					if (Get_Bumper_Status()) {
-						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-						CM_CorBack(COR_BACK_20MM);
-
-						if (Stop_Event())
-						{
-							Stop_Brifly();
-							ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-							return;
-						}
-
-						Set_Error_Code(Error_Code_Bumper);
-						Stop_Brifly();
-						return;
-					}
-				}
 			}
 
 #endif
@@ -1292,47 +1242,11 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			}
 
 #ifdef BUMPER_ERROR
-			if (Get_Bumper_Status()) {
-				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-				CM_CorBack(COR_BACK_20MM);
-				if (Stop_Event())
-				{
-					ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-					retval = MT_Key_Clean;
-					break;
-				}
-				if (Get_Bumper_Status()) {
-					CM_CorBack(COR_BACK_20MM);
-					if (Stop_Event())
-					{
-						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-						retval = MT_Key_Clean;
-						break;
-					}
-					if (Get_Bumper_Status()) {
-						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-						CM_CorBack(COR_BACK_20MM);
-						if (Stop_Event())
-						{
-							ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-							retval = MT_Key_Clean;
-							break;
-						}
-						Set_Error_Code(Error_Code_Bumper);
-						Stop_Brifly();
-						// If bumper jam, wait for manual release and it can keep on.(Convenient for testing)
-						//retval = MT_Key_Clean;
-						ROS_WARN("%s %d: bumper jam break! Please manual release the bumper!", __FUNCTION__, __LINE__);
-						while (Get_Bumper_Status()){
-							// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
-//							Beep(3, 25, 0, 1);
-							usleep(2000000);
-						}
-						//break;
-					}
-				}
+			if(Is_Bumper_Jamed())
+			{
+				retval = MT_Key_Clean;
+				break;
 			}
-
 #endif
 
 			Stop_Brifly();
@@ -1759,12 +1673,18 @@ int CM_cleaning()
 
 			if (rounding_type != ROUNDING_NONE) {
 				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
-				rounding(rounding_type, Next_Point, Bumper_Status_For_Rounding);
+				if(rounding(rounding_type, Next_Point, Bumper_Status_For_Rounding))
+				{
+					CM_ResetGoHome();
+					ROS_WARN("%s, %d: Reset gohome here.", __FUNCTION__, __LINE__);
+					quit = true;
+					retval = -1;
+				}
 			} else {
 				mt_state = CM_MoveToPoint(Next_Point);
 			}
 
-			if (y_current == countToCell(Next_Point.Y)) {
+			if (y_current == countToCell(Next_Point.Y) && quit == false) {
 				x = Map_GetXPos();
 				y = Map_GetYPos();
 				if (x_current != x ) {
@@ -2073,7 +1993,7 @@ void CM_go_home()
 				{
 					// If it is the last point, it means it it now at (0, 0).
 					if (from_station == 0) {
-						CM_HeadToCourse(ROTATE_TOP_SPEED, -MotionManage::s_slam->robot_get_home_angle());
+						CM_HeadToCourse(ROTATE_TOP_SPEED, -robot::instance()->home_angle());
 
 						if (Stop_Event())
 						{
@@ -2240,9 +2160,9 @@ uint8_t CM_Touring(void)
 					robot::instance()->Reset_Cleaning_Manual_Pause();
 				}
 #endif
-				Reset_Stop_Event_Status();
-				Set_Error_Code(Error_Code_None);
-				Set_Clean_Mode(Clean_Mode_Navigation);
+//				Reset_Stop_Event_Status();
+//				Set_Error_Code(Error_Code_None);
+//				Set_Clean_Mode(Clean_Mode_Navigation);
 				wav_play(WAV_CLEANING_FINISHED);
 				return 0;
 			}
@@ -2424,8 +2344,8 @@ uint8_t CM_Touring(void)
 
 	MotionManage motion;
 
-	Set_Clean_Mode(Clean_Mode_Navigation);
-	return 0;
+//	Set_Clean_Mode(Clean_Mode_Navigation);
+//	return 0;
 #if MANUAL_PAUSE_CLEANING
 	// Clear the pause status.
 	if (robot::instance()->Is_Cleaning_Manual_Paused())

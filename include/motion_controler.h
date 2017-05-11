@@ -17,7 +17,6 @@ public:
 	bool is_align_active(){
 		return is_align_active_;
 	};
-
 	static Laser* s_laser;
 	static Slam* s_slam;
 private:
@@ -33,7 +32,7 @@ private:
 		stop=0,
 		start=1,
 	}line_align_;
-	int16_t line_angle_;
+//	int16_t line_angle_;
 
 	//startup flag;
 //	enum start_object {laser,total};

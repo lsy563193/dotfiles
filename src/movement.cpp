@@ -456,6 +456,13 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	accurate = 10;
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
+		// For GoHome(), if reach the charger stub during turning, should stop immediately.
+		if (Is_ChargerOn())
+		{
+			ROS_DEBUG("Reach charger while turn left.");
+			Stop_Brifly();
+			break;
+		}
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
@@ -524,6 +531,13 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	accurate = 10;
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
+		// For GoHome(), if reach the charger stub during turning, should stop immediately.
+		if (Is_ChargerOn())
+		{
+			ROS_DEBUG("Reach charger while turn right.");
+			Stop_Brifly();
+			break;
+		}
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
@@ -634,8 +648,11 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 			Stop_Brifly();
 			WFM_move_back(120);
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				break;
+			}
 			Set_Dir_Left();
-			ROS_INFO("Bumper triged when turn left, back 20mm.");
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
@@ -712,8 +729,11 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 			Stop_Brifly();
 			WFM_move_back(120);
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				break;
+			}
 			Set_Dir_Right();
-			ROS_INFO("Bumper triged when turn right, back 20mm.");
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
@@ -857,6 +877,8 @@ void Jam_Turn_Left(uint16_t speed, int16_t angle)
 			break;
 		if(Stop_Event())
 			break;
+		if(!Get_Bumper_Status())
+			break;
 		/*if(Is_Turn_Remote())
 			break;*/
 		usleep(10000);
@@ -913,6 +935,8 @@ void Jam_Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Stop_Event())
 			break;
+		if(!Get_Bumper_Status())
+			break;
 		/*if(Is_Turn_Remote())
 			break;*/
 		usleep(10000);
@@ -960,15 +984,15 @@ uint8_t Get_Cliff_Trig(void)
 	cf = robot::instance()->robot_get_cliff_front();	
 	if (cl < Cliff_Limit){
 		ROS_WARN("Left cliff is detected:%d", cl);
-		Cliff_Status += 0x01;
+		Cliff_Status |= 0x01;
 	}
 	if (cr< Cliff_Limit){
 		ROS_WARN("Right cliff is detected:%d", cr);
-		Cliff_Status += 0x02;
+		Cliff_Status |= 0x02;
 	}
 	if (cf < Cliff_Limit){
 		ROS_WARN("Front cliff is detected:%d", cf);
-		Cliff_Status += 0x04;
+		Cliff_Status |= 0x04;
 	}
 	/*
 	if (Cliff_Status != 0x00){
@@ -2853,27 +2877,37 @@ uint8_t Is_Bumper_Jamed()
 	{
 		ROS_INFO("JAM1");
 		Move_Back();
+		if(Stop_Event())
+		{
+			ROS_INFO("%s, %d: Stop event in JAM1", __FUNCTION__, __LINE__);
+			return 1;
+		}
 		if(Get_Bumper_Status())
 		{
 			ROS_INFO("JAM2");
 			// Quick back will not set speed to 100, it will be limited by the RUN_TOP_SPEED.
 			Quick_Back(100,200);
+			if(Stop_Event())
+			{
+				ROS_INFO("%s, %d: Stop event in JAM2", __FUNCTION__, __LINE__);
+				return 1;
+			}
 			if(Get_Bumper_Status())
 			{
 				ROS_INFO("JAM3");
 				Jam_Turn_Right(60, 900);
-				Jam_Turn_Left(60, 1800);
 				if(Get_Bumper_Status())
 				{
 					ROS_INFO("JAM4");
-					//if(Is_Bumper_Fail())
-					//{
+					Jam_Turn_Left(60, 1800);
+					if(Get_Bumper_Status())
+					{
 						ROS_INFO("JAM5");
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						Set_Error_Code(Error_Code_Bumper);
 						wav_play(WAV_ERROR_BUMPER);
 						return 1;
-					//}
+					}
 				}
 			}
 		}

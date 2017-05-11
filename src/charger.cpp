@@ -92,9 +92,10 @@ void Charge_Function(void)
 
 		if(!Is_ChargerOn())//check if charger unplug
 		{
-			if (Stop_Charge_Counter > 50)
+			ROS_DEBUG("Leave charger");
+			if (Stop_Charge_Counter > 25)
 			{
-				// Stop_Charge_Counter > 50 means robot has left charger stub for 1s.
+				// Stop_Charge_Counter > 25 means robot has left charger stub for 0.5s.
 #if CONTINUE_CLEANING_AFTER_CHARGE
 				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
 				{
@@ -113,7 +114,7 @@ void Charge_Function(void)
 				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 				{
 					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
-					wav_play(WAV_ERROR_LIFT_UP);
+					//wav_play(WAV_ERROR_LIFT_UP);
 					CM_reset_cleaning_low_bat_pause();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					break;
@@ -269,8 +270,23 @@ void GoHome(void)
 	Reset_Rcon_Status();
 	// Save the start angle.
 	Last_Angle = Gyro_GetAngle();
+	// Enable the charge function
+	set_start_charge();
+
 	while(Gyro_Step < 3600)
 	{
+		// For GoHome(), if reach the charger stub during turning, should stop immediately.
+		if (Is_ChargerOn())
+		{
+			ROS_DEBUG("%s %d: Reach charger at first turn.", __FUNCTION__, __LINE__);
+			Disable_Motors();
+			usleep(100000);
+			if (Is_ChargerOn())
+			{
+				Set_Clean_Mode(Clean_Mode_Charging);
+				break;
+			}
+		}
 		if (Stop_Event())
 		{
 			ROS_WARN("%s %d: Stop_Event in turning 360 degrees to find charger signal.", __FUNCTION__, __LINE__);
@@ -529,6 +545,7 @@ void Around_ChargerStation(uint8_t Dir)
 	uint32_t N_Around_LRSignal=0;
 	uint8_t Bumper_Counter=0;
 	static uint8_t LLSignal_Count = 0,RRSignal_Count = 0, RTSignal_Count = 0,LTSignal_Count = 0;
+	uint8_t Cliff_Counter = 0;
 	Move_Forward(9,9);
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
@@ -578,14 +595,31 @@ void Around_ChargerStation(uint8_t Dir)
 				return;
 			}
 
-			while (Get_Cliff_Trig())
+			while (Get_Cliff_Trig() && Cliff_Counter < 3)
 			{
 				// Move back until escape cliff triggered.
 				Move_Back();
+				Cliff_Counter++;
+				usleep(40000);
+				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				{
+					Disable_Motors();
+					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+					wav_play(WAV_ERROR_LIFT_UP);
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return;
+				}
 			}
-			Turn_Left(Turn_Speed,1750);
-			Move_Forward(9,9);
-			Set_Clean_Mode(Clean_Mode_GoHome);
+			if (Cliff_Counter == 3)
+			{
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+			}
+			else
+			{
+				Turn_Left(Turn_Speed,1750);
+				Move_Forward(9,9);
+				Set_Clean_Mode(Clean_Mode_GoHome);
+			}
 			return;
 		}
 
@@ -673,6 +707,50 @@ void Around_ChargerStation(uint8_t Dir)
 			No_Signal_Counter=0;
 		}
 
+		if(Is_ChargerOn())
+		{
+			ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+			Disable_Motors();
+			Stop_Brifly();
+//			delay(2000);
+			usleep(200000);
+			if(Is_ChargerOn())
+			{
+				//delay(5000);
+				usleep(200000);
+				if(Is_ChargerOn())
+				{
+//					Reset_Error_Code();
+					Set_Clean_Mode(Clean_Mode_Charging);
+//					Beep(2, 25, 0, 1);
+//					Reset_Rcon_Remote();
+					return;
+				}
+			}
+			else if(Turn_Connect())
+			{
+				Set_Clean_Mode(Clean_Mode_Charging);
+//				Reset_Rcon_Remote();
+				return;
+			}
+			else
+			{
+				Set_SideBrush_PWM(30,30);
+				Set_MainBrush_PWM(0);
+				////Back(30,800);
+				//Back(30,300);
+				Quick_Back(30,300);
+				Set_MainBrush_PWM(30);
+				Stop_Brifly();
+			}
+			if (Stop_Event())
+			{
+				ROS_WARN("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
+				Disable_Motors();
+				return;
+			}
+		}
+
 		Temp_Rcon_Status = Get_Rcon_Status();
 		if(Temp_Rcon_Status)
 		{
@@ -698,7 +776,7 @@ void Around_ChargerStation(uint8_t Dir)
 			Dir=1-Dir;
 		}*/
 		ROS_DEBUG("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, Dir);
-		if(Dir == 1)//10.30  ×ó±ß£¬ÄæÊ±Õë
+		if(Dir == 1)//10.30
 		{
 //			if(Get_RightWheel_Step()>20000)
 //			{
@@ -856,7 +934,7 @@ void Around_ChargerStation(uint8_t Dir)
 					if(Temp_Position==2)
 					{
 						ROS_DEBUG("%s %d call By_Path()", __FUNCTION__, __LINE__);
-						Move_Forward(1,1);
+						//Move_Forward(1,1);
 						By_Path();
 						return;
 					}
@@ -1029,7 +1107,7 @@ void Around_ChargerStation(uint8_t Dir)
 					if(Temp_Position==2)
 					{
 						ROS_DEBUG("%s %d call By_Path()", __FUNCTION__, __LINE__);
-						Move_Forward(1,1);
+						//Move_Forward(1,1);
 						By_Path();
 						return;
 					}
@@ -1063,12 +1141,12 @@ uint8_t Check_Position(uint8_t Dir)
 
 	if(Dir == Round_Left)
 	{
-		ROS_DEBUG("Dir = left");
+		ROS_DEBUG("Check position Dir = left");
 		Set_Dir_Left();
 	}
 	else if(Dir == Round_Right)
 	{
-		ROS_DEBUG("Dir = right");
+		ROS_DEBUG("Check position Dir = right");
 		Set_Dir_Right();
 	}
 	Set_Wheel_Speed(10,10);
@@ -1141,7 +1219,7 @@ uint8_t Check_Position(uint8_t Dir)
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
-				ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -1170,6 +1248,49 @@ uint8_t Check_Position(uint8_t Dir)
 			}
 		}
 
+		if(Is_ChargerOn())
+		{
+			ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+			Disable_Motors();
+			Stop_Brifly();
+//			delay(2000);
+			usleep(200000);
+			if(Is_ChargerOn())
+			{
+				//delay(5000);
+				usleep(200000);
+				if(Is_ChargerOn())
+				{
+//					Reset_Error_Code();
+					Set_Clean_Mode(Clean_Mode_Charging);
+//					Beep(2, 25, 0, 1);
+//					Reset_Rcon_Remote();
+					return 2;
+				}
+			}
+			else if(Turn_Connect())
+			{
+				Set_Clean_Mode(Clean_Mode_Charging);
+//				Reset_Rcon_Remote();
+				return 2;
+			}
+			else
+			{
+				Set_SideBrush_PWM(30,30);
+				Set_MainBrush_PWM(0);
+				////Back(30,800);
+				//Back(30,300);
+				Quick_Back(30,300);
+				Set_MainBrush_PWM(30);
+				Stop_Brifly();
+			}
+			if (Stop_Event())
+			{
+				ROS_WARN("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
+				Disable_Motors();
+				return 1;
+			}
+		}
 		uint8_t octype = Check_Motor_Current();
 		if(octype){
 			if(Self_Check(octype)){
@@ -1249,7 +1370,7 @@ void By_Path(void)
 			//ROS_DEBUG("new round, Bumper_Counter = %d.", Bumper_Counter);
 			if(Is_ChargerOn())
 			{
-				ROS_DEBUG("Is_ChargerOn!!");
+				ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
 				Disable_Motors();
 				Stop_Brifly();
 //				delay(2000);
@@ -1438,6 +1559,14 @@ void By_Path(void)
 			{
 				if(Get_Cliff_Trig())
 				{
+					if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+					{
+						Disable_Motors();
+						ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+						wav_play(WAV_ERROR_LIFT_UP);
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return;
+					}
 					Move_Back();
 					Move_Back();
 					Turn_Left(Turn_Speed,1750);
@@ -1450,6 +1579,14 @@ void By_Path(void)
 			{
 				if(Get_Cliff_Trig())
 				{
+					if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+					{
+						Disable_Motors();
+						ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
+						wav_play(WAV_ERROR_LIFT_UP);
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						return;
+					}
 					Set_Wheel_Speed(0,0);
 					Set_Dir_Backward();
 //					delay(300);

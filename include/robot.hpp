@@ -80,15 +80,18 @@ public:
 	float robot_get_map_position_x();
 	float robot_get_map_position_y();
 	double robot_get_map_yaw();
-
 	void robot_display_positions();
 	void pub_ctrl_command(void);
 	void pub_clean_markers(void);
 	void pub_bumper_markers(void);
 	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
-
+	void is_odom_ready(bool is_ready){is_odom_ready_ = is_ready;};
 	void init_mumber();
+
+	void home_angle(int16_t angle){home_angle_ = angle;};
+	int16_t home_angle(void){ return home_angle_;};
+	int16_t home_angle_;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
@@ -115,7 +118,7 @@ private:
 	bool	manual_pause_cleaning;
 #endif
 	bool	is_sensor_ready;
-	bool	is_odom_ready;
+	bool	is_odom_ready_;
 
 	/* 1 byte */
 	float	angle;

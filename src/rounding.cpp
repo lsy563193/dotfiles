@@ -119,6 +119,12 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 		Round_Turn_Right(speed, angle);
 	}
 
+	if(Get_Error_Code() == Error_Code_Bumper)
+	{
+		/*----bumper jamed while turning----*/
+		return ;
+	}
+
 	if (Stop_Event())
 	{
 		ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -247,6 +253,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 		}
 		//rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 450 : 1350));
+		if(Get_Error_Code() == Error_Code_Bumper)
+		{
+			/*----bumper jamed while turning----*/
+			return 1;
+		}
 	}
 	else if (!(Origin_Bumper_Status & LeftBumperTrig) && (Origin_Bumper_Status & RightBumperTrig))
 	{
@@ -260,11 +271,21 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			ROS_INFO("%s %d: Right bumper ROUNDING_RIGHT and turn 45 degrees.", __FUNCTION__, __LINE__);
 		}
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 1350 : 450));
+		if(Get_Error_Code() == Error_Code_Bumper)
+		{
+			/*----bumper jamed while turning----*/
+			return 1;
+		}
 	}
 	else
 	{
 		// If bumper not hit or it just hit the front (Both left and right bumper triggered, robot should turn 90 degrees.
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
+		if(Get_Error_Code() == Error_Code_Bumper)
+		{
+			/*----bumper jamed while turning----*/
+			return 1;
+		}
 		// Debug
 		if (type == ROUNDING_LEFT)
 		{
@@ -348,6 +369,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 				// Turn right for 135 degrees.
 				rounding_turn(1, TURN_SPEED, 1350);
+				if(Get_Error_Code() == Error_Code_Bumper)
+				{
+					/*----bumper jamed while turning----*/
+					return 1;
+				}
 				if (Stop_Event())
 				{
 					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -382,6 +408,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn right for 90 degrees.
 					rounding_turn(1, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -398,6 +429,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn right for 30 degrees.
 					rounding_turn(1, TURN_SPEED, 300);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -423,6 +459,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(1, TURN_SPEED, 850);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFLRT = 0;
 					}
 				} else if(Temp_Rcon_Status & RconL_HomeT){
@@ -431,6 +472,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(1, TURN_SPEED, 300);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeLT = 0;
 					}
 				} else if(Temp_Rcon_Status & RconFL2_HomeT){
@@ -439,6 +485,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(1, TURN_SPEED, 600);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFL2T = 0;
 					}
 				// While rounding left, no need to detect right side rcon.
@@ -475,6 +526,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 300);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -484,6 +540,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 600);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -503,6 +564,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -512,6 +578,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 900);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -521,6 +592,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -620,15 +696,30 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 						// Turn right for 80 degrees.
 						rounding_turn(1, TURN_SPEED, 800);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					} else {
 						// Turn right for 40 degrees.
 						rounding_turn(1, TURN_SPEED, 400);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					}
 				} else {
 					// Turn right for 90 degrees.
 					rounding_turn(1, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					Move_Forward(15, 15);
 					/*
 					if (!Is_MoveWithRemote()) {
@@ -651,6 +742,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 				// Turn left for 135 degrees.
 				rounding_turn(0, TURN_SPEED, 1350);
+				if(Get_Error_Code() == Error_Code_Bumper)
+				{
+					/*----bumper jamed while turning----*/
+					return 1;
+				}
 				if (Stop_Event())
 				{
 					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -685,6 +781,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn left for 90 degrees.
 					rounding_turn(0, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -701,6 +802,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn left for 30 degrees.
 					rounding_turn(0, TURN_SPEED, 300);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -726,6 +832,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(0, TURN_SPEED, 850);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFLRT = 0;
 					}
 				// While rounding right, no need to detect left side rcon.
@@ -737,6 +848,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(0, TURN_SPEED, 950);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFR2T = 0;
 					}
 				} else if(Temp_Rcon_Status & RconR_HomeT){
@@ -745,6 +861,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(0, TURN_SPEED, 1100);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeRT = 0;
 					}
 				}
@@ -778,6 +899,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 300);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -787,6 +913,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 600);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -806,6 +937,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -815,6 +951,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 900);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -824,6 +965,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -923,15 +1069,30 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 						// Turn left for 80 degrees.
 						rounding_turn(0, TURN_SPEED, 800);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					} else {
 						// Turn left for 40 degrees.
 						rounding_turn(0, TURN_SPEED, 400);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					}
 				} else {
 					// Turn left for 90 degrees.
 					rounding_turn(0, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					Move_Forward(15, 15);
 					/*
 					if (!Is_MoveWithRemote()) {

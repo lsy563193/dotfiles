@@ -30,6 +30,12 @@ typedef struct{
 	int32_t Y;
 } Point32_t;
 
+typedef struct{
+	int32_t X;
+	int32_t Y;
+	int16_t	TH;
+} Pose32_t;
+
 double absolute(double d);
 double deg2rad(double deg, int8_t scale);
 double rad2deg(double rad, int8_t scale);

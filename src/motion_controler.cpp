@@ -79,9 +79,7 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 
 bool MotionManage::turn_to_align(void)
 {
-
-	//todo align odom
-//	is_odom_ready = false;
+	robot::instance()->is_odom_ready(false);
 	segmentss.clear();
 //	ROS_INFO("Start subscribe to /obstacles");
 	auto obstacles_sub = nh_.subscribe("/obstacles", 1, &MotionManage::robot_obstacles_cb, this);
@@ -111,15 +109,16 @@ bool MotionManage::turn_to_align(void)
 		return false;
 
 	ROS_INFO("Get the line");
-	line_angle_ = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
-	auto angle = static_cast<int16_t>(std::abs(line_angle_));
-	ROS_INFO("line detect: rotating line_angle_(%d)", line_angle_);
+	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
+	robot::instance()->home_angle(line_angle);
+	auto angle = static_cast<int16_t>(std::abs(line_angle));
+	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
 
-	if (line_angle_ > 0)
+	if (line_angle > 0)
 	{
 		ROS_INFO("Turn_Left %d", angle);
 		Turn_Left(13, angle);
-	} else if (line_angle_ < 0)
+	} else if (line_angle < 0)
 	{
 		ROS_INFO("Turn_Right %d", angle);
 		Turn_Right(13, angle);

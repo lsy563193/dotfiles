@@ -47,7 +47,7 @@ robot::robot()
 //  ROS_INFO("Obstacle Detector [ACTIVE]");
 	this->is_moving = false;
 	this->is_sensor_ready = false;
-	this->is_odom_ready = false;
+	this->is_odom_ready_ = false;
 
 	this->bumper_left = 0;
 	this->bumper_right = 0;
@@ -334,7 +334,7 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		}
 	}
 
-  if (!this->is_odom_ready) {
+  if (!this->is_odom_ready_) {
     this->position_x_off = map_pose.getOrigin().x();
     this->position_y_off = map_pose.getOrigin().y();
     this->position_z_off = map_pose.getOrigin().z();
@@ -346,8 +346,8 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		this->WF_position_x = WF_map_pose.getOrigin().x() - position_x_off;
 		this->WF_position_y = WF_map_pose.getOrigin().y() - position_y_off;
 	}
-  if (this->is_odom_ready == false) {
-    this->is_odom_ready = true;
+  if (this->is_odom_ready_ == false) {
+    this->is_odom_ready_ = true;
   }
 }
 /*
@@ -693,7 +693,7 @@ void robot::pub_bumper_markers(){
 
 void robot::init_mumber()
 {
-	//is_odom_ready = false;
+	//is_odom_ready_ = false;
 	position_x=0;
 	position_y=0;
 	position_z=0;
