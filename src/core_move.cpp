@@ -2379,8 +2379,7 @@ uint8_t CM_Touring(void)
 	}
 
 	//Check if slam is ok
-	if (MotionManage::s_laser->is_ready()) {
-	} else {
+	if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
 		Set_Error_Code(Error_Code_Slam);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 #if CONTINUE_CLEANING_AFTER_CHARGE

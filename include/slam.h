@@ -24,6 +24,7 @@ private:
 	bool	is_map_ready_;
 	ros::Subscriber map_sub_;
 	ros::NodeHandle nh_;
+	ros::NodeHandle nh_local_;
 
 };
 

@@ -59,7 +59,7 @@ pp::x900sensor	sensor;
 // Initialize the slam_angle_offset
 float slam_angle_offset = 0;
 //When you restart gmapping, gyro may be have a angle offset, compensate it
-bool g_is_line_angle_offset = false;
+int g_is_line_angle_offset = 0;
 float line_angle_offset = 0;
 
 // This flag is for reset beep action
@@ -278,10 +278,14 @@ void *robotbase_routine(void*)
 		sensor.angle = -(float)(angle) / 100.0;
 
 		/*---------------angle offset process ---------------*/
-		if(g_is_line_angle_offset == true){
+		if(g_is_line_angle_offset == 2){
+			sensor.angle -= line_angle_offset;
+		}else
+		if(g_is_line_angle_offset == 1){
 			if(line_angle_offset == std::numeric_limits<float>::max())
 				line_angle_offset = sensor.angle;
 			sensor.angle -= line_angle_offset;
+			g_is_line_angle_offset = 2;
 		}else
 			line_angle_offset =std::numeric_limits<float>::max();
 

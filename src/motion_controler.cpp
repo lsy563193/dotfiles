@@ -15,7 +15,7 @@
 #include <segment_set.h>
 #include <slam.h>
 Segment_set segmentss;
-extern bool g_is_line_angle_offset;
+extern int g_is_line_angle_offset;
 
 int8_t g_enable_slam_offset = 0;
 
@@ -132,7 +132,6 @@ bool MotionManage::turn_to_align(void)
 		std::cout << robot::angle << std::endl;
 		sleep(1);
 	}*/
-	g_is_line_angle_offset = true;
 
 	return true;
 }
@@ -173,7 +172,14 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 
 	//call start slam
+	sleep(1);
+	g_is_line_angle_offset = 1;
 	g_enable_slam_offset = 1;
+	while(g_is_line_angle_offset != 2){
+		ROS_INFO("g_is_line_angle_offset:%d",g_is_line_angle_offset);
+		usleep(2000);
+	};
+	ROS_WARN("ros angle:%f",robot::instance()->robot_get_angle());
 	s_slam->enable_map_update();
 	auto count_n_10ms = 1000;
 	while (!s_slam->is_map_ready() && --count_n_10ms != 0)
@@ -183,8 +189,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 	if (count_n_10ms == 0)
 	{
-		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+		ROS_ERROR("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 	}
+	ROS_INFO("ros angle:%f",robot::instance()->robot_get_angle());
 }
 
 MotionManage::~MotionManage()
@@ -214,7 +221,7 @@ MotionManage::~MotionManage()
 
 	wav_play(WAV_CLEANING_FINISHED);
 
-	g_is_line_angle_offset = false;
+	g_is_line_angle_offset = 0;
 
 	if (s_slam != nullptr)
 	{

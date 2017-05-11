@@ -8,7 +8,7 @@
 #include "slam.h"
 #include "std_srvs/Empty.h"
 
-Slam::Slam():nh_("~"),is_map_ready_(false)
+Slam::Slam():nh_local_("~"),nh_("/"),is_map_ready_(false)
 {
 	start();
 };
@@ -17,6 +17,7 @@ Slam::~Slam(){
 	stop();
 	align_cli_.shutdown();
 	map_sub_.shutdown();
+	nh_local_.shutdown();
 	nh_.shutdown();
 };
 
@@ -29,7 +30,7 @@ void Slam::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
 void Slam::start(void)
 {
 
-	nh_.param<int>("slam_type",slam_type_,0);
+	nh_local_.param<int>("slam_type",slam_type_,0);
 	if (slam_type_ == 0)
 		system("roslaunch pp gmapping.launch 2>/dev/null &");
 	else if (slam_type_ == 1)
@@ -60,11 +61,12 @@ void Slam::stop(void)
 void Slam::enable_map_update()
 {
 	align_cli_ = nh_.serviceClient<std_srvs::Empty>("align");
+//	align_cli_.waitForExistence(ros::Duration(10));
 	std_srvs::Empty empty;
 	align_cli_.call(empty);
-//	ROS_INFO("subscribe");
+	ROS_INFO("subscribe");
 	map_sub_ = nh_.subscribe("/map", 1, &Slam::robot_map_cb, this);
-//	ROS_INFO("subscribe ok");
+	ROS_INFO("subscribe ok");
 }
 
 bool Slam::is_map_ready()
