@@ -647,9 +647,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Home_Point.push_front(New_Home_Point);
 
 	Map_Initialize();
-	ROS_INFO("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	debug_map(MAP, 0, 0);
 	WF_PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
-	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
 	// Restart the gyro.
@@ -851,20 +852,23 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//WF_update_position();
 			WF_Check_Loop_Closed(Gyro_GetAngle());
 			if(reach_count >= 10){
-				reach_count = 0;
-				Stop_Brifly();
-				WF_Check_Angle();
-				if (WF_check_isolate()){
-					ROS_WARN("Isolated");
-					Isolated_Flag = 1;
+				if (WF_Check_Angle()) {//WF_Check_Angle succeed,it proves that the robot is not in the narrow space
+					reach_count = 0;
+					Stop_Brifly();
+					if (WF_check_isolate()){
+						ROS_WARN("Isolated");
+						Isolated_Flag = 1;
+						break;
+					} else{
+						ROS_WARN("Not Isolated");
+						Isolated_Flag = 0;
+					}
+					WF_End_Wall_Follow();
+					ROS_WARN("reach_count >= 10");
 					break;
-				} else{
-					ROS_WARN("Not Isolated");
-					Isolated_Flag = 0;
+				} else {
+					reach_count = 0;//reset reach_cout because WF_Check_Angle fail, it proves that the robot is in the narrow space
 				}
-				WF_End_Wall_Follow();
-				ROS_WARN("reach_count >= 10");
-				break;
 			}
 
 			//debug_WF_map(MAP, 0, 0);
@@ -1427,7 +1431,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 			}
 			if(reach_continuous_state = true){
 				reach_count++;
-				ROS_INFO("reach_count = %d", reach_count);
+				ROS_WARN("reach_count = %d", reach_count);
 			}
 		} else{
 			reach_continuous_state = false;
@@ -1558,27 +1562,46 @@ bool WF_Check_Angle(void) {
 	int32_t x, y;
 	int16_t th, former_th;
 	int16_t	th_diff;
-	int16_t	diff_limit = 200;
+	int16_t	diff_limit = 1500;
+	int8_t	pass_count = 0;
 	try{
-		x = (WF_Point.at(WF_Point.size() - 1)).X;
-		y = (WF_Point.at(WF_Point.size() - 1)).Y;
-		th = (WF_Point.at(WF_Point.size() - 1)).TH;
-		for (std::vector<Pose32_t>::reverse_iterator r_iter =  (WF_Point.rbegin() + 1); r_iter != WF_Point.rend(); ++r_iter) {
-			if (r_iter->X == x && r_iter ->Y == y) {
-				former_th = r_iter->TH;
-				ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
-				break;
+		for (int i = 1; i <= 10; i++) {
+			x = (WF_Point.at(WF_Point.size() - i)).X;
+			y = (WF_Point.at(WF_Point.size() - i)).Y;
+			th = (WF_Point.at(WF_Point.size() - i)).TH;
+			for (std::vector<Pose32_t>::reverse_iterator r_iter =  (WF_Point.rbegin() + i); r_iter != WF_Point.rend(); ++r_iter) {
+				if (r_iter->X == x && r_iter ->Y == y) {
+					former_th = r_iter->TH;
+					ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
+					break;
+				}
+				if (r_iter == (WF_Point.rend() - 1)) {
+					ROS_ERROR("Error! Can't find second same pose in WF_Point!");
+					debug_map(MAP, 0, 0);
+					return 0;
+				}
+			}
+
+			th_diff = (abs(former_th - th));
+			if (th_diff > 1800) {
+				th_diff = 3600 - th_diff;
+			}
+
+			if (th_diff  <= diff_limit) {
+				pass_count++;
+				ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, diff_limit);
+			} else {
+				ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, diff_limit);
 			}
 		}
-		th_diff = (abs(former_th - th));
-		if (th_diff  <= diff_limit) {
-			ROS_WARN("th_diff = %d, pass angle check!",th_diff);
-			return 1;
-		} else {
-			ROS_WARN("th_diff = %d, fail angle check!",th_diff);
-			return 0;
-		}
 
+		if (pass_count < 10) {
+			ROS_WARN("pass_count = %d,WF_Check_Angle Failed!", pass_count);
+			return 0;
+		} else {
+			ROS_WARN("pass_count = %d,WF_Check_Angle Succeed!", pass_count);
+			return 1;
+		}
 	}
 	catch(const std::out_of_range& oor){
 		std::cerr << "Out of range error:" << oor.what() << '\n';
