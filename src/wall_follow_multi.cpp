@@ -54,6 +54,7 @@ bool	escape_thread_running = false;
 uint32_t escape_trapped_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
+int32_t	check_angle_fail_count = 0;
 extern int8_t g_enable_slam_offset;
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
@@ -1597,8 +1598,17 @@ bool WF_Check_Angle(void) {
 
 		if (pass_count < 10) {
 			ROS_WARN("pass_count = %d,WF_Check_Angle Failed!", pass_count);
+
+			//in case of robot is always in the narrow and long space, when this count bigger than a threshold value, it will return 1
+			check_angle_fail_count++;
+			if (check_angle_fail_count >= 10) {
+				check_angle_fail_count = 0;
+				ROS_WARN("check_angle_fail_count >= 10!");
+				return 1;
+			}
 			return 0;
 		} else {
+			check_angle_fail_count = 0;
 			ROS_WARN("pass_count = %d,WF_Check_Angle Succeed!", pass_count);
 			return 1;
 		}
