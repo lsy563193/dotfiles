@@ -191,7 +191,7 @@ MotionManage::~MotionManage()
 {
 	Disable_Motors();
 
-	if (s_slam != nullptr)
+	if (s_laser != nullptr)
 	{
 		delete s_laser;
 		s_laser = nullptr;
