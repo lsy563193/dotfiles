@@ -232,6 +232,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 	int16_t		Left_Wall_Buffer[3] = { 0 }, Right_Wall_Buffer[3] = { 0 };
 	int32_t		y_start, R = 0, Proportion = 0, Delta = 0, Previous = 0;
 	uint32_t	WorkTime_Buffer = 0, Temp_Status = 0, Temp_Rcon_Status = 0;
+	// Rounding_Timer is for checking whether it is trapped and can't escape.
+	uint32_t	Rounding_Timer = time(NULL);
 
 	volatile uint8_t	Motor_Check_Code = 0;
 	volatile int32_t	L_B_Counter = 0, Wall_Distance = 400, Wall_Straight_Distance, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
@@ -315,6 +317,14 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 		if (Stop_Event())
 		{
+			Stop_Brifly();
+			return 0;
+		}
+
+		// Check rounding timeout
+		if ((time(NULL) - Rounding_Timer) > ESCAPE_TRAPPED_TIME)
+		{
+			ROS_WARN("%s %d: Rounding timeout, should be trapped.", __FUNCTION__, __LINE__);
 			Stop_Brifly();
 			return 0;
 		}
