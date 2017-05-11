@@ -1,4 +1,4 @@
-<!-- Runs obstacle detector and tracker with a single HokLaseraser scanner. -->
+<!-- Runs obstacle detector and tracker with a single Hokuyo_laser scanner. -->
 <launch>
   <node pkg="obstacle_detector" type="obstacle_detector" name="obstacle_detector" output="screen">
     <param name="min_group_points"     value="10"/>
