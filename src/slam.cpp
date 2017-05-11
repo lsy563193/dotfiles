@@ -62,7 +62,9 @@ void Slam::enable_map_update()
 	align_cli_ = nh_.serviceClient<std_srvs::Empty>("align");
 	std_srvs::Empty empty;
 	align_cli_.call(empty);
+//	ROS_INFO("subscribe");
 	map_sub_ = nh_.subscribe("/map", 1, &Slam::robot_map_cb, this);
+//	ROS_INFO("subscribe ok");
 }
 
 bool Slam::is_map_ready()

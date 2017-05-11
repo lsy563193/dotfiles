@@ -169,7 +169,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
 	{
 		ObstacleDetector od;
-		if (turn_to_align()) return;
+		if (!turn_to_align()) return;
 	}
 
 	//call start slam
