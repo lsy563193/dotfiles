@@ -144,110 +144,82 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
-	{
-		Work_Motor_Configure();
-		s_laser = new Laser();//start laser
-		if (!s_laser->is_ready())
-			return;
-		g_enable_slam_offset = 1;
-	} else
+	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
 #endif
 #if MANUAL_PAUSE_CLEANING
-	{
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
-		{
-			Work_Motor_Configure();
-
-			s_laser = new Laser();//start laser
-			if (!s_laser->is_ready())
-				return;
-			g_enable_slam_offset = 1;
-		} else
+		if (!robot::instance()->Is_Cleaning_Manual_Paused())
 #endif
-		{
 			s_slam = new Slam();
 
-			Work_Motor_Configure();
+	Work_Motor_Configure();
 
-			s_laser = new Laser();//start laser
-			if (!s_laser->is_ready())
-				return;
+	s_laser = new Laser();//start laser
+	if (!s_laser->is_ready())
+		return;
 
-			nh_.param<bool>("is_active_align",is_align_active_,false);
-			if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
-			{
-				ObstacleDetector od;
-				if (turn_to_align()) return;
-			}
-
-			//call start slam
-			g_enable_slam_offset = 1;
-			s_slam->enable_map_update();
-			auto count_n_10ms = 1000;
-			while (! s_slam->is_map_ready() && --count_n_10ms != 0)
-			{
-//		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-				usleep(10000);
-			}
-			if (count_n_10ms == 0)
-			{
-				ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-			}
-		}
-#if MANUAL_PAUSE_CLEANING
-	}
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+		return;
 #endif
+#if MANUAL_PAUSE_CLEANING
+	if (robot::instance()->Is_Cleaning_Manual_Paused())
+		return;
+#endif
+	nh_.param<bool>("is_active_align", is_align_active_, false);
+	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
+	{
+		ObstacleDetector od;
+		if (turn_to_align()) return;
+	}
+
+	//call start slam
+	g_enable_slam_offset = 1;
+	s_slam->enable_map_update();
+	auto count_n_10ms = 1000;
+	while (!s_slam->is_map_ready() && --count_n_10ms != 0)
+	{
+//		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+		usleep(10000);
+	}
+	if (count_n_10ms == 0)
+	{
+		ROS_INFO("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+	}
 }
 
 MotionManage::~MotionManage()
 {
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	Disable_Motors();
+
+	if (s_slam != nullptr)
 	{
-		Disable_Motors();
 		delete s_laser;
 		s_laser = nullptr;
-		g_enable_slam_offset = 0;
-	} else
+	}
+
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+		return;
 #endif
 #if MANUAL_PAUSE_CLEANING
+	if (robot::instance()->Is_Cleaning_Manual_Paused())
 	{
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
-		{
-			Disable_Motors();
-			delete s_laser;
-			s_laser = nullptr;
-			g_enable_slam_offset = 0;
-			wav_play(WAV_TEST_FAIL);
-		}
-		else
-#endif
-		{
-			Disable_Motors();
-
-//			if(startup_flag[lidar])
-			//try 3times;make sure to stop
-			if(Get_Cliff_Trig())
-				wav_play(WAV_ERROR_LIFT_UP);
-
-			wav_play(WAV_CLEANING_FINISHED);
-
-			if(s_slam != nullptr){
-				delete s_laser;
-				s_laser = nullptr;
-			}
-
-			g_is_line_angle_offset = false;
-
-			if(s_slam != nullptr){
-				delete s_slam;
-				s_slam= nullptr;
-			}
-			nh_.shutdown();
-		}
-#if MANUAL_PAUSE_CLEANING
+		wav_play(WAV_TEST_FAIL);
+		return;
 	}
 #endif
-};
 
+	if (Get_Cliff_Trig())
+		wav_play(WAV_ERROR_LIFT_UP);
+
+	wav_play(WAV_CLEANING_FINISHED);
+
+	g_is_line_angle_offset = false;
+
+	if (s_slam != nullptr)
+	{
+		delete s_slam;
+		s_slam = nullptr;
+	}
+	nh_.shutdown();
+}
