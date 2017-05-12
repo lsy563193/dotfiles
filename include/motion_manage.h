@@ -2,8 +2,8 @@
 // Created by lsy563193 on 4/25/17.
 //
 
-#ifndef PP_MOTION_CONTROLER_H
-#define PP_MOTION_CONTROLER_H
+#ifndef PP_MOTION_MANAGE_H
+#define PP_MOTION_MANAGE_H
 
 #include "laser.hpp"
 #include "slam.h"
@@ -40,4 +40,4 @@ private:
 
 };
 
-#endif //PP_MOTION_CONTROLER_H
+#endif //PP_MOTION_MANAGE_H

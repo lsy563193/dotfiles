@@ -11,7 +11,7 @@
 
 #include "obstacle_detector.cpp"
 
-#include "motion_controler.h"
+#include "motion_manage.h"
 #include <segment_set.h>
 #include <slam.h>
 Segment_set segmentss;

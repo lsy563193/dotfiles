@@ -33,7 +33,7 @@
 
 #include <wav.h>
 //#include "../include/obstacle_detector.h"
-#include <motion_controler.h>
+#include <motion_manage.h>
 #include <slam.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
@@ -2379,6 +2379,7 @@ uint8_t CM_Touring(void)
 	}
 
 	//Check if slam is ok
+	// If obstacle detector launch failed, s_slam->is_map_ready() will not return true.
 	if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
 		Set_Error_Code(Error_Code_Slam);
 		Set_Clean_Mode(Clean_Mode_Userinterface);

@@ -7,7 +7,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 #include <movement.h>
-#include <motion_controler.h>
+#include <motion_manage.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
