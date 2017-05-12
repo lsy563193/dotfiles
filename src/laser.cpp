@@ -111,6 +111,7 @@ void Laser::start(void)
 			sleep(1);
 		}
 		first_start = false;
+		laser_pm_gpio('1');
 		usleep(2000);
 		ROS_INFO("start_lidar");
 		start_mator_cli_.call(empty);
