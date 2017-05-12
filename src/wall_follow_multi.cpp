@@ -1344,10 +1344,6 @@ uint8_t WF_End_Wall_Follow(void){
 	int16_t i;
 	int8_t state;
 	// X, Y in Target_Point are all counts.
-	Point32_t	Next_Point, Target_Point;
-	Point16_t	tmpPnt, pnt16ArTmp[3];
-	MapTouringType	mt_state = MT_None;
-	int16_t home_angle = MotionManage::s_slam->robot_get_home_angle();
 	//Point32_t	Next_Point, Target_Point;
 	//Point16_t	tmpPnt, pnt16ArTmp[3];
 	//MapTouringType	mt_state = MT_None;
