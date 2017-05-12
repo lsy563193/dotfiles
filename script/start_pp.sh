@@ -11,8 +11,10 @@
 #
 # By default this script does nothing.
 
+export HOME=/tmp
+
 #roslaunch pp mybot.launch 2>/dev/null &
-roslaunch pp mybot.launch 2>/dev/stdout
+roslaunch pp mybot.launch 2>/dev/stdout &
 # . /opt/ros/indigo/startup_pp.sh
 
 exit 0
