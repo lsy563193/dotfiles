@@ -246,11 +246,6 @@ private:
 	float	WF_position_y;
 	float	odom_pose_x;
 	float	odom_pose_y;
-	float	position_map_x;
-	float	position_map_y;
-	float	position_x_off;
-	float	position_y_off;
-	float	position_z_off;
 
 	float	odom_yaw;
 	float	base_link_yaw;

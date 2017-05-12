@@ -334,17 +334,11 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		}
 	}
 
-  if (!this->is_odom_ready_) {
-    this->position_x_off = map_pose.getOrigin().x();
-    this->position_y_off = map_pose.getOrigin().y();
-    this->position_z_off = map_pose.getOrigin().z();
-  }
-
-  this->position_x = map_pose.getOrigin().x() - position_x_off;
-  this->position_y = map_pose.getOrigin().y() - position_y_off;
+  this->position_x = map_pose.getOrigin().x();
+  this->position_y = map_pose.getOrigin().y();
 	if (g_enable_slam_offset == 2){
-		this->WF_position_x = WF_map_pose.getOrigin().x() - position_x_off;
-		this->WF_position_y = WF_map_pose.getOrigin().y() - position_y_off;
+		this->WF_position_x = WF_map_pose.getOrigin().x();
+		this->WF_position_y = WF_map_pose.getOrigin().y();
 	}
   if (this->is_odom_ready_ == false) {
     this->is_odom_ready_ = true;
@@ -697,13 +691,6 @@ void robot::init_mumber()
 	position_x=0;
 	position_y=0;
 	position_z=0;
-	odom_pose_x=0;
-	odom_pose_y=0;
-	position_map_x=0;
-	position_map_y=0;
-	position_x_off=0;
-	position_y_off=0;
-	position_z_off=0;
 	robotbase_reset_odom_pose();
 	this->visualize_marker_init();
 }
