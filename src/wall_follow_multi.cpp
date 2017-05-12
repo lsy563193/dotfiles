@@ -54,6 +54,7 @@ bool	escape_thread_running = false;
 uint32_t escape_trapped_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
+int32_t same_cell_count = 0;
 extern int8_t g_enable_slam_offset;
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
@@ -882,6 +883,20 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					reach_count = 0;//reset reach_cout because WF_Check_Angle fail, it proves that the robot is in the narrow space
 				}
 			}
+			//Check if the robot is trapped
+			if (same_cell_count >= 1000) {
+				ROS_WARN("Maybe the robot is trapped! Checking!");
+				same_cell_count = 0;
+				Stop_Brifly();
+				if (WF_check_isolate()){
+					ROS_WARN("Not trapped!");
+				} else{
+					ROS_WARN("Trapped!");
+					WF_Break_Wall_Follow();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
+				}
+			}
 
 			//debug_WF_map(MAP, 0, 0);
 			//debug_sm_map(SPMAP, 0, 0);
@@ -1510,6 +1525,7 @@ bool WF_Is_Reach_Cleaned(void){
 int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 	if (WF_Point.empty() == false){
 		if(WF_Point.back().X != x || WF_Point.back().Y != y){
+			same_cell_count = 0;
 			New_WF_Point.X = x;
 			New_WF_Point.Y = y;
 			New_WF_Point.TH = th;
@@ -1518,9 +1534,12 @@ int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, WF_Point.TH = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.back().TH, (uint)WF_Point.size());
 			return 1;
 		} else{
+			same_cell_count++;//for checking if the robot is traped
+			ROS_INFO("same_cell_count = %d, still in the same cell.", same_cell_count);
 			return 0;//it means still in the same cell
 		}
 	} else{
+		same_cell_count = 0;
 		New_WF_Point.X = x;
 		New_WF_Point.Y = y;
 		New_WF_Point.TH = th;
