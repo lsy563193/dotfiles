@@ -50,23 +50,9 @@ void *core_move_thread(void *)
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
 
-	// Restart the gyro.
-	Set_Gyro_Off();
-	// Wait for 30ms to make sure the off command has been effectived.
-	usleep(30000);
-	// Set gyro on before wav_play can save the time for opening the gyro.
-	Set_Gyro_On();
-	// Wait for 0.5s to make sure gyro should be on after the wav_play().
 	wav_play(WAV_WELCOME_ILIFE);
 
-	Wait_For_Gyro_On();
-
 	protect_function();
-
-	// Beep for initializing completed.
-	Beep(6, 5, 0, 1);
-	usleep(80000);
-	Beep(3, 5, 0, 1);
 
 //	wav_play(WAV_BATTERY_CHARGE_DONE);
 	while(ros::ok()){

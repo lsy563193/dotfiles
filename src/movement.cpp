@@ -1960,11 +1960,6 @@ void Deceleration(void)
 
 uint8_t Stop_Event(void)
 {
-	// If clean mode == 0, it means robot initializing, don't receive any command.
-	if (Get_Clean_Mode() == 0)
-	{
-		return 0;
-	}
 	// If it has already had a Stop_Event_Status, then no need to check.
 	if (!Stop_Event_Status)
 	{
