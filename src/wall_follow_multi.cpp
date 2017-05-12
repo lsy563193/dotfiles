@@ -1573,35 +1573,33 @@ bool WF_Check_Angle(void) {
 				if (r_iter->X == x && r_iter ->Y == y) {
 					former_th = r_iter->TH;
 					ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
-					break;
+					th_diff = (abs(former_th - th));
+					if (th_diff > 1800) {
+						th_diff = 3600 - th_diff;
+					}
+					if (th_diff  <= diff_limit) {
+						pass_count++;
+						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, diff_limit);
+						break;
+					} else {
+						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, diff_limit);
+					}
 				}
-				if (r_iter == (WF_Point.rend() - 1)) {
+				/*if (r_iter == (WF_Point.rend() - 1)) {
 					ROS_ERROR("Error! Can't find second same pose in WF_Point!");
 					debug_map(MAP, 0, 0);
 					return 0;
-				}
-			}
-
-			th_diff = (abs(former_th - th));
-			if (th_diff > 1800) {
-				th_diff = 3600 - th_diff;
-			}
-
-			if (th_diff  <= diff_limit) {
-				pass_count++;
-				ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, diff_limit);
-			} else {
-				ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, diff_limit);
+				}*/
 			}
 		}
 
 		if (pass_count < 10) {
-			ROS_WARN("pass_count = %d,WF_Check_Angle Failed!", pass_count);
 			//in case of robot is always in the narrow and long space, when this count bigger than a threshold value, it will return 1
-			if (WF_check_isolate() == 0) {
+			/*if (WF_check_isolate() == 0) {
 				ROS_WARN("Loop closed!return 1.");
 				return 1;
-			}
+			}*/
+			ROS_WARN("pass_count = %d,WF_Check_Angle Failed!", pass_count);
 			return 0;
 		} else {
 			ROS_WARN("pass_count = %d,WF_Check_Angle Succeed!", pass_count);
