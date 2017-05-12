@@ -132,6 +132,13 @@ bool MotionManage::turn_to_align(void)
 		std::cout << robot::angle << std::endl;
 		sleep(1);
 	}*/
+		sleep(1);//waiting angle stable
+		g_is_line_angle_offset = 1;
+		while(g_is_line_angle_offset != 2){
+			ROS_INFO("g_is_line_angle_offset:%d",g_is_line_angle_offset);
+			usleep(2000);
+		};
+		ROS_WARN("ros angle:%f",robot::instance()->robot_get_angle());
 
 	return true;
 }
@@ -178,14 +185,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 
 	//call start slam
-	sleep(1);
-	g_is_line_angle_offset = 1;
 	g_enable_slam_offset = 1;
-	while(g_is_line_angle_offset != 2){
-		ROS_INFO("g_is_line_angle_offset:%d",g_is_line_angle_offset);
-		usleep(2000);
-	};
-	ROS_WARN("ros angle:%f",robot::instance()->robot_get_angle());
 	s_slam->enable_map_update();
 	auto count_n_10ms = 1000;
 	while (!s_slam->is_map_ready() && --count_n_10ms != 0)
