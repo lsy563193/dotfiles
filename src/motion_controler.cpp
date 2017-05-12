@@ -170,6 +170,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		ObstacleDetector od;
 		if (!turn_to_align()) return;
 	}
+	else
+	{
+		// Initialize the home angle.
+		robot::instance()->home_angle(0);
+	}
+
 
 	//call start slam
 	sleep(1);
