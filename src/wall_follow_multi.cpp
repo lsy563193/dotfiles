@@ -1535,7 +1535,7 @@ int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 			return 1;
 		} else{
 			same_cell_count++;//for checking if the robot is traped
-			ROS_INFO("same_cell_count = %d, still in the same cell.", same_cell_count);
+			//ROS_INFO("same_cell_count = %d, still in the same cell.", same_cell_count);
 			return 0;//it means still in the same cell
 		}
 	} else{
