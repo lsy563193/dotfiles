@@ -217,7 +217,7 @@ MotionManage::~MotionManage()
 #if MANUAL_PAUSE_CLEANING
 	if (robot::instance()->Is_Cleaning_Manual_Paused())
 	{
-		wav_play(WAV_TEST_FAIL);
+		wav_play(WAV_PAUSE_CLEANING);
 		return;
 	}
 #endif
