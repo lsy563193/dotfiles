@@ -74,18 +74,13 @@ void Sleep_Mode(void)
 		/*-----------------Check if near the charging base-----------------------------*/
 		if(Get_Rcon_Status()&0x777777 && !Get_Error_Code())
 		{
-			Ch_WP_Counter++;
-			Reset_Rcon_Status();
 			ROS_INFO("%s,%d,Rcon_status %u",__FUNCTION__,__LINE__,(uint32_t)Get_Rcon_Status());
-			if(Ch_WP_Counter>50)
-			{
-				Ch_WP_Counter=0;
-				Set_Clean_Mode(Clean_Mode_GoHome);
-				SetHomeRemote();
-				Set_Main_PwrByte(POWER_ACTIVE);
-				ResetSleepModeFlag();
-				break;
-			}
+			Reset_Rcon_Status();
+			Set_Clean_Mode(Clean_Mode_GoHome);
+			SetHomeRemote();
+			Set_Main_PwrByte(POWER_ACTIVE);
+			ResetSleepModeFlag();
+			break;
 		}
 		if(Is_ChargerOn())
 		{
@@ -102,4 +97,5 @@ void Sleep_Mode(void)
 		Set_LED(0, 100);
 		Alarm_Error();
 	}
+
 }
