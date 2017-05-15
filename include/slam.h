@@ -21,6 +21,10 @@ public:
 private:
 	int slam_type_;
 	ros::ServiceClient align_cli_;
+#if SLAM_METHOD_2
+	ros::ServiceClient start_slam_cli_;
+	ros::ServiceClient end_slam_cli_;
+#endif
 	bool	is_map_ready_;
 	ros::Subscriber map_sub_;
 	ros::NodeHandle nh_;
