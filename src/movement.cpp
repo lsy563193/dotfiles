@@ -2913,7 +2913,7 @@ uint8_t Is_Bumper_Jamed()
 		if(Stop_Event())
 		{
 			ROS_INFO("%s, %d: Stop event in JAM1", __FUNCTION__, __LINE__);
-			return 1;
+			return 0;
 		}
 		if(Get_Bumper_Status())
 		{
@@ -2923,12 +2923,17 @@ uint8_t Is_Bumper_Jamed()
 			if(Stop_Event())
 			{
 				ROS_INFO("%s, %d: Stop event in JAM2", __FUNCTION__, __LINE__);
-				return 1;
+				return 0;
 			}
 			if(Get_Bumper_Status())
 			{
 				ROS_INFO("JAM3");
 				Jam_Turn_Right(60, 900);
+				if(Stop_Event())
+				{
+					ROS_INFO("%s, %d: Stop event in JAM3", __FUNCTION__, __LINE__);
+					return 0;
+				}
 				if(Get_Bumper_Status())
 				{
 					ROS_INFO("JAM4");
