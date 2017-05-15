@@ -110,6 +110,16 @@ bool MotionManage::turn_to_align(void)
 
 	ROS_INFO("Get the line");
 	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
+
+	//testing to turn 180 degrees.
+	if (line_angle > 0)
+	{
+		line_angle -= 1800;
+	} else if (line_angle <= 0)
+	{
+		line_angle += 1800;
+	}
+
 	robot::instance()->home_angle(line_angle);
 	auto angle = static_cast<int16_t>(std::abs(line_angle));
 	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
