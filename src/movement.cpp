@@ -1459,17 +1459,31 @@ uint8_t Self_Check(uint8_t Check_Code)
 	}
 	else if(Check_Code==Check_Vacuum)
 	{
-		#ifdef BLDC_INSTALL
-		//BLDC_OFF;
-		usleep(10000);
-		Set_BLDC_TPWM(30);
-		Set_Vac_Speed();
-		//BLDC_ON;
-		usleep(100000);
-		Set_Error_Code(Error_Code_Fan_H);
-		Disable_Motors();
-		Alarm_Error();
-		return 1;
+		#ifndef BLDC_INSTALL
+		ROS_INFO("%s, %d: Vacuum Over Current!!", __FUNCTION__, __LINE__);
+		ROS_INFO("%d", Get_SelfCheck_Vacuum_Status());
+		while(Get_SelfCheck_Vacuum_Status() != 0x10)
+		{
+			/*-----wait until self check begin-----*/
+			Start_SelfCheck_Vacuum();
+		}
+		ROS_INFO("%s, %d: Vacuum Self checking", __FUNCTION__, __LINE__);
+		/*-----reset command for start self check-----*/
+		Reset_SelfCheck_Vacuum_Controler();
+		/*-----wait for the end of self check-----*/
+		while(Get_SelfCheck_Vacuum_Status() == 0x10);
+		ROS_INFO("%s, %d: end of Self checking", __FUNCTION__, __LINE__);
+		if(Get_SelfCheck_Vacuum_Status() == 0x20)
+		{
+			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
+			/*-----vacuum error-----*/
+			Set_Error_Code(Error_Code_Fan_H);
+			Disable_Motors();
+			wav_play(WAV_ERROR_SUCTION_FAN);
+			Reset_SelfCheck_Vacuum_Controler();
+			return 1;
+		}
+		Reset_SelfCheck_Vacuum_Controler();
 		#else
 		Disable_Motors();
 		//Stop_Brifly();
@@ -1516,6 +1530,10 @@ uint8_t Self_Check(uint8_t Check_Code)
 	return 0;
 }
 
+uint8_t Get_SelfCheck_Vacuum_Status(void)
+{
+	return (uint8_t)robot::instance()->robot_get_vacuum_selfcheck_status();
+}
 uint8_t Check_Bat_Home(void)
 {
 	// Check if battary is lower than the low battery go home voltage value.
@@ -2119,6 +2137,21 @@ void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right
 
 	int brush_main = main_brush_val;
 	control_set(CTL_BRUSH_MAIN, brush_main & 0xff);
+}
+
+void Start_SelfCheck_Vacuum(void)
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x02);
+}
+
+void End_SelfCheck_Vacuum(void)
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x04);
+}
+
+void Reset_SelfCheck_Vacuum_Controler(void)
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] & ~0x06);
 }
 
 void control_set(uint8_t type, uint8_t val)
@@ -2777,7 +2810,12 @@ void Set_Mobility_Step(uint32_t Steps)
 
 void Reset_Mobility_Step()
 {
-	Mobility_Step = 0;
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x01);
+}
+
+void Clear_Reset_Mobility_Step()
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] & ~0x01);
 }
 
 uint32_t  Get_Mobility_Step()

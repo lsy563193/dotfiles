@@ -184,6 +184,8 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 
 	this->cliff_front = msg->fcliff;
 
+	this->vacuum_selfcheck_status = msg->vacuum_selfcheck_status;
+
 	this->lbrush_oc = msg->lbrush_oc;
 		
 	this->rbrush_oc = msg->rbrush_oc;
@@ -415,6 +417,11 @@ int16_t robot::robot_get_visual_wall()
 #elif __ROBOT_X400
 	return 0;
 #endif
+}
+
+uint8_t robot::robot_get_vacuum_selfcheck_status()
+{
+	return this->vacuum_selfcheck_status;
 }
 
 bool robot::robot_get_lbrush_oc()//oc : over current

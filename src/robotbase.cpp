@@ -341,6 +341,7 @@ void *robotbase_routine(void*)
 		sensor.lcliff = ((receiStream[36] << 8) | receiStream[37]);
 		sensor.fcliff = ((receiStream[38] << 8) | receiStream[39]);
 		sensor.rcliff = ((receiStream[40] << 8) | receiStream[41]);
+		sensor.vacuum_selfcheck_status = (receiStream[42] & 0x30);
 		sensor.lbrush_oc = (receiStream[42] & 0x08) ? true : false;		// left brush over current
 		sensor.mbrush_oc = (receiStream[42] & 0x04) ? true : false;		// main brush over current
 		sensor.rbrush_oc = (receiStream[42] & 0x02) ? true : false;		// right brush over current

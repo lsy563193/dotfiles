@@ -36,6 +36,7 @@ public:
 	int16_t robot_get_right_wall();
 	int16_t robot_get_omni_wheel();
 	int16_t robot_get_visual_wall();
+	uint8_t robot_get_vacuum_selfcheck_status();
 	bool robot_get_lbrush_oc();
 	bool robot_get_rbrush_oc();
 	bool robot_get_mbrush_oc();
@@ -158,6 +159,7 @@ private:
 	uint16_t battery_voltage;
 
 	/*1 byte*/
+	uint8_t vacuum_selfcheck_status;
 	bool lbrush_oc; //oc: over current
 	bool rbrush_oc;
 	bool mbrush_oc;
