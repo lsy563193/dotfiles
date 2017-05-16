@@ -12,6 +12,8 @@ public:
 
 	bool laser_obstcal_detected(double distance, int angle, double range);
 
+	double get_laser_distance(int begin, int end, double range);
+
 	void is_ready(bool val);
 
 	bool is_ready();

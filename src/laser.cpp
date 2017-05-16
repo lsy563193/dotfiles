@@ -85,6 +85,27 @@ bool Laser::laser_obstcal_detected(double distance, int angle, double range)
 	return found;
 }
 
+double Laser::get_laser_distance(int begin, int end, double range)
+{
+	int		i, count;
+	bool	found = false;
+	double	angle_min, angle_max, tmp, range_tmp;
+	double	laser_distance = 0;
+	int		sum = 0;
+
+	for (i = begin; i < end; i++) {//default:begin = 260, end =270
+		if (laser_scan_data.ranges[i] < range) {
+			laser_distance = laser_scan_data.ranges[i] + laser_distance;
+			sum++;
+		}
+		//ROS_INFO("wall_distance = %lf, i = %d", laser_distance, i);
+	}
+	laser_distance = laser_distance / sum;
+	ROS_INFO("laser_distance_averange = %lf, sum = %d",laser_distance, sum);
+	//ROS_WARN("scan end");
+
+	return laser_distance;
+}
 bool Laser::is_ready()
 {
 	return is_ready_;
