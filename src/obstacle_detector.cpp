@@ -81,9 +81,9 @@ bool ObstacleDetector::updateParams(std_srvs::Empty::Request &req, std_srvs::Emp
 
   if (p_active_ != prev_active) {
     if (p_active_) {
-      scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
-
       obstacles_pub_ = nh_.advertise<Obstacles>("obstacles", 10);
+
+      scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
 
       ROS_INFO("Obstacle Detector [ACTIVE]");
     }
