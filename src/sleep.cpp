@@ -71,10 +71,11 @@ void Sleep_Mode(void)
 				break;
 			}
 		}
+
 		/*-----------------Check if near the charging base-----------------------------*/
-		if(Get_Rcon_Status()&0x777777 && !Get_Error_Code())
+		if((Get_Rcon_Status() & RconAll_Home_TLR) && (!Get_Error_Code()))
 		{
-			ROS_INFO("%s,%d,Rcon_status %u",__FUNCTION__,__LINE__,(uint32_t)Get_Rcon_Status());
+			ROS_INFO("%s,%d,Rcon_status = %x",__FUNCTION__,__LINE__,Get_Rcon_Status());
 			Reset_Rcon_Status();
 			Set_Clean_Mode(Clean_Mode_GoHome);
 			SetHomeRemote();
