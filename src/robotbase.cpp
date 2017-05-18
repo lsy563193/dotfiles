@@ -7,7 +7,6 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <pp/x900sensor.h>
-#include <pp/slam_angle_offset.h>
 #include <stdlib.h>
 #include <math.h>
 #include <pthread.h>
@@ -56,8 +55,6 @@ pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
-// Initialize the slam_angle_offset
-float slam_angle_offset = 0;
 //When you restart gmapping, gyro may be have a angle offset, compensate it
 int g_is_line_angle_offset = 0;
 float line_angle_offset = 0;
@@ -250,7 +247,6 @@ void *robotbase_routine(void*)
 	geometry_msgs::TransformStamped	odom_trans;
 
 	ros::Publisher	odom_pub,sensor_pub;
-	ros::Subscriber	slam_angle_offset_sub;
 	ros::NodeHandle	robotsensor_node;
 	ros::NodeHandle	odom_node;
 	ros::NodeHandle	slam_angle_offset_node;
@@ -259,7 +255,6 @@ void *robotbase_routine(void*)
 
 	sensor_pub = robotsensor_node.advertise<pp::x900sensor>("/robot_sensor",1);
 	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",5);
-	slam_angle_offset_sub = slam_angle_offset_node.subscribe<pp::slam_angle_offset>("/slam_angle_offset", 1, slam_angle_offset_callback);
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
@@ -289,33 +284,6 @@ void *robotbase_routine(void*)
 		}else
 			line_angle_offset =std::numeric_limits<float>::max();
 
-		if(g_enable_slam_offset)
-		{
-			// Compensate the angle with the offset published by slam
-			sensor.angle -= slam_angle_offset;
-			// Check for avoiding angle's sudden change
-			if (previous_angle == std::numeric_limits<float>::max())
-				previous_angle = sensor.angle;
-			else
-			{
-				delta_angle = sensor.angle - previous_angle;
-				// Format the delta_angle into Range(-180, 180)
-				delta_angle = (180 < delta_angle ? delta_angle - 360 : delta_angle);
-				delta_angle = (delta_angle < -180 ? delta_angle + 360 : delta_angle);
-				// Decide whether it is a sudden change
-				if (10 < fabs(delta_angle))
-				{
-					// It is a sudden change, discard this value
-					sensor.angle = previous_angle;
-				}
-				// Save current angle as previous_angle
-				previous_angle = sensor.angle;
-			}
-		}
-		else{
-			previous_angle = std::numeric_limits<float>::max();
-			slam_angle_offset=0;
-		}
 		/*-----------------angle offset end-----------------------------*/
 		
 		robot::instance()->set_angle(sensor.angle); //
@@ -453,15 +421,6 @@ void *serial_send_routine(void*){
 	}
 	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);
-}
-
-void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
-{
-	// Update the angle offset given by slam
-	if(ros::ok()&&(!robotbase_thread_stop)){
-		slam_angle_offset = msg->slam_angle_offset;
-	}
-	ROS_INFO("[robotbase] Get slam_angle_offset as: %f.\n", slam_angle_offset);
 }
 
 /*---------process_beep()---------------*/
