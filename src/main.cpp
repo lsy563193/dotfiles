@@ -186,9 +186,6 @@ int main(int argc, char **argv)
 	pthread_t	core_move_thread_id;
 	std::string	serial_port;
 
-#if SLAM_METHOD_2
-	system("roslaunch pp karto_slam.launch 2>/dev/null &");
-#endif
 
 	laser_pm_gpio('1');
 	ros::init(argc, argv, "pp");

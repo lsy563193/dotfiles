@@ -427,4 +427,4 @@
 #define VERIFY_KEY							(0)
 
 /* ------------------------------------- Slam method for testing ------------------------------------- */
-#define SLAM_METHOD_2						(0)
+#define SLAM_METHOD_2						(1)
