@@ -127,15 +127,6 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
-#endif
-#if MANUAL_PAUSE_CLEANING
-		if (!robot::instance()->Is_Cleaning_Manual_Paused())
-#endif
-			s_slam = new Slam();
-
-	//0 start motor
 	Work_Motor_Configure();
 
 	//1 start laser
@@ -164,7 +155,16 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	robot::instance()->home_angle(align_angle);
 
-	//3 call start slam
+	//call start slam
+#if CONTINUE_CLEANING_AFTER_CHARGE
+	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
+#endif
+#if MANUAL_PAUSE_CLEANING
+		if (!robot::instance()->Is_Cleaning_Manual_Paused())
+#endif
+			s_slam = new Slam();
+
+
 	g_enable_slam_offset = 1;
 	s_slam->enable_map_update();
 	auto count_n_10ms = 1000;
@@ -202,15 +202,16 @@ MotionManage::~MotionManage()
 	}
 #endif
 
-	if (Get_Cliff_Trig())
-		wav_play(WAV_ERROR_LIFT_UP);
-
-	wav_play(WAV_CLEANING_FINISHED);
-
 	if (s_slam != nullptr)
 	{
 		delete s_slam;
 		s_slam = nullptr;
 	}
+
+	if (Get_Cliff_Trig())
+		wav_play(WAV_ERROR_LIFT_UP);
+
+	wav_play(WAV_CLEANING_FINISHED);
+
 	nh_.shutdown();
 }
