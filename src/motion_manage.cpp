@@ -15,7 +15,6 @@
 #include <segment_set.h>
 #include <slam.h>
 Segment_set segmentss;
-extern int g_is_line_angle_offset;
 
 int8_t g_enable_slam_offset = 0;
 
@@ -77,7 +76,7 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 	}*/
 }
 
-bool MotionManage::turn_to_align(void)
+int16_t MotionManage::get_align_angle(void)
 {
 	robot::instance()->is_odom_ready(false);
 	segmentss.clear();
@@ -119,38 +118,7 @@ bool MotionManage::turn_to_align(void)
 	{
 		line_angle += 1800;
 	}
-
-	robot::instance()->home_angle(line_angle);
-	auto angle = static_cast<int16_t>(std::abs(line_angle));
-	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
-
-	if (line_angle > 0)
-	{
-		ROS_INFO("Turn_Left %d", angle);
-		Turn_Left(13, angle);
-	} else if (line_angle < 0)
-	{
-		ROS_INFO("Turn_Right %d", angle);
-		Turn_Right(13, angle);
-	}
-	if(Stop_Event())
-		return false;
-/*
-	auto count = 2;
-	while (count-- != 0)
-	{
-		std::cout << robot::angle << std::endl;
-		sleep(1);
-	}*/
-		sleep(1);//waiting angle stable
-		g_is_line_angle_offset = 1;
-		while(g_is_line_angle_offset != 2){
-			ROS_INFO("g_is_line_angle_offset:%d",g_is_line_angle_offset);
-			usleep(2000);
-		};
-		ROS_WARN("ros angle:%f",robot::instance()->robot_get_angle());
-
-	return true;
+	return line_angle;
 }
 
 
@@ -167,9 +135,11 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 #endif
 			s_slam = new Slam();
 
+	//0 start motor
 	Work_Motor_Configure();
 
-	s_laser = new Laser();//start laser
+	//1 start laser
+	s_laser = new Laser();
 	if (!s_laser->is_ready())
 		return;
 
@@ -181,20 +151,20 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (robot::instance()->Is_Cleaning_Manual_Paused())
 		return;
 #endif
+
+	//2 setting home_angle
+	int16_t align_angle = 0;
+
 	nh_.param<bool>("is_active_align", is_align_active_, false);
 	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
 	{
 		ObstacleDetector od;
-		if (!turn_to_align()) return;
-	}
-	else
-	{
-		// Initialize the home angle.
-		robot::instance()->home_angle(0);
+		align_angle = get_align_angle();
 	}
 
+	robot::instance()->home_angle(align_angle);
 
-	//call start slam
+	//3 call start slam
 	g_enable_slam_offset = 1;
 	s_slam->enable_map_update();
 	auto count_n_10ms = 1000;
@@ -236,8 +206,6 @@ MotionManage::~MotionManage()
 		wav_play(WAV_ERROR_LIFT_UP);
 
 	wav_play(WAV_CLEANING_FINISHED);
-
-	g_is_line_angle_offset = 0;
 
 	if (s_slam != nullptr)
 	{

@@ -55,9 +55,6 @@ pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
-//When you restart gmapping, gyro may be have a angle offset, compensate it
-int g_is_line_angle_offset = 0;
-float line_angle_offset = 0;
 
 // This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
@@ -272,20 +269,6 @@ void *robotbase_routine(void*)
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
 
-		/*---------------angle offset process ---------------*/
-		if(g_is_line_angle_offset == 2){
-			sensor.angle -= line_angle_offset;
-		}else
-		if(g_is_line_angle_offset == 1){
-			if(line_angle_offset == std::numeric_limits<float>::max())
-				line_angle_offset = sensor.angle;
-			sensor.angle -= line_angle_offset;
-			g_is_line_angle_offset = 2;
-		}else
-			line_angle_offset =std::numeric_limits<float>::max();
-
-		/*-----------------angle offset end-----------------------------*/
-		
 		robot::instance()->set_angle(sensor.angle); //
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;

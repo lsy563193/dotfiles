@@ -22,7 +22,7 @@ public:
 private:
 
 	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg);
-	bool turn_to_align(void);
+	int16_t get_align_angle(void);
 
 	int slam_type_;
 	ros::NodeHandle nh_;
