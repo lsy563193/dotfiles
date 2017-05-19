@@ -122,17 +122,17 @@ void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_lon
 bool CM_Check_is_exploring()
 {
 	int	index, plus_sign, a_max;
-	float	position_x, position_y, resolution, search_length = 0.10, search_width = 0.303; //unit for meter
+	float	position_x_, position_y_, resolution, search_length = 0.10, search_width = 0.303; //unit for meter
 	double	yaw, origin_x, origin_y;
 
 	uint32_t	width,	height;
 
 	std::vector<int8_t>	*p_map_data;
 
-	position_x = robot::instance()->robot_get_position_x();
-	position_y = robot::instance()->robot_get_position_y();
-	yaw = robot::instance()->robot_get_map_yaw();
-	yaw = robot::instance()->robot_get_obs_left();
+	position_x_ = robot::instance()->getPositionX();
+	position_y_ = robot::instance()->getPositionY();
+	yaw = robot::instance()->getMapYaw();
+	yaw = robot::instance()->getObsLeft();
 	
 	width = robot::instance()->robot_get_width();
 	height = robot::instance()->robot_get_height();
@@ -141,14 +141,14 @@ bool CM_Check_is_exploring()
 	origin_y = robot::instance()->robot_get_origin_y();
 	
 
-	p_map_data = robot::instance()->robot_get_map_data();
+	p_map_data = robot::instance()->getMapData();
 	if (std::abs(yaw) <= (M_PI / 2) ){
 		plus_sign = 1;
 		a_max = (plus_sign * std::abs(int(round(search_length * sin(std::abs(yaw)) / 0.05))));
 		for (int a = 0; a <= a_max; a = a + 1) {		//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
-			float x = position_x + (a / tan(std::abs(yaw))) * 0.05;
-			float y = position_y + a * 0.05;
+			float x = position_x_ + (a / tan(std::abs(yaw))) * 0.05;
+			float y = position_y_ + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
 				float x_1 = x + b * 0.05;
 				//over map scope
@@ -175,8 +175,8 @@ bool CM_Check_is_exploring()
 		a_max = (plus_sign * std::abs(int(round(search_length * sin(std::abs(yaw)) / 0.05))));
 		for (int a = 0; a >= a_max; a = a - 1) {	//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
-			float x = position_x + (a / tan(std::abs(yaw))) * 0.05;
-			float y = position_y + a * 0.05;
+			float x = position_x_ + (a / tan(std::abs(yaw))) * 0.05;
+			float y = position_y_ + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1) {
 				float x_1 = x + b * 0.05;
 				//*over map scope
@@ -229,8 +229,8 @@ void CM_update_position(uint16_t heading) {
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
 		for (c = 1; c >= -1; --c) {
@@ -244,7 +244,7 @@ void CM_update_position(uint16_t heading) {
 				}
 			}
 		}
-		robot::instance() -> pub_clean_markers();
+		robot::instance()->pubCleanMarkers();
 	}
 
 #if (ROBOT_SIZE == 5)
@@ -867,9 +867,9 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 		if (g_press_time > 150)
 		{
-			if (robot::instance()->Is_Cleaning_Manual_Paused())
+			if (robot::instance()->isCleaningManualPaused())
 			{
-				robot::instance()->Reset_Cleaning_Manual_Pause();
+				robot::instance()->resetCleaningManualPause();
 			}
 		}
 		else
@@ -1224,7 +1224,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 			Stop_Brifly();
 			CM_update_map_bumper(action, isBumperTriggered);
-			//robot::instance()->pub_bumper_markers();
+			//robot::instance()->pubBumperMarkers();
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
@@ -1433,7 +1433,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	CM_update_position(Gyro_GetAngle());
 
 	ROS_INFO("%s %d: move to point: %d\tGyro Calibration: %d", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
-	robot::instance()->robot_display_positions();
+	robot::instance()->displayPositions();
 	usleep(10000);
 
 	return retval;
@@ -1552,7 +1552,7 @@ uint8_t CM_resume_cleaning()
 	int8_t	state_for_continue_cleaning;
 
 	// Handle Continue Cleaning
-	if (g_go_home == 0 && robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (g_go_home == 0 && robot::instance()->isCleaningLowBatPaused_())
 	{
 		ROS_INFO("Go to continue point: (%d, %d), targets left.", countToCell(Continue_Point.X), countToCell(Continue_Point.Y));
 		g_low_battery = 0;
@@ -1748,9 +1748,9 @@ int CM_cleaning()
 void CM_reset_cleaning_low_bat_pause()
 {
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused()) {
+	if (robot::instance()->isCleaningLowBatPaused_()) {
 		// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
-		robot::instance()->Reset_Cleaning_Low_Bat_Pause();
+		robot::instance()->resetCleaningLowBatPause_();
 	}
 #endif
 }
@@ -1758,7 +1758,7 @@ void CM_reset_cleaning_low_bat_pause()
 void CM_go_home()
 {
 
-	if(robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if(robot::instance()->isCleaningLowBatPaused_())
 		wav_play(WAV_BATTERY_LOW);
 	wav_play(WAV_BACK_TO_CHARGER);
 
@@ -1787,7 +1787,7 @@ void CM_go_home()
 		}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		if (!robot::instance()->Is_Cleaning_Low_Bat_Paused() && !g_map_boundary_created)
+		if (!robot::instance()->isCleaningLowBatPaused_() && !g_map_boundary_created)
 		{
 			//2.2-1.3 Path to unclean area
 			CM_create_home_boundary();
@@ -1916,7 +1916,7 @@ void CM_go_home()
 				if (Get_Clean_Mode() == Clean_Mode_Charging)
 				{
 #if CONTINUE_CLEANING_AFTER_CHARGE
-					if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+					if (robot::instance()->isCleaningLowBatPaused_())
 					{
 						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 						cur_wtime = cur_wtime+Get_Work_Time();//store current time 
@@ -1987,7 +1987,7 @@ void CM_go_home()
 				{
 					// If it is the last point, it means it it now at (0, 0).
 					if (g_from_station == 0) {
-						auto angle = static_cast<int16_t>(robot::instance()->offset_angle() *10);
+						auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
 						CM_HeadToCourse(ROTATE_TOP_SPEED, -angle);
 
 						if (Stop_Event())
@@ -2010,9 +2010,9 @@ void CM_go_home()
 							}
 							if (g_press_time > 150)
 							{
-								if (robot::instance()->Is_Cleaning_Manual_Paused())
+								if (robot::instance()->isCleaningManualPaused())
 								{
-									robot::instance()->Reset_Cleaning_Manual_Pause();
+									robot::instance()->resetCleaningManualPause();
 								}
 							}
 							else
@@ -2039,7 +2039,7 @@ void CM_go_home()
 					}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-					if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+					if (robot::instance()->isCleaningLowBatPaused_())
 					{
 						ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 						CM_reset_cleaning_low_bat_pause();
@@ -2113,7 +2113,7 @@ uint8_t CM_Touring(void)
 	Point16_t tmp_pnt;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (robot::instance()->isCleaningLowBatPaused_())
 	{
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
@@ -2121,7 +2121,7 @@ uint8_t CM_Touring(void)
 #endif
 	{
 #if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
 			ROS_WARN("Restore from manual pause");
 			wav_play(WAV_CLEANING_CONTINUE);
@@ -2141,7 +2141,7 @@ uint8_t CM_Touring(void)
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+				if (robot::instance()->isCleaningLowBatPaused_())
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
@@ -2149,9 +2149,9 @@ uint8_t CM_Touring(void)
 				}
 #endif
 #if MANUAL_PAUSE_CLEANING
-				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				if (robot::instance()->isCleaningManualPaused())
 				{
-					robot::instance()->Reset_Cleaning_Manual_Pause();
+					robot::instance()->resetCleaningManualPause();
 				}
 #endif
 //				Reset_Stop_Event_Status();
@@ -2216,7 +2216,7 @@ uint8_t CM_Touring(void)
 					Reset_Stop_Event_Status();
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+				if (robot::instance()->isCleaningLowBatPaused_())
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
@@ -2226,9 +2226,9 @@ uint8_t CM_Touring(void)
 				}
 #endif
 #if MANUAL_PAUSE_CLEANING
-				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				if (robot::instance()->isCleaningManualPaused())
 				{
-					robot::instance()->Reset_Cleaning_Manual_Pause();
+					robot::instance()->resetCleaningManualPause();
 				}
 #endif
 				return 0;
@@ -2255,7 +2255,7 @@ uint8_t CM_Touring(void)
 	New_Home_Point.X = New_Home_Point.Y = 0;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (robot::instance()->isCleaningLowBatPaused_())
 	{
 		if (Get_Rcon_Status())
 		{
@@ -2273,7 +2273,7 @@ uint8_t CM_Touring(void)
 #endif
 	{
 #if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
 			Reset_Work_Time();
 			// Don't initialize the map, etc.
@@ -2308,7 +2308,7 @@ uint8_t CM_Touring(void)
 			/* usleep for checking whether robot is in the station */
 			usleep(20000);
 
-			robot::instance()->init_mumber();// for init robot member
+			robot::instance()->initMumber();// for init robot member
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 			// If it it the first time cleaning, initialize the Continue_Point.
@@ -2324,9 +2324,9 @@ uint8_t CM_Touring(void)
 //	return 0;
 #if MANUAL_PAUSE_CLEANING
 	// Clear the pause status.
-	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	if (robot::instance()->isCleaningManualPaused())
 	{
-		robot::instance()->Reset_Cleaning_Manual_Pause();
+		robot::instance()->resetCleaningManualPause();
 	}
 #endif
 
@@ -2346,9 +2346,9 @@ uint8_t CM_Touring(void)
 		ROS_INFO("%s ,%d ,set cur_wtime to zero ",__FUNCTION__,__LINE__);
 #endif
 #if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
-			robot::instance()->Reset_Cleaning_Manual_Pause();
+			robot::instance()->resetCleaningManualPause();
 		}
 #endif
 		return 0;
@@ -2403,11 +2403,11 @@ uint8_t CM_Touring(void)
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (!robot::instance()->isCleaningLowBatPaused_())
 #endif
 	{
 #if MANUAL_PAUSE_CLEANING
-		if (!robot::instance()->Is_Cleaning_Manual_Paused())
+		if (!robot::instance()->isCleaningManualPaused())
 #endif
 		{
 			Home_Point.clear();
@@ -2700,11 +2700,12 @@ void CM_CorBack(uint16_t dist)
 	Reset_Wheel_Step();
 	Counter_Watcher = 0;
 
-	pos_x = robot::instance()->robot_get_odom_position_x();
-	pos_y = robot::instance()->robot_get_odom_position_y();
+	pos_x = robot::instance()->getOdomPositionX();
+	pos_y = robot::instance()->getOdomPositionY();
 
 	while (1) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_odom_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_odom_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
+																																													 robot::instance()->getOdomPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -2850,7 +2851,7 @@ MapTouringType CM_handleExtEvent()
 		CM_SetGoHome(0);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->Set_Cleaning_Low_Bat_Pause();
+		robot::instance()->cleaningLowBatPause_();
 #endif
 		return MT_Battery_Home;
 	}
@@ -2867,7 +2868,7 @@ MapTouringType CM_handleExtEvent()
 		CM_SetGoHome(0);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->Set_Cleaning_Low_Bat_Pause();
+		robot::instance()->cleaningLowBatPause_();
 #endif
 		Reset_Rcon_Remote();
 		return MT_Battery_Home;
@@ -2894,9 +2895,9 @@ MapTouringType CM_handleExtEvent()
 		}
 		if (g_press_time > 150)
 		{
-			if (robot::instance()->Is_Cleaning_Manual_Paused())
+			if (robot::instance()->isCleaningManualPaused())
 			{
-				robot::instance()->Reset_Cleaning_Manual_Pause();
+				robot::instance()->resetCleaningManualPause();
 			}
 		}
 		else

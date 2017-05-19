@@ -48,8 +48,8 @@ void update_position(uint16_t heading) {
 	y = Map_GetYPos();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
@@ -152,10 +152,10 @@ void rounding_move_back()
 
 	should_mark = 0;
 
-	pos_x = robot::instance()->robot_get_position_x();
-	pos_y = robot::instance()->robot_get_position_y();
+	pos_x = robot::instance()->getPositionX();
+	pos_y = robot::instance()->getPositionY();
 	while (1) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getPositionX(), 2) + powf(pos_y - robot::instance()->getPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -397,8 +397,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			if (Temp_Bumper_Status & LeftBumperTrig) {
 				Set_Wheel_Speed(0, 0);
-				if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
-					Wall_Distance = robot::instance()->robot_get_left_wall() / 3;
+				if (robot::instance()->getLeftWall() > (Wall_Low_Limit)) {
+					Wall_Distance = robot::instance()->getLeftWall() / 3;
 				} else {
 					Wall_Distance += 200;
 				}
@@ -621,7 +621,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if (Wall_Distance >= 200) {
 				Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 				Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
-				Left_Wall_Buffer[0] = robot::instance()->robot_get_left_wall();
+				Left_Wall_Buffer[0] = robot::instance()->getLeftWall();
 				if (Left_Wall_Buffer[0] < 100) {
 					if ((Left_Wall_Buffer[1] - Left_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 						if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -640,7 +640,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-				Proportion = robot::instance()->robot_get_left_wall();
+				Proportion = robot::instance()->getLeftWall();
 
 				Proportion = Proportion * 100 / Wall_Distance;
 
@@ -770,8 +770,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			if (Temp_Bumper_Status & RightBumperTrig) {
 				Set_Wheel_Speed(0, 0);
-				if (robot::instance()->robot_get_right_wall() > (Wall_Low_Limit)) {
-					Wall_Distance = robot::instance()->robot_get_right_wall() / 3;
+				if (robot::instance()->getRightWall() > (Wall_Low_Limit)) {
+					Wall_Distance = robot::instance()->getRightWall() / 3;
 				} else {
 					Wall_Distance += 200;
 				}
@@ -994,7 +994,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if (Wall_Distance >= 200) {
 				Right_Wall_Buffer[2] = Right_Wall_Buffer[1];
 				Right_Wall_Buffer[1] = Right_Wall_Buffer[0];
-				Right_Wall_Buffer[0] = robot::instance()->robot_get_right_wall();
+				Right_Wall_Buffer[0] = robot::instance()->getRightWall();
 				if (Right_Wall_Buffer[0] < 100) {
 					if ((Right_Wall_Buffer[1] - Right_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 						if ((Right_Wall_Buffer[2] - Right_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -1013,7 +1013,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-				Proportion = robot::instance()->robot_get_right_wall();
+				Proportion = robot::instance()->getRightWall();
 
 				Proportion = Proportion * 100 / Wall_Distance;
 

@@ -74,7 +74,7 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 
 float MotionManage::get_align_angle(void)
 {
-	robot::instance()->is_odom_ready(false);
+	robot::instance()->isOdomReady(false);
 	segmentss.clear();
 //	ROS_INFO("Start subscribe to /obstacles");
 	auto obstacles_sub = nh_.subscribe("/obstacles", 1, &MotionManage::robot_obstacles_cb, this);
@@ -132,21 +132,21 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (robot::instance()->isCleaningLowBatPaused_())
 		return;
 #endif
 #if MANUAL_PAUSE_CLEANING
-	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	if (robot::instance()->isCleaningManualPaused())
 		return;
 #endif
 
-	//3 calculate offset_angle
+	//3 calculate offsetAngle
 	nh_.param<bool>("is_active_align", is_align_active_, false);
 	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
 	{
 		ObstacleDetector od;
 		auto align_angle = get_align_angle();
-		robot::instance()->offset_angle(align_angle);
+		robot::instance()->offsetAngle(align_angle);
 	}
 
 
@@ -154,10 +154,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
 		//call start slam
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (!robot::instance()->isCleaningLowBatPaused_())
 #endif
 #if MANUAL_PAUSE_CLEANING
-		if (!robot::instance()->Is_Cleaning_Manual_Paused())
+		if (!robot::instance()->isCleaningManualPaused())
 #endif
 			s_slam = new Slam();
 
@@ -186,11 +186,11 @@ MotionManage::~MotionManage()
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (robot::instance()->isCleaningLowBatPaused_())
 		return;
 #endif
 #if MANUAL_PAUSE_CLEANING
-	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	if (robot::instance()->isCleaningManualPaused())
 	{
 		wav_play(WAV_PAUSE_CLEANING);
 		return;
@@ -203,7 +203,7 @@ MotionManage::~MotionManage()
 		s_slam = nullptr;
 	}
 
-	robot::instance()->offset_angle(0);
+	robot::instance()->offsetAngle(0);
 
 	if (Get_Cliff_Trig())
 		wav_play(WAV_ERROR_LIFT_UP);

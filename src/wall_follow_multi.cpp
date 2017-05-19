@@ -84,10 +84,11 @@ void WFM_move_back(uint16_t dist)
 	Set_Wheel_Speed(5, 5);
 	Counter_Watcher = 0;
 
-	pos_x = robot::instance()->robot_get_odom_position_x();
-	pos_y = robot::instance()->robot_get_odom_position_y();
+	pos_x = robot::instance()->getOdomPositionX();
+	pos_y = robot::instance()->getOdomPositionY();
 	while (ros::ok()) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_odom_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_odom_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
+																																													 robot::instance()->getOdomPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -128,8 +129,8 @@ void *WFM_check_trapped(void *data)
 
 	MapEscapeTrappedType	escaped = Map_Escape_Trapped_Escaped;
 
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -139,8 +140,8 @@ void *WFM_check_trapped(void *data)
 
 	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 	while (escape_thread_running == true) {
-		pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		Map_SetPosition(pos_x, pos_y);
 		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -172,8 +173,8 @@ bool WF_check_isolate(void)
 
 	MapEscapeTrappedType	escaped = Map_Escape_Trapped_Escaped;
 
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	//Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -182,8 +183,8 @@ bool WF_check_isolate(void)
 	//escape_thread_running = true;
 
 	//ROS_INFO("%s %d: escape thread is up!\n", __FUNCTION__, __LINE__);
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	//Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -433,8 +434,8 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
 
-			if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
-				Wall_Distance = robot::instance()->robot_get_left_wall() / 3;
+			if (robot::instance()->getLeftWall() > (Wall_Low_Limit)) {
+				Wall_Distance = robot::instance()->getLeftWall() / 3;
 			} else {
 				Wall_Distance += 200;
 			}
@@ -483,7 +484,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		if (Wall_Distance >= 200) {
 			Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 			Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
-			Left_Wall_Buffer[0] = robot::instance()->robot_get_left_wall();
+			Left_Wall_Buffer[0] = robot::instance()->getLeftWall();
 			if (Left_Wall_Buffer[0] < 100) {
 				if ((Left_Wall_Buffer[1] - Left_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 					if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -499,7 +500,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 		if (Get_FrontOBS() < Get_FrontOBST_Value()) {
 
-			Proportion = robot::instance()->robot_get_left_wall();
+			Proportion = robot::instance()->getLeftWall();
 
 			Proportion = Proportion * 100 / Wall_Distance;
 
@@ -668,7 +669,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return 0;
 	}
-	robot::instance()->init_mumber();// for init robot member
+	robot::instance()->initMumber();// for init robot member
 	MotionManage motion;
 
 	if(Stop_Event()){
@@ -708,8 +709,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Wall_Distance = Wall_Low_Limit;
 	}
 
-	Start_WF_Pose_X = robot::instance()->robot_get_position_x();
-	Start_WF_Pose_Y = robot::instance()->robot_get_position_y();
+	Start_WF_Pose_X = robot::instance()->getPositionX();
+	Start_WF_Pose_Y = robot::instance()->getPositionY();
 
 	Move_Forward(25, 25);
 
@@ -809,7 +810,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 
 			/*------------------------------------------------------Distance Check-----------------------*/
-			if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_WF_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) > Find_Wall_Distance ){
+			if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->getPositionX(), 2) + powf(Start_WF_Pose_Y -
+																																																											 robot::instance()->getPositionY(), 2)))) > Find_Wall_Distance ){
 				ROS_INFO("Find wall over the limited distance : %f", Find_Wall_Distance);
 				WF_End_Wall_Follow();
 				return 0;
@@ -820,8 +822,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 		escape_trapped_timer = time(NULL);
-		Start_Pose_X = robot::instance()->robot_get_position_x();
-		Start_Pose_Y = robot::instance()->robot_get_position_y();
+		Start_Pose_X = robot::instance()->getPositionX();
+		Start_Pose_Y = robot::instance()->getPositionY();
 		First_Time_Flag = 1;
 		while (ros::ok()) {
 			if ((time(NULL) - escape_trapped_timer) > 3600) {
@@ -1004,7 +1006,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			/*------------------------------------------------------Home Station Event------------------------*/
 			Temp_Rcon_Status = Get_Rcon_Status();
 			Reset_Rcon_Status();
-			//Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+			//Temp_Rcon_Status = robot::instance()->getRcon();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
@@ -1217,7 +1219,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Wheel_Speed_Base = 15 + Get_WallAccelerate() / 150;
 					if(Wheel_Speed_Base>28)Wheel_Speed_Base = 28;
 
-					Proportion = robot::instance()->robot_get_left_wall();
+					Proportion = robot::instance()->getLeftWall();
 
 					Proportion = Proportion*100/Wall_Distance;
 
@@ -1362,7 +1364,7 @@ uint8_t WF_End_Wall_Follow(void){
 	//Point32_t	Next_Point, Target_Point;
 	//Point16_t	tmpPnt, g_pnt16_ar_tmp[3];
 	//MapTouringType	mt_state = MT_None;
-	//int16_t offset_angle = robot::instance()->robot_get_home_angle();
+	//int16_t offsetAngle = robot::instance()->robot_get_home_angle();
 	Stop_Brifly();
 	g_enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
@@ -1397,8 +1399,8 @@ void WF_update_position(void) {
 	y = Map_GetYPos();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 }
 
@@ -1421,8 +1423,8 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 	y = Map_GetYPos();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)

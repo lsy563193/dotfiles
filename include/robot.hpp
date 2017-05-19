@@ -23,108 +23,102 @@ public:
 	static robot *instance();
 	void init();
 //	void Subscriber(void);
-	void UnSubscriber(void);
-	bool robot_is_all_ready();
-	uint8_t robot_get_workmode();
-	float get_angle();
-	void set_angle(float angle_);
+	bool isAllReady();
+	float getAngle();
+	void setAngle(float angle_);
 
-	void offset_angle(float angle){
+	void offsetAngle(float angle){
 		boost::mutex::scoped_lock(offset_angle_metux_);
 		offset_angle_ = angle;
 	};
-	float offset_angle(void){
+	float offsetAngle(void){
 		boost::mutex::scoped_lock(offset_angle_metux_);
 		return offset_angle_;
 	};
 
-	float robot_get_angle_v();
-	int16_t robot_get_cliff_right();
-	int16_t robot_get_cliff_left();
-	int16_t robot_get_cliff_front();
-	int16_t robot_get_left_wall();
-	int16_t robot_get_right_wall();
-	int16_t robot_get_omni_wheel();
-	int16_t robot_get_visual_wall();
-	uint8_t robot_get_vacuum_selfcheck_status();
-	bool robot_get_lbrush_oc();
-	bool robot_get_rbrush_oc();
-	bool robot_get_mbrush_oc();
-	bool robot_get_vacuum_oc();
-	uint8_t robot_get_key();
-	int robot_get_charge_status();
-	uint8_t robot_get_ir_ctrl();
-	float robot_get_lwheel_current();
-	float robot_get_rwheel_current();
-	uint32_t robot_get_rcon();
+	float getAngleV();
+	int16_t getCliffRight();
+	int16_t getCliffLeft();
+	int16_t getCliffFront();
+	int16_t getLeftWall();
+	int16_t getRightWall();
+	int16_t getOmniWheel();
+	int16_t getVisualWall();
+	uint8_t getVacuumSelfCheckStatus();
+	bool getLbrushOc();
+	bool getRbrushOc();
+	bool getMbrushOc();
+	bool getVacuumOc();
+	uint8_t getKey();
+	int getChargeStatus();
+	uint8_t getIrCtrl();
+	float getLwheelCurrent();
+	float getRwheelCurrent();
+	uint32_t getRcon();
 	//uint32_t robot_get_rcon_front_left();
 	//uint32_t robot_get_rcon_front_right();
 	//uint32_t robot_get_rcon_back_left();
 	//uint32_t robot_get_rcon_back_right();
 	//uint32_t robot_get_rcon_left();
 	//uint32_t robot_get_rcon_right();
-	bool robot_get_bumper_right();
-	bool robot_get_bumper_left();
-	int16_t robot_get_obs_left();
-	int16_t robot_get_obs_right();
-	int16_t robot_get_obs_front();
-	bool robot_get_water_tank();
-	uint16_t robot_get_battery_voltage();
+	bool getBumperRight();
+	bool getBumperLeft();
+	int16_t getObsLeft();
+	int16_t getObsRight();
+	int16_t getObsFront();
+	bool getWaterTank();
+	uint16_t getBatteryVoltage();
+	std::vector<int8_t> *getMapData();
 
-        std::vector<int8_t> *robot_get_map_data();
+	bool isMoving();
+	float getLinearX();
+	float getLinearY();
+	float getLinearZ();
 
-	bool robot_is_moving();
-	float robot_get_linear_x();
-	float robot_get_linear_y();
-	float robot_get_linear_z();
+	int16_t getYaw();
 
-	int16_t robot_get_yaw();
+	float getPositionX();
+	float getPositionY();
+	float getPositionZ();
+	float getWfPositionX();
+	float getWfPositionY();
+	float getOdomPositionX();
+	float getOdomPositionY();
 
-	float robot_get_position_x();
-	float robot_get_position_y();
-	float robot_get_WF_position_x();
-	float robot_get_WF_position_y();
-	float robot_get_odom_position_x();
-	float robot_get_odom_position_y();
-	float robot_get_position_z();
-
-	float robot_get_map_position_x();
-	float robot_get_map_position_y();
-	double robot_get_map_yaw();
-	void robot_display_positions();
-	void pub_ctrl_command(void);
-	void pub_clean_markers(void);
-	void pub_bumper_markers(void);
-	void visualize_marker_init();
-	void set_ctrl_data(uint8_t type,uint8_t val);
-	void is_odom_ready(bool is_ready){is_odom_ready_ = is_ready;};
-	void init_mumber();
+	double getMapYaw();
+	void displayPositions();
+	void pubCtrlCommand(void);
+	void pubCleanMarkers(void);
+	void pubBumperMarkers(void);
+	void visualizeMarkerInit();
+	void isOdomReady(bool is_ready){is_odom_ready_ = is_ready;};
+	void initMumber();
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
-	bool Is_Cleaning_Low_Bat_Paused(void);
-	void Set_Cleaning_Low_Bat_Pause(void);
-	void Reset_Cleaning_Low_Bat_Pause(void);
+	bool isCleaningLowBatPaused_(void);
+	void cleaningLowBatPause_(void);
+	void resetCleaningLowBatPause_(void);
 #endif
 
 #if MANUAL_PAUSE_CLEANING
 // These 3 functions are for manual pause cleaning.
-	bool Is_Cleaning_Manual_Paused(void);
-	void Set_Cleaning_Manual_Pause(void);
-	void Reset_Cleaning_Manual_Pause(void);
+	bool isCleaningManualPaused(void);
+	void setCleaningManualPause(void);
+	void resetCleaningManualPause(void);
 #endif
 
 private:
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These variable is for continue cleaning after charge.
-	bool	low_bat_pause_cleaning;
+	bool	low_bat_pause_cleaning_;
 #endif
 #if MANUAL_PAUSE_CLEANING
 // These variable is for continue cleaning after charge.
-	bool	manual_pause_cleaning;
+	bool	manual_pause_cleaning_;
 #endif
-	bool	is_sensor_ready;
+	bool	is_sensor_ready_;
 	bool	is_odom_ready_;
 
 	float offset_angle_;
@@ -135,106 +129,106 @@ private:
 
 	bool	is_align_active_;
 	/* 1 byte */
-	float	angle_v;
+	float	angle_v_;
 
 	/* 1 byte */
-	int32_t brush_left;
+	int32_t brush_left_;
 
 	/* 1 byte */
-	int32_t brush_right;
+	int32_t brush_right_;
 
 	/* 1 byte */
-	int32_t brush_main;
+	int32_t brush_main_;
 
 	/* 2 bytes */
-	int16_t cliff_right;
+	int16_t cliff_right_;
 
 	/* 2 bytes */
-	int16_t cliff_left;
+	int16_t cliff_left_;
 
 	/* 2 bytes */
-	int16_t cliff_front;
+	int16_t cliff_front_;
 
 	/*1 byte */
 	uint8_t key;
 
 	/*1 byte */
-	uint8_t charge_status;
+	uint8_t charge_status_;
 
 	/*1 byte*/
-	bool w_tank; //water tank 
+	bool w_tank_; //water tank
 
 	/* 1 byte */
-	uint16_t battery_voltage;
+	uint16_t battery_voltage_;
 
 	/*1 byte*/
-	uint8_t vacuum_selfcheck_status;
-	bool lbrush_oc; //oc: over current
-	bool rbrush_oc;
-	bool mbrush_oc;
-	bool vacuum_oc;
+	uint8_t vacuum_selfcheck_status_;
+	bool lbrush_oc_; //oc: over current
+	bool rbrush_oc_;
+	bool mbrush_oc_;
+	bool vacuum_oc_;
 
 	/*2 bytes*/
-	float lw_crt;//left wheel current
+	float lw_crt_;//left wheel current
 	
 	/*2 bytes*/
-	float rw_crt; // right wheel current
+	float rw_crt_; // right wheel current
 
 	/*1 byte*/
-	uint16_t left_wall; // left wall sensor
+	uint16_t left_wall_; // left wall sensor
 	
 	/*1 byte*/
-	uint16_t right_wall; // left wall sensor
+	uint16_t right_wall_; // left wall sensor
 	
 	/*? byte*/
-	float x_acc; // accelaration of x
+	float x_acc_; // accelaration of x
 	
 	/*? byte*/
-	float y_acc; // accelaration of y
+	float y_acc_; // accelaration of y
 	
 	/*? byte*/
-	float z_acc; // accelaration of z
+	float z_acc_; // accelaration of z
 	
 	/*1 byte*/
-	uint8_t gyro_dymc; // ??
+	uint8_t gyro_dymc_; // ??
 	
 	/*1 byte*/
-	uint16_t ir_ctrl;
+	uint16_t ir_ctrl_;
 	
 	/*3 bytes*/
-	uint32_t charge_stub;
+	uint32_t charge_stub_;
 
 	/* 1 byte */
-	uint32_t rcon_front_left;
+	uint32_t rcon_front_left_;
 
 	/* 1 byte */
-	uint32_t rcon_front_right;
+	uint32_t rcon_front_right_;
 
 	/* 1 byte */
-	uint32_t rcon_back_left;
+	uint32_t rcon_back_left_;
 
 	/* 1 byte */
-	uint32_t rcon_back_right;
+	uint32_t rcon_back_right_;
 
 	/* 1 byte */
-	uint32_t rcon_left;
+	uint32_t rcon_left_;
 
 	/* 1 byte */
-	uint32_t rcon_right;
+	uint32_t rcon_right_;
 
 	/* 1 byte */
-	bool bumper_right;
+	bool bumper_right_;
 
 	/* 1 byte */
-	bool bumper_left;
+	bool bumper_left_;
 	/* 1 byte */
-	int16_t obs_left;
+	int16_t obs_left_;
 
 	/* 1 byte */
-	int16_t obs_right;
+	int16_t obs_right_;
 
 	/* 1 byte */
-	int16_t obs_front;
+	int16_t obs_front_;
 
 	#if __ROBOT_X900
 	//new variable visual wall
@@ -244,48 +238,48 @@ private:
 	//new variable plan
 	bool plan;
 	#endif
-	bool	is_moving;
+	bool	is_moving_;
 
-	float	linear_x;
-	float	linear_y;
-	float	linear_z;
+	float	linear_x_;
+	float	linear_y_;
+	float	linear_z_;
 
-	float	position_x;
-	float	position_y;
-	float	position_z;
-	float	WF_position_x;
-	float	WF_position_y;
-	float	odom_pose_x;
-	float	odom_pose_y;
+	float	position_x_;
+	float	position_y_;
+	float	position_z_;
+	float	wf_position_x_;
+	float	WF_position_y_;
+	float	odom_pose_x_;
+	float	odom_pose_y_;
 
-	float	odom_yaw;
-	float	base_link_yaw;
-	float	map_yaw;
+	float	odom_yaw_;
+	float	base_link_yaw_;
+	float	map_yaw_;
 
-	double	yaw;
+	double	yaw_;
 
-	ros::NodeHandle robot_node_handler;
-	ros::Subscriber robot_sensor_sub;
-	ros::Subscriber odom_sub;
-	ros::Subscriber map_metadata_sub;
+	ros::NodeHandle robot_nh_;
+	ros::Subscriber sensor_sub_;
+	ros::Subscriber odom_sub_;
+	ros::Subscriber map_metadata_sub_;
 //	ros::Subscriber obstacles_sub;
-	ros::Publisher send_cmd_pub;
-	ros::Publisher send_clean_marker_pub;
-	ros::Publisher send_bumper_marker_pub;
+	ros::Publisher send_cmd_pub_;
+	ros::Publisher send_clean_marker_pub_;
+	ros::Publisher send_bumper_marker_pub_;
 //	ros::Publisher obstacles_pub_;
 
-	visualization_msgs::Marker clean_markers,bumper_markers;
-	geometry_msgs::Point m_points;
+	visualization_msgs::Marker clean_markers_,bumper_markers_;
+	geometry_msgs::Point m_points_;
 
-	tf::TransformListener		*robot_tf;
-	tf::TransformListener		*robot_WF_tf;
+	tf::TransformListener		*robot_tf_;
+	tf::TransformListener		*robot_wf_tf_;
 	tf::Stamped<tf::Transform>	map_pose;
-	tf::Stamped<tf::Transform>	WF_map_pose;
+	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	void robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg);
-	void robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg);
+	void sensorCb(const pp::x900sensor::ConstPtr &msg);
+	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
-	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& msg);
+	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 };
 
 #endif

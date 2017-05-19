@@ -43,7 +43,7 @@ void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
 	ROS_INFO("Waiting for robot sensor ready.");
-	while (!robot::instance()->robot_is_all_ready()) {
+	while (!robot::instance()->isAllReady()) {
 		usleep(1000);
 	}
 	ROS_INFO("Robot sensor ready.");

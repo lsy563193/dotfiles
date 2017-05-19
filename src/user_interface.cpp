@@ -81,7 +81,7 @@ void User_Interface(void)
 		}
 #if MANUAL_PAUSE_CLEANING
 		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
 			if (Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
