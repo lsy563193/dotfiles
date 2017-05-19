@@ -51,51 +51,28 @@ using namespace obstacle_detector;
 //  return 0;
 //}
 
-ObstacleDetector::ObstacleDetector() : nh_(""), nh_local_("~"), p_active_(false) {
-  std_srvs::Empty empty;
-  updateParams(empty.request, empty.response);
-//  params_srv_ = nh_local_.advertiseService("params", &ObstacleDetector::updateParams, this);
+ObstacleDetector::ObstacleDetector() : nh_(""), nh_local_("~"), active_(false) {
+  nh_local_.param("is_active_align", active_, true);
+  nh_local_.param("use_split_and_merge", use_split_and_merge_, false);
 
-//  ros::spin();
+  nh_local_.param("min_group_points", min_group_points_, 5);
+
+  nh_local_.param("max_group_distance", max_group_distance_, 0.100);
+  nh_local_.param("distance_proportion", distance_proportion_, 0.006136);
+  nh_local_.param("max_split_distance", max_split_distance_, 0.070);
+  nh_local_.param("max_merge_separation", max_merge_separation_, 0.150);
+  nh_local_.param("max_merge_spread", max_merge_spread_, 0.070);
+
+  obstacles_pub_ = nh_.advertise<Obstacles>("obstacles", 10);
+
+  scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
+
+  ROS_INFO("Obstacle Detector [ACTIVE]");
 }
 ObstacleDetector::~ObstacleDetector(){
-  scan_sub_.shutdown();
-  obstacles_pub_.shutdown();
-  nh_.shutdown();
-	nh_local_.shutdown();
+//  scan_sub_.shutdown();
+//  obstacles_pub_.shutdown();
   ROS_INFO("Obstacle Detector [OFF]");
-}
-bool ObstacleDetector::updateParams(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-  bool prev_active = p_active_;
-
-  nh_local_.param<bool>("is_active_align", p_active_, true);
-  nh_local_.param<bool>("use_split_and_merge", p_use_split_and_merge_, false);
-
-  nh_local_.param<int>("min_group_points", p_min_group_points_, 5);
-
-  nh_local_.param<double>("max_group_distance", p_max_group_distance_, 0.100);
-  nh_local_.param<double>("distance_proportion", p_distance_proportion_, 0.006136);
-  nh_local_.param<double>("max_split_distance", p_max_split_distance_, 0.070);
-  nh_local_.param<double>("max_merge_separation", p_max_merge_separation_, 0.150);
-  nh_local_.param<double>("max_merge_spread", p_max_merge_spread_, 0.070);
-
-  if (p_active_ != prev_active) {
-    if (p_active_) {
-      obstacles_pub_ = nh_.advertise<Obstacles>("obstacles", 10);
-
-      scan_sub_ = nh_.subscribe("scan", 10, &ObstacleDetector::scanCallback, this);
-
-      ROS_INFO("Obstacle Detector [ACTIVE]");
-    }
-    else {
-      scan_sub_.shutdown();
-      obstacles_pub_.shutdown();
-
-      ROS_INFO("Obstacle Detector [OFF]");
-    }
-  }
-
-  return true;
 }
 
 void ObstacleDetector::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
@@ -135,7 +112,7 @@ void ObstacleDetector::groupPoints() {
     if (point_set.num_points != 0) {
       double r = (*point).length();
 
-      if ((*point - *point_set.end).lengthSquared() > pow(p_max_group_distance_ + r * p_distance_proportion_, 2.0)) {
+      if ((*point - *point_set.end).lengthSquared() > pow(max_group_distance_ + r * distance_proportion_, 2.0)) {
         detectSegments(point_set);
         point_set.num_points = -1;
         advance(point, -1);
@@ -155,12 +132,12 @@ void ObstacleDetector::groupPoints() {
 }
 
 void ObstacleDetector::detectSegments(const PointSet& point_set) {
-  if (point_set.num_points < p_min_group_points_)
+  if (point_set.num_points < min_group_points_)
     return;
 
   Segment segment(*point_set.begin, *point_set.end);  // Use Iterative End Point Fit
 
-  if (p_use_split_and_merge_)
+  if (use_split_and_merge_)
     segment = fitSegment(point_set);
 
   PointIterator set_divider;
@@ -177,7 +154,7 @@ void ObstacleDetector::detectSegments(const PointSet& point_set) {
     if ((distance = segment.distanceTo(*point)) >= max_distance) {
       double r = (*point).length();
 
-      if (distance > p_max_split_distance_ + r * p_distance_proportion_) {
+      if (distance > max_split_distance_ + r * distance_proportion_) {
         max_distance = distance;
         set_divider = point;
         split_index = point_index;
@@ -201,7 +178,7 @@ void ObstacleDetector::detectSegments(const PointSet& point_set) {
     detectSegments(subset1);
     detectSegments(subset2);
   } else {  // Add the segment
-    if (!p_use_split_and_merge_)
+    if (!use_split_and_merge_)
       segment = fitSegment(point_set);
 
     segments_.push_back(segment);
@@ -249,17 +226,17 @@ bool ObstacleDetector::compareSegments(const Segment& s1, const Segment& s2, Seg
 }
 
 bool ObstacleDetector::checkSegmentsProximity(const Segment& s1, const Segment& s2) {
-  return (s1.trueDistanceTo(s2.first_point) < p_max_merge_separation_ ||
-          s1.trueDistanceTo(s2.last_point)  < p_max_merge_separation_ ||
-          s2.trueDistanceTo(s1.first_point) < p_max_merge_separation_ ||
-          s2.trueDistanceTo(s1.last_point)  < p_max_merge_separation_);
+  return (s1.trueDistanceTo(s2.first_point) < max_merge_separation_ ||
+          s1.trueDistanceTo(s2.last_point)  < max_merge_separation_ ||
+          s2.trueDistanceTo(s1.first_point) < max_merge_separation_ ||
+          s2.trueDistanceTo(s1.last_point)  < max_merge_separation_);
 }
 
 bool ObstacleDetector::checkSegmentsCollinearity(const Segment& segment, const Segment& s1, const Segment& s2) {
-  return (segment.distanceTo(s1.first_point) < p_max_merge_spread_ &&
-          segment.distanceTo(s1.last_point)  < p_max_merge_spread_ &&
-          segment.distanceTo(s2.first_point) < p_max_merge_spread_ &&
-          segment.distanceTo(s2.last_point)  < p_max_merge_spread_);
+  return (segment.distanceTo(s1.first_point) < max_merge_spread_ &&
+          segment.distanceTo(s1.last_point)  < max_merge_spread_ &&
+          segment.distanceTo(s2.first_point) < max_merge_spread_ &&
+          segment.distanceTo(s2.last_point)  < max_merge_spread_);
 }
 
 void ObstacleDetector::publishObstacles() {

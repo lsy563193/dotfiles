@@ -89,17 +89,16 @@ private:
 //  std::list<Circle> circles_;
 
   // Parameters
-  bool p_active_;
-//  bool p_use_scan_;
-  bool p_use_split_and_merge_;
+  bool active_;
+  bool use_split_and_merge_;
 
-  int p_min_group_points_;
+  int min_group_points_;
 
-  double p_distance_proportion_;
-  double p_max_group_distance_;
-  double p_max_split_distance_;
-  double p_max_merge_separation_;
-  double p_max_merge_spread_;
+  double distance_proportion_;
+  double max_group_distance_;
+  double max_split_distance_;
+  double max_merge_separation_;
+  double max_merge_spread_;
 //  double p_max_circle_radius_;
 //  double p_radius_enlargement_;
 
