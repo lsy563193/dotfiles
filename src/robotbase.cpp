@@ -72,7 +72,13 @@ int temp_speaker_silence_time_count = 0;
 
 // Low battery flag
 extern uint8_t lowBattery;
-extern int8_t g_enable_slam_offset;
+
+/*extern int g_enable_angle_offset;
+extern boost::condition_variable g_cond_var;
+extern boost::mutex g_angle_offset_mt;
+
+extern void set_angle_offset(int);
+extern int get_angle_offset(void);*/
 
 // Odom coordinate
 float pose_x, pose_y;
@@ -269,7 +275,9 @@ void *robotbase_routine(void*)
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
 
-		robot::instance()->set_angle(sensor.angle); //
+		sensor.angle -= robot::instance()->offset_angle();
+		robot::instance()->set_angle(sensor.angle);
+//		ROS_INFO("sensor:%f",robot::instance()->get_angle());
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -354,7 +362,16 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
+
 		odom_pub.publish(odom);
+
+/*
+		if(get_angle_offset() == 2){
+			set_angle_offset(3);
+			g_cond_var.notify_all();
+		}
+*/
+
 		sensor_pub.publish(sensor);
 		/*---------------publish end --------------------------*/
 

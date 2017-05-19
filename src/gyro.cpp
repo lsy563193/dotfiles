@@ -164,7 +164,7 @@ bool Wait_For_Gyro_On(void)
 		if (skip_count == 0 && robot::instance()->robot_get_angle_v() != 0){
 			success_count++;
 		}
-		ROS_DEBUG("Opening%d, angle_v = %f.angle = %f.", success_count, robot::instance()->robot_get_angle_v(), robot::instance()->robot_get_angle());
+		ROS_DEBUG("Opening%d, angle_v = %f.angle = %f.", success_count, robot::instance()->robot_get_angle_v(), robot::instance()->get_angle());
 
 		if (success_count == 5)
 		{
@@ -173,7 +173,7 @@ bool Wait_For_Gyro_On(void)
 			while (!Stop_Event() && check_stable_count < 50)
 			{
 				usleep(20000);
-				current_angle = robot::instance()->robot_get_angle();
+				current_angle = robot::instance()->get_angle();
 				ROS_DEBUG("Checking%d, angle_v = %f.angle = %f, average_angle = %f.", check_stable_count, robot::instance()->robot_get_angle_v(), current_angle, average_angle);
 				if (current_angle > 0.02 || current_angle < -0.02)
 				{

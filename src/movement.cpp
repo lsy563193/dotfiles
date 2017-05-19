@@ -3168,10 +3168,7 @@ void Clear_Manual_Pause(void)
 		ROS_WARN("Reset manual pause status.");
 		wav_play(WAV_CLEANING_FINISHED);
 		robot::instance()->Reset_Cleaning_Manual_Pause();
-
-		extern bool g_is_line_angle_offset;
-		g_is_line_angle_offset=false;
-
+		robot::instance()->offset_angle(0);
 		MotionManage::s_slam->stop();
 		CM_ResetGoHome();
 	}

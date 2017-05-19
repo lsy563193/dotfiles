@@ -1991,7 +1991,8 @@ void CM_go_home()
 				{
 					// If it is the last point, it means it it now at (0, 0).
 					if (from_station == 0) {
-						CM_HeadToCourse(ROTATE_TOP_SPEED, -robot::instance()->home_angle());
+						auto angle = static_cast<int16_t>(robot::instance()->offset_angle() *10);
+						CM_HeadToCourse(ROTATE_TOP_SPEED, -angle);
 
 						if (Stop_Event())
 						{

@@ -26,8 +26,18 @@ public:
 	void UnSubscriber(void);
 	bool robot_is_all_ready();
 	uint8_t robot_get_workmode();
-	float robot_get_angle();
+	float get_angle();
 	void set_angle(float angle_);
+
+	void offset_angle(float angle){
+		boost::mutex::scoped_lock(offset_angle_metux_);
+		offset_angle_ = angle;
+	};
+	float offset_angle(void){
+		boost::mutex::scoped_lock(offset_angle_metux_);
+		return offset_angle_;
+	};
+
 	float robot_get_angle_v();
 	int16_t robot_get_cliff_right();
 	int16_t robot_get_cliff_left();
@@ -90,10 +100,6 @@ public:
 	void is_odom_ready(bool is_ready){is_odom_ready_ = is_ready;};
 	void init_mumber();
 
-	void home_angle(int16_t angle){home_angle_ = angle;};
-	int16_t home_angle(void){ return home_angle_;};
-	int16_t home_angle_;
-
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
 	bool Is_Cleaning_Low_Bat_Paused(void);
@@ -120,6 +126,9 @@ private:
 #endif
 	bool	is_sensor_ready;
 	bool	is_odom_ready_;
+
+	float offset_angle_;
+	boost::mutex offset_angle_metux_;
 
 	/* 1 byte */
 	float	angle;

@@ -18,6 +18,25 @@ Segment_set segmentss;
 
 int8_t g_enable_slam_offset = 0;
 
+/*
+int g_enable_angle_offset = 0;
+boost::mutex g_angle_offset_mt;
+boost::mutex g_wait_mt;
+
+int get_angle_offset(void)
+{
+	boost::mutex::scoped_lock lock(g_angle_offset_mt);
+	return g_enable_angle_offset;
+}
+void set_angle_offset(int status)
+{
+	boost::mutex::scoped_lock lock(g_angle_offset_mt);
+	g_enable_angle_offset = status;
+}
+
+boost::condition_variable g_cond_var;
+*/
+
 void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
 {
 //	ROS_WARN("robot_obstacles_cb");
@@ -49,34 +68,11 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 
 			segmentss.classify(seg);
 		}
-//		ROS_INFO("+++++++++++++++++++++++++++++");
 	}
-	/*else {//(is_obstacles_ready == true)
-		static int count = 0;
-		if(count++%300==0) {
-			for (auto &s : msg->segments) {
-				std::cout << "first " << s.first_point << std::endl;
-				std::cout << "last " << s.last_point << std::endl;
-//			查找直线经过的格子
-				Point32_t p1, p2;
-				p1 = PointToCount(s.first_point);
-				p2 = PointToCount(s.last_point);
-				cout << "$$$$$$$$$p1:" << p1.X << "," << p1.Y << endl;
-				cout << "$$$$$$$$$p2:" << p2.X << "," << p2.Y << endl;
-				std::vector<Point16_t> cells = greds_of_line_pass(p1, p2);
-				for (auto &cell : cells) {
-					std::cout << "cell:" << cell.X << "," << cell.Y << "\t";
-					Point32_t p = Map_CellToPoint(cell);
-					Map_SetCell(MAP, p.X, p.Y, BLOCKED_OBS);
-				}
-				cout << endl;
-			}
-			debug_map(MAP,0,0);
-		}
-	}*/
+
 }
 
-int16_t MotionManage::get_align_angle(void)
+float MotionManage::get_align_angle(void)
 {
 	robot::instance()->is_odom_ready(false);
 	segmentss.clear();
@@ -108,28 +104,29 @@ int16_t MotionManage::get_align_angle(void)
 		return false;
 
 	ROS_INFO("Get the line");
-	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
+//	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
+	auto line_angle = segmentss.min_distant_segment_angle();
 
-	//testing to turn 180 degrees.
+	//todo testing to turn 180 degrees.
 	if (line_angle > 0)
 	{
-		line_angle -= 1800;
+		line_angle -= 180;
 	} else if (line_angle <= 0)
 	{
-		line_angle += 1800;
+		line_angle += 180;
 	}
 	return line_angle;
 }
-
 
 Laser* MotionManage::s_laser = nullptr/*new Laser()*/;
 Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
+	//1 start motor
 	Work_Motor_Configure();
 
-	//1 start laser
+	//2 start laser
 	s_laser = new Laser();
 	if (!s_laser->is_ready())
 		return;
@@ -143,19 +140,19 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 #endif
 
-	//2 setting home_angle
-	int16_t align_angle = 0;
-
+	//3 calculate offset_angle
 	nh_.param<bool>("is_active_align", is_align_active_, false);
 	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
 	{
 		ObstacleDetector od;
-		align_angle = get_align_angle();
+		auto align_angle = get_align_angle();
+		robot::instance()->offset_angle(align_angle);
 	}
 
-	robot::instance()->home_angle(align_angle);
 
-	//call start slam
+	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
+	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
+		//call start slam
 #if CONTINUE_CLEANING_AFTER_CHARGE
 	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
 #endif
@@ -163,7 +160,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		if (!robot::instance()->Is_Cleaning_Manual_Paused())
 #endif
 			s_slam = new Slam();
-
 
 	g_enable_slam_offset = 1;
 	s_slam->enable_map_update();
@@ -177,7 +173,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		ROS_ERROR("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 	}
-	ROS_INFO("ros angle:%f",robot::instance()->robot_get_angle());
 }
 
 MotionManage::~MotionManage()
@@ -207,6 +202,8 @@ MotionManage::~MotionManage()
 		delete s_slam;
 		s_slam = nullptr;
 	}
+
+	robot::instance()->offset_angle(0);
 
 	if (Get_Cliff_Trig())
 		wav_play(WAV_ERROR_LIFT_UP);

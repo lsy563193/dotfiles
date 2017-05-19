@@ -30,7 +30,7 @@ int8_t key_press_count;
 int8_t key_release_count;
 
 //extern pp::x900sensor sensor;
-robot::robot()
+robot::robot():offset_angle_(0)
 {
 	this->init();
 	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
@@ -357,12 +357,12 @@ std::vector<int8_t> *robot::robot_get_map_data()
 }
 */
 
-float robot::robot_get_angle() {
+float robot::get_angle() {
   return this->angle;
 }
 
-void robot::set_angle(float angle_) {
-	this->angle = angle_;
+void robot::set_angle(float angle) {
+	this->angle = angle;
 }
 
 float robot::robot_get_angle_v()
