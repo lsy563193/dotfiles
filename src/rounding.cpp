@@ -36,6 +36,8 @@ uint8_t	should_mark = 0;
 
 RoundingType	rounding_type;
 
+extern uint8_t g_low_battery;
+
 void update_position(uint16_t heading) {
 	float   pos_x, pos_y;
 	int8_t	c, d, e;
@@ -336,7 +338,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					Stop_Brifly();
 					return 0;
 				}
-				if (Remote_Key(Remote_Max) && !lowBattery) {
+				if (Remote_Key(Remote_Max) && !g_low_battery) {
 					Reset_Rcon_Remote();
 					Switch_VacMode(true);
 				}

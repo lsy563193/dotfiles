@@ -46,8 +46,8 @@ extern std::list <Point32_t> Home_Point;
 // This is for adding new point to Home Point list.
 extern Point32_t New_Home_Point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
-extern uint8_t remote_go_home;
-extern uint8_t from_station;
+extern uint8_t g_remote_go_home;
+extern uint8_t g_from_station;
 extern int16_t xMin, xMax, yMin, yMax;
 bool	escape_thread_running = false;
 //Timer
@@ -1360,7 +1360,7 @@ uint8_t WF_End_Wall_Follow(void){
 	int8_t state;
 	// X, Y in Target_Point are all counts.
 	//Point32_t	Next_Point, Target_Point;
-	//Point16_t	tmpPnt, pnt16ArTmp[3];
+	//Point16_t	tmpPnt, g_pnt16_ar_tmp[3];
 	//MapTouringType	mt_state = MT_None;
 	//int16_t offset_angle = robot::instance()->robot_get_home_angle();
 	Stop_Brifly();

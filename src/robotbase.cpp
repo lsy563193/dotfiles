@@ -71,7 +71,7 @@ int robotbase_speaker_silence_time_count = 0;
 int temp_speaker_silence_time_count = 0;
 
 // Low battery flag
-extern uint8_t lowBattery;
+extern uint8_t g_low_battery;
 
 /*extern int g_enable_angle_offset;
 extern boost::condition_variable g_cond_var;
@@ -407,7 +407,7 @@ void *serial_send_routine(void*){
 			process_beep();
 		//}else{
 		//	// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
-		//	if (lowBattery){
+		//	if (g_low_battery){
 		//		Beep(3, 25, 25, 40);
 		//	}
 		}
