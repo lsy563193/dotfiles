@@ -98,7 +98,7 @@ public:
 	void visualize_marker_init();
 	void set_ctrl_data(uint8_t type,uint8_t val);
 	void is_odom_ready(bool is_ready){is_odom_ready_ = is_ready;};
-	void init_mumber();
+	void init_odom_position();
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.

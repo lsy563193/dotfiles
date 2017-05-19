@@ -668,7 +668,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return 0;
 	}
-	robot::instance()->init_mumber();// for init robot member
+	robot::instance()->init_odom_position();// for reset odom position to zero.
 	MotionManage motion;
 
 	if(Stop_Event()){

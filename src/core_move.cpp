@@ -2308,7 +2308,7 @@ uint8_t CM_Touring(void)
 			/* usleep for checking whether robot is in the station */
 			usleep(20000);
 
-			robot::instance()->init_mumber();// for init robot member
+			robot::instance()->init_odom_position();// for reset odom position to zero.
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 			// If it it the first time cleaning, initialize the Continue_Point.
