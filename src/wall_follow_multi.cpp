@@ -1591,45 +1591,54 @@ bool WF_Check_Angle(void) {
 	int16_t	th_diff;
 	int16_t	diff_limit = 1500;
 	int8_t	pass_count = 0;
+	int8_t	sum = 10;
+	bool	fail_flag = 0;
 	try{
 		for (int i = 1; i <= 10; i++) {
 			x = (WF_Point.at(WF_Point.size() - i)).X;
 			y = (WF_Point.at(WF_Point.size() - i)).Y;
 			th = (WF_Point.at(WF_Point.size() - i)).TH;
+			fail_flag = 0;
+
 			for (std::vector<Pose32_t>::reverse_iterator r_iter =  (WF_Point.rbegin() + i); r_iter != WF_Point.rend(); ++r_iter) {
-				if (r_iter->X == x && r_iter ->Y == y) {
+				if (r_iter->X == x && r_iter->Y == y) {
 					former_th = r_iter->TH;
-					ROS_INFO("iter->X = %d, iter->Y = %d, iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
+					ROS_INFO("r_iter->X = %d, r_iter->Y = %d, r_iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
 					th_diff = (abs(former_th - th));
+
 					if (th_diff > 1800) {
 						th_diff = 3600 - th_diff;
 					}
-					if (th_diff  <= diff_limit) {
+
+					if (th_diff <= diff_limit) {
 						pass_count++;
 						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, diff_limit);
 						break;
 					} else {
+						fail_flag = 1;
 						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, diff_limit);
 					}
 				}
-				/*if (r_iter == (WF_Point.rend() - 1)) {
-					ROS_ERROR("Error! Can't find second same pose in WF_Point!");
-					debug_map(MAP, 0, 0);
-					return 0;
-				}*/
+				/*in case of the WF_Point no second same point, the reach_count++ caused by cleanning the block obstacle which 
+				 cost is 2 or 3, it will be set 1(CLEANED), at this situation the sum should sum--, it will happen when the robot
+				 get close to the left wall but there is no wall exist, then the robot can judge it is in the isolate island.*/
+				if ((r_iter == (WF_Point.rend() - 1)) && (fail_flag == 0)) {
+					sum--;
+					ROS_WARN("Can't find second same pose in WF_Point! sum--");
+				}
 			}
 		}
 
-		if (pass_count < 10) {
+		if (pass_count < sum) {
 			//in case of robot is always in the narrow and long space, when this count bigger than a threshold value, it will return 1
 			/*if (WF_check_isolate() == 0) {
 				ROS_WARN("Loop closed!return 1.");
 				return 1;
 			}*/
-			ROS_WARN("pass_count = %d,WF_Check_Angle Failed!", pass_count);
+			ROS_WARN("pass_count = %d, less than sum = %d. WF_Check_Angle Failed!", pass_count, sum);
 			return 0;
 		} else {
-			ROS_WARN("pass_count = %d,WF_Check_Angle Succeed!", pass_count);
+			ROS_WARN("pass_count = %d, equal to sum = %d. WF_Check_Angle Succeed!", pass_count, sum);
 			return 1;
 		}
 	}
