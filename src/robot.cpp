@@ -692,7 +692,7 @@ void robot::pubBumperMarkers(){
 	send_bumper_marker_pub_.publish(bumper_markers_);
 }
 
-void robot::initMumber()
+void robot::initOdomPosition()
 {
 	//is_odom_ready_ = false;
 	position_x_=0;

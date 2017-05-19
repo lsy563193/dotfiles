@@ -92,7 +92,7 @@ public:
 	void pubBumperMarkers(void);
 	void visualizeMarkerInit();
 	void isOdomReady(bool is_ready){is_odom_ready_ = is_ready;};
-	void initMumber();
+	void initOdomPosition();
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
