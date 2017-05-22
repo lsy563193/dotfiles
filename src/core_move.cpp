@@ -78,8 +78,6 @@ extern uint32_t g_cur_wtime;//temporary work time
 
 // This list is for storing the position that robot sees the charger stub.
 std::list <Point32_t> g_home_point;
-// This is for adding new point to Home Point list.
-Point32_t g_new_home_point;
 
 // This is for the continue point for robot to go after charge.
 Point32_t g_continue_point;
@@ -1875,9 +1873,7 @@ void CM_go_home()
 #if MANUAL_PAUSE_CLEANING
 			} else if (state == -8) {
 				// The current target home point is still valid, so push it back to the home point list.
-				g_new_home_point.X = cellToCount(tmpPnt.X);
-				g_new_home_point.Y = cellToCount(tmpPnt.Y);
-				CM_SetHome(g_new_home_point.X, g_new_home_point.Y);
+				CM_SetHome(cellToCount(tmpPnt.X), cellToCount(tmpPnt.Y));
 
 				Reset_Stop_Event_Status();
 				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), g_home_point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime, (uint)g_home_point.size());
@@ -1946,9 +1942,7 @@ void CM_go_home()
 					if (Stop_Event() == 1 || Stop_Event() == 2)
 					{
 						// The current target home point is still valid, so push it back to the home point list.
-						g_new_home_point.X = cellToCount(tmpPnt.X);
-						g_new_home_point.Y = cellToCount(tmpPnt.Y);
-						CM_SetHome(g_new_home_point.X, g_new_home_point.Y);
+						CM_SetHome(cellToCount(tmpPnt.X), cellToCount(tmpPnt.Y));
 
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 
@@ -2489,10 +2483,11 @@ void CM_SetHome(int32_t x, int32_t y) {
 	Point16_t tmpPnt;
 
 	bool found = false;
+	Point32_t new_home_point;
 
 	ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
-	g_new_home_point.X = x;
-	g_new_home_point.Y = y;
+	new_home_point.X = x;
+	new_home_point.Y = y;
 
 	for (list<Point32_t>::iterator it = g_home_point.begin(); found == false && it != g_home_point.end(); ++it) {
 		if (it->X == x && it->Y == y) {
@@ -2500,8 +2495,8 @@ void CM_SetHome(int32_t x, int32_t y) {
 		}
 	}
 	if (found == false) {
-		g_home_point.push_front(g_new_home_point);
-		// If g_new_home_point near (0, 0)
+		g_home_point.push_front(new_home_point);
+		// If new_home_point near (0, 0)
 		if (abs(countToCell(x)) <= 5 && abs(countToCell(y)) <= 5)
 		{
 			// Update the trapped reference points

@@ -178,7 +178,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	//5 call start slam
 	s_slam = new Slam();
 
-	g_enable_slam_offset = 1;
+	if (Get_Clean_Mode() == Clean_Mode_Navigation)
+		g_enable_slam_offset = 1;
+	else if (Get_Clean_Mode() == Clean_Mode_WallFollow)
+		g_enable_slam_offset = 2;
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 1000;
 	while (!s_slam->isMapReady() && --count_n_10ms != 0)
@@ -240,8 +243,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 		case Clean_Mode_Navigation:
 			return initNavigationCleaning();
 		case Clean_Mode_WallFollow:
-			// TODO: return initWallFollowCleaning();
-			return true;
+			return initWallFollowCleaning();
 		case Clean_Mode_Spot:
 			// TODO: return initSpotCleaning();
 			return true;
@@ -386,13 +388,13 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		if (Get_Rcon_Status())
 		{
-			Point32_t new_g_home_point;
+			Point32_t new_home_point;
 			// Save the current coordinate as a new home point.
-			new_g_home_point.X = Map_GetXCount();
-			new_g_home_point.Y = Map_GetYCount();
+			new_home_point.X = Map_GetXCount();
+			new_home_point.Y = Map_GetYCount();
 
 			// Push the start point into the home point list.
-			g_home_point.push_front(new_g_home_point);
+			g_home_point.push_front(new_home_point);
 		}
 
 		Reset_Rcon_Status();
@@ -413,9 +415,9 @@ bool MotionManage::initNavigationCleaning(void)
 			g_home_point.clear();
 
 			// Push the start point into the home point list
-			Point32_t new_g_home_point;
-			new_g_home_point.X = new_g_home_point.Y = 0;
-			g_home_point.push_front(new_g_home_point);
+			Point32_t new_home_point;
+			new_home_point.X = new_home_point.Y = 0;
+			g_home_point.push_front(new_home_point);
 
 			// Mark all the trapped reference points as (0, 0).
 			Point16_t tmp_pnt;
@@ -440,6 +442,46 @@ bool MotionManage::initNavigationCleaning(void)
 #endif
 		}
 	}
+
+	return true;
+}
+
+bool MotionManage::initWallFollowCleaning(void)
+{
+	extern std::list <Point32_t> g_home_point;
+	extern std::vector<Pose32_t> WF_Point;
+
+	Reset_MoveWithRemote();
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
+	Set_LED(100, 0);
+	//wav_play(WAV_SYSTEM_INITIALIZING);
+	wav_play(WAV_CLEANING_WALL_FOLLOW);
+	if (!Wait_For_Gyro_On())
+	{
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		return false;
+	}
+
+	//Initital home point
+	g_home_point.clear();
+	WF_Point.clear();
+	Point32_t new_home_point;
+	new_home_point.X = new_home_point.Y = 0;
+	// Push the start point into the home point list
+	g_home_point.push_front(new_home_point);
+
+	Map_Initialize();
+	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	debug_map(MAP, 0, 0);
+	WF_PathPlanning_Initialize(&g_home_point.front().X, &g_home_point.front().Y);
+	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
+	//pthread_t	escape_thread_id;
+	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
 	return true;
 }

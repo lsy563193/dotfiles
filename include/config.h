@@ -68,10 +68,10 @@
 #define PP_MOVE_TO_MIDDLE_OF_PATH	(1)
 
 /* Zig-Zag cleanning time 120 minutes */
-#define CLEANNING_TIME			(14400)
+#define CLEANNING_TIME			(7200)
 
 /* With water tank, Zig-Zag cleanning time 90 minutes */
-#define WET_CLEANNING_TIME		(10800)
+#define WET_CLEANNING_TIME		(5400)
 
 /* Low battery go home voltage value */
 #define LOW_BATTERY_GO_HOME_VOLTAGE		(1320)
@@ -201,7 +201,7 @@
 #define MAP_FIND_WALL_DISTANCE		(67 * 4)
 
 /* Escape time set to 9 minutes */
-#define ESCAPE_TRAPPED_TIME		(1080)
+#define ESCAPE_TRAPPED_TIME		(540)
 
 /* Set trapped reference target size for robot to check that if it is trapped */
 #define ESCAPE_TRAPPED_REF_CELL_SIZE		(3)
