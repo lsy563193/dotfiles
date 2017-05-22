@@ -865,7 +865,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		{
 			if (robot::instance()->isManualPaused())
 			{
-				robot::instance()->resetCleaningManualPause();
+				robot::instance()->resetManualPause();
 			}
 		}
 		else
@@ -1992,7 +1992,7 @@ void CM_go_home()
 							{
 								if (robot::instance()->isManualPaused())
 								{
-									robot::instance()->resetCleaningManualPause();
+									robot::instance()->resetManualPause();
 								}
 							}
 							else
@@ -2090,7 +2090,7 @@ uint8_t CM_Touring(void)
 
 		if (robot::instance()->isManualPaused())
 		{
-			robot::instance()->resetCleaningManualPause();
+			robot::instance()->resetManualPause();
 		}
 
 		Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -2611,7 +2611,7 @@ MapTouringType CM_handleExtEvent()
 		{
 			if (robot::instance()->isManualPaused())
 			{
-				robot::instance()->resetCleaningManualPause();
+				robot::instance()->resetManualPause();
 			}
 		}
 		else

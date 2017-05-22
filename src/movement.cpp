@@ -1987,7 +1987,7 @@ uint8_t Stop_Event(void)
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
-				robot::instance()->setCleaningManualPause();
+				robot::instance()->setManualPause();
 				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
 				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
 				Reset_Work_Time();
@@ -2002,7 +2002,7 @@ uint8_t Stop_Event(void)
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
-				robot::instance()->setCleaningManualPause();
+				robot::instance()->setManualPause();
 				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
 				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
 				Reset_Work_Time();
@@ -3167,7 +3167,7 @@ void Clear_Manual_Pause(void)
 	{
 		ROS_WARN("Reset manual pause status.");
 		wav_play(WAV_CLEANING_FINISHED);
-		robot::instance()->resetCleaningManualPause();
+		robot::instance()->resetManualPause();
 		robot::instance()->offsetAngle(0);
 		MotionManage::s_slam->stop();
 		CM_ResetGoHome();

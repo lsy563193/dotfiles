@@ -156,7 +156,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	if (robot::instance()->isManualPaused())
 	{
-		robot::instance()->resetCleaningManualPause();
+		robot::instance()->resetManualPause();
 		return;
 	}
 
@@ -297,7 +297,7 @@ bool MotionManage::initNavigationCleaning(void)
 				}
 				if (robot::instance()->isManualPaused())
 				{
-					robot::instance()->resetCleaningManualPause();
+					robot::instance()->resetManualPause();
 				}
 				return false;
 			}
@@ -361,7 +361,7 @@ bool MotionManage::initNavigationCleaning(void)
 				}
 				if (robot::instance()->isManualPaused())
 				{
-					robot::instance()->resetCleaningManualPause();
+					robot::instance()->resetManualPause();
 				}
 				return false;
 			}

@@ -317,14 +317,14 @@ public:
 #endif
 	}
 
-	void setCleaningManualPause(void)
+	void setManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
 		manual_pause_cleaning_ = true;
 #endif
 	}
 
-	void resetCleaningManualPause(void)
+	void resetManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
 		manual_pause_cleaning_ = false;
