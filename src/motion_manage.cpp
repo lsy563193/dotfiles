@@ -74,7 +74,7 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 
 float MotionManage::get_align_angle(void)
 {
-	robot::instance()->isOdomReady(false);
+	robot::instance()->setOdomReady(false);
 	segmentss.clear();
 //	ROS_INFO("Start subscribe to /obstacles");
 	auto obstacles_sub = nh_.subscribe("/obstacles", 1, &MotionManage::robot_obstacles_cb, this);
