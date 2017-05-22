@@ -282,54 +282,64 @@ public:
 		is_odom_ready_ = is_ready;
 	}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
+//#if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
-	bool isCleaningLowBatPaused(void) const
+	bool isLowBatPaused(void) const
 	{
+#if CONTINUE_CLEANING_AFTER_CHARGE
 		return low_bat_pause_cleaning_;
-	}
-
-	void cleaningLowBatPause(void)
-	{
-		low_bat_pause_cleaning_ = true;
-	}
-
-	void resetCleaningLowBatPause(void)
-	{
-		low_bat_pause_cleaning_ = false;
-	}
+#else
+		return false;
 #endif
+	}
 
-#if MANUAL_PAUSE_CLEANING
-// These 3 functions are for manual pause cleaning.
-	bool isCleaningManualPaused(void) const
+	void setLowBatPause(void)
 	{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		low_bat_pause_cleaning_ = true;
+#endif
+	}
+
+	void resetLowBatPause(void)
+	{
+#if CONTINUE_CLEANING_AFTER_CHARGE
+		low_bat_pause_cleaning_ = false;
+#endif
+	}
+
+// These 3 functions are for manual pause cleaning.
+	bool isManualPaused(void) const
+	{
+#if MANUAL_PAUSE_CLEANING
 		return manual_pause_cleaning_;
+#else
+		return false;
+#endif
 	}
 
 	void setCleaningManualPause(void)
 	{
+#if MANUAL_PAUSE_CLEANING
 		manual_pause_cleaning_ = true;
+#endif
 	}
 
 	void resetCleaningManualPause(void)
 	{
+#if MANUAL_PAUSE_CLEANING
 		manual_pause_cleaning_ = false;
-	}
-
 #endif
+	}
 
 private:
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
+
 // These variable is for continue cleaning after charge.
 	bool	low_bat_pause_cleaning_;
-#endif
 
-#if MANUAL_PAUSE_CLEANING
 // These variable is for continue cleaning after charge.
 	bool	manual_pause_cleaning_;
-#endif
+
 
 	bool	is_sensor_ready_;
 

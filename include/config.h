@@ -281,10 +281,10 @@
 // Config for whether enable the function of continuing cleanning after charge
 #define CONTINUE_CLEANING_AFTER_CHARGE	(1)
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
+//#if CONTINUE_CLEANING_AFTER_CHARGE
 /* Continue cleaning voltage value */
 #define CONTINUE_CLEANING_VOLTAGE	(1530)
-#endif
+//#endif
 
 // Config for whether enable the function of manual pause cleaning.
 #define MANUAL_PAUSE_CLEANING	(1)

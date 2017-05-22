@@ -63,10 +63,10 @@ robot::robot():offset_angle_(0)
 	low_bat_pause_cleaning_ = false;
 	// Initialize the key press count.
 	key_press_count = 0;
-#if MANUAL_PAUSE_CLEANING
+
 	// Initialize the manual pause variable.
 	manual_pause_cleaning_ = false;
-#endif
+
 }
 
 robot::~robot()

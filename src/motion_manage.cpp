@@ -152,17 +152,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->isCleaningLowBatPaused())
+	if (robot::instance()->isLowBatPaused())
 		return;
-#endif
-#if MANUAL_PAUSE_CLEANING
-	if (robot::instance()->isCleaningManualPaused())
+	if (robot::instance()->isManualPaused())
 	{
 		robot::instance()->resetCleaningManualPause();
 		return;
 	}
-#endif
 
 	//4 calculate offsetAngle
 	nh_.param<bool>("is_active_align", is_align_active_, false);
@@ -212,17 +208,14 @@ MotionManage::~MotionManage()
 		s_laser = nullptr;
 	}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->isCleaningLowBatPaused())
+	if (robot::instance()->isLowBatPaused())
 		return;
-#endif
-#if MANUAL_PAUSE_CLEANING
-	if (robot::instance()->isCleaningManualPaused())
+
+	if (robot::instance()->isManualPaused())
 	{
 		wav_play(WAV_PAUSE_CLEANING);
 		return;
 	}
-#endif
 
 	if (s_slam != nullptr)
 	{
@@ -270,22 +263,18 @@ bool MotionManage::initNavigationCleaning(void)
 	Reset_Stop_Event_Status();
 
 	// Opening the gyro.
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->isCleaningLowBatPaused())
+	if (robot::instance()->isLowBatPaused())
 	{
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
 	else
-#endif
 	{
-#if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->isCleaningManualPaused())
+		if (robot::instance()->isManualPaused())
 		{
 			ROS_WARN("Restore from manual pause");
 			wav_play(WAV_CLEANING_CONTINUE);
 		}
 		else
-#endif
 		{
 			// Restart the gyro.
 			Set_Gyro_Off();
@@ -298,20 +287,16 @@ bool MotionManage::initNavigationCleaning(void)
 			if (!Wait_For_Gyro_On())
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
-#if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->isCleaningLowBatPaused())
+				if (robot::instance()->isLowBatPaused())
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
 					CM_reset_cleaning_low_bat_pause();
 				}
-#endif
-#if MANUAL_PAUSE_CLEANING
-				if (robot::instance()->isCleaningManualPaused())
+				if (robot::instance()->isManualPaused())
 				{
 					robot::instance()->resetCleaningManualPause();
 				}
-#endif
 				return false;
 			}
 		}
@@ -364,8 +349,7 @@ bool MotionManage::initNavigationCleaning(void)
 					}
 					Reset_Stop_Event_Status();
 				}
-#if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->isCleaningLowBatPaused())
+				if (robot::instance()->isLowBatPaused())
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
@@ -373,13 +357,10 @@ bool MotionManage::initNavigationCleaning(void)
 					g_cur_wtime = 0;
 					ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
 				}
-#endif
-#if MANUAL_PAUSE_CLEANING
-				if (robot::instance()->isCleaningManualPaused())
+				if (robot::instance()->isManualPaused())
 				{
 					robot::instance()->resetCleaningManualPause();
 				}
-#endif
 				return false;
 			}
 		}
@@ -401,8 +382,7 @@ bool MotionManage::initNavigationCleaning(void)
 	}
 
 	// Initialize motors and map.
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->isCleaningLowBatPaused())
+	if (robot::instance()->isLowBatPaused())
 	{
 		if (Get_Rcon_Status())
 		{
@@ -418,15 +398,12 @@ bool MotionManage::initNavigationCleaning(void)
 		Reset_Rcon_Status();
 	}
 	else
-#endif
 	{
-#if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->isCleaningManualPaused())
+		if (robot::instance()->isManualPaused())
 		{
 			Reset_Work_Time();
 		}
 		else
-#endif
 		{
 			// Set the Work_Timer_Start as current time
 			Reset_Work_Time();

@@ -81,10 +81,8 @@ std::list <Point32_t> g_home_point;
 // This is for adding new point to Home Point list.
 Point32_t g_new_home_point;
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
 // This is for the continue point for robot to go after charge.
 Point32_t g_continue_point;
-#endif
 
 uint8_t g_map_touring_cancel = 0;
 uint8_t	g_go_home = 0;
@@ -867,7 +865,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 		if (g_press_time > 150)
 		{
-			if (robot::instance()->isCleaningManualPaused())
+			if (robot::instance()->isManualPaused())
 			{
 				robot::instance()->resetCleaningManualPause();
 			}
@@ -1548,9 +1546,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 
 uint8_t CM_resume_cleaning()
 {
-#if CONTINUE_CLEANING_AFTER_CHARGE
-
-	if (g_go_home == 0 && robot::instance()->isCleaningLowBatPaused())
+	if (g_go_home == 0 && robot::instance()->isLowBatPaused())
 	{
 		// Handle Continue Cleaning
 		int8_t	state_for_continue_cleaning;
@@ -1603,7 +1599,6 @@ uint8_t CM_resume_cleaning()
 			// g_go_home has been set to 1.
 		}
 	}
-#endif
 	return 1;
 }
 
@@ -1748,18 +1743,16 @@ int CM_cleaning()
 
 void CM_reset_cleaning_low_bat_pause()
 {
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->isCleaningLowBatPaused()) {
+	if (robot::instance()->isLowBatPaused()) {
 		// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
-		robot::instance()->resetCleaningLowBatPause();
+		robot::instance()->resetLowBatPause();
 	}
-#endif
 }
 
 void CM_go_home()
 {
 
-	if(robot::instance()->isCleaningLowBatPaused())
+	if(robot::instance()->isLowBatPaused())
 		wav_play(WAV_BATTERY_LOW);
 	wav_play(WAV_BACK_TO_CHARGER);
 
@@ -1787,18 +1780,11 @@ void CM_go_home()
 			SetHomeRemote();
 		}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		if (!robot::instance()->isCleaningLowBatPaused() && !g_map_boundary_created)
+		if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
 		{
 			//2.2-1.3 Path to unclean area
 			CM_create_home_boundary();
 		}
-#else
-		if (!g_map_boundary_created)
-		{
-			CM_create_home_boundary();
-		}
-#endif
 
 		if (g_home_point.empty())
 		{
@@ -1917,8 +1903,7 @@ void CM_go_home()
 				// Check the clean mode to find out whether it has reach the charger.
 				if (Get_Clean_Mode() == Clean_Mode_Charging)
 				{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-					if (robot::instance()->isCleaningLowBatPaused())
+					if (robot::instance()->isLowBatPaused())
 					{
 						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 						g_cur_wtime = g_cur_wtime+Get_Work_Time();//store current time
@@ -1926,7 +1911,6 @@ void CM_go_home()
 						CM_ResetGoHome();
 						return;
 					}
-#endif
 					ROS_INFO("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 					CM_ResetGoHome();
 					return;
@@ -2012,7 +1996,7 @@ void CM_go_home()
 							}
 							if (g_press_time > 150)
 							{
-								if (robot::instance()->isCleaningManualPaused())
+								if (robot::instance()->isManualPaused())
 								{
 									robot::instance()->resetCleaningManualPause();
 								}
@@ -2040,8 +2024,7 @@ void CM_go_home()
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 					}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-					if (robot::instance()->isCleaningLowBatPaused())
+					if (robot::instance()->isLowBatPaused())
 					{
 						ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 						CM_reset_cleaning_low_bat_pause();
@@ -2050,7 +2033,7 @@ void CM_go_home()
 						CM_ResetGoHome();
 						return;
 					}
-#endif
+
 					ROS_INFO("%s %d: Finish cleaning but can't go to charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 					CM_ResetGoHome();
 					return;
@@ -2104,18 +2087,18 @@ uint8_t CM_Touring(void)
 	MotionManage motion;
 
 	if(!motion.initSucceeded()){
-#if CONTINUE_CLEANING_AFTER_CHARGE
+
 		// Reset continue cleaning status
 		CM_reset_cleaning_low_bat_pause();
 		g_cur_wtime = 0;
 		ROS_INFO("%s ,%d ,set g_cur_wtime to zero ",__FUNCTION__,__LINE__);
-#endif
-#if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->isCleaningManualPaused())
+
+
+		if (robot::instance()->isManualPaused())
 		{
 			robot::instance()->resetCleaningManualPause();
 		}
-#endif
+
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Reset_Stop_Event_Status();
 		ROS_WARN("%s %d: Init MotionManage failed! return 0\n", __FUNCTION__, __LINE__);
@@ -2146,17 +2129,9 @@ uint8_t CM_Touring(void)
 		ROS_INFO("%s ,%d ,set g_cur_wtime to zero ",__FUNCTION__,__LINE__);
 	}
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->isCleaningLowBatPaused())
-#endif
-	{
-#if MANUAL_PAUSE_CLEANING
-		if (!robot::instance()->isCleaningManualPaused())
-#endif
-		{
+	if (!robot::instance()->isLowBatPaused())
+		if (!robot::instance()->isManualPaused())
 			g_home_point.clear();
-		}
-	}
 	return 0;
 }
 
@@ -2544,14 +2519,14 @@ void CM_SetHome(int32_t x, int32_t y) {
 	}
 }
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
 void CM_SetContinuePoint(int32_t x, int32_t y)
 {
+#if CONTINUE_CLEANING_AFTER_CHARGE
 	ROS_INFO("%s %d: Set continue point: (%d, %d).", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
 	g_continue_point.X = x;
 	g_continue_point.Y = y;
-}
 #endif
+}
 
 uint8_t CM_IsLowBattery(void) {
 	return g_low_battery;
@@ -2593,10 +2568,10 @@ MapTouringType CM_handleExtEvent()
 		Stop_Brifly();
 		ROS_WARN("%s %d: low battery, battery < 13.2v is detected.", __FUNCTION__, __LINE__);
 		CM_SetGoHome(0);
-#if CONTINUE_CLEANING_AFTER_CHARGE
+
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->cleaningLowBatPause();
-#endif
+		robot::instance()->setLowBatPause();
+
 		return MT_Battery_Home;
 	}
 	/*
@@ -2612,7 +2587,7 @@ MapTouringType CM_handleExtEvent()
 		CM_SetGoHome(0);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->cleaningLowBatPause();
+		robot::instance()->setLowBatPause();
 #endif
 		Reset_Rcon_Remote();
 		return MT_Battery_Home;
@@ -2639,7 +2614,7 @@ MapTouringType CM_handleExtEvent()
 		}
 		if (g_press_time > 150)
 		{
-			if (robot::instance()->isCleaningManualPaused())
+			if (robot::instance()->isManualPaused())
 			{
 				robot::instance()->resetCleaningManualPause();
 			}

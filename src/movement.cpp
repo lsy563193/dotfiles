@@ -3160,10 +3160,10 @@ void ResetSleepModeFlag()
 {
 	SleepModeFlag = 0;
 }
-#if MANUAL_PAUSE_CLEANING
+
 void Clear_Manual_Pause(void)
 {
-	if (robot::instance()->isCleaningManualPaused())
+	if (robot::instance()->isManualPaused())
 	{
 		ROS_WARN("Reset manual pause status.");
 		wav_play(WAV_CLEANING_FINISHED);
@@ -3173,4 +3173,4 @@ void Clear_Manual_Pause(void)
 		CM_ResetGoHome();
 	}
 }
-#endif
+
