@@ -72,7 +72,7 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 
 }
 
-float MotionManage::get_align_angle(void)
+bool MotionManage::get_align_angle(float &line_angle)
 {
 	robot::instance()->setOdomReady(false);
 	segmentss.clear();
@@ -99,13 +99,13 @@ float MotionManage::get_align_angle(void)
 			ROS_INFO("detecting line time remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
-	obstacles_sub.shutdown();
+//	obstacles_sub.shutdown();
 	if(Stop_Event())
 		return false;
 
 	ROS_INFO("Get the line");
 //	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
-	auto line_angle = segmentss.min_distant_segment_angle();
+	line_angle = segmentss.min_distant_segment_angle();
 
 	//todo testing to turn 180 degrees.
 	if (line_angle > 0)
@@ -115,7 +115,8 @@ float MotionManage::get_align_angle(void)
 	{
 		line_angle += 180;
 	}
-	return line_angle;
+//	return line_angle;
+	return true;
 }
 
 Laser* MotionManage::s_laser = nullptr/*new Laser()*/;
@@ -145,7 +146,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
 	{
 		ObstacleDetector od;
-		auto align_angle = get_align_angle();
+		float align_angle=0;
+		if(! get_align_angle(align_angle) )
+			return ;
+
 		robot::instance()->offsetAngle(align_angle);
 	}
 
