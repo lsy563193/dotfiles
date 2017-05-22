@@ -770,7 +770,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Start_Pose_Y = robot::instance()->getPositionY();
 		First_Time_Flag = 1;
 		while (ros::ok()) {
-			if ((time(NULL) - escape_trapped_timer) > 3600) {
+			if ((time(NULL) - escape_trapped_timer) > WALL_FOLLOW_TIME) {
 				ROS_INFO("Wall Follow time longer than 60 minutes");
 				ROS_INFO("time now : %d", (int(time(NULL)) - escape_trapped_timer));
 				WF_End_Wall_Follow();
