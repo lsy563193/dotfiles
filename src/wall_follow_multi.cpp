@@ -1454,7 +1454,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 			if (reach_count == 0){
 				reach_continuous_state = true;
 			}
-			if(reach_continuous_state = true){
+			if(reach_continuous_state == true){
 				reach_count++;
 				ROS_WARN("reach_count = %d", reach_count);
 			}
