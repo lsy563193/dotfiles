@@ -42,7 +42,7 @@ boost::condition_variable g_cond_var;
 void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
 {
 //	ROS_WARN("robot_obstacles_cb");
-	if (!s_laser->is_ready())
+	if (!s_laser->isReady())
 		return;
 
 //	ROS_WARN("2robot_obstacles_cb");
@@ -140,7 +140,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	//3 start laser
 	s_laser = new Laser();
-	if (!s_laser->is_ready())
+	if (!s_laser->isReady())
 	{
 		if (!Stop_Event())
 		{

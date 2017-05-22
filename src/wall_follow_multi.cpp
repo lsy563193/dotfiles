@@ -684,7 +684,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		return 0;
 	}
 
-	if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
+	if (!MotionManage::s_laser->isReady() ||! MotionManage::s_slam->is_map_ready()) {
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Set_Error_Code(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
