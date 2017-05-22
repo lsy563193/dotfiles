@@ -132,7 +132,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->isCleaningLowBatPaused_())
+	if (robot::instance()->isCleaningLowBatPaused())
 		return;
 #endif
 #if MANUAL_PAUSE_CLEANING
@@ -154,7 +154,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
 		//call start slam
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->isCleaningLowBatPaused_())
+	if (!robot::instance()->isCleaningLowBatPaused())
 #endif
 #if MANUAL_PAUSE_CLEANING
 		if (!robot::instance()->isCleaningManualPaused())
@@ -186,7 +186,7 @@ MotionManage::~MotionManage()
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->isCleaningLowBatPaused_())
+	if (robot::instance()->isCleaningLowBatPaused())
 		return;
 #endif
 #if MANUAL_PAUSE_CLEANING

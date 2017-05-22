@@ -57,7 +57,7 @@ void Charge_Function(void)
 		bat_v = GetBatteryVoltage();
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		if (robot::instance()->isCleaningLowBatPaused_())
+		if (robot::instance()->isCleaningLowBatPaused())
 		{
 			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
 			{
@@ -100,7 +100,7 @@ void Charge_Function(void)
 			{
 				// Stop_Charge_Counter > 25 means robot has left charger stub for 0.5s.
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->isCleaningLowBatPaused_())
+				if (robot::instance()->isCleaningLowBatPaused())
 				{
 					ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
 					Set_Clean_Mode(Clean_Mode_Navigation);
@@ -640,7 +640,7 @@ void Around_ChargerStation(uint8_t Dir)
 					usleep(20000);
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (!robot::instance()->isCleaningLowBatPaused_())
+				if (!robot::instance()->isCleaningLowBatPaused())
 				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 				{
@@ -1226,7 +1226,7 @@ uint8_t Check_Position(uint8_t Dir)
 				usleep(20000);
 			}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-			if (!robot::instance()->isCleaningLowBatPaused_())
+			if (!robot::instance()->isCleaningLowBatPaused())
 			// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 			{
@@ -1620,7 +1620,7 @@ void By_Path(void)
 					usleep(20000);
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->isCleaningLowBatPaused_())
+				if (robot::instance()->isCleaningLowBatPaused())
 					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
 #endif
 				{

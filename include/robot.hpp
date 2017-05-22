@@ -284,17 +284,17 @@ public:
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
-	bool isCleaningLowBatPaused_(void) const
+	bool isCleaningLowBatPaused(void) const
 	{
 		return low_bat_pause_cleaning_;
 	}
 
-	void cleaningLowBatPause_(void)
+	void cleaningLowBatPause(void)
 	{
 		low_bat_pause_cleaning_ = true;
 	}
 
-	void resetCleaningLowBatPause_(void)
+	void resetCleaningLowBatPause(void)
 	{
 		low_bat_pause_cleaning_ = false;
 	}
