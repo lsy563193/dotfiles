@@ -898,7 +898,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 			}
 
-			//debug_WF_map(MAP, 0, 0);
+			//debug_map(MAP, 0, 0);
 			//debug_sm_map(SPMAP, 0, 0);
 
 #ifdef OBS_DYNAMIC
@@ -1476,8 +1476,8 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 			}
 		}
 	}
-	i = Map_GetRelativeX(heading, CELL_SIZE_3, 0);
-	j = Map_GetRelativeY(heading, CELL_SIZE_3, 0);
+	i = Map_GetRelativeX(heading, CELL_SIZE_2, 0);
+	j = Map_GetRelativeY(heading, CELL_SIZE_2, 0);
 	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 		Map_SetCell(MAP, i, j, BLOCKED_OBS);
 	}
@@ -1627,6 +1627,11 @@ bool WF_Check_Angle(void) {
 					ROS_WARN("Can't find second same pose in WF_Point! sum--");
 				}
 			}
+		}
+
+		if (sum < 10) {
+			ROS_WARN("sum = %d < 10, WF_Point is not enough! WF_Check_Angle Failed!", sum);
+			return 0;
 		}
 
 		if (pass_count < sum) {
