@@ -67,7 +67,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
 				Set_Main_PwrByte(Clean_Mode_WallFollow);
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 
 				Clear_Manual_Pause();
 
@@ -94,7 +94,7 @@ void *core_move_thread(void *)
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
 				Set_Main_PwrByte(Clean_Mode_GoHome);
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 
 				Clear_Manual_Pause();
 
@@ -135,7 +135,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
 				Set_Main_PwrByte(Clean_Mode_Remote);
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 
 				Clear_Manual_Pause();
 
@@ -144,7 +144,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
 				Set_Main_PwrByte(Clean_Mode_Spot);
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 
 				Clear_Manual_Pause();
 
@@ -161,7 +161,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
 				//Set_Main_PwrByte(Clean_Mode_Sleep);
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 
 				Clear_Manual_Pause();
 

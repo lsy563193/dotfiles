@@ -1544,58 +1544,50 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 
 uint8_t CM_resume_cleaning()
 {
-	if (g_go_home == 0 && robot::instance()->isLowBatPaused())
+	// Handle Continue Cleaning
+	int8_t state;
+
+	ROS_INFO("Go to continue point: (%d, %d), targets left.", countToCell(g_continue_point.X),
+					 countToCell(g_continue_point.Y));
+	g_low_battery = 0;
+
+	// Reset the cleaning pause flag.
+	robot::instance()->resetLowBatPause();
+	// Try go to exactly this home point.
+	state = CM_MoveToCell(countToCell(g_continue_point.X), countToCell(g_continue_point.Y), 2, 0,
+																							1);
+	ROS_INFO("CM_MoveToCell return %d.", state);
+
+	if (state == 1)
 	{
-		// Handle Continue Cleaning
-		int8_t	state_for_continue_cleaning;
-
-		ROS_INFO("Go to continue point: (%d, %d), targets left.", countToCell(g_continue_point.X), countToCell(g_continue_point.Y));
-		g_low_battery = 0;
-
-		// Reset the cleaning pause flag.
-		CM_reset_cleaning_low_bat_pause();
-		// Try go to exactly this home point.
-		state_for_continue_cleaning = CM_MoveToCell(countToCell(g_continue_point.X), countToCell(g_continue_point.Y), 2, 0, 1 );
-		ROS_INFO("CM_MoveToCell return %d.", state_for_continue_cleaning);
-
-		if (state_for_continue_cleaning == 1)
+		ROS_INFO("Robot has reach the continue point, continue cleaning.");
+	} else if (state == -1 || state == -2)
+	{
+		ROS_INFO("Robot can't reach the continue point, directly continue cleaning.");
+	} else if (state == -3 || state == -5 || state == -8)
+	{
+		if (state == -3)
 		{
-			ROS_INFO("Robot has reach the continue point, continue cleaning.");
-		}
-		else if (state_for_continue_cleaning == -1 || state_for_continue_cleaning == -2)
+			ROS_INFO("Robot battery < 1200, stop it.");
+			return 0;
+		} else
 		{
-			ROS_INFO("Robot can't reach the continue point, directly continue cleaning.");
+			ROS_INFO("Stop_Event.");
+			return 0;
 		}
-		else if (state_for_continue_cleaning == -3 || state_for_continue_cleaning == -5)
-		{
-			if (state_for_continue_cleaning == -3)
-			{
-				ROS_INFO("Robot battery < 1200, stop it.");
-				return 0;
-			}
-			else
-			{
-				ROS_INFO("Stop_Event.");
-				return 0;
-			}
-		}
-
-		else if (state_for_continue_cleaning == -4)
-		{
-			ROS_INFO("Remote home pressed, go home.");
-			g_remote_go_home = 1;
-			g_go_home = 1;
-		}
-		else if (state_for_continue_cleaning == -6)
-		{
-			ROS_INFO("Low battery go home. g_go_home = %d", g_go_home);
-			// g_go_home has been set to 1.
-		}
-		else if (state_for_continue_cleaning == -7)
-		{
-			ROS_INFO("Go home and near home now.");
-			// g_go_home has been set to 1.
-		}
+	} else if (state == -4)
+	{
+		ROS_INFO("Remote home pressed, go home.");
+		g_remote_go_home = 1;
+		g_go_home = 1;
+	} else if (state == -6)
+	{
+		ROS_INFO("Low battery go home. g_go_home = %d", g_go_home);
+		// g_go_home has been set to 1.
+	} else if (state == -7)
+	{
+		ROS_INFO("Go home and near home now.");
+		// g_go_home has been set to 1.
 	}
 	return 1;
 }
@@ -1739,14 +1731,6 @@ int CM_cleaning()
 	return retval;
 }
 
-void CM_reset_cleaning_low_bat_pause()
-{
-	if (robot::instance()->isLowBatPaused()) {
-		// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
-		robot::instance()->resetLowBatPause();
-	}
-}
-
 void CM_go_home()
 {
 
@@ -1825,7 +1809,7 @@ void CM_go_home()
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 				}
 
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 
 				ROS_WARN("%s %d: Finish cleanning but not stop near home, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 				g_cur_wtime = 0;
@@ -1842,7 +1826,7 @@ void CM_go_home()
 //				}
 				Set_Clean_Mode(Clean_Mode_Sleep);
 
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 
 				ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 				g_cur_wtime = 0;
@@ -1860,7 +1844,7 @@ void CM_go_home()
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 
 				CM_ResetGoHome();
-				CM_reset_cleaning_low_bat_pause();
+				robot::instance()->resetLowBatPause();
 				g_cur_wtime = 0;
 				ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
 
@@ -1922,7 +1906,7 @@ void CM_go_home()
 //					}
 					Set_Clean_Mode(Clean_Mode_Sleep);
 
-					CM_reset_cleaning_low_bat_pause();
+					robot::instance()->resetLowBatPause();
 
 					ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 					g_cur_wtime = 0;
@@ -1953,7 +1937,7 @@ void CM_go_home()
 #endif
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 
-					CM_reset_cleaning_low_bat_pause();
+					robot::instance()->resetLowBatPause();
 					g_cur_wtime = 0;
 
 					Reset_Stop_Event_Status();
@@ -2021,7 +2005,7 @@ void CM_go_home()
 					if (robot::instance()->isLowBatPaused())
 					{
 						ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
-						CM_reset_cleaning_low_bat_pause();
+						robot::instance()->resetLowBatPause();
 						g_cur_wtime = 0;
 						ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
 						CM_ResetGoHome();
@@ -2080,52 +2064,20 @@ uint8_t CM_Touring(void)
 
 	MotionManage motion;
 
-	if(!motion.initSucceeded()){
-
-		// Reset continue cleaning status
-		CM_reset_cleaning_low_bat_pause();
-		g_cur_wtime = 0;
-		ROS_INFO("%s ,%d ,set g_cur_wtime to zero ",__FUNCTION__,__LINE__);
-
-
-		if (robot::instance()->isManualPaused())
-		{
-			robot::instance()->resetManualPause();
-		}
-
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		Reset_Stop_Event_Status();
+	if(! motion.initSucceeded()){
 		ROS_WARN("%s %d: Init MotionManage failed! return 0\n", __FUNCTION__, __LINE__);
+		robot::instance()->resetLowBatPause();
+		robot::instance()->resetManualPause();
 		return 0;
 	}
 
+	if (g_go_home == 0 && robot::instance()->isLowBatPaused())
+		if (! CM_resume_cleaning())
+			return 0;
 
-	if (CM_resume_cleaning())
-	{
-		if (CM_cleaning() == 0) {
+	if (CM_cleaning() == 0)
 			CM_go_home();
-		}
-		else
-		{
-			// Cleaning shuted down, battery too low or Stop event.
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			// Reset continue cleaning status
-			CM_reset_cleaning_low_bat_pause();
-		}
-	}
-	else
-	{
-		// Resume cleaning failed, battery too low or Stop event.
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		// Reset continue cleaning status
-		CM_reset_cleaning_low_bat_pause();
-		g_cur_wtime = 0;
-		ROS_INFO("%s ,%d ,set g_cur_wtime to zero ",__FUNCTION__,__LINE__);
-	}
 
-	if (!robot::instance()->isLowBatPaused())
-		if (!robot::instance()->isManualPaused())
-			g_home_point.clear();
 	return 0;
 }
 

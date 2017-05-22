@@ -113,7 +113,7 @@ void Charge_Function(void)
 				{
 					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 					//wav_play(WAV_ERROR_LIFT_UP);
-					CM_reset_cleaning_low_bat_pause();
+					robot::instance()->resetLowBatPause();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					break;
 				}

@@ -87,7 +87,6 @@ void CM_go_home(void);
 
 // This function is for setting the continue point for robot to go after charge.
 void CM_SetContinuePoint(int32_t x, int32_t y);
-void CM_reset_cleaning_low_bat_pause();
 
 void CM_ResetBoundaryBlocks(void);
 

@@ -16,9 +16,14 @@
 #include <segment_set.h>
 #include <slam.h>
 #include <path_planning.h>
+#include <core_move.h>
+
 Segment_set segmentss;
 
 int8_t g_enable_slam_offset = 0;
+extern std::list <Point32_t> g_home_point;
+
+extern uint32_t g_cur_wtime;//temporary work time
 
 /*
 int g_enable_angle_offset = 0;
@@ -201,6 +206,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
+
+	Reset_Stop_Event_Status();
+
 	Disable_Motors();
 
 	g_enable_slam_offset = 0;
@@ -211,11 +219,12 @@ MotionManage::~MotionManage()
 		s_laser = nullptr;
 	}
 
-	if (robot::instance()->isLowBatPaused())
+	if (robot::instance()->isLowBatPaused()){
 		return;
+	}
 
-	if (robot::instance()->isManualPaused())
-	{
+	if (robot::instance()->isManualPaused()){
+		Set_Clean_Mode(Clean_Mode_Userinterface);
 		wav_play(WAV_PAUSE_CLEANING);
 		return;
 	}
@@ -233,6 +242,10 @@ MotionManage::~MotionManage()
 
 	wav_play(WAV_CLEANING_FINISHED);
 
+
+	g_home_point.clear();
+	g_cur_wtime = 0;
+	Set_Clean_Mode(Clean_Mode_Userinterface);
 	nh_.shutdown();
 }
 
@@ -255,7 +268,6 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 bool MotionManage::initNavigationCleaning(void)
 {
-	extern void CM_reset_cleaning_low_bat_pause();
 	extern uint32_t g_cur_wtime;
 	extern std::list <Point32_t> g_home_point;
 
@@ -287,20 +299,7 @@ bool MotionManage::initNavigationCleaning(void)
 			wav_play(WAV_CLEANING_START);
 
 			if (!Wait_For_Gyro_On())
-			{
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-				if (robot::instance()->isLowBatPaused())
-				{
-					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
-					// Quit continue cleaning.
-					CM_reset_cleaning_low_bat_pause();
-				}
-				if (robot::instance()->isManualPaused())
-				{
-					robot::instance()->resetManualPause();
-				}
 				return false;
-			}
 		}
 	}
 
@@ -333,7 +332,6 @@ bool MotionManage::initNavigationCleaning(void)
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			Quick_Back(20, 72);
 			if (Stop_Event() || Is_AtHomeBase()) {
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				Disable_Motors();
 				if (Is_AtHomeBase())
 				{
@@ -355,7 +353,7 @@ bool MotionManage::initNavigationCleaning(void)
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
-					CM_reset_cleaning_low_bat_pause();
+					robot::instance()->resetLowBatPause();
 					g_cur_wtime = 0;
 					ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
 				}
