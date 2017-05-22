@@ -42,9 +42,7 @@
 std::vector<Pose32_t> WF_Point;
 Pose32_t New_WF_Point;
 // This list is for storing the position that robot sees the charger stub.
-extern std::list <Point32_t> Home_Point;
-// This is for adding new point to Home Point list.
-extern Point32_t New_Home_Point;
+extern std::list <Point32_t> g_home_point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
 extern uint8_t g_remote_go_home;
 extern uint8_t g_from_station;
@@ -639,84 +637,30 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	uint32_t				Temp_Rcon_Status;
 	int16_t					Isolated_Count = 0;
 	uint8_t					octype;//for current check
-	Reset_MoveWithRemote();
 
-	//Initital home point
-	Home_Point.clear();
-	WF_Point.clear();
-	New_Home_Point.X = New_Home_Point.Y = 0;
-	// Push the start point into the home point list
-	Home_Point.push_front(New_Home_Point);
-
-	Map_Initialize();
-	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
-	debug_map(MAP, 0, 0);
-	WF_PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
-	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
-	//pthread_t	escape_thread_id;
-
-	// Restart the gyro.
-	Set_Gyro_Off();
-	// Wait for 30ms to make sure the off command has been effectived.
-	usleep(30000);
-	// Set gyro on before wav_play can save the time for opening the gyro.
-	Set_Gyro_On();
-	Set_LED(100, 0);
-	//wav_play(WAV_SYSTEM_INITIALIZING);
-	wav_play(WAV_CLEANING_WALL_FOLLOW);
-	if (!Wait_For_Gyro_On())
-	{
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		return 0;
+	escape_thread_running = false;
+	Wall_Distance = Wall_High_Limit;
+	if (Wall_Distance > Wall_High_Limit) {
+		Wall_Distance = Wall_High_Limit;
 	}
-	robot::instance()->initOdomPosition();// for reset odom position to zero.
+	if (Wall_Distance < Wall_Low_Limit) {
+		Wall_Distance = Wall_Low_Limit;
+	}
+	Start_WF_Pose_X = robot::instance()->getPositionX();
+	Start_WF_Pose_Y = robot::instance()->getPositionY();
+	Wall_Straight_Distance = 300;
+	Left_Wall_Speed = 15;
+
 	MotionManage motion;
 
-	if(Stop_Event()){
-		while (Get_Key_Press() & KEY_CLEAN)
-		{
-			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-			usleep(20000);
-		}
-		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+	if(!motion.initSucceeded()){
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Reset_Stop_Event_Status();
 		return 0;
 	}
 
-	if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		Set_Error_Code(Error_Code_Slam);
-		wav_play(WAV_TEST_LIDAR);
-		return 0;
-	}
-
-	g_enable_slam_offset = 2;//2 for wall follow mode
-
-	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
-
-	escape_thread_running = false;
-	//ret = pthread_create(&escape_thread_id, 0, WFM_check_trapped, &escape_state);
-
-
-	Wall_Distance = Wall_High_Limit;
-
-	if (Wall_Distance > Wall_High_Limit) {
-		Wall_Distance = Wall_High_Limit;
-	}
-
-	if (Wall_Distance < Wall_Low_Limit) {
-		Wall_Distance = Wall_Low_Limit;
-	}
-
-	Start_WF_Pose_X = robot::instance()->getPositionX();
-	Start_WF_Pose_Y = robot::instance()->getPositionY();
-
 	Move_Forward(25, 25);
 
-	Wall_Straight_Distance = 300;
-
-	Left_Wall_Speed = 15;
 	while(ros::ok()){
 
 		while (ros::ok()) {
@@ -826,7 +770,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Start_Pose_Y = robot::instance()->getPositionY();
 		First_Time_Flag = 1;
 		while (ros::ok()) {
-			if ((time(NULL) - escape_trapped_timer) > 3600) {
+			if ((time(NULL) - escape_trapped_timer) > WALL_FOLLOW_TIME) {
 				ROS_INFO("Wall Follow time longer than 60 minutes");
 				ROS_INFO("time now : %d", (int(time(NULL)) - escape_trapped_timer));
 				WF_End_Wall_Follow();
@@ -900,7 +844,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 			}
 
-			//debug_WF_map(MAP, 0, 0);
+			//debug_map(MAP, 0, 0);
 			//debug_sm_map(SPMAP, 0, 0);
 
 #ifdef OBS_DYNAMIC
@@ -1310,53 +1254,11 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	if (escape_thread_running == true) {
 		escape_thread_running = false;
 	}
-
-	//pthread_join(escape_thread_id, NULL);
-
-	ret = 0;
-	if ((time(NULL) - escape_trapped_timer) > ESCAPE_TRAPPED_TIME) {
-		ROS_WARN("%s %d: escape timeout %d(%d, %d), state 2", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME, (int)time(NULL), escape_trapped_timer);
-		ret = 2;
-	} else if (escape_state == Map_Escape_Trapped_Escaped) {
-		ROS_INFO("%s %d: escaped, state 0", __FUNCTION__, __LINE__);
-		ret = 0;;
-	} else {
-		ROS_INFO("%s %d: escaped, state 1", __FUNCTION__, __LINE__);
-		ret = 1;
-	}
-
 	Stop_Brifly();
 	Move_Forward(0, 0);
 	return ret;
 }
-/*
-void Wall_Follow_Init_Slam(void){
-	extern void start_slam(void);
-//	robot::instance()->Subscriber();
-	robot::instance()->start_lidar();
-	//std::async(std::launch::async, start_slam);
-	start_slam();
-	*//*while (robot::instance()->map_ready() == false || ros::ok()){
-		usleep(100);
-		ROS_WARN("waiting for map");
-	}*//*
-	sleep(5);
-	g_enable_slam_offset = 2;
-}*/
-/*
-void Wall_Follow_Stop_Slam(void){
-	extern void start_slam(void);
-	robot::instance()->UnSubscriber();
-	Disable_Motors();
-	robot::instance()->stop_laser();
-	//std::async(std::launch::async, start_slam);
-	robot::instance()->stop_slam();
-	*//*while (robot::instance()->map_ready() == false || ros::ok()){
-		usleep(100);
-		ROS_WARN("waiting for map");
-	}*//*
-	g_enable_slam_offset = 0;
-}*/
+
 uint8_t WF_End_Wall_Follow(void){
 	int16_t i;
 	int8_t state;
@@ -1364,7 +1266,7 @@ uint8_t WF_End_Wall_Follow(void){
 	//Point32_t	Next_Point, Target_Point;
 	//Point16_t	tmpPnt, g_pnt16_ar_tmp[3];
 	//MapTouringType	mt_state = MT_None;
-	//int16_t offsetAngle = robot::instance()->robot_get_home_angle();
+	//int16_t offsetAngle = robot::instance()->getHomeAngle();
 	Stop_Brifly();
 	g_enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
@@ -1372,7 +1274,7 @@ uint8_t WF_End_Wall_Follow(void){
 	CM_go_home();
 
 	/*****************************************Release Memory************************************/
-	Home_Point.clear();
+	g_home_point.clear();
 	WF_Point.clear();
 	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
@@ -1383,7 +1285,7 @@ uint8_t WF_End_Wall_Follow(void){
 
 uint8_t WF_Break_Wall_Follow(void){
 	/*****************************************Release Memory************************************/
-	Home_Point.clear();
+	g_home_point.clear();
 	WF_Point.clear();
 	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
@@ -1454,7 +1356,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 			if (reach_count == 0){
 				reach_continuous_state = true;
 			}
-			if(reach_continuous_state = true){
+			if(reach_continuous_state == true){
 				reach_count++;
 				ROS_WARN("reach_count = %d", reach_count);
 			}
@@ -1478,8 +1380,8 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 			}
 		}
 	}
-	i = Map_GetRelativeX(heading, CELL_SIZE_3, 0);
-	j = Map_GetRelativeY(heading, CELL_SIZE_3, 0);
+	i = Map_GetRelativeX(heading, CELL_SIZE_2, 0);
+	j = Map_GetRelativeY(heading, CELL_SIZE_2, 0);
 	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 		Map_SetCell(MAP, i, j, BLOCKED_OBS);
 	}
@@ -1553,12 +1455,12 @@ int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 }
 
 void WF_Mark_Home_Point(void){
-	//PathPlanning_Initialize(&, &Home_Point.front().Y);
+	//PathPlanning_Initialize(&, &g_home_point.front().Y);
 	int32_t x, y;
 	int i, j;
 	std::list <Point32_t> WF_Home_Point;
 
-	WF_Home_Point = Home_Point;
+	WF_Home_Point = g_home_point;
 
 	while (!WF_Home_Point.empty()){
 		x = WF_Home_Point.front().X;
@@ -1629,6 +1531,11 @@ bool WF_Check_Angle(void) {
 					ROS_WARN("Can't find second same pose in WF_Point! sum--");
 				}
 			}
+		}
+
+		if (sum < 10) {
+			ROS_WARN("sum = %d < 10, WF_Point is not enough! WF_Check_Angle Failed!", sum);
+			return 0;
 		}
 
 		if (pass_count < sum) {

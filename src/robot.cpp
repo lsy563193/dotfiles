@@ -63,10 +63,10 @@ robot::robot():offset_angle_(0)
 	low_bat_pause_cleaning_ = false;
 	// Initialize the key press count.
 	key_press_count = 0;
-#if MANUAL_PAUSE_CLEANING
+
 	// Initialize the manual pause variable.
 	manual_pause_cleaning_ = false;
-#endif
+
 }
 
 robot::~robot()
@@ -241,7 +241,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	ident.stamp_ = msg->header.stamp;
 	if (g_enable_slam_offset == 1){
 		//ROS_INFO("SLAM = 1");
-		if(MotionManage::s_slam->is_map_ready()){
+		if(MotionManage::s_slam->isMapReady()){
 		try {
 			robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			yaw_ = tf::getYaw(transform.getRotation());
@@ -291,7 +291,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 	}else if (g_enable_slam_offset == 2){//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam->is_map_ready()){
+		if(MotionManage::s_slam->isMapReady()){
 		try {
 			robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
 			robot_wf_tf_->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);

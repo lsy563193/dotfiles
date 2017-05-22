@@ -34,10 +34,8 @@ void Charge_Function(void)
 	// This counter is for debug message.
 	uint8_t Show_Batv_Counter=0;
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
-#endif
 
 	// This counter is for avoiding occasionly Is_ChargerOn return 0 when robot is charging, cause it will stop charger mode.
 	uint8_t Stop_Charge_Counter = 0;
@@ -56,8 +54,7 @@ void Charge_Function(void)
 		usleep(20000);
 		bat_v = GetBatteryVoltage();
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		if (robot::instance()->isCleaningLowBatPaused_())
+		if (robot::instance()->isLowBatPaused())
 		{
 			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
 			{
@@ -76,7 +73,6 @@ void Charge_Function(void)
 				break;
 			}
 		}
-#endif
 		if(Show_Batv_Counter > 250)
 		{
 			ROS_INFO(" In charge mode looping , battery voltage %5.2f V.",bat_v/100.0);
@@ -99,14 +95,13 @@ void Charge_Function(void)
 			if (Stop_Charge_Counter > 25)
 			{
 				// Stop_Charge_Counter > 25 means robot has left charger stub for 0.5s.
-#if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->isCleaningLowBatPaused_())
+				if (robot::instance()->isLowBatPaused())
 				{
 					ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
 					Set_Clean_Mode(Clean_Mode_Navigation);
 					break;
 				}
-#endif
+
 				ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
@@ -118,7 +113,7 @@ void Charge_Function(void)
 				{
 					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 					//wav_play(WAV_ERROR_LIFT_UP);
-					CM_reset_cleaning_low_bat_pause();
+					robot::instance()->resetLowBatPause();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					break;
 				}
@@ -639,19 +634,12 @@ void Around_ChargerStation(uint8_t Dir)
 					ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 					usleep(20000);
 				}
-#if CONTINUE_CLEANING_AFTER_CHARGE
-				if (!robot::instance()->isCleaningLowBatPaused_())
-				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
-#endif
-				{
-#if MANUAL_PAUSE_CLEANING
-					if (!robot::instance()->isCleaningManualPaused())
-					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
-#endif
-					{
+				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
+				// when stop event status is on,
+				// it will know and won't go to next home point.
+				if (! robot::instance()->isLowBatPaused())
+					if (! robot::instance()->isManualPaused())
 						Reset_Stop_Event_Status();
-					}
-				}
 			}
 			// If key pressed, go back to user interface mode.
 			Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1225,19 +1213,11 @@ uint8_t Check_Position(uint8_t Dir)
 				ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-#if CONTINUE_CLEANING_AFTER_CHARGE
-			if (!robot::instance()->isCleaningLowBatPaused_())
-			// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
-#endif
-			{
-#if MANUAL_PAUSE_CLEANING
-				if (!robot::instance()->isCleaningManualPaused())
-				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
-#endif
-				{
+			// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
+			// when stop event status is on, it will know and won't go to next home point.
+			if (!robot::instance()->isLowBatPaused())
+				if (!robot::instance()->isManualPaused())
 					Reset_Stop_Event_Status();
-				}
-			}
 			return 1;
 		}
 
@@ -1619,19 +1599,13 @@ void By_Path(void)
 					ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 					usleep(20000);
 				}
-#if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->isCleaningLowBatPaused_())
-					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
-#endif
-				{
-#if MANUAL_PAUSE_CLEANING
-					if (!robot::instance()->isCleaningManualPaused())
-					// Do not reset Stop_Event_Status is for when robot is going home in navigation mode, when stop event status is on, it will know and won't go to next home point.
-#endif
-					{
+				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
+				// when stop event status is on,
+				// it will know and won't go to next home point.
+				if (robot::instance()->isLowBatPaused())
+					if (!robot::instance()->isManualPaused())
 						Reset_Stop_Event_Status();
-					}
-				}
+
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 			}

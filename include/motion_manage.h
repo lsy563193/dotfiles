@@ -19,13 +19,21 @@ public:
 	};
 	static Laser* s_laser;
 	static Slam* s_slam;
+
+	bool initSucceeded()
+	{
+		return init_succeeded_;
+	}
+	bool initSucceeded(bool status)
+	{
+		init_succeeded_ = status;
+	}
 private:
 
 	bool turn_to_align(int16_t angle);
 	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg);
-	float get_align_angle(void);
+	bool get_align_angle(float & angle);
 
-	int slam_type_;
 	ros::NodeHandle nh_;
 	bool is_align_active_;
 
@@ -33,12 +41,12 @@ private:
 		stop=0,
 		start=1,
 	}line_align_;
-//	int16_t line_angle_;
 
-	//startup flag;
-//	enum start_object {laser,total};
-//	std::bitset<total> startup_flag;
+	bool init_succeeded_;
 
+	bool initCleaning(uint8_t cleaning_mode);
+	bool initNavigationCleaning(void);
+	bool initWallFollowCleaning(void);
 };
 
 #endif //PP_MOTION_MANAGE_H

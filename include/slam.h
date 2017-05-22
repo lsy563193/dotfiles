@@ -9,17 +9,15 @@ class Slam
 public:
 	Slam();
 	~Slam();
-	void slam_type(int type);
 	//todo
-	int robot_get_home_angle(){ return 0 ;};
-	void enable_map_update();
+	void enableMapUpdate();
+	bool isMapReady();
+
 	void start(void);
 	void stop(void);
-	void robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map);
-	bool is_map_ready();
-
 private:
-	int slam_type_;
+
+	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map);
 	ros::ServiceClient align_cli_;
 #if SLAM_METHOD_2
 	ros::ServiceClient start_slam_cli_;

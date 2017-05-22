@@ -702,6 +702,6 @@ void ResetSleepModeFlag();
 
 uint8_t Get_SelfCheck_Vacuum_Status(void);
 
-#if MANUAL_PAUSE_CLEANING
+//#if MANUAL_PAUSE_CLEANING
 void Clear_Manual_Pause(void);
-#endif
+//#endif

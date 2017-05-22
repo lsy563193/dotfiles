@@ -29,7 +29,7 @@ static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 uint32_t Rcon_Status;
-uint32_t cur_wtime = 0;//temporary current  work time
+uint32_t g_cur_wtime = 0;//temporary current  work time
 uint32_t Average_Move = 0;
 uint32_t Average_Counter =0;
 uint32_t Max_Move = 0;
@@ -773,8 +773,8 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		Map_SetPosition(pos_x, pos_y);
 
-		i = Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_3, 0);
-		j = Map_GetRelativeY(Gyro_GetAngle(), CELL_SIZE_3, 0);
+		i = Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		j = Map_GetRelativeY(Gyro_GetAngle(), CELL_SIZE_2, 0);
 		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 			Map_SetCell(MAP, i, j, BLOCKED_OBS);
 		}
@@ -1987,9 +1987,9 @@ uint8_t Stop_Event(void)
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
-				robot::instance()->setCleaningManualPause();
-				cur_wtime = Get_Work_Time()+cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				robot::instance()->setManualPause();
+				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
 				Reset_Work_Time();
 			}
 #endif
@@ -2002,9 +2002,9 @@ uint8_t Stop_Event(void)
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
-				robot::instance()->setCleaningManualPause();
-				cur_wtime = Get_Work_Time()+cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				robot::instance()->setManualPause();
+				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
 				Reset_Work_Time();
 			}
 #endif
@@ -3160,17 +3160,17 @@ void ResetSleepModeFlag()
 {
 	SleepModeFlag = 0;
 }
-#if MANUAL_PAUSE_CLEANING
+
 void Clear_Manual_Pause(void)
 {
-	if (robot::instance()->isCleaningManualPaused())
+	if (robot::instance()->isManualPaused())
 	{
 		ROS_WARN("Reset manual pause status.");
 		wav_play(WAV_CLEANING_FINISHED);
-		robot::instance()->resetCleaningManualPause();
+		robot::instance()->resetManualPause();
 		robot::instance()->offsetAngle(0);
 		MotionManage::s_slam->stop();
 		CM_ResetGoHome();
 	}
 }
-#endif
+
