@@ -29,7 +29,7 @@ static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 uint32_t Rcon_Status;
-uint32_t cur_wtime = 0;//temporary current  work time
+uint32_t g_cur_wtime = 0;//temporary current  work time
 uint32_t Average_Move = 0;
 uint32_t Average_Counter =0;
 uint32_t Max_Move = 0;
@@ -1988,8 +1988,8 @@ uint8_t Stop_Event(void)
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
 				robot::instance()->setCleaningManualPause();
-				cur_wtime = Get_Work_Time()+cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
 				Reset_Work_Time();
 			}
 #endif
@@ -2003,8 +2003,8 @@ uint8_t Stop_Event(void)
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
 				robot::instance()->setCleaningManualPause();
-				cur_wtime = Get_Work_Time()+cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
+				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
+				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
 				Reset_Work_Time();
 			}
 #endif

@@ -42,9 +42,9 @@
 std::vector<Pose32_t> WF_Point;
 Pose32_t New_WF_Point;
 // This list is for storing the position that robot sees the charger stub.
-extern std::list <Point32_t> Home_Point;
+extern std::list <Point32_t> g_home_point;
 // This is for adding new point to Home Point list.
-extern Point32_t New_Home_Point;
+extern Point32_t g_new_home_point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
 extern uint8_t g_remote_go_home;
 extern uint8_t g_from_station;
@@ -642,16 +642,16 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Reset_MoveWithRemote();
 
 	//Initital home point
-	Home_Point.clear();
+	g_home_point.clear();
 	WF_Point.clear();
-	New_Home_Point.X = New_Home_Point.Y = 0;
+	g_new_home_point.X = g_new_home_point.Y = 0;
 	// Push the start point into the home point list
-	Home_Point.push_front(New_Home_Point);
+	g_home_point.push_front(g_new_home_point);
 
 	Map_Initialize();
 	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
-	WF_PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
+	WF_PathPlanning_Initialize(&g_home_point.front().X, &g_home_point.front().Y);
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
@@ -1372,7 +1372,7 @@ uint8_t WF_End_Wall_Follow(void){
 	CM_go_home();
 
 	/*****************************************Release Memory************************************/
-	Home_Point.clear();
+	g_home_point.clear();
 	WF_Point.clear();
 	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
@@ -1383,7 +1383,7 @@ uint8_t WF_End_Wall_Follow(void){
 
 uint8_t WF_Break_Wall_Follow(void){
 	/*****************************************Release Memory************************************/
-	Home_Point.clear();
+	g_home_point.clear();
 	WF_Point.clear();
 	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
@@ -1553,12 +1553,12 @@ int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 }
 
 void WF_Mark_Home_Point(void){
-	//PathPlanning_Initialize(&, &Home_Point.front().Y);
+	//PathPlanning_Initialize(&, &g_home_point.front().Y);
 	int32_t x, y;
 	int i, j;
 	std::list <Point32_t> WF_Home_Point;
 
-	WF_Home_Point = Home_Point;
+	WF_Home_Point = g_home_point;
 
 	while (!WF_Home_Point.empty()){
 		x = WF_Home_Point.front().X;
