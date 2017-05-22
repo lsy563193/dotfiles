@@ -2936,7 +2936,8 @@ MapTouringType CM_handleExtEvent()
 				Reset_Rcon_Remote();
 				ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
 				auto modeTemp = Get_VacMode();
-				Spot_Mode(CleanSpot);
+				//Spot_Mode(CleanSpot);
+				Spot_WithCell(CleanSpot,0.5);
 				Work_Motor_Configure();
 				Set_VacMode(modeTemp,false);
 //				Switch_VacMode(false);
