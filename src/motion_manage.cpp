@@ -152,14 +152,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
-		//call start slam
-#if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->isCleaningLowBatPaused())
-#endif
-#if MANUAL_PAUSE_CLEANING
-		if (!robot::instance()->isCleaningManualPaused())
-#endif
-			s_slam = new Slam();
+	//call start slam
+	s_slam = new Slam();
 
 	g_enable_slam_offset = 1;
 	s_slam->enable_map_update();
