@@ -25,7 +25,7 @@ void laser_pm_gpio(char val)
 
 Laser::Laser():nh_(),is_ready_(false)
 {
-	scan_sub_ = nh_.subscribe("scan", 1, &Laser::laser_scan_cb, this);
+	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	start_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_motor");
 	laser_pm_gpio('1');
@@ -37,7 +37,7 @@ Laser::Laser():nh_(),is_ready_(false)
 Laser::~Laser()
 {
 	stop();
-//	scan_sub_ = nh_.subscribe("scan", 1, &Laser::laser_scan_cb, this);
+//	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	scan_sub_.shutdown();
 	start_mator_cli_.shutdown();
 	stop_mator_cli_.shutdown();
@@ -45,11 +45,11 @@ Laser::~Laser()
 	ROS_INFO("Laser stop");
 }
 
-void Laser::laser_scan_cb(const sensor_msgs::LaserScan::ConstPtr& scan)
+void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	int i, count = 0;
 
-	laser_scan_data = *scan;
+	laser_scan_data_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 //	ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
 
@@ -57,7 +57,7 @@ void Laser::laser_scan_cb(const sensor_msgs::LaserScan::ConstPtr& scan)
 
 }
 
-bool Laser::laser_obstcal_detected(double distance, int angle, double range)
+bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
 	int		i, count;
 	bool	found = false;
@@ -71,13 +71,13 @@ bool Laser::laser_obstcal_detected(double distance, int angle, double range)
 	angle_min = deg2rad((double) (angle % 360), 1) - atan(range_tmp / (distance + 0.155));
 	angle_max = deg2rad((double) (angle % 360), 1) + atan(range_tmp / (distance + 0.155));
 
-	count = (int)((laser_scan_data.angle_max - laser_scan_data.angle_min) / laser_scan_data.angle_increment);
+	count = (int)((laser_scan_data_.angle_max - laser_scan_data_.angle_min) / laser_scan_data_.angle_increment);
 	//ROS_INFO("%s %d %f %f %f %f", __FUNCTION__, __LINE__, range_tmp, distance + 0.155, range_tmp / (distance + 0.155), atan(range_tmp / (distance + 0.155)));
 	//ROS_INFO("%s %d: angle min: %f max: %f\tcount: %d\tdtor: %f\ttan: %f", __FUNCTION__, __LINE__, angle_min, angle_max, count, deg2rad((double) (angle % 360), 1),  atan(range_tmp / (distance + 0.155)));
 	for (i = 0; found == false && i < count; i++) {
-		tmp = laser_scan_data.angle_min + i * laser_scan_data.angle_increment;
-		if (tmp > angle_min && tmp < angle_max && laser_scan_data.ranges[i] < distance + 0.155) {
-			//ROS_INFO("%s %d: i: %d\ttmp: %f(%f, %f)\tdist: %f(%f)", __FUNCTION__, __LINE__, i, tmp, angle_min, angle_max, laser_scan_data.ranges[i], distance + 0.155);
+		tmp = laser_scan_data_.angle_min + i * laser_scan_data_.angle_increment;
+		if (tmp > angle_min && tmp < angle_max && laser_scan_data_.ranges[i] < distance + 0.155) {
+			//ROS_INFO("%s %d: i: %d\ttmp: %f(%f, %f)\tdist: %f(%f)", __FUNCTION__, __LINE__, i, tmp, angle_min, angle_max, laser_scan_data_.ranges[i], distance + 0.155);
 			found = true;
 		}
 	}
@@ -85,7 +85,7 @@ bool Laser::laser_obstcal_detected(double distance, int angle, double range)
 	return found;
 }
 
-double Laser::get_laser_distance(int begin, int end, double range)
+double Laser::getLaserDistance(int begin, int end, double range)
 {
 	int		i, count;
 	bool	found = false;
@@ -94,8 +94,8 @@ double Laser::get_laser_distance(int begin, int end, double range)
 	int		sum = 0;
 
 	for (i = begin; i < end; i++) {//default:begin = 260, end =270
-		if (laser_scan_data.ranges[i] < range) {
-			laser_distance = laser_scan_data.ranges[i] + laser_distance;
+		if (laser_scan_data_.ranges[i] < range) {
+			laser_distance = laser_scan_data_.ranges[i] + laser_distance;
 			sum++;
 		}
 		//ROS_INFO("wall_distance = %lf, i = %d", laser_distance, i);
@@ -106,12 +106,12 @@ double Laser::get_laser_distance(int begin, int end, double range)
 
 	return laser_distance;
 }
-bool Laser::is_ready()
+bool Laser::isReady()
 {
 	return is_ready_;
 }
 
-void Laser::is_ready(bool val)
+void Laser::isReady(bool val)
 {
 	is_ready_ = val;
 }

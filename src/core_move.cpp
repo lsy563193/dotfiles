@@ -1379,7 +1379,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
-		else if (MotionManage::s_laser->laser_obstcal_detected(0.2, 0, -1.0) == true) {
+		else if (MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0) == true) {
 			//ROS_INFO("%s %d: Laser detected obstcal, slow down!", __FUNCTION__, __LINE__);
 			Integrated = 0;
 			Rotate_Angle = 0;

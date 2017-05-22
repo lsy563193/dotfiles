@@ -42,7 +42,7 @@ boost::condition_variable g_cond_var;
 void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
 {
 //	ROS_WARN("robot_obstacles_cb");
-	if (!s_laser->is_ready())
+	if (!s_laser->isReady())
 		return;
 
 //	ROS_WARN("2robot_obstacles_cb");
@@ -140,7 +140,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	//3 start laser
 	s_laser = new Laser();
-	if (!s_laser->is_ready())
+	if (!s_laser->isReady())
 	{
 		if (!Stop_Event())
 		{
@@ -183,9 +183,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam = new Slam();
 
 	g_enable_slam_offset = 1;
-	s_slam->enable_map_update();
+	s_slam->enableMapUpdate();
 	auto count_n_10ms = 1000;
-	while (!s_slam->is_map_ready() && --count_n_10ms != 0)
+	while (!s_slam->isMapReady() && --count_n_10ms != 0)
 	{
 //		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 		usleep(10000);

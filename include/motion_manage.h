@@ -34,7 +34,6 @@ private:
 	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg);
 	bool get_align_angle(float & angle);
 
-	int slam_type_;
 	ros::NodeHandle nh_;
 	bool is_align_active_;
 

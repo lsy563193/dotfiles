@@ -684,7 +684,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		return 0;
 	}
 
-	if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
+	if (!MotionManage::s_laser->isReady() ||!MotionManage::s_slam->isMapReady()) {
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Set_Error_Code(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
@@ -1364,7 +1364,7 @@ uint8_t WF_End_Wall_Follow(void){
 	//Point32_t	Next_Point, Target_Point;
 	//Point16_t	tmpPnt, g_pnt16_ar_tmp[3];
 	//MapTouringType	mt_state = MT_None;
-	//int16_t offsetAngle = robot::instance()->robot_get_home_angle();
+	//int16_t offsetAngle = robot::instance()->getHomeAngle();
 	Stop_Brifly();
 	g_enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
