@@ -16,12 +16,9 @@
 
 #include "std_srvs/Empty.h"
 using namespace obstacle_detector;
+
 extern int8_t g_enable_slam_offset;
 static	robot *robot_obj = NULL;
-//typedef double Angle;
-
-extern pp::x900sensor   sensor;
-
 
 time_t	start_time;
 
@@ -41,7 +38,7 @@ robot::robot():offset_angle_(0)
 
 	//odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	visualizeMarkerInit();
-	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers_",1);
+	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	//send_bumper_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("bumper_markers_",1);
 //  obstacles_pub_ = robot_nh_.advertise<Obstacles>("obstacles", 10);
 //  ROS_INFO("Obstacle Detector [ACTIVE]");
@@ -90,10 +87,6 @@ void robot::init()
 	if (robot_obj == NULL) {
 		robot_obj = this;
 	}
-}
-
-bool robot::isAllReady() {
-  return (is_sensor_ready_ ) ? true : false;
 }
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
@@ -346,283 +339,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
     is_odom_ready_ = true;
   }
 }
-/*
 
-std::vector<int8_t> *robot::getMapData()
+
+void robot::displayPositions()
 {
-	//ROS_INFO("%s %d: return the ptr address", __FUNCTION__, __LINE__);
-	//ROS_INFO("%s %d: vector_pointer_address = %d", __FUNCTION__, __LINE__, (*(ptr))[0]);
-	//ROS_INFO("%s %d: seq = %d", __FUNCTION__, __LINE__, seq);
-	return ptr;
-}
-*/
-
-float robot::getAngle() {
-  return angle;
-}
-
-void robot::setAngle(float angle) {
-	angle = angle;
-}
-
-float robot::getAngleV()
-{
-	return angle_v_;
-}
-
-int16_t robot::getCliffRight()
-{
-	return sensor.rcliff;
-}
-
-int16_t robot::getCliffLeft()
-{
-	return sensor.lcliff;
-}
-
-int16_t robot::getCliffFront()
-{
-	//ROS_INFO("Cliff_Front = %d", sensor.fcliff);
-	//ROS_INFO("Topic_Cliff_Front = %d", cliff_front_);
-	return sensor.fcliff;
-}
-
-int16_t robot::getLeftWall()
-{
-	return sensor.left_wall - Left_Wall_BaseLine;
-}
-
-int16_t robot::getRightWall()
-{
-#if __ROBOT_X900
-	return sensor.right_wall - Right_Wall_BaseLine;
-#elif __ROBOT_X400
-	return 0;
-#endif
-}
-
-int16_t robot::getOmniWheel()
-{
-#if __ROBOT_X9000
-	   return sensor.omni_wheel;
-#elif __ROBOT_X400
-	   return 0;
-#endif
-}
-
-int16_t robot::getVisualWall()
-{
-#if __ROBOT_X900
-	return sensor.visual_wall;
-#elif __ROBOT_X400
-	return 0;
-#endif
-}
-
-uint8_t robot::getVacuumSelfCheckStatus()
-{
-	return vacuum_selfcheck_status_;
-}
-
-bool robot::getLbrushOc()//oc : over current
-{
-	return lbrush_oc_;
-}
-
-bool robot::getRbrushOc()
-{
-	return rbrush_oc_;
-}
-
-bool robot::getMbrushOc()
-{
-	return mbrush_oc_;
-}
-
-bool robot::getVacuumOc()
-{
-	return vacuum_oc_;
-}
-
-int robot::getChargeStatus()
-{
-	return charge_status_;
-}
-
-uint8_t robot::getKey(){
-	return key;
-}
-uint8_t robot::getIrCtrl()
-{
-	return  ir_ctrl_;
-}
-
-float robot::getLwheelCurrent()
-{
-	return lw_crt_;
-}
-
-float robot::getRwheelCurrent()
-{
-	return rw_crt_;
-}
-
-uint32_t robot::getRcon()
-{
-	return charge_stub_;
-}
-
-//uint32_t robot::robot_get_rcon_front_left()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_: %x.", __FUNCTION__, __LINE__, (charge_stub_ & 0xf00000) >> 20);
-//	return this -> rcon_front_left_ = (charge_stub_ & 0xf00000) >> 20;
-//}
-//
-//uint32_t robot::robot_get_rcon_front_right()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0f0000) >> 16);
-//	return rcon_front_right_ = (charge_stub_ & 0x0f0000) >> 16;
-//}
-//
-//uint32_t robot::robot_get_rcon_back_left()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0000f0) >> 4);
-//	return rcon_back_left_ = (charge_stub_ & 0x0000f0) >> 4;
-//}
-//
-//uint32_t robot::robot_get_rcon_back_right()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00000f) >> 0);
-//	return rcon_back_right_ = ( charge_stub_ & 0x00000f) >> 0;
-//}
-//
-//uint32_t robot::robot_get_rcon_left()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00f000) >> 12);
-//	return rcon_left_ = ( charge_stub_ & 0x00f000) >> 12;
-//}
-//
-//uint32_t robot::robot_get_rcon_right()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.",  __FUNCTION__, __LINE__, (charge_stub_ & 0x000f00) >> 8);
-//	return rcon_right_ = (charge_stub_ & 0x000f00) >> 8;
-//}
-/*
-bool robot::getBumperRight()
-{
-	return bumper_right_;
-}
-
-bool robot::getBumperLeft()
-{
-	return bumper_left_;
-}
-
-*/
-bool robot::getBumperRight()
-{
-	//ROS_INFO("rbumper = %d",sensor.rbumper);
-	//ROS_INFO("topic_rbumper = %d",bumper_right_);
-	return sensor.rbumper;
-}
-
-bool robot::getBumperLeft()
-{
-	//ROS_INFO("lbumper = %d",sensor.lbumper);
-	return sensor.lbumper;
-}
-int16_t robot::getObsLeft()
-{
-	return sensor.l_obs;
-}
-
-int16_t robot::getObsRight()
-{
-	return sensor.r_obs;
-}
-
-int16_t robot::getObsFront()
-{
-	return sensor.f_obs;
-}
-
-bool robot::getWaterTank()
-{
-	return w_tank_;
-}
-
-uint16_t robot::getBatteryVoltage()
-{
-	return battery_voltage_*10;
-}
-
-bool robot::isMoving()
-{
-	return is_moving_;
-}
-
-float robot::getLinearX()
-{
-	return linear_x_;
-}
-
-float robot::getLinearY()
-{
-	return linear_y_;
-}
-
-float robot::getLinearZ()
-{
-	return linear_z_;
-}
-
-float robot::getPositionX()
-{
-	return position_x_;
-}
-
-float robot::getPositionY()
-{
-	return position_y_;
-}
-
-float robot::getWfPositionX()
-{
-	return wf_position_x_;
-}
-
-float robot::getWfPositionY()
-{
-	return WF_position_y_;
-}
-
-float robot::getPositionZ()
-{
-	return position_z_;
-}
-
-float robot::getOdomPositionX()
-{
-	return odom_pose_x_;
-}
-
-float robot::getOdomPositionY()
-{
-	return odom_pose_y_;
-}
-
-int16_t robot::getYaw()
-{
-	return ((int16_t)(yaw_ * 1800 / M_PI));
-}
-
-void robot::displayPositions() {
 	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw_: %f(%f)",
 		map_pose.getOrigin().x(), map_pose.getOrigin().y(), map_yaw_, map_yaw_ * 1800 / M_PI,
 		Gyro_GetAngle(), yaw_, yaw_ * 1800 / M_PI);
@@ -666,11 +386,6 @@ void robot::visualizeMarkerInit(){
 */
 }
 
-double robot::getMapYaw()
-{
-	return yaw_;
-}
-
 void robot::pubCleanMarkers(){
 	m_points_.x = position_x_;
 	m_points_.y = position_y_;
@@ -702,34 +417,70 @@ void robot::initOdomPosition()
 	visualizeMarkerInit();
 }
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
-// This 3 functions is for declaring whether the robot is at status of pausing for charge.
-bool robot::isCleaningLowBatPaused_(void)
-{
-	return low_bat_pause_cleaning_;
-}
-void robot::cleaningLowBatPause_(void)
-{
-	low_bat_pause_cleaning_ = true;
-}
-void robot::resetCleaningLowBatPause_(void)
-{
-	low_bat_pause_cleaning_ = false;
-}
-#endif
 
-#if MANUAL_PAUSE_CLEANING
-// These 3 functions are for manual pause cleaning.
-bool robot::isCleaningManualPaused(void)
+/*
+
+std::vector<int8_t> *robot::getMapData()
 {
-	return manual_pause_cleaning_;
+	//ROS_INFO("%s %d: return the ptr address", __FUNCTION__, __LINE__);
+	//ROS_INFO("%s %d: vector_pointer_address = %d", __FUNCTION__, __LINE__, (*(ptr))[0]);
+	//ROS_INFO("%s %d: seq = %d", __FUNCTION__, __LINE__, seq);
+	return ptr;
 }
-void robot::setCleaningManualPause(void)
+*/
+
+//uint32_t robot::robot_get_rcon_front_left()
+//{
+//	// Move the 4 bits info to lowest bits
+//	//ROS_INFO("%s %d: charge_stub_: %x.", __FUNCTION__, __LINE__, (charge_stub_ & 0xf00000) >> 20);
+//	return this -> rcon_front_left_ = (charge_stub_ & 0xf00000) >> 20;
+//}
+//
+//uint32_t robot::robot_get_rcon_front_right()
+//{
+//	// Move the 4 bits info to lowest bits
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0f0000) >> 16);
+//	return rcon_front_right_ = (charge_stub_ & 0x0f0000) >> 16;
+//}
+//
+//uint32_t robot::robot_get_rcon_back_left()
+//{
+//	// Move the 4 bits info to lowest bits
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0000f0) >> 4);
+//	return rcon_back_left_ = (charge_stub_ & 0x0000f0) >> 4;
+//}
+//
+//uint32_t robot::robot_get_rcon_back_right()
+//{
+//	// Move the 4 bits info to lowest bits
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00000f) >> 0);
+//	return rcon_back_right_ = ( charge_stub_ & 0x00000f) >> 0;
+//}
+//
+//uint32_t robot::robot_get_rcon_left()
+//{
+//	// Move the 4 bits info to lowest bits
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00f000) >> 12);
+//	return rcon_left_ = ( charge_stub_ & 0x00f000) >> 12;
+//}
+//
+//uint32_t robot::robot_get_rcon_right()
+//{
+//	// Move the 4 bits info to lowest bits
+//	//ROS_INFO("%s %d: charge_stub_:%x.",  __FUNCTION__, __LINE__, (charge_stub_ & 0x000f00) >> 8);
+//	return rcon_right_ = (charge_stub_ & 0x000f00) >> 8;
+//}
+
+/*
+bool robot::getBumperRight()
 {
-	manual_pause_cleaning_ = true;
+	return bumper_right_;
 }
-void robot::resetCleaningManualPause(void)
+
+bool robot::getBumperLeft()
 {
-	manual_pause_cleaning_ = false;
+	return bumper_left_;
 }
-#endif
+
+*/
+
