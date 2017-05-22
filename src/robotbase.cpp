@@ -275,9 +275,9 @@ void *robotbase_routine(void*)
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
 
-		sensor.angle -= robot::instance()->offset_angle();
-		robot::instance()->set_angle(sensor.angle);
-//		ROS_INFO("sensor:%f",robot::instance()->get_angle());
+		sensor.angle -= robot::instance()->offsetAngle();
+		robot::instance()->setAngle(sensor.angle);
+//		ROS_INFO("sensor:%f",robot::instance()->getAngle());
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -314,26 +314,26 @@ void *robotbase_routine(void*)
 #elif __ROBOT_X400
 		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
 		sensor.rbumper = (receiStream[22] & 0x0f)?true:false;
-		sensor.ir_ctrl = receiStream[23];
+		sensor.ir_ctrl_ = receiStream[23];
 		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
 		sensor.key = receiStream[27];
 		sensor.c_s = receiStream[28];
-		sensor.w_tank = (receiStream[29] > 0) ? true : false;
+		sensor.w_tank_ = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
 
 		sensor.lcliff = ((receiStream[31] << 8) | receiStream[32]);
 		sensor.fcliff = ((receiStream[33] << 8) | receiStream[34]);
 		sensor.rcliff = ((receiStream[35] << 8) | receiStream[36]);
 
-		sensor.lbrush_oc = (receiStream[37] & 0x08) ? true : false;		// left brush over current
-		sensor.mbrush_oc = (receiStream[37] & 0x04) ? true : false;		// main brush over current
-		sensor.rbrush_oc = (receiStream[37] & 0x02) ? true : false;		// right brush over current
+		sensor.lbrush_oc_ = (receiStream[37] & 0x08) ? true : false;		// left brush over current
+		sensor.mbrush_oc_ = (receiStream[37] & 0x04) ? true : false;		// main brush over current
+		sensor.rbrush_oc_ = (receiStream[37] & 0x02) ? true : false;		// right brush over current
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
-		sensor.gyro_dymc = receiStream[38];
-		sensor.right_wall = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc = ((receiStream[41]<<8)|receiStream[42])/258.0f; //in mG
-		sensor.y_acc = ((receiStream[43]<<8)|receiStream[44])/258.0f; //in mG
-		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/258.0f; //in mG
+		sensor.gyro_dymc_ = receiStream[38];
+		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
+		sensor.x_acc_ = ((receiStream[41]<<8)|receiStream[42])/258.0f; //in mG
+		sensor.y_acc_ = ((receiStream[43]<<8)|receiStream[44])/258.0f; //in mG
+		sensor.z_acc_ = ((receiStream[45]<<8)|receiStream[46])/258.0f; //in mG
 #endif	
 		/*------------publish odom and robot_sensor topic -----------------------*/
 		cur_time = ros::Time::now();

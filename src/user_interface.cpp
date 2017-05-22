@@ -20,7 +20,7 @@
 #include "wav.h"
 #include "robot.hpp"
 
-extern uint32_t cur_wtime;
+extern uint32_t g_cur_wtime;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -81,7 +81,7 @@ void User_Interface(void)
 		}
 #if MANUAL_PAUSE_CLEANING
 		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
 			if (Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
@@ -92,7 +92,7 @@ void User_Interface(void)
 		}
 		else{
 			Reset_Work_Time();
-			cur_wtime = 0;
+			g_cur_wtime = 0;
 		}
 #endif
 		/*--------------------------------------------------------Check if on the charger stub--------------*/

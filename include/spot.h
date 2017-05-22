@@ -14,7 +14,8 @@
 
 #ifndef __Spot_H
 #define __Spot_H
-
+#include <list>
+#include "mathematics.h"
 
 #define Spiral_Right_Out	1
 #define Spiral_Right_In 	2
@@ -28,8 +29,10 @@ typedef enum{
 }SpotType;
 
 void Spot_Mode(SpotType spottype);
+void Spot_WithCell(SpotType spottype,float radian);
+void Spot_GetTarget(uint8_t spiral_type,float radian,std::list<Point32_t> *target,int32_t x_off,int32_t y_off);
 uint8_t Random_Dirt_Event(void);
-
+int8_t Spot_HandleException(SpotType st);
 #endif /*----Behaviors------*/
 
 

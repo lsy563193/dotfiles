@@ -146,6 +146,14 @@ void Laser::start(void)
 		}
 	}while ((count_3s == 0 && try_times != 0) && !Stop_Event());
 
+	if(Stop_Event()){
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			usleep(20000);
+		}
+	}
+
 	ROS_INFO("start_motor: %d", is_ready_);
 }
 

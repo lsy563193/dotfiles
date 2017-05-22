@@ -69,7 +69,7 @@ static LineType	pos_line[POS_LINE_CNT];
 
 static uint16_t line_cnt = 0;
 
-extern PositionType positions[];
+extern PositionType g_positions[];
 extern int16_t xMin, xMax, yMin, yMax;
 
 /*
@@ -518,7 +518,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 						}
 					}
 				}
-				printf("%s %d: can't find nearest point to current positions!\n", __FUNCTION__, __LINE__);
+				printf("%s %d: can't find nearest point to current g_positions!\n", __FUNCTION__, __LINE__);
 			}
 		}
 		/*
@@ -638,7 +638,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 		}
 
 		/* Try to avoid repeatly hit the obstcal ahead. */
-		if (positions[0].x == positions[1].x && positions[0].y == positions[1].y) {
+		if (g_positions[0].x == g_positions[1].x && g_positions[0].y == g_positions[1].y) {
 			path_trace_path(line_idx, cur_idx);
 			path_line_dump();
 
@@ -973,10 +973,10 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 							break;
 						}
 
-						printf("%s %d: %d %d %d %d %d\n", __FUNCTION__, __LINE__, positions[0].x, positions[0].y, positions[1].x,  positions[1].y, path_get_robot_direction());
+						printf("%s %d: %d %d %d %d %d\n", __FUNCTION__, __LINE__, g_positions[0].x, g_positions[0].y, g_positions[1].x,  g_positions[1].y, path_get_robot_direction());
 
 						/* Try to avoid repeatly hit the obstcal ahead. */
-						if (positions[0].x == positions[1].x && positions[0].y == positions[1].y) {
+						if (g_positions[0].x == g_positions[1].x && g_positions[0].y == g_positions[1].y) {
 							/* Possibly ahead is blocked */
 							printf("%s %d: level cur: %d\tlevel next: %d\n", __FUNCTION__, __LINE__, level_cur, level_next);
 							if (level_cur - 1 == level_next + 1 && abs(*y_next - y_pos) <= 2) {
