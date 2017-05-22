@@ -1898,6 +1898,7 @@ void CM_go_home()
 
 				g_cur_wtime = 0;
 				ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return;
 #endif
 			} else if (state == 1 || state == -7) {
