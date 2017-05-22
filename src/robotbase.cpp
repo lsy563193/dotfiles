@@ -130,7 +130,7 @@ void robotbase_deinit(void)
 	uint8_t buf[2];
 
 	if (is_robotbase_init) {
-		ROS_INFO("[robotbase]deinit...\n");
+		ROS_INFO("%s,%d",__FUNCTION__,__LINE__);
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		ROS_INFO("\tshutdown robotbase power");
@@ -145,13 +145,13 @@ void robotbase_deinit(void)
 		send_stream_thread = false;
 		usleep(40000);
 		serial_close();
-		ROS_INFO("[robotbase] Stop ok\n");
+		ROS_INFO("%s,%d, Stop OK",__FUNCTION__,__LINE__);
 		int mutex_ret = pthread_mutex_destroy(&recev_lock);
 		if(mutex_ret<0)
-			ROS_WARN_NAMED(ROBOTBASE,"pthread mutex destroy fail\n");
+			ROS_ERROR("_%s,%d, pthread mutex destroy fail",__FUNCTION__,__LINE__);
 		int cond_ret = pthread_cond_destroy(&recev_cond);
 		if(cond_ret<0)
-			ROS_WARN_NAMED(ROBOTBASE,"pthread cond destroy fail\n");
+			ROS_ERROR("%s,%d,pthread cond destroy fail",__FUNCTION__,__LINE__);
 	}
 }
 
@@ -215,7 +215,7 @@ void *serial_receive_routine(void *)
 					receiStream[j + 2] = receiData[j];
 				}
 				if(pthread_cond_signal(&recev_cond)<0)
-					ROS_WARN(" in serial read, pthread signal fail !");//if receive data corret than send signal
+					ROS_ERROR(" in serial read, pthread signal fail !");//if receive data corret than send signal
 			} else {
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
@@ -264,8 +264,8 @@ void *robotbase_routine(void*)
 
 	while (ros::ok() && !robotbase_thread_stop) {
 		
-		if(pthread_mutex_lock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive lock fail");
-		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_WARN("robotbase pthread receive cond wait fail");	
+		if(pthread_mutex_lock(&recev_lock)!=0)ROS_ERROR("robotbase pthread receive lock fail");
+		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");	
 		//ros::spinOnce();
 
 		lw_speed = (receiStream[2] << 8) | receiStream[3];

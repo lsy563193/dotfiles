@@ -469,11 +469,12 @@ void Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point_list,Poin
 	float t_dist = FLT_MAX;
 	t_p = point_list->front();
 	for(tp = point_list->begin() ; tp != point_list->end(); tp++){
-		dist = sqrt(pow(ref_point.X - tp->X,2) + pow(ref_point.Y + tp->Y,2));
-		if(dist <= mindist){
+		dist = sqrt(pow(ref_point.X - tp->X,2) + pow(ref_point.Y - tp->Y,2));
+		if(absolute(dist- mindist) <= 0.1){
 			near_point->X = tp->X;
 			near_point->Y = tp->Y;
-			break;
+			ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,tp->X,tp->Y);
+			return;
 		}
 		if(dist<t_dist){
 			t_dist = dist;
@@ -481,6 +482,8 @@ void Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point_list,Poin
 			t_p.Y = tp->Y;
 		}
 	}
+
+	ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,t_p.X,t_p.Y);
 	near_point->X = t_p.X;
 	near_point->Y = t_p.Y;
 }
@@ -545,11 +548,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
 			spiral_type = Spiral_Left_Out;	
-			ROS_WARN("%s %d ,spiral left out",__FUNCTION__,__LINE__);
+			ROS_INFO("%s %d ,spiral left out",__FUNCTION__,__LINE__);
 		}
 		else{
 			spiral_type = Spiral_Right_Out;
-			ROS_WARN("%s ,%d spiral right out",__FUNCTION__,__LINE__);
+			ROS_INFO("%s ,%d spiral right out",__FUNCTION__,__LINE__);
 		}
 		Point32_t StopPoint = {0,0};
 		Point32_t nearPoint = {0,0};
@@ -595,7 +598,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				if(g_should_follow_wall){
 					g_should_follow_wall = 0;
 					Is_Dict_Change = 1;
-					ROS_WARN("OBS or Bumper detect");
+					ROS_WARN("%s,%d,OBS or Bumper detect",__FUNCTION__,__LINE__);
 					if(spiral_type == Spiral_Right_Out){
 						od_spiral_out += 1;
 						if(od_spiral_out >= 3){
@@ -678,21 +681,20 @@ void Spot_WithCell(SpotType st,float spot_radius){
 					}
 					break;
 				}//ending if(g_should_follow_wall)
-
 			}//ending for(tp = target.begin();...)
 			if(Is_Dict_Change){
 				continue;
 			} 
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
-				ROS_WARN("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
+				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				break;
 			}
 			else if(spiral_type == Spiral_Right_Out){
-				ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
+				ROS_INFO("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
 				spiral_type  = Spiral_Right_In;
 			}
 			else if(spiral_type == Spiral_Left_Out){
-				ROS_WARN("%s,%d,set spiral type to left in ",__FUNCTION__,__LINE__);
+				ROS_INFO("%s,%d,set spiral type to left in ",__FUNCTION__,__LINE__);
 				spiral_type = Spiral_Left_In;
 			}
 		}//ending while(ros::ok)
@@ -708,11 +710,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
 			spiral_type = Spiral_Left_Out;	
-			ROS_WARN("%s %d ,spiral left out",__FUNCTION__,__LINE__);
+			ROS_INFO("%s %d ,spiral left out",__FUNCTION__,__LINE__);
 		}
 		else{
 			spiral_type = Spiral_Right_Out;
-			ROS_WARN("%s ,%d spiral right out",__FUNCTION__,__LINE__);
+			ROS_INFO("%s ,%d spiral right out",__FUNCTION__,__LINE__);
 		}
 		Point32_t StopPoint = {0,0};
 		Point32_t nearPoint = {0,0};
@@ -734,7 +736,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				if(Spot_HandleException(st)){
 					return;	
 				}
-				ROS_WARN("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
+				ROS_INFO("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
 				if(Is_Dict_Change){
 					if((nearPoint.X == tp->X) || (nearPoint.Y == tp->Y)){
 						Is_Dict_Change = 0;
@@ -759,16 +761,16 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				if(g_should_follow_wall){
 					g_should_follow_wall = 0;
 					Is_Dict_Change = 1;
-					ROS_WARN("OBS or Bumper detect");
+					ROS_INFO("%s,%d,OBS or Bumper detect",__FUNCTION__,__LINE__);
 					if(spiral_type == Spiral_Right_Out){
 						od_spiral_out += 1;
 						if(od_spiral_out >= 3){
 							od_spiral_out = 0;
-							ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
+							ROS_INFO("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
 							spiral_type = Spiral_Left_In;
 						}
 						else{
-							ROS_WARN("%s ,%d ,set spiral type to left out",__FUNCTION__,__LINE__);
+							ROS_INFO("%s ,%d ,set spiral type to left out",__FUNCTION__,__LINE__);
 							spiral_type = Spiral_Left_Out;
 						}
 						if(tp == target.begin()){
@@ -785,12 +787,12 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						od_spiral_out += 1;
 						if(od_spiral_out >= 3){
 							od_spiral_out = 0;
-							ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
+							ROS_INFO("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
 							spiral_type = Spiral_Right_In;
 						}
 						else{
 							spiral_type = Spiral_Right_Out;
-							ROS_WARN("%s ,%d ,set spiral type to right out",__FUNCTION__,__LINE__);
+							ROS_INFO("%s ,%d ,set spiral type to right out",__FUNCTION__,__LINE__);
 						}
 						if(tp == target.begin()){
 							StopPoint.X = tp->X;
@@ -803,7 +805,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						}
 					}
 					else if(spiral_type == Spiral_Right_In){
-						ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
+						ROS_INFO("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
 						spiral_type = Spiral_Left_In;
 						od_spiral_in++;
 						if(od_spiral_in > 3){
@@ -822,7 +824,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						}
 					}
 					else if(spiral_type == Spiral_Left_In){
-						ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
+						ROS_INFO("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
 						spiral_type = Spiral_Right_In;
 						od_spiral_in++;
 						if(od_spiral_in > 3){
@@ -847,15 +849,15 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				continue;
 			} 
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
-				ROS_WARN("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
+				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				break;
 			}
 			else if(spiral_type == Spiral_Right_Out){
-				ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
+				ROS_INFO("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
 				spiral_type  = Spiral_Right_In;
 			}
 			else if(spiral_type == Spiral_Left_Out){
-				ROS_WARN("%s,%d,set spiral type to left in ",__FUNCTION__,__LINE__);
+				ROS_INFO("%s,%d,set spiral type to left in ",__FUNCTION__,__LINE__);
 				spiral_type = Spiral_Left_In;
 			}
 		}//ending while(ros::ok)
@@ -885,7 +887,7 @@ void Spot_GetTarget(uint8_t sp_type,float radiu,std::list<Point32_t> *target,int
 	target->clear();
 	uint16_t st_c = 1;//number of spiral count
 	uint16_t st_n = (uint16_t)(radiu*1000/CELL_SIZE);//number of spiral
-	ROS_WARN("%s,%d,number of spiral %d",__FUNCTION__,__LINE__,st_n);
+	ROS_INFO("%s,%d,number of spiral %d",__FUNCTION__,__LINE__,st_n);
 	int16_t i;
 	switch(spt){
 		case Spiral_Left_Out:
