@@ -520,7 +520,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		robot::instance()->initOdomPosition();// for reset odom position to zero.
 		MotionManage motion;//start slam
 		/*----check slam open or not ------*/
-		if (!MotionManage::s_laser->isReady() ||! MotionManage::s_slam->is_map_ready()) {
+		if (!MotionManage::s_laser->isReady() ||!MotionManage::s_slam->isMapReady()) {
 			Set_Error_Code(Error_Code_Slam);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			//wav_play(WAV_TEST_LIDAR);

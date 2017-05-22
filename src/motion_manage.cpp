@@ -183,9 +183,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam = new Slam();
 
 	g_enable_slam_offset = 1;
-	s_slam->enable_map_update();
+	s_slam->enableMapUpdate();
 	auto count_n_10ms = 1000;
-	while (!s_slam->is_map_ready() && --count_n_10ms != 0)
+	while (!s_slam->isMapReady() && --count_n_10ms != 0)
 	{
 //		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 		usleep(10000);

@@ -15,13 +15,13 @@ Slam::Slam():nh_local_("~"),nh_("/"),is_map_ready_(false)
 
 Slam::~Slam(){
 	stop();
-	align_cli_.shutdown();
-	map_sub_.shutdown();
-	nh_local_.shutdown();
-	nh_.shutdown();
+//	align_cli_.shutdown();
+//	map_sub_.shutdown();
+//	nh_local_.shutdown();
+//	nh_.shutdown();
 };
 
-void Slam::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
+void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
 	is_map_ready_=true;
 	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
@@ -70,7 +70,7 @@ void Slam::stop(void)
 #endif
 }
 
-void Slam::enable_map_update()
+void Slam::enableMapUpdate()
 {
 	std_srvs::Empty empty;
 #if SLAM_METHOD_2
@@ -82,11 +82,11 @@ void Slam::enable_map_update()
 	align_cli_.call(empty);
 #endif
 	ROS_INFO("subscribe");
-	map_sub_ = nh_.subscribe("/map", 1, &Slam::robot_map_cb, this);
+	map_sub_ = nh_.subscribe("/map", 1, &Slam::mapCb, this);
 	ROS_INFO("subscribe ok");
 }
 
-bool Slam::is_map_ready()
+bool Slam::isMapReady()
 {
 	return is_map_ready_;
 }
