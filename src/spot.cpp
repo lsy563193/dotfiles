@@ -30,8 +30,7 @@
 #endif
 
 #define SPOT_MAX_SPEED	(20)
-extern bool Is_Slam_Ready;
-extern uint8_t should_follow_wall;//used to decide obstacle 
+extern uint8_t g_should_follow_wall;//used to decide obstacle 
 /* --------------------------------------------------Random Runnincg mode----------------------*/
 void Spot_Mode(SpotType ST)
 {
@@ -517,8 +516,8 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		homepoint.push_front(t_point);
 		Map_Initialize();//init map 
 		PathPlanning_Initialize(&homepoint.front().X,&homepoint.front().Y);//init pathplan 
-		robot::instance()->init_mumber();// for init robot member
 
+		robot::instance()->initOdomPosition();// for reset odom position to zero.
 		MotionManage motion;//start slam
 		/*----check slam open or not ------*/
 		if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
@@ -593,8 +592,8 @@ void Spot_WithCell(SpotType st,float spot_radius){
 					return;
 				}
 				//if detect obs or bumper trigger ,than change diraction
-				if(should_follow_wall){
-					should_follow_wall = 0;
+				if(g_should_follow_wall){
+					g_should_follow_wall = 0;
 					Is_Dict_Change = 1;
 					ROS_WARN("OBS or Bumper detect");
 					if(spiral_type == Spiral_Right_Out){
@@ -678,7 +677,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						}
 					}
 					break;
-				}//ending if(should_follow_wall)
+				}//ending if(g_should_follow_wall)
 
 			}//ending for(tp = target.begin();...)
 			if(Is_Dict_Change){
@@ -757,8 +756,8 @@ void Spot_WithCell(SpotType st,float spot_radius){
 					return;
 				}
 				//if detect obs or bumper trigger ,than change diraction
-				if(should_follow_wall){
-					should_follow_wall = 0;
+				if(g_should_follow_wall){
+					g_should_follow_wall = 0;
 					Is_Dict_Change = 1;
 					ROS_WARN("OBS or Bumper detect");
 					if(spiral_type == Spiral_Right_Out){
@@ -842,7 +841,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						}
 					}
 					break;
-				}//ending if(should_follow_wall)	
+				}//ending if(g_should_follow_wall)	
 			}//ending for(tp = target.begin();...)
 			if(Is_Dict_Change){
 				continue;
