@@ -435,11 +435,9 @@ bool MotionManage::initNavigationCleaning(void)
 
 			robot::instance()->initOdomPosition();
 
-#if CONTINUE_CLEANING_AFTER_CHARGE
 			// If it it the first time cleaning, initialize the g_continue_point.
 			extern Point32_t g_continue_point;
 			g_continue_point.X = g_continue_point.Y = 0;
-#endif
 		}
 	}
 

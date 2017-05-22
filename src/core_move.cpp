@@ -2516,11 +2516,9 @@ void CM_SetHome(int32_t x, int32_t y) {
 
 void CM_SetContinuePoint(int32_t x, int32_t y)
 {
-#if CONTINUE_CLEANING_AFTER_CHARGE
 	ROS_INFO("%s %d: Set continue point: (%d, %d).", __FUNCTION__, __LINE__, countToCell(x), countToCell(y));
 	g_continue_point.X = x;
 	g_continue_point.Y = y;
-#endif
 }
 
 uint8_t CM_IsLowBattery(void) {
