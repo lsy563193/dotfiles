@@ -773,8 +773,8 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		Map_SetPosition(pos_x, pos_y);
 
-		i = Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_3, 0);
-		j = Map_GetRelativeY(Gyro_GetAngle(), CELL_SIZE_3, 0);
+		i = Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		j = Map_GetRelativeY(Gyro_GetAngle(), CELL_SIZE_2, 0);
 		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
 			Map_SetCell(MAP, i, j, BLOCKED_OBS);
 		}
