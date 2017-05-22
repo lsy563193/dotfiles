@@ -7,22 +7,21 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 #include <movement.h>
-#include <segment_set.h>
+#include <motion_manage.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
 #include "figures/segment.h"
+#include "slam.h"
 
 #include "std_srvs/Empty.h"
 using namespace obstacle_detector;
-extern bool is_line_angle_offset;
-extern int8_t enable_slam_offset;
+extern int8_t g_enable_slam_offset;
 static	robot *robot_obj = NULL;
 //typedef double Angle;
 
 extern pp::x900sensor   sensor;
 
-Segment_set segmentss;
 
 time_t	start_time;
 
@@ -31,57 +30,52 @@ int8_t key_press_count;
 int8_t key_release_count;
 
 //extern pp::x900sensor sensor;
-robot::robot():is_align_active_(false),line_align_(finish),slam_type_(0),is_map_ready(false)
+robot::robot():offset_angle_(0)
 {
-	this->init();
-	this->robot_sensor_sub = this->robot_node_handler.subscribe("/robot_sensor", 10, &robot::robot_robot_sensor_cb, this);
-	this->robot_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
-	this->robot_WF_tf = new tf::TransformListener(this->robot_node_handler, ros::Duration(10), true);
+	init();
+	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
+	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(10), true);
+	robot_wf_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(10), true);
 	/*map subscriber for exploration*/
-//	this->map_metadata_sub = this->robot_node_handler.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
+//	map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
-	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
-	visualize_marker_init();
-	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
-	//this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
+	//odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
+	visualizeMarkerInit();
+	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers_",1);
+	//send_bumper_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("bumper_markers_",1);
+//  obstacles_pub_ = robot_nh_.advertise<Obstacles>("obstacles", 10);
+//  ROS_INFO("Obstacle Detector [ACTIVE]");
+	is_moving_ = false;
+	is_sensor_ready_ = false;
+	is_odom_ready_ = false;
 
-	this->is_moving = false;
-	this->is_sensor_ready = false;
-	this->is_odom_ready = false;
+	bumper_left_ = 0;
+	bumper_right_ = 0;
 
-	this->bumper_left = 0;
-	this->bumper_right = 0;
+	linear_x_ = 0.0;
+	linear_y_ = 0.0;
+	linear_z_ = 0.0;
 
-	this->linear_x = 0.0;
-	this->linear_y = 0.0;
-	this->linear_z = 0.0;
 
-	this->line_angle = 0;
+	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 
-//	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
-
-	start_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("start_motor");
-	stop_mator_cli_ = robot_node_handler.serviceClient<std_srvs::Empty>("stop_motor");
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 
 	// Initialize the low battery pause variable.
-	this->low_bat_pause_cleaning = false;
+	low_bat_pause_cleaning_ = false;
 	// Initialize the key press count.
 	key_press_count = 0;
 #if MANUAL_PAUSE_CLEANING
 	// Initialize the manual pause variable.
-	this->manual_pause_cleaning = false;
+	manual_pause_cleaning_ = false;
 #endif
 }
 
 robot::~robot()
 {
-	delete this->robot_tf;
-	delete this->robot_WF_tf;
+	delete robot_tf_;
+	delete robot_wf_tf_;
 
 	robot_obj = NULL;
 }
@@ -98,59 +92,59 @@ void robot::init()
 	}
 }
 
-bool robot::robot_is_all_ready() {
-  return (is_sensor_ready ) ? true : false;
+bool robot::isAllReady() {
+  return (is_sensor_ready_ ) ? true : false;
 }
 
-void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
+void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
-//	this->angle = msg->angle;
+//	angle = msg->angle;
 
-	this->angle_v = msg->angle_v;
+	angle_v_ = msg->angle_v;
 
-	this->lw_crt = msg->lw_crt;
+	lw_crt_ = msg->lw_crt;
 	
-	this->rw_crt = msg->rw_crt;
+	rw_crt_ = msg->rw_crt;
 
-	this->left_wall = msg->left_wall;
+	left_wall_ = msg->left_wall;
 
-	this->right_wall = msg->right_wall;
+	right_wall_ = msg->right_wall;
 
-	this->x_acc = msg->x_acc;
+	x_acc_ = msg->x_acc;
 
-	this->y_acc = msg->y_acc;
+	y_acc_ = msg->y_acc;
 
-	this->z_acc = msg->z_acc;
+	z_acc_ = msg->z_acc;
 
-	this->gyro_dymc = msg->gyro_dymc;
+	gyro_dymc_ = msg->gyro_dymc;
 
-	this->obs_left = msg->l_obs;
+	obs_left_ = msg->l_obs;
 
-	this->obs_right = msg->r_obs;
+	obs_right_ = msg->r_obs;
 
-	this->obs_front = msg->f_obs;
+	obs_front_ = msg->f_obs;
 
-	this->bumper_right = msg->rbumper;
+	bumper_right_ = msg->rbumper;
 
-	this->bumper_left = msg->lbumper;
+	bumper_left_ = msg->lbumper;
 
-	this->omni_wheel = msg->omni_wheel;
+	omni_wheel = msg->omni_wheel;
 
-	this->visual_wall = msg->visual_wall;
+	visual_wall = msg->visual_wall;
 
-	this->ir_ctrl = msg->ir_ctrl;
-	if (this->ir_ctrl > 0)
+	ir_ctrl_ = msg->ir_ctrl;
+	if (ir_ctrl_ > 0)
 	{
-		Set_Rcon_Remote(this->ir_ctrl);
+		Set_Rcon_Remote(ir_ctrl_);
 	}
 
-	this->charge_stub = msg->c_stub;//charge stub signal
-	Rcon_Status |= this->charge_stub;
-	//ROS_INFO("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, this->charge_stub);
+	charge_stub_ = msg->c_stub;//charge stub signal
+	Rcon_Status |= charge_stub_;
+	//ROS_INFO("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
 
-	this->key = msg->key;
+	key = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((this->key & KEY_CLEAN) && !(Get_Key_Press() & KEY_CLEAN))
+	if ((key & KEY_CLEAN) && !(Get_Key_Press() & KEY_CLEAN))
 	{
 		key_press_count++;
 		if (key_press_count > 5)
@@ -161,7 +155,7 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 			Set_Touch();
 		}
 	}
-	else if (!(this->key & KEY_CLEAN) && (Get_Key_Press() & KEY_CLEAN))
+	else if (!(key & KEY_CLEAN) && (Get_Key_Press() & KEY_CLEAN))
 	{
 		key_release_count++;
 		if (key_release_count > 5)
@@ -176,68 +170,58 @@ void robot::robot_robot_sensor_cb(const pp::x900sensor::ConstPtr& msg)
 		key_release_count = 0;
 	}
 
-	this->charge_status =msg->c_s; //charge status
+	charge_status_ =msg->c_s; //charge status
 	// Debug
-	//ROS_INFO("Subscribe charger status: %d.", this->charge_status);
+	//ROS_INFO("Subscribe charger status: %d.", charge_status_);
 
-	this->w_tank = msg->w_tank;
+	w_tank_ = msg->w_tank;
 
-	this->battery_voltage = msg->batv;
+	battery_voltage_ = msg->batv;
 
-	this->cliff_right = msg->rcliff;
+	cliff_right_ = msg->rcliff;
 
-	this->cliff_left = msg->lcliff;
+	cliff_left_ = msg->lcliff;
 
-	this->cliff_front = msg->fcliff;
+	cliff_front_ = msg->fcliff;
 
-	this->lbrush_oc = msg->lbrush_oc;
+	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
+
+	lbrush_oc_ = msg->lbrush_oc;
 		
-	this->rbrush_oc = msg->rbrush_oc;
+	rbrush_oc_ = msg->rbrush_oc;
 	
-	this->mbrush_oc = msg->mbrush_oc;
+	mbrush_oc_ = msg->mbrush_oc;
 
-	this->vacuum_oc = msg->vcum_oc;
+	vacuum_oc_ = msg->vcum_oc;
 
-	this->plan = msg->plan;
-	if(this->plan != 0)
+	plan = msg->plan;
+	if(plan != 0)
 		Set_Plan_Status(true);
 
-	this->is_sensor_ready = true;
+	is_sensor_ready_ = true;
 
-//	if (this->is_sensor_ready == false) {
+//	if (is_sensor_ready_ == false) {
 //		if (time(NULL) - start_time > 2) {
-//			ROS_INFO("%s %d: Gyro starting angle: %d", __FUNCTION__, __LINE__, (int16_t)((this->angle * 10 + 3600)) % 3600);
+//			ROS_INFO("%s %d: Gyro starting angle: %d", __FUNCTION__, __LINE__, (int16_t)((angle * 10 + 3600)) % 3600);
 
-//			Gyro_SetImuOffset(((int16_t)(this->angle * 10 + 3600)) % 3600);
-//			Gyro_SetImuAngle(((int16_t)(this->angle * 10 + 3600)) % 3600, this->angle_v);
-//			this->is_sensor_ready = true;
+//			Gyro_SetImuOffset(((int16_t)(angle * 10 + 3600)) % 3600);
+//			Gyro_SetImuAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v_);
+//			is_sensor_ready_ = true;
 //		}
 //	} else {
-//		Gyro_SetImuAngle(((int16_t)(this->angle * 10 + 3600)) % 3600, this->angle_v);
+//		Gyro_SetImuAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v_);
 //	}
 
 #if 0
-	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v: %f", __FUNCTION__, __LINE__, angle, angle_v);
-	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage, brush_left, brush_right, brush_main);
-	ROS_INFO("\t\tbumper_right: %d\tbumper_left: %d\tobs_left: %d\tobs_right: %d\tobs_front: %d", bumper_right, bumper_left, obs_left, obs_right , obs_front);
-	ROS_INFO("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d", cliff_right, cliff_left, cliff_front, wall);
-	ROS_INFO("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d", rcon_left, rcon_right, rcon_front_left, rcon_front_right, rcon_back_left, rcon_back_right);
+	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v_: %f", __FUNCTION__, __LINE__, angle, angle_v_);
+	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage_, brush_left_, brush_right_, brush_main_);
+	ROS_INFO("\t\tbumper_right_: %d\tbumper_left_: %d\tobs_left: %d\tobs_right: %d\tobs_front: %d", bumper_right_, bumper_left_, obs_left_, obs_right_ , obs_front_);
+	ROS_INFO("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d", cliff_right_, cliff_left_, cliff_front_, wall);
+	ROS_INFO("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d", rcon_left_, rcon_right_, rcon_front_left_, rcon_front_right_, rcon_back_left_, rcon_back_right_);
 #endif
 }
-/*
 
-void robot::robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg)
-{
-	static int count = 0;
-
-	count++;
-	if (count > 1) {
-		this->is_map_ready = true;
-	}
-}
-*/
-
-void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
+void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 	double map_yaw, pitch, roll;
 
@@ -247,29 +231,29 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	tf::StampedTransform		WF_transform;
 	tf::Stamped<tf::Transform>	odom_pose, map_pose, WF_map_pose;
 
-	this->linear_x = msg->twist.twist.linear.x;
-	this->linear_y = msg->twist.twist.linear.y;
-	this->linear_z = msg->twist.twist.linear.z;
-	this->odom_pose_x = msg->pose.pose.position.x;
-	this->odom_pose_y = msg->pose.pose.position.y;
-	//this->odom_eualr_angle;
-	if (this->linear_x == 0.0 && this->linear_y == 0.0 && this->linear_z == 0.0) {
-		this->is_moving = false;
+	linear_x_ = msg->twist.twist.linear.x;
+	linear_y_ = msg->twist.twist.linear.y;
+	linear_z_ = msg->twist.twist.linear.z;
+	odom_pose_x_ = msg->pose.pose.position.x;
+	odom_pose_y_ = msg->pose.pose.position.y;
+	//odom_eualr_angle;
+	if (linear_x_ == 0.0 && linear_y_ == 0.0 && linear_z_ == 0.0) {
+		is_moving_ = false;
 	} else {
-		this->is_moving = true;
+		is_moving_ = true;
 	}
 
 	ident.setIdentity();
 	ident.frame_id_ = "base_link";
 	ident.stamp_ = msg->header.stamp;
-	if (enable_slam_offset == 1){
+	if (g_enable_slam_offset == 1){
 		//ROS_INFO("SLAM = 1");
-		if(map_ready()){
+		if(MotionManage::s_slam->is_map_ready()){
 		try {
-			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
-			this->yaw = tf::getYaw(transform.getRotation());
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600);
-			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
+			robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
+			yaw_ = tf::getYaw(transform.getRotation());
+			Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -277,24 +261,24 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	
 
 		try {
-			this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-			this->robot_tf->transformPose("/map", ident, map_pose);
+			robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+			robot_tf_->transformPose("/map", ident, map_pose);
 			mat = odom_pose.getBasis();
 			mat.getEulerYPR(map_yaw, pitch, roll);
-			this->map_yaw = map_yaw;
-			this->map_pose = map_pose;
+			map_yaw_ = map_yaw;
+			map_pose = map_pose;
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 			return;
 		}
 		}
-	}else if (enable_slam_offset == 0){
+	}else if (g_enable_slam_offset == 0){
 		//ROS_INFO("SLAM = 0");
 		try {
-			this->robot_tf->lookupTransform("/odom", "base_link", ros::Time(0), transform);
-			this->yaw = tf::getYaw(transform.getRotation());
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600);
-			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
+			robot_tf_->lookupTransform("/odom", "base_link", ros::Time(0), transform);
+			yaw_ = tf::getYaw(transform.getRotation());
+			Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -302,25 +286,25 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	
 
 		try {
-			this->robot_tf->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-			this->robot_tf->transformPose("/odom", ident, map_pose);
+			robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+			robot_tf_->transformPose("/odom", ident, map_pose);
 			mat = odom_pose.getBasis();
 			mat.getEulerYPR(map_yaw, pitch, roll);
-			this->map_yaw = map_yaw;
-			this->map_pose = map_pose;
+			map_yaw_ = map_yaw;
+			map_pose = map_pose;
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 			return;
 		}
-	}else if (enable_slam_offset == 2){//Wall_Follow_Mode
+	}else if (g_enable_slam_offset == 2){//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(map_ready()){
+		if(MotionManage::s_slam->is_map_ready()){
 		try {
-			this->robot_tf->lookupTransform("/map", "base_link", ros::Time(0), transform);
-			this->robot_WF_tf->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
-			this->yaw = tf::getYaw(WF_transform.getRotation());
-			Gyro_SetAngle(((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600);
-			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(this->yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
+			robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
+			robot_wf_tf_->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
+			yaw_ = tf::getYaw(WF_transform.getRotation());
+			Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
+			//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 			return;
@@ -328,23 +312,23 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 	
 
 		try {
-			this->robot_tf->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-			this->robot_tf->transformPose("/map", ident, map_pose);
+			robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+			robot_tf_->transformPose("/map", ident, map_pose);
 			mat = odom_pose.getBasis();
 			mat.getEulerYPR(map_yaw, pitch, roll);
-			this->map_yaw = map_yaw;
-			this->map_pose = map_pose;
+			map_yaw_ = map_yaw;
+			map_pose = map_pose;
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 			return;
 		}
 		try {
-			this->robot_tf->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-			this->robot_tf->transformPose("/odom", ident, WF_map_pose);
+			robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+			robot_tf_->transformPose("/odom", ident, WF_map_pose);
 			mat = odom_pose.getBasis();
 			mat.getEulerYPR(map_yaw, pitch, roll);
-			this->map_yaw = map_yaw;
-			this->WF_map_pose = WF_map_pose;
+			map_yaw_ = map_yaw;
+			wf_map_pose = WF_map_pose;
 		} catch(tf::TransformException e) {
 			ROS_WARN("Failed to compute map pose, skipping scan (%s)", e.what());
 			return;
@@ -352,184 +336,63 @@ void robot::robot_odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
 		}
 	}
 
-  if (!this->is_odom_ready) {
-    this->position_x_off = map_pose.getOrigin().x();
-    this->position_y_off = map_pose.getOrigin().y();
-    this->position_z_off = map_pose.getOrigin().z();
-  }
-
-  this->position_x = map_pose.getOrigin().x() - position_x_off;
-  this->position_y = map_pose.getOrigin().y() - position_y_off;
-	if (enable_slam_offset == 2){
-		this->WF_position_x = WF_map_pose.getOrigin().x() - position_x_off;
-		this->WF_position_y = WF_map_pose.getOrigin().y() - position_y_off;
+  position_x_ = map_pose.getOrigin().x();
+  position_y_ = map_pose.getOrigin().y();
+	if (g_enable_slam_offset == 2){
+		wf_position_x_ = WF_map_pose.getOrigin().x();
+		WF_position_y_ = WF_map_pose.getOrigin().y();
 	}
-  if (this->is_odom_ready == false) {
-    this->is_odom_ready = true;
+  if (is_odom_ready_ == false) {
+    is_odom_ready_ = true;
   }
 }
-void robot::robot_map_cb(const nav_msgs::OccupancyGrid::ConstPtr& map)
-{
-	int map_size, vector_size;
-	//uint32_t seq;
-	//uint32_t width;
-	//uint32_t height;
-	//float resolution;
-	//std::vector<int8_t> *ptr;
-	this->width = map->info.width;
-	this->height = map->info.height;
-	this->resolution = map->info.resolution;
-	this->seq = map->header.seq;
-	this->origin_x = map->info.origin.position.x;
-	this->origin_y = map->info.origin.position.y;
-	//map_size = (width * height);
-	//int8_t map_data[n];
-	//std::vector<int8_t> map_data(map->data);
-	this->map_data = map->data;
-	//this->map_data(map->data);
-	this->ptr = &(map_data);
-	//vector_size = v1.size();
+/*
 
-	//v1.swap(map->data);
-	//memcpy(map_data, &map->data, sizeof(map->data));
-	//ROS_INFO("width = %d\theight = %d\tresolution = %f\tseq = %d", width, height, resolution, seq);
-	//ROS_INFO("map_size=%d\tvector_size = %d", map_size, vector_size);
-	//ROS_INFO("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d", map_data[0], map_data[1], map_data[2], map_data[3], map_data[4], map_data[5], map_data[6], map_data[7], map_data[8], map_data[9], map_data[10], map_data[11]);
-	//ROS_INFO("map->data = %d, %d, %d, %d, %d, %d", (map->data)[0], (map->data)[1], (map->data)[2], (map->data)[3], (map->data)[4], (map->data)[5]);
-	ROS_INFO("%s %d: vector = %d, %d, %d", __FUNCTION__, __LINE__, map_data[0], map_data[1], map_data[2]);
-	ROS_INFO("%s %d: vector_pointer = %d", __FUNCTION__, __LINE__, (*(this->ptr))[0]);
-	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
-	is_map_ready=true;
-
-}
-
-uint32_t robot::robot_get_width()
-{
-	return this->width;
-}
-
-uint32_t robot::robot_get_height()
-{
-	return this->height;
-}
-
-float robot::robot_get_resolution()
-{
-	return this->resolution;
-}
-
-double robot::robot_get_origin_x()
-{
-	return this->origin_x;
-}
-
-double robot::robot_get_origin_y()
-{
-	return this->origin_y;
-}
-
-std::vector<int8_t> *robot::robot_get_map_data()
+std::vector<int8_t> *robot::getMapData()
 {
 	//ROS_INFO("%s %d: return the ptr address", __FUNCTION__, __LINE__);
-	//ROS_INFO("%s %d: vector_pointer_address = %d", __FUNCTION__, __LINE__, (*(this->ptr))[0]);
-	//ROS_INFO("%s %d: seq = %d", __FUNCTION__, __LINE__, this->seq);
-	return this->ptr;
+	//ROS_INFO("%s %d: vector_pointer_address = %d", __FUNCTION__, __LINE__, (*(ptr))[0]);
+	//ROS_INFO("%s %d: seq = %d", __FUNCTION__, __LINE__, seq);
+	return ptr;
+}
+*/
+
+float robot::getAngle() {
+  return angle;
 }
 
-void robot::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
+void robot::setAngle(float angle) {
+	angle = angle;
+}
+
+float robot::getAngleV()
 {
-//	ROS_WARN("robot_obstacles_cb");
-	if (laser::instance()->is_ready() == false || is_sensor_ready == false)
-		return;
-
-//	ROS_WARN("2robot_obstacles_cb");
-	line_align_ = begin;
-
-	if (msg->segments.size() != 0)
-	{
-//			ROS_INFO("size = %d", msg->segments.size());
-		for (auto s : msg->segments)
-		{
-			Point first(s.first_point.x, s.first_point.y);
-			Point last(s.last_point.x, s.last_point.y);
-			Segment seg(first, last);
-//				std::cout << "seg: " << seg << std::endl;
-
-			auto dist = seg.length();
-
-//				if (dist < 1)
-//					ROS_INFO("dist = %f", dist);
-//				else
-//					ROS_INFO("dist = %f >1", dist);
-
-			if (dist < 1)
-				continue;
-
-			segmentss.classify(seg);
-		}
-//		ROS_INFO("+++++++++++++++++++++++++++++");
-	}
-	/*else {//(is_obstacles_ready == true)
-		static int count = 0;
-		if(count++%300==0) {
-			for (auto &s : msg->segments) {
-				std::cout << "first " << s.first_point << std::endl;
-				std::cout << "last " << s.last_point << std::endl;
-//			查找直线经过的格子
-				Point32_t p1, p2;
-				p1 = PointToCount(s.first_point);
-				p2 = PointToCount(s.last_point);
-				cout << "$$$$$$$$$p1:" << p1.X << "," << p1.Y << endl;
-				cout << "$$$$$$$$$p2:" << p2.X << "," << p2.Y << endl;
-				std::vector<Point16_t> cells = greds_of_line_pass(p1, p2);
-				for (auto &cell : cells) {
-					std::cout << "cell:" << cell.X << "," << cell.Y << "\t";
-					Point32_t p = Map_CellToPoint(cell);
-					Map_SetCell(MAP, p.X, p.Y, BLOCKED_OBS);
-				}
-				cout << endl;
-			}
-			debug_map(MAP,0,0);
-		}
-	}*/
+	return angle_v_;
 }
 
-float robot::robot_get_angle() {
-  return this->angle;
-}
-
-void robot::set_angle(float angle_) {
-	this->angle = angle_;
-}
-
-float robot::robot_get_angle_v()
-{
-	return this->angle_v;
-}
-
-int16_t robot::robot_get_cliff_right()
+int16_t robot::getCliffRight()
 {
 	return sensor.rcliff;
 }
 
-int16_t robot::robot_get_cliff_left()
+int16_t robot::getCliffLeft()
 {
 	return sensor.lcliff;
 }
 
-int16_t robot::robot_get_cliff_front()
+int16_t robot::getCliffFront()
 {
 	//ROS_INFO("Cliff_Front = %d", sensor.fcliff);
-	//ROS_INFO("Topic_Cliff_Front = %d", this->cliff_front);
+	//ROS_INFO("Topic_Cliff_Front = %d", cliff_front_);
 	return sensor.fcliff;
 }
 
-int16_t robot::robot_get_left_wall()
+int16_t robot::getLeftWall()
 {
 	return sensor.left_wall - Left_Wall_BaseLine;
 }
 
-int16_t robot::robot_get_right_wall()
+int16_t robot::getRightWall()
 {
 #if __ROBOT_X900
 	return sensor.right_wall - Right_Wall_BaseLine;
@@ -538,7 +401,7 @@ int16_t robot::robot_get_right_wall()
 #endif
 }
 
-int16_t robot::robot_get_omni_wheel()
+int16_t robot::getOmniWheel()
 {
 #if __ROBOT_X9000
 	   return sensor.omni_wheel;
@@ -547,7 +410,7 @@ int16_t robot::robot_get_omni_wheel()
 #endif
 }
 
-int16_t robot::robot_get_visual_wall()
+int16_t robot::getVisualWall()
 {
 #if __ROBOT_X900
 	return sensor.visual_wall;
@@ -556,521 +419,317 @@ int16_t robot::robot_get_visual_wall()
 #endif
 }
 
-bool robot::robot_get_lbrush_oc()//oc : over current
+uint8_t robot::getVacuumSelfCheckStatus()
 {
-	return this->lbrush_oc;
+	return vacuum_selfcheck_status_;
 }
 
-bool robot::robot_get_rbrush_oc()
+bool robot::getLbrushOc()//oc : over current
 {
-	return this->rbrush_oc;
+	return lbrush_oc_;
 }
 
-bool robot::robot_get_mbrush_oc()
+bool robot::getRbrushOc()
 {
-	return this->mbrush_oc;
+	return rbrush_oc_;
 }
 
-bool robot::robot_get_vacuum_oc()
+bool robot::getMbrushOc()
 {
-	return this->vacuum_oc;
+	return mbrush_oc_;
 }
 
-int robot::robot_get_charge_status()
+bool robot::getVacuumOc()
 {
-	return this->charge_status;
+	return vacuum_oc_;
 }
 
-uint8_t robot::robot_get_key(){
-	return this->key;
-}
-uint8_t robot::robot_get_ir_ctrl()
+int robot::getChargeStatus()
 {
-	return  this->ir_ctrl;
+	return charge_status_;
 }
 
-float robot::robot_get_lwheel_current()
+uint8_t robot::getKey(){
+	return key;
+}
+uint8_t robot::getIrCtrl()
 {
-	return this->lw_crt;
+	return  ir_ctrl_;
 }
 
-float robot::robot_get_rwheel_current()
+float robot::getLwheelCurrent()
 {
-	return this->rw_crt;
+	return lw_crt_;
 }
 
-uint32_t robot::robot_get_rcon()
+float robot::getRwheelCurrent()
 {
-	return this->charge_stub;
+	return rw_crt_;
+}
+
+uint32_t robot::getRcon()
+{
+	return charge_stub_;
 }
 
 //uint32_t robot::robot_get_rcon_front_left()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub: %x.", __FUNCTION__, __LINE__, (this->charge_stub & 0xf00000) >> 20);
-//	return this -> rcon_front_left = (this->charge_stub & 0xf00000) >> 20;
+//	//ROS_INFO("%s %d: charge_stub_: %x.", __FUNCTION__, __LINE__, (charge_stub_ & 0xf00000) >> 20);
+//	return this -> rcon_front_left_ = (charge_stub_ & 0xf00000) >> 20;
 //}
 //
 //uint32_t robot::robot_get_rcon_front_right()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this->charge_stub & 0x0f0000) >> 16);
-//	return this->rcon_front_right = (this->charge_stub & 0x0f0000) >> 16;
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0f0000) >> 16);
+//	return rcon_front_right_ = (charge_stub_ & 0x0f0000) >> 16;
 //}
 //
 //uint32_t robot::robot_get_rcon_back_left()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this->charge_stub & 0x0000f0) >> 4);
-//	return this->rcon_back_left = (this->charge_stub & 0x0000f0) >> 4;
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0000f0) >> 4);
+//	return rcon_back_left_ = (charge_stub_ & 0x0000f0) >> 4;
 //}
 //
 //uint32_t robot::robot_get_rcon_back_right()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this-> charge_stub & 0x00000f) >> 0);
-//	return this->rcon_back_right = (this-> charge_stub & 0x00000f) >> 0;
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00000f) >> 0);
+//	return rcon_back_right_ = ( charge_stub_ & 0x00000f) >> 0;
 //}
 //
 //uint32_t robot::robot_get_rcon_left()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub:%x.", __FUNCTION__, __LINE__, (this-> charge_stub & 0x00f000) >> 12);
-//	return this->rcon_left = (this-> charge_stub & 0x00f000) >> 12;
+//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00f000) >> 12);
+//	return rcon_left_ = ( charge_stub_ & 0x00f000) >> 12;
 //}
 //
 //uint32_t robot::robot_get_rcon_right()
 //{
 //	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub:%x.",  __FUNCTION__, __LINE__, (this->charge_stub & 0x000f00) >> 8);
-//	return this->rcon_right = (this->charge_stub & 0x000f00) >> 8;
+//	//ROS_INFO("%s %d: charge_stub_:%x.",  __FUNCTION__, __LINE__, (charge_stub_ & 0x000f00) >> 8);
+//	return rcon_right_ = (charge_stub_ & 0x000f00) >> 8;
 //}
 /*
-bool robot::robot_get_bumper_right()
+bool robot::getBumperRight()
 {
-	return this->bumper_right;
+	return bumper_right_;
 }
 
-bool robot::robot_get_bumper_left()
+bool robot::getBumperLeft()
 {
-	return this->bumper_left;
+	return bumper_left_;
 }
 
 */
-bool robot::robot_get_bumper_right()
+bool robot::getBumperRight()
 {
 	//ROS_INFO("rbumper = %d",sensor.rbumper);
-	//ROS_INFO("topic_rbumper = %d",this->bumper_right);
+	//ROS_INFO("topic_rbumper = %d",bumper_right_);
 	return sensor.rbumper;
 }
 
-bool robot::robot_get_bumper_left()
+bool robot::getBumperLeft()
 {
 	//ROS_INFO("lbumper = %d",sensor.lbumper);
 	return sensor.lbumper;
 }
-int16_t robot::robot_get_obs_left()
+int16_t robot::getObsLeft()
 {
 	return sensor.l_obs;
 }
 
-int16_t robot::robot_get_obs_right()
+int16_t robot::getObsRight()
 {
 	return sensor.r_obs;
 }
 
-int16_t robot::robot_get_obs_front()
+int16_t robot::getObsFront()
 {
 	return sensor.f_obs;
 }
 
-bool robot::robot_get_water_tank()
+bool robot::getWaterTank()
 {
-	return this->w_tank;
+	return w_tank_;
 }
 
-uint16_t robot::robot_get_battery_voltage()
+uint16_t robot::getBatteryVoltage()
 {
-	return this->battery_voltage*10;
+	return battery_voltage_*10;
 }
 
-bool robot::robot_is_moving()
+bool robot::isMoving()
 {
-	return this->is_moving;
+	return is_moving_;
 }
 
-float robot::robot_get_linear_x()
+float robot::getLinearX()
 {
-	return this->linear_x;
+	return linear_x_;
 }
 
-float robot::robot_get_linear_y()
+float robot::getLinearY()
 {
-	return this->linear_y;
+	return linear_y_;
 }
 
-float robot::robot_get_linear_z()
+float robot::getLinearZ()
 {
-	return this->linear_z;
+	return linear_z_;
 }
 
-float robot::robot_get_position_x()
+float robot::getPositionX()
 {
-	return this->position_x;
+	return position_x_;
 }
 
-float robot::robot_get_position_y()
+float robot::getPositionY()
 {
-	return this->position_y;
+	return position_y_;
 }
 
-float robot::robot_get_WF_position_x()
+float robot::getWfPositionX()
 {
-	return this->WF_position_x;
+	return wf_position_x_;
 }
 
-float robot::robot_get_WF_position_y()
+float robot::getWfPositionY()
 {
-	return this->WF_position_y;
+	return WF_position_y_;
 }
 
-float robot::robot_get_position_z()
+float robot::getPositionZ()
 {
-	return this->position_z;
+	return position_z_;
 }
 
-float robot::robot_get_odom_position_x()
+float robot::getOdomPositionX()
 {
-	return this->odom_pose_x;
+	return odom_pose_x_;
 }
 
-float robot::robot_get_odom_position_y()
+float robot::getOdomPositionY()
 {
-	return this->odom_pose_y;
+	return odom_pose_y_;
 }
 
-int16_t robot::robot_get_yaw()
+int16_t robot::getYaw()
 {
-	return ((int16_t)(this->yaw * 1800 / M_PI));
+	return ((int16_t)(yaw_ * 1800 / M_PI));
 }
 
-int16_t robot::robot_get_home_angle() {
-  return ((int16_t) (this->line_angle));
+void robot::displayPositions() {
+	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw_: %f(%f)",
+		map_pose.getOrigin().x(), map_pose.getOrigin().y(), map_yaw_, map_yaw_ * 1800 / M_PI,
+		Gyro_GetAngle(), yaw_, yaw_ * 1800 / M_PI);
 }
 
-void robot::robot_display_positions() {
-	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw: %f(%f)",
-		this->map_pose.getOrigin().x(), this->map_pose.getOrigin().y(), this->map_yaw, this->map_yaw * 1800 / M_PI,
-		Gyro_GetAngle(), this->yaw, this->yaw * 1800 / M_PI);
-}
-
-void robot::visualize_marker_init(){
-	this->clean_markers.ns = "waypoints";
-	this->clean_markers.id = 0;
-	this->clean_markers.type = visualization_msgs::Marker::LINE_STRIP;
-	this->clean_markers.action= 0;//add
-	this->clean_markers.lifetime=ros::Duration(0);
+void robot::visualizeMarkerInit(){
+	clean_markers_.ns = "waypoints";
+	clean_markers_.id = 0;
+	clean_markers_.type = visualization_msgs::Marker::LINE_STRIP;
+	clean_markers_.action= 0;//add
+	clean_markers_.lifetime=ros::Duration(0);
 #if __ROBOT_X400
-	this->clean_markers.scale.x = 0.31;
+	clean_markers_.scale.x = 0.31;
 #elif __ROBOT_X900
-	this->clean_markers.scale.x = 0.33;
+	clean_markers_.scale.x = 0.33;
 #endif
-//	this->clean_markers.scale.y = 0.31;
-	this->clean_markers.color.r = 0.0;
-	this->clean_markers.color.g = 1.0;
-	this->clean_markers.color.b = 0.0;
-	this->clean_markers.color.a = 0.4;
-	this->clean_markers.header.frame_id = "/map";
-	this->clean_markers.header.stamp = ros::Time::now();
-	this->m_points.x = 0.0;
-	this->m_points.y = 0.0;
-	this->m_points.z = 0.0;
-	this->clean_markers.points.clear();
-	this->clean_markers.points.push_back(m_points);
+//	clean_markers_.scale.y = 0.31;
+	clean_markers_.color.r = 0.0;
+	clean_markers_.color.g = 1.0;
+	clean_markers_.color.b = 0.0;
+	clean_markers_.color.a = 0.4;
+	clean_markers_.header.frame_id = "/map";
+	clean_markers_.header.stamp = ros::Time::now();
+	m_points_.x = 0.0;
+	m_points_.y = 0.0;
+	m_points_.z = 0.0;
+	clean_markers_.points.clear();
+	clean_markers_.points.push_back(m_points_);
 /*
-	this->bumper_markers.id=1;
-	this->bumper_markers.type=visualization_msgs::Marker::POINTS;
-	this->bumper_markers.action=0;
-	this->bumper_markers.lifetime=ros::Duration(0);
-	this->bumper_markers.scale.x = 0.05;
-	this->bumper_markers.scale.y = 0.1;
-	this->bumper_markers.color.g = 1.0;
-	this->bumper_markers.color.r = 1.0;
-	this->bumper_markers.color.a =1.0;
-	this->bumper_markers.header.frame_id = "/map";
-	this->bumper_markers.header.stamp = ros::Time::now();
+	bumper_markers_.id=1;
+	bumper_markers_.type=visualization_msgs::Marker::POINTS;
+	bumper_markers_.action=0;
+	bumper_markers_.lifetime=ros::Duration(0);
+	bumper_markers_.scale.x = 0.05;
+	bumper_markers_.scale.y = 0.1;
+	bumper_markers_.color.g = 1.0;
+	bumper_markers_.color.r = 1.0;
+	bumper_markers_.color.a =1.0;
+	bumper_markers_.header.frame_id = "/map";
+	bumper_markers_.header.stamp = ros::Time::now();
 */
 }
 
-double robot::robot_get_map_yaw()
+double robot::getMapYaw()
 {
-	return this->yaw;
+	return yaw_;
 }
 
-void robot::pub_clean_markers(){
-	this->m_points.x = this->position_x;
-	this->m_points.y = this->position_y;
-	this->m_points.z = 0;
-	this->clean_markers.header.stamp = ros::Time::now();
-	this->clean_markers.points.push_back(this->m_points);
-	this->send_clean_marker_pub.publish(this->clean_markers);
+void robot::pubCleanMarkers(){
+	m_points_.x = position_x_;
+	m_points_.y = position_y_;
+	m_points_.z = 0;
+	clean_markers_.header.stamp = ros::Time::now();
+	clean_markers_.points.push_back(m_points_);
+	send_clean_marker_pub_.publish(clean_markers_);
 }
 
-void robot::pub_bumper_markers(){
+void robot::pubBumperMarkers(){
 	float radius = 0.16;
-	float angle = this->yaw;//this->angle*M_PI/180.0f;//transform into angle
+	float angle = yaw_;//angle*M_PI/180.0f;//transform into angle
 	float offset_x = sin(angle)*radius;
 	float offset_y = cos(angle)*radius;
-	this->m_points.x = this->position_x+offset_x;
-	this->m_points.y = this->position_y+offset_y;
-	this->bumper_markers.header.stamp = ros::Time::now();
-	this->bumper_markers.points.push_back(this->m_points);
-	this->send_bumper_marker_pub.publish(this->bumper_markers);
+	m_points_.x = position_x_+offset_x;
+	m_points_.y = position_y_+offset_y;
+	bumper_markers_.header.stamp = ros::Time::now();
+	bumper_markers_.points.push_back(m_points_);
+	send_bumper_marker_pub_.publish(bumper_markers_);
 }
 
-void robot::start_slam(void)
+void robot::initOdomPosition()
 {
-	is_map_ready = false;
-	if (slam_type_ == 0)
-		system("roslaunch pp gmapping.launch 2>/dev/null &");
-	else if (slam_type_ == 1)
-		system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null &");
-	else if (slam_type_ == 2)
-		system("roslaunch pp cartographer_slam.launch 2>/dev/null &");
-}
-
-void robot::stop_slam(void)
-{
-	enable_slam_offset = 0;
-	is_map_ready = false;
-	if (slam_type_ == 0)
-		system("rosnode kill /slam_gmapping 2>/dev/null &");
-	else if (slam_type_ == 1)
-		system("rosnode kill /slam_karto 2>/dev/null &");
-	else if (slam_type_ == 2)
-		system("rosnode kill /cartographer_node 2>/dev/null &");
-}
-
-bool robot::align(void)
-{
-
-	if(Get_Clean_Mode() == Clean_Mode_WallFollow)
-		return false;
-
-	if (is_align_active_ != true)
-		return false;
-
-	line_align_ = detecting;
-	is_odom_ready = false;
-	segmentss.clear();
-	ROS_WARN("Start subscribe to /obstacles");
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-
-	//wait for start obstacle_detector
-	auto count_n_10ms = 1000;
-	while (line_align_ != begin && --count_n_10ms > 0 && !Stop_Event()){
-		if (count_n_10ms % 100 == 0)
-			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
-		usleep(10000);
-	}
-	if(Stop_Event() || count_n_10ms == 0)
-		return false;
-
-	count_n_10ms = 200;
-	ROS_WARN("Obstacle detector launch finishd.");
-
-	//wait for detecting line
-	while (--count_n_10ms > 0 && !Stop_Event())
-	{
-		if (count_n_10ms % 100 == 0)
-			ROS_WARN("detecting line time remain %d s\n", count_n_10ms / 100);
-		usleep(10000);
-	}
-	if(Stop_Event())
-		return false;
-
-	ROS_WARN("Get the line");
-	line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
-	auto angle = static_cast<int16_t>(std::abs(line_angle));
-	ROS_INFO("line detect: rotating line_angle(%d)", line_angle);
-
-	if (line_angle > 0)
-	{
-		ROS_INFO("Turn_Left %d", angle);
-		Turn_Left(13, angle);
-	} else if (line_angle < 0)
-	{
-		ROS_INFO("Turn_Right %d", angle);
-		Turn_Right(13, angle);
-	}
-	bool is_align=true;
-
-	line_align_ = finish;
-//	ros::WallDuration(100).sleep();
-
-	if(Stop_Event())
-		return false;
-/*
-	auto count = 2;
-	while (count-- != 0)
-	{
-		std::cout << robot::angle << std::endl;
-		sleep(1);
-	}*/
-	is_line_angle_offset = true;
-
-	return true;
-}
-
-void robot::align_exit(void)
-{
-	is_line_angle_offset = false;
-	line_align_ = detecting;
-}
-
-void robot::align_active(bool active){
-	is_align_active_ =  active;
-	if(is_align_active_ == true){
-		line_align_ = detecting;
-	}
-}
-
-bool robot::align_active(void)
-{
-	return is_align_active_;
-}
-
-bool robot::start_lidar(void)
-{
-	std_srvs::Empty empty;
-	auto count_6s = 0;
-	auto try_times = 3;
-	bool  first_start = true;
-	do
-	{
-		try_times--;
-		if (! first_start)
-		{
-			// todo pull down gpio
-			ROS_INFO("lidar start false, power off and try again!!!");
-			stop_lidar();
-			sleep(1);
-		}
-		first_start = false;
-		ladar_gpio('1');
-		usleep(2000);
-		ROS_INFO("start_lidar");
-		start_mator_cli_.call(empty);
-		count_6s = 300;//set reboot lidar time to 3 seconds
-		laser::instance()->is_ready(false);
-		while (laser::instance()->is_ready() == false && --count_6s > 0 && !Stop_Event())
-		{
-			if (count_6s % 100 == 0)
-				ROS_INFO("lidar start not success yet, will try to restart after %d s", count_6s / 100);
-			usleep(10000);
-		}
-	}while ((count_6s == 0 && try_times != 0) && !Stop_Event());
-
-	ROS_INFO("start_motor: %d", laser::instance()->is_ready());
-
-	return (laser::instance()->is_ready());
-}
-
-void robot::stop_lidar(void){
-	std_srvs::Empty empty;
-//	is_odom_ready = false;
-//	do
-//	{
-		laser::instance()->is_ready(false);
-		ROS_INFO("stop_lidar");
-		stop_mator_cli_.call(empty);
-		ladar_gpio('0');
-//		sleep(2);
-//	}while (laser::instance()->is_ready() == true);
-
-}
-
-void robot::slam_type(int type)
-{
-	slam_type_ = type;
-}
-
-void robot::map_ready(bool val)
-{
-	is_map_ready = val;
-}
-
-bool robot::map_ready(void)
-{
-	return is_map_ready;
-}
-
-/*
-void robot::Subscriber(void)
-{
-	this->map_sub = this->robot_node_handler.subscribe("/map", 1, &robot::robot_map_cb, this);
-	//this->odom_sub = this->robot_node_handler.subscribe("/odom", 1, &robot::robot_odom_cb, this);
-	visualize_marker_init();
-	this->send_clean_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("clean_markers",1);
-	this->send_bumper_marker_pub = this->robot_node_handler.advertise<visualization_msgs::Marker>("bumper_markers",1);
-	obstacles_sub = robot_node_handler.subscribe("/obstacles", 1, &robot::robot_obstacles_cb, this);
-
-}
-*/
-
-void robot::UnSubscriber(void)
-{
-	map_sub.shutdown();
-	//odom_sub.shutdown();
-
-	if(is_align_active_)
-	  obstacles_sub.shutdown();
-}
-void robot::init_mumber()
-{
-	//is_odom_ready = false;
-	position_x=0;
-	position_y=0;
-	position_z=0;
-	odom_pose_x=0;
-	odom_pose_y=0;
-	position_map_x=0;
-	position_map_y=0;
-	position_x_off=0;
-	position_y_off=0;
-	position_z_off=0;
+	//is_odom_ready_ = false;
+	position_x_=0;
+	position_y_=0;
+	position_z_=0;
 	robotbase_reset_odom_pose();
-	this->visualize_marker_init();
+	visualizeMarkerInit();
 }
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 // This 3 functions is for declaring whether the robot is at status of pausing for charge.
-bool robot::Is_Cleaning_Low_Bat_Paused(void)
+bool robot::isCleaningLowBatPaused_(void)
 {
-	return this->low_bat_pause_cleaning;
+	return low_bat_pause_cleaning_;
 }
-void robot::Set_Cleaning_Low_Bat_Pause(void)
+void robot::cleaningLowBatPause_(void)
 {
-	this->low_bat_pause_cleaning = true;
+	low_bat_pause_cleaning_ = true;
 }
-void robot::Reset_Cleaning_Low_Bat_Pause(void)
+void robot::resetCleaningLowBatPause_(void)
 {
-	this->low_bat_pause_cleaning = false;
+	low_bat_pause_cleaning_ = false;
 }
 #endif
 
 #if MANUAL_PAUSE_CLEANING
 // These 3 functions are for manual pause cleaning.
-bool robot::Is_Cleaning_Manual_Paused(void)
+bool robot::isCleaningManualPaused(void)
 {
-	return this->manual_pause_cleaning;
+	return manual_pause_cleaning_;
 }
-void robot::Set_Cleaning_Manual_Pause(void)
+void robot::setCleaningManualPause(void)
 {
-	this->manual_pause_cleaning = true;
+	manual_pause_cleaning_ = true;
 }
-void robot::Reset_Cleaning_Manual_Pause(void)
+void robot::resetCleaningManualPause(void)
 {
-	this->manual_pause_cleaning = false;
+	manual_pause_cleaning_ = false;
 }
 #endif

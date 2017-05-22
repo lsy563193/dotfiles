@@ -5,6 +5,7 @@
 #include "robot.hpp"
 #include <time.h>
 #include <fcntl.h>
+#include <motion_manage.h>
 
 #include "gyro.h"
 #include "movement.h"
@@ -15,6 +16,7 @@
 #include "core_move.h"
 #include "wall_follow_multi.h"
 #include "wav.h"
+#include "slam.h"
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -219,11 +221,11 @@ int32_t Get_Wall_ADC(int8_t dir)
 {
 	if (dir == 0)
 	{
-		return (int32_t)(int16_t)robot::instance()->robot_get_left_wall();
+		return (int32_t)(int16_t) robot::instance()->getLeftWall();
 	}
 	else
 	{
-		return (int32_t)(int16_t)robot::instance()->robot_get_right_wall();
+		return (int32_t)(int16_t) robot::instance()->getRightWall();
 	}
 }
 
@@ -454,6 +456,13 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	accurate = 10;
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
+		// For GoHome(), if reach the charger stub during turning, should stop immediately.
+		if (Is_ChargerOn())
+		{
+			ROS_DEBUG("Reach charger while turn left.");
+			Stop_Brifly();
+			break;
+		}
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
@@ -522,6 +531,13 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	accurate = 10;
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
+		// For GoHome(), if reach the charger stub during turning, should stop immediately.
+		if (Is_ChargerOn())
+		{
+			ROS_DEBUG("Reach charger while turn right.");
+			Stop_Brifly();
+			break;
+		}
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
@@ -632,8 +648,11 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 			Stop_Brifly();
 			WFM_move_back(120);
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				break;
+			}
 			Set_Dir_Left();
-			ROS_INFO("Bumper triged when turn left, back 20mm.");
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
@@ -710,8 +729,11 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 			Stop_Brifly();
 			WFM_move_back(120);
 			Stop_Brifly();
+			if(Is_Bumper_Jamed())
+			{
+				break;
+			}
 			Set_Dir_Right();
-			ROS_INFO("Bumper triged when turn right, back 20mm.");
 		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
@@ -747,8 +769,8 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 	accurate = 10;
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
-		pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		Map_SetPosition(pos_x, pos_y);
 
 		i = Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_3, 0);
@@ -855,6 +877,8 @@ void Jam_Turn_Left(uint16_t speed, int16_t angle)
 			break;
 		if(Stop_Event())
 			break;
+		if(!Get_Bumper_Status())
+			break;
 		/*if(Is_Turn_Remote())
 			break;*/
 		usleep(10000);
@@ -911,6 +935,8 @@ void Jam_Turn_Right(uint16_t speed, int16_t angle)
 			break;
 		if(Stop_Event())
 			break;
+		if(!Get_Bumper_Status())
+			break;
 		/*if(Is_Turn_Remote())
 			break;*/
 		usleep(10000);
@@ -925,25 +951,25 @@ void Jam_Turn_Right(uint16_t speed, int16_t angle)
 }
 int32_t Get_FrontOBS(void)
 {
-	return (int32_t)robot::instance()->robot_get_obs_front();
+	return (int32_t) robot::instance()->getObsFront();
 }
 
 int32_t Get_LeftOBS(void)
 {
-	return (int32_t)robot::instance()->robot_get_obs_left();
+	return (int32_t) robot::instance()->getObsLeft();
 }
 int32_t Get_RightOBS(void)
 {
-	return (int32_t)robot::instance()->robot_get_obs_right();
+	return (int32_t) robot::instance()->getObsRight();
 }
 uint8_t Get_Bumper_Status(void)
 {
 	uint8_t Temp_Status = 0;
 
-	if (robot::instance()->robot_get_bumper_left()) {
+	if (robot::instance()->getBumperLeft()) {
 		Temp_Status |= LeftBumperTrig;
 	}
-	if (robot::instance()->robot_get_bumper_right()) {
+	if (robot::instance()->getBumperRight()) {
 		Temp_Status |= RightBumperTrig;
 	}
 	return Temp_Status;
@@ -953,20 +979,20 @@ uint8_t Get_Cliff_Trig(void)
 {
 	uint8_t Cliff_Status = 0x00;
 	int16_t cl,cr,cf;
-	cl = robot::instance()->robot_get_cliff_left();
-	cr = robot::instance()->robot_get_cliff_right();
-	cf = robot::instance()->robot_get_cliff_front();	
+	cl = robot::instance()->getCliffLeft();
+	cr = robot::instance()->getCliffRight();
+	cf = robot::instance()->getCliffFront();
 	if (cl < Cliff_Limit){
 		ROS_WARN("Left cliff is detected:%d", cl);
-		Cliff_Status += 0x01;
+		Cliff_Status |= 0x01;
 	}
 	if (cr< Cliff_Limit){
 		ROS_WARN("Right cliff is detected:%d", cr);
-		Cliff_Status += 0x02;
+		Cliff_Status |= 0x02;
 	}
 	if (cf < Cliff_Limit){
 		ROS_WARN("Front cliff is detected:%d", cf);
-		Cliff_Status += 0x04;
+		Cliff_Status |= 0x04;
 	}
 	/*
 	if (Cliff_Status != 0x00){
@@ -1069,7 +1095,7 @@ uint8_t Is_AtHomeBase(void)
 {
 	// If the charge status is true, it means it is at home base charging.
 	//Debug
-	if (robot::instance()->robot_get_charge_status() == 2 || robot::instance()->robot_get_charge_status() == 1){
+	if (robot::instance()->getChargeStatus() == 2 || robot::instance()->getChargeStatus() == 1){
 		return 1;
 	}else{
 		return 0;
@@ -1179,9 +1205,9 @@ uint8_t  Is_MoveWithRemote(void){
 
 uint8_t Is_OBS_Near(void)
 {
-	if(robot::instance()->robot_get_obs_front() > (Front_OBSTrig_Value-200))return 1;
-	if(robot::instance()->robot_get_obs_right() > (Right_OBSTrig_Value-200))return 1;
-	if(robot::instance()->robot_get_obs_left() > (Left_OBSTrig_Value-200))return 1;
+	if(robot::instance()->getObsFront() > (Front_OBSTrig_Value-200))return 1;
+	if(robot::instance()->getObsRight() > (Right_OBSTrig_Value-200))return 1;
+	if(robot::instance()->getObsLeft() > (Left_OBSTrig_Value-200))return 1;
 	return 0;
 }
 
@@ -1265,21 +1291,21 @@ uint8_t Check_Motor_Current(void)
 	static uint8_t vacuum_oc_count = 0;
 	static uint8_t mbrush_oc_count = 0;
 	uint8_t sidebrush_oc_status = 0;
-	if((uint32_t)robot::instance()->robot_get_lwheel_current() > Wheel_Stall_Limit){
+	if((uint32_t) robot::instance()->getLwheelCurrent() > Wheel_Stall_Limit){
 		lwheel_oc_count++;
 		if(lwheel_oc_count >40){
 			lwheel_oc_count =0;
-			ROS_WARN("%s,%d,left wheel over current,%lu mA\n",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_lwheel_current());
+			ROS_WARN("%s,%d,left wheel over current,%u mA\n",__FUNCTION__,__LINE__,(uint32_t) robot::instance()->getLwheelCurrent());
 			return Check_Left_Wheel;
 		}
 	}
 	else
 		lwheel_oc_count = 0;
-	if((uint32_t)robot::instance()->robot_get_rwheel_current() > Wheel_Stall_Limit){
+	if((uint32_t) robot::instance()->getRwheelCurrent() > Wheel_Stall_Limit){
 		rwheel_oc_count++;
 		if(rwheel_oc_count > 40){
 			rwheel_oc_count = 0;
-			ROS_WARN("%s,%d,right wheel over current,%lu mA",__FUNCTION__,__LINE__,(uint32_t)robot::instance()->robot_get_rwheel_current());
+			ROS_WARN("%s,%d,right wheel over current,%u mA",__FUNCTION__,__LINE__,(uint32_t) robot::instance()->getRwheelCurrent());
 			return Check_Right_Wheel;
 		}
 	}
@@ -1294,7 +1320,7 @@ uint8_t Check_Motor_Current(void)
 		ROS_WARN("%s,%d,left brush over current",__FUNCTION__,__LINE__);
 		return Check_Left_Brush;
 	}
-	if(robot::instance()->robot_get_mbrush_oc()){
+	if(robot::instance()->getMbrushOc()){
 		mbrush_oc_count++;
 		if(mbrush_oc_count > 40){
 			mbrush_oc_count =0;
@@ -1302,7 +1328,7 @@ uint8_t Check_Motor_Current(void)
 			return Check_Main_Brush;
 		}
 	}
-	if(robot::instance()->robot_get_vacuum_oc()){
+	if(robot::instance()->getVacuumOc()){
 		vacuum_oc_count++;
 		if(vacuum_oc_count>40){
 			vacuum_oc_count = 0;
@@ -1350,7 +1376,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t)robot::instance()->robot_get_rwheel_current();
+			Wheel_Current_Summary += (uint32_t) robot::instance()->getRwheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary/=50;
@@ -1392,7 +1418,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		Wheel_Current_Summary=0;
 		while(Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t)robot::instance()->robot_get_lwheel_current();
+			Wheel_Current_Summary += (uint32_t) robot::instance()->getLwheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary/=50;
@@ -1433,17 +1459,31 @@ uint8_t Self_Check(uint8_t Check_Code)
 	}
 	else if(Check_Code==Check_Vacuum)
 	{
-		#ifdef BLDC_INSTALL
-		//BLDC_OFF;
-		usleep(10000);
-		Set_BLDC_TPWM(30);
-		Set_Vac_Speed();
-		//BLDC_ON;
-		usleep(100000);
-		Set_Error_Code(Error_Code_Fan_H);
-		Disable_Motors();
-		Alarm_Error();
-		return 1;
+		#ifndef BLDC_INSTALL
+		ROS_INFO("%s, %d: Vacuum Over Current!!", __FUNCTION__, __LINE__);
+		ROS_INFO("%d", Get_SelfCheck_Vacuum_Status());
+		while(Get_SelfCheck_Vacuum_Status() != 0x10)
+		{
+			/*-----wait until self check begin-----*/
+			Start_SelfCheck_Vacuum();
+		}
+		ROS_INFO("%s, %d: Vacuum Self checking", __FUNCTION__, __LINE__);
+		/*-----reset command for start self check-----*/
+		Reset_SelfCheck_Vacuum_Controler();
+		/*-----wait for the end of self check-----*/
+		while(Get_SelfCheck_Vacuum_Status() == 0x10);
+		ROS_INFO("%s, %d: end of Self checking", __FUNCTION__, __LINE__);
+		if(Get_SelfCheck_Vacuum_Status() == 0x20)
+		{
+			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
+			/*-----vacuum error-----*/
+			Set_Error_Code(Error_Code_Fan_H);
+			Disable_Motors();
+			wav_play(WAV_ERROR_SUCTION_FAN);
+			Reset_SelfCheck_Vacuum_Controler();
+			return 1;
+		}
+		Reset_SelfCheck_Vacuum_Controler();
 		#else
 		Disable_Motors();
 		//Stop_Brifly();
@@ -1490,6 +1530,10 @@ uint8_t Self_Check(uint8_t Check_Code)
 	return 0;
 }
 
+uint8_t Get_SelfCheck_Vacuum_Status(void)
+{
+	return (uint8_t) robot::instance()->getVacuumSelfCheckStatus();
+}
 uint8_t Check_Bat_Home(void)
 {
 	// Check if battary is lower than the low battery go home voltage value.
@@ -1662,16 +1706,16 @@ int16_t Get_LeftOBST_Value(void)
 
 uint8_t Is_WallOBS_Near(void)
 {
-	if (robot::instance()->robot_get_obs_front() > (Front_OBSTrig_Value + 500)) {
+	if (robot::instance()->getObsFront() > (Front_OBSTrig_Value + 500)) {
 		return 1;
 	}
-	if (robot::instance()->robot_get_obs_right() > (Right_OBSTrig_Value + 500)) {
+	if (robot::instance()->getObsRight() > (Right_OBSTrig_Value + 500)) {
 		return 1;
 	}
-	if (robot::instance()->robot_get_obs_left() > (Front_OBSTrig_Value + 1000)) {
+	if (robot::instance()->getObsLeft() > (Front_OBSTrig_Value + 1000)) {
 		return 1;
 	}
-	if (robot::instance()->robot_get_left_wall() > (Leftwall_OBSTrig_Vale +500)){
+	if (robot::instance()->getLeftWall() > (Leftwall_OBSTrig_Vale +500)){
 		return 1;
 	}
 	return 0;
@@ -1679,27 +1723,27 @@ uint8_t Is_WallOBS_Near(void)
 
 void Adjust_OBST_Value(void)
 {
-	if(robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value )
+	if(robot::instance()->getObsFront() > Front_OBSTrig_Value )
 		Front_OBSTrig_Value += 800;
-	if(robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
+	if(robot::instance()->getObsLeft() > Left_OBSTrig_Value)
 		Left_OBSTrig_Value	+= 800;
-	if(robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
+	if(robot::instance()->getObsRight() > Right_OBSTrig_Value)
 		Right_OBSTrig_Value += 800;
 }
 
 void Reset_OBST_Value(void)
 {
-	Left_OBSTrig_Value = robot::instance()->robot_get_obs_front() + 1000;
-	Front_OBSTrig_Value = robot::instance()->robot_get_obs_left() + 1000;
-	Right_OBSTrig_Value = robot::instance()->robot_get_obs_right() + 1000;
+	Left_OBSTrig_Value = robot::instance()->getObsFront() + 1000;
+	Front_OBSTrig_Value = robot::instance()->getObsLeft() + 1000;
+	Right_OBSTrig_Value = robot::instance()->getObsRight() + 1000;
 }
 
 uint8_t Spot_OBS_Status(void)
 {
 	uint8_t status =0;
-	if(robot::instance()->robot_get_obs_left() > 1000)status |=Status_Left_OBS;
-	if(robot::instance()->robot_get_obs_right() > 1000)status |=Status_Right_OBS;
-	if(robot::instance()->robot_get_obs_front() >1500)status |=Status_Front_OBS;
+	if(robot::instance()->getObsLeft() > 1000)status |=Status_Left_OBS;
+	if(robot::instance()->getObsRight() > 1000)status |=Status_Right_OBS;
+	if(robot::instance()->getObsFront() >1500)status |=Status_Front_OBS;
 	return status;
 }
 
@@ -1707,13 +1751,13 @@ uint8_t Get_OBS_Status(void)
 {
 	uint8_t Status = 0;
 
-	if (robot::instance()->robot_get_obs_left() > Left_OBSTrig_Value)
+	if (robot::instance()->getObsLeft() > Left_OBSTrig_Value)
 		Status |= Status_Left_OBS;
 
-	if (robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value)
+	if (robot::instance()->getObsFront() > Front_OBSTrig_Value)
 		Status |= Status_Front_OBS;
 
-	if (robot::instance()->robot_get_obs_right() > Right_OBSTrig_Value)
+	if (robot::instance()->getObsRight() > Right_OBSTrig_Value)
 		Status |= Status_Right_OBS;
 
 	return Status;
@@ -1756,7 +1800,7 @@ void Reset_Rcon_Status(void)
 }
 
 uint32_t Get_Rcon_Status(){
-	//Rcon_Status = robot::instance()->robot_get_rcon();
+	//Rcon_Status = robot::instance()->getRcon();
 	return Rcon_Status;
 }
 
@@ -1858,8 +1902,8 @@ void Stop_Brifly(void)
 		Set_Wheel_Speed(0, 0);
 		usleep(15000);
 		//ROS_INFO("%s %d: linear speed: (%f, %f, %f)", __FUNCTION__, __LINE__,
-		//	robot::instance()->robot_get_linear_x(), robot::instance()->robot_get_linear_y(), robot::instance()->robot_get_linear_z());
-	} while (robot::instance()->robot_is_moving());
+		//	robot::instance()->getLinearX(), robot::instance()->getLinearY(), robot::instance()->getLinearZ());
+	} while (robot::instance()->isMoving());
 	//ROS_INFO("%s %d: robot is stopped.", __FUNCTION__, __LINE__);
 }
 
@@ -1934,11 +1978,6 @@ void Deceleration(void)
 
 uint8_t Stop_Event(void)
 {
-	// If clean mode == 0, it means robot initializing, don't receive any command.
-	if (Get_Clean_Mode() == 0)
-	{
-		return 0;
-	}
 	// If it has already had a Stop_Event_Status, then no need to check.
 	if (!Stop_Event_Status)
 	{
@@ -1948,7 +1987,7 @@ uint8_t Stop_Event(void)
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
-				robot::instance()->Set_Cleaning_Manual_Pause();
+				robot::instance()->setCleaningManualPause();
 				cur_wtime = Get_Work_Time()+cur_wtime;
 				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
 				Reset_Work_Time();
@@ -1963,7 +2002,7 @@ uint8_t Stop_Event(void)
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 			{
-				robot::instance()->Set_Cleaning_Manual_Pause();
+				robot::instance()->setCleaningManualPause();
 				cur_wtime = Get_Work_Time()+cur_wtime;
 				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,cur_wtime);
 				Reset_Work_Time();
@@ -1996,7 +2035,7 @@ uint8_t Is_Station(void)
 
 uint8_t Is_ChargerOn(void)
 {
-	if (robot::instance()->robot_get_charge_status() == 1){
+	if (robot::instance()->getChargeStatus() == 1){
 		return 1;
 	}else{
 		return 0;
@@ -2098,6 +2137,21 @@ void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right
 
 	int brush_main = main_brush_val;
 	control_set(CTL_BRUSH_MAIN, brush_main & 0xff);
+}
+
+void Start_SelfCheck_Vacuum(void)
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x02);
+}
+
+void End_SelfCheck_Vacuum(void)
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x04);
+}
+
+void Reset_SelfCheck_Vacuum_Controler(void)
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] & ~0x06);
 }
 
 void control_set(uint8_t type, uint8_t val)
@@ -2388,7 +2442,7 @@ void Reset_LeftWheel_Step()
 
 uint16_t GetBatteryVoltage()
 {
-	return robot::instance()->robot_get_battery_voltage();
+	return robot::instance()->getBatteryVoltage();
 }
 
 uint8_t  Check_Bat_Stop()
@@ -2432,7 +2486,7 @@ uint16_t Get_Key_Time(uint16_t key)
 }
 
 uint8_t Is_Front_Close(){	
-	if(robot::instance()->robot_get_obs_front() > Front_OBSTrig_Value+1500)
+	if(robot::instance()->getObsFront() > Front_OBSTrig_Value+1500)
 		return 1;
 	else
 		return 0;
@@ -2756,7 +2810,12 @@ void Set_Mobility_Step(uint32_t Steps)
 
 void Reset_Mobility_Step()
 {
-	Mobility_Step = 0;
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x01);
+}
+
+void Clear_Reset_Mobility_Step()
+{
+	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] & ~0x01);
 }
 
 uint32_t  Get_Mobility_Step()
@@ -2851,27 +2910,42 @@ uint8_t Is_Bumper_Jamed()
 	{
 		ROS_INFO("JAM1");
 		Move_Back();
+		if(Stop_Event())
+		{
+			ROS_INFO("%s, %d: Stop event in JAM1", __FUNCTION__, __LINE__);
+			return 0;
+		}
 		if(Get_Bumper_Status())
 		{
 			ROS_INFO("JAM2");
 			// Quick back will not set speed to 100, it will be limited by the RUN_TOP_SPEED.
 			Quick_Back(100,200);
+			if(Stop_Event())
+			{
+				ROS_INFO("%s, %d: Stop event in JAM2", __FUNCTION__, __LINE__);
+				return 0;
+			}
 			if(Get_Bumper_Status())
 			{
 				ROS_INFO("JAM3");
 				Jam_Turn_Right(60, 900);
-				Jam_Turn_Left(60, 1800);
+				if(Stop_Event())
+				{
+					ROS_INFO("%s, %d: Stop event in JAM3", __FUNCTION__, __LINE__);
+					return 0;
+				}
 				if(Get_Bumper_Status())
 				{
 					ROS_INFO("JAM4");
-					//if(Is_Bumper_Fail())
-					//{
+					Jam_Turn_Left(60, 1800);
+					if(Get_Bumper_Status())
+					{
 						ROS_INFO("JAM5");
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						Set_Error_Code(Error_Code_Bumper);
 						wav_play(WAV_ERROR_BUMPER);
 						return 1;
-					//}
+					}
 				}
 			}
 		}
@@ -2905,13 +2979,6 @@ int32_t ABS_Minus(int32_t A,int32_t B)
 	return B-A;
 }
 
-void ladar_gpio(char val)
-{
-	int fd = open("/proc/driver/wifi-pm/power", O_WRONLY);
-	char buf[] = {val};
-	write(fd,buf,1);
-	close(fd);
-}
 #define NORMAL	1
 #define STOP	2
 #define MAX		3
@@ -2925,7 +2992,7 @@ uint8_t Check_SideBrush_Stall(void)
 	switch(LeftBrush_Status)
 	{
 		case NORMAL:
-			if(robot::instance()->robot_get_lbrush_oc())
+			if(robot::instance()->getLbrushOc())
 			{
 				if(LBrush_Stall_Counter < 200)
 					LBrush_Stall_Counter++;
@@ -2954,7 +3021,7 @@ uint8_t Check_SideBrush_Stall(void)
 			break;
 
 		case MAX:
-			if(robot::instance()->robot_get_lbrush_oc())
+			if(robot::instance()->getLbrushOc())
 			{
 				if(LBrush_Stall_Counter < 200)
 					LBrush_Stall_Counter++;
@@ -2999,7 +3066,7 @@ uint8_t Check_SideBrush_Stall(void)
 	switch(RightBrush_Status)
 	{
 		case NORMAL:
-			if(robot::instance()->robot_get_rbrush_oc())
+			if(robot::instance()->getRbrushOc())
 			{
 				if(RBrush_Stall_Counter < 200)
 					RBrush_Stall_Counter++;
@@ -3028,7 +3095,7 @@ uint8_t Check_SideBrush_Stall(void)
 			break;
 
 		case MAX:
-			if(robot::instance()->robot_get_rbrush_oc())
+			if(robot::instance()->getRbrushOc())
 			{
 				if(RBrush_Stall_Counter < 200)
 					RBrush_Stall_Counter++;
@@ -3096,13 +3163,13 @@ void ResetSleepModeFlag()
 #if MANUAL_PAUSE_CLEANING
 void Clear_Manual_Pause(void)
 {
-	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	if (robot::instance()->isCleaningManualPaused())
 	{
 		ROS_WARN("Reset manual pause status.");
 		wav_play(WAV_CLEANING_FINISHED);
-		robot::instance()->Reset_Cleaning_Manual_Pause();
-		robot::instance()->align_exit();
-		robot::instance()->stop_slam();
+		robot::instance()->resetCleaningManualPause();
+		robot::instance()->offsetAngle(0);
+		MotionManage::s_slam->stop();
 		CM_ResetGoHome();
 	}
 }

@@ -32,29 +32,30 @@
 #include "charger.hpp"
 #include "wav.h"
 
-#include "motion_controler.h"
+#include "motion_manage.h"
 //Turn speed
 #ifdef Turn_Speed
 #undef Turn_Speed
 #define Turn_Speed	18
 #endif
 
-std::vector<Point32_t> WF_Point;
-Point32_t New_WF_Point;
+std::vector<Pose32_t> WF_Point;
+Pose32_t New_WF_Point;
 // This list is for storing the position that robot sees the charger stub.
 extern std::list <Point32_t> Home_Point;
 // This is for adding new point to Home Point list.
 extern Point32_t New_Home_Point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
-extern uint8_t remote_go_home;
-extern uint8_t from_station;
+extern uint8_t g_remote_go_home;
+extern uint8_t g_from_station;
 extern int16_t xMin, xMax, yMin, yMax;
 bool	escape_thread_running = false;
 //Timer
 uint32_t escape_trapped_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
-extern int8_t enable_slam_offset;
+int32_t same_cell_count = 0;
+extern int8_t g_enable_slam_offset;
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 	{1200, 250, 150},
@@ -83,10 +84,11 @@ void WFM_move_back(uint16_t dist)
 	Set_Wheel_Speed(5, 5);
 	Counter_Watcher = 0;
 
-	pos_x = robot::instance()->robot_get_odom_position_x();
-	pos_y = robot::instance()->robot_get_odom_position_y();
+	pos_x = robot::instance()->getOdomPositionX();
+	pos_y = robot::instance()->getOdomPositionY();
 	while (ros::ok()) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_odom_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_odom_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
+																																													 robot::instance()->getOdomPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -127,8 +129,8 @@ void *WFM_check_trapped(void *data)
 
 	MapEscapeTrappedType	escaped = Map_Escape_Trapped_Escaped;
 
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -138,8 +140,8 @@ void *WFM_check_trapped(void *data)
 
 	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 	while (escape_thread_running == true) {
-		pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		Map_SetPosition(pos_x, pos_y);
 		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -171,8 +173,8 @@ bool WF_check_isolate(void)
 
 	MapEscapeTrappedType	escaped = Map_Escape_Trapped_Escaped;
 
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	//Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -181,8 +183,8 @@ bool WF_check_isolate(void)
 	//escape_thread_running = true;
 
 	//ROS_INFO("%s %d: escape thread is up!\n", __FUNCTION__, __LINE__);
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	//Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
@@ -432,8 +434,8 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
 
-			if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
-				Wall_Distance = robot::instance()->robot_get_left_wall() / 3;
+			if (robot::instance()->getLeftWall() > (Wall_Low_Limit)) {
+				Wall_Distance = robot::instance()->getLeftWall() / 3;
 			} else {
 				Wall_Distance += 200;
 			}
@@ -482,7 +484,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		if (Wall_Distance >= 200) {
 			Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 			Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
-			Left_Wall_Buffer[0] = robot::instance()->robot_get_left_wall();
+			Left_Wall_Buffer[0] = robot::instance()->getLeftWall();
 			if (Left_Wall_Buffer[0] < 100) {
 				if ((Left_Wall_Buffer[1] - Left_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 					if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -498,7 +500,7 @@ uint8_t Map_Wall_Follow(MapWallFollowType follow_type)
 		/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 		if (Get_FrontOBS() < Get_FrontOBST_Value()) {
 
-			Proportion = robot::instance()->robot_get_left_wall();
+			Proportion = robot::instance()->getLeftWall();
 
 			Proportion = Proportion * 100 / Wall_Distance;
 
@@ -647,9 +649,10 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Home_Point.push_front(New_Home_Point);
 
 	Map_Initialize();
-	ROS_INFO("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	debug_map(MAP, 0, 0);
 	WF_PathPlanning_Initialize(&Home_Point.front().X, &Home_Point.front().Y);
-	ROS_INFO("%s %d: path planning initialized", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 
 	// Restart the gyro.
@@ -666,20 +669,29 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return 0;
 	}
-	robot::instance()->init_mumber();// for init robot member
-	Motion_controller motion;
+	robot::instance()->initOdomPosition();// for reset odom position to zero.
+	MotionManage motion;
 
-	if (Is_Slam_Ready) {
-		Is_Slam_Ready = 0;
-	} else{
-		Is_Slam_Ready = 0;
+	if(Stop_Event()){
+		while (Get_Key_Press() & KEY_CLEAN)
+		{
+			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+			usleep(20000);
+		}
+		ROS_WARN("%s %d: Check: Touch Clean Mode! return 0\n", __FUNCTION__, __LINE__);
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		Reset_Stop_Event_Status();
+		return 0;
+	}
+
+	if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Set_Error_Code(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
 		return 0;
 	}
 
-	enable_slam_offset = 2;//2 for wall follow mode
+	g_enable_slam_offset = 2;//2 for wall follow mode
 
 	MapEscapeTrappedType escape_state = Map_Escape_Trapped_Trapped;
 
@@ -697,8 +709,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		Wall_Distance = Wall_Low_Limit;
 	}
 
-	Start_WF_Pose_X = robot::instance()->robot_get_position_x();
-	Start_WF_Pose_Y = robot::instance()->robot_get_position_y();
+	Start_WF_Pose_X = robot::instance()->getPositionX();
+	Start_WF_Pose_Y = robot::instance()->getPositionY();
 
 	Move_Forward(25, 25);
 
@@ -798,7 +810,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 
 			/*------------------------------------------------------Distance Check-----------------------*/
-			if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_WF_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) > Find_Wall_Distance ){
+			if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->getPositionX(), 2) + powf(Start_WF_Pose_Y -
+																																																											 robot::instance()->getPositionY(), 2)))) > Find_Wall_Distance ){
 				ROS_INFO("Find wall over the limited distance : %f", Find_Wall_Distance);
 				WF_End_Wall_Follow();
 				return 0;
@@ -809,8 +822,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 		escape_trapped_timer = time(NULL);
-		Start_Pose_X = robot::instance()->robot_get_position_x();
-		Start_Pose_Y = robot::instance()->robot_get_position_y();
+		Start_Pose_X = robot::instance()->getPositionX();
+		Start_Pose_Y = robot::instance()->getPositionY();
 		First_Time_Flag = 1;
 		while (ros::ok()) {
 			if ((time(NULL) - escape_trapped_timer) > 3600) {
@@ -854,19 +867,37 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//WF_update_position();
 			WF_Check_Loop_Closed(Gyro_GetAngle());
 			if(reach_count >= 10){
-				reach_count = 0;
+				if (WF_Check_Angle()) {//WF_Check_Angle succeed,it proves that the robot is not in the narrow space
+					reach_count = 0;
+					Stop_Brifly();
+					if (WF_check_isolate()){
+						ROS_WARN("Isolated");
+						Isolated_Flag = 1;
+						break;
+					} else{
+						ROS_WARN("Not Isolated");
+						Isolated_Flag = 0;
+					}
+					WF_End_Wall_Follow();
+					ROS_WARN("reach_count >= 10");
+					break;
+				} else {
+					reach_count = 0;//reset reach_cout because WF_Check_Angle fail, it proves that the robot is in the narrow space
+				}
+			}
+			//Check if the robot is trapped
+			if (same_cell_count >= 1000) {
+				ROS_WARN("Maybe the robot is trapped! Checking!");
+				same_cell_count = 0;
 				Stop_Brifly();
 				if (WF_check_isolate()){
-					ROS_INFO("Isolated");
-					Isolated_Flag = 1;
-					break;
+					ROS_WARN("Not trapped!");
 				} else{
-					ROS_INFO("Not Isolated");
-					Isolated_Flag = 0;
+					ROS_WARN("Trapped!");
+					WF_Break_Wall_Follow();
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+					return 0;
 				}
-				WF_End_Wall_Follow();
-				ROS_INFO("reach_count >= 10");
-				break;
 			}
 
 			//debug_WF_map(MAP, 0, 0);
@@ -975,7 +1006,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			/*------------------------------------------------------Home Station Event------------------------*/
 			Temp_Rcon_Status = Get_Rcon_Status();
 			Reset_Rcon_Status();
-			//Temp_Rcon_Status = robot::instance()->robot_get_rcon();
+			//Temp_Rcon_Status = robot::instance()->getRcon();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
 				CM_SetHome(Map_GetXCount(), Map_GetYCount());
@@ -1188,7 +1219,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					Wheel_Speed_Base = 15 + Get_WallAccelerate() / 150;
 					if(Wheel_Speed_Base>28)Wheel_Speed_Base = 28;
 
-					Proportion = robot::instance()->robot_get_left_wall();
+					Proportion = robot::instance()->getLeftWall();
 
 					Proportion = Proportion*100/Wall_Distance;
 
@@ -1267,9 +1298,11 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 			//Map_Initialize();
 			Map_Reset(MAP);
+			WF_Point.clear();
+			Turn_Right(Turn_Speed, 900);
 			continue;
 		} else{
-			ROS_INFO("%s %d: Not in isolate island, finish, break", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Not in isolate island, finish, break", __FUNCTION__, __LINE__);
 			break;
 		}
 	}//the biggest loop end
@@ -1296,44 +1329,44 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Move_Forward(0, 0);
 	return ret;
 }
-
+/*
 void Wall_Follow_Init_Slam(void){
 	extern void start_slam(void);
 //	robot::instance()->Subscriber();
 	robot::instance()->start_lidar();
 	//std::async(std::launch::async, start_slam);
 	start_slam();
-	/*while (robot::instance()->map_ready() == false || ros::ok()){
+	*//*while (robot::instance()->map_ready() == false || ros::ok()){
 		usleep(100);
 		ROS_WARN("waiting for map");
-	}*/
+	}*//*
 	sleep(5);
-	enable_slam_offset = 2;
-}
-
+	g_enable_slam_offset = 2;
+}*/
+/*
 void Wall_Follow_Stop_Slam(void){
 	extern void start_slam(void);
 	robot::instance()->UnSubscriber();
 	Disable_Motors();
-	robot::instance()->stop_lidar();
+	robot::instance()->stop_laser();
 	//std::async(std::launch::async, start_slam);
 	robot::instance()->stop_slam();
-	/*while (robot::instance()->map_ready() == false || ros::ok()){
+	*//*while (robot::instance()->map_ready() == false || ros::ok()){
 		usleep(100);
 		ROS_WARN("waiting for map");
-	}*/
-	enable_slam_offset = 0;
-}
+	}*//*
+	g_enable_slam_offset = 0;
+}*/
 uint8_t WF_End_Wall_Follow(void){
 	int16_t i;
 	int8_t state;
 	// X, Y in Target_Point are all counts.
-	Point32_t	Next_Point, Target_Point;
-	Point16_t	tmpPnt, pnt16ArTmp[3];
-	MapTouringType	mt_state = MT_None;
-	int16_t home_angle = robot::instance()->robot_get_home_angle();
+	//Point32_t	Next_Point, Target_Point;
+	//Point16_t	tmpPnt, g_pnt16_ar_tmp[3];
+	//MapTouringType	mt_state = MT_None;
+	//int16_t offsetAngle = robot::instance()->robot_get_home_angle();
 	Stop_Brifly();
-	enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
+	g_enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
 	WF_Mark_Home_Point();
 	CM_go_home();
@@ -1341,7 +1374,7 @@ uint8_t WF_End_Wall_Follow(void){
 	/*****************************************Release Memory************************************/
 	Home_Point.clear();
 	WF_Point.clear();
-	std::vector<Point32_t>(WF_Point).swap(WF_Point);
+	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
 	Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1352,7 +1385,7 @@ uint8_t WF_Break_Wall_Follow(void){
 	/*****************************************Release Memory************************************/
 	Home_Point.clear();
 	WF_Point.clear();
-	std::vector<Point32_t>(WF_Point).swap(WF_Point);
+	std::vector<Pose32_t>(WF_Point).swap(WF_Point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
 	Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -1366,8 +1399,8 @@ void WF_update_position(void) {
 	y = Map_GetYPos();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 }
 
@@ -1390,8 +1423,8 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 	y = Map_GetYPos();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
@@ -1414,7 +1447,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 	//Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
 	i = Map_GetRelativeX(heading, 0, 0);
 	j = Map_GetRelativeY(heading, 0, 0);
-	push_state = WF_Push_Point(countToCell(i),countToCell(j));//push a cell
+	push_state = WF_Push_Point(countToCell(i),countToCell(j), Gyro_GetAngle());//push a cell
 	if(push_state == 1){
 		reach_state = WF_Is_Reach_Cleaned();//check this cell if reached
 		if(reach_state == true){//add reach_count
@@ -1423,7 +1456,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 			}
 			if(reach_continuous_state = true){
 				reach_count++;
-				ROS_INFO("reach_count = %d", reach_count);
+				ROS_WARN("reach_count = %d", reach_count);
 			}
 		} else{
 			reach_continuous_state = false;
@@ -1491,21 +1524,29 @@ bool WF_Is_Reach_Cleaned(void){
 	return false;
 }
 
-int8_t WF_Push_Point(int32_t x, int32_t y){
+int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 	if (WF_Point.empty() == false){
 		if(WF_Point.back().X != x || WF_Point.back().Y != y){
+			same_cell_count = 0;
 			New_WF_Point.X = x;
 			New_WF_Point.Y = y;
+			New_WF_Point.TH = th;
 			WF_Point.push_back(New_WF_Point);
-			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
+			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, (uint)WF_Point.size());
+			ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, WF_Point.TH = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.back().TH, (uint)WF_Point.size());
 			return 1;
 		} else{
+			same_cell_count++;//for checking if the robot is traped
+			//ROS_INFO("same_cell_count = %d, still in the same cell.", same_cell_count);
 			return 0;//it means still in the same cell
 		}
 	} else{
+		same_cell_count = 0;
 		New_WF_Point.X = x;
 		New_WF_Point.Y = y;
+		New_WF_Point.TH = th;
 		WF_Point.push_back(New_WF_Point);
+		ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, WF_Point.TH = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.back().TH, WF_Point.size());
 		//ROS_INFO("WF_Point.X = %d, WF_Point.y = %d, size = %d", WF_Point.back().X, WF_Point.back().Y, WF_Point.size());
 		return 1;
 	}
@@ -1522,7 +1563,7 @@ void WF_Mark_Home_Point(void){
 	while (!WF_Home_Point.empty()){
 		x = WF_Home_Point.front().X;
 		y = WF_Home_Point.front().Y;
-		ROS_INFO("%s %d: WF_Home_Point.front().X = %d, WF_Home_Point.front().Y = %d, WF_Home_Point.size() = %d", __FUNCTION__, __LINE__, x, y, WF_Home_Point.size());
+		ROS_INFO("%s %d: WF_Home_Point.front().X = %d, WF_Home_Point.front().Y = %d, WF_Home_Point.size() = %d", __FUNCTION__, __LINE__, x, y, (uint)WF_Home_Point.size());
 		ROS_INFO("%s %d: xMin = %d, xMax = %d", __FUNCTION__, __LINE__, xMin, xMax);
 		WF_Home_Point.pop_front();
 
@@ -1533,4 +1574,78 @@ void WF_Mark_Home_Point(void){
 			}
 		}
 	}
+}
+
+/**************************************************************
+Function:WF_Check_Check_Angle
+Description:
+ *It mainly for checking whether the angle is same when wall
+ *follow end. When it check is loop closed, and is not isolated,
+ *it will check whether the angle of last 10 poses in WF_Point
+ *is same as the other same pose in the WF_Point except the last
+ *10 point. It can prevent from the case that the robot is in the
+ *narrow and long space when wall follow, and it will be checked
+ *as loop closed.
+ ***************************************************************/
+bool WF_Check_Angle(void) {
+	int32_t x, y;
+	int16_t th, former_th;
+	int16_t	th_diff;
+	int16_t	diff_limit = 1500;
+	int8_t	pass_count = 0;
+	int8_t	sum = 10;
+	bool	fail_flag = 0;
+	try{
+		for (int i = 1; i <= 10; i++) {
+			x = (WF_Point.at(WF_Point.size() - i)).X;
+			y = (WF_Point.at(WF_Point.size() - i)).Y;
+			th = (WF_Point.at(WF_Point.size() - i)).TH;
+			fail_flag = 0;
+
+			for (std::vector<Pose32_t>::reverse_iterator r_iter =  (WF_Point.rbegin() + i); r_iter != WF_Point.rend(); ++r_iter) {
+				if (r_iter->X == x && r_iter->Y == y) {
+					former_th = r_iter->TH;
+					ROS_INFO("r_iter->X = %d, r_iter->Y = %d, r_iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
+					th_diff = (abs(former_th - th));
+
+					if (th_diff > 1800) {
+						th_diff = 3600 - th_diff;
+					}
+
+					if (th_diff <= diff_limit) {
+						pass_count++;
+						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, diff_limit);
+						break;
+					} else {
+						fail_flag = 1;
+						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, diff_limit);
+					}
+				}
+				/*in case of the WF_Point no second same point, the reach_count++ caused by cleanning the block obstacle which 
+				 cost is 2 or 3, it will be set 1(CLEANED), at this situation the sum should sum--, it will happen when the robot
+				 get close to the left wall but there is no wall exist, then the robot can judge it is in the isolate island.*/
+				if ((r_iter == (WF_Point.rend() - 1)) && (fail_flag == 0)) {
+					sum--;
+					ROS_WARN("Can't find second same pose in WF_Point! sum--");
+				}
+			}
+		}
+
+		if (pass_count < sum) {
+			//in case of robot is always in the narrow and long space, when this count bigger than a threshold value, it will return 1
+			/*if (WF_check_isolate() == 0) {
+				ROS_WARN("Loop closed!return 1.");
+				return 1;
+			}*/
+			ROS_WARN("pass_count = %d, less than sum = %d. WF_Check_Angle Failed!", pass_count, sum);
+			return 0;
+		} else {
+			ROS_WARN("pass_count = %d, equal to sum = %d. WF_Check_Angle Succeed!", pass_count, sum);
+			return 1;
+		}
+	}
+	catch(const std::out_of_range& oor){
+		std::cerr << "Out of range error:" << oor.what() << '\n';
+	}
+	return 0;
 }

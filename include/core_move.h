@@ -58,6 +58,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 MapTouringType CM_MoveToPoint(Point32_t target);
 
 bool CM_Check_is_exploring();
+//bool CM_Check_is_exploring();
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y);
 uint8_t CM_MoveForward(void);
 

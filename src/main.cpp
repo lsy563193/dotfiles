@@ -28,6 +28,8 @@
 #include "verify.h"
 #endif
 
+void laser_pm_gpio(char val);
+
 void protect_function()
 {
 	//Bumper protect
@@ -41,30 +43,16 @@ void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
 	ROS_INFO("Waiting for robot sensor ready.");
-	while (!robot::instance()->robot_is_all_ready()) {
+	while (!robot::instance()->isAllReady()) {
 		usleep(1000);
 	}
 	ROS_INFO("Robot sensor ready.");
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
 
-	// Restart the gyro.
-	Set_Gyro_Off();
-	// Wait for 30ms to make sure the off command has been effectived.
-	usleep(30000);
-	// Set gyro on before wav_play can save the time for opening the gyro.
-	Set_Gyro_On();
-	// Wait for 0.5s to make sure gyro should be on after the wav_play().
 	wav_play(WAV_WELCOME_ILIFE);
 
-	Wait_For_Gyro_On();
-
 	protect_function();
-
-	// Beep for initializing completed.
-	Beep(6, 5, 0, 1);
-	usleep(80000);
-	Beep(3, 5, 0, 1);
 
 //	wav_play(WAV_BATTERY_CHARGE_DONE);
 	while(ros::ok()){
@@ -194,26 +182,22 @@ void *core_move_thread(void *)
 
 int main(int argc, char **argv)
 {
-	int			baudrate, ret1, core_move_thread_state, slam_type;
+	int			baudrate, ret1, core_move_thread_state;
 	bool		line_align_active, verify_ok = true;
 	pthread_t	core_move_thread_id;
 	std::string	serial_port;
 
+
+	laser_pm_gpio('1');
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
 
-	laser	laser_obj;
 	robot	robot_obj;
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 57600);
-	nh_private.param<bool>("line_align", line_align_active, false);
-	nh_private.param<int>("slam_type", slam_type, 0);
 
 	serial_init(serial_port.c_str(), baudrate);
-	robot::instance()->align_active(line_align_active);
-	robot::instance()->slam_type(slam_type);
-
 
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
@@ -246,5 +230,6 @@ int main(int argc, char **argv)
 	}
 
 	robotbase_deinit();
+	laser_pm_gpio('0');
 	return 0;
 }

@@ -14,7 +14,7 @@ FILE(GLOB PP_SRC
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp
-	src/motion_controler.cpp
+	src/motion_manage.cpp
 	src/movement.cpp
 	src/path_planning.cpp
 	src/random_runing.cpp
@@ -32,6 +32,7 @@ FILE(GLOB PP_SRC
 	src/wall_follow_multi.cpp
 	src/wall_follow_short.cpp
 	src/wav.cpp
+	src/slam.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

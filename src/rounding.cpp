@@ -36,6 +36,8 @@ uint8_t	should_mark = 0;
 
 RoundingType	rounding_type;
 
+extern uint8_t g_low_battery;
+
 void update_position(uint16_t heading) {
 	float   pos_x, pos_y;
 	int8_t	c, d, e;
@@ -46,8 +48,8 @@ void update_position(uint16_t heading) {
 	y = Map_GetYPos();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
@@ -119,6 +121,12 @@ void rounding_turn(uint8_t dir, uint16_t speed, uint16_t angle)
 		Round_Turn_Right(speed, angle);
 	}
 
+	if(Get_Error_Code() == Error_Code_Bumper)
+	{
+		/*----bumper jamed while turning----*/
+		return ;
+	}
+
 	if (Stop_Event())
 	{
 		ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -144,10 +152,10 @@ void rounding_move_back()
 
 	should_mark = 0;
 
-	pos_x = robot::instance()->robot_get_position_x();
-	pos_y = robot::instance()->robot_get_position_y();
+	pos_x = robot::instance()->getPositionX();
+	pos_y = robot::instance()->getPositionY();
 	while (1) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getPositionX(), 2) + powf(pos_y - robot::instance()->getPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -226,6 +234,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 	int16_t		Left_Wall_Buffer[3] = { 0 }, Right_Wall_Buffer[3] = { 0 };
 	int32_t		y_start, R = 0, Proportion = 0, Delta = 0, Previous = 0;
 	uint32_t	WorkTime_Buffer = 0, Temp_Status = 0, Temp_Rcon_Status = 0;
+	// Rounding_Timer is for checking whether it is trapped and can't escape.
+	uint32_t	Rounding_Timer = time(NULL);
 
 	volatile uint8_t	Motor_Check_Code = 0;
 	volatile int32_t	L_B_Counter = 0, Wall_Distance = 400, Wall_Straight_Distance, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
@@ -247,6 +257,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 		}
 		//rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 450 : 1350));
+		if(Get_Error_Code() == Error_Code_Bumper)
+		{
+			/*----bumper jamed while turning----*/
+			return 1;
+		}
 	}
 	else if (!(Origin_Bumper_Status & LeftBumperTrig) && (Origin_Bumper_Status & RightBumperTrig))
 	{
@@ -260,11 +275,21 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			ROS_INFO("%s %d: Right bumper ROUNDING_RIGHT and turn 45 degrees.", __FUNCTION__, __LINE__);
 		}
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, (type == ROUNDING_LEFT ? 1350 : 450));
+		if(Get_Error_Code() == Error_Code_Bumper)
+		{
+			/*----bumper jamed while turning----*/
+			return 1;
+		}
 	}
 	else
 	{
 		// If bumper not hit or it just hit the front (Both left and right bumper triggered, robot should turn 90 degrees.
 		rounding_turn((type == ROUNDING_LEFT ? 1 : 0), TURN_SPEED, 900);
+		if(Get_Error_Code() == Error_Code_Bumper)
+		{
+			/*----bumper jamed while turning----*/
+			return 1;
+		}
 		// Debug
 		if (type == ROUNDING_LEFT)
 		{
@@ -298,6 +323,14 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			return 0;
 		}
 
+		// Check rounding timeout
+		if ((time(NULL) - Rounding_Timer) > ESCAPE_TRAPPED_TIME)
+		{
+			ROS_WARN("%s %d: Rounding timeout, should be trapped.", __FUNCTION__, __LINE__);
+			Stop_Brifly();
+			return 0;
+		}
+
 		if (Get_Rcon_Remote() > 0) {
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
@@ -305,7 +338,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					Stop_Brifly();
 					return 0;
 				}
-				if (Remote_Key(Remote_Max) && !lowBattery) {
+				if (Remote_Key(Remote_Max) && !g_low_battery) {
 					Reset_Rcon_Remote();
 					Switch_VacMode(true);
 				}
@@ -348,6 +381,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 				// Turn right for 135 degrees.
 				rounding_turn(1, TURN_SPEED, 1350);
+				if(Get_Error_Code() == Error_Code_Bumper)
+				{
+					/*----bumper jamed while turning----*/
+					return 1;
+				}
 				if (Stop_Event())
 				{
 					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -359,8 +397,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			if (Temp_Bumper_Status & LeftBumperTrig) {
 				Set_Wheel_Speed(0, 0);
-				if (robot::instance()->robot_get_left_wall() > (Wall_Low_Limit)) {
-					Wall_Distance = robot::instance()->robot_get_left_wall() / 3;
+				if (robot::instance()->getLeftWall() > (Wall_Low_Limit)) {
+					Wall_Distance = robot::instance()->getLeftWall() / 3;
 				} else {
 					Wall_Distance += 200;
 				}
@@ -382,6 +420,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn right for 90 degrees.
 					rounding_turn(1, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -398,6 +441,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn right for 30 degrees.
 					rounding_turn(1, TURN_SPEED, 300);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -423,6 +471,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(1, TURN_SPEED, 850);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFLRT = 0;
 					}
 				} else if(Temp_Rcon_Status & RconL_HomeT){
@@ -431,6 +484,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(1, TURN_SPEED, 300);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeLT = 0;
 					}
 				} else if(Temp_Rcon_Status & RconFL2_HomeT){
@@ -439,6 +497,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(1, TURN_SPEED, 600);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFL2T = 0;
 					}
 				// While rounding left, no need to detect right side rcon.
@@ -475,6 +538,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 300);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -484,6 +552,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 600);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -503,6 +576,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -512,6 +590,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 900);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -521,6 +604,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(1, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -533,7 +621,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if (Wall_Distance >= 200) {
 				Left_Wall_Buffer[2] = Left_Wall_Buffer[1];
 				Left_Wall_Buffer[1] = Left_Wall_Buffer[0];
-				Left_Wall_Buffer[0] = robot::instance()->robot_get_left_wall();
+				Left_Wall_Buffer[0] = robot::instance()->getLeftWall();
 				if (Left_Wall_Buffer[0] < 100) {
 					if ((Left_Wall_Buffer[1] - Left_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 						if ((Left_Wall_Buffer[2] - Left_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -552,7 +640,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-				Proportion = robot::instance()->robot_get_left_wall();
+				Proportion = robot::instance()->getLeftWall();
 
 				Proportion = Proportion * 100 / Wall_Distance;
 
@@ -620,15 +708,30 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 						// Turn right for 80 degrees.
 						rounding_turn(1, TURN_SPEED, 800);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					} else {
 						// Turn right for 40 degrees.
 						rounding_turn(1, TURN_SPEED, 400);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					}
 				} else {
 					// Turn right for 90 degrees.
 					rounding_turn(1, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					Move_Forward(15, 15);
 					/*
 					if (!Is_MoveWithRemote()) {
@@ -651,6 +754,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 				}
 				// Turn left for 135 degrees.
 				rounding_turn(0, TURN_SPEED, 1350);
+				if(Get_Error_Code() == Error_Code_Bumper)
+				{
+					/*----bumper jamed while turning----*/
+					return 1;
+				}
 				if (Stop_Event())
 				{
 					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -662,8 +770,8 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			if (Temp_Bumper_Status & RightBumperTrig) {
 				Set_Wheel_Speed(0, 0);
-				if (robot::instance()->robot_get_right_wall() > (Wall_Low_Limit)) {
-					Wall_Distance = robot::instance()->robot_get_right_wall() / 3;
+				if (robot::instance()->getRightWall() > (Wall_Low_Limit)) {
+					Wall_Distance = robot::instance()->getRightWall() / 3;
 				} else {
 					Wall_Distance += 200;
 				}
@@ -685,6 +793,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn left for 90 degrees.
 					rounding_turn(0, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -701,6 +814,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					}
 					// Turn left for 30 degrees.
 					rounding_turn(0, TURN_SPEED, 300);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					if (Stop_Event())
 					{
 						ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
@@ -726,6 +844,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(0, TURN_SPEED, 850);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFLRT = 0;
 					}
 				// While rounding right, no need to detect left side rcon.
@@ -737,6 +860,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(0, TURN_SPEED, 950);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeFR2T = 0;
 					}
 				} else if(Temp_Rcon_Status & RconR_HomeT){
@@ -745,6 +873,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					{
 						CM_SetHome(Map_GetXCount(), Map_GetYCount());
 						rounding_turn(0, TURN_SPEED, 1100);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						HomeRT = 0;
 					}
 				}
@@ -778,6 +911,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 300);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -787,6 +925,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 600);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break;
 					}
@@ -806,6 +949,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -815,6 +963,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 900);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -824,6 +977,11 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 						if (!Stop_Event())
 						{
 							rounding_turn(0, TURN_SPEED, 1350);
+							if(Get_Error_Code() == Error_Code_Bumper)
+							{
+								/*----bumper jamed while turning----*/
+								return 1;
+							}
 						}
 						break; 
 					}
@@ -836,7 +994,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 			if (Wall_Distance >= 200) {
 				Right_Wall_Buffer[2] = Right_Wall_Buffer[1];
 				Right_Wall_Buffer[1] = Right_Wall_Buffer[0];
-				Right_Wall_Buffer[0] = robot::instance()->robot_get_right_wall();
+				Right_Wall_Buffer[0] = robot::instance()->getRightWall();
 				if (Right_Wall_Buffer[0] < 100) {
 					if ((Right_Wall_Buffer[1] - Right_Wall_Buffer[0]) > (Wall_Distance / 25)) {
 						if ((Right_Wall_Buffer[2] - Right_Wall_Buffer[1]) > (Wall_Distance / 25)) {
@@ -855,7 +1013,7 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 			if (Get_FrontOBS() < Get_FrontOBST_Value()) {
-				Proportion = robot::instance()->robot_get_right_wall();
+				Proportion = robot::instance()->getRightWall();
 
 				Proportion = Proportion * 100 / Wall_Distance;
 
@@ -923,15 +1081,30 @@ uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Stat
 					if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 						// Turn left for 80 degrees.
 						rounding_turn(0, TURN_SPEED, 800);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					} else {
 						// Turn left for 40 degrees.
 						rounding_turn(0, TURN_SPEED, 400);
+						if(Get_Error_Code() == Error_Code_Bumper)
+						{
+							/*----bumper jamed while turning----*/
+							return 1;
+						}
 						Move_Forward(15, 15);
 					}
 				} else {
 					// Turn left for 90 degrees.
 					rounding_turn(0, TURN_SPEED, 900);
+					if(Get_Error_Code() == Error_Code_Bumper)
+					{
+						/*----bumper jamed while turning----*/
+						return 1;
+					}
 					Move_Forward(15, 15);
 					/*
 					if (!Is_MoveWithRemote()) {

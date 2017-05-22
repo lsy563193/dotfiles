@@ -65,3 +65,9 @@ int8 gyro_dymc
 
 #plan, true: robot got a plan, false: nothing had happened
 bool plan
+
+#vacuum self check status
+#0x00:not in checking mode / check finished and no error
+#0x10:checking
+#0x20:check finished and vacuum error
+uint8 vacuum_selfcheck_status

@@ -20,7 +20,8 @@
 #include "map.h"
 #include "gyro.h"
 #include "wav.h"
-#include "motion_controler.h"
+#include "motion_manage.h"
+#include "slam.h"
 #include <ros/ros.h>
 #include <time.h>
 #ifdef Turn_Speed
@@ -517,19 +518,16 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		Map_Initialize();//init map 
 		PathPlanning_Initialize(&homepoint.front().X,&homepoint.front().Y);//init pathplan 
 		robot::instance()->init_mumber();// for init robot member
-		Motion_controller motion;//start slam
 
+		MotionManage motion;//start slam
 		/*----check slam open or not ------*/
-		if(Is_Slam_Ready){
-			Is_Slam_Ready = 0;
-		}
-		else{
-			Is_Slam_Ready = 0;
+		if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
 			Set_Error_Code(Error_Code_Slam);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			//wav_play(WAV_TEST_LIDAR);
 			return;
 		}
+
 		/*-----check stop event ----------*/
 		if(Stop_Event()){
 			while(Get_Key_Press() & KEY_CLEAN){

@@ -33,7 +33,8 @@
 
 #include <wav.h>
 //#include "../include/obstacle_detector.h"
-#include <motion_controler.h>
+#include <motion_manage.h>
+#include <slam.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -73,8 +74,6 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH (2 * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH / MOVE_TO_CELL_SEARCH_INCREMENT + 1)
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
-extern bool is_line_angle_offset;
-
 extern uint32_t cur_wtime;//temporary work time
 
 // This list is for storing the position that robot sees the charger stub.
@@ -87,15 +86,13 @@ Point32_t New_Home_Point;
 Point32_t Continue_Point;
 #endif
 
-uint8_t map_touring_cancel = 0;
-
-uint8_t	go_home = 0;
-uint8_t	remote_go_home = 0;
-uint8_t	from_station = 0;
-uint8_t lowBattery = 0;
-int16_t map_gyro_offset = 0;
-
-uint8_t	should_follow_wall = 0;
+uint8_t g_map_touring_cancel = 0;
+uint8_t	g_go_home = 0;
+uint8_t	g_remote_go_home = 0;
+uint8_t	g_from_station = 0;
+uint8_t g_low_battery = 0;
+int16_t g_map_gyro_offset = 0;
+uint8_t	g_should_follow_wall = 0;
 
 Point16_t relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
@@ -103,43 +100,39 @@ extern PositionType positions[];
 
 extern int16_t xMin, xMax, yMin, yMax;
 
-extern volatile uint8_t cleaning_mode;
-
 // This status is for rounding function to decide the angle it should turn.
-uint8_t Bumper_Status_For_Rounding;
-
-extern bool Is_Slam_Ready;//For checking if the slam is initialized finish
+uint8_t g_bumper_status_for_rounding;
 
 // This time count is for checking how many times of 20ms did the user press the key.
-uint16_t Press_Time = 0;
+uint16_t g_press_time = 0;
 
 // This flag is for checking whether map boundary is created.
-bool Map_Boundary_Created = false;
+bool g_map_boundary_created = false;
 
-// This pnt16ArTmp is for trapped reference point.
-Point16_t pnt16ArTmp[3];
+// This g_pnt16_ar_tmp is for trapped reference point.
+Point16_t g_pnt16_ar_tmp[3];
 
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cellToCount(countToCell(Map_GetRelativeX(heading, offset_lat, offset_long)));
 	*y = cellToCount(countToCell(Map_GetRelativeY(heading, offset_lat, offset_long)));
 }
-
+/*
 //not yet minus the x_off
 bool CM_Check_is_exploring()
 {
 	int	index, plus_sign, a_max;
-	float	position_x, position_y, resolution, search_length = 0.10, search_width = 0.303; //unit for meter
+	float	position_x_, position_y_, resolution, search_length = 0.10, search_width = 0.303; //unit for meter
 	double	yaw, origin_x, origin_y;
 
 	uint32_t	width,	height;
 
 	std::vector<int8_t>	*p_map_data;
 
-	position_x = robot::instance()->robot_get_position_x();
-	position_y = robot::instance()->robot_get_position_y();
-	yaw = robot::instance()->robot_get_map_yaw();
-	yaw = robot::instance()->robot_get_obs_left();
+	position_x_ = robot::instance()->getPositionX();
+	position_y_ = robot::instance()->getPositionY();
+	yaw = robot::instance()->getMapYaw();
+	yaw = robot::instance()->getObsLeft();
 	
 	width = robot::instance()->robot_get_width();
 	height = robot::instance()->robot_get_height();
@@ -148,17 +141,17 @@ bool CM_Check_is_exploring()
 	origin_y = robot::instance()->robot_get_origin_y();
 	
 
-	p_map_data = robot::instance()->robot_get_map_data();
+	p_map_data = robot::instance()->getMapData();
 	if (std::abs(yaw) <= (M_PI / 2) ){
 		plus_sign = 1;
 		a_max = (plus_sign * std::abs(int(round(search_length * sin(std::abs(yaw)) / 0.05))));
 		for (int a = 0; a <= a_max; a = a + 1) {		//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
-			float x = position_x + (a / tan(std::abs(yaw))) * 0.05;
-			float y = position_y + a * 0.05;
+			float x = position_x_ + (a / tan(std::abs(yaw))) * 0.05;
+			float y = position_y_ + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1){
 				float x_1 = x + b * 0.05;
-				/*over map scope*/
+				//over map scope
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))){
 					ROS_WARN("over scope");
 				} else {
@@ -182,11 +175,11 @@ bool CM_Check_is_exploring()
 		a_max = (plus_sign * std::abs(int(round(search_length * sin(std::abs(yaw)) / 0.05))));
 		for (int a = 0; a >= a_max; a = a - 1) {	//n = (search_length * cos(yaw)) / resolution
 			int c = 0;
-			float x = position_x + (a / tan(std::abs(yaw))) * 0.05;
-			float y = position_y + a * 0.05;
+			float x = position_x_ + (a / tan(std::abs(yaw))) * 0.05;
+			float y = position_y_ + a * 0.05;
 			for (int b = -int((round(search_width / 0.05)) / 2) + c; b <= int((round(search_width / 0.05)) / 2); b = b + 1) {
 				float x_1 = x + b * 0.05;
-				/*over map scope*/
+				//*over map scope
 				if ((x_1 < origin_x ) or (x_1 > (width * 0.05) ) or (y < origin_y) or (y > (height * 0.05))) {
 					ROS_WARN("over scope");
 				} else {
@@ -208,7 +201,7 @@ bool CM_Check_is_exploring()
 	}
 
 	return 0;
-}
+}*/
 
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y )
 {
@@ -236,8 +229,8 @@ void CM_update_position(uint16_t heading) {
 	x = Map_GetXPos();
 	y = Map_GetYPos();
 
-	pos_x = robot::instance()->robot_get_position_x() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->robot_get_position_y() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
 	if (x != Map_GetXPos() || y != Map_GetYPos()) {
 		for (c = 1; c >= -1; --c) {
@@ -251,7 +244,7 @@ void CM_update_position(uint16_t heading) {
 				}
 			}
 		}
-		robot::instance() -> pub_clean_markers();
+		robot::instance()->pubCleanMarkers();
 	}
 
 #if (ROBOT_SIZE == 5)
@@ -659,12 +652,12 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max)) {
 				if (Remote_Key(Remote_Max)) {
-					if (lowBattery == 0) {
+					if (g_low_battery == 0) {
 						Switch_VacMode(true);
 					}
 					Reset_Rcon_Remote();
 				}
-				if (Remote_Key(Remote_Home) && go_home == 0) {
+				if (Remote_Key(Remote_Home) && g_go_home == 0) {
 					Stop_Brifly();
 					Set_BLDC_Speed(Vac_Speed_NormalL);
 					Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
@@ -731,17 +724,13 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			Set_Wheel_Speed(0, 0);
 
 #ifdef BUMPER_ERROR
-			if (Get_Bumper_Status()) {
-				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-				CM_CorBack(COR_BACK_20MM);
-
-				if (Stop_Event())
-				{
-					Stop_Brifly();
-					ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-					return;
-				}
-
+			if (Is_Bumper_Jamed())
+			{
+				ROS_INFO("%s, %d: Bumper Jamed in CM_HeadToCourse!", __FUNCTION__, __LINE__);
+				return ;
+			}
+			else
+			{
 				Diff = Angle - Gyro_GetAngle();
 				while (Diff >= 1800) {
 					Diff = Diff - 3600;
@@ -763,53 +752,7 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 					Set_Dir_Right();
 					action = ACTION_RT;
 				}
-				if (Get_Bumper_Status()) {
-					CM_CorBack(COR_BACK_20MM);
 
-					if (Stop_Event())
-					{
-						Stop_Brifly();
-						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-						return;
-					}
-
-					Diff = Angle - Gyro_GetAngle();
-					while (Diff >= 1800) {
-						Diff = Diff - 3600;
-					}
-
-					while (Diff <= (-1800)) {
-						Diff = Diff + 3600;
-					}
-
-					ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()));
-					if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
-						ROS_INFO("Turn Left");
-
-						Set_Dir_Left();
-						action = ACTION_LT;
-					} else if ((Diff <= 0) && (Diff >= (-1800))) {
-						ROS_INFO("Turn Right");
-
-						Set_Dir_Right();
-						action = ACTION_RT;
-					}
-					if (Get_Bumper_Status()) {
-						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-						CM_CorBack(COR_BACK_20MM);
-
-						if (Stop_Event())
-						{
-							Stop_Brifly();
-							ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-							return;
-						}
-
-						Set_Error_Code(Error_Code_Bumper);
-						Stop_Brifly();
-						return;
-					}
-				}
 			}
 
 #endif
@@ -875,10 +818,10 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	position.X = Map_GetXCount();
 	position.Y = Map_GetYCount();
 
-	// Reset the Bumper_Status_For_Rounding.
-	Bumper_Status_For_Rounding = 0;
+	// Reset the g_bumper_status_for_rounding.
+	g_bumper_status_for_rounding = 0;
 
-	should_follow_wall = 0;
+	g_should_follow_wall = 0;
 
 	usleep(10000);
 	//10 second
@@ -910,28 +853,28 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
 		ROS_INFO("%s %d: Stop_Event in CM_HeadToCourse()", __FUNCTION__, __LINE__);
 		// Key release detection, if user has not release the key, don't do anything.
-		//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
+		//ROS_WARN("%s %d: g_press_time = %d", __FUNCTION__, __LINE__,  g_press_time);
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 			usleep(20000);
 #if MANUAL_PAUSE_CLEANING
-			Press_Time++;
-			if (Press_Time == 151)
+			g_press_time++;
+			if (g_press_time == 151)
 			{
 				Beep(1, 5, 0, 1);
 			}
 		}
-		if (Press_Time > 150)
+		if (g_press_time > 150)
 		{
-			if (robot::instance()->Is_Cleaning_Manual_Paused())
+			if (robot::instance()->isCleaningManualPaused())
 			{
-				robot::instance()->Reset_Cleaning_Manual_Pause();
+				robot::instance()->resetCleaningManualPause();
 			}
 		}
 		else
 		{
-			Press_Time = 0;
+			g_press_time = 0;
 #endif
 		}
 		usleep(10000);
@@ -952,7 +895,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	if (Get_LeftBrush_Stall())Set_LeftBrush_Stall(0);
 	if (Get_RightBrush_Stall())Set_RightBrush_Stall(0);
 
-	if (go_home == 1) {
+	if (g_go_home == 1) {
 		Set_VacMode(Vac_Normal,false);
 		Set_BLDC_Speed(Vac_Speed_NormalL);
 	}
@@ -990,15 +933,15 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		}
 
 		/* Check low battery event, if battery is low, stop. */
-		if (go_home == 1) {
-			if (Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power) && go_home != 1 ) {
+		if (g_go_home == 1) {
+			if (Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power) && g_go_home != 1 ) {
 				Stop_Brifly();
 				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
 				retval = MT_Battery;
 				break;
 			}
 		} else {
-			if (Check_Bat_SetMotors(Clean_Vac_Power, Clean_SideBrush_Power, Clean_MainBrush_Power) && go_home != 1 ) {
+			if (Check_Bat_SetMotors(Clean_Vac_Power, Clean_SideBrush_Power, Clean_MainBrush_Power) && g_go_home != 1 ) {
 				Stop_Brifly();
 				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
 				retval = MT_Battery;
@@ -1075,7 +1018,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 				Stop_Brifly();
 
-				should_follow_wall = 1;
+				g_should_follow_wall = 1;
 				isBumperTriggered = Get_Bumper_Status();
 				CM_update_map(action, isBumperTriggered);
 				retval = MT_None;
@@ -1155,7 +1098,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 #endif
 
 		Temp_Rcon_Status = Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT);
-		if (go_home == 0 && Temp_Rcon_Status) {
+		if (g_go_home == 0 && Temp_Rcon_Status) {
 			// It just clear the bits that are 1 in Temp_Rcon_Status has.
 			Set_Rcon_Status(Get_Rcon_Status() & (~Temp_Rcon_Status));
 			if (Temp_Rcon_Status & (RconFR_HomeT | RconFL_HomeT)) {
@@ -1268,7 +1211,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			isBumperTriggered = Get_Bumper_Status();
 			CM_update_map(action, isBumperTriggered);
 			retval = MT_None;
-			should_follow_wall = 1;
+			g_should_follow_wall = 1;
 			ROS_WARN("%s %d: OBS break, val: %d(%d)", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
 			break;
 		}
@@ -1277,11 +1220,11 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 		isBumperTriggered = Get_Bumper_Status();
 		if (isBumperTriggered) {
 			// Mark the status for rounding function.
-			Bumper_Status_For_Rounding = isBumperTriggered;
+			g_bumper_status_for_rounding = isBumperTriggered;
 
 			Stop_Brifly();
 			CM_update_map_bumper(action, isBumperTriggered);
-			//robot::instance()->pub_bumper_markers();
+			//robot::instance()->pubBumperMarkers();
 
 			ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 			CM_CorBack(COR_BACK_20MM);
@@ -1293,54 +1236,18 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			}
 
 #ifdef BUMPER_ERROR
-			if (Get_Bumper_Status()) {
-				ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-				CM_CorBack(COR_BACK_20MM);
-				if (Stop_Event())
-				{
-					ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-					retval = MT_Key_Clean;
-					break;
-				}
-				if (Get_Bumper_Status()) {
-					CM_CorBack(COR_BACK_20MM);
-					if (Stop_Event())
-					{
-						ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-						retval = MT_Key_Clean;
-						break;
-					}
-					if (Get_Bumper_Status()) {
-						ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-						CM_CorBack(COR_BACK_20MM);
-						if (Stop_Event())
-						{
-							ROS_WARN("%s %d: Stop event in CM_CorBack!", __FUNCTION__, __LINE__);
-							retval = MT_Key_Clean;
-							break;
-						}
-						Set_Error_Code(Error_Code_Bumper);
-						Stop_Brifly();
-						// If bumper jam, wait for manual release and it can keep on.(Convenient for testing)
-						//retval = MT_Key_Clean;
-						ROS_WARN("%s %d: bumper jam break! Please manual release the bumper!", __FUNCTION__, __LINE__);
-						while (Get_Bumper_Status()){
-							// Sleep for 2s and detect again, and beep to alarm in the first 0.5s
-//							Beep(3, 25, 0, 1);
-							usleep(2000000);
-						}
-						//break;
-					}
-				}
+			if(Is_Bumper_Jamed())
+			{
+				retval = MT_Key_Clean;
+				break;
 			}
-
 #endif
 
 			Stop_Brifly();
 			//isBumperTriggered = Get_Bumper_Status();
 			CM_update_map(action, isBumperTriggered);
 			retval = MT_None;
-			should_follow_wall = 1;
+			g_should_follow_wall = 1;
 			ROS_WARN("%s %d: bumper break!", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -1472,8 +1379,8 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			Base_Speed -= 3;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}
-		else if (laser::instance()->laser_obstcal_detected(0.2, 0, -1.0) == true) {
-			//ROS_INFO("%s %d: laser detected obstcal, slow down!", __FUNCTION__, __LINE__);
+		else if (MotionManage::s_laser->laser_obstcal_detected(0.2, 0, -1.0) == true) {
+			//ROS_INFO("%s %d: Laser detected obstcal, slow down!", __FUNCTION__, __LINE__);
 			Integrated = 0;
 			Rotate_Angle = 0;
 			Base_Speed -= 3;
@@ -1526,7 +1433,7 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 	CM_update_position(Gyro_GetAngle());
 
 	ROS_INFO("%s %d: move to point: %d\tGyro Calibration: %d", __FUNCTION__, __LINE__, retval, Gyro_GetCalibration());
-	robot::instance()->robot_display_positions();
+	robot::instance()->displayPositions();
 	usleep(10000);
 
 	return retval;
@@ -1566,7 +1473,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 	RoundingType	rounding_type = ROUNDING_NONE;
 
 	ROS_INFO("Enter rounding detection.");
-	if (should_follow_wall == 0 || Next_Point->Y == Map_GetYCount()) {
+	if (g_should_follow_wall == 0 || Next_Point->Y == Map_GetYCount()) {
 		return rounding_type;
 	}
 
@@ -1645,10 +1552,10 @@ uint8_t CM_resume_cleaning()
 	int8_t	state_for_continue_cleaning;
 
 	// Handle Continue Cleaning
-	if (go_home == 0 && robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (g_go_home == 0 && robot::instance()->isCleaningLowBatPaused_())
 	{
 		ROS_INFO("Go to continue point: (%d, %d), targets left.", countToCell(Continue_Point.X), countToCell(Continue_Point.Y));
-		lowBattery = 0;
+		g_low_battery = 0;
 
 		// Reset the cleaning pause flag.
 		CM_reset_cleaning_low_bat_pause();
@@ -1681,18 +1588,18 @@ uint8_t CM_resume_cleaning()
 		else if (state_for_continue_cleaning == -4)
 		{
 			ROS_INFO("Remote home pressed, go home.");
-			remote_go_home = 1;
-			go_home = 1;
+			g_remote_go_home = 1;
+			g_go_home = 1;
 		}
 		else if (state_for_continue_cleaning == -6)
 		{
-			ROS_INFO("Low battery go home. go_home = %d", go_home);
-			// go_home has been set to 1.
+			ROS_INFO("Low battery go home. g_go_home = %d", g_go_home);
+			// g_go_home has been set to 1.
 		}
 		else if (state_for_continue_cleaning == -7)
 		{
 			ROS_INFO("Go home and near home now.");
-			// go_home has been set to 1.
+			// g_go_home has been set to 1.
 		}
 	}
 #endif
@@ -1717,13 +1624,13 @@ int CM_cleaning()
 	retval = 0;
 	quit = false;
 #if MANUAL_PAUSE_CLEANING
-	// Checking go_home is for case that manual pause when robot going home.
-	while (ros::ok() && quit == false && go_home == 0) {
+	// Checking g_go_home is for case that manual pause when robot going home.
+	while (ros::ok() && quit == false && g_go_home == 0) {
 #else
 	while (ros::ok() && quit == false) {
 #endif
-		if (map_touring_cancel == 1) {
-			ROS_WARN("%s %d: map_touring_cancel = 1.", __FUNCTION__, __LINE__);
+		if (g_map_touring_cancel == 1) {
+			ROS_WARN("%s %d: g_map_touring_cancel = 1.", __FUNCTION__, __LINE__);
 			CM_ResetGoHome();
 			quit = true;
 			retval = -1;
@@ -1747,7 +1654,7 @@ int CM_cleaning()
 		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 
 		if (state == 0) {		//No target point
-			go_home = 1;
+			g_go_home = 1;
 			quit = true;
 		} else if (state == 1) {
 			ROS_INFO("Move to target-----------------------------");
@@ -1760,12 +1667,18 @@ int CM_cleaning()
 
 			if (rounding_type != ROUNDING_NONE) {
 				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
-				rounding(rounding_type, Next_Point, Bumper_Status_For_Rounding);
+				if(rounding(rounding_type, Next_Point, g_bumper_status_for_rounding))
+				{
+					CM_ResetGoHome();
+					ROS_WARN("%s, %d: Reset gohome here.", __FUNCTION__, __LINE__);
+					quit = true;
+					retval = -1;
+				}
 			} else {
 				mt_state = CM_MoveToPoint(Next_Point);
 			}
 
-			if (y_current == countToCell(Next_Point.Y)) {
+			if (y_current == countToCell(Next_Point.Y) && quit == false) {
 				x = Map_GetXPos();
 				y = Map_GetYPos();
 				if (x_current != x ) {
@@ -1791,7 +1704,7 @@ int CM_cleaning()
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Remote_Home) {
-				go_home = 1;
+				g_go_home = 1;
 				Stop_Brifly();
 				quit = true;
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
@@ -1801,21 +1714,21 @@ int CM_cleaning()
 				quit = true;
 				retval = -1;
 			} else if (mt_state == MT_Battery_Home) {
-				go_home = 1;
+				g_go_home = 1;
 				Stop_Brifly();
 				quit = true;
 			}
 		} else if (state == 2) {		// Trapped
 			state = Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 
-			if ( map_touring_cancel == 1 ) {
+			if ( g_map_touring_cancel == 1 ) {
 				CM_ResetGoHome();
 				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
 				quit = true;
 				retval = -1;
 			}
 
-			if ( go_home == 1 ) {
+			if ( g_go_home == 1 ) {
 				quit = true;
 			}
 
@@ -1835,9 +1748,9 @@ int CM_cleaning()
 void CM_reset_cleaning_low_bat_pause()
 {
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused()) {
+	if (robot::instance()->isCleaningLowBatPaused_()) {
 		// Due to robot can't successfully go back to charger stub, exit conintue cleaning.
-		robot::instance()->Reset_Cleaning_Low_Bat_Pause();
+		robot::instance()->resetCleaningLowBatPause_();
 	}
 #endif
 }
@@ -1845,7 +1758,7 @@ void CM_reset_cleaning_low_bat_pause()
 void CM_go_home()
 {
 
-	if(robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if(robot::instance()->isCleaningLowBatPaused_())
 		wav_play(WAV_BATTERY_LOW);
 	wav_play(WAV_BACK_TO_CHARGER);
 
@@ -1856,7 +1769,7 @@ void CM_go_home()
 
 	state = -1;
 	while (ros::ok()) {
-		if (map_touring_cancel == 1) {
+		if (g_map_touring_cancel == 1) {
 			return;
 		}
 
@@ -1869,18 +1782,18 @@ void CM_go_home()
 			return;
 		}
 
-		if (remote_go_home == 1) {
+		if (g_remote_go_home == 1) {
 			SetHomeRemote();
 		}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		if (!robot::instance()->Is_Cleaning_Low_Bat_Paused() && !Map_Boundary_Created)
+		if (!robot::instance()->isCleaningLowBatPaused_() && !g_map_boundary_created)
 		{
 			//2.2-1.3 Path to unclean area
 			CM_create_home_boundary();
 		}
 #else
-		if (!Map_Boundary_Created)
+		if (!g_map_boundary_created)
 		{
 			CM_create_home_boundary();
 		}
@@ -1899,7 +1812,7 @@ void CM_go_home()
 			tmpPnt.X = countToCell(Home_Point.front().X);
 			tmpPnt.Y = countToCell(Home_Point.front().Y);
 			// Delete the first home point, it works like a stack.
-			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, (uint)Home_Point.size());
 			Home_Point.pop_front();
 		}
 		while (ros::ok())
@@ -1920,7 +1833,7 @@ void CM_go_home()
 					usleep(100000);
 				}
 
-				if (from_station >= 1) {
+				if (g_from_station >= 1) {
 					Set_Clean_Mode(Clean_Mode_GoHome);
 					ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
 				} else {
@@ -1980,7 +1893,7 @@ void CM_go_home()
 				CM_SetHome(New_Home_Point.X, New_Home_Point.Y);
 
 				Reset_Stop_Event_Status();
-				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, Home_Point.size());
+				ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, (uint)Home_Point.size());
 
 				cur_wtime = 0;
 				ROS_INFO("%s ,%d ,set cur_wtime to zero",__FUNCTION__,__LINE__);
@@ -1988,7 +1901,7 @@ void CM_go_home()
 #endif
 			} else if (state == 1 || state == -7) {
 				// state == 1 means robot has reached the saved point.
-				// state = -7 means go_home == 1 and it is near the charger stub.
+				// state = -7 means g_go_home == 1 and it is near the charger stub.
 				// Call GoHome() function to try to go to charger stub.
 				ROS_WARN("Call GoHome()");
 				GoHome();
@@ -2003,7 +1916,7 @@ void CM_go_home()
 				if (Get_Clean_Mode() == Clean_Mode_Charging)
 				{
 #if CONTINUE_CLEANING_AFTER_CHARGE
-					if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+					if (robot::instance()->isCleaningLowBatPaused_())
 					{
 						ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 						cur_wtime = cur_wtime+Get_Work_Time();//store current time 
@@ -2054,7 +1967,7 @@ void CM_go_home()
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 
 						Reset_Stop_Event_Status();
-						ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, Home_Point.size());
+						ROS_INFO("%s %d: Pause cleanning, cleaning time: %d(s), Home_Point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime, (uint)Home_Point.size());
 						return;
 					}
 #endif
@@ -2073,8 +1986,9 @@ void CM_go_home()
 				else if (Home_Point.empty())
 				{
 					// If it is the last point, it means it it now at (0, 0).
-					if (from_station == 0) {
-						CM_HeadToCourse(ROTATE_TOP_SPEED, -robot::instance()->robot_get_home_angle());
+					if (g_from_station == 0) {
+						auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+						CM_HeadToCourse(ROTATE_TOP_SPEED, -angle);
 
 						if (Stop_Event())
 						{
@@ -2082,28 +1996,28 @@ void CM_go_home()
 //							Beep(5, 20, 0, 1);
 							ROS_INFO("%s %d: Stop evented in CM_HeadToCourse().", __FUNCTION__, __LINE__);
 							// Key release detection, if user has not release the key, don't do anything.
-							//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
+							//ROS_WARN("%s %d: g_press_time = %d", __FUNCTION__, __LINE__,  g_press_time);
 							while (Get_Key_Press() & KEY_CLEAN)
 							{
 								ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 								usleep(20000);
 #if MANUAL_PAUSE_CLEANING
-								Press_Time++;
-								if (Press_Time == 151)
+								g_press_time++;
+								if (g_press_time == 151)
 								{
 									Beep(1, 5, 0, 1);
 								}
 							}
-							if (Press_Time > 150)
+							if (g_press_time > 150)
 							{
-								if (robot::instance()->Is_Cleaning_Manual_Paused())
+								if (robot::instance()->isCleaningManualPaused())
 								{
-									robot::instance()->Reset_Cleaning_Manual_Pause();
+									robot::instance()->resetCleaningManualPause();
 								}
 							}
 							else
 							{
-								Press_Time = 0;
+								g_press_time = 0;
 #endif
 							}
 							// Key relaesed, then the touch status and stop event status should be cleared.
@@ -2117,7 +2031,7 @@ void CM_go_home()
 //						usleep(100000);
 //					}
 
-					if (from_station >= 1) {
+					if (g_from_station >= 1) {
 						Set_Clean_Mode(Clean_Mode_GoHome);
 						ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
 					} else {
@@ -2125,7 +2039,7 @@ void CM_go_home()
 					}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-					if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+					if (robot::instance()->isCleaningLowBatPaused_())
 					{
 						ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+cur_wtime);
 						CM_reset_cleaning_low_bat_pause();
@@ -2148,8 +2062,8 @@ void CM_go_home()
 			}
 			else if (state == -6)
 			{
-				// state == -6 means it detecteds low battery go home when go_home != 1, that's not possible.
-				ROS_INFO("%s %d: Robot detecteds low battery go home when go_home != 1, this message should not be printed, please check.", __FUNCTION__, __LINE__);
+				// state == -6 means it detecteds low battery go home when g_go_home != 1, that's not possible.
+				ROS_INFO("%s %d: Robot detecteds low battery go home when g_go_home != 1, this message should not be printed, please check.", __FUNCTION__, __LINE__);
 				continue;
 			}
 
@@ -2159,7 +2073,7 @@ void CM_go_home()
 				tmpPnt.X = countToCell(Home_Point.front().X);
 				tmpPnt.Y = countToCell(Home_Point.front().Y);
 				Home_Point.pop_front();
-				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, Home_Point.size());
+				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y, (uint)Home_Point.size());
 
 				/*
 				// In GoHome() function, it may set the clean mode to Clean_Mode_GoHome. But it is not appropriate here, because it might affect the mode detection in CM_MoveToCell() and make it return -4.
@@ -2180,27 +2094,26 @@ void CM_go_home()
 
 uint8_t CM_Touring(void)
 {
-	uint8_t Blink_LED = 0;
 	int16_t	i;
 
 	// Reset battery status
-	lowBattery = 0;
+	g_low_battery = 0;
 
 	Reset_Rcon_Status();
 
-	from_station = 0;
-	map_touring_cancel = 0;
+	g_from_station = 0;
+	g_map_touring_cancel = 0;
 
 	Set_LED(100,0);
 	Reset_MoveWithRemote();
 	Reset_Stop_Event_Status();
 
-	Press_Time = 0;
+	g_press_time = 0;
 
-	Point16_t tmpPnt;
+	Point16_t tmp_pnt;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (robot::instance()->isCleaningLowBatPaused_())
 	{
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
@@ -2208,7 +2121,7 @@ uint8_t CM_Touring(void)
 #endif
 	{
 #if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
 			ROS_WARN("Restore from manual pause");
 			wav_play(WAV_CLEANING_CONTINUE);
@@ -2228,7 +2141,7 @@ uint8_t CM_Touring(void)
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+				if (robot::instance()->isCleaningLowBatPaused_())
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
@@ -2236,9 +2149,9 @@ uint8_t CM_Touring(void)
 				}
 #endif
 #if MANUAL_PAUSE_CLEANING
-				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				if (robot::instance()->isCleaningManualPaused())
 				{
-					robot::instance()->Reset_Cleaning_Manual_Pause();
+					robot::instance()->resetCleaningManualPause();
 				}
 #endif
 //				Reset_Stop_Event_Status();
@@ -2303,7 +2216,7 @@ uint8_t CM_Touring(void)
 					Reset_Stop_Event_Status();
 				}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-				if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+				if (robot::instance()->isCleaningLowBatPaused_())
 				{
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
@@ -2313,9 +2226,9 @@ uint8_t CM_Touring(void)
 				}
 #endif
 #if MANUAL_PAUSE_CLEANING
-				if (robot::instance()->Is_Cleaning_Manual_Paused())
+				if (robot::instance()->isCleaningManualPaused())
 				{
-					robot::instance()->Reset_Cleaning_Manual_Pause();
+					robot::instance()->resetCleaningManualPause();
 				}
 #endif
 				return 0;
@@ -2323,7 +2236,7 @@ uint8_t CM_Touring(void)
 		}
 		Deceleration();
 		Stop_Brifly();
-		from_station = 1;
+		g_from_station = 1;
 	}
 	else
 	{
@@ -2337,30 +2250,12 @@ uint8_t CM_Touring(void)
 		Reset_Stop_Event_Status();
 	}
 
-	Blink_LED = 8;
 	Reset_Stop_Event_Status();
-	/*
-	ROS_INFO("while Blink_LED-----------------------------");
-	while (Blink_LED--) {
-		if (Stop_Event()) {
-			ROS_INFO("Stop_Event1-----------------------------");
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return 0;
-		}
-		usleep(200000);
-		if (Stop_Event()) {
-			ROS_INFO("Stop_Event2-----------------------------");
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return 0;
-		}
-		usleep(200000);
-	}
-	*/
 
 	New_Home_Point.X = New_Home_Point.Y = 0;
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (robot::instance()->isCleaningLowBatPaused_())
 	{
 		if (Get_Rcon_Status())
 		{
@@ -2378,7 +2273,7 @@ uint8_t CM_Touring(void)
 #endif
 	{
 #if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
 			Reset_Work_Time();
 			// Don't initialize the map, etc.
@@ -2397,12 +2292,12 @@ uint8_t CM_Touring(void)
 			Home_Point.push_front(New_Home_Point);
 
 			// Mark all the trapped reference points as (0, 0).
-			tmpPnt.X = 0;
-			tmpPnt.Y = 0;
+			tmp_pnt.X = 0;
+			tmp_pnt.Y = 0;
 			for ( int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
-				pnt16ArTmp[i] = tmpPnt;
+				g_pnt16_ar_tmp[i] = tmp_pnt;
 			}
-			path_escape_set_trapped_cell(pnt16ArTmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
+			path_escape_set_trapped_cell(g_pnt16_ar_tmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
 
 			ROS_INFO("Map_Initialize-----------------------------");
 			Map_Initialize();
@@ -2413,7 +2308,7 @@ uint8_t CM_Touring(void)
 			/* usleep for checking whether robot is in the station */
 			usleep(20000);
 
-			robot::instance()->init_mumber();// for init robot member
+			robot::instance()->initOdomPosition();// for reset odom position to zero.
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
 			// If it it the first time cleaning, initialize the Continue_Point.
@@ -2423,15 +2318,15 @@ uint8_t CM_Touring(void)
 
 	}
 
-	Motion_controller motion;
+	MotionManage motion;
 
 //	Set_Clean_Mode(Clean_Mode_Navigation);
 //	return 0;
 #if MANUAL_PAUSE_CLEANING
 	// Clear the pause status.
-	if (robot::instance()->Is_Cleaning_Manual_Paused())
+	if (robot::instance()->isCleaningManualPaused())
 	{
-		robot::instance()->Reset_Cleaning_Manual_Pause();
+		robot::instance()->resetCleaningManualPause();
 	}
 #endif
 
@@ -2451,19 +2346,17 @@ uint8_t CM_Touring(void)
 		ROS_INFO("%s ,%d ,set cur_wtime to zero ",__FUNCTION__,__LINE__);
 #endif
 #if MANUAL_PAUSE_CLEANING
-		if (robot::instance()->Is_Cleaning_Manual_Paused())
+		if (robot::instance()->isCleaningManualPaused())
 		{
-			robot::instance()->Reset_Cleaning_Manual_Pause();
+			robot::instance()->resetCleaningManualPause();
 		}
 #endif
 		return 0;
 	}
 
 	//Check if slam is ok
-	if (Is_Slam_Ready) {
-		Is_Slam_Ready = 0;
-	} else {
-		Is_Slam_Ready = 0;
+	// If obstacle detector launch failed, s_slam->is_map_ready() will not return true.
+	if (! MotionManage::s_laser->is_ready() ||! MotionManage::s_slam->is_map_ready()) {
 		Set_Error_Code(Error_Code_Slam);
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -2481,48 +2374,10 @@ uint8_t CM_Touring(void)
 		return 0;
 	}
 		/* usleep for checking whether robot is in the station */
+
+//	Set_Clean_Mode(Clean_Mode_Navigation);
+//	return 0;
 	usleep(700);
-	if (from_station == 1 && !robot::instance()->align_active()) {
-		ROS_INFO("%s %d: Turn 45 degree to the wall", __FUNCTION__, __LINE__);
-
-		CM_HeadToCourse(ROTATE_TOP_SPEED, Gyro_GetAngle() - 450);
-
-		if (Stop_Event()) {
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			ROS_WARN("%s %d: Check: Stop event! return 0", __FUNCTION__, __LINE__);
-//			Beep(5, 20, 0, 1);
-			Stop_Brifly();
-			// Key release detection, if user has not release the key, don't do anything.
-			//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
-			while (Get_Key_Press() & KEY_CLEAN)
-			{
-				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-				usleep(20000);
-#if MANUAL_PAUSE_CLEANING
-				Press_Time++;
-				if (Press_Time == 151)
-				{
-					Beep(1, 5, 0, 1);
-				}
-			}
-			if (Press_Time > 150)
-			{
-				if (robot::instance()->Is_Cleaning_Manual_Paused())
-				{
-					robot::instance()->Reset_Cleaning_Manual_Pause();
-				}
-			}else
-			{
-				Press_Time = 0;
-#endif
-			}
-			Reset_Stop_Event_Status();
-			CM_ResetGoHome();
-			return 0;
-		}
-
-		from_station = 1;
-	}
 
 	if (CM_resume_cleaning())
 	{
@@ -2548,11 +2403,11 @@ uint8_t CM_Touring(void)
 	}
 
 #if CONTINUE_CLEANING_AFTER_CHARGE
-	if (!robot::instance()->Is_Cleaning_Low_Bat_Paused())
+	if (!robot::instance()->isCleaningLowBatPaused_())
 #endif
 	{
 #if MANUAL_PAUSE_CLEANING
-		if (!robot::instance()->Is_Cleaning_Manual_Paused())
+		if (!robot::instance()->isCleaningManualPaused())
 #endif
 		{
 			Home_Point.clear();
@@ -2682,7 +2537,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 					ROS_WARN("%s %d: low battery is detected, battery < 1300", __FUNCTION__, __LINE__);
 					return -6;
 				} else if ( mt_state == MT_None ) {
-					if ( go_home == 1 && Is_Station() == 1 ) {
+					if ( g_go_home == 1 && Is_Station() == 1 ) {
 						return -7;
 					}
 #if MANUAL_PAUSE_CLEANING
@@ -2796,7 +2651,7 @@ int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_
 				ROS_INFO("%s %d: low battery is detected, battery < 1300", __FUNCTION__, __LINE__);
 				return -6;
 			} else if ( mt_state == MT_None ) {
-				if ( go_home == 1 && Is_Station() == 1 ) {
+				if ( g_go_home == 1 && Is_Station() == 1 ) {
 					return -7;
 				}
 #if MANUAL_PAUSE_CLEANING
@@ -2845,11 +2700,12 @@ void CM_CorBack(uint16_t dist)
 	Reset_Wheel_Step();
 	Counter_Watcher = 0;
 
-	pos_x = robot::instance()->robot_get_odom_position_x();
-	pos_y = robot::instance()->robot_get_odom_position_y();
+	pos_x = robot::instance()->getOdomPositionX();
+	pos_y = robot::instance()->getOdomPositionY();
 
 	while (1) {
-		distance = sqrtf(powf(pos_x - robot::instance()->robot_get_odom_position_x(), 2) + powf(pos_y - robot::instance()->robot_get_odom_position_y(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
+																																													 robot::instance()->getOdomPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -2886,28 +2742,28 @@ void CM_CorBack(uint16_t dist)
 
 void CM_SetGoHome(uint8_t remote) {
 	ROS_WARN("Set gohome flag.");
-	go_home = 1;
+	g_go_home = 1;
 	if (remote == 1) {
-		remote_go_home = 1;
+		g_remote_go_home = 1;
 	}
 }
 
 void CM_ResetGoHome(void)
 {
 	ROS_WARN("Reset gohome flag.");
-	go_home = 0;
-	remote_go_home = 0;
-	Map_Boundary_Created = false;
+	g_go_home = 0;
+	g_remote_go_home = 0;
+	g_map_boundary_created = false;
 }
 
 void CM_TouringCancel(void)
 {
-	map_touring_cancel = 1;
+	g_map_touring_cancel = 1;
 }
 
 void CM_SetGyroOffset(int16_t offset)
 {
-	map_gyro_offset = offset;
+	g_map_gyro_offset = offset;
 }
 
 void CM_SetHome(int32_t x, int32_t y) {
@@ -2934,12 +2790,12 @@ void CM_SetHome(int32_t x, int32_t y) {
 			tmpPnt.Y = countToCell(y);
 			for (int8_t i = ESCAPE_TRAPPED_REF_CELL_SIZE - 1; i > 0; i--)
 			{
-				pnt16ArTmp[i] = pnt16ArTmp[i-1];
-				ROS_DEBUG("i = %d, pnt16ArTmp[i].X = %d, pnt16ArTmp[i].Y = %d", i, pnt16ArTmp[i].X, pnt16ArTmp[i].Y);
+				g_pnt16_ar_tmp[i] = g_pnt16_ar_tmp[i-1];
+				ROS_DEBUG("i = %d, g_pnt16_ar_tmp[i].X = %d, g_pnt16_ar_tmp[i].Y = %d", i, g_pnt16_ar_tmp[i].X, g_pnt16_ar_tmp[i].Y);
 			}
-			pnt16ArTmp[0] = tmpPnt;
-			ROS_DEBUG("pnt16ArTmp[0].X = %d, pnt16ArTmp[0].Y = %d", pnt16ArTmp[0].X, pnt16ArTmp[0].Y);
-			path_escape_set_trapped_cell(pnt16ArTmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
+			g_pnt16_ar_tmp[0] = tmpPnt;
+			ROS_DEBUG("g_pnt16_ar_tmp[0].X = %d, g_pnt16_ar_tmp[0].Y = %d", g_pnt16_ar_tmp[0].X, g_pnt16_ar_tmp[0].Y);
+			path_escape_set_trapped_cell(g_pnt16_ar_tmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
 		}
 	}
 }
@@ -2954,7 +2810,7 @@ void CM_SetContinuePoint(int32_t x, int32_t y)
 #endif
 
 uint8_t CM_IsLowBattery(void) {
-	return lowBattery;
+	return g_low_battery;
 }
 
 uint8_t CM_CheckLoopBack( Point16_t target ) {
@@ -2984,9 +2840,9 @@ void CM_Matrix_Rotate(int32_t x_in, int32_t y_in, int32_t *x_out, int32_t *y_out
 MapTouringType CM_handleExtEvent()
 {
 	/* Check low battery event, if battery is low, go home directly. */
-	if ((Check_Bat_Home() == 1) && go_home != 1) {
+	if ((Check_Bat_Home() == 1) && g_go_home != 1) {
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
-		lowBattery = 1;
+		g_low_battery = 1;
 		if ( Get_VacMode() == Vac_Max ) {
 			Switch_VacMode(false);
 		}
@@ -2995,15 +2851,15 @@ MapTouringType CM_handleExtEvent()
 		CM_SetGoHome(0);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->Set_Cleaning_Low_Bat_Pause();
+		robot::instance()->cleaningLowBatPause_();
 #endif
 		return MT_Battery_Home;
 	}
 	/*
 	//for testing
-	if (Remote_Key(Remote_Left) && go_home != 1) {
+	if (Remote_Key(Remote_Left) && g_go_home != 1) {
 		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
-		lowBattery = 1;
+		g_low_battery = 1;
 		if ( Get_VacMode() == Vac_Max ) {
 			Switch_VacMode(true);
 		}
@@ -3012,7 +2868,7 @@ MapTouringType CM_handleExtEvent()
 		CM_SetGoHome(0);
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->Set_Cleaning_Low_Bat_Pause();
+		robot::instance()->cleaningLowBatPause_();
 #endif
 		Reset_Rcon_Remote();
 		return MT_Battery_Home;
@@ -3025,28 +2881,28 @@ MapTouringType CM_handleExtEvent()
 		ROS_WARN("%s %d: Stop_Event in CM_handleExtEvent.", __FUNCTION__, __LINE__);
 //		Beep(5, 20, 0, 1);
 		// Key release detection, if user has not release the key, don't do anything.
-		//ROS_WARN("%s %d: Press_Time = %d", __FUNCTION__, __LINE__,  Press_Time);
+		//ROS_WARN("%s %d: g_press_time = %d", __FUNCTION__, __LINE__,  g_press_time);
 		while (Get_Key_Press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 			usleep(20000);
 #if MANUAL_PAUSE_CLEANING
-			Press_Time++;
-			if (Press_Time == 151)
+			g_press_time++;
+			if (g_press_time == 151)
 			{
 				Beep(1, 5, 0, 1);
 			}
 		}
-		if (Press_Time > 150)
+		if (g_press_time > 150)
 		{
-			if (robot::instance()->Is_Cleaning_Manual_Paused())
+			if (robot::instance()->isCleaningManualPaused())
 			{
-				robot::instance()->Reset_Cleaning_Manual_Pause();
+				robot::instance()->resetCleaningManualPause();
 			}
 		}
 		else
 		{
-			Press_Time = 0;
+			g_press_time = 0;
 #endif
 		}
 		Reset_Stop_Event_Status();
@@ -3059,7 +2915,7 @@ MapTouringType CM_handleExtEvent()
 		ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 		if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max | Remote_Spot)) {
 			/* Check remote home key press event, if home key is pressed, go home directly. */
-			if (Remote_Key(Remote_Home) && (go_home == 0)) {
+			if (Remote_Key(Remote_Home) && (g_go_home == 0)) {
 				Set_BLDC_Speed(Vac_Speed_NormalL);
 				Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
 				Stop_Brifly();
@@ -3091,7 +2947,7 @@ MapTouringType CM_handleExtEvent()
 	
 
 			if (Remote_Key(Remote_Max)) {
-				if (lowBattery == 0) {
+				if (g_low_battery == 0) {
 					Switch_VacMode(true);
 				}
 				Reset_Rcon_Remote();
@@ -3181,5 +3037,5 @@ void CM_create_home_boundary(void)
 	}
 
 	// Set the flag.
-	Map_Boundary_Created = true;
+	g_map_boundary_created = true;
 }

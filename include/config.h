@@ -425,3 +425,6 @@
 #define	VERIFY_DEBUG						(0)
 #define VERIFY_CPU_ID						(0)
 #define VERIFY_KEY							(0)
+
+/* ------------------------------------- Slam method for testing ------------------------------------- */
+#define SLAM_METHOD_2						(1)

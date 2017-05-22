@@ -7,7 +7,6 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <pp/x900sensor.h>
-#include <pp/slam_angle_offset.h>
 #include <stdlib.h>
 #include <math.h>
 #include <pthread.h>
@@ -56,11 +55,6 @@ pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
-// Initialize the slam_angle_offset
-float slam_angle_offset = 0;
-//When you restart gmapping, gyro may be have a angle offset, compensate it
-bool is_line_angle_offset = false;
-float line_angle_offset = 0;
 
 // This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
@@ -77,8 +71,14 @@ int robotbase_speaker_silence_time_count = 0;
 int temp_speaker_silence_time_count = 0;
 
 // Low battery flag
-extern uint8_t lowBattery;
-extern int8_t enable_slam_offset;
+extern uint8_t g_low_battery;
+
+/*extern int g_enable_angle_offset;
+extern boost::condition_variable g_cond_var;
+extern boost::mutex g_angle_offset_mt;
+
+extern void set_angle_offset(int);
+extern int get_angle_offset(void);*/
 
 // Odom coordinate
 float pose_x, pose_y;
@@ -250,7 +250,6 @@ void *robotbase_routine(void*)
 	geometry_msgs::TransformStamped	odom_trans;
 
 	ros::Publisher	odom_pub,sensor_pub;
-	ros::Subscriber	slam_angle_offset_sub;
 	ros::NodeHandle	robotsensor_node;
 	ros::NodeHandle	odom_node;
 	ros::NodeHandle	slam_angle_offset_node;
@@ -259,7 +258,6 @@ void *robotbase_routine(void*)
 
 	sensor_pub = robotsensor_node.advertise<pp::x900sensor>("/robot_sensor",1);
 	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",5);
-	slam_angle_offset_sub = slam_angle_offset_node.subscribe<pp::slam_angle_offset>("/slam_angle_offset", 1, slam_angle_offset_callback);
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
@@ -277,44 +275,9 @@ void *robotbase_routine(void*)
 		angle = (receiStream[6] << 8) | receiStream[7];
 		sensor.angle = -(float)(angle) / 100.0;
 
-		/*---------------angle offset process ---------------*/
-		if(is_line_angle_offset == true){
-			if(line_angle_offset == std::numeric_limits<float>::max())
-				line_angle_offset = sensor.angle;
-			sensor.angle -= line_angle_offset;
-		}else
-			line_angle_offset =std::numeric_limits<float>::max();
-
-		if(enable_slam_offset)
-		{
-			// Compensate the angle with the offset published by slam
-			sensor.angle -= slam_angle_offset;
-			// Check for avoiding angle's sudden change
-			if (previous_angle == std::numeric_limits<float>::max())
-				previous_angle = sensor.angle;
-			else
-			{
-				delta_angle = sensor.angle - previous_angle;
-				// Format the delta_angle into Range(-180, 180)
-				delta_angle = (180 < delta_angle ? delta_angle - 360 : delta_angle);
-				delta_angle = (delta_angle < -180 ? delta_angle + 360 : delta_angle);
-				// Decide whether it is a sudden change
-				if (10 < fabs(delta_angle))
-				{
-					// It is a sudden change, discard this value
-					sensor.angle = previous_angle;
-				}
-				// Save current angle as previous_angle
-				previous_angle = sensor.angle;
-			}
-		}
-		else{
-			previous_angle = std::numeric_limits<float>::max();
-			slam_angle_offset=0;
-		}
-		/*-----------------angle offset end-----------------------------*/
-		
-		robot::instance()->set_angle(sensor.angle); //
+		sensor.angle -= robot::instance()->offsetAngle();
+		robot::instance()->setAngle(sensor.angle);
+//		ROS_INFO("sensor:%f",robot::instance()->getAngle());
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -337,6 +300,7 @@ void *robotbase_routine(void*)
 		sensor.lcliff = ((receiStream[36] << 8) | receiStream[37]);
 		sensor.fcliff = ((receiStream[38] << 8) | receiStream[39]);
 		sensor.rcliff = ((receiStream[40] << 8) | receiStream[41]);
+		sensor.vacuum_selfcheck_status = (receiStream[42] & 0x30);
 		sensor.lbrush_oc = (receiStream[42] & 0x08) ? true : false;		// left brush over current
 		sensor.mbrush_oc = (receiStream[42] & 0x04) ? true : false;		// main brush over current
 		sensor.rbrush_oc = (receiStream[42] & 0x02) ? true : false;		// right brush over current
@@ -350,26 +314,26 @@ void *robotbase_routine(void*)
 #elif __ROBOT_X400
 		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
 		sensor.rbumper = (receiStream[22] & 0x0f)?true:false;
-		sensor.ir_ctrl = receiStream[23];
+		sensor.ir_ctrl_ = receiStream[23];
 		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
 		sensor.key = receiStream[27];
 		sensor.c_s = receiStream[28];
-		sensor.w_tank = (receiStream[29] > 0) ? true : false;
+		sensor.w_tank_ = (receiStream[29] > 0) ? true : false;
 		sensor.batv = receiStream[30];
 
 		sensor.lcliff = ((receiStream[31] << 8) | receiStream[32]);
 		sensor.fcliff = ((receiStream[33] << 8) | receiStream[34]);
 		sensor.rcliff = ((receiStream[35] << 8) | receiStream[36]);
 
-		sensor.lbrush_oc = (receiStream[37] & 0x08) ? true : false;		// left brush over current
-		sensor.mbrush_oc = (receiStream[37] & 0x04) ? true : false;		// main brush over current
-		sensor.rbrush_oc = (receiStream[37] & 0x02) ? true : false;		// right brush over current
+		sensor.lbrush_oc_ = (receiStream[37] & 0x08) ? true : false;		// left brush over current
+		sensor.mbrush_oc_ = (receiStream[37] & 0x04) ? true : false;		// main brush over current
+		sensor.rbrush_oc_ = (receiStream[37] & 0x02) ? true : false;		// right brush over current
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
-		sensor.gyro_dymc = receiStream[38];
-		sensor.right_wall = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc = ((receiStream[41]<<8)|receiStream[42])/258.0f; //in mG
-		sensor.y_acc = ((receiStream[43]<<8)|receiStream[44])/258.0f; //in mG
-		sensor.z_acc = ((receiStream[45]<<8)|receiStream[46])/258.0f; //in mG
+		sensor.gyro_dymc_ = receiStream[38];
+		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
+		sensor.x_acc_ = ((receiStream[41]<<8)|receiStream[42])/258.0f; //in mG
+		sensor.y_acc_ = ((receiStream[43]<<8)|receiStream[44])/258.0f; //in mG
+		sensor.z_acc_ = ((receiStream[45]<<8)|receiStream[46])/258.0f; //in mG
 #endif	
 		/*------------publish odom and robot_sensor topic -----------------------*/
 		cur_time = ros::Time::now();
@@ -398,7 +362,16 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
+
 		odom_pub.publish(odom);
+
+/*
+		if(get_angle_offset() == 2){
+			set_angle_offset(3);
+			g_cond_var.notify_all();
+		}
+*/
+
 		sensor_pub.publish(sensor);
 		/*---------------publish end --------------------------*/
 
@@ -434,7 +407,7 @@ void *serial_send_routine(void*){
 			process_beep();
 		//}else{
 		//	// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
-		//	if (lowBattery){
+		//	if (g_low_battery){
 		//		Beep(3, 25, 25, 40);
 		//	}
 		}
@@ -448,15 +421,6 @@ void *serial_send_routine(void*){
 	}
 	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);
-}
-
-void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg)
-{
-	// Update the angle offset given by slam
-	if(ros::ok()&&(!robotbase_thread_stop)){
-		slam_angle_offset = msg->slam_angle_offset;
-	}
-	ROS_INFO("[robotbase] Get slam_angle_offset as: %f.\n", slam_angle_offset);
 }
 
 /*---------process_beep()---------------*/

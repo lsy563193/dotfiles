@@ -551,6 +551,12 @@ void set_stop_charge(void);
 
 void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val);
 
+void Start_SelfCheck_Vacuum(void);
+
+void End_SelfCheck_Vacuumm(void);
+
+void Reset_SelfCheck_Vacuum_Controler(void);
+
 void control_set(uint8_t type, uint8_t val);
 
 void control_append_crc(void);
@@ -639,6 +645,8 @@ void Set_Mobility_Step(uint32_t Steps);
 
 void Reset_Mobility_Step();
 
+void Clear_Reset_Mobility_Step();
+
 uint32_t  Get_Mobility_Step();
 
 void Adjust_OBST_Value();
@@ -677,7 +685,7 @@ uint8_t VirtualWall_TurnRight();
 
 uint8_t VirtualWall_TurnLeft();
 
-void ladar_gpio(char val);
+void laser_pm_gpio(char val);
 
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif
@@ -691,6 +699,8 @@ void Set_Main_PwrByte(uint8_t val);
 void SetSleepModeFlag();
 uint8_t GetSleepModeFlag();
 void ResetSleepModeFlag();
+
+uint8_t Get_SelfCheck_Vacuum_Status(void);
 
 #if MANUAL_PAUSE_CLEANING
 void Clear_Manual_Pause(void);

@@ -894,7 +894,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		return 0;
 	}
 
-	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, targets.size());
+	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, (int)targets.size());
 	for (list<PPTargetType>::iterator it = targets.begin(); it != targets.end(); ++it) {
 		std::string	msg = __FUNCTION__;
 		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
