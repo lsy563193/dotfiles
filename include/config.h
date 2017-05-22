@@ -73,6 +73,9 @@
 /* With water tank, Zig-Zag cleanning time 90 minutes */
 #define WET_CLEANNING_TIME		(5400)
 
+/* Wall follow cleanning time 60 minutes */
+#define WALL_FOLLOW_TIME		(3600)
+
 /* Low battery go home voltage value */
 #define LOW_BATTERY_GO_HOME_VOLTAGE		(1320)
 
