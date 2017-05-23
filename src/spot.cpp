@@ -572,7 +572,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				if(Spot_HandleException(st)){
 					return;	
 				}
-				ROS_WARN("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
+				ROS_WARN("%s ,%d target point (%d,%d),nearPoint.X = %d,nearPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,nearPoint.X,nearPoint.Y);
 				if(Is_Dict_Change){
 					if((nearPoint.X == tp->X) || (nearPoint.Y == tp->Y)){
 						Is_Dict_Change = 0;
