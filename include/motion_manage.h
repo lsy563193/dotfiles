@@ -47,6 +47,7 @@ private:
 	bool initCleaning(uint8_t cleaning_mode);
 	bool initNavigationCleaning(void);
 	bool initWallFollowCleaning(void);
+	bool initSpotCleaning(void);
 };
 
 #endif //PP_MOTION_MANAGE_H

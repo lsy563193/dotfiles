@@ -139,10 +139,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-	//2 start motor
-	Work_Motor_Configure();
-
-	//3 start laser
+	//2 start laser
 	s_laser = new Laser();
 	if (!s_laser->isReady())
 	{
@@ -164,7 +161,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-	//4 calculate offsetAngle
+	//3 calculate offsetAngle
 	nh_.param<bool>("is_active_align", is_align_active_, false);
 	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
 	{
@@ -180,10 +177,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
-	//5 call start slam
+	//4 call start slam
 	s_slam = new Slam();
 
-	if (Get_Clean_Mode() == Clean_Mode_Navigation)
+	if (Get_Clean_Mode() == Clean_Mode_Navigation || Get_Clean_Mode() == Clean_Mode_Spot)
 		g_enable_slam_offset = 1;
 	else if (Get_Clean_Mode() == Clean_Mode_WallFollow)
 		g_enable_slam_offset = 2;
@@ -265,8 +262,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 		case Clean_Mode_WallFollow:
 			return initWallFollowCleaning();
 		case Clean_Mode_Spot:
-			// TODO: return initSpotCleaning();
-			return true;
+			return initSpotCleaning();
 		default:
 			ROS_ERROR("This mode (%d) should not use MotionManage.", cleaning_mode);
 			return false;
@@ -440,6 +436,8 @@ bool MotionManage::initNavigationCleaning(void)
 		}
 	}
 
+	Work_Motor_Configure();
+
 	return true;
 }
 
@@ -459,7 +457,6 @@ bool MotionManage::initWallFollowCleaning(void)
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
 	if (!Wait_For_Gyro_On())
 	{
-		Set_Clean_Mode(Clean_Mode_Userinterface);
 		return false;
 	}
 
@@ -478,6 +475,42 @@ bool MotionManage::initWallFollowCleaning(void)
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
+
+	Work_Motor_Configure();
+
+	return true;
+}
+
+bool MotionManage::initSpotCleaning(void)
+{
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
+	Set_LED(100, 0);
+	//wav_play(WAV_SYSTEM_INITIALIZING);
+	wav_play(WAV_CLEANING_SPOT);
+	if (!Wait_For_Gyro_On())
+	{
+		return false;
+	}
+
+	std::list<Point32_t> homepoint;
+	Point32_t t_point;
+	t_point.X = 0;
+	t_point.Y = 0;
+	homepoint.clear();
+	homepoint.push_front(t_point);
+	Map_Initialize();//init map
+	PathPlanning_Initialize(&homepoint.front().X,&homepoint.front().Y);//init pathplan
+
+	robot::instance()->initOdomPosition();// for reset odom position to zero.
+
+	Switch_VacMode(false);
+	Set_MainBrush_PWM(80);
+	Set_SideBrush_PWM(60,60);
 
 	return true;
 }
