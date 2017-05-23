@@ -43,7 +43,7 @@ private:
 
 	//get and set function
 public:
-	bool isAllReady() const
+	bool isSensorReady() const
 	{
 		return is_sensor_ready_;
 	}
