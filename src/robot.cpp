@@ -27,7 +27,7 @@ int8_t key_press_count;
 int8_t key_release_count;
 
 //extern pp::x900sensor sensor;
-robot::robot():offset_angle_(0)
+robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
 	init();
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);

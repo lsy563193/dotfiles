@@ -171,12 +171,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		ObstacleDetector od;
 		float align_angle=0;
-		if(! get_align_angle(align_angle) )
-			return ;
-
+		if(!get_align_angle(align_angle))
+		{
+			initSucceeded(false);
+			return;
+		}
 		robot::instance()->offsetAngle(align_angle);
 	}
-
 
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
@@ -211,23 +212,30 @@ MotionManage::~MotionManage()
 
 	Disable_Motors();
 
-	g_enable_slam_offset = 0;
-
 	if (s_laser != nullptr)
 	{
 		delete s_laser;
 		s_laser = nullptr;
 	}
 
-	if (robot::instance()->isLowBatPaused()){
+	if (robot::instance()->isLowBatPaused())
+	{
+		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
+		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
 		return;
 	}
 
 	if (robot::instance()->isManualPaused()){
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		wav_play(WAV_PAUSE_CLEANING);
+		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
+		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
 		return;
 	}
+
+	// Reset g_enable_slam_offset after checking for pause and before shutdown slam
+	// It is for avoiding the tf warning caused by tf transform in odom callback in robotbase.cpp
+	g_enable_slam_offset = 0;
 
 	if (s_slam != nullptr)
 	{
@@ -235,7 +243,7 @@ MotionManage::~MotionManage()
 		s_slam = nullptr;
 	}
 
-	robot::instance()->offsetAngle(0);
+	robot::instance()->savedOffsetAngle(0);
 
 	if (Get_Cliff_Trig())
 		wav_play(WAV_ERROR_LIFT_UP);
@@ -269,61 +277,55 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 bool MotionManage::initNavigationCleaning(void)
 {
 	extern uint32_t g_cur_wtime;
-	extern std::list <Point32_t> g_home_point;
 
 	Set_LED(100,0);
 	Reset_Rcon_Status();
 	Reset_MoveWithRemote();
 	Reset_Stop_Event_Status();
 
-	// Opening the gyro.
+	// Restart the gyro.
+	Set_Gyro_Off();
+	// Wait for 30ms to make sure the off command has been effectived.
+	usleep(30000);
+	// Set gyro on before wav_play can save the time for opening the gyro.
+	Set_Gyro_On();
+
 	if (robot::instance()->isLowBatPaused())
 	{
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
-	else
+	else if (robot::instance()->isManualPaused())
 	{
-		if (robot::instance()->isManualPaused())
-		{
-			ROS_WARN("Restore from manual pause");
-			wav_play(WAV_CLEANING_CONTINUE);
-		}
-		else
-		{
-			// Restart the gyro.
-			Set_Gyro_Off();
-			// Wait for 30ms to make sure the off command has been effectived.
-			usleep(30000);
-			// Set gyro on before wav_play can save the time for opening the gyro.
-			Set_Gyro_On();
-			wav_play(WAV_CLEANING_START);
+		ROS_WARN("Restore from manual pause");
+		wav_play(WAV_CLEANING_CONTINUE);
+	}
+	else
+		wav_play(WAV_CLEANING_START);
 
-			if (!Wait_For_Gyro_On())
-				return false;
-		}
+	if (!Wait_For_Gyro_On())
+	{
+		return false;
+	}
+
+	if (robot::instance()->isManualPaused() || robot::instance()->isLowBatPaused())
+	{
+		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
+		ROS_INFO("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 	}
 
 	/*Move back from charge station*/
 	if (Is_AtHomeBase()) {
-		// Key release detection, if user has not release the key, don't do anything.
-		while (Get_Key_Press() & KEY_CLEAN)
-		{
-			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-			usleep(20000);
-		}
-		// Key relaesed, then the touch status and stop event status should be cleared.
-		Reset_Stop_Event_Status();
 		ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
 		// Reset the robot to non charge mode.
 		set_stop_charge();
+		// Sleep for 30ms to make sure it has sent at least one control message to stop charging.
+		usleep(30000);
 		while (Is_ChargerOn())
 		{
 			ROS_INFO("Robot Still charging.");
 			usleep(20000);
 		}
-		// Sleep for 30ms to make sure it has sent at least one control message to stop charging.
-		usleep(30000);
 		if (Is_ChargerOn()){
 			ROS_WARN("[core_move.cpp] Still charging.");
 		}
@@ -444,7 +446,6 @@ bool MotionManage::initNavigationCleaning(void)
 
 bool MotionManage::initWallFollowCleaning(void)
 {
-	extern std::list <Point32_t> g_home_point;
 	extern std::vector<Pose32_t> WF_Point;
 
 	Reset_MoveWithRemote();

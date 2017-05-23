@@ -70,6 +70,18 @@ public:
 		return offset_angle_;
 	};
 
+	void savedOffsetAngle(float angle)
+	{
+		if (angle > 180)
+			angle -= 360;
+		saved_offset_angle_ = -angle;
+	};
+
+	float savedOffsetAngle(void) const
+	{
+		return saved_offset_angle_;
+	};
+
 	float getAngleV() const
 	{
 		return angle_v_;
@@ -348,6 +360,8 @@ private:
 	float offset_angle_;
 
 	boost::mutex offset_angle_metux_;
+
+	float saved_offset_angle_;
 
 	/* 1 byte */
 	float	angle_;
