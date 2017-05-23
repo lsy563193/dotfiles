@@ -366,8 +366,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 void robot::displayPositions()
 {
-	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d\tyaw_: %f(%f)",
-		map_pose.getOrigin().x(), map_pose.getOrigin().y(), map_yaw_, map_yaw_ * 1800 / M_PI,
+	ROS_INFO("base_link->map: (%f, %f) %f(%f) Gyro: %d yaw_: %f(%f)",
+		position_x_, position_y_, map_yaw_, map_yaw_ * 1800 / M_PI,
 		Gyro_GetAngle(), yaw_, yaw_ * 1800 / M_PI);
 }
 
