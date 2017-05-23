@@ -1594,85 +1594,66 @@ uint8_t CM_resume_cleaning()
 
 int CM_cleaning()
 {
-	bool	quit;
-	float	slop, intercept;
-	int8_t	state, retval;
-	int16_t	x, y, x_current, y_current, start, end;
-
-	uint16_t	last_dir;
-
-	// X, Y in Target_Point are all counts.
-	Point32_t	Next_Point, Target_Point;
-
-	RoundingType	rounding_type;
-	MapTouringType	mt_state = MT_None;
-
-	retval = 0;
-	quit = false;
-#if MANUAL_PAUSE_CLEANING
 	// Checking g_go_home is for case that manual pause when robot going home.
-	while (ros::ok() && quit == false && g_go_home == 0) {
-#else
-	while (ros::ok() && quit == false) {
-#endif
+	if(g_go_home != 0) return 0;
+
+	while (ros::ok()) {
 		if (g_map_touring_cancel == 1) {
 			ROS_WARN("%s %d: g_map_touring_cancel = 1.", __FUNCTION__, __LINE__);
 			CM_ResetGoHome();
-			quit = true;
-			retval = -1;
-			continue;
+			return -1;
 		}
 
+		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
+		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
 		//State -1: Path next
 		//State  0: Target list is empty
 		//State  2: Robot is trapped
 		ROS_INFO("Find path-----------------------------");
 
-		last_dir = path_get_robot_direction();
+		uint16_t last_dir = path_get_robot_direction();
 
-		x_current = Map_GetXPos();
-		y_current = Map_GetYPos();
-		state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
+		int16_t x_current = Map_GetXPos();
+		int16_t y_current = Map_GetYPos();
+		Point32_t	Next_Point, Target_Point;
+		int8_t state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
 		ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
-
 		ROS_INFO("State: %d", state);
-		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
-		ROS_INFO("[core_move.cpp] %s %d: Current work time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
-
-		if (state == 0) {		//No target point
+		if (state == 0) { //No target point
 			g_go_home = 1;
-			quit = true;
-		} else if (state == 1) {
+			return 0;
+		} else
+		if (state == 1) {
 			ROS_INFO("Move to target-----------------------------");
 
-			rounding_type = ROUNDING_NONE;
+			RoundingType rounding_type = ROUNDING_NONE;
 
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
 			rounding_type = CM_get_rounding_direction(&Next_Point, Target_Point, last_dir);
 #endif
 
+			MapTouringType	mt_state = MT_None;
 			if (rounding_type != ROUNDING_NONE) {
 				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
 				if(rounding(rounding_type, Next_Point, g_bumper_status_for_rounding))
 				{
 					CM_ResetGoHome();
 					ROS_WARN("%s, %d: Reset gohome here.", __FUNCTION__, __LINE__);
-					quit = true;
-					retval = -1;
+					return -1;
 				}
 			} else {
 				mt_state = CM_MoveToPoint(Next_Point);
 			}
 
-			if (y_current == countToCell(Next_Point.Y) && quit == false) {
-				x = Map_GetXPos();
-				y = Map_GetYPos();
+			if (y_current == countToCell(Next_Point.Y)/* && quit == false*/) {
+				auto x = Map_GetXPos();
+				auto y = Map_GetYPos();
 				if (x_current != x ) {
-					slop = (((float)y_current) - ((float)y)) / (((float)x_current) - ((float)x));
-					intercept = ((float)(y)) - slop *  ((float)(x));
+					float slop = (((float)y_current) - ((float)y)) / (((float)x_current) - ((float)x));
+					float intercept = ((float)(y)) - slop *  ((float)(x));
 
-					start = x > x_current ? x_current : x;
-					end = x > x_current ? x: x_current;
+					auto start = x > x_current ? x_current : x;
+					auto end = x > x_current ? x: x_current;
 					for (x = start; x <= end; x++) {
 						y = (int16_t) (slop * (x) + intercept);
 
@@ -1687,48 +1668,40 @@ int CM_cleaning()
 			if (mt_state == MT_Battery) {
 				CM_ResetGoHome();
 				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
-				quit = true;
-				retval = -1;
+				return -1;
 			} else if (mt_state == MT_Remote_Home) {
 				g_go_home = 1;
-				Stop_Brifly();
-				quit = true;
+				return 0;
 			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
-				Disable_Motors();
+//				Disable_Motors();
 				CM_ResetGoHome();
 				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
-				quit = true;
-				retval = -1;
+				return -1;
 			} else if (mt_state == MT_Battery_Home) {
 				g_go_home = 1;
-				Stop_Brifly();
-				quit = true;
+				return 0;
 			}
-		} else if (state == 2) {		// Trapped
+		} else
+		if (state == 2) {		// Trapped
 			state = Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 
 			if ( g_map_touring_cancel == 1 ) {
 				CM_ResetGoHome();
 				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
-				quit = true;
-				retval = -1;
+				return -1;
 			}
 
-			if ( g_go_home == 1 ) {
-				quit = true;
-			}
+			if ( g_go_home == 1 )
+				return 0;
 
 			if (state == 2) {
 				CM_ResetGoHome();
 				ROS_WARN("%s %d: Reset gohome here.", __FUNCTION__, __LINE__);
-				Disable_Motors();
-				quit = true;
-				retval = -1;
+				return -1;
 			}
 		}
 	}
-
-	return retval;
+	return 0;
 }
 
 void CM_go_home()
