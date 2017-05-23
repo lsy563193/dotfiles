@@ -48,6 +48,11 @@ public:
 		return is_sensor_ready_;
 	}
 
+	bool isTfReady() const
+	{
+		return is_tf_ready_;
+	}
+
 	float getAngle() const
 	{
 		return angle_;
@@ -289,9 +294,9 @@ public:
 		return yaw_;
 	}
 
-	void setOdomReady(bool is_ready)
+	void setTfReady(bool is_ready)
 	{
-		is_odom_ready_ = is_ready;
+		is_tf_ready_ = is_ready;
 	}
 
 //#if CONTINUE_CLEANING_AFTER_CHARGE
@@ -355,7 +360,7 @@ private:
 
 	bool	is_sensor_ready_;
 
-	bool	is_odom_ready_;
+	bool	is_tf_ready_;
 
 	float offset_angle_;
 

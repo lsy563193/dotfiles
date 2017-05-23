@@ -24,7 +24,7 @@ Slam::~Slam(){
 void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
 	is_map_ready_=true;
-	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d:Finish map callback, map is ready now.", __FUNCTION__, __LINE__);
 }
 
 void Slam::start(void)

@@ -81,7 +81,6 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 
 bool MotionManage::get_align_angle(float &line_angle)
 {
-	robot::instance()->setOdomReady(false);
 	segmentss.clear();
 //	ROS_INFO("Start subscribe to /obstacles");
 	auto obstacles_sub = nh_.subscribe("/obstacles", 1, &MotionManage::robot_obstacles_cb, this);
@@ -190,14 +189,14 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		g_enable_slam_offset = 2;
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 1000;
-	while (!s_slam->isMapReady() && --count_n_10ms != 0)
+	robot::instance()->setTfReady(false);
+	while (!(s_slam->isMapReady() && robot::instance()->isTfReady()) && --count_n_10ms != 0)
 	{
-//		ROS_WARN("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		usleep(10000);
+		usleep(20000);
 	}
 	if (count_n_10ms == 0)
 	{
-		ROS_ERROR("%s %d: Map is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+		ROS_ERROR("%s %d: Map or tf framework is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 		Set_Error_Code(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
 		initSucceeded(false);

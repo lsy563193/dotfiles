@@ -660,6 +660,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		return 0;
 	}
 
+	ROS_INFO("%s %d: Start wall follow now.", __FUNCTION__, __LINE__);
 	Move_Forward(25, 25);
 
 	while(ros::ok()){
