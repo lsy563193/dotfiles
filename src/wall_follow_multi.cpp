@@ -52,6 +52,7 @@ bool	escape_thread_running = false;
 uint32_t escape_trapped_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
+int32_t	REACH_COUNT_LIMIT = 10;//10 represent the wall follow will end after overlap 10 cells
 int32_t same_cell_count = 0;
 extern int8_t g_enable_slam_offset;
 //MFW setting
@@ -631,7 +632,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	float					Start_Pose_X, Start_Pose_Y;//the first pose hit the wall
 	float					Distance_From_WF_Start;
 	float					Distance_From_Start;
-	float					Find_Wall_Distance = 8;
+	float					FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 	uint8_t					First_Time_Flag;
 	uint8_t					Isolated_Flag;
 	uint32_t				Temp_Rcon_Status;
@@ -755,8 +756,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 			/*------------------------------------------------------Distance Check-----------------------*/
 			if ((Distance_From_WF_Start = (sqrtf(powf(Start_WF_Pose_X - robot::instance()->getPositionX(), 2) + powf(Start_WF_Pose_Y -
-																																																											 robot::instance()->getPositionY(), 2)))) > Find_Wall_Distance ){
-				ROS_INFO("Find wall over the limited distance : %f", Find_Wall_Distance);
+																																																											 robot::instance()->getPositionY(), 2)))) > FIND_WALL_DISTANCE ){
+				ROS_INFO("Find wall over the limited distance : %f", FIND_WALL_DISTANCE);
 				WF_End_Wall_Follow();
 				return 0;
 			}
@@ -810,7 +811,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			/*------------------------------------WF_Map_Update---------------------------------------------------*/
 			//WF_update_position();
 			WF_Check_Loop_Closed(Gyro_GetAngle());
-			if(reach_count >= 10){
+			if(reach_count >= REACH_COUNT_LIMIT){
 				if (WF_Check_Angle()) {//WF_Check_Angle succeed,it proves that the robot is not in the narrow space
 					reach_count = 0;
 					Stop_Brifly();
@@ -823,7 +824,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 						Isolated_Flag = 0;
 					}
 					WF_End_Wall_Follow();
-					ROS_WARN("reach_count >= 10");
+					ROS_WARN("reach_count >= %d", REACH_COUNT_LIMIT);
 					break;
 				} else {
 					reach_count = 0;//reset reach_cout because WF_Check_Angle fail, it proves that the robot is in the narrow space
@@ -1493,12 +1494,12 @@ bool WF_Check_Angle(void) {
 	int32_t x, y;
 	int16_t th, former_th;
 	int16_t	th_diff;
-	int16_t	diff_limit = 1500;
+	int16_t	DIFF_LIMIT = 1500;//1500 means 150 degrees, it is used by angle check.
 	int8_t	pass_count = 0;
-	int8_t	sum = 10;
+	int8_t	sum = REACH_COUNT_LIMIT;
 	bool	fail_flag = 0;
 	try{
-		for (int i = 1; i <= 10; i++) {
+		for (int i = 1; i <= REACH_COUNT_LIMIT; i++) {
 			x = (WF_Point.at(WF_Point.size() - i)).X;
 			y = (WF_Point.at(WF_Point.size() - i)).Y;
 			th = (WF_Point.at(WF_Point.size() - i)).TH;
@@ -1514,13 +1515,13 @@ bool WF_Check_Angle(void) {
 						th_diff = 3600 - th_diff;
 					}
 
-					if (th_diff <= diff_limit) {
+					if (th_diff <= DIFF_LIMIT) {
 						pass_count++;
-						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, diff_limit);
+						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, DIFF_LIMIT);
 						break;
 					} else {
 						fail_flag = 1;
-						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, diff_limit);
+						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, DIFF_LIMIT);
 					}
 				}
 				/*in case of the WF_Point no second same point, the reach_count++ caused by cleanning the block obstacle which 
@@ -1533,8 +1534,8 @@ bool WF_Check_Angle(void) {
 			}
 		}
 
-		if (sum < 10) {
-			ROS_WARN("sum = %d < 10, WF_Point is not enough! WF_Check_Angle Failed!", sum);
+		if (sum < REACH_COUNT_LIMIT) {
+			ROS_WARN("sum = %d < %d, WF_Point is not enough! WF_Check_Angle Failed!", sum, REACH_COUNT_LIMIT);
 			return 0;
 		}
 
