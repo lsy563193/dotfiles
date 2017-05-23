@@ -39,7 +39,7 @@ private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
-//	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
+	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 
 	//get and set function
 public:
@@ -485,6 +485,7 @@ private:
 
 	ros::NodeHandle robot_nh_;
 	ros::Subscriber sensor_sub_;
+	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
 	ros::Subscriber map_metadata_sub_;
 //	ros::Subscriber obstacles_sub;

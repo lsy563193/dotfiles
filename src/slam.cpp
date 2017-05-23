@@ -21,12 +21,6 @@ Slam::~Slam(){
 //	nh_.shutdown();
 };
 
-void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
-{
-	is_map_ready_=true;
-	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
-}
-
 void Slam::start(void)
 {
 
@@ -81,12 +75,6 @@ void Slam::enableMapUpdate()
 //	align_cli_.waitForExistence(ros::Duration(10));
 	align_cli_.call(empty);
 #endif
-	ROS_INFO("subscribe");
-	map_sub_ = nh_.subscribe("/map", 1, &Slam::mapCb, this);
-	ROS_INFO("subscribe ok");
+
 }
 
-bool Slam::isMapReady()
-{
-	return is_map_ready_;
-}

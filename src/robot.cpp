@@ -31,6 +31,7 @@ robot::robot():offset_angle_(0)
 {
 	init();
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
+	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(10), true);
 	robot_wf_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(10), true);
 	/*map subscriber for exploration*/
@@ -340,6 +341,11 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
   }
 }
 
+void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
+{
+	MotionManage::s_slam->isMapReady(true);
+	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
+}
 
 void robot::displayPositions()
 {
