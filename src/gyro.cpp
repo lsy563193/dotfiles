@@ -262,6 +262,7 @@ void Set_Gyro_Off()
 //		ROS_INFO("gyro stop ready(%d),angle_v_(%f)", count, robot::instance()->getAngleV());
 	}
 	Reset_Gyro_Status();
+	robot::instance()->offsetAngle(0);
 	ROS_INFO("gyro stop ok");
 }
 

@@ -3165,11 +3165,19 @@ void Clear_Manual_Pause(void)
 {
 	if (robot::instance()->isManualPaused())
 	{
+		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
 		ROS_WARN("Reset manual pause status.");
 		wav_play(WAV_CLEANING_FINISHED);
 		robot::instance()->resetManualPause();
-		robot::instance()->offsetAngle(0);
-		MotionManage::s_slam->stop();
+		robot::instance()->savedOffsetAngle(0);
+		if (MotionManage::s_slam != nullptr)
+		{
+			delete MotionManage::s_slam;
+			MotionManage::s_slam = nullptr;
+		}
+		extern std::list <Point32_t> g_home_point;
+		g_home_point.clear();
+		g_cur_wtime = 0;
 		CM_ResetGoHome();
 	}
 }

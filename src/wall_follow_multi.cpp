@@ -647,12 +647,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	if (Wall_Distance < Wall_Low_Limit) {
 		Wall_Distance = Wall_Low_Limit;
 	}
-	Start_WF_Pose_X = robot::instance()->getPositionX();
-	Start_WF_Pose_Y = robot::instance()->getPositionY();
 	Wall_Straight_Distance = 300;
 	Left_Wall_Speed = 15;
 
 	MotionManage motion;
+
+	Start_WF_Pose_X = robot::instance()->getPositionX();
+	Start_WF_Pose_Y = robot::instance()->getPositionY();
 
 	if(!motion.initSucceeded()){
 		Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -660,6 +661,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		return 0;
 	}
 
+	ROS_INFO("%s %d: Start wall follow now.", __FUNCTION__, __LINE__);
 	Move_Forward(25, 25);
 
 	while(ros::ok()){

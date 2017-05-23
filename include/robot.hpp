@@ -43,9 +43,14 @@ private:
 
 	//get and set function
 public:
-	bool isAllReady() const
+	bool isSensorReady() const
 	{
 		return is_sensor_ready_;
+	}
+
+	bool isTfReady() const
+	{
+		return is_tf_ready_;
 	}
 
 	float getAngle() const
@@ -68,6 +73,18 @@ public:
 	{
 		boost::mutex::scoped_lock(offset_angle_metux_);
 		return offset_angle_;
+	};
+
+	void savedOffsetAngle(float angle)
+	{
+		if (angle > 180)
+			angle -= 360;
+		saved_offset_angle_ = -angle;
+	};
+
+	float savedOffsetAngle(void) const
+	{
+		return saved_offset_angle_;
 	};
 
 	float getAngleV() const
@@ -277,9 +294,9 @@ public:
 		return yaw_;
 	}
 
-	void setOdomReady(bool is_ready)
+	void setTfReady(bool is_ready)
 	{
-		is_odom_ready_ = is_ready;
+		is_tf_ready_ = is_ready;
 	}
 
 //#if CONTINUE_CLEANING_AFTER_CHARGE
@@ -343,11 +360,13 @@ private:
 
 	bool	is_sensor_ready_;
 
-	bool	is_odom_ready_;
+	bool	is_tf_ready_;
 
 	float offset_angle_;
 
 	boost::mutex offset_angle_metux_;
+
+	float saved_offset_angle_;
 
 	/* 1 byte */
 	float	angle_;

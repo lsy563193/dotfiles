@@ -500,50 +500,12 @@ void Spot_WithCell(SpotType st,float spot_radius){
     MapTouringType mt_state;
 	std::list<Point32_t> target;
 	Point32_t nextPoint;
+	uint8_t spot_stuck = 0;
 	/*--------initialize gyro & map & plan & slam --------*/
 	if(st == NormalSpot){
-		Set_Gyro_Off();
-		usleep(30000);
-		Set_Gyro_On();
-		wav_play(WAV_CLEANING_SPOT);
-		if(!Wait_For_Gyro_On()){
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			wav_play(WAV_CLEANING_FINISHED);
-			return ;
-		}
-		std::list<Point32_t> homepoint;
-		Point32_t t_point;
-		t_point.X = 0;
-		t_point.Y = 0;
-		homepoint.clear();
-		homepoint.push_front(t_point);
-		Map_Initialize();//init map 
-		PathPlanning_Initialize(&homepoint.front().X,&homepoint.front().Y);//init pathplan 
 
-		robot::instance()->initOdomPosition();// for reset odom position to zero.
 		MotionManage motion;//start slam
-		/*----check slam open or not ------*/
-		if (!MotionManage::s_laser->isReady() ||!MotionManage::s_slam->isMapReady()) {
-			Set_Error_Code(Error_Code_Slam);
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			//wav_play(WAV_TEST_LIDAR);
-			return;
-		}
 
-		/*-----check stop event ----------*/
-		if(Stop_Event()){
-			while(Get_Key_Press() & KEY_CLEAN){
-				ROS_INFO("%s,%d,key pressing ...",__FUNCTION__,__LINE__);
-				usleep(20000);
-			}
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			Reset_Stop_Event_Status();
-			return;
-		}
-		Set_LED(100,0);
-		Switch_VacMode(false);
-		Set_MainBrush_PWM(80);
-		Set_SideBrush_PWM(60,60);
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
@@ -572,9 +534,9 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				if(Spot_HandleException(st)){
 					return;	
 				}
-				ROS_WARN("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
+				ROS_WARN("%s ,%d target point (%d,%d),nearPoint.X = %d,nearPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,nearPoint.X,nearPoint.Y);
 				if(Is_Dict_Change){
-					if((nearPoint.X == tp->X) || (nearPoint.Y == tp->Y)){
+					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
 						Is_Dict_Change = 0;
 						nearPoint.X = 0;
 						nearPoint.Y = 0;
@@ -589,9 +551,6 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				nextPoint.Y = cellToCount(tp->Y);
 				mt_state = CM_LinearMoveToPoint(nextPoint,SPOT_MAX_SPEED,false,true);
 				if(mt_state == MT_Remote_Home || mt_state == MT_Remote_Clean || mt_state == MT_Remote_Spot || mt_state == MT_Battery || mt_state == MT_Key_Clean || mt_state == MT_Cliff){
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Disable_Motors();
-					wav_play(WAV_CLEANING_FINISHED);
 					return;
 				}
 				//if detect obs or bumper trigger ,than change diraction
@@ -619,6 +578,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_Out){
 						od_spiral_out += 1;
@@ -640,6 +600,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Right_In){
 						ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
@@ -648,6 +609,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -655,10 +617,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_In){
 						ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
@@ -667,6 +630,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -674,10 +638,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					break;
 				}//ending if(g_should_follow_wall)
@@ -687,6 +652,10 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			} 
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
+				if(spot_stuck){
+					mt_state = CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
+					spot_stuck = 0;
+				} 
 				break;
 			}
 			else if(spiral_type == Spiral_Right_Out){
@@ -738,7 +707,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				}
 				ROS_INFO("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
 				if(Is_Dict_Change){
-					if((nearPoint.X == tp->X) || (nearPoint.Y == tp->Y)){
+					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
 						Is_Dict_Change = 0;
 						nearPoint.X = 0;
 						nearPoint.Y = 0;
@@ -782,6 +751,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_Out){
 						od_spiral_out += 1;
@@ -803,6 +773,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Right_In){
 						ROS_INFO("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
@@ -811,6 +782,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -818,10 +790,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_In){
 						ROS_INFO("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
@@ -830,6 +803,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -837,10 +811,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					break;
 				}//ending if(g_should_follow_wall)	
@@ -850,6 +825,12 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			} 
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
+				StopPoint.X = x_offset;
+				StopPoint.Y = y_offset;
+				if(spot_stuck){
+					mt_state = CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
+					spot_stuck = 0;
+				} 
 				break;
 			}
 			else if(spiral_type == Spiral_Right_Out){
@@ -862,10 +843,6 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			}
 		}//ending while(ros::ok)
 	}//ending if(st == Cleanspot...)
-	if(st == NormalSpot){
-		Disable_Motors();
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-	}
 }
 /*
  * author: mengshige1988@qq.com
@@ -1123,9 +1100,6 @@ int8_t Spot_HandleException(SpotType st)
     uint8_t octype = Check_Motor_Current();
 	if (octype) {
 		if(Self_Check(octype) && (st == NormalSpot)){
-			Disable_Motors();
-			Stop_Brifly();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 1;
 		}
 		return 1;
@@ -1157,11 +1131,7 @@ int8_t Spot_HandleException(SpotType st)
 					Set_MoveWithRemote();
 					SetHomeRemote();
 				}
-				Disable_Motors();
-				Stop_Brifly();
 				Reset_Rcon_Remote();
-				wav_play(WAV_CLEANING_FINISHED);
-				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 1;
 			}
 		}
