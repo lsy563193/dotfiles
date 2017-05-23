@@ -500,6 +500,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
     MapTouringType mt_state;
 	std::list<Point32_t> target;
 	Point32_t nextPoint;
+	uint8_t spot_stuck = 0;
 	/*--------initialize gyro & map & plan & slam --------*/
 	if(st == NormalSpot){
 		Set_Gyro_Off();
@@ -574,7 +575,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				}
 				ROS_WARN("%s ,%d target point (%d,%d),nearPoint.X = %d,nearPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,nearPoint.X,nearPoint.Y);
 				if(Is_Dict_Change){
-					if((nearPoint.X == tp->X) || (nearPoint.Y == tp->Y)){
+					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
 						Is_Dict_Change = 0;
 						nearPoint.X = 0;
 						nearPoint.Y = 0;
@@ -619,6 +620,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_Out){
 						od_spiral_out += 1;
@@ -640,6 +642,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Right_In){
 						ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
@@ -648,6 +651,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -655,10 +659,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_In){
 						ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
@@ -667,6 +672,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -674,10 +680,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					break;
 				}//ending if(g_should_follow_wall)
@@ -687,6 +694,10 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			} 
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
+				if(spot_stuck){
+					mt_state = CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
+					spot_stuck = 0;
+				} 
 				break;
 			}
 			else if(spiral_type == Spiral_Right_Out){
@@ -738,7 +749,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				}
 				ROS_INFO("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
 				if(Is_Dict_Change){
-					if((nearPoint.X == tp->X) || (nearPoint.Y == tp->Y)){
+					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
 						Is_Dict_Change = 0;
 						nearPoint.X = 0;
 						nearPoint.Y = 0;
@@ -782,6 +793,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_Out){
 						od_spiral_out += 1;
@@ -803,6 +815,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Right_In){
 						ROS_INFO("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
@@ -811,6 +824,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -818,10 +832,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					else if(spiral_type == Spiral_Left_In){
 						ROS_INFO("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
@@ -830,6 +845,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						if(od_spiral_in > 3){
 							Is_Dict_Change = 0;
 							od_spiral_in =0;
+							spot_stuck = 1;
 							break;
 						}
 						if((tp->X == 0) && (tp->Y == 0)){
@@ -837,10 +853,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							StopPoint.Y = tp->Y;
 						}
 						else{
-							tp++;
+							tp--;
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
+						ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
 					break;
 				}//ending if(g_should_follow_wall)	
@@ -850,6 +867,12 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			} 
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
+				StopPoint.X = x_offset;
+				StopPoint.Y = y_offset;
+				if(spot_stuck){
+					mt_state = CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
+					spot_stuck = 0;
+				} 
 				break;
 			}
 			else if(spiral_type == Spiral_Right_Out){
