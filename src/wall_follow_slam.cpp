@@ -389,12 +389,17 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			/*------------------------------------------------------Check Battery-----------------------*/
 			if (Check_Bat_Home() == 1) {
 				ROS_WARN("%s %d: low battery, battery < 13.2v is detected, go home.", __FUNCTION__, __LINE__);
+				Stop_Brifly();
 				Set_LED(100, 100);//it indicate that the robot is in low battery state
+				wav_play(WAV_BATTERY_LOW);
 				WF_End_Wall_Follow();
 				return 0;
 			}
 			if (Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power)) {
 				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
+				Stop_Brifly();
+				Set_LED(100, 100);//it indicate that the robot is in low battery state
+				wav_play(WAV_BATTERY_LOW);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 0;
 
