@@ -22,7 +22,7 @@
 #endif
 
 #include "movement.h"
-#include "wall_follow_multi.h"
+#include "wall_follow_trapped.h"
 #include <ros/ros.h>
 #include <vector>
 #include <chrono>
