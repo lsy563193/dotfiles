@@ -72,10 +72,10 @@ Laser::~Laser()
 {
 	stop();
 //	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
-	scan_sub_.shutdown();
-	start_mator_cli_.shutdown();
-	stop_mator_cli_.shutdown();
-	nh_.shutdown();
+//	scan_sub_.shutdown();
+//	start_mator_cli_.shutdown();
+//	stop_mator_cli_.shutdown();
+//	nh_.shutdown();
 	ROS_INFO("Laser stop");
 }
 

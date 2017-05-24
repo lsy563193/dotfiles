@@ -250,7 +250,7 @@ MotionManage::~MotionManage()
 	g_home_point.clear();
 	g_cur_wtime = 0;
 	Set_Clean_Mode(Clean_Mode_Userinterface);
-	nh_.shutdown();
+//	nh_.shutdown();
 }
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
