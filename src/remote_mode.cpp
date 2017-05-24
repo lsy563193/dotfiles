@@ -34,7 +34,6 @@ void Remote_Mode(void)
   //Display_Clean_Status(Display_Remote);
 
 	if (!Is_Gyro_On()){
-//		Beep(3,25,25,2);
 		Set_Gyro_On();
 		if (!Wait_For_Gyro_On())
 		{
@@ -189,7 +188,6 @@ void Remote_Mode(void)
 	  /*------------------------------------------------------stop event-----------------------*/
 		if(Stop_Event())
 		{
-			Beep(5, 20, 0, 1);
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
