@@ -282,7 +282,7 @@ public:
 
 	float getWfPositionY() const
 	{
-		return WF_position_y_;
+		return wf_position_y_;
 	}
 
 	float getOdomPositionX() const
@@ -509,7 +509,7 @@ private:
 	float	position_y_;
 	float	position_z_;
 	float	wf_position_x_;
-	float	WF_position_y_;
+	float	wf_position_y_;
 	float	odom_pose_x_;
 	float	odom_pose_y_;
 
