@@ -271,10 +271,12 @@
 #define Error_Code_BatteryLow	((uint8_t)0x0E)
 #define Error_Code_Dustbin		((uint8_t)0x0F)
 #define Error_Code_Gyro			((uint8_t)0x10)
-#define Error_Code_Test			((uint8_t)0xff)
-#define Error_Code_Test_Null	((uint8_t)0xfe)
-#define Error_Code_Encoder		((uint8_t)0xFC)
-#define Error_Code_Slam			((uint8_t)0xFD)
+#define Error_Code_Encoder		((uint8_t)0x11)
+#define Error_Code_Slam			((uint8_t)0x12)
+#define Error_Code_Laser		((uint8_t)0x13)
+#define Error_Code_Test			((uint8_t)0x14)
+#define Error_Code_Test_Null	((uint8_t)0x15)
+
 
 #define Display_Full				4
 #define Display_Low					5
