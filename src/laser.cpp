@@ -15,11 +15,46 @@
 
 //using namespace obstacle_detector;
 
+int read_line(int fd, char* buf){
+	char temp;
+		int i = 0;
+		do
+		{
+			if (read(fd, &temp, 1) == 0)break;
+			if (temp == '\n') break;
+			buf[i++] = temp;
+			printf("%c", temp);
+		}while(1);
+	printf("\n");
+	return 1;
+}
+
 void laser_pm_gpio(char val)
 {
-	int fd = open("/proc/driver/wifi-pm/power", O_WRONLY);
-	char buf[] = {val};
-	write(fd,buf,1);
+
+	if(val != '1' && val != '0'){
+		ROS_ERROR("ERROR, laser_pm_gpio has wrong param, default set 1");
+		val = '1';
+	}
+
+	char w_buf[] = {val};
+	char r_buf[28] = {0};
+
+	int fd = open("/proc/driver/wifi-pm/power", O_RDWR);
+
+/*		ap6212 : wl power state on
+ *		ap6212 : wl power state off
+ *		check	25th bit diff in " o 'n' " or "o 'f' f"
+ */
+	char r_val = (val == '1') ? 'n' : 'f';
+	do
+	{
+		write(fd, w_buf, 1);
+		usleep(200000);
+		read_line(fd, r_buf);
+//		ROS_INFO("laser gpio val %s", r_buf);
+	}while(r_buf[25] != r_val);
+
 	close(fd);
 }
 
@@ -28,7 +63,6 @@ Laser::Laser():nh_(),is_ready_(false)
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	start_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("start_motor");
 	stop_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_motor");
-	laser_pm_gpio('1');
 	ROS_INFO("Laser init done!");
 
 	start();
@@ -133,7 +167,7 @@ void Laser::start(void)
 		}
 		first_start = false;
 		laser_pm_gpio('1');
-		usleep(2000);
+		usleep(20000);
 		ROS_INFO("start_lidar");
 		start_mator_cli_.call(empty);
 		count_3s = 300;//set reboot lidar time to 3 seconds
