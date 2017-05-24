@@ -18,6 +18,12 @@ extern volatile int16_t Left_Wall_BaseLine;
 extern volatile int16_t Right_Wall_BaseLine;
 extern pp::x900sensor   sensor;
 
+typedef enum {
+	Odom_Position_Odom_Angle = 0,
+	Map_Position_Map_Angle,
+	Map_Position_Odom_Angle,
+} Baselink_Frame_Type;
+
 class robot
 {
 public:
@@ -348,8 +354,19 @@ public:
 #endif
 	}
 
+	Baselink_Frame_Type getBaselinkFrameType(void)
+	{
+		return baselink_frame_type_;
+	}
+
+	void setBaselinkFrameType(Baselink_Frame_Type frame)
+	{
+		baselink_frame_type_ = frame;
+	}
+
 private:
 
+	Baselink_Frame_Type baselink_frame_type_;
 
 // These variable is for continue cleaning after charge.
 	bool	low_bat_pause_cleaning_;

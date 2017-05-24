@@ -1359,7 +1359,8 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 		if (Get_OBS_Status()) {
 			Integrated = 0;
-			Rotate_Angle = 0;
+			//todo fixed can't adjust angle offset at start run
+//			Rotate_Angle = 0;
 			Base_Speed -= 5;
 			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
 		}

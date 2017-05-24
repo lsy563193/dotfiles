@@ -54,7 +54,6 @@ bool reach_continuous_state;
 int32_t reach_count = 0;
 int32_t	REACH_COUNT_LIMIT = 10;//10 represent the wall follow will end after overlap 10 cells
 int32_t same_cell_count = 0;
-extern int8_t g_enable_slam_offset;
 //MFW setting
 static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
 	{1200, 250, 150},
@@ -755,7 +754,7 @@ uint8_t WF_End_Wall_Follow(void){
 	//MapTouringType	mt_state = MT_None;
 	//int16_t offsetAngle = robot::instance()->getHomeAngle();
 	Stop_Brifly();
-	g_enable_slam_offset = 1;//inorder to use the slam angle to finsh the shortest path to home;
+	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
 	CM_update_position(Gyro_GetAngle());
 	WF_Mark_Home_Point();
 	CM_go_home();
