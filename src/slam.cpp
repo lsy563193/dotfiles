@@ -6,6 +6,7 @@
 #include <movement.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include "slam.h"
+#include "robot.hpp"
 #include "std_srvs/Empty.h"
 
 Slam::Slam():nh_local_("~"),nh_("/"),is_map_ready_(false)
@@ -45,8 +46,7 @@ void Slam::start(void)
 
 void Slam::stop(void)
 {
-	extern int8_t g_enable_slam_offset;
-	g_enable_slam_offset = 0;
+	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 	is_map_ready_ = false;
 
 #if SLAM_METHOD_2

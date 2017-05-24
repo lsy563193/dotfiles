@@ -20,7 +20,6 @@
 
 Segment_set segmentss;
 
-int8_t g_enable_slam_offset = 0;
 extern std::list <Point32_t> g_home_point;
 
 extern uint32_t g_cur_wtime;//temporary work time
@@ -181,9 +180,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam = new Slam();
 
 	if (Get_Clean_Mode() == Clean_Mode_Navigation || Get_Clean_Mode() == Clean_Mode_Spot)
-		g_enable_slam_offset = 1;
+		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	else if (Get_Clean_Mode() == Clean_Mode_WallFollow)
-		g_enable_slam_offset = 2;
+		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 1000;
 	robot::instance()->setTfReady(false);
@@ -228,10 +227,6 @@ MotionManage::~MotionManage()
 		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
 		return;
 	}
-
-	// Reset g_enable_slam_offset after checking for pause and before shutdown slam
-	// It is for avoiding the tf warning caused by tf transform in odom callback in robotbase.cpp
-	g_enable_slam_offset = 0;
 
 	if (s_slam != nullptr)
 	{

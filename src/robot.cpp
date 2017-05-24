@@ -17,7 +17,6 @@
 #include "std_srvs/Empty.h"
 using namespace obstacle_detector;
 
-extern int8_t g_enable_slam_offset;
 static	robot *robot_obj = NULL;
 
 time_t	start_time;
@@ -68,6 +67,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	// Initialize the manual pause variable.
 	manual_pause_cleaning_ = false;
 
+	setBaselinkFrameType(Odom_Position_Odom_Angle);
 }
 
 robot::~robot()
@@ -240,7 +240,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	ident.setIdentity();
 	ident.frame_id_ = "base_link";
 	ident.stamp_ = msg->header.stamp;
-	if (g_enable_slam_offset == 1){
+	if (getBaselinkFrameType() == Map_Position_Map_Angle)
+	{
 		//ROS_INFO("SLAM = 1");
 		if(MotionManage::s_slam->isMapReady())
 		{
@@ -274,7 +275,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				setTfReady(true);
 			}
 		}
-	}else if (g_enable_slam_offset == 0){
+	}
+	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
+	{
 		//ROS_INFO("SLAM = 0");
 		try {
 			robot_tf_->lookupTransform("/odom", "base_link", ros::Time(0), transform);
@@ -306,7 +309,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
 			setTfReady(true);
 		}
-	}else if (g_enable_slam_offset == 2){//Wall_Follow_Mode
+	}
+	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
+	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
 		if(MotionManage::s_slam->isMapReady())
 		{
@@ -358,7 +363,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
   position_x_ = map_pose.getOrigin().x();
   position_y_ = map_pose.getOrigin().y();
-	if (g_enable_slam_offset == 2){
+	if (getBaselinkFrameType() == Map_Position_Odom_Angle){
 		wf_position_x_ = WF_map_pose.getOrigin().x();
 		WF_position_y_ = WF_map_pose.getOrigin().y();
 	}

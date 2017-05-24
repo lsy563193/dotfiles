@@ -34,7 +34,6 @@ void Remote_Mode(void)
   //Display_Clean_Status(Display_Remote);
 
 	if (!Is_Gyro_On()){
-//		Beep(3,25,25,2);
 		Set_Gyro_On();
 		if (!Wait_For_Gyro_On())
 		{
@@ -189,7 +188,6 @@ void Remote_Mode(void)
 	  /*------------------------------------------------------stop event-----------------------*/
 		if(Stop_Event())
 		{
-			Beep(5, 20, 0, 1);
 			// Key release detection, if user has not release the key, don't do anything.
 			while (Get_Key_Press() & KEY_CLEAN)
 			{
@@ -198,6 +196,7 @@ void Remote_Mode(void)
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
 			if (Stop_Event() == 3) {
+				Disable_Motors();
 				wav_play(WAV_ERROR_LIFT_UP);
 			}
 			Reset_Stop_Event_Status();
@@ -219,6 +218,7 @@ void Remote_Mode(void)
 				Move_Back();
 			}
 			Stop_Brifly();
+			Disable_Motors();
 			wav_play(WAV_ERROR_LIFT_UP);
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
@@ -239,6 +239,7 @@ void Remote_Mode(void)
 			if(Get_Cliff_Trig() == Status_Cliff_All){
 				Quick_Back(20,20);
 				Stop_Brifly();
+				Disable_Motors();
 				ROS_INFO("Cliff trigger three times stop robot ");
 				wav_play(WAV_ERROR_LIFT_UP);
 				Set_Clean_Mode(Clean_Mode_Userinterface);
