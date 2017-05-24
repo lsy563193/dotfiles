@@ -29,7 +29,8 @@ FILE(GLOB PP_SRC
 	src/spot.cpp
 	src/user_interface.cpp
 	src/verify.cpp
-	src/wall_follow_multi.cpp
+	src/wall_follow_slam.cpp
+	src/wall_follow_trapped.cpp
 	src/wall_follow_short.cpp
 	src/wav.cpp
 	src/slam.cpp

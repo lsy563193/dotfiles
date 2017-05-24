@@ -21,7 +21,8 @@
 #include "remote_mode.h"
 #include "random_runing.h"
 #include "sleep.h"
-#include "wall_follow_multi.h"
+#include "wall_follow_slam.h"
+#include "wall_follow_trapped.h"
 #include "wav.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
