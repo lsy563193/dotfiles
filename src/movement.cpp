@@ -1705,6 +1705,11 @@ int16_t Get_LeftOBST_Value(void)
 	return Left_OBSTrig_Value + 200;
 }
 
+int16_t Get_RightOBST_Value(void)
+{
+	return Right_OBSTrig_Value + 200;
+}
+
 uint8_t Is_WallOBS_Near(void)
 {
 	if (robot::instance()->getObsFront() > (Front_OBSTrig_Value + 500)) {

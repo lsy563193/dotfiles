@@ -6,7 +6,6 @@ FILE(GLOB PP_SRC
 	src/charger.cpp
 	src/core_move.cpp
 	src/crc8.cpp
-	src/curve_move.cpp
 	src/debug.cpp
 	src/des.cpp
 	src/gyro.cpp
@@ -21,7 +20,6 @@ FILE(GLOB PP_SRC
 	src/remote_mode.cpp
 	src/robotbase.cpp
 	src/robot.cpp
-	src/rounding.cpp
 	src/serial.cpp
 	src/shortest_path.cpp
 	src/sleep.cpp
@@ -34,6 +32,7 @@ FILE(GLOB PP_SRC
 	src/wall_follow_short.cpp
 	src/wav.cpp
 	src/slam.cpp
+	src/event_manager.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

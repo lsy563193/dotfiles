@@ -24,6 +24,7 @@
 #include "wall_follow_slam.h"
 #include "wall_follow_trapped.h"
 #include "wav.h"
+#include "event_manager.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
 {
 	int			baudrate, ret1, core_move_thread_state;
 	bool		line_align_active, verify_ok = true;
-	pthread_t	core_move_thread_id;
+	pthread_t	core_move_thread_id, event_manager_thread_id, event_handler_thread_id;
 	std::string	serial_port;
 
 
@@ -194,6 +195,8 @@ int main(int argc, char **argv)
 	ros::NodeHandle	nh_private("~");
 
 	robot	robot_obj;
+
+	event_manager_init();
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 57600);
@@ -216,6 +219,25 @@ int main(int argc, char **argv)
 	robotbase_init();
 
 	if (verify_ok == true) {
+#if 1
+		ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
+		if (ret1 != 0) {
+			ROS_ERROR("%s %d: event manager thread fails to run!", __FUNCTION__, __LINE__);
+		} else {
+			ROS_INFO("%s %d: event manager thread is up!", __FUNCTION__, __LINE__);
+		}
+#endif
+
+
+#if 1
+		ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
+		if (ret1 != 0) {
+			ROS_ERROR("%s %d: event manager thread fails to run!", __FUNCTION__, __LINE__);
+		} else {
+			ROS_INFO("%s %d: event manager thread is up!", __FUNCTION__, __LINE__);
+		}
+#endif
+
 		ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
 		if (ret1 != 0) {
 			core_move_thread_state = 0;

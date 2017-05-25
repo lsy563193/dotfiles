@@ -49,6 +49,7 @@ private:
 
 	//get and set function
 public:
+
 	bool isSensorReady() const
 	{
 		return is_sensor_ready_;

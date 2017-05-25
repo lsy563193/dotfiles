@@ -10,7 +10,10 @@ typedef enum {
 	SERIAL_UPDATE,
 } SerialCommandType;
 
-void serial_init(const char* port,int baudrate); 
+extern pthread_mutex_t serial_data_ready_mtx;
+extern pthread_cond_t serial_data_ready_cond;
+
+void serial_init(const char* port,int baudrate);
 int serial_close();
 int serial_flush();
 bool is_serial_ready();

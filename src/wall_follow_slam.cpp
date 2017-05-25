@@ -71,7 +71,7 @@ bool WF_check_isolate(void)
 	uint32_t	left_speed, right_speed;
 	static int16_t	current_x = 0, current_y = 0;
 
-	MapEscapeTrappedType	escaped = Map_Escape_Trapped_Escaped;
+	EscapeTrappedType	escaped = Escape_Trapped_Escaped;
 
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;

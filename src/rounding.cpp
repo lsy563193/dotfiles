@@ -228,7 +228,7 @@ uint8_t rounding_boundary_check()
 	return boundary_reach;
 }
 
-uint8_t rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
+uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
 {
 	uint8_t		Jam = 0, Temp_Counter = 0, Temp_Bumper_Status, Temp_Cliff_Status, HomeFLRT = 0, HomeLT = 0, HomeRT = 0, HomeFL2T = 0, HomeFR2T = 0;
 	int16_t		Left_Wall_Buffer[3] = { 0 }, Right_Wall_Buffer[3] = { 0 };

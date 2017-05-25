@@ -4,6 +4,10 @@ Assumes an 'odom_combined' frame, that provides reasonably accurate odometry
 -->
 
 <launch>
+
+  <env name="ROSCONSOLE_CONFIG_FILE"
+       value="$(find pp)/custom_rosconsole.conf"/>
+
   <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
     <param name="odom_frame" value="odom"/>
     <param name="map_update_interval" value="5"/>

@@ -54,6 +54,9 @@ pthread_t sendPortThread_id;
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
+pthread_mutex_t serial_data_ready_mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
+
 pp::x900sensor	sensor;
 
 // This flag is for reset beep action
@@ -335,6 +338,11 @@ void *robotbase_routine(void*)
 		sensor.y_acc_ = ((receiStream[43]<<8)|receiStream[44])/258.0f; //in mG
 		sensor.z_acc_ = ((receiStream[45]<<8)|receiStream[46])/258.0f; //in mG
 #endif	
+
+		pthread_mutex_lock(&serial_data_ready_mtx);
+		pthread_cond_broadcast(&serial_data_ready_cond);
+		pthread_mutex_unlock(&serial_data_ready_mtx);
+
 		/*------------publish odom and robot_sensor topic -----------------------*/
 		cur_time = ros::Time::now();
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;

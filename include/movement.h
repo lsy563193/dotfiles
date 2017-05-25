@@ -464,6 +464,7 @@ void Set_Vac_Speed(void);
 void OBS_Dynamic_Base(uint16_t Cy);
 int16_t Get_FrontOBST_Value(void);
 int16_t Get_LeftOBST_Value(void);
+int16_t Get_RightOBST_Value(void);
 uint8_t Is_WallOBS_Near(void);
 void Adjust_OBST_Value(void);
 void Reset_OBST_Value(void);
