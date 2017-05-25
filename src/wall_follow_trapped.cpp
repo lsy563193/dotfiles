@@ -1191,6 +1191,9 @@ void WFT_handle_bumper_all(bool state_now, bool state_last)
 	for (int i = 0; i < 3; i++) {
 		Left_Wall_Buffer[i] = 0;
 	}
+
+	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	if(Get_Bumper_Status() == 0) g_bumper_cnt = 0;
 }
 
 void WFT_handle_bumper_left(bool state_now, bool state_last)
@@ -1223,6 +1226,9 @@ void WFT_handle_bumper_left(bool state_now, bool state_last)
 	for (int i = 0; i < 3; i++) {
 		Left_Wall_Buffer[i] = 0;
 	}
+
+	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	if((Get_Bumper_Status() & LeftBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 void WFT_handle_bumper_right(bool state_now, bool state_last)
@@ -1247,6 +1253,9 @@ void WFT_handle_bumper_right(bool state_now, bool state_last)
 	Set_Wheel_Speed(0, 0);
 	wft_turn_angle = 700;
 	wall_straight_distance_tmp = 375;
+
+	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	if((Get_Bumper_Status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 /* Cliff */

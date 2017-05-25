@@ -275,6 +275,8 @@ MotionManage::~MotionManage()
 
 	robot::instance()->savedOffsetAngle(0);
 
+	if(g_bumper_cnt >=3 && g_bumper_hitted)
+		wav_play(WAV_ERROR_BUMPER);
 	if (Get_Cliff_Trig())
 		wav_play(WAV_ERROR_LIFT_UP);
 

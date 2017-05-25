@@ -999,42 +999,6 @@ void CM_rounding_turn(uint16_t speed, int16_t angle)
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
-uint8_t rounding_boundary_check()
-{
-	uint8_t boundary_reach = 0;
-	int16_t j;
-	int32_t x, y;
-
-	for (j = -1; boundary_reach == 0 && j <= 1; j++) {
-		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_3);
-		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_3);
-
-		if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
-			boundary_reach = 1;
-			CM_update_position(Gyro_GetAngle());
-			Set_Wheel_Speed(0, 0);
-			usleep(10000);
-
-			CM_update_position(Gyro_GetAngle());
-			CM_CorBack(COR_BACK_20MM);
-			CM_update_position(Gyro_GetAngle());
-			if (Stop_Event()) {
-				ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
-				return boundary_reach;
-			}
-
-			CM_rounding_turn(TURN_SPEED, 600);
-			if (Stop_Event()) {
-				ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
-				return boundary_reach;
-			}
-
-			CM_update_position(Gyro_GetAngle());
-		}
-	}
-	return boundary_reach;
-}
-
 uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
 {
 	bool		eh_status_now, eh_status_last;
@@ -2171,6 +2135,7 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 	}
 
 	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	if(Get_Bumper_Status() == 0) g_bumper_cnt = 0;
 }
 
 void CM_handle_bumper_left(bool state_now, bool state_last)
@@ -2221,6 +2186,7 @@ void CM_handle_bumper_left(bool state_now, bool state_last)
 	}
 
 	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	if((Get_Bumper_Status() & LeftBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 void CM_handle_bumper_right(bool state_now, bool state_last)
@@ -2271,6 +2237,7 @@ void CM_handle_bumper_right(bool state_now, bool state_last)
 	}
 
 	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	if((Get_Bumper_Status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 /* OBS */
