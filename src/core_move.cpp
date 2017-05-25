@@ -1154,7 +1154,7 @@ int CM_cleaning()
 			{
 				auto x = Map_GetXPos();
 				auto y = Map_GetYPos();
-				if (x_current != x)
+				if (x_current != x && (abs(x_current - x) <= 2)) {
 				{
 					float slop = (((float) y_current) - ((float) y)) / (((float) x_current) - ((float) x));
 					float intercept = ((float) (y)) - slop * ((float) (x));
