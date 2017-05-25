@@ -511,7 +511,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 	if(st == NormalSpot){
 
 		MotionManage motion;//start slam
-
+		if(! motion.initSucceeded()){
+			ROS_WARN("%s %d: Init MotionManage failed!", __FUNCTION__, __LINE__);
+			Disable_Motors();
+			return;
+		}
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
