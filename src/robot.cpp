@@ -214,13 +214,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
-	double map_yaw, pitch, roll;
 
 	tf::Matrix3x3				mat;
-	tf::Stamped<tf::Pose>		ident;
 	tf::StampedTransform		transform;
-	tf::StampedTransform		WF_transform;
-	tf::Stamped<tf::Transform>	odom_pose, map_pose, WF_map_pose;
 
 	linear_x_ = msg->twist.twist.linear.x;
 	linear_y_ = msg->twist.twist.linear.y;
@@ -234,9 +230,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		is_moving_ = true;
 	}
 
-	ident.setIdentity();
-	ident.frame_id_ = "base_link";
-	ident.stamp_ = msg->header.stamp;
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
 		//ROS_INFO("SLAM = 1");
@@ -244,6 +237,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
+				position_x_ = transform.getOrigin().x();
+				position_y_ = transform.getOrigin().y();
+				yaw_ = tf::getYaw(transform.getRotation());
 			} catch(tf::TransformException e) {
 				ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 				setTfReady(false);
@@ -260,35 +256,28 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
 		//ROS_INFO("SLAM = 0");
-		try {
-			robot_tf_->lookupTransform("/odom", "base_link", ros::Time(0), transform);
-		} catch(tf::TransformException e) {
-			ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
-			setTfReady(false);
-			return;
-		}
-	
-
-		if (!isTfReady())
-		{
-			ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
-			setTfReady(true);
-		}
+		yaw_ = tf::getYaw(msg->pose.pose.orientation);
+		position_x_ = odom_pose_x_;
+		position_y_ = odom_pose_y_;
 	}
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
 		if(MotionManage::s_slam->isMapReady())
 		{
+			yaw_ = tf::getYaw(msg->pose.pose.orientation);
+			wf_position_x_ = odom_pose_x_;
+			wf_position_y_ = odom_pose_y_;
+
 			try {
 				robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
-				robot_tf_->lookupTransform("/odom", "base_link", ros::Time(0), WF_transform);
+				position_x_ = transform.getOrigin().x();
+				position_y_ = transform.getOrigin().y();
 			} catch(tf::TransformException e) {
 				ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
 				setTfReady(false);
 				return;
 			}
-	
 
 			if (!isTfReady())
 			{
@@ -298,20 +287,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 	}
 
-	position_x_ = transform.getOrigin().x();
-	position_y_ = transform.getOrigin().y();
-
-	if (getBaselinkFrameType() == Map_Position_Odom_Angle){
-		wf_position_x_ = WF_transform.getOrigin().x();
-		wf_position_y_ = WF_transform.getOrigin().y();
-		yaw_ = tf::getYaw(WF_transform.getRotation());
-	}
-	else
-	{
-		yaw_ = tf::getYaw(transform.getRotation());
-	}
 	Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
-	//ROS_INFO("%s %d: offset: %d", __FUNCTION__, __LINE__, ((int16_t)(yaw * 1800 / M_PI + 3600)) % 3600 - Gyro_GetAngle());
+	//ROS_WARN("Position (%f, %f), angle: %d, wf_position (%f, %f).", position_x_, position_y_, Gyro_GetAngle(), wf_position_x_, wf_position_y_);
+	//ROS_WARN("Odom position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, (((int16_t)(tf::getYaw(msg->pose.pose.orientation) * 1800 / M_PI + 3600)) % 3600));
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
