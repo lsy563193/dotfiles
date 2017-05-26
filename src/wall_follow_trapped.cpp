@@ -1648,7 +1648,7 @@ void WFM_move_back(uint16_t dist)
 	while (ros::ok()) {
 		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
 																																													 robot::instance()->getOdomPositionY(), 2));
-		if (fabsf(distance) > 0.02f) {
+		if (fabsf(distance) > 0.025f) {
 			break;
 		}
 
