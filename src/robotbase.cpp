@@ -275,7 +275,7 @@ void *robotbase_routine(void*)
 		sensor.angle = -(float)(int16_t)((receiStream[6] << 8) | receiStream[7]) / 100;
 
 		sensor.angle -= robot::instance()->offsetAngle();
-		ROS_INFO("sensor:%f",robot::instance()->getAngle());
+//		ROS_INFO("sensor:%f",robot::instance()->getAngle());
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
