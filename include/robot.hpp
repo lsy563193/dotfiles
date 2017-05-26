@@ -49,7 +49,6 @@ private:
 
 	//get and set function
 public:
-
 	bool isSensorReady() const
 	{
 		return is_sensor_ready_;
@@ -63,11 +62,6 @@ public:
 	float getAngle() const
 	{
 		return angle_;
-	}
-
-	void setAngle(float angle)
-	{
-		angle_ = angle;
 	}
 
 	void offsetAngle(float angle)
@@ -98,6 +92,7 @@ public:
 	{
 		return angle_v_;
 	}
+
 	int16_t getCliffRight() const
 	{
 		return sensor.rcliff;

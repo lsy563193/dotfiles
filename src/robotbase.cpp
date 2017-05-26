@@ -234,9 +234,6 @@ void *robotbase_routine(void*)
 	pthread_detach(pthread_self());
 	ROS_INFO("%s.%d, thread running",__FUNCTION__,__LINE__);
 	float	th_last, vth;
-	float	previous_angle = std::numeric_limits<float>::max();
-	float	delta_angle = 0;
-	int16_t	angle;
 
 	uint16_t	lw_speed, rw_speed;
 
@@ -275,12 +272,10 @@ void *robotbase_routine(void*)
 		rw_speed = (receiStream[4] << 8) | receiStream[5];
 		sensor.lw_vel = (lw_speed > 0x7fff) ? -((float)(lw_speed - 0x8000) / 1000.0) : (float)(lw_speed) / 1000.0;
 		sensor.rw_vel = (rw_speed > 0x7fff) ? -((float)(rw_speed - 0x8000) / 1000.0) : (float)(rw_speed) / 1000.0;
-		angle = (receiStream[6] << 8) | receiStream[7];
-		sensor.angle = -(float)(angle) / 100.0;
+		sensor.angle = -(float)(int16_t)((receiStream[6] << 8) | receiStream[7]) / 100;
 
 		sensor.angle -= robot::instance()->offsetAngle();
-		robot::instance()->setAngle(sensor.angle);
-//		ROS_INFO("sensor:%f",robot::instance()->getAngle());
+		ROS_INFO("sensor:%f",robot::instance()->getAngle());
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
