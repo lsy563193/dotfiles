@@ -1272,7 +1272,7 @@ void CM_go_home()
 		g_home_point.pop_front();
 
 		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
-		CM_MoveToCell(tmpPnt.X, tmpPnt.Y, 2, 0, 1);
+		CM_MoveToCell(tmpPnt.X, tmpPnt.Y,2,0,1);
 	}
 }
 
@@ -1330,231 +1330,131 @@ uint8_t CM_Touring(void)
  */
 int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_t step )
 {
-	Point32_t		Next_Point;
 	int8_t		pathFind;
 	int16_t		i, j, k;
 	uint16_t	offsetIdx = 0;
 	Point16_t	tmp, pos;
-	MapTouringType	mt_state = MT_None;
+	Point32_t	Next_Point;
+
+	i = j = k = offsetIdx = 0;
 
 	if (is_block_accessible(x, y) == 0) {
 		ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
 		Map_Set_Cells(ROBOT_SIZE, x, y, CLEANED);
 	}
 
-	//Escape mode
-	//TODO: Escape
-	if ( mode ==  1 ) {
-		ROS_WARN("%s %d: Path Find: Escape Mode", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Path Find: Dynamic Target Mode, target: (%d, %d)", __FUNCTION__, __LINE__, x, y);
 
-		pos.X = x;
-		pos.Y = y;
-		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(),  &tmp.X, &tmp.Y);
-
-		return 0;
-	} else if ( mode == 2 ) {
-		i = j = k = offsetIdx = 0;
-
-		Point16_t relativePosTmp = {0, 0};
-		ROS_INFO("%s %d: Path Find: Dynamic Target Mode, target: (%d, %d)", __FUNCTION__, __LINE__, x, y);
-
-		g_relativePos[k].X = 0;
-		g_relativePos[k].Y = 0;
-		k = 1;
-		for ( i = -length; i <= length; i += step ) {
-			for ( j = -length; j <= length; j += step ) {
-				if ( x + i <= xMax && x + i >= xMin &&	y + j <= yMax && y + j >= yMin ) {
-					if ( i == 0 && j == 0 ) {
-						continue;
-					}
-					g_relativePos[k].X = i;
-					g_relativePos[k].Y = j;
-					ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)", __FUNCTION__, __LINE__, k, g_relativePos[k].X, g_relativePos[k].Y);
-					++k;
-				}
-			}
-		}
-		ROS_INFO("%s %d: Size: %d", __FUNCTION__, __LINE__, k);
-
-		//Position sort, two case: 1. sort for the previous half size of point; 2. sort the rest.
-		//Sort from the nearest point to the farest point, refer to the middle point
-		for ( i = 1 ; i < k; ++i) {
-			for ( j = 1; j < k - i; ++j ) {
-				if ( TwoPointsDistance( g_relativePos[j].X * 1000,	 g_relativePos[j].Y * 1000,	  0, 0 ) >
-					 TwoPointsDistance( g_relativePos[j + 1].X * 1000, g_relativePos[j + 1].Y * 1000, 0, 0 ) ) {
-					relativePosTmp = g_relativePos[j + 1];
-					g_relativePos[j + 1] = g_relativePos[j];
-					g_relativePos[j] = relativePosTmp;
-				}
-			}
-		}
-
-		ROS_INFO("%s %d: Bubble sort:", __FUNCTION__, __LINE__);
-		for ( i = 0; i < k; i++ ) {
-			ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)\tDis: %d", __FUNCTION__, __LINE__, i, g_relativePos[i].X, g_relativePos[i].Y,
-					 TwoPointsDistance( g_relativePos[i].X * 1000, g_relativePos[i].Y * 1000, 0, 0 ));
-		}
-
-		pos.X = x + g_relativePos[0].X;
-		pos.Y = y + g_relativePos[0].Y;
-		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
-
-		//Set cell
-		Map_Set_Cells(ROBOT_SIZE, x + g_relativePos[0].X, y + g_relativePos[0].Y, CLEANED);
-
-		ROS_INFO("%s %d: Path Find: %d", __FUNCTION__, __LINE__, pathFind);
-		ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-		ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
-		while (1) {
-			if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
-				path_set_current_pos();
-
-				ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
-				Next_Point.X = cellToCount(tmp.X);
-				Next_Point.Y = cellToCount(tmp.Y);
-
-#if ENABLE_DEBUG
-				debug_map(MAP, tmp.X, tmp.Y);
-#endif
-
-				CM_MoveToPoint(Next_Point);
-				ROS_INFO("%s %d: Arrive Target! Now: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
-
-				//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
-				if ( TwoPointsDistance( x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y, Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
-					ROS_WARN("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
-					ROS_WARN("%s %d: Destination: x: %d\ty: %d", __FUNCTION__, __LINE__, x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
-					return 1;
-				}
-
-				if (is_block_accessible(x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y) == 0) {
-					ROS_WARN("%s %d: Target is blocked. Try to find new target.", __FUNCTION__, __LINE__);
-					pathFind = -2;
+	g_relativePos[k].X = 0;
+	g_relativePos[k].Y = 0;
+	k = 1;
+	for (i = -length; i <= length; i += step) {
+		for (j = -length; j <= length; j += step) {
+			if (x + i <= xMax && x + i >= xMin &&	y + j <= yMax && y + j >= yMin) {
+				if (i == 0 && j == 0) {
 					continue;
 				}
-
-				pos.X = x + g_relativePos[offsetIdx].X;
-				pos.Y = y + g_relativePos[offsetIdx].Y;
-				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
-
-				if (CM_CheckLoopBack(tmp) == 1) {
-					pathFind = -2;
-				}
-				ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
-						 x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
-				ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-				ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
-			} else if ( pathFind == -2 || pathFind == -1 ) {
-				//Add offset
-				offsetIdx++;
-				if ( g_relativePos[offsetIdx].X == 0 && g_relativePos[offsetIdx].Y == 0 )
-					offsetIdx++;
-
-				if ( offsetIdx >= k ) {
-					return -2;
-				}
-
-				pos.X = x + g_relativePos[offsetIdx].X;
-				pos.Y = y + g_relativePos[offsetIdx].Y;
-				pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
-
-				if (Stop_Event()) {
-					ROS_INFO("%s %d: Stop event.", __FUNCTION__, __LINE__);
-					// Set touch status to make sure this event can be detected by main process while loop.
-					Stop_Brifly();
-					return -5;
-				}
-
-				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-					ROS_WARN("%s %d: robot is taken up.", __FUNCTION__, __LINE__);
-					Stop_Brifly();
-					return -5;
-				}
-
-				ROS_INFO("%s %d: Path Find: %d, %d Target Offset: (%d, %d)", __FUNCTION__, __LINE__, pathFind, offsetIdx,
-						 g_relativePos[offsetIdx].X, g_relativePos[offsetIdx].Y);
-				ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
-						 x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
-
-			} else {
-				return pathFind;
+				g_relativePos[k].X = i;
+				g_relativePos[k].Y = j;
+				ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)", __FUNCTION__, __LINE__, k, g_relativePos[k].X, g_relativePos[k].Y);
+				++k;
 			}
 		}
 	}
-	//Normal mode
-	else {
-		ROS_INFO("%s %d: Path Find: Normal Mode, target: (%d, %d)", __FUNCTION__, __LINE__, x, y);
-		pos.X = x;
-		pos.Y = y;
-		pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
+	ROS_INFO("%s %d: Size: %d", __FUNCTION__, __LINE__, k);
 
-		ROS_INFO("%s %d: Path Find: %d", __FUNCTION__, __LINE__, pathFind);
-		ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-		ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
+	//Position sort, two case: 1. sort for the previous half size of point; 2. sort the rest.
+	//Sort from the nearest point to the farest point, refer to the middle point
+	for (i = 1 ; i < k; ++i) {
+		for (j = 1; j < k - i; ++j) {
+			if (TwoPointsDistance( g_relativePos[j].X * 1000, g_relativePos[j].Y * 1000, 0, 0) >
+				 TwoPointsDistance( g_relativePos[j + 1].X * 1000, g_relativePos[j + 1].Y * 1000, 0, 0)) {
+				tmp = g_relativePos[j + 1];
+				g_relativePos[j + 1] = g_relativePos[j];
+				g_relativePos[j] = tmp;
+			}
+		}
+	}
 
-		//Note that path_move_to_unclean_area only can get the next cell to the destination cell
-		while ( pathFind == 1 || pathFind == SCHAR_MAX ) {
+	ROS_INFO("%s %d: Bubble sort:", __FUNCTION__, __LINE__);
+	for (i = 0; i < k; i++) {
+		ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)\tDis: %d", __FUNCTION__, __LINE__, i, g_relativePos[i].X, g_relativePos[i].Y,
+				 TwoPointsDistance(g_relativePos[i].X * 1000, g_relativePos[i].Y * 1000, 0, 0 ));
+	}
+
+	pos.X = x + g_relativePos[0].X;
+	pos.Y = y + g_relativePos[0].Y;
+	pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
+
+	//Set cell
+	Map_Set_Cells(ROBOT_SIZE, x + g_relativePos[0].X, y + g_relativePos[0].Y, CLEANED);
+
+	ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y, Map_GetXPos(), Map_GetYPos());
+	while (ros::ok()) {
+		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
+			return 0;
+		}
+
+		if (g_remote_home == true && g_go_home == 0) {
+			return 0;
+		}
+
+		if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
 			path_set_current_pos();
 
 			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
 			Next_Point.X = cellToCount(tmp.X);
 			Next_Point.Y = cellToCount(tmp.Y);
+
 #if ENABLE_DEBUG
 			debug_map(MAP, tmp.X, tmp.Y);
 #endif
 
-			mt_state = CM_MoveToPoint(Next_Point);
+			CM_MoveToPoint(Next_Point);
 			ROS_INFO("%s %d: Arrive Target! Now: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
-			if (mt_state == MT_Battery) {
-				ROS_INFO("%s %d: low battery is detected, battery < 1200", __FUNCTION__, __LINE__);
-				return -3;
-			} else if (mt_state == MT_Remote_Home) {
-				ROS_INFO("%s %d: home is pressed", __FUNCTION__, __LINE__);
-				return -4;
-#if MANUAL_PAUSE_CLEANING
-			} else if (mt_state == MT_Cliff) {
-				ROS_WARN("%s %d: Cliff is triggered.", __FUNCTION__, __LINE__);
-#else
-			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Cliff || mt_state == MT_Key_Clean) {
-				ROS_WARN("%s %d: remote is pressed, clean key is pressed,  or cliff is reached", __FUNCTION__, __LINE__);
-#endif
-				return -5;
-			} else if (mt_state == MT_Battery_Home) {
-				ROS_INFO("%s %d: low battery is detected, battery < 1300", __FUNCTION__, __LINE__);
-				return -6;
-			} else if ( mt_state == MT_None ) {
-				if ( g_go_home == 1 && Is_Station() == 1 ) {
-					return -7;
-				}
-#if MANUAL_PAUSE_CLEANING
-			} else if (mt_state == MT_Remote_Clean || mt_state == MT_Key_Clean) {
-				ROS_WARN("%s %d: remote is pressed, clean key is pressed", __FUNCTION__, __LINE__);
-				return -8;
-#endif
-			}
-
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
-			if ( TwoPointsDistance( x, y, Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
-				ROS_INFO("%s %d: Now: x:%d \ty: %d", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
-				ROS_INFO("%s %d: Destination: x: %d\ty: %d", __FUNCTION__, __LINE__, x, y);
+			if ( TwoPointsDistance( x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y, Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
+				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
 				return 1;
 			}
 
-			if (is_block_accessible(x, y) == 0) {
-				ROS_INFO("%s %d: target is blocked", __FUNCTION__, __LINE__);
-				return 0;
+			if (is_block_accessible(x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y) == 0) {
+				ROS_WARN("%s %d: Target is blocked. Try to find new target.", __FUNCTION__, __LINE__);
+				pathFind = -2;
+				continue;
 			}
 
-			pos.X = x;
-			pos.Y = y;
+			pos.X = x + g_relativePos[offsetIdx].X;
+			pos.Y = y + g_relativePos[offsetIdx].Y;
 			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
-			ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind, x, y);
-			ROS_INFO("%s %d: Target need to go: x: %d\ty: %d", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-			ROS_INFO("%s %d: Now: x: %d\ty: %d", __FUNCTION__, __LINE__, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
+			if (CM_CheckLoopBack(tmp) == 1) {
+				pathFind = -2;
+			}
+			ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind, x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
+			ROS_INFO("%s %d: Target need to go: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
+		} else if ( pathFind == -2 || pathFind == -1 ) {
+			//Add offset
+			offsetIdx++;
+			if (g_relativePos[offsetIdx].X == 0 && g_relativePos[offsetIdx].Y == 0)
+				offsetIdx++;
+
+			if (offsetIdx >= k) {
+				return -2;
+			}
+
+			pos.X = x + g_relativePos[offsetIdx].X;
+			pos.Y = y + g_relativePos[offsetIdx].Y;
+			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
+
+			ROS_INFO("%s %d: Path Find: %d, %d Target Offset: (%d, %d)", __FUNCTION__, __LINE__, pathFind, offsetIdx,
+					 g_relativePos[offsetIdx].X, g_relativePos[offsetIdx].Y);
+			ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
+					 x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
+		} else {
+			return pathFind;
 		}
-		return pathFind;
 	}
 }
 

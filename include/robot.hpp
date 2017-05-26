@@ -98,7 +98,6 @@ public:
 	{
 		return angle_v_;
 	}
-
 	int16_t getCliffRight() const
 	{
 		return sensor.rcliff;
