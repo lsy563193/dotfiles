@@ -1144,55 +1144,20 @@ uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 }
 #endif
 
-uint8_t CM_resume_cleaning()
+bool CM_resume_cleaning()
 {
-	// Handle Continue Cleaning
-	int8_t state;
-
-	ROS_INFO("Go to continue point: (%d, %d), targets left.", countToCell(g_continue_point.X),
-					 countToCell(g_continue_point.Y));
 	g_low_battery = 0;
-
-	// Reset the cleaning pause flag.
 	robot::instance()->resetLowBatPause();
-	// Try go to exactly this home point.
-	state = CM_MoveToCell(countToCell(g_continue_point.X), countToCell(g_continue_point.Y), 2, 0,
-																							1);
-	ROS_INFO("CM_MoveToCell return %d.", state);
 
-	if (state == 1)
+	CM_MoveToCell(countToCell(g_continue_point.X), countToCell(g_continue_point.Y),2,0,1);
+	if (g_fatal_quit_event || g_key_clean_pressed)
 	{
-		ROS_INFO("Robot has reach the continue point, continue cleaning.");
-	} else if (state == -1 || state == -2)
-	{
-		ROS_INFO("Robot can't reach the continue point, directly continue cleaning.");
-	} else if (state == -3 || state == -5 || state == -8)
-	{
-		if (state == -3)
-		{
-			ROS_INFO("Robot battery < 1200, stop it.");
-			return 0;
-		} else
-		{
-			ROS_INFO("Stop_Event.");
-			return 0;
-		}
-	} else if (state == -4)
-	{
-		ROS_INFO("Remote home pressed, go home.");
-		g_remote_go_home = 1;
-		g_go_home = 1;
-	} else if (state == -6)
-	{
-		ROS_INFO("Low battery go home. g_go_home = %d", g_go_home);
-		// g_go_home has been set to 1.
-	} else if (state == -7)
-	{
-		ROS_INFO("Go home and near home now.");
-		// g_go_home has been set to 1.
+		robot::instance()->resetLowBatPause();
+		return false;
 	}
-	return 1;
+	return true;
 }
+
 
 int CM_cleaning()
 {
