@@ -23,6 +23,7 @@ extern PositionType g_positions[];
  */
 void debug_map(uint8_t id, int16_t endx, int16_t endy)
 {
+#if ENABLE_DEBUG
 	int16_t		i, j, x_min, x_max, y_min, y_max, index;
 	CellState	cs;
 
@@ -74,5 +75,6 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 		ROS_INFO("%s", outString);
 	}
 	ROS_INFO("\n");
+#endif
 }
 #endif

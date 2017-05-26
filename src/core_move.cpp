@@ -1328,134 +1328,48 @@ uint8_t CM_Touring(void)
  *		-1: Robot cannot move to target cell
  *		1: Robot arrive target cell
  */
-int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_t step )
+int8_t CM_MoveToCell( int16_t target_x, int16_t target_y, uint8_t mode, uint8_t length, uint8_t step )
 {
-	int8_t		pathFind;
-	int16_t		i, j, k;
-	uint16_t	offsetIdx = 0;
-	Point16_t	tmp, pos;
-	Point32_t	Next_Point;
-
-	i = j = k = offsetIdx = 0;
-
-	if (is_block_accessible(x, y) == 0) {
+	if (is_block_accessible(target_x, target_y) == 0) {
 		ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
-		Map_Set_Cells(ROBOT_SIZE, x, y, CLEANED);
+		Map_Set_Cells(ROBOT_SIZE, target_x, target_y, CLEANED);
 	}
 
-	ROS_INFO("%s %d: Path Find: Dynamic Target Mode, target: (%d, %d)", __FUNCTION__, __LINE__, x, y);
+	ROS_INFO("%s %d: Path Find: target: (%d, %d)", __FUNCTION__, __LINE__, target_x, target_y);
+	Map_Set_Cells(ROBOT_SIZE, target_x, target_y, CLEANED);
 
-	g_relativePos[k].X = 0;
-	g_relativePos[k].Y = 0;
-	k = 1;
-	for (i = -length; i <= length; i += step) {
-		for (j = -length; j <= length; j += step) {
-			if (x + i <= xMax && x + i >= xMin &&	y + j <= yMax && y + j >= yMin) {
-				if (i == 0 && j == 0) {
-					continue;
-				}
-				g_relativePos[k].X = i;
-				g_relativePos[k].Y = j;
-				ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)", __FUNCTION__, __LINE__, k, g_relativePos[k].X, g_relativePos[k].Y);
-				++k;
-			}
-		}
-	}
-	ROS_INFO("%s %d: Size: %d", __FUNCTION__, __LINE__, k);
-
-	//Position sort, two case: 1. sort for the previous half size of point; 2. sort the rest.
-	//Sort from the nearest point to the farest point, refer to the middle point
-	for (i = 1 ; i < k; ++i) {
-		for (j = 1; j < k - i; ++j) {
-			if (TwoPointsDistance( g_relativePos[j].X * 1000, g_relativePos[j].Y * 1000, 0, 0) >
-				 TwoPointsDistance( g_relativePos[j + 1].X * 1000, g_relativePos[j + 1].Y * 1000, 0, 0)) {
-				tmp = g_relativePos[j + 1];
-				g_relativePos[j + 1] = g_relativePos[j];
-				g_relativePos[j] = tmp;
-			}
-		}
-	}
-
-	ROS_INFO("%s %d: Bubble sort:", __FUNCTION__, __LINE__);
-	for (i = 0; i < k; i++) {
-		ROS_INFO("%s %d: Id: %d\tPoint: (%d, %d)\tDis: %d", __FUNCTION__, __LINE__, i, g_relativePos[i].X, g_relativePos[i].Y,
-				 TwoPointsDistance(g_relativePos[i].X * 1000, g_relativePos[i].Y * 1000, 0, 0 ));
-	}
-
-	pos.X = x + g_relativePos[0].X;
-	pos.Y = y + g_relativePos[0].Y;
-	pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
-
-	//Set cell
-	Map_Set_Cells(ROBOT_SIZE, x + g_relativePos[0].X, y + g_relativePos[0].Y, CLEANED);
-
-	ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y, Map_GetXPos(), Map_GetYPos());
 	while (ros::ok()) {
-		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
+		if (g_fatal_quit_event || g_key_clean_pressed )
 			return 0;
-		}
 
-		if (g_remote_home == true && g_go_home == 0) {
+		if (g_remote_home && g_go_home == 0)
 			return 0;
-		}
 
+		Point16_t pos{target_x, target_y};
+		Point16_t	tmp;
+		auto pathFind = (int8_t)path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
+
+		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y, Map_GetXPos(), Map_GetYPos());
 		if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
 			path_set_current_pos();
 
+			if (CM_CheckLoopBack(tmp) == 1)
+				return -2;
+
 			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
-			Next_Point.X = cellToCount(tmp.X);
-			Next_Point.Y = cellToCount(tmp.Y);
-
-#if ENABLE_DEBUG
 			debug_map(MAP, tmp.X, tmp.Y);
-#endif
-
+			Point32_t	Next_Point{ cellToCount(tmp.X), cellToCount(tmp.Y) };
 			CM_MoveToPoint(Next_Point);
-			ROS_INFO("%s %d: Arrive Target! Now: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos());
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
-			if ( TwoPointsDistance( x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y, Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
-				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
+			if ( TwoPointsDistance( target_x , target_y , Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
+				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), target_x , target_y);
 				return 1;
 			}
-
-			if (is_block_accessible(x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y) == 0) {
-				ROS_WARN("%s %d: Target is blocked. Try to find new target.", __FUNCTION__, __LINE__);
-				pathFind = -2;
-				continue;
-			}
-
-			pos.X = x + g_relativePos[offsetIdx].X;
-			pos.Y = y + g_relativePos[offsetIdx].Y;
-			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
-
-			if (CM_CheckLoopBack(tmp) == 1) {
-				pathFind = -2;
-			}
-			ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind, x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
-			ROS_INFO("%s %d: Target need to go: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y, countToCell(Map_GetXCount()), countToCell(Map_GetYCount()));
-		} else if ( pathFind == -2 || pathFind == -1 ) {
-			//Add offset
-			offsetIdx++;
-			if (g_relativePos[offsetIdx].X == 0 && g_relativePos[offsetIdx].Y == 0)
-				offsetIdx++;
-
-			if (offsetIdx >= k) {
-				return -2;
-			}
-
-			pos.X = x + g_relativePos[offsetIdx].X;
-			pos.Y = y + g_relativePos[offsetIdx].Y;
-			pathFind = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
-
-			ROS_INFO("%s %d: Path Find: %d, %d Target Offset: (%d, %d)", __FUNCTION__, __LINE__, pathFind, offsetIdx,
-					 g_relativePos[offsetIdx].X, g_relativePos[offsetIdx].Y);
-			ROS_INFO("%s %d: Path Find: %d, target: (%d, %d)", __FUNCTION__, __LINE__, pathFind,
-					 x + g_relativePos[offsetIdx].X, y + g_relativePos[offsetIdx].Y);
-		} else {
+		} else
 			return pathFind;
-		}
 	}
+	return 0;
 }
 
 /*-------------- Move Back -----------------------------*/

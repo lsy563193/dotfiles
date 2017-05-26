@@ -85,6 +85,7 @@ void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_lon
 int32_t CM_ABS(int32_t A, int32_t B);
 
 int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_t step );
+//int8_t CM_MoveToCell( int16_t x, int16_t y);
 
 void CM_CorBack(uint16_t dist);
 
