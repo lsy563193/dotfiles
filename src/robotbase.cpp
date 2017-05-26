@@ -76,12 +76,8 @@ int temp_speaker_silence_time_count = 0;
 // Low battery flag
 extern uint8_t g_low_battery;
 
-/*extern int g_enable_angle_offset;
-extern boost::condition_variable g_cond_var;
-extern boost::mutex g_angle_offset_mt;
-
-extern void set_angle_offset(int);
-extern int get_angle_offset(void);*/
+// Lock for odom coordinate
+boost::mutex odom_mutex;
 
 // Odom coordinate
 float pose_x, pose_y;
@@ -268,6 +264,7 @@ void *robotbase_routine(void*)
 		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");	
 		//ros::spinOnce();
 
+		boost::mutex::scoped_lock(odom_mutex);
 		lw_speed = (receiStream[2] << 8) | receiStream[3];
 		rw_speed = (receiStream[4] << 8) | receiStream[5];
 		sensor.lw_vel = (lw_speed > 0x7fff) ? -((float)(lw_speed - 0x8000) / 1000.0) : (float)(lw_speed) / 1000.0;
@@ -275,7 +272,7 @@ void *robotbase_routine(void*)
 		sensor.angle = -(float)(int16_t)((receiStream[6] << 8) | receiStream[7]) / 100;
 
 		sensor.angle -= robot::instance()->offsetAngle();
-//		ROS_INFO("sensor:%f",robot::instance()->getAngle());
+		//ROS_INFO("sensor:%f",robot::instance()->getAngle());
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -461,5 +458,15 @@ void process_beep(){
 void robotbase_reset_odom_pose(void)
 {
 	// Reset the odom pose to (0, 0)
+	boost::mutex::scoped_lock(pose_mutex);
 	pose_x = pose_y = 0;
+}
+
+void robotbase_set_odom_pose_and_angle(float x, float y)
+{
+	// For restarting slam
+	boost::mutex::scoped_lock(odom_mutex);
+	pose_x += robot::instance()->getCorrectionX();
+	pose_y += robot::instance()->getCorrectionY();
+	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
 }

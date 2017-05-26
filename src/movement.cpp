@@ -2023,8 +2023,51 @@ uint8_t Stop_Event(void)
 
 		if (Get_Error_Code())
 		{
-			ROS_WARN("Detects Error: %d!", Get_Error_Code());
-			Stop_Event_Status = 4;
+			ROS_WARN("Detects Error: %x!", Get_Error_Code());
+			if (Get_Error_Code() == Error_Code_Slam)
+			{
+				Stop_Brifly();
+				// Check if it is really stopped.
+				uint8_t slam_error_count = 0;
+				tf::StampedTransform transform;
+				for (uint8_t i = 0; i < 3; i++)
+				{
+					try {
+						robot::instance()->robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
+					} catch(tf::TransformException e) {
+						ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
+						slam_error_count++;
+					}
+					if (slam_error_count > 0)
+						break;
+					i++;
+					usleep(20000);
+				}
+				if (slam_error_count > 0)
+				{
+					// Beep for debug
+					//Beep(3, 25, 25, 3);
+					system("rosnode kill /slam_karto &");
+					usleep(3000000);
+					system("roslaunch pp karto_slam.launch &");
+					robotbase_set_odom_pose_and_angle(robot::instance()->getPositionX(), robot::instance()->getPositionY());
+					MotionManage::s_slam->isMapReady(false);
+					while (!MotionManage::s_slam->isMapReady())
+					{
+						ROS_WARN("Slam not ready yet.");
+						MotionManage::s_slam->enableMapUpdate();
+						usleep(500000);
+					}
+					ROS_WARN("Slam restart successed.");
+					// Wait for 0.5s to make sure it has process the first scan.
+					usleep(500000);
+				}
+				Set_Error_Code(Error_Code_None);
+			}
+			else
+			{
+				Stop_Event_Status = 4;
+			}
 		}
 	}
 	return Stop_Event_Status;

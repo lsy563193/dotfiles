@@ -32,6 +32,8 @@ public:
 
 	static robot *instance();
 
+	tf::TransformListener		*robot_tf_;
+
 	// core function
 	void init();
 	void displayPositions();
@@ -295,6 +297,21 @@ public:
 		return yaw_;
 	}
 
+	double getCorrectionX() const
+	{
+		return correction_x_;
+	}
+
+	double getCorrectionY() const
+	{
+		return correction_y_;
+	}
+
+	double getCorrectionYaw() const
+	{
+		return correction_yaw_;
+	}
+
 	void setTfReady(bool is_ready)
 	{
 		is_tf_ready_ = is_ready;
@@ -508,11 +525,11 @@ private:
 	float	odom_pose_x_;
 	float	odom_pose_y_;
 
-	float	odom_yaw_;
-	float	base_link_yaw_;
-	float	map_yaw_;
-
 	double	yaw_;
+
+	float	correction_x_;
+	float	correction_y_;
+	float	correction_yaw_;
 
 	ros::NodeHandle robot_nh_;
 	ros::Subscriber sensor_sub_;
@@ -528,7 +545,6 @@ private:
 	visualization_msgs::Marker clean_markers_,bumper_markers_;
 	geometry_msgs::Point m_points_;
 
-	tf::TransformListener		*robot_tf_;
 	tf::TransformListener		*robot_wf_tf_;
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;

@@ -25,13 +25,15 @@ time_t	start_time;
 int8_t key_press_count;
 int8_t key_release_count;
 
+int16_t slam_error_count;
+
 //extern pp::x900sensor sensor;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
 	init();
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
-	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.5), true);
+	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 	/*map subscriber for exploration*/
 //	map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
@@ -215,8 +217,8 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 
-	tf::Matrix3x3				mat;
 	tf::StampedTransform		transform;
+	tf::StampedTransform		correction;
 
 	linear_x_ = msg->twist.twist.linear.x;
 	linear_y_ = msg->twist.twist.linear.y;
@@ -233,16 +235,26 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
 		//ROS_INFO("SLAM = 1");
-		if(MotionManage::s_slam->isMapReady())
+		if(MotionManage::s_slam->isMapReady() && Get_Error_Code() != Error_Code_Slam)
 		{
 			try {
-				robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
+				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
+				robot_tf_->lookupTransform("/map", "/odom", ros::Time(0), correction);
 				position_x_ = transform.getOrigin().x();
 				position_y_ = transform.getOrigin().y();
 				yaw_ = tf::getYaw(transform.getRotation());
+				correction_x_ = correction.getOrigin().x();
+				correction_y_ = correction.getOrigin().y();
+				correction_yaw_ = tf::getYaw(correction.getRotation());
 			} catch(tf::TransformException e) {
-				ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
+				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 				setTfReady(false);
+				slam_error_count++;
+				if (slam_error_count > 0)
+				{
+					Set_Error_Code(Error_Code_Slam);
+					slam_error_count = 0;
+				}
 				return;
 			}
 
@@ -250,6 +262,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			{
 				ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
 				setTfReady(true);
+				slam_error_count = 0;
 			}
 		}
 	}
@@ -263,19 +276,29 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam->isMapReady())
+		if(MotionManage::s_slam->isMapReady() && Get_Error_Code() != Error_Code_Slam)
 		{
 			yaw_ = tf::getYaw(msg->pose.pose.orientation);
 			wf_position_x_ = odom_pose_x_;
 			wf_position_y_ = odom_pose_y_;
 
 			try {
-				robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
+				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
+				robot_tf_->lookupTransform("/map", "/odom", ros::Time(0), correction);
 				position_x_ = transform.getOrigin().x();
 				position_y_ = transform.getOrigin().y();
+				correction_x_ = correction.getOrigin().x();
+				correction_y_ = correction.getOrigin().y();
+				correction_yaw_ = tf::getYaw(correction.getRotation());
 			} catch(tf::TransformException e) {
-				ROS_WARN("Failed to compute map transform, skipping scan (%s)", e.what());
+				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 				setTfReady(false);
+				slam_error_count++;
+				if (slam_error_count > 0)
+				{
+					Set_Error_Code(Error_Code_Slam);
+					slam_error_count = 0;
+				}
 				return;
 			}
 
@@ -283,6 +306,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			{
 				ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
 				setTfReady(true);
+				slam_error_count = 0;
 			}
 		}
 	}
