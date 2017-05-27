@@ -35,6 +35,10 @@ void User_Interface(void)
 #endif
 	bool Battery_Ready_to_clean = true;
 
+	uint16_t charge_signal_count_ = 0;
+	uint16_t no_charge_signal_count_ = 0;
+	bool detect_charger_signal_ = false;
+
 	Press_time=0;
 	Temp_Mode=0;
 	Error_Show_Counter=400;
@@ -119,6 +123,35 @@ void User_Interface(void)
 			Set_MoveWithRemote();
 			Reset_Rcon_Remote();
 			Temp_Mode=Clean_Mode_Spot;
+		}
+		/* -----------------------------Check if detects home signal -------------------------*/
+		if (Is_Station())
+		{
+			detect_charger_signal_ = true;
+			no_charge_signal_count_ = 0;
+			Reset_Rcon_Status();
+		}
+		else
+		{
+			if (detect_charger_signal_)
+				no_charge_signal_count_++;
+		}
+
+		if (no_charge_signal_count_ > 20)
+		{
+			charge_signal_count_ = 0;
+			detect_charger_signal_ = false;
+		}
+
+		if (detect_charger_signal_)
+		{
+			charge_signal_count_++;
+			//ROS_WARN("%s %d: User_Interface detects charger signal count %d.", __FUNCTION__, __LINE__, charge_signal_count_);
+		}
+
+		if (charge_signal_count_ > 18000) // 18000 x 10ms = 3min
+		{
+			Temp_Mode = Clean_Mode_GoHome;
 		}
 
 		/* -----------------------------Check if Home event ----------------------------------*/

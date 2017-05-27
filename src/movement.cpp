@@ -2075,7 +2075,7 @@ uint8_t Stop_Event(void)
 
 uint8_t Is_Station(void)
 {
-	if (Get_Rcon_Status() & 0x777777) // It means six rcon accepters receive any of the charger stub signal.
+	if (Get_Rcon_Status() & RconAll_Home_TLR) // It means eight rcon accepters receive any of the charger stub signal.
 	{
 		return 1;
 	}

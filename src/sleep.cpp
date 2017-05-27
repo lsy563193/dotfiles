@@ -23,6 +23,10 @@ void Sleep_Mode(void)
 		if(!GetSleepModeFlag())
 			SetSleepModeFlag();
 
+		// This is necessary because once the rcon has signal, it means base stm32 board has receive the rcon signal for 3 mins.
+		// If not reset here, it may cause directly go home once it sleeps.
+		Reset_Rcon_Status();
+
 		if (Get_Key_Press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s,%d, get key press ",__FUNCTION__,__LINE__);
@@ -73,7 +77,7 @@ void Sleep_Mode(void)
 		}
 
 		/*-----------------Check if near the charging base-----------------------------*/
-		if((Get_Rcon_Status() & RconAll_Home_TLR) && (!Get_Error_Code()))
+		if(Is_Station() && (!Get_Error_Code()))
 		{
 			ROS_INFO("%s,%d,Rcon_status = %x",__FUNCTION__,__LINE__,Get_Rcon_Status());
 			Reset_Rcon_Status();
