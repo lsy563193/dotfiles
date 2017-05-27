@@ -138,8 +138,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 	MotionManage motion;
 
-	Start_WF_Pose_X = robot::instance()->getPositionX();
-	Start_WF_Pose_Y = robot::instance()->getPositionY();
 
 	if(!motion.initSucceeded()){
 		Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -151,11 +149,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	Move_Forward(25, 25);
 
 	while(ros::ok()){
-
+		/*move to straight to find the wall*/
 		while (ros::ok()) {
-			/*------------------------------------WF_Map_Update---------------------------------------------------*/
 			//debug_WF_map(MAP, 0, 0);
 			//debug_sm_map(SPMAP, 0, 0);
+
+			Start_WF_Pose_X = robot::instance()->getPositionX();
+			Start_WF_Pose_Y = robot::instance()->getPositionY();
 
 			if(Is_OBS_Near()) {
 				Left_Wall_Speed = 15;
