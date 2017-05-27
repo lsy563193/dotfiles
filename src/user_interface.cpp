@@ -84,6 +84,72 @@ void User_Interface(void)
 			Battery_Ready_to_clean = false;
 		}
 
+#ifdef ONE_KEY_DISPLAY
+
+		//ROS_INFO("One key min_distant_segment logic. odc = %d", LedBreathCount);
+		if(breath){
+			LedBreathCount--;
+			if(LedBreathCount<=0)
+				breath = 0;
+		}
+		else{
+			LedBreathCount++;
+			if(LedBreathCount >=100)
+				breath = 1;
+		}
+		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 600s(10min).
+		TimeOutCounter++;
+		if(TimeOutCounter > USER_INTERFACE_TIMEOUT * 100)
+		{
+			TimeOutCounter=0;
+			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
+			Set_Clean_Mode(Clean_Mode_Sleep);
+			break;
+		}
+
+		if(Get_Error_Code())//min_distant_segment Error = red led full
+		{
+			Set_LED(0,100);
+		}
+		else if(!Battery_Ready_to_clean)//min_distant_segment low battery = red & green
+		{
+			Set_LED(LedBreathCount,LedBreathCount);
+		}
+		else
+		{
+			Set_LED(LedBreathCount,0);//min_distant_segment normal green
+		}
+
+#endif
+
+		// Alarm for error.
+		// The TimeOutCounter will be atleast 1 here.
+		if (Error_Alarm_Counter != 0 && Get_Error_Code() && (TimeOutCounter % 1000) == 0)
+		{
+			Error_Alarm_Counter--;
+			Alarm_Error();
+		}
+
+		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
+		if (Get_Error_Code() != Error_Code_None)
+		{
+			if (Remote_Key(Remote_All & ~Remote_Clean))
+			{
+				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				Reset_Rcon_Remote();
+				Error_Alarm_Counter = 0;
+				Alarm_Error();
+			}
+			else if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
+			{
+				Beep(2, 2, 0, 1);//Beep for useless remote command
+				wav_play(WAV_CLEAR_ERROR);
+				Set_Error_Code(Error_Code_None);
+				Reset_Rcon_Remote();
+			}
+			continue;
+		}
+
 		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
 		if (robot::instance()->isManualPaused())
 		{
@@ -124,6 +190,7 @@ void User_Interface(void)
 			Reset_Rcon_Remote();
 			Temp_Mode=Clean_Mode_Spot;
 		}
+
 		/* -----------------------------Check if detects home signal -------------------------*/
 		if (Is_Station())
 		{
@@ -278,52 +345,6 @@ void User_Interface(void)
 		//	Error_Show_Counter=0;
 		//	Sound_Out_Error(Get_Error_Code());
 		//}
- 
-#ifdef ONE_KEY_DISPLAY
-
-		//ROS_INFO("One key min_distant_segment logic. odc = %d", LedBreathCount);
-		if(breath){
-			LedBreathCount--;
-			if(LedBreathCount<=0)
-				breath = 0;
-		}
-		else{
-			LedBreathCount++;
-			if(LedBreathCount >=100)
-				breath = 1;
-		}
-		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 600s(10min).
-		TimeOutCounter++;
-		if(TimeOutCounter > USER_INTERFACE_TIMEOUT * 100)
-		{
-			TimeOutCounter=0;
-			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
-			Set_Clean_Mode(Clean_Mode_Sleep);
-			break;
-		}
-
-		if(Get_Error_Code())//min_distant_segment Error = red led full
-		{
-			Set_LED(0,100);
-		}
-		else if(!Battery_Ready_to_clean)//min_distant_segment low battery = red & green
-		{
-			Set_LED(LedBreathCount,LedBreathCount);
-		}
-		else
-		{
-			Set_LED(LedBreathCount,0);//min_distant_segment normal green
-		}
-
-#endif
-
-		// Alarm for error.
-		// The TimeOutCounter will be atleast 1 here.
-		if (Error_Alarm_Counter != 0 && Get_Error_Code() && (TimeOutCounter % 1000) == 0)
-		{
-			Error_Alarm_Counter--;
-			Alarm_Error();
-		}
 	}
 
 	if (Get_Clean_Mode() != Clean_Mode_Sleep)
