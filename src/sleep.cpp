@@ -8,7 +8,7 @@
 /*----------------------------------------------------------------Sleep mode---------------------------*/
 void Sleep_Mode(void)
 {
-	static uint32_t Ch_WP_Counter=0;
+	uint16_t sleep_time_counter_ = 0;
 	
 	Reset_Stop_Event_Status();
 	Reset_Rcon_Status();
@@ -20,7 +20,16 @@ void Sleep_Mode(void)
 	while(ros::ok())
 	{
 		usleep(200000);
-		if(!GetSleepModeFlag())
+
+		sleep_time_counter_++;
+		if (sleep_time_counter_ > 150)
+		{
+			// Check the battery for every 30s. If battery below 12.5v, power of core board will be cut off.
+			ResetSleepModeFlag();
+			ROS_WARN("Wake up robotbase to check if battery too low(<12.5v).");
+			sleep_time_counter_ = 0;
+		}
+		else if(!GetSleepModeFlag())
 			SetSleepModeFlag();
 
 		// This is necessary because once the rcon has signal, it means base stm32 board has receive the rcon signal for 3 mins.
@@ -51,7 +60,6 @@ void Sleep_Mode(void)
 		}
 		if(Remote_Key(Remote_Clean))
 		{
-			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Set_Main_PwrByte(POWER_ACTIVE);
 			ResetSleepModeFlag();
@@ -89,7 +97,6 @@ void Sleep_Mode(void)
 		}
 		if(Is_ChargerOn())
 		{
-			Ch_WP_Counter=0;
 			Set_Clean_Mode(Clean_Mode_Charging);
 			Set_Main_PwrByte(POWER_ACTIVE);
 			ResetSleepModeFlag();
