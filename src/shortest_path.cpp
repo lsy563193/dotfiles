@@ -1388,11 +1388,11 @@ int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
 		path_get_range(&x_min, &x_max, &y_min, &y_max);
-		//x_min = -100;
-		x_max = x_max + 4;
-		//y_min = -100;
-		y_max = y_max + 4;
-		
+		x_min = x_min - 8;
+		x_max = x_max + 8;
+		y_min = y_min - 8;
+		y_max = y_max + 8;
+
 		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
