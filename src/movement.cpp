@@ -1820,7 +1820,7 @@ uint8_t Remote_Key(uint8_t key)
 	}
 	if(Remote_Status & key)
 	{
-		if (Get_Error_Code() != Error_Code_None)
+		if (Get_Error_Code() == Error_Code_None)
 			Beep(2, 2, 0, 1);
 		return 1;
 	}
