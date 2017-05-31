@@ -278,18 +278,30 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		//ROS_INFO("SLAM = 2");
 		if(MotionManage::s_slam->isMapReady() && Get_Error_Code() != Error_Code_Slam)
 		{
-			yaw_ = tf::getYaw(msg->pose.pose.orientation);
-			wf_position_x_ = odom_pose_x_;
-			wf_position_y_ = odom_pose_y_;
+			//yaw_ = tf::getYaw(msg->pose.pose.orientation);
+			//wf_position_x_ = odom_pose_x_;
+			//wf_position_y_ = odom_pose_y_;
 
+			tf::Stamped<tf::Pose>           ident;
+			ident.setIdentity();
+			ident.frame_id_ = "base_link";
+			ident.stamp_ = msg->header.stamp;
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				robot_tf_->lookupTransform("/map", "/odom", ros::Time(0), correction);
+				yaw_ = tf::getYaw(transform.getRotation());
+				robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
+				//robot_tf_->lookupTransform("/map", "/odom", ros::Time(0), correction);
 				position_x_ = transform.getOrigin().x();
 				position_y_ = transform.getOrigin().y();
-				correction_x_ = correction.getOrigin().x();
-				correction_y_ = correction.getOrigin().y();
-				correction_yaw_ = tf::getYaw(correction.getRotation());
+				//correction_x_ = correction.getOrigin().x();
+				//correction_y_ = correction.getOrigin().y();
+				//correction_yaw_ = tf::getYaw(correction.getRotation());
+				robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
+				wf_position_x_ = transform.getOrigin().x();
+				wf_position_y_ = transform.getOrigin().y();
+
 			} catch(tf::TransformException e) {
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 				setTfReady(false);
