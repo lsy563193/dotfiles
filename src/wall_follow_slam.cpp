@@ -231,6 +231,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				}
 			}
 
+			/* check plan setting*/
+			if(Get_Plan_Status() == 1)
+			{
+				Set_Plan_Status(0);
+				Beep(Beep_Error_Sounds, 2, 0, 1);
+			}
+
 			/*------------------------------------------------------Check Current--------------------------------*/
 			octype = Check_Motor_Current();
 			if (octype) {

@@ -277,7 +277,6 @@
 #define Error_Code_Test			((uint8_t)0x14)
 #define Error_Code_Test_Null	((uint8_t)0x15)
 
-
 #define Display_Full				4
 #define Display_Low					5
 
@@ -693,8 +692,8 @@ void laser_pm_gpio(char val);
 int32_t ABS_Minus(int32_t A,int32_t B);
 #endif
 
-void Set_Plan_Status(bool Status);
-bool Get_Plan_Status(void);
+void Set_Plan_Status(uint8_t Status);
+uint8_t Get_Plan_Status(void);
 
 uint8_t Get_Main_PwrByte();
 void Set_Main_PwrByte(uint8_t val);

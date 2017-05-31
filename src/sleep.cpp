@@ -52,12 +52,34 @@ void Sleep_Mode(void)
 			Reset_Stop_Event_Status();
 			break;
 		}
-		if(Get_Plan_Status())
+
+		// Check if plan activated.
+		if (Get_Plan_Status() == 3)
 		{
-			Set_Plan_Status(false);
-	//		wav_play(WAV_APPOINTMENT_DONE);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			if (Get_Error_Code() == Error_Code_None)
+			{
+				Set_Main_PwrByte(Clean_Mode_Navigation);
+				ResetSleepModeFlag();
+				Beep(4, 4, 0, 1);
+				usleep(100000);
+				Beep(3,4,0,1);
+				usleep(100000);
+				Beep(2,4,0,1);
+				usleep(100000);
+				Beep(1,4,4,1);
+				Reset_Stop_Event_Status();
+				Set_Clean_Mode(Clean_Mode_Navigation);
+				break;
+			}
+			else
+			{
+				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+				Alarm_Error();
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				Set_Plan_Status(0);
+			}
 		}
+
 		if(Remote_Key(Remote_Clean))
 		{
 			Set_Clean_Mode(Clean_Mode_Userinterface);

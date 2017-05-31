@@ -509,7 +509,7 @@ private:
 	//new variable in x900 robot
 	int16_t omni_wheel;
 	//new variable plan
-	bool plan;
+	int8_t plan;
 	#endif
 	bool	is_moving_;
 

@@ -82,7 +82,7 @@ volatile uint8_t Remote_Status = 0;
 // Variable for stop event status.
 volatile uint8_t Stop_Event_Status = 0;
 // Variable for plan status
-volatile bool Plan_Status = false;
+volatile uint8_t Plan_Status = 0;
 
 // Error code for exception case
 volatile uint8_t Error_Code = 0;
@@ -368,6 +368,12 @@ void Quick_Back(uint8_t Speed, uint16_t Distance)
 				Reset_Rcon_Remote();
 			}
 		}
+		/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
+		}
 	}
 	ROS_INFO("Quick_Back finished.");
 }
@@ -494,6 +500,12 @@ void Turn_Left(uint16_t speed, int16_t angle)
 				Reset_Rcon_Remote();
 			}
 		}
+		/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
+		}
 		/*if(Is_Turn_Remote())
 			break;*/
 		if(Get_Bumper_Status()){
@@ -568,6 +580,12 @@ void Turn_Right(uint16_t speed, int16_t angle)
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 				Reset_Rcon_Remote();
 			}
+		}
+		/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
 		}
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -644,6 +662,12 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 				Reset_Rcon_Remote();
 			}
+		}
+		/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
 		}
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
@@ -725,6 +749,12 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
 				Reset_Rcon_Remote();
 			}
+		}
+		/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
 		}
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
@@ -821,6 +851,12 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 			}
 		}
 
+		/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
+		}
 		if(Get_Bumper_Status()){
 			break;
 		}
@@ -3189,12 +3225,14 @@ uint8_t Check_SideBrush_Stall(void)
 	return 0;
 }
 
-void Set_Plan_Status(bool Status)
+void Set_Plan_Status(uint8_t Status)
 {
 	Plan_Status = Status;
+	if (Plan_Status != 0)
+		ROS_WARN("Plan status return %d.", Plan_Status);
 }
 
-bool Get_Plan_Status()
+uint8_t Get_Plan_Status()
 {
 	return Plan_Status;
 }

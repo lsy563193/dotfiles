@@ -45,6 +45,7 @@ typedef enum {
 	WAV_BACK_TO_CHARGER_FAILED		= 39,
 	WAV_PAUSE_CLEANING				= 40,
 	WAV_CLEAR_ERROR					= 41,
+	WAV_CANCEL_APPOINTMENT			= 42,
 }WavType;
 
 void wav_play(WavType action);

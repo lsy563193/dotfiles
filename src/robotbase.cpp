@@ -305,7 +305,7 @@ void *robotbase_routine(void*)
 		sensor.x_acc = ((receiStream[46]<<8)|receiStream[47])/258.0f; //in mG
 		sensor.y_acc = ((receiStream[48]<<8)|receiStream[49])/258.0f; //in mG
 		sensor.z_acc = ((receiStream[50]<<8)|receiStream[51])/258.0f; //in mG
-		sensor.plan = (receiStream[52]) ? true : false;
+		sensor.plan = receiStream[52];
 #elif __ROBOT_X400
 		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
 		sensor.rbumper = (receiStream[22] & 0x0f)?true:false;

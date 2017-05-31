@@ -63,8 +63,13 @@ int16 visual_wall
 #gyroscope dynamic ragulate
 int8 gyro_dymc
 
-#plan, true: robot got a plan, false: nothing had happened
-bool plan
+#Plan status:
+#0: Nothing happens
+#1: Received a new appointment
+#2: Cancel a appointment
+#3: Start cleaning as planned
+#4: New appointment activated
+int8 plan
 
 #vacuum self check status
 #0x00:not in checking mode / check finished and no error

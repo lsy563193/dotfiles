@@ -55,6 +55,8 @@ void User_Interface(void)
 
 	Reset_Rcon_Remote();
 
+	Set_Plan_Status(0);
+
 	Reset_Stop_Event_Status();
 	//Enable_PPower();
 	//Disable_Motors();
@@ -152,6 +154,15 @@ void User_Interface(void)
 				Set_Error_Code(Error_Code_None);
 				Reset_Rcon_Remote();
 			}
+
+			if (Get_Plan_Status() == 3)
+			{
+				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+				Alarm_Error();
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				Set_Plan_Status(0);
+			}
+
 			continue;
 		}
 
@@ -243,10 +254,40 @@ void User_Interface(void)
 			Reset_Rcon_Remote();
 			Temp_Mode=Clean_Mode_WallFollow;
 		}
-		if(Get_Plan_Status()){
-			wav_play(WAV_APPOINTMENT_DONE);
-			ROS_INFO("%s ,%d, appointment success ",__FUNCTION__,__LINE__);
-			Set_Plan_Status(false);
+
+		/* -----------------------------Check if plan event ----------------------------------*/
+		switch (Get_Plan_Status())
+		{
+			case 1:
+			{
+				ROS_INFO("%s %d: Appointment received.", __FUNCTION__, __LINE__);
+				Beep(2, 2, 0, 1);
+				Set_Plan_Status(0);
+				break;
+			}
+			case 2:
+			{
+				ROS_INFO("%s %d: Appointment canceled.", __FUNCTION__, __LINE__);
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				Set_Plan_Status(0);
+				break;
+			}
+			case 3:
+			{
+				ROS_INFO("%s %d: Appointment activated.", __FUNCTION__, __LINE__);
+				// Sleep for 50ms cause the status 3 will be sent for 3 times.
+				usleep(50000);
+				Set_Plan_Status(0);
+				Temp_Mode=Clean_Mode_Navigation;
+				break;
+			}
+			case 4:
+			{
+				ROS_INFO("%s %d: Appointment succeeded.", __FUNCTION__, __LINE__);
+				wav_play(WAV_APPOINTMENT_DONE);
+				Set_Plan_Status(0);
+				break;
+			}
 		}
 		/* -----------------------------Check if Clean event ----------------------------------*/
 //		if(Is_Alarm())

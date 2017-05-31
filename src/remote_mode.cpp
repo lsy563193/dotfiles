@@ -256,10 +256,9 @@ void Remote_Mode(void)
 			}
 		}
 		/* check plan set */
-		if(Get_Plan_Status())
+		if(Get_Plan_Status() == 1)
 		{
-			Set_Plan_Status(false);
-	//		wav_play(WAV_APPOINTMENT_DONE);
+			Set_Plan_Status(0);
 			Beep(Beep_Error_Sounds, 2, 0, 1);
 		}
 	}

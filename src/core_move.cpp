@@ -585,6 +585,13 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 		uint8_t speed_up;
 		regulator.adjustSpeed(diff, speed_up);
 		Set_Wheel_Speed(speed_up, speed_up);
+
+			/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
+		}
 	}
 
 	CM_event_manager_turn(false);
@@ -996,6 +1003,13 @@ uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 		}
 
 		CM_update_position(Gyro_GetAngle());
+
+		/* check plan setting*/
+		if(Get_Plan_Status() == 1)
+		{
+			Set_Plan_Status(0);
+			Beep(Beep_Error_Sounds, 2, 0, 1);
+		}
 
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
 			// Robot has reach the target.
@@ -1609,10 +1623,9 @@ MapTouringType CM_handleExtEvent()
 		return MT_Cliff;
 	}
     /* check plan setting*/
-	if(Get_Plan_Status())
+	if(Get_Plan_Status() == 1)
 	{
-		Set_Plan_Status(false);
-//		wav_play(WAV_APPOINTMENT_DONE);
+		Set_Plan_Status(0);
 		Beep(Beep_Error_Sounds, 2, 0, 1);
 	}
 	return MT_None;
