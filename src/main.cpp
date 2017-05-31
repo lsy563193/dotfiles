@@ -52,11 +52,13 @@ void *core_move_thread(void *)
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
 
-	wav_play(WAV_WELCOME_ILIFE);
-
 	protect_function();
 
-//	wav_play(WAV_BATTERY_CHARGE_DONE);
+	wav_play(WAV_WELCOME_ILIFE);
+	usleep(200000);
+	if(Check_Bat_Ready_To_Clean())
+		wav_play(WAV_PLEASE_START_CLEANING);
+
 	while(ros::ok()){
 		usleep(20000);
 		switch(Get_Clean_Mode()){

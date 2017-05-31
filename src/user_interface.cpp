@@ -34,6 +34,7 @@ void User_Interface(void)
 	uint8_t breath =0;
 #endif
 	bool Battery_Ready_to_clean = true;
+	bool battery_too_low_ = false;
 
 	uint16_t charge_signal_count_ = 0;
 	uint16_t no_charge_signal_count_ = 0;
@@ -79,6 +80,10 @@ void User_Interface(void)
 	{
 		usleep(10000);
 		// Check the battery to warn the user.
+		if (Check_Bat_Stop())
+		{
+			battery_too_low_ = true;
+		}
 		if(!Check_Bat_Ready_To_Clean())
 		{
 			Battery_Ready_to_clean = false;
@@ -317,6 +322,12 @@ void User_Interface(void)
 //					Error_Show_Counter=400;
 					ROS_WARN("%s %d: Robot lift up.", __FUNCTION__, __LINE__);
 					wav_play(WAV_ERROR_LIFT_UP);
+					Temp_Mode=0;
+				}
+				else if (battery_too_low_)
+				{
+					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)LOW_BATTERY_STOP_VOLTAGE);
+					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 				}
 				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
