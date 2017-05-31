@@ -67,7 +67,7 @@ void CM_ResetGoHome(void);
 void CM_HeadToCourse(uint8_t Speed,int16_t Angle);
 
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
-MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
+bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
 
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y);
 bool CM_Check_is_exploring();
@@ -78,13 +78,13 @@ uint8_t CM_Touring(void);
 void CM_update_position(uint16_t heading);
 void CM_update_map(uint8_t bumper);
 void CM_update_map_bumper(uint8_t bumper);
-MapTouringType CM_CurveMoveToPoint();
+bool CM_CurveMoveToPoint();
 
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 int32_t CM_ABS(int32_t A, int32_t B);
 
-int8_t CM_MoveToCell( int16_t x, int16_t y, uint8_t mode, uint8_t length, uint8_t step );
+bool CM_MoveToCell( int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
 
 void CM_CorBack(uint16_t dist);
@@ -115,6 +115,8 @@ void CM_regist_events(void);
 void CM_unregist_events(void);
 
 void CM_set_event_manager_handler_state(bool state);
+
+void CM_event_manager_turn(bool state);
 
 #define define_cm_handle_func(name) \
 	void CM_handle_ ## name(bool state_now, bool state_last);

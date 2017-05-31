@@ -41,7 +41,7 @@
 #endif
 
 #define TURN_SPEED	17
-
+#define ROTATE_LOW_SPEED			(7)
 /*
  * MOVE_TO_CELL_SEARCH_INCREMENT: offset from robot's current position.
  * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH: max searching radius from robot's current position.
@@ -51,9 +51,10 @@
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH (2 * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH / MOVE_TO_CELL_SEARCH_INCREMENT + 1)
 #define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
 
-#define	PATH_PLANNER_MAX_SPEED		(30)
+#define	MAX_SPEED		(30)
 #define WHEEL_BASE_HALF			(((double)(WHEEL_BASE)) / 2)
-#define CELL_COUNT_MUL_TO_CELL_SIZE	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
+#define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
+#define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
 CMMoveType g_cm_move_type;
 
@@ -160,6 +161,140 @@ bool g_battery_low = false;
 uint8_t	g_battery_low_cnt = 0;
 
 int g_bumper_cnt = 0;
+
+static int16_t ranged_angle(int16_t angle)
+{
+	if (angle >= 1800) {
+			angle -= 3600;
+	} else
+	if (angle <= -1800) {
+			angle += 3600;
+	}
+	return angle;
+}
+
+typedef struct Regulator_{
+	Regulator_(int32_t max):integrated_(0),integration_cycle_(0),base_speed_(BASE_SPEED),tick_(0),speed_max_(max){};
+	bool adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool);
+	int32_t speed_max_;
+	int32_t integrated_;
+	int32_t base_speed_;
+	uint8_t integration_cycle_;
+	uint32_t tick_;
+}Regulator;
+
+// Target:	robot coordinate
+static bool check_map_boundary(bool& slow_down)
+{
+		int32_t		x, y;
+		for (auto i = -1; i <= 1; i++) {
+			CM_count_normalize(Gyro_GetAngle(), i * CELL_SIZE, CELL_SIZE_3, &x, &y);
+			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY)
+				slow_down = true;
+
+			CM_count_normalize(Gyro_GetAngle(), i * CELL_SIZE, CELL_SIZE_2, &x, &y);
+
+			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
+				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
+				Stop_Brifly();
+				CM_update_map(Get_Bumper_Status());
+				return true;
+			}
+		}
+	return false;
+}
+
+bool Regulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool slow_down)
+{
+	auto rotate_angle = ranged_angle(course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y) - Gyro_GetAngle());
+
+	if ( std::abs(rotate_angle) > 300)
+	{
+		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, rotate_angle);
+		return false;
+	}
+
+	if (integration_cycle_++ > 10)
+	{
+		integration_cycle_ = 0;
+		integrated_ += rotate_angle;
+		check_limit(integrated_, -150, 150);
+	}
+
+	auto distance = TwoPointsDistance(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
+	auto obstcal_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
+
+	if ( Get_OBS_Status() || Is_OBS_Near() || (distance < SLOW_DOWN_DISTANCE) || slow_down || obstcal_detected)
+	{
+		integrated_ = 0;
+		rotate_angle = 0;
+
+		if ( Get_OBS_Status() )
+			base_speed_ -= 5;
+		else if ( Is_OBS_Near() )
+			base_speed_ -= 4;
+		else
+			base_speed_ -= 3;
+
+		base_speed_ = base_speed_ < BASE_SPEED ? BASE_SPEED : base_speed_;
+	} else
+	if (base_speed_ < (int32_t) speed_max_)
+	{
+		if (tick_++ > 5)
+		{
+			tick_ = 0;
+			base_speed_++;
+		}
+		integrated_ = 0;
+	}
+
+	left_speed = base_speed_ - rotate_angle / 10 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+	right_speed = base_speed_ + rotate_angle / 10 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+
+	check_limit(left_speed, BASE_SPEED, speed_max_);
+	check_limit(right_speed, BASE_SPEED, speed_max_);
+	base_speed_ = (left_speed + right_speed) / 2;
+//	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d)",left_speed, right_speed, base_speed_, slow_down);
+	return true;
+}
+
+typedef struct Regulator2_{
+	Regulator2_(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
+					speed_max_(speed_max),speed_min_(speed_min),tick_(0), speed_(speed_start){};
+	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
+	uint8_t speed_max_;
+	uint8_t speed_min_;
+	uint8_t speed_;
+	uint32_t tick_;
+}Regulator2;
+
+bool Regulator2::adjustSpeed(int16_t diff, uint8_t& speed)
+{
+	if ((diff >= 0) && (diff <= 1800))
+		Set_Dir_Left();
+	else if ((diff <= 0) && (diff >= (-1800)))
+		Set_Dir_Right();
+
+	tick_++;
+	if (tick_ > 2)
+	{
+		tick_ = 0;
+		if (std::abs(diff) > 350){
+			speed_ = std::min(++speed_, speed_max_);
+		}
+		else{
+			--speed_;
+			speed_ = std::max(--speed_, speed_min_);
+		}
+	}
+	speed = speed_;
+	return true;
+}
+
+static double radius_of(Point16_t cell_0,Point16_t cell_1)
+{
+	return (abs(cellToCount(cell_0.X - cell_1.X)) + abs(cellToCount(cell_0.Y - cell_1.Y))) / 2;
+}
 
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
@@ -421,41 +556,14 @@ void CM_update_map(uint8_t bumper) {
 }
 
 /*--------------------------Head Angle--------------------------------*/
-void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
+void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 {
-	bool		eh_status_now, eh_status_last;
-	int16_t		Diff = 0;
-	uint32_t	SpeedUp, Tick;
-
-	eh_status_now = eh_status_last = false;
-	SpeedUp = Tick = 0;
-
-	Diff = Angle - Gyro_GetAngle();
-	ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tBias: %d\tTemp: %d\tScale: %d",
-			 __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
-
-	while (Diff >= 1800) {
-		Diff = Diff - 3600;
-	}
-
-	while (Diff <= (-1800)) {
-		Diff = Diff + 3600;
-	}
-
-	if ((Diff < 10) && (Diff > (-10))) {
-		return;
-	}
-
-	ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d(%d)\tBias: %d\tTemp: %d\tScale: %d",
-			 __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff, (Angle - Gyro_GetAngle()), Gyro_GetXAcc(), Gyro_GetYAcc(), Gyro_GetZAcc());
-
 	Stop_Brifly();
 
-	event_manager_enable_handler(EVT_BUMPER_ALL, true);
-	event_manager_enable_handler(EVT_BUMPER_LEFT, true);
-	event_manager_enable_handler(EVT_BUMPER_RIGHT, true);
+	CM_event_manager_turn(true);
 
-	SpeedUp = 4;
+	Regulator2 regulator(speed_max, ROTATE_LOW_SPEED, 4);
+	bool		eh_status_now, eh_status_last;
 	while (ros::ok()) {
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
@@ -466,94 +574,51 @@ void CM_HeadToCourse(uint8_t Speed, int16_t Angle)
 			break;
 		}
 
-		Diff = Angle - Gyro_GetAngle();
-		while (Diff >= 1800) {
-			Diff = Diff - 3600;
-		}
+		auto diff = ranged_angle(angle - Gyro_GetAngle());
 
-		while (Diff <= (-1800)) {
-			Diff = Diff + 3600;
-		}
-
-		if ((Diff >= 0) && (Diff <= 1800)) {	// turn right
-			Set_Dir_Left();
-		} else if ((Diff <= 0) && (Diff >= (-1800))) {
-			Set_Dir_Right();
-		}
-
-		Diff = CM_ABS(Angle, Gyro_GetAngle());
-		Diff = Diff > 1800 ? 3600 - Diff : Diff;
-		if (CM_ABS(Diff, 0) < 10) {
+		if (std::abs(diff) < 10) {
 			Stop_Brifly();
 			CM_update_position(Gyro_GetAngle());
-
-			ROS_INFO("%s %d: Angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Angle, Gyro_GetAngle(), Diff);
+			ROS_INFO("%s %d: angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, angle, Gyro_GetAngle(), diff);
 			break;
 		}
-
-		Tick++;
-		if (Tick > 2) {
-			Tick = 0;
-			if (Diff > 350) {	// acceleration and deceleration angle = 10
-				SpeedUp = (SpeedUp++) > Speed ? Speed : SpeedUp;
-			} else {
-				SpeedUp = (SpeedUp--) < 7 ? 7 : SpeedUp;
-			}
-		}
-		Set_Wheel_Speed(SpeedUp, SpeedUp);
+		uint8_t speed_up;
+		regulator.adjustSpeed(diff, speed_up);
+		Set_Wheel_Speed(speed_up, speed_up);
 	}
 
-	event_manager_enable_handler(EVT_BUMPER_ALL, false);
-	event_manager_enable_handler(EVT_BUMPER_LEFT, false);
-	event_manager_enable_handler(EVT_BUMPER_RIGHT, false);
-
+	CM_event_manager_turn(false);
 	Set_Wheel_Speed(0, 0);
 	CM_update_position(Gyro_GetAngle());
 }
 
-// Target:	robot coordinate
-MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
+bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
 {
-	bool		eh_status_now=false, eh_status_last=false;
-	int8_t		slow_down;
-	int16_t		i;
-	int32_t		x, y, Target_Course, Rotate_Angle, Integrated, Left_Speed, Right_Speed, Base_Speed, distance, Dis_From_Init;
-	uint8_t		Integration_Cycle, boundary_reach;
-	uint32_t	Tick = 0;
-	Point32_t	position;
-
-	position.X = Map_GetXCount();
-	position.Y = Map_GetYCount();
-
 	// Reset the g_bumper_status_for_rounding.
 	g_bumper_status_for_rounding = 0;
-	g_should_follow_wall = slow_down = Integration_Cycle = 0;
-	Target_Course = Rotate_Angle = Integrated = Left_Speed = Right_Speed = 0;
-
+	g_should_follow_wall =  0;
 	g_bumper_hitted = g_obs_triggered = g_cliff_triggered = g_rcon_triggered = false;
-	Base_Speed = BASE_SPEED;
+
+	Point32_t	position{Map_GetXCount(), Map_GetYCount()};
 
 	CM_update_position(Gyro_GetAngle());
 
-	if (rotate_is_needed == true) {
-		Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
-		ROS_INFO("Target_Course: %d", Target_Course);
+	if (rotate_is_needed) {
+		auto Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
 		CM_HeadToCourse(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
-		ROS_INFO("leave CM_HeadToCourse");
 	}
 
-	ROS_INFO("%s %d: original target (%d, %d)", __FUNCTION__, __LINE__, Target.X, Target.Y);
-	if (position.X != Map_GetXCount() && position.X == Target.X) {
+	if (position.X != Map_GetXCount() && position.X == Target.X)
 		Target.X = Map_GetXCount();
-	} else if (position.Y != Map_GetYCount() && position.Y == Target.Y) {
+	else if (position.Y != Map_GetYCount() && position.Y == Target.Y)
 		Target.Y = Map_GetYCount();
-	}
-	ROS_INFO("%s %d: new target (%d, %d)", __FUNCTION__, __LINE__, Target.X, Target.Y);
 
 	CM_set_event_manager_handler_state(true);
 
 	Reset_Rcon_Status();
 
+	Regulator regulator(speed_max);
+	bool	eh_status_now=false, eh_status_last=false;
 	while (1) {
 #ifdef WALL_DYNAMIC
 		Wall_Dynamic_Base(50);
@@ -578,17 +643,8 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 			CM_update_map(Get_Bumper_Status());
 			g_should_follow_wall = 1;
 
-			if (g_bumper_hitted) {
-				ROS_WARN("%s %d: bumper break", __FUNCTION__, __LINE__);
-			} else if (g_obs_triggered) {
-				ROS_WARN("%s %d: OBS break, OBS val: %d(%d)", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
-			} else if (g_cliff_triggered) {
+			if (g_cliff_triggered ||g_rcon_triggered)
 				g_should_follow_wall = 0;
-				ROS_WARN("%s %d: cliff break", __FUNCTION__, __LINE__);
-			} else if (g_rcon_triggered) {
-				g_should_follow_wall = 0;
-				ROS_WARN("%s %d: rcon break", __FUNCTION__, __LINE__);
-			}
 			break;
 		}
 
@@ -600,266 +656,161 @@ MapTouringType CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool st
 
 		CM_update_position(Gyro_GetAngle());
 
-		/* Check map boundary. */
-		boundary_reach = 0;
-		for (i = -1; boundary_reach == 0 && i <= 1; i++) {
-			CM_count_normalize(Gyro_GetAngle(), i * CELL_SIZE, CELL_SIZE_3, &x, &y);
-			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
-				slow_down = 1;
-			}
-
-			CM_count_normalize(Gyro_GetAngle(), i * CELL_SIZE, CELL_SIZE_2, &x, &y);
-
-			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
-				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
-				boundary_reach = 1;
-				Stop_Brifly();
-				CM_update_map(Get_Bumper_Status());
-				break;
-			}
-		}
-
-		if (boundary_reach == 1) {
-			ROS_WARN("%s %d: boundary break!", __FUNCTION__, __LINE__);
+		bool slow_down=false;
+		if(check_map_boundary(slow_down))
 			break;
-		}
 
-		/*--------------------------Adjust Move ------------------------------------*/
-		Rotate_Angle = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y) - Gyro_GetAngle();
-
-		if (Rotate_Angle >= 1800) {
-			Rotate_Angle -= 3600;
-		} else if (Rotate_Angle <= -1800) {
-			Rotate_Angle += 3600;
-		}
-		if (std::abs(Rotate_Angle) > 300) {
-			ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, Rotate_Angle);
+		uint8_t left_speed,right_speed;
+		if(! regulator.adjustSpeed(Target, left_speed, right_speed, slow_down))
 			break;
-		}
 
-		if (Integration_Cycle++ > 10) {
-			Integration_Cycle = 0;
-			Integrated += Rotate_Angle;
-			check_limit(Integrated, -150, 150);
-		}
-
-		distance = TwoPointsDistance(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
-
-		if (Get_OBS_Status() ||Is_OBS_Near() || (distance < SLOW_DOWN_DISTANCE) || slow_down || MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0) == true) {
-			Integrated = 0;
-			Rotate_Angle = 0;
-
-			if (Get_OBS_Status()) {
-				Base_Speed -= 5;
-			} else if (Is_OBS_Near()) {
-				Base_Speed -= 4;
-			} else {
-				Base_Speed -= 3;
-			}
-
-			Base_Speed = Base_Speed < BASE_SPEED ? BASE_SPEED : Base_Speed;
-		} else if (Base_Speed < (int32_t) speed_max) {
-			if (Tick++ > 5) {
-				Tick = 0;
-				Base_Speed++;
-			}
-			Integrated = 0;
-		}
-
-		Left_Speed = Base_Speed - Rotate_Angle / 10 - Integrated / 150; // - Delta / 20; // - Delta * 10 ; // - Integrated / 2500;
-		Right_Speed = Base_Speed + Rotate_Angle / 10 + Integrated / 150; // + Delta / 20;// + Delta * 10 ; // + Integrated / 2500;
-
-		check_limit(Left_Speed, BASE_SPEED, speed_max);
-		check_limit(Right_Speed, BASE_SPEED, speed_max);
-
-		Move_Forward(Left_Speed, Right_Speed);
-		Base_Speed = (Left_Speed + Right_Speed) / 2;
+		Move_Forward(left_speed, right_speed);
 	}
 
 	CM_set_event_manager_handler_state(false);
 
-	if (stop_is_needed == true) {
+	if (stop_is_needed)
 		Stop_Brifly();
-	}
+
 	CM_update_position(Gyro_GetAngle());
 
 	ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
 	robot::instance()->displayPositions();
 	usleep(10000);
 
-	return MT_None;
+	return true;
 }
 
-MapTouringType CM_MoveToPoint(Point32_t target)
+bool CM_TurnMoveToPoint(Point32_t Target,uint8_t speed_left,uint8_t speed_right)
 {
-	MapTouringType mt_state = MT_None;
-
-#ifdef PP_CURVE_MOVE
-
-	if (path_get_path_points_count() >= 3) {
-		mt_state = CM_CurveMoveToPoint();
-		if (mt_state == MT_CurveMove) {
-			CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
-		}
-	} else {
-		ROS_INFO("%s %d: Normal move to next point at east.", __FUNCTION__, __LINE__);
-		CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
-	}
-
-#else
-
-	ROS_INFO("%s %d: Normal move to next point at east.", __FUNCTION__, __LINE__);
-	mt_state = CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
-
-#endif
-
-	return mt_state;
-}
-
-MapTouringType CM_CurveMoveToPoint()
-{
-	int		i;
-	bool	eh_status_now, eh_status_last;
-	double	diff_1, diff_2, radius;
-	int16_t angle_start, angle_diff;
-	int32_t course;
-	uint8_t speed_left, speed_right, speed;
-
-	Point16_t	points[3];
-	Point32_t	target;
-	MapTouringType	retval = MT_None;
-
-	list<Point16_t> *path_points = path_get_path_points();
-
-	speed_left = speed_right = PATH_PLANNER_MAX_SPEED;
-
-	i = 0;
-	for (list<Point16_t>::iterator it = path_points->begin(); i < 3 && it != path_points->end(); ++it, i++) {
-		points[i] = *it;
-	}
-	path_reset_path_points();
-
-	ROS_WARN("%s %d: points[0](%d, %d)\tpoints[1](%d, %d)\tpoints[2](%d, %d)", __FUNCTION__, __LINE__, points[0].X, points[0].Y, points[1].X, points[1].Y, points[2].X, points[2].Y);
-
-	diff_1 = (abs(cellToCount(points[0].X - points[1].X)) + abs(cellToCount(points[0].Y - points[1].Y))) / 2;
-	diff_2 = (abs(cellToCount(points[2].X - points[1].X)) + abs(cellToCount(points[2].Y - points[1].Y))) / 2;
-	if (diff_1 < 3 * CELL_COUNT_MUL || diff_2 < 3 * CELL_COUNT_MUL) {
-		ROS_WARN("%s %d: diff_1: %f\tdiff_2: %f (%d)\n", __FUNCTION__, __LINE__, diff_1, diff_2, 3 * CELL_COUNT_MUL);
-		return MT_CurveMove;
-	}
-
-	radius = diff_1 > diff_2 ? diff_2 : diff_1;
-
-	target.X = cellToCount(points[1].X);
-	target.Y = cellToCount(points[1].Y);
-	if (points[0].X == points[1].X) {
-		target.Y = target.Y + (points[0].Y > points[1].Y ? radius : -radius);
-	} else {
-		target.X = target.X + (points[0].X > points[1].X ? radius : -radius);
-	}
-
-	course = course2dest(Map_GetXCount(), Map_GetYCount(), target.X, target.Y);
-	CM_HeadToCourse(ROTATE_TOP_SPEED, course);
-
-	ROS_WARN("%s %d: target: (%d, %d)\tradius: %f\n", __FUNCTION__, __LINE__, target.X, target.Y, radius);
-	retval = CM_LinearMoveToPoint(target, PATH_PLANNER_MAX_SPEED, false, true);
-	if (g_fatal_quit_event == true || g_key_clean_pressed == true ||g_bumper_hitted == true || g_obs_triggered == true || g_cliff_triggered == true || g_rcon_triggered == true) {
-		ROS_WARN("%s %d: linear move to point error: %d\n", __FUNCTION__, __LINE__, retval);
-		return retval;
-	}
-	ROS_WARN("%s %d: current position: (%d, %d)\tradius: %f", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), radius);
-
-	speed = (uint8_t) ceil(PATH_PLANNER_MAX_SPEED * (((double)radius) / CELL_COUNT_MUL_TO_CELL_SIZE - WHEEL_BASE_HALF) / (((double)radius) / CELL_COUNT_MUL_TO_CELL_SIZE + WHEEL_BASE_HALF));
-	if (points[1].X == points[2].X) {
-		if (points[0].X > points[1].X) {
-			points[1].Y < points[2].Y ? speed_right = speed : speed_left = speed;
-		} else {
-			points[1].Y < points[2].Y ? speed_left = speed :speed_right = speed;
-		}
-	} else {
-		if (points[0].Y > points[1].Y) {
-			points[1].X > points[2].X ? speed_right = speed : speed_left = speed;
-		} else {
-			points[1].X > points[2].X ? speed_left = speed : speed_right = speed;
-		}
-	}
-	ROS_WARN("%s %d: speed(%d, %d)\n", __FUNCTION__, __LINE__, speed_left, speed_right);
-	if ( speed_left < 0 || speed_left > PATH_PLANNER_MAX_SPEED || speed_right < 0 || speed_right > PATH_PLANNER_MAX_SPEED) {
-		ROS_WARN("%s %d: left/right speed error (%d, %d)", __FUNCTION__, __LINE__, speed_left, speed_right);
-		return MT_CurveMove;
-	}
-
-	angle_start = Gyro_GetAngle();
+	auto angle_start = Gyro_GetAngle();
 	Move_Forward(speed_left, speed_right);
 
-	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)\n", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(), angle_start);
-
-	eh_status_now = eh_status_last = false;
+	bool eh_status_now = false;
+	bool eh_status_last = false;
 	CM_set_event_manager_handler_state(true);
-	while (ros::ok()) {
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+	while (ros::ok())
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+		{
 			usleep(100);
 			continue;
 		}
 
 		CM_update_position(Gyro_GetAngle());
 
-		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
-			break;
-		}
+		if (g_fatal_quit_event || g_key_clean_pressed)
+			return false;
 
-		if (g_bumper_hitted == true || g_obs_triggered == true || g_cliff_triggered == true || g_rcon_triggered == true) {
-			Set_Wheel_Speed(0, 0);
-			CM_update_map(Get_Bumper_Status());
-			retval = MT_None;
-
-			if (g_bumper_hitted == true) {
-				ROS_WARN("%s %d: bumper break", __FUNCTION__, __LINE__);
-			} else if (g_obs_triggered == true) {
-				ROS_WARN("%s %d: OBS break, OBS val: %d(%d)", __FUNCTION__, __LINE__, Get_FrontOBS(), Get_FrontOBST_Value());
-			} else if (g_cliff_triggered == true) {
-				ROS_WARN("%s %d: cliff break", __FUNCTION__, __LINE__);
-			} else if (g_rcon_triggered == true) {
-				ROS_WARN("%s %d: rcon break", __FUNCTION__, __LINE__);
-			}
-			break;
-		}
-
-		angle_diff = Gyro_GetAngle() - angle_start;
-		if (angle_diff >= 1800) {
-			angle_diff -= 3600;
-		} else if (angle_diff <= -1800) {
-			angle_diff += 3600;
-		}
-		if (abs(angle_diff) > 900) {
-			break;
-		}
-
-		if ((points[1].X == points[2].X && abs(cellToCount(points[2].X) - Map_GetXCount()) < 100) ||
-			(points[1].Y == points[2].Y && abs(cellToCount(points[2].Y) - Map_GetYCount()) < 100))
+		if (g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered)
 		{
-			ROS_WARN("%s %d: reach line between point 1 & 2: %d\n", __FUNCTION__, __LINE__, cellToCount(points[1].X == points[2].X ? points[2].X : points[2].Y));
+			CM_update_map(Get_Bumper_Status());
+			return false;
+		}
+
+		auto angle_diff = ranged_angle(Gyro_GetAngle() - angle_start);
+		if (abs(angle_diff) >= 900){
+			ROS_WARN("%s %d: reach line between point 1 & 2: \n", __FUNCTION__, __LINE__);
 			break;
 		}
 	}
+	Stop_Brifly();
+	CM_update_position(Gyro_GetAngle());
+	return true;
+}
+
+void CM_MoveToPoint(Point32_t target)
+{
+#ifdef PP_CURVE_MOVE
+	if (path_get_path_points_count() >= 3){
+		if (! CM_CurveMoveToPoint())
+			CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+	}
+	else
+#endif
+		CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+}
+
+bool CM_CurveMoveToPoint()
+{
+	auto *path_cells = path_get_path_points();
+	std::vector<Point16_t>	cells;
+	std::copy_n((*path_cells).begin(), 3, std::back_inserter(cells));
+	path_reset_path_points();
+	std::string msg;
+	for (auto& cell : cells) {
+		msg += "(" + std::to_string(cell.X) + ", " + std::to_string(cell.Y) + ")->";
+	}
+	ROS_ERROR("cells:%s", msg.c_str());
+
+	auto radius_1 = radius_of(cells[1], cells[0]);
+	auto radius_2 = radius_of(cells[2], cells[1]);
+
+	if (radius_1 < RADIUS_CELL || radius_2 < RADIUS_CELL){
+		ROS_WARN("%s %d: radius_1: %f\tradius_2: %f (%d)\n", __FUNCTION__, __LINE__, radius_1, radius_2, 3 * CELL_COUNT_MUL);
+		return false;
+	}
+
+	auto radius = std::min(radius_1, radius_2);
+
+	Point32_t target{cellToCount(cells[1].X), cellToCount(cells[1].Y)};
+#define IS_MOVE_FOLLOW_Y_AXIS_FIRST (cells[0].X == cells[1].X)
+#define IS_IN_NAV_X_AXIS (cells[0].X < cells[2].X)
+#define IS_IN_NAV_Y_AXIS (cells[0].Y < cells[2].Y)
+	if (IS_MOVE_FOLLOW_Y_AXIS_FIRST) {
+		target.Y += (IS_IN_NAV_X_AXIS ? -radius : radius);
+	} else {
+		target.X += (IS_IN_NAV_Y_AXIS ? -radius : radius);
+	}
+
+	//1/3 move to first target
+	if(! CM_LinearMoveToPoint(target, MAX_SPEED, false, true) )
+		return false;
+
+	//2/3 turn to  target
+	auto speed = (uint8_t) ceil(MAX_SPEED * (radius / CELL_COUNT - WHEEL_BASE_HALF) / (radius / CELL_COUNT + WHEEL_BASE_HALF));
+	uint8_t speed_left = MAX_SPEED;
+	uint8_t speed_right = MAX_SPEED;
+	/*
+ *             -x
+ *  x^y   -         +
+ *        0 >-  1 -<0
+ *        v         v
+ *        +         +
+ *   -y   1     2   1 +y
+ *        +         +
+ *        ^         ^
+ *        0 >-  1 -<0
+ * x^y    +         -
+ *     x^y      +x     x^y
+*/
+	auto is_speed_right = (IS_IN_NAV_X_AXIS) ^ (IS_IN_NAV_Y_AXIS) ^ (IS_MOVE_FOLLOW_Y_AXIS_FIRST);
+	(is_speed_right ? speed_right : speed_left) = speed;
+
+	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
+
+	if ( speed_left < 0 || speed_left > MAX_SPEED || speed_right < 0 || speed_right > MAX_SPEED)
+		return false;
+
+	//3/3 move to last route
+	if(! CM_TurnMoveToPoint(target, speed_left, speed_right))
+		return false;
+
 	CM_set_event_manager_handler_state(false);
 
-	ROS_WARN("%s %d: anlge_diff: %d(%d, %d)", __FUNCTION__, __LINE__, angle_diff, Gyro_GetAngle(), angle_start);
+	target.X = cellToCount(cells[2].X);
+	target.Y = cellToCount(cells[2].Y);
 
-	ROS_WARN("%s %d: current position: (%d, %d) (%d, %d)\tradius: %f", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), Map_GetXCount(), Map_GetYCount(), radius);
-	target.X = cellToCount(points[2].X);
-	target.Y = cellToCount(points[2].Y);
+	//3 continue to move to target
+	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
+	if(! CM_LinearMoveToPoint(target, MAX_SPEED, true, false))
+		return false;
 
-	if (!(g_fatal_quit_event == true || g_key_clean_pressed == true ||g_bumper_hitted == true || g_obs_triggered == true || g_cliff_triggered == true || g_rcon_triggered == true)) {
-		ROS_WARN("%s %d: continue to move to target", __FUNCTION__, __LINE__);
-		retval = CM_LinearMoveToPoint(target, PATH_PLANNER_MAX_SPEED, true, false);
-	}
-
-	Stop_Brifly();
-	return retval;
+	return true;
 }
 
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
+
 RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_Point, uint16_t dir) {
 	int32_t		y_coordinate;
 	RoundingType	rounding_type = ROUNDING_NONE;
@@ -1149,7 +1100,7 @@ bool CM_resume_cleaning()
 	g_low_battery = 0;
 	robot::instance()->resetLowBatPause();
 
-	CM_MoveToCell(countToCell(g_continue_point.X), countToCell(g_continue_point.Y),2,0,1);
+	CM_MoveToCell(countToCell(g_continue_point.X), countToCell(g_continue_point.Y));
 	if (g_fatal_quit_event || g_key_clean_pressed)
 	{
 		robot::instance()->resetLowBatPause();
@@ -1184,7 +1135,8 @@ int CM_cleaning()
 		{
 			g_go_home = 1;
 			return 0;
-		} else if (state == 1)
+		} else
+		if (state == 1)
 		{
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
 			auto rounding_type = CM_get_rounding_direction(&Next_Point, Target_Point, last_dir);
@@ -1220,7 +1172,8 @@ int CM_cleaning()
 					}
 				}
 			}
-		} else if (state == 2)
+		} else
+		if (state == 2)
 		{    // Trapped
 			/* FIXME: disable events, since Wall_Follow_Trapped() doesn't handle events for now. */
 			CM_set_event_manager_handler_state(false);
@@ -1272,7 +1225,7 @@ void CM_go_home()
 		g_home_point.pop_front();
 
 		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
-		CM_MoveToCell(tmpPnt.X, tmpPnt.Y,2,0,1);
+		CM_MoveToCell(tmpPnt.X, tmpPnt.Y);
 	}
 }
 
@@ -1328,7 +1281,7 @@ uint8_t CM_Touring(void)
  *		-1: Robot cannot move to target cell
  *		1: Robot arrive target cell
  */
-int8_t CM_MoveToCell( int16_t target_x, int16_t target_y, uint8_t mode, uint8_t length, uint8_t step )
+bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 {
 	if (is_block_accessible(target_x, target_y) == 0) {
 		ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
@@ -1340,10 +1293,10 @@ int8_t CM_MoveToCell( int16_t target_x, int16_t target_y, uint8_t mode, uint8_t 
 
 	while (ros::ok()) {
 		if (g_fatal_quit_event || g_key_clean_pressed )
-			return 0;
+			return false;
 
 		if (g_remote_home && g_go_home == 0)
-			return 0;
+			return false;
 
 		Point16_t pos{target_x, target_y};
 		Point16_t	tmp;
@@ -1354,7 +1307,7 @@ int8_t CM_MoveToCell( int16_t target_x, int16_t target_y, uint8_t mode, uint8_t 
 			path_set_current_pos();
 
 			if (CM_CheckLoopBack(tmp) == 1)
-				return -2;
+				return false;
 
 			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
 			debug_map(MAP, tmp.X, tmp.Y);
@@ -1364,12 +1317,12 @@ int8_t CM_MoveToCell( int16_t target_x, int16_t target_y, uint8_t mode, uint8_t 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
 			if ( TwoPointsDistance( target_x , target_y , Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
 				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), target_x , target_y);
-				return 1;
+				return true;
 			}
 		} else
-			return pathFind;
+			return false;
 	}
-	return 0;
+	return false;
 }
 
 /*-------------- Move Back -----------------------------*/
@@ -1862,6 +1815,13 @@ void CM_set_event_manager_handler_state(bool state)
 	event_manager_enable_handler(EVT_RCON_FRONT_RIGHT2, state);
 	event_manager_enable_handler(EVT_RCON_LEFT, state);
 	event_manager_enable_handler(EVT_RCON_RIGHT, state);
+}
+
+void CM_event_manager_turn(bool state)
+{
+	event_manager_enable_handler(EVT_BUMPER_ALL, state);
+	event_manager_enable_handler(EVT_BUMPER_LEFT, state);
+	event_manager_enable_handler(EVT_BUMPER_RIGHT, state);
 }
 
 void CM_handle_bumper_all(bool state_now, bool state_last)
