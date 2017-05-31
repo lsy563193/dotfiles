@@ -217,7 +217,7 @@ void Charge_Function(void)
 		if (Check_Bat_Full() && !Battery_Full)
 		{
 			Battery_Full = true;
-			Set_LED(100,0);
+			Set_LED(0,0);
 			wav_play(WAV_BATTERY_CHARGE_DONE);
 		}
 
