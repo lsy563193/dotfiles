@@ -252,16 +252,16 @@ MotionManage::~MotionManage()
 		s_laser = nullptr;
 	}
 
-	if (robot::instance()->isLowBatPaused())
-	{
+	if (robot::instance()->isManualPaused()){
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+		wav_play(WAV_PAUSE_CLEANING);
 		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
 		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
 		return;
 	}
 
-	if (robot::instance()->isManualPaused()){
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		wav_play(WAV_PAUSE_CLEANING);
+	if (robot::instance()->isLowBatPaused())
+	{
 		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
 		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
 		return;
