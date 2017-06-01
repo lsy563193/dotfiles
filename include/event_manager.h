@@ -178,6 +178,7 @@ define_em_handler_func(over_current_suction)
 define_em_handler_func(key_clean)
 
 /* Remote */
+define_em_handler_func(remote_plan)
 define_em_handler_func(remote_clean)
 define_em_handler_func(remote_home)
 define_em_handler_func(remote_direction_left)

@@ -160,6 +160,7 @@ define_cm_handle_func(over_current_suction)
 define_cm_handle_func(key_clean)
 
 /* Remote */
+define_cm_handle_func(remote_plan)
 define_cm_handle_func(remote_clean)
 define_cm_handle_func(remote_home)
 define_cm_handle_func(remote_mode_spot)

@@ -586,12 +586,6 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 		regulator.adjustSpeed(diff, speed_up);
 		Set_Wheel_Speed(speed_up, speed_up);
 
-			/* check plan setting*/
-		if(Get_Plan_Status() == 1)
-		{
-			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
-		}
 	}
 
 	CM_event_manager_turn(false);
@@ -1003,13 +997,6 @@ uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 		}
 
 		CM_update_position(Gyro_GetAngle());
-
-		/* check plan setting*/
-		if(Get_Plan_Status() == 1)
-		{
-			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
-		}
 
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
 			// Robot has reach the target.
@@ -1589,6 +1576,7 @@ void CM_regist_events()
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 
 	/* Remote */
+	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_APPOINMENT, true);
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
 	event_manager_register_and_enable_x(remote_mode_spot, EVT_REMOTE_MODE_SPOT, true);
@@ -1648,6 +1636,7 @@ void CM_unregist_events()
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 
 	/* Remote */
+	event_manager_register_and_disable_x(EVT_REMOTE_APPOINMENT);
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	event_manager_register_and_disable_x(EVT_REMOTE_MODE_SPOT);
@@ -2371,6 +2360,14 @@ void CM_handle_key_clean(bool state_now, bool state_last)
 }
 
 /* Remote */
+
+void CM_handle_remote_plan(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	Set_Plan_Status(0);
+	Beep(Beep_Error_Sounds, 2, 0, 1);
+}
+
 void CM_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
@@ -2466,3 +2463,4 @@ void CM_handle_battery_low(bool state_now, bool state_last)
 		g_battery_low = true;
 	}
 }
+

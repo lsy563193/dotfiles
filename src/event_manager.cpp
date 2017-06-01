@@ -180,6 +180,11 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_KEY_CLEAN)
 		}
 
+		if (Get_Plan_Status() == 1) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_REMOTE_APPOINMENT)
+		}
+
 		if (Remote_Key(Remote_Clean)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_CLEAN)
@@ -331,6 +336,7 @@ void *event_handler_thread(void *data) {
 		evt_handle_check_event(EVT_KEY_CLEAN, key_clean)
 
 		/* Remote */
+		evt_handle_check_event(EVT_REMOTE_APPOINMENT, remote_plan)
 		evt_handle_check_event(EVT_REMOTE_CLEAN, remote_clean)
 		evt_handle_check_event(EVT_REMOTE_HOME, remote_home)
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_LEFT, remote_direction_left)
@@ -594,6 +600,11 @@ void em_default_handler_key_clean(bool state_now, bool state_last)
 }
 
 /* Remote */
+void em_default_handler_remote_plan(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
 void em_default_handler_remote_clean(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
