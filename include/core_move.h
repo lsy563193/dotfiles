@@ -89,8 +89,6 @@ bool CM_MoveToCell( int16_t x, int16_t y);
 
 void CM_CorBack(uint16_t dist);
 
-void CM_SetGoHome(uint8_t remote);
-
 void CM_SetHome(int32_t x, int32_t y);
 void CM_go_home(void);
 //void CM_SetStationHome(void);

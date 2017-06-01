@@ -1380,14 +1380,6 @@ void CM_CorBack(uint16_t dist)
 	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);
 }
 
-void CM_SetGoHome(uint8_t remote) {
-	ROS_WARN("Set gohome flag.");
-	g_go_home = 1;
-	if (remote == 1) {
-		g_remote_go_home = 1;
-	}
-}
-
 void CM_ResetGoHome(void)
 {
 	ROS_WARN("Reset gohome flag.");
@@ -2416,6 +2408,7 @@ void CM_handle_battery_home(bool state_now, bool state_last)
 	ROS_INFO("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home != 1) {
+		g_go_home = 1;
 		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
@@ -2423,8 +2416,6 @@ void CM_handle_battery_home(bool state_now, bool state_last)
 		if (Get_VacMode() == Vac_Max) {
 			Switch_VacMode(false);
 		}
-		CM_SetGoHome(0);
-
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
 		robot::instance()->setLowBatPause();
