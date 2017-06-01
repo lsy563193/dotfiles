@@ -100,8 +100,6 @@ void CM_AddTargets(Point16_t zone);
 
 uint8_t CM_CheckLoopBack(Point16_t target);
 
-void CM_Matrix_Rotate(int32_t x_in, int32_t y_in, int32_t *x_out, int32_t *y_out, double theta);
-
 MapTouringType CM_handleExtEvent(void);
 
 void CM_create_home_boundary(void);

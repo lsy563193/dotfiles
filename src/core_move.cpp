@@ -1436,19 +1436,6 @@ uint8_t CM_CheckLoopBack( Point16_t target ) {
 	return retval;
 }
 
-void CM_Matrix_Rotate(int32_t x_in, int32_t y_in, int32_t *x_out, int32_t *y_out, double theta)
-{
-	double dd, de;
-
-	dd = (double) x_in;
-	de = (double) y_in;
-
-	Matrix_Rotate(&dd, &de, theta);
-
-	*x_out = (int32_t)dd;
-	*y_out = (int32_t)de;
-}
-
 void CM_create_home_boundary(void)
 {
 	int16_t i, j, k;
@@ -1503,8 +1490,6 @@ void CM_create_home_boundary(void)
 	// Set the flag.
 	g_map_boundary_created = true;
 }
-
-
 
 /* Event handler functions. */
 void CM_regist_events()
