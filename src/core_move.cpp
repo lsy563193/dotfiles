@@ -1484,153 +1484,6 @@ void CM_Matrix_Rotate(int32_t x_in, int32_t y_in, int32_t *x_out, int32_t *y_out
 	*y_out = (int32_t)de;
 }
 
-MapTouringType CM_handleExtEvent()
-{
-	/* Check low battery event, if battery is low, go home directly. */
-	if ((Check_Bat_Home() == 1) && g_go_home != 1) {
-		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
-		g_low_battery = 1;
-		if ( Get_VacMode() == Vac_Max ) {
-			Switch_VacMode(false);
-		}
-		Stop_Brifly();
-		ROS_WARN("%s %d: low battery, battery < 13.2v is detected.", __FUNCTION__, __LINE__);
-		CM_SetGoHome(0);
-
-		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->setLowBatPause();
-
-		return MT_Battery_Home;
-	}
-	/*
-	//for testing
-	if (Remote_Key(Remote_Left) && g_go_home != 1) {
-		// Robot battery below LOW_BATTERY_GO_HOME_VOLTAGE (1320).
-		g_low_battery = 1;
-		if ( Get_VacMode() == Vac_Max ) {
-			Switch_VacMode(true);
-		}
-		Stop_Brifly();
-		ROS_WARN("%s %d: (For test, left key pressed) low battery, battery < 13.2v is detected.", __FUNCTION__, __LINE__);
-		CM_SetGoHome(0);
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		CM_SetContinuePoint(Map_GetXCount(), Map_GetYCount());
-		robot::instance()->setLowBatPause();
-#endif
-		Reset_Rcon_Remote();
-		return MT_Battery_Home;
-	}
-	*/
-
-	/* Check stop events. */
-	if (Stop_Event()) {
-		Stop_Brifly();
-		ROS_WARN("%s %d: Stop_Event in CM_handleExtEvent.", __FUNCTION__, __LINE__);
-//		Beep(5, 20, 0, 1);
-		// Key release detection, if user has not release the key, don't do anything.
-		//ROS_WARN("%s %d: g_press_time = %d", __FUNCTION__, __LINE__,  g_press_time);
-		while (Get_Key_Press() & KEY_CLEAN)
-		{
-			ROS_INFO("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
-			usleep(20000);
-#if MANUAL_PAUSE_CLEANING
-			g_press_time++;
-			if (g_press_time == 151)
-			{
-				Beep(1, 5, 0, 1);
-			}
-		}
-		if (g_press_time > 150)
-		{
-			if (robot::instance()->isManualPaused())
-			{
-				robot::instance()->resetManualPause();
-			}
-		}
-		else
-		{
-			g_press_time = 0;
-#endif
-		}
-		Reset_Stop_Event_Status();
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		return MT_Key_Clean;
-	}
-
-	/* Check remote events. */
-	if (Get_Rcon_Remote() > 0) {
-		ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-		if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max | Remote_Spot)) {
-			/* Check remote home key press event, if home key is pressed, go home directly. */
-			if (Remote_Key(Remote_Home) && (g_go_home == 0)) {
-				Set_BLDC_Speed(Vac_Speed_NormalL);
-				Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power);
-				Stop_Brifly();
-				ROS_WARN("%s %d: remote home is pressed.", __FUNCTION__, __LINE__);
-				CM_SetGoHome(1);
-				Reset_Rcon_Remote();
-				return MT_Remote_Home;
-			}
-
-
-			/*
-			 * Check remote spot key press event, if spot key is pressed,
-			 * change to spot mode, after spot mode finished, back to zig-zag clean.
-			 */
-
-			if (Remote_Key(Remote_Spot)) {
-				Stop_Brifly();
-				Reset_Rcon_Remote();
-				ROS_WARN("%s %d: remote spot is pressed.", __FUNCTION__, __LINE__);
-				auto modeTemp = Get_VacMode();
-				//Spot_Mode(CleanSpot);
-				Spot_WithCell(CleanSpot,1.0);
-				Work_Motor_Configure();
-				Set_VacMode(modeTemp,false);
-//				Switch_VacMode(false);
-				ROS_WARN("%s %d: remote spot ends.", __FUNCTION__, __LINE__);
-				return MT_None;
-			}
-	
-
-			if (Remote_Key(Remote_Max)) {
-				if (g_low_battery == 0) {
-					Switch_VacMode(true);
-				}
-				Reset_Rcon_Remote();
-			}
-
-
-			/* Check remote clean key press event, if clean key is pressed, stop robot directly. */
-			if (Remote_Key(Remote_Clean)) {
-				Stop_Brifly();
-				ROS_WARN("%s %d: remote clean key pressed.", __FUNCTION__, __LINE__);
-				Reset_Rcon_Remote();
-				return MT_Remote_Clean;
-			}
-			Reset_Rcon_Remote();
-		} else {
-			Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
-			Reset_Rcon_Remote();
-		}
-	}
-
-	/* Check whether robot is taken up. */
-	if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right)) {
-		ROS_INFO("%s %d: robot is taken up.\n", __FUNCTION__, __LINE__); 
-		Stop_Brifly();
-		wav_play(WAV_ERROR_LIFT_UP);
-		return MT_Cliff;
-	}
-    /* check plan setting*/
-	if(Get_Plan_Status() == 1)
-	{
-		Set_Plan_Status(0);
-		Beep(Beep_Error_Sounds, 2, 0, 1);
-	}
-	return MT_None;
-}
-
 void CM_create_home_boundary(void)
 {
 	int16_t i, j, k;
@@ -2543,9 +2396,11 @@ void CM_handle_remote_mode_spot(bool state_now, bool state_last)
 
 	Stop_Brifly();
 	Reset_Rcon_Remote();
-	Spot_Mode(CleanSpot);
-	Set_VacMode(Vac_Max);
-	Switch_VacMode(true);
+	auto modeTemp = Get_VacMode();
+	//Spot_Mode(CleanSpot);
+	Spot_WithCell(CleanSpot,1.0);
+	Work_Motor_Configure();
+	Set_VacMode(modeTemp,false);
 }
 
 void CM_handle_remote_suction(bool state_now, bool state_last)
