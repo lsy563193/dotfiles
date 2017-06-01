@@ -2494,12 +2494,6 @@ void Move_Back(void)
 	Quick_Back(18,30);
 }
 
-void Back(void)
-{
-	Stop_Brifly();
-	Quick_Back(18,30);
-}
-
 void Cliff_Move_Back()
 {
 	Stop_Brifly();
