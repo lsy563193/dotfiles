@@ -620,7 +620,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 
 	Regulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
-	while (1) {
+	while (ros::ok) {
 #ifdef WALL_DYNAMIC
 		Wall_Dynamic_Base(50);
 #endif
