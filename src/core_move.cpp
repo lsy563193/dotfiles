@@ -1383,11 +1383,6 @@ void CM_ResetGoHome(void)
 	g_map_boundary_created = false;
 }
 
-void CM_SetGyroOffset(int16_t offset)
-{
-	g_map_gyro_offset = offset;
-}
-
 void CM_SetHome(int32_t x, int32_t y) {
 	Point16_t tmpPnt;
 
