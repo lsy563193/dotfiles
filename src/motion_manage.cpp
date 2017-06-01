@@ -282,7 +282,7 @@ MotionManage::~MotionManage()
 
 	wav_play(WAV_CLEANING_FINISHED);
 
-	g_go_home =0;
+	g_go_home =true;
 	g_home_point.clear();
 	g_cur_wtime = 0;
 

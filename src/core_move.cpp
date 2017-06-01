@@ -76,7 +76,7 @@ std::list <Point32_t> g_home_point;
 // This is for the continue point for robot to go after charge.
 Point32_t g_continue_point;
 
-uint8_t	g_go_home = 0;
+bool	g_go_home = false;
 uint8_t	g_remote_go_home = 0;
 bool	g_from_station = 0;
 uint8_t g_low_battery = 0;
@@ -1114,7 +1114,7 @@ bool CM_resume_cleaning()
 int CM_cleaning()
 {
 	// Checking g_go_home is for case that manual pause when robot going home.
-	if(g_go_home != 0) return 0;
+	if(g_go_home) return 0;
 
 	while (ros::ok())
 	{
@@ -1134,7 +1134,7 @@ int CM_cleaning()
 		ROS_ERROR("State: %d", state);
 		if (state == 0) //No target point
 		{
-			g_go_home = 1;
+			g_go_home = true;
 			return 0;
 		} else
 		if (state == 1)
@@ -1181,7 +1181,7 @@ int CM_cleaning()
 			event_manager_set_current_mode(EVT_MODE_NAVIGATION);
 			CM_set_event_manager_handler_state(true);
 
-			if (g_go_home == 1)
+			if (g_go_home)
 				return 0;
 
 			if (es_state != Escape_Trapped_Escaped)
@@ -1245,7 +1245,8 @@ uint8_t CM_Touring(void)
 	g_oc_brush_left_cnt = g_oc_brush_main_cnt = g_oc_brush_right_cnt = g_oc_wheel_left_cnt = g_oc_wheel_right_cnt = g_oc_suction_cnt = 0;
 	g_cliff_cnt = 0;
 	g_bumper_cnt = g_press_time = 0;
-	g_go_home = g_remote_go_home = 0;
+	g_remote_go_home = 0;
+	g_go_home =false;
 	g_low_battery = 0;
 	g_from_station = 0;
 
@@ -1259,7 +1260,7 @@ uint8_t CM_Touring(void)
 
 	CM_regist_events();
 
-	if (g_go_home == 0 && (robot::instance()->isLowBatPaused()))
+	if (!g_go_home && (robot::instance()->isLowBatPaused()))
 		if (! CM_resume_cleaning())
 			return 0;
 
@@ -1295,7 +1296,7 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 		if (g_fatal_quit_event || g_key_clean_pressed )
 			return false;
 
-		if (g_remote_home && g_go_home == 0)
+		if (g_remote_home && !g_go_home )
 			return false;
 
 		Point16_t pos{target_x, target_y};
@@ -1382,8 +1383,7 @@ void CM_CorBack(uint16_t dist)
 
 void CM_ResetGoHome(void)
 {
-	ROS_WARN("Reset gohome flag.");
-	g_go_home = 0;
+	g_go_home = false;
 	g_remote_go_home = 0;
 	g_map_boundary_created = false;
 }
@@ -2037,7 +2037,7 @@ void CM_handle_rcon_front_left(bool state_now, bool state_last)
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home != 0) {
+	if (g_go_home) {
 		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -2063,7 +2063,7 @@ void CM_handle_rcon_front_left2(bool state_now, bool state_last)
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home != 0) {
+	if (g_go_home) {
 		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -2093,7 +2093,7 @@ void CM_handle_rcon_front_right(bool state_now, bool state_last)
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home != 0) {
+	if (g_go_home) {
 		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -2119,7 +2119,7 @@ void CM_handle_rcon_front_right2(bool state_now, bool state_last)
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home != 0) {
+	if (g_go_home) {
 		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -2149,7 +2149,7 @@ void CM_handle_rcon_left(bool state_now, bool state_last)
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home != 0) {
+	if (g_go_home) {
 		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -2177,7 +2177,7 @@ void CM_handle_rcon_right(bool state_now, bool state_last)
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home != 0) {
+	if (g_go_home) {
 		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -2374,7 +2374,7 @@ void CM_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	g_go_home = 1;
+	g_go_home = true;
 	g_remote_home = true;
 	Reset_Rcon_Remote();
 }
@@ -2407,8 +2407,8 @@ void CM_handle_battery_home(bool state_now, bool state_last)
 {
 	ROS_INFO("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home != 1) {
-		g_go_home = 1;
+	if (! g_go_home) {
+		g_go_home = true;
 		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
@@ -2435,7 +2435,7 @@ void CM_handle_battery_low(bool state_now, bool state_last)
 						 robot::instance()->getBatteryVoltage());
 		t_vol = GetBatteryVoltage();
 
-		if (g_go_home == 1) {
+		if (g_go_home) {
 			v_pwr = Home_Vac_Power / t_vol;
 			s_pwr = Home_SideBrush_Power / t_vol;
 			m_pwr = Home_MainBrush_Power / t_vol;
