@@ -210,8 +210,13 @@ void User_Interface(void)
 		/* -----------------------------Check if detects home signal -------------------------*/
 		if (Is_Station())
 		{
-			detect_charger_signal_ = true;
-			no_charge_signal_count_ = 0;
+			if (!robot::instance()->isManualPaused())
+			{
+				detect_charger_signal_ = true;
+				no_charge_signal_count_ = 0;
+			}
+			//else
+			//	ROS_DEBUG("Manual pause and skip the charger signal.");
 			Reset_Rcon_Status();
 		}
 		else
