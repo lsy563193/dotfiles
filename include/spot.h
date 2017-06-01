@@ -28,7 +28,6 @@ typedef enum{
 	WallSpot = 2,
 }SpotType;
 
-void Spot_Mode(SpotType spottype);
 void Spot_WithCell(SpotType spottype,float radian);
 void Spot_GetTarget(uint8_t spiral_type,float radian,std::list<Point32_t> *target,int32_t x_off,int32_t y_off);
 uint8_t Random_Dirt_Event(void);
