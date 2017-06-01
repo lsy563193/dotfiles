@@ -314,11 +314,6 @@ int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32
 	return index;
 }
 
-int32_t CM_ABS(int32_t A, int32_t B)
-{
-	return ((A > B) ? (A - B) : (B - A));
-}
-
 void CM_update_position(uint16_t heading) {
 	int8_t	e;
 	int16_t c, d, x, y;
@@ -649,7 +644,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 			break;
 		}
 
-		if (CM_ABS(Map_GetXCount(), Target.X) < 150 && CM_ABS(Map_GetYCount(), Target.Y) < 150) {
+		if (std::abs(Map_GetXCount() - Target.X) < 150 && std::abs(Map_GetYCount() - Target.Y) < 150) {
 			ROS_INFO("%s, %d: Reach target.", __FUNCTION__, __LINE__);
 			CM_update_map(Get_Bumper_Status());
 			break;

@@ -82,8 +82,6 @@ bool CM_CurveMoveToPoint();
 
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-int32_t CM_ABS(int32_t A, int32_t B);
-
 bool CM_MoveToCell( int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
 
