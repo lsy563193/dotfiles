@@ -1425,10 +1425,6 @@ void CM_SetContinuePoint(int32_t x, int32_t y)
 	g_continue_point.Y = y;
 }
 
-uint8_t CM_IsLowBattery(void) {
-	return g_low_battery;
-}
-
 uint8_t CM_CheckLoopBack( Point16_t target ) {
 	uint8_t retval = 0;
 	if ( target.X == g_positions[1].x && target.Y == g_positions[1].y &&
