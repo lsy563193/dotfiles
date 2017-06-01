@@ -565,3 +565,27 @@ bool MotionManage::initSpotCleaning(void)
 
 	return true;
 }
+
+void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_t target_point)
+{
+	int16_t i, j, x_min, x_max, y_min, y_max;
+	CellState cell_state;
+	path_get_range(&x_min, &x_max, &y_min, &y_max);
+
+	for (i = x_min; i <= x_max; i++)
+	{
+		for (j = y_min; j <= y_max; j++)
+		{
+			if (i == next_point.X && j == next_point.Y)
+				robot::instance()->setCleanMapMarkers(i, j, 4);
+			else if (i == target_point.X && j == target_point.Y)
+				robot::instance()->setCleanMapMarkers(i, j, 5);
+			else if (cell_state == CLEANED || cell_state == BLOCKED_OBS || cell_state == BLOCKED_BUMPER)
+			{
+				cell_state = Map_GetCell(id, i, j);
+				robot::instance()->setCleanMapMarkers(i, j, cell_state);
+			}
+		}
+	}
+	robot::instance()->pubCleanMapMarkers();
+}

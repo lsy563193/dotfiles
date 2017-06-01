@@ -1143,6 +1143,7 @@ int CM_cleaning()
 		int16_t y_current = Map_GetYPos();
 		Point32_t Next_Point, Target_Point;
 		int8_t state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
+		MotionManage::pubCleanMapMarkers(MAP);
 		ROS_INFO("Next point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y));
 		ROS_ERROR("State: %d", state);
 		if (state == 0) //No target point

@@ -13,6 +13,7 @@
 #include <pp/x900sensor.h>
 #include <vector>
 #include "config.h"
+#include "map.h"
 
 extern volatile int16_t Left_Wall_BaseLine;
 extern volatile int16_t Right_Wall_BaseLine;
@@ -38,6 +39,8 @@ public:
 	void init();
 	void displayPositions();
 	void pubCleanMarkers(void);
+	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
+	void pubCleanMapMarkers(void);
 	void pubBumperMarkers(void);
 	void visualizeMarkerInit();
 	void initOdomPosition();
@@ -539,11 +542,13 @@ private:
 //	ros::Subscriber obstacles_sub;
 	ros::Publisher send_cmd_pub_;
 	ros::Publisher send_clean_marker_pub_;
+	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher send_bumper_marker_pub_;
 //	ros::Publisher obstacles_pub_;
 
-	visualization_msgs::Marker clean_markers_,bumper_markers_;
+	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	geometry_msgs::Point m_points_;
+	std_msgs::ColorRGBA color_;
 
 	tf::TransformListener		*robot_wf_tf_;
 	tf::Stamped<tf::Transform>	map_pose;
