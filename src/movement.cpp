@@ -147,6 +147,16 @@ void Alarm_Error(void)
 			wav_play(WAV_ERROR_SUCTION_FAN);
 			break;
 		}
+		case Error_Code_Cliff:
+		{
+			wav_play(WAV_ERROR_CLIFF);
+			break;
+		}
+		case Error_Code_Bumper:
+		{
+			wav_play(WAV_ERROR_BUMPER);
+			break;
+		}
 		default:
 		{
 			break;
@@ -1516,7 +1526,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 			/*-----vacuum error-----*/
 			Set_Error_Code(Error_Code_Fan_H);
 			Disable_Motors();
-			wav_play(WAV_ERROR_SUCTION_FAN);
+			Alarm_Error();
 			Reset_SelfCheck_Vacuum_Controler();
 			return 1;
 		}
@@ -1549,14 +1559,14 @@ uint8_t Self_Check(uint8_t Check_Code)
 	{
 		Set_Error_Code(Error_Code_LeftBrush);
 		Disable_Motors();
-		wav_play(WAV_ERROR_LEFT_BRUSH);
+		Alarm_Error();
 		return 1;
 	}
 	else if(Check_Code==Check_Right_Brush)
 	{
 		Set_Error_Code(Error_Code_RightBrush);
 		Disable_Motors();
-		wav_play(WAV_ERROR_RIGHT_BRUSH);
+		Alarm_Error();
 		return 1;
 	}
 	Stop_Brifly();
@@ -3023,7 +3033,7 @@ uint8_t Is_Bumper_Jamed()
 						ROS_INFO("JAM5");
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						Set_Error_Code(Error_Code_Bumper);
-						wav_play(WAV_ERROR_BUMPER);
+						Alarm_Error();
 						return 1;
 					}
 				}

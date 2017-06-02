@@ -32,13 +32,31 @@
 
 void laser_pm_gpio(char val);
 
-void protect_function()
+bool selfCheckAtLaunch()
 {
 	//Bumper protect
-	if (Get_Bumper_Status()){
-		Random_Back();
-		Is_Bumper_Jamed();
+	if (Get_Bumper_Status())
+	{
+		Set_LED(0, 100);
+		wav_play(WAV_ERROR_BUMPER);
+		if (!Is_Gyro_On())
+		{
+			Set_Gyro_On();
+			while (!Wait_For_Gyro_On())
+				wav_play(WAV_SYSTEM_INITIALIZING);
+		}
+		if (Is_Bumper_Jamed())
+			return false;
+		else
+		{
+			Stop_Brifly();
+			wav_play(WAV_CLEAR_ERROR);
+			usleep(500000);
+		}
 	}
+	Set_Error_Code(Error_Code_None);
+	Set_LED(100, 0);
+	return true;
 }
 
 void *core_move_thread(void *)
@@ -52,12 +70,11 @@ void *core_move_thread(void *)
 	//Set_Clean_Mode(Clean_Mode_Navigation);
 	//Set_Clean_Mode(Clean_Mode_GoHome);
 
-	protect_function();
-
 	wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
-	if(Check_Bat_Ready_To_Clean())
-		wav_play(WAV_PLEASE_START_CLEANING);
+	if (selfCheckAtLaunch())
+		if(Check_Bat_Ready_To_Clean())
+			wav_play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
