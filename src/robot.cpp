@@ -426,14 +426,14 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.g = 0.0;
 		color_.b = 0.0;
 	}
-	else if (type == 4)// Next point
+	else if (type == TARGET)// Next point
 	{
 		// Yellow
 		color_.r = 1.0;
 		color_.g = 1.0;
 		color_.b = 0.0;
 	}
-	else if (type == 5)// Target point
+	else if (type == TARGET_CLEAN)// Target point
 	{
 		// Cyan
 		color_.r = 0.0;

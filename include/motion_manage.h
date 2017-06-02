@@ -7,6 +7,7 @@
 
 #include "laser.hpp"
 #include "slam.h"
+#include "mathematics.h"
 
 class MotionManage {
 public:
