@@ -35,6 +35,6 @@ void *serial_send_routine(void*);
 void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg);
 void process_beep();
 void robotbase_reset_odom_pose(void);
-void robotbase_set_odom_pose_and_angle(float x, float y);
+void robotbase_restore_slam_correction(void);
 
 #endif
