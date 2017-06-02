@@ -7,12 +7,15 @@
 
 #include "laser.hpp"
 #include "slam.h"
+#include "mathematics.h"
 
 class MotionManage {
 public:
 	MotionManage();
 
 	~MotionManage();
+
+	static void pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_t target_point);
 //private:
 	bool is_align_active(){
 		return is_align_active_;

@@ -50,6 +50,7 @@ extern uint8_t g_from_station;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 //Timer
 uint32_t wall_follow_timer;
+uint32_t bumper_interval_timer;
 bool reach_continuous_state;
 int32_t reach_count = 0;
 int32_t	REACH_COUNT_LIMIT = 10;//10 represent the wall follow will end after overlap 10 cells
@@ -146,6 +147,8 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 	}
 
 	ROS_INFO("%s %d: Start wall follow now.", __FUNCTION__, __LINE__);
+	wall_follow_timer = time(NULL);
+	bumper_interval_timer = time(NULL);
 	Move_Forward(25, 25);
 
 	while(ros::ok()){
@@ -261,7 +264,6 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 		//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
-		wall_follow_timer = time(NULL);
 		Start_Pose_X = robot::instance()->getPositionX();
 		Start_Pose_Y = robot::instance()->getPositionY();
 		First_Time_Flag = 1;
@@ -513,6 +515,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				//WFM_wall_move_back();
 				WFM_move_back(350);
 
+				if (time(NULL) - bumper_interval_timer > 15)
+				{
+					usleep(500000);
+					ROS_WARN("wait for adjust the gyro.");
+					bumper_interval_timer = time(NULL);
+				}
+
 				if (Is_Bumper_Jamed()){
 					Reset_Stop_Event_Status();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -562,6 +571,13 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 					//USPRINTF_ZZ("%s %d:Double bumper are trigged!",__func__,__LINE__);
 					WFM_move_back(100);
 
+					if (time(NULL) - bumper_interval_timer > 15)
+					{
+						usleep(500000);
+						ROS_WARN("wait for adjust the gyro.");
+						bumper_interval_timer = time(NULL);
+					}
+
 					//WFM_update();
 					WF_Check_Loop_Closed(Gyro_GetAngle());
 
@@ -586,6 +602,14 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 
 					//WFM_wall_move_back();
 					WFM_move_back(350);
+
+					if (time(NULL) - bumper_interval_timer > 15)
+					{
+						usleep(500000);
+						ROS_WARN("wait for adjust the gyro.");
+						bumper_interval_timer = time(NULL);
+					}
+
 					//WFM_update();
 					WF_Check_Loop_Closed(Gyro_GetAngle());
 					if (Is_Bumper_Jamed()) {

@@ -462,7 +462,7 @@ void robotbase_reset_odom_pose(void)
 	pose_x = pose_y = 0;
 }
 
-void robotbase_set_odom_pose_and_angle(float x, float y)
+void robotbase_restore_slam_correction()
 {
 	// For restarting slam
 	boost::mutex::scoped_lock(odom_mutex);

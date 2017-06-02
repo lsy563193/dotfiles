@@ -2087,7 +2087,7 @@ uint8_t Stop_Event(void)
 					system("rosnode kill /slam_karto &");
 					usleep(3000000);
 					system("roslaunch pp karto_slam.launch &");
-					robotbase_set_odom_pose_and_angle(robot::instance()->getPositionX(), robot::instance()->getPositionY());
+					robotbase_restore_slam_correction();
 					MotionManage::s_slam->isMapReady(false);
 					while (!MotionManage::s_slam->isMapReady())
 					{

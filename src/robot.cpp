@@ -39,6 +39,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	visualizeMarkerInit();
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
+	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
 	//send_bumper_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("bumper_markers_",1);
 //  obstacles_pub_ = robot_nh_.advertise<Obstacles>("obstacles", 10);
 //  ROS_INFO("Obstacle Detector [ACTIVE]");
@@ -376,6 +377,18 @@ void robot::visualizeMarkerInit(){
 	bumper_markers_.header.frame_id = "/map";
 	bumper_markers_.header.stamp = ros::Time::now();
 */
+
+	clean_map_markers_.ns = "cleaning_grid_map";
+	clean_map_markers_.id = 1;
+	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
+	clean_map_markers_.action= visualization_msgs::Marker::ADD;
+	clean_map_markers_.lifetime=ros::Duration(0);
+	clean_map_markers_.scale.x = 0.1;
+	clean_map_markers_.scale.y = 0.1;
+	color_.a = 0.7;
+	clean_map_markers_.header.frame_id = "/map";
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
 }
 
 void robot::pubCleanMarkers(){
@@ -385,6 +398,58 @@ void robot::pubCleanMarkers(){
 	clean_markers_.header.stamp = ros::Time::now();
 	clean_markers_.points.push_back(m_points_);
 	send_clean_marker_pub_.publish(clean_markers_);
+}
+
+void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
+{
+	m_points_.x = x * 0.112;
+	m_points_.y = y * 0.112;
+	m_points_.z = 0;
+	if (type == CLEANED)
+	{
+		// Green
+		color_.r = 0.0;
+		color_.g = 1.0;
+		color_.b = 0.0;
+	}
+	else if (type == BLOCKED_OBS)
+	{
+		// Blue
+		color_.r = 0.0;
+		color_.g = 0.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_BUMPER)
+	{
+		// Red
+		color_.r = 1.0;
+		color_.g = 0.0;
+		color_.b = 0.0;
+	}
+	else if (type == TARGET)// Next point
+	{
+		// Yellow
+		color_.r = 1.0;
+		color_.g = 1.0;
+		color_.b = 0.0;
+	}
+	else if (type == TARGET_CLEAN)// Target point
+	{
+		// Cyan
+		color_.r = 0.0;
+		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	clean_map_markers_.points.push_back(m_points_);
+	clean_map_markers_.colors.push_back(color_);
+}
+
+void robot::pubCleanMapMarkers(void)
+{
+	clean_map_markers_.header.stamp = ros::Time::now();
+	send_clean_map_marker_pub_.publish(clean_map_markers_);
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
 }
 
 void robot::pubBumperMarkers(){

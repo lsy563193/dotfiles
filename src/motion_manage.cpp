@@ -565,3 +565,38 @@ bool MotionManage::initSpotCleaning(void)
 
 	return true;
 }
+
+void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_t target_point)
+{
+	int16_t i, j, x_min, x_max, y_min, y_max, next_point_x, next_point_y, target_point_x, target_point_y;
+	CellState cell_state;
+	path_get_range(&x_min, &x_max, &y_min, &y_max);
+
+	next_point_x = countToCell(next_point.X);
+	if (next_point_x == SHRT_MIN )
+		next_point_x = x_min;
+	else if (next_point_x == SHRT_MAX)
+		next_point_x = x_max;
+
+	next_point_y = countToCell(next_point.Y);
+	target_point_x = countToCell(target_point.X);
+	target_point_y = countToCell(target_point.Y);
+
+	for (i = x_min; i <= x_max; i++)
+	{
+		for (j = y_min; j <= y_max; j++)
+		{
+			if (i == target_point_x && j == target_point_y)
+				robot::instance()->setCleanMapMarkers(i, j, TARGET_CLEAN);
+			else if (i == next_point_x && j == next_point_y)
+				robot::instance()->setCleanMapMarkers(i, j, TARGET);
+			else
+			{
+				cell_state = Map_GetCell(id, i, j);
+				if (cell_state == CLEANED || cell_state == BLOCKED_OBS || cell_state == BLOCKED_BUMPER)
+					robot::instance()->setCleanMapMarkers(i, j, cell_state);
+			}
+		}
+	}
+	robot::instance()->pubCleanMapMarkers();
+}
