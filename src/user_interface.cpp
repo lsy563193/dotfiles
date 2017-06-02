@@ -71,7 +71,7 @@ void User_Interface(void)
 
 	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
 	// Check the battery to warn the user.
-	if(!Check_Bat_Ready_To_Clean())
+	if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		Battery_Ready_to_clean = false;
@@ -86,7 +86,7 @@ void User_Interface(void)
 		{
 			battery_too_low_ = true;
 		}
-		if(!Check_Bat_Ready_To_Clean())
+		if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
 		{
 			Battery_Ready_to_clean = false;
 		}
