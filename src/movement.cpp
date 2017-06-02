@@ -1602,7 +1602,7 @@ uint8_t Check_Bat_Ready_To_Clean(void)
 	}
 	//ROS_INFO("%s %d: Battery limit is %d.", __FUNCTION__, __LINE__, battery_limit);
 	// Check if battary is lower than the low battery go home voltage value.
-	if (GetBatteryVoltage() > battery_limit){
+	if (GetBatteryVoltage() >= battery_limit){
 		return 1;
 	}
 	return 0;
