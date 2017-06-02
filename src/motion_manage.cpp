@@ -151,11 +151,12 @@ bool MotionManage::get_align_angle(float &line_angle)
 //	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	line_angle = segmentss.min_distant_segment_angle();
 
-	//todo testing to turn 180 degrees.
+	// If get line_angle from the scan data, turn 180 degrees.
+	// Else, the line_angle should be 0(Actually there is very little chance that the line_angle from scan data is exactly 0).
 	if (line_angle > 0)
 	{
 		line_angle -= 180;
-	} else if (line_angle <= 0)
+	} else if (line_angle < 0)
 	{
 		line_angle += 180;
 	}
