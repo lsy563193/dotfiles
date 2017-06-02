@@ -8,7 +8,7 @@
 
 char outString[256];
 
-extern PositionType g_positions[];
+extern PositionType g_pos_history[];
 
 #if defined(DEBUG_MAP) || defined(DEBUG_SM_MAP)
 
@@ -64,7 +64,7 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 
 		for (j = y_min; j <= y_max; j++) {
 			cs = Map_GetCell(id, i, j);
-			if (i == g_positions[0].x && j == g_positions[0].y) {
+			if (i == g_pos_history[0].x && j == g_pos_history[0].y) {
 				outString[index++] = 'x';
 			} else if (i == endx && j == endy) {
 				outString[index++] = 'e';

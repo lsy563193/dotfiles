@@ -477,7 +477,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 		ROS_INFO("Map_Initialize-----------------------------");
 		Map_Initialize();
-		PathPlanning_Initialize(&g_home_point.front().X, &g_home_point.front().Y);
+		path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);
 
 		robot::instance()->initOdomPosition();
 
@@ -555,7 +555,7 @@ bool MotionManage::initSpotCleaning(void)
 	homepoint.clear();
 	homepoint.push_front(t_point);
 	Map_Initialize();//init map
-	PathPlanning_Initialize(&homepoint.front().X,&homepoint.front().Y);//init pathplan
+	path_planning_initialize(&homepoint.front().X, &homepoint.front().Y);//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 

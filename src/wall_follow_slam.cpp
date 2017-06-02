@@ -47,7 +47,7 @@ extern std::list <Point32_t> g_home_point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
 extern uint8_t g_remote_go_home;
 extern uint8_t g_from_station;
-extern int16_t xMin, xMax, yMin, yMax;
+extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 //Timer
 uint32_t wall_follow_timer;
 bool reach_continuous_state;
@@ -953,7 +953,7 @@ int8_t WF_Push_Point(int32_t x, int32_t y, int16_t th){
 }
 
 void WF_Mark_Home_Point(void){
-	//PathPlanning_Initialize(&, &g_home_point.front().Y);
+	//path_planning_initialize(&, &g_home_point.front().Y);
 	int32_t x, y;
 	int i, j;
 	std::list <Point32_t> WF_Home_Point;
@@ -964,7 +964,7 @@ void WF_Mark_Home_Point(void){
 		x = WF_Home_Point.front().X;
 		y = WF_Home_Point.front().Y;
 		ROS_INFO("%s %d: WF_Home_Point.front().X = %d, WF_Home_Point.front().Y = %d, WF_Home_Point.size() = %d", __FUNCTION__, __LINE__, x, y, (uint)WF_Home_Point.size());
-		ROS_INFO("%s %d: xMin = %d, xMax = %d", __FUNCTION__, __LINE__, xMin, xMax);
+		ROS_INFO("%s %d: g_x_min = %d, g_x_max = %d", __FUNCTION__, __LINE__, g_x_min, g_x_max);
 		WF_Home_Point.pop_front();
 
 		for (i = -2; i <= 2; i++) {

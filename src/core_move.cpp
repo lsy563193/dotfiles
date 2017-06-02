@@ -91,9 +91,9 @@ Point16_t g_pnt16_ar_tmp[3];
 
 Point16_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
-extern PositionType g_positions[];
+extern PositionType g_pos_history[];
 
-extern int16_t xMin, xMax, yMin, yMax;
+extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 // This status is for rounding function to decide the angle it should turn.
 uint8_t g_bumper_status_for_rounding;
@@ -466,8 +466,8 @@ void CM_update_map_bumper(uint8_t bumper)
 		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
-		if ((g_positions[0].x == g_positions[1].x) && (g_positions[0].y == g_positions[1].y) && (g_positions[0].dir == g_positions[1].dir) &&
-			(g_positions[0].x == g_positions[2].x) && (g_positions[0].y == g_positions[2].y) && (g_positions[0].dir == g_positions[2].dir)) {
+		if ((g_pos_history[0].x == g_pos_history[1].x) && (g_pos_history[0].y == g_pos_history[1].y) && (g_pos_history[0].dir == g_pos_history[1].dir) &&
+			(g_pos_history[0].x == g_pos_history[2].x) && (g_pos_history[0].y == g_pos_history[2].y) && (g_pos_history[0].dir == g_pos_history[2].dir)) {
 			CM_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
 			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
@@ -485,8 +485,8 @@ void CM_update_map_bumper(uint8_t bumper)
 		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 
-		if ((g_positions[0].x == g_positions[1].x) && (g_positions[0].y == g_positions[1].y) && (g_positions[0].dir == g_positions[1].dir) &&
-			(g_positions[0].x == g_positions[2].x) && (g_positions[0].y == g_positions[2].y) && (g_positions[0].dir == g_positions[2].dir)) {
+		if ((g_pos_history[0].x == g_pos_history[1].x) && (g_pos_history[0].y == g_pos_history[1].y) && (g_pos_history[0].dir == g_pos_history[1].dir) &&
+			(g_pos_history[0].x == g_pos_history[2].x) && (g_pos_history[0].y == g_pos_history[2].y) && (g_pos_history[0].dir == g_pos_history[2].dir)) {
 			CM_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
 			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
@@ -1427,8 +1427,8 @@ void CM_SetContinuePoint(int32_t x, int32_t y)
 
 uint8_t CM_CheckLoopBack( Point16_t target ) {
 	uint8_t retval = 0;
-	if ( target.X == g_positions[1].x && target.Y == g_positions[1].y &&
-		 target.X == g_positions[3].x && target.Y == g_positions[3].y ) {
+	if ( target.X == g_pos_history[1].x && target.Y == g_pos_history[1].y &&
+		 target.X == g_pos_history[3].x && target.Y == g_pos_history[3].y ) {
 		ROS_WARN("%s %d Possible loop back (%d, %d)", __FUNCTION__, __LINE__, target.X, target.Y);
 		retval	= 1;
 	}
@@ -1443,32 +1443,32 @@ void CM_create_home_boundary(void)
 
 	k = 3;
 	xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
-	for (i = xMin; xMinSearch == SHRT_MAX; i++) {
-		for (j = yMin; j <= yMax; j++) {
+	for (i = g_x_min; xMinSearch == SHRT_MAX; i++) {
+		for (j = g_y_min; j <= g_y_max; j++) {
 			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
 				xMinSearch = i - k;
 				break;
 			}
 		}
 	}
-	for (i = xMax; xMaxSearch == SHRT_MAX; i--) {
-		for (j = yMin; j <= yMax; j++) {
+	for (i = g_x_max; xMaxSearch == SHRT_MAX; i--) {
+		for (j = g_y_min; j <= g_y_max; j++) {
 			if (Map_GetCell(MAP, i, j) != UNCLEAN) {
 				xMaxSearch = i + k;
 				break;
 			}
 		}
 	}
-	for (i = yMin; yMinSearch == SHRT_MAX; i++) {
-		for (j = xMin; j <= xMax; j++) {
+	for (i = g_y_min; yMinSearch == SHRT_MAX; i++) {
+		for (j = g_x_min; j <= g_x_max; j++) {
 			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
 				yMinSearch = i - k;
 				break;
 			}
 		}
 	}
-	for (i = yMax; yMaxSearch == SHRT_MAX; i--) {
-		for (j = xMin; j <= xMax; j++) {
+	for (i = g_y_max; yMaxSearch == SHRT_MAX; i--) {
+		for (j = g_x_min; j <= g_x_max; j++) {
 			if (Map_GetCell(MAP, j, i) != UNCLEAN) {
 				yMaxSearch = i + k;
 				break;

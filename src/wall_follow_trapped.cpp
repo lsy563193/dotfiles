@@ -593,7 +593,7 @@
 
 #define WFT_MOVE_BACK_20MM	(120)
 
-extern int16_t xMin, xMax, yMin, yMax;
+extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 bool escape_thread_running = false;
 EscapeTrappedType escape_state = Escape_Trapped_Trapped;

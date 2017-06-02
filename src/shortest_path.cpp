@@ -53,7 +53,7 @@
 #include "mathematics.h"
 #include "shortest_path.h"
 
-static uint8_t direct_go = 0;
+static uint8_t g_direct_go = 0;
 
 #ifdef SHORTEST_PATH_V2
 
@@ -69,8 +69,8 @@ static LineType	pos_line[POS_LINE_CNT];
 
 static uint16_t line_cnt = 0;
 
-extern PositionType g_positions[];
-extern int16_t xMin, xMax, yMin, yMax;
+extern PositionType g_pos_history[];
+extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 /*
  * Free the line segments.
@@ -106,7 +106,7 @@ static inline void lines_free() {
  */
 void path_position_init(uint8_t dg)
 {
-	direct_go = dg;
+	g_direct_go = dg;
 
 #if defined(SHORTEST_PATH_V2) && defined (SHORTEST_PATH_V2_RAM)
 
@@ -410,10 +410,10 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 
 	x_pos = pos.X;
 	y_pos = pos.Y;
-	x_min = xMin;
-	x_max = xMax;
-	y_min = yMin;
-	y_max = yMax;
+	x_min = g_x_min;
+	x_max = g_x_max;
+	y_min = g_y_min;
+	y_max = g_y_max;
 
 	printf("%s %d: (%d, %d) (%d, %d)\n", __FUNCTION__, __LINE__, x, y, *x_next, *y_next);
 
@@ -518,7 +518,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 						}
 					}
 				}
-				printf("%s %d: can't find nearest point to current g_positions!\n", __FUNCTION__, __LINE__);
+				printf("%s %d: can't find nearest point to current g_pos_history!\n", __FUNCTION__, __LINE__);
 			}
 		}
 		/*
@@ -638,7 +638,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 		}
 
 		/* Try to avoid repeatly hit the obstcal ahead. */
-		if (g_positions[0].x == g_positions[1].x && g_positions[0].y == g_positions[1].y) {
+		if (g_pos_history[0].x == g_pos_history[1].x && g_pos_history[0].y == g_pos_history[1].y) {
 			path_trace_path(line_idx, cur_idx);
 			path_line_dump();
 
@@ -973,10 +973,10 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 							break;
 						}
 
-						printf("%s %d: %d %d %d %d %d\n", __FUNCTION__, __LINE__, g_positions[0].x, g_positions[0].y, g_positions[1].x,  g_positions[1].y, path_get_robot_direction());
+						printf("%s %d: %d %d %d %d %d\n", __FUNCTION__, __LINE__, g_pos_history[0].x, g_pos_history[0].y, g_pos_history[1].x,  g_pos_history[1].y, path_get_robot_direction());
 
 						/* Try to avoid repeatly hit the obstcal ahead. */
-						if (g_positions[0].x == g_positions[1].x && g_positions[0].y == g_positions[1].y) {
+						if (g_pos_history[0].x == g_pos_history[1].x && g_pos_history[0].y == g_pos_history[1].y) {
 							/* Possibly ahead is blocked */
 							printf("%s %d: level cur: %d\tlevel next: %d\n", __FUNCTION__, __LINE__, level_cur, level_next);
 							if (level_cur - 1 == level_next + 1 && abs(*y_next - y_pos) <= 2) {
@@ -1405,10 +1405,10 @@ int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
  * By given a target, find the shortest path to the target. When finding the shorest path,
  * a grid map is used, and starting form the target position, this function will trace back
  * the path of which values are marked as 6 in the shorest path map. It will return the
- * coordinate by pointer to the caller function. When the direct_go flag is set, it will
+ * coordinate by pointer to the caller function. When the g_direct_go flag is set, it will
  * enable the robot to move directly to the next target point without limited to turn
  * 90, 180 or 270 degree, but it only happens when there is no obstcal in between the current
- * robot position and the next target point. It the direct_go flag is not set, the robot
+ * robot position and the next target point. It the g_direct_go flag is not set, the robot
  * is limited to turn 90, 180 and/or 270 degree, then go to the target.
  *
  * @param pos	The current robot position
@@ -1436,8 +1436,8 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 	if (retval < 0)
 		return retval;
 
-	/* direct_go flag is enabled. */
-	if (direct_go == 1) {
+	/* g_direct_go flag is enabled. */
+	if (g_direct_go == 1) {
 		x_path = pos.X;
 		y_path = pos.Y;
 

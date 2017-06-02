@@ -18,7 +18,7 @@ uint8_t spmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
 
 double xCount, yCount, relative_sin, relative_cos;
 uint16_t relative_theta = 3600;
-int16_t xMin, xMax, yMin, yMax;
+int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 
 void Map_Initialize(void) {
@@ -30,11 +30,11 @@ void Map_Initialize(void) {
 		}
 	}
 
-	xMin = xMax = yMin = yMax = 0;
-	xRangeMin = xMin - (MAP_SIZE - (xMax - xMin + 1));
-	xRangeMax = xMax + (MAP_SIZE - (xMax - xMin + 1));
-	yRangeMin = yMin - (MAP_SIZE - (yMax - yMin + 1));
-	yRangeMax = yMax + (MAP_SIZE - (yMax - yMin + 1));
+	g_x_min = g_x_max = g_y_min = g_y_max = 0;
+	xRangeMin = g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1));
+	xRangeMax = g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1));
+	yRangeMin = g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1));
+	yRangeMax = g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1));
 
 	xCount = 0;
 	yCount = 0;
@@ -43,12 +43,12 @@ void Map_Initialize(void) {
 int16_t Map_GetEstimatedRoomSize(void) {
 	int16_t i, j;
 
-	i = xMax - xMin;
-	j = yMax - yMin;
+	i = g_x_max - g_x_min;
+	j = g_y_max - g_y_min;
 
 	if(i < j) {
-		i = yMax - yMin;
-		j = xMax - xMin;
+		i = g_y_max - g_y_min;
+		j = g_x_max - g_x_min;
 	}
 
 	if(i * 2 > j * 3) {
@@ -158,23 +158,23 @@ void Map_SetCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 
 	if(id == MAP) {
 		if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
-			if(x < xMin) {
-				xMin = x;
-				xRangeMin = xMin - (MAP_SIZE - (xMax - xMin + 1));
-				xRangeMax = xMax + (MAP_SIZE - (xMax - xMin + 1));
-			} else if(x > xMax) {
-				xMax = x;
-				xRangeMin = xMin - (MAP_SIZE - (xMax - xMin + 1));
-				xRangeMax = xMax + (MAP_SIZE - (xMax - xMin + 1));
+			if(x < g_x_min) {
+				g_x_min = x;
+				xRangeMin = g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1));
+				xRangeMax = g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1));
+			} else if(x > g_x_max) {
+				g_x_max = x;
+				xRangeMin = g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1));
+				xRangeMax = g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1));
 			}
-			if(y < yMin) {
-				yMin = y;
-				yRangeMin = yMin - (MAP_SIZE - (yMax - yMin + 1));
-				yRangeMax = yMax + (MAP_SIZE - (yMax - yMin + 1));
-			} else if(y > yMax) {
-				yMax = y;
-				yRangeMin = yMin - (MAP_SIZE - (yMax - yMin + 1));
-				yRangeMax = yMax + (MAP_SIZE - (yMax - yMin + 1));
+			if(y < g_y_min) {
+				g_y_min = y;
+				yRangeMin = g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1));
+				yRangeMax = g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1));
+			} else if(y > g_y_max) {
+				g_y_max = y;
+				yRangeMin = g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1));
+				yRangeMax = g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1));
 			}
 
 			ROW = x + MAP_SIZE + MAP_SIZE / 2;
@@ -207,8 +207,8 @@ void Map_SetCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 void Map_ClearBlocks(void) {
 	int16_t c, d;
 
-	for(c = xMin; c < xMax; ++c) {
-		for(d = yMin; d < yMax; ++d) {
+	for(c = g_x_min; c < g_x_max; ++c) {
+		for(d = g_y_min; d < g_y_max; ++d) {
 			if(Map_GetCell(MAP, c, d) == BLOCKED_OBS || Map_GetCell(MAP, c, d) == BLOCKED_BUMPER || Map_GetCell(MAP, c, d) == BLOCKED_CLIFF) {
 				if(Map_GetCell(MAP, c - 1, d) != UNCLEAN && Map_GetCell(MAP, c, d + 1) != UNCLEAN && Map_GetCell(MAP, c + 1, d) != UNCLEAN && Map_GetCell(MAP, c, d - 1) != UNCLEAN) {
 					Map_SetCell(MAP, cellToCount(c), cellToCount(d), CLEANED);
