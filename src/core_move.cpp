@@ -175,15 +175,15 @@ static int16_t ranged_angle(int16_t angle)
 	return angle;
 }
 
-typedef struct Regulator_{
-	Regulator_(int32_t max):integrated_(0),integration_cycle_(0),base_speed_(BASE_SPEED),tick_(0),speed_max_(max){};
+typedef struct Regulator1_{
+	Regulator1_(int32_t max):integrated_(0),integration_cycle_(0),base_speed_(BASE_SPEED),tick_(0),speed_max_(max){};
 	bool adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool);
 	int32_t speed_max_;
 	int32_t integrated_;
 	int32_t base_speed_;
 	uint8_t integration_cycle_;
 	uint32_t tick_;
-}Regulator;
+}LinearSpeedRegulator;
 
 // Target:	robot coordinate
 static bool check_map_boundary(bool& slow_down)
@@ -205,7 +205,7 @@ static bool check_map_boundary(bool& slow_down)
 	return false;
 }
 
-bool Regulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool slow_down)
+bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool slow_down)
 {
 	auto rotate_angle = ranged_angle(course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y) - Gyro_GetAngle());
 
@@ -230,12 +230,13 @@ bool Regulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &righ
 		integrated_ = 0;
 		rotate_angle = 0;
 
-		if ( Get_OBS_Status() )
-			base_speed_ -= 5;
-		else if ( Is_OBS_Near() )
-			base_speed_ -= 4;
-		else
-			base_speed_ -= 3;
+		//if ( Get_OBS_Status() )
+		//	base_speed_ -= 5;
+		//else if ( Is_OBS_Near() )
+		//	base_speed_ -= 4;
+		//else
+		//	base_speed_ -= 3;
+		base_speed_ -= 1;
 
 		base_speed_ = base_speed_ < BASE_SPEED ? BASE_SPEED : base_speed_;
 	} else
@@ -249,8 +250,8 @@ bool Regulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &righ
 		integrated_ = 0;
 	}
 
-	left_speed = base_speed_ - rotate_angle / 10 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-	right_speed = base_speed_ + rotate_angle / 10 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+	left_speed = base_speed_ - rotate_angle / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+	right_speed = base_speed_ + rotate_angle / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
 	check_limit(left_speed, BASE_SPEED, speed_max_);
 	check_limit(right_speed, BASE_SPEED, speed_max_);
@@ -267,9 +268,9 @@ typedef struct Regulator2_{
 	uint8_t speed_min_;
 	uint8_t speed_;
 	uint32_t tick_;
-}Regulator2;
+}TurnSpeedRegulator;
 
-bool Regulator2::adjustSpeed(int16_t diff, uint8_t& speed)
+bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 {
 	if ((diff >= 0) && (diff <= 1800))
 		Set_Dir_Left();
@@ -461,7 +462,7 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 
 	CM_event_manager_turn(true);
 
-	Regulator2 regulator(speed_max, ROTATE_LOW_SPEED, 4);
+	TurnSpeedRegulator regulator(speed_max, ROTATE_LOW_SPEED, 4);
 	bool		eh_status_now, eh_status_last;
 	while (ros::ok()) {
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -517,7 +518,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 
 	Reset_Rcon_Status();
 
-	Regulator regulator(speed_max);
+	LinearSpeedRegulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
 #ifdef WALL_DYNAMIC
