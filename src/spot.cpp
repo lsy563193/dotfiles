@@ -110,7 +110,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		uint8_t od_spiral_out = 0,od_spiral_in = 0;
 		while(ros::ok()){
 			#ifdef OBS_DYNAMIC_MOVETOTARGET
-				OBS_Dynamic_Base(20);
+				robotbase_OBS_adjust_count(20);
 			#endif
 			/*-------get target list ---------*/
 			Spot_GetTarget(spiral_type, spot_radius, &target, 0, 0);

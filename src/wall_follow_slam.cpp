@@ -32,6 +32,7 @@
 #include <vector>
 #include "charger.hpp"
 #include "wav.h"
+#include "robotbase.h"
 
 #include "motion_manage.h"
 //Turn speed
@@ -181,7 +182,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			Wall_Dynamic_Base(30);
 #endif
 #ifdef OBS_DYNAMIC
-			OBS_Dynamic_Base(300);
+			robotbase_OBS_adjust_count(300);
 #endif
 
 			//WFM_boundary_check();
@@ -346,7 +347,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//debug_sm_map(SPMAP, 0, 0);
 
 #ifdef OBS_DYNAMIC
-			OBS_Dynamic_Base(100);
+			robotbase_OBS_adjust_count(100);
 #endif
 
 			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);

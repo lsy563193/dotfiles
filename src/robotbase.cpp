@@ -82,6 +82,9 @@ boost::mutex odom_mutex;
 // Odom coordinate
 float pose_x, pose_y;
 
+// For obs dynamic adjustment
+int OBS_adjust_count;
+
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret,sers_ret;
@@ -376,6 +379,8 @@ void *robotbase_routine(void*)
 		/*---------------publish end --------------------------*/
 
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
+		// Dynamic adjust obs
+		OBS_Dynamic_Base(OBS_adjust_count);
 	}
 	ROS_INFO("robotbase thread exit");
 	//pthread_exit(NULL);
@@ -469,4 +474,10 @@ void robotbase_restore_slam_correction()
 	pose_x += robot::instance()->getCorrectionX();
 	pose_y += robot::instance()->getCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
+}
+
+void robotbase_OBS_adjust_count(int count)
+{
+	boost::mutex::scoped_lock(odom_mutex);
+	OBS_adjust_count = count;
 }

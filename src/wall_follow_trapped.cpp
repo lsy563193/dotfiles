@@ -250,7 +250,7 @@
 //		Wall_Dynamic_Base(30);
 //#endif
 //#ifdef OBS_DYNAMIC
-//		OBS_Dynamic_Base(300);
+//		robotbase_OBS_adjust_count(300);
 //#endif
 //
 //		//WFM_boundary_check();
@@ -280,7 +280,7 @@
 //		}
 //
 //#ifdef OBS_DYNAMIC
-//		OBS_Dynamic_Base(100);
+//		robotbase_OBS_adjust_count(100);
 //#endif
 //
 //		//WFM_boundary_check();
@@ -582,6 +582,7 @@
 #include "movement.h"
 #include "path_planning.h"
 #include "robot.hpp"
+#include "robotbase.h"
 
 #include "wall_follow_trapped.h"
 
@@ -892,7 +893,7 @@ EscapeTrappedType Wall_Follow_Trapped()
 		Wall_Dynamic_Base(30);
 #endif
 #ifdef OBS_DYNAMIC
-		OBS_Dynamic_Base(300);
+		robotbase_OBS_adjust_count(300);
 #endif
 
 		WFT_boundary_check();
@@ -916,7 +917,7 @@ EscapeTrappedType Wall_Follow_Trapped()
 	while (ros::ok()) {
 
 #ifdef OBS_DYNAMIC
-		OBS_Dynamic_Base(100);
+		robotbase_OBS_adjust_count(100);
 #endif
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {

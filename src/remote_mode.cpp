@@ -19,6 +19,7 @@
 #include "remote_mode.h"
 #include <ros/ros.h>
 #include "wav.h"
+#include "robotbase.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
@@ -54,7 +55,7 @@ void Remote_Mode(void)
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
-		OBS_Dynamic_Base(20);
+		robotbase_OBS_adjust_count(20);
 #endif
 
 		if(Remote_Key(Remote_Forward))

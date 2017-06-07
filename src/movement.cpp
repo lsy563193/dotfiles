@@ -1673,7 +1673,7 @@ void OBS_Dynamic_Base(uint16_t Cy)
 	static uint32_t FrontOBS_E_Counter = 0,LeftOBS_E_Counter = 0,RightOBS_E_Counter = 0;
 	static int32_t FrontOBS_Everage = 0,LeftOBS_Everage = 0, RightOBS_Everage = 0;
 	static int32_t FrontOBS_Sum = 0, LeftOBS_Sum = 0, RightOBS_Sum = 0;
-	int16_t OBS_Diff = 350;
+	int16_t OBS_Diff = 350, OBS_adjust_limit = 100;
 
 	/*---------------Front-----------------------*/
 	Front_OBS_Buffer = Get_FrontOBS();
@@ -1689,8 +1689,8 @@ void OBS_Dynamic_Base(uint16_t Cy)
 		FrontOBS_E_Counter = 0;
 		Front_OBS_Buffer = Front_OBSTrig_Value - OBS_Diff;
 		Front_OBS_Buffer = (FrontOBS_Everage + Front_OBS_Buffer) / 2;
-		if (Front_OBS_Buffer < 100) {
-			Front_OBS_Buffer = 100;
+		if (Front_OBS_Buffer < OBS_adjust_limit) {
+			Front_OBS_Buffer = OBS_adjust_limit;
 		}
 		Front_OBSTrig_Value = Front_OBS_Buffer + OBS_Diff;
 		//Beep(1, 10, 0, 1);
@@ -1711,8 +1711,8 @@ void OBS_Dynamic_Base(uint16_t Cy)
 		LeftOBS_E_Counter = 0;
 		Left_OBS_Buffer = Left_OBSTrig_Value - OBS_Diff;
 		Left_OBS_Buffer = (LeftOBS_Everage + Left_OBS_Buffer) / 2;
-		if (Left_OBS_Buffer < 100) {
-			Left_OBS_Buffer = 100;
+		if (Left_OBS_Buffer < OBS_adjust_limit) {
+			Left_OBS_Buffer = OBS_adjust_limit;
 		}
 		Left_OBSTrig_Value = Left_OBS_Buffer + OBS_Diff;
 		//Beep(4, 10, 0, 1);
@@ -1732,8 +1732,8 @@ void OBS_Dynamic_Base(uint16_t Cy)
 		RightOBS_E_Counter = 0;
 		Right_OBS_Buffer = Right_OBSTrig_Value - OBS_Diff;
 		Right_OBS_Buffer = (RightOBS_Everage + Right_OBS_Buffer) / 2;
-		if (Right_OBS_Buffer < 100) {
-			Right_OBS_Buffer = 100;
+		if (Right_OBS_Buffer < OBS_adjust_limit) {
+			Right_OBS_Buffer = OBS_adjust_limit;
 		}
 		Right_OBSTrig_Value = Right_OBS_Buffer + OBS_Diff;
 		//Beep(8, 10, 0, 1);

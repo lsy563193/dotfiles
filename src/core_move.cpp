@@ -7,6 +7,7 @@
 #include "main.h"
 #include "laser.hpp"
 #include "robot.hpp"
+#include "robotbase.h"
 #include "core_move.h"
 
 #include "gyro.h"
@@ -525,7 +526,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
-		OBS_Dynamic_Base(100);
+		robotbase_OBS_adjust_count(100);
 #endif
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -891,7 +892,7 @@ uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 	g_rounding_wall_straight_distance = 300;
 	while (ros::ok()) {
 #ifdef OBS_DYNAMIC
-		OBS_Dynamic_Base(100);
+		robotbase_OBS_adjust_count(100);
 #endif
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
