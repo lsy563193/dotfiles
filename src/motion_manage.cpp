@@ -498,6 +498,8 @@ bool MotionManage::initWallFollowCleaning(void)
 	extern std::vector<Pose32_t> WF_Point;
 
 	Reset_MoveWithRemote();
+	Reset_Rcon_Status();
+	Reset_Stop_Event_Status();
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.

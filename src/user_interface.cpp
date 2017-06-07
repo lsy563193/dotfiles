@@ -150,6 +150,14 @@ void User_Interface(void)
 			else if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
 			{
 				Beep(2, 2, 0, 1);//Beep for useless remote command
+				// Wait for user to release the key.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_INFO("User still holds the key.");
+					usleep(100000);
+				}
+				// Key relaesed, then the touch status and stop event status should be cleared.
+				Reset_Stop_Event_Status();
 				wav_play(WAV_CLEAR_ERROR);
 				Set_Error_Code(Error_Code_None);
 				Reset_Rcon_Remote();
