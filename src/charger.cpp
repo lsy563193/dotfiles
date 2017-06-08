@@ -328,6 +328,7 @@ void GoHome(void)
 		if (Stop_Event())
 		{
 			ROS_WARN("%s %d: Stop_Event in turning 360 degrees to find charger signal.", __FUNCTION__, __LINE__);
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Disable_Motors();
 			break;
 		}
@@ -347,6 +348,7 @@ void GoHome(void)
 			Random_Back();
 			if(Is_Bumper_Jamed())
 			{
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
 		}
