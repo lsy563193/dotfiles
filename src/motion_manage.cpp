@@ -256,15 +256,15 @@ MotionManage::~MotionManage()
 	if (robot::instance()->isManualPaused()){
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		wav_play(WAV_PAUSE_CLEANING);
-		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
-		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
+		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		return;
 	}
 
 	if (robot::instance()->isLowBatPaused())
 	{
-		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
-		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
+		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		return;
 	}
 
@@ -361,7 +361,7 @@ bool MotionManage::initNavigationCleaning(void)
 	if (robot::instance()->isManualPaused() || robot::instance()->isLowBatPaused())
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
-		ROS_INFO("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
+		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 	}
 
 	/*Move back from charge station*/
