@@ -294,11 +294,11 @@ void GoHome(void)
 	//delay(1500);
 //	wav_play(WAV_BACK_TO_CHARGER);
 	// This is for calculating the robot turning.
-	uint16_t Current_Angle;
-	uint16_t Last_Angle;
-	int Angle_Offset;
+	float Current_Angle;
+	float Last_Angle;
+	float Angle_Offset;
 	// This step is for counting angle change when the robot turns.
-	long Gyro_Step = 0;
+	float Gyro_Step = 0;
 
 	Set_LED(100,100);
 	Set_SideBrush_PWM(30,30);
@@ -307,11 +307,11 @@ void GoHome(void)
 	Stop_Brifly();
 	Reset_Rcon_Status();
 	// Save the start angle.
-	Last_Angle = Gyro_GetAngle();
+	Last_Angle = robot::instance()->getAngle();
 	// Enable the charge function
 	set_start_charge();
 
-	while(Gyro_Step < 3600)
+	while(Gyro_Step < 360)
 	{
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
 		if (Is_ChargerOn())
@@ -552,21 +552,26 @@ void GoHome(void)
 			break;
 		}
 		usleep(50000);
-		Current_Angle = Gyro_GetAngle();
+		Current_Angle = robot::instance()->getAngle();
 		Angle_Offset = Current_Angle - Last_Angle;
-		//ROS_INFO("Current_Angle = %d, Last_Angle = %d, Angle_Offset = %d, Gyro_Step = %ld.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
+		ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
 		if (Angle_Offset > 0)
 		{
-			Angle_Offset -= 3600;
+			// For passing the boundary of angle range. e.g.(179 - (-178))
+			if (Angle_Offset >= 180)
+				Angle_Offset -= 360;
+			else
+				// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
+				Angle_Offset = 0;
 		}
-		Gyro_Step += abs(Angle_Offset);
+		Gyro_Step += (-Angle_Offset);
 		Last_Angle = Current_Angle;
 
 		Set_Dir_Right();
 		Set_Wheel_Speed(10, 10);
 	}
 
-	if (Gyro_Step >= 3600)
+	if (Gyro_Step >= 360)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 
 	// If robot didn't reach the charger, go back to userinterface mode.
@@ -594,7 +599,6 @@ void Around_ChargerStation(uint8_t Dir)
 	uint32_t No_Signal_Counter=0;
 	uint32_t N_Around_LRSignal=0;
 	uint8_t Bumper_Counter=0;
-	static uint8_t LLSignal_Count = 0,RRSignal_Count = 0, RTSignal_Count = 0,LTSignal_Count = 0;
 	uint8_t Cliff_Counter = 0;
 	Move_Forward(9,9);
 	Set_SideBrush_PWM(30,30);
@@ -805,7 +809,7 @@ void Around_ChargerStation(uint8_t Dir)
 			No_Signal_Counter++;
 			if(No_Signal_Counter>80)
 			{
-				Beep(1, 25, 75, 3);
+				//Beep(1, 25, 75, 3);
 				ROS_WARN("No charger signal received.");
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				return ;
@@ -1176,11 +1180,11 @@ uint8_t Check_Position(uint8_t Dir)
 //	uint32_t Counter_Watcher=0;
 	uint32_t Receive_Code = 0;
 	// This angle is for counting angle change when the robot turns.
-	uint16_t Current_Angle;
-	uint16_t Last_Angle;
-	int Angle_Offset;
+	float Current_Angle;
+	float Last_Angle;
+	float Angle_Offset;
 	// This step is for counting angle change when the robot turns.
-	long Gyro_Step = 0;
+	float Gyro_Step = 0;
 
 	if(Dir == Round_Left)
 	{
@@ -1194,26 +1198,29 @@ uint8_t Check_Position(uint8_t Dir)
 	}
 	Set_Wheel_Speed(10,10);
 
-	Last_Angle = Gyro_GetAngle();
-	ROS_DEBUG("Last_Angle = %d.", Last_Angle);
+	Last_Angle = robot::instance()->getAngle();
+	ROS_DEBUG("Last_Angle = %f.", Last_Angle);
 
 //	while(Get_LeftWheel_Step()<3600)
-	while(Gyro_Step < 3600)
+	while(Gyro_Step < 360)
 	{
 //		delay(1);
 		usleep(50000);
-		Current_Angle = Gyro_GetAngle();
+		Current_Angle = robot::instance()->getAngle();
 		Angle_Offset = Current_Angle - Last_Angle;
-		ROS_DEBUG("Current_Angle = %d, Last_Angle = %d, Angle_Offset = %d, Gyro_Step = %ld.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
-		if (Angle_Offset < 0 && Dir == Round_Left)
+		ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
+		if (Dir == Round_Left)
 		{
-			Angle_Offset += 3600;
+			if (Angle_Offset < 0)
+				Angle_Offset += 360;
+			Gyro_Step += Angle_Offset;
 		}
-		if (Angle_Offset > 0 && Dir == Round_Right)
+		if (Dir == Round_Right)
 		{
-			Angle_Offset -= 3600;
+			if (Angle_Offset > 0)
+				Angle_Offset -= 360;
+			Gyro_Step += (-Angle_Offset);
 		}
-		Gyro_Step += abs(Angle_Offset);
 		Last_Angle = Current_Angle;
 		//Counter_Watcher++;
 		//if(Counter_Watcher>150000)
