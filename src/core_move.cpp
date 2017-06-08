@@ -1115,6 +1115,7 @@ void CM_go_home()
 
 	while (ros::ok())
 	{
+		Set_LED(100, 0);
 
 		if (g_fatal_quit_event && g_key_clean_pressed || g_home_point.empty())
 		{

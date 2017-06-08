@@ -358,7 +358,7 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR_HomeL)//FR H_L
 		{
@@ -366,7 +366,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconFL_HomeL)//FL H_L
@@ -375,7 +375,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR_HomeR)//FR H_R
 		{
@@ -383,7 +383,7 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFL2_HomeR)//FL2 H_R
 		{
@@ -391,7 +391,7 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,850);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR2_HomeL)//FR2 H_L
 		{
@@ -399,7 +399,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,850);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconFL2_HomeL)//FL2 H_L
@@ -408,7 +408,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR2_HomeR)//FR2 H_R
 		{
@@ -416,20 +416,20 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconL_HomeL)// L  H_L
 		{
 			ROS_INFO("Start with L-L.");
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconR_HomeR)// R  H_R
 		{
 			ROS_INFO("Start with R-R.");
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconL_HomeR)// L  H_R
@@ -437,14 +437,14 @@ void GoHome(void)
 			ROS_INFO("Start with L-R.");
 			Turn_Left(Turn_Speed,1500);
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconR_HomeL)// R  H_L
 		{
 			ROS_INFO("Start with R-L.");
 			Turn_Right(Turn_Speed,1500);
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 /*--------------------------HomeT-----------------*/
 		if(Receive_Code&RconFL_HomeT)//FL H_T
@@ -453,7 +453,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR_HomeT)//FR H_T
 		{
@@ -461,7 +461,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconFL2_HomeT)//FL2 H_T
@@ -470,7 +470,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR2_HomeT)//FR2 H_T
 		{
@@ -478,7 +478,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconL_HomeT)// L  H_T
@@ -487,7 +487,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,1200);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconR_HomeT)// R  H_T
 		{
@@ -495,7 +495,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,1200);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 /*--------------BL BR---------------------*/
@@ -505,7 +505,7 @@ void GoHome(void)
 			Turn_Left(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if((Receive_Code&RconBR_HomeR))//BR H_L R  //OK
 		{
@@ -513,7 +513,7 @@ void GoHome(void)
 			Turn_Right(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if((Receive_Code&RconBL_HomeR))//BL H_R
@@ -522,7 +522,7 @@ void GoHome(void)
 			Turn_Left(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if((Receive_Code&RconBR_HomeL))//BL H_L R
 		{
@@ -530,7 +530,7 @@ void GoHome(void)
 			Turn_Right(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if((Receive_Code&RconBL_HomeT))//BL H_T
@@ -539,7 +539,7 @@ void GoHome(void)
 			Turn_Left(30,300);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if((Receive_Code&RconBR_HomeT))//BR H_T
 		{
@@ -547,7 +547,7 @@ void GoHome(void)
 			Turn_Right(30,300);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		usleep(50000);
 		Current_Angle = Gyro_GetAngle();
@@ -563,10 +563,20 @@ void GoHome(void)
 		Set_Dir_Right();
 		Set_Wheel_Speed(10, 10);
 	}
-	// If robot didn't reach the charger, go back to userinterface mode.
-	if(Get_Clean_Mode() != Clean_Mode_Charging)
-	{
+
+	if (Gyro_Step >= 3600)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+
+	// If robot didn't reach the charger, go back to userinterface mode.
+	if(Get_Clean_Mode() != Clean_Mode_Charging && Get_Clean_Mode() != Clean_Mode_GoHome)
+	{
+		extern std::list <Point32_t> g_home_point;
+		if (!Stop_Event() && g_home_point.empty())
+		{
+			Set_LED(100, 0);
+			Stop_Brifly();
+			wav_play(WAV_BACK_TO_CHARGER_FAILED);
+		}
 	}
 
 }
