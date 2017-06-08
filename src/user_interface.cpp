@@ -30,8 +30,8 @@ void User_Interface(void)
 	static volatile uint32_t TimeOutCounter=0;
 
 #ifdef ONE_KEY_DISPLAY
-	uint16_t LedBreathCount=0;
-	uint8_t breath =0;
+	uint16_t LedBreathCount=100;
+	uint8_t breath =1;
 #endif
 	bool Battery_Ready_to_clean = true;
 	bool battery_too_low_ = false;
