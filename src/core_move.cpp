@@ -1116,6 +1116,9 @@ int CM_cleaning()
 
 void CM_go_home()
 {
+	Set_VacMode(Vac_Normal, false);
+	Set_Vac_Speed();
+
 	if(robot::instance()->isLowBatPaused())
 		wav_play(WAV_BATTERY_LOW);
 	wav_play(WAV_BACK_TO_CHARGER);
@@ -2398,8 +2401,8 @@ void CM_handle_remote_suction(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_battery_home)
-		Switch_VacMode(false);
+	if (!g_go_home)
+		Switch_VacMode(true);
 	Reset_Rcon_Remote();
 }
 
