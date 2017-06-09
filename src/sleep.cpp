@@ -148,4 +148,6 @@ void Sleep_Mode(void)
 		Alarm_Error();
 	}
 
+	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
+	usleep(1500000);
 }
