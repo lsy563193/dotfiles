@@ -328,7 +328,7 @@ void User_Interface(void)
 //			Beep(2, 15, 0, 1);
 			Press_time=Get_Key_Time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
-			if(Press_time>20)
+			if(Press_time>151)
 			{
 				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
 				//Beep(6,25,25,1);
@@ -339,6 +339,8 @@ void User_Interface(void)
 				Beep(3,4,0,1);
 				usleep(100000);
 				Beep(5,4,4,1);
+				// Wait for beep finish.
+				usleep(200000);
 				// Wait for user to release the key.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{

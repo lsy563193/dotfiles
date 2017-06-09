@@ -141,6 +141,7 @@ bool Wait_For_Gyro_On(void)
 				break;
 			}
 			case 4:
+			case 5:
 			{
 				stop_waiting = true;
 				success_count = 0;
@@ -157,6 +158,12 @@ bool Wait_For_Gyro_On(void)
 					error_count++;
 					success_count = 0;
 				}
+				break;
+			}
+			default:
+			{
+				stop_waiting = true;
+				success_count = 0;
 				break;
 			}
 		}

@@ -103,10 +103,19 @@ void Sleep_Mode(void)
 			break;
 		}
 		Reset_Rcon_Remote();
-		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
+		if(Is_AtHomeBase() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
 			Set_Main_PwrByte(POWER_ACTIVE);
-			if(Turn_Connect())
+			ResetSleepModeFlag();
+			Reset_Rcon_Remote();
+			Beep(4, 4, 0, 1);
+			usleep(100000);
+			Beep(3,4,0,1);
+			usleep(100000);
+			Beep(2,4,0,1);
+			usleep(100000);
+			Beep(1,4,4,1);
+			if (is_direct_charge() || Turn_Connect())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
