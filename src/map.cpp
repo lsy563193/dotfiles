@@ -300,15 +300,15 @@ int16_t countToCell(double count) {
 	}
 }
 
-Point32_t Map_CellToPoint( Point16_t cell ) {
+Point32_t Map_CellToPoint( Cell_t cell ) {
 	Point32_t pnt;
 	pnt.X = cellToCount(cell.X);
 	pnt.Y = cellToCount(cell.Y);
 	return pnt;
 }
 
-Point16_t Map_PointToCell( Point32_t pnt ) {
-	Point16_t cell;
+Cell_t Map_PointToCell( Point32_t pnt ) {
+	Cell_t cell;
 	cell.X = countToCell(pnt.X);
 	cell.Y = countToCell(pnt.Y);
 	return cell;

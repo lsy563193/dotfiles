@@ -41,8 +41,8 @@
 using namespace std;
 
 typedef struct {
-	Point16_t	target;
-	list <Point16_t> points;
+	Cell_t	target;
+	list <Cell_t> points;
 } PPTargetType;
 
 list <PPTargetType> g_targets;
@@ -59,7 +59,7 @@ PositionType g_pos_history[5];
 
 uint16_t g_last_dir;
 
-Point16_t g_trappedCell[ESCAPE_TRAPPED_REF_CELL_SIZE];
+Cell_t g_trappedCell[ESCAPE_TRAPPED_REF_CELL_SIZE];
 
 uint8_t g_trappedCellSize = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
@@ -473,7 +473,7 @@ void path_find_all_targets()
 			continue;
 		}
 
-		Point16_t	t;
+		Cell_t	t;
 		tracex = it->target.X;
 		tracey = it->target.Y;
 		while (tracex != x || tracey != y) {
@@ -679,7 +679,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 		std::string	msg = __FUNCTION__;
 		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
 
-		for (list<Point16_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
+		for (list<Cell_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
 			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
 		}
 		msg += "\n";
@@ -706,7 +706,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 
 				last_y = it->points.front().Y;
 				within_range = true;
-				for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+				for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
 					if (i->Y < Map_GetYPos() || i->Y > d) {
 						within_range = false;
 					}
@@ -739,7 +739,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 						within_range = true;
 						last_y = it->points.front().Y;
 						bool turn = false;
-						for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+						for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
 							if (i->Y < a || i->Y > (d > Map_GetYPos() ? d : Map_GetYPos())) {
 								within_range = false;
 							}
@@ -791,7 +791,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 
 					last_y = it->points.front().Y;
 					within_range = true;
-					for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+					for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
 						if (i->Y > Map_GetYPos() || i->Y < d) {
 							within_range = false;
 						}
@@ -825,7 +825,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 						within_range = true;
 						last_y = it->points.front().Y;
 						bool turn = false;
-						for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+						for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
 							if (i->Y > a || i->Y < (d > Map_GetYPos() ? Map_GetYPos() : d)) {
 								within_range = false;
 							}
@@ -864,7 +864,7 @@ int16_t find_next_unclean_with_approaching(int16_t *x, int16_t *y)
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 					if (it->target.Y == d) {
 						within_range = true;
-						for (list<Point16_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+						for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
 							if (i->Y < Map_GetYPos() || i->Y > a) {
 								within_range = false;
 							}
@@ -1111,7 +1111,7 @@ int16_t WF_path_escape_trapped()
 	int16_t remote_x = 0, remote_y = 0;
 	int16_t x_min, x_max, y_min, y_max;
 	Point32_t	Remote_Point;
-	Point16_t   tmpPnt, pnt16ArTmp[3];
+	Cell_t   tmpPnt, pnt16ArTmp[3];
 	Remote_Point.X = 0;
 	Remote_Point.Y = 0;
 	//tmpPnt.X = countToCell(Remote_Point.X);
@@ -1364,7 +1364,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 			/* Find the path to the next target to clean. */
 			//pos.X = Map_GetXPos();
 			//pos.Y = Map_GetYPos();
-			Point16_t	pos{x_next_area, y_next_area};
+			Cell_t	pos{x_next_area, y_next_area};
 			val = path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &x_tmp, &y_tmp);
 			if (Map_GetXPos() == x_tmp) {
 				g_last_dir = Map_GetYPos() > y_tmp ? WEST : EAST;
@@ -1402,7 +1402,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 	return val;
 }
 
-void path_escape_set_trapped_cell( Point16_t *cell, uint8_t size )
+void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size )
 {
 	uint8_t i = 0;
 	g_trappedCellSize = size;
@@ -1412,7 +1412,7 @@ void path_escape_set_trapped_cell( Point16_t *cell, uint8_t size )
 	}
 }
 
-Point16_t *path_escape_get_trapped_cell()
+Cell_t *path_escape_get_trapped_cell()
 {
 	return g_trappedCell;
 }

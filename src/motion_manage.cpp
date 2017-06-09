@@ -465,10 +465,10 @@ bool MotionManage::initNavigationCleaning(void)
 		g_home_point.push_front(new_home_point);
 
 		// Mark all the trapped reference points as (0, 0).
-		Point16_t tmp_pnt;
+		Cell_t tmp_pnt;
 		tmp_pnt.X = 0;
 		tmp_pnt.Y = 0;
-		extern Point16_t g_pnt16_ar_tmp[3];
+		extern Cell_t g_pnt16_ar_tmp[3];
 		for (int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i)
 		{
 			g_pnt16_ar_tmp[i] = tmp_pnt;

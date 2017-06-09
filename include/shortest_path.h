@@ -35,11 +35,11 @@ uint16_t path_line_get_count(void);
 
 int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
-int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next);
+int16_t path_move_to_unclean_area(Cell_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next);
 
 int path_get_path_points_count();
 
-list<Point16_t> *path_get_path_points();
+list<Cell_t> *path_get_path_points();
 void path_reset_path_points();
 
 void path_display_path_points();

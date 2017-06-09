@@ -786,7 +786,7 @@ uint8_t WF_End_Wall_Follow(void){
 	int8_t state;
 	// X, Y in Target_Point are all counts.
 	//Point32_t	Next_Point, Target_Point;
-	//Point16_t	tmpPnt, g_pnt16_ar_tmp[3];
+	//Cell_t	tmpPnt, g_pnt16_ar_tmp[3];
 	//MapTouringType	mt_state = MT_None;
 	//int16_t offsetAngle = robot::instance()->getHomeAngle();
 	Stop_Brifly();

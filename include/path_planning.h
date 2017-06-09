@@ -188,9 +188,9 @@ void path_set_9cell(int16_t cell_x, int16_t cell_y, CellState state);
  /* Set the around 9 cell as state */
 void path_set_25cell(int16_t cell_x, int16_t cell_y, CellState state);
 
-void path_escape_set_trapped_cell( Point16_t *cell, uint8_t size );
+void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
-Point16_t *path_escape_get_trapped_cell(void);
+Cell_t *path_escape_get_trapped_cell(void);
 
 int16_t path_get_home_x(void);
 

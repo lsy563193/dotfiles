@@ -87,9 +87,9 @@ uint8_t	g_should_follow_wall = 0;
 bool g_map_boundary_created = false;
 
 // This g_pnt16_ar_tmp is for trapped reference point.
-Point16_t g_pnt16_ar_tmp[3];
+Cell_t g_pnt16_ar_tmp[3];
 
-Point16_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
+Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
 extern PositionType g_pos_history[];
 
@@ -291,7 +291,7 @@ bool Regulator2::adjustSpeed(int16_t diff, uint8_t& speed)
 	return true;
 }
 
-static double radius_of(Point16_t cell_0,Point16_t cell_1)
+static double radius_of(Cell_t cell_0,Cell_t cell_1)
 {
 	return (abs(cellToCount(cell_0.X - cell_1.X)) + abs(cellToCount(cell_0.Y - cell_1.Y))) / 2;
 }
@@ -730,7 +730,7 @@ void CM_MoveToPoint(Point32_t target)
 bool CM_CurveMoveToPoint()
 {
 	auto *path_cells = path_get_path_points();
-	std::vector<Point16_t>	cells;
+	std::vector<Cell_t>	cells;
 	std::copy_n((*path_cells).begin(), 3, std::back_inserter(cells));
 	path_reset_path_points();
 	std::string msg;
@@ -1215,7 +1215,7 @@ void CM_go_home()
 		if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
 			CM_create_home_boundary();
 
-		Point16_t tmpPnt = {countToCell(g_home_point.front().X), countToCell(g_home_point.front().Y)};
+		Cell_t tmpPnt = {countToCell(g_home_point.front().X), countToCell(g_home_point.front().Y)};
 		ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y,
 						 (uint) g_home_point.size());
 		g_home_point.pop_front();
@@ -1295,8 +1295,8 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 		if (g_remote_home && !g_go_home )
 			return false;
 
-		Point16_t pos{target_x, target_y};
-		Point16_t	tmp;
+		Cell_t pos{target_x, target_y};
+		Cell_t	tmp;
 		auto pathFind = (int8_t)path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
 
 		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y, Map_GetXPos(), Map_GetYPos());
@@ -1385,7 +1385,7 @@ void CM_ResetGoHome(void)
 }
 
 void CM_SetHome(int32_t x, int32_t y) {
-	Point16_t tmpPnt;
+	Cell_t tmpPnt;
 
 	bool found = false;
 	Point32_t new_home_point;
@@ -1426,7 +1426,7 @@ void CM_SetContinuePoint(int32_t x, int32_t y)
 	g_continue_point.Y = y;
 }
 
-uint8_t CM_CheckLoopBack( Point16_t target ) {
+uint8_t CM_CheckLoopBack( Cell_t target ) {
 	uint8_t retval = 0;
 	if ( target.X == g_pos_history[1].x && target.Y == g_pos_history[1].y &&
 		 target.X == g_pos_history[3].x && target.Y == g_pos_history[3].y ) {

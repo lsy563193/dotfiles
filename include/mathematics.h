@@ -17,7 +17,7 @@
 typedef struct{
 	int16_t X;
 	int16_t Y;
-} Point16_t;
+} Cell_t;
 
 typedef struct{
   double A;
@@ -47,8 +47,8 @@ uint16_t angle_delta(uint16_t a, uint16_t b);
 int32_t limit(int32_t i, int32_t lower_limit, int32_t upper_limit);
 void Matrix_Translate(double * x, double * y, double offset_x, double offset_y);
 void Matrix_Rotate(double * x, double * y, double theta);
-Point16_t calIntersPoint( Point16_t l1StartPnt, Point16_t l1EndPnt,
-                          Point16_t l2StartPnt, Point16_t l2EndPnt );
+Cell_t calIntersPoint( Cell_t l1StartPnt, Cell_t l1EndPnt,
+                          Cell_t l2StartPnt, Cell_t l2EndPnt );
 
 double radDeltaAngleVector( double a, double b );
 int16_t degreeDeltaAngleVector( uint16_t a, uint16_t b ) ;

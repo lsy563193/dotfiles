@@ -59,7 +59,7 @@ typedef enum {
 } ActionType;
 
 typedef struct {
-	Point16_t	pos;
+	Cell_t	pos;
 } VWType;
 
 void CM_TouringCancel(void);
@@ -96,9 +96,9 @@ void CM_SetContinuePoint(int32_t x, int32_t y);
 
 void CM_ResetBoundaryBlocks(void);
 
-void CM_AddTargets(Point16_t zone);
+void CM_AddTargets(Cell_t zone);
 
-uint8_t CM_CheckLoopBack(Point16_t target);
+uint8_t CM_CheckLoopBack(Cell_t target);
 
 MapTouringType CM_handleExtEvent(void);
 

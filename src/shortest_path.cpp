@@ -401,7 +401,7 @@ void path_trace_path(int16_t line_idx, int16_t cur_idx)
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
  */
-int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next)
+int16_t path_move_to_unclean_area(Cell_t pos, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next)
 {
 	uint8_t	level_cur, level_target, level_next, level_set, should_trace, found, blocked;
 
@@ -1045,7 +1045,7 @@ int16_t path_move_to_unclean_area(Point16_t pos, int16_t x, int16_t y, int16_t *
 int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound)
 {
 	int16_t *x_next, *y_next;
-	Point16_t	pos;
+	Cell_t	pos;
 
 	bound = bound;
 	pos.X = xID;
@@ -1059,7 +1059,7 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 
 #else
 
-list <Point16_t> path_points;
+list <Cell_t> path_points;
 
 /*
  * Give a target point, find the shorest path from the current robot position to the
@@ -1230,7 +1230,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	 * The last robot direction is use, this is to avoid using the path that
 	 * have the same direction as previous action.
 	 */
-	Point16_t t;
+	Cell_t t;
 	t.X = tracex = tracex_tmp = endx;
 	t.Y = tracey = tracey_tmp = endy;
 	path_points.push_back(t);
@@ -1422,12 +1422,12 @@ int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next) {
+int16_t path_move_to_unclean_area(Cell_t position, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
 
-	Point16_t pos;
+	Cell_t pos;
 
 	path_reset_path_points();
 
@@ -1511,14 +1511,14 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 
 #ifdef	PP_MOVE_TO_MIDDLE_OF_PATH
 		if (path_points.size() > 3) {
-			list<Point16_t>::iterator it = path_points.begin();
+			list<Cell_t>::iterator it = path_points.begin();
 			for (i = 0; i < path_points.size() - 3; i++) {
-				list<Point16_t>::iterator it_ptr1 = it;
+				list<Cell_t>::iterator it_ptr1 = it;
 
-				list<Point16_t>::iterator it_ptr2 = it_ptr1;
+				list<Cell_t>::iterator it_ptr2 = it_ptr1;
 				it_ptr2++;
 
-				list<Point16_t>::iterator it_ptr3 = it_ptr2;
+				list<Cell_t>::iterator it_ptr3 = it_ptr2;
 				it_ptr3++;
 
 				bool blocked_min, blocked_max;
@@ -1598,7 +1598,7 @@ int16_t path_move_to_unclean_area(Point16_t position, int16_t x, int16_t y, int1
 
 		if (path_points.size() > 1) {
 			i = 0;
-			for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end() && i <= 1; ++it, ++i) {
+			for (list<Cell_t>::iterator it = path_points.begin(); it != path_points.end() && i <= 1; ++it, ++i) {
 				if (i != 1) {
 					continue;
 				} else {
@@ -1618,7 +1618,7 @@ int path_get_path_points_count()
 	return path_points.size();
 }
 
-list<Point16_t> *path_get_path_points()
+list<Cell_t> *path_get_path_points()
 {
 	return &path_points;
 }
@@ -1633,7 +1633,7 @@ void path_display_path_points()
 	std::string     msg = __FUNCTION__;
 
 	msg += " " + std::to_string(__LINE__) + ": ";
-	for (list<Point16_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
+	for (list<Cell_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
 	msg += "\n";
