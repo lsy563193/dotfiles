@@ -190,12 +190,13 @@ void User_Interface(void)
 		}
 
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
-		if(Is_AtHomeBase())//on base but miss charging , adjust position to charge
+		if(Is_AtHomeBase() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
-			if(Turn_Connect())
-			{
+			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
+			if (is_direct_charge())
 				Temp_Mode = Clean_Mode_Charging;
-			}
+			else if(Turn_Connect())
+				Temp_Mode = Clean_Mode_Charging;
 			Disable_Motors();
 		}
 

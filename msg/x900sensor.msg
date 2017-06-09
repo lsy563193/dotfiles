@@ -32,6 +32,12 @@ uint32 c_stub
 uint8 key
 
 #c_s: charge status, 0: Not on charger stub, 1: On charger stub and charging, 2: On charger stub but not charging.
+#c_s: charge status.
+#0: Not on charger stub.
+#1: On charger stub and charging.
+#2: On charger stub but not charging.
+#3: Direct connect to charge line but not charging.
+#4: Direct connect to charge line and charging.
 uint8 c_s
 
 #w_tank: water tank status,1:set,0:not set
