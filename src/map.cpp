@@ -68,11 +68,11 @@ int32_t Map_GetYCount(void) {
 	return (int32_t)round(yCount);
 }
 
-int16_t Map_GetXPos(void) {
+int16_t Map_GetXCell(void) {
 	return countToCell(xCount);
 }
 
-int16_t Map_GetYPos(void) {
+int16_t Map_GetYCell(void) {
 	return countToCell(yCount);
 }
 
@@ -217,10 +217,10 @@ void Map_ClearBlocks(void) {
 		}
 	}
 
-	Map_SetCell(MAP, cellToCount(Map_GetXPos() - 1), cellToCount(Map_GetYPos()), CLEANED);
-	Map_SetCell(MAP, cellToCount(Map_GetXPos()), cellToCount(Map_GetYPos() + 1), CLEANED);
-	Map_SetCell(MAP, cellToCount(Map_GetXPos() + 1), cellToCount(Map_GetYPos()), CLEANED);
-	Map_SetCell(MAP, cellToCount(Map_GetXPos()), cellToCount(Map_GetYPos() - 1), CLEANED);
+	Map_SetCell(MAP, cellToCount(Map_GetXCell() - 1), cellToCount(Map_GetYCell()), CLEANED);
+	Map_SetCell(MAP, cellToCount(Map_GetXCell()), cellToCount(Map_GetYCell() + 1), CLEANED);
+	Map_SetCell(MAP, cellToCount(Map_GetXCell() + 1), cellToCount(Map_GetYCell()), CLEANED);
+	Map_SetCell(MAP, cellToCount(Map_GetXCell()), cellToCount(Map_GetYCell() - 1), CLEANED);
 }
 
 int32_t Map_GetRelativeX(uint16_t heading, int16_t offset_lat, int16_t offset_long) {
@@ -281,11 +281,11 @@ int16_t Map_GetLongitudinalOffset(uint16_t heading) {
 }
 */
 int16_t nextXID(uint16_t heading, int16_t offset_lat, int16_t offset_long) {
-	return Map_GetXPos() + offset_long * round(cos(deg2rad(heading, 10))) - offset_lat * round(sin(deg2rad(heading, 10)));
+	return Map_GetXCell() + offset_long * round(cos(deg2rad(heading, 10))) - offset_lat * round(sin(deg2rad(heading, 10)));
 }
 
 int16_t nextYID(uint16_t heading, int16_t offset_lat, int16_t offset_long) {
-	return Map_GetYPos() + offset_long * round(sin(deg2rad(heading, 10))) + offset_lat * round(cos(deg2rad(heading, 10)));
+	return Map_GetYCell() + offset_long * round(sin(deg2rad(heading, 10))) + offset_lat * round(cos(deg2rad(heading, 10)));
 }
 
 int32_t cellToCount(int16_t i) {

@@ -117,8 +117,8 @@
 //	Map_SetPosition(pos_x, pos_y);
 //	Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 //
-//	current_x = Map_GetXPos();
-//	current_y = Map_GetYPos();
+//	current_x = Map_GetXCell();
+//	current_y = Map_GetYCell();
 //	escape_thread_running = true;
 //
 //	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
@@ -128,17 +128,17 @@
 //		Map_SetPosition(pos_x, pos_y);
 //		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 //
-//		if (abs(current_x - Map_GetXPos()) >= 2 || abs(current_y - Map_GetYPos()) >= 2) {
+//		if (abs(current_x - Map_GetXCell()) >= 2 || abs(current_y - Map_GetYCell()) >= 2) {
 //			path_set_current_pos();
-//			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
+//			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXCell(), Map_GetYCell());
 //			val = path_escape_trapped();
 //			if (val == 1) {
 //				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 //				data = (void *) (&escaped);
 //				escape_thread_running = false;
 //			}
-//			current_x = Map_GetXPos();
-//			current_y = Map_GetYPos();
+//			current_x = Map_GetXCell();
+//			current_y = Map_GetYCell();
 //			} else {
 //				usleep(100000);
 //			}
@@ -770,8 +770,8 @@ void *WFT_check_trapped(void *data)
 	Map_SetPosition(pos_x, pos_y);
 	Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
-	current_x = Map_GetXPos();
-	current_y = Map_GetYPos();
+	current_x = Map_GetXCell();
+	current_y = Map_GetYCell();
 	escape_thread_running = true;
 
 	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
@@ -781,17 +781,18 @@ void *WFT_check_trapped(void *data)
 		Map_SetPosition(pos_x, pos_y);
 		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
-		if (abs(current_x - Map_GetXPos()) >= 2 || abs(current_y - Map_GetYPos()) >= 2) {
+		if (abs(current_x - Map_GetXCell()) >= 2 || abs(current_y - Map_GetYCell()) >= 2) {
 			path_set_current_pos();
-			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
+			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y,
+							 Map_GetXCell(), Map_GetYCell());
 			val = path_escape_trapped();
 			if (val == 1) {
 				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 				escape_state = Escape_Trapped_Escaped;
 				escape_thread_running = false;
 			}
-			current_x = Map_GetXPos();
-			current_y = Map_GetYPos();
+			current_x = Map_GetXCell();
+			current_y = Map_GetYCell();
 		} else {
 			usleep(100000);
 		}

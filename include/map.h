@@ -43,8 +43,8 @@ void Map_Initialize(void);
 
 int32_t Map_GetXCount(void);
 int32_t Map_GetYCount(void);
-int16_t Map_GetXPos(void);
-int16_t Map_GetYPos(void);
+int16_t Map_GetXCell(void);
+int16_t Map_GetYCell(void);
 
 void Map_MoveTo(double x, double y);
 void Map_SetPosition(double x, double y);

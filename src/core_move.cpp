@@ -320,13 +320,13 @@ void CM_update_position(uint16_t heading) {
 	int32_t i, j, k;
 
 	float	pos_x, pos_y;
-	x = Map_GetXPos();
-	y = Map_GetYPos();
+	x = Map_GetXCell();
+	y = Map_GetYCell();
 
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	Map_SetPosition(pos_x, pos_y);
-	if (x != Map_GetXPos() || y != Map_GetYPos()) {
+	if (x != Map_GetXCell() || y != Map_GetYCell()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
 				CM_count_normalize(heading, CELL_SIZE * c, CELL_SIZE * d, &i, &j);
@@ -834,21 +834,25 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 	 *					North (Xmax)
 	**/
 	y_coordinate = countToCell(Next_Point->Y);
-	if (y_coordinate != Map_GetYPos()) {
+	if (y_coordinate != Map_GetYCell()) {
 		// Robot need to go to new line
 		ROS_INFO("Robot need to go to new line");
 
 #if PP_ROUNDING_OBSTACLE_LEFT
-		if ((dir == NORTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2)) ||
-			(dir == SOUTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2 ))) {
+		if ((dir == NORTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+																																																			 Map_GetYCell() - 2)) ||
+			(dir == SOUTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+																																																		 Map_GetYCell() + 2 ))) {
 
 			rounding_type = ROUNDING_LEFT;
 		}
 #endif
 
 #if PP_ROUNDING_OBSTACLE_RIGHT
-		if ((dir == NORTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2)) ||
-			(dir == SOUTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2))) {
+		if ((dir == NORTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+																																																			 Map_GetYCell() + 2)) ||
+			(dir == SOUTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+																																																		 Map_GetYCell() - 2))) {
 
 			rounding_type = ROUNDING_RIGHT;
 		}
@@ -857,11 +861,13 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 		ROS_INFO("%s %d Robot don't need to go to new line. y: %d", __FUNCTION__, __LINE__, y_coordinate);
 		if (!(countToCell(Next_Point->X) == SHRT_MAX || countToCell(Next_Point->X) == SHRT_MIN)) {
 			y_coordinate = countToCell(Target_Point.Y);
-			if (y_coordinate != Map_GetYPos()) {
+			if (y_coordinate != Map_GetYCell()) {
 
 #if PP_ROUNDING_OBSTACLE_LEFT
-				if ((dir == NORTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2)) || 
-					(dir == SOUTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2 ))) {
+				if ((dir == NORTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+																																																					 Map_GetYCell() - 2)) ||
+					(dir == SOUTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+																																																				 Map_GetYCell() + 2 ))) {
 
 					rounding_type = ROUNDING_LEFT;
 					Next_Point->Y = Target_Point.Y;
@@ -869,8 +875,10 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 #endif
 
 #if PP_ROUNDING_OBSTACLE_RIGHT
-				if ((dir == NORTH && y_coordinate > Map_GetYPos() && (y_coordinate == Map_GetYPos() + 1 || y_coordinate == Map_GetYPos() + 2)) ||
-					(dir == SOUTH && y_coordinate < Map_GetYPos() && (y_coordinate == Map_GetYPos() - 1 || y_coordinate == Map_GetYPos() - 2))) {
+				if ((dir == NORTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+																																																					 Map_GetYCell() + 2)) ||
+					(dir == SOUTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+																																																				 Map_GetYCell() - 2))) {
 
 					rounding_type = ROUNDING_RIGHT;
 					Next_Point->Y = Target_Point.Y;
@@ -1105,6 +1113,27 @@ bool CM_resume_cleaning()
 	return true;
 }
 
+void linearMarkClean(const Cell_t& start, const Cell_t& target)
+{
+	if (start.Y == target.Y)
+	{
+		Cell_t stop = {Map_GetYCell(), Map_GetYCell()};
+		if (start.X != stop.X && (abs(start.Y - stop.Y) <= 2))
+		{
+			float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
+			float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
+
+			auto start_x = std::min(start.X, stop.Y);
+			auto stop_x = std::max(start.X, stop.Y);
+			for (auto x = start_x; x<=stop_x; x++)
+			{
+				auto y = (int16_t) (slop * (stop.X) + intercept);
+				for(auto dy=-ROBOT_SIZE_1_2;y<=ROBOT_SIZE_1_2;y++)
+				Map_SetCell(MAP, cellToCount(x), cellToCount(y - dy), CLEANED);
+			}
+		}
+	}
+}
 
 int CM_cleaning()
 {
@@ -1121,12 +1150,10 @@ int CM_cleaning()
 
 		uint16_t last_dir = path_get_robot_direction();
 
-		int16_t x_current = Map_GetXPos();
-		int16_t y_current = Map_GetYPos();
-		Point32_t Next_Point, Target_Point;
-		int8_t state = path_next(&Next_Point.X, &Next_Point.Y, &Target_Point);
-		MotionManage::pubCleanMapMarkers(MAP, Next_Point, Target_Point);
-		ROS_INFO("Next point is (%d, %d), target point is (%d, %d)", countToCell(Next_Point.X), countToCell(Next_Point.Y), countToCell(Target_Point.X), countToCell(Target_Point.Y));
+		Cell_t start{Map_GetXCell(), Map_GetYCell()};
+		Point32_t next_point, targets_point;
+		int8_t state = path_next(&next_point.X, &next_point.Y, &targets_point);
+		MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
 		ROS_ERROR("State: %d", state);
 		if (state == 0) //No target point
 		{
@@ -1136,38 +1163,19 @@ int CM_cleaning()
 		if (state == 1)
 		{
 #if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
-			auto rounding_type = CM_get_rounding_direction(&Next_Point, Target_Point, last_dir);
+			auto rounding_type = CM_get_rounding_direction(&next_point, targets_point, last_dir);
 			if (rounding_type != ROUNDING_NONE)
 			{
 				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
 				g_cm_move_type = CM_ROUNDING;
-				CM_rounding(rounding_type, Next_Point, g_bumper_status_for_rounding);
+				CM_rounding(rounding_type, next_point, g_bumper_status_for_rounding);
 				g_cm_move_type = CM_LINEARMOVE;
 			} else
 #endif
-				CM_MoveToPoint(Next_Point);
+				CM_MoveToPoint(next_point);
 
-			if (y_current == countToCell(Next_Point.Y))
-			{
-				auto x = Map_GetXPos();
-				auto y = Map_GetYPos();
-				if (x_current != x && (abs(y_current - y) <= 2)) {
-					float slop = (((float) y_current) - ((float) y)) / (((float) x_current) - ((float) x));
-					float intercept = ((float) (y)) - slop * ((float) (x));
+			linearMarkClean(start,Map_PointToCell(next_point));
 
-					auto start = x > x_current ? x_current : x;
-					auto end = x > x_current ? x : x_current;
-					for (x = start; x <= end; x++)
-					{
-						y = (int16_t) (slop * (x) + intercept);
-
-						ROS_INFO("%s %d: marking (%d, %d) (%d, %d) (%d, %d)", __FUNCTION__, __LINE__, x, y - 1, x, y, x, y + 1);
-						Map_SetCell(MAP, cellToCount(x), cellToCount(y - 1), CLEANED);
-						Map_SetCell(MAP, cellToCount(x), cellToCount(y), CLEANED);
-						Map_SetCell(MAP, cellToCount(x), cellToCount(y + 1), CLEANED);
-					}
-				}
-			}
 		} else
 		if (state == 2)
 		{    // Trapped
@@ -1297,9 +1305,10 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 
 		Cell_t pos{target_x, target_y};
 		Cell_t	tmp;
-		auto pathFind = (int8_t)path_move_to_unclean_area(pos, Map_GetXPos(), Map_GetYPos(), &tmp.X, &tmp.Y);
+		auto pathFind = (int8_t)path_move_to_unclean_area(pos, Map_GetXCell(), Map_GetYCell(), &tmp.X, &tmp.Y);
 
-		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y, Map_GetXPos(), Map_GetYPos());
+		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y,
+						 Map_GetXCell(), Map_GetYCell());
 		if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
 			path_set_current_pos();
 
@@ -1312,8 +1321,8 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 			CM_MoveToPoint(Next_Point);
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
-			if ( TwoPointsDistance( target_x , target_y , Map_GetXPos(), Map_GetYPos() ) < ROBOT_SIZE / 2 + 1 ) {
-				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXPos(), Map_GetYPos(), target_x , target_y);
+			if ( TwoPointsDistance( target_x , target_y , Map_GetXCell(), Map_GetYCell() ) < ROBOT_SIZE / 2 + 1 ) {
+				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, Map_GetXCell(), Map_GetYCell(), target_x , target_y);
 				return true;
 			}
 		} else

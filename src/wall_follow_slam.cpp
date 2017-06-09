@@ -79,8 +79,8 @@ bool WF_check_isolate(void)
 	Map_SetPosition(pos_x, pos_y);
 	//Map_SetCell(MAP, pos_x, pos_y, CLEANED);
 
-	current_x = Map_GetXPos();
-	current_y = Map_GetYPos();
+	current_x = Map_GetXCell();
+	current_y = Map_GetYCell();
 
 	//ROS_INFO("%s %d: escape thread is up!\n", __FUNCTION__, __LINE__);
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -90,15 +90,15 @@ bool WF_check_isolate(void)
 
 
 	path_set_current_pos();
-	//ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXPos(), Map_GetYPos());
+	//ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXCell(), Map_GetYCell());
 	val = WF_path_escape_trapped();
 	if (val == 0) {
 		return 0;//not isolated
 	} else {
 		return 1;//isolated
 	}
-	current_x = Map_GetXPos();
-	current_y = Map_GetYPos();
+	current_x = Map_GetXCell();
+	current_y = Map_GetYCell();
 }
 
 
@@ -819,8 +819,8 @@ void WF_update_position(void) {
 	float	pos_x, pos_y;
 	int16_t	x, y;
 
-	x = Map_GetXPos();
-	y = Map_GetYPos();
+	x = Map_GetXCell();
+	y = Map_GetYCell();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -843,8 +843,8 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 	int8_t	push_state;
 	bool	reach_state;
 
-	x = Map_GetXPos();
-	y = Map_GetYPos();
+	x = Map_GetXCell();
+	y = Map_GetYCell();
 
 	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -853,7 +853,7 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
 
-	if (x != Map_GetXPos() || y != Map_GetYPos()) {
+	if (x != Map_GetXCell() || y != Map_GetYCell()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
 				i = Map_GetRelativeX(heading, CELL_SIZE * c, CELL_SIZE * d);
@@ -920,8 +920,8 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 
 bool WF_Is_Reach_Cleaned(void){
 	int32_t x,y;
-	//x = Map_GetXPos();
-	//y = Map_GetYPos();
+	//x = Map_GetXCell();
+	//y = Map_GetYCell();
 
 	//CM_count_normalize(Gyro_GetAngle(), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
 	CM_count_normalize(Gyro_GetAngle(), 0, 0, &x, &y);
