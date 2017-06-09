@@ -190,7 +190,7 @@ void User_Interface(void)
 		}
 
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
-		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
+		if(Is_AtHomeBase())//on base but miss charging , adjust position to charge
 		{
 			if(Turn_Connect())
 			{
