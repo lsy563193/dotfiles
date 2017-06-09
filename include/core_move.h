@@ -75,8 +75,8 @@ uint8_t CM_MoveForward(void);
 
 uint8_t CM_Touring(void);
 
-void CM_update_position(uint16_t heading);
-void CM_update_map(uint8_t bumper);
+void CM_update_position();
+void CM_update_map();
 void CM_update_map_bumper(uint8_t bumper);
 bool CM_CurveMoveToPoint();
 

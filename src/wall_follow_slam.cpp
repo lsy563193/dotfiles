@@ -791,7 +791,7 @@ uint8_t WF_End_Wall_Follow(void){
 	//int16_t offsetAngle = robot::instance()->getHomeAngle();
 	Stop_Brifly();
 	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 	WF_Mark_Home_Point();
 	CM_go_home();
 

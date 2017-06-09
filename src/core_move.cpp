@@ -197,7 +197,7 @@ static bool check_map_boundary(bool& slow_down)
 			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
 				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
 				Stop_Brifly();
-				CM_update_map(Get_Bumper_Status());
+				CM_update_map();
 				return true;
 			}
 		}
@@ -314,11 +314,12 @@ int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32
 	return index;
 }
 
-void CM_update_position(uint16_t heading) {
+void CM_update_position() {
+
 	int8_t	e;
 	int16_t c, d, x, y;
 	int32_t i, j, k;
-
+	auto heading=Gyro_GetAngle();
 	float	pos_x, pos_y;
 	x = Map_GetXCell();
 	y = Map_GetYCell();
@@ -442,11 +443,43 @@ void CM_update_position(uint16_t heading) {
 	}
 }
 
-void CM_update_map_bumper(uint8_t bumper)
+void CM_update_map_obs()
+{
+
+	for (auto c = 0; c < 3; ++c) {
+		auto i = SHRT_MAX;
+		switch (c) {
+			case 0:
+				i = Get_OBS_Status() & Status_Right_OBS;
+				break;
+			case 1:
+				i = Get_OBS_Status() & Status_Front_OBS;
+				break;
+			case 2:
+				i = Get_OBS_Status() & Status_Left_OBS;
+				break;
+		}
+		int32_t x_tmp, y_tmp;
+		CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_3, &x_tmp, &y_tmp);
+		if (i) {
+			CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
+			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) != BLOCKED_BUMPER) {
+				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
+			}
+		} else {
+			CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
+			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) == BLOCKED_OBS) {
+				Map_SetCell(MAP, x_tmp, y_tmp, UNCLEAN);
+			}
+		}
+	}
+}
+void CM_update_map_bumper()
 {
 	int16_t	c;
 	int32_t	x_tmp, y_tmp;
-
+	auto bumper = Get_Bumper_Status();
 	if ((bumper & RightBumperTrig) && (bumper & LeftBumperTrig)) {
 		for (c = -1; c <= 1; ++c) {
 			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
@@ -494,60 +527,36 @@ void CM_update_map_bumper(uint8_t bumper)
 	}
 }
 
-void CM_update_map(uint8_t bumper) {
-	int16_t	c;
-	uint16_t i;
+void CM_update_map_cliff()
+{
 	int32_t	x_tmp, y_tmp;
-
-	for (c = 0; c < 3; ++c) {
-		i = SHRT_MAX;
-		switch (c) {
-			case 0:
-				i = Get_OBS_Status() & Status_Right_OBS;
-				break;
-			case 1:
-				i = Get_OBS_Status() & Status_Front_OBS;
-				break;
-			case 2:
-				i = Get_OBS_Status() & Status_Left_OBS;
-				break;
-		}
-
-		CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_3, &x_tmp, &y_tmp);
-		if (i) {
-			CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) != BLOCKED_BUMPER) {
-				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
-			}
-		} else {
-			CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) == BLOCKED_OBS) {
-				Map_SetCell(MAP, x_tmp, y_tmp, UNCLEAN);
-			}
-		}
-	}
-
-	CM_update_map_bumper(bumper);
-
 	if (Get_Cliff_Trig() & Status_Cliff_Front) {
-		for (c = -1; c <= 1; ++c) {
+		for (auto c = -1; c <= 1; ++c) {
 			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 		}
 	}
 	if (Get_Cliff_Trig() & Status_Cliff_Left) {
-		for (c = 1; c <= 2; ++c) {
+		for (auto c = 1; c <= 2; ++c) {
 			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 		}
 	}
 	if (Get_Cliff_Trig() & Status_Cliff_Right) {
-		for (c = -2; c <= -1; ++c) {
+		for (auto c = -2; c <= -1; ++c) {
 			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 		}
 	}
+}
+void CM_update_map() {
+
+	CM_update_map_obs();
+
+	CM_update_map_bumper();
+
+	CM_update_map_cliff();
+
 }
 
 /*--------------------------Head Angle--------------------------------*/
@@ -573,7 +582,7 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 
 		if (std::abs(diff) < 10) {
 			Stop_Brifly();
-			CM_update_position(Gyro_GetAngle());
+			CM_update_position();
 			ROS_INFO("%s %d: angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, angle, Gyro_GetAngle(), diff);
 			break;
 		}
@@ -585,7 +594,7 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 
 	CM_event_manager_turn(false);
 	Set_Wheel_Speed(0, 0);
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 }
 
 bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
@@ -597,7 +606,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 
 	Point32_t	position{Map_GetXCount(), Map_GetYCount()};
 
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 
 	if (rotate_is_needed) {
 		auto Target_Course = course2dest(Map_GetXCount(), Map_GetYCount(), Target.X, Target.Y);
@@ -636,7 +645,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 
 		if ( g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered ) {
 			Set_Wheel_Speed(0, 0);
-			CM_update_map(Get_Bumper_Status());
+			CM_update_map();
 			g_should_follow_wall = 1;
 
 			if (g_cliff_triggered ||g_rcon_triggered)
@@ -646,11 +655,11 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 
 		if (std::abs(Map_GetXCount() - Target.X) < 150 && std::abs(Map_GetYCount() - Target.Y) < 150) {
 			ROS_INFO("%s, %d: Reach target.", __FUNCTION__, __LINE__);
-			CM_update_map(Get_Bumper_Status());
+			CM_update_map();
 			break;
 		}
 
-		CM_update_position(Gyro_GetAngle());
+		CM_update_position();
 
 		bool slow_down=false;
 		if(check_map_boundary(slow_down))
@@ -668,7 +677,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 	if (stop_is_needed)
 		Stop_Brifly();
 
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 
 	ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
 	robot::instance()->displayPositions();
@@ -693,14 +702,14 @@ bool CM_TurnMoveToPoint(Point32_t Target,uint8_t speed_left,uint8_t speed_right)
 			continue;
 		}
 
-		CM_update_position(Gyro_GetAngle());
+		CM_update_position();
 
 		if (g_fatal_quit_event || g_key_clean_pressed)
 			return false;
 
 		if (g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered)
 		{
-			CM_update_map(Get_Bumper_Status());
+			CM_update_map();
 			return false;
 		}
 
@@ -711,7 +720,7 @@ bool CM_TurnMoveToPoint(Point32_t Target,uint8_t speed_left,uint8_t speed_right)
 		}
 	}
 	Stop_Brifly();
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 	return true;
 }
 
@@ -941,14 +950,14 @@ void CM_rounding_turn(uint16_t speed, int16_t angle)
 		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed_);
 		Set_Wheel_Speed(speed_, speed_);
 
-		CM_update_position(Gyro_GetAngle());
+		CM_update_position();
 		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 
 	Set_Dir_Forward();
 	Set_Wheel_Speed(0, 0);
 
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 	should_mark = 1;
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
@@ -999,7 +1008,7 @@ uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 			break;
 		}
 
-		CM_update_position(Gyro_GetAngle());
+		CM_update_position();
 
 		if ((y_start > target.Y && Map_GetYCount() < target.Y) || (y_start < target.Y && Map_GetYCount() > target.Y)) {
 			// Robot has reach the target.
@@ -1162,7 +1171,6 @@ int CM_cleaning()
 		} else
 		if (state == 1)
 		{
-#if (PP_ROUNDING_OBSTACLE_LEFT) || (PP_ROUNDING_OBSTACLE_RIGHT)
 			auto rounding_type = CM_get_rounding_direction(&next_point, targets_point, last_dir);
 			if (rounding_type != ROUNDING_NONE)
 			{
@@ -1171,7 +1179,6 @@ int CM_cleaning()
 				CM_rounding(rounding_type, next_point, g_bumper_status_for_rounding);
 				g_cm_move_type = CM_LINEARMOVE;
 			} else
-#endif
 				CM_MoveToPoint(next_point);
 
 			linearMarkClean(start,Map_PointToCell(next_point));
@@ -1340,7 +1347,7 @@ void CM_CorBack(uint16_t dist)
 
 	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
 	Stop_Brifly();
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 	Set_Dir_Backward();
 	Set_Wheel_Speed(8, 8);
 	Reset_Wheel_Step();
@@ -1356,7 +1363,7 @@ void CM_CorBack(uint16_t dist)
 			break;
 		}
 
-		CM_update_position(Gyro_GetAngle());
+		CM_update_position();
 		usleep(10000);
 		Counter_Watcher++;
 		SP = 8 + Counter_Watcher / 100;
@@ -1380,7 +1387,7 @@ void CM_CorBack(uint16_t dist)
 			break;
 		}
 	}
-	CM_update_position(Gyro_GetAngle());
+	CM_update_position();
 	Reset_TempPWM();
 	Stop_Brifly();
 	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);
@@ -1661,7 +1668,7 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 
 	Set_Wheel_Speed(0, 0);
 	if (g_cm_move_type == CM_LINEARMOVE) {
-		CM_update_map_bumper(isBumperTriggered);
+		CM_update_map_bumper();
 	}
 
 	g_bumper_hitted = true;
@@ -1714,7 +1721,7 @@ void CM_handle_bumper_left(bool state_now, bool state_last)
 
 	Set_Wheel_Speed(0, 0);
 	if (g_cm_move_type == CM_LINEARMOVE) {
-		CM_update_map_bumper(isBumperTriggered);
+		CM_update_map_bumper();
 	}
 
 	g_bumper_hitted = true;
@@ -1765,7 +1772,7 @@ void CM_handle_bumper_right(bool state_now, bool state_last)
 
 	Set_Wheel_Speed(0, 0);
 	if (g_cm_move_type == CM_LINEARMOVE) {
-		CM_update_map_bumper(isBumperTriggered);
+		CM_update_map_bumper();
 	}
 
 	g_bumper_hitted = true;
@@ -1838,7 +1845,7 @@ void CM_handle_cliff_front_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Set_Wheel_Speed(0, 0);
-	CM_update_map(Get_Bumper_Status());
+	CM_update_map();
 
 	g_cliff_triggered = true;
 	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
@@ -1869,7 +1876,7 @@ void CM_handle_cliff_front_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Set_Wheel_Speed(0, 0);
-	CM_update_map(Get_Bumper_Status());
+	CM_update_map();
 
 	g_cliff_triggered = true;
 	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
@@ -1900,7 +1907,7 @@ void CM_handle_cliff_left_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Set_Wheel_Speed(0, 0);
-	CM_update_map(Get_Bumper_Status());
+	CM_update_map();
 
 	g_cliff_triggered = true;
 	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
@@ -1927,7 +1934,7 @@ void CM_handle_cliff_front(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Set_Wheel_Speed(0, 0);
-	CM_update_map(Get_Bumper_Status());
+	CM_update_map();
 
 	g_cliff_triggered = true;
 	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
@@ -1954,7 +1961,7 @@ void CM_handle_cliff_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Set_Wheel_Speed(0, 0);
-	CM_update_map(Get_Bumper_Status());
+	CM_update_map();
 
 	g_cliff_triggered = true;
 	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
@@ -1985,7 +1992,7 @@ void CM_handle_cliff_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Set_Wheel_Speed(0, 0);
-	CM_update_map(Get_Bumper_Status());
+	CM_update_map();
 
 	g_cliff_triggered = true;
 	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
