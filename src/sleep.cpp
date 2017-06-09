@@ -19,10 +19,10 @@ void Sleep_Mode(void)
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
 	while(ros::ok())
 	{
-		usleep(200000);
+		usleep(20000);
 
 		sleep_time_counter_++;
-		if (sleep_time_counter_ > 150)
+		if (sleep_time_counter_ > 1500)
 		{
 			// Check the battery for every 30s. If battery below 12.5v, power of core board will be cut off.
 			ResetSleepModeFlag();
@@ -42,6 +42,7 @@ void Sleep_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Set_Main_PwrByte(POWER_ACTIVE);
 			ResetSleepModeFlag();
+			Set_LED(100, 0);
 			Beep(4, 4, 0, 1);
 			usleep(100000);
 			Beep(3,4,0,1);
@@ -49,6 +50,12 @@ void Sleep_Mode(void)
 			Beep(2,4,0,1);
 			usleep(100000);
 			Beep(1,4,4,1);
+			// Wait for user to release the key.
+			while (Get_Key_Press() & KEY_CLEAN)
+			{
+				ROS_WARN("User still holds the key.");
+				usleep(20000);
+			}
 			Reset_Stop_Event_Status();
 			break;
 		}
