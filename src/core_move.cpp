@@ -849,9 +849,9 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 		ROS_INFO("Robot need to go to new line");
 
 #if PP_ROUNDING_OBSTACLE_LEFT
-		if ((dir == NORTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+		if ((dir == POS_X && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
 																																																			 Map_GetYCell() - 2)) ||
-			(dir == SOUTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+			(dir == NEG_X && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
 																																																		 Map_GetYCell() + 2 ))) {
 
 			rounding_type = ROUNDING_LEFT;
@@ -859,9 +859,9 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 #endif
 
 #if PP_ROUNDING_OBSTACLE_RIGHT
-		if ((dir == NORTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+		if ((dir == POS_X && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
 																																																			 Map_GetYCell() + 2)) ||
-			(dir == SOUTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+			(dir == NEG_X && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
 																																																		 Map_GetYCell() - 2))) {
 
 			rounding_type = ROUNDING_RIGHT;
@@ -874,9 +874,9 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 			if (y_coordinate != Map_GetYCell()) {
 
 #if PP_ROUNDING_OBSTACLE_LEFT
-				if ((dir == NORTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+				if ((dir == POS_X && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
 																																																					 Map_GetYCell() - 2)) ||
-					(dir == SOUTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+					(dir == NEG_X && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
 																																																				 Map_GetYCell() + 2 ))) {
 
 					rounding_type = ROUNDING_LEFT;
@@ -885,9 +885,9 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 #endif
 
 #if PP_ROUNDING_OBSTACLE_RIGHT
-				if ((dir == NORTH && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
+				if ((dir == POS_X && y_coordinate > Map_GetYCell() && (y_coordinate == Map_GetYCell() + 1 || y_coordinate ==
 																																																					 Map_GetYCell() + 2)) ||
-					(dir == SOUTH && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
+					(dir == NEG_X && y_coordinate < Map_GetYCell() && (y_coordinate == Map_GetYCell() - 1 || y_coordinate ==
 																																																				 Map_GetYCell() - 2))) {
 
 					rounding_type = ROUNDING_RIGHT;

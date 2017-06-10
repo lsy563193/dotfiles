@@ -28,14 +28,14 @@ typedef enum {
 } CellState;
 
 typedef enum {
-  NORTH = 0,
-  NORTH_EAST = 450,
-  EAST = 900,
-  SOUTH_EAET = 1350,
-  SOUTH = 1800,
-  SOUTH_WEST = 2250,
-  WEST = 2700,
-  NORTH_WEST = 3150,
+  POS_X = 0,
+  PX_PY = 450,
+  POS_Y = 900,
+  NS_PY = 1350,
+  NEG_X = 1800,
+  NX_NY = 2250,
+  NEG_Y = 2700,
+  PX_NY = 3150,
   NONE = 3600,
 } Direction_Cardinal;
 

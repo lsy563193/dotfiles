@@ -301,7 +301,7 @@ uint8_t path_lane_is_cleaned(int16_t *x, int16_t *y)
 	y_tmp = *y;
 
 	for (i = 1; (min_stop == 0 || max_stop == 0); i++) {
-		/* Find the unclean area in the SOUTH direction of the lane. */
+		/* Find the unclean area in the NEG_X direction of the lane. */
 		if (min_stop == 0) {
 			/* Stop if the cells is blocked, or reach the boundary. */
 			if (is_block_blocked(x_tmp - i, y_tmp) == 1 || is_block_boundary(x_tmp - i, y_tmp) == 1) {
@@ -315,7 +315,7 @@ uint8_t path_lane_is_cleaned(int16_t *x, int16_t *y)
 			}
 		}
 
-		/* Find the unclean area in the NORTH direction of the lane. */
+		/* Find the unclean area in the POS_X direction of the lane. */
 		if (max_stop == 0) {
 			/* Stop if the cells is blocked, or reach the boundary. */
 			if (is_block_blocked(x_tmp + i, y_tmp) == 1 || is_block_boundary(x_tmp + i, y_tmp) == 1) {
@@ -371,11 +371,11 @@ uint8_t path_lane_is_cleaned(int16_t *x, int16_t *y)
 
 		found = 2;
 	} else if (min != SHRT_MAX) {
-		/* Only the SOUTH end is not cleaned. */
+		/* Only the NEG_X end is not cleaned. */
 		*x -= min;
 		found = 1;
 	} else if (max != SHRT_MAX ) {
-		/* Only the NORTH end is not cleaned. */
+		/* Only the POS_X end is not cleaned. */
 		*x += max;
 		found = 1;
 	}
@@ -938,7 +938,7 @@ int16_t path_ahead_to_clean(int16_t x, int16_t y, int16_t x_next)
 
 void path_update_cells()
 {
-	/* Skip, if robot is not moving towards X_AXIS. */
+	/* Skip, if robot is not moving towards POS_X. */
 	if ((g_last_dir % 1800) != 0)
 		return;
 
@@ -973,14 +973,14 @@ void path_update_cells()
 	/*
 	 * The following is try to handle the cases:
 	 *
-	 * 1. Robot moves towards NORTH
+	 * 1. Robot moves towards POS_X
 	 *
 	 * 		1110	0111
 	 * 		1x1e	e1x1
 	 *		1110	0111
 	 *		0uuu	uuu0
 	 *
-	 * 2. Robot moves towards SOUTH
+	 * 2. Robot moves towards NEG_X
 	 *
 	 *		0uuu	uuu0
 	 * 		1110	0111
@@ -991,8 +991,8 @@ void path_update_cells()
 	 * e is the target position. With the above changes, the movement of the
 	 * robot will be looks nicer.
 	 */
-	if (g_last_dir == NORTH || g_last_dir == SOUTH) {
-		if (g_last_dir == NORTH && g_pos_history[0].x > g_pos_history[1].x) {
+	if (g_last_dir == POS_X || g_last_dir == NEG_X) {
+		if (g_last_dir == POS_X && g_pos_history[0].x > g_pos_history[1].x) {
 			if (g_pos_history[0].y >= 0 && Map_GetCell(MAP, g_pos_history[0].x, g_pos_history[0].y + 2) == UNCLEAN) {
 				for (auto x = 0; x < 3; x++) {
 					auto cs = Map_GetCell(MAP, g_pos_history[0].x + 2, g_pos_history[0].y + x);
@@ -1010,7 +1010,7 @@ void path_update_cells()
 					}
 				}
 			}
-		} else if (g_last_dir == SOUTH && g_pos_history[0].x < g_pos_history[1].x) {
+		} else if (g_last_dir == NEG_X && g_pos_history[0].x < g_pos_history[1].x) {
 			if (g_pos_history[0].y >= 0 && Map_GetCell(MAP, g_pos_history[0].x, g_pos_history[0].y + 2) == UNCLEAN) {
 				for (auto x = 0; x < 3; x++) {
 					auto cs = Map_GetCell(MAP, g_pos_history[0].x - 2, g_pos_history[0].y + x);
@@ -1274,7 +1274,7 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 
 		g_pos_history[0].x_target = x_next_area;
 		g_pos_history[0].y_target = y_next_area;
-		g_last_dir = Map_GetXCell() > x_next_area ? SOUTH : NORTH;
+		g_last_dir = Map_GetXCell() > x_next_area ? NEG_X : POS_X;
 	} else
 	{
 		/* Get the next target to clean. */
@@ -1296,9 +1296,9 @@ int8_t path_next(int32_t *target_x, int32_t *target_y, Point32_t *final_target_c
 			Cell_t	pos{x_next_area, y_next_area};
 			val = path_move_to_unclean_area(pos, Map_GetXCell(), Map_GetYCell(), &x_tmp, &y_tmp);
 			if (Map_GetXCell() == x_tmp) {
-				g_last_dir = Map_GetYCell() > y_tmp ? WEST : EAST;
+				g_last_dir = Map_GetYCell() > y_tmp ? NEG_Y : POS_Y;
 			} else {
-				g_last_dir = Map_GetXCell() > x_tmp ? SOUTH : NORTH;
+				g_last_dir = Map_GetXCell() > x_tmp ? NEG_X : POS_X;
 			}
 			ROS_INFO("%s %d: x_next_area: %d\ty_next_area: %d\tx: %d\ty: %d\tlast_dir: %d", __FUNCTION__, __LINE__, x_next_area, y_next_area, x_tmp, y_tmp, g_last_dir);
 		} else {

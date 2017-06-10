@@ -239,7 +239,7 @@ uint8_t  path_line_process(int16_t x1, int16_t x2, int16_t y)
 
 	/*
 	 * Check for the closest point of the giving starting X coordinate towards
-	 * the NORTH(X coordinate should be increasing) direction which is accessible.
+	 * the POS_X(X coordinate should be increasing) direction which is accessible.
 	 */
 	do {
 		if (is_block_accessible(p1x, y) == 0) {
@@ -251,7 +251,7 @@ uint8_t  path_line_process(int16_t x1, int16_t x2, int16_t y)
 
 	/*
 	 * Check for the closest point of the giving ending X coordinate towards
-	 * the SOUTH(X coordinate should be decreasing) direction which is accessible.
+	 * the NEG_X(X coordinate should be decreasing) direction which is accessible.
 	 */
 	do {
 		if (is_block_accessible(p2x, y) == 0) {
@@ -981,8 +981,8 @@ int16_t path_move_to_unclean_area(Cell_t pos, int16_t x, int16_t y, int16_t *x_n
 							printf("%s %d: level cur: %d\tlevel next: %d\n", __FUNCTION__, __LINE__, level_cur, level_next);
 							if (level_cur - 1 == level_next + 1 && abs(*y_next - y_pos) <= 2) {
 
-								/* Only handle the case of move towards WEST & EAST. */
-								if ((path_get_robot_direction() == WEST && *y_next < y_pos) || (path_get_robot_direction() == EAST && *y_next > y_pos) ) {
+								/* Only handle the case of move towards NEG_Y & POS_Y. */
+								if ((path_get_robot_direction() == NEG_Y && *y_next < y_pos) || (path_get_robot_direction() == POS_Y && *y_next > y_pos) ) {
 									/* If the robot is repeatlly hitting the same obstcal, move back to the center of the line segment. */
 									x1 = pos_line[cur_idx].x > pos_line[next_idx].x ? pos_line[cur_idx].x : pos_line[next_idx].x;
 									x2 = pos_line[cur_idx].x + pos_line[cur_idx].x_off > pos_line[next_idx].x + pos_line[next_idx].x_off ? pos_line[next_idx].x + pos_line[next_idx].x_off : pos_line[cur_idx].x + pos_line[cur_idx].x_off;
@@ -1101,13 +1101,13 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 
 	/* Find the direction of target with reference to the current robot position. */
 	if (xID == endx) {
-		dest_dir = (yID > endy ? WEST : EAST);
+		dest_dir = (yID > endy ? NEG_Y : POS_Y);
 	} else if (yID == endy) {
-		dest_dir = (xID > endx ? SOUTH : NORTH);
+		dest_dir = (xID > endx ? NEG_X : POS_X);
 	} else if(abs(xID - endx) > abs(yID - endy)) {
-		dest_dir = (xID > endx ? SOUTH : NORTH);
+		dest_dir = (xID > endx ? NEG_X : POS_X);
 	} else {
-		dest_dir = (yID > endy ? WEST : EAST);
+		dest_dir = (yID > endy ? NEG_Y : POS_Y);
 	}
 
 	/* Reset the cells in the shorest path map. */
@@ -1236,7 +1236,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	path_points.push_back(t);
 
 	next = 0;
-	dest_dir = (path_get_robot_direction() == EAST || path_get_robot_direction() == WEST) ? 1: 0;
+	dest_dir = (path_get_robot_direction() == POS_Y || path_get_robot_direction() == NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != xID || tracey != yID) {
 		costAtCell = Map_GetCell(SPMAP, tracex, tracey);
