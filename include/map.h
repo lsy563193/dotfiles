@@ -39,6 +39,9 @@ typedef enum {
   NONE = 3600,
 } Direction_Cardinal;
 
+#define IS_POS_AXIS(x) (x == POS_X || x == POS_Y || x == NONE)
+#define	IS_X_AXIS(x) (x == NEG_X || x == POS_X || x == NONE)
+
 void Map_Initialize(void);
 
 int32_t Map_GetXCount(void);

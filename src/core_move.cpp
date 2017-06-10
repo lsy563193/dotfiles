@@ -734,7 +734,6 @@ void CM_MoveToPoint(Point32_t target)
 	else
 #endif
 		CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
-	sleep(5);
 }
 
 bool CM_CurveMoveToPoint()
@@ -1163,7 +1162,6 @@ int CM_cleaning()
 		Cell_t start{Map_GetXCell(), Map_GetYCell()};
 		Point32_t next_point, targets_point;
 		int8_t state = path_next(&next_point.X, &next_point.Y, &targets_point);
-		MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
 		ROS_ERROR("State: %d", state);
 		if (state == 0) //No target point
 		{
@@ -1181,7 +1179,8 @@ int CM_cleaning()
 				g_cm_move_type = CM_LINEARMOVE;
 			} else
 				CM_MoveToPoint(next_point);
-
+			MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
+			sleep(5);
 //			linearMarkClean(start,Map_PointToCell(next_point));
 
 		} else
