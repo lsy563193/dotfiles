@@ -938,97 +938,38 @@ int16_t path_ahead_to_clean(int16_t x, int16_t y, int16_t x_next)
 
 void path_update_cells()
 {
-	int16_t 	i, start, end;
-	int32_t		y;
-	CellState	cs;
-
-	/* Skip, if robot is not moving towards NORTH or SOUTH. */
+	/* Skip, if robot is not moving towards X_AXIS. */
 	if ((g_last_dir % 1800) != 0)
 		return;
 
-	start = g_pos_history[1].x > g_pos_history[0].x ? g_pos_history[0].x : g_pos_history[1].x;
-	end = g_pos_history[1].x > g_pos_history[0].x ? g_pos_history[1].x : g_pos_history[0].x;
-	ROS_INFO("%s %d: start: %d\tend: %d", __FUNCTION__, __LINE__, start, end);
-	for (i = start; i <= end; i++) {
-		/* Check the Map cells which Y coordinate equal (y - 2). */
-
-#if (ROBOT_SIZE == 5)
-
-		y = g_pos_history[0].y - 2;
-
-#else
-
-		y = g_pos_history[0].y - 1;
-
-#endif
-
-		if (Map_GetCell(MAP, i, y) == BLOCKED_OBS || Map_GetCell(MAP, i, g_pos_history[0].y - 2) == BLOCKED_BUMPER) {
-			if ( i == start) {
-				if (Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
-				} else {
-					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
+	auto start = std::min(g_pos_history[0].x, g_pos_history[1].x);
+	auto stop = std::max(g_pos_history[0].x, g_pos_history[1].x);
+	ROS_INFO("%s %d: start: %d\tstop: %d", __FUNCTION__, __LINE__, start, stop);
+	for(auto dy=-1;dy<=1;dy+=2)
+	{
+		auto y = g_pos_history[0].y + dy;
+		for (auto x = start; x <= stop; x++)
+		{
+			if (Map_GetCell(MAP, x, y) == BLOCKED_OBS || Map_GetCell(MAP, x, y) == BLOCKED_BUMPER)
+			{
+				auto state = CLEANED;
+				auto dx_start = -1;
+				auto dx_stop = 1;
+				if(x==start) dx_start = dx_stop;
+				if(x==stop) dx_stop = dx_start;
+				for (auto dx=dx_start; dx<=dx_stop; dx += 2)
+				{
+					if (Map_GetCell(MAP, x + dx, y) == CLEANED)
+						break;
+					else{
+						ROS_WARN("%s %d: reset (%d,%d) to %d.", __FUNCTION__, __LINE__, x+dx, y, start);
+						state = UNCLEAN;
+					}
 				}
-			} else if (i == end) {
-				if (Map_GetCell(MAP, i - 1, y) == CLEANED) {
-					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
-				} else {
-					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
-				}
-			} else {
-				if (Map_GetCell(MAP, i - 1, y) == CLEANED || Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
-				} else {
-					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
-				}
-			}
-		}
-
-		/* Check the Map cells which Y coordinate equal (y + 2). */
-#if (ROBOT_SIZE == 5)
-
-		y = g_pos_history[0].y + 2;
-
-#else
-
-		y = g_pos_history[0].y + 1;
-
-#endif
-		if (Map_GetCell(MAP, i, y) == BLOCKED_OBS || Map_GetCell(MAP, i, y) == BLOCKED_BUMPER) {
-			if ( i == start) {
-				if (Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
-				} else {
-					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
-				}
-			} else if (i == end) {
-				if (Map_GetCell(MAP, i - 1, y) == CLEANED) {
-					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
-				} else {
-					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
-				}
-			} else {
-				if (Map_GetCell(MAP, i - 1, y) == CLEANED || Map_GetCell(MAP, i + 1, y) == CLEANED) {
-					ROS_WARN("%s %d: reset (%d, %d) to cleaned.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), CLEANED);
-				} else {
-					ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, i, y);
-					Map_SetCell(MAP, cellToCount(i), cellToCount(y), UNCLEAN);
-				}
+				Map_SetCell(MAP, cellToCount(x), cellToCount(y), state);
 			}
 		}
 	}
-
 	/*
 	 * The following is try to handle the cases:
 	 *
@@ -1053,49 +994,37 @@ void path_update_cells()
 	if (g_last_dir == NORTH || g_last_dir == SOUTH) {
 		if (g_last_dir == NORTH && g_pos_history[0].x > g_pos_history[1].x) {
 			if (g_pos_history[0].y >= 0 && Map_GetCell(MAP, g_pos_history[0].x, g_pos_history[0].y + 2) == UNCLEAN) {
-				for (i = 0; i < 3; i++) {
-					cs = Map_GetCell(MAP, g_pos_history[0].x + 2, g_pos_history[0].y + i);
+				for (auto x = 0; x < 3; x++) {
+					auto cs = Map_GetCell(MAP, g_pos_history[0].x + 2, g_pos_history[0].y + x);
 					if (cs != CLEANED && cs != UNCLEAN) {
-						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, g_pos_history[0].x + 3, g_pos_history[0].y + i, cs);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 3), cellToCount(g_pos_history[0].y + i), cs);
-
-						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, g_pos_history[0].x + 2, g_pos_history[0].y + i);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 2), cellToCount(g_pos_history[0].y + i), UNCLEAN);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 3), cellToCount(g_pos_history[0].y + x), cs);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 2), cellToCount(g_pos_history[0].y + x), UNCLEAN);
 					}
 				}
 			} else if (g_pos_history[0].y < 0 && Map_GetCell(MAP, g_pos_history[0].x, g_pos_history[0].y - 2) == UNCLEAN) {
-				for (i = 0; i < 3; i++) {
-					cs = Map_GetCell(MAP, g_pos_history[0].x + 2, g_pos_history[0].y - i);
+				for (auto x = 0; x < 3; x++) {
+					auto cs = Map_GetCell(MAP, g_pos_history[0].x + 2, g_pos_history[0].y - x);
 					if (cs != CLEANED && cs!= UNCLEAN) {
-						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, g_pos_history[0].x + 3, g_pos_history[0].y - i, cs);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 3), cellToCount(g_pos_history[0].y - i), cs);
-
-						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, g_pos_history[0].x + 2, g_pos_history[0].y - i);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 2), cellToCount(g_pos_history[0].y - i), UNCLEAN);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 3), cellToCount(g_pos_history[0].y - x), cs);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x + 2), cellToCount(g_pos_history[0].y - x), UNCLEAN);
 					}
 				}
 			}
 		} else if (g_last_dir == SOUTH && g_pos_history[0].x < g_pos_history[1].x) {
 			if (g_pos_history[0].y >= 0 && Map_GetCell(MAP, g_pos_history[0].x, g_pos_history[0].y + 2) == UNCLEAN) {
-				for (i = 0; i < 3; i++) {
-					cs = Map_GetCell(MAP, g_pos_history[0].x - 2, g_pos_history[0].y + i);
+				for (auto x = 0; x < 3; x++) {
+					auto cs = Map_GetCell(MAP, g_pos_history[0].x - 2, g_pos_history[0].y + x);
 					if (cs != CLEANED && cs!= UNCLEAN) {
-						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, g_pos_history[0].x - 3, g_pos_history[0].y + i, cs);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 3), cellToCount(g_pos_history[0].y + i), cs);
-
-						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, g_pos_history[0].x - 2, g_pos_history[0].y + i);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 2), cellToCount(g_pos_history[0].y + i), UNCLEAN);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 3), cellToCount(g_pos_history[0].y + x), cs);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 2), cellToCount(g_pos_history[0].y + x), UNCLEAN);
 					}
 				}
 			} else if (g_pos_history[0].y < 0 && Map_GetCell(MAP, g_pos_history[0].x, g_pos_history[0].y - 2) == UNCLEAN) {
-				for (i = 0; i < 3; i++) {
-					cs = Map_GetCell(MAP, g_pos_history[0].x - 2, g_pos_history[0].y - i);
+				for (auto x = 0; x < 3; x++) {
+					auto cs = Map_GetCell(MAP, g_pos_history[0].x - 2, g_pos_history[0].y - x);
 					if (cs != CLEANED && cs!= UNCLEAN) {
-						ROS_WARN("%s %d: reset (%d, %d) to %d.", __FUNCTION__, __LINE__, g_pos_history[0].x - 3, g_pos_history[0].y - i, cs);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 3), cellToCount(g_pos_history[0].y - i), cs);
-
-						ROS_WARN("%s %d: reset (%d, %d) to unclean.", __FUNCTION__, __LINE__, g_pos_history[0].x - 2, g_pos_history[0].y - i);
-						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 2), cellToCount(g_pos_history[0].y - i), UNCLEAN);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 3), cellToCount(g_pos_history[0].y - x), cs);
+						Map_SetCell(MAP, cellToCount(g_pos_history[0].x - 2), cellToCount(g_pos_history[0].y - x), UNCLEAN);
 					}
 				}
 			}

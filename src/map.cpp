@@ -223,7 +223,7 @@ void Map_ClearBlocks(void) {
 	Map_SetCell(MAP, cellToCount(Map_GetXCell()), cellToCount(Map_GetYCell() - 1), CLEANED);
 }
 
-int32_t Map_GetRelativeX(uint16_t heading, int16_t offset_lat, int16_t offset_long) {
+int32_t Map_GetRelativeX(uint16_t heading, int16_t dx, int16_t offset_long) {
 	if(heading != relative_theta) {
 		if(heading == 0) {
 			relative_sin = 0;
@@ -244,7 +244,7 @@ int32_t Map_GetRelativeX(uint16_t heading, int16_t offset_lat, int16_t offset_lo
 	}
 
 	return Map_GetXCount() + (int32_t)( ( ((double)offset_long * relative_cos * CELL_COUNT_MUL) -
-	                                      ((double)offset_lat	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
+	                                      ((double)dx	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
 }
 
 int32_t Map_GetRelativeY(uint16_t heading, int16_t offset_lat, int16_t offset_long) {

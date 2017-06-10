@@ -734,6 +734,7 @@ void CM_MoveToPoint(Point32_t target)
 	else
 #endif
 		CM_LinearMoveToPoint(target, RUN_TOP_SPEED, true, true);
+	sleep(5);
 }
 
 bool CM_CurveMoveToPoint()
@@ -1181,7 +1182,7 @@ int CM_cleaning()
 			} else
 				CM_MoveToPoint(next_point);
 
-			linearMarkClean(start,Map_PointToCell(next_point));
+//			linearMarkClean(start,Map_PointToCell(next_point));
 
 		} else
 		if (state == 2)
