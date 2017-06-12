@@ -292,7 +292,8 @@ void User_Interface(void)
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
 				Set_Plan_Status(0);
-				Temp_Mode=Clean_Mode_Navigation;
+				if (!robot::instance()->isManualPaused())
+					Temp_Mode=Clean_Mode_Navigation;
 				break;
 			}
 			case 4:
