@@ -470,7 +470,7 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_home) {
 			break;
 		}
 
