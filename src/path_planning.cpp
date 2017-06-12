@@ -971,49 +971,6 @@ void path_update_cells()
 			}
 		}
 	}
-	/*
-	 * The following is try to handle the cases:
-	 *
-	 * 1. Robot moves towards POS_X
-	 *
-	 * 		1110	0111
-	 * 		1x1e	e1x1
-	 *		1110	0111
-	 *		0uuu	uuu0
-	 *
-	 * 2. Robot moves towards NEG_X
-	 *
-	 *		0uuu	uuu0
-	 * 		1110	0111
-	 * 		1x1e	e1x1
-	 *		1110	0111
-	 *
-	 * Where u is a value either 2 or 3, x is the current robot position,
-	 * e is the target position. With the above changes, the movement of the
-	 * robot will be looks nicer.
-	 */
-	if (g_last_dir == POS_X && curr_x > last_x ||
-			g_last_dir == NEG_X && curr_x < last_x)
-	{
-		auto dy2 = (curr_y >= 0) ? 2 : - 2;
-		auto dx2 = (g_last_dir == POS_X) ? 2 : - 2;
-		auto dx3 = (g_last_dir == POS_X) ? 3 : - 3;
-		if (Map_GetCell(MAP, curr_x, curr_y + dy2) == UNCLEAN)
-		{
-			for (auto dy = 0; dy < 3; dy++)
-			{
-				if(curr_y < 0) dy = -dy;
-				auto cs = Map_GetCell(MAP, curr_x + dx2, curr_y + dy);
-				if (cs != CLEANED && cs != UNCLEAN)
-				{
-					Map_SetCell(MAP, cellToCount(curr_x + dx3), cellToCount(curr_y + dy), cs);
-					ROS_WARN("reset (%d,%d) to %d.", curr_x + dx3, curr_y + dy, cs);
-					Map_SetCell(MAP, cellToCount(curr_x + dx2), cellToCount(curr_y + dy), UNCLEAN);
-					ROS_WARN("reset (%d,%d) to %d.", curr_x + dx2, curr_y + dy, UNCLEAN);
-				}
-			}
-		}
-	}
 }
 
 int16_t WF_path_escape_trapped()

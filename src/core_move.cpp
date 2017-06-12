@@ -1137,7 +1137,7 @@ void linearMarkClean(const Cell_t& start, const Cell_t& target)
 			for (auto x = start_x; x<=stop_x; x++)
 			{
 				auto y = (int16_t) (slop * (stop.X) + intercept);
-				for(auto dy=-ROBOT_SIZE_1_2;y<=ROBOT_SIZE_1_2;y++)
+				for(auto dy=-ROBOT_SIZE_1_2;dy<=ROBOT_SIZE_1_2;dy++)
 				Map_SetCell(MAP, cellToCount(x), cellToCount(y - dy), CLEANED);
 			}
 		}
