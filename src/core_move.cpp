@@ -32,6 +32,7 @@
 #include <motion_manage.h>
 #include <slam.h>
 #include <event_manager.h>
+#include <mathematics.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -187,13 +188,12 @@ typedef struct Regulator_{
 static bool check_map_boundary(bool& slow_down)
 {
 		int32_t		x, y;
-		for (auto i = -1; i <= 1; i++) {
-			CM_count_normalize(Gyro_GetAngle(), i * CELL_SIZE, CELL_SIZE_3, &x, &y);
+		for (auto dy = -1; dy <= 1; dy++) {
+			CM_count_normalize(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_3, &x, &y);
 			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY)
 				slow_down = true;
 
-			CM_count_normalize(Gyro_GetAngle(), i * CELL_SIZE, CELL_SIZE_2, &x, &y);
-
+			CM_count_normalize(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_2, &x, &y);
 			if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
 				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
 				Stop_Brifly();
@@ -314,49 +314,22 @@ int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32
 	return index;
 }
 
-void CM_update_position() {
-
-	int8_t	e;
-	int16_t c, d, x, y;
-	int32_t i, j, k;
-	auto heading=Gyro_GetAngle();
-	float	pos_x, pos_y;
-	x = Map_GetXCell();
-	y = Map_GetYCell();
-
-	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	Map_SetPosition(pos_x, pos_y);
-	if (x != Map_GetXCell() || y != Map_GetYCell()) {
-		for (c = 1; c >= -1; --c) {
-			for (d = 1; d >= -1; --d) {
-				CM_count_normalize(heading, CELL_SIZE * c, CELL_SIZE * d, &i, &j);
-				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
-
-				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER) {
-					ROS_WARN("%s %d: warning, reset bumper/obs value, (%d, %d)", __FUNCTION__, __LINE__, countToCell(i), countToCell(j));
-					Map_SetCell(MAP, i, j, CLEANED);
-				}
+void CM_update_map_cleaning()
+{
+	int32_t i,j;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy) {
+			for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx){
+				CM_count_normalize(Gyro_GetAngle(), CELL_SIZE * dy, CELL_SIZE * dx, &i, &j);
+				Map_SetCell(MAP, i, j, CLEANED);
 			}
-		}
-		robot::instance()->pubCleanMarkers();
-		Point32_t next_point{0,0}, targets_point{0,0};
-		MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
 	}
-	for (c = 1; c >= -1; --c) {
-		CM_count_normalize(heading, c * CELL_SIZE, CELL_SIZE, &i, &j);
-		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
-			//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
-		} else {
-			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BUMPER) {
-				ROS_WARN("%s %d: warning, setting bumper (%d, %d).", __FUNCTION__, __LINE__, countToCell(i), countToCell(j));
-			}
-			Map_SetCell(MAP, i, j, CLEANED);
-		}
-	}
+}
 
+void CM_update_map_obs()
+{
 	if (Get_OBS_Status() & Status_Left_OBS) {
-		CM_count_normalize(heading, CELL_SIZE_2, CELL_SIZE, &i, &j);
+		int32_t i,j;
+		CM_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &i, &j);
 		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
@@ -364,34 +337,19 @@ void CM_update_position() {
 		}
 	}
 
-	for (c = 0; c < 3; ++c) {
-		i = SHRT_MAX;
-		switch (c) {
-			case 0:
-				i = Get_OBS_Status() & Status_Right_OBS;
-				break;
-			case 1:
-				i = Get_OBS_Status() & Status_Front_OBS;
-				break;
-			case 2:
-				i = Get_OBS_Status() & Status_Left_OBS;
-				break;
-		}
-		CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &j, &k);
-		if (i && Map_GetCell(MAP, countToCell(j), countToCell(k)) != BLOCKED_BUMPER) {
-			Map_SetCell(MAP, j, k, BLOCKED_OBS);
-		} else if (Map_GetCell(MAP, countToCell(j), countToCell(k)) == BLOCKED_OBS) {
-			Map_SetCell(MAP, j, k, UNCLEAN);
+	if (Get_OBS_Status() & Status_Right_OBS) {
+		int32_t i,j;
+		CM_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &i, &j);
+		if (Get_Wall_ADC(1) > 200) {
+			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
+				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
+			}
 		}
 	}
-}
 
-void CM_update_map_obs()
-{
-
-	for (auto c = 0; c < 3; ++c) {
+	for (auto dy = 0; dy < 3; ++dy) {
 		auto i = SHRT_MAX;
-		switch (c) {
+		switch (dy) {
 			case 0:
 				i = Get_OBS_Status() & Status_Right_OBS;
 				break;
@@ -403,96 +361,89 @@ void CM_update_map_obs()
 				break;
 		}
 		int32_t x_tmp, y_tmp;
-		CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_3, &x_tmp, &y_tmp);
+		CM_count_normalize(Gyro_GetAngle(), (dy - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 		if (i) {
-			CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) != BLOCKED_BUMPER) {
-				ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 				Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
 			}
 		} else {
-			CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 			if (Map_GetCell(MAP, countToCell(x_tmp), countToCell(y_tmp)) == BLOCKED_OBS) {
 				Map_SetCell(MAP, x_tmp, y_tmp, UNCLEAN);
 			}
 		}
 	}
 }
+
 void CM_update_map_bumper()
 {
-	int16_t	c;
-	int32_t	x_tmp, y_tmp;
 	auto bumper = Get_Bumper_Status();
-	if ((bumper & RightBumperTrig) && (bumper & LeftBumperTrig)) {
-		for (c = -1; c <= 1; ++c) {
-			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-		}
-	} else if (bumper & LeftBumperTrig) {
-		CM_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE_2, &x_tmp, &y_tmp);
-		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
+	std::vector<Cell_t> d_cells;
 
-		CM_count_normalize(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-
-		CM_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x_tmp, &y_tmp);
-		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-
-		if ((g_pos_history[0].x == g_pos_history[1].x) && (g_pos_history[0].y == g_pos_history[1].y) && (g_pos_history[0].dir == g_pos_history[1].dir) &&
-			(g_pos_history[0].x == g_pos_history[2].x) && (g_pos_history[0].y == g_pos_history[2].y) && (g_pos_history[0].dir == g_pos_history[2].dir)) {
-			CM_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
-			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-		}
+	if ((bumper & RightBumperTrig) && (bumper & LeftBumperTrig))
+		d_cells = {{2,-1}, {2,0}, {2,1}};
+	else if (bumper & LeftBumperTrig) {
+		d_cells = {{2, 1}, {2,2},{1,2}};
+		if (g_pos_history[0] == g_pos_history[1] && g_pos_history[0] == g_pos_history[2])
+			d_cells.push_back({2,0});
 	} else if (bumper & RightBumperTrig) {
-		CM_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE_2, &x_tmp, &y_tmp);
+		d_cells = {{2,-2},{2,-1},{1,-2}};
+		if (g_pos_history[0] == g_pos_history[1]  && g_pos_history[0] == g_pos_history[2])
+			d_cells.push_back({2,0});
+	}
+
+	int32_t	x_tmp, y_tmp;
+	for(auto& d_cell : d_cells){
+		CM_count_normalize(Gyro_GetAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
 		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
 		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-
-		CM_count_normalize(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-
-		CM_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x_tmp, &y_tmp);
-		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-
-		if ((g_pos_history[0].x == g_pos_history[1].x) && (g_pos_history[0].y == g_pos_history[1].y) && (g_pos_history[0].dir == g_pos_history[1].dir) &&
-			(g_pos_history[0].x == g_pos_history[2].x) && (g_pos_history[0].y == g_pos_history[2].y) && (g_pos_history[0].dir == g_pos_history[2].dir)) {
-			CM_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x_tmp, &y_tmp);
-			ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
-			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-		}
 	}
 }
 
 void CM_update_map_cliff()
 {
+	std::vector<Cell_t> d_cells;
+	if (Get_Cliff_Trig() & Status_Cliff_Front){
+		d_cells.push_back({2,-1});
+		d_cells.push_back({2, 0});
+		d_cells.push_back({2, 1});
+	}
+	if (Get_Cliff_Trig() & Status_Cliff_Left){
+		d_cells.push_back({2, 1});
+		d_cells.push_back({2, 2});
+	}
+	if (Get_Cliff_Trig() & Status_Cliff_Right){
+		d_cells.push_back({2,-1});
+		d_cells.push_back({2,-2});
+	}
+
 	int32_t	x_tmp, y_tmp;
-	if (Get_Cliff_Trig() & Status_Cliff_Front) {
-		for (auto c = -1; c <= 1; ++c) {
-			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-		}
-	}
-	if (Get_Cliff_Trig() & Status_Cliff_Left) {
-		for (auto c = 1; c <= 2; ++c) {
-			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-		}
-	}
-	if (Get_Cliff_Trig() & Status_Cliff_Right) {
-		for (auto c = -2; c <= -1; ++c) {
-			CM_count_normalize(Gyro_GetAngle(), c * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-			Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
-		}
+	for (auto& d_cell : d_cells) {
+		CM_count_normalize(Gyro_GetAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
+		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, countToCell(x_tmp), countToCell(y_tmp));
+		Map_SetCell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 	}
 }
-void CM_update_map() {
+
+void CM_update_position()
+{
+	auto last_x = Map_GetXCell();
+	auto last_y = Map_GetYCell();
+	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	Map_SetPosition(pos_x, pos_y);
+
+	if (last_x != Map_GetXCell() || last_y != Map_GetYCell())
+		CM_update_map_cleaning();
+
+	CM_update_map_obs();
+
+	robot::instance()->pubCleanMarkers();
+	Point32_t next_point{0,0}, targets_point{0,0};
+	MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
+}
+
+void CM_update_map()
+{
 
 	CM_update_map_obs();
 

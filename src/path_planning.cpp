@@ -151,8 +151,8 @@ void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range
 	*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
 	*y_range_max = g_y_max + (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
 
-	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
-		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
+//	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
+//		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
 }
 
 uint8_t is_a_block(int16_t x, int16_t y)

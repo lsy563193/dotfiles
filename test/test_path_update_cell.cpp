@@ -69,8 +69,21 @@ int main(int argc, char **argv)
 	Map_SetCell(MAP, cellToCount(-2), cellToCount(0), BLOCKED);
 	Map_SetCell(MAP, cellToCount(-2), cellToCount(1), BLOCKED);
 	Map_SetCell(MAP, cellToCount(-2), cellToCount(2), BLOCKED);
-	path_update_cells();
-	debug_map(MAP,countToCell(stop.X),countToCell(stop.Y));
+//	path_update_cells();
+//	CM_update_position();
+
+	extern pp::x900sensor   sensor;
+
+//	sensor.lbumper = true;
+//	sensor.rbumper = true;
+//	sensor.rbumper = true;
+//	CM_update_map_bumper();
+
+	sensor.fcliff = true;
+//	sensor.rcliff = true;
+//	sensor.lcliff = true;
+	CM_update_map_cliff();
+//	debug_map(MAP,countToCell(stop.X),countToCell(stop.Y));
 //	Set_Clean_Mode(Clean_Mode_Spot);
 //	while (ros::ok)
 //	{

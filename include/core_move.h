@@ -77,7 +77,8 @@ uint8_t CM_Touring(void);
 
 void CM_update_position();
 void CM_update_map();
-void CM_update_map_bumper(uint8_t bumper);
+void CM_update_map_bumper();
+void CM_update_map_cliff();
 bool CM_CurveMoveToPoint();
 
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
