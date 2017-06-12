@@ -948,26 +948,26 @@ void path_update_cells()
 	auto start = std::min(curr_x, last_x);
 	auto stop  = std::max(curr_x, last_x);
 	ROS_INFO("%s %d: start: %d\tstop: %d", __FUNCTION__, __LINE__, start, stop);
-	for (auto it_x = start; it_x <= stop; it_x++)
+	for (auto x = start; x <= stop; x++)
 	{
 		for (auto dy = -1; dy <= 1; dy += 2)
 		{
-			if (Map_GetCell(MAP, it_x, curr_y + dy) == BLOCKED_OBS || Map_GetCell(MAP, it_x, curr_y + dy) == BLOCKED_BUMPER)
+			if (Map_GetCell(MAP, x, curr_y + dy) == BLOCKED_OBS || Map_GetCell(MAP, x, curr_y + dy) == BLOCKED_BUMPER)
 			{
 				auto state = CLEANED;
 				auto dx_start = -1;
 				auto dx_stop = 1;
-				if (it_x == start) dx_start = dx_stop;
-				if (it_x == stop) dx_stop = dx_start;
+				if (x == start) dx_start = dx_stop;
+				if (x == stop) dx_stop = dx_start;
 				for (auto dx = dx_start; dx <= dx_stop; dx += 2)
 				{
-					if (Map_GetCell(MAP, it_x + dx, curr_y + dy) == CLEANED)
+					if (Map_GetCell(MAP, x + dx, curr_y + dy) == CLEANED)
 						break;
 					else
 						state = UNCLEAN;
 				}
-				ROS_WARN("%s %d: reset (%d,%d) to %d.", __FUNCTION__, __LINE__, it_x, curr_y + dy, start);
-				Map_SetCell(MAP, cellToCount(it_x), cellToCount(curr_y + dy), state);
+				ROS_WARN("%s %d: reset (%d,%d) to %d.", __FUNCTION__, __LINE__, x, curr_y + dy, start);
+				Map_SetCell(MAP, cellToCount(x), cellToCount(curr_y + dy), state);
 			}
 		}
 	}

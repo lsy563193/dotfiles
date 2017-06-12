@@ -340,46 +340,9 @@ void CM_update_position() {
 			}
 		}
 		robot::instance()->pubCleanMarkers();
+		Point32_t next_point{0,0}, targets_point{0,0};
+		MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
 	}
-
-#if (ROBOT_SIZE == 5)
-
-	CM_count_normalize(heading, -CELL_SIZE_2, CELL_SIZE, &i, &j);
-	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
-		//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
-	} else {
-		Map_SetCell(MAP, i, j, CLEANED);
-	}
-
-	for (c = 1; c >= -1; --c) {
-		CM_count_normalize(heading, c * CELL_SIZE, CELL_SIZE, &i, &j);
-		Map_SetCell(MAP, i, j, CLEANED);
-	}
-
-	CM_count_normalize(heading, CELL_SIZE_2, CELL_SIZE, &i, &j);
-	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
-		//ROS_WARN("%s %d: warning, setting boundary.", __FUNCTION__, __LINE__);
-	} else {
-		Map_SetCell(MAP, i, j, CLEANED);
-	}
-
-	if (Get_OBS_Status() & Status_Left_OBS) {
-		CM_count_normalize(0, heading, CELL_SIZE_3, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC(0) > 200) {
-			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
-				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
-			}
-#if 0
-		} else {
-			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_OBS) {
-				/* Shall we reset the cell by using the wall sensor if it was marked? */
-				Map_SetCell(MAP, i, j, UNCLEAN);
-			}
-#endif
-		}
-	}
-
-#else
 	for (c = 1; c >= -1; --c) {
 		CM_count_normalize(heading, c * CELL_SIZE, CELL_SIZE, &i, &j);
 		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_BOUNDARY) {
@@ -398,17 +361,8 @@ void CM_update_position() {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
 				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
 			}
-#if 0
-		} else {
-			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) == BLOCKED_OBS) {
-				/* Shall we reset the cell by using the wall sensor if it was marked? */
-				Map_SetCell(MAP, i, j, UNCLEAN);
-			}
-#endif
 		}
 	}
-
-#endif
 
 	for (c = 0; c < 3; ++c) {
 		i = SHRT_MAX;
@@ -423,23 +377,12 @@ void CM_update_position() {
 				i = Get_OBS_Status() & Status_Left_OBS;
 				break;
 		}
-
-#if (ROBOT_SIZE == 5)
-		CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_3, &j, &k);
-		if (i && Map_GetCell(MAP, countToCell(j), countToCell(k)) != BLOCKED_BUMPER) {
-			Map_SetCell(MAP, j, k, BLOCKED_OBS);
-		} else if (Map_GetCell(MAP, countToCell(j), countToCell(k)) == BLOCKED_OBS) {
-			Map_SetCell(MAP, j, k, UNCLEAN);
-		}
-
-#else
 		CM_count_normalize(Gyro_GetAngle(), (c - 1) * CELL_SIZE, CELL_SIZE_2, &j, &k);
 		if (i && Map_GetCell(MAP, countToCell(j), countToCell(k)) != BLOCKED_BUMPER) {
 			Map_SetCell(MAP, j, k, BLOCKED_OBS);
 		} else if (Map_GetCell(MAP, countToCell(j), countToCell(k)) == BLOCKED_OBS) {
 			Map_SetCell(MAP, j, k, UNCLEAN);
 		}
-#endif
 	}
 }
 
@@ -1179,8 +1122,7 @@ int CM_cleaning()
 				g_cm_move_type = CM_LINEARMOVE;
 			} else
 				CM_MoveToPoint(next_point);
-			MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
-			sleep(5);
+//			MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
 //			linearMarkClean(start,Map_PointToCell(next_point));
 
 		} else
