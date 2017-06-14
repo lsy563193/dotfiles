@@ -168,6 +168,22 @@ void *core_move_thread(void *)
 
 				Clear_Manual_Pause();
 
+				if (!Is_Gyro_On())
+				{
+					// Restart the gyro.
+					Set_Gyro_Off();
+					// Wait for 30ms to make sure the off command has been effectived.
+					usleep(30000);
+					// Set gyro on before wav_play can save the time for opening the gyro.
+					Set_Gyro_On();
+					wav_play(WAV_SYSTEM_INITIALIZING);
+					if (!Wait_For_Gyro_On())
+					{
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						break;
+					}
+				}
+
 				Remote_Mode();
 				break;
 			case Clean_Mode_Spot:

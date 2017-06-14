@@ -34,16 +34,6 @@ void Remote_Mode(void)
 
   //Display_Clean_Status(Display_Remote);
 
-	if (!Is_Gyro_On()){
-		Set_Gyro_On();
-		if (!Wait_For_Gyro_On())
-		{
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return;
-		}
-//		Set_Gyro_Status();
-	}
-
 	Set_LED(100,0);
 	Reset_Wheel_Step();
 	Reset_Stop_Event_Status();
