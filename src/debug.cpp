@@ -63,7 +63,7 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 		outString[index++] = '\t';
 
 		for (j = y_min; j <= y_max; j++) {
-			cs = Map_GetCell(id, i, j);
+			cs = Map_get_cell(id, i, j);
 			if (i == g_pos_history[0].x && j == g_pos_history[0].y) {
 				outString[index++] = 'x';
 			} else if (i == endx && j == endy) {

@@ -428,8 +428,8 @@ bool MotionManage::initNavigationCleaning(void)
 		{
 			Point32_t new_home_point;
 			// Save the current coordinate as a new home point.
-			new_home_point.X = Map_GetXCount();
-			new_home_point.Y = Map_GetYCount();
+			new_home_point.X = Map_get_x_count();
+			new_home_point.Y = Map_get_y_count();
 
 			// Push the start point into the home point list.
 			g_home_point.push_front(new_home_point);
@@ -563,15 +563,15 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_
 	CellState cell_state;
 	path_get_range(&x_min, &x_max, &y_min, &y_max);
 
-	next_point_x = countToCell(next_point.X);
+	next_point_x = count_to_cell(next_point.X);
 	if (next_point_x == SHRT_MIN )
 		next_point_x = x_min;
 	else if (next_point_x == SHRT_MAX)
 		next_point_x = x_max;
 
-	next_point_y = countToCell(next_point.Y);
-	target_point_x = countToCell(target_point.X);
-	target_point_y = countToCell(target_point.Y);
+	next_point_y = count_to_cell(next_point.Y);
+	target_point_x = count_to_cell(target_point.X);
+	target_point_y = count_to_cell(target_point.Y);
 
 	for (i = x_min; i <= x_max; i++)
 	{
@@ -583,7 +583,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_
 				robot::instance()->setCleanMapMarkers(i, j, TARGET);
 			else
 			{
-				cell_state = Map_GetCell(id, i, j);
+				cell_state = Map_get_cell(id, i, j);
 				if (cell_state == CLEANED || cell_state == BLOCKED_OBS || cell_state == BLOCKED_BUMPER)
 					robot::instance()->setCleanMapMarkers(i, j, cell_state);
 			}

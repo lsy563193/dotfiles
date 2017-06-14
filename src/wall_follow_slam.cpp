@@ -76,29 +76,29 @@ bool WF_check_isolate(void)
 
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	Map_SetPosition(pos_x, pos_y);
-	//Map_SetCell(MAP, pos_x, pos_y, CLEANED);
+	Map_set_position(pos_x, pos_y);
+	//Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
-	current_x = Map_GetXCell();
-	current_y = Map_GetYCell();
+	current_x = Map_get_x_cell();
+	current_y = Map_get_y_cell();
 
 	//ROS_INFO("%s %d: escape thread is up!\n", __FUNCTION__, __LINE__);
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	Map_SetPosition(pos_x, pos_y);
-	//Map_SetCell(MAP, pos_x, pos_y, CLEANED);
+	Map_set_position(pos_x, pos_y);
+	//Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
 
 	path_set_current_pos();
-	//ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXCell(), Map_GetYCell());
+	//ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_get_x_cell(), Map_get_y_cell());
 	val = WF_path_escape_trapped();
 	if (val == 0) {
 		return 0;//not isolated
 	} else {
 		return 1;//isolated
 	}
-	current_x = Map_GetXCell();
-	current_y = Map_GetYCell();
+	current_x = Map_get_x_cell();
+	current_y = Map_get_y_cell();
 }
 
 
@@ -191,7 +191,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			Reset_Rcon_Status();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
-				CM_set_home(Map_GetXCount(), Map_GetYCount());
+				CM_set_home(Map_get_x_count(), Map_get_y_count());
 				break;
 			}
 
@@ -456,7 +456,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//Temp_Rcon_Status = robot::instance()->getRcon();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
-				CM_set_home(Map_GetXCount(), Map_GetYCount());
+				CM_set_home(Map_get_x_count(), Map_get_y_count());
 			}
 			if (Temp_Rcon_Status){
 				Reset_Rcon_Status();
@@ -766,7 +766,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 				break;
 			}
 			//Map_Initialize();
-			Map_Reset(MAP);
+			Map_reset(MAP);
 			WF_Point.clear();
 			Turn_Right(Turn_Speed, 900);
 			continue;
@@ -819,13 +819,13 @@ void WF_update_position(void) {
 	float	pos_x, pos_y;
 	int16_t	x, y;
 
-	x = Map_GetXCell();
-	y = Map_GetYCell();
+	x = Map_get_x_cell();
+	y = Map_get_y_cell();
 
-	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
+	//Map_move_to(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	Map_SetPosition(pos_x, pos_y);
+	Map_set_position(pos_x, pos_y);
 }
 
 /**************************************************************
@@ -843,35 +843,35 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 	int8_t	push_state;
 	bool	reach_state;
 
-	x = Map_GetXCell();
-	y = Map_GetYCell();
+	x = Map_get_x_cell();
+	y = Map_get_y_cell();
 
-	//Map_MoveTo(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
+	//Map_move_to(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	Map_SetPosition(pos_x, pos_y);
+	Map_set_position(pos_x, pos_y);
 
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
 
-	if (x != Map_GetXCell() || y != Map_GetYCell()) {
+	if (x != Map_get_x_cell() || y != Map_get_y_cell()) {
 		for (c = 1; c >= -1; --c) {
 			for (d = 1; d >= -1; --d) {
-				i = Map_GetRelativeX(heading, CELL_SIZE * c, CELL_SIZE * d);
-				j = Map_GetRelativeY(heading, CELL_SIZE * c, CELL_SIZE * d);
-				e = Map_GetCell(MAP, countToCell(i), countToCell(j));
+				i = Map_get_relative_x(heading, CELL_SIZE * c, CELL_SIZE * d);
+				j = Map_get_relative_y(heading, CELL_SIZE * c, CELL_SIZE * d);
+				e = Map_get_cell(MAP, count_to_cell(i), count_to_cell(j));
 
 				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER || e == BLOCKED_BOUNDARY ) {
-					Map_SetCell(MAP, i, j, CLEANED);
+					Map_set_cell(MAP, i, j, CLEANED);
 				}
 			}
 		}
 	}
 
-	//Map_SetCell(MAP, Map_GetRelativeX(heading, -CELL_SIZE, CELL_SIZE), Map_GetRelativeY(heading, -CELL_SIZE, CELL_SIZE), CLEANED);
-	//Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
-	i = Map_GetRelativeX(heading, 0, 0);
-	j = Map_GetRelativeY(heading, 0, 0);
-	push_state = WF_Push_Point(countToCell(i),countToCell(j), Gyro_GetAngle());//push a cell
+	//Map_set_cell(MAP, Map_get_relative_x(heading, -CELL_SIZE, CELL_SIZE), Map_get_relative_y(heading, -CELL_SIZE, CELL_SIZE), CLEANED);
+	//Map_set_cell(MAP, Map_get_relative_x(heading, 0, CELL_SIZE), Map_get_relative_y(heading, 0, CELL_SIZE), CLEANED);
+	i = Map_get_relative_x(heading, 0, 0);
+	j = Map_get_relative_y(heading, 0, 0);
+	push_state = WF_Push_Point(count_to_cell(i), count_to_cell(j), Gyro_GetAngle());//push a cell
 	if(push_state == 1){
 		reach_state = WF_Is_Reach_Cleaned();//check this cell if reached
 		if(reach_state == true){//add reach_count
@@ -890,22 +890,23 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 
 
 	if(push_state == 1){//mark after letf the same cell
-		//Map_SetCell(MAP, i, j, CLEANED);
+		//Map_set_cell(MAP, i, j, CLEANED);
 		int size = (WF_Point.size() - 2);
 		if(size >= 0){
 			ROS_INFO("WF_Point.size() - 2 = %d", size);
 			try{
-				Map_SetCell(MAP, cellToCount((WF_Point.at(WF_Point.size() - 2)).X), cellToCount((WF_Point.at(WF_Point.size() - 2)).Y), CLEANED);
+				Map_set_cell(MAP, cell_to_count((WF_Point.at(WF_Point.size() - 2)).X),
+										 cell_to_count((WF_Point.at(WF_Point.size() - 2)).Y), CLEANED);
 			}
 			catch(const std::out_of_range& oor){
 				std::cerr << "Out of range error:" << oor.what() << '\n';
 			}
 		}
 	}
-	i = Map_GetRelativeX(heading, CELL_SIZE_2, 0);
-	j = Map_GetRelativeY(heading, CELL_SIZE_2, 0);
-	if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
-		Map_SetCell(MAP, i, j, BLOCKED_OBS);
+	i = Map_get_relative_x(heading, CELL_SIZE_2, 0);
+	j = Map_get_relative_y(heading, CELL_SIZE_2, 0);
+	if (Map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY) {
+		Map_set_cell(MAP, i, j, BLOCKED_OBS);
 	}
 
 #else
@@ -914,22 +915,22 @@ void WF_Check_Loop_Closed(uint16_t heading) {
 	j = Map_GetRelativeY(heading, 0, 0);
 	Map_SetCell(MAP, Map_GetRelativeX(heading, 0, CELL_SIZE), Map_GetRelativeY(heading, 0, CELL_SIZE), CLEANED);
 
-	Map_SetCell(MAP, Map_GetRelativeX(heading, CELL_SIZE, 0), Map_GetRelativeY(heading, CELL_SIZE, 0), BLOCKED_OBS);
+	Map_set_cell(MAP, Map_get_relative_x(heading, CELL_SIZE, 0), Map_get_relative_y(heading, CELL_SIZE, 0), BLOCKED_OBS);
 #endif
 }
 
 bool WF_Is_Reach_Cleaned(void){
 	int32_t x,y;
-	//x = Map_GetXCell();
-	//y = Map_GetYCell();
+	//x = Map_get_x_cell();
+	//y = Map_get_y_cell();
 
 	//CM_count_normalize(Gyro_GetAngle(), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
 	CM_count_normalize(Gyro_GetAngle(), 0, 0, &x, &y);
 	try{
 		if(WF_Point.empty() == false){
 			if((WF_Point.size() - 1) >= 0){
-				if (Map_GetCell(MAP, (WF_Point.at(WF_Point.size() - 1)).X, (WF_Point.at(WF_Point.size() - 1)).Y) == CLEANED) {//size() - 2 means last two
-					ROS_INFO("Reach X = %d, Reach Y = %d", countToCell(x), countToCell(y));
+				if (Map_get_cell(MAP, (WF_Point.at(WF_Point.size() - 1)).X, (WF_Point.at(WF_Point.size() - 1)).Y) == CLEANED) {//size() - 2 means last two
+					ROS_INFO("Reach X = %d, Reach Y = %d", count_to_cell(x), count_to_cell(y));
 					//Beep(3, 25, 25, 1);//Beep when it was coincide
 					return true;
 				} else{
@@ -993,7 +994,7 @@ void WF_Mark_Home_Point(void){
 
 		for (i = -2; i <= 2; i++) {
 			for (j = -2;j <= 2; j++) {
-				Map_SetCell(MAP, cellToCount(x + i), cellToCount(y + j) , CLEANED);//0, -1
+				Map_set_cell(MAP, cell_to_count(x + i), cell_to_count(y + j), CLEANED);//0, -1
 				//ROS_INFO("%s %d: x + i = %d, y + j = %d", __FUNCTION__, __LINE__, x + i, y + j);
 			}
 		}

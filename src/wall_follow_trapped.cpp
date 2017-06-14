@@ -114,31 +114,31 @@
 //
 //	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 //	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-//	Map_SetPosition(pos_x, pos_y);
-//	Map_SetCell(MAP, pos_x, pos_y, CLEANED);
+//	Map_set_position(pos_x, pos_y);
+//	Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 //
-//	current_x = Map_GetXCell();
-//	current_y = Map_GetYCell();
+//	current_x = Map_get_x_cell();
+//	current_y = Map_get_y_cell();
 //	escape_thread_running = true;
 //
 //	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 //	while (escape_thread_running == true) {
 //		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 //		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-//		Map_SetPosition(pos_x, pos_y);
-//		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
+//		Map_set_position(pos_x, pos_y);
+//		Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 //
-//		if (abs(current_x - Map_GetXCell()) >= 2 || abs(current_y - Map_GetYCell()) >= 2) {
+//		if (abs(current_x - Map_get_x_cell()) >= 2 || abs(current_y - Map_get_y_cell()) >= 2) {
 //			path_set_current_pos();
-//			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_GetXCell(), Map_GetYCell());
+//			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_get_x_cell(), Map_get_y_cell());
 //			val = path_escape_trapped();
 //			if (val == 1) {
 //				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 //				data = (void *) (&escaped);
 //				escape_thread_running = false;
 //			}
-//			current_x = Map_GetXCell();
-//			current_y = Map_GetYCell();
+//			current_x = Map_get_x_cell();
+//			current_y = Map_get_y_cell();
 //			} else {
 //				usleep(100000);
 //			}
@@ -156,14 +156,14 @@
 //
 //	for (j = -1; boundary_reach == 0 && j <= 1; j++) {
 //#if (ROBOT_SIZE == 5)
-//		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
-//		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		x = Map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		y = Map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 //#else
-//		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
-//		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		x = Map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		y = Map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 //#endif
 //
-//		if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
+//		if (Map_get_cell(MAP, countToCell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
 //			boundary_reach = 1;
 //			Set_Wheel_Speed(0, 0);
 //			usleep(10000);
@@ -768,32 +768,32 @@ void *WFT_check_trapped(void *data)
 
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	Map_SetPosition(pos_x, pos_y);
-	Map_SetCell(MAP, pos_x, pos_y, CLEANED);
+	Map_set_position(pos_x, pos_y);
+	Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
-	current_x = Map_GetXCell();
-	current_y = Map_GetYCell();
+	current_x = Map_get_x_cell();
+	current_y = Map_get_y_cell();
 	escape_thread_running = true;
 
 	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 	while (escape_thread_running == true) {
 		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		Map_SetPosition(pos_x, pos_y);
-		Map_SetCell(MAP, pos_x, pos_y, CLEANED);
+		Map_set_position(pos_x, pos_y);
+		Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
-		if (abs(current_x - Map_GetXCell()) >= 2 || abs(current_y - Map_GetYCell()) >= 2) {
+		if (abs(current_x - Map_get_x_cell()) >= 2 || abs(current_y - Map_get_y_cell()) >= 2) {
 			path_set_current_pos();
 			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y,
-							 Map_GetXCell(), Map_GetYCell());
+							 Map_get_x_cell(), Map_get_y_cell());
 			val = path_escape_trapped();
 			if (val == 1) {
 				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 				escape_state = Escape_Trapped_Escaped;
 				escape_thread_running = false;
 			}
-			current_x = Map_GetXCell();
-			current_y = Map_GetYCell();
+			current_x = Map_get_x_cell();
+			current_y = Map_get_y_cell();
 		} else {
 			usleep(100000);
 		}
@@ -810,10 +810,10 @@ void WFT_boundary_check()
 	int32_t	x, y;
 
 	for (j = -1; boundary_reach == 0 && j <= 1; j++) {
-		x = Map_GetRelativeX(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
-		y = Map_GetRelativeY(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+		x = Map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+		y = Map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 
-		if (Map_GetCell(MAP, countToCell(x), countToCell(y)) == BLOCKED_BOUNDARY) {
+		if (Map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
 			boundary_reach = 1;
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
