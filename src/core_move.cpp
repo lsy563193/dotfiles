@@ -71,6 +71,7 @@ int16_t g_rounding_left_wall_buffer[3];
 int16_t g_rounding_right_wall_buffer[3];
 
 extern uint32_t g_cur_wtime;//temporary work time
+Point32_t g_next_point, g_targets_point;
 
 // This list is for storing the position that robot sees the charger stub.
 std::list <Point32_t> g_home_point;
@@ -325,6 +326,8 @@ void CM_update_map_cleaning()
 				Map_SetCell(MAP, i, j, CLEANED);
 			}
 	}
+
+	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
 }
 
 void CM_update_map_obs()
@@ -1063,9 +1066,8 @@ int CM_cleaning()
 		uint16_t last_dir = path_get_robot_direction();
 
 		Cell_t start{Map_GetXCell(), Map_GetYCell()};
-		Point32_t next_point, targets_point;
-		int8_t state = path_next(&next_point.X, &next_point.Y, &targets_point);
-		MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
+		int8_t state = path_next(&g_next_point.X, &g_next_point.Y, &g_targets_point);
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
 		ROS_ERROR("State: %d", state);
 		if (state == 0) //No target point
 		{
@@ -1074,17 +1076,16 @@ int CM_cleaning()
 		} else
 		if (state == 1)
 		{
-			auto rounding_type = CM_get_rounding_direction(&next_point, targets_point, last_dir);
+			auto rounding_type = CM_get_rounding_direction(&g_next_point, g_targets_point, last_dir);
 			if (rounding_type != ROUNDING_NONE)
 			{
 				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
 				g_cm_move_type = CM_ROUNDING;
-				CM_rounding(rounding_type, next_point, g_bumper_status_for_rounding);
+				CM_rounding(rounding_type, g_next_point, g_bumper_status_for_rounding);
 				g_cm_move_type = CM_LINEARMOVE;
 			} else
-				CM_MoveToPoint(next_point);
-//			MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
-			linearMarkClean(start,Map_PointToCell(next_point));
+				CM_MoveToPoint(g_next_point);
+			linearMarkClean(start,Map_PointToCell(g_next_point));
 
 		} else
 		if (state == 2)
