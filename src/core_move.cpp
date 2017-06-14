@@ -1200,12 +1200,6 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 	Map_Set_Cells(ROBOT_SIZE, target_x, target_y, CLEANED);
 
 	while (ros::ok()) {
-		if (g_fatal_quit_event || g_key_clean_pressed )
-			return false;
-
-		if (g_remote_home && !g_go_home )
-			return false;
-
 		Cell_t pos{target_x, target_y};
 		Cell_t	tmp;
 		auto pathFind = (int8_t)path_move_to_unclean_area(pos, Map_GetXCell(), Map_GetYCell(), &tmp.X, &tmp.Y);
@@ -1222,6 +1216,12 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{ cellToCount(tmp.X), cellToCount(tmp.Y) };
 			CM_MoveToPoint(Next_Point);
+
+			if (g_fatal_quit_event || g_key_clean_pressed )
+				return false;
+
+			if (g_remote_home && !g_go_home )
+				return false;
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
 			if ( TwoPointsDistance( target_x , target_y , Map_GetXCell(), Map_GetYCell() ) < ROBOT_SIZE / 2 + 1 ) {
