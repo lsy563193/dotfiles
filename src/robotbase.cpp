@@ -73,9 +73,6 @@ int temp_speaker_sound_time_count = -1;
 int robotbase_speaker_silence_time_count = 0;
 int temp_speaker_silence_time_count = 0;
 
-// Low battery flag
-extern uint8_t g_low_battery;
-
 // Lock for odom coordinate
 boost::mutex odom_mutex;
 
@@ -413,11 +410,6 @@ void *serial_send_routine(void*){
 		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
 			process_beep();
-		//}else{
-		//	// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
-		//	if (g_low_battery){
-		//		Beep(3, 25, 25, 40);
-		//	}
 		}
 		/*-------------------counter end-------------------------------------*/
 

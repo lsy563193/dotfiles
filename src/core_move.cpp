@@ -79,9 +79,7 @@ std::list <Point32_t> g_home_point;
 Point32_t g_continue_point;
 
 bool	g_go_home = false;
-uint8_t	g_remote_go_home = 0;
 bool	g_from_station = 0;
-uint8_t g_low_battery = 0;
 int16_t g_map_gyro_offset = 0;
 uint8_t	g_should_follow_wall = 0;
 
@@ -1006,7 +1004,6 @@ uint8_t CM_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 
 bool CM_resume_cleaning()
 {
-	g_low_battery = 0;
 	robot::instance()->resetLowBatPause();
 
 	CM_MoveToCell(countToCell(g_continue_point.X), countToCell(g_continue_point.Y));
@@ -1291,8 +1288,6 @@ uint8_t CM_Touring(void)
 	g_oc_brush_left_cnt = g_oc_brush_main_cnt = g_oc_brush_right_cnt = g_oc_wheel_left_cnt = g_oc_wheel_right_cnt = g_oc_suction_cnt = 0;
 	g_cliff_cnt = 0;
 	g_bumper_cnt = g_press_time = 0;
-	g_remote_go_home = 0;
-	g_low_battery = 0;
 	g_from_station = 0;
 
 	MotionManage motion;
@@ -1431,7 +1426,6 @@ void CM_ResetGoHome(void)
 {
 	ROS_DEBUG("Reset go home flags here.");
 	g_go_home = false;
-	g_remote_go_home = 0;
 	g_map_boundary_created = false;
 }
 

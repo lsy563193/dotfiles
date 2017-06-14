@@ -15,7 +15,6 @@
 #define Turn_Speed 18
 #endif
 
-extern uint8_t g_low_battery;
 
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void Charge_Function(void)
@@ -39,10 +38,6 @@ void Charge_Function(void)
 
 	// This counter is for avoiding occasionly Is_ChargerOn return 0 when robot is charging, cause it will stop charger mode.
 	uint8_t Stop_Charge_Counter = 0;
-
-	// Reset the g_low_battery flag in core_move.cpp and stop beeping.
-//	Beep(0, 0, 0, 1);
-	g_low_battery = 0;
 
 	Set_LED(100,100);
 	set_start_charge();

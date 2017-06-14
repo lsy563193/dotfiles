@@ -55,7 +55,6 @@ extern uint8_t g_oc_wheel_left_cnt;
 extern uint8_t g_oc_wheel_right_cnt;
 extern uint8_t g_oc_suction_cnt;
 extern uint8_t g_cliff_cnt;
-extern uint8_t	g_remote_go_home;
 extern uint16_t g_press_time;
 extern int g_bumper_cnt;
 
