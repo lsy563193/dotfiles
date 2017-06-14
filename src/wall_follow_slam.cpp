@@ -46,7 +46,6 @@ Pose32_t New_WF_Point;
 // This list is for storing the position that robot sees the charger stub.
 extern std::list <Point32_t> g_home_point;
 volatile int32_t Map_Wall_Follow_Distance = 0;
-extern uint8_t g_remote_go_home;
 extern uint8_t g_from_station;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 //Timer
