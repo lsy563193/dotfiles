@@ -283,22 +283,11 @@ MotionManage::~MotionManage()
 
 	wav_play(WAV_CLEANING_FINISHED);
 
-	g_go_home =true;
 	g_home_point.clear();
 	g_cur_wtime = 0;
 
-//	if (g_key_clean_pressed == true)
-	Set_Clean_Mode(Clean_Mode_Userinterface);
-
-
-	if(g_battery_low)
-		Set_Clean_Mode(Clean_Mode_Sleep);
-
-	if(g_fatal_quit_event)
-		Set_Clean_Mode(Clean_Mode_Sleep);
-
-	if(g_from_station)
-		Set_Clean_Mode(Clean_Mode_GoHome);
+	if (Get_Clean_Mode() != Clean_Mode_Sleep && Get_Clean_Mode() != Clean_Mode_Charging)
+		Set_Clean_Mode(Clean_Mode_Userinterface);
 
 	if (g_battery_low == true) {
 		ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
