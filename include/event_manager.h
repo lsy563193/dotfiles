@@ -28,6 +28,52 @@
 		val = max;					\
 	}
 
+#include "stdint.h"
+
+/* Events variables */
+/* The fatal quit event includes any of the following case:
+ *  g_bumper_jam
+ * 	g_cliff_all_triggered
+ * 	g_oc_brush_main
+ * 	g_oc_wheel_left
+ * 	g_oc_wheel_right
+ * 	g_oc_suction
+ * 	g_battery_low
+ */
+extern bool g_fatal_quit_event;
+/* Bumper */
+extern bool g_bumper_hitted;
+extern bool g_bumper_jam;
+extern int g_bumper_cnt;
+/* OBS */
+extern bool g_obs_triggered;
+/* Cliff */
+extern bool g_cliff_all_triggered;
+extern bool g_cliff_triggered;
+extern bool g_cliff_jam;
+extern uint8_t g_cliff_cnt;
+/* RCON */
+extern bool g_rcon_triggered;
+/* Over Current */
+extern bool g_oc_brush_main;
+extern bool g_oc_wheel_left;
+extern bool g_oc_wheel_right;
+extern bool g_oc_suction;
+extern uint8_t g_oc_brush_left_cnt;
+extern uint8_t g_oc_brush_main_cnt;
+extern uint8_t g_oc_brush_right_cnt;
+extern uint8_t g_oc_wheel_left_cnt;
+extern uint8_t g_oc_wheel_right_cnt;
+extern uint8_t g_oc_suction_cnt;
+/* Key */
+extern bool g_key_clean_pressed;
+/* Remote */
+extern bool g_remote_home;
+/* Battery */
+extern bool g_battery_home;
+extern bool g_battery_low;
+extern uint8_t g_battery_low_cnt;
+
 typedef enum {
 	EVT_BUMPER_ALL = 0,
 	EVT_BUMPER_LEFT,

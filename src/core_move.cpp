@@ -99,67 +99,6 @@ uint8_t g_bumper_status_for_rounding;
 // This time count is for checking how many times of 20ms did the user press the key.
 uint16_t g_press_time = 0;
 
-/* Events variables */
-/* The fatal quit event includes any of the following case:
- *  g_bumper_jam
- * 	g_cliff_all_triggered
- * 	g_oc_brush_main
- * 	g_oc_wheel_left
- * 	g_oc_wheel_right
- * 	g_oc_suction
- * 	g_battery_low
- */
-bool g_fatal_quit_event = false;
-
-/* Bumper */
-bool g_bumper_jam = false;
-bool g_bumper_hitted = false;
-
-/* OBS */
-bool g_obs_triggered = false;
-
-/* Cliff */
-bool g_cliff_all_triggered = false;
-
-bool g_cliff_jam = false;
-
-bool g_cliff_triggered = false;
-uint8_t g_cliff_cnt = 0;
-
-/* RCON */
-bool g_rcon_triggered = false;
-
-/* Over Current */
-uint8_t g_oc_brush_left_cnt = 0;
-
-bool g_oc_brush_main = false;
-uint8_t g_oc_brush_main_cnt = 0;
-
-uint8_t g_oc_brush_right_cnt = 0;
-
-bool g_oc_wheel_left = false;
-uint8_t	g_oc_wheel_left_cnt = 0;
-
-bool g_oc_wheel_right = false;
-uint8_t g_oc_wheel_right_cnt = 0;
-
-bool g_oc_suction = false;
-uint8_t g_oc_suction_cnt = 0;
-
-/* Key */
-bool g_key_clean_pressed = false;
-
-/* Remote */
-bool g_remote_home = false;
-
-/* Battery */
-bool g_battery_home = false;
-
-bool g_battery_low = false;
-uint8_t	g_battery_low_cnt = 0;
-
-int g_bumper_cnt = 0;
-
 static int16_t ranged_angle(int16_t angle)
 {
 	if (angle >= 1800) {

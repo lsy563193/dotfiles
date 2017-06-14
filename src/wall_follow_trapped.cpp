@@ -607,61 +607,6 @@ int32_t wall_straight_distance_tmp = 0;
 
 int16_t wft_turn_angle = 0;
 
-/* Events variables */
-/* The fatal quit event includes any of the following case:
- *  g_bumper_jam
- *  g_cliff_all_triggered
- *  g_oc_brush_main
- *  g_oc_wheel_left
- *  g_oc_wheel_right
- *  g_oc_suction
- *  g_battery_low
- */
-static bool g_fatal_quit_event = false;
-
-/* Bumper */
-static bool g_bumper_jam = false;
-static bool g_bumper_hitted = false;
-static int g_bumper_cnt = 0;
-
-/* Cliff */
-static bool g_cliff_all_triggered = false;
-
-static bool g_cliff_jam = false;
-
-static bool g_cliff_triggered = false;
-static uint8_t g_cliff_cnt = 0;
-
-/* RCON */
-static bool g_rcon_triggered = false;
-
-/* Over Current */
-static uint8_t g_oc_brush_left_cnt = 0;
-
-static bool g_oc_brush_main = false;
-static uint8_t g_oc_brush_main_cnt = 0;
-
-static uint8_t g_oc_brush_right_cnt = 0;
-
-static bool g_oc_wheel_left = false;
-static uint8_t g_oc_wheel_left_cnt = 0;
-
-static bool g_oc_wheel_right = false;
-static uint8_t g_oc_wheel_right_cnt = 0;
-
-static bool g_oc_suction = false;
-static uint8_t g_oc_suction_cnt = 0;
-
-/* Key */
-static bool g_key_clean_pressed = false;
-
-/* Remote */
-static bool g_remote_home = false;
-
-/* Battery */
-static bool g_battery_low = false;
-static uint8_t g_battery_low_cnt = 0;
-
 void WFT_turn_right(uint16_t speed, int16_t angle)
 {
 	uint8_t		accurate;

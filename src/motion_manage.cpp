@@ -17,46 +17,9 @@
 #include <slam.h>
 #include <path_planning.h>
 #include <core_move.h>
+#include <event_manager.h>
 
 Segment_set segmentss;
-
-/* Events variables */
-/* The fatal quit event includes any of the following case:
- *  g_bumper_jam
- * 	g_cliff_all_triggered
- * 	g_oc_brush_main
- * 	g_oc_wheel_left
- * 	g_oc_wheel_right
- * 	g_oc_suction
- * 	g_battery_low
- */
-extern bool g_fatal_quit_event;
-extern bool g_bumper_jam;
-extern bool g_bumper_hitted;
-extern bool g_obs_triggered;
-extern bool g_cliff_all_triggered;
-extern bool g_cliff_jam;
-extern bool g_cliff_triggered;
-extern bool g_rcon_triggered;
-extern bool g_oc_brush_main;
-extern bool g_oc_wheel_left;
-extern bool g_oc_wheel_right;
-extern bool g_oc_suction;
-extern bool g_key_clean_pressed;
-extern bool g_remote_home;
-extern bool g_battery_home;
-extern bool g_battery_low;
-extern bool g_from_station;
-extern bool g_go_home;
-extern uint8_t g_oc_brush_left_cnt;
-extern uint8_t g_oc_brush_main_cnt;
-extern uint8_t g_oc_brush_right_cnt;
-extern uint8_t g_oc_wheel_left_cnt;
-extern uint8_t g_oc_wheel_right_cnt;
-extern uint8_t g_oc_suction_cnt;
-extern uint8_t g_cliff_cnt;
-extern uint16_t g_press_time;
-extern int g_bumper_cnt;
 
 extern std::list <Point32_t> g_home_point;
 
@@ -257,6 +220,7 @@ MotionManage::~MotionManage()
 		wav_play(WAV_PAUSE_CLEANING);
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		extern bool g_go_home;
 		if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
 			ROS_WARN("%s %d: Pause going home, g_home_point list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point.size());
@@ -429,6 +393,7 @@ bool MotionManage::initNavigationCleaning(void)
 		}
 		Deceleration();
 		Stop_Brifly();
+		extern bool g_from_station;
 		g_from_station = 1;
 	}
 	else
@@ -495,6 +460,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 	Work_Motor_Configure();
 
+	extern bool g_go_home;
 	ROS_INFO("init g_go_home(%d), lowbat(%d), manualpaused(%d)", g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused());
 	return true;
 }
