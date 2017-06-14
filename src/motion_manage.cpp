@@ -44,6 +44,7 @@ extern bool g_oc_wheel_right;
 extern bool g_oc_suction;
 extern bool g_key_clean_pressed;
 extern bool g_remote_home;
+extern bool g_temp_spot_set;
 extern bool g_battery_home;
 extern bool g_battery_low;
 extern bool g_from_station;
@@ -198,7 +199,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		robot::instance()->resetManualPause();
 		return;
 	}
-
 	//3 calculate offsetAngle
 	nh_.param<bool>("is_active_align", is_align_active_, false);
 	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
@@ -253,13 +253,17 @@ MotionManage::~MotionManage()
 	}
 
 	if (robot::instance()->isManualPaused()){
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		wav_play(WAV_PAUSE_CLEANING);
+		if(!g_temp_spot_set){
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			wav_play(WAV_PAUSE_CLEANING);
+		}
+		else{
+			g_temp_spot_set = false;
+		}
 		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
 		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
 		return;
 	}
-
 	if (robot::instance()->isLowBatPaused())
 	{
 		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
@@ -547,8 +551,7 @@ bool MotionManage::initSpotCleaning(void)
 	{
 		return false;
 	}
-
-	std::list<Point32_t> homepoint;
+    std::list<Point32_t> homepoint;
 	Point32_t t_point;
 	t_point.X = 0;
 	t_point.Y = 0;

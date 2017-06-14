@@ -49,9 +49,6 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	ROS_INFO("Robot sensor ready.");
-	//Set_Clean_Mode(Clean_Mode_Navigation);
-	//Set_Clean_Mode(Clean_Mode_GoHome);
-
 	protect_function();
 
 	wav_play(WAV_WELCOME_ILIFE);

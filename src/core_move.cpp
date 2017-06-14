@@ -78,6 +78,7 @@ Point32_t g_continue_point;
 
 uint8_t	g_go_home = 0;
 uint8_t	g_remote_go_home = 0;
+bool g_temp_spot_set = false;
 bool	g_from_station = 0;
 uint8_t g_low_battery = 0;
 int16_t g_map_gyro_offset = 0;
@@ -153,7 +154,7 @@ bool g_key_clean_pressed = false;
 
 /* Remote */
 bool g_remote_home = false;
-
+bool g_remote_spot = false;
 /* Battery */
 bool g_battery_home = false;
 
@@ -343,7 +344,7 @@ void CM_update_position(uint16_t heading) {
 				}
 			}
 		}
-		robot::instance()->pubCleanMarkers();
+		//robot::instance()->pubCleanMarkers();
 	}
 
 #if (ROBOT_SIZE == 5)
@@ -605,7 +606,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 	g_bumper_status_for_rounding = 0;
 	g_should_follow_wall =  0;
 	g_bumper_hitted = g_obs_triggered = g_cliff_triggered = g_rcon_triggered = false;
-
+	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = false;
 	Point32_t	position{Map_GetXCount(), Map_GetYCount()};
 
 	CM_update_position(Gyro_GetAngle());
@@ -641,7 +642,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed ) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot ) {
 			break;
 		}
 
@@ -650,8 +651,8 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 			CM_update_map(Get_Bumper_Status());
 			g_should_follow_wall = 1;
 
-			if (g_cliff_triggered ||g_rcon_triggered)
-				g_should_follow_wall = 0;
+			//if (g_cliff_triggered ||g_rcon_triggered)
+			//	g_should_follow_wall = 0;
 			break;
 		}
 
@@ -1131,9 +1132,10 @@ int CM_cleaning()
 
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event)
+		if (g_key_clean_pressed || g_fatal_quit_event )
 			return -1;
-
+		if (g_remote_spot)
+			return -2;
 		if (g_remote_home || g_battery_home)
 			return 0;
 
@@ -1255,6 +1257,7 @@ uint8_t CM_Touring(void)
 	g_oc_brush_main = g_oc_wheel_left = g_oc_wheel_right = g_oc_suction = false;
 	g_key_clean_pressed = false;
 	g_remote_home = false;
+	g_remote_spot = false;
 	g_battery_home = g_battery_low = false;
 	g_oc_brush_left_cnt = g_oc_brush_main_cnt = g_oc_brush_right_cnt = g_oc_wheel_left_cnt = g_oc_wheel_right_cnt = g_oc_suction_cnt = 0;
 	g_cliff_cnt = 0;
@@ -1268,6 +1271,7 @@ uint8_t CM_Touring(void)
 	if(! motion.initSucceeded()){
 		robot::instance()->resetLowBatPause();
 		robot::instance()->resetManualPause();
+		robot::instance()->resetTempSpot();
 		return 0;
 	}
 
@@ -1276,10 +1280,15 @@ uint8_t CM_Touring(void)
 	if (g_go_home == 0 && (robot::instance()->isLowBatPaused()))
 		if (! CM_resume_cleaning())
 			return 0;
-
-	if (CM_cleaning() == 0)
+	int cm_clean_ret = CM_cleaning();
+	if (cm_clean_ret == 0)
 		CM_go_home();
-
+	else if(cm_clean_ret == -2){
+		Spot_WithCell(CleanSpot,1.0);
+		g_temp_spot_set = true;
+        Set_Clean_Mode(Clean_Mode_Navigation);
+        ROS_WARN("%s,%d,reset clean mode to navigation ",__FUNCTION__,__LINE__);
+    }
 	CM_unregist_events();
 	return 0;
 }
@@ -2397,11 +2406,13 @@ void CM_handle_remote_mode_spot(bool state_now, bool state_last)
 
 	Stop_Brifly();
 	Reset_Rcon_Remote();
-	auto modeTemp = Get_VacMode();
-	//Spot_Mode(CleanSpot);
-	Spot_WithCell(CleanSpot,1.0);
-	Work_Motor_Configure();
-	Set_VacMode(modeTemp,false);
+	g_remote_spot = true;
+	//robot::instance()->setTempSpot();
+	robot::instance()->setManualPause();
+	//Spot_WithCell(CleanSpot,1.0);
+	//Work_Motor_Configure();
+	//auto modeTemp = Get_VacMode();
+	//Set_VacMode(modeTemp,false);
 }
 
 void CM_handle_remote_suction(bool state_now, bool state_last)

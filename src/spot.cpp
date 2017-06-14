@@ -22,6 +22,7 @@
 #include "gyro.h"
 #include "wav.h"
 #include "motion_manage.h"
+#include "event_manager.h"
 #include "slam.h"
 #include <ros/ros.h>
 #include <time.h>
@@ -32,6 +33,10 @@
 
 #define SPOT_MAX_SPEED	(20)
 extern uint8_t g_should_follow_wall;//used to decide obstacle 
+extern bool g_remote_spot;//spot event handler variable
+extern bool g_remote_home;
+extern bool g_fatal_quit_event;
+extern bool g_key_clean_pressed;
 /* --------------------------------------------------Random Runnincg mode----------------------*/
 void Spot_Mode(SpotType ST)
 {
@@ -101,7 +106,7 @@ void Spot_Mode(SpotType ST)
 	uint32_t step;
 //	while (Get_LeftWheel_Step() < 6900 && ros::ok()) {
 	while(ros::ok()){
-		#ifdef OBS_DYNAMIC_MOVETOTARGET
+		#ifdef OBS_DYNAMIC
 		OBS_Dynamic_Base(20);
 		#endif
 		step =Get_LeftWheel_Step();
@@ -458,28 +463,28 @@ void Spot_Mode(SpotType ST)
 		wav_play(WAV_CLEANING_FINISHED);
 }
 /*
-* @author: mengshige1988@qq.com
-* @brief: find the first nearest point
-* @param1: reference point 
-* @param2: pointer  to the point list
-* @param3: pointing to the near_point 
-* @return: void
+* @author mengshige1988@qq.com
+* @brief find the first nearest point.
+* @param1 reference point.
+* @param2 pointer  to the point list.
+* @param3 pointing to the near_point.
+* @return None.
 * */
-void Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point_list,Point32_t *near_point)
+static uint8_t Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point_list,Point32_t *near_point)
 {
-	std::list<Point32_t>::const_iterator tp;
+	std::list<Point32_t>::reverse_iterator tp;
 	Point32_t t_p;
-	float dist=0.0;
+	float dist=0.0,dist_last;
 	float mindist = 1.0;
 	float t_dist = FLT_MAX;
 	t_p = point_list->front();
-	for(tp = point_list->begin() ; tp != point_list->end(); tp++){
+	for(tp = point_list->rbegin(); tp != point_list->rend(); tp++){
 		dist = sqrt( pow( ref_point.X - tp->X,2 ) + pow( ref_point.Y - tp->Y,2 ) );
 		if(absolute(dist- mindist) <= 0.1){
 			near_point->X = tp->X;
 			near_point->Y = tp->Y;
 			//ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,tp->X,tp->Y);
-			return;
+			return 1;
 		}
 		if(dist<t_dist){
 			t_dist = dist;
@@ -491,31 +496,31 @@ void Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point_list,Poin
 	//ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,t_p.X,t_p.Y);
 	near_point->X = t_p.X;
 	near_point->Y = t_p.Y;
+    return 1;
 }
 /*
-* @author: mengshige1988@qq.com
-* @brief: spot mode ,control robot rolling in rounding movement ,according to cell map .
-* @param: SpotType.
-*	SpotType: clean_spot  ,remote_spot  ,wall_spot. 
-* @return : None
+* @author mengshige1988@qq.com
+* @brief spot mode ,control robot rolling in rounding movement ,according to cell map .
+* @param1 SpotType: clean_spot  ,remote_spot  ,wall_spot. 
+* @param2 spot_diameter ,the spiral diameter in meters
+* @return None
 * */
-void Spot_WithCell(SpotType st,float spot_radius){
+void Spot_WithCell(SpotType st,float spot_diameter){
 	Reset_Stop_Event_Status();
 	Reset_Rcon_Status();
-    MapTouringType mt_state;
 	std::list<Point32_t> target;
-	Point32_t nextPoint;
 	uint8_t spot_stuck = 0;
-
+	g_remote_spot = false;
 	/*--------initialize gyro & map & plan & slam --------*/
 	if(st == NormalSpot){
-
+		g_remote_spot = g_remote_home = g_fatal_quit_event = g_key_clean_pressed = false;
 		MotionManage motion;//start slam
 		if(! motion.initSucceeded()){
 			ROS_WARN("%s %d: Init MotionManage failed!", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			return;
 		}
+		CM_regist_events();
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
@@ -532,11 +537,8 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		uint32_t tmp_coor;
 		uint8_t od_spiral_out = 0,od_spiral_in = 0;
 		while(ros::ok()){
-			#ifdef OBS_DYNAMIC_MOVETOTARGET
-				OBS_Dynamic_Base(20);
-			#endif
 			/*-------get target list ---------*/
-			Spot_GetTarget(spiral_type, spot_radius, &target, 0, 0);
+			Spot_GetTarget(spiral_type, spot_diameter, &target, 0, 0);
 			if(Is_Dict_Change){
 				Find_NearestPoint(StopPoint,&target,&nearPoint);
 				StopPoint.X = 0;
@@ -545,9 +547,9 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			/*--------iterator target ----------*/
 			for( tp = target.begin(); tp != target.end(); tp++){
 				usleep(20000);
-				if(Spot_HandleException(st)){
-					return;	
-				}
+				//if(Spot_HandleException(st)){
+				//	return;	
+				//}
 				//ROS_WARN("%s ,%d target point (%d,%d),nearPoint.X = %d,nearPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,nearPoint.X,nearPoint.Y);
 				if(Is_Dict_Change){
 					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
@@ -559,14 +561,18 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						continue;
 					}
 				}
+
 				/*----ready to spot movement ------*/
 
-				nextPoint.X = cellToCount(tp->X);
-				nextPoint.Y = cellToCount(tp->Y);
-				if(! CM_LinearMoveToPoint(nextPoint,SPOT_MAX_SPEED,false,true))
-					return;
+				CM_LinearMoveToPoint({cellToCount(tp->X),cellToCount(tp->Y)},SPOT_MAX_SPEED,false,true);
+ 
+	            if(g_fatal_quit_event ||  g_key_clean_pressed ||  g_remote_spot || g_remote_home){
+		            robot::instance()->resetManualPause();
+                    g_fatal_quit_event = g_key_clean_pressed = g_remote_home = g_remote_spot = false;
+                    return;
+                }
 
-				//if detect obs or bumper cliff trigger ,than change diraction
+				//if detect obs or bumper or  cliff trigger ,than change diraction
 				if(g_should_follow_wall){
 					g_should_follow_wall = 0;
 					Is_Dict_Change = 1;
@@ -625,7 +631,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							spot_stuck = 1;
 							break;
 						}
-						if((tp->X == 0) && (tp->Y == 0)){
+						if(tp == target.begin()){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
@@ -646,7 +652,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							spot_stuck = 1;
 							break;
 						}
-						if((tp->X == 0) && (tp->Y == 0)){
+						if(tp == target.begin()){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
@@ -657,7 +663,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 						}
 						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
 					}
-					break;
+                    break;//break for loop
 				}//ending if(g_should_follow_wall)
 			}//ending for(tp = target.begin();...)
 			if(Is_Dict_Change){
@@ -666,6 +672,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				if(spot_stuck){
+					//go back to start point
 					CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
 					spot_stuck = 0;
 				} 
@@ -680,9 +687,10 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				spiral_type = Spiral_Left_In;
 			}
 		}//ending while(ros::ok)
+		CM_unregist_events();
 	}//ending if(st == NormalSpot)
 	else if(st == CleanSpot || st == WallSpot){
-		
+		event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,false);
 		Set_LED(100,0);
 		Switch_VacMode(false);
 		Set_MainBrush_PWM(80);
@@ -707,7 +715,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		int32_t y_offset = (int32_t)Map_GetYPos();
 		while(ros::ok()){
 			/*-------get target list ---------*/
-			Spot_GetTarget(spiral_type,spot_radius,&target,x_offset,y_offset);
+			Spot_GetTarget(spiral_type,spot_diameter,&target,x_offset,y_offset);
 			if(Is_Dict_Change){
 				Find_NearestPoint(StopPoint,&target,&nearPoint);
 				StopPoint.X = 0;
@@ -716,9 +724,9 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			/*--------iterator target ----------*/
 			for(tp = target.begin(); tp!=target.end(); tp++){
 				usleep(20000);
-				if(Spot_HandleException(st)){
-					return;	
-				}
+				//if(Spot_HandleException(st)){
+				//	return;	
+				//}
 				//ROS_WARN("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
 				if(Is_Dict_Change){
 					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
@@ -731,14 +739,11 @@ void Spot_WithCell(SpotType st,float spot_radius){
 					}
 				}
 				/*----ready to spot movement ------*/
+				CM_LinearMoveToPoint({cellToCount(tp->X),cellToCount(tp->Y)},SPOT_MAX_SPEED,false,true);
+                if(g_fatal_quit_event ||  g_key_clean_pressed || g_remote_home){	
+                    return;
+                }
 
-				nextPoint.X = cellToCount(tp->X);
-				nextPoint.Y = cellToCount(tp->Y);
-				if(! CM_LinearMoveToPoint(nextPoint,SPOT_MAX_SPEED,false,true)) {
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Disable_Motors();
-					return;
-				}
 				//if detect obs or bumper cliff trigger ,than change diraction
 				if(g_should_follow_wall){
 					g_should_follow_wall = 0;
@@ -798,7 +803,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							spot_stuck = 1;
 							break;
 						}
-						if((tp->X == 0) && (tp->Y == 0)){
+						if(tp ==  target.begin()){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
@@ -819,7 +824,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 							spot_stuck = 1;
 							break;
 						}
-						if((tp->X == 0) && (tp->Y == 0)){
+						if(tp == target.begin()){
 							StopPoint.X = tp->X;
 							StopPoint.Y = tp->Y;
 						}
@@ -841,6 +846,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				StopPoint.X = x_offset;
 				StopPoint.Y = y_offset;
 				if(spot_stuck){
+				//go back to start point
 					CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
 					spot_stuck = 0;
 				} 
@@ -855,20 +861,21 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				spiral_type = Spiral_Left_In;
 			}
 		}//ending while(ros::ok)
+	event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,true);
 	}//ending if(st == Cleanspot...)
 }
 /*
- * author: mengshige1988@qq.com
- * @brief: calculate target points for spot move
- * @param1: sp_type
+ * @author mengshige1988@qq.com
+ * @brief calculate target points for spot move
+ * @param1 sp_type
  *		sp_type;Spiral_Right_Out,Spiral_Left_Out,Spiral_Right_In,Spiral_Left_In.
- * @param2: radius
- *			spiral radius in meters
- * @param3: *target
+ * @param2 diameters
+ *			spiral diameters in meters
+ * @param3 *target
  *			target list pointer
- * @return: None
+ * @return None
  */
-void Spot_GetTarget(uint8_t sp_type,float radiu,std::list<Point32_t> *target,int32_t x_off,int32_t y_off){
+void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,int32_t x_off,int32_t y_off){
 	uint8_t spt = sp_type;
 	Point32_t CurPoint;
 	int32_t x,x_l,y,y_l;
@@ -876,7 +883,7 @@ void Spot_GetTarget(uint8_t sp_type,float radiu,std::list<Point32_t> *target,int
 	y = y_l = y_off;
 	target->clear();
 	uint16_t st_c = 1;//number of spiral count
-	uint16_t st_n = (uint16_t)(radiu*1000/CELL_SIZE);//number of spiral
+	uint16_t st_n = (uint16_t)(diameter*1000/CELL_SIZE);//number of spiral
 	//ROS_INFO("%s,%d,number of spiral %d",__FUNCTION__,__LINE__,st_n);
 	int16_t i;
 	switch(spt){
@@ -1088,10 +1095,10 @@ void Spot_GetTarget(uint8_t sp_type,float radiu,std::list<Point32_t> *target,int
     }
 }
 /*
-* @author: mengshige1988@qq.com
-* @brief: spot handle exception
-* @param: spot type (NormalSpot,CleanSpot,WallSpot)
-* @return: 1 for exception occur , 0 for not occur
+* @author mengshige1988@qq.com
+* @brief spot handle exception
+* @param spot type (NormalSpot,CleanSpot,WallSpot)
+* @return ,1 for exception occur , 0 for not occur
 */
 int8_t Spot_HandleException(SpotType st)
 {

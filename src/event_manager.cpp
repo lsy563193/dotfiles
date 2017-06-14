@@ -607,11 +607,13 @@ void em_default_handler_remote_home(bool state_now, bool state_last)
 void em_default_handler_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_mode_spot(bool state_now, bool state_last)
@@ -622,6 +624,7 @@ void em_default_handler_remote_mode_spot(bool state_now, bool state_last)
 void em_default_handler_remote_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	Switch_VacMode(false);
 }
 
 /* Battery */

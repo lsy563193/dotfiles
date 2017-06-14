@@ -47,6 +47,8 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	is_sensor_ready_ = false;
 	is_tf_ready_ = false;
 
+	temp_spot_set_ = false;
+
 	bumper_left_ = 0;
 	bumper_right_ = 0;
 
