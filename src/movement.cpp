@@ -1408,7 +1408,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 
 /*
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
-		CM_CorBack(COR_BACK_20MM);
+		CM_move_back(COR_BACK_20MM);
 	else
 		Quick_Back(30,20);
 */
@@ -3284,7 +3284,7 @@ void Clear_Manual_Pause(void)
 		extern std::list <Point32_t> g_home_point;
 		g_home_point.clear();
 		g_cur_wtime = 0;
-		CM_ResetGoHome();
+		CM_reset_go_home();
 	}
 }
 

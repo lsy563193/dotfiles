@@ -140,7 +140,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 
 				nextPoint.X = cellToCount(tp->X);
 				nextPoint.Y = cellToCount(tp->Y);
-				if(! CM_LinearMoveToPoint(nextPoint,SPOT_MAX_SPEED,false,true))
+				if(!CM_linear_move_to_point(nextPoint, SPOT_MAX_SPEED, false, true))
 					return;
 
 				//if detect obs or bumper cliff trigger ,than change diraction
@@ -243,7 +243,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				if(spot_stuck){
-					CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
+					CM_linear_move_to_point(StopPoint, SPOT_MAX_SPEED, false, true);
 					spot_stuck = 0;
 				} 
 				break;
@@ -311,7 +311,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 
 				nextPoint.X = cellToCount(tp->X);
 				nextPoint.Y = cellToCount(tp->Y);
-				if(! CM_LinearMoveToPoint(nextPoint,SPOT_MAX_SPEED,false,true)) {
+				if(!CM_linear_move_to_point(nextPoint, SPOT_MAX_SPEED, false, true)) {
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					Disable_Motors();
 					return;
@@ -418,7 +418,7 @@ void Spot_WithCell(SpotType st,float spot_radius){
 				StopPoint.X = x_offset;
 				StopPoint.Y = y_offset;
 				if(spot_stuck){
-					CM_LinearMoveToPoint(StopPoint,SPOT_MAX_SPEED,false,true);
+					CM_linear_move_to_point(StopPoint, SPOT_MAX_SPEED, false, true);
 					spot_stuck = 0;
 				} 
 				break;

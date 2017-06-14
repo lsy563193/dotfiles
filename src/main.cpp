@@ -112,7 +112,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode------\n");
 				Set_Main_PwrByte(Clean_Mode_Navigation);
-				CM_Touring();
+				CM_touring();
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");

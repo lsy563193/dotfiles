@@ -268,7 +268,7 @@
 //		usleep(10000);
 //	}
 //
-//	//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle() + 900);
+//	//CM_head_to_course(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 //
 //	/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 //	escape_trapped_timer = time(NULL);

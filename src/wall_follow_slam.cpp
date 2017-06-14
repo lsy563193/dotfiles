@@ -192,7 +192,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			Reset_Rcon_Status();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
-				CM_SetHome(Map_GetXCount(), Map_GetYCount());
+				CM_set_home(Map_GetXCount(), Map_GetYCount());
 				break;
 			}
 
@@ -262,7 +262,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 		}
 
-		//CM_HeadToCourse(Rotate_TopSpeed, Gyro_GetAngle() + 900);
+		//CM_head_to_course(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 		Start_Pose_X = robot::instance()->getPositionX();
@@ -281,7 +281,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			if (First_Time_Flag == 0){
 				if ((Distance_From_Start = (sqrtf(powf(Start_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) < 0.303 ){
 					/*
-				   CM_MoveToCell(0, 0, 2, 0, 1);
+				   CM_move_to_cell(0, 0, 2, 0, 1);
 				   ROS_INFO("In Start Pose, finish wall follow.");
 					//Beep for the finish signal.
 					for (i = 10; i > 0; i--) {
@@ -457,7 +457,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//Temp_Rcon_Status = robot::instance()->getRcon();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
-				CM_SetHome(Map_GetXCount(), Map_GetYCount());
+				CM_set_home(Map_GetXCount(), Map_GetYCount());
 			}
 			if (Temp_Rcon_Status){
 				Reset_Rcon_Status();

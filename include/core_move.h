@@ -63,44 +63,44 @@ typedef struct {
 } VWType;
 
 void CM_TouringCancel(void);
-void CM_ResetGoHome(void);
-void CM_HeadToCourse(uint8_t Speed,int16_t Angle);
+void CM_reset_go_home(void);
+void CM_head_to_course(uint8_t Speed, int16_t Angle);
 
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
-bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
+bool CM_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
 
 int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y);
 bool CM_Check_is_exploring();
 uint8_t CM_MoveForward(void);
 
-uint8_t CM_Touring(void);
+uint8_t CM_touring(void);
 
 void CM_update_position(bool is_turn = false);
 void CM_update_map();
 void CM_update_map_bumper();
 void CM_update_map_cliff();
-bool CM_CurveMoveToPoint();
+bool CM_curve_move_to_point();
 
 void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-bool CM_MoveToCell( int16_t x, int16_t y);
+bool CM_move_to_cell(int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
 
-void CM_CorBack(uint16_t dist);
+void CM_move_back(uint16_t dist);
 
-void CM_SetHome(int32_t x, int32_t y);
+void CM_set_home(int32_t x, int32_t y);
 void CM_go_home(void);
 bool CM_go_to_charger(Cell_t current_home_cell);
 //void CM_SetStationHome(void);
 
 // This function is for setting the continue point for robot to go after charge.
-void CM_SetContinuePoint(int32_t x, int32_t y);
+void CM_set_continue_point(int32_t x, int32_t y);
 
 void CM_ResetBoundaryBlocks(void);
 
 void CM_AddTargets(Cell_t zone);
 
-uint8_t CM_CheckLoopBack(Cell_t target);
+uint8_t CM_check_loop_back(Cell_t target);
 
 MapTouringType CM_handleExtEvent(void);
 
