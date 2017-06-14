@@ -75,7 +75,7 @@ uint8_t CM_MoveForward(void);
 
 uint8_t CM_Touring(void);
 
-void CM_update_position();
+void CM_update_position(bool is_turn = false);
 void CM_update_map();
 void CM_update_map_bumper();
 void CM_update_map_cliff();
