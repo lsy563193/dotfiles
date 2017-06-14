@@ -68,7 +68,6 @@ uint16_t g_rounding_wall_straight_distance;
 int16_t g_rounding_left_wall_buffer[3];
 int16_t g_rounding_right_wall_buffer[3];
 
-extern uint32_t g_cur_wtime;//temporary work time
 Point32_t g_next_point, g_targets_point;
 
 // This list is for storing the position that robot sees the charger stub.
@@ -1209,8 +1208,6 @@ bool CM_go_to_charger(Cell_t current_home_cell)
 	{
 		if (robot::instance()->isLowBatPaused())
 		{
-			g_cur_wtime = g_cur_wtime+Get_Work_Time();//store current time
-			Reset_Work_Time();//reset current time
 			CM_reset_go_home();
 			return true;
 		}

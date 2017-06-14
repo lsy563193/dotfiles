@@ -30,7 +30,6 @@ static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 uint32_t Rcon_Status;
-uint32_t g_cur_wtime = 0;//temporary current  work time
 uint32_t Average_Move = 0;
 uint32_t Average_Counter =0;
 uint32_t Max_Move = 0;
@@ -60,7 +59,7 @@ volatile uint8_t Vac_Mode;
 volatile uint8_t vacModeSave;
 static uint8_t Cleaning_mode = 0;
 static uint8_t sendflag=0;
-static time_t work_time;
+static time_t start_work_time;
 ros::Time lw_t,rw_t; // these variable is used for calculate wheel step
 
 // Flag for homeremote
@@ -87,19 +86,14 @@ volatile uint8_t Plan_Status = 0;
 // Error code for exception case
 volatile uint8_t Error_Code = 0;
 /*----------------------- Work Timer functions--------------------------*/
-void Reset_Work_Time()
+void reset_start_work_time()
 {
-	work_time = time(NULL);
+	start_work_time = time(NULL);
 }
 
-uint32_t Get_Work_Time()
+uint32_t get_work_time()
 {
-	return (uint32_t)difftime(time(NULL), work_time);
-}
-
-void Set_Work_Time(time_t time)
-{
-	work_time = time;
+	return (uint32_t)difftime(time(NULL), start_work_time);
 }
 
 /*----------------------- Set error functions--------------------------*/
@@ -1665,7 +1659,7 @@ void Set_Vac_Speed(void)
 			Set_BLDC_Speed(Vac_Speed_Max);
 		}else{
 			// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-			if (Get_Work_Time() < Two_Hours){
+			if (get_work_time() < Two_Hours){
 				Set_BLDC_Speed(Vac_Speed_Normal);
 			}else{
 				//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
@@ -2048,12 +2042,7 @@ uint8_t Stop_Event(void)
 			ROS_WARN("Touch status == 1");
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
-			{
 				robot::instance()->setManualPause();
-				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
-				Reset_Work_Time();
-			}
 #endif
 			Reset_Touch();
 			Stop_Event_Status = 1;
@@ -2063,12 +2052,7 @@ uint8_t Stop_Event(void)
 			Reset_Rcon_Remote();
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
-			{
 				robot::instance()->setManualPause();
-				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
-				Reset_Work_Time();
-			}
 #endif
 			Stop_Event_Status = 2;
 		}
@@ -2970,7 +2954,7 @@ uint8_t VirtualWall_TurnLeft()
 uint8_t Is_WorkFinish(uint8_t m)
 {
 	static uint8_t bat_count = 0;
-	uint32_t wt = Get_Work_Time();	
+	uint32_t wt = get_work_time();
 	if(m){
 		if(wt>Auto_Work_Time)return 1;
 	}
@@ -3283,7 +3267,6 @@ void Clear_Manual_Pause(void)
 		}
 		extern std::list <Point32_t> g_home_point;
 		g_home_point.clear();
-		g_cur_wtime = 0;
 		CM_reset_go_home();
 	}
 }

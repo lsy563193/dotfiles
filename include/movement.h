@@ -346,8 +346,8 @@ extern uint32_t Rcon_Status;
 extern volatile int16_t Left_Wall_BaseLine;
 extern volatile int16_t Right_Wall_BaseLine;
 
-void Reset_Work_Time();
-uint32_t Get_Work_Time();
+void reset_start_work_time();
+uint32_t get_work_time();
 
 void Set_Error_Code(uint8_t Code);
 uint8_t Get_Error_Code(void);
@@ -494,8 +494,6 @@ void Reset_MoveWithRemote(void);
 void Set_MoveWithRemote(void);
 
 uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush);
-
-void Reset_WorkTimer(void);
 
 void Reset_Rcon_Status(void);
 
@@ -662,8 +660,6 @@ void Add_Average(uint32_t data);
 uint32_t Get_Average_Move(void);
 
 uint32_t Reset_Average_Counter(void);
-
-void Set_Work_Time(time_t );
 
 uint8_t Cliff_Escape(void);
 

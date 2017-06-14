@@ -20,7 +20,6 @@
 #include "wav.h"
 #include "robot.hpp"
 
-extern uint32_t g_cur_wtime;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -183,10 +182,6 @@ void User_Interface(void)
 				wav_play(WAV_ERROR_LIFT_UP);
 				Clear_Manual_Pause();
 			}
-		}
-		else{
-			Reset_Work_Time();
-			g_cur_wtime = 0;
 		}
 
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
@@ -353,10 +348,7 @@ void User_Interface(void)
 				Temp_Mode=Clean_Mode_Sleep;
 			}
 			else
-			{
 				Temp_Mode=Clean_Mode_Navigation;
-				Reset_Work_Time();
-			}
 			Reset_MoveWithRemote();
 		//	Reset_Error_Code();
 		}

@@ -60,7 +60,7 @@ extern int g_bumper_cnt;
 
 extern std::list <Point32_t> g_home_point;
 
-extern uint32_t g_cur_wtime;//temporary work time
+uint32_t g_saved_work_time = 0;//temporary work time
 
 /*
 int g_enable_angle_offset = 0;
@@ -265,7 +265,8 @@ MotionManage::~MotionManage()
 #endif
 		else
 			ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
-		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+		g_saved_work_time += get_work_time();
+		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
 
@@ -274,7 +275,8 @@ MotionManage::~MotionManage()
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
-		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+		g_saved_work_time += get_work_time();
+		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
 
@@ -294,7 +296,6 @@ MotionManage::~MotionManage()
 	wav_play(WAV_CLEANING_FINISHED);
 
 	g_home_point.clear();
-	g_cur_wtime = 0;
 
 	if (g_fatal_quit_event)
 		if (g_cliff_all_triggered)
@@ -313,7 +314,8 @@ MotionManage::~MotionManage()
 		else
 			ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning.", __FUNCTION__, __LINE__);
 
-	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+	g_saved_work_time += get_work_time();
+	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
 	if (Get_Clean_Mode() != Clean_Mode_Sleep && Get_Clean_Mode() != Clean_Mode_Charging)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -338,8 +340,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 bool MotionManage::initNavigationCleaning(void)
 {
-	extern uint32_t g_cur_wtime;
-
+	reset_start_work_time();
 	Set_LED(100,0);
 	Reset_Rcon_Status();
 	Reset_MoveWithRemote();
@@ -418,8 +419,6 @@ bool MotionManage::initNavigationCleaning(void)
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
 					robot::instance()->resetLowBatPause();
-					g_cur_wtime = 0;
-					ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
 				}
 				if (robot::instance()->isManualPaused())
 				{
@@ -459,15 +458,11 @@ bool MotionManage::initNavigationCleaning(void)
 		}
 
 		Reset_Rcon_Status();
-	} else
-	if (robot::instance()->isManualPaused())
-		Reset_Work_Time();
-	else
+	}
+	else if (!robot::instance()->isManualPaused())
 	{
-		// Set the Work_Timer_Start as current time
-		Reset_Work_Time();
-		g_cur_wtime = 0;
-		ROS_INFO("%s ,%d ,set g_cur_wtime to zero ", __FUNCTION__, __LINE__);
+		g_saved_work_time = 0;
+		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 		//Initital home point
 		g_home_point.clear();
 
@@ -508,6 +503,7 @@ bool MotionManage::initWallFollowCleaning(void)
 {
 	extern std::vector<Pose32_t> WF_Point;
 
+	reset_start_work_time();
 	Reset_MoveWithRemote();
 	Reset_Rcon_Status();
 	Reset_Stop_Event_Status();
@@ -525,6 +521,8 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 
+	g_saved_work_time = 0;
+	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
 	g_home_point.clear();
 	WF_Point.clear();
@@ -548,6 +546,8 @@ bool MotionManage::initWallFollowCleaning(void)
 
 bool MotionManage::initSpotCleaning(void)
 {
+	reset_start_work_time();
+
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
@@ -562,6 +562,8 @@ bool MotionManage::initSpotCleaning(void)
 		return false;
 	}
 
+	g_saved_work_time = 0;
+	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	std::list<Point32_t> homepoint;
 	Point32_t t_point;
 	t_point.X = 0;
