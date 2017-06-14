@@ -2262,9 +2262,8 @@ void CM_handle_remote_suction(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_battery_home == true) {
+	if (!g_battery_home)
 		Switch_VacMode(false);
-	}
 	Reset_Rcon_Remote();
 }
 
