@@ -2191,30 +2191,31 @@ void CM_handle_over_current_suction(bool state_now, bool state_last)
 /* Key */
 void CM_handle_key_clean(bool state_now, bool state_last)
 {
-	static bool pressed = false;
-	static time_t start_time = 0;
+	time_t start_time;
+	bool reset_manual_pause = false;
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	Set_Wheel_Speed(0, 0);
+	g_key_clean_pressed = true;
+	robot::instance()->setManualPause();
+	start_time = time(NULL);
 
-	if (Get_Touch_Status()) {
-		Set_Wheel_Speed(0, 0);
-
-		g_key_clean_pressed = true;
-		robot::instance()->setManualPause();
-
-		if (pressed == false) {
-			start_time = time(NULL);
-		} else {
-			pressed = true;
-			if (time(NULL) - start_time > 3) {
-				robot::instance()->resetManualPause();
+	while (Get_Key_Press() & KEY_CLEAN)
+	{
+		if (time(NULL) - start_time > 3) {
+			if (!reset_manual_pause)
+			{
+				Beep(2, 5, 0, 1);
+				reset_manual_pause = true;
 			}
+			robot::instance()->resetManualPause();
+			ROS_WARN("%s %d: Key clean is not released and manual pause has been reset.", __FUNCTION__, __LINE__);
 		}
-		Reset_Touch();
-	} else {
-		pressed = false;
-		start_time = 0;
+		else
+			ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
+		usleep(20000);
 	}
+	Reset_Touch();
 }
 
 /* Remote */
