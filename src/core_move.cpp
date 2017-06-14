@@ -1558,8 +1558,6 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 {
 	uint8_t isBumperTriggered = Get_Bumper_Status();
 
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	g_bumper_status_for_rounding = isBumperTriggered;
 
 	Set_Wheel_Speed(0, 0);
@@ -1568,7 +1566,7 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 	}
 
 	g_bumper_hitted = true;
-	ROS_INFO("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1603,15 +1601,13 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 		g_rounding_wall_straight_distance = 150;
 	}
 
-	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if(Get_Bumper_Status() == 0) g_bumper_cnt = 0;
 }
 
 void CM_handle_bumper_left(bool state_now, bool state_last)
 {
 	uint8_t isBumperTriggered = Get_Bumper_Status();
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_bumper_status_for_rounding = isBumperTriggered;
 
@@ -1621,7 +1617,7 @@ void CM_handle_bumper_left(bool state_now, bool state_last)
 	}
 
 	g_bumper_hitted = true;
-	ROS_INFO("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1654,15 +1650,13 @@ void CM_handle_bumper_left(bool state_now, bool state_last)
 		}
 	}
 
-	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if((Get_Bumper_Status() & LeftBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 void CM_handle_bumper_right(bool state_now, bool state_last)
 {
 	uint8_t isBumperTriggered = Get_Bumper_Status();
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_bumper_status_for_rounding = isBumperTriggered;
 
@@ -1672,7 +1666,7 @@ void CM_handle_bumper_right(bool state_now, bool state_last)
 	}
 
 	g_bumper_hitted = true;
-	ROS_INFO("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1705,46 +1699,44 @@ void CM_handle_bumper_right(bool state_now, bool state_last)
 		}
 	}
 
-	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if((Get_Bumper_Status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 /* OBS */
 void CM_handle_obs_front(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 void CM_handle_obs_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 void CM_handle_obs_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 /* Cliff */
 void CM_handle_cliff_all(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_cliff_all_triggered = true;
 	g_fatal_quit_event = true;
 }
 
 void CM_handle_cliff_front_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1769,13 +1761,11 @@ void CM_handle_cliff_front_left(bool state_now, bool state_last)
 
 void CM_handle_cliff_front_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1800,13 +1790,11 @@ void CM_handle_cliff_front_right(bool state_now, bool state_last)
 
 void CM_handle_cliff_left_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1827,13 +1815,11 @@ void CM_handle_cliff_left_right(bool state_now, bool state_last)
 
 void CM_handle_cliff_front(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1854,13 +1840,11 @@ void CM_handle_cliff_front(bool state_now, bool state_last)
 
 void CM_handle_cliff_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1885,13 +1869,11 @@ void CM_handle_cliff_left(bool state_now, bool state_last)
 
 void CM_handle_cliff_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1922,7 +1904,7 @@ void CM_handle_rcon_front_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -1948,7 +1930,7 @@ void CM_handle_rcon_front_left2(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -1978,7 +1960,7 @@ void CM_handle_rcon_front_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2004,7 +1986,7 @@ void CM_handle_rcon_front_right2(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2034,7 +2016,7 @@ void CM_handle_rcon_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2062,7 +2044,7 @@ void CM_handle_rcon_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2239,14 +2221,14 @@ void CM_handle_key_clean(bool state_now, bool state_last)
 
 void CM_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	Set_Plan_Status(0);
 	Beep(Beep_Error_Sounds, 2, 0, 1);
 }
 
 void CM_handle_remote_clean(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_key_clean_pressed = true;
 	robot::instance()->setManualPause();
@@ -2256,7 +2238,7 @@ void CM_handle_remote_clean(bool state_now, bool state_last)
 
 void CM_handle_remote_home(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_go_home = true;
 	g_remote_home = true;
@@ -2265,7 +2247,7 @@ void CM_handle_remote_home(bool state_now, bool state_last)
 
 void CM_handle_remote_mode_spot(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Stop_Brifly();
 	Reset_Rcon_Remote();
@@ -2278,7 +2260,7 @@ void CM_handle_remote_mode_spot(bool state_now, bool state_last)
 
 void CM_handle_remote_suction(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_battery_home == true) {
 		Switch_VacMode(false);
@@ -2289,8 +2271,6 @@ void CM_handle_remote_suction(bool state_now, bool state_last)
 /* Battery */
 void CM_handle_battery_home(bool state_now, bool state_last)
 {
-	ROS_INFO("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	if (! g_go_home) {
 		g_go_home = true;
 		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
