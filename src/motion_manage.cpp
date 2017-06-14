@@ -257,6 +257,15 @@ MotionManage::~MotionManage()
 		wav_play(WAV_PAUSE_CLEANING);
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		if (g_go_home)
+#if MANUAL_PAUSE_CLEANING
+			ROS_WARN("%s %d: Pause going home, g_home_point list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point.size());
+#else
+			ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+#endif
+		else
+			ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 		return;
 	}
 
@@ -264,6 +273,8 @@ MotionManage::~MotionManage()
 	{
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 		return;
 	}
 
@@ -285,15 +296,27 @@ MotionManage::~MotionManage()
 	g_home_point.clear();
 	g_cur_wtime = 0;
 
+	if (g_fatal_quit_event)
+		if (g_cliff_all_triggered)
+			ROS_WARN("%s %d: All Cliff are triggered. Finish cleaning.", __FUNCTION__, __LINE__);
+		else
+			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
+	else if (g_key_clean_pressed)
+		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+	else if (Get_Clean_Mode() == Clean_Mode_Charging)
+		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
+	else if (Get_Clean_Mode() == Clean_Mode_Sleep)
+		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
+	else
+		if (Get_Clean_Mode() == Clean_Mode_Spot)
+			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		else
+			ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning.", __FUNCTION__, __LINE__);
+
+	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+
 	if (Get_Clean_Mode() != Clean_Mode_Sleep && Get_Clean_Mode() != Clean_Mode_Charging)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
-
-	if (g_battery_low == true) {
-		ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
-	} else if (g_cliff_all_triggered == true) {
-		ROS_WARN("%s %d: All Cliff are triggered, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
-	}
-	ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
 
 }
 
