@@ -211,7 +211,7 @@ void *core_move_thread(void *)
 				Clear_Manual_Pause();
 
 				Disable_Motors();
-				Sleep_Mode();
+				sleep_mode();
 				break;
 			default:
 				Set_Clean_Mode(Clean_Mode_Userinterface);
