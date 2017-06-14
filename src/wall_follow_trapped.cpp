@@ -41,7 +41,7 @@
 ////Timer
 //uint32_t escape_trapped_timer;
 ////MFW setting
-//static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
+//static const MapWallFollowSetting MFW_SETTING[6]= {{1200, 250, 150 },
 //	{1200, 250, 150},
 //	{1200, 250, 150},
 //	{1200, 250, 70},
@@ -405,7 +405,7 @@
 //				Stop_Brifly();
 //				Turn_Right(Turn_Speed, 600);
 //
-//				Wall_Straight_Distance = MFW_Setting[follow_type].right_bumper_val; //150;
+//				Wall_Straight_Distance = MFW_SETTING[follow_type].right_bumper_val; //150;
 //			} else {
 //				WFM_move_back(350);
 //				if(Is_Bumper_Jamed())
@@ -415,7 +415,7 @@
 //				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
 //				Turn_Right(Turn_Speed, 150);
-//				Wall_Straight_Distance = MFW_Setting[follow_type].left_bumper_val; //250;
+//				Wall_Straight_Distance = MFW_SETTING[follow_type].left_bumper_val; //250;
 //			}
 //
 //			Wall_Straight_Distance = 200;

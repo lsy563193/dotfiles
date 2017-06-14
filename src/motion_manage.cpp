@@ -483,7 +483,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 bool MotionManage::initWallFollowCleaning(void)
 {
-	extern std::vector<Pose32_t> WF_Point;
+	extern std::vector<Pose32_t> g_wf_point;
 
 	Reset_MoveWithRemote();
 	Reset_Rcon_Status();
@@ -504,7 +504,7 @@ bool MotionManage::initWallFollowCleaning(void)
 
 	//Initital home point
 	g_home_point.clear();
-	WF_Point.clear();
+	g_wf_point.clear();
 	Point32_t new_home_point;
 	new_home_point.X = new_home_point.Y = 0;
 	// Push the start point into the home point list
