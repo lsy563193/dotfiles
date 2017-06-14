@@ -334,7 +334,7 @@ void CM_update_map_obs()
 		CM_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &i, &j);
 		if (Get_Wall_ADC(0) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
-				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
+				Map_SetCell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
 			}
 		}
 	}
@@ -344,7 +344,7 @@ void CM_update_map_obs()
 		CM_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &i, &j);
 		if (Get_Wall_ADC(1) > 200) {
 			if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BUMPER) {
-				Map_SetCell(MAP, i, j, BLOCKED_BUMPER); //BLOCKED_OBS);
+				Map_SetCell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
 			}
 		}
 	}
@@ -426,7 +426,7 @@ void CM_update_map_cliff()
 	}
 }
 
-void CM_update_position()
+void CM_update_position(bool is_turn)
 {
 	auto last_x = Map_GetXCell();
 	auto last_y = Map_GetYCell();
@@ -437,11 +437,10 @@ void CM_update_position()
 	if (last_x != Map_GetXCell() || last_y != Map_GetYCell())
 		CM_update_map_cleaning();
 
-	CM_update_map_obs();
+	if(! is_turn)
+		CM_update_map_obs();
 
 	robot::instance()->pubCleanMarkers();
-	Point32_t next_point{0,0}, targets_point{0,0};
-	MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
 }
 
 void CM_update_map()
@@ -478,7 +477,7 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 
 		if (std::abs(diff) < 10) {
 			Stop_Brifly();
-			CM_update_position();
+			CM_update_position(true);
 			ROS_INFO("%s %d: angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, angle, Gyro_GetAngle(), diff);
 			break;
 		}
@@ -490,7 +489,7 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 
 	CM_event_manager_turn(false);
 	Set_Wheel_Speed(0, 0);
-	CM_update_position();
+	CM_update_position(true);
 }
 
 bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
@@ -556,6 +555,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 		}
 
 		CM_update_position();
+//		MotionManage::pubCleanMapMarkers(MAP, Target, Target);
 
 		bool slow_down=false;
 		if(check_map_boundary(slow_down))
@@ -846,14 +846,14 @@ void CM_rounding_turn(uint16_t speed, int16_t angle)
 		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed_);
 		Set_Wheel_Speed(speed_, speed_);
 
-		CM_update_position();
+		CM_update_position(true);
 		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 
 	Set_Dir_Forward();
 	Set_Wheel_Speed(0, 0);
 
-	CM_update_position();
+	CM_update_position(true);
 	should_mark = 1;
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
@@ -1022,19 +1022,19 @@ void linearMarkClean(const Cell_t& start, const Cell_t& target)
 {
 	if (start.Y == target.Y)
 	{
-		Cell_t stop = {Map_GetYCell(), Map_GetYCell()};
+		Cell_t stop = {Map_GetXCell(), Map_GetYCell()};
 		if (start.X != stop.X && (abs(start.Y - stop.Y) <= 2))
 		{
 			float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
 			float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
 
-			auto start_x = std::min(start.X, stop.Y);
-			auto stop_x = std::max(start.X, stop.Y);
-			for (auto x = start_x; x<=stop_x; x++)
+			auto start_x = std::min(start.X, stop.X);
+			auto stop_x = std::max(start.X, stop.X);
+			for (auto x = start_x; x<=stop_x+1; x++)
 			{
 				auto y = (int16_t) (slop * (stop.X) + intercept);
 				for(auto dy=-ROBOT_SIZE_1_2;dy<=ROBOT_SIZE_1_2;dy++)
-				Map_SetCell(MAP, cellToCount(x), cellToCount(y - dy), CLEANED);
+					Map_SetCell(MAP, cellToCount(x), cellToCount(y + dy), CLEANED);
 			}
 		}
 	}
@@ -1058,6 +1058,7 @@ int CM_cleaning()
 		Cell_t start{Map_GetXCell(), Map_GetYCell()};
 		Point32_t next_point, targets_point;
 		int8_t state = path_next(&next_point.X, &next_point.Y, &targets_point);
+		MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
 		ROS_ERROR("State: %d", state);
 		if (state == 0) //No target point
 		{
@@ -1076,7 +1077,7 @@ int CM_cleaning()
 			} else
 				CM_MoveToPoint(next_point);
 //			MotionManage::pubCleanMapMarkers(MAP, next_point, targets_point);
-//			linearMarkClean(start,Map_PointToCell(next_point));
+			linearMarkClean(start,Map_PointToCell(next_point));
 
 		} else
 		if (state == 2)
