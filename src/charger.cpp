@@ -1654,7 +1654,7 @@ void By_Path(void)
 				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
 				// when stop event status is on,
 				// it will know and won't go to next home point.
-				if (robot::instance()->isLowBatPaused())
+				if (!robot::instance()->isLowBatPaused())
 					if (!robot::instance()->isManualPaused())
 						Reset_Stop_Event_Status();
 
