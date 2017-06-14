@@ -190,12 +190,13 @@ void User_Interface(void)
 		}
 
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
-		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
+		if(Is_AtHomeBase() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
-			if(Turn_Connect())
-			{
+			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
+			if (is_direct_charge())
 				Temp_Mode = Clean_Mode_Charging;
-			}
+			else if(Turn_Connect())
+				Temp_Mode = Clean_Mode_Charging;
 			Disable_Motors();
 		}
 
@@ -327,7 +328,7 @@ void User_Interface(void)
 //			Beep(2, 15, 0, 1);
 			Press_time=Get_Key_Time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
-			if(Press_time>20)
+			if(Press_time>151)
 			{
 				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
 				//Beep(6,25,25,1);
@@ -338,6 +339,8 @@ void User_Interface(void)
 				Beep(3,4,0,1);
 				usleep(100000);
 				Beep(5,4,4,1);
+				// Wait for beep finish.
+				usleep(200000);
 				// Wait for user to release the key.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{

@@ -469,7 +469,7 @@ void CM_HeadToCourse(uint8_t speed_max, int16_t angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_home) {
 			break;
 		}
 
@@ -534,7 +534,7 @@ bool CM_LinearMoveToPoint(Point32_t Target, int32_t speed_max, bool stop_is_need
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed ) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_home) {
 			break;
 		}
 
@@ -1043,7 +1043,11 @@ void linearMarkClean(const Cell_t& start, const Cell_t& target)
 int CM_cleaning()
 {
 	// Checking g_go_home is for case that manual pause when robot going home.
-	if(g_go_home) return 0;
+	if(g_go_home)
+	{
+		ROS_WARN("%s %d: Continue going home.", __FUNCTION__, __LINE__);
+		return 0;
+	}
 
 	while (ros::ok())
 	{
@@ -1051,7 +1055,10 @@ int CM_cleaning()
 			return -1;
 
 		if (g_remote_home || g_battery_home)
+		{
+			g_remote_home = false;
 			return 0;
+		}
 
 		uint16_t last_dir = path_get_robot_direction();
 
@@ -1110,30 +1117,162 @@ int CM_cleaning()
 
 void CM_go_home()
 {
+	Set_VacMode(Vac_Normal, false);
+	Set_Vac_Speed();
+
 	if(robot::instance()->isLowBatPaused())
 		wav_play(WAV_BATTERY_LOW);
 	wav_play(WAV_BACK_TO_CHARGER);
 
+	if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
+		CM_create_home_boundary();
+	Cell_t current_home_cell = {countToCell(g_home_point.front().X), countToCell(g_home_point.front().Y)};
+	ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y,
+					 (uint) g_home_point.size());
+	g_home_point.pop_front();
+
 	while (ros::ok())
 	{
-
-		if (g_fatal_quit_event && g_key_clean_pressed || g_home_point.empty())
+		Set_LED(100, 0);
+		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
+		Set_Clean_Mode(Clean_Mode_Navigation);
+		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
+		if (!CM_MoveToCell(current_home_cell.X, current_home_cell.Y))
 		{
-			robot::instance()->resetLowBatPause();
-			return;
+			if (g_fatal_quit_event)
+			{
+				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
+				Disable_Motors();
+				robot::instance()->resetLowBatPause();
+				if (g_battery_low)
+					Set_Clean_Mode(Clean_Mode_Sleep);
+				else
+					Set_Clean_Mode(Clean_Mode_Userinterface);
+				ROS_WARN("%s %d: Fatal quit and finish cleanning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time());
+				g_cur_wtime = 0;
+				ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
+				CM_ResetGoHome();
+				return;
+			}
+			if (g_key_clean_pressed)
+			{
+				Disable_Motors();
+				Set_Clean_Mode(Clean_Mode_Userinterface);
+#if MANUAL_PAUSE_CLEANING
+				if (robot::instance()->isManualPaused())
+					// The current home cell is still valid, so push it back to the home point list.
+					CM_SetHome(cellToCount(current_home_cell.X), cellToCount(current_home_cell.Y));
+				ROS_WARN("%s %d: Pause cleanning, cleaning time: %d(s), g_home_point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime, (uint)g_home_point.size());
+#else
+				ROS_WARN("%s %d: Clean key pressed, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
+#endif
+				g_cur_wtime = 0;
+				ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
+				return;
+			}
+		}
+		else
+		{
+			if (CM_go_to_charger(current_home_cell))
+				return;
 		}
 
-		if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
-			CM_create_home_boundary();
-
-		Cell_t tmpPnt = {countToCell(g_home_point.front().X), countToCell(g_home_point.front().Y)};
-		ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, tmpPnt.X, tmpPnt.Y,
-						 (uint) g_home_point.size());
-		g_home_point.pop_front();
-
-		ROS_INFO("[core_move.cpp] %s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, GetBatteryVoltage());
-		CM_MoveToCell(tmpPnt.X, tmpPnt.Y);
+		if (g_home_point.empty())
+		{
+			// If it is the last point, it means it it now at (0, 0).
+			if (!g_from_station) {
+				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+				CM_HeadToCourse(ROTATE_TOP_SPEED, -angle);
+			}
+			Disable_Motors();
+			robot::instance()->resetLowBatPause();
+			Set_Clean_Mode(Clean_Mode_Userinterface);
+			ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning, cleaning time: %d(s).", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
+			g_cur_wtime = 0;
+			ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
+			CM_ResetGoHome();
+			return;
+		}
+		else
+		{
+			// Get next home cell.
+			current_home_cell.X = countToCell(g_home_point.front().X);
+			current_home_cell.Y = countToCell(g_home_point.front().Y);
+			g_home_point.pop_front();
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point.size());
+		}
 	}
+}
+
+/* Statement for CM_go_to_charger(void)
+ * return : true -- going to charger has been stopped, either successfully or interrupted.
+ *          false -- going to charger failed, move to next point.
+ */
+bool CM_go_to_charger(Cell_t current_home_cell)
+{
+	// Call GoHome() function to try to go to charger stub.
+	ROS_WARN("Call GoHome()");
+	GoHome();
+	// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
+	while (Get_Clean_Mode() == Clean_Mode_GoHome)
+	{
+		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
+		Set_Clean_Mode(Clean_Mode_Navigation);
+		ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
+		GoHome();
+	}
+	// Check the clean mode to find out whether it has reach the charger.
+	if (Get_Clean_Mode() == Clean_Mode_Charging)
+	{
+		if (robot::instance()->isLowBatPaused())
+		{
+			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished. Current cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
+			g_cur_wtime = g_cur_wtime+Get_Work_Time();//store current time
+			Reset_Work_Time();//reset current time
+			CM_ResetGoHome();
+			return true;
+		}
+		ROS_WARN("%s %d: Finish cleaning and stop in charger stub, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
+		CM_ResetGoHome();
+		return true;
+	}
+	else if (Get_Clean_Mode() == Clean_Mode_Sleep)
+	{
+		// Battery too low.
+		Disable_Motors();
+		robot::instance()->resetLowBatPause();
+		ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
+		g_cur_wtime = 0;
+		ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
+		CM_ResetGoHome();
+		return true;
+	}
+	// FIXME: else if (g_fatal_quit_event || g_key_clean_pressed)
+	else if (Stop_Event())
+	{
+		Disable_Motors();
+		Set_Clean_Mode(Clean_Mode_Userinterface);
+#if MANUAL_PAUSE_CLEANING
+		// FIXME: if (g_key_clean_pressed)
+		if (Stop_Event() == 1 || Stop_Event() == 2)
+		{
+			Reset_Stop_Event_Status();
+			// The current home cell is still valid, so push it back to the home point list.
+			CM_SetHome(cellToCount(current_home_cell.X), cellToCount(current_home_cell.Y));
+			ROS_WARN("%s %d: Pause cleanning, cleaning time: %d(s), g_home_point list size: %u.", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime, (uint)g_home_point.size());
+			return true;
+		}
+#endif
+		robot::instance()->resetLowBatPause();
+		Reset_Stop_Event_Status();
+		ROS_WARN("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time()+g_cur_wtime);
+		g_cur_wtime = 0;
+		ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
+		CM_ResetGoHome();
+		return true;
+	}
+
+	return false;
 }
 
 uint8_t CM_Touring(void)
@@ -1153,7 +1292,6 @@ uint8_t CM_Touring(void)
 	g_cliff_cnt = 0;
 	g_bumper_cnt = g_press_time = 0;
 	g_remote_go_home = 0;
-	g_go_home =false;
 	g_low_battery = 0;
 	g_from_station = 0;
 
@@ -1200,12 +1338,6 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 	Map_Set_Cells(ROBOT_SIZE, target_x, target_y, CLEANED);
 
 	while (ros::ok()) {
-		if (g_fatal_quit_event || g_key_clean_pressed )
-			return false;
-
-		if (g_remote_home && !g_go_home )
-			return false;
-
 		Cell_t pos{target_x, target_y};
 		Cell_t	tmp;
 		auto pathFind = (int8_t)path_move_to_unclean_area(pos, Map_GetXCell(), Map_GetYCell(), &tmp.X, &tmp.Y);
@@ -1222,6 +1354,12 @@ bool CM_MoveToCell( int16_t target_x, int16_t target_y)
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{ cellToCount(tmp.X), cellToCount(tmp.Y) };
 			CM_MoveToPoint(Next_Point);
+
+			if (g_fatal_quit_event || g_key_clean_pressed )
+				return false;
+
+			if (g_remote_home && !g_go_home )
+				return false;
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
 			if ( TwoPointsDistance( target_x , target_y , Map_GetXCell(), Map_GetYCell() ) < ROBOT_SIZE / 2 + 1 ) {
@@ -1291,6 +1429,7 @@ void CM_CorBack(uint16_t dist)
 
 void CM_ResetGoHome(void)
 {
+	ROS_DEBUG("Reset go home flags here.");
 	g_go_home = false;
 	g_remote_go_home = 0;
 	g_map_boundary_created = false;
@@ -1558,8 +1697,6 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 {
 	uint8_t isBumperTriggered = Get_Bumper_Status();
 
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	g_bumper_status_for_rounding = isBumperTriggered;
 
 	Set_Wheel_Speed(0, 0);
@@ -1568,7 +1705,7 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 	}
 
 	g_bumper_hitted = true;
-	ROS_INFO("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1603,15 +1740,13 @@ void CM_handle_bumper_all(bool state_now, bool state_last)
 		g_rounding_wall_straight_distance = 150;
 	}
 
-	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if(Get_Bumper_Status() == 0) g_bumper_cnt = 0;
 }
 
 void CM_handle_bumper_left(bool state_now, bool state_last)
 {
 	uint8_t isBumperTriggered = Get_Bumper_Status();
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_bumper_status_for_rounding = isBumperTriggered;
 
@@ -1621,7 +1756,7 @@ void CM_handle_bumper_left(bool state_now, bool state_last)
 	}
 
 	g_bumper_hitted = true;
-	ROS_INFO("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1654,15 +1789,13 @@ void CM_handle_bumper_left(bool state_now, bool state_last)
 		}
 	}
 
-	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if((Get_Bumper_Status() & LeftBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 void CM_handle_bumper_right(bool state_now, bool state_last)
 {
 	uint8_t isBumperTriggered = Get_Bumper_Status();
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_bumper_status_for_rounding = isBumperTriggered;
 
@@ -1672,7 +1805,7 @@ void CM_handle_bumper_right(bool state_now, bool state_last)
 	}
 
 	g_bumper_hitted = true;
-	ROS_INFO("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1705,46 +1838,44 @@ void CM_handle_bumper_right(bool state_now, bool state_last)
 		}
 	}
 
-	ROS_INFO("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if((Get_Bumper_Status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 /* OBS */
 void CM_handle_obs_front(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 void CM_handle_obs_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 void CM_handle_obs_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 /* Cliff */
 void CM_handle_cliff_all(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_cliff_all_triggered = true;
 	g_fatal_quit_event = true;
 }
 
 void CM_handle_cliff_front_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1769,13 +1900,11 @@ void CM_handle_cliff_front_left(bool state_now, bool state_last)
 
 void CM_handle_cliff_front_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1800,13 +1929,11 @@ void CM_handle_cliff_front_right(bool state_now, bool state_last)
 
 void CM_handle_cliff_left_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1827,13 +1954,11 @@ void CM_handle_cliff_left_right(bool state_now, bool state_last)
 
 void CM_handle_cliff_front(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1854,13 +1979,11 @@ void CM_handle_cliff_front(bool state_now, bool state_last)
 
 void CM_handle_cliff_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1885,13 +2008,11 @@ void CM_handle_cliff_left(bool state_now, bool state_last)
 
 void CM_handle_cliff_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	Set_Wheel_Speed(0, 0);
 	CM_update_map();
 
 	g_cliff_triggered = true;
-	ROS_INFO("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_cliff_cnt++;
 
@@ -1922,7 +2043,7 @@ void CM_handle_rcon_front_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -1948,7 +2069,7 @@ void CM_handle_rcon_front_left2(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -1978,7 +2099,7 @@ void CM_handle_rcon_front_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2004,7 +2125,7 @@ void CM_handle_rcon_front_right2(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2034,7 +2155,7 @@ void CM_handle_rcon_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2062,7 +2183,7 @@ void CM_handle_rcon_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
-		ROS_INFO("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
 
@@ -2209,44 +2330,45 @@ void CM_handle_over_current_suction(bool state_now, bool state_last)
 /* Key */
 void CM_handle_key_clean(bool state_now, bool state_last)
 {
-	static bool pressed = false;
-	static time_t start_time = 0;
+	time_t start_time;
+	bool reset_manual_pause = false;
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	Set_Wheel_Speed(0, 0);
+	g_key_clean_pressed = true;
+	robot::instance()->setManualPause();
+	start_time = time(NULL);
 
-	if (Get_Touch_Status()) {
-		Set_Wheel_Speed(0, 0);
-
-		g_key_clean_pressed = true;
-		robot::instance()->setManualPause();
-
-		if (pressed == false) {
-			start_time = time(NULL);
-		} else {
-			pressed = true;
-			if (time(NULL) - start_time > 3) {
-				robot::instance()->resetManualPause();
+	while (Get_Key_Press() & KEY_CLEAN)
+	{
+		if (time(NULL) - start_time > 3) {
+			if (!reset_manual_pause)
+			{
+				Beep(2, 5, 0, 1);
+				reset_manual_pause = true;
 			}
+			robot::instance()->resetManualPause();
+			ROS_WARN("%s %d: Key clean is not released and manual pause has been reset.", __FUNCTION__, __LINE__);
 		}
-		Reset_Touch();
-	} else {
-		pressed = false;
-		start_time = 0;
+		else
+			ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
+		usleep(20000);
 	}
+	Reset_Touch();
 }
 
 /* Remote */
 
 void CM_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	Set_Plan_Status(0);
 	Beep(Beep_Error_Sounds, 2, 0, 1);
 }
 
 void CM_handle_remote_clean(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_key_clean_pressed = true;
 	robot::instance()->setManualPause();
@@ -2256,7 +2378,7 @@ void CM_handle_remote_clean(bool state_now, bool state_last)
 
 void CM_handle_remote_home(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	g_go_home = true;
 	g_remote_home = true;
@@ -2265,7 +2387,7 @@ void CM_handle_remote_home(bool state_now, bool state_last)
 
 void CM_handle_remote_mode_spot(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	Stop_Brifly();
 	Reset_Rcon_Remote();
@@ -2278,19 +2400,16 @@ void CM_handle_remote_mode_spot(bool state_now, bool state_last)
 
 void CM_handle_remote_suction(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_battery_home == true) {
-		Switch_VacMode(false);
-	}
+	if (!g_go_home)
+		Switch_VacMode(true);
 	Reset_Rcon_Remote();
 }
 
 /* Battery */
 void CM_handle_battery_home(bool state_now, bool state_last)
 {
-	ROS_INFO("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	if (! g_go_home) {
 		g_go_home = true;
 		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,

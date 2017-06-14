@@ -1149,6 +1149,15 @@ uint8_t Is_AtHomeBase(void)
 	}
 }
 
+uint8_t is_direct_charge(void)
+{
+	if (robot::instance()->getChargeStatus() == 3 || robot::instance()->getChargeStatus() == 4){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
 uint8_t Turn_Connect(void)
 {
 	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
@@ -2116,6 +2125,11 @@ uint8_t Stop_Event(void)
 				Stop_Event_Status = 4;
 			}
 		}
+		if (is_direct_charge())
+		{
+			ROS_WARN("Detect direct charge!");
+			Stop_Event_Status = 5;
+		}
 	}
 	return Stop_Event_Status;
 }
@@ -2131,7 +2145,7 @@ uint8_t Is_Station(void)
 
 uint8_t Is_ChargerOn(void)
 {
-	if (robot::instance()->getChargeStatus() == 1){
+	if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4){
 		return 1;
 	}else{
 		return 0;
