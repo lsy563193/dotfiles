@@ -105,16 +105,14 @@ bool wf_check_isolate(void)
 uint8_t wall_follow(MapWallFollowType follow_type)
 {
 
-	float Start_Pose_X, Start_Pose_Y;//the first pose hit the wall
-	uint8_t Temp_Counter = 0, Jam = 0;
+	uint8_t temp_counter = 0, jam = 0;
 	uint16_t i = 0;
-	int32_t Wheel_Speed_Base = 0;
+	int32_t wheel_speed_base = 0;
 	int ret;
-	int16_t Left_Wall_Buffer[3] = {0};
-	int32_t Proportion = 0, Delta = 0, Previous = 0, R = 0;
-	float					Distance_From_WF_Start;
+	int16_t left_wall_buffer[3] = {0};
+	int32_t proportion = 0, delta = 0, previous = 0, r = 0;
 
-	volatile int32_t Wall_Straight_Distance = 100, Left_Wall_Speed = 0, Right_Wall_Speed = 0;
+	volatile int32_t wall_straight_distance = 100, l_speed = 0, r_speed = 0;
 	static volatile int32_t Wall_Distance = Wall_High_Limit;
 	float Start_WF_Pose_X, Start_WF_Pose_Y;//the first pose when the wall mode start
 	float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
@@ -133,8 +131,8 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 	{
 		Wall_Distance = Wall_Low_Limit;
 	}
-	Wall_Straight_Distance = 300;
-	Left_Wall_Speed = 15;
+	wall_straight_distance = 300;
+	l_speed = 15;
 
 	MotionManage motion;
 
@@ -164,25 +162,25 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 			if (Is_OBS_Near())
 			{
-				Left_Wall_Speed = 15;
+				l_speed = 15;
 			} else
 			{
 				i++;
 				if (i > 10)
 				{
 					i = 0;
-					if (Left_Wall_Speed < 30)
+					if (l_speed < 30)
 					{
-						Left_Wall_Speed++;
+						l_speed++;
 					}
 				}
 			}
-			if (Left_Wall_Speed < 15)
+			if (l_speed < 15)
 			{
-				Left_Wall_Speed = 15;
+				l_speed = 15;
 			}
 
-			Move_Forward(Left_Wall_Speed, Left_Wall_Speed);
+			Move_Forward(l_speed, l_speed);
 
 #ifdef WALL_DYNAMIC
 			Wall_Dynamic_Base(30);
@@ -271,10 +269,10 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			}
 
 			/*------------------------------------------------------Distance Check-----------------------*/
-			if ((Distance_From_WF_Start = (sqrtf(
-							powf(Start_WF_Pose_X - robot::instance()->getPositionX(), 2) + powf(Start_WF_Pose_Y -
+			auto Distance_From_WF_Start = (sqrtf( powf(Start_WF_Pose_X - robot::instance()->getPositionX(), 2) + powf(Start_WF_Pose_Y -
 																																									robot::instance()->getPositionY(),
-																																									2)))) > FIND_WALL_DISTANCE)
+																																									2)));
+			if (Distance_From_WF_Start > FIND_WALL_DISTANCE)
 			{
 				ROS_INFO("Find wall over the limited distance : %f", FIND_WALL_DISTANCE);
 				wf_end_wall_follow();
@@ -285,8 +283,8 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 		//CM_head_to_course(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
-		Start_Pose_X = robot::instance()->getPositionX();
-		Start_Pose_Y = robot::instance()->getPositionY();
+		auto Start_Pose_X = robot::instance()->getPositionX();
+		auto Start_Pose_Y = robot::instance()->getPositionY();
 		First_Time_Flag = 1;
 		while (ros::ok())
 		{
@@ -492,7 +490,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				Move_Forward(15, 15);
 				Reset_WallAccelerate();
 				//Reset_Wheel_Step();
-				Wall_Straight_Distance = 375;
+				wall_straight_distance = 375;
 			}
 
 
@@ -552,7 +550,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					Stop_Brifly();
 					Move_Forward(10, 10);
 					Reset_Rcon_Status();
-					Wall_Straight_Distance = 80;
+					wall_straight_distance = 80;
 					Reset_WallAccelerate();
 				}
 			}
@@ -610,7 +608,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 				Move_Forward(10, 10);
 				Reset_WallAccelerate();
-				Wall_Straight_Distance = 200;
+				wall_straight_distance = 200;
 
 				Reset_Wheel_Step();
 			}
@@ -655,7 +653,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					Stop_Brifly();
 					WF_Turn_Right(Turn_Speed - 5, 850);
 
-					Wall_Straight_Distance = MFW_SETTING[follow_type].right_bumper_val; //150;
+					wall_straight_distance = MFW_SETTING[follow_type].right_bumper_val; //150;
 					Wall_Distance += 300;
 					if (Wall_Distance > Wall_High_Limit)Wall_Distance = Wall_High_Limit;
 				} else
@@ -687,7 +685,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 					//STOP_BRIFLY;
 					Stop_Brifly();
-					if (Jam < 3)
+					if (jam < 3)
 					{
 						if (Wall_Distance < 200)
 						{
@@ -707,19 +705,19 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					{
 						WF_Turn_Right(Turn_Speed - 5, 200);
 					}
-					Wall_Straight_Distance = MFW_SETTING[follow_type].left_bumper_val; //250;
+					wall_straight_distance = MFW_SETTING[follow_type].left_bumper_val; //250;
 				}
 
 				if (Get_WallAccelerate() < 2000)
 				{
-					Jam++;
+					jam++;
 				} else
 				{
-					Jam = 0;
+					jam = 0;
 				}
 
 				Reset_WallAccelerate();
-				Wall_Straight_Distance = 200;
+				wall_straight_distance = 200;
 				//STOP_BRIFLY;
 				Stop_Brifly();
 				//WFM_update();
@@ -727,14 +725,14 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 				Move_Forward(10, 10);
 
-				for (Temp_Counter = 0; Temp_Counter < 3; Temp_Counter++)
+				for (temp_counter = 0; temp_counter < 3; temp_counter++)
 				{
-					Left_Wall_Buffer[Temp_Counter] = 0;
+					left_wall_buffer[temp_counter] = 0;
 				}
 				Reset_Wheel_Step();
 			}
 			/*------------------------------------------------------Short Distance Move-----------------------*/
-			if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance)
+			if (Get_WallAccelerate() < (uint32_t) wall_straight_distance)
 			{
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
@@ -765,78 +763,78 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					if (Get_FrontOBS() < MFW_SETTING[follow_type].front_obs_val){
 #endif
 
-					Wheel_Speed_Base = 15 + Get_WallAccelerate() / 150;
-					if (Wheel_Speed_Base > 28)Wheel_Speed_Base = 28;
+					wheel_speed_base = 15 + Get_WallAccelerate() / 150;
+					if (wheel_speed_base > 28)wheel_speed_base = 28;
 
-					Proportion = robot::instance()->getLeftWall();
+					proportion = robot::instance()->getLeftWall();
 
-					Proportion = Proportion * 100 / Wall_Distance;
+					proportion = proportion * 100 / Wall_Distance;
 
-					Proportion -= 100;
+					proportion -= 100;
 
-					Delta = Proportion - Previous;
+					delta = proportion - previous;
 
 					if (Wall_Distance > 200)
 					{//over left
-						Left_Wall_Speed = Wheel_Speed_Base + Proportion / 8 + Delta / 3; //12
-						Right_Wall_Speed = Wheel_Speed_Base - Proportion / 9 - Delta / 3; //10
+						l_speed = wheel_speed_base + proportion / 8 + delta / 3; //12
+						r_speed = wheel_speed_base - proportion / 9 - delta / 3; //10
 
-						if (Wheel_Speed_Base < 26)
+						if (wheel_speed_base < 26)
 						{
-							if (Right_Wall_Speed > Wheel_Speed_Base + 6)
+							if (r_speed > wheel_speed_base + 6)
 							{
-								Right_Wall_Speed = 34;
-								Left_Wall_Speed = 4;
-							} else if (Left_Wall_Speed > Wheel_Speed_Base + 10)
+								r_speed = 34;
+								l_speed = 4;
+							} else if (l_speed > wheel_speed_base + 10)
 							{
-								Right_Wall_Speed = 5;
-								Left_Wall_Speed = 30;
+								r_speed = 5;
+								l_speed = 30;
 							}
 						} else
 						{
-							if (Right_Wall_Speed > 35)
+							if (r_speed > 35)
 							{
-								Right_Wall_Speed = 35;
-								Left_Wall_Speed = 4;
+								r_speed = 35;
+								l_speed = 4;
 							}
 						}
 					} else
 					{
-						Left_Wall_Speed = Wheel_Speed_Base + Proportion / 10 + Delta / 3;//16
-						Right_Wall_Speed = Wheel_Speed_Base - Proportion / 10 - Delta / 4; //11
+						l_speed = wheel_speed_base + proportion / 10 + delta / 3;//16
+						r_speed = wheel_speed_base - proportion / 10 - delta / 4; //11
 
-						if (Wheel_Speed_Base < 26)
+						if (wheel_speed_base < 26)
 						{
-							if (Right_Wall_Speed > Wheel_Speed_Base + 4)
+							if (r_speed > wheel_speed_base + 4)
 							{
-								Right_Wall_Speed = 34;
-								Left_Wall_Speed = 4;
+								r_speed = 34;
+								l_speed = 4;
 							}
 						} else
 						{
-							if (Right_Wall_Speed > 32)
+							if (r_speed > 32)
 							{
-								Right_Wall_Speed = 36;
-								Left_Wall_Speed = 4;
+								r_speed = 36;
+								l_speed = 4;
 							}
 						}
 					}
 
-					Previous = Proportion;
+					previous = proportion;
 
-					if (Left_Wall_Speed > 39)Left_Wall_Speed = 39;
-					if (Left_Wall_Speed < 0)Left_Wall_Speed = 0;
-					if (Right_Wall_Speed > 35)Right_Wall_Speed = 35;
-					if (Right_Wall_Speed < 5)Right_Wall_Speed = 5;
+					if (l_speed > 39)l_speed = 39;
+					if (l_speed < 0)l_speed = 0;
+					if (r_speed > 35)r_speed = 35;
+					if (r_speed < 5)r_speed = 5;
 
-					Move_Forward(Left_Wall_Speed, Right_Wall_Speed);
+					Move_Forward(l_speed, r_speed);
 					wf_check_loop_closed(Gyro_GetAngle());
 				} else
 				{
 					Stop_Brifly();
 					if (Get_WallAccelerate() < 2000)
 					{
-						Jam++;
+						jam++;
 					}
 					WF_Turn_Right(Turn_Speed - 5, 920);
 					Stop_Brifly();
