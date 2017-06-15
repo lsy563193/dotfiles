@@ -408,7 +408,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_home) {
+		if (g_fatal_quit_event || g_key_clean_pressed || (!g_go_home && g_remote_home)) {
 			break;
 		}
 
@@ -473,7 +473,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || g_remote_home) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home)) {
 			break;
 		}
 
@@ -993,6 +993,8 @@ int cm_cleaning()
 		if (g_remote_home || g_battery_home)
 		{
 			g_remote_home = false;
+			g_go_home = true;
+			ROS_DEBUG("%s %d: Receive go home command, reset g_remote_home.", __FUNCTION__, __LINE__);
 			return 0;
 		}
 
@@ -2306,12 +2308,13 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_go_home)
+	{
 		beep_for_command(true);
+		g_remote_home = true;
+	}
 	else
 		beep_for_command(false);
 
-	g_go_home = true;
-	g_remote_home = true;
 	Reset_Rcon_Remote();
 }
 
