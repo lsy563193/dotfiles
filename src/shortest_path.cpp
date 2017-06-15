@@ -1250,7 +1250,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 		map_set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 #define COST_SOUTH	{											\
-				if (next == 0 && (Map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
+				if (next == 0 && (map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
 					tracex--;								\
 					next = 1;								\
 					dest_dir = 1;								\
@@ -1258,7 +1258,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 			}
 
 #define COST_WEST	{											\
-				if (next == 0 && (Map_get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {	\
+				if (next == 0 && (map_get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {	\
 					tracey--;								\
 					next = 1;								\
 					dest_dir = 0;								\
@@ -1266,7 +1266,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 			}
 
 #define COST_EAST	{											\
-				if (next == 0 && (Map_get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {	\
+				if (next == 0 && (map_get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {	\
 					tracey++;								\
 					next = 1;								\
 					dest_dir = 0;								\
@@ -1274,7 +1274,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 			}
 
 #define COST_NORTH	{											\
-				if (next == 0 && Map_get_cell(SPMAP, tracex + 1, tracey) == targetCost) {	\
+				if (next == 0 && map_get_cell(SPMAP, tracex + 1, tracey) == targetCost) {	\
 					tracex++;								\
 					next = 1;								\
 					dest_dir = 1;								\

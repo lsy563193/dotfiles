@@ -63,93 +63,114 @@ typedef struct {
 } VWType;
 
 void CM_TouringCancel(void);
-void CM_reset_go_home(void);
-void CM_head_to_course(uint8_t Speed, int16_t Angle);
+void cm_reset_go_home(void);
+void cm_head_to_course(uint8_t Speed, int16_t Angle);
 
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
-bool CM_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
+bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
 
-int CM_Get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution, double origin_x, double origin_y);
+int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
+											double origin_x, double origin_y);
 bool CM_Check_is_exploring();
 uint8_t CM_MoveForward(void);
 
-uint8_t CM_touring(void);
+uint8_t cm_touring(void);
 
-void CM_update_position(bool is_turn = false);
-void CM_update_map();
-void CM_update_map_bumper();
-void CM_update_map_cliff();
-bool CM_curve_move_to_point();
+void cm_update_position(bool is_turn = false);
+void cm_update_map();
+void cm_update_map_bumper();
+void cm_update_map_cliff();
+bool cm_curve_move_to_point();
 
-void CM_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-bool CM_move_to_cell(int16_t x, int16_t y);
+bool cm_move_to_cell(int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
 
-void CM_move_back(uint16_t dist);
+void cm_move_back(uint16_t dist);
 
-void CM_set_home(int32_t x, int32_t y);
-void CM_go_home(void);
-bool CM_go_to_charger(Cell_t current_home_cell);
+void cm_set_home(int32_t x, int32_t y);
+void cm_go_home(void);
+bool cm_go_to_charger(Cell_t current_home_cell);
 //void CM_SetStationHome(void);
 
 // This function is for setting the continue point for robot to go after charge.
-void CM_set_continue_point(int32_t x, int32_t y);
+void cm_set_continue_point(int32_t x, int32_t y);
 
 void CM_ResetBoundaryBlocks(void);
 
 void CM_AddTargets(Cell_t zone);
 
-uint8_t CM_check_loop_back(Cell_t target);
+uint8_t cm_check_loop_back(Cell_t target);
 
-MapTouringType CM_handleExtEvent(void);
+MapTouringType cm_handle_ext_event(void);
 
-void CM_create_home_boundary(void);
+void cm_create_home_boundary(void);
 
 /* Event handler functions. */
-void CM_regist_events(void);
-void CM_unregist_events(void);
+void cm_regist_events(void);
+void cm_unregist_events(void);
 
-void CM_set_event_manager_handler_state(bool state);
+void cm_set_event_manager_handler_state(bool state);
 
-void CM_event_manager_turn(bool state);
+void cm_event_manager_turn(bool state);
 
 #define define_cm_handle_func(name) \
-	void CM_handle_ ## name(bool state_now, bool state_last);
+	void cm_handle_ ## name(bool state_now, bool state_last);
 
 /* Bumper */
 define_cm_handle_func(bumper_all)
+
 define_cm_handle_func(bumper_left)
+
 define_cm_handle_func(bumper_right)
 
 /* OBS */
 define_cm_handle_func(obs_front)
+
 define_cm_handle_func(obs_left)
+
 define_cm_handle_func(obs_right)
 
 /* Cliff */
 define_cm_handle_func(cliff_all)
+
 define_cm_handle_func(cliff_front_left)
+
 define_cm_handle_func(cliff_front_right)
+
 define_cm_handle_func(cliff_left_right)
+
 define_cm_handle_func(cliff_front)
+
 define_cm_handle_func(cliff_left)
+
 define_cm_handle_func(cliff_right)
 
 /* RCON */
 define_cm_handle_func(rcon_front_left)
+
 define_cm_handle_func(rcon_front_left2)
+
 define_cm_handle_func(rcon_front_right)
+
 define_cm_handle_func(rcon_front_right2)
+
 define_cm_handle_func(rcon_left)
+
 define_cm_handle_func(rcon_right)
 
 /* Over Current */
 define_cm_handle_func(over_current_brush_left)
+
 define_cm_handle_func(over_current_brush_main)
+
 define_cm_handle_func(over_current_brush_right)
+
 define_cm_handle_func(over_current_wheel_left)
+
 define_cm_handle_func(over_current_wheel_right)
+
 define_cm_handle_func(over_current_suction)
 
 /* Key */
@@ -157,13 +178,18 @@ define_cm_handle_func(key_clean)
 
 /* Remote */
 define_cm_handle_func(remote_plan)
+
 define_cm_handle_func(remote_clean)
+
 define_cm_handle_func(remote_home)
+
 define_cm_handle_func(remote_mode_spot)
+
 define_cm_handle_func(remote_suction)
 
 /* Battery */
 define_cm_handle_func(battery_home)
+
 define_cm_handle_func(battery_low)
 
 #endif

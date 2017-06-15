@@ -191,7 +191,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			Reset_Rcon_Status();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
-				CM_set_home(map_get_x_count(), map_get_y_count());
+				cm_set_home(map_get_x_count(), map_get_y_count());
 				break;
 			}
 
@@ -261,7 +261,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			}
 		}
 
-		//CM_head_to_course(Rotate_TopSpeed, Gyro_GetAngle() + 900);
+		//cm_head_to_course(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 		Start_Pose_X = robot::instance()->getPositionX();
@@ -280,7 +280,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			if (First_Time_Flag == 0){
 				if ((Distance_From_Start = (sqrtf(powf(Start_Pose_X - robot::instance()->robot_get_position_x(), 2) + powf(Start_Pose_Y - robot::instance()->robot_get_position_y(), 2)))) < 0.303 ){
 					/*
-				   CM_move_to_cell(0, 0, 2, 0, 1);
+				   cm_move_to_cell(0, 0, 2, 0, 1);
 				   ROS_INFO("In Start Pose, finish wall follow.");
 					//Beep for the finish signal.
 					for (i = 10; i > 0; i--) {
@@ -456,7 +456,7 @@ uint8_t Wall_Follow(MapWallFollowType follow_type)
 			//Temp_Rcon_Status = robot::instance()->getRcon();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if(Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT)){
-				CM_set_home(map_get_x_count(), map_get_y_count());
+				cm_set_home(map_get_x_count(), map_get_y_count());
 			}
 			if (Temp_Rcon_Status){
 				Reset_Rcon_Status();
@@ -791,9 +791,9 @@ uint8_t WF_End_Wall_Follow(void){
 	//int16_t offsetAngle = robot::instance()->getHomeAngle();
 	Stop_Brifly();
 	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
-	CM_update_position();
+	cm_update_position();
 	WF_Mark_Home_Point();
-	CM_go_home();
+	cm_go_home();
 
 	/*****************************************Release Memory************************************/
 	g_home_point.clear();
@@ -924,8 +924,8 @@ bool WF_Is_Reach_Cleaned(void){
 	//x = map_get_x_cell();
 	//y = map_get_y_cell();
 
-	//CM_count_normalize(Gyro_GetAngle(), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
-	CM_count_normalize(Gyro_GetAngle(), 0, 0, &x, &y);
+	//cm_count_normalize(Gyro_GetAngle(), 1 * CELL_SIZE_3, CELL_SIZE_3, &x, &y);
+	cm_count_normalize(Gyro_GetAngle(), 0, 0, &x, &y);
 	try{
 		if(WF_Point.empty() == false){
 			if((WF_Point.size() - 1) >= 0){
