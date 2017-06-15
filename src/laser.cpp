@@ -58,7 +58,7 @@ void laser_pm_gpio(char val)
 	close(fd);
 }
 
-Laser::Laser():nh_(),is_ready_(false)
+Laser::Laser():nh_(),is_ready_(false),is_scanDataReady_(false)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	start_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("start_motor");
@@ -82,13 +82,23 @@ Laser::~Laser()
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	int i, count = 0;
-
+	is_scanDataReady_ = false;
 	laser_scan_data_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 //	ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
-
+	is_scanDataReady_ = true;
 	is_ready_ = true;
+}
 
+/*
+ * @author mengshige1988@qq.com
+ * @brief 
+ * @param None
+ * @return bool
+ * */
+bool Laser::isNewDataReady()
+{
+	return this->is_scanDataReady_;
 }
 
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
@@ -117,6 +127,22 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 	}
 
 	return found;
+}
+
+/*
+ * @author mengshige1988@qq.com
+ * @brief according giveing angle return laser range data
+ * @angle angle from 0 to 359
+ * @return distance value (meter)
+ * */
+double Laser::getLaserDistance(uint16_t angle){
+	if(angle >359 || angle < 0){
+		ROS_WARN("%s,%d,angle should be in range 0 to 359,input angle = %u",__FUNCTION__,__LINE__,angle);
+		return 0;
+	}
+	else{
+		return this->laser_scan_data_.ranges[angle];
+	}
 }
 
 double Laser::getLaserDistance(int begin, int end, double range)
@@ -194,6 +220,7 @@ void Laser::start(void)
 void Laser::stop(void){
 	std_srvs::Empty empty;
 	is_ready_ = false;
+	is_scanDataReady_ = false;
 	ROS_INFO("stop_laser");
 	stop_mator_cli_.call(empty);
 	laser_pm_gpio('0');

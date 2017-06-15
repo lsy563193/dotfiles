@@ -17,13 +17,15 @@ public:
 	void isReady(bool val);
 
 	bool isReady();
+	bool isNewDataReady();
+	double getLaserDistance(uint16_t angle);
 
 private:
 	void stop(void);
 	void start(void);
 	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	bool is_ready_;
-
+	bool is_scanDataReady_;
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;
 
