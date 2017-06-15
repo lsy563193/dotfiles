@@ -160,7 +160,6 @@ void Random_Running_Mode(void)
 			return;
 		}
 		Beep(2,25,25,1);
-		Deceleration();
 		Turn_Right(Turn_Speed,1120+Get_Random_Factor()*10);
 		if(Stop_Event())
 		{
@@ -335,7 +334,6 @@ void Random_Running_Mode(void)
 			#ifdef SCREEN_REMOTE
 			if(Remote_Key(Remote_Left))
 			{
-				Deceleration();
 				Stop_Brifly();
 				Turn_Left(Turn_Speed,500);
 				Stop_Brifly();
@@ -345,7 +343,6 @@ void Random_Running_Mode(void)
 			}
 			if(Remote_Key(Remote_Right))
 			{
-				Deceleration();
 				Stop_Brifly();
 				Turn_Right(Turn_Speed,400);
 				Stop_Brifly();

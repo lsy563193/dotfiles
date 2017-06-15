@@ -88,7 +88,6 @@ void Remote_Mode(void)
 		if(Remote_Key(Remote_Left))
 		{
 
-			Deceleration();
 			Reset_Rcon_Remote();
 			Turn_Left(Turn_Speed,320);
 			//Set_SideBrush_PWM(30,30);
@@ -100,7 +99,6 @@ void Remote_Mode(void)
 		if(Remote_Key(Remote_Right))
 		{
 	
-			Deceleration();
 			//Work_Motor_Configure();
 			Reset_Rcon_Remote();
 			Turn_Right(Turn_Speed,320);

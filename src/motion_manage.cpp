@@ -370,7 +370,6 @@ bool MotionManage::initNavigationCleaning(void)
 				return false;
 			}
 		}
-		Deceleration();
 		Stop_Brifly();
 		extern bool g_from_station;
 		g_from_station = 1;
