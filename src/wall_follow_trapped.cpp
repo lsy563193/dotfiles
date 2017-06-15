@@ -129,7 +129,7 @@
 //		map_set_cell(MAP, pos_x, pos_y, CLEANED);
 //
 //		if (abs(current_x - map_get_x_cell()) >= 2 || abs(current_y - map_get_y_cell()) >= 2) {
-//			path_set_current_pos();
+//			path_update_cell_history();
 //			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, map_get_x_cell(), map_get_y_cell());
 //			val = path_escape_trapped();
 //			if (val == 1) {
@@ -728,7 +728,7 @@ void *WFT_check_trapped(void *data)
 		map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
 		if (abs(current_x - map_get_x_cell()) >= 2 || abs(current_y - map_get_y_cell()) >= 2) {
-			path_set_current_pos();
+			path_update_cell_history();
 			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y,
 							 map_get_x_cell(), map_get_y_cell());
 			val = path_escape_trapped();

@@ -101,6 +101,7 @@ void *core_move_thread(void *)
 				Clear_Manual_Pause();
 
 				wall_follow(Map_Wall_Follow_Escape_Trapped);
+//				cm_touring();
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");

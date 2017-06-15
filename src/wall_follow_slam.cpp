@@ -86,7 +86,7 @@ bool wf_check_isolate(void)
 	//Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
 
-	path_set_current_pos();
+	path_update_cell_history();
 	//ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_get_x_cell(), Map_get_y_cell());
 	val = WF_path_escape_trapped();
 	if (val == 0)

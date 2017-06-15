@@ -69,7 +69,7 @@ static LineType	pos_line[POS_LINE_CNT];
 
 static uint16_t line_cnt = 0;
 
-extern PositionType g_pos_history[];
+extern PositionType g_cell_history[];
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 /*
@@ -518,7 +518,7 @@ int16_t path_move_to_unclean_area(Cell_t pos, int16_t x, int16_t y, int16_t *x_n
 						}
 					}
 				}
-				printf("%s %d: can't find nearest point to current g_pos_history!\n", __FUNCTION__, __LINE__);
+				printf("%s %d: can't find nearest point to current g_cell_history!\n", __FUNCTION__, __LINE__);
 			}
 		}
 		/*
@@ -638,7 +638,7 @@ int16_t path_move_to_unclean_area(Cell_t pos, int16_t x, int16_t y, int16_t *x_n
 		}
 
 		/* Try to avoid repeatly hit the obstcal ahead. */
-		if (g_pos_history[0].x == g_pos_history[1].x && g_pos_history[0].y == g_pos_history[1].y) {
+		if (g_cell_history[0].x == g_cell_history[1].x && g_cell_history[0].y == g_cell_history[1].y) {
 			path_trace_path(line_idx, cur_idx);
 			path_line_dump();
 
@@ -973,10 +973,10 @@ int16_t path_move_to_unclean_area(Cell_t pos, int16_t x, int16_t y, int16_t *x_n
 							break;
 						}
 
-						printf("%s %d: %d %d %d %d %d\n", __FUNCTION__, __LINE__, g_pos_history[0].x, g_pos_history[0].y, g_pos_history[1].x,  g_pos_history[1].y, path_get_robot_direction());
+						printf("%s %d: %d %d %d %d %d\n", __FUNCTION__, __LINE__, g_cell_history[0].x, g_cell_history[0].y, g_cell_history[1].x,  g_cell_history[1].y, path_get_robot_direction());
 
 						/* Try to avoid repeatly hit the obstcal ahead. */
-						if (g_pos_history[0].x == g_pos_history[1].x && g_pos_history[0].y == g_pos_history[1].y) {
+						if (g_cell_history[0].x == g_cell_history[1].x && g_cell_history[0].y == g_cell_history[1].y) {
 							/* Possibly ahead is blocked */
 							printf("%s %d: level cur: %d\tlevel next: %d\n", __FUNCTION__, __LINE__, level_cur, level_next);
 							if (level_cur - 1 == level_next + 1 && abs(*y_next - y_pos) <= 2) {
@@ -1422,7 +1422,7 @@ int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_move_to_unclean_area(Cell_t position, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next) {
+int16_t path_move_to_unclean_area(const Cell_t& curr, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
@@ -1432,7 +1432,7 @@ int16_t path_move_to_unclean_area(Cell_t position, int16_t x, int16_t y, int16_t
 	path_reset_path_points();
 
 	/* Find the shortest path to the target by using shorest path grid map. */
-	retval = path_find_shortest_path(position.X, position.Y, x, y, 0);
+	retval = path_find_shortest_path(curr.X, curr.Y, x, y, 0);
 	if (retval < 0)
 		return retval;
 

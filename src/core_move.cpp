@@ -89,7 +89,7 @@ Cell_t g_pnt16_ar_tmp[3];
 
 Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
-extern PositionType g_pos_history[];
+extern PositionType g_cell_history[];
 
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
@@ -323,11 +323,11 @@ void cm_update_map_bumper()
 		d_cells = {{2,-1}, {2,0}, {2,1}};
 	else if (bumper & LeftBumperTrig) {
 		d_cells = {{2, 1}, {2,2},{1,2}};
-		if (g_pos_history[0] == g_pos_history[1] && g_pos_history[0] == g_pos_history[2])
+		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper & RightBumperTrig) {
 		d_cells = {{2,-2},{2,-1},{1,-2}};
-		if (g_pos_history[0] == g_pos_history[1]  && g_pos_history[0] == g_pos_history[2])
+		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
 
@@ -997,15 +997,15 @@ int cm_cleaning()
 		uint16_t last_dir = path_get_robot_direction();
 
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
-		int8_t state = path_next(&g_next_point.X, &g_next_point.Y, &g_targets_point);
+		int8_t is_found = path_next(&g_next_point, &g_targets_point);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
-		ROS_ERROR("State: %d", state);
-		if (state == 0) //No target point
+		ROS_ERROR("State: %d", is_found);
+		if (is_found == 0) //No target point
 		{
 			g_go_home = true;
 			return 0;
 		} else
-		if (state == 1)
+		if (is_found == 1)
 		{
 			auto rounding_type = CM_get_rounding_direction(&g_next_point, g_targets_point, last_dir);
 			if (rounding_type != ROUNDING_NONE)
@@ -1019,7 +1019,7 @@ int cm_cleaning()
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
 		} else
-		if (state == 2)
+		if (is_found == 2)
 		{    // Trapped
 			/* FIXME: disable events, since Wall_Follow_Trapped() doesn't handle events for now. */
 			cm_set_event_manager_handler_state(false);
@@ -1252,7 +1252,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y,
 						 map_get_x_cell(), map_get_y_cell());
 		if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
-			path_set_current_pos();
+			path_update_cell_history();
 
 			if (cm_check_loop_back(tmp) == 1)
 				return false;
@@ -1386,8 +1386,8 @@ void cm_set_continue_point(int32_t x, int32_t y)
 
 uint8_t cm_check_loop_back(Cell_t target) {
 	uint8_t retval = 0;
-	if ( target.X == g_pos_history[1].x && target.Y == g_pos_history[1].y &&
-		 target.X == g_pos_history[3].x && target.Y == g_pos_history[3].y ) {
+	if ( target.X == g_cell_history[1].x && target.Y == g_cell_history[1].y &&
+		 target.X == g_cell_history[3].x && target.Y == g_cell_history[3].y ) {
 		ROS_WARN("%s %d Possible loop back (%d, %d)", __FUNCTION__, __LINE__, target.X, target.Y);
 		retval	= 1;
 	}

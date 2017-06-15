@@ -71,7 +71,7 @@ int32_t Map_DistanceLimit(uint16_t heading);
 
 int32_t cell_to_count(int16_t distance);
 int16_t count_to_cell(double count);
-Point32_t map_cell_to_point(Cell_t cell);
+Point32_t map_cell_to_point(const Cell_t& cell);
 Cell_t map_point_to_cell(Point32_t pnt);
 
 void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);

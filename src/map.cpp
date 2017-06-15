@@ -303,7 +303,7 @@ int16_t count_to_cell(double count) {
 	}
 }
 
-Point32_t map_cell_to_point(Cell_t cell) {
+Point32_t map_cell_to_point(const Cell_t& cell) {
 	Point32_t pnt;
 	pnt.X = cell_to_count(cell.X);
 	pnt.Y = cell_to_count(cell.Y);

@@ -48,7 +48,7 @@ void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range
  *
  * @return
  */
-void path_set_current_pos(void);
+void path_update_cell_history(void);
 
 /*
  * Initialization function for path planning, it sets the starting
@@ -87,11 +87,11 @@ void WF_PathPlanning_Initialize(int32_t *x, int32_t *y);
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(int32_t *x, int32_t *y, Point32_t *final_target_cell);
+int8_t path_next(Point32_t *next_point, Point32_t *target_point);
 
 uint8_t path_home(int32_t *x, int32_t *y);
 
-void path_set_current_pos(void);
+void path_update_cell_history(void);
 
 void path_set_max_try_cnt(uint8_t val);
 
@@ -147,7 +147,7 @@ void path_update_cells(void);
  * 		1 if either one end is not cleaned
  * 		2 if both ends are not cleaned
  */
-uint8_t path_lane_is_cleaned(int16_t *x, int16_t *y);
+uint8_t path_lane_is_cleaned(Cell_t& next);
 
 /*
  * Find how many cells ahead to clean with a given target.
@@ -158,7 +158,7 @@ uint8_t path_lane_is_cleaned(int16_t *x, int16_t *y);
  *
  * @return
  */
-int16_t path_ahead_to_clean(int16_t x, int16_t y, int16_t x_next);
+int16_t path_ahead_to_clean(int16_t x, Cell_t next);
 
 /*
  * Check whether the robot is trapped or not. The robot is trapped if there
@@ -230,7 +230,7 @@ uint8_t is_block_boundary(int16_t x, int16_t y);
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-uint8_t is_brush_block_unclean(int16_t x, int16_t y);
+bool is_brush_block_unclean(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
