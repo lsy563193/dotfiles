@@ -3201,7 +3201,7 @@ void Set_Plan_Status(uint8_t Status)
 {
 	Plan_Status = Status;
 	if (Plan_Status != 0)
-		ROS_WARN("Plan status return %d.", Plan_Status);
+		ROS_DEBUG("Plan status return %d.", Plan_Status);
 }
 
 uint8_t Get_Plan_Status()

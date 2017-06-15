@@ -1510,12 +1510,12 @@ void cm_register_events()
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 
 	/* Remote */
-	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_APPOINMENT, true);
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
 	event_manager_register_and_enable_x(remote_mode_spot, EVT_REMOTE_MODE_SPOT, true);
 	event_manager_register_and_enable_x(remote_suction, EVT_REMOTE_SUCTION, true);
 	// Just enable the default handler.
+	event_manager_enable_handler(EVT_REMOTE_APPOINMENT, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
@@ -2289,13 +2289,6 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 }
 
 /* Remote */
-
-void cm_handle_remote_plan(bool state_now, bool state_last)
-{
-	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
-	Set_Plan_Status(0);
-}
 
 void cm_handle_remote_clean(bool state_now, bool state_last)
 {

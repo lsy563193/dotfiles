@@ -673,6 +673,7 @@ void em_default_handler_remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
+	Set_Plan_Status(0);
 	Reset_Rcon_Remote();
 }
 
