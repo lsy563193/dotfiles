@@ -419,8 +419,8 @@ bool MotionManage::initNavigationCleaning(void)
 		{
 			Point32_t new_home_point;
 			// Save the current coordinate as a new home point.
-			new_home_point.X = Map_get_x_count();
-			new_home_point.Y = Map_get_y_count();
+			new_home_point.X = map_get_x_count();
+			new_home_point.Y = map_get_y_count();
 
 			// Push the start point into the home point list.
 			g_home_point.push_front(new_home_point);
@@ -451,8 +451,8 @@ bool MotionManage::initNavigationCleaning(void)
 		}
 		path_escape_set_trapped_cell(g_pnt16_ar_tmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
 
-		ROS_INFO("Map_Initialize-----------------------------");
-		Map_Initialize();
+		ROS_INFO("map_init-----------------------------");
+		map_init();
 		path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);
 
 		robot::instance()->initOdomPosition();
@@ -471,7 +471,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 bool MotionManage::initWallFollowCleaning(void)
 {
-	extern std::vector<Pose32_t> WF_Point;
+	extern std::vector<Pose32_t> g_wf_point;
 
 	reset_start_work_time();
 	Reset_MoveWithRemote();
@@ -495,13 +495,13 @@ bool MotionManage::initWallFollowCleaning(void)
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
 	g_home_point.clear();
-	WF_Point.clear();
+	g_wf_point.clear();
 	Point32_t new_home_point;
 	new_home_point.X = new_home_point.Y = 0;
 	// Push the start point into the home point list
 	g_home_point.push_front(new_home_point);
 
-	Map_Initialize();
+	map_init();
 	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
 	WF_PathPlanning_Initialize(&g_home_point.front().X, &g_home_point.front().Y);
@@ -540,7 +540,7 @@ bool MotionManage::initSpotCleaning(void)
 	t_point.Y = 0;
 	homepoint.clear();
 	homepoint.push_front(t_point);
-	Map_Initialize();//init map
+	map_init();//init map
 	path_planning_initialize(&homepoint.front().X, &homepoint.front().Y);//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
@@ -578,7 +578,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_
 				robot::instance()->setCleanMapMarkers(i, j, TARGET);
 			else
 			{
-				cell_state = Map_get_cell(id, i, j);
+				cell_state = map_get_cell(id, i, j);
 				if (cell_state == CLEANED || cell_state == BLOCKED_OBS || cell_state == BLOCKED_BUMPER)
 					robot::instance()->setCleanMapMarkers(i, j, cell_state);
 			}

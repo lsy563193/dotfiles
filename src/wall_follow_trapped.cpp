@@ -41,7 +41,7 @@
 ////Timer
 //uint32_t escape_trapped_timer;
 ////MFW setting
-//static const MapWallFollowSetting MFW_Setting[6]= {{1200, 250, 150 },
+//static const MapWallFollowSetting MFW_SETTING[6]= {{1200, 250, 150 },
 //	{1200, 250, 150},
 //	{1200, 250, 150},
 //	{1200, 250, 70},
@@ -114,31 +114,31 @@
 //
 //	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 //	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-//	Map_set_position(pos_x, pos_y);
-//	Map_set_cell(MAP, pos_x, pos_y, CLEANED);
+//	map_set_position(pos_x, pos_y);
+//	map_set_cell(MAP, pos_x, pos_y, CLEANED);
 //
-//	current_x = Map_get_x_cell();
-//	current_y = Map_get_y_cell();
+//	current_x = map_get_x_cell();
+//	current_y = map_get_y_cell();
 //	escape_thread_running = true;
 //
 //	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 //	while (escape_thread_running == true) {
 //		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 //		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-//		Map_set_position(pos_x, pos_y);
-//		Map_set_cell(MAP, pos_x, pos_y, CLEANED);
+//		map_set_position(pos_x, pos_y);
+//		map_set_cell(MAP, pos_x, pos_y, CLEANED);
 //
-//		if (abs(current_x - Map_get_x_cell()) >= 2 || abs(current_y - Map_get_y_cell()) >= 2) {
+//		if (abs(current_x - map_get_x_cell()) >= 2 || abs(current_y - map_get_y_cell()) >= 2) {
 //			path_set_current_pos();
-//			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, Map_get_x_cell(), Map_get_y_cell());
+//			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y, map_get_x_cell(), map_get_y_cell());
 //			val = path_escape_trapped();
 //			if (val == 1) {
 //				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 //				data = (void *) (&escaped);
 //				escape_thread_running = false;
 //			}
-//			current_x = Map_get_x_cell();
-//			current_y = Map_get_y_cell();
+//			current_x = map_get_x_cell();
+//			current_y = map_get_y_cell();
 //			} else {
 //				usleep(100000);
 //			}
@@ -156,14 +156,14 @@
 //
 //	for (j = -1; boundary_reach == 0 && j <= 1; j++) {
 //#if (ROBOT_SIZE == 5)
-//		x = Map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
-//		y = Map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		x = map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		y = map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 //#else
-//		x = Map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
-//		y = Map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		x = map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+//		y = map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 //#endif
 //
-//		if (Map_get_cell(MAP, countToCell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
+//		if (map_get_cell(MAP, countToCell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
 //			boundary_reach = 1;
 //			Set_Wheel_Speed(0, 0);
 //			usleep(10000);
@@ -268,7 +268,7 @@
 //		usleep(10000);
 //	}
 //
-//	//CM_head_to_course(Rotate_TopSpeed, Gyro_GetAngle() + 900);
+//	//cm_head_to_course(Rotate_TopSpeed, Gyro_GetAngle() + 900);
 //
 //	/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 //	escape_trapped_timer = time(NULL);
@@ -405,7 +405,7 @@
 //				Stop_Brifly();
 //				Turn_Right(Turn_Speed, 600);
 //
-//				Wall_Straight_Distance = MFW_Setting[follow_type].right_bumper_val; //150;
+//				Wall_Straight_Distance = MFW_SETTING[follow_type].right_bumper_val; //150;
 //			} else {
 //				WFM_move_back(350);
 //				if(Is_Bumper_Jamed())
@@ -415,7 +415,7 @@
 //				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
 //				Turn_Right(Turn_Speed, 150);
-//				Wall_Straight_Distance = MFW_Setting[follow_type].left_bumper_val; //250;
+//				Wall_Straight_Distance = MFW_SETTING[follow_type].left_bumper_val; //250;
 //			}
 //
 //			Wall_Straight_Distance = 200;
@@ -713,32 +713,32 @@ void *WFT_check_trapped(void *data)
 
 	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	Map_set_position(pos_x, pos_y);
-	Map_set_cell(MAP, pos_x, pos_y, CLEANED);
+	map_set_position(pos_x, pos_y);
+	map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
-	current_x = Map_get_x_cell();
-	current_y = Map_get_y_cell();
+	current_x = map_get_x_cell();
+	current_y = map_get_y_cell();
 	escape_thread_running = true;
 
 	ROS_INFO("%s %d: escape thread is up!", __FUNCTION__, __LINE__);
 	while (escape_thread_running == true) {
 		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		Map_set_position(pos_x, pos_y);
-		Map_set_cell(MAP, pos_x, pos_y, CLEANED);
+		map_set_position(pos_x, pos_y);
+		map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
-		if (abs(current_x - Map_get_x_cell()) >= 2 || abs(current_y - Map_get_y_cell()) >= 2) {
+		if (abs(current_x - map_get_x_cell()) >= 2 || abs(current_y - map_get_y_cell()) >= 2) {
 			path_set_current_pos();
 			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y,
-							 Map_get_x_cell(), Map_get_y_cell());
+							 map_get_x_cell(), map_get_y_cell());
 			val = path_escape_trapped();
 			if (val == 1) {
 				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 				escape_state = Escape_Trapped_Escaped;
 				escape_thread_running = false;
 			}
-			current_x = Map_get_x_cell();
-			current_y = Map_get_y_cell();
+			current_x = map_get_x_cell();
+			current_y = map_get_y_cell();
 		} else {
 			usleep(100000);
 		}
@@ -755,10 +755,10 @@ void WFT_boundary_check()
 	int32_t	x, y;
 
 	for (j = -1; boundary_reach == 0 && j <= 1; j++) {
-		x = Map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
-		y = Map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+		x = map_get_relative_x(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
+		y = map_get_relative_y(Gyro_GetAngle(), j * CELL_SIZE, CELL_SIZE_2);
 
-		if (Map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
+		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
 			boundary_reach = 1;
 			Set_Wheel_Speed(0, 0);
 			usleep(10000);
