@@ -116,7 +116,6 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 	static volatile int32_t Wall_Distance = Wall_High_Limit;
 	float Start_WF_Pose_X, Start_WF_Pose_Y;//the first pose when the wall mode start
 	float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-	uint8_t First_Time_Flag;
 	uint8_t Isolated_Flag;
 	uint32_t Temp_Rcon_Status;
 	int16_t Isolated_Count = 0;
@@ -285,7 +284,6 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 		/* Set escape trapped timer when it is in Map_Wall_Follow_Escape_Trapped mode. */
 		auto Start_Pose_X = robot::instance()->getPositionX();
 		auto Start_Pose_Y = robot::instance()->getPositionY();
-		First_Time_Flag = 1;
 		while (ros::ok())
 		{
 			if ((time(NULL) - g_wall_follow_timer) > WALL_FOLLOW_TIME)
