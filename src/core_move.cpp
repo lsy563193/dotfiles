@@ -1210,14 +1210,14 @@ uint8_t cm_touring(void)
 	if(! motion.initSucceeded()){
 		robot::instance()->resetLowBatPause();
 		robot::instance()->resetManualPause();
-		robot::instance()->resetTempSpot();
+		cm_unregist_events();
 		return 0;
 	}
 
-	cm_regist_events();
-
 	if (!g_go_home && (robot::instance()->isLowBatPaused()))
-		if (!cm_resume_cleaning())
+		if (! cm_resume_cleaning())
+		{
+			cm_unregist_events();
 			return 0;
 	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
