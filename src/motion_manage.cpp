@@ -349,7 +349,7 @@ bool MotionManage::initNavigationCleaning(void)
 	}
 
 	/*Move back from charge station*/
-	if (Is_AtHomeBase()) {
+	if (is_on_charger_stub()) {
 		ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
 		// Reset the robot to non charge mode.
@@ -368,9 +368,9 @@ bool MotionManage::initNavigationCleaning(void)
 		for (int i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			Quick_Back(20, 72);
-			if (Stop_Event() || Is_AtHomeBase()) {
+			if (Stop_Event() || is_on_charger_stub()) {
 				Disable_Motors();
-				if (Is_AtHomeBase())
+				if (is_on_charger_stub())
 				{
 					ROS_WARN("%s %d: move back 100mm and still detect charger! Or touch event. return 0", __FUNCTION__, __LINE__);
 				}

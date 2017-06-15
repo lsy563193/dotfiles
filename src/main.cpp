@@ -35,7 +35,7 @@ void laser_pm_gpio(char val);
 bool selfCheckAtLaunch()
 {
 	// Skip self check if using direct charge or at charger stub, because robot can not move during direct charge.
-	if (is_direct_charge() || Is_AtHomeBase())
+	if (is_direct_charge() || is_on_charger_stub())
 		return true;
 
 	//Bumper protect
@@ -75,7 +75,7 @@ void *core_move_thread(void *)
 	usleep(200000);
 	if (selfCheckAtLaunch())
 	{
-		if (is_direct_charge() || Is_AtHomeBase())
+		if (is_direct_charge() || is_on_charger_stub())
 			Set_Clean_Mode(Clean_Mode_Charging);
 		else if (Check_Bat_Ready_To_Clean())
 			wav_play(WAV_PLEASE_START_CLEANING);

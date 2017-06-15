@@ -413,7 +413,7 @@ uint8_t Get_Bumper_Status(void);
 
 uint8_t Get_Cliff_Trig(void);
 
-uint8_t Is_AtHomeBase(void);
+bool is_on_charger_stub(void);
 
 uint8_t is_direct_charge(void);
 

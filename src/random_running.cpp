@@ -104,7 +104,7 @@ void Random_Running_Mode(void)
 //  }
 
 	ROS_DEBUG_NAMED("random mode","-------in random running mode-----");
-	if(Is_AtHomeBase())
+	if(is_on_charger_stub())
 	{
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Beep(2,25,25,1);

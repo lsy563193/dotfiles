@@ -185,7 +185,7 @@ void User_Interface(void)
 		}
 
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
-		if(Is_AtHomeBase() || is_direct_charge())//on base but miss charging , adjust position to charge
+		if(is_on_charger_stub() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
 			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 			if (is_direct_charge())

@@ -18,6 +18,8 @@
 #include "wall_follow_trapped.h"
 #include "wav.h"
 #include "slam.h"
+#include "event_manager.h"
+
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -1128,12 +1130,12 @@ uint8_t Cliff_Event(uint8_t event)
 	if(d_flag)return 1;
 	return 0;
 }
-/*-------------------------------Check if at home base------------------------------------*/
-uint8_t Is_AtHomeBase(void)
+/*-------------------------------Check if at charger stub------------------------------------*/
+bool is_on_charger_stub(void)
 {
 	// If the charge status is true, it means it is at home base charging.
 	//Debug
-	if (robot::instance()->getChargeStatus() == 2 || robot::instance()->getChargeStatus() == 1){
+	if (g_charge_detect == 2 || g_charge_detect == 1){
 		return 1;
 	}else{
 		return 0;

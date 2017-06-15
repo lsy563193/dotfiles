@@ -103,7 +103,7 @@ void sleep_mode(void)
 			break;
 		}
 		Reset_Rcon_Remote();
-		if(Is_AtHomeBase() || is_direct_charge())//on base but miss charging , adjust position to charge
+		if(is_on_charger_stub() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
 			Set_Main_PwrByte(POWER_ACTIVE);
 			ResetSleepModeFlag();

@@ -140,7 +140,7 @@ void Charge_Function(void)
 				ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 				wav_play(WAV_BATTERY_LOW);
 			}
-			else if (Is_AtHomeBase())
+			else if (is_on_charger_stub())
 			{
 				ROS_WARN("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
 				// Key release detection, if user has not release the key, don't do anything.
@@ -158,7 +158,7 @@ void Charge_Function(void)
 		{
 			set_stop_charge();
 			Reset_Rcon_Remote();
-			if(Is_AtHomeBase())
+			if(is_on_charger_stub())
 			{
 				Set_VacMode(Vac_Normal);
 //				Set_Room_Mode(Room_Mode_Large);
@@ -190,7 +190,7 @@ void Charge_Function(void)
 					ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 					wav_play(WAV_BATTERY_LOW);
 				}
-				else if (Is_AtHomeBase())
+				else if (is_on_charger_stub())
 				{
 //					Set_VacMode(Vac_Normal);
 //					Set_Room_Mode(Room_Mode_Large);
@@ -255,7 +255,7 @@ void Charge_Function(void)
 //		if(Is_Alarm())
 //		{
 //			Reset_Alarm();
-//			if(Is_AtHomeBase())
+//			if(is_on_charger_stub())
 //			{
 //				Set_VacMode(Vac_Normal);
 //				Set_Room_Mode(Room_Mode_Large);
