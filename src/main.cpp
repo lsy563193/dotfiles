@@ -100,7 +100,7 @@ void *core_move_thread(void *)
 
 				Clear_Manual_Pause();
 
-				Wall_Follow(Map_Wall_Follow_Escape_Trapped);
+				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");
@@ -211,7 +211,7 @@ void *core_move_thread(void *)
 				Clear_Manual_Pause();
 
 				Disable_Motors();
-				Sleep_Mode();
+				sleep_mode();
 				break;
 			default:
 				Set_Clean_Mode(Clean_Mode_Userinterface);
