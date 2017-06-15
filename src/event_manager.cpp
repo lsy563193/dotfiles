@@ -270,7 +270,7 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Charge Status */
-		if (robot::instance()->getChargeStatus()) {
+		if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CHARGE_DETECT)
 		}
@@ -713,6 +713,7 @@ void em_default_handler_charge_detect(bool state_now, bool state_last)
 	if (g_charge_detect_cnt++ > 25)
 	{
 		g_charge_detect = robot::instance()->getChargeStatus();
+		ROS_WARN("%s %d: g_charge_detect has been set to %d.", g_charge_detect);
 		g_charge_detect_cnt = 0;
 	}
 }
