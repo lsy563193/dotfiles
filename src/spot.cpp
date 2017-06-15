@@ -96,7 +96,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 			Disable_Motors();
 			return;
 		}
-		cm_regist_events();
+		cm_register_events();
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
@@ -263,7 +263,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				spiral_type = Spiral_Left_In;
 			}
 		}//ending while(ros::ok)
-		cm_unregist_events();
+		cm_unregister_events();
 	}//ending if(st == NormalSpot)
 	else if(st == CleanSpot || st == WallSpot){
 		event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,false);

@@ -1212,14 +1212,14 @@ uint8_t cm_touring(void)
 	if(! motion.initSucceeded()){
 		robot::instance()->resetLowBatPause();
 		robot::instance()->resetManualPause();
-		cm_unregist_events();
+		cm_unregister_events();
 		return 0;
 	}
 
 	if (!g_go_home && (robot::instance()->isLowBatPaused())){
 		if (! cm_resume_cleaning())
 		{
-			cm_unregist_events();
+			cm_unregister_events();
 			return 0;
         }
     }
@@ -1231,7 +1231,7 @@ uint8_t cm_touring(void)
 		g_temp_spot_set = true;
         Set_Clean_Mode(Clean_Mode_Navigation);
     }
-	cm_unregist_events();
+	cm_unregister_events();
 	return 0;
 }
 
@@ -1463,7 +1463,7 @@ void cm_create_home_boundary(void)
 }
 
 /* Event handler functions. */
-void cm_regist_events()
+void cm_register_events()
 {
 	event_manager_set_current_mode(EVT_MODE_NAVIGATION);
 
@@ -1528,7 +1528,7 @@ void cm_regist_events()
 	event_manager_set_enable(true);
 }
 
-void cm_unregist_events()
+void cm_unregister_events()
 {
 #define event_manager_register_and_disable_x(x) \
 	event_manager_register_handler(x, NULL); \

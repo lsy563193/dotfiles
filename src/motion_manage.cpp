@@ -308,7 +308,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 bool MotionManage::initNavigationCleaning(void)
 {
-	cm_regist_events();
+	cm_register_events();
 	// Wait for 20ms to make sure the event manager has start working.
 	usleep(20000);
 
