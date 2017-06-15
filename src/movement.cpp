@@ -470,7 +470,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (Is_ChargerOn())
+		if (is_charge_on())
 		{
 			ROS_DEBUG("Reach charger while turn left.");
 			Stop_Brifly();
@@ -551,7 +551,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (Is_ChargerOn())
+		if (is_charge_on())
 		{
 			ROS_DEBUG("Reach charger while turn right.");
 			Stop_Brifly();
@@ -1133,22 +1133,22 @@ uint8_t Cliff_Event(uint8_t event)
 /*-------------------------------Check if at charger stub------------------------------------*/
 bool is_on_charger_stub(void)
 {
-	// If the charge status is true, it means it is at home base charging.
-	//Debug
-	if (g_charge_detect == 2 || g_charge_detect == 1){
-		return 1;
-	}else{
-		return 0;
-	}
+	// 1: On charger stub and charging.
+	// 2: On charger stub but not charging.
+	if (robot::instance()->getChargeStatus() == 2 || robot::instance()->getChargeStatus() == 1)
+		return true;
+	else
+		return false;
 }
 
-uint8_t is_direct_charge(void)
+bool is_direct_charge(void)
 {
-	if (robot::instance()->getChargeStatus() == 3 || robot::instance()->getChargeStatus() == 4){
-		return 1;
-	}else{
-		return 0;
-	}
+	// 3: Direct connect to charge line but not charging.
+	// 4: Direct connect to charge line and charging.
+	if (robot::instance()->getChargeStatus() == 3 || robot::instance()->getChargeStatus() == 4)
+		return true;
+	else
+		return false;
 }
 
 uint8_t Turn_Connect(void)
@@ -1161,7 +1161,7 @@ uint8_t Turn_Connect(void)
 	set_start_charge();
 	// Wait for 200ms for charging activated.
 	usleep(200000);
-	if (Is_ChargerOn())
+	if (is_charge_on())
 	{
 		ROS_INFO("[movement.cpp] Reach charger without turning.");
 //		Beep(2, 25, 0, 1);
@@ -1177,13 +1177,12 @@ uint8_t Turn_Connect(void)
 	Set_Wheel_Speed(speed, speed);
 	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
 			Disable_Motors();
-			Stop_Brifly();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				ROS_INFO("[movement.cpp] Turn left reach charger.");
 //				Beep(2, 25, 0, 1);
@@ -1209,11 +1208,11 @@ uint8_t Turn_Connect(void)
 	Set_Wheel_Speed(speed, speed);
 	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
 			Disable_Motors();
 			Stop_Brifly();
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				ROS_INFO("[movement.cpp] Turn right reach charger.");
 //				Beep(2, 25, 0, 1);
@@ -2126,13 +2125,14 @@ uint8_t Is_Station(void)
 	return 0;
 }
 
-uint8_t Is_ChargerOn(void)
+bool is_charge_on(void)
 {
-	if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4){
-		return 1;
-	}else{
-		return 0;
-	}
+	// 1: On charger stub and charging.
+	// 4: Direct connect to charge line and charging.
+	if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4)
+		return true;
+	else
+		return false;
 }
 
 uint8_t Is_Water_Tank(void)

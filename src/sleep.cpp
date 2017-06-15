@@ -133,7 +133,7 @@ void sleep_mode(void)
 			ResetSleepModeFlag();
 			break;
 		}
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
 			Set_Clean_Mode(Clean_Mode_Charging);
 			Set_Main_PwrByte(POWER_ACTIVE);

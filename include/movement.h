@@ -415,7 +415,7 @@ uint8_t Get_Cliff_Trig(void);
 
 bool is_on_charger_stub(void);
 
-uint8_t is_direct_charge(void);
+bool is_direct_charge(void);
 
 uint8_t Turn_Connect(void);
 
@@ -535,7 +535,7 @@ uint8_t Stop_Event(void);
 
 uint8_t Is_Station(void);
 
-uint8_t Is_ChargerOn(void);
+bool is_charge_on(void);
 
 uint8_t Is_Water_Tank(void);
 

@@ -36,7 +36,7 @@ void Charge_Function(void)
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
 
-	// This counter is for avoiding occasionly Is_ChargerOn return 0 when robot is charging, cause it will stop charger mode.
+	// This counter is for avoiding occasionly is_charge_on return 0 when robot is charging, cause it will stop charger mode.
 	uint8_t Stop_Charge_Counter = 0;
 
 	Set_LED(100,100);
@@ -85,7 +85,7 @@ void Charge_Function(void)
 //		}
 //		#endif
 
-		if(!Is_ChargerOn())//check if charger unplug
+		if(!is_charge_on())//check if charger unplug
 		{
 			ROS_DEBUG("Leave charger");
 			if (Stop_Charge_Counter > 25)
@@ -325,12 +325,12 @@ void GoHome(void)
 	while(Gyro_Step < 360)
 	{
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (Is_ChargerOn())
+		if (is_charge_on())
 		{
 			ROS_DEBUG("%s %d: Reach charger at first turn.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			usleep(100000);
-			if (Is_ChargerOn())
+			if (is_charge_on())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
@@ -765,18 +765,18 @@ void Around_ChargerStation(uint8_t Dir)
 			No_Signal_Counter=0;
 		}
 
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
-			ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: is_charge_on!!", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			Stop_Brifly();
 //			delay(2000);
 			usleep(200000);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				//delay(5000);
 				usleep(200000);
-				if(Is_ChargerOn())
+				if(is_charge_on())
 				{
 //					Reset_Error_Code();
 					Set_Clean_Mode(Clean_Mode_Charging);
@@ -1301,18 +1301,18 @@ uint8_t Check_Position(uint8_t Dir)
 			}
 		}
 
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
-			ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: is_charge_on!!", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			Stop_Brifly();
 //			delay(2000);
 			usleep(200000);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				//delay(5000);
 				usleep(200000);
-				if(Is_ChargerOn())
+				if(is_charge_on())
 				{
 //					Reset_Error_Code();
 					Set_Clean_Mode(Clean_Mode_Charging);
@@ -1421,18 +1421,18 @@ void By_Path(void)
 		while(Cycle--)
 		{
 			//ROS_DEBUG("new round, Bumper_Counter = %d.", Bumper_Counter);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
-				ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+				ROS_DEBUG("%s %d: is_charge_on!!", __FUNCTION__, __LINE__);
 				Disable_Motors();
 				Stop_Brifly();
 //				delay(2000);
 				usleep(200000);
-				if(Is_ChargerOn())
+				if(is_charge_on())
 				{
 					//delay(5000);
 					usleep(200000);
-					if(Is_ChargerOn())
+					if(is_charge_on())
 					{
 //						Reset_Error_Code();
 						Set_Clean_Mode(Clean_Mode_Charging);

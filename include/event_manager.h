@@ -76,6 +76,7 @@ extern bool g_battery_low;
 extern uint8_t g_battery_low_cnt;
 /* Charge status */
 extern uint8_t g_charge_detect;
+extern uint8_t g_charge_detect_cnt;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,

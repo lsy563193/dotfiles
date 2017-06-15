@@ -56,6 +56,7 @@ bool g_battery_low = false;
 uint8_t g_battery_low_cnt = 0;
 /* Charge Status */
 uint8_t g_charge_detect = 0;
+uint8_t g_charge_detect_cnt = 0;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -709,7 +710,11 @@ void em_default_handler_battery_low(bool state_now, bool state_last)
 void em_default_handler_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	g_charge_detect = robot::instance()->getChargeStatus();
+	if (g_charge_detect_cnt++ > 25)
+	{
+		g_charge_detect = robot::instance()->getChargeStatus();
+		g_charge_detect_cnt = 0;
+	}
 }
 
 /* Default: empty hanlder */

@@ -356,12 +356,12 @@ bool MotionManage::initNavigationCleaning(void)
 		set_stop_charge();
 		// Sleep for 30ms to make sure it has sent at least one control message to stop charging.
 		usleep(30000);
-		while (Is_ChargerOn())
+		while (is_charge_on())
 		{
 			ROS_INFO("Robot Still charging.");
 			usleep(20000);
 		}
-		if (Is_ChargerOn()){
+		if (is_charge_on()){
 			ROS_WARN("[core_move.cpp] Still charging.");
 		}
 		// Set i < 7 for robot to move back for approximately 500mm.

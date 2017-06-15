@@ -116,7 +116,7 @@ void Random_Running_Mode(void)
 		Set_BLDC_Speed(30);
 		Stop_Brifly();
 		Quick_Back(30,750);
-		if(Stop_Event()||Is_ChargerOn())
+		if(Stop_Event()||is_charge_on())
 		{
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.

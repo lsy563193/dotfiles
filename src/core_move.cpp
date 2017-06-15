@@ -1204,6 +1204,8 @@ uint8_t cm_touring(void)
 	g_cliff_cnt = 0;
 	g_bumper_cnt = g_press_time = 0;
 	g_from_station = 0;
+	g_charge_detect = 0;
+	g_charge_detect_cnt = 0;
 
 	MotionManage motion;
 
