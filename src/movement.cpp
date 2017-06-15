@@ -806,12 +806,12 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 	while (ros::ok()) {
 		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		Map_set_position(pos_x, pos_y);
+		map_set_position(pos_x, pos_y);
 
-		i = Map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		j = Map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		if (Map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY) {
-			Map_set_cell(MAP, i, j, BLOCKED_OBS);
+		i = map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		j = map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY) {
+			map_set_cell(MAP, i, j, BLOCKED_OBS);
 		}
 
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {

@@ -1113,31 +1113,31 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	/* Reset the cells in the shorest path map. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			Map_set_cell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
+			map_set_cell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
 		}
 	}
 
 	/* Marked the obstcals to the shorest path map. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			cs = Map_get_cell(MAP, i, j);
+			cs = map_get_cell(MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++) {
 				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 					for (n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-						Map_set_cell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
+						map_set_cell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
 					}
 				}
 			}
 		}
 	}
 
-	if (Map_get_cell(SPMAP, endx, endy) == COST_HIGH) {
-		Map_set_cell(SPMAP, endx, endy, COST_NO);
+	if (map_get_cell(SPMAP, endx, endy) == COST_HIGH) {
+		map_set_cell(SPMAP, endx, endy, COST_NO);
 	}
 
 	/* Set the current robot position has the cost value of 1. */
-	Map_set_cell(SPMAP, (int32_t) xID, (int32_t) yID, COST_1);
+	map_set_cell(SPMAP, (int32_t) xID, (int32_t) yID, COST_1);
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -1148,7 +1148,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	passSet = 1;
 	passValue = 1;
 	nextPassValue = 2;
-	while (Map_get_cell(SPMAP, endx, endy) == COST_NO && passSet == 1) {
+	while (map_get_cell(SPMAP, endx, endy) == COST_NO && passSet == 1) {
 		offset++;
 		passSet = 0;
 
@@ -1170,28 +1170,28 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 					continue;
 
 				/* Found a cell that has a pass value equal to the current pass value. */
-				if(Map_get_cell(SPMAP, i, j) == passValue) {
+				if(map_get_cell(SPMAP, i, j) == passValue) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
-					if (Map_get_cell(SPMAP, i - 1, j) == COST_NO) {
-						Map_set_cell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
+					if (map_get_cell(SPMAP, i - 1, j) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
-					if (Map_get_cell(SPMAP, i + 1, j) == COST_NO) {
-						Map_set_cell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
+					if (map_get_cell(SPMAP, i + 1, j) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
-					if (Map_get_cell(SPMAP, i, j - 1) == COST_NO) {
-						Map_set_cell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
+					if (map_get_cell(SPMAP, i, j - 1) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
-					if (Map_get_cell(SPMAP, i, j + 1) == COST_NO) {
-						Map_set_cell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
+					if (map_get_cell(SPMAP, i, j + 1) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 				}
@@ -1209,7 +1209,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 
 	/* The target position still have a cost of 0, which mean it is not reachable. */
 	totalCost = 0;
-	if (Map_get_cell(SPMAP, endx, endy) == COST_NO) {
+	if (map_get_cell(SPMAP, endx, endy) == COST_NO) {
 		ROS_WARN("target point (%d, %d) is not reachable(0), return -2.", endx, endy);
 #ifdef	DEBUG_SM_MAP
 		debug_map(SPMAP, endx, endy);
@@ -1239,7 +1239,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	dest_dir = (path_get_robot_direction() == POS_Y || path_get_robot_direction() == NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != xID || tracey != yID) {
-		costAtCell = Map_get_cell(SPMAP, tracex, tracey);
+		costAtCell = map_get_cell(SPMAP, tracex, tracey);
 		targetCost = costAtCell - 1;
 
 		/* Reset target cost to 5, since cost only set from 1 to 5 in the shorest path map. */
@@ -1247,7 +1247,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 			targetCost = COST_5;
 
 		/* Set the cell value to 6 if the cells is on the path. */
-		Map_set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+		map_set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 #define COST_SOUTH	{											\
 				if (next == 0 && (Map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
@@ -1308,7 +1308,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 		tracex_tmp = tracex;
 		tracey_tmp = tracey;
 	}
-	Map_set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+	map_set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 	t.X = tracex_tmp;
 	t.Y = tracey_tmp;
@@ -1453,22 +1453,22 @@ int16_t path_move_to_unclean_area(Cell_t position, int16_t x, int16_t y, int16_t
 			 * in the shorest path grid map.
 			 */
 			stage = 0;
-			if (Map_get_cell(SPMAP, x_path - 1, y_path) == COST_PATH) {
+			if (map_get_cell(SPMAP, x_path - 1, y_path) == COST_PATH) {
 				x_path--;
 				stage = 1;
-				Map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
-			} else if (Map_get_cell(SPMAP, x_path, y_path + 1) == COST_PATH) {
+				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+			} else if (map_get_cell(SPMAP, x_path, y_path + 1) == COST_PATH) {
 				y_path++;
 				stage = 2;
-				Map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
-			} else if (Map_get_cell(SPMAP, x_path + 1, y_path) == COST_PATH) {
+				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+			} else if (map_get_cell(SPMAP, x_path + 1, y_path) == COST_PATH) {
 				x_path++;
 				stage = 3;
-				Map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
-			} else if (Map_get_cell(SPMAP, x_path, y_path - 1) == COST_PATH) {
+				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+			} else if (map_get_cell(SPMAP, x_path, y_path - 1) == COST_PATH) {
 				y_path--;
 				stage = 4;
-				Map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
 			}
 
 			if (stage == 0)
@@ -1483,7 +1483,7 @@ int16_t path_move_to_unclean_area(Cell_t position, int16_t x, int16_t y, int16_t
 			blocked = 0;
 			for (i = si; i <= ei && blocked == 0; i++) {
 				for (j = sj; j <= ej && blocked == 0; j++) {
-					if(Map_get_cell(SPMAP, i, j) == COST_HIGH) {
+					if(map_get_cell(SPMAP, i, j) == COST_HIGH) {
 						blocked = 1;
 					}
 				}
@@ -1535,10 +1535,10 @@ int16_t path_move_to_unclean_area(Cell_t position, int16_t x, int16_t y, int16_t
 					while (blocked_min == false || blocked_max == false) {
 						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
 							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
-								if (blocked_min == false && (x_min - 1 < sj || Map_get_cell(SPMAP, x_min - 1, i) == COST_HIGH)) {
+								if (blocked_min == false && (x_min - 1 < sj || map_get_cell(SPMAP, x_min - 1, i) == COST_HIGH)) {
 									blocked_min = true;
 								}
-								if (blocked_max == false && (x_max + 1 > ej || Map_get_cell(SPMAP, x_max + 1, i) == COST_HIGH)) {
+								if (blocked_max == false && (x_max + 1 > ej || map_get_cell(SPMAP, x_max + 1, i) == COST_HIGH)) {
 									blocked_max = true;
 								}
 							}
@@ -1566,10 +1566,10 @@ int16_t path_move_to_unclean_area(Cell_t position, int16_t x, int16_t y, int16_t
 					while (blocked_min == false || blocked_max == false) {
 						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
 							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
-								if (blocked_min == false && (y_min - 1 < sj || Map_get_cell(SPMAP, i, y_min - 1) == COST_HIGH)) {
+								if (blocked_min == false && (y_min - 1 < sj || map_get_cell(SPMAP, i, y_min - 1) == COST_HIGH)) {
 									blocked_min = true;
 								}
-								if (blocked_max == false && (y_max + 1 > ej || Map_get_cell(SPMAP, i, y_max + 1) == COST_HIGH)) {
+								if (blocked_max == false && (y_max + 1 > ej || map_get_cell(SPMAP, i, y_max + 1) == COST_HIGH)) {
 									blocked_max = true;
 								}
 							}

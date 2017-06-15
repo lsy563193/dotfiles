@@ -280,8 +280,8 @@ void Spot_WithCell(SpotType st,float spot_radius){
 		uint8_t Is_Dict_Change = 0;
 		uint32_t tmp_coor;
 		uint8_t od_spiral_out = 0,od_spiral_in = 0;
-		int32_t x_offset = (int32_t) Map_get_x_cell();
-		int32_t y_offset = (int32_t) Map_get_y_cell();
+		int32_t x_offset = (int32_t) map_get_x_cell();
+		int32_t y_offset = (int32_t) map_get_y_cell();
 		while(ros::ok()){
 			/*-------get target list ---------*/
 			Spot_GetTarget(spiral_type,spot_radius,&target,x_offset,y_offset);
