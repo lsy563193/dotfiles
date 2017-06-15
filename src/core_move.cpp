@@ -2269,7 +2269,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 		if (time(NULL) - start_time > 3) {
 			if (!reset_manual_pause)
 			{
-				Beep(2, 5, 0, 1);
+				beep_for_command(true);
 				reset_manual_pause = true;
 			}
 			robot::instance()->resetManualPause();
@@ -2288,7 +2288,6 @@ void cm_handle_remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	Set_Plan_Status(0);
-	Beep(Beep_Error_Sounds, 2, 0, 1);
 }
 
 void cm_handle_remote_clean(bool state_now, bool state_last)

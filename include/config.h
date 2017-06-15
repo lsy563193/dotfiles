@@ -109,8 +109,6 @@
 #define CLIFF_ERROR    (1)
 #define BUMPER_ERROR   (1)
 
-/* Beep Error Sounds*/
-#define Beep_Error_Sounds		(5)
 /*
  * Definition relates to the robot.
  */

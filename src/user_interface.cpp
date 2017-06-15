@@ -141,7 +141,7 @@ void User_Interface(void)
 		{
 			if (Remote_Key(Remote_All & ~Remote_Clean))
 			{
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 				Error_Alarm_Counter = 0;
 				Alarm_Error();

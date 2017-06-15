@@ -127,7 +127,7 @@ void Charge_Function(void)
 			if (is_direct_charge())
 			{
 				ROS_WARN("Can not go to navigation mode during direct charging.");
-				Beep(Beep_Error_Sounds, 2, 0, 1);// Beep for invalid key.
+				beep_for_command(false);
 				// Key release detection, if user has not release the key, don't do anything.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
@@ -182,7 +182,7 @@ void Charge_Function(void)
 				if (is_direct_charge())
 				{
 					ROS_WARN("Can not go to navigation mode during direct charging.");
-					Beep(Beep_Error_Sounds, 2, 0, 1);// Beep for invalid key.
+					beep_for_command(false);
 				}
 				else if (!Check_Bat_Ready_To_Clean())
 				{
@@ -196,7 +196,7 @@ void Charge_Function(void)
 				}
 			}
 			else{
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -348,7 +348,7 @@ void GoHome(void)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -717,7 +717,7 @@ void Around_ChargerStation(uint8_t Dir)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -1295,7 +1295,7 @@ uint8_t Check_Position(uint8_t Dir)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -1468,7 +1468,7 @@ void By_Path(void)
 					ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 					if (Get_Rcon_Remote() & (Remote_Clean)) {
 					} else {
-						Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+						beep_for_command(false);
 						Reset_Rcon_Remote();
 					}
 				}
@@ -1500,7 +1500,7 @@ void By_Path(void)
 						ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 						if (Get_Rcon_Remote() & (Remote_Clean)) {
 						} else {
-							Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+							beep_for_command(false);
 							Reset_Rcon_Remote();
 						}
 					}
@@ -1568,7 +1568,7 @@ void By_Path(void)
 						ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 						if (Get_Rcon_Remote() & (Remote_Clean)) {
 						} else {
-							Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+							beep_for_command(false);
 							Reset_Rcon_Remote();
 						}
 					}
@@ -1683,7 +1683,7 @@ void By_Path(void)
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 				if (Get_Rcon_Remote() & (Remote_Clean)) {
 				} else {
-					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+					beep_for_command(false);
 					Reset_Rcon_Remote();
 				}
 			}

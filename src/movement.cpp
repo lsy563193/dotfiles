@@ -291,7 +291,6 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Left_Wall_E_Counter=0;
 		Left_Wall_Sum_Value=0;
 		Left_Temp_Wall_Buffer=0;
-		//Beep(1, 10, 0, 1);
 		//ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
@@ -319,7 +318,6 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Right_Wall_E_Counter=0;
 		Right_Wall_Sum_Value=0;
 		Right_Temp_Wall_Buffer=0;
-		//Beep(1, 10, 0, 1);
 		//ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
@@ -487,7 +485,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -495,7 +493,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -568,7 +566,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -576,7 +574,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -650,7 +648,7 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 					Switch_VacMode(true);
 				}
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -658,7 +656,7 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
@@ -737,7 +735,7 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 					Switch_VacMode(true);
 				}
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -745,7 +743,7 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
@@ -837,7 +835,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 					Switch_VacMode(true);
 				}
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -846,7 +844,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		if(Get_Bumper_Status()){
 			break;
@@ -1149,7 +1147,6 @@ uint8_t Turn_Connect(void)
 	if (is_charge_on())
 	{
 		ROS_INFO("[movement.cpp] Reach charger without turning.");
-//		Beep(2, 25, 0, 1);
 		return 1;
 	}
 	// Start turning right.
@@ -1170,7 +1167,6 @@ uint8_t Turn_Connect(void)
 			if(is_charge_on())
 			{
 				ROS_INFO("[movement.cpp] Turn left reach charger.");
-//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
@@ -1200,7 +1196,6 @@ uint8_t Turn_Connect(void)
 			if(is_charge_on())
 			{
 				ROS_INFO("[movement.cpp] Turn right reach charger.");
-//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
@@ -1679,7 +1674,6 @@ void OBS_Dynamic_Base(uint16_t Cy)
 			Front_OBS_Buffer = OBS_adjust_limit;
 		}
 		Front_OBSTrig_Value = Front_OBS_Buffer + OBS_Diff;
-		//Beep(1, 10, 0, 1);
 		//ROS_INFO("Update Front_OBSTrig_Value = %d.", Front_OBSTrig_Value);
 	}
 
@@ -1701,7 +1695,6 @@ void OBS_Dynamic_Base(uint16_t Cy)
 			Left_OBS_Buffer = OBS_adjust_limit;
 		}
 		Left_OBSTrig_Value = Left_OBS_Buffer + OBS_Diff;
-		//Beep(4, 10, 0, 1);
 		//ROS_INFO("Update Left_OBSTrig_Value = %d.", Left_OBSTrig_Value);
 	}
 	/*---------------Right-----------------------*/
@@ -1722,7 +1715,6 @@ void OBS_Dynamic_Base(uint16_t Cy)
 			Right_OBS_Buffer = OBS_adjust_limit;
 		}
 		Right_OBSTrig_Value = Right_OBS_Buffer + OBS_Diff;
-		//Beep(8, 10, 0, 1);
 		//ROS_INFO("Update Right_OBSTrig_Value = %d.", Right_OBSTrig_Value);
 	}
 }
@@ -1852,8 +1844,6 @@ uint8_t Remote_Key(uint8_t key)
 	}
 	if(Remote_Status & key)
 	{
-		if (Get_Error_Code() == Error_Code_None)
-			Beep(2, 2, 0, 1);
 		return 1;
 	}
 	else
@@ -2544,7 +2534,7 @@ uint16_t Get_Key_Time(uint16_t key)
 		time++;
 		if (time == 151)
 		{
-			Beep(1, 5, 0, 1);
+			beep_for_command(true);
 		}
 		if(time>1500)break;
 		usleep(20000);
@@ -3251,3 +3241,10 @@ void Clear_Manual_Pause(void)
 	}
 }
 
+void beep_for_command(bool valid)
+{
+	if (valid)
+		Beep(2, 2, 0, 1);
+	else
+		Beep(5, 2, 0, 1);
+}

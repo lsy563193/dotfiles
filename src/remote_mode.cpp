@@ -248,7 +248,7 @@ void Remote_Mode(void)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 	}
 	Disable_Motors();
