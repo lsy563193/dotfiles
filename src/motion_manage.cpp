@@ -254,7 +254,7 @@ MotionManage::~MotionManage()
 
 	if(g_bumper_cnt >=3 && g_bumper_hitted)
 		wav_play(WAV_ERROR_BUMPER);
-	if (Get_Cliff_Trig())
+	if (g_cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 
 	wav_play(WAV_CLEANING_FINISHED);
@@ -304,6 +304,10 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 bool MotionManage::initNavigationCleaning(void)
 {
+	CM_regist_events();
+	// Wait for 20ms to make sure the event manager has start working.
+	usleep(20000);
+
 	reset_start_work_time();
 	Set_LED(100,0);
 	Reset_Rcon_Status();

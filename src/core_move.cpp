@@ -1209,14 +1209,16 @@ uint8_t CM_touring(void)
 	if(! motion.initSucceeded()){
 		robot::instance()->resetLowBatPause();
 		robot::instance()->resetManualPause();
+		CM_unregist_events();
 		return 0;
 	}
 
-	CM_regist_events();
-
 	if (!g_go_home && (robot::instance()->isLowBatPaused()))
 		if (! CM_resume_cleaning())
+		{
+			CM_unregist_events();
 			return 0;
+		}
 
 	if (CM_cleaning() == 0)
 		CM_go_home();
