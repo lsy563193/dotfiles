@@ -1219,15 +1219,15 @@ uint8_t cm_touring(void)
 	if (!g_go_home && (robot::instance()->isLowBatPaused()))
 		if (!cm_resume_cleaning())
 			return 0;
-	int cm_clean_ret = CM_cleaning();
+	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
-		CM_go_home();
+		cm_go_home();
 	else if(cm_clean_ret == -2){
 		Spot_WithCell(CleanSpot,1.0);
 		g_temp_spot_set = true;
         Set_Clean_Mode(Clean_Mode_Navigation);
     }
-	CM_unregist_events();
+	cm_unregist_events();
 	return 0;
 }
 

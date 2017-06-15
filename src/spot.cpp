@@ -96,7 +96,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 			Disable_Motors();
 			return;
 		}
-		CM_regist_events();
+		cm_regist_events();
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
@@ -140,7 +140,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 
 				/*----ready to spot movement ------*/
 
-				CM_LinearMoveToPoint({cellToCount(tp->X),cellToCount(tp->Y)},SPOT_MAX_SPEED,false,true);
+				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED,false,true);
  
 	            if(g_fatal_quit_event ||  g_key_clean_pressed ||  g_remote_spot || g_remote_home){
 		            robot::instance()->resetManualPause();
@@ -248,12 +248,8 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				if(spot_stuck){
-<<<<<<< HEAD
 					//go back to start point
-					CM_LinearMoveToPoint(StopPoint, SPOT_MAX_SPEED, false, true);
-=======
 					cm_linear_move_to_point(StopPoint, SPOT_MAX_SPEED, false, true);
->>>>>>> da10b9b18641a637dbee75edd5437a0cbd072925
 					spot_stuck = 0;
 				} 
 				break;
@@ -267,7 +263,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				spiral_type = Spiral_Left_In;
 			}
 		}//ending while(ros::ok)
-		CM_unregist_events();
+		cm_unregist_events();
 	}//ending if(st == NormalSpot)
 	else if(st == CleanSpot || st == WallSpot){
 		event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,false);
@@ -319,22 +315,12 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 					}
 				}
 				/*----ready to spot movement ------*/
-				CM_LinearMoveToPoint({cellToCount(tp->X),cellToCount(tp->Y)},SPOT_MAX_SPEED,false,true);
+				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED,false,true);
                 if(g_fatal_quit_event ||  g_key_clean_pressed || g_remote_home){	
                     Disable_Motors();
                     return;
                 }
 
-<<<<<<< HEAD
-=======
-				nextPoint.X = cell_to_count(tp->X);
-				nextPoint.Y = cell_to_count(tp->Y);
-				if(!cm_linear_move_to_point(nextPoint, SPOT_MAX_SPEED, false, true)) {
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Disable_Motors();
-					return;
-				}
->>>>>>> da10b9b18641a637dbee75edd5437a0cbd072925
 				//if detect obs or bumper cliff trigger ,than change diraction
 				if(g_should_follow_wall){
 					g_should_follow_wall = 0;
@@ -437,12 +423,8 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				StopPoint.X = x_offset;
 				StopPoint.Y = y_offset;
 				if(spot_stuck){
-<<<<<<< HEAD
                     //go back to start point
-					CM_LinearMoveToPoint(StopPoint, SPOT_MAX_SPEED, false, true);
-=======
 					cm_linear_move_to_point(StopPoint, SPOT_MAX_SPEED, false, true);
->>>>>>> da10b9b18641a637dbee75edd5437a0cbd072925
 					spot_stuck = 0;
 				} 
 				break;

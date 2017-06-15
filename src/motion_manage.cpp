@@ -25,6 +25,7 @@ extern std::list <Point32_t> g_home_point;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
+extern bool g_temp_spot_set;
 /*
 int g_enable_angle_offset = 0;
 boost::mutex g_angle_offset_mt;
