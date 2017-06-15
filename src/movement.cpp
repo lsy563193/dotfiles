@@ -1840,7 +1840,7 @@ uint8_t Remote_Key(uint8_t key)
 	// Debug
 	if (Remote_Status > 0)
 	{
-		ROS_INFO("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
+		ROS_DEBUG("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
 	}
 	if(Remote_Status & key)
 	{
