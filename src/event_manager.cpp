@@ -54,6 +54,8 @@ bool g_remote_spot = false;
 bool g_battery_home = false;
 bool g_battery_low = false;
 uint8_t g_battery_low_cnt = 0;
+/* Charge Status */
+uint8_t g_charge_detect = 0;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -266,6 +268,12 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_BATTERY_LOW)
 		}
 
+		/* Charge Status */
+		if (robot::instance()->getChargeStatus()) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_CHARGE_DETECT)
+		}
+
 #undef evt_set_status_x
 
 		if (set) {
@@ -393,6 +401,9 @@ void *event_handler_thread(void *data) {
 		/* Battery */
 		evt_handle_check_event(EVT_BATTERY_HOME, battery_home)
 		evt_handle_check_event(EVT_BATTERY_LOW, battery_low)
+
+		/* Charge Status */
+		evt_handle_check_event(EVT_CHARGE_DETECT, charge_detect)
 
 #undef evt_handle_event_x
 
@@ -693,6 +704,12 @@ void em_default_handler_battery_home(bool state_now, bool state_last)
 void em_default_handler_battery_low(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
+void em_default_handler_charge_detect(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	g_charge_detect = robot::instance()->getChargeStatus();
 }
 
 /* Default: empty hanlder */

@@ -74,6 +74,8 @@ extern bool g_remote_spot;
 extern bool g_battery_home;
 extern bool g_battery_low;
 extern uint8_t g_battery_low_cnt;
+/* Charge status */
+extern uint8_t g_charge_detect;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,
@@ -135,6 +137,8 @@ typedef enum {
 
 	EVT_BATTERY_HOME,
 	EVT_BATTERY_LOW,
+
+	EVT_CHARGE_DETECT,
 
 	EVT_MAX,
 } EventType;
@@ -236,6 +240,9 @@ define_em_handler_func(remote_suction)
 /* Battery */
 define_em_handler_func(battery_home)
 define_em_handler_func(battery_low)
+
+/* Charge Status */
+define_em_handler_func(charge_detect)
 
 define_em_handler_func(empty)
 
