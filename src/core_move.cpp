@@ -1214,11 +1214,13 @@ uint8_t cm_touring(void)
 		return 0;
 	}
 
-	if (!g_go_home && (robot::instance()->isLowBatPaused()))
+	if (!g_go_home && (robot::instance()->isLowBatPaused())){
 		if (! cm_resume_cleaning())
 		{
 			cm_unregist_events();
 			return 0;
+        }
+    }
 	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
 		cm_go_home();
