@@ -806,12 +806,12 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 	while (ros::ok()) {
 		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		Map_set_position(pos_x, pos_y);
+		map_set_position(pos_x, pos_y);
 
-		i = Map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		j = Map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		if (Map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY) {
-			Map_set_cell(MAP, i, j, BLOCKED_OBS);
+		i = map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		j = map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY) {
+			map_set_cell(MAP, i, j, BLOCKED_OBS);
 		}
 
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
@@ -1402,7 +1402,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 
 /*
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
-		CM_move_back(COR_BACK_20MM);
+		cm_move_back(COR_BACK_20MM);
 	else
 		Quick_Back(30,20);
 */
@@ -3267,7 +3267,7 @@ void Clear_Manual_Pause(void)
 		}
 		extern std::list <Point32_t> g_home_point;
 		g_home_point.clear();
-		CM_reset_go_home();
+		cm_reset_go_home();
 	}
 }
 

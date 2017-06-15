@@ -6,7 +6,7 @@
 #include "movement.h"
 #include "wav.h"
 /*----------------------------------------------------------------Sleep mode---------------------------*/
-void Sleep_Mode(void)
+void sleep_mode(void)
 {
 	uint16_t sleep_time_counter_ = 0;
 	

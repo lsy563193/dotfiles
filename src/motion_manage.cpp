@@ -17,47 +17,9 @@
 #include <slam.h>
 #include <path_planning.h>
 #include <core_move.h>
+#include <event_manager.h>
 
 Segment_set segmentss;
-
-/* Events variables */
-/* The fatal quit event includes any of the following case:
- *  g_bumper_jam
- * 	g_cliff_all_triggered
- * 	g_oc_brush_main
- * 	g_oc_wheel_left
- * 	g_oc_wheel_right
- * 	g_oc_suction
- * 	g_battery_low
- */
-extern bool g_fatal_quit_event;
-extern bool g_bumper_jam;
-extern bool g_bumper_hitted;
-extern bool g_obs_triggered;
-extern bool g_cliff_all_triggered;
-extern bool g_cliff_jam;
-extern bool g_cliff_triggered;
-extern bool g_rcon_triggered;
-extern bool g_oc_brush_main;
-extern bool g_oc_wheel_left;
-extern bool g_oc_wheel_right;
-extern bool g_oc_suction;
-extern bool g_key_clean_pressed;
-extern bool g_remote_home;
-extern bool g_temp_spot_set;
-extern bool g_battery_home;
-extern bool g_battery_low;
-extern bool g_from_station;
-extern bool g_go_home;
-extern uint8_t g_oc_brush_left_cnt;
-extern uint8_t g_oc_brush_main_cnt;
-extern uint8_t g_oc_brush_right_cnt;
-extern uint8_t g_oc_wheel_left_cnt;
-extern uint8_t g_oc_wheel_right_cnt;
-extern uint8_t g_oc_suction_cnt;
-extern uint8_t g_cliff_cnt;
-extern uint16_t g_press_time;
-extern int g_bumper_cnt;
 
 extern std::list <Point32_t> g_home_point;
 
@@ -262,6 +224,7 @@ MotionManage::~MotionManage()
 		}
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		extern bool g_go_home;
 		if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
 			ROS_WARN("%s %d: Pause going home, g_home_point list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point.size());
@@ -433,6 +396,7 @@ bool MotionManage::initNavigationCleaning(void)
 		}
 		Deceleration();
 		Stop_Brifly();
+		extern bool g_from_station;
 		g_from_station = 1;
 	}
 	else
@@ -454,8 +418,8 @@ bool MotionManage::initNavigationCleaning(void)
 		{
 			Point32_t new_home_point;
 			// Save the current coordinate as a new home point.
-			new_home_point.X = Map_get_x_count();
-			new_home_point.Y = Map_get_y_count();
+			new_home_point.X = map_get_x_count();
+			new_home_point.Y = map_get_y_count();
 
 			// Push the start point into the home point list.
 			g_home_point.push_front(new_home_point);
@@ -486,8 +450,8 @@ bool MotionManage::initNavigationCleaning(void)
 		}
 		path_escape_set_trapped_cell(g_pnt16_ar_tmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
 
-		ROS_INFO("Map_Initialize-----------------------------");
-		Map_Initialize();
+		ROS_INFO("map_init-----------------------------");
+		map_init();
 		path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);
 
 		robot::instance()->initOdomPosition();
@@ -499,13 +463,14 @@ bool MotionManage::initNavigationCleaning(void)
 
 	Work_Motor_Configure();
 
+	extern bool g_go_home;
 	ROS_INFO("init g_go_home(%d), lowbat(%d), manualpaused(%d)", g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused());
 	return true;
 }
 
 bool MotionManage::initWallFollowCleaning(void)
 {
-	extern std::vector<Pose32_t> WF_Point;
+	extern std::vector<Pose32_t> g_wf_point;
 
 	reset_start_work_time();
 	Reset_MoveWithRemote();
@@ -529,13 +494,13 @@ bool MotionManage::initWallFollowCleaning(void)
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
 	g_home_point.clear();
-	WF_Point.clear();
+	g_wf_point.clear();
 	Point32_t new_home_point;
 	new_home_point.X = new_home_point.Y = 0;
 	// Push the start point into the home point list
 	g_home_point.push_front(new_home_point);
 
-	Map_Initialize();
+	map_init();
 	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
 	WF_PathPlanning_Initialize(&g_home_point.front().X, &g_home_point.front().Y);
@@ -574,7 +539,7 @@ bool MotionManage::initSpotCleaning(void)
 	t_point.Y = 0;
 	homepoint.clear();
 	homepoint.push_front(t_point);
-	Map_Initialize();//init map
+	map_init();//init map
 	path_planning_initialize(&homepoint.front().X, &homepoint.front().Y);//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
@@ -612,7 +577,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_
 				robot::instance()->setCleanMapMarkers(i, j, TARGET);
 			else
 			{
-				cell_state = Map_get_cell(id, i, j);
+				cell_state = map_get_cell(id, i, j);
 				if (cell_state == CLEANED || cell_state == BLOCKED_OBS || cell_state == BLOCKED_BUMPER)
 					robot::instance()->setCleanMapMarkers(i, j, cell_state);
 			}

@@ -9,6 +9,52 @@
 
 #include "event_manager.h"
 
+
+/* Events variables */
+/* The fatal quit event includes any of the following case:
+ *  g_bumper_jam
+ * 	g_cliff_all_triggered
+ * 	g_oc_brush_main
+ * 	g_oc_wheel_left
+ * 	g_oc_wheel_right
+ * 	g_oc_suction
+ * 	g_battery_low
+ */
+bool g_fatal_quit_event = false;
+/* Bumper */
+bool g_bumper_hitted = false;
+bool g_bumper_jam = false;
+int g_bumper_cnt = 0;
+/* OBS */
+bool g_obs_triggered = false;
+/* Cliff */
+bool g_cliff_all_triggered = false;
+bool g_cliff_triggered = false;
+bool g_cliff_jam = false;
+uint8_t g_cliff_cnt = 0;
+/* RCON */
+bool g_rcon_triggered = false;
+/* Over Current */
+bool g_oc_brush_main = false;
+bool g_oc_wheel_left = false;
+bool g_oc_wheel_right = false;
+bool g_oc_suction = false;
+uint8_t g_oc_brush_left_cnt = 0;
+uint8_t g_oc_brush_main_cnt = 0;
+uint8_t g_oc_brush_right_cnt = 0;
+uint8_t g_oc_wheel_left_cnt = 0;
+uint8_t g_oc_wheel_right_cnt = 0;
+uint8_t g_oc_suction_cnt = 0;
+/* Key */
+bool g_key_clean_pressed = false;
+/* Remote */
+bool g_remote_home = false;
+bool g_remote_spot = false;
+/* Battery */
+bool g_battery_home = false;
+bool g_battery_low = false;
+uint8_t g_battery_low_cnt = 0;
+
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
 static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
