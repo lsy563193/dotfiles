@@ -660,40 +660,51 @@ void em_default_handler_key_clean(bool state_now, bool state_last)
 /* Remote */
 void em_default_handler_remote_plan(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_clean(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_home(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_direction_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_direction_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_mode_spot(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_suction(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	Switch_VacMode(false);
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 /* Battery */
