@@ -192,5 +192,7 @@ define_cm_handle_func(battery_home)
 
 define_cm_handle_func(battery_low)
 
+/* Charge Status */
+define_cm_handle_func(charge_detect)
 #endif
 

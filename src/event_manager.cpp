@@ -270,7 +270,7 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Charge Status */
-		if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4) {
+		if (robot::instance()->getChargeStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CHARGE_DETECT)
 		}

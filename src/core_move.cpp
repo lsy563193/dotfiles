@@ -1520,6 +1520,9 @@ void cm_regist_events()
 	event_manager_register_and_enable_x(battery_home, EVT_BATTERY_HOME, true);
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 
+	/* Charge Status */
+	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
+
 #undef event_manager_register_and_enable_x
 
 	event_manager_set_enable(true);
@@ -1579,6 +1582,9 @@ void cm_unregist_events()
 	/* Battery */
 	event_manager_register_and_disable_x(EVT_BATTERY_HOME);
 	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
+
+	/* Charge Status */
+	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 
 #undef event_manager_register_and_disable_x
 
@@ -2379,3 +2385,17 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 	}
 }
 
+void cm_handle_charge_detect(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
+	if (robot::instance()->getChargeStatus() == 3)
+	{
+		if (g_charge_detect_cnt++ > 5)
+		{
+			g_charge_detect = robot::instance()->getChargeStatus();
+			g_fatal_quit_event = true;
+			ROS_WARN("%s %d: g_charge_detect has been set to %d.", __FUNCTION__, __LINE__, g_charge_detect);
+			g_charge_detect_cnt = 0;
+		}
+	}
+}
