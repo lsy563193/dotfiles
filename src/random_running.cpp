@@ -115,7 +115,7 @@ void Random_Running_Mode(void)
 		Set_MainBrush_PWM(0);
 		Set_BLDC_Speed(30);
 		Stop_Brifly();
-		Quick_Back(30,750);
+		quick_back(30,750);
 		if(Stop_Event()||is_charge_on())
 		{
 			Stop_Brifly();
@@ -130,7 +130,7 @@ void Random_Running_Mode(void)
 			return;
 		}
 		Beep(2,25,25,1);
-		Quick_Back(30,750);
+		quick_back(30,750);
 		if(Stop_Event())
 		{
 			Stop_Brifly();
@@ -145,7 +145,7 @@ void Random_Running_Mode(void)
 			return;
 		}
 		Beep(2,25,25,1);
-		Quick_Back(30,750);
+		quick_back(30,750);
 		if(Stop_Event())
 		{
 			Stop_Brifly();

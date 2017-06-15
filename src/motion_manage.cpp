@@ -367,7 +367,7 @@ bool MotionManage::initNavigationCleaning(void)
 		// Set i < 7 for robot to move back for approximately 500mm.
 		for (int i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
-			Quick_Back(20, 72);
+			quick_back(20, 72);
 			if (Stop_Event() || is_on_charger_stub()) {
 				Disable_Motors();
 				if (is_on_charger_stub())

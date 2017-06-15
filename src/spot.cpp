@@ -704,14 +704,14 @@ int8_t Spot_HandleException(SpotType st)
 	}
 	/*--------- cliff detect event--------------*/
 	if (Get_Cliff_Trig() == (Status_Cliff_All)) {
-		Quick_Back(20,20);//1 time
+		quick_back(20,20);//1 time
 		Stop_Brifly();
 		if(Get_Cliff_Trig() == (Status_Cliff_All)){
-			Quick_Back(20,20);//2 times
+			quick_back(20,20);//2 times
 			Stop_Brifly();
 		}
 		if(Get_Cliff_Trig() == Status_Cliff_All){
-			Quick_Back(20,20);//3 times
+			quick_back(20,20);//3 times
 			Stop_Brifly();
 			ROS_INFO("%s %d, Cliff trigger three times ,robot lift up ",__FUNCTION__,__LINE__);
 			if(st == NormalSpot)

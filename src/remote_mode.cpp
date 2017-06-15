@@ -221,14 +221,14 @@ void Remote_Mode(void)
 			break;
 		}
 		if(Get_Cliff_Trig() == (Status_Cliff_All)){
-			Quick_Back(20,20);
+			quick_back(20,20);
 			Stop_Brifly();
 			if(Get_Cliff_Trig() == (Status_Cliff_All)){
-				Quick_Back(20,20);
+				quick_back(20,20);
 				Stop_Brifly();
 			}
 			if(Get_Cliff_Trig() == Status_Cliff_All){
-				Quick_Back(20,20);
+				quick_back(20,20);
 				Stop_Brifly();
 				Disable_Motors();
 				ROS_INFO("Cliff trigger three times stop robot ");

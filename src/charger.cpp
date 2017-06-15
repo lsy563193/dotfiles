@@ -796,7 +796,7 @@ void Around_ChargerStation(uint8_t Dir)
 				Set_MainBrush_PWM(0);
 				////Back(30,800);
 				//Back(30,300);
-				Quick_Back(30,300);
+				quick_back(30,300);
 				Set_MainBrush_PWM(30);
 				Stop_Brifly();
 			}
@@ -1332,7 +1332,7 @@ uint8_t Check_Position(uint8_t Dir)
 				Set_MainBrush_PWM(0);
 				////Back(30,800);
 				//Back(30,300);
-				Quick_Back(30,300);
+				quick_back(30,300);
 				Set_MainBrush_PWM(30);
 				Stop_Brifly();
 			}
@@ -1452,7 +1452,7 @@ void By_Path(void)
 					Set_MainBrush_PWM(0);
 					////Back(30,800);
 					//Back(30,300);
-					Quick_Back(30,300);
+					quick_back(30,300);
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 				}
@@ -1507,8 +1507,8 @@ void By_Path(void)
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(0);
 //					Back(30,2500);//waiting
-					Quick_Back(30,300);//waiting
-					ROS_DEBUG("%d: Quick_Back in !position_far", __LINE__);
+					quick_back(30,300);//waiting
+					ROS_DEBUG("%d: quick_back in !position_far", __LINE__);
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 					if(Bumper_Counter>0)
@@ -1574,7 +1574,7 @@ void By_Path(void)
 					}
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(0);
-					Quick_Back(30,300);
+					quick_back(30,300);
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 					if(Bumper_Counter>0)

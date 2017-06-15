@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <unistd.h>
 #include <math.h>
 #include <time.h>
 #include <ros/ros.h>
@@ -347,41 +348,26 @@ int32_t Get_Wall_Base(int8_t dir)
 	}
 }
 
-void Quick_Back(uint8_t Speed, uint16_t Distance)
+void quick_back(uint8_t speed, uint16_t distance)
 {
+	// The distance is for mm.
+	float saved_x, saved_y;
+	saved_x = robot::instance()->getOdomPositionX();
+	saved_y = robot::instance()->getOdomPositionY();
 	// Quickly move back for a distance.
 	wheel_left_direction = 1;
 	wheel_right_direction = 1;
 	Reset_Wheel_Step();
-	Set_Wheel_Speed(Speed, Speed);
-	// This count is for how many milliseconds it should take. The Distance is in mm.
-	int back_count = int(1000 * Distance / (Speed * SPEED_ALF));
-	//ROS_INFO("%s %d Quick_back for %dms.", __FUNCTION__, __LINE__, back_count);
-	for (int i = 0; i < back_count; i++){
-		// Sleep for 1 millisecond
-		usleep(1000);
-		if (Stop_Event())
-		{
+	Set_Wheel_Speed(speed, speed);
+	ROS_WARN("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
+	while (sqrtf(powf(saved_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_y - robot::instance()->getOdomPositionY(), 2)) < (float)distance / 1000)
+	{
+		ROS_WARN("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
+		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 			break;
-		}
-		if (Get_Rcon_Remote() > 0) {
-			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-			if (Get_Rcon_Remote() & (Remote_Clean)) {
-				Reset_Rcon_Remote();
-				break;
-			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
-				Reset_Rcon_Remote();
-			}
-		}
-		/* check plan setting*/
-		if(Get_Plan_Status() == 1)
-		{
-			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
-		}
+		usleep(20000);
 	}
-	ROS_INFO("Quick_Back finished.");
+	ROS_INFO("quick_back finished.");
 }
 
 void Turn_Left_At_Init(uint16_t speed, int16_t angle)
@@ -1402,7 +1388,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
 		cm_move_back(COR_BACK_20MM);
 	else
-		Quick_Back(30,20);
+		quick_back(30,20);
 */
 	Disable_Motors();
 	usleep(10000);
@@ -2491,20 +2477,20 @@ void ResetSendFlag(void)
 void Random_Back(void)
 {
 	Stop_Brifly();
-	Quick_Back(12,30);
+	quick_back(12,30);
 	
 }
 
 void Move_Back(void)
 {
 	Stop_Brifly();
-	Quick_Back(18,30);
+	quick_back(18,30);
 }
 
 void Cliff_Move_Back()
 {
 	Stop_Brifly();
-	Quick_Back(18,60);
+	quick_back(18,60);
 }
 void Set_RightWheel_Step(uint32_t step)
 {
@@ -3006,7 +2992,7 @@ uint8_t Is_Bumper_Jamed()
 		{
 			ROS_INFO("JAM2");
 			// Quick back will not set speed to 100, it will be limited by the RUN_TOP_SPEED.
-			Quick_Back(100,200);
+			quick_back(100,200);
 			if(Stop_Event())
 			{
 				ROS_INFO("%s, %d: Stop event in JAM2", __FUNCTION__, __LINE__);
