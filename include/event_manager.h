@@ -233,10 +233,12 @@ define_em_handler_func(key_clean)
 define_em_handler_func(remote_plan)
 define_em_handler_func(remote_clean)
 define_em_handler_func(remote_home)
+define_em_handler_func(remote_direction_forward)
 define_em_handler_func(remote_direction_left)
 define_em_handler_func(remote_direction_right)
 define_em_handler_func(remote_mode_spot)
 define_em_handler_func(remote_suction)
+define_em_handler_func(remote_wall_follow)
 
 /* Battery */
 define_em_handler_func(battery_home)
