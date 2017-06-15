@@ -359,10 +359,9 @@ void quick_back(uint8_t speed, uint16_t distance)
 	wheel_right_direction = 1;
 	Reset_Wheel_Step();
 	Set_Wheel_Speed(speed, speed);
-	ROS_WARN("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
 	while (sqrtf(powf(saved_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_y - robot::instance()->getOdomPositionY(), 2)) < (float)distance / 1000)
 	{
-		ROS_WARN("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
+		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
 		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 			break;
 		usleep(20000);
