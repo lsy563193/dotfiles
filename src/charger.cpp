@@ -149,7 +149,6 @@ void Charge_Function(void)
 					ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 					usleep(20000);
 				}
-//				Set_Room_Mode(Room_Mode_Large);
 				Set_Clean_Mode(Clean_Mode_Navigation);
 				break;
 			}
@@ -192,9 +191,6 @@ void Charge_Function(void)
 				}
 				else if (is_on_charger_stub())
 				{
-//					Set_VacMode(Vac_Normal);
-//					Set_Room_Mode(Room_Mode_Large);
-					set_stop_charge();
 					Set_Clean_Mode(Clean_Mode_Navigation);
 					break;
 				}
@@ -291,6 +287,9 @@ void Charge_Function(void)
 		#endif
 
 	}
+	set_stop_charge();
+	// Wait for 20ms to make sure stop charging command has been sent.
+	usleep(20000);
 }
 
 /*----------------------------------------------------------------GO Home  ----------------*/
