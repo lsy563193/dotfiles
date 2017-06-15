@@ -326,9 +326,7 @@ bool MotionManage::initNavigationCleaning(void)
 	Set_Gyro_On();
 
 	if (robot::instance()->isLowBatPaused())
-	{
 		wav_play(WAV_CLEANING_CONTINUE);
-	}
 	else if (robot::instance()->isManualPaused())
 	{
 		ROS_WARN("Restore from manual pause");
@@ -338,9 +336,7 @@ bool MotionManage::initNavigationCleaning(void)
 		wav_play(WAV_CLEANING_START);
 
 	if (!Wait_For_Gyro_On())
-	{
 		return false;
-	}
 
 	if (robot::instance()->isManualPaused() || robot::instance()->isLowBatPaused())
 	{
@@ -352,49 +348,24 @@ bool MotionManage::initNavigationCleaning(void)
 	if (is_on_charger_stub()) {
 		ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		Set_SideBrush_PWM(30, 30);
-		// Reset the robot to non charge mode.
-		set_stop_charge();
-		// Sleep for 30ms to make sure it has sent at least one control message to stop charging.
-		usleep(30000);
-		while (is_charge_on())
-		{
-			ROS_INFO("Robot Still charging.");
-			usleep(20000);
-		}
-		if (is_charge_on()){
-			ROS_WARN("[core_move.cpp] Still charging.");
-		}
 		// Set i < 7 for robot to move back for approximately 500mm.
 		for (int i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			quick_back(20, 72);
-			if (Stop_Event() || is_on_charger_stub()) {
+			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub()) {
 				Disable_Motors();
-				if (is_on_charger_stub())
-				{
-					ROS_WARN("%s %d: move back 100mm and still detect charger! Or touch event. return 0", __FUNCTION__, __LINE__);
-				}
-				if (Get_Key_Press() & KEY_CLEAN)
-				{
-					ROS_WARN("%s %d: touch event! return 0", __FUNCTION__, __LINE__);
-					Stop_Brifly();
-					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
-					{
-						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-						usleep(20000);
-					}
-					Reset_Stop_Event_Status();
-				}
-				if (robot::instance()->isLowBatPaused())
-				{
-					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
-					// Quit continue cleaning.
-					robot::instance()->resetLowBatPause();
-				}
-				if (robot::instance()->isManualPaused())
+				if (g_fatal_quit_event)
 				{
 					robot::instance()->resetManualPause();
+					robot::instance()->resetLowBatPause();
+				}
+				else if (g_key_clean_pressed && !robot::instance()->isLowBatPaused())
+					robot::instance()->resetManualPause();
+				else if (!g_fatal_quit_event && !g_key_clean_pressed)
+				{
+					ROS_WARN("%s %d: Fail to leave charger stub.", __FUNCTION__, __LINE__);
+					robot::instance()->resetManualPause();
+					robot::instance()->resetLowBatPause();
 				}
 				return false;
 			}
