@@ -1515,6 +1515,11 @@ void cm_register_events()
 	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
 	event_manager_register_and_enable_x(remote_mode_spot, EVT_REMOTE_MODE_SPOT, true);
 	event_manager_register_and_enable_x(remote_suction, EVT_REMOTE_SUCTION, true);
+	// Just enable the default handler.
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_enable_handler(EVT_REMOTE_MODE_WALL_FOLLOW, true);
 
 	/* Battery */
 	event_manager_register_and_enable_x(battery_home, EVT_BATTERY_HOME, true);
@@ -2259,6 +2264,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	bool reset_manual_pause = false;
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	beep_for_command(true);
 	Set_Wheel_Speed(0, 0);
 	g_key_clean_pressed = true;
 	robot::instance()->setManualPause();
@@ -2287,6 +2293,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 void cm_handle_remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
 	Set_Plan_Status(0);
 }
 
@@ -2294,6 +2301,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
+	beep_for_command(true);
 	g_key_clean_pressed = true;
 	robot::instance()->setManualPause();
 
@@ -2304,6 +2312,11 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
+	if (!g_go_home)
+		beep_for_command(true);
+	else
+		beep_for_command(false);
+
 	g_go_home = true;
 	g_remote_home = true;
 	Reset_Rcon_Remote();
@@ -2313,6 +2326,7 @@ void cm_handle_remote_mode_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
+	beep_for_command(true);
 	Stop_Brifly();
 	Reset_Rcon_Remote();
 	g_remote_spot = true;
@@ -2329,7 +2343,12 @@ void cm_handle_remote_suction(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_go_home)
+	{
+		beep_for_command(true);
 		Switch_VacMode(true);
+	}
+	else
+		beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
