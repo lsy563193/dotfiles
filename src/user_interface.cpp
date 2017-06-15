@@ -20,7 +20,6 @@
 #include "wav.h"
 #include "robot.hpp"
 
-extern uint32_t g_cur_wtime;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -30,8 +29,8 @@ void User_Interface(void)
 	static volatile uint32_t TimeOutCounter=0;
 
 #ifdef ONE_KEY_DISPLAY
-	uint16_t LedBreathCount=0;
-	uint8_t breath =0;
+	uint16_t LedBreathCount=100;
+	uint8_t breath =1;
 #endif
 	bool Battery_Ready_to_clean = true;
 	bool battery_too_low_ = false;
@@ -71,7 +70,7 @@ void User_Interface(void)
 
 	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
 	// Check the battery to warn the user.
-	if(!Check_Bat_Ready_To_Clean())
+	if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		Battery_Ready_to_clean = false;
@@ -86,7 +85,7 @@ void User_Interface(void)
 		{
 			battery_too_low_ = true;
 		}
-		if(!Check_Bat_Ready_To_Clean())
+		if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
 		{
 			Battery_Ready_to_clean = false;
 		}
@@ -150,6 +149,14 @@ void User_Interface(void)
 			else if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
 			{
 				Beep(2, 2, 0, 1);//Beep for useless remote command
+				// Wait for user to release the key.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_INFO("User still holds the key.");
+					usleep(100000);
+				}
+				// Key relaesed, then the touch status and stop event status should be cleared.
+				Reset_Stop_Event_Status();
 				wav_play(WAV_CLEAR_ERROR);
 				Set_Error_Code(Error_Code_None);
 				Reset_Rcon_Remote();
@@ -176,18 +183,15 @@ void User_Interface(void)
 				Clear_Manual_Pause();
 			}
 		}
-		else{
-			Reset_Work_Time();
-			g_cur_wtime = 0;
-		}
 
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
-		if(Is_AtHomeBase() && (Get_Cliff_Trig() == 0))//on base but miss charging , adjust position to charge
+		if(Is_AtHomeBase() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
-			if(Turn_Connect())
-			{
+			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
+			if (is_direct_charge())
 				Temp_Mode = Clean_Mode_Charging;
-			}
+			else if(Turn_Connect())
+				Temp_Mode = Clean_Mode_Charging;
 			Disable_Motors();
 		}
 
@@ -283,7 +287,8 @@ void User_Interface(void)
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
 				Set_Plan_Status(0);
-				Temp_Mode=Clean_Mode_Navigation;
+				if (!robot::instance()->isManualPaused())
+					Temp_Mode=Clean_Mode_Navigation;
 				break;
 			}
 			case 4:
@@ -319,7 +324,7 @@ void User_Interface(void)
 //			Beep(2, 15, 0, 1);
 			Press_time=Get_Key_Time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
-			if(Press_time>20)
+			if(Press_time>151)
 			{
 				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
 				//Beep(6,25,25,1);
@@ -330,6 +335,8 @@ void User_Interface(void)
 				Beep(3,4,0,1);
 				usleep(100000);
 				Beep(5,4,4,1);
+				// Wait for beep finish.
+				usleep(200000);
 				// Wait for user to release the key.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
@@ -341,10 +348,7 @@ void User_Interface(void)
 				Temp_Mode=Clean_Mode_Sleep;
 			}
 			else
-			{
 				Temp_Mode=Clean_Mode_Navigation;
-				Reset_Work_Time();
-			}
 			Reset_MoveWithRemote();
 		//	Reset_Error_Code();
 		}

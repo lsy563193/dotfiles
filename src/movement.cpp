@@ -30,7 +30,6 @@ static uint8_t wheel_right_direction = 0;
 static uint8_t remote_move_flag=0;
 static uint8_t home_remote_flag = 0;
 uint32_t Rcon_Status;
-uint32_t g_cur_wtime = 0;//temporary current  work time
 uint32_t Average_Move = 0;
 uint32_t Average_Counter =0;
 uint32_t Max_Move = 0;
@@ -60,7 +59,7 @@ volatile uint8_t Vac_Mode;
 volatile uint8_t vacModeSave;
 static uint8_t Cleaning_mode = 0;
 static uint8_t sendflag=0;
-static time_t work_time;
+static time_t start_work_time;
 ros::Time lw_t,rw_t; // these variable is used for calculate wheel step
 
 // Flag for homeremote
@@ -87,19 +86,14 @@ volatile uint8_t Plan_Status = 0;
 // Error code for exception case
 volatile uint8_t Error_Code = 0;
 /*----------------------- Work Timer functions--------------------------*/
-void Reset_Work_Time()
+void reset_start_work_time()
 {
-	work_time = time(NULL);
+	start_work_time = time(NULL);
 }
 
-uint32_t Get_Work_Time()
+uint32_t get_work_time()
 {
-	return (uint32_t)difftime(time(NULL), work_time);
-}
-
-void Set_Work_Time(time_t time)
-{
-	work_time = time;
+	return (uint32_t)difftime(time(NULL), start_work_time);
 }
 
 /*----------------------- Set error functions--------------------------*/
@@ -145,6 +139,16 @@ void Alarm_Error(void)
 		case Error_Code_Fan_H:
 		{
 			wav_play(WAV_ERROR_SUCTION_FAN);
+			break;
+		}
+		case Error_Code_Cliff:
+		{
+			wav_play(WAV_ERROR_CLIFF);
+			break;
+		}
+		case Error_Code_Bumper:
+		{
+			wav_play(WAV_ERROR_BUMPER);
 			break;
 		}
 		default:
@@ -802,12 +806,12 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 	while (ros::ok()) {
 		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		Map_SetPosition(pos_x, pos_y);
+		Map_set_position(pos_x, pos_y);
 
-		i = Map_GetRelativeX(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		j = Map_GetRelativeY(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		if (Map_GetCell(MAP, countToCell(i), countToCell(j)) != BLOCKED_BOUNDARY) {
-			Map_SetCell(MAP, i, j, BLOCKED_OBS);
+		i = Map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		j = Map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_2, 0);
+		if (Map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY) {
+			Map_set_cell(MAP, i, j, BLOCKED_OBS);
 		}
 
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
@@ -1139,6 +1143,15 @@ uint8_t Is_AtHomeBase(void)
 	}
 }
 
+uint8_t is_direct_charge(void)
+{
+	if (robot::instance()->getChargeStatus() == 3 || robot::instance()->getChargeStatus() == 4){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
 uint8_t Turn_Connect(void)
 {
 	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
@@ -1389,7 +1402,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 
 /*
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
-		CM_CorBack(COR_BACK_20MM);
+		CM_move_back(COR_BACK_20MM);
 	else
 		Quick_Back(30,20);
 */
@@ -1516,7 +1529,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 			/*-----vacuum error-----*/
 			Set_Error_Code(Error_Code_Fan_H);
 			Disable_Motors();
-			wav_play(WAV_ERROR_SUCTION_FAN);
+			Alarm_Error();
 			Reset_SelfCheck_Vacuum_Controler();
 			return 1;
 		}
@@ -1549,14 +1562,14 @@ uint8_t Self_Check(uint8_t Check_Code)
 	{
 		Set_Error_Code(Error_Code_LeftBrush);
 		Disable_Motors();
-		wav_play(WAV_ERROR_LEFT_BRUSH);
+		Alarm_Error();
 		return 1;
 	}
 	else if(Check_Code==Check_Right_Brush)
 	{
 		Set_Error_Code(Error_Code_RightBrush);
 		Disable_Motors();
-		wav_play(WAV_ERROR_RIGHT_BRUSH);
+		Alarm_Error();
 		return 1;
 	}
 	Stop_Brifly();
@@ -1602,7 +1615,7 @@ uint8_t Check_Bat_Ready_To_Clean(void)
 	}
 	//ROS_INFO("%s %d: Battery limit is %d.", __FUNCTION__, __LINE__, battery_limit);
 	// Check if battary is lower than the low battery go home voltage value.
-	if (GetBatteryVoltage() > battery_limit){
+	if (GetBatteryVoltage() >= battery_limit){
 		return 1;
 	}
 	return 0;
@@ -1646,7 +1659,7 @@ void Set_Vac_Speed(void)
 			Set_BLDC_Speed(Vac_Speed_Max);
 		}else{
 			// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-			if (Get_Work_Time() < Two_Hours){
+			if (get_work_time() < Two_Hours){
 				Set_BLDC_Speed(Vac_Speed_Normal);
 			}else{
 				//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
@@ -1663,7 +1676,7 @@ void OBS_Dynamic_Base(uint16_t Cy)
 	static uint32_t FrontOBS_E_Counter = 0,LeftOBS_E_Counter = 0,RightOBS_E_Counter = 0;
 	static int32_t FrontOBS_Everage = 0,LeftOBS_Everage = 0, RightOBS_Everage = 0;
 	static int32_t FrontOBS_Sum = 0, LeftOBS_Sum = 0, RightOBS_Sum = 0;
-	int16_t OBS_Diff = 350;
+	int16_t OBS_Diff = 350, OBS_adjust_limit = 100;
 
 	/*---------------Front-----------------------*/
 	Front_OBS_Buffer = Get_FrontOBS();
@@ -1679,8 +1692,8 @@ void OBS_Dynamic_Base(uint16_t Cy)
 		FrontOBS_E_Counter = 0;
 		Front_OBS_Buffer = Front_OBSTrig_Value - OBS_Diff;
 		Front_OBS_Buffer = (FrontOBS_Everage + Front_OBS_Buffer) / 2;
-		if (Front_OBS_Buffer < 100) {
-			Front_OBS_Buffer = 100;
+		if (Front_OBS_Buffer < OBS_adjust_limit) {
+			Front_OBS_Buffer = OBS_adjust_limit;
 		}
 		Front_OBSTrig_Value = Front_OBS_Buffer + OBS_Diff;
 		//Beep(1, 10, 0, 1);
@@ -1701,8 +1714,8 @@ void OBS_Dynamic_Base(uint16_t Cy)
 		LeftOBS_E_Counter = 0;
 		Left_OBS_Buffer = Left_OBSTrig_Value - OBS_Diff;
 		Left_OBS_Buffer = (LeftOBS_Everage + Left_OBS_Buffer) / 2;
-		if (Left_OBS_Buffer < 100) {
-			Left_OBS_Buffer = 100;
+		if (Left_OBS_Buffer < OBS_adjust_limit) {
+			Left_OBS_Buffer = OBS_adjust_limit;
 		}
 		Left_OBSTrig_Value = Left_OBS_Buffer + OBS_Diff;
 		//Beep(4, 10, 0, 1);
@@ -1722,8 +1735,8 @@ void OBS_Dynamic_Base(uint16_t Cy)
 		RightOBS_E_Counter = 0;
 		Right_OBS_Buffer = Right_OBSTrig_Value - OBS_Diff;
 		Right_OBS_Buffer = (RightOBS_Everage + Right_OBS_Buffer) / 2;
-		if (Right_OBS_Buffer < 100) {
-			Right_OBS_Buffer = 100;
+		if (Right_OBS_Buffer < OBS_adjust_limit) {
+			Right_OBS_Buffer = OBS_adjust_limit;
 		}
 		Right_OBSTrig_Value = Right_OBS_Buffer + OBS_Diff;
 		//Beep(8, 10, 0, 1);
@@ -2029,12 +2042,7 @@ uint8_t Stop_Event(void)
 			ROS_WARN("Touch status == 1");
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
-			{
 				robot::instance()->setManualPause();
-				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
-				Reset_Work_Time();
-			}
 #endif
 			Reset_Touch();
 			Stop_Event_Status = 1;
@@ -2044,12 +2052,7 @@ uint8_t Stop_Event(void)
 			Reset_Rcon_Remote();
 #if MANUAL_PAUSE_CLEANING
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
-			{
 				robot::instance()->setManualPause();
-				g_cur_wtime = Get_Work_Time()+g_cur_wtime;
-				ROS_INFO("%s ,%d store current time %d s",__FUNCTION__,__LINE__,g_cur_wtime);
-				Reset_Work_Time();
-			}
 #endif
 			Stop_Event_Status = 2;
 		}
@@ -2106,6 +2109,11 @@ uint8_t Stop_Event(void)
 				Stop_Event_Status = 4;
 			}
 		}
+		if (is_direct_charge())
+		{
+			ROS_WARN("Detect direct charge!");
+			Stop_Event_Status = 5;
+		}
 	}
 	return Stop_Event_Status;
 }
@@ -2121,7 +2129,7 @@ uint8_t Is_Station(void)
 
 uint8_t Is_ChargerOn(void)
 {
-	if (robot::instance()->getChargeStatus() == 1){
+	if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4){
 		return 1;
 	}else{
 		return 0;
@@ -2489,12 +2497,6 @@ void Random_Back(void)
 }
 
 void Move_Back(void)
-{
-	Stop_Brifly();
-	Quick_Back(18,30);
-}
-
-void Back(void)
 {
 	Stop_Brifly();
 	Quick_Back(18,30);
@@ -2952,7 +2954,7 @@ uint8_t VirtualWall_TurnLeft()
 uint8_t Is_WorkFinish(uint8_t m)
 {
 	static uint8_t bat_count = 0;
-	uint32_t wt = Get_Work_Time();	
+	uint32_t wt = get_work_time();
 	if(m){
 		if(wt>Auto_Work_Time)return 1;
 	}
@@ -3029,7 +3031,7 @@ uint8_t Is_Bumper_Jamed()
 						ROS_INFO("JAM5");
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						Set_Error_Code(Error_Code_Bumper);
-						wav_play(WAV_ERROR_BUMPER);
+						Alarm_Error();
 						return 1;
 					}
 				}
@@ -3265,8 +3267,7 @@ void Clear_Manual_Pause(void)
 		}
 		extern std::list <Point32_t> g_home_point;
 		g_home_point.clear();
-		g_cur_wtime = 0;
-		CM_ResetGoHome();
+		CM_reset_go_home();
 	}
 }
 

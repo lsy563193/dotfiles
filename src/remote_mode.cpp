@@ -19,6 +19,7 @@
 #include "remote_mode.h"
 #include <ros/ros.h>
 #include "wav.h"
+#include "robotbase.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
@@ -33,16 +34,6 @@ void Remote_Mode(void)
 
   //Display_Clean_Status(Display_Remote);
 
-	if (!Is_Gyro_On()){
-		Set_Gyro_On();
-		if (!Wait_For_Gyro_On())
-		{
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			return;
-		}
-//		Set_Gyro_Status();
-	}
-
 	Set_LED(100,0);
 	Reset_Wheel_Step();
 	Reset_Stop_Event_Status();
@@ -54,7 +45,7 @@ void Remote_Mode(void)
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
-		OBS_Dynamic_Base(20);
+		robotbase_OBS_adjust_count(20);
 #endif
 
 		if(Remote_Key(Remote_Forward))

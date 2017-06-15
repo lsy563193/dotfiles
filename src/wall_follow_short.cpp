@@ -68,7 +68,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 	Mobility_Temp_Error=0;
 	Follow_Distance = 0;
 	ROS_DEBUG("In Wall Follow short");	
-	if(Get_Work_Time()>9000)
+	if(get_work_time()>9000)
 	{
 		Follow_Distance=30000;
 		Bumper_Limit=13;

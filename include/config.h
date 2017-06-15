@@ -147,6 +147,7 @@
 
 #endif
 
+#define ROBOT_SIZE_1_2			(ROBOT_SIZE/2)
 /*
  * Total number of targets that can be allowed..
  */

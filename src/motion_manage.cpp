@@ -56,13 +56,12 @@ extern uint8_t g_oc_wheel_left_cnt;
 extern uint8_t g_oc_wheel_right_cnt;
 extern uint8_t g_oc_suction_cnt;
 extern uint8_t g_cliff_cnt;
-extern uint8_t	g_remote_go_home;
 extern uint16_t g_press_time;
 extern int g_bumper_cnt;
 
 extern std::list <Point32_t> g_home_point;
 
-extern uint32_t g_cur_wtime;//temporary work time
+uint32_t g_saved_work_time = 0;//temporary work time
 
 /*
 int g_enable_angle_offset = 0;
@@ -152,11 +151,12 @@ bool MotionManage::get_align_angle(float &line_angle)
 //	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	line_angle = segmentss.min_distant_segment_angle();
 
-	//todo testing to turn 180 degrees.
+	// If get line_angle from the scan data, turn 180 degrees.
+	// Else, the line_angle should be 0(Actually there is very little chance that the line_angle from scan data is exactly 0).
 	if (line_angle > 0)
 	{
 		line_angle -= 180;
-	} else if (line_angle <= 0)
+	} else if (line_angle < 0)
 	{
 		line_angle += 180;
 	}
@@ -260,14 +260,27 @@ MotionManage::~MotionManage()
 		else{
 			g_temp_spot_set = false;
 		}
-		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
-		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
+		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		if (g_go_home)
+#if MANUAL_PAUSE_CLEANING
+			ROS_WARN("%s %d: Pause going home, g_home_point list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point.size());
+#else
+			ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+#endif
+		else
+			ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
+		g_saved_work_time += get_work_time();
+		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
 	if (robot::instance()->isLowBatPaused())
 	{
-		robot::instance()->savedOffsetAngle((float)Gyro_GetAngle() / 10);
-		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, (float)Gyro_GetAngle() / 10);
+		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
+		g_saved_work_time += get_work_time();
+		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
 
@@ -286,29 +299,30 @@ MotionManage::~MotionManage()
 
 	wav_play(WAV_CLEANING_FINISHED);
 
-	g_go_home =0;
 	g_home_point.clear();
-	g_cur_wtime = 0;
 
-//	if (g_key_clean_pressed == true)
-	Set_Clean_Mode(Clean_Mode_Userinterface);
+	if (g_fatal_quit_event)
+		if (g_cliff_all_triggered)
+			ROS_WARN("%s %d: All Cliff are triggered. Finish cleaning.", __FUNCTION__, __LINE__);
+		else
+			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
+	else if (g_key_clean_pressed)
+		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+	else if (Get_Clean_Mode() == Clean_Mode_Charging)
+		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
+	else if (Get_Clean_Mode() == Clean_Mode_Sleep)
+		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
+	else
+		if (Get_Clean_Mode() == Clean_Mode_Spot)
+			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		else
+			ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning.", __FUNCTION__, __LINE__);
 
+	g_saved_work_time += get_work_time();
+	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
-	if(g_battery_low)
-		Set_Clean_Mode(Clean_Mode_Sleep);
-
-	if(g_fatal_quit_event)
-		Set_Clean_Mode(Clean_Mode_Sleep);
-
-	if(g_from_station)
-		Set_Clean_Mode(Clean_Mode_GoHome);
-
-	if (g_battery_low == true) {
-		ROS_WARN("%s %d: Battery too low, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
-	} else if (g_cliff_all_triggered == true) {
-		ROS_WARN("%s %d: All Cliff are triggered, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
-	}
-	ROS_INFO("%s %d: Finish cleanning, cleaning time: %d(s)", __FUNCTION__, __LINE__, Get_Work_Time());
+	if (Get_Clean_Mode() != Clean_Mode_Sleep && Get_Clean_Mode() != Clean_Mode_Charging)
+		Set_Clean_Mode(Clean_Mode_Userinterface);
 
 }
 
@@ -330,8 +344,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 bool MotionManage::initNavigationCleaning(void)
 {
-	extern uint32_t g_cur_wtime;
-
+	reset_start_work_time();
 	Set_LED(100,0);
 	Reset_Rcon_Status();
 	Reset_MoveWithRemote();
@@ -364,7 +377,7 @@ bool MotionManage::initNavigationCleaning(void)
 	if (robot::instance()->isManualPaused() || robot::instance()->isLowBatPaused())
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
-		ROS_INFO("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
+		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 	}
 
 	/*Move back from charge station*/
@@ -410,8 +423,6 @@ bool MotionManage::initNavigationCleaning(void)
 					ROS_WARN("%s %d: fail to leave charger stub when continue to clean.", __FUNCTION__, __LINE__);
 					// Quit continue cleaning.
 					robot::instance()->resetLowBatPause();
-					g_cur_wtime = 0;
-					ROS_INFO("%s ,%d ,set g_cur_wtime to zero",__FUNCTION__,__LINE__);
 				}
 				if (robot::instance()->isManualPaused())
 				{
@@ -443,23 +454,19 @@ bool MotionManage::initNavigationCleaning(void)
 		{
 			Point32_t new_home_point;
 			// Save the current coordinate as a new home point.
-			new_home_point.X = Map_GetXCount();
-			new_home_point.Y = Map_GetYCount();
+			new_home_point.X = Map_get_x_count();
+			new_home_point.Y = Map_get_y_count();
 
 			// Push the start point into the home point list.
 			g_home_point.push_front(new_home_point);
 		}
 
 		Reset_Rcon_Status();
-	} else
-	if (robot::instance()->isManualPaused())
-		Reset_Work_Time();
-	else
+	}
+	else if (!robot::instance()->isManualPaused())
 	{
-		// Set the Work_Timer_Start as current time
-		Reset_Work_Time();
-		g_cur_wtime = 0;
-		ROS_INFO("%s ,%d ,set g_cur_wtime to zero ", __FUNCTION__, __LINE__);
+		g_saved_work_time = 0;
+		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 		//Initital home point
 		g_home_point.clear();
 
@@ -469,10 +476,10 @@ bool MotionManage::initNavigationCleaning(void)
 		g_home_point.push_front(new_home_point);
 
 		// Mark all the trapped reference points as (0, 0).
-		Point16_t tmp_pnt;
+		Cell_t tmp_pnt;
 		tmp_pnt.X = 0;
 		tmp_pnt.Y = 0;
-		extern Point16_t g_pnt16_ar_tmp[3];
+		extern Cell_t g_pnt16_ar_tmp[3];
 		for (int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i)
 		{
 			g_pnt16_ar_tmp[i] = tmp_pnt;
@@ -481,7 +488,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 		ROS_INFO("Map_Initialize-----------------------------");
 		Map_Initialize();
-		PathPlanning_Initialize(&g_home_point.front().X, &g_home_point.front().Y);
+		path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);
 
 		robot::instance()->initOdomPosition();
 
@@ -500,7 +507,10 @@ bool MotionManage::initWallFollowCleaning(void)
 {
 	extern std::vector<Pose32_t> WF_Point;
 
+	reset_start_work_time();
 	Reset_MoveWithRemote();
+	Reset_Rcon_Status();
+	Reset_Stop_Event_Status();
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
@@ -515,6 +525,8 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 
+	g_saved_work_time = 0;
+	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
 	g_home_point.clear();
 	WF_Point.clear();
@@ -538,6 +550,8 @@ bool MotionManage::initWallFollowCleaning(void)
 
 bool MotionManage::initSpotCleaning(void)
 {
+	reset_start_work_time();
+
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
@@ -551,14 +565,17 @@ bool MotionManage::initSpotCleaning(void)
 	{
 		return false;
 	}
-    std::list<Point32_t> homepoint;
+
+	g_saved_work_time = 0;
+	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
+	std::list<Point32_t> homepoint;
 	Point32_t t_point;
 	t_point.X = 0;
 	t_point.Y = 0;
 	homepoint.clear();
 	homepoint.push_front(t_point);
 	Map_Initialize();//init map
-	PathPlanning_Initialize(&homepoint.front().X,&homepoint.front().Y);//init pathplan
+	path_planning_initialize(&homepoint.front().X, &homepoint.front().Y);//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
@@ -575,15 +592,15 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_
 	CellState cell_state;
 	path_get_range(&x_min, &x_max, &y_min, &y_max);
 
-	next_point_x = countToCell(next_point.X);
+	next_point_x = count_to_cell(next_point.X);
 	if (next_point_x == SHRT_MIN )
 		next_point_x = x_min;
 	else if (next_point_x == SHRT_MAX)
 		next_point_x = x_max;
 
-	next_point_y = countToCell(next_point.Y);
-	target_point_x = countToCell(target_point.X);
-	target_point_y = countToCell(target_point.Y);
+	next_point_y = count_to_cell(next_point.Y);
+	target_point_x = count_to_cell(target_point.X);
+	target_point_y = count_to_cell(target_point.Y);
 
 	for (i = x_min; i <= x_max; i++)
 	{
@@ -595,7 +612,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_
 				robot::instance()->setCleanMapMarkers(i, j, TARGET);
 			else
 			{
-				cell_state = Map_GetCell(id, i, j);
+				cell_state = Map_get_cell(id, i, j);
 				if (cell_state == CLEANED || cell_state == BLOCKED_OBS || cell_state == BLOCKED_BUMPER)
 					robot::instance()->setCleanMapMarkers(i, j, cell_state);
 			}

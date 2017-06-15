@@ -38,7 +38,7 @@ uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
-uint8_t sendStream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0xcc,0x33};
+uint8_t sendStream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 #endif
 
 
@@ -73,14 +73,14 @@ int temp_speaker_sound_time_count = -1;
 int robotbase_speaker_silence_time_count = 0;
 int temp_speaker_silence_time_count = 0;
 
-// Low battery flag
-extern uint8_t g_low_battery;
-
 // Lock for odom coordinate
 boost::mutex odom_mutex;
 
 // Odom coordinate
 float pose_x, pose_y;
+
+// For obs dynamic adjustment
+int OBS_adjust_count;
 
 int robotbase_init(void)
 {
@@ -157,7 +157,10 @@ void robotbase_deinit(void)
 void robotbase_reset_send_stream(void)
 {
 	for (int i = 0; i < SEND_LEN; i++) {
-		sendStream[i] = 0x0;
+		if (i != CTL_LED_GREEN)
+			sendStream[i] = 0x0;
+		else
+			sendStream[i] = 0x64;
 	}
 	sendStream[0] = 0xaa;
 	sendStream[1] = 0x55;
@@ -376,6 +379,8 @@ void *robotbase_routine(void*)
 		/*---------------publish end --------------------------*/
 
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
+		// Dynamic adjust obs
+		OBS_Dynamic_Base(OBS_adjust_count);
 	}
 	ROS_INFO("robotbase thread exit");
 	//pthread_exit(NULL);
@@ -405,11 +410,6 @@ void *serial_send_routine(void*){
 		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
 			process_beep();
-		//}else{
-		//	// Trigger constant beep alarm for low battary alarm, it has the lowest priority among all the alarms, so it can be interrupted by other alarm.
-		//	if (g_low_battery){
-		//		Beep(3, 25, 25, 40);
-		//	}
 		}
 		/*-------------------counter end-------------------------------------*/
 
@@ -469,4 +469,10 @@ void robotbase_restore_slam_correction()
 	pose_x += robot::instance()->getCorrectionX();
 	pose_y += robot::instance()->getCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
+}
+
+void robotbase_OBS_adjust_count(int count)
+{
+	boost::mutex::scoped_lock(odom_mutex);
+	OBS_adjust_count = count;
 }

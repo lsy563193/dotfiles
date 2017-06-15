@@ -131,10 +131,10 @@ void Matrix_Rotate(double * x, double * y, double theta)
 	*y = e;
 }
 
-Point16_t calIntersPoint( Point16_t l1StartPnt, Point16_t l1EndPnt,
-                          Point16_t l2StartPnt, Point16_t l2EndPnt )
+Cell_t calIntersPoint( Cell_t l1StartPnt, Cell_t l1EndPnt,
+                          Cell_t l2StartPnt, Cell_t l2EndPnt )
 {
-	Point16_t retval;
+	Cell_t retval;
 	double l1[4], l2[4], p[2] = { 32555, 32555 };
 	l1[0] = (double)(l1StartPnt.X); l1[1] = (double)(l1StartPnt.Y);
 	l1[2] = (double)(l1EndPnt.X);	 l1[3] = (double)(l1EndPnt.Y);

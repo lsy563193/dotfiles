@@ -11,12 +11,13 @@ FILE(GLOB PP_SRC
 	src/gyro.cpp
 	src/laser.cpp
 	src/main.cpp
+#	test/test_path_update_cell.cpp
 	src/map.cpp
 	src/mathematics.cpp
 	src/motion_manage.cpp
 	src/movement.cpp
 	src/path_planning.cpp
-	src/random_runing.cpp
+	src/random_running.cpp
 	src/remote_mode.cpp
 	src/robotbase.cpp
 	src/robot.cpp
@@ -95,25 +96,26 @@ catkin_package(
 )
 
 add_executable(pp  ${PP_SRC} )
-target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
+target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
+#target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 
-add_executable(syscheck src/signature.c src/crc8.cpp src/des.cpp src/serial.cpp src/syscheck.cpp)
-target_link_libraries(syscheck ${catkin_LIBRARIES} -lm "-T ../ilife_ldscript.lds -Wl,--verbose")
+#add_executable(syscheck src/signature.c src/crc8.cpp src/des.cpp src/serial.cpp src/syscheck.cpp)
+#target_link_libraries(syscheck ${catkin_LIBRARIES} -lm "-T ../ilife_ldscript.lds -Wl,--verbose")
 
 #add_executable(angle_test test/angle_test.cpp )
 #target_link_libraries(angle_test ${catkin_LIBRARIES} -lm -lpthread)
 
-install(TARGETS pp syscheck
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(DIRECTORY launch urdf config audio
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  USE_SOURCE_PERMISSIONS
-)
-
-install(FILES custom_rosconsole.conf
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+#install(TARGETS pp syscheck
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
+#
+#install(DIRECTORY launch urdf config audio
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#  USE_SOURCE_PERMISSIONS
+#)
+#
+#install(FILES custom_rosconsole.conf
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#)

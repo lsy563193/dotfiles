@@ -15,7 +15,6 @@
 #define Turn_Speed 18
 #endif
 
-extern uint8_t g_low_battery;
 
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void Charge_Function(void)
@@ -39,10 +38,6 @@ void Charge_Function(void)
 
 	// This counter is for avoiding occasionly Is_ChargerOn return 0 when robot is charging, cause it will stop charger mode.
 	uint8_t Stop_Charge_Counter = 0;
-
-	// Reset the g_low_battery flag in core_move.cpp and stop beeping.
-//	Beep(0, 0, 0, 1);
-	g_low_battery = 0;
 
 	Set_LED(100,100);
 	set_start_charge();
@@ -129,14 +124,25 @@ void Charge_Function(void)
 		{
 			//Beep(5, 20, 0, 1);
 //			Reset_Error_Code();
-			if (!Check_Bat_Ready_To_Clean())
+			if (is_direct_charge())
+			{
+				ROS_WARN("Can not go to navigation mode during direct charging.");
+				Beep(Beep_Error_Sounds, 2, 0, 1);// Beep for invalid key.
+				// Key release detection, if user has not release the key, don't do anything.
+				while (Get_Key_Press() & KEY_CLEAN)
+				{
+					ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
+					usleep(20000);
+				}
+			}
+			else if (!Check_Bat_Ready_To_Clean())
 			{
 				ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 				wav_play(WAV_BATTERY_LOW);
 			}
 			else if (Is_AtHomeBase())
 			{
-				ROS_INFO("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
+				ROS_WARN("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
 				// Key release detection, if user has not release the key, don't do anything.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
@@ -174,7 +180,12 @@ void Charge_Function(void)
 		if(Get_Rcon_Remote()){
 			if (Remote_Key(Remote_Clean)) {
 				Reset_Rcon_Remote();
-				if (!Check_Bat_Ready_To_Clean())
+				if (is_direct_charge())
+				{
+					ROS_WARN("Can not go to navigation mode during direct charging.");
+					Beep(Beep_Error_Sounds, 2, 0, 1);// Beep for invalid key.
+				}
+				else if (!Check_Bat_Ready_To_Clean())
 				{
 					ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 					wav_play(WAV_BATTERY_LOW);
@@ -294,11 +305,11 @@ void GoHome(void)
 	//delay(1500);
 //	wav_play(WAV_BACK_TO_CHARGER);
 	// This is for calculating the robot turning.
-	uint16_t Current_Angle;
-	uint16_t Last_Angle;
-	int Angle_Offset;
+	float Current_Angle;
+	float Last_Angle;
+	float Angle_Offset;
 	// This step is for counting angle change when the robot turns.
-	long Gyro_Step = 0;
+	float Gyro_Step = 0;
 
 	Set_LED(100,100);
 	Set_SideBrush_PWM(30,30);
@@ -307,11 +318,11 @@ void GoHome(void)
 	Stop_Brifly();
 	Reset_Rcon_Status();
 	// Save the start angle.
-	Last_Angle = Gyro_GetAngle();
+	Last_Angle = robot::instance()->getAngle();
 	// Enable the charge function
 	set_start_charge();
 
-	while(Gyro_Step < 3600)
+	while(Gyro_Step < 360)
 	{
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
 		if (Is_ChargerOn())
@@ -328,6 +339,7 @@ void GoHome(void)
 		if (Stop_Event())
 		{
 			ROS_WARN("%s %d: Stop_Event in turning 360 degrees to find charger signal.", __FUNCTION__, __LINE__);
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			Disable_Motors();
 			break;
 		}
@@ -347,6 +359,7 @@ void GoHome(void)
 			Random_Back();
 			if(Is_Bumper_Jamed())
 			{
+				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}
 		}
@@ -358,7 +371,7 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR_HomeL)//FR H_L
 		{
@@ -366,7 +379,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconFL_HomeL)//FL H_L
@@ -375,7 +388,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR_HomeR)//FR H_R
 		{
@@ -383,7 +396,7 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,900);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFL2_HomeR)//FL2 H_R
 		{
@@ -391,7 +404,7 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,850);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR2_HomeL)//FR2 H_L
 		{
@@ -399,7 +412,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,850);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconFL2_HomeL)//FL2 H_L
@@ -408,7 +421,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR2_HomeR)//FR2 H_R
 		{
@@ -416,20 +429,20 @@ void GoHome(void)
 			Turn_Left(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconL_HomeL)// L  H_L
 		{
 			ROS_INFO("Start with L-L.");
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconR_HomeR)// R  H_R
 		{
 			ROS_INFO("Start with R-R.");
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconL_HomeR)// L  H_R
@@ -437,14 +450,14 @@ void GoHome(void)
 			ROS_INFO("Start with L-R.");
 			Turn_Left(Turn_Speed,1500);
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		if(Receive_Code&RconR_HomeL)// R  H_L
 		{
 			ROS_INFO("Start with R-L.");
 			Turn_Right(Turn_Speed,1500);
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 /*--------------------------HomeT-----------------*/
 		if(Receive_Code&RconFL_HomeT)//FL H_T
@@ -453,7 +466,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR_HomeT)//FR H_T
 		{
@@ -461,7 +474,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconFL2_HomeT)//FL2 H_T
@@ -470,7 +483,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,600);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconFR2_HomeT)//FR2 H_T
 		{
@@ -478,7 +491,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 		if(Receive_Code&RconL_HomeT)// L  H_T
@@ -487,7 +500,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,1200);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if(Receive_Code&RconR_HomeT)// R  H_T
 		{
@@ -495,7 +508,7 @@ void GoHome(void)
 			Turn_Right(Turn_Speed,1200);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 
 /*--------------BL BR---------------------*/
@@ -505,7 +518,7 @@ void GoHome(void)
 			Turn_Left(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if((Receive_Code&RconBR_HomeR))//BR H_L R  //OK
 		{
@@ -513,7 +526,7 @@ void GoHome(void)
 			Turn_Right(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if((Receive_Code&RconBL_HomeR))//BL H_R
@@ -522,7 +535,7 @@ void GoHome(void)
 			Turn_Left(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if((Receive_Code&RconBR_HomeL))//BL H_L R
 		{
@@ -530,7 +543,7 @@ void GoHome(void)
 			Turn_Right(30,800);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 
 		if((Receive_Code&RconBL_HomeT))//BL H_T
@@ -539,7 +552,7 @@ void GoHome(void)
 			Turn_Left(30,300);
 			Stop_Brifly();
 			Around_ChargerStation(1);
-			return;
+			break;
 		}
 		if((Receive_Code&RconBR_HomeT))//BR H_T
 		{
@@ -547,26 +560,41 @@ void GoHome(void)
 			Turn_Right(30,300);
 			Stop_Brifly();
 			Around_ChargerStation(0);
-			return;
+			break;
 		}
 		usleep(50000);
-		Current_Angle = Gyro_GetAngle();
+		Current_Angle = robot::instance()->getAngle();
 		Angle_Offset = Current_Angle - Last_Angle;
-		//ROS_INFO("Current_Angle = %d, Last_Angle = %d, Angle_Offset = %d, Gyro_Step = %ld.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
+		ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
 		if (Angle_Offset > 0)
 		{
-			Angle_Offset -= 3600;
+			// For passing the boundary of angle range. e.g.(179 - (-178))
+			if (Angle_Offset >= 180)
+				Angle_Offset -= 360;
+			else
+				// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
+				Angle_Offset = 0;
 		}
-		Gyro_Step += abs(Angle_Offset);
+		Gyro_Step += (-Angle_Offset);
 		Last_Angle = Current_Angle;
 
 		Set_Dir_Right();
 		Set_Wheel_Speed(10, 10);
 	}
-	// If robot didn't reach the charger, go back to userinterface mode.
-	if(Get_Clean_Mode() != Clean_Mode_Charging)
-	{
+
+	if (Gyro_Step >= 360)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+
+	// If robot didn't reach the charger, go back to userinterface mode.
+	if(Get_Clean_Mode() != Clean_Mode_Charging && Get_Clean_Mode() != Clean_Mode_GoHome)
+	{
+		extern std::list <Point32_t> g_home_point;
+		if (!Stop_Event() && g_home_point.empty())
+		{
+			Set_LED(100, 0);
+			Stop_Brifly();
+			wav_play(WAV_BACK_TO_CHARGER_FAILED);
+		}
 	}
 
 }
@@ -582,7 +610,6 @@ void Around_ChargerStation(uint8_t Dir)
 	uint32_t No_Signal_Counter=0;
 	uint32_t N_Around_LRSignal=0;
 	uint8_t Bumper_Counter=0;
-	static uint8_t LLSignal_Count = 0,RRSignal_Count = 0, RTSignal_Count = 0,LTSignal_Count = 0;
 	uint8_t Cliff_Counter = 0;
 	Move_Forward(9,9);
 	Set_SideBrush_PWM(30,30);
@@ -793,7 +820,7 @@ void Around_ChargerStation(uint8_t Dir)
 			No_Signal_Counter++;
 			if(No_Signal_Counter>80)
 			{
-				Beep(1, 25, 75, 3);
+				//Beep(1, 25, 75, 3);
 				ROS_WARN("No charger signal received.");
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				return ;
@@ -1164,11 +1191,11 @@ uint8_t Check_Position(uint8_t Dir)
 //	uint32_t Counter_Watcher=0;
 	uint32_t Receive_Code = 0;
 	// This angle is for counting angle change when the robot turns.
-	uint16_t Current_Angle;
-	uint16_t Last_Angle;
-	int Angle_Offset;
+	float Current_Angle;
+	float Last_Angle;
+	float Angle_Offset;
 	// This step is for counting angle change when the robot turns.
-	long Gyro_Step = 0;
+	float Gyro_Step = 0;
 
 	if(Dir == Round_Left)
 	{
@@ -1182,26 +1209,29 @@ uint8_t Check_Position(uint8_t Dir)
 	}
 	Set_Wheel_Speed(10,10);
 
-	Last_Angle = Gyro_GetAngle();
-	ROS_DEBUG("Last_Angle = %d.", Last_Angle);
+	Last_Angle = robot::instance()->getAngle();
+	ROS_DEBUG("Last_Angle = %f.", Last_Angle);
 
 //	while(Get_LeftWheel_Step()<3600)
-	while(Gyro_Step < 3600)
+	while(Gyro_Step < 360)
 	{
 //		delay(1);
 		usleep(50000);
-		Current_Angle = Gyro_GetAngle();
+		Current_Angle = robot::instance()->getAngle();
 		Angle_Offset = Current_Angle - Last_Angle;
-		ROS_DEBUG("Current_Angle = %d, Last_Angle = %d, Angle_Offset = %d, Gyro_Step = %ld.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
-		if (Angle_Offset < 0 && Dir == Round_Left)
+		ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
+		if (Dir == Round_Left)
 		{
-			Angle_Offset += 3600;
+			if (Angle_Offset < 0)
+				Angle_Offset += 360;
+			Gyro_Step += Angle_Offset;
 		}
-		if (Angle_Offset > 0 && Dir == Round_Right)
+		if (Dir == Round_Right)
 		{
-			Angle_Offset -= 3600;
+			if (Angle_Offset > 0)
+				Angle_Offset -= 360;
+			Gyro_Step += (-Angle_Offset);
 		}
-		Gyro_Step += abs(Angle_Offset);
 		Last_Angle = Current_Angle;
 		//Counter_Watcher++;
 		//if(Counter_Watcher>150000)
@@ -1642,7 +1672,7 @@ void By_Path(void)
 				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
 				// when stop event status is on,
 				// it will know and won't go to next home point.
-				if (robot::instance()->isLowBatPaused())
+				if (!robot::instance()->isLowBatPaused())
 					if (!robot::instance()->isManualPaused())
 						Reset_Stop_Event_Status();
 

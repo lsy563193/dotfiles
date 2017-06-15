@@ -143,7 +143,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	if ((key & KEY_CLEAN) && !(Get_Key_Press() & KEY_CLEAN))
 	{
 		key_press_count++;
-		if (key_press_count > 5)
+		if (key_press_count > 0)
 		{
 			Set_Key_Press(KEY_CLEAN);
 			key_press_count = 0;

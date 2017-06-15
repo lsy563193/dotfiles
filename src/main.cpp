@@ -32,13 +32,35 @@
 
 void laser_pm_gpio(char val);
 
-void protect_function()
+bool selfCheckAtLaunch()
 {
+	// Skip self check if using direct charge or at charger stub, because robot can not move during direct charge.
+	if (is_direct_charge() || Is_AtHomeBase())
+		return true;
+
 	//Bumper protect
-	if (Get_Bumper_Status()){
-		Random_Back();
-		Is_Bumper_Jamed();
+	if (Get_Bumper_Status())
+	{
+		Set_LED(0, 100);
+		wav_play(WAV_ERROR_BUMPER);
+		if (!Is_Gyro_On())
+		{
+			Set_Gyro_On();
+			while (!Wait_For_Gyro_On())
+				wav_play(WAV_SYSTEM_INITIALIZING);
+		}
+		if (Is_Bumper_Jamed())
+			return false;
+		else
+		{
+			Stop_Brifly();
+			wav_play(WAV_CLEAR_ERROR);
+			usleep(500000);
+		}
 	}
+	Set_Error_Code(Error_Code_None);
+	Set_LED(100, 0);
+	return true;
 }
 
 void *core_move_thread(void *)
@@ -49,12 +71,15 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	ROS_INFO("Robot sensor ready.");
-	protect_function();
-
 	wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
-	if(Check_Bat_Ready_To_Clean())
-		wav_play(WAV_PLEASE_START_CLEANING);
+	if (selfCheckAtLaunch())
+	{
+		if (is_direct_charge() || Is_AtHomeBase())
+			Set_Clean_Mode(Clean_Mode_Charging);
+		else if (Check_Bat_Ready_To_Clean())
+			wav_play(WAV_PLEASE_START_CLEANING);
+	}
 
 	while(ros::ok()){
 		usleep(20000);
@@ -84,7 +109,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode------\n");
 				Set_Main_PwrByte(Clean_Mode_Navigation);
-				CM_Touring();
+				CM_touring();
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
@@ -139,6 +164,22 @@ void *core_move_thread(void *)
 				robot::instance()->resetLowBatPause();
 
 				Clear_Manual_Pause();
+
+				if (!Is_Gyro_On())
+				{
+					// Restart the gyro.
+					Set_Gyro_Off();
+					// Wait for 30ms to make sure the off command has been effectived.
+					usleep(30000);
+					// Set gyro on before wav_play can save the time for opening the gyro.
+					Set_Gyro_On();
+					wav_play(WAV_SYSTEM_INITIALIZING);
+					if (!Wait_For_Gyro_On())
+					{
+						Set_Clean_Mode(Clean_Mode_Userinterface);
+						break;
+					}
+				}
 
 				Remote_Mode();
 				break;

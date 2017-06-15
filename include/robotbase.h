@@ -25,6 +25,7 @@ extern uint8_t robotbase_sound_code;
 extern int robotbase_speaker_sound_time_count;
 extern int robotbase_speaker_silence_time_count;
 extern bool key_or_clean_button_detected;
+extern int OBS_adjust_count;
 int robotbase_init();
 void robotbase_deinit(void);
 void robotbase_reset_send_stream(void);
@@ -36,5 +37,6 @@ void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg);
 void process_beep();
 void robotbase_reset_odom_pose(void);
 void robotbase_restore_slam_correction(void);
+void robotbase_OBS_adjust_count(int count);
 
 #endif
