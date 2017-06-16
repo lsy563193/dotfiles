@@ -68,6 +68,12 @@ void User_Interface(void)
 	while(ros::ok())
 	{
 		usleep(10000);
+
+		charger_signal_delay_mutex.lock();
+		if (charger_signal_delay > 0)
+			charger_signal_delay--;
+		charger_signal_delay_mutex.unlock();
+
 		// Check the battery to warn the user.
 		if (Check_Bat_Stop())
 		{
@@ -194,14 +200,6 @@ void User_Interface(void)
 			Set_MoveWithRemote();
 			Reset_Rcon_Remote();
 			Temp_Mode=Clean_Mode_Spot;
-		}
-
-		/* -----------------------------Check if near charger stub ---------------------------*/
-		if (!g_rcon_triggered)
-		{
-			boost::mutex::scoped_lock(charger_signal_delay_mutex);
-			if (charger_signal_delay > 0)
-				charger_signal_delay--;
 		}
 
 		/* -----------------------------Check if Home event ----------------------------------*/
@@ -360,13 +358,6 @@ void User_Interface(void)
 			Temp_Mode=0;
 		}
 
-		//Error_Show_Counter++;
-		//if(Error_Show_Counter>500)
-		//{
-		//	Test_Mode_Flag=0;
-		//	Error_Show_Counter=0;
-		//	Sound_Out_Error(Get_Error_Code());
-		//}
 	}
 
 	if (Get_Clean_Mode() != Clean_Mode_Sleep)
@@ -392,13 +383,14 @@ void user_interface_register_events(void)
 
 void user_interface_handle_rcon(bool state_now, bool state_last)
 {
-	/* -----------------------------Check if detects home signal -------------------------*/
 	if (robot::instance()->isManualPaused())
 	{
 		Reset_Rcon_Status();
+		ROS_DEBUG("%s %d: User_Interface detects charger signal, but ignore for manual pause.", __FUNCTION__, __LINE__);
 		return;
 	}
 
+	ROS_DEBUG("%s %d: User_Interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
 	boost::mutex::scoped_lock(charger_signal_delay_mutex);
 	if (charger_signal_delay == 0)
 		charger_signal_start_time = time(NULL);
@@ -411,7 +403,6 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	}
 
 	charger_signal_delay = 20;
-	ROS_DEBUG("%s %d: User_Interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
 	Reset_Rcon_Status();
 
 }
