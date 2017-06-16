@@ -1232,7 +1232,7 @@ uint8_t cm_touring(void)
 	if (cm_clean_ret == 0)
 		cm_go_home();
 	else if(cm_clean_ret == -2){
-		Spot_WithCell(CleanSpot,1.0);
+		spot_with_cell(CLEAN_SPOT,1.0);
 		g_temp_spot_set = true;
         Set_Clean_Mode(Clean_Mode_Navigation);
     }
@@ -2488,9 +2488,7 @@ void cm_handle_remote_mode_spot(bool state_now, bool state_last)
 	Stop_Brifly();
 	Reset_Rcon_Remote();
 	g_remote_spot = true;
-	//robot::instance()->setTempSpot();
 	robot::instance()->setManualPause();
-	//Spot_WithCell(CleanSpot,1.0);
 	//Work_Motor_Configure();
 	//auto modeTemp = Get_VacMode();
 	//Set_VacMode(modeTemp,false);

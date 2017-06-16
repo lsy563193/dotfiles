@@ -45,7 +45,7 @@ extern bool g_key_clean_pressed;
 * @param3 pointing to the near_point.
 * @return None.
 * */
-static uint8_t Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point_list,Point32_t *near_point)
+static uint8_t find_nearest_point(Point32_t ref_point,std::list<Point32_t> *point_list,Point32_t *near_point)
 {
 	std::list<Point32_t>::reverse_iterator tp;
 	Point32_t t_p;
@@ -80,7 +80,7 @@ static uint8_t Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point
 * @param2 spot_diameter ,the spiral diameter in meters
 * @return None
 * */
-void Spot_WithCell(SpotType st,float spot_diameter)
+void spot_with_cell(SpotType st,float spot_diameter)
 {
 	Reset_Stop_Event_Status();
 	Reset_Rcon_Status();
@@ -88,7 +88,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 	uint8_t spot_stuck = 0;
 	g_remote_spot = false;
 	/*--------initialize gyro & map & plan & slam --------*/
-	if(st == NormalSpot){
+	if(st == NORMAL_SPOT){
 		g_remote_spot = g_remote_home = g_fatal_quit_event = g_key_clean_pressed = false;
 		MotionManage motion;//start slam
 		if(! motion.initSucceeded()){
@@ -100,25 +100,25 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
-			spiral_type = Spiral_Left_Out;	
+			spiral_type = SPIRAL_LEFT_OUT;	
 			ROS_INFO("%s %d ,spiral left out",__FUNCTION__,__LINE__);
 		}
 		else{
-			spiral_type = Spiral_Right_Out;
+			spiral_type = SPIRAL_RIGHT_OUT;
 			ROS_INFO("%s ,%d spiral right out",__FUNCTION__,__LINE__);
 		}
-		Point32_t StopPoint = {0,0};
-		Point32_t nearPoint = {0,0};
-		uint8_t Is_Dict_Change = 0;
+		Point32_t stop_point = {0,0};
+		Point32_t near_point = {0,0};
+		uint8_t is_dirct_change = 0;
 		uint32_t tmp_coor;
 		uint8_t od_spiral_out = 0,od_spiral_in = 0;
 		while(ros::ok()){
 			/*-------get target list ---------*/
-			Spot_GetTarget(spiral_type, spot_diameter, &target, 0, 0);
-			if(Is_Dict_Change){
-				Find_NearestPoint(StopPoint,&target,&nearPoint);
-				StopPoint.X = 0;
-				StopPoint.Y = 0;
+			gen_spot_target(spiral_type, spot_diameter, &target, 0, 0);
+			if(is_dirct_change){
+				find_nearest_point(stop_point,&target,&near_point);
+				stop_point.X = 0;
+				stop_point.Y = 0;
 			}
 			/*--------iterator target ----------*/
 			for( tp = target.begin(); tp != target.end(); tp++){
@@ -126,12 +126,12 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				//if(Spot_HandleException(st)){
 				//	return;	
 				//}
-				//ROS_WARN("%s ,%d target point (%d,%d),nearPoint.X = %d,nearPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,nearPoint.X,nearPoint.Y);
-				if(Is_Dict_Change){
-					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
-						Is_Dict_Change = 0;
-						nearPoint.X = 0;
-						nearPoint.Y = 0;
+				//ROS_WARN("%s ,%d target point (%d,%d),near_point.X = %d,near_point.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,near_point.X,near_point.Y);
+				if(is_dirct_change){
+					if((near_point.X == tp->X) && (near_point.Y == tp->Y)){
+						is_dirct_change = 0;
+						near_point.X = 0;
+						near_point.Y = 0;
 					}
 					else{
 						continue;
@@ -151,121 +151,121 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				//if detect obs or bumper or  cliff trigger ,than change diraction
 				if(g_should_follow_wall){
 					g_should_follow_wall = 0;
-					Is_Dict_Change = 1;
+					is_dirct_change = 1;
 					//ROS_WARN("%s,%d,OBS or Bumper cliff detect",__FUNCTION__,__LINE__);
-					if(spiral_type == Spiral_Right_Out){
+					if(spiral_type == SPIRAL_RIGHT_OUT){
 						od_spiral_out += 1;
 						if(od_spiral_out >= 3){
 							od_spiral_out = 0;
 							//ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
-							spiral_type = Spiral_Left_In;
+							spiral_type = SPIRAL_LEFT_IN;
 						}
 						else{
 							//ROS_WARN("%s ,%d ,set spiral type to left out",__FUNCTION__,__LINE__);
-							spiral_type = Spiral_Left_Out;
+							spiral_type = SPIRAL_LEFT_OUT;
 						}
 						if(tp == target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
-					else if(spiral_type == Spiral_Left_Out){
+					else if(spiral_type == SPIRAL_LEFT_OUT){
 						od_spiral_out += 1;
 						if(od_spiral_out >= 3){
 							od_spiral_out = 0;
 							//ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
-							spiral_type = Spiral_Right_In;
+							spiral_type = SPIRAL_RIGHT_IN;
 						}
 						else{
-							spiral_type = Spiral_Right_Out;
+							spiral_type = SPIRAL_RIGHT_OUT;
 							//ROS_WARN("%s ,%d ,set spiral type to right out",__FUNCTION__,__LINE__);
 						}
 						if(tp == target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
-					else if(spiral_type == Spiral_Right_In){
+					else if(spiral_type == SPIRAL_RIGHT_IN){
 						//ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
-						spiral_type = Spiral_Left_In;
+						spiral_type = SPIRAL_LEFT_IN;
 						od_spiral_in++;
 						if(od_spiral_in > 3){
-							Is_Dict_Change = 0;
+							is_dirct_change = 0;
 							od_spiral_in =0;
 							spot_stuck = 1;
 							break;
 						}
 						if(tp == target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
-					else if(spiral_type == Spiral_Left_In){
+					else if(spiral_type == SPIRAL_LEFT_IN){
 						//ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
-						spiral_type = Spiral_Right_In;
+						spiral_type = SPIRAL_RIGHT_IN;
 						od_spiral_in++;
 						if(od_spiral_in > 3){
-							Is_Dict_Change = 0;
+							is_dirct_change = 0;
 							od_spiral_in =0;
 							spot_stuck = 1;
 							break;
 						}
 						if(tp == target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
                     break;//break for loop
 				}//ending if(g_should_follow_wall)
 			}//ending for(tp = target.begin();...)
-			if(Is_Dict_Change){
+			if(is_dirct_change){
 				continue;
 			} 
-			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
+			if((spiral_type == SPIRAL_RIGHT_IN) || (spiral_type == SPIRAL_LEFT_IN)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				if(spot_stuck){
 					//go back to start point
-					cm_linear_move_to_point(StopPoint, SPOT_MAX_SPEED, false, true);
+					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED, false, true);
 					spot_stuck = 0;
 				} 
 				break;
 			}
-			else if(spiral_type == Spiral_Right_Out){
+			else if(spiral_type == SPIRAL_RIGHT_OUT){
 				//ROS_INFO("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
-				spiral_type  = Spiral_Right_In;
+				spiral_type  = SPIRAL_RIGHT_IN;
 			}
-			else if(spiral_type == Spiral_Left_Out){
+			else if(spiral_type == SPIRAL_LEFT_OUT){
 				//ROS_INFO("%s,%d,set spiral type to left in ",__FUNCTION__,__LINE__);
-				spiral_type = Spiral_Left_In;
+				spiral_type = SPIRAL_LEFT_IN;
 			}
 		}//ending while(ros::ok)
 		cm_unregister_events();
-	}//ending if(st == NormalSpot)
-	else if(st == CleanSpot || st == WallSpot){
+	}//ending if(st == NORMAL_SPOT)
+	else if(st == CLEAN_SPOT || st == WALL_SPOT){
 		event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,false);
 		Set_LED(100,0);
 		Switch_VacMode(false);
@@ -275,27 +275,27 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
-			spiral_type = Spiral_Left_Out;	
+			spiral_type = SPIRAL_LEFT_OUT;	
 			ROS_INFO("%s %d ,spiral left out",__FUNCTION__,__LINE__);
 		}
 		else{
-			spiral_type = Spiral_Right_Out;
+			spiral_type = SPIRAL_RIGHT_OUT;
 			ROS_INFO("%s ,%d spiral right out",__FUNCTION__,__LINE__);
 		}
-		Point32_t StopPoint = {0,0};
-		Point32_t nearPoint = {0,0};
-		uint8_t Is_Dict_Change = 0;
+		Point32_t stop_point = {0,0};
+		Point32_t near_point = {0,0};
+		uint8_t is_dirct_change = 0;
 		uint32_t tmp_coor;
 		uint8_t od_spiral_out = 0,od_spiral_in = 0;
 		int32_t x_offset = (int32_t) map_get_x_cell();
 		int32_t y_offset = (int32_t) map_get_y_cell();
 		while(ros::ok()){
 			/*-------get target list ---------*/
-			Spot_GetTarget(spiral_type,spot_diameter,&target,x_offset,y_offset);
-			if(Is_Dict_Change){
-				Find_NearestPoint(StopPoint,&target,&nearPoint);
-				StopPoint.X = 0;
-				StopPoint.Y = 0;
+			gen_spot_target(spiral_type,spot_diameter,&target,x_offset,y_offset);
+			if(is_dirct_change){
+				find_nearest_point(stop_point,&target,&near_point);
+				stop_point.X = 0;
+				stop_point.Y = 0;
 			}
 			/*--------iterator target ----------*/
 			for(tp = target.begin(); tp!=target.end(); tp++){
@@ -303,12 +303,12 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				//if(Spot_HandleException(st)){
 				//	return;	
 				//}
-				//ROS_WARN("%s ,%d target point (%d,%d),StopPoint.X = %d,StopPoint.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,StopPoint.X,StopPoint.Y);
-				if(Is_Dict_Change){
-					if((nearPoint.X == tp->X) && (nearPoint.Y == tp->Y)){
-						Is_Dict_Change = 0;
-						nearPoint.X = 0;
-						nearPoint.Y = 0;
+				//ROS_WARN("%s ,%d target point (%d,%d),stop_point.X = %d,stop_point.Y = %d",__FUNCTION__,__LINE__,tp->X,tp->Y,stop_point.X,stop_point.Y);
+				if(is_dirct_change){
+					if((near_point.X == tp->X) && (near_point.Y == tp->Y)){
+						is_dirct_change = 0;
+						near_point.X = 0;
+						near_point.Y = 0;
 					}
 					else{
 						continue;
@@ -324,138 +324,138 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				//if detect obs or bumper cliff trigger ,than change diraction
 				if(g_should_follow_wall){
 					g_should_follow_wall = 0;
-					Is_Dict_Change = 1;
+					is_dirct_change = 1;
 					//ROS_WARN("%s,%d,OBS or Bumper or Cliff detect",__FUNCTION__,__LINE__);
-					if(spiral_type == Spiral_Right_Out){
+					if(spiral_type == SPIRAL_RIGHT_OUT){
 						od_spiral_out += 1;
 						if(od_spiral_out >= 3){
 							od_spiral_out = 0;
 							//ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
-							spiral_type = Spiral_Left_In;
+							spiral_type = SPIRAL_LEFT_IN;
 						}
 						else{
 							//ROS_WARN("%s ,%d ,set spiral type to left out",__FUNCTION__,__LINE__);
-							spiral_type = Spiral_Left_Out;
+							spiral_type = SPIRAL_LEFT_OUT;
 						}
 						if(tp == target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
-					else if(spiral_type == Spiral_Left_Out){
+					else if(spiral_type == SPIRAL_LEFT_OUT){
 						od_spiral_out += 1;
 						if(od_spiral_out >= 3){
 							od_spiral_out = 0;
 							//ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
-							spiral_type = Spiral_Right_In;
+							spiral_type = SPIRAL_RIGHT_IN;
 						}
 						else{
-							spiral_type = Spiral_Right_Out;
+							spiral_type = SPIRAL_RIGHT_OUT;
 							//ROS_WARN("%s ,%d ,set spiral type to right out",__FUNCTION__,__LINE__);
 						}
 						if(tp == target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
-					else if(spiral_type == Spiral_Right_In){
+					else if(spiral_type == SPIRAL_RIGHT_IN){
 						//ROS_WARN("%s ,%d ,set spiral type to left in",__FUNCTION__,__LINE__);
-						spiral_type = Spiral_Left_In;
+						spiral_type = SPIRAL_LEFT_IN;
 						od_spiral_in++;
 						if(od_spiral_in > 3){
-							Is_Dict_Change = 0;
+							is_dirct_change = 0;
 							od_spiral_in =0;
 							spot_stuck = 1;
 							break;
 						}
 						if(tp ==  target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
-					else if(spiral_type == Spiral_Left_In){
+					else if(spiral_type == SPIRAL_LEFT_IN){
 						//ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
-						spiral_type = Spiral_Right_In;
+						spiral_type = SPIRAL_RIGHT_IN;
 						od_spiral_in++;
 						if(od_spiral_in > 3){
-							Is_Dict_Change = 0;
+							is_dirct_change = 0;
 							od_spiral_in =0;
 							spot_stuck = 1;
 							break;
 						}
 						if(tp == target.begin()){
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
 						else{
 							tp--;
-							StopPoint.X = tp->X;
-							StopPoint.Y = tp->Y;
+							stop_point.X = tp->X;
+							stop_point.Y = tp->Y;
 						}
-						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,StopPoint.X,StopPoint.Y);
+						//ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__,__LINE__,stop_point.X,stop_point.Y);
 					}
 					break;
 				}//ending if(g_should_follow_wall)	
 			}//ending for(tp = target.begin();...)
-			if(Is_Dict_Change){
+			if(is_dirct_change){
 				continue;
 			} 
-			if((spiral_type == Spiral_Right_In) || (spiral_type == Spiral_Left_In)){//spot done
+			if((spiral_type == SPIRAL_RIGHT_IN) || (spiral_type == SPIRAL_LEFT_IN)){//spot done
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
-				StopPoint.X = x_offset;
-				StopPoint.Y = y_offset;
+				stop_point.X = x_offset;
+				stop_point.Y = y_offset;
 				if(spot_stuck){
                     //go back to start point
-					cm_linear_move_to_point(StopPoint, SPOT_MAX_SPEED, false, true);
+					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED, false, true);
 					spot_stuck = 0;
 				} 
 				break;
 			}
-			else if(spiral_type == Spiral_Right_Out){
+			else if(spiral_type == SPIRAL_RIGHT_OUT){
 				//ROS_WARN("%s ,%d ,set spiral type to right in",__FUNCTION__,__LINE__);
-				spiral_type  = Spiral_Right_In;
+				spiral_type  = SPIRAL_RIGHT_IN;
 			}
-			else if(spiral_type == Spiral_Left_Out){
+			else if(spiral_type == SPIRAL_LEFT_OUT){
 				//ROS_WARN("%s,%d,set spiral type to left in ",__FUNCTION__,__LINE__);
-				spiral_type = Spiral_Left_In;
+				spiral_type = SPIRAL_LEFT_IN;
 			}
 		}//ending while(ros::ok)
 	event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,true);
-	}//ending if(st == Cleanspot...)
+	}//ending if(st == CLEAN_SPOT...)
 }
 /*
  * @author mengshige1988@qq.com
  * @brief calculate target points for spot move
  * @param1 sp_type
- *		sp_type;Spiral_Right_Out,Spiral_Left_Out,Spiral_Right_In,Spiral_Left_In.
+ *		sp_type;SPIRAL_RIGHT_OUT,SPIRAL_LEFT_OUT,SPIRAL_RIGHT_OUT,SPIRAL_LEFT_IN.
  * @param2 diameters
  *			spiral diameters in meters
  * @param3 *target
  *			target list pointer
  * @return None
  */
-void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,int32_t x_off,int32_t y_off)
+void gen_spot_target(uint8_t sp_type,float diameter,std::list<Point32_t> *target,int32_t x_off,int32_t y_off)
 {
 	uint8_t spt = sp_type;
-	Point32_t CurPoint;
+	Point32_t cur_point;
 	int32_t x,x_l,y,y_l;
 	x = x_l = x_off;
 	y = y_l = y_off;
@@ -465,31 +465,31 @@ void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,
 	//ROS_INFO("%s,%d,number of spiral %d",__FUNCTION__,__LINE__,st_n);
 	int16_t i;
 	switch(spt){
-		case Spiral_Left_Out:
+		case SPIRAL_LEFT_OUT:
 			while(1){
 				if(st_c>st_n){
 					break;
 				}
 				if(st_c == 1){
-					CurPoint.X = x;
-					CurPoint.Y = y;
-					target->push_back(CurPoint);
+					cur_point.X = x;
+					cur_point.Y = y;
+					target->push_back(cur_point);
 				}
 				else if((st_c%2)==0){//even number
 					x = x_l + 1;
 					x_l = x;
 					for(i = 0;i<st_c;i++){
 						y = y_l + i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i=0;i<(st_c - 1);i++){
 						x = x_l - i - 1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				else{//odd number
@@ -497,49 +497,49 @@ void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,
 					x_l = x;
 					for(i=0;i<st_c;i++){
 						y = y_l - i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i=0;i<(st_c-1);i++){
 						x = x_l + i + 1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				x_l = x;
 				y_l = y;
 				st_c+=1;
 			}
-			target->push_back(CurPoint);
+			target->push_back(cur_point);
 			break;
-		case Spiral_Right_Out:
+		case SPIRAL_RIGHT_OUT:
 			while(1){
 				if(st_c>st_n){
 					break;
 				}
 				if(st_c == 1){
-					CurPoint.X = x;
-					CurPoint.Y = y;
-					target->push_back(CurPoint);
+					cur_point.X = x;
+					cur_point.Y = y;
+					target->push_back(cur_point);
 				}
 				else if((st_c%2)==0){//even number
 					x = x_l + 1;
 					x_l = x;
 					for(i = 0;i<st_c;i++){
 						y = y_l - i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i=0;i<(st_c - 1);i++){
 						x = x_l - i - 1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				else{//odd number
@@ -547,49 +547,49 @@ void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,
 					x_l = x;
 					for(i=0;i < st_c;i++){
 						y = y_l + i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i=0;i<(st_c-1);i++){
 						x = x_l + i + 1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				x_l = x;
 				y_l = y;
 				st_c+=1;
 			}
-			target->push_back(CurPoint);
+			target->push_back(cur_point);
 			break;
-		case Spiral_Right_In:
+        case SPIRAL_RIGHT_IN:
 			while(1){
 				if(st_c>st_n){
 					break;
 				}
 				if(st_c == 1){
-					CurPoint.X = x;
-					CurPoint.Y = y;
-					target->push_back(CurPoint);
+					cur_point.X = x;
+					cur_point.Y = y;
+					target->push_back(cur_point);
 				}
 				else if((st_c%2)==0){//even number
 					y = y_l + 1;
 					y_l = y;
 					for(i = 0;i < st_c;i++){
 						x = x_l - i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i = 0;i < (st_c -1);i++){
 						y = y_l - i -1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				else{ //odd number
@@ -597,50 +597,50 @@ void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,
 					y_l = y;
 					for(i = 0;i<st_c;i++){
 						x = x_l + i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i = 0;i<(st_c -1 );i++){
 						y = y_l + i + 1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				x_l = x;
 				y_l = y;
 				st_c += 1;
 			}
-			target->push_back(CurPoint);
+			target->push_back(cur_point);
 			target->reverse();
 			break;
-		case Spiral_Left_In:
+		case SPIRAL_LEFT_IN:
 			while(1){
 				if(st_c>st_n){
 					break;
 				}
 				if(st_c == 1){
-					CurPoint.X = x;
-					CurPoint.Y = y;
-					target->push_back(CurPoint);
+					cur_point.X = x;
+					cur_point.Y = y;
+					target->push_back(cur_point);
 				}
 				else if((st_c%2)==0){//even number
 					y = y_l - 1;
 					y_l = y;
 					for(i = 0;i < st_c;i++){
 						x = x_l - i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i=0;i<(st_c - 1);i++){
 						y = y_l + i + 1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				else{//odd number
@@ -648,23 +648,23 @@ void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,
 					y_l = y;
 					for(i=0;i<st_c;i++){
 						x = x_l + i;
-						CurPoint.X = x;
-						CurPoint.Y = y;
+						cur_point.X = x;
+						cur_point.Y = y;
 						if(i == 0 || i  == (st_c -1))
-							target->push_back(CurPoint);
+							target->push_back(cur_point);
 					}
 					for(i=0;i<(st_c-1);i++){
 						y = y_l -i - 1;
-						CurPoint.X = x;
-						CurPoint.Y = y;
-						//target->push_back(CurPoint);
+						cur_point.X = x;
+						cur_point.Y = y;
+						//target->push_back(cur_point);
 					}
 				}
 				x_l = x;
 				y_l = y;
 				st_c+=1;
 			}
-			target->push_back(CurPoint);
+			target->push_back(cur_point);
 			target->reverse();
 			break;
 		default:
@@ -675,10 +675,10 @@ void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,
 /*
 * @author mengshige1988@qq.com
 * @brief spot handle exception
-* @param spot type (NormalSpot,CleanSpot,WallSpot)
+* @param spot type (NORMAL_SPOT,CLEAN_SPOT,WALL_SPOT)
 * @return ,1 for exception occur , 0 for not occur
 */
-int8_t Spot_HandleException(SpotType st)
+int8_t spot_handle_exception(SpotType st)
 {
 	/*-----detect stop event (remote_clean ,key press) ------*/
 	if (Stop_Event()) {
@@ -689,7 +689,7 @@ int8_t Spot_HandleException(SpotType st)
 			ROS_INFO("%s %d: key pressing.", __FUNCTION__, __LINE__);
 			usleep(20000);
 		}
-		if(st == NormalSpot){
+		if(st == NORMAL_SPOT){
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 		}
 		Reset_Stop_Event_Status();
@@ -697,7 +697,7 @@ int8_t Spot_HandleException(SpotType st)
 	}
     uint8_t octype = Check_Motor_Current();
 	if (octype) {
-		if(Self_Check(octype) && (st == NormalSpot)){
+		if(Self_Check(octype) && (st == NORMAL_SPOT)){
 			return 1;
 		}
 		return 1;
@@ -714,7 +714,7 @@ int8_t Spot_HandleException(SpotType st)
 			quick_back(20,20);//3 times
 			Stop_Brifly();
 			ROS_INFO("%s %d, Cliff trigger three times ,robot lift up ",__FUNCTION__,__LINE__);
-			if(st == NormalSpot)
+			if(st == NORMAL_SPOT)
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 			Disable_Motors();
 			//wav_play(WAV_ERROR_LIFT_UP);
@@ -723,7 +723,7 @@ int8_t Spot_HandleException(SpotType st)
 	}
 	/*--------get remote event ---------------*/
 	if (Get_Rcon_Remote()) {
-		if(st == NormalSpot){
+		if(st == NORMAL_SPOT){
 			if(Remote_Key(Remote_All)){
 				if(Get_Rcon_Remote() == Remote_Home){
 					Set_MoveWithRemote();
@@ -733,7 +733,7 @@ int8_t Spot_HandleException(SpotType st)
 				return 1;
 			}
 		}
-		else if(st == CleanSpot || st == WallSpot){
+		else if(st == CLEAN_SPOT || st == WALL_SPOT){
 			if(Remote_Key(Remote_Home)){
 				Reset_Rcon_Remote();
 				Set_MoveWithRemote();
@@ -747,6 +747,7 @@ int8_t Spot_HandleException(SpotType st)
 		}
 	}
 }
+
 /*----------------------------------------------------------------Random Dirt Event---------------------------------*/
  
 uint8_t Random_Dirt_Event(void)
@@ -843,7 +844,7 @@ uint8_t Random_Dirt_Event(void)
 				if (Get_LeftWheel_Step() > 6000) {
 					Move_Forward(0, 0);
 					Reset_LeftWheel_Step();
-					Move_Style = Spiral_Right_Out;
+					Move_Style = SPIRAL_RIGHT_OUT;
 				}
 				Set_Dir_Right();
 				Set_Wheel_Speed(25, 10);
@@ -858,14 +859,14 @@ uint8_t Random_Dirt_Event(void)
 					Stop_Brifly();
 					Turn_Left(Turn_Speed, 2500);
 					Move_Forward(10, 10);
-					Move_Style = Spiral_Left_Out;
+					Move_Style = SPIRAL_LEFT_OUT;
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
 				}
 				break;
 
-			case Spiral_Right_Out:
+			case SPIRAL_RIGHT_OUT:
 				if (Get_LeftWheel_Step() > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 100) {
@@ -874,7 +875,7 @@ uint8_t Random_Dirt_Event(void)
 						Radius += 6;
 					}
 					if (Radius > 140) {
-						Move_Style = Spiral_Right_In;
+						Move_Style = SPIRAL_RIGHT_IN;
 					}
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
@@ -889,7 +890,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					Stop_Brifly();
 					Turn_Left(Turn_Speed, 2500);
-					Move_Style = Spiral_Left_Out;
+					Move_Style = SPIRAL_LEFT_OUT;
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
@@ -900,7 +901,7 @@ uint8_t Random_Dirt_Event(void)
 
 				break;
 
-			case Spiral_Right_In:
+			case SPIRAL_RIGHT_IN:
 				if (Get_LeftWheel_Step() > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 3) {
@@ -924,7 +925,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					Stop_Brifly();
 					Turn_Left(Turn_Speed, 2500);
-					Move_Style = Spiral_Left_In;
+					Move_Style = SPIRAL_LEFT_IN;
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
@@ -935,7 +936,7 @@ uint8_t Random_Dirt_Event(void)
 
 				break;
 
-			case Spiral_Left_Out:
+			case SPIRAL_LEFT_OUT:
 				if (Get_RightWheel_Step() > (Radius * 3)) {
 					Reset_RightWheel_Step();
 					if (Radius < 100) {
@@ -944,7 +945,7 @@ uint8_t Random_Dirt_Event(void)
 						Radius += 6;
 					}
 					if (Radius > 140) {
-						Move_Style = Spiral_Left_In;
+						Move_Style = SPIRAL_LEFT_IN;
 					}
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
@@ -959,7 +960,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
-					Move_Style = Spiral_Right_Out;
+					Move_Style = SPIRAL_RIGHT_OUT;
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
@@ -970,7 +971,7 @@ uint8_t Random_Dirt_Event(void)
 
 				break;
 
-			case Spiral_Left_In:
+			case SPIRAL_LEFT_IN:
 				if (Get_RightWheel_Step() > (Radius * 2)) {
 					Reset_RightWheel_Step();
 					if (Radius < 3) {
@@ -994,7 +995,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
-					Move_Style = Spiral_Right_In;
+					Move_Style = SPIRAL_RIGHT_IN;
 					Reset_Wheel_Step();
 					Reset_Wall_Step();
 					OBS_Counter++;
@@ -1023,4 +1024,3 @@ uint8_t Random_Dirt_Event(void)
 	}
 	//return 2;
 }
-

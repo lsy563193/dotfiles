@@ -17,21 +17,21 @@
 #include <list>
 #include "mathematics.h"
 
-#define Spiral_Right_Out	1
-#define Spiral_Right_In 	2
-#define Spiral_Left_Out 	4
-#define Spiral_Left_In	  8
+#define SPIRAL_RIGHT_OUT	1
+#define SPIRAL_RIGHT_IN 	2
+#define SPIRAL_LEFT_OUT 	4
+#define SPIRAL_LEFT_IN	  8
 #define First_Round       10
 typedef enum{
-	NormalSpot = 0,
-	CleanSpot = 1,
-	WallSpot = 2,
+	NORMAL_SPOT = 0,
+	CLEAN_SPOT = 1,
+	WALL_SPOT = 2,
 }SpotType;
 
-void Spot_WithCell(SpotType spottype,float radian);
-void Spot_GetTarget(uint8_t spiral_type,float radian,std::list<Point32_t> *target,int32_t x_off,int32_t y_off);
+void spot_with_cell(SpotType spot_t,float diameter);
+void gen_spot_target(uint8_t spiral_type,float radian,std::list<Point32_t> *target,int32_t x_off,int32_t y_off);
 uint8_t Random_Dirt_Event(void);
-int8_t Spot_HandleException(SpotType st);
+int8_t spot_handle_exception(SpotType st);
 #endif /*----Behaviors------*/
 
 

@@ -192,7 +192,7 @@ void *core_move_thread(void *)
 				Clear_Manual_Pause();
 
 				//Spot_Mode(NormalSpot);
-				Spot_WithCell(NormalSpot,1.0);
+				spot_with_cell(NORMAL_SPOT,1.0);
 				Disable_Motors();
 				usleep(200000);
 //				Beep(1,25,25,2);
