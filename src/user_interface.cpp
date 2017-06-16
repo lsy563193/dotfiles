@@ -368,6 +368,8 @@ void User_Interface(void)
 		ROS_INFO("Reset the error code,");
 		Set_Error_Code(Error_Code_None);
 	}
+
+	user_interface_unregister_events();
 }
 
 void user_interface_register_events(void)
@@ -383,6 +385,18 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+}
+
+void user_interface_unregister_events(void)
+{
+#define event_manager_register_and_disable_x(x) \
+	event_manager_register_handler(x, NULL); \
+	event_manager_enable_handler(x, false);
+
+	/* Rcon */
+	event_manager_register_and_disable_x(EVT_RCON);
+	/* Battery */
+	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)

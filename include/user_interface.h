@@ -46,6 +46,8 @@ typedef struct
 
 void user_interface_register_events(void);
 
+void user_interface_unregister_events(void);
+
 #define define_user_interface_handle_func(name) \
 	void user_interface_handle_ ## name(bool state_now, bool state_last);
 
