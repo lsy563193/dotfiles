@@ -38,7 +38,7 @@ uint8_t Spiral(void)
 	while(ros::ok())
 	{
 
-		Motor_Check_Code=Check_Motor_Current();
+		Motor_Check_Code= check_motor_current();
 		if(Motor_Check_Code)
 		{
 			return 0;	  
@@ -90,7 +90,7 @@ uint8_t Spiral(void)
 			{
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				Reset_Rcon_Remote();
-				SetHomeRemote();
+				set_home_remote();
 				return 1;
 			}
 			/*
@@ -107,8 +107,8 @@ uint8_t Spiral(void)
 		Right_Wheel_Speed = (42*Radius)/(Radius+100);
 		if(Right_Wheel_Speed>42)Right_Wheel_Speed=42;
 		if(Right_Wheel_Speed<0)Right_Wheel_Speed=0;
-		
-		Set_Wheel_Speed(42,Right_Wheel_Speed);
+
+		set_wheel_speed(42, Right_Wheel_Speed);
 //		Move_Forward(42,g_right_wheel_speed);
 		if(First_Round_Flag)
 		{
@@ -135,7 +135,7 @@ uint8_t Spiral(void)
 			return 0;
 		}
 		
-		if(Get_Bumper_Status()||Get_Cliff_Trig()||Get_OBS_Status())
+		if(get_bumper_status()|| get_cliff_trig()||Get_OBS_Status())
 		{ 
 			return 0;
 		}

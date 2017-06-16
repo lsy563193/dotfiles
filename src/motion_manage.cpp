@@ -135,7 +135,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	initSucceeded(true);
 
 	//1 Initialize for different mode.
-	if (!initCleaning(Get_Clean_Mode()))
+	if (!initCleaning(get_clean_mode()))
 	{
 		initSucceeded(false);
 		return;
@@ -164,7 +164,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 	//3 calculate offsetAngle
 	nh_.param<bool>("is_active_align", is_align_active_, false);
-	if (Get_Clean_Mode() == Clean_Mode_Navigation && is_align_active_)
+	if (get_clean_mode() == Clean_Mode_Navigation && is_align_active_)
 	{
 		ObstacleDetector od;
 		float align_angle=0;
@@ -181,9 +181,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	//4 call start slam
 	s_slam = new Slam();
 
-	if (Get_Clean_Mode() == Clean_Mode_Navigation || Get_Clean_Mode() == Clean_Mode_Spot)
+	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot)
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-	else if (Get_Clean_Mode() == Clean_Mode_WallFollow)
+	else if (get_clean_mode() == Clean_Mode_WallFollow)
 		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 1000;
@@ -272,12 +272,12 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
 	else if (g_key_clean_pressed)
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
-	else if (Get_Clean_Mode() == Clean_Mode_Charging)
+	else if (get_clean_mode() == Clean_Mode_Charging)
 		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
-	else if (Get_Clean_Mode() == Clean_Mode_Sleep)
+	else if (get_clean_mode() == Clean_Mode_Sleep)
 		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
 	else
-		if (Get_Clean_Mode() == Clean_Mode_Spot)
+		if (get_clean_mode() == Clean_Mode_Spot)
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 		else
 			ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning.", __FUNCTION__, __LINE__);
@@ -285,7 +285,7 @@ MotionManage::~MotionManage()
 	g_saved_work_time += get_work_time();
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
-	if (Get_Clean_Mode() != Clean_Mode_Sleep && Get_Clean_Mode() != Clean_Mode_Charging)
+	if (get_clean_mode() != Clean_Mode_Sleep && get_clean_mode() != Clean_Mode_Charging)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 
 }
@@ -314,7 +314,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 	reset_start_work_time();
 	Set_LED(100,0);
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	Reset_MoveWithRemote();
 	Reset_Stop_Event_Status();
 
@@ -400,7 +400,7 @@ bool MotionManage::initNavigationCleaning(void)
 			g_home_point.push_front(new_home_point);
 		}
 
-		Reset_Rcon_Status();
+		reset_rcon_status();
 	}
 	else if (!robot::instance()->isManualPaused())
 	{
@@ -436,7 +436,7 @@ bool MotionManage::initNavigationCleaning(void)
 		g_continue_point.X = g_continue_point.Y = 0;
 	}
 
-	Work_Motor_Configure();
+	work_motor_configure();
 
 	extern bool g_go_home;
 	ROS_INFO("init g_go_home(%d), lowbat(%d), manualpaused(%d)", g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused());
@@ -449,7 +449,7 @@ bool MotionManage::initWallFollowCleaning(void)
 
 	reset_start_work_time();
 	Reset_MoveWithRemote();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	Reset_Stop_Event_Status();
 	// Restart the gyro.
 	Set_Gyro_Off();
@@ -483,7 +483,7 @@ bool MotionManage::initWallFollowCleaning(void)
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
-	Work_Motor_Configure();
+	work_motor_configure();
 
 	return true;
 }

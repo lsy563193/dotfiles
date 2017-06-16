@@ -181,7 +181,7 @@ void Random_Running_Mode(void)
 
 	Set_Clean_Mode(Clean_Mode_RandomMode);
 
-	Work_Motor_Configure();
+	 work_motor_configure();
 	Reset_Move_Distance();
 	 reset_wheel_step();
 	Reset_Stop_Event_Status();
@@ -190,7 +190,7 @@ void Random_Running_Mode(void)
 	Set_Direction_Flag(Direction_Flag_Right);
 	Stunk=0;
 	Low_Power_Counter=0;
-	Reset_Rcon_Status();
+	 reset_rcon_status();
 
 	Set_Vac_Speed();
 	while(ros::ok())
@@ -226,10 +226,10 @@ void Random_Running_Mode(void)
 			}
 		}
 		/*------------------------------------------------------Check Current-----------------------*/
-		Motor_Check_Code=Check_Motor_Current();
+		Motor_Check_Code= check_motor_current();
 		if(Motor_Check_Code)
 		{
-			if(Self_Check(Motor_Check_Code))
+			if(self_check(Motor_Check_Code))
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
@@ -273,7 +273,7 @@ void Random_Running_Mode(void)
 			{
 				Stop_Brifly();
 				Set_Dir_Left();
-				Set_Wheel_Speed(30,30);
+				set_wheel_speed(30, 30);
 				//Set_SideBrush_PWM(60,60);
 				usleep(100000);
 				while(Remote_Key(Remote_Left))
@@ -305,7 +305,7 @@ void Random_Running_Mode(void)
 			{
 				Stop_Brifly();
 				Set_Dir_Right();
-				Set_Wheel_Speed(30,30);
+				set_wheel_speed(30, 30);
 				//Set_SideBrush_PWM(60,60);
 				usleep(100000);
 				while(Remote_Key(Remote_Right))
@@ -377,7 +377,7 @@ void Random_Running_Mode(void)
 			{
 				usleep(50000);
 				Set_Clean_Mode(Clean_Mode_GoHome);
-				SetHomeRemote();
+				set_home_remote();
 				Reset_Rcon_Remote();
 				return;
 			}
@@ -469,7 +469,7 @@ void Random_Running_Mode(void)
 					}
 				}
 				Move_Forward(2,2);
-				Reset_Rcon_Status();
+				reset_rcon_status();
 				Base_Wall_On=0;
 				reset_wheel_step();
 				Wall_Small_Counter++;
@@ -498,30 +498,30 @@ void Random_Running_Mode(void)
 #endif
 
 		/*------------------------------------------------------Cliff Event-----------------------*/
-		Temp_Cliff_Status=Get_Cliff_Trig();
+		Temp_Cliff_Status= get_cliff_trig();
 		if(Temp_Cliff_Status)
 		{
 			ROS_DEBUG("random running , cliff event!");
-			Set_Wheel_Speed(0,0);
+			set_wheel_speed(0, 0);
 			set_dir_backward();
 			usleep(30000);
-			if(Get_Cliff_Trig()||(get_left_wheel_step()<200))
+			if(get_cliff_trig()||(get_left_wheel_step()<200))
 			{
 				Cliff_Move_Back();
-				if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				if(get_cliff_trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					break;
 				}
-				if(Get_Cliff_Trig())
+				if(get_cliff_trig())
 				{
-					if(Cliff_Escape())
+					if(cliff_escape())
 					{
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						break;
 					}
 				}
-				if(Cliff_Event(Temp_Cliff_Status))
+				if(cliff_event(Temp_Cliff_Status))
 				{
 					Set_Direction_Flag(Direction_Flag_Left);
 				}
@@ -530,7 +530,7 @@ void Random_Running_Mode(void)
 					Set_Direction_Flag(Direction_Flag_Right);
 				}
 				reset_wheel_step();
-				Reset_TempPWM();
+				reset_temp_pwm();
 				Stunk++;
 				Bumper_Counter++;
 				Wall_Bumper_Counter+=2;
@@ -544,7 +544,7 @@ void Random_Running_Mode(void)
 		}
 		/*------------------------------------------------------Bumper Event-----------------------*/
 		/*-----------------left bumper ------------------------------------*/
-		if(Get_Bumper_Status()&LeftBumperTrig)
+		if(get_bumper_status()&LeftBumperTrig)
 		{
 			ROS_DEBUG("random running , left bumpe event!");
 			Avoid_Flag=0;
@@ -558,9 +558,9 @@ void Random_Running_Mode(void)
 			{
 				Wall_Bumper_Counter+=3;
 			}
-			Set_Wheel_Speed(0,0);
+			set_wheel_speed(0, 0);
 			usleep(10000);
-			Temp_Bumper_Status = Get_Bumper_Status();
+			Temp_Bumper_Status = get_bumper_status();
 			Random_Back();
 			if(Is_Bumper_Jamed())break;
 
@@ -672,7 +672,7 @@ void Random_Running_Mode(void)
 			}
 			if(!Avoid_Flag)
 			{
-				Reset_TempPWM();
+				reset_temp_pwm();
 				reset_wheel_step();
 			}
 			else
@@ -690,7 +690,7 @@ void Random_Running_Mode(void)
 		}
 
 /*---------------------------------------------------------Right Bumper ----------------------------------*/
-		if(Get_Bumper_Status()&RightBumperTrig)
+		if(get_bumper_status()&RightBumperTrig)
 		{
 			ROS_DEBUG("random running ,right bumper event ");
 			Avoid_Flag=0;
@@ -704,9 +704,9 @@ void Random_Running_Mode(void)
 			{
 				Wall_Bumper_Counter+=2;
 			}
-			Set_Wheel_Speed(0,0);
+			set_wheel_speed(0, 0);
 			usleep(10000);
-			Temp_Bumper_Status = Get_Bumper_Status();
+			Temp_Bumper_Status = get_bumper_status();
 			Random_Back();
 			if(Is_Bumper_Jamed())break;
 			Stunk++;
@@ -815,7 +815,7 @@ void Random_Running_Mode(void)
 			}
 			if(!Avoid_Flag)
 			{
-				Reset_TempPWM();
+				reset_temp_pwm();
 				reset_wheel_step();
 			}
 			else
@@ -840,8 +840,8 @@ void Random_Running_Mode(void)
 			Left_Wheel_Step_Buffer= get_left_wheel_step();
 			Add_Average(get_left_wheel_step());
 			//Random_Back();
-			Set_Wheel_Speed(0,0);
-			Reset_TempPWM();
+			set_wheel_speed(0, 0);
+			reset_temp_pwm();
 			usleep(10000);
 			//Stop_Brifly();
 			N_H_T=0;
@@ -909,7 +909,7 @@ void Random_Running_Mode(void)
 				Random_Back();
 				//Stop_Brifly();
 				Stunk++;
-				if(Get_Bumper_Status())
+				if(get_bumper_status())
 				{
 					Random_Back();
 					if(Is_Bumper_Jamed())break;
@@ -1191,7 +1191,7 @@ void Random_Running_Mode(void)
 				}
 				Turn_Right(Turn_Speed-5,240);
 				Move_Forward(10,10);
-				Reset_TempPWM();
+				reset_temp_pwm();
 			}
 			else if(On_TrapOut_Flag==2)
 			{
@@ -1211,13 +1211,13 @@ void Random_Running_Mode(void)
 				}
 				Turn_Right(Turn_Speed-5,240);
 				Move_Forward(10,10);
-				Reset_TempPWM();
+				reset_temp_pwm();
 			}
 			if(!Is_HalfTurn_Flag())
 			{
 				//Stop_Brifly();
 				Move_Forward(0,0);
-				Reset_TempPWM();
+				reset_temp_pwm();
 				//usleep(50000);
 				reset_wheel_step();
 				usleep(10000);
@@ -1274,9 +1274,9 @@ void Random_Running_Mode(void)
 		}
 
 	/*-------------------------------------------------------------------------------------------------------------------*/
-		if((Get_Cliff_Trig()==0)&&(Get_Bumper_Status()==0))
+		if((get_cliff_trig()==0)&&(get_bumper_status()==0))
 		{
-			if(Is_OBS_Near())
+			if(is_obs_near())
 			{
 				if(Moving_Speed>30)
 				{
@@ -1335,16 +1335,16 @@ uint8_t Out_Trap_Right(void)
 	uint32_t Bump_Counter=0;
 	reset_wheel_step();
 	//Reset_Move_Distance();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	reset_wall_step();
 	while(ros::ok())
 	{
 		usleep(10000);
 		/*------------------------------------------------------Check Current-----------------------*/
-		Motor_Check_Code=Check_Motor_Current();
+		Motor_Check_Code= check_motor_current();
 		if(Motor_Check_Code)
 		{
-			if(Self_Check(Motor_Check_Code))
+			if(self_check(Motor_Check_Code))
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 1;
@@ -1387,7 +1387,7 @@ uint8_t Out_Trap_Right(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 1;
 		}
-		if(Get_Bumper_Status()&LeftBumperTrig)
+		if(get_bumper_status()&LeftBumperTrig)
 		{
 			Stop_Brifly();
 			Wall_Move_Back();
@@ -1398,7 +1398,7 @@ uint8_t Out_Trap_Right(void)
 			Bump_Counter++;
 		}
 
-		if(Get_Bumper_Status()&RightBumperTrig)
+		if(get_bumper_status()&RightBumperTrig)
 		{
 			Stop_Brifly();
 			Wall_Move_Back();
@@ -1419,7 +1419,7 @@ uint8_t Out_Trap_Right(void)
 		if(Is_LeftWheel_Reach(5000))return 0;
 		if(get_right_wall_step()>12000)return 0;
 
-		if(Get_Cliff_Trig())
+		if(get_cliff_trig())
 		{
 			return 0;
 		}
@@ -1442,16 +1442,16 @@ uint8_t Out_Trap_Left(void)
 	uint32_t Bump_Counter=0;
 	reset_wheel_step();
 	//Reset_Move_Distance();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	reset_wall_step();
 	while(ros::ok())
 	{
 		usleep(10000);
 	/*------------------------------------------------------Check Current-----------------------*/
-		Motor_Check_Code=Check_Motor_Current();
+		Motor_Check_Code= check_motor_current();
 		if(Motor_Check_Code)
 		{
-			if(Self_Check(Motor_Check_Code))
+			if(self_check(Motor_Check_Code))
 			{
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				return 1;
@@ -1494,7 +1494,7 @@ uint8_t Out_Trap_Left(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 1;
 		}
-		if(Get_Bumper_Status()&RightBumperTrig)
+		if(get_bumper_status()&RightBumperTrig)
 		{
 			Stop_Brifly();
 			Wall_Move_Back();
@@ -1505,7 +1505,7 @@ uint8_t Out_Trap_Left(void)
 			Bump_Counter++;
 		}
 
-		if(Get_Bumper_Status()&LeftBumperTrig)
+		if(get_bumper_status()&LeftBumperTrig)
 		{
 			Stop_Brifly();
 			Wall_Move_Back();
@@ -1526,7 +1526,7 @@ uint8_t Out_Trap_Left(void)
 		if(Is_RightWheel_Reach(5000))return 0;
 		if(get_left_wall_step()>12000)return 0;
 
-		if(Get_Cliff_Trig())
+		if(get_cliff_trig())
 		{
 			return 0;
 		}
@@ -1577,10 +1577,10 @@ uint8_t Left_Bumper_Avoiding(void)
 			Reset_Rcon_Remote();
 			return 0;
 		}
-		if(Get_Bumper_Status())break;
+		if(get_bumper_status())break;
 		if(Get_OBS_Status())break;
-		if(Get_Cliff_Trig())break;
-		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))return 0;
+		if(get_cliff_trig())break;
+		if((check_motor_current()==Check_Left_Wheel)||(check_motor_current()==Check_Right_Wheel))return 0;
 		if(Get_Rcon_Status()&0x0f00)return 0;
 
 #ifdef VIRTUAL_WALL
@@ -1630,10 +1630,10 @@ uint8_t Right_Bumper_Avoiding(void)
 			Reset_Rcon_Remote();
 			return 0;
 		}
-		if(Get_Bumper_Status())break;
+		if(get_bumper_status())break;
 		if(Get_OBS_Status())break;
-		if(Get_Cliff_Trig())break;
-		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))return 0;
+		if(get_cliff_trig())break;
+		if((check_motor_current()==Check_Left_Wheel)||(check_motor_current()==Check_Right_Wheel))return 0;
 		if(Get_Rcon_Status()&0x0f00)return 0;
 
 #ifdef VIRTUAL_WALL
@@ -1665,7 +1665,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	//Set_LeftTPWM(0);
 
 	reset_wheel_step();
-	Reset_TempPWM();
+	reset_temp_pwm();
 	usleep(10000);
 	Move_Forward(0,speed);
 	Counter_Watcher=0;
@@ -1684,23 +1684,23 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 			return;
 		}
 		if(Is_Turn_Remote())Temp_H_Flag=1;
-		if(Get_Bumper_Status())Temp_H_Flag=1;
+		if(get_bumper_status())Temp_H_Flag=1;
 		if(Is_Front_Close())
 		{
-			Set_Wheel_Speed(0,20);
+			set_wheel_speed(0, 20);
 		}
 		else
 		{
 			H_S = get_right_wheel_step()/8 + speed;
 			if(H_S>42)H_S=42;
-			Set_Wheel_Speed(0,H_S);
+			set_wheel_speed(0, H_S);
 		}
-		if(Get_Cliff_Trig())Temp_H_Flag=1;
+		if(get_cliff_trig())Temp_H_Flag=1;
 		if(Stop_Event())
 		{
 			Temp_H_Flag=1;
 		}
-		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))Temp_H_Flag=1;
+		if((check_motor_current()==Check_Left_Wheel)||(check_motor_current()==Check_Right_Wheel))Temp_H_Flag=1;
 		if(Temp_H_Flag)break;
 
 #ifdef VIRTUAL_WALL
@@ -1712,7 +1712,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	}
 	if(Temp_H_Flag)
 	{
-		Set_Wheel_Speed(0,0);
+		set_wheel_speed(0, 0);
 		return;
 	}
 	Set_HalfTurn_Flag();
@@ -1734,10 +1734,10 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 //	Set_TempPWM(20,0);
 	//Set_RightTPWM(0);
 	 reset_wheel_step();
-	Reset_TempPWM();
+	 reset_temp_pwm();
 	usleep(10000);
 	Move_Forward(speed,0);
-  //Set_Wheel_Speed(42,0);
+  //set_wheel_speed(42,0);
 	Counter_Watcher=0;
 	Reset_HalfTurn_Flag();
 	ROS_DEBUG("half turn right angle :%d",angle);
@@ -1754,23 +1754,23 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 			return;
 		}
 		if(Is_Turn_Remote())Temp_H_Flag=1;
-		if(Get_Bumper_Status())Temp_H_Flag=1;
+		if(get_bumper_status())Temp_H_Flag=1;
 		if(Is_Front_Close())
 		{
-			Set_Wheel_Speed(20,0);
+			set_wheel_speed(20, 0);
 		}
 		else
 		{
 			H_S = get_left_wheel_step()/8 + speed;
 			if(H_S>42)H_S=42;
-			Set_Wheel_Speed(H_S,0);
+			set_wheel_speed(H_S, 0);
 		}
-		if(Get_Cliff_Trig())Temp_H_Flag=1;
+		if(get_cliff_trig())Temp_H_Flag=1;
 		if(Stop_Event())
 		{
 			Temp_H_Flag=1;
 		}
-		if((Check_Motor_Current()==Check_Left_Wheel)||(Check_Motor_Current()==Check_Right_Wheel))Temp_H_Flag=1;
+		if((check_motor_current()==Check_Left_Wheel)||(check_motor_current()==Check_Right_Wheel))Temp_H_Flag=1;
 		if(Temp_H_Flag)break;
 
 #ifdef VIRTUAL_WALL
@@ -1782,7 +1782,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 	}
 	if(Temp_H_Flag)
 	{
-		Set_Wheel_Speed(0,0);
+		set_wheel_speed(0, 0);
 		return;
 	}
 	Set_HalfTurn_Flag();

@@ -128,51 +128,51 @@ void *event_manager_thread(void *data)
 	}
 
 		/* Bumper */
-		if (Get_Bumper_Status() == AllBumperTrig) {
+		if (get_bumper_status() == AllBumperTrig) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_ALL)
-		} else if (Get_Bumper_Status() & LeftBumperTrig) {
+		} else if (get_bumper_status() & LeftBumperTrig) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_LEFT)
-		} else if (Get_Bumper_Status() & RightBumperTrig) {
+		} else if (get_bumper_status() & RightBumperTrig) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_RIGHT)
 		}
 
 		/* OBS */
-		if (Get_FrontOBS() > Get_FrontOBST_Value()) {
+		if (get_front_obs() > Get_FrontOBST_Value()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_FRONT)
 		}
-		if (Get_LeftOBS() > Get_LeftOBST_Value()) {
+		if (get_left_obs() > Get_LeftOBST_Value()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_LEFT)
 		}
-		if (Get_RightOBS() > Get_RightOBST_Value()) {
+		if (get_right_obs() > Get_RightOBST_Value()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_RIGHT)
 		}
 
 		/* Cliff */
-		if (Get_Cliff_Trig() == Status_Cliff_All) {
+		if (get_cliff_trig() == Status_Cliff_All) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL)
-		} else if (Get_Cliff_Trig() == (Status_Cliff_Front | Status_Cliff_Left)) {
+		} else if (get_cliff_trig() == (Status_Cliff_Front | Status_Cliff_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_LEFT)
-		} else if (Get_Cliff_Trig() == (Status_Cliff_Front | Status_Cliff_Right)) {
+		} else if (get_cliff_trig() == (Status_Cliff_Front | Status_Cliff_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT)
-		} else if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Right)) {
+		} else if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT)
-		} else if (Get_Cliff_Trig() == (Status_Cliff_Front)) {
+		} else if (get_cliff_trig() == (Status_Cliff_Front)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT)
-		} else if (Get_Cliff_Trig() == (Status_Cliff_Left)) {
+		} else if (get_cliff_trig() == (Status_Cliff_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT)
-		} else if (Get_Cliff_Trig() == (Status_Cliff_Right)) {
+		} else if (get_cliff_trig() == (Status_Cliff_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_RIGHT)
 		}
@@ -486,7 +486,7 @@ uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
 /* Bumper */
 void em_default_handler_bumper_all(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 	if (state_now == true && state_last == true) {
 		bumper_all_cnt++;
 
@@ -500,12 +500,12 @@ void em_default_handler_bumper_all(bool state_now, bool state_last)
 	Move_Back();
 	Stop_Brifly();
 
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 }
 
 void em_default_handler_bumper_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 	if (state_now == true && state_last == true) {
 		bumper_left_cnt++;
 
@@ -518,12 +518,12 @@ void em_default_handler_bumper_left(bool state_now, bool state_last)
 
 	Move_Back();
 	Stop_Brifly();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 }
 
 void em_default_handler_bumper_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 
 	if (state_now == true && state_last == true) {
 		bumper_right_cnt++;
@@ -537,7 +537,7 @@ void em_default_handler_bumper_right(bool state_now, bool state_last)
 
 	Move_Back();
 	Stop_Brifly();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 }
 
 /* OBS */

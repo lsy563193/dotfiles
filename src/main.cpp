@@ -39,7 +39,7 @@ bool selfCheckAtLaunch()
 		return true;
 
 	//Bumper protect
-	if (Get_Bumper_Status())
+	if (get_bumper_status())
 	{
 		Set_LED(0, 100);
 		wav_play(WAV_ERROR_BUMPER);
@@ -77,13 +77,13 @@ void *core_move_thread(void *)
 	{
 		if (is_direct_charge() || is_on_charger_stub())
 			Set_Clean_Mode(Clean_Mode_Charging);
-		else if (Check_Bat_Ready_To_Clean())
+		else if (check_bat_ready_to_clean())
 			wav_play(WAV_PLEASE_START_CLEANING);
 	}
 
 	while(ros::ok()){
 		usleep(20000);
-		switch(Get_Clean_Mode()){
+		switch(get_clean_mode()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------User_Interface mode------\n");
 				Set_Main_PwrByte(Clean_Mode_Userinterface);
@@ -146,7 +146,7 @@ void *core_move_thread(void *)
 					wav_play(WAV_BACK_TO_CHARGER);
 				}
 
-				while (Get_Clean_Mode()==Clean_Mode_GoHome)
+				while (get_clean_mode()==Clean_Mode_GoHome)
 				{
 					// If GoHome() set clean mode as Clean_Mode_GoHome, it means it still needs to go to charger stub.
 #if Random_Find_Charger_Stub

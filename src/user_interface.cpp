@@ -56,12 +56,12 @@ void User_Interface(void)
 	Reset_Rcon_Remote();
 	Set_Plan_Status(0);
 	Reset_Stop_Event_Status();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	Set_VacMode(Vac_Save);
 
 	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
 	// Check the battery to warn the user.
-	if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
+	if(!check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		Battery_Ready_to_clean = false;
@@ -81,7 +81,7 @@ void User_Interface(void)
 		if (battery_low_delay > 0)
 			battery_low_delay--;
 		battery_low_delay_mutex.unlock();
-		if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
+		if(!check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
 		{
 			Battery_Ready_to_clean = false;
 		}
@@ -169,7 +169,7 @@ void User_Interface(void)
 		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
 		if (robot::instance()->isManualPaused())
 		{
-			if (Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			if (get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
 				ROS_WARN("Robot lifted up during manual pause, reset manual pause status.");
 				wav_play(WAV_ERROR_LIFT_UP);
@@ -183,7 +183,7 @@ void User_Interface(void)
 			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 			if (is_direct_charge())
 				Temp_Mode = Clean_Mode_Charging;
-			else if(Turn_Connect())
+			else if(turn_connect())
 				Temp_Mode = Clean_Mode_Charging;
 			Disable_Motors();
 		}
@@ -210,7 +210,7 @@ void User_Interface(void)
 			Temp_Mode=Clean_Mode_GoHome;
 		//	Reset_MoveWithRemote();
 			Set_MoveWithRemote();
-			SetHomeRemote();
+			set_home_remote();
 			Reset_Rcon_Remote();
 		}
 
@@ -324,7 +324,7 @@ void User_Interface(void)
 			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
 				ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
-				if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 //					set_error_code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
@@ -362,7 +362,7 @@ void User_Interface(void)
 
 	}
 
-	if (Get_Clean_Mode() != Clean_Mode_Sleep)
+	if (get_clean_mode() != Clean_Mode_Sleep)
 	{
 		// Any manual operation will reset the error status.
 		ROS_INFO("Reset the error code,");
@@ -403,7 +403,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 {
 	if (robot::instance()->isManualPaused())
 	{
-		Reset_Rcon_Status();
+		reset_rcon_status();
 		ROS_DEBUG("%s %d: User_Interface detects charger signal, but ignore for manual pause.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -416,12 +416,12 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	if (time(NULL) - charger_signal_start_time > 180)// 3 mins
 	{
 		Temp_Mode = Clean_Mode_GoHome;
-		Reset_Rcon_Status();
+		reset_rcon_status();
 		return;
 	}
 
 	charger_signal_delay = 20;
-	Reset_Rcon_Status();
+	reset_rcon_status();
 
 }
 

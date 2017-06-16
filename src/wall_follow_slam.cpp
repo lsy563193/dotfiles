@@ -217,7 +217,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			auto start_wf_pose_x = robot::instance()->getPositionX();
 			auto start_wf_pose_y = robot::instance()->getPositionY();
 
-			if (Is_OBS_Near())
+			if (is_obs_near())
 			{
 				l_speed = 15;
 			} else
@@ -250,7 +250,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 			wf_update_position();
 			temp_rcon_status = Get_Rcon_Status();
-			Reset_Rcon_Status();
+			reset_rcon_status();
 			//ROS_INFO("temp_rcon_status = %d", temp_rcon_status);
 			if (temp_rcon_status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
 			{
@@ -258,9 +258,9 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				break;
 			}
 
-			if (Get_Bumper_Status() || (Get_FrontOBS() > Get_FrontOBST_Value()) || Get_Cliff_Trig())
+			if (get_bumper_status() || (get_front_obs() > Get_FrontOBST_Value()) || get_cliff_trig())
 			{
-				ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Check: get_bumper_status! Break!", __FUNCTION__, __LINE__);
 				break;
 			}
 
@@ -313,11 +313,11 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			}
 
 			/*------------------------------------------------------Check Current--------------------------------*/
-			oc_type = Check_Motor_Current();
+			oc_type = check_motor_current();
 			if (oc_type)
 			{
 				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
-				if (Self_Check(oc_type))
+				if (self_check(oc_type))
 				{
 					wf_break_wall_follow();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -405,11 +405,11 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);
 			//WFM_boundary_check();
 			/*------------------------------------------------------Check Current--------------------------------*/
-			oc_type = Check_Motor_Current();
+			oc_type = check_motor_current();
 			if (oc_type)
 			{
 				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
-				if (Self_Check(oc_type))
+				if (self_check(oc_type))
 				{
 					wf_break_wall_follow();
 					Set_Clean_Mode(Clean_Mode_Userinterface);
@@ -458,7 +458,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				}
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
-			if (Check_Bat_Home() == 1)
+			if (check_bat_home() == 1)
 			{
 				ROS_WARN("%s %d: low battery, battery < 13.2v is detected, go home.", __FUNCTION__, __LINE__);
 				Stop_Brifly();
@@ -485,31 +485,31 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				beep_for_command(false);
 			}
 			/*------------------------------------------------------Cliff Event-----------------------*/
-			if (Get_Cliff_Trig())
+			if (get_cliff_trig())
 			{
-				Set_Wheel_Speed(0, 0);
+				set_wheel_speed(0, 0);
 				set_dir_backward();
 				usleep(15000);
 				Cliff_Move_Back();
-				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 				{
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 					wf_break_wall_follow();
-					ROS_INFO("Get_Cliff_Trig");
+					ROS_INFO("get_cliff_trig");
 					return 0;
 				}
-				if (Get_Cliff_Trig())
+				if (get_cliff_trig())
 				{
-					if (Cliff_Escape())
+					if (cliff_escape())
 					{
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						wf_break_wall_follow();
-						ROS_INFO("Cliff_Escape");
+						ROS_INFO("cliff_escape");
 						return 0;
 					}
 				}
 
-				WF_Turn_Right(Turn_Speed - 10, 750);
+				wf_turn_right(Turn_Speed - 10, 750);
 				Stop_Brifly();
 				Move_Forward(15, 15);
 				Reset_WallAccelerate();
@@ -520,7 +520,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 			/*------------------------------------------------------Home Station Event------------------------*/
 			temp_rcon_status = Get_Rcon_Status();
-			Reset_Rcon_Status();
+			reset_rcon_status();
 			//temp_rcon_status = robot::instance()->getRcon();
 			//ROS_INFO("temp_rcon_status = %d", temp_rcon_status);
 			if (temp_rcon_status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
@@ -529,7 +529,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			}
 			if (temp_rcon_status)
 			{
-				Reset_Rcon_Status();
+				reset_rcon_status();
 				if (temp_rcon_status & RconFrontAll_Home_TLR)
 				{
 					/*
@@ -543,7 +543,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				}
 				if (temp_rcon_status & RconFrontAll_Home_T)
 				{
-					if (Is_MoveWithRemote())
+					if (is_move_with_remote())
 					{
 						Set_Clean_Mode(Clean_Mode_GoHome);
 						//ResetHomeRemote();
@@ -554,33 +554,33 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					Stop_Brifly();
 					if (temp_rcon_status & RconFR_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 850);
+						wf_turn_right(Turn_Speed, 850);
 					} else if (temp_rcon_status & RconFL_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 850);
+						wf_turn_right(Turn_Speed, 850);
 					} else if (temp_rcon_status & RconL_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 300);
+						wf_turn_right(Turn_Speed, 300);
 					} else if (temp_rcon_status & RconFL2_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 600);
+						wf_turn_right(Turn_Speed, 600);
 					} else if (temp_rcon_status & RconFR2_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 950);
+						wf_turn_right(Turn_Speed, 950);
 					} else if (temp_rcon_status & RconR_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 1100);
+						wf_turn_right(Turn_Speed, 1100);
 					}
 					Stop_Brifly();
 					Move_Forward(10, 10);
-					Reset_Rcon_Status();
+					reset_rcon_status();
 					straight_distance = 80;
 					Reset_WallAccelerate();
 				}
 			}
 
 			/*---------------------------------------------------Bumper Event-----------------------*/
-			if (Get_Bumper_Status() & RightBumperTrig)
+			if (get_bumper_status() & RightBumperTrig)
 			{
 				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				//Base_Speed = BASE_SPEED;
@@ -620,7 +620,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 				//STOP_BRIFLY;
 				Stop_Brifly();
-				WF_Turn_Right(Turn_Speed - 5, 920);
+				wf_turn_right(Turn_Speed - 5, 920);
 
 				//bumperCount++;
 
@@ -637,18 +637,18 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				reset_wheel_step();
 			}
 
-			if (Get_Bumper_Status() & LeftBumperTrig)
+			if (get_bumper_status() & LeftBumperTrig)
 			{
 				ROS_WARN("%s %d: left bumper triggered", __FUNCTION__, __LINE__);
 				//Base_Speed = BASE_SPEED;
 				//L_B_Counter++;
-				Set_Wheel_Speed(0, 0);
-				Reset_TempPWM();
+				set_wheel_speed(0, 0);
+				reset_temp_pwm();
 				//delay(10);
 				usleep(1000);
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
-				if (Get_Bumper_Status() & RightBumperTrig)
+				if (get_bumper_status() & RightBumperTrig)
 				{
 					ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 					//USPRINTF_ZZ("%s %d:Double bumper are trigged!",__func__,__LINE__);
@@ -675,7 +675,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					}
 					//STOP_BRIFLY;
 					Stop_Brifly();
-					WF_Turn_Right(Turn_Speed - 5, 850);
+					wf_turn_right(Turn_Speed - 5, 850);
 
 					straight_distance = MFW_SETTING[follow_type].right_bumper_val; //150;
 					wall_distance += 300;
@@ -713,21 +713,21 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					{
 						if (wall_distance < 200)
 						{
-							if (Get_LeftOBS() > (Get_LeftOBST_Value() - 200))
+							if (get_left_obs() > (Get_LeftOBST_Value() - 200))
 							{
 								wall_distance = Wall_High_Limit;
-								WF_Turn_Right(Turn_Speed - 5, 300);
+								wf_turn_right(Turn_Speed - 5, 300);
 							} else
 							{
-								WF_Turn_Right(Turn_Speed - 5, 200);
+								wf_turn_right(Turn_Speed - 5, 200);
 							}
 						} else
 						{
-							WF_Turn_Right(Turn_Speed - 5, 300);
+							wf_turn_right(Turn_Speed - 5, 300);
 						}
 					} else
 					{
-						WF_Turn_Right(Turn_Speed - 5, 200);
+						wf_turn_right(Turn_Speed - 5, 200);
 					}
 					straight_distance = MFW_SETTING[follow_type].left_bumper_val; //250;
 				}
@@ -778,7 +778,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			} else
 			{
 				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
-				if (Get_FrontOBS() < Get_FrontOBST_Value())
+				if (get_front_obs() < Get_FrontOBST_Value())
 				{
 					regulator.adjustSpeed(l_speed, r_speed, wall_distance);
 					Move_Forward(l_speed, r_speed);
@@ -790,7 +790,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					{
 						jam++;
 					}
-					WF_Turn_Right(Turn_Speed - 5, 920);
+					wf_turn_right(Turn_Speed - 5, 920);
 					Stop_Brifly();
 					//WFM_update();
 					wf_check_loop_closed(Gyro_GetAngle());

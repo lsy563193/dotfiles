@@ -94,12 +94,12 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 
 //	Reset_Bumper_Error();
 
-	Work_Motor_Configure();
+	work_motor_configure();
 	Set_Vac_Speed();
-	Set_RightWheel_Speed(15);
+	set_right_wheel_speed(15);
 	reset_wall_step();
 	Move_Forward(7,7);
-  	Reset_Rcon_Status();
+	reset_rcon_status();
 	reset_wheel_step();
   	Set_Mobility_Step(1000);
 	Reset_Average_Counter();
@@ -137,15 +137,15 @@ uint8_t Wall_Follow_Short(uint32_t dis)
       }
     }
 	  /*------------------------------------------------------Check Current-----------------------*/
-	   Motor_Check_Code=Check_Motor_Current();
+	   Motor_Check_Code= check_motor_current();
 		if(Motor_Check_Code)
 		{
-		  if(Self_Check(Motor_Check_Code))
+		  if(self_check(Motor_Check_Code))
 			{
         Set_Clean_Mode(Clean_Mode_Userinterface);
 			  return 1;
 			}
-      Reset_TempPWM();
+			reset_temp_pwm();
       break;
 		}
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
@@ -192,7 +192,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		Temp_Rcon_Status = Get_Rcon_Status();
     	if(Temp_Rcon_Status)
     	{
-      		Reset_Rcon_Status();
+				reset_rcon_status();
       		if(Temp_Rcon_Status&0X0FFF)
       		{
         		if(Is_WorkFinish(Get_Room_Mode()))
@@ -221,7 +221,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				}
 				//Stop_Brifly();
 				Move_Forward(10,10);
-				Reset_Rcon_Status();
+						reset_rcon_status();
 				Wall_Straight_Distance=80;
 				Reset_WallAccelerate();
 			}
@@ -237,7 +237,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 #endif
 
 		/*---------------------------------------------------Bumper Event-----------------------*/
-    if(Get_Bumper_Status()&RightBumperTrig)
+    if(get_bumper_status()&RightBumperTrig)
     {
 		Stop_Brifly();
 		Wall_Move_Back();
@@ -267,10 +267,10 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			reset_wheel_step();
 		SWall_B_Counter+=1;
     }
-	if(Get_Bumper_Status()&LeftBumperTrig)
-    {	
-    	Set_Wheel_Speed(0,0);
-     	Reset_TempPWM();
+	if(get_bumper_status()&LeftBumperTrig)
+    {
+			set_wheel_speed(0, 0);
+			reset_temp_pwm();
       	usleep(30000);
 			
 //      if(get_wall_adc(0)>200)
@@ -283,7 +283,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			
 		if(Wall_Distance<Wall_Low_Limit)Wall_Distance=Wall_Low_Limit;	
 			
-		if(Get_Bumper_Status()&RightBumperTrig)
+		if(get_bumper_status()&RightBumperTrig)
 		{
 			Wall_Move_Back();
 			if(Is_Bumper_Jamed())break;;
@@ -327,22 +327,22 @@ uint8_t Wall_Follow_Short(uint32_t dis)
     
 
 		/*------------------------------------------------------Cliff Event-----------------------*/
-    if(Get_Cliff_Trig())
+    if(get_cliff_trig())
     {
-		  Set_Wheel_Speed(0,0);
+			set_wheel_speed(0, 0);
 			set_dir_backward();
 	    usleep(15000);
-//			if(Get_Cliff_Trig())
+//			if(get_cliff_trig())
 //			{
 			  Cliff_Move_Back();
-				if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				if(get_cliff_trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 				  break;
 				}
-				if(Get_Cliff_Trig())
+				if(get_cliff_trig())
 			  {
-				  if(Cliff_Escape())
+				  if(cliff_escape())
 					{
 					  Set_Clean_Mode(Clean_Mode_Userinterface);
             return 1;
@@ -376,7 +376,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 					{
 					  if(Get_WallAccelerate()>300)
 						{
-						  if((Get_RightWheel_Speed()-Get_LeftWheel_Speed())>=-3)
+						  if((get_right_wheel_speed()- get_left_wheel_speed())>=-3)
 							{
 								Move_Forward(18,16);
 								usleep(100000);
@@ -411,7 +411,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		else
 		{
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
-	    	if(Get_FrontOBS()<Get_FrontOBST_Value())
+	    	if(get_front_obs()<Get_FrontOBST_Value())
 	    	{
 					Proportion = get_wall_adc(0);
 					
@@ -474,7 +474,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				Stop_Brifly();
 				if(get_left_wheel_step()<12500)
 				{
-					if(Get_FrontOBS()>Get_FrontOBST_Value())
+					if(get_front_obs()>Get_FrontOBST_Value())
 					{
 						if(Get_WallAccelerate()<2000)
 						{
@@ -503,7 +503,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 	Set_Direction_Flag(Direction_Flag_Right);
 	//Stop_Brifly();
 	//Wheel_Stop();
-	Set_Wheel_Speed(0,0);
+	set_wheel_speed(0, 0);
 	usleep(20000);
 	return 0;
 }
