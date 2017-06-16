@@ -368,6 +368,8 @@ void User_Interface(void)
 		ROS_INFO("Reset the error code,");
 		set_error_code(Error_Code_None);
 	}
+
+	user_interface_unregister_events();
 }
 
 void user_interface_register_events(void)
@@ -384,7 +386,6 @@ void user_interface_register_events(void)
 	/* Battery */
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 }
-
 
 void user_interface_unregister_events(void)
 {
