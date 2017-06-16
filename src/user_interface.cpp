@@ -188,13 +188,6 @@ void User_Interface(void)
 			Disable_Motors();
 		}
 
-		/*--------------------------------------------------------Check if remote move event--------------*/
-		if(Remote_Key(Remote_Forward | Remote_Right | Remote_Left | Remote_Backward))
-		{
-			Temp_Mode = Clean_Mode_Remote;
-			Reset_Rcon_Remote();
-		}
-
 		/* -----------------------------Check if spot event ----------------------------------*/
 		if(Remote_Key(Remote_Spot))//                                       Check Remote Key Spin
 		{
@@ -385,6 +378,14 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+	/* Remote */
+	event_manager_register_handler(EVT_REMOTE_DIRECTION_FORWARD, &user_interface_handle_direction);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
+	event_manager_register_handler(EVT_REMOTE_DIRECTION_LEFT, &user_interface_handle_direction);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
+	event_manager_register_handler(EVT_REMOTE_DIRECTION_RIGHT, &user_interface_handle_direction);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
+
 }
 
 void user_interface_unregister_events(void)
@@ -397,6 +398,10 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
 	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
+	/* Remote */
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)
@@ -439,4 +444,12 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 	}
 
 	battery_low_delay = 10;
+}
+
+void user_interface_handle_direction(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote direction key %x has been pressed.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+	beep_for_command(true);
+	Temp_Mode = Clean_Mode_Remote;
+	Reset_Rcon_Remote();
 }

@@ -55,5 +55,8 @@ void user_interface_unregister_events(void);
 define_user_interface_handle_func(rcon)
 /* Battery */
 define_user_interface_handle_func(battery_low)
+/* Remote */
+define_user_interface_handle_func(direction)
+
 #endif /* __DISPLAY_H */
 
