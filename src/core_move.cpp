@@ -1522,7 +1522,7 @@ void cm_register_events()
 	event_manager_register_and_enable_x(remote_mode_spot, EVT_REMOTE_MODE_SPOT, true);
 	event_manager_register_and_enable_x(remote_suction, EVT_REMOTE_SUCTION, true);
 	// Just enable the default handler.
-	event_manager_enable_handler(EVT_REMOTE_APPOINMENT, true);
+	event_manager_enable_handler(EVT_PLAN, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
@@ -1588,7 +1588,7 @@ void cm_unregister_events()
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 
 	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_APPOINMENT);
+	event_manager_register_and_disable_x(EVT_PLAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	event_manager_register_and_disable_x(EVT_REMOTE_MODE_SPOT);
@@ -2118,7 +2118,7 @@ void cm_block_charger_stub(int8_t direction)
 			break;
 		}
 		default:
-			ROS_ERROR("%s %d: Receive wrong direction: %d.", direction);
+			ROS_ERROR("%s %d: Receive wrong direction: %d.", __FUNCTION__, __LINE__, direction);
 	}
 	cm_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
 	map_set_cell(MAP, x, y, BLOCKED_BUMPER);

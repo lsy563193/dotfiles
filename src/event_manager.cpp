@@ -236,9 +236,9 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_KEY_CLEAN)
 		}
 
-		if (Get_Plan_Status() == 1) {
+		if (Get_Plan_Status()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_APPOINMENT)
+			evt_set_status_x(EVT_PLAN)
 		}
 
 		/* Remote */
@@ -412,7 +412,7 @@ void *event_handler_thread(void *data) {
 		evt_handle_check_event(EVT_KEY_CLEAN, key_clean)
 
 		/* Remote */
-		evt_handle_check_event(EVT_REMOTE_APPOINMENT, remote_plan)
+		evt_handle_check_event(EVT_PLAN, remote_plan)
 		evt_handle_check_event(EVT_REMOTE_CLEAN, remote_clean)
 		evt_handle_check_event(EVT_REMOTE_HOME, remote_home)
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_FORWARD, remote_direction_forward)
