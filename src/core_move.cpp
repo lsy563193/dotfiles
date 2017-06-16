@@ -997,6 +997,9 @@ int cm_cleaning()
 		uint16_t last_dir = path_get_robot_direction();
 
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
+		path_update_cell_history();
+		path_update_cells();
+		path_reset_path_points();
 		int8_t is_found = path_next(&g_next_point, &g_targets_point);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
 		ROS_ERROR("State: %d", is_found);
@@ -1247,7 +1250,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 	while (ros::ok()) {
 		Cell_t pos{target_x, target_y};
 		Cell_t	tmp;
-		auto pathFind = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), &tmp.X, &tmp.Y);
+		auto pathFind = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), tmp.X, tmp.Y);
 
 		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y,
 						 map_get_x_cell(), map_get_y_cell());

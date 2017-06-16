@@ -56,6 +56,7 @@ uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between
 int16_t g_home_x, g_home_y;
 
 Cell_t g_cell_history[5];
+const Cell_t& g_curr = g_cell_history[0];
 
 uint16_t g_last_dir;
 
@@ -536,7 +537,7 @@ void path_find_all_targets()
 	}
 }
 
-int16_t path_target(int16_t *x, int16_t *y)
+int16_t path_target(Cell_t& next, Cell_t& target)
 {
 	bool	within_range;
 	int16_t found, final_cost, a, b, c, d, start, end, last_y;
@@ -737,8 +738,8 @@ int16_t path_target(int16_t *x, int16_t *y)
 					}
 				}
 				if (within_range == true) {
-					*x = it->target.X;
-					*y = it->target.Y;
+					target.X = it->target.X;
+					target.Y = it->target.Y;
 					final_cost = it->points.size();
 					stop = 1;
 				}
@@ -781,8 +782,8 @@ int16_t path_target(int16_t *x, int16_t *y)
 							}
 						}
 						if (within_range == true) {
-							*x = it->target.X;
-							*y = it->target.Y;
+							target.X = it->target.X;
+							target.Y = it->target.Y;
 							final_cost = it->points.size();
 							stop = 1;
 						}
@@ -822,8 +823,8 @@ int16_t path_target(int16_t *x, int16_t *y)
 						}
 					}
 					if (within_range == true) {
-						*x = it->target.X;
-						*y = it->target.Y;
+						target.X = it->target.X;
+						target.Y = it->target.Y;
 						final_cost = it->points.size();
 						stop = 1;
 					}
@@ -867,8 +868,8 @@ int16_t path_target(int16_t *x, int16_t *y)
 							}
 						}
 						if (within_range == true) {
-							*x = it->target.X;
-							*y = it->target.Y;
+							target.X = it->target.X;
+							target.Y = it->target.Y;
 							final_cost = it->points.size();
 							stop = 1;
 						}
@@ -890,8 +891,8 @@ int16_t path_target(int16_t *x, int16_t *y)
 							}
 						}
 						if (within_range == true && it->points.size() < final_cost) {
-							*x = it->target.X;
-							*y = it->target.Y;
+							target.X = it->target.X;
+							target.Y = it->target.Y;
 							final_cost = it->points.size();
 							stop = 1;
 						}
@@ -908,8 +909,8 @@ int16_t path_target(int16_t *x, int16_t *y)
 			for (d = y_min; d <= y_max; ++d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 					if (it->points.size() < final_cost) {
-						*x = it->target.X;
-						*y = it->target.Y;
+						target.X = it->target.X;
+						target.Y = it->target.Y;
 						final_cost = it->points.size();
 					}
 				}
@@ -918,9 +919,12 @@ int16_t path_target(int16_t *x, int16_t *y)
 	}
 
 	found = (final_cost != 1000) ? final_cost : 0 ;
-	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, *x, *y);
+	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, target.X, target.Y);
 
-	return found;
+	if(found == 0)
+	return 0;
+
+	return path_next_best(target, g_curr.X, g_curr.Y, next.X, next.Y);
 }
 
 void path_update_cells()
@@ -1122,24 +1126,15 @@ int16_t path_escape_trapped()
 
 int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
-	path_update_cell_history();
 
-	path_update_cells();
-
-	path_reset_path_points();
-
-	const Cell_t curr = g_cell_history[0];
-	Cell_t next = curr;
-
+	Cell_t next = g_curr;
 	auto is_found = path_lane_is_cleaned(next);
 	Cell_t target = next;
 	if (!is_found)
 	{
-		auto size = path_target(&target.X, &target.Y);
-		if (size == 0)
+		auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
+		if (ret == 0)
 			return 0;
-
-		auto ret = path_next_best(target, curr.X, curr.Y, &next.X, &next.Y);
 
 		if (ret == -2)
 		{
@@ -1151,13 +1146,13 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 		}
 	}
 	//found ==1
-	*target_point = map_cell_to_point(target);
-	if (curr.X == next.X)
-		g_last_dir = curr.Y > next.Y ? NEG_Y : POS_Y;
+	if (g_curr.X == next.X)
+		g_last_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
 	else
-		g_last_dir = curr.X > next.X ? NEG_X : POS_X;
+		g_last_dir = g_curr.X > next.X ? NEG_X : POS_X;
 
 	*next_point = map_cell_to_point(next);
+	*target_point = map_cell_to_point(target);
 	return 1;
 }
 

@@ -1422,7 +1422,7 @@ int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, int16_t *x_next, int16_t *y_next) {
+int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, int16_t& x_next, int16_t &y_next) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
@@ -1503,11 +1503,11 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 				break;
 			}
 		}
-		*x_next = x_path;
-		*y_next = y_path;
+		x_next = x_path;
+		y_next = y_path;
 	} else {
-		*x_next = target_x;
-		*y_next = target_y;
+		x_next = target_x;
+		y_next = target_y;
 
 #ifdef	PP_MOVE_TO_MIDDLE_OF_PATH
 		if (path_points.size() > 3) {
@@ -1602,8 +1602,8 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 				if (i != 1) {
 					continue;
 				} else {
-					*x_next = it->X;
-					*y_next = it->Y;
+					x_next = it->X;
+					y_next = it->Y;
 				}
 			}
 		}
