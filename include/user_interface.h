@@ -51,6 +51,7 @@ void user_interface_register_events(void);
 
 /* Bumper */
 define_user_interface_handle_func(rcon)
-
+/* Battery */
+define_user_interface_handle_func(battery_low)
 #endif /* __DISPLAY_H */
 
