@@ -88,7 +88,6 @@ void Remote_Mode(void)
 		if(Remote_Key(Remote_Left))
 		{
 
-			Deceleration();
 			Reset_Rcon_Remote();
 			Turn_Left(Turn_Speed,320);
 			//Set_SideBrush_PWM(30,30);
@@ -100,7 +99,6 @@ void Remote_Mode(void)
 		if(Remote_Key(Remote_Right))
 		{
 	
-			Deceleration();
 			//Work_Motor_Configure();
 			Reset_Rcon_Remote();
 			Turn_Right(Turn_Speed,320);
@@ -221,14 +219,14 @@ void Remote_Mode(void)
 			break;
 		}
 		if(Get_Cliff_Trig() == (Status_Cliff_All)){
-			Quick_Back(20,20);
+			quick_back(20,20);
 			Stop_Brifly();
 			if(Get_Cliff_Trig() == (Status_Cliff_All)){
-				Quick_Back(20,20);
+				quick_back(20,20);
 				Stop_Brifly();
 			}
 			if(Get_Cliff_Trig() == Status_Cliff_All){
-				Quick_Back(20,20);
+				quick_back(20,20);
 				Stop_Brifly();
 				Disable_Motors();
 				ROS_INFO("Cliff trigger three times stop robot ");
@@ -250,7 +248,7 @@ void Remote_Mode(void)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 	}
 	Disable_Motors();

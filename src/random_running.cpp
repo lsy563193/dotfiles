@@ -104,7 +104,7 @@ void Random_Running_Mode(void)
 //  }
 
 	ROS_DEBUG_NAMED("random mode","-------in random running mode-----");
-	if(Is_AtHomeBase())
+	if(is_on_charger_stub())
 	{
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 		Beep(2,25,25,1);
@@ -115,8 +115,8 @@ void Random_Running_Mode(void)
 		Set_MainBrush_PWM(0);
 		Set_BLDC_Speed(30);
 		Stop_Brifly();
-		Quick_Back(30,750);
-		if(Stop_Event()||Is_ChargerOn())
+		quick_back(30,750);
+		if(Stop_Event()||is_charge_on())
 		{
 			Stop_Brifly();
 			// Key release detection, if user has not release the key, don't do anything.
@@ -130,7 +130,7 @@ void Random_Running_Mode(void)
 			return;
 		}
 		Beep(2,25,25,1);
-		Quick_Back(30,750);
+		quick_back(30,750);
 		if(Stop_Event())
 		{
 			Stop_Brifly();
@@ -145,7 +145,7 @@ void Random_Running_Mode(void)
 			return;
 		}
 		Beep(2,25,25,1);
-		Quick_Back(30,750);
+		quick_back(30,750);
 		if(Stop_Event())
 		{
 			Stop_Brifly();
@@ -160,7 +160,6 @@ void Random_Running_Mode(void)
 			return;
 		}
 		Beep(2,25,25,1);
-		Deceleration();
 		Turn_Right(Turn_Speed,1120+Get_Random_Factor()*10);
 		if(Stop_Event())
 		{
@@ -335,7 +334,6 @@ void Random_Running_Mode(void)
 			#ifdef SCREEN_REMOTE
 			if(Remote_Key(Remote_Left))
 			{
-				Deceleration();
 				Stop_Brifly();
 				Turn_Left(Turn_Speed,500);
 				Stop_Brifly();
@@ -345,7 +343,6 @@ void Random_Running_Mode(void)
 			}
 			if(Remote_Key(Remote_Right))
 			{
-				Deceleration();
 				Stop_Brifly();
 				Turn_Right(Turn_Speed,400);
 				Stop_Brifly();

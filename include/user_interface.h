@@ -44,6 +44,13 @@ typedef struct
 	uint32_t Sun;
 }Plan_Struct;
 
+void user_interface_register_events(void);
+
+#define define_user_interface_handle_func(name) \
+	void user_interface_handle_ ## name(bool state_now, bool state_last);
+
+/* Bumper */
+define_user_interface_handle_func(rcon)
 
 #endif /* __DISPLAY_H */
 

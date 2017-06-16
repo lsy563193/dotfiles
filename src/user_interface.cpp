@@ -19,12 +19,16 @@
 #include "config.h"
 #include "wav.h"
 #include "robot.hpp"
+#include "event_manager.h"
 
+uint8_t Temp_Mode=0;
+time_t charger_signal_start_time;
+uint16_t charger_signal_delay = 20;
+boost::mutex charger_signal_delay_mutex;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
 	static volatile uint8_t Press_time=0;
-	static volatile uint8_t Temp_Mode=0;
 	static volatile uint16_t Error_Show_Counter=400;
 	static volatile uint32_t TimeOutCounter=0;
 
@@ -35,38 +39,23 @@ void User_Interface(void)
 	bool Battery_Ready_to_clean = true;
 	bool battery_too_low_ = false;
 
-	uint16_t charge_signal_count_ = 0;
-	uint16_t no_charge_signal_count_ = 0;
-	bool detect_charger_signal_ = false;
+	// Count for error alarm.
+	uint8_t Error_Alarm_Counter = 2;
+
+	charger_signal_delay = 0;
 
 	Press_time=0;
 	Temp_Mode=0;
 	Error_Show_Counter=400;
 	TimeOutCounter=0;
 
+	user_interface_register_events();
 	Disable_Motors();
-//	Beep(3,25,25,1);
-	//usleep(600000);
-//	Beep(3,25,25,1);
-	usleep(600000);
-
-//	Reset_Encoder_Error();
-
 	Reset_Rcon_Remote();
-
 	Set_Plan_Status(0);
-
 	Reset_Stop_Event_Status();
-	//Enable_PPower();
-	//Disable_Motors();
 	Reset_Rcon_Status();
-//	Clear_Clcok_Receive();
-	// Reset touch to avoid previous touch leads to directly go to navigation mode.
-//	ResetHomeRemote();
 	Set_VacMode(Vac_Save);
-
-	// Count for error alarm.
-	uint8_t Error_Alarm_Counter = 2;
 
 	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
 	// Check the battery to warn the user.
@@ -141,7 +130,7 @@ void User_Interface(void)
 		{
 			if (Remote_Key(Remote_All & ~Remote_Clean))
 			{
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 				Error_Alarm_Counter = 0;
 				Alarm_Error();
@@ -185,7 +174,7 @@ void User_Interface(void)
 		}
 
 		/*--------------------------------------------------------Check if on the charger stub--------------*/
-		if(Is_AtHomeBase() || is_direct_charge())//on base but miss charging , adjust position to charge
+		if(is_on_charger_stub() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
 			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 			if (is_direct_charge())
@@ -211,39 +200,12 @@ void User_Interface(void)
 			Temp_Mode=Clean_Mode_Spot;
 		}
 
-		/* -----------------------------Check if detects home signal -------------------------*/
-		if (Is_Station())
+		/* -----------------------------Check if near charger stub ---------------------------*/
+		if (!g_rcon_triggered)
 		{
-			if (!robot::instance()->isManualPaused())
-			{
-				detect_charger_signal_ = true;
-				no_charge_signal_count_ = 0;
-			}
-			//else
-			//	ROS_DEBUG("Manual pause and skip the charger signal.");
-			Reset_Rcon_Status();
-		}
-		else
-		{
-			if (detect_charger_signal_)
-				no_charge_signal_count_++;
-		}
-
-		if (no_charge_signal_count_ > 20)
-		{
-			charge_signal_count_ = 0;
-			detect_charger_signal_ = false;
-		}
-
-		if (detect_charger_signal_)
-		{
-			charge_signal_count_++;
-			//ROS_WARN("%s %d: User_Interface detects charger signal count %d.", __FUNCTION__, __LINE__, charge_signal_count_);
-		}
-
-		if (charge_signal_count_ > 18000) // 18000 x 10ms = 3min
-		{
-			Temp_Mode = Clean_Mode_GoHome;
+			boost::mutex::scoped_lock(charger_signal_delay_mutex);
+			if (charger_signal_delay > 0)
+				charger_signal_delay--;
 		}
 
 		/* -----------------------------Check if Home event ----------------------------------*/
@@ -373,18 +335,21 @@ void User_Interface(void)
 					ROS_WARN("%s %d: Robot lift up.", __FUNCTION__, __LINE__);
 					wav_play(WAV_ERROR_LIFT_UP);
 					Temp_Mode=0;
+					charger_signal_delay = 0;
 				}
 				else if (battery_too_low_)
 				{
 					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)LOW_BATTERY_STOP_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
+					charger_signal_delay = 0;
 				}
 				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
 				{
 					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
+					charger_signal_delay = 0;
 				}
 				else
 				{
@@ -414,4 +379,43 @@ void User_Interface(void)
 		ROS_INFO("Reset the error code,");
 		Set_Error_Code(Error_Code_None);
 	}
+}
+
+void user_interface_register_events(void)
+{
+	ROS_WARN("Register rcon");
+	event_manager_set_current_mode(EVT_MODE_USER_INTERFACE);
+
+#define event_manager_register_and_enable_x(name, y, enabled) \
+	event_manager_register_handler(y, &user_interface_handle_ ##name); \
+	event_manager_enable_handler(y, enabled);
+
+	/* Rcon */
+	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+}
+
+void user_interface_handle_rcon(bool state_now, bool state_last)
+{
+	/* -----------------------------Check if detects home signal -------------------------*/
+	if (robot::instance()->isManualPaused())
+	{
+		Reset_Rcon_Status();
+		return;
+	}
+
+	boost::mutex::scoped_lock(charger_signal_delay_mutex);
+	if (charger_signal_delay == 0)
+		charger_signal_start_time = time(NULL);
+
+	if (time(NULL) - charger_signal_start_time > 10)// 3 mins
+	{
+		Temp_Mode = Clean_Mode_GoHome;
+		Reset_Rcon_Status();
+		return;
+	}
+
+	charger_signal_delay = 20;
+	ROS_DEBUG("%s %d: User_Interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
+	Reset_Rcon_Status();
+
 }

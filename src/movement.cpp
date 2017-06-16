@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <unistd.h>
 #include <math.h>
 #include <time.h>
 #include <ros/ros.h>
@@ -18,6 +19,8 @@
 #include "wall_follow_trapped.h"
 #include "wav.h"
 #include "slam.h"
+#include "event_manager.h"
+
 extern uint8_t sendStream[SEND_LEN];
 
 static int16_t Left_OBSTrig_Value = 500;
@@ -288,7 +291,6 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Left_Wall_E_Counter=0;
 		Left_Wall_Sum_Value=0;
 		Left_Temp_Wall_Buffer=0;
-		//Beep(1, 10, 0, 1);
 		//ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
@@ -316,7 +318,6 @@ void Wall_Dynamic_Base(uint32_t Cy)
 		Right_Wall_E_Counter=0;
 		Right_Wall_Sum_Value=0;
 		Right_Temp_Wall_Buffer=0;
-		//Beep(1, 10, 0, 1);
 		//ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
 	}
 
@@ -345,41 +346,25 @@ int32_t Get_Wall_Base(int8_t dir)
 	}
 }
 
-void Quick_Back(uint8_t Speed, uint16_t Distance)
+void quick_back(uint8_t speed, uint16_t distance)
 {
+	// The distance is for mm.
+	float saved_x, saved_y;
+	saved_x = robot::instance()->getOdomPositionX();
+	saved_y = robot::instance()->getOdomPositionY();
 	// Quickly move back for a distance.
 	wheel_left_direction = 1;
 	wheel_right_direction = 1;
 	Reset_Wheel_Step();
-	Set_Wheel_Speed(Speed, Speed);
-	// This count is for how many milliseconds it should take. The Distance is in mm.
-	int back_count = int(1000 * Distance / (Speed * SPEED_ALF));
-	//ROS_INFO("%s %d Quick_back for %dms.", __FUNCTION__, __LINE__, back_count);
-	for (int i = 0; i < back_count; i++){
-		// Sleep for 1 millisecond
-		usleep(1000);
-		if (Stop_Event())
-		{
+	Set_Wheel_Speed(speed, speed);
+	while (sqrtf(powf(saved_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_y - robot::instance()->getOdomPositionY(), 2)) < (float)distance / 1000)
+	{
+		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
+		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 			break;
-		}
-		if (Get_Rcon_Remote() > 0) {
-			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-			if (Get_Rcon_Remote() & (Remote_Clean)) {
-				Reset_Rcon_Remote();
-				break;
-			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
-				Reset_Rcon_Remote();
-			}
-		}
-		/* check plan setting*/
-		if(Get_Plan_Status() == 1)
-		{
-			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
-		}
+		usleep(20000);
 	}
-	ROS_INFO("Quick_Back finished.");
+	ROS_INFO("quick_back finished.");
 }
 
 void Turn_Left_At_Init(uint16_t speed, int16_t angle)
@@ -468,7 +453,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (Is_ChargerOn())
+		if (is_charge_on())
 		{
 			ROS_DEBUG("Reach charger while turn left.");
 			Stop_Brifly();
@@ -500,7 +485,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -508,7 +493,7 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -549,7 +534,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 	if(speed > 30) accurate  = 30;
 	while (ros::ok()) {
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (Is_ChargerOn())
+		if (is_charge_on())
 		{
 			ROS_DEBUG("Reach charger while turn right.");
 			Stop_Brifly();
@@ -581,7 +566,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -589,7 +574,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		/*if(Is_Turn_Remote())
 			break;*/
@@ -663,7 +648,7 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 					Switch_VacMode(true);
 				}
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -671,7 +656,7 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
@@ -750,7 +735,7 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 					Switch_VacMode(true);
 				}
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -758,7 +743,7 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		if(Get_Bumper_Status()){
 			Stop_Brifly();
@@ -850,7 +835,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 					Switch_VacMode(true);
 				}
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -859,7 +844,7 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		if(Get_Plan_Status() == 1)
 		{
 			Set_Plan_Status(0);
-			Beep(Beep_Error_Sounds, 2, 0, 1);
+			beep_for_command(false);
 		}
 		if(Get_Bumper_Status()){
 			break;
@@ -1024,15 +1009,12 @@ uint8_t Get_Cliff_Trig(void)
 	cr = robot::instance()->getCliffRight();
 	cf = robot::instance()->getCliffFront();
 	if (cl < Cliff_Limit){
-		ROS_WARN("Left cliff is detected:%d", cl);
 		Cliff_Status |= 0x01;
 	}
 	if (cr< Cliff_Limit){
-		ROS_WARN("Right cliff is detected:%d", cr);
 		Cliff_Status |= 0x02;
 	}
 	if (cf < Cliff_Limit){
-		ROS_WARN("Front cliff is detected:%d", cf);
 		Cliff_Status |= 0x04;
 	}
 	/*
@@ -1131,25 +1113,25 @@ uint8_t Cliff_Event(uint8_t event)
 	if(d_flag)return 1;
 	return 0;
 }
-/*-------------------------------Check if at home base------------------------------------*/
-uint8_t Is_AtHomeBase(void)
+/*-------------------------------Check if at charger stub------------------------------------*/
+bool is_on_charger_stub(void)
 {
-	// If the charge status is true, it means it is at home base charging.
-	//Debug
-	if (robot::instance()->getChargeStatus() == 2 || robot::instance()->getChargeStatus() == 1){
-		return 1;
-	}else{
-		return 0;
-	}
+	// 1: On charger stub and charging.
+	// 2: On charger stub but not charging.
+	if (robot::instance()->getChargeStatus() == 2 || robot::instance()->getChargeStatus() == 1)
+		return true;
+	else
+		return false;
 }
 
-uint8_t is_direct_charge(void)
+bool is_direct_charge(void)
 {
-	if (robot::instance()->getChargeStatus() == 3 || robot::instance()->getChargeStatus() == 4){
-		return 1;
-	}else{
-		return 0;
-	}
+	// 3: Direct connect to charge line but not charging.
+	// 4: Direct connect to charge line and charging.
+	if (robot::instance()->getChargeStatus() == 3 || robot::instance()->getChargeStatus() == 4)
+		return true;
+	else
+		return false;
 }
 
 uint8_t Turn_Connect(void)
@@ -1162,10 +1144,9 @@ uint8_t Turn_Connect(void)
 	set_start_charge();
 	// Wait for 200ms for charging activated.
 	usleep(200000);
-	if (Is_ChargerOn())
+	if (is_charge_on())
 	{
 		ROS_INFO("[movement.cpp] Reach charger without turning.");
-//		Beep(2, 25, 0, 1);
 		return 1;
 	}
 	// Start turning right.
@@ -1178,16 +1159,14 @@ uint8_t Turn_Connect(void)
 	Set_Wheel_Speed(speed, speed);
 	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
 			Disable_Motors();
-			Stop_Brifly();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				ROS_INFO("[movement.cpp] Turn left reach charger.");
-//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
@@ -1210,14 +1189,13 @@ uint8_t Turn_Connect(void)
 	Set_Wheel_Speed(speed, speed);
 	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
 			Disable_Motors();
 			Stop_Brifly();
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				ROS_INFO("[movement.cpp] Turn right reach charger.");
-//				Beep(2, 25, 0, 1);
 				return 1;
 			}
 			Set_Wheel_Speed(speed, speed);
@@ -1404,7 +1382,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 	if(Get_Clean_Mode() == Clean_Mode_Navigation)
 		cm_move_back(COR_BACK_20MM);
 	else
-		Quick_Back(30,20);
+		quick_back(30,20);
 */
 	Disable_Motors();
 	usleep(10000);
@@ -1696,7 +1674,6 @@ void OBS_Dynamic_Base(uint16_t Cy)
 			Front_OBS_Buffer = OBS_adjust_limit;
 		}
 		Front_OBSTrig_Value = Front_OBS_Buffer + OBS_Diff;
-		//Beep(1, 10, 0, 1);
 		//ROS_INFO("Update Front_OBSTrig_Value = %d.", Front_OBSTrig_Value);
 	}
 
@@ -1718,7 +1695,6 @@ void OBS_Dynamic_Base(uint16_t Cy)
 			Left_OBS_Buffer = OBS_adjust_limit;
 		}
 		Left_OBSTrig_Value = Left_OBS_Buffer + OBS_Diff;
-		//Beep(4, 10, 0, 1);
 		//ROS_INFO("Update Left_OBSTrig_Value = %d.", Left_OBSTrig_Value);
 	}
 	/*---------------Right-----------------------*/
@@ -1739,7 +1715,6 @@ void OBS_Dynamic_Base(uint16_t Cy)
 			Right_OBS_Buffer = OBS_adjust_limit;
 		}
 		Right_OBSTrig_Value = Right_OBS_Buffer + OBS_Diff;
-		//Beep(8, 10, 0, 1);
 		//ROS_INFO("Update Right_OBSTrig_Value = %d.", Right_OBSTrig_Value);
 	}
 }
@@ -1865,12 +1840,10 @@ uint8_t Remote_Key(uint8_t key)
 	// Debug
 	if (Remote_Status > 0)
 	{
-		ROS_INFO("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
+		ROS_DEBUG("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
 	}
 	if(Remote_Status & key)
 	{
-		if (Get_Error_Code() == Error_Code_None)
-			Beep(2, 2, 0, 1);
 		return 1;
 	}
 	else
@@ -2028,10 +2001,6 @@ void Reset_Stop_Event_Status(void)
 	Reset_Touch();
 }
 
-void Deceleration(void)
-{
-}
-
 uint8_t Stop_Event(void)
 {
 	// If it has already had a Stop_Event_Status, then no need to check.
@@ -2127,13 +2096,14 @@ uint8_t Is_Station(void)
 	return 0;
 }
 
-uint8_t Is_ChargerOn(void)
+bool is_charge_on(void)
 {
-	if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4){
-		return 1;
-	}else{
-		return 0;
-	}
+	// 1: On charger stub and charging.
+	// 4: Direct connect to charge line and charging.
+	if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4)
+		return true;
+	else
+		return false;
 }
 
 uint8_t Is_Water_Tank(void)
@@ -2492,20 +2462,20 @@ void ResetSendFlag(void)
 void Random_Back(void)
 {
 	Stop_Brifly();
-	Quick_Back(12,30);
+	quick_back(12,30);
 	
 }
 
 void Move_Back(void)
 {
 	Stop_Brifly();
-	Quick_Back(18,30);
+	quick_back(18,30);
 }
 
 void Cliff_Move_Back()
 {
 	Stop_Brifly();
-	Quick_Back(18,60);
+	quick_back(18,60);
 }
 void Set_RightWheel_Step(uint32_t step)
 {
@@ -2564,7 +2534,7 @@ uint16_t Get_Key_Time(uint16_t key)
 		time++;
 		if (time == 151)
 		{
-			Beep(1, 5, 0, 1);
+			beep_for_command(true);
 		}
 		if(time>1500)break;
 		usleep(20000);
@@ -3007,7 +2977,7 @@ uint8_t Is_Bumper_Jamed()
 		{
 			ROS_INFO("JAM2");
 			// Quick back will not set speed to 100, it will be limited by the RUN_TOP_SPEED.
-			Quick_Back(100,200);
+			quick_back(100,200);
 			if(Stop_Event())
 			{
 				ROS_INFO("%s, %d: Stop event in JAM2", __FUNCTION__, __LINE__);
@@ -3231,7 +3201,7 @@ void Set_Plan_Status(uint8_t Status)
 {
 	Plan_Status = Status;
 	if (Plan_Status != 0)
-		ROS_WARN("Plan status return %d.", Plan_Status);
+		ROS_DEBUG("Plan status return %d.", Plan_Status);
 }
 
 uint8_t Get_Plan_Status()
@@ -3271,3 +3241,10 @@ void Clear_Manual_Pause(void)
 	}
 }
 
+void beep_for_command(bool valid)
+{
+	if (valid)
+		Beep(2, 2, 0, 1);
+	else
+		Beep(5, 2, 0, 1);
+}

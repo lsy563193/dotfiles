@@ -36,7 +36,7 @@ void Charge_Function(void)
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
 
-	// This counter is for avoiding occasionly Is_ChargerOn return 0 when robot is charging, cause it will stop charger mode.
+	// This counter is for avoiding occasionly is_charge_on return 0 when robot is charging, cause it will stop charger mode.
 	uint8_t Stop_Charge_Counter = 0;
 
 	Set_LED(100,100);
@@ -85,7 +85,7 @@ void Charge_Function(void)
 //		}
 //		#endif
 
-		if(!Is_ChargerOn())//check if charger unplug
+		if(!is_charge_on())//check if charger unplug
 		{
 			ROS_DEBUG("Leave charger");
 			if (Stop_Charge_Counter > 25)
@@ -127,7 +127,7 @@ void Charge_Function(void)
 			if (is_direct_charge())
 			{
 				ROS_WARN("Can not go to navigation mode during direct charging.");
-				Beep(Beep_Error_Sounds, 2, 0, 1);// Beep for invalid key.
+				beep_for_command(false);
 				// Key release detection, if user has not release the key, don't do anything.
 				while (Get_Key_Press() & KEY_CLEAN)
 				{
@@ -140,7 +140,7 @@ void Charge_Function(void)
 				ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 				wav_play(WAV_BATTERY_LOW);
 			}
-			else if (Is_AtHomeBase())
+			else if (is_on_charger_stub())
 			{
 				ROS_WARN("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
 				// Key release detection, if user has not release the key, don't do anything.
@@ -149,7 +149,6 @@ void Charge_Function(void)
 					ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 					usleep(20000);
 				}
-//				Set_Room_Mode(Room_Mode_Large);
 				Set_Clean_Mode(Clean_Mode_Navigation);
 				break;
 			}
@@ -158,7 +157,7 @@ void Charge_Function(void)
 		{
 			set_stop_charge();
 			Reset_Rcon_Remote();
-			if(Is_AtHomeBase())
+			if(is_on_charger_stub())
 			{
 				Set_VacMode(Vac_Normal);
 //				Set_Room_Mode(Room_Mode_Large);
@@ -183,24 +182,21 @@ void Charge_Function(void)
 				if (is_direct_charge())
 				{
 					ROS_WARN("Can not go to navigation mode during direct charging.");
-					Beep(Beep_Error_Sounds, 2, 0, 1);// Beep for invalid key.
+					beep_for_command(false);
 				}
 				else if (!Check_Bat_Ready_To_Clean())
 				{
 					ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 					wav_play(WAV_BATTERY_LOW);
 				}
-				else if (Is_AtHomeBase())
+				else if (is_on_charger_stub())
 				{
-//					Set_VacMode(Vac_Normal);
-//					Set_Room_Mode(Room_Mode_Large);
-					set_stop_charge();
 					Set_Clean_Mode(Clean_Mode_Navigation);
 					break;
 				}
 			}
 			else{
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -255,7 +251,7 @@ void Charge_Function(void)
 //		if(Is_Alarm())
 //		{
 //			Reset_Alarm();
-//			if(Is_AtHomeBase())
+//			if(is_on_charger_stub())
 //			{
 //				Set_VacMode(Vac_Normal);
 //				Set_Room_Mode(Room_Mode_Large);
@@ -291,6 +287,9 @@ void Charge_Function(void)
 		#endif
 
 	}
+	set_stop_charge();
+	// Wait for 20ms to make sure stop charging command has been sent.
+	usleep(20000);
 }
 
 /*----------------------------------------------------------------GO Home  ----------------*/
@@ -325,12 +324,12 @@ void GoHome(void)
 	while(Gyro_Step < 360)
 	{
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (Is_ChargerOn())
+		if (is_charge_on())
 		{
 			ROS_DEBUG("%s %d: Reach charger at first turn.", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			usleep(100000);
-			if (Is_ChargerOn())
+			if (is_charge_on())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
@@ -349,7 +348,7 @@ void GoHome(void)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -718,7 +717,7 @@ void Around_ChargerStation(uint8_t Dir)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
@@ -765,18 +764,18 @@ void Around_ChargerStation(uint8_t Dir)
 			No_Signal_Counter=0;
 		}
 
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
-			ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: is_charge_on!!", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			Stop_Brifly();
 //			delay(2000);
 			usleep(200000);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				//delay(5000);
 				usleep(200000);
-				if(Is_ChargerOn())
+				if(is_charge_on())
 				{
 //					Reset_Error_Code();
 					Set_Clean_Mode(Clean_Mode_Charging);
@@ -797,7 +796,7 @@ void Around_ChargerStation(uint8_t Dir)
 				Set_MainBrush_PWM(0);
 				////Back(30,800);
 				//Back(30,300);
-				Quick_Back(30,300);
+				quick_back(30,300);
 				Set_MainBrush_PWM(30);
 				Stop_Brifly();
 			}
@@ -1296,23 +1295,23 @@ uint8_t Check_Position(uint8_t Dir)
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 			if (Get_Rcon_Remote() & (Remote_Clean)) {
 			} else {
-				Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+				beep_for_command(false);
 				Reset_Rcon_Remote();
 			}
 		}
 
-		if(Is_ChargerOn())
+		if(is_charge_on())
 		{
-			ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: is_charge_on!!", __FUNCTION__, __LINE__);
 			Disable_Motors();
 			Stop_Brifly();
 //			delay(2000);
 			usleep(200000);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
 				//delay(5000);
 				usleep(200000);
-				if(Is_ChargerOn())
+				if(is_charge_on())
 				{
 //					Reset_Error_Code();
 					Set_Clean_Mode(Clean_Mode_Charging);
@@ -1333,7 +1332,7 @@ uint8_t Check_Position(uint8_t Dir)
 				Set_MainBrush_PWM(0);
 				////Back(30,800);
 				//Back(30,300);
-				Quick_Back(30,300);
+				quick_back(30,300);
 				Set_MainBrush_PWM(30);
 				Stop_Brifly();
 			}
@@ -1421,18 +1420,18 @@ void By_Path(void)
 		while(Cycle--)
 		{
 			//ROS_DEBUG("new round, Bumper_Counter = %d.", Bumper_Counter);
-			if(Is_ChargerOn())
+			if(is_charge_on())
 			{
-				ROS_DEBUG("%s %d: Is_ChargerOn!!", __FUNCTION__, __LINE__);
+				ROS_DEBUG("%s %d: is_charge_on!!", __FUNCTION__, __LINE__);
 				Disable_Motors();
 				Stop_Brifly();
 //				delay(2000);
 				usleep(200000);
-				if(Is_ChargerOn())
+				if(is_charge_on())
 				{
 					//delay(5000);
 					usleep(200000);
-					if(Is_ChargerOn())
+					if(is_charge_on())
 					{
 //						Reset_Error_Code();
 						Set_Clean_Mode(Clean_Mode_Charging);
@@ -1453,7 +1452,7 @@ void By_Path(void)
 					Set_MainBrush_PWM(0);
 					////Back(30,800);
 					//Back(30,300);
-					Quick_Back(30,300);
+					quick_back(30,300);
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 				}
@@ -1469,7 +1468,7 @@ void By_Path(void)
 					ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 					if (Get_Rcon_Remote() & (Remote_Clean)) {
 					} else {
-						Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+						beep_for_command(false);
 						Reset_Rcon_Remote();
 					}
 				}
@@ -1501,15 +1500,15 @@ void By_Path(void)
 						ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 						if (Get_Rcon_Remote() & (Remote_Clean)) {
 						} else {
-							Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+							beep_for_command(false);
 							Reset_Rcon_Remote();
 						}
 					}
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(0);
 //					Back(30,2500);//waiting
-					Quick_Back(30,300);//waiting
-					ROS_DEBUG("%d: Quick_Back in !position_far", __LINE__);
+					quick_back(30,300);//waiting
+					ROS_DEBUG("%d: quick_back in !position_far", __LINE__);
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 					if(Bumper_Counter>0)
@@ -1569,13 +1568,13 @@ void By_Path(void)
 						ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 						if (Get_Rcon_Remote() & (Remote_Clean)) {
 						} else {
-							Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+							beep_for_command(false);
 							Reset_Rcon_Remote();
 						}
 					}
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(0);
-					Quick_Back(30,300);
+					quick_back(30,300);
 					Set_MainBrush_PWM(30);
 					Stop_Brifly();
 					if(Bumper_Counter>0)
@@ -1684,7 +1683,7 @@ void By_Path(void)
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
 				if (Get_Rcon_Remote() & (Remote_Clean)) {
 				} else {
-					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+					beep_for_command(false);
 					Reset_Rcon_Remote();
 				}
 			}

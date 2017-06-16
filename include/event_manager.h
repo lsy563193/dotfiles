@@ -29,6 +29,7 @@
 	}
 
 #include "stdint.h"
+#include <boost/thread.hpp>
 
 /* Events variables */
 /* The fatal quit event includes any of the following case:
@@ -40,6 +41,7 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
+extern boost::mutex g_event_status_mutex;
 extern bool g_fatal_quit_event;
 /* Bumper */
 extern bool g_bumper_hitted;
@@ -69,10 +71,14 @@ extern uint8_t g_oc_suction_cnt;
 extern bool g_key_clean_pressed;
 /* Remote */
 extern bool g_remote_home;
+extern bool g_remote_spot;
 /* Battery */
 extern bool g_battery_home;
 extern bool g_battery_low;
 extern uint8_t g_battery_low_cnt;
+/* Charge status */
+extern uint8_t g_charge_detect;
+extern uint8_t g_charge_detect_cnt;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,
@@ -94,12 +100,15 @@ typedef enum {
 	EVT_CLIFF_LEFT,
 	EVT_CLIFF_RIGHT,
 
+	EVT_RCON,
+/*
 	EVT_RCON_FRONT_LEFT,
 	EVT_RCON_FRONT_LEFT2,
 	EVT_RCON_FRONT_RIGHT,
 	EVT_RCON_FRONT_RIGHT2,
 	EVT_RCON_LEFT,
 	EVT_RCON_RIGHT,
+*/
 
 	EVT_OVER_CURRENT_BRUSH_LEFT,
 	EVT_OVER_CURRENT_BRUSH_MAIN,
@@ -134,6 +143,8 @@ typedef enum {
 
 	EVT_BATTERY_HOME,
 	EVT_BATTERY_LOW,
+
+	EVT_CHARGE_DETECT,
 
 	EVT_MAX,
 } EventType;
@@ -205,12 +216,15 @@ define_em_handler_func(cliff_left)
 define_em_handler_func(cliff_right)
 
 /* RCON */
+define_em_handler_func(rcon)
+/*
 define_em_handler_func(rcon_front_left)
 define_em_handler_func(rcon_front_left2)
 define_em_handler_func(rcon_front_right)
 define_em_handler_func(rcon_front_right2)
 define_em_handler_func(rcon_left)
 define_em_handler_func(rcon_right)
+*/
 
 /* Over Current */
 define_em_handler_func(over_current_brush_left)
@@ -227,14 +241,19 @@ define_em_handler_func(key_clean)
 define_em_handler_func(remote_plan)
 define_em_handler_func(remote_clean)
 define_em_handler_func(remote_home)
+define_em_handler_func(remote_direction_forward)
 define_em_handler_func(remote_direction_left)
 define_em_handler_func(remote_direction_right)
 define_em_handler_func(remote_mode_spot)
 define_em_handler_func(remote_suction)
+define_em_handler_func(remote_wall_follow)
 
 /* Battery */
 define_em_handler_func(battery_home)
 define_em_handler_func(battery_low)
+
+/* Charge Status */
+define_em_handler_func(charge_detect)
 
 define_em_handler_func(empty)
 

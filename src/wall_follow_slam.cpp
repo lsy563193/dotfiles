@@ -300,7 +300,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					}
 				} else
 				{
-					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+					beep_for_command(false);
 					Reset_Rcon_Remote();
 				}
 			}
@@ -309,7 +309,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			if (Get_Plan_Status() == 1)
 			{
 				Set_Plan_Status(0);
-				Beep(Beep_Error_Sounds, 2, 0, 1);
+				beep_for_command(false);
 			}
 
 			/*------------------------------------------------------Check Current--------------------------------*/
@@ -453,7 +453,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					}
 				} else
 				{
-					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
+					beep_for_command(false);
 					Reset_Rcon_Remote();
 				}
 			}
@@ -482,7 +482,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			{
 				Set_Plan_Status(false);
 				//	wav_play(WAV_APPOINTMENT_DONE);
-				Beep(Beep_Error_Sounds, 2, 0, 1);
+				beep_for_command(false);
 			}
 			/*------------------------------------------------------Cliff Event-----------------------*/
 			if (Get_Cliff_Trig())

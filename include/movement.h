@@ -378,7 +378,7 @@ void Wall_Dynamic_Base(uint32_t Cy);
 void Set_Wall_Base(int8_t dir, int32_t data);
 int32_t Get_Wall_Base(int8_t dir);
 
-void Quick_Back(uint8_t Speed,uint16_t Distance);
+void quick_back(uint8_t speed,uint16_t distance);
 
 void Turn_Left_At_Init(uint16_t speed,int16_t angle);
 void Turn_Left(uint16_t speed,int16_t angle);
@@ -399,8 +399,6 @@ void Set_RightBrush_Stall(uint8_t R);
 
 void Wall_Dynamic_Base(uint32_t Cy);
 
-void Quick_Back(uint8_t Speed,uint16_t Distance);
-
 //void Turn_Right(uint16_t speed,uint16_t angle);
 
 uint8_t Get_OBS_Status(void);
@@ -413,9 +411,9 @@ uint8_t Get_Bumper_Status(void);
 
 uint8_t Get_Cliff_Trig(void);
 
-uint8_t Is_AtHomeBase(void);
+bool is_on_charger_stub(void);
 
-uint8_t is_direct_charge(void);
+bool is_direct_charge(void);
 
 uint8_t Turn_Connect(void);
 
@@ -529,13 +527,11 @@ void Set_Touch(void);
 
 void Reset_Stop_Event_Status(void);
 
-void Deceleration(void);
-
 uint8_t Stop_Event(void);
 
 uint8_t Is_Station(void);
 
-uint8_t Is_ChargerOn(void);
+bool is_charge_on(void);
 
 uint8_t Is_Water_Tank(void);
 
@@ -705,3 +701,5 @@ uint8_t Get_SelfCheck_Vacuum_Status(void);
 //#if MANUAL_PAUSE_CLEANING
 void Clear_Manual_Pause(void);
 //#endif
+
+void beep_for_command(bool valid);

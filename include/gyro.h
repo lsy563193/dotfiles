@@ -12,6 +12,7 @@ void Gyro_SetAngle(int16_t angle);
 
 void Set_Gyro_On(void);
 bool Wait_For_Gyro_On(void);
+bool check_gyro_stable(void);
 void Set_Gyro_Off(void);
 void Set_Gyro_Status(void);
 void Reset_Gyro_Status(void);

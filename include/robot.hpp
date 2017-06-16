@@ -337,7 +337,18 @@ public:
 		low_bat_pause_cleaning_ = true;
 #endif
 	}
-
+	void setTempSpot(void)
+	{
+		temp_spot_set_ = true;
+	}
+	void resetTempSpot(void)
+	{
+		temp_spot_set_ = false;
+	}
+	bool isTempSpot(void)
+	{
+		return temp_spot_set_;
+	}
 	void resetLowBatPause(void)
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -395,6 +406,7 @@ private:
 	bool	is_tf_ready_;
 
 	float offset_angle_;
+    bool temp_spot_set_;
 
 	boost::mutex offset_angle_metux_;
 

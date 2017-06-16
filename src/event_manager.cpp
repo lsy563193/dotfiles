@@ -20,6 +20,7 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
+boost::mutex g_event_status_mutex;
 bool g_fatal_quit_event = false;
 /* Bumper */
 bool g_bumper_hitted = false;
@@ -49,10 +50,14 @@ uint8_t g_oc_suction_cnt = 0;
 bool g_key_clean_pressed = false;
 /* Remote */
 bool g_remote_home = false;
+bool g_remote_spot = false;
 /* Battery */
 bool g_battery_home = false;
 bool g_battery_low = false;
 uint8_t g_battery_low_cnt = 0;
+/* Charge Status */
+uint8_t g_charge_detect = 0;
+uint8_t g_charge_detect_cnt = 0;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -173,6 +178,11 @@ void *event_manager_thread(void *data)
 		}
 
 		/* RCON */
+		if (Get_Rcon_Status()) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_RCON)
+		}
+/*
 		if ((Get_Rcon_Status() & RconFL_HomeT) == RconFL_HomeT) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_FRONT_LEFT)
@@ -192,6 +202,7 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_RIGHT)
 		}
+*/
 
 		/* Over Current */
 		if (robot::instance()->getLbrushOc()) {
@@ -230,6 +241,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_REMOTE_APPOINMENT)
 		}
 
+		/* Remote */
 		if (Remote_Key(Remote_Clean)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_CLEAN)
@@ -237,6 +249,10 @@ void *event_manager_thread(void *data)
 		if (Remote_Key(Remote_Home)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_HOME)
+		}
+		if (Remote_Key(Remote_Forward)) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_REMOTE_DIRECTION_FORWARD)
 		}
 		if (Remote_Key(Remote_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
@@ -254,6 +270,10 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_SUCTION)
 		}
+		if (Remote_Key(Remote_Wall_Follow)) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_REMOTE_MODE_WALL_FOLLOW)
+		}
 
 		/* Battery */
 		if (robot::instance()->getBatteryVoltage() && robot::instance()->getBatteryVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE) {
@@ -263,6 +283,12 @@ void *event_manager_thread(void *data)
 		if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BATTERY_LOW)
+		}
+
+		/* Charge Status */
+		if (robot::instance()->getChargeStatus()) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_CHARGE_DETECT)
 		}
 
 #undef evt_set_status_x
@@ -355,6 +381,10 @@ void *event_handler_thread(void *data) {
 		}
 
 		/* RCON */
+		if (status_now[EVT_RCON] == true) {
+			evt_handle_event_x(rcon, EVT_RCON)
+		}
+/*
 		if (status_now[EVT_RCON_FRONT_LEFT] == true) {
             evt_handle_event_x(rcon_front_left, EVT_RCON_FRONT_LEFT)
 		} else if (status_now[EVT_RCON_FRONT_LEFT2] == true) {
@@ -368,6 +398,7 @@ void *event_handler_thread(void *data) {
 		} else if (status_now[EVT_RCON_RIGHT] == true) {
             evt_handle_event_x(rcon_right, EVT_RCON_RIGHT)
 		}
+*/
 
 		/* Over Current */
 		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_LEFT, over_current_brush_left)
@@ -384,14 +415,19 @@ void *event_handler_thread(void *data) {
 		evt_handle_check_event(EVT_REMOTE_APPOINMENT, remote_plan)
 		evt_handle_check_event(EVT_REMOTE_CLEAN, remote_clean)
 		evt_handle_check_event(EVT_REMOTE_HOME, remote_home)
+		evt_handle_check_event(EVT_REMOTE_DIRECTION_FORWARD, remote_direction_forward)
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_LEFT, remote_direction_left)
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_RIGHT, remote_direction_right)
 		evt_handle_check_event(EVT_REMOTE_MODE_SPOT, remote_mode_spot)
 		evt_handle_check_event(EVT_REMOTE_SUCTION, remote_suction)
+		evt_handle_check_event(EVT_REMOTE_MODE_WALL_FOLLOW, remote_wall_follow)
 
 		/* Battery */
 		evt_handle_check_event(EVT_BATTERY_HOME, battery_home)
 		evt_handle_check_event(EVT_BATTERY_LOW, battery_low)
+
+		/* Charge Status */
+		evt_handle_check_event(EVT_CHARGE_DETECT, charge_detect)
 
 #undef evt_handle_event_x
 
@@ -577,6 +613,11 @@ void em_default_handler_cliff_right(bool state_now, bool state_last)
 }
 
 /* RCON */
+void em_default_handler_rcon(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+/*
 void em_default_handler_rcon_front_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
@@ -606,6 +647,7 @@ void em_default_handler_rcon_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
+*/
 
 /* Over Current */
 void em_default_handler_over_current_brush_left(bool state_now, bool state_last)
@@ -647,37 +689,66 @@ void em_default_handler_key_clean(bool state_now, bool state_last)
 /* Remote */
 void em_default_handler_remote_plan(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Set_Plan_Status(0);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_clean(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_home(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
+}
+
+void em_default_handler_remote_direction_forward(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
+}
+
+void em_default_handler_remote_wall_follow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_direction_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_direction_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_mode_spot(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 void em_default_handler_remote_suction(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(false);
+	Reset_Rcon_Remote();
 }
 
 /* Battery */
@@ -689,6 +760,18 @@ void em_default_handler_battery_home(bool state_now, bool state_last)
 void em_default_handler_battery_low(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
+void em_default_handler_charge_detect(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	if (g_charge_detect_cnt++ > 25)
+	{
+		boost::mutex::scoped_lock(g_event_status_mutex);
+		g_charge_detect = robot::instance()->getChargeStatus();
+		ROS_WARN("%s %d: g_charge_detect has been set to %d.", g_charge_detect);
+		g_charge_detect_cnt = 0;
+	}
 }
 
 /* Default: empty hanlder */
