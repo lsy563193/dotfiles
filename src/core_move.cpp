@@ -465,7 +465,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
-		robotbase_OBS_adjust_count(50);
+		robotbase_obs_adjust_count(50);
 #endif
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -828,7 +828,7 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 	g_rounding_wall_straight_distance = 300;
 	while (ros::ok()) {
 #ifdef OBS_DYNAMIC
-		robotbase_OBS_adjust_count(100);
+		robotbase_obs_adjust_count(100);
 #endif
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {

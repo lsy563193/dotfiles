@@ -471,7 +471,7 @@ void robotbase_restore_slam_correction()
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
 }
 
-void robotbase_OBS_adjust_count(int count)
+void robotbase_obs_adjust_count(int count)
 {
 	boost::mutex::scoped_lock(odom_mutex);
 	OBS_adjust_count = count;

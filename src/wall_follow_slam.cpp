@@ -243,7 +243,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			wall_dynamic_base(30);
 #endif
 #ifdef OBS_DYNAMIC
-			robotbase_OBS_adjust_count(300);
+			robotbase_obs_adjust_count(300);
 #endif
 
 			//WFM_boundary_check();
@@ -399,7 +399,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			//debug_sm_map(SPMAP, 0, 0);
 
 #ifdef OBS_DYNAMIC
-			robotbase_OBS_adjust_count(100);
+			robotbase_obs_adjust_count(100);
 #endif
 
 			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);

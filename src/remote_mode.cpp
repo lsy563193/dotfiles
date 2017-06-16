@@ -45,7 +45,7 @@ void Remote_Mode(void)
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
-		robotbase_OBS_adjust_count(20);
+		robotbase_obs_adjust_count(20);
 #endif
 
 		if(remote_key(Remote_Forward))

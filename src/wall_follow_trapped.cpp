@@ -250,7 +250,7 @@
 //		wall_dynamic_base(30);
 //#endif
 //#ifdef OBS_DYNAMIC
-//		robotbase_OBS_adjust_count(300);
+//		robotbase_obs_adjust_count(300);
 //#endif
 //
 //		//WFM_boundary_check();
@@ -280,7 +280,7 @@
 //		}
 //
 //#ifdef OBS_DYNAMIC
-//		robotbase_OBS_adjust_count(100);
+//		robotbase_obs_adjust_count(100);
 //#endif
 //
 //		//WFM_boundary_check();
@@ -838,7 +838,7 @@ EscapeTrappedType Wall_Follow_Trapped()
 		wall_dynamic_base(30);
 #endif
 #ifdef OBS_DYNAMIC
-		robotbase_OBS_adjust_count(300);
+		robotbase_obs_adjust_count(300);
 #endif
 
 		WFT_boundary_check();
@@ -862,7 +862,7 @@ EscapeTrappedType Wall_Follow_Trapped()
 	while (ros::ok()) {
 
 #ifdef OBS_DYNAMIC
-		robotbase_OBS_adjust_count(100);
+		robotbase_obs_adjust_count(100);
 #endif
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
