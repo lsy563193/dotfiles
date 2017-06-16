@@ -1235,7 +1235,7 @@ uint8_t cm_touring(void)
 	if (cm_clean_ret == 0)
 		cm_go_home();
 	else if(cm_clean_ret == -2){
-		Spot_WithCell(CleanSpot,1.0);
+		spot_with_cell(CLEAN_SPOT,1.0);
 		g_temp_spot_set = true;
 		set_clean_mode(Clean_Mode_Navigation);
     }
