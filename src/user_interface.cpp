@@ -208,41 +208,6 @@ void User_Interface(void)
 			Temp_Mode=Clean_Mode_WallFollow;
 		}
 
-		/* -----------------------------Check if plan event ----------------------------------*/
-		switch (Get_Plan_Status())
-		{
-			case 1:
-			{
-				ROS_INFO("%s %d: Appointment received.", __FUNCTION__, __LINE__);
-				Beep(2, 2, 0, 1);
-				Set_Plan_Status(0);
-				break;
-			}
-			case 2:
-			{
-				ROS_INFO("%s %d: Appointment canceled.", __FUNCTION__, __LINE__);
-				wav_play(WAV_CANCEL_APPOINTMENT);
-				Set_Plan_Status(0);
-				break;
-			}
-			case 3:
-			{
-				ROS_INFO("%s %d: Appointment activated.", __FUNCTION__, __LINE__);
-				// Sleep for 50ms cause the status 3 will be sent for 3 times.
-				usleep(50000);
-				Set_Plan_Status(0);
-				if (!robot::instance()->isManualPaused())
-					Temp_Mode=Clean_Mode_Navigation;
-				break;
-			}
-			case 4:
-			{
-				ROS_INFO("%s %d: Appointment succeeded.", __FUNCTION__, __LINE__);
-				wav_play(WAV_APPOINTMENT_DONE);
-				Set_Plan_Status(0);
-				break;
-			}
-		}
 		/* -----------------------------Check if remote clean event ----------------------------*/
 		if(Remote_Key(Remote_Clean))//                                       Check Remote Key Clean
 		{
@@ -349,7 +314,8 @@ void user_interface_register_events(void)
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_register_handler(EVT_REMOTE_DIRECTION_RIGHT, &user_interface_handle_direction);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
-
+	/* Plan */
+	event_manager_register_and_enable_x(plan, EVT_PLAN, true);
 }
 
 void user_interface_unregister_events(void)
@@ -367,6 +333,8 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
+	/* Plan */
+	event_manager_register_and_disable_x(EVT_PLAN);
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)
@@ -426,4 +394,42 @@ void user_interface_handle_direction(bool state_now, bool state_last)
 	beep_for_command(true);
 	Temp_Mode = Clean_Mode_Remote;
 	Reset_Rcon_Remote();
+}
+
+void user_interface_handle_plan(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: Remote key plan has been pressed.", __FUNCTION__, __LINE__);
+	/* -----------------------------Check if plan event ----------------------------------*/
+	switch (Get_Plan_Status())
+	{
+		case 1:
+		{
+			ROS_WARN("%s %d: Remote key plan has been pressed. Plan received.", __FUNCTION__, __LINE__);
+			beep_for_command(true);
+			break;
+		}
+		case 2:
+		{
+			ROS_WARN("%s %d: Plan canceled.", __FUNCTION__, __LINE__);
+			wav_play(WAV_CANCEL_APPOINTMENT);
+			break;
+		}
+		case 3:
+		{
+			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
+			// Sleep for 50ms cause the status 3 will be sent for 3 times.
+			usleep(50000);
+			if (!robot::instance()->isManualPaused())
+				Temp_Mode=Clean_Mode_Navigation;
+			break;
+		}
+		case 4:
+		{
+			ROS_WARN("%s %d: Plan confirmed.", __FUNCTION__, __LINE__);
+			wav_play(WAV_APPOINTMENT_DONE);
+			break;
+		}
+	}
+
+	Set_Plan_Status(0);
 }
