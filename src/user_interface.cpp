@@ -30,7 +30,7 @@ void User_Interface(void)
 {
 	static volatile uint8_t Press_time=0;
 	static volatile uint16_t Error_Show_Counter=400;
-	static volatile uint32_t TimeOutCounter=0;
+	time_t start_time;
 
 #ifdef ONE_KEY_DISPLAY
 	uint16_t LedBreathCount=100;
@@ -43,11 +43,10 @@ void User_Interface(void)
 	uint8_t Error_Alarm_Counter = 2;
 
 	charger_signal_delay = 0;
-
+	start_time = time(NULL);
 	Press_time=0;
 	Temp_Mode=0;
 	Error_Show_Counter=400;
-	TimeOutCounter=0;
 
 	user_interface_register_events();
 	Disable_Motors();
@@ -92,11 +91,9 @@ void User_Interface(void)
 			if(LedBreathCount >=100)
 				breath = 1;
 		}
-		// TimeOutCounter is for counting that robot will go to sleep mode if there is not any control signal within 600s(10min).
-		TimeOutCounter++;
-		if(TimeOutCounter > USER_INTERFACE_TIMEOUT * 100)
+		//if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
+		if(time(NULL) - start_time > 30)
 		{
-			TimeOutCounter=0;
 			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
 			Set_Clean_Mode(Clean_Mode_Sleep);
 			break;
@@ -118,12 +115,12 @@ void User_Interface(void)
 #endif
 
 		// Alarm for error.
-		// The TimeOutCounter will be atleast 1 here.
-		if (Error_Alarm_Counter != 0 && Get_Error_Code() && (TimeOutCounter % 1000) == 0)
-		{
-			Error_Alarm_Counter--;
-			Alarm_Error();
-		}
+		if (Get_Error_Code())
+			if ((Error_Alarm_Counter == 2 && (time(NULL) - start_time) > 10) || (Error_Alarm_Counter == 1 && (time(NULL) - start_time) > 20))
+			{
+				Error_Alarm_Counter--;
+				Alarm_Error();
+			}
 
 		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
 		if (Get_Error_Code() != Error_Code_None)
