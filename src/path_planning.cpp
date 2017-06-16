@@ -261,11 +261,11 @@ uint8_t is_block_blocked(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t path_lane_is_cleaned(Cell_t& next)
+bool path_lane_is_cleaned(Cell_t& next)
 {
-	int16_t i, found, min, max, min_stop, max_stop, x_tmp, y_tmp;
+	int16_t i, is_found, min, max, min_stop, max_stop, x_tmp, y_tmp;
 
-	min_stop = max_stop = found = 0;
+	min_stop = max_stop = is_found = 0;
 	min = max = SHRT_MAX;
 	x_tmp = next.X;
 	y_tmp = next.Y;
@@ -364,34 +364,49 @@ uint8_t path_lane_is_cleaned(Cell_t& next)
 			next.X -= min;
 		}
 
-		found = 2;
+		is_found = 2;
 	} else if (min != SHRT_MAX)
 	{
 		/* Only the NEG_X end is not cleaned. */
 		next.X -= min;
-		found = 1;
+		is_found = 1;
 	} else if (max != SHRT_MAX)
 	{
 		/* Only the POS_X end is not cleaned. */
 		next.X += max;
-		found = 1;
+		is_found = 1;
 	}
-	if (found == 1 && g_cell_history[0] == g_cell_history[1])
-		found = 0;
+	if (is_found == 1 && g_cell_history[0] == g_cell_history[1])
+		is_found = 0;
 
-	if (found == 1)
+	if (is_found == 1)
 	{
 		uint8_t un_cleaned_cnt = 0;
-		for (auto i = -ROBOT_SIZE_1_2; i <= ROBOT_SIZE_1_2; ++i)
-			for (auto j = -ROBOT_SIZE_1_2; j <= ROBOT_SIZE_1_2; ++j)
-				if (map_get_cell(MAP, found + i, found + j) == UNCLEAN)
+		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+			for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+				if (map_get_cell(MAP, next.X + dx, next.Y + dy) == UNCLEAN)
 					un_cleaned_cnt++;
 
 		if (un_cleaned_cnt < 2)
-			found = 0;
+			is_found = 0;
 	}
 
-	return found;
+	ROS_WARN("is_found =%d", is_found);
+
+	const Cell_t curr{g_cell_history[0].x, g_cell_history[0].y};
+	if (is_found > 0)
+	{
+		auto dx1 = (next.X > curr.X) ? 1 : -1;
+		auto boundary = (next.X > curr.X) ? g_x_max : g_x_min;
+		while(next.X != boundary)
+		{
+			ROS_ERROR("dx1(%d),bound(%d),next(%d,%d)",dx1,boundary, next.X,next.Y);
+			if (! is_brush_block_unclean(next.X, next.Y))
+				break;
+			next.X += dx1;
+		}
+	}
+	return is_found>0;
 }
 
 void path_find_all_targets()
@@ -527,7 +542,7 @@ void path_find_all_targets()
 	}
 }
 
-int16_t find_next_unclean_with_shortest_path(int16_t *x, int16_t *y)
+int16_t path_target_best(int16_t *x, int16_t *y)
 {
 	bool	within_range;
 	int16_t found, final_cost, a, b, c, d, start, end, last_y;
@@ -1120,30 +1135,20 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 
 	path_reset_path_points();
 
+	Cell_t target{0, 0};
 	const Cell_t curr{g_cell_history[0].x, g_cell_history[0].y};
 	Cell_t next = curr;
 
 	auto is_found = path_lane_is_cleaned(next);
-
-	ROS_WARN("is_found =%d", is_found);
-	auto val = 1;
-	if (is_found > 0)
+	if (!is_found)
 	{
-		auto dx1 = (next.X > curr.X) ? 1 : -1;
-		auto boundary = (next.X > curr.X) ? g_x_max : g_x_min;
-		for(;next.X != boundary; next.X += dx1)
-		{
-			if (is_brush_block_unclean(next.X, next.Y) != UNCLEAN)
-				break;
-		}
-	} else
-	{
-		val = find_next_unclean_with_shortest_path(&next.X, &next.Y);
+		auto size = path_target_best(&target.X, &target.Y);
+		if (size == 0)
+			return 0;
 
-		if (is_found > 0)
-			val = path_move_to_unclean_area(curr, map_get_x_cell(), map_get_y_cell(), &next.X, &next.Y);
+		auto ret = path_next_best(target, curr.X, curr.Y, &next.X, &next.Y);
 
-		if (val == -2)
+		if (ret == -2)
 		{
 			/* Robot is trapped and no path to starting point or home. */
 			if (path_escape_trapped() == 0)
@@ -1152,20 +1157,19 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				return -1;
 		}
 	}
-	if(val)
-	{
-		if (g_first_start == 1)
-			g_first_start++;
-		g_cell_history[0].x_target = next.X;
-		g_cell_history[0].y_target = next.Y;
-		*target_point = map_cell_to_point(next);
-		if (curr.X == next.X)
-			g_last_dir = curr.Y > next.Y ? NEG_Y : POS_Y;
-		else
-			g_last_dir = curr.X > next.X ? NEG_X : POS_X;
-	}
+	//found ==1
+	if (g_first_start == 1)
+		g_first_start++;
+	g_cell_history[0].x_target = next.X;
+	g_cell_history[0].y_target = next.Y;
+	*target_point = map_cell_to_point(target);
+	if (curr.X == next.X)
+		g_last_dir = curr.Y > next.Y ? NEG_Y : POS_Y;
+	else
+		g_last_dir = curr.X > next.X ? NEG_X : POS_X;
+
 	*next_point = map_cell_to_point(next);
-	return val;
+	return 1;
 }
 
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size )

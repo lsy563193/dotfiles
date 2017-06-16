@@ -147,7 +147,7 @@ void path_update_cells(void);
  * 		1 if either one end is not cleaned
  * 		2 if both ends are not cleaned
  */
-uint8_t path_lane_is_cleaned(Cell_t& next);
+bool path_lane_is_cleaned(Cell_t& next);
 
 /*
  * Find how many cells ahead to clean with a given target.

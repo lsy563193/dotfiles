@@ -12,24 +12,6 @@
 #include <robot.hpp>
 //#include "a_star.h"
 #include "map.h"
-void updateMap(const Cell_t &start_cell, const Cell_t &next_cell){
-	if(start_cell.Y == next_cell.Y)
-	{//followction Back x axis
-		auto start = std::min(start_cell.X, next_cell.X);
-		auto end = std::max(start_cell.X, next_cell.X);
-		for(auto i = start; i<=end+1; i++){
-			for(auto dy = -1; dy<=1; dy++)
-				Map_SetCell(MAP, cellToCount(i), cellToCount(next_cell.Y + dy), CLEANED);
-		}
-	}else
-	{
-		auto start = std::min(start_cell.Y, next_cell.Y);
-		auto end = std::max(start_cell.Y, next_cell.Y);
-		for(auto i = start; i<=end+1; i++)
-			Map_SetCell(MAP, Map_GetXCount(), i, CLEANED);
-	}
-};
-
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "pp");
@@ -38,52 +20,52 @@ int main(int argc, char **argv)
 	robot	robot_obj;
 
 	int32_t x=0,y=0;
-	Map_Initialize();
+	map_init();
 	path_planning_initialize(&x, &y);//init pathplan
 
-	Cell_t start{0,0};
-	Cell_t stop{10,0};
-	extern PositionType g_pos_history[5];
+	Cell_t last{0,0};
+	Cell_t curr{10,0};
+	extern PositionType g_cell_history[5];
 	extern uint16_t g_last_dir;
 	g_last_dir=1800;
-	g_pos_history[1].x = 10;
-	g_pos_history[1].y = 0;
-	g_pos_history[0].x = 0;
-	g_pos_history[0].y = 0;
-	updateMap(start,stop);
-	Map_SetCell(MAP, cellToCount(0), cellToCount(-1), BLOCKED);
-	Map_SetCell(MAP, cellToCount(0), cellToCount(1), BLOCKED);
+	g_cell_history[0].x = curr.X;
+	g_cell_history[0].y = curr.Y;
+	g_cell_history[1].x = last.X;
+	g_cell_history[1].y = last.Y;
 
-	Map_SetCell(MAP, cellToCount(5), cellToCount(-1), BLOCKED);
-	Map_SetCell(MAP, cellToCount(5), cellToCount(1), BLOCKED);
+//	debug_map(MAP,curr.X,curr.Y);
+	linear_mark_clean(last, curr);
+	debug_map(MAP,curr.X,curr.Y);
+	map_set_cell(MAP, cell_to_count(0), cell_to_count(-1), BLOCKED);
+	map_set_cell(MAP, cell_to_count(0), cell_to_count(1), BLOCKED);
 
-	Map_SetCell(MAP, cellToCount(10), cellToCount(-1), BLOCKED);
-	Map_SetCell(MAP, cellToCount(10), cellToCount(1), BLOCKED);
+	map_set_cell(MAP, cell_to_count(5), cell_to_count(-1), BLOCKED);
+	map_set_cell(MAP, cell_to_count(5), cell_to_count(1), BLOCKED);
 
-//	Map_SetCell(MAP, cellToCount(10), cellToCount(-2), UNCLEAN);
-//	Map_SetCell(MAP, cellToCount(10), cellToCount(2), UNCLEAN);
+	map_set_cell(MAP, cell_to_count(10), cell_to_count(-1), BLOCKED);
+	map_set_cell(MAP, cell_to_count(10), cell_to_count(1), BLOCKED);
 
-	Map_SetCell(MAP, cellToCount(12), cellToCount(0), BLOCKED);
-	Map_SetCell(MAP, cellToCount(12), cellToCount(1), BLOCKED);
-	Map_SetCell(MAP, cellToCount(12), cellToCount(2), BLOCKED);
-	Map_SetCell(MAP, cellToCount(-2), cellToCount(0), BLOCKED);
-	Map_SetCell(MAP, cellToCount(-2), cellToCount(1), BLOCKED);
-	Map_SetCell(MAP, cellToCount(-2), cellToCount(2), BLOCKED);
-//	path_update_cells();
+	map_set_cell(MAP, cell_to_count(12), cell_to_count(0), BLOCKED);
+	map_set_cell(MAP, cell_to_count(12), cell_to_count(1), BLOCKED);
+	map_set_cell(MAP, cell_to_count(12), cell_to_count(2), BLOCKED);
+	map_set_cell(MAP, cell_to_count(-2), cell_to_count(0), BLOCKED);
+	map_set_cell(MAP, cell_to_count(-2), cell_to_count(1), BLOCKED);
+	map_set_cell(MAP, cell_to_count(-2), cell_to_count(2), BLOCKED);
+	path_update_cells();
 //	CM_update_position();
 
-	extern pp::x900sensor   sensor;
+//	extern pp::x900sensor   sensor;
 
 //	sensor.lbumper = true;
 //	sensor.rbumper = true;
 //	sensor.rbumper = true;
 //	CM_update_map_bumper();
 
-	sensor.fcliff = true;
+//	sensor.fcliff = true;
 //	sensor.rcliff = true;
 //	sensor.lcliff = true;
-	CM_update_map_cliff();
-//	debug_map(MAP,countToCell(stop.X),countToCell(stop.Y));
+//	cm_update_map_cliff();
+//	debug_map(MAP,countToCell(curr.X),countToCell(curr.Y));
 //	Set_Clean_Mode(Clean_Mode_Spot);
 //	while (ros::ok)
 //	{

@@ -1054,7 +1054,7 @@ int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t 
 	x_next = &xID;
 	y_next = &yID;
 
-	return path_move_to_unclean_area(pos, endx, endy, x_next, y_next);
+	return path_best(pos, endx, endy, x_next, y_next);
 }
 
 #else
@@ -1422,7 +1422,7 @@ int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_move_to_unclean_area(const Cell_t& curr, int16_t x, int16_t y, int16_t *x_next, int16_t *y_next) {
+int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, int16_t *x_next, int16_t *y_next) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
@@ -1432,7 +1432,7 @@ int16_t path_move_to_unclean_area(const Cell_t& curr, int16_t x, int16_t y, int1
 	path_reset_path_points();
 
 	/* Find the shortest path to the target by using shorest path grid map. */
-	retval = path_find_shortest_path(curr.X, curr.Y, x, y, 0);
+	retval = path_find_shortest_path(curr.X, curr.Y, target_x, target_y, 0);
 	if (retval < 0)
 		return retval;
 
@@ -1447,7 +1447,7 @@ int16_t path_move_to_unclean_area(const Cell_t& curr, int16_t x, int16_t y, int1
 		 * in the way to the target, if obstcal is found, return the point that just before
 		 * finding the obstcal as the next point to move.
 		 */
-		while (x_path != x || y_path != y) {
+		while (x_path != target_x || y_path != target_y) {
 			/*
 			 * Starting from the current robot position, finding the cells that marked as 6
 			 * in the shorest path grid map.
@@ -1506,8 +1506,8 @@ int16_t path_move_to_unclean_area(const Cell_t& curr, int16_t x, int16_t y, int1
 		*x_next = x_path;
 		*y_next = y_path;
 	} else {
-		*x_next = x;
-		*y_next = y;
+		*x_next = target_x;
+		*y_next = target_y;
 
 #ifdef	PP_MOVE_TO_MIDDLE_OF_PATH
 		if (path_points.size() > 3) {
@@ -1552,7 +1552,7 @@ int16_t path_move_to_unclean_area(const Cell_t& curr, int16_t x, int16_t y, int1
 					}
 
 					ROS_INFO("%s %d: x_min: %d\tx_max: %d\n", __FUNCTION__, __LINE__, x_min, x_max);
-					if (x != (x_min + x_max) / 2) {
+					if (target_x != (x_min + x_max) / 2) {
 						it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
 					}
 				} else {
@@ -1583,7 +1583,7 @@ int16_t path_move_to_unclean_area(const Cell_t& curr, int16_t x, int16_t y, int1
 					}
 
 					ROS_INFO("%s %d: y_min: %d\ty_max: %d\n", __FUNCTION__, __LINE__, y_min, y_max);
-					if (y != (y_min + y_max) / 2) {
+					if (target_y != (y_min + y_max) / 2) {
 						it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
 					}
 				}

@@ -1247,7 +1247,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 	while (ros::ok()) {
 		Cell_t pos{target_x, target_y};
 		Cell_t	tmp;
-		auto pathFind = (int8_t)path_move_to_unclean_area(pos, map_get_x_cell(), map_get_y_cell(), &tmp.X, &tmp.Y);
+		auto pathFind = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), &tmp.X, &tmp.Y);
 
 		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y,
 						 map_get_x_cell(), map_get_y_cell());
