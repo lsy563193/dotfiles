@@ -1493,12 +1493,15 @@ void cm_register_events()
 	event_manager_register_and_enable_x(cliff_right, EVT_CLIFF_RIGHT, true);
 
 	/* RCON */
+	event_manager_register_and_enable_x(rcon, EVT_RCON, false);
+/*
 	event_manager_register_and_enable_x(rcon_front_left, EVT_RCON_FRONT_LEFT, false);
 	event_manager_register_and_enable_x(rcon_front_left2, EVT_RCON_FRONT_LEFT2, false);
 	event_manager_register_and_enable_x(rcon_front_right, EVT_RCON_FRONT_RIGHT, false);
 	event_manager_register_and_enable_x(rcon_front_right2, EVT_RCON_FRONT_RIGHT2, false);
 	event_manager_register_and_enable_x(rcon_left, EVT_RCON_LEFT, false);
 	event_manager_register_and_enable_x(rcon_right, EVT_RCON_RIGHT, false);
+*/
 
 	/* Over Current */
 	event_manager_register_and_enable_x(over_current_brush_left, EVT_OVER_CURRENT_BRUSH_LEFT, true);
@@ -1561,12 +1564,15 @@ void cm_unregister_events()
 	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
 
 	/* RCON */
+	event_manager_register_and_disable_x(EVT_RCON);
+/*
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT);
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT2);
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT);
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT2);
 	event_manager_register_and_disable_x(EVT_RCON_LEFT);
 	event_manager_register_and_disable_x(EVT_RCON_RIGHT);
+*/
 
 	/* Over Current */
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_LEFT);
@@ -1610,12 +1616,15 @@ void cm_set_event_manager_handler_state(bool state)
 	//event_manager_enable_handler(EVT_OBS_LEFT, state);
 	//event_manager_enable_handler(EVT_OBS_RIGHT, state);
 
+	event_manager_enable_handler(EVT_RCON, state);
+/*
 	event_manager_enable_handler(EVT_RCON_FRONT_LEFT, state);
 	event_manager_enable_handler(EVT_RCON_FRONT_LEFT2, state);
 	event_manager_enable_handler(EVT_RCON_FRONT_RIGHT, state);
 	event_manager_enable_handler(EVT_RCON_FRONT_RIGHT2, state);
 	event_manager_enable_handler(EVT_RCON_LEFT, state);
 	event_manager_enable_handler(EVT_RCON_RIGHT, state);
+*/
 }
 
 void cm_event_manager_turn(bool state)
@@ -1968,6 +1977,156 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 }
 
 /* RCON */
+void cm_handle_rcon(bool state_now, bool state_last)
+{
+	// lt_cnt means count for rcon left receive home top signal. rt_cnt, etc, can be understood like this.
+	static int8_t lt_cnt = 0, rt_cnt = 0, flt_cnt = 0, frt_cnt = 0, fl2t_cnt = 0, fr2t_cnt = 0;
+
+	/*
+	 * direction indicates which cell should robot mark for blocking.
+	 * -2: left
+	 * -1: front left
+	 *  0: front
+	 *  1: front right
+	 *  2: right
+	 */
+	int8_t direction = 0;
+	int8_t max_cnt = 0;
+
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (g_go_home) {
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		return;
+	}
+	//if (!(Get_Rcon_Status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+	// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
+	if (!(Get_Rcon_Status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+		// Skip other rcon signals.
+		return;
+
+	if (Get_Rcon_Status() & RconL_HomeT)
+		lt_cnt++;
+	if (Get_Rcon_Status() & RconR_HomeT)
+		rt_cnt++;
+	if (Get_Rcon_Status() & RconFL_HomeT)
+		flt_cnt++;
+	if (Get_Rcon_Status() & RconFR_HomeT)
+		frt_cnt++;
+	if (Get_Rcon_Status() & RconFL2_HomeT)
+		fl2t_cnt++;
+	if (Get_Rcon_Status() & RconFR2_HomeT)
+		fr2t_cnt++;
+
+	if (lt_cnt > 3)
+	{
+		max_cnt = lt_cnt;
+		direction = -2;
+	}
+	if (fl2t_cnt > 3 && fl2t_cnt > max_cnt)
+	{
+		max_cnt = fl2t_cnt;
+		direction = -1;
+	}
+	if (flt_cnt > 3 && flt_cnt > max_cnt)
+	{
+		max_cnt = flt_cnt;
+		direction = 0;
+	}
+	if (frt_cnt > 3 && frt_cnt > max_cnt)
+	{
+		max_cnt = frt_cnt;
+		direction = 0;
+	}
+	if (fr2t_cnt > 3 && fr2t_cnt > max_cnt)
+	{
+		max_cnt = fr2t_cnt;
+		direction = 1;
+	}
+	if (rt_cnt > 3 && rt_cnt > max_cnt)
+	{
+		direction = 2;
+	}
+
+	cm_block_charger_stub(direction);
+	lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
+	Reset_Rcon_Status();
+}
+
+void cm_block_charger_stub(int8_t direction)
+{
+	int32_t x, y, x2, y2;
+
+	ROS_WARN("%s %d: Robot meet charger stub, stop and mark the block.", __FUNCTION__, __LINE__);
+	Set_Wheel_Speed(0, 0);
+
+	switch (direction)
+	{
+		case -2:
+		{
+			cm_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
+			if (g_cm_move_type == CM_ROUNDING)
+				if (g_rounding_type == ROUNDING_LEFT)
+					g_rounding_turn_angle = 300;
+				//else
+				//	g_rounding_turn_angle = 1100;
+			break;
+		}
+		case -1:
+		{
+			cm_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
+			cm_count_normalize(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x2, &y2);
+			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
+			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
+			if (g_cm_move_type == CM_ROUNDING)
+				if (g_rounding_type == ROUNDING_LEFT)
+					g_rounding_turn_angle = 600;
+				//else
+				//	g_rounding_turn_angle = 950;
+			break;
+		}
+		case 0:
+		{
+			cm_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
+			if (g_cm_move_type == CM_ROUNDING)
+				g_rounding_turn_angle = 850;
+			break;
+		}
+		case 1:
+		{
+			cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
+			cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x2, &y2);
+			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
+			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
+			if (g_cm_move_type == CM_ROUNDING)
+				if (g_rounding_type == ROUNDING_RIGHT)
+					g_rounding_turn_angle = 600;
+				//else
+				//	g_rounding_turn_angle = 950;
+			break;
+		}
+		case 2:
+		{
+			cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
+			if (g_cm_move_type == CM_ROUNDING)
+				if (g_rounding_type == ROUNDING_RIGHT)
+					g_rounding_turn_angle = 300;
+				//else
+				//	g_rounding_turn_angle = 1100;
+			break;
+		}
+		default:
+			ROS_ERROR("%s %d: Receive wrong direction: %d.", direction);
+	}
+	cm_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
+	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
+	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+
+	g_rcon_triggered = true;
+	cm_set_home(map_get_x_count(), map_get_y_count());
+
+}
+/*
 void cm_handle_rcon_front_left(bool state_now, bool state_last)
 {
 	int32_t	x, y;
@@ -2134,6 +2293,7 @@ void cm_handle_rcon_right(bool state_now, bool state_last)
 		}
 	}
 }
+*/
 
 /* Over Current */
 void cm_handle_over_current_brush_left(bool state_now, bool state_last)

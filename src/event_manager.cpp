@@ -177,6 +177,11 @@ void *event_manager_thread(void *data)
 		}
 
 		/* RCON */
+		if (Get_Rcon_Status()) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_RCON)
+		}
+/*
 		if ((Get_Rcon_Status() & RconFL_HomeT) == RconFL_HomeT) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_FRONT_LEFT)
@@ -196,6 +201,7 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_RIGHT)
 		}
+*/
 
 		/* Over Current */
 		if (robot::instance()->getLbrushOc()) {
@@ -374,6 +380,10 @@ void *event_handler_thread(void *data) {
 		}
 
 		/* RCON */
+		if (status_now[EVT_RCON] == true) {
+			evt_handle_event_x(rcon, EVT_RCON)
+		}
+/*
 		if (status_now[EVT_RCON_FRONT_LEFT] == true) {
             evt_handle_event_x(rcon_front_left, EVT_RCON_FRONT_LEFT)
 		} else if (status_now[EVT_RCON_FRONT_LEFT2] == true) {
@@ -387,6 +397,7 @@ void *event_handler_thread(void *data) {
 		} else if (status_now[EVT_RCON_RIGHT] == true) {
             evt_handle_event_x(rcon_right, EVT_RCON_RIGHT)
 		}
+*/
 
 		/* Over Current */
 		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_LEFT, over_current_brush_left)
@@ -601,6 +612,11 @@ void em_default_handler_cliff_right(bool state_now, bool state_last)
 }
 
 /* RCON */
+void em_default_handler_rcon(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+/*
 void em_default_handler_rcon_front_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
@@ -630,6 +646,7 @@ void em_default_handler_rcon_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
+*/
 
 /* Over Current */
 void em_default_handler_over_current_brush_left(bool state_now, bool state_last)

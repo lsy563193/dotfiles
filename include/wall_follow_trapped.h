@@ -79,12 +79,15 @@ define_wft_handle_func(cliff_left)
 define_wft_handle_func(cliff_right)
 
 /* RCON */
+define_wft_handle_func(rcon)
+/*
 define_wft_handle_func(rcon_front_left)
 define_wft_handle_func(rcon_front_left2)
 define_wft_handle_func(rcon_front_right)
 define_wft_handle_func(rcon_front_right2)
 define_wft_handle_func(rcon_left)
 define_wft_handle_func(rcon_right)
+*/
 
 /* Over Current */
 define_wft_handle_func(over_current_brush_left)

@@ -1032,12 +1032,15 @@ void WFT_regist_events()
 	event_manager_register_and_enable_x(cliff_right, EVT_CLIFF_RIGHT, true);
 
 	/* RCON */
+	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+	/*
 	event_manager_register_and_enable_x(rcon_front_left, EVT_RCON_FRONT_LEFT, true);
 	event_manager_register_and_enable_x(rcon_front_left2, EVT_RCON_FRONT_LEFT2, true);
 	event_manager_register_and_enable_x(rcon_front_right, EVT_RCON_FRONT_RIGHT, true);
 	event_manager_register_and_enable_x(rcon_front_right2, EVT_RCON_FRONT_RIGHT2, true);
 	event_manager_register_and_enable_x(rcon_left, EVT_RCON_LEFT, true);
 	event_manager_register_and_enable_x(rcon_right, EVT_RCON_RIGHT, true);
+	*/
 
 	/* Over Current */
 	event_manager_register_and_enable_x(over_current_brush_left, EVT_OVER_CURRENT_BRUSH_LEFT, true);
@@ -1083,12 +1086,15 @@ void WFT_unregist_events()
 	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
 
 	/* RCON */
+	event_manager_register_and_disable_x(EVT_RCON);
+/*
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT);
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT2);
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT);
 	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT2);
 	event_manager_register_and_disable_x(EVT_RCON_LEFT);
 	event_manager_register_and_disable_x(EVT_RCON_RIGHT);
+*/
 
 	/* Key */
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
@@ -1363,6 +1369,30 @@ void WFT_handle_cliff_right(bool state_now, bool state_last)
 	g_rcon_triggered = true;		\
 	wft_turn_angle = x;
 
+void WFT_handle_rcon(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (Get_Rcon_Status() & RconL_HomeT) {
+		wft_hanle_rcons(300);
+	}
+	else if (Get_Rcon_Status() & RconFL2_HomeT) {
+		wft_hanle_rcons(600);
+	}
+	else if (Get_Rcon_Status() & RconFL_HomeT) {
+		wft_hanle_rcons(850);
+	}
+	else if (Get_Rcon_Status() & RconFR_HomeT) {
+		wft_hanle_rcons(850);
+	}
+	else if (Get_Rcon_Status() & RconFR2_HomeT) {
+		wft_hanle_rcons(950);
+	}
+	else if (Get_Rcon_Status() & RconR_HomeT) {
+		wft_hanle_rcons(1100);
+	}
+}
+/*
 void WFT_handle_rcon_front_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
@@ -1398,7 +1428,7 @@ void WFT_handle_rcon_right(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 	wft_hanle_rcons(1100);
 }
-
+*/
 #undef wft_hanle_rcons
 
 /* Over Current */

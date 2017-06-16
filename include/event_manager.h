@@ -98,12 +98,15 @@ typedef enum {
 	EVT_CLIFF_LEFT,
 	EVT_CLIFF_RIGHT,
 
+	EVT_RCON,
+/*
 	EVT_RCON_FRONT_LEFT,
 	EVT_RCON_FRONT_LEFT2,
 	EVT_RCON_FRONT_RIGHT,
 	EVT_RCON_FRONT_RIGHT2,
 	EVT_RCON_LEFT,
 	EVT_RCON_RIGHT,
+*/
 
 	EVT_OVER_CURRENT_BRUSH_LEFT,
 	EVT_OVER_CURRENT_BRUSH_MAIN,
@@ -211,12 +214,15 @@ define_em_handler_func(cliff_left)
 define_em_handler_func(cliff_right)
 
 /* RCON */
+define_em_handler_func(rcon)
+/*
 define_em_handler_func(rcon_front_left)
 define_em_handler_func(rcon_front_left2)
 define_em_handler_func(rcon_front_right)
 define_em_handler_func(rcon_front_right2)
 define_em_handler_func(rcon_left)
 define_em_handler_func(rcon_right)
+*/
 
 /* Over Current */
 define_em_handler_func(over_current_brush_left)

@@ -115,6 +115,7 @@ void cm_set_event_manager_handler_state(bool state);
 
 void cm_event_manager_turn(bool state);
 
+void cm_block_charger_stub(int8_t direction);
 #define define_cm_handle_func(name) \
 	void cm_handle_ ## name(bool state_now, bool state_last);
 
@@ -148,6 +149,8 @@ define_cm_handle_func(cliff_left)
 define_cm_handle_func(cliff_right)
 
 /* RCON */
+define_cm_handle_func(rcon)
+/*
 define_cm_handle_func(rcon_front_left)
 
 define_cm_handle_func(rcon_front_left2)
@@ -159,6 +162,7 @@ define_cm_handle_func(rcon_front_right2)
 define_cm_handle_func(rcon_left)
 
 define_cm_handle_func(rcon_right)
+*/
 
 /* Over Current */
 define_cm_handle_func(over_current_brush_left)
