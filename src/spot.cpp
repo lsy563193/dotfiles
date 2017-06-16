@@ -83,7 +83,7 @@ static uint8_t find_nearest_point(Point32_t ref_point,std::list<Point32_t> *poin
 void spot_with_cell(SpotType st,float spot_diameter)
 {
 	Reset_Stop_Event_Status();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	std::list<Point32_t> target;
 	uint8_t spot_stuck = 0;
 	g_remote_spot = false;
@@ -695,22 +695,22 @@ int8_t spot_handle_exception(SpotType st)
 		Reset_Stop_Event_Status();
 		return 1;
 	}
-    uint8_t octype = Check_Motor_Current();
+    uint8_t octype = check_motor_current();
 	if (octype) {
-		if(Self_Check(octype) && (st == NORMAL_SPOT)){
+		if(self_check(octype) && (st == NORMAL_SPOT)){
 			return 1;
 		}
 		return 1;
 	}
 	/*--------- cliff detect event--------------*/
-	if (Get_Cliff_Trig() == (Status_Cliff_All)) {
+	if (get_cliff_trig() == (Status_Cliff_All)) {
 		quick_back(20,20);//1 time
 		Stop_Brifly();
-		if(Get_Cliff_Trig() == (Status_Cliff_All)){
+		if(get_cliff_trig() == (Status_Cliff_All)){
 			quick_back(20,20);//2 times
 			Stop_Brifly();
 		}
-		if(Get_Cliff_Trig() == Status_Cliff_All){
+		if(get_cliff_trig() == Status_Cliff_All){
 			quick_back(20,20);//3 times
 			Stop_Brifly();
 			ROS_INFO("%s %d, Cliff trigger three times ,robot lift up ",__FUNCTION__,__LINE__);
@@ -727,7 +727,7 @@ int8_t spot_handle_exception(SpotType st)
 			if(Remote_Key(Remote_All)){
 				if(Get_Rcon_Remote() == Remote_Home){
 					Set_MoveWithRemote();
-					SetHomeRemote();
+					set_home_remote();
 				}
 				Reset_Rcon_Remote();
 				return 1;
@@ -737,7 +737,7 @@ int8_t spot_handle_exception(SpotType st)
 			if(Remote_Key(Remote_Home)){
 				Reset_Rcon_Remote();
 				Set_MoveWithRemote();
-				SetHomeRemote();
+				set_home_remote();
 				return 1;
 			}
 			else if(Remote_Key(Remote_Left | Remote_Right | Remote_Forward)){
@@ -775,8 +775,8 @@ uint8_t Random_Dirt_Event(void)
 #endif
 
 	Move_Forward(0, 0);
-	Reset_Wheel_Step();
-	Reset_Wall_Step();
+	reset_wheel_step();
+	reset_wall_step();
 	usleep(10000);
 
 	Reset_Rcon_Remote();
@@ -820,7 +820,7 @@ uint8_t Random_Dirt_Event(void)
 			return 0;
 		}
 
-		if (Check_Motor_Current()) {
+		if (check_motor_current()) {
 			Motor_OC_Counter++;
 			if (Motor_OC_Counter > 50) {
 				Motor_OC_Counter = 0;
@@ -841,33 +841,33 @@ uint8_t Random_Dirt_Event(void)
 
 		switch (Move_Style) {
 			case First_Round:
-				if (Get_LeftWheel_Step() > 6000) {
+				if (get_left_wheel_step() > 6000) {
 					Move_Forward(0, 0);
 					Reset_LeftWheel_Step();
 					Move_Style = SPIRAL_RIGHT_OUT;
 				}
 				Set_Dir_Right();
-				Set_Wheel_Speed(25, 10);
+				set_wheel_speed(25, 10);
 
-				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
 
-					if (Get_Bumper_Status()) {
+					if (get_bumper_status()) {
 						Random_Back();
-					} else if (Get_Cliff_Trig()) {
+					} else if (get_cliff_trig()) {
 						Move_Back();
 					}
 					Stop_Brifly();
-					Turn_Left(Turn_Speed, 2500);
+					turn_left(Turn_Speed, 2500);
 					Move_Forward(10, 10);
 					Move_Style = SPIRAL_LEFT_OUT;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
 				break;
 
 			case SPIRAL_RIGHT_OUT:
-				if (Get_LeftWheel_Step() > (Radius * 3)) {
+				if (get_left_wheel_step() > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 100) {
 						Radius += 2;
@@ -878,31 +878,31 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = SPIRAL_RIGHT_IN;
 					}
 				}
-				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
-					if (Get_Bumper_Status()) {
+					if (get_bumper_status()) {
 						Random_Back();
-					} else if (Get_Cliff_Trig()) {
+					} else if (get_cliff_trig()) {
 						Move_Back();
 					}
 					Stop_Brifly();
-					Turn_Left(Turn_Speed, 2500);
 					Move_Style = SPIRAL_LEFT_OUT;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					turn_left(Turn_Speed, 2500);
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
-				Set_LeftWheel_Speed(SPOT_MAX_SPEED);
-				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				set_dir_forward();
+				set_left_wheel_speed(SPOT_MAX_SPEED);
+				set_right_wheel_speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 
 				break;
 
 			case SPIRAL_RIGHT_IN:
-				if (Get_LeftWheel_Step() > (Radius * 3)) {
+				if (get_left_wheel_step() > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -913,31 +913,31 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
-					if (Get_Bumper_Status()) {
+					if (get_bumper_status()) {
 						Random_Back();
-					} else if (Get_Cliff_Trig()) {
+					} else if (get_cliff_trig()) {
 						Move_Back();
 					}
 					Stop_Brifly();
-					Turn_Left(Turn_Speed, 2500);
 					Move_Style = SPIRAL_LEFT_IN;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					turn_left(Turn_Speed, 2500);
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
-				Set_LeftWheel_Speed(SPOT_MAX_SPEED);
-				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				set_dir_forward();
+				set_left_wheel_speed(SPOT_MAX_SPEED);
+				set_right_wheel_speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 
 				break;
 
 			case SPIRAL_LEFT_OUT:
-				if (Get_RightWheel_Step() > (Radius * 3)) {
+				if (get_right_wheel_step() > (Radius * 3)) {
 					Reset_RightWheel_Step();
 					if (Radius < 100) {
 						Radius += 2;
@@ -948,31 +948,31 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = SPIRAL_LEFT_IN;
 					}
 				}
-				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
-					if (Get_Bumper_Status()) {
+					if (get_bumper_status()) {
 						Random_Back();
-					} else if (Get_Cliff_Trig()) {
+					} else if (get_cliff_trig()) {
 						Move_Back();
 					}
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = SPIRAL_RIGHT_OUT;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
-				Set_RightWheel_Speed(SPOT_MAX_SPEED);
-				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				set_dir_forward();
+				set_right_wheel_speed(SPOT_MAX_SPEED);
+				set_left_wheel_speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 
 				break;
 
 			case SPIRAL_LEFT_IN:
-				if (Get_RightWheel_Step() > (Radius * 2)) {
+				if (get_right_wheel_step() > (Radius * 2)) {
 					Reset_RightWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -983,26 +983,26 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
-					if (Get_Bumper_Status()) {
+					if (get_bumper_status()) {
 						Random_Back();
-					} else if (Get_Cliff_Trig()) {
+					} else if (get_cliff_trig()) {
 						Move_Back();
 					}
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = SPIRAL_RIGHT_IN;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
-				Set_RightWheel_Speed(SPOT_MAX_SPEED);
-				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
+				set_dir_forward();
+				set_right_wheel_speed(SPOT_MAX_SPEED);
+				set_left_wheel_speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 
 				break;
 

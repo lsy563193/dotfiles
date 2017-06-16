@@ -25,6 +25,9 @@ uint8_t Temp_Mode=0;
 time_t charger_signal_start_time;
 uint16_t charger_signal_delay = 20;
 boost::mutex charger_signal_delay_mutex;
+time_t battery_low_start_time;
+uint16_t battery_low_delay = 10;
+boost::mutex battery_low_delay_mutex;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -53,12 +56,12 @@ void User_Interface(void)
 	Reset_Rcon_Remote();
 	Set_Plan_Status(0);
 	Reset_Stop_Event_Status();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	Set_VacMode(Vac_Save);
 
 	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
 	// Check the battery to warn the user.
-	if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
+	if(!check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		Battery_Ready_to_clean = false;
@@ -68,12 +71,17 @@ void User_Interface(void)
 	while(ros::ok())
 	{
 		usleep(10000);
-		// Check the battery to warn the user.
-		if (Check_Bat_Stop())
-		{
-			battery_too_low_ = true;
-		}
-		if(!Check_Bat_Ready_To_Clean() && !robot::instance()->isManualPaused())
+
+		charger_signal_delay_mutex.lock();
+		if (charger_signal_delay > 0)
+			charger_signal_delay--;
+		charger_signal_delay_mutex.unlock();
+
+		battery_low_delay_mutex.lock();
+		if (battery_low_delay > 0)
+			battery_low_delay--;
+		battery_low_delay_mutex.unlock();
+		if(!check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
 		{
 			Battery_Ready_to_clean = false;
 		}
@@ -91,15 +99,14 @@ void User_Interface(void)
 			if(LedBreathCount >=100)
 				breath = 1;
 		}
-		//if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
-		if(time(NULL) - start_time > 30)
+		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
 			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
 			Set_Clean_Mode(Clean_Mode_Sleep);
 			break;
 		}
 
-		if(Get_Error_Code())//min_distant_segment Error = red led full
+		if(get_error_code())//min_distant_segment Error = red led full
 		{
 			Set_LED(0,100);
 		}
@@ -115,22 +122,22 @@ void User_Interface(void)
 #endif
 
 		// Alarm for error.
-		if (Get_Error_Code())
+		if (get_error_code())
 			if ((Error_Alarm_Counter == 2 && (time(NULL) - start_time) > 10) || (Error_Alarm_Counter == 1 && (time(NULL) - start_time) > 20))
 			{
 				Error_Alarm_Counter--;
-				Alarm_Error();
+				alarm_error();
 			}
 
 		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
-		if (Get_Error_Code() != Error_Code_None)
+		if (get_error_code() != Error_Code_None)
 		{
 			if (Remote_Key(Remote_All & ~Remote_Clean))
 			{
 				beep_for_command(false);
 				Reset_Rcon_Remote();
 				Error_Alarm_Counter = 0;
-				Alarm_Error();
+				alarm_error();
 			}
 			else if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
 			{
@@ -144,14 +151,14 @@ void User_Interface(void)
 				// Key relaesed, then the touch status and stop event status should be cleared.
 				Reset_Stop_Event_Status();
 				wav_play(WAV_CLEAR_ERROR);
-				Set_Error_Code(Error_Code_None);
+				set_error_code(Error_Code_None);
 				Reset_Rcon_Remote();
 			}
 
 			if (Get_Plan_Status() == 3)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				Alarm_Error();
+				alarm_error();
 				wav_play(WAV_CANCEL_APPOINTMENT);
 				Set_Plan_Status(0);
 			}
@@ -162,7 +169,7 @@ void User_Interface(void)
 		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
 		if (robot::instance()->isManualPaused())
 		{
-			if (Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			if (get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
 				ROS_WARN("Robot lifted up during manual pause, reset manual pause status.");
 				wav_play(WAV_ERROR_LIFT_UP);
@@ -176,7 +183,7 @@ void User_Interface(void)
 			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 			if (is_direct_charge())
 				Temp_Mode = Clean_Mode_Charging;
-			else if(Turn_Connect())
+			else if(turn_connect())
 				Temp_Mode = Clean_Mode_Charging;
 			Disable_Motors();
 		}
@@ -197,21 +204,13 @@ void User_Interface(void)
 			Temp_Mode=Clean_Mode_Spot;
 		}
 
-		/* -----------------------------Check if near charger stub ---------------------------*/
-		if (!g_rcon_triggered)
-		{
-			boost::mutex::scoped_lock(charger_signal_delay_mutex);
-			if (charger_signal_delay > 0)
-				charger_signal_delay--;
-		}
-
 		/* -----------------------------Check if Home event ----------------------------------*/
 		if(Remote_Key(Remote_Home)) //                                    Check Key Home
 		{
 			Temp_Mode=Clean_Mode_GoHome;
 		//	Reset_MoveWithRemote();
 			Set_MoveWithRemote();
-			SetHomeRemote();
+			set_home_remote();
 			Reset_Rcon_Remote();
 		}
 
@@ -325,9 +324,9 @@ void User_Interface(void)
 			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
 				ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
-				if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
-//					Set_Error_Code(Error_Code_Cliff);
+//					set_error_code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
 					ROS_WARN("%s %d: Robot lift up.", __FUNCTION__, __LINE__);
 					wav_play(WAV_ERROR_LIFT_UP);
@@ -361,21 +360,16 @@ void User_Interface(void)
 			Temp_Mode=0;
 		}
 
-		//Error_Show_Counter++;
-		//if(Error_Show_Counter>500)
-		//{
-		//	Test_Mode_Flag=0;
-		//	Error_Show_Counter=0;
-		//	Sound_Out_Error(Get_Error_Code());
-		//}
 	}
 
-	if (Get_Clean_Mode() != Clean_Mode_Sleep)
+	if (get_clean_mode() != Clean_Mode_Sleep)
 	{
 		// Any manual operation will reset the error status.
 		ROS_INFO("Reset the error code,");
-		Set_Error_Code(Error_Code_None);
+		set_error_code(Error_Code_None);
 	}
+
+	user_interface_unregister_events();
 }
 
 void user_interface_register_events(void)
@@ -389,30 +383,60 @@ void user_interface_register_events(void)
 
 	/* Rcon */
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+	/* Battery */
+	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+}
+
+void user_interface_unregister_events(void)
+{
+#define event_manager_register_and_disable_x(x) \
+	event_manager_register_handler(x, NULL); \
+	event_manager_enable_handler(x, false);
+
+	/* Rcon */
+	event_manager_register_and_disable_x(EVT_RCON);
+	/* Battery */
+	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)
 {
-	/* -----------------------------Check if detects home signal -------------------------*/
 	if (robot::instance()->isManualPaused())
 	{
-		Reset_Rcon_Status();
+		reset_rcon_status();
+		ROS_DEBUG("%s %d: User_Interface detects charger signal, but ignore for manual pause.", __FUNCTION__, __LINE__);
 		return;
 	}
 
+	ROS_DEBUG("%s %d: User_Interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
 	boost::mutex::scoped_lock(charger_signal_delay_mutex);
 	if (charger_signal_delay == 0)
 		charger_signal_start_time = time(NULL);
 
-	if (time(NULL) - charger_signal_start_time > 10)// 3 mins
+	if (time(NULL) - charger_signal_start_time > 180)// 3 mins
 	{
 		Temp_Mode = Clean_Mode_GoHome;
-		Reset_Rcon_Status();
+		reset_rcon_status();
 		return;
 	}
 
 	charger_signal_delay = 20;
-	ROS_DEBUG("%s %d: User_Interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
-	Reset_Rcon_Status();
+	reset_rcon_status();
 
+}
+
+void user_interface_handle_battery_low(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: User_Interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, robot::instance()->getBatteryVoltage(), (int)(time(NULL) - battery_low_start_time));
+	boost::mutex::scoped_lock(battery_low_delay_mutex);
+	if (battery_low_delay == 0)
+		battery_low_start_time = time(NULL);
+
+	if (time(NULL) - battery_low_start_time > 5)// 5 seconds
+	{
+		Temp_Mode = Clean_Mode_Sleep;
+		return;
+	}
+
+	battery_low_delay = 10;
 }

@@ -94,13 +94,13 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 
 //	Reset_Bumper_Error();
 
-	Work_Motor_Configure();
+	work_motor_configure();
 	Set_Vac_Speed();
-	Set_RightWheel_Speed(15);
-	Reset_Wall_Step();
+	set_right_wheel_speed(15);
+	reset_wall_step();
 	Move_Forward(7,7);
-  	Reset_Rcon_Status();
-  	Reset_Wheel_Step();
+	reset_rcon_status();
+	reset_wheel_step();
   	Set_Mobility_Step(1000);
 	Reset_Average_Counter();
 	Reset_WallAccelerate();
@@ -111,7 +111,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
   while(ros::ok())
   {
 	usleep(1000);
-    if(Get_LeftWheel_Step()<500)
+    if(get_left_wheel_step()<500)
     {
       Mobility_Temp_Error=0;
       Temp_Mobility_Distance = Get_Move_Distance();
@@ -137,15 +137,15 @@ uint8_t Wall_Follow_Short(uint32_t dis)
       }
     }
 	  /*------------------------------------------------------Check Current-----------------------*/
-	   Motor_Check_Code=Check_Motor_Current();
+	   Motor_Check_Code= check_motor_current();
 		if(Motor_Check_Code)
 		{
-		  if(Self_Check(Motor_Check_Code))
+		  if(self_check(Motor_Check_Code))
 			{
         Set_Clean_Mode(Clean_Mode_Userinterface);
 			  return 1;
 			}
-      Reset_TempPWM();
+			reset_temp_pwm();
       break;
 		}
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
@@ -192,7 +192,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		Temp_Rcon_Status = Get_Rcon_Status();
     	if(Temp_Rcon_Status)
     	{
-      		Reset_Rcon_Status();
+				reset_rcon_status();
       		if(Temp_Rcon_Status&0X0FFF)
       		{
         		if(Is_WorkFinish(Get_Room_Mode()))
@@ -221,7 +221,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				}
 				//Stop_Brifly();
 				Move_Forward(10,10);
-				Reset_Rcon_Status();
+						reset_rcon_status();
 				Wall_Straight_Distance=80;
 				Reset_WallAccelerate();
 			}
@@ -237,7 +237,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 #endif
 
 		/*---------------------------------------------------Bumper Event-----------------------*/
-    if(Get_Bumper_Status()&RightBumperTrig)
+    if(get_bumper_status()&RightBumperTrig)
     {
 		Stop_Brifly();
 		Wall_Move_Back();
@@ -264,16 +264,16 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			Left_Wall_Buffer[Temp_Counter]=0;
 		}	
       	Stop_Brifly();
-      	Reset_Wheel_Step();
+			reset_wheel_step();
 		SWall_B_Counter+=1;
     }
-	if(Get_Bumper_Status()&LeftBumperTrig)
-    {	
-    	Set_Wheel_Speed(0,0);
-     	Reset_TempPWM();
+	if(get_bumper_status()&LeftBumperTrig)
+    {
+			set_wheel_speed(0, 0);
+			reset_temp_pwm();
       	usleep(30000);
 			
-//      if(Get_Wall_ADC(0)>200)
+//      if(get_wall_adc(0)>200)
 //			{
 //				Wall_Distance-=100;
 //			}
@@ -283,7 +283,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			
 		if(Wall_Distance<Wall_Low_Limit)Wall_Distance=Wall_Low_Limit;	
 			
-		if(Get_Bumper_Status()&RightBumperTrig)
+		if(get_bumper_status()&RightBumperTrig)
 		{
 			Wall_Move_Back();
 			if(Is_Bumper_Jamed())break;;
@@ -321,28 +321,28 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			Left_Wall_Buffer[Temp_Counter]=0;
 		}	
       	//Stop_Brifly();
-      	Reset_Wheel_Step();
+		reset_wheel_step();
 		SWall_B_Counter+=1;
     }
     
 
 		/*------------------------------------------------------Cliff Event-----------------------*/
-    if(Get_Cliff_Trig())
+    if(get_cliff_trig())
     {
-		  Set_Wheel_Speed(0,0);
-      Set_Dir_Backward();
+			set_wheel_speed(0, 0);
+			set_dir_backward();
 	    usleep(15000);
-//			if(Get_Cliff_Trig())
+//			if(get_cliff_trig())
 //			{
 			  Cliff_Move_Back();
-				if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				if(get_cliff_trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 					Set_Clean_Mode(Clean_Mode_Userinterface);
 				  break;
 				}
-				if(Get_Cliff_Trig())
+				if(get_cliff_trig())
 			  {
-				  if(Cliff_Escape())
+				  if(cliff_escape())
 					{
 					  Set_Clean_Mode(Clean_Mode_Userinterface);
             return 1;
@@ -352,7 +352,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				Turn_Right(Turn_Speed-10,900);
 				Stop_Brifly();
 				Reset_WallAccelerate();
-				Reset_Wheel_Step();
+			reset_wheel_step();
 //				break;
 //			}
     }
@@ -367,7 +367,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		{
 			Left_Wall_Buffer[2]=Left_Wall_Buffer[1];
 			Left_Wall_Buffer[1]=Left_Wall_Buffer[0];
-			Left_Wall_Buffer[0]=Get_Wall_ADC(0);
+			Left_Wall_Buffer[0]= get_wall_adc(0);
 			if(Left_Wall_Buffer[0]<100)
 			{
 			  if((Left_Wall_Buffer[1]-Left_Wall_Buffer[0])>(Wall_Distance/25))
@@ -376,7 +376,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 					{
 					  if(Get_WallAccelerate()>300)
 						{
-						  if((Get_RightWheel_Speed()-Get_LeftWheel_Speed())>=-3)
+						  if((get_right_wheel_speed()- get_left_wheel_speed())>=-3)
 							{
 								Move_Forward(18,16);
 								usleep(100000);
@@ -392,7 +392,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		/*------------------------------------------------------Short Distance Move-----------------------*/
 		if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance)
 		{
-      		if(Get_LeftWheel_Step()<500)
+      		if(get_left_wheel_step()<500)
       		{
         		if(Get_WallAccelerate()<100)
   				{
@@ -411,9 +411,9 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		else
 		{
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
-	    	if(Get_FrontOBS()<Get_FrontOBST_Value())
+	    	if(get_front_obs()<Get_FrontOBST_Value())
 	    	{
-					Proportion = Get_Wall_ADC(0);
+					Proportion = get_wall_adc(0);
 					
 					Proportion = Proportion*100/Wall_Distance;
 					
@@ -450,16 +450,16 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 					
 					Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
 
-				if(Get_RightWall_Step()>Get_LeftWall_Step())
+				if(get_right_wall_step()> get_left_wall_step())
 				{
-					R=Get_RightWall_Step()-Get_LeftWall_Step();
+					R= get_right_wall_step()- get_left_wall_step();
 					if(R>7500)//turn over 3600 degree
 					{
 						break;
 					}
 				}
 	      
-	      		if((Get_RightWall_Step()>Follow_Distance)||(Get_LeftWall_Step()>Follow_Distance))//about 5 Meter
+	      		if((get_right_wall_step()>Follow_Distance)||(get_left_wall_step()>Follow_Distance))//about 5 Meter
 	      		{
           			break; 
 	      		}
@@ -472,9 +472,9 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 	    	else
 	    	{
 				Stop_Brifly();
-				if(Get_LeftWheel_Step()<12500)
+				if(get_left_wheel_step()<12500)
 				{
-					if(Get_FrontOBS()>Get_FrontOBST_Value())
+					if(get_front_obs()>Get_FrontOBST_Value())
 					{
 						if(Get_WallAccelerate()<2000)
 						{
@@ -494,7 +494,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 					Turn_Right(Turn_Speed-5,900);
 					Move_Forward(15,15);
 				}
-				Reset_Wheel_Step();
+					reset_wheel_step();
 				Wall_Distance+=200;
 				if(Wall_Distance>Wall_High_Limit)Wall_Distance=Wall_High_Limit;
 			}
@@ -503,7 +503,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 	Set_Direction_Flag(Direction_Flag_Right);
 	//Stop_Brifly();
 	//Wheel_Stop();
-	Set_Wheel_Speed(0,0);
+	set_wheel_speed(0, 0);
 	usleep(20000);
 	return 0;
 }

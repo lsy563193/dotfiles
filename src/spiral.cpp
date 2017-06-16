@@ -33,12 +33,12 @@ uint8_t Spiral(void)
 	ROS_DEBUG("In Spiral ");	
 	Max_Radius = 180 + Get_Random_Factor();
 
-	Reset_Wheel_Step();
+	reset_wheel_step();
 	Move_Forward(38,0);
 	while(ros::ok())
 	{
 
-		Motor_Check_Code=Check_Motor_Current();
+		Motor_Check_Code= check_motor_current();
 		if(Motor_Check_Code)
 		{
 			return 0;	  
@@ -72,7 +72,7 @@ uint8_t Spiral(void)
 			}
 			if(Remote_Key(Remote_Left))
 			{
-				Turn_Left(Turn_Speed,700);
+				turn_left(Turn_Speed, 700);
 				Move_Forward(30,30);
 				Set_Clean_Mode(Clean_Mode_RandomMode);
 				Reset_Rcon_Remote();
@@ -90,7 +90,7 @@ uint8_t Spiral(void)
 			{
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				Reset_Rcon_Remote();
-				SetHomeRemote();
+				set_home_remote();
 				return 1;
 			}
 			/*
@@ -107,18 +107,18 @@ uint8_t Spiral(void)
 		Right_Wheel_Speed = (42*Radius)/(Radius+100);
 		if(Right_Wheel_Speed>42)Right_Wheel_Speed=42;
 		if(Right_Wheel_Speed<0)Right_Wheel_Speed=0;
-		
-		Set_Wheel_Speed(42,Right_Wheel_Speed);
-//		Move_Forward(42,Right_Wheel_Speed);
+
+		set_wheel_speed(42, Right_Wheel_Speed);
+//		Move_Forward(42,g_right_wheel_speed);
 		if(First_Round_Flag)
 		{
-			if(Get_LeftWheel_Step()>3000)First_Round_Flag=0;
+			if(get_left_wheel_step()>3000)First_Round_Flag=0;
 		}
 		else
 		{
-			if(Get_LeftWheel_Step()>(Radius))
+			if(get_left_wheel_step()>(Radius))
 			{
-				Reset_Wheel_Step();
+				reset_wheel_step();
 				if(Radius<100)
 				{
 					Radius+=1;
@@ -135,7 +135,7 @@ uint8_t Spiral(void)
 			return 0;
 		}
 		
-		if(Get_Bumper_Status()||Get_Cliff_Trig()||Get_OBS_Status())
+		if(get_bumper_status()|| get_cliff_trig()||Get_OBS_Status())
 		{ 
 			return 0;
 		}

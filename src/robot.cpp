@@ -135,7 +135,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	}
 
 	charge_stub_ = msg->c_stub;//charge stub signal
-	Rcon_Status |= charge_stub_;
+	g_rcon_status |= charge_stub_;
 	//ROS_INFO("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
 
 	key = msg->key;
@@ -238,7 +238,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
 		//ROS_INFO("SLAM = 1");
-		if(MotionManage::s_slam->isMapReady() && Get_Error_Code() != Error_Code_Slam)
+		if(MotionManage::s_slam->isMapReady() && get_error_code() != Error_Code_Slam)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -255,7 +255,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 0)
 				{
-					Set_Error_Code(Error_Code_Slam);
+					set_error_code(Error_Code_Slam);
 					slam_error_count = 0;
 				}
 				return;
@@ -279,7 +279,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam->isMapReady() && Get_Error_Code() != Error_Code_Slam)
+		if(MotionManage::s_slam->isMapReady() && get_error_code() != Error_Code_Slam)
 		{
 			//yaw_ = tf::getYaw(msg->pose.pose.orientation);
 			//wf_position_x_ = odom_pose_x_;
@@ -311,7 +311,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 0)
 				{
-					Set_Error_Code(Error_Code_Slam);
+					set_error_code(Error_Code_Slam);
 					slam_error_count = 0;
 				}
 				return;

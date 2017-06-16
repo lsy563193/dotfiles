@@ -35,9 +35,9 @@ void Remote_Mode(void)
   //Display_Clean_Status(Display_Remote);
 
 	Set_LED(100,0);
-	Reset_Wheel_Step();
+	reset_wheel_step();
 	Reset_Stop_Event_Status();
-	Work_Motor_Configure();
+	work_motor_configure();
 //    Set_VacMode(Vac_Normal);
 	while(ros::ok())
 	{
@@ -68,11 +68,11 @@ void Remote_Mode(void)
 			}
 			else
 			{
-				Moving_Speed=(Get_RightWheel_Step()/80)+25;
+				Moving_Speed=(get_right_wheel_step()/80)+25;
 				if(Moving_Speed<25)Moving_Speed=25;
 				if(Moving_Speed>42)Moving_Speed=42;
 				Move_Forward(Moving_Speed,Moving_Speed);
-				//Work_Motor_Configure();
+				//work_motor_configure();
 				OBS_Stop=0;
 			}
 			No_Command_Counter=0;
@@ -80,7 +80,7 @@ void Remote_Mode(void)
 		else
 		{
 			Stop_Brifly();
-			//Work_Motor_Configure();
+			//work_motor_configure();
 		}
 
 
@@ -89,24 +89,24 @@ void Remote_Mode(void)
 		{
 
 			Reset_Rcon_Remote();
-			Turn_Left(Turn_Speed,320);
+			turn_left(Turn_Speed, 320);
 			//Set_SideBrush_PWM(30,30);
 			//Set_MainBrush_PWM(30);
 			No_Command_Counter=0;
-			Reset_Wheel_Step();
+			reset_wheel_step();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Right))
 		{
 	
-			//Work_Motor_Configure();
+			//work_motor_configure();
 			Reset_Rcon_Remote();
 			Turn_Right(Turn_Speed,320);
 			//Set_SideBrush_PWM(30,30);
 			//Set_MainBrush_PWM(30);
 			//Set_BLDC_Speed(30);
 			No_Command_Counter=0;
-			Reset_Wheel_Step();
+			reset_wheel_step();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Max))
@@ -120,7 +120,7 @@ void Remote_Mode(void)
 			No_Command_Counter=0;
 			//Forward_Flag=0;
 			Reset_Rcon_Remote();
-			Reset_Wheel_Step();
+			reset_wheel_step();
 		}
 
 		No_Command_Counter++;
@@ -169,7 +169,7 @@ void Remote_Mode(void)
 		{
 			Disable_Motors();
 			Set_Clean_Mode(Clean_Mode_GoHome);
-			SetHomeRemote();
+			set_home_remote();
 			Reset_Rcon_Remote();
 			return;
 		}
@@ -200,10 +200,10 @@ void Remote_Mode(void)
 			break;
 		}
 		/*-------------------------------------------Bumper  and cliff Event-----------------------*/
-		if(Get_Cliff_Trig())
+		if(get_cliff_trig())
 		{
 			Move_Back();
-			if(Get_Cliff_Trig()){
+			if(get_cliff_trig()){
 				Move_Back();
 			}
 			Stop_Brifly();
@@ -212,20 +212,20 @@ void Remote_Mode(void)
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			break;
 		}
-		if(Get_Bumper_Status())
+		if(get_bumper_status())
 		{
 			Random_Back();
 			Is_Bumper_Jamed();
 			break;
 		}
-		if(Get_Cliff_Trig() == (Status_Cliff_All)){
+		if(get_cliff_trig() == (Status_Cliff_All)){
 			quick_back(20,20);
 			Stop_Brifly();
-			if(Get_Cliff_Trig() == (Status_Cliff_All)){
+			if(get_cliff_trig() == (Status_Cliff_All)){
 				quick_back(20,20);
 				Stop_Brifly();
 			}
-			if(Get_Cliff_Trig() == Status_Cliff_All){
+			if(get_cliff_trig() == Status_Cliff_All){
 				quick_back(20,20);
 				Stop_Brifly();
 				Disable_Motors();
@@ -237,9 +237,9 @@ void Remote_Mode(void)
 		}
 		/*------------------------------------------------check motor over current event ---------*/
 		uint8_t octype =0;
-		octype = Check_Motor_Current();
+		octype = check_motor_current();
 		if(octype){
-			if(Self_Check(octype)){
+			if(self_check(octype)){
 				Set_Clean_Mode(Clean_Mode_Userinterface);
 				break;
 			}

@@ -162,14 +162,14 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, ui
 	auto distance = TwoPointsDistance(map_get_x_count(), map_get_y_count(), Target.X, Target.Y);
 	auto obstcal_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
-	if ( Get_OBS_Status() || Is_OBS_Near() || (distance < SLOW_DOWN_DISTANCE) || slow_down || obstcal_detected)
+	if ( Get_OBS_Status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || slow_down || obstcal_detected)
 	{
 		integrated_ = 0;
 		rotate_angle = 0;
 
 		//if ( Get_OBS_Status() )
 		//	base_speed_ -= 5;
-		//else if ( Is_OBS_Near() )
+		//else if ( is_obs_near() )
 		//	base_speed_ -= 4;
 		//else
 		//	base_speed_ -= 3;
@@ -271,7 +271,7 @@ void cm_update_map_obs()
 	if (Get_OBS_Status() & Status_Left_OBS) {
 		int32_t i,j;
 		cm_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC(0) > 200) {
+		if (get_wall_adc(0) > 200) {
 			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
 				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
 			}
@@ -281,7 +281,7 @@ void cm_update_map_obs()
 	if (Get_OBS_Status() & Status_Right_OBS) {
 		int32_t i,j;
 		cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC(1) > 200) {
+		if (get_wall_adc(1) > 200) {
 			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
 				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
 			}
@@ -317,7 +317,7 @@ void cm_update_map_obs()
 
 void cm_update_map_bumper()
 {
-	auto bumper = Get_Bumper_Status();
+	auto bumper = get_bumper_status();
 	std::vector<Cell_t> d_cells;
 
 	if ((bumper & RightBumperTrig) && (bumper & LeftBumperTrig))
@@ -343,16 +343,16 @@ void cm_update_map_bumper()
 void cm_update_map_cliff()
 {
 	std::vector<Cell_t> d_cells;
-	if (Get_Cliff_Trig() & Status_Cliff_Front){
+	if (get_cliff_trig() & Status_Cliff_Front){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2, 0});
 		d_cells.push_back({2, 1});
 	}
-	if (Get_Cliff_Trig() & Status_Cliff_Left){
+	if (get_cliff_trig() & Status_Cliff_Left){
 		d_cells.push_back({2, 1});
 		d_cells.push_back({2, 2});
 	}
-	if (Get_Cliff_Trig() & Status_Cliff_Right){
+	if (get_cliff_trig() & Status_Cliff_Right){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2,-2});
 	}
@@ -422,12 +422,12 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 		}
 		uint8_t speed_up;
 		regulator.adjustSpeed(diff, speed_up);
-		Set_Wheel_Speed(speed_up, speed_up);
+		set_wheel_speed(speed_up, speed_up);
 
 	}
 
 	cm_event_manager_turn(false);
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	cm_update_position(true);
 }
 
@@ -454,13 +454,13 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 
 	cm_set_event_manager_handler_state(true);
 
-	Reset_Rcon_Status();
+	reset_rcon_status();
 
 	LinearSpeedRegulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
 #ifdef WALL_DYNAMIC
-		Wall_Dynamic_Base(50);
+		wall_dynamic_base(50);
 #endif
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
@@ -478,7 +478,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 		}
 
 		if ( g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered ) {
-			Set_Wheel_Speed(0, 0);
+			set_wheel_speed(0, 0);
 			cm_update_map();
 			g_should_follow_wall = 1;
 
@@ -658,15 +658,15 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 		return rounding_type;
 	}
 
-	if (Get_Cliff_Trig()) {
+	if (get_cliff_trig()) {
 		ROS_INFO("%s %d, cliff triggered.", __FUNCTION__, __LINE__);
-	} else if (Get_Bumper_Status()) {
+	} else if (get_bumper_status()) {
 		ROS_INFO("%s %d, bumper event.", __FUNCTION__, __LINE__);
 	} else if (Get_OBS_Status()) {
 		ROS_INFO("%s %d, OBS detected.", __FUNCTION__, __LINE__);
-	} else if (Get_FrontOBS() > Get_FrontOBST_Value()) {
+	} else if (get_front_obs() > Get_FrontOBST_Value()) {
 		ROS_INFO("%s %d, front OBS detected.", __FUNCTION__, __LINE__);
-	} else if (Get_Wall_ADC(0) > 170) {
+	} else if (get_wall_adc(0) > 170) {
 		ROS_INFO("%s %d, wall sensor exceed 170.", __FUNCTION__, __LINE__);
 	}
 	/*					South (Xmin)
@@ -780,14 +780,14 @@ void cm_rounding_turn(uint16_t speed, int16_t angle)
 			speed_ = std::min((uint16_t)10, speed);
 		}
 		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed_);
-		Set_Wheel_Speed(speed_, speed_);
+		set_wheel_speed(speed_, speed_);
 
 		cm_update_position(true);
 		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 
-	Set_Dir_Forward();
-	Set_Wheel_Speed(0, 0);
+	set_dir_forward();
+	set_wheel_speed(0, 0);
 
 	cm_update_position(true);
 
@@ -873,8 +873,8 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 				if ((buffer_ptr[1] - buffer_ptr[0]) > (g_rounding_wall_distance / 25)) {
 					if ((buffer_ptr[2] - buffer_ptr[1]) > (g_rounding_wall_distance / 25)) {
 						//if (Get_WallAccelerate()>300) {
-							//if ((type == ROUNDING_LEFT && (Get_RightWheel_Speed()- Get_LeftWheel_Speed()) >= -3) ||
-							//	(type == ROUNDING_RIGHT && (Get_LeftWheel_Speed()- Get_RightWheel_Speed()) >= -3)) {
+							//if ((type == ROUNDING_LEFT && (get_right_wheel_speed()- get_left_wheel_speed()) >= -3) ||
+							//	(type == ROUNDING_RIGHT && (get_left_wheel_speed()- get_right_wheel_speed()) >= -3)) {
 								// Away from the wall.
 								speed_left = type == ROUNDING_LEFT ? 18 : 16;
 								speed_right = type == ROUNDING_LEFT ? 16 : 18;
@@ -889,7 +889,7 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 		}
 
 		/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
-		if (Get_FrontOBS() < Get_FrontOBST_Value()) {
+		if (get_front_obs() < Get_FrontOBST_Value()) {
 			Proportion = (type == ROUNDING_LEFT ? robot::instance()->getLeftWall() : robot::instance()->getRightWall()) * 100 / g_rounding_wall_distance - 100;
 			Delta = Proportion - Previous;
 
@@ -909,7 +909,8 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 				speed_left = (speed_left - speed_right) > 5 ? speed_right + 5 : speed_left;
 			}
 
-			if ((type == ROUNDING_LEFT && Get_LeftOBS() > Get_LeftOBST_Value()) || (type == ROUNDING_RIGHT && Get_RightOBS() > Get_RightOBST_Value())) {
+			if ((type == ROUNDING_LEFT && get_left_obs() > Get_LeftOBST_Value()) || (type == ROUNDING_RIGHT &&
+							get_right_obs() > Get_RightOBST_Value())) {
 				if (g_rounding_wall_distance < Wall_High_Limit) {
 					g_rounding_wall_distance++;
 				}
@@ -926,8 +927,9 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 			Move_Forward((type == ROUNDING_LEFT ? speed_left : speed_right), (type == ROUNDING_LEFT ? speed_right : speed_left));
 		} else {
 			angle = 900;
-			if ((type == ROUNDING_LEFT && Get_LeftWheel_Step() < 12500) || (type == ROUNDING_RIGHT && Get_RightWheel_Step() < 12500)) {
-				angle = Get_FrontOBS() > Get_FrontOBST_Value() ? 800 : 400;
+			if ((type == ROUNDING_LEFT && get_left_wheel_step() < 12500) || (type == ROUNDING_RIGHT &&
+							get_right_wheel_step() < 12500)) {
+				angle = get_front_obs() > Get_FrontOBST_Value() ? 800 : 400;
 			}
 			cm_rounding_turn(TURN_SPEED, angle);
 			Move_Forward(15, 15);
@@ -1140,7 +1142,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 	ROS_WARN("Call GoHome()");
 	GoHome();
 	// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
-	while (Get_Clean_Mode() == Clean_Mode_GoHome)
+	while (get_clean_mode() == Clean_Mode_GoHome)
 	{
 		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
 		Set_Clean_Mode(Clean_Mode_Navigation);
@@ -1148,7 +1150,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		GoHome();
 	}
 	// Check the clean mode to find out whether it has reach the charger.
-	if (Get_Clean_Mode() == Clean_Mode_Charging)
+	if (get_clean_mode() == Clean_Mode_Charging)
 	{
 		if (robot::instance()->isLowBatPaused())
 		{
@@ -1159,7 +1161,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		return true;
 	}
 	// FIXME: else if (g_battery_low)
-	else if (Get_Clean_Mode() == Clean_Mode_Sleep)
+	else if (get_clean_mode() == Clean_Mode_Sleep)
 	{
 		// Battery too low.
 		Disable_Motors();
@@ -1306,9 +1308,9 @@ void cm_move_back(uint16_t dist)
 	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
 	Stop_Brifly();
 	cm_update_position();
-	Set_Dir_Backward();
-	Set_Wheel_Speed(8, 8);
-	Reset_Wheel_Step();
+	set_dir_backward();
+	set_wheel_speed(8, 8);
+	reset_wheel_step();
 	Counter_Watcher = 0;
 
 	pos_x = robot::instance()->getOdomPositionX();
@@ -1327,10 +1329,10 @@ void cm_move_back(uint16_t dist)
 		SP = 8 + Counter_Watcher / 100;
 		SP = (SP > 18) ? 18 : SP;
 
-		Set_Wheel_Speed(SP, SP);
+		set_wheel_speed(SP, SP);
 		if (Counter_Watcher > 3000) {
-			if (Is_Encoder_Fail()) {
-				Set_Error_Code(Error_Code_Encoder);
+			if (is_encoder_fail()) {
+				set_error_code(Error_Code_Encoder);
 			}
 			break;
 		}
@@ -1339,14 +1341,14 @@ void cm_move_back(uint16_t dist)
 			Stop_Brifly();
 			break;
 		}
-		uint8_t octype = Check_Motor_Current();
+		uint8_t octype = check_motor_current();
 		if ((octype == Check_Left_Wheel) || ( octype  == Check_Right_Wheel)) {
 			ROS_INFO("%s ,%d, motor over current",__FUNCTION__,__LINE__);
 			break;
 		}
 	}
 	cm_update_position();
-	Reset_TempPWM();
+	reset_temp_pwm();
 	Stop_Brifly();
 	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);
 }
@@ -1638,17 +1640,17 @@ void cm_event_manager_turn(bool state)
 
 void cm_handle_bumper_all(bool state_now, bool state_last)
 {
-	uint8_t isBumperTriggered = Get_Bumper_Status();
+	uint8_t isBumperTriggered = get_bumper_status();
 
 	g_bumper_status_for_rounding = isBumperTriggered;
 
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	if (g_cm_move_type == CM_LINEARMOVE) {
 		cm_update_map_bumper();
 	}
 
 	g_bumper_hitted = true;
-	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1683,23 +1685,23 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 		g_rounding_wall_straight_distance = 150;
 	}
 
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
-	if(Get_Bumper_Status() == 0) g_bumper_cnt = 0;
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	if(get_bumper_status() == 0) g_bumper_cnt = 0;
 }
 
 void cm_handle_bumper_left(bool state_now, bool state_last)
 {
-	uint8_t isBumperTriggered = Get_Bumper_Status();
+	uint8_t isBumperTriggered = get_bumper_status();
 
 	g_bumper_status_for_rounding = isBumperTriggered;
 
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	if (g_cm_move_type == CM_LINEARMOVE) {
 		cm_update_map_bumper();
 	}
 
 	g_bumper_hitted = true;
-	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1732,23 +1734,23 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 		}
 	}
 
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
-	if((Get_Bumper_Status() & LeftBumperTrig) == 0) g_bumper_cnt = 0;
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	if((get_bumper_status() & LeftBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
 {
-	uint8_t isBumperTriggered = Get_Bumper_Status();
+	uint8_t isBumperTriggered = get_bumper_status();
 
 	g_bumper_status_for_rounding = isBumperTriggered;
 
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	if (g_cm_move_type == CM_LINEARMOVE) {
 		cm_update_map_bumper();
 	}
 
 	g_bumper_hitted = true;
-	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, Get_Bumper_Status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 	if (state_now == true && state_last == true) {
 		g_bumper_cnt++;
 
@@ -1781,8 +1783,8 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 		}
 	}
 
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
-	if((Get_Bumper_Status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	if((get_bumper_status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 /* OBS */
@@ -1814,7 +1816,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	cm_update_map();
 
 	g_cliff_triggered = true;
@@ -1843,7 +1845,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	cm_update_map();
 
 	g_cliff_triggered = true;
@@ -1872,7 +1874,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	cm_update_map();
 
 	g_cliff_triggered = true;
@@ -1897,7 +1899,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
 {
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	cm_update_map();
 
 	g_cliff_triggered = true;
@@ -1922,7 +1924,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
 {
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	cm_update_map();
 
 	g_cliff_triggered = true;
@@ -1951,7 +1953,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
 {
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	cm_update_map();
 
 	g_cliff_triggered = true;
@@ -2052,7 +2054,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 
 	cm_block_charger_stub(direction);
 	lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
-	Reset_Rcon_Status();
+	reset_rcon_status();
 }
 
 void cm_block_charger_stub(int8_t direction)
@@ -2060,7 +2062,7 @@ void cm_block_charger_stub(int8_t direction)
 	int32_t x, y, x2, y2;
 
 	ROS_WARN("%s %d: Robot meet charger stub, stop and mark the block.", __FUNCTION__, __LINE__);
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 
 	switch (direction)
 	{
@@ -2252,7 +2254,7 @@ void cm_handle_rcon_left(bool state_now, bool state_last)
 		return;
 	}
 
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 
 	cm_count_normalize(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x, &y);
 	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
@@ -2280,7 +2282,7 @@ void cm_handle_rcon_right(bool state_now, bool state_last)
 		return;
 	}
 
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 
 	cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x, &y);
 	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
@@ -2288,7 +2290,7 @@ void cm_handle_rcon_right(bool state_now, bool state_last)
 
 	g_rcon_triggered = true;
 	cm_set_home(map_get_x_count(), map_get_y_count());
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	if (g_cm_move_type == CM_ROUNDING) {
 		if (g_rounding_type == ROUNDING_LEFT) {
 			g_rounding_turn_angle = 1100;
@@ -2332,7 +2334,7 @@ void cm_handle_over_current_brush_main(bool state_now, bool state_last)
 		g_oc_brush_main_cnt = 0;
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
-		if (Self_Check(Check_Main_Brush) == 1) {
+		if (self_check(Check_Main_Brush) == 1) {
 			g_oc_brush_main = true;
 			g_fatal_quit_event = true;
 		}
@@ -2374,7 +2376,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 		g_oc_wheel_left_cnt = 0;
 		ROS_WARN("%s %d: left wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
-		if (Self_Check(Check_Left_Wheel) == 1) {
+		if (self_check(Check_Left_Wheel) == 1) {
 			g_oc_wheel_left = true;
 			g_fatal_quit_event = true;
 		}
@@ -2394,7 +2396,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 		g_oc_wheel_right_cnt = 0;
 		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
-		if (Self_Check(Check_Right_Wheel) == 1) {
+		if (self_check(Check_Right_Wheel) == 1) {
 			g_oc_wheel_right = true;
 			g_fatal_quit_event = true;
 		}
@@ -2414,7 +2416,7 @@ void cm_handle_over_current_suction(bool state_now, bool state_last)
 		g_oc_suction_cnt = 0;
 		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
 
-		if (Self_Check(Check_Vacuum) == 1) {
+		if (self_check(Check_Vacuum) == 1) {
 			g_oc_suction = false;
 			g_fatal_quit_event = true;
 		}
@@ -2429,7 +2431,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
-	Set_Wheel_Speed(0, 0);
+	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 	robot::instance()->setManualPause();
 	start_time = time(NULL);
@@ -2489,7 +2491,6 @@ void cm_handle_remote_mode_spot(bool state_now, bool state_last)
 	Reset_Rcon_Remote();
 	g_remote_spot = true;
 	robot::instance()->setManualPause();
-	//Work_Motor_Configure();
 	//auto modeTemp = Get_VacMode();
 	//Set_VacMode(modeTemp,false);
 }

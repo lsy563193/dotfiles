@@ -11,7 +11,7 @@ void sleep_mode(void)
 	uint16_t sleep_time_counter_ = 0;
 	
 	Reset_Stop_Event_Status();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	Set_LED(0,0);
 	
 	Disable_Motors();
@@ -34,7 +34,7 @@ void sleep_mode(void)
 
 		// This is necessary because once the rcon has signal, it means base stm32 board has receive the rcon signal for 3 mins.
 		// If not reset here, it may cause directly go home once it sleeps.
-		Reset_Rcon_Status();
+		reset_rcon_status();
 
 		if (Get_Key_Press() & KEY_CLEAN)
 		{
@@ -63,7 +63,7 @@ void sleep_mode(void)
 		// Check if plan activated.
 		if (Get_Plan_Status() == 3)
 		{
-			if (Get_Error_Code() == Error_Code_None)
+			if (get_error_code() == Error_Code_None)
 			{
 				Set_Main_PwrByte(Clean_Mode_Navigation);
 				ResetSleepModeFlag();
@@ -81,7 +81,7 @@ void sleep_mode(void)
 			else
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				Alarm_Error();
+				alarm_error();
 				wav_play(WAV_CANCEL_APPOINTMENT);
 				Set_Plan_Status(0);
 			}
@@ -115,7 +115,7 @@ void sleep_mode(void)
 			Beep(2,4,0,1);
 			usleep(100000);
 			Beep(1,4,4,1);
-			if (is_direct_charge() || Turn_Connect())
+			if (is_direct_charge() || turn_connect())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
 				break;
@@ -123,12 +123,12 @@ void sleep_mode(void)
 		}
 
 		/*-----------------Check if near the charging base-----------------------------*/
-		if(Is_Station() && (!Get_Error_Code()))
+		if(Is_Station() && (!get_error_code()))
 		{
 			ROS_INFO("%s,%d,Rcon_status = %x",__FUNCTION__,__LINE__,Get_Rcon_Status());
-			Reset_Rcon_Status();
+			reset_rcon_status();
 			Set_Clean_Mode(Clean_Mode_GoHome);
-			SetHomeRemote();
+			set_home_remote();
 			Set_Main_PwrByte(POWER_ACTIVE);
 			ResetSleepModeFlag();
 			break;
@@ -142,10 +142,10 @@ void sleep_mode(void)
 		}
 	}
 	// Alarm for error.
-	if (Get_Clean_Mode() == Clean_Mode_Userinterface && Get_Error_Code())
+	if (get_clean_mode() == Clean_Mode_Userinterface && get_error_code())
 	{
 		Set_LED(0, 100);
-		Alarm_Error();
+		alarm_error();
 	}
 
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.

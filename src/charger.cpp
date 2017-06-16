@@ -105,7 +105,7 @@ void Charge_Function(void)
 			else
 			{
 				Stop_Charge_Counter++;
-				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 				{
 					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
 					//wav_play(WAV_ERROR_LIFT_UP);
@@ -135,7 +135,7 @@ void Charge_Function(void)
 					usleep(20000);
 				}
 			}
-			else if (!Check_Bat_Ready_To_Clean())
+			else if (!check_bat_ready_to_clean())
 			{
 				ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 				wav_play(WAV_BATTERY_LOW);
@@ -184,7 +184,7 @@ void Charge_Function(void)
 					ROS_WARN("Can not go to navigation mode during direct charging.");
 					beep_for_command(false);
 				}
-				else if (!Check_Bat_Ready_To_Clean())
+				else if (!check_bat_ready_to_clean())
 				{
 					ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
 					wav_play(WAV_BATTERY_LOW);
@@ -220,7 +220,7 @@ void Charge_Function(void)
 			case 3:
 			{
 				ROS_INFO("%s %d: Appointment activated.", __FUNCTION__, __LINE__);
-				if (Get_Error_Code() == Error_Code_None)
+				if (get_error_code() == Error_Code_None)
 				{
 					// Sleep for 50ms cause the status 3 will be sent for 3 times.
 					usleep(50000);
@@ -229,7 +229,7 @@ void Charge_Function(void)
 				else
 				{
 					ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-					Alarm_Error();
+					alarm_error();
 					wav_play(WAV_CANCEL_APPOINTMENT);
 				}
 				Set_Plan_Status(0);
@@ -244,7 +244,7 @@ void Charge_Function(void)
 			}
 
 		}
-		if (Get_Clean_Mode() == Clean_Mode_Navigation)
+		if (get_clean_mode() == Clean_Mode_Navigation)
 			break;
 
 		/*-----------------------------------------------------Schedul Timer Up-----------------*/
@@ -261,7 +261,7 @@ void Charge_Function(void)
 //		}
 
 		#ifdef ONE_KEY_DISPLAY
-		if (Check_Bat_Full() && !Battery_Full)
+		if (check_bat_full() && !Battery_Full)
 		{
 			Battery_Full = true;
 			Set_LED(0,0);
@@ -300,7 +300,7 @@ void GoHome(void)
 //	Move_Forward(9,9);
 //	Set_SideBrush_PWM(30,30);
 //	Set_MainBrush_PWM(30);
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	//delay(1500);
 //	wav_play(WAV_BACK_TO_CHARGER);
 	// This is for calculating the robot turning.
@@ -315,7 +315,7 @@ void GoHome(void)
 	Set_MainBrush_PWM(30);
 
 	Stop_Brifly();
-	Reset_Rcon_Status();
+	reset_rcon_status();
 	// Save the start angle.
 	Last_Angle = robot::instance()->getAngle();
 	// Enable the charge function
@@ -353,7 +353,7 @@ void GoHome(void)
 			}
 		}
 
-		if(Get_Bumper_Status())
+		if(get_bumper_status())
 		{
 			Random_Back();
 			if(Is_Bumper_Jamed())
@@ -363,11 +363,11 @@ void GoHome(void)
 			}
 		}
 		Receive_Code = Get_Rcon_Status();
-		Reset_Rcon_Status();
+		reset_rcon_status();
 		if(Receive_Code&RconFL_HomeR)//FL H_R
 		{
 			ROS_INFO("Start with FL-R.");
-			Turn_Left(Turn_Speed,900);
+			turn_left(Turn_Speed, 900);
 			Stop_Brifly();
 			Around_ChargerStation(0);
 			break;
@@ -392,7 +392,7 @@ void GoHome(void)
 		if(Receive_Code&RconFR_HomeR)//FR H_R
 		{
 			ROS_INFO("Start with FR-R.");
-			Turn_Left(Turn_Speed,900);
+			turn_left(Turn_Speed, 900);
 			Stop_Brifly();
 			Around_ChargerStation(0);
 			break;
@@ -400,7 +400,7 @@ void GoHome(void)
 		if(Receive_Code&RconFL2_HomeR)//FL2 H_R
 		{
 			ROS_INFO("Start with FL2-R.");
-			Turn_Left(Turn_Speed,850);
+			turn_left(Turn_Speed, 850);
 			Stop_Brifly();
 			Around_ChargerStation(0);
 			break;
@@ -425,7 +425,7 @@ void GoHome(void)
 		if(Receive_Code&RconFR2_HomeR)//FR2 H_R
 		{
 			ROS_INFO("Start with FR2-R.");
-			Turn_Left(Turn_Speed,600);
+			turn_left(Turn_Speed, 600);
 			Stop_Brifly();
 			Around_ChargerStation(0);
 			break;
@@ -447,7 +447,7 @@ void GoHome(void)
 		if(Receive_Code&RconL_HomeR)// L  H_R
 		{
 			ROS_INFO("Start with L-R.");
-			Turn_Left(Turn_Speed,1500);
+			turn_left(Turn_Speed, 1500);
 			Around_ChargerStation(0);
 			break;
 		}
@@ -514,7 +514,7 @@ void GoHome(void)
 		if((Receive_Code&RconBL_HomeL))//BL H_L    //OK
 		{
 			ROS_INFO("Start with BL-L.");
-			Turn_Left(30,800);
+			turn_left(30, 800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
 			break;
@@ -531,7 +531,7 @@ void GoHome(void)
 		if((Receive_Code&RconBL_HomeR))//BL H_R
 		{
 			ROS_INFO("Start with BL-R.");
-			Turn_Left(30,800);
+			turn_left(30, 800);
 			Stop_Brifly();
 			Around_ChargerStation(1);
 			break;
@@ -548,7 +548,7 @@ void GoHome(void)
 		if((Receive_Code&RconBL_HomeT))//BL H_T
 		{
 			ROS_INFO("Start with BL-T.");
-			Turn_Left(30,300);
+			turn_left(30, 300);
 			Stop_Brifly();
 			Around_ChargerStation(1);
 			break;
@@ -578,14 +578,14 @@ void GoHome(void)
 		Last_Angle = Current_Angle;
 
 		Set_Dir_Right();
-		Set_Wheel_Speed(10, 10);
+		set_wheel_speed(10, 10);
 	}
 
 	if (Gyro_Step >= 360)
 		Set_Clean_Mode(Clean_Mode_Userinterface);
 
 	// If robot didn't reach the charger, go back to userinterface mode.
-	if(Get_Clean_Mode() != Clean_Mode_Charging && Get_Clean_Mode() != Clean_Mode_GoHome)
+	if(get_clean_mode() != Clean_Mode_Charging && get_clean_mode() != Clean_Mode_GoHome)
 	{
 		extern std::list <Point32_t> g_home_point;
 		if (!Stop_Event() && g_home_point.empty())
@@ -615,13 +615,13 @@ void Around_ChargerStation(uint8_t Dir)
 	Set_MainBrush_PWM(30);
 	Set_BLDC_Speed(Vac_Speed_NormalL);
 	//delay(500);
-	Reset_Rcon_Status();
-	Reset_Wheel_Step();
+	reset_rcon_status();
+	reset_wheel_step();
 	Reset_Move_Distance();
 	ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, Dir);
 	while(1)
 	{
-//		if(Get_LeftWheel_Step()<500)
+//		if(get_left_wheel_step()<500)
 //		{
 //			Mobility_Temp_Error=0;
 //			Temp_Mobility_Distance = Get_Move_Distance();
@@ -648,9 +648,9 @@ void Around_ChargerStation(uint8_t Dir)
 //			}
 //		}
 
-		if(Get_Cliff_Trig())
+		if(get_cliff_trig())
 		{
-			if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+			if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 			{
 				Disable_Motors();
 				ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
@@ -659,13 +659,13 @@ void Around_ChargerStation(uint8_t Dir)
 				return;
 			}
 
-			while (Get_Cliff_Trig() && Cliff_Counter < 3)
+			while (get_cliff_trig() && Cliff_Counter < 3)
 			{
 				// Move back until escape cliff triggered.
 				Move_Back();
 				Cliff_Counter++;
 				usleep(40000);
-				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 				{
 					Disable_Motors();
 					ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
@@ -680,7 +680,7 @@ void Around_ChargerStation(uint8_t Dir)
 			}
 			else
 			{
-				Turn_Left(Turn_Speed,1750);
+				turn_left(Turn_Speed, 1750);
 				Move_Forward(9,9);
 				Set_Clean_Mode(Clean_Mode_GoHome);
 			}
@@ -700,7 +700,7 @@ void Around_ChargerStation(uint8_t Dir)
 					ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 					usleep(20000);
 				}
-				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
+				// Do not reset g_stop_event_status is for when robot is going home in navigation mode,
 				// when stop event status is on,
 				// it will know and won't go to next home point.
 				if (! robot::instance()->isLowBatPaused())
@@ -733,7 +733,7 @@ void Around_ChargerStation(uint8_t Dir)
 
 //		if(Home_Check_Current())return;
 
-		if(Get_Bumper_Status())
+		if(get_bumper_status())
 		{
 			Bumper_Counter++;
 			Random_Back();
@@ -744,14 +744,14 @@ void Around_ChargerStation(uint8_t Dir)
 			if(Dir)
 			{
 				// Robot at left side of charger stub.
-				Turn_Left(Turn_Speed,1800);
+				turn_left(Turn_Speed, 1800);
 			}
 			else
 			{
 				// Robot at right side of charger stub.
 				Turn_Right(Turn_Speed,1800);
 			}
-			Reset_Rcon_Status();
+			reset_rcon_status();
 			Move_Forward(10,10);
 			//???
 			Dir = 1-Dir;
@@ -760,7 +760,7 @@ void Around_ChargerStation(uint8_t Dir)
 				Set_Clean_Mode(Clean_Mode_GoHome);
 				return ;
 			}
-			//Reset_Wheel_Step();
+			//reset_wheel_step();
 			No_Signal_Counter=0;
 		}
 
@@ -784,7 +784,7 @@ void Around_ChargerStation(uint8_t Dir)
 					return;
 				}
 			}
-			else if(Turn_Connect())
+			else if(turn_connect())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
 //				Reset_Rcon_Remote();
@@ -802,7 +802,7 @@ void Around_ChargerStation(uint8_t Dir)
 			}
 			if (Stop_Event())
 			{
-				ROS_WARN("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Stop_Event in turn_connect.", __FUNCTION__, __LINE__);
 				Disable_Motors();
 				return;
 			}
@@ -812,7 +812,7 @@ void Around_ChargerStation(uint8_t Dir)
 		if(Temp_Rcon_Status)
 		{
 			No_Signal_Counter=0;
-			Reset_Rcon_Status();
+			reset_rcon_status();
 		}
 		else
 		{
@@ -835,7 +835,7 @@ void Around_ChargerStation(uint8_t Dir)
 		ROS_DEBUG("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, Dir);
 		if(Dir == 1)//10.30
 		{
-//			if(Get_RightWheel_Step()>20000)
+//			if(get_right_wheel_step()>20000)
 //			{
 //				Stop_Brifly();
 //				Turn_Right(Turn_Speed,2200);
@@ -911,7 +911,7 @@ void Around_ChargerStation(uint8_t Dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FL-R.", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
-				Turn_Left(Turn_Speed,600);
+				turn_left(Turn_Speed, 600);
 				Move_Forward(5,5);
 			}
 			else if(Temp_Rcon_Status&RconFL_HomeT)	 //FR_HT
@@ -1008,10 +1008,10 @@ void Around_ChargerStation(uint8_t Dir)
 		}
 		else//30.10
 		{
-//			if(Get_LeftWheel_Step()>20000)
+//			if(get_left_wheel_step()>20000)
 //			{
 //				Stop_Brifly();
-//				Turn_Left(Turn_Speed,2200);
+//				turn_left(Turn_Speed,2200);
 //				Set_Clean_Mode(Clean_Mode_GoHome);
 //				return ;
 //			}
@@ -1075,7 +1075,7 @@ void Around_ChargerStation(uint8_t Dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FR-R.", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
-				Turn_Left(Turn_Speed,500);
+				turn_left(Turn_Speed, 500);
 				Move_Forward(5,5);
 			}
 			else if(Temp_Rcon_Status&RconFR_HomeL)	//OK
@@ -1089,28 +1089,28 @@ void Around_ChargerStation(uint8_t Dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
-				Turn_Left(Turn_Speed,500);
+				turn_left(Turn_Speed, 500);
 				Move_Forward(5,5);
 			}
 			else if(Temp_Rcon_Status&RconFL_HomeT)	//OK
 			{
 				ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
-				Turn_Left(Turn_Speed,800);
+				turn_left(Turn_Speed, 800);
 				Move_Forward(5,5);
 			}
 			else if(Temp_Rcon_Status&RconFL2_HomeT)  //OK
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
-				Turn_Left(Turn_Speed,900);
+				turn_left(Turn_Speed, 900);
 				Move_Forward(5,5);
 			}
 			else if(Temp_Rcon_Status&RconL_HomeT)  //OK
 			{
 				ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
 //				Stop_Brifly();
-				Turn_Left(Turn_Speed,1100);
+				turn_left(Turn_Speed, 1100);
 				Move_Forward(5,5);
 				Dir = 1;
 			}
@@ -1206,12 +1206,12 @@ uint8_t Check_Position(uint8_t Dir)
 		ROS_DEBUG("Check position Dir = right");
 		Set_Dir_Right();
 	}
-	Set_Wheel_Speed(10,10);
+	set_wheel_speed(10, 10);
 
 	Last_Angle = robot::instance()->getAngle();
 	ROS_DEBUG("Last_Angle = %f.", Last_Angle);
 
-//	while(Get_LeftWheel_Step()<3600)
+//	while(get_left_wheel_step()<3600)
 	while(Gyro_Step < 360)
 	{
 //		delay(1);
@@ -1235,9 +1235,9 @@ uint8_t Check_Position(uint8_t Dir)
 		//Counter_Watcher++;
 		//if(Counter_Watcher>150000)
 		//{
-		//	if(Is_Encoder_Fail())
+		//	if(is_encoder_fail())
 		//	{
-		//		Set_Error_Code(Error_Code_Encoder);
+		//		set_error_code(Error_Code_Encoder);
 		//	}
 		//	return 1;
 		//}
@@ -1245,7 +1245,7 @@ uint8_t Check_Position(uint8_t Dir)
 		ROS_DEBUG("Check_Position Get_Rcon_Status() == %x, R... == %x, receive code: %x.", Get_Rcon_Status(), (RconL_HomeL|RconL_HomeR|RconFL_HomeL|RconFL_HomeR|RconR_HomeL|RconR_HomeR|RconFR_HomeL|RconFR_HomeR), Receive_Code);
 		if(Receive_Code)
 		{
-			Reset_Rcon_Status();
+			reset_rcon_status();
 			if (Receive_Code & RconL_HomeL)ROS_DEBUG("Check_Position get L-L");
 			if (Receive_Code & RconL_HomeR)ROS_DEBUG("Check_Position get L-R");
 			if (Receive_Code & RconFL_HomeL)ROS_DEBUG("Check_Position get FL-L");
@@ -1282,7 +1282,7 @@ uint8_t Check_Position(uint8_t Dir)
 				ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
-			// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
+			// Do not reset g_stop_event_status is for when robot is going home in navigation mode,
 			// when stop event status is on, it will know and won't go to next home point.
 			if (!robot::instance()->isLowBatPaused())
 				if (!robot::instance()->isManualPaused())
@@ -1320,7 +1320,7 @@ uint8_t Check_Position(uint8_t Dir)
 					return 2;
 				}
 			}
-			else if(Turn_Connect())
+			else if(turn_connect())
 			{
 				Set_Clean_Mode(Clean_Mode_Charging);
 //				Reset_Rcon_Remote();
@@ -1338,20 +1338,20 @@ uint8_t Check_Position(uint8_t Dir)
 			}
 			if (Stop_Event())
 			{
-				ROS_WARN("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Stop_Event in turn_connect.", __FUNCTION__, __LINE__);
 				Disable_Motors();
 				return 1;
 			}
 		}
-		uint8_t octype = Check_Motor_Current();
+		uint8_t octype = check_motor_current();
 		if(octype){
-			if(Self_Check(octype)){
+			if(self_check(octype)){
 				ROS_INFO("%s ,%d motor over current ",__FUNCTION__,__LINE__);
 				return 1;
 			}
 		}
 	}
-//	Reset_TempPWM();
+//	reset_temp_pwm();
 	return 0;
 }
 
@@ -1369,7 +1369,7 @@ void By_Path(void)
 	uint8_t Bumper_Counter=0;
 	uint8_t Side_Counter=0;
 
-//	Reset_Wheel_Step();
+//	reset_wheel_step();
 
 	Reset_Stop_Event_Status();
 //	Display_Content(LED_Home,100,100,0,7);
@@ -1381,14 +1381,14 @@ void By_Path(void)
 	Set_SideBrush_PWM(30,30);
 	Set_MainBrush_PWM(30);
 	Set_BLDC_Speed(Vac_Speed_NormalL);
-//	SetHomeRemote();
+//	set_home_remote();
 
 //	Beep(1);
 
 	while(1)
 	{
 		Receive_Code = 0;
-//		if(Get_LeftWheel_Step()<500)
+//		if(get_left_wheel_step()<500)
 //		{
 //			Mobility_Temp_Error=0;
 //			Temp_Mobility_Distance = Get_Move_Distance();
@@ -1440,7 +1440,7 @@ void By_Path(void)
 						return;
 					}
 				}
-				else if(Turn_Connect())
+				else if(turn_connect())
 				{
 					Set_Clean_Mode(Clean_Mode_Charging);
 //					Reset_Rcon_Remote();
@@ -1458,7 +1458,7 @@ void By_Path(void)
 				}
 				if (Stop_Event())
 				{
-					ROS_WARN("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Stop_Event in turn_connect.", __FUNCTION__, __LINE__);
 					Disable_Motors();
 					return;
 				}
@@ -1475,14 +1475,14 @@ void By_Path(void)
 			}
 			/*----------------------------------------------OBS------------------Event---------------*/
 			//ROS_DEBUG("get_Left_bumper_Status");
-			if(Get_Bumper_Status()&LeftBumperTrig)
+			if(get_bumper_status()&LeftBumperTrig)
 			{
 //				Random_Back();
-				Reset_Rcon_Status();
+				reset_rcon_status();
 				if(!Position_Far)
 				{
 					Stop_Brifly();
-					if(Turn_Connect())
+					if(turn_connect())
 					{
 						Set_Clean_Mode(Clean_Mode_Charging);
 						ROS_INFO("Set Clean_Mode_Charging and return");
@@ -1490,7 +1490,7 @@ void By_Path(void)
 					}
 					if (Stop_Event())
 					{
-						ROS_WARN("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Stop_Event in turn_connect.", __FUNCTION__, __LINE__);
 						Disable_Motors();
 						return;
 					}
@@ -1544,21 +1544,21 @@ void By_Path(void)
 				ROS_DEBUG("%d, Left bumper count =%d.", __LINE__, Bumper_Counter);
 			}
 			//ROS_DEBUG("Get_Right_Bumper_Status");
-			if(Get_Bumper_Status()&RightBumperTrig)
+			if(get_bumper_status()&RightBumperTrig)
 			{
 //				Random_Back();
-				Reset_Rcon_Status();
+				reset_rcon_status();
 				if(!Position_Far)
 				{
 					Stop_Brifly();
-					if(Turn_Connect())
+					if(turn_connect())
 					{
 						Set_Clean_Mode(Clean_Mode_Charging);
 						return;
 					}
 					if (Stop_Event())
 					{
-						ROS_WARN("%s %d: Stop_Event in Turn_Connect.", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Stop_Event in turn_connect.", __FUNCTION__, __LINE__);
 						Disable_Motors();
 						return;
 					}
@@ -1588,7 +1588,7 @@ void By_Path(void)
 				else if((Get_Rcon_Status()&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR))==0)
 				{
 					Random_Back();
-					Turn_Left(Turn_Speed,1100);
+					turn_left(Turn_Speed, 1100);
 					Move_Forward(8,8);
 					Set_Clean_Mode(Clean_Mode_GoHome);
 					ROS_DEBUG("%d, Return from RightBumperTrig.", __LINE__);
@@ -1597,7 +1597,7 @@ void By_Path(void)
 				else
 				{
 					Random_Back();
-					Turn_Left(Turn_Speed,1100);
+					turn_left(Turn_Speed, 1100);
 					Set_SideBrush_PWM(30,30);
 					Set_MainBrush_PWM(30);
 					Move_Forward(8,8);
@@ -1609,9 +1609,9 @@ void By_Path(void)
 
 			if(Position_Far)
 			{
-				if(Get_Cliff_Trig())
+				if(get_cliff_trig())
 				{
-					if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+					if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 					{
 						Disable_Motors();
 						ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
@@ -1621,7 +1621,7 @@ void By_Path(void)
 					}
 					Move_Back();
 					Move_Back();
-					Turn_Left(Turn_Speed,1750);
+					turn_left(Turn_Speed, 1750);
 					Move_Forward(9,9);
 					Set_Clean_Mode(Clean_Mode_GoHome);
 					return;
@@ -1629,9 +1629,9 @@ void By_Path(void)
 			}
 			else
 			{
-				if(Get_Cliff_Trig())
+				if(get_cliff_trig())
 				{
-					if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+					if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 					{
 						Disable_Motors();
 						ROS_WARN("%s, %d robot lift up\n", __FUNCTION__, __LINE__);
@@ -1639,20 +1639,20 @@ void By_Path(void)
 						Set_Clean_Mode(Clean_Mode_Userinterface);
 						return;
 					}
-					Set_Wheel_Speed(0,0);
-					Set_Dir_Backward();
+					set_wheel_speed(0, 0);
+					set_dir_backward();
 //					delay(300);
 					usleep(30000);
-					if(Get_Cliff_Trig())
+					if(get_cliff_trig())
 					{
 						Move_Back();
 						Move_Back();
-						Turn_Left(Turn_Speed,1750);
+						turn_left(Turn_Speed, 1750);
 						Move_Forward(9,9);
 						Set_Clean_Mode(Clean_Mode_GoHome);
 						return;
 					}
-					Set_Dir_Forward();
+					set_dir_forward();
 					break;
 				}
 			}
@@ -1668,7 +1668,7 @@ void By_Path(void)
 					ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 					usleep(20000);
 				}
-				// Do not reset Stop_Event_Status is for when robot is going home in navigation mode,
+				// Do not reset g_stop_event_status is for when robot is going home in navigation mode,
 				// when stop event status is on,
 				// it will know and won't go to next home point.
 				if (!robot::instance()->isLowBatPaused())
@@ -1710,7 +1710,7 @@ void By_Path(void)
 						RconFR2_HomeL|RconFR2_HomeT|RconFR2_HomeR| \
 						RconR_HomeL|RconR_HomeT|RconR_HomeR \
 					 );
-//		Reset_Rcon_Status();
+//		reset_rcon_status();
 		if(Receive_Code)
 		{
 //			if((Receive_Code&0x00060000) == 0x00060000)Position_Far = 0;
@@ -1758,7 +1758,7 @@ void By_Path(void)
 				ROS_DEBUG("%s, %d: Robot sees HomeL or HomeR, Position_Far = 0.", __FUNCTION__, __LINE__);
 				Position_Far=0;
 			}
-			Reset_Rcon_Status();
+			reset_rcon_status();
 			NoSignal_Counter = 0;
 		}
 		else
@@ -2224,18 +2224,18 @@ void By_Path(void)
 					Move_Forward(8,14);
 					break;
 
-//				case 0x40:	  Turn_Left(20,250);
+//				case 0x40:	  turn_left(20,250);
 				case (RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0xC0:	  Turn_Left(20,350);
+//				case 0xC0:	  turn_left(20,350);
 				case (RconFL2_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,350);
+					turn_left(20, 350);
 					Stop_Brifly();
 					Move_Forward(3,10);
 					break;
@@ -2378,66 +2378,66 @@ void By_Path(void)
 					Move_Forward(9,12);
 					break;
 
-//				case 0x1C0:   Turn_Left(20,250);
+//				case 0x1C0:   turn_left(20,250);
 				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x140:   Turn_Left(20,400);
+//				case 0x140:   turn_left(20,400);
 				case (RconL_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, L_L/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,400);
+					turn_left(20, 400);
 					Stop_Brifly();
 					Move_Forward(3,8);
 					break;
 
-//				case 0x1d0:   Turn_Left(20,250);
+//				case 0x1d0:   turn_left(20,250);
 				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(4,10);
 					break;
 
-//				case 0x340:   Turn_Left(20,450);
+//				case 0x340:   turn_left(20,450);
 				case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,450);
+					turn_left(20, 450);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x300 :  Turn_Left(20,500);
+//				case 0x300 :  turn_left(20,500);
 				case (RconL_HomeR|RconL_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, L_R/L_L.", __FUNCTION__, __LINE__);
-					Turn_Left(20,500);
+					turn_left(20, 500);
 					Stop_Brifly();
 					Move_Forward(6,9);
 					break;
 
-//				case 0x200:   Turn_Left(20,550);
+//				case 0x200:   turn_left(20,550);
 				case (RconL_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, L_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,550);
+					turn_left(20, 550);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x150:   Turn_Left(20,250);
+//				case 0x150:   turn_left(20,250);
 				case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x240:   Turn_Left(20,500);
+//				case 0x240:   turn_left(20,500);
 				case (RconL_HomeR|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, L_R/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,500);
+					turn_left(20, 500);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
@@ -2934,18 +2934,18 @@ void By_Path(void)
 					Move_Forward(3,9);
 					break;
 
-//				case 0x40:	  Turn_Left(20,250);
+//				case 0x40:	  turn_left(20,250);
 				case (RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0xC0:	  Turn_Left(20,350);
+//				case 0xC0:	  turn_left(20,350);
 				case (RconFL2_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,350);
+					turn_left(20, 350);
 					Stop_Brifly();
 					Move_Forward(3,10);
 					break;
@@ -3088,66 +3088,66 @@ void By_Path(void)
 					Move_Forward(6,9);
 					break;
 
-//				case 0x1C0:   Turn_Left(20,250);
+//				case 0x1C0:   turn_left(20,250);
 				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x140:   Turn_Left(20,400);
+//				case 0x140:   turn_left(20,400);
 				case (RconL_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, L_L/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,400);
+					turn_left(20, 400);
 					Stop_Brifly();
 					Move_Forward(3,8);
 					break;
 
-//				case 0x1d0:   Turn_Left(20,250);
+//				case 0x1d0:   turn_left(20,250);
 				case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(4,10);
 					break;
 
-//				case 0x340:   Turn_Left(20,450);
+//				case 0x340:   turn_left(20,450);
 				case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,450);
+					turn_left(20, 450);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x300 :  Turn_Left(20,500);
+//				case 0x300 :  turn_left(20,500);
 				case (RconL_HomeR|RconL_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, L_R/L_L.", __FUNCTION__, __LINE__);
-					Turn_Left(20,500);
+					turn_left(20, 500);
 					Stop_Brifly();
 					Move_Forward(6,9);
 					break;
 
-//				case 0x200:   Turn_Left(20,550);
+//				case 0x200:   turn_left(20,550);
 				case (RconL_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, L_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,550);
+					turn_left(20, 550);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x150:   Turn_Left(20,250);
+//				case 0x150:   turn_left(20,250);
 				case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,250);
+					turn_left(20, 250);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
 
-//				case 0x240:   Turn_Left(20,500);
+//				case 0x240:   turn_left(20,500);
 				case (RconL_HomeR|RconFL2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, L_R/FL2_R.", __FUNCTION__, __LINE__);
-					Turn_Left(20,500);
+					turn_left(20, 500);
 					Stop_Brifly();
 					Move_Forward(3,9);
 					break;
@@ -3225,10 +3225,10 @@ void By_Path(void)
 /*------------------------------------------------*/
 uint8_t Home_Check_Current(void)
 {
-	uint8_t Motor_Check_Code=Check_Motor_Current();
+	uint8_t Motor_Check_Code= check_motor_current();
 	if(Motor_Check_Code)
 	{
-		if(Self_Check(Motor_Check_Code))
+		if(self_check(Motor_Check_Code))
 		{
 			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 1;
