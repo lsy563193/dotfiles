@@ -395,7 +395,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	if (charger_signal_delay == 0)
 		charger_signal_start_time = time(NULL);
 
-	if (time(NULL) - charger_signal_start_time > 10)// 3 mins
+	if (time(NULL) - charger_signal_start_time > 180)// 3 mins
 	{
 		Temp_Mode = Clean_Mode_GoHome;
 		Reset_Rcon_Status();
