@@ -91,8 +91,7 @@ void User_Interface(void)
 			if(LedBreathCount >=100)
 				breath = 1;
 		}
-		//if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
-		if(time(NULL) - start_time > 30)
+		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
 			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
 			Set_Clean_Mode(Clean_Mode_Sleep);
