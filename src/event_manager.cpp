@@ -140,15 +140,15 @@ void *event_manager_thread(void *data)
 		}
 
 		/* OBS */
-		if (get_front_obs() > Get_FrontOBST_Value()) {
+		if (get_front_obs() > get_front_obs_value()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_FRONT)
 		}
-		if (get_left_obs() > Get_LeftOBST_Value()) {
+		if (get_left_obs() > get_left_obs_value()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_LEFT)
 		}
-		if (get_right_obs() > Get_RightOBST_Value()) {
+		if (get_right_obs() > get_right_obs_value()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_RIGHT)
 		}
@@ -178,7 +178,7 @@ void *event_manager_thread(void *data)
 		}
 
 		/* RCON */
-		if (Get_Rcon_Status()) {
+		if (get_rcon_status()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON)
 		}
@@ -198,7 +198,7 @@ void *event_manager_thread(void *data)
 		} else if ((Get_Rcon_Status() & RconL_HomeT) == RconL_HomeT) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_LEFT)
-		} else if ((Get_Rcon_Status() & RconR_HomeT) == RconR_HomeT) {
+		} else if ((get_rcon_status() & RconR_HomeT) == RconR_HomeT) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_RIGHT)
 		}
@@ -231,46 +231,46 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Key */
-		if (Get_Touch_Status()) {
+		if (get_touch_status()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_KEY_CLEAN)
 		}
 
-		if (Get_Plan_Status() == 1) {
+		if (get_plan_status() == 1) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_APPOINMENT)
 		}
 
 		/* Remote */
-		if (Remote_Key(Remote_Clean)) {
+		if (remote_key(Remote_Clean)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_CLEAN)
 		}
-		if (Remote_Key(Remote_Home)) {
+		if (remote_key(Remote_Home)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_HOME)
 		}
-		if (Remote_Key(Remote_Forward)) {
+		if (remote_key(Remote_Forward)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_FORWARD)
 		}
-		if (Remote_Key(Remote_Left)) {
+		if (remote_key(Remote_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_LEFT)
 		}
-		if (Remote_Key(Remote_Right)) {
+		if (remote_key(Remote_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_RIGHT)
 		}
-		if (Remote_Key(Remote_Spot)) {
+		if (remote_key(Remote_Spot)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_MODE_SPOT)
 		}
-		if (Remote_Key(Remote_Max)) {
+		if (remote_key(Remote_Max)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_SUCTION)
 		}
-		if (Remote_Key(Remote_Wall_Follow)) {
+		if (remote_key(Remote_Wall_Follow)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_MODE_WALL_FOLLOW)
 		}
@@ -497,8 +497,8 @@ void em_default_handler_bumper_all(bool state_now, bool state_last)
 		bumper_all_cnt = 0;
 	}
 
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 }
@@ -516,8 +516,8 @@ void em_default_handler_bumper_left(bool state_now, bool state_last)
 		bumper_left_cnt = 0;
 	}
 
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 }
 
@@ -535,8 +535,8 @@ void em_default_handler_bumper_right(bool state_now, bool state_last)
 		bumper_right_cnt = 0;
 	}
 
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 }
 
@@ -544,36 +544,36 @@ void em_default_handler_bumper_right(bool state_now, bool state_last)
 void em_default_handler_obs_front(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 }
 
 void em_default_handler_obs_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 }
 
 void em_default_handler_obs_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 }
 
 void em_default_handler_obs_wall_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 }
 
 void em_default_handler_obs_wall_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	Move_Back();
-	Stop_Brifly();
+	move_back();
+	stop_brifly();
 }
 
 /* Cliff */
@@ -691,64 +691,64 @@ void em_default_handler_remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Set_Plan_Status(0);
-	Reset_Rcon_Remote();
+	set_plan_status(0);
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_wall_follow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_mode_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 void em_default_handler_remote_suction(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 }
 
 /* Battery */

@@ -31,10 +31,10 @@ uint8_t Spiral(void)
 	uint8_t First_Round_Flag=1;
 	uint8_t Vac_Mode_Buffer=0;
 	ROS_DEBUG("In Spiral ");	
-	Max_Radius = 180 + Get_Random_Factor();
+	Max_Radius = 180 + get_random_factor();
 
 	reset_wheel_step();
-	Move_Forward(38,0);
+	move_forward(38, 0);
 	while(ros::ok())
 	{
 
@@ -44,62 +44,62 @@ uint8_t Spiral(void)
 			return 0;	  
 		}
 		/*-------------------------------------------------------Check Battery ------------------*/
-		if(Check_Bat_SetMotors(Clean_Vac_Power,Clean_SideBrush_Power,Clean_MainBrush_Power))//Low Battery Event
+		if(check_bat_set_motors(Clean_Vac_Power, Clean_SideBrush_Power, Clean_MainBrush_Power))//Low Battery Event
 		{
 			return 0;
 		}
 		/*------------------------------------------------------Stop event-----------------------*/
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			return 1;
 		}
-		if(Get_Rcon_Remote() > 0)
+		if(get_rcon_remote() > 0)
 		{
-			if(Remote_Key(Remote_Spot))
+			if(remote_key(Remote_Spot))
 			{
-        		Vac_Mode_Buffer = Get_VacMode();				
+        		Vac_Mode_Buffer = get_vac_mode();
 				Temp_Dirt_Status=Random_Dirt_Event();
-				Set_VacMode(Vac_Mode_Buffer,false);
-				Set_Vac_Speed();
-				Reset_Rcon_Remote();
+				set_vacmode(Vac_Mode_Buffer, false);
+				set_vac_speed();
+				reset_rcon_remote();
 				if(Temp_Dirt_Status==1)
 				{
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					set_clean_mode(Clean_Mode_Userinterface);
 					return 1;
 				}
 				return 0;
 			}
-			if(Remote_Key(Remote_Left))
+			if(remote_key(Remote_Left))
 			{
 				turn_left(Turn_Speed, 700);
-				Move_Forward(30,30);
-				Set_Clean_Mode(Clean_Mode_RandomMode);
-				Reset_Rcon_Remote();
+				move_forward(30, 30);
+				set_clean_mode(Clean_Mode_RandomMode);
+				reset_rcon_remote();
 				return 1;
 			}
-			if(Remote_Key(Remote_Right))
+			if(remote_key(Remote_Right))
 			{
 				Turn_Right(Turn_Speed,560);
-				Move_Forward(30,30);
-				Set_Clean_Mode(Clean_Mode_RandomMode);
-				Reset_Rcon_Remote();
+				move_forward(30, 30);
+				set_clean_mode(Clean_Mode_RandomMode);
+				reset_rcon_remote();
 				return 1;
 			}
-			if(Remote_Key(Remote_Home)) //                                    Check Key Home
+			if(remote_key(Remote_Home)) //                                    Check Key Home
 			{
-				Set_Clean_Mode(Clean_Mode_GoHome);
-				Reset_Rcon_Remote();
+				set_clean_mode(Clean_Mode_GoHome);
+				reset_rcon_remote();
 				set_home_remote();
 				return 1;
 			}
 			/*
-			if(Remote_Key(Remote_Random)) //                                    Check Key Home
+			if(remote_key(Remote_Random)) //                                    Check Key Home
 			{
 				Turn_Right(Turn_Speed,560);
-				Move_Forward(30,30);
-				Set_Clean_Mode(Clean_Mode_RandomMode);
-				Reset_Rcon_Remote();
+				move_forward(30,30);
+				set_clean_mode(Clean_Mode_RandomMode);
+				reset_rcon_remote();
 				return 1;
 			}*/
 		}
@@ -109,7 +109,7 @@ uint8_t Spiral(void)
 		if(Right_Wheel_Speed<0)Right_Wheel_Speed=0;
 
 		set_wheel_speed(42, Right_Wheel_Speed);
-//		Move_Forward(42,g_right_wheel_speed);
+//		move_forward(42,g_right_wheel_speed);
 		if(First_Round_Flag)
 		{
 			if(get_left_wheel_step()>3000)First_Round_Flag=0;
@@ -135,7 +135,7 @@ uint8_t Spiral(void)
 			return 0;
 		}
 		
-		if(get_bumper_status()|| get_cliff_trig()||Get_OBS_Status())
+		if(get_bumper_status()|| get_cliff_trig()|| get_obs_status())
 		{ 
 			return 0;
 		}

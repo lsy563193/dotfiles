@@ -9,14 +9,14 @@
 void sleep_mode(void)
 {
 	uint16_t sleep_time_counter_ = 0;
-	
-	Reset_Stop_Event_Status();
+
+	reset_stop_event_status();
 	reset_rcon_status();
-	Set_LED(0,0);
-	
-	Disable_Motors();
-	Set_Main_PwrByte(POWER_DOWN);
-	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__,Get_Main_PwrByte());
+	set_led(0, 0);
+
+	disable_motors();
+	set_main_pwr_byte(POWER_DOWN);
+	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, get_main_pwr_byte());
 	while(ros::ok())
 	{
 		usleep(20000);
@@ -25,57 +25,57 @@ void sleep_mode(void)
 		if (sleep_time_counter_ > 1500)
 		{
 			// Check the battery for every 30s. If battery below 12.5v, power of core board will be cut off.
-			ResetSleepModeFlag();
+			reset_sleep_mode_flag();
 			ROS_WARN("Wake up robotbase to check if battery too low(<12.5v).");
 			sleep_time_counter_ = 0;
 		}
-		else if(!GetSleepModeFlag())
-			SetSleepModeFlag();
+		else if(!get_sleep_mode_flag())
+			set_sleep_mode_flag();
 
 		// This is necessary because once the rcon has signal, it means base stm32 board has receive the rcon signal for 3 mins.
 		// If not reset here, it may cause directly go home once it sleeps.
 		reset_rcon_status();
 
-		if (Get_Key_Press() & KEY_CLEAN)
+		if (get_key_press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s,%d, get key press ",__FUNCTION__,__LINE__);
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			Set_Main_PwrByte(POWER_ACTIVE);
-			ResetSleepModeFlag();
-			Set_LED(100, 0);
-			Beep(4, 4, 0, 1);
+			set_clean_mode(Clean_Mode_Userinterface);
+			set_main_pwr_byte(POWER_ACTIVE);
+			reset_sleep_mode_flag();
+			set_led(100, 0);
+			beep(4, 4, 0, 1);
 			usleep(100000);
-			Beep(3,4,0,1);
+			beep(3, 4, 0, 1);
 			usleep(100000);
-			Beep(2,4,0,1);
+			beep(2, 4, 0, 1);
 			usleep(100000);
-			Beep(1,4,4,1);
+			beep(1, 4, 4, 1);
 			// Wait for user to release the key.
-			while (Get_Key_Press() & KEY_CLEAN)
+			while (get_key_press() & KEY_CLEAN)
 			{
 				ROS_WARN("User still holds the key.");
 				usleep(20000);
 			}
-			Reset_Stop_Event_Status();
+			reset_stop_event_status();
 			break;
 		}
 
 		// Check if plan activated.
-		if (Get_Plan_Status() == 3)
+		if (get_plan_status() == 3)
 		{
 			if (get_error_code() == Error_Code_None)
 			{
-				Set_Main_PwrByte(Clean_Mode_Navigation);
-				ResetSleepModeFlag();
-				Beep(4, 4, 0, 1);
+				set_main_pwr_byte(Clean_Mode_Navigation);
+				reset_sleep_mode_flag();
+				beep(4, 4, 0, 1);
 				usleep(100000);
-				Beep(3,4,0,1);
+				beep(3, 4, 0, 1);
 				usleep(100000);
-				Beep(2,4,0,1);
+				beep(2, 4, 0, 1);
 				usleep(100000);
-				Beep(1,4,4,1);
-				Reset_Stop_Event_Status();
-				Set_Clean_Mode(Clean_Mode_Navigation);
+				beep(1, 4, 4, 1);
+				reset_stop_event_status();
+				set_clean_mode(Clean_Mode_Navigation);
 				break;
 			}
 			else
@@ -83,68 +83,68 @@ void sleep_mode(void)
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				alarm_error();
 				wav_play(WAV_CANCEL_APPOINTMENT);
-				Set_Plan_Status(0);
+				set_plan_status(0);
 			}
 		}
 
-		if(Remote_Key(Remote_Clean))
+		if(remote_key(Remote_Clean))
 		{
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			Set_Main_PwrByte(POWER_ACTIVE);
-			ResetSleepModeFlag();
-			Reset_Rcon_Remote();
-			Beep(4, 4, 0, 1);
+			set_clean_mode(Clean_Mode_Userinterface);
+			set_main_pwr_byte(POWER_ACTIVE);
+			reset_sleep_mode_flag();
+			reset_rcon_remote();
+			beep(4, 4, 0, 1);
 			usleep(100000);
-			Beep(3,4,0,1);
+			beep(3, 4, 0, 1);
 			usleep(100000);
-			Beep(2,4,0,1);
+			beep(2, 4, 0, 1);
 			usleep(100000);
-			Beep(1,4,4,1);
+			beep(1, 4, 4, 1);
 			break;
 		}
-		Reset_Rcon_Remote();
+		reset_rcon_remote();
 		if(is_on_charger_stub() || is_direct_charge())//on base but miss charging , adjust position to charge
 		{
-			Set_Main_PwrByte(POWER_ACTIVE);
-			ResetSleepModeFlag();
-			Reset_Rcon_Remote();
-			Beep(4, 4, 0, 1);
+			set_main_pwr_byte(POWER_ACTIVE);
+			reset_sleep_mode_flag();
+			reset_rcon_remote();
+			beep(4, 4, 0, 1);
 			usleep(100000);
-			Beep(3,4,0,1);
+			beep(3, 4, 0, 1);
 			usleep(100000);
-			Beep(2,4,0,1);
+			beep(2, 4, 0, 1);
 			usleep(100000);
-			Beep(1,4,4,1);
+			beep(1, 4, 4, 1);
 			if (is_direct_charge() || turn_connect())
 			{
-				Set_Clean_Mode(Clean_Mode_Charging);
+				set_clean_mode(Clean_Mode_Charging);
 				break;
 			}
 		}
 
 		/*-----------------Check if near the charging base-----------------------------*/
-		if(Is_Station() && (!get_error_code()))
+		if(is_station() && (!get_error_code()))
 		{
-			ROS_INFO("%s,%d,Rcon_status = %x",__FUNCTION__,__LINE__,Get_Rcon_Status());
+			ROS_INFO("%s,%d,Rcon_status = %x",__FUNCTION__,__LINE__, get_rcon_status());
 			reset_rcon_status();
-			Set_Clean_Mode(Clean_Mode_GoHome);
+			set_clean_mode(Clean_Mode_GoHome);
 			set_home_remote();
-			Set_Main_PwrByte(POWER_ACTIVE);
-			ResetSleepModeFlag();
+			set_main_pwr_byte(POWER_ACTIVE);
+			reset_sleep_mode_flag();
 			break;
 		}
 		if(is_charge_on())
 		{
-			Set_Clean_Mode(Clean_Mode_Charging);
-			Set_Main_PwrByte(POWER_ACTIVE);
-			ResetSleepModeFlag();
+			set_clean_mode(Clean_Mode_Charging);
+			set_main_pwr_byte(POWER_ACTIVE);
+			reset_sleep_mode_flag();
 			break;
 		}
 	}
 	// Alarm for error.
 	if (get_clean_mode() == Clean_Mode_Userinterface && get_error_code())
 	{
-		Set_LED(0, 100);
+		set_led(0, 100);
 		alarm_error();
 	}
 

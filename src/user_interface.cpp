@@ -52,18 +52,18 @@ void User_Interface(void)
 	Error_Show_Counter=400;
 
 	user_interface_register_events();
-	Disable_Motors();
-	Reset_Rcon_Remote();
-	Set_Plan_Status(0);
-	Reset_Stop_Event_Status();
+	disable_motors();
+	reset_rcon_remote();
+	set_plan_status(0);
+	reset_stop_event_status();
 	reset_rcon_status();
-	Set_VacMode(Vac_Save);
+	set_vacmode(Vac_Save);
 
-	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, GetBatteryVoltage());
+	ROS_INFO("%s,%d ,BatteryVoltage = %d v.",__FUNCTION__,__LINE__, get_battery_voltage());
 	// Check the battery to warn the user.
 	if(!check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
 	{
-		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		ROS_WARN("%s %d: Battery level low %4dV(limit in %4dV).", __FUNCTION__, __LINE__, get_battery_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		Battery_Ready_to_clean = false;
 		wav_play(WAV_BATTERY_LOW);
 	}
@@ -102,21 +102,21 @@ void User_Interface(void)
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
 			ROS_WARN("Userinterface mode didn't receive any command in 10mins, go to sleep mode.");
-			Set_Clean_Mode(Clean_Mode_Sleep);
+			set_clean_mode(Clean_Mode_Sleep);
 			break;
 		}
 
 		if(get_error_code())//min_distant_segment Error = red led full
 		{
-			Set_LED(0,100);
+			set_led(0, 100);
 		}
 		else if(!Battery_Ready_to_clean)//min_distant_segment low battery = red & green
 		{
-			Set_LED(LedBreathCount,LedBreathCount);
+			set_led(LedBreathCount, LedBreathCount);
 		}
 		else
 		{
-			Set_LED(LedBreathCount,0);//min_distant_segment normal green
+			set_led(LedBreathCount, 0);//min_distant_segment normal green
 		}
 
 #endif
@@ -132,35 +132,35 @@ void User_Interface(void)
 		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
 		if (get_error_code() != Error_Code_None)
 		{
-			if (Remote_Key(Remote_All & ~Remote_Clean))
+			if (remote_key(Remote_All & ~Remote_Clean))
 			{
 				beep_for_command(false);
-				Reset_Rcon_Remote();
+				reset_rcon_remote();
 				Error_Alarm_Counter = 0;
 				alarm_error();
 			}
-			else if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
+			else if (remote_key(Remote_Clean) || get_key_press() & KEY_CLEAN)
 			{
-				Beep(2, 2, 0, 1);//Beep for useless remote command
+				beep(2, 2, 0, 1);//beep for useless remote command
 				// Wait for user to release the key.
-				while (Get_Key_Press() & KEY_CLEAN)
+				while (get_key_press() & KEY_CLEAN)
 				{
 					ROS_INFO("User still holds the key.");
 					usleep(100000);
 				}
 				// Key relaesed, then the touch status and stop event status should be cleared.
-				Reset_Stop_Event_Status();
+				reset_stop_event_status();
 				wav_play(WAV_CLEAR_ERROR);
 				set_error_code(Error_Code_None);
-				Reset_Rcon_Remote();
+				reset_rcon_remote();
 			}
 
-			if (Get_Plan_Status() == 3)
+			if (get_plan_status() == 3)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				alarm_error();
 				wav_play(WAV_CANCEL_APPOINTMENT);
-				Set_Plan_Status(0);
+				set_plan_status(0);
 			}
 
 			continue;
@@ -173,7 +173,7 @@ void User_Interface(void)
 			{
 				ROS_WARN("Robot lifted up during manual pause, reset manual pause status.");
 				wav_play(WAV_ERROR_LIFT_UP);
-				Clear_Manual_Pause();
+				clear_manual_pause();
 			}
 		}
 
@@ -185,58 +185,58 @@ void User_Interface(void)
 				Temp_Mode = Clean_Mode_Charging;
 			else if(turn_connect())
 				Temp_Mode = Clean_Mode_Charging;
-			Disable_Motors();
+			disable_motors();
 		}
 
 		/*--------------------------------------------------------Check if remote move event--------------*/
-		if(Remote_Key(Remote_Forward | Remote_Right | Remote_Left | Remote_Backward))
+		if(remote_key(Remote_Forward | Remote_Right | Remote_Left | Remote_Backward))
 		{
 			Temp_Mode = Clean_Mode_Remote;
-			Reset_Rcon_Remote();
+			reset_rcon_remote();
 		}
 
 		/* -----------------------------Check if spot event ----------------------------------*/
-		if(Remote_Key(Remote_Spot))//                                       Check Remote Key Spin
+		if(remote_key(Remote_Spot))//                                       Check Remote Key Spin
 		{
 			//Transmite_BAT();
-			Set_MoveWithRemote();
-			Reset_Rcon_Remote();
+			set_move_with_remote();
+			reset_rcon_remote();
 			Temp_Mode=Clean_Mode_Spot;
 		}
 
 		/* -----------------------------Check if Home event ----------------------------------*/
-		if(Remote_Key(Remote_Home)) //                                    Check Key Home
+		if(remote_key(Remote_Home)) //                                    Check Key Home
 		{
 			Temp_Mode=Clean_Mode_GoHome;
-		//	Reset_MoveWithRemote();
-			Set_MoveWithRemote();
+		//	reset_move_with_remote();
+			set_move_with_remote();
 			set_home_remote();
-			Reset_Rcon_Remote();
+			reset_rcon_remote();
 		}
 
 		/* -----------------------------Check if wall follow event ----------------------------------*/
-		if(Remote_Key(Remote_Wall_Follow))//                                  Check Remote Key Wallfollow
+		if(remote_key(Remote_Wall_Follow))//                                  Check Remote Key Wallfollow
 		{
-			Set_MoveWithRemote();
-			Reset_Rcon_Remote();
+			set_move_with_remote();
+			reset_rcon_remote();
 			Temp_Mode=Clean_Mode_WallFollow;
 		}
 
 		/* -----------------------------Check if plan event ----------------------------------*/
-		switch (Get_Plan_Status())
+		switch (get_plan_status())
 		{
 			case 1:
 			{
 				ROS_INFO("%s %d: Appointment received.", __FUNCTION__, __LINE__);
-				Beep(2, 2, 0, 1);
-				Set_Plan_Status(0);
+				beep(2, 2, 0, 1);
+				set_plan_status(0);
 				break;
 			}
 			case 2:
 			{
 				ROS_INFO("%s %d: Appointment canceled.", __FUNCTION__, __LINE__);
 				wav_play(WAV_CANCEL_APPOINTMENT);
-				Set_Plan_Status(0);
+				set_plan_status(0);
 				break;
 			}
 			case 3:
@@ -244,7 +244,7 @@ void User_Interface(void)
 				ROS_INFO("%s %d: Appointment activated.", __FUNCTION__, __LINE__);
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
-				Set_Plan_Status(0);
+				set_plan_status(0);
 				if (!robot::instance()->isManualPaused())
 					Temp_Mode=Clean_Mode_Navigation;
 				break;
@@ -253,7 +253,7 @@ void User_Interface(void)
 			{
 				ROS_INFO("%s %d: Appointment succeeded.", __FUNCTION__, __LINE__);
 				wav_play(WAV_APPOINTMENT_DONE);
-				Set_Plan_Status(0);
+				set_plan_status(0);
 				break;
 			}
 		}
@@ -264,50 +264,50 @@ void User_Interface(void)
 //			if(Get_AlarmSet_Minutes()==Get_Time_Minutes())
 //			{
 //				Temp_Mode=Clean_Mode_Navigation;
-//				Reset_MoveWithRemote();
+//				reset_move_with_remote();
 //			}
 //		}
 
 		/* -----------------------------Check if remote clean event ----------------------------*/
-		if(Remote_Key(Remote_Clean))//                                       Check Remote Key Clean
+		if(remote_key(Remote_Clean))//                                       Check Remote Key Clean
 		{
-			Reset_Rcon_Remote();
+			reset_rcon_remote();
 			Temp_Mode=Clean_Mode_Navigation;
-			Reset_MoveWithRemote();
+			reset_move_with_remote();
 		}
 
 		/* -----------------------------Check if key clean event ----------------------------*/
-		if(Get_Key_Press() & KEY_CLEAN)//                                    Check Key Clean
+		if(get_key_press() & KEY_CLEAN)//                                    Check Key Clean
 		{
-//			Beep(2, 15, 0, 1);
-			Press_time=Get_Key_Time(KEY_CLEAN);
+//			beep(2, 15, 0, 1);
+			Press_time= get_key_time(KEY_CLEAN);
 			// Long press on the clean button means let the robot go to sleep mode.
 			if(Press_time>151)
 			{
 				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
-				//Beep(6,25,25,1);
-				Beep(1, 4, 0, 1);
+				//beep(6,25,25,1);
+				beep(1, 4, 0, 1);
 				usleep(100000);
-				Beep(2,4,0,1);
+				beep(2, 4, 0, 1);
 				usleep(100000);
-				Beep(3,4,0,1);
+				beep(3, 4, 0, 1);
 				usleep(100000);
-				Beep(5,4,4,1);
+				beep(5, 4, 4, 1);
 				// Wait for beep finish.
 				usleep(200000);
 				// Wait for user to release the key.
-				while (Get_Key_Press() & KEY_CLEAN)
+				while (get_key_press() & KEY_CLEAN)
 				{
 					ROS_INFO("User still holds the key.");
 					usleep(100000);
 				}
 				// Key relaesed, then the touch status and stop event status should be cleared.
-				Reset_Stop_Event_Status();
+				reset_stop_event_status();
 				Temp_Mode=Clean_Mode_Sleep;
 			}
 			else
 				Temp_Mode=Clean_Mode_Navigation;
-			Reset_MoveWithRemote();
+			reset_move_with_remote();
 		//	Reset_Error_Code();
 		}
 
@@ -315,15 +315,15 @@ void User_Interface(void)
 		{
 			if((Temp_Mode==Clean_Mode_Sleep)||(Temp_Mode==Clean_Mode_Charging))
 			{
-//				Reset_Bumper_Error();
+//				reset_bumper_error();
 //				Reset_Error_Code();
-				Set_Clean_Mode(Temp_Mode);
+				set_clean_mode(Temp_Mode);
 //				Set_CleanKeyDelay(0);
 				break;
 			}
 			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
-				ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
+				ROS_INFO("[user_interface.cpp] get_battery_voltage = %d.", get_battery_voltage());
 				if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
 //					set_error_code(Error_Code_Cliff);
@@ -335,14 +335,14 @@ void User_Interface(void)
 				}
 				else if (battery_too_low_)
 				{
-					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)LOW_BATTERY_STOP_VOLTAGE);
+					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__, get_battery_voltage(),(int)LOW_BATTERY_STOP_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 					charger_signal_delay = 0;
 				}
 				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
 				{
-					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__,GetBatteryVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+					ROS_WARN("%s %d: Battery level low %4dV(limit in %4d V)", __FUNCTION__, __LINE__, get_battery_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
 					Temp_Mode=0;
 					charger_signal_delay = 0;
@@ -350,10 +350,10 @@ void User_Interface(void)
 				else
 				{
 //					Reset_Error_Code();
-					Set_Clean_Mode(Temp_Mode);
+					set_clean_mode(Temp_Mode);
 //					Set_CleanKeyDelay(0);
-					Reset_Rcon_Remote();
-//					Reset_Bumper_Error();
+					reset_rcon_remote();
+//					reset_bumper_error();
 					break;
 				}
 			}

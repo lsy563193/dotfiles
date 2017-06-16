@@ -36,7 +36,7 @@ void Slam::start(void)
 	else if (slam_type_ == 2)
 		system("roslaunch pp cartographer_slam.launch 2>/dev/null &");
 /*
-	if(Stop_Event()){
+	if(stop_event()){
 		stop();
 		return false;
 	}

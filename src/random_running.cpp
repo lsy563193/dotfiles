@@ -84,129 +84,129 @@ void Random_Running_Mode(void)
 	Set_Gyro_On();
 	if (!Wait_For_Gyro_On())
 	{
-		Set_Clean_Mode(Clean_Mode_Userinterface);
+		set_clean_mode(Clean_Mode_Userinterface);
 		return;
 	}
 
 	reset_start_work_time();
-	Wall_Bumper_Factor = Get_Random_Factor()/15;
-	Reset_MoveWithRemote();
-//	Reset_Bumper_Error();
-		Set_LED(100,0);
-	Reset_Stop_Event_Status();
+	Wall_Bumper_Factor = get_random_factor()/15;
+	 reset_move_with_remote();
+//	reset_bumper_error();
+	 set_led(100, 0);
+	 reset_stop_event_status();
 
 //  if(!Is_Dustbin_Install())
 //  {
 //    set_error_code(Error_Code_Dustbin);
-//    Set_Clean_Mode(Clean_Mode_Userinterface);
-//    Disable_Motors();
+//    set_clean_mode(Clean_Mode_Userinterface);
+//    disable_motors();
 //    return;
 //  }
 
 	ROS_DEBUG_NAMED("random mode","-------in random running mode-----");
 	if(is_on_charger_stub())
 	{
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		Beep(2,25,25,1);
+		set_clean_mode(Clean_Mode_Userinterface);
+		beep(2, 25, 25, 1);
 		usleep(400000);
-		Reset_Rcon_Remote();
-		Beep(2,25,25,1);
-		Set_SideBrush_PWM(30,30);
-		Set_MainBrush_PWM(0);
-		Set_BLDC_Speed(30);
-		Stop_Brifly();
+		reset_rcon_remote();
+		beep(2, 25, 25, 1);
+		set_side_brush_pwm(30, 30);
+		set_main_brush_pwm(0);
+		set_bldc_speed(30);
+		stop_brifly();
 		quick_back(30,750);
-		if(Stop_Event()||is_charge_on())
+		if(stop_event()||is_charge_on())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
+			while (get_key_press() & KEY_CLEAN)
 			{
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
-			Reset_Stop_Event_Status();
+			reset_stop_event_status();
 			return;
 		}
-		Beep(2,25,25,1);
+		beep(2, 25, 25, 1);
 		quick_back(30,750);
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
+			while (get_key_press() & KEY_CLEAN)
 			{
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
-			Reset_Stop_Event_Status();
+			reset_stop_event_status();
 			return;
 		}
-		Beep(2,25,25,1);
+		beep(2, 25, 25, 1);
 		quick_back(30,750);
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
+			while (get_key_press() & KEY_CLEAN)
 			{
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
-			Reset_Stop_Event_Status();
+			reset_stop_event_status();
 			return;
 		}
-		Beep(2,25,25,1);
-		Turn_Right(Turn_Speed,1120+Get_Random_Factor()*10);
-		if(Stop_Event())
+		beep(2, 25, 25, 1);
+		Turn_Right(Turn_Speed,1120+ get_random_factor()*10);
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
+			while (get_key_press() & KEY_CLEAN)
 			{
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
-			Reset_Stop_Event_Status();
+			reset_stop_event_status();
 			return;
 		}
-		Stop_Brifly();
-		//Initialize_Motor();
+		stop_brifly();
+		//initialize_motor();
 		Base_Wall_On=0;
 	}
 
-	Set_Clean_Mode(Clean_Mode_RandomMode);
+	 set_clean_mode(Clean_Mode_RandomMode);
 
 	 work_motor_configure();
-	Reset_Move_Distance();
+	 reset_move_distance();
 	 reset_wheel_step();
-	Reset_Stop_Event_Status();
+	 reset_stop_event_status();
 	Wall_Bumper_Counter=0;
-	Reset_Rcon_Remote();
-	Set_Direction_Flag(Direction_Flag_Right);
+	 reset_rcon_remote();
+	 set_direction_flag(Direction_Flag_Right);
 	Stunk=0;
 	Low_Power_Counter=0;
 	 reset_rcon_status();
 
-	Set_Vac_Speed();
+	 set_vac_speed();
 	while(ros::ok())
 	{
 		usleep(10000);
 		wall_dynamic_base(400);
 
 #ifdef OBS_DYNAMIC
-		OBS_Dynamic_Base(300);
+		obs_dynamic_base(300);
 #endif
 
 		/*if(Get_Room_Mode())//small room
 		{
-			if(WorkFinish_ByRoom(Get_Room_Mode()))
+			if(WorkFinish_ByRoom(get_room_mode()))
 			{
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				break;
 			}
 		}*/
@@ -214,15 +214,15 @@ void Random_Running_Mode(void)
 		/*-------------------------------------Mobility----------------------------------------------*/
 		if(get_left_wheel_step()<500)
 		{
-			Temp_Mobility_Distance = Get_Move_Distance();
+			Temp_Mobility_Distance = get_move_distance();
 		}
 		else
 		{
-			if((Get_Move_Distance()-Temp_Mobility_Distance)>500)
+			if((get_move_distance()-Temp_Mobility_Distance)>500)
 			{
-				Temp_Mobility_Distance = Get_Move_Distance();
-				Check_Mobility();
-				Reset_Mobility_Step();
+				Temp_Mobility_Distance = get_move_distance();
+				check_mobility();
+				reset_mobility_step();
 			}
 		}
 		/*------------------------------------------------------Check Current-----------------------*/
@@ -231,19 +231,19 @@ void Random_Running_Mode(void)
 		{
 			if(self_check(Motor_Check_Code))
 			{
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				break;
 			}
-			//Initialize_Motor();
+			//initialize_motor();
 		}
 		/*------------------------------------------------------Check Battery-----------------------*/
-		if(Check_Bat_SetMotors(Clean_Vac_Power,Clean_SideBrush_Power,Clean_MainBrush_Power))//Low Battery Event
+		if(check_bat_set_motors(Clean_Vac_Power, Clean_SideBrush_Power, Clean_MainBrush_Power))//Low Battery Event
 		{
 			Low_Power_Counter++;
 			if(Low_Power_Counter>10)
 			{
 				ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				break;
 			}
 		}
@@ -252,39 +252,39 @@ void Random_Running_Mode(void)
 			Low_Power_Counter=0;
 		}
 		/*------------------------------------------------------Stop event-----------------------*/
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
+			while (get_key_press() & KEY_CLEAN)
 			{
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
-			Reset_Stop_Event_Status();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			reset_stop_event_status();
+			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
-		if(Get_Rcon_Remote() > 0)
+		if(get_rcon_remote() > 0)
 		{
 			#ifdef STANDARD_REMOTE
-			if(Remote_Key(Remote_Left))
+			if(remote_key(Remote_Left))
 			{
-				Stop_Brifly();
-				Set_Dir_Left();
+				stop_brifly();
+				set_dir_left();
 				set_wheel_speed(30, 30);
-				//Set_SideBrush_PWM(60,60);
+				//set_side_brush_pwm(60,60);
 				usleep(100000);
-				while(Remote_Key(Remote_Left))
+				while(remote_key(Remote_Left))
 				{
-					Reset_Rcon_Remote();
+					reset_rcon_remote();
 					usleep(100000);
-					if (Stop_Event())
+					if (stop_event())
 					{
-						Stop_Brifly();
+						stop_brifly();
 						// Key release detection, if user has not release the key, don't do anything.
-						while (Get_Key_Press() & KEY_CLEAN)
+						while (get_key_press() & KEY_CLEAN)
 						{
 							ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 							usleep(20000);
@@ -292,31 +292,31 @@ void Random_Running_Mode(void)
 						break;
 					}
 				}
-				if (Stop_Event())
+				if (stop_event())
 				{
 					continue;
 				}
-				Stop_Brifly();
-				Reset_Rcon_Remote();
+				stop_brifly();
+				reset_rcon_remote();
 				reset_wheel_step();
-				Move_Forward(10,10);
+				move_forward(10, 10);
 			}
-			if(Remote_Key(Remote_Right))
+			if(remote_key(Remote_Right))
 			{
-				Stop_Brifly();
-				Set_Dir_Right();
+				stop_brifly();
+				set_dir_right();
 				set_wheel_speed(30, 30);
-				//Set_SideBrush_PWM(60,60);
+				//set_side_brush_pwm(60,60);
 				usleep(100000);
-				while(Remote_Key(Remote_Right))
+				while(remote_key(Remote_Right))
 				{
-					Reset_Rcon_Remote();
+					reset_rcon_remote();
 					usleep(100000);
-					if(Stop_Event())
+					if(stop_event())
 					{
-						Stop_Brifly();
+						stop_brifly();
 						// Key release detection, if user has not release the key, don't do anything.
-						while (Get_Key_Press() & KEY_CLEAN)
+						while (get_key_press() & KEY_CLEAN)
 						{
 							ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 							usleep(20000);
@@ -325,10 +325,10 @@ void Random_Running_Mode(void)
 						break;
 					}
 				}
-				Stop_Brifly();
-				Reset_Rcon_Remote();
+				stop_brifly();
+				reset_rcon_remote();
 				reset_wheel_step();
-				Move_Forward(10,10);
+				move_forward(10, 10);
 			}
 			#endif
 			#ifdef SCREEN_REMOTE
@@ -362,85 +362,85 @@ void Random_Running_Mode(void)
 //			Move_Forward(10,10);
 			}
 			#else
-			if(Remote_Key(Remote_Max))
+			if(remote_key(Remote_Max))
 			{
 				Stop_Brifly();
 				Turn_Right(Turn_Speed,1800);
-				Stop_Brifly();
-				Reset_Rcon_Remote();
+				stop_brifly();
+				reset_rcon_remote();
 				reset_wheel_step();
-				Move_Forward(10,10);
+				move_forward(10,10);
 			}
 			#endif
 			#endif
-			if(Remote_Key(Remote_Home)) //                                    Check Key Home
+			if(remote_key(Remote_Home)) //                                    Check Key Home
 			{
 				usleep(50000);
-				Set_Clean_Mode(Clean_Mode_GoHome);
+				set_clean_mode(Clean_Mode_GoHome);
 				set_home_remote();
-				Reset_Rcon_Remote();
+				reset_rcon_remote();
 				return;
 			}
-//		if(Remote_Key(Remote_Random)) //                                    Check Key Home
+//		if(remote_key(Remote_Random)) //                                    Check Key Home
 //		{
-//			Set_Clean_Mode(Clean_Mode_WallFollow);
-//				Move_Forward(10,10);
-//				Reset_Rcon_Remote();
+//			set_clean_mode(Clean_Mode_WallFollow);
+//				move_forward(10,10);
+//				reset_rcon_remote();
 //				break;
 //		}
-			if(Remote_Key(Remote_Spot))
+			if(remote_key(Remote_Spot))
 			{
-				Reset_Rcon_Remote();
-				Vac_Mode_Buffer = Get_VacMode();
+				reset_rcon_remote();
+				Vac_Mode_Buffer = get_vac_mode();
 				Temp_Dirt_Status=Random_Dirt_Event();
-				Set_VacMode(Vac_Mode_Buffer,false);
-				Set_Vac_Speed();
+				set_vacmode(Vac_Mode_Buffer, false);
+				set_vac_speed();
 				if(Temp_Dirt_Status==1)
 				{
-					// Stop_Event triggered in Random_Dirt_Event
+					// stop_event triggered in Random_Dirt_Event
 					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
+					while (get_key_press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
 					// Key relaesed, then the touch status and stop event status should be cleared.
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					set_clean_mode(Clean_Mode_Userinterface);
 					break;
 				}
 				reset_wheel_step();
 			}
-			Reset_Rcon_Remote();
+			reset_rcon_remote();
 		}
 		/*------------------------------------------------------Virtual wall Event-----------------------*/
 #ifdef VIRTUAL_WALL
-		if(Is_WorkFinish(Get_Room_Mode()))
+		if(is_work_finish(get_room_mode()))
 		{
-			if(Is_NearStation())
+			if(is_near_station())
 			{
 				ROS_DEBUG("jump to the home mode in random running");
-				Set_Clean_Mode(Clean_Mode_GoHome);
+				set_clean_mode(Clean_Mode_GoHome);
 				break;
 			}
 		}
 		else if(Base_Wall_On)
 		{
-			Temp_Rcon_Status = Get_Rcon_Status();
+			Temp_Rcon_Status = get_rcon_status();
 			if(Temp_Rcon_Status & 0x0f00)
 			{
-				Stop_Brifly();
-				Stop_Brifly();
+				stop_brifly();
+				stop_brifly();
 				if(get_left_wheel_step()<1000)
 				{
-					if(Is_Direction_Right())
+					if(is_direction_right())
 					{
 						Turn_Right(Turn_Speed,1200);
-						Set_Direction_Flag(Direction_Flag_Right);
+						set_direction_flag(Direction_Flag_Right);
 					}
 					else
 					{
 						turn_left(Turn_Speed, 1200);
-						Set_Direction_Flag(Direction_Flag_Left);
+						set_direction_flag(Direction_Flag_Left);
 					}
 				}
 				else
@@ -448,27 +448,27 @@ void Random_Running_Mode(void)
 					if(Temp_Rcon_Status & RconL_HomeT)
 					{
 						Turn_Right(Turn_Speed,800);
-						Set_Direction_Flag(Direction_Flag_Right);
+						set_direction_flag(Direction_Flag_Right);
 					}
 					else if(Temp_Rcon_Status & RconFL_HomeT)
 					{
-						Random_Back();
+						random_back();
 						Turn_Right(Turn_Speed,1120);
-						Set_Direction_Flag(Direction_Flag_Right);
+						set_direction_flag(Direction_Flag_Right);
 					}
 					else if(Temp_Rcon_Status & RconFR_HomeT)
 					{
-						Random_Back();
+						random_back();
 						turn_left(Turn_Speed, 1120);
-						Set_Direction_Flag(Direction_Flag_Left);
+						set_direction_flag(Direction_Flag_Left);
 					}
 					else if(Temp_Rcon_Status & RconR_HomeT)
 					{
 						turn_left(Turn_Speed, 1000);
-						Set_Direction_Flag(Direction_Flag_Left);
+						set_direction_flag(Direction_Flag_Left);
 					}
 				}
-				Move_Forward(2,2);
+				move_forward(2, 2);
 				reset_rcon_status();
 				Base_Wall_On=0;
 				reset_wheel_step();
@@ -479,12 +479,12 @@ void Random_Running_Mode(void)
 #endif
 		/*------------------------------------------------------Virtual Wall--------------------*/
 #ifdef VIRTUAL_WALL
-		//Temp_Rcon_Status = Get_Rcon_Status();
-		if (Is_VirtualWall()) {
-			Reset_VirtualWall();
+		//Temp_Rcon_Status = get_rcon_status();
+		if (is_virtual_wall_()) {
+			reset_virtual_wall();
 			Virtual_Wall_C++;
 			if (Virtual_Wall_C > 1) {
-				Stop_Brifly();
+				stop_brifly();
 				//WalkAlongVirtualWall(Temp_Rcon_Status);
 				Temp_Rcon_Status = 0;
 			}
@@ -507,27 +507,27 @@ void Random_Running_Mode(void)
 			usleep(30000);
 			if(get_cliff_trig()||(get_left_wheel_step()<200))
 			{
-				Cliff_Move_Back();
+				cliff_move_back();
 				if(get_cliff_trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					set_clean_mode(Clean_Mode_Userinterface);
 					break;
 				}
 				if(get_cliff_trig())
 				{
 					if(cliff_escape())
 					{
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						set_clean_mode(Clean_Mode_Userinterface);
 						break;
 					}
 				}
 				if(cliff_event(Temp_Cliff_Status))
 				{
-					Set_Direction_Flag(Direction_Flag_Left);
+					set_direction_flag(Direction_Flag_Left);
 				}
 				else
 				{
-					Set_Direction_Flag(Direction_Flag_Right);
+					set_direction_flag(Direction_Flag_Right);
 				}
 				reset_wheel_step();
 				reset_temp_pwm();
@@ -536,10 +536,10 @@ void Random_Running_Mode(void)
 				Wall_Bumper_Counter+=2;
 				Wall_Small_Counter++;
 				Wall_Mid_Counter++;
-				Move_Forward(5,5);
+				move_forward(5, 5);
 				usleep(10000);
 			}
-			Reset_LeftWheel_Step();
+			reset_left_wheel_step();
 			set_dir_forward();
 		}
 		/*------------------------------------------------------Bumper Event-----------------------*/
@@ -549,7 +549,7 @@ void Random_Running_Mode(void)
 			ROS_DEBUG("random running , left bumpe event!");
 			Avoid_Flag=0;
 			Left_Wheel_Step_Buffer= get_left_wheel_step();
-			Add_Average(get_left_wheel_step());
+			add_average(get_left_wheel_step());
 			if(get_left_wheel_step()>14000)
 			{
 				Wall_Bumper_Counter+=2;
@@ -561,64 +561,64 @@ void Random_Running_Mode(void)
 			set_wheel_speed(0, 0);
 			usleep(10000);
 			Temp_Bumper_Status = get_bumper_status();
-			Random_Back();
-			if(Is_Bumper_Jamed())break;
+			random_back();
+			if(is_bumper_jamed())break;
 
 			Stunk++;
 			if(Stunk>7)
 			{
 				Turn_Right(Turn_Speed,240);
-				Move_Forward(10,10);
+				move_forward(10, 10);
 				if(Out_Trap_Left())
 				{
-					// Out_Trap_Left() return 1 may be caused by Stop_Event.
+					// Out_Trap_Left() return 1 may be caused by stop_event.
 					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
+					while (get_key_press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
 					// Key relaesed, then the touch status and stop event should be cleared.
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Stop_Event_Status();
+					set_clean_mode(Clean_Mode_Userinterface);
+					reset_stop_event_status();
 					break;
 				}
 				Stunk=0;
-				Set_Direction_Flag(Direction_Flag_Right);
+				set_direction_flag(Direction_Flag_Right);
 				Turn_Right(Turn_Speed,80);
 			}
 			else
 			{
-				if((Wall_Small_Counter>30)&&(!Is_Move_Finished(300000)))
+				if((Wall_Small_Counter>30)&&(!is_move_finished(300000)))
 				{
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed,400);
-					Stop_Brifly();
+					stop_brifly();
 					if(Wall_Follow_Short(3000))return;
 					Stunk=0;
 					Wall_Bumper_Counter=0;
 					Wall_Small_Counter=0;
 					Wall_Mid_Counter=0;
-					Reset_Move_Distance();
+					reset_move_distance();
 				}
-				else if((Wall_Mid_Counter>40)||(Is_Move_Finished(460000)))
+				else if((Wall_Mid_Counter>40)||(is_move_finished(460000)))
 				{
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed,400);
-					Stop_Brifly();
+					stop_brifly();
 					if(Wall_Follow_Short(1000))return;
 					Stunk=0;
 					Wall_Bumper_Counter=0;
 					Wall_Mid_Counter=0;
 					Wall_Small_Counter=0;
-					Reset_Move_Distance();
+					reset_move_distance();
 				}
-				else if((Wall_Bumper_Counter>(Short_Wall_Trig+Wall_Bumper_Factor))&&(Get_Random_Factor()<25))
+				else if((Wall_Bumper_Counter>(Short_Wall_Trig+Wall_Bumper_Factor))&&(get_random_factor()<25))
 				{
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed,400);
-					Stop_Brifly();
-					if(Wall_Follow_Short(Get_Average_Move()))return;
+					stop_brifly();
+					if(Wall_Follow_Short(get_average_move()))return;
 					Stunk=0;
 					Wall_Bumper_Counter=0;
 					Wall_Mid_Counter=0;
@@ -628,32 +628,32 @@ void Random_Running_Mode(void)
 				{
 					if(Left_Wheel_Step_Buffer<1000)
 					{
-						if(Is_Direction_Right())
+						if(is_direction_right())
 						{
 							Turn_Right(Turn_Speed,660);
-							Set_Direction_Flag(Direction_Flag_Right);
+							set_direction_flag(Direction_Flag_Right);
 						}
 						else
 						{
 							turn_left(Turn_Speed, 660);
-							Set_Direction_Flag(Direction_Flag_Left);
+							set_direction_flag(Direction_Flag_Left);
 						}
 					}
 					else
 					{
 						if(Temp_Bumper_Status == AllBumperTrig)
 						{
-							//Half_Turn_Right(Turn_Speed,800+Get_Random_Factor()*7);
-							Turn_Right(Turn_Speed,800+Get_Random_Factor()*7);
+							//Half_Turn_Right(Turn_Speed,800+get_random_factor()*7);
+							Turn_Right(Turn_Speed,800+ get_random_factor()*7);
 							Avoid_Flag=1;
 						}
 						else
 						{
-							if(Get_Random_Factor()<60)
+							if(get_random_factor()<60)
 							{
 								Turn_Right(Turn_Speed,800);
 								if(Left_Bumper_Avoiding())Avoid_Flag=1;
-								if (Stop_Event())
+								if (stop_event())
 								{
 									// Continue to let the main while loop to process the stop event status.
 									continue;
@@ -661,12 +661,12 @@ void Random_Running_Mode(void)
 							}
 							else
 							{
-								//Half_Turn_Right(Turn_Speed,700+Get_Random_Factor()*9);
-								Turn_Right(Turn_Speed,700+Get_Random_Factor()*9);
+								//Half_Turn_Right(Turn_Speed,700+get_random_factor()*9);
+								Turn_Right(Turn_Speed,700+ get_random_factor()*9);
 								Avoid_Flag=1;
 							}
 						}
-						Set_Direction_Flag(Direction_Flag_Right);
+						set_direction_flag(Direction_Flag_Right);
 					}
 				}
 			}
@@ -679,11 +679,11 @@ void Random_Running_Mode(void)
 			{
 				if(get_left_wheel_step()> get_right_wheel_step())
 				{
-					Set_RightWheel_Step(get_left_wheel_step());
+					set_right_wheel_step(get_left_wheel_step());
 				}
-				Set_RightWheel_Step(get_right_wheel_step()/2);
+				set_right_wheel_step(get_right_wheel_step() / 2);
 			}
-			Set_Mobility_Step(0);
+			set_mobility_step(0);
 			Bumper_Counter++;
 			Wall_Small_Counter++;
 			Wall_Mid_Counter++;
@@ -695,7 +695,7 @@ void Random_Running_Mode(void)
 			ROS_DEBUG("random running ,right bumper event ");
 			Avoid_Flag=0;
 			Left_Wheel_Step_Buffer= get_left_wheel_step();
-			Add_Average(get_left_wheel_step());
+			add_average(get_left_wheel_step());
 			if(get_left_wheel_step()>14000)
 			{
 				Wall_Bumper_Counter+=1;
@@ -707,62 +707,62 @@ void Random_Running_Mode(void)
 			set_wheel_speed(0, 0);
 			usleep(10000);
 			Temp_Bumper_Status = get_bumper_status();
-			Random_Back();
-			if(Is_Bumper_Jamed())break;
+			random_back();
+			if(is_bumper_jamed())break;
 			Stunk++;
 			if(Stunk>7)
 			{
 				turn_left(Turn_Speed, 240);
-				Move_Forward(10,10);
+				move_forward(10, 10);
 				if(Out_Trap_Right())
 				{
-					// Out_Trap_Right() return 1 may be caused by Stop_Event.
+					// Out_Trap_Right() return 1 may be caused by stop_event.
 					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
+					while (get_key_press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
 					// Key relaesed, then the touch status and stop event status should be cleared.
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Stop_Event_Status();
+					set_clean_mode(Clean_Mode_Userinterface);
+					reset_stop_event_status();
 					break;
 				}
 				Stunk=0;
-				Set_Direction_Flag(Direction_Flag_Left);
+				set_direction_flag(Direction_Flag_Left);
 				turn_left(Turn_Speed, 80);
 			}
 			else
 			{
-				if((Wall_Small_Counter>30)&&(!Is_Move_Finished(300000)))
+				if((Wall_Small_Counter>30)&&(!is_move_finished(300000)))
 				{
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed,900);
-					Stop_Brifly();
+					stop_brifly();
 					if(Wall_Follow_Short(4000))return;
 					Stunk=0;
 					Wall_Bumper_Counter=0;
-					Reset_Move_Distance();
+					reset_move_distance();
 					Wall_Small_Counter=0;
 				}
-				else if((Wall_Mid_Counter>40)||(Is_Move_Finished(460000)))
+				else if((Wall_Mid_Counter>40)||(is_move_finished(460000)))
 				{
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed,900);
-					Stop_Brifly();
+					stop_brifly();
 					if(Wall_Follow_Short(1000))return;
 					Stunk=0;
 					Wall_Bumper_Counter=0;
 					Wall_Mid_Counter=0;
 					Wall_Small_Counter=0;
-					Reset_Move_Distance();
+					reset_move_distance();
 				}
-				else if((Wall_Bumper_Counter>(Short_Wall_Trig+Wall_Bumper_Factor))&&(Get_Random_Factor()<25))
+				else if((Wall_Bumper_Counter>(Short_Wall_Trig+Wall_Bumper_Factor))&&(get_random_factor()<25))
 				{
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed,900);
-					Stop_Brifly();
-					if(Wall_Follow_Short(Get_Average_Move()))return;
+					stop_brifly();
+					if(Wall_Follow_Short(get_average_move()))return;
 					Stunk=0;
 					Wall_Bumper_Counter=0;
 					Wall_Mid_Counter=0;
@@ -771,32 +771,32 @@ void Random_Running_Mode(void)
 				{
 					if(Left_Wheel_Step_Buffer<1000)
 					{
-						if(Is_Direction_Left())
+						if(is_direction_left())
 						{
 							turn_left(Turn_Speed, 660);
-							Set_Direction_Flag(Direction_Flag_Left);
+							set_direction_flag(Direction_Flag_Left);
 						}
 						else
 						{
 							Turn_Right(Turn_Speed,660);
-							Set_Direction_Flag(Direction_Flag_Right);
+							set_direction_flag(Direction_Flag_Right);
 						}
 					}
 					else
 					{
 						if(Temp_Bumper_Status == AllBumperTrig)
 						{
-							//Half_Turn_Left(Turn_Speed,800+Get_Random_Factor()*6);
-							turn_left(Turn_Speed, 800 + Get_Random_Factor() * 6);
+							//Half_Turn_Left(Turn_Speed,800+get_random_factor()*6);
+							turn_left(Turn_Speed, 800 + get_random_factor() * 6);
 							Avoid_Flag=1;
 						}
 						else
 						{
-							if(Get_Random_Factor()<60)
+							if(get_random_factor()<60)
 							{
 								turn_left(Turn_Speed, 800);
 								if(Right_Bumper_Avoiding())Avoid_Flag=1;
-								if (Stop_Event())
+								if (stop_event())
 								{
 									// Continue to let the main while loop to process the stop event status.
 									continue;
@@ -804,12 +804,12 @@ void Random_Running_Mode(void)
 							}
 							else
 							{
-								//Half_Turn_Left(Turn_Speed,700+Get_Random_Factor()*8);
-								turn_left(Turn_Speed, 700 + Get_Random_Factor() * 8);
+								//Half_Turn_Left(Turn_Speed,700+get_random_factor()*8);
+								turn_left(Turn_Speed, 700 + get_random_factor() * 8);
 								Avoid_Flag=1;
 							}
 						}
-						Set_Direction_Flag(Direction_Flag_Left);
+						set_direction_flag(Direction_Flag_Left);
 					}
 				}
 			}
@@ -822,11 +822,11 @@ void Random_Running_Mode(void)
 			{
 				if(get_left_wheel_step()> get_right_wheel_step())
 				{
-					Set_RightWheel_Step(get_left_wheel_step());
+					set_right_wheel_step(get_left_wheel_step());
 				}
-				Set_RightWheel_Step(get_right_wheel_step()/2);
+				set_right_wheel_step(get_right_wheel_step() / 2);
 			}
-			Set_Mobility_Step(0);
+			set_mobility_step(0);
 			Bumper_Counter++;
 			Wall_Small_Counter++;
 			Wall_Mid_Counter++;
@@ -836,17 +836,17 @@ void Random_Running_Mode(void)
 		if(Temp_OBS_Status)
 		{
 			ROS_DEBUG("random running ,obs event ");
-			Temp_OBS_Status=Get_OBS_Status();
+			Temp_OBS_Status= get_obs_status();
 			Left_Wheel_Step_Buffer= get_left_wheel_step();
-			Add_Average(get_left_wheel_step());
-			//Random_Back();
+			add_average(get_left_wheel_step());
+			//random_back();
 			set_wheel_speed(0, 0);
 			reset_temp_pwm();
 			usleep(10000);
-			//Stop_Brifly();
+			//stop_brifly();
 			N_H_T=0;
 			Reset_HalfTurn_Flag();
-			if(Is_LeftWheel_Reach(30))
+			if(is_left_wheel_reach(30))
 			{
 				if(Left_Wheel_Step_Buffer>14000)
 				{
@@ -856,49 +856,49 @@ void Random_Running_Mode(void)
 				{
 					Wall_Bumper_Counter+=2;
 				}
-				Stop_Brifly();
+				stop_brifly();
 				Bumper_Counter++;
 			}
 
-			if((Wall_Small_Counter>30)&&(!Is_Move_Finished(300000)))
+			if((Wall_Small_Counter>30)&&(!is_move_finished(300000)))
 			{
 				if(Temp_OBS_Status & (Status_Right_OBS|Status_Front_OBS))
 				{
 					Turn_Right(Turn_Speed,900);
-					Stop_Brifly();
+					stop_brifly();
 				}
-				Move_Forward(5,5);
+				move_forward(5, 5);
 				if(Wall_Follow_Short(4000))return;
 				Stunk=0;
 				Wall_Bumper_Counter=0;
 				Wall_Small_Counter=0;
-				Reset_Move_Distance();
+				reset_move_distance();
 				Wall_Mid_Counter=0;
 			}
-			else if((Wall_Mid_Counter>40)||(Is_Move_Finished(460000)))
+			else if((Wall_Mid_Counter>40)||(is_move_finished(460000)))
 			{
 				if(Temp_OBS_Status & (Status_Right_OBS|Status_Front_OBS))
 				{
 					Turn_Right(Turn_Speed,900);
-					Stop_Brifly();
+					stop_brifly();
 				}
-				Move_Forward(5,5);
+				move_forward(5, 5);
 				if(Wall_Follow_Short(1000))return;
 				Stunk=0;
 				Wall_Bumper_Counter=0;
 				Wall_Mid_Counter=0;
 				Wall_Small_Counter=0;
-				Reset_Move_Distance();
+				reset_move_distance();
 			}
-			else if((Wall_Bumper_Counter> (Short_Wall_Trig+Wall_Bumper_Factor))&&(Get_Random_Factor()<25))
+			else if((Wall_Bumper_Counter> (Short_Wall_Trig+Wall_Bumper_Factor))&&(get_random_factor()<25))
 			{
 				if(Temp_OBS_Status & (Status_Right_OBS|Status_Front_OBS))
 				{
 					Turn_Right(Turn_Speed,900);
-					Stop_Brifly();
+					stop_brifly();
 				}
-				Move_Forward(5,5);
-				if(Wall_Follow_Short(Get_Average_Move()))return;
+				move_forward(5, 5);
+				if(Wall_Follow_Short(get_average_move()))return;
 				Stunk=0;
 				Wall_Bumper_Counter=0;
 				Wall_Mid_Counter=0;
@@ -906,33 +906,33 @@ void Random_Running_Mode(void)
 			}
 			else
 			{
-				Random_Back();
-				//Stop_Brifly();
+				random_back();
+				//stop_brifly();
 				Stunk++;
 				if(get_bumper_status())
 				{
-					Random_Back();
-					if(Is_Bumper_Jamed())break;
-					Stop_Brifly();
+					random_back();
+					if(is_bumper_jamed())break;
+					stop_brifly();
 				}
 				if(Left_Wheel_Step_Buffer<1000)
 				{
-					if(Is_Direction_Left())
+					if(is_direction_left())
 					{
 						if(Stunk>10)
 						{
 							if(Out_Trap_Right())
 							{
-								// Out_Trap_Right() return 1 may be caused by Stop_Event.
+								// Out_Trap_Right() return 1 may be caused by stop_event.
 								// Key release detection, if user has not release the key, don't do anything.
-								while (Get_Key_Press() & KEY_CLEAN)
+								while (get_key_press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
 								// Key relaesed, then the touch status and stop event status should be cleared.
-								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Stop_Event_Status();
+								set_clean_mode(Clean_Mode_Userinterface);
+								reset_stop_event_status();
 								break;
 							}
 							Stunk=0;
@@ -950,7 +950,7 @@ void Random_Running_Mode(void)
 							}
 						}
 						N_H_T=1;
-						Set_Direction_Flag(Direction_Flag_Left);
+						set_direction_flag(Direction_Flag_Left);
 					}
 					else
 					{
@@ -958,16 +958,16 @@ void Random_Running_Mode(void)
 						{
 							if(Out_Trap_Left())
 							{
-								// Out_Trap_Left() return 1 may be caused by Stop_Event.
+								// Out_Trap_Left() return 1 may be caused by stop_event.
 								// Key release detection, if user has not release the key, don't do anything.
-								while (Get_Key_Press() & KEY_CLEAN)
+								while (get_key_press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
 								// Key relaesed, then the touch status and stop event status should be cleared.
-								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Stop_Event_Status();
+								set_clean_mode(Clean_Mode_Userinterface);
+								reset_stop_event_status();
 								break;
 							}
 							Stunk=0;
@@ -985,7 +985,7 @@ void Random_Running_Mode(void)
 							}
 						}
 						N_H_T=1;
-						Set_Direction_Flag(Direction_Flag_Right);
+						set_direction_flag(Direction_Flag_Right);
 					}
 				}
 				else
@@ -995,16 +995,16 @@ void Random_Running_Mode(void)
 					{
 						if(Random_Factor)
 						{
-							//Half_Turn_Left(Turn_Speed,750+Get_Random_Factor()*8);
-							turn_left(Turn_Speed, 750 + Get_Random_Factor() * 8);
-							Set_Direction_Flag(Direction_Flag_Left);
+							//Half_Turn_Left(Turn_Speed,750+get_random_factor()*8);
+							turn_left(Turn_Speed, 750 + get_random_factor() * 8);
+							set_direction_flag(Direction_Flag_Left);
 						}
 						else
 						{
-							//Half_Turn_Right(Turn_Speed,800+Get_Random_Factor()*8);
-							Turn_Right(Turn_Speed,800+Get_Random_Factor()*8);
+							//Half_Turn_Right(Turn_Speed,800+get_random_factor()*8);
+							Turn_Right(Turn_Speed,800+ get_random_factor()*8);
 
-							Set_Direction_Flag(Direction_Flag_Right);
+							set_direction_flag(Direction_Flag_Right);
 						}
 					}
 					else if(Temp_OBS_Status==0x72)//LF
@@ -1013,13 +1013,13 @@ void Random_Running_Mode(void)
 						{
 							//Half_Turn_Right(Turn_Speed,1200);
 							Turn_Right(Turn_Speed,1200);
-							Set_Direction_Flag(Direction_Flag_Right);
+							set_direction_flag(Direction_Flag_Right);
 						}
 						else
 						{
 							//Half_Turn_Left(Turn_Speed,1200);
-							turn_left(Turn_Speed, 750 + Get_Random_Factor() * 8);
-							Set_Direction_Flag(Direction_Flag_Left);
+							turn_left(Turn_Speed, 750 + get_random_factor() * 8);
+							set_direction_flag(Direction_Flag_Left);
 						}
 					}
 					else if(Temp_OBS_Status&0x02)//L
@@ -1028,16 +1028,16 @@ void Random_Running_Mode(void)
 						{
 							if(Out_Trap_Left())
 							{
-								// Out_Trap_Left() return 1 may be caused by Stop_Event.
+								// Out_Trap_Left() return 1 may be caused by stop_event.
 								// Key release detection, if user has not release the key, don't do anything.
-								while (Get_Key_Press() & KEY_CLEAN)
+								while (get_key_press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
 								// Key relaesed, then the touch status and stop event status should be cleared.
-								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Stop_Event_Status();
+								set_clean_mode(Clean_Mode_Userinterface);
+								reset_stop_event_status();
 								break;
 							}
 							Stunk=0;
@@ -1049,14 +1049,14 @@ void Random_Running_Mode(void)
 						else
 						{
 							if((Bumper_Counter%3)==0)
-								//Half_Turn_Right(Turn_Speed,800+Get_Random_Factor()*7);
-								Turn_Right(Turn_Speed,800+Get_Random_Factor()*7);
+								//Half_Turn_Right(Turn_Speed,800+get_random_factor()*7);
+								Turn_Right(Turn_Speed,800+ get_random_factor()*7);
 							else
-								//Half_Turn_Right(Turn_Speed,750+Get_Random_Factor()*8);
-								Turn_Right(Turn_Speed,750+Get_Random_Factor()*8);
+								//Half_Turn_Right(Turn_Speed,750+get_random_factor()*8);
+								Turn_Right(Turn_Speed,750+ get_random_factor()*8);
 
 						}
-						Set_Direction_Flag(Direction_Flag_Right);
+						set_direction_flag(Direction_Flag_Right);
 					}
 					else
 					{
@@ -1064,16 +1064,16 @@ void Random_Running_Mode(void)
 						{
 							if(Out_Trap_Right())
 							{
-								// Out_Trap_Right() return 1 may be caused by Stop_Event.
+								// Out_Trap_Right() return 1 may be caused by stop_event.
 								// Key release detection, if user has not release the key, don't do anything.
-								while (Get_Key_Press() & KEY_CLEAN)
+								while (get_key_press() & KEY_CLEAN)
 								{
 									ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 									usleep(20000);
 								}
 								// Key relaesed, then the touch status and stop event status should be cleared.
-								Set_Clean_Mode(Clean_Mode_Userinterface);
-								Reset_Stop_Event_Status();
+								set_clean_mode(Clean_Mode_Userinterface);
+								reset_stop_event_status();
 								break;
 							}
 							Stunk=0;
@@ -1086,32 +1086,32 @@ void Random_Running_Mode(void)
 							{
 								if(Random_Factor)
 								{
-									//Half_Turn_Left(Turn_Speed,750+Get_Random_Factor()*7);
-									turn_left(Turn_Speed, 750 + Get_Random_Factor() * 7);
-									Set_Direction_Flag(Direction_Flag_Left);
+									//Half_Turn_Left(Turn_Speed,750+get_random_factor()*7);
+									turn_left(Turn_Speed, 750 + get_random_factor() * 7);
+									set_direction_flag(Direction_Flag_Left);
 								}
 								else
 								{
-									//Half_Turn_Right(Turn_Speed,750+Get_Random_Factor()*7);
-									Turn_Right(Turn_Speed,750+Get_Random_Factor()*7);
-									Set_Direction_Flag(Direction_Flag_Right);
+									//Half_Turn_Right(Turn_Speed,750+get_random_factor()*7);
+									Turn_Right(Turn_Speed,750+ get_random_factor()*7);
+									set_direction_flag(Direction_Flag_Right);
 								}
 							}
 							else if(Temp_OBS_Status>8)
 							{
-								//Half_Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
-								turn_left(Turn_Speed, 800 + Get_Random_Factor() * 7);
-								Set_Direction_Flag(Direction_Flag_Left);
+								//Half_Turn_Left(Turn_Speed,800+get_random_factor()*7);
+								turn_left(Turn_Speed, 800 + get_random_factor() * 7);
+								set_direction_flag(Direction_Flag_Left);
 							}
 							else
 							{
 								if((Bumper_Counter%3)==0)
-									//Half_Turn_Left(Turn_Speed,850+Get_Random_Factor()*7);
-									turn_left(Turn_Speed, 850 + Get_Random_Factor() * 7);
+									//Half_Turn_Left(Turn_Speed,850+get_random_factor()*7);
+									turn_left(Turn_Speed, 850 + get_random_factor() * 7);
 								else
-									//Half_Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
-									turn_left(Turn_Speed, 800 + Get_Random_Factor() * 7);
-								Set_Direction_Flag(Direction_Flag_Left);
+									//Half_Turn_Left(Turn_Speed,800+get_random_factor()*7);
+									turn_left(Turn_Speed, 800 + get_random_factor() * 7);
+								set_direction_flag(Direction_Flag_Left);
 							}
 						}
 					}
@@ -1119,15 +1119,15 @@ void Random_Running_Mode(void)
 			}
 			OBS_Cycle = 0;
 			On_TrapOut_Flag=0;
-			if(Get_Rcon_Remote() <= 0)
+			if(get_rcon_remote() <= 0)
 			{
-				if(Get_OBS_Status())
+				if(get_obs_status())
 				{
 					if(!N_H_T)
 					{
-						Stop_Brifly();
-						Random_Back();
-						Stop_Brifly();
+						stop_brifly();
+						random_back();
+						stop_brifly();
 					}
 
 					do
@@ -1136,11 +1136,11 @@ void Random_Running_Mode(void)
 						Stunk++;
 						if(OBS_Cycle>3)
 						{
-							Adjust_OBST_Value();
+							adjust_obs_value();
 							Stunk=Stunk-OBS_Cycle;
 							break;
 						}
-						if(Is_Direction_Left())
+						if(is_direction_left())
 						{
 							if((Stunk>10)||(OBS_Cycle>7))
 							{
@@ -1150,9 +1150,9 @@ void Random_Running_Mode(void)
 							}
 							else
 							{
-								OBS_Turn_Left(Turn_Speed-5,400);
+								obs_turn_left(Turn_Speed - 5, 400);
 							}
-							Set_Direction_Flag(Direction_Flag_Left);
+							set_direction_flag(Direction_Flag_Left);
 						}
 						else
 						{
@@ -1164,12 +1164,12 @@ void Random_Running_Mode(void)
 							}
 							else
 							{
-								OBS_Turn_Right(Turn_Speed-5,400);
+								obs_turn_right(Turn_Speed - 5, 400);
 							}
-							Set_Direction_Flag(Direction_Flag_Right);
+							set_direction_flag(Direction_Flag_Right);
 						}
 						usleep(10000);
-					}while(Get_OBS_Status());
+					}while(get_obs_status());
 					Reset_HalfTurn_Flag();
 				}
 			}
@@ -1177,46 +1177,46 @@ void Random_Running_Mode(void)
 			{
 				if(Out_Trap_Right())
 				{
-					// Out_Trap_Right() return 1 may be caused by Stop_Event.
+					// Out_Trap_Right() return 1 may be caused by stop_event.
 					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
+					while (get_key_press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
 					// Key relaesed, then the touch status and stop event status should be cleared.
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Stop_Event_Status();
+					set_clean_mode(Clean_Mode_Userinterface);
+					reset_stop_event_status();
 					break;
 				}
 				Turn_Right(Turn_Speed-5,240);
-				Move_Forward(10,10);
+				move_forward(10, 10);
 				reset_temp_pwm();
 			}
 			else if(On_TrapOut_Flag==2)
 			{
 				if(Out_Trap_Left())
 				{
-					// Out_Trap_Left() return 1 may be caused by Stop_Event.
+					// Out_Trap_Left() return 1 may be caused by stop_event.
 					// Key release detection, if user has not release the key, don't do anything.
-					while (Get_Key_Press() & KEY_CLEAN)
+					while (get_key_press() & KEY_CLEAN)
 					{
 						ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 						usleep(20000);
 					}
 					// Key relaesed, then the touch status and stop event status should be cleared.
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Stop_Event_Status();
+					set_clean_mode(Clean_Mode_Userinterface);
+					reset_stop_event_status();
 					break;
 				}
 				Turn_Right(Turn_Speed-5,240);
-				Move_Forward(10,10);
+				move_forward(10, 10);
 				reset_temp_pwm();
 			}
 			if(!Is_HalfTurn_Flag())
 			{
-				//Stop_Brifly();
-				Move_Forward(0,0);
+				//stop_brifly();
+				move_forward(0, 0);
 				reset_temp_pwm();
 				//usleep(50000);
 				reset_wheel_step();
@@ -1226,11 +1226,11 @@ void Random_Running_Mode(void)
 			{
 				if(get_left_wheel_step()> get_right_wheel_step())
 				{
-					Set_RightWheel_Step(get_left_wheel_step());
+					set_right_wheel_step(get_left_wheel_step());
 				}
-				Set_RightWheel_Step(get_right_wheel_step()/2);
+				set_right_wheel_step(get_right_wheel_step() / 2);
 			}
-			Set_Mobility_Step(0);
+			set_mobility_step(0);
 			Wall_Small_Counter++;
 			Wall_Mid_Counter++;
 			Temp_OBS_Status=0;
@@ -1240,33 +1240,33 @@ void Random_Running_Mode(void)
 		if(Wall_Mid_Counter>70)
 		{
 			Wall_Mid_Counter=0;
-			Reset_Move_Distance();
+			reset_move_distance();
 		}
-		if(Is_LeftWheel_Reach(29000))
+		if(is_left_wheel_reach(29000))
 		{
 			if(Spiral()){
-				if (Stop_Event())
+				if (stop_event())
 				{
-					Set_Clean_Mode(Clean_Mode_Userinterface);
-					Reset_Stop_Event_Status();
+					set_clean_mode(Clean_Mode_Userinterface);
+					reset_stop_event_status();
 				}
 				break;
 			}
 			reset_wheel_step();
 			Set_HalfTurn_Flag();
 		}
-		if(Is_LeftWheel_Reach(24000))
+		if(is_left_wheel_reach(24000))
 		{
 			Wall_Small_Counter=0;
 		}
-		if(Is_LeftWheel_Reach(2500))
+		if(is_left_wheel_reach(2500))
 		{
 			Stunk=0;
-//			Reset_Bumper_Error();
-			if(Get_LeftBrush_Stall())set_left_brush_stall(0);
-			if(Get_RightBrush_Stall())set_right_brush_stall(0);
+//			reset_bumper_error();
+			if(get_left_brush_stall())set_left_brush_stall(0);
+			if(get_right_brush_stall())set_right_brush_stall(0);
 		}
-		else if(Is_LeftWheel_Reach(750))
+		else if(is_left_wheel_reach(750))
 		{
 			Base_Wall_On=1;
 			//Set_Left_Brush(ENABLE);
@@ -1282,11 +1282,11 @@ void Random_Running_Mode(void)
 				{
 					Moving_Speed--;
 				}
-				Set_RightWheel_Step(400);
+				set_right_wheel_step(400);
 			}
 
 
-			if(Get_OBS_Status())
+			if(get_obs_status())
 			{
 				if(Moving_Speed>10)
 				{
@@ -1302,9 +1302,9 @@ void Random_Running_Mode(void)
 				if(OBS_Delay>1000)
 				{
 					OBS_Distance_Counter=0;
-					Temp_OBS_Status = Get_OBS_Status();
+					Temp_OBS_Status = get_obs_status();
 				}
-				Set_RightWheel_Step(200);
+				set_right_wheel_step(200);
 			}
 			else
 			{
@@ -1322,7 +1322,7 @@ void Random_Running_Mode(void)
 				}
 				if(Moving_Speed>Max_Speed)Moving_Speed=Max_Speed;
 			}
-			Move_Forward(Moving_Speed,Moving_Speed);
+			move_forward(Moving_Speed, Moving_Speed);
 		}
 	}
 }
@@ -1334,7 +1334,7 @@ uint8_t Out_Trap_Right(void)
 	uint8_t Motor_Check_Code=0;
 	uint32_t Bump_Counter=0;
 	reset_wheel_step();
-	//Reset_Move_Distance();
+	//reset_move_distance();
 	reset_rcon_status();
 	reset_wall_step();
 	while(ros::ok())
@@ -1346,10 +1346,10 @@ uint8_t Out_Trap_Right(void)
 		{
 			if(self_check(Motor_Check_Code))
 			{
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				return 1;
 			}
-			//Initialize_Motor();
+			//initialize_motor();
 		}
 		/*-------------------------------------------------------Wheel ---------------------------------------*/
 		if(get_left_wall_step() - get_right_wall_step())
@@ -1361,62 +1361,62 @@ uint8_t Out_Trap_Right(void)
 			}
 		}
 		/*------------------------------------------------------Stop event-----------------------*/
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			return 1;
 		}
 
-		if(Remote_Key(Remote_Left))
+		if(remote_key(Remote_Left))
 		{
 			Turn_Right(Turn_Speed,240);
-			Move_Forward(30,30);
-			Reset_Rcon_Remote();
+			move_forward(30, 30);
+			reset_rcon_remote();
 			return 0;
 		}
-		if(Get_Rcon_Status()&0x0f00)return 0;
+		if(get_rcon_status()&0x0f00)return 0;
 
 #ifdef VIRTUAL_WALL
-		if (Is_VirtualWall()) {
+		if (is_virtual_wall_()) {
 			return 0;
 		}
 #endif
 
-		if(Check_Bat_SetMotors(Clean_Vac_Power,Clean_SideBrush_Power,Clean_MainBrush_Power))//Low Battery Event
+		if(check_bat_set_motors(Clean_Vac_Power, Clean_SideBrush_Power, Clean_MainBrush_Power))//Low Battery Event
 		{
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			set_clean_mode(Clean_Mode_Userinterface);
 			return 1;
 		}
 		if(get_bumper_status()&LeftBumperTrig)
 		{
-			Stop_Brifly();
-			Wall_Move_Back();
-			if(Is_Bumper_Jamed())return 1;
+			stop_brifly();
+			wall_move_back();
+			if(is_bumper_jamed())return 1;
 			turn_left(Turn_Speed - 5, 800);
-			Stop_Brifly();
-			Reset_LeftWheel_Step();
+			stop_brifly();
+			reset_left_wheel_step();
 			Bump_Counter++;
 		}
 
 		if(get_bumper_status()&RightBumperTrig)
 		{
-			Stop_Brifly();
-			Wall_Move_Back();
-			if(Is_Bumper_Jamed())return 1;
+			stop_brifly();
+			wall_move_back();
+			if(is_bumper_jamed())return 1;
 			turn_left(Turn_Speed - 8, 150);
-			Stop_Brifly();
-			Reset_LeftWheel_Step();
+			stop_brifly();
+			reset_left_wheel_step();
 			Bump_Counter++;
 		}
 		if(Bump_Counter>15)return 0;
-		if(Is_Front_Close())
+		if(is_front_close())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			turn_left(Turn_Speed - 8, 640);
-			Stop_Brifly();
-			Reset_LeftWheel_Step();
+			stop_brifly();
+			reset_left_wheel_step();
 		}
-		if(Is_LeftWheel_Reach(5000))return 0;
+		if(is_left_wheel_reach(5000))return 0;
 		if(get_right_wall_step()>12000)return 0;
 
 		if(get_cliff_trig())
@@ -1425,11 +1425,11 @@ uint8_t Out_Trap_Right(void)
 		}
 		if(get_left_wheel_step()<130)
 		{
-			Move_Forward(15,15);
+			move_forward(15, 15);
 		}
 		else
 		{
-			Move_Forward(38,6);
+			move_forward(38, 6);
 		}
 	}
 }
@@ -1441,7 +1441,7 @@ uint8_t Out_Trap_Left(void)
 	uint8_t Motor_Check_Code=0;
 	uint32_t Bump_Counter=0;
 	reset_wheel_step();
-	//Reset_Move_Distance();
+	//reset_move_distance();
 	reset_rcon_status();
 	reset_wall_step();
 	while(ros::ok())
@@ -1453,10 +1453,10 @@ uint8_t Out_Trap_Left(void)
 		{
 			if(self_check(Motor_Check_Code))
 			{
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				return 1;
 			}
-		//Initialize_Motor();
+		//initialize_motor();
 		}
 	/*-------------------------------------------------------Wheel ---------------------------------------*/
 		if(get_right_wall_step()> get_left_wall_step())
@@ -1468,62 +1468,62 @@ uint8_t Out_Trap_Left(void)
 			}
 		}
 		/*------------------------------------------------------Stop event-----------------------*/
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			return 1;
 		}
 
-		if(Remote_Key(Remote_Right))
+		if(remote_key(Remote_Right))
 		{
 			Turn_Right(Turn_Speed,300);
-			Move_Forward(30,30);
-			Reset_Rcon_Remote();
+			move_forward(30, 30);
+			reset_rcon_remote();
 			return 0;
 		}
-		if(Get_Rcon_Status()&0x0f00)return 0;
+		if(get_rcon_status()&0x0f00)return 0;
 
 #ifdef VIRTUAL_WALL
-		if (Is_VirtualWall()) {
+		if (is_virtual_wall_()) {
 			return 0;
 		}
 #endif
 
-		if(Check_Bat_SetMotors(Clean_Vac_Power,Clean_SideBrush_Power,Clean_MainBrush_Power))//Low Battery Event
+		if(check_bat_set_motors(Clean_Vac_Power, Clean_SideBrush_Power, Clean_MainBrush_Power))//Low Battery Event
 		{
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			set_clean_mode(Clean_Mode_Userinterface);
 			return 1;
 		}
 		if(get_bumper_status()&RightBumperTrig)
 		{
-			Stop_Brifly();
-			Wall_Move_Back();
-			if(Is_Bumper_Jamed())return 1;
+			stop_brifly();
+			wall_move_back();
+			if(is_bumper_jamed())return 1;
 			Turn_Right(Turn_Speed-5,1025);
-			Stop_Brifly();
-			Reset_RightWheel_Step();
+			stop_brifly();
+			reset_right_wheel_step();
 			Bump_Counter++;
 		}
 
 		if(get_bumper_status()&LeftBumperTrig)
 		{
-			Stop_Brifly();
-			Wall_Move_Back();
-			if(Is_Bumper_Jamed())return 1;
+			stop_brifly();
+			wall_move_back();
+			if(is_bumper_jamed())return 1;
 			Turn_Right(Turn_Speed-8,150);
-			Stop_Brifly();
-			Reset_RightWheel_Step();
+			stop_brifly();
+			reset_right_wheel_step();
 			Bump_Counter++;
 		}
 		if(Bump_Counter>15)return 0;
-		if(Is_Front_Close())
+		if(is_front_close())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			Turn_Right(Turn_Speed-8,800);
-			Stop_Brifly();
-			Reset_RightWheel_Step();
+			stop_brifly();
+			reset_right_wheel_step();
 		}
-		if(Is_RightWheel_Reach(5000))return 0;
+		if(is_right_wheel_reach(5000))return 0;
 		if(get_left_wall_step()>12000)return 0;
 
 		if(get_cliff_trig())
@@ -1532,11 +1532,11 @@ uint8_t Out_Trap_Left(void)
 		}
 		if(get_right_wheel_step()<130)
 		{
-			Move_Forward(15,15);
+			move_forward(15, 15);
 		}
 		else
 		{
-			Move_Forward(6,38);
+			move_forward(6, 38);
 		}
 	}
 }
@@ -1546,16 +1546,16 @@ uint8_t Left_Bumper_Avoiding(void)
 {
 	uint16_t Counter_Watcher=0;
 	uint32_t Temp_A_Speed=0;
-	//Stop_Brifly();
+	//stop_brifly();
 	reset_wheel_step();
-	Move_Forward(5,20);
+	move_forward(5, 20);
 	while(get_right_wheel_step()<2000&&ros::ok())
 	{
 		usleep(100);
 		Temp_A_Speed = get_right_wheel_step()/8 + 20;
 		if(Temp_A_Speed<20)Temp_A_Speed=20;
 		if(Temp_A_Speed>42)Temp_A_Speed=42;
-		Move_Forward(Temp_A_Speed/4,Temp_A_Speed);
+		move_forward(Temp_A_Speed / 4, Temp_A_Speed);
 
 		Counter_Watcher++;
 		if(Counter_Watcher>50000)
@@ -1567,32 +1567,32 @@ uint8_t Left_Bumper_Avoiding(void)
 			}
 			return 0;
 		}
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			return 0;
 		}
-		if(Get_Rcon_Remote() > 0)
+		if(get_rcon_remote() > 0)
 		{
-			Reset_Rcon_Remote();
+			reset_rcon_remote();
 			return 0;
 		}
 		if(get_bumper_status())break;
-		if(Get_OBS_Status())break;
+		if(get_obs_status())break;
 		if(get_cliff_trig())break;
 		if((check_motor_current()==Check_Left_Wheel)||(check_motor_current()==Check_Right_Wheel))return 0;
-		if(Get_Rcon_Status()&0x0f00)return 0;
+		if(get_rcon_status()&0x0f00)return 0;
 
 #ifdef VIRTUAL_WALL
-		if (Is_VirtualWall()) {
+		if (is_virtual_wall_()) {
 			break;
 		}
 #endif
 
 	}
 	if(get_right_wheel_step()>=2000)return 1;
-	Stop_Brifly();
-	Stop_Brifly();
+	stop_brifly();
+	stop_brifly();
 	return 0;
 }
 
@@ -1600,16 +1600,16 @@ uint8_t Right_Bumper_Avoiding(void)
 {
 	uint16_t Counter_Watcher=0;
 	uint32_t Temp_A_Speed=0;
-	//Stop_Brifly();
+	//stop_brifly();
 	reset_wheel_step();
-	Move_Forward(20,5);
+	move_forward(20, 5);
 	while(get_left_wheel_step()<2000)
 	{
 		usleep(100);
 		Temp_A_Speed = get_left_wheel_step()/8 + 20;
 		if(Temp_A_Speed<20)Temp_A_Speed=20;
 		if(Temp_A_Speed>42)Temp_A_Speed=42;
-		Move_Forward(Temp_A_Speed,Temp_A_Speed/4);
+		move_forward(Temp_A_Speed, Temp_A_Speed / 4);
 		Counter_Watcher++;
 		if(Counter_Watcher>50000)
 		{
@@ -1620,32 +1620,32 @@ uint8_t Right_Bumper_Avoiding(void)
 			}
 			return 0;
 		}
-		if(Stop_Event())
+		if(stop_event())
 		{
-			Stop_Brifly();
+			stop_brifly();
 			return 0;
 		}
-		if(Get_Rcon_Remote() > 0)
+		if(get_rcon_remote() > 0)
 		{
-			Reset_Rcon_Remote();
+			reset_rcon_remote();
 			return 0;
 		}
 		if(get_bumper_status())break;
-		if(Get_OBS_Status())break;
+		if(get_obs_status())break;
 		if(get_cliff_trig())break;
 		if((check_motor_current()==Check_Left_Wheel)||(check_motor_current()==Check_Right_Wheel))return 0;
-		if(Get_Rcon_Status()&0x0f00)return 0;
+		if(get_rcon_status()&0x0f00)return 0;
 
 #ifdef VIRTUAL_WALL
-		if (Is_VirtualWall()) {
+		if (is_virtual_wall_()) {
 			break;
 		}
 #endif
 
 	}
 	if(get_left_wheel_step()>=2000)return 1;
-	Stop_Brifly();
-	Stop_Brifly();
+	stop_brifly();
+	stop_brifly();
 	return 0;
 }
 
@@ -1656,9 +1656,9 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	turn_left(speed, angle / 2);
-	if(Get_Rcon_Remote() > 0)
+	if(get_rcon_remote() > 0)
 	{
-		Reset_Rcon_Remote();
+		reset_rcon_remote();
 		return;
 	}
 	//set_dir_forward();
@@ -1667,7 +1667,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	reset_wheel_step();
 	reset_temp_pwm();
 	usleep(10000);
-	Move_Forward(0,speed);
+	move_forward(0, speed);
 	Counter_Watcher=0;
 	Reset_HalfTurn_Flag();
 	ROS_DEBUG("half turn left angle :%d",angle);
@@ -1683,9 +1683,9 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 			}
 			return;
 		}
-		if(Is_Turn_Remote())Temp_H_Flag=1;
+		if(is_turn_remote())Temp_H_Flag=1;
 		if(get_bumper_status())Temp_H_Flag=1;
-		if(Is_Front_Close())
+		if(is_front_close())
 		{
 			set_wheel_speed(0, 20);
 		}
@@ -1696,7 +1696,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 			set_wheel_speed(0, H_S);
 		}
 		if(get_cliff_trig())Temp_H_Flag=1;
-		if(Stop_Event())
+		if(stop_event())
 		{
 			Temp_H_Flag=1;
 		}
@@ -1704,7 +1704,7 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 		if(Temp_H_Flag)break;
 
 #ifdef VIRTUAL_WALL
-		if (Is_VirtualWall()) {
+		if (is_virtual_wall_()) {
 			break;
 		}
 #endif
@@ -1725,9 +1725,9 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
 	Turn_Right(speed,angle/2);
-	if(Get_Rcon_Remote() > 0)
+	if(get_rcon_remote() > 0)
 	{
-		Reset_Rcon_Remote();
+		reset_rcon_remote();
 		return;
 	}
 //	set_dir_forward();
@@ -1736,7 +1736,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 	 reset_wheel_step();
 	 reset_temp_pwm();
 	usleep(10000);
-	Move_Forward(speed,0);
+	 move_forward(speed, 0);
   //set_wheel_speed(42,0);
 	Counter_Watcher=0;
 	Reset_HalfTurn_Flag();
@@ -1753,9 +1753,9 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 			}
 			return;
 		}
-		if(Is_Turn_Remote())Temp_H_Flag=1;
+		if(is_turn_remote())Temp_H_Flag=1;
 		if(get_bumper_status())Temp_H_Flag=1;
-		if(Is_Front_Close())
+		if(is_front_close())
 		{
 			set_wheel_speed(20, 0);
 		}
@@ -1766,7 +1766,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 			set_wheel_speed(H_S, 0);
 		}
 		if(get_cliff_trig())Temp_H_Flag=1;
-		if(Stop_Event())
+		if(stop_event())
 		{
 			Temp_H_Flag=1;
 		}
@@ -1774,7 +1774,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 		if(Temp_H_Flag)break;
 
 #ifdef VIRTUAL_WALL
-		if (Is_VirtualWall()) {
+		if (is_virtual_wall_()) {
 			break;
 		}
 #endif

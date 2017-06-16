@@ -88,26 +88,26 @@ bool MotionManage::get_align_angle(float &line_angle)
 
 	//wait for start obstacle_detector
 	auto count_n_10ms = 1000;
-	while (line_align_ != start && --count_n_10ms > 0 && !Stop_Event()){
+	while (line_align_ != start && --count_n_10ms > 0 && !stop_event()){
 		if (count_n_10ms % 100 == 0)
 			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
 		usleep(10000);
 	}
-	if(Stop_Event() || count_n_10ms == 0)
+	if(stop_event() || count_n_10ms == 0)
 		return false;
 
 	count_n_10ms = 200;
 	ROS_INFO("Obstacle detector launch finishd.");
 
 	//wait for detecting line
-	while (--count_n_10ms > 0 && !Stop_Event())
+	while (--count_n_10ms > 0 && !stop_event())
 	{
 		if (count_n_10ms % 100 == 0)
 			ROS_INFO("detecting line time remain %d s", count_n_10ms / 100);
 		usleep(10000);
 	}
 //	obstacles_sub.shutdown();
-	if(Stop_Event())
+	if(stop_event())
 		return false;
 
 	ROS_INFO("Get the line");
@@ -145,7 +145,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_laser = new Laser();
 	if (!s_laser->isReady())
 	{
-		if (!Stop_Event())
+		if (!stop_event())
 		{
 			ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
 			set_error_code(Error_Code_Laser);
@@ -205,9 +205,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 MotionManage::~MotionManage()
 {
 
-	Reset_Stop_Event_Status();
+	reset_stop_event_status();
 
-	Disable_Motors();
+	disable_motors();
 
 	if (s_laser != nullptr)
 	{
@@ -217,7 +217,7 @@ MotionManage::~MotionManage()
 
 	if (robot::instance()->isManualPaused()){
 		if(!g_temp_spot_set){
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			set_clean_mode(Clean_Mode_Userinterface);
 			wav_play(WAV_PAUSE_CLEANING);
 		}
 		else{
@@ -286,7 +286,7 @@ MotionManage::~MotionManage()
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
 	if (get_clean_mode() != Clean_Mode_Sleep && get_clean_mode() != Clean_Mode_Charging)
-		Set_Clean_Mode(Clean_Mode_Userinterface);
+		set_clean_mode(Clean_Mode_Userinterface);
 
 }
 
@@ -313,10 +313,10 @@ bool MotionManage::initNavigationCleaning(void)
 	usleep(20000);
 
 	reset_start_work_time();
-	Set_LED(100,0);
+	set_led(100, 0);
 	reset_rcon_status();
-	Reset_MoveWithRemote();
-	Reset_Stop_Event_Status();
+	reset_move_with_remote();
+	reset_stop_event_status();
 
 	// Restart the gyro.
 	Set_Gyro_Off();
@@ -347,13 +347,13 @@ bool MotionManage::initNavigationCleaning(void)
 	/*Move back from charge station*/
 	if (is_on_charger_stub()) {
 		ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
-		Set_SideBrush_PWM(30, 30);
+		set_side_brush_pwm(30, 30);
 		// Set i < 7 for robot to move back for approximately 500mm.
 		for (int i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			quick_back(20, 72);
 			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub()) {
-				Disable_Motors();
+				disable_motors();
 				if (g_fatal_quit_event)
 				{
 					robot::instance()->resetManualPause();
@@ -370,26 +370,26 @@ bool MotionManage::initNavigationCleaning(void)
 				return false;
 			}
 		}
-		Stop_Brifly();
+		stop_brifly();
 		extern bool g_from_station;
 		g_from_station = 1;
 	}
 	else
 	{
 		// Key release detection, if user has not release the key, don't do anything.
-		while (Get_Key_Press() & KEY_CLEAN)
+		while (get_key_press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 			usleep(20000);
 		}
 		// Key relaesed, then the touch status and stop event status should be cleared.
-		Reset_Stop_Event_Status();
+		reset_stop_event_status();
 	}
 
 	// Initialize motors and map.
 	if (robot::instance()->isLowBatPaused())
 	{
-		if (Get_Rcon_Status())
+		if (get_rcon_status())
 		{
 			Point32_t new_home_point;
 			// Save the current coordinate as a new home point.
@@ -448,16 +448,16 @@ bool MotionManage::initWallFollowCleaning(void)
 	extern std::vector<Pose32_t> g_wf_point;
 
 	reset_start_work_time();
-	Reset_MoveWithRemote();
+	reset_move_with_remote();
 	reset_rcon_status();
-	Reset_Stop_Event_Status();
+	reset_stop_event_status();
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	Set_Gyro_On();
-	Set_LED(100, 0);
+	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
 	if (!Wait_For_Gyro_On())
@@ -498,7 +498,7 @@ bool MotionManage::initSpotCleaning(void)
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	Set_Gyro_On();
-	Set_LED(100, 0);
+	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_SPOT);
 	if (!Wait_For_Gyro_On())
@@ -519,9 +519,9 @@ bool MotionManage::initSpotCleaning(void)
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
-	Switch_VacMode(false);
-	Set_MainBrush_PWM(80);
-	Set_SideBrush_PWM(60,60);
+	switch_vac_mode(false);
+	set_main_brush_pwm(80);
+	set_side_brush_pwm(60, 60);
 
 	return true;
 }

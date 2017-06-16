@@ -82,7 +82,7 @@ static uint8_t Find_NearestPoint(Point32_t ref_point,std::list<Point32_t> *point
 * */
 void Spot_WithCell(SpotType st,float spot_diameter)
 {
-	Reset_Stop_Event_Status();
+	reset_stop_event_status();
 	reset_rcon_status();
 	std::list<Point32_t> target;
 	uint8_t spot_stuck = 0;
@@ -93,7 +93,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 		MotionManage motion;//start slam
 		if(! motion.initSucceeded()){
 			ROS_WARN("%s %d: Init MotionManage failed!", __FUNCTION__, __LINE__);
-			Disable_Motors();
+			disable_motors();
 			return;
 		}
 		cm_register_events();
@@ -267,10 +267,10 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 	}//ending if(st == NormalSpot)
 	else if(st == CleanSpot || st == WallSpot){
 		event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,false);
-		Set_LED(100,0);
-		Switch_VacMode(false);
-		Set_MainBrush_PWM(80);
-		Set_SideBrush_PWM(60,60);
+		set_led(100, 0);
+		switch_vac_mode(false);
+		set_main_brush_pwm(80);
+		set_side_brush_pwm(60, 60);
 		wav_play(WAV_CLEANING_SPOT);
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
@@ -316,8 +316,8 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				}
 				/*----ready to spot movement ------*/
 				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED,false,true);
-                if(g_fatal_quit_event ||  g_key_clean_pressed || g_remote_home){	
-                    Disable_Motors();
+                if(g_fatal_quit_event ||  g_key_clean_pressed || g_remote_home){
+									disable_motors();
                     return;
                 }
 
@@ -681,18 +681,18 @@ void Spot_GetTarget(uint8_t sp_type,float diameter,std::list<Point32_t> *target,
 int8_t Spot_HandleException(SpotType st)
 {
 	/*-----detect stop event (remote_clean ,key press) ------*/
-	if (Stop_Event()) {
-		Stop_Brifly();
-		Disable_Motors();
-		while (Get_Key_Press() & KEY_CLEAN)
+	if (stop_event()) {
+		stop_brifly();
+		disable_motors();
+		while (get_key_press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s %d: key pressing.", __FUNCTION__, __LINE__);
 			usleep(20000);
 		}
 		if(st == NormalSpot){
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			set_clean_mode(Clean_Mode_Userinterface);
 		}
-		Reset_Stop_Event_Status();
+		reset_stop_event_status();
 		return 1;
 	}
     uint8_t octype = check_motor_current();
@@ -705,43 +705,43 @@ int8_t Spot_HandleException(SpotType st)
 	/*--------- cliff detect event--------------*/
 	if (get_cliff_trig() == (Status_Cliff_All)) {
 		quick_back(20,20);//1 time
-		Stop_Brifly();
+		stop_brifly();
 		if(get_cliff_trig() == (Status_Cliff_All)){
 			quick_back(20,20);//2 times
-			Stop_Brifly();
+			stop_brifly();
 		}
 		if(get_cliff_trig() == Status_Cliff_All){
 			quick_back(20,20);//3 times
-			Stop_Brifly();
+			stop_brifly();
 			ROS_INFO("%s %d, Cliff trigger three times ,robot lift up ",__FUNCTION__,__LINE__);
 			if(st == NormalSpot)
-				Set_Clean_Mode(Clean_Mode_Userinterface);
-			Disable_Motors();
+				set_clean_mode(Clean_Mode_Userinterface);
+			disable_motors();
 			//wav_play(WAV_ERROR_LIFT_UP);
 			return 1;
 		}
 	}
 	/*--------get remote event ---------------*/
-	if (Get_Rcon_Remote()) {
+	if (get_rcon_remote()) {
 		if(st == NormalSpot){
-			if(Remote_Key(Remote_All)){
-				if(Get_Rcon_Remote() == Remote_Home){
-					Set_MoveWithRemote();
+			if(remote_key(Remote_All)){
+				if(get_rcon_remote() == Remote_Home){
+					set_move_with_remote();
 					set_home_remote();
 				}
-				Reset_Rcon_Remote();
+				reset_rcon_remote();
 				return 1;
 			}
 		}
 		else if(st == CleanSpot || st == WallSpot){
-			if(Remote_Key(Remote_Home)){
-				Reset_Rcon_Remote();
-				Set_MoveWithRemote();
+			if(remote_key(Remote_Home)){
+				reset_rcon_remote();
+				set_move_with_remote();
 				set_home_remote();
 				return 1;
 			}
-			else if(Remote_Key(Remote_Left | Remote_Right | Remote_Forward)){
-					Reset_Rcon_Remote();
+			else if(remote_key(Remote_Left | Remote_Right | Remote_Forward)){
+				reset_rcon_remote();
 				return 1;
 			}
 		}
@@ -764,21 +764,21 @@ uint8_t Random_Dirt_Event(void)
 
 	Move_Style = First_Round;
 
-	Reset_Stop_Event_Status();
+	reset_stop_event_status();
 
-	Check_Bat_SetMotors(135000, 100000, 100000);
+	check_bat_set_motors(135000, 100000, 100000);
 
 #ifdef BLDC_INSTALL
 	Set_VacMode(Vac_Max);
 	Set_Vac_Speed();
 #endif
 
-	Move_Forward(0, 0);
+	move_forward(0, 0);
 	reset_wheel_step();
 	reset_wall_step();
 	usleep(10000);
 
-	Reset_Rcon_Remote();
+	reset_rcon_remote();
 
 	Motor_OC_Counter = 0;
 	while (ros::ok()) {
@@ -787,7 +787,7 @@ uint8_t Random_Dirt_Event(void)
 		if (Flash_Counter > 20) {
 			Watch_Counter++;
 			if (Watch_Counter > 1000) {
-				Set_Touch();
+				set_touch();
 				return 1;
 			}
 			Flash_Counter = 0;
@@ -799,10 +799,10 @@ uint8_t Random_Dirt_Event(void)
 			}
 		}
 
-		if (Remote_Key(Remote_All)) {
+		if (remote_key(Remote_All)) {
 			//Main_Brush_PWM = MainBrush_Power;
-			Move_Forward(30, 30);
-			Reset_Rcon_Remote();
+			move_forward(30, 30);
+			reset_rcon_remote();
 			return 0;
 		}
 
@@ -814,8 +814,8 @@ uint8_t Random_Dirt_Event(void)
 #endif
 
 		/*------------------------------------------------------Check Battery-----------------------*/
-		if (Check_Bat_SetMotors(135000, 100000, 120000)) {	//Low Battery Event
-			Move_Forward(30, 30);
+		if (check_bat_set_motors(135000, 100000, 120000)) {	//Low Battery Event
+			move_forward(30, 30);
 			return 0;
 		}
 
@@ -824,15 +824,15 @@ uint8_t Random_Dirt_Event(void)
 			if (Motor_OC_Counter > 50) {
 				Motor_OC_Counter = 0;
 				//Main_Brush_PWM = MainBrush_Power;
-				Move_Forward(30, 30);
+				move_forward(30, 30);
 				return 0;
 			}
 		} else {
 			Motor_OC_Counter = 0;
 		}
 		/*------------------------------------------------------stop event-----------------------*/
-		if (Stop_Event()) {
-			Stop_Brifly();
+		if (stop_event()) {
+			stop_brifly();
 			ROS_INFO("%s %d: Stop event!", __FUNCTION__, __LINE__);
 			return 1;
 		}
@@ -841,23 +841,23 @@ uint8_t Random_Dirt_Event(void)
 		switch (Move_Style) {
 			case First_Round:
 				if (get_left_wheel_step() > 6000) {
-					Move_Forward(0, 0);
-					Reset_LeftWheel_Step();
+					move_forward(0, 0);
+					reset_left_wheel_step();
 					Move_Style = Spiral_Right_Out;
 				}
-				Set_Dir_Right();
+				set_dir_right();
 				set_wheel_speed(25, 10);
 
-				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || spot_obs_status()) {
 
 					if (get_bumper_status()) {
-						Random_Back();
+						random_back();
 					} else if (get_cliff_trig()) {
-						Move_Back();
+						move_back();
 					}
-					Stop_Brifly();
+					stop_brifly();
 					turn_left(Turn_Speed, 2500);
-					Move_Forward(10, 10);
+					move_forward(10, 10);
 					Move_Style = Spiral_Left_Out;
 					reset_wheel_step();
 					reset_wall_step();
@@ -867,7 +867,7 @@ uint8_t Random_Dirt_Event(void)
 
 			case Spiral_Right_Out:
 				if (get_left_wheel_step() > (Radius * 3)) {
-					Reset_LeftWheel_Step();
+					reset_left_wheel_step();
 					if (Radius < 100) {
 						Radius += 2;
 					} else {
@@ -877,17 +877,17 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = Spiral_Right_In;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || spot_obs_status()) {
 
 					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (get_bumper_status()) {
-						Random_Back();
+						random_back();
 					} else if (get_cliff_trig()) {
-						Move_Back();
+						move_back();
 					}
-					Stop_Brifly();
+					stop_brifly();
 					turn_left(Turn_Speed, 2500);
 					Move_Style = Spiral_Left_Out;
 					reset_wheel_step();
@@ -902,7 +902,7 @@ uint8_t Random_Dirt_Event(void)
 
 			case Spiral_Right_In:
 				if (get_left_wheel_step() > (Radius * 3)) {
-					Reset_LeftWheel_Step();
+					reset_left_wheel_step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
 					}
@@ -912,17 +912,17 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || spot_obs_status()) {
 
 					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (get_bumper_status()) {
-						Random_Back();
+						random_back();
 					} else if (get_cliff_trig()) {
-						Move_Back();
+						move_back();
 					}
-					Stop_Brifly();
+					stop_brifly();
 					turn_left(Turn_Speed, 2500);
 					Move_Style = Spiral_Left_In;
 					reset_wheel_step();
@@ -937,7 +937,7 @@ uint8_t Random_Dirt_Event(void)
 
 			case Spiral_Left_Out:
 				if (get_right_wheel_step() > (Radius * 3)) {
-					Reset_RightWheel_Step();
+					reset_right_wheel_step();
 					if (Radius < 100) {
 						Radius += 2;
 					} else {
@@ -947,17 +947,17 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = Spiral_Left_In;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || spot_obs_status()) {
 
 					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (get_bumper_status()) {
-						Random_Back();
+						random_back();
 					} else if (get_cliff_trig()) {
-						Move_Back();
+						move_back();
 					}
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_Out;
 					reset_wheel_step();
@@ -972,7 +972,7 @@ uint8_t Random_Dirt_Event(void)
 
 			case Spiral_Left_In:
 				if (get_right_wheel_step() > (Radius * 2)) {
-					Reset_RightWheel_Step();
+					reset_right_wheel_step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
 					}
@@ -982,17 +982,17 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || Spot_OBS_Status()) {
+				if (get_bumper_status() || get_cliff_trig() || spot_obs_status()) {
 
 					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (get_bumper_status()) {
-						Random_Back();
+						random_back();
 					} else if (get_cliff_trig()) {
-						Move_Back();
+						move_back();
 					}
-					Stop_Brifly();
+					stop_brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_In;
 					reset_wheel_step();
@@ -1011,13 +1011,13 @@ uint8_t Random_Dirt_Event(void)
 		}
 		if ((OBS_Counter > 5) || (Stunk > 2)) {
 			//Main_Brush_PWM = MainBrush_Power;
-			Move_Forward(30, 30);
+			move_forward(30, 30);
 			return 0;
 		}
 		if (Spot_Flag) {
 			Spot_Flag = 0;
 			//Main_Brush_PWM = MainBrush_Power;
-			Move_Forward(30, 30);
+			move_forward(30, 30);
 			return 2;
 		}
 	}

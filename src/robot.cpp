@@ -131,7 +131,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	ir_ctrl_ = msg->ir_ctrl;
 	if (ir_ctrl_ > 0)
 	{
-		Set_Rcon_Remote(ir_ctrl_);
+		set_rcon_remote(ir_ctrl_);
 	}
 
 	charge_stub_ = msg->c_stub;//charge stub signal
@@ -140,23 +140,23 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	key = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((key & KEY_CLEAN) && !(Get_Key_Press() & KEY_CLEAN))
+	if ((key & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
 	{
 		key_press_count++;
 		if (key_press_count > 0)
 		{
-			Set_Key_Press(KEY_CLEAN);
+			set_key_press(KEY_CLEAN);
 			key_press_count = 0;
 			// When key 'clean' is triggered, it will set touch status.
-			Set_Touch();
+			set_touch();
 		}
 	}
-	else if (!(key & KEY_CLEAN) && (Get_Key_Press() & KEY_CLEAN))
+	else if (!(key & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
 	{
 		key_release_count++;
 		if (key_release_count > 5)
 		{
-			Reset_Key_Press(KEY_CLEAN);
+			reset_key_press(KEY_CLEAN);
 			key_release_count = 0;
 		}
 	}
@@ -192,7 +192,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	plan = msg->plan;
 	if(plan > 0)
-		Set_Plan_Status(plan);
+		set_plan_status(plan);
 
 	is_sensor_ready_ = true;
 
