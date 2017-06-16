@@ -20,6 +20,7 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
+boost::mutex g_event_status_mutex;
 bool g_fatal_quit_event = false;
 /* Bumper */
 bool g_bumper_hitted = false;
@@ -766,6 +767,7 @@ void em_default_handler_charge_detect(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (g_charge_detect_cnt++ > 25)
 	{
+		boost::mutex::scoped_lock(g_event_status_mutex);
 		g_charge_detect = robot::instance()->getChargeStatus();
 		ROS_WARN("%s %d: g_charge_detect has been set to %d.", g_charge_detect);
 		g_charge_detect_cnt = 0;
