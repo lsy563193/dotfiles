@@ -28,6 +28,7 @@ boost::mutex charger_signal_delay_mutex;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 10;
 boost::mutex battery_low_delay_mutex;
+uint8_t Error_Alarm_Counter = 2;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -41,8 +42,7 @@ void User_Interface(void)
 	bool Battery_Ready_to_clean = true;
 
 	// Count for error alarm.
-	uint8_t Error_Alarm_Counter = 2;
-
+	Error_Alarm_Counter = 2;
 	charger_signal_delay = 0;
 	battery_low_delay = 0;
 	start_time = time(NULL);
@@ -134,14 +134,7 @@ void User_Interface(void)
 		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
 		if (Get_Error_Code() != Error_Code_None)
 		{
-			if (Remote_Key(Remote_All & ~Remote_Clean))
-			{
-				beep_for_command(false);
-				Reset_Rcon_Remote();
-				Error_Alarm_Counter = 0;
-				Alarm_Error();
-			}
-			else if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
+			if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
 			{
 				Beep(2, 2, 0, 1);//Beep for useless remote command
 				// Wait for user to release the key.
@@ -421,6 +414,15 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 void user_interface_handle_direction(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote direction key %x has been pressed.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+	if (Get_Error_Code())
+	{
+		ROS_WARN("%s %d: Remote direction key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
+		beep_for_command(false);
+		Reset_Rcon_Remote();
+		Error_Alarm_Counter = 0;
+		Alarm_Error();
+		return;
+	}
 	beep_for_command(true);
 	Temp_Mode = Clean_Mode_Remote;
 	Reset_Rcon_Remote();
