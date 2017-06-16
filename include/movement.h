@@ -341,47 +341,47 @@
 #define CMD_ACK						0x23
 #define CMD_NCK						0x25
 
-extern uint32_t Rcon_Status;
+extern uint32_t g_rcon_status;
 
-extern volatile int16_t Left_Wall_BaseLine;
-extern volatile int16_t Right_Wall_BaseLine;
+extern volatile int16_t g_left_wall_baseline;
+extern volatile int16_t g_right_wall_baseline;
 
 void reset_start_work_time();
 uint32_t get_work_time();
 
-void Set_Error_Code(uint8_t Code);
-uint8_t Get_Error_Code(void);
-void Alarm_Error(void);
+void set_error_code(uint8_t Code);
+uint8_t get_error_code(void);
+void alarm_error(void);
 
-void Set_LeftBrush_Stall(uint8_t L);
+void set_left_brush_stall(uint8_t L);
 
-uint32_t Get_RightWheel_Step(void);
-uint32_t Get_LeftWheel_Step(void);
+uint32_t get_right_wheel_step(void);
+uint32_t get_left_wheel_step(void);
 void Reset_RightWheel_Step();
 void Reset_LeftWheel_Step();
-void Set_Wheel_Step(uint32_t Left,uint32_t Right);
-void Reset_Wheel_Step(void);
-void Reset_Wall_Step(void);
-uint32_t Get_LeftWall_Step(void);
-uint32_t Get_RightWall_Step(void);
+void set_wheel_step(uint32_t Left, uint32_t Right);
+void reset_wheel_step(void);
+void reset_wall_step(void);
+uint32_t get_left_wall_step(void);
+uint32_t get_right_wall_step(void);
 
-int32_t Get_Wall_ADC(int8_t dir);
+int32_t get_wall_adc(int8_t dir);
 
-void Set_Dir_Backward(void);
-void Set_Dir_Forward(void);
+void set_dir_backward(void);
+void set_dir_forward(void);
 
-uint8_t Is_Encoder_Fail(void);
+uint8_t is_encoder_fail(void);
 
-void Set_RightBrush_Stall(uint8_t R);
+void set_right_brush_stall(uint8_t R);
 
-void Wall_Dynamic_Base(uint32_t Cy);
-void Set_Wall_Base(int8_t dir, int32_t data);
-int32_t Get_Wall_Base(int8_t dir);
+void wall_dynamic_base(uint32_t Cy);
+void set_wall_base(int8_t dir, int32_t data);
+int32_t get_wall_base(int8_t dir);
 
 void quick_back(uint8_t speed,uint16_t distance);
 
-void Turn_Left_At_Init(uint16_t speed,int16_t angle);
-void Turn_Left(uint16_t speed,int16_t angle);
+void turn_left_at_init(uint16_t speed, int16_t angle);
+void turn_left(uint16_t speed, int16_t angle);
 void Turn_Right(uint16_t speed,int16_t angle);
 void Round_Turn_Left(uint16_t speed,int16_t angle);
 void Round_Turn_Right(uint16_t speed,int16_t angle);
@@ -389,15 +389,15 @@ void Jam_Turn_Left(uint16_t speed,int16_t angle);
 void Jam_Turn_Right(uint16_t speed,int16_t angle);
 void WF_Turn_Right(uint16_t speed,int16_t angle);
 
-void Set_LeftBrush_Stall(uint8_t L);
+void set_left_brush_stall(uint8_t L);
 
-void Set_Dir_Backward(void);
+void set_dir_backward(void);
 
-uint8_t Is_Encoder_Fail(void);
+uint8_t is_encoder_fail(void);
 
-void Set_RightBrush_Stall(uint8_t R);
+void set_right_brush_stall(uint8_t R);
 
-void Wall_Dynamic_Base(uint32_t Cy);
+void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 

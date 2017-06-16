@@ -98,7 +98,7 @@ void User_Interface(void)
 			break;
 		}
 
-		if(Get_Error_Code())//min_distant_segment Error = red led full
+		if(get_error_code())//min_distant_segment Error = red led full
 		{
 			Set_LED(0,100);
 		}
@@ -114,22 +114,22 @@ void User_Interface(void)
 #endif
 
 		// Alarm for error.
-		if (Get_Error_Code())
+		if (get_error_code())
 			if ((Error_Alarm_Counter == 2 && (time(NULL) - start_time) > 10) || (Error_Alarm_Counter == 1 && (time(NULL) - start_time) > 20))
 			{
 				Error_Alarm_Counter--;
-				Alarm_Error();
+				alarm_error();
 			}
 
 		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
-		if (Get_Error_Code() != Error_Code_None)
+		if (get_error_code() != Error_Code_None)
 		{
 			if (Remote_Key(Remote_All & ~Remote_Clean))
 			{
 				beep_for_command(false);
 				Reset_Rcon_Remote();
 				Error_Alarm_Counter = 0;
-				Alarm_Error();
+				alarm_error();
 			}
 			else if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
 			{
@@ -143,14 +143,14 @@ void User_Interface(void)
 				// Key relaesed, then the touch status and stop event status should be cleared.
 				Reset_Stop_Event_Status();
 				wav_play(WAV_CLEAR_ERROR);
-				Set_Error_Code(Error_Code_None);
+				set_error_code(Error_Code_None);
 				Reset_Rcon_Remote();
 			}
 
 			if (Get_Plan_Status() == 3)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				Alarm_Error();
+				alarm_error();
 				wav_play(WAV_CANCEL_APPOINTMENT);
 				Set_Plan_Status(0);
 			}
@@ -326,7 +326,7 @@ void User_Interface(void)
 				ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %d.", GetBatteryVoltage());
 				if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 				{
-//					Set_Error_Code(Error_Code_Cliff);
+//					set_error_code(Error_Code_Cliff);
 //					Error_Show_Counter=400;
 					ROS_WARN("%s %d: Robot lift up.", __FUNCTION__, __LINE__);
 					wav_play(WAV_ERROR_LIFT_UP);
@@ -365,7 +365,7 @@ void User_Interface(void)
 		//{
 		//	Test_Mode_Flag=0;
 		//	Error_Show_Counter=0;
-		//	Sound_Out_Error(Get_Error_Code());
+		//	Sound_Out_Error(get_error_code());
 		//}
 	}
 
@@ -373,7 +373,7 @@ void User_Interface(void)
 	{
 		// Any manual operation will reset the error status.
 		ROS_INFO("Reset the error code,");
-		Set_Error_Code(Error_Code_None);
+		set_error_code(Error_Code_None);
 	}
 }
 

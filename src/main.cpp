@@ -58,7 +58,7 @@ bool selfCheckAtLaunch()
 			usleep(500000);
 		}
 	}
-	Set_Error_Code(Error_Code_None);
+	set_error_code(Error_Code_None);
 	Set_LED(100, 0);
 	return true;
 }

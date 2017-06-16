@@ -240,7 +240,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			Move_Forward(l_speed, l_speed);
 
 #ifdef WALL_DYNAMIC
-			Wall_Dynamic_Base(30);
+			wall_dynamic_base(30);
 #endif
 #ifdef OBS_DYNAMIC
 			robotbase_OBS_adjust_count(300);
@@ -488,7 +488,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			if (Get_Cliff_Trig())
 			{
 				Set_Wheel_Speed(0, 0);
-				Set_Dir_Backward();
+				set_dir_backward();
 				usleep(15000);
 				Cliff_Move_Back();
 				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
@@ -513,7 +513,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				Stop_Brifly();
 				Move_Forward(15, 15);
 				Reset_WallAccelerate();
-				//Reset_Wheel_Step();
+				//reset_wheel_step();
 				straight_distance = 375;
 			}
 
@@ -634,7 +634,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				Reset_WallAccelerate();
 				straight_distance = 200;
 
-				Reset_Wheel_Step();
+				reset_wheel_step();
 			}
 
 			if (Get_Bumper_Status() & LeftBumperTrig)
@@ -753,14 +753,14 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				{
 					left_wall_buffer[temp_counter] = 0;
 				}
-				Reset_Wheel_Step();
+				reset_wheel_step();
 			}
 			/*------------------------------------------------------Short Distance Move-----------------------*/
 			if (Get_WallAccelerate() < (uint32_t) straight_distance)
 			{
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
-				if (Get_LeftWheel_Step() < 500)
+				if (get_left_wheel_step() < 500)
 				{
 					if (Get_WallAccelerate() < 100)
 					{
@@ -795,7 +795,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					//WFM_update();
 					wf_check_loop_closed(Gyro_GetAngle());
 					Move_Forward(15, 15);
-					Reset_Wheel_Step();
+					reset_wheel_step();
 
 					wall_distance = Wall_High_Limit;
 				}

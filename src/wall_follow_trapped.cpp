@@ -63,7 +63,7 @@
 //
 //	ROS_INFO("%s %d: ", __FUNCTION__, __LINE__);
 //	Stop_Brifly();
-//	Set_Dir_Backward();
+//	set_dir_backward();
 //	Set_Wheel_Speed(5, 5);
 //	Counter_Watcher = 0;
 //
@@ -76,7 +76,7 @@
 //			break;
 //		}
 //
-//		Temp_Speed = Get_LeftWheel_Step() / 3 + 8;
+//		Temp_Speed = get_left_wheel_step() / 3 + 8;
 //		if (Temp_Speed > 12) {
 //			Temp_Speed = 12;
 //		}
@@ -85,8 +85,8 @@
 //		usleep(10000);
 //		Counter_Watcher++;
 //		if (Counter_Watcher > 3000) {
-//			if(Is_Encoder_Fail()) {
-//				Set_Error_Code(Error_Code_Encoder);
+//			if(is_encoder_fail()) {
+//				set_error_code(Error_Code_Encoder);
 //			}
 //			return;
 //		}
@@ -99,7 +99,7 @@
 //			return;
 //		}
 //	}
-//	Set_Dir_Forward();
+//	set_dir_forward();
 //	Set_Wheel_Speed(0, 0);
 //}
 //
@@ -247,7 +247,7 @@
 //		Move_Forward(Left_Wall_Speed, Left_Wall_Speed);
 //
 //#ifdef WALL_DYNAMIC
-//		Wall_Dynamic_Base(30);
+//		wall_dynamic_base(30);
 //#endif
 //#ifdef OBS_DYNAMIC
 //		robotbase_OBS_adjust_count(300);
@@ -287,7 +287,7 @@
 //		/*------------------------------------------------------Cliff Event-----------------------*/
 //		if(Get_Cliff_Trig()){
 //			Set_Wheel_Speed(0,0);
-//			Set_Dir_Backward();
+//			set_dir_backward();
 //			usleep(15000);
 //			Cliff_Move_Back();
 //			if(Get_Cliff_Trig()==(Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right)){
@@ -306,7 +306,7 @@
 //			Stop_Brifly();
 //			Move_Forward(15,15);
 //			Reset_WallAccelerate();
-//			//Reset_Wheel_Step();
+//			//reset_wheel_step();
 //			Wall_Straight_Distance=375;
 //		}
 //
@@ -648,7 +648,7 @@ void WFT_turn_right(uint16_t speed, int16_t angle)
 		Set_Wheel_Speed(speed_, speed_);
 	}
 
-	Set_Dir_Forward();
+	set_dir_forward();
 	Set_Wheel_Speed(0, 0);
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
@@ -661,9 +661,9 @@ void WFT_move_back(uint16_t dist)
 	uint32_t	SP = 10;
 
 	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
-	Set_Dir_Backward();
+	set_dir_backward();
 	Set_Wheel_Speed(8, 8);
-	Reset_Wheel_Step();
+	reset_wheel_step();
 
 	pos_x = robot::instance()->getOdomPositionX();
 	pos_y = robot::instance()->getOdomPositionY();
@@ -683,8 +683,8 @@ void WFT_move_back(uint16_t dist)
 
 		Set_Wheel_Speed(SP, SP);
 		if (cnt > 3000) {
-			if (Is_Encoder_Fail()) {
-				Set_Error_Code(Error_Code_Encoder);
+			if (is_encoder_fail()) {
+				set_error_code(Error_Code_Encoder);
 			}
 			ROS_INFO("%s %d: Counter Wathcher!", __FUNCTION__, __LINE__);
 			break;
@@ -835,7 +835,7 @@ EscapeTrappedType Wall_Follow_Trapped()
 		Move_Forward(Left_Wall_Speed, Left_Wall_Speed);
 
 #ifdef WALL_DYNAMIC
-		Wall_Dynamic_Base(30);
+		wall_dynamic_base(30);
 #endif
 #ifdef OBS_DYNAMIC
 		robotbase_OBS_adjust_count(300);
@@ -1616,7 +1616,7 @@ void WFM_move_back(uint16_t dist)
 
 	ROS_INFO("%s %d: ", __FUNCTION__, __LINE__);
 	Stop_Brifly();
-	Set_Dir_Backward();
+	set_dir_backward();
 	Set_Wheel_Speed(5, 5);
 	Counter_Watcher = 0;
 
@@ -1629,7 +1629,7 @@ void WFM_move_back(uint16_t dist)
 			break;
 		}
 
-		Temp_Speed = Get_LeftWheel_Step() / 3 + 8;
+		Temp_Speed = get_left_wheel_step() / 3 + 8;
 		if (Temp_Speed > 12) {
 			Temp_Speed = 12;
 		}
@@ -1638,8 +1638,8 @@ void WFM_move_back(uint16_t dist)
 		usleep(10000);
 		Counter_Watcher++;
 		if (Counter_Watcher > 3000) {
-			if(Is_Encoder_Fail()) {
-				Set_Error_Code(Error_Code_Encoder);
+			if(is_encoder_fail()) {
+				set_error_code(Error_Code_Encoder);
 			}
 			return;
 		}
@@ -1652,6 +1652,6 @@ void WFM_move_back(uint16_t dist)
 			return;
 		}
 	}
-	Set_Dir_Forward();
+	set_dir_forward();
 	Set_Wheel_Speed(0, 0);
 }

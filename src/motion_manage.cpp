@@ -148,7 +148,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		if (!Stop_Event())
 		{
 			ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
-			Set_Error_Code(Error_Code_Laser);
+			set_error_code(Error_Code_Laser);
 			wav_play(WAV_TEST_LIDAR);
 		}
 		initSucceeded(false);
@@ -195,7 +195,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (count_n_10ms == 0)
 	{
 		ROS_ERROR("%s %d: Map or tf framework is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		Set_Error_Code(Error_Code_Slam);
+		set_error_code(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
 		initSucceeded(false);
 		return;

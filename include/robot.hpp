@@ -15,8 +15,8 @@
 #include "config.h"
 #include "map.h"
 
-extern volatile int16_t Left_Wall_BaseLine;
-extern volatile int16_t Right_Wall_BaseLine;
+extern volatile int16_t g_left_wall_baseline;
+extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
 
 typedef enum {
@@ -115,13 +115,13 @@ public:
 
 	int16_t getLeftWall() const
 	{
-		return sensor.left_wall - Left_Wall_BaseLine;
+		return sensor.left_wall - g_left_wall_baseline;
 	}
 
 	int16_t getRightWall() const
 	{
 #if __ROBOT_X900
-		return sensor.right_wall - Right_Wall_BaseLine;
+		return sensor.right_wall - g_right_wall_baseline;
 #elif __ROBOT_X400
 		return 0;
 #endif

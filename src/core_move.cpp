@@ -271,7 +271,7 @@ void cm_update_map_obs()
 	if (Get_OBS_Status() & Status_Left_OBS) {
 		int32_t i,j;
 		cm_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC(0) > 200) {
+		if (get_wall_adc(0) > 200) {
 			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
 				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
 			}
@@ -281,7 +281,7 @@ void cm_update_map_obs()
 	if (Get_OBS_Status() & Status_Right_OBS) {
 		int32_t i,j;
 		cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (Get_Wall_ADC(1) > 200) {
+		if (get_wall_adc(1) > 200) {
 			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
 				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
 			}
@@ -460,7 +460,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
 #ifdef WALL_DYNAMIC
-		Wall_Dynamic_Base(50);
+		wall_dynamic_base(50);
 #endif
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
@@ -666,7 +666,7 @@ RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_P
 		ROS_INFO("%s %d, OBS detected.", __FUNCTION__, __LINE__);
 	} else if (Get_FrontOBS() > Get_FrontOBST_Value()) {
 		ROS_INFO("%s %d, front OBS detected.", __FUNCTION__, __LINE__);
-	} else if (Get_Wall_ADC(0) > 170) {
+	} else if (get_wall_adc(0) > 170) {
 		ROS_INFO("%s %d, wall sensor exceed 170.", __FUNCTION__, __LINE__);
 	}
 	/*					South (Xmin)
@@ -786,7 +786,7 @@ void cm_rounding_turn(uint16_t speed, int16_t angle)
 		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 
-	Set_Dir_Forward();
+	set_dir_forward();
 	Set_Wheel_Speed(0, 0);
 
 	cm_update_position(true);
@@ -926,7 +926,8 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 			Move_Forward((type == ROUNDING_LEFT ? speed_left : speed_right), (type == ROUNDING_LEFT ? speed_right : speed_left));
 		} else {
 			angle = 900;
-			if ((type == ROUNDING_LEFT && Get_LeftWheel_Step() < 12500) || (type == ROUNDING_RIGHT && Get_RightWheel_Step() < 12500)) {
+			if ((type == ROUNDING_LEFT && get_left_wheel_step() < 12500) || (type == ROUNDING_RIGHT &&
+							get_right_wheel_step() < 12500)) {
 				angle = Get_FrontOBS() > Get_FrontOBST_Value() ? 800 : 400;
 			}
 			cm_rounding_turn(TURN_SPEED, angle);
@@ -1306,9 +1307,9 @@ void cm_move_back(uint16_t dist)
 	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
 	Stop_Brifly();
 	cm_update_position();
-	Set_Dir_Backward();
+	set_dir_backward();
 	Set_Wheel_Speed(8, 8);
-	Reset_Wheel_Step();
+	reset_wheel_step();
 	Counter_Watcher = 0;
 
 	pos_x = robot::instance()->getOdomPositionX();
@@ -1329,8 +1330,8 @@ void cm_move_back(uint16_t dist)
 
 		Set_Wheel_Speed(SP, SP);
 		if (Counter_Watcher > 3000) {
-			if (Is_Encoder_Fail()) {
-				Set_Error_Code(Error_Code_Encoder);
+			if (is_encoder_fail()) {
+				set_error_code(Error_Code_Encoder);
 			}
 			break;
 		}

@@ -35,7 +35,7 @@ void Remote_Mode(void)
   //Display_Clean_Status(Display_Remote);
 
 	Set_LED(100,0);
-	Reset_Wheel_Step();
+	reset_wheel_step();
 	Reset_Stop_Event_Status();
 	Work_Motor_Configure();
 //    Set_VacMode(Vac_Normal);
@@ -68,7 +68,7 @@ void Remote_Mode(void)
 			}
 			else
 			{
-				Moving_Speed=(Get_RightWheel_Step()/80)+25;
+				Moving_Speed=(get_right_wheel_step()/80)+25;
 				if(Moving_Speed<25)Moving_Speed=25;
 				if(Moving_Speed>42)Moving_Speed=42;
 				Move_Forward(Moving_Speed,Moving_Speed);
@@ -89,11 +89,11 @@ void Remote_Mode(void)
 		{
 
 			Reset_Rcon_Remote();
-			Turn_Left(Turn_Speed,320);
+			turn_left(Turn_Speed, 320);
 			//Set_SideBrush_PWM(30,30);
 			//Set_MainBrush_PWM(30);
 			No_Command_Counter=0;
-			Reset_Wheel_Step();
+			reset_wheel_step();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Right))
@@ -106,7 +106,7 @@ void Remote_Mode(void)
 			//Set_MainBrush_PWM(30);
 			//Set_BLDC_Speed(30);
 			No_Command_Counter=0;
-			Reset_Wheel_Step();
+			reset_wheel_step();
 			Forward_Flag=0;
 		}
 		if(Remote_Key(Remote_Max))
@@ -120,7 +120,7 @@ void Remote_Mode(void)
 			No_Command_Counter=0;
 			//Forward_Flag=0;
 			Reset_Rcon_Remote();
-			Reset_Wheel_Step();
+			reset_wheel_step();
 		}
 
 		No_Command_Counter++;

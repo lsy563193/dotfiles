@@ -774,8 +774,8 @@ uint8_t Random_Dirt_Event(void)
 #endif
 
 	Move_Forward(0, 0);
-	Reset_Wheel_Step();
-	Reset_Wall_Step();
+	reset_wheel_step();
+	reset_wall_step();
 	usleep(10000);
 
 	Reset_Rcon_Remote();
@@ -840,7 +840,7 @@ uint8_t Random_Dirt_Event(void)
 
 		switch (Move_Style) {
 			case First_Round:
-				if (Get_LeftWheel_Step() > 6000) {
+				if (get_left_wheel_step() > 6000) {
 					Move_Forward(0, 0);
 					Reset_LeftWheel_Step();
 					Move_Style = Spiral_Right_Out;
@@ -856,17 +856,17 @@ uint8_t Random_Dirt_Event(void)
 						Move_Back();
 					}
 					Stop_Brifly();
-					Turn_Left(Turn_Speed, 2500);
+					turn_left(Turn_Speed, 2500);
 					Move_Forward(10, 10);
 					Move_Style = Spiral_Left_Out;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
 				break;
 
 			case Spiral_Right_Out:
-				if (Get_LeftWheel_Step() > (Radius * 3)) {
+				if (get_left_wheel_step() > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 100) {
 						Radius += 2;
@@ -879,7 +879,7 @@ uint8_t Random_Dirt_Event(void)
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (Get_Bumper_Status()) {
@@ -888,20 +888,20 @@ uint8_t Random_Dirt_Event(void)
 						Move_Back();
 					}
 					Stop_Brifly();
-					Turn_Left(Turn_Speed, 2500);
+					turn_left(Turn_Speed, 2500);
 					Move_Style = Spiral_Left_Out;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
+				set_dir_forward();
 				Set_LeftWheel_Speed(SPOT_MAX_SPEED);
 				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 
 				break;
 
 			case Spiral_Right_In:
-				if (Get_LeftWheel_Step() > (Radius * 3)) {
+				if (get_left_wheel_step() > (Radius * 3)) {
 					Reset_LeftWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -914,7 +914,7 @@ uint8_t Random_Dirt_Event(void)
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (Get_Bumper_Status()) {
@@ -923,20 +923,20 @@ uint8_t Random_Dirt_Event(void)
 						Move_Back();
 					}
 					Stop_Brifly();
-					Turn_Left(Turn_Speed, 2500);
+					turn_left(Turn_Speed, 2500);
 					Move_Style = Spiral_Left_In;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
+				set_dir_forward();
 				Set_LeftWheel_Speed(SPOT_MAX_SPEED);
 				Set_RightWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 
 				break;
 
 			case Spiral_Left_Out:
-				if (Get_RightWheel_Step() > (Radius * 3)) {
+				if (get_right_wheel_step() > (Radius * 3)) {
 					Reset_RightWheel_Step();
 					if (Radius < 100) {
 						Radius += 2;
@@ -949,7 +949,7 @@ uint8_t Random_Dirt_Event(void)
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (Get_Bumper_Status()) {
@@ -960,18 +960,18 @@ uint8_t Random_Dirt_Event(void)
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_Out;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
+				set_dir_forward();
 				Set_RightWheel_Speed(SPOT_MAX_SPEED);
 				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 
 				break;
 
 			case Spiral_Left_In:
-				if (Get_RightWheel_Step() > (Radius * 2)) {
+				if (get_right_wheel_step() > (Radius * 2)) {
 					Reset_RightWheel_Step();
 					if (Radius < 3) {
 						Spot_Flag = 1;
@@ -984,7 +984,7 @@ uint8_t Random_Dirt_Event(void)
 				}
 				if (Get_Bumper_Status() || Get_Cliff_Trig() || Spot_OBS_Status()) {
 
-					if (Get_LeftWall_Step() < 3000) {
+					if (get_left_wall_step() < 3000) {
 						Stunk++;
 					}
 					if (Get_Bumper_Status()) {
@@ -995,11 +995,11 @@ uint8_t Random_Dirt_Event(void)
 					Stop_Brifly();
 					Turn_Right(Turn_Speed, 2000);
 					Move_Style = Spiral_Right_In;
-					Reset_Wheel_Step();
-					Reset_Wall_Step();
+					reset_wheel_step();
+					reset_wall_step();
 					OBS_Counter++;
 				}
-				Set_Dir_Forward();
+				set_dir_forward();
 				Set_RightWheel_Speed(SPOT_MAX_SPEED);
 				Set_LeftWheel_Speed((SPOT_MAX_SPEED * Radius) / (Radius + 230));
 

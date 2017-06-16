@@ -63,7 +63,7 @@ void sleep_mode(void)
 		// Check if plan activated.
 		if (Get_Plan_Status() == 3)
 		{
-			if (Get_Error_Code() == Error_Code_None)
+			if (get_error_code() == Error_Code_None)
 			{
 				Set_Main_PwrByte(Clean_Mode_Navigation);
 				ResetSleepModeFlag();
@@ -81,7 +81,7 @@ void sleep_mode(void)
 			else
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				Alarm_Error();
+				alarm_error();
 				wav_play(WAV_CANCEL_APPOINTMENT);
 				Set_Plan_Status(0);
 			}
@@ -123,7 +123,7 @@ void sleep_mode(void)
 		}
 
 		/*-----------------Check if near the charging base-----------------------------*/
-		if(Is_Station() && (!Get_Error_Code()))
+		if(Is_Station() && (!get_error_code()))
 		{
 			ROS_INFO("%s,%d,Rcon_status = %x",__FUNCTION__,__LINE__,Get_Rcon_Status());
 			Reset_Rcon_Status();
@@ -142,10 +142,10 @@ void sleep_mode(void)
 		}
 	}
 	// Alarm for error.
-	if (Get_Clean_Mode() == Clean_Mode_Userinterface && Get_Error_Code())
+	if (Get_Clean_Mode() == Clean_Mode_Userinterface && get_error_code())
 	{
 		Set_LED(0, 100);
-		Alarm_Error();
+		alarm_error();
 	}
 
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.

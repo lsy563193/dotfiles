@@ -21,98 +21,98 @@
 #include "slam.h"
 #include "event_manager.h"
 
-extern uint8_t sendStream[SEND_LEN];
+extern uint8_t g_send_stream[SEND_LEN];
 
-static int16_t Left_OBSTrig_Value = 500;
-static int16_t Front_OBSTrig_Value = 500;
-static int16_t Right_OBSTrig_Value = 500;
-volatile int16_t OBS_Trig_Value = 800;
-static int16_t Leftwall_OBSTrig_Vale = 500;
-static uint8_t wheel_left_direction = 0;
-static uint8_t wheel_right_direction = 0;
-static uint8_t remote_move_flag=0;
-static uint8_t home_remote_flag = 0;
-uint32_t Rcon_Status;
-uint32_t Average_Move = 0;
-uint32_t Average_Counter =0;
-uint32_t Max_Move = 0;
-uint32_t Auto_Work_Time = 2800;
-uint32_t Room_Work_Time = 3600;
-uint8_t Room_Mode = 0;
-uint8_t SleepModeFlag = 0;
+static int16_t g_left_obs_trig_value = 500;
+static int16_t g_front_obs_trig_value = 500;
+static int16_t g_right_obs_trig_value = 500;
+volatile int16_t g_obs_trig_value = 800;
+static int16_t g_leftwall_obs_trig_vale = 500;
+static uint8_t g_wheel_left_direction = 0;
+static uint8_t g_wheel_right_direction = 0;
+static uint8_t g_remote_move_flag=0;
+static uint8_t g_home_remote_flag = 0;
+uint32_t g_rcon_status;
+uint32_t g_average_move = 0;
+uint32_t g_average_counter =0;
+uint32_t g_max_move = 0;
+uint32_t g_auto_work_time = 2800;
+uint32_t g_room_work_time = 3600;
+uint8_t g_room_mode = 0;
+uint8_t g_sleep_mode_flag = 0;
 
-static uint32_t Wall_Accelerate =0;
-static int16_t Left_Wheel_Speed = 0;
-static int16_t Right_Wheel_Speed = 0;
-static uint32_t left_wheel_step = 0;
-static uint32_t right_wheel_step = 0;
-static uint32_t leftwall_step = 0;
-static uint32_t rightwall_step = 0;
+static uint32_t g_wall_accelerate =0;
+static int16_t g_left_wheel_speed = 0;
+static int16_t g_right_wheel_speed = 0;
+static uint32_t g_left_wheel_step = 0;
+static uint32_t g_right_wheel_step = 0;
+static uint32_t g_leftwall_step = 0;
+static uint32_t g_rightwall_step = 0;
 
 //Value for saving SideBrush_PWM
-static uint16_t LBrush_PWM = 0;
-static uint16_t RBrush_PWM = 0;
+static uint16_t g_l_brush_pwm = 0;
+static uint16_t g_r_brush_pwm = 0;
 
-static int32_t MoveStepCounter = 0;
-static uint32_t Mobility_Step = 0;
-static uint8_t Direction_Flag=0;
+static int32_t g_move_step_counter = 0;
+static uint32_t g_mobility_step = 0;
+static uint8_t g_direction_flag=0;
 // Variable for vacuum mode
 
-volatile uint8_t Vac_Mode;
-volatile uint8_t vacModeSave;
-static uint8_t Cleaning_mode = 0;
-static uint8_t sendflag=0;
-static time_t start_work_time;
-ros::Time lw_t,rw_t; // these variable is used for calculate wheel step
+volatile uint8_t g_vac_mode;
+volatile uint8_t g_vac_mode_save;
+static uint8_t g_cleaning_mode = 0;
+static uint8_t g_sendflag=0;
+static time_t g_start_work_time;
+ros::Time g_lw_t,g_rw_t; // these variable is used for calculate wheel step
 
 // Flag for homeremote
-volatile uint8_t R_H_Flag=0;
+volatile uint8_t g_r_h_flag=0;
 
 // Counter for bumper error
-volatile uint8_t Bumper_Error = 0;
+volatile uint8_t g_bumper_error = 0;
 
 // Value for wall sensor offset.
-volatile int16_t Left_Wall_BaseLine = 50;
-volatile int16_t Right_Wall_BaseLine = 50;
+volatile int16_t g_left_wall_baseline = 50;
+volatile int16_t g_right_wall_baseline = 50;
 
 // Variable for key status, key may have many key types.
-volatile uint8_t Key_Status = 0;
+volatile uint8_t g_key_status = 0;
 // Variable for touch status, touch status is just for KEY_CLEAN.
-volatile uint8_t Touch_Status = 0;
+volatile uint8_t g_touch_status = 0;
 // Variable for remote status, remote status is just for remote controller.
-volatile uint8_t Remote_Status = 0;
+volatile uint8_t g_remote_status = 0;
 // Variable for stop event status.
-volatile uint8_t Stop_Event_Status = 0;
+volatile uint8_t g_stop_event_status = 0;
 // Variable for plan status
-volatile uint8_t Plan_Status = 0;
+volatile uint8_t g_plan_status = 0;
 
 // Error code for exception case
-volatile uint8_t Error_Code = 0;
+volatile uint8_t g_error_code = 0;
 /*----------------------- Work Timer functions--------------------------*/
 void reset_start_work_time()
 {
-	start_work_time = time(NULL);
+	g_start_work_time = time(NULL);
 }
 
 uint32_t get_work_time()
 {
-	return (uint32_t)difftime(time(NULL), start_work_time);
+	return (uint32_t)difftime(time(NULL), g_start_work_time);
 }
 
 /*----------------------- Set error functions--------------------------*/
-void Set_Error_Code(uint8_t code)
+void set_error_code(uint8_t code)
 {
-	Error_Code = code;
+	g_error_code = code;
 }
 
-uint8_t Get_Error_Code()
+uint8_t get_error_code()
 {
-	return Error_Code;
+	return g_error_code;
 }
 
-void Alarm_Error(void)
+void alarm_error(void)
 {
-	switch (Get_Error_Code())
+	switch (get_error_code())
 	{
 		case Error_Code_LeftWheel:
 		{
@@ -162,70 +162,70 @@ void Alarm_Error(void)
 
 }
 
-void Set_LeftBrush_Stall(uint8_t L)
+void set_left_brush_stall(uint8_t L)
 {
 	// Actually not used in old code
 	L = L;
 }
 
-uint32_t Get_RightWheel_Step(void)
+uint32_t get_right_wheel_step(void)
 {
 	double t,step;
 	double rwsp;
-	if(Right_Wheel_Speed<0)
-		rwsp = (double)Right_Wheel_Speed*-1;
+	if(g_right_wheel_speed<0)
+		rwsp = (double)g_right_wheel_speed*-1;
 	else
-		rwsp = (double)Right_Wheel_Speed;
-	t = (double)(ros::Time::now()-rw_t).toSec();
+		rwsp = (double)g_right_wheel_speed;
+	t = (double)(ros::Time::now()-g_rw_t).toSec();
 	step = rwsp*t/0.12;//origin 0.181
-	right_wheel_step = (uint32_t)step;
-	return right_wheel_step;
+	g_right_wheel_step = (uint32_t)step;
+	return g_right_wheel_step;
 }
-uint32_t Get_LeftWheel_Step(void)
+uint32_t get_left_wheel_step(void)
 {
 	double t,step;
 	double lwsp;
-	if(Left_Wheel_Speed<0)
-		lwsp = (double)Left_Wheel_Speed*-1;
+	if(g_left_wheel_speed<0)
+		lwsp = (double)g_left_wheel_speed*-1;
 	else
-		lwsp = (double)Left_Wheel_Speed;
-	t=(double)(ros::Time::now()-lw_t).toSec();
+		lwsp = (double)g_left_wheel_speed;
+	t=(double)(ros::Time::now()-g_lw_t).toSec();
 	step = lwsp*t/0.12;//origin 0.181
-	left_wheel_step = (uint32_t)step;
-	return left_wheel_step;
+	g_left_wheel_step = (uint32_t)step;
+	return g_left_wheel_step;
 }
 
-void Reset_Wheel_Step(void)
+void reset_wheel_step(void)
 {
-	lw_t = ros::Time::now();
-	rw_t = ros::Time::now();
-	right_wheel_step = 0;
-	left_wheel_step = 0;
+	g_lw_t = ros::Time::now();
+	g_rw_t = ros::Time::now();
+	g_right_wheel_step = 0;
+	g_left_wheel_step = 0;
 }
 
-void Reset_Wall_Step(void)
+void reset_wall_step(void)
 {
-	leftwall_step = 0;
-	rightwall_step = 0;
+	g_leftwall_step = 0;
+	g_rightwall_step = 0;
 }
 
-uint32_t Get_LeftWall_Step(void)
+uint32_t get_left_wall_step(void)
 {
-	return leftwall_step = Get_LeftWheel_Step();
+	return g_leftwall_step = get_left_wheel_step();
 }
 
-uint32_t Get_RightWall_Step(void)
+uint32_t get_right_wall_step(void)
 {
-	return rightwall_step = Get_RightWheel_Step();
+	return g_rightwall_step = get_right_wheel_step();
 }
 
-void Set_Wheel_Step(uint32_t Left, uint32_t Right)
+void set_wheel_step(uint32_t Left, uint32_t Right)
 {
-	left_wheel_step = Left;
-	right_wheel_step = Right;
+	g_left_wheel_step = Left;
+	g_right_wheel_step = Right;
 }
 
-int32_t Get_Wall_ADC(int8_t dir)
+int32_t get_wall_adc(int8_t dir)
 {
 	if (dir == 0)
 	{
@@ -237,38 +237,38 @@ int32_t Get_Wall_ADC(int8_t dir)
 	}
 }
 
-void Set_Dir_Backward(void)
+void set_dir_backward(void)
 {
-	wheel_left_direction = 1;
-	wheel_right_direction = 1;
+	g_wheel_left_direction = 1;
+	g_wheel_right_direction = 1;
 }
 
-void Set_Dir_Forward(void)
+void set_dir_forward(void)
 {
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 }
 
-uint8_t Is_Encoder_Fail(void)
+uint8_t is_encoder_fail(void)
 {
 	return 0;
 }
 
-void Set_RightBrush_Stall(uint8_t R)
+void set_right_brush_stall(uint8_t R)
 {
 	R = R;
 }
 
-void Wall_Dynamic_Base(uint32_t Cy)
+void wall_dynamic_base(uint32_t Cy)
 {
-	//ROS_INFO("Run Wall_Dynamic_Base.");
+	//ROS_INFO("Run wall_dynamic_base.");
 	static int32_t Left_Wall_Sum_Value=0, Right_Wall_Sum_Value=0;
 	static int32_t Left_Wall_Everage_Value=0, Right_Wall_Everage_Value=0;
 	static int32_t Left_Wall_E_Counter=0, Right_Wall_E_Counter=0;
 	static int32_t Left_Temp_Wall_Buffer=0, Right_Temp_Wall_Buffer=0;
 
 	// Dynamic adjust for left wall sensor.
-	Left_Temp_Wall_Buffer = Get_Wall_ADC(0);
+	Left_Temp_Wall_Buffer = get_wall_adc(0);
 	Left_Wall_Sum_Value+=Left_Temp_Wall_Buffer;
 	Left_Wall_E_Counter++;
 	Left_Wall_Everage_Value=Left_Wall_Sum_Value/Left_Wall_E_Counter;
@@ -283,19 +283,19 @@ void Wall_Dynamic_Base(uint32_t Cy)
 	if ((uint32_t) Left_Wall_E_Counter > Cy)
 	{
 		// Get the wall base line for left wall sensor.
-		Left_Wall_Everage_Value += Get_Wall_Base(0);
+		Left_Wall_Everage_Value += get_wall_base(0);
 		if(Left_Wall_Everage_Value>300)Left_Wall_Everage_Value=300;//set a limit
 		// Adjust the wall base line for left wall sensor.
-		Set_Wall_Base(0, Left_Wall_Everage_Value);
+		set_wall_base(0, Left_Wall_Everage_Value);
 		Left_Wall_Everage_Value=0;
 		Left_Wall_E_Counter=0;
 		Left_Wall_Sum_Value=0;
 		Left_Temp_Wall_Buffer=0;
-		//ROS_INFO("Set Left Wall base value as: %d.", Get_Wall_Base(0));
+		//ROS_INFO("Set Left Wall base value as: %d.", get_wall_base(0));
 	}
 
 	// Dynamic adjust for right wall sensor.
-	Right_Temp_Wall_Buffer = Get_Wall_ADC(1);
+	Right_Temp_Wall_Buffer = get_wall_adc(1);
 	Right_Wall_Sum_Value+=Right_Temp_Wall_Buffer;
 	Right_Wall_E_Counter++;
 	Right_Wall_Everage_Value=Right_Wall_Sum_Value/Right_Wall_E_Counter;
@@ -310,39 +310,39 @@ void Wall_Dynamic_Base(uint32_t Cy)
 	if ((uint32_t) Right_Wall_E_Counter > Cy)
 	{
 		// Get the wall base line for right wall sensor.
-		Right_Wall_Everage_Value += Get_Wall_Base(1);
+		Right_Wall_Everage_Value += get_wall_base(1);
 		if(Right_Wall_Everage_Value>300)Right_Wall_Everage_Value=300;//set a limit
 		// Adjust the wall base line for right wall sensor.
-		Set_Wall_Base(1, Right_Wall_Everage_Value);
+		set_wall_base(1, Right_Wall_Everage_Value);
 		Right_Wall_Everage_Value=0;
 		Right_Wall_E_Counter=0;
 		Right_Wall_Sum_Value=0;
 		Right_Temp_Wall_Buffer=0;
-		//ROS_INFO("Set Right Wall base value as: %d.", Get_Wall_Base(0));
+		//ROS_INFO("Set Right Wall base value as: %d.", get_wall_base(0));
 	}
 
 }
 
-void Set_Wall_Base(int8_t dir, int32_t data)
+void set_wall_base(int8_t dir, int32_t data)
 {
 	if (dir == 0)
 	{
-		Left_Wall_BaseLine = data;
+		g_left_wall_baseline = data;
 	}
 	else
 	{
-		Right_Wall_BaseLine = data;
+		g_right_wall_baseline = data;
 	}
 }
-int32_t Get_Wall_Base(int8_t dir)
+int32_t get_wall_base(int8_t dir)
 {
 	if(dir == 0)
 	{
-		return Left_Wall_BaseLine;
+		return g_left_wall_baseline;
 	}
 	else
 	{
-		return Right_Wall_BaseLine;
+		return g_right_wall_baseline;
 	}
 }
 
@@ -353,9 +353,9 @@ void quick_back(uint8_t speed, uint16_t distance)
 	saved_x = robot::instance()->getOdomPositionX();
 	saved_y = robot::instance()->getOdomPositionY();
 	// Quickly move back for a distance.
-	wheel_left_direction = 1;
-	wheel_right_direction = 1;
-	Reset_Wheel_Step();
+	g_wheel_left_direction = 1;
+	g_wheel_right_direction = 1;
+	reset_wheel_step();
 	Set_Wheel_Speed(speed, speed);
 	while (sqrtf(powf(saved_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_y - robot::instance()->getOdomPositionY(), 2)) < (float)distance / 1000)
 	{
@@ -367,7 +367,7 @@ void quick_back(uint8_t speed, uint16_t distance)
 	ROS_INFO("quick_back finished.");
 }
 
-void Turn_Left_At_Init(uint16_t speed, int16_t angle)
+void turn_left_at_init(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
 	int16_t gyro_angle;
@@ -422,15 +422,15 @@ void Turn_Left_At_Init(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d, diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
-void Turn_Left(uint16_t speed, int16_t angle)
+void turn_left(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
 	int16_t gyro_angle;
@@ -503,8 +503,8 @@ void Turn_Left(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
@@ -584,8 +584,8 @@ void Turn_Right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
@@ -671,8 +671,8 @@ void Round_Turn_Left(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
@@ -758,8 +758,8 @@ void Round_Turn_Right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
@@ -852,8 +852,8 @@ void WF_Turn_Right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
@@ -910,8 +910,8 @@ void Jam_Turn_Left(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
@@ -968,8 +968,8 @@ void Jam_Turn_Right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(0, 0);
 
@@ -1068,11 +1068,11 @@ uint8_t Cliff_Event(uint8_t event)
 	uint16_t temp_adjust=0,random_factor=0;
 	uint8_t d_flag = 0;
 	// There is 50% chance that the temp_adjust = 450.
-	//if(left_wheel_step%2)temp_adjust = 450;
+	//if(g_left_wheel_step%2)temp_adjust = 450;
 	if(((int)ros::Time::now().toSec())%2)temp_adjust = 450;
 	else temp_adjust = 0;
 	// There is 33% chance that the random_factor = 1.
-	//if(right_wheel_step%3)random_factor = 1;
+	//if(g_right_wheel_step%3)random_factor = 1;
 	if(((int)ros::Time::now().toSec())%3)random_factor = 1;
 	else random_factor = 0;
 
@@ -1154,8 +1154,8 @@ uint8_t Turn_Connect(void)
 	if (target_angle < 0) {
 		target_angle = 3600 + target_angle;
 	}
-	wheel_left_direction = 0;
-	wheel_right_direction = 1;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 1;
 	Set_Wheel_Speed(speed, speed);
 	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
@@ -1184,8 +1184,8 @@ uint8_t Turn_Connect(void)
 	if (target_angle > 3600) {
 		target_angle = target_angle - 3600;
 	}
-	wheel_left_direction = 1;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 1;
+	g_wheel_right_direction = 0;
 	Set_Wheel_Speed(speed, speed);
 	while(abs(target_angle - Gyro_GetAngle()) > 20)
 	{
@@ -1214,28 +1214,28 @@ uint8_t Turn_Connect(void)
 
 void SetHomeRemote(void)
 {
-	home_remote_flag = 1;
+	g_home_remote_flag = 1;
 }
 
 void Reset_HomeRemote(void)
 {
-	home_remote_flag = 0;
+	g_home_remote_flag = 0;
 }
 
 uint8_t IsHomeRemote(void)
 {
-	return R_H_Flag;
+	return g_r_h_flag;
 }
 
 uint8_t  Is_MoveWithRemote(void){
-	return remote_move_flag;	
+	return g_remote_move_flag;
 }
 
 uint8_t Is_OBS_Near(void)
 {
-	if(robot::instance()->getObsFront() > (Front_OBSTrig_Value-200))return 1;
-	if(robot::instance()->getObsRight() > (Right_OBSTrig_Value-200))return 1;
-	if(robot::instance()->getObsLeft() > (Left_OBSTrig_Value-200))return 1;
+	if(robot::instance()->getObsFront() > (g_front_obs_trig_value-200))return 1;
+	if(robot::instance()->getObsRight() > (g_right_obs_trig_value-200))return 1;
+	if(robot::instance()->getObsLeft() > (g_left_obs_trig_value-200))return 1;
 	return 0;
 }
 
@@ -1271,9 +1271,9 @@ void Set_LeftWheel_Speed(uint8_t speed)
 	int16_t l_speed;
 	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
 	l_speed = (int16_t)(speed*SPEED_ALF);
-	if(wheel_left_direction == 1)
+	if(g_wheel_left_direction == 1)
 		l_speed |=0x8000;
-	Left_Wheel_Speed = l_speed;
+	g_left_wheel_speed = l_speed;
 	control_set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
 
@@ -1284,21 +1284,21 @@ void Set_RightWheel_Speed(uint8_t speed)
 	int16_t r_speed;
 	speed = speed>RUN_TOP_SPEED?RUN_TOP_SPEED:speed;
 	r_speed = (int16_t)(speed*SPEED_ALF);
-	if(wheel_right_direction == 1)
+	if(g_wheel_right_direction == 1)
 		r_speed |=0x8000;
-	Right_Wheel_Speed = r_speed;
+	g_right_wheel_speed = r_speed;
 	control_set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
 }
 
 int16_t Get_LeftWheel_Speed(void)
 {
-	return Left_Wheel_Speed;
+	return g_left_wheel_speed;
 }
 
 int16_t Get_RightWheel_Speed(void)
 {
-	return Right_Wheel_Speed;
+	return g_right_wheel_speed;
 }
 
 void Work_Motor_Configure(void)
@@ -1412,8 +1412,8 @@ uint8_t Self_Check(uint8_t Check_Code)
 		{
 			Disable_Motors();
 			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n",__FUNCTION__,__LINE__);
-			Set_Error_Code(Error_Code_RightWheel);
-			Alarm_Error();
+			set_error_code(Error_Code_RightWheel);
+			alarm_error();
 			return 1;
 
 		}
@@ -1421,7 +1421,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 		if(Right_Wheel_Slow>100)
 		{
 			Disable_Motors();
-			Set_Error_Code(Error_Code_RightWheel);
+			set_error_code(Error_Code_RightWheel);
 			return 1;
 		}
 		*/
@@ -1454,20 +1454,20 @@ uint8_t Self_Check(uint8_t Check_Code)
 		{
 			Disable_Motors();
 			ROS_WARN("%s %d,left wheel stall maybe, please check!!", __FUNCTION__, __LINE__);
-			Set_Error_Code(Error_Code_LeftWheel);
-			Alarm_Error();
+			set_error_code(Error_Code_LeftWheel);
+			alarm_error();
 			return 1;
 		}
 		/*
 		if(Left_Wheel_Slow>100)
 		{
 			Disable_Motors();
-			Set_Error_Code(Error_Code_RightWheel);
+			set_error_code(Error_Code_RightWheel);
 			return 1;
 		}
 		*/
 		Stop_Brifly();
-		//Turn_Left(Turn_Speed,1800);
+		//turn_left(Turn_Speed,1800);
 	}
 	else if(Check_Code==Check_Main_Brush)
 	{
@@ -1478,9 +1478,9 @@ uint8_t Self_Check(uint8_t Check_Code)
 		}
 		else if((uint32_t)difftime(time(NULL),mboctime)>=3){
 			mbrushchecking = 0;
-			Set_Error_Code(Error_Code_MainBrush);
+			set_error_code(Error_Code_MainBrush);
 			Disable_Motors();
-			Alarm_Error();
+			alarm_error();
 			return 1;
 		}
 		return 0;
@@ -1505,9 +1505,9 @@ uint8_t Self_Check(uint8_t Check_Code)
 		{
 			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
 			/*-----vacuum error-----*/
-			Set_Error_Code(Error_Code_Fan_H);
+			set_error_code(Error_Code_Fan_H);
 			Disable_Motors();
-			Alarm_Error();
+			alarm_error();
 			Reset_SelfCheck_Vacuum_Controler();
 			return 1;
 		}
@@ -1530,7 +1530,7 @@ uint8_t Self_Check(uint8_t Check_Code)
 			}
 			usleep(50000);
 		}
-		Set_Error_Code(Error_Code_Fan_H);
+		set_error_code(Error_Code_Fan_H);
 		Disable_Motors();
 		Alarm_Error();
 		return 1;
@@ -1538,16 +1538,16 @@ uint8_t Self_Check(uint8_t Check_Code)
 	}
 	else if(Check_Code==Check_Left_Brush)
 	{
-		Set_Error_Code(Error_Code_LeftBrush);
+		set_error_code(Error_Code_LeftBrush);
 		Disable_Motors();
-		Alarm_Error();
+		alarm_error();
 		return 1;
 	}
 	else if(Check_Code==Check_Right_Brush)
 	{
-		Set_Error_Code(Error_Code_RightBrush);
+		set_error_code(Error_Code_RightBrush);
 		Disable_Motors();
-		Alarm_Error();
+		alarm_error();
 		return 1;
 	}
 	Stop_Brifly();
@@ -1601,21 +1601,21 @@ uint8_t Check_Bat_Ready_To_Clean(void)
 
 uint8_t Get_Clean_Mode(void)
 {
-	return Cleaning_mode;
+	return g_cleaning_mode;
 }
 
 void Set_VacMode(uint8_t mode,bool is_save)
 {
 	// Set the mode for vacuum.
 	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
-	Vac_Mode = vacModeSave;
+	g_vac_mode = g_vac_mode_save;
 	if(mode!=Vac_Save){
-		Vac_Mode = mode;
+		g_vac_mode = mode;
 		if(is_save)
-			vacModeSave = Vac_Mode;
+			g_vac_mode_save = g_vac_mode;
 	}
 
-	ROS_INFO("%s ,%d Vac_Mode(%d),vacModeSave(%d)",__FUNCTION__,__LINE__,Vac_Mode,vacModeSave);
+	ROS_INFO("%s ,%d g_vac_mode(%d),g_vac_mode_save(%d)",__FUNCTION__,__LINE__,g_vac_mode,g_vac_mode_save);
 }
 
 void Set_BLDC_Speed(uint32_t S)
@@ -1668,13 +1668,13 @@ void OBS_Dynamic_Base(uint16_t Cy)
 	}
 	if (FrontOBS_E_Counter > Cy) {
 		FrontOBS_E_Counter = 0;
-		Front_OBS_Buffer = Front_OBSTrig_Value - OBS_Diff;
+		Front_OBS_Buffer = g_front_obs_trig_value - OBS_Diff;
 		Front_OBS_Buffer = (FrontOBS_Everage + Front_OBS_Buffer) / 2;
 		if (Front_OBS_Buffer < OBS_adjust_limit) {
 			Front_OBS_Buffer = OBS_adjust_limit;
 		}
-		Front_OBSTrig_Value = Front_OBS_Buffer + OBS_Diff;
-		//ROS_INFO("Update Front_OBSTrig_Value = %d.", Front_OBSTrig_Value);
+		g_front_obs_trig_value = Front_OBS_Buffer + OBS_Diff;
+		//ROS_INFO("Update g_front_obs_trig_value = %d.", g_front_obs_trig_value);
 	}
 
 	/*---------------Left-----------------------*/
@@ -1689,13 +1689,13 @@ void OBS_Dynamic_Base(uint16_t Cy)
 	}
 	if (LeftOBS_E_Counter > Cy) {
 		LeftOBS_E_Counter = 0;
-		Left_OBS_Buffer = Left_OBSTrig_Value - OBS_Diff;
+		Left_OBS_Buffer = g_left_obs_trig_value - OBS_Diff;
 		Left_OBS_Buffer = (LeftOBS_Everage + Left_OBS_Buffer) / 2;
 		if (Left_OBS_Buffer < OBS_adjust_limit) {
 			Left_OBS_Buffer = OBS_adjust_limit;
 		}
-		Left_OBSTrig_Value = Left_OBS_Buffer + OBS_Diff;
-		//ROS_INFO("Update Left_OBSTrig_Value = %d.", Left_OBSTrig_Value);
+		g_left_obs_trig_value = Left_OBS_Buffer + OBS_Diff;
+		//ROS_INFO("Update g_left_obs_trig_value = %d.", g_left_obs_trig_value);
 	}
 	/*---------------Right-----------------------*/
 	Right_OBS_Buffer = Get_RightOBS();
@@ -1709,43 +1709,43 @@ void OBS_Dynamic_Base(uint16_t Cy)
 	}
 	if (RightOBS_E_Counter > Cy) {
 		RightOBS_E_Counter = 0;
-		Right_OBS_Buffer = Right_OBSTrig_Value - OBS_Diff;
+		Right_OBS_Buffer = g_right_obs_trig_value - OBS_Diff;
 		Right_OBS_Buffer = (RightOBS_Everage + Right_OBS_Buffer) / 2;
 		if (Right_OBS_Buffer < OBS_adjust_limit) {
 			Right_OBS_Buffer = OBS_adjust_limit;
 		}
-		Right_OBSTrig_Value = Right_OBS_Buffer + OBS_Diff;
-		//ROS_INFO("Update Right_OBSTrig_Value = %d.", Right_OBSTrig_Value);
+		g_right_obs_trig_value = Right_OBS_Buffer + OBS_Diff;
+		//ROS_INFO("Update g_right_obs_trig_value = %d.", g_right_obs_trig_value);
 	}
 }
 
 int16_t Get_FrontOBST_Value(void)
 {
-	return Front_OBSTrig_Value + 1700;
+	return g_front_obs_trig_value + 1700;
 }
 
 int16_t Get_LeftOBST_Value(void)
 {
-	return Left_OBSTrig_Value + 200;
+	return g_left_obs_trig_value + 200;
 }
 
 int16_t Get_RightOBST_Value(void)
 {
-	return Right_OBSTrig_Value + 200;
+	return g_right_obs_trig_value + 200;
 }
 
 uint8_t Is_WallOBS_Near(void)
 {
-	if (robot::instance()->getObsFront() > (Front_OBSTrig_Value + 500)) {
+	if (robot::instance()->getObsFront() > (g_front_obs_trig_value + 500)) {
 		return 1;
 	}
-	if (robot::instance()->getObsRight() > (Right_OBSTrig_Value + 500)) {
+	if (robot::instance()->getObsRight() > (g_right_obs_trig_value + 500)) {
 		return 1;
 	}
-	if (robot::instance()->getObsLeft() > (Front_OBSTrig_Value + 1000)) {
+	if (robot::instance()->getObsLeft() > (g_front_obs_trig_value + 1000)) {
 		return 1;
 	}
-	if (robot::instance()->getLeftWall() > (Leftwall_OBSTrig_Vale +500)){
+	if (robot::instance()->getLeftWall() > (g_leftwall_obs_trig_vale +500)){
 		return 1;
 	}
 	return 0;
@@ -1753,19 +1753,19 @@ uint8_t Is_WallOBS_Near(void)
 
 void Adjust_OBST_Value(void)
 {
-	if(robot::instance()->getObsFront() > Front_OBSTrig_Value )
-		Front_OBSTrig_Value += 800;
-	if(robot::instance()->getObsLeft() > Left_OBSTrig_Value)
-		Left_OBSTrig_Value	+= 800;
-	if(robot::instance()->getObsRight() > Right_OBSTrig_Value)
-		Right_OBSTrig_Value += 800;
+	if(robot::instance()->getObsFront() > g_front_obs_trig_value )
+		g_front_obs_trig_value += 800;
+	if(robot::instance()->getObsLeft() > g_left_obs_trig_value)
+		g_left_obs_trig_value	+= 800;
+	if(robot::instance()->getObsRight() > g_right_obs_trig_value)
+		g_right_obs_trig_value += 800;
 }
 
 void Reset_OBST_Value(void)
 {
-	Left_OBSTrig_Value = robot::instance()->getObsFront() + 1000;
-	Front_OBSTrig_Value = robot::instance()->getObsLeft() + 1000;
-	Right_OBSTrig_Value = robot::instance()->getObsRight() + 1000;
+	g_left_obs_trig_value = robot::instance()->getObsFront() + 1000;
+	g_front_obs_trig_value = robot::instance()->getObsLeft() + 1000;
+	g_right_obs_trig_value = robot::instance()->getObsRight() + 1000;
 }
 
 uint8_t Spot_OBS_Status(void)
@@ -1781,13 +1781,13 @@ uint8_t Get_OBS_Status(void)
 {
 	uint8_t Status = 0;
 
-	if (robot::instance()->getObsLeft() > Left_OBSTrig_Value)
+	if (robot::instance()->getObsLeft() > g_left_obs_trig_value)
 		Status |= Status_Left_OBS;
 
-	if (robot::instance()->getObsFront() > Front_OBSTrig_Value)
+	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
 		Status |= Status_Front_OBS;
 
-	if (robot::instance()->getObsRight() > Right_OBSTrig_Value)
+	if (robot::instance()->getObsRight() > g_right_obs_trig_value)
 		Status |= Status_Right_OBS;
 
 	return Status;
@@ -1795,8 +1795,8 @@ uint8_t Get_OBS_Status(void)
 
 void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
-	wheel_left_direction = 0;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 0;
 
 	Set_Wheel_Speed(Left_Speed, Right_Speed);
 }
@@ -1804,7 +1804,7 @@ void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed)
 uint8_t Get_VacMode(void)
 {
 	// Return the vacuum mode
-	return Vac_Mode;
+	return g_vac_mode;
 }
 
 void Switch_VacMode(bool is_save)
@@ -1821,28 +1821,28 @@ void Switch_VacMode(bool is_save)
 
 void Set_Rcon_Status(uint32_t code)
 {
-	Rcon_Status = code;
+	g_rcon_status = code;
 }
 
 void Reset_Rcon_Status(void)
 {
-	Rcon_Status = 0;
+	g_rcon_status = 0;
 }
 
 uint32_t Get_Rcon_Status(){
-	//Rcon_Status = robot::instance()->getRcon();
-	return Rcon_Status;
+	//g_rcon_status = robot::instance()->getRcon();
+	return g_rcon_status;
 }
 
 /*----------------------------------------Remote--------------------------------*/
 uint8_t Remote_Key(uint8_t key)
 {
 	// Debug
-	if (Remote_Status > 0)
+	if (g_remote_status > 0)
 	{
-		ROS_DEBUG("%s, %d Remote_Status = %x",__FUNCTION__,__LINE__, Remote_Status);
+		ROS_DEBUG("%s, %d g_remote_status = %x",__FUNCTION__,__LINE__, g_remote_status);
 	}
-	if(Remote_Status & key)
+	if(g_remote_status & key)
 	{
 		return 1;
 	}
@@ -1853,26 +1853,26 @@ uint8_t Remote_Key(uint8_t key)
 }
 void Set_Rcon_Remote(uint8_t cmd)
 {
-	Remote_Status |= cmd;
+	g_remote_status |= cmd;
 }
 void Reset_Rcon_Remote(void)
 {
-	Remote_Status = 0;
+	g_remote_status = 0;
 }
 
 uint8_t Get_Rcon_Remote(void)
 {
-	return Remote_Status;
+	return g_remote_status;
 }
 
 void Set_MoveWithRemote(void)
 {
-	remote_move_flag = 1;
+	g_remote_move_flag = 1;
 }
 
 void Reset_MoveWithRemote(void)
 {
-	remote_move_flag = 0;
+	g_remote_move_flag = 0;
 }
 
 uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush)
@@ -1905,14 +1905,14 @@ uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32
 
 void Set_Dir_Left(void)
 {
-	wheel_left_direction = 1;
-	wheel_right_direction = 0;
+	g_wheel_left_direction = 1;
+	g_wheel_right_direction = 0;
 }
 
 void Set_Dir_Right(void)
 {
-	wheel_left_direction = 0;
-	wheel_right_direction = 1;
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 1;
 }
 
 void Set_LED(uint16_t G, uint16_t R)
@@ -1947,10 +1947,10 @@ void Set_SideBrush_PWM(uint16_t L, uint16_t R)
 {
 	// Set left and right brush PWM, the value of L/R should be in range (0, 100).
 	L = L < 100 ? L : 100 ;
-	LBrush_PWM = L;
+	g_l_brush_pwm = L;
 	control_set(CTL_BRUSH_LEFT, L & 0xff);
 	R = R < 100 ? R : 100 ;
-	RBrush_PWM = R;
+	g_r_brush_pwm = R;
 	control_set(CTL_BRUSH_RIGHT, R & 0xff);
 }
 
@@ -1981,30 +1981,30 @@ uint8_t Get_RightBrush_Stall(void)
 
 uint8_t Get_Touch_Status(void)
 {
-	return Touch_Status;
+	return g_touch_status;
 }
 
 void Reset_Touch(void)
 {
-	Touch_Status = 0;
+	g_touch_status = 0;
 }
 
 void Set_Touch(void)
 {
-	Touch_Status = 1;
+	g_touch_status = 1;
 }
 
 void Reset_Stop_Event_Status(void)
 {
-	Stop_Event_Status = 0;
+	g_stop_event_status = 0;
 	// For key release checking.
 	Reset_Touch();
 }
 
 uint8_t Stop_Event(void)
 {
-	// If it has already had a Stop_Event_Status, then no need to check.
-	if (!Stop_Event_Status)
+	// If it has already had a g_stop_event_status, then no need to check.
+	if (!g_stop_event_status)
 	{
 		// Get the key value from robot sensor
 		if (Get_Touch_Status()){
@@ -2014,7 +2014,7 @@ uint8_t Stop_Event(void)
 				robot::instance()->setManualPause();
 #endif
 			Reset_Touch();
-			Stop_Event_Status = 1;
+			g_stop_event_status = 1;
 		}
 		if (Remote_Key(Remote_Clean)){
 			ROS_WARN("Remote_Key clean.");
@@ -2023,17 +2023,17 @@ uint8_t Stop_Event(void)
 			if (Get_Clean_Mode() == Clean_Mode_Navigation)
 				robot::instance()->setManualPause();
 #endif
-			Stop_Event_Status = 2;
+			g_stop_event_status = 2;
 		}
 		if (Get_Cliff_Trig() == 0x07){
 			ROS_WARN("Cliff triggered.");
-			Stop_Event_Status = 3;
+			g_stop_event_status = 3;
 		}
 
-		if (Get_Error_Code())
+		if (get_error_code())
 		{
-			ROS_WARN("Detects Error: %x!", Get_Error_Code());
-			if (Get_Error_Code() == Error_Code_Slam)
+			ROS_WARN("Detects Error: %x!", get_error_code());
+			if (get_error_code() == Error_Code_Slam)
 			{
 				Stop_Brifly();
 				// Check if it is really stopped.
@@ -2071,20 +2071,20 @@ uint8_t Stop_Event(void)
 					// Wait for 0.5s to make sure it has process the first scan.
 					usleep(500000);
 				}
-				Set_Error_Code(Error_Code_None);
+				set_error_code(Error_Code_None);
 			}
 			else
 			{
-				Stop_Event_Status = 4;
+				g_stop_event_status = 4;
 			}
 		}
 		if (is_direct_charge())
 		{
 			ROS_WARN("Detect direct charge!");
-			Stop_Event_Status = 5;
+			g_stop_event_status = 5;
 		}
 	}
-	return Stop_Event_Status;
+	return g_stop_event_status;
 }
 
 uint8_t Is_Station(void)
@@ -2114,7 +2114,7 @@ uint8_t Is_Water_Tank(void)
 
 void Set_Clean_Mode(uint8_t mode)
 {
-	Cleaning_mode = mode;
+	g_cleaning_mode = mode;
 }
 
 void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count)
@@ -2124,9 +2124,9 @@ void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int 
 	// Total_Time_Count means how many loops of speaker sound loop will it sound.
 	robotbase_speaker_sound_loop_count = Total_Time_Count;
 	// A speaker sound loop contains one sound time and one silence time
-	// Sound_Time_Count means how many loops of sendStream loop will it sound in one speaker sound loop
+	// Sound_Time_Count means how many loops of g_send_stream loop will it sound in one speaker sound loop
 	robotbase_speaker_sound_time_count = Sound_Time_Count;
-	// Silence_Time_Count means how many loops of sendStream loop will it be silence in one speaker sound loop, -1 means consistently beep.
+	// Silence_Time_Count means how many loops of g_send_stream loop will it be silence in one speaker sound loop, -1 means consistently beep.
 	robotbase_speaker_silence_time_count = Silence_Time_Count;
 	// Trigger the update flag to start the new beep action
 	robotbase_beep_update_flag = true;
@@ -2183,7 +2183,7 @@ void Set_Main_PwrByte(uint8_t val)
 }
 
 uint8_t Get_Main_PwrByte(){
-	return sendStream[CTL_MAIN_PWR];
+	return g_send_stream[CTL_MAIN_PWR];
 }
 
 void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val)
@@ -2205,33 +2205,33 @@ void Set_CleanTool_Power(uint8_t vacuum_val,uint8_t left_brush_val,uint8_t right
 
 void Start_SelfCheck_Vacuum(void)
 {
-	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x02);
+	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x02);
 }
 
 void End_SelfCheck_Vacuum(void)
 {
-	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x04);
+	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x04);
 }
 
 void Reset_SelfCheck_Vacuum_Controler(void)
 {
-	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] & ~0x06);
+	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] & ~0x06);
 }
 
 void control_set(uint8_t type, uint8_t val)
 {
 	SetSendFlag();
 	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
-		sendStream[type] = val;
-		//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-		//serial_write(SEND_LEN, sendStream);
+		g_send_stream[type] = val;
+		//g_send_stream[SEND_LEN-3] = calcBufCrc8((char *)g_send_stream, SEND_LEN-3);
+		//serial_write(SEND_LEN, g_send_stream);
 	}
 	ResetSendFlag();
 }
 
 void control_append_crc(){
 	SetSendFlag();
-	sendStream[CTL_CRC] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	g_send_stream[CTL_CRC] = calcBufCrc8((char *)g_send_stream, SEND_LEN-3);
 	ResetSendFlag();
 }
 
@@ -2241,13 +2241,13 @@ void control_stop_all(void)
 	SetSendFlag();
 	for(i = 2; i < (SEND_LEN)-2; i++) {
 		if (i == CTL_MAIN_PWR)
-			sendStream[i] = 0x01;
+			g_send_stream[i] = 0x01;
 		else
-			sendStream[i] = 0x00;
+			g_send_stream[i] = 0x00;
 	}
 	ResetSendFlag();
-	//sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
-	//serial_write(SEND_LEN, sendStream);
+	//g_send_stream[SEND_LEN-3] = calcBufCrc8((char *)g_send_stream, SEND_LEN-3);
+	//serial_write(SEND_LEN, g_send_stream);
 }
 
 int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number)
@@ -2261,11 +2261,11 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 	for (int i = 0; i < num_send_packets; i++) {
 		//Populate dummy.
 		for (int j = 0; j < DUMMY_DOWNLINK_LENGTH; j++)
-			sendStream[j + DUMMY_DOWNLINK_OFFSET] = (uint8_t) (rand() % 256);
+			g_send_stream[j + DUMMY_DOWNLINK_OFFSET] = (uint8_t) (rand() % 256);
 
 		//Populate Sequence number.
 		for (int j = 0; j < SEQUENCE_DOWNLINK_LENGTH; j++)
-			sendStream[j + SEQUENCE_DOWNLINK_OFFSET] = (uint8_t) ((sequence_number >> 8 * j) % 256);
+			g_send_stream[j + SEQUENCE_DOWNLINK_OFFSET] = (uint8_t) ((sequence_number >> 8 * j) % 256);
 
 		//Populate key.
 #if VERIFY_DEBUG
@@ -2273,10 +2273,10 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 #endif
 
 		for (int k = 0; k < KEY_DOWNLINK_LENGTH; k++) {
-			sendStream[k + KEY_DOWNLINK_OFFSET] = key[i * KEY_DOWNLINK_LENGTH + k];
+			g_send_stream[k + KEY_DOWNLINK_OFFSET] = key[i * KEY_DOWNLINK_LENGTH + k];
 
 #if VERIFY_DEBUG
-			printf("%02x ", sendStream[k + KEY_DOWNLINK_OFFSET]);
+			printf("%02x ", g_send_stream[k + KEY_DOWNLINK_OFFSET]);
 			if (k == KEY_DOWNLINK_LENGTH - 1)
 				printf("\n");
 #endif
@@ -2286,13 +2286,13 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 		//Fill command field
 		switch (i) {
 			case 0:
-				sendStream[SEND_LEN - 4] = CMD_KEY1;
+				g_send_stream[SEND_LEN - 4] = CMD_KEY1;
 				break;
 			case 1:
-				sendStream[SEND_LEN - 4] = CMD_KEY2;
+				g_send_stream[SEND_LEN - 4] = CMD_KEY2;
 				break;
 			case 2:
-				sendStream[SEND_LEN - 4] = CMD_KEY3;
+				g_send_stream[SEND_LEN - 4] = CMD_KEY3;
 				break;
 			default:
 
@@ -2308,7 +2308,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 			int counter = 0, ret;
 
 
-			memcpy(buf, sendStream, sizeof(uint8_t) * SEND_LEN);
+			memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
 			buf[CTL_CRC] = calcBufCrc8((char *)buf, SEND_LEN - 3);
 			serial_write(SEND_LEN, buf);
 
@@ -2360,7 +2360,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 
 				if(ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK) {	//set finished
 					//printf("Downlink command ACKed!!\n");
-					sendStream[CTL_CMD] = 0;                              //clear command byte
+					g_send_stream[CTL_CMD] = 0;                              //clear command byte
 					break;
 				}
 			} else {
@@ -2418,15 +2418,15 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 				sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
 
 			//Send acknowledge back to MCU.
-			sendStream[CTL_CMD] = CMD_ACK;
+			g_send_stream[CTL_CMD] = CMD_ACK;
 			for (int k = 0; k < 20; k++) {
-				memcpy(buf, sendStream, sizeof(uint8_t) * SEND_LEN);
+				memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
 				buf[CTL_CRC] = calcBufCrc8((char *)buf, SEND_LEN - 3);
 				serial_write(SEND_LEN, buf);
 
 				usleep(500);
 			}
-			sendStream[CTL_CMD] = 0;
+			g_send_stream[CTL_CMD] = 0;
 
 #if VERIFY_DEBUG
 			printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -2436,7 +2436,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 		}
 		usleep(500);
 	}
-	sendStream[CTL_CMD] = 0;
+	g_send_stream[CTL_CMD] = 0;
 
 #if VERIFY_DEBUG
 	printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -2447,17 +2447,17 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 
 uint8_t IsSendBusy(void)
 {
-	return sendflag;
+	return g_sendflag;
 }
 
 void SetSendFlag(void)
 {
-	sendflag = 1;
+	g_sendflag = 1;
 }
 
 void ResetSendFlag(void)
 {
-	sendflag = 0;
+	g_sendflag = 0;
 }
 void Random_Back(void)
 {
@@ -2479,23 +2479,23 @@ void Cliff_Move_Back()
 }
 void Set_RightWheel_Step(uint32_t step)
 {
-	right_wheel_step = step;
+	g_right_wheel_step = step;
 }
 
 void Set_LeftWheel_Step(uint32_t step)
 {
-	left_wheel_step = step;
+	g_left_wheel_step = step;
 }
 void Reset_RightWheel_Step()
 {
-	rw_t = ros::Time::now();
-	right_wheel_step = 0;
+	g_rw_t = ros::Time::now();
+	g_right_wheel_step = 0;
 }
 
 void Reset_LeftWheel_Step()
 {
-	lw_t = ros::Time::now();
-	left_wheel_step	= 0;
+	g_lw_t = ros::Time::now();
+	g_left_wheel_step	= 0;
 }
 
 uint16_t GetBatteryVoltage()
@@ -2513,17 +2513,17 @@ uint8_t  Check_Bat_Stop()
 
 void Set_Key_Press(uint8_t key)
 {
-	Key_Status |= key;
+	g_key_status |= key;
 }
 
 void Reset_Key_Press(uint8_t key)
 {
-	Key_Status &= ~key;
+	g_key_status &= ~key;
 }
 
 uint8_t Get_Key_Press(void)
 {	
-	return Key_Status;
+	return g_key_status;
 }
 
 uint16_t Get_Key_Time(uint16_t key)
@@ -2544,7 +2544,7 @@ uint16_t Get_Key_Time(uint16_t key)
 }
 
 uint8_t Is_Front_Close(){	
-	if(robot::instance()->getObsFront() > Front_OBSTrig_Value+1500)
+	if(robot::instance()->getObsFront() > g_front_obs_trig_value+1500)
 		return 1;
 	else
 		return 0;
@@ -2569,12 +2569,12 @@ uint8_t Is_Turn_Remote(void)
 
 uint8_t Get_Direction_Flag(void)
 {
-	return Direction_Flag;
+	return g_direction_flag;
 }
 
 void Set_Direction_Flag(uint8_t flag)
 {
-	Direction_Flag = flag;
+	g_direction_flag = flag;
 }
 
 uint8_t Is_Direction_Right(void)
@@ -2589,7 +2589,7 @@ uint8_t Is_Direction_Left(void)
 }
 uint8_t Is_LeftWheel_Reach(int32_t step)
 {
-	if(left_wheel_step > (uint32_t)step)
+	if(g_left_wheel_step > (uint32_t)step)
 		return 1;
 	else
 		return 0;
@@ -2597,7 +2597,7 @@ uint8_t Is_LeftWheel_Reach(int32_t step)
 
 uint8_t Is_RightWheel_Reach(int32_t step)
 {
-	if(right_wheel_step > (uint32_t)step)
+	if(g_right_wheel_step > (uint32_t)step)
 		return 1;
 	else
 		return 0;
@@ -2607,13 +2607,13 @@ void Wall_Move_Back(void)
 {
 	uint16_t count=0;
 	uint16_t tp = 0;
-	uint8_t mc = 0;	
-	Set_Dir_Backward();
+	uint8_t mc = 0;
+	set_dir_backward();
 	Set_Wheel_Speed(3,3);
 	usleep(20000);
-	Reset_Wheel_Step();
-	while(((left_wheel_step<100)||(right_wheel_step<100))&&ros::ok()){
-		tp = left_wheel_step/3+8;
+	reset_wheel_step();
+	while(((g_left_wheel_step<100)||(g_right_wheel_step<100))&&ros::ok()){
+		tp = g_left_wheel_step/3+8;
 		if(tp>12)tp=12;	
 		Set_Wheel_Speed(tp,tp);
 		usleep(1000);
@@ -2626,31 +2626,31 @@ void Wall_Move_Back(void)
 		mc = Check_Motor_Current();
 		if(mc == Check_Left_Wheel || mc == Check_Right_Wheel)
 			return;
-	}	
-	Set_Dir_Forward();
+	}
+	set_dir_forward();
 	Set_Wheel_Speed(0,0);
 		
 }
 
 void Reset_Move_Distance(){
-	MoveStepCounter = 0;
+	g_move_step_counter = 0;
 }
 
 uint8_t Is_Move_Finished(int32_t distance)
 {
-	MoveStepCounter = Get_LeftWheel_Step();
-	MoveStepCounter +=Get_RightWheel_Step();
-	if((MoveStepCounter/2)>distance)
+	g_move_step_counter = get_left_wheel_step();
+	g_move_step_counter += get_right_wheel_step();
+	if((g_move_step_counter/2)>distance)
 		return 1;
 	else
 		return 0;
 }
 uint32_t Get_Move_Distance(void)
 {
-	MoveStepCounter = Get_LeftWheel_Step();
-	MoveStepCounter +=Get_RightWheel_Step();
+	g_move_step_counter = get_left_wheel_step();
+	g_move_step_counter += get_right_wheel_step();
 
-	if(MoveStepCounter>0)return (uint32_t)(MoveStepCounter/2);
+	if(g_move_step_counter>0)return (uint32_t)(g_move_step_counter/2);
 	return 0;
 }
 
@@ -2662,7 +2662,7 @@ void OBS_Turn_Left(uint16_t speed,uint16_t angle)
 	Reset_Rcon_Remote();
 	Set_Wheel_Speed(speed,speed);
 	Reset_LeftWheel_Step();
-	while(ros::ok()&&left_wheel_step <angle){
+	while(ros::ok()&&g_left_wheel_step <angle){
 		counter++;
 		if(counter>3000)
 			return;
@@ -2683,7 +2683,7 @@ void OBS_Turn_Right(uint16_t speed,uint16_t angle)
 	Reset_Rcon_Remote();
 	Set_Wheel_Speed(speed,speed);
 	Reset_RightWheel_Step();
-	while(ros::ok()&&right_wheel_step <angle){
+	while(ros::ok()&&g_right_wheel_step <angle){
 		counter++;
 		if(counter>3000)
 			//return;
@@ -2744,9 +2744,9 @@ void Cliff_Turn_Left(uint16_t speed,uint16_t angle)
 		Counter_Watcher++;
 		if(Counter_Watcher>3000)
 		{
-			if(Is_Encoder_Fail())
+			if(is_encoder_fail())
 			{
-				Set_Error_Code(Error_Code_Encoder);
+				set_error_code(Error_Code_Encoder);
 			}
 			return;
 		}
@@ -2808,9 +2808,9 @@ void Cliff_Turn_Right(uint16_t speed,uint16_t angle)
 		Counter_Watcher++;
 		if(Counter_Watcher>3000)
 		{
-			if(Is_Encoder_Fail())
+			if(is_encoder_fail())
 			{
-				Set_Error_Code(Error_Code_Encoder);
+				set_error_code(Error_Code_Encoder);
 			}
 			return;
 		}
@@ -2863,22 +2863,22 @@ uint8_t Is_NearStation(void){
 
 void Set_Mobility_Step(uint32_t Steps)
 {
-	Mobility_Step = Steps;
+	g_mobility_step = Steps;
 }
 
 void Reset_Mobility_Step()
 {
-	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] | 0x01);
+	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x01);
 }
 
 void Clear_Reset_Mobility_Step()
 {
-	control_set(CTL_OMNI_RESET, sendStream[CTL_OMNI_RESET] & ~0x01);
+	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] & ~0x01);
 }
 
 uint32_t  Get_Mobility_Step()
 {
-	return Mobility_Step;
+	return g_mobility_step;
 }
 
 void Check_Mobility(void)
@@ -2888,22 +2888,22 @@ void Check_Mobility(void)
 
 void Add_Average(uint32_t data)
 {
-	Average_Move += data;
-	Average_Counter++;
-	if(data>Max_Move)
-		Max_Move = data;
+	g_average_move += data;
+	g_average_counter++;
+	if(data>g_max_move)
+		g_max_move = data;
 	
 }
 
 uint32_t Get_Average_Move(void)
 {
-	return (Average_Move/Average_Counter);
+	return (g_average_move/g_average_counter);
 }
 
 uint32_t Reset_Average_Counter(void)
 {
-	Average_Move = 0;
-	Average_Counter = 0;
+	g_average_move = 0;
+	g_average_counter = 0;
 }
 
 void Reset_VirtualWall(void)
@@ -2926,7 +2926,7 @@ uint8_t Is_WorkFinish(uint8_t m)
 	static uint8_t bat_count = 0;
 	uint32_t wt = get_work_time();
 	if(m){
-		if(wt>Auto_Work_Time)return 1;
+		if(wt>g_auto_work_time)return 1;
 	}
 	else if(wt>Const_Work_Time)return 1;
 	if(GetBatteryVoltage()<1420)
@@ -2940,25 +2940,25 @@ uint8_t Is_WorkFinish(uint8_t m)
 }
 
 uint8_t Get_Room_Mode(){
-	return Room_Mode;	
+	return g_room_mode;
 }
 
 void Set_Room_Mode(uint8_t m){
 	if(m)
-		Room_Mode = 1;
+		g_room_mode = 1;
 	else
-		Room_Mode = 0;
+		g_room_mode = 0;
 }
 
 void Reset_WallAccelerate()
 {
-		Wall_Accelerate =0;
+		g_wall_accelerate =0;
 }
 
 uint32_t Get_WallAccelerate()
 {
 	
-	return Wall_Accelerate=Get_RightWheel_Step(); 
+	return g_wall_accelerate= get_right_wheel_step();
 }
 
 /*---------------------------------Bumper Error ----------------------------------------*/
@@ -3000,8 +3000,8 @@ uint8_t Is_Bumper_Jamed()
 					{
 						ROS_INFO("JAM5");
 						Set_Clean_Mode(Clean_Mode_Userinterface);
-						Set_Error_Code(Error_Code_Bumper);
-						Alarm_Error();
+						set_error_code(Error_Code_Bumper);
+						alarm_error();
 						return 1;
 					}
 				}
@@ -3013,13 +3013,13 @@ uint8_t Is_Bumper_Jamed()
 
 void Reset_Bumper_Error(void)
 {
-	Bumper_Error=0;
+	g_bumper_error=0;
 }
 uint8_t Is_Bumper_Fail(void)
 {
-	Bumper_Error++;
-	ROS_INFO("Buper_Error = %d", Bumper_Error);
-	if(Bumper_Error>3)return 1;
+	g_bumper_error++;
+	ROS_INFO("Buper_Error = %d", g_bumper_error);
+	if(g_bumper_error>3)return 1;
 	else return 0;
 }
 
@@ -3113,7 +3113,7 @@ uint8_t Check_SideBrush_Stall(void)
 				else
 				{
 					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
-					Set_LeftBrush_PWM(LBrush_PWM);
+					Set_LeftBrush_PWM(g_l_brush_pwm);
 					LBrush_Error_Counter = 0;
 					LeftBrush_Status = NORMAL;
 				}
@@ -3187,7 +3187,7 @@ uint8_t Check_SideBrush_Stall(void)
 				else
 				{
 					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
-					Set_RightBrush_PWM(RBrush_PWM);
+					Set_RightBrush_PWM(g_r_brush_pwm);
 					RBrush_Error_Counter = 0;
 					RightBrush_Status = NORMAL;
 				}
@@ -3199,26 +3199,26 @@ uint8_t Check_SideBrush_Stall(void)
 
 void Set_Plan_Status(uint8_t Status)
 {
-	Plan_Status = Status;
-	if (Plan_Status != 0)
-		ROS_DEBUG("Plan status return %d.", Plan_Status);
+	g_plan_status = Status;
+	if (g_plan_status != 0)
+		ROS_DEBUG("Plan status return %d.", g_plan_status);
 }
 
 uint8_t Get_Plan_Status()
 {
-	return Plan_Status;
+	return g_plan_status;
 }
 uint8_t GetSleepModeFlag()
 {
-	return SleepModeFlag;
+	return g_sleep_mode_flag;
 }
 void SetSleepModeFlag()
 {
-	SleepModeFlag = 1;
+	g_sleep_mode_flag = 1;
 }
 void ResetSleepModeFlag()
 {
-	SleepModeFlag = 0;
+	g_sleep_mode_flag = 0;
 }
 
 void Clear_Manual_Pause(void)

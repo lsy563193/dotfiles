@@ -29,7 +29,7 @@ uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
-uint8_t sendStream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
+uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
 
 #elif __ROBOT_X900
 uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -38,7 +38,7 @@ uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
-uint8_t sendStream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
+uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 #endif
 
 
@@ -63,7 +63,7 @@ pp::x900sensor	sensor;
 bool robotbase_beep_update_flag = false;
 // Speaker totally sound time count, every count means once of send streem loop, if this count < 0, it will be a constant beep action
 int robotbase_speaker_sound_loop_count = 0;
-// Sound code to be set in sendStream
+// Sound code to be set in g_send_stream
 uint8_t robotbase_sound_code = 0;
 // A speaker sound loop contains one sound time and one silence time
 // Speaker sound time count in one speaker sound loop, every count means once of send streem loop
@@ -96,10 +96,10 @@ int robotbase_init(void)
 		return -1;
 	}
 	Set_Main_PwrByte(POWER_ACTIVE);
-	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	g_send_stream[SEND_LEN-3] = calcBufCrc8((char *)g_send_stream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 //	do {
-//		serial_write(SEND_LEN,sendStream);
+//		serial_write(SEND_LEN,g_send_stream);
 //		usleep(20000);
 //	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
 	//ROS_INFO("OK!");
@@ -158,14 +158,14 @@ void robotbase_reset_send_stream(void)
 {
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
-			sendStream[i] = 0x0;
+			g_send_stream[i] = 0x0;
 		else
-			sendStream[i] = 0x64;
+			g_send_stream[i] = 0x64;
 	}
-	sendStream[0] = 0xaa;
-	sendStream[1] = 0x55;
-	sendStream[SEND_LEN - 2] = 0xcc;
-	sendStream[SEND_LEN - 1] = 0x33;
+	g_send_stream[0] = 0xaa;
+	g_send_stream[1] = 0x55;
+	g_send_stream[SEND_LEN - 2] = 0xcc;
+	g_send_stream[SEND_LEN - 1] = 0x33;
 }
 
 void *serial_receive_routine(void *)
@@ -414,7 +414,7 @@ void *serial_send_routine(void*){
 		/*-------------------counter end-------------------------------------*/
 
 		if(!IsSendBusy()){
-			memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
+			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 			serial_write(SEND_LEN, buf);
 		}
@@ -428,13 +428,13 @@ void *serial_send_routine(void*){
 
 void process_beep(){
 	// This routine handles the speaker sounding logic
-	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in sendStream.
+	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in g_send_stream.
 	if (temp_speaker_silence_time_count == 0){
 		temp_speaker_silence_time_count--;
 		temp_speaker_sound_time_count = robotbase_speaker_sound_time_count;
 		control_set(CTL_BUZZER, robotbase_sound_code & 0xFF);
 	}
-	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in sendStream.
+	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
 	if (temp_speaker_sound_time_count == 0){
 		temp_speaker_sound_time_count--;
 		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
