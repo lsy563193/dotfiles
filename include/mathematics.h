@@ -14,9 +14,13 @@
 
 #endif
 
-typedef struct{
+typedef struct Cell_t_{
 	int16_t X;
 	int16_t Y;
+	friend bool operator==(const Cell_t_ left, const Cell_t_ right)
+	{
+		return left.X == right.X && left.Y == right.Y;
+	}
 } Cell_t;
 
 typedef struct{

@@ -8,14 +8,11 @@
 #include "debug.h"
 
 typedef struct PositionType_{
-	int16_t	x;
-	int16_t	y;
-	int16_t	x_target;
-	int16_t y_target;
-	uint16_t dir;
+	Cell_t	cell;
+//	uint16_t dir;
 	friend bool operator==(const PositionType_ left, const PositionType_ right)
 	{
-		return left.x == right.x && left.y == right.y && left.dir == right.dir;
+		return left.cell.X == right.cell.X && left.cell.Y == right.cell.Y/* && left.dir == right.dir*/;
 	}
 } PositionType;
 

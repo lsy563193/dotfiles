@@ -89,7 +89,7 @@ Cell_t g_pnt16_ar_tmp[3];
 
 Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
-extern PositionType g_cell_history[];
+extern Cell_t g_cell_history[];
 
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
@@ -1386,8 +1386,7 @@ void cm_set_continue_point(int32_t x, int32_t y)
 
 uint8_t cm_check_loop_back(Cell_t target) {
 	uint8_t retval = 0;
-	if ( target.X == g_cell_history[1].x && target.Y == g_cell_history[1].y &&
-		 target.X == g_cell_history[3].x && target.Y == g_cell_history[3].y ) {
+	if ( target == g_cell_history[1] && target == g_cell_history[3]) {
 		ROS_WARN("%s %d Possible loop back (%d, %d)", __FUNCTION__, __LINE__, target.X, target.Y);
 		retval	= 1;
 	}
