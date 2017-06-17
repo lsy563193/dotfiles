@@ -134,7 +134,7 @@ void User_Interface(void)
 		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
 		if (Get_Error_Code() != Error_Code_None)
 		{
-			if (Remote_Key(Remote_Clean) || Get_Key_Press() & KEY_CLEAN)
+			if (Get_Key_Press() & KEY_CLEAN)
 			{
 				Beep(2, 2, 0, 1);//Beep for useless remote command
 				// Wait for user to release the key.
@@ -172,31 +172,6 @@ void User_Interface(void)
 			else if(Turn_Connect())
 				Temp_Mode = Clean_Mode_Charging;
 			Disable_Motors();
-		}
-
-		/* -----------------------------Check if Home event ----------------------------------*/
-		if(Remote_Key(Remote_Home)) //                                    Check Key Home
-		{
-			Temp_Mode=Clean_Mode_GoHome;
-			Set_MoveWithRemote();
-			SetHomeRemote();
-			Reset_Rcon_Remote();
-		}
-
-		/* -----------------------------Check if wall follow event ----------------------------------*/
-		if(Remote_Key(Remote_Wall_Follow))//                                  Check Remote Key Wallfollow
-		{
-			Set_MoveWithRemote();
-			Reset_Rcon_Remote();
-			Temp_Mode=Clean_Mode_WallFollow;
-		}
-
-		/* -----------------------------Check if remote clean event ----------------------------*/
-		if(Remote_Key(Remote_Clean))//                                       Check Remote Key Clean
-		{
-			Reset_Rcon_Remote();
-			Temp_Mode=Clean_Mode_Navigation;
-			Reset_MoveWithRemote();
 		}
 
 		/* -----------------------------Check if key clean event ----------------------------*/
@@ -279,7 +254,10 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_FORWARD, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 }
 
@@ -298,7 +276,10 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
+	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
+	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
+	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 }
 
@@ -369,6 +350,16 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 
 	if (Get_Error_Code())
 	{
+		if (Get_Rcon_Remote() == Remote_Clean)
+		{
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+			beep_for_command(true);
+			wav_play(WAV_CLEAR_ERROR);
+			Set_Error_Code(Error_Code_None);
+			Error_Alarm_Counter = 0;
+			Reset_Rcon_Remote();
+			return;
+		}
 		ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
 		beep_for_command(false);
 		Error_Alarm_Counter = 0;
@@ -396,9 +387,24 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			Temp_Mode = Clean_Mode_Remote;
 			break;
 		}
+		case Remote_Clean:
+		{
+			Temp_Mode = Clean_Mode_Navigation;
+			break;
+		}
 		case Remote_Spot:
 		{
 			Temp_Mode = Clean_Mode_Spot;
+			break;
+		}
+		case Remote_Home:
+		{
+			Temp_Mode = Clean_Mode_GoHome;
+			break;
+		}
+		case Remote_Wall_Follow:
+		{
+			Temp_Mode = Clean_Mode_WallFollow;
 			break;
 		}
 	}
