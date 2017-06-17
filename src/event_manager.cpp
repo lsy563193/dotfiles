@@ -334,7 +334,7 @@ void *event_handler_thread(void *data) {
 	{																			\
 		if (eat[evt_mgr_mode].handler_enabled[y] == true) {						\
 			if (eat[evt_mgr_mode].handler[y] == NULL) {							\
-				em_default_handler_ ## name(status_now[y], status_last[y]);		\
+				em_default_handle_ ## name(status_now[y], status_last[y]);		\
 			} else {															\
 				eat[evt_mgr_mode].handler[y](status_now[y], status_last[y]);	\
 			}																	\
@@ -483,7 +483,7 @@ uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
 /* Below are the internal functions. */
 
 /* Bumper */
-void em_default_handler_bumper_all(bool state_now, bool state_last)
+void em_default_handle_bumper_all(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if (state_now == true && state_last == true) {
@@ -502,7 +502,7 @@ void em_default_handler_bumper_all(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 }
 
-void em_default_handler_bumper_left(bool state_now, bool state_last)
+void em_default_handle_bumper_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 	if (state_now == true && state_last == true) {
@@ -520,7 +520,7 @@ void em_default_handler_bumper_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 }
 
-void em_default_handler_bumper_right(bool state_now, bool state_last)
+void em_default_handle_bumper_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, Get_Bumper_Status());
 
@@ -540,35 +540,35 @@ void em_default_handler_bumper_right(bool state_now, bool state_last)
 }
 
 /* OBS */
-void em_default_handler_obs_front(bool state_now, bool state_last)
+void em_default_handle_obs_front(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	Move_Back();
 	Stop_Brifly();
 }
 
-void em_default_handler_obs_left(bool state_now, bool state_last)
+void em_default_handle_obs_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	Move_Back();
 	Stop_Brifly();
 }
 
-void em_default_handler_obs_right(bool state_now, bool state_last)
+void em_default_handle_obs_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	Move_Back();
 	Stop_Brifly();
 }
 
-void em_default_handler_obs_wall_left(bool state_now, bool state_last)
+void em_default_handle_obs_wall_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	Move_Back();
 	Stop_Brifly();
 }
 
-void em_default_handler_obs_wall_right(bool state_now, bool state_last)
+void em_default_handle_obs_wall_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	Move_Back();
@@ -576,117 +576,117 @@ void em_default_handler_obs_wall_right(bool state_now, bool state_last)
 }
 
 /* Cliff */
-void em_default_handler_cliff_all(bool state_now, bool state_last)
+void em_default_handle_cliff_all(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_cliff_front_left(bool state_now, bool state_last)
+void em_default_handle_cliff_front_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_cliff_front_right(bool state_now, bool state_last)
+void em_default_handle_cliff_front_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_cliff_left_right(bool state_now, bool state_last)
+void em_default_handle_cliff_left_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_cliff_front(bool state_now, bool state_last)
+void em_default_handle_cliff_front(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_cliff_left(bool state_now, bool state_last)
+void em_default_handle_cliff_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_cliff_right(bool state_now, bool state_last)
+void em_default_handle_cliff_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* RCON */
-void em_default_handler_rcon(bool state_now, bool state_last)
+void em_default_handle_rcon(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 /*
-void em_default_handler_rcon_front_left(bool state_now, bool state_last)
+void em_default_handle_rcon_front_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_rcon_front_left2(bool state_now, bool state_last)
+void em_default_handle_rcon_front_left2(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_rcon_front_right(bool state_now, bool state_last)
+void em_default_handle_rcon_front_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_rcon_front_right2(bool state_now, bool state_last)
+void em_default_handle_rcon_front_right2(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_rcon_left(bool state_now, bool state_last)
+void em_default_handle_rcon_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_rcon_right(bool state_now, bool state_last)
+void em_default_handle_rcon_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 */
 
 /* Over Current */
-void em_default_handler_over_current_brush_left(bool state_now, bool state_last)
+void em_default_handle_over_current_brush_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_over_current_brush_main(bool state_now, bool state_last)
+void em_default_handle_over_current_brush_main(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_over_current_brush_right(bool state_now, bool state_last)
+void em_default_handle_over_current_brush_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_over_current_wheel_left(bool state_now, bool state_last)
+void em_default_handle_over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_over_current_wheel_right(bool state_now, bool state_last)
+void em_default_handle_over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_over_current_suction(bool state_now, bool state_last)
+void em_default_handle_over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* Key */
-void em_default_handler_key_clean(bool state_now, bool state_last)
+void em_default_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* Remote */
-void em_default_handler_remote_plan(bool state_now, bool state_last)
+void em_default_handle_remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
@@ -694,56 +694,56 @@ void em_default_handler_remote_plan(bool state_now, bool state_last)
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_clean(bool state_now, bool state_last)
+void em_default_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_home(bool state_now, bool state_last)
+void em_default_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_direction_forward(bool state_now, bool state_last)
+void em_default_handle_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_wall_follow(bool state_now, bool state_last)
+void em_default_handle_remote_wall_follow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_direction_left(bool state_now, bool state_last)
+void em_default_handle_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_direction_right(bool state_now, bool state_last)
+void em_default_handle_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_spot(bool state_now, bool state_last)
+void em_default_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_suction(bool state_now, bool state_last)
+void em_default_handle_remote_suction(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
@@ -751,17 +751,17 @@ void em_default_handler_remote_suction(bool state_now, bool state_last)
 }
 
 /* Battery */
-void em_default_handler_battery_home(bool state_now, bool state_last)
+void em_default_handle_battery_home(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_battery_low(bool state_now, bool state_last)
+void em_default_handle_battery_low(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void em_default_handler_charge_detect(bool state_now, bool state_last)
+void em_default_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (g_charge_detect_cnt++ > 25)
@@ -773,7 +773,7 @@ void em_default_handler_charge_detect(bool state_now, bool state_last)
 }
 
 /* Default: empty hanlder */
-void em_default_handler_empty(bool state_now, bool state_last)
+void em_default_handle_empty(bool state_now, bool state_last)
 {
 	ROS_INFO("%s %d: is called", __FUNCTION__, __LINE__);
 }

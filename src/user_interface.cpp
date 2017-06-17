@@ -304,11 +304,11 @@ void user_interface_register_events(void)
 	/* Battery */
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Remote */
-	event_manager_register_handler(EVT_REMOTE_DIRECTION_FORWARD, &user_interface_handle_direction);
+	event_manager_register_handler(EVT_REMOTE_DIRECTION_FORWARD, &user_interface_handle_remote_direction);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_register_handler(EVT_REMOTE_DIRECTION_LEFT, &user_interface_handle_direction);
+	event_manager_register_handler(EVT_REMOTE_DIRECTION_LEFT, &user_interface_handle_remote_direction);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_register_handler(EVT_REMOTE_DIRECTION_RIGHT, &user_interface_handle_direction);
+	event_manager_register_handler(EVT_REMOTE_DIRECTION_RIGHT, &user_interface_handle_remote_direction);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
 	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
 	/* Plan */
@@ -377,7 +377,7 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 	battery_low_delay = 10;
 }
 
-void user_interface_handle_direction(bool state_now, bool state_last)
+void user_interface_handle_remote_direction(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote direction key %x has been pressed.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
 	if (Get_Error_Code())

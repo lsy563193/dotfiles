@@ -189,7 +189,7 @@ uint8_t event_manager_check_event(bool *eh_status_now, bool *eh_status_last);
 /* Below are the internal functions. */
 
 #define define_em_handler_func(name) \
-	void em_default_handler_ ## name(bool state_now, bool state_last);
+	void em_default_handle_ ## name(bool state_now, bool state_last);
 
 /* Bumper */
 define_em_handler_func(bumper_all)
