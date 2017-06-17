@@ -40,6 +40,7 @@ void User_Interface(void)
 	uint8_t breath =1;
 #endif
 	bool Battery_Ready_to_clean = true;
+	bool eh_status_now=false, eh_status_last=false;
 
 	// Count for error alarm.
 	Error_Alarm_Counter = 2;
@@ -69,6 +70,10 @@ void User_Interface(void)
 	while(ros::ok())
 	{
 		usleep(10000);
+
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
 
 		charger_signal_delay_mutex.lock();
 		if (charger_signal_delay > 0)
