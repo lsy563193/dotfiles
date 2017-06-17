@@ -266,7 +266,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 		cm_unregister_events();
 	}//ending if(st == NormalSpot)
 	else if(st == CleanSpot || st == WallSpot){
-		event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,false);
+		event_manager_enable_handler(EVT_REMOTE_SPOT,false);
 		Set_LED(100,0);
 		Switch_VacMode(false);
 		Set_MainBrush_PWM(80);
@@ -438,7 +438,7 @@ void Spot_WithCell(SpotType st,float spot_diameter)
 				spiral_type = Spiral_Left_In;
 			}
 		}//ending while(ros::ok)
-	event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,true);
+	event_manager_enable_handler(EVT_REMOTE_SPOT,true);
 	}//ending if(st == Cleanspot...)
 }
 /*

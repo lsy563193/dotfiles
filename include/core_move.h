@@ -188,7 +188,7 @@ define_cm_handle_func(remote_clean)
 
 define_cm_handle_func(remote_home)
 
-define_cm_handle_func(remote_mode_spot)
+define_cm_handle_func(remote_spot)
 
 define_cm_handle_func(remote_suction)
 

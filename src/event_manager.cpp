@@ -263,7 +263,7 @@ void *event_manager_thread(void *data)
 		}
 		if (Remote_Key(Remote_Spot)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_MODE_SPOT)
+			evt_set_status_x(EVT_REMOTE_SPOT)
 		}
 		if (Remote_Key(Remote_Max)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
@@ -271,7 +271,7 @@ void *event_manager_thread(void *data)
 		}
 		if (Remote_Key(Remote_Wall_Follow)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_MODE_WALL_FOLLOW)
+			evt_set_status_x(EVT_REMOTE_WALL_FOLLOW)
 		}
 
 		/* Battery */
@@ -417,9 +417,9 @@ void *event_handler_thread(void *data) {
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_FORWARD, remote_direction_forward)
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_LEFT, remote_direction_left)
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_RIGHT, remote_direction_right)
-		evt_handle_check_event(EVT_REMOTE_MODE_SPOT, remote_mode_spot)
+		evt_handle_check_event(EVT_REMOTE_SPOT, remote_spot)
 		evt_handle_check_event(EVT_REMOTE_SUCTION, remote_suction)
-		evt_handle_check_event(EVT_REMOTE_MODE_WALL_FOLLOW, remote_wall_follow)
+		evt_handle_check_event(EVT_REMOTE_WALL_FOLLOW, remote_wall_follow)
 
 		/* Battery */
 		evt_handle_check_event(EVT_BATTERY_HOME, battery_home)
@@ -736,7 +736,7 @@ void em_default_handler_remote_direction_right(bool state_now, bool state_last)
 	Reset_Rcon_Remote();
 }
 
-void em_default_handler_remote_mode_spot(bool state_now, bool state_last)
+void em_default_handler_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);

@@ -128,10 +128,9 @@ typedef enum {
 	EVT_REMOTE_DIRECTION_LEFT,
 	EVT_REMOTE_DIRECTION_RIGHT,
 
-	EVT_REMOTE_MODE_NAVIGATION,
-	EVT_REMOTE_MODE_WALL_FOLLOW,
-	EVT_REMOTE_MODE_RANDOM,
-	EVT_REMOTE_MODE_SPOT,
+	EVT_REMOTE_WALL_FOLLOW,
+	EVT_REMOTE_RANDOM,
+	EVT_REMOTE_SPOT,
 
 	EVT_REMOTE_SUCTION,
 
@@ -242,7 +241,7 @@ define_em_handler_func(remote_home)
 define_em_handler_func(remote_direction_forward)
 define_em_handler_func(remote_direction_left)
 define_em_handler_func(remote_direction_right)
-define_em_handler_func(remote_mode_spot)
+define_em_handler_func(remote_spot)
 define_em_handler_func(remote_suction)
 define_em_handler_func(remote_wall_follow)
 
