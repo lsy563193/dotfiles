@@ -283,8 +283,7 @@ void user_interface_register_events(void)
 	event_manager_register_handler(EVT_REMOTE_DIRECTION_RIGHT, &user_interface_handle_remote_direction);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
 	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
-	/* Plan */
-	event_manager_register_and_enable_x(plan, EVT_PLAN, true);
+	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 }
 
 void user_interface_unregister_events(void)
@@ -303,8 +302,7 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
-	/* Plan */
-	event_manager_register_and_disable_x(EVT_PLAN);
+	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)
@@ -395,7 +393,7 @@ void user_interface_handle_remote_direction(bool state_now, bool state_last)
 	Reset_Rcon_Remote();
 }
 
-void user_interface_handle_plan(bool state_now, bool state_last)
+void user_interface_handle_remote_plan(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Remote key plan has been pressed.", __FUNCTION__, __LINE__);
 	/* -----------------------------Check if plan event ----------------------------------*/

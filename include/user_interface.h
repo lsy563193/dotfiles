@@ -57,7 +57,7 @@ define_user_interface_handle_func(rcon)
 define_user_interface_handle_func(battery_low)
 /* Remote */
 define_user_interface_handle_func(remote_direction)
-define_user_interface_handle_func(plan)
+define_user_interface_handle_func(remote_plan)
 define_user_interface_handle_func(remote_spot)
 
 #endif /* __DISPLAY_H */
