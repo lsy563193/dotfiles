@@ -310,6 +310,7 @@ void user_interface_register_events(void)
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_register_handler(EVT_REMOTE_DIRECTION_RIGHT, &user_interface_handle_direction);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
 	/* Plan */
 	event_manager_register_and_enable_x(plan, EVT_PLAN, true);
 }
@@ -329,6 +330,7 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
+	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	/* Plan */
 	event_manager_register_and_disable_x(EVT_PLAN);
 }
@@ -438,4 +440,21 @@ void user_interface_handle_plan(bool state_now, bool state_last)
 	}
 
 	Set_Plan_Status(0);
+}
+
+void user_interface_handle_remote_spot(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote direction key %x has been pressed.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+	if (Get_Error_Code())
+	{
+		ROS_WARN("%s %d: Remote direction key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
+		beep_for_command(false);
+		Reset_Rcon_Remote();
+		Error_Alarm_Counter = 0;
+		Alarm_Error();
+		return;
+	}
+	beep_for_command(true);
+	Temp_Mode = Clean_Mode_Spot;
+	Reset_Rcon_Remote();
 }
