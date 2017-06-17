@@ -384,9 +384,9 @@ void user_interface_handle_direction(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Remote direction key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
 		beep_for_command(false);
-		Reset_Rcon_Remote();
 		Error_Alarm_Counter = 0;
 		Alarm_Error();
+		Reset_Rcon_Remote();
 		return;
 	}
 	beep_for_command(true);
@@ -449,9 +449,9 @@ void user_interface_handle_remote_spot(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Remote direction key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
 		beep_for_command(false);
-		Reset_Rcon_Remote();
 		Error_Alarm_Counter = 0;
 		Alarm_Error();
+		Reset_Rcon_Remote();
 		return;
 	}
 	beep_for_command(true);
