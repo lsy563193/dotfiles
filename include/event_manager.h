@@ -29,7 +29,6 @@
 	}
 
 #include "stdint.h"
-#include <boost/thread.hpp>
 
 /* Events variables */
 /* The fatal quit event includes any of the following case:
@@ -41,7 +40,6 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
-extern boost::mutex g_event_status_mutex;
 extern bool g_fatal_quit_event;
 /* Bumper */
 extern bool g_bumper_hitted;
