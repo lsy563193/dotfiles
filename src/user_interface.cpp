@@ -174,14 +174,6 @@ void User_Interface(void)
 			Disable_Motors();
 		}
 
-		/* -----------------------------Check if spot event ----------------------------------*/
-		if(Remote_Key(Remote_Spot))//                                       Check Remote Key Spin
-		{
-			Set_MoveWithRemote();
-			Reset_Rcon_Remote();
-			Temp_Mode=Clean_Mode_Spot;
-		}
-
 		/* -----------------------------Check if Home event ----------------------------------*/
 		if(Remote_Key(Remote_Home)) //                                    Check Key Home
 		{
@@ -249,14 +241,7 @@ void User_Interface(void)
 			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
 			{
 				ROS_INFO("[user_interface.cpp] GetBatteryVoltage = %dmV.", GetBatteryVoltage());
-				if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
-				{
-					ROS_WARN("%s %d: Robot lift up.", __FUNCTION__, __LINE__);
-					wav_play(WAV_ERROR_LIFT_UP);
-					Temp_Mode=0;
-					charger_signal_delay = 0;
-				}
-				else if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
+				if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
 				{
 					ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, robot::instance()->getBatteryVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 					wav_play(WAV_BATTERY_LOW);
@@ -272,14 +257,6 @@ void User_Interface(void)
 			}
 			Temp_Mode=0;
 		}
-
-	}
-
-	if (Get_Clean_Mode() != Clean_Mode_Sleep)
-	{
-		// Any manual operation will reset the error status.
-		ROS_INFO("Reset the error code,");
-		Set_Error_Code(Error_Code_None);
 	}
 
 	user_interface_unregister_events();
@@ -345,6 +322,27 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 
 	if (time(NULL) - charger_signal_start_time > 180)// 3 mins
 	{
+		if (Get_Error_Code())
+		{
+			ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, Get_Error_Code());
+			Error_Alarm_Counter = 0;
+			Alarm_Error();
+			wav_play(WAV_BACK_TO_CHARGER_FAILED);
+			charger_signal_delay = 0;
+			Reset_Rcon_Status();
+			return;
+		}
+
+		if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+		{
+			ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+			wav_play(WAV_ERROR_LIFT_UP);
+			wav_play(WAV_BACK_TO_CHARGER_FAILED);
+			charger_signal_delay = 0;
+			Reset_Rcon_Status();
+			return;
+		}
+
 		Temp_Mode = Clean_Mode_GoHome;
 		Reset_Rcon_Status();
 		return;
@@ -382,6 +380,16 @@ void user_interface_handle_remote_direction(bool state_now, bool state_last)
 		Reset_Rcon_Remote();
 		return;
 	}
+
+	if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	{
+		ROS_WARN("%s %d: Remote direction key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+		beep_for_command(false);
+		wav_play(WAV_ERROR_LIFT_UP);
+		Reset_Rcon_Remote();
+		return;
+	}
+
 	beep_for_command(true);
 	Temp_Mode = Clean_Mode_Remote;
 	Reset_Rcon_Remote();
@@ -414,6 +422,15 @@ void user_interface_handle_plan(bool state_now, bool state_last)
 				Alarm_Error();
 				wav_play(WAV_CANCEL_APPOINTMENT);
 				Set_Plan_Status(0);
+				break;
+			}
+			else if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			{
+				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+				wav_play(WAV_ERROR_LIFT_UP);
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				Set_Plan_Status(0);
+				break;
 			}
 			else
 			{
@@ -447,6 +464,16 @@ void user_interface_handle_remote_spot(bool state_now, bool state_last)
 		Reset_Rcon_Remote();
 		return;
 	}
+
+	if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	{
+		ROS_WARN("%s %d: Remote direction key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+		beep_for_command(false);
+		wav_play(WAV_ERROR_LIFT_UP);
+		Reset_Rcon_Remote();
+		return;
+	}
+
 	beep_for_command(true);
 	Temp_Mode = Clean_Mode_Spot;
 	Reset_Rcon_Remote();
