@@ -276,13 +276,10 @@ void user_interface_register_events(void)
 	/* Battery */
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Remote */
-	event_manager_register_handler(EVT_REMOTE_DIRECTION_FORWARD, &user_interface_handle_remote_direction);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_register_handler(EVT_REMOTE_DIRECTION_LEFT, &user_interface_handle_remote_direction);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_register_handler(EVT_REMOTE_DIRECTION_RIGHT, &user_interface_handle_remote_direction);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_FORWARD, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 }
 
@@ -366,12 +363,13 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 	battery_low_delay = 10;
 }
 
-void user_interface_handle_remote_direction(bool state_now, bool state_last)
+void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote direction key %x has been pressed.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+
 	if (Get_Error_Code())
 	{
-		ROS_WARN("%s %d: Remote direction key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
+		ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
 		beep_for_command(false);
 		Error_Alarm_Counter = 0;
 		Alarm_Error();
@@ -381,7 +379,7 @@ void user_interface_handle_remote_direction(bool state_now, bool state_last)
 
 	if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 	{
-		ROS_WARN("%s %d: Remote direction key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
+		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
 		beep_for_command(false);
 		wav_play(WAV_ERROR_LIFT_UP);
 		Reset_Rcon_Remote();
@@ -389,7 +387,21 @@ void user_interface_handle_remote_direction(bool state_now, bool state_last)
 	}
 
 	beep_for_command(true);
-	Temp_Mode = Clean_Mode_Remote;
+	switch (Get_Rcon_Remote())
+	{
+		case Remote_Forward:
+		case Remote_Left:
+		case Remote_Right:
+		{
+			Temp_Mode = Clean_Mode_Remote;
+			break;
+		}
+		case Remote_Spot:
+		{
+			Temp_Mode = Clean_Mode_Spot;
+			break;
+		}
+	}
 	Reset_Rcon_Remote();
 }
 
@@ -448,31 +460,4 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 	}
 
 	Set_Plan_Status(0);
-}
-
-void user_interface_handle_remote_spot(bool state_now, bool state_last)
-{
-	ROS_WARN("%s %d: Remote direction key %x has been pressed.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
-	if (Get_Error_Code())
-	{
-		ROS_WARN("%s %d: Remote direction key %x not valid because of error %d.", __FUNCTION__, __LINE__, Get_Rcon_Remote(), Get_Error_Code());
-		beep_for_command(false);
-		Error_Alarm_Counter = 0;
-		Alarm_Error();
-		Reset_Rcon_Remote();
-		return;
-	}
-
-	if(Get_Cliff_Trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
-	{
-		ROS_WARN("%s %d: Remote direction key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, Get_Rcon_Remote());
-		beep_for_command(false);
-		wav_play(WAV_ERROR_LIFT_UP);
-		Reset_Rcon_Remote();
-		return;
-	}
-
-	beep_for_command(true);
-	Temp_Mode = Clean_Mode_Spot;
-	Reset_Rcon_Remote();
 }
