@@ -154,15 +154,6 @@ void User_Interface(void)
 				Set_Error_Code(Error_Code_None);
 				Reset_Rcon_Remote();
 			}
-
-			if (Get_Plan_Status() == 3)
-			{
-				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				Alarm_Error();
-				wav_play(WAV_CANCEL_APPOINTMENT);
-				Set_Plan_Status(0);
-			}
-
 			continue;
 		}
 
@@ -422,11 +413,21 @@ void user_interface_handle_plan(bool state_now, bool state_last)
 		case 3:
 		{
 			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-			// Sleep for 50ms cause the status 3 will be sent for 3 times.
-			usleep(50000);
-			if (!robot::instance()->isManualPaused())
-				Temp_Mode=Clean_Mode_Navigation;
-			break;
+			if (Get_Error_Code() != Error_Code_None)
+			{
+				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+				Alarm_Error();
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				Set_Plan_Status(0);
+			}
+			else
+			{
+				// Sleep for 50ms cause the status 3 will be sent for 3 times.
+				usleep(50000);
+				if (!robot::instance()->isManualPaused())
+					Temp_Mode=Clean_Mode_Navigation;
+				break;
+			}
 		}
 		case 4:
 		{
