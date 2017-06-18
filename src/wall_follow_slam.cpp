@@ -426,7 +426,7 @@ uint8_t wf_end_wall_follow(void)
 	stop_brifly();
 	robot::instance()->setBaselinkFrameType(
 					Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
-	cm_update_position();
+	cm_update_map();
 	wf_mark_home_point();
 	cm_go_home();
 
@@ -475,7 +475,7 @@ Description:
  ***************************************************************/
 void wf_check_loop_closed(uint16_t heading)
 {
-	cm_update_position();
+	cm_update_map();
 //	g_same_cell_count = is_new_cell() ? g_same_cell_count + 1 : 0;
 	is_start_cell() ? g_reach_count++ : g_reach_count = 0;
 

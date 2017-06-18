@@ -76,6 +76,11 @@ int16_t map_get_y_cell(void) {
 	return count_to_cell(yCount);
 }
 
+Cell_t map_get_curr_cell()
+{
+	return Cell_t{map_get_x_cell(), map_get_y_cell()};
+}
+
 void map_move_to(double d_x, double d_y) {
 	xCount += d_x;
 	yCount += d_y;
