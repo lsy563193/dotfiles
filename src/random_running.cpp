@@ -530,7 +530,6 @@ void Random_Running_Mode(void)
 					set_direction_flag(Direction_Flag_Right);
 				}
 				reset_wheel_step();
-				reset_temp_pwm();
 				Stunk++;
 				Bumper_Counter++;
 				Wall_Bumper_Counter+=2;
@@ -672,7 +671,6 @@ void Random_Running_Mode(void)
 			}
 			if(!Avoid_Flag)
 			{
-				reset_temp_pwm();
 				reset_wheel_step();
 			}
 			else
@@ -815,7 +813,6 @@ void Random_Running_Mode(void)
 			}
 			if(!Avoid_Flag)
 			{
-				reset_temp_pwm();
 				reset_wheel_step();
 			}
 			else
@@ -841,7 +838,6 @@ void Random_Running_Mode(void)
 			add_average(get_left_wheel_step());
 			//random_back();
 			set_wheel_speed(0, 0);
-			reset_temp_pwm();
 			usleep(10000);
 			//stop_brifly();
 			N_H_T=0;
@@ -1191,7 +1187,6 @@ void Random_Running_Mode(void)
 				}
 				Turn_Right(Turn_Speed-5,240);
 				move_forward(10, 10);
-				reset_temp_pwm();
 			}
 			else if(On_TrapOut_Flag==2)
 			{
@@ -1211,13 +1206,11 @@ void Random_Running_Mode(void)
 				}
 				Turn_Right(Turn_Speed-5,240);
 				move_forward(10, 10);
-				reset_temp_pwm();
 			}
 			if(!Is_HalfTurn_Flag())
 			{
 				//stop_brifly();
 				move_forward(0, 0);
-				reset_temp_pwm();
 				//usleep(50000);
 				reset_wheel_step();
 				usleep(10000);
@@ -1665,7 +1658,6 @@ void Half_Turn_Left(uint16_t speed,uint16_t angle)
 	//Set_LeftTPWM(0);
 
 	reset_wheel_step();
-	reset_temp_pwm();
 	usleep(10000);
 	move_forward(0, speed);
 	Counter_Watcher=0;
@@ -1734,7 +1726,6 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 //	Set_TempPWM(20,0);
 	//Set_RightTPWM(0);
 	 reset_wheel_step();
-	 reset_temp_pwm();
 	usleep(10000);
 	 move_forward(speed, 0);
   //set_wheel_speed(42,0);

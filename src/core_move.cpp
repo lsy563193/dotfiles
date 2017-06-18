@@ -378,8 +378,6 @@ void cm_update_position(bool is_turn)
 
 	if(! is_turn)
 		cm_update_map_obs();
-
-	//robot::instance()->pubCleanMarkers();
 }
 
 void cm_update_map()
@@ -1349,7 +1347,6 @@ void cm_move_back(uint16_t dist)
 		}
 	}
 	cm_update_position();
-	reset_temp_pwm();
 	stop_brifly();
 	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);
 }

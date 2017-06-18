@@ -145,7 +145,6 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				set_clean_mode(Clean_Mode_Userinterface);
 			  return 1;
 			}
-			reset_temp_pwm();
       break;
 		}
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
@@ -270,7 +269,6 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 	if(get_bumper_status()&LeftBumperTrig)
     {
 			set_wheel_speed(0, 0);
-			reset_temp_pwm();
       	usleep(30000);
 			
 //      if(get_wall_adc(0)>200)

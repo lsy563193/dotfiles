@@ -429,8 +429,6 @@ uint32_t get_rcon_status(void);
 
 void set_rcon_status(uint32_t code);
 
-void reset_temp_pwm(void);
-
 void set_wheel_speed(uint8_t Left, uint8_t Right);
 
 void work_motor_configure(void);

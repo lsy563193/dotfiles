@@ -823,9 +823,7 @@ void wf_turn_right(uint16_t speed, int16_t angle)
 
 	target_angle = gyro_angle - angle;
 	if (target_angle < 0)
-	{
 		target_angle = 3600 + target_angle;
-	}
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(),
 					 speed);
 
@@ -1320,10 +1318,6 @@ uint8_t is_obs_near(void)
 	if (robot::instance()->getObsRight() > (g_right_obs_trig_value - 200))return 1;
 	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
 	return 0;
-}
-
-void reset_temp_pwm(void)
-{
 }
 
 void set_wheel_speed(uint8_t Left, uint8_t Right)
@@ -2264,7 +2258,6 @@ void initialize_motor(void)
 	set_bldc_speed(40);
 //	move_forward(0,0);
 	stop_brifly();
-	reset_temp_pwm();
 //	Left_Wheel_Slow=0;
 //	Right_Wheel_Slow=0;
 //	reset_bumper_error();
@@ -2855,7 +2848,6 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 {
 	uint16_t Counter_Watcher = 0;
 	//Left_Wheel_Step=0;
-	reset_temp_pwm();
 	set_wheel_speed(speed, speed);
 	Counter_Watcher = 0;
 	reset_rcon_remote();
@@ -2924,7 +2916,6 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 {
 	uint16_t Counter_Watcher = 0;
 	//Left_Wheel_Step=0;
-	reset_temp_pwm();
 	set_wheel_speed(speed, speed);
 	Counter_Watcher = 0;
 	reset_rcon_remote();
@@ -3124,7 +3115,6 @@ void reset_wall_accelerate()
 
 uint32_t get_wall_accelerate()
 {
-
 	return g_wall_accelerate = get_right_wheel_step();
 }
 
