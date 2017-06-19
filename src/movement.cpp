@@ -824,34 +824,19 @@ void wf_turn_right(uint16_t speed, int16_t angle)
 	target_angle = gyro_angle - angle;
 	if (target_angle < 0)
 		target_angle = 3600 + target_angle;
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(),
-					 speed);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 
 	set_dir_right();
 
 	set_wheel_speed(speed, speed);
-	uint8_t oc = 0;
 
 	uint8_t accurate;
 	accurate = 10;
 	if (speed > 30) accurate = 30;
 	while (ros::ok())
 	{
-		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		map_set_position(pos_x, pos_y);
-
-		i = map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		j = map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY)
-		{
-			map_set_cell(MAP, i, j, BLOCKED_OBS);
-		}
-
 		if (abs(target_angle - Gyro_GetAngle()) < accurate)
-		{
 			break;
-		}
 		if (abs(target_angle - Gyro_GetAngle()) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
@@ -866,46 +851,7 @@ void wf_turn_right(uint16_t speed, int16_t angle)
 		{
 			set_wheel_speed(speed, speed);
 		}
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			break;
-		if (stop_event())
-			break;
-		/*if(is_turn_remote())
-			break;
-		 */
 
-		if (get_rcon_remote() > 0)
-		{
-			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-			if (get_rcon_remote() & (Remote_Clean | Remote_Home | Remote_Max))
-			{
-				if (get_rcon_remote() & (Remote_Home | Remote_Clean))
-				{
-					break;
-				}
-				if (remote_key(Remote_Max))
-				{
-					reset_rcon_remote();
-					switch_vac_mode(true);
-				}
-			} else
-			{
-				beep_for_command(false);
-				reset_rcon_remote();
-			}
-		}
-
-		/* check plan setting*/
-		if (get_plan_status() == 1)
-		{
-			set_plan_status(0);
-			beep_for_command(false);
-		}
-		if (get_bumper_status())
-		{
-			break;
-		}
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}

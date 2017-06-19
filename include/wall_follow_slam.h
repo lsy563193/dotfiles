@@ -17,7 +17,7 @@ bool is_new_cell();
 uint8_t wf_end_wall_follow(void);
 uint8_t wf_break_wall_follow(void);
 void WFM_move_back(uint16_t dist);
-bool wf_check_isolate(void);
+bool is_check_isolate(void);
 void wf_mark_home_point(void);
 
 /**************************************************************
