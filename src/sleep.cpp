@@ -12,9 +12,6 @@ void sleep_mode(void)
 	uint16_t sleep_time_counter_ = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	reset_stop_event_status();
-	reset_rcon_status();
-
 	beep(1, 4, 0, 1);
 	usleep(100000);
 	beep(2, 4, 0, 1);
@@ -29,6 +26,11 @@ void sleep_mode(void)
 	set_main_pwr_byte(POWER_DOWN);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, get_main_pwr_byte());
 
+	reset_stop_event_status();
+	reset_rcon_status();
+	reset_rcon_remote();
+	set_plan_status(0);
+
 	sleep_register_events();
 	while(ros::ok())
 	{
@@ -37,6 +39,9 @@ void sleep_mode(void)
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
 		}
+
+		if (get_clean_mode() != Clean_Mode_Sleep)
+			break;
 
 		sleep_time_counter_++;
 		if (sleep_time_counter_ > 1500)
@@ -48,19 +53,6 @@ void sleep_mode(void)
 		}
 		else if(!get_sleep_mode_flag())
 			set_sleep_mode_flag();
-
-		// This is necessary because once the rcon has signal, it means base stm32 board has receive the rcon signal for 3 mins.
-		// If not reset here, it may cause directly go home once it sleeps.
-		reset_rcon_status();
-
-		if (get_clean_mode() != Clean_Mode_Sleep)
-			break;
-	}
-	// Alarm for error.
-	if (get_clean_mode() == Clean_Mode_Userinterface && get_error_code())
-	{
-		set_led(0, 100);
-		alarm_error();
 	}
 
 	sleep_unregister_events();
@@ -73,11 +65,22 @@ void sleep_mode(void)
 	usleep(100000);
 	beep(1, 4, 4, 1);
 
-	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
-	usleep(1500000);
+	// Alarm for error.
+	if (get_clean_mode() == Clean_Mode_Userinterface && get_error_code())
+	{
+		set_led(0, 100);
+		alarm_error();
+	}
+	else
+	{
+		// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
+		usleep(1500000);
+	}
+
 	reset_rcon_status();
 	reset_rcon_remote();
 	reset_stop_event_status();
+	set_plan_status(0);
 }
 
 void sleep_register_events(void)
