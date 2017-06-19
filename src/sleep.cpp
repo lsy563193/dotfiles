@@ -5,10 +5,12 @@
 #include "sleep.h"
 #include "movement.h"
 #include "wav.h"
+#include "event_manager.h"
 /*----------------------------------------------------------------Sleep mode---------------------------*/
 void sleep_mode(void)
 {
 	uint16_t sleep_time_counter_ = 0;
+	bool eh_status_now=false, eh_status_last=false;
 
 	reset_stop_event_status();
 	reset_rcon_status();
@@ -17,9 +19,15 @@ void sleep_mode(void)
 	disable_motors();
 	set_main_pwr_byte(POWER_DOWN);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, get_main_pwr_byte());
+
+	sleep_register_events();
 	while(ros::ok())
 	{
 		usleep(20000);
+
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
 
 		sleep_time_counter_++;
 		if (sleep_time_counter_ > 1500)
@@ -148,6 +156,43 @@ void sleep_mode(void)
 		alarm_error();
 	}
 
+	sleep_unregister_events();
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
 	usleep(1500000);
+}
+
+void sleep_register_events(void)
+{
+	ROS_WARN("%s %d: Register events", __FUNCTION__, __LINE__);
+	event_manager_set_current_mode(EVT_MODE_SLEEP);
+
+#define event_manager_register_and_enable_x(name, y, enabled) \
+	event_manager_register_handler(y, &sleep_handle_ ##name); \
+	event_manager_enable_handler(y, enabled);
+
+	///* Rcon */
+	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+	///* Remote */
+	//event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
+	///* Key */
+	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
+	///* Charge Status */
+	//event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
+}
+
+void sleep_unregister_events(void)
+{
+	ROS_WARN("%s %d: Unregister events", __FUNCTION__, __LINE__);
+#define event_manager_register_and_disable_x(x) \
+	event_manager_register_handler(x, NULL); \
+	event_manager_enable_handler(x, false);
+
+	///* Rcon */
+	//event_manager_register_and_disable_x(EVT_RCON);
+	///* Remote */
+	//event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
+	///* Key */
+	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
+	///* Charge Status */
+	//event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }

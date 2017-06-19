@@ -157,6 +157,7 @@ typedef enum {
 	EVT_MODE_RANDOM,
 	EVT_MODE_SPOT,
 	EVT_MODE_MAX,
+	EVT_MODE_SLEEP,
 } EventModeType;
 
 typedef struct {
