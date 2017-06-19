@@ -97,7 +97,7 @@ void path_planning_initialize(int32_t *x, int32_t *y)
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {
-		g_cell_history[i] =  {i+1, i+1};
+		g_cell_history[i] =  {int16_t(i+1), int16_t(i+1)};
 	}
 
 	/* Initialize the shortest path. */
@@ -970,7 +970,7 @@ int16_t WF_path_escape_trapped()
 	int16_t x_min, x_max, y_min, y_max;
 	path_get_range(&x_min, &x_max, &y_min, &y_max);
 	Cell_t a_temp_cell[3];
-	a_temp_cell[0] = {x_max + 1, y_max + 1};
+	a_temp_cell[0] = {int16_t(x_max + 1), int16_t(y_max + 1)};
 	path_escape_set_trapped_cell(a_temp_cell, 1);
 
 	int16_t	val = 0;
@@ -1152,7 +1152,7 @@ void WF_PathPlanning_Initialize(int32_t *x, int32_t *y)
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {
-		g_cell_history[i]= {i + 1, i + 1};
+		g_cell_history[i]= {int16_t(i + 1), int16_t(i + 1)};
 	}
 
 	/* Initialize the shortest path. */
