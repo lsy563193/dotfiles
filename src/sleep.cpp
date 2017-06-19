@@ -9,7 +9,7 @@
 /*----------------------------------------------------------------Sleep mode---------------------------*/
 void sleep_mode(void)
 {
-	uint16_t sleep_time_counter_ = 0;
+	time_t check_battery_time = time(NULL);
 	bool eh_status_now=false, eh_status_last=false;
 
 	beep(1, 4, 0, 1);
@@ -43,13 +43,14 @@ void sleep_mode(void)
 		if (get_clean_mode() != Clean_Mode_Sleep)
 			break;
 
-		sleep_time_counter_++;
-		if (sleep_time_counter_ > 1500)
+		if (time(NULL) - check_battery_time > 30)
 		{
 			// Check the battery for every 30s. If battery below 12.5v, power of core board will be cut off.
 			reset_sleep_mode_flag();
 			ROS_WARN("Wake up robotbase to check if battery too low(<12.5v).");
-			sleep_time_counter_ = 0;
+			// Wait for 40ms to make sure base board has finish checking.
+			usleep(40000);
+			check_battery_time = time(NULL);
 		}
 		else if(!get_sleep_mode_flag())
 			set_sleep_mode_flag();
@@ -167,7 +168,6 @@ void sleep_handle_remote_plan(bool state_now, bool state_last)
 		}
 	}
 }
-
 
 void sleep_handle_key_clean(bool state_now, bool state_last)
 {
