@@ -35,9 +35,9 @@ void remote_mode_unregister_events(void);
 //define_remote_mode_handle_func(over_current_wheel_left)
 //define_remote_mode_handle_func(over_current_wheel_right)
 //define_remote_mode_handle_func(over_current_suction)
-///* Key */
-//define_remote_mode_handle_func(key_clean)
-///* Remote */
+/* Key */
+define_remote_mode_handle_func(key_clean)
+/* Remote */
 define_remote_mode_handle_func(remote_direction_forward)
 define_remote_mode_handle_func(remote_direction_left)
 define_remote_mode_handle_func(remote_direction_right)

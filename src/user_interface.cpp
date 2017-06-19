@@ -443,6 +443,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	{
 		temp_mode = Clean_Mode_Sleep;
 		reset_stop_event_status();
+		reset_touch();
 		return;
 	}
 
@@ -461,6 +462,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		wav_play(WAV_ERROR_LIFT_UP);
 		reset_stop_event_status();
+		reset_touch();
 		return;
 	}
 
@@ -469,11 +471,13 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		wav_play(WAV_BATTERY_LOW);
 		reset_stop_event_status();
+		reset_touch();
 		return;
 	}
 
 	temp_mode = Clean_Mode_Navigation;
 	reset_stop_event_status();
+	reset_touch();
 }
 
 void user_interface_handle_charge_detect(bool state_now, bool state_last)

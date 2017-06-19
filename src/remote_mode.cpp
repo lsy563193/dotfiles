@@ -100,25 +100,6 @@ void Remote_Mode(void)
 			turn_flag = 0;
 		}
 
-	  /*------------------------------------------------------stop event-----------------------*/
-		if(stop_event())
-		{
-			// Key release detection, if user has not release the key, don't do anything.
-			while (get_key_press() & KEY_CLEAN)
-			{
-				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-				usleep(20000);
-			}
-			// Key relaesed, then the touch status and stop event status should be cleared.
-			if (stop_event() == 3) {
-				disable_motors();
-				wav_play(WAV_ERROR_LIFT_UP);
-			}
-			reset_stop_event_status();
-			set_clean_mode(Clean_Mode_Userinterface);
-			break;
-		}
-
 		/*------------------------------------------------------Check Battery-----------------------*/
 		if(check_bat_stop())
 		{
@@ -196,6 +177,8 @@ void remote_mode_register_events(void)
 	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	///* Battery */
 	//event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+	/* Key */
+	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_direction_forward, EVT_REMOTE_DIRECTION_FORWARD, true);
 	event_manager_register_and_enable_x(remote_direction_left, EVT_REMOTE_DIRECTION_LEFT, true);
@@ -206,8 +189,6 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_HOME, true);
 	//event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
-	///* Key */
-	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	///* Charge Status */
 	//event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 }
@@ -225,6 +206,8 @@ void remote_mode_unregister_events(void)
 	//event_manager_register_and_disable_x(EVT_RCON);
 	///* Battery */
 	//event_manager_register_and_disable_x(EVT_BATTERY_LOW);
+	/* Key */
+	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
@@ -235,8 +218,6 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	//event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	///* Key */
-	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	///* Charge Status */
 	//event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }
@@ -295,4 +276,17 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	else
 		set_clean_mode(Clean_Mode_Userinterface);
 	reset_rcon_remote();
+}
+
+void remote_mode_handle_key_clean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
+	beep_for_command(true);
+	while (get_key_press() == KEY_CLEAN)
+	{
+		ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
+		usleep(40000);
+	}
+	set_clean_mode(Clean_Mode_Userinterface);
+	reset_touch();
 }
