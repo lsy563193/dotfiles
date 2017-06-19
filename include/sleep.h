@@ -14,7 +14,7 @@ void sleep_unregister_events(void);
 define_sleep_handle_func(rcon)
 /* Remote */
 define_sleep_handle_func(remote_clean)
-///* Key */
-//define_sleep_handle_func(key_clean)
+/* Key */
+define_sleep_handle_func(key_clean)
 /* Charge Status */
 define_sleep_handle_func(charge_detect)

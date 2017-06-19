@@ -53,30 +53,6 @@ void sleep_mode(void)
 		// If not reset here, it may cause directly go home once it sleeps.
 		reset_rcon_status();
 
-		if (get_key_press() & KEY_CLEAN)
-		{
-			ROS_INFO("%s,%d, get key press ",__FUNCTION__,__LINE__);
-			set_clean_mode(Clean_Mode_Userinterface);
-			set_main_pwr_byte(POWER_ACTIVE);
-			reset_sleep_mode_flag();
-			set_led(100, 0);
-			beep(4, 4, 0, 1);
-			usleep(100000);
-			beep(3, 4, 0, 1);
-			usleep(100000);
-			beep(2, 4, 0, 1);
-			usleep(100000);
-			beep(1, 4, 4, 1);
-			// Wait for user to release the key.
-			while (get_key_press() & KEY_CLEAN)
-			{
-				ROS_WARN("User still holds the key.");
-				usleep(20000);
-			}
-			reset_stop_event_status();
-			break;
-		}
-
 		// Check if plan activated.
 		if (get_plan_status() == 3)
 		{
@@ -128,6 +104,7 @@ void sleep_mode(void)
 	usleep(1500000);
 	reset_rcon_status();
 	reset_rcon_remote();
+	reset_stop_event_status();
 }
 
 void sleep_register_events(void)
@@ -143,8 +120,8 @@ void sleep_register_events(void)
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
-	///* Key */
-	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
+	/* Key */
+	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 }
@@ -160,8 +137,8 @@ void sleep_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_RCON);
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	///* Key */
-	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
+	/* Key */
+	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }
@@ -183,6 +160,23 @@ void sleep_handle_remote_clean(bool state_now, bool state_last)
 	set_clean_mode(Clean_Mode_Userinterface);
 	set_main_pwr_byte(Clean_Mode_Userinterface);
 	reset_sleep_mode_flag();
+}
+
+void sleep_handle_key_clean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
+	set_clean_mode(Clean_Mode_Userinterface);
+	set_main_pwr_byte(Clean_Mode_Userinterface);
+	reset_sleep_mode_flag();
+	usleep(20000);
+
+	beep_for_command(true);
+
+	while (get_key_press() == KEY_CLEAN)
+	{
+		ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
+		usleep(40000);
+	}
 }
 
 void sleep_handle_charge_detect(bool state_now, bool state_last)
