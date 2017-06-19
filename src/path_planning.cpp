@@ -964,29 +964,6 @@ void path_update_cells()
 	}
 }
 
-int16_t WF_path_escape_trapped()
-{
-
-	int16_t x_min, x_max, y_min, y_max;
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
-	Cell_t a_temp_cell[3];
-	a_temp_cell[0] = {int16_t(x_max + 1), int16_t(y_max + 1)};
-	path_escape_set_trapped_cell(a_temp_cell, 1);
-
-	int16_t	val = 0;
-	Cell_t remote{0,0};
-	if (g_trapped_cell[0] != remote)
-	{
-		val = 1;//isolated
-	} else {
-		if (is_block_accessible(remote.X, remote.Y) == 1)
-		{
-			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, remote.X, remote.Y, 0);
-			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1 ;
-		}
-	}
-	return val;
-}
 
 int16_t path_escape_trapped()
 {

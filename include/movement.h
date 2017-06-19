@@ -387,7 +387,6 @@ void round_turn_left(uint16_t speed, int16_t angle);
 void round_turn_right(uint16_t speed, int16_t angle);
 void jam_turn_left(uint16_t speed, int16_t angle);
 void jam_turn_right(uint16_t speed, int16_t angle);
-void wf_turn_right(uint16_t speed, int16_t angle);
 
 void set_left_brush_stall(uint8_t L);
 

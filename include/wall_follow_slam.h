@@ -11,8 +11,21 @@
 
 uint8_t wall_follow(MapWallFollowType follow_type);
 void wf_check_loop_closed(uint16_t heading);
+void wf_update_position(void);
 bool is_start_cell(void);
 bool is_new_cell();
+
+/*
+ * Check whether the robot is trapped or not. The robot is trapped if there
+ * is no path to (0, 0) or home.
+ *
+ * @param
+ *
+ * @return	0 if the robot is trapped
+ * 		1 if the robot is not trapped.
+ */
+int16_t WF_path_escape_trapped(void);
+void wf_turn_right(uint16_t speed, int16_t angle);
 
 int8_t wf_push_point(int32_t x, int32_t y, int16_t th);
 bool wf_is_reach_cleaned(void);

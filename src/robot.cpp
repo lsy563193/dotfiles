@@ -326,7 +326,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			}
 		}
 
-		cm_update_map();
+//		cm_update_map();
 	}
 
 	Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
