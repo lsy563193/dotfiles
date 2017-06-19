@@ -152,12 +152,6 @@ void Remote_Mode(void)
 				break;
 			}
 		}
-		/* check plan set */
-		if(get_plan_status() == 1)
-		{
-			set_plan_status(0);
-			beep_for_command(false);
-		}
 	}
 	disable_motors();
 	remote_mode_unregister_events();
@@ -189,7 +183,7 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_HOME, true);
-	//event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
+	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 }
@@ -218,7 +212,7 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	//event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
+	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }
