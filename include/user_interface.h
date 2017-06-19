@@ -24,6 +24,7 @@
 #define Edit_Add      1
 #define Edit_Sub      2
 
+#include "stdint.h"
 
 void User_Interface(void);
 
