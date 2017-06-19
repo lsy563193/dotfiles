@@ -14,6 +14,15 @@ void sleep_mode(void)
 
 	reset_stop_event_status();
 	reset_rcon_status();
+
+	beep(1, 4, 0, 1);
+	usleep(100000);
+	beep(2, 4, 0, 1);
+	usleep(100000);
+	beep(3, 4, 0, 1);
+	usleep(100000);
+	beep(4, 4, 0, 1);
+	usleep(100000);
 	set_led(0, 0);
 
 	disable_motors();
