@@ -125,7 +125,7 @@ void User_Interface(void)
 
 		// Alarm for error.
 		if (get_error_code())
-			if ((error_alarm_counter == 2 && (time(NULL) - start_time) > 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) > 20))
+			if ((error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
 			{
 				error_alarm_counter--;
 				alarm_error();
@@ -225,7 +225,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	if (charger_signal_delay == 0)
 		charger_signal_start_time = time(NULL);
 
-	if (time(NULL) - charger_signal_start_time > 180)// 3 mins
+	if (time(NULL) - charger_signal_start_time >= 180)// 3 mins
 	{
 		if (get_error_code())
 		{
@@ -264,7 +264,7 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 	if (battery_low_delay == 0)
 		battery_low_start_time = time(NULL);
 
-	if (time(NULL) - battery_low_start_time > 5)// 5 seconds
+	if (time(NULL) - battery_low_start_time >= 5)// 5 seconds
 	{
 		temp_mode = Clean_Mode_Sleep;
 		return;
@@ -422,7 +422,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 
 	while (get_key_press() == KEY_CLEAN)
 	{
-		if (time(NULL) - key_press_start_time > 3)
+		if (time(NULL) - key_press_start_time >= 3)
 		{
 			if (!long_press_to_sleep)
 			{
