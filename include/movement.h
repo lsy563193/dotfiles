@@ -341,113 +341,111 @@
 #define CMD_ACK						0x23
 #define CMD_NCK						0x25
 
-extern uint32_t Rcon_Status;
+extern uint32_t g_rcon_status;
 
-extern volatile int16_t Left_Wall_BaseLine;
-extern volatile int16_t Right_Wall_BaseLine;
+extern volatile int16_t g_left_wall_baseline;
+extern volatile int16_t g_right_wall_baseline;
 
 void reset_start_work_time();
 uint32_t get_work_time();
 
-void Set_Error_Code(uint8_t Code);
-uint8_t Get_Error_Code(void);
-void Alarm_Error(void);
+void set_error_code(uint8_t Code);
+uint8_t get_error_code(void);
+void alarm_error(void);
 
-void Set_LeftBrush_Stall(uint8_t L);
+void set_left_brush_stall(uint8_t L);
 
-uint32_t Get_RightWheel_Step(void);
-uint32_t Get_LeftWheel_Step(void);
-void Reset_RightWheel_Step();
-void Reset_LeftWheel_Step();
-void Set_Wheel_Step(uint32_t Left,uint32_t Right);
-void Reset_Wheel_Step(void);
-void Reset_Wall_Step(void);
-uint32_t Get_LeftWall_Step(void);
-uint32_t Get_RightWall_Step(void);
+uint32_t get_right_wheel_step(void);
+uint32_t get_left_wheel_step(void);
+void reset_right_wheel_step();
+void reset_left_wheel_step();
+void set_wheel_step(uint32_t Left, uint32_t Right);
+void reset_wheel_step(void);
+void reset_wall_step(void);
+uint32_t get_left_wall_step(void);
+uint32_t get_right_wall_step(void);
 
-int32_t Get_Wall_ADC(int8_t dir);
+int32_t get_wall_adc(int8_t dir);
 
-void Set_Dir_Backward(void);
-void Set_Dir_Forward(void);
+void set_dir_backward(void);
+void set_dir_forward(void);
 
-uint8_t Is_Encoder_Fail(void);
+uint8_t is_encoder_fail(void);
 
-void Set_RightBrush_Stall(uint8_t R);
+void set_right_brush_stall(uint8_t R);
 
-void Wall_Dynamic_Base(uint32_t Cy);
-void Set_Wall_Base(int8_t dir, int32_t data);
-int32_t Get_Wall_Base(int8_t dir);
+void wall_dynamic_base(uint32_t Cy);
+void set_wall_base(int8_t dir, int32_t data);
+int32_t get_wall_base(int8_t dir);
 
 void quick_back(uint8_t speed,uint16_t distance);
 
-void Turn_Left_At_Init(uint16_t speed,int16_t angle);
-void Turn_Left(uint16_t speed,int16_t angle);
+void turn_left_at_init(uint16_t speed, int16_t angle);
+void turn_left(uint16_t speed, int16_t angle);
 void Turn_Right(uint16_t speed,int16_t angle);
-void Round_Turn_Left(uint16_t speed,int16_t angle);
-void Round_Turn_Right(uint16_t speed,int16_t angle);
-void Jam_Turn_Left(uint16_t speed,int16_t angle);
-void Jam_Turn_Right(uint16_t speed,int16_t angle);
-void WF_Turn_Right(uint16_t speed,int16_t angle);
+void round_turn_left(uint16_t speed, int16_t angle);
+void round_turn_right(uint16_t speed, int16_t angle);
+void jam_turn_left(uint16_t speed, int16_t angle);
+void jam_turn_right(uint16_t speed, int16_t angle);
+void wf_turn_right(uint16_t speed, int16_t angle);
 
-void Set_LeftBrush_Stall(uint8_t L);
+void set_left_brush_stall(uint8_t L);
 
-void Set_Dir_Backward(void);
+void set_dir_backward(void);
 
-uint8_t Is_Encoder_Fail(void);
+uint8_t is_encoder_fail(void);
 
-void Set_RightBrush_Stall(uint8_t R);
+void set_right_brush_stall(uint8_t R);
 
-void Wall_Dynamic_Base(uint32_t Cy);
+void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 
-uint8_t Get_OBS_Status(void);
+uint8_t get_obs_status(void);
 
-int32_t Get_FrontOBS(void);
-int32_t Get_LeftOBS(void);
-int32_t Get_RightOBS(void);
+int32_t get_front_obs(void);
+int32_t get_left_obs(void);
+int32_t get_right_obs(void);
 
-uint8_t Get_Bumper_Status(void);
+uint8_t get_bumper_status(void);
 
-uint8_t Get_Cliff_Trig(void);
+uint8_t get_cliff_trig(void);
 
 bool is_on_charger_stub(void);
 
 bool is_direct_charge(void);
 
-uint8_t Turn_Connect(void);
+uint8_t turn_connect(void);
 
-void SetHomeRemote(void);
+void set_home_remote(void);
 
-void Reset_HomeRemote(void);
+void reset_home_remote(void);
 
-uint8_t IsHomeRemote(void);
+uint8_t is_home_remote(void);
 
-uint8_t Is_OBS_Near(void);
+uint8_t is_obs_near(void);
 
-uint32_t Get_Rcon_Status(void);
+uint32_t get_rcon_status(void);
 
-void Set_Rcon_Status(uint32_t code);
+void set_rcon_status(uint32_t code);
 
-void Reset_TempPWM(void);
+void set_wheel_speed(uint8_t Left, uint8_t Right);
 
-void Set_Wheel_Speed(uint8_t Left, uint8_t Right);
+void work_motor_configure(void);
 
-void Work_Motor_Configure(void);
+uint8_t check_motor_current(void);
 
-uint8_t Check_Motor_Current(void);
+uint8_t check_side_brush_stall(void);
 
-uint8_t Check_SideBrush_Stall(void);
+uint8_t self_check(uint8_t Check_Code);
 
-uint8_t Self_Check(uint8_t Check_Code);
+uint8_t check_bat_home(void);
 
-uint8_t Check_Bat_Home(void);
+uint8_t check_bat_full(void);
 
-uint8_t Check_Bat_Full(void);
+uint8_t check_bat_ready_to_clean(void);
 
-uint8_t Check_Bat_Ready_To_Clean(void);
-
-uint8_t Get_Clean_Mode(void);
+uint8_t get_clean_mode(void);
 
 /*
  * Set the mode for vacuum.
@@ -456,104 +454,104 @@ uint8_t Get_Clean_Mode(void);
  * mode: Vac_Normal Vac_Max Vac_Save(load mode save last time)
  * save: if save is ture,save this mode,next time clean will reload at interface
  * */
-void Set_VacMode(uint8_t mode,bool is_save=false);
+void set_vacmode(uint8_t mode, bool is_save = false);
 
-void Set_BLDC_Speed(uint32_t S);
+void set_bldc_speed(uint32_t S);
 
-void Set_Vac_Speed(void);
+void set_vac_speed(void);
 
-void OBS_Dynamic_Base(uint16_t Cy);
-int16_t Get_FrontOBST_Value(void);
-int16_t Get_LeftOBST_Value(void);
-int16_t Get_RightOBST_Value(void);
-uint8_t Is_WallOBS_Near(void);
-void Adjust_OBST_Value(void);
-void Reset_OBST_Value(void);
-uint8_t Spot_OBS_Status(void);
-uint8_t Get_OBS_Status(void);
+void obs_dynamic_base(uint16_t Cy);
+int16_t get_front_obs_value(void);
+int16_t get_left_obs_value(void);
+int16_t get_right_obs_value(void);
+uint8_t is_wall_obs_near(void);
+void adjust_obs_value(void);
+void reset_obst_value(void);
+uint8_t spot_obs_status(void);
+uint8_t get_obs_status(void);
 
-void Move_Forward(uint8_t Left_Speed, uint8_t Right_Speed);
+void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
-uint8_t Get_VacMode(void);
+uint8_t get_vac_mode(void);
 
 /*
  * node:default is not save,go and spod mode is not save, key is save
  */
-void Switch_VacMode(bool save);
+void switch_vac_mode(bool save);
 
-void Set_Rcon_Remote(uint8_t cmd);
+void set_rcon_remote(uint8_t cmd);
 
-void Reset_Rcon_Remote(void);
+void reset_rcon_remote(void);
 
-uint8_t Get_Rcon_Remote(void);
+uint8_t get_rcon_remote(void);
 
-void Reset_MoveWithRemote(void);
+void reset_move_with_remote(void);
 
-void Set_MoveWithRemote(void);
+void set_move_with_remote(void);
 
-uint8_t Check_Bat_SetMotors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush);
+uint8_t check_bat_set_motors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush);
 
-void Reset_Rcon_Status(void);
+void reset_rcon_status(void);
 
-void Set_Dir_Left(void);
+void set_dir_left(void);
 
-void Set_Dir_Right(void);
+void set_dir_right(void);
 
-void Set_LED(uint16_t G, uint16_t R);
+void set_led(uint16_t G, uint16_t R);
 
-void Stop_Brifly(void);
+void stop_brifly(void);
 
-void Set_MainBrush_PWM(uint16_t PWM);
+void set_main_brush_pwm(uint16_t PWM);
 
-void Set_SideBrush_PWM(uint16_t L, uint16_t R);
+void set_side_brush_pwm(uint16_t L, uint16_t R);
 
-void Set_LeftBrush_PWM(uint16_t L);
+void set_left_brush_pwm(uint16_t L);
 
-void Set_RightBrush_PWM(uint16_t R);
+void set_right_brush_pwm(uint16_t R);
 
-uint8_t Get_LeftBrush_Stall(void);
+uint8_t get_left_brush_stall(void);
 
-uint8_t Get_RightBrush_Stall(void);
+uint8_t get_right_brush_stall(void);
 
-uint8_t Remote_Key(uint8_t Key);
+uint8_t remote_key(uint8_t Key);
 
-uint8_t Is_MoveWithRemote(void);
+uint8_t is_move_with_remote(void);
 
-uint8_t Get_Touch_Status(void);
+uint8_t get_touch_status(void);
 
-void Reset_Touch(void);
+void reset_touch(void);
 
-void Set_Touch(void);
+void set_touch(void);
 
-void Reset_Stop_Event_Status(void);
+void reset_stop_event_status(void);
 
-uint8_t Stop_Event(void);
+uint8_t stop_event(void);
 
-uint8_t Is_Station(void);
+uint8_t is_station(void);
 
 bool is_charge_on(void);
 
-uint8_t Is_Water_Tank(void);
+uint8_t is_water_tank(void);
 
-void Set_Clean_Mode(uint8_t mode);
+void set_clean_mode(uint8_t mode);
 
-void Beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
+void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
 
-void Initialize_Motor(void);
+void initialize_motor(void);
 
-void Disable_Motors(void);
+void disable_motors(void);
 
 void set_start_charge(void);
 
 void set_stop_charge(void);
 
-void Set_CleanTool_Power(uint8_t vaccum_val,uint8_t left_brush_val,uint8_t right_brush_val,uint8_t main_brush_val);
+void set_clean_tool_power(uint8_t vaccum_val, uint8_t left_brush_val, uint8_t right_brush_val, uint8_t main_brush_val);
 
-void Start_SelfCheck_Vacuum(void);
+void start_self_check_vacuum(void);
 
 void End_SelfCheck_Vacuumm(void);
 
-void Reset_SelfCheck_Vacuum_Controler(void);
+void reset_self_check_vacuum_controler(void);
 
 void control_set(uint8_t type, uint8_t val);
 
@@ -563,143 +561,143 @@ void control_stop_all(void);
 
 int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number);
 
-void Random_Back(void);
+void random_back(void);
 
-void Move_Back(void);
+void move_back(void);
 
-void Cliff_Move_Back(void);
+void cliff_move_back(void);
 
-void Set_LeftWheel_Speed(uint8_t speed);
+void set_left_wheel_speed(uint8_t speed);
 
-void Set_RightWheel_Speed(uint8_t speed);
+void set_right_wheel_speed(uint8_t speed);
 
-int16_t Get_LeftWheel_Speed(void);
+int16_t get_left_wheel_speed(void);
 
-int16_t Get_RightWheel_Speed(void);
+int16_t get_right_wheel_speed(void);
 
-uint8_t  Check_Bat_Stop();
+uint8_t  check_bat_stop();
 
-void Set_Key_Press(uint8_t key);
+void set_key_press(uint8_t key);
 
-void Reset_Key_Press(uint8_t key);
+void reset_key_press(uint8_t key);
 
-uint8_t Get_Key_Press(void);
+uint8_t get_key_press(void);
 
-uint16_t GetBatteryVoltage();
+uint16_t get_battery_voltage();
 
-uint16_t Get_Key_Time(uint16_t key);
+uint16_t get_key_time(uint16_t key);
 	
-uint8_t IsSendBusy(void);
+uint8_t is_send_busy(void);
 
-void SetSendFlag(void);
+void set_send_flag(void);
 
-void ResetSendFlag(void);
+void reset_send_flag(void);
 
-uint8_t Is_VirtualWall(void);
+uint8_t is_virtual_wall_(void);
 
-uint8_t Is_Bumper_Jamed(void);
+uint8_t is_bumper_jamed(void);
 
-void Reset_Bumper_Error(void);
+void reset_bumper_error(void);
 
-uint8_t Is_Bumper_Fail(void);
+uint8_t is_bumper_fail(void);
 
-uint8_t Is_Turn_Remote(void);
+uint8_t is_turn_remote(void);
 
-uint8_t Is_Front_Close(void);
+uint8_t is_front_close(void);
 
-void Set_LeftWheel_Step(uint32_t step);
+void set_left_wheel_step(uint32_t step);
 
-void Set_RightWheel_Step(uint32_t step);
+void set_right_wheel_step(uint32_t step);
 
-void Set_Direction_Flag(uint8_t flag);
+void set_direction_flag(uint8_t flag);
 
-uint8_t Is_Direction_Right();
+uint8_t is_direction_right();
 
-uint8_t Is_Direction_Left();
+uint8_t is_direction_left();
 
-uint8_t Get_Direction_Flag();
+uint8_t get_direction_flag();
 
-uint8_t Is_RightWheel_Reach(int32_t step);
+uint8_t is_right_wheel_reach(int32_t step);
 
-uint8_t Is_LeftWheel_Reach(int32_t step);
+uint8_t is_left_wheel_reach(int32_t step);
 
-void Wall_Move_Back(void);
+void wall_move_back(void);
 
-void Reset_Move_Distance(void);
+void reset_move_distance(void);
 
-uint8_t Is_Move_Finished(int32_t distance);
+uint8_t is_move_finished(int32_t distance);
 
-uint32_t Get_Move_Distance(void);
+uint32_t get_move_distance(void);
 
-void OBS_Turn_Left(uint16_t speed,uint16_t angle);
+void obs_turn_left(uint16_t speed, uint16_t angle);
 
-void OBS_Turn_Right(uint16_t speed,uint16_t angle);
+void obs_turn_right(uint16_t speed, uint16_t angle);
 
-uint8_t Get_Random_Factor();
+uint8_t get_random_factor();
 
-uint8_t Is_NearStation(void);
+uint8_t is_near_station(void);
 
-void Set_Mobility_Step(uint32_t Steps);
+void set_mobility_step(uint32_t Steps);
 
-void Reset_Mobility_Step();
+void reset_mobility_step();
 
-void Clear_Reset_Mobility_Step();
+void clear_reset_mobility_step();
 
-uint32_t  Get_Mobility_Step();
+uint32_t  get_mobility_step();
 
-void Adjust_OBST_Value();
+void adjust_obs_value();
 
-void Check_Mobility(void);
+void check_mobility(void);
 
-void Add_Average(uint32_t data);
+void add_average(uint32_t data);
 
-uint32_t Get_Average_Move(void);
+uint32_t get_average_move(void);
 
-uint32_t Reset_Average_Counter(void);
+uint32_t reset_average_counter(void);
 
-uint8_t Cliff_Escape(void);
+uint8_t cliff_escape(void);
 
-uint8_t Cliff_Event(uint8_t temp_status);
+uint8_t cliff_event(uint8_t temp_status);
 
-void Reset_VirtualWall();
+void reset_virtual_wall();
 
-void Cliff_Turn_Left(uint16_t speed,uint16_t angle);
+void cliff_turn_left(uint16_t speed, uint16_t angle);
 
-void Cliff_Turn_Right(uint16_t speed,uint16_t angle);
+void cliff_turn_right(uint16_t speed, uint16_t angle);
 
-uint8_t Is_WorkFinish(uint8_t m);
+uint8_t is_work_finish(uint8_t m);
 
-void Set_Room_Mode(uint8_t m);
+void set_room_mode(uint8_t m);
 
-uint8_t Get_Room_Mode(void);
+uint8_t get_room_mode(void);
 
-uint32_t Get_WallAccelerate();
+uint32_t get_wall_accelerate();
 
-void Reset_WallAccelerate();
+void reset_wall_accelerate();
 
-uint8_t VirtualWall_TurnRight();
+uint8_t virtual_wall_turn_right();
 
-uint8_t VirtualWall_TurnLeft();
+uint8_t virtual_wall_turn_left();
 
 void laser_pm_gpio(char val);
 
-int32_t ABS_Minus(int32_t A,int32_t B);
+int32_t abs_minus(int32_t A, int32_t B);
 #endif
 
-void Set_Plan_Status(uint8_t Status);
-uint8_t Get_Plan_Status(void);
+void set_plan_status(uint8_t Status);
+uint8_t get_plan_status(void);
 
-uint8_t Get_Main_PwrByte();
-void Set_Main_PwrByte(uint8_t val);
+uint8_t get_main_pwr_byte();
+void set_main_pwr_byte(uint8_t val);
 
-void SetSleepModeFlag();
-uint8_t GetSleepModeFlag();
-void ResetSleepModeFlag();
+void set_sleep_mode_flag();
+uint8_t get_sleep_mode_flag();
+void reset_sleep_mode_flag();
 
-uint8_t Get_SelfCheck_Vacuum_Status(void);
+uint8_t get_self_check_vacuum_status(void);
 
 //#if MANUAL_PAUSE_CLEANING
-void Clear_Manual_Pause(void);
+void clear_manual_pause(void);
 //#endif
 
 void beep_for_command(bool valid);

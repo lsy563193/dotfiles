@@ -218,7 +218,7 @@ void Set_Gyro_Off()
 			angle_v = robot::instance()->getAngleV();
 			ROS_DEBUG("Current angle_v_ = %f, angle_v_ = %f, sum = %d.", robot::instance()->getAngleV(), angle_v, sum);
 			if (sum > 10) {
-				Set_Error_Code(Error_Code_Gyro);
+				set_error_code(Error_Code_Gyro);
 				ROS_WARN("%s,%d, gyro off failed!",__FUNCTION__,__LINE__);
 				return;
 			}

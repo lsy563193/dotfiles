@@ -29,7 +29,7 @@ uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
-uint8_t sendStream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
+uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
 
 #elif __ROBOT_X900
 uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -38,7 +38,7 @@ uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
-uint8_t sendStream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
+uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 #endif
 
 
@@ -63,7 +63,7 @@ pp::x900sensor	sensor;
 bool robotbase_beep_update_flag = false;
 // Speaker totally sound time count, every count means once of send streem loop, if this count < 0, it will be a constant beep action
 int robotbase_speaker_sound_loop_count = 0;
-// Sound code to be set in sendStream
+// Sound code to be set in g_send_stream
 uint8_t robotbase_sound_code = 0;
 // A speaker sound loop contains one sound time and one silence time
 // Speaker sound time count in one speaker sound loop, every count means once of send streem loop
@@ -95,11 +95,11 @@ int robotbase_init(void)
 		ROS_INFO("[robotbase] serial not ready\n");
 		return -1;
 	}
-	Set_Main_PwrByte(POWER_ACTIVE);
-	sendStream[SEND_LEN-3] = calcBufCrc8((char *)sendStream, SEND_LEN-3);
+	set_main_pwr_byte(POWER_ACTIVE);
+	g_send_stream[SEND_LEN-3] = calcBufCrc8((char *)g_send_stream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 //	do {
-//		serial_write(SEND_LEN,sendStream);
+//		serial_write(SEND_LEN,g_send_stream);
 //		usleep(20000);
 //	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
 	//ROS_INFO("OK!");
@@ -133,13 +133,13 @@ void robotbase_deinit(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		ROS_INFO("\tshutdown robotbase power");
-		Set_LED(0,0);
+		set_led(0, 0);
 		control_set(CTL_BUZZER, 0x00);
 		Set_Gyro_Off();
 		usleep(40000);
-		Disable_Motors();
+		disable_motors();
 		usleep(40000);
-		Set_Main_PwrByte(POWER_DOWN);
+		set_main_pwr_byte(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
 		usleep(40000);
@@ -158,14 +158,14 @@ void robotbase_reset_send_stream(void)
 {
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
-			sendStream[i] = 0x0;
+			g_send_stream[i] = 0x0;
 		else
-			sendStream[i] = 0x64;
+			g_send_stream[i] = 0x64;
 	}
-	sendStream[0] = 0xaa;
-	sendStream[1] = 0x55;
-	sendStream[SEND_LEN - 2] = 0xcc;
-	sendStream[SEND_LEN - 1] = 0x33;
+	g_send_stream[0] = 0xaa;
+	g_send_stream[1] = 0x55;
+	g_send_stream[SEND_LEN - 2] = 0xcc;
+	g_send_stream[SEND_LEN - 1] = 0x33;
 }
 
 void *serial_receive_routine(void *)
@@ -380,7 +380,7 @@ void *robotbase_routine(void*)
 
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 		// Dynamic adjust obs
-		OBS_Dynamic_Base(OBS_adjust_count);
+		obs_dynamic_base(OBS_adjust_count);
 	}
 	ROS_INFO("robotbase thread exit");
 	//pthread_exit(NULL);
@@ -392,14 +392,14 @@ void *serial_send_routine(void*){
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
-	ResetSendFlag();
+	reset_send_flag();
 	while(send_stream_thread){
 		r.sleep();
-		if(GetSleepModeFlag()){
+		if(get_sleep_mode_flag()){
 			continue;
 		}
 		/*-------------------speaker variable counter -----------------------*/
-		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
+		// Force reset the beep action when beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
 		if (robotbase_beep_update_flag){
 			temp_speaker_sound_time_count = -1;
 			temp_speaker_silence_time_count = 0;
@@ -413,8 +413,8 @@ void *serial_send_routine(void*){
 		}
 		/*-------------------counter end-------------------------------------*/
 
-		if(!IsSendBusy()){
-			memcpy(buf,sendStream,sizeof(uint8_t)*SEND_LEN);
+		if(!is_send_busy()){
+			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 			serial_write(SEND_LEN, buf);
 		}
@@ -428,13 +428,13 @@ void *serial_send_routine(void*){
 
 void process_beep(){
 	// This routine handles the speaker sounding logic
-	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in sendStream.
+	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in g_send_stream.
 	if (temp_speaker_silence_time_count == 0){
 		temp_speaker_silence_time_count--;
 		temp_speaker_sound_time_count = robotbase_speaker_sound_time_count;
 		control_set(CTL_BUZZER, robotbase_sound_code & 0xFF);
 	}
-	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in sendStream.
+	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
 	if (temp_speaker_sound_time_count == 0){
 		temp_speaker_sound_time_count--;
 		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
@@ -471,7 +471,7 @@ void robotbase_restore_slam_correction()
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
 }
 
-void robotbase_OBS_adjust_count(int count)
+void robotbase_obs_adjust_count(int count)
 {
 	boost::mutex::scoped_lock(odom_mutex);
 	OBS_adjust_count = count;

@@ -39,9 +39,9 @@ bool selfCheckAtLaunch()
 		return true;
 
 	//Bumper protect
-	if (Get_Bumper_Status())
+	if (get_bumper_status())
 	{
-		Set_LED(0, 100);
+		set_led(0, 100);
 		wav_play(WAV_ERROR_BUMPER);
 		if (!Is_Gyro_On())
 		{
@@ -49,17 +49,17 @@ bool selfCheckAtLaunch()
 			while (!Wait_For_Gyro_On())
 				wav_play(WAV_SYSTEM_INITIALIZING);
 		}
-		if (Is_Bumper_Jamed())
+		if (is_bumper_jamed())
 			return false;
 		else
 		{
-			Stop_Brifly();
+			stop_brifly();
 			wav_play(WAV_CLEAR_ERROR);
 			usleep(500000);
 		}
 	}
-	Set_Error_Code(Error_Code_None);
-	Set_LED(100, 0);
+	set_error_code(Error_Code_None);
+	set_led(100, 0);
 	return true;
 }
 
@@ -76,26 +76,26 @@ void *core_move_thread(void *)
 	if (selfCheckAtLaunch())
 	{
 		if (is_direct_charge() || is_on_charger_stub())
-			Set_Clean_Mode(Clean_Mode_Charging);
-		else if (Check_Bat_Ready_To_Clean())
+			set_clean_mode(Clean_Mode_Charging);
+		else if (check_bat_ready_to_clean())
 			wav_play(WAV_PLEASE_START_CLEANING);
 	}
 
 	while(ros::ok()){
 		usleep(20000);
-		switch(Get_Clean_Mode()){
+		switch(get_clean_mode()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------User_Interface mode------\n");
-				Set_Main_PwrByte(Clean_Mode_Userinterface);
+				set_main_pwr_byte(Clean_Mode_Userinterface);
 //				wav_play(WAV_TEST_MODE);
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
-				Set_Main_PwrByte(Clean_Mode_WallFollow);
+				set_main_pwr_byte(Clean_Mode_WallFollow);
 				robot::instance()->resetLowBatPause();
 
-				Clear_Manual_Pause();
+				clear_manual_pause();
 
 				wall_follow(Map_Wall_Follow_Escape_Trapped);
 //				cm_touring();
@@ -103,27 +103,27 @@ void *core_move_thread(void *)
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");
 
-				Clear_Manual_Pause();
+				clear_manual_pause();
 
 				Random_Running_Mode();
 				break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode------\n");
-				Set_Main_PwrByte(Clean_Mode_Navigation);
+				set_main_pwr_byte(Clean_Mode_Navigation);
 				cm_touring();
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
-				Set_Main_PwrByte(Clean_Mode_Charging);
+				set_main_pwr_byte(Clean_Mode_Charging);
 				Charge_Function();
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
-				Set_Main_PwrByte(Clean_Mode_GoHome);
+				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
 
-				Clear_Manual_Pause();
+				clear_manual_pause();
 
 				if (!Is_Gyro_On())
 				{
@@ -137,7 +137,7 @@ void *core_move_thread(void *)
 
 					if (!Wait_For_Gyro_On())
 					{
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						set_clean_mode(Clean_Mode_Userinterface);
 						break;
 					}
 				}
@@ -146,7 +146,7 @@ void *core_move_thread(void *)
 					wav_play(WAV_BACK_TO_CHARGER);
 				}
 
-				while (Get_Clean_Mode()==Clean_Mode_GoHome)
+				while (get_clean_mode()==Clean_Mode_GoHome)
 				{
 					// If GoHome() set clean mode as Clean_Mode_GoHome, it means it still needs to go to charger stub.
 #if Random_Find_Charger_Stub
@@ -161,10 +161,10 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
-				Set_Main_PwrByte(Clean_Mode_Remote);
+				set_main_pwr_byte(Clean_Mode_Remote);
 				robot::instance()->resetLowBatPause();
 
-				Clear_Manual_Pause();
+				clear_manual_pause();
 
 				if (!Is_Gyro_On())
 				{
@@ -177,7 +177,7 @@ void *core_move_thread(void *)
 					wav_play(WAV_SYSTEM_INITIALIZING);
 					if (!Wait_For_Gyro_On())
 					{
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						set_clean_mode(Clean_Mode_Userinterface);
 						break;
 					}
 				}
@@ -186,33 +186,33 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
-				Set_Main_PwrByte(Clean_Mode_Spot);
+				set_main_pwr_byte(Clean_Mode_Spot);
 				robot::instance()->resetLowBatPause();
 
-				Clear_Manual_Pause();
+				clear_manual_pause();
 
 				//Spot_Mode(NormalSpot);
-				Spot_WithCell(NormalSpot,1.0);
-				Disable_Motors();
+				spot_with_cell(NORMAL_SPOT,1.0);
+				disable_motors();
 				usleep(200000);
-//				Beep(1,25,25,2);
-//				Beep(2,25,25,2);
+//				beep(1,25,25,2);
+//				beep(2,25,25,2);
 				break;
 			case Clean_Mode_Mobility:
 
 				break;
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
-				//Set_Main_PwrByte(Clean_Mode_Sleep);
+				//set_main_pwr_byte(Clean_Mode_Sleep);
 				robot::instance()->resetLowBatPause();
 
-				Clear_Manual_Pause();
+				clear_manual_pause();
 
-				Disable_Motors();
+				disable_motors();
 				sleep_mode();
 				break;
 			default:
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				break;
 
 		}
@@ -289,7 +289,7 @@ int main(int argc, char **argv)
 		ros::spin();
 	} else {
 		printf("turn on led\n");
-		Set_LED(100, 100);
+		set_led(100, 100);
 		sleep(10);
 	}
 

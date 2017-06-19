@@ -77,7 +77,7 @@ uint8_t CM_MoveForward(void);
 
 uint8_t cm_touring(void);
 
-void cm_update_position(bool is_turn = false);
+Cell_t cm_update_position(bool is_turn = false);
 void cm_update_map();
 void cm_update_map_bumper();
 void cm_update_map_cliff();

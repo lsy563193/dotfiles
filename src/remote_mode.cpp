@@ -34,222 +34,222 @@ void Remote_Mode(void)
 
   //Display_Clean_Status(Display_Remote);
 
-	Set_LED(100,0);
-	Reset_Wheel_Step();
-	Reset_Stop_Event_Status();
-	Work_Motor_Configure();
-//    Set_VacMode(Vac_Normal);
+	set_led(100, 0);
+	reset_wheel_step();
+	reset_stop_event_status();
+	work_motor_configure();
+//    set_vacmode(Vac_Normal);
 	while(ros::ok())
 	{
 		usleep(20000);
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
-		robotbase_OBS_adjust_count(20);
+		robotbase_obs_adjust_count(20);
 #endif
 
-		if(Remote_Key(Remote_Forward))
+		if(remote_key(Remote_Forward))
 		{
 			Forward_Flag=1-Forward_Flag;
-			Reset_Rcon_Remote();
+			reset_rcon_remote();
 			No_Command_Counter=0;
 		}
 
 		if(Forward_Flag)
 		{
 		
-			if(Get_OBS_Status())
+			if(get_obs_status())
 			{
 				Dec_Counter++;
 				if(Moving_Speed>10)Moving_Speed--;
-				Move_Forward(Moving_Speed,Moving_Speed);
+				move_forward(Moving_Speed, Moving_Speed);
 				OBS_Stop++;
 				if(OBS_Stop>8)Forward_Flag=0;
 			}
 			else
 			{
-				Moving_Speed=(Get_RightWheel_Step()/80)+25;
+				Moving_Speed=(get_right_wheel_step()/80)+25;
 				if(Moving_Speed<25)Moving_Speed=25;
 				if(Moving_Speed>42)Moving_Speed=42;
-				Move_Forward(Moving_Speed,Moving_Speed);
-				//Work_Motor_Configure();
+				move_forward(Moving_Speed, Moving_Speed);
+				//work_motor_configure();
 				OBS_Stop=0;
 			}
 			No_Command_Counter=0;
 		}
 		else
 		{
-			Stop_Brifly();
-			//Work_Motor_Configure();
+			stop_brifly();
+			//work_motor_configure();
 		}
 
 
 
-		if(Remote_Key(Remote_Left))
+		if(remote_key(Remote_Left))
 		{
 
-			Reset_Rcon_Remote();
-			Turn_Left(Turn_Speed,320);
-			//Set_SideBrush_PWM(30,30);
-			//Set_MainBrush_PWM(30);
+			reset_rcon_remote();
+			turn_left(Turn_Speed, 320);
+			//set_side_brush_pwm(30,30);
+			//set_main_brush_pwm(30);
 			No_Command_Counter=0;
-			Reset_Wheel_Step();
+			reset_wheel_step();
 			Forward_Flag=0;
 		}
-		if(Remote_Key(Remote_Right))
+		if(remote_key(Remote_Right))
 		{
 	
-			//Work_Motor_Configure();
-			Reset_Rcon_Remote();
+			//work_motor_configure();
+			reset_rcon_remote();
 			Turn_Right(Turn_Speed,320);
-			//Set_SideBrush_PWM(30,30);
-			//Set_MainBrush_PWM(30);
-			//Set_BLDC_Speed(30);
+			//set_side_brush_pwm(30,30);
+			//set_main_brush_pwm(30);
+			//set_bldc_speed(30);
 			No_Command_Counter=0;
-			Reset_Wheel_Step();
+			reset_wheel_step();
 			Forward_Flag=0;
 		}
-		if(Remote_Key(Remote_Max))
+		if(remote_key(Remote_Max))
 		{
 
-			Switch_VacMode(true);
-			Reset_Rcon_Remote();
+			switch_vac_mode(true);
+			reset_rcon_remote();
 			//Turn_Right(Turn_Speed,1800);
-			//Set_SideBrush_PWM(30,30);
-			//Set_MainBrush_PWM(30);
+			//set_side_brush_pwm(30,30);
+			//set_main_brush_pwm(30);
 			No_Command_Counter=0;
 			//Forward_Flag=0;
-			Reset_Rcon_Remote();
-			Reset_Wheel_Step();
+			reset_rcon_remote();
+			reset_wheel_step();
 		}
 
 		No_Command_Counter++;
 		if(No_Command_Counter>200)
 		{
 			No_Command_Counter=0;
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
 
-		if(Remote_Key(Remote_Spot))
+		if(remote_key(Remote_Spot))
 		{
-			Disable_Motors();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			Reset_Rcon_Remote();
+			disable_motors();
+			set_clean_mode(Clean_Mode_Userinterface);
+			reset_rcon_remote();
 			return;
 		}
 
-		if(Remote_Key(Remote_Clean))
+		if(remote_key(Remote_Clean))
 		{
-			Disable_Motors();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			Reset_Rcon_Remote();
+			disable_motors();
+			set_clean_mode(Clean_Mode_Userinterface);
+			reset_rcon_remote();
 			return;
 		}
 
-		if(Remote_Key(Remote_Wall_Follow))
+		if(remote_key(Remote_Wall_Follow))
 		{
-			Disable_Motors();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			Reset_Rcon_Remote();
+			disable_motors();
+			set_clean_mode(Clean_Mode_Userinterface);
+			reset_rcon_remote();
 			return;
 		}
 		/*
-		if(Remote_Key(Remote_Random))
+		if(remote_key(Remote_Random))
 		{
-			Disable_Motors();
-			Set_Clean_Mode(Clean_Mode_RandomMode);
-//			Initialize_Motor();
-//			Set_MoveWithRemote();
-			Reset_Rcon_Remote();
+			disable_motors();
+			set_clean_mode(Clean_Mode_RandomMode);
+//			initialize_motor();
+//			set_move_with_remote();
+			reset_rcon_remote();
 			return;
 		}
 		*/
-		if(Remote_Key(Remote_Home))
+		if(remote_key(Remote_Home))
 		{
-			Disable_Motors();
-			Set_Clean_Mode(Clean_Mode_GoHome);
-			SetHomeRemote();
-			Reset_Rcon_Remote();
+			disable_motors();
+			set_clean_mode(Clean_Mode_GoHome);
+			set_home_remote();
+			reset_rcon_remote();
 			return;
 		}
 
 	  /*------------------------------------------------------stop event-----------------------*/
-		if(Stop_Event())
+		if(stop_event())
 		{
 			// Key release detection, if user has not release the key, don't do anything.
-			while (Get_Key_Press() & KEY_CLEAN)
+			while (get_key_press() & KEY_CLEAN)
 			{
 				ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 				usleep(20000);
 			}
 			// Key relaesed, then the touch status and stop event status should be cleared.
-			if (Stop_Event() == 3) {
-				Disable_Motors();
+			if (stop_event() == 3) {
+				disable_motors();
 				wav_play(WAV_ERROR_LIFT_UP);
 			}
-			Reset_Stop_Event_Status();
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			reset_stop_event_status();
+			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
 
 		/*------------------------------------------------------Check Battery-----------------------*/
-		if(Check_Bat_Stop())
+		if(check_bat_stop())
 		{
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
 		/*-------------------------------------------Bumper  and cliff Event-----------------------*/
-		if(Get_Cliff_Trig())
+		if(get_cliff_trig())
 		{
-			Move_Back();
-			if(Get_Cliff_Trig()){
-				Move_Back();
+			move_back();
+			if(get_cliff_trig()){
+				move_back();
 			}
-			Stop_Brifly();
-			Disable_Motors();
+			stop_brifly();
+			disable_motors();
 			wav_play(WAV_ERROR_LIFT_UP);
-			Set_Clean_Mode(Clean_Mode_Userinterface);
+			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
-		if(Get_Bumper_Status())
+		if(get_bumper_status())
 		{
-			Random_Back();
-			Is_Bumper_Jamed();
+			random_back();
+			is_bumper_jamed();
 			break;
 		}
-		if(Get_Cliff_Trig() == (Status_Cliff_All)){
+		if(get_cliff_trig() == (Status_Cliff_All)){
 			quick_back(20,20);
-			Stop_Brifly();
-			if(Get_Cliff_Trig() == (Status_Cliff_All)){
+			stop_brifly();
+			if(get_cliff_trig() == (Status_Cliff_All)){
 				quick_back(20,20);
-				Stop_Brifly();
+				stop_brifly();
 			}
-			if(Get_Cliff_Trig() == Status_Cliff_All){
+			if(get_cliff_trig() == Status_Cliff_All){
 				quick_back(20,20);
-				Stop_Brifly();
-				Disable_Motors();
+				stop_brifly();
+				disable_motors();
 				ROS_INFO("Cliff trigger three times stop robot ");
 				wav_play(WAV_ERROR_LIFT_UP);
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				break;
 			}
 		}
 		/*------------------------------------------------check motor over current event ---------*/
 		uint8_t octype =0;
-		octype = Check_Motor_Current();
+		octype = check_motor_current();
 		if(octype){
-			if(Self_Check(octype)){
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+			if(self_check(octype)){
+				set_clean_mode(Clean_Mode_Userinterface);
 				break;
 			}
 		}
 		/* check plan set */
-		if(Get_Plan_Status() == 1)
+		if(get_plan_status() == 1)
 		{
-			Set_Plan_Status(0);
+			set_plan_status(0);
 			beep_for_command(false);
 		}
 	}
-	Disable_Motors();
+	disable_motors();
 }
