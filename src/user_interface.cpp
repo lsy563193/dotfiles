@@ -27,17 +27,16 @@ uint16_t charger_signal_delay = 20;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 10;
 uint8_t Error_Alarm_Counter = 2;
+bool Battery_Ready_to_clean = true;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
-	static volatile uint8_t Press_time=0;
 	time_t start_time;
 
 #ifdef ONE_KEY_DISPLAY
 	uint16_t LedBreathCount=100;
 	uint8_t breath =1;
 #endif
-	bool Battery_Ready_to_clean = true;
 	bool eh_status_now=false, eh_status_last=false;
 
 	// Count for error alarm.
@@ -45,10 +44,7 @@ void User_Interface(void)
 	charger_signal_delay = 0;
 	battery_low_delay = 0;
 	start_time = time(NULL);
-	Press_time=0;
 	Temp_Mode=0;
-
-	user_interface_register_events();
 
 	disable_motors();
 	reset_rcon_remote();
@@ -65,6 +61,8 @@ void User_Interface(void)
 		Battery_Ready_to_clean = false;
 		wav_play(WAV_BATTERY_LOW);
 	}
+
+	user_interface_register_events();
 
 	while(ros::ok())
 	{
@@ -154,31 +152,10 @@ void User_Interface(void)
 			disable_motors();
 		}
 
-		if(Temp_Mode)
+		if(Temp_Mode != 0)
 		{
-			if((Temp_Mode==Clean_Mode_Sleep)||(Temp_Mode==Clean_Mode_Charging))
-			{
-				set_clean_mode(Temp_Mode);
-				break;
-			}
-			if((Temp_Mode==Clean_Mode_GoHome)||(Temp_Mode==Clean_Mode_WallFollow)||(Temp_Mode==Clean_Mode_Spot)||(Temp_Mode==Clean_Mode_RandomMode)||(Temp_Mode==Clean_Mode_Navigation)||(Temp_Mode==Clean_Mode_Remote))
-			{
-				ROS_INFO("[user_interface.cpp] get_battery_voltage = %dmV.", get_battery_voltage());
-				if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
-				{
-					ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-					wav_play(WAV_BATTERY_LOW);
-					Temp_Mode=0;
-					charger_signal_delay = 0;
-				}
-				else
-				{
-					set_clean_mode(Temp_Mode);
-					reset_rcon_remote();
-					break;
-				}
-			}
-			Temp_Mode=0;
+			set_clean_mode(Temp_Mode);
+			break;
 		}
 	}
 
@@ -330,7 +307,6 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 		return;
 	}
 
-	beep_for_command(true);
 	switch (get_rcon_remote())
 	{
 		case Remote_Forward:
@@ -362,6 +338,19 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			break;
 		}
 	}
+
+	if((Temp_Mode != Clean_Mode_GoHome && Temp_Mode != Clean_Mode_Remote) && !Battery_Ready_to_clean)
+	{
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		beep_for_command(false);
+		wav_play(WAV_BATTERY_LOW);
+		reset_rcon_remote();
+		reset_stop_event_status();
+		Temp_Mode = 0;
+		return;
+	}
+
+	beep_for_command(true);
 	reset_rcon_remote();
 }
 
@@ -470,6 +459,14 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		wav_play(WAV_ERROR_LIFT_UP);
+		reset_stop_event_status();
+		return;
+	}
+
+	if(!Battery_Ready_to_clean)
+	{
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		wav_play(WAV_BATTERY_LOW);
 		reset_stop_event_status();
 		return;
 	}
