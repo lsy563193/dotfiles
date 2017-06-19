@@ -25,6 +25,8 @@
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
 uint8_t forward_flag = 0;
+// turn_flag: 0 for not turning, -1 for turning left, 1 for turning right.
+int8_t turn_flag = 0;
 
 void Remote_Mode(void)
 {
@@ -33,6 +35,7 @@ void Remote_Mode(void)
 	uint32_t OBS_Stop=0;
 	bool eh_status_now=false, eh_status_last=false;
 	forward_flag = 0;
+	turn_flag = 0;
   //Display_Clean_Status(Display_Remote);
 
 	set_led(100, 0);
@@ -83,28 +86,19 @@ void Remote_Mode(void)
 
 
 
-		if(remote_key(Remote_Left))
+		if(turn_flag == -1)
 		{
+			turn_left(Turn_Speed, 300);
+			forward_flag=0;
+			turn_flag = 0;
+		}
+		if(turn_flag == 1)
+		{
+			Turn_Right(Turn_Speed,300);
+			forward_flag=0;
+			turn_flag = 0;
+		}
 
-			reset_rcon_remote();
-			turn_left(Turn_Speed, 320);
-			//set_side_brush_pwm(30,30);
-			//set_main_brush_pwm(30);
-			reset_wheel_step();
-			forward_flag=0;
-		}
-		if(remote_key(Remote_Right))
-		{
-	
-			//work_motor_configure();
-			reset_rcon_remote();
-			Turn_Right(Turn_Speed,320);
-			//set_side_brush_pwm(30,30);
-			//set_main_brush_pwm(30);
-			//set_bldc_speed(30);
-			reset_wheel_step();
-			forward_flag=0;
-		}
 		if(remote_key(Remote_Max))
 		{
 
@@ -259,8 +253,8 @@ void remote_mode_register_events(void)
 	//event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_direction_forward, EVT_REMOTE_DIRECTION_FORWARD, true);
-	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);
-	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_register_and_enable_x(remote_direction_left, EVT_REMOTE_DIRECTION_LEFT, true);
+	event_manager_register_and_enable_x(remote_direction_right, EVT_REMOTE_DIRECTION_RIGHT, true);
 	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
 	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
 	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
@@ -287,8 +281,8 @@ void remote_mode_unregister_events(void)
 	//event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
-	//event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
-	//event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
 	//event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	//event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	//event_manager_register_and_disable_x(EVT_REMOTE_HOME);
@@ -310,8 +304,28 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 
 void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 {
+	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
+	if (turn_flag == 1)
+	{
+		beep_for_command(false);
+		reset_rcon_remote();
+		return;
+	}
+	beep_for_command(true);
+	turn_flag = -1;
+	reset_rcon_remote();
 }
 
 void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 {
+	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
+	if (turn_flag == -1)
+	{
+		beep_for_command(false);
+		reset_rcon_remote();
+		return;
+	}
+	beep_for_command(true);
+	turn_flag = 1;
+	reset_rcon_remote();
 }
