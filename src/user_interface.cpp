@@ -23,9 +23,9 @@
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;
-uint16_t charger_signal_delay = 20;
+uint16_t charger_signal_delay = 0;
 time_t battery_low_start_time;
-uint16_t battery_low_delay = 10;
+uint16_t battery_low_delay = 0;
 uint8_t error_alarm_counter = 2;
 bool battery_ready_to_clean = true;
 /*------------------------------------------------------------User Interface ----------------------------------*/
@@ -45,6 +45,7 @@ void User_Interface(void)
 	battery_low_delay = 0;
 	start_time = time(NULL);
 	temp_mode=0;
+	battery_ready_to_clean = true;
 
 	disable_motors();
 	reset_rcon_remote();
@@ -130,28 +131,6 @@ void User_Interface(void)
 				alarm_error();
 			}
 
-		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
-		if (robot::instance()->isManualPaused())
-		{
-			if (get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
-			{
-				ROS_WARN("%s %d: Robot lifted up during manual pause, reset manual pause status.", __FUNCTION__, __LINE__);
-				wav_play(WAV_ERROR_LIFT_UP);
-				clear_manual_pause();
-			}
-		}
-
-		/*--------------------------------------------------------Check if on the charger stub--------------*/
-		if(is_on_charger_stub() || is_direct_charge())//on base but miss charging , adjust position to charge
-		{
-			ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
-			if (is_direct_charge())
-				temp_mode = Clean_Mode_Charging;
-			else if(turn_connect())
-				temp_mode = Clean_Mode_Charging;
-			disable_motors();
-		}
-
 		if(temp_mode != 0)
 		{
 			set_clean_mode(temp_mode);
@@ -171,6 +150,8 @@ void user_interface_register_events(void)
 	event_manager_register_handler(y, &user_interface_handle_ ##name); \
 	event_manager_enable_handler(y, enabled);
 
+	/* Cliff */
+	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
 	/* Rcon */
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
@@ -186,6 +167,8 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	/* Key */
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
+	/* Charge Status */
+	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 }
 
 void user_interface_unregister_events(void)
@@ -195,6 +178,8 @@ void user_interface_unregister_events(void)
 	event_manager_register_handler(x, NULL); \
 	event_manager_enable_handler(x, false);
 
+	/* Cliff */
+	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
 	/* Rcon */
 	event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
@@ -210,6 +195,21 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Key */
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
+	/* Charge Status */
+	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+}
+
+void user_interface_handle_cliff_all(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: Cliff all triggered.", __FUNCTION__, __LINE__);
+
+	/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
+	if (robot::instance()->isManualPaused())
+	{
+		ROS_WARN("%s %d: Robot lifted up during manual pause, reset manual pause status.", __FUNCTION__, __LINE__);
+		wav_play(WAV_ERROR_LIFT_UP);
+		clear_manual_pause();
+	}
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)
@@ -473,4 +473,10 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 
 	temp_mode = Clean_Mode_Navigation;
 	reset_stop_event_status();
+}
+
+void user_interface_handle_charge_detect(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
+	temp_mode = Clean_Mode_Charging;
 }

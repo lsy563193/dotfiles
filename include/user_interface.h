@@ -51,6 +51,8 @@ void user_interface_unregister_events(void);
 #define define_user_interface_handle_func(name) \
 	void user_interface_handle_ ## name(bool state_now, bool state_last);
 
+/* Cliff */
+define_user_interface_handle_func(cliff_all)
 /* Rcon */
 define_user_interface_handle_func(rcon)
 /* Battery */
@@ -60,6 +62,8 @@ define_user_interface_handle_func(remote_cleaning)
 define_user_interface_handle_func(remote_plan)
 /* Key */
 define_user_interface_handle_func(key_clean)
+/* Charge Status */
+define_user_interface_handle_func(charge_detect)
 
 #endif /* __DISPLAY_H */
 
