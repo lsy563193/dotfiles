@@ -267,7 +267,7 @@ void *event_manager_thread(void *data)
 		}
 		if (remote_key(Remote_Max)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_SUCTION)
+			evt_set_status_x(EVT_REMOTE_MAX)
 		}
 		if (remote_key(Remote_Wall_Follow)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
@@ -418,7 +418,7 @@ void *event_handler_thread(void *data) {
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_LEFT, remote_direction_left)
 		evt_handle_check_event(EVT_REMOTE_DIRECTION_RIGHT, remote_direction_right)
 		evt_handle_check_event(EVT_REMOTE_SPOT, remote_spot)
-		evt_handle_check_event(EVT_REMOTE_SUCTION, remote_suction)
+		evt_handle_check_event(EVT_REMOTE_MAX, remote_max)
 		evt_handle_check_event(EVT_REMOTE_WALL_FOLLOW, remote_wall_follow)
 
 		/* Battery */
@@ -743,7 +743,7 @@ void em_default_handle_remote_spot(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void em_default_handle_remote_suction(bool state_now, bool state_last)
+void em_default_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(false);
