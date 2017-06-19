@@ -1055,7 +1055,7 @@ void WFT_regist_events()
 
 	/* Remote */
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_suction, EVT_REMOTE_SUCTION, true);
+	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
 
 	/* Battery */
 	event_manager_register_handler(EVT_BATTERY_LOW, &WFT_handle_battery_low);
@@ -1101,7 +1101,7 @@ void WFT_unregist_events()
 
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_SUCTION);
+	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
 
 
 	/* Battery */
@@ -1577,7 +1577,7 @@ void WFT_handle_remote_clean(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void WFT_handle_remote_suction(bool state_now, bool state_last)
+void WFT_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 

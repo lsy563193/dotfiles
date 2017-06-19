@@ -102,7 +102,7 @@ define_wft_handle_func(key_clean)
 
 /* Remote */
 define_wft_handle_func(remote_clean)
-define_wft_handle_func(remote_suction)
+define_wft_handle_func(remote_max)
 
 /* Battery */
 define_wft_handle_func(battery_low)
