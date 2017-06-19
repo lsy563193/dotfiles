@@ -104,23 +104,6 @@ void sleep_mode(void)
 			}
 		}
 
-		if(remote_key(Remote_Clean))
-		{
-			set_clean_mode(Clean_Mode_Userinterface);
-			set_main_pwr_byte(POWER_ACTIVE);
-			reset_sleep_mode_flag();
-			reset_rcon_remote();
-			beep(4, 4, 0, 1);
-			usleep(100000);
-			beep(3, 4, 0, 1);
-			usleep(100000);
-			beep(2, 4, 0, 1);
-			usleep(100000);
-			beep(1, 4, 4, 1);
-			break;
-		}
-		reset_rcon_remote();
-
 		if (get_clean_mode() != Clean_Mode_Sleep)
 			break;
 	}
@@ -144,6 +127,7 @@ void sleep_mode(void)
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
 	usleep(1500000);
 	reset_rcon_status();
+	reset_rcon_remote();
 }
 
 void sleep_register_events(void)
@@ -157,8 +141,8 @@ void sleep_register_events(void)
 
 	/* Rcon */
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
-	///* Remote */
-	//event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
+	/* Remote */
+	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	///* Key */
 	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Charge Status */
@@ -174,8 +158,8 @@ void sleep_unregister_events(void)
 
 	/* Rcon */
 	event_manager_register_and_disable_x(EVT_RCON);
-	///* Remote */
-	//event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
+	/* Remote */
+	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	///* Key */
 	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Charge Status */
@@ -191,6 +175,14 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 		set_main_pwr_byte(Clean_Mode_GoHome);
 		reset_sleep_mode_flag();
 	}
+}
+
+void sleep_handle_remote_clean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
+	set_clean_mode(Clean_Mode_Userinterface);
+	set_main_pwr_byte(Clean_Mode_Userinterface);
+	reset_sleep_mode_flag();
 }
 
 void sleep_handle_charge_detect(bool state_now, bool state_last)
