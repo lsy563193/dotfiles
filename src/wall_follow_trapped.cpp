@@ -1623,8 +1623,7 @@ void WFM_move_back(uint16_t dist)
 	pos_x = robot::instance()->getOdomPositionX();
 	pos_y = robot::instance()->getOdomPositionY();
 	while (ros::ok()) {
-		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
-																																													 robot::instance()->getOdomPositionY(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y - robot::instance()->getOdomPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -1641,14 +1640,6 @@ void WFM_move_back(uint16_t dist)
 			if(is_encoder_fail()) {
 				set_error_code(Error_Code_Encoder);
 			}
-			return;
-		}
-		if (stop_event()) {
-			return;
-		}
-		uint8_t octype = check_motor_current();
-		if ((octype == Check_Left_Wheel) || ( octype == Check_Right_Wheel)) {
-			ROS_INFO("%s,%d,motor over current",__FUNCTION__,__LINE__);
 			return;
 		}
 	}

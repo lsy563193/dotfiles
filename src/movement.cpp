@@ -177,7 +177,7 @@ uint32_t get_right_wheel_step(void)
 		rwsp = (double) g_right_wheel_speed * -1;
 	else
 		rwsp = (double) g_right_wheel_speed;
-	t = (double) (ros::Time::now() - g_rw_t).toSec();
+	t = (ros::Time::now() - g_rw_t).toSec();
 	step = rwsp * t / 0.12;//origin 0.181
 	g_right_wheel_step = (uint32_t) step;
 	return g_right_wheel_step;

@@ -272,7 +272,6 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				reset_wheel_step();
 			}
 			/*------------------------------------------------------Short Distance Move-----------------------*/
-			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 			if (get_right_wheel_step() < (uint32_t) STRAIGHT_DISTANCE)
 			{
 				adjustSpeed(l_speed, r_speed);
@@ -280,6 +279,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			}
 			else
 			{
+				/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 				if (get_front_obs() < get_front_obs_value())
 				{
 					regulator.adjustSpeed(l_speed, r_speed, wall_distance);
@@ -290,7 +290,6 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					if (get_right_wheel_step() < 2000)
 						jam++;
 					wf_turn_right(Turn_Speed - 5, 920);
-					stop_brifly();
 					move_forward(15, 15);
 					reset_wheel_step();
 					wall_distance = Wall_High_Limit;
@@ -305,7 +304,6 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			break;
 	}
 
-	stop_brifly();
 	move_forward(0, 0);
 	return ret;
 }
