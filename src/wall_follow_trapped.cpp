@@ -1608,6 +1608,7 @@ void WFT_handle_battery_low(bool state_now, bool state_last)
 		g_battery_low = true;
 	}
 }
+
 void WFM_move_back(uint16_t dist)
 {
 	float pos_x, pos_y, distance;
