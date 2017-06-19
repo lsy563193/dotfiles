@@ -44,7 +44,7 @@ define_remote_mode_handle_func(remote_direction_right)
 //define_remote_mode_handle_func(remote_clean)
 //define_remote_mode_handle_func(remote_home)
 //define_remote_mode_handle_func(remote_spot)
-//define_remote_mode_handle_func(remote_max)
+define_remote_mode_handle_func(remote_max)
 ///* Battery */
 //define_remote_mode_handle_func(battery_low)
 ///* Charge Status */
