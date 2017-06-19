@@ -249,6 +249,24 @@
 #define RightBumperTrig				2
 #define AllBumperTrig				3
 
+#define LeftCliffTrig							1
+#define RightCliffTrig						2
+#define RightLeftCliffTrig				3
+#define FrontCliffTrig						4
+#define LeftFrontCliffTrig				5
+#define RightFrontCliffTrig				6
+/*
+typedef enum{
+	TRIG_NULL 				=0,
+	TRIG_LEFT 				=1,
+	TRIG_RIGHT 				=2,
+	TRIG_LEFT_RIGHT		=3,
+	TRIG_FRONT				=4,
+	TRIG_LEFT_FRONT		=5,
+	TRIG_RIGHT_FRONT	=6,
+};
+*/
+
 #define Turn_Speed				33
 
 #define Power_On					0x01
