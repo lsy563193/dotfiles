@@ -51,9 +51,13 @@ void user_interface_unregister_events(void);
 #define define_user_interface_handle_func(name) \
 	void user_interface_handle_ ## name(bool state_now, bool state_last);
 
-/* Bumper */
+/* Rcon */
 define_user_interface_handle_func(rcon)
 /* Battery */
 define_user_interface_handle_func(battery_low)
+/* Remote */
+define_user_interface_handle_func(remote_cleaning)
+define_user_interface_handle_func(remote_plan)
+
 #endif /* __DISPLAY_H */
 

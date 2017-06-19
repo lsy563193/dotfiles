@@ -1496,14 +1496,14 @@ void cm_register_events()
 	/* Remote */
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
-	event_manager_register_and_enable_x(remote_mode_spot, EVT_REMOTE_MODE_SPOT, true);
+	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_suction, EVT_REMOTE_SUCTION, true);
 	// Just enable the default handler.
-	event_manager_enable_handler(EVT_REMOTE_APPOINMENT, true);
+	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_enable_handler(EVT_REMOTE_MODE_WALL_FOLLOW, true);
+	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
 
 	/* Battery */
 	event_manager_register_and_enable_x(battery_home, EVT_BATTERY_HOME, true);
@@ -1565,10 +1565,10 @@ void cm_unregister_events()
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 
 	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_APPOINMENT);
+	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	event_manager_register_and_disable_x(EVT_REMOTE_MODE_SPOT);
+	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	event_manager_register_and_disable_x(EVT_REMOTE_SUCTION);
 
 	/* Battery */
@@ -2080,7 +2080,7 @@ void cm_block_charger_stub(int8_t direction)
 			break;
 		}
 		default:
-			ROS_ERROR("%s %d: Receive wrong direction: %d.", direction);
+			ROS_ERROR("%s %d: Receive wrong direction: %d.", __FUNCTION__, __LINE__, direction);
 	}
 	cm_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
 	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
@@ -2442,7 +2442,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_mode_spot(bool state_now, bool state_last)
+void cm_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 

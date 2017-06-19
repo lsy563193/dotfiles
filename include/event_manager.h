@@ -29,7 +29,6 @@
 	}
 
 #include "stdint.h"
-#include <boost/thread.hpp>
 
 /* Events variables */
 /* The fatal quit event includes any of the following case:
@@ -41,7 +40,6 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
-extern boost::mutex g_event_status_mutex;
 extern bool g_fatal_quit_event;
 /* Bumper */
 extern bool g_bumper_hitted;
@@ -120,7 +118,7 @@ typedef enum {
 	EVT_KEY_CLEAN,
 	EVT_KEY_RANDOM,
 
-	EVT_REMOTE_APPOINMENT,
+	EVT_REMOTE_PLAN,
 
 	EVT_REMOTE_CLEAN,
 	EVT_REMOTE_HOME,
@@ -130,10 +128,9 @@ typedef enum {
 	EVT_REMOTE_DIRECTION_LEFT,
 	EVT_REMOTE_DIRECTION_RIGHT,
 
-	EVT_REMOTE_MODE_NAVIGATION,
-	EVT_REMOTE_MODE_WALL_FOLLOW,
-	EVT_REMOTE_MODE_RANDOM,
-	EVT_REMOTE_MODE_SPOT,
+	EVT_REMOTE_WALL_FOLLOW,
+	EVT_REMOTE_RANDOM,
+	EVT_REMOTE_SPOT,
 
 	EVT_REMOTE_SUCTION,
 
@@ -192,7 +189,7 @@ uint8_t event_manager_check_event(bool *eh_status_now, bool *eh_status_last);
 /* Below are the internal functions. */
 
 #define define_em_handler_func(name) \
-	void em_default_handler_ ## name(bool state_now, bool state_last);
+	void em_default_handle_ ## name(bool state_now, bool state_last);
 
 /* Bumper */
 define_em_handler_func(bumper_all)
@@ -244,7 +241,7 @@ define_em_handler_func(remote_home)
 define_em_handler_func(remote_direction_forward)
 define_em_handler_func(remote_direction_left)
 define_em_handler_func(remote_direction_right)
-define_em_handler_func(remote_mode_spot)
+define_em_handler_func(remote_spot)
 define_em_handler_func(remote_suction)
 define_em_handler_func(remote_wall_follow)
 
