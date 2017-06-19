@@ -20,6 +20,7 @@
 #include <ros/ros.h>
 #include "wav.h"
 #include "robotbase.h"
+#include "event_manager.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
@@ -31,6 +32,7 @@ void Remote_Mode(void)
 	uint8_t Forward_Flag=0;
 	uint8_t Dec_Counter=0;
 	uint32_t OBS_Stop=0;
+	bool eh_status_now=false, eh_status_last=false;
 
   //Display_Clean_Status(Display_Remote);
 
@@ -43,6 +45,9 @@ void Remote_Mode(void)
 	{
 		usleep(20000);
 
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 		/* Dyanmic adjust obs trigger val . */
 		robotbase_obs_adjust_count(20);
@@ -252,4 +257,62 @@ void Remote_Mode(void)
 		}
 	}
 	disable_motors();
+}
+
+void remote_mode_register_events(void)
+{
+	ROS_WARN("%s %d: Register events", __FUNCTION__, __LINE__);
+	event_manager_set_current_mode(EVT_MODE_REMOTE);
+
+#define event_manager_register_and_enable_x(name, y, enabled) \
+	event_manager_register_handler(y, &remote_mode_handle_ ##name); \
+	event_manager_enable_handler(y, enabled);
+
+	///* Cliff */
+	//event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
+	///* Rcon */
+	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+	///* Battery */
+	//event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+	///* Remote */
+	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_FORWARD, true);
+	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);
+	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_RIGHT, true);
+	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
+	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
+	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
+	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
+	//event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
+	///* Key */
+	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
+	///* Charge Status */
+	//event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
+}
+
+void remote_mode_unregister_events(void)
+{
+	ROS_WARN("%s %d: Unregister events", __FUNCTION__, __LINE__);
+#define event_manager_register_and_disable_x(x) \
+	event_manager_register_handler(x, NULL); \
+	event_manager_enable_handler(x, false);
+
+	///* Cliff */
+	//event_manager_register_and_disable_x(EVT_CLIFF_ALL);
+	///* Rcon */
+	//event_manager_register_and_disable_x(EVT_RCON);
+	///* Battery */
+	//event_manager_register_and_disable_x(EVT_BATTERY_LOW);
+	///* Remote */
+	//event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
+	//event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
+	//event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
+	//event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
+	//event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
+	//event_manager_register_and_disable_x(EVT_REMOTE_HOME);
+	//event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
+	//event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
+	///* Key */
+	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
+	///* Charge Status */
+	//event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }

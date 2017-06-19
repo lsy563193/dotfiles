@@ -96,7 +96,6 @@ void spot_with_cell(SpotType st,float spot_diameter)
 			disable_motors();
 			return;
 		}
-		cm_register_events();
 		std::list<Point32_t>::const_iterator tp;
 		uint8_t spiral_type;
 		if((clock()/CLOCKS_PER_SEC) %2 == 0){
