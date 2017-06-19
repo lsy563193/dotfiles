@@ -19,6 +19,7 @@
 #include "remote_mode.h"
 #include <ros/ros.h>
 #include "wav.h"
+#include "robot.hpp"
 #include "robotbase.h"
 #include "event_manager.h"
 
@@ -189,8 +190,8 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_HOME, true);
 	//event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
-	///* Charge Status */
-	//event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
+	/* Charge Status */
+	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 }
 
 void remote_mode_unregister_events(void)
@@ -218,8 +219,8 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	//event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	///* Charge Status */
-	//event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+	/* Charge Status */
+	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }
 
 void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)
@@ -289,4 +290,14 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 	}
 	set_clean_mode(Clean_Mode_Userinterface);
 	reset_touch();
+}
+
+void remote_mode_handle_charge_detect(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
+	if (robot::instance()->getChargeStatus() == 3)
+	{
+		set_clean_mode(Clean_Mode_Charging);
+		disable_motors();
+	}
 }

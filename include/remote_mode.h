@@ -45,7 +45,7 @@ define_remote_mode_handle_func(remote_exit)
 define_remote_mode_handle_func(remote_max)
 ///* Battery */
 //define_remote_mode_handle_func(battery_low)
-///* Charge Status */
-//define_remote_mode_handle_func(charge_detect)
+/* Charge Status */
+define_remote_mode_handle_func(charge_detect)
 
 #endif /*----Behaviors------*/
