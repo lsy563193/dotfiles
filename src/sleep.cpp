@@ -130,17 +130,6 @@ void sleep_mode(void)
 			}
 		}
 
-		/*-----------------Check if near the charging base-----------------------------*/
-		if(is_station() && (!get_error_code()))
-		{
-			ROS_INFO("%s,%d,Rcon_status = %x",__FUNCTION__,__LINE__, get_rcon_status());
-			reset_rcon_status();
-			set_clean_mode(Clean_Mode_GoHome);
-			set_home_remote();
-			set_main_pwr_byte(POWER_ACTIVE);
-			reset_sleep_mode_flag();
-			break;
-		}
 		if(is_charge_on())
 		{
 			set_clean_mode(Clean_Mode_Charging);
@@ -157,8 +146,18 @@ void sleep_mode(void)
 	}
 
 	sleep_unregister_events();
+
+	beep(4, 4, 0, 1);
+	usleep(100000);
+	beep(3, 4, 0, 1);
+	usleep(100000);
+	beep(2, 4, 0, 1);
+	usleep(100000);
+	beep(1, 4, 4, 1);
+
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
 	usleep(1500000);
+	reset_rcon_status();
 }
 
 void sleep_register_events(void)
@@ -170,8 +169,8 @@ void sleep_register_events(void)
 	event_manager_register_handler(y, &sleep_handle_ ##name); \
 	event_manager_enable_handler(y, enabled);
 
-	///* Rcon */
-	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+	/* Rcon */
+	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	///* Remote */
 	//event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	///* Key */
@@ -187,12 +186,23 @@ void sleep_unregister_events(void)
 	event_manager_register_handler(x, NULL); \
 	event_manager_enable_handler(x, false);
 
-	///* Rcon */
-	//event_manager_register_and_disable_x(EVT_RCON);
+	/* Rcon */
+	event_manager_register_and_disable_x(EVT_RCON);
 	///* Remote */
 	//event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	///* Key */
 	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	///* Charge Status */
 	//event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+}
+
+void sleep_handle_rcon(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
+	if (get_error_code() == Error_Code_None)
+	{
+		set_clean_mode(Clean_Mode_GoHome);
+		set_main_pwr_byte(Clean_Mode_GoHome);
+		reset_sleep_mode_flag();
+	}
 }

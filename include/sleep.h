@@ -10,8 +10,8 @@ void sleep_unregister_events(void);
 #define define_sleep_handle_func(name) \
 	void sleep_handle_ ## name(bool state_now, bool state_last);
 
-///* Rcon */
-//define_sleep_handle_func(rcon)
+/* Rcon */
+define_sleep_handle_func(rcon)
 ///* Remote */
 //define_sleep_handle_func(remote_clean)
 ///* Key */
