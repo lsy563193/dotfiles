@@ -41,9 +41,7 @@ void remote_mode_unregister_events(void);
 define_remote_mode_handle_func(remote_direction_forward)
 define_remote_mode_handle_func(remote_direction_left)
 define_remote_mode_handle_func(remote_direction_right)
-//define_remote_mode_handle_func(remote_clean)
-//define_remote_mode_handle_func(remote_home)
-//define_remote_mode_handle_func(remote_spot)
+define_remote_mode_handle_func(remote_cleaning)
 define_remote_mode_handle_func(remote_max)
 ///* Battery */
 //define_remote_mode_handle_func(battery_low)

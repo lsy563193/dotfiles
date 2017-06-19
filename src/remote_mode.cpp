@@ -58,6 +58,9 @@ void Remote_Mode(void)
 		robotbase_obs_adjust_count(20);
 #endif
 
+		if (get_clean_mode() != Clean_Mode_Remote)
+			break;
+
 		if(forward_flag)
 		{
 			if(get_obs_status())
@@ -84,8 +87,6 @@ void Remote_Mode(void)
 			//work_motor_configure();
 		}
 
-
-
 		if(turn_flag == -1)
 		{
 			turn_left(Turn_Speed, 300);
@@ -99,40 +100,6 @@ void Remote_Mode(void)
 			turn_flag = 0;
 		}
 
-		if(remote_key(Remote_Spot))
-		{
-			disable_motors();
-			set_clean_mode(Clean_Mode_Userinterface);
-			reset_rcon_remote();
-			break;
-		}
-
-		if(remote_key(Remote_Clean))
-		{
-			disable_motors();
-			set_clean_mode(Clean_Mode_Userinterface);
-			reset_rcon_remote();
-			break;
-		}
-
-		if(remote_key(Remote_Wall_Follow))
-		{
-			disable_motors();
-			set_clean_mode(Clean_Mode_Userinterface);
-			reset_rcon_remote();
-			break;
-		}
-		/*
-		if(remote_key(Remote_Random))
-		{
-			disable_motors();
-			set_clean_mode(Clean_Mode_RandomMode);
-//			initialize_motor();
-//			set_move_with_remote();
-			reset_rcon_remote();
-			return;
-		}
-		*/
 		if(remote_key(Remote_Home))
 		{
 			disable_motors();
@@ -243,10 +210,10 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(remote_direction_left, EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_register_and_enable_x(remote_direction_right, EVT_REMOTE_DIRECTION_RIGHT, true);
 	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
-	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
-	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
+	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
 	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
-	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
 	//event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	///* Key */
 	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
@@ -272,10 +239,10 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
 	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
 	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
-	//event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	//event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
+	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
+	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
+	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 	//event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	//event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 	//event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	///* Key */
 	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
@@ -324,5 +291,14 @@ void remote_mode_handle_remote_max(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
 	switch_vac_mode(true);
+	reset_rcon_remote();
+}
+
+void remote_mode_handle_remote_cleaning(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
+	beep_for_command(true);
+	disable_motors();
+	set_clean_mode(Clean_Mode_Userinterface);
 	reset_rcon_remote();
 }
