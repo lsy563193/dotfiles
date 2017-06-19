@@ -76,17 +76,6 @@ bool wf_check_isolate(void)
 	map_set_position(pos_x, pos_y);
 	//Map_set_cell(MAP, pos_x, pos_y, CLEANED);
 
-	current_x = map_get_x_cell();
-	current_y = map_get_y_cell();
-
-	//ROS_INFO("%s %d: escape thread is up!\n", __FUNCTION__, __LINE__);
-	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	map_set_position(pos_x, pos_y);
-	//Map_set_cell(MAP, pos_x, pos_y, CLEANED);
-
-
-	path_set_current_pos();
 	//ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!\n", __FUNCTION__, __LINE__, current_x, current_y, Map_get_x_cell(), Map_get_y_cell());
 	val = WF_path_escape_trapped();
 	if (val == 0)
@@ -96,8 +85,6 @@ bool wf_check_isolate(void)
 	{
 		return 1;//isolated
 	}
-	current_x = map_get_x_cell();
-	current_y = map_get_y_cell();
 }
 
 
@@ -138,15 +125,15 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 	if (!motion.initSucceeded())
 	{
-		Set_Clean_Mode(Clean_Mode_Userinterface);
-		Reset_Stop_Event_Status();
+		set_clean_mode(Clean_Mode_Userinterface);
+		reset_stop_event_status();
 		return 0;
 	}
 
 	ROS_INFO("%s %d: Start wall follow now.", __FUNCTION__, __LINE__);
 	g_wall_follow_timer = time(NULL);
 	g_bumper_interval_timer = time(NULL);
-	Move_Forward(25, 25);
+	move_forward(25, 25);
 
 	while (ros::ok())
 	{
@@ -159,7 +146,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			Start_WF_Pose_X = robot::instance()->getPositionX();
 			Start_WF_Pose_Y = robot::instance()->getPositionY();
 
-			if (Is_OBS_Near())
+			if (is_obs_near())
 			{
 				l_speed = 15;
 			} else
@@ -179,20 +166,19 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				l_speed = 15;
 			}
 
-			Move_Forward(l_speed, l_speed);
+			move_forward(l_speed, l_speed);
 
 #ifdef WALL_DYNAMIC
-			Wall_Dynamic_Base(30);
+			wall_dynamic_base(30);
 #endif
 #ifdef OBS_DYNAMIC
-			robotbase_OBS_adjust_count(300);
+			robotbase_obs_adjust_count(300);
 #endif
 
 			//WFM_boundary_check();
 
-			wf_update_position();
-			Temp_Rcon_Status = Get_Rcon_Status();
-			Reset_Rcon_Status();
+			Temp_Rcon_Status = get_rcon_status();
+			reset_rcon_status();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
 			{
@@ -200,69 +186,69 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				break;
 			}
 
-			if (Get_Bumper_Status() || (Get_FrontOBS() > Get_FrontOBST_Value()) || Get_Cliff_Trig())
+			if (get_bumper_status() || (get_front_obs() > get_front_obs_value()) || get_cliff_trig())
 			{
 				ROS_WARN("%s %d: Check: Get_Bumper_Status! Break!", __FUNCTION__, __LINE__);
 				break;
 			}
 
 			/*------------------------------------------------------Stop event-----------------------*/
-			if (Stop_Event())
+			if (stop_event())
 			{
 				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
-				Reset_Stop_Event_Status();
+				reset_stop_event_status();
 				wf_break_wall_follow();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				return 0;
 			}
-			if (Get_Rcon_Remote() > 0)
+			if (get_rcon_remote() > 0)
 			{
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max))
+				if (get_rcon_remote() & (Remote_Clean | Remote_Home | Remote_Max))
 				{
-					if (Remote_Key(Remote_Home))
+					if (remote_key(Remote_Home))
 					{
-						Reset_Rcon_Remote();
-						Set_MoveWithRemote();
+						reset_rcon_remote();
+						set_move_with_remote();
 						wf_end_wall_follow();
 						return 0;
 					}
-					if (Remote_Key(Remote_Clean))
+					if (remote_key(Remote_Clean))
 					{
-						Reset_Rcon_Remote();
-						Set_MoveWithRemote();
+						reset_rcon_remote();
+						set_move_with_remote();
 						wf_break_wall_follow();
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						set_clean_mode(Clean_Mode_Userinterface);
 						return 0;
 					}
-					if (Remote_Key(Remote_Max))
+					if (remote_key(Remote_Max))
 					{
-						Reset_Rcon_Remote();
-						Switch_VacMode(true);
+						reset_rcon_remote();
+						switch_vac_mode(true);
 					}
 				} else
 				{
-					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
-					Reset_Rcon_Remote();
+					beep(5, 2, 0, 1);//Beep for useless remote command
+					reset_rcon_remote();
 				}
 			}
 
 			/* check plan setting*/
-			if (Get_Plan_Status() == 1)
+			if (get_plan_status() == 1)
 			{
-				Set_Plan_Status(0);
-				Beep(Beep_Error_Sounds, 2, 0, 1);
+				set_plan_status(0);
+				beep(5, 2, 0, 1);
 			}
 
 			/*------------------------------------------------------Check Current--------------------------------*/
-			octype = Check_Motor_Current();
+			octype = check_motor_current();
 			if (octype)
 			{
 				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
-				if (Self_Check(octype))
+				if (self_check(octype))
 				{
 					wf_break_wall_follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					set_clean_mode(Clean_Mode_Userinterface);
 					return 0;
 				}
 			}
@@ -325,14 +311,13 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			//ROS_INFO("time now : %d", int(time(NULL)));
 #endif
 			/*------------------------------------WF_Map_Update---------------------------------------------------*/
-			//wf_update_position();
 			wf_check_loop_closed(Gyro_GetAngle());
 			if (g_reach_count >= REACH_COUNT_LIMIT)
 			{
 				if (wf_check_angle())
 				{//wf_check_angle succeed,it proves that the robot is not in the narrow space
 					g_reach_count = 0;
-					Stop_Brifly();
+					stop_brifly();
 					if (wf_check_isolate())
 					{
 						ROS_WARN("Isolated");
@@ -356,7 +341,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			{
 				ROS_WARN("Maybe the robot is trapped! Checking!");
 				g_same_cell_count = 0;
-				Stop_Brifly();
+				stop_brifly();
 				if (wf_check_isolate())
 				{
 					ROS_WARN("Not trapped!");
@@ -364,7 +349,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				{
 					ROS_WARN("Trapped!");
 					wf_break_wall_follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					set_clean_mode(Clean_Mode_Userinterface);
 					return 0;
 				}
 			}
@@ -373,128 +358,128 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			//debug_sm_map(SPMAP, 0, 0);
 
 #ifdef OBS_DYNAMIC
-			robotbase_OBS_adjust_count(100);
+			robotbase_obs_adjust_count(100);
 #endif
 
 			//ROS_INFO("%s %d: wall_following", __FUNCTION__, __LINE__);
 			//WFM_boundary_check();
 			/*------------------------------------------------------Check Current--------------------------------*/
-			octype = Check_Motor_Current();
+			octype = check_motor_current();
 			if (octype)
 			{
 				ROS_WARN("%s %d: motor over current ", __FUNCTION__, __LINE__);
-				if (Self_Check(octype))
+				if (self_check(octype))
 				{
 					wf_break_wall_follow();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					set_clean_mode(Clean_Mode_Userinterface);
 					return 0;
 				}
 			}
 
 			/*------------------------------------------------------Stop event-----------------------*/
-			if (Stop_Event())
+			if (stop_event())
 			{
 				ROS_WARN("%s %d: Touch", __FUNCTION__, __LINE__);
-				Reset_Stop_Event_Status();
+				reset_stop_event_status();
 				wf_break_wall_follow();
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				return 0;
 			}
-			if (Get_Rcon_Remote() > 0)
+			if (get_rcon_remote() > 0)
 			{
 				ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-				if (Get_Rcon_Remote() & (Remote_Clean | Remote_Home | Remote_Max))
+				if (get_rcon_remote() & (Remote_Clean | Remote_Home | Remote_Max))
 				{
-					if (Remote_Key(Remote_Home))
+					if (remote_key(Remote_Home))
 					{
-						Reset_Rcon_Remote();
-						Set_MoveWithRemote();
+						reset_rcon_remote();
+						set_move_with_remote();
 						wf_end_wall_follow();
 						return 0;
 					}
-					if (Remote_Key(Remote_Clean))
+					if (remote_key(Remote_Clean))
 					{
-						Reset_Rcon_Remote();
-						Set_MoveWithRemote();
+						reset_rcon_remote();
+						set_move_with_remote();
 						wf_break_wall_follow();
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						set_clean_mode(Clean_Mode_Userinterface);
 						return 0;
 					}
-					if (Remote_Key(Remote_Max))
+					if (remote_key(Remote_Max))
 					{
-						Reset_Rcon_Remote();
-						Switch_VacMode(true);
+						reset_rcon_remote();
+						switch_vac_mode(true);
 					}
 				} else
 				{
-					Beep(Beep_Error_Sounds, 2, 0, 1);//Beep for useless remote command
-					Reset_Rcon_Remote();
+					beep(5, 2, 0, 1);//Beep for useless remote command
+					reset_rcon_remote();
 				}
 			}
 			/*------------------------------------------------------Check Battery-----------------------*/
-			if (Check_Bat_Home() == 1)
+			if (check_bat_home() == 1)
 			{
 				ROS_WARN("%s %d: low battery, battery < 13.2v is detected, go home.", __FUNCTION__, __LINE__);
-				Stop_Brifly();
-				Set_LED(100, 100);//it indicate that the robot is in low battery state
+				stop_brifly();
+				set_led(100, 100);//it indicate that the robot is in low battery state
 				wav_play(WAV_BATTERY_LOW);
 				wf_end_wall_follow();
 				return 0;
 			}
-			if (Check_Bat_SetMotors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power))
+			if (check_bat_set_motors(Home_Vac_Power, Home_SideBrush_Power, Home_MainBrush_Power))
 			{
 				ROS_WARN("%s %d: low battery, battery < 1200 is detected.", __FUNCTION__, __LINE__);
-				Stop_Brifly();
-				Set_LED(100, 100);//it indicate that the robot is in low battery state
+				stop_brifly();
+				set_led(100, 100);//it indicate that the robot is in low battery state
 				wav_play(WAV_BATTERY_LOW);
-				Set_Clean_Mode(Clean_Mode_Userinterface);
+				set_clean_mode(Clean_Mode_Userinterface);
 				return 0;
 
 			}
 			/* check plan setting*/
-			if (Get_Plan_Status())
+			if (get_plan_status())
 			{
-				Set_Plan_Status(false);
+				set_plan_status(false);
 				//	wav_play(WAV_APPOINTMENT_DONE);
-				Beep(Beep_Error_Sounds, 2, 0, 1);
+				beep(5, 2, 0, 1);
 			}
 			/*------------------------------------------------------Cliff Event-----------------------*/
-			if (Get_Cliff_Trig())
+			if (get_cliff_trig())
 			{
-				Set_Wheel_Speed(0, 0);
-				Set_Dir_Backward();
+				set_wheel_speed(0, 0);
+				set_dir_backward();
 				usleep(15000);
-				Cliff_Move_Back();
-				if (Get_Cliff_Trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
+				cliff_move_back();
+				if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right))
 				{
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					set_clean_mode(Clean_Mode_Userinterface);
 					wf_break_wall_follow();
 					ROS_INFO("Get_Cliff_Trig");
 					return 0;
 				}
-				if (Get_Cliff_Trig())
+				if (get_cliff_trig())
 				{
-					if (Cliff_Escape())
+					if (cliff_escape())
 					{
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						set_clean_mode(Clean_Mode_Userinterface);
 						wf_break_wall_follow();
 						ROS_INFO("Cliff_Escape");
 						return 0;
 					}
 				}
 
-				WF_Turn_Right(Turn_Speed - 10, 750);
-				Stop_Brifly();
-				Move_Forward(15, 15);
-				Reset_WallAccelerate();
+				wf_turn_right(Turn_Speed - 10, 750);
+				stop_brifly();
+				move_forward(15, 15);
+				reset_wall_accelerate();
 				//Reset_Wheel_Step();
 				wall_straight_distance = 375;
 			}
 
 
 			/*------------------------------------------------------Home Station Event------------------------*/
-			Temp_Rcon_Status = Get_Rcon_Status();
-			Reset_Rcon_Status();
+			Temp_Rcon_Status = get_rcon_status();
+			reset_rcon_status();
 			//Temp_Rcon_Status = robot::instance()->getRcon();
 			//ROS_INFO("Temp_Rcon_Status = %d", Temp_Rcon_Status);
 			if (Temp_Rcon_Status & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT | RconL_HomeT | RconR_HomeT))
@@ -503,7 +488,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			}
 			if (Temp_Rcon_Status)
 			{
-				Reset_Rcon_Status();
+				reset_rcon_status();
 				if (Temp_Rcon_Status & RconFrontAll_Home_TLR)
 				{
 					/*
@@ -517,44 +502,44 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				}
 				if (Temp_Rcon_Status & RconFrontAll_Home_T)
 				{
-					if (Is_MoveWithRemote())
+					if (is_move_with_remote())
 					{
-						Set_Clean_Mode(Clean_Mode_GoHome);
+						set_clean_mode(Clean_Mode_GoHome);
 						//ResetHomeRemote();
 						//USPRINTF_ZZ("%s %d: Check: Virtual 2! break\n", __FUNCTION__, __LINE__);
 						ROS_INFO("Check: Virtual 2! break");
 						break;
 					}
-					Stop_Brifly();
+					stop_brifly();
 					if (Temp_Rcon_Status & RconFR_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 850);
+						wf_turn_right(Turn_Speed, 850);
 					} else if (Temp_Rcon_Status & RconFL_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 850);
+						wf_turn_right(Turn_Speed, 850);
 					} else if (Temp_Rcon_Status & RconL_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 300);
+						wf_turn_right(Turn_Speed, 300);
 					} else if (Temp_Rcon_Status & RconFL2_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 600);
+						wf_turn_right(Turn_Speed, 600);
 					} else if (Temp_Rcon_Status & RconFR2_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 950);
+						wf_turn_right(Turn_Speed, 950);
 					} else if (Temp_Rcon_Status & RconR_HomeT)
 					{
-						WF_Turn_Right(Turn_Speed, 1100);
+						wf_turn_right(Turn_Speed, 1100);
 					}
-					Stop_Brifly();
-					Move_Forward(10, 10);
-					Reset_Rcon_Status();
+					stop_brifly();
+					move_forward(10, 10);
+					reset_rcon_status();
 					wall_straight_distance = 80;
-					Reset_WallAccelerate();
+					reset_wall_accelerate();
 				}
 			}
 
 			/*---------------------------------------------------Bumper Event-----------------------*/
-			if (Get_Bumper_Status() & RightBumperTrig)
+			if (get_bumper_status() & RightBumperTrig)
 			{
 				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 				//Base_Speed = BASE_SPEED;
@@ -562,7 +547,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				//Wall_BH_Counter++;
 
 				//STOP_BRIFLY;
-				Stop_Brifly();
+				stop_brifly();
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
 
@@ -576,10 +561,10 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					g_bumper_interval_timer = time(NULL);
 				}
 
-				if (Is_Bumper_Jamed())
+				if (is_bumper_jamed())
 				{
-					Reset_Stop_Event_Status();
-					Set_Clean_Mode(Clean_Mode_Userinterface);
+					reset_stop_event_status();
+					set_clean_mode(Clean_Mode_Userinterface);
 					//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
 					wf_break_wall_follow();
 					ROS_INFO("%s %d: Check: Bumper 2! break", __FUNCTION__, __LINE__);
@@ -593,36 +578,35 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 				if (Wall_Distance > Wall_High_Limit)Wall_Distance = Wall_High_Limit;
 
 				//STOP_BRIFLY;
-				Stop_Brifly();
-				WF_Turn_Right(Turn_Speed - 5, 920);
+				stop_brifly();
+				wf_turn_right(Turn_Speed - 5, 920);
 
 				//bumperCount++;
 
 				//STOP_BRIFLY;
-				Stop_Brifly();
+				stop_brifly();
 
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
 
-				Move_Forward(10, 10);
-				Reset_WallAccelerate();
+				move_forward(10, 10);
+				reset_wall_accelerate();
 				wall_straight_distance = 200;
 
-				Reset_Wheel_Step();
+				reset_wheel_step();
 			}
 
-			if (Get_Bumper_Status() & LeftBumperTrig)
+			if (get_bumper_status() & LeftBumperTrig)
 			{
 				ROS_WARN("%s %d: left bumper triggered", __FUNCTION__, __LINE__);
 				//Base_Speed = BASE_SPEED;
 				//L_B_Counter++;
-				Set_Wheel_Speed(0, 0);
-				Reset_TempPWM();
+				set_wheel_speed(0, 0);
 				//delay(10);
 				usleep(1000);
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
-				if (Get_Bumper_Status() & RightBumperTrig)
+				if (get_bumper_status() & RightBumperTrig)
 				{
 					ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 					//USPRINTF_ZZ("%s %d:Double bumper are trigged!",__func__,__LINE__);
@@ -638,18 +622,18 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					//WFM_update();
 					wf_check_loop_closed(Gyro_GetAngle());
 
-					if (Is_Bumper_Jamed())
+					if (is_bumper_jamed())
 					{
-						Reset_Stop_Event_Status();
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						reset_stop_event_status();
+						set_clean_mode(Clean_Mode_Userinterface);
 						//USPRINTF("%s %d: Check: Bumper 2! break\n", __FUNCTION__, __LINE__);
 						wf_break_wall_follow();
 						ROS_INFO("%s %d: Check: Bumper 2! break", __FUNCTION__, __LINE__);
 						return 0;
 					}
 					//STOP_BRIFLY;
-					Stop_Brifly();
-					WF_Turn_Right(Turn_Speed - 5, 850);
+					stop_brifly();
+					wf_turn_right(Turn_Speed - 5, 850);
 
 					wall_straight_distance = MFW_SETTING[follow_type].right_bumper_val; //150;
 					Wall_Distance += 300;
@@ -671,10 +655,10 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 					//WFM_update();
 					wf_check_loop_closed(Gyro_GetAngle());
-					if (Is_Bumper_Jamed())
+					if (is_bumper_jamed())
 					{
-						Reset_Stop_Event_Status();
-						Set_Clean_Mode(Clean_Mode_Userinterface);
+						reset_stop_event_status();
+						set_clean_mode(Clean_Mode_Userinterface);
 						wf_break_wall_follow();
 						//USPRINTF("%s %d: Check: Bumper 3! break\n", __FUNCTION__, __LINE__);
 						ROS_INFO("%s %d: Check: Bumper 3! break", __FUNCTION__, __LINE__);
@@ -682,31 +666,31 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					}
 
 					//STOP_BRIFLY;
-					Stop_Brifly();
+					stop_brifly();
 					if (jam < 3)
 					{
 						if (Wall_Distance < 200)
 						{
-							if (Get_LeftOBS() > (Get_LeftOBST_Value() - 200))
+							if (get_left_obs() > (get_left_obs_value() - 200))
 							{
 								Wall_Distance = Wall_High_Limit;
-								WF_Turn_Right(Turn_Speed - 5, 300);
+								wf_turn_right(Turn_Speed - 5, 300);
 							} else
 							{
-								WF_Turn_Right(Turn_Speed - 5, 200);
+								wf_turn_right(Turn_Speed - 5, 200);
 							}
 						} else
 						{
-							WF_Turn_Right(Turn_Speed - 5, 300);
+							wf_turn_right(Turn_Speed - 5, 300);
 						}
 					} else
 					{
-						WF_Turn_Right(Turn_Speed - 5, 200);
+						wf_turn_right(Turn_Speed - 5, 200);
 					}
 					wall_straight_distance = MFW_SETTING[follow_type].left_bumper_val; //250;
 				}
 
-				if (Get_WallAccelerate() < 2000)
+				if (get_wall_accelerate() < 2000)
 				{
 					jam++;
 				} else
@@ -714,38 +698,38 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					jam = 0;
 				}
 
-				Reset_WallAccelerate();
+				reset_wall_accelerate();
 				wall_straight_distance = 200;
 				//STOP_BRIFLY;
-				Stop_Brifly();
+				stop_brifly();
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
 
-				Move_Forward(10, 10);
+				move_forward(10, 10);
 
 				for (temp_counter = 0; temp_counter < 3; temp_counter++)
 				{
 					left_wall_buffer[temp_counter] = 0;
 				}
-				Reset_Wheel_Step();
+				reset_wheel_step();
 			}
 			/*------------------------------------------------------Short Distance Move-----------------------*/
-			if (Get_WallAccelerate() < (uint32_t) wall_straight_distance)
+			if (get_wall_accelerate() < (uint32_t) wall_straight_distance)
 			{
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
-				if (Get_LeftWheel_Step() < 500)
+				if (get_left_wheel_step() < 500)
 				{
-					if (Get_WallAccelerate() < 100)
+					if (get_wall_accelerate() < 100)
 					{
-						Move_Forward(10, 10);
+						move_forward(10, 10);
 					} else
 					{
-						Move_Forward(15, 15);
+						move_forward(15, 15);
 					}
 				} else
 				{
-					Move_Forward(23, 23);
+					move_forward(23, 23);
 				}
 				//WFM_update();
 				wf_check_loop_closed(Gyro_GetAngle());
@@ -755,13 +739,13 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 
 
 #ifdef OBS_DYNAMIC
-				if (Get_FrontOBS() < Get_FrontOBST_Value())
+				if (get_front_obs() < get_front_obs_value())
 				{
 #else
 					if (Get_FrontOBS() < MFW_SETTING[follow_type].front_obs_val){
 #endif
 
-					wheel_speed_base = 15 + Get_WallAccelerate() / 150;
+					wheel_speed_base = 15 + get_wall_accelerate() / 150;
 					if (wheel_speed_base > 28)wheel_speed_base = 28;
 
 					proportion = robot::instance()->getLeftWall();
@@ -825,21 +809,21 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 					if (r_speed > 35)r_speed = 35;
 					if (r_speed < 5)r_speed = 5;
 
-					Move_Forward(l_speed, r_speed);
+					move_forward(l_speed, r_speed);
 					wf_check_loop_closed(Gyro_GetAngle());
 				} else
 				{
-					Stop_Brifly();
-					if (Get_WallAccelerate() < 2000)
+					stop_brifly();
+					if (get_wall_accelerate() < 2000)
 					{
 						jam++;
 					}
-					WF_Turn_Right(Turn_Speed - 5, 920);
-					Stop_Brifly();
+					wf_turn_right(Turn_Speed - 5, 920);
+					stop_brifly();
 					//WFM_update();
 					wf_check_loop_closed(Gyro_GetAngle());
-					Move_Forward(15, 15);
-					Reset_Wheel_Step();
+					move_forward(15, 15);
+					reset_wheel_step();
 
 					Wall_Distance = Wall_High_Limit;
 				}
@@ -868,8 +852,8 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 		}
 	}//the biggest loop end
 
-	Stop_Brifly();
-	Move_Forward(0, 0);
+	stop_brifly();
+	move_forward(0, 0);
 	return ret;
 }
 
@@ -877,7 +861,7 @@ uint8_t wf_end_wall_follow(void)
 {
 	int16_t i;
 	int8_t state;
-	Stop_Brifly();
+	stop_brifly();
 	robot::instance()->setBaselinkFrameType(
 					Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
 	cm_update_position();
@@ -890,7 +874,7 @@ uint8_t wf_end_wall_follow(void)
 	std::vector<Pose32_t>(g_wf_point).swap(g_wf_point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
-	Set_Clean_Mode(Clean_Mode_Userinterface);
+	set_clean_mode(Clean_Mode_Userinterface);
 	return 0;
 }
 
@@ -902,22 +886,8 @@ uint8_t wf_break_wall_follow(void)
 	std::vector<Pose32_t>(g_wf_point).swap(g_wf_point);
 	debug_map(MAP, 0, 0);
 	debug_map(SPMAP, 0, 0);
-	Set_Clean_Mode(Clean_Mode_Userinterface);
+	set_clean_mode(Clean_Mode_Userinterface);
 	return 0;
-}
-
-void wf_update_position(void)
-{
-	float pos_x, pos_y;
-	int16_t x, y;
-
-	x = map_get_x_cell();
-	y = map_get_y_cell();
-
-	//Map_move_to(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
-	pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	map_set_position(pos_x, pos_y);
 }
 
 /**************************************************************

@@ -10,10 +10,12 @@
 #include "wall_follow_trapped.h"
 
 uint8_t wall_follow(MapWallFollowType follow_type);
-void wf_update_position(void);
 void wf_check_loop_closed(uint16_t heading);
 bool is_start_cell(void);
 bool is_new_cell();
+
+int8_t wf_push_point(int32_t x, int32_t y, int16_t th);
+bool wf_is_reach_cleaned(void);
 uint8_t wf_end_wall_follow(void);
 uint8_t wf_break_wall_follow(void);
 void WFM_move_back(uint16_t dist);
