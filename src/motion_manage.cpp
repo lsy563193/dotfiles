@@ -308,7 +308,6 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 bool MotionManage::initNavigationCleaning(void)
 {
-	cm_register_events();
 	// Wait for 20ms to make sure the event manager has start working.
 	usleep(20000);
 
@@ -318,6 +317,8 @@ bool MotionManage::initNavigationCleaning(void)
 	reset_move_with_remote();
 	reset_stop_event_status();
 	reset_touch();
+
+	cm_register_events();
 
 	// Restart the gyro.
 	Set_Gyro_Off();
@@ -492,8 +493,12 @@ bool MotionManage::initWallFollowCleaning(void)
 bool MotionManage::initSpotCleaning(void)
 {
 	reset_start_work_time();
+	reset_rcon_status();
+	reset_move_with_remote();
+	reset_stop_event_status();
 	reset_touch();
 
+	cm_register_events();
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
