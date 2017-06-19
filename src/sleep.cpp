@@ -29,6 +29,7 @@ void sleep_mode(void)
 	reset_stop_event_status();
 	reset_rcon_status();
 	reset_rcon_remote();
+	reset_touch();
 	set_plan_status(0);
 
 	sleep_register_events();

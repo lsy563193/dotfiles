@@ -52,6 +52,7 @@ void User_Interface(void)
 	set_plan_status(0);
 	reset_stop_event_status();
 	reset_rcon_status();
+	reset_touch();
 	set_vacmode(Vac_Save);
 
 	ROS_INFO("%s,%d ,BatteryVoltage = %dmv.",__FUNCTION__,__LINE__, get_battery_voltage());

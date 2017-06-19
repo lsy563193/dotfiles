@@ -317,6 +317,7 @@ bool MotionManage::initNavigationCleaning(void)
 	reset_rcon_status();
 	reset_move_with_remote();
 	reset_stop_event_status();
+	reset_touch();
 
 	// Restart the gyro.
 	Set_Gyro_Off();
@@ -450,6 +451,7 @@ bool MotionManage::initWallFollowCleaning(void)
 	reset_move_with_remote();
 	reset_rcon_status();
 	reset_stop_event_status();
+	reset_touch();
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
@@ -490,6 +492,7 @@ bool MotionManage::initWallFollowCleaning(void)
 bool MotionManage::initSpotCleaning(void)
 {
 	reset_start_work_time();
+	reset_touch();
 
 	// Restart the gyro.
 	Set_Gyro_Off();
