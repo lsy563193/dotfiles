@@ -132,27 +132,6 @@ void User_Interface(void)
 				alarm_error();
 			}
 
-		/*-------------------------------If has error, only clean key or remote key clean will reset it--------------*/
-		if (get_error_code() != Error_Code_None)
-		{
-			if (get_key_press() & KEY_CLEAN)
-			{
-				beep(2, 2, 0, 1);//beep for useless remote command
-				// Wait for user to release the key.
-				while (get_key_press() & KEY_CLEAN)
-				{
-					ROS_INFO("User still holds the key.");
-					usleep(100000);
-				}
-				// Key relaesed, then the touch status and stop event status should be cleared.
-				reset_stop_event_status();
-				wav_play(WAV_CLEAR_ERROR);
-				set_error_code(Error_Code_None);
-				reset_rcon_remote();
-			}
-			continue;
-		}
-
 		/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
 		if (robot::instance()->isManualPaused())
 		{
@@ -173,38 +152,6 @@ void User_Interface(void)
 			else if(turn_connect())
 				Temp_Mode = Clean_Mode_Charging;
 			disable_motors();
-		}
-
-		/* -----------------------------Check if key clean event ----------------------------*/
-		if(get_key_press() & KEY_CLEAN)//                                    Check Key Clean
-		{
-			Press_time=get_key_time(KEY_CLEAN);
-			// Long press on the clean button means let the robot go to sleep mode.
-			if(Press_time>151)
-			{
-				ROS_INFO("%s %d: Long press and go to sleep mode.", __FUNCTION__, __LINE__);
-				beep(1, 4, 0, 1);
-				usleep(100000);
-				beep(2, 4, 0, 1);
-				usleep(100000);
-				beep(3, 4, 0, 1);
-				usleep(100000);
-				beep(5, 4, 4, 1);
-				// Wait for beep finish.
-				usleep(200000);
-				// Wait for user to release the key.
-				while (get_key_press() & KEY_CLEAN)
-				{
-					ROS_INFO("User still holds the key.");
-					usleep(100000);
-				}
-				// Key relaesed, then the touch status and stop event status should be cleared.
-				reset_stop_event_status();
-				Temp_Mode=Clean_Mode_Sleep;
-			}
-			else
-				Temp_Mode=Clean_Mode_Navigation;
-			reset_move_with_remote();
 		}
 
 		if(Temp_Mode)
@@ -260,6 +207,8 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
+	/* Key */
+	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 }
 
 void user_interface_unregister_events(void)
@@ -282,6 +231,8 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
+	/* Key */
+	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)
@@ -359,6 +310,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			set_error_code(Error_Code_None);
 			Error_Alarm_Counter = 0;
 			reset_rcon_remote();
+			reset_stop_event_status();
 			return;
 		}
 		ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, get_rcon_remote(), get_error_code());
@@ -391,6 +343,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 		case Remote_Clean:
 		{
 			Temp_Mode = Clean_Mode_Navigation;
+			reset_stop_event_status();
 			break;
 		}
 		case Remote_Spot:
@@ -414,7 +367,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 
 void user_interface_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: Remote key plan has been pressed.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Remote key plan has been pressed.", __FUNCTION__, __LINE__);
 	/* -----------------------------Check if plan event ----------------------------------*/
 	switch (get_plan_status())
 	{
@@ -467,4 +420,60 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 	}
 
 	set_plan_status(0);
+}
+
+void user_interface_handle_key_clean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
+
+	time_t key_press_start_time = time(NULL);
+	bool long_press_to_sleep = false;
+
+	beep_for_command(true);
+
+	while (get_key_press() == KEY_CLEAN)
+	{
+		if (time(NULL) - key_press_start_time > 3)
+		{
+			if (!long_press_to_sleep)
+			{
+				long_press_to_sleep = true;
+				beep_for_command(true);
+			}
+			ROS_WARN("%s %d: User hasn't release the key and robot is going to sleep.", __FUNCTION__, __LINE__);
+		}
+		else
+		{
+			ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
+		}
+		usleep(40000);
+	}
+
+	if (long_press_to_sleep)
+	{
+		Temp_Mode = Clean_Mode_Sleep;
+		reset_stop_event_status();
+		return;
+	}
+
+	if (get_error_code())
+	{
+		ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
+		wav_play(WAV_CLEAR_ERROR);
+		set_error_code(Error_Code_None);
+		Error_Alarm_Counter = 0;
+		reset_stop_event_status();
+		return;
+	}
+
+	if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	{
+		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
+		wav_play(WAV_ERROR_LIFT_UP);
+		reset_stop_event_status();
+		return;
+	}
+
+	Temp_Mode = Clean_Mode_Navigation;
+	reset_stop_event_status();
 }

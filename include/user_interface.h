@@ -58,6 +58,8 @@ define_user_interface_handle_func(battery_low)
 /* Remote */
 define_user_interface_handle_func(remote_cleaning)
 define_user_interface_handle_func(remote_plan)
+/* Key */
+define_user_interface_handle_func(key_clean)
 
 #endif /* __DISPLAY_H */
 
