@@ -100,15 +100,6 @@ void Remote_Mode(void)
 			turn_flag = 0;
 		}
 
-		if(remote_key(Remote_Home))
-		{
-			disable_motors();
-			set_clean_mode(Clean_Mode_GoHome);
-			set_home_remote();
-			reset_rcon_remote();
-			return;
-		}
-
 	  /*------------------------------------------------------stop event-----------------------*/
 		if(stop_event())
 		{
@@ -210,10 +201,10 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(remote_direction_left, EVT_REMOTE_DIRECTION_LEFT, true);
 	event_manager_register_and_enable_x(remote_direction_right, EVT_REMOTE_DIRECTION_RIGHT, true);
 	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
-	//event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
+	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_CLEAN, true);
+	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_SPOT, true);
+	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_WALL_FOLLOW, true);
+	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_HOME, true);
 	//event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	///* Key */
 	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
@@ -242,7 +233,7 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
-	//event_manager_register_and_disable_x(EVT_REMOTE_HOME);
+	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	//event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	///* Key */
 	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
@@ -294,11 +285,14 @@ void remote_mode_handle_remote_max(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void remote_mode_handle_remote_cleaning(bool state_now, bool state_last)
+void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
 	beep_for_command(true);
 	disable_motors();
-	set_clean_mode(Clean_Mode_Userinterface);
+	if (get_rcon_remote() == Remote_Home)
+		set_clean_mode(Clean_Mode_GoHome);
+	else
+		set_clean_mode(Clean_Mode_Userinterface);
 	reset_rcon_remote();
 }
