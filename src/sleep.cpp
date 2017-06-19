@@ -53,33 +53,6 @@ void sleep_mode(void)
 		// If not reset here, it may cause directly go home once it sleeps.
 		reset_rcon_status();
 
-		// Check if plan activated.
-		if (get_plan_status() == 3)
-		{
-			if (get_error_code() == Error_Code_None)
-			{
-				set_main_pwr_byte(Clean_Mode_Navigation);
-				reset_sleep_mode_flag();
-				beep(4, 4, 0, 1);
-				usleep(100000);
-				beep(3, 4, 0, 1);
-				usleep(100000);
-				beep(2, 4, 0, 1);
-				usleep(100000);
-				beep(1, 4, 4, 1);
-				reset_stop_event_status();
-				set_clean_mode(Clean_Mode_Navigation);
-				break;
-			}
-			else
-			{
-				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				alarm_error();
-				wav_play(WAV_CANCEL_APPOINTMENT);
-				set_plan_status(0);
-			}
-		}
-
 		if (get_clean_mode() != Clean_Mode_Sleep)
 			break;
 	}
@@ -120,6 +93,7 @@ void sleep_register_events(void)
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
+	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	/* Key */
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Charge Status */
@@ -137,6 +111,7 @@ void sleep_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_RCON);
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
+	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Key */
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Charge Status */
@@ -161,6 +136,35 @@ void sleep_handle_remote_clean(bool state_now, bool state_last)
 	set_main_pwr_byte(Clean_Mode_Userinterface);
 	reset_sleep_mode_flag();
 }
+
+void sleep_handle_remote_plan(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
+	if (get_plan_status() == 3)
+	{
+		if (get_error_code() != Error_Code_None)
+		{
+			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+			alarm_error();
+			wav_play(WAV_CANCEL_APPOINTMENT);
+			set_plan_status(0);
+		}
+		else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+			wav_play(WAV_ERROR_LIFT_UP);
+			wav_play(WAV_CANCEL_APPOINTMENT);
+			set_plan_status(0);
+		}
+		else
+		{
+			set_clean_mode(Clean_Mode_Navigation);
+			set_main_pwr_byte(Clean_Mode_Navigation);
+			reset_sleep_mode_flag();
+		}
+	}
+}
+
 
 void sleep_handle_key_clean(bool state_now, bool state_last)
 {
