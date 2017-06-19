@@ -238,7 +238,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
-		//ROS_INFO("SLAM = 1");
 		if(MotionManage::s_slam->isMapReady() && get_error_code() != Error_Code_Slam)
 		{
 			try {
@@ -269,6 +268,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count = 0;
 			}
 		}
+		cm_update_map();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
@@ -286,7 +286,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			//wf_position_x_ = odom_pose_x_;
 			//wf_position_y_ = odom_pose_y_;
 
-			tf::Stamped<tf::Pose>           ident;
+			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
 			ident.frame_id_ = "base_link";
 			ident.stamp_ = msg->header.stamp;
@@ -325,10 +325,11 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count = 0;
 			}
 		}
+
+//		cm_update_map();
 	}
 
 	Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
-	cm_update_map();
 	//ROS_WARN("Odom position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, (((int16_t)(tf::getYaw(msg->pose.pose.orientation) * 1800 / M_PI + 3600)) % 3600));
 }
 

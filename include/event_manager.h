@@ -132,7 +132,7 @@ typedef enum {
 	EVT_REMOTE_RANDOM,
 	EVT_REMOTE_SPOT,
 
-	EVT_REMOTE_SUCTION,
+	EVT_REMOTE_MAX,
 
 	EVT_REMOTE_TIMER,
 
@@ -158,6 +158,7 @@ typedef enum {
 	EVT_MODE_SPOT,
 	EVT_MODE_MAX,
 	EVT_MODE_CHARGE,
+	EVT_MODE_SLEEP,
 } EventModeType;
 
 typedef struct {
@@ -243,7 +244,7 @@ define_em_handler_func(remote_direction_forward)
 define_em_handler_func(remote_direction_left)
 define_em_handler_func(remote_direction_right)
 define_em_handler_func(remote_spot)
-define_em_handler_func(remote_suction)
+define_em_handler_func(remote_max)
 define_em_handler_func(remote_wall_follow)
 
 /* Battery */

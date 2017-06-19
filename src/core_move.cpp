@@ -368,7 +368,7 @@ Cell_t cm_update_position(bool is_turn)
 	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	map_set_position(pos_x, pos_y);
-	return Cell_t{pos_x, pos_y};
+	return Cell_t{(int16_t)pos_x, (int16_t)pos_y};
 }
 
 void cm_update_map()
@@ -1497,7 +1497,7 @@ void cm_register_events()
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
 	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
-	event_manager_register_and_enable_x(remote_suction, EVT_REMOTE_SUCTION, true);
+	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
 	// Just enable the default handler.
 	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
@@ -1569,7 +1569,7 @@ void cm_unregister_events()
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
-	event_manager_register_and_disable_x(EVT_REMOTE_SUCTION);
+	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
 
 	/* Battery */
 	event_manager_register_and_disable_x(EVT_BATTERY_HOME);
@@ -2458,7 +2458,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	//set_vacmode(modeTemp,false);
 }
 
-void cm_handle_remote_suction(bool state_now, bool state_last)
+void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 

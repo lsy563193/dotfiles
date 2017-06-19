@@ -1055,7 +1055,7 @@ void WFT_regist_events()
 
 	/* Remote */
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_suction, EVT_REMOTE_SUCTION, true);
+	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
 
 	/* Battery */
 	event_manager_register_handler(EVT_BATTERY_LOW, &WFT_handle_battery_low);
@@ -1101,7 +1101,7 @@ void WFT_unregist_events()
 
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_SUCTION);
+	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
 
 
 	/* Battery */
@@ -1577,7 +1577,7 @@ void WFT_handle_remote_clean(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void WFT_handle_remote_suction(bool state_now, bool state_last)
+void WFT_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1608,6 +1608,7 @@ void WFT_handle_battery_low(bool state_now, bool state_last)
 		g_battery_low = true;
 	}
 }
+
 void WFM_move_back(uint16_t dist)
 {
 	float pos_x, pos_y, distance;
@@ -1623,8 +1624,7 @@ void WFM_move_back(uint16_t dist)
 	pos_x = robot::instance()->getOdomPositionX();
 	pos_y = robot::instance()->getOdomPositionY();
 	while (ros::ok()) {
-		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
-																																													 robot::instance()->getOdomPositionY(), 2));
+		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y - robot::instance()->getOdomPositionY(), 2));
 		if (fabsf(distance) > 0.02f) {
 			break;
 		}
@@ -1641,14 +1641,6 @@ void WFM_move_back(uint16_t dist)
 			if(is_encoder_fail()) {
 				set_error_code(Error_Code_Encoder);
 			}
-			return;
-		}
-		if (stop_event()) {
-			return;
-		}
-		uint8_t octype = check_motor_current();
-		if ((octype == Check_Left_Wheel) || ( octype == Check_Right_Wheel)) {
-			ROS_INFO("%s,%d,motor over current",__FUNCTION__,__LINE__);
 			return;
 		}
 	}

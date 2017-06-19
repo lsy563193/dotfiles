@@ -28,8 +28,8 @@ static int16_t g_front_obs_trig_value = 500;
 static int16_t g_right_obs_trig_value = 500;
 volatile int16_t g_obs_trig_value = 800;
 static int16_t g_leftwall_obs_trig_vale = 500;
-static uint8_t g_wheel_left_direction = 0;
-static uint8_t g_wheel_right_direction = 0;
+uint8_t g_wheel_left_direction = 0;
+uint8_t g_wheel_right_direction = 0;
 static uint8_t g_remote_move_flag = 0;
 static uint8_t g_home_remote_flag = 0;
 uint32_t g_rcon_status;
@@ -177,7 +177,7 @@ uint32_t get_right_wheel_step(void)
 		rwsp = (double) g_right_wheel_speed * -1;
 	else
 		rwsp = (double) g_right_wheel_speed;
-	t = (double) (ros::Time::now() - g_rw_t).toSec();
+	t = (ros::Time::now() - g_rw_t).toSec();
 	step = rwsp * t / 0.12;//origin 0.181
 	g_right_wheel_step = (uint32_t) step;
 	return g_right_wheel_step;
@@ -811,110 +811,6 @@ void round_turn_right(uint16_t speed, int16_t angle)
 	set_wheel_speed(0, 0);
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
-}
-
-void wf_turn_right(uint16_t speed, int16_t angle)
-{
-	int16_t target_angle;
-	int16_t gyro_angle;
-	int32_t i, j;
-	float pos_x, pos_y;
-	gyro_angle = Gyro_GetAngle();
-
-	target_angle = gyro_angle - angle;
-	if (target_angle < 0)
-		target_angle = 3600 + target_angle;
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(),
-					 speed);
-
-	set_dir_right();
-
-	set_wheel_speed(speed, speed);
-	uint8_t oc = 0;
-
-	uint8_t accurate;
-	accurate = 10;
-	if (speed > 30) accurate = 30;
-	while (ros::ok())
-	{
-		pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-		map_set_position(pos_x, pos_y);
-
-		i = map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		j = map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_2, 0);
-		if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BOUNDARY)
-		{
-			map_set_cell(MAP, i, j, BLOCKED_OBS);
-		}
-
-		if (abs(target_angle - Gyro_GetAngle()) < accurate)
-		{
-			break;
-		}
-		if (abs(target_angle - Gyro_GetAngle()) < 50)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
-		} else if (abs(target_angle - Gyro_GetAngle()) < 200)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
-		} else
-		{
-			set_wheel_speed(speed, speed);
-		}
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			break;
-		if (stop_event())
-			break;
-		/*if(is_turn_remote())
-			break;
-		 */
-
-		if (get_rcon_remote() > 0)
-		{
-			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-			if (get_rcon_remote() & (Remote_Clean | Remote_Home | Remote_Max))
-			{
-				if (get_rcon_remote() & (Remote_Home | Remote_Clean))
-				{
-					break;
-				}
-				if (remote_key(Remote_Max))
-				{
-					reset_rcon_remote();
-					switch_vac_mode(true);
-				}
-			} else
-			{
-				beep_for_command(false);
-				reset_rcon_remote();
-			}
-		}
-
-		/* check plan setting*/
-		if (get_plan_status() == 1)
-		{
-			set_plan_status(0);
-			beep_for_command(false);
-		}
-		if (get_bumper_status())
-		{
-			break;
-		}
-		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
-	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
-
-	set_wheel_speed(0, 0);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
 void jam_turn_left(uint16_t speed, int16_t angle)

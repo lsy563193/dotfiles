@@ -240,11 +240,11 @@ uint8_t Wall_Follow_Short(uint32_t dis)
     {
 			stop_brifly();
 			wall_move_back();
-		if(get_wall_accelerate()>80)
+		if(get_right_wheel_step()>80)
 		{
 			if(is_bumper_jamed())break;
 		}
-		if(get_wall_accelerate()<2000)
+		if(get_right_wheel_step()<2000)
 		{
 			Jam++;
 		}
@@ -303,7 +303,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			Wall_Straight_Distance=250;
 		}
 
-		if(get_wall_accelerate()<2000)
+		if(get_right_wheel_step()<2000)
 		{
 			Jam++;
 		}
@@ -372,7 +372,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				{
 				  if((Left_Wall_Buffer[2]-Left_Wall_Buffer[1])>(Wall_Distance/25))
 					{
-					  if(get_wall_accelerate()>300)
+					  if(get_right_wheel_step()>300)
 						{
 						  if((get_right_wheel_speed()- get_left_wheel_speed())>=-3)
 							{
@@ -388,11 +388,11 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		}
 		
 		/*------------------------------------------------------Short Distance Move-----------------------*/
-		if (get_wall_accelerate() < (uint32_t) Wall_Straight_Distance)
+		if (get_right_wheel_step() < (uint32_t) Wall_Straight_Distance)
 		{
       		if(get_left_wheel_step()<500)
       		{
-        		if(get_wall_accelerate()<100)
+        		if(get_right_wheel_step()<100)
   				{
 						move_forward(15, 15);
   				}
@@ -461,7 +461,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 	      		{
           			break; 
 	      		}
-				if(get_wall_accelerate()>750)
+				if(get_right_wheel_step()>750)
 				{
 					//Set_Left_Brush(ENABLE);
 			   		//Set_Right_Brush(ENABLE);
@@ -474,7 +474,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 				{
 					if(get_front_obs()> get_front_obs_value())
 					{
-						if(get_wall_accelerate()<2000)
+						if(get_right_wheel_step()<2000)
 						{
 							Jam++;
 						}
