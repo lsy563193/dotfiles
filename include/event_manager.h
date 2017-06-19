@@ -159,6 +159,7 @@ typedef enum {
 	EVT_MODE_MAX,
 	EVT_MODE_CHARGE,
 	EVT_MODE_SLEEP,
+	EVT_MODE_REMOTE,
 } EventModeType;
 
 typedef struct {

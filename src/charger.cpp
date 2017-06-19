@@ -3136,13 +3136,6 @@ void charge_register_event(void)
 	event_manager_register_and_enable_x(key, EVT_KEY_CLEAN, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_MAX, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
 }
 
 void charge_unregister_event(void)
@@ -3160,13 +3153,6 @@ void charge_unregister_event(void)
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
-	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
-	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
 }
 
 void charge_handle_charge_detect(bool state_now, bool state_last)
