@@ -51,6 +51,7 @@ bool g_key_clean_pressed = false;
 /* Remote */
 bool g_remote_home = false;
 bool g_remote_spot = false;
+bool g_remote_wallfollow = false;
 /* Battery */
 bool g_battery_home = false;
 bool g_battery_low = false;

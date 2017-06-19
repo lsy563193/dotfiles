@@ -15,9 +15,9 @@
 #include "motion_manage.h"
 #include <segment_set.h>
 #include <slam.h>
-#include <path_planning.h>
-#include <core_move.h>
-#include <event_manager.h>
+#include "path_planning.h"
+#include "core_move.h"
+#include "event_manager.h"
 
 Segment_set segmentss;
 
@@ -25,7 +25,6 @@ extern std::list <Point32_t> g_home_point;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
-extern bool g_temp_spot_set;
 /*
 int g_enable_angle_offset = 0;
 boost::mutex g_angle_offset_mt;
@@ -206,7 +205,7 @@ MotionManage::~MotionManage()
 {
 
 	Reset_Stop_Event_Status();
-
+	uint8_t clean_mode = get_clean_mode();
 	Disable_Motors();
 
 	if (s_laser != nullptr)
@@ -216,13 +215,8 @@ MotionManage::~MotionManage()
 	}
 
 	if (robot::instance()->isManualPaused()){
-		if(!g_temp_spot_set){
-			Set_Clean_Mode(Clean_Mode_Userinterface);
-			wav_play(WAV_PAUSE_CLEANING);
-		}
-		else{
-			g_temp_spot_set = false;
-		}
+        Set_Clean_Mode(Clean_Mode_Userinterface);
+        wav_play(WAV_PAUSE_CLEANING);
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		extern bool g_go_home;
@@ -247,12 +241,11 @@ MotionManage::~MotionManage()
 		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
-
-	if (s_slam != nullptr)
-	{
-		delete s_slam;
-		s_slam = nullptr;
-	}
+    if (s_slam != nullptr)
+    {
+        delete s_slam;
+        s_slam = nullptr;
+    }
 
 	robot::instance()->savedOffsetAngle(0);
 
@@ -285,8 +278,9 @@ MotionManage::~MotionManage()
 	g_saved_work_time += get_work_time();
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
-	if (get_clean_mode() != Clean_Mode_Sleep && get_clean_mode() != Clean_Mode_Charging)
+	if (clean_mode != Clean_Mode_Sleep && clean_mode != Clean_Mode_Charging ){
 		Set_Clean_Mode(Clean_Mode_Userinterface);
+	}
 
 }
 
