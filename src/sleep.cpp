@@ -111,32 +111,9 @@ void sleep_mode(void)
 			break;
 		}
 		reset_rcon_remote();
-		if(is_on_charger_stub() || is_direct_charge())//on base but miss charging , adjust position to charge
-		{
-			set_main_pwr_byte(POWER_ACTIVE);
-			reset_sleep_mode_flag();
-			reset_rcon_remote();
-			beep(4, 4, 0, 1);
-			usleep(100000);
-			beep(3, 4, 0, 1);
-			usleep(100000);
-			beep(2, 4, 0, 1);
-			usleep(100000);
-			beep(1, 4, 4, 1);
-			if (is_direct_charge() || turn_connect())
-			{
-				set_clean_mode(Clean_Mode_Charging);
-				break;
-			}
-		}
 
-		if(is_charge_on())
-		{
-			set_clean_mode(Clean_Mode_Charging);
-			set_main_pwr_byte(POWER_ACTIVE);
-			reset_sleep_mode_flag();
+		if (get_clean_mode() != Clean_Mode_Sleep)
 			break;
-		}
 	}
 	// Alarm for error.
 	if (get_clean_mode() == Clean_Mode_Userinterface && get_error_code())
@@ -175,8 +152,8 @@ void sleep_register_events(void)
 	//event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	///* Key */
 	//event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-	///* Charge Status */
-	//event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
+	/* Charge Status */
+	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 }
 
 void sleep_unregister_events(void)
@@ -192,8 +169,8 @@ void sleep_unregister_events(void)
 	//event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
 	///* Key */
 	//event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-	///* Charge Status */
-	//event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+	/* Charge Status */
+	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }
 
 void sleep_handle_rcon(bool state_now, bool state_last)
@@ -205,4 +182,12 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 		set_main_pwr_byte(Clean_Mode_GoHome);
 		reset_sleep_mode_flag();
 	}
+}
+
+void sleep_handle_charge_detect(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
+	set_clean_mode(Clean_Mode_Charging);
+	set_main_pwr_byte(Clean_Mode_Charging);
+	reset_sleep_mode_flag();
 }

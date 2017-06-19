@@ -16,5 +16,5 @@ define_sleep_handle_func(rcon)
 //define_sleep_handle_func(remote_clean)
 ///* Key */
 //define_sleep_handle_func(key_clean)
-///* Charge Status */
-//define_sleep_handle_func(charge_detect)
+/* Charge Status */
+define_sleep_handle_func(charge_detect)
