@@ -166,17 +166,6 @@ int16_t path_ahead_to_clean(int16_t x, Cell_t next);
  * @return	0 if the robot is trapped
  * 		1 if the robot is not trapped.
  */
-int16_t WF_path_escape_trapped(void);
-
-/*
- * Check whether the robot is trapped or not. The robot is trapped if there
- * is no path to (0, 0) or home.
- *
- * @param
- *
- * @return	0 if the robot is trapped
- * 		1 if the robot is not trapped.
- */
 int16_t path_escape_trapped(void);
 
  /* Set the around 9 cell as state */

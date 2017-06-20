@@ -37,6 +37,6 @@ void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg);
 void process_beep();
 void robotbase_reset_odom_pose(void);
 void robotbase_restore_slam_correction(void);
-void robotbase_OBS_adjust_count(int count);
+void robotbase_obs_adjust_count(int count);
 
 #endif

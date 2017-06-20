@@ -198,16 +198,16 @@ void Laser::start(void)
 		start_mator_cli_.call(empty);
 		count_3s = 300;//set reboot lidar time to 3 seconds
 		is_ready_ = false;
-		while (is_ready_ == false && --count_3s > 0 && !Stop_Event())
+		while (is_ready_ == false && --count_3s > 0 && !stop_event())
 		{
 			if (count_3s % 100 == 0)
 				ROS_INFO("laser start not success yet, will try to restart after %d s", count_3s / 100);
 			usleep(10000);
 		}
-	}while ((count_3s == 0 && try_times != 0) && !Stop_Event());
+	}while ((count_3s == 0 && try_times != 0) && !stop_event());
 
-	if(Stop_Event()){
-		while (Get_Key_Press() & KEY_CLEAN)
+	if(stop_event()){
+		while (get_key_press() & KEY_CLEAN)
 		{
 			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
 			usleep(20000);

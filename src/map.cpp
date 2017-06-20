@@ -76,6 +76,11 @@ int16_t map_get_y_cell(void) {
 	return count_to_cell(yCount);
 }
 
+Cell_t map_get_curr_cell()
+{
+	return Cell_t{map_get_x_cell(), map_get_y_cell()};
+}
+
 void map_move_to(double d_x, double d_y) {
 	xCount += d_x;
 	yCount += d_y;
@@ -226,7 +231,7 @@ void map_clear_blocks(void) {
 	map_set_cell(MAP, cell_to_count(map_get_x_cell()), cell_to_count(map_get_y_cell() - 1), CLEANED);
 }
 
-int32_t map_get_relative_x(uint16_t heading, int16_t dx, int16_t offset_long) {
+int32_t map_get_relative_x(uint16_t heading, int16_t dx, int16_t dy) {
 	if(heading != relative_theta) {
 		if(heading == 0) {
 			relative_sin = 0;
@@ -246,7 +251,7 @@ int32_t map_get_relative_x(uint16_t heading, int16_t dx, int16_t offset_long) {
 		}
 	}
 
-	return map_get_x_count() + (int32_t)( ( ((double)offset_long * relative_cos * CELL_COUNT_MUL) -
+	return map_get_x_count() + (int32_t)( ( ((double)dy * relative_cos * CELL_COUNT_MUL) -
 	                                      ((double)dx	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
 }
 

@@ -95,7 +95,7 @@ int robotbase_init(void)
 		ROS_INFO("[robotbase] serial not ready\n");
 		return -1;
 	}
-	Set_Main_PwrByte(POWER_ACTIVE);
+	set_main_pwr_byte(POWER_ACTIVE);
 	g_send_stream[SEND_LEN-3] = calcBufCrc8((char *)g_send_stream, SEND_LEN-3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 //	do {
@@ -133,13 +133,13 @@ void robotbase_deinit(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		ROS_INFO("\tshutdown robotbase power");
-		Set_LED(0,0);
+		set_led(0, 0);
 		control_set(CTL_BUZZER, 0x00);
 		Set_Gyro_Off();
 		usleep(40000);
-		Disable_Motors();
+		disable_motors();
 		usleep(40000);
-		Set_Main_PwrByte(POWER_DOWN);
+		set_main_pwr_byte(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
 		usleep(40000);
@@ -380,7 +380,7 @@ void *robotbase_routine(void*)
 
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 		// Dynamic adjust obs
-		OBS_Dynamic_Base(OBS_adjust_count);
+		obs_dynamic_base(OBS_adjust_count);
 	}
 	ROS_INFO("robotbase thread exit");
 	//pthread_exit(NULL);
@@ -392,14 +392,14 @@ void *serial_send_routine(void*){
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
-	ResetSendFlag();
+	reset_send_flag();
 	while(send_stream_thread){
 		r.sleep();
-		if(GetSleepModeFlag()){
+		if(get_sleep_mode_flag()){
 			continue;
 		}
 		/*-------------------speaker variable counter -----------------------*/
-		// Force reset the beep action when Beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
+		// Force reset the beep action when beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
 		if (robotbase_beep_update_flag){
 			temp_speaker_sound_time_count = -1;
 			temp_speaker_silence_time_count = 0;
@@ -413,7 +413,7 @@ void *serial_send_routine(void*){
 		}
 		/*-------------------counter end-------------------------------------*/
 
-		if(!IsSendBusy()){
+		if(!is_send_busy()){
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
 			serial_write(SEND_LEN, buf);
@@ -471,7 +471,7 @@ void robotbase_restore_slam_correction()
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
 }
 
-void robotbase_OBS_adjust_count(int count)
+void robotbase_obs_adjust_count(int count)
 {
 	boost::mutex::scoped_lock(odom_mutex);
 	OBS_adjust_count = count;

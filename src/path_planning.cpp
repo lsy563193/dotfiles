@@ -61,9 +61,9 @@ const Cell_t& g_curr = g_cell_history[0];
 
 uint16_t g_last_dir;
 
-Cell_t g_trappedCell[ESCAPE_TRAPPED_REF_CELL_SIZE];
+Cell_t g_trapped_cell[ESCAPE_TRAPPED_REF_CELL_SIZE];
 
-uint8_t g_trappedCellSize = ESCAPE_TRAPPED_REF_CELL_SIZE;
+uint8_t g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
@@ -76,10 +76,10 @@ void path_planning_initialize(int32_t *x, int32_t *y)
 	g_home_y = count_to_cell(*y);
 
 	for ( i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
-		g_trappedCell[i].X = g_home_x;
-		g_trappedCell[i].Y = g_home_y;
+		g_trapped_cell[i].X = g_home_x;
+		g_trapped_cell[i].Y = g_home_y;
 	}
-	g_trappedCellSize = ESCAPE_TRAPPED_REF_CELL_SIZE;
+	g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 #if (ROBOT_SIZE == 5)
 
@@ -98,7 +98,7 @@ void path_planning_initialize(int32_t *x, int32_t *y)
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {
-		g_cell_history[i] =  {i+1, i+1};
+		g_cell_history[i] =  {int16_t(i+1), int16_t(i+1)};
 	}
 
 	/* Initialize the shortest path. */
@@ -965,94 +965,6 @@ void path_update_cells()
 	}
 }
 
-int16_t WF_path_escape_trapped()
-{
-
-	int16_t	val = 0;
-	uint16_t i = 0;
-	int16_t remote_x = 0, remote_y = 0;
-	int16_t x_min, x_max, y_min, y_max;
-	Point32_t	Remote_Point;
-	Cell_t   tmpPnt, pnt16ArTmp[3];
-	Remote_Point.X = 0;
-	Remote_Point.Y = 0;
-	//tmpPnt.X = count_to_cell(Remote_Point.X);
-	//tmpPnt.Y = count_to_cell(Remote_Point.Y);
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
-	tmpPnt.X = x_max + 1;
-	tmpPnt.Y = y_max + 1;
-	ROS_INFO("tmpPnt.X = %d, tmpPnt.Y = %d\n",tmpPnt.X, tmpPnt.Y);
-	pnt16ArTmp[0] = tmpPnt;
-
-	path_escape_set_trapped_cell(pnt16ArTmp, 1);
-
-	if ( g_trappedCell[0].X != remote_x || g_trappedCell[0].Y != remote_y ){
-		for ( i = 0; i < g_trappedCellSize; ++i ) {
-			ROS_INFO("%s %d Check %d trapped reference cell: x: %d, y: %d\n", __FUNCTION__, __LINE__,
-			         i, g_trappedCell[i].X, g_trappedCell[i].Y);
-			/*if (is_block_accessible(g_trappedCell[i].X, g_trappedCell[i].Y) == 0) {
-				map_set_cells(ROBOT_SIZE, g_trappedCell[i].X, g_trappedCell[i].Y, CLEANED);
-			}*/
-
-			//val = WF_path_find_shortest_path( g_cell_history[0].x, g_cell_history[0].y, g_trappedCell[i].X, g_trappedCell[i].Y, 0);
-			val = WF_path_find_shortest_path( g_cell_history[0].X, g_cell_history[0].Y, g_trappedCell[i].X, g_trappedCell[i].Y, 0);
-			ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-			ROS_INFO("SCHAR_MAX = %d\n", SCHAR_MAX);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* No path to home, which is set when path planning is initialized. */
-				val = 0;//not isolated
-			} else {
-				val = 1;//isolated
-				break;
-			}
-		}
-	} else {
-		if (is_block_accessible(0, 0) == 1) {
-			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
-#if DEBUG_SM_MAP
-			debug_map(SPMAP, 0, 0);
-#endif
-//			ROS_INFO("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, g_cell_history[0].x, g_cell_history[0].y, val);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* Robot start position is blocked. */
-				val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, remote_x, remote_y, 0);
-				ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-
-#if DEBUG_MAP
-				debug_map(MAP, remote_x, remote_y);
-#endif
-
-				if (val < 0 || val == SCHAR_MAX) {
-					val = 0;
-				} else {
-					val = 1;
-				};
-			} else {
-				val = 1;
-			}
-		} else {
-			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, remote_x, remote_y, 0);
-			ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-
-#if DEBUG_SM_MAP
-			debug_map(SPMAP, 0, 0);
-#endif
-#if DEBUG_MAP
-			debug_map(MAP, remote_x, remote_y);
-#endif
-
-			if (val < 0 || val == SCHAR_MAX) {
-				/* No path to home, which is set when path planning is initialized. */
-				val = 0;
-			} else {
-				val = 1;
-			}
-		}
-	}
-
-	ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-	return val;
-}
 
 int16_t path_escape_trapped()
 {
@@ -1060,15 +972,15 @@ int16_t path_escape_trapped()
 	int16_t	val = 0;
 	uint16_t i = 0;
 
-	if ( g_trappedCell[0].X != g_home_x || g_trappedCell[0].Y != g_home_y ){
-		for ( i = 0; i < g_trappedCellSize; ++i ) {
+	if ( g_trapped_cell[0].X != g_home_x || g_trapped_cell[0].Y != g_home_y ){
+		for ( i = 0; i < g_trapped_cell_size; ++i ) {
 			ROS_WARN("%s %d Check %d trapped reference cell: x: %d, y: %d", __FUNCTION__, __LINE__,
-			         i, g_trappedCell[i].X, g_trappedCell[i].Y);
-			if (is_block_accessible(g_trappedCell[i].X, g_trappedCell[i].Y) == 0) {
-				map_set_cells(ROBOT_SIZE, g_trappedCell[i].X, g_trappedCell[i].Y, CLEANED);
+			         i, g_trapped_cell[i].X, g_trapped_cell[i].Y);
+			if (is_block_accessible(g_trapped_cell[i].X, g_trapped_cell[i].Y) == 0) {
+				map_set_cells(ROBOT_SIZE, g_trapped_cell[i].X, g_trapped_cell[i].Y, CLEANED);
 			}
 
-			val = path_find_shortest_path( g_cell_history[0].X, g_cell_history[0].Y, g_trappedCell[i].X, g_trappedCell[i].Y, 0);
+			val = path_find_shortest_path( g_cell_history[0].X, g_cell_history[0].Y, g_trapped_cell[i].X, g_trapped_cell[i].Y, 0);
 			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* No path to home, which is set when path planning is initialized. */
@@ -1159,17 +1071,16 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size )
 {
-	uint8_t i = 0;
-	g_trappedCellSize = size;
-	for ( i = 0; i < g_trappedCellSize; ++i ) {
-		g_trappedCell[i] = cell[i];
-		ROS_INFO("%s %d Set %d trapped reference cell: x: %d\ty:%d", __FUNCTION__, __LINE__, i, g_trappedCell[i].X, g_trappedCell[i].Y);
+	g_trapped_cell_size = size;
+	for (auto i = 0; i < g_trapped_cell_size; ++i ) {
+		g_trapped_cell[i] = cell[i];
+		ROS_INFO("%s %d Set %d trapped reference cell: x: %d\ty:%d", __FUNCTION__, __LINE__, i, g_trapped_cell[i].X, g_trapped_cell[i].Y);
 	}
 }
 
 Cell_t *path_escape_get_trapped_cell()
 {
-	return g_trappedCell;
+	return g_trapped_cell;
 }
 
 int16_t path_get_home_x()
@@ -1196,10 +1107,10 @@ void WF_PathPlanning_Initialize(int32_t *x, int32_t *y)
 //	weight_enabled = 1;
 
 	for ( i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
-		g_trappedCell[i].X = g_home_x;
-		g_trappedCell[i].Y = g_home_y;
+		g_trapped_cell[i].X = g_home_x;
+		g_trapped_cell[i].Y = g_home_y;
 	}
-	g_trappedCellSize = ESCAPE_TRAPPED_REF_CELL_SIZE;
+	g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 
 #if (ROBOT_SIZE == 5)
@@ -1219,7 +1130,7 @@ void WF_PathPlanning_Initialize(int32_t *x, int32_t *y)
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {
-		g_cell_history[i]= {i + 1, i + 1};
+		g_cell_history[i]= {int16_t(i + 1), int16_t(i + 1)};
 	}
 
 	/* Initialize the shortest path. */

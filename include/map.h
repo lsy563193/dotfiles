@@ -64,6 +64,7 @@ int16_t next_y_id(uint16_t heading, int16_t offset_lat, int16_t offset_long);
 void Map_GetRelativePosition(uint16_t heading, int16_t *x, int16_t *y);
 
 CellState map_get_cell(uint8_t id, int16_t x, int16_t y);
+Cell_t map_get_curr_cell();
 void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value);
 
 void map_clear_blocks(void);

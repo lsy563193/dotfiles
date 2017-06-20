@@ -8,6 +8,7 @@
 #include <vector>
 #include <movement.h>
 #include <motion_manage.h>
+#include <core_move.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
@@ -131,7 +132,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	ir_ctrl_ = msg->ir_ctrl;
 	if (ir_ctrl_ > 0)
 	{
-		Set_Rcon_Remote(ir_ctrl_);
+		set_rcon_remote(ir_ctrl_);
 	}
 
 	charge_stub_ = msg->c_stub;//charge stub signal
@@ -140,23 +141,23 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	key = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((key & KEY_CLEAN) && !(Get_Key_Press() & KEY_CLEAN))
+	if ((key & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
 	{
 		key_press_count++;
 		if (key_press_count > 0)
 		{
-			Set_Key_Press(KEY_CLEAN);
+			set_key_press(KEY_CLEAN);
 			key_press_count = 0;
 			// When key 'clean' is triggered, it will set touch status.
-			Set_Touch();
+			set_touch();
 		}
 	}
-	else if (!(key & KEY_CLEAN) && (Get_Key_Press() & KEY_CLEAN))
+	else if (!(key & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
 	{
 		key_release_count++;
 		if (key_release_count > 5)
 		{
-			Reset_Key_Press(KEY_CLEAN);
+			reset_key_press(KEY_CLEAN);
 			key_release_count = 0;
 		}
 	}
@@ -192,7 +193,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	plan = msg->plan;
 	if(plan > 0)
-		Set_Plan_Status(plan);
+		set_plan_status(plan);
 
 	is_sensor_ready_ = true;
 
@@ -237,7 +238,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
-		//ROS_INFO("SLAM = 1");
 		if(MotionManage::s_slam->isMapReady() && get_error_code() != Error_Code_Slam)
 		{
 			try {
@@ -268,6 +268,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count = 0;
 			}
 		}
+		cm_update_map();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
@@ -285,7 +286,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			//wf_position_x_ = odom_pose_x_;
 			//wf_position_y_ = odom_pose_y_;
 
-			tf::Stamped<tf::Pose>           ident;
+			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
 			ident.frame_id_ = "base_link";
 			ident.stamp_ = msg->header.stamp;
@@ -324,10 +325,11 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count = 0;
 			}
 		}
+
+//		cm_update_map();
 	}
 
 	Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
-	//ROS_WARN("Position (%f, %f), angle: %d, wf_position (%f, %f).", position_x_, position_y_, Gyro_GetAngle(), wf_position_x_, wf_position_y_);
 	//ROS_WARN("Odom position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, (((int16_t)(tf::getYaw(msg->pose.pose.orientation) * 1800 / M_PI + 3600)) % 3600));
 }
 
