@@ -855,8 +855,9 @@ int16_t get_round_angle(CMMoveType type){
 	return angle;
 }
 
-uint8_t cm_follow_wall(CMMoveType type, Point32_t target)
+uint8_t cm_follow_wall(Point32_t target)
 {
+	auto type = g_cm_move_type;
 	g_rounding_left_wall_buffer = { 0,0,0 }, g_rounding_right_wall_buffer = { 0,0,0 };
 	g_rounding_wall_distance = 400;
 
@@ -1010,7 +1011,7 @@ int cm_cleaning()
 		if (is_found == 1)
 		{
 			if (is_follow_wall(&g_next_point, g_targets_point, path_get_robot_direction()))
-				cm_follow_wall(g_cm_move_type, g_next_point);
+				cm_follow_wall(g_next_point);
 			else
 				cm_move_to_point(g_next_point);
 
