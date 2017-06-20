@@ -368,7 +368,7 @@ Cell_t cm_update_position(bool is_turn)
 	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	map_set_position(pos_x, pos_y);
-	return Cell_t{(int16_t)pos_x, (int16_t)pos_y};
+	return map_get_curr_cell();
 }
 
 void cm_update_map()
@@ -377,10 +377,7 @@ void cm_update_map()
 
 	auto curr = cm_update_position();
 
-	if (last == curr)
-		return;
-
-	cm_update_map_obs();
+//	ROS_WARN("1 last(%d,%d),curr(%d,%d)",last.X, last.Y, curr.X, curr.Y);
 
 	cm_update_map_bumper();
 
@@ -388,7 +385,10 @@ void cm_update_map()
 
 	cm_update_map_cleaned();
 
-	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
+	cm_update_map_obs();
+//	ROS_ERROR("2 last(%d,%d),curr(%d,%d)",last.X, last.Y,curr.X,curr.Y);
+	if (last != curr || get_bumper_status()!=0 || get_cliff_trig() !=0 || get_obs_status() != 0)
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
 }
 //-------------------------------cm_move_back-----------------------------//
 uint16_t round_turn_angle()
