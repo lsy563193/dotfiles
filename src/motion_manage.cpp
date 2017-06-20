@@ -156,7 +156,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	if (robot::instance()->isLowBatPaused())
 		return;
-	if (robot::instance()->isManualPaused())
+	if (robot::instance()->isManualPaused() && s_slam != nullptr)
 	{
 		robot::instance()->resetManualPause();
 		return;
@@ -406,7 +406,8 @@ bool MotionManage::initNavigationCleaning(void)
 					robot::instance()->resetLowBatPause();
 				}
 				else if (g_key_clean_pressed && !robot::instance()->isLowBatPaused())
-					robot::instance()->resetManualPause();
+					// Reset the odom position so when continue cleaning, the position robot stopped at will be the home point (0, 0).
+					robot::instance()->initOdomPosition();
 				else if (!g_fatal_quit_event && !g_key_clean_pressed)
 				{
 					ROS_WARN("%s %d: Fail to leave charger stub.", __FUNCTION__, __LINE__);
