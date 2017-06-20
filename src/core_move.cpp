@@ -677,18 +677,6 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 	return true;
 }
 
-void cm_move_to_point(Point32_t target)
-{
-#ifdef PP_CURVE_MOVE
-	if (path_get_path_points_count() >= 3){
-		if (!cm_curve_move_to_point())
-			cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
-	}
-	else
-#endif
-		cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
-}
-
 bool cm_curve_move_to_point()
 {
 	auto *path_cells = path_get_path_points();
@@ -1013,7 +1001,8 @@ int cm_cleaning()
 			if (is_follow_wall(&g_next_point, g_targets_point, path_get_robot_direction()))
 				cm_follow_wall(g_next_point);
 			else
-				cm_move_to_point(g_next_point);
+			if (path_get_path_points_count() < 3 && !cm_curve_move_to_point())
+				cm_linear_move_to_point(g_next_point, RUN_TOP_SPEED, true, true);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
