@@ -31,10 +31,11 @@ float pos_x, pos_y;
 
 void Remote_Mode(void)
 {
-	uint32_t Moving_Speed=0;
+	uint8_t Moving_Speed=0;
 	uint8_t Dec_Counter=0;
 	uint32_t OBS_Stop=0;
 	bool eh_status_now=false, eh_status_last=false;
+	g_battery_low_cnt = 0;
   //Display_Clean_Status(Display_Remote);
 
 	set_led(100, 0);
@@ -72,7 +73,7 @@ void Remote_Mode(void)
 				}
 				else
 				{
-					Moving_Speed=(get_right_wheel_step()/80)+25;
+					Moving_Speed++;
 					if(Moving_Speed<25)Moving_Speed=25;
 					if(Moving_Speed>42)Moving_Speed=42;
 					move_forward(Moving_Speed, Moving_Speed);
@@ -83,15 +84,21 @@ void Remote_Mode(void)
 			}
 			case REMOTE_MODE_BACKWARD:
 			{
-				move_forward(-Moving_Speed, -Moving_Speed);
+				set_dir_backward();
+				set_wheel_speed(20, 20);
+				if (sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y - robot::instance()->getOdomPositionY(), 2)) > 0.01f)
+				{
+					ROS_DEBUG("%s %d: Move back finished.", __FUNCTION__, __LINE__);
+					set_move_flag_(REMOTE_MODE_STAY);
+				}
 				break;
 			}
 			case REMOTE_MODE_STAY:
 			{
 				set_wheel_speed(0, 0);
+				Moving_Speed = 0;
 				break;
 			}
-
 			case REMOTE_MODE_LEFT:
 			{
 				turn_left(Turn_Speed, 300);
@@ -106,48 +113,6 @@ void Remote_Mode(void)
 			}
 		}
 
-		/*------------------------------------------------------Check Battery-----------------------*/
-		if(check_bat_stop())
-		{
-			set_clean_mode(Clean_Mode_Userinterface);
-			break;
-		}
-		/*-------------------------------------------Bumper  and cliff Event-----------------------*/
-		if(get_cliff_trig())
-		{
-			move_back();
-			if(get_cliff_trig()){
-				move_back();
-			}
-			stop_brifly();
-			disable_motors();
-			wav_play(WAV_ERROR_LIFT_UP);
-			set_clean_mode(Clean_Mode_Userinterface);
-			break;
-		}
-		if(get_bumper_status())
-		{
-			random_back();
-			is_bumper_jamed();
-			break;
-		}
-		if(get_cliff_trig() == (Status_Cliff_All)){
-			quick_back(20,20);
-			stop_brifly();
-			if(get_cliff_trig() == (Status_Cliff_All)){
-				quick_back(20,20);
-				stop_brifly();
-			}
-			if(get_cliff_trig() == Status_Cliff_All){
-				quick_back(20,20);
-				stop_brifly();
-				disable_motors();
-				ROS_INFO("Cliff trigger three times stop robot ");
-				wav_play(WAV_ERROR_LIFT_UP);
-				set_clean_mode(Clean_Mode_Userinterface);
-				break;
-			}
-		}
 		/*------------------------------------------------check motor over current event ---------*/
 		uint8_t octype =0;
 		octype = check_motor_current();
@@ -187,12 +152,26 @@ void remote_mode_register_events(void)
 	event_manager_register_handler(y, &remote_mode_handle_ ##name); \
 	event_manager_enable_handler(y, enabled);
 
-	///* Cliff */
-	//event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
+	/* Bumper */
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_ALL, true);
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_LEFT, true);
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_RIGHT, true);
+	/* Cliff */
+	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_LEFT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_RIGHT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT_RIGHT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
+	/* OBS */
+	event_manager_register_and_enable_x(obs, EVT_OBS_FRONT, true);
+	event_manager_register_and_enable_x(obs, EVT_OBS_LEFT, true);
+	event_manager_register_and_enable_x(obs, EVT_OBS_RIGHT, true);
 	///* Rcon */
 	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
-	///* Battery */
-	//event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+	/* Battery */
+	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Key */
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Remote */
@@ -216,12 +195,26 @@ void remote_mode_unregister_events(void)
 	event_manager_register_handler(x, NULL); \
 	event_manager_enable_handler(x, false);
 
-	///* Cliff */
-	//event_manager_register_and_disable_x(EVT_CLIFF_ALL);
+	/* Bumper */
+	event_manager_register_and_disable_x(EVT_BUMPER_ALL);
+	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
+	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
+	/* Cliff */
+	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_LEFT);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_RIGHT);
+	event_manager_register_and_disable_x(EVT_CLIFF_LEFT_RIGHT);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
+	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
+	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
+	/* OBS */
+	event_manager_register_and_disable_x(EVT_OBS_FRONT);
+	event_manager_register_and_disable_x(EVT_OBS_LEFT);
+	event_manager_register_and_disable_x(EVT_OBS_RIGHT);
 	///* Rcon */
 	//event_manager_register_and_disable_x(EVT_RCON);
-	///* Battery */
-	//event_manager_register_and_disable_x(EVT_BATTERY_LOW);
+	/* Battery */
+	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 	/* Key */
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Remote */
@@ -236,6 +229,45 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+}
+
+void remote_mode_handle_bumper(bool state_now, bool state_last)
+{
+	pos_x = robot::instance()->getOdomPositionX();
+	pos_y = robot::instance()->getOdomPositionY();
+	if (state_last == false)
+	{
+		ROS_WARN("%s %d: Bumper triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, pos_x, pos_y);
+	}
+	set_move_flag_(REMOTE_MODE_BACKWARD);
+}
+
+void remote_mode_handle_cliff_all(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+	disable_motors();
+	wav_play(WAV_ERROR_LIFT_UP);
+	set_clean_mode(Clean_Mode_Userinterface);
+}
+
+void remote_mode_handle_cliff(bool state_now, bool state_last)
+{
+	pos_x = robot::instance()->getOdomPositionX();
+	pos_y = robot::instance()->getOdomPositionY();
+	if (state_last == false)
+	{
+		ROS_WARN("%s %d: Cliff triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, pos_x, pos_y);
+	}
+	set_move_flag_(REMOTE_MODE_BACKWARD);
+}
+
+void remote_mode_handle_obs(bool state_now, bool state_last)
+{
+	if (get_move_flag_() == REMOTE_MODE_FORWARD)
+	{
+		ROS_WARN("%s %d: OBS triggered, stop the robot.", __FUNCTION__, __LINE__);
+		set_move_flag_(REMOTE_MODE_STAY);
+	}
 }
 
 void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)
@@ -332,5 +364,17 @@ void remote_mode_handle_charge_detect(bool state_now, bool state_last)
 	{
 		set_clean_mode(Clean_Mode_Charging);
 		disable_motors();
+	}
+}
+
+void remote_mode_handle_battery_low(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: Detects battery low.", __FUNCTION__, __LINE__);
+	if (g_battery_low_cnt++ > 50)
+	{
+		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, get_battery_voltage());
+		disable_motors();
+		wav_play(WAV_BATTERY_LOW);
+		set_clean_mode(Clean_Mode_Userinterface);
 	}
 }
