@@ -98,8 +98,7 @@ extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 // This status is for rounding function to decide the angle it should turn.
 uint8_t g_bumper_status_for_rounding;
 
-// This time count is for checking how many times of 20ms did the user press the key.
-uint16_t g_press_time = 0;
+bool g_motion_init_succeeded = false;
 
 static int16_t ranged_angle(int16_t angle)
 {
@@ -1280,6 +1279,7 @@ uint8_t cm_touring(void)
 {
 	g_cm_move_type = CM_LINEARMOVE;
 	g_from_station = 0;
+	g_motion_init_succeeded = false;
 	event_manager_reset_status();
 	MotionManage motion;
 
@@ -1290,13 +1290,15 @@ uint8_t cm_touring(void)
 		return 0;
 	}
 
+	g_motion_init_succeeded = true;
+
 	if (!g_go_home && (robot::instance()->isLowBatPaused())){
 		if (! cm_resume_cleaning())
 		{
 			cm_unregister_events();
 			return 0;
-        }
-    }
+		}
+	}
 	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
 		cm_go_home();
@@ -2318,11 +2320,17 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	beep_for_command(true);
-	stop_brifly();
+	if (g_motion_init_succeeded)
+	{
+		beep_for_command(true);
+		stop_brifly();
+		g_remote_spot = true;
+		set_clean_mode(Clean_Mode_Spot);
+	}
+	else
+		beep_for_command(false);
+
 	reset_rcon_remote();
-	g_remote_spot = true;
-    set_clean_mode(Clean_Mode_Spot);
 }
 
 void cm_handle_remote_wallfollow(bool state_now,bool state_last)
