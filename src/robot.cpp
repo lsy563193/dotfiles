@@ -268,7 +268,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count = 0;
 			}
 		}
-		cm_update_map();
+		if(! is_turn())
+			cm_update_map();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
