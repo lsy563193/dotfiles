@@ -76,8 +76,7 @@ std::list <Point32_t> g_home_point;
 // This is for the continue point for robot to go after charge.
 Point32_t g_continue_point;
 
-uint8_t	g_remote_go_home = 0;
-bool g_temp_spot_set = false;
+//uint8_t	g_remote_go_home = 0;
 bool	g_go_home = false;
 bool	g_from_station = 0;
 int16_t g_map_gyro_offset = 0;
@@ -368,7 +367,7 @@ Cell_t cm_update_position(bool is_turn)
 	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	map_set_position(pos_x, pos_y);
-	return Cell_t{(int16_t)pos_x, (int16_t)pos_y};
+	return map_get_curr_cell();
 }
 
 void cm_update_map()
@@ -377,10 +376,7 @@ void cm_update_map()
 
 	auto curr = cm_update_position();
 
-	if (last == curr)
-		return;
-
-	cm_update_map_obs();
+//	ROS_WARN("1 last(%d,%d),curr(%d,%d)",last.X, last.Y, curr.X, curr.Y);
 
 	cm_update_map_bumper();
 
@@ -388,7 +384,10 @@ void cm_update_map()
 
 	cm_update_map_cleaned();
 
-	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
+	cm_update_map_obs();
+//	ROS_ERROR("2 last(%d,%d),curr(%d,%d)",last.X, last.Y,curr.X,curr.Y);
+	if (last != curr || get_bumper_status()!=0 || get_cliff_trig() !=0 || get_obs_status() != 0)
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
 }
 //-------------------------------cm_move_back-----------------------------//
 uint16_t round_turn_angle()
@@ -1075,8 +1074,6 @@ int cm_cleaning()
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event )
 			return -1;
-		if (g_remote_spot)
-			return -2;
 		if (g_remote_home || g_battery_home)
 		{
 			g_remote_home = false;
@@ -1318,11 +1315,6 @@ uint8_t cm_touring(void)
 	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
 		cm_go_home();
-	else if(cm_clean_ret == -2){
-		spot_with_cell(CLEAN_SPOT,1.0);
-		g_temp_spot_set = true;
-		set_clean_mode(Clean_Mode_Navigation);
-    }
 	cm_unregister_events();
 	return 0;
 }
@@ -1602,8 +1594,10 @@ void cm_register_events()
 	/* Remote */
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
+	event_manager_register_and_enable_x(remote_wallfollow,EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
+
 	// Just enable the default handler.
 	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
 	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
@@ -2343,12 +2337,16 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	stop_brifly();
 	reset_rcon_remote();
 	g_remote_spot = true;
-	//robot::instance()->setTempSpot();
-	robot::instance()->setManualPause();
-	//Spot_WithCell(CleanSpot,1.0);
-	//work_motor_configure();
-	//auto modeTemp = get_vac_mode();
-	//set_vacmode(modeTemp,false);
+    set_clean_mode(Clean_Mode_Spot);
+}
+
+void cm_handle_remote_wallfollow(bool state_now,bool state_last)
+{
+	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
+	beep_for_command(true);
+	stop_brifly();
+	reset_rcon_remote();
+	g_remote_wallfollow = true;
 }
 
 void cm_handle_remote_max(bool state_now, bool state_last)
@@ -2380,21 +2378,20 @@ void cm_handle_battery_home(bool state_now, bool state_last)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		cm_set_continue_point(map_get_x_count(), map_get_y_count());
 		robot::instance()->setLowBatPause();
-#endif
-	}
+#endif 
+    }
 }
 
 void cm_handle_battery_low(bool state_now, bool state_last)
 {
-	uint8_t		v_pwr, s_pwr, m_pwr;
-	uint16_t	t_vol;
+    uint8_t         v_pwr, s_pwr, m_pwr;
+    uint16_t        t_vol;
 
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+    ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_battery_low_cnt++ > 50) {
-		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
-						 robot::instance()->getBatteryVoltage());
 		t_vol = get_battery_voltage();
+		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
 		if (g_go_home) {
 			v_pwr = Home_Vac_Power / t_vol;

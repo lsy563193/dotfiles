@@ -476,3 +476,10 @@ void robotbase_obs_adjust_count(int count)
 	boost::mutex::scoped_lock(odom_mutex);
 	OBS_adjust_count = count;
 }
+bool is_turn(void)
+{
+	boost::mutex::scoped_lock(odom_mutex);
+	return ((abs(sensor.rw_vel - sensor.rw_vel) > 0.1) ||
+					(sensor.lw_vel * sensor.rw_vel < 0)
+					);
+}
