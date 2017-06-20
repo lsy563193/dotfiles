@@ -185,6 +185,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
 		usleep(40000);
 	}
+	reset_touch();
 }
 
 void sleep_handle_charge_detect(bool state_now, bool state_last)

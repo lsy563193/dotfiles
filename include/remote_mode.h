@@ -15,8 +15,17 @@
 #ifndef __Remote_Mode_H
 #define __Remote_Mode_H
 
+typedef enum {
+	REMOTE_MODE_FORWARD = 0,
+	REMOTE_MODE_LEFT,
+	REMOTE_MODE_RIGHT,
+	REMOTE_MODE_BACKWARD,
+	REMOTE_MODE_STAY,
+} RemoteModeMoveType;
 
 void Remote_Mode(void);
+void set_move_flag_(RemoteModeMoveType flag);
+RemoteModeMoveType get_move_flag_(void);
 void remote_mode_register_events(void);
 void remote_mode_unregister_events(void);
 
@@ -35,19 +44,17 @@ void remote_mode_unregister_events(void);
 //define_remote_mode_handle_func(over_current_wheel_left)
 //define_remote_mode_handle_func(over_current_wheel_right)
 //define_remote_mode_handle_func(over_current_suction)
-///* Key */
-//define_remote_mode_handle_func(key_clean)
-///* Remote */
+/* Key */
+define_remote_mode_handle_func(key_clean)
+/* Remote */
 define_remote_mode_handle_func(remote_direction_forward)
 define_remote_mode_handle_func(remote_direction_left)
 define_remote_mode_handle_func(remote_direction_right)
-//define_remote_mode_handle_func(remote_clean)
-//define_remote_mode_handle_func(remote_home)
-//define_remote_mode_handle_func(remote_spot)
-//define_remote_mode_handle_func(remote_max)
+define_remote_mode_handle_func(remote_exit)
+define_remote_mode_handle_func(remote_max)
 ///* Battery */
 //define_remote_mode_handle_func(battery_low)
-///* Charge Status */
-//define_remote_mode_handle_func(charge_detect)
+/* Charge Status */
+define_remote_mode_handle_func(charge_detect)
 
 #endif /*----Behaviors------*/
