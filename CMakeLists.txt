@@ -34,6 +34,7 @@ FILE(GLOB PP_SRC
 	src/wav.cpp
 	src/slam.cpp
 	src/event_manager.cpp
+	src/go_home.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

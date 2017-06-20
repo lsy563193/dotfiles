@@ -25,6 +25,7 @@
 #include "wall_follow_trapped.h"
 #include "wav.h"
 #include "event_manager.h"
+#include "go_home.hpp"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
