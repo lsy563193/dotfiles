@@ -47,10 +47,6 @@ boost::condition_variable g_cond_var;
 void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
 {
 //	ROS_WARN("robot_obstacles_cb");
-	if (!s_laser->isReady())
-		return;
-
-//	ROS_WARN("2robot_obstacles_cb");
 	line_align_ = start;
 
 	if (msg->segments.size() != 0)
@@ -142,14 +138,16 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	//2 start laser
 	s_laser = new Laser();
-	if (!s_laser->isReady())
+	if (s_laser->isReady() == -1)
 	{
-		if (!stop_event())
-		{
-			ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
-			set_error_code(Error_Code_Laser);
-			wav_play(WAV_TEST_LIDAR);
-		}
+		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
+		set_error_code(Error_Code_Laser);
+		wav_play(WAV_TEST_LIDAR);
+		initSucceeded(false);
+		return;
+	}
+	else if (s_laser->isReady() == 0)
+	{
 		initSucceeded(false);
 		return;
 	}
@@ -161,6 +159,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		robot::instance()->resetManualPause();
 		return;
 	}
+
 	//3 calculate offsetAngle
 	nh_.param<bool>("is_active_align", is_align_active_, false);
 	if (get_clean_mode() == Clean_Mode_Navigation && is_align_active_)
@@ -177,6 +176,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
+
 	//4 call start slam
 	s_slam = new Slam();
 
@@ -421,17 +421,7 @@ bool MotionManage::initNavigationCleaning(void)
 		extern bool g_from_station;
 		g_from_station = 1;
 	}
-	else
-	{
-		// Key release detection, if user has not release the key, don't do anything.
-		while (get_key_press() & KEY_CLEAN)
-		{
-			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-			usleep(20000);
-		}
-		// Key relaesed, then the touch status and stop event status should be cleared.
-		reset_stop_event_status();
-	}
+
 	work_motor_configure();
 
 	extern bool g_go_home;
