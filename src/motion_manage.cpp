@@ -213,23 +213,23 @@ MotionManage::~MotionManage()
 		s_laser = nullptr;
 	}
 
-	if (robot::instance()->isManualPaused()){
-        set_clean_mode(Clean_Mode_Userinterface);
-        wav_play(WAV_PAUSE_CLEANING);
-    }
-    robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-    ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
-    extern bool g_go_home;
-    if (g_go_home)
+	if (robot::instance()->isManualPaused())
+	{
+		set_clean_mode(Clean_Mode_Userinterface);
+		wav_play(WAV_PAUSE_CLEANING);
+		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		extern bool g_go_home;
+		if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
-        ROS_WARN("%s %d: Pause going home, g_home_point list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point.size());
+			ROS_WARN("%s %d: Pause going home, g_home_point list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point.size());
 #else
-        ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
-    else{
-        ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
-        g_saved_work_time += get_work_time();
-        ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+		else
+		ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
+		g_saved_work_time += get_work_time();
+		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
 	if (robot::instance()->isLowBatPaused())
@@ -241,11 +241,11 @@ MotionManage::~MotionManage()
 		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
-    if (s_slam != nullptr)
-    {
-        delete s_slam;
-        s_slam = nullptr;
-    }
+if (s_slam != nullptr)
+	{
+		delete s_slam;
+		s_slam = nullptr;
+	}
 
 	robot::instance()->savedOffsetAngle(0);
 
