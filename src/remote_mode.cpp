@@ -35,6 +35,7 @@ void Remote_Mode(void)
 	uint8_t Dec_Counter=0;
 	uint32_t OBS_Stop=0;
 	bool eh_status_now=false, eh_status_last=false;
+	g_battery_low_cnt = 0;
   //Display_Clean_Status(Display_Remote);
 
 	set_led(100, 0);
@@ -112,12 +113,6 @@ void Remote_Mode(void)
 			}
 		}
 
-		/*------------------------------------------------------Check Battery-----------------------*/
-		if(check_bat_stop())
-		{
-			set_clean_mode(Clean_Mode_Userinterface);
-			break;
-		}
 		/*------------------------------------------------check motor over current event ---------*/
 		uint8_t octype =0;
 		octype = check_motor_current();
@@ -175,8 +170,8 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(obs, EVT_OBS_RIGHT, true);
 	///* Rcon */
 	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
-	///* Battery */
-	//event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+	/* Battery */
+	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Key */
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Remote */
@@ -218,8 +213,8 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OBS_RIGHT);
 	///* Rcon */
 	//event_manager_register_and_disable_x(EVT_RCON);
-	///* Battery */
-	//event_manager_register_and_disable_x(EVT_BATTERY_LOW);
+	/* Battery */
+	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 	/* Key */
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Remote */
@@ -369,5 +364,17 @@ void remote_mode_handle_charge_detect(bool state_now, bool state_last)
 	{
 		set_clean_mode(Clean_Mode_Charging);
 		disable_motors();
+	}
+}
+
+void remote_mode_handle_battery_low(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: Detects battery low.", __FUNCTION__, __LINE__);
+	if (g_battery_low_cnt++ > 50)
+	{
+		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, get_battery_voltage());
+		disable_motors();
+		wav_play(WAV_BATTERY_LOW);
+		set_clean_mode(Clean_Mode_Userinterface);
 	}
 }

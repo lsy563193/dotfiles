@@ -261,10 +261,9 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 
 void user_interface_handle_battery_low(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: User_Interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, get_battery_voltage(), (int)(time(NULL) - battery_low_start_time));
 	if (battery_low_delay == 0)
 		battery_low_start_time = time(NULL);
-
+	ROS_DEBUG("%s %d: User_Interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, get_battery_voltage(), (int)(time(NULL) - battery_low_start_time));
 	if (time(NULL) - battery_low_start_time >= 5)// 5 seconds
 	{
 		temp_mode = Clean_Mode_Sleep;
