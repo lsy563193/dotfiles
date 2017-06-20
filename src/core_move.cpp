@@ -113,6 +113,9 @@ static int16_t ranged_angle(int16_t angle)
 
 typedef struct Regulator1_{
 	Regulator1_(int32_t max):integrated_(0),integration_cycle_(0),base_speed_(BASE_SPEED),tick_(0),speed_max_(max){};
+	~Regulator1_(){
+		set_wheel_speed(0, 0);
+	};
 	bool adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool);
 	int32_t speed_max_;
 	int32_t integrated_;
@@ -551,15 +554,8 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	LinearSpeedRegulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
-#ifdef WALL_DYNAMIC
 		wall_dynamic_base(50);
-#endif
-
-#ifdef OBS_DYNAMIC_MOVETOTARGET
-		/* Dyanmic adjust obs trigger val . */
 		robotbase_obs_adjust_count(50);
-#endif
-
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
 			continue;
@@ -573,7 +569,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 			if(g_bumper_hitted || g_cliff_triggered){
 				cm_move_back();
 			}
-			set_wheel_speed(0, 0);
 			g_should_follow_wall = 1;
 
 			break;
@@ -596,13 +591,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	}
 
 	cm_set_event_manager_handler_state(false);
-
-	if (stop_is_needed)
-		stop_brifly();
-
-	ROS_INFO("%s %d: Gyro Calibration: %d", __FUNCTION__, __LINE__, Gyro_GetCalibration());
-	robot::instance()->displayPositions();
-	usleep(10000);
 
 	return true;
 }
@@ -686,7 +674,7 @@ bool cm_curve_move_to_point()
 	}
 
 	//1/3 move to first target
-	if(!cm_linear_move_to_point(target, MAX_SPEED, false, true) )
+	if(!cm_linear_move_to_point(target, MAX_SPEED, true, true) )
 		return false;
 
 	//2/3 turn to  target
@@ -725,90 +713,30 @@ bool cm_curve_move_to_point()
 
 	//3 continue to move to target
 	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
-	if(!cm_linear_move_to_point(target, MAX_SPEED, true, false))
+	if(!cm_linear_move_to_point(target, MAX_SPEED, true, true))
 		return false;
 
 	return true;
 }
 
-RoundingType CM_get_rounding_direction(Point32_t *Next_Point, Point32_t Target_Point, uint16_t dir) {
-	int32_t		y_coordinate;
+RoundingType cm_get_rounding_direction(Point32_t *next_point, Point32_t target_points, uint16_t dir) {
 	RoundingType	rounding_type = ROUNDING_NONE;
 
-	ROS_INFO("Enter rounding detection.");
-	if (g_should_follow_wall == 0 || Next_Point->Y == map_get_y_count()) {
+	if (g_should_follow_wall == 0 || next_point->Y == map_get_y_count()) {
 		return rounding_type;
 	}
 
-	if (get_cliff_trig()) {
-		ROS_INFO("%s %d, cliff triggered.", __FUNCTION__, __LINE__);
-	} else if (get_bumper_status()) {
-		ROS_INFO("%s %d, bumper event.", __FUNCTION__, __LINE__);
-	} else if (get_obs_status()) {
-		ROS_INFO("%s %d, OBS detected.", __FUNCTION__, __LINE__);
-	} else if (get_front_obs() > get_front_obs_value()) {
-		ROS_INFO("%s %d, front OBS detected.", __FUNCTION__, __LINE__);
-	} else if (get_wall_adc(0) > 170) {
-		ROS_INFO("%s %d, wall sensor exceed 170.", __FUNCTION__, __LINE__);
-	}
-	/*					South (Xmin)
-	 *						|
-	 *	West (Ymin)  --  robot	--	 East (Ymax)
-	 *						|
-	 *					North (Xmax)
-	**/
-	y_coordinate = count_to_cell(Next_Point->Y);
-	if (y_coordinate != map_get_y_cell()) {
-		// Robot need to go to new line
+	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
+	if ( delta_y != 0 && std::abs(delta_y <= 2) ) {
 		ROS_INFO("Robot need to go to new line");
-
-#if PP_ROUNDING_OBSTACLE_LEFT
-		if ((dir == POS_X && y_coordinate < map_get_y_cell() && (y_coordinate == map_get_y_cell() - 1 || y_coordinate ==
-																																																						 map_get_y_cell() - 2)) ||
-			(dir == NEG_X && y_coordinate > map_get_y_cell() && (y_coordinate == map_get_y_cell() + 1 || y_coordinate ==
-																																																					 map_get_y_cell() + 2 ))) {
-
-			rounding_type = ROUNDING_LEFT;
-		}
-#endif
-
-#if PP_ROUNDING_OBSTACLE_RIGHT
-		if ((dir == POS_X && y_coordinate > map_get_y_cell() && (y_coordinate == map_get_y_cell() + 1 || y_coordinate ==
-																																																						 map_get_y_cell() + 2)) ||
-			(dir == NEG_X && y_coordinate < map_get_y_cell() && (y_coordinate == map_get_y_cell() - 1 || y_coordinate ==
-																																																					 map_get_y_cell() - 2))) {
-
-			rounding_type = ROUNDING_RIGHT;
-		}
-#endif
-	} else {
-		ROS_INFO("%s %d Robot don't need to go to new line. y: %d", __FUNCTION__, __LINE__, y_coordinate);
-		if (!(count_to_cell(Next_Point->X) == SHRT_MAX || count_to_cell(Next_Point->X) == SHRT_MIN)) {
-			y_coordinate = count_to_cell(Target_Point.Y);
-			if (y_coordinate != map_get_y_cell()) {
-
-#if PP_ROUNDING_OBSTACLE_LEFT
-				if ((dir == POS_X && y_coordinate < map_get_y_cell() && (y_coordinate == map_get_y_cell() - 1 || y_coordinate ==
-																																																								 map_get_y_cell() - 2)) ||
-					(dir == NEG_X && y_coordinate > map_get_y_cell() && (y_coordinate == map_get_y_cell() + 1 || y_coordinate ==
-																																																							 map_get_y_cell() + 2 ))) {
-
-					rounding_type = ROUNDING_LEFT;
-					Next_Point->Y = Target_Point.Y;
-				}
-#endif
-
-#if PP_ROUNDING_OBSTACLE_RIGHT
-				if ((dir == POS_X && y_coordinate > map_get_y_cell() && (y_coordinate == map_get_y_cell() + 1 || y_coordinate ==
-																																																								 map_get_y_cell() + 2)) ||
-					(dir == NEG_X && y_coordinate < map_get_y_cell() && (y_coordinate == map_get_y_cell() - 1 || y_coordinate ==
-																																																							 map_get_y_cell() - 2))) {
-
-					rounding_type = ROUNDING_RIGHT;
-					Next_Point->Y = Target_Point.Y;
-				}
-#endif
-
+		rounding_type = ( (dir == POS_X) ^ (delta_y > 0) ) ? ROUNDING_LEFT: ROUNDING_RIGHT;
+	} else if(delta_y == 0){
+		ROS_INFO("%s %d Robot don't need to go to new line. y: %d", __FUNCTION__, __LINE__, delta_y);
+		if (!(count_to_cell(next_point->X) == SHRT_MAX || count_to_cell(next_point->X) == SHRT_MIN)) {
+			delta_y = count_to_cell(target_points.Y) - map_get_y_cell();
+			if (delta_y != 0 && std::abs(delta_y <= 2)) {
+				rounding_type = (dir == POS_X ^ delta_y > 0 ) ? ROUNDING_LEFT : ROUNDING_RIGHT;
+				next_point->Y = target_points.Y;
 			}
 		}
 	}
@@ -1098,7 +1026,7 @@ int cm_cleaning()
 		} else
 		if (is_found == 1)
 		{
-			auto rounding_type = CM_get_rounding_direction(&g_next_point, g_targets_point, last_dir);
+			auto rounding_type = cm_get_rounding_direction(&g_next_point, g_targets_point, last_dir);
 			if (rounding_type != ROUNDING_NONE)
 			{
 				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");

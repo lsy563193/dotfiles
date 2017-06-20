@@ -445,7 +445,11 @@ uint8_t is_obs_near(void);
 uint32_t get_rcon_status(void);
 
 void set_rcon_status(uint32_t code);
-
+/*
+// Add handling for gyro dynamic adjustment.
+// If robot going straight, should turn off gyro dynamic adjustment.
+// If robot turning, should turn on gyro dynamic adjustment.
+ */
 void set_wheel_speed(uint8_t Left, uint8_t Right);
 
 void work_motor_configure(void);
