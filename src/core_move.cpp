@@ -17,6 +17,7 @@
 #include "rounding.h"
 #include "shortest_path.h"
 #include "spot.h"
+#include "go_home.hpp"
 
 #include "movement.h"
 #include "wall_follow_trapped.h"
