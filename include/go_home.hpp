@@ -1,13 +1,13 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#define Round_Left			0x01
-#define Round_Right			0x02
+#define ROUND_LEFT			0x01
+#define ROUND_RIGHT			0x02
 
 void go_home(void);
 void around_chargerstation(uint8_t Dir);
-uint8_t Check_Position(uint8_t Dir);
-void By_Path(void);
-uint8_t Home_Check_Current(void);
-void Home_Motor_Set(void);
+uint8_t check_position(uint8_t Dir);
+void by_path(void);
+uint8_t home_check_current(void);
+void home_motor_set(void);
 
