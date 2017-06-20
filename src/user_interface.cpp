@@ -153,7 +153,13 @@ void user_interface_register_events(void)
 	event_manager_enable_handler(y, enabled);
 
 	/* Cliff */
-	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_ALL, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_LEFT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_RIGHT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT_RIGHT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
 	/* Rcon */
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
@@ -183,6 +189,12 @@ void user_interface_unregister_events(void)
 
 	/* Cliff */
 	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_LEFT);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_RIGHT);
+	event_manager_register_and_disable_x(EVT_CLIFF_LEFT_RIGHT);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
+	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
+	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
 	/* Rcon */
 	event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
@@ -203,12 +215,12 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }
 
-void user_interface_handle_cliff_all(bool state_now, bool state_last)
+void user_interface_handle_cliff(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: Cliff all triggered.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 
 	/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
-	if (robot::instance()->isManualPaused())
+	if (!state_last && robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Robot lifted up during manual pause, reset manual pause status.", __FUNCTION__, __LINE__);
 		wav_play(WAV_ERROR_LIFT_UP);

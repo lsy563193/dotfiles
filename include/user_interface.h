@@ -53,7 +53,7 @@ void user_interface_unregister_events(void);
 	void user_interface_handle_ ## name(bool state_now, bool state_last);
 
 /* Cliff */
-define_user_interface_handle_func(cliff_all)
+define_user_interface_handle_func(cliff)
 /* Rcon */
 define_user_interface_handle_func(rcon)
 /* Battery */
