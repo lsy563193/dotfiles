@@ -1300,8 +1300,8 @@ uint8_t cm_touring(void)
 	MotionManage motion;
 
 	if(! motion.initSucceeded()){
-		robot::instance()->resetLowBatPause();
-		robot::instance()->resetManualPause();
+		//robot::instance()->resetLowBatPause();
+		//robot::instance()->resetManualPause();
 		cm_unregister_events();
 		return 0;
 	}

@@ -314,6 +314,56 @@ bool MotionManage::initNavigationCleaning(void)
 
 	cm_register_events();
 
+	// Initialize motors and map.
+	if (robot::instance()->isLowBatPaused())
+	{
+		if (get_rcon_status())
+		{
+			Point32_t new_home_point;
+			// Save the current coordinate as a new home point.
+			new_home_point.X = map_get_x_count();
+			new_home_point.Y = map_get_y_count();
+
+			// Push the start point into the home point list.
+			g_home_point.push_front(new_home_point);
+		}
+
+		reset_rcon_status();
+	}
+	else if (!robot::instance()->isManualPaused())
+	{
+		g_saved_work_time = 0;
+		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
+		//Initital home point
+		g_home_point.clear();
+
+		// Push the start point into the home point list
+		Point32_t new_home_point;
+		new_home_point.X = new_home_point.Y = 0;
+		g_home_point.push_front(new_home_point);
+
+		// Mark all the trapped reference points as (0, 0).
+		Cell_t tmp_pnt;
+		tmp_pnt.X = 0;
+		tmp_pnt.Y = 0;
+		extern Cell_t g_pnt16_ar_tmp[3];
+		for (int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i)
+		{
+			g_pnt16_ar_tmp[i] = tmp_pnt;
+		}
+		path_escape_set_trapped_cell(g_pnt16_ar_tmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
+
+		ROS_INFO("map_init-----------------------------");
+		map_init();
+		path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);
+
+		robot::instance()->initOdomPosition();
+
+		// If it it the first time cleaning, initialize the g_continue_point.
+		extern Point32_t g_continue_point;
+		g_continue_point.X = g_continue_point.Y = 0;
+	}
+
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
@@ -381,57 +431,6 @@ bool MotionManage::initNavigationCleaning(void)
 		// Key relaesed, then the touch status and stop event status should be cleared.
 		reset_stop_event_status();
 	}
-
-	// Initialize motors and map.
-	if (robot::instance()->isLowBatPaused())
-	{
-		if (get_rcon_status())
-		{
-			Point32_t new_home_point;
-			// Save the current coordinate as a new home point.
-			new_home_point.X = map_get_x_count();
-			new_home_point.Y = map_get_y_count();
-
-			// Push the start point into the home point list.
-			g_home_point.push_front(new_home_point);
-		}
-
-		reset_rcon_status();
-	}
-	else if (!robot::instance()->isManualPaused())
-	{
-		g_saved_work_time = 0;
-		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-		//Initital home point
-		g_home_point.clear();
-
-		// Push the start point into the home point list
-		Point32_t new_home_point;
-		new_home_point.X = new_home_point.Y = 0;
-		g_home_point.push_front(new_home_point);
-
-		// Mark all the trapped reference points as (0, 0).
-		Cell_t tmp_pnt;
-		tmp_pnt.X = 0;
-		tmp_pnt.Y = 0;
-		extern Cell_t g_pnt16_ar_tmp[3];
-		for (int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i)
-		{
-			g_pnt16_ar_tmp[i] = tmp_pnt;
-		}
-		path_escape_set_trapped_cell(g_pnt16_ar_tmp, ESCAPE_TRAPPED_REF_CELL_SIZE);
-
-		ROS_INFO("map_init-----------------------------");
-		map_init();
-		path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);
-
-		robot::instance()->initOdomPosition();
-
-		// If it it the first time cleaning, initialize the g_continue_point.
-		extern Point32_t g_continue_point;
-		g_continue_point.X = g_continue_point.Y = 0;
-	}
-
 	work_motor_configure();
 
 	extern bool g_go_home;
