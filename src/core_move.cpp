@@ -1194,7 +1194,6 @@ uint8_t cm_touring(void)
 	if(! motion.initSucceeded()){
 		//robot::instance()->resetLowBatPause();
 		//robot::instance()->resetManualPause();
-		cm_unregister_events();
 		return 0;
 	}
 
@@ -1203,14 +1202,12 @@ uint8_t cm_touring(void)
 	if (!g_go_home && (robot::instance()->isLowBatPaused())){
 		if (! cm_resume_cleaning())
 		{
-			cm_unregister_events();
 			return 0;
 		}
 	}
 	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
 		cm_go_home();
-	cm_unregister_events();
 	return 0;
 }
 
@@ -1514,6 +1511,7 @@ void cm_register_events()
 
 void cm_unregister_events()
 {
+	ROS_INFO("%s %d: Unregister events", __FUNCTION__, __LINE__);
 #define event_manager_register_and_disable_x(x) \
 	event_manager_register_handler(x, NULL); \
 	event_manager_enable_handler(x, false);

@@ -171,9 +171,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 
 	if (robot::instance()->isLowBatPaused())
+	{
+		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		return;
+	}
 	if (robot::instance()->isManualPaused() && s_slam != nullptr)
 	{
+		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		robot::instance()->resetManualPause();
 		return;
 	}
@@ -230,6 +234,11 @@ MotionManage::~MotionManage()
 		delete s_laser;
 		s_laser = nullptr;
 	}
+
+	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+
+	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Charging)
+		cm_unregister_events();
 
 	if (robot::instance()->isManualPaused())
 	{
