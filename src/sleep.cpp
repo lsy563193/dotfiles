@@ -32,6 +32,7 @@ void sleep_mode(void)
 	reset_touch();
 	set_plan_status(0);
 
+	event_manager_reset_status();
 	sleep_register_events();
 	while(ros::ok())
 	{
@@ -185,6 +186,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
 		usleep(40000);
 	}
+	reset_touch();
 }
 
 void sleep_handle_charge_detect(bool state_now, bool state_last)

@@ -17,6 +17,7 @@
 #include "rounding.h"
 #include "shortest_path.h"
 #include "spot.h"
+#include "go_home.hpp"
 
 #include "movement.h"
 #include "wall_follow_trapped.h"
@@ -96,8 +97,7 @@ extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 // This status is for rounding function to decide the angle it should turn.
 uint8_t g_bumper_status_for_rounding;
 
-// This time count is for checking how many times of 20ms did the user press the key.
-uint16_t g_press_time = 0;
+bool g_motion_init_succeeded = false;
 
 static int16_t ranged_angle(int16_t angle)
 {
@@ -1129,14 +1129,14 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 {
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("Call GoHome()");
-	GoHome();
+	go_home();
 	// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
 	while (get_clean_mode() == Clean_Mode_GoHome)
 	{
 		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
 		set_clean_mode(Clean_Mode_Navigation);
 		ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
-		GoHome();
+		go_home();
 	}
 	// Check the clean mode to find out whether it has reach the charger.
 	if (get_clean_mode() == Clean_Mode_Charging)
@@ -1185,40 +1185,27 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 uint8_t cm_touring(void)
 {
 	g_cm_move_type = CM_LINEARMOVE;
-	g_fatal_quit_event = false;
-	g_bumper_jam = false;
-	g_cliff_all_triggered = false;
-	g_cliff_jam = false;
-	g_cliff_triggered = false;
-	g_rcon_triggered = false;
-	g_oc_brush_main = g_oc_wheel_left = g_oc_wheel_right = g_oc_suction = false;
-	g_key_clean_pressed = false;
-	g_remote_home = false;
-	g_remote_spot = false;
-	g_battery_home = g_battery_low = false;
-	g_oc_brush_left_cnt = g_oc_brush_main_cnt = g_oc_brush_right_cnt = g_oc_wheel_left_cnt = g_oc_wheel_right_cnt = g_oc_suction_cnt = 0;
-	g_cliff_cnt = 0;
-	g_bumper_cnt = g_press_time = 0;
 	g_from_station = 0;
-	g_charge_detect = 0;
-	g_charge_detect_cnt = 0;
-
+	g_motion_init_succeeded = false;
+	event_manager_reset_status();
 	MotionManage motion;
 
 	if(! motion.initSucceeded()){
-		robot::instance()->resetLowBatPause();
-		robot::instance()->resetManualPause();
+		//robot::instance()->resetLowBatPause();
+		//robot::instance()->resetManualPause();
 		cm_unregister_events();
 		return 0;
 	}
+
+	g_motion_init_succeeded = true;
 
 	if (!g_go_home && (robot::instance()->isLowBatPaused())){
 		if (! cm_resume_cleaning())
 		{
 			cm_unregister_events();
 			return 0;
-        }
-    }
+		}
+	}
 	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
 		cm_go_home();
@@ -2236,11 +2223,17 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	beep_for_command(true);
-	stop_brifly();
+	if (g_motion_init_succeeded)
+	{
+		beep_for_command(true);
+		stop_brifly();
+		g_remote_spot = true;
+		set_clean_mode(Clean_Mode_Spot);
+	}
+	else
+		beep_for_command(false);
+
 	reset_rcon_remote();
-	g_remote_spot = true;
-    set_clean_mode(Clean_Mode_Spot);
 }
 
 void cm_handle_remote_wallfollow(bool state_now,bool state_last)

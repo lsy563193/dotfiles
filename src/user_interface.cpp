@@ -64,6 +64,7 @@ void User_Interface(void)
 		wav_play(WAV_BATTERY_LOW);
 	}
 
+	event_manager_reset_status();
 	user_interface_register_events();
 
 	while(ros::ok())
@@ -165,6 +166,7 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
+	event_manager_enable_handler(EVT_REMOTE_MAX, true);
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	/* Key */
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
@@ -193,6 +195,7 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
+	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Key */
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
@@ -261,10 +264,9 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 
 void user_interface_handle_battery_low(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: User_Interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, get_battery_voltage(), (int)(time(NULL) - battery_low_start_time));
 	if (battery_low_delay == 0)
 		battery_low_start_time = time(NULL);
-
+	ROS_DEBUG("%s %d: User_Interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, get_battery_voltage(), (int)(time(NULL) - battery_low_start_time));
 	if (time(NULL) - battery_low_start_time >= 5)// 5 seconds
 	{
 		temp_mode = Clean_Mode_Sleep;
@@ -443,6 +445,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	{
 		temp_mode = Clean_Mode_Sleep;
 		reset_stop_event_status();
+		reset_touch();
 		return;
 	}
 
@@ -461,6 +464,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		wav_play(WAV_ERROR_LIFT_UP);
 		reset_stop_event_status();
+		reset_touch();
 		return;
 	}
 
@@ -469,11 +473,13 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		wav_play(WAV_BATTERY_LOW);
 		reset_stop_event_status();
+		reset_touch();
 		return;
 	}
 
 	temp_mode = Clean_Mode_Navigation;
 	reset_stop_event_status();
+	reset_touch();
 }
 
 void user_interface_handle_charge_detect(bool state_now, bool state_last)

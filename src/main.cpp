@@ -25,6 +25,7 @@
 #include "wall_follow_trapped.h"
 #include "wav.h"
 #include "event_manager.h"
+#include "go_home.hpp"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
@@ -115,7 +116,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
 				set_main_pwr_byte(Clean_Mode_Charging);
-				Charge_Function();
+				charge_function();
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();
@@ -152,7 +153,7 @@ void *core_move_thread(void *)
 #if Random_Find_Charger_Stub
 					HomeStraight_Mode();
 #else
-					GoHome();
+					go_home();
 #endif
 				}
 				break;
