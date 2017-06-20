@@ -32,7 +32,7 @@ uint8_t g_wheel_left_direction = 0;
 uint8_t g_wheel_right_direction = 0;
 static uint8_t g_remote_move_flag = 0;
 static uint8_t g_home_remote_flag = 0;
-uint32_t t_rcon_status;
+uint32_t g_rcon_status;
 uint32_t g_average_move = 0;
 uint32_t g_average_counter = 0;
 uint32_t g_max_move = 0;
@@ -1219,8 +1219,10 @@ uint8_t is_obs_near(void)
 void set_wheel_speed(uint8_t Left, uint8_t Right)
 {
 	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
-	Left = std::min(Left, RUN_TOP_SPEED);
-	Right = std::min(Right, RUN_TOP_SPEED);
+
+	Left = Left < RUN_TOP_SPEED ? Left : RUN_TOP_SPEED;
+	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
+
 	set_left_wheel_speed(Left);
 	set_right_wheel_speed(Right);
 #if GYRO_DYNAMIC_ADJUSTMENT

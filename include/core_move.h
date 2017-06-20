@@ -24,15 +24,10 @@
 #define COR_BACK_500MM		(3000)
 
 typedef enum {
-	ROUNDING_NONE = 0,
-	ROUNDING_LEFT,
-	ROUNDING_RIGHT,
-} RoundingType;
-
-typedef enum {
 	CM_LINEARMOVE = 0,
 	CM_CURVEMOVE,
-	CM_ROUNDING,
+	CM_FOLLOW_LEFT_WALL,
+	CM_FOLLOW_RIGHT_WALL,
 } CMMoveType;
 
 typedef enum {

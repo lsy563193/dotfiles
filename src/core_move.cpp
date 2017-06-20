@@ -60,7 +60,6 @@
 
 CMMoveType g_cm_move_type;
 
-RoundingType	g_rounding_type;
 uint16_t g_rounding_turn_angle;
 uint16_t g_rounding_move_speed;
 uint16_t g_rounding_wall_distance;
@@ -230,6 +229,55 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 	speed = speed_;
 	return true;
 }
+typedef struct RoundRegulator_{
+	RoundRegulator_(CMMoveType type):type_(type),previous_(0){ };
+	~RoundRegulator_(){ set_wheel_speed(0,0); };
+	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	int32_t	 previous_ = 0;
+	CMMoveType type_;
+}FollowWallRegulator;
+
+bool FollowWallRegulator::adjustSpeed(int32_t &speed_left, int32_t &speed_right)
+{
+	auto proportion =
+					(type_ == CM_FOLLOW_LEFT_WALL ? robot::instance()->getLeftWall() : robot::instance()->getRightWall()) * 100 /
+					g_rounding_wall_distance - 100;
+	auto Delta = proportion - previous_;
+
+	if (g_rounding_wall_distance > 300)
+	{
+		speed_left = 25 + proportion / 12 + Delta / 5;
+		speed_right = 25 - proportion / 10 - Delta / 5;
+		if (speed_right > 33)
+		{
+			speed_left = 5;
+			speed_right = 33;
+		}
+	} else
+	{
+		speed_right = 15 - proportion / 18 - Delta / 10;
+		speed_left = (speed_right > 18) ? 5 : (15 + proportion / 22 + Delta / 10);
+
+		check_limit(speed_left, 4, 20);
+		check_limit(speed_right, 4, 18);
+		speed_left = (speed_left - speed_right) > 5 ? speed_right + 5 : speed_left;
+	}
+
+	if ((type_ == CM_FOLLOW_LEFT_WALL && get_left_obs() > get_left_obs_value()) ||
+			(type_ == CM_FOLLOW_RIGHT_WALL && get_right_obs() > get_right_obs_value()))
+		if (g_rounding_wall_distance < Wall_High_Limit)
+			g_rounding_wall_distance++;
+
+	if (is_wall_obs_near())
+	{
+		speed_left /= 2;
+		speed_right /= 2;
+	}
+
+	previous_ = proportion;
+	check_limit(speed_left, 0, 40);
+	speed_right = speed_right < 0 ? 0 : speed_right;
+}
 
 static double radius_of(Cell_t cell_0,Cell_t cell_1)
 {
@@ -398,19 +446,19 @@ uint16_t round_turn_angle()
 	if(get_bumper_status()==AllBumperTrig || get_cliff_trig() == FrontCliffTrig || get_cliff_trig() == RightLeftCliffTrig)
 			return 900;
 		else if(get_bumper_status()==LeftBumperTrig || get_cliff_trig() == LeftCliffTrig)
-			return (g_rounding_type == ROUNDING_LEFT) ? 300 : 1350; //left
+			return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? 300 : 1350; //left
 		else if(get_bumper_status()==RightBumperTrig || get_cliff_trig() == RightCliffTrig)
-			return (g_rounding_type == ROUNDING_LEFT) ? 1350 : 300; //right
+			return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? 1350 : 300; //right
 		else if(get_cliff_trig() == LeftFrontCliffTrig)
-			return (g_rounding_type == ROUNDING_LEFT) ? 1350 : 300; //right
+			return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? 1350 : 300; //right
 		else/* (get_cliff_trig() == RightFrontCliffTrig)*/
-			return (g_rounding_type == ROUNDING_LEFT) ? 1350 : 600;
+			return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? 1350 : 600;
 }
 
 uint16_t round_turn_distance()
 {
 	auto wall = robot::instance()->getLeftWall();
-	if (g_rounding_type != ROUNDING_LEFT)
+	if (g_cm_move_type != CM_FOLLOW_LEFT_WALL)
 		wall = robot::instance()->getRightWall();
 
 	auto distance = wall > (Wall_Low_Limit) ? wall / 3 : g_rounding_wall_distance + 200;
@@ -420,8 +468,8 @@ uint16_t round_turn_distance()
 
 uint16_t round_turn_speed()
 {
-	if ((g_rounding_type == ROUNDING_LEFT) && (get_bumper_status()  == RightBumperTrig) ||
-			(g_rounding_type == ROUNDING_RIGHT) && (get_bumper_status()  == LeftBumperTrig) )
+	if ((g_cm_move_type == CM_FOLLOW_LEFT_WALL) && (get_bumper_status()  == RightBumperTrig) ||
+			(g_cm_move_type == CM_FOLLOW_RIGHT_WALL) && (get_bumper_status()  == LeftBumperTrig) )
 		return 15;
 	return 10;
 }
@@ -436,24 +484,24 @@ uint16_t rounding_straight_distance()
 		return 150;
 	}else if(get_bumper_status() == LeftBumperTrig)
 	{
-		if (g_rounding_type == ROUNDING_LEFT) return 250;
+		if (g_cm_move_type == CM_FOLLOW_LEFT_WALL) return 250;
 		else return 375;
 	}else if(get_bumper_status() == RightBumperTrig)
 	{
-		if (g_rounding_type == ROUNDING_LEFT) return 375;
+		if (g_cm_move_type == CM_FOLLOW_LEFT_WALL) return 375;
 		else return 259;
 	}
 }
 
 void cm_move_back(void)
 {
-	if (g_cm_move_type == CM_ROUNDING)
+	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_LEFT_WALL)
 	{
 		g_rounding_turn_angle = round_turn_angle();
 		if (get_bumper_status() != 0)
 		{
 			g_rounding_wall_distance = round_turn_distance();
-			auto &wall_buffer = (g_rounding_type != ROUNDING_LEFT) ? g_rounding_left_wall_buffer : g_rounding_right_wall_buffer;
+			auto &wall_buffer = (g_cm_move_type != CM_FOLLOW_LEFT_WALL) ? g_rounding_left_wall_buffer : g_rounding_right_wall_buffer;
 			wall_buffer = {0, 0, 0};
 			g_rounding_move_speed = round_turn_speed();
 			g_rounding_wall_straight_distance = rounding_straight_distance();
@@ -719,128 +767,112 @@ bool cm_curve_move_to_point()
 	return true;
 }
 
-RoundingType cm_get_rounding_direction(Point32_t *next_point, Point32_t target_points, uint16_t dir) {
-	RoundingType	rounding_type = ROUNDING_NONE;
-
-	if (g_should_follow_wall == 0 || next_point->Y == map_get_y_count()) {
-		return rounding_type;
-	}
+bool is_follow_wall(Point32_t *next_point, Point32_t target_points, uint16_t dir) {
+	g_cm_move_type = CM_LINEARMOVE;
 
 	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
+
+	ROS_INFO("curr_y(%d),next_y(%d),delta_y(%d),dir(%d)",map_get_y_cell(), count_to_cell(next_point->Y), delta_y, dir);
+
+	if (!IS_X_AXIS(dir) || g_should_follow_wall == 0 || delta_y == 0) {
+		return false;
+	}
+
 	if ( delta_y != 0 && std::abs(delta_y <= 2) ) {
-		ROS_INFO("Robot need to go to new line");
-		rounding_type = ( (dir == POS_X) ^ (delta_y > 0) ) ? ROUNDING_LEFT: ROUNDING_RIGHT;
+		g_cm_move_type = (dir == POS_X) ^ (delta_y > 0) ? CM_FOLLOW_LEFT_WALL: CM_FOLLOW_RIGHT_WALL;
+		ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
 	} else if(delta_y == 0){
-		ROS_INFO("%s %d Robot don't need to go to new line. y: %d", __FUNCTION__, __LINE__, delta_y);
+		ROS_INFO("%s %d robot don't need to go to new line. y: %d", __FUNCTION__, __LINE__, delta_y);
 		if (!(count_to_cell(next_point->X) == SHRT_MAX || count_to_cell(next_point->X) == SHRT_MIN)) {
 			delta_y = count_to_cell(target_points.Y) - map_get_y_cell();
 			if (delta_y != 0 && std::abs(delta_y <= 2)) {
-				rounding_type = (dir == POS_X ^ delta_y > 0 ) ? ROUNDING_LEFT : ROUNDING_RIGHT;
 				next_point->Y = target_points.Y;
+				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
+				ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
 			}
 		}
 	}
-	return rounding_type;
+	return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) || (g_cm_move_type == CM_FOLLOW_RIGHT_WALL);
 }
 
-void cm_rounding_turn(uint16_t speed, int16_t angle)
+static int16_t uranged_angle(int16_t angle)
 {
-	uint8_t		accurate;
-	int16_t		target_angle;
-	uint16_t	speed_;
-
-	bool eh_status_now, eh_status_last;
-
-	eh_status_now = eh_status_last = false;
-
-	stop_brifly();
-
-	if (g_rounding_type == ROUNDING_RIGHT) {
-		target_angle = Gyro_GetAngle() + angle + (Gyro_GetAngle() + angle >= 3600 ? (-3600) : 0);
-	} else {
-		target_angle = Gyro_GetAngle() - angle + (Gyro_GetAngle() - angle < 0 ? 3600 : 0);
+	if (angle >= 3600) {
+			angle -= 3600;
+	} else
+	if (angle <= 0) {
+			angle += 3600;
 	}
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+	return angle;
+}
 
-	accurate = speed > 30 ? 30 : 10;
+void cm_follow_wall_turn(uint16_t speed, int16_t angle)
+{
+	ROS_WARN("%s %d: cm_follow_wall_turn", __FUNCTION__, __LINE__);
+	stop_brifly();
+	bool eh_status_now=false, eh_status_last=false;
+	angle = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? -angle : angle;
+	auto target_angle = uranged_angle(Gyro_GetAngle() + angle);
+
+	auto accurate = speed > 30 ? 30 : 10;
 	while (ros::ok()) {
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
 			continue;
 		}
 
-		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
+		if (g_fatal_quit_event || g_key_clean_pressed )
 			break;
-		}
 
-		if(g_bumper_hitted || g_cliff_triggered){
-			cm_move_back();
-		}
-
-		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
+//		ROS_INFO("target(%d,%d),current(%d),speed(%d)", angle, target_angle, Gyro_GetAngle(), speed);
+		if (abs(target_angle - Gyro_GetAngle()) < accurate)
 			break;
-		}
 
-		if (g_rounding_type == ROUNDING_RIGHT) {
-			set_dir_left();
-		} else {
-			set_dir_right();
-		}
+		(g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? set_dir_right() : set_dir_left();
 
-		speed_ = speed;
+		auto speed_ = speed;
 		if (abs(target_angle - Gyro_GetAngle()) < 50) {
 			speed_ = std::min((uint16_t)5, speed);
 		} else if (abs(target_angle - Gyro_GetAngle()) < 200) {
 			speed_ = std::min((uint16_t)10, speed);
 		}
-		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed_);
 		set_wheel_speed(speed_, speed_);
-
-		ROS_DEBUG("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
 	}
 
 	set_dir_forward();
 	set_wheel_speed(0, 0);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
-uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
-{
-	bool		eh_status_now, eh_status_last;
-	int16_t		angle ;
-	int32_t		y_start, Proportion = 0, Delta = 0, Previous = 0, speed_left = 0, speed_right = 0;
-
-	g_rounding_left_wall_buffer = { 0,0,0 }, g_rounding_right_wall_buffer = { 0,0,0};
-	g_rounding_wall_distance = 400;
-	eh_status_now = eh_status_last = false;
-
-	g_rounding_type = type;
-	y_start = map_get_y_count();
-	ROS_INFO("%s %d: Y: %d\tY abs: %d\ttarget Y: %d\ttarget Y abs: %d", __FUNCTION__, __LINE__, map_get_y_count(), abs(
-					map_get_y_count()), target.Y, abs(target.Y));
-
-	if ((Origin_Bumper_Status & LeftBumperTrig) && !(Origin_Bumper_Status & RightBumperTrig)) {
-		ROS_INFO("%s %d: Left bumper", __FUNCTION__, __LINE__);
-		angle = (type == ROUNDING_LEFT) ? 450 : 1350;
-	} else if (!(Origin_Bumper_Status & LeftBumperTrig) && (Origin_Bumper_Status & RightBumperTrig)) {
-		ROS_INFO("%s %d: Right bumper", __FUNCTION__, __LINE__);
-		angle = (type == ROUNDING_LEFT) ? 1350 : 450;
+int16_t get_round_angle(CMMoveType type){
+	int16_t		angle;
+	if ((g_bumper_status_for_rounding & LeftBumperTrig) && !(g_bumper_status_for_rounding & RightBumperTrig)) {
+		angle = (type == CM_FOLLOW_LEFT_WALL) ? 450 : 1350;
+	} else if (!(g_bumper_status_for_rounding & LeftBumperTrig) && (g_bumper_status_for_rounding & RightBumperTrig)) {
+		angle = (type == CM_FOLLOW_LEFT_WALL) ? 1350 : 450;
 	} else {
-		// If bumper not hit or it just hit the front (Both left and right bumper triggered, robot should turn 90 degrees.
-		ROS_INFO("%s %d: Same bumper", __FUNCTION__, __LINE__);
 		angle = 900;
 	}
-	ROS_INFO("%s %d: ROUNDING_%s, turn %d degrees.", __FUNCTION__, __LINE__, type == ROUNDING_LEFT ? "LEFT" : "RIGHT", angle);
-	cm_rounding_turn(TURN_SPEED, angle);
+	return angle;
+}
 
+uint8_t cm_follow_wall(CMMoveType type, Point32_t target)
+{
+	g_rounding_left_wall_buffer = { 0,0,0 }, g_rounding_right_wall_buffer = { 0,0,0 };
+	g_rounding_wall_distance = 400;
+
+	auto y_start = map_get_y_count();
+	auto angle = get_round_angle(type);
+	ROS_WARN("%s %d: before cm_follow_wall_turn", __FUNCTION__, __LINE__);
+	cm_follow_wall_turn(TURN_SPEED, angle);
+	ROS_WARN("%s %d: after cm_follow_wall_turn", __FUNCTION__, __LINE__);
+
+	bool	eh_status_now=false, eh_status_last=false;
+	int32_t	 speed_left = 0, speed_right = 0;
 	cm_set_event_manager_handler_state(true);
-
 	g_rounding_wall_straight_distance = 300;
+	FollowWallRegulator regulator(type);
 	while (ros::ok()) {
-#ifdef OBS_DYNAMIC
 		robotbase_obs_adjust_count(100);
-#endif
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
@@ -849,51 +881,40 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
 			break;
 		}
-		if(g_bumper_hitted || g_cliff_triggered)
-			cm_move_back();
 
-		if ((y_start > target.Y && map_get_y_count() < target.Y) || (y_start < target.Y && map_get_y_count() > target.Y)) {
-			// Robot has reach the target.
-			ROS_INFO("%s %d: Y: %d\tY abs: %d\ttarget Y: %d\ttarget Y abs: %d", __FUNCTION__, __LINE__, map_get_y_count(), abs(
-							map_get_y_count()), target.Y, abs(target.Y));
+		ROS_WARN("%s %d:y_start(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, count_to_cell(y_start), count_to_cell(target.Y),map_get_y_cell());
+		if(g_bumper_hitted || g_cliff_triggered){
+				cm_move_back();
+		}
+		if ((y_start < target.Y ^ map_get_y_count() < target.Y)) // Robot has reach the target.
+			break;
+
+		if ((y_start < target.Y ^ (y_start - map_get_y_count()) < 120)) { // Robot has round to the opposite direcition.
+			map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0), map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
 			break;
 		}
-
-		/* Tolerance of distance allow to move back when roundinging the obstcal. */
-		if ((target.Y > y_start && (y_start - map_get_y_count()) > 120) || (target.Y < y_start && (map_get_y_count() - y_start) > 120)) {
-			// Robot has round to the opposite direcition.
-			ROS_INFO("%s %d: Y: %d position: (%d, %d)", __FUNCTION__, __LINE__, target.Y, map_get_x_count(), map_get_y_count());
-
-			map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0),
-									 map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
-			break;
-		}
-
 		if (g_rounding_turn_angle != 0) {
-			cm_rounding_turn(TURN_SPEED, g_rounding_turn_angle);
+			cm_follow_wall_turn(TURN_SPEED, g_rounding_turn_angle);
 			g_rounding_turn_angle = 0;
 			move_forward(g_rounding_move_speed, g_rounding_move_speed);
 		}
 
 		if (g_rounding_wall_distance >= 200) {
-			auto& wall_buffer = (type == ROUNDING_LEFT) ? g_rounding_left_wall_buffer : g_rounding_right_wall_buffer;
-			wall_buffer[2] = wall_buffer[1];
-			wall_buffer[1] = wall_buffer[0];
-			wall_buffer[0] = (type == ROUNDING_LEFT) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
-			if (wall_buffer[0] < 100) {
-				if ((wall_buffer[1] - wall_buffer[0]) > (g_rounding_wall_distance / 25)) {
-					if ((wall_buffer[2] - wall_buffer[1]) > (g_rounding_wall_distance / 25)) {
-						//if (get_wall_accelerate()>300) {
-							//if ((type == ROUNDING_LEFT && (get_right_wheel_speed()- get_left_wheel_speed()) >= -3) ||
-							//	(type == ROUNDING_RIGHT && (get_left_wheel_speed()- get_right_wheel_speed()) >= -3)) {
-								// Away from the wall.
-								speed_left = type == ROUNDING_LEFT ? 18 : 16;
-								speed_right = type == ROUNDING_LEFT ? 16 : 18;
+			auto buffer_ptr = (type == CM_FOLLOW_LEFT_WALL) ? g_rounding_left_wall_buffer : g_rounding_right_wall_buffer;
+			buffer_ptr[2] = buffer_ptr[1];
+			buffer_ptr[1] = buffer_ptr[0];
+			buffer_ptr[0] = (type == CM_FOLLOW_LEFT_WALL) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+			if (buffer_ptr[0] < 100)
+			{
+				if ((buffer_ptr[1] - buffer_ptr[0]) > (g_rounding_wall_distance / 25))
+				{
+					if ((buffer_ptr[2] - buffer_ptr[1]) > (g_rounding_wall_distance / 25))
+					{
+						speed_left = type == CM_FOLLOW_LEFT_WALL ? 18 : 16;
+						speed_right = type == CM_FOLLOW_LEFT_WALL ? 16 : 18;
 						move_forward(speed_left, speed_right);
-								usleep(100000);
-								g_rounding_wall_straight_distance = 300;
-							//}
-						//}
+						usleep(100000);
+						g_rounding_wall_straight_distance = 300;
 					}
 				}
 			}
@@ -901,56 +922,20 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 
 		/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
 		if (get_front_obs() < get_front_obs_value()) {
-			Proportion = (type == ROUNDING_LEFT ? robot::instance()->getLeftWall() : robot::instance()->getRightWall()) * 100 / g_rounding_wall_distance - 100;
-			Delta = Proportion - Previous;
-
-			if (g_rounding_wall_distance > 300) {
-				speed_left = 25 + Proportion / 12 + Delta / 5;
-				speed_right = 25 - Proportion / 10 - Delta / 5;
-				if (speed_right > 33) {
-					speed_left = 5;
-					speed_right = 33;
-				}
-			} else {
-				speed_right = 15 - Proportion / 18 - Delta / 10;
-				speed_left = (speed_right > 18) ? 5 : (15 + Proportion / 22 + Delta / 10);
-
-				check_limit(speed_left, 4, 20);
-				check_limit(speed_right, 4, 18);
-				speed_left = (speed_left - speed_right) > 5 ? speed_right + 5 : speed_left;
-			}
-
-			if ((type == ROUNDING_LEFT && get_left_obs() > get_left_obs_value()) || (type == ROUNDING_RIGHT &&
-							get_right_obs() > get_right_obs_value())) {
-				if (g_rounding_wall_distance < Wall_High_Limit) {
-					g_rounding_wall_distance++;
-				}
-			}
-			if (is_wall_obs_near()){
-				speed_left /= 2;
-				speed_right /= 2;
-			}
-
-			Previous = Proportion;
-			check_limit(speed_left, 0, 40);
-			speed_right = speed_right < 0 ? 0 : speed_right;
-
-			move_forward((type == ROUNDING_LEFT ? speed_left : speed_right),
-									 (type == ROUNDING_LEFT ? speed_right : speed_left));
+			regulator.adjustSpeed(speed_left, speed_right);
+			move_forward((type == CM_FOLLOW_LEFT_WALL ? speed_left : speed_right), (type == CM_FOLLOW_LEFT_WALL ? speed_right : speed_left));
 		} else {
 			angle = 900;
-			if ((type == ROUNDING_LEFT && get_left_wheel_step() < 12500) || (type == ROUNDING_RIGHT &&
+			if ((type == CM_FOLLOW_LEFT_WALL && get_left_wheel_step() < 12500) || (type == CM_FOLLOW_RIGHT_WALL &&
 							get_right_wheel_step() < 12500)) {
 				angle = get_front_obs() > get_front_obs_value() ? 800 : 400;
 			}
-			cm_rounding_turn(TURN_SPEED, angle);
+			cm_follow_wall_turn(TURN_SPEED, angle);
 			move_forward(15, 15);
 			g_rounding_wall_distance = Wall_High_Limit;
 		}
 	}
 	cm_set_event_manager_handler_state(false);
-
-	stop_brifly();
 	return 0;
 }
 
@@ -1010,8 +995,6 @@ int cm_cleaning()
 			return 0;
 		}
 
-		uint16_t last_dir = path_get_robot_direction();
-
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
 		path_update_cell_history();
 		path_update_cells();
@@ -1026,15 +1009,11 @@ int cm_cleaning()
 		} else
 		if (is_found == 1)
 		{
-			auto rounding_type = cm_get_rounding_direction(&g_next_point, g_targets_point, last_dir);
-			if (rounding_type != ROUNDING_NONE)
-			{
-				ROS_INFO("%s %d: Rounding %s.", __FUNCTION__, __LINE__, rounding_type == ROUNDING_LEFT ? "left" : "right");
-				g_cm_move_type = CM_ROUNDING;
-				cm_rounding(rounding_type, g_next_point, g_bumper_status_for_rounding);
-				g_cm_move_type = CM_LINEARMOVE;
-			} else
+			if (is_follow_wall(&g_next_point, g_targets_point, path_get_robot_direction()))
+				cm_follow_wall(g_cm_move_type, g_next_point);
+			else
 				cm_move_to_point(g_next_point);
+
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
 		} else
@@ -1844,8 +1823,7 @@ void cm_block_charger_stub(int8_t direction)
 		case -2:
 		{
 			cm_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
-			if (g_cm_move_type == CM_ROUNDING)
-				if (g_rounding_type == ROUNDING_LEFT)
+			if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
 					g_rounding_turn_angle = 300;
 				//else
 				//	g_rounding_turn_angle = 1100;
@@ -1857,8 +1835,7 @@ void cm_block_charger_stub(int8_t direction)
 			cm_count_normalize(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x2, &y2);
 			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
 			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
-			if (g_cm_move_type == CM_ROUNDING)
-				if (g_rounding_type == ROUNDING_LEFT)
+			if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
 					g_rounding_turn_angle = 600;
 				//else
 				//	g_rounding_turn_angle = 950;
@@ -1867,7 +1844,7 @@ void cm_block_charger_stub(int8_t direction)
 		case 0:
 		{
 			cm_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
-			if (g_cm_move_type == CM_ROUNDING)
+			if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
 				g_rounding_turn_angle = 850;
 			break;
 		}
@@ -1877,8 +1854,7 @@ void cm_block_charger_stub(int8_t direction)
 			cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x2, &y2);
 			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
 			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
-			if (g_cm_move_type == CM_ROUNDING)
-				if (g_rounding_type == ROUNDING_RIGHT)
+			if (g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
 					g_rounding_turn_angle = 600;
 				//else
 				//	g_rounding_turn_angle = 950;
@@ -1887,8 +1863,7 @@ void cm_block_charger_stub(int8_t direction)
 		case 2:
 		{
 			cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
-			if (g_cm_move_type == CM_ROUNDING)
-				if (g_rounding_type == ROUNDING_RIGHT)
+			if (g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
 					g_rounding_turn_angle = 300;
 				//else
 				//	g_rounding_turn_angle = 1100;
@@ -1927,7 +1902,7 @@ void cm_handle_rcon_front_left(bool state_now, bool state_last)
 	cm_set_home(map_get_x_count(), map_get_y_count());
 	Reset_Rcon_Status();
 
-	if (g_cm_move_type == CM_ROUNDING) {
+	if (g_cm_move_type == CM_FOLLOW_WALL) {
 		g_rounding_turn_angle = 850;
 	}
 }
@@ -1955,7 +1930,7 @@ void cm_handle_rcon_front_left2(bool state_now, bool state_last)
 	g_rcon_triggered = true;
 	cm_set_home(map_get_x_count(), map_get_y_count());
 	Reset_Rcon_Status();
-	if (g_cm_move_type == CM_ROUNDING) {
+	if (g_cm_move_type == CM_FOLLOW_WALL) {
 		if (g_rounding_type == ROUNDING_LEFT) {
 			g_rounding_turn_angle = 600;
 		}
@@ -1983,7 +1958,7 @@ void cm_handle_rcon_front_right(bool state_now, bool state_last)
 	cm_set_home(map_get_x_count(), map_get_y_count());
 	Reset_Rcon_Status();
 
-	if (g_cm_move_type == CM_ROUNDING) {
+	if (g_cm_move_type == CM_FOLLOW_WALL) {
 		g_rounding_turn_angle = 850;
 	}
 }
@@ -2011,7 +1986,7 @@ void cm_handle_rcon_front_right2(bool state_now, bool state_last)
 	g_rcon_triggered = true;
 	cm_set_home(map_get_x_count(), map_get_y_count());
 	Reset_Rcon_Status();
-	if (g_cm_move_type == CM_ROUNDING) {
+	if (g_cm_move_type == CM_FOLLOW_WALL) {
 		if (g_rounding_type == ROUNDING_LEFT) {
 			g_rounding_turn_angle = 950;
 		}
@@ -2039,7 +2014,7 @@ void cm_handle_rcon_left(bool state_now, bool state_last)
 	cm_set_home(map_get_x_count(), map_get_y_count());
 	Reset_Rcon_Status();
 
-	if (g_cm_move_type == CM_ROUNDING) {
+	if (g_cm_move_type == CM_FOLLOW_WALL) {
 		if (g_rounding_type == ROUNDING_LEFT) {
 			g_rounding_turn_angle = 300;
 		}
@@ -2066,7 +2041,7 @@ void cm_handle_rcon_right(bool state_now, bool state_last)
 	g_rcon_triggered = true;
 	cm_set_home(map_get_x_count(), map_get_y_count());
 	reset_rcon_status();
-	if (g_cm_move_type == CM_ROUNDING) {
+	if (g_cm_move_type == CM_FOLLOW_WALL) {
 		if (g_rounding_type == ROUNDING_LEFT) {
 			g_rounding_turn_angle = 1100;
 		}
