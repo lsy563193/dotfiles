@@ -3115,6 +3115,13 @@ void charge_register_event(void)
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
+	event_manager_enable_handler(EVT_REMOTE_HOME, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
+	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
+	event_manager_enable_handler(EVT_REMOTE_MAX, true);
 }
 
 void charge_unregister_event(void)
@@ -3122,7 +3129,7 @@ void charge_unregister_event(void)
 	ROS_WARN("%s, %d: Unregister events.", __FUNCTION__, __LINE__);
 #define event_manager_register_and_disable_x(x) \
 	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false);
+	event_manager_enable_handler(x, false)
 
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
@@ -3132,6 +3139,13 @@ void charge_unregister_event(void)
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
+	event_manager_enable_handler(EVT_REMOTE_HOME, false);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, false);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, false);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, false);
+	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
+	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
+	event_manager_enable_handler(EVT_REMOTE_MAX, false);
 }
 
 void charge_handle_charge_detect(bool state_now, bool state_last)
