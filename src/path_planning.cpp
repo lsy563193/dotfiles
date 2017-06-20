@@ -39,6 +39,7 @@
 #include "map.h"
 #include "path_planning.h"
 #include "shortest_path.h"
+#include "spot.h"
 
 using namespace std;
 

@@ -18,6 +18,7 @@
 
 
 /*---------------------------------------------------------------- Charge Function ------------------------*/
+/* Exit charge mode when this counter equals to 0 */
 uint8_t g_stop_charge_counter = 0;
 void Charge_Function(void)
 {
@@ -37,9 +38,6 @@ void Charge_Function(void)
 
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
-
-	// This counter is for avoiding occasionly is_charge_on return 0 when robot is charging, cause it will stop charger mode.
-	uint8_t Stop_Charge_Counter = 0;
 
 	bool eh_status_now=false, eh_status_last=false;
 	set_led(100, 100);
@@ -82,12 +80,6 @@ void Charge_Function(void)
 		{
 			Show_Batv_Counter++;
 		}
-//		#ifdef SCREEN_REMOTE
-//		if(Remote_Clock_Received())
-//		{
-//			Set_Remote_Schedule();
-//		}
-//		#endif
 
 		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 		{
@@ -109,19 +101,6 @@ void Charge_Function(void)
 		}
 		if (get_clean_mode() == Clean_Mode_Navigation)
 			break;
-
-		/*-----------------------------------------------------Schedul Timer Up-----------------*/
-//		if(Is_Alarm())
-//		{
-//			Reset_Alarm();
-//			if(is_on_charger_stub())
-//			{
-//				set_vacmode(Vac_Normal);
-//				set_room_mode(Room_Mode_Large);
-//				set_clean_mode(Clean_Mode_Navigation);
-//				break;
-//			}
-//		}
 
 		#ifdef ONE_KEY_DISPLAY
 		if (check_bat_full() && !Battery_Full)
@@ -3133,9 +3112,16 @@ void charge_register_event(void)
 	/* Plan */
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	/* key */
-	event_manager_register_and_enable_x(key, EVT_KEY_CLEAN, true);
+	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
+	event_manager_enable_handler(EVT_REMOTE_HOME, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
+	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
+	event_manager_enable_handler(EVT_REMOTE_MAX, true);
 }
 
 void charge_unregister_event(void)
@@ -3143,7 +3129,7 @@ void charge_unregister_event(void)
 	ROS_WARN("%s, %d: Unregister events.", __FUNCTION__, __LINE__);
 #define event_manager_register_and_disable_x(x) \
 	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false);
+	event_manager_enable_handler(x, false)
 
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
@@ -3153,6 +3139,13 @@ void charge_unregister_event(void)
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Remote */
 	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
+	event_manager_enable_handler(EVT_REMOTE_HOME, false);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, false);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, false);
+	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, false);
+	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
+	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
+	event_manager_enable_handler(EVT_REMOTE_MAX, false);
 }
 
 void charge_handle_charge_detect(bool state_now, bool state_last)
@@ -3214,7 +3207,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 	}
 	set_plan_status (0);
 }
-void charge_handle_key(bool state_now, bool state_last)
+void charge_handle_key_clean(bool state_now, bool state_last)
 {
 	if (is_direct_charge())
 	{
