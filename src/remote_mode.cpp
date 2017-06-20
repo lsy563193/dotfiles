@@ -31,7 +31,7 @@ float pos_x, pos_y;
 
 void Remote_Mode(void)
 {
-	uint32_t Moving_Speed=0;
+	uint8_t Moving_Speed=0;
 	uint8_t Dec_Counter=0;
 	uint32_t OBS_Stop=0;
 	bool eh_status_now=false, eh_status_last=false;
@@ -72,7 +72,7 @@ void Remote_Mode(void)
 				}
 				else
 				{
-					Moving_Speed=(get_right_wheel_step()/80)+25;
+					Moving_Speed++;
 					if(Moving_Speed<25)Moving_Speed=25;
 					if(Moving_Speed>42)Moving_Speed=42;
 					move_forward(Moving_Speed, Moving_Speed);
@@ -84,7 +84,7 @@ void Remote_Mode(void)
 			case REMOTE_MODE_BACKWARD:
 			{
 				set_dir_backward();
-				set_wheel_speed(Moving_Speed, Moving_Speed);
+				set_wheel_speed(20, 20);
 				if (sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y - robot::instance()->getOdomPositionY(), 2)) > 0.01f)
 				{
 					ROS_DEBUG("%s %d: Move back finished.", __FUNCTION__, __LINE__);
@@ -95,9 +95,9 @@ void Remote_Mode(void)
 			case REMOTE_MODE_STAY:
 			{
 				set_wheel_speed(0, 0);
+				Moving_Speed = 0;
 				break;
 			}
-
 			case REMOTE_MODE_LEFT:
 			{
 				turn_left(Turn_Speed, 300);
@@ -169,6 +169,10 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT, true);
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
+	/* OBS */
+	event_manager_register_and_enable_x(obs, EVT_OBS_FRONT, true);
+	event_manager_register_and_enable_x(obs, EVT_OBS_LEFT, true);
+	event_manager_register_and_enable_x(obs, EVT_OBS_RIGHT, true);
 	///* Rcon */
 	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	///* Battery */
@@ -208,6 +212,10 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
 	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
 	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
+	/* OBS */
+	event_manager_register_and_disable_x(EVT_OBS_FRONT);
+	event_manager_register_and_disable_x(EVT_OBS_LEFT);
+	event_manager_register_and_disable_x(EVT_OBS_RIGHT);
 	///* Rcon */
 	//event_manager_register_and_disable_x(EVT_RCON);
 	///* Battery */
@@ -246,6 +254,7 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 	wav_play(WAV_ERROR_LIFT_UP);
 	set_clean_mode(Clean_Mode_Userinterface);
 }
+
 void remote_mode_handle_cliff(bool state_now, bool state_last)
 {
 	pos_x = robot::instance()->getOdomPositionX();
@@ -255,6 +264,15 @@ void remote_mode_handle_cliff(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Cliff triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, pos_x, pos_y);
 	}
 	set_move_flag_(REMOTE_MODE_BACKWARD);
+}
+
+void remote_mode_handle_obs(bool state_now, bool state_last)
+{
+	if (get_move_flag_() == REMOTE_MODE_FORWARD)
+	{
+		ROS_WARN("%s %d: OBS triggered, stop the robot.", __FUNCTION__, __LINE__);
+		set_move_flag_(REMOTE_MODE_STAY);
+	}
 }
 
 void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)
