@@ -4,7 +4,7 @@
 #define Round_Left			0x01
 #define Round_Right			0x02
 
-void Charge_Function();
+void charge_function();
 void GoHome(void);
 void Around_ChargerStation(uint8_t Dir);
 uint8_t Check_Position(uint8_t Dir);

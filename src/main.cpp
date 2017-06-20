@@ -115,7 +115,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
 				set_main_pwr_byte(Clean_Mode_Charging);
-				Charge_Function();
+				charge_function();
 				break;
 			case Clean_Mode_GoHome:
 				//goto_charger();

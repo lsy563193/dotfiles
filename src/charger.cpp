@@ -20,24 +20,24 @@
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 /* Exit charge mode when this counter equals to 0 */
 uint8_t g_stop_charge_counter = 0;
-void Charge_Function(void)
+void charge_function(void)
 {
 
-	volatile uint8_t Display_Switch=1;
+	volatile uint8_t display_switch=1;
 
-	bool Battery_Full = false;
+	bool battery_full = false;
 
 	#ifdef ONE_KEY_DISPLAY
 
-	uint8_t One_Display_Counter=0;
+	uint8_t one_display_counter=0;
 
 	#endif
 
 	// This counter is for debug message.
-	uint8_t Show_Batv_Counter=0;
+	uint8_t show_batv_counter=0;
 
 	// This counter is for checking if battery enough to continue cleaning.
-	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
+	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 
 	bool eh_status_now=false, eh_status_last=false;
 	set_led(100, 100);
@@ -56,29 +56,29 @@ void Charge_Function(void)
 		{
 			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
 			{
-				Bat_Enough_To_Continue_Cleaning_Counter++;
-				//ROS_INFO("Bat_Enough_To_Continue_Cleaning_Counter = %d.", Bat_Enough_To_Continue_Cleaning_Counter);
+				bat_enough_to_continue_cleaning_counter++;
+				//ROS_INFO("Bat_Enough_To_Continue_Cleaning_Counter = %d.", bat_enough_to_continue_cleaning_counter);
 			}
 			else
 			{
-				Bat_Enough_To_Continue_Cleaning_Counter = 0;
+				bat_enough_to_continue_cleaning_counter = 0;
 			}
 
-			if (Bat_Enough_To_Continue_Cleaning_Counter > 500)// About 10 seconds.
+			if (bat_enough_to_continue_cleaning_counter > 500)// About 10 seconds.
 			{
 				ROS_INFO("Robot finish charging, continue cleaning.");
 				set_clean_mode(Clean_Mode_Navigation);
 				break;
 			}
 		}
-		if(Show_Batv_Counter > 250)
+		if(show_batv_counter > 250)
 		{
 			ROS_INFO(" In charge mode looping , battery voltage %5.2f V.",bat_v/100.0);
-			Show_Batv_Counter = 0;
+			show_batv_counter = 0;
 		}
 		else
 		{
-			Show_Batv_Counter++;
+			show_batv_counter++;
 		}
 
 		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
@@ -103,28 +103,28 @@ void Charge_Function(void)
 			break;
 
 		#ifdef ONE_KEY_DISPLAY
-		if (check_bat_full() && !Battery_Full)
+		if (check_bat_full() && !battery_full)
 		{
-			Battery_Full = true;
+			battery_full = true;
 			set_led(0, 0);
 			wav_play(WAV_BATTERY_CHARGE_DONE);
 		}
 
-		if (!Battery_Full)
+		if (!battery_full)
 		{
 			// For displaying breathing LED
-			if(Display_Switch)
+			if(display_switch)
 			{
-				One_Display_Counter+=2;
-				if(One_Display_Counter>98)Display_Switch=0;
+				one_display_counter+=2;
+				if(one_display_counter>98)display_switch=0;
 			}
 			else
 			{
-				One_Display_Counter-=2;
-				if(One_Display_Counter<2)Display_Switch=1;
+				one_display_counter-=2;
+				if(one_display_counter<2)display_switch=1;
 			}
 
-			set_led(One_Display_Counter, One_Display_Counter);
+			set_led(one_display_counter, one_display_counter);
 		}
 		#endif
 
