@@ -88,7 +88,7 @@ void cm_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_lon
 bool cm_move_to_cell(int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
 
-void cm_move_back(uint16_t dist);
+void cm_move_back_(uint16_t dist);
 
 void cm_set_home(int32_t x, int32_t y);
 void cm_go_home(void);

@@ -978,15 +978,15 @@ uint8_t get_cliff_trig(void)
 	cf = robot::instance()->getCliffFront();
 	if (cl < Cliff_Limit)
 	{
-		Cliff_Status |= 0x01;
+		Cliff_Status |= LeftCliffTrig;
 	}
 	if (cr < Cliff_Limit)
 	{
-		Cliff_Status |= 0x02;
+		Cliff_Status |= RightCliffTrig;
 	}
 	if (cf < Cliff_Limit)
 	{
-		Cliff_Status |= 0x04;
+		Cliff_Status |= FrontCliffTrig;
 	}
 	/*
 	if (Cliff_Status != 0x00){
@@ -1362,7 +1362,7 @@ uint8_t self_check(uint8_t Check_Code)
 
 /*
 	if(get_clean_mode() == Clean_Mode_Navigation)
-		cm_move_back(COR_BACK_20MM);
+		cm_move_back_(COR_BACK_20MM);
 	else
 		quick_back(30,20);
 */

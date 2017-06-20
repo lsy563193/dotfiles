@@ -65,8 +65,8 @@ uint16_t g_rounding_turn_angle;
 uint16_t g_rounding_move_speed;
 uint16_t g_rounding_wall_distance;
 uint16_t g_rounding_wall_straight_distance;
-int16_t g_rounding_left_wall_buffer[3];
-int16_t g_rounding_right_wall_buffer[3];
+std::vector<int16_t> g_rounding_left_wall_buffer;
+std::vector<int16_t> g_rounding_right_wall_buffer;
 
 Point32_t g_next_point, g_targets_point;
 
@@ -389,6 +389,105 @@ void cm_update_map()
 
 	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
 }
+//-------------------------------cm_move_back-----------------------------//
+uint16_t round_turn_angle()
+{
+	if(get_bumper_status()==AllBumperTrig || get_cliff_trig() == FrontCliffTrig || get_cliff_trig() == RightLeftCliffTrig)
+			return 900;
+		else if(get_bumper_status()==LeftBumperTrig || get_cliff_trig() == LeftCliffTrig)
+			return (g_rounding_type == ROUNDING_LEFT) ? 300 : 1350; //left
+		else if(get_bumper_status()==RightBumperTrig || get_cliff_trig() == RightCliffTrig)
+			return (g_rounding_type == ROUNDING_LEFT) ? 1350 : 300; //right
+		else if(get_cliff_trig() == LeftFrontCliffTrig)
+			return (g_rounding_type == ROUNDING_LEFT) ? 1350 : 300; //right
+		else/* (get_cliff_trig() == RightFrontCliffTrig)*/
+			return (g_rounding_type == ROUNDING_LEFT) ? 1350 : 600;
+}
+
+uint16_t round_turn_distance()
+{
+	auto wall = robot::instance()->getLeftWall();
+	if (g_rounding_type != ROUNDING_LEFT)
+		wall = robot::instance()->getRightWall();
+
+	auto distance = wall > (Wall_Low_Limit) ? wall / 3 : g_rounding_wall_distance + 200;
+	check_limit(distance, Wall_Low_Limit, Wall_High_Limit);
+	return distance;
+}
+
+uint16_t round_turn_speed()
+{
+	if ((g_rounding_type == ROUNDING_LEFT) && (get_bumper_status()  == RightBumperTrig) ||
+			(g_rounding_type == ROUNDING_RIGHT) && (get_bumper_status()  == LeftBumperTrig) )
+		return 15;
+	return 10;
+}
+
+std::vector<int16_t> reset_rounding_wall_buffer()
+{
+
+}
+uint16_t rounding_straight_distance()
+{
+	if(get_bumper_status() == AllBumperTrig){
+		return 150;
+	}else if(get_bumper_status() == LeftBumperTrig)
+	{
+		if (g_rounding_type == ROUNDING_LEFT) return 250;
+		else return 375;
+	}else if(get_bumper_status() == RightBumperTrig)
+	{
+		if (g_rounding_type == ROUNDING_LEFT) return 375;
+		else return 259;
+	}
+}
+
+void cm_move_back(void)
+{
+	if (g_cm_move_type == CM_ROUNDING)
+	{
+		g_rounding_turn_angle = round_turn_angle();
+		if (get_bumper_status() != 0)
+		{
+			g_rounding_wall_distance = round_turn_distance();
+			auto &wall_buffer = (g_rounding_type != ROUNDING_LEFT) ? g_rounding_left_wall_buffer : g_rounding_right_wall_buffer;
+			wall_buffer = {0, 0, 0};
+			g_rounding_move_speed = round_turn_speed();
+			g_rounding_wall_straight_distance = rounding_straight_distance();
+		}
+	}
+
+	cm_move_back_(COR_BACK_20MM);
+
+	if (get_bumper_status() != 0)
+	{
+		g_bumper_cnt++;
+
+		if (g_bumper_cnt > 2)
+		{
+			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
+			g_bumper_jam = g_fatal_quit_event = true;
+		}
+	} else{
+		g_bumper_cnt = 0;
+		g_bumper_hitted = 0;
+	}
+	if (get_cliff_trig() != 0)
+	{
+		g_cliff_cnt++;
+
+		if (g_cliff_cnt > 2)
+		{
+			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
+			g_bumper_jam = g_fatal_quit_event = true;
+		}
+	} else{
+		g_cliff_jam = false;
+		g_cliff_cnt = 0;
+	}
+//	if((get_bumper_status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+}
 
 /*--------------------------Head Angle--------------------------------*/
 void cm_head_to_course(uint8_t speed_max, int16_t angle)
@@ -471,11 +570,12 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 		}
 
 		if ( g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered ) {
+			if(g_bumper_hitted || g_cliff_triggered){
+				cm_move_back();
+			}
 			set_wheel_speed(0, 0);
 			g_should_follow_wall = 1;
 
-			//if (g_cliff_triggered ||g_rcon_triggered)
-			//	g_should_follow_wall = 0;
 			break;
 		}
 
@@ -745,6 +845,10 @@ void cm_rounding_turn(uint16_t speed, int16_t angle)
 			break;
 		}
 
+		if(g_bumper_hitted || g_cliff_triggered){
+			cm_move_back();
+		}
+
 		if (abs(target_angle - Gyro_GetAngle()) < accurate) {
 			break;
 		}
@@ -776,10 +880,10 @@ void cm_rounding_turn(uint16_t speed, int16_t angle)
 uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_Status)
 {
 	bool		eh_status_now, eh_status_last;
-	int16_t		angle, *buffer_ptr;
+	int16_t		angle ;
 	int32_t		y_start, Proportion = 0, Delta = 0, Previous = 0, speed_left = 0, speed_right = 0;
 
-	g_rounding_left_wall_buffer[3] = { 0 }, g_rounding_right_wall_buffer[3] = { 0 };
+	g_rounding_left_wall_buffer = { 0,0,0 }, g_rounding_right_wall_buffer = { 0,0,0};
 	g_rounding_wall_distance = 400;
 	eh_status_now = eh_status_last = false;
 
@@ -817,6 +921,8 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
 			break;
 		}
+		if(g_bumper_hitted || g_cliff_triggered)
+			cm_move_back();
 
 		if ((y_start > target.Y && map_get_y_count() < target.Y) || (y_start < target.Y && map_get_y_count() > target.Y)) {
 			// Robot has reach the target.
@@ -842,13 +948,13 @@ uint8_t cm_rounding(RoundingType type, Point32_t target, uint8_t Origin_Bumper_S
 		}
 
 		if (g_rounding_wall_distance >= 200) {
-			buffer_ptr = (type == ROUNDING_LEFT) ? g_rounding_left_wall_buffer : g_rounding_right_wall_buffer;
-			buffer_ptr[2] = buffer_ptr[1];
-			buffer_ptr[1] = buffer_ptr[0];
-			buffer_ptr[0] = (type == ROUNDING_LEFT) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
-			if (buffer_ptr[0] < 100) {
-				if ((buffer_ptr[1] - buffer_ptr[0]) > (g_rounding_wall_distance / 25)) {
-					if ((buffer_ptr[2] - buffer_ptr[1]) > (g_rounding_wall_distance / 25)) {
+			auto& wall_buffer = (type == ROUNDING_LEFT) ? g_rounding_left_wall_buffer : g_rounding_right_wall_buffer;
+			wall_buffer[2] = wall_buffer[1];
+			wall_buffer[1] = wall_buffer[0];
+			wall_buffer[0] = (type == ROUNDING_LEFT) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+			if (wall_buffer[0] < 100) {
+				if ((wall_buffer[1] - wall_buffer[0]) > (g_rounding_wall_distance / 25)) {
+					if ((wall_buffer[2] - wall_buffer[1]) > (g_rounding_wall_distance / 25)) {
 						//if (get_wall_accelerate()>300) {
 							//if ((type == ROUNDING_LEFT && (get_right_wheel_speed()- get_left_wheel_speed()) >= -3) ||
 							//	(type == ROUNDING_RIGHT && (get_left_wheel_speed()- get_right_wheel_speed()) >= -3)) {
@@ -1271,7 +1377,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 }
 
 /*-------------- Move Back -----------------------------*/
-void cm_move_back(uint16_t dist)
+void cm_move_back_(uint16_t dist)
 {
 	float pos_x, pos_y, distance;
 	uint32_t SP = 10;
@@ -1618,42 +1724,7 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 
 	g_bumper_hitted = true;
 	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_bumper_cnt++;
 
-		if (g_bumper_cnt > 2) {
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else {
-		g_bumper_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-
-	if (g_cm_move_type == CM_ROUNDING) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_rounding_wall_distance = robot::instance()->getLeftWall() > (Wall_Low_Limit) ?
-															 robot::instance()->getLeftWall() / 3 : g_rounding_wall_distance + 200;
-			for (int i = 0; i < 3; i++) {
-					g_rounding_left_wall_buffer[i] = 0;
-			}
-		} else {
-			g_rounding_wall_distance = robot::instance()->getLeftWall() > (Wall_Low_Limit) ?
-															 robot::instance()->getLeftWall() / 3 : g_rounding_wall_distance + 200;
-			for (int i = 0; i < 3; i++) {
-				g_rounding_right_wall_buffer[i] = 0;
-			}
-		}
-		check_limit(g_rounding_wall_distance, Wall_Low_Limit, Wall_High_Limit)
-
-		g_rounding_turn_angle = 900;
-		g_rounding_move_speed = 10;
-		g_rounding_wall_straight_distance = 150;
-	}
-
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
-	if(get_bumper_status() == 0) g_bumper_cnt = 0;
 }
 
 void cm_handle_bumper_left(bool state_now, bool state_last)
@@ -1666,40 +1737,6 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 
 	g_bumper_hitted = true;
 	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_bumper_cnt++;
-
-		if (g_bumper_cnt > 2) {
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else {
-		g_bumper_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_rounding_wall_distance = robot::instance()->getLeftWall() > (Wall_Low_Limit) ?
-															 robot::instance()->getLeftWall() / 3 : g_rounding_wall_distance + 200;
-			for (int i = 0; i < 3; i++) {
-				g_rounding_left_wall_buffer[i] = 0;
-			}
-			check_limit(g_rounding_wall_distance, Wall_Low_Limit, Wall_High_Limit)
-
-			g_rounding_turn_angle = 300;
-			g_rounding_move_speed = 10;
-			g_rounding_wall_straight_distance = 250;
-		} else {
-			ROS_WARN("%s %d: move back for left bumper.", __FUNCTION__, __LINE__);
-			g_rounding_turn_angle = 1350;
-			g_rounding_move_speed = 15;
-			g_rounding_wall_straight_distance = 375;
-		}
-	}
-
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
-	if((get_bumper_status() & LeftBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
@@ -1712,40 +1749,6 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 
 	g_bumper_hitted = true;
 	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_bumper_cnt++;
-
-		if (g_bumper_cnt > 2) {
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else {
-		g_bumper_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			ROS_INFO("%s %d: move back for right bumper.", __FUNCTION__, __LINE__);
-			g_rounding_turn_angle = 1350;
-			g_rounding_move_speed = 15;
-			g_rounding_wall_straight_distance = 375;
-		} else {
-			g_rounding_wall_distance = robot::instance()->getRightWall() > (Wall_Low_Limit) ?
-															 robot::instance()->getRightWall() / 3 : g_rounding_wall_distance + 200;
-			for (int i = 0; i < 3; i++) {
-				g_rounding_right_wall_buffer[i] = 0;
-			}
-			check_limit(g_rounding_wall_distance, Wall_Low_Limit, Wall_High_Limit)
-
-			g_rounding_turn_angle = 300;
-			g_rounding_move_speed = 10;
-			g_rounding_wall_straight_distance = 250;
-		}
-	}
-
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
-	if((get_bumper_status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
 }
 
 /* OBS */
@@ -1781,26 +1784,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_cliff_cnt++;
 
-		if (g_cliff_cnt > 2) {
-			ROS_WARN("%s %d: should quit, jam count: %d", __FUNCTION__, __LINE__, g_cliff_cnt);
-			g_cliff_jam = true;
-			g_fatal_quit_event = true;
-		}
-	} else {
-		g_cliff_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_rounding_turn_angle = 600;
-		} else {
-			g_rounding_turn_angle = 1350;
-		}
-	}
 }
 
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
@@ -1809,26 +1793,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_cliff_cnt++;
 
-		if (g_cliff_cnt > 2) {
-			ROS_WARN("%s %d: should quit, jam count: %d", __FUNCTION__, __LINE__, g_cliff_cnt);
-			g_cliff_jam = true;
-			g_fatal_quit_event = true;
-		}
-	} else {
-		g_cliff_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_rounding_turn_angle = 1350;
-		} else {
-			g_rounding_turn_angle = 600;
-		}
-	}
 }
 
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
@@ -1837,22 +1802,6 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_cliff_cnt++;
-
-		if (g_cliff_cnt > 2) {
-			ROS_WARN("%s %d: should quit, jam count: %d", __FUNCTION__, __LINE__, g_cliff_cnt);
-			g_cliff_jam = true;
-			g_fatal_quit_event = true;
-		}
-	} else {
-		g_cliff_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		g_rounding_turn_angle = 900;
-	}
 }
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
@@ -1861,22 +1810,6 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_cliff_cnt++;
-
-		if (g_cliff_cnt > 2) {
-			ROS_WARN("%s %d: should quit, jam count: %d", __FUNCTION__, __LINE__, g_cliff_cnt);
-			g_cliff_jam = true;
-			g_fatal_quit_event = true;
-		}
-	} else {
-		g_cliff_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		g_rounding_turn_angle = 900;
-	}
 }
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
@@ -1885,26 +1818,6 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_cliff_cnt++;
-
-		if (g_cliff_cnt > 2) {
-			ROS_WARN("%s %d: should quit, jam count: %d", __FUNCTION__, __LINE__, g_cliff_cnt);
-			g_cliff_jam = true;
-			g_fatal_quit_event = true;
-		}
-	} else {
-		g_cliff_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_rounding_turn_angle = 300;
-		} else {
-			g_rounding_turn_angle = 1350;
-		}
-	}
 }
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
@@ -1913,26 +1826,6 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
-	if (state_now == true && state_last == true) {
-		g_cliff_cnt++;
-
-		if (g_cliff_cnt > 2) {
-			ROS_WARN("%s %d: should quit, jam count: %d", __FUNCTION__, __LINE__, g_cliff_cnt);
-			g_cliff_jam = true;
-			g_fatal_quit_event = true;
-		}
-	} else {
-		g_cliff_cnt = 0;
-	}
-
-	cm_move_back(COR_BACK_20MM);
-	if (g_cm_move_type == CM_ROUNDING) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_rounding_turn_angle = 1350;
-		} else {
-			g_rounding_turn_angle = 300;
-		}
-	}
 }
 
 /* RCON */
