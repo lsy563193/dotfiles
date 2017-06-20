@@ -3112,7 +3112,7 @@ void charge_register_event(void)
 	/* Plan */
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	/* key */
-	event_manager_register_and_enable_x(key, EVT_KEY_CLEAN, true);
+	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
 }
@@ -3193,7 +3193,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 	}
 	set_plan_status (0);
 }
-void charge_handle_key(bool state_now, bool state_last)
+void charge_handle_key_clean(bool state_now, bool state_last)
 {
 	if (is_direct_charge())
 	{
