@@ -77,35 +77,53 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 
 bool MotionManage::get_align_angle(float &line_angle)
 {
+	time_t start_time;
+	bool eh_status_now=false, eh_status_last=false;
+
 	segmentss.clear();
-//	ROS_INFO("Start subscribe to /obstacles");
+	ROS_INFO("Start subscribe to /obstacles");
 	auto obstacles_sub = nh_.subscribe("/obstacles", 1, &MotionManage::robot_obstacles_cb, this);
 
 	//wait for start obstacle_detector
-	auto count_n_10ms = 1000;
-	while (line_align_ != start && --count_n_10ms > 0 && !stop_event()){
-		if (count_n_10ms % 100 == 0)
-			ROS_WARN(" start obstacle_detector remain %d s\n", count_n_10ms / 100);
-		usleep(10000);
-	}
-	if(stop_event() || count_n_10ms == 0)
-		return false;
+	start_time = time(NULL);
+	while (time(NULL) - start_time <= 10 && line_align_ != start)
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
 
-	count_n_10ms = 200;
-	ROS_INFO("Obstacle detector launch finishd.");
+		if (g_fatal_quit_event || g_key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Launch obstacle detector interrupted.", __FUNCTION__, __LINE__);
+			return false;
+		}
+	}
+
+	if (line_align_ != start)
+	{
+		ROS_WARN("%s %d: Obstacle detector launch timeout, do not align.", __FUNCTION__, __LINE__);
+		line_angle = 0;
+		return true;
+	}
+
+	ROS_DEBUG("%s %d: Obstacle detector launch finishd.", __FUNCTION__, __LINE__);
 
 	//wait for detecting line
-	while (--count_n_10ms > 0 && !stop_event())
+	start_time = time(NULL);
+	while (time(NULL) - start_time <= 2)
 	{
-		if (count_n_10ms % 100 == 0)
-			ROS_INFO("detecting line time remain %d s", count_n_10ms / 100);
-		usleep(10000);
-	}
-//	obstacles_sub.shutdown();
-	if(stop_event())
-		return false;
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
 
-	ROS_INFO("Get the line");
+		if (g_fatal_quit_event || g_key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Detecting line interrupted.", __FUNCTION__, __LINE__);
+			return false;
+		}
+	}
+
+	ROS_DEBUG("%s %d: Get the line", __FUNCTION__, __LINE__);
 //	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	line_angle = segmentss.min_distant_segment_angle();
 
