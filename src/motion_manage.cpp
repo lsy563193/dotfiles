@@ -226,7 +226,7 @@ MotionManage::~MotionManage()
 #else
         ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
-    else
+    else{
         ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
         g_saved_work_time += get_work_time();
         ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);

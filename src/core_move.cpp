@@ -1315,7 +1315,6 @@ uint8_t cm_touring(void)
 	int cm_clean_ret = cm_cleaning();
 	if (cm_clean_ret == 0)
 		cm_go_home();
-    }
 	cm_unregister_events();
 	return 0;
 }
@@ -1595,7 +1594,7 @@ void cm_register_events()
 	/* Remote */
 	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
 	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
-	event_manager_register_and_enable_x(remote_wallfollow,EVT_REMOTE_MODE_WALL_FOLLOW, true);
+	event_manager_register_and_enable_x(remote_wallfollow,EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
 
@@ -2338,15 +2337,15 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	stop_brifly();
 	reset_rcon_remote();
 	g_remote_spot = true;
-    Set_Clean_Mode(Clean_Mode_Spot);
+    set_clean_mode(Clean_Mode_Spot);
 }
 
 void cm_handle_remote_wallfollow(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
 	beep_for_command(true);
-	Stop_Brifly();
-	Reset_Rcon_Remote();
+	stop_brifly();
+	reset_rcon_remote();
 	g_remote_wallfollow = true;
 }
 
@@ -2392,7 +2391,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 
 	if (g_battery_low_cnt++ > 50) {
 		t_vol = get_battery_voltage();
-		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_val);
+		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
 		if (g_go_home) {
 			v_pwr = Home_Vac_Power / t_vol;

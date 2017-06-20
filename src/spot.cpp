@@ -261,7 +261,7 @@ void spot_with_target(SpotType st,float spot_diameter)
 				spiral_type = SPIRAL_LEFT_IN;
 			}
 		}//ending while(ros::ok)
-        event_manager_enable_handler(EVT_REMOTE_MODE_SPOT,true);//enable remote spot handle
+        event_manager_enable_handler(EVT_REMOTE_SPOT,true);//enable remote spot handle
 	}//ending else if(st == CLEAN_SPOT...)
 }
 
