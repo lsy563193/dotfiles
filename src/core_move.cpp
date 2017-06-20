@@ -1223,14 +1223,14 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 {
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("Call GoHome()");
-	GoHome();
+	go_home();
 	// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
 	while (get_clean_mode() == Clean_Mode_GoHome)
 	{
 		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
 		set_clean_mode(Clean_Mode_Navigation);
 		ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
-		GoHome();
+		go_home();
 	}
 	// Check the clean mode to find out whether it has reach the charger.
 	if (get_clean_mode() == Clean_Mode_Charging)

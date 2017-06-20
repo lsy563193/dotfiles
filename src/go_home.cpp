@@ -14,10 +14,10 @@
 
 const uint16_t TURN_SPEED = 18;
 /*----------------------------------------------------------------GO Home  ----------------*/
-void GoHome(void)
+void go_home(void)
 {
 
-	uint32_t Receive_Code = 0;
+	uint32_t receive_code = 0;
 //	move_forward(9,9);
 //	set_side_brush_pwm(30,30);
 //	set_main_brush_pwm(30);
@@ -25,11 +25,11 @@ void GoHome(void)
 	//delay(1500);
 //	wav_play(WAV_BACK_TO_CHARGER);
 	// This is for calculating the robot turning.
-	float Current_Angle;
-	float Last_Angle;
-	float Angle_Offset;
+	float current_angle;
+	float last_angle;
+	float angle_offset;
 	// This step is for counting angle change when the robot turns.
-	float Gyro_Step = 0;
+	float gyro_step = 0;
 
 	set_led(100, 100);
 	set_side_brush_pwm(30, 30);
@@ -38,11 +38,11 @@ void GoHome(void)
 	stop_brifly();
 	reset_rcon_status();
 	// Save the start angle.
-	Last_Angle = robot::instance()->getAngle();
+	last_angle = robot::instance()->getAngle();
 	// Enable the charge function
 	set_start_charge();
 
-	while(Gyro_Step < 360)
+	while(gyro_step < 360)
 	{
 		// For GoHome(), if reach the charger stub during turning, should stop immediately.
 		if (is_charge_on())
@@ -83,226 +83,226 @@ void GoHome(void)
 				break;
 			}
 		}
-		Receive_Code = get_rcon_status();
+		receive_code = get_rcon_status();
 		reset_rcon_status();
-		if(Receive_Code&RconFL_HomeR)//FL H_R
+		if(receive_code&RconFL_HomeR)//FL H_R
 		{
 			ROS_INFO("Start with FL-R.");
-			turn_left(Turn_Speed, 900);
+			turn_left(TURN_SPEED, 900);
 			stop_brifly();
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
-		if(Receive_Code&RconFR_HomeL)//FR H_L
+		if(receive_code&RconFR_HomeL)//FR H_L
 		{
 			ROS_INFO("Start with FR-L.");
-			Turn_Right(Turn_Speed,900);
+			Turn_Right(TURN_SPEED,900);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
 
-		if(Receive_Code&RconFL_HomeL)//FL H_L
+		if(receive_code&RconFL_HomeL)//FL H_L
 		{
 			ROS_INFO("Start with FL-L.");
-			Turn_Right(Turn_Speed,900);
+			Turn_Right(TURN_SPEED,900);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if(Receive_Code&RconFR_HomeR)//FR H_R
+		if(receive_code&RconFR_HomeR)//FR H_R
 		{
 			ROS_INFO("Start with FR-R.");
-			turn_left(Turn_Speed, 900);
+			turn_left(TURN_SPEED, 900);
 			stop_brifly();
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
-		if(Receive_Code&RconFL2_HomeR)//FL2 H_R
+		if(receive_code&RconFL2_HomeR)//FL2 H_R
 		{
 			ROS_INFO("Start with FL2-R.");
-			turn_left(Turn_Speed, 850);
+			turn_left(TURN_SPEED, 850);
 			stop_brifly();
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
-		if(Receive_Code&RconFR2_HomeL)//FR2 H_L
+		if(receive_code&RconFR2_HomeL)//FR2 H_L
 		{
 			ROS_INFO("Start with FR2-L.");
-			Turn_Right(Turn_Speed,850);
+			Turn_Right(TURN_SPEED,850);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
 
-		if(Receive_Code&RconFL2_HomeL)//FL2 H_L
+		if(receive_code&RconFL2_HomeL)//FL2 H_L
 		{
 			ROS_INFO("Start with FL2-L.");
-			Turn_Right(Turn_Speed,600);
+			Turn_Right(TURN_SPEED,600);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if(Receive_Code&RconFR2_HomeR)//FR2 H_R
+		if(receive_code&RconFR2_HomeR)//FR2 H_R
 		{
 			ROS_INFO("Start with FR2-R.");
-			turn_left(Turn_Speed, 600);
+			turn_left(TURN_SPEED, 600);
 			stop_brifly();
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
 
-		if(Receive_Code&RconL_HomeL)// L  H_L
+		if(receive_code&RconL_HomeL)// L  H_L
 		{
 			ROS_INFO("Start with L-L.");
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if(Receive_Code&RconR_HomeR)// R  H_R
+		if(receive_code&RconR_HomeR)// R  H_R
 		{
 			ROS_INFO("Start with R-R.");
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
 
-		if(Receive_Code&RconL_HomeR)// L  H_R
+		if(receive_code&RconL_HomeR)// L  H_R
 		{
 			ROS_INFO("Start with L-R.");
-			turn_left(Turn_Speed, 1500);
-			Around_ChargerStation(0);
+			turn_left(TURN_SPEED, 1500);
+			around_chargerstation(0);
 			break;
 		}
-		if(Receive_Code&RconR_HomeL)// R  H_L
+		if(receive_code&RconR_HomeL)// R  H_L
 		{
 			ROS_INFO("Start with R-L.");
-			Turn_Right(Turn_Speed,1500);
-			Around_ChargerStation(1);
+			Turn_Right(TURN_SPEED,1500);
+			around_chargerstation(1);
 			break;
 		}
 /*--------------------------HomeT-----------------*/
-		if(Receive_Code&RconFL_HomeT)//FL H_T
+		if(receive_code&RconFL_HomeT)//FL H_T
 		{
 			ROS_INFO("Start with FL-T.");
-			Turn_Right(Turn_Speed,600);
+			Turn_Right(TURN_SPEED,600);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if(Receive_Code&RconFR_HomeT)//FR H_T
+		if(receive_code&RconFR_HomeT)//FR H_T
 		{
 			ROS_INFO("Start with FR-T.");
-			Turn_Right(Turn_Speed,800);
+			Turn_Right(TURN_SPEED,800);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
 
-		if(Receive_Code&RconFL2_HomeT)//FL2 H_T
+		if(receive_code&RconFL2_HomeT)//FL2 H_T
 		{
 			ROS_INFO("Start with FL2-T.");
-			Turn_Right(Turn_Speed,600);
+			Turn_Right(TURN_SPEED,600);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if(Receive_Code&RconFR2_HomeT)//FR2 H_T
+		if(receive_code&RconFR2_HomeT)//FR2 H_T
 		{
 			ROS_INFO("Start with FR2-T.");
-			Turn_Right(Turn_Speed,800);
+			Turn_Right(TURN_SPEED,800);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
 
-		if(Receive_Code&RconL_HomeT)// L  H_T
+		if(receive_code&RconL_HomeT)// L  H_T
 		{
 			ROS_INFO("Start with L-T.");
-			Turn_Right(Turn_Speed,1200);
+			Turn_Right(TURN_SPEED,1200);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if(Receive_Code&RconR_HomeT)// R  H_T
+		if(receive_code&RconR_HomeT)// R  H_T
 		{
 			ROS_INFO("Start with R-T.");
-			Turn_Right(Turn_Speed,1200);
+			Turn_Right(TURN_SPEED,1200);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
 
 /*--------------BL BR---------------------*/
-		if((Receive_Code&RconBL_HomeL))//BL H_L    //OK
+		if((receive_code&RconBL_HomeL))//BL H_L    //OK
 		{
 			ROS_INFO("Start with BL-L.");
 			turn_left(30, 800);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if((Receive_Code&RconBR_HomeR))//BR H_L R  //OK
+		if((receive_code&RconBR_HomeR))//BR H_L R  //OK
 		{
 			ROS_INFO("Start with BR-R.");
 			Turn_Right(30,800);
 			stop_brifly();
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
 
-		if((Receive_Code&RconBL_HomeR))//BL H_R
+		if((receive_code&RconBL_HomeR))//BL H_R
 		{
 			ROS_INFO("Start with BL-R.");
 			turn_left(30, 800);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if((Receive_Code&RconBR_HomeL))//BL H_L R
+		if((receive_code&RconBR_HomeL))//BL H_L R
 		{
 			ROS_INFO("Start with BR-L.");
 			Turn_Right(30,800);
 			stop_brifly();
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
 
-		if((Receive_Code&RconBL_HomeT))//BL H_T
+		if((receive_code&RconBL_HomeT))//BL H_T
 		{
 			ROS_INFO("Start with BL-T.");
 			turn_left(30, 300);
 			stop_brifly();
-			Around_ChargerStation(1);
+			around_chargerstation(1);
 			break;
 		}
-		if((Receive_Code&RconBR_HomeT))//BR H_T
+		if((receive_code&RconBR_HomeT))//BR H_T
 		{
 			ROS_INFO("Start with BR-T.");
 			Turn_Right(30,300);
 			stop_brifly();
-			Around_ChargerStation(0);
+			around_chargerstation(0);
 			break;
 		}
 		usleep(50000);
-		Current_Angle = robot::instance()->getAngle();
-		Angle_Offset = Current_Angle - Last_Angle;
-		ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", Current_Angle, Last_Angle, Angle_Offset, Gyro_Step);
-		if (Angle_Offset > 0)
+		current_angle = robot::instance()->getAngle();
+		angle_offset = current_angle - last_angle;
+		ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
+		if (angle_offset > 0)
 		{
 			// For passing the boundary of angle range. e.g.(179 - (-178))
-			if (Angle_Offset >= 180)
-				Angle_Offset -= 360;
+			if (angle_offset >= 180)
+				angle_offset -= 360;
 			else
 				// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
-				Angle_Offset = 0;
+				angle_offset = 0;
 		}
-		Gyro_Step += (-Angle_Offset);
-		Last_Angle = Current_Angle;
+		gyro_step += (-angle_offset);
+		last_angle = current_angle;
 
 		set_dir_right();
 		set_wheel_speed(10, 10);
 	}
 
-	if (Gyro_Step >= 360)
+	if (gyro_step >= 360)
 		set_clean_mode(Clean_Mode_Userinterface);
 
 	// If robot didn't reach the charger, go back to userinterface mode.
@@ -319,7 +319,7 @@ void GoHome(void)
 
 }
 
-void Around_ChargerStation(uint8_t Dir)
+void around_chargerstation(uint8_t Dir)
 {
 //	uint32_t Temp_Steps=0;
 	uint8_t Temp_Position=0;
@@ -401,7 +401,7 @@ void Around_ChargerStation(uint8_t Dir)
 			}
 			else
 			{
-				turn_left(Turn_Speed, 1750);
+				turn_left(TURN_SPEED, 1750);
 				move_forward(9, 9);
 				set_clean_mode(Clean_Mode_GoHome);
 			}
@@ -465,12 +465,12 @@ void Around_ChargerStation(uint8_t Dir)
 			if(Dir)
 			{
 				// Robot at left side of charger stub.
-				turn_left(Turn_Speed, 1800);
+				turn_left(TURN_SPEED, 1800);
 			}
 			else
 			{
 				// Robot at right side of charger stub.
-				Turn_Right(Turn_Speed,1800);
+				Turn_Right(TURN_SPEED,1800);
 			}
 			reset_rcon_status();
 			move_forward(10, 10);
@@ -625,42 +625,42 @@ void Around_ChargerStation(uint8_t Dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FL-L.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(Turn_Speed,500);
+				Turn_Right(TURN_SPEED,500);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFL_HomeR)	 //FR_HL
 			{
 				ROS_DEBUG("%s, %d: Detect FL-R.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				turn_left(Turn_Speed, 600);
+				turn_left(TURN_SPEED, 600);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFL_HomeT)	 //FR_HT
 			{
 				ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(Turn_Speed,500);
+				Turn_Right(TURN_SPEED,500);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFR_HomeT)	 //R_HT
 			{
 				ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(Turn_Speed,800);
+				Turn_Right(TURN_SPEED,800);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFR2_HomeT) //FR2_T //OK
 			{
 				ROS_DEBUG("%s, %d: Detect FR2-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(Turn_Speed,900);
+				Turn_Right(TURN_SPEED,900);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconR_HomeT)  //OK
 			{
 				ROS_DEBUG("%s, %d: Detect R-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(Turn_Speed,1100);
+				Turn_Right(TURN_SPEED,1100);
 				move_forward(5, 5);
 				Dir = 0;
 			}
@@ -796,42 +796,42 @@ void Around_ChargerStation(uint8_t Dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FR-R.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				turn_left(Turn_Speed, 500);
+				turn_left(TURN_SPEED, 500);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFR_HomeL)	//OK
 			{
 				ROS_DEBUG("%s, %d: Detect FR-L.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(Turn_Speed,600);
+				Turn_Right(TURN_SPEED,600);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFR_HomeT)	//ok
 			{
 				ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				turn_left(Turn_Speed, 500);
+				turn_left(TURN_SPEED, 500);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFL_HomeT)	//OK
 			{
 				ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				turn_left(Turn_Speed, 800);
+				turn_left(TURN_SPEED, 800);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconFL2_HomeT)  //OK
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				turn_left(Turn_Speed, 900);
+				turn_left(TURN_SPEED, 900);
 				move_forward(5, 5);
 			}
 			else if(Temp_Rcon_Status&RconL_HomeT)  //OK
 			{
 				ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				turn_left(Turn_Speed, 1100);
+				turn_left(TURN_SPEED, 1100);
 				move_forward(5, 5);
 				Dir = 1;
 			}
@@ -1242,7 +1242,7 @@ void By_Path(void)
 				else if((get_rcon_status()&(RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR))==0)
 				{
 					random_back();
-					Turn_Right(Turn_Speed,1100);
+					Turn_Right(TURN_SPEED,1100);
 					move_forward(8, 8);
 					set_clean_mode(Clean_Mode_GoHome);
 					ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
@@ -1251,7 +1251,7 @@ void By_Path(void)
 				else
 				{
 					random_back();
-					Turn_Right(Turn_Speed,1100);
+					Turn_Right(TURN_SPEED,1100);
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(30);
 					move_forward(8, 8);
@@ -1308,7 +1308,7 @@ void By_Path(void)
 				else if((get_rcon_status()&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR))==0)
 				{
 					random_back();
-					turn_left(Turn_Speed, 1100);
+					turn_left(TURN_SPEED, 1100);
 					move_forward(8, 8);
 					set_clean_mode(Clean_Mode_GoHome);
 					ROS_DEBUG("%d, Return from RightBumperTrig.", __LINE__);
@@ -1317,7 +1317,7 @@ void By_Path(void)
 				else
 				{
 					random_back();
-					turn_left(Turn_Speed, 1100);
+					turn_left(TURN_SPEED, 1100);
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(30);
 					move_forward(8, 8);
@@ -1341,7 +1341,7 @@ void By_Path(void)
 					}
 					move_back();
 					move_back();
-					turn_left(Turn_Speed, 1750);
+					turn_left(TURN_SPEED, 1750);
 					move_forward(9, 9);
 					set_clean_mode(Clean_Mode_GoHome);
 					return;
@@ -1367,7 +1367,7 @@ void By_Path(void)
 					{
 						move_back();
 						move_back();
-						turn_left(Turn_Speed, 1750);
+						turn_left(TURN_SPEED, 1750);
 						move_forward(9, 9);
 						set_clean_mode(Clean_Mode_GoHome);
 						return;
@@ -1500,7 +1500,7 @@ void By_Path(void)
 				{
 					ROS_INFO("%s, %d: Robot can't see charger, return to gohome mode.", __FUNCTION__, __LINE__);
 					stop_brifly();
-					Turn_Right(Turn_Speed,1000);
+					Turn_Right(TURN_SPEED,1000);
 					stop_brifly();
 					move_forward(10, 10);
 					set_clean_mode(Clean_Mode_GoHome);

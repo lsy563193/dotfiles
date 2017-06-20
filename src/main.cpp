@@ -153,7 +153,7 @@ void *core_move_thread(void *)
 #if Random_Find_Charger_Stub
 					HomeStraight_Mode();
 #else
-					GoHome();
+					go_home();
 #endif
 				}
 				break;
