@@ -165,6 +165,7 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
+	event_manager_enable_handler(EVT_REMOTE_MAX, true);
 	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
 	/* Key */
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
@@ -193,6 +194,7 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
+	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Key */
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
