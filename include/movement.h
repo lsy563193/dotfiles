@@ -400,7 +400,7 @@ void quick_back(uint8_t speed,uint16_t distance);
 
 void turn_left_at_init(uint16_t speed, int16_t angle);
 void turn_left(uint16_t speed, int16_t angle);
-void Turn_Right(uint16_t speed,int16_t angle);
+void turn_right(uint16_t speed, int16_t angle);
 void round_turn_left(uint16_t speed, int16_t angle);
 void round_turn_right(uint16_t speed, int16_t angle);
 void jam_turn_left(uint16_t speed, int16_t angle);

@@ -80,7 +80,7 @@ uint8_t Spiral(void)
 			}
 			if(remote_key(Remote_Right))
 			{
-				Turn_Right(Turn_Speed,560);
+				turn_right(Turn_Speed, 560);
 				move_forward(30, 30);
 				set_clean_mode(Clean_Mode_RandomMode);
 				reset_rcon_remote();
@@ -96,7 +96,7 @@ uint8_t Spiral(void)
 			/*
 			if(remote_key(Remote_Random)) //                                    Check Key Home
 			{
-				Turn_Right(Turn_Speed,560);
+				turn_right(Turn_Speed,560);
 				move_forward(30,30);
 				set_clean_mode(Clean_Mode_RandomMode);
 				reset_rcon_remote();

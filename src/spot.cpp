@@ -885,7 +885,7 @@ uint8_t Random_Dirt_Event(void)
 						move_back();
 					}
 					stop_brifly();
-					Turn_Right(Turn_Speed, 2000);
+					turn_right(Turn_Speed, 2000);
 					Move_Style = SPIRAL_RIGHT_OUT;
 					reset_wheel_step();
 					reset_wall_step();
@@ -920,7 +920,7 @@ uint8_t Random_Dirt_Event(void)
 						move_back();
 					}
 					stop_brifly();
-					Turn_Right(Turn_Speed, 2000);
+					turn_right(Turn_Speed, 2000);
 					Move_Style = SPIRAL_RIGHT_IN;
 					reset_wheel_step();
 					reset_wall_step();

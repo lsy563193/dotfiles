@@ -108,7 +108,7 @@ void Remote_Mode(void)
 			}
 			case REMOTE_MODE_RIGHT:
 			{
-				Turn_Right(Turn_Speed,300);
+				turn_right(Turn_Speed, 300);
 				set_move_flag_(REMOTE_MODE_STAY);
 				break;
 			}

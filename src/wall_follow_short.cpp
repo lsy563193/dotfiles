@@ -204,19 +204,19 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 						stop_brifly();
 				if(Temp_Rcon_Status & RconFR_HomeT)
 				{
-					Turn_Right(Turn_Speed,1300);
+					turn_right(Turn_Speed, 1300);
 				}
 				else if(Temp_Rcon_Status & RconFL_HomeT)
 				{
-					Turn_Right(Turn_Speed,1200);
+					turn_right(Turn_Speed, 1200);
 				}
 				else if(Temp_Rcon_Status & RconL_HomeT)
 				{
-					Turn_Right(Turn_Speed,900);
+					turn_right(Turn_Speed, 900);
 				}
 				else if(Temp_Rcon_Status & RconR_HomeT)
 				{
-					Turn_Right(Turn_Speed,1500);
+					turn_right(Turn_Speed, 1500);
 				}
 				//stop_brifly();
 						move_forward(10, 10);
@@ -253,7 +253,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		  Jam=0;
 		}
 
-	    Turn_Right(Turn_Speed-5,720);
+			turn_right(Turn_Speed - 5, 720);
 			move_forward(15, 15);
 			reset_wall_accelerate();
 		Wall_Straight_Distance=375;
@@ -285,7 +285,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		{
 			wall_move_back();
 			if(is_bumper_jamed())break;;
-			Turn_Right(Turn_Speed-5,600);
+			turn_right(Turn_Speed - 5, 600);
 			Wall_Straight_Distance=150;
 		}
 		else
@@ -294,11 +294,11 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 			if(is_bumper_jamed())break;
 			if(Jam<3)
 			{
-				Turn_Right(Turn_Speed-10,300);
+				turn_right(Turn_Speed - 10, 300);
 			}
 			else
 			{
-				Turn_Right(Turn_Speed-10,150);
+				turn_right(Turn_Speed - 10, 150);
 			}
 			Wall_Straight_Distance=250;
 		}
@@ -346,8 +346,8 @@ uint8_t Wall_Follow_Short(uint32_t dis)
             return 1;
 					}
 				}
-			
-				Turn_Right(Turn_Speed-10,900);
+
+			turn_right(Turn_Speed - 10, 900);
 			stop_brifly();
 			reset_wall_accelerate();
 			reset_wheel_step();
@@ -478,18 +478,18 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 						{
 							Jam++;
 						}
-					Turn_Right(Turn_Speed-5,800);
+						turn_right(Turn_Speed - 5, 800);
 						move_forward(15, 15);
 					}
 					else
 					{
-						Turn_Right(Turn_Speed-5,500);
+						turn_right(Turn_Speed - 5, 500);
 						move_forward(15, 15);
 					}
 				}
 				else
 				{
-					Turn_Right(Turn_Speed-5,900);
+					turn_right(Turn_Speed - 5, 900);
 					move_forward(15, 15);
 				}
 					reset_wheel_step();

@@ -527,7 +527,7 @@ void turn_left(uint16_t speed, int16_t angle)
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
-void Turn_Right(uint16_t speed, int16_t angle)
+void turn_right(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
 	int16_t gyro_angle;
@@ -1405,7 +1405,7 @@ uint8_t self_check(uint8_t Check_Code)
 		}
 		*/
 		stop_brifly();
-		//Turn_Right(Turn_Speed,1800);
+		//turn_right(Turn_Speed,1800);
 	}
 		/*---------------------------Self Check left wheel -------------------*/
 	else if (Check_Code == Check_Left_Wheel)

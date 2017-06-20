@@ -96,7 +96,7 @@ void go_home(void)
 		if(receive_code&RconFR_HomeL)//FR H_L
 		{
 			ROS_INFO("Start with FR-L.");
-			Turn_Right(TURN_SPEED,900);
+			turn_right(TURN_SPEED, 900);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -105,7 +105,7 @@ void go_home(void)
 		if(receive_code&RconFL_HomeL)//FL H_L
 		{
 			ROS_INFO("Start with FL-L.");
-			Turn_Right(TURN_SPEED,900);
+			turn_right(TURN_SPEED, 900);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -129,7 +129,7 @@ void go_home(void)
 		if(receive_code&RconFR2_HomeL)//FR2 H_L
 		{
 			ROS_INFO("Start with FR2-L.");
-			Turn_Right(TURN_SPEED,850);
+			turn_right(TURN_SPEED, 850);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -138,7 +138,7 @@ void go_home(void)
 		if(receive_code&RconFL2_HomeL)//FL2 H_L
 		{
 			ROS_INFO("Start with FL2-L.");
-			Turn_Right(TURN_SPEED,600);
+			turn_right(TURN_SPEED, 600);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -175,7 +175,7 @@ void go_home(void)
 		if(receive_code&RconR_HomeL)// R  H_L
 		{
 			ROS_INFO("Start with R-L.");
-			Turn_Right(TURN_SPEED,1500);
+			turn_right(TURN_SPEED, 1500);
 			around_chargerstation(1);
 			break;
 		}
@@ -183,7 +183,7 @@ void go_home(void)
 		if(receive_code&RconFL_HomeT)//FL H_T
 		{
 			ROS_INFO("Start with FL-T.");
-			Turn_Right(TURN_SPEED,600);
+			turn_right(TURN_SPEED, 600);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -191,7 +191,7 @@ void go_home(void)
 		if(receive_code&RconFR_HomeT)//FR H_T
 		{
 			ROS_INFO("Start with FR-T.");
-			Turn_Right(TURN_SPEED,800);
+			turn_right(TURN_SPEED, 800);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -200,7 +200,7 @@ void go_home(void)
 		if(receive_code&RconFL2_HomeT)//FL2 H_T
 		{
 			ROS_INFO("Start with FL2-T.");
-			Turn_Right(TURN_SPEED,600);
+			turn_right(TURN_SPEED, 600);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -208,7 +208,7 @@ void go_home(void)
 		if(receive_code&RconFR2_HomeT)//FR2 H_T
 		{
 			ROS_INFO("Start with FR2-T.");
-			Turn_Right(TURN_SPEED,800);
+			turn_right(TURN_SPEED, 800);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -217,7 +217,7 @@ void go_home(void)
 		if(receive_code&RconL_HomeT)// L  H_T
 		{
 			ROS_INFO("Start with L-T.");
-			Turn_Right(TURN_SPEED,1200);
+			turn_right(TURN_SPEED, 1200);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -225,7 +225,7 @@ void go_home(void)
 		if(receive_code&RconR_HomeT)// R  H_T
 		{
 			ROS_INFO("Start with R-T.");
-			Turn_Right(TURN_SPEED,1200);
+			turn_right(TURN_SPEED, 1200);
 			stop_brifly();
 			around_chargerstation(1);
 			break;
@@ -243,7 +243,7 @@ void go_home(void)
 		if((receive_code&RconBR_HomeR))//BR H_L R  //OK
 		{
 			ROS_INFO("Start with BR-R.");
-			Turn_Right(30,800);
+			turn_right(30, 800);
 			stop_brifly();
 			around_chargerstation(0);
 			break;
@@ -260,7 +260,7 @@ void go_home(void)
 		if((receive_code&RconBR_HomeL))//BL H_L R
 		{
 			ROS_INFO("Start with BR-L.");
-			Turn_Right(30,800);
+			turn_right(30, 800);
 			stop_brifly();
 			around_chargerstation(0);
 			break;
@@ -277,7 +277,7 @@ void go_home(void)
 		if((receive_code&RconBR_HomeT))//BR H_T
 		{
 			ROS_INFO("Start with BR-T.");
-			Turn_Right(30,300);
+			turn_right(30, 300);
 			stop_brifly();
 			around_chargerstation(0);
 			break;
@@ -470,7 +470,7 @@ void around_chargerstation(uint8_t dir)
 			else
 			{
 				// Robot at right side of charger stub.
-				Turn_Right(TURN_SPEED,1800);
+				turn_right(TURN_SPEED, 1800);
 			}
 			reset_rcon_status();
 			move_forward(10, 10);
@@ -549,7 +549,7 @@ void around_chargerstation(uint8_t dir)
 		/*
 		if(temp_rcon_status&0x4000)
 		{
-			Turn_Right(30,2200);
+			turn_right(30,2200);
 			move_forward(10,10);
 			dir=1-dir;
 		}*/
@@ -559,7 +559,7 @@ void around_chargerstation(uint8_t dir)
 //			if(get_right_wheel_step()>20000)
 //			{
 //				stop_brifly();
-//				Turn_Right(Turn_Speed,2200);
+//				turn_right(Turn_Speed,2200);
 //				set_clean_mode(Clean_Mode_GoHome);
 //				return ;
 //			}
@@ -625,7 +625,7 @@ void around_chargerstation(uint8_t dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FL-L.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(TURN_SPEED,500);
+				turn_right(TURN_SPEED, 500);
 				move_forward(5, 5);
 			}
 			else if(temp_rcon_status&RconFL_HomeR)	 //FR_HL
@@ -639,28 +639,28 @@ void around_chargerstation(uint8_t dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(TURN_SPEED,500);
+				turn_right(TURN_SPEED, 500);
 				move_forward(5, 5);
 			}
 			else if(temp_rcon_status&RconFR_HomeT)	 //R_HT
 			{
 				ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(TURN_SPEED,800);
+				turn_right(TURN_SPEED, 800);
 				move_forward(5, 5);
 			}
 			else if(temp_rcon_status&RconFR2_HomeT) //FR2_T //OK
 			{
 				ROS_DEBUG("%s, %d: Detect FR2-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(TURN_SPEED,900);
+				turn_right(TURN_SPEED, 900);
 				move_forward(5, 5);
 			}
 			else if(temp_rcon_status&RconR_HomeT)  //OK
 			{
 				ROS_DEBUG("%s, %d: Detect R-T.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(TURN_SPEED,1100);
+				turn_right(TURN_SPEED, 1100);
 				move_forward(5, 5);
 				dir = 0;
 			}
@@ -803,7 +803,7 @@ void around_chargerstation(uint8_t dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FR-L.", __FUNCTION__, __LINE__);
 //				stop_brifly();
-				Turn_Right(TURN_SPEED,600);
+				turn_right(TURN_SPEED, 600);
 				move_forward(5, 5);
 			}
 			else if(temp_rcon_status&RconFR_HomeT)	//ok
@@ -848,7 +848,7 @@ void around_chargerstation(uint8_t dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FL-L, call By_Path().", __FUNCTION__, __LINE__);
 //				stop_brifly();
-//				Turn_Right(30,500);
+//				turn_right(30,500);
 				by_path();
 				return;
 			}
@@ -856,7 +856,7 @@ void around_chargerstation(uint8_t dir)
 			{
 				ROS_DEBUG("%s, %d: Detect FR-L, call By_Path().", __FUNCTION__, __LINE__);
 //				stop_brifly();
-//				Turn_Right(Turn_Speed,300);
+//				turn_right(Turn_Speed,300);
 				by_path();
 				return;
 			}
@@ -1242,7 +1242,7 @@ void by_path(void)
 				else if((get_rcon_status()&(RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR))==0)
 				{
 					random_back();
-					Turn_Right(TURN_SPEED,1100);
+					turn_right(TURN_SPEED, 1100);
 					move_forward(8, 8);
 					set_clean_mode(Clean_Mode_GoHome);
 					ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
@@ -1251,7 +1251,7 @@ void by_path(void)
 				else
 				{
 					random_back();
-					Turn_Right(TURN_SPEED,1100);
+					turn_right(TURN_SPEED, 1100);
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(30);
 					move_forward(8, 8);
@@ -1500,7 +1500,7 @@ void by_path(void)
 				{
 					ROS_INFO("%s, %d: Robot can't see charger, return to gohome mode.", __FUNCTION__, __LINE__);
 					stop_brifly();
-					Turn_Right(TURN_SPEED,1000);
+					turn_right(TURN_SPEED, 1000);
 					stop_brifly();
 					move_forward(10, 10);
 					set_clean_mode(Clean_Mode_GoHome);
@@ -1606,18 +1606,18 @@ void by_path(void)
 					move_forward(12, 6);
 					break;
 
-//				case 0x002:   Turn_Right(20,250);				   //FRR_L
+//				case 0x002:   turn_right(20,250);				   //FRR_L
 				case (RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0x003:   Turn_Right(20,350);				   //FR2_L/FR2_R
+//				case 0x003:   turn_right(20,350);				   //FR2_L/FR2_R
 				case (RconFR2_HomeL|RconFR2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-					Turn_Right(20,350);
+					turn_right(20, 350);
 					stop_brifly();
 					move_forward(10, 3);
 					break;
@@ -1760,66 +1760,66 @@ void by_path(void)
 					move_forward(13, 12);
 					break;
 
-//				case 0x803:   Turn_Right(20,250);
+//				case 0x803:   turn_right(20,250);
 				case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: Position_Far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(9, 3);
 						break;
 
-//				case 0x802:   Turn_Right(20,400);
+//				case 0x802:   turn_right(20,400);
 				case (RconR_HomeR|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,400);
+					turn_right(20, 400);
 					stop_brifly();
 					move_forward(8, 3);
 					break;
 
-//				case 0x80b:   Turn_Right(20,250);
+//				case 0x80b:   turn_right(20,250);
 				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 					ROS_DEBUG("%s, %d: Position_Far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-					Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(10, 4);
 					break;
 
-//				case 0xC02:	  Turn_Right(20,450);
+//				case 0xC02:	  turn_right(20,450);
 				case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,450);
+					turn_right(20, 450);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0xC00 :  Turn_Right(20,500);
+//				case 0xC00 :  turn_right(20,500);
 				case (RconR_HomeR|RconR_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, R_R/R_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,500);
+					turn_right(20, 500);
 					stop_brifly();
 					move_forward(9, 6);
 					break;
 
-//				case 0x400 :  Turn_Right(20,550);
+//				case 0x400 :  turn_right(20,550);
 				case (RconR_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, R_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,550);
+					turn_right(20, 550);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0x80A:   Turn_Right(20,250);
+//				case 0x80A:   turn_right(20,250);
 				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0x402:   Turn_Right(20,500);
+//				case 0x402:   turn_right(20,500);
 				case (RconR_HomeL|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: Position_Far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,500);
+					turn_right(20, 500);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
@@ -2319,15 +2319,15 @@ void by_path(void)
 //				case 0x002:
 				case (RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0x003:   Turn_Right(20,350);				  //FR2_L/FR2_R
+//				case 0x003:   turn_right(20,350);				  //FR2_L/FR2_R
 				case (RconFR2_HomeL|RconFR2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-					Turn_Right(20,350);
+					turn_right(20, 350);
 					stop_brifly();
 					move_forward(10, 3);
 					break;
@@ -2470,66 +2470,66 @@ void by_path(void)
 					move_forward(9, 6);
 					break;
 
-//				case 0x803:   Turn_Right(20,250);
+//				case 0x803:   turn_right(20,250);
 				case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-					Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0x802:   Turn_Right(20,400);
+//				case 0x802:   turn_right(20,400);
 				case (RconR_HomeR|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,400);
+					turn_right(20, 400);
 					stop_brifly();
 					move_forward(8, 3);
 					break;
 
-//				case 0x80b:   Turn_Right(20,250);
+//				case 0x80b:   turn_right(20,250);
 				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 					ROS_DEBUG("%s, %d: !Position_Far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-					Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(10, 4);
 					break;
 
-//				case 0xC02:	  Turn_Right(20,450);
+//				case 0xC02:	  turn_right(20,450);
 				case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,450);
+					turn_right(20, 450);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0xC00 :  Turn_Right(20,500);
+//				case 0xC00 :  turn_right(20,500);
 				case (RconR_HomeR|RconR_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, R_R/R_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,500);
+					turn_right(20, 500);
 					stop_brifly();
 					move_forward(9, 6);
 					break;
 
-//				case 0x400 :  Turn_Right(20,550);
+//				case 0x400 :  turn_right(20,550);
 				case (RconR_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, R_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,550);
+					turn_right(20, 550);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0x80A:   Turn_Right(20,250);
+//				case 0x80A:   turn_right(20,250);
 				case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,250);
+					turn_right(20, 250);
 					stop_brifly();
 					move_forward(9, 3);
 					break;
 
-//				case 0x402:   Turn_Right(20,500);
+//				case 0x402:   turn_right(20,500);
 				case (RconR_HomeL|RconFR2_HomeL):
 					ROS_DEBUG("%s, %d: !Position_Far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-					Turn_Right(20,500);
+					turn_right(20, 500);
 					stop_brifly();
 					move_forward(9, 3);
 					break;

@@ -169,7 +169,7 @@
 //			usleep(10000);
 //
 //			WFM_move_back(350);
-//			Turn_Right(Turn_Speed, 600);
+//			turn_right(Turn_Speed, 600);
 //			move_forward(15, 15);
 //		}
 //	}
@@ -302,7 +302,7 @@
 //				}
 //			}
 //
-//			Turn_Right(Turn_Speed-10,750);
+//			turn_right(Turn_Speed-10,750);
 //			stop_brifly();
 //			move_forward(15,15);
 //			reset_wall_accelerate();
@@ -336,17 +336,17 @@
 //				}
 //				stop_brifly();
 //				if(Temp_Rcon_Status & RconFR_HomeT){
-//					Turn_Right(Turn_Speed,850);
+//					turn_right(Turn_Speed,850);
 //				} else if(Temp_Rcon_Status & RconFL_HomeT){
-//					Turn_Right(Turn_Speed,850);
+//					turn_right(Turn_Speed,850);
 //				} else if(Temp_Rcon_Status & RconL_HomeT){
-//					Turn_Right(Turn_Speed,300);
+//					turn_right(Turn_Speed,300);
 //				} else if(Temp_Rcon_Status & RconFL2_HomeT){
-//					Turn_Right(Turn_Speed,600);
+//					turn_right(Turn_Speed,600);
 //				} else if(Temp_Rcon_Status & RconFR2_HomeT){
-//					Turn_Right(Turn_Speed,950);
+//					turn_right(Turn_Speed,950);
 //				} else if(Temp_Rcon_Status & RconR_HomeT){
-//					Turn_Right(Turn_Speed,1100);
+//					turn_right(Turn_Speed,1100);
 //				}
 //				stop_brifly();
 //				move_forward(10, 10);
@@ -368,7 +368,7 @@
 //			{
 //				return 2;
 //			}
-//			Turn_Right(Turn_Speed, 700);
+//			turn_right(Turn_Speed, 700);
 //
 //			stop_brifly();
 //
@@ -403,7 +403,7 @@
 //				}
 //				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 //				stop_brifly();
-//				Turn_Right(Turn_Speed, 600);
+//				turn_right(Turn_Speed, 600);
 //
 //				Wall_Straight_Distance = MFW_SETTING[follow_type].right_bumper_val; //150;
 //			} else {
@@ -414,7 +414,7 @@
 //				}
 //				ROS_WARN("%s %d: right bumper triggered", __FUNCTION__, __LINE__);
 //				stop_brifly();
-//				Turn_Right(Turn_Speed, 150);
+//				turn_right(Turn_Speed, 150);
 //				Wall_Straight_Distance = MFW_SETTING[follow_type].left_bumper_val; //250;
 //			}
 //
@@ -529,7 +529,7 @@
 //		} else {
 //			ROS_INFO("%s %d: ", __FUNCTION__, __LINE__);
 //			stop_brifly();
-//			Turn_Right(Turn_Speed, 750);
+//			turn_right(Turn_Speed, 750);
 //			ROS_INFO("%s %d: ", __FUNCTION__, __LINE__);
 //			stop_brifly();
 //			move_forward(15, 15);

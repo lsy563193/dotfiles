@@ -160,7 +160,7 @@ void Random_Running_Mode(void)
 			return;
 		}
 		beep(2, 25, 25, 1);
-		Turn_Right(Turn_Speed,1120+ get_random_factor()*10);
+		turn_right(Turn_Speed, 1120 + get_random_factor() * 10);
 		if(stop_event())
 		{
 			stop_brifly();
@@ -365,7 +365,7 @@ void Random_Running_Mode(void)
 			if(remote_key(Remote_Max))
 			{
 				Stop_Brifly();
-				Turn_Right(Turn_Speed,1800);
+				turn_right(Turn_Speed,1800);
 				stop_brifly();
 				reset_rcon_remote();
 				reset_wheel_step();
@@ -434,7 +434,7 @@ void Random_Running_Mode(void)
 				{
 					if(is_direction_right())
 					{
-						Turn_Right(Turn_Speed,1200);
+						turn_right(Turn_Speed, 1200);
 						set_direction_flag(Direction_Flag_Right);
 					}
 					else
@@ -447,13 +447,13 @@ void Random_Running_Mode(void)
 				{
 					if(Temp_Rcon_Status & RconL_HomeT)
 					{
-						Turn_Right(Turn_Speed,800);
+						turn_right(Turn_Speed, 800);
 						set_direction_flag(Direction_Flag_Right);
 					}
 					else if(Temp_Rcon_Status & RconFL_HomeT)
 					{
 						random_back();
-						Turn_Right(Turn_Speed,1120);
+						turn_right(Turn_Speed, 1120);
 						set_direction_flag(Direction_Flag_Right);
 					}
 					else if(Temp_Rcon_Status & RconFR_HomeT)
@@ -566,7 +566,7 @@ void Random_Running_Mode(void)
 			Stunk++;
 			if(Stunk>7)
 			{
-				Turn_Right(Turn_Speed,240);
+				turn_right(Turn_Speed, 240);
 				move_forward(10, 10);
 				if(Out_Trap_Left())
 				{
@@ -584,14 +584,14 @@ void Random_Running_Mode(void)
 				}
 				Stunk=0;
 				set_direction_flag(Direction_Flag_Right);
-				Turn_Right(Turn_Speed,80);
+				turn_right(Turn_Speed, 80);
 			}
 			else
 			{
 				if((Wall_Small_Counter>30)&&(!is_move_finished(300000)))
 				{
 					stop_brifly();
-					Turn_Right(Turn_Speed,400);
+					turn_right(Turn_Speed, 400);
 					stop_brifly();
 					if(Wall_Follow_Short(3000))return;
 					Stunk=0;
@@ -603,7 +603,7 @@ void Random_Running_Mode(void)
 				else if((Wall_Mid_Counter>40)||(is_move_finished(460000)))
 				{
 					stop_brifly();
-					Turn_Right(Turn_Speed,400);
+					turn_right(Turn_Speed, 400);
 					stop_brifly();
 					if(Wall_Follow_Short(1000))return;
 					Stunk=0;
@@ -615,7 +615,7 @@ void Random_Running_Mode(void)
 				else if((Wall_Bumper_Counter>(Short_Wall_Trig+Wall_Bumper_Factor))&&(get_random_factor()<25))
 				{
 					stop_brifly();
-					Turn_Right(Turn_Speed,400);
+					turn_right(Turn_Speed, 400);
 					stop_brifly();
 					if(Wall_Follow_Short(get_average_move()))return;
 					Stunk=0;
@@ -629,7 +629,7 @@ void Random_Running_Mode(void)
 					{
 						if(is_direction_right())
 						{
-							Turn_Right(Turn_Speed,660);
+							turn_right(Turn_Speed, 660);
 							set_direction_flag(Direction_Flag_Right);
 						}
 						else
@@ -643,14 +643,14 @@ void Random_Running_Mode(void)
 						if(Temp_Bumper_Status == AllBumperTrig)
 						{
 							//Half_Turn_Right(Turn_Speed,800+get_random_factor()*7);
-							Turn_Right(Turn_Speed,800+ get_random_factor()*7);
+							turn_right(Turn_Speed, 800 + get_random_factor() * 7);
 							Avoid_Flag=1;
 						}
 						else
 						{
 							if(get_random_factor()<60)
 							{
-								Turn_Right(Turn_Speed,800);
+								turn_right(Turn_Speed, 800);
 								if(Left_Bumper_Avoiding())Avoid_Flag=1;
 								if (stop_event())
 								{
@@ -661,7 +661,7 @@ void Random_Running_Mode(void)
 							else
 							{
 								//Half_Turn_Right(Turn_Speed,700+get_random_factor()*9);
-								Turn_Right(Turn_Speed,700+ get_random_factor()*9);
+								turn_right(Turn_Speed, 700 + get_random_factor() * 9);
 								Avoid_Flag=1;
 							}
 						}
@@ -735,7 +735,7 @@ void Random_Running_Mode(void)
 				if((Wall_Small_Counter>30)&&(!is_move_finished(300000)))
 				{
 					stop_brifly();
-					Turn_Right(Turn_Speed,900);
+					turn_right(Turn_Speed, 900);
 					stop_brifly();
 					if(Wall_Follow_Short(4000))return;
 					Stunk=0;
@@ -746,7 +746,7 @@ void Random_Running_Mode(void)
 				else if((Wall_Mid_Counter>40)||(is_move_finished(460000)))
 				{
 					stop_brifly();
-					Turn_Right(Turn_Speed,900);
+					turn_right(Turn_Speed, 900);
 					stop_brifly();
 					if(Wall_Follow_Short(1000))return;
 					Stunk=0;
@@ -758,7 +758,7 @@ void Random_Running_Mode(void)
 				else if((Wall_Bumper_Counter>(Short_Wall_Trig+Wall_Bumper_Factor))&&(get_random_factor()<25))
 				{
 					stop_brifly();
-					Turn_Right(Turn_Speed,900);
+					turn_right(Turn_Speed, 900);
 					stop_brifly();
 					if(Wall_Follow_Short(get_average_move()))return;
 					Stunk=0;
@@ -776,7 +776,7 @@ void Random_Running_Mode(void)
 						}
 						else
 						{
-							Turn_Right(Turn_Speed,660);
+							turn_right(Turn_Speed, 660);
 							set_direction_flag(Direction_Flag_Right);
 						}
 					}
@@ -860,7 +860,7 @@ void Random_Running_Mode(void)
 			{
 				if(Temp_OBS_Status & (Status_Right_OBS|Status_Front_OBS))
 				{
-					Turn_Right(Turn_Speed,900);
+					turn_right(Turn_Speed, 900);
 					stop_brifly();
 				}
 				move_forward(5, 5);
@@ -875,7 +875,7 @@ void Random_Running_Mode(void)
 			{
 				if(Temp_OBS_Status & (Status_Right_OBS|Status_Front_OBS))
 				{
-					Turn_Right(Turn_Speed,900);
+					turn_right(Turn_Speed, 900);
 					stop_brifly();
 				}
 				move_forward(5, 5);
@@ -890,7 +890,7 @@ void Random_Running_Mode(void)
 			{
 				if(Temp_OBS_Status & (Status_Right_OBS|Status_Front_OBS))
 				{
-					Turn_Right(Turn_Speed,900);
+					turn_right(Turn_Speed, 900);
 					stop_brifly();
 				}
 				move_forward(5, 5);
@@ -967,17 +967,17 @@ void Random_Running_Mode(void)
 								break;
 							}
 							Stunk=0;
-							Turn_Right(Turn_Speed,240);
+							turn_right(Turn_Speed, 240);
 						}
 						else
 						{
 							if(Left_Wheel_Step_Buffer<300)
 							{
-								Turn_Right(Turn_Speed-10,400);
+								turn_right(Turn_Speed - 10, 400);
 							}
 							else
 							{
-								Turn_Right(Turn_Speed,400);
+								turn_right(Turn_Speed, 400);
 							}
 						}
 						N_H_T=1;
@@ -998,7 +998,7 @@ void Random_Running_Mode(void)
 						else
 						{
 							//Half_Turn_Right(Turn_Speed,800+get_random_factor()*8);
-							Turn_Right(Turn_Speed,800+ get_random_factor()*8);
+							turn_right(Turn_Speed, 800 + get_random_factor() * 8);
 
 							set_direction_flag(Direction_Flag_Right);
 						}
@@ -1008,7 +1008,7 @@ void Random_Running_Mode(void)
 						if(Random_Factor)
 						{
 							//Half_Turn_Right(Turn_Speed,1200);
-							Turn_Right(Turn_Speed,1200);
+							turn_right(Turn_Speed, 1200);
 							set_direction_flag(Direction_Flag_Right);
 						}
 						else
@@ -1038,7 +1038,7 @@ void Random_Running_Mode(void)
 							}
 							Stunk=0;
 							//Half_Turn_Right(Turn_Speed,240);
-							Turn_Right(Turn_Speed,240);
+							turn_right(Turn_Speed, 240);
 
 
 						}
@@ -1046,10 +1046,10 @@ void Random_Running_Mode(void)
 						{
 							if((Bumper_Counter%3)==0)
 								//Half_Turn_Right(Turn_Speed,800+get_random_factor()*7);
-								Turn_Right(Turn_Speed,800+ get_random_factor()*7);
+								turn_right(Turn_Speed, 800 + get_random_factor() * 7);
 							else
 								//Half_Turn_Right(Turn_Speed,750+get_random_factor()*8);
-								Turn_Right(Turn_Speed,750+ get_random_factor()*8);
+								turn_right(Turn_Speed, 750 + get_random_factor() * 8);
 
 						}
 						set_direction_flag(Direction_Flag_Right);
@@ -1089,7 +1089,7 @@ void Random_Running_Mode(void)
 								else
 								{
 									//Half_Turn_Right(Turn_Speed,750+get_random_factor()*7);
-									Turn_Right(Turn_Speed,750+ get_random_factor()*7);
+									turn_right(Turn_Speed, 750 + get_random_factor() * 7);
 									set_direction_flag(Direction_Flag_Right);
 								}
 							}
@@ -1185,7 +1185,7 @@ void Random_Running_Mode(void)
 					reset_stop_event_status();
 					break;
 				}
-				Turn_Right(Turn_Speed-5,240);
+				turn_right(Turn_Speed - 5, 240);
 				move_forward(10, 10);
 			}
 			else if(On_TrapOut_Flag==2)
@@ -1204,7 +1204,7 @@ void Random_Running_Mode(void)
 					reset_stop_event_status();
 					break;
 				}
-				Turn_Right(Turn_Speed-5,240);
+				turn_right(Turn_Speed - 5, 240);
 				move_forward(10, 10);
 			}
 			if(!Is_HalfTurn_Flag())
@@ -1362,7 +1362,7 @@ uint8_t Out_Trap_Right(void)
 
 		if(remote_key(Remote_Left))
 		{
-			Turn_Right(Turn_Speed,240);
+			turn_right(Turn_Speed, 240);
 			move_forward(30, 30);
 			reset_rcon_remote();
 			return 0;
@@ -1469,7 +1469,7 @@ uint8_t Out_Trap_Left(void)
 
 		if(remote_key(Remote_Right))
 		{
-			Turn_Right(Turn_Speed,300);
+			turn_right(Turn_Speed, 300);
 			move_forward(30, 30);
 			reset_rcon_remote();
 			return 0;
@@ -1492,7 +1492,7 @@ uint8_t Out_Trap_Left(void)
 			stop_brifly();
 			wall_move_back();
 			if(is_bumper_jamed())return 1;
-			Turn_Right(Turn_Speed-5,1025);
+			turn_right(Turn_Speed - 5, 1025);
 			stop_brifly();
 			reset_right_wheel_step();
 			Bump_Counter++;
@@ -1503,7 +1503,7 @@ uint8_t Out_Trap_Left(void)
 			stop_brifly();
 			wall_move_back();
 			if(is_bumper_jamed())return 1;
-			Turn_Right(Turn_Speed-8,150);
+			turn_right(Turn_Speed - 8, 150);
 			stop_brifly();
 			reset_right_wheel_step();
 			Bump_Counter++;
@@ -1512,7 +1512,7 @@ uint8_t Out_Trap_Left(void)
 		if(is_front_close())
 		{
 			stop_brifly();
-			Turn_Right(Turn_Speed-8,800);
+			turn_right(Turn_Speed - 8, 800);
 			stop_brifly();
 			reset_right_wheel_step();
 		}
@@ -1716,7 +1716,7 @@ void Half_Turn_Right(uint16_t speed,uint16_t angle)
 	uint16_t H_S=0;
 	uint16_t Counter_Watcher=0;
 	uint8_t Temp_H_Flag=0;
-	Turn_Right(speed,angle/2);
+	turn_right(speed, angle / 2);
 	if(get_rcon_remote() > 0)
 	{
 		reset_rcon_remote();

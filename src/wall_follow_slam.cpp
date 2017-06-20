@@ -865,7 +865,7 @@ uint8_t wall_follow(MapWallFollowType follow_type)
 			//Map_Initialize();
 			map_reset(MAP);
 			g_wf_point.clear();
-			Turn_Right(Turn_Speed, 900);
+			turn_right(Turn_Speed, 900);
 			continue;
 		} else
 		{
