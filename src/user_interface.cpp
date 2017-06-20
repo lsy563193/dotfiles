@@ -64,6 +64,7 @@ void User_Interface(void)
 		wav_play(WAV_BATTERY_LOW);
 	}
 
+	event_manager_reset_status();
 	user_interface_register_events();
 
 	while(ros::ok())

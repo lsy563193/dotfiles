@@ -481,6 +481,48 @@ uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
 	return 0;
 }
 
+void event_manager_reset_status(void)
+{
+	g_fatal_quit_event = false;
+	/* Bumper */
+	g_bumper_hitted = false;
+	g_bumper_jam = false;
+	g_bumper_cnt = 0;
+	/* OBS */
+	g_obs_triggered = false;
+	/* Cliff */
+	g_cliff_all_triggered = false;
+	g_cliff_triggered = false;
+	g_cliff_jam = false;
+	g_cliff_cnt = 0;
+	/* RCON */
+	g_rcon_triggered = false;
+	/* Over Current */
+	g_oc_brush_main = false;
+	g_oc_wheel_left = false;
+	g_oc_wheel_right = false;
+	g_oc_suction = false;
+	g_oc_brush_left_cnt = 0;
+	g_oc_brush_main_cnt = 0;
+	g_oc_brush_right_cnt = 0;
+	g_oc_wheel_left_cnt = 0;
+	g_oc_wheel_right_cnt = 0;
+	g_oc_suction_cnt = 0;
+	/* Key */
+	g_key_clean_pressed = false;
+	/* Remote */
+	g_remote_home = false;
+	g_remote_spot = false;
+	g_remote_wallfollow = false;
+	/* Battery */
+	g_battery_home = false;
+	g_battery_low = false;
+	g_battery_low_cnt = 0;
+	/* Charge Status */
+	g_charge_detect = 0;
+	g_charge_detect_cnt = 0;
+}
+
 /* Below are the internal functions. */
 
 /* Bumper */

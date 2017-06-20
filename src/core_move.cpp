@@ -1279,24 +1279,8 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 uint8_t cm_touring(void)
 {
 	g_cm_move_type = CM_LINEARMOVE;
-	g_fatal_quit_event = false;
-	g_bumper_jam = false;
-	g_cliff_all_triggered = false;
-	g_cliff_jam = false;
-	g_cliff_triggered = false;
-	g_rcon_triggered = false;
-	g_oc_brush_main = g_oc_wheel_left = g_oc_wheel_right = g_oc_suction = false;
-	g_key_clean_pressed = false;
-	g_remote_home = false;
-	g_remote_spot = false;
-	g_battery_home = g_battery_low = false;
-	g_oc_brush_left_cnt = g_oc_brush_main_cnt = g_oc_brush_right_cnt = g_oc_wheel_left_cnt = g_oc_wheel_right_cnt = g_oc_suction_cnt = 0;
-	g_cliff_cnt = 0;
-	g_bumper_cnt = g_press_time = 0;
 	g_from_station = 0;
-	g_charge_detect = 0;
-	g_charge_detect_cnt = 0;
-
+	event_manager_reset_status();
 	MotionManage motion;
 
 	if(! motion.initSucceeded()){

@@ -32,6 +32,7 @@ void sleep_mode(void)
 	reset_touch();
 	set_plan_status(0);
 
+	event_manager_reset_status();
 	sleep_register_events();
 	while(ros::ok())
 	{

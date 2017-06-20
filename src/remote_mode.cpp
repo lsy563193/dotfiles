@@ -46,6 +46,7 @@ void Remote_Mode(void)
 	set_move_flag_(REMOTE_MODE_STAY);
 //    set_vacmode(Vac_Normal);
 
+	event_manager_reset_status();
 	remote_mode_register_events();
 
 	while(ros::ok())

@@ -190,6 +190,8 @@ void event_manager_enable_handler(EventType type, bool enabled);
 
 uint8_t event_manager_check_event(bool *eh_status_now, bool *eh_status_last);
 
+void event_manager_reset_status(void);
+
 /* Below are the internal functions. */
 
 #define define_em_handler_func(name) \
