@@ -15,8 +15,17 @@
 #ifndef __Remote_Mode_H
 #define __Remote_Mode_H
 
+typedef enum {
+	REMOTE_MODE_FORWARD = 0,
+	REMOTE_MODE_LEFT,
+	REMOTE_MODE_RIGHT,
+	REMOTE_MODE_BACKWARD,
+	REMOTE_MODE_STAY,
+} RemoteModeMoveType;
 
 void Remote_Mode(void);
+void set_move_flag_(RemoteModeMoveType flag);
+RemoteModeMoveType get_move_flag_(void);
 void remote_mode_register_events(void);
 void remote_mode_unregister_events(void);
 
