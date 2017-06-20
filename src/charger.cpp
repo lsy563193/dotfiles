@@ -18,6 +18,7 @@
 
 
 /*---------------------------------------------------------------- Charge Function ------------------------*/
+/* Exit charge mode when this counter equals to 0 */
 uint8_t g_stop_charge_counter = 0;
 void Charge_Function(void)
 {
@@ -37,9 +38,6 @@ void Charge_Function(void)
 
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t Bat_Enough_To_Continue_Cleaning_Counter = 0;
-
-	// This counter is for avoiding occasionly is_charge_on return 0 when robot is charging, cause it will stop charger mode.
-	uint8_t Stop_Charge_Counter = 0;
 
 	bool eh_status_now=false, eh_status_last=false;
 	set_led(100, 100);
@@ -82,12 +80,6 @@ void Charge_Function(void)
 		{
 			Show_Batv_Counter++;
 		}
-//		#ifdef SCREEN_REMOTE
-//		if(Remote_Clock_Received())
-//		{
-//			Set_Remote_Schedule();
-//		}
-//		#endif
 
 		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 		{
@@ -109,19 +101,6 @@ void Charge_Function(void)
 		}
 		if (get_clean_mode() == Clean_Mode_Navigation)
 			break;
-
-		/*-----------------------------------------------------Schedul Timer Up-----------------*/
-//		if(Is_Alarm())
-//		{
-//			Reset_Alarm();
-//			if(is_on_charger_stub())
-//			{
-//				set_vacmode(Vac_Normal);
-//				set_room_mode(Room_Mode_Large);
-//				set_clean_mode(Clean_Mode_Navigation);
-//				break;
-//			}
-//		}
 
 		#ifdef ONE_KEY_DISPLAY
 		if (check_bat_full() && !Battery_Full)
