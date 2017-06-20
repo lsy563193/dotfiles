@@ -83,7 +83,13 @@ void Remote_Mode(void)
 			}
 			case REMOTE_MODE_BACKWARD:
 			{
-				move_forward(-Moving_Speed, -Moving_Speed);
+				set_dir_backward();
+				set_wheel_speed(Moving_Speed, Moving_Speed);
+				if (sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y - robot::instance()->getOdomPositionY(), 2)) > 0.01f)
+				{
+					ROS_DEBUG("%s %d: Move back finished.", __FUNCTION__, __LINE__);
+					set_move_flag_(REMOTE_MODE_STAY);
+				}
 				break;
 			}
 			case REMOTE_MODE_STAY:
@@ -123,12 +129,6 @@ void Remote_Mode(void)
 			disable_motors();
 			wav_play(WAV_ERROR_LIFT_UP);
 			set_clean_mode(Clean_Mode_Userinterface);
-			break;
-		}
-		if(get_bumper_status())
-		{
-			random_back();
-			is_bumper_jamed();
 			break;
 		}
 		if(get_cliff_trig() == (Status_Cliff_All)){
@@ -187,6 +187,10 @@ void remote_mode_register_events(void)
 	event_manager_register_handler(y, &remote_mode_handle_ ##name); \
 	event_manager_enable_handler(y, enabled);
 
+	/* Bumper */
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_ALL, true);
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_LEFT, true);
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_RIGHT, true);
 	///* Cliff */
 	//event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
 	///* Rcon */
@@ -216,6 +220,10 @@ void remote_mode_unregister_events(void)
 	event_manager_register_handler(x, NULL); \
 	event_manager_enable_handler(x, false);
 
+	/* Bumper */
+	event_manager_register_and_disable_x(EVT_BUMPER_ALL);
+	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
+	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
 	///* Cliff */
 	//event_manager_register_and_disable_x(EVT_CLIFF_ALL);
 	///* Rcon */
@@ -236,6 +244,17 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+}
+
+void remote_mode_handle_bumper(bool state_now, bool state_last)
+{
+	pos_x = robot::instance()->getOdomPositionX();
+	pos_y = robot::instance()->getOdomPositionY();
+	if (state_last == false)
+	{
+		ROS_WARN("%s %d: Bumper triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, pos_x, pos_y);
+	}
+	set_move_flag_(REMOTE_MODE_BACKWARD);
 }
 
 void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)

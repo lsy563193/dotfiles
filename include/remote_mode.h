@@ -32,8 +32,8 @@ void remote_mode_unregister_events(void);
 #define define_remote_mode_handle_func(name) \
 	void remote_mode_handle_ ## name(bool state_now, bool state_last);
 
-///* Bumper */
-//define_remote_mode_handle_func(bumper)
+/* Bumper */
+define_remote_mode_handle_func(bumper)
 ///* OBS */
 //define_remote_mode_handle_func(obs)
 ///* Cliff */
