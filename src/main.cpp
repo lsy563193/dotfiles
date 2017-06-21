@@ -26,6 +26,7 @@
 #include "wav.h"
 #include "event_manager.h"
 #include "go_home.hpp"
+#include "wav.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
@@ -72,6 +73,7 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	ROS_INFO("Robot sensor ready.");
+	wav_adjust_volume(55);
 	wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
 	if (selfCheckAtLaunch())
@@ -261,6 +263,7 @@ int main(int argc, char **argv)
 	robotbase_init();
 
 	if (verify_ok == true) {
+		wav_open_pcm_driver();
 #if 1
 		ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
 		if (ret1 != 0) {
@@ -296,5 +299,6 @@ int main(int argc, char **argv)
 
 	robotbase_deinit();
 	laser_pm_gpio('0');
+	wav_close_pcm_driver();
 	return 0;
 }

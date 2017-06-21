@@ -49,5 +49,9 @@ typedef enum {
 }WavType;
 
 void wav_play(WavType action);
+bool wav_open_pcm_driver(void);
+void wav_close_pcm_driver(void);
+void wav_launch_mixer(void);
+void wav_adjust_volume(long volume);
 
 #endif
