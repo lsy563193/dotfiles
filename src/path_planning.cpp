@@ -1037,26 +1037,56 @@ int16_t path_escape_trapped()
 	return val;
 }
 
+bool is_isolate(){
+	static bool is_first_time = true;
+	if(is_first_time){
+		is_first_time = false;
+		return true;
+	}else
+		return false;
+}
+
 int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
-
 	Cell_t next = g_curr;
-	auto is_found = path_lane_is_cleaned(next);
 	Cell_t target = next;
-	if (!is_found)
-	{
-		auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
-		if (ret == 0)
-			return 0;
-
-		if (ret == -2)
-		{
-			/* Robot is trapped and no path to starting point or home. */
-			if (path_escape_trapped() == 0)
-				return 2;
-			else
-				return -1;
+	extern CMMoveType g_cm_move_type;
+	if(get_clean_mode() == Clean_Mode_WallFollow){
+		ROS_INFO("target is_isolate");
+		static int isolate_count = 0;
+		if(is_isolate()){
+			g_cm_move_type = CM_LINEARMOVE;
+			path_lane_is_cleaned(next);
+			isolate_count++;
+			if (isolate_count == 3)
+				return 0;//go home;
 		}
+		else{
+			ROS_INFO("start follow wall");
+			g_cm_move_type = CM_FOLLOW_LEFT_WALL;
+			next = map_point_to_cell(*next_point);
+		}
+	}
+	else if(get_clean_mode() == Clean_Mode_Navigation) {
+		auto is_found = path_lane_is_cleaned(next);
+		target = next;
+		if (!is_found)
+		{
+			auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
+			if (ret == 0)
+				return 0;
+
+			if (ret == -2)
+			{
+				/* Robot is trapped and no path to starting point or home. */
+				if (path_escape_trapped() == 0)
+					return 2;
+				else
+					return -1;
+			}
+		}
+	}
+	else if(get_clean_mode() == Clean_Mode_Spot){
 	}
 	//found ==1
 	if (g_curr.X == next.X)

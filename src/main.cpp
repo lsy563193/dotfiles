@@ -98,8 +98,8 @@ void *core_move_thread(void *)
 
 				clear_manual_pause();
 
-				wall_follow(Map_Wall_Follow_Escape_Trapped);
-//				cm_touring();
+//				wall_follow(Map_Wall_Follow_Escape_Trapped);
+				cm_touring();
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");

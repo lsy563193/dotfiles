@@ -237,7 +237,7 @@ MotionManage::~MotionManage()
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Charging)
+	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Charging || get_clean_mode() == Clean_Mode_Charging ||get_clean_mode() == Clean_Mode_Spot)
 		cm_unregister_events();
 
 	if (robot::instance()->isManualPaused())
@@ -313,6 +313,7 @@ if (s_slam != nullptr)
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
 {
+	cm_register_events();
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:
@@ -338,8 +339,6 @@ bool MotionManage::initNavigationCleaning(void)
 	reset_move_with_remote();
 	reset_stop_event_status();
 	reset_touch();
-
-	cm_register_events();
 
 	// Initialize motors and map.
 	if (robot::instance()->isLowBatPaused())
@@ -509,7 +508,6 @@ bool MotionManage::initSpotCleaning(void)
 	reset_stop_event_status();
 	reset_touch();
 
-	cm_register_events();
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.

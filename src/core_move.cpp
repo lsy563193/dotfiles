@@ -618,7 +618,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 				cm_move_back();
 			}
 			g_should_follow_wall = 1;
-
 			break;
 		}
 
@@ -768,7 +767,11 @@ bool cm_curve_move_to_point()
 }
 
 bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
-	g_cm_move_type = CM_LINEARMOVE;
+	if(get_clean_mode() == Clean_Mode_WallFollow){
+		return g_cm_move_type == CM_FOLLOW_LEFT_WALL;
+	}else if(get_clean_mode() == Clean_Mode_Spot){
+		return false;
+	}
 
 	if (!IS_X_AXIS(dir) || g_should_follow_wall == 0 || next_point->Y == map_get_y_count()) {
 		return false;
@@ -862,9 +865,7 @@ uint8_t cm_follow_wall(Point32_t target)
 
 	auto start_y = map_get_y_count();
 	auto angle = get_round_angle(type);
-	ROS_WARN("%s %d: before cm_follow_wall_turn", __FUNCTION__, __LINE__);
 	cm_follow_wall_turn(TURN_SPEED, angle);
-	ROS_WARN("%s %d: after cm_follow_wall_turn", __FUNCTION__, __LINE__);
 
 	bool	eh_status_now=false, eh_status_last=false;
 	int32_t	 speed_left = 0, speed_right = 0;
@@ -882,21 +883,33 @@ uint8_t cm_follow_wall(Point32_t target)
 			break;
 		}
 
-		ROS_INFO("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, count_to_cell(start_y), count_to_cell(target.Y),map_get_y_cell());
 		if(g_bumper_hitted || g_cliff_triggered){
 				cm_move_back();
 		}
-		if ((start_y < target.Y ^ map_get_y_count() < target.Y)){
-			ROS_WARN("Robot has reach the target.");
-			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,map_get_y_count());
-			break;
-		}
+		if(get_clean_mode() == Clean_Mode_WallFollow){
+			//reach start cell;
+			//return;
+		}else
+		if(get_clean_mode() == Clean_Mode_Navigation){
 
-		if ((target.Y > start_y && (start_y - map_get_y_count()) > 120) || (target.Y < start_y && (map_get_y_count() - start_y) > 120)) {
-			ROS_WARN("Robot has round to the opposite direcition.");
-			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,map_get_y_count());
-			map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0), map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
-			break;
+			if ((start_y < target.Y ^ map_get_y_count() < target.Y))
+			{
+				ROS_WARN("Robot has reach the target.");
+				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,
+								 map_get_y_count());
+				break;
+			}
+
+			if ((target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
+					(target.Y < start_y && (map_get_y_count() - start_y) > 120))
+			{
+				ROS_WARN("Robot has round to the opposite direcition.");
+				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,
+								 map_get_y_count());
+				map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0),
+										 map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
+				break;
+			}
 		}
 
 		if (g_rounding_turn_angle != 0) {
