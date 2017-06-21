@@ -914,14 +914,14 @@ uint8_t wf_break_wall_follow(void)
 
 void wf_update_position(void)
 {
-	extern Point32_t g_next_point, g_targets_point;
+	extern Point32_t g_next_point, g_target_point;
 	Cell_t last{map_get_x_cell(), map_get_y_cell()};
 
 	//Map_move_to(dd * cos(deg2rad(heading, 10)), dd * sin(deg2rad(heading, 10)));
 	Cell_t curr{(int16_t)(robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE), (int16_t)(robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE)};
 	map_set_position(curr.X, curr.Y);
 	if(last != curr)
-		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 }
 
 /**************************************************************
@@ -934,7 +934,7 @@ Description:
 void wf_check_loop_closed(uint16_t heading)
 {
 
-	extern Point32_t g_next_point, g_targets_point;
+	extern Point32_t g_next_point, g_target_point;
 //	float pos_x, pos_y;
 	int8_t c, d, e;
 	int16_t x, y;
@@ -950,7 +950,7 @@ void wf_check_loop_closed(uint16_t heading)
 	map_set_position(curr.X, curr.Y);
 
 	if(last != curr)
-		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 
 #if (ROBOT_SIZE == 5 || ROBOT_SIZE == 3)
 

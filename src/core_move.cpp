@@ -68,7 +68,7 @@ uint16_t g_rounding_wall_straight_distance;
 std::vector<int16_t> g_rounding_left_wall_buffer;
 std::vector<int16_t> g_rounding_right_wall_buffer;
 
-Point32_t g_next_point, g_targets_point;
+Point32_t g_next_point, g_target_point;
 
 // This list is for storing the position that robot sees the charger stub.
 std::list <Point32_t> g_home_point;
@@ -438,7 +438,7 @@ void cm_update_map()
 	cm_update_map_obs();
 //	ROS_ERROR("2 last(%d,%d),curr(%d,%d)",last.X, last.Y,curr.X,curr.Y);
 	if (last != curr || get_bumper_status()!=0 || get_cliff_trig() !=0 || get_obs_status() != 0)
-		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 }
 //-------------------------------cm_move_back-----------------------------//
 uint16_t round_turn_angle()
@@ -643,6 +643,18 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	return true;
 }
 
+/*
+void cm_move_to_point(Point32_t target)
+{
+	if (path_get_path_points_count() >= 3){
+		if (!cm_curve_move_to_point())
+			cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
+	}
+	else
+		cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
+}
+*/
+
 bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_right)
 {
 	auto angle_start = Gyro_GetAngle();
@@ -675,18 +687,6 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 	}
 	stop_brifly();
 	return true;
-}
-
-void cm_move_to_point(Point32_t target)
-{
-#ifdef PP_CURVE_MOVE
-	if (path_get_path_points_count() >= 3){
-		if (!cm_curve_move_to_point())
-			cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
-	}
-	else
-#endif
-		cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
 }
 
 bool cm_curve_move_to_point()
@@ -767,16 +767,15 @@ bool cm_curve_move_to_point()
 	return true;
 }
 
-bool is_follow_wall(Point32_t *next_point, Point32_t target_points, uint16_t dir) {
+bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
 	g_cm_move_type = CM_LINEARMOVE;
 
-	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
-
-	ROS_INFO("curr_y(%d),next_y(%d),delta_y(%d),dir(%d)",map_get_y_cell(), count_to_cell(next_point->Y), delta_y, dir);
-
-	if (!IS_X_AXIS(dir) || g_should_follow_wall == 0 || delta_y == 0) {
+	if (!IS_X_AXIS(dir) || g_should_follow_wall == 0 || next_point->Y == map_get_y_count()) {
 		return false;
 	}
+
+	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
+	ROS_INFO("curr_y(%d),next_y(%d),delta_y(%d),dir(%d)",map_get_y_cell(), count_to_cell(next_point->Y), delta_y, dir);
 
 	if ( delta_y != 0 && std::abs(delta_y <= 2) ) {
 		g_cm_move_type = (dir == POS_X) ^ (delta_y > 0) ? CM_FOLLOW_LEFT_WALL: CM_FOLLOW_RIGHT_WALL;
@@ -784,9 +783,9 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_points, uint16_t dir
 	} else if(delta_y == 0){
 		ROS_INFO("%s %d robot don't need to go to new line. y: %d", __FUNCTION__, __LINE__, delta_y);
 		if (!(count_to_cell(next_point->X) == SHRT_MAX || count_to_cell(next_point->X) == SHRT_MIN)) {
-			delta_y = count_to_cell(target_points.Y) - map_get_y_cell();
+			delta_y = count_to_cell(target_point.Y) - map_get_y_cell();
 			if (delta_y != 0 && std::abs(delta_y <= 2)) {
-				next_point->Y = target_points.Y;
+				next_point->Y = target_point.Y;
 				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
 				ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
 			}
@@ -861,7 +860,7 @@ uint8_t cm_follow_wall(Point32_t target)
 	g_rounding_left_wall_buffer = { 0,0,0 }, g_rounding_right_wall_buffer = { 0,0,0 };
 	g_rounding_wall_distance = 400;
 
-	auto y_start = map_get_y_count();
+	auto start_y = map_get_y_count();
 	auto angle = get_round_angle(type);
 	ROS_WARN("%s %d: before cm_follow_wall_turn", __FUNCTION__, __LINE__);
 	cm_follow_wall_turn(TURN_SPEED, angle);
@@ -883,17 +882,23 @@ uint8_t cm_follow_wall(Point32_t target)
 			break;
 		}
 
-		ROS_WARN("%s %d:y_start(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, count_to_cell(y_start), count_to_cell(target.Y),map_get_y_cell());
+		ROS_INFO("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, count_to_cell(start_y), count_to_cell(target.Y),map_get_y_cell());
 		if(g_bumper_hitted || g_cliff_triggered){
 				cm_move_back();
 		}
-		if ((y_start < target.Y ^ map_get_y_count() < target.Y)) // Robot has reach the target.
+		if ((start_y < target.Y ^ map_get_y_count() < target.Y)){
+			ROS_WARN("Robot has reach the target.");
+			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,map_get_y_count());
 			break;
+		}
 
-		if ((y_start < target.Y ^ (y_start - map_get_y_count()) < 120)) { // Robot has round to the opposite direcition.
+		if ((target.Y > start_y && (start_y - map_get_y_count()) > 120) || (target.Y < start_y && (map_get_y_count() - start_y) > 120)) {
+			ROS_WARN("Robot has round to the opposite direcition.");
+			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,map_get_y_count());
 			map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0), map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
 			break;
 		}
+
 		if (g_rounding_turn_angle != 0) {
 			cm_follow_wall_turn(TURN_SPEED, g_rounding_turn_angle);
 			g_rounding_turn_angle = 0;
@@ -997,11 +1002,12 @@ int cm_cleaning()
 		}
 
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
+		auto last_dir = path_get_robot_direction();
 		path_update_cell_history();
 		path_update_cells();
 		path_reset_path_points();
-		int8_t is_found = path_next(&g_next_point, &g_targets_point);
-//		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_targets_point);
+		int8_t is_found = path_next(&g_next_point, &g_target_point);
+//		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 		ROS_ERROR("State: %d", is_found);
 		if (is_found == 0) //No target point
 		{
@@ -1010,10 +1016,11 @@ int cm_cleaning()
 		} else
 		if (is_found == 1)
 		{
-			if (is_follow_wall(&g_next_point, g_targets_point, path_get_robot_direction()))
+			if (is_follow_wall(&g_next_point, g_target_point, last_dir))
 				cm_follow_wall(g_next_point);
 			else
-				cm_move_to_point(g_next_point);
+			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+				cm_linear_move_to_point(g_next_point, RUN_TOP_SPEED, true, true);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
@@ -1248,7 +1255,8 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
-			cm_move_to_point(Next_Point);
+			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+				cm_linear_move_to_point(Next_Point, RUN_TOP_SPEED, true, true);
 
 			if (g_fatal_quit_event || g_key_clean_pressed )
 				return false;
