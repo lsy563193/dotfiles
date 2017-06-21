@@ -8,7 +8,7 @@
 #include <fcntl.h>
 
 #include "mathematics.h"
-
+#include "event_manager.h"
 #include "laser.hpp"
 //#include <obstacle_detector.h>
 //#include <figures/point.h>
@@ -58,7 +58,7 @@ void laser_pm_gpio(char val)
 	close(fd);
 }
 
-Laser::Laser():nh_(),is_ready_(false),is_scanDataReady_(false)
+Laser::Laser():nh_(),is_ready_(0),is_scanDataReady_(false)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	start_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("start_motor");
@@ -87,7 +87,7 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 //	ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
 	is_scanDataReady_ = true;
-	is_ready_ = true;
+	isReady(1);
 }
 
 /*
@@ -166,12 +166,12 @@ double Laser::getLaserDistance(int begin, int end, double range)
 
 	return laser_distance;
 }
-bool Laser::isReady()
+int8_t Laser::isReady()
 {
 	return is_ready_;
 }
 
-void Laser::isReady(bool val)
+void Laser::isReady(uint8_t val)
 {
 	is_ready_ = val;
 }
@@ -179,49 +179,70 @@ void Laser::isReady(bool val)
 void Laser::start(void)
 {
 	std_srvs::Empty empty;
-	auto count_3s = 0;
-	auto try_times = 3;
-	bool  first_start = true;
-	do
-	{
-		try_times--;
-		if (! first_start)
-		{
-			ROS_INFO("lidar start false, power off and try again!!!");
-			stop();
-			sleep(1);
-		}
-		first_start = false;
-		laser_pm_gpio('1');
-		usleep(20000);
-		ROS_INFO("start_lidar");
-		start_mator_cli_.call(empty);
-		count_3s = 300;//set reboot lidar time to 3 seconds
-		is_ready_ = false;
-		while (is_ready_ == false && --count_3s > 0 && !stop_event())
-		{
-			if (count_3s % 100 == 0)
-				ROS_INFO("laser start not success yet, will try to restart after %d s", count_3s / 100);
-			usleep(10000);
-		}
-	}while ((count_3s == 0 && try_times != 0) && !stop_event());
+	time_t start_time = time(NULL);
+	time_t stop_time = time(NULL);
+	uint8_t try_times = 1;
+	bool stopped = false;
+	bool eh_status_now=false, eh_status_last=false;
 
-	if(stop_event()){
-		while (get_key_press() & KEY_CLEAN)
+	laser_pm_gpio('1');
+	usleep(20000);
+	ROS_WARN("%s %d: Start laser for the %d time.", __FUNCTION__, __LINE__, try_times);
+	start_mator_cli_.call(empty);
+
+	while (ros::ok() && try_times <= 3)
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
+
+		if (g_fatal_quit_event || g_key_clean_pressed)
 		{
-			ROS_INFO("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-			usleep(20000);
+			isReady(0);
+			ROS_WARN("%s %d: Laser starting interrupted, status: %d", __FUNCTION__, __LINE__, isReady());
+			return;
+		}
+
+		if (stopped)
+		{
+			if (time(NULL) - stop_time >= 1)
+			{
+				laser_pm_gpio('1');
+				usleep(20000);
+				ROS_WARN("%s %d: Start laser for %d time.", __FUNCTION__, __LINE__, try_times);
+				start_mator_cli_.call(empty);
+				start_time = time(NULL);
+				stopped = false;
+			}
+		}
+		else
+		{
+			if (isReady() == 1)
+			{
+				ROS_WARN("%s %d: Laser start successed, status:%d.", __FUNCTION__, __LINE__, isReady());
+				return;
+			}
+
+			if (time(NULL) - start_time >= 3)
+			{
+				try_times++;
+				ROS_WARN("%s %d: Laser starting failed, power off before retry.", __FUNCTION__, __LINE__);
+				stop();
+				stop_time = time(NULL);
+				stopped = true;
+			}
 		}
 	}
 
-	ROS_INFO("start_motor: %d", is_ready_);
+	isReady(-1);
+	ROS_ERROR("%s %d: Laser start timeout, status:%d.", __FUNCTION__, __LINE__, isReady());
 }
 
 void Laser::stop(void){
 	std_srvs::Empty empty;
-	is_ready_ = false;
+	isReady(0);
 	is_scanDataReady_ = false;
-	ROS_INFO("stop_laser");
+	ROS_INFO("%s %d: Stop laser.", __FUNCTION__, __LINE__);
 	stop_mator_cli_.call(empty);
 	laser_pm_gpio('0');
 }
