@@ -643,6 +643,18 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	return true;
 }
 
+/*
+void cm_move_to_point(Point32_t target)
+{
+	if (path_get_path_points_count() >= 3){
+		if (!cm_curve_move_to_point())
+			cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
+	}
+	else
+		cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
+}
+*/
+
 bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_right)
 {
 	auto angle_start = Gyro_GetAngle();
@@ -1007,7 +1019,7 @@ int cm_cleaning()
 			if (is_follow_wall(&g_next_point, g_target_point, last_dir))
 				cm_follow_wall(g_next_point);
 			else
-			if (path_get_path_points_count() < 3 && !cm_curve_move_to_point())
+			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 				cm_linear_move_to_point(g_next_point, RUN_TOP_SPEED, true, true);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
@@ -1243,7 +1255,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
-			if (path_get_path_points_count() < 3 && !cm_curve_move_to_point())
+			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 				cm_linear_move_to_point(Next_Point, RUN_TOP_SPEED, true, true);
 
 			if (g_fatal_quit_event || g_key_clean_pressed )
