@@ -39,6 +39,11 @@ typedef struct{
 } Point32_t;
 
 typedef struct{
+	double x;
+	double y;
+} Double_Point;
+
+typedef struct{
 	int32_t X;
 	int32_t Y;
 	int16_t	TH;
