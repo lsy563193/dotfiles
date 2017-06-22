@@ -110,12 +110,12 @@ static int16_t ranged_angle(int16_t angle)
 	return angle;
 }
 
-typedef struct Regulator1_{
-	Regulator1_(int32_t max):integrated_(0),integration_cycle_(0),base_speed_(BASE_SPEED),tick_(0),speed_max_(max){};
-	~Regulator1_(){
+typedef struct LinearSpeedRegulator_{
+	LinearSpeedRegulator_(int32_t max):integrated_(0),integration_cycle_(0),base_speed_(BASE_SPEED),tick_(0),speed_max_(max){};
+	~LinearSpeedRegulator_(){
 		set_wheel_speed(0, 0);
 	};
-	bool adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool);
+	bool adjustSpeed(Point32_t Target, bool slow_down);
 	int32_t speed_max_;
 	int32_t integrated_;
 	int32_t base_speed_;
@@ -142,8 +142,10 @@ static bool check_map_boundary(bool& slow_down)
 	return false;
 }
 
-bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool slow_down)
+bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down)
 {
+	uint8_t left_speed;
+	uint8_t right_speed;
 	auto rotate_angle = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y) - Gyro_GetAngle());
 
 	if ( std::abs(rotate_angle) > 300)
@@ -194,11 +196,12 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, ui
 	check_limit(right_speed, BASE_SPEED, speed_max_);
 	base_speed_ = (left_speed + right_speed) / 2;
 //	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d)",left_speed, right_speed, base_speed_, slow_down);
+	move_forward(left_speed, right_speed);
 	return true;
 }
 
-typedef struct Regulator2_{
-	Regulator2_(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
+typedef struct TurnSpeedRegulator_{
+	TurnSpeedRegulator_(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
 					speed_max_(speed_max),speed_min_(speed_min),tick_(0), speed_(speed_start){};
 	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
 	uint8_t speed_max_;
@@ -230,9 +233,9 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 	return true;
 }
 
-typedef struct RoundRegulator_{
-	RoundRegulator_(CMMoveType type):type_(type),previous_(0){ };
-	~RoundRegulator_(){ set_wheel_speed(0,0); };
+typedef struct FollowWallRegulator_{
+	FollowWallRegulator_(CMMoveType type):type_(type),previous_(0){ };
+	~FollowWallRegulator_(){ set_wheel_speed(0,0); };
 	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	int32_t	 previous_ = 0;
 	CMMoveType type_;
@@ -650,11 +653,8 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 		if(check_map_boundary(slow_down))
 			break;
 
-		uint8_t left_speed,right_speed;
-		if(! regulator.adjustSpeed(Target, left_speed, right_speed, slow_down))
+		if(!regulator.adjustSpeed(Target, slow_down))
 			break;
-
-		move_forward(left_speed, right_speed);
 	}
 
 	cm_set_event_manager_handler_state(false);
