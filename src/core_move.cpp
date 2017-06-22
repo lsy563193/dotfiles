@@ -229,6 +229,7 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 	speed = speed_;
 	return true;
 }
+
 typedef struct RoundRegulator_{
 	RoundRegulator_(CMMoveType type):type_(type),previous_(0){ };
 	~RoundRegulator_(){ set_wheel_speed(0,0); };
@@ -277,6 +278,26 @@ bool FollowWallRegulator::adjustSpeed(int32_t &speed_left, int32_t &speed_right)
 	previous_ = proportion;
 	check_limit(speed_left, 0, 40);
 	speed_right = speed_right < 0 ? 0 : speed_right;
+}
+
+typedef struct SelfCheckRegulator_{
+	SelfCheckRegulator_(){};
+	bool adjustSpeed(uint8_t check_code, uint8_t &left_speed, uint8_t &right_speed);
+}SelfCheckRegulator;
+
+bool SelfCheckRegulator::adjustSpeed(uint8_t check_code, uint8_t &left_speed, uint8_t &right_speed)
+{
+	if (check_code == Check_Left_Wheel || check_code == Check_Right_Wheel)
+	{
+		if (get_direction_flag() == Direction_Flag_Left) {
+			set_dir_right();
+		} else {
+			set_dir_left();
+		}
+		left_speed = 30;
+		right_speed = 30;
+	}
+	return true;
 }
 
 static double radius_of(Cell_t cell_0,Cell_t cell_1)
@@ -555,7 +576,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || (!g_go_home && g_remote_home)) {
+		if (g_fatal_quit_event || g_key_clean_pressed || (!g_go_home && g_remote_home) || g_oc_wheel_left || g_oc_wheel_right) {
 			break;
 		}
 
@@ -608,7 +629,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home)) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || g_oc_wheel_left || g_oc_wheel_right) {
 			break;
 		}
 
@@ -669,7 +690,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || g_oc_wheel_left || g_oc_wheel_right)
 			return false;
 
 		if (g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered)
@@ -823,7 +844,7 @@ void cm_follow_wall_turn(uint16_t speed, int16_t angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed )
+		if (g_fatal_quit_event || g_key_clean_pressed  || g_oc_wheel_left || g_oc_wheel_right)
 			break;
 
 //		ROS_INFO("target(%d,%d),current(%d),speed(%d)", angle, target_angle, Gyro_GetAngle(), speed);
@@ -878,7 +899,7 @@ uint8_t cm_follow_wall(Point32_t target)
 			usleep(100);
 			continue;
 		}
-		if (g_fatal_quit_event == true || g_key_clean_pressed == true) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right) {
 			break;
 		}
 
@@ -1035,6 +1056,10 @@ int cm_cleaning()
 				cm_linear_move_to_point(g_next_point, RUN_TOP_SPEED, true, true);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
+
+			if (g_oc_wheel_left || g_oc_wheel_right){
+				cm_self_check();
+			}
 
 		} else
 		if (is_found == 2)
@@ -1451,6 +1476,103 @@ void cm_create_home_boundary(void)
 
 	// Set the flag.
 	g_map_boundary_created = true;
+}
+
+/*------------- Self check and resume-------------------*/
+void cm_self_check(void)
+{
+	ROS_WARN("%s %d: Try to resume the oc cases.", __FUNCTION__, __LINE__);
+	uint8_t check_code;
+	uint8_t resume_cnt = 0;
+	time_t start_time = time(NULL);
+	float wheel_current_sum = 0;
+	uint8_t wheel_current_sum_cnt = 0;
+	bool eh_status_now=false, eh_status_last=false;
+
+	SelfCheckRegulator regulator;
+	cm_set_event_manager_handler_state(true);
+
+	while (ros::ok) {
+		robotbase_obs_adjust_count(50);
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			usleep(100);
+			continue;
+		}
+
+		if (g_fatal_quit_event || g_key_clean_pressed)
+			break;
+
+		// Check for right wheel.
+		if (g_oc_wheel_left || g_oc_wheel_right)
+		{
+			if (g_oc_wheel_left)
+				check_code = Check_Left_Wheel;
+			else
+				check_code = Check_Right_Wheel;
+
+			if (time(NULL) - start_time >= 1)
+			{
+				wheel_current_sum /= wheel_current_sum_cnt;
+				if (wheel_current_sum > Wheel_Stall_Limit)
+				{
+					if (resume_cnt >= 3)
+					{
+						disable_motors();
+						if (g_oc_wheel_left)
+						{
+							ROS_WARN("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
+							set_error_code(Error_Code_LeftWheel);
+						}
+						else
+						{
+							ROS_WARN("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
+							set_error_code(Error_Code_RightWheel);
+						}
+						g_fatal_quit_event = true;
+						break;
+					}
+					else
+					{
+						start_time = time(NULL);
+						resume_cnt++;
+						wheel_current_sum = 0;
+						wheel_current_sum_cnt = 0;
+						ROS_WARN("%s %d: Failed to resume for %d times.", __FUNCTION__, __LINE__, resume_cnt);
+					}
+				}
+				else
+				{
+					if (g_oc_wheel_left)
+					{
+						ROS_WARN("%s %d: Left wheel resume successed.", __FUNCTION__, __LINE__);
+						g_oc_wheel_left = false;
+					}
+					else
+					{
+						ROS_WARN("%s %d: Left wheel resume successed.", __FUNCTION__, __LINE__);
+						g_oc_wheel_right = false;
+					}
+					break;
+				}
+			}
+			else
+			{
+				if (g_oc_wheel_left)
+					wheel_current_sum += (uint32_t) robot::instance()->getLwheelCurrent();
+				else
+					wheel_current_sum += (uint32_t) robot::instance()->getRwheelCurrent();
+				wheel_current_sum_cnt++;
+			}
+		}
+
+		uint8_t left_speed,right_speed;
+		if(! regulator.adjustSpeed(check_code, left_speed, right_speed))
+			break;
+
+		set_wheel_speed(left_speed, right_speed);
+	}
+
+	cm_set_event_manager_handler_state(false);
 }
 
 /* Event handler functions. */
@@ -2132,10 +2254,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 		g_oc_wheel_left_cnt = 0;
 		ROS_WARN("%s %d: left wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
-		if (self_check(Check_Left_Wheel) == 1) {
-			g_oc_wheel_left = true;
-			g_fatal_quit_event = true;
-		}
+		g_oc_wheel_left = true;
 	}
 }
 
@@ -2152,10 +2271,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 		g_oc_wheel_right_cnt = 0;
 		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
-		if (self_check(Check_Right_Wheel) == 1) {
-			g_oc_wheel_right = true;
-			g_fatal_quit_event = true;
-		}
+		g_oc_wheel_right = true;
 	}
 }
 

@@ -103,6 +103,8 @@ MapTouringType cm_handle_ext_event(void);
 
 void cm_create_home_boundary(void);
 
+void cm_self_check(void);
+
 /* Event handler functions. */
 void cm_register_events(void);
 void cm_unregister_events(void);
