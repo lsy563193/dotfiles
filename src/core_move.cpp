@@ -35,6 +35,7 @@
 #include <slam.h>
 #include <event_manager.h>
 #include <mathematics.h>
+#include "wall_follow_slam.h"
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -144,6 +145,15 @@ static bool check_map_boundary(bool& slow_down)
 
 bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, uint8_t &left_speed, uint8_t &right_speed, bool slow_down)
 {
+
+	if(g_bumper_hitted || g_cliff_triggered)
+	{
+		left_speed = right_speed = -8;
+		return true;
+	}
+	if(g_bumper_hitted || g_cliff_triggered){
+
+	}
 	auto rotate_angle = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y) - Gyro_GetAngle());
 
 	if ( std::abs(rotate_angle) > 300)
@@ -847,9 +857,10 @@ void cm_follow_wall_turn(uint16_t speed, int16_t angle)
 
 int16_t get_round_angle(CMMoveType type){
 	int16_t		angle;
-	if ((g_bumper_status_for_rounding & LeftBumperTrig) && !(g_bumper_status_for_rounding & RightBumperTrig)) {
+	auto status = get_bumper_status();
+	if ((status & LeftBumperTrig) && !(status & RightBumperTrig)) {
 		angle = (type == CM_FOLLOW_LEFT_WALL) ? 450 : 1350;
-	} else if (!(g_bumper_status_for_rounding & LeftBumperTrig) && (g_bumper_status_for_rounding & RightBumperTrig)) {
+	} else if (!(status & LeftBumperTrig) && (status & RightBumperTrig)) {
 		angle = (type == CM_FOLLOW_LEFT_WALL) ? 1350 : 450;
 	} else {
 		angle = 900;
@@ -887,8 +898,10 @@ uint8_t cm_follow_wall(Point32_t target)
 				cm_move_back();
 		}
 		if(get_clean_mode() == Clean_Mode_WallFollow){
-			//reach start cell;
-			//return;
+			if(wf_is_end()){
+				wf_break_wall_follow();
+				break;
+			}
 		}else
 		if(get_clean_mode() == Clean_Mode_Navigation){
 
@@ -943,7 +956,8 @@ uint8_t cm_follow_wall(Point32_t target)
 		if (get_front_obs() < get_front_obs_value()) {
 			regulator.adjustSpeed(speed_left, speed_right);
 			move_forward((type == CM_FOLLOW_LEFT_WALL ? speed_left : speed_right), (type == CM_FOLLOW_LEFT_WALL ? speed_right : speed_left));
-		} else {
+		}
+		else {
 			angle = 900;
 			if ((type == CM_FOLLOW_LEFT_WALL && get_left_wheel_step() < 12500) || (type == CM_FOLLOW_RIGHT_WALL &&
 							get_right_wheel_step() < 12500)) {
@@ -1629,9 +1643,6 @@ void cm_event_manager_turn(bool state)
 
 void cm_handle_bumper_all(bool state_now, bool state_last)
 {
-	uint8_t isBumperTriggered = get_bumper_status();
-
-	g_bumper_status_for_rounding = isBumperTriggered;
 
 	set_wheel_speed(0, 0);
 
@@ -1644,8 +1655,6 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 {
 	uint8_t isBumperTriggered = get_bumper_status();
 
-	g_bumper_status_for_rounding = isBumperTriggered;
-
 	set_wheel_speed(0, 0);
 
 	g_bumper_hitted = true;
@@ -1654,9 +1663,6 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
 {
-	uint8_t isBumperTriggered = get_bumper_status();
-
-	g_bumper_status_for_rounding = isBumperTriggered;
 
 	set_wheel_speed(0, 0);
 

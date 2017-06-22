@@ -457,7 +457,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 bool MotionManage::initWallFollowCleaning(void)
 {
-	extern std::vector<Pose32_t> g_wf_point;
+	extern std::vector<Pose16_t> g_wf_cell;
 	reset_start_work_time();
 	reset_move_with_remote();
 	reset_rcon_status();
@@ -481,7 +481,7 @@ bool MotionManage::initWallFollowCleaning(void)
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
 	g_home_point.clear();
-	g_wf_point.clear();
+	g_wf_cell.clear();
 	Point32_t new_home_point;
 	new_home_point.X = new_home_point.Y = 0;
 	// Push the start point into the home point list

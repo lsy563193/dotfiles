@@ -32,6 +32,7 @@
 #include <ros/ros.h>
 #include <movement.h>
 #include <mathematics.h>
+#include <wall_follow_slam.h>
 
 #include "core_move.h"
 #include "gyro.h"
@@ -930,6 +931,8 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 
 void path_update_cells()
 {
+	if(get_clean_mode() != Clean_Mode_Navigation)
+		return;
 	/* Skip, if robot is not moving towards POS_X. */
 	if ((g_last_dir % 1800) != 0)
 		return;
@@ -1037,31 +1040,37 @@ int16_t path_escape_trapped()
 	return val;
 }
 
-bool is_isolate(){
-	static bool is_first_time = true;
-	if(is_first_time){
-		is_first_time = false;
-		return true;
-	}else
-		return false;
-}
+//bool wf_is_isolate(){
+//	static bool is_first_time = true;
+//	if(is_first_time){
+//		is_first_time = false;
+//		return true;
+//	}else
+//		return false;
+//}
 
+int g_isolate_count = 0;
 int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
 	Cell_t next = g_curr;
 	Cell_t target = next;
 	extern CMMoveType g_cm_move_type;
 	if(get_clean_mode() == Clean_Mode_WallFollow){
-		ROS_INFO("target is_isolate");
-		static int isolate_count = 0;
-		if(is_isolate()){
+		ROS_INFO("target wf_is_isolate");
+		bool is_end= false;
+
+//		if(is_trap()){
+//			return 0;
+//		}
+		if((g_isolate_count>0 && g_isolate_count<=3) || wf_is_start()){
 			g_cm_move_type = CM_LINEARMOVE;
+			wf_break_wall_follow();
 			path_lane_is_cleaned(next);
-			isolate_count++;
-			if (isolate_count == 3)
-				return 0;//go home;
-		}
-		else{
+		} else if((g_isolate_count > 3 || g_isolate_count == 0) && g_cm_move_type != CM_LINEARMOVE)
+		{
+			wf_clear();
+			return 0;
+		} else if(! wf_is_start()){
 			ROS_INFO("start follow wall");
 			g_cm_move_type = CM_FOLLOW_LEFT_WALL;
 			next = map_point_to_cell(*next_point);

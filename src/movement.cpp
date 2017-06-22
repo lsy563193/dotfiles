@@ -616,6 +616,7 @@ void turn_right(uint16_t speed, int16_t angle)
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
+/*
 
 void round_turn_left(uint16_t speed, int16_t angle)
 {
@@ -665,8 +666,10 @@ void round_turn_left(uint16_t speed, int16_t angle)
 			break;
 		if (stop_event())
 			break;
-		/*if(is_turn_remote())
-			break;*/
+		*/
+/*if(is_turn_remote())
+			break;*//*
+
 		if (get_rcon_remote() > 0)
 		{
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
@@ -687,7 +690,9 @@ void round_turn_left(uint16_t speed, int16_t angle)
 				reset_rcon_remote();
 			}
 		}
-		/* check plan setting*/
+		*/
+/* check plan setting*//*
+
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
@@ -763,8 +768,10 @@ void round_turn_right(uint16_t speed, int16_t angle)
 			break;
 		if (stop_event())
 			break;
-		/*if(is_turn_remote())
-			break;*/
+		*/
+/*if(is_turn_remote())
+			break;*//*
+
 		if (get_rcon_remote() > 0)
 		{
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
@@ -785,7 +792,9 @@ void round_turn_right(uint16_t speed, int16_t angle)
 				reset_rcon_remote();
 			}
 		}
-		/* check plan setting*/
+		*/
+/* check plan setting*//*
+
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
@@ -812,6 +821,7 @@ void round_turn_right(uint16_t speed, int16_t angle)
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
+*/
 
 void jam_turn_left(uint16_t speed, int16_t angle)
 {
