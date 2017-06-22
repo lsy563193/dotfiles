@@ -1793,9 +1793,7 @@ uint8_t get_obs_status(void)
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
-
+	set_dir_forward();
 	set_wheel_speed(Left_Speed, Right_Speed);
 }
 
@@ -1908,12 +1906,14 @@ uint8_t check_bat_set_motors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint3
 
 void set_dir_left(void)
 {
+	set_direction_flag(Direction_Flag_Left);
 	g_wheel_left_direction = 1;
 	g_wheel_right_direction = 0;
 }
 
 void set_dir_right(void)
 {
+	set_direction_flag(Direction_Flag_Right);
 	g_wheel_left_direction = 0;
 	g_wheel_right_direction = 1;
 }
