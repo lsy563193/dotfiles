@@ -595,15 +595,14 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	else if (position.Y != map_get_y_count() && position.Y == Target.Y)
 		Target.Y = map_get_y_count();
 
-	cm_set_event_manager_handler_state(true);
-
+	robotbase_obs_adjust_count(50);
 	reset_rcon_status();
+	cm_set_event_manager_handler_state(true);
 
 	LinearSpeedRegulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
 		wall_dynamic_base(50);
-		robotbase_obs_adjust_count(50);
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
 			continue;
@@ -685,6 +684,9 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 		}
 	}
 	stop_brifly();
+
+	cm_set_event_manager_handler_state(false);
+
 	return true;
 }
 
@@ -724,7 +726,7 @@ bool cm_curve_move_to_point()
 	if(!cm_linear_move_to_point(target, MAX_SPEED, true, true) )
 		return false;
 
-	//2/3 turn to  target
+	//2/3 calculate the curve speed.
 	auto speed = (uint8_t) ceil(MAX_SPEED * (radius / CELL_COUNT - WHEEL_BASE_HALF) / (radius / CELL_COUNT + WHEEL_BASE_HALF));
 	uint8_t speed_left = MAX_SPEED;
 	uint8_t speed_right = MAX_SPEED;
@@ -749,16 +751,14 @@ bool cm_curve_move_to_point()
 	if ( speed_left < 0 || speed_left > MAX_SPEED || speed_right < 0 || speed_right > MAX_SPEED)
 		return false;
 
-	//3/3 move to last route
+	//2/3 move to last route
 	if(!cm_turn_move_to_point(target, speed_left, speed_right))
 		return false;
-
-	cm_set_event_manager_handler_state(false);
 
 	target.X = cell_to_count(cells[2].X);
 	target.Y = cell_to_count(cells[2].Y);
 
-	//3 continue to move to target
+	//3/3 continue to move to target
 	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
 	if(!cm_linear_move_to_point(target, MAX_SPEED, true, true))
 		return false;
@@ -872,9 +872,8 @@ uint8_t cm_follow_wall(Point32_t target)
 	cm_set_event_manager_handler_state(true);
 	g_rounding_wall_straight_distance = 300;
 	FollowWallRegulator regulator(type);
+	robotbase_obs_adjust_count(100);
 	while (ros::ok()) {
-		robotbase_obs_adjust_count(100);
-
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
 			continue;
