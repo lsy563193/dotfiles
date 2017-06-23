@@ -99,6 +99,10 @@ uint8_t g_bumper_status_for_rounding;
 // Saved position for move back.
 float saved_pos_x, saved_pos_y;
 
+// Flag for indicating whether move back has finished.
+bool g_move_back_finished = true;
+
+// Flag for indicating whether motion instance is initialized successfully.
 bool g_motion_init_succeeded = false;
 
 static int16_t ranged_angle(int16_t angle)
@@ -322,13 +326,17 @@ bool FollowWallRegulator::adjustSpeed(int32_t &speed_left, int32_t &speed_right)
 }
 
 typedef struct SelfCheckRegulator_{
-	SelfCheckRegulator_(){};
-	bool adjustSpeed(uint8_t check_code, uint8_t &left_speed, uint8_t &right_speed);
+	SelfCheckRegulator_():bumper_jam_state(1){};
+	bool adjustSpeed();
+	uint8_t bumper_jam_state;
+	uint16_t target_angle;
 }SelfCheckRegulator;
 
-bool SelfCheckRegulator::adjustSpeed(uint8_t check_code, uint8_t &left_speed, uint8_t &right_speed)
+bool SelfCheckRegulator::adjustSpeed()
 {
-	if (check_code == Check_Left_Wheel || check_code == Check_Right_Wheel)
+	uint8_t left_speed;
+	uint8_t right_speed;
+	if (g_oc_wheel_left || g_oc_wheel_right)
 	{
 		if (get_direction_flag() == Direction_Flag_Left) {
 			set_dir_right();
@@ -338,6 +346,42 @@ bool SelfCheckRegulator::adjustSpeed(uint8_t check_code, uint8_t &left_speed, ui
 		left_speed = 30;
 		right_speed = 30;
 	}
+	else //if (g_bumper_jam)
+	{
+		switch (bumper_jam_state)
+		{
+			case 2:
+			{
+				// Quickly move back for a distance.
+				set_dir_backward();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 3:
+			{
+				// Quickly turn right for 90 degrees.
+				set_dir_right();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 4:
+			{
+				// Quickly turn left for 180 degrees.
+				set_dir_left();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			default:// bumper_jam_state = 1
+			{
+				// Move back for a distance.
+				set_dir_backward();
+				left_speed = right_speed = 18;
+				break;
+			}
+		}
+	}
+
+	set_wheel_speed(left_speed, right_speed);
 	return true;
 }
 
@@ -427,6 +471,10 @@ void cm_update_map_obs()
 
 void cm_update_map_bumper()
 {
+	if (g_bumper_jam)
+		// During self check.
+		return;
+
 	auto bumper = get_bumper_status();
 	std::vector<Cell_t> d_cells;
 
@@ -646,15 +694,14 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	// Reset the g_bumper_status_for_rounding.
 	g_bumper_status_for_rounding = 0;
 	g_should_follow_wall =  0;
-	g_bumper_hitted = g_obs_triggered = g_cliff_triggered = g_rcon_triggered = false;
+	g_obs_triggered = g_rcon_triggered = false;
 	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
 	bool rotate_is_needed_ = rotate_is_needed;
 	uint16_t target_angle;
 
-	if (rotate_is_needed_) {
+	if (rotate_is_needed_)
 		target_angle = course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y);
-	}
 	else
 		target_angle = 0;
 
@@ -691,21 +738,48 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 
 		if (g_bumper_hitted || g_cliff_triggered)
 		{
+			g_move_back_finished = false;
 			float distance;
 			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 			if (fabsf(distance) > 0.02f)
 			{
 				if (g_bumper_hitted)
 				{
-					if(robot::instance()->getBumperLeft() == false && robot::instance()->getBumperRight() == false)
+					// Check if still bumper triggered.
+					if(!get_bumper_status())
+					{
+						ROS_INFO("%s %d: Move back for bumper finished.", __FUNCTION__, __LINE__);
+						g_move_back_finished = true;
 						g_bumper_hitted = false;
+						g_bumper_cnt = 0;
+						break;
+					}
 					else
-						g_bumper_cnt++;
+					{
+						if (++g_bumper_cnt >= 2)
+						{
+							// Should switch to cm_self_check() function to resume.
+							g_bumper_jam = true;
+							break;
+						}
+						else
+						{
+							// Move back for one more time.
+							ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
+							saved_pos_x = robot::instance()->getOdomPositionX();
+							saved_pos_y = robot::instance()->getOdomPositionY();
+							continue;
+						}
+					}
 				}
 				else
+				{
+					ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
+					g_move_back_finished = true;
 					g_cliff_triggered = false;
+					break;
+				}
 
-				break;
 			}
 		}
 		else if (std::abs(map_get_x_count() - Target.X) < 150 && std::abs(map_get_y_count() - Target.Y) < 150) {
@@ -1117,7 +1191,7 @@ int cm_cleaning()
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
-			if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_cnt > 0){
+			if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam){
 				cm_self_check();
 			}
 
@@ -1542,12 +1616,13 @@ void cm_create_home_boundary(void)
 void cm_self_check(void)
 {
 	ROS_WARN("%s %d: Try to resume the oc cases.", __FUNCTION__, __LINE__);
-	uint8_t check_code;
 	uint8_t resume_cnt = 0;
 	time_t start_time = time(NULL);
 	float wheel_current_sum = 0;
 	uint8_t wheel_current_sum_cnt = 0;
 	bool eh_status_now=false, eh_status_last=false;
+	saved_pos_x = robot::instance()->getOdomPositionX();
+	saved_pos_y = robot::instance()->getOdomPositionY();
 
 	SelfCheckRegulator regulator;
 	cm_set_event_manager_handler_state(true);
@@ -1565,11 +1640,6 @@ void cm_self_check(void)
 		// Check for right wheel.
 		if (g_oc_wheel_left || g_oc_wheel_right)
 		{
-			if (g_oc_wheel_left)
-				check_code = Check_Left_Wheel;
-			else
-				check_code = Check_Right_Wheel;
-
 			if (time(NULL) - start_time >= 1)
 			{
 				wheel_current_sum /= wheel_current_sum_cnt;
@@ -1624,12 +1694,73 @@ void cm_self_check(void)
 				wheel_current_sum_cnt++;
 			}
 		}
+		else if (g_bumper_jam)
+		{
+			if (!get_bumper_status())
+			{
+				ROS_WARN("%s %d: Bumper resume successed.", __FUNCTION__, __LINE__);
+				g_bumper_jam = false;
+				break;
+			}
 
-		uint8_t left_speed,right_speed;
-		if(! regulator.adjustSpeed(check_code, left_speed, right_speed))
+			switch (regulator.bumper_jam_state)
+			{
+				case 2:
+				{
+					float distance;
+					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+					if (fabsf(distance) > 0.02f)
+					{
+						ROS_WARN("%s %d: Try bumper resume state 3.", __FUNCTION__, __LINE__);
+						regulator.bumper_jam_state = 3;
+						regulator.target_angle = Gyro_GetAngle() - 900;
+						if (regulator.target_angle < 0)
+							regulator.target_angle += 3600;
+					}
+					break;
+				}
+				case 3:
+				{
+					if (abs(Gyro_GetAngle() - regulator.target_angle) < 30)
+					{
+						ROS_WARN("%s %d: Try bumper resume state 4.", __FUNCTION__, __LINE__);
+						regulator.bumper_jam_state = 4;
+						regulator.target_angle = Gyro_GetAngle() + 1800;
+						if (regulator.target_angle > 3600)
+							regulator.target_angle -= 3600;
+					}
+					break;
+				}
+				case 4:
+				{
+					if (abs(Gyro_GetAngle() - regulator.target_angle) < 30)
+					{
+						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
+						g_fatal_quit_event = true;
+						set_error_code(Error_Code_Bumper);
+					}
+					break;
+				}
+				default: // case 1:
+				{
+					float distance;
+					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+					if (fabsf(distance) > 0.02f)
+					{
+						ROS_WARN("%s %d: Try bumper resume state 2.", __FUNCTION__, __LINE__);
+						regulator.bumper_jam_state = 2;
+						saved_pos_x = robot::instance()->getOdomPositionX();
+						saved_pos_y = robot::instance()->getOdomPositionY();
+					}
+					break;
+				}
+			}
+
+		}
+
+		if(! regulator.adjustSpeed())
 			break;
 
-		set_wheel_speed(left_speed, right_speed);
 	}
 
 	cm_set_event_manager_handler_state(false);
@@ -1818,8 +1949,11 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 
 	g_bumper_hitted = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 
@@ -1835,8 +1969,11 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 
 	g_bumper_hitted = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -1851,8 +1988,11 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 
 	g_bumper_hitted = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -1890,8 +2030,11 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
@@ -1903,8 +2046,11 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
@@ -1916,8 +2062,11 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -1928,8 +2077,11 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -1940,8 +2092,11 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -1952,8 +2107,11 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 
 	g_cliff_triggered = true;
 
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
 
 	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
