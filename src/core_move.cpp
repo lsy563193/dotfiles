@@ -131,25 +131,6 @@ typedef struct LinearSpeedRegulator_{
 	uint8_t turn_speed_;
 }LinearSpeedRegulator;
 
-// Target:	robot coordinate
-static bool check_map_boundary(bool& slow_down)
-{
-		int32_t		x, y;
-		for (auto dy = -1; dy <= 1; dy++) {
-			cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_3, &x, &y);
-			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
-				slow_down = true;
-
-			cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_2, &x, &y);
-			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
-				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
-				stop_brifly();
-				return true;
-			}
-		}
-	return false;
-}
-
 bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed, uint16_t target_angle)
 {
 	uint8_t left_speed;
@@ -245,7 +226,10 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 
 typedef struct TurnSpeedRegulator_{
 	TurnSpeedRegulator_(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
-					speed_max_(speed_max),speed_min_(speed_min),tick_(0), speed_(speed_start){};
+					speed_max_(speed_max),speed_min_(speed_min), speed_(speed_start),tick_(0){};
+	~TurnSpeedRegulator_() {
+		set_wheel_speed(0, 0);
+	}
 	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
 	uint8_t speed_max_;
 	uint8_t speed_min_;
@@ -328,6 +312,9 @@ bool FollowWallRegulator::adjustSpeed(int32_t &speed_left, int32_t &speed_right)
 
 typedef struct SelfCheckRegulator_{
 	SelfCheckRegulator_(){};
+	~SelfCheckRegulator_(){
+		set_wheel_speed(0, 0);
+	};
 	bool adjustSpeed(uint8_t bumper_jam_state);
 }SelfCheckRegulator;
 
@@ -382,6 +369,25 @@ bool SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 
 	set_wheel_speed(left_speed, right_speed);
 	return true;
+}
+
+// Target:	robot coordinate
+static bool check_map_boundary(bool& slow_down)
+{
+		int32_t		x, y;
+		for (auto dy = -1; dy <= 1; dy++) {
+			cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_3, &x, &y);
+			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
+				slow_down = true;
+
+			cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_2, &x, &y);
+			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
+				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
+				stop_brifly();
+				return true;
+			}
+		}
+	return false;
 }
 
 static double radius_of(Cell_t cell_0,Cell_t cell_1)
