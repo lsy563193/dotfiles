@@ -44,7 +44,6 @@
 #endif
 
 #define TURN_SPEED	17
-#define ROTATE_LOW_SPEED			(7)
 /*
  * MOVE_TO_CELL_SEARCH_INCREMENT: offset from robot's current position.
  * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH: max searching radius from robot's current position.
@@ -114,16 +113,17 @@ static int16_t ranged_angle(int16_t angle)
 }
 
 typedef struct LinearSpeedRegulator_{
-	LinearSpeedRegulator_(int32_t max):integrated_(0),integration_cycle_(0),base_speed_(BASE_SPEED),tick_(0),speed_max_(max){};
+	LinearSpeedRegulator_(int32_t max):speed_max_(max),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4){};
 	~LinearSpeedRegulator_(){
 		set_wheel_speed(0, 0);
 	};
-	bool adjustSpeed(Point32_t Target, bool slow_down);
+	bool adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed, uint16_t target_angle);
 	int32_t speed_max_;
 	int32_t integrated_;
 	int32_t base_speed_;
 	uint8_t integration_cycle_;
 	uint32_t tick_;
+	uint8_t turn_speed_;
 }LinearSpeedRegulator;
 
 // Target:	robot coordinate
@@ -145,7 +145,7 @@ static bool check_map_boundary(bool& slow_down)
 	return false;
 }
 
-bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down)
+bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed, uint16_t target_angle)
 {
 	uint8_t left_speed;
 	uint8_t right_speed;
@@ -154,6 +154,41 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down)
 		left_speed = right_speed = 8;
 		set_dir_backward();
 		set_wheel_speed(left_speed, right_speed);
+		return true;
+	}
+
+	// Firstly turn to the right angle. (Replace old function HeadToCourse())
+	if (rotate_is_needed)
+	{
+		auto diff = ranged_angle(target_angle - Gyro_GetAngle());
+
+		if (std::abs(diff) < 10) {
+			set_wheel_speed(0, 0);
+			ROS_INFO("%s %d: target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, target_angle, Gyro_GetAngle(), diff);
+			rotate_is_needed = false;
+			tick_ = 0;
+			return true;
+		}
+
+		tick_++;
+		if (tick_ > 2)
+		{
+			tick_ = 0;
+			if (std::abs(diff) > 350){
+				turn_speed_ = std::min(++turn_speed_, ROTATE_TOP_SPEED);
+			}
+			else{
+				--turn_speed_;
+				turn_speed_ = std::max(--turn_speed_, ROTATE_LOW_SPEED);
+			}
+		}
+
+		if ((diff >= 0) && (diff <= 1800))
+			set_dir_left();
+		else if ((diff <= 0) && (diff >= (-1800)))
+			set_dir_right();
+
+		set_wheel_speed(turn_speed_, turn_speed_);
 		return true;
 	}
 
@@ -179,15 +214,7 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down)
 	{
 		integrated_ = 0;
 		rotate_angle = 0;
-
-		//if ( get_obs_status() )
-		//	base_speed_ -= 5;
-		//else if ( is_obs_near() )
-		//	base_speed_ -= 4;
-		//else
-		//	base_speed_ -= 3;
 		base_speed_ -= 1;
-
 		base_speed_ = base_speed_ < BASE_SPEED ? BASE_SPEED : base_speed_;
 	} else
 	if (base_speed_ < (int32_t) speed_max_)
@@ -622,11 +649,14 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	g_bumper_hitted = g_obs_triggered = g_cliff_triggered = g_rcon_triggered = false;
 	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
+	bool rotate_is_needed_ = rotate_is_needed;
+	uint16_t target_angle;
 
-	if (rotate_is_needed) {
-		auto Target_Course = course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y);
-		cm_head_to_course(ROTATE_TOP_SPEED, Target_Course);	//turn to target position
+	if (rotate_is_needed_) {
+		target_angle = course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y);
 	}
+	else
+		target_angle = 0;
 
 	if (position.X != map_get_x_count() && position.X == Target.X)
 		Target.X = map_get_x_count();
@@ -683,7 +713,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 			break;
 		}
 
-		if(!regulator.adjustSpeed(Target, slow_down))
+		if(!regulator.adjustSpeed(Target, slow_down, rotate_is_needed_, target_angle))
 			break;
 	}
 

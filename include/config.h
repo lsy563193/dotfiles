@@ -260,7 +260,8 @@
  * When it is too large, it will fall down when reach the cliff.
  */
 #define BASE_SPEED						((int32_t) 15) // 15)
-#define ROTATE_TOP_SPEED				((uint32_t) 16) // 22)
+#define ROTATE_TOP_SPEED				((uint8_t) 16) // 22)
+#define ROTATE_LOW_SPEED				((uint8_t) 7)
 #if __ROBOT_X900
 #define RUN_TOP_SPEED					((int32_t) 40) // 45)
 #elif __ROBOT_X400
