@@ -309,7 +309,7 @@ void wf_update_map()
 
 	auto cell_x = map_get_x_cell();
 	auto cell_y = map_get_y_cell();
-	Pose16_t curr_cell{cell_x, cell_y, Gyro_GetAngle()};
+	Pose16_t curr_cell{cell_x, cell_y, (int16_t)Gyro_GetAngle()};
 	if (wf_is_reach_new_cell(curr_cell))
 	{
 		ROS_WARN("g_reach_count(%d)", g_reach_count);
