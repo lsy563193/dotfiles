@@ -698,6 +698,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	g_bumper_status_for_rounding = 0;
 	g_should_follow_wall =  0;
 	g_obs_triggered = g_rcon_triggered = false;
+	g_move_back_finished = true;
 	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
 	bool rotate_is_needed_ = rotate_is_needed;
@@ -1652,7 +1653,7 @@ void cm_create_home_boundary(void)
 /*------------- Self check and resume-------------------*/
 void cm_self_check(void)
 {
-	ROS_WARN("%s %d: Try to resume the oc cases.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Try to resume the oc or jam cases.", __FUNCTION__, __LINE__);
 	uint8_t resume_cnt = 0;
 	time_t start_time = time(NULL);
 	float wheel_current_sum = 0;
@@ -2100,9 +2101,10 @@ void cm_handle_obs_right(bool state_now, bool state_last)
 /* Cliff */
 void cm_handle_cliff_all(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_cliff_all_triggered = true;
 	g_cliff_triggered = true;
+	if (g_move_back_finished && !g_cliff_jam)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
@@ -2118,7 +2120,8 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_cliff_jam)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
 
@@ -2135,7 +2138,8 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_cliff_jam)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
 
@@ -2152,7 +2156,8 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_cliff_jam)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
@@ -2168,7 +2173,8 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_cliff_jam)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
@@ -2184,7 +2190,8 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_cliff_jam)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
@@ -2200,7 +2207,8 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_cliff_jam)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 /* RCON */
