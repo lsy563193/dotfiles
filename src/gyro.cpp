@@ -36,14 +36,14 @@ uint8_t Gyro_GetCalibration(void) {
 	return gyro_calibration;
 }
 
-int16_t Gyro_GetAngle(void)
+uint16_t Gyro_GetAngle(void)
 {
 	return gyro_angle;
 }
 
 void Gyro_SetAngle(int16_t angle)
 {
-	if(angle <0)
+	while (angle < 0)
 		angle += 3600;
 
 	gyro_angle = angle;

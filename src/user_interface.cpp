@@ -26,7 +26,7 @@ time_t charger_signal_start_time;
 uint16_t charger_signal_delay = 0;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 0;
-uint8_t error_alarm_counter = 2;
+uint8_t error_alarm_counter = 3;
 bool battery_ready_to_clean = true;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
@@ -40,7 +40,7 @@ void User_Interface(void)
 	bool eh_status_now=false, eh_status_last=false;
 
 	// Count for error alarm.
-	error_alarm_counter = 2;
+	error_alarm_counter = 3;
 	charger_signal_delay = 0;
 	battery_low_delay = 0;
 	start_time = time(NULL);
@@ -127,7 +127,7 @@ void User_Interface(void)
 
 		// Alarm for error.
 		if (get_error_code())
-			if ((error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
+			if (error_alarm_counter == 3 || (error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
 			{
 				error_alarm_counter--;
 				alarm_error();

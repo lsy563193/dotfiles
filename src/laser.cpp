@@ -86,11 +86,11 @@ Laser::~Laser()
 
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
-	int i, count = 0;
+	int count = 0;
 	is_scanDataReady_ = false;
 	laser_scan_data_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-//	ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, msg->header.seq, msg->angle_min, msg->angle_max, count, msg->ranges[180]);
+	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	is_scanDataReady_ = true;
 	isReady(1);
 }
@@ -149,7 +149,7 @@ void Laser::start(void)
 	ROS_WARN("%s %d: Start laser for the %d time.", __FUNCTION__, __LINE__, try_times);
 	start_mator_cli_.call(empty);
 
-	while (ros::ok() && try_times <= 3)
+	while (ros::ok() && try_times <= 2)
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
@@ -164,7 +164,7 @@ void Laser::start(void)
 
 		if (stopped)
 		{
-			if (time(NULL) - stop_time >= 1)
+			if (time(NULL) - stop_time > 0)
 			{
 				laser_pm_gpio('1');
 				usleep(20000);
@@ -182,7 +182,7 @@ void Laser::start(void)
 				return;
 			}
 
-			if (time(NULL) - start_time >= 3)
+			if (time(NULL) - start_time > 5)
 			{
 				try_times++;
 				ROS_WARN("%s %d: Laser starting failed, power off before retry.", __FUNCTION__, __LINE__);
