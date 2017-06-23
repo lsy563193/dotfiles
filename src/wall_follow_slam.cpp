@@ -43,7 +43,6 @@
 #endif
 
 std::vector<Pose16_t> g_wf_cell;
-Pose16_t g_new_wf_point;
 int g_isolate_count = 0;
 // This list is for storing the position that robot sees the charger stub.
 extern std::list<Point32_t> g_home_point;
@@ -74,8 +73,7 @@ static bool wf_is_reach_new_cell(Pose16_t &pose)
 	if (g_wf_cell.empty() || g_wf_cell.back() != pose)
 	{
 		g_same_cell_count = 0;
-		g_new_wf_point = pose;
-		g_wf_cell.push_back(g_new_wf_point);
+		g_wf_cell.push_back(pose);
 		return true;
 	} else if (! g_wf_cell.empty())
 		g_same_cell_count++;//for checking if the robot is traped
@@ -201,8 +199,9 @@ static void wf_update_cleaned()
 static bool wf_is_reach_cleaned(void)
 {
 	if (! g_wf_cell.empty())
-		if ( map_get_cell(MAP, g_wf_cell.back().X, (g_wf_cell.back().Y) == CLEANED) )
+		if (map_get_cell(MAP, g_wf_cell.back().X, g_wf_cell.back().Y) == CLEANED)
 			return true;
+
 	return false;
 }
 
@@ -312,10 +311,8 @@ void wf_update_map()
 	Pose16_t curr_cell{cell_x, cell_y, (int16_t)Gyro_GetAngle()};
 	if (wf_is_reach_new_cell(curr_cell))
 	{
-		ROS_WARN("g_reach_count(%d)", g_reach_count);
-		g_reach_count = (wf_is_reach_cleaned()) ? g_reach_count + 1 : 0;
+		g_reach_count = wf_is_reach_cleaned() ? g_reach_count + 1 : 0;
 		int size = (g_wf_cell.size() - 2);
-		ROS_ERROR("g_wf_cell.size - 2(%d)", size);
 		if (size >= 0)
 			map_set_cell(MAP, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);
 
@@ -332,7 +329,7 @@ bool wf_is_reach_isolate()
 {
 	if(is_reach()){
 		ROS_INFO("is_reach()");
-		g_isolate_count = is_isolate() ? g_isolate_count+1 : 0;
+		g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
 		map_reset(MAP);
 		ROS_INFO("isolate_count(%d)", g_isolate_count);
 		return true;
