@@ -51,6 +51,7 @@ extern bool g_obs_triggered;
 extern bool g_cliff_all_triggered;
 extern bool g_cliff_triggered;
 extern bool g_cliff_jam;
+extern uint8_t g_cliff_all_cnt;
 extern uint8_t g_cliff_cnt;
 /* RCON */
 extern bool g_rcon_triggered;

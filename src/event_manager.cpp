@@ -31,6 +31,7 @@ bool g_obs_triggered = false;
 bool g_cliff_all_triggered = false;
 bool g_cliff_triggered = false;
 bool g_cliff_jam = false;
+uint8_t g_cliff_all_cnt = 0;
 uint8_t g_cliff_cnt = 0;
 /* RCON */
 bool g_rcon_triggered = false;
@@ -494,6 +495,7 @@ void event_manager_reset_status(void)
 	g_cliff_all_triggered = false;
 	g_cliff_triggered = false;
 	g_cliff_jam = false;
+	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
 	g_rcon_triggered = false;
