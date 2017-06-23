@@ -78,7 +78,7 @@ void cm_update_map_bumper();
 void cm_update_map_cliff();
 bool cm_curve_move_to_point();
 
-void cm_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_world_to_point(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 bool cm_move_to_cell(int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);

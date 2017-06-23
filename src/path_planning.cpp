@@ -1070,8 +1070,8 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				wf_break_wall_follow();
 
 				int32_t x_point,y_point;
-				const float	FIND_WALL_DISTANCE = 2;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-				cm_count_normalize(Gyro_GetAngle(), 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
+				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
+				cm_world_to_point(Gyro_GetAngle(), 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
 				next = {count_to_cell(x_point),count_to_cell(y_point)};
 			}
 
