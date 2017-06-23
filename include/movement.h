@@ -700,8 +700,6 @@ uint8_t virtual_wall_turn_right();
 
 uint8_t virtual_wall_turn_left();
 
-void laser_pm_gpio(char val);
-
 int32_t abs_minus(int32_t A, int32_t B);
 #endif
 

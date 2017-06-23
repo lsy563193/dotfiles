@@ -31,8 +31,6 @@
 #include "verify.h"
 #endif
 
-void laser_pm_gpio(char val);
-
 bool selfCheckAtLaunch()
 {
 	// Skip self check if using direct charge or at charger stub, because robot can not move during direct charge.
@@ -232,7 +230,6 @@ int main(int argc, char **argv)
 	std::string	serial_port;
 
 
-	laser_pm_gpio('1');
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
 
@@ -295,6 +292,5 @@ int main(int argc, char **argv)
 	}
 
 	robotbase_deinit();
-	laser_pm_gpio('0');
 	return 0;
 }
