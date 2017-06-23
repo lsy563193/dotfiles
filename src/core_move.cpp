@@ -493,7 +493,7 @@ void cm_update_map_bumper()
 	int32_t	x_tmp, y_tmp;
 	for(auto& d_cell : d_cells){
 		cm_count_normalize(Gyro_GetAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
-		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x_tmp), count_to_cell(y_tmp));
+		ROS_DEBUG("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x_tmp), count_to_cell(y_tmp));
 		map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 	}
 }
@@ -518,7 +518,7 @@ void cm_update_map_cliff()
 	int32_t	x_tmp, y_tmp;
 	for (auto& d_cell : d_cells) {
 		cm_count_normalize(Gyro_GetAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
-		ROS_INFO("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x_tmp), count_to_cell(y_tmp));
+		ROS_DEBUG("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x_tmp), count_to_cell(y_tmp));
 		map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 	}
 }
@@ -1955,7 +1955,8 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_bumper_jam)
+		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
 
@@ -1975,7 +1976,8 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_bumper_jam)
+		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
@@ -1994,7 +1996,8 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_bumper_jam)
+		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 /* OBS */
