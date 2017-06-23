@@ -1040,40 +1040,41 @@ int16_t path_escape_trapped()
 	return val;
 }
 
-//bool wf_is_isolate(){
-//	static bool is_first_time = true;
-//	if(is_first_time){
-//		is_first_time = false;
-//		return true;
-//	}else
-//		return false;
-//}
-
-int g_isolate_count = 0;
 int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
 	Cell_t next = g_curr;
 	Cell_t target = next;
 	extern CMMoveType g_cm_move_type;
 	if(get_clean_mode() == Clean_Mode_WallFollow){
-		ROS_INFO("target wf_is_isolate");
-		bool is_end= false;
+		ROS_ERROR("path_next Clean_Mode:(%d)", get_clean_mode());
+		if(g_cm_move_type == CM_LINEARMOVE){
+			if(g_curr != map_point_to_cell(*next_point)){
+				ROS_INFO("start follow wall");
+				g_cm_move_type = CM_FOLLOW_LEFT_WALL;
+				next = map_point_to_cell(*next_point);
+			}else{
+				ROS_INFO("reach 8m, go_home.");
+				wf_clear();
+				return 0;
+			}
+		} else {
+			if(wf_is_go_home()){
+				ROS_INFO("follow wall finish");
+				wf_clear();
+				return 0;
 
-//		if(is_trap()){
-//			return 0;
-//		}
-		if((g_isolate_count>0 && g_isolate_count<=3) || wf_is_start()){
-			g_cm_move_type = CM_LINEARMOVE;
-			wf_break_wall_follow();
-			path_lane_is_cleaned(next);
-		} else if((g_isolate_count > 3 || g_isolate_count == 0) && g_cm_move_type != CM_LINEARMOVE)
-		{
-			wf_clear();
-			return 0;
-		} else if(! wf_is_start()){
-			ROS_INFO("start follow wall");
-			g_cm_move_type = CM_FOLLOW_LEFT_WALL;
-			next = map_point_to_cell(*next_point);
+			}else
+			{
+				ROS_INFO("CM_LINEARMOVE");
+				g_cm_move_type = CM_LINEARMOVE;
+				wf_break_wall_follow();
+
+				int32_t x_point,y_point;
+				const float	FIND_WALL_DISTANCE = 2;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
+				cm_count_normalize(Gyro_GetAngle(), 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
+				next = {count_to_cell(x_point),count_to_cell(y_point)};
+			}
+
 		}
 	}
 	else if(get_clean_mode() == Clean_Mode_Navigation) {

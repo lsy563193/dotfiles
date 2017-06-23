@@ -777,6 +777,7 @@ bool cm_curve_move_to_point()
 }
 
 bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
+	ROS_ERROR("is_follow_wall Clean_Mode:(%d)", get_clean_mode());
 	if(get_clean_mode() == Clean_Mode_WallFollow){
 		return g_cm_move_type == CM_FOLLOW_LEFT_WALL;
 	}else if(get_clean_mode() == Clean_Mode_Spot){
@@ -1091,9 +1092,9 @@ void cm_go_home()
 
 	if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
 		cm_create_home_boundary();
+	//todo ! emply()
 	Cell_t current_home_cell = {count_to_cell(g_home_point.front().X), count_to_cell(g_home_point.front().Y)};
-	ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y,
-					 (uint) g_home_point.size());
+//	ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint) g_home_point.size());
 	g_home_point.pop_front();
 
 	while (ros::ok())
@@ -1219,7 +1220,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 
 uint8_t cm_touring(void)
 {
-	g_cm_move_type = CM_LINEARMOVE;
+	g_cm_move_type = get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL: CM_LINEARMOVE;
 	g_from_station = 0;
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();

@@ -44,6 +44,7 @@
 
 std::vector<Pose16_t> g_wf_cell;
 Pose16_t g_new_wf_point;
+int g_isolate_count = 0;
 // This list is for storing the position that robot sees the charger stub.
 extern std::list<Point32_t> g_home_point;
 extern uint8_t g_from_station;
@@ -68,19 +69,18 @@ static const MapWallFollowSetting MFW_SETTING[6] = {{1200, 250, 150},
 																										{1200, 250, 150},
 																										{1200, 250, 150},};
 //------------static
-static int8_t wf_push_cell(Pose16_t &pose)
+static bool wf_is_reach_new_cell(Pose16_t &pose)
 {
-	if (!g_wf_cell.empty() && g_wf_cell.back() != pose)
+	if (g_wf_cell.empty() || g_wf_cell.back() != pose)
 	{
 		g_same_cell_count = 0;
 		g_new_wf_point = pose;
 		g_wf_cell.push_back(g_new_wf_point);
-		return 1;
-	} else if (g_wf_cell.back() == pose)
-	{
+		return true;
+	} else if (! g_wf_cell.empty())
 		g_same_cell_count++;//for checking if the robot is traped
-		return 0;//it means still in the same cell
-	}
+
+	return false;
 }
 
 static bool is_reach(void)
@@ -88,6 +88,8 @@ static bool is_reach(void)
 	if ( g_reach_count < REACH_COUNT_LIMIT)
 		return false;
 
+	ROS_INFO("reach_count>10(%d)",g_reach_count);
+	g_reach_count = 0;
 	int16_t th_diff;
 	int16_t DIFF_LIMIT = 1500;//1500 means 150 degrees, it is used by angle check.
 	int8_t pass_count = 0;
@@ -104,22 +106,27 @@ static bool is_reach(void)
 				if (*r_iter == cell)
 				{
 					th_diff = (abs(r_iter->TH - cell.TH));
-
+					ROS_INFO("r_iter->X = %d, r_iter->Y = %d, r_iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
 					if (th_diff > 1800)
 						th_diff = 3600 - th_diff;
 
 					if (th_diff <= DIFF_LIMIT)
 					{
 						pass_count++;
+						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, DIFF_LIMIT);
 						break;
-					} else
+					} else{
+						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, DIFF_LIMIT);
 						fail_flag = 1;
+					}
 				}
 				/*in case of the g_wf_cell no second same point, the g_reach_count++ caused by cleanning the block obstacle which
 				 cost is 2 or 3, it will be set 1(CLEANED), at this situation the sum should sum--, it will happen when the robot
 				 get close to the left wall but there is no wall exist, then the robot can judge it is in the isolate island.*/
-				if ((r_iter == (g_wf_cell.rend() - 1)) && (fail_flag == 0))
+				if ((r_iter == (g_wf_cell.rend() - 1)) && (fail_flag == 0)){
 					sum--;
+					ROS_WARN("Can't find second same pose in WF_Point! sum--");
+				}
 			}
 		}
 
@@ -140,7 +147,7 @@ static bool is_trap(void)
 	{
 		ROS_WARN("Maybe the robot is trapped! Checking!");
 		g_same_cell_count = 0;
-/*		if (wf_is_isolate())
+/*		if (is_isolate())
 		{
 			ROS_WARN("Not trapped!");
 		} else
@@ -156,14 +163,14 @@ static bool is_trap(void)
 
 static bool is_time_out(void)
 {
-	if ((time(NULL) - g_wall_follow_timer) > WALL_FOLLOW_TIME)
-	{
-		ROS_INFO("Wall Follow time longer than 60 minutes");
-		ROS_INFO("time now : %d", (int(time(NULL)) - g_wall_follow_timer));
-		wf_clear();
-		return 1;
-	}
-	return 0;
+//	if ((time(NULL) - g_wall_follow_timer) > WALL_FOLLOW_TIME)
+//	{
+//		ROS_INFO("Wall Follow time longer than 60 minutes");
+//		ROS_INFO("time now : %d", (int(time(NULL)) - g_wall_follow_timer));
+//		wf_clear();
+//		return 1;
+//	}
+	return false;
 }
 
 
@@ -228,14 +235,56 @@ static void wf_mark_home_point(void)
 	}
 }
 
+static bool is_isolate() {
+	path_update_cell_history();
+	int16_t	val = 0;
+	uint16_t i = 0;
+	int16_t x_min, x_max, y_min, y_max;
+	Point32_t	Remote_Point;
+	Remote_Point.X = 0;
+	Remote_Point.Y = 0;
+	path_get_range(&x_min, &x_max, &y_min, &y_max);
+	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
+//	pnt16ArTmp[0] = out_cell;
+
+//	path_escape_set_trapped_cell(pnt16ArTmp, 1);
+
+	Cell_t remote{0,0};
+	if ( out_cell != remote){
+			val = WF_path_find_shortest_path( g_cell_history[0].X, g_cell_history[0].Y, out_cell.X, out_cell.Y, 0);
+			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
+	} else {
+		if (is_block_accessible(0, 0) == 1) {
+			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			if (val < 0 || val == SCHAR_MAX) {
+				/* Robot start position is blocked. */
+				val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+
+				if (val < 0 || val == SCHAR_MAX) {
+					val = 0;
+				} else {
+					val = 1;
+				};
+			} else {
+				val = 1;
+			}
+		} else {
+			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			if (val < 0 || val == SCHAR_MAX)
+				val = 0;
+			else
+				val = 1;
+		}
+	}
+	return val != 0;
+}
+
 /*------------------------------------------------------------------ Wall Follow Mode--------------------------*/
 uint8_t wf_break_wall_follow(void)
 {
 	/*****************************************Release Memory************************************/
-	g_home_point.clear();
 	g_wf_cell.clear();
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
-	set_clean_mode(Clean_Mode_Userinterface);
 	return 0;
 }
 
@@ -245,6 +294,7 @@ uint8_t wf_clear(void)
 	cm_update_position();
 	wf_mark_home_point();
 	wf_break_wall_follow();
+	g_isolate_count = 0;
 	return 0;
 }
 
@@ -260,12 +310,16 @@ void wf_update_map()
 	auto cell_x = map_get_x_cell();
 	auto cell_y = map_get_y_cell();
 	Pose16_t curr_cell{cell_x, cell_y, Gyro_GetAngle()};
-	if (wf_push_cell(curr_cell))
+	if (wf_is_reach_new_cell(curr_cell))
 	{
+		ROS_WARN("g_reach_count(%d)", g_reach_count);
 		g_reach_count = (wf_is_reach_cleaned()) ? g_reach_count + 1 : 0;
 		int size = (g_wf_cell.size() - 2);
+		ROS_ERROR("g_wf_cell.size - 2(%d)", size);
 		if (size >= 0)
 			map_set_cell(MAP, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);
+
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 	}
 
 	cell_x = map_get_relative_x(heading, CELL_SIZE_2, 0);
@@ -274,109 +328,26 @@ void wf_update_map()
 		map_set_cell(MAP, cell_x, cell_y, BLOCKED_OBS);
 }
 
-bool wf_is_start()
+bool wf_is_reach_isolate()
 {
-	static bool is_first_time = true;
-	if(is_first_time){
-		is_first_time = false;
+	if(is_reach()){
+		ROS_INFO("is_reach()");
+		g_isolate_count = is_isolate() ? g_isolate_count+1 : 0;
+		map_reset(MAP);
+		ROS_INFO("isolate_count(%d)", g_isolate_count);
 		return true;
 	}
 	return false;
 }
-bool wf_is_isolate() {
-
-
-	path_update_cell_history();
-	int16_t	val = 0;
-	uint16_t i = 0;
-	int16_t remote_x = 0, remote_y = 0;
-	int16_t x_min, x_max, y_min, y_max;
-	Point32_t	Remote_Point;
-	Cell_t   tmpPnt, pnt16ArTmp[3];
-	Remote_Point.X = 0;
-	Remote_Point.Y = 0;
-	//tmpPnt.X = countToCell(Remote_Point.X);
-	//tmpPnt.Y = countToCell(Remote_Point.Y);
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
-	tmpPnt.X = x_max + 1;
-	tmpPnt.Y = y_max + 1;
-	ROS_INFO("tmpPnt.X = %d, tmpPnt.Y = %d\n",tmpPnt.X, tmpPnt.Y);
-	pnt16ArTmp[0] = tmpPnt;
-
-	path_escape_set_trapped_cell(pnt16ArTmp, 1);
-
-	if ( g_trapped_cell[0].X != remote_x || g_trapped_cell[0].Y != remote_y ){
-		for ( i = 0; i < g_trapped_cell_size; ++i ) {
-			ROS_INFO("%s %d Check %d trapped reference cell: x: %d, y: %d\n", __FUNCTION__, __LINE__,
-			         i, g_trapped_cell[i].X, g_trapped_cell[i].Y);
-			/*if (is_block_accessible(trappedCell[i].X, trappedCell[i].Y) == 0) {
-				Map_Set_Cells(ROBOT_SIZE, trappedCell[i].X, trappedCell[i].Y, CLEANED);
-			}*/
-
-			//val = WF_path_find_shortest_path( g_positions[0].x, g_positions[0].y, trappedCell[i].X, trappedCell[i].Y, 0);
-			val = WF_path_find_shortest_path( g_cell_history[0].X, g_cell_history[0].Y, g_trapped_cell[i].X, g_trapped_cell[i].Y, 0);
-			ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-			ROS_INFO("SCHAR_MAX = %d\n", SCHAR_MAX);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* No path to home, which is set when path planning is initialized. */
-				val = 0;//not isolated
-			} else {
-				val = 1;//isolated
-				break;
-			}
-		}
-	} else {
-		if (is_block_accessible(0, 0) == 1) {
-			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
-#if DEBUG_SM_MAP
-			debug_map(SPMAP, 0, 0);
-#endif
-			ROS_INFO("%s %d: pos (%d, %d)\tval: %d\n", __FUNCTION__, __LINE__, g_cell_history[0].X, g_cell_history[0].Y, val);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* Robot start position is blocked. */
-				val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, remote_x, remote_y, 0);
-				ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-
-#if DEBUG_MAP
-				debug_map(MAP, remote_x, remote_y);
-#endif
-
-				if (val < 0 || val == SCHAR_MAX) {
-					val = 0;
-				} else {
-					val = 1;
-				};
-			} else {
-				val = 1;
-			}
-		} else {
-			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, remote_x, remote_y, 0);
-			ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-
-#if DEBUG_SM_MAP
-			debug_map(SPMAP, 0, 0);
-#endif
-#if DEBUG_MAP
-			debug_map(MAP, remote_x, remote_y);
-#endif
-
-			if (val < 0 || val == SCHAR_MAX) {
-				/* No path to home, which is set when path planning is initialized. */
-				val = 0;
-			} else {
-				val = 1;
-			}
-		}
-	}
-
-	ROS_INFO("%s %d: val %d\n", __FUNCTION__, __LINE__, val);
-	return val != 0;
-}
 
 bool wf_is_end()
 {
-	if (is_reach() || is_time_out() || is_trap())
+	if (wf_is_reach_isolate() || is_time_out() || is_trap())
 			return true;
 	return false;
 }
 
+bool wf_is_go_home()
+{
+	return g_isolate_count>3;
+};

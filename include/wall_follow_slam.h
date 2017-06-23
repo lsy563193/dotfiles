@@ -11,8 +11,7 @@
 
 uint8_t wf_clear(void);
 void wf_update_map();
-bool wf_is_isolate();
 bool wf_is_end();
-bool wf_is_start();
 uint8_t wf_break_wall_follow(void);
+bool wf_is_go_home();
 #endif
