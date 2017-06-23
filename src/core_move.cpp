@@ -733,7 +733,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || g_oc_wheel_left || g_oc_wheel_right) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check()) {
 			break;
 		}
 
@@ -1235,7 +1235,7 @@ int cm_cleaning()
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
-			if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam){
+			if (cm_should_self_check()){
 				cm_self_check();
 			}
 
@@ -1857,6 +1857,13 @@ void cm_self_check(void)
 	}
 
 	cm_set_event_manager_handler_state(false);
+}
+
+bool cm_should_self_check(void)
+{
+	if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam)
+		return true;
+	return false;
 }
 
 /* Event handler functions. */
@@ -2698,7 +2705,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_go_home)
+	if (!g_go_home && !cm_should_self_check())
 	{
 		beep_for_command(true);
 		g_remote_home = true;
@@ -2713,7 +2720,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded)
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check())
 	{
 		beep_for_command(true);
 		stop_brifly();
@@ -2729,17 +2736,15 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 void cm_handle_remote_wallfollow(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
-	beep_for_command(true);
-	stop_brifly();
+	beep_for_command(false);
 	reset_rcon_remote();
-	g_remote_wallfollow = true;
 }
 
 void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_go_home)
+	if (!g_go_home && !cm_should_self_check())
 	{
 		beep_for_command(true);
 		switch_vac_mode(true);
