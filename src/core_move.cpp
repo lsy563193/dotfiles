@@ -345,6 +345,11 @@ bool SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 		left_speed = 30;
 		right_speed = 30;
 	}
+	else if (g_cliff_jam)
+	{
+		set_dir_backward();
+		left_speed = right_speed = 18;
+	}
 	else //if (g_bumper_jam)
 	{
 		switch (bumper_jam_state)
@@ -494,6 +499,10 @@ void cm_update_map_bumper()
 
 void cm_update_map_cliff()
 {
+	if (g_cliff_jam)
+		// During self check.
+		return;
+
 	std::vector<Cell_t> d_cells;
 	if (get_cliff_trig() & Status_Cliff_Front){
 		d_cells.push_back({2,-1});
@@ -768,10 +777,40 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 				}
 				else
 				{
-					ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
-					g_move_back_finished = true;
-					g_cliff_triggered = false;
-					break;
+					if (!get_cliff_trig())
+					{
+						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
+						g_move_back_finished = true;
+						g_cliff_triggered = false;
+						g_cliff_all_triggered = false;
+						g_cliff_cnt = 0;
+						g_cliff_all_cnt = 0;
+						break;
+					}
+					else
+					{
+						if ((get_cliff_trig() == Status_Cliff_All) && ++g_cliff_all_cnt >= 2)
+						{
+							ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+							g_fatal_quit_event = true;
+							break;
+						}
+
+						if (++g_cliff_cnt >= 2)
+						{
+							// Should switch to cm_self_check() function to resume.
+							g_cliff_jam = true;
+							break;
+						}
+						else
+						{
+							// Move back for one more time.
+							ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
+							saved_pos_x = robot::instance()->getOdomPositionX();
+							saved_pos_y = robot::instance()->getOdomPositionY();
+							continue;
+						}
+					}
 				}
 
 			}
@@ -1189,7 +1228,7 @@ int cm_cleaning()
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
-			if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam){
+			if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam){
 				cm_self_check();
 			}
 
@@ -1622,7 +1661,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (g_bumper_jam)
+	if (g_bumper_jam || g_cliff_jam)
 	{
 		beep_for_command(true);
 		// Save current position for moving back detection.
@@ -1705,12 +1744,45 @@ void cm_self_check(void)
 				wheel_current_sum_cnt++;
 			}
 		}
+		else if (g_cliff_jam)
+		{
+			if (!get_cliff_trig())
+			{
+				ROS_WARN("%s %d: Cliff resume successed.", __FUNCTION__, __LINE__);
+				g_cliff_triggered = false;
+				g_cliff_all_triggered = false;
+				g_cliff_cnt = 0;
+				g_cliff_all_cnt = 0;
+				g_cliff_jam = false;
+				break;
+			}
+			float distance;
+			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			if (fabsf(distance) > 0.05f)
+			{
+				if (((get_cliff_trig() == Status_Cliff_All) && g_cliff_all_cnt++ >= 2) || ++resume_cnt >= 3)
+				{
+					ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
+					g_fatal_quit_event = true;
+					set_error_code(Error_Code_Cliff);
+				}
+				else
+				{
+					stop_brifly();
+					beep_for_command(true);
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+				}
+			}
+		}
 		else if (g_bumper_jam)
 		{
 			if (!get_bumper_status())
 			{
 				ROS_WARN("%s %d: Bumper resume successed.", __FUNCTION__, __LINE__);
 				g_bumper_jam = false;
+				g_bumper_hitted = false;
+				g_bumper_cnt = 0;
 				break;
 			}
 
@@ -1725,7 +1797,6 @@ void cm_self_check(void)
 					{
 						stop_brifly();
 						bumper_jam_state++;
-						beep_for_command(true);
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
 						saved_pos_x = robot::instance()->getOdomPositionX();
 						saved_pos_y = robot::instance()->getOdomPositionY();
@@ -1739,7 +1810,6 @@ void cm_self_check(void)
 					if (fabsf(distance) > 0.05f)
 					{
 						bumper_jam_state++;
-						beep_for_command(true);
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
 						target_angle = Gyro_GetAngle() - 900;
 						if (target_angle < 0)
@@ -1754,7 +1824,6 @@ void cm_self_check(void)
 					if (abs(Gyro_GetAngle() - target_angle) < 50)
 					{
 						bumper_jam_state++;
-						beep_for_command(true);
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
 						target_angle = Gyro_GetAngle() + 900;
 						if (target_angle > 3600)
@@ -2033,13 +2102,14 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_cliff_all_triggered = true;
-	g_fatal_quit_event = true;
+	g_cliff_triggered = true;
 }
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
 	set_wheel_speed(0, 0);
 
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
 	if (!state_last && g_move_back_finished)
@@ -2056,6 +2126,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
 	set_wheel_speed(0, 0);
 
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
 	if (!state_last && g_move_back_finished)
@@ -2072,6 +2143,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
 	set_wheel_speed(0, 0);
 
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
 	if (!state_last && g_move_back_finished)
@@ -2087,6 +2159,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 {
 	set_wheel_speed(0, 0);
 
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
 	if (!state_last && g_move_back_finished)
@@ -2102,6 +2175,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 {
 	set_wheel_speed(0, 0);
 
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
 	if (!state_last && g_move_back_finished)
@@ -2117,6 +2191,7 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 {
 	set_wheel_speed(0, 0);
 
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
 	if (!state_last && g_move_back_finished)
