@@ -326,13 +326,11 @@ bool FollowWallRegulator::adjustSpeed(int32_t &speed_left, int32_t &speed_right)
 }
 
 typedef struct SelfCheckRegulator_{
-	SelfCheckRegulator_():bumper_jam_state(1){};
-	bool adjustSpeed();
-	uint8_t bumper_jam_state;
-	uint16_t target_angle;
+	SelfCheckRegulator_(){};
+	bool adjustSpeed(uint8_t bumper_jam_state);
 }SelfCheckRegulator;
 
-bool SelfCheckRegulator::adjustSpeed()
+bool SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 {
 	uint8_t left_speed;
 	uint8_t right_speed;
@@ -350,32 +348,27 @@ bool SelfCheckRegulator::adjustSpeed()
 	{
 		switch (bumper_jam_state)
 		{
+			case 1:
 			case 2:
+			case 3:
 			{
 				// Quickly move back for a distance.
 				set_dir_backward();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
-			case 3:
+			case 4:
 			{
 				// Quickly turn right for 90 degrees.
 				set_dir_right();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
-			case 4:
+			case 5:
 			{
 				// Quickly turn left for 180 degrees.
 				set_dir_left();
 				left_speed = right_speed = RUN_TOP_SPEED;
-				break;
-			}
-			default:// bumper_jam_state = 1
-			{
-				// Move back for a distance.
-				set_dir_backward();
-				left_speed = right_speed = 18;
 				break;
 			}
 		}
@@ -1620,9 +1613,20 @@ void cm_self_check(void)
 	time_t start_time = time(NULL);
 	float wheel_current_sum = 0;
 	uint8_t wheel_current_sum_cnt = 0;
+	uint8_t bumper_jam_state = 1;
+	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
-	saved_pos_x = robot::instance()->getOdomPositionX();
-	saved_pos_y = robot::instance()->getOdomPositionY();
+
+	if (g_bumper_jam)
+	{
+		beep_for_command(true);
+		// Save current position for moving back detection.
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
+
+	if (g_oc_wheel_left || g_oc_wheel_right)
+		disable_motors();
 
 	SelfCheckRegulator regulator;
 	cm_set_event_manager_handler_state(true);
@@ -1676,11 +1680,13 @@ void cm_self_check(void)
 					{
 						ROS_WARN("%s %d: Left wheel resume successed.", __FUNCTION__, __LINE__);
 						g_oc_wheel_left = false;
+						work_motor_configure();
 					}
 					else
 					{
 						ROS_WARN("%s %d: Left wheel resume successed.", __FUNCTION__, __LINE__);
 						g_oc_wheel_right = false;
+						work_motor_configure();
 					}
 					break;
 				}
@@ -1703,37 +1709,58 @@ void cm_self_check(void)
 				break;
 			}
 
-			switch (regulator.bumper_jam_state)
+			switch (bumper_jam_state)
 			{
-				case 2:
+				case 1: // Move back for the first time.
+				case 2: // Move back for the second time.
 				{
 					float distance;
 					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-					if (fabsf(distance) > 0.02f)
+					if (fabsf(distance) > 0.05f)
 					{
-						ROS_WARN("%s %d: Try bumper resume state 3.", __FUNCTION__, __LINE__);
-						regulator.bumper_jam_state = 3;
-						regulator.target_angle = Gyro_GetAngle() - 900;
-						if (regulator.target_angle < 0)
-							regulator.target_angle += 3600;
+						stop_brifly();
+						bumper_jam_state++;
+						beep_for_command(true);
+						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+						saved_pos_x = robot::instance()->getOdomPositionX();
+						saved_pos_y = robot::instance()->getOdomPositionY();
 					}
 					break;
 				}
-				case 3:
+				case 3: // Move back for the third time.
 				{
-					if (abs(Gyro_GetAngle() - regulator.target_angle) < 30)
+					float distance;
+					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+					if (fabsf(distance) > 0.05f)
 					{
-						ROS_WARN("%s %d: Try bumper resume state 4.", __FUNCTION__, __LINE__);
-						regulator.bumper_jam_state = 4;
-						regulator.target_angle = Gyro_GetAngle() + 1800;
-						if (regulator.target_angle > 3600)
-							regulator.target_angle -= 3600;
+						bumper_jam_state++;
+						beep_for_command(true);
+						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+						target_angle = Gyro_GetAngle() - 900;
+						if (target_angle < 0)
+							target_angle += 3600;
+						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 					}
 					break;
 				}
 				case 4:
 				{
-					if (abs(Gyro_GetAngle() - regulator.target_angle) < 30)
+					ROS_WARN("%s %d: Gyro_GetAngle(): %d", __FUNCTION__, __LINE__, Gyro_GetAngle());
+					if (abs(Gyro_GetAngle() - target_angle) < 50)
+					{
+						bumper_jam_state++;
+						beep_for_command(true);
+						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+						target_angle = Gyro_GetAngle() + 900;
+						if (target_angle > 3600)
+							target_angle -= 3600;
+						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
+					}
+					break;
+				}
+				case 5:
+				{
+					if (abs(Gyro_GetAngle() - target_angle) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						g_fatal_quit_event = true;
@@ -1741,26 +1768,11 @@ void cm_self_check(void)
 					}
 					break;
 				}
-				default: // case 1:
-				{
-					float distance;
-					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-					if (fabsf(distance) > 0.02f)
-					{
-						ROS_WARN("%s %d: Try bumper resume state 2.", __FUNCTION__, __LINE__);
-						regulator.bumper_jam_state = 2;
-						saved_pos_x = robot::instance()->getOdomPositionX();
-						saved_pos_y = robot::instance()->getOdomPositionY();
-					}
-					break;
-				}
 			}
-
 		}
 
-		if(! regulator.adjustSpeed())
+		if(! regulator.adjustSpeed(bumper_jam_state))
 			break;
-
 	}
 
 	cm_set_event_manager_handler_state(false);
