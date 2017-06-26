@@ -324,7 +324,7 @@ bool SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	uint8_t right_speed;
 	if (g_oc_wheel_left || g_oc_wheel_right)
 	{
-		if (get_direction_flag() == Direction_Flag_Left) {
+		if (g_oc_wheel_right) {
 			set_dir_right();
 		} else {
 			set_dir_left();
