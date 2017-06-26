@@ -22,44 +22,67 @@
 #include "robot.hpp"
 #include "robotbase.h"
 #include "event_manager.h"
+#include "core_move.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
 RemoteModeMoveType move_flag = REMOTE_MODE_STAY;
 boost::mutex move_flag_mutex;
-float pos_x, pos_y;
 
 void Remote_Mode(void)
 {
-	uint8_t Moving_Speed=0;
-	uint8_t Dec_Counter=0;
-	uint32_t OBS_Stop=0;
-	bool eh_status_now=false, eh_status_last=false;
 	g_battery_low_cnt = 0;
   //Display_Clean_Status(Display_Remote);
 
 	set_led(100, 0);
-	reset_wheel_step();
-	reset_stop_event_status();
-	work_motor_configure();
 	reset_rcon_remote();
-	set_move_flag_(REMOTE_MODE_STAY);
-//    set_vacmode(Vac_Normal);
 
 	event_manager_reset_status();
 	remote_mode_register_events();
+
+#ifdef OBS_DYNAMIC_MOVETOTARGET
+	/* Dyanmic adjust obs trigger val . */
+	robotbase_obs_adjust_count(20);
+#endif
+
+	while (ros::ok())
+	{
+		if (g_fatal_quit_event)
+		{
+			set_clean_mode(Clean_Mode_Userinterface);
+			break;
+		}
+
+		if (get_clean_mode() != Clean_Mode_Remote)
+			break;
+
+		remote_move();
+
+		if (cm_should_self_check())
+			cm_self_check();
+
+	}
+	if (g_fatal_quit_event && g_cliff_all_cnt >= 2)
+		wav_play(WAV_ERROR_LIFT_UP);
+	disable_motors();
+	remote_mode_unregister_events();
+}
+
+void remote_move(void)
+{
+	uint8_t moving_speed=0;
+	bool eh_status_now=false, eh_status_last=false;
+
+	set_move_flag_(REMOTE_MODE_STAY);
+	work_motor_configure();
 
 	while(ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
 		}
-#ifdef OBS_DYNAMIC_MOVETOTARGET
-		/* Dyanmic adjust obs trigger val . */
-		robotbase_obs_adjust_count(20);
-#endif
 
-		if (get_clean_mode() != Clean_Mode_Remote)
+		if (g_fatal_quit_event || cm_should_self_check() || get_clean_mode() != Clean_Mode_Remote)
 			break;
 
 		switch (get_move_flag_())
@@ -68,36 +91,91 @@ void Remote_Mode(void)
 			{
 				if(get_obs_status())
 				{
-					Dec_Counter++;
-					if(Moving_Speed>10)Moving_Speed--;
-					move_forward(Moving_Speed, Moving_Speed);
+					if(moving_speed>10)moving_speed--;
+					move_forward(moving_speed, moving_speed);
 				}
 				else
 				{
-					Moving_Speed++;
-					if(Moving_Speed<25)Moving_Speed=25;
-					if(Moving_Speed>42)Moving_Speed=42;
-					move_forward(Moving_Speed, Moving_Speed);
-					//work_motor_configure();
-					OBS_Stop=0;
+					moving_speed++;
+					if(moving_speed<25)moving_speed=25;
+					if(moving_speed>42)moving_speed=42;
+					move_forward(moving_speed, moving_speed);
 				}
 				break;
 			}
 			case REMOTE_MODE_BACKWARD:
 			{
+				g_move_back_finished = false;
 				set_dir_backward();
 				set_wheel_speed(20, 20);
-				if (sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y - robot::instance()->getOdomPositionY(), 2)) > 0.01f)
+				if (sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2)) < 0.05f)
+					break;
+
+				if (g_bumper_hitted)
 				{
-					ROS_DEBUG("%s %d: Move back finished.", __FUNCTION__, __LINE__);
-					set_move_flag_(REMOTE_MODE_STAY);
+					// Check if still bumper triggered.
+					if(!get_bumper_status())
+					{
+						ROS_INFO("%s %d: Move back for bumper finished.", __FUNCTION__, __LINE__);
+						g_move_back_finished = true;
+						g_bumper_hitted = false;
+						g_bumper_cnt = 0;
+					}
+					else if (++g_bumper_cnt >= 2)
+					{
+						// Should switch to cm_self_check() function to resume.
+						g_bumper_jam = true;
+						break;
+					}
+					else
+					{
+						// Move back for one more time.
+						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
+						saved_pos_x = robot::instance()->getOdomPositionX();
+						saved_pos_y = robot::instance()->getOdomPositionY();
+						continue;
+					}
 				}
+				else
+				{
+					if (!get_cliff_trig())
+					{
+						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
+						g_move_back_finished = true;
+						g_cliff_triggered = false;
+						g_cliff_all_triggered = false;
+						g_cliff_cnt = 0;
+						g_cliff_all_cnt = 0;
+					}
+					else if ((get_cliff_trig() == Status_Cliff_All) && ++g_cliff_all_cnt >= 2)
+					{
+						ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+						g_fatal_quit_event = true;
+						break;
+					}
+					else if (++g_cliff_cnt >= 2)
+					{
+						// Should switch to cm_self_check() function to resume.
+						g_cliff_jam = true;
+						break;
+					}
+					else
+					{
+						// Move back for one more time.
+						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
+						saved_pos_x = robot::instance()->getOdomPositionX();
+						saved_pos_y = robot::instance()->getOdomPositionY();
+						continue;
+					}
+				}
+				ROS_DEBUG("%s %d: Move back finished.", __FUNCTION__, __LINE__);
+				set_move_flag_(REMOTE_MODE_STAY);
 				break;
 			}
 			case REMOTE_MODE_STAY:
 			{
 				set_wheel_speed(0, 0);
-				Moving_Speed = 0;
+				moving_speed = 0;
 				break;
 			}
 			case REMOTE_MODE_LEFT:
@@ -113,19 +191,7 @@ void Remote_Mode(void)
 				break;
 			}
 		}
-
-		/*------------------------------------------------check motor over current event ---------*/
-		uint8_t octype =0;
-		octype = check_motor_current();
-		if(octype){
-			if(self_check(octype)){
-				set_clean_mode(Clean_Mode_Userinterface);
-				break;
-			}
-		}
 	}
-	disable_motors();
-	remote_mode_unregister_events();
 }
 
 void set_move_flag_(RemoteModeMoveType flag)
@@ -169,6 +235,13 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(obs, EVT_OBS_FRONT, true);
 	event_manager_register_and_enable_x(obs, EVT_OBS_LEFT, true);
 	event_manager_register_and_enable_x(obs, EVT_OBS_RIGHT, true);
+	/* Over Current */
+	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_LEFT, true);
+	//event_manager_register_and_enable_x(over_current_brush_main, EVT_OVER_CURRENT_BRUSH_MAIN, true);
+	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_RIGHT, true);
+	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
+	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
+	//event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
 	///* Rcon */
 	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
@@ -212,6 +285,13 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OBS_FRONT);
 	event_manager_register_and_disable_x(EVT_OBS_LEFT);
 	event_manager_register_and_disable_x(EVT_OBS_RIGHT);
+	/* Over Current */
+	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_LEFT);
+	//event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_MAIN);
+	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
+	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
+	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
+	//event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
 	///* Rcon */
 	//event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
@@ -234,11 +314,13 @@ void remote_mode_unregister_events(void)
 
 void remote_mode_handle_bumper(bool state_now, bool state_last)
 {
-	pos_x = robot::instance()->getOdomPositionX();
-	pos_y = robot::instance()->getOdomPositionY();
-	if (state_last == false)
+	g_bumper_hitted = true;
+
+	if (!state_last && g_move_back_finished)
 	{
-		ROS_WARN("%s %d: Bumper triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, pos_x, pos_y);
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+		ROS_WARN("%s %d: Bumper triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
 	}
 	set_move_flag_(REMOTE_MODE_BACKWARD);
 }
@@ -253,13 +335,16 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 
 void remote_mode_handle_cliff(bool state_now, bool state_last)
 {
-	pos_x = robot::instance()->getOdomPositionX();
-	pos_y = robot::instance()->getOdomPositionY();
-	if (state_last == false)
+	g_cliff_triggered = true;
+
+	if (!state_last && g_move_back_finished)
 	{
-		ROS_WARN("%s %d: Cliff triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, pos_x, pos_y);
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+		ROS_WARN("%s %d: Cliff triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
 	}
 	set_move_flag_(REMOTE_MODE_BACKWARD);
+
 }
 
 void remote_mode_handle_obs(bool state_now, bool state_last)
@@ -365,6 +450,39 @@ void remote_mode_handle_charge_detect(bool state_now, bool state_last)
 	{
 		set_clean_mode(Clean_Mode_Charging);
 		disable_motors();
+	}
+}
+
+void remote_mode_handle_over_current_wheel_left(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if ((uint32_t) robot::instance()->getLwheelCurrent() < Wheel_Stall_Limit) {
+		g_oc_wheel_left_cnt = 0;
+		return;
+	}
+
+	if (g_oc_wheel_left_cnt++ > 40){
+		g_oc_wheel_left_cnt = 0;
+		ROS_WARN("%s %d: left wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		g_oc_wheel_left = true;
+	}
+}
+
+void remote_mode_handle_over_current_wheel_right(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if ((uint32_t) robot::instance()->getRwheelCurrent() < Wheel_Stall_Limit) {
+		g_oc_wheel_right_cnt = 0;
+		return;
+	}
+
+	if (g_oc_wheel_right_cnt++ > 40){
+		g_oc_wheel_right_cnt = 0;
+		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+
+		g_oc_wheel_right = true;
 	}
 }
 

@@ -24,6 +24,7 @@ typedef enum {
 } RemoteModeMoveType;
 
 void Remote_Mode(void);
+void remote_move(void);
 void set_move_flag_(RemoteModeMoveType flag);
 RemoteModeMoveType get_move_flag_(void);
 void remote_mode_register_events(void);
@@ -40,10 +41,10 @@ define_remote_mode_handle_func(obs)
 define_remote_mode_handle_func(cliff_all)
 define_remote_mode_handle_func(cliff)
 ///* Over Current */
-//define_remote_mode_handle_func(over_current_brush_left)
-//define_remote_mode_handle_func(over_current_brush_right)
-//define_remote_mode_handle_func(over_current_wheel_left)
-//define_remote_mode_handle_func(over_current_wheel_right)
+define_remote_mode_handle_func(over_current_brush_left)
+define_remote_mode_handle_func(over_current_brush_right)
+define_remote_mode_handle_func(over_current_wheel_left)
+define_remote_mode_handle_func(over_current_wheel_right)
 //define_remote_mode_handle_func(over_current_suction)
 /* Key */
 define_remote_mode_handle_func(key_clean)

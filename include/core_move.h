@@ -57,6 +57,9 @@ typedef struct {
 	Cell_t	pos;
 } VWType;
 
+extern float saved_pos_x, saved_pos_y;
+extern bool g_move_back_finished;
+
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
 void cm_head_to_course(uint8_t Speed, int16_t Angle);

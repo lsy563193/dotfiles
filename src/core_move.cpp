@@ -764,22 +764,19 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 						g_bumper_cnt = 0;
 						break;
 					}
+					else if (++g_bumper_cnt >= 2)
+					{
+						// Should switch to cm_self_check() function to resume.
+						g_bumper_jam = true;
+						break;
+					}
 					else
 					{
-						if (++g_bumper_cnt >= 2)
-						{
-							// Should switch to cm_self_check() function to resume.
-							g_bumper_jam = true;
-							break;
-						}
-						else
-						{
-							// Move back for one more time.
-							ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
-							saved_pos_x = robot::instance()->getOdomPositionX();
-							saved_pos_y = robot::instance()->getOdomPositionY();
-							continue;
-						}
+						// Move back for one more time.
+						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
+						saved_pos_x = robot::instance()->getOdomPositionX();
+						saved_pos_y = robot::instance()->getOdomPositionY();
+						continue;
 					}
 				}
 				else
@@ -794,32 +791,27 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 						g_cliff_all_cnt = 0;
 						break;
 					}
+					else if ((get_cliff_trig() == Status_Cliff_All) && ++g_cliff_all_cnt >= 2)
+					{
+						ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+						g_fatal_quit_event = true;
+						break;
+					}
+					else if (++g_cliff_cnt >= 2)
+					{
+						// Should switch to cm_self_check() function to resume.
+						g_cliff_jam = true;
+						break;
+					}
 					else
 					{
-						if ((get_cliff_trig() == Status_Cliff_All) && ++g_cliff_all_cnt >= 2)
-						{
-							ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-							g_fatal_quit_event = true;
-							break;
-						}
-
-						if (++g_cliff_cnt >= 2)
-						{
-							// Should switch to cm_self_check() function to resume.
-							g_cliff_jam = true;
-							break;
-						}
-						else
-						{
-							// Move back for one more time.
-							ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
-							saved_pos_x = robot::instance()->getOdomPositionX();
-							saved_pos_y = robot::instance()->getOdomPositionY();
-							continue;
-						}
+						// Move back for one more time.
+						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
+						saved_pos_x = robot::instance()->getOdomPositionX();
+						saved_pos_y = robot::instance()->getOdomPositionY();
+						continue;
 					}
 				}
-
 			}
 		}
 		else if (std::abs(map_get_x_count() - Target.X) < 150 && std::abs(map_get_y_count() - Target.Y) < 150) {
@@ -1670,7 +1662,6 @@ void cm_self_check(void)
 
 	if (g_bumper_jam || g_cliff_jam)
 	{
-		beep_for_command(true);
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
@@ -1827,7 +1818,7 @@ void cm_self_check(void)
 				}
 				case 4:
 				{
-					ROS_WARN("%s %d: Gyro_GetAngle(): %d", __FUNCTION__, __LINE__, Gyro_GetAngle());
+					ROS_DEBUG("%s %d: Gyro_GetAngle(): %d", __FUNCTION__, __LINE__, Gyro_GetAngle());
 					if (abs(Gyro_GetAngle() - target_angle) < 50)
 					{
 						bumper_jam_state++;
@@ -2041,15 +2032,13 @@ void cm_event_manager_turn(bool state)
 
 void cm_handle_bumper_all(bool state_now, bool state_last)
 {
-
-	set_wheel_speed(0, 0);
-
 	g_bumper_hitted = true;
 
 	if (!state_last && g_move_back_finished)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_bumper_jam)
@@ -2059,16 +2048,13 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 
 void cm_handle_bumper_left(bool state_now, bool state_last)
 {
-	uint8_t isBumperTriggered = get_bumper_status();
-
-	set_wheel_speed(0, 0);
-
 	g_bumper_hitted = true;
 
 	if (!state_last && g_move_back_finished)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_bumper_jam)
@@ -2077,15 +2063,13 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
 {
-
-	set_wheel_speed(0, 0);
-
 	g_bumper_hitted = true;
 
 	if (!state_last && g_move_back_finished)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_bumper_jam)
@@ -2122,8 +2106,6 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
-	set_wheel_speed(0, 0);
-
 	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
@@ -2131,6 +2113,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_cliff_jam)
@@ -2140,8 +2123,6 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
-	set_wheel_speed(0, 0);
-
 	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
@@ -2149,6 +2130,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_cliff_jam)
@@ -2158,8 +2140,6 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
-	set_wheel_speed(0, 0);
-
 	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
@@ -2167,6 +2147,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_cliff_jam)
@@ -2175,8 +2156,6 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
 {
-	set_wheel_speed(0, 0);
-
 	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
@@ -2184,6 +2163,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_cliff_jam)
@@ -2192,8 +2172,6 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
 {
-	set_wheel_speed(0, 0);
-
 	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
@@ -2201,6 +2179,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_cliff_jam)
@@ -2209,8 +2188,6 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
 {
-	set_wheel_speed(0, 0);
-
 	g_cliff_all_triggered = false;
 	g_cliff_triggered = true;
 
@@ -2218,6 +2195,7 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
+		set_wheel_speed(0, 0);
 	}
 
 	if (g_move_back_finished && !g_cliff_jam)
