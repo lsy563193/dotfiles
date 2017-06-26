@@ -28,6 +28,9 @@ time_t battery_low_start_time;
 uint16_t battery_low_delay = 0;
 uint8_t error_alarm_counter = 3;
 bool battery_ready_to_clean = true;
+bool long_press_to_sleep = false;
+uint8_t user_interface_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
+uint8_t user_interface_plan_status = 0;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -124,9 +127,48 @@ void User_Interface(void)
 		}
 
 #endif
-
+		// Check for wav playing.
+		if (long_press_to_sleep)
+		{
+			long_press_to_sleep = false;
+			temp_mode = Clean_Mode_Sleep;
+		}
+		else if (user_interface_reject_reason)
+		{
+			switch (user_interface_reject_reason)
+			{
+				case 1:
+					error_alarm_counter = 0;
+					user_interface_reject_reason = 0;
+					alarm_error();
+					break;
+				case 2:
+					user_interface_reject_reason = 0;
+					wav_play(WAV_ERROR_LIFT_UP);
+					break;
+				case 3:
+					user_interface_reject_reason = 0;
+					wav_play(WAV_BATTERY_LOW);
+					break;
+				case 4:
+					user_interface_reject_reason = 0;
+					wav_play(WAV_CLEAR_ERROR);
+					error_alarm_counter = 0;
+					set_error_code(Error_Code_None);
+					break;
+			}
+			temp_mode = 0;
+		}
+		else if (user_interface_plan_status)
+		{
+			if (user_interface_plan_status == 2)
+				wav_play(WAV_CANCEL_APPOINTMENT);
+			else if (user_interface_plan_status == 4)
+				wav_play(WAV_APPOINTMENT_DONE);
+			user_interface_plan_status = 0;
+		}
 		// Alarm for error.
-		if (get_error_code())
+		else if (get_error_code())
 			if (error_alarm_counter == 3 || (error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
 			{
 				error_alarm_counter--;
@@ -223,7 +265,7 @@ void user_interface_handle_cliff(bool state_now, bool state_last)
 	if (!state_last && robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Robot lifted up during manual pause, reset manual pause status.", __FUNCTION__, __LINE__);
-		wav_play(WAV_ERROR_LIFT_UP);
+		user_interface_reject_reason = 2;
 		clear_manual_pause();
 	}
 }
@@ -244,34 +286,15 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	if (time(NULL) - charger_signal_start_time >= 180)// 3 mins
 	{
 		if (get_error_code())
-		{
 			ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
-			error_alarm_counter = 0;
-			alarm_error();
-			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-			charger_signal_delay = 0;
-			reset_rcon_status();
-			return;
-		}
-
-		if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
-		{
+		else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-			wav_play(WAV_ERROR_LIFT_UP);
-			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-			charger_signal_delay = 0;
-			reset_rcon_status();
-			return;
-		}
-
-		temp_mode = Clean_Mode_GoHome;
-		reset_rcon_status();
-		return;
+		else
+			temp_mode = Clean_Mode_GoHome;
 	}
 
 	charger_signal_delay = 20;
 	reset_rcon_status();
-
 }
 
 void user_interface_handle_battery_low(bool state_now, bool state_last)
@@ -291,36 +314,6 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
-
-	if (get_error_code())
-	{
-		if (get_rcon_remote() == Remote_Clean)
-		{
-			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
-			beep_for_command(true);
-			wav_play(WAV_CLEAR_ERROR);
-			set_error_code(Error_Code_None);
-			error_alarm_counter = 0;
-			reset_rcon_remote();
-			reset_stop_event_status();
-			return;
-		}
-		ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, get_rcon_remote(), get_error_code());
-		beep_for_command(false);
-		error_alarm_counter = 0;
-		alarm_error();
-		reset_rcon_remote();
-		return;
-	}
-
-	if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
-	{
-		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
-		beep_for_command(false);
-		wav_play(WAV_ERROR_LIFT_UP);
-		reset_rcon_remote();
-		return;
-	}
 
 	switch (get_rcon_remote())
 	{
@@ -354,18 +347,38 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 		}
 	}
 
-	if((temp_mode != Clean_Mode_GoHome && temp_mode != Clean_Mode_Remote) && !battery_ready_to_clean)
+	if (get_error_code())
+	{
+		if (get_rcon_remote() == Remote_Clean)
+		{
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
+			beep_for_command(true);
+			user_interface_reject_reason = 4;
+			reset_stop_event_status();
+		}
+		else
+		{
+			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, get_rcon_remote(), get_error_code());
+			user_interface_reject_reason = 1;
+			beep_for_command(false);
+		}
+	}
+	else if (get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	{
+		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
+		beep_for_command(false);
+		user_interface_reject_reason = 2;
+	}
+	else if ((temp_mode != Clean_Mode_GoHome && temp_mode != Clean_Mode_Remote) && !battery_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beep_for_command(false);
-		wav_play(WAV_BATTERY_LOW);
-		reset_rcon_remote();
-		reset_stop_event_status();
-		temp_mode = 0;
-		return;
+		user_interface_reject_reason = 3;
 	}
 
-	beep_for_command(true);
+	if (!user_interface_reject_reason)
+		beep_for_command(true);
+
 	reset_rcon_remote();
 }
 
@@ -379,12 +392,13 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Remote key plan has been pressed. Plan received.", __FUNCTION__, __LINE__);
 			beep_for_command(true);
+			user_interface_plan_status = 1;
 			break;
 		}
 		case 2:
 		{
 			ROS_WARN("%s %d: Plan canceled.", __FUNCTION__, __LINE__);
-			wav_play(WAV_CANCEL_APPOINTMENT);
+			user_interface_plan_status = 2;
 			break;
 		}
 		case 3:
@@ -393,17 +407,15 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 			if (get_error_code() != Error_Code_None)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				alarm_error();
-				wav_play(WAV_CANCEL_APPOINTMENT);
-				set_plan_status(0);
+				user_interface_reject_reason = 1;
+				user_interface_plan_status = 2;
 				break;
 			}
 			else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				wav_play(WAV_ERROR_LIFT_UP);
-				wav_play(WAV_CANCEL_APPOINTMENT);
-				set_plan_status(0);
+				user_interface_reject_reason = 2;
+				user_interface_plan_status = 2;
 				break;
 			}
 			else
@@ -418,7 +430,7 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 		case 4:
 		{
 			ROS_WARN("%s %d: Plan confirmed.", __FUNCTION__, __LINE__);
-			wav_play(WAV_APPOINTMENT_DONE);
+			user_interface_plan_status = 4;
 			break;
 		}
 	}
@@ -431,7 +443,6 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
 	time_t key_press_start_time = time(NULL);
-	bool long_press_to_sleep = false;
 
 	beep_for_command(true);
 
@@ -455,7 +466,6 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 
 	if (long_press_to_sleep)
 	{
-		temp_mode = Clean_Mode_Sleep;
 		reset_stop_event_status();
 		reset_touch();
 		return;
@@ -464,32 +474,24 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	if (get_error_code())
 	{
 		ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
-		wav_play(WAV_CLEAR_ERROR);
-		set_error_code(Error_Code_None);
-		error_alarm_counter = 0;
-		reset_stop_event_status();
-		return;
+		user_interface_reject_reason = 4;
 	}
 
 	if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
-		wav_play(WAV_ERROR_LIFT_UP);
-		reset_stop_event_status();
-		reset_touch();
-		return;
+		user_interface_reject_reason = 2;
 	}
 
 	if(!battery_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		wav_play(WAV_BATTERY_LOW);
-		reset_stop_event_status();
-		reset_touch();
-		return;
+		user_interface_reject_reason = 3;
 	}
 
-	temp_mode = Clean_Mode_Navigation;
+	if (!user_interface_reject_reason)
+		temp_mode = Clean_Mode_Navigation;
+
 	reset_stop_event_status();
 	reset_touch();
 }

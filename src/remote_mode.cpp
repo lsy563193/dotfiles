@@ -359,7 +359,7 @@ void remote_mode_handle_obs(bool state_now, bool state_last)
 void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
@@ -377,7 +377,7 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
@@ -395,7 +395,7 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
@@ -413,20 +413,30 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 void remote_mode_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(true);
-	switch_vac_mode(true);
+	if (!g_bumper_jam && !g_cliff_jam)
+	{
+		beep_for_command(true);
+		switch_vac_mode(true);
+	}
+	else
+		beep_for_command(false);
 	reset_rcon_remote();
 }
 
 void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
-	beep_for_command(true);
-	disable_motors();
-	if (get_rcon_remote() == Remote_Home)
-		set_clean_mode(Clean_Mode_GoHome);
+	if (!g_bumper_jam && !g_cliff_jam)
+	{
+		beep_for_command(true);
+		disable_motors();
+		if (get_rcon_remote() == Remote_Home)
+			set_clean_mode(Clean_Mode_GoHome);
+		else
+			set_clean_mode(Clean_Mode_Userinterface);
+	}
 	else
-		set_clean_mode(Clean_Mode_Userinterface);
+		beep_for_command(false);
 	reset_rcon_remote();
 }
 
@@ -440,6 +450,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 		usleep(40000);
 	}
 	set_clean_mode(Clean_Mode_Userinterface);
+	g_key_clean_pressed = true;
 	reset_touch();
 }
 
