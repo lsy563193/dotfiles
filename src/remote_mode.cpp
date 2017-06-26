@@ -450,6 +450,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 		usleep(40000);
 	}
 	set_clean_mode(Clean_Mode_Userinterface);
+	g_key_clean_pressed = true;
 	reset_touch();
 }
 
