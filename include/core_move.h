@@ -165,11 +165,11 @@ define_cm_handle_func(rcon_right)
 */
 
 /* Over Current */
-define_cm_handle_func(over_current_brush_left)
+//define_cm_handle_func(over_current_brush_left)
 
 define_cm_handle_func(over_current_brush_main)
 
-define_cm_handle_func(over_current_brush_right)
+//define_cm_handle_func(over_current_brush_right)
 
 define_cm_handle_func(over_current_wheel_left)
 

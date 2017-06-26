@@ -1906,9 +1906,9 @@ void cm_register_events()
 */
 
 	/* Over Current */
-	event_manager_register_and_enable_x(over_current_brush_left, EVT_OVER_CURRENT_BRUSH_LEFT, true);
+	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_LEFT, true);
 	event_manager_register_and_enable_x(over_current_brush_main, EVT_OVER_CURRENT_BRUSH_MAIN, true);
-	event_manager_register_and_enable_x(over_current_brush_right, EVT_OVER_CURRENT_BRUSH_RIGHT, true);
+	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
 	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
@@ -2540,26 +2540,26 @@ void cm_handle_rcon_right(bool state_now, bool state_last)
 */
 
 /* Over Current */
-void cm_handle_over_current_brush_left(bool state_now, bool state_last)
-{
-	static uint8_t stop_cnt = 0;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-	if(!robot::instance()->getLbrushOc()) {
-		g_oc_brush_left_cnt = 0;
-		if (stop_cnt++ > 250) {
-			set_left_brush_pwm(30);
-		}
-		return;
-	}
-
-	stop_cnt = 0;
-	if (g_oc_brush_left_cnt++ > 40) {
-		g_oc_brush_left_cnt = 0;
-		set_left_brush_pwm(0);
-		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
-	}
-}
+//void cm_handle_over_current_brush_left(bool state_now, bool state_last)
+//{
+//	static uint8_t stop_cnt = 0;
+//
+//	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+//	if(!robot::instance()->getLbrushOc()) {
+//		g_oc_brush_left_cnt = 0;
+//		if (stop_cnt++ > 250) {
+//			set_left_brush_pwm(30);
+//		}
+//		return;
+//	}
+//
+//	stop_cnt = 0;
+//	if (g_oc_brush_left_cnt++ > 40) {
+//		g_oc_brush_left_cnt = 0;
+//		set_left_brush_pwm(0);
+//		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
+//	}
+//}
 
 void cm_handle_over_current_brush_main(bool state_now, bool state_last)
 {
@@ -2581,27 +2581,27 @@ void cm_handle_over_current_brush_main(bool state_now, bool state_last)
     }
 }
 
-void cm_handle_over_current_brush_right(bool state_now, bool state_last)
-{
-	static uint8_t stop_cnt = 0;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
-	if(!robot::instance()->getRbrushOc()) {
-		g_oc_brush_right_cnt = 0;
-		if (stop_cnt++ > 250) {
-			set_right_brush_pwm(30);
-		}
-		return;
-	}
-
-	stop_cnt = 0;
-	if (g_oc_brush_right_cnt++ > 40) {
-		g_oc_brush_right_cnt = 0;
-		set_right_brush_pwm(0);
-		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
-	}
-}
+//void cm_handle_over_current_brush_right(bool state_now, bool state_last)
+//{
+//	static uint8_t stop_cnt = 0;
+//
+//	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+//
+//	if(!robot::instance()->getRbrushOc()) {
+//		g_oc_brush_right_cnt = 0;
+//		if (stop_cnt++ > 250) {
+//			set_right_brush_pwm(30);
+//		}
+//		return;
+//	}
+//
+//	stop_cnt = 0;
+//	if (g_oc_brush_right_cnt++ > 40) {
+//		g_oc_brush_right_cnt = 0;
+//		set_right_brush_pwm(0);
+//		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
+//	}
+//}
 
 void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 {

@@ -83,6 +83,7 @@ void event_manager_init()
 	g_event_manager_enabled = g_event_handler_status = false;
 
 	bumper_all_cnt = bumper_left_cnt = bumper_right_cnt = 0;
+	event_manager_reset_status();
 
 	for (i = 0; i < EVT_MODE_MAX; i++) {
 		for (j = 0; j < EVT_MAX; j++) {
@@ -206,7 +207,7 @@ void *event_manager_thread(void *data)
 */
 
 		/* Over Current */
-		if (robot::instance()->getLbrushOc()) {
+		if (1 || robot::instance()->getLbrushOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_LEFT)
 		}
@@ -214,7 +215,7 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_MAIN)
 		}
-		if (robot::instance()->getRbrushOc()) {
+		if (1 || robot::instance()->getRbrushOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_RIGHT)
 		}
@@ -697,6 +698,13 @@ void em_default_handle_rcon_right(bool state_now, bool state_last)
 void em_default_handle_over_current_brush_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	if (!g_fatal_quit_event && check_left_brush_stall())
+	{
+		/*-----Set error-----*/
+		set_error_code(Error_Code_LeftBrush);
+		g_fatal_quit_event = true;
+		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
+	}
 }
 
 void em_default_handle_over_current_brush_main(bool state_now, bool state_last)
@@ -707,6 +715,13 @@ void em_default_handle_over_current_brush_main(bool state_now, bool state_last)
 void em_default_handle_over_current_brush_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	if (!g_fatal_quit_event && check_right_brush_stall())
+	{
+		/*-----Set error-----*/
+		set_error_code(Error_Code_RightBrush);
+		g_fatal_quit_event = true;
+		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
+	}
 }
 
 void em_default_handle_over_current_wheel_left(bool state_now, bool state_last)
