@@ -304,7 +304,7 @@ void wf_update_map()
 
 	cm_update_position();
 
-	wf_update_cleaned();
+	//wf_update_cleaned();
 
 	auto cell_x = map_get_x_cell();
 	auto cell_y = map_get_y_cell();
@@ -312,6 +312,7 @@ void wf_update_map()
 	if (wf_is_reach_new_cell(curr_cell))
 	{
 		g_reach_count = wf_is_reach_cleaned() ? g_reach_count + 1 : 0;
+		ROS_INFO("reach_count>10(%d)",g_reach_count);
 		int size = (g_wf_cell.size() - 2);
 		if (size >= 0)
 			map_set_cell(MAP, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);

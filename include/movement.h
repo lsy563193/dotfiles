@@ -456,7 +456,8 @@ void work_motor_configure(void);
 
 uint8_t check_motor_current(void);
 
-uint8_t check_side_brush_stall(void);
+uint8_t check_left_brush_stall(void);
+uint8_t check_right_brush_stall(void);
 
 uint8_t self_check(uint8_t Check_Code);
 

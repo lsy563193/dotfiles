@@ -68,17 +68,8 @@ void sleep_mode(void)
 	usleep(100000);
 	beep(1, 4, 4, 1);
 
-	// Alarm for error.
-	if (get_clean_mode() == Clean_Mode_Userinterface && get_error_code())
-	{
-		set_led(0, 100);
-		alarm_error();
-	}
-	else
-	{
-		// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
-		usleep(1500000);
-	}
+	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
+	usleep(1500000);
 
 	reset_rcon_status();
 	reset_rcon_remote();
