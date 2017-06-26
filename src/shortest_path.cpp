@@ -1091,7 +1091,7 @@ list <Cell_t> path_points;
  * 		totalCost: Total cost
  *
  */
-int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
+int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -1100,14 +1100,14 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	path_points.clear();
 
 	/* Find the direction of target with reference to the current robot position. */
-	if (xID == endx) {
-		dest_dir = (yID > endy ? NEG_Y : POS_Y);
-	} else if (yID == endy) {
-		dest_dir = (xID > endx ? NEG_X : POS_X);
-	} else if(abs(xID - endx) > abs(yID - endy)) {
-		dest_dir = (xID > endx ? NEG_X : POS_X);
+	if (curr_x == end_x) {
+		dest_dir = (curr_y > end_y ? NEG_Y : POS_Y);
+	} else if (curr_y == end_y) {
+		dest_dir = (curr_x > end_x ? NEG_X : POS_X);
+	} else if(abs(curr_x - end_x) > abs(curr_y - end_y)) {
+		dest_dir = (curr_x > end_x ? NEG_X : POS_X);
 	} else {
-		dest_dir = (yID > endy ? NEG_Y : POS_Y);
+		dest_dir = (curr_y > end_y ? NEG_Y : POS_Y);
 	}
 
 	/* Reset the cells in the shorest path map. */
@@ -1129,15 +1129,17 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 					}
 				}
 			}
+			else if(cs == UNCLEAN)
+				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}
 
-	if (map_get_cell(SPMAP, endx, endy) == COST_HIGH) {
-		map_set_cell(SPMAP, endx, endy, COST_NO);
+	if (map_get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
+		map_set_cell(SPMAP, end_x, end_y, COST_NO);
 	}
 
 	/* Set the current robot position has the cost value of 1. */
-	map_set_cell(SPMAP, (int32_t) xID, (int32_t) yID, COST_1);
+	map_set_cell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -1148,7 +1150,7 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	passSet = 1;
 	passValue = 1;
 	nextPassValue = 2;
-	while (map_get_cell(SPMAP, endx, endy) == COST_NO && passSet == 1) {
+	while (map_get_cell(SPMAP, end_x, end_y) == COST_NO && passSet == 1) {
 		offset++;
 		passSet = 0;
 
@@ -1161,11 +1163,11 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 		 * the cell (X -/+ offset, Y -/+ offset) would be set only. The cells far away
 		 * to the robot position won't be set.
 		 */
-		for (i = xID - offset; i <= xID + offset; i++) {
+		for (i = curr_x - offset; i <= curr_x + offset; i++) {
 			if (i < x_min || i > x_max)
 				continue;
 
-			for (j = yID - offset; j <= yID + offset; j++) {
+			for (j = curr_y - offset; j <= curr_y + offset; j++) {
 				if (j < y_min || j > y_max)
 					continue;
 
@@ -1209,10 +1211,10 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 
 	/* The target position still have a cost of 0, which mean it is not reachable. */
 	totalCost = 0;
-	if (map_get_cell(SPMAP, endx, endy) == COST_NO) {
-		ROS_WARN("target point (%d, %d) is not reachable(0), return -2.", endx, endy);
+	if (map_get_cell(SPMAP, end_x, end_y) == COST_NO) {
+		ROS_WARN("target point (%d, %d) is not reachable(0), return -2.", end_x, end_y);
 #ifdef	DEBUG_SM_MAP
-		debug_map(SPMAP, endx, endy);
+		debug_map(SPMAP, end_x, end_y);
 #endif
 		return -2;
 	}
@@ -1231,14 +1233,14 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
 	 * have the same direction as previous action.
 	 */
 	Cell_t t;
-	t.X = tracex = tracex_tmp = endx;
-	t.Y = tracey = tracey_tmp = endy;
+	t.X = tracex = tracex_tmp = end_x;
+	t.Y = tracey = tracey_tmp = end_y;
 	path_points.push_back(t);
 
 	next = 0;
 	dest_dir = (path_get_robot_direction() == POS_Y || path_get_robot_direction() == NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
-	while (tracex != xID || tracey != yID) {
+	while (tracex != curr_x || tracey != curr_y) {
 		costAtCell = map_get_cell(SPMAP, tracex, tracey);
 		targetCost = costAtCell - 1;
 
@@ -1335,23 +1337,23 @@ int16_t path_find_shortest_path_ranged(int16_t xID, int16_t yID, int16_t endx, i
  * 		(totalCost: from function path_find_shortest_path_ranged)
  *
  */
-int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
+int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound) {
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
 	if (bound == 1) {
 		/* If bound is set, set the search range. */
-		x_min = (xID > endx ? endx : xID) - 8;
-		x_max = (xID > endx ? xID : endx) + 8;
-		y_min = (yID > endy ? endy : yID) - 8;
-		y_max = (yID > endy ? yID : endy) + 8;
-		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
-		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		x_min = (curr_x > end_x ? end_x : curr_x) - 8;
+		x_max = (curr_x > end_x ? curr_x : end_x) + 8;
+		y_min = (curr_y > end_y ? end_y : curr_y) - 8;
+		y_max = (curr_y > end_y ? curr_y : end_y) + 8;
+		ROS_INFO("shortest path(%d): end_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d", __LINE__, end_x, end_y, x_min, x_max, y_min, y_max);
+		val =  path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
 		path_get_range(&x_min, &x_max, &y_min, &y_max);
-		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
-		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
+		val =  path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
+		ROS_INFO("shortest path(%d): end_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d\t return: %d", __LINE__, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	}
 
 	return val;
@@ -1509,7 +1511,6 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 		x_next = target_x;
 		y_next = target_y;
 
-#ifdef	PP_MOVE_TO_MIDDLE_OF_PATH
 		if (path_points.size() > 3) {
 			list<Cell_t>::iterator it = path_points.begin();
 			for (i = 0; i < path_points.size() - 3; i++) {
@@ -1593,8 +1594,6 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 		}
 
 		path_display_path_points();
-
-#endif
 
 		if (path_points.size() > 1) {
 			i = 0;

@@ -960,6 +960,7 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 		return false;
 	}
 
+	ROS_INFO("curr_point_y(%d),next_point_y(%d),dir(%d),g_should_follow_wall(%d)",next_point->Y, map_get_y_count(), dir, g_should_follow_wall);
 	if (!IS_X_AXIS(dir) || g_should_follow_wall == 0 || next_point->Y == map_get_y_count()) {
 		return false;
 	}
