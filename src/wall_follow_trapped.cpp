@@ -572,6 +572,7 @@
 #include <pthread.h>
 
 #include <ros/ros.h>
+#include <core_move.h>
 
 #include "charger.hpp"
 #include "debug.h"
@@ -731,7 +732,9 @@ void *WFT_check_trapped(void *data)
 			path_update_cell_history();
 			ROS_INFO("%s %d: escape thread checking: pos: (%d, %d) (%d, %d)!", __FUNCTION__, __LINE__, current_x, current_y,
 							 map_get_x_cell(), map_get_y_cell());
-			val = path_escape_trapped();
+
+			Cell_t next; Cell_t target;
+			val  = path_target(next, target);//0 not target, 1,found, -2 trap
 			if (val == 1) {
 				ROS_INFO("%s %d: escaped, thread is existing!", __FUNCTION__, __LINE__);
 				escape_state = Escape_Trapped_Escaped;
