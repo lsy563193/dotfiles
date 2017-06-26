@@ -312,7 +312,7 @@ void wf_update_map()
 	if (wf_is_reach_new_cell(curr_cell))
 	{
 		g_reach_count = wf_is_reach_cleaned() ? g_reach_count + 1 : 0;
-		ROS_INFO("reach_count>10(%d)",g_reach_count);
+		ROS_INFO("reach_count(%d)",g_reach_count);
 		int size = (g_wf_cell.size() - 2);
 		if (size >= 0)
 			map_set_cell(MAP, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);
@@ -330,8 +330,15 @@ bool wf_is_reach_isolate()
 {
 	if(is_reach()){
 		ROS_INFO("is_reach()");
-		g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
-		map_reset(MAP);
+		//g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
+		if (is_isolate()) {
+			g_isolate_count++;
+			map_reset(MAP);
+			ROS_WARN("is_isolate");
+		} else {
+			g_isolate_count = 4;
+			ROS_WARN("is not isolate");
+		}
 		ROS_INFO("isolate_count(%d)", g_isolate_count);
 		return true;
 	}
