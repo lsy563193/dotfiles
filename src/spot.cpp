@@ -32,7 +32,6 @@
 #endif
 
 #define SPOT_MAX_SPEED	(20)
-//extern uint8_t g_should_follow_wall;//used to decide obstacle 
 static SpotMovement* spot_obj = NULL;
 /*
  * @author mengshige1988@qq.com

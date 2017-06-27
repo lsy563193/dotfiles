@@ -35,8 +35,6 @@ typedef enum{
 
 class SpotMovement;
 
-extern uint8_t g_should_follow_wall;
-
 class SpotMovement
 {
 

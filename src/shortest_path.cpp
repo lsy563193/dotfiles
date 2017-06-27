@@ -1118,6 +1118,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 		}
 	}
 
+	extern bool g_go_home;
 	/* Marked the obstcals to the shorest path map. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
@@ -1130,7 +1131,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 					}
 				}
 			}
-			else if(cs == UNCLEAN && get_clean_mode() == Clean_Mode_Navigation)
+			else if(cs == UNCLEAN && g_go_home)
 				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}
