@@ -532,7 +532,7 @@ bool MotionManage::initSpotCleaning(void)
 	g_home_point.clear();
 	g_home_point.push_front(t_point);//init home point
 	map_init();//init map
-	path_planning_initialize(&homepoint.front().X, &homepoint.front().Y);//init pathplan
+	path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
