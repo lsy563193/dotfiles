@@ -66,8 +66,6 @@ private:
 
 	uint8_t is_stuck_;
 
-	uint8_t is_first_round_;
-
 	uint8_t sout_od_cnt_;//spiral out obs detect count
 
 	uint8_t sin_od_cnt_;//spiral in obs detect count

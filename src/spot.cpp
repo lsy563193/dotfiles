@@ -56,7 +56,6 @@ SpotMovement::SpotMovement(float diameter = 1.0)
 	target_.clear();
 	st_ = NO_SPOT;
 	spot_init_ = 0;
-	is_first_round_ = 1;
 
 }
 SpotMovement::~SpotMovement()
@@ -72,7 +71,6 @@ SpotMovement::~SpotMovement()
 	sin_od_cnt_ = 0;
 	target_.clear();
 	spot_init_ = 0;
-	is_first_round_ = 1;
 	st_ = NO_SPOT;
 }
 
@@ -148,7 +146,6 @@ void SpotMovement::spotInit(float diameter,Point32_t cur_point)
 	target_.clear();
 	if(spot_init_ == 0){// init
 		spot_init_ = 1;
-		//is_first_round_ = 1;
 		if(getSpotType() == CLEAN_SPOT){
 			switch_vac_mode(false);
 			set_main_brush_pwm(80);
@@ -158,7 +155,6 @@ void SpotMovement::spotInit(float diameter,Point32_t cur_point)
 	}
 	else{//deinit
 		spot_init_ = 0;
-		//is_first_round_ = 0;
 		work_motor_configure();
 	}
 }
@@ -183,7 +179,6 @@ void SpotMovement::spotDeinit()
 	target_.clear();
 	//resetSpotType();
 	spot_init_ = 1;//set init 1
-	is_first_round_ = 1;
 }
 
 
@@ -576,7 +571,7 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 			spiral_type_= (spiral_type_ == SPIRAL_RIGHT_OUT)? SPIRAL_RIGHT_IN: SPIRAL_LEFT_IN;
 			generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
 			tp_ = target_.begin();
-			ROS_WARN("%s,%d , %s , get next point (%d %d) ",__FUNCTION__,__LINE__,(spiral_type_ == SPIRAL_RIGHT_OUT)? "right in" : " left in ",tp_->X,tp_->Y);	
+			ROS_WARN("%s,%d , %s , get next point (%d %d) ",__FUNCTION__,__LINE__,(spiral_type_ == SPIRAL_RIGHT_OUT)? "right in" : " left in ",tp_->X,tp_->Y);
 			next_point = { cell_to_count(tp_->X), cell_to_count(tp_->Y) };
 			tp_++;
 			ret = 1;
@@ -585,7 +580,6 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 	else{
 		ret = 0;
 	}
-		
 	return ret;
 }
 
