@@ -389,6 +389,7 @@ void set_dir_forward(void);
 uint8_t is_encoder_fail(void);
 
 void set_right_brush_stall(uint8_t R);
+void set_left_brush_stall(uint8_t L);
 
 void wall_dynamic_base(uint32_t Cy);
 void set_wall_base(int8_t dir, int32_t data);
