@@ -111,6 +111,7 @@ void remote_move(void)
 				g_move_back_finished = false;
 				set_dir_backward();
 				set_wheel_speed(20, 20);
+
 				if (sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2)) < 0.02f)
 					break;
 

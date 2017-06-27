@@ -425,8 +425,6 @@ bool is_on_charger_stub(void);
 
 bool is_direct_charge(void);
 
-uint8_t turn_connect(void);
-
 void set_home_remote(void);
 
 void reset_home_remote(void);
