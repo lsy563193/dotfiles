@@ -241,7 +241,7 @@ void remote_mode_register_events(void)
 	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
 	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
-	//event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
+	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
 	///* Rcon */
 	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
@@ -291,7 +291,7 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
-	//event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
+	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
 	///* Rcon */
 	//event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
@@ -494,6 +494,23 @@ void remote_mode_handle_over_current_wheel_right(bool state_now, bool state_last
 		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
 		g_oc_wheel_right = true;
+	}
+}
+
+void remote_mode_handle_over_current_suction(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (!robot::instance()->getVacuumOc()) {
+		g_oc_suction_cnt = 0;
+		return;
+	}
+
+	if (g_oc_suction_cnt++ > 40) {
+		g_oc_suction_cnt = 0;
+		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
+
+		g_oc_suction = true;
 	}
 }
 
