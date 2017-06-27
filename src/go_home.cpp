@@ -2857,7 +2857,7 @@ uint8_t turn_connect(void)
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
 		{
-			if(get_clean_mode == Clean_Mode_GoHome)
+			if(get_clean_mode() == Clean_Mode_GoHome)
 			{
 				g_key_clean_pressed = false;
 				g_cliff_all_triggered = false;
