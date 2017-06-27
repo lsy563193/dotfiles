@@ -254,6 +254,11 @@ void set_right_brush_stall(uint8_t R)
 	R = R;
 }
 
+void set_left_brush_stall(uint8_t L)
+{
+	L = L;
+}
+
 void wall_dynamic_base(uint32_t Cy)
 {
 	//ROS_INFO("Run wall_dynamic_base.");
