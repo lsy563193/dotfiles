@@ -732,7 +732,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			break;
 		}
 
-		if (g_obs_triggered || g_rcon_triggered ) {
+		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
 			g_should_follow_wall = 1;
 			break;
 		}
