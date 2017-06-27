@@ -41,6 +41,7 @@
 #include "path_planning.h"
 #include "shortest_path.h"
 #include "spot.h"
+#include "movement.h"
 
 using namespace std;
 
@@ -1068,14 +1069,22 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				ROS_INFO("CM_LINEARMOVE");
 				g_cm_move_type = CM_LINEARMOVE;
 				wf_break_wall_follow();
-
+				auto angle = wf_is_first() ? 0 : 2700;
 				int32_t x_point,y_point;
 				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-				cm_world_to_point(Gyro_GetAngle(), 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
+				cm_world_to_point(Gyro_GetAngle() + angle, 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
 				next = {count_to_cell(x_point),count_to_cell(y_point)};
+				ROS_WARN("next.X = %d next.Y = %d", next.X, next.Y);
 			}
 
 		}
+	}
+	//if(get_clean_mode() == Clean_Mode_Spot || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){	
+	else if( SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
+        int8_t ret = SpotMovement::instance()->getNextTarget(*next_point);
+		target_point = next_point;
+        ROS_WARN("%s,%d target_point (%d,%d),next_point (%d,%d) return %d",__FUNCTION__,__LINE__,target_point->X,target_point->Y,next_point->X,next_point->Y,ret);
+        return ret;
 	}
 	else if(get_clean_mode() == Clean_Mode_Navigation) {
 		auto is_found = path_lane_is_cleaned(next);
@@ -1096,8 +1105,6 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			}
 		}
 	}
-	else if(get_clean_mode() == Clean_Mode_Spot){
-	}
 	//found ==1
 	if (g_curr.X == next.X)
 		g_last_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
@@ -1106,6 +1113,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 
 	*next_point = map_cell_to_point(next);
 	*target_point = map_cell_to_point(target);
+
 	return 1;
 }
 

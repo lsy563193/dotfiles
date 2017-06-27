@@ -306,8 +306,10 @@ if (s_slam != nullptr)
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
 	uint8_t clean_mode = get_clean_mode();
-	if (clean_mode != Clean_Mode_Sleep && clean_mode != Clean_Mode_Charging )
+	if (clean_mode != Clean_Mode_Sleep && clean_mode != Clean_Mode_Charging ){
+		ROS_WARN("%s,%d,set clean mode userinterface",__FUNCTION__,__LINE__);
 		set_clean_mode(Clean_Mode_Userinterface);
+	}
 
 }
 
@@ -404,9 +406,9 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_WARN("Restore from manual pause");
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
-	else
+	else{
 		wav_play(WAV_CLEANING_START);
-
+	}
 	if (!Wait_For_Gyro_On())
 		return false;
 

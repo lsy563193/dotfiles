@@ -52,6 +52,7 @@ bool g_key_clean_pressed = false;
 bool g_remote_home = false;
 bool g_remote_spot = false;
 bool g_remote_wallfollow = false;
+bool g_remote_dirt_keys = false;
 /* Battery */
 bool g_battery_home = false;
 bool g_battery_low = false;
@@ -131,27 +132,27 @@ void *event_manager_thread(void *data)
 
 		/* Bumper */
 		if (get_bumper_status() == AllBumperTrig) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: setting event:all bumper trig ", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_ALL)
 		} else if (get_bumper_status() & LeftBumperTrig) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: setting event: left bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_LEFT)
 		} else if (get_bumper_status() & RightBumperTrig) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: setting event: right bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_RIGHT)
 		}
 
 		/* OBS */
 		if (get_front_obs() > get_front_obs_value()) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: setting event: front obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_FRONT)
 		}
 		if (get_left_obs() > get_left_obs_value()) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: setting event: left obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_LEFT)
 		}
 		if (get_right_obs() > get_right_obs_value()) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: setting event: right obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_RIGHT)
 		}
 
@@ -517,6 +518,7 @@ void event_manager_reset_status(void)
 	g_remote_home = false;
 	g_remote_spot = false;
 	g_remote_wallfollow = false;
+	g_remote_dirt_keys = false;
 	/* Battery */
 	g_battery_home = false;
 	g_battery_low = false;

@@ -151,6 +151,8 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 		if (std::abs(diff) < 10) {
 			set_wheel_speed(0, 0);
 			ROS_INFO("%s %d: Gyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Gyro_GetAngle(), diff);
+			g_obs_triggered = false;
+			g_rcon_triggered = false;
 			rotate_is_needed = false;
 			tick_ = 0;
 			return true;
@@ -614,7 +616,7 @@ uint16_t rounding_straight_distance()
 
 void cm_move_back(void)
 {
-	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_LEFT_WALL)
+	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
 	{
 		g_rounding_turn_angle = round_turn_angle();
 		if (get_bumper_status() != 0)
@@ -705,9 +707,9 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	g_should_follow_wall =  0;
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
-	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = false;
+	g_bumper_hitted =  g_cliff_triggered = false;
+	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = g_remote_wallfollow = g_remote_dirt_keys = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
-	uint16_t target_angle;
 	bool rotate_is_needed_ = true;
 
 	if (position.X != map_get_x_count() && position.X == Target.X)
@@ -728,12 +730,20 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check()) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || g_remote_wallfollow || g_remote_dirt_keys) {
 			break;
 		}
 
-		if (g_obs_triggered || g_rcon_triggered ) {
+		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
 			g_should_follow_wall = 1;
+			SpotType spt = SpotMovement::instance() -> getSpotType(); 
+            if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
+                SpotMovement::instance()->setDirectChange();
+			break;
+		}
+
+		if (std::abs(map_get_x_count() - Target.X) < 150 && std::abs(map_get_y_count() - Target.Y) < 150) {
+			ROS_DEBUG("%s, %d: Reach target.", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -954,29 +964,30 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 	}else if(get_clean_mode() == Clean_Mode_Spot){
 		return false;
 	}
-
-	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
-						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
-																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
-	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),g_should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_should_follow_wall);
+	g_cm_move_type = CM_LINEARMOVE;
+//	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
+//						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
+//																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
+//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),g_should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_should_follow_wall);
 	if (!IS_X_AXIS(dir) || g_should_follow_wall == 0 || next_point->Y == map_get_y_count()) {
 		return false;
 	}
 
 	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
-	ROS_ERROR("curr_y(%d),next_y(%d),delta_y(%d),dir(%d)",map_get_y_cell(), count_to_cell(next_point->Y), delta_y, dir);
+//	ROS_ERROR("curr_y(%d),next_y(%d),delta_y(%d),dir(%d)",map_get_y_cell(), count_to_cell(next_point->Y), delta_y, dir);
 
 	if ( delta_y != 0 && std::abs(delta_y <= 2) ) {
 		g_cm_move_type = (dir == POS_X) ^ (delta_y > 0) ? CM_FOLLOW_LEFT_WALL: CM_FOLLOW_RIGHT_WALL;
-		ROS_ERROR("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
+		ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
 	} else if(delta_y == 0){
-		ROS_ERROR("don't need to go to new line. curr_x(%d)", count_to_cell(next_point->X));
+//		ROS_ERROR("don't need to go to new line. curr_x(%d)", count_to_cell(next_point->X));
 		if (!(count_to_cell(next_point->X) == SHRT_MAX || count_to_cell(next_point->X) == SHRT_MIN)) {
 			delta_y = count_to_cell(target_point.Y) - map_get_y_cell();
 			if (delta_y != 0 && std::abs(delta_y <= 2)) {
 				next_point->Y = target_point.Y;
 				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
-				ROS_ERROR("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
+//				ROS_ERROR("don't need to go to new line. curr_x(%d)", count_to_cell(next_point->X));
+				ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
 			}
 		}
 	}
@@ -1070,7 +1081,10 @@ uint8_t cm_follow_wall(Point32_t target)
 		}
 
 		if(g_bumper_hitted || g_cliff_triggered){
-				cm_move_back();
+			cm_move_back();
+			g_bumper_hitted = false;
+			g_cliff_triggered = false;
+//			sleep(2);
 		}
 		if(get_clean_mode() == Clean_Mode_WallFollow){
 			if(wf_is_end()){
@@ -1190,16 +1204,25 @@ int cm_cleaning()
 		ROS_WARN("%s %d: Continue going home.", __FUNCTION__, __LINE__);
 		return 0;
 	}
-
+	bool on_spot = false;
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event )
-			return -1;
+		if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT && g_remote_spot )
+			on_spot = g_remote_spot;
+		if (g_key_clean_pressed || g_fatal_quit_event || g_remote_dirt_keys || g_remote_wallfollow){
+			//g_remote_wallfollow and g_remote_dirt_keys only enable in spot mode
+			if(g_key_clean_pressed && on_spot){
+				on_spot = false;
+				ROS_WARN("%s,%d,stop spot ,contiue to navigation");
+			}
+			else
+				return -1;
+		}
 		if (g_remote_home || g_battery_home)
 		{
 			g_remote_home = false;
 			g_go_home = true;
-			ROS_DEBUG("%s %d: Receive go home command, reset g_remote_home.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Receive go home command, reset g_remote_home.", __FUNCTION__, __LINE__);
 			return 0;
 		}
 
@@ -1214,6 +1237,7 @@ int cm_cleaning()
 		if (is_found == 0) //No target point
 		{
 			g_go_home = true;
+			//set_clean_mode(Clean_Mode_Userinterface);	
 			return 0;
 		} else
 		if (is_found == 1)
@@ -1342,7 +1366,7 @@ void cm_go_home()
 bool cm_go_to_charger(Cell_t current_home_cell)
 {
 	// Call GoHome() function to try to go to charger stub.
-	ROS_WARN("Call GoHome()");
+	ROS_WARN("%s,%d,Call GoHome()",__FUNCTION__,__LINE__);
 	go_home();
 	// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
 	while (get_clean_mode() == Clean_Mode_GoHome)
@@ -1416,11 +1440,12 @@ uint8_t cm_touring(void)
 		if (! cm_resume_cleaning())
 		{
 			return 0;
-		}
-	}
-	int cm_clean_ret = cm_cleaning();
-	if (cm_clean_ret == 0)
+        }
+    }
+	if (cm_cleaning() == 0){
 		cm_go_home();
+	}
+	cm_unregister_events();
 	return 0;
 }
 
@@ -1950,6 +1975,9 @@ void cm_register_events()
 	event_manager_register_and_enable_x(remote_wallfollow,EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
 	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
+	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_RIGHT, true);
+	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_LEFT, true);
+	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_FORWARD, true);
 
 	// Just enable the default handler.
 	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
@@ -2024,6 +2052,9 @@ void cm_unregister_events()
 	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
 	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
 	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
+	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
 
 	/* Battery */
 	event_manager_register_and_disable_x(EVT_BATTERY_HOME);
@@ -2708,8 +2739,13 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 
 	beep_for_command(true);
 	g_key_clean_pressed = true;
-	robot::instance()->setManualPause();
-
+	SpotType spt = SpotMovement::instance()->getSpotType();
+	if(spt == NO_SPOT){//not in spot mode
+		robot::instance()->setManualPause();
+	}	
+	else if(spt == NORMAL_SPOT || spt == CLEAN_SPOT){
+		SpotMovement::instance() -> setSpotType(NO_SPOT);
+	}
 	reset_rcon_remote();
 }
 
@@ -2721,6 +2757,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 	{
 		beep_for_command(true);
 		g_remote_home = true;
+		SpotMovement::instance() -> setSpotType(NO_SPOT);
 	}
 	else
 		beep_for_command(false);
@@ -2736,19 +2773,37 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	{
 		beep_for_command(true);
 		stop_brifly();
-		g_remote_spot = true;
-		set_clean_mode(Clean_Mode_Spot);
+		if(!g_remote_spot){
+			g_remote_spot = true;
+			if(SpotMovement::instance() -> getSpotType() == NO_SPOT){
+				SpotMovement::instance() -> setSpotType(CLEAN_SPOT);
+			}
+		}
+		else{
+			g_remote_spot = false;
+			if(SpotMovement::instance() -> getSpotType() == CLEAN_SPOT)
+				SpotMovement::instance()->setSpotType(NO_SPOT);
+		}
+
 	}
-	else
+	else{
 		beep_for_command(false);
 
+	}
 	reset_rcon_remote();
 }
 
 void cm_handle_remote_wallfollow(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
-	beep_for_command(false);
+	if(SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
+		beep_for_command(true);
+		stop_brifly();
+		g_remote_wallfollow = true;
+	}
+	else{
+		beep_for_command(false);
+	}
 	reset_rcon_remote();
 }
 
@@ -2764,6 +2819,25 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 	else
 		beep_for_command(false);
 	reset_rcon_remote();
+}
+
+void cm_handle_remote_direction(bool state_now,bool state_last)
+{
+	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
+	SpotType spt = SpotMovement::instance()->getSpotType();
+	if(!g_remote_dirt_keys)
+	{
+		beep_for_command(true);
+		g_remote_dirt_keys = true;
+		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT){
+			SpotMovement::instance()->setSpotType(NO_SPOT);
+		}
+	}
+	else
+	{
+		beep_for_command(false);
+		g_remote_dirt_keys = false;
+	}
 }
 
 /* Battery */

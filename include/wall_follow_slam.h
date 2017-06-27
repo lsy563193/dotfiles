@@ -14,4 +14,5 @@ void wf_update_map();
 bool wf_is_end();
 uint8_t wf_break_wall_follow(void);
 bool wf_is_go_home();
+bool wf_is_first();
 #endif
