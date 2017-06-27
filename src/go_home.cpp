@@ -93,6 +93,11 @@ void go_home(void)
 		{
 			continue;
 		}
+		if(g_fatal_quit_event)
+		{
+			set_clean_mode(Clean_Mode_Userinterface);
+			break;
+		}
 		if(g_charge_detect && g_go_home_state_now != 4)
 		{
 			g_charge_detect = 0;
@@ -130,7 +135,9 @@ void go_home(void)
 						if(++g_bumper_cnt>2)
 						{
 							g_bumper_jam = true;
+							break;
 						}
+						continue;
 					}
 					else
 					{
@@ -428,7 +435,9 @@ void go_home(void)
 							if(++g_bumper_cnt>2)
 							{
 								g_bumper_jam = true;
+								break;
 							}
+							continue;
 						}
 						else
 						{
@@ -451,8 +460,10 @@ void go_home(void)
 						{
 							if(++g_cliff_cnt>2)
 							{
-								;
+								g_cliff_jam = true;
+								break;
 							}
+							continue;
 						}
 						else
 						{
@@ -929,16 +940,24 @@ void go_home(void)
 					}
 					else
 					{
-						g_bumper_left = false;
-						g_bumper_right = false;
 						g_move_back_finished = true;
-						stop_brifly();
-						if(bumper_counter > 1)
+						if(get_bumper_status())
 						{
-							 move_forward(0, 0);
-							 set_clean_mode(Clean_Mode_GoHome);
-							 ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
-							 break;
+							g_bumper_jam = true;
+							break;
+						}
+						else
+						{
+							g_bumper_left = false;
+							g_bumper_right = false;
+							stop_brifly();
+							if(bumper_counter > 1)
+							{
+								 move_forward(0, 0);
+								 set_clean_mode(Clean_Mode_GoHome);
+								 ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
+								 break;
+							}
 						}
 					}
 				}
@@ -951,15 +970,27 @@ void go_home(void)
 					else
 					{
 						g_move_back_finished = true;
-						if(g_bumper_left)
-							turn_right(TURN_SPEED,1100);
+						if(get_bumper_status())
+						{
+							if(++g_bumper_cnt>2)
+							{
+								g_bumper_jam = true;
+								break;
+							}
+							continue;
+						}
 						else
-							turn_left(TURN_SPEED,1100);
-						g_bumper_left = false;
-						g_bumper_right = false;
-						move_forward(8, 8);
-						set_clean_mode(Clean_Mode_GoHome);
-						break;
+						{
+							if(g_bumper_left)
+								turn_right(TURN_SPEED,1100);
+							else
+								turn_left(TURN_SPEED,1100);
+							g_bumper_left = false;
+							g_bumper_right = false;
+							move_forward(8, 8);
+							set_clean_mode(Clean_Mode_GoHome);
+							break;
+						}
 					}
 				}
 				else if(move_back_status == RANDOM_BACK_2)
@@ -971,16 +1002,28 @@ void go_home(void)
 					else
 					{
 						g_move_back_finished = true;
-						if(g_bumper_left)
-							turn_right(TURN_SPEED,1100);
+						if(get_bumper_status())
+						{
+							if(++g_bumper_cnt>2)
+							{
+								g_bumper_jam = true;
+								break;
+							}
+							continue;
+						}
 						else
-							turn_left(TURN_SPEED,1100);
-						g_bumper_left = false;
-						g_bumper_right = false;
-						set_side_brush_pwm(30, 30);
-						set_main_brush_pwm(30);
-						move_forward(8, 8);
-						continue;
+						{
+							if(g_bumper_left)
+								turn_right(TURN_SPEED,1100);
+							else
+								turn_left(TURN_SPEED,1100);
+								g_bumper_left = false;
+							g_bumper_right = false;
+							set_side_brush_pwm(30, 30);
+							set_main_brush_pwm(30);
+							move_forward(8, 8);
+							continue;
+						}
 					}
 				}
 			}
@@ -2423,6 +2466,10 @@ void go_home(void)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 		}
 	}
+	if(cm_should_self_check())
+	{
+		cm_self_check();
+	}
 	go_home_unregister_events();
 }
 
@@ -2487,6 +2534,7 @@ void go_home_register_events(void)
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
 	/*---bumper---*/
 	event_manager_register_and_enable_x(bumper_right, EVT_BUMPER_RIGHT, true);
+	event_manager_register_and_enable_x(bumper_all, EVT_BUMPER_ALL, true);
 	event_manager_register_and_enable_x(bumper_left, EVT_BUMPER_LEFT, true);
 	/*---battery---*/
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
@@ -2519,6 +2567,7 @@ void go_home_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
 	/*---bumper---*/
 	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
+	event_manager_register_and_disable_x(EVT_BUMPER_ALL);
 	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
 	/*---battery---*/
 	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
@@ -2575,6 +2624,26 @@ void go_home_handle_cliff(bool state_now, bool state_last)
 {
 	g_cliff_triggered = true;
 }
+
+void go_home_handle_bumper_all(bool state_now, bool state_last)
+{
+	static int bumper_all_cnt = 0;
+	if (state_now == true && state_last == true)
+	{
+		bumper_all_cnt++;
+		if (bumper_all_cnt > 2)
+		{
+			bumper_all_cnt = 0;
+			g_bumper_right = true;
+			g_bumper_left = true;
+		}
+	}
+	else
+	{
+		bumper_all_cnt = 0;
+	}
+}
+
 
 void go_home_handle_bumper_left(bool state_now, bool state_last)
 {
