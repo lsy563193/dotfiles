@@ -106,7 +106,7 @@ bool g_move_back_finished = true;
 // Flag for indicating whether motion instance is initialized successfully.
 bool g_motion_init_succeeded = false;
 
-static int16_t ranged_angle(int16_t angle)
+int16_t ranged_angle(int16_t angle)
 {
 	if (angle >= 1800) {
 			angle -= 3600;

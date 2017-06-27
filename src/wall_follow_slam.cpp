@@ -161,14 +161,13 @@ static bool is_trap(void)
 
 static bool is_time_out(void)
 {
-//	if ((time(NULL) - g_wall_follow_timer) > WALL_FOLLOW_TIME)
-//	{
-//		ROS_INFO("Wall Follow time longer than 60 minutes");
-//		ROS_INFO("time now : %d", (int(time(NULL)) - g_wall_follow_timer));
-//		wf_clear();
-//		return 1;
-//	}
-	return false;
+	if (get_work_time() > WALL_FOLLOW_TIME) {
+		ROS_INFO("Wall Follow time longer than 60 minutes");
+		ROS_INFO("time now : %d", get_work_time());
+		return true;
+	} else {
+		return false;
+	}
 }
 
 
