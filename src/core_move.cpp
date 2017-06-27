@@ -122,7 +122,7 @@ typedef struct LinearSpeedRegulator_{
 	~LinearSpeedRegulator_(){
 		set_wheel_speed(0, 0);
 	};
-	bool adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed, uint16_t target_angle);
+	bool adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed);
 	int32_t speed_max_;
 	int32_t integrated_;
 	int32_t base_speed_;
@@ -131,7 +131,7 @@ typedef struct LinearSpeedRegulator_{
 	uint8_t turn_speed_;
 }LinearSpeedRegulator;
 
-bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed, uint16_t target_angle)
+bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed)
 {
 	uint8_t left_speed;
 	uint8_t right_speed;
@@ -143,14 +143,14 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 		return true;
 	}
 
+	auto diff = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y) - Gyro_GetAngle());
+
 	// Firstly turn to the right angle. (Replace old function HeadToCourse())
 	if (rotate_is_needed)
 	{
-		auto diff = ranged_angle(target_angle - Gyro_GetAngle());
-
 		if (std::abs(diff) < 10) {
 			set_wheel_speed(0, 0);
-			ROS_INFO("%s %d: target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, target_angle, Gyro_GetAngle(), diff);
+			ROS_INFO("%s %d: Gyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Gyro_GetAngle(), diff);
 			rotate_is_needed = false;
 			tick_ = 0;
 			return true;
@@ -178,18 +178,16 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 		return true;
 	}
 
-	auto rotate_angle = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y) - Gyro_GetAngle());
-
-	if ( std::abs(rotate_angle) > 300)
+	if ( std::abs(diff) > 300)
 	{
-		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, rotate_angle);
+		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
 		return false;
 	}
 
 	if (integration_cycle_++ > 10)
 	{
 		integration_cycle_ = 0;
-		integrated_ += rotate_angle;
+		integrated_ += diff;
 		check_limit(integrated_, -150, 150);
 	}
 
@@ -199,7 +197,7 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || slow_down || obstcal_detected)
 	{
 		integrated_ = 0;
-		rotate_angle = 0;
+		diff = 0;
 		base_speed_ -= 1;
 		base_speed_ = base_speed_ < BASE_SPEED ? BASE_SPEED : base_speed_;
 	} else
@@ -213,8 +211,8 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 		integrated_ = 0;
 	}
 
-	left_speed = base_speed_ - rotate_angle / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-	right_speed = base_speed_ + rotate_angle / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+	left_speed = base_speed_ - diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+	right_speed = base_speed_ + diff / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
 	check_limit(left_speed, BASE_SPEED, speed_max_);
 	check_limit(right_speed, BASE_SPEED, speed_max_);
@@ -700,7 +698,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 	set_wheel_speed(0, 0);
 }
 
-bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed)
+bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 {
 	// Reset the g_bumper_status_for_rounding.
 	g_bumper_status_for_rounding = 0;
@@ -709,13 +707,8 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 	g_move_back_finished = true;
 	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
-	bool rotate_is_needed_ = rotate_is_needed;
 	uint16_t target_angle;
-
-	if (rotate_is_needed_)
-		target_angle = course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y);
-	else
-		target_angle = 0;
+	bool rotate_is_needed_ = true;
 
 	if (position.X != map_get_x_count() && position.X == Target.X)
 		Target.X = map_get_x_count();
@@ -821,7 +814,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_n
 			break;
 		}
 
-		if(!regulator.adjustSpeed(Target, slow_down, rotate_is_needed_, target_angle))
+		if(!regulator.adjustSpeed(Target, slow_down, rotate_is_needed_))
 			break;
 	}
 
@@ -912,7 +905,7 @@ bool cm_curve_move_to_point()
 	}
 
 	//1/3 move to first target
-	if(!cm_linear_move_to_point(target, MAX_SPEED, true, true) )
+	if(!cm_linear_move_to_point(target, MAX_SPEED) )
 		return false;
 
 	//2/3 calculate the curve speed.
@@ -949,7 +942,7 @@ bool cm_curve_move_to_point()
 
 	//3/3 continue to move to target
 	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
-	if(!cm_linear_move_to_point(target, MAX_SPEED, true, true))
+	if(!cm_linear_move_to_point(target, MAX_SPEED))
 		return false;
 
 	return true;
@@ -1229,7 +1222,7 @@ int cm_cleaning()
 				cm_follow_wall(g_next_point);
 			else
 			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_linear_move_to_point(g_next_point, RUN_TOP_SPEED, true, true);
+				cm_linear_move_to_point(g_next_point, RUN_TOP_SPEED);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
@@ -1469,7 +1462,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
 			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_linear_move_to_point(Next_Point, RUN_TOP_SPEED, true, true);
+				cm_linear_move_to_point(Next_Point, RUN_TOP_SPEED);
 
 			if (g_fatal_quit_event || g_key_clean_pressed )
 				return false;

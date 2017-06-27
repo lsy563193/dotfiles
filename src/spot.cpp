@@ -136,7 +136,7 @@ void spot_with_target(SpotType st,float spot_diameter)
 				}
 
 				/*----ready to spot movement ------*/
-				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED,false,true);
+				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED);
  
 	            if(g_fatal_quit_event ||  g_key_clean_pressed ||  g_remote_spot || g_remote_home || g_remote_wallfollow){
                     g_fatal_quit_event = g_key_clean_pressed  = g_remote_home = g_remote_wallfollow = g_remote_spot = false;
@@ -157,7 +157,7 @@ void spot_with_target(SpotType st,float spot_diameter)
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				if(spot_stuck){
 					/*----go back to start point--------*/
-					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED, false, true);
+					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED);
 					spot_stuck = 0;
 				} 
 				break;
@@ -226,7 +226,7 @@ void spot_with_target(SpotType st,float spot_diameter)
 					}
 				}
 				/*----ready to spot movement ------*/
-				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED,false,true);
+				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED);
 
                 if(g_fatal_quit_event ||  g_key_clean_pressed || g_remote_home){	
                     return;
@@ -247,7 +247,7 @@ void spot_with_target(SpotType st,float spot_diameter)
 				stop_point.Y = y_offset;
 				if(spot_stuck){
                     /*------move back to start point-------*/
-					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED, false, true);
+					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED);
 					spot_stuck = 0;
 				} 
 				break;
