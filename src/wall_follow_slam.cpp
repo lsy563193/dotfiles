@@ -361,3 +361,8 @@ bool wf_is_go_home()
 		return false;
 	}
 };
+
+bool wf_is_first()
+{
+	return g_isolate_count == 0;
+}

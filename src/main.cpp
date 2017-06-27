@@ -155,9 +155,11 @@ void *core_move_thread(void *)
 #endif
 				}
 				break;
+
 			case Clean_Mode_Test:
 
 				break;
+
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
 				set_main_pwr_byte(Clean_Mode_Remote);
@@ -183,23 +185,22 @@ void *core_move_thread(void *)
 
 				Remote_Mode();
 				break;
+
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
 				set_main_pwr_byte(Clean_Mode_Spot);
 				robot::instance()->resetLowBatPause();
-
-				clear_manual_pause();
-
-				//Spot_Mode(NormalSpot);
-				spot_with_target(NORMAL_SPOT,1.0);
+				reset_rcon_remote();
+                SpotMovement::instance()->setSpotType(NORMAL_SPOT);
+				cm_touring();
 				disable_motors();
 				usleep(200000);
-//				beep(1,25,25,2);
-//				beep(2,25,25,2);
 				break;
+
 			case Clean_Mode_Mobility:
 
 				break;
+
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
 				//set_main_pwr_byte(Clean_Mode_Sleep);
@@ -234,6 +235,8 @@ int main(int argc, char **argv)
 	ros::NodeHandle	nh_private("~");
 
 	robot	robot_obj;
+
+	SpotMovement spot_obj(1.0);
 
 	event_manager_init();
 
@@ -271,9 +274,9 @@ int main(int argc, char **argv)
 #if 1
 		ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
 		if (ret1 != 0) {
-			ROS_ERROR("%s %d: event manager thread fails to run!", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: event handler thread fails to run!", __FUNCTION__, __LINE__);
 		} else {
-			ROS_INFO("%s %d: event manager thread is up!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: event handler thread is up!", __FUNCTION__, __LINE__);
 		}
 #endif
 

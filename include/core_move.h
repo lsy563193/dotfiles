@@ -198,6 +198,8 @@ define_cm_handle_func(remote_wallfollow);
 
 define_cm_handle_func(remote_max)
 
+define_cm_handle_func(remote_direction)
+
 /* Battery */
 define_cm_handle_func(battery_home)
 
