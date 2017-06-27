@@ -371,8 +371,6 @@ void set_error_code(uint8_t Code);
 uint8_t get_error_code(void);
 void alarm_error(void);
 
-void set_left_brush_stall(uint8_t L);
-
 uint32_t get_right_wheel_step(void);
 uint32_t get_left_wheel_step(void);
 void reset_right_wheel_step();
@@ -398,15 +396,10 @@ int32_t get_wall_base(int8_t dir);
 
 void quick_back(uint8_t speed,uint16_t distance);
 
-void turn_left_at_init(uint16_t speed, int16_t angle);
 void turn_left(uint16_t speed, int16_t angle);
 void turn_right(uint16_t speed, int16_t angle);
-void round_turn_left(uint16_t speed, int16_t angle);
-void round_turn_right(uint16_t speed, int16_t angle);
 void jam_turn_left(uint16_t speed, int16_t angle);
 void jam_turn_right(uint16_t speed, int16_t angle);
-
-void set_left_brush_stall(uint8_t L);
 
 void set_dir_backward(void);
 

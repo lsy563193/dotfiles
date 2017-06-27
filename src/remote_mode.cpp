@@ -28,6 +28,7 @@ extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
 RemoteModeMoveType move_flag = REMOTE_MODE_STAY;
 boost::mutex move_flag_mutex;
+int16_t remote_target_angle;
 
 void Remote_Mode(void)
 {
@@ -36,6 +37,7 @@ void Remote_Mode(void)
 
 	set_led(100, 0);
 	reset_rcon_remote();
+	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
 	event_manager_reset_status();
 	remote_mode_register_events();
@@ -71,6 +73,7 @@ void Remote_Mode(void)
 void remote_move(void)
 {
 	uint8_t moving_speed=0;
+	uint8_t tick_ = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
 	set_move_flag_(REMOTE_MODE_STAY);
@@ -108,7 +111,8 @@ void remote_move(void)
 				g_move_back_finished = false;
 				set_dir_backward();
 				set_wheel_speed(20, 20);
-				if (sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2)) < 0.05f)
+
+				if (sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2)) < 0.02f)
 					break;
 
 				if (g_bumper_hitted)
@@ -179,15 +183,38 @@ void remote_move(void)
 				break;
 			}
 			case REMOTE_MODE_LEFT:
-			{
-				turn_left(Turn_Speed, 300);
-				set_move_flag_(REMOTE_MODE_STAY);
-				break;
-			}
 			case REMOTE_MODE_RIGHT:
 			{
-				turn_right(Turn_Speed, 300);
-				set_move_flag_(REMOTE_MODE_STAY);
+				auto diff = ranged_angle(remote_target_angle - Gyro_GetAngle());
+
+				if (std::abs(diff) < 10) {
+					set_wheel_speed(0, 0);
+					ROS_INFO("%s %d: remote_target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, remote_target_angle, Gyro_GetAngle(), diff);
+					set_move_flag_(REMOTE_MODE_STAY);
+					tick_ = 0;
+				}
+
+				//tick_++;
+				////ROS_WARN("%s %d: tick_: %d, diff: %d. moving speed: %d.", __FUNCTION__, __LINE__, tick_,  diff, moving_speed);
+				//if (tick_ > 1)
+				//{
+				//	tick_ = 0;
+				if (std::abs(diff) > 80){
+					moving_speed = std::min(++moving_speed, ROTATE_TOP_SPEED);
+					//ROS_WARN("%s %d: tick_: %d, diff: %d. moving speed: %d.", __FUNCTION__, __LINE__, tick_,  diff, moving_speed);
+				}
+				else{
+					--moving_speed;
+					moving_speed = std::max(--moving_speed, ROTATE_LOW_SPEED);
+					//ROS_WARN("%s %d: tick_: %d, diff: %d. moving speed: %d.", __FUNCTION__, __LINE__, tick_,  diff, moving_speed);
+				}
+				//}
+
+				if (get_move_flag_() == REMOTE_MODE_LEFT)
+					set_dir_left();
+				else
+					set_dir_right();
+				set_wheel_speed(moving_speed, moving_speed);
 				break;
 			}
 		}
@@ -241,7 +268,7 @@ void remote_mode_register_events(void)
 	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
 	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
-	//event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
+	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
 	///* Rcon */
 	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
@@ -291,7 +318,7 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
-	//event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
+	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
 	///* Rcon */
 	//event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
@@ -359,7 +386,7 @@ void remote_mode_handle_obs(bool state_now, bool state_last)
 void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
@@ -377,11 +404,15 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beep_for_command(true);
+		remote_target_angle = Gyro_GetAngle() + 300;
+		if (remote_target_angle >= 3600)
+			remote_target_angle -= 3600;
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, Gyro_GetAngle());
 		set_move_flag_(REMOTE_MODE_LEFT);
 	}
 	else
@@ -395,11 +426,15 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beep_for_command(true);
+		remote_target_angle = Gyro_GetAngle() - 300;
+		if (remote_target_angle < 0)
+			remote_target_angle += 3600;
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, Gyro_GetAngle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
 	else
@@ -413,20 +448,30 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 void remote_mode_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(true);
-	switch_vac_mode(true);
+	if (!g_bumper_jam && !g_cliff_jam)
+	{
+		beep_for_command(true);
+		switch_vac_mode(true);
+	}
+	else
+		beep_for_command(false);
 	reset_rcon_remote();
 }
 
 void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
-	beep_for_command(true);
-	disable_motors();
-	if (get_rcon_remote() == Remote_Home)
-		set_clean_mode(Clean_Mode_GoHome);
+	if (!g_bumper_jam && !g_cliff_jam)
+	{
+		beep_for_command(true);
+		disable_motors();
+		if (get_rcon_remote() == Remote_Home)
+			set_clean_mode(Clean_Mode_GoHome);
+		else
+			set_clean_mode(Clean_Mode_Userinterface);
+	}
 	else
-		set_clean_mode(Clean_Mode_Userinterface);
+		beep_for_command(false);
 	reset_rcon_remote();
 }
 
@@ -440,6 +485,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 		usleep(40000);
 	}
 	set_clean_mode(Clean_Mode_Userinterface);
+	g_key_clean_pressed = true;
 	reset_touch();
 }
 
@@ -483,6 +529,23 @@ void remote_mode_handle_over_current_wheel_right(bool state_now, bool state_last
 		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
 		g_oc_wheel_right = true;
+	}
+}
+
+void remote_mode_handle_over_current_suction(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (!robot::instance()->getVacuumOc()) {
+		g_oc_suction_cnt = 0;
+		return;
+	}
+
+	if (g_oc_suction_cnt++ > 40) {
+		g_oc_suction_cnt = 0;
+		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
+
+		g_oc_suction = true;
 	}
 }
 

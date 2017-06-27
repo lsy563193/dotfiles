@@ -99,13 +99,13 @@ void *core_move_thread(void *)
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				cm_touring();
 				break;
-			case Clean_Mode_RandomMode:
-				ROS_INFO("\n-------Random_Running mode------\n");
+			//case Clean_Mode_RandomMode:
+			//	ROS_INFO("\n-------Random_Running mode------\n");
 
-				clear_manual_pause();
+			//	clear_manual_pause();
 
-				Random_Running_Mode();
-				break;
+			//	Random_Running_Mode();
+			//	break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode------\n");
 				set_main_pwr_byte(Clean_Mode_Navigation);
