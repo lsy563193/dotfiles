@@ -151,6 +151,8 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 		if (std::abs(diff) < 10) {
 			set_wheel_speed(0, 0);
 			ROS_INFO("%s %d: Gyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Gyro_GetAngle(), diff);
+			g_obs_triggered = false;
+			g_rcon_triggered = false;
 			rotate_is_needed = false;
 			tick_ = 0;
 			return true;
@@ -707,7 +709,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	g_move_back_finished = true;
 	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
-	uint16_t target_angle;
 	bool rotate_is_needed_ = true;
 
 	if (position.X != map_get_x_count() && position.X == Target.X)
