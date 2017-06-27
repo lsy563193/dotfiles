@@ -1074,10 +1074,9 @@ uint8_t cm_follow_wall(Point32_t target)
 			usleep(100);
 			continue;
 		}
-		if (g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right || (!g_go_home && g_remote_home)) {
 			break;
 		}
-
 		if(g_bumper_hitted || g_cliff_triggered){
 				cm_move_back();
 		}
@@ -2748,15 +2747,16 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_go_home && !cm_should_self_check())
-	{
+	if (!g_go_home && !cm_should_self_check()) {
 		beep_for_command(true);
 		g_remote_home = true;
 		SpotMovement::instance() -> setSpotType(NO_SPOT);
+		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}
-	else
+	else {
 		beep_for_command(false);
-
+		ROS_INFO("g_remote_home = %d", g_remote_home);
+	}
 	reset_rcon_remote();
 }
 
