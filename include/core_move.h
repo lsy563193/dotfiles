@@ -69,7 +69,7 @@ void cm_head_to_course(uint8_t Speed, int16_t Angle);
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
 int16_t path_target(Cell_t& next, Cell_t& target);
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
-bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
+bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max);
 
 int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
 											double origin_x, double origin_y);
