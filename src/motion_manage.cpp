@@ -526,12 +526,11 @@ bool MotionManage::initSpotCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	std::list<Point32_t> homepoint;
 	Point32_t t_point;
 	t_point.X = 0;
 	t_point.Y = 0;
-	homepoint.clear();
-	homepoint.push_front(t_point);
+	g_home_point.clear();
+	g_home_point.push_front(t_point);//init home point
 	map_init();//init map
 	path_planning_initialize(&homepoint.front().X, &homepoint.front().Y);//init pathplan
 

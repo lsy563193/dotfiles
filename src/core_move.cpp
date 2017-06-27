@@ -1207,10 +1207,10 @@ int cm_cleaning()
 	{
 		SpotType spot_type = SpotMovement::instance()->getSpotType();
 		if(spot_type == CLEAN_SPOT && g_remote_spot ){
-			on_spot = g_remote_spot;
+			on_spot = g_remote_spot;//for store remot_spot state
 		}
 		if (g_key_clean_pressed || g_fatal_quit_event || g_remote_dirt_keys || g_remote_wallfollow ){
-			//g_remote_wallfollow and g_remote_dirt_keys only enable in spot mode
+			//g_remote_wallfollow and g_remote_dirt_keys only set in spot mode
 			if(g_key_clean_pressed && on_spot){
 				on_spot = false;
 				ROS_WARN("%s,%d,stop spot ,continue to navigation",__FUNCTION__,__LINE__);
@@ -2779,13 +2779,15 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 
 	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check())
 	{
-		beep_for_command(true);
 		stop_brifly();
 		SpotType spt = SpotMovement::instance() -> getSpotType();
-		g_remote_spot = true;
 		if( spt == NO_SPOT){
+			g_remote_spot = true;
+			beep_for_command(true);
 			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		}
+		else
+			beep_for_command(false);
 	}
 	else{
 		beep_for_command(false);
