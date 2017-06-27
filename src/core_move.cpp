@@ -1302,7 +1302,7 @@ void cm_go_home()
 	{
 		set_led(100, 0);
 		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
-		set_clean_mode(Clean_Mode_Navigation);
+		//set_clean_mode(Clean_Mode_Navigation);
 		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
 		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
 		{
