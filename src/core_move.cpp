@@ -954,7 +954,7 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 	}else if(get_clean_mode() == Clean_Mode_Spot){
 		return false;
 	}
-
+	g_cm_move_type = CM_LINEARMOVE;
 	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
 						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
 																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
