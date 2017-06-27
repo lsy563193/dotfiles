@@ -32,6 +32,7 @@
 #include <ros/ros.h>
 #include <movement.h>
 #include <mathematics.h>
+#include <wall_follow_slam.h>
 
 #include "core_move.h"
 #include "gyro.h"
@@ -930,6 +931,8 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 
 void path_update_cells()
 {
+	if(get_clean_mode() != Clean_Mode_Navigation)
+		return;
 	/* Skip, if robot is not moving towards POS_X. */
 	if ((g_last_dir % 1800) != 0)
 		return;
@@ -1039,24 +1042,61 @@ int16_t path_escape_trapped()
 
 int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
-
 	Cell_t next = g_curr;
-	auto is_found = path_lane_is_cleaned(next);
 	Cell_t target = next;
-	if (!is_found)
-	{
-		auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
-		if (ret == 0)
-			return 0;
+	extern CMMoveType g_cm_move_type;
+	if(get_clean_mode() == Clean_Mode_WallFollow){
+		ROS_ERROR("path_next Clean_Mode:(%d)", get_clean_mode());
+		if(g_cm_move_type == CM_LINEARMOVE){
+			if(g_curr != map_point_to_cell(*next_point)){
+				ROS_INFO("start follow wall");
+				g_cm_move_type = CM_FOLLOW_LEFT_WALL;
+				next = map_point_to_cell(*next_point);
+			}else{
+				ROS_INFO("reach 8m, go_home.");
+				wf_clear();
+				return 0;
+			}
+		} else {
+			if(wf_is_go_home()){
+				ROS_INFO("follow wall finish");
+				wf_clear();
+				return 0;
 
-		if (ret == -2)
-		{
-			/* Robot is trapped and no path to starting point or home. */
-			if (path_escape_trapped() == 0)
-				return 2;
-			else
-				return -1;
+			}else
+			{
+				ROS_INFO("CM_LINEARMOVE");
+				g_cm_move_type = CM_LINEARMOVE;
+				wf_break_wall_follow();
+
+				int32_t x_point,y_point;
+				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
+				cm_world_to_point(Gyro_GetAngle(), 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
+				next = {count_to_cell(x_point),count_to_cell(y_point)};
+			}
+
 		}
+	}
+	else if(get_clean_mode() == Clean_Mode_Navigation) {
+		auto is_found = path_lane_is_cleaned(next);
+		target = next;
+		if (!is_found)
+		{
+			auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
+			if (ret == 0)
+				return 0;
+
+			if (ret == -2)
+			{
+				/* Robot is trapped and no path to starting point or home. */
+				if (path_escape_trapped() == 0)
+					return 2;
+				else
+					return -1;
+			}
+		}
+	}
+	else if(get_clean_mode() == Clean_Mode_Spot){
 	}
 	//found ==1
 	if (g_curr.X == next.X)

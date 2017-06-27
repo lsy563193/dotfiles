@@ -29,7 +29,11 @@ struct WAV_HEADER
 	char		dataType[4];
 	unsigned int	dataSize;
 } wav_header;
- 
+
+snd_pcm_t *handle;
+snd_mixer_t *mixer_fd;
+snd_mixer_elem_t *elem;
+
 void wav_play(WavType action)
 {
 	int	rc, ret, size, dir, channels, frequency, bit, datablock, nread;
@@ -37,8 +41,6 @@ void wav_play(WavType action)
 	FILE	*fp;
 
 	unsigned int	val;
-
-	snd_pcm_t		*handle;
 
 	snd_pcm_uframes_t	frames;
 	snd_pcm_hw_params_t	*params;
@@ -51,6 +53,7 @@ void wav_play(WavType action)
 		return;
 	}
 
+	ROS_WARN("%s %d: Play the wav %d.", __FUNCTION__, __LINE__, action);
 	nread = fread(&wav_header, 1, sizeof(wav_header), fp);
 
 	ROS_DEBUG("nread: %d\n", nread);
@@ -73,45 +76,55 @@ void wav_play(WavType action)
 	bit = wav_header.bitsPerSample;
 	datablock = wav_header.blockAlign;
 
-	rc = snd_pcm_open(&handle, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
-	if (rc < 0)	{
-		ROS_ERROR("open PCM device failed:");
-		return;
-	}
+	wav_open_pcm_driver();
 
 	snd_pcm_hw_params_alloca(&params);
-	if (rc < 0) {
-		ROS_ERROR("snd_pcm_hw_params_alloca");
-		return;
-	}
 
 	rc = snd_pcm_hw_params_any(handle, params);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_any");
+		wav_close_pcm_driver();
 		return;
 	}
 
 	rc = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
 	if (rc < 0) {
 		ROS_ERROR("sed_pcm_hw_set_access");
+		wav_close_pcm_driver();
 		return;
 	}
 
 	switch (bit / 8) {
 		case 1:
-			snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
+			rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
+			if (rc < 0) {
+				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
+				wav_close_pcm_driver();
+				return;
+			}
 			break ;
 		case 2:
-			snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+			rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+			if (rc < 0) {
+				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
+				wav_close_pcm_driver();
+				return;
+			}
 			break ;
 		case 3:
-			snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S24_LE);
+			rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S24_LE);
+			if (rc < 0) {
+				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
+				wav_close_pcm_driver();
+				return;
+			}
 			break ;
 	}
 
 	rc = snd_pcm_hw_params_set_channels(handle, params, channels);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_set_channels:");
+		wav_close_pcm_driver();
 		return;
 	}
 
@@ -119,18 +132,21 @@ void wav_play(WavType action)
 	rc = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_set_rate_near:");
+		wav_close_pcm_driver();
 		return;
 	}
  
 	rc = snd_pcm_hw_params(handle, params);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params: ");
+		wav_close_pcm_driver();
 		return;
 	}
 
 	rc = snd_pcm_hw_params_get_period_size(params, &frames, &dir);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_get_period_size:");
+		wav_close_pcm_driver();
 		return;
 	}
 
@@ -141,7 +157,7 @@ void wav_play(WavType action)
 	// Seek to audio data
 	fseek(fp, 58, SEEK_SET);
 
-	while (1) {
+	while (ros::ok()) {
 		memset(buffer, 0, sizeof(char)* size);
 		ret = fread(buffer, 1, size, fp);
 		if (ret == 0) {
@@ -150,7 +166,7 @@ void wav_play(WavType action)
 		} else if (ret != size) {
 		}
 
-		while ((ret = snd_pcm_writei(handle, buffer, frames)) < 0) {
+		while ((ret = snd_pcm_writei(handle, buffer, ret/datablock)) < 0) {
 			usleep(2000);
 			if (ret == -EPIPE) {
 				ROS_DEBUG("audio underrun occurred");
@@ -161,8 +177,99 @@ void wav_play(WavType action)
 		}
 	}
 
-	snd_pcm_drain(handle);
-	snd_pcm_close(handle);
+	fclose(fp);
+
+	wav_close_pcm_driver();
 	free(buffer);
 	return;
+}
+
+bool wav_open_pcm_driver(void)
+{
+	int rc = 0;
+	wav_launch_mixer();
+	wav_adjust_volume(0);
+	ROS_DEBUG("%s %d: Open wav driver.", __FUNCTION__, __LINE__);
+	rc = snd_pcm_open(&handle, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
+	if (rc < 0)	{
+		ROS_ERROR("open PCM device failed:");
+		return false;
+	}
+	wav_adjust_volume(55);
+	return true;
+}
+
+void wav_close_pcm_driver(void)
+{
+	ROS_DEBUG("%s %d: Close wav driver.", __FUNCTION__, __LINE__);
+	wav_adjust_volume(0);
+	snd_pcm_drain(handle);
+	snd_pcm_close(handle);
+	snd_mixer_close(mixer_fd);
+}
+
+void wav_launch_mixer(void)
+{
+
+	int rc;
+
+	ROS_DEBUG("%s %d: Launch mixer.", __FUNCTION__, __LINE__);
+	// Open the mixer.
+	rc = snd_mixer_open(&mixer_fd, 0);
+	if (rc < 0)
+	{
+		ROS_ERROR("%s %d: snd_mixer_open error: %d.", __FUNCTION__, __LINE__, rc);
+		mixer_fd = NULL;
+		return;
+	}
+
+	// Attach an HCTL to an opened mixer.
+	rc = snd_mixer_attach(mixer_fd, "default");
+	if (rc < 0)
+	{
+		ROS_ERROR("%s %d: snd_mixer_attach error: %d.", __FUNCTION__, __LINE__, rc);
+		snd_mixer_close(mixer_fd);
+		mixer_fd = NULL;
+		return;
+	}
+
+	// Register the mixer.
+	rc = snd_mixer_selem_register(mixer_fd, NULL, NULL);
+	if (rc < 0)
+	{
+		ROS_ERROR("%s %d: snd_mixer_selem_register error: %d.", __FUNCTION__, __LINE__, rc);
+		snd_mixer_close(mixer_fd);
+		mixer_fd = NULL;
+		return;
+	}
+
+	// Load the mixer.
+	rc = snd_mixer_load(mixer_fd);
+	if (rc < 0)
+	{
+		ROS_ERROR("%s %d: snd_mixer_selem_register error: %d.", __FUNCTION__, __LINE__, rc);
+		snd_mixer_close(mixer_fd);
+		mixer_fd = NULL;
+		return;
+	}
+}
+
+void wav_adjust_volume(long volume)
+{
+	long min_volume, max_volume;
+	// Adjust the volume.
+	for(elem=snd_mixer_first_elem(mixer_fd); elem; elem=snd_mixer_elem_next(elem))
+	{
+		if (snd_mixer_elem_get_type(elem) == SND_MIXER_ELEM_SIMPLE && snd_mixer_selem_is_active(elem))// Find the available and active mixer.
+		{
+			if(!strncmp(snd_mixer_selem_get_name(elem), "Lineout volume control", 22))
+			{
+				snd_mixer_selem_get_playback_volume_range(elem, &min_volume, &max_volume);
+				//ROS_WARN("%s %d: Mixer %s volume range (%ld, %ld).", __FUNCTION__, __LINE__, snd_mixer_selem_get_name(elem), min_volume, max_volume);
+				ROS_DEBUG("%s %d: Set volumn as %ld.", __FUNCTION__, __LINE__, volume);
+				snd_mixer_selem_set_playback_volume_all(elem, volume);
+				break;
+			}
+		}
+	}
 }

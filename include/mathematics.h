@@ -39,10 +39,23 @@ typedef struct{
 } Point32_t;
 
 typedef struct{
-	int32_t X;
-	int32_t Y;
+	double x;
+	double y;
+} Double_Point;
+
+typedef struct Pose16_t_{
+	int16_t X;
+	int16_t Y;
 	int16_t	TH;
-} Pose32_t;
+	friend bool operator==(const Pose16_t_ left, const Pose16_t_ right)
+	{
+		return left.X == right.X && left.Y == right.Y;
+	}
+	friend bool operator!=(const Pose16_t_ left, const Pose16_t_ right)
+	{
+		return !(left == right);
+	}
+} Pose16_t;
 
 double absolute(double d);
 double deg2rad(double deg, int8_t scale);

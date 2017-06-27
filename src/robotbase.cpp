@@ -473,8 +473,10 @@ void robotbase_restore_slam_correction()
 
 void robotbase_obs_adjust_count(int count)
 {
+#ifdef OBS_DYNAMIC
 	boost::mutex::scoped_lock(odom_mutex);
 	OBS_adjust_count = count;
+#endif
 }
 bool is_turn(void)
 {

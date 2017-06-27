@@ -19,4 +19,5 @@ void go_home_handle_cliff_all(bool, bool);
 void go_home_handle_bumper_left(bool, bool);
 void go_home_handle_bumper_right(bool, bool);
 void go_home_handle_cliff(bool, bool);
+void go_home_handle_battery_low(bool, bool);
 uint8_t turn_connect(void);

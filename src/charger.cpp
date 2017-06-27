@@ -46,6 +46,7 @@ void charge_function(void)
 	set_plan_status(0);
 	uint16_t bat_v;
 	ROS_INFO("[gotocharger.cpp] Start charger mode.");
+	event_manager_reset_status();
 	charge_register_event();
 	while(ros::ok())
 	{

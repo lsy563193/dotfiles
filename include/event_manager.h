@@ -51,6 +51,7 @@ extern bool g_obs_triggered;
 extern bool g_cliff_all_triggered;
 extern bool g_cliff_triggered;
 extern bool g_cliff_jam;
+extern uint8_t g_cliff_all_cnt;
 extern uint8_t g_cliff_cnt;
 /* RCON */
 extern bool g_rcon_triggered;
@@ -189,6 +190,8 @@ void event_manager_register_handler(EventType type, void (*func)(bool state_now,
 void event_manager_enable_handler(EventType type, bool enabled);
 
 uint8_t event_manager_check_event(bool *eh_status_now, bool *eh_status_last);
+
+void event_manager_reset_status(void);
 
 /* Below are the internal functions. */
 

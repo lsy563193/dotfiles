@@ -24,15 +24,10 @@
 #define COR_BACK_500MM		(3000)
 
 typedef enum {
-	ROUNDING_NONE = 0,
-	ROUNDING_LEFT,
-	ROUNDING_RIGHT,
-} RoundingType;
-
-typedef enum {
 	CM_LINEARMOVE = 0,
 	CM_CURVEMOVE,
-	CM_ROUNDING,
+	CM_FOLLOW_LEFT_WALL,
+	CM_FOLLOW_RIGHT_WALL,
 } CMMoveType;
 
 typedef enum {
@@ -62,11 +57,15 @@ typedef struct {
 	Cell_t	pos;
 } VWType;
 
+extern float saved_pos_x, saved_pos_y;
+extern bool g_move_back_finished;
+
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
 void cm_head_to_course(uint8_t Speed, int16_t Angle);
 
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
+int16_t path_target(Cell_t& next, Cell_t& target);
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
 bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max, bool stop_is_needed, bool rotate_is_needed);
 
@@ -83,7 +82,7 @@ void cm_update_map_bumper();
 void cm_update_map_cliff();
 bool cm_curve_move_to_point();
 
-void cm_count_normalize(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_world_to_point(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 bool cm_move_to_cell(int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
@@ -107,6 +106,9 @@ uint8_t cm_check_loop_back(Cell_t target);
 MapTouringType cm_handle_ext_event(void);
 
 void cm_create_home_boundary(void);
+
+void cm_self_check(void);
+bool cm_should_self_check(void);
 
 /* Event handler functions. */
 void cm_register_events(void);
@@ -166,11 +168,11 @@ define_cm_handle_func(rcon_right)
 */
 
 /* Over Current */
-define_cm_handle_func(over_current_brush_left)
+//define_cm_handle_func(over_current_brush_left)
 
 define_cm_handle_func(over_current_brush_main)
 
-define_cm_handle_func(over_current_brush_right)
+//define_cm_handle_func(over_current_brush_right)
 
 define_cm_handle_func(over_current_wheel_left)
 

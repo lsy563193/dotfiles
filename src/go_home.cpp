@@ -13,6 +13,8 @@
 #include "charger.hpp"
 
 const uint16_t TURN_SPEED = 18;
+extern float saved_pos_x, saved_pos_y;
+extern bool g_move_back_finish;
 /*----------------------------------------------------------------GO Home  ----------------*/
 uint8_t g_dir_around_cs = 0;
 uint8_t g_dir_check_position = 0;
@@ -38,6 +40,12 @@ void go_home(void)
 	uint8_t entrance_to_move_back = 0;
 	uint32_t receive_code = 0;
 	uint8_t ret = 0;
+	float distance = 0.0;
+	uint8_t move_back_status = 0;
+	#define RANDOM_BACK_1	1
+	#define RANDOM_BACK_2	2
+	#define QUICK_BACK_1	3
+	#define QUICK_BACK_2	4
 	/*---variable for around_chargestation---*/
 	uint8_t signal_counter=0;
 	uint32_t no_signal_counter=0;
@@ -63,6 +71,7 @@ void go_home(void)
 	// This step is for counting angle change when the robot turns.
 	float gyro_step = 0;
 
+	g_move_back_finished = true;
 	g_go_home_state_now = 0;
 	g_go_home_state_last = 0;
 	set_led(100, 100);
@@ -106,14 +115,63 @@ void go_home(void)
 		}						
 		if(g_go_home_state_now == 0)
 		{
+			if(!g_move_back_finished)
+			{
+				distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+				if(distance < 0.03f)
+				{
+					continue;
+				}
+				else
+				{
+					g_move_back_finished = true;
+					if(get_bumper_status())
+					{
+						if(++g_bumper_cnt>2)
+						{
+							g_bumper_jam = true;
+						}
+					}
+					else
+					{
+						g_bumper_cnt = 0;
+						g_bumper_left = false;
+						g_bumper_right = false;
+					}
+				}
+			}
 			if(g_bumper_left || g_bumper_right)
 			{
-				ROS_INFO("bumper back 0");
-				random_back();
-				g_bumper_left = false;
-				g_bumper_right = false;
+				//random_back();
+				stop_brifly();
+				set_dir_backward();
+				set_wheel_speed(18,18);
+				g_move_back_finished = false;
+				saved_pos_x = robot::instance()->getOdomPositionX();
+				saved_pos_y = robot::instance()->getOdomPositionY();
+				continue;
 			}
+			current_angle = robot::instance()->getAngle();
+			angle_offset = current_angle - last_angle;
+			ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
+			if (angle_offset > 0)
+			{
+				// For passing the boundary of angle range. e.g.(179 - (-178))
+				if (angle_offset >= 180)
+					angle_offset -= 360;
+				else
+				// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
+					angle_offset = 0;
+			}
+			gyro_step += (-angle_offset);
+			last_angle = current_angle;
+
+			set_dir_right();
+			set_wheel_speed(10, 10);
+
+
 			receive_code = get_rcon_status();
+			reset_rcon_status();
 			if(receive_code&RconFL_HomeR)//FL H_R
 			{
 				ROS_INFO("Start with FL-R.");
@@ -126,7 +184,7 @@ void go_home(void)
 			if(receive_code&RconFR_HomeL)//FR H_L
 			{
 				ROS_INFO("Start with FR-L.");
-				Turn_Right(TURN_SPEED,900);
+				turn_right(TURN_SPEED,900);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -136,7 +194,7 @@ void go_home(void)
 			if(receive_code&RconFL_HomeL)//FL H_L
 			{
 				ROS_INFO("Start with FL-L.");
-				Turn_Right(TURN_SPEED,900);
+				turn_right(TURN_SPEED,900);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -163,7 +221,7 @@ void go_home(void)
 			if(receive_code&RconFR2_HomeL)//FR2 H_L
 			{
 				ROS_INFO("Start with FR2-L.");
-				Turn_Right(TURN_SPEED,850);
+				turn_right(TURN_SPEED,850);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -173,7 +231,7 @@ void go_home(void)
 			if(receive_code&RconFL2_HomeL)//FL2 H_L
 			{
 				ROS_INFO("Start with FL2-L.");
-				Turn_Right(TURN_SPEED,600);
+				turn_right(TURN_SPEED,600);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -215,7 +273,7 @@ void go_home(void)
 			if(receive_code&RconR_HomeL)// R  H_L
 			{
 				ROS_INFO("Start with R-L.");
-				Turn_Right(TURN_SPEED,1500);
+				turn_right(TURN_SPEED,1500);
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
 				continue;
@@ -224,7 +282,7 @@ void go_home(void)
 			if(receive_code&RconFL_HomeT)//FL H_T
 			{
 				ROS_INFO("Start with FL-T.");
-				Turn_Right(TURN_SPEED,600);
+				turn_right(TURN_SPEED,600);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -233,7 +291,7 @@ void go_home(void)
 			if(receive_code&RconFR_HomeT)//FR H_T
 			{
 				ROS_INFO("Start with FR-T.");
-				Turn_Right(TURN_SPEED,800);
+				turn_right(TURN_SPEED,800);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -243,7 +301,7 @@ void go_home(void)
 			if(receive_code&RconFL2_HomeT)//FL2 H_T
 			{
 				ROS_INFO("Start with FL2-T.");
-				Turn_Right(TURN_SPEED,600);
+				turn_right(TURN_SPEED,600);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -252,7 +310,7 @@ void go_home(void)
 			if(receive_code&RconFR2_HomeT)//FR2 H_T
 			{
 				ROS_INFO("Start with FR2-T.");
-				Turn_Right(TURN_SPEED,800);
+				turn_right(TURN_SPEED,800);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -262,7 +320,7 @@ void go_home(void)
 			if(receive_code&RconL_HomeT)// L  H_T
 			{
 				ROS_INFO("Start with L-T.");
-				Turn_Right(TURN_SPEED,1200);
+				turn_right(TURN_SPEED,1200);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -271,7 +329,7 @@ void go_home(void)
 			if(receive_code&RconR_HomeT)// R  H_T
 			{
 				ROS_INFO("Start with R-T.");
-				Turn_Right(TURN_SPEED,1200);
+				turn_right(TURN_SPEED,1200);
 				stop_brifly();
 				g_dir_around_cs = 1;
 				g_go_home_state_now = 1;
@@ -291,7 +349,7 @@ void go_home(void)
 			if((receive_code&RconBR_HomeR))//BR H_L R  //OK
 			{
 				ROS_INFO("Start with BR-R.");
-				Turn_Right(30,800);
+				turn_right(30,800);
 				stop_brifly();
 				g_dir_around_cs = 0;
 				g_go_home_state_now = 1;
@@ -310,7 +368,7 @@ void go_home(void)
 			if((receive_code&RconBR_HomeL))//BL H_L R
 			{
 				ROS_INFO("Start with BR-L.");
-				Turn_Right(30,800);
+				turn_right(30,800);
 				stop_brifly();
 				g_dir_around_cs = 0;
 				g_go_home_state_now = 1;
@@ -329,29 +387,12 @@ void go_home(void)
 			if((receive_code&RconBR_HomeT))//BR H_T
 			{
 				ROS_INFO("Start with BR-T.");
-				Turn_Right(30,300);
+				turn_right(30,300);
 				stop_brifly();
 				g_dir_around_cs = 0;
 				g_go_home_state_now = 1;
 				continue;
 			}
-			current_angle = robot::instance()->getAngle();
-			angle_offset = current_angle - last_angle;
-			ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
-			if (angle_offset > 0)
-			{
-				// For passing the boundary of angle range. e.g.(179 - (-178))
-				if (angle_offset >= 180)
-					angle_offset -= 360;
-				else
-				// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
-					angle_offset = 0;
-			}
-			gyro_step += (-angle_offset);
-			last_angle = current_angle;
-
-			set_dir_right();
-			set_wheel_speed(10, 10);
 		}
 		/*-----around_chargestation init-----*/
 		else if(g_go_home_state_now == 1)
@@ -370,51 +411,89 @@ void go_home(void)
 		/*-------around_chargestation-------*/
 		else if(g_go_home_state_now == 2)
 		{
-			if(g_cliff_triggered)
+			if(!g_move_back_finished)
 			{
-				g_cliff_triggered = false;
-				if(g_cliff_cnt == 0)
+				distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+				if(distance < 0.03f)
 				{
-					move_back();
-					ROS_INFO("cliff back 2");
-					g_cliff_cnt++;
 					continue;
 				}
 				else
 				{
-					g_cliff_cnt++;
-					if(g_cliff_cnt >= 3)
+					g_move_back_finished = true;
+					if(g_bumper_left || g_bumper_right)
 					{
-						g_cliff_cnt = 0;
-						set_clean_mode(Clean_Mode_Userinterface);
-						break;
+						if(get_bumper_status())
+						{
+							if(++g_bumper_cnt>2)
+							{
+								g_bumper_jam = true;
+							}
+						}
+						else
+						{
+							g_bumper_cnt = 0;
+							g_bumper_left = false;
+							g_bumper_right = false;
+							if(g_dir_around_cs)
+								turn_left(TURN_SPEED, 1800);
+							else
+								turn_right(TURN_SPEED, 1800);
+							move_forward(10,10);
+							g_dir_around_cs = 1 - g_dir_around_cs;
+							set_clean_mode(Clean_Mode_GoHome);
+							break;
+						}
+					}
+					else if(g_cliff_triggered)
+					{
+						if(get_cliff_trig())
+						{
+							if(++g_cliff_cnt>2)
+							{
+								;
+							}
+						}
+						else
+						{
+							g_cliff_cnt = 0;
+							g_cliff_triggered = false;
+							turn_left(TURN_SPEED, 1750);
+							move_forward(9,9);
+							set_clean_mode(Clean_Mode_GoHome);
+							break;
+						}
 					}
 				}
 			}
-			else
+			if(g_cliff_triggered)
 			{
-				if(g_cliff_cnt != 0)
-				{
-					turn_left(TURN_SPEED, 1750);
-					move_forward(9,9);
-					set_clean_mode(Clean_Mode_GoHome);
-					g_cliff_cnt = 0;
-					break;
-				}
+				//move_back();
+				g_cliff_cnt++;
+				stop_brifly();
+				set_dir_backward();
+				set_wheel_speed(18,18);
+
+				g_move_back_finished = false;
+				saved_pos_x = robot::instance()->getOdomPositionX();
+				saved_pos_y = robot::instance()->getOdomPositionY();
+				continue;
 			}
 			if(g_bumper_left || g_bumper_right)
 			{
-				ROS_INFO("bumper back 2");
-				random_back();
-				g_bumper_left = false;
-				g_bumper_right = false;
-				if(g_dir_around_cs)
-					turn_left(TURN_SPEED, 1800);
-				else
-					Turn_Right(TURN_SPEED, 1800);
-				move_forward(10,10);
-				g_dir_around_cs = 1 - g_dir_around_cs;
-				set_clean_mode(Clean_Mode_GoHome);
+			//	random_back();
+				stop_brifly();
+				set_dir_backward();
+				set_wheel_speed(18,18);
+
+				g_move_back_finished = false;
+				saved_pos_x = robot::instance()->getOdomPositionX();
+				saved_pos_y = robot::instance()->getOdomPositionY();
+				continue;
+			}
+			if(g_battery_low)
+			{
+				g_battery_low = false;
 				break;
 			}
 			receive_code = get_rcon_status();
@@ -475,7 +554,7 @@ void go_home(void)
 				else if(receive_code&RconFL_HomeL)	//FR_HL
 				{
 					ROS_DEBUG("%s, %d: Detect FL-L.", __FUNCTION__, __LINE__);
-					Turn_Right(TURN_SPEED,500);
+					turn_right(TURN_SPEED,500);
 					move_forward(5, 5);
 				}
 				else if(receive_code&RconFL_HomeR)	 //FR_HL
@@ -487,25 +566,25 @@ void go_home(void)
 				else if(receive_code&RconFL_HomeT)	 //FR_HT
 				{
 					ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
-					Turn_Right(TURN_SPEED,500);
+					turn_right(TURN_SPEED,500);
 					move_forward(5, 5);
 				}
 				else if(receive_code&RconFR_HomeT)	 //R_HT
 				{
 					ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
-					Turn_Right(TURN_SPEED,800);
+					turn_right(TURN_SPEED,800);
 					move_forward(5, 5);
 				}
 				else if(receive_code&RconFR2_HomeT) //FR2_T //OK
 				{
 					ROS_DEBUG("%s, %d: Detect FR2-T.", __FUNCTION__, __LINE__);
-					Turn_Right(TURN_SPEED,900);
+					turn_right(TURN_SPEED,900);
 					move_forward(5, 5);
 				}
 				else if(receive_code&RconR_HomeT)  //OK
 				{
 					ROS_DEBUG("%s, %d: Detect R-T.", __FUNCTION__, __LINE__);
-					Turn_Right(TURN_SPEED,1100);
+					turn_right(TURN_SPEED,1100);
 					move_forward(5, 5);
 					g_dir_around_cs = 0;
 				}
@@ -600,7 +679,7 @@ void go_home(void)
 				else if(receive_code&RconFR_HomeL)	//OK
 				{
 					ROS_DEBUG("%s, %d: Detect FR-L.", __FUNCTION__, __LINE__);
-					Turn_Right(TURN_SPEED,600);
+					turn_right(TURN_SPEED,600);
 					move_forward(5, 5);
 				}
 				else if(receive_code&RconFR_HomeT)	//ok
@@ -721,7 +800,6 @@ void go_home(void)
 				}
 				else if(ret == 2)
 				{
-					ROS_INFO("ret == 2 in check position");
 					break;
 				}
 				else
@@ -730,13 +808,11 @@ void go_home(void)
 					set_main_brush_pwm(0);
 					////Back(30,800);
 					//Back(30,300);
-					ROS_INFO("turn_connect back 4");
 					quick_back(30,300);
 					set_main_brush_pwm(30);
 					stop_brifly();
 				}
 			}
-			ROS_INFO("check_position main while");
 			if(gyro_step < 360)
 			{
 				current_angle = robot::instance()->getAngle();
@@ -796,7 +872,7 @@ void go_home(void)
 				{
 					ROS_INFO("%s, %d: Robot can't see charger, return to gohome mode.", __FUNCTION__, __LINE__);
 					stop_brifly();
-					Turn_Right(TURN_SPEED,1000);
+					turn_right(TURN_SPEED,1000);
 					stop_brifly();
 					move_forward(10, 10);
 					set_clean_mode(Clean_Mode_GoHome);
@@ -829,7 +905,85 @@ void go_home(void)
 		/*---by_path main while---*/
 		else if(g_go_home_state_now == 6)
 		{
-			ROS_INFO("by_path main while");
+			if(!g_move_back_finished)
+			{
+				distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+				if(move_back_status == QUICK_BACK_1)
+				{
+					if(distance < 0.3f)
+					{
+						continue;
+					}
+					else
+					{
+						g_move_back_finished = true;
+						stop_brifly();
+						break;
+					}
+				}
+				else if(move_back_status == QUICK_BACK_2)
+				{
+					if(distance < 0.3f)
+					{
+						continue;
+					}
+					else
+					{
+						g_bumper_left = false;
+						g_bumper_right = false;
+						g_move_back_finished = true;
+						stop_brifly();
+						if(bumper_counter > 1)
+						{
+							 move_forward(0, 0);
+							 set_clean_mode(Clean_Mode_GoHome);
+							 ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
+							 break;
+						}
+					}
+				}
+				else if(move_back_status == RANDOM_BACK_1)
+				{
+					if(distance < 0.03f)
+					{
+						continue;
+					}
+					else
+					{
+						g_move_back_finished = true;
+						if(g_bumper_left)
+							turn_right(TURN_SPEED,1100);
+						else
+							turn_left(TURN_SPEED,1100);
+						g_bumper_left = false;
+						g_bumper_right = false;
+						move_forward(8, 8);
+						set_clean_mode(Clean_Mode_GoHome);
+						break;
+					}
+				}
+				else if(move_back_status == RANDOM_BACK_2)
+				{
+					if(distance < 0.03f)
+					{
+						continue;
+					}
+					else
+					{
+						g_move_back_finished = true;
+						if(g_bumper_left)
+							turn_right(TURN_SPEED,1100);
+						else
+							turn_left(TURN_SPEED,1100);
+						g_bumper_left = false;
+						g_bumper_right = false;
+						set_side_brush_pwm(30, 30);
+						set_main_brush_pwm(30);
+						move_forward(8, 8);
+						continue;
+					}
+				}
+			}
 			if(g_charge_detect)
 			{
 				g_charge_detect = 0;
@@ -861,14 +1015,20 @@ void go_home(void)
 					set_main_brush_pwm(0);
 					////Back(30,800);
 					//Back(30,300);
-					ROS_INFO("turn_connect back 6");
-					quick_back(30,300);
 					set_main_brush_pwm(30);
-					stop_brifly();
+
+					set_dir_backward();
+					set_wheel_speed(30,30);
+					g_move_back_finished = false;
+					move_back_status = QUICK_BACK_1;
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					continue;
 				}
 			}
 			if(g_bumper_left)
 			{
+				bumper_counter++;
 				if(!g_position_far)
 				{
 					stop_brifly();
@@ -885,48 +1045,42 @@ void go_home(void)
 					}
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(0);
-					ROS_INFO("lbumper turn_connect back 6");
-					quick_back(30,300);
-					g_bumper_left = false;
-					g_bumper_right = false;
 					ROS_DEBUG("%d: quick_back in !position_far", __LINE__);
 					set_main_brush_pwm(30);
 					stop_brifly();
-					if(bumper_counter>0)
-					{
-						 move_forward(0, 0);
-						 set_clean_mode(Clean_Mode_GoHome);
-						 ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
-						 break;
-					}
+
+					g_move_back_finished = false;
+					move_back_status = QUICK_BACK_2;
+					set_dir_backward();
+					set_wheel_speed(30,30);
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					continue;
 				}
 				else if((get_rcon_status()&(RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR))==0)
 				{
-					ROS_INFO("lbumper rcon back 6");
-					random_back();
-					g_bumper_left = false;
-					g_bumper_right = false;
-					Turn_Right(TURN_SPEED,1100);
-					move_forward(8, 8);
-					set_clean_mode(Clean_Mode_GoHome);
-					ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
-					break;
+					g_move_back_finished = false;
+					move_back_status = RANDOM_BACK_1;
+					set_dir_backward();
+					set_wheel_speed(12,12);
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					continue;
 				}
 				else
 				{
-					ROS_INFO("lbumper back 6");
-					random_back();
-					g_bumper_left = false;
-					g_bumper_right = false;
-					Turn_Right(TURN_SPEED,1100);
-					set_side_brush_pwm(30, 30);
-					set_main_brush_pwm(30);
-					move_forward(8, 8);
+					g_move_back_finished = false;
+					move_back_status = RANDOM_BACK_2;
+					set_dir_backward();
+					set_wheel_speed(12,12);
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					continue;
 				}
-				bumper_counter++;
 			}
 			else if(g_bumper_right)
 			{
+				bumper_counter++;
 				if(!g_position_far)
 				{
 					stop_brifly();
@@ -943,50 +1097,43 @@ void go_home(void)
 					}
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(0);
-					ROS_INFO("rbumper turn_connect back 6");
-					quick_back(30,300);
-					g_bumper_left = false;
-					g_bumper_right = false;
 					ROS_DEBUG("%d: quick_back in !position_far", __LINE__);
 					set_main_brush_pwm(30);
 					stop_brifly();
-					if(bumper_counter>0)
-					{
-						 move_forward(0, 0);
-						 set_clean_mode(Clean_Mode_GoHome);
-						 ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
-						 break;
-					}
+
+					g_move_back_finished = false;
+					move_back_status = QUICK_BACK_2;
+					set_dir_backward();
+					set_wheel_speed(30,30);
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					continue;
+
 				}
 				else if((get_rcon_status()&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR))==0)
 				{
-					ROS_INFO("rbumper rcon back 6");
-					random_back();
-					g_bumper_left = false;
-					g_bumper_right = false;
-					turn_left(TURN_SPEED,1100);
-					move_forward(8, 8);
-					set_clean_mode(Clean_Mode_GoHome);
-					ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
-					break;
+					g_move_back_finished = false;
+					move_back_status = RANDOM_BACK_1;
+					set_dir_backward();
+					set_wheel_speed(12,12);
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					continue;
 				}
 				else
 				{
-					ROS_INFO("rbumper back 6");
-					random_back();
-					g_bumper_left = false;
-					g_bumper_right = false;
-					turn_left(TURN_SPEED,1100);
-					set_side_brush_pwm(30, 30);
-					set_main_brush_pwm(30);
-					move_forward(8, 8);
+					g_move_back_finished = false;
+					move_back_status = RANDOM_BACK_2;
+					set_dir_backward();
+					set_wheel_speed(12,12);
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					continue;
 				}
-				bumper_counter++;
 			}
 			if(g_cliff_triggered)
 			{
 				g_cliff_triggered = false;
-				ROS_INFO("cleff back 6");
 				move_back();
 				move_back();
 				turn_left(TURN_SPEED, 1750);
@@ -1145,14 +1292,14 @@ void go_home(void)
 
 					case (RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+						turn_right(20,250);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						Turn_Right(20,350);
+						turn_right(20,350);
 						stop_brifly();
 						move_forward(10, 3);
 						break;
@@ -1274,56 +1421,56 @@ void go_home(void)
 
 					case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 							ROS_DEBUG("%s, %d: g_position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-							Turn_Right(20,250);
+							turn_right(20,250);
 						stop_brifly();
 						move_forward(9, 3);
 							break;
 
 					case (RconR_HomeR|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,400);
+						turn_right(20,400);
 						stop_brifly();
 						move_forward(8, 3);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+						turn_right(20,250);
 						stop_brifly();
 						move_forward(10, 4);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,450);
+						turn_right(20,450);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/R_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,500);
+						turn_right(20,500);
 						stop_brifly();
 						move_forward(9, 6);
 						break;
 
 					case (RconR_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,550);
+						turn_right(20,550);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+						turn_right(20,250);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,500);
+						turn_right(20,500);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
@@ -1744,14 +1891,14 @@ void go_home(void)
 
 					case (RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+						turn_right(20,250);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						Turn_Right(20,350);
+						turn_right(20,350);
 						stop_brifly();
 						move_forward(10, 3);
 						break;
@@ -1873,56 +2020,56 @@ void go_home(void)
 
 					case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+						turn_right(20,250);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconR_HomeR|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,400);
+						turn_right(20,400);
 						stop_brifly();
 						move_forward(8, 3);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+						turn_right(20,250);
 						stop_brifly();
 						move_forward(10, 4);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,450);
+						turn_right(20,450);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/R_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,500);
+						turn_right(20,500);
 						stop_brifly();
 						move_forward(9, 6);
 						break;
 
 					case (RconR_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,550);
+						turn_right(20,550);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,250);
+						turn_right(20,250);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
 
 					case (RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-						Turn_Right(20,500);
+						turn_right(20,500);
 						stop_brifly();
 						move_forward(9, 3);
 						break;
@@ -2341,6 +2488,8 @@ void go_home_register_events(void)
 	/*---bumper---*/
 	event_manager_register_and_enable_x(bumper_right, EVT_BUMPER_RIGHT, true);
 	event_manager_register_and_enable_x(bumper_left, EVT_BUMPER_LEFT, true);
+	/*---battery---*/
+	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 }
 
 void go_home_unregister_events(void)
@@ -2371,6 +2520,8 @@ void go_home_unregister_events(void)
 	/*---bumper---*/
 	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
 	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
+	/*---battery---*/
+	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 }
 
 void go_home_handle_charge_detect(bool state_now, bool state_last)
@@ -2461,6 +2612,14 @@ void go_home_handle_bumper_right(bool state_now, bool state_last)
 	}
 }
 
+void go_home_handle_battery_low(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
+	usleep(1000000);
+	set_clean_mode(Clean_Mode_Sleep);
+	g_battery_low = true;
+}
+
 uint8_t turn_connect(void)
 {
 	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
@@ -2474,7 +2633,7 @@ uint8_t turn_connect(void)
 	if(g_charge_detect)
 	{
 		g_charge_detect = 0;
-		ROS_INFO("[movement.cpp] Reach charger without turning.");
+		ROS_INFO("Reach charger without turning.");
 		return 1;
 	}
 	// Start turning right.
@@ -2497,7 +2656,7 @@ uint8_t turn_connect(void)
 			if (g_charge_detect)
 			{
 				g_charge_detect = 0;
-				ROS_INFO("[movement.cpp] Turn left reach charger.");
+				ROS_INFO("Turn left reach charger.");
 				return 1;
 			}
 			set_wheel_speed(speed, speed);
@@ -2536,7 +2695,7 @@ uint8_t turn_connect(void)
 			if (g_charge_detect)
 			{
 				g_charge_detect = 0;
-				ROS_INFO("[movement.cpp] Turn left reach charger.");
+				ROS_INFO("Turn left reach charger.");
 				return 1;
 			}
 			set_wheel_speed(speed, speed);

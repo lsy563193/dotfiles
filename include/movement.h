@@ -400,7 +400,7 @@ void quick_back(uint8_t speed,uint16_t distance);
 
 void turn_left_at_init(uint16_t speed, int16_t angle);
 void turn_left(uint16_t speed, int16_t angle);
-void Turn_Right(uint16_t speed,int16_t angle);
+void turn_right(uint16_t speed, int16_t angle);
 void round_turn_left(uint16_t speed, int16_t angle);
 void round_turn_right(uint16_t speed, int16_t angle);
 void jam_turn_left(uint16_t speed, int16_t angle);
@@ -443,14 +443,19 @@ uint8_t is_obs_near(void);
 uint32_t get_rcon_status(void);
 
 void set_rcon_status(uint32_t code);
-
+/*
+// Add handling for gyro dynamic adjustment.
+// If robot going straight, should turn off gyro dynamic adjustment.
+// If robot turning, should turn on gyro dynamic adjustment.
+ */
 void set_wheel_speed(uint8_t Left, uint8_t Right);
 
 void work_motor_configure(void);
 
 uint8_t check_motor_current(void);
 
-uint8_t check_side_brush_stall(void);
+uint8_t check_left_brush_stall(void);
+uint8_t check_right_brush_stall(void);
 
 uint8_t self_check(uint8_t Check_Code);
 
@@ -693,8 +698,6 @@ void reset_wall_accelerate();
 uint8_t virtual_wall_turn_right();
 
 uint8_t virtual_wall_turn_left();
-
-void laser_pm_gpio(char val);
 
 int32_t abs_minus(int32_t A, int32_t B);
 #endif

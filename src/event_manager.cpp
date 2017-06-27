@@ -31,6 +31,7 @@ bool g_obs_triggered = false;
 bool g_cliff_all_triggered = false;
 bool g_cliff_triggered = false;
 bool g_cliff_jam = false;
+uint8_t g_cliff_all_cnt = 0;
 uint8_t g_cliff_cnt = 0;
 /* RCON */
 bool g_rcon_triggered = false;
@@ -82,6 +83,7 @@ void event_manager_init()
 	g_event_manager_enabled = g_event_handler_status = false;
 
 	bumper_all_cnt = bumper_left_cnt = bumper_right_cnt = 0;
+	event_manager_reset_status();
 
 	for (i = 0; i < EVT_MODE_MAX; i++) {
 		for (j = 0; j < EVT_MAX; j++) {
@@ -205,7 +207,7 @@ void *event_manager_thread(void *data)
 */
 
 		/* Over Current */
-		if (robot::instance()->getLbrushOc()) {
+		if (1 || robot::instance()->getLbrushOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_LEFT)
 		}
@@ -213,7 +215,7 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_MAIN)
 		}
-		if (robot::instance()->getRbrushOc()) {
+		if (1 || robot::instance()->getRbrushOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_RIGHT)
 		}
@@ -481,6 +483,49 @@ uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
 	return 0;
 }
 
+void event_manager_reset_status(void)
+{
+	g_fatal_quit_event = false;
+	/* Bumper */
+	g_bumper_hitted = false;
+	g_bumper_jam = false;
+	g_bumper_cnt = 0;
+	/* OBS */
+	g_obs_triggered = false;
+	/* Cliff */
+	g_cliff_all_triggered = false;
+	g_cliff_triggered = false;
+	g_cliff_jam = false;
+	g_cliff_all_cnt = 0;
+	g_cliff_cnt = 0;
+	/* RCON */
+	g_rcon_triggered = false;
+	/* Over Current */
+	g_oc_brush_main = false;
+	g_oc_wheel_left = false;
+	g_oc_wheel_right = false;
+	g_oc_suction = false;
+	g_oc_brush_left_cnt = 0;
+	g_oc_brush_main_cnt = 0;
+	g_oc_brush_right_cnt = 0;
+	g_oc_wheel_left_cnt = 0;
+	g_oc_wheel_right_cnt = 0;
+	g_oc_suction_cnt = 0;
+	/* Key */
+	g_key_clean_pressed = false;
+	/* Remote */
+	g_remote_home = false;
+	g_remote_spot = false;
+	g_remote_wallfollow = false;
+	/* Battery */
+	g_battery_home = false;
+	g_battery_low = false;
+	g_battery_low_cnt = 0;
+	/* Charge Status */
+	g_charge_detect = 0;
+	g_charge_detect_cnt = 0;
+}
+
 /* Below are the internal functions. */
 
 /* Bumper */
@@ -653,6 +698,13 @@ void em_default_handle_rcon_right(bool state_now, bool state_last)
 void em_default_handle_over_current_brush_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	if (!g_fatal_quit_event && check_left_brush_stall())
+	{
+		/*-----Set error-----*/
+		set_error_code(Error_Code_LeftBrush);
+		g_fatal_quit_event = true;
+		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
+	}
 }
 
 void em_default_handle_over_current_brush_main(bool state_now, bool state_last)
@@ -663,6 +715,13 @@ void em_default_handle_over_current_brush_main(bool state_now, bool state_last)
 void em_default_handle_over_current_brush_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	if (!g_fatal_quit_event && check_right_brush_stall())
+	{
+		/*-----Set error-----*/
+		set_error_code(Error_Code_RightBrush);
+		g_fatal_quit_event = true;
+		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
+	}
 }
 
 void em_default_handle_over_current_wheel_left(bool state_now, bool state_last)

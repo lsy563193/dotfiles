@@ -9,6 +9,7 @@
 #include <movement.h>
 #include <motion_manage.h>
 #include <core_move.h>
+#include <wall_follow_slam.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
@@ -328,6 +329,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 
 //		cm_update_map();
+		extern CMMoveType g_cm_move_type;
+		if(g_cm_move_type != CM_LINEARMOVE)
+			wf_update_map();
 	}
 
 	Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);

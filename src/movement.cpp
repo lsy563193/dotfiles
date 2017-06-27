@@ -527,7 +527,7 @@ void turn_left(uint16_t speed, int16_t angle)
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
 
-void Turn_Right(uint16_t speed, int16_t angle)
+void turn_right(uint16_t speed, int16_t angle)
 {
 	int16_t target_angle;
 	int16_t gyro_angle;
@@ -616,6 +616,7 @@ void Turn_Right(uint16_t speed, int16_t angle)
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
+/*
 
 void round_turn_left(uint16_t speed, int16_t angle)
 {
@@ -665,8 +666,10 @@ void round_turn_left(uint16_t speed, int16_t angle)
 			break;
 		if (stop_event())
 			break;
-		/*if(is_turn_remote())
-			break;*/
+		*/
+/*if(is_turn_remote())
+			break;*//*
+
 		if (get_rcon_remote() > 0)
 		{
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
@@ -687,7 +690,9 @@ void round_turn_left(uint16_t speed, int16_t angle)
 				reset_rcon_remote();
 			}
 		}
-		/* check plan setting*/
+		*/
+/* check plan setting*//*
+
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
@@ -763,8 +768,10 @@ void round_turn_right(uint16_t speed, int16_t angle)
 			break;
 		if (stop_event())
 			break;
-		/*if(is_turn_remote())
-			break;*/
+		*/
+/*if(is_turn_remote())
+			break;*//*
+
 		if (get_rcon_remote() > 0)
 		{
 			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
@@ -785,7 +792,9 @@ void round_turn_right(uint16_t speed, int16_t angle)
 				reset_rcon_remote();
 			}
 		}
-		/* check plan setting*/
+		*/
+/* check plan setting*//*
+
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
@@ -812,6 +821,7 @@ void round_turn_right(uint16_t speed, int16_t angle)
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
 }
+*/
 
 void jam_turn_left(uint16_t speed, int16_t angle)
 {
@@ -1138,15 +1148,13 @@ uint8_t is_obs_near(void)
 void set_wheel_speed(uint8_t Left, uint8_t Right)
 {
 	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
+
 	Left = Left < RUN_TOP_SPEED ? Left : RUN_TOP_SPEED;
 	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
+
 	set_left_wheel_speed(Left);
 	set_right_wheel_speed(Right);
-
 #if GYRO_DYNAMIC_ADJUSTMENT
-	// Add handling for gyro dynamic adjustment.
-	// If robot going straight, should turn off gyro dynamic adjustment.
-	// If robot turning, should turn on gyro dynamic adjustment.
 	if (abs(Left - Right) > 1)
 	{
 		Set_Gyro_Dynamic_On();
@@ -1209,7 +1217,6 @@ uint8_t check_motor_current(void)
 	static uint8_t rwheel_oc_count = 0;
 	static uint8_t vacuum_oc_count = 0;
 	static uint8_t mbrush_oc_count = 0;
-	uint8_t sidebrush_oc_status = 0;
 	if ((uint32_t) robot::instance()->getLwheelCurrent() > Wheel_Stall_Limit)
 	{
 		lwheel_oc_count++;
@@ -1234,17 +1241,6 @@ uint8_t check_motor_current(void)
 		}
 	} else
 		rwheel_oc_count = 0;
-	sidebrush_oc_status = check_side_brush_stall();
-	if (sidebrush_oc_status == 2)
-	{
-		ROS_WARN("%s,%d,right brush over current", __FUNCTION__, __LINE__);
-		return Check_Right_Brush;
-	}
-	if (sidebrush_oc_status == 1)
-	{
-		ROS_WARN("%s,%d,left brush over current", __FUNCTION__, __LINE__);
-		return Check_Left_Brush;
-	}
 	if (robot::instance()->getMbrushOc())
 	{
 		mbrush_oc_count++;
@@ -1326,7 +1322,7 @@ uint8_t self_check(uint8_t Check_Code)
 		}
 		*/
 		stop_brifly();
-		//Turn_Right(Turn_Speed,1800);
+		//turn_right(Turn_Speed,1800);
 	}
 		/*---------------------------Self Check left wheel -------------------*/
 	else if (Check_Code == Check_Left_Wheel)
@@ -1714,9 +1710,7 @@ uint8_t get_obs_status(void)
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
-
+	set_dir_forward();
 	set_wheel_speed(Left_Speed, Right_Speed);
 }
 
@@ -1829,12 +1823,14 @@ uint8_t check_bat_set_motors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint3
 
 void set_dir_left(void)
 {
+	set_direction_flag(Direction_Flag_Left);
 	g_wheel_left_direction = 1;
 	g_wheel_right_direction = 0;
 }
 
 void set_dir_right(void)
 {
+	set_direction_flag(Direction_Flag_Right);
 	g_wheel_left_direction = 0;
 	g_wheel_right_direction = 1;
 }
@@ -3010,155 +3006,177 @@ int32_t abs_minus(int32_t A, int32_t B)
 	return B - A;
 }
 
-#define NORMAL  1
-#define STOP  2
-#define MAX    3
-
-uint8_t check_side_brush_stall(void)
+uint8_t check_left_brush_stall(void)
 {
-	static uint32_t Time_LBrush = 0, Time_RBrush = 0;
-	static uint8_t LBrush_Stall_Counter = 0, RBrush_Stall_Counter = 0, LBrush_Error_Counter = 0, RBrush_Error_Counter = 0;
-	static uint8_t LeftBrush_Status = NORMAL, RightBrush_Status = NORMAL;
-
+	static time_t time_lbrush;
+	static uint8_t lbrush_error_counter = 0;
+	static uint8_t left_brush_status = 1;
 	/*---------------------------------Left Brush Stall---------------------------------*/
-	switch (LeftBrush_Status)
+	switch (left_brush_status)
 	{
-		case NORMAL:
+		case 1:
+		{
 			if (robot::instance()->getLbrushOc())
 			{
-				if (LBrush_Stall_Counter < 200)
-					LBrush_Stall_Counter++;
-			} else
-			{
-				LBrush_Stall_Counter = 0;
+				if (g_oc_brush_left_cnt < 200)
+					g_oc_brush_left_cnt++;
 			}
-			if (LBrush_Stall_Counter > 10)
+			else
+				g_oc_brush_left_cnt = 0;
+
+			if (g_oc_brush_left_cnt > 10)
 			{
-				/*-----Left Brush is stall in normal mode, stop the brush-----*/
+				/*-----Left Brush is stall, stop the brush-----*/
 				set_left_brush_pwm(0);
-				LeftBrush_Status = STOP;
-				Time_LBrush = time(NULL);
+				left_brush_status = 2;
+				time_lbrush = time(NULL);
+				ROS_WARN("%s %d: Stop the brush for 5s.", __FUNCTION__, __LINE__);
 			}
 			break;
-
-		case STOP:
+		}
+		case 2:
+		{
 			/*-----brush should stop for 5s-----*/
-			if ((time(NULL) - Time_LBrush) > 5)
+			if ((time(NULL) - time_lbrush) >= 5)
 			{
+				// Then restart brush and let it fully operated.
 				set_left_brush_pwm(100);
-				LeftBrush_Status = MAX;
-				Time_LBrush = time(NULL);
+				left_brush_status = 3;
+				time_lbrush = time(NULL);
+				ROS_WARN("%s %d: Fully operate the brush for 5s.", __FUNCTION__, __LINE__);
 			}
 			break;
+		}
 
-		case MAX:
+		case 3:
+		{
 			if (robot::instance()->getLbrushOc())
 			{
-				if (LBrush_Stall_Counter < 200)
-					LBrush_Stall_Counter++;
+				if (g_oc_brush_left_cnt < 200)
+					g_oc_brush_left_cnt++;
 			} else
 			{
-				LBrush_Stall_Counter = 0;
+				g_oc_brush_left_cnt = 0;
 			}
 
-			if (LBrush_Stall_Counter > 10)
+			if (g_oc_brush_left_cnt > 10)
 			{
-				/*-----brush is stall in max mode, stop the brush and increase error counter -----*/
+				/*-----Brush is still stall, stop the brush and increase error counter -----*/
 				set_left_brush_pwm(0);
-				LeftBrush_Status = STOP;
-				Time_LBrush = time(NULL);
-				LBrush_Error_Counter++;
-				if (LBrush_Error_Counter > 2)
+				left_brush_status = 2;
+				time_lbrush = time(NULL);
+				lbrush_error_counter++;
+				if (lbrush_error_counter > 2)
 				{
-					/*-----return error message-----*/
+					left_brush_status = 1;
+					g_oc_brush_left_cnt = 0;
+					lbrush_error_counter = 0;
 					return 1;
 				}
 				break;
-			} else
+			}
+			else
 			{
-				if ((time(NULL) - Time_LBrush) < 5)
+				ROS_DEBUG("%s %d: Fully operate the brush for 5s.", __FUNCTION__, __LINE__);
+				if ((time(NULL) - time_lbrush) >= 5)
 				{
-					/*-----brush should works in max mode for 5s-----*/
-					LeftBrush_Status = MAX;
-				} else
-				{
+					ROS_WARN("%s %d: Restore from fully operated.", __FUNCTION__, __LINE__);
 					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
 					set_left_brush_pwm(g_l_brush_pwm);
-					LBrush_Error_Counter = 0;
-					LeftBrush_Status = NORMAL;
+					left_brush_status = 1;
+					g_oc_brush_left_cnt = 0;
+					lbrush_error_counter = 0;
 				}
 			}
 			break;
+		}
 	}
-	/*-------------------------------Rigth Brush Stall---------------------------------*/
-	switch (RightBrush_Status)
+	return 0;
+}
+uint8_t check_right_brush_stall(void)
+{
+	static time_t time_rbrush;
+	static uint8_t rbrush_error_counter = 0;
+	static uint8_t rightbrush_status = 1;
+	/*---------------------------------Left Brush Stall---------------------------------*/
+	switch (rightbrush_status)
 	{
-		case NORMAL:
+		case 1:
+		{
 			if (robot::instance()->getRbrushOc())
 			{
-				if (RBrush_Stall_Counter < 200)
-					RBrush_Stall_Counter++;
-			} else
-			{
-				RBrush_Stall_Counter = 0;
+				if (g_oc_brush_right_cnt < 200)
+					g_oc_brush_right_cnt++;
 			}
-			if (RBrush_Stall_Counter > 10)
+			else
+				g_oc_brush_right_cnt = 0;
+
+			if (g_oc_brush_right_cnt > 10)
 			{
-				/*-----Right Brush is stall in normal mode, stop the brush-----*/
+				/*-----Left Brush is stall, stop the brush-----*/
 				set_right_brush_pwm(0);
-				RightBrush_Status = STOP;
-				Time_RBrush = time(NULL);
+				rightbrush_status = 2;
+				time_rbrush = time(NULL);
+				ROS_WARN("%s %d: Stop the brush for 5s.", __FUNCTION__, __LINE__);
 			}
 			break;
-
-		case STOP:
+		}
+		case 2:
+		{
 			/*-----brush should stop for 5s-----*/
-			if ((time(NULL) - Time_RBrush) > 5)
+			if ((time(NULL) - time_rbrush) >= 5)
 			{
+				// Then restart brush and let it fully operated.
 				set_right_brush_pwm(100);
-				RightBrush_Status = MAX;
-				Time_RBrush = time(NULL);
+				rightbrush_status = 3;
+				time_rbrush = time(NULL);
+				ROS_WARN("%s %d: Fully operate the brush for 5s.", __FUNCTION__, __LINE__);
 			}
 			break;
+		}
 
-		case MAX:
+		case 3:
+		{
 			if (robot::instance()->getRbrushOc())
 			{
-				if (RBrush_Stall_Counter < 200)
-					RBrush_Stall_Counter++;
+				if (g_oc_brush_right_cnt < 200)
+					g_oc_brush_right_cnt++;
 			} else
 			{
-				RBrush_Stall_Counter = 0;
+				g_oc_brush_right_cnt = 0;
 			}
 
-			if (RBrush_Stall_Counter > 10)
+			if (g_oc_brush_right_cnt > 10)
 			{
-				/*-----brush is stall in max mode, stop the brush and increase error counter -----*/
+				/*-----Brush is still stall, stop the brush and increase error counter -----*/
 				set_right_brush_pwm(0);
-				RightBrush_Status = STOP;
-				Time_RBrush = time(NULL);
-				RBrush_Error_Counter++;
-				if (RBrush_Error_Counter > 2)
+				rightbrush_status = 2;
+				time_rbrush = time(NULL);
+				rbrush_error_counter++;
+				if (rbrush_error_counter > 2)
 				{
-					/*-----return error message-----*/
-					return 2;
+					rightbrush_status = 1;
+					g_oc_brush_right_cnt = 0;
+					rbrush_error_counter = 0;
+					return 1;
 				}
 				break;
-			} else
+			}
+			else
 			{
-				if ((time(NULL) - Time_RBrush) < 5)
+				ROS_DEBUG("%s %d: Fully operate the brush for 5s.", __FUNCTION__, __LINE__);
+				if ((time(NULL) - time_rbrush) >= 5)
 				{
-					/*-----brush should works in max mode for 5s-----*/
-					RightBrush_Status = MAX;
-				} else
-				{
+					ROS_WARN("%s %d: Restore from fully operated.", __FUNCTION__, __LINE__);
 					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
 					set_right_brush_pwm(g_r_brush_pwm);
-					RBrush_Error_Counter = 0;
-					RightBrush_Status = NORMAL;
+					rightbrush_status = 1;
+					g_oc_brush_right_cnt = 0;
+					rbrush_error_counter = 0;
 				}
 			}
 			break;
+		}
 	}
 	return 0;
 }

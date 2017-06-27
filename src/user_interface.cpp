@@ -26,7 +26,7 @@ time_t charger_signal_start_time;
 uint16_t charger_signal_delay = 0;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 0;
-uint8_t error_alarm_counter = 2;
+uint8_t error_alarm_counter = 3;
 bool battery_ready_to_clean = true;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
@@ -40,7 +40,7 @@ void User_Interface(void)
 	bool eh_status_now=false, eh_status_last=false;
 
 	// Count for error alarm.
-	error_alarm_counter = 2;
+	error_alarm_counter = 3;
 	charger_signal_delay = 0;
 	battery_low_delay = 0;
 	start_time = time(NULL);
@@ -64,6 +64,7 @@ void User_Interface(void)
 		wav_play(WAV_BATTERY_LOW);
 	}
 
+	event_manager_reset_status();
 	user_interface_register_events();
 
 	while(ros::ok())
@@ -126,7 +127,7 @@ void User_Interface(void)
 
 		// Alarm for error.
 		if (get_error_code())
-			if ((error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
+			if (error_alarm_counter == 3 || (error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
 			{
 				error_alarm_counter--;
 				alarm_error();
@@ -152,7 +153,13 @@ void user_interface_register_events(void)
 	event_manager_enable_handler(y, enabled);
 
 	/* Cliff */
-	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_ALL, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_LEFT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_RIGHT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT_RIGHT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
+	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
 	/* Rcon */
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
@@ -182,6 +189,12 @@ void user_interface_unregister_events(void)
 
 	/* Cliff */
 	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_LEFT);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_RIGHT);
+	event_manager_register_and_disable_x(EVT_CLIFF_LEFT_RIGHT);
+	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
+	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
+	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
 	/* Rcon */
 	event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
@@ -202,12 +215,12 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
 }
 
-void user_interface_handle_cliff_all(bool state_now, bool state_last)
+void user_interface_handle_cliff(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: Cliff all triggered.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 
 	/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
-	if (robot::instance()->isManualPaused())
+	if (!state_last && robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Robot lifted up during manual pause, reset manual pause status.", __FUNCTION__, __LINE__);
 		wav_play(WAV_ERROR_LIFT_UP);

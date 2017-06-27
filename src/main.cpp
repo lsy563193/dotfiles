@@ -23,15 +23,13 @@
 #include "sleep.h"
 #include "wall_follow_slam.h"
 #include "wall_follow_trapped.h"
-#include "wav.h"
 #include "event_manager.h"
 #include "go_home.hpp"
+#include "wav.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
-
-void laser_pm_gpio(char val);
 
 bool selfCheckAtLaunch()
 {
@@ -98,8 +96,8 @@ void *core_move_thread(void *)
 
 				clear_manual_pause();
 
-				wall_follow(Map_Wall_Follow_Escape_Trapped);
-//				cm_touring();
+//				wall_follow(Map_Wall_Follow_Escape_Trapped);
+				cm_touring();
 				break;
 			case Clean_Mode_RandomMode:
 				ROS_INFO("\n-------Random_Running mode------\n");
@@ -232,7 +230,6 @@ int main(int argc, char **argv)
 	std::string	serial_port;
 
 
-	laser_pm_gpio('1');
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
 
@@ -295,6 +292,5 @@ int main(int argc, char **argv)
 	}
 
 	robotbase_deinit();
-	laser_pm_gpio('0');
 	return 0;
 }
