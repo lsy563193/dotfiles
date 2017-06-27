@@ -54,6 +54,7 @@ extern uint8_t g_trapped_cell_size;
 extern Cell_t g_cell_history[5];
 extern uint8_t g_wheel_left_direction;
 extern uint8_t g_wheel_right_direction;
+bool	is_wf_go_home = false;
 
 //Timer
 uint32_t g_wall_follow_timer;
@@ -161,14 +162,14 @@ static bool is_trap(void)
 
 static bool is_time_out(void)
 {
-//	if ((time(NULL) - g_wall_follow_timer) > WALL_FOLLOW_TIME)
-//	{
-//		ROS_INFO("Wall Follow time longer than 60 minutes");
-//		ROS_INFO("time now : %d", (int(time(NULL)) - g_wall_follow_timer));
-//		wf_clear();
-//		return 1;
-//	}
-	return false;
+	if (get_work_time() > WALL_FOLLOW_TIME) {
+		ROS_INFO("Wall Follow time longer than 60 minutes");
+		ROS_INFO("time now : %d", get_work_time());
+		is_wf_go_home = true;
+		return true;
+	} else {
+		return false;
+	}
 }
 
 
@@ -312,7 +313,7 @@ void wf_update_map()
 	if (wf_is_reach_new_cell(curr_cell))
 	{
 		g_reach_count = wf_is_reach_cleaned() ? g_reach_count + 1 : 0;
-		ROS_INFO("reach_count>10(%d)",g_reach_count);
+		ROS_INFO("reach_count(%d)",g_reach_count);
 		int size = (g_wf_cell.size() - 2);
 		if (size >= 0)
 			map_set_cell(MAP, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);
@@ -330,8 +331,15 @@ bool wf_is_reach_isolate()
 {
 	if(is_reach()){
 		ROS_INFO("is_reach()");
-		g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
-		map_reset(MAP);
+		//g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
+		if (is_isolate()) {
+			g_isolate_count++;
+			map_reset(MAP);
+			ROS_WARN("is_isolate");
+		} else {
+			g_isolate_count = 4;
+			ROS_WARN("is not isolate");
+		}
 		ROS_INFO("isolate_count(%d)", g_isolate_count);
 		return true;
 	}
@@ -347,5 +355,9 @@ bool wf_is_end()
 
 bool wf_is_go_home()
 {
-	return g_isolate_count>3;
+	if (g_isolate_count > 3 || is_wf_go_home) {
+		return true;
+	} else {
+		return false;
+	}
 };

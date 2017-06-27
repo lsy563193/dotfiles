@@ -240,12 +240,12 @@ void SpotMovement::spotWithTarget(SpotType st, float spot_diameter = 1.0)
 				}
 
 				/*----ready to spot movement ------*/
-				cm_linear_move_to_point({cell_to_count(tp_->X),cell_to_count(tp_->Y)},SPOT_MAX_SPEED,false,true);
-
-				if(g_fatal_quit_event ||  g_key_clean_pressed ||  g_remote_spot || g_remote_home || g_remote_wallfollow){
-					g_fatal_quit_event = g_key_clean_pressed  = g_remote_home = g_remote_wallfollow = g_remote_spot = false;
-					return;
-				}
+				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED);
+ 
+	            if(g_fatal_quit_event ||  g_key_clean_pressed ||  g_remote_spot || g_remote_home || g_remote_wallfollow){
+                    g_fatal_quit_event = g_key_clean_pressed  = g_remote_home = g_remote_wallfollow = g_remote_spot = false;
+                    return;
+                }
 
 				/*------if detect obstacle,than change diraction--------*/
 				changeSpiralType();
@@ -261,8 +261,8 @@ void SpotMovement::spotWithTarget(SpotType st, float spot_diameter = 1.0)
 				ROS_INFO("%s, %d, spot mode clean finishing",__FUNCTION__,__LINE__);
 				if(is_stuck_){
 					/*----go back to start point--------*/
-					cm_linear_move_to_point({0,0}, SPOT_MAX_SPEED, false, true);
-					is_stuck_ = 0;
+					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED);
+					spot_stuck = 0;
 				} 
 				break;
 			}
@@ -319,7 +319,7 @@ void SpotMovement::spotWithTarget(SpotType st, float spot_diameter = 1.0)
 					}
 				}
 				/*----ready to spot movement ------*/
-				cm_linear_move_to_point({cell_to_count(tp_->X),cell_to_count(tp_->Y)},SPOT_MAX_SPEED,false,true);
+				cm_linear_move_to_point({cell_to_count(tp->X),cell_to_count(tp->Y)},SPOT_MAX_SPEED);
 
 				if(g_fatal_quit_event ||  g_key_clean_pressed || g_remote_home){	
 					return;
@@ -340,8 +340,8 @@ void SpotMovement::spotWithTarget(SpotType st, float spot_diameter = 1.0)
 				stop_point_.Y = y_offset;
 				if(is_stuck_){
                     /*------move back to start point-------*/
-					cm_linear_move_to_point(stop_point_, SPOT_MAX_SPEED, false, true);
-					is_stuck_ = 0;
+					cm_linear_move_to_point(stop_point, SPOT_MAX_SPEED);
+					spot_stuck = 0;
 				} 
 				break;
 			}
