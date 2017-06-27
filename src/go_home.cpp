@@ -20,16 +20,16 @@ uint8_t g_dir_around_cs = 0;
 uint8_t g_dir_check_position = 0;
 uint8_t g_position_far = 1;
 /*	meaning of g_go_home_state_now 		*
+ * -1: go_home				initial		*
  *	0: go_home				main_while	*
  *	1: around_chargestation	initial		*
  *	2: around_chargestation	main_while	*
  *	3: check_position		initial		*
  *	4: check_position		main_while	*
  *	5: by_path				initial		*
- *	6: by_path				main_while	*
- *	7: move back 						*/
-uint8_t g_go_home_state_now = 0;
-uint8_t g_go_home_state_last = 0;
+ *	6: by_path				main_while	*/
+int8_t g_go_home_state_now = -1;
+int8_t g_go_home_state_last = -1;
 bool g_bumper_left = false, g_bumper_right = false;
 void go_home(void)
 {
@@ -70,6 +70,9 @@ void go_home(void)
 	float angle_offset;
 	// This step is for counting angle change when the robot turns.
 	float gyro_step = 0;
+	// To save the clean mode when call go_home()
+	uint8_t last_clean_mode;
+	last_clean_mode = get_clean_mode();
 
 	g_move_back_finished = true;
 	g_go_home_state_now = 0;
@@ -87,311 +90,376 @@ void go_home(void)
 
 	go_home_register_events();
 
-	while(gyro_step < 360)
+	while(1)
 	{
 		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 		{
 			continue;
 		}
+		if(cm_should_self_check())
+		{
+			cm_self_check();
+		}
+		if(g_fatal_quit_event)
+		{
+			if(last_clean_mode == Clean_Mode_GoHome)
+				set_clean_mode(Clean_Mode_Userinterface);
+			break;
+		}
 		if(g_charge_detect && g_go_home_state_now != 4)
 		{
-			g_charge_detect = 0;
+			if(last_clean_mode == Clean_Mode_GoHome)
+			{
+				g_charge_detect = 0;
+				set_clean_mode(Clean_Mode_Charging);
+			}
 			disable_motors();
-			set_clean_mode(Clean_Mode_Charging);
 			break;
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
 		{
-			g_key_clean_pressed = false;
-			set_clean_mode(Clean_Mode_Userinterface);
+			if(last_clean_mode == Clean_Mode_GoHome)
+			{
+				g_key_clean_pressed = false;
+				g_cliff_all_triggered = false;
+				set_clean_mode(Clean_Mode_Userinterface);
+			}
 			disable_motors();
-			if (! robot::instance()->isLowBatPaused())
-				if (! robot::instance()->isManualPaused())
-				{
-					g_key_clean_pressed = 0;
-					g_cliff_all_triggered = false;
-				}
 			break;
-		}						
+		}
+		/*---go_home initial---*/
+		if(g_go_home_state_now == -1)
+		{
+			entrance_to_check_position = 0;
+			entrance_to_move_back = 0;
+			receive_code = 0;
+			ret = 0;
+			distance = 0.0;
+			move_back_status = 0;
+			signal_counter=0;
+			no_signal_counter=0;
+			n_around_lrsignal=0;
+			bumper_counter=0;
+			cliff_counter = 0;
+			temp_code =0 ;
+			nosignal_counter=0;
+			temp_check_position=0;
+			near_counter=0;
+			side_counter=0;
+			eh_status_now=false, eh_status_last=false;
+			tc_speed = 5;
+
+			reset_rcon_status();
+			gyro_step = 0;
+
+			g_move_back_finished = true;
+			g_go_home_state_now = 0;
+			g_go_home_state_last = 0;
+			set_led(100, 100);
+			set_side_brush_pwm(30, 30);
+			set_main_brush_pwm(30);
+
+			stop_brifly();
+			reset_rcon_status();
+			// Save the start angle.
+			last_angle = robot::instance()->getAngle();
+			// Enable the charge function
+			set_start_charge();
+
+			g_go_home_state_now = 0;
+			continue;
+		}
+		/*---go_home main while---*/
 		if(g_go_home_state_now == 0)
 		{
-			if(!g_move_back_finished)
+			if(gyro_step < 360)
 			{
-				distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-				if(distance < 0.03f)
+				if(!g_move_back_finished)
 				{
-					continue;
-				}
-				else
-				{
-					g_move_back_finished = true;
-					if(get_bumper_status())
+					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+					if(distance < 0.03f)
 					{
-						if(++g_bumper_cnt>2)
-						{
-							g_bumper_jam = true;
-						}
+						continue;
 					}
 					else
 					{
-						g_bumper_cnt = 0;
-						g_bumper_left = false;
-						g_bumper_right = false;
+						g_move_back_finished = true;
+						if(get_bumper_status())
+						{
+							if(++g_bumper_cnt>2)
+							{
+								g_bumper_jam = true;
+								break;
+							}
+							continue;
+						}
+						else
+						{
+							g_bumper_cnt = 0;
+							g_bumper_left = false;
+							g_bumper_right = false;
+						}
 					}
 				}
-			}
-			if(g_bumper_left || g_bumper_right)
-			{
-				//random_back();
-				stop_brifly();
-				set_dir_backward();
-				set_wheel_speed(18,18);
-				g_move_back_finished = false;
-				saved_pos_x = robot::instance()->getOdomPositionX();
-				saved_pos_y = robot::instance()->getOdomPositionY();
-				continue;
-			}
-			current_angle = robot::instance()->getAngle();
-			angle_offset = current_angle - last_angle;
-			ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
-			if (angle_offset > 0)
-			{
-				// For passing the boundary of angle range. e.g.(179 - (-178))
-				if (angle_offset >= 180)
-					angle_offset -= 360;
-				else
-				// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
-					angle_offset = 0;
-			}
-			gyro_step += (-angle_offset);
-			last_angle = current_angle;
+				if(g_bumper_left || g_bumper_right)
+				{
+					//random_back();
+					stop_brifly();
+					set_dir_backward();
+					set_wheel_speed(18,18);
+					g_move_back_finished = false;
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					continue;
+				}
+				current_angle = robot::instance()->getAngle();
+				angle_offset = current_angle - last_angle;
+				ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
+				if (angle_offset > 0)
+				{
+					// For passing the boundary of angle range. e.g.(179 - (-178))
+					if (angle_offset >= 180)
+						angle_offset -= 360;
+					else
+					// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
+						angle_offset = 0;
+				}
+				gyro_step += (-angle_offset);
+				last_angle = current_angle;
 
-			set_dir_right();
-			set_wheel_speed(10, 10);
+				set_dir_right();
+				set_wheel_speed(10, 10);
 
 
-			receive_code = get_rcon_status();
-			reset_rcon_status();
-			if(receive_code&RconFL_HomeR)//FL H_R
-			{
-				ROS_INFO("Start with FL-R.");
-				turn_left(TURN_SPEED, 900);
-				stop_brifly();
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconFR_HomeL)//FR H_L
-			{
-				ROS_INFO("Start with FR-L.");
-				turn_right(TURN_SPEED,900);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				receive_code = get_rcon_status();
+				reset_rcon_status();
+				if(receive_code&RconFL_HomeR)//FL H_R
+				{
+					ROS_INFO("Start with FL-R.");
+					turn_left(TURN_SPEED, 900);
+					stop_brifly();
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconFR_HomeL)//FR H_L
+				{
+					ROS_INFO("Start with FR-L.");
+					turn_right(TURN_SPEED,900);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if(receive_code&RconFL_HomeL)//FL H_L
-			{
-				ROS_INFO("Start with FL-L.");
-				turn_right(TURN_SPEED,900);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconFR_HomeR)//FR H_R
-			{
-				ROS_INFO("Start with FR-R.");
-				turn_left(TURN_SPEED, 900);
-				stop_brifly();
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconFL2_HomeR)//FL2 H_R
-			{
-				ROS_INFO("Start with FL2-R.");
-				turn_left(TURN_SPEED, 850);
-				stop_brifly();
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconFR2_HomeL)//FR2 H_L
-			{
-				ROS_INFO("Start with FR2-L.");
-				turn_right(TURN_SPEED,850);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				if(receive_code&RconFL_HomeL)//FL H_L
+				{
+					ROS_INFO("Start with FL-L.");
+					turn_right(TURN_SPEED,900);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconFR_HomeR)//FR H_R
+				{
+					ROS_INFO("Start with FR-R.");
+					turn_left(TURN_SPEED, 900);
+					stop_brifly();
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconFL2_HomeR)//FL2 H_R
+				{
+					ROS_INFO("Start with FL2-R.");
+					turn_left(TURN_SPEED, 850);
+					stop_brifly();
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconFR2_HomeL)//FR2 H_L
+				{
+					ROS_INFO("Start with FR2-L.");
+					turn_right(TURN_SPEED,850);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if(receive_code&RconFL2_HomeL)//FL2 H_L
-			{
-				ROS_INFO("Start with FL2-L.");
-				turn_right(TURN_SPEED,600);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconFR2_HomeR)//FR2 H_R
-			{
-				ROS_INFO("Start with FR2-R.");
-				turn_left(TURN_SPEED, 600);
-				stop_brifly();
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				if(receive_code&RconFL2_HomeL)//FL2 H_L
+				{
+					ROS_INFO("Start with FL2-L.");
+					turn_right(TURN_SPEED,600);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconFR2_HomeR)//FR2 H_R
+				{
+					ROS_INFO("Start with FR2-R.");
+					turn_left(TURN_SPEED, 600);
+					stop_brifly();
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if(receive_code&RconL_HomeL)// L  H_L
-			{
-				ROS_INFO("Start with L-L.");
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconR_HomeR)// R  H_R
-			{
-				ROS_INFO("Start with R-R.");
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				if(receive_code&RconL_HomeL)// L  H_L
+				{
+					ROS_INFO("Start with L-L.");
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconR_HomeR)// R  H_R
+				{
+					ROS_INFO("Start with R-R.");
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if(receive_code&RconL_HomeR)// L  H_R
-			{
-				ROS_INFO("Start with L-R.");
-				turn_left(TURN_SPEED, 1500);
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconR_HomeL)// R  H_L
-			{
-				ROS_INFO("Start with R-L.");
-				turn_right(TURN_SPEED,1500);
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-	/*--------------------------HomeT-----------------*/
-			if(receive_code&RconFL_HomeT)//FL H_T
-			{
-				ROS_INFO("Start with FL-T.");
-				turn_right(TURN_SPEED,600);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconFR_HomeT)//FR H_T
-			{
-				ROS_INFO("Start with FR-T.");
-				turn_right(TURN_SPEED,800);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				if(receive_code&RconL_HomeR)// L  H_R
+				{
+					ROS_INFO("Start with L-R.");
+					turn_left(TURN_SPEED, 1500);
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconR_HomeL)// R  H_L
+				{
+					ROS_INFO("Start with R-L.");
+					turn_right(TURN_SPEED,1500);
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+		/*--------------------------HomeT-----------------*/
+				if(receive_code&RconFL_HomeT)//FL H_T
+				{
+					ROS_INFO("Start with FL-T.");
+					turn_right(TURN_SPEED,600);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconFR_HomeT)//FR H_T
+				{
+					ROS_INFO("Start with FR-T.");
+					turn_right(TURN_SPEED,800);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if(receive_code&RconFL2_HomeT)//FL2 H_T
-			{
-				ROS_INFO("Start with FL2-T.");
-				turn_right(TURN_SPEED,600);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconFR2_HomeT)//FR2 H_T
-			{
-				ROS_INFO("Start with FR2-T.");
-				turn_right(TURN_SPEED,800);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				if(receive_code&RconFL2_HomeT)//FL2 H_T
+				{
+					ROS_INFO("Start with FL2-T.");
+					turn_right(TURN_SPEED,600);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconFR2_HomeT)//FR2 H_T
+				{
+					ROS_INFO("Start with FR2-T.");
+					turn_right(TURN_SPEED,800);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if(receive_code&RconL_HomeT)// L  H_T
-			{
-				ROS_INFO("Start with L-T.");
-				turn_right(TURN_SPEED,1200);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if(receive_code&RconR_HomeT)// R  H_T
-			{
-				ROS_INFO("Start with R-T.");
-				turn_right(TURN_SPEED,1200);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				if(receive_code&RconL_HomeT)// L  H_T
+				{
+					ROS_INFO("Start with L-T.");
+					turn_right(TURN_SPEED,1200);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if(receive_code&RconR_HomeT)// R  H_T
+				{
+					ROS_INFO("Start with R-T.");
+					turn_right(TURN_SPEED,1200);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-	/*--------------BL BR---------------------*/
-			if((receive_code&RconBL_HomeL))//BL H_L    //OK
-			{
-				ROS_INFO("Start with BL-L.");
-				turn_left(30, 800);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if((receive_code&RconBR_HomeR))//BR H_L R  //OK
-			{
-				ROS_INFO("Start with BR-R.");
-				turn_right(30,800);
-				stop_brifly();
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
+		/*--------------BL BR---------------------*/
+				if((receive_code&RconBL_HomeL))//BL H_L    //OK
+				{
+					ROS_INFO("Start with BL-L.");
+					turn_left(30, 800);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if((receive_code&RconBR_HomeR))//BR H_L R  //OK
+				{
+					ROS_INFO("Start with BR-R.");
+					turn_right(30,800);
+					stop_brifly();
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if((receive_code&RconBL_HomeR))//BL H_R
-			{
-				ROS_INFO("Start with BL-R.");
-				turn_left(30, 800);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
-			}
-			if((receive_code&RconBR_HomeL))//BL H_L R
-			{
-				ROS_INFO("Start with BR-L.");
-				turn_right(30,800);
-				stop_brifly();
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
-			}
+				if((receive_code&RconBL_HomeR))//BL H_R
+				{
+					ROS_INFO("Start with BL-R.");
+					turn_left(30, 800);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if((receive_code&RconBR_HomeL))//BL H_L R
+				{
+					ROS_INFO("Start with BR-L.");
+					turn_right(30,800);
+					stop_brifly();
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
 
-			if((receive_code&RconBL_HomeT))//BL H_T
-			{
-				ROS_INFO("Start with BL-T.");
-				turn_left(30, 300);
-				stop_brifly();
-				g_dir_around_cs = 1;
-				g_go_home_state_now = 1;
-				continue;
+				if((receive_code&RconBL_HomeT))//BL H_T
+				{
+					ROS_INFO("Start with BL-T.");
+					turn_left(30, 300);
+					stop_brifly();
+					g_dir_around_cs = 1;
+					g_go_home_state_now = 1;
+					continue;
+				}
+				if((receive_code&RconBR_HomeT))//BR H_T
+				{
+					ROS_INFO("Start with BR-T.");
+					turn_right(30,300);
+					stop_brifly();
+					g_dir_around_cs = 0;
+					g_go_home_state_now = 1;
+					continue;
+				}
 			}
-			if((receive_code&RconBR_HomeT))//BR H_T
+			else
 			{
-				ROS_INFO("Start with BR-T.");
-				turn_right(30,300);
-				stop_brifly();
-				g_dir_around_cs = 0;
-				g_go_home_state_now = 1;
-				continue;
+				if(last_clean_mode == Clean_Mode_GoHome)
+					set_clean_mode(Clean_Mode_Userinterface);
+				break;
 			}
 		}
 		/*-----around_chargestation init-----*/
@@ -408,7 +476,7 @@ void go_home(void)
 			g_go_home_state_now = 2;
 			continue;
 		}
-		/*-------around_chargestation-------*/
+		/*-------around_chargestation main while-------*/
 		else if(g_go_home_state_now == 2)
 		{
 			if(!g_move_back_finished)
@@ -428,7 +496,9 @@ void go_home(void)
 							if(++g_bumper_cnt>2)
 							{
 								g_bumper_jam = true;
+								break;
 							}
+							continue;
 						}
 						else
 						{
@@ -441,8 +511,8 @@ void go_home(void)
 								turn_right(TURN_SPEED, 1800);
 							move_forward(10,10);
 							g_dir_around_cs = 1 - g_dir_around_cs;
-							set_clean_mode(Clean_Mode_GoHome);
-							break;
+							g_go_home_state_now = -1;
+							continue;
 						}
 					}
 					else if(g_cliff_triggered)
@@ -451,8 +521,10 @@ void go_home(void)
 						{
 							if(++g_cliff_cnt>2)
 							{
-								;
+								g_cliff_jam = true;
+								break;
 							}
+							continue;
 						}
 						else
 						{
@@ -460,8 +532,8 @@ void go_home(void)
 							g_cliff_triggered = false;
 							turn_left(TURN_SPEED, 1750);
 							move_forward(9,9);
-							set_clean_mode(Clean_Mode_GoHome);
-							break;
+							g_go_home_state_now = -1;
+							continue;
 						}
 					}
 				}
@@ -493,7 +565,8 @@ void go_home(void)
 			}
 			if(g_battery_low)
 			{
-				g_battery_low = false;
+				if(last_clean_mode != Clean_Mode_GoHome)
+					g_battery_low = false;
 				break;
 			}
 			receive_code = get_rcon_status();
@@ -508,8 +581,8 @@ void go_home(void)
 				if(no_signal_counter>80)
 				{
 					ROS_WARN("No charger signal received.");
-					set_clean_mode(Clean_Mode_GoHome);
-					break;
+					g_go_home_state_now = -1;
+					continue;
 				}
 			}
 			ROS_DEBUG("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, g_dir_around_cs);
@@ -779,12 +852,15 @@ void go_home(void)
 		{
 			if(g_charge_detect)
 			{
-				g_charge_detect = 0;
 				if(g_charge_detect_cnt == 0)g_charge_detect_cnt++;
 				else
 				{
+					if(last_clean_mode == Clean_Mode_GoHome)
+					{
+						g_charge_detect = 0;
+						set_clean_mode(Clean_Mode_Charging);
+					}
 					disable_motors();
-					set_clean_mode(Clean_Mode_Charging);
 					break;
 				}
 			}
@@ -794,8 +870,12 @@ void go_home(void)
 				ret = turn_connect();
 				if(ret == 1)
 				{
+					if(last_clean_mode == Clean_Mode_GoHome)
+					{
+						g_charge_detect = 0;
+						set_clean_mode(Clean_Mode_Charging);
+					}
 					disable_motors();
-					set_clean_mode(Clean_Mode_Charging);
 					break;
 				}
 				else if(ret == 2)
@@ -875,8 +955,8 @@ void go_home(void)
 					turn_right(TURN_SPEED,1000);
 					stop_brifly();
 					move_forward(10, 10);
-					set_clean_mode(Clean_Mode_GoHome);
-					break;
+					g_go_home_state_now = -1;
+					continue;
 				}
 			}
 		}
@@ -918,7 +998,8 @@ void go_home(void)
 					{
 						g_move_back_finished = true;
 						stop_brifly();
-						break;
+						g_go_home_state_now = -1;
+						continue;
 					}
 				}
 				else if(move_back_status == QUICK_BACK_2)
@@ -929,16 +1010,24 @@ void go_home(void)
 					}
 					else
 					{
-						g_bumper_left = false;
-						g_bumper_right = false;
 						g_move_back_finished = true;
-						stop_brifly();
-						if(bumper_counter > 1)
+						if(get_bumper_status())
 						{
-							 move_forward(0, 0);
-							 set_clean_mode(Clean_Mode_GoHome);
-							 ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
-							 break;
+							g_bumper_jam = true;
+							break;
+						}
+						else
+						{
+							g_bumper_left = false;
+							g_bumper_right = false;
+							stop_brifly();
+							if(bumper_counter > 1)
+							{
+								 move_forward(0, 0);
+								 ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
+								 g_go_home_state_now = -1;
+								 continue;
+							}
 						}
 					}
 				}
@@ -951,15 +1040,27 @@ void go_home(void)
 					else
 					{
 						g_move_back_finished = true;
-						if(g_bumper_left)
-							turn_right(TURN_SPEED,1100);
+						if(get_bumper_status())
+						{
+							if(++g_bumper_cnt>2)
+							{
+								g_bumper_jam = true;
+								break;
+							}
+							continue;
+						}
 						else
-							turn_left(TURN_SPEED,1100);
-						g_bumper_left = false;
-						g_bumper_right = false;
-						move_forward(8, 8);
-						set_clean_mode(Clean_Mode_GoHome);
-						break;
+						{
+							if(g_bumper_left)
+								turn_right(TURN_SPEED,1100);
+							else
+								turn_left(TURN_SPEED,1100);
+							g_bumper_left = false;
+							g_bumper_right = false;
+							move_forward(8, 8);
+							g_go_home_state_now = -1;
+							continue;
+						}
 					}
 				}
 				else if(move_back_status == RANDOM_BACK_2)
@@ -971,27 +1072,42 @@ void go_home(void)
 					else
 					{
 						g_move_back_finished = true;
-						if(g_bumper_left)
-							turn_right(TURN_SPEED,1100);
+						if(get_bumper_status())
+						{
+							if(++g_bumper_cnt>2)
+							{
+								g_bumper_jam = true;
+								break;
+							}
+							continue;
+						}
 						else
-							turn_left(TURN_SPEED,1100);
-						g_bumper_left = false;
-						g_bumper_right = false;
-						set_side_brush_pwm(30, 30);
-						set_main_brush_pwm(30);
-						move_forward(8, 8);
-						continue;
+						{
+							if(g_bumper_left)
+								turn_right(TURN_SPEED,1100);
+							else
+								turn_left(TURN_SPEED,1100);
+								g_bumper_left = false;
+							g_bumper_right = false;
+							set_side_brush_pwm(30, 30);
+							set_main_brush_pwm(30);
+							move_forward(8, 8);
+							continue;
+						}
 					}
 				}
 			}
 			if(g_charge_detect)
 			{
-				g_charge_detect = 0;
 				if(g_charge_detect_cnt == 0)g_charge_detect_cnt++;
 				else
 				{
+					if(last_clean_mode == Clean_Mode_GoHome)
+					{
+						g_charge_detect = 0;
+						set_clean_mode(Clean_Mode_Charging);
+					}
 					disable_motors();
-					set_clean_mode(Clean_Mode_Charging);
 					break;
 				}
 			}
@@ -1001,8 +1117,12 @@ void go_home(void)
 				ret = turn_connect();
 				if(ret == 1)
 				{
+					if(last_clean_mode == Clean_Mode_GoHome)
+					{
+						g_charge_detect = 0;
+						set_clean_mode(Clean_Mode_Charging);
+					}
 					disable_motors();
-					set_clean_mode(Clean_Mode_Charging);
 					break;
 				}
 				else if(ret == 2)
@@ -1035,8 +1155,12 @@ void go_home(void)
 					ret = turn_connect();
 					if(ret == 1)
 					{
+						if(last_clean_mode == Clean_Mode_GoHome)
+						{
+							g_charge_detect = 0;
+							set_clean_mode(Clean_Mode_Charging);
+						}
 						disable_motors();
-						set_clean_mode(Clean_Mode_Charging);
 						break;
 					}
 					else if(ret == 2)
@@ -1087,8 +1211,12 @@ void go_home(void)
 					ret = turn_connect();
 					if(ret == 1)
 					{
+						if(last_clean_mode == Clean_Mode_GoHome)
+						{
+							g_charge_detect = 0;
+							set_clean_mode(Clean_Mode_Charging);
+						}
 						disable_motors();
-						set_clean_mode(Clean_Mode_Charging);
 						break;
 					}
 					else if(ret == 2)
@@ -1138,8 +1266,8 @@ void go_home(void)
 				move_back();
 				turn_left(TURN_SPEED, 1750);
 				move_forward(9, 9);
-				set_clean_mode(Clean_Mode_GoHome);
-				break;
+				g_go_home_state_now = -1;
+				continue;
 			}
 
 			if(entrance_to_check_position == 0)
@@ -1180,8 +1308,8 @@ void go_home(void)
 							{
 								move_forward(9, 9);
 								ROS_INFO("%s, %d: Robot goes far, back to gohome mode.", __FUNCTION__, __LINE__);
-								set_clean_mode(Clean_Mode_GoHome);
-								break;	
+								g_go_home_state_now = -1;
+								continue;
 							}
 						}
 						else
@@ -2409,11 +2537,8 @@ void go_home(void)
 		}
 		usleep(500000);
 	}
-	if (gyro_step >= 360)
-		set_clean_mode(Clean_Mode_Userinterface);
-
 	// If robot didn't reach the charger, go back to userinterface mode.
-	if(get_clean_mode() != Clean_Mode_Charging && get_clean_mode() != Clean_Mode_GoHome)
+	if(get_clean_mode() != Clean_Mode_Charging)
 	{
 		extern std::list <Point32_t> g_home_point;
 		if (!stop_event() && g_home_point.empty())
@@ -2487,6 +2612,7 @@ void go_home_register_events(void)
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
 	/*---bumper---*/
 	event_manager_register_and_enable_x(bumper_right, EVT_BUMPER_RIGHT, true);
+	event_manager_register_and_enable_x(bumper_all, EVT_BUMPER_ALL, true);
 	event_manager_register_and_enable_x(bumper_left, EVT_BUMPER_LEFT, true);
 	/*---battery---*/
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
@@ -2519,6 +2645,7 @@ void go_home_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
 	/*---bumper---*/
 	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
+	event_manager_register_and_disable_x(EVT_BUMPER_ALL);
 	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
 	/*---battery---*/
 	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
@@ -2567,13 +2694,45 @@ void go_home_handle_remote_clean(bool state_now, bool state_last)
 
 void go_home_handle_cliff_all(bool state_now, bool state_last)
 {
-	wav_play(WAV_ERROR_LIFT_UP);
-	g_cliff_all_triggered = true;
+	static int cliff_all_cnt = 0;
+	if (state_now == true && state_last == true)
+	{
+		cliff_all_cnt++;
+		if (cliff_all_cnt > 2)
+		{
+			cliff_all_cnt = 0;
+			wav_play(WAV_ERROR_LIFT_UP);
+			g_cliff_all_triggered = true;
+		}
+	}
+	else
+	{
+		cliff_all_cnt = 0;
+	}
 }
 
 void go_home_handle_cliff(bool state_now, bool state_last)
 {
 	g_cliff_triggered = true;
+}
+
+void go_home_handle_bumper_all(bool state_now, bool state_last)
+{
+	static int bumper_all_cnt = 0;
+	if (state_now == true && state_last == true)
+	{
+		bumper_all_cnt++;
+		if (bumper_all_cnt > 2)
+		{
+			bumper_all_cnt = 0;
+			g_bumper_right = true;
+			g_bumper_left = true;
+		}
+	}
+	else
+	{
+		bumper_all_cnt = 0;
+	}
 }
 
 void go_home_handle_bumper_left(bool state_now, bool state_last)
@@ -2632,7 +2791,6 @@ uint8_t turn_connect(void)
 	usleep(200000);
 	if(g_charge_detect)
 	{
-		g_charge_detect = 0;
 		ROS_INFO("Reach charger without turning.");
 		return 1;
 	}
@@ -2655,7 +2813,6 @@ uint8_t turn_connect(void)
 			usleep(500000);
 			if (g_charge_detect)
 			{
-				g_charge_detect = 0;
 				ROS_INFO("Turn left reach charger.");
 				return 1;
 			}
@@ -2663,14 +2820,13 @@ uint8_t turn_connect(void)
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
 		{
-			set_clean_mode(Clean_Mode_Userinterface);
+			if(get_clean_mode() == Clean_Mode_GoHome)
+			{
+				g_key_clean_pressed = false;
+				g_cliff_all_triggered = false;
+				set_clean_mode(Clean_Mode_Userinterface);
+			}
 			disable_motors();
-			if (! robot::instance()->isLowBatPaused())
-				if (! robot::instance()->isManualPaused())
-				{
-					g_key_clean_pressed = 0;
-					g_cliff_all_triggered = false;
-				}
 			return 2;
 		}
 	}
@@ -2694,7 +2850,6 @@ uint8_t turn_connect(void)
 			usleep(500000);
 			if (g_charge_detect)
 			{
-				g_charge_detect = 0;
 				ROS_INFO("Turn left reach charger.");
 				return 1;
 			}
@@ -2702,14 +2857,13 @@ uint8_t turn_connect(void)
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
 		{
-			set_clean_mode(Clean_Mode_Userinterface);
+			if(get_clean_mode == Clean_Mode_GoHome)
+			{
+				g_key_clean_pressed = false;
+				g_cliff_all_triggered = false;
+				set_clean_mode(Clean_Mode_Userinterface);
+			}
 			disable_motors();
-			if (! robot::instance()->isLowBatPaused())
-				if (! robot::instance()->isManualPaused())
-				{
-					g_key_clean_pressed = 0;
-					g_cliff_all_triggered = false;
-				}
 			return 2;
 		}
 	}

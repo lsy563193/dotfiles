@@ -482,6 +482,7 @@ bool is_turn(void)
 {
 	boost::mutex::scoped_lock(odom_mutex);
 	return ((abs(sensor.rw_vel - sensor.rw_vel) > 0.1) ||
-					(sensor.lw_vel * sensor.rw_vel < 0)
+					(sensor.lw_vel * sensor.rw_vel < 0) ||
+					(sensor.lw_vel < 0 && sensor.rw_vel < 0)
 					);
 }

@@ -65,6 +65,7 @@ uint16_t g_rounding_turn_angle;
 uint16_t g_rounding_move_speed;
 uint16_t g_rounding_wall_distance;
 uint16_t g_rounding_wall_straight_distance;
+static bool g_is_should_follow_wall;
 std::vector<int16_t> g_rounding_left_wall_buffer;
 std::vector<int16_t> g_rounding_right_wall_buffer;
 
@@ -80,7 +81,6 @@ Point32_t g_continue_point;
 bool	g_go_home = false;
 bool	g_from_station = 0;
 int16_t g_map_gyro_offset = 0;
-uint8_t	g_should_follow_wall = 0;
 
 // This flag is for checking whether map boundary is created.
 bool g_map_boundary_created = false;
@@ -616,7 +616,7 @@ uint16_t rounding_straight_distance()
 
 void cm_move_back(void)
 {
-	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_LEFT_WALL)
+	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
 	{
 		g_rounding_turn_angle = round_turn_angle();
 		if (get_bumper_status() != 0)
@@ -703,8 +703,8 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 {
 	// Reset the g_bumper_status_for_rounding.
+	g_is_should_follow_wall = false;
 	g_bumper_status_for_rounding = 0;
-	g_should_follow_wall =  0;
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
@@ -735,8 +735,8 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 		}
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
-			g_should_follow_wall = 1;
-			SpotType spt = SpotMovement::instance() -> getSpotType(); 
+			g_is_should_follow_wall = true;
+			SpotType spt = SpotMovement::instance() -> getSpotType();
             if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
                 SpotMovement::instance()->setDirectChange();
 			break;
@@ -767,6 +767,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 						g_move_back_finished = true;
 						g_bumper_hitted = false;
 						g_bumper_cnt = 0;
+						g_is_should_follow_wall = true;
 						break;
 					}
 					else if (++g_bumper_cnt >= 2)
@@ -968,25 +969,27 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
 						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
 																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
-	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),g_should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_should_follow_wall);
-	if (!IS_X_AXIS(dir) || g_should_follow_wall == 0 || next_point->Y == map_get_y_count()) {
+	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),is_should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_is_should_follow_wall);
+	if (!IS_X_AXIS(dir) || !g_is_should_follow_wall ||next_point->Y == map_get_y_count()) {
+
 		return false;
 	}
 
 	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
 	ROS_ERROR("curr_y(%d),next_y(%d),delta_y(%d),dir(%d)",map_get_y_cell(), count_to_cell(next_point->Y), delta_y, dir);
 
-	if ( delta_y != 0 && std::abs(delta_y <= 2) ) {
+	if ( delta_y != 0 && std::abs(delta_y) <= 2 ) {
 		g_cm_move_type = (dir == POS_X) ^ (delta_y > 0) ? CM_FOLLOW_LEFT_WALL: CM_FOLLOW_RIGHT_WALL;
-		ROS_ERROR("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
+		ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
 	} else if(delta_y == 0){
 		ROS_ERROR("don't need to go to new line. curr_x(%d)", count_to_cell(next_point->X));
 		if (!(count_to_cell(next_point->X) == SHRT_MAX || count_to_cell(next_point->X) == SHRT_MIN)) {
 			delta_y = count_to_cell(target_point.Y) - map_get_y_cell();
-			if (delta_y != 0 && std::abs(delta_y <= 2)) {
+			if (delta_y != 0 && std::abs(delta_y) <= 2) {
 				next_point->Y = target_point.Y;
 				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
-				ROS_ERROR("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
+//				ROS_ERROR("don't need to go to new line. curr_x(%d)", count_to_cell(next_point->X));
+				ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
 			}
 		}
 	}
@@ -1075,12 +1078,11 @@ uint8_t cm_follow_wall(Point32_t target)
 			usleep(100);
 			continue;
 		}
-		if (g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right) {
+		if (g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right || (!g_go_home && g_remote_home)) {
 			break;
 		}
-
 		if(g_bumper_hitted || g_cliff_triggered){
-				cm_move_back();
+			cm_move_back();
 		}
 		if(get_clean_mode() == Clean_Mode_WallFollow){
 			if(wf_is_end()){
@@ -1305,7 +1307,7 @@ void cm_go_home()
 	{
 		set_led(100, 0);
 		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
-		set_clean_mode(Clean_Mode_Navigation);
+		//set_clean_mode(Clean_Mode_Navigation);
 		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
 		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
 		{
@@ -2757,16 +2759,17 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_go_home && !cm_should_self_check())
-	{
+	if (!g_go_home && !cm_should_self_check()) {
 		beep_for_command(true);
 		g_remote_home = true;
 		SpotMovement::instance()->setSpotType(NO_SPOT);
 		SpotMovement::instance()->spotInit(1.0,{0,0});//clear all variable
+		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}
-	else
+	else {
 		beep_for_command(false);
-
+		ROS_INFO("g_remote_home = %d", g_remote_home);
+	}
 	reset_rcon_remote();
 }
 
