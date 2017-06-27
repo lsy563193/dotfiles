@@ -54,6 +54,7 @@ extern uint8_t g_trapped_cell_size;
 extern Cell_t g_cell_history[5];
 extern uint8_t g_wheel_left_direction;
 extern uint8_t g_wheel_right_direction;
+bool	is_wf_go_home = false;
 
 //Timer
 uint32_t g_wall_follow_timer;
@@ -164,6 +165,7 @@ static bool is_time_out(void)
 	if (get_work_time() > WALL_FOLLOW_TIME) {
 		ROS_INFO("Wall Follow time longer than 60 minutes");
 		ROS_INFO("time now : %d", get_work_time());
+		is_wf_go_home = true;
 		return true;
 	} else {
 		return false;
@@ -353,5 +355,9 @@ bool wf_is_end()
 
 bool wf_is_go_home()
 {
-	return g_isolate_count>3;
+	if (g_isolate_count > 3 || is_wf_go_home) {
+		return true;
+	} else {
+		return false;
+	}
 };
