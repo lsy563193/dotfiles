@@ -1059,13 +1059,12 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				return 0;
 			}
 		} else {
-			if(wf_is_go_home()){
+			if(wf_is_go_home()) {
 				ROS_INFO("follow wall finish");
 				wf_clear();
 				return 0;
 
-			}else
-			{
+			} else {
 				ROS_INFO("CM_LINEARMOVE");
 				g_cm_move_type = CM_LINEARMOVE;
 				wf_break_wall_follow();
