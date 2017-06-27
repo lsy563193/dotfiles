@@ -17,7 +17,7 @@ FILE(GLOB PP_SRC
 	src/motion_manage.cpp
 	src/movement.cpp
 	src/path_planning.cpp
-	src/random_running.cpp
+#	src/random_running.cpp
 	src/remote_mode.cpp
 	src/robotbase.cpp
 	src/robot.cpp

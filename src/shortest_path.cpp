@@ -48,6 +48,7 @@
 #include <string.h>
 
 #include <ros/ros.h>
+#include <movement.h>
 
 #include "core_move.h"
 #include "mathematics.h"
@@ -1129,7 +1130,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 					}
 				}
 			}
-			else if(cs == UNCLEAN)
+			else if(cs == UNCLEAN && get_clean_mode() == Clean_Mode_Navigation)
 				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}

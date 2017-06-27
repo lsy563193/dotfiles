@@ -106,7 +106,7 @@ bool g_move_back_finished = true;
 // Flag for indicating whether motion instance is initialized successfully.
 bool g_motion_init_succeeded = false;
 
-static int16_t ranged_angle(int16_t angle)
+int16_t ranged_angle(int16_t angle)
 {
 	if (angle >= 1800) {
 			angle -= 3600;
@@ -322,7 +322,9 @@ bool SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 {
 	uint8_t left_speed;
 	uint8_t right_speed;
-	if (g_oc_wheel_left || g_oc_wheel_right)
+	if (g_oc_suction)
+		left_speed = right_speed = 0;
+	else if (g_oc_wheel_left || g_oc_wheel_right)
 	{
 		if (g_oc_wheel_right) {
 			set_dir_right();
@@ -1658,6 +1660,7 @@ void cm_self_check(void)
 	float wheel_current_sum = 0;
 	uint8_t wheel_current_sum_cnt = 0;
 	uint8_t bumper_jam_state = 1;
+	uint8_t vacuum_oc_state = 1;
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
@@ -1670,6 +1673,13 @@ void cm_self_check(void)
 
 	if (g_oc_wheel_left || g_oc_wheel_right)
 		disable_motors();
+
+	if (g_oc_suction)
+	{
+		ROS_WARN("%s, %d: Vacuum Self checking start", __FUNCTION__, __LINE__);
+		disable_motors();
+		start_self_check_vacuum();
+	}
 
 	SelfCheckRegulator regulator;
 	cm_set_event_manager_handler_state(true);
@@ -1721,13 +1731,13 @@ void cm_self_check(void)
 				{
 					if (g_oc_wheel_left)
 					{
-						ROS_WARN("%s %d: Left wheel resume successed.", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 						g_oc_wheel_left = false;
 						work_motor_configure();
 					}
 					else
 					{
-						ROS_WARN("%s %d: Left wheel resume successed.", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 						g_oc_wheel_right = false;
 						work_motor_configure();
 					}
@@ -1747,7 +1757,7 @@ void cm_self_check(void)
 		{
 			if (!get_cliff_trig())
 			{
-				ROS_WARN("%s %d: Cliff resume successed.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
 				g_cliff_triggered = false;
 				g_cliff_all_triggered = false;
 				g_cliff_cnt = 0;
@@ -1778,7 +1788,7 @@ void cm_self_check(void)
 		{
 			if (!get_bumper_status())
 			{
-				ROS_WARN("%s %d: Bumper resume successed.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 				g_bumper_jam = false;
 				g_bumper_hitted = false;
 				g_bumper_cnt = 0;
@@ -1843,6 +1853,36 @@ void cm_self_check(void)
 				}
 			}
 		}
+		else if (g_oc_suction)
+		{
+			switch (vacuum_oc_state)
+			{
+				case 1:
+					ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
+					if (get_self_check_vacuum_status() == 0x10)
+					{
+						ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
+						reset_self_check_vacuum_controler();
+						vacuum_oc_state = 2;
+					}
+					break;
+				case 2:
+					ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
+					if (get_self_check_vacuum_status() == 0x20)
+					{
+						ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
+						set_error_code(Error_Code_Encoder);
+						g_fatal_quit_event = true;
+					}
+					else if (get_self_check_vacuum_status() == 0x20)
+					{
+						ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
+						g_oc_suction = false;
+						g_oc_suction_cnt = 0;
+					}
+					break;
+			}
+		}
 
 		if(! regulator.adjustSpeed(bumper_jam_state))
 			break;
@@ -1853,7 +1893,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam)
+	if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction)
 		return true;
 	return false;
 }
@@ -2629,10 +2669,7 @@ void cm_handle_over_current_suction(bool state_now, bool state_last)
 		g_oc_suction_cnt = 0;
 		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
 
-		if (self_check(Check_Vacuum) == 1) {
-			g_oc_suction = false;
-			g_fatal_quit_event = true;
-		}
+		g_oc_suction = true;
 	}
 }
 
