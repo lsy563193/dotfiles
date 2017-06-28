@@ -218,6 +218,7 @@ double Laser::getLaserDistance(int begin, int end, double range, double *line_an
 	//double	line_angle;
 	Double_Point	New_Laser_Point;
 	Laser_Point.clear();
+	ROS_ERROR("getLaserDistance");
 	for (i = begin; i < end; i++) {//default:begin = 260, end =270
 		/*if (laser_scan_data_.ranges[i] < range) {
 			laser_distance = laser_scan_data_.ranges[i] + laser_distance;
@@ -243,7 +244,7 @@ double Laser::getLaserDistance(int begin, int end, double range, double *line_an
 	lineFit(Laser_Point, a, b, c);
 	splitLine(Laser_Point, 0.01, 10);
 	splitLine2nd(&Laser_Group, 0.01,10);
-	mergeLine(&Laser_Group, 0.01);
+	//mergeLine(&Laser_Group, 0.01);
 	fitLineGroup(&Laser_Group, 0.1);
 	*line_angle = atan2(-a, b) * 180 / PI;
 	//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
@@ -281,7 +282,7 @@ bool Laser::lineFit(const std::vector<Double_Point> &points, double &a, double &
 	double lambda = ( (Dxx + Dyy) - sqrt( (Dxx - Dyy) * (Dxx - Dyy) + 4 * Dxy * Dxy) ) / 2.0;
 	double den = sqrt( Dxy * Dxy + (lambda - Dxx) * (lambda - Dxx) );
 
-	ROS_WARN("points.size = %d, den = %lf", size, den);
+	//ROS_WARN("points.size = %d, den = %lf", size, den);
 	if(fabs(den) < 1e-5) {
 		if( fabs(Dxx / Dyy - 1) < 1e-5) {
 			ROS_WARN("line fit failed!");
@@ -331,7 +332,7 @@ bool Laser::splitLine(const std::vector<Double_Point> &points, double consec_lim
 			++iter;
 		}
 	}
-	ROS_INFO("Laser_Group.size = %d", Laser_Group.size());
+	ROS_INFO("splitLine : Laser_Group.size = %d", Laser_Group.size());
 	return true;
 }
 #if 0
@@ -451,8 +452,8 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 		x2 = (iter->end() - 1)->x;
 		y2 = (iter->end() - 1)->y;
 		points_size = iter->size();
-		ROS_WARN("points_size = %d", points_size);
-		ROS_WARN("next line");
+		//ROS_WARN("points_size = %d", points_size);
+		//ROS_WARN("next line");
 		end_iterate_flag = true;
 		if (x1 != x2 && y1 != y2) {
 			a = y2 - y1;
@@ -477,7 +478,7 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 			//ROS_WARN("t_max = %lf", t_max);
 
 			/*if t_max > t_lim, then split into 2 lines*/
-			ROS_WARN("loop for split");
+			//ROS_WARN("loop for split");
 			if (t_max > t_lim) {
 				end_iterate_flag &= false;
 				//ROS_WARN("t_tmax > t_lim,end_iterate_flag = %d", end_iterate_flag);
@@ -511,7 +512,7 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 				}
 			} else {//else push_back the line into new_group
 				end_iterate_flag &= true;
-				ROS_WARN("t_max < t_lim,end_iterate_flag = %d", end_iterate_flag);
+				//ROS_WARN("t_max < t_lim,end_iterate_flag = %d", end_iterate_flag);
 				/*for (int j = 0; j < points_size; j++) {
 					new_line.push_back(*(iter->begin() + j));
 					if (j == (points_size - 1)) {
@@ -596,7 +597,7 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end();) {
 		if (iter->size() < points_count_lim) {
 			iter = (*groups).erase(iter);
-			ROS_WARN("iter->size() = %d", iter->size());
+			//ROS_WARN("iter->size() = %d", iter->size());
 		} else {
 			++iter;
 		}
@@ -606,7 +607,7 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 
 	/*if the lines still can be splited, iterate to split it*/
 	if (end_iterate_flag == false) {
-		ROS_WARN("iterate!");
+		//ROS_WARN("iterate!");
 		splitLine2nd(&Laser_Group, 0.01,10);
 	}
 
@@ -666,7 +667,7 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 						//ROS_WARN("t >= t_max,points_index_max = %d", points_index_max);
 					}
 				}
-				ROS_WARN("merge: t_max = %lf", t_max);
+				//ROS_WARN("merge: t_max = %lf", t_max);
 				if (t_max < t_lim) {
 					int index = std::distance((*groups).begin(), iter);
 					merge_index.push_back(index);
