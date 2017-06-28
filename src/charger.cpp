@@ -91,8 +91,16 @@ void charge_function(void)
 		{
 			if(robot::instance()->isLowBatPaused())
 			{
-				ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
-				set_clean_mode(Clean_Mode_Navigation);
+				if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
+				{
+					ROS_INFO("[gotocharger.cpp] Exit charger mode and but battery too low to continue cleaning.");
+					set_clean_mode(Clean_Mode_Userinterface);
+				}
+				else
+				{
+					ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
+					set_clean_mode(Clean_Mode_Navigation);
+				}
 				break;
 			}
 
