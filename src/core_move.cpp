@@ -2851,8 +2851,10 @@ void cm_handle_battery_home(bool state_now, bool state_last)
 			switch_vac_mode(false);
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		cm_set_continue_point(map_get_x_count(), map_get_y_count());
-		robot::instance()->setLowBatPause();
+		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
+			cm_set_continue_point(map_get_x_count(), map_get_y_count());
+			robot::instance()->setLowBatPause();
+		}
 #endif 
     }
 }
