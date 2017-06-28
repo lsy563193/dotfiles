@@ -1246,7 +1246,6 @@ int cm_cleaning()
 		if (is_found == 0) //No target point
 		{
 			g_go_home = true;
-			//set_clean_mode(Clean_Mode_Userinterface);	
 			return 0;
 		} else
 		if (is_found == 1)
@@ -1319,7 +1318,6 @@ void cm_go_home()
 			}
 			disable_motors();
 			robot::instance()->resetLowBatPause();
-			set_clean_mode(Clean_Mode_Userinterface);
 			cm_reset_go_home();
 			return;
 		}
@@ -1341,17 +1339,12 @@ void cm_go_home()
 				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
 				disable_motors();
 				robot::instance()->resetLowBatPause();
-				if (g_battery_low)
-					set_clean_mode(Clean_Mode_Sleep);
-				else
-					set_clean_mode(Clean_Mode_Userinterface);
 				cm_reset_go_home();
 				return;
 			}
 			if (g_key_clean_pressed)
 			{
 				disable_motors();
-				set_clean_mode(Clean_Mode_Userinterface);
 				if (robot::instance()->isManualPaused())
 					// The current home cell is still valid, so push it back to the home point list.
 					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
@@ -1394,7 +1387,6 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 	else if (g_fatal_quit_event || g_key_clean_pressed)
 	{
 		disable_motors();
-		set_clean_mode(Clean_Mode_Userinterface);
 #if MANUAL_PAUSE_CLEANING
 		if (g_key_clean_pressed)
 		{
