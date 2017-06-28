@@ -111,7 +111,6 @@ void go_home(void)
 		{
 			if(last_clean_mode == Clean_Mode_GoHome)
 			{
-				g_charge_detect = 0;
 				set_clean_mode(Clean_Mode_Charging);
 			}
 			disable_motors();
@@ -858,7 +857,6 @@ void go_home(void)
 				{
 					if(last_clean_mode == Clean_Mode_GoHome)
 					{
-						g_charge_detect = 0;
 						set_clean_mode(Clean_Mode_Charging);
 					}
 					disable_motors();
@@ -873,7 +871,6 @@ void go_home(void)
 				{
 					if(last_clean_mode == Clean_Mode_GoHome)
 					{
-						g_charge_detect = 0;
 						set_clean_mode(Clean_Mode_Charging);
 					}
 					disable_motors();
@@ -1105,7 +1102,6 @@ void go_home(void)
 				{
 					if(last_clean_mode == Clean_Mode_GoHome)
 					{
-						g_charge_detect = 0;
 						set_clean_mode(Clean_Mode_Charging);
 					}
 					disable_motors();
@@ -1120,7 +1116,6 @@ void go_home(void)
 				{
 					if(last_clean_mode == Clean_Mode_GoHome)
 					{
-						g_charge_detect = 0;
 						set_clean_mode(Clean_Mode_Charging);
 					}
 					disable_motors();
@@ -1158,7 +1153,6 @@ void go_home(void)
 					{
 						if(last_clean_mode == Clean_Mode_GoHome)
 						{
-							g_charge_detect = 0;
 							set_clean_mode(Clean_Mode_Charging);
 						}
 						disable_motors();
@@ -1214,7 +1208,6 @@ void go_home(void)
 					{
 						if(last_clean_mode == Clean_Mode_GoHome)
 						{
-							g_charge_detect = 0;
 							set_clean_mode(Clean_Mode_Charging);
 						}
 						disable_motors();
