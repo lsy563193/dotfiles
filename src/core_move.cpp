@@ -2842,6 +2842,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT){
 			g_remote_dirt_keys = true;
 			SpotMovement::instance()->setSpotType(NO_SPOT);
+			SpotMovement::instance()->spotInit(1.0,{0,0});
 		}
 	}
 	else
