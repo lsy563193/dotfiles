@@ -748,6 +748,13 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			break;
 		}
 
+		if (g_cliff_all_cnt >= 2)
+		{
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+			g_fatal_quit_event = true;
+			break;
+		}
+
 		bool slow_down=false;
 		if(check_map_boundary(slow_down))
 			break;
@@ -796,12 +803,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 						g_cliff_all_triggered = false;
 						g_cliff_cnt = 0;
 						g_cliff_all_cnt = 0;
-						break;
-					}
-					else if ((get_cliff_trig() == Status_Cliff_All) && ++g_cliff_all_cnt >= 2)
-					{
-						ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-						g_fatal_quit_event = true;
 						break;
 					}
 					else if (++g_cliff_cnt >= 2)
@@ -1701,6 +1702,13 @@ void cm_self_check(void)
 		if (g_fatal_quit_event || g_key_clean_pressed)
 			break;
 
+		if (g_cliff_all_cnt >= 2)
+		{
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+			g_fatal_quit_event = true;
+			break;
+		}
+
 		// Check for right wheel.
 		if (g_oc_wheel_left || g_oc_wheel_right)
 		{
@@ -1776,7 +1784,7 @@ void cm_self_check(void)
 			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 			if (fabsf(distance) > 0.05f)
 			{
-				if (((get_cliff_trig() == Status_Cliff_All) && g_cliff_all_cnt++ >= 2) || ++resume_cnt >= 3)
+				if (++resume_cnt >= 3)
 				{
 					ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
 					g_fatal_quit_event = true;
@@ -1785,7 +1793,6 @@ void cm_self_check(void)
 				else
 				{
 					stop_brifly();
-					beep_for_command(true);
 					saved_pos_x = robot::instance()->getOdomPositionX();
 					saved_pos_y = robot::instance()->getOdomPositionY();
 				}
@@ -2153,6 +2160,7 @@ void cm_handle_obs_right(bool state_now, bool state_last)
 void cm_handle_cliff_all(bool state_now, bool state_last)
 {
 	g_cliff_all_triggered = true;
+	g_cliff_all_cnt++;
 	g_cliff_triggered = true;
 	if (g_move_back_finished && !g_cliff_jam)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");

@@ -230,9 +230,14 @@ MotionManage::~MotionManage()
 	reset_stop_event_status();
 	disable_motors();
 
+	if(g_bumper_jam)
+		wav_play(WAV_ERROR_BUMPER);
+	if (g_cliff_all_triggered)
+		wav_play(WAV_ERROR_LIFT_UP);
+
 	if (s_laser != nullptr)
 	{
-		delete s_laser;
+		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
 
@@ -281,11 +286,6 @@ if (s_slam != nullptr)
 	}
 
 	robot::instance()->savedOffsetAngle(0);
-
-	if(g_bumper_cnt >=3 && g_bumper_hitted)
-		wav_play(WAV_ERROR_BUMPER);
-	if (g_cliff_all_triggered)
-		wav_play(WAV_ERROR_LIFT_UP);
 
 	wav_play(WAV_CLEANING_FINISHED);
 
