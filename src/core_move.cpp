@@ -2788,7 +2788,6 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 			/*----store current position---*/
 			map_set_position((robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL/CELL_SIZE), (robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
 			ROS_WARN("%s,%d,cur cell x = %d,cur cell y = %d",__FUNCTION__,__LINE__,map_get_x_cell(),map_get_y_cell());
-			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		}
 		else
 			beep_for_command(false);
