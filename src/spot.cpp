@@ -513,8 +513,6 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 	int8_t ret = 1;
 	if(!isSpotInit()){//for the first time
 
-		/*----store current position---*/
-		map_set_position((robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL/CELL_SIZE), (robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
 		/*---init spot move and set begin point---*/
 		spotInit(1.0, {map_get_x_cell(), map_get_y_cell()} );
 		/*---generate target ,and  set target_ ---*/
@@ -529,14 +527,14 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 	else if( isDirectChange() && spot_init_ == 1 ){
 		resetDirectChange();
 		changeSpiralType();//in this function,set stop_point_ and change spiral type
-		if(!isStuck()){
+		if(!isStuck()){// not stuck
 			generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);//re_generate target
 			findNearestPoint( stop_point_);//set near_point_
 			ROS_WARN("%s,%d , on direction change, get next point (%d %d) ",__FUNCTION__,__LINE__,near_point_.X,near_point_.Y);
 			next_point = {cell_to_count(near_point_.X), cell_to_count(near_point_.Y) };
 			ret = 1;
 		}
-		else// stucked  ,end spot movement
+		else// stuck,end spot
 		{
 			resetStuck();	
 			ROS_WARN("%s,%d , is stucked ,get next point (%d %d) ",__FUNCTION__,__LINE__,begin_point_.X,begin_point_.Y);

@@ -1454,7 +1454,8 @@ uint8_t cm_touring(void)
         }
     }
 	if (cm_cleaning() == 0){
-		cm_go_home();
+		if(get_clean_mode() != Clean_Mode_Spot)
+			cm_go_home();
 	}
 	cm_unregister_events();
 	return 0;
@@ -2784,6 +2785,10 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 			set_wheel_speed(0, 0);
 			g_remote_spot = true;
 			beep_for_command(true);
+			/*----store current position---*/
+			map_set_position((robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL/CELL_SIZE), (robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
+			ROS_WARN("%s,%d,cur cell x = %d,cur cell y = %d",__FUNCTION__,__LINE__,map_get_x_cell(),map_get_y_cell());
+			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		}
 		else
 			beep_for_command(false);
