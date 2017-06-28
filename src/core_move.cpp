@@ -2785,10 +2785,10 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 
 	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check())
 	{
-		stop_brifly();
 		SpotType spt = SpotMovement::instance() -> getSpotType();
 		if( spt == NO_SPOT){
 			g_remote_spot = true;
+			stop_brifly();
 			beep_for_command(true);
 			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		}
