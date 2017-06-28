@@ -2823,7 +2823,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 /* Battery */
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
-	if (! g_go_home) {
+	if (g_motion_init_succeeded && ! g_go_home) {
 		g_go_home = true;
 		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
