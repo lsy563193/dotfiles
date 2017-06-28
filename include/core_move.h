@@ -66,6 +66,7 @@ void CM_TouringCancel(void);
 void cm_reset_go_home(void);
 void cm_head_to_course(uint8_t Speed, int16_t Angle);
 
+void cm_follow_wall_turn(uint16_t speed, int16_t angle);
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
 int16_t path_target(Cell_t& next, Cell_t& target);
 MapTouringType CM_LinearMoveToPoint(Point32_t target);

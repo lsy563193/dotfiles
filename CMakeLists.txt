@@ -29,6 +29,7 @@ FILE(GLOB PP_SRC
 	src/user_interface.cpp
 	src/verify.cpp
 	src/wall_follow_slam.cpp
+#	src/wall_follow_slam2.cpp
 	src/wall_follow_trapped.cpp
 	src/wall_follow_short.cpp
 	src/wav.cpp
