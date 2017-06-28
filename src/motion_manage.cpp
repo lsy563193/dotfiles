@@ -18,6 +18,7 @@
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
+#include "spot.h"
 
 Segment_set segmentss;
 
@@ -239,6 +240,12 @@ MotionManage::~MotionManage()
 
 	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Charging || get_clean_mode() == Clean_Mode_Charging ||get_clean_mode() == Clean_Mode_Spot)
 		cm_unregister_events();
+
+	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
+	{
+		SpotMovement::instance()->setSpotType(NO_SPOT);
+		SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
+	}
 
 	if (robot::instance()->isManualPaused())
 	{
