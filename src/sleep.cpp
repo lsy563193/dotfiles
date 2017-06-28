@@ -13,6 +13,7 @@ void sleep_mode(void)
 {
 	time_t check_battery_time = time(NULL);
 	bool eh_status_now=false, eh_status_last=false;
+	sleep_plan_reject_reason = 0;
 
 	beep(1, 4, 0, 1);
 	usleep(100000);
