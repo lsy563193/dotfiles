@@ -708,7 +708,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
-	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = g_remote_dirt_keys = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
 	bool rotate_is_needed_ = true;
 
@@ -732,9 +731,8 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 
 		if (g_fatal_quit_event || g_key_clean_pressed
 			|| (!g_go_home && g_remote_home)
-			|| (SpotMovement::instance()->getSpotType() == NO_SPOT && g_remote_spot)
-			|| (SpotMovement::instance()->getSpotType() == CLEAN_SPOT && g_remote_dirt_keys)
-			|| (SpotMovement::instance()->getSpotType() == NORMAL_SPOT && g_remote_dirt_keys))
+			|| g_remote_spot // It will only be set if robot is not during spot.
+			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
@@ -868,9 +866,8 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 		if (g_fatal_quit_event || g_key_clean_pressed
 			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
 			|| (!g_go_home && g_remote_home)
-			|| (SpotMovement::instance()->getSpotType() == NO_SPOT && g_remote_spot)
-			|| (SpotMovement::instance()->getSpotType() == CLEAN_SPOT && g_remote_dirt_keys)
-			|| (SpotMovement::instance()->getSpotType() == NORMAL_SPOT && g_remote_dirt_keys))
+			|| g_remote_spot // It will only be set if robot is not during spot.
+			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
 			return false;
 
 		auto angle_diff = ranged_angle(Gyro_GetAngle() - angle_start);
@@ -1219,22 +1216,23 @@ int cm_cleaning()
 			return 0;
 		}
 
-		if (SpotMovement::instance()->getSpotType() == NO_SPOT && g_remote_spot)
+		if (g_remote_spot)
 		{
 			g_remote_spot = false;
 			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		}
-		else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT && g_remote_dirt_keys)
+
+		if (g_remote_dirt_keys)
 		{
 			g_remote_dirt_keys = false;
-			SpotMovement::instance()->setSpotType(NO_SPOT);
-			SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
-			wav_play(WAV_CLEANING_CONTINUE);
-		}
-		else if (SpotMovement::instance()->getSpotType() == NORMAL_SPOT && g_remote_dirt_keys)
-		{
-			g_remote_dirt_keys = false;
-			return -1;
+			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT)
+			{
+				SpotMovement::instance()->setSpotType(NO_SPOT);
+				SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
+				wav_play(WAV_CLEANING_CONTINUE);
+			}
+			else if (SpotMovement::instance()->getSpotType() == NORMAL_SPOT)
+				return -1;
 		}
 
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
