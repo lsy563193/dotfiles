@@ -2729,7 +2729,8 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if(spt == NORMAL_SPOT || spt == CLEAN_SPOT){
 			ROS_WARN("%s,%d,set spot type NO_SPOT",__FUNCTION__,__LINE__);
-			robot::instance()->setManualPause();
+			if(spt == CLEAN_SPOT)
+				robot::instance()->setManualPause();
 			SpotMovement::instance()->setSpotType(NO_SPOT);
 			SpotMovement::instance()->spotInit(1.0,{0,0});//clear all variable
 		}
@@ -2752,7 +2753,8 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	}	
 	else if(spt == NORMAL_SPOT || spt == CLEAN_SPOT){
 		ROS_WARN("%s,%d,set spot type NO_SPOT",__FUNCTION__,__LINE__);
-		robot::instance()->setManualPause();
+		if(spt == CLEAN_SPOT)
+			robot::instance()->setManualPause();
 		SpotMovement::instance()->setSpotType(NO_SPOT);
 		SpotMovement::instance()->spotInit(1.0,{0,0});//clear all variable
 	}
