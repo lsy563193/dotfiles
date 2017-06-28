@@ -1294,6 +1294,8 @@ int cm_cleaning()
 
 void cm_go_home()
 {
+	Cell_t current_home_cell;
+
 	set_vacmode(Vac_Normal, false);
 	set_vac_speed();
 
@@ -1303,17 +1305,35 @@ void cm_go_home()
 
 	if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
 		cm_create_home_boundary();
-	//todo ! emply()
-	Cell_t current_home_cell = {count_to_cell(g_home_point.front().X), count_to_cell(g_home_point.front().Y)};
-//	ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint) g_home_point.size());
-	g_home_point.pop_front();
 
 	while (ros::ok())
 	{
 		set_led(100, 0);
-		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
-		//set_clean_mode(Clean_Mode_Navigation);
+		if (g_home_point.empty())
+		{
+			ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
+			// If it is the last point, it means it it now at (0, 0).
+			if (!g_from_station) {
+				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
+			}
+			disable_motors();
+			robot::instance()->resetLowBatPause();
+			set_clean_mode(Clean_Mode_Userinterface);
+			cm_reset_go_home();
+			return;
+		}
+		else
+		{
+			// Get next home cell.
+			current_home_cell.X = count_to_cell(g_home_point.front().X);
+			current_home_cell.Y = count_to_cell(g_home_point.front().Y);
+			g_home_point.pop_front();
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point.size());
+		}
+
 		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
+
 		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
 		{
 			if (g_fatal_quit_event)
@@ -1338,33 +1358,8 @@ void cm_go_home()
 				return;
 			}
 		}
-		else
-		{
-			if (cm_go_to_charger(current_home_cell))
-				return;
-		}
-
-		if (g_home_point.empty())
-		{
-			// If it is the last point, it means it it now at (0, 0).
-			if (!g_from_station) {
-				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
-				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
-			}
-			disable_motors();
-			robot::instance()->resetLowBatPause();
-			set_clean_mode(Clean_Mode_Userinterface);
-			cm_reset_go_home();
+		else if (cm_go_to_charger(current_home_cell))
 			return;
-		}
-		else
-		{
-			// Get next home cell.
-			current_home_cell.X = count_to_cell(g_home_point.front().X);
-			current_home_cell.Y = count_to_cell(g_home_point.front().Y);
-			g_home_point.pop_front();
-			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point.size());
-		}
 	}
 }
 
@@ -1377,16 +1372,8 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("%s,%d,Call GoHome()",__FUNCTION__,__LINE__);
 	go_home();
-	// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
-	while (get_clean_mode() == Clean_Mode_GoHome)
-	{
-		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
-		set_clean_mode(Clean_Mode_Navigation);
-		ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
-		go_home();
-	}
-	// Check the clean mode to find out whether it has reach the charger.
-	if (get_clean_mode() == Clean_Mode_Charging)
+
+	if (g_charge_detect)
 	{
 		if (robot::instance()->isLowBatPaused())
 		{
@@ -1396,8 +1383,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		cm_reset_go_home();
 		return true;
 	}
-	// FIXME: else if (g_battery_low)
-	else if (get_clean_mode() == Clean_Mode_Sleep)
+	else if (g_battery_low)
 	{
 		// Battery too low.
 		disable_motors();
@@ -1405,14 +1391,12 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		cm_reset_go_home();
 		return true;
 	}
-	// FIXME: else if (g_fatal_quit_event || g_key_clean_pressed)
-	else if (stop_event())
+	else if (g_fatal_quit_event || g_key_clean_pressed)
 	{
 		disable_motors();
 		set_clean_mode(Clean_Mode_Userinterface);
 #if MANUAL_PAUSE_CLEANING
-		// FIXME: if (g_key_clean_pressed)
-		if (stop_event() == 1 || stop_event() == 2)
+		if (g_key_clean_pressed)
 		{
 			reset_stop_event_status();
 			// The current home cell is still valid, so push it back to the home point list.

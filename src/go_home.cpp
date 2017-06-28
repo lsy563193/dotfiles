@@ -88,7 +88,8 @@ void go_home(void)
 	// Enable the charge function
 	set_start_charge();
 
-	go_home_register_events();
+	if (last_clean_mode == Clean_Mode_GoHome)
+		go_home_register_events();
 
 	while(1)
 	{
@@ -2545,7 +2546,9 @@ void go_home(void)
 		set_wheel_speed(0, 0);
 		wav_play(WAV_BACK_TO_CHARGER_FAILED);
 	}
-	go_home_unregister_events();
+
+	if (last_clean_mode == Clean_Mode_GoHome)
+		go_home_unregister_events();
 }
 
 /*-------------------Turn OFF the Vaccum-----------------------------*/
