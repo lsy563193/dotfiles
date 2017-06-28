@@ -2537,39 +2537,15 @@ void go_home(void)
 		}
 		usleep(500000);
 	}
-	// If robot didn't reach the charger, go back to userinterface mode.
-	if(get_clean_mode() != Clean_Mode_Charging)
+
+	extern std::list <Point32_t> g_home_point;
+	if(!g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed && g_home_point.empty())
 	{
-		extern std::list <Point32_t> g_home_point;
-		if (!stop_event() && g_home_point.empty())
-		{
-			set_led(100, 0);
-			stop_brifly();
-			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		}
+		set_led(100, 0);
+		set_wheel_speed(0, 0);
+		wav_play(WAV_BACK_TO_CHARGER_FAILED);
 	}
 	go_home_unregister_events();
-}
-
-/*------------------------------------------------*/
-uint8_t home_check_current(void)
-{
-	uint8_t motor_check_code= check_motor_current();
-	if(motor_check_code)
-	{
-		if(self_check(motor_check_code))
-		{
-			set_clean_mode(Clean_Mode_Userinterface);
-			return 1;
-		}
-		else
-		{
-			home_motor_set();
-			set_clean_mode(Clean_Mode_GoHome);
-			return 1;
-		}
-	}
-	return 0;
 }
 
 /*-------------------Turn OFF the Vaccum-----------------------------*/
