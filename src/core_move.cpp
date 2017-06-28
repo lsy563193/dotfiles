@@ -1206,16 +1206,9 @@ int cm_cleaning()
 	while (ros::ok())
 	{
 		SpotType spot_type = SpotMovement::instance()->getSpotType();
-		if(spot_type == CLEAN_SPOT && g_remote_spot ){
-			on_spot = g_remote_spot;//for store remot_spot state
-		}
 		if (g_key_clean_pressed || g_fatal_quit_event || g_remote_dirt_keys || g_remote_wallfollow ){
 			//g_remote_wallfollow and g_remote_dirt_keys only set in spot mode
-			if(g_key_clean_pressed && on_spot){
-				on_spot = false;
-				ROS_WARN("%s,%d,stop spot ,continue to navigation",__FUNCTION__,__LINE__);
-			}
-			else if(g_remote_wallfollow || spot_type == NORMAL_SPOT){
+			if(g_remote_wallfollow || spot_type == NORMAL_SPOT){
 				set_clean_mode(Clean_Mode_WallFollow);
 			}
 			else{
@@ -2732,6 +2725,16 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 			ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
 		usleep(20000);
 	}
+	if(!reset_manual_pause){
+		SpotType spt = SpotMovement::instance()->getSpotType();
+		if(spt == NORMAL_SPOT || spt == CLEAN_SPOT){
+			ROS_WARN("%s,%d,set spot type NO_SPOT",__FUNCTION__,__LINE__);
+			robot::instance()->setManualPause();
+			SpotMovement::instance()->setSpotType(NO_SPOT);
+			SpotMovement::instance()->spotInit(1.0,{0,0});//clear all variable
+		}
+	}
+
 	reset_touch();
 }
 
@@ -2749,6 +2752,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	}	
 	else if(spt == NORMAL_SPOT || spt == CLEAN_SPOT){
 		ROS_WARN("%s,%d,set spot type NO_SPOT",__FUNCTION__,__LINE__);
+		robot::instance()->setManualPause();
 		SpotMovement::instance()->setSpotType(NO_SPOT);
 		SpotMovement::instance()->spotInit(1.0,{0,0});//clear all variable
 	}
@@ -2833,15 +2837,14 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 	if(!g_remote_dirt_keys)
 	{
 		beep_for_command(true);
-		g_remote_dirt_keys = true;
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT){
+			g_remote_dirt_keys = true;
 			SpotMovement::instance()->setSpotType(NO_SPOT);
 		}
 	}
 	else
 	{
 		beep_for_command(false);
-		g_remote_dirt_keys = false;
 	}
 }
 
