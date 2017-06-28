@@ -6,6 +6,8 @@
 #include "movement.h"
 #include "wav.h"
 #include "event_manager.h"
+
+uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 /*----------------------------------------------------------------Sleep mode---------------------------*/
 void sleep_mode(void)
 {
@@ -40,6 +42,25 @@ void sleep_mode(void)
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
+		}
+
+		switch (sleep_plan_reject_reason)
+		{
+			case 1:
+				alarm_error();
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				sleep_plan_reject_reason = 0;
+				break;
+			case 2:
+				wav_play(WAV_ERROR_LIFT_UP);
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				sleep_plan_reject_reason = 0;
+				break;
+			case 3:
+				wav_play(WAV_BATTERY_LOW);
+				wav_play(WAV_CANCEL_APPOINTMENT);
+				sleep_plan_reject_reason = 0;
+				break;
 		}
 
 		if (get_clean_mode() != Clean_Mode_Sleep)
@@ -122,8 +143,8 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 	{
 		set_clean_mode(Clean_Mode_GoHome);
 		set_main_pwr_byte(Clean_Mode_GoHome);
-		reset_sleep_mode_flag();
 	}
+	reset_sleep_mode_flag();
 }
 
 void sleep_handle_remote_clean(bool state_now, bool state_last)
@@ -142,24 +163,21 @@ void sleep_handle_remote_plan(bool state_now, bool state_last)
 		if (get_error_code() != Error_Code_None)
 		{
 			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-			alarm_error();
-			wav_play(WAV_CANCEL_APPOINTMENT);
-			set_plan_status(0);
+			sleep_plan_reject_reason = 1;
 		}
 		else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-			wav_play(WAV_ERROR_LIFT_UP);
-			wav_play(WAV_CANCEL_APPOINTMENT);
-			set_plan_status(0);
+			sleep_plan_reject_reason = 2;
 		}
 		else
 		{
 			set_clean_mode(Clean_Mode_Navigation);
 			set_main_pwr_byte(Clean_Mode_Navigation);
-			reset_sleep_mode_flag();
 		}
 	}
+	reset_sleep_mode_flag();
+	set_plan_status(0);
 }
 
 void sleep_handle_key_clean(bool state_now, bool state_last)
