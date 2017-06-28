@@ -88,7 +88,8 @@ void go_home(void)
 	// Enable the charge function
 	set_start_charge();
 
-	go_home_register_events();
+	if (last_clean_mode == Clean_Mode_GoHome)
+		go_home_register_events();
 
 	while(1)
 	{
@@ -2537,39 +2538,17 @@ void go_home(void)
 		}
 		usleep(500000);
 	}
-	// If robot didn't reach the charger, go back to userinterface mode.
-	if(get_clean_mode() != Clean_Mode_Charging)
-	{
-		extern std::list <Point32_t> g_home_point;
-		if (!stop_event() && g_home_point.empty())
-		{
-			set_led(100, 0);
-			stop_brifly();
-			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		}
-	}
-	go_home_unregister_events();
-}
 
-/*------------------------------------------------*/
-uint8_t home_check_current(void)
-{
-	uint8_t motor_check_code= check_motor_current();
-	if(motor_check_code)
+	extern std::list <Point32_t> g_home_point;
+	if(!g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed && g_home_point.empty())
 	{
-		if(self_check(motor_check_code))
-		{
-			set_clean_mode(Clean_Mode_Userinterface);
-			return 1;
-		}
-		else
-		{
-			home_motor_set();
-			set_clean_mode(Clean_Mode_GoHome);
-			return 1;
-		}
+		set_led(100, 0);
+		set_wheel_speed(0, 0);
+		wav_play(WAV_BACK_TO_CHARGER_FAILED);
 	}
-	return 0;
+
+	if (last_clean_mode == Clean_Mode_GoHome)
+		go_home_unregister_events();
 }
 
 /*-------------------Turn OFF the Vaccum-----------------------------*/
@@ -2676,19 +2655,24 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 
 void go_home_handle_key_clean(bool state_now, bool state_last)
 {
-	/*---go home main while---*/
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	beep_for_command(true);
+	set_wheel_speed(0, 0);
+	g_key_clean_pressed = true;
+
 	while (get_key_press() & KEY_CLEAN)
 	{
-		ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
 		usleep(20000);
 	}
-	g_key_clean_pressed = 1;
+
 	reset_touch();
 }
 
 void go_home_handle_remote_clean(bool state_now, bool state_last)
 {
-	g_key_clean_pressed = 1;
+	beep_for_command(true);
+	g_key_clean_pressed = true;
 	reset_rcon_remote();
 }
 

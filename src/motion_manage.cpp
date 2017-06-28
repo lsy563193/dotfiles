@@ -230,16 +230,20 @@ MotionManage::~MotionManage()
 	reset_stop_event_status();
 	disable_motors();
 
+	if(g_bumper_jam)
+		wav_play(WAV_ERROR_BUMPER);
+	if (g_cliff_all_triggered)
+		wav_play(WAV_ERROR_LIFT_UP);
+
 	if (s_laser != nullptr)
 	{
-		delete s_laser;
+		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Charging || get_clean_mode() == Clean_Mode_Charging ||get_clean_mode() == Clean_Mode_Spot)
-		cm_unregister_events();
+	cm_unregister_events();
 
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
 	{
@@ -283,11 +287,6 @@ if (s_slam != nullptr)
 
 	robot::instance()->savedOffsetAngle(0);
 
-	if(g_bumper_cnt >=3 && g_bumper_hitted)
-		wav_play(WAV_ERROR_BUMPER);
-	if (g_cliff_all_triggered)
-		wav_play(WAV_ERROR_LIFT_UP);
-
 	wav_play(WAV_CLEANING_FINISHED);
 
 	g_home_point.clear();
@@ -299,9 +298,9 @@ if (s_slam != nullptr)
 			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
 	else if (g_key_clean_pressed)
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
-	else if (get_clean_mode() == Clean_Mode_Charging)
+	else if (g_charge_detect)
 		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
-	else if (get_clean_mode() == Clean_Mode_Sleep)
+	else if (g_battery_low)
 		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
 	else
 		if (get_clean_mode() == Clean_Mode_Spot)
@@ -312,11 +311,12 @@ if (s_slam != nullptr)
 	g_saved_work_time += get_work_time();
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
-	uint8_t clean_mode = get_clean_mode();
-	if (clean_mode != Clean_Mode_Sleep && clean_mode != Clean_Mode_Charging ){
-		ROS_WARN("%s,%d,set clean mode userinterface",__FUNCTION__,__LINE__);
+	if (g_battery_low)
+		set_clean_mode(Clean_Mode_Sleep);
+	else if (g_charge_detect)
+		set_clean_mode(Clean_Mode_Charging);
+	else
 		set_clean_mode(Clean_Mode_Userinterface);
-	}
 
 }
 
