@@ -220,10 +220,6 @@ double Laser::getLaserDistance(int begin, int end, double range, double *line_an
 	Laser_Point.clear();
 	ROS_ERROR("getLaserDistance");
 	for (i = begin; i < end; i++) {//default:begin = 260, end =270
-		/*if (laser_scan_data_.ranges[i] < range) {
-			laser_distance = laser_scan_data_.ranges[i] + laser_distance;
-			sum++;
-		}*/
 		if (laser_scan_data_.ranges[i] < 4) {
 			th = i * 1.0;
 			th = th + 180.0;
@@ -235,18 +231,13 @@ double Laser::getLaserDistance(int begin, int end, double range, double *line_an
 		//ROS_INFO("wall_distance = %lf, i = %d", laser_distance, i);
 		//ROS_INFO("Laser_Point_x = %lf, Laser_Point_y = %lf, th = %lf, distance = %lf", New_Laser_Point.x, New_Laser_Point.y, th, laser_scan_data_.ranges[i]);
 	}
-
-	//laser_distance = laser_distance / sum;
-	//ROS_INFO("laser_distance_averange = %lf, sum = %d",laser_distance, sum);
-	//ROS_WARN("scan end");
-
-	//return laser_distance;
 	lineFit(Laser_Point, a, b, c);
 	splitLine(Laser_Point, 0.01, 10);
 	splitLine2nd(&Laser_Group, 0.01,10);
-	//mergeLine(&Laser_Group, 0.01);
+	mergeLine(&Laser_Group, 0.01);
 	fitLineGroup(&Laser_Group, 0.1);
-	*line_angle = atan2(-a, b) * 180 / PI;
+	//*line_angle = atan2(-a, b) * 180 / PI;
+	*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
 	//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 	ROS_INFO("line_angle = %lf", *line_angle);
 	Laser_Group.clear();
@@ -778,7 +769,7 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			//pubFitLineMarker(a, b, c, -0.5, 0.5);
 			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
 			//ROS_WARN("iter->begin()->y = %lf, (iter->end() - 1)->y= %lf",iter->begin()->y, (iter->end() - 1)->y);
-			//ROS_WARN("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
+			ROS_WARN("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
 	} else {
