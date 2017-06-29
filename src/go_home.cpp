@@ -260,8 +260,6 @@ void go_to_charger(void)
 					set_dir_backward();
 					set_wheel_speed(18,18);
 					g_move_back_finished = false;
-					saved_pos_x = robot::instance()->getOdomPositionX();
-					saved_pos_y = robot::instance()->getOdomPositionY();
 					continue;
 				}
 				if(!turn_finished)
@@ -683,8 +681,6 @@ void go_to_charger(void)
 				set_wheel_speed(18,18);
 
 				g_move_back_finished = false;
-				saved_pos_x = robot::instance()->getOdomPositionX();
-				saved_pos_y = robot::instance()->getOdomPositionY();
 				continue;
 			}
 			if(g_bumper_left || g_bumper_right)
@@ -694,10 +690,7 @@ void go_to_charger(void)
 				stop_brifly();
 				set_dir_backward();
 				set_wheel_speed(18,18);
-
 				g_move_back_finished = false;
-				saved_pos_x = robot::instance()->getOdomPositionX();
-				saved_pos_y = robot::instance()->getOdomPositionY();
 				continue;
 			}
 			if(!turn_finished)
@@ -1366,6 +1359,7 @@ void go_to_charger(void)
 			{
 				bumper_counter++;
 				ROS_INFO("bumper in by path!");
+				g_move_back_finished = false;
 				if(!g_position_far)
 				{
 					stop_brifly();
@@ -1373,16 +1367,13 @@ void go_to_charger(void)
 						break;
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(0);
-					ROS_DEBUG("%d: quick_back in !position_far", __LINE__);
+					ROS_WARN("%d: quick_back in !position_far", __LINE__);
 					set_main_brush_pwm(30);
 					stop_brifly();
 
-					g_move_back_finished = false;
 					move_back_status = QUICK_BACK_2;
 					set_dir_backward();
 					set_wheel_speed(30,30);
-					saved_pos_x = robot::instance()->getOdomPositionX();
-					saved_pos_y = robot::instance()->getOdomPositionY();
 					continue;
 				}
 				else
@@ -1395,11 +1386,9 @@ void go_to_charger(void)
 					{
 						move_back_status = RANDOM_BACK_2;
 					}
-					g_move_back_finished = false;
+					ROS_WARN("%d: quick_back in position_far", __LINE__);
 					set_dir_backward();
 					set_wheel_speed(12,12);
-					saved_pos_y = robot::instance()->getOdomPositionY();
-					saved_pos_x = robot::instance()->getOdomPositionX();
 					continue;
 				}
 			}
@@ -1410,8 +1399,6 @@ void go_to_charger(void)
 				g_move_back_finished = false;
 				set_dir_backward();
 				set_wheel_speed(18, 18);
-				saved_pos_y = robot::instance()->getOdomPositionY();
-				saved_pos_x = robot::instance()->getOdomPositionX();
 				continue;
 			}
 
@@ -2831,9 +2818,9 @@ void go_home_register_events(void)
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT, true);
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
 	/*---bumper---*/
-	event_manager_register_and_enable_x(bumper_right, EVT_BUMPER_RIGHT, true);
-	event_manager_register_and_enable_x(bumper_all, EVT_BUMPER_ALL, true);
-	event_manager_register_and_enable_x(bumper_left, EVT_BUMPER_LEFT, true);
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_RIGHT, true);
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_ALL, true);
+	event_manager_register_and_enable_x(bumper, EVT_BUMPER_LEFT, true);
 	/*---battery---*/
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/*---over current---*/
@@ -2951,61 +2938,31 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 
 void go_home_handle_cliff(bool state_now, bool state_last)
 {
-	g_cliff_triggered = true;
+	if (state_now == true && state_last == false)
+	{
+		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+		g_cliff_triggered = true;
+	}
 }
 
-void go_home_handle_bumper_all(bool state_now, bool state_last)
+void go_home_handle_bumper(bool state_now, bool state_last)
 {
-	static int bumper_all_cnt = 0;
-	if (state_now == true && state_last == true)
+	if (state_now == true && state_last == false)
 	{
-		bumper_all_cnt++;
-		if (bumper_all_cnt > 2)
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+		if (get_bumper_status() & LeftBumperTrig)
 		{
-			bumper_all_cnt = 0;
-			g_bumper_right = true;
+			ROS_WARN("%s %d: Left bumper triggered.", __FUNCTION__, __LINE__);
 			g_bumper_left = true;
 		}
-	}
-	else
-	{
-		bumper_all_cnt = 0;
-	}
-}
-
-void go_home_handle_bumper_left(bool state_now, bool state_last)
-{
-	static int bumper_left_cnt = 0;
-	if (state_now == true && state_last == true)
-	{
-		bumper_left_cnt++;
-		if (bumper_left_cnt > 2)
+		if (get_bumper_status() & RightBumperTrig)
 		{
-			bumper_left_cnt = 0;
-			g_bumper_left = true;
-		}
-	}
-	else
-	{
-		bumper_left_cnt = 0;
-	}
-}
-
-void go_home_handle_bumper_right(bool state_now, bool state_last)
-{
-	static int bumper_right_cnt = 0;
-	if (state_now == true && state_last == true)
-	{
-		bumper_right_cnt++;
-		if (bumper_right_cnt > 2)
-		{
-			bumper_right_cnt = 0;
+			ROS_WARN("%s %d: Left bumper triggered.", __FUNCTION__, __LINE__);
 			g_bumper_right = true;
 		}
-	}
-	else
-	{
-		bumper_right_cnt = 0;
 	}
 }
 
