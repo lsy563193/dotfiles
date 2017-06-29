@@ -17,9 +17,12 @@
 #endif
 
 
-/*---------------------------------------------------------------- Charge Function ------------------------*/
 /* Exit charge mode when this counter equals to 0 */
 uint8_t g_stop_charge_counter = 0;
+
+uint8_t charge_plan_status = 0;
+uint8_t charge_reject_reason = 0;
+/*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {
 
@@ -107,6 +110,33 @@ void charge_function(void)
 			ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
 			set_clean_mode(Clean_Mode_Userinterface);
 			break;
+		}
+		if (charge_reject_reason)
+		{
+			switch (charge_reject_reason)
+			{
+				case 1:
+					alarm_error();
+					charge_reject_reason = 0;
+					break;
+				case 2:
+					wav_play(WAV_ERROR_LIFT_UP);
+					clear_manual_pause();
+					charge_reject_reason = 0;
+					break;
+				case 3:
+					wav_play(WAV_BATTERY_LOW);
+					charge_reject_reason = 0;
+					break;
+			}
+		}
+		else if (charge_plan_status)
+		{
+			if (charge_plan_status == 2)
+				wav_play(WAV_CANCEL_APPOINTMENT);
+			else if (charge_plan_status == 4)
+				wav_play(WAV_APPOINTMENT_DONE);
+			charge_plan_status = 0;
 		}
 		if (get_clean_mode() == Clean_Mode_Navigation)
 			break;
@@ -212,7 +242,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 		case 2:
 		{
 			ROS_WARN("%s %d: Plan canceled.", __FUNCTION__, __LINE__);
-			wav_play(WAV_CANCEL_APPOINTMENT);
+			charge_plan_status = 2;
 			break;
 		}
 		case 3:
@@ -221,17 +251,19 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 			if (get_error_code() != Error_Code_None)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-				alarm_error();
-				wav_play(WAV_CANCEL_APPOINTMENT);
-				set_plan_status(0);
+				charge_reject_reason = 1;
 				break;
 			}
 			else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				wav_play(WAV_ERROR_LIFT_UP);
-				wav_play(WAV_CANCEL_APPOINTMENT);
-				set_plan_status(0);
+				charge_reject_reason = 2;
+				break;
+			}
+			else if (!check_bat_ready_to_clean())
+			{
+				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
+				charge_reject_reason = 3;
 				break;
 			}
 			else
@@ -246,7 +278,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 		case 4:
 		{
 			ROS_WARN("%s %d: Plan confirmed.", __FUNCTION__, __LINE__);
-			wav_play(WAV_APPOINTMENT_DONE);
+			charge_plan_status = 4;
 			break;
 		}
 	}
@@ -256,31 +288,42 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 {
 	if (is_direct_charge())
 	{
-		ROS_WARN("Can not go to navigation mode during direct charging.");
+		ROS_WARN("%s %d: Can not go to navigation mode during direct charging.", __FUNCTION__, __LINE__);
 		beep_for_command(false);
-		// Key release detection, if user has not release the key, don't do anything.
-		while (get_key_press() & KEY_CLEAN)
-		{
-			ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
-			usleep(20000);
-		}
+	}
+	else if (get_error_code() != Error_Code_None)
+	{
+		ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
+		beep_for_command(false);
+		charge_reject_reason = 1;
+	}
+	else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	{
+		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+		beep_for_command(false);
+		charge_reject_reason = 2;
 	}
 	else if (!check_bat_ready_to_clean())
 	{
-		ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
-		wav_play(WAV_BATTERY_LOW);
+		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
+		beep_for_command(false);
+		charge_reject_reason = 3;
 	}
 	else if (is_on_charger_stub())
 	{
-		ROS_WARN("[gotocharger.cpp] Exit charger mode and go to navigation mode.");
-		// Key release detection, if user has not release the key, don't do anything.
-		while (get_key_press() & KEY_CLEAN)
-		{
-			ROS_WARN("%s %d: User hasn't release key or still cliff detected.", __FUNCTION__, __LINE__);
-			usleep(20000);
-		}
+		ROS_WARN("%s %d: Exit charger mode and go to navigation mode.", __FUNCTION__, __LINE__);
+		beep_for_command(true);
 		set_clean_mode(Clean_Mode_Navigation);
 	}
+
+	// Key release detection, if user has not release the key, don't do anything.
+	while (get_key_press() & KEY_CLEAN)
+	{
+		ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
+		usleep(20000);
+	}
+
+	reset_touch();
 }
 void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 {
@@ -288,16 +331,31 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 		reset_rcon_remote();
 		if (is_direct_charge())
 		{
-			ROS_WARN("Can not go to navigation mode during direct charging.");
+			ROS_WARN("%s %d: Can not go to navigation mode during direct charging.", __FUNCTION__, __LINE__);
 			beep_for_command(false);
+		}
+		else if (get_error_code() != Error_Code_None)
+		{
+			ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
+			beep_for_command(false);
+			charge_reject_reason = 1;
+		}
+		else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+		{
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+			beep_for_command(false);
+			charge_reject_reason = 2;
 		}
 		else if (!check_bat_ready_to_clean())
 		{
-			ROS_WARN("Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(1400) + 60, can't go to navigation mode.");
-			wav_play(WAV_BATTERY_LOW);
+			ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
+			charge_reject_reason = 3;
+			beep_for_command(false);
 		}
 		else if (is_on_charger_stub())
 		{
+			ROS_WARN("%s %d: Exit charger mode and go to navigation mode.", __FUNCTION__, __LINE__);
+			beep_for_command(true);
 			set_clean_mode(Clean_Mode_Navigation);
 		}
 	}
