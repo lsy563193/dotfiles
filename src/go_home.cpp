@@ -111,7 +111,6 @@ void go_to_charger(void)
 	 *	2: other						*/
 	uint8_t entrance_to_turn = 0;
 	uint32_t receive_code = 0;
-	uint8_t ret = 0;
 	float distance = 0.0;
 	int16_t target_angle = 0;
 	uint16_t turn_speed = 0;
@@ -191,7 +190,6 @@ void go_to_charger(void)
 		{
 			entrance_to_check_position = 0;
 			receive_code = 0;
-			ret = 0;
 			distance = 0.0;
 			move_back_status = 0;
 			signal_counter=0;
@@ -1095,10 +1093,7 @@ void go_to_charger(void)
 			else if(g_charge_detect_cnt > 0)
 			{
 				g_charge_detect_cnt = 0;
-				ret = turn_connect();
-				if(ret == 1)
-					break;
-				else if(ret == 2)
+				if(turn_connect())
 					break;
 				else
 				{
@@ -1375,10 +1370,7 @@ void go_to_charger(void)
 			else if(g_charge_detect_cnt > 0)
 			{
 				g_charge_detect_cnt = 0;
-				ret = turn_connect();
-				if(ret == 1)
-					break;
-				else if(ret == 2)
+				if(turn_connect())
 					break;
 				else
 				{
@@ -1404,10 +1396,7 @@ void go_to_charger(void)
 				if(!g_position_far)
 				{
 					stop_brifly();
-					ret = turn_connect();
-					if(ret == 1)
-						break;
-					else if(ret == 2)
+					if(turn_connect())
 						break;
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(0);
@@ -3124,8 +3113,11 @@ void go_home_handle_over_current_suction(bool state_now, bool state_last)
 	}
 }
 
-
-uint8_t turn_connect(void)
+/* turn_connect()
+ * return: true - event triggered, including g_charge_detect/g_key_clean_pressed/g_cliff_all_triggered.
+ *         false - can't reach the charger stub.
+ */
+bool turn_connect(void)
 {
 	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
 	extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
@@ -3138,7 +3130,7 @@ uint8_t turn_connect(void)
 	if(g_charge_detect)
 	{
 		ROS_INFO("Reach charger without turning.");
-		return 1;
+		return true;
 	}
 	// Start turning right.
 	target_angle = Gyro_GetAngle() - 120;
@@ -3160,7 +3152,7 @@ uint8_t turn_connect(void)
 			if (g_charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
-				return 1;
+				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
@@ -3174,7 +3166,7 @@ uint8_t turn_connect(void)
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
 			disable_motors();
-			return 2;
+			return true;
 		}
 	}
 	stop_brifly();
@@ -3198,7 +3190,7 @@ uint8_t turn_connect(void)
 			if (g_charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
-				return 1;
+				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
@@ -3212,11 +3204,11 @@ uint8_t turn_connect(void)
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
 			disable_motors();
-			return 2;
+			return true;
 		}
 	}
 	stop_brifly();
 
-	return 0;
+	return false;
 }
 

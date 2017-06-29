@@ -21,4 +21,4 @@ void go_home_handle_over_current_brush_main(bool, bool);
 void go_home_handle_over_current_wheel_left(bool, bool);
 void go_home_handle_over_current_wheel_right(bool, bool);
 void go_home_handle_over_current_suction(bool, bool);
-uint8_t turn_connect(void);
+bool turn_connect(void);
