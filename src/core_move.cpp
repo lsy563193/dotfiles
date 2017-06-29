@@ -1261,7 +1261,10 @@ int cm_cleaning()
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
 			if (cm_should_self_check()){
+				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
+				cm_set_event_manager_handler_state(true);
 				cm_self_check();
+				cm_set_event_manager_handler_state(false);
 			}
 
 		} else
@@ -1691,7 +1694,6 @@ void cm_self_check(void)
 	}
 
 	SelfCheckRegulator regulator;
-	cm_set_event_manager_handler_state(true);
 
 	while (ros::ok) {
 		robotbase_obs_adjust_count(50);
@@ -1902,8 +1904,6 @@ void cm_self_check(void)
 		if(! regulator.adjustSpeed(bumper_jam_state))
 			break;
 	}
-
-	cm_set_event_manager_handler_state(false);
 }
 
 bool cm_should_self_check(void)
