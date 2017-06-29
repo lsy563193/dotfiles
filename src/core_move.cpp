@@ -1057,7 +1057,7 @@ uint8_t cm_follow_wall(Point32_t target)
 	bool	eh_status_now=false, eh_status_last=false;
 	cm_set_event_manager_handler_state(true);
 	g_straight_distance = 300;
-	TurnRegulator turn_reg(TURN_SPEED);
+	TurnRegulator turn_reg(TURN_SPEED-5);
 	BackRegulator back_reg;
 	FollowWallRegulator follow_wall_reg(type);
 	RegulatorProxy regulator(&follow_wall_reg);

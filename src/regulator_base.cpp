@@ -14,18 +14,18 @@
 
 bool RegulatorBase::isStop()
 {
-	ROS_INFO("reg_base isStop");
+//	ROS_INFO("reg_base isStop");
 	return g_fatal_quit_event || g_key_clean_pressed  || g_oc_wheel_left || g_oc_wheel_right;
 }
 
 //FollowWallRegulator
 
 FollowWallRegulator::FollowWallRegulator(CMMoveType type):type_(type),previous_(0){
-	ROS_INFO("FollowWallRegulator init");
+//	ROS_INFO("FollowWallRegulator init");
 };
 bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	ROS_INFO("FollowWallRegulator adjustSpeed");
+//	ROS_INFO("FollowWallRegulator adjustSpeed");
 	if (get_right_wheel_step() < (uint32_t) g_straight_distance)
 	{
 		int32_t speed;
@@ -36,14 +36,14 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		} else
 			speed = 23;
 		l_speed = r_speed = speed;
-		ROS_INFO("get_right_wheel_step() < (uint32_t) g_straight_distance", get_right_wheel_step(), g_straight_distance);
+//		ROS_INFO("get_right_wheel_step() < (uint32_t) g_straight_distance", get_right_wheel_step(), g_straight_distance);
 	}
 	else
 	{
 
 		if (get_front_obs() < get_front_obs_value())
 		{
-			ROS_INFO("get_front_obs() < get_front_obs_value()", get_front_obs(), get_front_obs_value());
+//			ROS_INFO("get_front_obs() < get_front_obs_value()", get_front_obs(), get_front_obs_value());
 			auto wheel_speed_base = 15 + get_right_wheel_step() / 150;
 			if (wheel_speed_base > 28)wheel_speed_base = 28;
 
@@ -127,7 +127,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool FollowWallRegulator::isReach()
 {
-	ROS_INFO("FollowWallRegulator isReach");
+//	ROS_INFO("FollowWallRegulator isReach");
 	bool ret = false;
 	auto start_y = origin_.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)
@@ -164,19 +164,19 @@ bool FollowWallRegulator::isReach()
 
 bool FollowWallRegulator::isSwitch()
 {
-	ROS_INFO("FollowWallRegulator isSwitch");
+//	ROS_INFO("FollowWallRegulator isSwitch");
 	return g_bumper_hitted || g_cliff_triggered || g_turn_angle != 0;
 }
 
 //BackRegulator
 BackRegulator::BackRegulator():speed_(8),counter_(0),pos_x_(0),pos_y_(0)
 {
-	ROS_INFO("BackRegulator init");
+//	ROS_INFO("BackRegulator init");
 }
 
 bool BackRegulator::isSwitch()
 {
-	ROS_INFO("BackRegulator::isSwitch");
+//	ROS_INFO("BackRegulator::isSwitch");
 	auto distance = sqrtf(powf(pos_x_ - robot::instance()->getOdomPositionX(), 2) + powf(pos_y_ -
 																																								 robot::instance()->getOdomPositionY(), 2));
 	return fabsf(distance) > 0.02f;
@@ -185,13 +185,13 @@ bool BackRegulator::isSwitch()
 bool BackRegulator::isReach()
 {
 
-	ROS_INFO("reg_back isReach");
+//	ROS_INFO("reg_back isReach");
 	return false;
 }
 
 bool BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	ROS_INFO("reg_back adjustSpeed");
+//	ROS_INFO("reg_back adjustSpeed");
 	set_dir_backward();
 	speed_ += counter_ / 100;
 	speed_ = (speed_ > 18) ? 18 : speed_;
@@ -203,18 +203,18 @@ bool BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //TurnRegulator
 TurnRegulator::TurnRegulator(uint16_t speed_max):speed_max_(speed_max),target_angle_(0)
 {
-	ROS_INFO("TurnRegulator init");
+//	ROS_INFO("TurnRegulator init");
 	accurate_ = speed_max_ > 30 ? 30 : 10;
 }
 
 bool TurnRegulator::isSwitch()
 {
-	ROS_INFO("TurnRegulator::isSwitch");
+//	ROS_INFO("TurnRegulator::isSwitch");
 	return (abs(target_angle_ - Gyro_GetAngle()) < accurate_);
 }
 bool TurnRegulator::isReach()
 {
-	ROS_INFO("TurnRegulator::isReach");
+//	ROS_INFO("TurnRegulator::isReach");
 	return false;
 }
 
@@ -222,7 +222,7 @@ bool TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 
 	(g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? set_dir_right() : set_dir_left();
-	ROS_INFO("TurnRegulator::adjustSpeed");
+//	ROS_INFO("TurnRegulator::adjustSpeed");
 	auto speed = speed_max_;
 		if (abs(target_angle_ - Gyro_GetAngle()) < 50) {
 			speed = std::min((uint16_t)5, speed);
@@ -237,7 +237,7 @@ bool TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 RegulatorProxy::RegulatorProxy(RegulatorBase* p_reg):p_reg_(p_reg)
 {
-	ROS_INFO("RegulatorProxy init");
+//	ROS_INFO("RegulatorProxy init");
 }
 
 bool RegulatorProxy::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
