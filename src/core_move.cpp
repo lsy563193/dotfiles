@@ -1246,7 +1246,8 @@ int cm_cleaning()
 		ROS_ERROR("State: %d", is_found);
 		if (is_found == 0) //No target point
 		{
-			g_go_home = true;
+			if(get_clean_mode() != Clean_Mode_Spot)
+				g_go_home = true;
 			return 0;
 		} else
 		if (is_found == 1)

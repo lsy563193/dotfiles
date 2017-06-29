@@ -514,7 +514,7 @@ void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::vector<Po
  * */
 int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 {
-	int8_t ret = 1;
+	int8_t ret = 0;
 	if(!isSpotInit()){//for the first time
 
 		/*---init spot move and set begin point---*/
@@ -560,7 +560,7 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 
 		if(spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN){
 			ROS_WARN("%s,%d , spot ending, get next point (%d %d) ",__FUNCTION__,__LINE__,begin_point_.X,begin_point_.Y);
-			next_point = { cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y) };// set next point to begin point 
+			next_point = { cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y) };// go back to begin point 
 			spotInit(1.0,{0,0});//deinit
 			if(getSpotType() == CLEAN_SPOT){
 				ret = 1;
@@ -578,9 +578,6 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 			tp_++;
 			ret = 1;
 		}
-	}
-	else{
-		ret = 0;
 	}
 	return ret;
 }
