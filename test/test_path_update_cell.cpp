@@ -10,6 +10,7 @@
 #include <core_move.h>
 #include <gyro.h>
 #include <robot.hpp>
+
 //#include "a_star.h"
 #include "map.h"
 int main(int argc, char **argv)

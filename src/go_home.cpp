@@ -111,7 +111,6 @@ void go_to_charger(void)
 	 *	2: other						*/
 	uint8_t entrance_to_turn = 0;
 	uint32_t receive_code = 0;
-	float distance = 0.0;
 	int16_t target_angle = 0;
 	uint16_t turn_speed = 0;
 	uint8_t turn_finished = true;
@@ -189,7 +188,6 @@ void go_to_charger(void)
 			ROS_INFO("%s %d: Start go to charger.", __FUNCTION__, __LINE__);
 			entrance_to_check_position = 0;
 			receive_code = 0;
-			distance = 0.0;
 			move_back_status = 0;
 			no_signal_counter=0;
 			bumper_counter=0;
@@ -228,30 +226,8 @@ void go_to_charger(void)
 			{
 				if(!g_move_back_finished)
 				{
-					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-					if(distance < 0.03f)
-					{
+					if (!go_home_check_move_back_finish(0.03f, 0))
 						continue;
-					}
-					else
-					{
-						g_move_back_finished = true;
-						if(get_bumper_status())
-						{
-							if(++g_bumper_cnt>2)
-							{
-								g_bumper_jam = true;
-								continue;
-							}
-							continue;
-						}
-						else
-						{
-							g_bumper_cnt = 0;
-							g_bumper_left = false;
-							g_bumper_right = false;
-						}
-					}
 				}
 				if(g_bumper_left || g_bumper_right)
 				{
@@ -602,74 +578,45 @@ void go_to_charger(void)
 		{
 			if(!g_move_back_finished)
 			{
-				distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-				if(distance < 0.03f)
-				{
+				if (!go_home_check_move_back_finish(0.03f, 0))
 					continue;
-				}
 				else
 				{
-					g_move_back_finished = true;
 					if(g_bumper_left || g_bumper_right)
 					{
-						if(get_bumper_status())
+						g_bumper_cnt = 0;
+						g_bumper_left = false;
+						g_bumper_right = false;
+						if(g_dir_around_cs)
 						{
-							if(++g_bumper_cnt>2)
-							{
-								g_bumper_jam = true;
-								continue;
-							}
-							continue;
+							set_dir_left();
+							target_angle = Gyro_GetAngle() + 1800;
+							if(target_angle > 3600)target_angle -= 3600;
 						}
 						else
 						{
-							g_bumper_cnt = 0;
-							g_bumper_left = false;
-							g_bumper_right = false;
-							if(g_dir_around_cs)
-							{
-								set_dir_left();
-								target_angle = Gyro_GetAngle() + 1800;
-								if(target_angle > 3600)target_angle -= 3600;
-							}
-							else
-							{
-								set_dir_right();
-								target_angle = Gyro_GetAngle() - 1800;
-								if(target_angle < 0)target_angle += 3600;
-							}
-							turn_finished = false;
-							turn_speed = TURN_SPEED;
-							entrance_to_turn = 0;
-							continue;
+							set_dir_right();
+							target_angle = Gyro_GetAngle() - 1800;
+							if(target_angle < 0)target_angle += 3600;
 						}
+						turn_finished = false;
+						turn_speed = TURN_SPEED;
+						entrance_to_turn = 0;
 					}
 					else if(g_cliff_triggered)
 					{
-						if(get_cliff_trig())
-						{
-							if(++g_cliff_cnt>2)
-							{
-								g_cliff_jam = true;
-								continue;
-							}
-							continue;
-						}
-						else
-						{
-							g_cliff_cnt = 0;
-							g_cliff_triggered = false;
-							move_forward(9,9);
-							g_go_home_state_now = -1;
-							turn_finished = false;
-							set_dir_left();
-							turn_speed = TURN_SPEED;
-							target_angle = Gyro_GetAngle() + 1750;
-							if(target_angle > 3600)target_angle -= 3600;
-							entrance_to_turn = 1;
-							continue;
-						}
+						g_cliff_cnt = 0;
+						g_cliff_triggered = false;
+						move_forward(9,9);
+						g_go_home_state_now = -1;
+						turn_finished = false;
+						set_dir_left();
+						turn_speed = TURN_SPEED;
+						target_angle = Gyro_GetAngle() + 1750;
+						if(target_angle > 3600)target_angle -= 3600;
+						entrance_to_turn = 1;
 					}
+					continue;
 				}
 			}
 			if(g_cliff_triggered)
@@ -1162,127 +1109,69 @@ void go_to_charger(void)
 		{
 			if(!g_move_back_finished)
 			{
-				distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 				if(move_back_status == QUICK_BACK_1)
 				{
-					if(distance < 0.3f)
-					{
+					if (!go_home_check_move_back_finish(0.3f, 0))
 						continue;
-					}
-					else
-					{
-						if(get_bumper_status())
-						{
-							g_bumper_jam = true;
-							continue;
-						}
-						g_move_back_finished = true;
-						stop_brifly();
-						g_go_home_state_now = -1;
-						continue;
-					}
+
+					stop_brifly();
+					g_go_home_state_now = -1;
+					continue;
 				}
 				else if(move_back_status == QUICK_BACK_2)
 				{
-					if(distance < 0.3f)
-					{
+					if (!go_home_check_move_back_finish(0.3f, 0))
 						continue;
-					}
-					else
+
+					g_bumper_left = false;
+					g_bumper_right = false;
+					stop_brifly();
+					if(bumper_counter > 1)
 					{
-						g_move_back_finished = true;
-						if(get_bumper_status())
-						{
-							g_bumper_jam = true;
-							continue;
-						}
-						else
-						{
-							g_bumper_left = false;
-							g_bumper_right = false;
-							stop_brifly();
-							if(bumper_counter > 1)
-							{
-								move_forward(0, 0);
-								ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
-								g_go_home_state_now = -1;
-							}
-							continue;
-						}
+						move_forward(0, 0);
+						ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
+						g_go_home_state_now = -1;
 					}
+					continue;
 				}
 				else if(move_back_status == RANDOM_BACK_1 || move_back_status == RANDOM_BACK_2)
 				{
-					if(distance < 0.03f)
-					{
+					if (!go_home_check_move_back_finish(0.03f, 0))
 						continue;
+
+					if(g_bumper_left)
+					{
+						set_dir_right();
+						target_angle = Gyro_GetAngle() - 1100;
+						if(target_angle < 0)target_angle += 3600;
 					}
 					else
 					{
-						g_move_back_finished = true;
-						if(get_bumper_status())
-						{
-							if(++g_bumper_cnt>2)
-							{
-								g_bumper_jam = true;
-								continue;
-							}
-							continue;
-						}
-						else
-						{
-							if(g_bumper_left)
-							{
-								set_dir_right();
-								target_angle = Gyro_GetAngle() - 1100;
-								if(target_angle < 0)target_angle += 3600;
-							}
-							else
-							{
-								set_dir_left();
-								target_angle = Gyro_GetAngle() + 1100;
-								if(target_angle > 3600)target_angle -= 3600;
-							}
-							g_bumper_left = false;
-							g_bumper_right = false;
-							turn_speed = TURN_SPEED;
-							turn_finished = false;
-							entrance_to_turn = 0;
-							continue;
-						}
+						set_dir_left();
+						target_angle = Gyro_GetAngle() + 1100;
+						if(target_angle > 3600)target_angle -= 3600;
 					}
+					g_bumper_left = false;
+					g_bumper_right = false;
+					turn_speed = TURN_SPEED;
+					turn_finished = false;
+					entrance_to_turn = 0;
+					continue;
 				}
 				else if(move_back_status == CLIFF_BACK)
 				{
-					if(distance < 0.03f)
-					{
+					if (!go_home_check_move_back_finish(0.03f, 0))
 						continue;
-					}
-					else
-					{
-						g_move_back_finished = true;
-						if(get_cliff_trig())
-						{
-							if(++g_cliff_cnt>2)
-							{
-								g_cliff_jam = true;
-								continue;
-							}
-							continue;
-						}
-						else
-						{
-							g_cliff_cnt = 0;
-							g_cliff_triggered = false;
-							turn_finished = false;
-							set_dir_left();
-							turn_speed = TURN_SPEED;
-							target_angle = Gyro_GetAngle() + 1750;
-							if(target_angle > 3600)target_angle -= 3600;
-							entrance_to_turn = 1;
-							continue;
-						}
-					}
+
+					g_cliff_cnt = 0;
+					g_cliff_triggered = false;
+					turn_finished = false;
+					set_dir_left();
+					turn_speed = TURN_SPEED;
+					target_angle = Gyro_GetAngle() + 1750;
+					if(target_angle > 3600)target_angle -= 3600;
+					entrance_to_turn = 1;
+					continue;
 				}
 			}
 			if(!turn_finished)
@@ -2791,6 +2680,154 @@ void go_to_charger(void)
 	}
 }
 
+/* turn_connect()
+ * return: true - event triggered, including g_charge_detect/g_key_clean_pressed/g_cliff_all_triggered.
+ *         false - can't reach the charger stub.
+ */
+bool turn_connect(void)
+{
+	ROS_INFO("%s %d: Start turn_connect().", __FUNCTION__, __LINE__);
+	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
+	extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
+	int16_t target_angle;
+	int8_t speed = 5;
+	// Enable the switch for charging.
+	set_start_charge();
+	// Wait for 200ms for charging activated.
+	usleep(200000);
+	if(g_charge_detect)
+	{
+		ROS_INFO("Reach charger without turning.");
+		return true;
+	}
+	// Start turning right.
+	target_angle = Gyro_GetAngle() - 120;
+	if (target_angle < 0)
+	{
+		target_angle = 3600 + target_angle;
+	}
+	g_wheel_left_direction = 0;
+	g_wheel_right_direction = 1;
+	set_wheel_speed(speed, speed);
+	while (abs(target_angle - Gyro_GetAngle()) > 20)
+	{
+		if (g_charge_detect)
+		{
+			g_charge_detect = 0;
+			disable_motors();
+			// Wait for a while to decide if it is really on the charger stub.
+			usleep(500000);
+			if (g_charge_detect)
+			{
+				ROS_INFO("Turn left reach charger.");
+				return true;
+			}
+			set_wheel_speed(speed, speed);
+		}
+		if(g_key_clean_pressed || g_cliff_all_triggered)
+		{
+			if(get_clean_mode() == Clean_Mode_GoHome)
+			{
+				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
+				g_key_clean_pressed = false;
+				g_cliff_all_triggered = false;
+				set_clean_mode(Clean_Mode_Userinterface);
+			}
+			disable_motors();
+			return true;
+		}
+	}
+	stop_brifly();
+	// Start turning left.
+	target_angle = Gyro_GetAngle() + 240;
+	if (target_angle > 3600)
+	{
+		target_angle = target_angle - 3600;
+	}
+	g_wheel_left_direction = 1;
+	g_wheel_right_direction = 0;
+	set_wheel_speed(speed, speed);
+	while (abs(target_angle - Gyro_GetAngle()) > 20)
+	{
+		if (g_charge_detect)
+		{
+			g_charge_detect = 0;
+			disable_motors();
+			// Wait for a while to decide if it is really on the charger stub.
+			usleep(500000);
+			if (g_charge_detect)
+			{
+				ROS_INFO("Turn left reach charger.");
+				return true;
+			}
+			set_wheel_speed(speed, speed);
+		}
+		if(g_key_clean_pressed || g_cliff_all_triggered)
+		{
+			if(get_clean_mode() == Clean_Mode_GoHome)
+			{
+				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
+				g_key_clean_pressed = false;
+				g_cliff_all_triggered = false;
+				set_clean_mode(Clean_Mode_Userinterface);
+			}
+			disable_motors();
+			return true;
+		}
+	}
+	stop_brifly();
+
+	return false;
+}
+
+bool go_home_check_move_back_finish(float target_distance, uint8_t type)
+{
+	float distance;
+	distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+
+	if(distance < target_distance)
+	{
+		ROS_WARN("%s %d: Not reach yet.", __FUNCTION__, __LINE__);
+		return false;
+	}
+	else
+	{
+		g_move_back_finished = true;
+		if((g_bumper_left || g_bumper_right) && get_bumper_status())
+		{
+			if(++g_bumper_cnt>2)
+			{
+				g_bumper_jam = true;
+			}
+			return false;
+		}
+		else
+		{
+			ROS_WARN("%s %d: reset for bumper.", __FUNCTION__, __LINE__);
+			g_bumper_cnt = 0;
+			g_bumper_left = false;
+			g_bumper_right = false;
+		}
+
+		if(g_cliff_triggered && get_cliff_trig())
+		{
+			if(++g_cliff_cnt>2)
+			{
+				g_cliff_jam = true;
+			}
+			return false;
+		}
+		else
+		{
+			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
+			g_cliff_triggered = false;
+			g_cliff_cnt = 0;
+		}
+	}
+
+	return true;
+}
+
 void go_home_register_events(void)
 {
 	ROS_INFO("%s, %d: Register events.", __FUNCTION__, __LINE__);
@@ -3041,105 +3078,5 @@ void go_home_handle_over_current_suction(bool state_now, bool state_last)
 
 		g_oc_suction = true;
 	}
-}
-
-/* turn_connect()
- * return: true - event triggered, including g_charge_detect/g_key_clean_pressed/g_cliff_all_triggered.
- *         false - can't reach the charger stub.
- */
-bool turn_connect(void)
-{
-	ROS_INFO("%s %d: Start turn_connect().", __FUNCTION__, __LINE__);
-	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
-	extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
-	int16_t target_angle;
-	int8_t speed = 5;
-	// Enable the switch for charging.
-	set_start_charge();
-	// Wait for 200ms for charging activated.
-	usleep(200000);
-	if(g_charge_detect)
-	{
-		ROS_INFO("Reach charger without turning.");
-		return true;
-	}
-	// Start turning right.
-	target_angle = Gyro_GetAngle() - 120;
-	if (target_angle < 0)
-	{
-		target_angle = 3600 + target_angle;
-	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 1;
-	set_wheel_speed(speed, speed);
-	while (abs(target_angle - Gyro_GetAngle()) > 20)
-	{
-		if (g_charge_detect)
-		{
-			g_charge_detect = 0;
-			disable_motors();
-			// Wait for a while to decide if it is really on the charger stub.
-			usleep(500000);
-			if (g_charge_detect)
-			{
-				ROS_INFO("Turn left reach charger.");
-				return true;
-			}
-			set_wheel_speed(speed, speed);
-		}
-		if(g_key_clean_pressed || g_cliff_all_triggered)
-		{
-			if(get_clean_mode() == Clean_Mode_GoHome)
-			{
-				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
-				g_key_clean_pressed = false;
-				g_cliff_all_triggered = false;
-				set_clean_mode(Clean_Mode_Userinterface);
-			}
-			disable_motors();
-			return true;
-		}
-	}
-	stop_brifly();
-	// Start turning left.
-	target_angle = Gyro_GetAngle() + 240;
-	if (target_angle > 3600)
-	{
-		target_angle = target_angle - 3600;
-	}
-	g_wheel_left_direction = 1;
-	g_wheel_right_direction = 0;
-	set_wheel_speed(speed, speed);
-	while (abs(target_angle - Gyro_GetAngle()) > 20)
-	{
-		if (g_charge_detect)
-		{
-			g_charge_detect = 0;
-			disable_motors();
-			// Wait for a while to decide if it is really on the charger stub.
-			usleep(500000);
-			if (g_charge_detect)
-			{
-				ROS_INFO("Turn left reach charger.");
-				return true;
-			}
-			set_wheel_speed(speed, speed);
-		}
-		if(g_key_clean_pressed || g_cliff_all_triggered)
-		{
-			if(get_clean_mode() == Clean_Mode_GoHome)
-			{
-				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
-				g_key_clean_pressed = false;
-				g_cliff_all_triggered = false;
-				set_clean_mode(Clean_Mode_Userinterface);
-			}
-			disable_motors();
-			return true;
-		}
-	}
-	stop_brifly();
-
-	return false;
 }
 

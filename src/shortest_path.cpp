@@ -1131,7 +1131,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 					}
 				}
 			}
-			else if(cs == UNCLEAN && g_go_home)
+			else if(cs == UNCLEAN && get_clean_mode() == Clean_Mode_Navigation)
 				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}
