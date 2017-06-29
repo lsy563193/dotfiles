@@ -96,28 +96,30 @@ uint8_t SpotMovement::findNearestPoint(Point32_t ref_point )
 	float t_dist = FLT_MAX;
 	t_p = target_.front();
 	tp_ = target_.begin();
-	int i=0;
+	int i=0 ,pos = 0;
 	for(rtp = target_.rbegin(); rtp != target_.rend(); ++rtp,++i){
 		dist = sqrt( pow( ref_point.X - rtp->X,2 ) + pow( ref_point.Y - rtp->Y,2 ) );
 		if(absolute(dist- mindist) <= 0.1){
 			near_point_.X = rtp->X;
 			near_point_.Y = rtp->Y;
-			tp_ = tp_ + (int)(target_.size() - i - 1);
-			//ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,rtp->X,rtp->Y);
+			pos = (int)(target_.size() - i - 1);
+			tp_ = tp_ + pos;
+			ROS_WARN("%s,%d,tp_ = (%d,%d) t.size = %d,i = %d ,pos = %d",__FUNCTION__,__LINE__, tp_->X, tp_->Y, target_.size(), i, pos);
 			return 1;
 		}
 		if(dist < t_dist){
-			tp_ = target_.begin() + (int)(target_.size() - i - 1);
+			pos = (int)(target_.size() - i - 1);
+			tp_ = target_.begin() + pos;
 			t_dist = dist;
 			t_p.X = rtp->X;
 			t_p.Y = rtp->Y;
 		}
 	}
 
-	//ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,t_p.X,t_p.Y);
+	ROS_WARN("%s,%d,tp_ = (%d,%d) ,t.size = %d, i = %d ,pos = %d,",__FUNCTION__,__LINE__,tp_->X,tp_->Y, target_.size(),i, pos);
 	near_point_.X = t_p.X;
 	near_point_.Y = t_p.Y;
-    return 1;
+    return 0;
 }
 
 /*
@@ -372,6 +374,7 @@ uint8_t SpotMovement::changeSpiralType()
 		if(sout_od_cnt_ >= OBS_DETECT_COUNT_MAX){
 			sout_od_cnt_ = 0;
 			spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT)? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN ;
+			//generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
 		}
 		else{
 			spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT)? SPIRAL_LEFT_OUT : SPIRAL_RIGHT_OUT ;
@@ -383,7 +386,7 @@ uint8_t SpotMovement::changeSpiralType()
 			tp_--;
 			stop_point_ = {tp_->X,tp_->Y};
 		}
-		ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__, __LINE__, stop_point_.X, stop_point_.Y);
+		ROS_WARN("%s,%d,spiral out ,stop point (%d,%d) ,type = %d",__FUNCTION__, __LINE__, stop_point_.X, stop_point_.Y, spiral_type_);
 	}
 	else if(spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN){
 		spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_IN)? SPIRAL_LEFT_IN: SPIRAL_RIGHT_IN;
@@ -400,7 +403,7 @@ uint8_t SpotMovement::changeSpiralType()
 			tp_--;
 			stop_point_ = {tp_->X,tp_->Y};
 		}
-		ROS_WARN("%s,%d,stop point (%d,%d)",__FUNCTION__, __LINE__,stop_point_.X,stop_point_.Y);
+		ROS_WARN("%s,%d,spiral in ,stop point (%d,%d), type= %d ",__FUNCTION__, __LINE__,stop_point_.X,stop_point_.Y , spiral_type_ );
 	}
 	return spiral_type_;
 }
@@ -515,70 +518,80 @@ void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::vector<Po
 int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 {
 	int8_t ret = 0;
-	if(!isSpotInit()){//for the first time
-
+	SpotType spt = getSpotType();
+	if(!isSpotInit() && spt != NO_SPOT )//for the first time
+	{
 		/*---init spot move and set begin point---*/
-		spotInit(1.0, {map_get_x_cell(), map_get_y_cell()} );
+		if(spt == CLEAN_SPOT)
+			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()} );
+		else
+			spotInit(1.0, {0,0});
 		/*---generate target ,and  set target_ ---*/
 		generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
 		tp_ = target_.begin();//first target point
 		ROS_WARN("%s,%d , on spot init, get next point (%d %d) ",__FUNCTION__,__LINE__,tp_->X,tp_->Y);
 		next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
-		tp_++ ;
 		ret = 1;
 	}
-
-	else if( isDirectChange() && spot_init_ == 1 ){
-		resetDirectChange();
-		changeSpiralType();//in this function,set stop_point_ and change spiral type
-		if(!isStuck()){// not stuck
-			generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);//re_generate target
-			//tp_ = target_.begin();
-			findNearestPoint( stop_point_);//set near_point_
-			ROS_WARN("%s,%d , on direction change, get next point (%d %d) ",__FUNCTION__,__LINE__,near_point_.X,near_point_.Y);
-			next_point = {cell_to_count(near_point_.X), cell_to_count(near_point_.Y) };
-			ret = 1;
-		}
-		else// stuck
+	else if(tp_ != target_.end() && spot_init_ == 1)
+	{
+		if( isDirectChange() )//yes bumper/obs detect
 		{
-			resetStuck();	
-			ROS_WARN("%s,%d , is stucked ,get next point (%d %d) ",__FUNCTION__,__LINE__,begin_point_.X,begin_point_.Y);
-			next_point = { cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
-			spotInit(1.0,{0,0});//deinit
-			ret = 1;
-		}
-	}
-
-	else if(tp_ != target_.end() && spot_init_ == 1){
-		ROS_WARN("%s,%d , get next point (%d %d) ",__FUNCTION__,__LINE__,tp_->X,tp_->Y);
-		next_point = { cell_to_count(tp_->X), cell_to_count(tp_->Y) };
-		tp_++;
-		ret = 1;
-	}
-
-	else if(tp_ == target_.end() && spot_init_ == 1 ){
-
-		if(spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN){
-			ROS_WARN("%s,%d , spot ending, get next point (%d %d) ",__FUNCTION__,__LINE__,begin_point_.X,begin_point_.Y);
-			next_point = { cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y) };// go back to begin point 
-			spotInit(1.0,{0,0});//deinit
-			if(getSpotType() == CLEAN_SPOT){
+			resetDirectChange();
+			if(!isStuck()){// not stuck
+				changeSpiralType();//change spiral type ,set stop_point_ 
+				generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);//re_generate target	
+				findNearestPoint( stop_point_);//set near_point_,  tp_
+				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ",__FUNCTION__,__LINE__,near_point_.X,near_point_.Y);
+				next_point = {cell_to_count(near_point_.X), cell_to_count(near_point_.Y) };
 				ret = 1;
 			}
-			else
-				ret = 0;
-			setSpotType(NO_SPOT);
+			else// stuck
+			{
+				resetStuck();	
+				ROS_WARN("%s,%d , is stucked ,go back to begin point (%d %d) ",__FUNCTION__,__LINE__,begin_point_.X,begin_point_.Y);
+				next_point = { cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
+				spotInit(1.0,{0,0});//clear all spot variable
+				if(spt == CLEAN_SPOT){
+					ret = 1;
+				}
+				else
+					ret = 0;
+				setSpotType(NO_SPOT);
+			}
 		}
-		else {
-			spiral_type_= (spiral_type_ == SPIRAL_RIGHT_OUT)? SPIRAL_RIGHT_IN: SPIRAL_LEFT_IN;
-			generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
-			tp_ = target_.begin();
-			ROS_WARN("%s,%d , %s , get next point (%d %d) ",__FUNCTION__,__LINE__,(spiral_type_ == SPIRAL_RIGHT_OUT)? "right in" : " left in ",tp_->X,tp_->Y);
-			next_point = { cell_to_count(tp_->X), cell_to_count(tp_->Y) };
-			tp_++;
-			ret = 1;
+		else//no bumper/obs detect
+		{
+			tp_ ++;
+			if(tp_ != target_.end()){	
+				ROS_WARN("%s,%d , get next point (%d %d) ",__FUNCTION__, __LINE__, tp_->X, tp_->Y);
+				next_point = { cell_to_count(tp_->X), cell_to_count(tp_->Y) };
+				ret = 1;
+			}
+			else if(tp_ == target_.end()){
+				if(spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN){ //end spot
+					ROS_WARN("%s,%d , spot ending, get next point (%d %d) ",__FUNCTION__,__LINE__,begin_point_.X,begin_point_.Y);
+					next_point = { cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y) };// go back to begin point 
+					spotInit(1.0,{0,0});//clear all spot variable
+					if(spt == CLEAN_SPOT){
+						ret = 1;
+					}
+					else
+						ret = 0;
+					setSpotType(NO_SPOT);
+				}
+				else {//switch to anothor spiral type
+					spiral_type_= (spiral_type_ == SPIRAL_RIGHT_OUT)? SPIRAL_RIGHT_IN: SPIRAL_LEFT_IN;
+					generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
+					tp_ = target_.begin();
+					ROS_WARN("%s,%d , %s ,set spiral in, get next point (%d %d) ",__FUNCTION__,__LINE__,(spiral_type_ == SPIRAL_RIGHT_OUT)? "right in" : " left in ",tp_->X,tp_->Y);
+					next_point = { cell_to_count(tp_->X), cell_to_count(tp_->Y) };
+					ret = 1;
+				}
+
+			}
 		}
-	}
+	}	
 	return ret;
 }
 
