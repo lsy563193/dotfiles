@@ -206,7 +206,7 @@ void Laser::stop(void){
 	laser_pm_gpio('0');
 }
 
-double Laser::getLaserDistance(int begin, int end, double range, double *line_angle)
+bool Laser::getLaserDistance(int begin, int end, double range, double *line_angle)
 {
 	int		i, count;
 	bool	found = false;
@@ -237,11 +237,16 @@ double Laser::getLaserDistance(int begin, int end, double range, double *line_an
 	mergeLine(&Laser_Group, 0.01);
 	fitLineGroup(&Laser_Group, 0.1);
 	//*line_angle = atan2(-a, b) * 180 / PI;
-	*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
-	//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-	ROS_INFO("line_angle = %lf", *line_angle);
 	Laser_Group.clear();
-	return 0;
+	if (!fit_line.empty()) {
+		*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
+		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
+		ROS_WARN("line_angle = %lf", *line_angle);
+		return true;
+	} else {
+		ROS_WARN("no line to fit!");
+		return false;
+	}
 }
 
 bool Laser::lineFit(const std::vector<Double_Point> &points, double &a, double &b, double &c)
@@ -755,6 +760,7 @@ void Laser::pubLineMarker(std::vector<std::vector<Double_Point> > *groups) {
 bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim) {
 	double 	a, b, c;
 	double line_angle;
+	const double L =0.2727716;
 	int	loop_count = 0;
 	LineABC	new_fit_line;
 	fit_line.clear();
@@ -765,6 +771,13 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			new_fit_line.A = a;
 			new_fit_line.B = b;
 			new_fit_line.C = c;
+			/*erase the lines which are far away from the robot*/
+			double x_l = fabs(c / a);
+			double y_l = fabs(c / b);
+			if ((x_l > L) && (y_l > L)) {
+				ROS_WARN("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
+				continue;
+			}
 			fit_line.push_back(new_fit_line);
 			//pubFitLineMarker(a, b, c, -0.5, 0.5);
 			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
@@ -776,7 +789,6 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 		fit_line_marker.points.clear();
 		fit_line_marker_pub.publish(fit_line_marker);
 	}
-
 	fit_line_marker.points.clear();
 	return true;
 }

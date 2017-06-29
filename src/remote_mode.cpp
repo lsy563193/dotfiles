@@ -29,9 +29,11 @@ extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 RemoteModeMoveType move_flag = REMOTE_MODE_STAY;
 boost::mutex move_flag_mutex;
 int16_t remote_target_angle;
+bool remote_exit;
 
 void Remote_Mode(void)
 {
+	remote_exit = false;
 	g_battery_low_cnt = 0;
   //Display_Clean_Status(Display_Remote);
 
@@ -55,7 +57,7 @@ void Remote_Mode(void)
 			break;
 		}
 
-		if (get_clean_mode() != Clean_Mode_Remote)
+		if (g_key_clean_pressed || remote_exit)
 			break;
 
 		remote_move();
@@ -461,10 +463,18 @@ void remote_mode_handle_remote_max(bool state_now, bool state_last)
 void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
-	if (!g_bumper_jam && !g_cliff_jam)
+	if (get_rcon_remote() == Remote_Clean)
+	{
+		beep_for_command(true);
+		g_key_clean_pressed = true;
+		set_clean_mode(Clean_Mode_Userinterface);
+		disable_motors();
+	}
+	else if (!g_bumper_jam && !g_cliff_jam)
 	{
 		beep_for_command(true);
 		disable_motors();
+		remote_exit = true;
 		if (get_rcon_remote() == Remote_Home)
 			set_clean_mode(Clean_Mode_GoHome);
 		else
@@ -479,6 +489,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
+	disable_motors();
 	while (get_key_press() == KEY_CLEAN)
 	{
 		ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);

@@ -14,7 +14,7 @@ public:
 
 	bool laserObstcalDetected(double distance, int angle, double range);
 
-	double getLaserDistance(int begin, int end, double range, double *line_angle);
+	bool getLaserDistance(int begin, int end, double range, double *line_angle);
 
 	void isReady(uint8_t val);
 	int8_t isReady();
