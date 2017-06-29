@@ -1361,13 +1361,14 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 
 uint8_t cm_touring(void)
 {
-	g_cm_move_type = get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL: CM_LINEARMOVE;
+	g_cm_move_type = get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE;
 	g_from_station = 0;
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();
 	MotionManage motion;
 
-	if(! motion.initSucceeded()){
+	if (!motion.initSucceeded())
+	{
 		//robot::instance()->resetLowBatPause();
 		//robot::instance()->resetManualPause();
 		return 0;
@@ -1375,14 +1376,16 @@ uint8_t cm_touring(void)
 
 	g_motion_init_succeeded = true;
 
-	if (!g_go_home && (robot::instance()->isLowBatPaused())){
-		if (! cm_resume_cleaning())
+	if (!g_go_home && (robot::instance()->isLowBatPaused()))
+	{
+		if (!cm_resume_cleaning())
 		{
 			return 0;
-        }
-    }
-	if (cm_cleaning() == 0){
-		if(get_clean_mode() != Clean_Mode_Spot)
+		}
+	}
+	if (cm_cleaning() == 0)
+	{
+		if (get_clean_mode() != Clean_Mode_Spot)
 			cm_go_home();
 	}
 	cm_unregister_events();
