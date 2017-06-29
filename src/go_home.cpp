@@ -228,6 +228,7 @@ void go_to_charger(void)
 					if (!go_home_check_move_back_finish(0.03f, 0))
 						continue;
 
+					g_move_back_finished = true;
 					g_bumper_left = false;
 					g_bumper_right = false;
 				}
@@ -569,6 +570,7 @@ void go_to_charger(void)
 					continue;
 				else
 				{
+					g_move_back_finished = true;
 					if(g_bumper_left || g_bumper_right)
 					{
 						g_bumper_cnt = 0;
@@ -1071,6 +1073,7 @@ void go_to_charger(void)
 					if (!go_home_check_move_back_finish(0.3f, 0))
 						continue;
 
+					g_move_back_finished = true;
 					g_bumper_left = false;
 					g_bumper_right = false;
 					stop_brifly();
@@ -1082,6 +1085,7 @@ void go_to_charger(void)
 					if (!go_home_check_move_back_finish(0.3f, 0))
 						continue;
 
+					g_move_back_finished = true;
 					g_bumper_left = false;
 					g_bumper_right = false;
 					stop_brifly();
@@ -1098,6 +1102,7 @@ void go_to_charger(void)
 					if (!go_home_check_move_back_finish(0.03f, 0))
 						continue;
 
+					g_move_back_finished = true;
 					if(g_bumper_left)
 					{
 						set_dir_right();
@@ -1122,6 +1127,7 @@ void go_to_charger(void)
 					if (!go_home_check_move_back_finish(0.03f, 0))
 						continue;
 
+					g_move_back_finished = true;
 					g_cliff_cnt = 0;
 					g_cliff_triggered = false;
 					turn_finished = false;
@@ -2738,7 +2744,6 @@ bool go_home_check_move_back_finish(float target_distance, uint8_t type)
 	}
 	else
 	{
-		g_move_back_finished = true;
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
 		{
 			if(++g_bumper_cnt>2)
