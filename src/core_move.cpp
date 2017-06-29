@@ -694,7 +694,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
-	g_fatal_quit_event = g_key_clean_pressed = g_remote_spot = g_remote_wallfollow = g_remote_dirt_keys = false;
 	Point32_t	position{map_get_x_count(), map_get_y_count()};
 	bool rotate_is_needed_ = true;
 
@@ -716,20 +715,29 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || g_remote_wallfollow || g_remote_dirt_keys) {
+		if (g_fatal_quit_event || g_key_clean_pressed
+			|| (!g_go_home && g_remote_home)
+			|| g_remote_spot // It will only be set if robot is not during spot.
+			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
 			break;
-		}
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
 			g_is_should_follow_wall = true;
 			SpotType spt = SpotMovement::instance() -> getSpotType();
-            if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
-                SpotMovement::instance()->setDirectChange();
+			if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
+				SpotMovement::instance()->setDirectChange();
 			break;
 		}
 
 		if (std::abs(map_get_x_count() - Target.X) < 150 && std::abs(map_get_y_count() - Target.Y) < 150) {
 			ROS_DEBUG("%s, %d: Reach target.", __FUNCTION__, __LINE__);
+			break;
+		}
+
+		if (g_cliff_all_cnt >= 2)
+		{
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+			g_fatal_quit_event = true;
 			break;
 		}
 
@@ -781,12 +789,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 						g_cliff_all_triggered = false;
 						g_cliff_cnt = 0;
 						g_cliff_all_cnt = 0;
-						break;
-					}
-					else if ((get_cliff_trig() == Status_Cliff_All) && ++g_cliff_all_cnt >= 2)
-					{
-						ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-						g_fatal_quit_event = true;
 						break;
 					}
 					else if (++g_cliff_cnt >= 2)
@@ -848,13 +850,12 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_remote_spot || (!g_go_home && g_remote_home) || g_oc_wheel_left || g_oc_wheel_right)
+		if (g_fatal_quit_event || g_key_clean_pressed
+			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
+			|| (!g_go_home && g_remote_home)
+			|| g_remote_spot // It will only be set if robot is not during spot.
+			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
 			return false;
-
-		if (g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered)
-		{
-			return false;
-		}
 
 		auto angle_diff = ranged_angle(Gyro_GetAngle() - angle_start);
 		if (abs(angle_diff) >= 900){
@@ -1154,23 +1155,34 @@ int cm_cleaning()
 	bool on_spot = false;
 	while (ros::ok())
 	{
-		if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT && g_remote_spot )
-			on_spot = g_remote_spot;
-		if (g_key_clean_pressed || g_fatal_quit_event || g_remote_dirt_keys || g_remote_wallfollow){
-			//g_remote_wallfollow and g_remote_dirt_keys only enable in spot mode
-			if(g_key_clean_pressed && on_spot){
-				on_spot = false;
-				ROS_WARN("%s,%d,stop spot ,contiue to navigation");
-			}
-			else
-				return -1;
-		}
+		if (g_key_clean_pressed || g_fatal_quit_event)
+			return -1;
+
 		if (g_remote_home || g_battery_home)
 		{
 			g_remote_home = false;
 			g_go_home = true;
 			ROS_WARN("%s %d: Receive go home command, reset g_remote_home.", __FUNCTION__, __LINE__);
 			return 0;
+		}
+
+		if (g_remote_spot)
+		{
+			g_remote_spot = false;
+			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
+		}
+
+		if (g_remote_dirt_keys)
+		{
+			g_remote_dirt_keys = false;
+			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT)
+			{
+				SpotMovement::instance()->setSpotType(NO_SPOT);
+				SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
+				wav_play(WAV_CLEANING_CONTINUE);
+			}
+			else if (SpotMovement::instance()->getSpotType() == NORMAL_SPOT)
+				return -1;
 		}
 
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
@@ -1183,8 +1195,8 @@ int cm_cleaning()
 		ROS_ERROR("State: %d", is_found);
 		if (is_found == 0) //No target point
 		{
-			g_go_home = true;
-			//set_clean_mode(Clean_Mode_Userinterface);	
+			if(get_clean_mode() != Clean_Mode_Spot)
+				g_go_home = true;
 			return 0;
 		} else
 		if (is_found == 1)
@@ -1198,7 +1210,10 @@ int cm_cleaning()
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
 			if (cm_should_self_check()){
+				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
+				cm_set_event_manager_handler_state(true);
 				cm_self_check();
+				cm_set_event_manager_handler_state(false);
 			}
 
 		} else
@@ -1232,6 +1247,8 @@ int cm_cleaning()
 
 void cm_go_home()
 {
+	Cell_t current_home_cell;
+
 	set_vacmode(Vac_Normal, false);
 	set_vac_speed();
 
@@ -1241,49 +1258,13 @@ void cm_go_home()
 
 	if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
 		cm_create_home_boundary();
-	//todo ! emply()
-	Cell_t current_home_cell = {count_to_cell(g_home_point.front().X), count_to_cell(g_home_point.front().Y)};
-//	ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint) g_home_point.size());
-	g_home_point.pop_front();
 
 	while (ros::ok())
 	{
 		set_led(100, 0);
-		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
-		//set_clean_mode(Clean_Mode_Navigation);
-		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
-		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
-		{
-			if (g_fatal_quit_event)
-			{
-				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
-				disable_motors();
-				robot::instance()->resetLowBatPause();
-				if (g_battery_low)
-					set_clean_mode(Clean_Mode_Sleep);
-				else
-					set_clean_mode(Clean_Mode_Userinterface);
-				cm_reset_go_home();
-				return;
-			}
-			if (g_key_clean_pressed)
-			{
-				disable_motors();
-				set_clean_mode(Clean_Mode_Userinterface);
-				if (robot::instance()->isManualPaused())
-					// The current home cell is still valid, so push it back to the home point list.
-					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
-				return;
-			}
-		}
-		else
-		{
-			if (cm_go_to_charger(current_home_cell))
-				return;
-		}
-
 		if (g_home_point.empty())
 		{
+			ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
 			// If it is the last point, it means it it now at (0, 0).
 			if (!g_from_station) {
 				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
@@ -1291,7 +1272,6 @@ void cm_go_home()
 			}
 			disable_motors();
 			robot::instance()->resetLowBatPause();
-			set_clean_mode(Clean_Mode_Userinterface);
 			cm_reset_go_home();
 			return;
 		}
@@ -1303,6 +1283,30 @@ void cm_go_home()
 			g_home_point.pop_front();
 			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point.size());
 		}
+
+		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
+
+		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
+		{
+			if (g_fatal_quit_event)
+			{
+				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
+				disable_motors();
+				robot::instance()->resetLowBatPause();
+				cm_reset_go_home();
+				return;
+			}
+			if (g_key_clean_pressed)
+			{
+				disable_motors();
+				if (robot::instance()->isManualPaused())
+					// The current home cell is still valid, so push it back to the home point list.
+					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
+				return;
+			}
+		}
+		else if (cm_go_to_charger(current_home_cell))
+			return;
 	}
 }
 
@@ -1315,16 +1319,8 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("%s,%d,Call GoHome()",__FUNCTION__,__LINE__);
 	go_home();
-	// In GoHome() function the clean mode might be set to Clean_Mode_GoHome, it should keep try GoHome().
-	while (get_clean_mode() == Clean_Mode_GoHome)
-	{
-		// Set clean mode to navigation so GoHome() function will know this is during navigation mode.
-		set_clean_mode(Clean_Mode_Navigation);
-		ROS_INFO("%s,%d set clean mode gohome",__FUNCTION__,__LINE__);
-		go_home();
-	}
-	// Check the clean mode to find out whether it has reach the charger.
-	if (get_clean_mode() == Clean_Mode_Charging)
+
+	if (g_charge_detect)
 	{
 		if (robot::instance()->isLowBatPaused())
 		{
@@ -1334,8 +1330,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		cm_reset_go_home();
 		return true;
 	}
-	// FIXME: else if (g_battery_low)
-	else if (get_clean_mode() == Clean_Mode_Sleep)
+	else if (g_battery_low)
 	{
 		// Battery too low.
 		disable_motors();
@@ -1343,14 +1338,11 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		cm_reset_go_home();
 		return true;
 	}
-	// FIXME: else if (g_fatal_quit_event || g_key_clean_pressed)
-	else if (stop_event())
+	else if (g_fatal_quit_event || g_key_clean_pressed)
 	{
 		disable_motors();
-		set_clean_mode(Clean_Mode_Userinterface);
 #if MANUAL_PAUSE_CLEANING
-		// FIXME: if (g_key_clean_pressed)
-		if (stop_event() == 1 || stop_event() == 2)
+		if (g_key_clean_pressed)
 		{
 			reset_stop_event_status();
 			// The current home cell is still valid, so push it back to the home point list.
@@ -1390,7 +1382,8 @@ uint8_t cm_touring(void)
         }
     }
 	if (cm_cleaning() == 0){
-		cm_go_home();
+		if(get_clean_mode() != Clean_Mode_Spot)
+			cm_go_home();
 	}
 	cm_unregister_events();
 	return 0;
@@ -1616,7 +1609,6 @@ void cm_self_check(void)
 	}
 
 	SelfCheckRegulator regulator;
-	cm_set_event_manager_handler_state(true);
 
 	while (ros::ok) {
 		robotbase_obs_adjust_count(50);
@@ -1627,6 +1619,13 @@ void cm_self_check(void)
 
 		if (g_fatal_quit_event || g_key_clean_pressed)
 			break;
+
+		if (g_cliff_all_cnt >= 2)
+		{
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+			g_fatal_quit_event = true;
+			break;
+		}
 
 		// Check for right wheel.
 		if (g_oc_wheel_left || g_oc_wheel_right)
@@ -1703,7 +1702,7 @@ void cm_self_check(void)
 			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 			if (fabsf(distance) > 0.05f)
 			{
-				if (((get_cliff_trig() == Status_Cliff_All) && g_cliff_all_cnt++ >= 2) || ++resume_cnt >= 3)
+				if (++resume_cnt >= 3)
 				{
 					ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
 					g_fatal_quit_event = true;
@@ -1712,7 +1711,6 @@ void cm_self_check(void)
 				else
 				{
 					stop_brifly();
-					beep_for_command(true);
 					saved_pos_x = robot::instance()->getOdomPositionX();
 					saved_pos_y = robot::instance()->getOdomPositionY();
 				}
@@ -1821,8 +1819,6 @@ void cm_self_check(void)
 		if(! regulator.adjustSpeed(bumper_jam_state))
 			break;
 	}
-
-	cm_set_event_manager_handler_state(false);
 }
 
 bool cm_should_self_check(void)
@@ -2080,6 +2076,7 @@ void cm_handle_obs_right(bool state_now, bool state_last)
 void cm_handle_cliff_all(bool state_now, bool state_last)
 {
 	g_cliff_all_triggered = true;
+	g_cliff_all_cnt++;
 	g_cliff_triggered = true;
 	if (g_move_back_finished && !g_cliff_jam)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
@@ -2623,9 +2620,11 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	beep_for_command(true);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
-	robot::instance()->setManualPause();
-	start_time = time(NULL);
 
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT)
+		robot::instance()->setManualPause();
+
+	start_time = time(NULL);
 	while (get_key_press() & KEY_CLEAN)
 	{
 		if (time(NULL) - start_time > 3) {
@@ -2641,6 +2640,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 			ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
 		usleep(20000);
 	}
+
 	reset_touch();
 }
 
@@ -2652,13 +2652,8 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 
 	beep_for_command(true);
 	g_key_clean_pressed = true;
-	SpotType spt = SpotMovement::instance()->getSpotType();
-	if(spt == NO_SPOT){//not in spot mode
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT)
 		robot::instance()->setManualPause();
-	}	
-	else if(spt == NORMAL_SPOT || spt == CLEAN_SPOT){
-		SpotMovement::instance() -> setSpotType(NO_SPOT);
-	}
 	reset_rcon_remote();
 }
 
@@ -2666,10 +2661,9 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_go_home && !cm_should_self_check()) {
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check()) {
 		beep_for_command(true);
 		g_remote_home = true;
-		SpotMovement::instance() -> setSpotType(NO_SPOT);
 		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}
 	else {
@@ -2685,39 +2679,27 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 
 	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check())
 	{
-		beep_for_command(true);
-		stop_brifly();
-		if(!g_remote_spot){
+		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
+			set_wheel_speed(0, 0);
 			g_remote_spot = true;
-			if(SpotMovement::instance() -> getSpotType() == NO_SPOT){
-				SpotMovement::instance() -> setSpotType(CLEAN_SPOT);
-			}
+			beep_for_command(true);
+			/*----store current position---*/
+			map_set_position((robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL/CELL_SIZE), (robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
+			ROS_WARN("%s,%d,cur cell x = %d,cur cell y = %d",__FUNCTION__,__LINE__,map_get_x_cell(),map_get_y_cell());
 		}
-		else{
-			g_remote_spot = false;
-			if(SpotMovement::instance() -> getSpotType() == CLEAN_SPOT)
-				SpotMovement::instance()->setSpotType(NO_SPOT);
-		}
-
+		else
+			beep_for_command(false);
 	}
-	else{
+	else
 		beep_for_command(false);
 
-	}
 	reset_rcon_remote();
 }
 
 void cm_handle_remote_wallfollow(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
-	if(SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
-		beep_for_command(true);
-		stop_brifly();
-		g_remote_wallfollow = true;
-	}
-	else{
-		beep_for_command(false);
-	}
+	beep_for_command(false);
 	reset_rcon_remote();
 }
 
@@ -2725,7 +2707,7 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_go_home && !cm_should_self_check())
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT)
 	{
 		beep_for_command(true);
 		switch_vac_mode(true);
@@ -2738,26 +2720,26 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 void cm_handle_remote_direction(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
-	SpotType spt = SpotMovement::instance()->getSpotType();
-	if(!g_remote_dirt_keys)
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check())
 	{
-		beep_for_command(true);
-		g_remote_dirt_keys = true;
+		SpotType spt = SpotMovement::instance()->getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT){
-			SpotMovement::instance()->setSpotType(NO_SPOT);
+			beep_for_command(true);
+			g_remote_dirt_keys = true;
 		}
+		else
+			beep_for_command(false);
 	}
 	else
-	{
 		beep_for_command(false);
-		g_remote_dirt_keys = false;
-	}
+
+	reset_rcon_remote();
 }
 
 /* Battery */
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
-	if (! g_go_home) {
+	if (g_motion_init_succeeded && ! g_go_home) {
 		g_go_home = true;
 		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
@@ -2767,8 +2749,10 @@ void cm_handle_battery_home(bool state_now, bool state_last)
 			switch_vac_mode(false);
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
-		cm_set_continue_point(map_get_x_count(), map_get_y_count());
-		robot::instance()->setLowBatPause();
+		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
+			cm_set_continue_point(map_get_x_count(), map_get_y_count());
+			robot::instance()->setLowBatPause();
+		}
 #endif 
     }
 }
