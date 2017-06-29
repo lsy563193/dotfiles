@@ -322,7 +322,6 @@ if (s_slam != nullptr)
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
 {
-	cm_register_events();
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:
@@ -416,6 +415,10 @@ bool MotionManage::initNavigationCleaning(void)
 	else{
 		wav_play(WAV_CLEANING_START);
 	}
+
+	// Can't register until now because if register too early, the handler may affect the pause status, so it will play the wrong wav.
+	cm_register_events();
+
 	if (!Wait_For_Gyro_On())
 		return false;
 
@@ -466,6 +469,8 @@ bool MotionManage::initNavigationCleaning(void)
 
 bool MotionManage::initWallFollowCleaning(void)
 {
+	cm_register_events();
+
 	extern std::vector<Pose16_t> g_wf_cell;
 	reset_start_work_time();
 	reset_move_with_remote();
@@ -511,6 +516,8 @@ bool MotionManage::initWallFollowCleaning(void)
 
 bool MotionManage::initSpotCleaning(void)
 {
+	cm_register_events();
+
 	reset_start_work_time();
 	reset_rcon_status();
 	reset_move_with_remote();
