@@ -5,6 +5,7 @@
 #define ROUND_RIGHT			0x02
 
 void go_home(void);
+void go_to_charger(void);
 void go_home_register_events(void);
 void go_home_unregister_events(void);
 void go_home_handle_key_clean(bool, bool);

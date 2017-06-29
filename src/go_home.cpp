@@ -32,7 +32,74 @@ uint8_t g_position_far = 1;
 int8_t g_go_home_state_now = -1;
 int8_t g_go_home_state_last = -1;
 bool g_bumper_left = false, g_bumper_right = false;
+bool g_go_to_charger_failed = false;
+// To save the clean mode when call go_home()
+uint8_t last_clean_mode;
+
 void go_home(void)
+{
+	g_go_to_charger_failed = false;
+	last_clean_mode = get_clean_mode();
+
+	if (last_clean_mode == Clean_Mode_GoHome)
+	{
+		event_manager_reset_status();
+		go_home_register_events();
+	}
+
+	while (ros::ok())
+	{
+		if (g_fatal_quit_event || g_key_clean_pressed || g_go_to_charger_failed)
+		{
+			if(last_clean_mode == Clean_Mode_GoHome)
+				set_clean_mode(Clean_Mode_Userinterface);
+			break;
+		}
+		if(g_charge_detect)
+		{
+			if(last_clean_mode == Clean_Mode_GoHome)
+				set_clean_mode(Clean_Mode_Charging);
+			disable_motors();
+			break;
+		}
+		if(g_cliff_all_triggered)
+		{
+			if(last_clean_mode == Clean_Mode_GoHome)
+			{
+				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
+				g_key_clean_pressed = false;
+				g_cliff_all_triggered = false;
+				set_clean_mode(Clean_Mode_Userinterface);
+			}
+			disable_motors();
+			break;
+		}
+		if(g_battery_low)
+		{
+			set_clean_mode(Clean_Mode_Sleep);
+			break;
+		}
+
+		go_to_charger();
+
+		if(cm_should_self_check())
+			cm_self_check();
+
+	}
+
+	extern std::list <Point32_t> g_home_point;
+	if(!g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed && g_home_point.empty())
+	{
+		set_led(100, 0);
+		set_wheel_speed(0, 0);
+		wav_play(WAV_BACK_TO_CHARGER_FAILED);
+	}
+
+	if (last_clean_mode == Clean_Mode_GoHome)
+		go_home_unregister_events();
+}
+
+void go_to_charger(void)
 {
 	/*	meaning of entrance_to_check_position	*
 	 *	0: around_chargestation					*
@@ -46,15 +113,16 @@ void go_home(void)
 	uint32_t receive_code = 0;
 	uint8_t ret = 0;
 	float distance = 0.0;
-	uint8_t move_back_status = 0;
 	int16_t target_angle = 0;
 	uint16_t turn_speed = 0;
 	uint8_t turn_finished = true;
+
 	#define RANDOM_BACK_1	1
 	#define RANDOM_BACK_2	2
 	#define QUICK_BACK_1	3
 	#define QUICK_BACK_2	4
 	#define CLIFF_BACK		5
+	uint8_t move_back_status = 0;
 	/*---variable for around_chargestation---*/
 	uint8_t signal_counter=0;
 	uint32_t no_signal_counter=0;
@@ -69,7 +137,6 @@ void go_home(void)
 	uint8_t side_counter=0;
 	bool eh_status_now=false, eh_status_last=false;
 	/*---variable for turn_connect---*/
-	int16_t tc_target_angle;
 	int8_t tc_speed = 5;
 
 	reset_rcon_status();
@@ -79,9 +146,15 @@ void go_home(void)
 	float angle_offset;
 	// This step is for counting angle change when the robot turns.
 	float gyro_step = 0;
-	// To save the clean mode when call go_home()
-	uint8_t last_clean_mode;
-	last_clean_mode = get_clean_mode();
+
+	g_dir_around_cs = 0;
+	g_dir_check_position = 0;
+	g_position_far = 1;
+	g_go_home_state_now = -1;
+	g_go_home_state_last = -1;
+	g_bumper_left = false;
+	g_bumper_right = false;
+
 
 	g_move_back_finished = true;
 	g_go_home_state_now = 0;
@@ -97,46 +170,22 @@ void go_home(void)
 	// Enable the charge function
 	set_start_charge();
 
-	if (last_clean_mode == Clean_Mode_GoHome)
-		go_home_register_events();
-
 	while(ros::ok())
 	{
 		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-		{
 			continue;
-		}
-		if(cm_should_self_check())
-		{
-			cm_self_check();
-		}
+
 		if(g_fatal_quit_event)
-		{
-			if(last_clean_mode == Clean_Mode_GoHome)
-				set_clean_mode(Clean_Mode_Userinterface);
 			break;
-		}
 		if(g_charge_detect && g_go_home_state_now != 4)
-		{
-			if(last_clean_mode == Clean_Mode_GoHome)
-			{
-				set_clean_mode(Clean_Mode_Charging);
-			}
-			disable_motors();
 			break;
-		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
-		{
-			if(last_clean_mode == Clean_Mode_GoHome)
-			{
-				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
-				g_key_clean_pressed = false;
-				g_cliff_all_triggered = false;
-				set_clean_mode(Clean_Mode_Userinterface);
-			}
-			disable_motors();
 			break;
-		}
+		if(g_battery_low)
+			break;
+		if(cm_should_self_check())
+			break;
+
 		/*---go_home initial---*/
 		if(g_go_home_state_now == -1)
 		{
@@ -537,8 +586,7 @@ void go_home(void)
 			}
 			else
 			{
-				if(last_clean_mode == Clean_Mode_GoHome)
-					set_clean_mode(Clean_Mode_Userinterface);
+				g_go_to_charger_failed = true;
 				break;
 			}
 		}
@@ -695,12 +743,6 @@ void go_home(void)
 				}
 				set_wheel_speed(turn_speed, turn_speed);
 				continue;
-			}
-			if(g_battery_low)
-			{
-				if(last_clean_mode != Clean_Mode_GoHome)
-					g_battery_low = false;
-				break;
 			}
 			receive_code = get_rcon_status();
 			if(receive_code)
@@ -1045,34 +1087,19 @@ void go_home(void)
 			}
 			if(g_charge_detect)
 			{
-				if(g_charge_detect_cnt == 0)g_charge_detect_cnt++;
+				if(g_charge_detect_cnt == 0)
+					g_charge_detect_cnt++;
 				else
-				{
-					if(last_clean_mode == Clean_Mode_GoHome)
-					{
-						set_clean_mode(Clean_Mode_Charging);
-					}
-					disable_motors();
 					break;
-				}
 			}
 			else if(g_charge_detect_cnt > 0)
 			{
 				g_charge_detect_cnt = 0;
 				ret = turn_connect();
 				if(ret == 1)
-				{
-					if(last_clean_mode == Clean_Mode_GoHome)
-					{
-						set_clean_mode(Clean_Mode_Charging);
-					}
-					disable_motors();
 					break;
-				}
 				else if(ret == 2)
-				{
 					break;
-				}
 				else
 				{
 					set_side_brush_pwm(30, 30);
@@ -1350,18 +1377,9 @@ void go_home(void)
 				g_charge_detect_cnt = 0;
 				ret = turn_connect();
 				if(ret == 1)
-				{
-					if(last_clean_mode == Clean_Mode_GoHome)
-					{
-						set_clean_mode(Clean_Mode_Charging);
-					}
-					disable_motors();
 					break;
-				}
 				else if(ret == 2)
-				{
 					break;
-				}
 				else
 				{
 					set_side_brush_pwm(30, 30);
@@ -1388,18 +1406,9 @@ void go_home(void)
 					stop_brifly();
 					ret = turn_connect();
 					if(ret == 1)
-					{
-						if(last_clean_mode == Clean_Mode_GoHome)
-						{
-							set_clean_mode(Clean_Mode_Charging);
-						}
-						disable_motors();
 						break;
-					}
 					else if(ret == 2)
-					{
 						break;
-					}
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(0);
 					ROS_DEBUG("%d: quick_back in !position_far", __LINE__);
@@ -2831,17 +2840,6 @@ void go_home(void)
 		}
 		usleep(50000);
 	}
-
-	extern std::list <Point32_t> g_home_point;
-	if(!g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed && g_home_point.empty())
-	{
-		set_led(100, 0);
-		set_wheel_speed(0, 0);
-		wav_play(WAV_BACK_TO_CHARGER_FAILED);
-	}
-
-	if (last_clean_mode == Clean_Mode_GoHome)
-		go_home_unregister_events();
 }
 
 void go_home_register_events(void)
@@ -3052,8 +3050,6 @@ void go_home_handle_bumper_right(bool state_now, bool state_last)
 void go_home_handle_battery_low(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
-	usleep(1000000);
-	set_clean_mode(Clean_Mode_Sleep);
 	g_battery_low = true;
 }
 
