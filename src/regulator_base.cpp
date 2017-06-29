@@ -239,11 +239,21 @@ bool TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 //RegulatorManage
 
-RegulatorProxy::RegulatorProxy(RegulatorBase *p_reg) : p_reg_(p_reg)
+RegulatorProxy::RegulatorProxy(Point32_t target):target_(target)
 {
 //	ROS_INFO("RegulatorProxy init");
+	turn_reg_ = new TurnRegulator(13);
+	back_reg_ = new BackRegulator();
+	follow_wall_reg_ = new FollowWallRegulator(g_cm_move_type);
+	p_reg_ = follow_wall_reg_;
 }
 
+RegulatorProxy::~RegulatorProxy()
+{
+	delete turn_reg_;
+	delete back_reg_;
+	delete follow_wall_reg_;
+}
 bool RegulatorProxy::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	if (p_reg_ != nullptr)
@@ -264,11 +274,33 @@ bool RegulatorProxy::isReach()
 		return p_reg_->isReach();
 	return false;
 }
-/*
-void RegulatorProxy::switchTo()
+
+void RegulatorProxy::switchToNext()
 {
-	switch(getType()){
-		case RegBack:
-			break;
+	if (p_reg_ == follow_wall_reg_)
+	{
+		if (g_turn_angle != 0)
+		{
+			turn_reg_->setTarget(calc_target(g_turn_angle));
+			p_reg_ = turn_reg_;
+		} else if (g_bumper_hitted || g_cliff_triggered)
+		{
+			g_turn_angle = bumper_turn_angle(get_bumper_status());
+			auto pos_x = robot::instance()->getOdomPositionX();
+			auto pos_y = robot::instance()->getOdomPositionY();
+			back_reg_->setOrigin(pos_x, pos_y);
+			p_reg_ = back_reg_;
+		}
+	} else if (p_reg_ == back_reg_)
+	{
+		g_bumper_hitted = g_cliff_triggered = false;
+		turn_reg_->setTarget(calc_target(g_turn_angle));
+		p_reg_ = turn_reg_;
+	} else if (p_reg_ == turn_reg_)
+	{
+		g_turn_angle = 0;
+		follow_wall_reg_->setOrigin({map_get_x_count(), map_get_y_count()});
+		follow_wall_reg_->setTarget(target_);
+		p_reg_ = follow_wall_reg_;
 	}
-}*/
+}

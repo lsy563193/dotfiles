@@ -83,15 +83,19 @@ private:
 
 class RegulatorProxy:public RegulatorBase{
 public:
-	RegulatorProxy(RegulatorBase* p_reg);
-	void switchTo(RegulatorBase *p_reg){p_reg_ = p_reg;};
+	RegulatorProxy(Point32_t target);
+	~RegulatorProxy();
+	void switchToNext();
 	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
 	bool isReach();
 	RegulatorBase* getType(){ return p_reg_; };
 private:
 	RegulatorBase* p_reg_;
-	uint8_t bumper_;
+	TurnRegulator* turn_reg_;
+	BackRegulator* back_reg_;
+	FollowWallRegulator* follow_wall_reg_;
+	Point32_t target_;
 
 };
 

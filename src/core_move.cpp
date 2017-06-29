@@ -1051,16 +1051,12 @@ int16_t get_round_angle(CMMoveType type){
 
 uint8_t cm_follow_wall(Point32_t target)
 {
-	auto type = g_cm_move_type;
 	g_left_buffer = { 0,0,0 }, g_right_buffer = { 0,0,0 };
 	g_wall_distance = 400;
 	bool	eh_status_now=false, eh_status_last=false;
 	cm_set_event_manager_handler_state(true);
 	g_straight_distance = 300;
-	TurnRegulator turn_reg(TURN_SPEED-5);
-	BackRegulator back_reg;
-	FollowWallRegulator follow_wall_reg(type);
-	RegulatorProxy regulator(&follow_wall_reg);
+	RegulatorProxy regulator(target);
 	robotbase_obs_adjust_count(100);
 	while (ros::ok())
 	{
@@ -1074,32 +1070,8 @@ uint8_t cm_follow_wall(Point32_t target)
 			break;
 
 		if (regulator.isSwitch())
-		{
-			if(regulator.getType() == &follow_wall_reg){
-				if(g_turn_angle != 0){
-					turn_reg.setTarget(calc_target(g_turn_angle));
-					regulator.switchTo(&turn_reg);
-				}
-				else if(g_bumper_hitted || g_cliff_triggered){
-					g_turn_angle = bumper_turn_angle(get_bumper_status());
-					auto pos_x = robot::instance()->getOdomPositionX();
-					auto pos_y = robot::instance()->getOdomPositionY();
-					back_reg.setOrigin(pos_x, pos_y);
-					regulator.switchTo(&back_reg);
-				}
-			}
-			else if(regulator.getType() == &back_reg){
-				g_bumper_hitted = g_cliff_triggered = false;
-				turn_reg.setTarget(calc_target(g_turn_angle));
-				regulator.switchTo(&turn_reg);
-			}
-			else if(regulator.getType() == &turn_reg){
-				g_turn_angle = 0;
-				follow_wall_reg.setOrigin({map_get_x_count(), map_get_y_count()});
-				follow_wall_reg.setTarget(target);
-				regulator.switchTo(&follow_wall_reg);
-			}
-		}
+			regulator.switchToNext();
+
 		int32_t	 speed_left = 0, speed_right = 0;
 		regulator.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);
