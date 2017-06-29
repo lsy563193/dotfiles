@@ -123,9 +123,7 @@ void go_to_charger(void)
 	#define CLIFF_BACK		5
 	uint8_t move_back_status = 0;
 	/*---variable for around_chargestation---*/
-	uint8_t signal_counter=0;
 	uint32_t no_signal_counter=0;
-	uint32_t n_around_lrsignal=0;
 	uint8_t bumper_counter=0;
 	uint8_t cliff_counter = 0;
 	/*---variable for by_path---*/
@@ -188,13 +186,12 @@ void go_to_charger(void)
 		/*---go_home initial---*/
 		if(g_go_home_state_now == -1)
 		{
+			ROS_INFO("%s %d: Start go to charger.", __FUNCTION__, __LINE__);
 			entrance_to_check_position = 0;
 			receive_code = 0;
 			distance = 0.0;
 			move_back_status = 0;
-			signal_counter=0;
 			no_signal_counter=0;
-			n_around_lrsignal=0;
 			bumper_counter=0;
 			cliff_counter = 0;
 			temp_code =0 ;
@@ -861,39 +858,24 @@ void go_to_charger(void)
 
 				if(receive_code&(RconFR_HomeR))
 				{
-					ROS_DEBUG("%s, %d: Detect FR-R, call By_Path().", __FUNCTION__, __LINE__);
+					ROS_INFO("%s, %d: Detect FR-R, call By_Path().", __FUNCTION__, __LINE__);
 					g_go_home_state_now = 5;
 					continue;
 				}
 				if(receive_code&(RconFL_HomeR))
 				{
-					ROS_DEBUG("%s, %d: Detect FL-R, call By_Path().", __FUNCTION__, __LINE__);
+					ROS_INFO("%s, %d: Detect FL-R, call By_Path().", __FUNCTION__, __LINE__);
 					g_go_home_state_now = 5;
 					continue;
 				}
 				if(receive_code&(RconL_HomeR))
 				{
-					ROS_DEBUG("%s, %d: Detect L-R, call By_Path().", __FUNCTION__, __LINE__);
-					signal_counter++;
-					n_around_lrsignal=0;
-					if(signal_counter>0)
-					{
-						ROS_DEBUG("%s %d signal_counter>0, check position.", __FUNCTION__, __LINE__);
-						signal_counter=0;
-						stop_brifly();
-						g_dir_check_position = ROUND_LEFT;
-						g_go_home_state_last = 0;
-						g_go_home_state_now = 3;
-						continue;
-					}
-				}
-				else
-				{
-					n_around_lrsignal++;
-					if(n_around_lrsignal>4)
-					{
-						if(signal_counter>0)signal_counter--;
-					}
+					ROS_INFO("%s, %d: Detect L-R, Check position.", __FUNCTION__, __LINE__);
+					stop_brifly();
+					g_dir_check_position = ROUND_LEFT;
+					g_go_home_state_last = 0;
+					g_go_home_state_now = 3;
+					continue;
 				}
 			}
 			else
@@ -998,39 +980,24 @@ void go_to_charger(void)
 
 				if(receive_code&(RconFL_HomeL))
 				{
-					ROS_DEBUG("%s, %d: Detect FL-L, call By_Path().", __FUNCTION__, __LINE__);
+					ROS_INFO("%s, %d: Detect FL-L, call By_Path().", __FUNCTION__, __LINE__);
 					g_go_home_state_now = 5;
 					continue;
 				}
 				if(receive_code&(RconFR_HomeL))
 				{
-					ROS_DEBUG("%s, %d: Detect FR-L, call By_Path().", __FUNCTION__, __LINE__);
+					ROS_INFO("%s, %d: Detect FR-L, call By_Path().", __FUNCTION__, __LINE__);
 					g_go_home_state_now = 5;
 					continue;
 				}
 				if((receive_code&(RconR_HomeL)))
 				{
-					ROS_DEBUG("%s, %d: Detect R-L, call By_Path().", __FUNCTION__, __LINE__);
-					n_around_lrsignal=0;
-					signal_counter++;
-					if(signal_counter>0)
-					{
-						ROS_DEBUG("%s %d Signal_Counter>0, check position.", __FUNCTION__, __LINE__);
-						signal_counter=0;
-						stop_brifly();
-						g_dir_check_position = ROUND_RIGHT;
-						g_go_home_state_last = 0;
-						g_go_home_state_now = 3;
-						continue;
-					}
-				}
-				else
-				{
-					n_around_lrsignal++;
-					if(n_around_lrsignal>4)
-					{
-						if(signal_counter>0)signal_counter--;
-					}
+					ROS_INFO("%s, %d: Detect R-L, check position.", __FUNCTION__, __LINE__);
+					stop_brifly();
+					g_dir_check_position = ROUND_RIGHT;
+					g_go_home_state_last = 0;
+					g_go_home_state_now = 3;
+					continue;
 				}
 			}
 		}
@@ -1041,12 +1008,12 @@ void go_to_charger(void)
 			gyro_step = 0;
 			if(g_dir_check_position == ROUND_LEFT)
 			{
-				ROS_DEBUG("Check position Dir = left");
+				ROS_INFO("Check position Dir = left");
 				set_dir_left();
 			}
 			else if(g_dir_check_position == ROUND_RIGHT)
 			{
-				ROS_DEBUG("Check position Dir = right");
+				ROS_INFO("Check position Dir = right");
 				set_dir_right();
 			}
 			set_wheel_speed(10, 10);
@@ -1177,6 +1144,7 @@ void go_to_charger(void)
 		/*---by_path initial---*/
 		else if(g_go_home_state_now == 5)
 		{
+			ROS_INFO("%s %d: Start by path logic.", __FUNCTION__, __LINE__);
 			receive_code=0;
 			temp_code =0 ;
 			g_position_far=1;
@@ -1210,6 +1178,11 @@ void go_to_charger(void)
 					}
 					else
 					{
+						if(get_bumper_status())
+						{
+							g_bumper_jam = true;
+							continue;
+						}
 						g_move_back_finished = true;
 						stop_brifly();
 						g_go_home_state_now = -1;
@@ -1240,8 +1213,8 @@ void go_to_charger(void)
 								move_forward(0, 0);
 								ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
 								g_go_home_state_now = -1;
-								continue;
 							}
+							continue;
 						}
 					}
 				}
@@ -1458,7 +1431,7 @@ void go_to_charger(void)
 					if((receive_code&(RconFR_HomeT|RconFL_HomeT)) == (RconFR_HomeT|RconFL_HomeT))
 					{
 						g_position_far = 0;
-						ROS_INFO("%s, %d: Robot face HomeT, g_position_far = 0.", __FUNCTION__, __LINE__);
+						ROS_DEBUG("%s, %d: Robot face HomeT, g_position_far = 0.", __FUNCTION__, __LINE__);
 					}
 					if(receive_code&(RconFR2_HomeT|RconFL2_HomeT|RconR_HomeT|RconL_HomeT))
 					{
@@ -3119,6 +3092,7 @@ void go_home_handle_over_current_suction(bool state_now, bool state_last)
  */
 bool turn_connect(void)
 {
+	ROS_INFO("%s %d: Start turn_connect().", __FUNCTION__, __LINE__);
 	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
 	extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
 	int16_t target_angle;
