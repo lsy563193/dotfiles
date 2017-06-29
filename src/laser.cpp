@@ -206,7 +206,7 @@ void Laser::stop(void){
 	laser_pm_gpio('0');
 }
 
-double Laser::getLaserDistance(int begin, int end, double range, double *line_angle)
+bool Laser::getLaserDistance(int begin, int end, double range, double *line_angle)
 {
 	int		i, count;
 	bool	found = false;
@@ -237,11 +237,16 @@ double Laser::getLaserDistance(int begin, int end, double range, double *line_an
 	mergeLine(&Laser_Group, 0.01);
 	fitLineGroup(&Laser_Group, 0.1);
 	//*line_angle = atan2(-a, b) * 180 / PI;
-	*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
-	//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-	ROS_INFO("line_angle = %lf", *line_angle);
 	Laser_Group.clear();
-	return 0;
+	if (!fit_line.empty()) {
+		*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
+		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
+		ROS_WARN("line_angle = %lf", *line_angle);
+		return true;
+	} else {
+		ROS_WARN("no line to fit!");
+		return false;
+	}
 }
 
 bool Laser::lineFit(const std::vector<Double_Point> &points, double &a, double &b, double &c)
