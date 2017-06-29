@@ -39,7 +39,7 @@
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
-
+#include "regulator_base.h"
 #ifdef TURN_SPEED
 #undef TURN_SPEED
 #endif
@@ -63,7 +63,7 @@ CMMoveType g_cm_move_type;
 
 uint16_t g_turn_angle;
 uint16_t g_rounding_move_speed;
-uint16_t g_wall_distance;
+uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
 static bool g_is_should_follow_wall;
@@ -258,155 +258,6 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 		}
 	}
 	speed = speed_;
-	return true;
-}
-
-typedef struct FollowWallRegulator_{
-	FollowWallRegulator_(CMMoveType type):type_(type),previous(0){ };
-	~FollowWallRegulator_(){ set_wheel_speed(0,0); };
-	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	int32_t	 previous = 0;
-	CMMoveType type_;
-}FollowWallRegulator;
-
-/*bool FollowWallRegulator::adjustSpeed(int32_t &speed_left, int32_t &speed_right)
-{
-	auto proportion =
-					(type_ == CM_FOLLOW_LEFT_WALL ? robot::instance()->getLeftWall() : robot::instance()->getRightWall()) * 100 /
-					g_wall_distance - 100;
-	auto Delta = proportion - previous_;
-
-	if (g_wall_distance > 300)
-	{
-		speed_left = 25 + proportion / 12 + Delta / 5;
-		speed_right = 25 - proportion / 10 - Delta / 5;
-		if (speed_right > 33)
-		{
-			speed_left = 5;
-			speed_right = 33;
-		}
-	} else
-	{
-		speed_right = 15 - proportion / 18 - Delta / 10;
-		speed_left = (speed_right > 18) ? 5 : (15 + proportion / 22 + Delta / 10);
-
-		check_limit(speed_left, 4, 20);
-		check_limit(speed_right, 4, 18);
-		speed_left = (speed_left - speed_right) > 5 ? speed_right + 5 : speed_left;
-	}
-
-	if ((type_ == CM_FOLLOW_LEFT_WALL && get_left_obs() > get_left_obs_value()) ||
-			(type_ == CM_FOLLOW_RIGHT_WALL && get_right_obs() > get_right_obs_value()))
-		if (g_wall_distance < Wall_High_Limit)
-			g_wall_distance++;
-
-	if (is_wall_obs_near())
-	{
-		speed_left /= 2;
-		speed_right /= 2;
-	}
-
-	previous_ = proportion;
-	check_limit(speed_left, 0, 40);
-	speed_right = speed_right < 0 ? 0 : speed_right;
-}*/
-bool FollowWallRegulator::adjustSpeed(int32_t &speed_left, int32_t &speed_right)
-{
-	if (get_right_wheel_step() < (uint32_t) g_straight_distance)
-	{
-		int32_t speed;
-		if (get_left_wheel_step() < 500)
-		{
-			if (get_right_wheel_step() < 100) speed = 10;
-			else speed = 15;
-		} else
-			speed = 23;
-		speed_left = speed_right = speed;
-		ROS_INFO("get_right_wheel_step() < (uint32_t) g_straight_distance", get_right_wheel_step(), g_straight_distance);
-	}
-	else
-	{
-
-		if (get_front_obs() < get_front_obs_value())
-		{
-			ROS_INFO("get_front_obs() < get_front_obs_value()", get_front_obs(), get_front_obs_value());
-			auto wheel_speed_base = 15 + get_wall_accelerate() / 150;
-			if (wheel_speed_base > 28)wheel_speed_base = 28;
-
-			auto proportion = robot::instance()->getLeftWall();
-
-			proportion = proportion * 100 / g_wall_distance;
-
-			proportion -= 100;
-
-			auto delta = proportion - previous;
-
-			if (g_wall_distance > 200)
-			{//over left
-				speed_left = wheel_speed_base + proportion / 8 + delta / 3; //12
-				speed_right = wheel_speed_base - proportion / 9 - delta / 3; //10
-
-				if (wheel_speed_base < 26)
-				{
-					if (speed_right > wheel_speed_base + 6)
-					{
-						speed_right = 34;
-						speed_left = 4;
-					} else if (speed_left > wheel_speed_base + 10)
-					{
-						speed_right = 5;
-						speed_left = 30;
-					}
-				} else
-				{
-					if (speed_right > 35)
-					{
-						speed_right = 35;
-						speed_left = 4;
-					}
-				}
-			} else
-			{
-				speed_left = wheel_speed_base + proportion / 10 + delta / 3;//16
-				speed_right = wheel_speed_base - proportion / 10 - delta / 4; //11
-
-				if (wheel_speed_base < 26)
-				{
-					if (speed_right > wheel_speed_base + 4)
-					{
-						speed_right = 34;
-						speed_left = 4;
-					}
-				} else
-				{
-					if (speed_right > 32)
-					{
-						speed_right = 36;
-						speed_left = 4;
-					}
-				}
-			}
-
-			previous = proportion;
-
-			if (speed_left > 39)speed_left = 39;
-			if (speed_left < 0)speed_left = 0;
-			if (speed_right > 35)speed_right = 35;
-			if (speed_right < 5)speed_right = 5;
-
-		}
-		 else
-		{
-			if (get_right_wheel_step() < 2000) jam++;
-			cm_follow_wall_turn(TURN_SPEED - 5, 920);
-			move_forward(15, 15);
-			reset_wheel_step();
-
-			g_wall_distance = Wall_High_Limit;
-		}
-	}
-	if(type_ != CM_FOLLOW_LEFT_WALL) std::swap(speed_left, speed_right);
-		move_forward(speed_left, speed_right);
 	return true;
 }
 
@@ -743,10 +594,12 @@ uint16_t bumper_straight_distance()
 		else return 259;
 	}
 }
+/*
 
 void cm_move_back(void)
 {
-	/*if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
+	*/
+/*if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
 	{
 		g_turn_angle = bumper_turn_angle();
 		if (get_bumper_status() != 0)
@@ -757,7 +610,8 @@ void cm_move_back(void)
 			g_rounding_move_speed = round_turn_speed();
 			g_straight_distance = bumper_straight_distance();
 		}
-	}*/
+	}*//*
+
 	auto status = get_bumper_status();
 	cm_move_back_(COR_BACK_20MM);
 	g_turn_angle = bumper_turn_angle(status);
@@ -791,6 +645,7 @@ void cm_move_back(void)
 //	if((get_bumper_status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
 	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 }
+*/
 
 /*--------------------------Head Angle--------------------------------*/
 void cm_head_to_course(uint8_t speed_max, int16_t angle)
@@ -1127,7 +982,7 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 	return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) || (g_cm_move_type == CM_FOLLOW_RIGHT_WALL);
 }
 
-static int16_t uranged_angle(int16_t angle)
+int16_t uranged_angle(int16_t angle)
 {
 	if (angle >= 3600) {
 			angle -= 3600;
@@ -1138,6 +993,11 @@ static int16_t uranged_angle(int16_t angle)
 	return angle;
 }
 
+int16_t calc_target(int16_t)
+{
+	auto angle = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? -g_turn_angle : g_turn_angle;
+	return uranged_angle(Gyro_GetAngle() + angle);
+}
 void cm_follow_wall_turn(uint16_t speed, int16_t angle)
 {
 	ROS_WARN("%s %d: cm_follow_wall_turn", __FUNCTION__, __LINE__);
@@ -1193,94 +1053,56 @@ uint8_t cm_follow_wall(Point32_t target)
 	auto type = g_cm_move_type;
 	g_left_buffer = { 0,0,0 }, g_right_buffer = { 0,0,0 };
 	g_wall_distance = 400;
-
-	auto start_y = map_get_y_count();
-
 	bool	eh_status_now=false, eh_status_last=false;
-	int32_t	 speed_left = 0, speed_right = 0;
 	cm_set_event_manager_handler_state(true);
 	g_straight_distance = 300;
-	FollowWallRegulator regulator(type);
+	TurnRegulator turn_reg(TURN_SPEED);
+	BackRegulator back_reg;
+	FollowWallRegulator follow_wall_reg(type);
+	RegulatorProxy regulator(&follow_wall_reg);
 	robotbase_obs_adjust_count(100);
-	while (ros::ok()) {
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+	while (ros::ok())
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+		{
 			usleep(100);
 			continue;
 		}
-		if (g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right || (!g_go_home && g_remote_home)) {
+
+		if (regulator.isExit())
 			break;
-		}
 
-		if(get_clean_mode() == Clean_Mode_WallFollow){
-			if(wf_is_end()){
-				wf_break_wall_follow();
-				break;
-			}
-		}else
-		if(get_clean_mode() == Clean_Mode_Navigation){
-
-			if ((start_y < target.Y ^ map_get_y_count() < target.Y))
-			{
-				ROS_WARN("Robot has reach the target.");
-				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,
-								 map_get_y_count());
-				break;
-			}
-
-			if ((target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
-					(target.Y < start_y && (map_get_y_count() - start_y) > 120))
-			{
-				ROS_WARN("Robot has round to the opposite direcition.");
-				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target.Y,
-								 map_get_y_count());
-				map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0),
-										 map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
-				break;
-			}
-		}
-
-		if(g_bumper_hitted || g_cliff_triggered){
-			auto status = get_bumper_status();
-			cm_move_back_(COR_BACK_20MM);
-			g_bumper_hitted = g_cliff_triggered = false;
-			g_turn_angle = bumper_turn_angle(status);
-			speed_left = speed_right = 10;
-//			sleep(3);
-		}
-		if (g_turn_angle != 0) {
-			cm_follow_wall_turn(TURN_SPEED, g_turn_angle);
-			g_turn_angle = 0;
-//			sleep(3);
-			move_forward(speed_left, speed_right);
-		}
-/*
-		if (g_wall_distance >= 200) {
-			auto buffer_ptr = (type == CM_FOLLOW_LEFT_WALL) ? g_left_buffer : g_right_buffer;
-			buffer_ptr[2] = buffer_ptr[1];
-			buffer_ptr[1] = buffer_ptr[0];
-			buffer_ptr[0] = (type == CM_FOLLOW_LEFT_WALL) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
-			if (buffer_ptr[0] < 100)
-			{
-				if ((buffer_ptr[1] - buffer_ptr[0]) > (g_wall_distance / 25))
-				{
-					if ((buffer_ptr[2] - buffer_ptr[1]) > (g_wall_distance / 25))
-					{
-						speed_left = type == CM_FOLLOW_LEFT_WALL ? 18 : 16;
-						speed_right = type == CM_FOLLOW_LEFT_WALL ? 16 : 18;
-						move_forward(speed_left, speed_right);
-						usleep(100000);
-						g_straight_distance = 300;
-					}
+		if (regulator.isSwitch())
+		{
+			if(regulator.getType() == &follow_wall_reg){
+				if(g_turn_angle != 0){
+					turn_reg.setTarget(calc_target(g_turn_angle));
+					regulator.switchTo(&turn_reg);
+				}
+				else if(g_bumper_hitted || g_cliff_triggered){
+					g_turn_angle = bumper_turn_angle(get_bumper_status());
+					auto pos_x = robot::instance()->getOdomPositionX();
+					auto pos_y = robot::instance()->getOdomPositionY();
+					back_reg.setOrigin(pos_x, pos_y);
+					regulator.switchTo(&back_reg);
 				}
 			}
+			else if(regulator.getType() == &back_reg){
+				g_bumper_hitted = g_cliff_triggered = false;
+				turn_reg.setTarget(calc_target(g_turn_angle));
+				regulator.switchTo(&turn_reg);
+			}
+			else if(regulator.getType() == &turn_reg){
+				g_turn_angle = 0;
+				follow_wall_reg.setOrigin({map_get_x_count(), map_get_y_count()});
+				follow_wall_reg.setTarget(target);
+				regulator.switchTo(&follow_wall_reg);
+			}
 		}
-*/
-
-		/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
+		int32_t	 speed_left = 0, speed_right = 0;
 		regulator.adjustSpeed(speed_left, speed_right);
-		ROS_WARN("1282, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ",
-						 g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
-		}
+		set_wheel_speed(speed_left, speed_right);
+	}
 
 	cm_set_event_manager_handler_state(false);
 	return 0;
@@ -1639,36 +1461,12 @@ void cm_move_back_(uint16_t dist)
 	uint16_t Counter_Watcher = 0;
 
 	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
-	stop_brifly();
-	set_dir_backward();
-	set_wheel_speed(8, 8);
-	reset_wheel_step();
 	Counter_Watcher = 0;
 
 	pos_x = robot::instance()->getOdomPositionX();
 	pos_y = robot::instance()->getOdomPositionY();
 
-	while (1) {
-		distance = sqrtf(powf(pos_x - robot::instance()->getOdomPositionX(), 2) + powf(pos_y -
-																																													 robot::instance()->getOdomPositionY(), 2));
-		if (fabsf(distance) > 0.02f) {
-			break;
-		}
 
-		usleep(10000);
-		Counter_Watcher++;
-		SP = 8 + Counter_Watcher / 100;
-		SP = (SP > 18) ? 18 : SP;
-
-		set_wheel_speed(SP, SP);
-		if (Counter_Watcher > 3000) {
-			if (is_encoder_fail()) {
-				set_error_code(Error_Code_Encoder);
-			}
-			break;
-		}
-
-	}
 	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);
 }
 

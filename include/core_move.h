@@ -59,7 +59,12 @@ typedef struct {
 
 extern float saved_pos_x, saved_pos_y;
 extern bool g_move_back_finished;
+extern uint16_t g_straight_distance;
+extern uint16_t g_turn_angle;
+extern uint16_t g_wall_distance;
+extern CMMoveType g_cm_move_type;
 
+int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);
 
 void CM_TouringCancel(void);
