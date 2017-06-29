@@ -18,6 +18,7 @@
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
+#include "spot.h"
 
 Segment_set segmentss;
 
@@ -229,16 +230,26 @@ MotionManage::~MotionManage()
 	reset_stop_event_status();
 	disable_motors();
 
+	if(g_bumper_jam)
+		wav_play(WAV_ERROR_BUMPER);
+	if (g_cliff_all_triggered)
+		wav_play(WAV_ERROR_LIFT_UP);
+
 	if (s_laser != nullptr)
 	{
-		delete s_laser;
+		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Charging || get_clean_mode() == Clean_Mode_Charging ||get_clean_mode() == Clean_Mode_Spot)
-		cm_unregister_events();
+	cm_unregister_events();
+
+	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
+	{
+		SpotMovement::instance()->setSpotType(NO_SPOT);
+		SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
+	}
 
 	if (robot::instance()->isManualPaused())
 	{
@@ -276,11 +287,6 @@ if (s_slam != nullptr)
 
 	robot::instance()->savedOffsetAngle(0);
 
-	if(g_bumper_cnt >=3 && g_bumper_hitted)
-		wav_play(WAV_ERROR_BUMPER);
-	if (g_cliff_all_triggered)
-		wav_play(WAV_ERROR_LIFT_UP);
-
 	wav_play(WAV_CLEANING_FINISHED);
 
 	g_home_point.clear();
@@ -292,9 +298,9 @@ if (s_slam != nullptr)
 			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
 	else if (g_key_clean_pressed)
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
-	else if (get_clean_mode() == Clean_Mode_Charging)
+	else if (g_charge_detect)
 		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
-	else if (get_clean_mode() == Clean_Mode_Sleep)
+	else if (g_battery_low)
 		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
 	else
 		if (get_clean_mode() == Clean_Mode_Spot)
@@ -305,17 +311,17 @@ if (s_slam != nullptr)
 	g_saved_work_time += get_work_time();
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 
-	uint8_t clean_mode = get_clean_mode();
-	if (clean_mode != Clean_Mode_Sleep && clean_mode != Clean_Mode_Charging ){
-		ROS_WARN("%s,%d,set clean mode userinterface",__FUNCTION__,__LINE__);
+	if (g_battery_low)
+		set_clean_mode(Clean_Mode_Sleep);
+	else if (g_charge_detect)
+		set_clean_mode(Clean_Mode_Charging);
+	else
 		set_clean_mode(Clean_Mode_Userinterface);
-	}
 
 }
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
 {
-	cm_register_events();
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:
@@ -409,6 +415,10 @@ bool MotionManage::initNavigationCleaning(void)
 	else{
 		wav_play(WAV_CLEANING_START);
 	}
+
+	// Can't register until now because if register too early, the handler may affect the pause status, so it will play the wrong wav.
+	cm_register_events();
+
 	if (!Wait_For_Gyro_On())
 		return false;
 
@@ -459,6 +469,8 @@ bool MotionManage::initNavigationCleaning(void)
 
 bool MotionManage::initWallFollowCleaning(void)
 {
+	cm_register_events();
+
 	extern std::vector<Pose16_t> g_wf_cell;
 	reset_start_work_time();
 	reset_move_with_remote();
@@ -504,6 +516,8 @@ bool MotionManage::initWallFollowCleaning(void)
 
 bool MotionManage::initSpotCleaning(void)
 {
+	cm_register_events();
+
 	reset_start_work_time();
 	reset_rcon_status();
 	reset_move_with_remote();
@@ -526,14 +540,13 @@ bool MotionManage::initSpotCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	std::list<Point32_t> homepoint;
 	Point32_t t_point;
 	t_point.X = 0;
 	t_point.Y = 0;
-	homepoint.clear();
-	homepoint.push_front(t_point);
+	g_home_point.clear();
+	g_home_point.push_front(t_point);//init home point
 	map_init();//init map
-	path_planning_initialize(&homepoint.front().X, &homepoint.front().Y);//init pathplan
+	path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 

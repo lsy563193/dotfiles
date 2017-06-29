@@ -24,6 +24,8 @@
 #include "motion_manage.h"
 #include "event_manager.h"
 #include "slam.h"
+
+#include <algorithm>
 #include <ros/ros.h>
 #include <time.h>
 #ifdef Turn_Speed
@@ -55,7 +57,6 @@ SpotMovement::SpotMovement(float diameter = 1.0)
 	target_.clear();
 	st_ = NO_SPOT;
 	spot_init_ = 0;
-	is_first_round_ = 1;
 
 }
 SpotMovement::~SpotMovement()
@@ -71,7 +72,6 @@ SpotMovement::~SpotMovement()
 	sin_od_cnt_ = 0;
 	target_.clear();
 	spot_init_ = 0;
-	is_first_round_ = 1;
 	st_ = NO_SPOT;
 }
 
@@ -85,30 +85,32 @@ SpotMovement* SpotMovement::instance()
 * @author mengshige1988@qq.com
 * @brief find the first nearest point.
 * @param1 reference point.
-* @param2 pointer  to the point list.
-* @param3 pointer to the near point.
 * @return None.
 * */
 uint8_t SpotMovement::findNearestPoint(Point32_t ref_point )
 {
-	std::list<Point32_t>::reverse_iterator tp;
+	std::vector<Point32_t>::reverse_iterator rtp;
 	Point32_t t_p;
 	float dist=0.0,dist_last;
 	float mindist = 1.0;
 	float t_dist = FLT_MAX;
 	t_p = target_.front();
-	for(tp = target_.rbegin(); tp != target_.rend(); tp++){
-		dist = sqrt( pow( ref_point.X - tp->X,2 ) + pow( ref_point.Y - tp->Y,2 ) );
+	tp_ = target_.begin();
+	int i=0;
+	for(rtp = target_.rbegin(); rtp != target_.rend(); ++rtp,++i){
+		dist = sqrt( pow( ref_point.X - rtp->X,2 ) + pow( ref_point.Y - rtp->Y,2 ) );
 		if(absolute(dist- mindist) <= 0.1){
-			near_point_.X = tp->X;
-			near_point_.Y = tp->Y;
-			//ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,tp->X,tp->Y);
+			near_point_.X = rtp->X;
+			near_point_.Y = rtp->Y;
+			tp_ = tp_ + (int)(target_.size() - i - 1);
+			//ROS_WARN("%s,%d,find near point (%d,%d)",__FUNCTION__,__LINE__,rtp->X,rtp->Y);
 			return 1;
 		}
-		if(dist<t_dist){
+		if(dist < t_dist){
+			tp_ = target_.begin() + (int)(target_.size() - i - 1);
 			t_dist = dist;
-			t_p.X = tp->X;
-			t_p.Y = tp->Y;
+			t_p.X = rtp->X;
+			t_p.Y = rtp->Y;
 		}
 	}
 
@@ -147,7 +149,6 @@ void SpotMovement::spotInit(float diameter,Point32_t cur_point)
 	target_.clear();
 	if(spot_init_ == 0){// init
 		spot_init_ = 1;
-		//is_first_round_ = 1;
 		if(getSpotType() == CLEAN_SPOT){
 			switch_vac_mode(false);
 			set_main_brush_pwm(80);
@@ -157,7 +158,6 @@ void SpotMovement::spotInit(float diameter,Point32_t cur_point)
 	}
 	else{//deinit
 		spot_init_ = 0;
-		//is_first_round_ = 0;
 		work_motor_configure();
 	}
 }
@@ -182,7 +182,6 @@ void SpotMovement::spotDeinit()
 	target_.clear();
 	//resetSpotType();
 	spot_init_ = 1;//set init 1
-	is_first_round_ = 1;
 }
 
 
@@ -418,7 +417,7 @@ uint8_t SpotMovement::changeSpiralType()
  * @param4 begin point
  * @return None
  */
-void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::list<Point32_t> *target, const Point32_t beginpoint)
+void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::vector<Point32_t> *target, const Point32_t beginpoint)
 {
 	uint8_t spt = sp_type;
 	int32_t x,x_l,y,y_l;
@@ -446,7 +445,7 @@ void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::list<Poin
 				}
 				for(i=0;i<(st_c - 1);i++){
 					x = x_l - i - 1;
-					//target_->push_back({x,y});
+					//target->push_back({x,y});
 				}
 			}
 
@@ -460,7 +459,7 @@ void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::list<Poin
 				}
 				for(i=0;i<(st_c-1);i++){
 					x = x_l + i + 1;
-					//target_->push_back({x,y});
+					//target->push_back({x,y});
 				}
 			}
 			x_l = x; y_l = y; st_c+=1;
@@ -483,7 +482,7 @@ void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::list<Poin
 				}
 				for(i = 0;i < (st_c -1);i++){
 					y = (spt == SPIRAL_RIGHT_IN)?(y_l - i -1): (y_l +i +1);
-					//target_->push_back({x,y});
+					//target->push_back({x,y});
 				}
 			}
 
@@ -497,13 +496,13 @@ void SpotMovement::generateTarget(uint8_t sp_type,float diameter, std::list<Poin
 				}
 				for(i = 0;i<(st_c -1 );i++){
 					y = (spt == SPIRAL_RIGHT_IN)? (y_l + i + 1): (y_l -i - 1);
-					//target_->push_back({x,y});
+					//target->push_back({x,y});
 				}
 			}
 			x_l = x; y_l = y; st_c += 1;
 		}
 		target->push_back({x,y});
-		target->reverse();
+		std::reverse(target->begin(),target->end());
 	}
 }
 
@@ -518,8 +517,6 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 	int8_t ret = 1;
 	if(!isSpotInit()){//for the first time
 
-		/*----store current position---*/
-		map_set_position((robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL/CELL_SIZE), (robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
 		/*---init spot move and set begin point---*/
 		spotInit(1.0, {map_get_x_cell(), map_get_y_cell()} );
 		/*---generate target ,and  set target_ ---*/
@@ -534,14 +531,15 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 	else if( isDirectChange() && spot_init_ == 1 ){
 		resetDirectChange();
 		changeSpiralType();//in this function,set stop_point_ and change spiral type
-		if(!isStuck()){
+		if(!isStuck()){// not stuck
 			generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);//re_generate target
+			//tp_ = target_.begin();
 			findNearestPoint( stop_point_);//set near_point_
 			ROS_WARN("%s,%d , on direction change, get next point (%d %d) ",__FUNCTION__,__LINE__,near_point_.X,near_point_.Y);
 			next_point = {cell_to_count(near_point_.X), cell_to_count(near_point_.Y) };
 			ret = 1;
 		}
-		else// stucked  ,end spot movement
+		else// stuck
 		{
 			resetStuck();	
 			ROS_WARN("%s,%d , is stucked ,get next point (%d %d) ",__FUNCTION__,__LINE__,begin_point_.X,begin_point_.Y);
@@ -575,7 +573,7 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 			spiral_type_= (spiral_type_ == SPIRAL_RIGHT_OUT)? SPIRAL_RIGHT_IN: SPIRAL_LEFT_IN;
 			generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
 			tp_ = target_.begin();
-			ROS_WARN("%s,%d , %s , get next point (%d %d) ",__FUNCTION__,__LINE__,(spiral_type_ == SPIRAL_RIGHT_OUT)? "right in" : " left in ",tp_->X,tp_->Y);	
+			ROS_WARN("%s,%d , %s , get next point (%d %d) ",__FUNCTION__,__LINE__,(spiral_type_ == SPIRAL_RIGHT_OUT)? "right in" : " left in ",tp_->X,tp_->Y);
 			next_point = { cell_to_count(tp_->X), cell_to_count(tp_->Y) };
 			tp_++;
 			ret = 1;
@@ -584,7 +582,6 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 	else{
 		ret = 0;
 	}
-		
 	return ret;
 }
 

@@ -15,7 +15,7 @@
 #ifndef __SPOT_H__
 #define __SPOT_H__
 
-#include <list>
+#include <vector>
 
 #include "mathematics.h"
 #include "core_move.h"
@@ -42,9 +42,9 @@ private:
 
 	float spot_diameter_;//
 
-	std::list<Point32_t> target_;
+	std::vector<Point32_t> target_;
 
-	std::list<Point32_t>::const_iterator tp_;//target pointer
+	std::vector<Point32_t>::const_iterator tp_;//target pointer
 
 	Point32_t stop_point_;
 
@@ -63,8 +63,6 @@ private:
 	uint8_t is_spot_init_;
 
 	uint8_t is_stuck_;
-
-	uint8_t is_first_round_;
 
 	uint8_t sout_od_cnt_;//spiral out obs detect count
 
@@ -87,7 +85,7 @@ public:
 
 	uint8_t changeSpiralType();
 
-	void generateTarget(uint8_t spiral_type, float radian, std::list<Point32_t> *target, Point32_t curpoint);
+	void generateTarget(uint8_t spiral_type, float radian, std::vector<Point32_t> *target, Point32_t curpoint);
 
 	int8_t getNextTarget(Point32_t &next_point);
 

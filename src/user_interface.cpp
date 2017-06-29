@@ -139,25 +139,25 @@ void User_Interface(void)
 			{
 				case 1:
 					error_alarm_counter = 0;
-					user_interface_reject_reason = 0;
 					alarm_error();
+					user_interface_reject_reason = 0;
 					break;
 				case 2:
-					user_interface_reject_reason = 0;
 					wav_play(WAV_ERROR_LIFT_UP);
+					clear_manual_pause();
+					user_interface_reject_reason = 0;
 					break;
 				case 3:
-					user_interface_reject_reason = 0;
 					wav_play(WAV_BATTERY_LOW);
+					user_interface_reject_reason = 0;
 					break;
 				case 4:
-					user_interface_reject_reason = 0;
 					wav_play(WAV_CLEAR_ERROR);
 					error_alarm_counter = 0;
 					set_error_code(Error_Code_None);
+					user_interface_reject_reason = 0;
 					break;
 			}
-			temp_mode = 0;
 		}
 		else if (user_interface_plan_status)
 		{
@@ -266,7 +266,6 @@ void user_interface_handle_cliff(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Robot lifted up during manual pause, reset manual pause status.", __FUNCTION__, __LINE__);
 		user_interface_reject_reason = 2;
-		clear_manual_pause();
 	}
 }
 
@@ -315,38 +314,6 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
 
-	switch (get_rcon_remote())
-	{
-		case Remote_Forward:
-		case Remote_Left:
-		case Remote_Right:
-		{
-			temp_mode = Clean_Mode_Remote;
-			break;
-		}
-		case Remote_Clean:
-		{
-			temp_mode = Clean_Mode_Navigation;
-			reset_stop_event_status();
-			break;
-		}
-		case Remote_Spot:
-		{
-			temp_mode = Clean_Mode_Spot;
-			break;
-		}
-		case Remote_Home:
-		{
-			temp_mode = Clean_Mode_GoHome;
-			break;
-		}
-		case Remote_Wall_Follow:
-		{
-			temp_mode = Clean_Mode_WallFollow;
-			break;
-		}
-	}
-
 	if (get_error_code())
 	{
 		if (get_rcon_remote() == Remote_Clean)
@@ -377,7 +344,40 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 	}
 
 	if (!user_interface_reject_reason)
+	{
 		beep_for_command(true);
+		switch (get_rcon_remote())
+		{
+			case Remote_Forward:
+			case Remote_Left:
+			case Remote_Right:
+			{
+				temp_mode = Clean_Mode_Remote;
+				break;
+			}
+			case Remote_Clean:
+			{
+				temp_mode = Clean_Mode_Navigation;
+				reset_stop_event_status();
+				break;
+			}
+			case Remote_Spot:
+			{
+				temp_mode = Clean_Mode_Spot;
+				break;
+			}
+			case Remote_Home:
+			{
+				temp_mode = Clean_Mode_GoHome;
+				break;
+			}
+			case Remote_Wall_Follow:
+			{
+				temp_mode = Clean_Mode_WallFollow;
+				break;
+			}
+		}
+	}
 
 	reset_rcon_remote();
 }
