@@ -2831,6 +2831,17 @@ void go_home(void)
 		}
 		usleep(50000);
 	}
+
+	extern std::list <Point32_t> g_home_point;
+	if(!g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed && g_home_point.empty())
+	{
+		set_led(100, 0);
+		set_wheel_speed(0, 0);
+		wav_play(WAV_BACK_TO_CHARGER_FAILED);
+	}
+
+	if (last_clean_mode == Clean_Mode_GoHome)
+		go_home_unregister_events();
 }
 
 void go_home_register_events(void)
