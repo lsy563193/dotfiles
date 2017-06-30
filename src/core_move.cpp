@@ -559,13 +559,14 @@ uint16_t bumper_turn_angle(uint8_t status)
 
 bool laser_turn_angle(void)
 {
+	stop_brifly();
+	usleep(500000);
 	double line_angle;
 	bool is_fit_sud;
 	uint8_t status = angle_to_bumper_status();
 	if (status == AllBumperTrig)
 	{
 		ROS_ERROR("left and right bumper");
-		usleep(500000);
 		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0,&line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
@@ -586,7 +587,6 @@ bool laser_turn_angle(void)
 	{
 		g_wall_distance = std::min(g_wall_distance + 300, Wall_High_Limit);
 		ROS_ERROR("right bumper");
-		usleep(500000);
 		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0,&line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
@@ -608,7 +608,6 @@ bool laser_turn_angle(void)
 		g_wall_distance = std::max(g_wall_distance - 100, Wall_Low_Limit);
 
 		ROS_ERROR("left bumper");
-		usleep(500000);
 		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0,&line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {

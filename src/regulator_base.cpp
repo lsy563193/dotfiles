@@ -292,7 +292,6 @@ void RegulatorProxy::switchToNext()
 		}
 	} else if (p_reg_ == back_reg_)
 	{
-		stop_brifly();
 		g_bumper_hitted = g_cliff_triggered = false;
 		laser_turn_angle();
 		turn_reg_->setTarget(calc_target(g_turn_angle));
