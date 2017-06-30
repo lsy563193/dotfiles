@@ -1078,11 +1078,10 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 
 		}
 	}
-	//if(get_clean_mode() == Clean_Mode_Spot || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){	
+	//if(get_clean_mode() == Clean_Mode_Spot || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
 	else if( SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
         int8_t ret = SpotMovement::instance()->getNextTarget(*next_point);
-		target_point = next_point;
-        //ROS_WARN("%s,%d target_point (%d,%d),next_point (%d,%d) return %d",__FUNCTION__,__LINE__,target_point->X,target_point->Y,next_point->X,next_point->Y,ret);
+		*target_point = *next_point;
         return ret;
 	}
 	else if(get_clean_mode() == Clean_Mode_Navigation) {
