@@ -109,11 +109,14 @@ bool g_motion_init_succeeded = false;
 
 int16_t ranged_angle(int16_t angle)
 {
-	if (angle >= 1800) {
+	while (angle > 1800 || angle <= -1800)
+	{
+		if (angle > 1800) {
 			angle -= 3600;
-	} else
-	if (angle <= -1800) {
+		} else
+		if (angle <= -1800) {
 			angle += 3600;
+		}
 	}
 	return angle;
 }
@@ -1007,11 +1010,14 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 
 int16_t uranged_angle(int16_t angle)
 {
-	if (angle >= 3600) {
+	while (angle >= 3600 || angle < 0)
+	{
+		if (angle >= 3600) {
 			angle -= 3600;
-	} else
-	if (angle <= 0) {
+		} else
+		if (angle < 0) {
 			angle += 3600;
+		}
 	}
 	return angle;
 }
