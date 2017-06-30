@@ -560,7 +560,7 @@ uint16_t bumper_turn_angle(uint8_t status)
 bool laser_turn_angle(void)
 {
 	stop_brifly();
-	usleep(500000);
+	usleep(0);//500000 for 0.5s
 	double line_angle;
 	bool is_fit_sud;
 	uint8_t status = angle_to_bumper_status();
