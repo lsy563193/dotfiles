@@ -594,58 +594,6 @@ uint16_t bumper_straight_distance()
 		else return 259;
 	}
 }
-/*
-
-void cm_move_back(void)
-{
-	*/
-/*if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
-	{
-		g_turn_angle = bumper_turn_angle();
-		if (get_bumper_status() != 0)
-		{
-			g_wall_distance = round_turn_distance();
-			auto &wall_buffer = (g_cm_move_type != CM_FOLLOW_LEFT_WALL) ? g_left_buffer : g_right_buffer;
-			wall_buffer = {0, 0, 0};
-			g_rounding_move_speed = round_turn_speed();
-			g_straight_distance = bumper_straight_distance();
-		}
-	}*//*
-
-	auto status = get_bumper_status();
-	cm_move_back_(COR_BACK_20MM);
-	g_turn_angle = bumper_turn_angle(status);
-
-	if (get_bumper_status() != 0)
-	{
-		g_bumper_cnt++;
-
-		if (g_bumper_cnt > 2)
-		{
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else{
-		g_bumper_cnt = 0;
-		g_bumper_hitted = 0;
-	}
-	if (get_cliff_trig() != 0)
-	{
-		g_cliff_cnt++;
-
-		if (g_cliff_cnt > 2)
-		{
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else{
-		g_cliff_jam = false;
-		g_cliff_cnt = 0;
-	}
-//	if((get_bumper_status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
-}
-*/
 
 /*--------------------------Head Angle--------------------------------*/
 void cm_head_to_course(uint8_t speed_max, int16_t angle)
