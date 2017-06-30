@@ -10,11 +10,12 @@
 #include <core_move.h>
 #include "regulator_base.h"
 #include "ros/ros.h"
-#include <event_manager.h> 
+#include <event_manager.h>
+
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
-	return g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right;
+	return g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right || g_remote_home;
 }
 
 //FollowWallRegulator

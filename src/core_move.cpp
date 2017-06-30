@@ -575,7 +575,7 @@ bool laser_turn_angle(void)
 			line_angle = int(fabs(line_angle) * 10);
 		}
 		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle >= 0 && line_angle < 1800) {
+		if (is_fit_sud && line_angle >=900 && line_angle < 1800) {
 			g_turn_angle = line_angle;
 			ROS_WARN("laser generate turn angle!");
 			return true;
