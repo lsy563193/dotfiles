@@ -141,6 +141,9 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	uint8_t right_speed;
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
+
+		if(get_clean_mode() == Clean_Mode_WallFollow)
+			g_turn_angle = get_bumper_status();
 		left_speed = right_speed = 8;
 		set_dir_backward();
 		set_wheel_speed(left_speed, right_speed);
@@ -1049,7 +1052,6 @@ uint8_t cm_follow_wall(Point32_t target)
 	g_straight_distance = 300;
 	RegulatorProxy regulator(target);
 	robotbase_obs_adjust_count(100);
-	g_turn_angle = 0;
 	while (ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
@@ -1330,6 +1332,7 @@ uint8_t cm_touring(void)
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();
 	MotionManage motion;
+	g_turn_angle = 0;
 
 	if (!motion.initSucceeded())
 	{
