@@ -179,7 +179,7 @@ bool BackRegulator::isSwitch()
 	auto distance = sqrtf(powf(pos_x_ - robot::instance()->getOdomPositionX(), 2) + powf(pos_y_ -
 																																											 robot::instance()->getOdomPositionY(),
 																																											 2));
-	return fabsf(distance) > 0.02f;
+	return fabsf(distance) > 0.005f;
 }
 
 bool BackRegulator::isReach()
