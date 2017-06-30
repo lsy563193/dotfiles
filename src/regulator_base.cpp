@@ -10,7 +10,8 @@
 #include <core_move.h>
 #include "regulator_base.h"
 #include "ros/ros.h"
-#include <event_manager.h> 
+#include <event_manager.h>
+
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
