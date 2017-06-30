@@ -299,6 +299,7 @@ void RegulatorProxy::switchToNext()
 	} else if (p_reg_ == turn_reg_)
 	{
 		g_turn_angle = 0;
+		g_bumper_hitted = g_cliff_triggered = false;//don't move back after turn
 		follow_wall_reg_->setOrigin({map_get_x_count(), map_get_y_count()});
 		follow_wall_reg_->setTarget(target_);
 		p_reg_ = follow_wall_reg_;
