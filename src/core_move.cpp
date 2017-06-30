@@ -551,11 +551,92 @@ uint16_t bumper_turn_angle(uint8_t status)
 		jam = get_right_wheel_step() < 2000 ? ++jam : 0;
 	}
 	g_straight_distance = 200;
-	g_left_buffer = {0, 0, 0};
+//	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
-	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ",
-						g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
+//	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
 	return g_turn_angle;
+}
+bool laser_turn_angle(void)
+{
+	double line_angle;
+	bool is_fit_sud;
+	uint8_t status = angle_to_bumper_status();
+	if (status == AllBumperTrig)
+	{
+		ROS_ERROR("left and right bumper");
+		usleep(500000);
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle >= 0 && line_angle < 1800) {
+			g_turn_angle = line_angle;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	} else if (status == RightBumperTrig)
+	{
+		g_wall_distance = std::min(g_wall_distance + 300, Wall_High_Limit);
+		ROS_ERROR("right bumper");
+		usleep(500000);
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
+			g_turn_angle = line_angle;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	} else if (status == LeftBumperTrig)
+	{
+		g_wall_distance = std::max(g_wall_distance - 100, Wall_Low_Limit);
+
+		ROS_ERROR("left bumper");
+		usleep(500000);
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle > 0 && line_angle <= 900) {
+			g_turn_angle = line_angle;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	}
+	return true;
+}
+
+uint8_t angle_to_bumper_status(void)
+{
+	if (g_turn_angle == 850)
+		return AllBumperTrig;
+	else if (g_turn_angle == 920)
+		return RightBumperTrig;
+	else if (g_turn_angle == 0)
+		return 0;
+	return LeftBumperTrig;
 }
 uint16_t round_turn_distance()
 {

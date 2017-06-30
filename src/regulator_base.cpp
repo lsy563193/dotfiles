@@ -10,8 +10,7 @@
 #include <core_move.h>
 #include "regulator_base.h"
 #include "ros/ros.h"
-#include <event_manager.h>
-
+#include <event_manager.h> 
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
@@ -293,7 +292,9 @@ void RegulatorProxy::switchToNext()
 		}
 	} else if (p_reg_ == back_reg_)
 	{
+		stop_brifly();
 		g_bumper_hitted = g_cliff_triggered = false;
+		laser_turn_angle();
 		turn_reg_->setTarget(calc_target(g_turn_angle));
 		p_reg_ = turn_reg_;
 	} else if (p_reg_ == turn_reg_)
