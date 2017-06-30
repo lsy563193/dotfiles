@@ -694,14 +694,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
-	Point32_t	position{map_get_x_count(), map_get_y_count()};
 	bool rotate_is_needed_ = true;
-
-	if (position.X != map_get_x_count() && position.X == Target.X)
-		Target.X = map_get_x_count();
-	else if (position.Y != map_get_y_count() && position.Y == Target.Y)
-		Target.Y = map_get_y_count();
-
 	robotbase_obs_adjust_count(50);
 	reset_rcon_status();
 	cm_set_event_manager_handler_state(true);
