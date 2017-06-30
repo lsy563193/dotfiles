@@ -566,6 +566,7 @@ bool laser_turn_angle(void)
 	double line_angle;
 	bool is_fit_sud;
 	uint8_t status = angle_to_bumper_status();
+	auto reset_wall_dis = 100;
 	if (status == AllBumperTrig)
 	{
 		ROS_ERROR("left and right bumper");
@@ -579,7 +580,7 @@ bool laser_turn_angle(void)
 		ROS_WARN("line_angle = %lf", line_angle);
 		if (is_fit_sud && line_angle >=900 && line_angle < 1800) {
 			g_turn_angle = line_angle;
-			g_wall_distance = 200;
+			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
 			return true;
 		} else {
@@ -599,7 +600,7 @@ bool laser_turn_angle(void)
 		ROS_WARN("line_angle = %lf", line_angle);
 		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
 			g_turn_angle = line_angle;
-			g_wall_distance = 200;
+			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
 			return true;
 		} else {
@@ -617,9 +618,9 @@ bool laser_turn_angle(void)
 			line_angle = int(fabs(line_angle) * 10);
 		}
 		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle > 0 && line_angle <= 900) {
+		if (is_fit_sud && line_angle > 200 && line_angle <= 900) {
 			g_turn_angle = line_angle;
-			g_wall_distance = 200;
+			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
 			return true;
 		} else {
