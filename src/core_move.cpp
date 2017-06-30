@@ -143,7 +143,9 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	{
 
 		if(get_clean_mode() == Clean_Mode_WallFollow)
-			g_turn_angle = get_bumper_status();
+			if(g_turn_angle == 0)
+				g_turn_angle = bumper_turn_angle(get_bumper_status());
+
 		left_speed = right_speed = 8;
 		set_dir_backward();
 		set_wheel_speed(left_speed, right_speed);
