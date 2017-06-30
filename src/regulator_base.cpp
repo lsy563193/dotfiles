@@ -294,6 +294,7 @@ void RegulatorProxy::switchToNext()
 	} else if (p_reg_ == back_reg_)
 	{
 		g_bumper_hitted = g_cliff_triggered = false;
+		auto bumper = angle_turn_bumper(g_turn_angle);
 		turn_reg_->setTarget(calc_target(g_turn_angle));
 		p_reg_ = turn_reg_;
 	} else if (p_reg_ == turn_reg_)

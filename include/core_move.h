@@ -65,6 +65,7 @@ extern uint16_t g_wall_distance;
 extern CMMoveType g_cm_move_type;
 
 uint16_t bumper_turn_angle(uint8_t status);
+uint8_t angle_turn_bumper(uint16_t angle);
 int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);

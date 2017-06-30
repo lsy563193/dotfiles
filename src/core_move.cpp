@@ -553,10 +553,22 @@ uint16_t bumper_turn_angle(uint8_t status)
 	g_straight_distance = 200;
 //	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
-	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ",
-						g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
+//	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
 	return g_turn_angle;
 }
+
+
+uint8_t angle_turn_bumper(uint16_t angle)
+{
+
+	if(g_turn_angle == 850)
+		return AllBumperTrig;
+	else if(g_turn_angle == 920)
+		return RightBumperTrig;
+	return LeftBumperTrig;
+}
+
+
 uint16_t round_turn_distance()
 {
 	auto wall = robot::instance()->getLeftWall();
