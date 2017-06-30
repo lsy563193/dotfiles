@@ -10,7 +10,7 @@
   * Initialize the System Clock.ADC converter.EXTI.Timer and USART3
   * <h2><center>&copy; COPYRIGHT 2011 ILife CO.LTD</center></h2>
   ******************************************************************************
-  */  
+  */
 
 #ifndef __SPOT_H__
 #define __SPOT_H__
@@ -20,23 +20,20 @@
 #include "mathematics.h"
 #include "core_move.h"
 
-#define SPIRAL_RIGHT_OUT	1
-#define SPIRAL_RIGHT_IN 	2
-#define SPIRAL_LEFT_OUT 	4
-#define SPIRAL_LEFT_IN	  8
+#define SPIRAL_RIGHT_OUT  1
+#define SPIRAL_RIGHT_IN  2
+#define SPIRAL_LEFT_OUT  4
+#define SPIRAL_LEFT_IN    8
 #define First_Round       10
 #define OBS_DETECT_COUNT_MAX 3
 
-typedef enum{
+typedef enum {
 	NO_SPOT = 0,
 	NORMAL_SPOT = 1,
 	CLEAN_SPOT = 2,
-}SpotType;
+} SpotType;
 
-class SpotMovement;
-
-class SpotMovement
-{
+class SpotMovement {
 
 private:
 
@@ -50,7 +47,7 @@ private:
 
 	Point32_t near_point_;
 
-	Point32_t begin_point_;	
+	Point32_t begin_point_;
 
 	SpotType st_;
 
@@ -59,7 +56,7 @@ private:
 	uint8_t is_direct_change_;
 
 	uint8_t spiral_type_;
-	
+
 	uint8_t is_spot_init_;
 
 	uint8_t is_stuck_;
@@ -67,56 +64,136 @@ private:
 	uint8_t sout_od_cnt_;//spiral out obs detect count
 
 	uint8_t sin_od_cnt_;//spiral in obs detect count
-	
+
 public:
 
+/*
+ * @author mengshige1988@qq.com
+ * @brief SpotMovement instruction
+ * @param diameter in meters
+ * @return None
+ */
 	SpotMovement(float diameter);
+
 	~SpotMovement();
 
-	void spotInit(float diameter=1.0, Point32_t cur_point = {0,0});
+/*
+ * @author mengshige1988@qq.com
+ * @brief init spot while ready to spot movement
+ * @param None
+ * @return void
+ */
 
-    void spotDeinit();
+	void spotInit(float diameter = 1.0, Point32_t cur_point = {0, 0});
 
-    uint8_t isSpotInit() { return spot_init_; }
+/*
+ * @author mengshige1988@qq.com
+ * @brief spot deinit
+ * @param None
+ * @return None
+ */
 
-	static SpotMovement* instance();
+	void spotDeinit();
 
+	uint8_t isSpotInit()
+	{ return spot_init_; }
+
+	static SpotMovement *instance();
+/*
+* @author mengshige1988@qq.com
+* @brief spot mode ,control robot rolling in spiral  movement ,according to given target.
+* @param1 SpotType ( clean_spot  ,remote_spot  ,wall_spot)
+* @param2 spot_diameter,in meters
+* @return None
+* */
 	//void spotWithTarget(SpotType spot_t,float diameter);
-
+/*
+ * @author mengshige1988@qq.com
+ * @brief when detect obstacle(rcon, cliff, bumper) from cm_linear_move_to_point() change spiral type
+ * and set stop point
+ * @param None
+ * return spiral type
+ */
 	uint8_t changeSpiralType();
 
+/*
+ * @author mengshige1988@qq.com
+ * @brief generate target points for spot move
+ * @param1 sp_type
+ *		sp_type;SPIRAL_RIGHT_OUT,SPIRAL_LEFT_OUT,SPIRAL_RIGHT_OUT,SPIRAL_LEFT_IN.
+ * @param2 diameter
+ *			spiral diameters in meters
+ * @param3 *target
+ *			target list pointer
+ * @param4 begin point
+ * @return None
+ */
 	void generateTarget(uint8_t spiral_type, float radian, std::vector<Point32_t> *target, Point32_t curpoint);
 
+/*
+ * @author mengshige1988@qq.com
+ * @brief get next spot target
+ * @param next target Point 's address
+ * @return 1 found ,0 not found
+ * */
 	int8_t getNextTarget(Point32_t &next_point);
+
+/*
+* @author mengshige1988@qq.com
+* @brief find the first nearest point.
+* @param1 reference point.
+* @return None.
+* */
 
 	uint8_t findNearestPoint(Point32_t ref_point);
 
-	void setSpiralType(uint8_t spi_t){ spiral_type_ = spi_t;}
+	void setSpiralType(uint8_t spi_t)
+	{ spiral_type_ = spi_t; }
 
-	void setSpiralObsDetectCnt(uint8_t sout,uint8_t sin){ sout_od_cnt_ = sout; sin_od_cnt_ = sin;}
+	void setSpiralObsDetectCnt(uint8_t sout, uint8_t sin)
+	{
+		sout_od_cnt_ = sout;
+		sin_od_cnt_ = sin;
+	}
 
-	uint8_t isDirectChange(void){ return is_direct_change_; }
-	
-	void setDirectChange(void){	is_direct_change_ = 1;	}
+	uint8_t isDirectChange(void)
+	{ return is_direct_change_; }
 
-	void resetDirectChange(void){ is_direct_change_ = 0; }
+	void setDirectChange(void)
+	{ is_direct_change_ = 1; }
 
-	uint8_t isStuck(void){ return is_stuck_; }
+	void resetDirectChange(void)
+	{ is_direct_change_ = 0; }
 
-	void setStuck(void){ is_stuck_ = 1; }
+	uint8_t isStuck(void)
+	{ return is_stuck_; }
 
-	void resetStuck(void){ is_stuck_ = 0; }
+	void setStuck(void)
+	{ is_stuck_ = 1; }
 
-	void setBeginPoint(Point32_t begin){ begin_point_.X = begin.X; begin_point_.Y = begin.Y; }
+	void resetStuck(void)
+	{ is_stuck_ = 0; }
 
-	SpotType getSpotType(void) { return st_; }
+	void setBeginPoint(Point32_t begin)
+	{
+		begin_point_.X = begin.X;
+		begin_point_.Y = begin.Y;
+	}
 
-	void setSpotType(SpotType st){ st_ = st; }
+	SpotType getSpotType(void)
+	{ return st_; }
 
-	void resetSpotType(void){st_ = NO_SPOT; }
+	void setSpotType(SpotType st)
+	{ st_ = st; }
+
+	void resetSpotType(void)
+	{ st_ = NO_SPOT; }
 };
 
 /*---legacy function , remove??----*/
+/*
+ * legacy function remote ?
+ * */
 uint8_t Random_Dirt_Event(void);
 
 #endif /*__SPOT_H__*/

@@ -67,8 +67,8 @@ uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
 static bool g_is_should_follow_wall;
-std::vector<int16_t> g_left_buffer;
-std::vector<int16_t> g_right_buffer;
+//std::vector<int16_t> g_left_buffer;
+//std::vector<int16_t> g_right_buffer;
 
 Point32_t g_next_point, g_target_point;
 
@@ -556,6 +556,7 @@ uint16_t bumper_turn_angle(uint8_t status)
 //	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
 	return g_turn_angle;
 }
+<<<<<<< HEAD
 bool laser_turn_angle(void)
 {
 	double line_angle;
@@ -638,6 +639,7 @@ uint8_t angle_to_bumper_status(void)
 		return 0;
 	return LeftBumperTrig;
 }
+
 uint16_t round_turn_distance()
 {
 	auto wall = robot::instance()->getLeftWall();
@@ -675,58 +677,6 @@ uint16_t bumper_straight_distance()
 		else return 259;
 	}
 }
-/*
-
-void cm_move_back(void)
-{
-	*/
-/*if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
-	{
-		g_turn_angle = bumper_turn_angle();
-		if (get_bumper_status() != 0)
-		{
-			g_wall_distance = round_turn_distance();
-			auto &wall_buffer = (g_cm_move_type != CM_FOLLOW_LEFT_WALL) ? g_left_buffer : g_right_buffer;
-			wall_buffer = {0, 0, 0};
-			g_rounding_move_speed = round_turn_speed();
-			g_straight_distance = bumper_straight_distance();
-		}
-	}*//*
-
-	auto status = get_bumper_status();
-	cm_move_back_(COR_BACK_20MM);
-	g_turn_angle = bumper_turn_angle(status);
-
-	if (get_bumper_status() != 0)
-	{
-		g_bumper_cnt++;
-
-		if (g_bumper_cnt > 2)
-		{
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else{
-		g_bumper_cnt = 0;
-		g_bumper_hitted = 0;
-	}
-	if (get_cliff_trig() != 0)
-	{
-		g_cliff_cnt++;
-
-		if (g_cliff_cnt > 2)
-		{
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else{
-		g_cliff_jam = false;
-		g_cliff_cnt = 0;
-	}
-//	if((get_bumper_status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
-}
-*/
 
 /*--------------------------Head Angle--------------------------------*/
 void cm_head_to_course(uint8_t speed_max, int16_t angle)
@@ -775,14 +725,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
-	Point32_t	position{map_get_x_count(), map_get_y_count()};
 	bool rotate_is_needed_ = true;
-
-	if (position.X != map_get_x_count() && position.X == Target.X)
-		Target.X = map_get_x_count();
-	else if (position.Y != map_get_y_count() && position.Y == Target.Y)
-		Target.Y = map_get_y_count();
-
 	robotbase_obs_adjust_count(50);
 	reset_rcon_status();
 	cm_set_event_manager_handler_state(true);
@@ -1080,42 +1023,6 @@ int16_t calc_target(int16_t)
 	auto angle = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? -g_turn_angle : g_turn_angle;
 	return uranged_angle(Gyro_GetAngle() + angle);
 }
-void cm_follow_wall_turn(uint16_t speed, int16_t angle)
-{
-	ROS_WARN("%s %d: cm_follow_wall_turn", __FUNCTION__, __LINE__);
-	stop_brifly();
-	bool eh_status_now=false, eh_status_last=false;
-	angle = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? -angle : angle;
-	auto target_angle = uranged_angle(Gyro_GetAngle() + angle);
-
-	auto accurate = speed > 30 ? 30 : 10;
-	while (ros::ok()) {
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
-			usleep(100);
-			continue;
-		}
-
-		if (g_fatal_quit_event || g_key_clean_pressed  || g_oc_wheel_left || g_oc_wheel_right)
-			break;
-
-//		ROS_INFO("target(%d,%d),current(%d),speed(%d)", angle, target_angle, Gyro_GetAngle(), speed);
-		if (abs(target_angle - Gyro_GetAngle()) < accurate)
-			break;
-
-		(g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? set_dir_right() : set_dir_left();
-
-		auto speed_ = speed;
-		if (abs(target_angle - Gyro_GetAngle()) < 50) {
-			speed_ = std::min((uint16_t)5, speed);
-		} else if (abs(target_angle - Gyro_GetAngle()) < 200) {
-			speed_ = std::min((uint16_t)10, speed);
-		}
-		set_wheel_speed(speed_, speed_);
-	}
-
-	set_dir_forward();
-	set_wheel_speed(0, 0);
-}
 
 int16_t get_round_angle(CMMoveType type){
 	int16_t		angle;
@@ -1132,7 +1039,6 @@ int16_t get_round_angle(CMMoveType type){
 
 uint8_t cm_follow_wall(Point32_t target)
 {
-	g_left_buffer = { 0,0,0 }, g_right_buffer = { 0,0,0 };
 	g_wall_distance = 400;
 	bool	eh_status_now=false, eh_status_last=false;
 	cm_set_event_manager_handler_state(true);
@@ -1500,23 +1406,6 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			return false;
 	}
 	return false;
-}
-
-/*-------------- Move Back -----------------------------*/
-void cm_move_back_(uint16_t dist)
-{
-	float pos_x, pos_y, distance;
-	uint32_t SP = 10;
-	uint16_t Counter_Watcher = 0;
-
-	ROS_INFO("%s %d: Moving back...", __FUNCTION__, __LINE__);
-	Counter_Watcher = 0;
-
-	pos_x = robot::instance()->getOdomPositionX();
-	pos_y = robot::instance()->getOdomPositionY();
-
-
-	ROS_INFO("%s %d: Moving back done!", __FUNCTION__, __LINE__);
 }
 
 void cm_reset_go_home(void)
