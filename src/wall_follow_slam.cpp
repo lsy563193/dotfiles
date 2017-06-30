@@ -300,7 +300,6 @@ uint8_t wf_clear(void)
 
 void wf_update_map()
 {
-	auto heading = Gyro_GetAngle();
 	extern Point32_t g_next_point, g_target_point;
 
 	auto cell = cm_update_position();
@@ -317,10 +316,10 @@ void wf_update_map()
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 	}
 
-	cell.X = map_get_relative_x(heading, CELL_SIZE_2, 0);
-	cell.Y = map_get_relative_y(heading, CELL_SIZE_2, 0);
-	if (map_get_cell(MAP, count_to_cell(cell.X), count_to_cell(cell.Y)) != BLOCKED_BOUNDARY)
-		map_set_cell(MAP, cell.X, cell.Y, BLOCKED_OBS);
+	int32_t x,y;
+	cm_world_to_point(Gyro_GetAngle(), CELL_SIZE_2, 0, &x, &y);
+	if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BOUNDARY)
+		map_set_cell(MAP, x, y, BLOCKED_OBS);
 }
 
 bool wf_is_reach_isolate()
