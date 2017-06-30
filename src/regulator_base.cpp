@@ -211,7 +211,7 @@ TurnRegulator::TurnRegulator(uint16_t speed_max) : speed_max_(speed_max), target
 bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
-	return (abs(target_angle_ - Gyro_GetAngle()) < accurate_);
+	return (abs(target_angle_ - Gyro_GetAngle()) < accurate_ || g_bumper_hitted || g_cliff_triggered);
 }
 
 bool TurnRegulator::isReach()
@@ -301,10 +301,22 @@ void RegulatorProxy::switchToNext()
 		p_reg_ = turn_reg_;
 	} else if (p_reg_ == turn_reg_)
 	{
-		g_turn_angle = 0;
-		g_bumper_hitted = g_cliff_triggered = false;//don't move back after turn
-		follow_wall_reg_->setOrigin({map_get_x_count(), map_get_y_count()});
-		follow_wall_reg_->setTarget(target_);
-		p_reg_ = follow_wall_reg_;
+
+		if(g_bumper_hitted || g_cliff_triggered)
+		{
+			g_bumper_hitted = g_cliff_triggered = false;//don't move back after turn
+			auto pos_x = robot::instance()->getOdomPositionX();
+			auto pos_y = robot::instance()->getOdomPositionY();
+			back_reg_->setOrigin(pos_x, pos_y);
+			p_reg_ = back_reg_;
+		}
+			else
+		{
+			g_turn_angle = 0;
+			follow_wall_reg_->setOrigin({map_get_x_count(), map_get_y_count()});
+			follow_wall_reg_->setTarget(target_);
+			p_reg_ = follow_wall_reg_;
+		}
+
 	}
 }

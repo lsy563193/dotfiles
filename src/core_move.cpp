@@ -109,11 +109,14 @@ bool g_motion_init_succeeded = false;
 
 int16_t ranged_angle(int16_t angle)
 {
-	if (angle >= 1800) {
+	while (angle > 1800 || angle <= -1800)
+	{
+		if (angle > 1800) {
 			angle -= 3600;
-	} else
-	if (angle <= -1800) {
+		} else
+		if (angle <= -1800) {
 			angle += 3600;
+		}
 	}
 	return angle;
 }
@@ -1007,11 +1010,14 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 
 int16_t uranged_angle(int16_t angle)
 {
-	if (angle >= 3600) {
+	while (angle >= 3600 || angle < 0)
+	{
+		if (angle >= 3600) {
 			angle -= 3600;
-	} else
-	if (angle <= 0) {
+		} else
+		if (angle < 0) {
 			angle += 3600;
+		}
 	}
 	return angle;
 }
@@ -1041,9 +1047,9 @@ uint8_t cm_follow_wall(Point32_t target)
 	bool	eh_status_now=false, eh_status_last=false;
 	cm_set_event_manager_handler_state(true);
 	g_straight_distance = 300;
-	g_turn_angle = 0;
 	RegulatorProxy regulator(target);
 	robotbase_obs_adjust_count(100);
+	g_turn_angle = 0;
 	while (ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
