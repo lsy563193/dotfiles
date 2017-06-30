@@ -293,7 +293,9 @@ void RegulatorProxy::switchToNext()
 	} else if (p_reg_ == back_reg_)
 	{
 		g_bumper_hitted = g_cliff_triggered = false;
-		laser_turn_angle();
+		if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
+			laser_turn_angle();
+		}
 		turn_reg_->setTarget(calc_target(g_turn_angle));
 		p_reg_ = turn_reg_;
 	} else if (p_reg_ == turn_reg_)
