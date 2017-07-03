@@ -33,12 +33,13 @@ struct WAV_HEADER
 snd_pcm_t *handle;
 snd_mixer_t *mixer_fd;
 snd_mixer_elem_t *elem;
+FILE	*fp;
+char *buffer;
 
 void wav_play(WavType action)
 {
 	int	rc, ret, size, dir, channels, frequency, bit, datablock, nread;
-	char	*buffer, audio_file[64];
-	FILE	*fp;
+	char	audio_file[64];
 
 	unsigned int	val;
 
@@ -177,10 +178,7 @@ void wav_play(WavType action)
 		}
 	}
 
-	fclose(fp);
-
 	wav_close_pcm_driver();
-	free(buffer);
 	return;
 }
 
@@ -202,6 +200,8 @@ bool wav_open_pcm_driver(void)
 void wav_close_pcm_driver(void)
 {
 	ROS_DEBUG("%s %d: Close wav driver.", __FUNCTION__, __LINE__);
+	fclose(fp);
+	free(buffer);
 	wav_adjust_volume(0);
 	snd_pcm_drain(handle);
 	snd_pcm_close(handle);
