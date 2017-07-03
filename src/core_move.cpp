@@ -1755,7 +1755,7 @@ void cm_self_check(void)
 				if (get_self_check_vacuum_status() == 0x20)
 				{
 					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
-					set_error_code(Error_Code_Encoder);
+					set_error_code(Error_Code_Fan_H);
 					g_fatal_quit_event = true;
 					break;
 				}
