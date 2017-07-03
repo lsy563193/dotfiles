@@ -21,8 +21,7 @@ uint8_t turn_type = 0;
 #define NORMAL_TURN 1
 #define AROUND_BUMPER_TURN 2
 #define AROUND_CLIFF_TURN 3
-#define BY_PATH_BUMPER_TURN 4
-#define BY_PATH_CLIFF_TURN 5
+#define BY_PATH_TURN 5
 
 /*----------------------------------------------------------------GO Home  ----------------*/
 uint8_t g_dir_around_cs = 0;
@@ -120,6 +119,11 @@ void go_to_charger(void)
 	uint32_t receive_code = 0;
 
 	uint8_t move_back_type = 0;
+#define NORMAL_BACK 0
+#define AROUND_CLIFF_BACK 7
+#define TURN_CONNECT_BACK 2
+#define BY_PATH_BUMPER_BACK 3
+#define BY_PATH_CLIFF_BACK 6
 	/*---variable for around_chargestation---*/
 	uint32_t no_signal_counter=0;
 	uint8_t cliff_counter = 0;
@@ -188,6 +192,7 @@ void go_to_charger(void)
 				continue;
 			ROS_WARN("%s %d: Move back finish.", __FUNCTION__, __LINE__);
 			g_move_back_finished = true;
+			reset_rcon_status();
 		}
 
 		if(!turn_finished)
@@ -197,6 +202,7 @@ void go_to_charger(void)
 
 			ROS_WARN("%s %d: Turn finish.", __FUNCTION__, __LINE__);
 			turn_finished = true;
+			reset_rcon_status();
 		}
 
 		/*---go_home initial---*/
@@ -205,7 +211,7 @@ void go_to_charger(void)
 			ROS_INFO("%s %d: Start go to charger.", __FUNCTION__, __LINE__);
 			entrance_to_check_position = 0;
 			receive_code = 0;
-			move_back_type = 0;
+			move_back_type = NORMAL_BACK;
 			no_signal_counter=0;
 			go_home_bumper_counter=0;
 			cliff_counter = 0;
@@ -244,7 +250,7 @@ void go_to_charger(void)
 			{
 				if(g_bumper_left || g_bumper_right)
 				{
-					move_back_type = 0;
+					move_back_type = NORMAL_BACK;
 					g_move_back_finished = false;
 					continue;
 				}
@@ -474,7 +480,7 @@ void go_to_charger(void)
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				g_cliff_cnt++;
-				move_back_type = 7;
+				move_back_type = AROUND_CLIFF_BACK;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1750);
 				turn_type = AROUND_CLIFF_TURN;
@@ -486,7 +492,7 @@ void go_to_charger(void)
 			{
 				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 				go_home_bumper_counter++;
-				move_back_type = 1;
+				move_back_type = NORMAL_BACK;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1800);
 				ROS_WARN("%s %d: Set angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
@@ -871,9 +877,7 @@ void go_to_charger(void)
 				else
 				{
 					if(last_clean_mode == Clean_Mode_GoHome)
-					{
 						set_clean_mode(Clean_Mode_Charging);
-					}
 					disable_motors();
 					break;
 				}
@@ -888,10 +892,8 @@ void go_to_charger(void)
 					set_side_brush_pwm(30, 30);
 					set_main_brush_pwm(30);
 
-					set_dir_backward();
-					set_wheel_speed(30,30);
 					g_move_back_finished = false;
-					move_back_type = 2;
+					move_back_type = TURN_CONNECT_BACK;
 					saved_pos_x = robot::instance()->getOdomPositionX();
 					saved_pos_y = robot::instance()->getOdomPositionY();
 					continue;
@@ -911,7 +913,7 @@ void go_to_charger(void)
 					ROS_WARN("%d: quick_back in !position_far", __LINE__);
 					set_main_brush_pwm(30);
 					stop_brifly();
-					move_back_type = 3;
+					move_back_type = BY_PATH_BUMPER_BACK;
 					set_dir_backward();
 					set_wheel_speed(30,30);
 					continue;
@@ -919,18 +921,14 @@ void go_to_charger(void)
 				else
 				{
 					if((get_rcon_status()&(RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR))==0)
-					{
-						move_back_type = 4;
 						g_go_home_state_now = -1;
-					}
-					else
-						move_back_type = 5;
 
+					move_back_type = NORMAL_BACK; // Means robot far from HomeT signal.
 					if(g_bumper_left)
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 1100);
 					else
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1100);
-					turn_type = BY_PATH_BUMPER_TURN;
+					turn_type = BY_PATH_TURN;
 					turn_finished = false;
 					ROS_WARN("%d: quick_back in position_far", __LINE__);
 					continue;
@@ -938,11 +936,10 @@ void go_to_charger(void)
 			}
 			if(g_cliff_triggered)
 			{
-				g_cliff_triggered = false;
-				move_back_type = 6;
+				move_back_type = BY_PATH_CLIFF_BACK;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1750);
-				turn_type = BY_PATH_CLIFF_TURN;
+				turn_type = BY_PATH_TURN;
 				turn_finished = false;
 				g_go_home_state_now = -1;
 				continue;
@@ -2321,14 +2318,13 @@ bool go_home_check_move_back_finish(uint8_t type)
 	set_dir_backward();
 	set_wheel_speed(18,18);
 
-	if (type == 2 || type == 3)
+	if (type == TURN_CONNECT_BACK || type == BY_PATH_BUMPER_BACK)
 		target_distance = 0.3f;
 	else
 		target_distance = 0.03f;
 
 	if(distance < target_distance)
 		return false;
-
 	else
 	{
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
@@ -2341,36 +2337,23 @@ bool go_home_check_move_back_finish(uint8_t type)
 		{
 			ROS_WARN("%s %d: reset for bumper.", __FUNCTION__, __LINE__);
 			g_bumper_cnt = 0;
+			g_bumper_left = false;
+			g_bumper_right = false;
 			switch (type)
 			{
-				case 0:
-					g_bumper_left = false;
-					g_bumper_right = false;
+				case NORMAL_BACK:
 					break;
-				case 1:
-					g_bumper_left = false;
-					g_bumper_right = false;
-					break;
-				case 2:
-					g_bumper_left = false;
-					g_bumper_right = false;
+				case TURN_CONNECT_BACK:
 					set_wheel_speed(0, 0);
 					g_go_home_state_now = -1;
 					break;
-				case 3:
-					g_bumper_left = false;
-					g_bumper_right = false;
+				case BY_PATH_BUMPER_BACK:
 					set_wheel_speed(0, 0);
 					if(go_home_bumper_counter > 1)
 					{
 						ROS_DEBUG("%d, Return from LeftBumperTrig.", __LINE__);
 						g_go_home_state_now = -1;
 					}
-					break;
-				case 4:
-				case 5:
-					g_bumper_left = false;
-					g_bumper_right = false;
 					break;
 			}
 		}
@@ -2383,17 +2366,9 @@ bool go_home_check_move_back_finish(uint8_t type)
 		}
 		else
 		{
-			if (type == 6)
-			{
-				g_cliff_cnt = 0;
-				g_cliff_triggered = false;
-			}
-			if (type == 7)
-			{
-				g_cliff_cnt = 0;
-				g_cliff_triggered = false;
+			//if (type == BY_PATH_CLIFF_BACK);
+			if (type == AROUND_CLIFF_BACK)
 				move_forward(9,9);
-			}
 
 			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
 			g_cliff_triggered = false;
@@ -2406,7 +2381,7 @@ bool go_home_check_move_back_finish(uint8_t type)
 
 bool go_home_check_turn_finish(int16_t target_angle, uint8_t type)
 {
-	uint8_t turn_speed = 0;
+	static uint8_t turn_speed = 0;
 	auto diff = ranged_angle(target_angle - Gyro_GetAngle());
 	if (diff > 0)
 		set_dir_left();
@@ -2429,9 +2404,7 @@ bool go_home_check_turn_finish(int16_t target_angle, uint8_t type)
 			case AROUND_CLIFF_TURN:
 				move_forward(9, 9);
 				break;
-			case BY_PATH_BUMPER_TURN:
-			case BY_PATH_CLIFF_TURN:
-				set_wheel_speed(0, 0);
+			case BY_PATH_TURN:
 				set_side_brush_pwm(30, 30);
 				set_main_brush_pwm(30);
 				move_forward(8, 8);
@@ -2440,7 +2413,7 @@ bool go_home_check_turn_finish(int16_t target_angle, uint8_t type)
 
 		return true;
 	}
-	ROS_WARN("%s %d: Turn not finish yet, target: %d, current: %d, diff: %d.", __FUNCTION__, __LINE__, target_angle, Gyro_GetAngle(), diff);
+	//ROS_WARN("%s %d: Turn not finish yet, type: %d, target: %d, current: %d, diff: %d.", __FUNCTION__, __LINE__, type, target_angle, Gyro_GetAngle(), diff);
 	if(std::abs(diff) > 80)
 		turn_speed = ROTATE_TOP_SPEED;
 	else
