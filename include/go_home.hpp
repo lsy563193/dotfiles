@@ -1,9 +1,6 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#define ROUND_LEFT			0x01
-#define ROUND_RIGHT			0x02
-
 void go_home(void);
 void go_to_charger(void);
 bool go_home_check_move_back_finish(float target_distance);
