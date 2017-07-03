@@ -141,6 +141,11 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	uint8_t right_speed;
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
+
+		if(get_clean_mode() == Clean_Mode_WallFollow)
+			if(g_turn_angle == 0)
+				g_turn_angle = bumper_turn_angle();
+
 		left_speed = right_speed = 8;
 		set_dir_backward();
 		set_wheel_speed(left_speed, right_speed);
@@ -529,8 +534,9 @@ void cm_update_map()
 		else*//* (get_cliff_trig() == RightFrontCliffTrig)*//*
 			return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? 1350 : 600;
 }*/
-uint16_t bumper_turn_angle(uint8_t status)
+uint16_t bumper_turn_angle()
 {
+	auto status = get_bumper_status();
 	if (status == AllBumperTrig)
 	{
 		g_turn_angle = 850;
@@ -553,6 +559,9 @@ uint16_t bumper_turn_angle(uint8_t status)
 		g_straight_distance = 250; //250;
 		jam = get_right_wheel_step() < 2000 ? ++jam : 0;
 	}
+	status = get_cliff_trig();
+	if(status != 0)
+		g_turn_angle = 750;
 	g_straight_distance = 200;
 //	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
@@ -1050,7 +1059,6 @@ uint8_t cm_follow_wall(Point32_t target)
 	g_straight_distance = 300;
 	RegulatorProxy regulator(target);
 	robotbase_obs_adjust_count(100);
-	g_turn_angle = 0;
 	while (ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
@@ -1331,6 +1339,7 @@ uint8_t cm_touring(void)
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();
 	MotionManage motion;
+	g_turn_angle = 0;
 
 	if (!motion.initSucceeded())
 	{
@@ -1353,7 +1362,6 @@ uint8_t cm_touring(void)
 		if (get_clean_mode() != Clean_Mode_Spot)
 			cm_go_home();
 	}
-	cm_unregister_events();
 	return 0;
 }
 
@@ -1776,9 +1784,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	if (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction)
-		return true;
-	return false;
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction);
 }
 
 /* Event handler functions. */

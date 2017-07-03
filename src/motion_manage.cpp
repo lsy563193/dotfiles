@@ -279,7 +279,8 @@ MotionManage::~MotionManage()
 		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
-if (s_slam != nullptr)
+
+	if (s_slam != nullptr)
 	{
 		delete s_slam;
 		s_slam = nullptr;

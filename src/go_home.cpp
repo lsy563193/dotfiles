@@ -59,12 +59,12 @@ void go_home(void)
 		{
 			if(last_clean_mode == Clean_Mode_GoHome)
 			{
+				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
 				g_key_clean_pressed = false;
 				g_cliff_all_triggered = false;
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
-			disable_motors();
 			break;
 		}
 		if(g_battery_low)
@@ -224,18 +224,10 @@ void go_to_charger(void)
 				}
 
 				current_angle = robot::instance()->getAngle();
-				angle_offset = current_angle - last_angle;
+				angle_offset = ranged_angle(current_angle - last_angle);
 				ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
-				if (angle_offset > 0)
-				{
-					// For passing the boundary of angle range. e.g.(179 - (-178))
-					if (angle_offset >= 180)
-						angle_offset -= 360;
-					else
-					// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
-						angle_offset = 0;
-				}
-				gyro_step += (-angle_offset);
+				if (angle_offset < 0)
+					gyro_step += (-angle_offset);
 				last_angle = current_angle;
 
 				set_dir_right();
@@ -454,13 +446,12 @@ void go_to_charger(void)
 			{
 				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 				around_charger_stub_dir = 1 - around_charger_stub_dir;
-				go_home_bumper_counter++;
-				if(go_home_bumper_counter > 1)
+				if(++go_home_bumper_counter > 1)
 					g_go_home_state_now = GO_HOME_INIT;
 				target_distance = 0.03;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1800);
-				ROS_WARN("%s %d: Set angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
+				ROS_WARN("%s %d: Set target angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
 				turn_finished = false;
 				continue;
 			}
@@ -473,7 +464,8 @@ void go_to_charger(void)
 			else
 			{
 				no_signal_counter++;
-				if(no_signal_counter>500)
+				set_wheel_speed(8, 8);
+				if(no_signal_counter>200)
 				{
 					ROS_WARN("No charger signal received.");
 					g_go_home_state_now = GO_HOME_INIT;
@@ -698,6 +690,7 @@ void go_to_charger(void)
 		{
 			receive_code = 0;
 			gyro_step = 0;
+			stop_brifly();
 			if(check_position_dir == ROUND_LEFT)
 			{
 				ROS_INFO("Check position Dir = left");
@@ -736,21 +729,34 @@ void go_to_charger(void)
 					stop_brifly();
 				}
 			}
+
+			if(g_bumper_left || g_bumper_right)
+			{
+				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
+				around_charger_stub_dir = 1 - around_charger_stub_dir;
+				if(++go_home_bumper_counter > 1)
+					g_go_home_state_now = GO_HOME_INIT;
+				else
+					g_go_home_state_now = AROUND_CHARGER_STATION_INIT;
+				target_distance = 0.03;
+				g_move_back_finished = false;
+				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1800);
+				ROS_WARN("%s %d: Set target angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
+				turn_finished = false;
+				continue;
+			}
+
 			if(gyro_step < 360)
 			{
 				current_angle = robot::instance()->getAngle();
-				angle_offset = current_angle - last_angle;
-				ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
-				if (check_position_dir == ROUND_LEFT)
+				angle_offset = ranged_angle(current_angle - last_angle);
+				ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
+				if (check_position_dir == ROUND_LEFT && angle_offset > 0)
 				{
-					if (angle_offset < 0)
-						angle_offset += 360;
 					gyro_step += angle_offset;
 				}
-				if (check_position_dir == ROUND_RIGHT)
+				if (check_position_dir == ROUND_RIGHT && angle_offset < 0)
 				{
-					if (angle_offset > 0)
-						angle_offset -= 360;
 					gyro_step += (-angle_offset);
 				}
 				last_angle = current_angle;
@@ -2160,12 +2166,12 @@ bool turn_connect(void)
 		{
 			if(get_clean_mode() == Clean_Mode_GoHome)
 			{
+				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
 				g_key_clean_pressed = false;
 				g_cliff_all_triggered = false;
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
-			disable_motors();
 			return true;
 		}
 	}
@@ -2193,12 +2199,12 @@ bool turn_connect(void)
 		{
 			if(get_clean_mode() == Clean_Mode_GoHome)
 			{
+				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
 				g_key_clean_pressed = false;
 				g_cliff_all_triggered = false;
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
-			disable_motors();
 			return true;
 		}
 	}
@@ -2262,7 +2268,6 @@ bool go_home_check_turn_finish(int16_t target_angle)
 	if(std::abs(diff) < 10)
 	{
 		ROS_WARN("%s %d: Turn finish.", __FUNCTION__, __LINE__);
-		set_wheel_speed(0, 0);
 		return true;
 	}
 	//ROS_WARN("%s %d: Turn not finish yet, target: %d, current: %d, diff: %d.", __FUNCTION__, __LINE__, target_angle, Gyro_GetAngle(), diff);
