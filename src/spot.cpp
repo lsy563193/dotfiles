@@ -81,40 +81,34 @@ SpotMovement *SpotMovement::instance()
 uint8_t SpotMovement::findNearestPoint(Point32_t ref_point)
 {
 	std::vector<Point32_t>::reverse_iterator rtp;
-	Point32_t t_p;
 	float dist = 0.0, dist_last;
 	float mindist = 1.0;
 	float t_dist = FLT_MAX;
-	t_p = target_.front();
+	tp_ = target_.begin();
 	int i = 0, pos = 0;
-	for (rtp = target_.rbegin(); rtp != target_.rend(); ++rtp, ++i)
+	int ret = 0;
+	for (rtp = target_.rbegin(); rtp != target_.rend(); ++rtp)
 	{
 		dist = sqrt(pow(ref_point.X - rtp->X, 2) + pow(ref_point.Y - rtp->Y, 2));
-		if (absolute(dist - mindist) <= 0.1)
-		{
-			near_point_.X = rtp->X;
-			near_point_.Y = rtp->Y;
-			pos = (int) (target_.size() - i - 1);
-			tp_ = tp_ + pos;
-			ROS_WARN("%s,%d,near point (%d,%d),tp_ = (%d,%d) t.size = %d,i = %d ,pos = %d", __FUNCTION__, __LINE__, 
-						near_point_.X, near_point_.Y, tp_->X, tp_->Y, target_.size(), i, pos);
-			return 1;
-		}
+		i++;
 		if (dist < t_dist)
 		{
-			pos = (int) (target_.size() - i - 1);
-			tp_ = target_.begin() + pos;
+			pos = (int) (target_.size() - i);
 			t_dist = dist;
-			t_p.X = rtp->X;
-			t_p.Y = rtp->Y;
+			near_point_ = {rtp->X,rtp->Y};
+			ret = 1;
 		}
 	}
 
-	ROS_WARN("%s,%d,near point (%d,%d),tp_ = (%d,%d) t.size = %d,i = %d ,pos = %d", __FUNCTION__, __LINE__, 
-					t_p.X, t_p.Y, tp_->X, tp_->Y, target_.size(), i--, pos);
-	near_point_.X = t_p.X;
-	near_point_.Y = t_p.Y;
-	return 0;
+	ROS_WARN("%s,%d,near point (%d,%d), t.size = %d,pos = %d", __FUNCTION__, __LINE__, 
+					near_point_.X, near_point_.Y, target_.size(), pos);
+	while(pos){
+		printf("(%d,%d), ",tp_->X,tp_->Y);
+		pos--;
+		tp_++;
+	}
+	ROS_WARN("\n%s,%d,tp_ (%d,%d)",__FUNCTION__,__LINE__,tp_->X,tp_->Y);
+	return ret;
 }
 
 void SpotMovement::spotInit(float diameter, Point32_t cur_point)
@@ -151,7 +145,8 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	} else
 	{//deinit
 		spot_init_ = 0;
-		work_motor_configure();
+		if(getSpotType() == CLEAN_SPOT)
+			work_motor_configure();
 	}
 }
 
