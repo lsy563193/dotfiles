@@ -6,7 +6,7 @@
 
 void go_home(void);
 void go_to_charger(void);
-bool go_home_check_move_back_finish(uint8_t type);
+bool go_home_check_move_back_finish(float target_distance);
 bool go_home_check_turn_finish(int16_t target_angle);
 void go_home_register_events(void);
 void go_home_unregister_events(void);
