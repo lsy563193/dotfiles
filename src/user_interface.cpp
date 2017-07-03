@@ -476,14 +476,12 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
 		user_interface_reject_reason = 4;
 	}
-
-	if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		user_interface_reject_reason = 2;
 	}
-
-	if(!battery_ready_to_clean)
+	else if(!battery_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		user_interface_reject_reason = 3;

@@ -575,6 +575,7 @@ bool laser_turn_angle(void)
 	double line_angle;
 	bool is_fit_sud;
 	uint8_t status = angle_to_bumper_status();
+	auto reset_wall_dis = 100;
 	if (status == AllBumperTrig)
 	{
 		ROS_ERROR("left and right bumper");
@@ -588,7 +589,7 @@ bool laser_turn_angle(void)
 		ROS_WARN("line_angle = %lf", line_angle);
 		if (is_fit_sud && line_angle >=900 && line_angle < 1800) {
 			g_turn_angle = line_angle;
-			g_wall_distance = 200;
+			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
 			return true;
 		} else {
@@ -608,7 +609,7 @@ bool laser_turn_angle(void)
 		ROS_WARN("line_angle = %lf", line_angle);
 		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
 			g_turn_angle = line_angle;
-			g_wall_distance = 200;
+			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
 			return true;
 		} else {
@@ -626,9 +627,9 @@ bool laser_turn_angle(void)
 			line_angle = int(fabs(line_angle) * 10);
 		}
 		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle > 0 && line_angle <= 900) {
+		if (is_fit_sud && line_angle > 200 && line_angle <= 900) {
 			g_turn_angle = line_angle;
-			g_wall_distance = 200;
+			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
 			return true;
 		} else {
@@ -1746,32 +1747,34 @@ void cm_self_check(void)
 		}
 		else if (g_oc_suction)
 		{
-			switch (vacuum_oc_state)
+			if(vacuum_oc_state == 1)
 			{
-				case 1:
-					ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
-					if (get_self_check_vacuum_status() == 0x10)
-					{
-						ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
-						reset_self_check_vacuum_controler();
-						vacuum_oc_state = 2;
-					}
+				ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
+				if (get_self_check_vacuum_status() == 0x10)
+				{
+					ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
+					reset_self_check_vacuum_controler();
+					vacuum_oc_state = 2;
+				}
+				continue;
+			}
+			else if (vacuum_oc_state == 2)
+			{
+				ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
+				if (get_self_check_vacuum_status() == 0x20)
+				{
+					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
+					set_error_code(Error_Code_Fan_H);
+					g_fatal_quit_event = true;
 					break;
-				case 2:
-					ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
-					if (get_self_check_vacuum_status() == 0x20)
-					{
-						ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
-						set_error_code(Error_Code_Encoder);
-						g_fatal_quit_event = true;
-					}
-					else if (get_self_check_vacuum_status() == 0x20)
-					{
-						ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
-						g_oc_suction = false;
-						g_oc_suction_cnt = 0;
-					}
+				}
+				else if (get_self_check_vacuum_status() == 0x00)
+				{
+					ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
+					g_oc_suction = false;
+					g_oc_suction_cnt = 0;
 					break;
+				}
 			}
 		}
 
