@@ -300,16 +300,11 @@ uint8_t wf_clear(void)
 
 void wf_update_map()
 {
-	auto heading = Gyro_GetAngle();
 	extern Point32_t g_next_point, g_target_point;
 
-	cm_update_position();
+	auto cell = cm_update_position();
 
-	//wf_update_cleaned();
-
-	auto cell_x = map_get_x_cell();
-	auto cell_y = map_get_y_cell();
-	Pose16_t curr_cell{cell_x, cell_y, (int16_t)Gyro_GetAngle()};
+	Pose16_t curr_cell{cell.X, cell.Y, (int16_t)Gyro_GetAngle()};
 	if (wf_is_reach_new_cell(curr_cell))
 	{
 		g_reach_count = wf_is_reach_cleaned() ? g_reach_count + 1 : 0;
@@ -321,10 +316,10 @@ void wf_update_map()
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 	}
 
-	cell_x = map_get_relative_x(heading, CELL_SIZE_2, 0);
-	cell_y = map_get_relative_y(heading, CELL_SIZE_2, 0);
-	if (map_get_cell(MAP, count_to_cell(cell_x), count_to_cell(cell_y)) != BLOCKED_BOUNDARY)
-		map_set_cell(MAP, cell_x, cell_y, BLOCKED_OBS);
+	int32_t x,y;
+	cm_world_to_point(Gyro_GetAngle(), CELL_SIZE_2, 0, &x, &y);
+	if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BOUNDARY)
+		map_set_cell(MAP, x, y, BLOCKED_OBS);
 }
 
 bool wf_is_reach_isolate()

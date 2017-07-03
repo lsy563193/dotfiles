@@ -109,11 +109,14 @@ bool g_motion_init_succeeded = false;
 
 int16_t ranged_angle(int16_t angle)
 {
-	if (angle >= 1800) {
+	while (angle > 1800 || angle <= -1800)
+	{
+		if (angle > 1800) {
 			angle -= 3600;
-	} else
-	if (angle <= -1800) {
+		} else
+		if (angle <= -1800) {
 			angle += 3600;
+		}
 	}
 	return angle;
 }
@@ -553,10 +556,92 @@ uint16_t bumper_turn_angle(uint8_t status)
 	g_straight_distance = 200;
 //	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
-	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ",
-						g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
+//	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
 	return g_turn_angle;
 }
+
+bool laser_turn_angle(void)
+{
+	stop_brifly();
+	double line_angle;
+	bool is_fit_sud;
+	uint8_t status = angle_to_bumper_status();
+	auto reset_wall_dis = 100;
+	if (status == AllBumperTrig)
+	{
+		ROS_ERROR("left and right bumper");
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle >=900 && line_angle < 1800) {
+			g_turn_angle = line_angle;
+			g_wall_distance = reset_wall_dis;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	} else if (status == RightBumperTrig)
+	{
+		ROS_ERROR("right bumper");
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
+			g_turn_angle = line_angle;
+			g_wall_distance = reset_wall_dis;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	} else if (status == LeftBumperTrig)
+	{
+		ROS_ERROR("left bumper");
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle > 200 && line_angle <= 900) {
+			g_turn_angle = line_angle;
+			g_wall_distance = reset_wall_dis;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	}
+	return true;
+}
+
+uint8_t angle_to_bumper_status(void)
+{
+	if (g_turn_angle == 850)
+		return AllBumperTrig;
+	else if (g_turn_angle == 920)
+		return RightBumperTrig;
+	else if (g_turn_angle == 0)
+		return 0;
+	return LeftBumperTrig;
+}
+
 uint16_t round_turn_distance()
 {
 	auto wall = robot::instance()->getLeftWall();
@@ -594,58 +679,6 @@ uint16_t bumper_straight_distance()
 		else return 259;
 	}
 }
-/*
-
-void cm_move_back(void)
-{
-	*/
-/*if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
-	{
-		g_turn_angle = bumper_turn_angle();
-		if (get_bumper_status() != 0)
-		{
-			g_wall_distance = round_turn_distance();
-			auto &wall_buffer = (g_cm_move_type != CM_FOLLOW_LEFT_WALL) ? g_left_buffer : g_right_buffer;
-			wall_buffer = {0, 0, 0};
-			g_rounding_move_speed = round_turn_speed();
-			g_straight_distance = bumper_straight_distance();
-		}
-	}*//*
-
-	auto status = get_bumper_status();
-	cm_move_back_(COR_BACK_20MM);
-	g_turn_angle = bumper_turn_angle(status);
-
-	if (get_bumper_status() != 0)
-	{
-		g_bumper_cnt++;
-
-		if (g_bumper_cnt > 2)
-		{
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else{
-		g_bumper_cnt = 0;
-		g_bumper_hitted = 0;
-	}
-	if (get_cliff_trig() != 0)
-	{
-		g_cliff_cnt++;
-
-		if (g_cliff_cnt > 2)
-		{
-			ROS_WARN("%s %d: all bumper jam, should quit, jam count: %d", __FUNCTION__, __LINE__, g_bumper_cnt);
-			g_bumper_jam = g_fatal_quit_event = true;
-		}
-	} else{
-		g_cliff_jam = false;
-		g_cliff_cnt = 0;
-	}
-//	if((get_bumper_status() & RightBumperTrig) == 0) g_bumper_cnt = 0;
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
-}
-*/
 
 /*--------------------------Head Angle--------------------------------*/
 void cm_head_to_course(uint8_t speed_max, int16_t angle)
@@ -694,14 +727,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
-	Point32_t	position{map_get_x_count(), map_get_y_count()};
 	bool rotate_is_needed_ = true;
-
-	if (position.X != map_get_x_count() && position.X == Target.X)
-		Target.X = map_get_x_count();
-	else if (position.Y != map_get_y_count() && position.Y == Target.Y)
-		Target.Y = map_get_y_count();
-
 	robotbase_obs_adjust_count(50);
 	reset_rcon_status();
 	cm_set_event_manager_handler_state(true);
@@ -985,11 +1011,14 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 
 int16_t uranged_angle(int16_t angle)
 {
-	if (angle >= 3600) {
+	while (angle >= 3600 || angle < 0)
+	{
+		if (angle >= 3600) {
 			angle -= 3600;
-	} else
-	if (angle <= 0) {
+		} else
+		if (angle < 0) {
 			angle += 3600;
+		}
 	}
 	return angle;
 }
@@ -1021,6 +1050,7 @@ uint8_t cm_follow_wall(Point32_t target)
 	g_straight_distance = 300;
 	RegulatorProxy regulator(target);
 	robotbase_obs_adjust_count(100);
+	g_turn_angle = 0;
 	while (ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
