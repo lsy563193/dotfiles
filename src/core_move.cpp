@@ -1785,7 +1785,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction)
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction);
 }
 
 /* Event handler functions. */
