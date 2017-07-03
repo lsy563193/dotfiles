@@ -498,7 +498,6 @@ void go_to_charger(void)
 				ROS_WARN("%s %d: Set angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
 				turn_type = AROUND_BUMPER_TURN;
 				turn_finished = false;
-				g_go_home_state_now = -1;
 				continue;
 			}
 			receive_code = get_rcon_status();
