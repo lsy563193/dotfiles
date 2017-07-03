@@ -14,15 +14,7 @@
 #include "charger.hpp"
 
 extern float saved_pos_x, saved_pos_y;
-uint8_t turn_finished;
 uint8_t go_home_bumper_counter = 0;
-int16_t go_home_target_angle = 0;
-uint8_t turn_type = 0;
-#define NORMAL_TURN 1
-#define AROUND_BUMPER_TURN 2
-#define AROUND_CLIFF_TURN 3
-#define BY_PATH_TURN 5
-
 /*----------------------------------------------------------------GO Home  ----------------*/
 uint8_t g_dir_around_cs = 0;
 uint8_t g_dir_check_position = 0;
@@ -112,18 +104,14 @@ void go_to_charger(void)
 	 *	0: around_chargestation					*
 	 *	1: by_path								*/
 	uint8_t entrance_to_check_position = 0;
-	/*	meaning of turn_type		*
-	 *	0: bumper						*
-	 *	1: cliff						*
-	 *	2: other						*/
 	uint32_t receive_code = 0;
 
 	uint8_t move_back_type = 0;
 #define NORMAL_BACK 0
-#define AROUND_CLIFF_BACK 7
+#define AROUND_CLIFF_BACK 1
 #define TURN_CONNECT_BACK 2
 #define BY_PATH_BUMPER_BACK 3
-#define BY_PATH_CLIFF_BACK 6
+#define BY_PATH_CLIFF_BACK 4
 	/*---variable for around_chargestation---*/
 	uint32_t no_signal_counter=0;
 	uint8_t cliff_counter = 0;
@@ -139,13 +127,11 @@ void go_to_charger(void)
 
 	reset_rcon_status();
 	// This is for calculating the robot turning.
-	uint8_t turn_type = 0;
-	turn_type = 0;
-	go_home_target_angle = 0;
+	int16_t go_home_target_angle = 0;
 	float current_angle;
 	float last_angle;
 	float angle_offset;
-	turn_finished = true;
+	uint8_t turn_finished = true;
 	// This step is for counting angle change when the robot turns.
 	float gyro_step = 0;
 
@@ -197,7 +183,7 @@ void go_to_charger(void)
 
 		if(!turn_finished)
 		{
-			if (!go_home_check_turn_finish(go_home_target_angle, turn_type))
+			if (!go_home_check_turn_finish(go_home_target_angle))
 				continue;
 
 			ROS_WARN("%s %d: Turn finish.", __FUNCTION__, __LINE__);
@@ -483,7 +469,6 @@ void go_to_charger(void)
 				move_back_type = AROUND_CLIFF_BACK;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1750);
-				turn_type = AROUND_CLIFF_TURN;
 				turn_finished = false;
 				g_go_home_state_now = -1;
 				continue;
@@ -491,12 +476,14 @@ void go_to_charger(void)
 			if(g_bumper_left || g_bumper_right)
 			{
 				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
+				g_dir_around_cs = 1 - g_dir_around_cs;
 				go_home_bumper_counter++;
+				if(go_home_bumper_counter > 1)
+					g_go_home_state_now = -1;
 				move_back_type = NORMAL_BACK;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1800);
 				ROS_WARN("%s %d: Set angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
-				turn_type = AROUND_BUMPER_TURN;
 				turn_finished = false;
 				continue;
 			}
@@ -837,7 +824,6 @@ void go_to_charger(void)
 				{
 					ROS_INFO("%s, %d: Robot can't see charger, return to gohome mode.", __FUNCTION__, __LINE__);
 					go_home_target_angle = ranged_angle(Gyro_GetAngle() - 1000);
-					turn_type = NORMAL_TURN;
 					turn_finished = false;
 					g_go_home_state_now = -1;
 					continue;
@@ -927,7 +913,6 @@ void go_to_charger(void)
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 1100);
 					else
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1100);
-					turn_type = BY_PATH_TURN;
 					turn_finished = false;
 					ROS_WARN("%d: quick_back in position_far", __LINE__);
 					continue;
@@ -938,7 +923,6 @@ void go_to_charger(void)
 				move_back_type = BY_PATH_CLIFF_BACK;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1750);
-				turn_type = BY_PATH_TURN;
 				turn_finished = false;
 				g_go_home_state_now = -1;
 				continue;
@@ -1095,14 +1079,12 @@ void go_to_charger(void)
 
 					case (RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 350);
 						break;
@@ -1224,56 +1206,42 @@ void go_to_charger(void)
 
 					case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconR_HomeR|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 400);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 450);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/R_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
-						turn_finished = false;
-						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 500);
-						break;
-
-					case (RconR_HomeL):
-						ROS_DEBUG("%s, %d: g_position_far, R_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 550);
 						break;
 
 					case (RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 500);
 						break;
@@ -1380,14 +1348,12 @@ void go_to_charger(void)
 
 					case (RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconFL2_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 350);
 						break;
@@ -1509,56 +1475,48 @@ void go_to_charger(void)
 
 					case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconL_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, L_L/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 400);
 						break;
 
 					case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 450);
 						break;
 
 					case (RconL_HomeR|RconL_HomeL):
 						ROS_DEBUG("%s, %d: g_position_far, L_R/L_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 500);
 						break;
 
 					case (RconL_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, L_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 550);
 						break;
 
 					case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconL_HomeR|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: g_position_far, L_R/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 500);
 						break;
@@ -1696,14 +1654,12 @@ void go_to_charger(void)
 
 					case (RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 350);
 						break;
@@ -1825,56 +1781,48 @@ void go_to_charger(void)
 
 					case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconR_HomeR|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 400);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 450);
 						break;
 
 					case (RconR_HomeR|RconR_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/R_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 500);
 						break;
 
 					case (RconR_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 550);
 						break;
 
 					case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 250);
 						break;
 
 					case (RconR_HomeL|RconFR2_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() - 500);
 						break;
@@ -1981,14 +1929,12 @@ void go_to_charger(void)
 
 					case (RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconFL2_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 350);
 						break;
@@ -2109,56 +2055,48 @@ void go_to_charger(void)
 
 					case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconL_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, L_L/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 400);
 						break;
 
 					case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 450);
 						break;
 
 					case (RconL_HomeR|RconL_HomeL):
 						ROS_DEBUG("%s, %d: !g_position_far, L_R/L_L.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 500);
 						break;
 
 					case (RconL_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, L_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 250);
 						break;
 
 					case (RconL_HomeR|RconFL2_HomeR):
 						ROS_DEBUG("%s, %d: !g_position_far, L_R/FL2_R.", __FUNCTION__, __LINE__);
-						turn_type = NORMAL_TURN;
 						turn_finished = false;
 						go_home_target_angle = ranged_angle(Gyro_GetAngle() + 500);
 						break;
@@ -2378,7 +2316,7 @@ bool go_home_check_move_back_finish(uint8_t type)
 	return true;
 }
 
-bool go_home_check_turn_finish(int16_t target_angle, uint8_t type)
+bool go_home_check_turn_finish(int16_t target_angle)
 {
 	static uint8_t turn_speed = 0;
 	auto diff = ranged_angle(target_angle - Gyro_GetAngle());
@@ -2391,28 +2329,9 @@ bool go_home_check_turn_finish(int16_t target_angle, uint8_t type)
 	{
 		ROS_WARN("%s %d: Turn finish.", __FUNCTION__, __LINE__);
 		set_wheel_speed(0, 0);
-		switch (type)
-		{
-			case NORMAL_TURN:
-				break;
-			case AROUND_BUMPER_TURN:
-				move_forward(10,10);
-				g_dir_around_cs = 1 - g_dir_around_cs;
-				if(go_home_bumper_counter > 1)g_go_home_state_now = -1;
-				break;
-			case AROUND_CLIFF_TURN:
-				move_forward(9, 9);
-				break;
-			case BY_PATH_TURN:
-				set_side_brush_pwm(30, 30);
-				set_main_brush_pwm(30);
-				move_forward(8, 8);
-				break;
-		}
-
 		return true;
 	}
-	//ROS_WARN("%s %d: Turn not finish yet, type: %d, target: %d, current: %d, diff: %d.", __FUNCTION__, __LINE__, type, target_angle, Gyro_GetAngle(), diff);
+	//ROS_WARN("%s %d: Turn not finish yet, target: %d, current: %d, diff: %d.", __FUNCTION__, __LINE__, target_angle, Gyro_GetAngle(), diff);
 	if(std::abs(diff) > 80)
 		turn_speed = ROTATE_TOP_SPEED;
 	else
@@ -2531,7 +2450,7 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 
 void go_home_handle_key_clean(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
@@ -2547,6 +2466,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 
 void go_home_handle_remote_clean(bool state_now, bool state_last)
 {
+	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
 	g_key_clean_pressed = true;
 	reset_rcon_remote();
