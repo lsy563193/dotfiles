@@ -144,7 +144,7 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 
 		if(get_clean_mode() == Clean_Mode_WallFollow)
 			if(g_turn_angle == 0)
-				g_turn_angle = bumper_turn_angle(get_bumper_status());
+				g_turn_angle = bumper_turn_angle();
 
 		left_speed = right_speed = 8;
 		set_dir_backward();
@@ -534,8 +534,9 @@ void cm_update_map()
 		else*//* (get_cliff_trig() == RightFrontCliffTrig)*//*
 			return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? 1350 : 600;
 }*/
-uint16_t bumper_turn_angle(uint8_t status)
+uint16_t bumper_turn_angle()
 {
+	auto status = get_bumper_status();
 	if (status == AllBumperTrig)
 	{
 		g_turn_angle = 850;
@@ -558,6 +559,9 @@ uint16_t bumper_turn_angle(uint8_t status)
 		g_straight_distance = 250; //250;
 		jam = get_right_wheel_step() < 2000 ? ++jam : 0;
 	}
+	status = get_cliff_trig();
+	if(status != 0)
+		g_turn_angle = 750;
 	g_straight_distance = 200;
 //	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
