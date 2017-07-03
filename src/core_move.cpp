@@ -1738,32 +1738,34 @@ void cm_self_check(void)
 		}
 		else if (g_oc_suction)
 		{
-			switch (vacuum_oc_state)
+			if(vacuum_oc_state == 1)
 			{
-				case 1:
-					ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
-					if (get_self_check_vacuum_status() == 0x10)
-					{
-						ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
-						reset_self_check_vacuum_controler();
-						vacuum_oc_state = 2;
-					}
+				ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
+				if (get_self_check_vacuum_status() == 0x10)
+				{
+					ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
+					reset_self_check_vacuum_controler();
+					vacuum_oc_state = 2;
+				}
+				continue;
+			}
+			else if (vacuum_oc_state == 2)
+			{
+				ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
+				if (get_self_check_vacuum_status() == 0x20)
+				{
+					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
+					set_error_code(Error_Code_Encoder);
+					g_fatal_quit_event = true;
 					break;
-				case 2:
-					ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
-					if (get_self_check_vacuum_status() == 0x20)
-					{
-						ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
-						set_error_code(Error_Code_Encoder);
-						g_fatal_quit_event = true;
-					}
-					else if (get_self_check_vacuum_status() == 0x20)
-					{
-						ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
-						g_oc_suction = false;
-						g_oc_suction_cnt = 0;
-					}
+				}
+				else if (get_self_check_vacuum_status() == 0x00)
+				{
+					ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
+					g_oc_suction = false;
+					g_oc_suction_cnt = 0;
 					break;
+				}
 			}
 		}
 
