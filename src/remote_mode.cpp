@@ -66,10 +66,11 @@ void Remote_Mode(void)
 			cm_self_check();
 
 	}
-	if (g_fatal_quit_event && g_cliff_all_cnt >= 2)
-		wav_play(WAV_ERROR_LIFT_UP);
 	disable_motors();
 	remote_mode_unregister_events();
+
+	if (g_fatal_quit_event && g_cliff_all_cnt >= 2)
+		wav_play(WAV_ERROR_LIFT_UP);
 }
 
 void remote_move(void)
@@ -356,10 +357,17 @@ void remote_mode_handle_bumper(bool state_now, bool state_last)
 
 void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-	disable_motors();
-	wav_play(WAV_ERROR_LIFT_UP);
-	set_clean_mode(Clean_Mode_Userinterface);
+	g_cliff_triggered = true;
+	g_cliff_all_cnt++;
+
+	if (!state_last && g_move_back_finished)
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+		ROS_WARN("%s %d: Cliff triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
+	}
+	set_move_flag_(REMOTE_MODE_BACKWARD);
+
 }
 
 void remote_mode_handle_cliff(bool state_now, bool state_last)

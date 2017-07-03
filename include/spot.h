@@ -109,6 +109,14 @@ public:
 	//void spotWithTarget(SpotType spot_t,float diameter);
 /*
  * @author mengshige1988@qq.com
+ * @brief when obstical detcet set stop point
+ * @param None
+ * @return None
+ */
+	void setStopPoint();
+
+/*
+ * @author mengshige1988@qq.com
  * @brief when detect obstacle(rcon, cliff, bumper) from cm_linear_move_to_point() change spiral type
  * and set stop point
  * @param None
@@ -190,7 +198,6 @@ public:
 	{ st_ = NO_SPOT; }
 };
 
-/*---legacy function , remove??----*/
 /*
  * legacy function remote ?
  * */

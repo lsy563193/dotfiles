@@ -52,7 +52,9 @@ public:
 	bool adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
 	bool isReach();
-	void setOrigin(float pos_x, float pos_y){
+	void setOrigin(){
+		auto pos_x = robot::instance()->getOdomPositionX();
+		auto pos_y = robot::instance()->getOdomPositionY();
 		pos_x_ = pos_x;
 		pos_y_ = pos_y;
 	}

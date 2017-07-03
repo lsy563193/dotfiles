@@ -16,7 +16,8 @@
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
-	return g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right || g_remote_home;
+	return g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right || g_remote_home ||
+					g_bumper_jam || g_cliff_jam;
 }
 
 //FollowWallRegulator
@@ -197,7 +198,24 @@ bool BackRegulator::isSwitch()
 	auto distance = sqrtf(powf(pos_x_ - robot::instance()->getOdomPositionX(), 2) + powf(pos_y_ -
 																																											 robot::instance()->getOdomPositionY(),
 																																											 2));
-	return fabsf(distance) > 0.02f;
+	if(fabsf(distance) > 0.02f){
+		if(get_bumper_status()!= 0) {
+			g_bumper_cnt++ ;
+			if(g_bumper_cnt >=2) g_bumper_jam=true;
+		}else g_bumper_cnt = 0;
+
+		if(get_cliff_trig() != 0)
+		{
+			g_cliff_cnt++;
+			if(g_cliff_cnt >=2) g_cliff_jam=true;
+		}else g_cliff_cnt = 0;
+
+		if(g_bumper_cnt == 0 && g_cliff_cnt == 0)
+			return true;
+		else
+			setOrigin();
+	}
+	return false;
 }
 
 bool BackRegulator::isReach()
@@ -302,10 +320,8 @@ void RegulatorProxy::switchToNext()
 			p_reg_ = turn_reg_;
 		} else if (g_bumper_hitted || g_cliff_triggered)
 		{
-			g_turn_angle = bumper_turn_angle(get_bumper_status());
-			auto pos_x = robot::instance()->getOdomPositionX();
-			auto pos_y = robot::instance()->getOdomPositionY();
-			back_reg_->setOrigin(pos_x, pos_y);
+			g_turn_angle = bumper_turn_angle();
+			back_reg_->setOrigin();
 			p_reg_ = back_reg_;
 		}
 	} else if (p_reg_ == back_reg_)
@@ -322,9 +338,7 @@ void RegulatorProxy::switchToNext()
 		if(g_bumper_hitted || g_cliff_triggered)
 		{
 			g_bumper_hitted = g_cliff_triggered = false;//don't move back after turn
-			auto pos_x = robot::instance()->getOdomPositionX();
-			auto pos_y = robot::instance()->getOdomPositionY();
-			back_reg_->setOrigin(pos_x, pos_y);
+			back_reg_->setOrigin();
 			p_reg_ = back_reg_;
 		}
 			else
