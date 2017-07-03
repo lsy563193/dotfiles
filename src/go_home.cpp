@@ -15,16 +15,15 @@
 
 extern float saved_pos_x, saved_pos_y;
 /*----------------------------------------------------------------GO Home  ----------------*/
-/*	meaning of g_go_home_state_now 		*
- * -1: go_home				initial		*
- *	0: go_home				main_while	*
- *	1: around_chargestation	initial		*
- *	2: around_chargestation	main_while	*
- *	3: check_position		initial		*
- *	4: check_position		main_while	*
- *	5: by_path				initial		*
- *	6: by_path				main_while	*/
-int8_t g_go_home_state_now = -1;
+#define GO_HOME_INIT -1
+#define GO_HOME 0
+#define AROUND_CHARGER_STATION_INIT 1
+#define AROUND_CHARGER_STATION 2
+#define CHECK_POSITION_INIT 3
+#define CHECK_POSITION 4
+#define BY_PATH_INIT 5
+#define BY_PATH 6
+int8_t g_go_home_state_now = GO_HOME_INIT;
 bool g_bumper_left = false, g_bumper_right = false;
 bool g_go_to_charger_failed = false;
 // To save the clean mode when call go_home()
@@ -131,7 +130,7 @@ void go_to_charger(void)
 	float gyro_step = 0;
 
 	uint8_t go_home_bumper_counter = 0;
-	g_go_home_state_now = -1;
+	g_go_home_state_now = GO_HOME_INIT;
 	g_bumper_left = false;
 	g_bumper_right = false;
 
@@ -155,7 +154,7 @@ void go_to_charger(void)
 
 		if(g_fatal_quit_event)
 			break;
-		if(g_charge_detect && g_go_home_state_now != 4)
+		if(g_charge_detect && g_go_home_state_now != CHECK_POSITION)
 			break;
 		if(g_key_clean_pressed || g_cliff_all_triggered)
 			break;
@@ -184,7 +183,7 @@ void go_to_charger(void)
 		}
 
 		/*---go_home initial---*/
-		if(g_go_home_state_now == -1)
+		if(g_go_home_state_now == GO_HOME_INIT)
 		{
 			ROS_INFO("%s %d: Start go to charger.", __FUNCTION__, __LINE__);
 			entrance_to_check_position = 0;
@@ -205,17 +204,15 @@ void go_to_charger(void)
 			gyro_step = 0;
 
 			g_move_back_finished = true;
-			g_go_home_state_now = 0;
+			g_go_home_state_now = GO_HOME;
 
 			// Save the start angle.
 			last_angle = robot::instance()->getAngle();
 			// Enable the charge function
 			set_start_charge();
-
-			g_go_home_state_now = 0;
 		}
 		/*---go_home main while---*/
-		else if(g_go_home_state_now == 0)
+		else if(g_go_home_state_now == GO_HOME)
 		{
 			if(gyro_step < 360)
 			{
@@ -250,14 +247,14 @@ void go_to_charger(void)
 				{
 					ROS_INFO("Start with L-L.");
 					around_charger_stub_dir = 1;
-					g_go_home_state_now = 1;
+					g_go_home_state_now = AROUND_CHARGER_STATION_INIT;
 					continue;
 				}
 				if(receive_code&RconR_HomeR)// R  H_R
 				{
 					ROS_INFO("Start with R-R.");
 					around_charger_stub_dir = 0;
-					g_go_home_state_now = 1;
+					g_go_home_state_now = AROUND_CHARGER_STATION_INIT;
 					continue;
 				}
 
@@ -420,7 +417,7 @@ void go_to_charger(void)
 
 				if (!turn_finished)
 				{
-					g_go_home_state_now = 1;
+					g_go_home_state_now = AROUND_CHARGER_STATION_INIT;
 					continue;
 				}
 			}
@@ -431,16 +428,16 @@ void go_to_charger(void)
 			}
 		}
 		/*-----around_chargestation init-----*/
-		else if(g_go_home_state_now == 1)
+		else if(g_go_home_state_now == AROUND_CHARGER_STATION_INIT)
 		{
 			go_home_bumper_counter = 0;
 			move_forward(9, 9);
 			reset_rcon_status();
 			ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
-			g_go_home_state_now = 2;
+			g_go_home_state_now = AROUND_CHARGER_STATION;
 		}
 		/*-------around_chargestation main while-------*/
-		else if(g_go_home_state_now == 2)
+		else if(g_go_home_state_now == AROUND_CHARGER_STATION)
 		{
 			if(g_cliff_triggered)
 			{
@@ -450,7 +447,7 @@ void go_to_charger(void)
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1750);
 				turn_finished = false;
-				g_go_home_state_now = -1;
+				g_go_home_state_now = GO_HOME_INIT;
 				continue;
 			}
 			if(g_bumper_left || g_bumper_right)
@@ -459,7 +456,7 @@ void go_to_charger(void)
 				around_charger_stub_dir = 1 - around_charger_stub_dir;
 				go_home_bumper_counter++;
 				if(go_home_bumper_counter > 1)
-					g_go_home_state_now = -1;
+					g_go_home_state_now = GO_HOME_INIT;
 				target_distance = 0.03;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1800);
@@ -479,7 +476,7 @@ void go_to_charger(void)
 				if(no_signal_counter>500)
 				{
 					ROS_WARN("No charger signal received.");
-					g_go_home_state_now = -1;
+					g_go_home_state_now = GO_HOME_INIT;
 				}
 				continue;
 			}
@@ -490,20 +487,20 @@ void go_to_charger(void)
 				if(receive_code&(RconFR_HomeR))
 				{
 					ROS_INFO("%s, %d: Detect FR-R, call By_Path().", __FUNCTION__, __LINE__);
-					g_go_home_state_now = 5;
+					g_go_home_state_now = BY_PATH_INIT;
 					continue;
 				}
 				if(receive_code&(RconFL_HomeR))
 				{
 					ROS_INFO("%s, %d: Detect FL-R, call By_Path().", __FUNCTION__, __LINE__);
-					g_go_home_state_now = 5;
+					g_go_home_state_now = BY_PATH_INIT;
 					continue;
 				}
 				if(receive_code&(RconL_HomeR))
 				{
 					ROS_INFO("%s, %d: Detect L-R, Check position.", __FUNCTION__, __LINE__);
 					check_position_dir = ROUND_LEFT;
-					g_go_home_state_now = 3;
+					g_go_home_state_now = CHECK_POSITION_INIT;
 					continue;
 				}
 
@@ -595,20 +592,20 @@ void go_to_charger(void)
 				if(receive_code&(RconFL_HomeL))
 				{
 					ROS_INFO("%s, %d: Detect FL-L, call By_Path().", __FUNCTION__, __LINE__);
-					g_go_home_state_now = 5;
+					g_go_home_state_now = BY_PATH_INIT;
 					continue;
 				}
 				if(receive_code&(RconFR_HomeL))
 				{
 					ROS_INFO("%s, %d: Detect FR-L, call By_Path().", __FUNCTION__, __LINE__);
-					g_go_home_state_now = 5;
+					g_go_home_state_now = BY_PATH_INIT;
 					continue;
 				}
 				if((receive_code&(RconR_HomeL)))
 				{
 					ROS_INFO("%s, %d: Detect R-L, check position.", __FUNCTION__, __LINE__);
 					check_position_dir = ROUND_RIGHT;
-					g_go_home_state_now = 3;
+					g_go_home_state_now = CHECK_POSITION_INIT;
 					continue;
 				}
 
@@ -697,7 +694,7 @@ void go_to_charger(void)
 			}
 		}
 		/*---check_position initial---*/
-		else if(g_go_home_state_now == 3)
+		else if(g_go_home_state_now == CHECK_POSITION_INIT)
 		{
 			receive_code = 0;
 			gyro_step = 0;
@@ -715,10 +712,10 @@ void go_to_charger(void)
 
 			last_angle = robot::instance()->getAngle();
 			ROS_DEBUG("Last_Angle = %f.", last_angle);
-			g_go_home_state_now = 4;
+			g_go_home_state_now = CHECK_POSITION;
 		}
 		/*---check_position main while---*/
-		else if(g_go_home_state_now == 4)
+		else if(g_go_home_state_now == CHECK_POSITION)
 		{
 			if(g_charge_detect)
 			{
@@ -777,7 +774,7 @@ void go_to_charger(void)
 				{
 					if(receive_code & (RconFR_HomeL|RconFR_HomeR))
 					{
-						g_go_home_state_now = 5;
+						g_go_home_state_now = BY_PATH_INIT;
 						continue;
 					}
 				}
@@ -785,7 +782,7 @@ void go_to_charger(void)
 				{
 					if(receive_code & (RconFL_HomeL|RconFL_HomeR))
 					{
-						g_go_home_state_now = 5;
+						g_go_home_state_now = BY_PATH_INIT;
 						continue;
 					}
 				}
@@ -793,19 +790,19 @@ void go_to_charger(void)
 			if(gyro_step >= 360)
 			{
 				if(entrance_to_check_position == 0)
-					g_go_home_state_now = 2;
+					g_go_home_state_now = AROUND_CHARGER_STATION;
 				else
 				{
 					ROS_INFO("%s, %d: Robot can't see charger, return to gohome mode.", __FUNCTION__, __LINE__);
 					go_home_target_angle = ranged_angle(Gyro_GetAngle() - 1000);
 					turn_finished = false;
-					g_go_home_state_now = -1;
+					g_go_home_state_now = GO_HOME_INIT;
 					continue;
 				}
 			}
 		}
 		/*---by_path initial---*/
-		else if(g_go_home_state_now == 5)
+		else if(g_go_home_state_now == BY_PATH_INIT)
 		{
 			ROS_INFO("%s %d: Start by path logic.", __FUNCTION__, __LINE__);
 			receive_code=0;
@@ -821,11 +818,11 @@ void go_to_charger(void)
 			set_start_charge();
 			move_forward(9, 9);
 
-			g_go_home_state_now = 6;
+			g_go_home_state_now = BY_PATH;
 			continue;
 		}
 		/*---by_path main while---*/
-		else if(g_go_home_state_now == 6)
+		else if(g_go_home_state_now == BY_PATH)
 		{
 			if(g_charge_detect)
 			{
@@ -847,7 +844,7 @@ void go_to_charger(void)
 				{
 					target_distance = 0.3;
 					g_move_back_finished = false;
-					g_go_home_state_now = -1;
+					g_go_home_state_now = GO_HOME_INIT;
 					saved_pos_x = robot::instance()->getOdomPositionX();
 					saved_pos_y = robot::instance()->getOdomPositionY();
 					continue;
@@ -866,13 +863,13 @@ void go_to_charger(void)
 					ROS_WARN("%d: quick_back in !position_far", __LINE__);
 					target_distance = 0.3;
 					if(go_home_bumper_counter > 1)
-						g_go_home_state_now = -1;
+						g_go_home_state_now = GO_HOME_INIT;
 					continue;
 				}
 				else
 				{
 					if((get_rcon_status()&(RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR))==0)
-						g_go_home_state_now = -1;
+						g_go_home_state_now = GO_HOME_INIT;
 
 					target_distance = 0.03;
 					if(g_bumper_left)
@@ -890,7 +887,7 @@ void go_to_charger(void)
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1750);
 				turn_finished = false;
-				g_go_home_state_now = -1;
+				g_go_home_state_now = GO_HOME_INIT;
 				continue;
 			}
 
@@ -932,7 +929,7 @@ void go_to_charger(void)
 							{
 								move_forward(9, 9);
 								ROS_INFO("%s, %d: Robot goes far, back to gohome mode.", __FUNCTION__, __LINE__);
-								g_go_home_state_now = -1;
+								g_go_home_state_now = GO_HOME_INIT;
 								continue;
 							}
 						}
@@ -961,7 +958,7 @@ void go_to_charger(void)
 						stop_brifly();
 						check_position_dir = ROUND_LEFT;
 						entrance_to_check_position = 1;
-						g_go_home_state_now = 3;
+						g_go_home_state_now = CHECK_POSITION_INIT;
 						continue;
 					}
 				}
@@ -2364,7 +2361,7 @@ void go_home_unregister_events(void)
 
 void go_home_handle_charge_detect(bool state_now, bool state_last)
 {
-	if(g_go_home_state_now == 4)
+	if(g_go_home_state_now == CHECK_POSITION)
 	{
 		g_charge_detect = 1;
 	}
