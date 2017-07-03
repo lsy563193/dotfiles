@@ -84,9 +84,13 @@ static bool wf_is_reach_new_cell(Pose16_t &pose)
 
 static bool is_reach(void)
 {
+	/*check if spot turn*/
+	if  (get_sp_turn_count() > 400) {
+		reset_sp_turn_count();
+		return true;
+	}
 	if ( g_reach_count < REACH_COUNT_LIMIT)
 		return false;
-
 	ROS_INFO("reach_count>10(%d)",g_reach_count);
 	g_reach_count = 0;
 	int16_t th_diff;
@@ -248,6 +252,8 @@ static bool is_isolate() {
 //	pnt16ArTmp[0] = out_cell;
 
 //	path_escape_set_trapped_cell(pnt16ArTmp, 1);
+	cm_update_map();
+	debug_map(MAP, 0, 0);
 
 	Cell_t remote{0,0};
 	if ( out_cell != remote){

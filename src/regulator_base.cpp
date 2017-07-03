@@ -12,6 +12,7 @@
 #include "ros/ros.h"
 #include <event_manager.h>
 
+
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
@@ -38,6 +39,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		} else
 			speed = 23;
 		l_speed = r_speed = speed;
+//		ROS_INFO("Wf_1, speed = %d, g_wall_distance = %d", speed, g_wall_distance, g_wall_distance);
 //		ROS_INFO("get_right_wheel_step() < (uint32_t) g_straight_distance", get_right_wheel_step(), g_straight_distance);
 	} else
 	{
@@ -64,21 +66,29 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 				if (wheel_speed_base < 26)
 				{
+					reset_sp_turn_count();
 					if (r_speed > wheel_speed_base + 6)
 					{
 						r_speed = 34;
 						l_speed = 4;
+//						ROS_INFO("Wf_2, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
 					} else if (l_speed > wheel_speed_base + 10)
 					{
 						r_speed = 5;
 						l_speed = 30;
+//						ROS_INFO("Wf_3, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
 					}
 				} else
 				{
 					if (r_speed > 35)
 					{
+						add_sp_turn_count();
 						r_speed = 35;
 						l_speed = 4;
+//						ROS_INFO("Wf_4, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
+						ROS_WARN("get_sp_turn_count() = %d", get_sp_turn_count());
+					} else {
+						reset_sp_turn_count();
 					}
 				}
 			} else
@@ -89,17 +99,24 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 				if (wheel_speed_base < 26)
 				{
+					reset_sp_turn_count();
 					if (r_speed > wheel_speed_base + 4)
 					{
 						r_speed = 34;
 						l_speed = 4;
+//						ROS_INFO("Wf_5, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
 					}
 				} else
 				{
 					if (r_speed > 32)
 					{
+						add_sp_turn_count();
 						r_speed = 36;
 						l_speed = 4;
+//						ROS_INFO("Wf_6, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
+						ROS_WARN("g_sp_turn_count() = %d",get_sp_turn_count());
+					} else {
+						reset_sp_turn_count();
 					}
 				}
 			}
@@ -110,7 +127,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			if (l_speed < 0)l_speed = 0;
 			if (r_speed > 35)r_speed = 35;
 			if (r_speed < 5)r_speed = 5;
-
+//			ROS_INFO("Wf_7, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
 		} else
 		{
 			if (get_right_wheel_step() < 2000) jam_++;
@@ -301,7 +318,7 @@ void RegulatorProxy::switchToNext()
 		p_reg_ = turn_reg_;
 	} else if (p_reg_ == turn_reg_)
 	{
-
+		reset_sp_turn_count();
 		if(g_bumper_hitted || g_cliff_triggered)
 		{
 			g_bumper_hitted = g_cliff_triggered = false;//don't move back after turn
