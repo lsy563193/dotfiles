@@ -89,6 +89,8 @@ volatile uint8_t g_plan_status = 0;
 // Error code for exception case
 volatile uint8_t g_error_code = 0;
 
+//Variable for checking spot turn in wall follow mode
+volatile int32_t g_wf_sp_turn_count;
 /*----------------------- Work Timer functions--------------------------*/
 void reset_start_work_time()
 {
@@ -2959,4 +2961,19 @@ void beep_for_command(bool valid)
 		beep(2, 2, 0, 1);
 	else
 		beep(5, 2, 0, 1);
+}
+
+void reset_sp_turn_count()
+{
+	g_wf_sp_turn_count = 0;
+}
+
+int32_t get_sp_turn_count()
+{
+	return g_wf_sp_turn_count;
+}
+
+void add_sp_turn_count()
+{
+	g_wf_sp_turn_count++;
 }
