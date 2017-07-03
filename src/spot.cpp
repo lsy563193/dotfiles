@@ -107,7 +107,8 @@ uint8_t SpotMovement::findNearestPoint(Point32_t ref_point)
 		pos--;
 		tp_++;
 	}
-	ROS_WARN("\n%s,%d,tp_ (%d,%d)",__FUNCTION__,__LINE__,tp_->X,tp_->Y);
+	printf(",(%d,%d)\n",tp_->X,tp_->Y);
+	ROS_WARN("%s,%d,tp_ (%d,%d)",__FUNCTION__,__LINE__,tp_->X,tp_->Y);
 	return ret;
 }
 
@@ -360,6 +361,7 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 			{// not stuck
 				setStopPoint();
 				changeSpiralType();
+				next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 				generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);//re_generate target
 				uint8_t is_find = findNearestPoint(stop_point_);//find near_point_,  tp_
 				if(!is_find)
@@ -368,7 +370,6 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 				}
 				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ", __FUNCTION__, __LINE__, near_point_.X,
 								 near_point_.Y);
-				next_point = {cell_to_count(near_point_.X), cell_to_count(near_point_.Y)};
 				ret = 1;
 			} else// stuck
 			{
