@@ -1365,7 +1365,6 @@ uint8_t cm_touring(void)
 		if (get_clean_mode() != Clean_Mode_Spot)
 			cm_go_home();
 	}
-	cm_unregister_events();
 	return 0;
 }
 

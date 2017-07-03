@@ -59,12 +59,12 @@ void go_home(void)
 		{
 			if(last_clean_mode == Clean_Mode_GoHome)
 			{
+				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
 				g_key_clean_pressed = false;
 				g_cliff_all_triggered = false;
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
-			disable_motors();
 			break;
 		}
 		if(g_battery_low)
@@ -2166,12 +2166,12 @@ bool turn_connect(void)
 		{
 			if(get_clean_mode() == Clean_Mode_GoHome)
 			{
+				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
 				g_key_clean_pressed = false;
 				g_cliff_all_triggered = false;
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
-			disable_motors();
 			return true;
 		}
 	}
@@ -2199,12 +2199,12 @@ bool turn_connect(void)
 		{
 			if(get_clean_mode() == Clean_Mode_GoHome)
 			{
+				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
 				g_key_clean_pressed = false;
 				g_cliff_all_triggered = false;
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
-			disable_motors();
 			return true;
 		}
 	}
