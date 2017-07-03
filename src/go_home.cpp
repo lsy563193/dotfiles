@@ -224,18 +224,10 @@ void go_to_charger(void)
 				}
 
 				current_angle = robot::instance()->getAngle();
-				angle_offset = current_angle - last_angle;
+				angle_offset = ranged_angle(current_angle - last_angle);
 				ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
-				if (angle_offset > 0)
-				{
-					// For passing the boundary of angle range. e.g.(179 - (-178))
-					if (angle_offset >= 180)
-						angle_offset -= 360;
-					else
-					// For sudden change of angle, normally it shouldn't turn back for a few degrees, however if something hit robot to opposit degree, we can skip that angle change.
-						angle_offset = 0;
-				}
-				gyro_step += (-angle_offset);
+				if (angle_offset < 0)
+					gyro_step += (-angle_offset);
 				last_angle = current_angle;
 
 				set_dir_right();
@@ -698,6 +690,7 @@ void go_to_charger(void)
 		{
 			receive_code = 0;
 			gyro_step = 0;
+			stop_brifly();
 			if(check_position_dir == ROUND_LEFT)
 			{
 				ROS_INFO("Check position Dir = left");
@@ -756,18 +749,14 @@ void go_to_charger(void)
 			if(gyro_step < 360)
 			{
 				current_angle = robot::instance()->getAngle();
-				angle_offset = current_angle - last_angle;
-				ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
-				if (check_position_dir == ROUND_LEFT)
+				angle_offset = ranged_angle(current_angle - last_angle);
+				ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
+				if (check_position_dir == ROUND_LEFT && angle_offset > 0)
 				{
-					if (angle_offset < 0)
-						angle_offset += 360;
 					gyro_step += angle_offset;
 				}
-				if (check_position_dir == ROUND_RIGHT)
+				if (check_position_dir == ROUND_RIGHT && angle_offset < 0)
 				{
-					if (angle_offset > 0)
-						angle_offset -= 360;
 					gyro_step += (-angle_offset);
 				}
 				last_angle = current_angle;
@@ -2279,7 +2268,6 @@ bool go_home_check_turn_finish(int16_t target_angle)
 	if(std::abs(diff) < 10)
 	{
 		ROS_WARN("%s %d: Turn finish.", __FUNCTION__, __LINE__);
-		set_wheel_speed(0, 0);
 		return true;
 	}
 	//ROS_WARN("%s %d: Turn not finish yet, target: %d, current: %d, diff: %d.", __FUNCTION__, __LINE__, target_angle, Gyro_GetAngle(), diff);
