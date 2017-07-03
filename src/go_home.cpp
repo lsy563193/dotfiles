@@ -454,13 +454,12 @@ void go_to_charger(void)
 			{
 				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 				around_charger_stub_dir = 1 - around_charger_stub_dir;
-				go_home_bumper_counter++;
-				if(go_home_bumper_counter > 1)
+				if(++go_home_bumper_counter > 1)
 					g_go_home_state_now = GO_HOME_INIT;
 				target_distance = 0.03;
 				g_move_back_finished = false;
 				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1800);
-				ROS_WARN("%s %d: Set angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
+				ROS_WARN("%s %d: Set target angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
 				turn_finished = false;
 				continue;
 			}
@@ -473,7 +472,8 @@ void go_to_charger(void)
 			else
 			{
 				no_signal_counter++;
-				if(no_signal_counter>500)
+				set_wheel_speed(8, 8);
+				if(no_signal_counter>200)
 				{
 					ROS_WARN("No charger signal received.");
 					g_go_home_state_now = GO_HOME_INIT;
@@ -736,6 +736,23 @@ void go_to_charger(void)
 					stop_brifly();
 				}
 			}
+
+			if(g_bumper_left || g_bumper_right)
+			{
+				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
+				around_charger_stub_dir = 1 - around_charger_stub_dir;
+				if(++go_home_bumper_counter > 1)
+					g_go_home_state_now = GO_HOME_INIT;
+				else
+					g_go_home_state_now = AROUND_CHARGER_STATION_INIT;
+				target_distance = 0.03;
+				g_move_back_finished = false;
+				go_home_target_angle = ranged_angle(Gyro_GetAngle() + 1800);
+				ROS_WARN("%s %d: Set target angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
+				turn_finished = false;
+				continue;
+			}
+
 			if(gyro_step < 360)
 			{
 				current_angle = robot::instance()->getAngle();
