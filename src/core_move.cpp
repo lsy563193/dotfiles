@@ -1186,6 +1186,9 @@ int cm_cleaning()
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
 				cm_set_event_manager_handler_state(true);
 				cm_self_check();
+				ROS_INFO("get_clean_mode:",get_clean_mode());
+				if(get_clean_mode() == Clean_Mode_WallFollow)
+					wf_break_wall_follow();
 				cm_set_event_manager_handler_state(false);
 			}
 
