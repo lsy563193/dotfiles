@@ -2050,7 +2050,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_triggered = true;
 	g_cliff_all_cnt++;
 	g_cliff_triggered = true;
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2066,7 +2066,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
@@ -2083,7 +2083,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
@@ -2100,7 +2100,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2116,7 +2116,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2132,7 +2132,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2148,7 +2148,7 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
