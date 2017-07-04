@@ -848,6 +848,7 @@ void go_to_charger(void)
 				else
 				{
 					target_distance = 0.3;
+					ROS_WARN("%s %d: Turn connect failed, move back for %fm.", __FUNCTION__, __LINE__, target_distance);
 					g_move_back_finished = false;
 					g_go_home_state_now = GO_HOME_INIT;
 					saved_pos_x = robot::instance()->getOdomPositionX();
@@ -2212,10 +2213,10 @@ bool go_home_check_move_back_finish(float target_distance)
 		}
 		else
 		{
-			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
+			if (g_cliff_triggered)
+				ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
 			g_cliff_triggered = false;
 			g_cliff_cnt = 0;
-			return true;
 		}
 
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
@@ -2226,11 +2227,11 @@ bool go_home_check_move_back_finish(float target_distance)
 		}
 		else
 		{
-			ROS_WARN("%s %d: reset for bumper.", __FUNCTION__, __LINE__);
+			if (g_bumper_left || g_bumper_right)
+				ROS_WARN("%s %d: reset for bumper.", __FUNCTION__, __LINE__);
 			g_bumper_cnt = 0;
 			g_bumper_left = false;
 			g_bumper_right = false;
-			return true;
 		}
 	}
 

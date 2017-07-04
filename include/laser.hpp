@@ -14,7 +14,7 @@ public:
 
 	bool laserObstcalDetected(double distance, int angle, double range);
 
-	bool getLaserDistance(int begin, int end, double range, double *line_angle);
+	bool getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle);
 
 	void isReady(uint8_t val);
 	int8_t isReady();
@@ -31,7 +31,7 @@ public:
 
 	void pubLineMarker(std::vector<std::vector<Double_Point> > *groups);
 
-	bool fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim);
+	bool fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 

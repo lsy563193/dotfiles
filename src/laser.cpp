@@ -224,7 +224,7 @@ void Laser::stopShield(void)
 	ROS_INFO("%s %d: Stop laser shield.", __FUNCTION__, __LINE__);
 }
 
-bool Laser::getLaserDistance(int begin, int end, double range, double *line_angle)
+bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle)
 {
 	int		i, count;
 	bool	found = false;
@@ -253,7 +253,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double *line_angl
 	splitLine(Laser_Point, 0.01, 10);
 	splitLine2nd(&Laser_Group, 0.01,10);
 	mergeLine(&Laser_Group, 0.01);
-	fitLineGroup(&Laser_Group, 0.1);
+	fitLineGroup(&Laser_Group, 0.1, dis_lim);
 	//*line_angle = atan2(-a, b) * 180 / PI;
 	Laser_Group.clear();
 	if (!fit_line.empty()) {
@@ -775,7 +775,7 @@ void Laser::pubLineMarker(std::vector<std::vector<Double_Point> > *groups) {
 }
 
 
-bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim) {
+bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim) {
 	double 	a, b, c;
 	double line_angle;
 	const double L =0.2727716;
@@ -794,7 +794,7 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			//double y_l = fabs(c / b);
 			double dis = fabs(c / (sqrt(a * a + b * b)));
 			//if ((x_l > L) && (y_l > L)) {
-			if (dis > 0.217 || dis < 0.167) {
+			if (dis > dis_lim || dis < 0.167) {
 				//ROS_WARN("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
 				ROS_WARN("the line is too far away from robot. dis = %lf", dis);
 				continue;

@@ -139,6 +139,9 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			g_turn_angle = 920;
 //			reset_wheel_step();
 			g_wall_distance = Wall_High_Limit;
+			if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
+				laser_turn_angle(true);
+			}
 		}
 	}
 
@@ -336,7 +339,7 @@ void RegulatorProxy::switchToNext()
 	{
 		g_bumper_hitted = g_cliff_triggered = false;
 		if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
-			laser_turn_angle();
+			laser_turn_angle(false);
 		}
 		turn_reg_->setTarget(calc_target(g_turn_angle));
 		p_reg_ = turn_reg_;
