@@ -87,7 +87,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 						r_speed = 35;
 						l_speed = 4;
 //						ROS_INFO("Wf_4, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
-						ROS_WARN("get_sp_turn_count() = %d", get_sp_turn_count());
+//						ROS_WARN("get_sp_turn_count() = %d", get_sp_turn_count());
 					} else {
 						reset_sp_turn_count();
 					}
@@ -115,7 +115,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 						r_speed = 36;
 						l_speed = 4;
 //						ROS_INFO("Wf_6, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
-						ROS_WARN("g_sp_turn_count() = %d",get_sp_turn_count());
+//						ROS_WARN("g_sp_turn_count() = %d",get_sp_turn_count());
 					} else {
 						reset_sp_turn_count();
 					}
