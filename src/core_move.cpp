@@ -141,7 +141,7 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	uint8_t right_speed;
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
-		if(get_clean_mode() == Clean_Mode_WallFollow)
+//		if(get_clean_mode() == Clean_Mode_WallFollow)
 			if(g_turn_angle == 0)
 				g_turn_angle = bumper_turn_angle();
 
