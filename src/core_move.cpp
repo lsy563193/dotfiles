@@ -1247,6 +1247,7 @@ void cm_go_home()
 				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
 			}
 			disable_motors();
+			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 			robot::instance()->resetLowBatPause();
 			cm_reset_go_home();
 			return;
@@ -1283,6 +1284,14 @@ void cm_go_home()
 		}
 		else if (cm_go_to_charger(current_home_cell))
 			return;
+		else
+		{
+			set_led(100, 0);
+			set_vacmode(Vac_Normal, false);
+			set_vac_speed();
+			set_side_brush_pwm(50, 50);
+			set_main_brush_pwm(30);
+		}
 	}
 }
 
@@ -1297,12 +1306,6 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 	cm_unregister_events();
 	go_home();
 	cm_register_events();
-	work_motor_configure();
-	set_vacmode(Vac_Normal, false);
-	set_vac_speed();
-	set_side_brush_pwm(50, 50);
-	set_main_brush_pwm(30);
-
 	if (g_charge_detect)
 	{
 		if (robot::instance()->isLowBatPaused())
@@ -1338,7 +1341,6 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		cm_reset_go_home();
 		return true;
 	}
-
 	return false;
 }
 
@@ -2586,7 +2588,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	time_t start_time;
 	bool reset_manual_pause = false;
 
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;

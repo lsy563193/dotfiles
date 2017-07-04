@@ -82,11 +82,9 @@ void go_home(void)
 
 	}
 
-	extern std::list <Point32_t> g_home_point;
-	if(!g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed && g_home_point.empty())
+	if(!during_navigation && !g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed)
 	{
-		set_led(100, 0);
-		set_wheel_speed(0, 0);
+		disable_motors();
 		wav_play(WAV_BACK_TO_CHARGER_FAILED);
 	}
 
@@ -2286,7 +2284,7 @@ bool go_home_check_turn_finish(int16_t target_angle)
 
 void go_home_register_events(void)
 {
-	ROS_INFO("%s, %d: Register events.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s, %d: Register events.", __FUNCTION__, __LINE__);
 	event_manager_set_current_mode(EVT_MODE_HOME);
 #define event_manager_register_and_enable_x(name, y, enabled) \
 	event_manager_register_handler(y, &go_home_handle_ ##name); \
