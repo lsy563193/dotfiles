@@ -174,12 +174,14 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (robot::instance()->isLowBatPaused())
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+		s_laser->startShield();
 		return;
 	}
 	if (robot::instance()->isManualPaused() && s_slam != nullptr)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		robot::instance()->resetManualPause();
+		s_laser->startShield();
 		return;
 	}
 
