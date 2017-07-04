@@ -569,17 +569,16 @@ uint16_t bumper_turn_angle()
 	return g_turn_angle;
 }
 
-bool laser_turn_angle(void)
+bool laser_turn_angle(bool obs_status)
 {
 	stop_brifly();
 	double line_angle;
 	bool is_fit_sud;
 	uint8_t status = angle_to_bumper_status();
 	auto reset_wall_dis = 100;
-	if (status == AllBumperTrig)
-	{
-		ROS_ERROR("left and right bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0,&line_angle);
+	if (obs_status) {
+		ROS_ERROR("front obs trigger");
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0, 0.25, &line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
 			line_angle = int((180 - line_angle) * 10);
@@ -587,7 +586,28 @@ bool laser_turn_angle(void)
 			line_angle = int(fabs(line_angle) * 10);
 		}
 		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle >=900 && line_angle < 1800) {
+		if (is_fit_sud && line_angle >= 450 && line_angle < 1800) {
+			g_turn_angle = line_angle;
+			g_wall_distance = reset_wall_dis;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	}
+	if (status == AllBumperTrig)
+	{
+		ROS_ERROR("left and right bumper");
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0, 0.217,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
 			g_turn_angle = line_angle;
 			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
@@ -599,7 +619,7 @@ bool laser_turn_angle(void)
 	} else if (status == RightBumperTrig)
 	{
 		ROS_ERROR("right bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0,&line_angle);
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0, 0.217, &line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
 			line_angle = int((180 - line_angle) * 10);
@@ -619,7 +639,7 @@ bool laser_turn_angle(void)
 	} else if (status == LeftBumperTrig)
 	{
 		ROS_ERROR("left bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0,&line_angle);
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0, 0.217, &line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
 			line_angle = int((180 - line_angle) * 10);
