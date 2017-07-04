@@ -753,7 +753,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 		if (g_fatal_quit_event || g_key_clean_pressed
 			|| (!g_go_home && g_remote_home)
 			|| g_remote_spot // It will only be set if robot is not during spot.
-			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
+			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
@@ -889,7 +889,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
 			|| (!g_go_home && g_remote_home)
 			|| g_remote_spot // It will only be set if robot is not during spot.
-			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
+			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			return false;
 
 		auto angle_diff = ranged_angle(Gyro_GetAngle() - angle_start);
@@ -1145,9 +1145,9 @@ int cm_cleaning()
 			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		}
 
-		if (g_remote_dirt_keys)
+		if (g_remote_direction_keys)
 		{
-			g_remote_dirt_keys = false;
+			g_remote_direction_keys = false;
 			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT)
 			{
 				SpotMovement::instance()->setSpotType(NO_SPOT);
@@ -2687,7 +2687,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT){
 			beep_for_command(true);
-			g_remote_dirt_keys = true;
+			g_remote_direction_keys = true;
 		}
 		else
 			beep_for_command(false);
@@ -2703,7 +2703,7 @@ void cm_handle_battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && ! g_go_home) {
 		g_go_home = true;
-		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
+		ROS_WARN("%s %d: low battery, battery = %dmv ", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
 
