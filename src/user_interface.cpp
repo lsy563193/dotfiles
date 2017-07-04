@@ -384,7 +384,6 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 
 void user_interface_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote key plan has been pressed.", __FUNCTION__, __LINE__);
 	/* -----------------------------Check if plan event ----------------------------------*/
 	switch (get_plan_status())
 	{

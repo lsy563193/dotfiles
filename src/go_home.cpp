@@ -2286,6 +2286,7 @@ void go_home_register_events(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
 	event_manager_enable_handler(EVT_REMOTE_MAX, true);
+	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
 	/*---cliff---*/
 	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
@@ -2326,6 +2327,7 @@ void go_home_unregister_events(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
 	event_manager_enable_handler(EVT_REMOTE_MAX, false);
+	event_manager_enable_handler(EVT_REMOTE_PLAN, false);
 	/*---cliff---*/
 	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
 	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
