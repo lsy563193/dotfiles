@@ -52,7 +52,7 @@ bool g_key_clean_pressed = false;
 bool g_remote_home = false;
 bool g_remote_spot = false;
 bool g_remote_wallfollow = false;
-bool g_remote_dirt_keys = false;
+bool g_remote_direction_keys = false;
 /* Battery */
 bool g_battery_home = false;
 bool g_battery_low = false;
@@ -518,7 +518,7 @@ void event_manager_reset_status(void)
 	g_remote_home = false;
 	g_remote_spot = false;
 	g_remote_wallfollow = false;
-	g_remote_dirt_keys = false;
+	g_remote_direction_keys = false;
 	/* Battery */
 	g_battery_home = false;
 	g_battery_low = false;
