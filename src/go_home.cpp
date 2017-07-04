@@ -26,38 +26,40 @@ extern float saved_pos_x, saved_pos_y;
 int8_t g_go_home_state_now = GO_HOME_INIT;
 bool g_bumper_left = false, g_bumper_right = false;
 bool g_go_to_charger_failed = false;
-// To save the clean mode when call go_home()
-uint8_t last_clean_mode;
+bool during_navigation = false;
 
 void go_home(void)
 {
 	g_go_to_charger_failed = false;
-	last_clean_mode = get_clean_mode();
 
-	if (last_clean_mode == Clean_Mode_GoHome)
-	{
+	if (get_clean_mode() == Clean_Mode_GoHome)
+		during_navigation = false;
+	else
+		during_navigation = true;
+
+	if (!during_navigation)
 		event_manager_reset_status();
-		go_home_register_events();
-	}
+
+	go_home_register_events();
 
 	while (ros::ok())
 	{
 		if (g_fatal_quit_event || g_key_clean_pressed || g_go_to_charger_failed)
 		{
-			if(last_clean_mode == Clean_Mode_GoHome)
+			if(!during_navigation)
 				set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
 		if(g_charge_detect)
 		{
-			if(last_clean_mode == Clean_Mode_GoHome)
+			if(!during_navigation)
 				set_clean_mode(Clean_Mode_Charging);
 			disable_motors();
 			break;
 		}
 		if(g_cliff_all_triggered)
 		{
-			if(last_clean_mode == Clean_Mode_GoHome)
+			if(!during_navigation)
 			{
 				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
@@ -80,16 +82,13 @@ void go_home(void)
 
 	}
 
-	extern std::list <Point32_t> g_home_point;
-	if(!g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed && g_home_point.empty())
+	if(!during_navigation && !g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed)
 	{
-		set_led(100, 0);
-		set_wheel_speed(0, 0);
+		disable_motors();
 		wav_play(WAV_BACK_TO_CHARGER_FAILED);
 	}
 
-	if (last_clean_mode == Clean_Mode_GoHome)
-		go_home_unregister_events();
+	go_home_unregister_events();
 }
 
 void go_to_charger(void)
@@ -835,7 +834,7 @@ void go_to_charger(void)
 				if(g_charge_detect_cnt == 0)g_charge_detect_cnt++;
 				else
 				{
-					if(last_clean_mode == Clean_Mode_GoHome)
+					if(!during_navigation)
 						set_clean_mode(Clean_Mode_Charging);
 					disable_motors();
 					break;
@@ -2163,17 +2162,7 @@ bool turn_connect(void)
 			set_wheel_speed(speed, speed);
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
-		{
-			if(get_clean_mode() == Clean_Mode_GoHome)
-			{
-				disable_motors();
-				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
-				g_key_clean_pressed = false;
-				g_cliff_all_triggered = false;
-				set_clean_mode(Clean_Mode_Userinterface);
-			}
 			return true;
-		}
 	}
 	stop_brifly();
 	// Start turning left.
@@ -2196,17 +2185,7 @@ bool turn_connect(void)
 			set_wheel_speed(speed, speed);
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
-		{
-			if(get_clean_mode() == Clean_Mode_GoHome)
-			{
-				disable_motors();
-				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
-				g_key_clean_pressed = false;
-				g_cliff_all_triggered = false;
-				set_clean_mode(Clean_Mode_Userinterface);
-			}
 			return true;
-		}
 	}
 	stop_brifly();
 
@@ -2225,6 +2204,20 @@ bool go_home_check_move_back_finish(float target_distance)
 		return false;
 	else
 	{
+		if(g_cliff_triggered && get_cliff_trig())
+		{
+			if(++g_cliff_cnt>2)
+				g_cliff_jam = true;
+			return false;
+		}
+		else
+		{
+			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
+			g_cliff_triggered = false;
+			g_cliff_cnt = 0;
+			return true;
+		}
+
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
 		{
 			if(++g_bumper_cnt>2)
@@ -2237,19 +2230,7 @@ bool go_home_check_move_back_finish(float target_distance)
 			g_bumper_cnt = 0;
 			g_bumper_left = false;
 			g_bumper_right = false;
-		}
-
-		if(g_cliff_triggered && get_cliff_trig())
-		{
-			if(++g_cliff_cnt>2)
-				g_cliff_jam = true;
-			return false;
-		}
-		else
-		{
-			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
-			g_cliff_triggered = false;
-			g_cliff_cnt = 0;
+			return true;
 		}
 	}
 
@@ -2285,7 +2266,7 @@ bool go_home_check_turn_finish(int16_t target_angle)
 
 void go_home_register_events(void)
 {
-	ROS_INFO("%s, %d: Register events.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s, %d: Register events.", __FUNCTION__, __LINE__);
 	event_manager_set_current_mode(EVT_MODE_HOME);
 #define event_manager_register_and_enable_x(name, y, enabled) \
 	event_manager_register_handler(y, &go_home_handle_ ##name); \
@@ -2390,15 +2371,32 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 void go_home_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
+	time_t start_time;
+	bool reset_manual_pause = false;
 	beep_for_command(true);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
+	start_time = time(NULL);
 
+	if (during_navigation)
+		robot::instance()->setManualPause();
+
+	ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
 	while (get_key_press() & KEY_CLEAN)
 	{
-		ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
+		if (during_navigation && (time(NULL) - start_time > 3))
+		{
+			if (!reset_manual_pause)
+			{
+				beep_for_command(true);
+				reset_manual_pause = true;
+			}
+			robot::instance()->resetManualPause();
+			ROS_WARN("%s %d: Key clean is not released and manual pause has been reset.", __FUNCTION__, __LINE__);
+		}
 		usleep(20000);
 	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	reset_touch();
 }
@@ -2408,6 +2406,8 @@ void go_home_handle_remote_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
 	g_key_clean_pressed = true;
+	if (during_navigation)
+		robot::instance()->setManualPause();
 	reset_rcon_remote();
 }
 

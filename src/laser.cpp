@@ -157,7 +157,7 @@ void Laser::start(void)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			isReady(0);
 			ROS_WARN("%s %d: Laser starting interrupted, status: %d", __FUNCTION__, __LINE__, isReady());
@@ -790,10 +790,13 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			new_fit_line.B = b;
 			new_fit_line.C = c;
 			/*erase the lines which are far away from the robot*/
-			double x_l = fabs(c / a);
-			double y_l = fabs(c / b);
-			if ((x_l > L) && (y_l > L)) {
-				ROS_WARN("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
+			//double x_l = fabs(c / a);
+			//double y_l = fabs(c / b);
+			double dis = fabs(c / (sqrt(a * a + b * b)));
+			//if ((x_l > L) && (y_l > L)) {
+			if (dis > 0.217 || dis < 0.167) {
+				//ROS_WARN("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
+				ROS_WARN("the line is too far away from robot. dis = %lf", dis);
 				continue;
 			}
 			fit_line.push_back(new_fit_line);

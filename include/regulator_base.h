@@ -18,13 +18,9 @@ public:
 private:
 	bool isStop();
 
-//	enum RegulatorType{
-//		RegBase,
-//		RegBack,
-//		RegTurn,
-//		RegFlwl,
-//	};
-//	int type_;
+public:
+	static Point32_t s_target;
+	static Point32_t s_origin;
 };
 
 class FollowWallRegulator:public RegulatorBase{
@@ -35,14 +31,12 @@ public:
 	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isReach();
 	bool isSwitch();
-	void setTarget(Point32_t target){target_ = target;};
-	void setOrigin(Point32_t origin){origin_ = origin;};
+	void setTarget(Point32_t target){s_target = target;};
+	void setOrigin(Point32_t origin){s_origin = origin;};
 
 private:
 	int32_t	 previous_;
 	CMMoveType type_;
-	Point32_t target_;
-	Point32_t origin_;
 	int jam_;
 };
 
@@ -97,7 +91,6 @@ private:
 	TurnRegulator* turn_reg_;
 	BackRegulator* back_reg_;
 	FollowWallRegulator* follow_wall_reg_;
-	Point32_t target_;
 
 };
 

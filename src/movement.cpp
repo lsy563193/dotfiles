@@ -363,7 +363,7 @@ void quick_back(uint8_t speed, uint16_t distance)
 	{
 		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y,
 							robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
-		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect || g_cliff_all_triggered)
 			break;
 		usleep(20000);
 	}
