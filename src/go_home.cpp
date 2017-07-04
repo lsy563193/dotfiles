@@ -2162,9 +2162,7 @@ bool turn_connect(void)
 			set_wheel_speed(speed, speed);
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
-		{
 			return true;
-		}
 	}
 	stop_brifly();
 	// Start turning left.
@@ -2187,9 +2185,7 @@ bool turn_connect(void)
 			set_wheel_speed(speed, speed);
 		}
 		if(g_key_clean_pressed || g_cliff_all_triggered)
-		{
 			return true;
-		}
 	}
 	stop_brifly();
 
@@ -2208,6 +2204,20 @@ bool go_home_check_move_back_finish(float target_distance)
 		return false;
 	else
 	{
+		if(g_cliff_triggered && get_cliff_trig())
+		{
+			if(++g_cliff_cnt>2)
+				g_cliff_jam = true;
+			return false;
+		}
+		else
+		{
+			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
+			g_cliff_triggered = false;
+			g_cliff_cnt = 0;
+			return true;
+		}
+
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
 		{
 			if(++g_bumper_cnt>2)
@@ -2220,19 +2230,7 @@ bool go_home_check_move_back_finish(float target_distance)
 			g_bumper_cnt = 0;
 			g_bumper_left = false;
 			g_bumper_right = false;
-		}
-
-		if(g_cliff_triggered && get_cliff_trig())
-		{
-			if(++g_cliff_cnt>2)
-				g_cliff_jam = true;
-			return false;
-		}
-		else
-		{
-			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
-			g_cliff_triggered = false;
-			g_cliff_cnt = 0;
+			return true;
 		}
 	}
 
