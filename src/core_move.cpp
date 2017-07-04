@@ -1294,7 +1294,14 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 {
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("%s,%d,Call GoHome()",__FUNCTION__,__LINE__);
+	cm_unregister_events();
 	go_home();
+	cm_register_events();
+	work_motor_configure();
+	set_vacmode(Vac_Normal, false);
+	set_vac_speed();
+	set_side_brush_pwm(50, 50);
+	set_main_brush_pwm(30);
 
 	if (g_charge_detect)
 	{
@@ -1793,6 +1800,7 @@ bool cm_should_self_check(void)
 /* Event handler functions. */
 void cm_register_events()
 {
+	ROS_INFO("%s %d: Register events", __FUNCTION__, __LINE__);
 	event_manager_set_current_mode(EVT_MODE_NAVIGATION);
 
 	/* Bumper */
@@ -2583,7 +2591,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
 		robot::instance()->setManualPause();
 
 	start_time = time(NULL);
@@ -2614,7 +2622,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 
 	beep_for_command(true);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT &&get_clean_mode() != Clean_Mode_WallFollow)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
 		robot::instance()->setManualPause();
 	reset_rcon_remote();
 }

@@ -26,38 +26,40 @@ extern float saved_pos_x, saved_pos_y;
 int8_t g_go_home_state_now = GO_HOME_INIT;
 bool g_bumper_left = false, g_bumper_right = false;
 bool g_go_to_charger_failed = false;
-// To save the clean mode when call go_home()
-uint8_t last_clean_mode;
+bool during_navigation = false;
 
 void go_home(void)
 {
 	g_go_to_charger_failed = false;
-	last_clean_mode = get_clean_mode();
 
-	if (last_clean_mode == Clean_Mode_GoHome)
-	{
+	if (get_clean_mode() == Clean_Mode_GoHome)
+		during_navigation = false;
+	else
+		during_navigation = true;
+
+	if (!during_navigation)
 		event_manager_reset_status();
-		go_home_register_events();
-	}
+
+	go_home_register_events();
 
 	while (ros::ok())
 	{
 		if (g_fatal_quit_event || g_key_clean_pressed || g_go_to_charger_failed)
 		{
-			if(last_clean_mode == Clean_Mode_GoHome)
+			if(!during_navigation)
 				set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
 		if(g_charge_detect)
 		{
-			if(last_clean_mode == Clean_Mode_GoHome)
+			if(!during_navigation)
 				set_clean_mode(Clean_Mode_Charging);
 			disable_motors();
 			break;
 		}
 		if(g_cliff_all_triggered)
 		{
-			if(last_clean_mode == Clean_Mode_GoHome)
+			if(!during_navigation)
 			{
 				disable_motors();
 				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
@@ -88,8 +90,7 @@ void go_home(void)
 		wav_play(WAV_BACK_TO_CHARGER_FAILED);
 	}
 
-	if (last_clean_mode == Clean_Mode_GoHome)
-		go_home_unregister_events();
+	go_home_unregister_events();
 }
 
 void go_to_charger(void)
@@ -835,7 +836,7 @@ void go_to_charger(void)
 				if(g_charge_detect_cnt == 0)g_charge_detect_cnt++;
 				else
 				{
-					if(last_clean_mode == Clean_Mode_GoHome)
+					if(!during_navigation)
 						set_clean_mode(Clean_Mode_Charging);
 					disable_motors();
 					break;
@@ -2390,15 +2391,32 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 void go_home_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
+	time_t start_time;
+	bool reset_manual_pause = false;
 	beep_for_command(true);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
+	start_time = time(NULL);
 
+	if (during_navigation)
+		robot::instance()->setManualPause();
+
+	ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
 	while (get_key_press() & KEY_CLEAN)
 	{
-		ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
+		if (during_navigation && (time(NULL) - start_time > 3))
+		{
+			if (!reset_manual_pause)
+			{
+				beep_for_command(true);
+				reset_manual_pause = true;
+			}
+			robot::instance()->resetManualPause();
+			ROS_WARN("%s %d: Key clean is not released and manual pause has been reset.", __FUNCTION__, __LINE__);
+		}
 		usleep(20000);
 	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	reset_touch();
 }
@@ -2408,6 +2426,8 @@ void go_home_handle_remote_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
 	g_key_clean_pressed = true;
+	if (during_navigation)
+		robot::instance()->setManualPause();
 	reset_rcon_remote();
 }
 
