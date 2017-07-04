@@ -11,6 +11,10 @@
 #include "regulator_base.h"
 #include "ros/ros.h"
 #include <event_manager.h>
+#include <mathematics.h>
+
+Point32_t RegulatorBase::s_target = {0,0};
+Point32_t RegulatorBase::s_origin = {0,0};
 
 bool RegulatorBase::isStop()
 {
@@ -129,8 +133,9 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool FollowWallRegulator::isReach()
 {
 //	ROS_INFO("FollowWallRegulator isReach");
+	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	bool ret = false;
-	auto start_y = origin_.Y;
+	auto start_y = s_origin.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)
 	{
 		if (wf_is_end())
@@ -141,19 +146,19 @@ bool FollowWallRegulator::isReach()
 	} else if (get_clean_mode() == Clean_Mode_Navigation)
 	{
 
-		if ((start_y < target_.Y ^ map_get_y_count() < target_.Y))
+		if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
 		{
 			ROS_WARN("Robot has reach the target.");
-			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target_.Y,
+			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
 							 map_get_y_count());
 			ret = true;
 		}
 
-		if ((target_.Y > start_y && (start_y - map_get_y_count()) > 120) ||
-				(target_.Y < start_y && (map_get_y_count() - start_y) > 120))
+		if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
+				(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
 		{
 			ROS_WARN("Robot has round to the opposite direcition.");
-			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, target_.Y,
+			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
 							 map_get_y_count());
 			map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0),
 									 map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
@@ -257,9 +262,12 @@ bool TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 //RegulatorManage
 
-RegulatorProxy::RegulatorProxy(Point32_t target):target_(target)
+RegulatorProxy::RegulatorProxy(Point32_t target)
 {
 //	ROS_INFO("RegulatorProxy init");
+	s_target = target;
+	ROS_INFO("target(%d,%d)",target.X,target.Y);
+	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	turn_reg_ = new TurnRegulator(13);
 	back_reg_ = new BackRegulator();
 	follow_wall_reg_ = new FollowWallRegulator(g_cm_move_type);
@@ -328,7 +336,8 @@ void RegulatorProxy::switchToNext()
 		{
 			g_turn_angle = 0;
 			follow_wall_reg_->setOrigin({map_get_x_count(), map_get_y_count()});
-			follow_wall_reg_->setTarget(target_);
+			ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
+//			follow_wall_reg_->setTarget(target_);
 			p_reg_ = follow_wall_reg_;
 		}
 
