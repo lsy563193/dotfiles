@@ -66,8 +66,10 @@ void laser_pm_gpio(char val)
 Laser::Laser():nh_(),is_ready_(0),is_scanDataReady_(false)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
-	start_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("start_motor");
-	stop_mator_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_motor");
+	start_motor_cli_ = nh_.serviceClient<std_srvs::Empty>("start_motor");
+	stop_motor_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_motor");
+	start_laser_shield_cli_ = nh_.serviceClient<std_srvs::Empty>("start_laser_shield");
+	stop_laser_shield_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_laser_shield");
 	ROS_INFO("Laser init done!");
 
 	start();
@@ -78,8 +80,8 @@ Laser::~Laser()
 	stop();
 //	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 //	scan_sub_.shutdown();
-//	start_mator_cli_.shutdown();
-//	stop_mator_cli_.shutdown();
+//	start_motor_cli_.shutdown();
+//	stop_motor_cli_.shutdown();
 //	nh_.shutdown();
 	ROS_INFO("Laser stop");
 }
@@ -147,7 +149,7 @@ void Laser::start(void)
 	laser_pm_gpio('1');
 	usleep(20000);
 	ROS_WARN("%s %d: Start laser for the %d time.", __FUNCTION__, __LINE__, try_times);
-	start_mator_cli_.call(empty);
+	start_motor_cli_.call(empty);
 
 	while (ros::ok() && try_times <= 2)
 	{
@@ -169,7 +171,7 @@ void Laser::start(void)
 				laser_pm_gpio('1');
 				usleep(20000);
 				ROS_WARN("%s %d: Start laser for %d time.", __FUNCTION__, __LINE__, try_times);
-				start_mator_cli_.call(empty);
+				start_motor_cli_.call(empty);
 				start_time = time(NULL);
 				stopped = false;
 			}
@@ -197,13 +199,29 @@ void Laser::start(void)
 	ROS_ERROR("%s %d: Laser start timeout, status:%d.", __FUNCTION__, __LINE__, isReady());
 }
 
-void Laser::stop(void){
+void Laser::stop(void)
+{
+	stopShield();
 	std_srvs::Empty empty;
 	isReady(0);
 	is_scanDataReady_ = false;
 	ROS_INFO("%s %d: Stop laser.", __FUNCTION__, __LINE__);
-	stop_mator_cli_.call(empty);
+	stop_motor_cli_.call(empty);
 	laser_pm_gpio('0');
+}
+
+void Laser::startShield(void)
+{
+	std_srvs::Empty empty;
+	start_laser_shield_cli_.call(empty);
+	ROS_INFO("%s %d: Start laser shield.", __FUNCTION__, __LINE__);
+}
+
+void Laser::stopShield(void)
+{
+	std_srvs::Empty empty;
+	stop_laser_shield_cli_.call(empty);
+	ROS_INFO("%s %d: Stop laser shield.", __FUNCTION__, __LINE__);
 }
 
 bool Laser::getLaserDistance(int begin, int end, double range, double *line_angle)

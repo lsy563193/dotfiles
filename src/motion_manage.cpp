@@ -222,6 +222,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
+	s_laser->startShield();
 }
 
 MotionManage::~MotionManage()

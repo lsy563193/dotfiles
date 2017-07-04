@@ -34,6 +34,10 @@ public:
 	bool fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
+
+	void startShield(void);
+	void stopShield(void);
+
 private:
 	void stop(void);
 	void start(void);
@@ -45,8 +49,10 @@ private:
 
 	sensor_msgs::LaserScan laser_scan_data_;
 
-	ros::ServiceClient start_mator_cli_;
-	ros::ServiceClient stop_mator_cli_;
+	ros::ServiceClient start_motor_cli_;
+	ros::ServiceClient stop_motor_cli_;
+	ros::ServiceClient start_laser_shield_cli_;
+	ros::ServiceClient stop_laser_shield_cli_;
 
 	std::vector<Double_Point>	Laser_Point;
 	std::vector<std::vector<Double_Point> >	Laser_Group;
