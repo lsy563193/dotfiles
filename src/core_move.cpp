@@ -66,7 +66,7 @@ uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
-static bool g_is_should_follow_wall;
+static bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
@@ -141,7 +141,6 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	uint8_t right_speed;
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
-
 		if(get_clean_mode() == Clean_Mode_WallFollow)
 			if(g_turn_angle == 0)
 				g_turn_angle = bumper_turn_angle();
@@ -731,7 +730,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 {
 	// Reset the g_bumper_status_for_rounding.
-	g_is_should_follow_wall = false;
+	g_should_follow_wall = false;
 	g_bumper_status_for_rounding = 0;
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
@@ -757,7 +756,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
-			g_is_should_follow_wall = true;
+			g_should_follow_wall = true;
 			SpotType spt = SpotMovement::instance() -> getSpotType();
 			if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 				SpotMovement::instance()->setDirectChange();
@@ -796,7 +795,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 						g_move_back_finished = true;
 						g_bumper_hitted = false;
 						g_bumper_cnt = 0;
-						g_is_should_follow_wall = true;
+						g_should_follow_wall = true;
 						break;
 					}
 					else if (++g_bumper_cnt >= 2)
@@ -991,8 +990,8 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 //	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
 //						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
 //																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
-//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),is_should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_is_should_follow_wall);
-	if (!IS_X_AXIS(dir) || !g_is_should_follow_wall ||next_point->Y == map_get_y_count()) {
+//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_should_follow_wall);
+	if (!IS_X_AXIS(dir) || !g_should_follow_wall ||next_point->Y == map_get_y_count()) {
 
 		return false;
 	}
