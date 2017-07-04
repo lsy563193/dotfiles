@@ -72,7 +72,7 @@ extern bool g_key_clean_pressed;
 extern bool g_remote_home;
 extern bool g_remote_spot;
 extern bool g_remote_wallfollow;
-extern bool g_remote_dirt_keys;
+extern bool g_remote_direction_keys;
 /* Battery */
 extern bool g_battery_home;
 extern bool g_battery_low;

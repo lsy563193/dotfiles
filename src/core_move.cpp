@@ -66,7 +66,7 @@ uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
-static bool g_is_should_follow_wall;
+static bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
@@ -141,8 +141,7 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	uint8_t right_speed;
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
-
-		if(get_clean_mode() == Clean_Mode_WallFollow)
+//		if(get_clean_mode() == Clean_Mode_WallFollow)
 			if(g_turn_angle == 0)
 				g_turn_angle = bumper_turn_angle();
 
@@ -751,7 +750,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 {
 	// Reset the g_bumper_status_for_rounding.
-	g_is_should_follow_wall = false;
+	g_should_follow_wall = false;
 	g_bumper_status_for_rounding = 0;
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
@@ -773,11 +772,11 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 		if (g_fatal_quit_event || g_key_clean_pressed
 			|| (!g_go_home && g_remote_home)
 			|| g_remote_spot // It will only be set if robot is not during spot.
-			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
+			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
-			g_is_should_follow_wall = true;
+			g_should_follow_wall = true;
 			SpotType spt = SpotMovement::instance() -> getSpotType();
 			if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 				SpotMovement::instance()->setDirectChange();
@@ -816,7 +815,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 						g_move_back_finished = true;
 						g_bumper_hitted = false;
 						g_bumper_cnt = 0;
-						g_is_should_follow_wall = true;
+						g_should_follow_wall = true;
 						break;
 					}
 					else if (++g_bumper_cnt >= 2)
@@ -909,7 +908,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
 			|| (!g_go_home && g_remote_home)
 			|| g_remote_spot // It will only be set if robot is not during spot.
-			|| g_remote_dirt_keys) // It will only be set if robot is during spot.
+			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			return false;
 
 		auto angle_diff = ranged_angle(Gyro_GetAngle() - angle_start);
@@ -1011,8 +1010,8 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 //	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
 //						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
 //																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
-//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),is_should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_is_should_follow_wall);
-	if (!IS_X_AXIS(dir) || !g_is_should_follow_wall ||next_point->Y == map_get_y_count()) {
+//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_should_follow_wall);
+	if (!IS_X_AXIS(dir) || !g_should_follow_wall ||next_point->Y == map_get_y_count()) {
 
 		return false;
 	}
@@ -1165,9 +1164,9 @@ int cm_cleaning()
 			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		}
 
-		if (g_remote_dirt_keys)
+		if (g_remote_direction_keys)
 		{
-			g_remote_dirt_keys = false;
+			g_remote_direction_keys = false;
 			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT)
 			{
 				SpotMovement::instance()->setSpotType(NO_SPOT);
@@ -2070,7 +2069,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_triggered = true;
 	g_cliff_all_cnt++;
 	g_cliff_triggered = true;
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2086,7 +2085,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
@@ -2103,7 +2102,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
@@ -2120,7 +2119,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2136,7 +2135,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2152,7 +2151,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2168,7 +2167,7 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2717,7 +2716,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT){
 			beep_for_command(true);
-			g_remote_dirt_keys = true;
+			g_remote_direction_keys = true;
 		}
 		else
 			beep_for_command(false);
@@ -2733,7 +2732,7 @@ void cm_handle_battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && ! g_go_home) {
 		g_go_home = true;
-		ROS_WARN("%s %d: low battery, battery < %dmv is detected.", __FUNCTION__, __LINE__,
+		ROS_WARN("%s %d: low battery, battery = %dmv ", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
 

@@ -157,7 +157,7 @@ void Laser::start(void)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			isReady(0);
 			ROS_WARN("%s %d: Laser starting interrupted, status: %d", __FUNCTION__, __LINE__, isReady());
