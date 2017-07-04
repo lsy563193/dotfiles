@@ -1186,6 +1186,9 @@ int cm_cleaning()
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
 				cm_set_event_manager_handler_state(true);
 				cm_self_check();
+				ROS_INFO("get_clean_mode:",get_clean_mode());
+				if(get_clean_mode() == Clean_Mode_WallFollow)
+					wf_break_wall_follow();
 				cm_set_event_manager_handler_state(false);
 			}
 
@@ -2611,7 +2614,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 
 	beep_for_command(true);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT &&get_clean_mode() != Clean_Mode_WallFollow)
 		robot::instance()->setManualPause();
 	reset_rcon_remote();
 }
