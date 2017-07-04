@@ -245,8 +245,6 @@ MotionManage::~MotionManage()
 	reset_stop_event_status();
 	disable_motors();
 
-	if(g_bumper_jam)
-		wav_play(WAV_ERROR_BUMPER);
 	if (g_cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 

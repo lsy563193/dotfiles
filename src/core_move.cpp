@@ -1664,7 +1664,6 @@ void cm_self_check(void)
 						g_oc_wheel_right = false;
 						work_motor_configure();
 					}
-					break;
 				}
 			}
 			else
@@ -1686,7 +1685,6 @@ void cm_self_check(void)
 				g_cliff_cnt = 0;
 				g_cliff_all_cnt = 0;
 				g_cliff_jam = false;
-				break;
 			}
 			float distance;
 			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
@@ -1714,7 +1712,6 @@ void cm_self_check(void)
 				g_bumper_jam = false;
 				g_bumper_hitted = false;
 				g_bumper_cnt = 0;
-				break;
 			}
 
 			switch (bumper_jam_state)
@@ -1727,8 +1724,17 @@ void cm_self_check(void)
 					if (fabsf(distance) > 0.05f)
 					{
 						stop_brifly();
-						bumper_jam_state++;
-						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+						// If cliff jam during bumper self resume.
+						if (get_cliff_trig() && ++g_cliff_cnt > 2)
+						{
+							g_cliff_jam = true;
+							resume_cnt = 0;
+						}
+						else
+						{
+							bumper_jam_state++;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+						}
 						saved_pos_x = robot::instance()->getOdomPositionX();
 						saved_pos_y = robot::instance()->getOdomPositionY();
 					}
@@ -1740,19 +1746,34 @@ void cm_self_check(void)
 					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 					if (fabsf(distance) > 0.05f)
 					{
-						bumper_jam_state++;
-						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-						target_angle = Gyro_GetAngle() - 900;
-						if (target_angle < 0)
-							target_angle += 3600;
-						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
+						// If cliff jam during bumper self resume.
+						if (get_cliff_trig() && ++g_cliff_cnt > 2)
+						{
+							g_cliff_jam = true;
+							resume_cnt = 0;
+						}
+						else
+						{
+							bumper_jam_state++;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+							target_angle = Gyro_GetAngle() - 900;
+							if (target_angle < 0)
+								target_angle += 3600;
+							ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
+						}
 					}
 					break;
 				}
 				case 4:
 				{
 					ROS_DEBUG("%s %d: Gyro_GetAngle(): %d", __FUNCTION__, __LINE__, Gyro_GetAngle());
-					if (abs(Gyro_GetAngle() - target_angle) < 50)
+					// If cliff jam during bumper self resume.
+					if (get_cliff_trig() && ++g_cliff_cnt > 2)
+					{
+						g_cliff_jam = true;
+						resume_cnt = 0;
+					}
+					else if (abs(Gyro_GetAngle() - target_angle) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
@@ -1765,7 +1786,13 @@ void cm_self_check(void)
 				}
 				case 5:
 				{
-					if (abs(Gyro_GetAngle() - target_angle) < 50)
+					// If cliff jam during bumper self resume.
+					if (get_cliff_trig() && ++g_cliff_cnt > 2)
+					{
+						g_cliff_jam = true;
+						resume_cnt = 0;
+					}
+					else if (abs(Gyro_GetAngle() - target_angle) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						g_fatal_quit_event = true;
@@ -1807,6 +1834,8 @@ void cm_self_check(void)
 				}
 			}
 		}
+		else
+			break;
 
 		if(! regulator.adjustSpeed(bumper_jam_state))
 			break;
