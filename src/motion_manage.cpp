@@ -93,7 +93,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Launch obstacle detector interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -117,7 +117,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Detecting line interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -146,6 +146,8 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
+	bool eh_status_now=false, eh_status_last=false;
+
 	initSucceeded(true);
 
 	//1 Initialize for different mode.
@@ -174,12 +176,14 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (robot::instance()->isLowBatPaused())
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+		s_laser->startShield();
 		return;
 	}
 	if (robot::instance()->isManualPaused() && s_slam != nullptr)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		robot::instance()->resetManualPause();
+		s_laser->startShield();
 		return;
 	}
 
@@ -212,6 +216,16 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	robot::instance()->setTfReady(false);
 	while (!(s_slam->isMapReady() && robot::instance()->isTfReady()) && --count_n_10ms != 0)
 	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
+
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
+		{
+			ROS_WARN("%s %d: Waiting for slam interrupted.", __FUNCTION__, __LINE__);
+			break;
+		}
+
 		usleep(20000);
 	}
 	if (count_n_10ms == 0)
@@ -222,6 +236,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
+	s_laser->startShield();
 }
 
 MotionManage::~MotionManage()
@@ -344,10 +359,6 @@ bool MotionManage::initNavigationCleaning(void)
 
 	reset_start_work_time();
 	set_led(100, 0);
-	reset_rcon_status();
-	reset_move_with_remote();
-	reset_stop_event_status();
-	reset_touch();
 
 	// Initialize motors and map.
 	if (robot::instance()->isLowBatPaused())
@@ -399,6 +410,8 @@ bool MotionManage::initNavigationCleaning(void)
 		g_continue_point.X = g_continue_point.Y = 0;
 	}
 
+	reset_touch();
+
 	// Restart the gyro.
 	Set_Gyro_Off();
 	// Wait for 30ms to make sure the off command has been effectived.
@@ -417,6 +430,8 @@ bool MotionManage::initNavigationCleaning(void)
 		wav_play(WAV_CLEANING_START);
 	}
 
+	reset_rcon_status();
+	reset_touch();
 	// Can't register until now because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
 
@@ -437,7 +452,7 @@ bool MotionManage::initNavigationCleaning(void)
 		for (int i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			quick_back(20, 72);
-			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub()) {
+			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
 				disable_motors();
 				if (g_fatal_quit_event)
 				{

@@ -89,6 +89,8 @@ volatile uint8_t g_plan_status = 0;
 // Error code for exception case
 volatile uint8_t g_error_code = 0;
 
+//Variable for checking spot turn in wall follow mode
+volatile int32_t g_wf_sp_turn_count;
 /*----------------------- Work Timer functions--------------------------*/
 void reset_start_work_time()
 {
@@ -361,7 +363,7 @@ void quick_back(uint8_t speed, uint16_t distance)
 	{
 		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y,
 							robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
-		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect || g_cliff_all_triggered)
 			break;
 		usleep(20000);
 	}
@@ -2959,4 +2961,19 @@ void beep_for_command(bool valid)
 		beep(2, 2, 0, 1);
 	else
 		beep(5, 2, 0, 1);
+}
+
+void reset_sp_turn_count()
+{
+	g_wf_sp_turn_count = 0;
+}
+
+int32_t get_sp_turn_count()
+{
+	return g_wf_sp_turn_count;
+}
+
+void add_sp_turn_count()
+{
+	g_wf_sp_turn_count++;
 }

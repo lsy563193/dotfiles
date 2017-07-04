@@ -66,7 +66,7 @@ uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
-static bool g_is_should_follow_wall;
+static bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
@@ -141,7 +141,6 @@ bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &r
 	uint8_t right_speed;
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
-
 		if(get_clean_mode() == Clean_Mode_WallFollow)
 			if(g_turn_angle == 0)
 				g_turn_angle = bumper_turn_angle();
@@ -731,7 +730,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 {
 	// Reset the g_bumper_status_for_rounding.
-	g_is_should_follow_wall = false;
+	g_should_follow_wall = false;
 	g_bumper_status_for_rounding = 0;
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
@@ -757,7 +756,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
-			g_is_should_follow_wall = true;
+			g_should_follow_wall = true;
 			SpotType spt = SpotMovement::instance() -> getSpotType();
 			if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 				SpotMovement::instance()->setDirectChange();
@@ -796,7 +795,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 						g_move_back_finished = true;
 						g_bumper_hitted = false;
 						g_bumper_cnt = 0;
-						g_is_should_follow_wall = true;
+						g_should_follow_wall = true;
 						break;
 					}
 					else if (++g_bumper_cnt >= 2)
@@ -991,8 +990,8 @@ bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir)
 //	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
 //						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
 //																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
-//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),is_should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_is_should_follow_wall);
-	if (!IS_X_AXIS(dir) || !g_is_should_follow_wall ||next_point->Y == map_get_y_count()) {
+//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_should_follow_wall);
+	if (!IS_X_AXIS(dir) || !g_should_follow_wall ||next_point->Y == map_get_y_count()) {
 
 		return false;
 	}
@@ -1247,6 +1246,7 @@ void cm_go_home()
 				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
 			}
 			disable_motors();
+			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 			robot::instance()->resetLowBatPause();
 			cm_reset_go_home();
 			return;
@@ -1283,6 +1283,14 @@ void cm_go_home()
 		}
 		else if (cm_go_to_charger(current_home_cell))
 			return;
+		else
+		{
+			set_led(100, 0);
+			set_vacmode(Vac_Normal, false);
+			set_vac_speed();
+			set_side_brush_pwm(50, 50);
+			set_main_brush_pwm(30);
+		}
 	}
 }
 
@@ -1294,8 +1302,9 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 {
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("%s,%d,Call GoHome()",__FUNCTION__,__LINE__);
+	cm_unregister_events();
 	go_home();
-
+	cm_register_events();
 	if (g_charge_detect)
 	{
 		if (robot::instance()->isLowBatPaused())
@@ -1331,7 +1340,6 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		cm_reset_go_home();
 		return true;
 	}
-
 	return false;
 }
 
@@ -1793,6 +1801,7 @@ bool cm_should_self_check(void)
 /* Event handler functions. */
 void cm_register_events()
 {
+	ROS_INFO("%s %d: Register events", __FUNCTION__, __LINE__);
 	event_manager_set_current_mode(EVT_MODE_NAVIGATION);
 
 	/* Bumper */
@@ -2040,7 +2049,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_triggered = true;
 	g_cliff_all_cnt++;
 	g_cliff_triggered = true;
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2056,7 +2065,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
@@ -2073,7 +2082,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
@@ -2090,7 +2099,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2106,7 +2115,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2122,7 +2131,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2138,7 +2147,7 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_cliff_jam)
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2578,12 +2587,12 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	time_t start_time;
 	bool reset_manual_pause = false;
 
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	beep_for_command(true);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
 		robot::instance()->setManualPause();
 
 	start_time = time(NULL);
@@ -2614,7 +2623,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 
 	beep_for_command(true);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT &&get_clean_mode() != Clean_Mode_WallFollow)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
 		robot::instance()->setManualPause();
 	reset_rcon_remote();
 }

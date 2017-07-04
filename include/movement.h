@@ -713,3 +713,7 @@ void clear_manual_pause(void);
 //#endif
 
 void beep_for_command(bool valid);
+
+void reset_sp_turn_count();
+int32_t get_sp_turn_count();
+void add_sp_turn_count();
