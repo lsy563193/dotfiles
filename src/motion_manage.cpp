@@ -566,7 +566,8 @@ bool MotionManage::initSpotCleaning(void)
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
-	switch_vac_mode(false);
+	set_vac_mode(Vac_Max);
+	set_vac_speed();
 	set_main_brush_pwm(80);
 	set_side_brush_pwm(60, 60);
 

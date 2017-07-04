@@ -1151,6 +1151,7 @@ int cm_cleaning()
 			{
 				SpotMovement::instance()->setSpotType(NO_SPOT);
 				SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
+				work_motor_configure();
 				wav_play(WAV_CLEANING_CONTINUE);
 			}
 			else if (SpotMovement::instance()->getSpotType() == NORMAL_SPOT)
@@ -1370,8 +1371,11 @@ uint8_t cm_touring(void)
 	}
 	if (cm_cleaning() == 0)
 	{
-		if (get_clean_mode() != Clean_Mode_Spot)
+		if (get_clean_mode() != Clean_Mode_Spot){
 			cm_go_home();
+		}
+		else
+			g_go_home = false;
 	}
 	return 0;
 }

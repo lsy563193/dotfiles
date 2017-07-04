@@ -138,7 +138,10 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 		spot_init_ = 1;
 		if (getSpotType() == CLEAN_SPOT)
 		{
-			switch_vac_mode(false);
+			if(get_vac_mode() != Vac_Max){
+				set_vac_mode(Vac_Max);
+				set_vac_speed();
+			}
 			set_main_brush_pwm(80);
 			set_side_brush_pwm(60, 60);
 			wav_play(WAV_CLEANING_SPOT);
