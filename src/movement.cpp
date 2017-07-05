@@ -1447,6 +1447,15 @@ uint8_t get_vac_mode(void)
 	return g_vac_mode;
 }
 
+void set_vac_mode(uint8_t mode)
+{
+	if(mode <= Vac_Save)
+		g_vac_mode = mode;
+	else{
+		ROS_ERROR("%s,%d, variable error",__FUNCTION__,__LINE__);
+	}
+}
+
 void switch_vac_mode(bool is_save)
 {
 	// Switch the vacuum mode between Max and Normal

@@ -121,9 +121,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------GoHome mode------\n");
 				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
-
 				clear_manual_pause();
-
 				if (!Is_Gyro_On())
 				{
 					// Restart the gyro.
@@ -145,28 +143,17 @@ void *core_move_thread(void *)
 					wav_play(WAV_BACK_TO_CHARGER);
 				}
 
-				while (get_clean_mode()==Clean_Mode_GoHome)
-				{
-					// If GoHome() set clean mode as Clean_Mode_GoHome, it means it still needs to go to charger stub.
-#if Random_Find_Charger_Stub
-					HomeStraight_Mode();
-#else
-					go_home();
-#endif
-				}
+				go_home();
 				break;
 
 			case Clean_Mode_Test:
-
 				break;
 
 			case Clean_Mode_Remote:
 				ROS_INFO("\n-------Remote mode------\n");
 				set_main_pwr_byte(Clean_Mode_Remote);
 				robot::instance()->resetLowBatPause();
-
 				clear_manual_pause();
-
 				if (!Is_Gyro_On())
 				{
 					// Restart the gyro.
@@ -190,8 +177,9 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Spot mode------\n");
 				set_main_pwr_byte(Clean_Mode_Spot);
 				robot::instance()->resetLowBatPause();
+				clear_manual_pause();
 				reset_rcon_remote();
-                SpotMovement::instance()->setSpotType(NORMAL_SPOT);
+				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
 				cm_touring();
 				disable_motors();
 				usleep(200000);

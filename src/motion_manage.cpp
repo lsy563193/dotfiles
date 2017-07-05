@@ -245,8 +245,6 @@ MotionManage::~MotionManage()
 	reset_stop_event_status();
 	disable_motors();
 
-	if(g_bumper_jam)
-		wav_play(WAV_ERROR_BUMPER);
 	if (g_cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 
@@ -566,7 +564,8 @@ bool MotionManage::initSpotCleaning(void)
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
-	switch_vac_mode(false);
+	set_vac_mode(Vac_Max);
+	set_vac_speed();
 	set_main_brush_pwm(80);
 	set_side_brush_pwm(60, 60);
 

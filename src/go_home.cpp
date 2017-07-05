@@ -848,6 +848,7 @@ void go_to_charger(void)
 				else
 				{
 					target_distance = 0.3;
+					ROS_WARN("%s %d: Turn connect failed, move back for %fm.", __FUNCTION__, __LINE__, target_distance);
 					g_move_back_finished = false;
 					g_go_home_state_now = GO_HOME_INIT;
 					saved_pos_x = robot::instance()->getOdomPositionX();
@@ -2212,10 +2213,10 @@ bool go_home_check_move_back_finish(float target_distance)
 		}
 		else
 		{
-			ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
+			if (g_cliff_triggered)
+				ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
 			g_cliff_triggered = false;
 			g_cliff_cnt = 0;
-			return true;
 		}
 
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
@@ -2226,11 +2227,11 @@ bool go_home_check_move_back_finish(float target_distance)
 		}
 		else
 		{
-			ROS_WARN("%s %d: reset for bumper.", __FUNCTION__, __LINE__);
+			if (g_bumper_left || g_bumper_right)
+				ROS_WARN("%s %d: reset for bumper.", __FUNCTION__, __LINE__);
 			g_bumper_cnt = 0;
 			g_bumper_left = false;
 			g_bumper_right = false;
-			return true;
 		}
 	}
 
@@ -2285,6 +2286,7 @@ void go_home_register_events(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
 	event_manager_enable_handler(EVT_REMOTE_MAX, true);
+	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
 	/*---cliff---*/
 	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
 	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
@@ -2325,6 +2327,7 @@ void go_home_unregister_events(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
 	event_manager_enable_handler(EVT_REMOTE_MAX, false);
+	event_manager_enable_handler(EVT_REMOTE_PLAN, false);
 	/*---cliff---*/
 	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
 	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
@@ -2496,7 +2499,7 @@ void go_home_handle_over_current_wheel_left(bool state_now, bool state_last)
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
 		g_oc_wheel_left = true;
 	}
@@ -2513,7 +2516,7 @@ void go_home_handle_over_current_wheel_right(bool state_now, bool state_last)
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
 		g_oc_wheel_right = true;
 	}
