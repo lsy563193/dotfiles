@@ -46,12 +46,12 @@ void charge_function(void)
 	bool eh_status_now=false, eh_status_last=false;
 	set_led(100, 100);
 	set_start_charge();
-	wav_play(WAV_BATTERY_CHARGE);
 	set_plan_status(0);
+	charge_register_event();
+	event_manager_reset_status();
+	wav_play(WAV_BATTERY_CHARGE);
 	uint16_t bat_v;
 	ROS_INFO("%s %d: Start charger mode.", __FUNCTION__, __LINE__);
-	event_manager_reset_status();
-	charge_register_event();
 	while(ros::ok())
 	{
 		usleep(20000);
