@@ -750,8 +750,14 @@ void em_default_handle_key_clean(bool state_now, bool state_last)
 /* Remote */
 void em_default_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	if (get_plan_status() == 1 || get_plan_status() == 2)
+	{
+		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
+		beep_for_command(false);
+	}
+	else if (get_plan_status() == 3)
+		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
+
 	set_plan_status(0);
 	reset_rcon_remote();
 }
