@@ -321,7 +321,10 @@ uint8_t wf_clear(void)
 	robot::instance()->setBaselinkFrameType( Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
 	cm_update_position();
 	wf_mark_home_point();
-	wf_break_wall_follow();
+	//wf_break_wall_follow();
+	ROS_INFO("/*****************************************Release Memory************************************/");
+	g_wf_cell.clear();
+	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
 	g_isolate_count = 0;
 	return 0;
 }
@@ -357,7 +360,8 @@ bool wf_is_reach_isolate()
 		//g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
 		if (is_isolate()) {
 			g_isolate_count++;
-			map_reset(MAP);
+			//map_reset(MAP);
+			wf_break_wall_follow();
 			ROS_WARN("is_isolate");
 		} else {
 			g_isolate_count = 4;

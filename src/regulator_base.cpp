@@ -159,7 +159,7 @@ bool FollowWallRegulator::isReach()
 	{
 		if (wf_is_end())
 		{
-			wf_break_wall_follow();
+			//wf_break_wall_follow();
 			ret = true;
 		}
 	} else if (get_clean_mode() == Clean_Mode_Navigation)
