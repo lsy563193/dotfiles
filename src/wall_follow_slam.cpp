@@ -98,6 +98,10 @@ static bool is_reach(void)
 	int8_t pass_count = 0;
 	int8_t sum = REACH_COUNT_LIMIT;
 	bool fail_flag = 0;
+
+	std::vector<Cell_t> reach_point;
+	reach_point.clear();
+	Cell_t new_point;
 	try
 	{
 		for (int i = 1; i <= REACH_COUNT_LIMIT; i++)
@@ -108,6 +112,18 @@ static bool is_reach(void)
 			{
 				if (*r_iter == cell)
 				{
+					bool is_found = false;
+					new_point.X = r_iter->X;
+					new_point.Y = r_iter->Y;
+					for (std::vector<Cell_t>::iterator c_it = reach_point.begin(); is_found == false && c_it != reach_point.end(); ++c_it) {
+						if (new_point.X == c_it->X && new_point.Y == c_it-> Y) {
+							is_found = true;
+						}
+					}
+					if (is_found == false) {
+						ROS_INFO("p_new_point.X = %d, p_new_point.Y = %d",new_point.X, new_point.Y);
+						reach_point.push_back(new_point);
+					}
 					th_diff = (abs(r_iter->TH - cell.TH));
 					ROS_INFO("r_iter->X = %d, r_iter->Y = %d, r_iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
 					if (th_diff > 1800)
@@ -132,10 +148,15 @@ static bool is_reach(void)
 				}
 			}
 		}
-
+		ROS_ERROR("reach_point.size() = %d",reach_point.size());
+		if (reach_point.size() < 3) {
+			ROS_ERROR("reach_point.size() = %d < 3",reach_point.size());
+			return 0;
+		}
 		if (sum < REACH_COUNT_LIMIT) return 0;
 
 		if (pass_count < REACH_COUNT_LIMIT) return 0; else return 1;
+
 	}
 	catch (const std::out_of_range &oor)
 	{
