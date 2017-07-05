@@ -469,6 +469,8 @@ bool MotionManage::initNavigationCleaning(void)
 				return false;
 			}
 		}
+		auto cell = cm_update_position();
+		cm_set_home(map_get_x_count(), map_get_y_count());
 		stop_brifly();
 		extern bool g_from_station;
 		g_from_station = 1;
