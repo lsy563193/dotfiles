@@ -70,8 +70,8 @@ ObstacleDetector::ObstacleDetector() : nh_(""), nh_local_("~"), active_(false) {
   ROS_INFO("Obstacle Detector [ACTIVE]");
 }
 ObstacleDetector::~ObstacleDetector(){
-//  scan_sub_.shutdown();
-//  obstacles_pub_.shutdown();
+  scan_sub_.shutdown();
+  obstacles_pub_.shutdown();
   ROS_INFO("Obstacle Detector [OFF]");
 }
 
