@@ -297,8 +297,8 @@ RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 //	ROS_INFO("RegulatorProxy init");
 	s_target = target;
 	s_origin = origin;
-	ROS_INFO("target(%d,%d)",target.X,target.Y);
-	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
+//	ROS_INFO("target(%d,%d)",target.X,target.Y);
+//	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	turn_reg_ = new TurnRegulator(13);
 	back_reg_ = new BackRegulator();
 	follow_wall_reg_ = new FollowWallRegulator(g_cm_move_type);
