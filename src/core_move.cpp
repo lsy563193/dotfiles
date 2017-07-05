@@ -1056,7 +1056,7 @@ uint8_t cm_follow_wall(Point32_t target)
 	bool	eh_status_now=false, eh_status_last=false;
 	cm_set_event_manager_handler_state(true);
 	g_straight_distance = 300;
-	RegulatorProxy regulator(target);
+	RegulatorProxy regulator({map_get_x_count(),map_get_y_count()}, target);
 	robotbase_obs_adjust_count(100);
 	while (ros::ok())
 	{

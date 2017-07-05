@@ -31,8 +31,8 @@ public:
 	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isReach();
 	bool isSwitch();
-	void setTarget(Point32_t target){s_target = target;};
-	void setOrigin(Point32_t origin){s_origin = origin;};
+//	void setTarget(Point32_t target){s_target = target;};
+//	void setOrigin(Point32_t origin){s_origin = origin;};
 
 private:
 	int32_t	 previous_;
@@ -79,7 +79,7 @@ private:
 
 class RegulatorProxy:public RegulatorBase{
 public:
-	RegulatorProxy(Point32_t target);
+	RegulatorProxy(Point32_t origin, Point32_t target);
 	~RegulatorProxy();
 	void switchToNext();
 	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
