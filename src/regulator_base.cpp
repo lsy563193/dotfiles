@@ -152,7 +152,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool FollowWallRegulator::isReach()
 {
 //	ROS_INFO("FollowWallRegulator isReach");
-	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
+//	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	bool ret = false;
 	auto start_y = s_origin.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)

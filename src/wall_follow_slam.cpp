@@ -149,7 +149,7 @@ static bool is_reach(void)
 			}
 		}
 		ROS_ERROR("reach_point.size() = %d",reach_point.size());
-		if (reach_point.size() < 3) {
+		if (reach_point.size() < 4) {
 			ROS_ERROR("reach_point.size() = %d < 3",reach_point.size());
 			return 0;
 		}
