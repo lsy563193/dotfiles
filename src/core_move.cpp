@@ -568,17 +568,16 @@ uint16_t bumper_turn_angle()
 	return g_turn_angle;
 }
 
-bool laser_turn_angle(void)
+bool laser_turn_angle(bool obs_status)
 {
 	stop_brifly();
 	double line_angle;
 	bool is_fit_sud;
 	uint8_t status = angle_to_bumper_status();
 	auto reset_wall_dis = 100;
-	if (status == AllBumperTrig)
-	{
-		ROS_ERROR("left and right bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0,&line_angle);
+	if (obs_status) {
+		ROS_ERROR("front obs trigger");
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0, 0.25, &line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
 			line_angle = int((180 - line_angle) * 10);
@@ -586,7 +585,28 @@ bool laser_turn_angle(void)
 			line_angle = int(fabs(line_angle) * 10);
 		}
 		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle >=900 && line_angle < 1800) {
+		if (is_fit_sud && line_angle >= 450 && line_angle < 1800) {
+			g_turn_angle = line_angle;
+			g_wall_distance = reset_wall_dis;
+			ROS_WARN("laser generate turn angle!");
+			return true;
+		} else {
+			ROS_WARN("bumper generate turn angle!");
+			return false;
+		}
+	}
+	if (status == AllBumperTrig)
+	{
+		ROS_ERROR("left and right bumper");
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0, 0.217,&line_angle);
+		ROS_WARN("line_angle_raw = %lf", line_angle);
+		if (line_angle > 0) {
+			line_angle = int((180 - line_angle) * 10);
+		} else {
+			line_angle = int(fabs(line_angle) * 10);
+		}
+		ROS_WARN("line_angle = %lf", line_angle);
+		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
 			g_turn_angle = line_angle;
 			g_wall_distance = reset_wall_dis;
 			ROS_WARN("laser generate turn angle!");
@@ -598,7 +618,7 @@ bool laser_turn_angle(void)
 	} else if (status == RightBumperTrig)
 	{
 		ROS_ERROR("right bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0,&line_angle);
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0, 0.217, &line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
 			line_angle = int((180 - line_angle) * 10);
@@ -618,7 +638,7 @@ bool laser_turn_angle(void)
 	} else if (status == LeftBumperTrig)
 	{
 		ROS_ERROR("left bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0,&line_angle);
+		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0, 0.217, &line_angle);
 		ROS_WARN("line_angle_raw = %lf", line_angle);
 		if (line_angle > 0) {
 			line_angle = int((180 - line_angle) * 10);
@@ -1151,6 +1171,7 @@ int cm_cleaning()
 			{
 				SpotMovement::instance()->setSpotType(NO_SPOT);
 				SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
+				work_motor_configure();
 				wav_play(WAV_CLEANING_CONTINUE);
 			}
 			else if (SpotMovement::instance()->getSpotType() == NORMAL_SPOT)
@@ -1185,7 +1206,6 @@ int cm_cleaning()
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
 				cm_set_event_manager_handler_state(true);
 				cm_self_check();
-				ROS_INFO("get_clean_mode:",get_clean_mode());
 				if(get_clean_mode() == Clean_Mode_WallFollow)
 					wf_break_wall_follow();
 				cm_set_event_manager_handler_state(false);
@@ -1236,7 +1256,6 @@ void cm_go_home()
 
 	while (ros::ok())
 	{
-		set_led(100, 0);
 		if (g_home_point.empty())
 		{
 			ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
@@ -1262,6 +1281,13 @@ void cm_go_home()
 
 		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
 
+		// Resume from go home mode.
+		set_led(100, 0);
+		set_vacmode(Vac_Normal, false);
+		set_vac_speed();
+		set_side_brush_pwm(50, 50);
+		set_main_brush_pwm(30);
+
 		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
 		{
 			if (g_fatal_quit_event)
@@ -1283,14 +1309,6 @@ void cm_go_home()
 		}
 		else if (cm_go_to_charger(current_home_cell))
 			return;
-		else
-		{
-			set_led(100, 0);
-			set_vacmode(Vac_Normal, false);
-			set_vac_speed();
-			set_side_brush_pwm(50, 50);
-			set_main_brush_pwm(30);
-		}
 	}
 }
 
@@ -1370,8 +1388,11 @@ uint8_t cm_touring(void)
 	}
 	if (cm_cleaning() == 0)
 	{
-		if (get_clean_mode() != Clean_Mode_Spot)
+		if (get_clean_mode() != Clean_Mode_Spot){
 			cm_go_home();
+		}
+		else
+			g_go_home = false;
 	}
 	return 0;
 }
@@ -1644,7 +1665,6 @@ void cm_self_check(void)
 						g_oc_wheel_right = false;
 						work_motor_configure();
 					}
-					break;
 				}
 			}
 			else
@@ -1666,7 +1686,6 @@ void cm_self_check(void)
 				g_cliff_cnt = 0;
 				g_cliff_all_cnt = 0;
 				g_cliff_jam = false;
-				break;
 			}
 			float distance;
 			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
@@ -1694,7 +1713,6 @@ void cm_self_check(void)
 				g_bumper_jam = false;
 				g_bumper_hitted = false;
 				g_bumper_cnt = 0;
-				break;
 			}
 
 			switch (bumper_jam_state)
@@ -1707,8 +1725,17 @@ void cm_self_check(void)
 					if (fabsf(distance) > 0.05f)
 					{
 						stop_brifly();
-						bumper_jam_state++;
-						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+						// If cliff jam during bumper self resume.
+						if (get_cliff_trig() && ++g_cliff_cnt > 2)
+						{
+							g_cliff_jam = true;
+							resume_cnt = 0;
+						}
+						else
+						{
+							bumper_jam_state++;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+						}
 						saved_pos_x = robot::instance()->getOdomPositionX();
 						saved_pos_y = robot::instance()->getOdomPositionY();
 					}
@@ -1720,19 +1747,34 @@ void cm_self_check(void)
 					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 					if (fabsf(distance) > 0.05f)
 					{
-						bumper_jam_state++;
-						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-						target_angle = Gyro_GetAngle() - 900;
-						if (target_angle < 0)
-							target_angle += 3600;
-						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
+						// If cliff jam during bumper self resume.
+						if (get_cliff_trig() && ++g_cliff_cnt > 2)
+						{
+							g_cliff_jam = true;
+							resume_cnt = 0;
+						}
+						else
+						{
+							bumper_jam_state++;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
+							target_angle = Gyro_GetAngle() - 900;
+							if (target_angle < 0)
+								target_angle += 3600;
+							ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
+						}
 					}
 					break;
 				}
 				case 4:
 				{
 					ROS_DEBUG("%s %d: Gyro_GetAngle(): %d", __FUNCTION__, __LINE__, Gyro_GetAngle());
-					if (abs(Gyro_GetAngle() - target_angle) < 50)
+					// If cliff jam during bumper self resume.
+					if (get_cliff_trig() && ++g_cliff_cnt > 2)
+					{
+						g_cliff_jam = true;
+						resume_cnt = 0;
+					}
+					else if (abs(Gyro_GetAngle() - target_angle) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
@@ -1745,7 +1787,13 @@ void cm_self_check(void)
 				}
 				case 5:
 				{
-					if (abs(Gyro_GetAngle() - target_angle) < 50)
+					// If cliff jam during bumper self resume.
+					if (get_cliff_trig() && ++g_cliff_cnt > 2)
+					{
+						g_cliff_jam = true;
+						resume_cnt = 0;
+					}
+					else if (abs(Gyro_GetAngle() - target_angle) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						g_fatal_quit_event = true;
@@ -1787,6 +1835,8 @@ void cm_self_check(void)
 				}
 			}
 		}
+		else
+			break;
 
 		if(! regulator.adjustSpeed(bumper_jam_state))
 			break;
@@ -2541,7 +2591,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
 		g_oc_wheel_left = true;
 	}
@@ -2558,7 +2608,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
 		g_oc_wheel_right = true;
 	}

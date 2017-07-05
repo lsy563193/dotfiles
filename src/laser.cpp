@@ -224,7 +224,7 @@ void Laser::stopShield(void)
 	ROS_INFO("%s %d: Stop laser shield.", __FUNCTION__, __LINE__);
 }
 
-bool Laser::getLaserDistance(int begin, int end, double range, double *line_angle)
+bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle)
 {
 	int		i, count;
 	bool	found = false;
@@ -253,7 +253,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double *line_angl
 	splitLine(Laser_Point, 0.01, 10);
 	splitLine2nd(&Laser_Group, 0.01,10);
 	mergeLine(&Laser_Group, 0.01);
-	fitLineGroup(&Laser_Group, 0.1);
+	fitLineGroup(&Laser_Group, 0.1, dis_lim);
 	//*line_angle = atan2(-a, b) * 180 / PI;
 	Laser_Group.clear();
 	if (!fit_line.empty()) {
@@ -346,7 +346,7 @@ bool Laser::splitLine(const std::vector<Double_Point> &points, double consec_lim
 			++iter;
 		}
 	}
-	ROS_INFO("splitLine : Laser_Group.size = %d", Laser_Group.size());
+	ROS_INFO("splitLine : Laser_Group.size = %lu", Laser_Group.size());
 	return true;
 }
 #if 0
@@ -538,7 +538,7 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 		}
 	}
 
-	ROS_WARN("1Laser_Group.size = %d", (*groups).size());
+	ROS_WARN("1Laser_Group.size = %lu", (*groups).size());
 #if 0
 	/*loop for erasing the old lines which are unsplit*/
 	ROS_WARN("loop for erasing the old lines which are unsplit");
@@ -575,7 +575,7 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	for (std::vector<std::vector<Double_Point> >::iterator iter = new_group.begin(); iter != new_group.end(); ++iter) {
 		(*groups).push_back(*iter);
 		ROS_WARN("push_back lines in new_group");
-		ROS_WARN("3Laser_Group.size = %d", (*groups).size());
+		ROS_WARN("3Laser_Group.size = %u", (*groups).size());
 	}
 	new_group.clear();
 #endif
@@ -588,21 +588,21 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 			ROS_WARN("erase the unsplit line! index = %d", i);
 			std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin() + (groups_erased_index[i] + i);
 			(*groups).erase(iter);
-			ROS_WARN("2Laser_Group.size = %d", (*groups).size());
+			ROS_WARN("2Laser_Group.size = %lu", (*groups).size());
 
 			for (int j = 0; j < 2; j++) {
 				ROS_WARN("push_back lines in new_group");
-				ROS_WARN("new_group.begin->size() = %d", (new_group.begin()->size()));
-				ROS_WARN("new_group.size() = %d", (new_group.size()));
+				ROS_WARN("new_group.begin->size() = %lu", (new_group.begin()->size()));
+				ROS_WARN("new_group.size() = %lu", (new_group.size()));
 				(*groups).insert((*groups).begin() + (groups_erased_index[i] + j), *(new_group.begin() + j));
 				//(*groups).push_back(new_group.begin());
 				//new_group.pop_back();
-				ROS_WARN("3Laser_Group.size = %d", (*groups).size());
+				ROS_WARN("3Laser_Group.size = %lu", (*groups).size());
 			}
 		}
 	}
 
-	ROS_WARN("new_group.size = %d", new_group.size());
+	ROS_WARN("new_group.size = %lu", new_group.size());
 	groups_erased_index.clear();
 	new_group.clear();
 
@@ -617,7 +617,7 @@ bool Laser::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 		}
 	}
 
-	ROS_WARN("4Laser_Group.size = %d", (*groups).size());
+	ROS_WARN("4Laser_Group.size = %lu", (*groups).size());
 
 	/*if the lines still can be splited, iterate to split it*/
 	if (end_iterate_flag == false) {
@@ -685,7 +685,7 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 				if (t_max < t_lim) {
 					int index = std::distance((*groups).begin(), iter);
 					merge_index.push_back(index);
-					ROS_WARN("5Laser_Group.size = %d", (*groups).size());
+					ROS_WARN("5Laser_Group.size = %lu", (*groups).size());
 					ROS_WARN("merge! index = %d and %d", index, (index + 1));
 				}
 			}
@@ -707,13 +707,13 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 			}
 			(*groups).erase(iter - loop_count);
 			ROS_WARN("merge : erase front");
-			ROS_WARN("Laser_Group.size = %d", (*groups).size());
+			ROS_WARN("Laser_Group.size = %lu", (*groups).size());
 			(*groups).erase(iter + 1 - loop_count);
 			ROS_WARN("merge : erase rear");
-			ROS_WARN("5Laser_Group.size = %d", (*groups).size());
+			ROS_WARN("5Laser_Group.size = %lu", (*groups).size());
 			(*groups).insert((*groups).begin() + (*m_iter) - loop_count, new_line);
 			ROS_WARN("merge : insert");
-			ROS_WARN("5Laser_Group.size = %d", (*groups).size());
+			ROS_WARN("5Laser_Group.size = %lu", (*groups).size());
 			loop_count++;
 		}
 	}
@@ -775,7 +775,7 @@ void Laser::pubLineMarker(std::vector<std::vector<Double_Point> > *groups) {
 }
 
 
-bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim) {
+bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim) {
 	double 	a, b, c;
 	double line_angle;
 	const double L =0.2727716;
@@ -794,7 +794,7 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			//double y_l = fabs(c / b);
 			double dis = fabs(c / (sqrt(a * a + b * b)));
 			//if ((x_l > L) && (y_l > L)) {
-			if (dis > 0.217 || dis < 0.167) {
+			if (dis > dis_lim || dis < 0.167) {
 				//ROS_WARN("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
 				ROS_WARN("the line is too far away from robot. dis = %lf", dis);
 				continue;

@@ -1638,7 +1638,7 @@ void path_display_path_points()
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
 	msg += "\n";
-	ROS_INFO(msg.c_str());
+	ROS_INFO("%s,%d,%s",__FUNCTION__,__LINE__,msg.c_str());
 }
 
 #endif

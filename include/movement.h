@@ -470,7 +470,10 @@ uint8_t get_clean_mode(void);
  * */
 void set_vacmode(uint8_t mode, bool is_save = false);
 
+
 void set_bldc_speed(uint32_t S);
+
+void set_vac_mode(uint8_t mode);
 
 void set_vac_speed(void);
 

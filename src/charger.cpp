@@ -22,6 +22,7 @@ uint8_t g_stop_charge_counter = 0;
 
 uint8_t charge_plan_status = 0;
 uint8_t charge_reject_reason = 0;
+time_t charge_plan_confirm_time = time(NULL);
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {
@@ -48,7 +49,7 @@ void charge_function(void)
 	wav_play(WAV_BATTERY_CHARGE);
 	set_plan_status(0);
 	uint16_t bat_v;
-	ROS_INFO("[gotocharger.cpp] Start charger mode.");
+	ROS_INFO("%s %d: Start charger mode.", __FUNCTION__, __LINE__);
 	event_manager_reset_status();
 	charge_register_event();
 	while(ros::ok())
@@ -132,11 +133,18 @@ void charge_function(void)
 		}
 		else if (charge_plan_status)
 		{
-			if (charge_plan_status == 2)
+			if (charge_plan_status == 2 && (time(NULL) - charge_plan_confirm_time >= 3))
+			{
+				ROS_WARN("%s %d: Cancel appointment.", __FUNCTION__, __LINE__);
 				wav_play(WAV_CANCEL_APPOINTMENT);
-			else if (charge_plan_status == 4)
+				charge_plan_status = 0;
+			}
+			else if (charge_plan_status == 1 && (time(NULL) - charge_plan_confirm_time >= 3))
+			{
+				ROS_WARN("%s %d: Confirm appointment.", __FUNCTION__, __LINE__);
 				wav_play(WAV_APPOINTMENT_DONE);
-			charge_plan_status = 0;
+				charge_plan_status = 0;
+			}
 		}
 		if (get_clean_mode() == Clean_Mode_Navigation)
 			break;
@@ -172,6 +180,12 @@ void charge_function(void)
 	set_stop_charge();
 	// Wait for 20ms to make sure stop charging command has been sent.
 	usleep(20000);
+
+	if (charge_plan_status == 2)
+		wav_play(WAV_CANCEL_APPOINTMENT);
+	else if (charge_plan_status == 1)
+		wav_play(WAV_APPOINTMENT_DONE);
+	charge_plan_status = 0;
 }
 
 void charge_register_event(void)
@@ -229,20 +243,23 @@ void charge_handle_charge_detect(bool state_now, bool state_last)
 }
 void charge_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: Remote key plan has been pressed.", __FUNCTION__, __LINE__);
+	if (get_plan_status())
+		charge_plan_confirm_time = time(NULL);
 
 	switch(get_plan_status())
 	{
 		case 1:
 		{
-			ROS_WARN("%s %d: Remote key plan has been pressed. Plan received.", __FUNCTION__, __LINE__);
 			beep_for_command(true);
+			charge_plan_status = 1;
+			ROS_WARN("%s %d: Plan received, plan status: %d.", __FUNCTION__, __LINE__, charge_plan_status);
 			break;
 		}
 		case 2:
 		{
-			ROS_WARN("%s %d: Plan canceled.", __FUNCTION__, __LINE__);
+			beep_for_command(true);
 			charge_plan_status = 2;
+			ROS_WARN("%s %d: Plan cancel received, plan status: %d.", __FUNCTION__, __LINE__, charge_plan_status);
 			break;
 		}
 		case 3:
@@ -252,18 +269,21 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 1;
+				charge_plan_status = 2;
 				break;
 			}
 			else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 2;
+				charge_plan_status = 2;
 				break;
 			}
 			else if (!check_bat_ready_to_clean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 3;
+				charge_plan_status = 2;
 				break;
 			}
 			else
@@ -274,12 +294,6 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 					set_clean_mode(Clean_Mode_Navigation);
 				break;
 			}
-		}
-		case 4:
-		{
-			ROS_WARN("%s %d: Plan confirmed.", __FUNCTION__, __LINE__);
-			charge_plan_status = 4;
-			break;
 		}
 	}
 	set_plan_status (0);

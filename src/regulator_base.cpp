@@ -20,8 +20,7 @@ Point32_t RegulatorBase::s_origin = {0,0};
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
-	return g_fatal_quit_event || g_key_clean_pressed || g_oc_wheel_left || g_oc_wheel_right || g_remote_home ||
-					g_bumper_jam || g_cliff_jam;
+	return g_fatal_quit_event || g_key_clean_pressed || g_remote_home || cm_should_self_check();
 }
 
 //FollowWallRegulator
@@ -139,6 +138,9 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			g_turn_angle = 920;
 //			reset_wheel_step();
 			g_wall_distance = Wall_High_Limit;
+			if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
+				laser_turn_angle(true);
+			}
 		}
 	}
 
@@ -150,7 +152,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool FollowWallRegulator::isReach()
 {
 //	ROS_INFO("FollowWallRegulator isReach");
-	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
+//	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	bool ret = false;
 	auto start_y = s_origin.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)
@@ -348,7 +350,7 @@ void RegulatorProxy::switchToNext()
 	{
 		g_bumper_hitted = g_cliff_triggered = false;
 		if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
-			laser_turn_angle();
+			laser_turn_angle(false);
 		}
 		turn_reg_->setTarget(calc_target(g_turn_angle));
 		p_reg_ = turn_reg_;

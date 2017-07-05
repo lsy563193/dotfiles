@@ -31,6 +31,7 @@ bool battery_ready_to_clean = true;
 bool long_press_to_sleep = false;
 uint8_t user_interface_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 uint8_t user_interface_plan_status = 0;
+time_t user_interface_plan_confirm_time = time(NULL);
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void User_Interface(void)
 {
@@ -161,11 +162,18 @@ void User_Interface(void)
 		}
 		else if (user_interface_plan_status)
 		{
-			if (user_interface_plan_status == 2)
+			if (user_interface_plan_status == 2 && (time(NULL) - user_interface_plan_confirm_time >= 3))
+			{
+				ROS_WARN("%s %d: Cancel appointment.", __FUNCTION__, __LINE__);
 				wav_play(WAV_CANCEL_APPOINTMENT);
-			else if (user_interface_plan_status == 4)
+				user_interface_plan_status = 0;
+			}
+			else if (user_interface_plan_status == 1 && (time(NULL) - user_interface_plan_confirm_time >= 3))
+			{
+				ROS_WARN("%s %d: Confirm appointment.", __FUNCTION__, __LINE__);
 				wav_play(WAV_APPOINTMENT_DONE);
-			user_interface_plan_status = 0;
+				user_interface_plan_status = 0;
+			}
 		}
 		// Alarm for error.
 		else if (get_error_code())
@@ -183,6 +191,12 @@ void User_Interface(void)
 	}
 
 	user_interface_unregister_events();
+
+	if (user_interface_plan_status == 2)
+		wav_play(WAV_CANCEL_APPOINTMENT);
+	else if (user_interface_plan_status == 1)
+		wav_play(WAV_APPOINTMENT_DONE);
+	user_interface_plan_status = 0;
 }
 
 void user_interface_register_events(void)
@@ -384,21 +398,24 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 
 void user_interface_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote key plan has been pressed.", __FUNCTION__, __LINE__);
 	/* -----------------------------Check if plan event ----------------------------------*/
+	if (get_plan_status())
+		user_interface_plan_confirm_time = time(NULL);
+
 	switch (get_plan_status())
 	{
 		case 1:
 		{
-			ROS_WARN("%s %d: Remote key plan has been pressed. Plan received.", __FUNCTION__, __LINE__);
 			beep_for_command(true);
 			user_interface_plan_status = 1;
+			ROS_WARN("%s %d: Plan received, plan status: %d.", __FUNCTION__, __LINE__, user_interface_plan_status);
 			break;
 		}
 		case 2:
 		{
-			ROS_WARN("%s %d: Plan canceled.", __FUNCTION__, __LINE__);
+			beep_for_command(true);
 			user_interface_plan_status = 2;
+			ROS_WARN("%s %d: Plan cancel received, plan status: %d.", __FUNCTION__, __LINE__, user_interface_plan_status);
 			break;
 		}
 		case 3:
@@ -418,6 +435,13 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 				user_interface_plan_status = 2;
 				break;
 			}
+			else if (!check_bat_ready_to_clean())
+			{
+				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
+				user_interface_reject_reason = 3;
+				user_interface_plan_status = 2;
+				break;
+			}
 			else
 			{
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
@@ -426,12 +450,6 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 					temp_mode=Clean_Mode_Navigation;
 				break;
 			}
-		}
-		case 4:
-		{
-			ROS_WARN("%s %d: Plan confirmed.", __FUNCTION__, __LINE__);
-			user_interface_plan_status = 4;
-			break;
 		}
 	}
 

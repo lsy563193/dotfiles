@@ -533,7 +533,7 @@ void event_manager_reset_status(void)
 /* Bumper */
 void em_default_handle_bumper_all(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 	if (state_now == true && state_last == true) {
 		bumper_all_cnt++;
 
@@ -552,7 +552,7 @@ void em_default_handle_bumper_all(bool state_now, bool state_last)
 
 void em_default_handle_bumper_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 	if (state_now == true && state_last == true) {
 		bumper_left_cnt++;
 
@@ -570,7 +570,7 @@ void em_default_handle_bumper_left(bool state_now, bool state_last)
 
 void em_default_handle_bumper_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 
 	if (state_now == true && state_last == true) {
 		bumper_right_cnt++;
@@ -590,37 +590,37 @@ void em_default_handle_bumper_right(bool state_now, bool state_last)
 /* OBS */
 void em_default_handle_obs_front(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	move_back();
-	stop_brifly();
+	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	//move_back();
+	//stop_brifly();
 }
 
 void em_default_handle_obs_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	move_back();
-	stop_brifly();
+	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	//move_back();
+	//stop_brifly();
 }
 
 void em_default_handle_obs_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	move_back();
-	stop_brifly();
+	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	//move_back();
+	//stop_brifly();
 }
 
 void em_default_handle_obs_wall_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	move_back();
-	stop_brifly();
+	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	//move_back();
+	//stop_brifly();
 }
 
 void em_default_handle_obs_wall_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	move_back();
-	stop_brifly();
+	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	//move_back();
+	//stop_brifly();
 }
 
 /* Cliff */
@@ -750,8 +750,14 @@ void em_default_handle_key_clean(bool state_now, bool state_last)
 /* Remote */
 void em_default_handle_remote_plan(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	if (get_plan_status() == 1 || get_plan_status() == 2)
+	{
+		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
+		beep_for_command(false);
+	}
+	else if (get_plan_status() == 3)
+		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
+
 	set_plan_status(0);
 	reset_rcon_remote();
 }

@@ -100,7 +100,7 @@ uint8_t SpotMovement::findNearestPoint(Point32_t ref_point)
 		}
 	}
 
-	ROS_WARN("%s,%d,near point (%d,%d), t.size = %d,pos = %d", __FUNCTION__, __LINE__, 
+	ROS_WARN("%s,%d,near point (%d,%d), t.size = %u,pos = %d", __FUNCTION__, __LINE__, 
 					near_point_.X, near_point_.Y, target_.size(), pos);
 	while(pos){
 		printf("(%d,%d), ",tp_->X,tp_->Y);
@@ -138,7 +138,10 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 		spot_init_ = 1;
 		if (getSpotType() == CLEAN_SPOT)
 		{
-			switch_vac_mode(false);
+			if(get_vac_mode() != Vac_Max){
+				set_vac_mode(Vac_Max);
+				set_vac_speed();
+			}
 			set_main_brush_pwm(80);
 			set_side_brush_pwm(60, 60);
 			wav_play(WAV_CLEANING_SPOT);
