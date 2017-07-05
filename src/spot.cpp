@@ -100,7 +100,7 @@ uint8_t SpotMovement::findNearestPoint(Point32_t ref_point)
 		}
 	}
 
-	ROS_WARN("%s,%d,near point (%d,%d), t.size = %d,pos = %d", __FUNCTION__, __LINE__, 
+	ROS_WARN("%s,%d,near point (%d,%d), t.size = %u,pos = %d", __FUNCTION__, __LINE__, 
 					near_point_.X, near_point_.Y, target_.size(), pos);
 	while(pos){
 		printf("(%d,%d), ",tp_->X,tp_->Y);

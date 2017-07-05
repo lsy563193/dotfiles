@@ -2499,7 +2499,7 @@ void go_home_handle_over_current_wheel_left(bool state_now, bool state_last)
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
 		g_oc_wheel_left = true;
 	}
@@ -2516,7 +2516,7 @@ void go_home_handle_over_current_wheel_right(bool state_now, bool state_last)
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %lu mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
 		g_oc_wheel_right = true;
 	}
