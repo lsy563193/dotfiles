@@ -1257,7 +1257,6 @@ void cm_go_home()
 
 	while (ros::ok())
 	{
-		set_led(100, 0);
 		if (g_home_point.empty())
 		{
 			ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
@@ -1283,6 +1282,13 @@ void cm_go_home()
 
 		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
 
+		// Resume from go home mode.
+		set_led(100, 0);
+		set_vacmode(Vac_Normal, false);
+		set_vac_speed();
+		set_side_brush_pwm(50, 50);
+		set_main_brush_pwm(30);
+
 		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
 		{
 			if (g_fatal_quit_event)
@@ -1304,14 +1310,6 @@ void cm_go_home()
 		}
 		else if (cm_go_to_charger(current_home_cell))
 			return;
-		else
-		{
-			set_led(100, 0);
-			set_vacmode(Vac_Normal, false);
-			set_vac_speed();
-			set_side_brush_pwm(50, 50);
-			set_main_brush_pwm(30);
-		}
 	}
 }
 
