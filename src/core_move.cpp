@@ -61,6 +61,7 @@
 
 CMMoveType g_cm_move_type;
 
+bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
 uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
@@ -725,7 +726,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 		}
 
 		if (g_fatal_quit_event
-			|| g_key_clean_pressed || (!g_go_home && g_remote_home)
+			|| g_key_clean_pressed || (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_oc_wheel_left || g_oc_wheel_right
 			|| g_bumper_hitted || g_cliff_triggered
 			)
@@ -905,7 +906,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 
 		if (g_fatal_quit_event || g_key_clean_pressed
 			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
-			|| (!g_go_home && g_remote_home)
+			|| (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_remote_spot // It will only be set if robot is not during spot.
 			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			return false;
@@ -1227,6 +1228,16 @@ int cm_cleaning()
 
 void cm_go_home()
 {
+	/* Robot will try to go to the cells in g_home_point_old_path list
+	 * first, and it will only go through the CLEANED area. If the
+	 * cell in g_home_point_new_path is unreachable through the
+	 * CLEANED area, it will be push into g_home_point_new_path list.
+	 * When all the cells in g_home_point_old_path list are unreachable
+	 * or failed to go to charger, robot will start to go to cells in
+	 * g_home_point_new_path through the UNCLEAN area (If there is a
+	 * way like this).
+	 */
+	bool all_old_path_failed = false;
 	Cell_t current_home_cell;
 	g_cm_move_type = CM_LINEARMOVE;
 
@@ -1253,13 +1264,15 @@ void cm_go_home()
 					cm_head_to_course(ROTATE_TOP_SPEED, -angle);
 				}
 				disable_motors();
-				wav_play(WAV_BACK_TO_CHARGER_FAILED);
+				if(g_have_seen_charge_stub)
+					wav_play(WAV_BACK_TO_CHARGER_FAILED);
 				robot::instance()->resetLowBatPause();
 				cm_reset_go_home();
 				return;
 			}
 
 			// Try all the new path home point.
+			all_old_path_failed = true;
 			set_explore_new_path_flag(true);
 			// Get next home cell.
 			current_home_cell.X = count_to_cell(g_home_point_new_path.front().X);
@@ -1308,17 +1321,22 @@ void cm_go_home()
 				if (robot::instance()->isManualPaused())
 					// The current home cell is still valid, so push it back to the home point list.
 					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
+				if (get_clean_mode() == Clean_Mode_WallFollow)
+					cm_reset_go_home();
 				return;
 			}
 
-			// If can not reach this point, save this point to new path home point list.
-			Point32_t new_home_point;
-			new_home_point.X = cell_to_count(current_home_cell.X);
-			new_home_point.Y = cell_to_count(current_home_cell.Y);
-			g_home_point_new_path.push_back(new_home_point);
-			ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
+			if (get_clean_mode() != Clean_Mode_WallFollow && !all_old_path_failed)
+			{
+				// If can not reach this point, save this point to new path home point list.
+				Point32_t new_home_point;
+				new_home_point.X = cell_to_count(current_home_cell.X);
+				new_home_point.Y = cell_to_count(current_home_cell.Y);
+				g_home_point_new_path.push_back(new_home_point);
+				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
+			}
 		}
-		else if (cm_go_to_charger(current_home_cell))
+		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
 			return;
 	}
 }
@@ -1380,6 +1398,7 @@ uint8_t cm_touring(void)
 	event_manager_reset_status();
 	MotionManage motion;
 	g_turn_angle = 0;
+	g_have_seen_charge_stub = false;
 
 	if (!motion.initSucceeded())
 	{
@@ -1451,7 +1470,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			if (g_fatal_quit_event || g_key_clean_pressed )
 				return false;
 
-			if (g_remote_home && !g_go_home )
+			if ((g_battery_home || g_remote_home) && !g_go_home )
 				return false;
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
@@ -2225,8 +2244,9 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	 *  0: front
 	 *  1: front right
 	 *  2: right
+	 *  9: meaningless
 	 */
-	int8_t direction = 0;
+	int8_t direction = 9;
 	int8_t max_cnt = 0;
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
@@ -2284,9 +2304,13 @@ void cm_handle_rcon(bool state_now, bool state_last)
 		direction = 2;
 	}
 
-	cm_block_charger_stub(direction);
-	lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
-	reset_rcon_status();
+	if(direction != 9)
+	{
+		g_have_seen_charge_stub = true;
+		cm_block_charger_stub(direction);
+		lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
+	}
+		reset_rcon_status();
 }
 
 void cm_block_charger_stub(int8_t direction)
@@ -2783,7 +2807,6 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && ! g_go_home) {
-		g_go_home = true;
 		ROS_WARN("%s %d: low battery, battery = %dmv ", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;

@@ -20,7 +20,7 @@ Point32_t RegulatorBase::s_origin = {0,0};
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
-	return g_fatal_quit_event || g_key_clean_pressed || g_remote_home || cm_should_self_check();
+	return g_fatal_quit_event || g_key_clean_pressed || g_battery_home || g_remote_home || cm_should_self_check();
 }
 
 //FollowWallRegulator
@@ -32,19 +32,22 @@ FollowWallRegulator::FollowWallRegulator(CMMoveType type) : type_(type), previou
 
 bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
+//	uint32_t r_step = (get_right_wheel_step() / 100) * 11 ;
+	uint32_t r_step = get_left_wheel_step();
 //	ROS_INFO("FollowWallRegulator adjustSpeed");
-	if (get_right_wheel_step() < (uint32_t) g_straight_distance)
+//	ROS_INFO("r_step: %d < g_straight_distance : %d", r_step, g_straight_distance);
+	if ((r_step) < (uint32_t) g_straight_distance)
 	{
 		int32_t speed;
-		if (get_left_wheel_step() < 500)
+		if (r_step < 500)
 		{
-			if (get_right_wheel_step() < 100) speed = 10;
+			if (r_step < 100) speed = 10;
 			else speed = 15;
 		} else
 			speed = 23;
 		l_speed = r_speed = speed;
+//		ROS_WARN("r_step: %d < g_straight_distance : %d", r_step, g_straight_distance);
 //		ROS_INFO("Wf_1, speed = %d, g_wall_distance = %d", speed, g_wall_distance, g_wall_distance);
-//		ROS_INFO("get_right_wheel_step() < (uint32_t) g_straight_distance", get_right_wheel_step(), g_straight_distance);
 	} else
 	{
 
@@ -264,7 +267,12 @@ TurnRegulator::TurnRegulator(uint16_t speed_max) : speed_max_(speed_max), target
 bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
-	return (abs(target_angle_ - Gyro_GetAngle()) < accurate_ || g_bumper_hitted || g_cliff_triggered);
+	if (abs(target_angle_ - Gyro_GetAngle()) < accurate_ || g_bumper_hitted || g_cliff_triggered) {
+		reset_left_wheel_step();
+		return true;
+	} else {
+		return false;
+	}
 }
 
 bool TurnRegulator::isReach()

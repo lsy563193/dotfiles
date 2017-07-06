@@ -256,6 +256,8 @@ MotionManage::~MotionManage()
 	}
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	// Wait for 0.15s to make sure last tf waiting for map frame has finished and Odom_Position_Odom_Angle has been activated.
+	usleep(150000);
 
 	cm_unregister_events();
 
@@ -286,6 +288,8 @@ MotionManage::~MotionManage()
 	}
 	if (robot::instance()->isLowBatPaused())
 	{
+		set_clean_mode(Clean_Mode_Charging);
+		wav_play(WAV_PAUSE_CLEANING);
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);

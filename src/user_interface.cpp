@@ -101,12 +101,12 @@ void User_Interface(void)
 
 		//ROS_INFO("One key min_distant_segment logic. odc = %d", LedBreathCount);
 		if(breath){
-			led_breath_cnt--;
+			led_breath_cnt -= 2;
 			if(led_breath_cnt<=0)
 				breath = 0;
 		}
 		else{
-			led_breath_cnt++;
+			led_breath_cnt += 2;
 			if(led_breath_cnt >=100)
 				breath = 1;
 		}
