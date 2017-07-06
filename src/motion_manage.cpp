@@ -22,7 +22,8 @@
 
 Segment_set segmentss;
 
-extern std::list <Point32_t> g_home_point;
+extern std::list <Point32_t> g_home_point_old_path;
+extern std::list <Point32_t> g_home_point_new_path;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
@@ -273,7 +274,7 @@ MotionManage::~MotionManage()
 		extern bool g_go_home;
 		if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
-			ROS_WARN("%s %d: Pause going home, g_home_point list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point.size());
+			ROS_WARN("%s %d: Pause going home, g_home_point_old_path list size: %u, g_home_point_new_path list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
 #else
 			ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
@@ -303,7 +304,8 @@ MotionManage::~MotionManage()
 
 	wav_play(WAV_CLEANING_FINISHED);
 
-	g_home_point.clear();
+	g_home_point_old_path.clear();
+	g_home_point_new_path.clear();
 
 	if (g_fatal_quit_event)
 		if (g_cliff_all_triggered)
@@ -369,7 +371,7 @@ bool MotionManage::initNavigationCleaning(void)
 			new_home_point.Y = map_get_y_count();
 
 			// Push the start point into the home point list.
-			g_home_point.push_front(new_home_point);
+			g_home_point_old_path.push_front(new_home_point);
 		}
 
 		reset_rcon_status();
@@ -379,12 +381,13 @@ bool MotionManage::initNavigationCleaning(void)
 		g_saved_work_time = 0;
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 		//Initital home point
-		g_home_point.clear();
+		g_home_point_old_path.clear();
+		g_home_point_new_path.clear();
 
 		// Push the start point into the home point list
 		Point32_t new_home_point;
 		new_home_point.X = new_home_point.Y = 0;
-		g_home_point.push_front(new_home_point);
+		g_home_point_old_path.push_front(new_home_point);
 
 		// Mark all the trapped reference points as (0, 0).
 		Cell_t tmp_pnt;
@@ -399,7 +402,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 		ROS_INFO("map_init-----------------------------");
 		map_init();
-		path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);
+		path_planning_initialize(&g_home_point_old_path.front().X, &g_home_point_old_path.front().Y);
 
 		robot::instance()->initOdomPosition();
 
@@ -510,17 +513,18 @@ bool MotionManage::initWallFollowCleaning(void)
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
-	g_home_point.clear();
+	g_home_point_old_path.clear();
+	g_home_point_new_path.clear();
 	g_wf_cell.clear();
 	Point32_t new_home_point;
 	new_home_point.X = new_home_point.Y = 0;
 	// Push the start point into the home point list
-	g_home_point.push_front(new_home_point);
+	g_home_point_old_path.push_front(new_home_point);
 
 	map_init();
 	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
-	WF_PathPlanning_Initialize(&g_home_point.front().X, &g_home_point.front().Y);
+	WF_PathPlanning_Initialize(&g_home_point_old_path.front().X, &g_home_point_old_path.front().Y);
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
@@ -559,10 +563,11 @@ bool MotionManage::initSpotCleaning(void)
 	Point32_t t_point;
 	t_point.X = 0;
 	t_point.Y = 0;
-	g_home_point.clear();
-	g_home_point.push_front(t_point);//init home point
+	g_home_point_old_path.clear();
+	g_home_point_new_path.clear();
+	g_home_point_old_path.push_front(t_point);//init home point
 	map_init();//init map
-	path_planning_initialize(&g_home_point.front().X, &g_home_point.front().Y);//init pathplan
+	path_planning_initialize(&g_home_point_old_path.front().X, &g_home_point_old_path.front().Y);//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 

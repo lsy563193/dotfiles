@@ -2958,8 +2958,10 @@ void clear_manual_pause(void)
 			delete MotionManage::s_slam;
 			MotionManage::s_slam = nullptr;
 		}
-		extern std::list<Point32_t> g_home_point;
-		g_home_point.clear();
+		extern std::list<Point32_t> g_home_point_old_path;
+		extern std::list<Point32_t> g_home_point_new_path;
+		g_home_point_old_path.clear();
+		g_home_point_new_path.clear();
 		cm_reset_go_home();
 	}
 }

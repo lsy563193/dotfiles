@@ -45,7 +45,7 @@
 std::vector<Pose16_t> g_wf_cell;
 int g_isolate_count = 0;
 // This list is for storing the position that robot sees the charger stub.
-extern std::list<Point32_t> g_home_point;
+extern std::list<Point32_t> g_home_point_old_path;
 extern uint8_t g_from_station;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
@@ -233,12 +233,12 @@ static bool wf_is_reach_cleaned(void)
 
 static void wf_mark_home_point(void)
 {
-	//path_planning_initialize(&, &g_home_point.front().Y);
+	//path_planning_initialize(&, &g_home_point_old_path.front().Y);
 	int32_t x, y;
 	int i, j;
 	std::list<Point32_t> WF_Home_Point;
 
-	WF_Home_Point = g_home_point;
+	WF_Home_Point = g_home_point_old_path;
 
 	while (!WF_Home_Point.empty())
 	{
@@ -309,7 +309,7 @@ static bool is_isolate() {
 /*------------------------------------------------------------------ Wall Follow Mode--------------------------*/
 uint8_t wf_break_wall_follow(void)
 {
-	ROS_INFO("/*****************************************Release Memory************************************/");
+	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
 	g_wf_cell.clear();
 	map_reset(MAP);
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
@@ -322,7 +322,7 @@ uint8_t wf_clear(void)
 	cm_update_position();
 	wf_mark_home_point();
 	//wf_break_wall_follow();
-	ROS_INFO("/*****************************************Release Memory************************************/");
+	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
 	g_wf_cell.clear();
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
 	g_isolate_count = 0;

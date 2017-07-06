@@ -73,7 +73,8 @@ static bool g_should_follow_wall;
 Point32_t g_next_point, g_target_point;
 
 // This list is for storing the position that robot sees the charger stub.
-std::list <Point32_t> g_home_point;
+std::list <Point32_t> g_home_point_old_path;
+std::list <Point32_t> g_home_point_new_path;
 
 // This is for the continue point for robot to go after charge.
 Point32_t g_continue_point;
@@ -1145,6 +1146,7 @@ int cm_cleaning()
 		return 0;
 	}
 	bool on_spot = false;
+	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event)
@@ -1154,7 +1156,7 @@ int cm_cleaning()
 		{
 			g_remote_home = false;
 			g_go_home = true;
-			ROS_WARN("%s %d: Receive go home command, reset g_remote_home.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Receive go home command or battery low and should go home, reset g_remote_home.", __FUNCTION__, __LINE__);
 			return 0;
 		}
 
@@ -1243,6 +1245,7 @@ int cm_cleaning()
 void cm_go_home()
 {
 	Cell_t current_home_cell;
+	g_cm_move_type = CM_LINEARMOVE;
 
 	set_vacmode(Vac_Normal, false);
 	set_vac_speed();
@@ -1256,27 +1259,45 @@ void cm_go_home()
 
 	while (ros::ok())
 	{
-		if (g_home_point.empty())
+		if (g_home_point_old_path.empty())
 		{
-			ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
-			// If it is the last point, it means it it now at (0, 0).
-			if (!g_from_station) {
-				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
-				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
+			if (get_clean_mode() == Clean_Mode_WallFollow || g_home_point_new_path.empty())
+			{
+				ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
+				// If it is the last point, it means it it now at (0, 0).
+				if (!g_from_station) {
+					auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+					cm_head_to_course(ROTATE_TOP_SPEED, -angle);
+				}
+				disable_motors();
+				wav_play(WAV_BACK_TO_CHARGER_FAILED);
+				robot::instance()->resetLowBatPause();
+				cm_reset_go_home();
+				return;
 			}
-			disable_motors();
-			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-			robot::instance()->resetLowBatPause();
-			cm_reset_go_home();
-			return;
+
+			// Try all the new path home point.
+			set_explore_new_path_flag(true);
+			// Get next home cell.
+			current_home_cell.X = count_to_cell(g_home_point_new_path.front().X);
+			current_home_cell.Y = count_to_cell(g_home_point_new_path.front().Y);
+			g_home_point_new_path.pop_front();
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point_new_path.size());
+
 		}
 		else
 		{
+			if (get_clean_mode() == Clean_Mode_WallFollow)
+				// Always explore the new path.
+				set_explore_new_path_flag(true);
+			else
+				// Try all the old path home point first.
+				set_explore_new_path_flag(false);
 			// Get next home cell.
-			current_home_cell.X = count_to_cell(g_home_point.front().X);
-			current_home_cell.Y = count_to_cell(g_home_point.front().Y);
-			g_home_point.pop_front();
-			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point.size());
+			current_home_cell.X = count_to_cell(g_home_point_old_path.front().X);
+			current_home_cell.Y = count_to_cell(g_home_point_old_path.front().Y);
+			g_home_point_old_path.pop_front();
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u old path targets left, %u new targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
 		}
 
 		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
@@ -1306,6 +1327,13 @@ void cm_go_home()
 					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
 				return;
 			}
+
+			// If can not reach this point, save this point to new path home point list.
+			Point32_t new_home_point;
+			new_home_point.X = cell_to_count(current_home_cell.X);
+			new_home_point.Y = cell_to_count(current_home_cell.Y);
+			g_home_point_new_path.push_back(new_home_point);
+			ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
 		}
 		else if (cm_go_to_charger(current_home_cell))
 			return;
@@ -1472,13 +1500,13 @@ void cm_set_home(int32_t x, int32_t y) {
 	new_home_point.X = x;
 	new_home_point.Y = y;
 
-	for (list<Point32_t>::iterator it = g_home_point.begin(); found == false && it != g_home_point.end(); ++it) {
+	for (list<Point32_t>::iterator it = g_home_point_old_path.begin(); found == false && it != g_home_point_old_path.end(); ++it) {
 		if (it->X == x && it->Y == y) {
 			found = true;
 		}
 	}
 	if (found == false) {
-		g_home_point.push_front(new_home_point);
+		g_home_point_old_path.push_front(new_home_point);
 		// If new_home_point near (0, 0)
 		if (abs(count_to_cell(x)) <= 5 && abs(count_to_cell(y)) <= 5)
 		{

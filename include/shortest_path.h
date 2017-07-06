@@ -45,3 +45,4 @@ void path_reset_path_points();
 void path_display_path_points();
 
 #endif
+void set_explore_new_path_flag(bool flag);

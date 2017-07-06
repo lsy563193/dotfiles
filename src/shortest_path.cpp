@@ -56,6 +56,9 @@
 
 static uint8_t g_direct_go = 0;
 
+// This flag is for deciding whether it should consider UNCLEAN block as valid path.
+bool explore_new_path_flag = false;
+
 #ifdef SHORTEST_PATH_V2
 
 #if defined(SHORTEST_PATH_V2) && defined (SHORTEST_PATH_V2_RAM)
@@ -1131,7 +1134,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 					}
 				}
 			}
-			else if(cs == UNCLEAN && get_clean_mode() == Clean_Mode_Navigation)
+			else if(cs == UNCLEAN && !explore_new_path_flag)
 				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}
@@ -1642,3 +1645,8 @@ void path_display_path_points()
 }
 
 #endif
+
+void set_explore_new_path_flag(bool flag)
+{
+	explore_new_path_flag = flag;
+}
