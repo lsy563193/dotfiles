@@ -14,6 +14,8 @@
 
 #include <visualization_msgs/Marker.h>
 #include <ros/ros.h>
+
+#include "core_move.h"
 //#include <obstacle_detector.h>
 //#include <figures/point.h>
 
@@ -257,7 +259,11 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 	//*line_angle = atan2(-a, b) * 180 / PI;
 	Laser_Group.clear();
 	if (!fit_line.empty()) {
-		*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
+		if (g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
+			*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
+		} else {
+			*line_angle = atan2(0 - fit_line.back().A, fit_line.back().B) * 180 / PI;
+		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 		ROS_WARN("line_angle = %lf", *line_angle);
 		return true;
