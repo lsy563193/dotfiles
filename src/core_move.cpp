@@ -61,6 +61,7 @@
 
 CMMoveType g_cm_move_type;
 
+bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
 uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
@@ -1270,7 +1271,8 @@ void cm_go_home()
 					cm_head_to_course(ROTATE_TOP_SPEED, -angle);
 				}
 				disable_motors();
-				wav_play(WAV_BACK_TO_CHARGER_FAILED);
+				if(g_have_seen_charge_stub)
+					wav_play(WAV_BACK_TO_CHARGER_FAILED);
 				robot::instance()->resetLowBatPause();
 				cm_reset_go_home();
 				return;
@@ -1335,7 +1337,7 @@ void cm_go_home()
 			g_home_point_new_path.push_back(new_home_point);
 			ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
 		}
-		else if (cm_go_to_charger(current_home_cell))
+		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
 			return;
 	}
 }
@@ -1397,6 +1399,7 @@ uint8_t cm_touring(void)
 	event_manager_reset_status();
 	MotionManage motion;
 	g_turn_angle = 0;
+	g_have_seen_charge_stub = false;
 
 	if (!motion.initSucceeded())
 	{
@@ -2242,8 +2245,9 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	 *  0: front
 	 *  1: front right
 	 *  2: right
+	 *  9: meaningless
 	 */
-	int8_t direction = 0;
+	int8_t direction = 9;
 	int8_t max_cnt = 0;
 
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
@@ -2301,9 +2305,13 @@ void cm_handle_rcon(bool state_now, bool state_last)
 		direction = 2;
 	}
 
-	cm_block_charger_stub(direction);
-	lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
-	reset_rcon_status();
+	if(direction != 9)
+	{
+		g_have_seen_charge_stub = true;
+		cm_block_charger_stub(direction);
+		lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
+	}
+		reset_rcon_status();
 }
 
 void cm_block_charger_stub(int8_t direction)
