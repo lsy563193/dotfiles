@@ -32,21 +32,24 @@ FollowWallRegulator::FollowWallRegulator(CMMoveType type) : type_(type), previou
 
 bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-//	uint32_t r_step = (get_right_wheel_step() / 100) * 11 ;
-	uint32_t r_step = get_left_wheel_step();
+//	uint32_t l_step = (get_right_wheel_step() / 100) * 11 ;
+	auto _l_step = get_left_wheel_step();
+	auto _r_step = get_right_wheel_step();
+	auto &l_step = (type_ == CM_FOLLOW_LEFT_WALL) ? _l_step :_r_step ;
+	auto &r_step = (type_ == CM_FOLLOW_LEFT_WALL) ? _r_step :_l_step ;
 //	ROS_INFO("FollowWallRegulator adjustSpeed");
-//	ROS_INFO("r_step: %d < g_straight_distance : %d", r_step, g_straight_distance);
-	if ((r_step) < (uint32_t) g_straight_distance)
+//	ROS_INFO("l_step: %d < g_straight_distance : %d", l_step, g_straight_distance);
+	if ((l_step) < (uint32_t) g_straight_distance)
 	{
 		int32_t speed;
-		if (r_step < 500)
+		if (l_step < 500)
 		{
-			if (r_step < 100) speed = 10;
+			if (l_step < 100) speed = 10;
 			else speed = 15;
 		} else
 			speed = 23;
 		l_speed = r_speed = speed;
-//		ROS_WARN("r_step: %d < g_straight_distance : %d", r_step, g_straight_distance);
+//		ROS_WARN("l_step: %d < g_straight_distance : %d", l_step, g_straight_distance);
 //		ROS_INFO("Wf_1, speed = %d, g_wall_distance = %d", speed, g_wall_distance, g_wall_distance);
 	} else
 	{
@@ -54,10 +57,10 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (get_front_obs() < get_front_obs_value())
 		{
 //			ROS_INFO("get_front_obs() < get_front_obs_value()", get_front_obs(), get_front_obs_value());
-			auto wheel_speed_base = 15 + get_right_wheel_step() / 150;
+			auto wheel_speed_base = 15 + r_step / 150;
 			if (wheel_speed_base > 28)wheel_speed_base = 28;
 
-			auto proportion = robot::instance()->getLeftWall();
+			auto proportion = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
 
 			proportion = proportion * 100 / g_wall_distance;
 
@@ -137,11 +140,11 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //			ROS_INFO("Wf_7, l_speed = %d, r_speed = %d, g_wall_distance = %d", l_speed, r_speed, g_wall_distance);
 		} else
 		{
-			if (get_right_wheel_step() < 2000) jam_++;
+			if (r_step < 2000) jam_++;
 			g_turn_angle = 920;
 //			reset_wheel_step();
 			g_wall_distance = Wall_High_Limit;
-			if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
+			if (LASER_FOLLOW_WALL) {
 				laser_turn_angle(true);
 			}
 		}
@@ -268,7 +271,7 @@ bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
 	if (abs(target_angle_ - Gyro_GetAngle()) < accurate_ || g_bumper_hitted || g_cliff_triggered) {
-		reset_left_wheel_step();
+		reset_wheel_step();
 		return true;
 	} else {
 		return false;
@@ -357,7 +360,7 @@ void RegulatorProxy::switchToNext()
 	} else if (p_reg_ == back_reg_)
 	{
 		g_bumper_hitted = g_cliff_triggered = false;
-		if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
+		if (LASER_FOLLOW_WALL) {
 			laser_turn_angle(false);
 		}
 		turn_reg_->setTarget(calc_target(g_turn_angle));
