@@ -20,7 +20,7 @@ Point32_t RegulatorBase::s_origin = {0,0};
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
-	return g_fatal_quit_event || g_key_clean_pressed || g_remote_home || cm_should_self_check();
+	return g_fatal_quit_event || g_key_clean_pressed || g_battery_home || g_remote_home || cm_should_self_check();
 }
 
 //FollowWallRegulator

@@ -350,7 +350,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 		beep_for_command(false);
 		user_interface_reject_reason = 2;
 	}
-	else if ((temp_mode != Clean_Mode_GoHome && temp_mode != Clean_Mode_Remote) && !battery_ready_to_clean)
+	else if ((get_rcon_remote() != Remote_Forward && get_rcon_remote() != Remote_Left && get_rcon_remote() != Remote_Right && get_rcon_remote() != Remote_Home) && !battery_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beep_for_command(false);
