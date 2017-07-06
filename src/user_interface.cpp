@@ -332,7 +332,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 	{
 		if (get_rcon_remote() == Remote_Clean)
 		{
-			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_error_code());
 			beep_for_command(true);
 			user_interface_reject_reason = 4;
 			reset_stop_event_status();
