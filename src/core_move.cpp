@@ -1245,6 +1245,16 @@ int cm_cleaning()
 
 void cm_go_home()
 {
+	/* Robot will try to go to the cells in g_home_point_old_path list
+	 * first, and it will only go through the CLEANED area. If the
+	 * cell in g_home_point_new_path is unreachable through the
+	 * CLEANED area, it will be push into g_home_point_new_path list.
+	 * When all the cells in g_home_point_old_path list are unreachable
+	 * or failed to go to charger, robot will start to go to cells in
+	 * g_home_point_new_path through the UNCLEAN area (If there is a
+	 * way like this).
+	 */
+	bool all_old_path_failed = false;
 	Cell_t current_home_cell;
 	g_cm_move_type = CM_LINEARMOVE;
 
@@ -1279,6 +1289,7 @@ void cm_go_home()
 			}
 
 			// Try all the new path home point.
+			all_old_path_failed = true;
 			set_explore_new_path_flag(true);
 			// Get next home cell.
 			current_home_cell.X = count_to_cell(g_home_point_new_path.front().X);
@@ -1327,15 +1338,20 @@ void cm_go_home()
 				if (robot::instance()->isManualPaused())
 					// The current home cell is still valid, so push it back to the home point list.
 					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
+				if (get_clean_mode() == Clean_Mode_WallFollow)
+					cm_reset_go_home();
 				return;
 			}
 
-			// If can not reach this point, save this point to new path home point list.
-			Point32_t new_home_point;
-			new_home_point.X = cell_to_count(current_home_cell.X);
-			new_home_point.Y = cell_to_count(current_home_cell.Y);
-			g_home_point_new_path.push_back(new_home_point);
-			ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
+			if (get_clean_mode() != Clean_Mode_WallFollow && !all_old_path_failed)
+			{
+				// If can not reach this point, save this point to new path home point list.
+				Point32_t new_home_point;
+				new_home_point.X = cell_to_count(current_home_cell.X);
+				new_home_point.Y = cell_to_count(current_home_cell.Y);
+				g_home_point_new_path.push_back(new_home_point);
+				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
+			}
 		}
 		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
 			return;
