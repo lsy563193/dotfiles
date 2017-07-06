@@ -382,17 +382,22 @@ public:
 
 	Baselink_Frame_Type getBaselinkFrameType(void)
 	{
+		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
 		return baselink_frame_type_;
 	}
 
 	void setBaselinkFrameType(Baselink_Frame_Type frame)
 	{
+		baselink_frame_type_mutex_.lock();
 		baselink_frame_type_ = frame;
+		baselink_frame_type_mutex_.unlock();
+		ROS_WARN("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
+	boost::mutex baselink_frame_type_mutex_;
 
 // These variable is for continue cleaning after charge.
 	bool	low_bat_pause_cleaning_;

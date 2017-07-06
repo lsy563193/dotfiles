@@ -256,6 +256,8 @@ MotionManage::~MotionManage()
 	}
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	// Wait for 0.15s to make sure last tf waiting for map frame has finished and Odom_Position_Odom_Angle has been activated.
+	usleep(150000);
 
 	cm_unregister_events();
 
