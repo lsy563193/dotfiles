@@ -357,7 +357,7 @@ bool MotionManage::initNavigationCleaning(void)
 	// Wait for 20ms to make sure the event manager has start working.
 	usleep(20000);
 
-	reset_start_work_time();
+	reset_work_time();
 	set_led(100, 0);
 
 	// Initialize motors and map.
@@ -491,7 +491,7 @@ bool MotionManage::initWallFollowCleaning(void)
 	cm_register_events();
 
 	extern std::vector<Pose16_t> g_wf_cell;
-	reset_start_work_time();
+	reset_work_time();
 	reset_move_with_remote();
 	reset_rcon_status();
 	reset_stop_event_status();
@@ -538,7 +538,7 @@ bool MotionManage::initSpotCleaning(void)
 {
 	cm_register_events();
 
-	reset_start_work_time();
+	reset_work_time();
 	reset_rcon_status();
 	reset_move_with_remote();
 	reset_stop_event_status();
