@@ -27,13 +27,13 @@ time_t charge_plan_confirm_time = time(NULL);
 void charge_function(void)
 {
 
-	volatile uint8_t display_switch=1;
+	volatile uint8_t display_switch=0;
 
 	bool battery_full = false;
 
 	#ifdef ONE_KEY_DISPLAY
 
-	uint8_t one_display_counter=0;
+	uint8_t one_display_counter=100;
 
 	#endif
 
@@ -54,7 +54,7 @@ void charge_function(void)
 	ROS_INFO("%s %d: Start charger mode.", __FUNCTION__, __LINE__);
 	while(ros::ok())
 	{
-		usleep(20000);
+		usleep(10000);
 		bat_v = get_battery_voltage();
 
 		if (robot::instance()->isLowBatPaused())
