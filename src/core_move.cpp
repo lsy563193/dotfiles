@@ -725,7 +725,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 		}
 
 		if (g_fatal_quit_event
-			|| g_key_clean_pressed || (!g_go_home && g_remote_home)
+			|| g_key_clean_pressed || (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_oc_wheel_left || g_oc_wheel_right
 			|| g_bumper_hitted || g_cliff_triggered
 			)
@@ -771,7 +771,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 		}
 
 		if (g_fatal_quit_event || g_key_clean_pressed
-			|| (!g_go_home && g_remote_home)
+			|| (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_remote_spot // It will only be set if robot is not during spot.
 			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			break;
@@ -907,7 +907,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 
 		if (g_fatal_quit_event || g_key_clean_pressed
 			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
-			|| (!g_go_home && g_remote_home)
+			|| (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_remote_spot // It will only be set if robot is not during spot.
 			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			return false;
@@ -1484,7 +1484,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			if (g_fatal_quit_event || g_key_clean_pressed )
 				return false;
 
-			if (g_remote_home && !g_go_home )
+			if ((g_battery_home || g_remote_home) && !g_go_home )
 				return false;
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
@@ -2805,7 +2805,6 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && ! g_go_home) {
-		g_go_home = true;
 		ROS_WARN("%s %d: low battery, battery = %dmv ", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
