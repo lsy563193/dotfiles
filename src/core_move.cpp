@@ -1249,7 +1249,7 @@ void cm_go_home()
 
 	set_vacmode(Vac_Normal, false);
 	set_vac_speed();
-
+	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	if(robot::instance()->isLowBatPaused())
 		wav_play(WAV_BATTERY_LOW);
 	wav_play(WAV_BACK_TO_CHARGER);
