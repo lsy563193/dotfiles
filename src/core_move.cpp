@@ -575,13 +575,6 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			break;
 		}
 
-		if (g_cliff_all_cnt >= 2)
-		{
-			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-			g_fatal_quit_event = true;
-			break;
-		}
-
 		bool slow_down=false;
 		if(check_map_boundary(slow_down))
 			break;
