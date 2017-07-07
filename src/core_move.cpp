@@ -2472,8 +2472,11 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 
 	beep_for_command(true);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
+		SpotMovement::instance()->spotInit(1.0,{0,0});
+		SpotMovement::instance()->setSpotType(NO_SPOT);
 		robot::instance()->setManualPause();
+	}
 	reset_rcon_remote();
 }
 
