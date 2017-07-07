@@ -465,7 +465,7 @@ uint16_t round_turn_distance()
 uint16_t round_turn_speed()
 {
 	if ((mt_is_left()) && (get_bumper_status()  == RightBumperTrig) ||
-			(g_cm_move_type == CM_FOLLOW_RIGHT_WALL) && (get_bumper_status()  == LeftBumperTrig) )
+			(mt_is_right()) && (get_bumper_status()  == LeftBumperTrig) )
 		return 15;
 	return 10;
 }
@@ -2129,7 +2129,7 @@ void cm_block_charger_stub(int8_t direction)
 		case 2:
 		{
 			cm_world_to_point(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
-			if (g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
+			if (mt_is_right())
 					g_turn_angle = 300;
 				//else
 				//	g_turn_angle = 1100;

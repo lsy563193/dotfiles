@@ -26,7 +26,7 @@ bool RegulatorBase::isStop()
 
 //FollowWallRegulator
 
-FollowWallRegulator::FollowWallRegulator(CMMoveType type) : type_(type), previous_(0)
+FollowWallRegulator::FollowWallRegulator() : previous_(0)
 {
 //	ROS_INFO("FollowWallRegulator init");
 };
@@ -484,7 +484,7 @@ RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	turn_reg_ = new TurnRegulator(13);
 	back_reg_ = new BackRegulator();
-	follow_wall_reg_ = new FollowWallRegulator(g_cm_move_type);
+	follow_wall_reg_ = new FollowWallRegulator();
 	p_reg_ = follow_wall_reg_;
 }
 
