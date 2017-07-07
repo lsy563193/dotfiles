@@ -550,7 +550,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 		}
 
 		if (g_fatal_quit_event || g_key_clean_pressed
-			|| (!g_go_home && g_remote_home) || g_remote_spot || g_remote_direction_keys)
+			|| (!g_go_home && g_remote_home) || g_remote_direction_keys)
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
@@ -2497,11 +2497,14 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 
 	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check()) {
 
-		if( SpotMovement::instance()->getSpotType()  != NORMAL_SPOT){
+		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
+			beep_for_command(false);
+		}
+		else{	
 			g_remote_home = true;
+			beep_for_command(true);
 		}
 		ROS_INFO("g_remote_home = %d", g_remote_home);
-		beep_for_command(true);
 	}
 	else {
 		beep_for_command(false);
@@ -2538,14 +2541,19 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 						(robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
 			ROS_WARN("%s,%d,cur cell x = %d,cur cell y = %d",__FUNCTION__,__LINE__,map_get_x_cell(),map_get_y_cell());
 			SpotMovement::instance() ->setSpotType(CLEAN_SPOT);
+			set_wheel_speed(0, 0);
+			beep_for_command(true);
+			g_remote_spot = true;
 		}
 		else if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
-				SpotMovement::instance()->setSpotType(NO_SPOT);
-				SpotMovement::instance()->spotInit(1.0,{0,0});
+			SpotMovement::instance()->setSpotType(NO_SPOT);
+			SpotMovement::instance()->spotInit(1.0,{0,0});
+			set_wheel_speed(0, 0);
+			beep_for_command(true);
 		}
-		g_remote_spot = true;
-		set_wheel_speed(0, 0);
-		beep_for_command(true);
+		else{
+			beep_for_command(false);
+		}
 	}
 	else
 		beep_for_command(false);
