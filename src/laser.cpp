@@ -783,6 +783,7 @@ void Laser::pubLineMarker(std::vector<std::vector<Double_Point> > *groups) {
 
 bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim) {
 	double 	a, b, c;
+	double	x_0, y_0;
 	double line_angle;
 	const double L =0.2727716;
 	int	loop_count = 0;
@@ -791,16 +792,21 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 	if (!(*groups).empty()) {
 		for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 			lineFit((*iter), a, b, c);
-			line_angle = atan2(-a, b) * 180 / PI;
+			//line_angle = atan2(-a, b) * 180 / PI;
 			new_fit_line.A = a;
 			new_fit_line.B = b;
 			new_fit_line.C = c;
+			x_0 = 0 - c / a;
+			y_0 = 0 - c / b;
+			line_angle = atan2(y_0, 0 - x_0) * 180 / PI;
+			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
+			ROS_INFO("x_0 = %lf, y_0 = %lf", x_0, y_0);
 			/*erase the lines which are far away from the robot*/
 			//double x_l = fabs(c / a);
 			//double y_l = fabs(c / b);
 			double dis = fabs(c / (sqrt(a * a + b * b)));
 			//if ((x_l > L) && (y_l > L)) {
-			if (dis > dis_lim || dis < 0.167) {
+			if (dis > dis_lim || dis < 0.167 || x_0 < 0) {
 				//ROS_WARN("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
 				ROS_WARN("the line is too far away from robot. dis = %lf", dis);
 				continue;
