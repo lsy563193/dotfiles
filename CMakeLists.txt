@@ -37,6 +37,7 @@ FILE(GLOB PP_SRC
 	src/event_manager.cpp
 	src/go_home.cpp
 	src/regulator.cpp
+	src/move_type.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

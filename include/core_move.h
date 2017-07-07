@@ -71,6 +71,7 @@ int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);
 
+extern bool g_should_follow_wall;
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
 void cm_head_to_course(uint8_t Speed, int16_t Angle);
