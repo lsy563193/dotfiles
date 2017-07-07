@@ -57,7 +57,7 @@ extern uint16_t g_turn_angle;
 extern uint16_t g_wall_distance;
 
 uint16_t bumper_turn_angle();
-bool laser_turn_angle(bool obs_status);
+bool laser_turn_angle();
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);

@@ -400,13 +400,11 @@ bool _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max
 	return false;
 }
 
-bool laser_turn_angle(bool obs_status)
+bool laser_turn_angle()
 {
-
+ auto obs_status = get_front_obs() >= get_front_obs_value();
 	stop_brifly();
-	uint8_t status = angle_to_bumper_status();
 
-	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
 	int angle_min, angle_max;
 	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
 	{
@@ -422,6 +420,9 @@ bool laser_turn_angle(bool obs_status)
 		ROS_ERROR("front obs trigger");
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
 	}
+
+	uint8_t status = angle_to_bumper_status();
+	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
 	if (status == AllBumperTrig)
 	{
 		return _laser_turn_angle(90, 270, 900, 1800);
