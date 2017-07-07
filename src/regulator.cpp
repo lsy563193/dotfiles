@@ -8,7 +8,7 @@
 #include <wall_follow_slam.h>
 #include <robot.hpp>
 #include <core_move.h>
-#include "regulator_base.h"
+#include "regulator.h"
 #include "ros/ros.h"
 #include <event_manager.h>
 #include <mathematics.h>

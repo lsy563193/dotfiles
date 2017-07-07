@@ -39,7 +39,7 @@
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
-#include "regulator_base.h"
+#include "regulator.h"
 #ifdef TURN_SPEED
 #undef TURN_SPEED
 #endif
