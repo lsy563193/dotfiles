@@ -208,14 +208,15 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	//4 call start slam
 	s_slam = new Slam();
 
+	robot::instance()->setTfReady(false);
 	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot)
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	else if (get_clean_mode() == Clean_Mode_WallFollow)
 		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
 	s_slam->enableMapUpdate();
-	auto count_n_10ms = 1000;
-	robot::instance()->setTfReady(false);
-	while (!(s_slam->isMapReady() && robot::instance()->isTfReady()) && --count_n_10ms != 0)
+	auto count_n_10ms = 500;
+
+	while (ros::ok() && !(s_slam->isMapReady() && robot::instance()->isTfReady()) && --count_n_10ms != 0)
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
