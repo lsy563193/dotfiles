@@ -24,13 +24,6 @@
 #define COR_BACK_500MM		(3000)
 
 typedef enum {
-	CM_LINEARMOVE = 0,
-	CM_CURVEMOVE,
-	CM_FOLLOW_LEFT_WALL,
-	CM_FOLLOW_RIGHT_WALL,
-} CMMoveType;
-
-typedef enum {
 	MT_None = 0,
 	MT_Battery,
 	MT_Remote_Home,
@@ -62,7 +55,6 @@ extern bool g_move_back_finished;
 extern uint16_t g_straight_distance;
 extern uint16_t g_turn_angle;
 extern uint16_t g_wall_distance;
-extern CMMoveType g_cm_move_type;
 
 uint16_t bumper_turn_angle();
 bool laser_turn_angle(bool obs_status);
@@ -71,6 +63,7 @@ int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);
 
+extern bool g_should_follow_wall;
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
 void cm_head_to_course(uint8_t Speed, int16_t Angle);

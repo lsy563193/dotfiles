@@ -364,7 +364,7 @@ extern uint32_t g_rcon_status;
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
 
-void reset_start_work_time();
+void reset_work_time();
 uint32_t get_work_time();
 
 void set_error_code(uint8_t Code);
