@@ -101,10 +101,10 @@ private:
 	int jam_;
 };
 
-class LinearSpeedRegulator{
+class LinearRegulator{
 public:
-	LinearSpeedRegulator(int32_t max):speed_max_(max),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4){};
-	~LinearSpeedRegulator(){
+	LinearRegulator(int32_t max):speed_max_(max),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4){};
+	~LinearRegulator(){
 		set_wheel_speed(0, 0);
 	};
 	bool adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed);

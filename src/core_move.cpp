@@ -539,7 +539,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	reset_rcon_status();
 	cm_set_event_manager_handler_state(true);
 
-	LinearSpeedRegulator regulator(speed_max);
+	LinearRegulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
 		wall_dynamic_base(50);

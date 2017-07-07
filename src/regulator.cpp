@@ -302,7 +302,7 @@ bool TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	return true;
 }
 
-bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed)
+bool LinearRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed)
 {
 	uint8_t left_speed;
 	uint8_t right_speed;
