@@ -406,16 +406,6 @@ bool laser_turn_angle()
  auto obs_status = get_front_obs() >= get_front_obs_value();
 	stop_brifly();
 
-	int angle_min, angle_max;
-	if (mt_is_left())
-	{
-		angle_min = 900;
-		angle_max = 1800;
-	} else
-	{
-		angle_min = 200;
-		angle_max = 900;
-	}
 	if (obs_status)
 	{
 		ROS_ERROR("front obs trigger");
@@ -423,7 +413,16 @@ bool laser_turn_angle()
 	}
 
 	uint8_t status = angle_to_bumper_status();
-	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
+	int angle_min, angle_max;
+	if (mt_is_left() ^ status == LeftBumperTrig)
+	{
+		angle_min = 450;
+		angle_max = 1800;
+	}else {
+		angle_min = 200;
+		angle_max = 900;
+	}
+
 	if (status == AllBumperTrig)
 	{
 		return _laser_turn_angle(90, 270, 900, 1800);

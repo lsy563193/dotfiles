@@ -287,6 +287,7 @@ bool TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	(mt_is_left()) ? set_dir_right() : set_dir_left();
 //	ROS_INFO("TurnRegulator::adjustSpeed");
 	auto speed = speed_max_;
+
 	if (abs(target_angle_ - Gyro_GetAngle()) < 50)
 	{
 		speed = std::min((uint16_t) 5, speed);
@@ -305,8 +306,11 @@ bool LinearRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
 //		if(get_clean_mode() == Clean_Mode_WallFollow)
-			if(g_turn_angle == 0)
+			if(g_turn_angle == 0){
+				mt_set(CM_FOLLOW_LEFT_WALL);
 				g_turn_angle = bumper_turn_angle();
+				mt_set(CM_LINEARMOVE);
+			}
 
 		left_speed = right_speed = 8;
 		set_dir_backward();
