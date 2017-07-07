@@ -13,6 +13,7 @@
 #include <event_manager.h>
 #include <mathematics.h>
 #include <motion_manage.h>
+#include <wav.h>
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
@@ -169,34 +170,47 @@ bool FollowWallRegulator::isReach()
 	} else if (get_clean_mode() == Clean_Mode_Navigation)
 	{
 
-		if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
+		extern int g_trapped_mode;
+		if (g_trapped_mode != 0)
 		{
-			ROS_WARN("Robot has reach the target.");
-			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
-							 map_get_y_count());
+			extern uint32_t g_escape_trapped_timer;
+			if (g_trapped_mode == 2 || (time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
+			{
+//				wav_play(WAV_CLEANING_START);
+				g_trapped_mode = 0;
+				ret = true;
+			}
+		} else
+		{
+			if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
+			{
+				ROS_WARN("Robot has reach the target.");
+				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
+								 map_get_y_count());
 //			if(s_origin.X == map_get_x_count() && s_origin.Y == map_get_y_count()){
 //				ROS_WARN("direcition is wrong, swap");
 //				extern uint16_t g_last_dir;
 //				g_last_dir = (g_last_dir == POS_X) ? NEG_X : POS_X;
 //			}
-			ret = true;
-		}
+				ret = true;
+			}
 
-		if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
-				(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
-		{
-			ROS_WARN("Robot has round to the opposite direcition.");
-			ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
-							 map_get_y_count());
-			map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0),
-									 map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
+			if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
+					(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
+			{
+				ROS_WARN("Robot has round to the opposite direcition.");
+				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
+								 map_get_y_count());
+				map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0),
+										 map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
 
 //			if(s_origin.X == map_get_x_count() && s_origin.Y == map_get_y_count()){
 //				ROS_WARN("direcition is wrong, swap");
 //				extern uint16_t g_last_dir;
 //				g_last_dir = (g_last_dir == POS_X) ? NEG_X : POS_X;
 //			}
-			ret = true;
+				ret = true;
+			}
 		}
 	}
 	return ret;

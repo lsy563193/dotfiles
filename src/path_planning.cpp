@@ -44,6 +44,7 @@
 #include "spot.h"
 #include "movement.h"
 
+#include "wav.h"
 using namespace std;
 
 typedef struct {
@@ -57,12 +58,15 @@ uint8_t	g_first_start = 0;
 
 uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between current pos. & dest. */
 
+
 int16_t g_home_x, g_home_y;
 
 Cell_t g_cell_history[5];
 const Cell_t& g_curr = g_cell_history[0];
 
 uint16_t g_last_dir;
+
+int g_trapped_mode = 1;
 
 Cell_t g_trapped_cell[ESCAPE_TRAPPED_REF_CELL_SIZE];
 
@@ -1052,7 +1056,6 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			if(g_curr != map_point_to_cell(*next_point)){
 				ROS_INFO("start follow wall");
 				mt_set(CM_FOLLOW_LEFT_WALL);
-//				g_cm_move_type = CM_FOLLOW_RIGHT_WALL;
 				next = map_point_to_cell(*next_point);
 			}else{
 				ROS_INFO("reach 8m, go_home.");
@@ -1092,9 +1095,14 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
 			if (ret == 0)
 				return 0;
-
-			if (ret == -2)
-				return 2;
+			if (ret == -2){
+				wav_play(WAV_CLEANING_WALL_FOLLOW);
+				mt_set(CM_FOLLOW_LEFT_WALL);
+				extern uint32_t g_escape_trapped_timer;
+				g_escape_trapped_timer = time(NULL);
+				g_trapped_mode = 1;
+				return 1;
+			}
 		}
 	}
 	//found ==1

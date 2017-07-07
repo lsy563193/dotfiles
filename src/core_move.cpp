@@ -64,6 +64,7 @@ bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
+uint32_t g_escape_trapped_timer;
 int jam=0;
 bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
@@ -308,6 +309,14 @@ void cm_update_map()
 //	ROS_ERROR("2 last(%d,%d),curr(%d,%d)",last.X, last.Y,curr.X,curr.Y);
 	if (last != curr || get_bumper_status()!=0 || get_cliff_trig() !=0 || get_obs_status() != 0)
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+
+	{
+		extern int g_trapped_mode;
+		Cell_t next,target;
+		if(last != curr && g_trapped_mode == 1 && path_target(next, target) == 1)
+			g_trapped_mode = 2;
+	}
+
 }
 //-------------------------------cm_move_back-----------------------------//
 /*uint16_t bumper_turn_angle()
@@ -939,33 +948,6 @@ int cm_cleaning()
 				cm_set_event_manager_handler_state(false);
 			}
 
-		} else
-		if (is_found == 2)
-		{    // Trapped
-			/* FIXME: disable events, since Wall_Follow_Trapped() doesn't handle events for now. */
-			cm_set_event_manager_handler_state(false);
-			auto es_state = Wall_Follow_Trapped();
-			event_manager_set_current_mode(EVT_MODE_NAVIGATION);
-			cm_set_event_manager_handler_state(true);
-
-			if (g_go_home)
-				return 0;
-
-			if (es_state != Escape_Trapped_Escaped)
-			{
-				disable_motors();
-				if (es_state == Escape_Trapped_Key_Clean)
-				{
-					g_key_clean_pressed = true;
-				} else if (es_state == Escape_Trapped_Fatal)
-				{
-					g_fatal_quit_event = true;
-				}
-				return -1;
-			}
-
-			//Resume the motors.
-			work_motor_configure();
 		}
 	}
 	return 0;
