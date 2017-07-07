@@ -999,6 +999,9 @@ int cm_cleaning()
 				}
 				return -1;
 			}
+
+			//Resume the motors.
+			work_motor_configure();
 		}
 	}
 	return 0;
