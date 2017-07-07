@@ -51,7 +51,7 @@ public:
 	bool isReach();
 	void setTarget(){
 		if (LASER_FOLLOW_WALL)
-			laser_turn_angle(false);
+			laser_turn_angle(get_front_obs() >= get_front_obs_value());
 
 		target_angle_ = calc_target(g_turn_angle);
 	};
