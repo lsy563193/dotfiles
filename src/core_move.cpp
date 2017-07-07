@@ -1118,7 +1118,26 @@ void cm_go_home()
 			}
 		}
 		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
+		{
+			if (g_fatal_quit_event)
+			{
+				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
+				disable_motors();
+				robot::instance()->resetLowBatPause();
+				cm_reset_go_home();
+			}
+			else if (g_key_clean_pressed)
+			{
+				disable_motors();
+				if (robot::instance()->isManualPaused())
+					// The current home cell is still valid, so push it back to the home point list.
+					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
+				if (get_clean_mode() == Clean_Mode_WallFollow)
+					cm_reset_go_home();
+			}
+
 			return;
+		}
 	}
 }
 
