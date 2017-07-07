@@ -63,7 +63,6 @@ CMMoveType g_cm_move_type;
 
 bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
-uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
