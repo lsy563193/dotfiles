@@ -260,7 +260,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 	//*line_angle = atan2(-a, b) * 180 / PI;
 	Laser_Group.clear();
 	if (!fit_line.empty()) {
-		if (g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
+		if (mt_is_left()) {
 			*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
 		} else {
 			*line_angle = atan2(0 - fit_line.back().A, fit_line.back().B) * 180 / PI;

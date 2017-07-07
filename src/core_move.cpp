@@ -325,12 +325,12 @@ void cm_update_map()
 }*/
 uint16_t bumper_turn_angle()
 {
-	auto get_wheel_step = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? get_right_wheel_step : get_left_wheel_step;
-	auto get_obs = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? get_left_obs : get_right_obs;
-	auto get_obs_value = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? get_left_obs_value : get_right_obs_value;
+	auto get_wheel_step = (mt_is_left()) ? get_right_wheel_step : get_left_wheel_step;
+	auto get_obs = (mt_is_left()) ? get_left_obs : get_right_obs;
+	auto get_obs_value = (mt_is_left()) ? get_left_obs_value : get_right_obs_value;
 	auto status = get_bumper_status();
-	auto diff_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? RightBumperTrig : LeftBumperTrig;
-	auto same_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? LeftBumperTrig : RightBumperTrig;
+	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
+	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
 
 	if (status == AllBumperTrig)
 	{
@@ -386,7 +386,8 @@ bool _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max
 	is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle);
 	ROS_WARN("line_angle_raw = %lf", line_angle);
 	uint16_t angle = double_scale_10(line_angle);
-	if (g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
+
+	if (mt_is_right())
 		angle  = 1800-angle;
 
 	ROS_WARN("line_angle = %d", angle);
@@ -406,7 +407,7 @@ bool laser_turn_angle()
 	stop_brifly();
 
 	int angle_min, angle_max;
-	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
+	if (mt_is_left())
 	{
 		angle_min = 900;
 		angle_max = 1800;
@@ -439,8 +440,8 @@ bool laser_turn_angle()
 
 uint8_t angle_to_bumper_status(void)
 {
-	auto diff_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? RightBumperTrig : LeftBumperTrig;
-	auto same_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? LeftBumperTrig : RightBumperTrig;
+	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
+	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
 	if (g_turn_angle == 850)
 		return AllBumperTrig;
 	else if (g_turn_angle == 920)
@@ -453,7 +454,7 @@ uint8_t angle_to_bumper_status(void)
 uint16_t round_turn_distance()
 {
 	auto wall = robot::instance()->getLeftWall();
-	if (g_cm_move_type != CM_FOLLOW_LEFT_WALL)
+	if (mt_is_left())
 		wall = robot::instance()->getRightWall();
 
 	auto distance = wall > (Wall_Low_Limit) ? wall / 3 : g_wall_distance + 200;
@@ -463,7 +464,7 @@ uint16_t round_turn_distance()
 
 uint16_t round_turn_speed()
 {
-	if ((g_cm_move_type == CM_FOLLOW_LEFT_WALL) && (get_bumper_status()  == RightBumperTrig) ||
+	if ((mt_is_left()) && (get_bumper_status()  == RightBumperTrig) ||
 			(g_cm_move_type == CM_FOLLOW_RIGHT_WALL) && (get_bumper_status()  == LeftBumperTrig) )
 		return 15;
 	return 10;
@@ -479,11 +480,11 @@ uint16_t bumper_straight_distance()
 		return 150;
 	}else if(get_bumper_status() == LeftBumperTrig)
 	{
-		if (g_cm_move_type == CM_FOLLOW_LEFT_WALL) return 250;
+		if (mt_is_left()) return 250;
 		else return 375;
 	}else if(get_bumper_status() == RightBumperTrig)
 	{
-		if (g_cm_move_type == CM_FOLLOW_LEFT_WALL) return 375;
+		if (mt_is_left()) return 375;
 		else return 259;
 	}
 }
@@ -794,7 +795,7 @@ int16_t uranged_angle(int16_t angle)
 
 int16_t calc_target(int16_t)
 {
-	auto angle = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? -g_turn_angle : g_turn_angle;
+	auto angle = (mt_is_left()) ? -g_turn_angle : g_turn_angle;
 	return uranged_angle(Gyro_GetAngle() + angle);
 }
 
@@ -802,9 +803,9 @@ int16_t get_round_angle(CMMoveType type){
 	int16_t		angle;
 	auto status = get_bumper_status();
 	if ((status & LeftBumperTrig) && !(status & RightBumperTrig)) {
-		angle = (type == CM_FOLLOW_LEFT_WALL) ? 450 : 1350;
+		angle = (mt_is_left()) ? 450 : 1350;
 	} else if (!(status & LeftBumperTrig) && (status & RightBumperTrig)) {
-		angle = (type == CM_FOLLOW_LEFT_WALL) ? 1350 : 450;
+		angle = (mt_is_left()) ? 1350 : 450;
 	} else {
 		angle = 900;
 	}
@@ -2088,7 +2089,7 @@ void cm_block_charger_stub(int8_t direction)
 		case -2:
 		{
 			cm_world_to_point(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
-			if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
+			if (mt_is_left())
 					g_turn_angle = 300;
 				//else
 				//	g_turn_angle = 1100;
@@ -2100,7 +2101,7 @@ void cm_block_charger_stub(int8_t direction)
 			cm_world_to_point(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x2, &y2);
 			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
 			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
-			if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
+			if (mt_is_left())
 					g_turn_angle = 600;
 				//else
 				//	g_turn_angle = 950;
@@ -2109,7 +2110,7 @@ void cm_block_charger_stub(int8_t direction)
 		case 0:
 		{
 			cm_world_to_point(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
-			if (g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
+			if (mt_is_fallwall())
 				g_turn_angle = 850;
 			break;
 		}
@@ -2119,7 +2120,7 @@ void cm_block_charger_stub(int8_t direction)
 			cm_world_to_point(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x2, &y2);
 			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
 			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
-			if (g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
+			if (mt_is_right())
 					g_turn_angle = 600;
 				//else
 				//	g_turn_angle = 950;

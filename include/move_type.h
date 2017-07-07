@@ -15,6 +15,10 @@ typedef enum {
 
 extern CMMoveType g_cm_move_type;
 
+bool mt_is_right();
+
+bool mt_is_left();
+
 bool mt_is_fallwall();
 
 bool mt_is_linear();
