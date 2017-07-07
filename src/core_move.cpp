@@ -2494,6 +2494,10 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 			beep_for_command(true);
 			if (get_clean_mode() == Clean_Mode_WallFollow)
 				wf_clear();
+			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
+				SpotMovement::instance()->spotInit(1.0,{0,0});
+				SpotMovement::instance()->setSpotType(NO_SPOT);
+			}
 		}
 		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}
