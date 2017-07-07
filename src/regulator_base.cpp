@@ -216,9 +216,8 @@ BackRegulator::BackRegulator() : speed_(8), counter_(0), pos_x_(0), pos_y_(0)
 bool BackRegulator::isSwitch()
 {
 //	ROS_INFO("BackRegulator::isSwitch");
-	auto distance = sqrtf(powf(pos_x_ - robot::instance()->getOdomPositionX(), 2) + powf(pos_y_ -
-																																											 robot::instance()->getOdomPositionY(),
-																																											 2));
+	auto distance = sqrtf(powf(pos_x_ - robot::instance()->getOdomPositionX(), 2) +
+			   	powf(pos_y_ - robot::instance()->getOdomPositionY(), 2));
 	if(fabsf(distance) > 0.02f){
 		if(get_bumper_status()!= 0) {
 			g_bumper_cnt++ ;
@@ -354,7 +353,8 @@ void RegulatorProxy::switchToNext()
 			back_reg_->setOrigin();
 			p_reg_ = back_reg_;
 		}
-	} else if (p_reg_ == back_reg_)
+	}
+	else if (p_reg_ == back_reg_)
 	{
 		g_bumper_hitted = g_cliff_triggered = false;
 		if (LASER_FOLLOW_WALL && g_cm_move_type == CM_FOLLOW_LEFT_WALL) {
@@ -362,7 +362,8 @@ void RegulatorProxy::switchToNext()
 		}
 		turn_reg_->setTarget(calc_target(g_turn_angle));
 		p_reg_ = turn_reg_;
-	} else if (p_reg_ == turn_reg_)
+	}
+	else if (p_reg_ == turn_reg_)
 	{
 		reset_sp_turn_count();
 		if(g_bumper_hitted || g_cliff_triggered)
