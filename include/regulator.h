@@ -49,8 +49,11 @@ public:
 	bool adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
 	bool isReach();
-	void setTarget(int16_t target_angle){
-		target_angle_ = target_angle;
+	void setTarget(){
+		if (LASER_FOLLOW_WALL)
+			laser_turn_angle(false);
+
+		target_angle_ = calc_target(g_turn_angle);
 	};
 
 private:

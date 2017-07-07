@@ -403,9 +403,11 @@ bool _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max
 
 bool laser_turn_angle(bool obs_status)
 {
+
 	stop_brifly();
 	uint8_t status = angle_to_bumper_status();
 
+	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
 	int angle_min, angle_max;
 	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
 	{
