@@ -1052,6 +1052,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			if(g_curr != map_point_to_cell(*next_point)){
 				ROS_INFO("start follow wall");
 				g_cm_move_type = CM_FOLLOW_LEFT_WALL;
+//				g_cm_move_type = CM_FOLLOW_RIGHT_WALL;
 				next = map_point_to_cell(*next_point);
 			}else{
 				ROS_INFO("reach 8m, go_home.");

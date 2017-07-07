@@ -39,7 +39,7 @@
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
-#include "regulator_base.h"
+#include "regulator.h"
 #ifdef TURN_SPEED
 #undef TURN_SPEED
 #endif
@@ -63,7 +63,6 @@ CMMoveType g_cm_move_type;
 
 bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
-uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
@@ -121,216 +120,6 @@ int16_t ranged_angle(int16_t angle)
 		}
 	}
 	return angle;
-}
-
-typedef struct LinearSpeedRegulator_{
-	LinearSpeedRegulator_(int32_t max):speed_max_(max),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4){};
-	~LinearSpeedRegulator_(){
-		set_wheel_speed(0, 0);
-	};
-	bool adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed);
-	int32_t speed_max_;
-	int32_t integrated_;
-	int32_t base_speed_;
-	uint8_t integration_cycle_;
-	uint32_t tick_;
-	uint8_t turn_speed_;
-}LinearSpeedRegulator;
-
-bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed)
-{
-	uint8_t left_speed;
-	uint8_t right_speed;
-	if (g_bumper_hitted || g_cliff_triggered)
-	{
-//		if(get_clean_mode() == Clean_Mode_WallFollow)
-			if(g_turn_angle == 0)
-				g_turn_angle = bumper_turn_angle();
-
-		left_speed = right_speed = 8;
-		set_dir_backward();
-		set_wheel_speed(left_speed, right_speed);
-		return true;
-	}
-
-	auto diff = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y) - Gyro_GetAngle());
-
-	// Firstly turn to the right angle. (Replace old function HeadToCourse())
-	if (rotate_is_needed)
-	{
-		if (std::abs(diff) < 10) {
-			set_wheel_speed(0, 0);
-			ROS_INFO("%s %d: Gyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Gyro_GetAngle(), diff);
-			g_obs_triggered = false;
-			g_rcon_triggered = false;
-			rotate_is_needed = false;
-			tick_ = 0;
-			return true;
-		}
-
-		tick_++;
-		if (tick_ > 2)
-		{
-			tick_ = 0;
-			if (std::abs(diff) > 350){
-				turn_speed_ = std::min(++turn_speed_, ROTATE_TOP_SPEED);
-			}
-			else{
-				--turn_speed_;
-				turn_speed_ = std::max(--turn_speed_, ROTATE_LOW_SPEED);
-			}
-		}
-
-		if ((diff >= 0) && (diff <= 1800))
-			set_dir_left();
-		else if ((diff <= 0) && (diff >= (-1800)))
-			set_dir_right();
-
-		set_wheel_speed(turn_speed_, turn_speed_);
-		return true;
-	}
-
-	if ( std::abs(diff) > 300)
-	{
-		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
-		return false;
-	}
-
-	if (integration_cycle_++ > 10)
-	{
-		integration_cycle_ = 0;
-		integrated_ += diff;
-		check_limit(integrated_, -150, 150);
-	}
-
-	auto distance = TwoPointsDistance(map_get_x_count(), map_get_y_count(), Target.X, Target.Y);
-	auto obstcal_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
-
-	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || slow_down || obstcal_detected)
-	{
-		integrated_ = 0;
-		diff = 0;
-		base_speed_ -= 1;
-		base_speed_ = base_speed_ < BASE_SPEED ? BASE_SPEED : base_speed_;
-	} else
-	if (base_speed_ < (int32_t) speed_max_)
-	{
-		if (tick_++ > 5)
-		{
-			tick_ = 0;
-			base_speed_++;
-		}
-		integrated_ = 0;
-	}
-
-	left_speed = base_speed_ - diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-	right_speed = base_speed_ + diff / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-
-	check_limit(left_speed, BASE_SPEED, speed_max_);
-	check_limit(right_speed, BASE_SPEED, speed_max_);
-	base_speed_ = (left_speed + right_speed) / 2;
-//	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d)",left_speed, right_speed, base_speed_, slow_down);
-	move_forward(left_speed, right_speed);
-	return true;
-}
-
-typedef struct TurnSpeedRegulator_{
-	TurnSpeedRegulator_(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
-					speed_max_(speed_max),speed_min_(speed_min), speed_(speed_start),tick_(0){};
-	~TurnSpeedRegulator_() {
-		set_wheel_speed(0, 0);
-	}
-	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
-	uint8_t speed_max_;
-	uint8_t speed_min_;
-	uint8_t speed_;
-	uint32_t tick_;
-}TurnSpeedRegulator;
-
-bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
-{
-	if ((diff >= 0) && (diff <= 1800))
-		set_dir_left();
-	else if ((diff <= 0) && (diff >= (-1800)))
-		set_dir_right();
-
-	tick_++;
-	if (tick_ > 2)
-	{
-		tick_ = 0;
-		if (std::abs(diff) > 350){
-			speed_ = std::min(++speed_, speed_max_);
-		}
-		else{
-			--speed_;
-			speed_ = std::max(--speed_, speed_min_);
-		}
-	}
-	speed = speed_;
-	return true;
-}
-
-typedef struct SelfCheckRegulator_{
-	SelfCheckRegulator_(){};
-	~SelfCheckRegulator_(){
-		set_wheel_speed(0, 0);
-	};
-	bool adjustSpeed(uint8_t bumper_jam_state);
-}SelfCheckRegulator;
-
-bool SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
-{
-	uint8_t left_speed;
-	uint8_t right_speed;
-	if (g_oc_suction)
-		left_speed = right_speed = 0;
-	else if (g_oc_wheel_left || g_oc_wheel_right)
-	{
-		if (g_oc_wheel_right) {
-			set_dir_right();
-		} else {
-			set_dir_left();
-		}
-		left_speed = 30;
-		right_speed = 30;
-	}
-	else if (g_cliff_jam)
-	{
-		set_dir_backward();
-		left_speed = right_speed = 18;
-	}
-	else //if (g_bumper_jam)
-	{
-		switch (bumper_jam_state)
-		{
-			case 1:
-			case 2:
-			case 3:
-			{
-				// Quickly move back for a distance.
-				set_dir_backward();
-				left_speed = right_speed = RUN_TOP_SPEED;
-				break;
-			}
-			case 4:
-			{
-				// Quickly turn right for 90 degrees.
-				set_dir_right();
-				left_speed = right_speed = RUN_TOP_SPEED;
-				break;
-			}
-			case 5:
-			{
-				// Quickly turn left for 180 degrees.
-				set_dir_left();
-				left_speed = right_speed = RUN_TOP_SPEED;
-				break;
-			}
-		}
-	}
-
-	set_wheel_speed(left_speed, right_speed);
-	return true;
 }
 
 // Target:	robot coordinate
@@ -537,139 +326,128 @@ void cm_update_map()
 }*/
 uint16_t bumper_turn_angle()
 {
+	auto get_wheel_step = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? get_right_wheel_step : get_left_wheel_step;
+	auto get_obs = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? get_left_obs : get_right_obs;
+	auto get_obs_value = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? get_left_obs_value : get_right_obs_value;
 	auto status = get_bumper_status();
+	auto diff_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? RightBumperTrig : LeftBumperTrig;
+	auto same_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? LeftBumperTrig : RightBumperTrig;
+
 	if (status == AllBumperTrig)
 	{
 		g_turn_angle = 850;
 		g_straight_distance = 150; //150;
 		g_wall_distance = std::min(g_wall_distance + 300, Wall_High_Limit);
-		jam = get_right_wheel_step() < 2000 ? ++jam : 0;
-	} else if (status == RightBumperTrig)
+		jam = get_wheel_step() < 2000 ? ++jam : 0;
+	} else if (status == diff_side)
 	{
 		g_wall_distance = std::min(g_wall_distance + 300, Wall_High_Limit);
 		g_turn_angle = 920;
-	} else if (status == LeftBumperTrig)
+	} else if (status == same_side)
 	{
 		g_wall_distance = std::max(g_wall_distance - 100, Wall_Low_Limit);
 
-		g_turn_angle = (jam >= 3 || (g_wall_distance < 200 && get_left_obs() <= get_left_obs_value() - 200)) ? 200 : 300;
+		g_turn_angle = (jam >= 3 || (g_wall_distance < 200 && get_obs() <= get_obs_value() - 200)) ? 200 : 300;
 
-		g_wall_distance = (jam < 3 && g_wall_distance<200 && get_left_obs()>(get_left_obs_value() - 200))
+		g_wall_distance = (jam < 3 && g_wall_distance<200 && get_obs()>(get_obs_value() - 200))
 											? Wall_High_Limit : g_wall_distance;
 
 		g_straight_distance = 250; //250;
-		jam = get_right_wheel_step() < 2000 ? ++jam : 0;
+		jam = get_wheel_step() < 2000 ? ++jam : 0;
 	}
+
 	status = get_cliff_trig();
 	if(status != 0)
 		g_turn_angle = 750;
+
 	g_straight_distance = 200;
 //	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
 //	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
 	return g_turn_angle;
 }
+int double_scale_10(double line_angle)
+{
+	int angle;
+	if (line_angle > 0)
+	{
+		angle = int((180 - line_angle) * 10);
+	} else
+	{
+		angle = int(fabs(line_angle) * 10);
+	}
+	return angle;
+}
+bool _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max,double dis_limit=0.217)
+{
+	ROS_WARN("bumper (%d)!", get_bumper_status());
+	bool is_found;
+	double line_angle;
+	const auto RESET_WALL_DIS = 100;
+	is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle);
+	ROS_WARN("line_angle_raw = %lf", line_angle);
+	uint16_t angle = double_scale_10(line_angle);
+	if (g_cm_move_type == CM_FOLLOW_RIGHT_WALL)
+		angle  = 1800-angle;
+
+	ROS_WARN("line_angle = %d", angle);
+	if (is_found && angle >= angle_min && angle < angle_max)
+	{
+		g_turn_angle = angle;
+		g_wall_distance = RESET_WALL_DIS;
+		ROS_WARN("laser generate turn angle!");
+		return true;
+	}
+	return false;
+}
 
 bool laser_turn_angle(bool obs_status)
 {
+
 	stop_brifly();
-	double line_angle;
-	bool is_fit_sud;
 	uint8_t status = angle_to_bumper_status();
-	auto reset_wall_dis = 100;
-	if (obs_status) {
+
+	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
+	int angle_min, angle_max;
+	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
+	{
+		angle_min = 900;
+		angle_max = 1800;
+	} else
+	{
+		angle_min = 200;
+		angle_max = 900;
+	}
+	if (obs_status)
+	{
 		ROS_ERROR("front obs trigger");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0, 0.25, &line_angle);
-		ROS_WARN("line_angle_raw = %lf", line_angle);
-		if (line_angle > 0) {
-			line_angle = int((180 - line_angle) * 10);
-		} else {
-			line_angle = int(fabs(line_angle) * 10);
-		}
-		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle >= 450 && line_angle < 1800) {
-			g_turn_angle = line_angle;
-			g_wall_distance = reset_wall_dis;
-			ROS_WARN("laser generate turn angle!");
-			return true;
-		} else {
-			ROS_WARN("bumper generate turn angle!");
-			return false;
-		}
+		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
 	}
 	if (status == AllBumperTrig)
 	{
-		ROS_ERROR("left and right bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 270, -1.0, 0.217,&line_angle);
-		ROS_WARN("line_angle_raw = %lf", line_angle);
-		if (line_angle > 0) {
-			line_angle = int((180 - line_angle) * 10);
-		} else {
-			line_angle = int(fabs(line_angle) * 10);
-		}
-		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
-			g_turn_angle = line_angle;
-			g_wall_distance = reset_wall_dis;
-			ROS_WARN("laser generate turn angle!");
-			return true;
-		} else {
-			ROS_WARN("bumper generate turn angle!");
-			return false;
-		}
+		return _laser_turn_angle(90, 270, 900, 1800);
 	} else if (status == RightBumperTrig)
 	{
-		ROS_ERROR("right bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(90, 180, -1.0, 0.217, &line_angle);
-		ROS_WARN("line_angle_raw = %lf", line_angle);
-		if (line_angle > 0) {
-			line_angle = int((180 - line_angle) * 10);
-		} else {
-			line_angle = int(fabs(line_angle) * 10);
-		}
-		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle >= 900 && line_angle < 1800) {
-			g_turn_angle = line_angle;
-			g_wall_distance = reset_wall_dis;
-			ROS_WARN("laser generate turn angle!");
-			return true;
-		} else {
-			ROS_WARN("bumper generate turn angle!");
-			return false;
-		}
+
+		return _laser_turn_angle(90, 180, angle_min, angle_max);
 	} else if (status == LeftBumperTrig)
 	{
-		ROS_ERROR("left bumper");
-		is_fit_sud = MotionManage::s_laser->getLaserDistance(180, 270, -1.0, 0.217, &line_angle);
-		ROS_WARN("line_angle_raw = %lf", line_angle);
-		if (line_angle > 0) {
-			line_angle = int((180 - line_angle) * 10);
-		} else {
-			line_angle = int(fabs(line_angle) * 10);
-		}
-		ROS_WARN("line_angle = %lf", line_angle);
-		if (is_fit_sud && line_angle > 200 && line_angle <= 900) {
-			g_turn_angle = line_angle;
-			g_wall_distance = reset_wall_dis;
-			ROS_WARN("laser generate turn angle!");
-			return true;
-		} else {
-			ROS_WARN("bumper generate turn angle!");
-			return false;
-		}
+		return _laser_turn_angle(180, 270, angle_min, angle_max);
 	}
-	return true;
+	return false;
 }
 
 uint8_t angle_to_bumper_status(void)
 {
+	auto diff_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? RightBumperTrig : LeftBumperTrig;
+	auto same_side = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? LeftBumperTrig : RightBumperTrig;
 	if (g_turn_angle == 850)
 		return AllBumperTrig;
 	else if (g_turn_angle == 920)
-		return RightBumperTrig;
+		return diff_side;
 	else if (g_turn_angle == 0)
 		return 0;
-	return LeftBumperTrig;
+	return same_side;
 }
 
 uint16_t round_turn_distance()
@@ -762,7 +540,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	reset_rcon_status();
 	cm_set_event_manager_handler_state(true);
 
-	LinearSpeedRegulator regulator(speed_max);
+	LinearRegulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
 		wall_dynamic_base(50);
@@ -1002,7 +780,7 @@ bool cm_curve_move_to_point()
 
 bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
 	if(get_clean_mode() == Clean_Mode_WallFollow){
-		return g_cm_move_type == CM_FOLLOW_LEFT_WALL;
+		return g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL ;
 	}else if(get_clean_mode() == Clean_Mode_Spot){
 		return false;
 	}
@@ -1243,7 +1021,7 @@ void cm_go_home()
 
 	set_vacmode(Vac_Normal, false);
 	set_vac_speed();
-
+	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	if(robot::instance()->isLowBatPaused())
 		wav_play(WAV_BATTERY_LOW);
 	wav_play(WAV_BACK_TO_CHARGER);
@@ -2069,8 +1847,8 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_bumper_jam)
-		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+//	if (g_move_back_finished && !g_bumper_jam)
+//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
 
@@ -2085,8 +1863,8 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_bumper_jam)
-		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+//	if (g_move_back_finished && !g_bumper_jam)
+//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
@@ -2100,26 +1878,26 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 		set_wheel_speed(0, 0);
 	}
 
-	if (g_move_back_finished && !g_bumper_jam)
-		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+//	if (g_move_back_finished && !g_bumper_jam)
+//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 /* OBS */
 void cm_handle_obs_front(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+//	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 void cm_handle_obs_left(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+//	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
 void cm_handle_obs_right(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+//	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 	g_obs_triggered = true;
 }
 
