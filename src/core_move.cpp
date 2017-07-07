@@ -894,7 +894,6 @@ int cm_cleaning()
 		ROS_WARN("%s %d: Continue going home.", __FUNCTION__, __LINE__);
 		return 0;
 	}
-	bool on_spot = false;
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
@@ -917,7 +916,6 @@ int cm_cleaning()
 		}
 		
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
-		auto last_dir = path_get_robot_direction();
 		path_update_cell_history();
 		path_update_cells();
 		path_reset_path_points();
