@@ -1095,13 +1095,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				return 0;
 
 			if (ret == -2)
-			{
-				/* Robot is trapped and no path to starting point or home. */
-				if (path_escape_trapped() == 0)
-					return 2;
-				else
-					return -1;
-			}
+				return 2;
 		}
 	}
 	//found ==1
