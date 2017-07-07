@@ -65,6 +65,8 @@ uint16_t g_turn_angle;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 uint32_t g_escape_trapped_timer;
+
+extern int g_trapped_mode;
 int jam=0;
 bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
@@ -311,7 +313,6 @@ void cm_update_map()
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 
 	{
-		extern int g_trapped_mode;
 		Cell_t next,target;
 		if(last != curr && g_trapped_mode == 1 && path_target(next, target) == 1)
 			g_trapped_mode = 2;
@@ -947,8 +948,10 @@ int cm_cleaning()
 					wf_break_wall_follow();
 				cm_set_event_manager_handler_state(false);
 			}
-
 		}
+		if (is_found == 2)
+				return -1;
+
 	}
 	return 0;
 }
@@ -1140,6 +1143,7 @@ uint8_t cm_touring(void)
 {
 	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_from_station = 0;
+	g_trapped_mode = 0;
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();
 	MotionManage motion;
