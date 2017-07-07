@@ -550,7 +550,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 		}
 
 		if (g_fatal_quit_event || g_key_clean_pressed
-			|| (!g_go_home && g_remote_home) || g_remote_direction_keys)
+			|| (!g_go_home && g_remote_home))
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
