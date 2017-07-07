@@ -92,7 +92,7 @@ volatile uint8_t g_error_code = 0;
 //Variable for checking spot turn in wall follow mode
 volatile int32_t g_wf_sp_turn_count;
 /*----------------------- Work Timer functions--------------------------*/
-void reset_start_work_time()
+void reset_work_time()
 {
 	g_start_work_time = time(NULL);
 }

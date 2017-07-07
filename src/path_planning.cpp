@@ -1079,7 +1079,6 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 
 		}
 	}
-	//if(get_clean_mode() == Clean_Mode_Spot || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){	
 	else if( SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
         int8_t ret = SpotMovement::instance()->getNextTarget(*next_point);
 		*target_point = *next_point;

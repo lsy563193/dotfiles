@@ -549,9 +549,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 		}
 
 		if (g_fatal_quit_event || g_key_clean_pressed
-			|| (!g_go_home && (g_battery_home || g_remote_home))
-			|| g_remote_spot // It will only be set if robot is not during spot.
-			|| g_remote_direction_keys) // It will only be set if robot is during spot.
+			|| (!g_go_home && g_remote_home))
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
@@ -897,30 +895,15 @@ int cm_cleaning()
 		{
 			g_remote_home = false;
 			g_go_home = true;
-			ROS_WARN("%s %d: Receive go home command or battery low and should go home, reset g_remote_home.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home.", __FUNCTION__, __LINE__);
 			return 0;
 		}
 
 		if (g_remote_spot)
 		{
-			g_remote_spot = false;
-			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
-		}
-
-		if (g_remote_direction_keys)
-		{
-			g_remote_direction_keys = false;
-			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT)
-			{
-				SpotMovement::instance()->setSpotType(NO_SPOT);
-				SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
-				work_motor_configure();
-				wav_play(WAV_CLEANING_CONTINUE);
-			}
-			else if (SpotMovement::instance()->getSpotType() == NORMAL_SPOT)
-				return -1;
-		}
-
+			g_remote_spot = false;	
+		}	
+		
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
 		auto last_dir = path_get_robot_direction();
 		path_update_cell_history();
@@ -934,8 +917,8 @@ int cm_cleaning()
 			if(get_clean_mode() != Clean_Mode_Spot)
 				g_go_home = true;
 			return 0;
-		} else
-		if (is_found == 1)
+		}
+		else if (is_found == 1)
 		{
 			if (mt_is_fallwall())
 				cm_follow_wall(g_next_point);
@@ -978,6 +961,9 @@ int cm_cleaning()
 				}
 				return -1;
 			}
+
+			//Resume the motors.
+			work_motor_configure();
 		}
 	}
 	return 0;
@@ -1094,7 +1080,26 @@ void cm_go_home()
 			}
 		}
 		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
+		{
+			if (g_fatal_quit_event)
+			{
+				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
+				disable_motors();
+				robot::instance()->resetLowBatPause();
+				cm_reset_go_home();
+			}
+			else if (g_key_clean_pressed)
+			{
+				disable_motors();
+				if (robot::instance()->isManualPaused())
+					// The current home cell is still valid, so push it back to the home point list.
+					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
+				if (get_clean_mode() == Clean_Mode_WallFollow)
+					cm_reset_go_home();
+			}
+
 			return;
+		}
 	}
 }
 
@@ -2001,7 +2006,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	 *  0: front
 	 *  1: front right
 	 *  2: right
-	 *  9: meaningless
+	 *  9: do not need to block
 	 */
 	int8_t direction = 9;
 	int8_t max_cnt = 0;
@@ -2031,32 +2036,32 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	if (get_rcon_status() & RconFR2_HomeT)
 		fr2t_cnt++;
 
-	if (lt_cnt > 3)
+	if (lt_cnt > 2)
 	{
 		max_cnt = lt_cnt;
 		direction = -2;
 	}
-	if (fl2t_cnt > 3 && fl2t_cnt > max_cnt)
+	if (fl2t_cnt > 2 && fl2t_cnt > max_cnt)
 	{
 		max_cnt = fl2t_cnt;
 		direction = -1;
 	}
-	if (flt_cnt > 3 && flt_cnt > max_cnt)
+	if (flt_cnt > 2 && flt_cnt > max_cnt)
 	{
 		max_cnt = flt_cnt;
 		direction = 0;
 	}
-	if (frt_cnt > 3 && frt_cnt > max_cnt)
+	if (frt_cnt > 2 && frt_cnt > max_cnt)
 	{
 		max_cnt = frt_cnt;
 		direction = 0;
 	}
-	if (fr2t_cnt > 3 && fr2t_cnt > max_cnt)
+	if (fr2t_cnt > 2 && fr2t_cnt > max_cnt)
 	{
 		max_cnt = fr2t_cnt;
 		direction = 1;
 	}
-	if (rt_cnt > 3 && rt_cnt > max_cnt)
+	if (rt_cnt > 2 && rt_cnt > max_cnt)
 	{
 		direction = 2;
 	}
@@ -2067,7 +2072,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 		cm_block_charger_stub(direction);
 		lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
 	}
-		reset_rcon_status();
+	reset_rcon_status();
 }
 
 void cm_block_charger_stub(int8_t direction)
@@ -2475,8 +2480,16 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check()) {
-		beep_for_command(true);
-		g_remote_home = true;
+
+		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
+			beep_for_command(false);
+		}
+		else{
+			g_remote_home = true;
+			beep_for_command(true);
+			if (get_clean_mode() == Clean_Mode_WallFollow)
+				wf_clear();
+		}
 		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}
 	else {
@@ -2486,22 +2499,47 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
+static bool g_remote_spot_pressed = false;
+static time_t g_spot_pressed_duration;
+
 void cm_handle_remote_spot(bool state_now, bool state_last)
 {
+	
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+	bool b_time_short = false;
+	if(g_remote_spot_pressed == false){
+		g_remote_spot_pressed = true;
+		g_spot_pressed_duration = time(NULL);
+	}
+	else{
+		g_remote_spot_pressed = false;
+		if (difftime(time(NULL),g_spot_pressed_duration) < 3){
+			ROS_WARN("%s,%d, press spot key to fast",__FUNCTION__,__LINE__);
+			b_time_short = true;	
+		}
+	}
 
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check())
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && !b_time_short && !g_remote_spot)
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
-			set_wheel_speed(0, 0);
-			g_remote_spot = true;
-			beep_for_command(true);
 			/*----store current position---*/
-			map_set_position((robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL/CELL_SIZE), (robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
+			map_set_position((robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL/CELL_SIZE), 
+						(robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL/CELL_SIZE));
 			ROS_WARN("%s,%d,cur cell x = %d,cur cell y = %d",__FUNCTION__,__LINE__,map_get_x_cell(),map_get_y_cell());
+			SpotMovement::instance() ->setSpotType(CLEAN_SPOT);
+			set_wheel_speed(0, 0);
+			beep_for_command(true);
+			g_remote_spot = true;
 		}
-		else
+		else if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
+			SpotMovement::instance()->setSpotType(NO_SPOT);
+			SpotMovement::instance()->spotInit(1.0,{0,0});
+			set_wheel_speed(0, 0);
+			beep_for_command(true);
+		}
+		else{
 			beep_for_command(false);
+		}
 	}
 	else
 		beep_for_command(false);
@@ -2533,19 +2571,7 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 void cm_handle_remote_direction(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check())
-	{
-		SpotType spt = SpotMovement::instance()->getSpotType();
-		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT){
-			beep_for_command(true);
-			g_remote_direction_keys = true;
-		}
-		else
-			beep_for_command(false);
-	}
-	else
-		beep_for_command(false);
-
+	beep_for_command(false);
 	reset_rcon_remote();
 }
 

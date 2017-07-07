@@ -2,6 +2,8 @@
 // Created by lsy563193 on 5/10/17.
 //
 
+#include "ros/ros.h"
+#include "boost/thread.hpp"
 #ifndef PP_SLAM_H
 #define PP_SLAM_H
 class Slam
@@ -11,12 +13,17 @@ public:
 	~Slam();
 	//todo
 	void enableMapUpdate();
-	bool isMapReady(void) const
+	bool isMapReady(void)
 	{
+		boost::mutex::scoped_lock(is_map_ready_mutex_);
 		return is_map_ready_;
 	}
 
-	void isMapReady(bool val) { is_map_ready_ = val; };
+	void isMapReady(bool val)
+	{
+		boost::mutex::scoped_lock(is_map_ready_mutex_);
+		is_map_ready_ = val;
+	}
 
 	void start(void);
 	void stop(void);
@@ -29,6 +36,7 @@ private:
 	ros::ServiceClient end_slam_cli_;
 #endif
 	bool	is_map_ready_;
+	boost::mutex is_map_ready_mutex_;
 //	ros::Subscriber map_sub_;
 	ros::NodeHandle nh_;
 	ros::NodeHandle nh_local_;

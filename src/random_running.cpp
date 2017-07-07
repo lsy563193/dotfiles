@@ -88,7 +88,7 @@ void Random_Running_Mode(void)
 		return;
 	}
 
-	reset_start_work_time();
+	reset_work_time();
 	Wall_Bumper_Factor = get_random_factor()/15;
 	 reset_move_with_remote();
 //	reset_bumper_error();
