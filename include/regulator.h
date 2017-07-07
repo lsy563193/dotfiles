@@ -5,6 +5,7 @@
 #ifndef PP_REGULATOR_BASE_H
 #define PP_REGULATOR_BASE_H
 
+#include <move_type.h>
 
 class RegulatorBase {
 public:
@@ -51,7 +52,7 @@ public:
 	bool isReach();
 	void setTarget(){
 		if (LASER_FOLLOW_WALL)
-			laser_turn_angle(false);
+			laser_turn_angle();
 
 		target_angle_ = calc_target(g_turn_angle);
 	};

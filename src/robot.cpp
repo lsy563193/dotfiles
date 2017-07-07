@@ -10,6 +10,7 @@
 #include <motion_manage.h>
 #include <core_move.h>
 #include <wall_follow_slam.h>
+#include <move_type.h>
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
@@ -329,8 +330,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 
 //		cm_update_map();
-		extern CMMoveType g_cm_move_type;
-		if(g_cm_move_type != CM_LINEARMOVE)
+		if(! mt_is_linear())
 			wf_update_map();
 	}
 

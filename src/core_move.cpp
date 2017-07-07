@@ -36,6 +36,7 @@
 #include <event_manager.h>
 #include <mathematics.h>
 #include "wall_follow_slam.h"
+#include <move_type.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -59,14 +60,12 @@
 #define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
-CMMoveType g_cm_move_type;
-
 bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
-static bool g_should_follow_wall;
+bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
@@ -401,13 +400,11 @@ bool _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max
 	return false;
 }
 
-bool laser_turn_angle(bool obs_status)
+bool laser_turn_angle()
 {
-
+ auto obs_status = get_front_obs() >= get_front_obs_value();
 	stop_brifly();
-	uint8_t status = angle_to_bumper_status();
 
-	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
 	int angle_min, angle_max;
 	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
 	{
@@ -423,6 +420,9 @@ bool laser_turn_angle(bool obs_status)
 		ROS_ERROR("front obs trigger");
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
 	}
+
+	uint8_t status = angle_to_bumper_status();
+	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
 	if (status == AllBumperTrig)
 	{
 		return _laser_turn_angle(90, 270, 900, 1800);
@@ -777,43 +777,6 @@ bool cm_curve_move_to_point()
 	return true;
 }
 
-bool is_follow_wall(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
-	if(get_clean_mode() == Clean_Mode_WallFollow){
-		return g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL ;
-	}else if(get_clean_mode() == Clean_Mode_Spot){
-		return false;
-	}
-	g_cm_move_type = CM_LINEARMOVE;
-//	ROS_ERROR("curr(%d,%d),next(%d,%d),target(%d,%d)",map_get_x_cell(), map_get_y_cell(),
-//						                                        count_to_cell(next_point->X), count_to_cell(next_point->Y),
-//																										count_to_cell(target_point.X), count_to_cell(target_point.Y));
-//	ROS_ERROR("curr_point_y(%d),next_point_y(%d),dir(%d),should_follow_wall(%d)",map_get_y_count(), next_point->Y, dir, g_should_follow_wall);
-	if (!IS_X_AXIS(dir) || !g_should_follow_wall ||next_point->Y == map_get_y_count()) {
-
-		return false;
-	}
-
-	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
-//	ROS_ERROR("curr_y(%d),next_y(%d),delta_y(%d),dir(%d)",map_get_y_cell(), count_to_cell(next_point->Y), delta_y, dir);
-
-	if ( delta_y != 0 && std::abs(delta_y) <= 2 ) {
-		g_cm_move_type = (dir == POS_X) ^ (delta_y > 0) ? CM_FOLLOW_LEFT_WALL: CM_FOLLOW_RIGHT_WALL;
-		ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
-	} else if(delta_y == 0){
-//		ROS_ERROR("don't need to go to new line. curr_x(%d)", count_to_cell(next_point->X));
-		if (!(count_to_cell(next_point->X) == SHRT_MAX || count_to_cell(next_point->X) == SHRT_MIN)) {
-			delta_y = count_to_cell(target_point.Y) - map_get_y_cell();
-			if (delta_y != 0 && std::abs(delta_y) <= 2) {
-				next_point->Y = target_point.Y;
-				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
-//				ROS_ERROR("don't need to go to new line. curr_x(%d)", count_to_cell(next_point->X));
-				ROS_INFO("follow wall to new line, 2_left_3_right(%d)",g_cm_move_type);
-			}
-		}
-	}
-	return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) || (g_cm_move_type == CM_FOLLOW_RIGHT_WALL);
-}
-
 int16_t uranged_angle(int16_t angle)
 {
 	while (angle >= 3600 || angle < 0)
@@ -957,7 +920,7 @@ int cm_cleaning()
 		}
 		else if (is_found == 1)
 		{
-			if (is_follow_wall(&g_next_point, g_target_point, last_dir))
+			if (mt_is_fallwall())
 				cm_follow_wall(g_next_point);
 			else
 			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
@@ -1019,7 +982,7 @@ void cm_go_home()
 	 */
 	bool all_old_path_failed = false;
 	Cell_t current_home_cell;
-	g_cm_move_type = CM_LINEARMOVE;
+	mt_set(CM_LINEARMOVE);
 
 	set_vacmode(Vac_Normal, false);
 	set_vac_speed();
@@ -1117,7 +1080,26 @@ void cm_go_home()
 			}
 		}
 		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
+		{
+			if (g_fatal_quit_event)
+			{
+				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
+				disable_motors();
+				robot::instance()->resetLowBatPause();
+				cm_reset_go_home();
+			}
+			else if (g_key_clean_pressed)
+			{
+				disable_motors();
+				if (robot::instance()->isManualPaused())
+					// The current home cell is still valid, so push it back to the home point list.
+					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
+				if (get_clean_mode() == Clean_Mode_WallFollow)
+					cm_reset_go_home();
+			}
+
 			return;
+		}
 	}
 }
 
@@ -1172,7 +1154,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 
 uint8_t cm_touring(void)
 {
-	g_cm_move_type = get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE;
+	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_from_station = 0;
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();
@@ -2024,7 +2006,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	 *  0: front
 	 *  1: front right
 	 *  2: right
-	 *  9: meaningless
+	 *  9: do not need to block
 	 */
 	int8_t direction = 9;
 	int8_t max_cnt = 0;
@@ -2054,32 +2036,32 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	if (get_rcon_status() & RconFR2_HomeT)
 		fr2t_cnt++;
 
-	if (lt_cnt > 3)
+	if (lt_cnt > 2)
 	{
 		max_cnt = lt_cnt;
 		direction = -2;
 	}
-	if (fl2t_cnt > 3 && fl2t_cnt > max_cnt)
+	if (fl2t_cnt > 2 && fl2t_cnt > max_cnt)
 	{
 		max_cnt = fl2t_cnt;
 		direction = -1;
 	}
-	if (flt_cnt > 3 && flt_cnt > max_cnt)
+	if (flt_cnt > 2 && flt_cnt > max_cnt)
 	{
 		max_cnt = flt_cnt;
 		direction = 0;
 	}
-	if (frt_cnt > 3 && frt_cnt > max_cnt)
+	if (frt_cnt > 2 && frt_cnt > max_cnt)
 	{
 		max_cnt = frt_cnt;
 		direction = 0;
 	}
-	if (fr2t_cnt > 3 && fr2t_cnt > max_cnt)
+	if (fr2t_cnt > 2 && fr2t_cnt > max_cnt)
 	{
 		max_cnt = fr2t_cnt;
 		direction = 1;
 	}
-	if (rt_cnt > 3 && rt_cnt > max_cnt)
+	if (rt_cnt > 2 && rt_cnt > max_cnt)
 	{
 		direction = 2;
 	}
@@ -2090,7 +2072,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 		cm_block_charger_stub(direction);
 		lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
 	}
-		reset_rcon_status();
+	reset_rcon_status();
 }
 
 void cm_block_charger_stub(int8_t direction)
@@ -2502,9 +2484,11 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(false);
 		}
-		else{	
+		else{
 			g_remote_home = true;
 			beep_for_command(true);
+			if (get_clean_mode() == Clean_Mode_WallFollow)
+				wf_clear();
 		}
 		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}
