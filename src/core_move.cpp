@@ -549,8 +549,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed
-			|| (!g_go_home && g_remote_home))
+		if (g_fatal_quit_event || g_key_clean_pressed || (!g_go_home && g_remote_home) || g_remote_spot)
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
@@ -2549,10 +2548,11 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 			g_remote_spot = true;
 		}
 		else if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
-			SpotMovement::instance()->setSpotType(NO_SPOT);
 			SpotMovement::instance()->spotInit(1.0,{0,0});
+			SpotMovement::instance()->setSpotType(NO_SPOT);
 			set_wheel_speed(0, 0);
 			beep_for_command(true);
+			g_remote_spot = true;
 		}
 		else{
 			beep_for_command(false);

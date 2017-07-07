@@ -113,10 +113,7 @@ uint8_t SpotMovement::findNearestPoint(Point32_t ref_point)
 }
 
 static void spot_motor_configure(){
-	if(get_vac_mode() != Vac_Max){
-		set_vac_mode(Vac_Max);
-		set_vac_speed();
-	}
+	set_bldc_speed(Vac_Speed_Max);
 	set_main_brush_pwm(80);
 	set_side_brush_pwm(60, 60);
 	wav_play(WAV_CLEANING_SPOT);
@@ -155,15 +152,10 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	{//deinit
 		spot_init_ = 0;
 		if(getSpotType() == CLEAN_SPOT){
-			if(get_vac_mode() == Vac_Max){
-				set_vac_mode(Vac_Normal);
-				set_vac_speed();
-			}
-			set_main_brush_pwm(50);
-			set_side_brush_pwm(30, 30);
+			work_motor_configure();
 			wav_play(WAV_CLEANING_CONTINUE);
-
 		}
+		
 	}
 }
 
