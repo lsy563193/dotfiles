@@ -330,7 +330,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 
 //		cm_update_map();
-		if(g_cm_move_type != CM_LINEARMOVE)
+		if(! mt_is_linear())
 			wf_update_map();
 	}
 

@@ -996,7 +996,7 @@ void cm_go_home()
 	 */
 	bool all_old_path_failed = false;
 	Cell_t current_home_cell;
-	g_cm_move_type = CM_LINEARMOVE;
+	mt_set(CM_LINEARMOVE);
 
 	set_vacmode(Vac_Normal, false);
 	set_vac_speed();
@@ -1149,7 +1149,7 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 
 uint8_t cm_touring(void)
 {
-	g_cm_move_type = get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE;
+	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_from_station = 0;
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();

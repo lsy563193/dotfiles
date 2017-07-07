@@ -6,7 +6,6 @@
 #define PP_REGULATOR_BASE_H
 
 
-#include <move_type.h>
 class RegulatorBase {
 public:
 	bool isExit(){

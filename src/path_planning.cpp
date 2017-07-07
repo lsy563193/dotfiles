@@ -1048,10 +1048,10 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 	Cell_t target = next;
 	if(get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_ERROR("path_next Clean_Mode:(%d)", get_clean_mode());
-		if(g_cm_move_type == CM_LINEARMOVE){
+		if(mt_is_linear()){
 			if(g_curr != map_point_to_cell(*next_point)){
 				ROS_INFO("start follow wall");
-				g_cm_move_type = CM_FOLLOW_LEFT_WALL;
+				mt_set(CM_FOLLOW_LEFT_WALL);
 //				g_cm_move_type = CM_FOLLOW_RIGHT_WALL;
 				next = map_point_to_cell(*next_point);
 			}else{
@@ -1067,7 +1067,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 
 			} else {
 				ROS_INFO("CM_LINEARMOVE");
-				g_cm_move_type = CM_LINEARMOVE;
+				mt_set(CM_LINEARMOVE);
 				wf_break_wall_follow();
 				auto angle = wf_is_first() ? 0 : 2700;
 				int32_t x_point,y_point;
@@ -1099,13 +1099,16 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 		}
 	}
 	//found ==1
+	*next_point = map_cell_to_point(next);
+	*target_point = map_cell_to_point(target);
+
+	if(get_clean_mode() == Clean_Mode_Navigation)
+		mt_update(next_point, *target_point, g_last_dir);
+
 	if (g_curr.X == next.X)
 		g_last_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
 	else
 		g_last_dir = g_curr.X > next.X ? NEG_X : POS_X;
-
-	*next_point = map_cell_to_point(next);
-	*target_point = map_cell_to_point(target);
 
 	return 1;
 }

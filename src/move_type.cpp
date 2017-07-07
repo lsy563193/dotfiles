@@ -15,10 +15,14 @@ bool mt_is_fallwall()
 	return g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL;
 }
 
-bool mt_update(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
+bool mt_is_linear()
+{
+	return g_cm_move_type == CM_LINEARMOVE;
+}
+void mt_update(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
 	g_cm_move_type = CM_LINEARMOVE;
 	if (!IS_X_AXIS(dir) || !g_should_follow_wall ||next_point->Y == map_get_y_count())
-		return false;
+		return;
 
 	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
 
@@ -35,5 +39,9 @@ bool mt_update(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
 			}
 		}
 	}
-	return (g_cm_move_type == CM_FOLLOW_LEFT_WALL) || (g_cm_move_type == CM_FOLLOW_RIGHT_WALL);
+}
+
+void mt_set(CMMoveType mt)
+{
+	g_cm_move_type = mt;
 }
