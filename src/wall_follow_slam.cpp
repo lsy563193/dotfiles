@@ -309,7 +309,7 @@ static bool is_isolate() {
 /*------------------------------------------------------------------ Wall Follow Mode--------------------------*/
 uint8_t wf_break_wall_follow(void)
 {
-	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
+//	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
 	g_wf_cell.clear();
 	map_reset(MAP);
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
