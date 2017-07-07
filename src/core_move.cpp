@@ -2511,6 +2511,14 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 {
 	
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (mt_is_fallwall())
+	{
+		beep_for_command(false);
+		reset_rcon_remote();
+		return;
+	}
+
 	bool b_time_short = false;
 	if(g_remote_spot_pressed == false){
 		g_remote_spot_pressed = true;
