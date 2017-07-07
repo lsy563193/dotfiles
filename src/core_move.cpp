@@ -39,7 +39,7 @@
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
-#include "regulator_base.h"
+#include "regulator.h"
 #ifdef TURN_SPEED
 #undef TURN_SPEED
 #endif
@@ -63,7 +63,6 @@ CMMoveType g_cm_move_type;
 
 bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
-uint16_t g_rounding_move_speed;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 int jam=0;
@@ -121,216 +120,6 @@ int16_t ranged_angle(int16_t angle)
 		}
 	}
 	return angle;
-}
-
-typedef struct LinearSpeedRegulator_{
-	LinearSpeedRegulator_(int32_t max):speed_max_(max),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4){};
-	~LinearSpeedRegulator_(){
-		set_wheel_speed(0, 0);
-	};
-	bool adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed);
-	int32_t speed_max_;
-	int32_t integrated_;
-	int32_t base_speed_;
-	uint8_t integration_cycle_;
-	uint32_t tick_;
-	uint8_t turn_speed_;
-}LinearSpeedRegulator;
-
-bool LinearSpeedRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate_is_needed)
-{
-	uint8_t left_speed;
-	uint8_t right_speed;
-	if (g_bumper_hitted || g_cliff_triggered)
-	{
-//		if(get_clean_mode() == Clean_Mode_WallFollow)
-			if(g_turn_angle == 0)
-				g_turn_angle = bumper_turn_angle();
-
-		left_speed = right_speed = 8;
-		set_dir_backward();
-		set_wheel_speed(left_speed, right_speed);
-		return true;
-	}
-
-	auto diff = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), Target.X, Target.Y) - Gyro_GetAngle());
-
-	// Firstly turn to the right angle. (Replace old function HeadToCourse())
-	if (rotate_is_needed)
-	{
-		if (std::abs(diff) < 10) {
-			set_wheel_speed(0, 0);
-			ROS_INFO("%s %d: Gyro: %d\tDiff: %d", __FUNCTION__, __LINE__, Gyro_GetAngle(), diff);
-			g_obs_triggered = false;
-			g_rcon_triggered = false;
-			rotate_is_needed = false;
-			tick_ = 0;
-			return true;
-		}
-
-		tick_++;
-		if (tick_ > 2)
-		{
-			tick_ = 0;
-			if (std::abs(diff) > 350){
-				turn_speed_ = std::min(++turn_speed_, ROTATE_TOP_SPEED);
-			}
-			else{
-				--turn_speed_;
-				turn_speed_ = std::max(--turn_speed_, ROTATE_LOW_SPEED);
-			}
-		}
-
-		if ((diff >= 0) && (diff <= 1800))
-			set_dir_left();
-		else if ((diff <= 0) && (diff >= (-1800)))
-			set_dir_right();
-
-		set_wheel_speed(turn_speed_, turn_speed_);
-		return true;
-	}
-
-	if ( std::abs(diff) > 300)
-	{
-		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
-		return false;
-	}
-
-	if (integration_cycle_++ > 10)
-	{
-		integration_cycle_ = 0;
-		integrated_ += diff;
-		check_limit(integrated_, -150, 150);
-	}
-
-	auto distance = TwoPointsDistance(map_get_x_count(), map_get_y_count(), Target.X, Target.Y);
-	auto obstcal_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
-
-	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || slow_down || obstcal_detected)
-	{
-		integrated_ = 0;
-		diff = 0;
-		base_speed_ -= 1;
-		base_speed_ = base_speed_ < BASE_SPEED ? BASE_SPEED : base_speed_;
-	} else
-	if (base_speed_ < (int32_t) speed_max_)
-	{
-		if (tick_++ > 5)
-		{
-			tick_ = 0;
-			base_speed_++;
-		}
-		integrated_ = 0;
-	}
-
-	left_speed = base_speed_ - diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-	right_speed = base_speed_ + diff / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-
-	check_limit(left_speed, BASE_SPEED, speed_max_);
-	check_limit(right_speed, BASE_SPEED, speed_max_);
-	base_speed_ = (left_speed + right_speed) / 2;
-//	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d)",left_speed, right_speed, base_speed_, slow_down);
-	move_forward(left_speed, right_speed);
-	return true;
-}
-
-typedef struct TurnSpeedRegulator_{
-	TurnSpeedRegulator_(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
-					speed_max_(speed_max),speed_min_(speed_min), speed_(speed_start),tick_(0){};
-	~TurnSpeedRegulator_() {
-		set_wheel_speed(0, 0);
-	}
-	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
-	uint8_t speed_max_;
-	uint8_t speed_min_;
-	uint8_t speed_;
-	uint32_t tick_;
-}TurnSpeedRegulator;
-
-bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
-{
-	if ((diff >= 0) && (diff <= 1800))
-		set_dir_left();
-	else if ((diff <= 0) && (diff >= (-1800)))
-		set_dir_right();
-
-	tick_++;
-	if (tick_ > 2)
-	{
-		tick_ = 0;
-		if (std::abs(diff) > 350){
-			speed_ = std::min(++speed_, speed_max_);
-		}
-		else{
-			--speed_;
-			speed_ = std::max(--speed_, speed_min_);
-		}
-	}
-	speed = speed_;
-	return true;
-}
-
-typedef struct SelfCheckRegulator_{
-	SelfCheckRegulator_(){};
-	~SelfCheckRegulator_(){
-		set_wheel_speed(0, 0);
-	};
-	bool adjustSpeed(uint8_t bumper_jam_state);
-}SelfCheckRegulator;
-
-bool SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
-{
-	uint8_t left_speed;
-	uint8_t right_speed;
-	if (g_oc_suction)
-		left_speed = right_speed = 0;
-	else if (g_oc_wheel_left || g_oc_wheel_right)
-	{
-		if (g_oc_wheel_right) {
-			set_dir_right();
-		} else {
-			set_dir_left();
-		}
-		left_speed = 30;
-		right_speed = 30;
-	}
-	else if (g_cliff_jam)
-	{
-		set_dir_backward();
-		left_speed = right_speed = 18;
-	}
-	else //if (g_bumper_jam)
-	{
-		switch (bumper_jam_state)
-		{
-			case 1:
-			case 2:
-			case 3:
-			{
-				// Quickly move back for a distance.
-				set_dir_backward();
-				left_speed = right_speed = RUN_TOP_SPEED;
-				break;
-			}
-			case 4:
-			{
-				// Quickly turn right for 90 degrees.
-				set_dir_right();
-				left_speed = right_speed = RUN_TOP_SPEED;
-				break;
-			}
-			case 5:
-			{
-				// Quickly turn left for 180 degrees.
-				set_dir_left();
-				left_speed = right_speed = RUN_TOP_SPEED;
-				break;
-			}
-		}
-	}
-
-	set_wheel_speed(left_speed, right_speed);
-	return true;
 }
 
 // Target:	robot coordinate
@@ -614,9 +403,11 @@ bool _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max
 
 bool laser_turn_angle(bool obs_status)
 {
+
 	stop_brifly();
 	uint8_t status = angle_to_bumper_status();
 
+	ROS_ERROR("$$$$$$$$$$$$$$$$$$$$$$$ status(%d)",status);
 	int angle_min, angle_max;
 	if (g_cm_move_type == CM_FOLLOW_LEFT_WALL)
 	{
@@ -749,7 +540,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 	reset_rcon_status();
 	cm_set_event_manager_handler_state(true);
 
-	LinearSpeedRegulator regulator(speed_max);
+	LinearRegulator regulator(speed_max);
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok) {
 		wall_dynamic_base(50);

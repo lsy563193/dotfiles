@@ -36,7 +36,7 @@ FILE(GLOB PP_SRC
 	src/slam.cpp
 	src/event_manager.cpp
 	src/go_home.cpp
-	src/regulator_base.cpp
+	src/regulator.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS
