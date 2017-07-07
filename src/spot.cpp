@@ -153,7 +153,6 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 		spot_init_ = 0;
 		if(getSpotType() == CLEAN_SPOT){
 			work_motor_configure();
-			wav_play(WAV_CLEANING_CONTINUE);
 		}
 		
 	}

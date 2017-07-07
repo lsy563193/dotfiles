@@ -901,8 +901,10 @@ int cm_cleaning()
 
 		if (g_remote_spot)
 		{
-			g_remote_spot = false;	
-		}	
+			g_remote_spot = false;
+			if(SpotMovement::instance()->getSpotType() == NO_SPOT)
+				wav_play(WAV_CLEANING_CONTINUE);
+		}
 		
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
 		auto last_dir = path_get_robot_direction();
@@ -2532,10 +2534,10 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 			g_remote_spot = true;
 		}
 		else if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
+			beep_for_command(true);
 			SpotMovement::instance()->spotInit(1.0,{0,0});
 			SpotMovement::instance()->setSpotType(NO_SPOT);
 			set_wheel_speed(0, 0);
-			beep_for_command(true);
 			g_remote_spot = true;
 		}
 		else{
