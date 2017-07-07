@@ -549,8 +549,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed
-			|| (!g_go_home && g_remote_home))
+		if (g_fatal_quit_event || g_key_clean_pressed || (!g_go_home && g_remote_home) || g_remote_spot)
 			break;
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
@@ -902,8 +901,10 @@ int cm_cleaning()
 
 		if (g_remote_spot)
 		{
-			g_remote_spot = false;	
-		}	
+			g_remote_spot = false;
+			if(SpotMovement::instance()->getSpotType() == NO_SPOT)
+				wav_play(WAV_CLEANING_CONTINUE);
+		}
 		
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
 		auto last_dir = path_get_robot_direction();
@@ -2471,8 +2472,11 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 
 	beep_for_command(true);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
+		SpotMovement::instance()->spotInit(1.0,{0,0});
+		SpotMovement::instance()->setSpotType(NO_SPOT);
 		robot::instance()->setManualPause();
+	}
 	reset_rcon_remote();
 }
 
@@ -2490,6 +2494,10 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 			beep_for_command(true);
 			if (get_clean_mode() == Clean_Mode_WallFollow)
 				wf_clear();
+			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
+				SpotMovement::instance()->spotInit(1.0,{0,0});
+				SpotMovement::instance()->setSpotType(NO_SPOT);
+			}
 		}
 		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}
@@ -2507,6 +2515,14 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 {
 	
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (mt_is_fallwall())
+	{
+		beep_for_command(false);
+		reset_rcon_remote();
+		return;
+	}
+
 	bool b_time_short = false;
 	if(g_remote_spot_pressed == false){
 		g_remote_spot_pressed = true;
@@ -2533,10 +2549,11 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 			g_remote_spot = true;
 		}
 		else if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
-			SpotMovement::instance()->setSpotType(NO_SPOT);
-			SpotMovement::instance()->spotInit(1.0,{0,0});
-			set_wheel_speed(0, 0);
 			beep_for_command(true);
+			SpotMovement::instance()->spotInit(1.0,{0,0});
+			SpotMovement::instance()->setSpotType(NO_SPOT);
+			set_wheel_speed(0, 0);
+			g_remote_spot = true;
 		}
 		else{
 			beep_for_command(false);

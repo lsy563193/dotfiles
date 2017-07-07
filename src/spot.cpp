@@ -113,14 +113,9 @@ uint8_t SpotMovement::findNearestPoint(Point32_t ref_point)
 }
 
 static void spot_motor_configure(){
-	if(get_vac_mode() != Vac_Max){
-		set_vac_mode(Vac_Max);
-		set_vac_speed();
-	}
+	set_bldc_speed(Vac_Speed_Max);
 	set_main_brush_pwm(80);
 	set_side_brush_pwm(60, 60);
-	wav_play(WAV_CLEANING_SPOT);
-
 }
 
 void SpotMovement::spotInit(float diameter, Point32_t cur_point)
@@ -155,15 +150,9 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	{//deinit
 		spot_init_ = 0;
 		if(getSpotType() == CLEAN_SPOT){
-			if(get_vac_mode() == Vac_Max){
-				set_vac_mode(Vac_Normal);
-				set_vac_speed();
-			}
-			set_main_brush_pwm(50);
-			set_side_brush_pwm(30, 30);
-			wav_play(WAV_CLEANING_CONTINUE);
-
+			work_motor_configure();
 		}
+		
 	}
 }
 
@@ -360,8 +349,10 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 	if (!isSpotInit() && spt != NO_SPOT)//for the first time
 	{
 		/*---init spot move and set begin point---*/
-		if (spt == CLEAN_SPOT)
+		if (spt == CLEAN_SPOT){
 			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()});
+			wav_play(WAV_CLEANING_SPOT);
+		}
 		else
 			spotInit(1.0, {0, 0});
 		/*---generate target ,and  set target_ ---*/
