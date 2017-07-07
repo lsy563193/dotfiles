@@ -2025,7 +2025,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	 *  0: front
 	 *  1: front right
 	 *  2: right
-	 *  9: meaningless
+	 *  9: do not need to block
 	 */
 	int8_t direction = 9;
 	int8_t max_cnt = 0;
@@ -2055,32 +2055,32 @@ void cm_handle_rcon(bool state_now, bool state_last)
 	if (get_rcon_status() & RconFR2_HomeT)
 		fr2t_cnt++;
 
-	if (lt_cnt > 3)
+	if (lt_cnt > 2)
 	{
 		max_cnt = lt_cnt;
 		direction = -2;
 	}
-	if (fl2t_cnt > 3 && fl2t_cnt > max_cnt)
+	if (fl2t_cnt > 2 && fl2t_cnt > max_cnt)
 	{
 		max_cnt = fl2t_cnt;
 		direction = -1;
 	}
-	if (flt_cnt > 3 && flt_cnt > max_cnt)
+	if (flt_cnt > 2 && flt_cnt > max_cnt)
 	{
 		max_cnt = flt_cnt;
 		direction = 0;
 	}
-	if (frt_cnt > 3 && frt_cnt > max_cnt)
+	if (frt_cnt > 2 && frt_cnt > max_cnt)
 	{
 		max_cnt = frt_cnt;
 		direction = 0;
 	}
-	if (fr2t_cnt > 3 && fr2t_cnt > max_cnt)
+	if (fr2t_cnt > 2 && fr2t_cnt > max_cnt)
 	{
 		max_cnt = fr2t_cnt;
 		direction = 1;
 	}
-	if (rt_cnt > 3 && rt_cnt > max_cnt)
+	if (rt_cnt > 2 && rt_cnt > max_cnt)
 	{
 		direction = 2;
 	}
@@ -2091,7 +2091,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 		cm_block_charger_stub(direction);
 		lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
 	}
-		reset_rcon_status();
+	reset_rcon_status();
 }
 
 void cm_block_charger_stub(int8_t direction)
@@ -2503,9 +2503,11 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(false);
 		}
-		else{	
+		else{
 			g_remote_home = true;
 			beep_for_command(true);
+			if (get_clean_mode() == Clean_Mode_WallFollow)
+				wf_clear();
 		}
 		ROS_INFO("g_remote_home = %d", g_remote_home);
 	}

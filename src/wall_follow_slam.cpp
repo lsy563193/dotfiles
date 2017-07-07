@@ -326,6 +326,7 @@ uint8_t wf_clear(void)
 	g_wf_cell.clear();
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
 	g_isolate_count = 0;
+	is_wf_go_home = false;
 	return 0;
 }
 
