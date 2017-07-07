@@ -33,6 +33,7 @@
 #include <movement.h>
 #include <mathematics.h>
 #include <wall_follow_slam.h>
+#include <move_type.h>
 
 #include "core_move.h"
 #include "gyro.h"
@@ -1045,7 +1046,6 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
 	Cell_t next = g_curr;
 	Cell_t target = next;
-	extern CMMoveType g_cm_move_type;
 	if(get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_ERROR("path_next Clean_Mode:(%d)", get_clean_mode());
 		if(g_cm_move_type == CM_LINEARMOVE){

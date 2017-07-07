@@ -60,8 +60,6 @@
 #define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
-CMMoveType g_cm_move_type;
-
 bool g_have_seen_charge_stub = false;
 uint16_t g_turn_angle;
 uint16_t g_wall_distance=20;
@@ -939,7 +937,7 @@ int cm_cleaning()
 		} else
 		if (is_found == 1)
 		{
-			if (move_type_update(&g_next_point, g_target_point, last_dir))
+			if (mt_is_fallwall())
 				cm_follow_wall(g_next_point);
 			else
 			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())

@@ -14,6 +14,7 @@
 
 #include <visualization_msgs/Marker.h>
 #include <ros/ros.h>
+#include <move_type.h>
 
 #include "core_move.h"
 //#include <obstacle_detector.h>
