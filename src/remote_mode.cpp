@@ -30,12 +30,12 @@ RemoteModeMoveType move_flag = REMOTE_MODE_STAY;
 boost::mutex move_flag_mutex;
 int16_t remote_target_angle;
 bool remote_exit;
+time_t remote_cmd_time;
 
 void Remote_Mode(void)
 {
 	remote_exit = false;
 	g_battery_low_cnt = 0;
-  //Display_Clean_Status(Display_Remote);
 
 	set_led(100, 0);
 	reset_rcon_remote();
@@ -78,6 +78,10 @@ void remote_move(void)
 	uint8_t moving_speed=0;
 	uint8_t tick_ = 0;
 	bool eh_status_now=false, eh_status_last=false;
+	// Set timeout time as 10s.
+	uint8_t remote_timeout = 10;
+
+	remote_cmd_time = time(NULL);
 
 	set_move_flag_(REMOTE_MODE_STAY);
 	work_motor_configure();
@@ -90,6 +94,13 @@ void remote_move(void)
 
 		if (g_fatal_quit_event || cm_should_self_check() || get_clean_mode() != Clean_Mode_Remote)
 			break;
+
+		if (time(NULL) - remote_cmd_time >= remote_timeout)
+		{
+			set_clean_mode(Clean_Mode_Userinterface);
+			remote_exit = true;
+			break;
+		}
 
 		switch (get_move_flag_())
 		{
@@ -396,6 +407,7 @@ void remote_mode_handle_obs(bool state_now, bool state_last)
 void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
+	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
@@ -414,6 +426,7 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
+	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
@@ -436,6 +449,7 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
+	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
 		beep_for_command(false);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
@@ -458,6 +472,7 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 void remote_mode_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	remote_cmd_time = time(NULL);
 	if (!g_bumper_jam && !g_cliff_jam)
 	{
 		beep_for_command(true);
@@ -471,6 +486,7 @@ void remote_mode_handle_remote_max(bool state_now, bool state_last)
 void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
+	remote_cmd_time = time(NULL);
 	if (get_rcon_remote() == Remote_Clean)
 	{
 		beep_for_command(true);
@@ -496,6 +512,7 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 void remote_mode_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
+	remote_cmd_time = time(NULL);
 	beep_for_command(true);
 	disable_motors();
 	while (get_key_press() == KEY_CLEAN)
