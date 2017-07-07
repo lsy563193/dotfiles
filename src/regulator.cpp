@@ -26,7 +26,7 @@ bool RegulatorBase::isStop()
 
 //FollowWallRegulator
 
-FollowWallRegulator::FollowWallRegulator(CMMoveType type) : type_(type), previous_(0)
+FollowWallRegulator::FollowWallRegulator() : previous_(0)
 {
 //	ROS_INFO("FollowWallRegulator init");
 };
@@ -36,8 +36,8 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //	uint32_t l_step = (get_right_wheel_step() / 100) * 11 ;
 	auto _l_step = get_left_wheel_step();
 	auto _r_step = get_right_wheel_step();
-	auto &l_step = (type_ == CM_FOLLOW_LEFT_WALL) ? _l_step :_r_step ;
-	auto &r_step = (type_ == CM_FOLLOW_LEFT_WALL) ? _r_step :_l_step ;
+	auto &l_step = (mt_is_left()) ? _l_step :_r_step ;
+	auto &r_step = (mt_is_left()) ? _r_step :_l_step ;
 //	ROS_INFO("FollowWallRegulator adjustSpeed");
 //	ROS_INFO("l_step: %d < g_straight_distance : %d", l_step, g_straight_distance);
 	if ((l_step) < (uint32_t) g_straight_distance)
@@ -61,7 +61,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			auto wheel_speed_base = 15 + r_step / 150;
 			if (wheel_speed_base > 28)wheel_speed_base = 28;
 
-			auto proportion = (g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+			auto proportion = (mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
 
 			proportion = proportion * 100 / g_wall_distance;
 
@@ -148,7 +148,7 @@ bool FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}
 	}
 
-	if (type_ != CM_FOLLOW_LEFT_WALL) std::swap(l_speed, r_speed);
+	if (! mt_is_left()) std::swap(l_speed, r_speed);
 	set_dir_forward();
 	return true;
 }
@@ -284,9 +284,10 @@ bool TurnRegulator::isReach()
 bool TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 
-	(g_cm_move_type == CM_FOLLOW_LEFT_WALL) ? set_dir_right() : set_dir_left();
+	(mt_is_left()) ? set_dir_right() : set_dir_left();
 //	ROS_INFO("TurnRegulator::adjustSpeed");
 	auto speed = speed_max_;
+
 	if (abs(target_angle_ - Gyro_GetAngle()) < 50)
 	{
 		speed = std::min((uint16_t) 5, speed);
@@ -305,8 +306,11 @@ bool LinearRegulator::adjustSpeed(Point32_t Target, bool slow_down, bool &rotate
 	if (g_bumper_hitted || g_cliff_triggered)
 	{
 //		if(get_clean_mode() == Clean_Mode_WallFollow)
-			if(g_turn_angle == 0)
+			if(g_turn_angle == 0){
+				mt_set(CM_FOLLOW_LEFT_WALL);
 				g_turn_angle = bumper_turn_angle();
+				mt_set(CM_LINEARMOVE);
+			}
 
 		left_speed = right_speed = 8;
 		set_dir_backward();
@@ -484,7 +488,7 @@ RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	turn_reg_ = new TurnRegulator(13);
 	back_reg_ = new BackRegulator();
-	follow_wall_reg_ = new FollowWallRegulator(g_cm_move_type);
+	follow_wall_reg_ = new FollowWallRegulator();
 	p_reg_ = follow_wall_reg_;
 }
 

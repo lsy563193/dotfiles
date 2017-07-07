@@ -91,7 +91,7 @@ public:
 class FollowWallRegulator:public RegulatorBase{
 
 public:
-	FollowWallRegulator(CMMoveType type);
+	FollowWallRegulator();
 	~FollowWallRegulator(){ set_wheel_speed(0,0); };
 	bool adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isReach();
@@ -101,7 +101,6 @@ public:
 
 private:
 	int32_t	 previous_;
-	CMMoveType type_;
 	int jam_;
 };
 

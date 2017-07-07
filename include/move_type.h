@@ -13,7 +13,9 @@ typedef enum {
 	CM_FOLLOW_RIGHT_WALL,
 } CMMoveType;
 
-extern CMMoveType g_cm_move_type;
+bool mt_is_right();
+
+bool mt_is_left();
 
 bool mt_is_fallwall();
 

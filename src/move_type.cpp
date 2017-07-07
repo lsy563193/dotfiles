@@ -10,6 +10,16 @@
 
 CMMoveType g_cm_move_type;
 
+bool mt_is_left()
+{
+	return g_cm_move_type == CM_FOLLOW_LEFT_WALL;
+}
+
+bool mt_is_right()
+{
+	return g_cm_move_type == CM_FOLLOW_RIGHT_WALL;
+}
+
 bool mt_is_fallwall()
 {
 	return g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL;
