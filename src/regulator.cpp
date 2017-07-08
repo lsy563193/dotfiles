@@ -279,7 +279,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	check_limit(left_speed, BASE_SPEED, speed_max_);
 	check_limit(right_speed, BASE_SPEED, speed_max_);
 	base_speed_ = (left_speed + right_speed) / 2;
-	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d)",left_speed, right_speed, base_speed_, is_map_front_block(3));
+	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d),diff(%d)",left_speed, right_speed, base_speed_, is_map_front_block(3),diff);
 }
 
 
