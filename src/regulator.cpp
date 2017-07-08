@@ -216,7 +216,7 @@ bool LinearRegulator::isStop()
 	if ( std::abs(diff) > 300)
 	{
 		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
-		return false;
+		return true;
 	}
 
 	if(g_remote_spot)
