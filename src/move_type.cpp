@@ -29,6 +29,11 @@ bool mt_is_linear()
 {
 	return g_cm_move_type == CM_LINEARMOVE;
 }
+
+CMMoveType mt_get()
+{
+	return g_cm_move_type ;
+}
 void mt_update(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
 	g_cm_move_type = CM_LINEARMOVE;
 	if (!IS_X_AXIS(dir) || !g_should_follow_wall ||next_point->Y == map_get_y_count())

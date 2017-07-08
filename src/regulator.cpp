@@ -100,6 +100,7 @@ TurnRegulator::TurnRegulator() : speed_max_(13)
 bool TurnRegulator::_isReach()
 {
 	if (abs(target_angle_ - Gyro_GetAngle()) < accurate_){
+		ROS_INFO("%s, %d: TurnRegulator.", __FUNCTION__, __LINE__);
 		g_obs_triggered = g_rcon_triggered = 0; //should clear when turn
 		return true;
 	}
@@ -176,7 +177,7 @@ bool LinearRegulator::_isReach()
 {
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
-		ROS_INFO("%s, %d: Reach target.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -598,13 +599,13 @@ void RegulatorProxy::switchToNext()
 		{
 			g_bumper_hitted = g_cliff_triggered = false;
 
-			if(mt_is_linear())
+			auto mt = mt_get();
+			if(mt == CM_LINEARMOVE)
 				mt_set(CM_FOLLOW_LEFT_WALL);
 
 			g_turn_angle = bumper_turn_angle();
 
-			if(mt_is_linear())
-				mt_set(CM_LINEARMOVE);
+			mt_set(mt);
 
 			back_reg_->setOrigin();
 			p_reg_ = back_reg_;
