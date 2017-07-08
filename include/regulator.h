@@ -85,7 +85,9 @@ private:
 
 class SelfCheckRegulator{
 public:
-	SelfCheckRegulator(){};
+	SelfCheckRegulator(){
+		ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
+	};
 	~SelfCheckRegulator(){
 		set_wheel_speed(0, 0);
 	};

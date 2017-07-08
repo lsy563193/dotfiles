@@ -29,15 +29,15 @@ bool RegulatorBase::isStop()
 
 BackRegulator::BackRegulator() : speed_(8), counter_(0), pos_x_(0), pos_y_(0)
 {
-//	ROS_INFO("BackRegulator init");
+//	ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
 bool BackRegulator::_isReach()
 {
-//	ROS_INFO("reg_back _isReach");
 	auto distance = sqrtf(powf(pos_x_ - robot::instance()->getOdomPositionX(), 2) +
 			   	powf(pos_y_ - robot::instance()->getOdomPositionY(), 2));
 	if(fabsf(distance) > 0.02f){
+//		ROS_WARN("%s, %d: BackRegulator ");
 		if(get_bumper_status()!= 0) {
 			g_bumper_cnt++ ;
 			if(g_bumper_cnt >=2) g_bumper_jam=true;
@@ -81,7 +81,6 @@ bool BackRegulator::isStop()
 
 void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-//	ROS_INFO("reg_back adjustSpeed");
 	set_dir_backward();
 	speed_ += counter_ / 100;
 	speed_ = (speed_ > 18) ? 18 : speed_;
@@ -92,7 +91,7 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 TurnRegulator::TurnRegulator() : speed_max_(13)
 {
-//	ROS_INFO("TurnRegulator init");
+//	ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
 	accurate_ = speed_max_ > 30 ? 30 : 10;
 	target_angle_ = calc_target(g_turn_angle);
 }
@@ -100,7 +99,7 @@ TurnRegulator::TurnRegulator() : speed_max_(13)
 bool TurnRegulator::_isReach()
 {
 	if (abs(target_angle_ - Gyro_GetAngle()) < accurate_){
-		ROS_INFO("%s, %d: TurnRegulator.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s, %d: TurnRegulator target,curr (%d,%d)", __FUNCTION__, __LINE__,target_angle_, Gyro_GetAngle());
 		g_obs_triggered = g_rcon_triggered = 0; //should clear when turn
 		return true;
 	}
@@ -128,14 +127,24 @@ bool TurnRegulator::isStop()
 void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 
-	(mt_is_left()) ? set_dir_right() : set_dir_left();
+	auto diff = target_angle_ - Gyro_GetAngle();
+	if(mt_is_fallwall())
+		(mt_is_left()) ? set_dir_right() : set_dir_left();
+	else
+	{
+		if ((diff >= 0) && (diff <= 1800))
+			set_dir_left();
+		else if ((diff <= 0) && (diff >= (-1800)))
+			set_dir_right();
+	}
+
 //	ROS_INFO("TurnRegulator::adjustSpeed");
 	auto speed = speed_max_;
 
-	if (abs(target_angle_ - Gyro_GetAngle()) < 50)
+	if (std::abs(diff) < 50)
 	{
 		speed = std::min((uint16_t) 5, speed);
-	} else if (abs(target_angle_ - Gyro_GetAngle()) < 200)
+	} else if (std::abs(diff) < 200)
 	{
 		speed = std::min((uint16_t) 10, speed);
 	}
@@ -170,7 +179,9 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 LinearRegulator::LinearRegulator():
 				speed_max_(40),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
 {
-	g_turn_angle = course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle();
+	g_turn_angle = uranged_angle(course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
+	ROS_WARN("%s %d: angle(%d),curr(%d,%d),targ(%d,%d) ", __FUNCTION__, __LINE__, g_turn_angle, map_get_x_count(),map_get_y_count(), s_target.X,s_target.Y);
+	ROS_ERROR("angle:%d(%d,%d) ", g_turn_angle, course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
 }
 
 bool LinearRegulator::_isReach()
@@ -187,7 +198,7 @@ bool LinearRegulator::_isReach()
 bool LinearRegulator::isSwitch()
 {
 	if (g_bumper_hitted || g_cliff_triggered){
-			ROS_WARN("%s, %d: g_bumper_hitted || g_cliff_triggered.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s, %d:LinearRegulator g_bumper_hitted || g_cliff_triggered.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -234,6 +245,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	auto diff = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
 
+	ROS_WARN("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
 	if (integration_cycle_++ > 10)
 	{
 		integration_cycle_ = 0;
@@ -267,13 +279,13 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	check_limit(left_speed, BASE_SPEED, speed_max_);
 	check_limit(right_speed, BASE_SPEED, speed_max_);
 	base_speed_ = (left_speed + right_speed) / 2;
-//	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d)",left_speed, right_speed, base_speed_, slow_down);
+	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d)",left_speed, right_speed, base_speed_, is_map_front_block(3));
 }
 
 
 FollowWallRegulator::FollowWallRegulator() : previous_(0)
 {
-//	ROS_INFO("FollowWallRegulator init");
+	ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
 bool FollowWallRegulator::_isReach()
@@ -306,6 +318,7 @@ bool FollowWallRegulator::_isReach()
 		{
 			if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
 			{
+				ROS_WARN("%s, %d: BackRegulator ");
 				ROS_WARN("Robot has reach the target.");
 				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
 								 map_get_y_count());
@@ -320,6 +333,7 @@ bool FollowWallRegulator::_isReach()
 			if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
 					(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
 			{
+				ROS_WARN("%s, %d: BackRegulator ");
 				ROS_WARN("Robot has round to the opposite direcition.");
 				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
 								 map_get_y_count());
@@ -530,8 +544,8 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 //RegulatorManage
 RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 {
-//	ROS_INFO("RegulatorProxy init");
 	g_obs_triggered = g_rcon_triggered = false;
+	g_bumper_cnt = g_cliff_cnt =0;
 
 	s_target = target;
 	s_origin = origin;
@@ -559,6 +573,7 @@ RegulatorProxy::~RegulatorProxy()
 	delete turn_reg_;
 	delete back_reg_;
 	delete mt_reg_;
+	set_wheel_speed(0,0);
 }
 void RegulatorProxy::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {

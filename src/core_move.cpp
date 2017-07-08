@@ -98,9 +98,6 @@ extern Cell_t g_cell_history[];
 
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
-// This status is for rounding function to decide the angle it should turn.
-uint8_t g_bumper_status_for_rounding;
-
 // Saved position for move back.
 float saved_pos_x, saved_pos_y;
 
@@ -533,7 +530,6 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 bool cm_linear_move_to_point(Point32_t target)
 {
 	g_should_follow_wall = false;
-	g_bumper_status_for_rounding = 0;
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
@@ -567,18 +563,6 @@ bool cm_linear_move_to_point(Point32_t target)
 
 	return true;
 }
-
-/*
-void cm_move_to_point(Point32_t target)
-{
-	if (path_get_path_points_count() >= 3){
-		if (!cm_curve_move_to_point())
-			cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
-	}
-	else
-		cm_linear_move_to_point(target, RUN_TOP_SPEED, true, true);
-}
-*/
 
 bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_right)
 {
