@@ -54,7 +54,7 @@ void wav_play(WavType action)
 		return;
 	}
 
-	ROS_WARN("%s %d: Play the wav %d.", __FUNCTION__, __LINE__, action);
+	ROS_INFO("%s %d: Play the wav %d.", __FUNCTION__, __LINE__, action);
 	nread = fread(&wav_header, 1, sizeof(wav_header), fp);
 
 	ROS_DEBUG("nread: %d\n", nread);

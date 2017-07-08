@@ -124,22 +124,15 @@ int16_t ranged_angle(int16_t angle)
 	return angle;
 }
 
-// Target:	robot coordinate
-static bool check_map_boundary(bool& slow_down)
+bool is_map_front_block(int dx)
 {
-		int32_t		x, y;
-		for (auto dy = -1; dy <= 1; dy++) {
-			cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_3, &x, &y);
-			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
-				slow_down = true;
-
-			cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE_2, &x, &y);
-			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY) {
-				ROS_INFO("%s, %d: Blocked boundary.", __FUNCTION__, __LINE__);
-				stop_brifly();
-				return true;
-			}
-		}
+	int32_t x, y;
+	for (auto dy = -1; dy <= 1; dy++)
+	{
+		cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
+		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
+			return true;
+	}
 	return false;
 }
 
@@ -537,118 +530,37 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 	set_wheel_speed(0, 0);
 }
 
-bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
+bool cm_linear_move_to_point(Point32_t target)
 {
-	// Reset the g_bumper_status_for_rounding.
 	g_should_follow_wall = false;
 	g_bumper_status_for_rounding = 0;
 	g_obs_triggered = g_rcon_triggered = false;
 	g_move_back_finished = true;
 	g_bumper_hitted =  g_cliff_triggered = false;
-	bool rotate_is_needed_ = true;
 	robotbase_obs_adjust_count(50);
 	reset_rcon_status();
 	cm_set_event_manager_handler_state(true);
 
-	LinearRegulator regulator(speed_max);
+	RegulatorProxy regulator({map_get_x_count(), map_get_y_count()},target);
+
 	bool	eh_status_now=false, eh_status_last=false;
-	while (ros::ok) {
-		wall_dynamic_base(50);
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+	while (ros::ok())
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+		{
 			usleep(100);
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || (!g_go_home && g_remote_home) || g_remote_spot)
+		if (regulator.isExit())
 			break;
 
-		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
-			g_should_follow_wall = true;
-			SpotType spt = SpotMovement::instance() -> getSpotType();
-			if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
-				SpotMovement::instance()->setDirectChange();
-			break;
-		}
+		if (regulator.isSwitch())
+			regulator.switchToNext();
 
-		if (std::abs(map_get_x_count() - Target.X) < 150 && std::abs(map_get_y_count() - Target.Y) < 150) {
-			ROS_DEBUG("%s, %d: Reach target.", __FUNCTION__, __LINE__);
-			break;
-		}
-
-		bool slow_down=false;
-		if(check_map_boundary(slow_down))
-			break;
-
-		if (g_bumper_hitted || g_cliff_triggered)
-		{
-			g_move_back_finished = false;
-			float distance;
-			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-			if (fabsf(distance) > 0.02f)
-			{
-				if (g_bumper_hitted)
-				{
-					// Check if still bumper triggered.
-					if(!get_bumper_status())
-					{
-						ROS_INFO("%s %d: Move back for bumper finished.", __FUNCTION__, __LINE__);
-						g_move_back_finished = true;
-						g_bumper_hitted = false;
-						g_bumper_cnt = 0;
-						g_should_follow_wall = true;
-						break;
-					}
-					else if (++g_bumper_cnt >= 2)
-					{
-						// Should switch to cm_self_check() function to resume.
-						g_bumper_jam = true;
-						break;
-					}
-					else
-					{
-						// Move back for one more time.
-						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
-						saved_pos_x = robot::instance()->getOdomPositionX();
-						saved_pos_y = robot::instance()->getOdomPositionY();
-						continue;
-					}
-				}
-				else
-				{
-					if (!get_cliff_trig())
-					{
-						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
-						g_move_back_finished = true;
-						g_cliff_triggered = false;
-						g_cliff_all_triggered = false;
-						g_cliff_cnt = 0;
-						g_cliff_all_cnt = 0;
-						break;
-					}
-					else if (++g_cliff_cnt >= 2)
-					{
-						// Should switch to cm_self_check() function to resume.
-						g_cliff_jam = true;
-						break;
-					}
-					else
-					{
-						// Move back for one more time.
-						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
-						saved_pos_x = robot::instance()->getOdomPositionX();
-						saved_pos_y = robot::instance()->getOdomPositionY();
-						continue;
-					}
-				}
-			}
-		}
-		else if (std::abs(map_get_x_count() - Target.X) < 150 && std::abs(map_get_y_count() - Target.Y) < 150) {
-			ROS_INFO("%s, %d: Reach target.", __FUNCTION__, __LINE__);
-			break;
-		}
-
-		if(!regulator.adjustSpeed(Target, slow_down, rotate_is_needed_))
-			break;
+		int32_t	 speed_left = 0, speed_right = 0;
+		regulator.adjustSpeed(speed_left, speed_right);
+		set_wheel_speed(speed_left, speed_right);
 	}
 
 	cm_set_event_manager_handler_state(false);
@@ -737,7 +649,7 @@ bool cm_curve_move_to_point()
 	}
 
 	//1/3 move to first target
-	if(!cm_linear_move_to_point(target, MAX_SPEED) )
+	if(!cm_linear_move_to_point(target) )
 		return false;
 
 	//2/3 calculate the curve speed.
@@ -774,7 +686,7 @@ bool cm_curve_move_to_point()
 
 	//3/3 continue to move to target
 	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
-	if(!cm_linear_move_to_point(target, MAX_SPEED))
+	if(!cm_linear_move_to_point(target))
 		return false;
 
 	return true;
@@ -914,7 +826,7 @@ int cm_cleaning()
 		path_reset_path_points();
 		int8_t is_found = path_next(&g_next_point, &g_target_point);
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-		ROS_ERROR("State: %d", is_found);
+		ROS_INFO("State: %d", is_found);
 		if (is_found == 0) //No target point
 		{
 			if(get_clean_mode() != Clean_Mode_Spot)
@@ -927,7 +839,7 @@ int cm_cleaning()
 				cm_follow_wall(g_next_point);
 			else
 			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_linear_move_to_point(g_next_point, RUN_TOP_SPEED);
+				cm_linear_move_to_point(g_next_point);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
@@ -1206,7 +1118,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
 			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_linear_move_to_point(Next_Point, RUN_TOP_SPEED);
+				cm_linear_move_to_point(Next_Point);
 
 			if (g_fatal_quit_event || g_key_clean_pressed )
 				return false;
@@ -1609,8 +1521,7 @@ void cm_self_check(void)
 		else
 			break;
 
-		if(! regulator.adjustSpeed(bumper_jam_state))
-			break;
+		regulator.adjustSpeed(bumper_jam_state);
 	}
 }
 

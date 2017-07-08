@@ -274,7 +274,7 @@ MotionManage::~MotionManage()
 		set_clean_mode(Clean_Mode_Userinterface);
 		wav_play(WAV_PAUSE_CLEANING);
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		extern bool g_go_home;
 		if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
@@ -283,9 +283,9 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
 		else
-		ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
 		g_saved_work_time += get_work_time();
-		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+		ROS_INFO("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
 	if (robot::instance()->isLowBatPaused())

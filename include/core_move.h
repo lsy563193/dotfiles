@@ -62,6 +62,7 @@ uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);
+bool is_map_front_block(int dx);
 
 extern bool g_should_follow_wall;
 void CM_TouringCancel(void);

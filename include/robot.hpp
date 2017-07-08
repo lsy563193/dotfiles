@@ -391,7 +391,7 @@ public:
 		baselink_frame_type_mutex_.lock();
 		baselink_frame_type_ = frame;
 		baselink_frame_type_mutex_.unlock();
-		ROS_WARN("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
+		ROS_INFO("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
 private:
