@@ -365,7 +365,7 @@ uint16_t bumper_turn_angle()
 	g_straight_distance = 200;
 //	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
-//	ROS_WARN("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
+//	ROS_INFO("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
 	return g_turn_angle;
 }
 int double_scale_10(double line_angle)
@@ -382,23 +382,23 @@ int double_scale_10(double line_angle)
 }
 bool _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max,double dis_limit=0.217)
 {
-	ROS_WARN("bumper (%d)!", get_bumper_status());
+	ROS_INFO("bumper (%d)!", get_bumper_status());
 	bool is_found;
 	double line_angle;
 	const auto RESET_WALL_DIS = 100;
 	is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle);
-	ROS_WARN("line_angle_raw = %lf", line_angle);
+	ROS_INFO("line_angle_raw = %lf", line_angle);
 	uint16_t angle = double_scale_10(line_angle);
 
 	if (mt_is_right())
 		angle  = 1800-angle;
 
-	ROS_WARN("line_angle = %d", angle);
+	ROS_INFO("line_angle = %d", angle);
 	if (is_found && angle >= angle_min && angle < angle_max)
 	{
 		g_turn_angle = angle;
 		g_wall_distance = RESET_WALL_DIS;
-		ROS_WARN("laser generate turn angle!");
+		ROS_WARN("laser generate turn angle(%d)!",g_turn_angle);
 		return true;
 	}
 	return false;
@@ -411,7 +411,7 @@ bool laser_turn_angle()
 
 	if (obs_status)
 	{
-		ROS_ERROR("front obs trigger");
+		ROS_INFO("front obs trigger");
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
 	}
 
