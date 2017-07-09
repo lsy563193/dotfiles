@@ -50,6 +50,7 @@ bool BackRegulator::_isReach()
 		}else g_cliff_cnt = 0;
 
 		if(g_bumper_cnt == 0 && g_cliff_cnt == 0){
+			g_bumper_hitted = g_cliff_triggered = 0;// node  can reset hear, switchToNext do not need this two flag
 			return true;
 		}
 		else
