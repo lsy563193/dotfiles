@@ -544,7 +544,7 @@ bool cm_move_to(Point32_t target)
 		if (regulator.isExit())
 			break;
 
-		if (regulator.isReach())
+		if (regulator.isReach() || regulator.isPause())
 			return true;
 
 		if (regulator.isSwitch())
@@ -555,8 +555,7 @@ bool cm_move_to(Point32_t target)
 		set_wheel_speed(speed_left, speed_right);
 	}
 
-
-	return true;
+	return false;
 }
 
 bool cm_move_to(int16_t target_x, int16_t target_y)
@@ -585,7 +584,7 @@ bool cm_move_to(int16_t target_x, int16_t target_y)
 			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
-			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+//			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 				cm_move_to(Next_Point);
 
 			if (g_fatal_quit_event || g_key_clean_pressed )
@@ -829,7 +828,7 @@ int cm_cleaning()
 		}
 		else if (is_found == 1)
 		{
-			if (mt_is_fallwall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+//			if (mt_is_fallwall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 				cm_move_to(g_next_point);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));

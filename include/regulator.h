@@ -9,9 +9,15 @@
 
 class RegulatorBase {
 public:
+
 	bool isExit(){
+		return g_fatal_quit_event || g_key_clean_pressed;
+	};
+
+	bool isPause(){
 		return RegulatorBase::isStop() || isStop();
 	};
+
 	virtual bool isSwitch() = 0;
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual bool isStop()=0;
