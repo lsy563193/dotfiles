@@ -15,6 +15,7 @@
 #include <motion_manage.h>
 #include <wav.h>
 #include <spot.h>
+#include <robotbase.h>
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
@@ -574,6 +575,7 @@ RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 		p_reg_ = turn_reg_;
 	}
 
+	robotbase_obs_adjust_count(50);
 	cm_set_event_manager_handler_state(true);
 
 }

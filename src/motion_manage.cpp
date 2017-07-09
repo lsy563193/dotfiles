@@ -20,6 +20,7 @@
 #include "core_move.h"
 #include "event_manager.h"
 #include "spot.h"
+#include "move_type.h"
 
 Segment_set segmentss;
 
