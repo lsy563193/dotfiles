@@ -90,7 +90,18 @@ bool cm_curve_move_to_point();
 
 void cm_world_to_point(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-bool cm_move_to_cell(int16_t x, int16_t y);
+/*
+ * Robot move to target cell
+ * @param x	cell x
+ * @param y	cell y
+ * @param mode 2: Dynamic change cells near target cell
+ *			   1: with escape mode, not finish
+ *			   0: no escape mode
+ * @return	-2: Robot is trapped
+ *		-1: Robot cannot move to target cell
+ *		1: Robot arrive target cell
+ */
+bool cm_move_to(int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
 
 void cm_move_back_(uint16_t dist);

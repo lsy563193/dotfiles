@@ -559,6 +559,52 @@ bool cm_move_to(Point32_t target)
 	return true;
 }
 
+bool cm_move_to(int16_t target_x, int16_t target_y)
+{
+	if (is_block_accessible(target_x, target_y) == 0) {
+		ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
+		map_set_cells(ROBOT_SIZE, target_x, target_y, CLEANED);
+	}
+
+	ROS_INFO("%s %d: Path Find: target: (%d, %d)", __FUNCTION__, __LINE__, target_x, target_y);
+	map_set_cells(ROBOT_SIZE, target_x, target_y, CLEANED);
+
+	while (ros::ok()) {
+		Cell_t pos{target_x, target_y};
+		Cell_t	tmp;
+		auto pathFind = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), tmp.X, tmp.Y);
+
+		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y,
+						 map_get_x_cell(), map_get_y_cell());
+		if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
+			path_update_cell_history();
+
+			if (cm_check_loop_back(tmp) == 1)
+				return false;
+
+			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
+			debug_map(MAP, tmp.X, tmp.Y);
+			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
+			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+				cm_move_to(Next_Point);
+
+			if (g_fatal_quit_event || g_key_clean_pressed )
+				return false;
+
+			if ((g_battery_home || g_remote_home) && !g_go_home )
+				return false;
+
+			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
+			if ( TwoPointsDistance( target_x , target_y , map_get_x_cell(), map_get_y_cell() ) < ROBOT_SIZE / 2 + 1 ) {
+				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), target_x , target_y);
+				return true;
+			}
+		} else
+			return false;
+	}
+	return false;
+}
+
 bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_right)
 {
 	auto angle_start = Gyro_GetAngle();
@@ -708,7 +754,7 @@ bool cm_resume_cleaning()
 {
 	robot::instance()->resetLowBatPause();
 
-	cm_move_to_cell(count_to_cell(g_continue_point.X), count_to_cell(g_continue_point.Y));
+	cm_move_to(count_to_cell(g_continue_point.X), count_to_cell(g_continue_point.Y));
 	if (g_fatal_quit_event || g_key_clean_pressed)
 	{
 		robot::instance()->resetLowBatPause();
@@ -883,7 +929,7 @@ void cm_go_home()
 		set_side_brush_pwm(50, 50);
 		set_main_brush_pwm(30);
 
-		if (!cm_move_to_cell(current_home_cell.X, current_home_cell.Y))
+		if (!cm_move_to(current_home_cell.X, current_home_cell.Y))
 		{
 			if (g_fatal_quit_event)
 			{
@@ -1023,63 +1069,6 @@ uint8_t cm_touring(void)
 			g_go_home = false;
 	}
 	return 0;
-}
-
-/*
- * Robot move to target cell
- * @param x	cell x
- * @param y	cell y
- * @param mode 2: Dynamic change cells near target cell
- *			   1: with escape mode, not finish
- *			   0: no escape mode
- * @return	-2: Robot is trapped
- *		-1: Robot cannot move to target cell
- *		1: Robot arrive target cell
- */
-bool cm_move_to_cell(int16_t target_x, int16_t target_y)
-{
-	if (is_block_accessible(target_x, target_y) == 0) {
-		ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
-		map_set_cells(ROBOT_SIZE, target_x, target_y, CLEANED);
-	}
-
-	ROS_INFO("%s %d: Path Find: target: (%d, %d)", __FUNCTION__, __LINE__, target_x, target_y);
-	map_set_cells(ROBOT_SIZE, target_x, target_y, CLEANED);
-
-	while (ros::ok()) {
-		Cell_t pos{target_x, target_y};
-		Cell_t	tmp;
-		auto pathFind = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), tmp.X, tmp.Y);
-
-		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y,
-						 map_get_x_cell(), map_get_y_cell());
-		if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
-			path_update_cell_history();
-
-			if (cm_check_loop_back(tmp) == 1)
-				return false;
-
-			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
-			debug_map(MAP, tmp.X, tmp.Y);
-			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
-			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_move_to(Next_Point);
-
-			if (g_fatal_quit_event || g_key_clean_pressed )
-				return false;
-
-			if ((g_battery_home || g_remote_home) && !g_go_home )
-				return false;
-
-			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
-			if ( TwoPointsDistance( target_x , target_y , map_get_x_cell(), map_get_y_cell() ) < ROBOT_SIZE / 2 + 1 ) {
-				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), target_x , target_y);
-				return true;
-			}
-		} else
-			return false;
-	}
-	return false;
 }
 
 void cm_reset_go_home(void)
