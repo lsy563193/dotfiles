@@ -32,7 +32,7 @@ BackRegulator::BackRegulator() : speed_(8), counter_(0), pos_x_(0), pos_y_(0)
 //	ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
-bool BackRegulator::_isReach()
+bool BackRegulator::isReach()
 {
 	auto distance = sqrtf(powf(pos_x_ - robot::instance()->getOdomPositionX(), 2) +
 			   	powf(pos_y_ - robot::instance()->getOdomPositionY(), 2));
@@ -63,7 +63,7 @@ bool BackRegulator::isSwitch()
 {
 //	ROS_INFO("BackRegulator::isSwitch");
 	if(mt_is_fallwall())
-		return _isReach();
+		return isReach();
 	if(mt_is_linear())
 		return false;
 
@@ -72,11 +72,6 @@ bool BackRegulator::isSwitch()
 
 bool BackRegulator::isStop()
 {
-	if(mt_is_linear())
-		return _isReach();
-	else
-	if (mt_is_fallwall())
-		return false;
 	return false;
 }
 
@@ -98,7 +93,7 @@ TurnRegulator::TurnRegulator() : speed_max_(13)
 	target_angle_ = calc_target(g_turn_angle);
 }
 
-bool TurnRegulator::_isReach()
+bool TurnRegulator::isReach()
 {
 	if (abs(target_angle_ - Gyro_GetAngle()) < accurate_){
 		ROS_WARN("%s, %d: TurnRegulator target,curr (%d,%d)", __FUNCTION__, __LINE__,target_angle_, Gyro_GetAngle());
@@ -112,7 +107,7 @@ bool TurnRegulator::_isReach()
 bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
-	if(_isReach() || g_bumper_hitted || g_cliff_triggered)
+	if(isReach() || g_bumper_hitted || g_cliff_triggered)
 	{
 		reset_sp_turn_count();
 		reset_wheel_step();
@@ -182,12 +177,13 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 LinearRegulator::LinearRegulator():
 				speed_max_(40),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
 {
+	g_should_follow_wall = false;
 	g_turn_angle = uranged_angle(course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
 	ROS_WARN("%s %d: angle(%d),curr(%d,%d),targ(%d,%d) ", __FUNCTION__, __LINE__, g_turn_angle, map_get_x_count(),map_get_y_count(), s_target.X,s_target.Y);
 	ROS_ERROR("angle:%d(%d,%d) ", g_turn_angle, course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
 }
 
-bool LinearRegulator::_isReach()
+bool LinearRegulator::isReach()
 {
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
@@ -239,7 +235,7 @@ bool LinearRegulator::isStop()
 		return true;
 	}
 
-	return _isReach();
+	return false;
 }
 
 void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -289,12 +285,14 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 FollowWallRegulator::FollowWallRegulator() : previous_(0)
 {
+	g_wall_distance = 400;
+	g_straight_distance = 300;
 	ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
-bool FollowWallRegulator::_isReach()
+bool FollowWallRegulator::isReach()
 {
-//	ROS_INFO("FollowWallRegulator _isReach");
+//	ROS_INFO("FollowWallRegulator isReach");
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	bool ret = false;
 	auto start_y = s_origin.Y;
@@ -365,7 +363,7 @@ bool FollowWallRegulator::isSwitch()
 bool FollowWallRegulator::isStop()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-	return _isReach();
+	return false;
 }
 
 void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
@@ -550,7 +548,10 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 {
 	g_obs_triggered = g_rcon_triggered = false;
+	g_bumper_hitted =  g_cliff_triggered = false;
+	g_obs_triggered = g_rcon_triggered = false;
 	g_bumper_cnt = g_cliff_cnt =0;
+	reset_rcon_status();
 
 	s_target = target;
 	s_origin = origin;
@@ -570,6 +571,7 @@ RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 		p_reg_ = turn_reg_;
 	}
 
+	cm_set_event_manager_handler_state(true);
 
 }
 
@@ -579,6 +581,7 @@ RegulatorProxy::~RegulatorProxy()
 	delete back_reg_;
 	delete mt_reg_;
 	set_wheel_speed(0,0);
+	cm_set_event_manager_handler_state(false);
 }
 void RegulatorProxy::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
@@ -586,10 +589,10 @@ void RegulatorProxy::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		p_reg_->adjustSpeed(left_speed, right_speed);
 }
 
-bool RegulatorProxy::_isReach()
+bool RegulatorProxy::isReach()
 {
-	if (p_reg_ != nullptr)
-		return p_reg_->_isReach();
+	if ( (mt_is_linear() && p_reg_ == back_reg_) || (mt_is_fallwall() && p_reg_ == mt_reg_) )
+		return p_reg_->isReach();
 	return false;
 }
 

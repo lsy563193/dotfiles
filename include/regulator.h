@@ -15,7 +15,7 @@ public:
 	virtual bool isSwitch() = 0;
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual bool isStop()=0;
-	virtual bool _isReach() = 0;
+	virtual bool isReach() = 0;
 
 public:
 	static Point32_t s_target;
@@ -36,7 +36,7 @@ public:
 	}
 
 protected:
-	bool _isReach();
+	bool isReach();
 
 private:
 	float pos_x_,pos_y_;
@@ -59,7 +59,7 @@ public:
 	};
 
 protected:
-	bool _isReach();
+	bool isReach();
 
 private:
 	int16_t target_angle_;
@@ -105,7 +105,7 @@ public:
 //	void setTarget(Point32_t target){s_target = target;};
 //	void setOrigin(Point32_t origin){s_origin = origin;};
 protected:
-	bool _isReach();
+	bool isReach();
 
 private:
 	int32_t	 previous_;
@@ -121,7 +121,7 @@ public:
 	void adjustSpeed(int32_t&, int32_t&);
 
 protected:
-	bool _isReach();
+	bool isReach();
 
 private:
 	int32_t speed_max_;
@@ -140,7 +140,7 @@ public:
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
 	bool isStop();
-	bool _isReach();
+	bool isReach();
 	RegulatorBase* getType(){ return p_reg_; };
 private:
 	RegulatorBase* p_reg_;

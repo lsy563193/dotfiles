@@ -527,15 +527,8 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 	set_wheel_speed(0, 0);
 }
 
-bool cm_linear_move_to_point(Point32_t target)
+bool cm_move_to(Point32_t target)
 {
-	g_should_follow_wall = false;
-	g_obs_triggered = g_rcon_triggered = false;
-	g_move_back_finished = true;
-	g_bumper_hitted =  g_cliff_triggered = false;
-	robotbase_obs_adjust_count(50);
-	reset_rcon_status();
-	cm_set_event_manager_handler_state(true);
 
 	RegulatorProxy regulator({map_get_x_count(), map_get_y_count()},target);
 
@@ -551,6 +544,9 @@ bool cm_linear_move_to_point(Point32_t target)
 		if (regulator.isExit())
 			break;
 
+		if (regulator.isReach())
+			return true;
+
 		if (regulator.isSwitch())
 			regulator.switchToNext();
 
@@ -559,7 +555,6 @@ bool cm_linear_move_to_point(Point32_t target)
 		set_wheel_speed(speed_left, speed_right);
 	}
 
-	cm_set_event_manager_handler_state(false);
 
 	return true;
 }
@@ -633,7 +628,7 @@ bool cm_curve_move_to_point()
 	}
 
 	//1/3 move to first target
-	if(!cm_linear_move_to_point(target) )
+	if(!cm_move_to(target) )
 		return false;
 
 	//2/3 calculate the curve speed.
@@ -670,7 +665,7 @@ bool cm_curve_move_to_point()
 
 	//3/3 continue to move to target
 	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
-	if(!cm_linear_move_to_point(target))
+	if(!cm_move_to(target))
 		return false;
 
 	return true;
@@ -707,37 +702,6 @@ int16_t get_round_angle(CMMoveType type){
 		angle = 900;
 	}
 	return angle;
-}
-
-uint8_t cm_follow_wall(Point32_t target)
-{
-	g_wall_distance = 400;
-	bool	eh_status_now=false, eh_status_last=false;
-	cm_set_event_manager_handler_state(true);
-	g_straight_distance = 300;
-	RegulatorProxy regulator({map_get_x_count(),map_get_y_count()}, target);
-	robotbase_obs_adjust_count(100);
-	while (ros::ok())
-	{
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-		{
-			usleep(100);
-			continue;
-		}
-
-		if (regulator.isExit())
-			break;
-
-		if (regulator.isSwitch())
-			regulator.switchToNext();
-
-		int32_t	 speed_left = 0, speed_right = 0;
-		regulator.adjustSpeed(speed_left, speed_right);
-		set_wheel_speed(speed_left, speed_right);
-	}
-
-	cm_set_event_manager_handler_state(false);
-	return 0;
 }
 
 bool cm_resume_cleaning()
@@ -819,11 +783,8 @@ int cm_cleaning()
 		}
 		else if (is_found == 1)
 		{
-			if (mt_is_fallwall())
-				cm_follow_wall(g_next_point);
-			else
-			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_linear_move_to_point(g_next_point);
+			if (mt_is_fallwall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+				cm_move_to(g_next_point);
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
@@ -1102,7 +1063,7 @@ bool cm_move_to_cell(int16_t target_x, int16_t target_y)
 			debug_map(MAP, tmp.X, tmp.Y);
 			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
 			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_linear_move_to_point(Next_Point);
+				cm_move_to(Next_Point);
 
 			if (g_fatal_quit_event || g_key_clean_pressed )
 				return false;
