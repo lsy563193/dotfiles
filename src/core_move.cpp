@@ -795,9 +795,6 @@ int cm_cleaning()
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event)
-			return -1;
-
 		if (g_remote_home || g_battery_home)
 		{
 			g_remote_home = false;
@@ -829,7 +826,8 @@ int cm_cleaning()
 		else if (is_found == 1)
 		{
 //			if (mt_is_fallwall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_move_to(g_next_point);
+			if(! cm_move_to(g_next_point))
+				return -1;
 
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
