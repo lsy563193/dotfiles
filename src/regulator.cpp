@@ -81,6 +81,7 @@ bool BackRegulator::isStop()
 
 void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
+//	ROS_INFO("BackRegulator::adjustSpeed");
 	set_dir_backward();
 	speed_ += counter_ / 100;
 	speed_ = (speed_ > 18) ? 18 : speed_;
@@ -127,7 +128,8 @@ bool TurnRegulator::isStop()
 void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 
-	auto diff = target_angle_ - Gyro_GetAngle();
+	auto diff = ranged_angle(target_angle_ - Gyro_GetAngle());
+//	ROS_WARN("TurnRegulator::adjustSpeed diff(%d)", diff);
 	if(mt_is_fallwall())
 		(mt_is_left()) ? set_dir_right() : set_dir_left();
 	else
@@ -241,11 +243,12 @@ bool LinearRegulator::isStop()
 
 void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
+//	ROS_INFO("BackRegulator::adjustSpeed");
 	set_dir_forward();
 
 	auto diff = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
 
-	ROS_WARN("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
+//	ROS_WARN("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
 	if (integration_cycle_++ > 10)
 	{
 		integration_cycle_ = 0;
@@ -279,7 +282,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	check_limit(left_speed, BASE_SPEED, speed_max_);
 	check_limit(right_speed, BASE_SPEED, speed_max_);
 	base_speed_ = (left_speed + right_speed) / 2;
-	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d),diff(%d)",left_speed, right_speed, base_speed_, is_map_front_block(3),diff);
+//	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d),diff(%d)",left_speed, right_speed, base_speed_, is_map_front_block(3),diff);
 }
 
 
@@ -366,6 +369,7 @@ bool FollowWallRegulator::isStop()
 
 void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
+	ROS_INFO("BackRegulator::adjustSpeed");
 //	uint32_t l_step = (get_right_wheel_step() / 100) * 11 ;
 	auto _l_step = get_left_wheel_step();
 	auto _r_step = get_right_wheel_step();
