@@ -10,9 +10,7 @@
 class RegulatorBase {
 public:
 
-	bool isExit(){
-		return g_fatal_quit_event || g_key_clean_pressed;
-	};
+	bool isExit();
 
 	bool isPause(){
 		return RegulatorBase::isStop() || isStop();

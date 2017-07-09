@@ -19,6 +19,9 @@
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
 
+bool RegulatorBase::isExit(){
+	return g_fatal_quit_event || g_key_clean_pressed;
+}
 
 bool RegulatorBase::isStop()
 {
