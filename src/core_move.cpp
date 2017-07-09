@@ -786,12 +786,6 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 
 int cm_cleaning()
 {
-	// Checking g_go_home is for case that manual pause when robot going home.
-	if(g_go_home)
-	{
-		ROS_WARN("%s %d: Continue going home.", __FUNCTION__, __LINE__);
-		return 0;
-	}
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
@@ -842,7 +836,6 @@ int cm_cleaning()
 		}
 		if (is_found == 2)
 				return -1;
-
 	}
 	return 0;
 }
@@ -1032,21 +1025,11 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 
 uint8_t cm_touring(void)
 {
-	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
-	g_from_station = 0;
-	g_trapped_mode = 0;
-	g_motion_init_succeeded = false;
-	event_manager_reset_status();
+
 	MotionManage motion;
-	g_turn_angle = 0;
-	g_have_seen_charge_stub = false;
 
 	if (!motion.initSucceeded())
-	{
-		//robot::instance()->resetLowBatPause();
-		//robot::instance()->resetManualPause();
 		return 0;
-	}
 
 	g_motion_init_succeeded = true;
 

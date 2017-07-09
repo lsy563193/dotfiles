@@ -15,6 +15,7 @@
 #include "motion_manage.h"
 #include <segment_set.h>
 #include <slam.h>
+#include <move_type.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -147,6 +148,13 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
+	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
+	g_from_station = 0;
+	g_trapped_mode = 0;
+	g_motion_init_succeeded = false;
+	event_manager_reset_status();
+	g_turn_angle = 0;
+	g_have_seen_charge_stub = false;
 	bool eh_status_now=false, eh_status_last=false;
 
 	initSucceeded(true);
