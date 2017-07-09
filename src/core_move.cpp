@@ -813,8 +813,10 @@ int cm_cleaning()
 		ROS_INFO("State: %d", is_found);
 		if (is_found == 0) //No target point
 		{
-			if(get_clean_mode() != Clean_Mode_Spot)
+			if(get_clean_mode() != Clean_Mode_Spot){
 				g_go_home = true;
+				cm_go_home();
+			}
 			return 0;
 		}
 		else if (is_found == 1)
@@ -842,15 +844,6 @@ int cm_cleaning()
 
 void cm_go_home()
 {
-	/* Robot will try to go to the cells in g_home_point_old_path list
-	 * first, and it will only go through the CLEANED area. If the
-	 * cell in g_home_point_new_path is unreachable through the
-	 * CLEANED area, it will be push into g_home_point_new_path list.
-	 * When all the cells in g_home_point_old_path list are unreachable
-	 * or failed to go to charger, robot will start to go to cells in
-	 * g_home_point_new_path through the UNCLEAN area (If there is a
-	 * way like this).
-	 */
 	bool all_old_path_failed = false;
 	Cell_t current_home_cell;
 	mt_set(CM_LINEARMOVE);
@@ -1034,20 +1027,10 @@ uint8_t cm_touring(void)
 	g_motion_init_succeeded = true;
 
 	if (!g_go_home && (robot::instance()->isLowBatPaused()))
-	{
 		if (!cm_resume_cleaning())
-		{
 			return 0;
-		}
-	}
-	if (cm_cleaning() == 0)
-	{
-		if (get_clean_mode() != Clean_Mode_Spot){
-			cm_go_home();
-		}
-		else
-			g_go_home = false;
-	}
+
+	cm_cleaning();
 	return 0;
 }
 

@@ -107,6 +107,17 @@ bool cm_move_to(int16_t x, int16_t y);
 void cm_move_back_(uint16_t dist);
 
 void cm_set_home(int32_t x, int32_t y);
+
+	/* Robot will try to go to the cells in g_home_point_old_path list
+	 * first, and it will only go through the CLEANED area. If the
+	 * cell in g_home_point_new_path is unreachable through the
+	 * CLEANED area, it will be push into g_home_point_new_path list.
+	 * When all the cells in g_home_point_old_path list are unreachable
+	 * or failed to go to charger, robot will start to go to cells in
+	 * g_home_point_new_path through the UNCLEAN area (If there is a
+	 * way like this).
+	 */
+
 void cm_go_home(void);
 bool cm_go_to_charger(Cell_t current_home_cell);
 //void CM_SetStationHome(void);
