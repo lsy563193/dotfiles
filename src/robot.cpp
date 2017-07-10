@@ -334,8 +334,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			wf_update_map();
 	}
 
-	Gyro_SetAngle(((int16_t)(yaw_ * 1800 / M_PI + 3600)) % 3600);
-	//ROS_WARN("Odom position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, (((int16_t)(tf::getYaw(msg->pose.pose.orientation) * 1800 / M_PI + 3600)) % 3600));
+	Gyro_SetAngle(yaw_ * 1800 / M_PI);
+	ROS_WARN("Odom position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, Gyro_GetAngle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)

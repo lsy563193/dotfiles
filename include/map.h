@@ -52,8 +52,8 @@ int16_t map_get_y_cell(void);
 void map_move_to(double x, double y);
 void map_set_position(double x, double y);
 
-int32_t map_get_relative_x(uint16_t heading, int16_t offset_lat, int16_t offset_long);
-int32_t map_get_relative_y(uint16_t heading, int16_t offset_lat, int16_t offset_long);
+int32_t map_get_relative_x(int16_t heading, int16_t offset_lat, int16_t offset_long);
+int32_t map_get_relative_y(int16_t heading, int16_t offset_lat, int16_t offset_long);
 
 int16_t Map_GetLateralOffset(uint16_t heading);
 int16_t Map_GetLongitudinalOffset(uint16_t heading);

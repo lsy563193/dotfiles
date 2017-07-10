@@ -231,7 +231,7 @@ void map_clear_blocks(void) {
 	map_set_cell(MAP, cell_to_count(map_get_x_cell()), cell_to_count(map_get_y_cell() - 1), CLEANED);
 }
 
-int32_t map_get_relative_x(uint16_t heading, int16_t dx, int16_t dy) {
+int32_t map_get_relative_x(int16_t heading, int16_t dx, int16_t dy) {
 	if(heading != relative_theta) {
 		if(heading == 0) {
 			relative_sin = 0;
@@ -242,7 +242,7 @@ int32_t map_get_relative_x(uint16_t heading, int16_t dx, int16_t dy) {
 		} else if(heading == 1800) {
 			relative_sin = 0;
 			relative_cos = -1;
-		} else if(heading == 2700) {
+		} else if(heading == -900) {
 			relative_sin = -1;
 			relative_cos = 0;
 		} else {
@@ -255,7 +255,7 @@ int32_t map_get_relative_x(uint16_t heading, int16_t dx, int16_t dy) {
 	                                      ((double)dx	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
 }
 
-int32_t map_get_relative_y(uint16_t heading, int16_t offset_lat, int16_t offset_long) {
+int32_t map_get_relative_y(int16_t heading, int16_t offset_lat, int16_t offset_long) {
 	if(heading != relative_theta) {
 		if(heading == 0) {
 			relative_sin = 0;
@@ -266,7 +266,7 @@ int32_t map_get_relative_y(uint16_t heading, int16_t offset_lat, int16_t offset_
 		} else if(heading == 1800) {
 			relative_sin = 0;
 			relative_cos = -1;
-		} else if(heading == 2700) {
+		} else if(heading == -900) {
 			relative_sin = -1;
 			relative_cos = 0;
 		} else {

@@ -53,7 +53,7 @@ typedef struct {
 extern float saved_pos_x, saved_pos_y;
 extern bool g_move_back_finished;
 extern uint16_t g_straight_distance;
-extern uint16_t g_turn_angle;
+extern int16_t g_turn_angle;
 extern uint16_t g_wall_distance;
 
 extern bool g_from_station;
@@ -93,7 +93,7 @@ void cm_update_map_bumper();
 void cm_update_map_cliff();
 bool cm_curve_move_to_point();
 
-void cm_world_to_point(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 /*
  * Robot move to target cell

@@ -455,9 +455,7 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beep_for_command(true);
-		remote_target_angle = Gyro_GetAngle() - 300;
-		if (remote_target_angle < 0)
-			remote_target_angle += 3600;
+		remote_target_angle = ranged_angle(Gyro_GetAngle() - 300);
 		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, Gyro_GetAngle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
