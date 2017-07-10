@@ -57,18 +57,7 @@ SpotMovement::SpotMovement(float diameter = 1.0)
 
 SpotMovement::~SpotMovement()
 {
-	if (spot_obj != NULL)
-		spot_obj = NULL;
-	stop_point_ = {0, 0};
-	near_point_ = {0, 0};
-	begin_point_ = {0, 0};
-	is_direct_change_ = 0;
-	is_stuck_ = 0;
-	sout_od_cnt_ = 0;
-	sin_od_cnt_ = 0;
-	target_.clear();
-	spot_init_ = 0;
-	st_ = NO_SPOT;
+	spotDeinit();
 }
 
 SpotMovement *SpotMovement::instance()
@@ -139,27 +128,12 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	sout_od_cnt_ = 0;
 	sin_od_cnt_ = 0;
 	target_.clear();
-	if (spot_init_ == 0)
-	{// init
-		spot_init_ = 1;
-		if (getSpotType() == CLEAN_SPOT)
-		{
-			spot_motor_configure();
-		}
-	} else
-	{//deinit
-		spot_init_ = 0;
-		if(getSpotType() == CLEAN_SPOT){
-			work_motor_configure();
-		}
-		
-	}
+	spot_init_ = 1;
+	spot_motor_configure();
 }
-
 
 void SpotMovement::spotDeinit()
 {
-	work_motor_configure();
 	stop_point_ = {0, 0};
 	near_point_ = {0, 0};
 	begin_point_ = {0, 0};
@@ -168,8 +142,12 @@ void SpotMovement::spotDeinit()
 	sout_od_cnt_ = 0;
 	sin_od_cnt_ = 0;
 	target_.clear();
-	//resetSpotType();
-	spot_init_ = 1;//set init 1
+	spot_diameter_ = 0;
+	spot_init_ = 0;
+	if(getSpotType() == CLEAN_SPOT){
+		work_motor_configure();
+	}
+	resetSpotType();
 }
 
 void SpotMovement::setStopPoint()
@@ -313,7 +291,8 @@ void SpotMovement::generateTarget(uint8_t sp_type, float diameter, std::vector<P
 					y = (spt == SPIRAL_RIGHT_IN) ? (y_l - i - 1) : (y_l + i + 1);
 					//target->push_back({x,y});
 				}
-			} else
+			}
+			else
 			{ //odd number
 				y = (spt == SPIRAL_RIGHT_IN) ? (y_l - 1) : (y_l + 1);
 				y_l = y;
@@ -353,14 +332,15 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()});
 			wav_play(WAV_CLEANING_SPOT);
 		}
-		else
+		else if( spt == NORMAL_SPOT)
 			spotInit(1.0, {0, 0});
 		/*---generate target ,and  set target_ ---*/
 		generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
 		ROS_WARN("%s,%d , on spot init, get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
 		next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 		ret = 1;
-	} else if (tp_ != target_.end() && spot_init_ == 1)
+	}
+	else if (tp_ != target_.end() && spot_init_ == 1)
 	{
 		if (isDirectChange())//yes bumper/obs detect
 		{
@@ -379,13 +359,14 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ", __FUNCTION__, __LINE__, near_point_.X,
 								 near_point_.Y);
 				ret = 1;
-			} else// stuck
+			}
+			else// stuck
 			{
 				resetStuck();
 				ROS_WARN("%s,%d , is stucked, go back to begin point (%d %d) ", __FUNCTION__, __LINE__, begin_point_.X,
 								 begin_point_.Y);
 				next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
-				spotInit(1.0, {0, 0});//clear all spot variable
+				spotDeinit();//clear all spot variable
 				if (spt == CLEAN_SPOT)
 				{
 					ret = 1;
@@ -393,7 +374,8 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 					ret = 0;
 				setSpotType(NO_SPOT);
 			}
-		} else//no bumper/obs detect
+		}
+		else//no bumper/obs detect
 		{
 			tp_++;
 			if (tp_ != target_.end())
@@ -401,22 +383,19 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 				ROS_WARN("%s,%d , get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
 				next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 				ret = 1;
-			} else if (tp_ == target_.end())
+			}
+			else if (tp_ == target_.end())
 			{
 				if (spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN)
 				{ //end spot
 					ROS_WARN("%s,%d , spot ending, ending point (%d %d) ", __FUNCTION__, __LINE__, begin_point_.X,
 									 begin_point_.Y);
 					next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};// go back to begin point
-					spotInit(1.0, {0, 0});//clear all spot variable
-					if (spt == CLEAN_SPOT)
-					{
-						ret = 1;
-					} else {
-						ret = 0;
-					}
-					setSpotType(NO_SPOT);
-				} else
+					if (spt == CLEAN_SPOT){	ret = 1;}//clean spot
+					else {ret = 0;} //normal spot
+					spotDeinit();//clear all spot variable
+				}
+				else
 				{//switch to anothor spiral type
 					spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_RIGHT_IN : SPIRAL_LEFT_IN;
 					generateTarget(spiral_type_, spot_diameter_, &target_, begin_point_);
