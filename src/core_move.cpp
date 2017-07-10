@@ -1323,9 +1323,7 @@ void cm_self_check(void)
 						{
 							bumper_jam_state++;
 							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-							target_angle = Gyro_GetAngle() - 900;
-							if (target_angle < 0)
-								target_angle += 3600;
+							target_angle = ranged_angle(Gyro_GetAngle() - 900);
 							ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 						}
 					}
@@ -1344,9 +1342,7 @@ void cm_self_check(void)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-						target_angle = Gyro_GetAngle() + 900;
-						if (target_angle > 3600)
-							target_angle -= 3600;
+						target_angle = ranged_angle(Gyro_GetAngle() + 900);
 						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 					}
 					break;

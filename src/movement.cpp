@@ -2399,7 +2399,6 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 	Counter_Watcher = 0;
 	reset_rcon_remote();
 	int16_t target_angle;
-	uint16_t gyro_angle;
 	// This decides whether robot should stop when left cliff triggered.
 	bool right_cliff_triggered = false;
 
@@ -2408,13 +2407,7 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 		right_cliff_triggered = true;
 	}
 
-	gyro_angle = Gyro_GetAngle();
-
-	target_angle = gyro_angle + angle;
-	if (target_angle >= 3600)
-	{
-		target_angle = target_angle - 3600;
-	}
+	target_angle = ranged_angle(Gyro_GetAngle() + angle);
 
 	set_dir_left();
 	set_wheel_speed(speed, speed);
