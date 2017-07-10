@@ -2457,8 +2457,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	beep_for_command(true);
 	g_key_clean_pressed = true;
 	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
-		SpotMovement::instance()->spotInit(1.0,{0,0});
-		SpotMovement::instance()->setSpotType(NO_SPOT);
+		SpotMovement::instance()->spotDeinit();
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();
@@ -2479,8 +2478,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 			if (get_clean_mode() == Clean_Mode_WallFollow)
 				wf_clear();
 			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
-				SpotMovement::instance()->spotInit(1.0,{0,0});
-				SpotMovement::instance()->setSpotType(NO_SPOT);
+				SpotMovement::instance()->spotDeinit();
 			}
 		}
 		ROS_INFO("g_remote_home = %d", g_remote_home);
@@ -2534,8 +2532,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 		}
 		else if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
 			beep_for_command(true);
-			SpotMovement::instance()->spotInit(1.0,{0,0});
-			SpotMovement::instance()->setSpotType(NO_SPOT);
+			SpotMovement::instance()->spotDeinit();
 			set_wheel_speed(0, 0);
 			g_remote_spot = true;
 		}
