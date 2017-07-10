@@ -26,7 +26,7 @@
 
 #include "stdint.h"
 
-void User_Interface(void);
+void user_interface(void);
 
 typedef struct
 {

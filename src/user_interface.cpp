@@ -33,7 +33,7 @@ uint8_t user_interface_reject_reason = 0; // 1 for error exist, 2 for robot lift
 uint8_t user_interface_plan_status = 0;
 time_t user_interface_plan_confirm_time = time(NULL);
 /*------------------------------------------------------------User Interface ----------------------------------*/
-void User_Interface(void)
+void user_interface(void)
 {
 	time_t start_time;
 
@@ -288,11 +288,11 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	if (robot::instance()->isManualPaused())
 	{
 		reset_rcon_status();
-		ROS_DEBUG("%s %d: User_Interface detects charger signal, but ignore for manual pause.", __FUNCTION__, __LINE__);
+		ROS_DEBUG("%s %d: user_interface detects charger signal, but ignore for manual pause.", __FUNCTION__, __LINE__);
 		return;
 	}
 
-	ROS_DEBUG("%s %d: User_Interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
+	ROS_DEBUG("%s %d: user_interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
 	if (charger_signal_delay == 0)
 		charger_signal_start_time = time(NULL);
 
@@ -314,7 +314,7 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 {
 	if (battery_low_delay == 0)
 		battery_low_start_time = time(NULL);
-	ROS_DEBUG("%s %d: User_Interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, get_battery_voltage(), (int)(time(NULL) - battery_low_start_time));
+	ROS_DEBUG("%s %d: user_interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, get_battery_voltage(), (int)(time(NULL) - battery_low_start_time));
 	if (time(NULL) - battery_low_start_time >= 5)// 5 seconds
 	{
 		temp_mode = Clean_Mode_Sleep;
