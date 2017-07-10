@@ -366,13 +366,8 @@ int8_t SpotMovement::getNextTarget(Point32_t &next_point)
 				ROS_WARN("%s,%d , is stucked, go back to begin point (%d %d) ", __FUNCTION__, __LINE__, begin_point_.X,
 								 begin_point_.Y);
 				next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
+				ret = (spt == CLEAN_SPOT)?1:0;
 				spotDeinit();//clear all spot variable
-				if (spt == CLEAN_SPOT)
-				{
-					ret = 1;
-				} else
-					ret = 0;
-				setSpotType(NO_SPOT);
 			}
 		}
 		else//no bumper/obs detect
