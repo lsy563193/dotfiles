@@ -372,8 +372,8 @@ void quick_back(uint8_t speed, uint16_t distance)
 
 void turn_left(uint16_t speed, int16_t angle)
 {
-	auto target_angle = ranged_angle(Gyro_GetAngle() + angle);
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(),
+	auto target_angle = ranged_angle(gyro_get_angle() + angle);
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(),
 					 speed);
 
 	set_dir_left();
@@ -393,20 +393,20 @@ void turn_left(uint16_t speed, int16_t angle)
 			stop_brifly();
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < accurate)
+		if (abs(target_angle - gyro_get_angle()) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < 50)
+		if (abs(target_angle - gyro_get_angle()) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
-		} else if (abs(target_angle - Gyro_GetAngle()) < 200)
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
+		} else if (abs(target_angle - gyro_get_angle()) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
 		} else
 		{
 			set_wheel_speed(speed, speed);
@@ -441,24 +441,24 @@ void turn_left(uint16_t speed, int16_t angle)
 			break;
 		}
 		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
 	}
 	g_wheel_left_direction = 0;
 	g_wheel_right_direction = 0;
 
 	set_wheel_speed(0, 0);
 
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
 }
 
 void turn_right(uint16_t speed, int16_t angle)
 {
-	auto target_angle = Gyro_GetAngle() - angle;
+	auto target_angle = gyro_get_angle() - angle;
 	if (target_angle < 0)
 	{
 		target_angle = 3600 + target_angle;
 	}
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(),
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(),
 					 speed);
 
 	set_dir_right();
@@ -478,20 +478,20 @@ void turn_right(uint16_t speed, int16_t angle)
 			stop_brifly();
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < accurate)
+		if (abs(target_angle - gyro_get_angle()) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < 50)
+		if (abs(target_angle - gyro_get_angle()) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
-		} else if (abs(target_angle - Gyro_GetAngle()) < 200)
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
+		} else if (abs(target_angle - gyro_get_angle()) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
 		} else
 		{
 			set_wheel_speed(speed, speed);
@@ -526,21 +526,21 @@ void turn_right(uint16_t speed, int16_t angle)
 			break;
 		}
 		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
 	}
 	g_wheel_left_direction = 0;
 	g_wheel_right_direction = 0;
 
 	set_wheel_speed(0, 0);
 
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
 }
 
 void jam_turn_left(uint16_t speed, int16_t angle)
 {
-	auto target_angle = ranged_angle(Gyro_GetAngle() + angle);
+	auto target_angle = ranged_angle(gyro_get_angle() + angle);
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 Gyro_GetAngle(), speed);
+					 gyro_get_angle(), speed);
 
 	set_dir_left();
 
@@ -552,20 +552,20 @@ void jam_turn_left(uint16_t speed, int16_t angle)
 	if (speed > 30) accurate = 30;
 	while (ros::ok())
 	{
-		if (abs(target_angle - Gyro_GetAngle()) < accurate)
+		if (abs(target_angle - gyro_get_angle()) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < 50)
+		if (abs(target_angle - gyro_get_angle()) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
-		} else if (abs(target_angle - Gyro_GetAngle()) < 200)
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
+		} else if (abs(target_angle - gyro_get_angle()) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
 		} else
 		{
 			set_wheel_speed(speed, speed);
@@ -580,22 +580,22 @@ void jam_turn_left(uint16_t speed, int16_t angle)
 		/*if(is_turn_remote())
 			break;*/
 		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - Gyro_GetAngle());
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
 	}
 	g_wheel_left_direction = 0;
 	g_wheel_right_direction = 0;
 
 	set_wheel_speed(0, 0);
 
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
 }
 
 void jam_turn_right(uint16_t speed, int16_t angle)
 {
-	auto target_angle = ranged_angle(Gyro_GetAngle() - angle);
+	auto target_angle = ranged_angle(gyro_get_angle() - angle);
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 Gyro_GetAngle(), speed);
+					 gyro_get_angle(), speed);
 
 	set_dir_right();
 
@@ -607,20 +607,20 @@ void jam_turn_right(uint16_t speed, int16_t angle)
 	if (speed > 30) accurate = 30;
 	while (ros::ok())
 	{
-		if (abs(target_angle - Gyro_GetAngle()) < accurate)
+		if (abs(target_angle - gyro_get_angle()) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < 50)
+		if (abs(target_angle - gyro_get_angle()) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 5);
-		} else if (abs(target_angle - Gyro_GetAngle()) < 200)
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
+		} else if (abs(target_angle - gyro_get_angle()) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), 10);
+			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
 		} else
 		{
 			set_wheel_speed(speed, speed);
@@ -635,14 +635,14 @@ void jam_turn_right(uint16_t speed, int16_t angle)
 		/*if(is_turn_remote())
 			break;*/
 		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed);
+		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
 	}
 	g_wheel_left_direction = 0;
 	g_wheel_right_direction = 0;
 
 	set_wheel_speed(0, 0);
 
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle());
+	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
 }
 
 int32_t get_front_obs(void)
@@ -853,10 +853,10 @@ void set_wheel_speed(uint8_t Left, uint8_t Right)
 #if GYRO_DYNAMIC_ADJUSTMENT
 	if (abs(Left - Right) > 1)
 	{
-		Set_Gyro_Dynamic_On();
+		set_gyro_dynamic_on();
 	} else
 	{
-		Set_Gyro_Dynamic_Off();
+		set_gyro_dynamic_off();
 	}
 #endif
 }
@@ -2376,20 +2376,20 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 		right_cliff_triggered = true;
 	}
 
-	target_angle = ranged_angle(Gyro_GetAngle() + angle);
+	target_angle = ranged_angle(gyro_get_angle() + angle);
 
 	set_dir_left();
 	set_wheel_speed(speed, speed);
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 Gyro_GetAngle(), speed);
+					 gyro_get_angle(), speed);
 	while (ros::ok())
 	{
-		if (abs(target_angle - Gyro_GetAngle()) < 20)
+		if (abs(target_angle - gyro_get_angle()) < 20)
 		{
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < 50)
+		if (abs(target_angle - gyro_get_angle()) < 50)
 		{
 			set_wheel_speed(speed / 2, speed / 2);
 		} else
@@ -2437,20 +2437,20 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 		left_cliff_triggered = true;
 	}
 
-	target_angle = ranged_angle(Gyro_GetAngle() - angle);
+	target_angle = ranged_angle(gyro_get_angle() - angle);
 
 	set_dir_right();
 	set_wheel_speed(speed, speed);
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 Gyro_GetAngle(), speed);
+					 gyro_get_angle(), speed);
 	while (ros::ok())
 	{
-		if (abs(target_angle - Gyro_GetAngle()) < 20)
+		if (abs(target_angle - gyro_get_angle()) < 20)
 		{
 			break;
 		}
-		if (abs(target_angle - Gyro_GetAngle()) < 50)
+		if (abs(target_angle - gyro_get_angle()) < 50)
 		{
 			set_wheel_speed(speed / 2, speed / 2);
 		} else

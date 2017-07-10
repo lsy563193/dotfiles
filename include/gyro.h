@@ -3,22 +3,22 @@
 
 #include "debug.h"
 
-int16_t Gyro_GetXAcc(void);
-int16_t Gyro_GetYAcc(void);
-int16_t Gyro_GetZAcc(void);
-uint8_t Gyro_GetCalibration(void);
-int16_t Gyro_GetAngle(void);
-void Gyro_SetAngle(int16_t angle);
+int16_t gyro_get_x_acc(void);
+int16_t gyro_get_y_acc(void);
+int16_t gyro_get_z_acc(void);
+uint8_t gyro_get_calibration(void);
+int16_t gyro_get_angle(void);
+void gyro_set_angle(int16_t angle);
 
-void Set_Gyro_On(void);
-bool Wait_For_Gyro_On(void);
+void set_gyro_on(void);
+bool wait_for_gyro_on(void);
 bool check_gyro_stable(void);
-void Set_Gyro_Off(void);
-void Set_Gyro_Status(void);
-void Reset_Gyro_Status(void);
-uint8_t Is_Gyro_On(void);
+void set_gyro_off(void);
+void set_gyro_status(void);
+void reset_gyro_status(void);
+uint8_t is_gyro_on(void);
 #if GYRO_DYNAMIC_ADJUSTMENT
-void Set_Gyro_Dynamic_On(void);
-void Set_Gyro_Dynamic_Off(void);
+void set_gyro_dynamic_on(void);
+void set_gyro_dynamic_off(void);
 #endif
 #endif /* __GYRO_H */

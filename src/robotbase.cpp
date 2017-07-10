@@ -135,7 +135,7 @@ void robotbase_deinit(void)
 		ROS_INFO("\tshutdown robotbase power");
 		set_led(0, 0);
 		control_set(CTL_BUZZER, 0x00);
-		Set_Gyro_Off();
+		set_gyro_off();
 		usleep(40000);
 		disable_motors();
 		usleep(40000);

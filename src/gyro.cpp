@@ -20,50 +20,50 @@ uint8_t gyro_calibration = 255;
 
 static uint8_t Gyro_Status = 0;
 
-int16_t Gyro_GetXAcc(void) {
+int16_t gyro_get_x_acc(void) {
 	return gyro_xacc;
 }
 
-int16_t Gyro_GetYAcc(void) {
+int16_t gyro_get_y_acc(void) {
 	return gyro_yacc;
 }
 
-int16_t Gyro_GetZAcc(void) {
+int16_t gyro_get_z_acc(void) {
 	return gyro_zacc;
 }
 
-uint8_t Gyro_GetCalibration(void) {
+uint8_t gyro_get_calibration(void) {
 	return gyro_calibration;
 }
 
-int16_t Gyro_GetAngle(void)
+int16_t gyro_get_angle(void)
 {
 	return gyro_angle;
 }
 
-void Gyro_SetAngle(int16_t angle)
+void gyro_set_angle(int16_t angle)
 {
 	gyro_angle = angle;
 }
 
-void Set_Gyro_Status(void)
+void set_gyro_status(void)
 {
 	Gyro_Status = 1;
 }
 
-void Reset_Gyro_Status(void)
+void reset_gyro_status(void)
 {
 	Gyro_Status = 0;
 }
 
-uint8_t Is_Gyro_On(void)
+uint8_t is_gyro_on(void)
 {
 	return Gyro_Status;
 }
 
-void Set_Gyro_On(void)
+void set_gyro_on(void)
 {
-	if (Is_Gyro_On()){
+	if (is_gyro_on()){
 		ROS_INFO("gyro on already");
 	}
 	else
@@ -74,7 +74,7 @@ void Set_Gyro_On(void)
 	}
 }
 
-bool Wait_For_Gyro_On(void)
+bool wait_for_gyro_on(void)
 {
 	// Count for cliff triggered during opening gyro.
 	uint8_t error_count = 0;
@@ -99,7 +99,7 @@ bool Wait_For_Gyro_On(void)
 		}
 		else
 		{
-			Set_Gyro_On();
+			set_gyro_on();
 		}
 
 		if (g_key_clean_pressed || g_cliff_all_triggered || g_fatal_quit_event || is_direct_charge())
@@ -129,11 +129,11 @@ bool Wait_For_Gyro_On(void)
 	if(open_gyro_success)
 	{
 		ROS_INFO("gyro start ok");
-		Set_Gyro_Status();
+		set_gyro_status();
 		return true;
 	}
 	ROS_INFO("gyro start fail");
-	Set_Gyro_Off();
+	set_gyro_off();
 	return false;
 }
 
@@ -158,7 +158,7 @@ bool check_gyro_stable()
 							robot::instance()->getAngleV(), current_angle, average_angle);
 		if (current_angle > 0.02 || current_angle < -0.02)
 		{
-			Set_Gyro_Off();
+			set_gyro_off();
 			wav_play(WAV_SYSTEM_INITIALIZING);
 			break;
 		}
@@ -171,7 +171,7 @@ bool check_gyro_stable()
 		if (average_angle > 0.002)
 		{
 			ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
-			Set_Gyro_Off();
+			set_gyro_off();
 			average_angle = 0;
 			wav_play(WAV_SYSTEM_INITIALIZING);
 		}
@@ -191,10 +191,10 @@ bool check_gyro_stable()
 	return false;
 }
 
-void Set_Gyro_Off()
+void set_gyro_off()
 {
 	control_set(CTL_GYRO, 0x00);
-	if (!Is_Gyro_On()){
+	if (!is_gyro_on()){
 		ROS_INFO("gyro stop already");
 		return;
 	}
@@ -222,15 +222,15 @@ void Set_Gyro_Off()
 		}
 //		ROS_INFO("gyro stop ready(%d),angle_v_(%f)", count, robot::instance()->getAngleV());
 	}
-	Reset_Gyro_Status();
+	reset_gyro_status();
 	robot::instance()->offsetAngle(0);
 	ROS_INFO("gyro stop ok");
 }
 
 #if GYRO_DYNAMIC_ADJUSTMENT
-void Set_Gyro_Dynamic_On(void)
+void set_gyro_dynamic_on(void)
 {
-	if (Is_Gyro_On())
+	if (is_gyro_on())
 	{
 		control_set(CTL_GYRO, 0x03);
 	}
@@ -240,9 +240,9 @@ void Set_Gyro_Dynamic_On(void)
 	}
 }
 
-void Set_Gyro_Dynamic_Off(void)
+void set_gyro_dynamic_off(void)
 {
-	if (Is_Gyro_On())
+	if (is_gyro_on())
 	{
 		control_set(CTL_GYRO, 0x02);
 	}

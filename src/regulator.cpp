@@ -99,8 +99,8 @@ TurnRegulator::TurnRegulator() : speed_max_(13)
 
 bool TurnRegulator::isReach()
 {
-	if (abs(target_angle_ - Gyro_GetAngle()) < accurate_){
-		ROS_WARN("%s, %d: TurnRegulator target,curr (%d,%d)", __FUNCTION__, __LINE__,target_angle_, Gyro_GetAngle());
+	if (abs(target_angle_ - gyro_get_angle()) < accurate_){
+		ROS_WARN("%s, %d: TurnRegulator target,curr (%d,%d)", __FUNCTION__, __LINE__,target_angle_, gyro_get_angle());
 		g_obs_triggered = g_rcon_triggered = 0; //should clear when turn
 		return true;
 	}
@@ -128,7 +128,7 @@ bool TurnRegulator::isStop()
 void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 
-	auto diff = ranged_angle(target_angle_ - Gyro_GetAngle());
+	auto diff = ranged_angle(target_angle_ - gyro_get_angle());
 //	ROS_WARN("TurnRegulator::adjustSpeed diff(%d)", diff);
 	if(mt_is_fallwall())
 		(mt_is_left()) ? set_dir_right() : set_dir_left();
@@ -183,10 +183,10 @@ LinearRegulator::LinearRegulator():
 {
 	g_should_follow_wall = false;
 	g_turn_angle = ranged_angle(
-					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
+					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
 	ROS_WARN("%s %d: angle(%d),curr(%d,%d),targ(%d,%d) ", __FUNCTION__, __LINE__, g_turn_angle, map_get_x_count(),map_get_y_count(), s_target.X,s_target.Y);
 	ROS_ERROR("angle:%d(%d,%d) ", g_turn_angle,
-						course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
+						course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y), gyro_get_angle());
 }
 
 bool LinearRegulator::isReach()
@@ -229,7 +229,7 @@ bool LinearRegulator::isStop()
 	}
 
 	auto diff = ranged_angle(
-					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
+					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
 	if ( std::abs(diff) > 300)
 	{
 		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
@@ -251,9 +251,9 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	set_dir_forward();
 
 	auto diff = ranged_angle(
-					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
+					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
 
-//	ROS_WARN("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
+//	ROS_WARN("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),gyro_get_angle());
 	if (integration_cycle_++ > 10)
 	{
 		integration_cycle_ = 0;
@@ -347,8 +347,8 @@ bool FollowWallRegulator::isReach()
 				ROS_WARN("Robot has round to the opposite direcition.");
 				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
 								 map_get_y_count());
-				map_set_cell(MAP, map_get_relative_x(Gyro_GetAngle(), CELL_SIZE_3, 0),
-										 map_get_relative_y(Gyro_GetAngle(), CELL_SIZE_3, 0), CLEANED);
+				map_set_cell(MAP, map_get_relative_x(gyro_get_angle(), CELL_SIZE_3, 0),
+										 map_get_relative_y(gyro_get_angle(), CELL_SIZE_3, 0), CLEANED);
 
 //			if(s_origin.X == map_get_x_count() && s_origin.Y == map_get_y_count()){
 //				ROS_WARN("direcition is wrong, swap");

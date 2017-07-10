@@ -126,7 +126,7 @@ bool is_map_front_block(int dx)
 	int32_t x, y;
 	for (auto dy = -1; dy <= 1; dy++)
 	{
-		cm_world_to_point(Gyro_GetAngle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
+		cm_world_to_point(gyro_get_angle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
 		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
 			return true;
 	}
@@ -162,7 +162,7 @@ void cm_update_map_cleaned()
 	int32_t i,j;
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy) {
         for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx){
-					cm_world_to_point(Gyro_GetAngle(), CELL_SIZE * dy, CELL_SIZE * dx, &i, &j);
+					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &i, &j);
             map_set_cell(MAP, i, j, CLEANED);
         }
 	}
@@ -172,7 +172,7 @@ void cm_update_map_obs()
 {
 	if (get_obs_status() & Status_Left_OBS) {
 		int32_t i,j;
-		cm_world_to_point(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &i, &j);
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, CELL_SIZE, &i, &j);
 		if (get_wall_adc(0) > 200) {
 			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
 				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
@@ -182,7 +182,7 @@ void cm_update_map_obs()
 
 	if (get_obs_status() & Status_Right_OBS) {
 		int32_t i,j;
-		cm_world_to_point(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &i, &j);
+		cm_world_to_point(gyro_get_angle(), -CELL_SIZE_2, CELL_SIZE, &i, &j);
 		if (get_wall_adc(1) > 200) {
 			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
 				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
@@ -204,7 +204,7 @@ void cm_update_map_obs()
 				break;
 		}
 		int32_t x_tmp, y_tmp;
-		cm_world_to_point(Gyro_GetAngle(), (dy - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
+		cm_world_to_point(gyro_get_angle(), (dy - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 		if (i) {
 			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER) {
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
@@ -240,7 +240,7 @@ void cm_update_map_bumper()
 
 	int32_t	x_tmp, y_tmp;
 	for(auto& d_cell : d_cells){
-		cm_world_to_point(Gyro_GetAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
+		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
 		ROS_DEBUG("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x_tmp), count_to_cell(y_tmp));
 		map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 	}
@@ -269,7 +269,7 @@ void cm_update_map_cliff()
 
 	int32_t	x_tmp, y_tmp;
 	for (auto& d_cell : d_cells) {
-		cm_world_to_point(Gyro_GetAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
+		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x_tmp, &y_tmp);
 		ROS_DEBUG("%s %d: marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x_tmp), count_to_cell(y_tmp));
 		map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_BUMPER);
 	}
@@ -510,11 +510,11 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 			)
 			break;
 
-		auto diff = ranged_angle(angle - Gyro_GetAngle());
+		auto diff = ranged_angle(angle - gyro_get_angle());
 
 		if (std::abs(diff) < 10) {
 			stop_brifly();
-			ROS_INFO("%s %d: angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, angle, Gyro_GetAngle(), diff);
+			ROS_INFO("%s %d: angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, angle, gyro_get_angle(), diff);
 			break;
 		}
 		uint8_t speed_up;
@@ -606,7 +606,7 @@ bool cm_move_to(int16_t target_x, int16_t target_y)
 
 bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_right)
 {
-	auto angle_start = Gyro_GetAngle();
+	auto angle_start = gyro_get_angle();
 	move_forward(speed_left, speed_right);
 
 	bool eh_status_now = false;
@@ -627,7 +627,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 			|| g_remote_direction_keys) // It will only be set if robot is during spot.
 			return false;
 
-		auto angle_diff = ranged_angle(Gyro_GetAngle() - angle_start);
+		auto angle_diff = ranged_angle(gyro_get_angle() - angle_start);
 		if (abs(angle_diff) >= 900){
 			ROS_WARN("%s %d: reach line between point 1 & 2: \n", __FUNCTION__, __LINE__);
 			break;
@@ -719,7 +719,7 @@ bool cm_curve_move_to_point()
 int16_t calc_target(int16_t)
 {
 	auto angle = (mt_is_left()) ? -g_turn_angle : g_turn_angle;
-	return ranged_angle(Gyro_GetAngle() + angle);
+	return ranged_angle(gyro_get_angle() + angle);
 }
 
 int16_t get_round_angle(CMMoveType type){
@@ -1323,7 +1323,7 @@ void cm_self_check(void)
 						{
 							bumper_jam_state++;
 							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-							target_angle = ranged_angle(Gyro_GetAngle() - 900);
+							target_angle = ranged_angle(gyro_get_angle() - 900);
 							ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 						}
 					}
@@ -1331,18 +1331,18 @@ void cm_self_check(void)
 				}
 				case 4:
 				{
-					ROS_DEBUG("%s %d: Gyro_GetAngle(): %d", __FUNCTION__, __LINE__, Gyro_GetAngle());
+					ROS_DEBUG("%s %d: gyro_get_angle(): %d", __FUNCTION__, __LINE__, gyro_get_angle());
 					// If cliff jam during bumper self resume.
 					if (get_cliff_trig() && ++g_cliff_cnt > 2)
 					{
 						g_cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(Gyro_GetAngle() - target_angle) < 50)
+					else if (abs(gyro_get_angle() - target_angle) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-						target_angle = ranged_angle(Gyro_GetAngle() + 900);
+						target_angle = ranged_angle(gyro_get_angle() + 900);
 						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 					}
 					break;
@@ -1355,7 +1355,7 @@ void cm_self_check(void)
 						g_cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(Gyro_GetAngle() - target_angle) < 50)
+					else if (abs(gyro_get_angle() - target_angle) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						g_fatal_quit_event = true;
@@ -1855,7 +1855,7 @@ void cm_block_charger_stub(int8_t direction)
 	{
 		case -2:
 		{
-			cm_world_to_point(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
 			if (mt_is_left())
 					g_turn_angle = 300;
 				//else
@@ -1864,8 +1864,8 @@ void cm_block_charger_stub(int8_t direction)
 		}
 		case -1:
 		{
-			cm_world_to_point(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
-			cm_world_to_point(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x2, &y2);
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE, CELL_SIZE_2, &x2, &y2);
 			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
 			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
 			if (mt_is_left())
@@ -1876,15 +1876,15 @@ void cm_block_charger_stub(int8_t direction)
 		}
 		case 0:
 		{
-			cm_world_to_point(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
+			cm_world_to_point(gyro_get_angle(), 0, CELL_SIZE_2, &x, &y);
 			if (mt_is_fallwall())
 				g_turn_angle = 850;
 			break;
 		}
 		case 1:
 		{
-			cm_world_to_point(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
-			cm_world_to_point(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x2, &y2);
+			cm_world_to_point(gyro_get_angle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
+			cm_world_to_point(gyro_get_angle(), -CELL_SIZE, CELL_SIZE_2, &x2, &y2);
 			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
 			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
 			if (mt_is_right())
@@ -1895,7 +1895,7 @@ void cm_block_charger_stub(int8_t direction)
 		}
 		case 2:
 		{
-			cm_world_to_point(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
+			cm_world_to_point(gyro_get_angle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
 			if (mt_is_right())
 					g_turn_angle = 300;
 				//else
@@ -1905,7 +1905,7 @@ void cm_block_charger_stub(int8_t direction)
 		default:
 			ROS_ERROR("%s %d: Receive wrong direction: %d.", __FUNCTION__, __LINE__, direction);
 	}
-	cm_world_to_point(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
+	cm_world_to_point(gyro_get_angle(), 0, CELL_SIZE_2, &x, &y);
 	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
 	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
 
@@ -2067,7 +2067,7 @@ void cm_handle_rcon_right(bool state_now, bool state_last)
 
 	set_wheel_speed(0, 0);
 
-	cm_world_to_point(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x, &y);
+	cm_world_to_point(gyro_get_angle(), -CELL_SIZE, CELL_SIZE_2, &x, &y);
 	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
 	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
 

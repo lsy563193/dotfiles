@@ -202,7 +202,7 @@ static void wf_update_cleaned()
 {
 
 	int16_t x, y;
-	auto heading = Gyro_GetAngle();
+	auto heading = gyro_get_angle();
 	if (x != map_get_x_cell() || y != map_get_y_cell())
 	{
 		for (auto c = 1; c >= -1; --c)
@@ -336,7 +336,7 @@ void wf_update_map()
 
 	auto cell = cm_update_position();
 
-	Pose16_t curr_cell{cell.X, cell.Y, (int16_t)Gyro_GetAngle()};
+	Pose16_t curr_cell{cell.X, cell.Y, (int16_t) gyro_get_angle()};
 	if (wf_is_reach_new_cell(curr_cell))
 	{
 		g_reach_count = wf_is_reach_cleaned() ? g_reach_count + 1 : 0;
@@ -349,7 +349,7 @@ void wf_update_map()
 	}
 
 	int32_t x,y;
-	cm_world_to_point(Gyro_GetAngle(), CELL_SIZE_2, 0, &x, &y);
+	cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, 0, &x, &y);
 	if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BOUNDARY)
 		map_set_cell(MAP, x, y, BLOCKED_OBS);
 }

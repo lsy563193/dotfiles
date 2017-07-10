@@ -42,10 +42,10 @@ bool self_check_at_launch()
 	{
 		set_led(0, 100);
 		wav_play(WAV_ERROR_BUMPER);
-		if (!Is_Gyro_On())
+		if (!is_gyro_on())
 		{
-			Set_Gyro_On();
-			while (!Wait_For_Gyro_On())
+			set_gyro_on();
+			while (!wait_for_gyro_on())
 				wav_play(WAV_SYSTEM_INITIALIZING);
 		}
 		if (is_bumper_jamed())
@@ -122,17 +122,17 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
 				clear_manual_pause();
-				if (!Is_Gyro_On())
+				if (!is_gyro_on())
 				{
 					// Restart the gyro.
-					Set_Gyro_Off();
+					set_gyro_off();
 					// Wait for 30ms to make sure the off command has been effectived.
 					usleep(30000);
 					// Set gyro on before wav_play can save the time for opening the gyro.
-					Set_Gyro_On();
+					set_gyro_on();
 					wav_play(WAV_BACK_TO_CHARGER);
 
-					if (!Wait_For_Gyro_On())
+					if (!wait_for_gyro_on())
 					{
 						set_clean_mode(Clean_Mode_Userinterface);
 						break;
@@ -154,16 +154,16 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_Remote);
 				robot::instance()->resetLowBatPause();
 				clear_manual_pause();
-				if (!Is_Gyro_On())
+				if (!is_gyro_on())
 				{
 					// Restart the gyro.
-					Set_Gyro_Off();
+					set_gyro_off();
 					// Wait for 30ms to make sure the off command has been effectived.
 					usleep(30000);
 					// Set gyro on before wav_play can save the time for opening the gyro.
-					Set_Gyro_On();
+					set_gyro_on();
 					wav_play(WAV_SYSTEM_INITIALIZING);
-					if (!Wait_For_Gyro_On())
+					if (!wait_for_gyro_on())
 					{
 						set_clean_mode(Clean_Mode_Userinterface);
 						break;

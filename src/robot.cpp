@@ -334,8 +334,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			wf_update_map();
 	}
 
-	Gyro_SetAngle(yaw_ * 1800 / M_PI);
-	ROS_WARN("Odom position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, Gyro_GetAngle());
+	gyro_set_angle(yaw_ * 1800 / M_PI);
+	ROS_WARN("Odom position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
@@ -347,7 +347,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 void robot::displayPositions()
 {
 	ROS_INFO("base_link->map: (%f, %f) Gyro: %d yaw_: %f(%f)",
-		position_x_, position_y_, Gyro_GetAngle(), yaw_, yaw_ * 1800 / M_PI);
+		position_x_, position_y_, gyro_get_angle(), yaw_, yaw_ * 1800 / M_PI);
 }
 
 void robot::visualizeMarkerInit(){

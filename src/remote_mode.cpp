@@ -199,11 +199,12 @@ void remote_move(void)
 			case REMOTE_MODE_LEFT:
 			case REMOTE_MODE_RIGHT:
 			{
-				auto diff = ranged_angle(remote_target_angle - Gyro_GetAngle());
+				auto diff = ranged_angle(remote_target_angle - gyro_get_angle());
 
 				if (std::abs(diff) < 10) {
 					set_wheel_speed(0, 0);
-					ROS_INFO("%s %d: remote_target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, remote_target_angle, Gyro_GetAngle(), diff);
+					ROS_INFO("%s %d: remote_target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, remote_target_angle,
+									 gyro_get_angle(), diff);
 					set_move_flag_(REMOTE_MODE_STAY);
 					tick_ = 0;
 				}
@@ -432,10 +433,10 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beep_for_command(true);
-		remote_target_angle = Gyro_GetAngle() + 300;
+		remote_target_angle = gyro_get_angle() + 300;
 		if (remote_target_angle >= 3600)
 			remote_target_angle -= 3600;
-		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, Gyro_GetAngle());
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro_get_angle());
 		set_move_flag_(REMOTE_MODE_LEFT);
 	}
 	else
@@ -455,8 +456,8 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beep_for_command(true);
-		remote_target_angle = ranged_angle(Gyro_GetAngle() - 300);
-		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, Gyro_GetAngle());
+		remote_target_angle = ranged_angle(gyro_get_angle() - 300);
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro_get_angle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
 	else

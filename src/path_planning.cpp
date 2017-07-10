@@ -1075,7 +1075,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				auto angle = wf_is_first() ? 0 : 2700;
 				int32_t x_point,y_point;
 				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-				cm_world_to_point(Gyro_GetAngle() + angle, 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
+				cm_world_to_point(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);
 				next = {count_to_cell(x_point),count_to_cell(y_point)};
 				ROS_INFO("next.X = %d next.Y = %d", next.X, next.Y);
 			}

@@ -429,11 +429,11 @@ bool MotionManage::initNavigationCleaning(void)
 	reset_touch();
 
 	// Restart the gyro.
-	Set_Gyro_Off();
+	set_gyro_off();
 	// Wait for 30ms to make sure the off command has been effectived.
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
-	Set_Gyro_On();
+	set_gyro_on();
 
 	if (robot::instance()->isLowBatPaused())
 		wav_play(WAV_CLEANING_CONTINUE);
@@ -451,7 +451,7 @@ bool MotionManage::initNavigationCleaning(void)
 	// Can't register until now because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
 
-	if (!Wait_For_Gyro_On())
+	if (!wait_for_gyro_on())
 		return false;
 
 	if (robot::instance()->isManualPaused() || robot::instance()->isLowBatPaused())
@@ -512,15 +512,15 @@ bool MotionManage::initWallFollowCleaning(void)
 	reset_stop_event_status();
 	reset_touch();
 	// Restart the gyro.
-	Set_Gyro_Off();
+	set_gyro_off();
 	// Wait for 30ms to make sure the off command has been effectived.
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
-	Set_Gyro_On();
+	set_gyro_on();
 	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
-	if (!Wait_For_Gyro_On())
+	if (!wait_for_gyro_on())
 	{
 		return false;
 	}
@@ -560,15 +560,15 @@ bool MotionManage::initSpotCleaning(void)
 	reset_touch();
 
 	// Restart the gyro.
-	Set_Gyro_Off();
+	set_gyro_off();
 	// Wait for 30ms to make sure the off command has been effectived.
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
-	Set_Gyro_On();
+	set_gyro_on();
 	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_SPOT);
-	if (!Wait_For_Gyro_On())
+	if (!wait_for_gyro_on())
 	{
 		return false;
 	}
