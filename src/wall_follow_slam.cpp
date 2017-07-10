@@ -278,14 +278,14 @@ static bool is_isolate() {
 
 	Cell_t remote{0,0};
 	if ( out_cell != remote){
-			val = WF_path_find_shortest_path( g_cell_history[0].X, g_cell_history[0].Y, out_cell.X, out_cell.Y, 0);
+			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, out_cell.X, out_cell.Y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
 		if (is_block_accessible(0, 0) == 1) {
-			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
-				val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+				val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
 
 				if (val < 0 || val == SCHAR_MAX) {
 					val = 0;
@@ -296,7 +296,7 @@ static bool is_isolate() {
 				val = 1;
 			}
 		} else {
-			val = WF_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX)
 				val = 0;
 			else

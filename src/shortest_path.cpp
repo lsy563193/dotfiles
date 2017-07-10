@@ -1380,7 +1380,7 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
  * 		(totalCost: from function path_find_shortest_path_ranged)
  *
  */
-int16_t WF_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
+int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
