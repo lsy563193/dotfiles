@@ -96,7 +96,7 @@ int robotbase_init(void)
 		return -1;
 	}
 	set_main_pwr_byte(POWER_ACTIVE);
-	g_send_stream[SEND_LEN-3] = calcBufCrc8((char *)g_send_stream, SEND_LEN-3);
+	g_send_stream[SEND_LEN-3] = calc_buf_crc8((char *) g_send_stream, SEND_LEN - 3);
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 //	do {
 //		serial_write(SEND_LEN,g_send_stream);
@@ -210,7 +210,7 @@ void *serial_receive_routine(void *)
 			tmpSet[i + 2] = receiData[i];
 		}
 
-		c_crc = calcBufCrc8((char *)tmpSet, wh_len - 1);
+		c_crc = calc_buf_crc8((char *) tmpSet, wh_len - 1);
 		if (r_crc == c_crc){
 			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
 				for (j = 0; j < wht_len; j++) {
@@ -415,7 +415,7 @@ void *serial_send_routine(void*){
 
 		if(!is_send_busy()){
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
-			buf[CTL_CRC] = calcBufCrc8((char *)buf, sl);
+			buf[CTL_CRC] = calc_buf_crc8((char *) buf, sl);
 			serial_write(SEND_LEN, buf);
 		}
 	}

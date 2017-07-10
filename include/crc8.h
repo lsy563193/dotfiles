@@ -6,6 +6,6 @@
 void init_crc8(void);
 void crc8(unsigned char *crc, unsigned char m);
 
-uint8_t calcBufCrc8(char *inBuf, uint32_t inBufSz);
+uint8_t calc_buf_crc8(char *inBuf, uint32_t inBufSz);
 
 #endif
