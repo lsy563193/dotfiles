@@ -372,16 +372,7 @@ void quick_back(uint8_t speed, uint16_t distance)
 
 void turn_left(uint16_t speed, int16_t angle)
 {
-	int16_t target_angle;
-	int16_t gyro_angle;
-
-	gyro_angle = Gyro_GetAngle();
-
-	target_angle = gyro_angle + angle;
-	if (target_angle >= 3600)
-	{
-		target_angle -= 3600;
-	}
+	auto target_angle = ranged_angle(Gyro_GetAngle() + angle);
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(),
 					 speed);
 
@@ -462,12 +453,7 @@ void turn_left(uint16_t speed, int16_t angle)
 
 void turn_right(uint16_t speed, int16_t angle)
 {
-	int16_t target_angle;
-	int16_t gyro_angle;
-
-	gyro_angle = Gyro_GetAngle();
-
-	target_angle = gyro_angle - angle;
+	auto target_angle = Gyro_GetAngle() - angle;
 	if (target_angle < 0)
 	{
 		target_angle = 3600 + target_angle;
@@ -552,16 +538,7 @@ void turn_right(uint16_t speed, int16_t angle)
 
 void jam_turn_left(uint16_t speed, int16_t angle)
 {
-	int16_t target_angle;
-	int16_t gyro_angle;
-
-	gyro_angle = Gyro_GetAngle();
-
-	target_angle = gyro_angle + angle;
-	if (target_angle >= 3600)
-	{
-		target_angle -= 3600;
-	}
+	auto target_angle = ranged_angle(Gyro_GetAngle() + angle);
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
 					 Gyro_GetAngle(), speed);
 
@@ -615,16 +592,8 @@ void jam_turn_left(uint16_t speed, int16_t angle)
 
 void jam_turn_right(uint16_t speed, int16_t angle)
 {
-	int16_t target_angle;
-	int16_t gyro_angle;
+	auto target_angle = ranged_angle(Gyro_GetAngle() - angle);
 
-	gyro_angle = Gyro_GetAngle();
-
-	target_angle = gyro_angle - angle;
-	if (target_angle < 0)
-	{
-		target_angle = 3600 + target_angle;
-	}
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
 					 Gyro_GetAngle(), speed);
 
@@ -2460,7 +2429,6 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 	Counter_Watcher = 0;
 	reset_rcon_remote();
 	int16_t target_angle;
-	uint16_t gyro_angle;
 	// This decides whether robot should stop when left cliff triggered.
 	bool left_cliff_triggered = false;
 
@@ -2469,13 +2437,7 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 		left_cliff_triggered = true;
 	}
 
-	gyro_angle = Gyro_GetAngle();
-
-	target_angle = gyro_angle - angle;
-	if (target_angle < 0)
-	{
-		target_angle = 3600 + target_angle;
-	}
+	target_angle = ranged_angle(Gyro_GetAngle() - angle);
 
 	set_dir_right();
 	set_wheel_speed(speed, speed);
