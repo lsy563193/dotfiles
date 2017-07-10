@@ -1148,7 +1148,7 @@ int16_t path_get_home_y()
 	return g_home_y;
 }
 
-void WF_PathPlanning_Initialize(int32_t *x, int32_t *y)
+void wf_path_planning_initialize(int32_t *x, int32_t *y)
 {
 	int16_t i;
 

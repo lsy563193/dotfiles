@@ -539,7 +539,7 @@ bool MotionManage::initWallFollowCleaning(void)
 	map_init();
 	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
-	WF_PathPlanning_Initialize(&g_home_point_old_path.front().X, &g_home_point_old_path.front().Y);
+	wf_path_planning_initialize(&g_home_point_old_path.front().X, &g_home_point_old_path.front().Y);
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.

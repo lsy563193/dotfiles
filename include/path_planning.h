@@ -67,7 +67,7 @@ void path_planning_initialize(int32_t *x, int32_t *y);
  *
  * @return
  */
-void WF_PathPlanning_Initialize(int32_t *x, int32_t *y);
+void wf_path_planning_initialize(int32_t *x, int32_t *y);
 
 /*
  * Function to find the next target to clean. When the robot goes to a new
