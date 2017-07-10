@@ -11,7 +11,7 @@
 #include "robot.hpp"
 #include "event_manager.h"
 
-uint16_t gyro_angle;   //[3:3]   = Angle
+int16_t gyro_angle;   //[3:3]   = Angle
 int16_t gyro_xacc;        //[7:8]   = X Acceleration
 int16_t gyro_yacc;        //[9:10]  = Y Acceleration
 int16_t gyro_zacc;        //[11:12] = Z Acceleration
@@ -36,16 +36,13 @@ uint8_t Gyro_GetCalibration(void) {
 	return gyro_calibration;
 }
 
-uint16_t Gyro_GetAngle(void)
+int16_t Gyro_GetAngle(void)
 {
 	return gyro_angle;
 }
 
 void Gyro_SetAngle(int16_t angle)
 {
-	while (angle < 0)
-		angle += 3600;
-
 	gyro_angle = angle;
 }
 

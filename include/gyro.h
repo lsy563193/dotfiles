@@ -7,7 +7,7 @@ int16_t Gyro_GetXAcc(void);
 int16_t Gyro_GetYAcc(void);
 int16_t Gyro_GetZAcc(void);
 uint8_t Gyro_GetCalibration(void);
-uint16_t Gyro_GetAngle(void);
+int16_t Gyro_GetAngle(void);
 void Gyro_SetAngle(int16_t angle);
 
 void Set_Gyro_On(void);
