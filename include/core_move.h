@@ -56,12 +56,18 @@ extern uint16_t g_straight_distance;
 extern uint16_t g_turn_angle;
 extern uint16_t g_wall_distance;
 
+extern bool g_from_station;
+extern int g_trapped_mode;
+extern bool g_have_seen_charge_stub;
+extern bool g_motion_init_succeeded;
+
 uint16_t bumper_turn_angle();
 bool laser_turn_angle();
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);
+bool is_map_front_block(int dx);
 
 extern bool g_should_follow_wall;
 void CM_TouringCancel(void);
@@ -89,12 +95,34 @@ bool cm_curve_move_to_point();
 
 void cm_world_to_point(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-bool cm_move_to_cell(int16_t x, int16_t y);
+/*
+ * Robot move to target cell
+ * @param x	cell x
+ * @param y	cell y
+ * @param mode 2: Dynamic change cells near target cell
+ *			   1: with escape mode, not finish
+ *			   0: no escape mode
+ * @return	-2: Robot is trapped
+ *		-1: Robot cannot move to target cell
+ *		1: Robot arrive target cell
+ */
+bool cm_move_to(int16_t x, int16_t y);
 //int8_t CM_MoveToCell( int16_t x, int16_t y);
 
 void cm_move_back_(uint16_t dist);
 
 void cm_set_home(int32_t x, int32_t y);
+
+	/* Robot will try to go to the cells in g_home_point_old_path list
+	 * first, and it will only go through the CLEANED area. If the
+	 * cell in g_home_point_new_path is unreachable through the
+	 * CLEANED area, it will be push into g_home_point_new_path list.
+	 * When all the cells in g_home_point_old_path list are unreachable
+	 * or failed to go to charger, robot will start to go to cells in
+	 * g_home_point_new_path through the UNCLEAN area (If there is a
+	 * way like this).
+	 */
+
 void cm_go_home(void);
 bool cm_go_to_charger(Cell_t current_home_cell);
 //void CM_SetStationHome(void);

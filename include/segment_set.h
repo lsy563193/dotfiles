@@ -83,7 +83,7 @@ void Segment_set::classify(Segment& seg)
 
 double Segment_set::min_distant_segment_angle()
 {
-  std::cout << "-----Segment_set display------" << std::endl;
+  ROS_INFO("-----Segment_set display------");
   auto min_dist = std::numeric_limits<double>::max();
   auto index = 0;
   auto it = 0;
@@ -92,18 +92,18 @@ double Segment_set::min_distant_segment_angle()
   {
     if(segments.size()<5)
       continue;
-    std::cout << "--------------------" << std::endl;
-    std::cout << "segments: " <<std::endl;
+    ROS_INFO("--------------------");
+    ROS_INFO("segments: ");
     for (auto& segment : segments)
-      std::cout << segment << std::endl;
+      ROS_INFO("(%f,%f),(%f,%f)",segment.first_point.x, segment.first_point.y, segment.last_point.x, segment.last_point.y);
 
     auto seg_arv = Segment( average(get_first(segments)),average(get_last(segments)) );
-    std::cout << "seg_arv: " << seg_arv << std::endl;
+    ROS_INFO("seg_arv: ");
     double dist = seg_arv.distanceTo(Point(0,0));
-    std::cout << "average dist:"<< dist << std::endl;
+    ROS_INFO("average dist:");
     if(dist < min_dist){
       min_dist = dist;
-      std::cout << "min_dist:"<< min_dist << std::endl;
+      ROS_INFO("min_dist:");
       index = it;
     }
     it++;

@@ -15,10 +15,12 @@
 #include "motion_manage.h"
 #include <segment_set.h>
 #include <slam.h>
+#include <move_type.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
 #include "spot.h"
+#include "move_type.h"
 
 Segment_set segmentss;
 
@@ -147,6 +149,13 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
+	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
+	g_from_station = 0;
+	g_trapped_mode = 0;
+	g_motion_init_succeeded = false;
+	event_manager_reset_status();
+	g_turn_angle = 0;
+	g_have_seen_charge_stub = false;
 	bool eh_status_now=false, eh_status_last=false;
 
 	initSucceeded(true);
@@ -274,7 +283,7 @@ MotionManage::~MotionManage()
 		set_clean_mode(Clean_Mode_Userinterface);
 		wav_play(WAV_PAUSE_CLEANING);
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+		ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		extern bool g_go_home;
 		if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
@@ -283,9 +292,9 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
 		else
-		ROS_WARN("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
 		g_saved_work_time += get_work_time();
-		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+		ROS_INFO("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
 	}
 	if (robot::instance()->isLowBatPaused())

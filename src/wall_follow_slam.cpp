@@ -46,7 +46,7 @@ std::vector<Pose16_t> g_wf_cell;
 int g_isolate_count = 0;
 // This list is for storing the position that robot sees the charger stub.
 extern std::list<Point32_t> g_home_point_old_path;
-extern uint8_t g_from_station;
+extern bool g_from_station;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 extern Cell_t g_trapped_cell[ESCAPE_TRAPPED_REF_CELL_SIZE];
