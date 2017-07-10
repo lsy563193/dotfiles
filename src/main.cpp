@@ -31,7 +31,7 @@
 #include "verify.h"
 #endif
 
-bool selfCheckAtLaunch()
+bool self_check_at_launch()
 {
 	// Skip self check if using direct charge or at charger stub, because robot can not move during direct charge.
 	if (is_direct_charge() || is_on_charger_stub())
@@ -72,7 +72,7 @@ void *core_move_thread(void *)
 	ROS_INFO("Robot sensor ready.");
 	wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
-	if (selfCheckAtLaunch())
+	if (self_check_at_launch())
 	{
 		if (is_direct_charge() || is_on_charger_stub())
 			set_clean_mode(Clean_Mode_Charging);
