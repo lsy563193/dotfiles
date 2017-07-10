@@ -32,7 +32,7 @@ int16_t remote_target_angle;
 bool remote_exit;
 time_t remote_cmd_time;
 
-void Remote_Mode(void)
+void remote_mode(void)
 {
 	remote_exit = false;
 	g_battery_low_cnt = 0;

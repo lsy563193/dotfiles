@@ -23,7 +23,7 @@ typedef enum {
 	REMOTE_MODE_STAY,
 } RemoteModeMoveType;
 
-void Remote_Mode(void);
+void remote_mode(void);
 void remote_move(void);
 void set_move_flag_(RemoteModeMoveType flag);
 RemoteModeMoveType get_move_flag_(void);

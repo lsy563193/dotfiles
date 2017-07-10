@@ -170,7 +170,7 @@ void *core_move_thread(void *)
 					}
 				}
 
-				Remote_Mode();
+				remote_mode();
 				break;
 
 			case Clean_Mode_Spot:
