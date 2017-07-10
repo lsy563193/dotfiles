@@ -594,7 +594,7 @@ bool cm_move_to(int16_t target_x, int16_t target_y)
 				return false;
 
 			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
-			if ( TwoPointsDistance( target_x , target_y , map_get_x_cell(), map_get_y_cell() ) < ROBOT_SIZE / 2 + 1 ) {
+			if (two_points_distance(target_x, target_y, map_get_x_cell(), map_get_y_cell()) < ROBOT_SIZE / 2 + 1 ) {
 				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), target_x , target_y);
 				return true;
 			}

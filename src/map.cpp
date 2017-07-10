@@ -246,8 +246,8 @@ int32_t map_get_relative_x(int16_t heading, int16_t dx, int16_t dy) {
 			relative_sin = -1;
 			relative_cos = 0;
 		} else {
-			relative_sin = sin(deg2rad(heading, 10));
-			relative_cos = cos(deg2rad(heading, 10));
+			relative_sin = sin(deg_to_rad(heading, 10));
+			relative_cos = cos(deg_to_rad(heading, 10));
 		}
 	}
 
@@ -270,8 +270,8 @@ int32_t map_get_relative_y(int16_t heading, int16_t offset_lat, int16_t offset_l
 			relative_sin = -1;
 			relative_cos = 0;
 		} else {
-			relative_sin = sin(deg2rad(heading, 10));
-			relative_cos = cos(deg2rad(heading, 10));
+			relative_sin = sin(deg_to_rad(heading, 10));
+			relative_cos = cos(deg_to_rad(heading, 10));
 		}
 	}
 
@@ -289,11 +289,13 @@ int16_t Map_GetLongitudinalOffset(uint16_t heading) {
 }
 */
 int16_t next_x_id(uint16_t heading, int16_t offset_lat, int16_t offset_long) {
-	return map_get_x_cell() + offset_long * round(cos(deg2rad(heading, 10))) - offset_lat * round(sin(deg2rad(heading, 10)));
+	return map_get_x_cell() + offset_long * round(cos(deg_to_rad(heading, 10))) - offset_lat * round(sin(
+					deg_to_rad(heading, 10)));
 }
 
 int16_t next_y_id(uint16_t heading, int16_t offset_lat, int16_t offset_long) {
-	return map_get_y_cell() + offset_long * round(sin(deg2rad(heading, 10))) + offset_lat * round(cos(deg2rad(heading, 10)));
+	return map_get_y_cell() + offset_long * round(sin(deg_to_rad(heading, 10))) + offset_lat * round(cos(
+					deg_to_rad(heading, 10)));
 }
 
 int32_t cell_to_count(int16_t i) {

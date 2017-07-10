@@ -113,12 +113,12 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 	} else {
 		range_tmp = range;
 	}
-	angle_min = deg2rad((double) (angle % 360), 1) - atan(range_tmp / (distance + 0.155));
-	angle_max = deg2rad((double) (angle % 360), 1) + atan(range_tmp / (distance + 0.155));
+	angle_min = deg_to_rad((double) (angle % 360), 1) - atan(range_tmp / (distance + 0.155));
+	angle_max = deg_to_rad((double) (angle % 360), 1) + atan(range_tmp / (distance + 0.155));
 
 	count = (int)((laser_scan_data_.angle_max - laser_scan_data_.angle_min) / laser_scan_data_.angle_increment);
 	//ROS_INFO("%s %d %f %f %f %f", __FUNCTION__, __LINE__, range_tmp, distance + 0.155, range_tmp / (distance + 0.155), atan(range_tmp / (distance + 0.155)));
-	//ROS_INFO("%s %d: angle min: %f max: %f\tcount: %d\tdtor: %f\ttan: %f", __FUNCTION__, __LINE__, angle_min, angle_max, count, deg2rad((double) (angle % 360), 1),  atan(range_tmp / (distance + 0.155)));
+	//ROS_INFO("%s %d: angle min: %f max: %f\tcount: %d\tdtor: %f\ttan: %f", __FUNCTION__, __LINE__, angle_min, angle_max, count, deg_to_rad((double) (angle % 360), 1),  atan(range_tmp / (distance + 0.155)));
 	for (i = 0; found == false && i < count; i++) {
 		tmp = laser_scan_data_.angle_min + i * laser_scan_data_.angle_increment;
 		if (tmp > angle_min && tmp < angle_max && laser_scan_data_.ranges[i] < distance + 0.155) {

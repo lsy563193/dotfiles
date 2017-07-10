@@ -182,9 +182,11 @@ LinearRegulator::LinearRegulator():
 				speed_max_(40),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
 {
 	g_should_follow_wall = false;
-	g_turn_angle = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
+	g_turn_angle = ranged_angle(
+					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
 	ROS_WARN("%s %d: angle(%d),curr(%d,%d),targ(%d,%d) ", __FUNCTION__, __LINE__, g_turn_angle, map_get_x_count(),map_get_y_count(), s_target.X,s_target.Y);
-	ROS_ERROR("angle:%d(%d,%d) ", g_turn_angle, course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
+	ROS_ERROR("angle:%d(%d,%d) ", g_turn_angle,
+						course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
 }
 
 bool LinearRegulator::isReach()
@@ -226,7 +228,8 @@ bool LinearRegulator::isStop()
 		return true;
 	}
 
-	auto diff = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
+	auto diff = ranged_angle(
+					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
 	if ( std::abs(diff) > 300)
 	{
 		ROS_WARN("%s %d: warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
@@ -247,9 +250,10 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 //	ROS_INFO("BackRegulator::adjustSpeed");
 	set_dir_forward();
 
-	auto diff = ranged_angle(course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
+	auto diff = ranged_angle(
+					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - Gyro_GetAngle());
 
-//	ROS_WARN("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course2dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
+//	ROS_WARN("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),Gyro_GetAngle());
 	if (integration_cycle_++ > 10)
 	{
 		integration_cycle_ = 0;
@@ -257,7 +261,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		check_limit(integrated_, -150, 150);
 	}
 
-	auto distance = TwoPointsDistance(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y);
+	auto distance = two_points_distance(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y);
 	auto obstcal_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
 	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || obstcal_detected)
