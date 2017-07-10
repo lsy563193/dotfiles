@@ -93,7 +93,7 @@ void cm_update_map_bumper();
 void cm_update_map_cliff();
 bool cm_curve_move_to_point();
 
-void cm_world_to_point(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 /*
  * Robot move to target cell
