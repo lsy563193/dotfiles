@@ -61,7 +61,7 @@
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
 bool g_have_seen_charge_stub = false;
-uint16_t g_turn_angle;
+int16_t g_turn_angle;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 uint32_t g_escape_trapped_timer;
@@ -138,7 +138,7 @@ static double radius_of(Cell_t cell_0,Cell_t cell_1)
 	return (abs(cell_to_count(cell_0.X - cell_1.X)) + abs(cell_to_count(cell_0.Y - cell_1.Y))) / 2;
 }
 
-void cm_world_to_point(uint16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
+void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long)));
 	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long)));
@@ -716,24 +716,10 @@ bool cm_curve_move_to_point()
 	return true;
 }
 
-int16_t uranged_angle(int16_t angle)
-{
-	while (angle >= 3600 || angle < 0)
-	{
-		if (angle >= 3600) {
-			angle -= 3600;
-		} else
-		if (angle < 0) {
-			angle += 3600;
-		}
-	}
-	return angle;
-}
-
 int16_t calc_target(int16_t)
 {
 	auto angle = (mt_is_left()) ? -g_turn_angle : g_turn_angle;
-	return uranged_angle(Gyro_GetAngle() + angle);
+	return ranged_angle(Gyro_GetAngle() + angle);
 }
 
 int16_t get_round_angle(CMMoveType type){
