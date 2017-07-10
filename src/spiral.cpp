@@ -21,7 +21,7 @@
 #include <unistd.h>
 
 ///*----------------------------------------------------------- Spining Event -----------------------*/
-uint8_t Spiral(void)
+uint8_t spiral(void)
 {
 	uint32_t Motor_Check_Code=0;
 	uint8_t Temp_Dirt_Status=0;
@@ -30,7 +30,7 @@ uint8_t Spiral(void)
 	int32_t Right_Wheel_Speed=0;
 	uint8_t First_Round_Flag=1;
 	uint8_t Vac_Mode_Buffer=0;
-	ROS_DEBUG("In Spiral ");	
+	ROS_DEBUG("In spiral ");
 	Max_Radius = 180 + get_random_factor();
 
 	reset_wheel_step();

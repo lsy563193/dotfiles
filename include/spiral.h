@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <stdint.h>
 
-uint8_t Spiral(void);
+uint8_t spiral(void);
 
 
 #endif /*----Behaviors------*/
