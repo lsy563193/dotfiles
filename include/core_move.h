@@ -125,7 +125,7 @@ void cm_set_home(int32_t x, int32_t y);
 	 */
 
 void cm_go_home(void);
-bool cm_go_to_charger(Cell_t current_home_cell);
+bool cm_go_to_charger();
 //void CM_SetStationHome(void);
 
 // This function is for setting the continue point for robot to go after charge.

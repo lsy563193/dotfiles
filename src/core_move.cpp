@@ -78,6 +78,9 @@ Point32_t g_next_point, g_target_point;
 std::list <Point32_t> g_home_point_old_path;
 std::list <Point32_t> g_home_point_new_path;
 
+// This is the current home cell that robot should go.
+Cell_t g_current_home_cell;
+
 // This is for the continue point for robot to go after charge.
 Point32_t g_continue_point;
 
@@ -747,7 +750,6 @@ bool cm_resume_cleaning()
 	cm_move_to(count_to_cell(g_continue_point.X), count_to_cell(g_continue_point.Y));
 	if (g_fatal_quit_event || g_key_clean_pressed)
 	{
-		robot::instance()->resetLowBatPause();
 		return false;
 	}
 	return true;
@@ -793,11 +795,13 @@ int cm_cleaning()
 	{
 		if (g_remote_home || g_battery_home)
 		{
+			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home.", __FUNCTION__, __LINE__);
 			g_remote_home = false;
 			g_go_home = true;
-			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home.", __FUNCTION__, __LINE__);
-			return 0;
 		}
+
+		if (g_go_home)
+			break;
 
 		if (g_remote_spot)
 		{
@@ -815,11 +819,7 @@ int cm_cleaning()
 		ROS_INFO("State: %d", is_found);
 		if (is_found == 0) //No target point
 		{
-			if(get_clean_mode() != Clean_Mode_Spot){
-				g_go_home = true;
-				cm_go_home();
-			}
-			return 0;
+			g_go_home = true;
 		}
 		else if (is_found == 1)
 		{
@@ -838,20 +838,19 @@ int cm_cleaning()
 				cm_set_event_manager_handler_state(false);
 			}
 		}
-		if (is_found == 2)
-				return -1;
+		else if (is_found == 2)
+			return -1;
 	}
+
+	cm_go_home();
 	return 0;
 }
 
 void cm_go_home()
 {
-	bool all_old_path_failed = false;
-	Cell_t current_home_cell;
 	mt_set(CM_LINEARMOVE);
 
-	set_vacmode(Vac_Normal, false);
-	set_vac_speed();
+	work_motor_configure();
 	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	if(robot::instance()->isLowBatPaused())
 		wav_play(WAV_BATTERY_LOW);
@@ -862,35 +861,7 @@ void cm_go_home()
 
 	while (ros::ok())
 	{
-		if (g_home_point_old_path.empty())
-		{
-			if (get_clean_mode() == Clean_Mode_WallFollow || g_home_point_new_path.empty())
-			{
-				ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
-				// If it is the last point, it means it it now at (0, 0).
-				if (!g_from_station) {
-					auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
-					cm_head_to_course(ROTATE_TOP_SPEED, -angle);
-				}
-				disable_motors();
-				if(g_have_seen_charge_stub)
-					wav_play(WAV_BACK_TO_CHARGER_FAILED);
-				robot::instance()->resetLowBatPause();
-				cm_reset_go_home();
-				return;
-			}
-
-			// Try all the new path home point.
-			all_old_path_failed = true;
-			set_explore_new_path_flag(true);
-			// Get next home cell.
-			current_home_cell.X = count_to_cell(g_home_point_new_path.front().X);
-			current_home_cell.Y = count_to_cell(g_home_point_new_path.front().Y);
-			g_home_point_new_path.pop_front();
-			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point_new_path.size());
-
-		}
-		else
+		if (!g_home_point_old_path.empty())
 		{
 			if (get_clean_mode() == Clean_Mode_WallFollow)
 				// Always explore the new path.
@@ -899,73 +870,61 @@ void cm_go_home()
 				// Try all the old path home point first.
 				set_explore_new_path_flag(false);
 			// Get next home cell.
-			current_home_cell.X = count_to_cell(g_home_point_old_path.front().X);
-			current_home_cell.Y = count_to_cell(g_home_point_old_path.front().Y);
+			g_current_home_cell.X = count_to_cell(g_home_point_old_path.front().X);
+			g_current_home_cell.Y = count_to_cell(g_home_point_old_path.front().Y);
 			g_home_point_old_path.pop_front();
-			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u old path targets left, %u new targets left.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u old path targets left, %u new targets left.", __FUNCTION__, __LINE__, g_current_home_cell.X, g_current_home_cell.Y, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
+		}
+		else if (get_clean_mode() != Clean_Mode_WallFollow && !g_home_point_new_path.empty())
+		{
+			// Try all the new path home point.
+			set_explore_new_path_flag(true);
+			// Get next home cell.
+			g_current_home_cell.X = count_to_cell(g_home_point_new_path.front().X);
+			g_current_home_cell.Y = count_to_cell(g_home_point_new_path.front().Y);
+			g_home_point_new_path.pop_front();
+			ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, g_current_home_cell.X, g_current_home_cell.Y, (uint)g_home_point_new_path.size());
+		}
+		else
+		{
+			ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
+			// If it is the last point, it means it it now at (0, 0).
+			if (!g_from_station) {
+				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
+			}
+			disable_motors();
+			if(g_have_seen_charge_stub)
+				wav_play(WAV_BACK_TO_CHARGER_FAILED);
+			robot::instance()->resetLowBatPause();
+			cm_reset_go_home();
+			return;
 		}
 
 		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
 
-		// Resume from go home mode.
-		set_led(100, 0);
-		set_vacmode(Vac_Normal, false);
-		set_vac_speed();
-		set_side_brush_pwm(50, 50);
-		set_main_brush_pwm(30);
-
-		if (!cm_move_to(current_home_cell.X, current_home_cell.Y))
+		if (!cm_move_to(g_current_home_cell.X, g_current_home_cell.Y))
 		{
-			if (g_fatal_quit_event)
-			{
-				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
-				disable_motors();
-				robot::instance()->resetLowBatPause();
-				cm_reset_go_home();
+			if (g_fatal_quit_event || g_key_clean_pressed)
 				return;
-			}
-			if (g_key_clean_pressed)
-			{
-				disable_motors();
-				if (robot::instance()->isManualPaused())
-					// The current home cell is still valid, so push it back to the home point list.
-					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
-				if (get_clean_mode() == Clean_Mode_WallFollow)
-					cm_reset_go_home();
-				return;
-			}
 
-			if (get_clean_mode() != Clean_Mode_WallFollow && !all_old_path_failed)
+			if (get_clean_mode() != Clean_Mode_WallFollow && !g_home_point_old_path.empty())
 			{
 				// If can not reach this point, save this point to new path home point list.
 				Point32_t new_home_point;
-				new_home_point.X = cell_to_count(current_home_cell.X);
-				new_home_point.Y = cell_to_count(current_home_cell.Y);
+				new_home_point.X = cell_to_count(g_current_home_cell.X);
+				new_home_point.Y = cell_to_count(g_current_home_cell.Y);
 				g_home_point_new_path.push_back(new_home_point);
-				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
+				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, g_current_home_cell.X, g_current_home_cell.Y);
 			}
 		}
-		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
-		{
-			if (g_fatal_quit_event)
-			{
-				// Fatal quit means cliff is triggered / bumper jamed / any over current event.
-				disable_motors();
-				robot::instance()->resetLowBatPause();
-				cm_reset_go_home();
-			}
-			else if (g_key_clean_pressed)
-			{
-				disable_motors();
-				if (robot::instance()->isManualPaused())
-					// The current home cell is still valid, so push it back to the home point list.
-					cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
-				if (get_clean_mode() == Clean_Mode_WallFollow)
-					cm_reset_go_home();
-			}
-
+		else if (g_have_seen_charge_stub && cm_go_to_charger())
 			return;
-		}
+
+		// Resume from go home mode.
+		set_led(100, 0);
+		work_motor_configure();
+
 	}
 }
 
@@ -973,48 +932,15 @@ void cm_go_home()
  * return : true -- going to charger has been stopped, either successfully or interrupted.
  *          false -- going to charger failed, move to next point.
  */
-bool cm_go_to_charger(Cell_t current_home_cell)
+bool cm_go_to_charger()
 {
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("%s,%d,Call GoHome()",__FUNCTION__,__LINE__);
 	cm_unregister_events();
 	go_home();
 	cm_register_events();
-	if (g_charge_detect)
-	{
-		if (robot::instance()->isLowBatPaused())
-		{
-			cm_reset_go_home();
-			return true;
-		}
-		cm_reset_go_home();
+	if (g_fatal_quit_event || g_key_clean_pressed)
 		return true;
-	}
-	else if (g_battery_low)
-	{
-		// Battery too low.
-		disable_motors();
-		robot::instance()->resetLowBatPause();
-		cm_reset_go_home();
-		return true;
-	}
-	else if (g_fatal_quit_event || g_key_clean_pressed)
-	{
-		disable_motors();
-#if MANUAL_PAUSE_CLEANING
-		if (g_key_clean_pressed)
-		{
-			reset_stop_event_status();
-			// The current home cell is still valid, so push it back to the home point list.
-			cm_set_home(cell_to_count(current_home_cell.X), cell_to_count(current_home_cell.Y));
-			return true;
-		}
-#endif
-		robot::instance()->resetLowBatPause();
-		reset_stop_event_status();
-		cm_reset_go_home();
-		return true;
-	}
 	return false;
 }
 
@@ -1174,13 +1100,6 @@ void cm_self_check(void)
 
 		if (g_fatal_quit_event || g_key_clean_pressed)
 			break;
-
-		if (g_cliff_all_cnt >= 2)
-		{
-			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-			g_fatal_quit_event = true;
-			break;
-		}
 
 		if (g_slam_error)
 		{
@@ -1667,8 +1586,15 @@ void cm_handle_obs_right(bool state_now, bool state_last)
 /* Cliff */
 void cm_handle_cliff_all(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = true;
 	g_cliff_all_cnt++;
+	if (g_cliff_all_cnt >= 2)
+	{
+		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+		g_cliff_all_triggered = true;
+		g_fatal_quit_event = true;
+		return;
+	}
+
 	g_cliff_triggered = true;
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");

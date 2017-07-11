@@ -212,10 +212,11 @@ bool LinearRegulator::isSwitch()
 
 bool LinearRegulator::isStop()
 {
-	if (g_obs_triggered || g_rcon_triggered)
+	if (g_obs_triggered || g_rcon_triggered || g_rcon_triggered)
 	{
-		ROS_WARN("%s, %d: g_obs_triggered || g_rcon_triggered.", __FUNCTION__, __LINE__);
-		g_should_follow_wall = true;
+		ROS_WARN("%s, %d: g_obs_triggered || g_rcon_triggered || g_rcon_triggered.", __FUNCTION__, __LINE__);
+		if (!g_rcon_triggered)
+			g_should_follow_wall = true;
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 			SpotMovement::instance()->setDirectChange();

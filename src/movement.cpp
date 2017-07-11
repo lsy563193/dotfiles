@@ -898,9 +898,16 @@ int16_t get_right_wheel_speed(void)
 
 void work_motor_configure(void)
 {
-	// Set the vacuum to a normal mode
-	set_vacmode(Vac_Save);
-	set_vac_speed();
+	extern bool g_go_home;
+	if (g_go_home)
+	{
+		// Set the vacuum to a normal mode
+		set_vacmode(Vac_Normal, false);
+		set_vac_speed();
+	} else {
+		set_vacmode(Vac_Save);
+		set_vac_speed();
+	}
 
 	// Trun on the main brush and side brush
 	set_side_brush_pwm(50, 50);

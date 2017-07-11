@@ -185,6 +185,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	if (robot::instance()->isLowBatPaused())
 	{
+		robot::instance()->resetLowBatPause();
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		s_laser->startShield();
 		return;
@@ -260,22 +261,36 @@ MotionManage::~MotionManage()
 {
 
 	reset_stop_event_status();
+	cm_unregister_events();
 	disable_motors();
 
-	if (g_cliff_all_triggered)
-		wav_play(WAV_ERROR_LIFT_UP);
+	if (g_fatal_quit_event) // Also handles for g_battery_low/g_charge_detect/g_cliff_all_triggered.
+	{
+		robot::instance()->resetLowBatPause();
+		cm_reset_go_home();
+		if (g_cliff_all_triggered)
+			wav_play(WAV_ERROR_LIFT_UP);
+	}
+
+	if (g_key_clean_pressed)
+	{
+		if (get_clean_mode() == Clean_Mode_Navigation && g_go_home && robot::instance()->isManualPaused())
+		{
+			extern Cell_t g_current_home_cell;
+			// The current home cell is still valid, so push it back to the home point list.
+			cm_set_home(cell_to_count(g_current_home_cell.X), cell_to_count(g_current_home_cell.Y));
+		}
+		else if (get_clean_mode() == Clean_Mode_WallFollow)
+			cm_reset_go_home();
+	}
+
+	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
 	if (s_laser != nullptr)
 	{
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
-
-	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
-	// Wait for 0.15s to make sure last tf waiting for map frame has finished and Odom_Position_Odom_Angle has been activated.
-	usleep(150000);
-
-	cm_unregister_events();
 
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
 	//if (get_clean_mode() == Clean_Mode_Spot)
@@ -298,7 +313,7 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
 		else
-		ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
 		g_saved_work_time += get_work_time();
 		ROS_INFO("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 		return;
@@ -321,12 +336,11 @@ MotionManage::~MotionManage()
 		s_slam = nullptr;
 	}
 
-	robot::instance()->savedOffsetAngle(0);
-
 	wav_play(WAV_CLEANING_FINISHED);
 
 	g_home_point_old_path.clear();
 	g_home_point_new_path.clear();
+	robot::instance()->savedOffsetAngle(0);
 
 	if (g_fatal_quit_event)
 		if (g_cliff_all_triggered)
@@ -354,7 +368,6 @@ MotionManage::~MotionManage()
 		set_clean_mode(Clean_Mode_Charging);
 	else
 		set_clean_mode(Clean_Mode_Userinterface);
-
 }
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
