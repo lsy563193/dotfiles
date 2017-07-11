@@ -86,6 +86,7 @@ bool CM_Check_is_exploring();
 uint8_t CM_MoveForward(void);
 
 uint8_t cm_touring(void);
+int cm_cleaning(void);
 
 Cell_t cm_update_position(bool is_turn = false);
 void cm_update_map();

@@ -97,7 +97,7 @@ void *core_move_thread(void *)
 				clear_manual_pause();
 
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
-				cm_touring();
+				cm_cleaning();
 				break;
 			//case Clean_Mode_RandomMode:
 			//	ROS_INFO("\n-------Random_Running mode------\n");
@@ -109,7 +109,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode------\n");
 				set_main_pwr_byte(Clean_Mode_Navigation);
-				cm_touring();
+				cm_cleaning();
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode------\n");
@@ -180,7 +180,7 @@ void *core_move_thread(void *)
 				clear_manual_pause();
 				reset_rcon_remote();
 				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
-				cm_touring();
+				cm_cleaning();
 				disable_motors();
 				usleep(200000);
 				break;

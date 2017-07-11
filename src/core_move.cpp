@@ -772,6 +772,17 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 
 int cm_cleaning()
 {
+	MotionManage motion;
+
+	if (!motion.initSucceeded())
+		return 0;
+
+	g_motion_init_succeeded = true;
+
+	if (!g_go_home && (robot::instance()->isLowBatPaused()))
+		if (!cm_resume_cleaning())
+			return 0;
+
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
@@ -1000,24 +1011,6 @@ bool cm_go_to_charger(Cell_t current_home_cell)
 		return true;
 	}
 	return false;
-}
-
-uint8_t cm_touring(void)
-{
-
-	MotionManage motion;
-
-	if (!motion.initSucceeded())
-		return 0;
-
-	g_motion_init_succeeded = true;
-
-	if (!g_go_home && (robot::instance()->isLowBatPaused()))
-		if (!cm_resume_cleaning())
-			return 0;
-
-	cm_cleaning();
-	return 0;
 }
 
 void cm_reset_go_home(void)
