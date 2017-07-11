@@ -27,7 +27,7 @@ bool RegulatorBase::isExit(){
 bool RegulatorBase::isStop()
 {
 //	ROS_INFO("reg_base isStop");
-	return g_battery_home || !g_go_home && g_remote_home || cm_should_self_check();
+	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check();
 }
 
 

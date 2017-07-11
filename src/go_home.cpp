@@ -159,6 +159,11 @@ void go_to_charger(void)
 			break;
 		if(g_battery_low)
 			break;
+		if (g_slam_error)
+		{
+			set_wheel_speed(0, 0);
+			continue;
+		}
 		if(cm_should_self_check())
 			break;
 

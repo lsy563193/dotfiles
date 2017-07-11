@@ -81,6 +81,8 @@ extern uint8_t g_battery_low_cnt;
 /* Charge status */
 extern uint8_t g_charge_detect;
 extern uint8_t g_charge_detect_cnt;
+/* Slam Error */
+extern bool g_slam_error;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,
@@ -146,6 +148,8 @@ typedef enum {
 	EVT_BATTERY_LOW,
 
 	EVT_CHARGE_DETECT,
+
+	EVT_SLAM_ERROR,
 
 	EVT_MAX,
 } EventType;
@@ -260,6 +264,9 @@ define_em_handler_func(battery_low)
 
 /* Charge Status */
 define_em_handler_func(charge_detect)
+
+/* Slam Error */
+define_em_handler_func(slam_error)
 
 define_em_handler_func(empty)
 

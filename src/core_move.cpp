@@ -529,7 +529,6 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 
 bool cm_move_to(Point32_t target)
 {
-
 	RegulatorProxy regulator({map_get_x_count(), map_get_y_count()},target);
 
 	bool	eh_status_now=false, eh_status_last=false;
@@ -543,6 +542,12 @@ bool cm_move_to(Point32_t target)
 
 		if (regulator.isExit())
 			break;
+
+		if (g_slam_error)
+		{
+			set_wheel_speed(0, 0);
+			continue;
+		}
 
 		if (regulator.isReach() || regulator.isPause())
 			return true;
@@ -1177,6 +1182,12 @@ void cm_self_check(void)
 			break;
 		}
 
+		if (g_slam_error)
+		{
+			set_wheel_speed(0, 0);
+			continue;
+		}
+
 		// Check for right wheel.
 		if (g_oc_wheel_left || g_oc_wheel_right)
 		{
@@ -1477,6 +1488,9 @@ void cm_register_events()
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 
+	/* Slam Error */
+	event_manager_enable_handler(EVT_SLAM_ERROR, true);
+
 #undef event_manager_register_and_enable_x
 
 	event_manager_set_enable(true);
@@ -1546,6 +1560,9 @@ void cm_unregister_events()
 
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+
+	/* Slam Error */
+	event_manager_register_and_disable_x(EVT_SLAM_ERROR);
 
 #undef event_manager_register_and_disable_x
 
@@ -2197,6 +2214,19 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	bool reset_manual_pause = false;
 
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (g_slam_error)
+	{
+		beep_for_command(false);
+		while (get_key_press() & KEY_CLEAN)
+		{
+			usleep(20000);
+		}
+		ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
+		reset_touch();
+		return;
+	}
+
 	beep_for_command(true);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
@@ -2230,6 +2260,13 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
+	if (g_slam_error)
+	{
+		beep_for_command(false);
+		reset_rcon_remote();
+		return;
+	}
+
 	beep_for_command(true);
 	g_key_clean_pressed = true;
 	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
@@ -2244,7 +2281,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check()) {
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && !g_slam_error) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(false);
@@ -2276,7 +2313,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (mt_is_fallwall())
+	if (mt_is_fallwall() || g_slam_error)
 	{
 		beep_for_command(false);
 		reset_rcon_remote();
@@ -2336,7 +2373,7 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT)
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error)
 	{
 		beep_for_command(true);
 		switch_vac_mode(true);
