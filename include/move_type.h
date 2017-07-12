@@ -11,6 +11,7 @@ typedef enum {
 	CM_CURVEMOVE,
 	CM_FOLLOW_LEFT_WALL,
 	CM_FOLLOW_RIGHT_WALL,
+	CM_GO_TO_CHANGER,
 } CMMoveType;
 
 bool mt_is_right();

@@ -39,6 +39,10 @@
 #define Status_Cliff_Right			((uint8_t) 0x02)
 #define Status_Cliff_Front			((uint8_t) 0x04)
 #define Status_Cliff_All			((uint8_t) 0x07)
+#define Status_Cliff_LF			((uint8_t) 0x05)
+#define Status_Cliff_RF			((uint8_t) 0x06)
+#define Status_Cliff_LR			((uint8_t) 0x03)
+
 
 #define Cliff_PWM_Duration			((uint16_t) 0x000D)	//set Cliff PWM Duration = 13
 #define Obstacle_PWM_Duration		((uint16_t) 0x000D)	//set Obstacle PWM Duration =13

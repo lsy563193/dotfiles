@@ -24,19 +24,19 @@
  */
 bool g_fatal_quit_event = false;
 /* Bumper */
-bool g_bumper_hitted = false;
+int g_bumper_hitted = false;
 bool g_bumper_jam = false;
 int g_bumper_cnt = 0;
 /* OBS */
-bool g_obs_triggered = false;
+int g_obs_triggered = 0;
 /* Cliff */
-bool g_cliff_all_triggered = false;
-bool g_cliff_triggered = false;
+//bool g_cliff_all_triggered = false;
+int g_cliff_triggered = false;
 bool g_cliff_jam = false;
 uint8_t g_cliff_all_cnt = 0;
-uint8_t g_cliff_cnt = 0;
+int g_cliff_cnt = 0;
 /* RCON */
-bool g_rcon_triggered = false;
+uint32_t g_rcon_triggered = false;
 /* Over Current */
 bool g_oc_brush_main = false;
 bool g_oc_wheel_left = false;
@@ -507,7 +507,6 @@ void event_manager_reset_status(void)
 	/* OBS */
 	g_obs_triggered = false;
 	/* Cliff */
-	g_cliff_all_triggered = false;
 	g_cliff_triggered = false;
 	g_cliff_jam = false;
 	g_cliff_all_cnt = 0;

@@ -12,18 +12,22 @@ public:
 
 	bool isExit();
 
-	bool isPause(){
-		return RegulatorBase::isStop() || isStop();
+	bool isStop(){
+		return RegulatorBase::_isStop() || _isStop();
 	};
 
 	virtual bool isSwitch() = 0;
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
-	virtual bool isStop()=0;
+	virtual bool _isStop()=0;
+	virtual void setTarget() = 0;
 	virtual bool isReach() = 0;
 
 public:
 	static Point32_t s_target;
 	static Point32_t s_origin;
+	static int16_t s_angle;
+	static float s_pos_x;
+	static float s_pos_y;
 };
 
 class BackRegulator: public RegulatorBase{
@@ -31,19 +35,16 @@ public:
 	BackRegulator();
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
-	bool isStop();
-	void setOrigin(){
-		auto pos_x = robot::instance()->getOdomPositionX();
-		auto pos_y = robot::instance()->getOdomPositionY();
-		pos_x_ = pos_x;
-		pos_y_ = pos_y;
+	bool _isStop();
+	void setTarget(){
+		s_pos_x = robot::instance()->getOdomPositionX();
+		s_pos_y = robot::instance()->getOdomPositionY();
 	}
 
 protected:
 	bool isReach();
 
 private:
-	float pos_x_,pos_y_;
 	int counter_;
 	int32_t speed_;
 };
@@ -51,22 +52,16 @@ private:
 class TurnRegulator: public RegulatorBase{
 public:
 
-	TurnRegulator();
+	TurnRegulator(int16_t angle);
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
-	bool isStop();
-	void setTarget(){
-		if (LASER_FOLLOW_WALL)
-			laser_turn_angle();
-
-		target_angle_ = calc_target(g_turn_angle);
-	};
+	bool _isStop();
+	void setTarget();
 
 protected:
 	bool isReach();
 
 private:
-	int16_t target_angle_;
 	uint16_t accurate_;
 	uint16_t speed_max_;
 };
@@ -101,13 +96,12 @@ public:
 class FollowWallRegulator:public RegulatorBase{
 
 public:
-	FollowWallRegulator();
+	FollowWallRegulator(Point32_t origin, Point32_t target);
 	~FollowWallRegulator(){ set_wheel_speed(0,0); };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
-	bool isStop();
-//	void setTarget(Point32_t target){s_target = target;};
-//	void setOrigin(Point32_t origin){s_origin = origin;};
+	bool _isStop();
+	void setTarget(){ };
 protected:
 	bool isReach();
 
@@ -118,11 +112,12 @@ private:
 
 class LinearRegulator: public RegulatorBase{
 public:
-	LinearRegulator();
+	LinearRegulator(Point32_t);
 	~LinearRegulator(){ };
-	bool isStop();
+	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
+	void setTarget() { };
 
 protected:
 	bool isReach();
@@ -140,12 +135,13 @@ class RegulatorProxy:public RegulatorBase{
 public:
 	RegulatorProxy(Point32_t origin, Point32_t target);
 	~RegulatorProxy();
-	void switchToNext();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
-	bool isStop();
+	bool _isStop();
 	bool isReach();
-	RegulatorBase* getType(){ return p_reg_; };
+	void setTarget() { };
+
+	void switchToNext();
 private:
 	RegulatorBase* p_reg_;
 	RegulatorBase* mt_reg_;

@@ -161,7 +161,6 @@ void remote_move(void)
 						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;
 						g_cliff_triggered = false;
-						g_cliff_all_triggered = false;
 						g_cliff_cnt = 0;
 						g_cliff_all_cnt = 0;
 					}
