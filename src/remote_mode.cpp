@@ -69,7 +69,7 @@ void remote_mode(void)
 	disable_motors();
 	remote_mode_unregister_events();
 
-	if (g_fatal_quit_event && g_cliff_all_cnt >= 2)
+	if (g_cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 }
 
@@ -160,15 +160,9 @@ void remote_move(void)
 					{
 						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;
-						g_cliff_triggered = false;
+						g_cliff_triggered = 0;
 						g_cliff_cnt = 0;
 						g_cliff_all_cnt = 0;
-					}
-					else if ((get_cliff_trig() == Status_Cliff_All) && ++g_cliff_all_cnt >= 2)
-					{
-						ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-						g_fatal_quit_event = true;
-						break;
 					}
 					else if (++g_cliff_cnt >= 2)
 					{
@@ -368,22 +362,20 @@ void remote_mode_handle_bumper(bool state_now, bool state_last)
 
 void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 {
-	g_cliff_triggered = true;
 	g_cliff_all_cnt++;
-
-	if (!state_last && g_move_back_finished)
+	if (g_cliff_all_cnt++ > 2)
 	{
-		saved_pos_x = robot::instance()->getOdomPositionX();
-		saved_pos_y = robot::instance()->getOdomPositionY();
-		ROS_WARN("%s %d: Cliff triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
+		g_cliff_all_triggered = true;
+		g_fatal_quit_event = true;
 	}
-	set_move_flag_(REMOTE_MODE_BACKWARD);
-
+	g_cliff_triggered = Status_Cliff_All;
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void remote_mode_handle_cliff(bool state_now, bool state_last)
 {
-	g_cliff_triggered = true;
+	g_cliff_triggered = Status_Cliff_All;
 
 	if (!state_last && g_move_back_finished)
 	{

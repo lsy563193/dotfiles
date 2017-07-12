@@ -30,8 +30,8 @@ int g_bumper_cnt = 0;
 /* OBS */
 int g_obs_triggered = 0;
 /* Cliff */
-//bool g_cliff_all_triggered = false;
-int g_cliff_triggered = false;
+bool g_cliff_all_triggered = false;
+int g_cliff_triggered = 0;
 bool g_cliff_jam = false;
 uint8_t g_cliff_all_cnt = 0;
 int g_cliff_cnt = 0;
@@ -507,7 +507,8 @@ void event_manager_reset_status(void)
 	/* OBS */
 //	g_obs_triggered = false;
 	/* Cliff */
-	g_cliff_triggered = false;
+	g_cliff_all_triggered = false;
+	g_cliff_triggered = 0;
 	g_cliff_jam = false;
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;

@@ -211,7 +211,7 @@ bool RegulatorBase::isExit(){
 bool RegulatorBase::_isStop()
 {
 //	ROS_INFO("reg_base _isStop");
-	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check();
+	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check() || g_cliff_all_triggered;
 }
 
 

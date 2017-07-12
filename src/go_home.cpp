@@ -46,8 +46,13 @@ void go_home(void)
 	{
 		if (g_fatal_quit_event || g_key_clean_pressed || g_go_to_charger_failed)
 		{
-			if(!during_cleaning)
-				set_clean_mode(Clean_Mode_Userinterface);
+			if(!during_cleaning && g_cliff_all_triggered)
+			{
+				disable_motors();
+				wav_play(WAV_ERROR_LIFT_UP);
+				g_key_clean_pressed = false;
+			}
+			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
 		if(g_charge_detect)
@@ -55,17 +60,6 @@ void go_home(void)
 			if(!during_cleaning)
 				set_clean_mode(Clean_Mode_Charging);
 			disable_motors();
-			break;
-		}
-		if(get_cliff_trig() == Status_Cliff_All)
-		{
-			if(!during_cleaning)
-			{
-				disable_motors();
-				if(get_cliff_trig() == Status_Cliff_All)wav_play(WAV_ERROR_LIFT_UP);
-				g_key_clean_pressed = false;
-				set_clean_mode(Clean_Mode_Userinterface);
-			}
 			break;
 		}
 		if(g_battery_low)
@@ -154,7 +148,7 @@ void go_to_charger(void)
 			break;
 		if(g_charge_detect && g_go_home_state_now != CHECK_POSITION)
 			break;
-		if(g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
+		if(g_key_clean_pressed)
 			break;
 		if(g_battery_low)
 			break;
@@ -2166,7 +2160,7 @@ bool turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
+		if(g_key_clean_pressed || g_fatal_quit_event)
 			return true;
 	}
 	stop_brifly();
@@ -2189,7 +2183,7 @@ bool turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
+		if(g_key_clean_pressed || g_fatal_quit_event)
 			return true;
 	}
 	stop_brifly();
@@ -2219,7 +2213,7 @@ bool go_home_check_move_back_finish(float target_distance)
 		{
 			if (g_cliff_triggered)
 				ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
-			g_cliff_triggered = false;
+			g_cliff_triggered = 0;
 			g_cliff_cnt = 0;
 		}
 
@@ -2420,19 +2414,15 @@ void go_home_handle_remote_clean(bool state_now, bool state_last)
 
 void go_home_handle_cliff_all(bool state_now, bool state_last)
 {
-	static int cliff_all_cnt = 0;
-	if (state_now == true && state_last == true)
+	g_cliff_all_cnt++;
+	if (g_cliff_all_cnt++ > 2)
 	{
-		cliff_all_cnt++;
-		if (cliff_all_cnt > 2)
-		{
-			cliff_all_cnt = 0;
-		}
+		g_cliff_all_triggered = true;
+		g_fatal_quit_event = true;
 	}
-	else
-	{
-		cliff_all_cnt = 0;
-	}
+	g_cliff_triggered = Status_Cliff_All;
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void go_home_handle_cliff(bool state_now, bool state_last)
@@ -2442,7 +2432,7 @@ void go_home_handle_cliff(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
-		g_cliff_triggered = true;
+		g_cliff_triggered = Status_Cliff_All;
 	}
 }
 

@@ -48,7 +48,7 @@ extern int g_bumper_cnt;
 /* OBS */
 extern int g_obs_triggered;
 /* Cliff */
-//extern bool g_cliff_all_triggered;
+extern bool g_cliff_all_triggered;
 extern int g_cliff_triggered;
 extern bool g_cliff_jam;
 extern uint8_t g_cliff_all_cnt;

@@ -1108,8 +1108,8 @@ void cm_self_check(void)
 			if (!get_cliff_trig())
 			{
 				ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
-				g_cliff_triggered = false;
-//				g_cliff_all_triggered = false;
+				g_cliff_triggered = 0;
+				g_cliff_all_triggered = false;
 				g_cliff_cnt = 0;
 				g_cliff_all_cnt = 0;
 				g_cliff_jam = false;
@@ -1529,16 +1529,20 @@ void cm_handle_obs_right(bool state_now, bool state_last)
 /* Cliff */
 void cm_handle_cliff_all(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = true;
-//	g_cliff_all_cnt++;
+	g_cliff_all_cnt++;
+	if (g_cliff_all_cnt++ > 2)
+	{
+		g_cliff_all_triggered = true;
+		g_fatal_quit_event = true;
+	}
 	g_cliff_triggered = Status_Cliff_All;
-//	if (g_move_back_finished && !g_cliff_jam && !state_last)
-//		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
+	if (g_move_back_finished && !g_cliff_jam && !state_last)
+		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = Status_Cliff_LF;
 
 //	if (!state_last && g_move_back_finished)
@@ -1555,7 +1559,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = Status_Cliff_RF;
 
 //	if (!state_last && g_move_back_finished)
@@ -1572,7 +1576,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = Status_Cliff_LR;
 
 //	if (!state_last && g_move_back_finished)
@@ -1588,7 +1592,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = Status_Cliff_Front;
 
 //	if (!state_last && g_move_back_finished)
@@ -1604,7 +1608,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = Status_Cliff_Left;
 
 //	if (!state_last && g_move_back_finished)
@@ -1620,7 +1624,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+	g_cliff_all_triggered = false;
 	g_cliff_triggered = Status_Cliff_Right;
 
 //	if (!state_last && g_move_back_finished)
