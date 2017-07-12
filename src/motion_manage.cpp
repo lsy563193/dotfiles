@@ -266,6 +266,7 @@ MotionManage::~MotionManage()
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
 		SpotMovement::instance()->spotDeinit();// clear the variables.
+		sleep(1);
 	}
 
 	if (robot::instance()->isManualPaused())

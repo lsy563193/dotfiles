@@ -564,6 +564,7 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 
 		if (!rotate_is_needed_ && (g_obs_triggered || g_rcon_triggered)) {
 			g_should_follow_wall = true;
+			ROS_WARN("%s,%d,obs or rcon trigger",__FUNCTION__,__LINE__);
 			SpotType spt = SpotMovement::instance() -> getSpotType();
 			if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 				SpotMovement::instance()->setDirectChange();
@@ -588,6 +589,14 @@ bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max)
 
 		if (g_bumper_hitted || g_cliff_triggered)
 		{
+
+			if (g_bumper_hitted){
+				ROS_WARN("%s,%d ,bumper hitted",__FUNCTION__,__LINE__);
+				SpotType spt = SpotMovement::instance() -> getSpotType();
+				if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
+					SpotMovement::instance()->setDirectChange();
+			}
+
 			g_move_back_finished = false;
 			float distance;
 			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
@@ -694,8 +703,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 		if (g_fatal_quit_event || g_key_clean_pressed
 			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
 			|| (!g_go_home && (g_battery_home || g_remote_home))
-			|| g_remote_spot // It will only be set if robot is not during spot.
-			|| g_remote_direction_keys) // It will only be set if robot is during spot.
+			|| g_remote_spot || g_remote_direction_keys)
 			return false;
 
 		auto angle_diff = ranged_angle(Gyro_GetAngle() - angle_start);
