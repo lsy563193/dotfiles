@@ -60,7 +60,8 @@
 #define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
-bool g_have_seen_charge_stub = false;
+int g_rcon_triggered = 0;//1~6
+bool g_rcon_dirction = false;
 int16_t g_turn_angle;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
@@ -681,7 +682,7 @@ int cm_cleaning()
 		}
 		else if (is_found == 1)
 		{
-//			if (mt_is_fallwall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 			if(! cm_move_to(g_next_point))
 				return -1;
 
@@ -731,7 +732,7 @@ void cm_go_home()
 					cm_head_to_course(ROTATE_TOP_SPEED, -angle);
 				}
 				disable_motors();
-				if(g_have_seen_charge_stub)
+				if(g_rcon_dirction)
 					wav_play(WAV_BACK_TO_CHARGER_FAILED);
 				robot::instance()->resetLowBatPause();
 				cm_reset_go_home();
@@ -803,7 +804,7 @@ void cm_go_home()
 				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, current_home_cell.X, current_home_cell.Y);
 			}
 		}
-		else if (g_have_seen_charge_stub && cm_go_to_charger(current_home_cell))
+		else if (g_rcon_dirction && cm_go_to_charger(current_home_cell))
 		{
 			if (g_fatal_quit_event)
 			{
@@ -884,19 +885,18 @@ void cm_reset_go_home(void)
 }
 
 void cm_set_home(int32_t x, int32_t y) {
-	Cell_t tmpPnt;
 
-	bool found = false;
 	Point32_t new_home_point;
 
 	ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, count_to_cell(x),
 					 count_to_cell(y));
 	new_home_point.X = x;
 	new_home_point.Y = y;
-
-	for (list<Point32_t>::iterator it = g_home_point_old_path.begin(); found == false && it != g_home_point_old_path.end(); ++it) {
-		if (it->X == x && it->Y == y) {
+	auto found = false;
+	for (const auto& it : g_home_point_old_path) {
+		if (it.X == x && it.Y == y) {
 			found = true;
+			break;
 		}
 	}
 	if (found == false) {
@@ -905,8 +905,7 @@ void cm_set_home(int32_t x, int32_t y) {
 		if (abs(count_to_cell(x)) <= 5 && abs(count_to_cell(y)) <= 5)
 		{
 			// Update the trapped reference points
-			tmpPnt.X = count_to_cell(x);
-			tmpPnt.Y = count_to_cell(y);
+			Cell_t tmpPnt{count_to_cell(x), count_to_cell(y)};;
 			for (int8_t i = ESCAPE_TRAPPED_REF_CELL_SIZE - 1; i > 0; i--)
 			{
 				g_pnt16_ar_tmp[i] = g_pnt16_ar_tmp[i-1];
@@ -1638,322 +1637,28 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 /* RCON */
 void cm_handle_rcon(bool state_now, bool state_last)
 {
-	// lt_cnt means count for rcon left receive home top signal. rt_cnt, etc, can be understood like this.
-	static int8_t lt_cnt = 0, rt_cnt = 0, flt_cnt = 0, frt_cnt = 0, fl2t_cnt = 0, fr2t_cnt = 0;
-
-	/*
-	 * direction indicates which cell should robot mark for blocking.
-	 * -2: left
-	 * -1: front left
-	 *  0: front
-	 *  1: front right
-	 *  2: right
-	 *  9: do not need to block
-	 */
-	int8_t direction = 9;
-	int8_t max_cnt = 0;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
-	if (g_go_home) {
-		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		return;
-	}
-	//if (!(get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
-	// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
-	if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
-		// Skip other rcon signals.
-		return;
-
-	if (get_rcon_status() & RconL_HomeT)
-		lt_cnt++;
-	if (get_rcon_status() & RconR_HomeT)
-		rt_cnt++;
-	if (get_rcon_status() & RconFL_HomeT)
-		flt_cnt++;
-	if (get_rcon_status() & RconFR_HomeT)
-		frt_cnt++;
-	if (get_rcon_status() & RconFL2_HomeT)
-		fl2t_cnt++;
-	if (get_rcon_status() & RconFR2_HomeT)
-		fr2t_cnt++;
-
-	if (lt_cnt > 2)
-	{
-		max_cnt = lt_cnt;
-		direction = -2;
-	}
-	if (fl2t_cnt > 2 && fl2t_cnt > max_cnt)
-	{
-		max_cnt = fl2t_cnt;
-		direction = -1;
-	}
-	if (flt_cnt > 2 && flt_cnt > max_cnt)
-	{
-		max_cnt = flt_cnt;
-		direction = 0;
-	}
-	if (frt_cnt > 2 && frt_cnt > max_cnt)
-	{
-		max_cnt = frt_cnt;
-		direction = 0;
-	}
-	if (fr2t_cnt > 2 && fr2t_cnt > max_cnt)
-	{
-		max_cnt = fr2t_cnt;
-		direction = 1;
-	}
-	if (rt_cnt > 2 && rt_cnt > max_cnt)
-	{
-		direction = 2;
-	}
-
-	if(direction != 9)
-	{
-		g_have_seen_charge_stub = true;
-		cm_block_charger_stub(direction);
-		lt_cnt = fl2t_cnt = flt_cnt = frt_cnt = fr2t_cnt = rt_cnt = 0;
-	}
-	reset_rcon_status();
-}
-
-void cm_block_charger_stub(int8_t direction)
-{
-	int32_t x, y, x2, y2;
-
-	ROS_WARN("%s %d: Robot meet charger stub, stop and mark the block.", __FUNCTION__, __LINE__);
-	set_wheel_speed(0, 0);
-
-	switch (direction)
-	{
-		case -2:
-		{
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
-			if (mt_is_left())
-					g_turn_angle = 300;
-				//else
-				//	g_turn_angle = 1100;
-			break;
-		}
-		case -1:
-		{
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE, CELL_SIZE_2, &x2, &y2);
-			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
-			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
-			if (mt_is_left())
-					g_turn_angle = 600;
-				//else
-				//	g_turn_angle = 950;
-			break;
-		}
-		case 0:
-		{
-			cm_world_to_point(gyro_get_angle(), 0, CELL_SIZE_2, &x, &y);
-			if (mt_is_fallwall())
-				g_turn_angle = 850;
-			break;
-		}
-		case 1:
-		{
-			cm_world_to_point(gyro_get_angle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
-			cm_world_to_point(gyro_get_angle(), -CELL_SIZE, CELL_SIZE_2, &x2, &y2);
-			map_set_cell(MAP, x2, y2, BLOCKED_BUMPER);
-			ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x2), count_to_cell(y2));
-			if (mt_is_right())
-					g_turn_angle = 600;
-				//else
-				//	g_turn_angle = 950;
-			break;
-		}
-		case 2:
-		{
-			cm_world_to_point(gyro_get_angle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
-			if (mt_is_right())
-					g_turn_angle = 300;
-				//else
-				//	g_turn_angle = 1100;
-			break;
-		}
-		default:
-			ROS_ERROR("%s %d: Receive wrong direction: %d.", __FUNCTION__, __LINE__, direction);
-	}
-	cm_world_to_point(gyro_get_angle(), 0, CELL_SIZE_2, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-	g_rcon_triggered = true;
-	cm_set_home(map_get_x_count(), map_get_y_count());
-
-}
 /*
-void cm_handle_rcon_front_left(bool state_now, bool state_last)
-{
-	int32_t	x, y;
-
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_go_home) {
 		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
-
-	Set_Wheel_Speed(0, 0);
-
-	cm_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-	g_rcon_triggered = true;
-	cm_set_home(map_get_x_count(), map_get_y_count());
-	Reset_Rcon_Status();
-
-	if (g_cm_move_type == CM_FOLLOW_WALL) {
-		g_turn_angle = 850;
+	if(mt_is_follow_wall()){
+		if (!(get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+			return;
 	}
-}
-
-void cm_handle_rcon_front_left2(bool state_now, bool state_last)
-{
-	int32_t	x, y;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
-	if (g_go_home) {
-		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+	else if (mt_is_linear())
+		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
+		if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 		return;
+
+	g_rcon_triggered = get_rcon();
+	if(g_rcon_triggered != 0){
+		cm_block_charger_stub();
 	}
-
-	Set_Wheel_Speed(0, 0);
-
-	cm_count_normalize(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-	cm_count_normalize(Gyro_GetAngle(), CELL_SIZE_2, CELL_SIZE, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-	g_rcon_triggered = true;
-	cm_set_home(map_get_x_count(), map_get_y_count());
-	Reset_Rcon_Status();
-	if (g_cm_move_type == CM_FOLLOW_WALL) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_turn_angle = 600;
-		}
-	}
+	reset_rcon_status();*/
 }
-
-void cm_handle_rcon_front_right(bool state_now, bool state_last)
-{
-	int32_t	x, y;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
-	if (g_go_home) {
-		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		return;
-	}
-
-	Set_Wheel_Speed(0, 0);
-
-	cm_count_normalize(Gyro_GetAngle(), 0, CELL_SIZE_2, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-	g_rcon_triggered = true;
-	cm_set_home(map_get_x_count(), map_get_y_count());
-	Reset_Rcon_Status();
-
-	if (g_cm_move_type == CM_FOLLOW_WALL) {
-		g_turn_angle = 850;
-	}
-}
-
-void cm_handle_rcon_front_right2(bool state_now, bool state_last)
-{
-	int32_t	x, y;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
-	if (g_go_home) {
-		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		return;
-	}
-
-	Set_Wheel_Speed(0, 0);
-
-	cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE, CELL_SIZE_2, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-	cm_count_normalize(Gyro_GetAngle(), -CELL_SIZE_2, CELL_SIZE, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-	g_rcon_triggered = true;
-	cm_set_home(map_get_x_count(), map_get_y_count());
-	Reset_Rcon_Status();
-	if (g_cm_move_type == CM_FOLLOW_WALL) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_turn_angle = 950;
-		}
-	}
-}
-
-void cm_handle_rcon_left(bool state_now, bool state_last)
-{
-	int32_t	x, y;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
-	if (g_go_home) {
-		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		return;
-	}
-
-	set_wheel_speed(0, 0);
-
-	cm_count_normalize(Gyro_GetAngle(), CELL_SIZE, CELL_SIZE_2, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-	g_rcon_triggered = true;
-	cm_set_home(map_get_x_count(), map_get_y_count());
-	Reset_Rcon_Status();
-
-	if (g_cm_move_type == CM_FOLLOW_WALL) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_turn_angle = 300;
-		}
-	}
-}
-
-void cm_handle_rcon_right(bool state_now, bool state_last)
-{
-	int32_t	x, y;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
-	if (g_go_home) {
-		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		return;
-	}
-
-	set_wheel_speed(0, 0);
-
-	cm_world_to_point(gyro_get_angle(), -CELL_SIZE, CELL_SIZE_2, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	ROS_INFO("%s %d: is called. marking (%d, %d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-	g_rcon_triggered = true;
-	cm_set_home(map_get_x_count(), map_get_y_count());
-	reset_rcon_status();
-	if (g_cm_move_type == CM_FOLLOW_WALL) {
-		if (g_rounding_type == ROUNDING_LEFT) {
-			g_turn_angle = 1100;
-		}
-	}
-}
-*/
 
 /* Over Current */
 //void cm_handle_over_current_brush_left(bool state_now, bool state_last)
@@ -2174,7 +1879,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (mt_is_fallwall() || g_slam_error)
+	if (mt_is_follow_wall() || g_slam_error)
 	{
 		beep_for_command(false);
 		reset_rcon_remote();

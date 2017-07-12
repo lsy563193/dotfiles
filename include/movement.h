@@ -426,6 +426,8 @@ uint8_t get_bumper_status(void);
 
 uint8_t get_cliff_trig(void);
 
+int get_rcon_trig(void);
+
 bool is_on_charger_stub(void);
 
 bool is_direct_charge(void);
