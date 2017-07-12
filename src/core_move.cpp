@@ -409,7 +409,7 @@ bool cm_move_to(Point32_t target)
 			continue;
 		}
 
-		if (regulator.isReach() || regulator.isPause())
+		if (regulator.isReach() || regulator.isStop())
 			return true;
 
 		if (regulator.isSwitch())

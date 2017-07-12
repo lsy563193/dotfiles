@@ -152,9 +152,9 @@ bool RegulatorBase::isExit(){
 	return g_fatal_quit_event || g_key_clean_pressed;
 }
 
-bool RegulatorBase::isStop()
+bool RegulatorBase::_isStop()
 {
-//	ROS_INFO("reg_base isStop");
+//	ROS_INFO("reg_base _isStop");
 	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check();
 }
 
@@ -192,7 +192,7 @@ bool BackRegulator::isSwitch()
 	return false;
 }
 
-bool BackRegulator::isStop()
+bool BackRegulator::_isStop()
 {
 	return false;
 }
@@ -239,7 +239,7 @@ bool TurnRegulator::isSwitch()
 	return false;
 }
 
-bool TurnRegulator::isStop()
+bool TurnRegulator::_isStop()
 {
 	return false;
 }
@@ -342,7 +342,7 @@ bool LinearRegulator::isSwitch()
 	return false;
 }
 
-bool LinearRegulator::isStop()
+bool LinearRegulator::_isStop()
 {
 	if (get_obs_status() || get_rcon_status())
 	{
@@ -522,7 +522,7 @@ bool FollowWallRegulator::isSwitch()
 	return false;
 }
 
-bool FollowWallRegulator::isStop()
+bool FollowWallRegulator::_isStop()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
 	return false;
@@ -751,30 +751,30 @@ bool RegulatorProxy::isSwitch()
 	return false;
 }
 
-bool RegulatorProxy::isStop()
+bool RegulatorProxy::_isStop()
 {
 	if (p_reg_ != nullptr)
-		return p_reg_->isStop();
+		return p_reg_->_isStop();
 	return false;
 }
 
 void RegulatorProxy::switchToNext()
 {
-	if (p_reg_ == mt_reg_)
-	{
-		if (g_obs_triggered || g_rcon_triggered)
-			p_reg_ = turn_reg_;
-		else if (g_bumper_hitted || g_cliff_triggered)
-			p_reg_ = back_reg_;
-	}
-	else if (p_reg_ == back_reg_)
-		p_reg_ = turn_reg_;
-	else if (p_reg_ == turn_reg_)
+	if (p_reg_ == turn_reg_)
 	{
 		if(g_bumper_hitted || g_cliff_triggered)
 			p_reg_ = back_reg_;
 		else /*if(g_obs_triggered || g_rcon_triggered)*/
 			p_reg_ = mt_reg_;
+	}
+	else if (p_reg_ == back_reg_)
+		p_reg_ = turn_reg_;
+	else if (p_reg_ == mt_reg_)
+	{
+		if (g_obs_triggered || g_rcon_triggered)
+			p_reg_ = turn_reg_;
+		else if (g_bumper_hitted || g_cliff_triggered)
+			p_reg_ = back_reg_;
 	}
 	g_obs_triggered = g_rcon_triggered = 0;
 	g_bumper_hitted = g_cliff_triggered = 0;

@@ -12,15 +12,15 @@ public:
 
 	bool isExit();
 
-	bool isPause(){
-		return RegulatorBase::isStop() || isStop();
+	bool isStop(){
+		return RegulatorBase::_isStop() || _isStop();
 	};
 
 	virtual bool isSwitch() = 0;
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
-	virtual bool isStop()=0;
-	virtual bool isReach() = 0;
+	virtual bool _isStop()=0;
 	virtual void setTarget() = 0;
+	virtual bool isReach() = 0;
 
 public:
 	static Point32_t s_target;
@@ -35,7 +35,7 @@ public:
 	BackRegulator();
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
-	bool isStop();
+	bool _isStop();
 	void setTarget(){
 		s_pos_x = robot::instance()->getOdomPositionX();
 		s_pos_y = robot::instance()->getOdomPositionY();
@@ -55,7 +55,7 @@ public:
 	TurnRegulator(int16_t angle);
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
-	bool isStop();
+	bool _isStop();
 	void setTarget();
 
 protected:
@@ -100,7 +100,7 @@ public:
 	~FollowWallRegulator(){ set_wheel_speed(0,0); };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
-	bool isStop();
+	bool _isStop();
 	void setTarget(){ };
 protected:
 	bool isReach();
@@ -114,7 +114,7 @@ class LinearRegulator: public RegulatorBase{
 public:
 	LinearRegulator(Point32_t);
 	~LinearRegulator(){ };
-	bool isStop();
+	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
 	void setTarget() { };
@@ -137,7 +137,7 @@ public:
 	~RegulatorProxy();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
-	bool isStop();
+	bool _isStop();
 	bool isReach();
 	void setTarget() { };
 
