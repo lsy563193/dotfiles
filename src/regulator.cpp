@@ -158,7 +158,7 @@ static int16_t laser_turn_angle()
 {
 	stop_brifly();
 
-	if (g_obs_triggered == Status_Front_OBS)
+	if (g_obs_triggered == 1)
 	{
 		ROS_INFO("front obs trigger");
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
@@ -187,7 +187,16 @@ static int16_t laser_turn_angle()
 
 	return g_turn_angle;
 }
-
+static int16_t _get_obs_value()
+{
+	if(get_front_obs() > get_front_obs_value())
+		return 1;
+	if(get_left_obs() > get_left_obs_value())
+		return 2;
+	if(get_right_obs() > get_right_obs_value())
+		return 3;
+	return 0;
+}
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
@@ -391,7 +400,7 @@ bool LinearRegulator::isSwitch()
 
 bool LinearRegulator::_isStop()
 {
-	if (get_obs_status() > get_front_obs_value() || get_rcon_status())
+	if (_get_obs_value() || get_rcon_status())
 	{
 		if(get_rcon_status()) cm_block_charger_stub();
 
@@ -563,8 +572,8 @@ bool FollowWallRegulator::isSwitch()
 		g_straight_distance = 80;
 		return true;
 	}
-	if(! g_obs_triggered  && get_obs_status() == Status_Front_OBS){
-		g_obs_triggered = get_obs_status();
+	if(! g_obs_triggered  && get_front_obs() >= get_front_obs_value()){
+		g_obs_triggered = 1;
 		g_turn_angle = obs_turn_angle();
 		g_wall_distance = Wall_High_Limit;
 		return true;
