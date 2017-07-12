@@ -16,6 +16,7 @@
 #include <wav.h>
 #include <spot.h>
 #include <robotbase.h>
+#include <path_planning.h>
 
 int jam=0;
 
@@ -45,7 +46,7 @@ void cm_block_charger_stub()
 		if (dx2 != 0)
 			map_set_cell(MAP, CELL_SIZE * dx2, CELL_SIZE * dy2, BLOCKED_BUMPER);
 	}
-	cm_set_home(map_get_x_count(), map_get_y_count());
+	path_set_home(map_get_curr_cell());
 
 }
 
@@ -211,7 +212,7 @@ bool RegulatorBase::isExit(){
 bool RegulatorBase::_isStop()
 {
 //	ROS_INFO("reg_base _isStop");
-	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check() || g_cliff_all_triggered;
+	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check();
 }
 
 
@@ -274,7 +275,7 @@ TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(13)
 bool TurnRegulator::isReach()
 {
 	if (abs(s_angle - gyro_get_angle()) < accurate_){
-		ROS_WARN("%s, %d: TurnRegulator target,curr (%d,%d)", __FUNCTION__, __LINE__,s_angle, gyro_get_angle());
+		ROS_WARN("%s, %d: TurnRegulator target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, s_angle, gyro_get_angle());
 		return true;
 	}
 
@@ -363,8 +364,8 @@ LinearRegulator::LinearRegulator(Point32_t target):
 	s_target = target;
 	g_turn_angle = ranged_angle(
 					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
-	ROS_WARN("%s %d: angle(%d),curr(%d,%d),targ(%d,%d) ", __FUNCTION__, __LINE__, g_turn_angle, map_get_x_count(),map_get_y_count(), s_target.X,s_target.Y);
-	ROS_ERROR("angle:%d(%d,%d) ", g_turn_angle,
+	ROS_WARN("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
+	ROS_WARN("%s %d: turn angle:%d, target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, g_turn_angle,
 						course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y), gyro_get_angle());
 }
 
