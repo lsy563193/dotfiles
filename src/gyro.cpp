@@ -102,7 +102,7 @@ bool wait_for_gyro_on(void)
 			set_gyro_on();
 		}
 
-		if (g_key_clean_pressed || g_cliff_all_triggered || g_fatal_quit_event || is_direct_charge())
+		if (g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All || g_fatal_quit_event || is_direct_charge())
 			break;
 
 		if (skip_count == 0 && robot::instance()->getAngleV() != 0){
@@ -151,7 +151,7 @@ bool check_gyro_stable()
 	while (check_stable_count < 50)
 	{
 		usleep(20000);
-		if (g_key_clean_pressed || g_cliff_all_triggered || g_fatal_quit_event || is_direct_charge())
+		if (g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All || g_fatal_quit_event || is_direct_charge())
 			break;
 		current_angle = robot::instance()->getAngle();
 		ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.", check_stable_count,

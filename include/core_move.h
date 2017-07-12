@@ -61,15 +61,12 @@ extern int g_trapped_mode;
 extern bool g_have_seen_charge_stub;
 extern bool g_motion_init_succeeded;
 
-uint16_t bumper_turn_angle();
-bool laser_turn_angle();
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);
 bool is_map_front_block(int dx);
 
-extern bool g_should_follow_wall;
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
 void cm_head_to_course(uint8_t Speed, int16_t Angle);

@@ -42,19 +42,19 @@
  */
 extern bool g_fatal_quit_event;
 /* Bumper */
-extern bool g_bumper_hitted;
+extern int g_bumper_hitted;
 extern bool g_bumper_jam;
 extern int g_bumper_cnt;
 /* OBS */
-extern bool g_obs_triggered;
+extern int g_obs_triggered;
 /* Cliff */
-extern bool g_cliff_all_triggered;
-extern bool g_cliff_triggered;
+//extern bool g_cliff_all_triggered;
+extern int g_cliff_triggered;
 extern bool g_cliff_jam;
 extern uint8_t g_cliff_all_cnt;
-extern uint8_t g_cliff_cnt;
+extern int g_cliff_cnt;
 /* RCON */
-extern bool g_rcon_triggered;
+extern uint32_t g_rcon_triggered;
 /* Over Current */
 extern bool g_oc_brush_main;
 extern bool g_oc_wheel_left;

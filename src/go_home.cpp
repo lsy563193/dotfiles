@@ -57,14 +57,13 @@ void go_home(void)
 			disable_motors();
 			break;
 		}
-		if(g_cliff_all_triggered)
+		if(get_cliff_trig() == Status_Cliff_All)
 		{
 			if(!during_cleaning)
 			{
 				disable_motors();
-				if(g_cliff_all_triggered)wav_play(WAV_ERROR_LIFT_UP);
+				if(get_cliff_trig() == Status_Cliff_All)wav_play(WAV_ERROR_LIFT_UP);
 				g_key_clean_pressed = false;
-				g_cliff_all_triggered = false;
 				set_clean_mode(Clean_Mode_Userinterface);
 			}
 			break;
@@ -155,7 +154,7 @@ void go_to_charger(void)
 			break;
 		if(g_charge_detect && g_go_home_state_now != CHECK_POSITION)
 			break;
-		if(g_key_clean_pressed || g_cliff_all_triggered)
+		if(g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
 			break;
 		if(g_battery_low)
 			break;
@@ -2162,7 +2161,7 @@ bool turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_cliff_all_triggered)
+		if(g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
 			return true;
 	}
 	stop_brifly();
@@ -2185,7 +2184,7 @@ bool turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_cliff_all_triggered)
+		if(g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
 			return true;
 	}
 	stop_brifly();
@@ -2423,7 +2422,6 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 		if (cliff_all_cnt > 2)
 		{
 			cliff_all_cnt = 0;
-			g_cliff_all_triggered = true;
 		}
 	}
 	else

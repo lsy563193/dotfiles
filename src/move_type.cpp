@@ -6,6 +6,7 @@
 #include <mathematics.h>
 #include <movement.h>
 #include <core_move.h>
+#include <event_manager.h>
 #include "move_type.h"
 
 CMMoveType g_cm_move_type;
@@ -36,7 +37,7 @@ CMMoveType mt_get()
 }
 void mt_update(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
 	g_cm_move_type = CM_LINEARMOVE;
-	if (!IS_X_AXIS(dir) || !g_should_follow_wall ||next_point->Y == map_get_y_count())
+	if (!IS_X_AXIS(dir) || g_obs_triggered != Status_Front_OBS || g_bumper_hitted == 0 ||next_point->Y == map_get_y_count())
 		return;
 
 	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
