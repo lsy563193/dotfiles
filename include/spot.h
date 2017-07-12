@@ -25,7 +25,7 @@
 #define SPIRAL_LEFT_OUT  4
 #define SPIRAL_LEFT_IN    8
 #define First_Round       10
-#define OBS_DETECT_COUNT_MAX 3
+#define OBS_DETECT_COUNT_MAX 8
 
 typedef enum {
 	NO_SPOT = 0,
@@ -39,9 +39,11 @@ private:
 
 	float spot_diameter_;//
 
-	std::vector<Point32_t> target_;
+	std::vector<Point32_t> targets_;
 
 	std::vector<Point32_t>::const_iterator tp_;//target pointer
+
+	std::vector<Point32_t>::const_iterator bp_;//bumper pointer
 
 	Point32_t stop_point_;
 
@@ -99,21 +101,14 @@ public:
 	{ return spot_init_; }
 
 	static SpotMovement *instance();
-/*
-* @author mengshige1988@qq.com
-* @brief spot mode ,control robot rolling in spiral  movement ,according to given target.
-* @param1 SpotType ( clean_spot  ,remote_spot  ,wall_spot)
-* @param2 spot_diameter,in meters
-* @return None
-* */
-	//void spotWithTarget(SpotType spot_t,float diameter);
+
 /*
  * @author mengshige1988@qq.com
- * @brief when obstical detcet set stop point
- * @param None
+ * @brief when obstical detcet spot set stop point
+ * @param stp(stop point)
  * @return None
  */
-	void setStopPoint();
+	void setStopPoint(Point32_t *stp);
 
 /*
  * @author mengshige1988@qq.com
@@ -136,7 +131,7 @@ public:
  * @param4 begin point
  * @return None
  */
-	void generateTarget(uint8_t spiral_type, float radian, std::vector<Point32_t> *target, Point32_t curpoint);
+	void genTargets(uint8_t spiral_type, float radian, std::vector<Point32_t> *target, Point32_t curpoint);
 
 /*
  * @author mengshige1988@qq.com
@@ -144,16 +139,16 @@ public:
  * @param next target Point 's address
  * @return 1 found ,0 not found
  * */
-	int8_t getNextTarget(Point32_t &next_point);
+	int8_t spotNextTarget(Point32_t &next_point);
 
 /*
 * @author mengshige1988@qq.com
-* @brief find the first nearest point.
+* @brief get the first nearest point.
 * @param1 reference point.
 * @return None.
 * */
 
-	uint8_t findNearestPoint(Point32_t ref_point);
+	uint8_t getNearPoint(Point32_t ref_point);
 
 	void setSpiralType(uint8_t spi_t)
 	{ spiral_type_ = spi_t; }

@@ -388,6 +388,11 @@ bool LinearRegulator::isSwitch()
 		g_bumper_hitted = get_bumper_status();
 		g_cliff_triggered = get_cliff_trig();
 
+		ROS_WARN("%s,%d ,bumper hitted",__FUNCTION__,__LINE__);
+		SpotType spt = SpotMovement::instance() -> getSpotType();
+		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
+			SpotMovement::instance()->setDirectChange();
+
 		mt_set(CM_FOLLOW_LEFT_WALL);
 		g_turn_angle = bumper_turn_angle();
 		mt_set(CM_LINEARMOVE);
