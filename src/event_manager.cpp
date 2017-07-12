@@ -36,7 +36,7 @@ bool g_cliff_jam = false;
 uint8_t g_cliff_all_cnt = 0;
 int g_cliff_cnt = 0;
 /* RCON */
-uint32_t g_rcon_triggered = false;
+//int g_rcon_triggered = 0;
 /* Over Current */
 bool g_oc_brush_main = false;
 bool g_oc_wheel_left = false;
@@ -512,7 +512,7 @@ void event_manager_reset_status(void)
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
-	g_rcon_triggered = false;
+//	g_rcon_triggered = false;
 	/* Over Current */
 	g_oc_brush_main = false;
 	g_oc_wheel_left = false;

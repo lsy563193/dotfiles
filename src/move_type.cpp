@@ -21,7 +21,7 @@ bool mt_is_right()
 	return g_cm_move_type == CM_FOLLOW_RIGHT_WALL;
 }
 
-bool mt_is_fallwall()
+bool mt_is_follow_wall()
 {
 	return g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL;
 }

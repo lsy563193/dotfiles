@@ -155,7 +155,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();
 	g_turn_angle = 0;
-	g_have_seen_charge_stub = false;
 	bool eh_status_now=false, eh_status_last=false;
 
 	initSucceeded(true);
