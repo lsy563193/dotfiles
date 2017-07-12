@@ -96,7 +96,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Launch obstacle detector interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -120,7 +120,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || get_cliff_trig()== Status_Cliff_All)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Detecting line interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -155,7 +155,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_motion_init_succeeded = false;
 	event_manager_reset_status();
 	g_turn_angle = 0;
-	g_have_seen_charge_stub = false;
 	bool eh_status_now=false, eh_status_last=false;
 
 	initSucceeded(true);
@@ -238,7 +237,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || get_cliff_trig() == Status_Cliff_All)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Waiting for slam interrupted.", __FUNCTION__, __LINE__);
 			break;
@@ -294,8 +293,8 @@ MotionManage::~MotionManage()
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
-		SpotMovement::instance()->spotInit(1.0,{0,0});// clear the variables.
-		SpotMovement::instance()->setSpotType(NO_SPOT);
+		SpotMovement::instance()->spotDeinit();// clear the variables.
+		sleep(1);
 	}
 
 	if (robot::instance()->isManualPaused())
@@ -342,7 +341,7 @@ MotionManage::~MotionManage()
 	robot::instance()->savedOffsetAngle(0);
 
 	if (g_fatal_quit_event)
-		if (get_cliff_trig() == Status_Cliff_All)
+		if (g_cliff_all_triggered)
 			ROS_WARN("%s %d: All Cliff are triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 		else
 			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
@@ -486,7 +485,7 @@ bool MotionManage::initNavigationCleaning(void)
 		for (int i = 0; i < 7; i++) {
 			// Move back for distance of 72mm, it takes approximately 0.5s.
 			quick_back(20, 72);
-			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub() || get_cliff_trig() == Status_Cliff_All) {
+			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
 				disable_motors();
 				if (g_fatal_quit_event)
 				{

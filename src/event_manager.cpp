@@ -30,13 +30,13 @@ int g_bumper_cnt = 0;
 /* OBS */
 int g_obs_triggered = 0;
 /* Cliff */
-//bool g_cliff_all_triggered = false;
-int g_cliff_triggered = false;
+bool g_cliff_all_triggered = false;
+int g_cliff_triggered = 0;
 bool g_cliff_jam = false;
 uint8_t g_cliff_all_cnt = 0;
 int g_cliff_cnt = 0;
 /* RCON */
-uint32_t g_rcon_triggered = false;
+//int g_rcon_triggered = 0;
 /* Over Current */
 bool g_oc_brush_main = false;
 bool g_oc_wheel_left = false;
@@ -505,14 +505,15 @@ void event_manager_reset_status(void)
 	g_bumper_jam = false;
 	g_bumper_cnt = 0;
 	/* OBS */
-	g_obs_triggered = false;
+//	g_obs_triggered = false;
 	/* Cliff */
-	g_cliff_triggered = false;
+	g_cliff_all_triggered = false;
+	g_cliff_triggered = 0;
 	g_cliff_jam = false;
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
-	g_rcon_triggered = false;
+//	g_rcon_triggered = false;
 	/* Over Current */
 	g_oc_brush_main = false;
 	g_oc_wheel_left = false;

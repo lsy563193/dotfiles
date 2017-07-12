@@ -58,7 +58,6 @@ extern uint16_t g_wall_distance;
 
 extern bool g_from_station;
 extern int g_trapped_mode;
-extern bool g_have_seen_charge_stub;
 extern bool g_motion_init_succeeded;
 
 uint8_t angle_to_bumper_status(void);

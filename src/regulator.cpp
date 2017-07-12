@@ -19,6 +19,36 @@
 
 int jam=0;
 
+void cm_block_charger_stub()
+{
+	enum {left,right,fl,fr,fl2,fr2};
+	ROS_WARN("%s %d: Robot meet charger stub, stop and mark the block.", __FUNCTION__, __LINE__);
+	int dx=0,dy=0;
+	int dx2=0,dy2=0;
+	switch (g_rcon_triggered-1)
+	{
+		case left: dx = 1, dy = 2;
+			break;
+		case fl2: dx = 1,dy = 2; dx2 = 2,dy2 = 1;
+			break;
+		case fl:
+		case fr: dx = 0, dy = 2;
+			break;
+		case fr2: dx = 1, dy = -2; dx2 = 2, dy2 = -1;
+			break;
+		case right: dx = -2, dy = 1;
+			break;
+	}
+	if(get_clean_mode() != Clean_Mode_WallFollow)
+	{
+		map_set_cell(MAP, CELL_SIZE * dx, CELL_SIZE * dy, BLOCKED_BUMPER);
+		if (dx2 != 0)
+			map_set_cell(MAP, CELL_SIZE * dx2, CELL_SIZE * dy2, BLOCKED_BUMPER);
+	}
+	cm_set_home(map_get_x_count(), map_get_y_count());
+
+}
+
 static int16_t bumper_turn_angle()
 {
 	auto get_wheel_step = (mt_is_left()) ? get_right_wheel_step : get_left_wheel_step;
@@ -54,23 +84,40 @@ static int16_t bumper_turn_angle()
 //	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
 //	ROS_INFO("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
+	if(mt_is_right())
+		g_turn_angle = -g_turn_angle;
 	return g_turn_angle;
 }
 
 static int16_t cliff_turn_angle()
 {
-	return 750;
+	g_turn_angle = 750;
+	if(mt_is_right())
+		g_turn_angle = -g_turn_angle;
+	return g_turn_angle;
 }
 
 static int16_t obs_turn_angle()
 {
-	return 920;
+	g_turn_angle = 920;
+	if(mt_is_right())
+		g_turn_angle = -g_turn_angle;
+	return g_turn_angle;
 }
 
 static int16_t rcon_turn_angle()
 {
-	return 920;
+	enum {left,right,fl,fr,fl2,fr2};
+	int16_t left_angle[] =   {300,1100,850,850,600,950};
+	int16_t right_angle[] =  {-1100, -300, -850, -850, -950, -600};
+	if(mt_is_left())
+		g_turn_angle = left_angle[g_rcon_triggered-1];
+	else if(mt_is_right())
+		g_turn_angle = right_angle[g_rcon_triggered-1];
+
+	return g_turn_angle;
 }
+
 static int double_scale_10(double line_angle)
 {
 	int angle;
@@ -111,7 +158,7 @@ static int16_t laser_turn_angle()
 {
 	stop_brifly();
 
-	if (g_obs_triggered == Status_Front_OBS)
+	if (g_obs_triggered == 1)
 	{
 		ROS_INFO("front obs trigger");
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
@@ -140,7 +187,16 @@ static int16_t laser_turn_angle()
 
 	return g_turn_angle;
 }
-
+static int16_t _get_obs_value()
+{
+	if(get_front_obs() > get_front_obs_value())
+		return 1;
+	if(get_left_obs() > get_left_obs_value())
+		return 2;
+	if(get_right_obs() > get_right_obs_value())
+		return 3;
+	return 0;
+}
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
@@ -155,7 +211,7 @@ bool RegulatorBase::isExit(){
 bool RegulatorBase::_isStop()
 {
 //	ROS_INFO("reg_base _isStop");
-	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check();
+	return g_battery_home || (!g_go_home && g_remote_home) || cm_should_self_check() || g_cliff_all_triggered;
 }
 
 
@@ -171,7 +227,7 @@ bool BackRegulator::isReach()
 	if(fabsf(distance) > 0.02f){
 //		ROS_WARN("%s, %d: BackRegulator ");
 		g_bumper_cnt = get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
-		g_cliff_cnt = get_bumper_status() != 0 ? 0 : g_cliff_cnt+1 ;
+		g_cliff_cnt = get_cliff_trig() == 0 ? 0 : g_cliff_cnt+1 ;
 
 		if((g_bumper_cnt == 0 && g_cliff_cnt == 0) || g_bumper_cnt >= 3 || g_cliff_cnt >= 3)
 			return true;
@@ -184,7 +240,7 @@ bool BackRegulator::isReach()
 bool BackRegulator::isSwitch()
 {
 //	ROS_INFO("BackRegulator::isSwitch");
-	if(mt_is_fallwall())
+	if(mt_is_follow_wall())
 		return isReach();
 	if(mt_is_linear())
 		return false;
@@ -254,7 +310,7 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 	auto diff = ranged_angle(s_angle - gyro_get_angle());
 //	ROS_WARN("TurnRegulator::adjustSpeed diff(%d)", diff);
-	if(mt_is_fallwall())
+	if(mt_is_follow_wall())
 		(mt_is_left()) ? set_dir_right() : set_dir_left();
 	else
 	{
@@ -332,9 +388,14 @@ bool LinearRegulator::isSwitch()
 		g_bumper_hitted = get_bumper_status();
 		g_cliff_triggered = get_cliff_trig();
 
+		ROS_WARN("%s,%d ,bumper hitted",__FUNCTION__,__LINE__);
+		SpotType spt = SpotMovement::instance() -> getSpotType();
+		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
+			SpotMovement::instance()->setDirectChange();
+
 		mt_set(CM_FOLLOW_LEFT_WALL);
 		g_turn_angle = bumper_turn_angle();
-		mt_set(CM_FOLLOW_LEFT_WALL);
+		mt_set(CM_LINEARMOVE);
 
 		return true;
 	}
@@ -344,8 +405,10 @@ bool LinearRegulator::isSwitch()
 
 bool LinearRegulator::_isStop()
 {
-	if (get_obs_status() || get_rcon_status())
+	if (_get_obs_value() || get_rcon_status())
 	{
+		if(get_rcon_status()) cm_block_charger_stub();
+
 		ROS_WARN("%s, %d: g_obs_triggered || g_rcon_triggered.", __FUNCTION__, __LINE__);
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
@@ -508,13 +571,14 @@ bool FollowWallRegulator::isSwitch()
 		g_turn_angle = cliff_turn_angle();
 		return true;
 	}
-	if(! g_cliff_triggered && get_rcon_status()){
-		g_cliff_triggered = get_rcon_status();
+	if(! g_rcon_triggered && get_rcon_trig()){
+		g_rcon_triggered = get_rcon_status();
 		g_turn_angle = rcon_turn_angle();
+		g_straight_distance = 80;
 		return true;
 	}
-	if(! g_obs_triggered  && get_obs_status() == Status_Front_OBS){
-		g_obs_triggered = get_obs_status();
+	if(! g_obs_triggered  && get_front_obs() >= get_front_obs_value()){
+		g_obs_triggered = 1;
 		g_turn_angle = obs_turn_angle();
 		g_wall_distance = Wall_High_Limit;
 		return true;
@@ -710,7 +774,7 @@ RegulatorProxy::RegulatorProxy(Point32_t origin, Point32_t target)
 
 	back_reg_ = new BackRegulator();
 
-	if (mt_is_fallwall())
+	if (mt_is_follow_wall())
 		mt_reg_ = new FollowWallRegulator(origin, target);
 	else
 		mt_reg_ = new LinearRegulator(target);
@@ -739,7 +803,7 @@ void RegulatorProxy::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 bool RegulatorProxy::isReach()
 {
-	if ( (mt_is_linear() && p_reg_ == back_reg_) || (mt_is_fallwall() && p_reg_ == mt_reg_) )
+	if ( (mt_is_linear() && p_reg_ == back_reg_) || (mt_is_follow_wall() && p_reg_ == mt_reg_) )
 		return p_reg_->isReach();
 	return false;
 }
