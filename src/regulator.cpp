@@ -227,7 +227,7 @@ bool BackRegulator::isReach()
 	if(fabsf(distance) > 0.02f){
 //		ROS_WARN("%s, %d: BackRegulator ");
 		g_bumper_cnt = get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
-		g_cliff_cnt = get_bumper_status() != 0 ? 0 : g_cliff_cnt+1 ;
+		g_cliff_cnt = get_cliff_trig() == 0 ? 0 : g_cliff_cnt+1 ;
 
 		if((g_bumper_cnt == 0 && g_cliff_cnt == 0) || g_bumper_cnt >= 3 || g_cliff_cnt >= 3)
 			return true;

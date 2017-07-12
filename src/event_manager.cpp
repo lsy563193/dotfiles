@@ -28,7 +28,7 @@ int g_bumper_hitted = false;
 bool g_bumper_jam = false;
 int g_bumper_cnt = 0;
 /* OBS */
-//int g_obs_triggered = 0;
+int g_obs_triggered = 0;
 /* Cliff */
 //bool g_cliff_all_triggered = false;
 int g_cliff_triggered = false;
