@@ -215,6 +215,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
 
 	//4 call start slam
+	while (g_slam_error)
+	{
+		// Wait for slam launch.
+		usleep(20000);
+	}
+
 	s_slam = new Slam();
 
 	robot::instance()->setTfReady(false);

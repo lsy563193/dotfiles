@@ -6,6 +6,8 @@
 
 #include "movement.h"
 #include "robot.hpp"
+#include "robotbase.h"
+#include "motion_manage.h"
 
 #include "event_manager.h"
 
@@ -60,6 +62,8 @@ uint8_t g_battery_low_cnt = 0;
 /* Charge Status */
 uint8_t g_charge_detect = 0;
 uint8_t g_charge_detect_cnt = 0;
+/* Slam Error */
+bool g_slam_error = false;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -294,6 +298,12 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_CHARGE_DETECT)
 		}
 
+		/* Slam Error */
+		if (g_slam_error) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_SLAM_ERROR)
+		}
+
 #undef evt_set_status_x
 
 		if (set) {
@@ -432,6 +442,9 @@ void *event_handler_thread(void *data) {
 		/* Charge Status */
 		evt_handle_check_event(EVT_CHARGE_DETECT, charge_detect)
 
+		/* Slam Error */
+		evt_handle_check_event(EVT_SLAM_ERROR, slam_error)
+
 #undef evt_handle_event_x
 
 		pthread_mutex_lock(&event_handler_mtx);
@@ -525,6 +538,8 @@ void event_manager_reset_status(void)
 	/* Charge Status */
 	g_charge_detect = 0;
 	g_charge_detect_cnt = 0;
+	/* Slam Error */
+	g_slam_error = false;
 }
 
 /* Below are the internal functions. */
@@ -532,7 +547,6 @@ void event_manager_reset_status(void)
 /* Bumper */
 void em_default_handle_bumper_all(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 	if (state_now == true && state_last == true) {
 		bumper_all_cnt++;
 
@@ -551,7 +565,6 @@ void em_default_handle_bumper_all(bool state_now, bool state_last)
 
 void em_default_handle_bumper_left(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 	if (state_now == true && state_last == true) {
 		bumper_left_cnt++;
 
@@ -569,7 +582,6 @@ void em_default_handle_bumper_left(bool state_now, bool state_last)
 
 void em_default_handle_bumper_right(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
 
 	if (state_now == true && state_last == true) {
 		bumper_right_cnt++;
@@ -589,35 +601,35 @@ void em_default_handle_bumper_right(bool state_now, bool state_last)
 /* OBS */
 void em_default_handle_obs_front(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void em_default_handle_obs_left(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void em_default_handle_obs_right(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void em_default_handle_obs_wall_left(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void em_default_handle_obs_wall_right(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
@@ -837,6 +849,63 @@ void em_default_handle_charge_detect(bool state_now, bool state_last)
 		ROS_WARN("%s %d: g_charge_detect has been set to %d.", __FUNCTION__, __LINE__, g_charge_detect);
 		g_charge_detect_cnt = 0;
 	}
+}
+
+/* Slam Error */
+void em_default_handle_slam_error(bool state_now, bool state_last)
+{
+	static time_t slam_error_kill_timer_;
+	static uint8_t led_tick_cnt = 5;
+	static uint8_t led_brightness = 0;
+	static bool relaunch = false;
+
+	if (!state_last)
+	{
+		ROS_ERROR("%s %d: Slam process may be dead.", __FUNCTION__, __LINE__);
+		led_tick_cnt = 5;
+		led_brightness = 0;
+		relaunch = false;
+		slam_error_kill_timer_ = time(NULL);
+		system("rosnode kill /slam_karto &");
+	}
+
+	// Wait for 3s to make sure node has been killed.
+	if (time(NULL) - slam_error_kill_timer_ < 1)
+		return;
+
+	if (!relaunch)
+	{
+		system("roslaunch pp karto_slam.launch &");
+		robotbase_restore_slam_correction();
+		MotionManage::s_slam->isMapReady(false);
+		relaunch = true;
+	}
+
+	if (MotionManage::s_slam != nullptr)
+	{
+		if (!MotionManage::s_slam->isMapReady())
+		{
+			MotionManage::s_laser->stopShield();
+			ROS_WARN("Slam not ready yet.");
+			MotionManage::s_slam->enableMapUpdate();
+			usleep(100000);
+			led_tick_cnt--;
+			if (led_tick_cnt >= 0)
+			{
+				led_tick_cnt = 5;
+				led_brightness = 100 - led_brightness;
+				set_led(led_brightness, 0);
+			}
+			return;
+		}
+		else
+			MotionManage::s_laser->startShield();
+	}
+	set_led(100, 0);
+	// Wait for 0.2s to make sure it has process the first scan.
+	usleep(200000);
+	ROS_WARN("Slam restart successed.");
+	g_slam_error = false;
 }
 
 /* Default: empty hanlder */

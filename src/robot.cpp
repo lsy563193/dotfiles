@@ -16,6 +16,7 @@
 #include "laser.hpp"
 #include "figures/segment.h"
 #include "slam.h"
+#include "event_manager.h"
 
 #include "std_srvs/Empty.h"
 using namespace obstacle_detector;
@@ -59,6 +60,9 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	linear_y_ = 0.0;
 	linear_z_ = 0.0;
 
+	correction_x_ = 0.0;
+	correction_y_ = 0.0;
+	correction_yaw_ = 0.0;
 
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 
@@ -240,7 +244,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
-		if(MotionManage::s_slam->isMapReady() && get_error_code() != Error_Code_Slam)
+		if(MotionManage::s_slam->isMapReady() && !g_slam_error)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -257,7 +261,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					set_error_code(Error_Code_Slam);
+					g_slam_error = true;
 					slam_error_count = 0;
 				}
 				return;
@@ -283,7 +287,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam->isMapReady() && get_error_code() != Error_Code_Slam)
+		if(MotionManage::s_slam->isMapReady() && !g_slam_error)
 		{
 			//yaw_ = tf::getYaw(msg->pose.pose.orientation);
 			//wf_position_x_ = odom_pose_x_;
@@ -315,7 +319,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					set_error_code(Error_Code_Slam);
+					g_slam_error = true;
 					slam_error_count = 0;
 				}
 				return;
