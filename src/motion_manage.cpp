@@ -463,6 +463,7 @@ bool MotionManage::initNavigationCleaning(void)
 	else if(g_plan_activated == true)
 	{
 		wav_play(WAV_PLAN_CLEANING_START);
+		g_plan_activated = false;
 	}
 	else{
 		wav_play(WAV_CLEANING_START);
