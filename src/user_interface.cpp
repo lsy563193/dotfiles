@@ -449,8 +449,8 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 				if (robot::instance()->isManualPaused())
 				{
 					clear_manual_pause();
-					g_plan_activated = true;
 				}
+				g_plan_activated = true;
 				temp_mode=Clean_Mode_Navigation;
 				break;
 			}
