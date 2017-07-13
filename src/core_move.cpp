@@ -1340,8 +1340,8 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_status = Status_Cliff_LF;
+//	g_cliff_all_triggered = false;
+//	g_cliff_status = Status_Cliff_LF;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1357,8 +1357,8 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_status = Status_Cliff_RF;
+//	g_cliff_all_triggered = false;
+//	g_cliff_status = Status_Cliff_RF;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1374,8 +1374,8 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_status = Status_Cliff_LR;
+//	g_cliff_all_triggered = false;
+//	g_cliff_status = Status_Cliff_LR;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1390,8 +1390,8 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_status = Status_Cliff_Front;
+//	g_cliff_all_triggered = false;
+//	g_cliff_status = Status_Cliff_Front;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1406,8 +1406,8 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_status = Status_Cliff_Left;
+//	g_cliff_all_triggered = false;
+//	g_cliff_status = Status_Cliff_Left;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1422,8 +1422,8 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_status = Status_Cliff_Right;
+//	g_cliff_all_triggered = false;
+//	g_cliff_status = Status_Cliff_Right;
 
 //	if (!state_last && g_move_back_finished)
 //	{
