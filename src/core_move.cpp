@@ -362,7 +362,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 		if (g_fatal_quit_event
 			|| g_key_clean_pressed || (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_oc_wheel_left || g_oc_wheel_right
-			|| g_bumper_status || g_cliff_status
+			|| g_bumper_triggered || g_cliff_triggered
 			)
 			break;
 
@@ -476,7 +476,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 		}
 
 		if (g_fatal_quit_event || g_key_clean_pressed
-			|| g_bumper_status || g_obs_status || g_cliff_status || g_rcon_triggered
+			|| g_bumper_triggered || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
 			|| (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_remote_spot // It will only be set if robot is not during spot.
 			|| g_remote_direction_keys) // It will only be set if robot is during spot.
@@ -906,7 +906,7 @@ void cm_self_check(void)
 			if (!get_cliff_status())
 			{
 				ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
-				g_cliff_status = 0;
+				g_cliff_triggered = 0;
 				g_cliff_all_triggered = false;
 				g_cliff_cnt = 0;
 				g_cliff_all_cnt = 0;
@@ -936,7 +936,7 @@ void cm_self_check(void)
 			{
 				ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 				g_bumper_jam = false;
-				g_bumper_status = false;
+				g_bumper_triggered = false;
 				g_bumper_cnt = 0;
 			}
 
@@ -1256,7 +1256,7 @@ void cm_event_manager_turn(bool state)
 
 void cm_handle_bumper_all(bool state_now, bool state_last)
 {
-//	g_bumper_status = AllBumperTrig;
+//	g_bumper_triggered = AllBumperTrig;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1272,9 +1272,9 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 
 void cm_handle_bumper_left(bool state_now, bool state_last)
 {
-//	if(g_bumper_status != 0)
+//	if(g_bumper_triggered != 0)
 //		return;
-//	g_bumper_status = LeftBumperTrig;
+//	g_bumper_triggered = LeftBumperTrig;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1289,10 +1289,10 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
 {
-//	if(g_bumper_status != 0)
+//	if(g_bumper_triggered != 0)
 //		return;
 //
-//	g_bumper_status = RightBumperTrig;
+//	g_bumper_triggered = RightBumperTrig;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1309,19 +1309,19 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 void cm_handle_obs_front(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
-//	g_obs_status = Status_Front_OBS;
+//	g_obs_triggered = Status_Front_OBS;
 }
 
 void cm_handle_obs_left(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
-//	g_obs_status = Status_Left_OBS;
+//	g_obs_triggered = Status_Left_OBS;
 }
 
 void cm_handle_obs_right(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
-//	g_obs_status = Status_Right_OBS;
+//	g_obs_triggered = Status_Right_OBS;
 }
 
 /* Cliff */
@@ -1333,7 +1333,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 		g_cliff_all_triggered = true;
 		g_fatal_quit_event = true;
 	}
-	g_cliff_status = Status_Cliff_All;
+	g_cliff_triggered = Status_Cliff_All;
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -1341,7 +1341,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
 //	g_cliff_all_triggered = false;
-//	g_cliff_status = Status_Cliff_LF;
+//	g_cliff_triggered = Status_Cliff_LF;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1358,7 +1358,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
 //	g_cliff_all_triggered = false;
-//	g_cliff_status = Status_Cliff_RF;
+//	g_cliff_triggered = Status_Cliff_RF;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1375,7 +1375,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
 //	g_cliff_all_triggered = false;
-//	g_cliff_status = Status_Cliff_LR;
+//	g_cliff_triggered = Status_Cliff_LR;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1391,7 +1391,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 void cm_handle_cliff_front(bool state_now, bool state_last)
 {
 //	g_cliff_all_triggered = false;
-//	g_cliff_status = Status_Cliff_Front;
+//	g_cliff_triggered = Status_Cliff_Front;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1407,7 +1407,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 void cm_handle_cliff_left(bool state_now, bool state_last)
 {
 //	g_cliff_all_triggered = false;
-//	g_cliff_status = Status_Cliff_Left;
+//	g_cliff_triggered = Status_Cliff_Left;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1423,7 +1423,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 void cm_handle_cliff_right(bool state_now, bool state_last)
 {
 //	g_cliff_all_triggered = false;
-//	g_cliff_status = Status_Cliff_Right;
+//	g_cliff_triggered = Status_Cliff_Right;
 
 //	if (!state_last && g_move_back_finished)
 //	{

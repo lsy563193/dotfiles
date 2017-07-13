@@ -129,14 +129,14 @@ void remote_move(void)
 				if (sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2)) < 0.02f)
 					break;
 
-				if (g_bumper_status)
+				if (g_bumper_triggered)
 				{
 					// Check if still bumper triggered.
 					if(!get_bumper_status())
 					{
 						ROS_INFO("%s %d: Move back for bumper finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;
-						g_bumper_status = false;
+						g_bumper_triggered = false;
 						g_bumper_cnt = 0;
 					}
 					else if (++g_bumper_cnt >= 2)
@@ -160,7 +160,7 @@ void remote_move(void)
 					{
 						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;
-						g_cliff_status = 0;
+						g_cliff_triggered = 0;
 						g_cliff_cnt = 0;
 						g_cliff_all_cnt = 0;
 					}
@@ -349,7 +349,7 @@ void remote_mode_unregister_events(void)
 
 void remote_mode_handle_bumper(bool state_now, bool state_last)
 {
-	g_bumper_status = true;
+	g_bumper_triggered = true;
 
 	if (!state_last && g_move_back_finished)
 	{
@@ -368,14 +368,14 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 		g_cliff_all_triggered = true;
 		g_fatal_quit_event = true;
 	}
-	g_cliff_status = Status_Cliff_All;
+	g_cliff_triggered = Status_Cliff_All;
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void remote_mode_handle_cliff(bool state_now, bool state_last)
 {
-	g_cliff_status = Status_Cliff_All;
+	g_cliff_triggered = Status_Cliff_All;
 
 	if (!state_last && g_move_back_finished)
 	{
