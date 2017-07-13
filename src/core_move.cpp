@@ -690,6 +690,8 @@ int cm_cleaning()
 					wf_break_wall_follow();
 				cm_set_event_manager_handler_state(false);
 			}
+			else if (g_go_home && g_have_seen_charge_stub && cm_go_to_charger())
+				return -1;
 		}
 		else if (is_found == 2)
 			return -1;
@@ -697,41 +699,6 @@ int cm_cleaning()
 
 	return 0;
 }
-
-/*
-void cm_go_home()
-{
-	mt_set(CM_LINEARMOVE);
-
-	while (ros::ok())
-	{
-		ROS_INFO("%s %d: Current Battery level: %d.", __FUNCTION__, __LINE__, get_battery_voltage());
-
-		if (!cm_move_to(g_current_home_cell.X, g_current_home_cell.Y))
-		{
-			if (g_fatal_quit_event || g_key_clean_pressed)
-				return;
-
-			if (get_clean_mode() != Clean_Mode_WallFollow && !g_home_point_old_path.empty())
-			{
-				// If can not reach this point, save this point to new path home point list.
-				Point32_t new_home_point;
-				new_home_point.X = cell_to_count(g_current_home_cell.X);
-				new_home_point.Y = cell_to_count(g_current_home_cell.Y);
-				g_home_point_new_path.push_back(new_home_point);
-				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, g_current_home_cell.X, g_current_home_cell.Y);
-			}
-		}
-		else if (g_have_seen_charge_stub && cm_go_to_charger())
-			return;
-
-		// Resume from go home mode.
-		set_led(100, 0);
-		work_motor_configure();
-
-	}
-}
-*/
 
 /* Statement for cm_go_to_charger(void)
  * return : true -- going to charger has been stopped, either successfully or interrupted.
@@ -744,7 +711,7 @@ bool cm_go_to_charger()
 	cm_unregister_events();
 	go_home();
 	cm_register_events();
-	if (g_fatal_quit_event || g_key_clean_pressed)
+	if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 		return true;
 	return false;
 }
