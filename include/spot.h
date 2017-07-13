@@ -139,7 +139,7 @@ public:
  * @param next target Point 's address
  * @return 1 found ,0 not found
  * */
-	int8_t spotNextTarget(Point32_t &next_point);
+	int8_t spotNextTarget(Point32_t *next_point);
 
 /*
 * @author mengshige1988@qq.com
