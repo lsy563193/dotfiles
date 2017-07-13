@@ -25,7 +25,7 @@ public:
 public:
 	static Point32_t s_target;
 	static Point32_t s_origin;
-	static int16_t s_angle;
+	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;
 };
@@ -131,15 +131,15 @@ private:
 	uint8_t turn_speed_;
 };
 
-class RegulatorProxy:public RegulatorBase{
+class RegulatorManage:public RegulatorBase{
 public:
-	RegulatorProxy(Point32_t origin, Point32_t target);
-	~RegulatorProxy();
+	RegulatorManage(Point32_t origin, Point32_t target);
+	~RegulatorManage();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
 	bool _isStop();
 	bool isReach();
-	void setTarget() { };
+	void setTarget() {p_reg_->setTarget();}
 
 	void switchToNext();
 private:
