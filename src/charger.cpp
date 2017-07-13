@@ -133,13 +133,13 @@ void charge_function(void)
 		}
 		else if (charge_plan_status)
 		{
-			if (charge_plan_status == 2 && (time(NULL) - charge_plan_confirm_time >= 3))
+			if (charge_plan_status == 2 && (time(NULL) - charge_plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Cancel appointment.", __FUNCTION__, __LINE__);
 				wav_play(WAV_CANCEL_APPOINTMENT);
 				charge_plan_status = 0;
 			}
-			else if (charge_plan_status == 1 && (time(NULL) - charge_plan_confirm_time >= 3))
+			else if (charge_plan_status == 1 && (time(NULL) - charge_plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Confirm appointment.", __FUNCTION__, __LINE__);
 				wav_play(WAV_APPOINTMENT_DONE);
@@ -290,8 +290,12 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 			{
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
-				if (!robot::instance()->isManualPaused())
-					set_clean_mode(Clean_Mode_Navigation);
+				if (robot::instance()->isManualPaused())
+				{
+					clear_manual_pause();
+				}
+				g_plan_activated = true;
+				set_clean_mode(Clean_Mode_Navigation);
 				break;
 			}
 		}

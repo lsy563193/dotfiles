@@ -43,7 +43,6 @@ SpotMovement::SpotMovement(float diameter = 1.0)
 		spot_obj = this;
 	spot_diameter_ = diameter;
 	stop_point_ = {0, 0};
-	near_point_ = {0, 0};
 	begin_point_ = {0, 0};
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
@@ -88,7 +87,6 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	}
 	spot_diameter_ = diameter;
 	stop_point_ = {0, 0};
-	near_point_ = {0, 0};
 	begin_point_ = {cur_point.X, cur_point.Y};
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
@@ -102,7 +100,6 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 void SpotMovement::spotDeinit()
 {
 	stop_point_ = {0, 0};
-	near_point_ = {0, 0};
 	begin_point_ = {0, 0};
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
@@ -128,8 +125,8 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 			bp_ = tp_;
 		}
 	}
-
 	ROS_WARN("%s,%d,bumper point (%d,%d)",__FUNCTION__,__LINE__,bp_->X,bp_->Y);
+
 	if (bp_ == targets_.begin())
 	{
 		if (spiral_type_ == SPIRAL_RIGHT_OUT ){
@@ -141,7 +138,6 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 	}
 	else
 	{
-		//bp_--;
 		if ( ( bp_-1 )->X == bp_->X )
 		{
 			if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
@@ -194,15 +190,14 @@ uint8_t SpotMovement::changeSpiralType()
 uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 {
 	int ret = 0;
-	for (tp_ = targets_.begin(); tp_ != targets_.end(); ++tp_)
+	for (tp_ = targets_.begin(); tp_ != targets_.end(); ++tp_)//find stop point in new target list
 	{
 		if(ref_point.X == tp_->X && ref_point.Y == tp_->Y){
 			ret = 1;
-			near_point_ = {tp_->X, tp_->Y};
 			break;
 		}
 	}
-	if(!ret){//if not find then find near point
+	if(!ret){//if not find then find point near to stop point
 		float dist = 0.0;
 		int pos = 0, i = 0;
 		std::vector<Point32_t>::reverse_iterator rtp_;
@@ -212,7 +207,6 @@ uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 			if(absolute(dist - 1.0) < 0.9){
 				ret = 1;
 				pos = (targets_.size() - i);
-				near_point_ = {rtp_->X, rtp_->Y};
 				break;
 			}
 
@@ -228,7 +222,7 @@ uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 	return ret;
 }
 
-int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
+int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 {
 	int8_t ret = 0;
 	SpotType spt = getSpotType();
@@ -236,15 +230,15 @@ int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
 	{
 		/*---init spot move and set begin point---*/
 		if (spt == CLEAN_SPOT){
-			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()});
 			wav_play(WAV_CLEANING_SPOT);
+			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()});
 		}
 		else if( spt == NORMAL_SPOT)
 			spotInit(1.0, {0, 0});
 		/*---generate target ,and  set targets_ ---*/
 		genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
 		ROS_WARN("%s,%d , on spot init, get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
-		next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
+		*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 		ret = 1;
 	}
 	else if (tp_ != targets_.end() && spot_init_ == 1)
@@ -254,22 +248,29 @@ int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
 			resetDirectChange();
 			
 			if (!isStuck())
-			{// not stuck
-				changeSpiralType();
-				setStopPoint(&stop_point_);
-				genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
-				getNearPoint(stop_point_);
-				next_point = {cell_to_count(near_point_.X), cell_to_count(near_point_.Y)};
+			{
+				if(isNextPointChange()){
+					if (tp_+1 != targets_.end())
+						tp_++;
+				}
+				else{
+					changeSpiralType();
+					setStopPoint(&stop_point_);
+					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
+					getNearPoint(stop_point_);
+				}
+				*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
+				setNextPointChange();
 				ret = 1;
-				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ", __FUNCTION__, __LINE__, near_point_.X,
-								 near_point_.Y);
+				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X,
+								 tp_->Y);
 			}
 			else// stuck
 			{
 				resetStuck();
 				ROS_WARN("%s,%d , is stucked, go back to begin point (%d %d) ", __FUNCTION__, __LINE__, begin_point_.X,
 								 begin_point_.Y);
-				next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
+				*next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
 				ret = (spt == CLEAN_SPOT)?1:0;
 				spotDeinit();//clear all spot variable
 				sleep(1);
@@ -277,7 +278,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
 		}
 		else//no bumper/obs detect
 		{
-			//tp_++;
+			resetNextPointChange();
 			if ((tp_+1) != targets_.end())
 			{
 				uint8_t in_row=0,in_col=0;
@@ -305,7 +306,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
 				}
 
 				ROS_WARN("%s,%d , get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
-				next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
+				*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 				ret = 1;
 			}
 			else if ((tp_+1) == targets_.end())
@@ -314,7 +315,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
 				{ //end spot movement
 					ROS_WARN("%s,%d , spot ending, ending point (%d %d) ", __FUNCTION__, __LINE__, begin_point_.X,
 									 begin_point_.Y);
-					next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};// go back to begin point
+					*next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};// go back to begin point
 					if (spt == CLEAN_SPOT){	ret = 1;}//clean_spot return 1
 					else {ret = 0;} //normal_spot return 0
 					spotDeinit();//clear all spot variable
@@ -326,7 +327,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
 					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
 					ROS_WARN("%s,%d , %s ,set spiral in, get next point (%d %d) ", __FUNCTION__, __LINE__,
 									 (spiral_type_ == SPIRAL_RIGHT_OUT) ? "right in" : " left in ", tp_->X, tp_->Y);
-					next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
+					*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 					ret = 1;
 				}
 

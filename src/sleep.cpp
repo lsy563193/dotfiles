@@ -173,6 +173,7 @@ void sleep_handle_remote_plan(bool state_now, bool state_last)
 		}
 		else
 		{
+			g_plan_activated = true;
 			set_clean_mode(Clean_Mode_Navigation);
 			set_main_pwr_byte(Clean_Mode_Navigation);
 		}
