@@ -805,7 +805,7 @@ void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 bool RegulatorManage::isReach()
 {
-	if ( (mt_is_linear() && p_reg_ == back_reg_) || (mt_is_follow_wall() && p_reg_ == mt_reg_) )
+	if ( (mt_is_linear() && (p_reg_ == back_reg_ || p_reg_ == mt_reg_)) || (mt_is_follow_wall() && p_reg_ == mt_reg_) )
 		return p_reg_->isReach();
 	return false;
 }
