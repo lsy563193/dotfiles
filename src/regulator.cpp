@@ -558,23 +558,23 @@ bool FollowWallRegulator::isReach()
 bool FollowWallRegulator::isSwitch()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-	if(/*! g_bumper_hitted &&*/ get_bumper_status()){
+	if( g_bumper_hitted || get_bumper_status()){
 		g_bumper_hitted = get_bumper_status();
 		g_turn_angle = bumper_turn_angle();
 		return true;
 	}
-	if(/*! g_cliff_triggered &&*/ get_cliff_trig()){
+	if( g_cliff_triggered || get_cliff_trig()){
 		g_cliff_triggered = get_cliff_trig();
 		g_turn_angle = cliff_turn_angle();
 		return true;
 	}
-	if(/*! g_rcon_triggered && */get_rcon_trig()){
+	if( g_rcon_triggered || get_rcon_trig()){
 		g_rcon_triggered = get_rcon_status();
 		g_turn_angle = rcon_turn_angle();
 		g_straight_distance = 80;
 		return true;
 	}
-	if(/*! g_obs_triggered && */ get_front_obs() >= get_front_obs_value()){
+	if( g_obs_triggered || get_front_obs() >= get_front_obs_value()){
 		g_obs_triggered = 1;
 		g_turn_angle = obs_turn_angle();
 		g_wall_distance = Wall_High_Limit;
