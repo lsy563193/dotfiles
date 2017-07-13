@@ -64,7 +64,8 @@ uint8_t g_charge_detect = 0;
 uint8_t g_charge_detect_cnt = 0;
 /* Slam Error */
 bool g_slam_error = false;
-
+/* Plan */
+bool g_plan_activated = false;
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
 static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
