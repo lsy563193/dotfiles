@@ -851,7 +851,7 @@ void RegulatorManage::switchToNext()
 			ROS_WARN("%s %d: From mt_reg_ to back_reg_.", __FUNCTION__, __LINE__);
 		}
 	}
-	ROS_WARN("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d)",g_obs_triggered, g_rcon_triggered, g_bumper_hitted, g_cliff_triggered);
+	ROS_WARN("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_hitted, g_cliff_triggered);
 	setTarget();
 	g_obs_triggered = g_rcon_triggered = 0;
 	g_bumper_hitted = g_cliff_triggered = 0;
