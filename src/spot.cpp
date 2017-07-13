@@ -236,8 +236,8 @@ int8_t SpotMovement::spotNextTarget(Point32_t &next_point)
 	{
 		/*---init spot move and set begin point---*/
 		if (spt == CLEAN_SPOT){
-			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()});
 			wav_play(WAV_CLEANING_SPOT);
+			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()});
 		}
 		else if( spt == NORMAL_SPOT)
 			spotInit(1.0, {0, 0});
