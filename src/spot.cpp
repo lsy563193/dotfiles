@@ -43,7 +43,6 @@ SpotMovement::SpotMovement(float diameter = 1.0)
 		spot_obj = this;
 	spot_diameter_ = diameter;
 	stop_point_ = {0, 0};
-	near_point_ = {0, 0};
 	begin_point_ = {0, 0};
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
@@ -88,7 +87,6 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	}
 	spot_diameter_ = diameter;
 	stop_point_ = {0, 0};
-	near_point_ = {0, 0};
 	begin_point_ = {cur_point.X, cur_point.Y};
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
@@ -102,7 +100,6 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 void SpotMovement::spotDeinit()
 {
 	stop_point_ = {0, 0};
-	near_point_ = {0, 0};
 	begin_point_ = {0, 0};
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
@@ -128,8 +125,8 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 			bp_ = tp_;
 		}
 	}
-
 	ROS_WARN("%s,%d,bumper point (%d,%d)",__FUNCTION__,__LINE__,bp_->X,bp_->Y);
+
 	if (bp_ == targets_.begin())
 	{
 		if (spiral_type_ == SPIRAL_RIGHT_OUT ){
@@ -141,7 +138,6 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 	}
 	else
 	{
-		//bp_--;
 		if ( ( bp_-1 )->X == bp_->X )
 		{
 			if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
@@ -194,15 +190,14 @@ uint8_t SpotMovement::changeSpiralType()
 uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 {
 	int ret = 0;
-	for (tp_ = targets_.begin(); tp_ != targets_.end(); ++tp_)
+	for (tp_ = targets_.begin(); tp_ != targets_.end(); ++tp_)//find stop point in new target list
 	{
 		if(ref_point.X == tp_->X && ref_point.Y == tp_->Y){
 			ret = 1;
-			near_point_ = {tp_->X, tp_->Y};
 			break;
 		}
 	}
-	if(!ret){//if not find then find near point
+	if(!ret){//if not find then find point near to stop point
 		float dist = 0.0;
 		int pos = 0, i = 0;
 		std::vector<Point32_t>::reverse_iterator rtp_;
@@ -212,7 +207,6 @@ uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 			if(absolute(dist - 1.0) < 0.9){
 				ret = 1;
 				pos = (targets_.size() - i);
-				near_point_ = {rtp_->X, rtp_->Y};
 				break;
 			}
 
@@ -254,15 +248,22 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 			resetDirectChange();
 			
 			if (!isStuck())
-			{// not stuck
-				changeSpiralType();
-				setStopPoint(&stop_point_);
-				genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
-				getNearPoint(stop_point_);
-				*next_point = {cell_to_count(near_point_.X), cell_to_count(near_point_.Y)};
+			{
+				if(isNextPointChange()){
+					if (tp_+1 != targets_.end())
+						tp_++;
+				}
+				else{
+					changeSpiralType();
+					setStopPoint(&stop_point_);
+					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
+					getNearPoint(stop_point_);
+				}
+				*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
+				setNextPointChange();
 				ret = 1;
-				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ", __FUNCTION__, __LINE__, near_point_.X,
-								 near_point_.Y);
+				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X,
+								 tp_->Y);
 			}
 			else// stuck
 			{
@@ -277,6 +278,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 		}
 		else//no bumper/obs detect
 		{
+			resetNextPointChange();
 			if ((tp_+1) != targets_.end())
 			{
 				uint8_t in_row=0,in_col=0;

@@ -47,8 +47,6 @@ private:
 
 	Point32_t stop_point_;
 
-	Point32_t near_point_;
-
 	Point32_t begin_point_;
 
 	SpotType st_;
@@ -66,6 +64,8 @@ private:
 	uint8_t sout_od_cnt_;//spiral out obs detect count
 
 	uint8_t sin_od_cnt_;//spiral in obs detect count
+
+	uint8_t np_chg_;//next point change
 
 public:
 
@@ -191,6 +191,15 @@ public:
 
 	void resetSpotType(void)
 	{ st_ = NO_SPOT; }
+
+	void setNextPointChange(void)
+	{np_chg_ = 1;}
+
+	void resetNextPointChange(void)
+	{np_chg_ = 0;}
+
+	uint8_t isNextPointChange(void)
+	{return np_chg_;}
 };
 
 /*
