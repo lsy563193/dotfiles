@@ -45,7 +45,7 @@
 std::vector<Pose16_t> g_wf_cell;
 int g_isolate_count = 0;
 // This list is for storing the position that robot sees the charger stub.
-extern std::list<Point32_t> g_home_point_old_path;
+extern std::list<Cell_t> g_home_point_old_path;
 extern bool g_from_station;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
@@ -236,9 +236,7 @@ static void wf_mark_home_point(void)
 	//path_planning_initialize(&, &g_home_point_old_path.front().Y);
 	int32_t x, y;
 	int i, j;
-	std::list<Point32_t> WF_Home_Point;
-
-	WF_Home_Point = g_home_point_old_path;
+	std::list<Cell_t> WF_Home_Point = g_home_point_old_path;
 
 	while (!WF_Home_Point.empty())
 	{
@@ -253,7 +251,7 @@ static void wf_mark_home_point(void)
 		{
 			for (j = -2; j <= 2; j++)
 			{
-				map_set_cell(MAP, cell_to_count(x + i), cell_to_count(y + j), CLEANED);//0, -1
+				map_set_cell(MAP, x + i, y + j, CLEANED);//0, -1
 				//ROS_INFO("%s %d: x + i = %d, y + j = %d", __FUNCTION__, __LINE__, x + i, y + j);
 			}
 		}
