@@ -424,7 +424,7 @@ int32_t get_right_obs(void);
 
 uint8_t get_bumper_status(void);
 
-uint8_t get_cliff_trig(void);
+uint8_t get_cliff_status(void);
 
 int get_rcon_trig(void);
 

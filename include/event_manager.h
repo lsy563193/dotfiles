@@ -42,14 +42,14 @@
  */
 extern bool g_fatal_quit_event;
 /* Bumper */
-extern int g_bumper_hitted;
+extern int g_bumper_status;
 extern bool g_bumper_jam;
 extern int g_bumper_cnt;
 /* OBS */
-extern int g_obs_triggered;
+extern int g_obs_status;
 /* Cliff */
 extern bool g_cliff_all_triggered;
-extern int g_cliff_triggered;
+extern int g_cliff_status;
 extern bool g_cliff_jam;
 extern uint8_t g_cliff_all_cnt;
 extern int g_cliff_cnt;

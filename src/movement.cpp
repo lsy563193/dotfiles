@@ -676,7 +676,7 @@ uint8_t get_bumper_status(void)
 	return Temp_Status;
 }
 
-uint8_t get_cliff_trig(void)
+uint8_t get_cliff_status(void)
 {
 	uint8_t Cliff_Status = 0x00;
 	int16_t cl, cr, cf;
@@ -704,7 +704,7 @@ uint8_t get_cliff_trig(void)
 }
 
 
-int get_rcon()
+int get_rcon_trig_()
 {
 	enum {left,right,fl,fr,fl2,fr2};
 	static int8_t cnt[6]={0,0,0,0,0,0};
@@ -757,7 +757,7 @@ int get_rcon_trig(void)
 			return 0;
 		}
 
-	return get_rcon();
+	return get_rcon_trig_();
 }
 
 uint8_t cliff_escape(void)
@@ -766,7 +766,7 @@ uint8_t cliff_escape(void)
 	uint8_t cc;
 	while (ros::ok())
 	{
-		cc = get_cliff_trig();
+		cc = get_cliff_status();
 		if (cc)
 		{
 			if (cc == (Status_Cliff_Left | Status_Cliff_Right | Status_Cliff_Front))
@@ -1716,7 +1716,7 @@ uint8_t stop_event(void)
 #endif
 			g_stop_event_status = 2;
 		}
-		if (get_cliff_trig() == 0x07)
+		if (get_cliff_status() == 0x07)
 		{
 			ROS_WARN("Cliff triggered.");
 			g_stop_event_status = 3;
@@ -2436,7 +2436,7 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 	// This decides whether robot should stop when left cliff triggered.
 	bool right_cliff_triggered = false;
 
-	if (get_cliff_trig() & Status_Cliff_Right)
+	if (get_cliff_status() & Status_Cliff_Right)
 	{
 		right_cliff_triggered = true;
 	}
@@ -2473,7 +2473,7 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 			return;
 		}
 		if (is_turn_remote())return;
-		if (!right_cliff_triggered && (get_cliff_trig() & Status_Cliff_Right))
+		if (!right_cliff_triggered && (get_cliff_status() & Status_Cliff_Right))
 		{
 			stop_brifly();
 			return;
@@ -2497,7 +2497,7 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 	// This decides whether robot should stop when left cliff triggered.
 	bool left_cliff_triggered = false;
 
-	if (get_cliff_trig() & Status_Cliff_Left)
+	if (get_cliff_status() & Status_Cliff_Left)
 	{
 		left_cliff_triggered = true;
 	}
@@ -2534,7 +2534,7 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 			return;
 		}
 		if (is_turn_remote())return;
-		if (!left_cliff_triggered && (get_cliff_trig() & Status_Cliff_Left))
+		if (!left_cliff_triggered && (get_cliff_status() & Status_Cliff_Left))
 		{
 			stop_brifly();
 			return;

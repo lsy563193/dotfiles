@@ -24,14 +24,14 @@
  */
 bool g_fatal_quit_event = false;
 /* Bumper */
-int g_bumper_hitted = false;
+int g_bumper_status = false;
 bool g_bumper_jam = false;
 int g_bumper_cnt = 0;
 /* OBS */
-int g_obs_triggered = 0;
+int g_obs_status = 0;
 /* Cliff */
 bool g_cliff_all_triggered = false;
-int g_cliff_triggered = 0;
+int g_cliff_status = 0;
 bool g_cliff_jam = false;
 uint8_t g_cliff_all_cnt = 0;
 int g_cliff_cnt = 0;
@@ -162,25 +162,25 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Cliff */
-		if (get_cliff_trig() == Status_Cliff_All) {
+		if (get_cliff_status() == Status_Cliff_All) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL)
-		} else if (get_cliff_trig() == (Status_Cliff_Front | Status_Cliff_Left)) {
+		} else if (get_cliff_status() == (Status_Cliff_Front | Status_Cliff_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_LEFT)
-		} else if (get_cliff_trig() == (Status_Cliff_Front | Status_Cliff_Right)) {
+		} else if (get_cliff_status() == (Status_Cliff_Front | Status_Cliff_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT)
-		} else if (get_cliff_trig() == (Status_Cliff_Left | Status_Cliff_Right)) {
+		} else if (get_cliff_status() == (Status_Cliff_Left | Status_Cliff_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT)
-		} else if (get_cliff_trig() == (Status_Cliff_Front)) {
+		} else if (get_cliff_status() == (Status_Cliff_Front)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT)
-		} else if (get_cliff_trig() == (Status_Cliff_Left)) {
+		} else if (get_cliff_status() == (Status_Cliff_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT)
-		} else if (get_cliff_trig() == (Status_Cliff_Right)) {
+		} else if (get_cliff_status() == (Status_Cliff_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_RIGHT)
 		}
@@ -502,14 +502,14 @@ void event_manager_reset_status(void)
 {
 	g_fatal_quit_event = false;
 	/* Bumper */
-	g_bumper_hitted = false;
+	g_bumper_status = false;
 	g_bumper_jam = false;
 	g_bumper_cnt = 0;
 	/* OBS */
-//	g_obs_triggered = false;
+//	g_obs_status = false;
 	/* Cliff */
 	g_cliff_all_triggered = false;
-	g_cliff_triggered = 0;
+	g_cliff_status = 0;
 	g_cliff_jam = false;
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;

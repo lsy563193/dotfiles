@@ -583,13 +583,13 @@ uint8_t Random_Dirt_Event(void)
 				set_dir_right();
 				set_wheel_speed(25, 10);
 
-				if (get_bumper_status() || get_cliff_trig() || spot_obs_status())
+				if (get_bumper_status() || get_cliff_status() || spot_obs_status())
 				{
 
 					if (get_bumper_status())
 					{
 						random_back();
-					} else if (get_cliff_trig())
+					} else if (get_cliff_status())
 					{
 						move_back();
 					}
@@ -619,7 +619,7 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = SPIRAL_RIGHT_IN;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || spot_obs_status())
+				if (get_bumper_status() || get_cliff_status() || spot_obs_status())
 				{
 
 					if (get_left_wall_step() < 3000)
@@ -629,7 +629,7 @@ uint8_t Random_Dirt_Event(void)
 					if (get_bumper_status())
 					{
 						random_back();
-					} else if (get_cliff_trig())
+					} else if (get_cliff_status())
 					{
 						move_back();
 					}
@@ -662,7 +662,7 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || spot_obs_status())
+				if (get_bumper_status() || get_cliff_status() || spot_obs_status())
 				{
 
 					if (get_left_wall_step() < 3000)
@@ -672,7 +672,7 @@ uint8_t Random_Dirt_Event(void)
 					if (get_bumper_status())
 					{
 						random_back();
-					} else if (get_cliff_trig())
+					} else if (get_cliff_status())
 					{
 						move_back();
 					}
@@ -705,7 +705,7 @@ uint8_t Random_Dirt_Event(void)
 						Move_Style = SPIRAL_LEFT_IN;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || spot_obs_status())
+				if (get_bumper_status() || get_cliff_status() || spot_obs_status())
 				{
 
 					if (get_left_wall_step() < 3000)
@@ -715,7 +715,7 @@ uint8_t Random_Dirt_Event(void)
 					if (get_bumper_status())
 					{
 						random_back();
-					} else if (get_cliff_trig())
+					} else if (get_cliff_status())
 					{
 						move_back();
 					}
@@ -748,7 +748,7 @@ uint8_t Random_Dirt_Event(void)
 						Radius -= 6;
 					}
 				}
-				if (get_bumper_status() || get_cliff_trig() || spot_obs_status())
+				if (get_bumper_status() || get_cliff_status() || spot_obs_status())
 				{
 
 					if (get_left_wall_step() < 3000)
@@ -758,7 +758,7 @@ uint8_t Random_Dirt_Event(void)
 					if (get_bumper_status())
 					{
 						random_back();
-					} else if (get_cliff_trig())
+					} else if (get_cliff_status())
 					{
 						move_back();
 					}

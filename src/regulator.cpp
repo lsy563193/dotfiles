@@ -22,32 +22,43 @@ int jam=0;
 
 void cm_block_charger_stub()
 {
-	enum {left,right,fl,fr,fl2,fr2};
+	enum {
+		left, right, fl, fr, fl2, fr2
+	};
 	ROS_WARN("%s %d: Robot meet charger stub, stop and mark the block.", __FUNCTION__, __LINE__);
-	int dx=0,dy=0;
-	int dx2=0,dy2=0;
-	switch (g_rcon_triggered-1)
+	int dx = 0, dy = 0;
+	int dx2 = 0, dy2 = 0;
+	switch (g_rcon_triggered - 1)
 	{
-		case left: dx = 1, dy = 2;
+		case left:
+			dx = 1, dy = 2;
 			break;
-		case fl2: dx = 1,dy = 2; dx2 = 2,dy2 = 1;
+		case fl2:
+			dx = 1, dy = 2;
+			dx2 = 2, dy2 = 1;
 			break;
 		case fl:
-		case fr: dx = 0, dy = 2;
+		case fr:
+			dx = 2, dy = 0;
 			break;
-		case fr2: dx = 1, dy = -2; dx2 = 2, dy2 = -1;
+		case fr2:
+			dx = 1, dy = -2;
+			dx2 = 2, dy2 = -1;
 			break;
-		case right: dx = -2, dy = 1;
+		case right:
+			dx = 1, dy = -2;
 			break;
 	}
-	if(get_clean_mode() != Clean_Mode_WallFollow)
-	{
-		map_set_cell(MAP, CELL_SIZE * dx, CELL_SIZE * dy, BLOCKED_BUMPER);
-		if (dx2 != 0)
-			map_set_cell(MAP, CELL_SIZE * dx2, CELL_SIZE * dy2, BLOCKED_BUMPER);
+	int32_t x,y;
+	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
+	if (dx2 != 0){
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
+		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
 	}
+//	stop_brifly();
+//	sleep(5);
 	path_set_home(map_get_curr_cell());
-
 }
 
 static int16_t bumper_turn_angle()
@@ -160,15 +171,15 @@ static int16_t laser_turn_angle()
 {
 	stop_brifly();
 
-	if (g_obs_triggered != 0)
+	if (g_obs_status != 0)
 	{
 		ROS_WARN("front obs trigger");
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
 	}
-	else if(g_bumper_hitted != 0)
+	else if(g_bumper_status != 0)
 	{
 		int angle_min, angle_max;
-		if (mt_is_left() ^ g_bumper_hitted == LeftBumperTrig)
+		if (mt_is_left() ^ g_bumper_status == LeftBumperTrig)
 		{
 			angle_min = 450;
 			angle_max = 1800;
@@ -179,11 +190,11 @@ static int16_t laser_turn_angle()
 			angle_max = 900;
 		}
 
-		if (g_bumper_hitted == AllBumperTrig)
+		if (g_bumper_status == AllBumperTrig)
 			return _laser_turn_angle(90, 270, 900, 1800);
-		else if (g_bumper_hitted == RightBumperTrig)
+		else if (g_bumper_status == RightBumperTrig)
 			return _laser_turn_angle(90, 180, angle_min, angle_max);
-		else if (g_bumper_hitted == LeftBumperTrig)
+		else if (g_bumper_status == LeftBumperTrig)
 			return _laser_turn_angle(180, 270, angle_min, angle_max);
 	}
 
@@ -229,7 +240,7 @@ bool BackRegulator::isReach()
 	if(fabsf(distance) > 0.02f){
 //		ROS_WARN("%s, %d: BackRegulator ");
 		g_bumper_cnt = get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
-		g_cliff_cnt = get_cliff_trig() == 0 ? 0 : g_cliff_cnt+1 ;
+		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
 
 		if((g_bumper_cnt == 0 && g_cliff_cnt == 0) || g_bumper_cnt >= 3 || g_cliff_cnt >= 3)
 			return true;
@@ -286,10 +297,10 @@ bool TurnRegulator::isReach()
 bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
-	if(isReach() ||(! g_bumper_hitted  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_trig()))
+	if(isReach() ||(! g_bumper_status  && get_bumper_status()) || (! g_cliff_status && get_cliff_status()))
 	{
-		g_bumper_hitted = get_bumper_status();
-		g_cliff_triggered = get_cliff_trig();
+		g_bumper_status = get_bumper_status();
+		g_cliff_status = get_cliff_status();
 		reset_sp_turn_count();
 		reset_wheel_step();
 		return true;
@@ -313,7 +324,7 @@ void TurnRegulator::setTarget()
 void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	auto diff = ranged_angle(s_target_angle - gyro_get_angle());
-	ROS_WARN("TurnRegulator::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, gyro_get_angle());
+//	ROS_WARN("TurnRegulator::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, gyro_get_angle());
 	(diff >= 0) ? set_dir_left() : set_dir_right();
 
 //	ROS_INFO("TurnRegulator::adjustSpeed");
@@ -377,12 +388,12 @@ bool LinearRegulator::isReach()
 
 bool LinearRegulator::isSwitch()
 {
-	if ((! g_bumper_hitted && get_bumper_status())
-			|| (! g_cliff_triggered && get_cliff_trig()))
+	if ((! g_bumper_status && get_bumper_status())
+			|| (! g_cliff_status && get_cliff_status()))
 	{
-		ROS_WARN("%s, %d:LinearRegulator g_bumper_hitted || g_cliff_triggered.", __FUNCTION__, __LINE__);
-		g_bumper_hitted = get_bumper_status();
-		g_cliff_triggered = get_cliff_trig();
+		ROS_WARN("%s, %d:LinearRegulator g_bumper_status || g_cliff_status.", __FUNCTION__, __LINE__);
+		g_bumper_status = get_bumper_status();
+		g_cliff_status = get_cliff_status();
 
 		ROS_WARN("%s,%d ,bumper hitted",__FUNCTION__,__LINE__);
 		SpotType spt = SpotMovement::instance() -> getSpotType();
@@ -401,12 +412,19 @@ bool LinearRegulator::isSwitch()
 
 bool LinearRegulator::_isStop()
 {
-	if (_get_obs_value() || get_rcon_status())
-	{
-		if(get_rcon_status()) cm_block_charger_stub();
-		g_obs_triggered = _get_obs_value();
+	auto rcon_tmp = get_rcon_trig();
+	if(rcon_tmp != 0)
+	ROS_WARN("rcon_tmp(%d)",rcon_tmp);
 
-		ROS_WARN("%s, %d: g_obs_triggered || g_rcon_triggered.", __FUNCTION__, __LINE__);
+	if (_get_obs_value() || rcon_tmp)
+	{
+		g_obs_status = _get_obs_value();
+		if(rcon_tmp){
+			g_rcon_triggered = rcon_tmp;
+			cm_block_charger_stub();
+		}
+
+		ROS_WARN("%s, %d: g_obs_status || g_rcon_triggered.", __FUNCTION__, __LINE__);
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 			SpotMovement::instance()->setDirectChange();
@@ -558,24 +576,26 @@ bool FollowWallRegulator::isReach()
 bool FollowWallRegulator::isSwitch()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-	if( g_bumper_hitted || get_bumper_status()){
-		g_bumper_hitted = get_bumper_status();
+	if( g_bumper_status || get_bumper_status()){
+		g_bumper_status = get_bumper_status();
 		g_turn_angle = bumper_turn_angle();
 		return true;
 	}
-	if( g_cliff_triggered || get_cliff_trig()){
-		g_cliff_triggered = get_cliff_trig();
+	if( g_cliff_status || get_cliff_status()){
+		g_cliff_status = get_cliff_status();
 		g_turn_angle = cliff_turn_angle();
 		return true;
 	}
-	if( g_rcon_triggered || get_rcon_trig()){
-		g_rcon_triggered = get_rcon_status();
+	auto rcon_tmp = get_rcon_trig();
+	ROS_WARN("rcon_tmp(%d)",rcon_tmp);
+	if( g_rcon_triggered || rcon_tmp){
+		g_rcon_triggered = rcon_tmp;
 		g_turn_angle = rcon_turn_angle();
 		g_straight_distance = 80;
 		return true;
 	}
-	if( g_obs_triggered || get_front_obs() >= get_front_obs_value()){
-		g_obs_triggered = 1;
+	if( g_obs_status || get_front_obs() >= get_front_obs_value()){
+		g_obs_status = 1;
 		g_turn_angle = obs_turn_angle();
 		g_wall_distance = Wall_High_Limit;
 		return true;
@@ -828,25 +848,25 @@ void RegulatorManage::switchToNext()
 {
 	if (p_reg_ == turn_reg_)
 	{
-		if(g_bumper_hitted || g_cliff_triggered)
+		if(g_bumper_status || g_cliff_status)
 			p_reg_ = back_reg_;
-		else /*if(g_obs_triggered || g_rcon_triggered)*/
+		else /*if(g_obs_status || g_rcon_triggered)*/
 			p_reg_ = mt_reg_;
 	}
 	else if (p_reg_ == back_reg_)
 		p_reg_ = turn_reg_;
 	else if (p_reg_ == mt_reg_)
 	{
-		if (g_obs_triggered || g_rcon_triggered)
+		if (g_obs_status || g_rcon_triggered)
 			p_reg_ = turn_reg_;
-		else if (g_bumper_hitted || g_cliff_triggered)
+		else if (g_bumper_status || g_cliff_status)
 			p_reg_ = back_reg_;
 	}
-	ROS_WARN("g_obs_triggered(%d)",g_obs_triggered);
+	ROS_WARN("g_obs_status(%d)",g_obs_status);
 	ROS_WARN("g_rcon_triggered(%d)",g_rcon_triggered);
-	ROS_WARN("g_bumper_hitted(%d)",g_bumper_hitted);
-	ROS_WARN("g_cliff_triggered(%d)",g_cliff_triggered);
+	ROS_WARN("g_bumper_status(%d)",g_bumper_status);
+	ROS_WARN("g_cliff_status(%d)",g_cliff_status);
 	setTarget();
-	g_obs_triggered = g_rcon_triggered = 0;
-	g_bumper_hitted = g_cliff_triggered = 0;
+	g_obs_status = g_rcon_triggered = 0;
+	g_bumper_status = g_cliff_status = 0;
 }

@@ -428,7 +428,7 @@ void go_to_charger(void)
 		/*-------around_chargestation main while-------*/
 		else if(g_go_home_state_now == AROUND_CHARGER_STATION)
 		{
-			if(g_cliff_triggered)
+			if(g_cliff_status)
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				g_cliff_cnt++;
@@ -885,7 +885,7 @@ void go_to_charger(void)
 					continue;
 				}
 			}
-			if(g_cliff_triggered)
+			if(g_cliff_status)
 			{
 				target_distance = 0.03;
 				g_move_back_finished = false;
@@ -2203,7 +2203,7 @@ bool go_home_check_move_back_finish(float target_distance)
 		return false;
 	else
 	{
-		if(g_cliff_triggered && get_cliff_trig())
+		if(g_cliff_status && get_cliff_status())
 		{
 			if(++g_cliff_cnt>2)
 				g_cliff_jam = true;
@@ -2211,9 +2211,9 @@ bool go_home_check_move_back_finish(float target_distance)
 		}
 		else
 		{
-			if (g_cliff_triggered)
+			if (g_cliff_status)
 				ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
-			g_cliff_triggered = 0;
+			g_cliff_status = 0;
 			g_cliff_cnt = 0;
 		}
 
@@ -2420,7 +2420,7 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 		g_cliff_all_triggered = true;
 		g_fatal_quit_event = true;
 	}
-	g_cliff_triggered = Status_Cliff_All;
+	g_cliff_status = Status_Cliff_All;
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -2432,7 +2432,7 @@ void go_home_handle_cliff(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
-		g_cliff_triggered = Status_Cliff_All;
+		g_cliff_status = Status_Cliff_All;
 	}
 }
 
