@@ -83,6 +83,8 @@ extern uint8_t g_charge_detect;
 extern uint8_t g_charge_detect_cnt;
 /* Slam Error */
 extern bool g_slam_error;
+/* Plan */
+extern bool g_plan_activated;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,

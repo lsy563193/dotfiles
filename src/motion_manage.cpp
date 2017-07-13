@@ -460,6 +460,10 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_WARN("Restore from manual pause");
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
+	else if(g_plan_activated == true)
+	{
+		wav_play(WAV_PLAN_CLEANING_START);
+	}
 	else{
 		wav_play(WAV_CLEANING_START);
 	}
