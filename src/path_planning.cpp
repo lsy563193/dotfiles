@@ -45,6 +45,11 @@
 #include "movement.h"
 
 #include "wav.h"
+
+#define NO_TARGET_LEFT 0
+#define TARGET_FOUND 1
+#define TRAPPED 2
+
 using namespace std;
 
 typedef struct {
@@ -58,8 +63,13 @@ uint8_t	g_first_start = 0;
 
 uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between current pos. & dest. */
 
+// This list is for storing the position that robot sees the charger stub.
+std::list <Cell_t> g_home_point_old_path;
+std::list <Cell_t> g_home_point_new_path;
 
-int16_t g_home_x, g_home_y;
+Cell_t g_current_home_cell;
+
+int16_t g_home_x = 0, g_home_y = 0;
 
 Cell_t g_cell_history[5];
 const Cell_t& g_curr = g_cell_history[0];
@@ -74,17 +84,14 @@ uint8_t g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
-void path_planning_initialize(int32_t *x, int32_t *y)
+//void path_planning_initialize(int32_t *x, int32_t *y)
+void path_planning_initialize(Cell_t cell)
 {
 	int16_t i;
 
 	/* Save the starting point as home. */
-	g_home_x = count_to_cell(*x);
-	g_home_y = count_to_cell(*y);
-
 	for ( i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
-		g_trapped_cell[i].X = g_home_x;
-		g_trapped_cell[i].Y = g_home_y;
+		g_trapped_cell[i] = cell;
 	}
 	g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
@@ -118,7 +125,7 @@ void path_planning_initialize(int32_t *x, int32_t *y)
 
 #endif
 
-	map_set_cell(MAP, *x, *y, CLEANED);
+	map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
 
 	/* Set the starting point as cleaned. */
 	map_set_cell(MAP, cell_to_count(-1), cell_to_count(-1), CLEANED);
@@ -1050,7 +1057,9 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
 	Cell_t next = g_curr;
 	Cell_t target = next;
-	if(get_clean_mode() == Clean_Mode_WallFollow){
+
+	extern bool g_go_home;
+	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
 		if(mt_is_linear()){
 			if(g_curr != map_point_to_cell(*next_point)){
@@ -1060,13 +1069,13 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			}else{
 				ROS_INFO("reach 8m, go_home.");
 				wf_clear();
-				return 0;
+				g_go_home = true;
 			}
 		} else {
 			if(wf_is_go_home()) {
 				ROS_INFO("follow wall finish");
 				wf_clear();
-				return 0;
+				g_go_home = true;
 
 			} else {
 				ROS_INFO("CM_LINEARMOVE");
@@ -1087,18 +1096,17 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 		*target_point = *next_point;
         return ret;
 	}
-	else if(get_clean_mode() == Clean_Mode_Navigation) {
+	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
 		auto is_found = path_lane_is_cleaned(next);
 		target = next;
 		if (!is_found)
 		{
 			auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
 			if (ret == 0)
-				return 0;
+				g_go_home = true;
 			if (ret == -2){
 				if(g_trapped_mode == 0){
 					g_trapped_mode = 1;
-					wav_play(WAV_CLEANING_WALL_FOLLOW);
 					mt_set(CM_FOLLOW_LEFT_WALL);
 					extern uint32_t g_escape_trapped_timer;
 					g_escape_trapped_timer = time(NULL);
@@ -1109,6 +1117,13 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			}
 		}
 	}
+
+	if (g_go_home)
+	{
+		if (path_get_home_target(next, target) == NO_TARGET_LEFT)
+			return 0;
+	}
+
 	//found ==1
 	*next_point = map_cell_to_point(next);
 	*target_point = map_cell_to_point(target);
@@ -1138,6 +1153,124 @@ Cell_t *path_escape_get_trapped_cell()
 	return g_trapped_cell;
 }
 
+void path_set_home(Cell_t cell)
+{
+	bool found = false;
+
+	ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, cell.X, cell.Y);
+
+	for (list<Cell_t>::iterator it = g_home_point_old_path.begin(); found == false && it != g_home_point_old_path.end(); ++it) {
+		if (it->X == cell.X && it->Y == cell.Y) {
+			found = true;
+		}
+	}
+	if (found == false) {
+		extern bool g_have_seen_charge_stub;
+		g_have_seen_charge_stub = true;
+		g_home_point_old_path.push_front(cell);
+		// If cell near (0, 0)
+		if (abs(cell.X) <= 5 && abs(cell.Y) <= 5)
+		{
+
+			// This g_temp_trapped_cell is for trapped reference point.
+			auto g_temp_trapped_cell = path_escape_get_trapped_cell();
+
+			// Update the trapped reference points
+			for (int8_t i = ESCAPE_TRAPPED_REF_CELL_SIZE - 1; i > 0; i--)
+			{
+				g_temp_trapped_cell[i] = g_temp_trapped_cell[i-1];
+				ROS_DEBUG("i = %d, g_temp_trapped_cell[i].X = %d, g_temp_trapped_cell[i].Y = %d", i, g_temp_trapped_cell[i].X, g_temp_trapped_cell[i].Y);
+			}
+			g_temp_trapped_cell[0] = cell;
+			ROS_DEBUG("g_temp_trapped_cell[0].X = %d, g_temp_trapped_cell[0].Y = %d", g_temp_trapped_cell[0].X, g_temp_trapped_cell[0].Y);
+			path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
+		}
+	}
+}
+
+/* Get next point and home point.
+ * return :NO_TARGET_LEFT (0)
+ *        :TARGET_FOUND (1)
+ */
+int8_t path_get_home_target(Cell_t& next, Cell_t& target)
+{
+	static bool switch_target = true;
+	int8_t return_val;
+	while (ros::ok())
+	{
+		if (map_get_curr_cell() == g_current_home_cell)
+			// Reach this home cell.
+			switch_target = true;
+
+		if (switch_target)
+		{
+			// Get the home point.
+			if (!g_home_point_old_path.empty())
+			{
+				// Get next home cell.
+				target = g_home_point_old_path.front();
+				g_home_point_old_path.pop_front();
+				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u old path targets left, %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
+				if (get_clean_mode() == Clean_Mode_WallFollow)
+					// Always explore the new path.
+					set_explore_new_path_flag(true);
+				else
+					// Try all the old path home point first.
+					set_explore_new_path_flag(false);
+				switch_target = false;
+			}
+			else if (get_clean_mode() == Clean_Mode_Navigation && !g_home_point_new_path.empty())
+			{
+				// Try all the new path home point.
+				set_explore_new_path_flag(true);
+				// Get next home cell.
+				target = g_home_point_new_path.front();
+				g_home_point_new_path.pop_front();
+				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_new_path.size());
+				switch_target = false;
+			}
+			else // Target list is empty.
+			{
+				ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
+				return_val = NO_TARGET_LEFT;
+				break;
+			}
+		}
+
+		if (is_block_accessible(target.X, target.Y) == 0) {
+			ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
+			map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
+		}
+
+		Cell_t pos{target.X, target.Y};
+		auto path_next_status = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), next.X, next.Y);
+		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
+		if (path_next_status == 1)
+		{
+			if (cm_check_loop_back(next))
+				switch_target = true;
+			else
+			{
+				g_current_home_cell = target;
+				return_val = TARGET_FOUND;
+				break;
+			}
+		}
+		else
+		{
+			if (get_clean_mode() == Clean_Mode_Navigation && !g_home_point_old_path.empty())
+			{
+				// If can not reach this point, save this point to new path home point list.
+				g_home_point_new_path.push_back(target);
+				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, target.X, target.Y);
+			}
+			switch_target = true;
+		}
+	}
+
+	return return_val;
+}
+
 int16_t path_get_home_x()
 {
 	return g_home_x;
@@ -1148,22 +1281,19 @@ int16_t path_get_home_y()
 	return g_home_y;
 }
 
-void wf_path_planning_initialize(int32_t *x, int32_t *y)
+void wf_path_planning_initialize(Cell_t cell)
 {
 	int16_t i;
 
-	/* Save the starting point as home. */
-	g_home_x = count_to_cell(*x);
-	g_home_y = count_to_cell(*y);
 
 	/* Initialize the default settings. */
 //	preset_action_count = 0;
 
 //	weight_enabled = 1;
 
+	/* Save the starting point as home. */
 	for ( i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
-		g_trapped_cell[i].X = g_home_x;
-		g_trapped_cell[i].Y = g_home_y;
+		g_trapped_cell[i] = cell;
 	}
 	g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 

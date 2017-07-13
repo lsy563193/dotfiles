@@ -58,7 +58,6 @@ extern uint16_t g_wall_distance;
 
 extern bool g_from_station;
 extern int g_trapped_mode;
-extern bool g_have_seen_charge_stub;
 extern bool g_motion_init_succeeded;
 
 uint8_t angle_to_bumper_status(void);
@@ -109,8 +108,6 @@ bool cm_move_to(int16_t x, int16_t y);
 
 void cm_move_back_(uint16_t dist);
 
-void cm_set_home(int32_t x, int32_t y);
-
 	/* Robot will try to go to the cells in g_home_point_old_path list
 	 * first, and it will only go through the CLEANED area. If the
 	 * cell in g_home_point_new_path is unreachable through the
@@ -122,7 +119,7 @@ void cm_set_home(int32_t x, int32_t y);
 	 */
 
 void cm_go_home(void);
-bool cm_go_to_charger(Cell_t current_home_cell);
+bool cm_go_to_charger();
 //void CM_SetStationHome(void);
 
 // This function is for setting the continue point for robot to go after charge.
@@ -132,7 +129,7 @@ void CM_ResetBoundaryBlocks(void);
 
 void CM_AddTargets(Cell_t zone);
 
-uint8_t cm_check_loop_back(Cell_t target);
+bool cm_check_loop_back(Cell_t target);
 
 MapTouringType cm_handle_ext_event(void);
 

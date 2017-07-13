@@ -7,6 +7,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <motion_manage.h>
+#include <move_type.h>
 
 #include "gyro.h"
 #include "movement.h"
@@ -363,7 +364,7 @@ void quick_back(uint8_t speed, uint16_t distance)
 	{
 		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y,
 							robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
-		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect || get_cliff_trig() == Status_Cliff_All)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect || g_cliff_all_triggered)
 			break;
 		usleep(20000);
 	}
@@ -702,6 +703,63 @@ uint8_t get_cliff_trig(void)
 	return Cliff_Status;
 }
 
+
+int get_rcon()
+{
+	enum {left,right,fl,fr,fl2,fr2};
+	static int8_t cnt[6]={0,0,0,0,0,0};
+	const int MAX_CNT = 2;
+
+	if (get_rcon_status() & RconL_HomeT)
+		cnt[left]++;
+	if (get_rcon_status() & RconR_HomeT)
+		cnt[right]++;
+	if (get_rcon_status() & RconFL_HomeT)
+		cnt[fl]++;
+	if (get_rcon_status() & RconFR_HomeT)
+		cnt[fr]++;
+	if (get_rcon_status() & RconFL2_HomeT)
+		cnt[fl2]++;
+	if (get_rcon_status() & RconFR2_HomeT)
+		cnt[fr2]++;
+
+	auto ret = 0;
+	for(int i=0;i<6;i++)
+		if(cnt[i] > MAX_CNT)
+		{
+			cnt[left] = cnt[fl2] = cnt[fl] = cnt[fr] = cnt[fr2] = cnt[right] = 0;
+			ret = i+1;
+			break;
+		}
+	reset_rcon_status();
+	return ret;
+}
+
+int get_rcon_trig(void)
+{
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+
+	if (g_go_home) {
+		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		reset_rcon_status();
+		return 0;
+	}
+	if(mt_is_follow_wall()){
+		if (!(get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
+			reset_rcon_status();
+			return 0;
+		}
+	}
+	else if (mt_is_linear())
+		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
+		if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
+			reset_rcon_status();
+			return 0;
+		}
+
+	return get_rcon();
+}
+
 uint8_t cliff_escape(void)
 {
 	uint8_t count = 1;
@@ -898,9 +956,16 @@ int16_t get_right_wheel_speed(void)
 
 void work_motor_configure(void)
 {
-	// Set the vacuum to a normal mode
-	set_vacmode(Vac_Save);
-	set_vac_speed();
+	extern bool g_go_home;
+	if (g_go_home)
+	{
+		// Set the vacuum to a normal mode
+		set_vacmode(Vac_Normal, false);
+		set_vac_speed();
+	} else {
+		set_vacmode(Vac_Save);
+		set_vac_speed();
+	}
 
 	// Trun on the main brush and side brush
 	set_side_brush_pwm(50, 50);
@@ -2913,8 +2978,8 @@ void clear_manual_pause(void)
 			delete MotionManage::s_slam;
 			MotionManage::s_slam = nullptr;
 		}
-		extern std::list<Point32_t> g_home_point_old_path;
-		extern std::list<Point32_t> g_home_point_new_path;
+		extern std::list<Cell_t> g_home_point_old_path;
+		extern std::list<Cell_t> g_home_point_new_path;
 		g_home_point_old_path.clear();
 		g_home_point_new_path.clear();
 		cm_reset_go_home();

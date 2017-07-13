@@ -51,23 +51,21 @@ void path_update_cell_history(void);
  * Initialization function for path planning, it sets the starting
  * point as the home of the robot.
  *
- * @param *x	Pointer to robot home X coordinate
- * @param *y	Pointer to robot home Y coordinate
+ * @param cell	robot home cell coordinate
  *
  * @return
  */
-void path_planning_initialize(int32_t *x, int32_t *y);
+void path_planning_initialize(Cell_t cell);
 
 /*
  * Initialization function for path planning in wall follow mode, it sets the starting
  * point as the home of the robot.
  *
- * @param *x	Pointer to robot home X coordinate
- * @param *y	Pointer to robot home Y coordinate
+ * @param cell	robot home cell coordinate
  *
  * @return
  */
-void wf_path_planning_initialize(int32_t *x, int32_t *y);
+void wf_path_planning_initialize(Cell_t cell);
 
 /*
  * Function to find the next target to clean. When the robot goes to a new
@@ -177,6 +175,10 @@ void path_set_25cell(int16_t cell_x, int16_t cell_y, CellState state);
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
 Cell_t *path_escape_get_trapped_cell(void);
+
+void path_set_home(Cell_t cell);
+
+int8_t path_get_home_target(Cell_t& next, Cell_t& target);
 
 int16_t path_get_home_x(void);
 
