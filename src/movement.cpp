@@ -1515,7 +1515,6 @@ void set_rcon_status(uint32_t code)
 
 void reset_rcon_status(void)
 {
-	ROS_WARN("reset_rcon_status");
 	g_rcon_status = 0;
 }
 
