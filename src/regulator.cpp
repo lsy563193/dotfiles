@@ -315,8 +315,8 @@ bool TurnRegulator::_isStop()
 
 void TurnRegulator::setTarget()
 {
-	if(LASER_FOLLOW_WALL)
-		g_turn_angle = laser_turn_angle();
+//	if(LASER_FOLLOW_WALL)
+//		g_turn_angle = laser_turn_angle();
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 	ROS_INFO("%s %d: TurnRegulator, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
@@ -594,7 +594,7 @@ bool FollowWallRegulator::isSwitch()
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-	if( g_obs_triggered || get_front_obs() >= get_front_obs_value()){
+	if( g_obs_triggered  || get_front_obs() >= get_front_obs_value()){
 		g_obs_triggered = 1;
 		g_turn_angle = obs_turn_angle();
 		g_wall_distance = Wall_High_Limit;
@@ -622,7 +622,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto &same_speed = (mt_is_left()) ? l_speed : r_speed;
 	auto &diff_speed = (mt_is_left()) ? r_speed : l_speed;
 //	ROS_INFO("FollowWallRegulator adjustSpeed");
-//	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
+	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
 	if ((same_dist) < (uint32_t) g_straight_distance)
 	{
 		int32_t speed;
