@@ -525,7 +525,7 @@ bool FollowWallRegulator::isReach()
 		{
 			if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
 			{
-				ROS_WARN("%s, %d: BackRegulator ");
+				ROS_WARN("%s, %d: BackRegulator ",__FUNCTION__,__LINE__);
 				ROS_WARN("Robot has reach the target.");
 				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
 								 map_get_y_count());
@@ -540,7 +540,7 @@ bool FollowWallRegulator::isReach()
 			if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
 					(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
 			{
-				ROS_WARN("%s, %d: BackRegulator ");
+				ROS_WARN("%s, %d: BackRegulator ",__FUNCTION__,__LINE__);
 				ROS_WARN("Robot has round to the opposite direcition.");
 				ROS_WARN("%s %d:start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y,
 								 map_get_y_count());

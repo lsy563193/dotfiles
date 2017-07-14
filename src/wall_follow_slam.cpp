@@ -148,9 +148,9 @@ static bool is_reach(void)
 				}
 			}
 		}
-		ROS_ERROR("reach_point.size() = %d",reach_point.size());
+		ROS_ERROR("reach_point.size() = %u",reach_point.size());
 		if (reach_point.size() < 4) {
-			ROS_ERROR("reach_point.size() = %d < 3",reach_point.size());
+			ROS_ERROR("reach_point.size() = %u < 3",reach_point.size());
 			return 0;
 		}
 		if (sum < REACH_COUNT_LIMIT) return 0;

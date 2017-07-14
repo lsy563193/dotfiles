@@ -664,7 +664,7 @@ int cm_cleaning()
 		path_reset_path_points();
 		int8_t is_found = path_next(&g_next_point, &g_target_point);
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-		ROS_INFO("State: %d", is_found, g_next_point.X, g_next_point.Y, g_target_point.X, g_target_point.Y);
+		ROS_INFO("State: %d,next_point(%d,%d),target_point(%d,%d)", is_found, g_next_point.X, g_next_point.Y, g_target_point.X, g_target_point.Y);
 		if (is_found == 0) //No target point
 		{
 			// If it is the last point, it means it it now at (0, 0).
