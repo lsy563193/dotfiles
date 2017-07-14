@@ -385,7 +385,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 
 bool cm_move_to(Point32_t target)
 {
-	RegulatorManage regulator({map_get_x_count(), map_get_y_count()},target);
+	RegulatorManage rm({map_get_x_count(), map_get_y_count()},target);
 
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok())
@@ -396,7 +396,7 @@ bool cm_move_to(Point32_t target)
 			continue;
 		}
 
-		if (regulator.isExit())
+		if (rm.isExit())
 			break;
 
 		if (g_slam_error)
@@ -405,14 +405,14 @@ bool cm_move_to(Point32_t target)
 			continue;
 		}
 
-		if (regulator.isReach() || regulator.isStop())
+		if (rm.isReach() || rm.isStop())
 			return true;
 
-		if (regulator.isSwitch())
-			regulator.switchToNext();
+		if (rm.isSwitch())
+			rm.switchToNext();
 
 		int32_t	 speed_left = 0, speed_right = 0;
-		regulator.adjustSpeed(speed_left, speed_right);
+		rm.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);
 	}
 
