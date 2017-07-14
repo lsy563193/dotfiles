@@ -706,28 +706,28 @@ uint8_t get_cliff_status(void)
 
 int get_rcon_trig_()
 {
-	enum {left,right,fl,fr,fl2,fr2};
+	enum {left,fl1,fl2,fr2,fr1,right};
 	static int8_t cnt[6]={0,0,0,0,0,0};
-	const int MAX_CNT = 2;
-
+	const int MAX_CNT = 1;
+	if(get_rcon_status() != 0)
+		ROS_WARN("get_rcon_status(%d)",get_rcon_status());
 	if (get_rcon_status() & RconL_HomeT)
 		cnt[left]++;
-	if (get_rcon_status() & RconR_HomeT)
-		cnt[right]++;
 	if (get_rcon_status() & RconFL_HomeT)
-		cnt[fl]++;
-	if (get_rcon_status() & RconFR_HomeT)
-		cnt[fr]++;
+		cnt[fl1]++;
 	if (get_rcon_status() & RconFL2_HomeT)
 		cnt[fl2]++;
 	if (get_rcon_status() & RconFR2_HomeT)
 		cnt[fr2]++;
-
+	if (get_rcon_status() & RconFR_HomeT)
+		cnt[fr1]++;
+	if (get_rcon_status() & RconR_HomeT)
+		cnt[right]++;
 	auto ret = 0;
 	for(int i=0;i<6;i++)
 		if(cnt[i] > MAX_CNT)
 		{
-			cnt[left] = cnt[fl2] = cnt[fl] = cnt[fr] = cnt[fr2] = cnt[right] = 0;
+			cnt[left] = cnt[fl1] = cnt[fl2] = cnt[fr2] = cnt[fr1] = cnt[right] = 0;
 			ret = i+1;
 			break;
 		}
@@ -737,25 +737,29 @@ int get_rcon_trig_()
 
 int get_rcon_trig(void)
 {
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-
 	if (g_go_home) {
-		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+//		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		reset_rcon_status();
 		return 0;
 	}
 	if(mt_is_follow_wall()){
+//		ROS_WARN("%s %d: rcon(%d).", __FUNCTION__, __LINE__, (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
+//		ROS_WARN("%s %d: ~rcon(%d).", __FUNCTION__, __LINE__, ~(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
+//		ROS_WARN("%s %d: rcon_status(%d).", __FUNCTION__, __LINE__, (get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)));
 		if (!(get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
 			reset_rcon_status();
 			return 0;
 		}
 	}
-	else if (mt_is_linear())
+	else if (mt_is_linear()){
+//		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
 		if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
 			reset_rcon_status();
 			return 0;
 		}
+
+	}
 
 	return get_rcon_trig_();
 }
@@ -1511,6 +1515,7 @@ void set_rcon_status(uint32_t code)
 
 void reset_rcon_status(void)
 {
+	ROS_WARN("reset_rcon_status");
 	g_rcon_status = 0;
 }
 
