@@ -248,16 +248,16 @@ void cm_update_map_cliff()
 		return;
 
 	std::vector<Cell_t> d_cells;
-	if (get_cliff_trig() & Status_Cliff_Front){
+	if (get_cliff_status() & Status_Cliff_Front){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2, 0});
 		d_cells.push_back({2, 1});
 	}
-	if (get_cliff_trig() & Status_Cliff_Left){
+	if (get_cliff_status() & Status_Cliff_Left){
 		d_cells.push_back({2, 1});
 		d_cells.push_back({2, 2});
 	}
-	if (get_cliff_trig() & Status_Cliff_Right){
+	if (get_cliff_status() & Status_Cliff_Right){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2,-2});
 	}
@@ -294,7 +294,7 @@ void cm_update_map()
 
 	cm_update_map_obs();
 //	ROS_ERROR("2 last(%d,%d),curr(%d,%d)",last.X, last.Y,curr.X,curr.Y);
-	if (last != curr || get_bumper_status()!=0 || get_cliff_trig() !=0 || get_obs_status() != 0)
+	if (last != curr || get_bumper_status()!=0 || get_cliff_status() !=0 || get_obs_status() != 0)
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 
 	{
@@ -362,7 +362,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 		if (g_fatal_quit_event
 			|| g_key_clean_pressed || (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_oc_wheel_left || g_oc_wheel_right
-			|| g_bumper_hitted || g_cliff_triggered
+			|| g_bumper_triggered || g_cliff_triggered
 			)
 			break;
 
@@ -385,7 +385,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 
 bool cm_move_to(Point32_t target)
 {
-	RegulatorProxy regulator({map_get_x_count(), map_get_y_count()},target);
+	RegulatorManage regulator({map_get_x_count(), map_get_y_count()},target);
 
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok())
@@ -476,7 +476,7 @@ bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_r
 		}
 
 		if (g_fatal_quit_event || g_key_clean_pressed
-			|| g_bumper_hitted || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
+			|| g_bumper_triggered || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
 			|| (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_remote_spot // It will only be set if robot is not during spot.
 			|| g_remote_direction_keys) // It will only be set if robot is during spot.
@@ -903,7 +903,7 @@ void cm_self_check(void)
 		}
 		else if (g_cliff_jam)
 		{
-			if (!get_cliff_trig())
+			if (!get_cliff_status())
 			{
 				ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
 				g_cliff_triggered = 0;
@@ -936,7 +936,7 @@ void cm_self_check(void)
 			{
 				ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 				g_bumper_jam = false;
-				g_bumper_hitted = false;
+				g_bumper_triggered = false;
 				g_bumper_cnt = 0;
 			}
 
@@ -951,7 +951,7 @@ void cm_self_check(void)
 					{
 						stop_brifly();
 						// If cliff jam during bumper self resume.
-						if (get_cliff_trig() && ++g_cliff_cnt > 2)
+						if (get_cliff_status() && ++g_cliff_cnt > 2)
 						{
 							g_cliff_jam = true;
 							resume_cnt = 0;
@@ -973,7 +973,7 @@ void cm_self_check(void)
 					if (fabsf(distance) > 0.05f)
 					{
 						// If cliff jam during bumper self resume.
-						if (get_cliff_trig() && ++g_cliff_cnt > 2)
+						if (get_cliff_status() && ++g_cliff_cnt > 2)
 						{
 							g_cliff_jam = true;
 							resume_cnt = 0;
@@ -992,7 +992,7 @@ void cm_self_check(void)
 				{
 					ROS_DEBUG("%s %d: gyro_get_angle(): %d", __FUNCTION__, __LINE__, gyro_get_angle());
 					// If cliff jam during bumper self resume.
-					if (get_cliff_trig() && ++g_cliff_cnt > 2)
+					if (get_cliff_status() && ++g_cliff_cnt > 2)
 					{
 						g_cliff_jam = true;
 						resume_cnt = 0;
@@ -1009,7 +1009,7 @@ void cm_self_check(void)
 				case 5:
 				{
 					// If cliff jam during bumper self resume.
-					if (get_cliff_trig() && ++g_cliff_cnt > 2)
+					if (get_cliff_status() && ++g_cliff_cnt > 2)
 					{
 						g_cliff_jam = true;
 						resume_cnt = 0;
@@ -1256,7 +1256,7 @@ void cm_event_manager_turn(bool state)
 
 void cm_handle_bumper_all(bool state_now, bool state_last)
 {
-//	g_bumper_hitted = AllBumperTrig;
+//	g_bumper_triggered = AllBumperTrig;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1272,9 +1272,9 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 
 void cm_handle_bumper_left(bool state_now, bool state_last)
 {
-//	if(g_bumper_hitted != 0)
+//	if(g_bumper_triggered != 0)
 //		return;
-//	g_bumper_hitted = LeftBumperTrig;
+//	g_bumper_triggered = LeftBumperTrig;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1289,10 +1289,10 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 
 void cm_handle_bumper_right(bool state_now, bool state_last)
 {
-//	if(g_bumper_hitted != 0)
+//	if(g_bumper_triggered != 0)
 //		return;
 //
-//	g_bumper_hitted = RightBumperTrig;
+//	g_bumper_triggered = RightBumperTrig;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1340,8 +1340,8 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_triggered = Status_Cliff_LF;
+//	g_cliff_all_triggered = false;
+//	g_cliff_triggered = Status_Cliff_LF;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1357,8 +1357,8 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_triggered = Status_Cliff_RF;
+//	g_cliff_all_triggered = false;
+//	g_cliff_triggered = Status_Cliff_RF;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1374,8 +1374,8 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_triggered = Status_Cliff_LR;
+//	g_cliff_all_triggered = false;
+//	g_cliff_triggered = Status_Cliff_LR;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1390,8 +1390,8 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_triggered = Status_Cliff_Front;
+//	g_cliff_all_triggered = false;
+//	g_cliff_triggered = Status_Cliff_Front;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1406,8 +1406,8 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_triggered = Status_Cliff_Left;
+//	g_cliff_all_triggered = false;
+//	g_cliff_triggered = Status_Cliff_Left;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1422,8 +1422,8 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
 {
-	g_cliff_all_triggered = false;
-	g_cliff_triggered = Status_Cliff_Right;
+//	g_cliff_all_triggered = false;
+//	g_cliff_triggered = Status_Cliff_Right;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1455,7 +1455,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 		if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 		return;
 
-	g_rcon_triggered = get_rcon();
+	g_rcon_triggered = get_rcon_trig_();
 	if(g_rcon_triggered != 0){
 		cm_block_charger_stub();
 	}

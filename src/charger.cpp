@@ -272,7 +272,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 				charge_plan_status = 2;
 				break;
 			}
-			else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 2;
@@ -315,7 +315,7 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 		beep_for_command(false);
 		charge_reject_reason = 1;
 	}
-	else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 	{
 		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 		beep_for_command(false);
@@ -358,7 +358,7 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 			beep_for_command(false);
 			charge_reject_reason = 1;
 		}
-		else if(get_cliff_trig() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+		else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 			beep_for_command(false);

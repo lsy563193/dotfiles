@@ -135,7 +135,7 @@ uint8_t spiral(void)
 			return 0;
 		}
 		
-		if(get_bumper_status()|| get_cliff_trig()|| get_obs_status())
+		if(get_bumper_status()|| get_cliff_status()|| get_obs_status())
 		{ 
 			return 0;
 		}

@@ -2203,7 +2203,7 @@ bool go_home_check_move_back_finish(float target_distance)
 		return false;
 	else
 	{
-		if(g_cliff_triggered && get_cliff_trig())
+		if(g_cliff_triggered && get_cliff_status())
 		{
 			if(++g_cliff_cnt>2)
 				g_cliff_jam = true;

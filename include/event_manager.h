@@ -42,7 +42,7 @@
  */
 extern bool g_fatal_quit_event;
 /* Bumper */
-extern int g_bumper_hitted;
+extern int g_bumper_triggered;
 extern bool g_bumper_jam;
 extern int g_bumper_cnt;
 /* OBS */

@@ -719,7 +719,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
 		}
 		msg += "\n";
-		ROS_INFO(msg.c_str());
+		ROS_INFO("%s",msg.c_str());
 	}
 
 #if 1
