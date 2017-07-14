@@ -143,7 +143,8 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	charge_stub_ = msg->c_stub;//charge stub signal
 	g_rcon_status |= charge_stub_;
-	//ROS_INFO("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
+	//if (charge_stub_)
+	//	ROS_INFO("%s %d: Rcon info: %8x.", __FUNCTION__, __LINE__, charge_stub_);
 
 	key = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.

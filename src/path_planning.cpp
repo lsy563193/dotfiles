@@ -402,7 +402,7 @@ bool path_lane_is_cleaned(Cell_t& next)
 			is_found = 0;
 	}
 
-	ROS_WARN("is_found =%d", is_found);
+	ROS_WARN("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
 
 	const Cell_t curr{g_cell_history[0].X, g_cell_history[0].Y};
 	if (is_found > 0)
@@ -1199,8 +1199,11 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 	while (ros::ok())
 	{
 		if (map_get_curr_cell() == g_current_home_cell)
+		{
 			// Reach this home cell.
 			switch_target = true;
+			ROS_WARN("%s %d: Target reached, switch target.", __FUNCTION__, __LINE__);
+		}
 
 		if (switch_target)
 		{
@@ -1236,6 +1239,8 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				break;
 			}
 		}
+		else
+			target = g_current_home_cell;
 
 		if (is_block_accessible(target.X, target.Y) == 0) {
 			ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);

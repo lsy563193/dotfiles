@@ -417,7 +417,7 @@ bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
 	if(rcon_tmp != 0)
-	ROS_WARN("rcon_tmp(%d)",rcon_tmp);
+		ROS_WARN("rcon_tmp(%d)",rcon_tmp);
 
 	if (_get_obs_value() || rcon_tmp)
 	{
