@@ -664,7 +664,7 @@ int cm_cleaning()
 		path_reset_path_points();
 		int8_t is_found = path_next(&g_next_point, &g_target_point);
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-		ROS_INFO("State: %d", is_found, g_next_point.X, g_next_point.Y, g_target_point.X, g_target_point.Y);
+		ROS_INFO("%s %d: is_found: %d, next point(%d, %d), target point(%d, %d).", __FUNCTION__, __LINE__, is_found, count_to_cell(g_next_point.X), count_to_cell(g_next_point.Y), count_to_cell(g_target_point.X), count_to_cell(g_target_point.Y));
 		if (is_found == 0) //No target point
 		{
 			// If it is the last point, it means it it now at (0, 0).
@@ -690,8 +690,12 @@ int cm_cleaning()
 					wf_break_wall_follow();
 				cm_set_event_manager_handler_state(false);
 			}
-			else if (g_go_home && g_have_seen_charge_stub && cm_go_to_charger())
-				return -1;
+			else if (g_go_home && g_have_seen_charge_stub)
+			{
+				extern Cell_t g_current_home_cell;
+				if (map_get_curr_cell() == g_current_home_cell && cm_go_to_charger())
+					return -1;
+			}
 		}
 		else if (is_found == 2)
 			return -1;
