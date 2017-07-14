@@ -160,7 +160,7 @@ static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int
 	ROS_INFO("line_angle = %d", angle);
 	if (is_found && angle >= angle_min && angle < angle_max)
 	{
-		g_turn_angle = angle;
+		g_turn_angle = 0 - angle;
 		g_wall_distance = RESET_WALL_DIS;
 		ROS_WARN("laser generate turn angle(%d)!",g_turn_angle);
 	}
@@ -315,8 +315,8 @@ bool TurnRegulator::_isStop()
 
 void TurnRegulator::setTarget()
 {
-//	if(LASER_FOLLOW_WALL)
-//		g_turn_angle = laser_turn_angle();
+	if(LASER_FOLLOW_WALL)
+		g_turn_angle = laser_turn_angle();
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 	ROS_WARN("%s %d: TurnRegulator, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
