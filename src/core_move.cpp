@@ -171,11 +171,16 @@ void cm_update_map_obs()
 		if (get_obs_status() & obs_lr[dir])
 		{
 			auto dx = 1;
-			auto dy = (dir=0) ?2:-2;
+			auto dy = (dir==0) ?2:-2;
 			int32_t x,y;
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			if (get_wall_adc(dir) > 200)
 			{
+				if(dir == 0)
+					ROS_WARN("left obs(1,2)");
+				else
+					ROS_WARN("right obs(1,-2)");
+
 				if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BUMPER)
 				{
 					map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
@@ -191,6 +196,13 @@ void cm_update_map_obs()
 		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
 		auto status = map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp));
 		if (is_trig && status != BLOCKED_BUMPER) {
+			if(dy == 0)
+				ROS_WARN("right obs(2,-1)");
+			else if(dy == 1)
+				ROS_WARN("front obs(2,0)");
+			else if(dy == 2)
+				ROS_WARN("left obs(2,1)");
+
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
 		} else if(! is_trig && status == BLOCKED_OBS)
 				map_set_cell(MAP, x_tmp, y_tmp, UNCLEAN);
