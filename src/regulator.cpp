@@ -881,4 +881,8 @@ void RegulatorManage::switchToNext()
 	setTarget();
 	g_obs_triggered = g_rcon_triggered = 0;
 	g_bumper_triggered = g_cliff_triggered = 0;
+//	if(p_reg_ == turn_reg_)
+//		robotbase_obs_adjust_count(0);
+//	else
+//		robotbase_obs_adjust_count(50);
 }

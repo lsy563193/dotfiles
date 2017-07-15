@@ -402,7 +402,7 @@ bool path_lane_is_cleaned(Cell_t& next)
 			is_found = 0;
 	}
 
-	ROS_WARN("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
+	ROS_INFO("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
 
 	const Cell_t curr{g_cell_history[0].X, g_cell_history[0].Y};
 	if (is_found > 0)
