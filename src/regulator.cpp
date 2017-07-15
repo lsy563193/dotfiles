@@ -18,48 +18,8 @@
 #include <robotbase.h>
 #include <path_planning.h>
 
+extern Cell_t g_cell_history[];
 int jam=0;
-
-void cm_block_charger_stub()
-{
-	enum {
-		left, fl2, fl1, fr1, fr2, right,
-	};
-	ROS_INFO("%s %d: Robot meet charger stub, stop and mark the block.", __FUNCTION__, __LINE__);
-	int dx = 0, dy = 0;
-	int dx2 = 0, dy2 = 0;
-	switch (g_rcon_triggered - 1)
-	{
-		case left:
-			dx = 1, dy = 2;
-			break;
-		case fl2:
-			dx = 1, dy = 2;
-			dx2 = 2, dy2 = 1;
-			break;
-		case fl1:
-		case fr1:
-			dx = 2, dy = 0;
-			break;
-		case fr2:
-			dx = 1, dy = -2;
-			dx2 = 2, dy2 = -1;
-			break;
-		case right:
-			dx = 1, dy = -2;
-			break;
-	}
-	int32_t x,y;
-	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	if (dx2 != 0){
-		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	}
-//	stop_brifly();
-//	sleep(5);
-	path_set_home(map_get_curr_cell());
-}
 
 static int16_t bumper_turn_angle()
 {
@@ -426,7 +386,7 @@ bool LinearRegulator::_isStop()
 		g_obs_triggered = _get_obs_value();
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
-			cm_block_charger_stub();
+			path_set_home(map_get_curr_cell());
 		}
 
 		ROS_INFO("%s, %d: LinearRegulator, g_obs_triggered || g_rcon_triggered.", __FUNCTION__, __LINE__);
@@ -885,4 +845,5 @@ void RegulatorManage::switchToNext()
 //		robotbase_obs_adjust_count(0);
 //	else
 //		robotbase_obs_adjust_count(50);
+
 }

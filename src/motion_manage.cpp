@@ -644,7 +644,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_
 			else
 			{
 				cell_state = map_get_cell(id, i, j);
-				if (cell_state == CLEANED || cell_state == BLOCKED_OBS || cell_state == BLOCKED_BUMPER)
+				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
 					robot::instance()->setCleanMapMarkers(i, j, cell_state);
 			}
 		}

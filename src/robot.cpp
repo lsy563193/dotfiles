@@ -275,7 +275,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count = 0;
 			}
 		}
-		if(! is_turn())
+//		if(! is_turn())
 			cm_update_map();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
@@ -435,10 +435,21 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_BUMPER)
 	{
-		// Red
 		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 0.0;
+	}
+	else if (type == BLOCKED_CLIFF)
+	{
+		color_.r = 1.0;
+		color_.g = 0.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_RCON)
+	{
+		color_.r = 1.0;
+		color_.g = 1.0;
+		color_.b = 1.0;
 	}
 	else if (type == TARGET)// Next point
 	{
