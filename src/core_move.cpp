@@ -165,50 +165,35 @@ void cm_update_map_cleaned()
 
 void cm_update_map_obs()
 {
-	if (get_obs_status() & Status_Left_OBS) {
-		int32_t i,j;
-		cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (get_wall_adc(0) > 200) {
-			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
-				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
+	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
+	for (auto dir = 0; dir < 2; ++dir)
+	{
+		if (get_obs_status() & obs_lr[dir])
+		{
+			auto dx = 1;
+			auto dy = (dir=0) ?2:-2;
+			int32_t x,y;
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			if (get_wall_adc(dir) > 200)
+			{
+				if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BUMPER)
+				{
+					map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
+				}
 			}
 		}
 	}
 
-	if (get_obs_status() & Status_Right_OBS) {
-		int32_t i,j;
-		cm_world_to_point(gyro_get_angle(), -CELL_SIZE_2, CELL_SIZE, &i, &j);
-		if (get_wall_adc(1) > 200) {
-			if (map_get_cell(MAP, count_to_cell(i), count_to_cell(j)) != BLOCKED_BUMPER) {
-				map_set_cell(MAP, i, j, BLOCKED_OBS); //BLOCKED_OBS);
-			}
-		}
-	}
-
-	for (auto dy = 0; dy < 3; ++dy) {
-		auto i = SHRT_MAX;
-		switch (dy) {
-			case 0:
-				i = get_obs_status() & Status_Right_OBS;
-				break;
-			case 1:
-				i = get_obs_status() & Status_Front_OBS;
-				break;
-			case 2:
-				i = get_obs_status() & Status_Left_OBS;
-				break;
-		}
+	uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
+	for (auto dy = 0; dy <= 2; ++dy) {
+		auto is_trig = get_obs_status() & obs_all[dy];
 		int32_t x_tmp, y_tmp;
-		cm_world_to_point(gyro_get_angle(), (dy - 1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
-		if (i) {
-			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER) {
+		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x_tmp, &y_tmp);
+		auto status = map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp));
+		if (is_trig && status != BLOCKED_BUMPER) {
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS);
-			}
-		} else {
-			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) == BLOCKED_OBS) {
+		} else if(! is_trig && status == BLOCKED_OBS)
 				map_set_cell(MAP, x_tmp, y_tmp, UNCLEAN);
-			}
-		}
 	}
 }
 
