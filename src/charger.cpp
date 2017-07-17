@@ -135,6 +135,11 @@ void charge_function(void)
 					wav_play(WAV_BATTERY_LOW);
 					charge_reject_reason = 0;
 					break;
+				case 4:
+					wav_play(WAV_CLEAR_ERROR);
+					charge_reject_reason = 0;
+					set_error_code(Error_Code_None);
+					break;
 			}
 		}
 		else if (charge_plan_status)
@@ -318,8 +323,17 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 	else if (get_error_code() != Error_Code_None)
 	{
 		ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
-		beep_for_command(false);
-		charge_reject_reason = 1;
+		if (check_error_cleared(get_error_code()))
+		{
+			beep_for_command(true);
+			charge_reject_reason = 4;
+		}
+		else
+		{
+			beep_for_command(false);
+			charge_reject_reason = 1;
+		}
+		reset_stop_event_status();
 	}
 	else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 	{
@@ -361,8 +375,17 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 		else if (get_error_code() != Error_Code_None)
 		{
 			ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
-			beep_for_command(false);
-			charge_reject_reason = 1;
+			if (check_error_cleared(get_error_code()))
+			{
+				beep_for_command(true);
+				charge_reject_reason = 4;
+			}
+			else
+			{
+				beep_for_command(false);
+				charge_reject_reason = 1;
+			}
+			reset_stop_event_status();
 		}
 		else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 		{
