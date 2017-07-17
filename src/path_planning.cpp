@@ -1102,7 +1102,6 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 		if (!is_found)
 		{
 			auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
-			ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
 			if (ret == 0)
 				g_go_home = true;
 			if (ret == -2){
@@ -1121,8 +1120,9 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				auto paths =  path_get_path_points();
 				paths->pop_back();
 				next = paths->back();
-				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
+//				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
 			}
+			ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d),target(%d,%d)", __FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, next.X,next.Y,target.X,target.Y);
 		}
 	}
 
