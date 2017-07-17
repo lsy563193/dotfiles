@@ -226,9 +226,8 @@ bool BackRegulator::isReach()
 			   	powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
 	if(fabsf(distance) > 0.02f){
 		ROS_INFO("%s, %d: BackRegulator ", __FUNCTION__, __LINE__);
-		g_bumper_cnt = get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
+		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
-
 		if((g_bumper_cnt == 0 && g_cliff_cnt == 0) || g_bumper_cnt >= 3 || g_cliff_cnt >= 3)
 			return true;
 		else
@@ -841,6 +840,7 @@ bool RegulatorManage::_isStop()
 
 void RegulatorManage::switchToNext()
 {
+	auto reg_old = p_reg_;
 	if (p_reg_ == turn_reg_)
 	{
 		if(g_bumper_triggered || g_cliff_triggered){
@@ -873,8 +873,10 @@ void RegulatorManage::switchToNext()
 	}
 	ROS_INFO("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered);
 	setTarget();
-	g_obs_triggered = g_rcon_triggered = 0;
-	g_bumper_triggered = g_cliff_triggered = 0;
+	if(reg_old != back_reg_){
+		g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
+		g_cliff_triggered = 0;
+	}
 //	g_turn_angle = 0;
 //	if(p_reg_ == turn_reg_)
 //		robotbase_obs_adjust_count(0);
