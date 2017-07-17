@@ -939,7 +939,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 	if(found == 0)
 	return 0;
 
-	return path_next_best(target, g_curr.X, g_curr.Y, next.X, next.Y);
+	return path_next_best(g_curr, target.X, target.Y, next.X, next.Y);
 }
 
 void path_update_cells()
@@ -1102,6 +1102,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 		if (!is_found)
 		{
 			auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
+			ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
 			if (ret == 0)
 				g_go_home = true;
 			if (ret == -2){
@@ -1114,6 +1115,13 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 					return 2;
 				}
 				return 1;
+			}
+
+			if(next == map_get_curr_cell()){
+				auto paths =  path_get_path_points();
+				paths->pop_back();
+				next = paths->back();
+				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
 			}
 		}
 	}

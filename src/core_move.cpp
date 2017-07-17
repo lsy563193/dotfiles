@@ -128,6 +128,7 @@ bool is_map_front_block(int dx)
 	return false;
 }
 
+//map--------------------------------------------------------
 static  void _update_map_obs()
 {
 	if(! g_obs_triggered)
@@ -159,8 +160,14 @@ static  void _update_map_obs()
 		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x, &y);
 		auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
 		if (is_trig && status != BLOCKED_BUMPER) {
-			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-				map_set_cell(MAP, x, y, BLOCKED_OBS);
+//			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			if(dy == 2 && g_turn_angle<0)
+//				ROS_ERROR("%s,%d: not mark left in turn right, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			else if (dy == 0 && g_turn_angle>0)
+//				ROS_ERROR("%s,%d: not mark right turn left, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			else
+//				map_set_cell(MAP, x, y, BLOCKED_OBS);
+			map_set_cell(MAP, x, y, BLOCKED_OBS);
 		} else if(! is_trig && status == BLOCKED_OBS){
 			ROS_WARN("%s,%d:unclean (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 			map_set_cell(MAP, x, y, UNCLEAN);
@@ -280,6 +287,33 @@ static void update_map_blocked()
 	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 }
 
+void cm_update_map_cleaned()
+{
+	int32_t x, y;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+	{
+		for (auto dx = 0/*-ROBOT_SIZE_1_2*/; dx <= ROBOT_SIZE_1_2; ++dx)
+		{
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			auto status = map_get_cell(MAP, x, y);
+//			if (status > CLEANED && status < BLOCKED_BOUNDARY)
+//				ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+
+//			ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+			map_set_cell(MAP, x, y, CLEANED);
+		}
+	}
+}
+
+Cell_t cm_update_position(bool is_turn)
+{
+	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	map_set_position(pos_x, pos_y);
+	return map_get_curr_cell();
+}
+
+//--------------------------------------------------------
 static double radius_of(Cell_t cell_0,Cell_t cell_1)
 {
 	return (abs(cell_to_count(cell_0.X - cell_1.X)) + abs(cell_to_count(cell_0.Y - cell_1.Y))) / 2;
@@ -304,29 +338,6 @@ int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32
 	return index;
 }
 
-void cm_update_map_cleaned()
-{
-	int32_t x,y;
-	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy) {
-        for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx){
-					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-					auto status = map_get_cell(MAP, x, y);
-					if(status > CLEANED && status <BLOCKED_BOUNDARY)
-						ROS_ERROR("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-
-           map_set_cell(MAP, x, y, CLEANED);
-        }
-	}
-}
-
-Cell_t cm_update_position(bool is_turn)
-{
-	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	map_set_position(pos_x, pos_y);
-	return map_get_curr_cell();
-}
-
 void cm_update_map()
 {
 	auto last = map_get_curr_cell();
@@ -339,7 +350,7 @@ void cm_update_map()
 	if (last != curr )
 	{
 
-		cm_update_map_cleaned();
+//		cm_update_map_cleaned();
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
 		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 	}
@@ -453,11 +464,13 @@ bool cm_move_to(Point32_t target)
 		}
 
 		if (rm.isReach() || rm.isStop()){
+//			ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
 			update_map_blocked();
 			return true;
 		}
 
 		if (rm.isSwitch()){
+//			ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
 			update_map_blocked();
 			rm.switchToNext();
 		}

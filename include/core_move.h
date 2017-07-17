@@ -85,6 +85,7 @@ uint8_t cm_touring(void);
 int cm_cleaning(void);
 
 Cell_t cm_update_position(bool is_turn = false);
+void cm_update_map_cleaned();
 void cm_update_map();
 bool cm_curve_move_to_point();
 

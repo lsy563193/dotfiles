@@ -171,6 +171,32 @@ static int16_t _get_obs_value()
 	return 0;
 }
 
+void mark()
+{
+	if (get_clean_mode() != Clean_Mode_Navigation)
+		return;
+
+	static Cell_t last{0, 0};
+	auto curr = map_get_curr_cell();
+	if (last != curr)
+	{
+//		ROS_ERROR("%s %d: mark.", __FUNCTION__, __LINE__);
+		last = curr;
+		cm_update_map_cleaned();
+		if(mt_is_follow_wall())
+		{
+			int32_t x, y;
+			auto dy = mt_is_left() ? 2 : -2;
+			for(auto dx = -1;dx <=0;dx++){
+				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE*dx, &x, &y);
+//				ROS_ERROR("%s %d: follow_wall.", __FUNCTION__, __LINE__);
+//		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BOUNDARY)
+				map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+			}
+		}
+	}
+}
+
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
 int16_t RegulatorBase::s_target_angle = 0;
@@ -338,6 +364,8 @@ LinearRegulator::LinearRegulator(Point32_t target):
 
 bool LinearRegulator::isReach()
 {
+	mark();
+
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
 		ROS_INFO("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
@@ -472,6 +500,7 @@ bool FollowWallRegulator::isReach()
 {
 //	ROS_INFO("FollowWallRegulator isReach");
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
+	mark();
 	bool ret = false;
 	auto start_y = s_origin.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)
@@ -498,7 +527,7 @@ bool FollowWallRegulator::isReach()
 		{
 			if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
 			{
-				ROS_INFO("%s %d: FollowWallRegulator, robot has reach the target, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y, map_get_y_count());
+				ROS_WARN("%s %d: FollowWallRegulator, robot has reach the target, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y, map_get_y_count());
 //			if(s_origin.X == map_get_x_count() && s_origin.Y == map_get_y_count()){
 //				ROS_INFO("direcition is wrong, swap");
 //				extern uint16_t g_last_dir;
@@ -510,7 +539,7 @@ bool FollowWallRegulator::isReach()
 			if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
 					(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
 			{
-				ROS_INFO("%s %d: FollowWallRegulator, robot has round to the opposite direcition, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y, map_get_y_count());
+				ROS_WARN("%s %d: FollowWallRegulator, robot has round to the opposite direcition, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y, map_get_y_count());
 				map_set_cell(MAP, map_get_relative_x(gyro_get_angle(), CELL_SIZE_3, 0),
 										 map_get_relative_y(gyro_get_angle(), CELL_SIZE_3, 0), CLEANED);
 
@@ -569,6 +598,7 @@ bool FollowWallRegulator::_isStop()
 //	ROS_INFO("FollowWallRegulator isSwitch");
 	return false;
 }
+
 
 void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
@@ -841,6 +871,7 @@ void RegulatorManage::switchToNext()
 	setTarget();
 	g_obs_triggered = g_rcon_triggered = 0;
 	g_bumper_triggered = g_cliff_triggered = 0;
+//	g_turn_angle = 0;
 //	if(p_reg_ == turn_reg_)
 //		robotbase_obs_adjust_count(0);
 //	else
