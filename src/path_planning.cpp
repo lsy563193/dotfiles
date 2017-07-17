@@ -1269,8 +1269,8 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 			map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 		}
 
-		Cell_t pos{target.X, target.Y};
-		auto path_next_status = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), next.X, next.Y);
+		Cell_t pos{map_get_x_cell(), map_get_y_cell()};
+		auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
 		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 		if (path_next_status == 1)
 		{
@@ -1372,9 +1372,9 @@ int8_t path_get_continue_target(Cell_t& next, Cell_t& target)
 		map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 	}
 
-	Cell_t pos{target.X, target.Y};
+	Cell_t pos{map_get_x_cell(), map_get_y_cell()};
 	set_explore_new_path_flag(false);
-	auto path_next_status = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), next.X, next.Y);
+	auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
 	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 	if (path_next_status == 1 && !cm_check_loop_back(next))
 		return_val = TARGET_FOUND;

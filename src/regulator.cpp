@@ -632,7 +632,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto &same_speed = (mt_is_left()) ? l_speed : r_speed;
 	auto &diff_speed = (mt_is_left()) ? r_speed : l_speed;
 //	ROS_INFO("FollowWallRegulator adjustSpeed");
-	ROS_DEBUG("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
+//	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
 	if ((same_dist) < (uint32_t) g_straight_distance)
 	{
 		int32_t speed;
@@ -657,6 +657,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 		auto delta = proportion - previous_;
 
+//		ROS_INFO("Wf_1.1, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 		if (g_wall_distance > 200)
 		{//over left
 
@@ -670,13 +671,13 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				{
 					diff_speed = 34;
 					same_speed = 4;
-//						ROS_INFO("Wf_2, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
+//					ROS_INFO("Wf_2, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 				}
 				else if (same_speed > wheel_speed_base + 10)
 				{
 					diff_speed = 5;
 					same_speed = 30;
-//						ROS_INFO("Wf_3, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
+//					ROS_INFO("Wf_3, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 				}
 			}
 			else
@@ -686,8 +687,8 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 					add_sp_turn_count();
 					diff_speed = 35;
 					same_speed = 4;
-//						ROS_INFO("Wf_4, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
-//						ROS_INFO("get_sp_turn_count() = %d", get_sp_turn_count());
+//					ROS_INFO("Wf_4, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
+//					ROS_INFO("get_sp_turn_count() = %d", get_sp_turn_count());
 				}
 				else
 				{
@@ -700,7 +701,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 			same_speed = wheel_speed_base + proportion / 10 + delta / 3;//16
 			diff_speed = wheel_speed_base - proportion / 10 - delta / 4; //11
-
+//			ROS_INFO("Wf_4.1, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 			if (wheel_speed_base < 26)
 			{
 				reset_sp_turn_count();
@@ -708,7 +709,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				{
 					diff_speed = 34;
 					same_speed = 4;
-//						ROS_INFO("Wf_5, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
+//					ROS_INFO("Wf_5, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 				}
 			}
 			else
@@ -718,8 +719,8 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 					add_sp_turn_count();
 					diff_speed = 36;
 					same_speed = 4;
-//						ROS_INFO("Wf_6, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
-//						ROS_INFO("g_sp_turn_count() = %d",get_sp_turn_count());
+//					ROS_INFO("Wf_6, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
+//					ROS_INFO("g_sp_turn_count() = %d",get_sp_turn_count());
 				}
 				else
 				{
