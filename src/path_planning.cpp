@@ -400,7 +400,7 @@ bool path_lane_is_cleaned(Cell_t& next)
 			is_found = 0;
 	}
 
-	ROS_WARN("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
+	ROS_INFO("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
 
 	const Cell_t curr{g_cell_history[0].X, g_cell_history[0].Y};
 	if (is_found > 0)
@@ -938,7 +938,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 		return 0;
 
 	set_explore_new_path_flag(true);
-	return path_next_best(target, g_curr.X, g_curr.Y, next.X, next.Y);
+	return path_next_best(g_curr, target.X, target.Y, next.X, next.Y);
 }
 
 void path_update_cells()
@@ -1107,6 +1107,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			else
 			{
 				auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
+				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
 				if (ret == 0)
 					g_go_home = true;
 				if (ret == -2){
@@ -1120,6 +1121,13 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 					}
 					return 1;
 				}
+			}
+
+			if(next == map_get_curr_cell()){
+				auto paths =  path_get_path_points();
+				paths->pop_back();
+				next = paths->back();
+				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
 			}
 		}
 	}

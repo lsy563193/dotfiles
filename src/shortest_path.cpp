@@ -1513,7 +1513,8 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 		}
 		x_next = x_path;
 		y_next = y_path;
-	} else {
+	}
+	else {
 		x_next = target_x;
 		y_next = target_y;
 
@@ -1642,7 +1643,7 @@ void path_display_path_points()
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
 	msg += "\n";
-	ROS_INFO("%s,%d,%s",__FUNCTION__,__LINE__,msg.c_str());
+	ROS_WARN("%s,%d,%s",__FUNCTION__,__LINE__,msg.c_str());
 }
 
 #endif

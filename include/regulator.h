@@ -139,6 +139,7 @@ public:
 	bool isSwitch();
 	bool _isStop();
 	bool isReach();
+	void mark();
 	void setTarget() {p_reg_->setTarget();}
 
 	void switchToNext();

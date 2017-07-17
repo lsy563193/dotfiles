@@ -1315,83 +1315,59 @@ void set_vac_speed(void)
 }
 
 /*--------------------------------------Obs Dynamic adjust----------------------*/
-void obs_dynamic_base(uint16_t Cy)
+void obs_dynamic_base(uint16_t count)
 {
-	static int32_t Front_OBS_Buffer = 0, Left_OBS_Buffer = 0, Right_OBS_Buffer = 0;
-	static uint32_t FrontOBS_E_Counter = 0, LeftOBS_E_Counter = 0, RightOBS_E_Counter = 0;
-	static int32_t FrontOBS_Everage = 0, LeftOBS_Everage = 0, RightOBS_Everage = 0;
-	static int32_t FrontOBS_Sum = 0, LeftOBS_Sum = 0, RightOBS_Sum = 0;
-	int16_t OBS_Diff = 350, OBS_adjust_limit = 100;
-
-	/*---------------Front-----------------------*/
-	Front_OBS_Buffer = get_front_obs();
-
-	FrontOBS_Sum += Front_OBS_Buffer;
-	FrontOBS_E_Counter++;
-	FrontOBS_Everage = FrontOBS_Sum / FrontOBS_E_Counter;
-	if (abs_minus(FrontOBS_Everage, Front_OBS_Buffer) > 50)
+	count = 20;
+//	enum {front,left,right};
+	static uint32_t obs_cnt[] = {0,0,0};
+	static int32_t obs_sum[] = {0,0,0};
+	const int16_t OBS_DIFF = 350;
+	const int16_t LIMIT_LOW = 100;
+	int16_t* p_obs_trig_value[] = {&g_front_obs_trig_value,&g_left_obs_trig_value,&g_right_obs_trig_value};
+	typedef int32_t(*Func_t)(void);
+	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
+//	if(count == 0)
+//		return ;
+	for(int i =0;i<3;i++)
 	{
-		FrontOBS_E_Counter = 0;
-		FrontOBS_Sum = 0;
-	}
-	if (FrontOBS_E_Counter > Cy)
-	{
-		FrontOBS_E_Counter = 0;
-		Front_OBS_Buffer = g_front_obs_trig_value - OBS_Diff;
-		Front_OBS_Buffer = (FrontOBS_Everage + Front_OBS_Buffer) / 2;
-		if (Front_OBS_Buffer < OBS_adjust_limit)
+//		if(i == 0)
+//			ROS_WARN("front-------------------------");
+//		if(i == 1)
+//			ROS_WARN("left-------------------------");
+//		if(i == 2)
+//			ROS_WARN("right-------------------------");
+
+		auto p_obs_trig_val = p_obs_trig_value[i];
+		auto obs_get = p_get_obs[i]();
+
+//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_trig_val, obs_get);
+		obs_sum[i] += obs_get;
+		obs_cnt[i]++;
+		auto obs_avg = obs_sum[i] / obs_cnt[i];
+//		ROS_WARN("obs_avg(%d), (%d / %d), ",obs_avg, obs_sum[i], obs_cnt[i]);
+		auto diff = abs_minus(obs_avg , obs_get);
+		if (diff > 50)
 		{
-			Front_OBS_Buffer = OBS_adjust_limit;
+//			ROS_WARN("diff = (%d) > 50.", diff);
+			obs_cnt[i] = 0;
+			obs_sum[i] = 0;
 		}
-		g_front_obs_trig_value = Front_OBS_Buffer + OBS_Diff;
-		//ROS_INFO("Update g_front_obs_trig_value = %d.", g_front_obs_trig_value);
-	}
-
-	/*---------------Left-----------------------*/
-	Left_OBS_Buffer = get_left_obs();
-
-	LeftOBS_Sum += Left_OBS_Buffer;
-	LeftOBS_E_Counter++;
-	LeftOBS_Everage = LeftOBS_Sum / LeftOBS_E_Counter;
-	if (abs_minus(LeftOBS_Everage, Left_OBS_Buffer) > 50)
-	{
-		LeftOBS_E_Counter = 0;
-		LeftOBS_Sum = 0;
-	}
-	if (LeftOBS_E_Counter > Cy)
-	{
-		LeftOBS_E_Counter = 0;
-		Left_OBS_Buffer = g_left_obs_trig_value - OBS_Diff;
-		Left_OBS_Buffer = (LeftOBS_Everage + Left_OBS_Buffer) / 2;
-		if (Left_OBS_Buffer < OBS_adjust_limit)
+		if (obs_cnt[i] > count)
 		{
-			Left_OBS_Buffer = OBS_adjust_limit;
-		}
-		g_left_obs_trig_value = Left_OBS_Buffer + OBS_Diff;
-		//ROS_INFO("Update g_left_obs_trig_value = %d.", g_left_obs_trig_value);
-	}
-	/*---------------Right-----------------------*/
-	Right_OBS_Buffer = get_right_obs();
+			obs_cnt[i] = 0;
+			obs_sum[i] = 0;
+			obs_get = (obs_avg + *p_obs_trig_val - OBS_DIFF) / 2;
+			if (obs_get < LIMIT_LOW)
+				obs_get = LIMIT_LOW;
 
-	RightOBS_Sum += Right_OBS_Buffer;
-	RightOBS_E_Counter++;
-	RightOBS_Everage = RightOBS_Sum / RightOBS_E_Counter;
-	if (abs_minus(RightOBS_Everage, Right_OBS_Buffer) > 50)
-	{
-		RightOBS_E_Counter = 0;
-		RightOBS_Sum = 0;
-	}
-	if (RightOBS_E_Counter > Cy)
-	{
-		RightOBS_E_Counter = 0;
-		Right_OBS_Buffer = g_right_obs_trig_value - OBS_Diff;
-		Right_OBS_Buffer = (RightOBS_Everage + Right_OBS_Buffer) / 2;
-		if (Right_OBS_Buffer < OBS_adjust_limit)
-		{
-			Right_OBS_Buffer = OBS_adjust_limit;
+			*p_obs_trig_val = obs_get + OBS_DIFF;
+//			if(i == 0)
+//				ROS_WARN("obs front = %d.", g_front_obs_trig_value);
+//			else if(i == 1)
+//				ROS_WARN("obs left = %d.", g_left_obs_trig_value);
+//			else if(i == 2)
+//				ROS_WARN("obs right = %d.", g_right_obs_trig_value);
 		}
-		g_right_obs_trig_value = Right_OBS_Buffer + OBS_Diff;
-		//ROS_INFO("Update g_right_obs_trig_value = %d.", g_right_obs_trig_value);
 	}
 }
 
