@@ -434,8 +434,9 @@ bool MotionManage::initNavigationCleaning(void)
 		// If it it the first time cleaning, initialize the g_continue_point.
 		extern Cell_t g_continue_cell;
 		g_continue_cell.X = g_continue_cell.Y = 0;
-		extern bool g_have_seen_charge_stub;
+		extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
 		g_have_seen_charge_stub = false;
+		g_start_point_seen_charger = false;
 	}
 
 	reset_touch();

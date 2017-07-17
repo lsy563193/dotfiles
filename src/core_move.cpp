@@ -84,6 +84,7 @@ bool g_resume_cleaning = false;
 bool g_map_boundary_created = false;
 
 bool g_have_seen_charge_stub = false;
+bool g_start_point_seen_charger = false;
 
 Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
@@ -695,11 +696,16 @@ int cm_cleaning()
 					wf_break_wall_follow();
 				cm_set_event_manager_handler_state(false);
 			}
-			else if (g_go_home && g_have_seen_charge_stub)
+			else if(g_go_home)
 			{
 				extern Cell_t g_current_home_cell;
-				if (map_get_curr_cell() == g_current_home_cell && cm_go_to_charger())
-					return -1;
+				if(map_get_curr_cell() == g_current_home_cell)
+				{
+					 if ((g_target_point.X == 0 && g_target_point.Y == 0 && g_start_point_seen_charger)||
+						(g_target_point.X != 0 || g_target_point.Y != 0))
+						if(cm_go_to_charger())
+							return -1;
+				}
 			}
 		}
 		else if (is_found == 2)

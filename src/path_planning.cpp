@@ -1197,6 +1197,12 @@ void path_set_home(Cell_t cell)
 			path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
 		}
 	}
+	else if(cell.X == 0 && cell.Y == 0)
+	{
+		extern bool g_start_point_seen_charger, g_have_seen_charge_stub;
+		g_start_point_seen_charger = true;
+		g_have_seen_charge_stub = true;
+	}
 }
 
 /* Get next point and home point.
