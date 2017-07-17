@@ -742,10 +742,17 @@ void cm_reset_go_home(void)
 	g_map_boundary_created = false;
 }
 
-bool cm_check_loop_back(Cell_t target) {
+bool cm_check_loop_back(Cell_t target)
+{
 	bool retval = false;
 	if ( target == g_cell_history[1] && target == g_cell_history[3]) {
-		ROS_WARN("%s %d Possible loop back (%d, %d)", __FUNCTION__, __LINE__, target.X, target.Y);
+		ROS_WARN("%s %d Possible loop back (%d, %d), g_cell_history:(%d, %d) (%d, %d) (%d, %d) (%d, %d) (%d, %d).", __FUNCTION__, __LINE__,
+						target.X, target.Y,
+						g_cell_history[0].X, g_cell_history[0].Y,
+						g_cell_history[1].X, g_cell_history[1].Y,
+						g_cell_history[2].X, g_cell_history[2].Y,
+						g_cell_history[3].X, g_cell_history[3].Y,
+						g_cell_history[4].X, g_cell_history[4].Y);
 		retval	= true;
 	}
 
