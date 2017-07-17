@@ -1600,6 +1600,7 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 			}
 		}
 
+		path_points.reverse();
 		path_display_path_points();
 
 		if (path_points.size() > 1) {
