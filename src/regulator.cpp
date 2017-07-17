@@ -20,6 +20,7 @@
 
 extern Cell_t g_cell_history[];
 int jam=0;
+//bool g_is_should_follow_wall;
 
 static int16_t bumper_turn_angle()
 {
@@ -354,6 +355,7 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 LinearRegulator::LinearRegulator(Point32_t target):
 				speed_max_(40),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
 {
+//	g_is_should_follow_wall = false;
 	s_target = target;
 	g_turn_angle = ranged_angle(
 					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
@@ -380,6 +382,7 @@ bool LinearRegulator::isSwitch()
 	if ((! g_bumper_triggered && get_bumper_status())
 			|| (! g_cliff_triggered && get_cliff_status()))
 	{
+//		g_is_should_follow_wall = true;
 		ROS_INFO("%s, %d:LinearRegulator g_bumper_triggered || g_cliff_triggered.", __FUNCTION__, __LINE__);
 		g_bumper_triggered = get_bumper_status();
 		g_cliff_triggered = get_cliff_status();
@@ -412,6 +415,7 @@ bool LinearRegulator::_isStop()
 	if (_get_obs_value() || rcon_tmp)
 	{
 		g_obs_triggered = _get_obs_value();
+//		g_is_should_follow_wall = true;
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
 			path_set_home(map_get_curr_cell());
