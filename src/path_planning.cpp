@@ -123,6 +123,13 @@ void path_planning_initialize(Cell_t cell)
 	/* Initialize the shortest path. */
 	path_position_init(g_direct_go);
 
+#ifndef ZONE_WALLFOLLOW
+
+	/* Set the back as blocked, since robot will align the start angle with the wall. */
+	Map_SetCell(MAP, cellToCount(-3), cellToCount(0), BLOCKED_BUMPER);
+
+#endif
+
 	map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
 
 	/* Set the starting point as cleaned. */

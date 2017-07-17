@@ -396,16 +396,16 @@ bool LinearRegulator::isSwitch()
 		ROS_INFO("%s, %d:LinearRegulator g_bumper_triggered || g_cliff_triggered.", __FUNCTION__, __LINE__);
 		g_bumper_triggered = get_bumper_status();
 		g_cliff_triggered = get_cliff_status();
-		ROS_INFO("%s, %d: LinearRegulator, g_bumper_hitted || g_cliff_triggered.", __FUNCTION__, __LINE__);
-		g_bumper_triggered = get_bumper_status();
-		g_cliff_triggered = get_cliff_status();
 
 		SpotType spt = SpotMovement::instance() -> getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 			SpotMovement::instance()->setDirectChange();
 
 		mt_set(CM_FOLLOW_LEFT_WALL);
-		g_turn_angle = bumper_turn_angle();
+		if(g_bumper_triggered)
+			g_turn_angle = bumper_turn_angle();
+		else
+			g_turn_angle = cliff_turn_angle();
 		mt_set(CM_LINEARMOVE);
 
 		return true;
@@ -797,18 +797,13 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 
 	back_reg_ = new BackRegulator();
 
-	if (mt_is_follow_wall()){
+	if (mt_is_follow_wall())
 		mt_reg_ = new FollowWallRegulator(origin, target);
-		turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
-		p_reg_ = mt_reg_;
-	}
-
-	else{
+	else
 		mt_reg_ = new LinearRegulator(target);
-		turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
-		p_reg_ = turn_reg_;
-	}
 
+	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
+	p_reg_ = turn_reg_;
 
 	robotbase_obs_adjust_count(50);
 	cm_set_event_manager_handler_state(true);
