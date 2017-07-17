@@ -310,6 +310,21 @@ public:
 		return correction_y_;
 	}
 
+	float getXAcc() const
+	{
+		return x_acc_;
+	}
+
+	float getYAcc() const
+	{
+		return y_acc_;
+	}
+
+	float getZAcc() const
+	{
+		return z_acc_;
+	}
+
 	double getCorrectionYaw() const
 	{
 		return correction_yaw_;
