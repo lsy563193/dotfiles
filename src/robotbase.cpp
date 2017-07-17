@@ -261,10 +261,11 @@ void *robotbase_routine(void*)
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
 
-	while (ros::ok() && !robotbase_thread_stop) {
-		
+	while (ros::ok() && !robotbase_thread_stop)
+	{
 		if(pthread_mutex_lock(&recev_lock)!=0)ROS_ERROR("robotbase pthread receive lock fail");
-		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");	
+		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");
+		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 		//ros::spinOnce();
 
 		boost::mutex::scoped_lock(odom_mutex);
@@ -305,9 +306,9 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[42] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc = receiStream[43];
 		sensor.omni_wheel = (receiStream[44]<<8)|receiStream[45];
-		sensor.x_acc = ((receiStream[46]<<8)|receiStream[47])/258.0f; //in mG
-		sensor.y_acc = ((receiStream[48]<<8)|receiStream[49])/258.0f; //in mG
-		sensor.z_acc = ((receiStream[50]<<8)|receiStream[51])/258.0f; //in mG
+		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);// / 258.0f; //in mG
+		sensor.y_acc = static_cast<int16_t>((receiStream[48]<<8)|receiStream[49]);// / 258.0f; //in mG
+		sensor.z_acc = static_cast<int16_t>((receiStream[50]<<8)|receiStream[51]);// / 258.0f; //in mG
 		sensor.plan = receiStream[52];
 #elif __ROBOT_X400
 		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
@@ -329,9 +330,9 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc_ = receiStream[38];
 		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc_ = ((receiStream[41]<<8)|receiStream[42])/258.0f; //in mG
-		sensor.y_acc_ = ((receiStream[43]<<8)|receiStream[44])/258.0f; //in mG
-		sensor.z_acc_ = ((receiStream[45]<<8)|receiStream[46])/258.0f; //in mG
+		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]) /258.0f; //in mG
+		sensor.y_acc_ = static_cast<int16_t>(((receiStream[43]<<8)|receiStream[44]) /258.0f; //in mG
+		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]) /258.0f; //in mG
 #endif	
 
 		pthread_mutex_lock(&serial_data_ready_mtx);
@@ -365,7 +366,6 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-
 		odom_pub.publish(odom);
 
 /*
@@ -374,11 +374,8 @@ void *robotbase_routine(void*)
 			g_cond_var.notify_all();
 		}
 */
-
 		sensor_pub.publish(sensor);
 		/*---------------publish end --------------------------*/
-
-		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 		// Dynamic adjust obs
 		obs_dynamic_base(OBS_adjust_count);
 	}
@@ -386,7 +383,8 @@ void *robotbase_routine(void*)
 	//pthread_exit(NULL);
 }
 
-void *serial_send_routine(void*){
+void *serial_send_routine(void*)
+{
 	pthread_detach(pthread_self());
 	ROS_INFO("%s,%d thread running",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
@@ -426,7 +424,8 @@ void *serial_send_routine(void*){
 /*---------process_beep()---------------*/
 /*--------author: austin---------------*/
 
-void process_beep(){
+void process_beep()
+{
 	// This routine handles the speaker sounding logic
 	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in g_send_stream.
 	if (temp_speaker_silence_time_count == 0){
@@ -478,6 +477,7 @@ void robotbase_obs_adjust_count(int count)
 	OBS_adjust_count = count;
 #endif
 }
+
 bool is_turn(void)
 {
 	boost::mutex::scoped_lock(odom_mutex);

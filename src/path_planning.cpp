@@ -123,6 +123,13 @@ void path_planning_initialize(Cell_t cell)
 	/* Initialize the shortest path. */
 	path_position_init(g_direct_go);
 
+#ifndef ZONE_WALLFOLLOW
+
+	/* Set the back as blocked, since robot will align the start angle with the wall. */
+	Map_SetCell(MAP, cellToCount(-3), cellToCount(0), BLOCKED_BUMPER);
+
+#endif
+
 	map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
 
 	/* Set the starting point as cleaned. */
@@ -1107,9 +1114,13 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			else
 			{
 				auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
-				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
+				ROS_WARN("%s %d: path_target: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, next.X, next.Y, target.X, target.Y);
 				if (ret == 0)
+				{
 					g_go_home = true;
+					cm_create_home_boundary();
+					wav_play(WAV_BACK_TO_CHARGER);
+				}
 				if (ret == -2){
 					if(g_trapped_mode == 0){
 						g_trapped_mode = 1;
