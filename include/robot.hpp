@@ -335,6 +335,19 @@ public:
 		is_tf_ready_ = is_ready;
 	}
 
+	void setTempSpot(void)
+	{
+		temp_spot_set_ = true;
+	}
+	void resetTempSpot(void)
+	{
+		temp_spot_set_ = false;
+	}
+	bool isTempSpot(void)
+	{
+		return temp_spot_set_;
+	}
+
 //#if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
 	bool isLowBatPaused(void) const
@@ -349,24 +362,15 @@ public:
 	void setLowBatPause(void)
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
+		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		low_bat_pause_cleaning_ = true;
 #endif
 	}
-	void setTempSpot(void)
-	{
-		temp_spot_set_ = true;
-	}
-	void resetTempSpot(void)
-	{
-		temp_spot_set_ = false;
-	}
-	bool isTempSpot(void)
-	{
-		return temp_spot_set_;
-	}
+
 	void resetLowBatPause(void)
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
+		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		low_bat_pause_cleaning_ = false;
 #endif
 	}
@@ -384,6 +388,7 @@ public:
 	void setManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
+		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		manual_pause_cleaning_ = true;
 #endif
 	}
@@ -391,6 +396,7 @@ public:
 	void resetManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
+		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		manual_pause_cleaning_ = false;
 #endif
 	}

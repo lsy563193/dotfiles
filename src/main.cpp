@@ -31,37 +31,6 @@
 #include "verify.h"
 #endif
 
-bool self_check_at_launch()
-{
-	// Skip self check if using direct charge or at charger stub, because robot can not move during direct charge.
-	if (is_direct_charge() || is_on_charger_stub())
-		return true;
-
-	//Bumper protect
-	if (get_bumper_status())
-	{
-		set_led(0, 100);
-		wav_play(WAV_ERROR_BUMPER);
-		if (!is_gyro_on())
-		{
-			set_gyro_on();
-			while (!wait_for_gyro_on())
-				wav_play(WAV_SYSTEM_INITIALIZING);
-		}
-		if (is_bumper_jamed())
-			return false;
-		else
-		{
-			stop_brifly();
-			wav_play(WAV_CLEAR_ERROR);
-			usleep(500000);
-		}
-	}
-	set_error_code(Error_Code_None);
-	set_led(100, 0);
-	return true;
-}
-
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
@@ -72,13 +41,11 @@ void *core_move_thread(void *)
 	ROS_INFO("Robot sensor ready.");
 	wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
-	if (self_check_at_launch())
-	{
-		if (is_direct_charge() || is_on_charger_stub())
-			set_clean_mode(Clean_Mode_Charging);
-		else if (check_bat_ready_to_clean())
-			wav_play(WAV_PLEASE_START_CLEANING);
-	}
+
+	if (is_direct_charge() || is_on_charger_stub())
+		set_clean_mode(Clean_Mode_Charging);
+	else if (check_bat_ready_to_clean())
+		wav_play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
