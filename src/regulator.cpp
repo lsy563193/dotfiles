@@ -109,8 +109,11 @@ static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int
 	ROS_INFO("bumper (%d)!", get_bumper_status());
 	bool is_found;
 	double line_angle;
-	const auto RESET_WALL_DIS = 100;
-	is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle);
+	double distance;
+	auto RESET_WALL_DIS = 100;
+	is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
+	RESET_WALL_DIS = int(distance * 1000);
+	ROS_INFO("line_distance = %lf", distance);
 	ROS_INFO("line_angle_raw = %lf", line_angle);
 	auto angle = double_scale_10(line_angle);
 
@@ -301,8 +304,8 @@ bool TurnRegulator::_isStop()
 
 void TurnRegulator::setTarget()
 {
-//	if(LASER_FOLLOW_WALL)
-//		g_turn_angle = laser_turn_angle();
+	if(LASER_FOLLOW_WALL)
+		g_turn_angle = laser_turn_angle();
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 	ROS_INFO("%s %d: TurnRegulator, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
