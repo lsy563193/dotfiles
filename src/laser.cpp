@@ -227,7 +227,7 @@ void Laser::stopShield(void)
 	ROS_INFO("%s %d: Stop laser shield.", __FUNCTION__, __LINE__);
 }
 
-bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle)
+bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
 {
 	int		i, count;
 	bool	found = false;
@@ -262,8 +262,10 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 	if (!fit_line.empty()) {
 		if (mt_is_left()) {
 			*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
+			*distance = fabs(fit_line.begin()->C / (sqrt(fit_line.begin()->A * fit_line.begin()->A + fit_line.begin()->B * fit_line.begin()->B)));
 		} else {
 			*line_angle = atan2(0 - fit_line.back().A, fit_line.back().B) * 180 / PI;
+			*distance = fabs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 		ROS_INFO("line_angle = %lf", *line_angle);

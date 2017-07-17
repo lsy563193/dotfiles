@@ -74,7 +74,6 @@ void cm_follow_wall_turn(uint16_t speed, int16_t angle);
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
 int16_t path_target(Cell_t& next, Cell_t& target);
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
-bool cm_linear_move_to_point(Point32_t Target, int32_t speed_max);
 
 int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
 											double origin_x, double origin_y);
@@ -91,20 +90,6 @@ bool cm_curve_move_to_point();
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-/*
- * Robot move to target cell
- * @param x	cell x
- * @param y	cell y
- * @param mode 2: Dynamic change cells near target cell
- *			   1: with escape mode, not finish
- *			   0: no escape mode
- * @return	-2: Robot is trapped
- *		-1: Robot cannot move to target cell
- *		1: Robot arrive target cell
- */
-bool cm_move_to(int16_t x, int16_t y);
-//int8_t CM_MoveToCell( int16_t x, int16_t y);
-
 void cm_move_back_(uint16_t dist);
 
 	/* Robot will try to go to the cells in g_home_point_old_path list
@@ -120,9 +105,6 @@ void cm_move_back_(uint16_t dist);
 void cm_go_home(void);
 bool cm_go_to_charger();
 //void CM_SetStationHome(void);
-
-// This function is for setting the continue point for robot to go after charge.
-void cm_set_continue_point(int32_t x, int32_t y);
 
 void CM_ResetBoundaryBlocks(void);
 

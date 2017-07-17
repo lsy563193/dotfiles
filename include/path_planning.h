@@ -275,4 +275,9 @@ uint8_t is_a_block(int16_t x, int16_t y);
  */
 uint16_t path_get_robot_direction(void);
 
+// This function is for setting the continue cell for robot to go after charge.
+void path_set_continue_cell(Cell_t cell);
+
+int8_t path_get_continue_target(Cell_t& next, Cell_t& target);
+
 #endif

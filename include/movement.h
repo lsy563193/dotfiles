@@ -374,6 +374,7 @@ uint32_t get_work_time();
 void set_error_code(uint8_t Code);
 uint8_t get_error_code(void);
 void alarm_error(void);
+bool check_error_cleared(uint8_t error_code);
 
 uint32_t get_right_wheel_step(void);
 uint32_t get_left_wheel_step(void);

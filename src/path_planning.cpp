@@ -42,11 +42,13 @@
 #include "path_planning.h"
 #include "shortest_path.h"
 #include "spot.h"
+#include "robot.hpp"
 #include "movement.h"
 
 #include "wav.h"
 
 #define NO_TARGET_LEFT 0
+#define TARGET_REACHED 0
 #define TARGET_FOUND 1
 #define TRAPPED 2
 
@@ -70,6 +72,9 @@ std::list <Cell_t> g_home_point_new_path;
 Cell_t g_current_home_cell;
 
 int16_t g_home_x = 0, g_home_y = 0;
+
+// This is for the continue point for robot to go after charge.
+Cell_t g_continue_cell;
 
 Cell_t g_cell_history[5];
 const Cell_t& g_curr = g_cell_history[0];
@@ -117,13 +122,6 @@ void path_planning_initialize(Cell_t cell)
 
 	/* Initialize the shortest path. */
 	path_position_init(g_direct_go);
-
-#ifndef ZONE_WALLFOLLOW
-
-	/* Set the back as blocked, since robot will align the start angle with the wall. */
-	Map_SetCell(MAP, cellToCount(-3), cellToCount(0), BLOCKED_BUMPER);
-
-#endif
 
 	map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
 
@@ -937,8 +935,9 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, target.X, target.Y);
 
 	if(found == 0)
-	return 0;
+		return 0;
 
+	set_explore_new_path_flag(true);
 	return path_next_best(g_curr, target.X, target.Y, next.X, next.Y);
 }
 
@@ -1097,33 +1096,38 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
         return ret;
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
-		auto is_found = path_lane_is_cleaned(next);
-		target = next;
-		if (!is_found)
+		extern bool g_resume_cleaning;
+		if (g_resume_cleaning && path_get_continue_target(next, target) != TARGET_FOUND)
+			g_resume_cleaning = false;
+
+		if (!g_resume_cleaning)
 		{
-			auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
-			if (ret == 0)
-				g_go_home = true;
-			if (ret == -2){
-				if(g_trapped_mode == 0){
-					g_trapped_mode = 1;
-					mt_set(CM_FOLLOW_LEFT_WALL);
-					extern uint32_t g_escape_trapped_timer;
-					g_escape_trapped_timer = time(NULL);
-				}else if(g_trapped_mode == 1){
-					return 2;
+			if (path_lane_is_cleaned(next))
+				target = next;
+			else
+			{
+				auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
+				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
+				if (ret == 0)
+					g_go_home = true;
+				if (ret == -2){
+					if(g_trapped_mode == 0){
+						g_trapped_mode = 1;
+						mt_set(CM_FOLLOW_LEFT_WALL);
+						extern uint32_t g_escape_trapped_timer;
+						g_escape_trapped_timer = time(NULL);
+					}else if(g_trapped_mode == 1){
+						return 2;
+					}
+					return 1;
 				}
-				return 1;
 			}
 			ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d),target(%d,%d)", __FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, next.X,next.Y,target.X,target.Y);
 		}
 	}
 
-	if (g_go_home)
-	{
-		if (path_get_home_target(next, target) == NO_TARGET_LEFT)
-			return 0;
-	}
+	if (g_go_home && path_get_home_target(next, target) == NO_TARGET_LEFT)
+		return 0;
 
 	//found ==1
 	*next_point = map_cell_to_point(next);
@@ -1187,6 +1191,12 @@ void path_set_home(Cell_t cell)
 			path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
 		}
 	}
+	else if(cell.X == 0 && cell.Y == 0)
+	{
+		extern bool g_start_point_seen_charger, g_have_seen_charge_stub;
+		g_start_point_seen_charger = true;
+		g_have_seen_charge_stub = true;
+	}
 }
 
 /* Get next point and home point.
@@ -1244,7 +1254,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 			target = g_current_home_cell;
 
 		if (is_block_accessible(target.X, target.Y) == 0) {
-			ROS_WARN("%s %d: target is blocked.\n", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
 			map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 		}
 
@@ -1326,5 +1336,40 @@ void wf_path_planning_initialize(Cell_t cell)
 
 	/* Initialize the shortest path. */
 	path_position_init(g_direct_go);
+}
+
+void path_set_continue_cell(Cell_t cell)
+{
+	g_continue_cell = cell;
+	ROS_INFO("%s %d: Set continue cell: (%d, %d).", __FUNCTION__, __LINE__, g_continue_cell.X, g_continue_cell.Y);
+}
+
+int8_t path_get_continue_target(Cell_t& next, Cell_t& target)
+{
+	int8_t return_val;
+	target = g_continue_cell;
+
+	ROS_WARN("%s %d: Need to resume cleaning.", __FUNCTION__, __LINE__);
+	if (map_get_curr_cell() == g_continue_cell)
+	{
+		return_val = TARGET_REACHED;
+		return return_val;
+	}
+
+	if (is_block_accessible(target.X, target.Y) == 0) {
+		ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
+		map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
+	}
+
+	Cell_t pos{target.X, target.Y};
+	set_explore_new_path_flag(false);
+	auto path_next_status = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), next.X, next.Y);
+	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
+	if (path_next_status == 1 && !cm_check_loop_back(next))
+		return_val = TARGET_FOUND;
+	else
+		return_val = NO_TARGET_LEFT;
+
+	return return_val;
 }
 

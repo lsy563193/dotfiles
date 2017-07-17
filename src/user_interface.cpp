@@ -333,8 +333,16 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 		if (get_rcon_remote() == Remote_Clean)
 		{
 			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_error_code());
-			beep_for_command(true);
-			user_interface_reject_reason = 4;
+			if (check_error_cleared(get_error_code()))
+			{
+				beep_for_command(true);
+				user_interface_reject_reason = 4;
+			}
+			else
+			{
+				beep_for_command(false);
+				user_interface_reject_reason = 1;
+			}
 			reset_stop_event_status();
 		}
 		else
@@ -466,7 +474,10 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 
 	time_t key_press_start_time = time(NULL);
 
-	beep_for_command(true);
+	if (check_error_cleared(get_error_code()))
+		beep_for_command(true);
+	else
+		beep_for_command(false);
 
 	while (get_key_press() == KEY_CLEAN)
 	{
@@ -495,8 +506,13 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 
 	if (get_error_code())
 	{
-		ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
-		user_interface_reject_reason = 4;
+		if (check_error_cleared(get_error_code()))
+		{
+			user_interface_reject_reason = 4;
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
+		}
+		else
+			user_interface_reject_reason = 1;
 	}
 	else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
 	{
