@@ -124,7 +124,7 @@ static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int
 	ROS_INFO("line_angle = %d", angle);
 	if (is_found && angle >= angle_min && angle < angle_max)
 	{
-		g_turn_angle = -angle;
+		g_turn_angle = mt_is_right() ? angle : -angle;
 		g_wall_distance = RESET_WALL_DIS;
 		ROS_INFO("laser generate turn angle(%d)!",g_turn_angle);
 	}
