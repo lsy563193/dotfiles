@@ -182,9 +182,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-	if (robot::instance()->isLowBatPaused())
+	extern bool g_resume_cleaning;
+	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
-		robot::instance()->resetLowBatPause();
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		s_laser->startShield();
 		return;
@@ -317,8 +317,12 @@ MotionManage::~MotionManage()
 	}
 	else if (robot::instance()->isLowBatPaused())
 	{
+		extern bool g_resume_cleaning;
+		g_resume_cleaning = true;
+		robot::instance()->resetLowBatPause();
 		set_clean_mode(Clean_Mode_Charging);
 		wav_play(WAV_PAUSE_CLEANING);
+		cm_reset_go_home();
 		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 		ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
@@ -331,7 +335,6 @@ MotionManage::~MotionManage()
 		extern bool g_have_seen_charge_stub;
 		if(!g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		robot::instance()->resetLowBatPause();
 		cm_reset_go_home();
 	}
 
@@ -400,17 +403,8 @@ bool MotionManage::initNavigationCleaning(void)
 	set_led(100, 0);
 
 	// Initialize motors and map.
-	if (robot::instance()->isLowBatPaused())
-	{
-		if (get_rcon_status())
-		{
-			// Push the start point into the home point list.
-			g_home_point_old_path.push_front(map_get_curr_cell());
-		}
-
-		reset_rcon_status();
-	}
-	else if (!robot::instance()->isManualPaused())
+	extern bool g_resume_cleaning;
+	if (!robot::instance()->isManualPaused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning)
 	{
 		g_saved_work_time = 0;
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
@@ -438,8 +432,8 @@ bool MotionManage::initNavigationCleaning(void)
 		robot::instance()->initOdomPosition();
 
 		// If it it the first time cleaning, initialize the g_continue_point.
-		extern Point32_t g_continue_point;
-		g_continue_point.X = g_continue_point.Y = 0;
+		extern Cell_t g_continue_cell;
+		g_continue_cell.X = g_continue_cell.Y = 0;
 		extern bool g_have_seen_charge_stub;
 		g_have_seen_charge_stub = false;
 	}
@@ -453,8 +447,11 @@ bool MotionManage::initNavigationCleaning(void)
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
 
-	if (robot::instance()->isLowBatPaused())
+	if (g_resume_cleaning)
+	{
+		ROS_WARN("Restore from low battery pause");
 		wav_play(WAV_CLEANING_CONTINUE);
+	}
 	else if (robot::instance()->isManualPaused())
 	{
 		ROS_WARN("Restore from manual pause");
