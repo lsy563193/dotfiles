@@ -75,7 +75,7 @@ static int16_t obs_turn_angle()
 	g_turn_angle = -920;
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
-	ROS_INFO("g_turn_angle(%d)",g_turn_angle);
+	ROS_WARN("g_turn_angle(%d)",g_turn_angle);
 	return g_turn_angle;
 }
 
@@ -283,13 +283,13 @@ TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(13)
 {
 	accurate_ = speed_max_ > 30 ? 30 : 10;
 	s_target_angle = angle;
-	ROS_INFO("%s %d: Init, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
+	ROS_WARN("%s %d: Init, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
 
 bool TurnRegulator::isReach()
 {
 	if (abs(s_target_angle - gyro_get_angle()) < accurate_){
-		ROS_INFO("%s, %d: TurnRegulator target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
+		ROS_WARN("%s, %d: TurnRegulator target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
 		return true;
 	}
 
@@ -318,8 +318,8 @@ bool TurnRegulator::_isStop()
 
 void TurnRegulator::setTarget()
 {
-	if(LASER_FOLLOW_WALL)
-		g_turn_angle = laser_turn_angle();
+//	if(LASER_FOLLOW_WALL)
+//		g_turn_angle = laser_turn_angle();
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 	ROS_INFO("%s %d: TurnRegulator, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
@@ -373,11 +373,7 @@ LinearRegulator::LinearRegulator(Point32_t target):
 {
 //	g_is_should_follow_wall = false;
 	s_target = target;
-	g_turn_angle = ranged_angle(
-					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
 	ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
-	ROS_INFO("%s %d: turn angle:%d, target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, g_turn_angle,
-						course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y), gyro_get_angle());
 }
 
 bool LinearRegulator::isReach()
@@ -431,12 +427,16 @@ bool LinearRegulator::_isStop()
 	if (_get_obs_value() || rcon_tmp)
 	{
 		g_obs_triggered = _get_obs_value();
+
 //		g_is_should_follow_wall = true;
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
 			path_set_home(map_get_curr_cell());
 		}
-
+/*		if(g_obs_triggered)
+			g_turn_angle = obs_turn_angle();
+		else
+			g_turn_angle = rcon_turn_angle();*/
 		ROS_INFO("%s, %d: LinearRegulator, g_obs_triggered || g_rcon_triggered.", __FUNCTION__, __LINE__);
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
@@ -809,6 +809,24 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 	else
 		mt_reg_ = new LinearRegulator(target);
 
+	if(mt_is_follow_wall())
+	{
+		ROS_WARN("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered);
+		if (g_obs_triggered)
+			g_turn_angle = obs_turn_angle();
+		else if (g_bumper_triggered)
+			g_turn_angle = bumper_turn_angle();
+		else if (g_cliff_triggered)
+			g_turn_angle = cliff_turn_angle();
+		else if (g_rcon_triggered)
+			g_turn_angle = rcon_turn_angle();
+//		if (LASER_FOLLOW_WALL)
+//			g_turn_angle = laser_turn_angle();
+	}else if(mt_is_linear())
+		g_turn_angle = ranged_angle(
+					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
+
+	ROS_WARN("g_turn_angle(%d)",g_turn_angle);
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
 	p_reg_ = turn_reg_;
 

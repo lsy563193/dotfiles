@@ -265,7 +265,6 @@ MotionManage::~MotionManage()
 {
 
 	reset_stop_event_status();
-	cm_unregister_events();
 	disable_motors();
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
@@ -280,19 +279,14 @@ MotionManage::~MotionManage()
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
 		SpotMovement::instance()->spotDeinit();// clear the variables.
+		// Wait for 1s before playing wavs so the noise of suction will be less and the wavs will be clearer.
 		sleep(1);
 	}
 
-	if (g_fatal_quit_event) // Also handles for g_battery_low/g_charge_detect/g_cliff_all_triggered.
+	if (!g_fatal_quit_event && g_key_clean_pressed && robot::instance()->isManualPaused())
 	{
-		robot::instance()->resetLowBatPause();
-		cm_reset_go_home();
-		if (g_cliff_all_triggered)
-			wav_play(WAV_ERROR_LIFT_UP);
-	}
-	else if (g_key_clean_pressed)
-	{
-		if (robot::instance()->isManualPaused())
+		wav_play(WAV_PAUSE_CLEANING);
+		if (!g_cliff_all_triggered)
 		{
 			extern bool g_go_home;
 			if (g_go_home)
@@ -302,7 +296,6 @@ MotionManage::~MotionManage()
 				path_set_home(g_current_home_cell);
 			}
 			set_clean_mode(Clean_Mode_Userinterface);
-			wav_play(WAV_PAUSE_CLEANING);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			if (g_go_home)
@@ -315,32 +308,54 @@ MotionManage::~MotionManage()
 				ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
 			g_saved_work_time += get_work_time();
 			ROS_INFO("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+			cm_unregister_events();
 			return;
 		}
-		else // It should be Clean_Mode_WallFollow or Clean_Mode_Spot or long press key clean stop.
-			cm_reset_go_home();
+		else
+		{
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+			robot::instance()->resetManualPause();
+		}
 	}
-	else if (robot::instance()->isLowBatPaused())
+
+	cm_reset_go_home();
+
+	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
 	{
-		extern bool g_resume_cleaning;
-		g_resume_cleaning = true;
-		robot::instance()->resetLowBatPause();
-		set_clean_mode(Clean_Mode_Charging);
 		wav_play(WAV_PAUSE_CLEANING);
-		cm_reset_go_home();
-		robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-		ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
-		ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
-		g_saved_work_time += get_work_time();
-		ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
-		return;
+		if (!g_cliff_all_triggered)
+		{
+			extern bool g_resume_cleaning;
+			g_resume_cleaning = true;
+			robot::instance()->resetLowBatPause();
+			set_clean_mode(Clean_Mode_Charging);
+			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
+			g_saved_work_time += get_work_time();
+			ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+			cm_unregister_events();
+			return;
+		}
+		else
+		{
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+			robot::instance()->resetLowBatPause();
+		}
+	}
+
+	cm_unregister_events();
+	if (g_fatal_quit_event) // Also handles for g_battery_low/g_charge_detect/g_cliff_all_triggered.
+	{
+		robot::instance()->resetLowBatPause();
+		if (g_cliff_all_triggered)
+			wav_play(WAV_ERROR_LIFT_UP);
 	}
 	else // Normal finish.
 	{
 		extern bool g_have_seen_charge_stub;
 		if(!g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		cm_reset_go_home();
 	}
 
 	if (s_slam != nullptr)
