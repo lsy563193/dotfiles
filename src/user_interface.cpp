@@ -192,6 +192,7 @@ void user_interface(void)
 
 	user_interface_unregister_events();
 
+	// Make sure alarm will be done.
 	if (user_interface_plan_status == 2)
 		wav_play(WAV_CANCEL_APPOINTMENT);
 	else if (user_interface_plan_status == 1)
@@ -390,7 +391,15 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			}
 			case Remote_Home:
 			{
-				temp_mode = Clean_Mode_GoHome;
+				if (robot::instance()->isManualPaused())
+				{
+					extern bool g_go_home;
+					if (!g_go_home)
+						g_remote_home = true;
+					temp_mode = Clean_Mode_Navigation;
+				}
+				else
+					temp_mode = Clean_Mode_GoHome;
 				break;
 			}
 			case Remote_Wall_Follow:
@@ -519,7 +528,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		user_interface_reject_reason = 2;
 	}
-	else if(!battery_ready_to_clean)
+	else if(!battery_ready_to_clean && !robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		user_interface_reject_reason = 3;
