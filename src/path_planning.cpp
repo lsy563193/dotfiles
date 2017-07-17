@@ -1144,7 +1144,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 	*next_point = map_cell_to_point(next);
 	*target_point = map_cell_to_point(target);
 
-	if(get_clean_mode() == Clean_Mode_Navigation)
+	if(get_clean_mode() == Clean_Mode_Navigation || g_go_home)
 		mt_update(next_point, *target_point, g_last_dir);
 
 	if (g_curr.X == next.X)
