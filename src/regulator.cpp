@@ -851,7 +851,6 @@ bool RegulatorManage::_isStop()
 
 void RegulatorManage::switchToNext()
 {
-	auto reg_old = p_reg_;
 	if (p_reg_ == turn_reg_)
 	{
 		if(g_bumper_triggered || g_cliff_triggered){
@@ -884,7 +883,7 @@ void RegulatorManage::switchToNext()
 	}
 	ROS_INFO("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered);
 	setTarget();
-	if(reg_old != back_reg_){
+	if(p_reg_ != back_reg_){
 		g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 		g_cliff_triggered = 0;
 	}
