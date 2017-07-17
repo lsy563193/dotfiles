@@ -145,7 +145,7 @@ static  void _update_map_obs()
 			{
 				if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BUMPER)
 				{
-					ROS_ERROR("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+					ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 					map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
 				}
 			}
@@ -168,7 +168,7 @@ static  void _update_map_obs()
 //				map_set_cell(MAP, x, y, BLOCKED_OBS);
 			map_set_cell(MAP, x, y, BLOCKED_OBS);
 		} else if(! is_trig && status == BLOCKED_OBS){
-			ROS_WARN("%s,%d:unclean (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+			ROS_INFO("%s,%d:unclean (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 			map_set_cell(MAP, x, y, UNCLEAN);
 		}
 	}
@@ -197,7 +197,7 @@ static void _update_map_bumper()
 	int32_t	x, y;
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
-		ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
 	}
 }
@@ -226,7 +226,7 @@ static void _update_map_cliff()
 	int32_t	x, y;
 	for (auto& d_cell : d_cells) {
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
-		ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_CLIFF);
 	}
 }
@@ -265,10 +265,10 @@ static void _update_map_rcon()
 	int32_t x,y;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 	map_set_cell(MAP, x, y, BLOCKED_RCON);
-	ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//	ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 	if (dx2 != 0){
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-		ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//		ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 	}
 }

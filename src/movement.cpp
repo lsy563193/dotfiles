@@ -166,6 +166,43 @@ void alarm_error(void)
 
 }
 
+bool check_error_cleared(uint8_t error_code)
+{
+	bool error_cleared = true;
+	switch (error_code)
+	{
+		case Error_Code_LeftWheel:
+		case Error_Code_RightWheel:
+		case Error_Code_LeftBrush:
+		case Error_Code_RightBrush:
+		case Error_Code_MainBrush:
+		case Error_Code_Fan_H:
+			break;
+		case Error_Code_Cliff:
+		{
+			if (get_cliff_status())
+			{
+				ROS_WARN("%s %d: Cliff still triggered.", __FUNCTION__, __LINE__);
+				error_cleared = false;
+			}
+			break;
+		}
+		case Error_Code_Bumper:
+		{
+			if (get_bumper_status())
+			{
+				ROS_WARN("%s %d: Bumper still triggered.", __FUNCTION__, __LINE__);
+				error_cleared = false;
+			}
+			break;
+		}
+		default:
+			break;
+	}
+
+	return error_cleared;
+}
+
 uint32_t get_right_wheel_step(void)
 {
 	double t, step;
