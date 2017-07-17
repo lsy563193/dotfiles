@@ -136,7 +136,7 @@ static int16_t laser_turn_angle()
 
 	if (g_obs_triggered != 0)
 	{
-		ROS_INFO("front obs trigger");
+		ROS_ERROR("%s %d: front obs trigger.", __FUNCTION__, __LINE__);
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
 	}
 	else if(g_bumper_triggered != 0)
@@ -153,12 +153,18 @@ static int16_t laser_turn_angle()
 			angle_max = 900;
 		}
 
-		if (g_bumper_triggered == AllBumperTrig)
+		if (g_bumper_triggered == AllBumperTrig) {
+			ROS_ERROR("%s %d: AllBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(90, 270, 900, 1800);
-		else if (g_bumper_triggered == RightBumperTrig)
+		}
+		else if (g_bumper_triggered == RightBumperTrig) {
+			ROS_ERROR("%s %d: RightBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(90, 180, angle_min, angle_max);
-		else if (g_bumper_triggered == LeftBumperTrig)
+		}
+		else if (g_bumper_triggered == LeftBumperTrig) {
+			ROS_ERROR("%s %d: LeftBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(180, 270, angle_min, angle_max);
+		}
 	}
 
 	return g_turn_angle;
@@ -616,7 +622,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto &same_speed = (mt_is_left()) ? l_speed : r_speed;
 	auto &diff_speed = (mt_is_left()) ? r_speed : l_speed;
 //	ROS_INFO("FollowWallRegulator adjustSpeed");
-	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
+	ROS_DEBUG("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
 	if ((same_dist) < (uint32_t) g_straight_distance)
 	{
 		int32_t speed;
