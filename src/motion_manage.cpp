@@ -153,7 +153,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_from_station = 0;
 	g_trapped_mode = 0;
 	g_motion_init_succeeded = false;
+	bool remote_home_during_pause = false;
+	if (robot::instance()->isManualPaused() && g_remote_home)
+		remote_home_during_pause = true;
 	event_manager_reset_status();
+	if (remote_home_during_pause)
+		g_remote_home = true;
 	g_turn_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
@@ -457,6 +462,16 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		ROS_WARN("Restore from manual pause");
 		wav_play(WAV_CLEANING_CONTINUE);
+		if (g_go_home || (!g_go_home && g_remote_home))
+		{
+			wav_play(WAV_BACK_TO_CHARGER);
+			if (!g_go_home && g_remote_home)
+			{
+				cm_create_home_boundary();
+				g_go_home = true;
+				g_remote_home = false;
+			}
+		}
 	}
 	else if(g_plan_activated == true)
 	{

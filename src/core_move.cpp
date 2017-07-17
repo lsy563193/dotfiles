@@ -645,7 +645,7 @@ int cm_cleaning()
 			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home and g_battery_home.", __FUNCTION__, __LINE__);
 			g_go_home = true;
 			work_motor_configure();
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 			if(g_battery_home)
 				wav_play(WAV_BATTERY_LOW);
 			wav_play(WAV_BACK_TO_CHARGER);
