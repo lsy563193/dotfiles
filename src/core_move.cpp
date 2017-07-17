@@ -74,13 +74,11 @@ bool g_should_follow_wall;
 
 Point32_t g_next_point, g_target_point;
 
-// This is for the continue point for robot to go after charge.
-Point32_t g_continue_point;
-
 //uint8_t	g_remote_go_home = 0;
 bool	g_go_home = false;
 bool	g_from_station = 0;
 int16_t g_map_gyro_offset = 0;
+bool g_resume_cleaning = false;
 
 // This flag is for checking whether map boundary is created.
 bool g_map_boundary_created = false;
@@ -383,6 +381,13 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 	set_wheel_speed(0, 0);
 }
 
+/*
+ * Robot move to target cell
+ * @param target: Target cell.
+ * @return	-2: Robot is trapped
+ *			-1: Robot cannot move to target cell
+ *			1: Robot arrive target cell
+ */
 bool cm_move_to(Point32_t target)
 {
 	RegulatorManage rm({map_get_x_count(), map_get_y_count()},target);
@@ -419,44 +424,6 @@ bool cm_move_to(Point32_t target)
 	return false;
 }
 
-bool cm_move_to(int16_t target_x, int16_t target_y)
-{
-
-	while (ros::ok()) {
-		Cell_t pos{target_x, target_y};
-		Cell_t	tmp;
-		auto pathFind = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), tmp.X, tmp.Y);
-
-		ROS_INFO("%s %d: Path Find: %d\tTarget: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, pathFind, tmp.X, tmp.Y,
-						 map_get_x_cell(), map_get_y_cell());
-		if ( pathFind == 1 || pathFind == SCHAR_MAX ) {
-			path_update_cell_history();
-
-			if (cm_check_loop_back(tmp))
-				return false;
-
-			ROS_INFO("%s %d: Move to target...", __FUNCTION__, __LINE__ );
-			debug_map(MAP, tmp.X, tmp.Y);
-			Point32_t	Next_Point{cell_to_count(tmp.X), cell_to_count(tmp.Y) };
-//			if (path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-				cm_move_to(Next_Point);
-
-			if (g_fatal_quit_event || g_key_clean_pressed )
-				return false;
-
-			if ((g_battery_home || g_remote_home) && !g_go_home )
-				return false;
-
-			//Arrive exit cell, set < 3 when ROBOT_SIZE == 5
-			if (two_points_distance(target_x, target_y, map_get_x_cell(), map_get_y_cell()) < ROBOT_SIZE / 2 + 1 ) {
-				ROS_WARN("%s %d: Now: (%d, %d)\tDest: (%d, %d)", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), target_x , target_y);
-				return true;
-			}
-		} else
-			return false;
-	}
-	return false;
-}
 /*
 
 bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_right)
@@ -572,32 +539,7 @@ bool cm_curve_move_to_point()
 
 	return true;
 }
-
-int16_t get_round_angle(CMMoveType type){
-	int16_t		angle;
-	auto status = get_bumper_status();
-	if ((status & LeftBumperTrig) && !(status & RightBumperTrig)) {
-		angle = (mt_is_left()) ? 450 : 1350;
-	} else if (!(status & LeftBumperTrig) && (status & RightBumperTrig)) {
-		angle = (mt_is_left()) ? 1350 : 450;
-	} else {
-		angle = 900;
-	}
-	return angle;
-}
 */
-
-bool cm_resume_cleaning()
-{
-	robot::instance()->resetLowBatPause();
-
-	cm_move_to(count_to_cell(g_continue_point.X), count_to_cell(g_continue_point.Y));
-	if (g_fatal_quit_event || g_key_clean_pressed)
-	{
-		return false;
-	}
-	return true;
-}
 
 void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 {
@@ -630,25 +572,22 @@ int cm_cleaning()
 
 	g_motion_init_succeeded = true;
 
-	if (!g_go_home && (robot::instance()->isLowBatPaused()))
-		if (!cm_resume_cleaning())
-			return 0;
-
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
 		if (!g_go_home && (g_remote_home || g_battery_home))
 		{
-			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home.", __FUNCTION__, __LINE__);
-			g_remote_home = false;
+			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home and g_battery_home.", __FUNCTION__, __LINE__);
 			g_go_home = true;
 			work_motor_configure();
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 			if(g_battery_home)
 				wav_play(WAV_BATTERY_LOW);
 			wav_play(WAV_BACK_TO_CHARGER);
-			if (!robot::instance()->isLowBatPaused() && !g_map_boundary_created)
+			if (!g_battery_home && !g_map_boundary_created)
 				cm_create_home_boundary();
+			g_remote_home = false;
+			g_battery_home = false;
 		}
 
 		if (!g_go_home && g_remote_spot)
@@ -667,7 +606,9 @@ int cm_cleaning()
 		ROS_INFO("%s %d: is_found: %d, next point(%d, %d), target point(%d, %d).", __FUNCTION__, __LINE__, is_found, count_to_cell(g_next_point.X), count_to_cell(g_next_point.Y), count_to_cell(g_target_point.X), count_to_cell(g_target_point.Y));
 		if (is_found == 0) //No target point
 		{
-			// If it is the last point, it means it it now at (0, 0).
+			// It means robot can not go to charger stub.
+			robot::instance()->resetLowBatPause();
+			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
 			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
 				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
 				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
@@ -722,16 +663,9 @@ bool cm_go_to_charger()
 
 void cm_reset_go_home(void)
 {
-	ROS_DEBUG("Reset go home flags here.");
+	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
 	g_go_home = false;
 	g_map_boundary_created = false;
-}
-
-void cm_set_continue_point(int32_t x, int32_t y)
-{
-	ROS_INFO("%s %d: Set continue point: (%d, %d).", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-	g_continue_point.X = x;
-	g_continue_point.Y = y;
 }
 
 bool cm_check_loop_back(Cell_t target) {
@@ -1774,7 +1708,7 @@ void cm_handle_battery_home(bool state_now, bool state_last)
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
-			cm_set_continue_point(map_get_x_count(), map_get_y_count());
+			path_set_continue_cell(map_get_curr_cell());
 			robot::instance()->setLowBatPause();
 		}
 #endif 

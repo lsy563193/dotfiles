@@ -23,6 +23,9 @@ uint8_t g_stop_charge_counter = 0;
 uint8_t charge_plan_status = 0;
 uint8_t charge_reject_reason = 0;
 time_t charge_plan_confirm_time = time(NULL);
+
+extern bool g_resume_cleaning;
+
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {
@@ -44,20 +47,22 @@ void charge_function(void)
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 
 	bool eh_status_now=false, eh_status_last=false;
+	uint16_t bat_v;
+
 	set_led(100, 100);
 	set_start_charge();
 	set_plan_status(0);
 	charge_register_event();
 	event_manager_reset_status();
 	wav_play(WAV_BATTERY_CHARGE);
-	uint16_t bat_v;
 	ROS_INFO("%s %d: Start charger mode.", __FUNCTION__, __LINE__);
+
 	while(ros::ok())
 	{
 		usleep(10000);
 		bat_v = get_battery_voltage();
 
-		if (robot::instance()->isLowBatPaused())
+		if (g_resume_cleaning)
 		{
 			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
 			{
@@ -71,14 +76,14 @@ void charge_function(void)
 
 			if (bat_enough_to_continue_cleaning_counter > 500)// About 10 seconds.
 			{
-				ROS_INFO("Robot finish charging, continue cleaning.");
+				ROS_INFO("%s %d: Robot finish charging, continue cleaning.", __FUNCTION__, __LINE__);
 				set_clean_mode(Clean_Mode_Navigation);
 				break;
 			}
 		}
 		if(show_batv_counter > 250)
 		{
-			ROS_INFO(" In charge mode looping , battery voltage %5.2f V.",bat_v/100.0);
+			ROS_INFO("%s %d: In charge mode looping , battery voltage %5.2f V.", __FUNCTION__, __LINE__, bat_v/100.0);
 			show_batv_counter = 0;
 		}
 		else
@@ -93,22 +98,23 @@ void charge_function(void)
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
 		{
-			if(robot::instance()->isLowBatPaused())
+			if (g_resume_cleaning)
 			{
 				if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
 				{
-					ROS_INFO("[gotocharger.cpp] Exit charger mode and but battery too low to continue cleaning.");
+					ROS_INFO("%s %d: Exit charger mode and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
 					set_clean_mode(Clean_Mode_Userinterface);
+					g_resume_cleaning = false;
 				}
 				else
 				{
-					ROS_INFO("[gotocharger.cpp] Exit charger mode and continue cleaning.");
+					ROS_INFO("%s %d: Exit charger mode and continue cleaning.", __FUNCTION__, __LINE__);
 					set_clean_mode(Clean_Mode_Navigation);
 				}
 				break;
 			}
 
-			ROS_INFO("[gotocharger.cpp] Exit charger mode and go to userinterface mode.");
+			ROS_INFO("%s %d: Exit charger mode and go to userinterface mode.", __FUNCTION__, __LINE__);
 			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
