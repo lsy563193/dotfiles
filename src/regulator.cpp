@@ -285,6 +285,7 @@ bool TurnRegulator::isSwitch()
 //	ROS_INFO("TurnRegulator::isSwitch");
 	if(isReach() ||(! g_bumper_triggered  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_status()))
 	{
+		ROS_WARN("%s, %d: TurnRegulator should switch.", __FUNCTION__, __LINE__);
 		g_bumper_triggered = get_bumper_status();
 		g_cliff_triggered = get_cliff_status();
 		reset_sp_turn_count();
@@ -368,7 +369,7 @@ bool LinearRegulator::isReach()
 
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
-		ROS_INFO("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -777,6 +778,7 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 //RegulatorManage
 RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 {
+	ROS_WARN("%s %d: origin(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, count_to_cell(origin.X), count_to_cell(origin.Y), count_to_cell(target.X), count_to_cell(target.Y));
 	g_bumper_cnt = g_cliff_cnt =0;
 	reset_rcon_status();
 
