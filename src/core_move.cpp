@@ -454,6 +454,10 @@ bool cm_move_to(Point32_t target)
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok())
 	{
+		if (get_clean_mode() == Clean_Mode_WallFollow && mt_is_linear()) {
+			wall_dynamic_base(30);
+		}
+
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 		{
 			usleep(100);
