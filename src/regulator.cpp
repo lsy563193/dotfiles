@@ -231,8 +231,15 @@ bool BackRegulator::isReach()
 		ROS_INFO("%s, %d: BackRegulator ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
-		if((g_bumper_cnt == 0 && g_cliff_cnt == 0) || g_bumper_cnt >= 3 || g_cliff_cnt >= 3)
+		if(g_bumper_cnt == 0 && g_cliff_cnt == 0)
 			return true;
+		if(g_bumper_cnt >= 2 || g_cliff_cnt >= 2){
+			if(g_cliff_cnt >= 2)
+				g_cliff_jam = true;
+			else
+				g_bumper_jam = true;
+			return false;
+		}
 		else
 			setTarget();
 	}
