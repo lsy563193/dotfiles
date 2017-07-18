@@ -1323,7 +1323,6 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	path_points.push_back(t);
 
 	path_display_path_points();
-	ROS_WARN("g_turn_angle(%d)",g_turn_angle);
 
 	return totalCost;
 }
