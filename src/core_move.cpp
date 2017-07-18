@@ -636,6 +636,7 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 	}
 }
 
+
 int cm_cleaning()
 {
 	MotionManage motion;

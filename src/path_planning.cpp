@@ -79,7 +79,8 @@ Cell_t g_continue_cell;
 Cell_t g_cell_history[5];
 const Cell_t& g_curr = g_cell_history[0];
 
-uint16_t g_last_dir;
+uint16_t g_new_dir;
+uint16_t g_old_dir;
 
 int g_trapped_mode = 1;
 
@@ -113,7 +114,8 @@ void path_planning_initialize(Cell_t cell)
 	g_direct_go = 0;
 
 	g_cell_history[0] = {0,0};
-	g_last_dir = 0;
+	g_new_dir = 0;
+	g_new_dir = 0;
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {
@@ -158,7 +160,7 @@ void path_update_cell_history()
 
 uint16_t path_get_robot_direction()
 {
-	return g_last_dir;
+	return g_new_dir;
 }
 
 void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max)
@@ -953,7 +955,7 @@ void path_update_cells()
 	if(get_clean_mode() != Clean_Mode_Navigation)
 		return;
 	/* Skip, if robot is not moving towards POS_X. */
-	if ((g_last_dir % 1800) != 0)
+	if ((g_new_dir % 1800) != 0)
 		return;
 
 	auto curr_x = g_cell_history[0].X;
@@ -1144,13 +1146,14 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 	*next_point = map_cell_to_point(next);
 	*target_point = map_cell_to_point(target);
 
+	g_old_dir = g_new_dir;
 	if(get_clean_mode() == Clean_Mode_Navigation || g_go_home)
-		mt_update(next_point, *target_point, g_last_dir);
+		mt_update(next_point, *target_point, g_old_dir);
 
 	if (g_curr.X == next.X)
-		g_last_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
+		g_new_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
 	else
-		g_last_dir = g_curr.X > next.X ? NEG_X : POS_X;
+		g_new_dir = g_curr.X > next.X ? NEG_X : POS_X;
 
 	return 1;
 }
@@ -1338,7 +1341,7 @@ void wf_path_planning_initialize(Cell_t cell)
 	g_direct_go = 0;
 
 	g_cell_history[0] = {0,0};
-	g_last_dir = 0;
+	g_new_dir = 0;
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {

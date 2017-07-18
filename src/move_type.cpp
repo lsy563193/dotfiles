@@ -53,7 +53,7 @@ void mt_update(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
 			delta_y = count_to_cell(target_point.Y) - map_get_y_cell();
 //			ROS_ERROR("%s,%d: target delta_y(%d)",__FUNCTION__,__LINE__,delta_y);
 			if (delta_y != 0 && std::abs(delta_y) <= 2) {
-				next_point->Y = target_point.Y;
+				*next_point = target_point;
 				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_RIGHT_WALL : CM_FOLLOW_LEFT_WALL);
 				ROS_ERROR("%s,%d: target:, 2_left_3_right(%d)",__FUNCTION__, __LINE__, g_cm_move_type);
 			}
