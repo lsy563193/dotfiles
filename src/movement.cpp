@@ -2987,7 +2987,7 @@ void clear_manual_pause(void)
 	{
 		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
 		ROS_WARN("Reset manual pause status.");
-		wav_play(WAV_CLEANING_FINISHED);
+		wav_play(WAV_CLEANING_STOP);
 		robot::instance()->resetManualPause();
 		robot::instance()->savedOffsetAngle(0);
 		if (MotionManage::s_slam != nullptr)
