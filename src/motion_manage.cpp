@@ -352,7 +352,9 @@ MotionManage::~MotionManage()
 		if (g_cliff_all_triggered)
 		{
 			ROS_INFO("g_is_main_switch_off: %d", g_is_main_switch_off);
-			if(!g_is_main_switch_off)
+			if(g_is_main_switch_off)
+				wav_play(WAV_CHECK_SWITCH);
+			else
 				wav_play(WAV_ERROR_LIFT_UP);
 		}
 	}
