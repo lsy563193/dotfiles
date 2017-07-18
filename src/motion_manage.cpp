@@ -29,6 +29,7 @@ extern std::list <Cell_t> g_home_point_new_path;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
+bool g_is_main_switch_off = false;
 /*
 int g_enable_angle_offset = 0;
 boost::mutex g_angle_offset_mt;
@@ -344,7 +345,12 @@ MotionManage::~MotionManage()
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
 		if (g_cliff_all_triggered)
-			wav_play(WAV_ERROR_LIFT_UP);
+		{
+			if(g_is_main_switch_off)
+				wav_play(WAV_CHECK_SWITCH);
+			else
+				wav_play(WAV_ERROR_LIFT_UP);
+		}
 		wav_play(WAV_CLEANING_STOP);
 	}
 	else // Normal finish.
