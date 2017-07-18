@@ -200,6 +200,18 @@ void go_to_charger(void)
 			reset_rcon_status();
 			gyro_step = 0;
 
+			if (get_cliff_status())
+			{
+				saved_pos_x = robot::instance()->getOdomPositionX();
+				saved_pos_y = robot::instance()->getOdomPositionY();
+				g_cliff_triggered = Status_Cliff_All;
+			}
+			else if (get_bumper_status())
+			{
+				saved_pos_x = robot::instance()->getOdomPositionX();
+				saved_pos_y = robot::instance()->getOdomPositionY();
+				g_bumper_left = g_bumper_right = true;
+			}
 			g_move_back_finished = true;
 			g_go_home_state_now = GO_HOME;
 
@@ -217,6 +229,15 @@ void go_to_charger(void)
 				{
 					target_distance = 0.03;
 					g_move_back_finished = false;
+					continue;
+				}
+				if(g_cliff_triggered)
+				{
+					ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+					g_cliff_cnt++;
+					target_distance = 0.03;
+					g_move_back_finished = false;
+					g_go_home_state_now = GO_HOME_INIT;
 					continue;
 				}
 
@@ -740,6 +761,15 @@ void go_to_charger(void)
 				go_home_target_angle = ranged_angle(gyro_get_angle() + 1800);
 				ROS_WARN("%s %d: Set target angle:%d.", __FUNCTION__, __LINE__, go_home_target_angle);
 				turn_finished = false;
+				continue;
+			}
+			if(g_cliff_triggered)
+			{
+				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+				g_cliff_cnt++;
+				target_distance = 0.03;
+				g_move_back_finished = false;
+				g_go_home_state_now = GO_HOME_INIT;
 				continue;
 			}
 
