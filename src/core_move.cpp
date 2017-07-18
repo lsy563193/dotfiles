@@ -658,6 +658,7 @@ int cm_cleaning()
 		if (!g_go_home && g_remote_spot)
 		{
 			g_remote_spot = false;
+			//while remote spot key press back to navigation mode
 			if(SpotMovement::instance()->getSpotType() == NO_SPOT)
 				wav_play(WAV_CLEANING_CONTINUE);
 		}

@@ -475,6 +475,8 @@ bool MotionManage::initNavigationCleaning(void)
 	if (!wait_for_gyro_on())
 		return false;
 
+	robot::instance()->accInit4Tilt();//init accelerate for tile detect
+
 	if (robot::instance()->isManualPaused() || robot::instance()->isLowBatPaused())
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());

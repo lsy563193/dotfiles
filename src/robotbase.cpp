@@ -306,9 +306,9 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[42] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc = receiStream[43];
 		sensor.omni_wheel = (receiStream[44]<<8)|receiStream[45];
-		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);// / 258.0f; //in mG
-		sensor.y_acc = static_cast<int16_t>((receiStream[48]<<8)|receiStream[49]);// / 258.0f; //in mG
-		sensor.z_acc = static_cast<int16_t>((receiStream[50]<<8)|receiStream[51]);// / 258.0f; //in mG
+		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);//in G
+		sensor.y_acc = static_cast<int16_t>((receiStream[48]<<8)|receiStream[49]);//in mG
+		sensor.z_acc = static_cast<int16_t>((receiStream[50]<<8)|receiStream[51]);//in mG
 		sensor.plan = receiStream[52];
 #elif __ROBOT_X400
 		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
@@ -330,9 +330,9 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc_ = receiStream[38];
 		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]) /258.0f; //in mG
-		sensor.y_acc_ = static_cast<int16_t>(((receiStream[43]<<8)|receiStream[44]) /258.0f; //in mG
-		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]) /258.0f; //in mG
+		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]) //in mG
+		sensor.y_acc_ = static_cast<int16_t>(((receiStream[43]<<8)|receiStream[44])//in mG
+		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]) //in mG
 #endif	
 
 		pthread_mutex_lock(&serial_data_ready_mtx);

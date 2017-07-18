@@ -2,8 +2,6 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
-#include "gyro.h"
-#include "robot.hpp"
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 #include <movement.h>
@@ -11,6 +9,10 @@
 #include <core_move.h>
 #include <wall_follow_slam.h>
 #include <move_type.h>
+#include <std_srvs/SetBool.h>
+
+#include "gyro.h"
+#include "robot.hpp"
 #include "robotbase.h"
 #include "config.h"
 #include "laser.hpp"
@@ -44,6 +46,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	visualizeMarkerInit();
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
+	up_tilt_cli_ = robot_nh_.serviceClient<std_srvs::SetBool>("uptiltcall");
 	//send_bumper_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("bumper_markers_",1);
 //  obstacles_pub_ = robot_nh_.advertise<Obstacles>("obstacles", 10);
 //  ROS_INFO("Obstacle Detector [ACTIVE]");
@@ -78,6 +81,9 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	manual_pause_cleaning_ = false;
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
+
+	up_tilt_count_ = 0;
+	is_up_tilt_ = false;
 }
 
 robot::~robot()
@@ -347,6 +353,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
 	MotionManage::s_slam->isMapReady(true);
 	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
+
 }
 
 void robot::displayPositions()
@@ -566,3 +573,42 @@ bool robot::getBumperLeft()
 
 */
 
+#ifndef UPTILE_COUNT_REACH
+#define UPTILE_COUNT_REACH (10)
+#endif
+
+#define DIF_TILT_VAL 40
+
+bool robot::isUpTilt()
+{
+	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_VAL){
+		if(++up_tilt_count_ > UPTILE_COUNT_REACH){
+			ROS_ERROR("%s,%d,robot head tilt !!",__FUNCTION__,__LINE__);
+			up_tilt_count_ = 0;
+			is_up_tilt_ = true;
+		}
+	}
+	else{
+		up_tilt_count_ = 0;
+		is_up_tilt_ = false;
+	}
+	return is_up_tilt_;
+}
+
+void robot::upTiltCall(bool v)
+{
+	std_srvs::SetBool tri;
+
+	if(v){
+		tri.request.data = true;
+	}
+	else if(!v){
+		tri.request.data = false;
+	}
+	if(up_tilt_cli_.call(tri)){
+		ROS_WARN("%s,%d,up tilt call %s",__FUNCTION__,__LINE__,tri.response.success == true?"publish":"no publish");
+	}
+	else{
+		ROS_ERROR("%s,%d,fail to call uptilt",__FUNCTION__,__LINE__);
+	}
+}
