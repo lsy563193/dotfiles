@@ -353,7 +353,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			beep_for_command(false);
 		}
 	}
-	else if (get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	else if (get_cliff_status() == Status_Cliff_All)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		beep_for_command(false);
@@ -523,7 +523,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		else
 			user_interface_reject_reason = 1;
 	}
-	else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	else if(get_cliff_status() == Status_Cliff_All)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		user_interface_reject_reason = 2;
