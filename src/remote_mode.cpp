@@ -31,6 +31,7 @@ boost::mutex move_flag_mutex;
 int16_t remote_target_angle;
 bool remote_exit;
 time_t remote_cmd_time;
+uint8_t remote_rcon_cnt = 0;
 
 void remote_mode(void)
 {
@@ -81,6 +82,7 @@ void remote_move(void)
 	// Set timeout time as 10s.
 	uint8_t remote_timeout = 10;
 
+	remote_rcon_cnt = 0;
 	remote_cmd_time = time(NULL);
 
 	set_move_flag_(REMOTE_MODE_STAY);
@@ -187,6 +189,7 @@ void remote_move(void)
 			{
 				set_wheel_speed(0, 0);
 				moving_speed = 0;
+				remote_rcon_cnt = 0;
 				break;
 			}
 			case REMOTE_MODE_LEFT:
@@ -277,8 +280,8 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
 	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
-	///* Rcon */
-	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+	/* Rcon */
+	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Key */
@@ -327,8 +330,8 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
-	///* Rcon */
-	//event_manager_register_and_disable_x(EVT_RCON);
+	/* Rcon */
+	event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
 	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 	/* Key */
@@ -497,6 +500,20 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	else
 		beep_for_command(false);
 	reset_rcon_remote();
+}
+
+void remote_mode_handle_rcon(bool state_now, bool state_last)
+{
+	if (get_move_flag_() == REMOTE_MODE_FORWARD && (get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+	{
+		ROS_DEBUG("%s %d: Rcon HomeT signal received.", __FUNCTION__, __LINE__);
+		if (remote_rcon_cnt++ >= 2)
+		{
+			ROS_WARN("%s %d: Stop for rcon signal.", __FUNCTION__, __LINE__);
+			set_move_flag_(REMOTE_MODE_STAY);
+		}
+	}
+	reset_rcon_status();
 }
 
 void remote_mode_handle_key_clean(bool state_now, bool state_last)
