@@ -824,6 +824,8 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 			g_turn_angle = cliff_turn_angle();
 		else if (g_rcon_triggered)
 			g_turn_angle = rcon_turn_angle();
+		else
+			g_turn_angle = 0;
 //		if (LASER_FOLLOW_WALL)
 //			g_turn_angle = laser_turn_angle();
 	}else if(mt_is_linear())
