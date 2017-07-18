@@ -312,10 +312,7 @@ MotionManage::~MotionManage()
 			return;
 		}
 		else
-		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-			robot::instance()->resetManualPause();
-		}
 	}
 
 	cm_reset_go_home();
@@ -338,15 +335,13 @@ MotionManage::~MotionManage()
 			return;
 		}
 		else
-		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-			robot::instance()->resetLowBatPause();
-		}
 	}
 
 	cm_unregister_events();
 	if (g_fatal_quit_event) // Also handles for g_battery_low/g_charge_detect/g_cliff_all_triggered.
 	{
+		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
 		if (g_cliff_all_triggered)
 			wav_play(WAV_ERROR_LIFT_UP);
