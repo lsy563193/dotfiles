@@ -79,7 +79,8 @@ Cell_t g_continue_cell;
 Cell_t g_cell_history[5];
 const Cell_t& g_curr = g_cell_history[0];
 
-uint16_t g_last_dir;
+uint16_t g_new_dir;
+uint16_t g_old_dir;
 
 int g_trapped_mode = 1;
 
@@ -113,7 +114,8 @@ void path_planning_initialize(Cell_t cell)
 	g_direct_go = 0;
 
 	g_cell_history[0] = {0,0};
-	g_last_dir = 0;
+	g_new_dir = 0;
+	g_new_dir = 0;
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {
@@ -122,6 +124,13 @@ void path_planning_initialize(Cell_t cell)
 
 	/* Initialize the shortest path. */
 	path_position_init(g_direct_go);
+
+#ifndef ZONE_WALLFOLLOW
+
+	/* Set the back as blocked, since robot will align the start angle with the wall. */
+	Map_SetCell(MAP, cellToCount(-3), cellToCount(0), BLOCKED_BUMPER);
+
+#endif
 
 	map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
 
@@ -151,7 +160,7 @@ void path_update_cell_history()
 
 uint16_t path_get_robot_direction()
 {
-	return g_last_dir;
+	return g_new_dir;
 }
 
 void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max)
@@ -946,7 +955,7 @@ void path_update_cells()
 	if(get_clean_mode() != Clean_Mode_Navigation)
 		return;
 	/* Skip, if robot is not moving towards POS_X. */
-	if ((g_last_dir % 1800) != 0)
+	if ((g_new_dir % 1800) != 0)
 		return;
 
 	auto curr_x = g_cell_history[0].X;
@@ -1107,9 +1116,13 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 			else
 			{
 				auto ret = path_target(next, target);//0 not target, 1,found, -2 trap
-				ROS_WARN("next(%d,%d),target(%d,%d)", next.X,next.Y,target.X,target.Y);
+//				ROS_WARN("%s %d: path_target: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, next.X, next.Y, target.X, target.Y);
 				if (ret == 0)
+				{
 					g_go_home = true;
+					cm_create_home_boundary();
+					wav_play(WAV_BACK_TO_CHARGER);
+				}
 				if (ret == -2){
 					if(g_trapped_mode == 0){
 						g_trapped_mode = 1;
@@ -1122,7 +1135,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 					return 1;
 				}
 			}
-			ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d),target(%d,%d)", __FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, next.X,next.Y,target.X,target.Y);
+//			ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d),target(%d,%d)", __FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, next.X,next.Y,target.X,target.Y);
 		}
 	}
 
@@ -1133,13 +1146,14 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 	*next_point = map_cell_to_point(next);
 	*target_point = map_cell_to_point(target);
 
-	if(get_clean_mode() == Clean_Mode_Navigation)
-		mt_update(next_point, *target_point, g_last_dir);
+	g_old_dir = g_new_dir;
+	if(get_clean_mode() == Clean_Mode_Navigation || g_go_home)
+		mt_update(next_point, *target_point, g_old_dir);
 
 	if (g_curr.X == next.X)
-		g_last_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
+		g_new_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
 	else
-		g_last_dir = g_curr.X > next.X ? NEG_X : POS_X;
+		g_new_dir = g_curr.X > next.X ? NEG_X : POS_X;
 
 	return 1;
 }
@@ -1258,8 +1272,8 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 			map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 		}
 
-		Cell_t pos{target.X, target.Y};
-		auto path_next_status = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), next.X, next.Y);
+		Cell_t pos{map_get_x_cell(), map_get_y_cell()};
+		auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
 		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 		if (path_next_status == 1)
 		{
@@ -1327,7 +1341,7 @@ void wf_path_planning_initialize(Cell_t cell)
 	g_direct_go = 0;
 
 	g_cell_history[0] = {0,0};
-	g_last_dir = 0;
+	g_new_dir = 0;
 
 	/* Reset the poisition list. */
 	for (i = 0; i < 3; i++) {
@@ -1361,9 +1375,9 @@ int8_t path_get_continue_target(Cell_t& next, Cell_t& target)
 		map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 	}
 
-	Cell_t pos{target.X, target.Y};
+	Cell_t pos{map_get_x_cell(), map_get_y_cell()};
 	set_explore_new_path_flag(false);
-	auto path_next_status = (int8_t) path_next_best(pos, map_get_x_cell(), map_get_y_cell(), next.X, next.Y);
+	auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
 	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 	if (path_next_status == 1 && !cm_check_loop_back(next))
 		return_val = TARGET_FOUND;

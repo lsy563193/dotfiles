@@ -130,12 +130,13 @@ bool is_map_front_block(int dx)
 //map--------------------------------------------------------
 static  void _update_map_obs()
 {
-	if(! g_obs_triggered)
+	auto obs_trig = get_obs_status();
+	if(! obs_trig)
 		return;
 	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
 	for (auto dir = 0; dir < 2; ++dir)
 	{
-		if (g_obs_triggered & obs_lr[dir])
+		if (obs_trig & obs_lr[dir])
 		{
 			auto dx = 1;
 			auto dy = (dir==0) ?2:-2;
@@ -154,7 +155,7 @@ static  void _update_map_obs()
 
 	uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
 	for (auto dy = 0; dy <= 2; ++dy) {
-		auto is_trig = get_obs_status() & obs_all[dy];
+		auto is_trig = obs_trig & obs_all[dy];
 		int32_t x, y;
 		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x, &y);
 		auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
@@ -176,19 +177,20 @@ static  void _update_map_obs()
 
 static void _update_map_bumper()
 {
-	if (g_bumper_jam || g_bumper_cnt>=2 || ! g_bumper_triggered)
+	auto bumper_trig = get_bumper_status();
+	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
 		return;
 
 	std::vector<Cell_t> d_cells;
 
-	if ((g_bumper_triggered & RightBumperTrig) && (g_bumper_triggered & LeftBumperTrig))
+	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
 		d_cells = {{2,-1}, {2,0}, {2,1}};
-	else if (g_bumper_triggered & LeftBumperTrig) {
+	else if (bumper_trig & LeftBumperTrig) {
 		d_cells = {{2, 1}, {2,2},{1,2}};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
-	} else if (g_bumper_triggered & RightBumperTrig) {
+	} else if (bumper_trig & RightBumperTrig) {
 		d_cells = {{2,-2},{2,-1},{1,-2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
@@ -204,21 +206,22 @@ static void _update_map_bumper()
 
 static void _update_map_cliff()
 {
-	if (g_cliff_jam || g_bumper_triggered)
+	auto cliff_trig = get_cliff_status();
+	if (g_cliff_jam || cliff_trig)
 		// During self check.
 		return;
 
 	std::vector<Cell_t> d_cells;
-	if (g_cliff_triggered & Status_Cliff_Front){
+	if (cliff_trig & Status_Cliff_Front){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2, 0});
 		d_cells.push_back({2, 1});
 	}
-	if (g_cliff_triggered & Status_Cliff_Left){
+	if (cliff_trig & Status_Cliff_Left){
 		d_cells.push_back({2, 1});
 		d_cells.push_back({2, 2});
 	}
-	if (g_cliff_triggered & Status_Cliff_Right){
+	if (cliff_trig & Status_Cliff_Right){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2,-2});
 	}
@@ -233,7 +236,8 @@ static void _update_map_cliff()
 
 static void _update_map_rcon()
 {
-	if(! g_rcon_triggered)
+	auto rcon_trig = get_rcon_trig();
+	if(! rcon_trig)
 		return;
 
 	enum {
@@ -241,7 +245,7 @@ static void _update_map_rcon()
 	};
 	int dx = 0, dy = 0;
 	int dx2 = 0, dy2 = 0;
-	switch (g_rcon_triggered - 1)
+	switch (rcon_trig - 1)
 	{
 		case left:
 			dx = 1, dy = 2;
@@ -454,6 +458,10 @@ bool cm_move_to(Point32_t target)
 	bool	eh_status_now=false, eh_status_last=false;
 	while (ros::ok())
 	{
+		if (get_clean_mode() == Clean_Mode_WallFollow && mt_is_linear()) {
+			wall_dynamic_base(30);
+		}
+
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 		{
 			usleep(100);
@@ -628,6 +636,7 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 	}
 }
 
+
 int cm_cleaning()
 {
 	MotionManage motion;
@@ -645,7 +654,7 @@ int cm_cleaning()
 			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home and g_battery_home.", __FUNCTION__, __LINE__);
 			g_go_home = true;
 			work_motor_configure();
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 			if(g_battery_home)
 				wav_play(WAV_BATTERY_LOW);
 			wav_play(WAV_BACK_TO_CHARGER);
@@ -739,10 +748,17 @@ void cm_reset_go_home(void)
 	g_map_boundary_created = false;
 }
 
-bool cm_check_loop_back(Cell_t target) {
+bool cm_check_loop_back(Cell_t target)
+{
 	bool retval = false;
 	if ( target == g_cell_history[1] && target == g_cell_history[3]) {
-		ROS_WARN("%s %d Possible loop back (%d, %d)", __FUNCTION__, __LINE__, target.X, target.Y);
+		ROS_WARN("%s %d Possible loop back (%d, %d), g_cell_history:(%d, %d) (%d, %d) (%d, %d) (%d, %d) (%d, %d).", __FUNCTION__, __LINE__,
+						target.X, target.Y,
+						g_cell_history[0].X, g_cell_history[0].Y,
+						g_cell_history[1].X, g_cell_history[1].Y,
+						g_cell_history[2].X, g_cell_history[2].Y,
+						g_cell_history[3].X, g_cell_history[3].Y,
+						g_cell_history[4].X, g_cell_history[4].Y);
 		retval	= true;
 	}
 
