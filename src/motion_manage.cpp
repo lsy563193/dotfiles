@@ -285,7 +285,7 @@ MotionManage::~MotionManage()
 
 	if (!g_fatal_quit_event && g_key_clean_pressed && robot::instance()->isManualPaused())
 	{
-		wav_play(WAV_PAUSE_CLEANING);
+		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
 		{
 			extern bool g_go_home;
@@ -312,17 +312,14 @@ MotionManage::~MotionManage()
 			return;
 		}
 		else
-		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-			robot::instance()->resetManualPause();
-		}
 	}
 
 	cm_reset_go_home();
 
 	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
 	{
-		wav_play(WAV_PAUSE_CLEANING);
+		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
 		{
 			extern bool g_resume_cleaning;
@@ -338,24 +335,24 @@ MotionManage::~MotionManage()
 			return;
 		}
 		else
-		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-			robot::instance()->resetLowBatPause();
-		}
 	}
 
 	cm_unregister_events();
 	if (g_fatal_quit_event) // Also handles for g_battery_low/g_charge_detect/g_cliff_all_triggered.
 	{
+		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
 		if (g_cliff_all_triggered)
 			wav_play(WAV_ERROR_LIFT_UP);
+		wav_play(WAV_CLEANING_STOP);
 	}
 	else // Normal finish.
 	{
 		extern bool g_have_seen_charge_stub;
 		if(!g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
+		wav_play(WAV_CLEANING_FINISHED);
 	}
 
 	if (s_slam != nullptr)
@@ -364,7 +361,6 @@ MotionManage::~MotionManage()
 		s_slam = nullptr;
 	}
 
-	wav_play(WAV_CLEANING_FINISHED);
 
 	g_home_point_old_path.clear();
 	g_home_point_new_path.clear();

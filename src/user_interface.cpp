@@ -445,7 +445,7 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 				user_interface_plan_status = 2;
 				break;
 			}
-			else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			else if(get_cliff_status() == Status_Cliff_All)
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				user_interface_reject_reason = 2;
