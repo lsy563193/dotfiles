@@ -70,6 +70,9 @@ void remote_mode(void)
 	disable_motors();
 	remote_mode_unregister_events();
 
+	if (g_battery_low)
+		wav_play(WAV_BATTERY_LOW);
+
 	if (g_cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 }
@@ -599,7 +602,7 @@ void remote_mode_handle_battery_low(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, get_battery_voltage());
 		disable_motors();
-		wav_play(WAV_BATTERY_LOW);
-		set_clean_mode(Clean_Mode_Userinterface);
+		g_battery_low = true;
+		g_fatal_quit_event = true;
 	}
 }
