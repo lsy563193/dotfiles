@@ -37,10 +37,6 @@ void user_interface(void)
 {
 	time_t start_time;
 
-#ifdef ONE_KEY_DISPLAY
-	uint16_t led_breath_cnt=100;
-	uint8_t breath =1;
-#endif
 	bool eh_status_now=false, eh_status_last=false;
 
 	// Count for error alarm.
@@ -65,8 +61,14 @@ void user_interface(void)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV).", __FUNCTION__, __LINE__, get_battery_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		battery_ready_to_clean = false;
+		set_led_mode(LED_BREATH, LED_ORANGE);
 		wav_play(WAV_BATTERY_LOW);
 	}
+	else
+		set_led_mode(LED_BREATH, LED_GREEN);
+
+	if(get_error_code())
+		set_led_mode(LED_STEADY, LED_RED);
 
 	event_manager_reset_status();
 	user_interface_register_events();
@@ -85,9 +87,10 @@ void user_interface(void)
 		if (battery_low_delay > 0)
 			battery_low_delay--;
 
-		if(!check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
+		if(battery_ready_to_clean && !check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
 		{
 			battery_ready_to_clean = false;
+			set_led_mode(LED_BREATH, LED_ORANGE);
 		}
 
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
@@ -97,37 +100,6 @@ void user_interface(void)
 			break;
 		}
 
-#ifdef ONE_KEY_DISPLAY
-
-		//ROS_INFO("One key min_distant_segment logic. odc = %d", LedBreathCount);
-		if(breath){
-			led_breath_cnt -= 2;
-			if(led_breath_cnt<=0)
-				breath = 0;
-		}
-		else{
-			led_breath_cnt += 2;
-			if(led_breath_cnt >=100)
-				breath = 1;
-		}
-
-		if(get_error_code())//min_distant_segment Error = red led full
-		{
-			// Red
-			set_led(0, 100);
-		}
-		else if(!battery_ready_to_clean)
-		{
-			// Orange
-			set_led(led_breath_cnt, led_breath_cnt);
-		}
-		else
-		{
-			// Green
-			set_led(led_breath_cnt, 0);//min_distant_segment normal green
-		}
-
-#endif
 		// Check for wav playing.
 		if (long_press_to_sleep)
 		{
@@ -153,6 +125,7 @@ void user_interface(void)
 					user_interface_reject_reason = 0;
 					break;
 				case 4:
+					set_led_mode(LED_BREATH, LED_GREEN);
 					wav_play(WAV_CLEAR_ERROR);
 					error_alarm_counter = 0;
 					set_error_code(Error_Code_None);

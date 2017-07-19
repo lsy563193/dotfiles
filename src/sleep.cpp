@@ -23,10 +23,11 @@ void sleep_mode(void)
 	usleep(100000);
 	beep(4, 80, 0, 1);
 	usleep(100000);
-	set_led(0, 0);
+	set_led_mode(LED_STEADY, LED_OFF);
 
 	disable_motors();
 	set_main_pwr_byte(POWER_DOWN);
+	usleep(20000);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, get_main_pwr_byte());
 
 	reset_stop_event_status();

@@ -422,7 +422,7 @@ bool MotionManage::initNavigationCleaning(void)
 	usleep(20000);
 
 	reset_work_time();
-	set_led(100, 0);
+	set_led_mode(LED_STEADY, LED_GREEN);
 
 	// Initialize motors and map.
 	extern bool g_resume_cleaning;
@@ -559,6 +559,7 @@ bool MotionManage::initNavigationCleaning(void)
 bool MotionManage::initWallFollowCleaning(void)
 {
 	cm_register_events();
+	set_led_mode(LED_STEADY, LED_GREEN);
 
 	extern std::vector<Pose16_t> g_wf_cell;
 	reset_work_time();
@@ -572,7 +573,6 @@ bool MotionManage::initWallFollowCleaning(void)
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
-	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
 	if (!wait_for_gyro_on())
@@ -609,6 +609,7 @@ bool MotionManage::initWallFollowCleaning(void)
 bool MotionManage::initSpotCleaning(void)
 {
 	cm_register_events();
+	set_led_mode(LED_STEADY, LED_GREEN);
 
 	reset_work_time();
 	reset_rcon_status();
@@ -622,7 +623,6 @@ bool MotionManage::initSpotCleaning(void)
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
-	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_SPOT);
 	if (!wait_for_gyro_on())

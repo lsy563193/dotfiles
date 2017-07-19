@@ -92,7 +92,8 @@ void Random_Running_Mode(void)
 	Wall_Bumper_Factor = get_random_factor()/15;
 	 reset_move_with_remote();
 //	reset_bumper_error();
-	 set_led(100, 0);
+
+	set_led_mode(LED_STEADY, LED_GREEN);
 	 reset_stop_event_status();
 
 //  if(!Is_Dustbin_Install())

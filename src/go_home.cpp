@@ -32,8 +32,31 @@ void go_home(void)
 {
 	g_go_to_charger_failed = false;
 
+	set_led_mode(LED_STEADY, LED_ORANGE);
 	if (get_clean_mode() == Clean_Mode_GoHome)
+	{
 		during_cleaning = false;
+		if (!is_gyro_on())
+		{
+			// Restart the gyro.
+			set_gyro_off();
+			// Wait for 30ms to make sure the off command has been effectived.
+			usleep(30000);
+			// Set gyro on before wav_play can save the time for opening the gyro.
+			set_gyro_on();
+			wav_play(WAV_BACK_TO_CHARGER);
+
+			if (!wait_for_gyro_on())
+			{
+				set_clean_mode(Clean_Mode_Userinterface);
+				return;
+			}
+		}
+		else
+		{
+			wav_play(WAV_BACK_TO_CHARGER);
+		}
+	}
 	else
 		during_cleaning = true;
 
@@ -127,7 +150,6 @@ void go_to_charger(void)
 	g_bumper_right = false;
 
 	g_move_back_finished = true;
-	set_led(100, 100);
 	set_side_brush_pwm(30, 30);
 	set_main_brush_pwm(30);
 	set_bldc_speed(Vac_Speed_NormalL);
