@@ -159,7 +159,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		remote_home_during_pause = true;
 	event_manager_reset_status();
 	if (remote_home_during_pause)
+	{
 		g_remote_home = true;
+		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
+	}
 	g_turn_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
@@ -422,7 +425,10 @@ bool MotionManage::initNavigationCleaning(void)
 	usleep(20000);
 
 	reset_work_time();
-	set_led_mode(LED_STEADY, LED_GREEN);
+	if (g_remote_home || g_go_home_by_remote)
+		set_led_mode(LED_STEADY, LED_ORANGE);
+	else
+		set_led_mode(LED_STEADY, LED_GREEN);
 
 	// Initialize motors and map.
 	extern bool g_resume_cleaning;
@@ -479,16 +485,12 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		ROS_WARN("Restore from manual pause");
 		wav_play(WAV_CLEANING_CONTINUE);
-		if (g_go_home || (!g_go_home && g_remote_home))
+		if (g_go_home)
 		{
 			wav_play(WAV_BACK_TO_CHARGER);
-			if (!g_go_home && g_remote_home)
-			{
-				cm_create_home_boundary();
-				g_go_home = true;
-				g_remote_home = false;
-			}
 		}
+		else
+			cm_check_should_go_home();
 	}
 	else if(g_plan_activated == true)
 	{

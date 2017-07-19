@@ -101,6 +101,8 @@ bool g_move_back_finished = true;
 // Flag for indicating whether motion instance is initialized successfully.
 bool g_motion_init_succeeded = false;
 
+bool g_go_home_by_remote = false;
+
 int16_t ranged_angle(int16_t angle)
 {
 	while (angle > 1800 || angle <= -1800)
@@ -649,20 +651,7 @@ int cm_cleaning()
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
-		if (!g_go_home && (g_remote_home || g_battery_home))
-		{
-			ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home and g_battery_home.", __FUNCTION__, __LINE__);
-			g_go_home = true;
-			work_motor_configure();
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
-			if(g_battery_home)
-				wav_play(WAV_BATTERY_LOW);
-			wav_play(WAV_BACK_TO_CHARGER);
-			if (!g_battery_home && !g_map_boundary_created)
-				cm_create_home_boundary();
-			g_remote_home = false;
-			g_battery_home = false;
-		}
+		cm_check_should_go_home();
 
 		if (!g_go_home && g_remote_spot)
 		{
@@ -715,6 +704,8 @@ int cm_cleaning()
 						(g_target_point.X != 0 || g_target_point.Y != 0))
 						if(cm_go_to_charger())
 							return -1;
+						else if (!g_go_home_by_remote)
+							set_led_mode(LED_STEADY, LED_GREEN);
 				}
 			}
 		}
@@ -725,6 +716,31 @@ int cm_cleaning()
 	return 0;
 }
 
+void cm_check_should_go_home(void)
+{
+	if (!g_go_home && (g_remote_home || g_battery_home))
+	{
+		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home and g_battery_home.", __FUNCTION__, __LINE__);
+		g_go_home = true;
+		if (g_motion_init_succeeded)
+		{
+			work_motor_configure();
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
+			if (g_battery_home)
+				wav_play(WAV_BATTERY_LOW);
+		}
+		if (g_remote_home)
+		{
+			set_led_mode(LED_STEADY, LED_ORANGE);
+			g_go_home_by_remote = true;
+		}
+		wav_play(WAV_BACK_TO_CHARGER);
+		if (!g_battery_home && !g_map_boundary_created)
+			cm_create_home_boundary();
+		g_remote_home = false;
+		g_battery_home = false;
+	}
+}
 /* Statement for cm_go_to_charger(void)
  * return : true -- going to charger has been stopped, either successfully or interrupted.
  *          false -- going to charger failed, move to next point.
@@ -746,6 +762,7 @@ void cm_reset_go_home(void)
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
 	g_go_home = false;
 	g_map_boundary_created = false;
+	g_go_home_by_remote = false;
 }
 
 bool cm_check_loop_back(Cell_t target)

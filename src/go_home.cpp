@@ -58,7 +58,10 @@ void go_home(void)
 		}
 	}
 	else
+	{
+		ROS_INFO("%s %d: set during_cleaning.", __FUNCTION__, __LINE__);
 		during_cleaning = true;
+	}
 
 	if (!during_cleaning)
 		event_manager_reset_status();

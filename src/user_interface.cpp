@@ -366,9 +366,9 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			{
 				if (robot::instance()->isManualPaused())
 				{
-					extern bool g_go_home;
-					if (!g_go_home)
-						g_remote_home = true;
+					g_remote_home = true;
+					extern bool g_go_home_by_remote;
+					g_go_home_by_remote = true;
 					temp_mode = Clean_Mode_Navigation;
 				}
 				else
