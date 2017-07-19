@@ -482,13 +482,12 @@ void go_to_charger(void)
 			else
 			{
 				no_signal_counter++;
-				set_wheel_speed(8, 8);
 				if(no_signal_counter>200)
 				{
 					ROS_WARN("No charger signal received.");
 					g_go_home_state_now = GO_HOME_INIT;
+					continue;
 				}
-				continue;
 			}
 
 			ROS_DEBUG("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, around_charger_stub_dir);
@@ -557,43 +556,43 @@ void go_to_charger(void)
 				if(receive_code&RconL_HomeT)  //L_T
 				{
 					ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
-					move_forward(19, 5);
+					move_forward(22, 12);
 					usleep(100000);
 				}
 				else if(receive_code&RconL_HomeL)  //L_L  9 18
 				{
 					ROS_DEBUG("%s, %d: Detect L-L.", __FUNCTION__, __LINE__);
-					move_forward(19, 5);
+					move_forward(22, 12);
 					usleep(100000);
 				}
 				else if(receive_code&RconL_HomeR)  //L_R  9 18
 				{
 					ROS_DEBUG("%s, %d: Detect L-R.", __FUNCTION__, __LINE__);
-					move_forward(17, 9);
+					move_forward(25, 14);
 					usleep(100000);
 				}
 				else if(receive_code&RconFL2_HomeT)  //FL2_T
 				{
 					ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
-					move_forward(16, 19);
+					move_forward(23, 14);
 					usleep(100000);
 				}
 				else if(receive_code&RconFL2_HomeL)  //FL_HL
 				{
 					ROS_DEBUG("%s, %d: Detect FL2-L.", __FUNCTION__, __LINE__);
-					move_forward(15, 11);
+					move_forward(20, 14);
 					usleep(100000);
 				}
 				else if(receive_code&RconFL2_HomeR)//FL2_HR
 				{
 					ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-					move_forward(9, 15);
+					move_forward(15, 21);
 					usleep(100000);
 				}
 				else
 				{
 					ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-					move_forward(16, 34);  //0K (16,35)	  1100
+					move_forward(14, 21);  //0K (16,35)	  1100
 					usleep(100000);
 				}
 			}
@@ -662,43 +661,43 @@ void go_to_charger(void)
 				if(receive_code&RconR_HomeT)   // OK ,(10,26)
 				{
 					ROS_DEBUG("%s %d Detect R-T.", __FUNCTION__, __LINE__);
-					move_forward(5, 19);
+					move_forward(12, 22);
 					usleep(100000);
 				}
 				else if(receive_code&RconR_HomeR)  //ok 18 13
 				{
 					ROS_DEBUG("%s %d Detect R-R.", __FUNCTION__, __LINE__);
-					move_forward(5, 19);
+					move_forward(12, 22);
 					usleep(100000);
 				}
 				else if(receive_code&RconR_HomeL)  //ok 18 13
 				{
 					ROS_DEBUG("%s %d Detect R-L.", __FUNCTION__, __LINE__);
-					move_forward(9, 17);
+					move_forward(14, 25);
 					usleep(100000);
 				}
 				else if(receive_code&RconFR2_HomeT)   //turn left
 				{
 					ROS_DEBUG("%s %d Detect FR2-T.", __FUNCTION__, __LINE__);
-					move_forward(19, 17);
+					move_forward(14, 23);
 					usleep(100000);
 				}
 				else if(receive_code&RconFR2_HomeR)  //OK
 				{
 					ROS_DEBUG("%s %d Detect FR2-R.", __FUNCTION__, __LINE__);
-					move_forward(11, 15);
+					move_forward(14, 20);
 					usleep(100000);
 				}
 				else if(receive_code&RconFR2_HomeL)  //
 				{
 					ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-					move_forward(15, 9);
+					move_forward(21, 15);
 					usleep(100000);
 				}
 				else
 				{
 					ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-					move_forward(34, 16);
+					move_forward(21, 14);
 					usleep(100000);
 				}
 			}
