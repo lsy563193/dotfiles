@@ -90,6 +90,8 @@ bool cm_curve_move_to_point();
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
+void mark_offset(int16_t dx, int16_t dy, CellState status);
+
 void cm_move_back_(uint16_t dist);
 
 	/* Robot will try to go to the cells in g_home_point_old_path list

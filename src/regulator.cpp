@@ -183,11 +183,13 @@ static int16_t _get_obs_value()
 	return 0;
 }
 
-void follow_mark_block(const Cell_t &start, const Cell_t &target)
+void mark_linear(const Cell_t &start, const Cell_t &stop,CellState state)
 {
-//	if (start.Y == target.Y)
-	Cell_t stop = map_get_curr_cell();
 	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
+	auto dx = stop.X-start.X;
+	if(dx ==0)
+		return;
+
 	float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
 	float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
 
@@ -196,9 +198,9 @@ void follow_mark_block(const Cell_t &start, const Cell_t &target)
 	for (auto x = start_x; x <= stop_x + 1; x++)
 	{
 		auto y = (int16_t) (slop * (stop.X) + intercept);
-		auto dy = (target.Y > start.Y) ? 2: -2;
-		ROS_ERROR("%s,%d: mark cell(%d,%d)",__FUNCTION__, __LINE__, x,y+dy);
-		map_set_cell(MAP, cell_to_count(x), cell_to_count(y + dy), BLOCKED_CLIFF);
+		auto dy = (dx > 0 ^ mt_is_left()) ? -2 : 2;
+		ROS_ERROR("%s,%d: diff(dx,%d)  mark cell(%d,%d)", __FUNCTION__, dx, dy, __LINE__, x, y + dy);
+		map_set_cell(MAP, cell_to_count(x), cell_to_count(y + dy), state);
 	}
 }
 
@@ -566,12 +568,10 @@ bool FollowWallRegulator::isReach()
 		{
 			if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
 			{
-				ROS_INFO("%s %d: FollowWallRegulator, robot has reach the target, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, start_y, s_target.Y, map_get_y_count());
-//			if(s_origin.X == map_get_x_count() && s_origin.Y == map_get_y_count()){
-//				ROS_INFO("direcition is wrong, swap");
-//				extern uint16_t g_old_dir;
-//				g_new_dir = (g_new_dir == POS_X) ? NEG_X : POS_X;
-//			}
+				extern uint16_t g_old_dir;
+				ROS_WARN("%s %d: reach the target, old_dir(%d) start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
+								 g_old_dir, count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(map_get_y_count()));
+
 				ret = true;
 			}
 
@@ -581,16 +581,9 @@ bool FollowWallRegulator::isReach()
 				extern uint16_t g_old_dir;
 				ROS_WARN("%s %d: opposite direcition, old_dir(%d) start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
 								 g_old_dir, count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(map_get_y_count()));
-				if((g_old_dir == POS_X && map_get_y_count() < s_origin.Y) ||(g_old_dir == NEG_Y && map_get_y_count() > s_origin.Y))
-					follow_mark_block(map_point_to_cell(s_origin),map_point_to_cell(s_target));
-				map_set_cell(MAP, map_get_relative_x(gyro_get_angle(), CELL_SIZE_3, 0),
-										 map_get_relative_y(gyro_get_angle(), CELL_SIZE_3, 0), CLEANED);
 
-//			if(s_origin.X == map_get_x_count() && s_origin.Y == map_get_y_count()){
-//				ROS_INFO("direcition is wrong, swap");
-//				extern uint16_t g_new_dir;
-//				g_new_dir = (g_new_dir == POS_X) ? NEG_X : POS_X;
-//			}
+				mark_linear(map_point_to_cell(s_origin), map_get_curr_cell(),BLOCKED_CLIFF);
+				mark_offset(3,0,CLEANED);
 				ret = true;
 			}
 		}
