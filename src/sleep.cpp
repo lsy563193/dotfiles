@@ -15,13 +15,13 @@ void sleep_mode(void)
 	bool eh_status_now=false, eh_status_last=false;
 	sleep_plan_reject_reason = 0;
 
-	beep(1, 4, 0, 1);
+	beep(1, 80, 0, 1);
 	usleep(100000);
-	beep(2, 4, 0, 1);
+	beep(2, 80, 0, 1);
 	usleep(100000);
-	beep(3, 4, 0, 1);
+	beep(3, 80, 0, 1);
 	usleep(100000);
-	beep(4, 4, 0, 1);
+	beep(4, 80, 0, 1);
 	usleep(100000);
 	set_led(0, 0);
 
@@ -82,13 +82,13 @@ void sleep_mode(void)
 
 	sleep_unregister_events();
 
-	beep(4, 4, 0, 1);
+	beep(4, 80, 0, 1);
 	usleep(100000);
-	beep(3, 4, 0, 1);
+	beep(3, 80, 0, 1);
 	usleep(100000);
-	beep(2, 4, 0, 1);
+	beep(2, 80, 0, 1);
 	usleep(100000);
-	beep(1, 4, 4, 1);
+	beep(1, 80, 4, 1);
 
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
 	usleep(1500000);

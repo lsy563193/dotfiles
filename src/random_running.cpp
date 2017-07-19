@@ -107,10 +107,10 @@ void Random_Running_Mode(void)
 	if(is_on_charger_stub())
 	{
 		set_clean_mode(Clean_Mode_Userinterface);
-		beep(2, 25, 25, 1);
+		beep(2, 500, 500, 1);
 		usleep(400000);
 		reset_rcon_remote();
-		beep(2, 25, 25, 1);
+		beep(2, 500, 500, 1);
 		set_side_brush_pwm(30, 30);
 		set_main_brush_pwm(0);
 		set_bldc_speed(30);
@@ -129,7 +129,7 @@ void Random_Running_Mode(void)
 			reset_stop_event_status();
 			return;
 		}
-		beep(2, 25, 25, 1);
+		beep(2, 500, 500, 1);
 		quick_back(30,750);
 		if(stop_event())
 		{
@@ -144,7 +144,7 @@ void Random_Running_Mode(void)
 			reset_stop_event_status();
 			return;
 		}
-		beep(2, 25, 25, 1);
+		beep(2, 500, 500, 1);
 		quick_back(30,750);
 		if(stop_event())
 		{
@@ -159,7 +159,7 @@ void Random_Running_Mode(void)
 			reset_stop_event_status();
 			return;
 		}
-		beep(2, 25, 25, 1);
+		beep(2, 500, 500, 1);
 		turn_right(Turn_Speed, 1120 + get_random_factor() * 10);
 		if(stop_event())
 		{

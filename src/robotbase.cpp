@@ -404,8 +404,7 @@ void *serial_send_routine(void*)
 			robotbase_beep_update_flag = false;
 		}
 		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
-		// If beep_time_count has ran out, it will not sound anymore and check the battary status. If low battary, it will constantly beep to alarm.
-		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
+		// If count > 0, it is processing for different alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
 			process_beep();
 		}
@@ -420,9 +419,6 @@ void *serial_send_routine(void*)
 	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);
 }
-
-/*---------process_beep()---------------*/
-/*--------author: austin---------------*/
 
 void process_beep()
 {
