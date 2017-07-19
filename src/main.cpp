@@ -39,7 +39,7 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	ROS_INFO("Robot sensor ready.");
-	wav_play(WAV_WELCOME_ILIFE);
+	//wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
 
 	if (is_direct_charge() || is_on_charger_stub())
