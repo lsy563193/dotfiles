@@ -462,7 +462,7 @@ void turn_left(uint16_t speed, int16_t angle)
 			{
 			} else
 			{
-				beep_for_command(false);
+				beep_for_command(INVALID);
 				reset_rcon_remote();
 			}
 		}
@@ -470,7 +470,7 @@ void turn_left(uint16_t speed, int16_t angle)
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
-			beep_for_command(false);
+			beep_for_command(INVALID);
 		}
 		/*if(is_turn_remote())
 			break;*/
@@ -547,7 +547,7 @@ void turn_right(uint16_t speed, int16_t angle)
 			{
 			} else
 			{
-				beep_for_command(false);
+				beep_for_command(INVALID);
 				reset_rcon_remote();
 			}
 		}
@@ -555,7 +555,7 @@ void turn_right(uint16_t speed, int16_t angle)
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
-			beep_for_command(false);
+			beep_for_command(INVALID);
 		}
 		/*if(is_turn_remote())
 			break;*/
@@ -2266,9 +2266,7 @@ uint16_t get_key_time(uint16_t key)
 	{
 		time++;
 		if (time == 151)
-		{
-			beep_for_command(true);
-		}
+			beep_for_command(VALID);
 		if (time > 1500)break;
 		usleep(20000);
 		if (get_key_press() != key)break;

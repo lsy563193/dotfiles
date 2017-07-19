@@ -2404,7 +2404,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	time_t start_time;
 	bool reset_manual_pause = false;
-	beep_for_command(true);
+	beep_for_command(VALID);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 	start_time = time(NULL);
@@ -2419,7 +2419,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 		{
 			if (!reset_manual_pause)
 			{
-				beep_for_command(true);
+				beep_for_command(VALID);
 				reset_manual_pause = true;
 			}
 			robot::instance()->resetManualPause();
@@ -2435,7 +2435,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 void go_home_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(true);
+	beep_for_command(VALID);
 	g_key_clean_pressed = true;
 	if (during_cleaning && get_clean_mode() == Clean_Mode_Navigation)
 		robot::instance()->setManualPause();

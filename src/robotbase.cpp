@@ -330,10 +330,10 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc_ = receiStream[38];
 		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]) //in mG
-		sensor.y_acc_ = static_cast<int16_t>(((receiStream[43]<<8)|receiStream[44])//in mG
-		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]) //in mG
-#endif	
+		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]); //in mG
+		sensor.y_acc_ = static_cast<int16_t>((receiStream[43]<<8)|receiStream[44]);//in mG
+		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]); //in mG
+#endif
 
 		pthread_mutex_lock(&serial_data_ready_mtx);
 		pthread_cond_broadcast(&serial_data_ready_cond);

@@ -404,16 +404,16 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		set_move_flag_(REMOTE_MODE_FORWARD);
-		beep_for_command(true);
+		beep_for_command(VALID);
 	}
 	else
 	{
 		set_move_flag_(REMOTE_MODE_STAY);
-		beep_for_command(true);
+		beep_for_command(VALID);
 	}
 	reset_rcon_remote();
 }
@@ -423,10 +423,10 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		remote_target_angle = gyro_get_angle() + 300;
 		if (remote_target_angle >= 3600)
 			remote_target_angle -= 3600;
@@ -435,7 +435,7 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 	}
 	else
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	reset_rcon_remote();
@@ -446,17 +446,17 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		remote_target_angle = ranged_angle(gyro_get_angle() - 300);
 		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro_get_angle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
 	else
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	reset_rcon_remote();
@@ -468,11 +468,11 @@ void remote_mode_handle_remote_max(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	if (!g_bumper_jam && !g_cliff_jam)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		switch_vac_mode(true);
 	}
 	else
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
@@ -482,14 +482,14 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	if (get_rcon_remote() == Remote_Clean)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		g_key_clean_pressed = true;
 		set_clean_mode(Clean_Mode_Userinterface);
 		disable_motors();
 	}
 	else if (!g_bumper_jam && !g_cliff_jam)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		disable_motors();
 		remote_exit = true;
 		if (get_rcon_remote() == Remote_Home)
@@ -498,7 +498,7 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 			set_clean_mode(Clean_Mode_Userinterface);
 	}
 	else
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
@@ -520,7 +520,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
-	beep_for_command(true);
+	beep_for_command(VALID);
 	disable_motors();
 	while (get_key_press() == KEY_CLEAN)
 	{

@@ -190,7 +190,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 	reset_sleep_mode_flag();
 	usleep(20000);
 
-	beep_for_command(true);
+	beep_for_command(VALID);
 
 	while (get_key_press() == KEY_CLEAN)
 	{

@@ -766,7 +766,7 @@ void em_default_handle_remote_plan(bool state_now, bool state_last)
 	if (get_plan_status() == 1 || get_plan_status() == 2)
 	{
 		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	}
 	else if (get_plan_status() == 3)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
@@ -778,56 +778,56 @@ void em_default_handle_remote_plan(bool state_now, bool state_last)
 void em_default_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_wall_follow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 

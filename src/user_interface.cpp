@@ -336,12 +336,12 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_error_code());
 			if (check_error_cleared(get_error_code()))
 			{
-				beep_for_command(true);
+				beep_for_command(VALID);
 				user_interface_reject_reason = 4;
 			}
 			else
 			{
-				beep_for_command(false);
+				beep_for_command(INVALID);
 				user_interface_reject_reason = 1;
 			}
 			reset_stop_event_status();
@@ -350,25 +350,25 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, get_rcon_remote(), get_error_code());
 			user_interface_reject_reason = 1;
-			beep_for_command(false);
+			beep_for_command(INVALID);
 		}
 	}
 	else if (get_cliff_status() == Status_Cliff_All)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
-		beep_for_command(false);
+		beep_for_command(INVALID);
 		user_interface_reject_reason = 2;
 	}
 	else if ((get_rcon_remote() != Remote_Forward && get_rcon_remote() != Remote_Left && get_rcon_remote() != Remote_Right && get_rcon_remote() != Remote_Home) && !battery_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, get_battery_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		beep_for_command(false);
+		beep_for_command(INVALID);
 		user_interface_reject_reason = 3;
 	}
 
 	if (!user_interface_reject_reason)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		switch (get_rcon_remote())
 		{
 			case Remote_Forward:
@@ -423,14 +423,14 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 	{
 		case 1:
 		{
-			beep_for_command(true);
+			beep_for_command(VALID);
 			user_interface_plan_status = 1;
 			ROS_WARN("%s %d: Plan received, plan status: %d.", __FUNCTION__, __LINE__, user_interface_plan_status);
 			break;
 		}
 		case 2:
 		{
-			beep_for_command(true);
+			beep_for_command(VALID);
 			user_interface_plan_status = 2;
 			ROS_WARN("%s %d: Plan cancel received, plan status: %d.", __FUNCTION__, __LINE__, user_interface_plan_status);
 			break;
@@ -484,9 +484,9 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	time_t key_press_start_time = time(NULL);
 
 	if (check_error_cleared(get_error_code()))
-		beep_for_command(true);
+		beep_for_command(VALID);
 	else
-		beep_for_command(false);
+		beep_for_command(INVALID);
 
 	while (get_key_press() == KEY_CLEAN)
 	{
@@ -495,7 +495,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 			if (!long_press_to_sleep)
 			{
 				long_press_to_sleep = true;
-				beep_for_command(true);
+				beep_for_command(VALID);
 			}
 			ROS_WARN("%s %d: User hasn't release the key and robot is going to sleep.", __FUNCTION__, __LINE__);
 		}

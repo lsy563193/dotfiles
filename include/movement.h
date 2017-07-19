@@ -363,6 +363,10 @@ typedef enum{
 #define CMD_ACK						0x23
 #define CMD_NCK						0x25
 
+// For beep_for_command()
+#define VALID						true
+#define INVALID						false
+
 extern uint32_t g_rcon_status;
 
 extern volatile int16_t g_left_wall_baseline;
