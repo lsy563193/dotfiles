@@ -1126,6 +1126,8 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				if (ret == -2){
 					if(g_trapped_mode == 0){
 						g_trapped_mode = 1;
+						// This led light is for debug.
+						set_led_mode(LED_FLASH, LED_GREEN, 300);
 						mt_set(CM_FOLLOW_LEFT_WALL);
 						extern uint32_t g_escape_trapped_timer;
 						g_escape_trapped_timer = time(NULL);

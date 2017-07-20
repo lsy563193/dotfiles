@@ -11,7 +11,7 @@ FILE(GLOB PP_SRC
 	src/gyro.cpp
 	src/laser.cpp
 	src/main.cpp
-#	test/regulator.cpp
+#	test/test_path_update_cell.cpp
 	src/map.cpp
 	src/mathematics.cpp
 	src/motion_manage.cpp
