@@ -329,7 +329,12 @@ void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long,
 	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long)));
 	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long)));
 }
-
+void mark_offset(int16_t dx, int16_t dy, CellState status)
+{
+	int x,y;
+	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE*dx, &x, &y);
+	map_set_cell(MAP, x,y,status);
+}
 int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
 											double origin_x, double origin_y)
 {
