@@ -18,6 +18,7 @@
 #include <robotbase.h>
 #include <path_planning.h>
 
+extern uint16_t g_old_dir;
 extern Cell_t g_cell_history[];
 int jam=0;
 //bool g_is_should_follow_wall;
@@ -157,15 +158,15 @@ static int16_t laser_turn_angle()
 		}
 
 		if (g_bumper_triggered == AllBumperTrig) {
-			ROS_ERROR("%s %d: AllBumper trigger.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: AllBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(90, 270, 900, 1800);
 		}
 		else if (g_bumper_triggered == RightBumperTrig) {
-			ROS_ERROR("%s %d: RightBumper trigger.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: RightBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(90, 180, angle_min, angle_max);
 		}
 		else if (g_bumper_triggered == LeftBumperTrig) {
-			ROS_ERROR("%s %d: LeftBumper trigger.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: LeftBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(180, 270, angle_min, angle_max);
 		}
 	}
@@ -186,21 +187,38 @@ static int16_t _get_obs_value()
 void mark_linear(const Cell_t &start, const Cell_t &stop,CellState state)
 {
 	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
-	auto dx = stop.X-start.X;
-	if(dx ==0)
-		return;
 
 	float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
 	float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
 
 	auto start_x = std::min(start.X, stop.X);
 	auto stop_x = std::max(start.X, stop.X);
-	for (auto x = start_x; x <= stop_x + 1; x++)
+	for (auto x = start_x; x <= stop_x; x++)
 	{
 		auto y = (int16_t) (slop * (stop.X) + intercept);
-		auto dy = (dx > 0 ^ mt_is_left()) ? -2 : 2;
-		ROS_ERROR("%s,%d: diff(dx,%d)  mark cell(%d,%d)", __FUNCTION__, dx, dy, __LINE__, x, y + dy);
-		map_set_cell(MAP, cell_to_count(x), cell_to_count(y + dy), state);
+		ROS_ERROR("%s,%d: cell(%d,%d)",__FUNCTION__, __LINE__, x, y);
+		map_set_cell(MAP, cell_to_count(x), cell_to_count(y), state);
+	}
+}
+
+void mark_follow(Cell_t start)
+{
+	auto stop = map_get_curr_cell();
+	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
+	auto dx = stop.X - start.X;
+	if (dx != 0)
+	{
+		auto dy_ = (g_old_dir == POS_X ^ dx > 0) ? 3 : 2;
+		dy_ = (dx > 0 ^ mt_is_left()) ? -dy_ : dy_;
+		start.Y += dy_;
+		stop.Y += dy_;
+
+		auto dx_ = (g_old_dir == POS_X) ? 2 : -2;
+		start.X += dx_;
+		stop.X -= dx_;
+		auto new_dx = stop.X - start.X;
+		if(new_dx != 0 && dx>0 ^ new_dx<0)
+			mark_linear(start, stop, BLOCKED_CLIFF);
 	}
 }
 
@@ -216,17 +234,36 @@ void mark()
 //		ROS_ERROR("%s %d: mark.", __FUNCTION__, __LINE__);
 		last = curr;
 		cm_update_map_cleaned();
-		/*if(mt_is_follow_wall())
+		if(mt_is_follow_wall())
 		{
-			int32_t x, y;
-			auto dy = mt_is_left() ? 2 : -2;
-			for(auto dx = -1;dx <=0;dx++){
-				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE*dx, &x, &y);
-//				ROS_ERROR("%s %d: follow_wall.", __FUNCTION__, __LINE__);
-//		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BOUNDARY)
-				map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+			auto dx = curr.X - count_to_cell(RegulatorBase::s_origin.X);
+			if(dx == 0)
+				return;
+			auto dy = mt_is_left()  ?  2 : -2;
+			ROS_ERROR("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
+			if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
+			{
+				for (dx = -1; dx <= 0; dx++)
+				{
+					int x, y;
+					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+					ROS_ERROR("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+					if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
+						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+				}
 			}
-		}*/
+			if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
+			{
+				for (dx = -1; dx <= 0; dx++)
+				{
+					int x, y;
+					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+					ROS_ERROR("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+					if (count_to_cell(y) -curr.Y <= 2);
+						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+				}
+			}
+		}
 	}
 }
 
@@ -444,11 +481,12 @@ bool LinearRegulator::isSwitch()
 bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
+	auto obs_tmp = _get_obs_value();
 
-	if (_get_obs_value() || rcon_tmp)
+	if (obs_tmp == 1 || rcon_tmp)
 	{
-		if(_get_obs_value())
-			g_obs_triggered = _get_obs_value();
+		if(obs_tmp == 1)
+			g_obs_triggered = obs_tmp;
 
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
@@ -561,29 +599,25 @@ bool FollowWallRegulator::isReach()
 			if (g_trapped_mode == 2 || (time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
 			{
 //				wav_play(WAV_CLEANING_START);
-//				g_trapped_mode = 0;
+				g_trapped_mode = 0;
 				ret = true;
 			}
 		} else
 		{
 			if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
 			{
-				extern uint16_t g_old_dir;
-				ROS_WARN("%s %d: reach the target, old_dir(%d) start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
-								 g_old_dir, count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(map_get_y_count()));
-
+				ROS_WARN("%s %d: reach the target, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
+								 count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(map_get_y_count()));
 				ret = true;
 			}
 
 			if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
 					(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
 			{
-				extern uint16_t g_old_dir;
+				ROS_ERROR("start %d,curr %d, diff %d",start_y,map_get_y_count(),  start_y - map_get_y_count());
 				ROS_WARN("%s %d: opposite direcition, old_dir(%d) start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
 								 g_old_dir, count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(map_get_y_count()));
-
-				mark_linear(map_point_to_cell(s_origin), map_get_curr_cell(),BLOCKED_CLIFF);
-				mark_offset(3,0,CLEANED);
+//				mark_offset(3,0,CLEANED);
 				ret = true;
 			}
 		}
@@ -627,6 +661,7 @@ bool FollowWallRegulator::isSwitch()
 			g_obs_triggered = 1;
 		g_turn_angle = obs_turn_angle();
 		g_wall_distance = Wall_High_Limit;
+		g_straight_distance = 100;
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}

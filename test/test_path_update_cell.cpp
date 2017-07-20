@@ -10,16 +10,20 @@
 #include <core_move.h>
 #include <gyro.h>
 #include <robot.hpp>
+#include <move_type.h>
 
 //#include "a_star.h"
 #include "map.h"
+
+
+extern void mark_follow(Cell_t start);
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "pp");
-	ros::NodeHandle	nh_private("~");
+//	ros::init(argc, argv, "pp");
+//	ros::NodeHandle	nh_private("~");
 
-	robot	robot_obj;
-
+//	robot	robot_obj;
+/*
 	int32_t x=0,y=0;
 	map_init();
 	path_planning_initialize(&x, &y);//init pathplan
@@ -91,6 +95,19 @@ int main(int argc, char **argv)
 //			ROS_INFO("go to escape mode");
 //			break;
 //		}
-//	}
+//	}*/
+
+	extern uint16_t g_old_dir;
+	map_init();
+
+	Cell_t start{0,0};
+	Cell_t stop{9,0};
+	auto point = map_cell_to_point(stop);
+	map_set_position(point.X,point.Y);
+	mt_set(CM_FOLLOW_LEFT_WALL);
+	g_old_dir = POS_X;
+	mark_follow(start);
+
+	debug_map(MAP,stop.X,stop.Y);
 	return 0;
 }
