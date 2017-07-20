@@ -73,6 +73,7 @@ Laser::Laser():nh_(),is_ready_(0),is_scanDataReady_(false)
 	stop_motor_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_motor");
 	start_laser_shield_cli_ = nh_.serviceClient<std_srvs::Empty>("start_laser_shield");
 	stop_laser_shield_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_laser_shield");
+
 	ROS_INFO("Laser init done!");
 
 	start();
@@ -226,6 +227,7 @@ void Laser::stopShield(void)
 	stop_laser_shield_cli_.call(empty);
 	ROS_INFO("%s %d: Stop laser shield.", __FUNCTION__, __LINE__);
 }
+
 
 bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
 {

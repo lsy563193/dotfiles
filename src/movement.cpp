@@ -462,7 +462,7 @@ void turn_left(uint16_t speed, int16_t angle)
 			{
 			} else
 			{
-				beep_for_command(false);
+				beep_for_command(INVALID);
 				reset_rcon_remote();
 			}
 		}
@@ -470,7 +470,7 @@ void turn_left(uint16_t speed, int16_t angle)
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
-			beep_for_command(false);
+			beep_for_command(INVALID);
 		}
 		/*if(is_turn_remote())
 			break;*/
@@ -547,7 +547,7 @@ void turn_right(uint16_t speed, int16_t angle)
 			{
 			} else
 			{
-				beep_for_command(false);
+				beep_for_command(INVALID);
 				reset_rcon_remote();
 			}
 		}
@@ -555,7 +555,7 @@ void turn_right(uint16_t speed, int16_t angle)
 		if (get_plan_status() == 1)
 		{
 			set_plan_status(0);
-			beep_for_command(false);
+			beep_for_command(INVALID);
 		}
 		/*if(is_turn_remote())
 			break;*/
@@ -1766,7 +1766,7 @@ uint8_t stop_event(void)
 				if (slam_error_count > 0)
 				{
 					// beep for debug
-					//beep(3, 25, 25, 3);
+					//beep(3, 500, 500, 3);
 					system("rosnode kill /slam_karto &");
 					usleep(3000000);
 					system("roslaunch pp karto_slam.launch &");
@@ -1827,7 +1827,7 @@ void set_clean_mode(uint8_t mode)
 	g_cleaning_mode = mode;
 }
 
-void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count)
+void beep(uint8_t Sound_Code, int Sound_Time_Ms, int Silence_Time_Ms, int Total_Time_Count)
 {
 	// Sound_Code means the interval of the speaker sounding, higher interval makes lower sound.
 	robotbase_sound_code = Sound_Code;
@@ -1835,9 +1835,9 @@ void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int 
 	robotbase_speaker_sound_loop_count = Total_Time_Count;
 	// A speaker sound loop contains one sound time and one silence time
 	// Sound_Time_Count means how many loops of g_send_stream loop will it sound in one speaker sound loop
-	robotbase_speaker_sound_time_count = Sound_Time_Count;
+	robotbase_speaker_sound_time_count = Sound_Time_Ms / 20;
 	// Silence_Time_Count means how many loops of g_send_stream loop will it be silence in one speaker sound loop, -1 means consistently beep.
-	robotbase_speaker_silence_time_count = Silence_Time_Count;
+	robotbase_speaker_silence_time_count = Silence_Time_Ms / 20;
 	// Trigger the update flag to start the new beep action
 	robotbase_beep_update_flag = true;
 }
@@ -2266,9 +2266,7 @@ uint16_t get_key_time(uint16_t key)
 	{
 		time++;
 		if (time == 151)
-		{
-			beep_for_command(true);
-		}
+			beep_for_command(VALID);
 		if (time > 1500)break;
 		usleep(20000);
 		if (get_key_press() != key)break;
@@ -3006,9 +3004,9 @@ void clear_manual_pause(void)
 void beep_for_command(bool valid)
 {
 	if (valid)
-		beep(2, 2, 0, 1);
+		beep(2, 40, 0, 1);
 	else
-		beep(5, 2, 0, 1);
+		beep(5, 40, 0, 1);
 }
 
 void reset_sp_turn_count()
@@ -3024,4 +3022,13 @@ int32_t get_sp_turn_count()
 void add_sp_turn_count()
 {
 	g_wf_sp_turn_count++;
+}
+
+void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
+{
+	robotbase_led_type = type;
+	robotbase_led_color = color;
+	robotbase_led_cnt_for_switch = time_ms / 20;
+	live_led_cnt_for_switch = 0;
+	robotbase_led_update_flag = true;
 }

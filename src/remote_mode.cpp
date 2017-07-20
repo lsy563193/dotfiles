@@ -31,13 +31,14 @@ boost::mutex move_flag_mutex;
 int16_t remote_target_angle;
 bool remote_exit;
 time_t remote_cmd_time;
+uint8_t remote_rcon_cnt = 0;
 
 void remote_mode(void)
 {
 	remote_exit = false;
 	g_battery_low_cnt = 0;
 
-	set_led(100, 0);
+	set_led_mode(LED_STEADY, LED_GREEN);
 	reset_rcon_remote();
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
@@ -69,6 +70,9 @@ void remote_mode(void)
 	disable_motors();
 	remote_mode_unregister_events();
 
+	if (g_battery_low)
+		wav_play(WAV_BATTERY_LOW);
+
 	if (g_cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 }
@@ -81,6 +85,7 @@ void remote_move(void)
 	// Set timeout time as 10s.
 	uint8_t remote_timeout = 10;
 
+	remote_rcon_cnt = 0;
 	remote_cmd_time = time(NULL);
 
 	set_move_flag_(REMOTE_MODE_STAY);
@@ -187,6 +192,7 @@ void remote_move(void)
 			{
 				set_wheel_speed(0, 0);
 				moving_speed = 0;
+				remote_rcon_cnt = 0;
 				break;
 			}
 			case REMOTE_MODE_LEFT:
@@ -277,8 +283,8 @@ void remote_mode_register_events(void)
 	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
 	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
-	///* Rcon */
-	//event_manager_register_and_enable_x(rcon, EVT_RCON, true);
+	/* Rcon */
+	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
 	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Key */
@@ -327,8 +333,8 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
-	///* Rcon */
-	//event_manager_register_and_disable_x(EVT_RCON);
+	/* Rcon */
+	event_manager_register_and_disable_x(EVT_RCON);
 	/* Battery */
 	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
 	/* Key */
@@ -401,16 +407,16 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		set_move_flag_(REMOTE_MODE_FORWARD);
-		beep_for_command(true);
+		beep_for_command(VALID);
 	}
 	else
 	{
 		set_move_flag_(REMOTE_MODE_STAY);
-		beep_for_command(true);
+		beep_for_command(VALID);
 	}
 	reset_rcon_remote();
 }
@@ -420,10 +426,10 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		remote_target_angle = gyro_get_angle() + 300;
 		if (remote_target_angle >= 3600)
 			remote_target_angle -= 3600;
@@ -432,7 +438,7 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 	}
 	else
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	reset_rcon_remote();
@@ -443,17 +449,17 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		remote_target_angle = ranged_angle(gyro_get_angle() - 300);
 		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro_get_angle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
 	else
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	reset_rcon_remote();
@@ -465,11 +471,11 @@ void remote_mode_handle_remote_max(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	if (!g_bumper_jam && !g_cliff_jam)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		switch_vac_mode(true);
 	}
 	else
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
@@ -479,14 +485,14 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	if (get_rcon_remote() == Remote_Clean)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		g_key_clean_pressed = true;
 		set_clean_mode(Clean_Mode_Userinterface);
 		disable_motors();
 	}
 	else if (!g_bumper_jam && !g_cliff_jam)
 	{
-		beep_for_command(true);
+		beep_for_command(VALID);
 		disable_motors();
 		remote_exit = true;
 		if (get_rcon_remote() == Remote_Home)
@@ -495,15 +501,29 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 			set_clean_mode(Clean_Mode_Userinterface);
 	}
 	else
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	reset_rcon_remote();
+}
+
+void remote_mode_handle_rcon(bool state_now, bool state_last)
+{
+	if (get_move_flag_() == REMOTE_MODE_FORWARD && (get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+	{
+		ROS_DEBUG("%s %d: Rcon HomeT signal received.", __FUNCTION__, __LINE__);
+		if (remote_rcon_cnt++ >= 2)
+		{
+			ROS_WARN("%s %d: Stop for rcon signal.", __FUNCTION__, __LINE__);
+			set_move_flag_(REMOTE_MODE_STAY);
+		}
+	}
+	reset_rcon_status();
 }
 
 void remote_mode_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
-	beep_for_command(true);
+	beep_for_command(VALID);
 	disable_motors();
 	while (get_key_press() == KEY_CLEAN)
 	{
@@ -582,7 +602,7 @@ void remote_mode_handle_battery_low(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, get_battery_voltage());
 		disable_motors();
-		wav_play(WAV_BATTERY_LOW);
-		set_clean_mode(Clean_Mode_Userinterface);
+		g_battery_low = true;
+		g_fatal_quit_event = true;
 	}
 }

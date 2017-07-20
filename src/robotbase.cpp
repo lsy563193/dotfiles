@@ -41,9 +41,7 @@ uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 #endif
 
-
-
-#define  _RATE 50 
+#define  _RATE 50
 
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
@@ -61,7 +59,7 @@ pp::x900sensor	sensor;
 
 // This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
-// Speaker totally sound time count, every count means once of send streem loop, if this count < 0, it will be a constant beep action
+// Speaker totally sound time count, every count contains sound time and silence time, and the length depends on sound time counts and silence time counts, if this count < 0, it will be a constant beep action
 int robotbase_speaker_sound_loop_count = 0;
 // Sound code to be set in g_send_stream
 uint8_t robotbase_sound_code = 0;
@@ -72,6 +70,13 @@ int temp_speaker_sound_time_count = -1;
 // Speaker silence time count in one speaker sound loop, every count means once of send streem loop
 int robotbase_speaker_silence_time_count = 0;
 int temp_speaker_silence_time_count = 0;
+
+// For led control.
+uint8_t robotbase_led_type = LED_STEADY;
+bool robotbase_led_update_flag = false;
+uint8_t robotbase_led_color = LED_GREEN;
+uint16_t robotbase_led_cnt_for_switch = 0;
+uint16_t live_led_cnt_for_switch = 0;
 
 // Lock for odom coordinate
 boost::mutex odom_mutex;
@@ -133,7 +138,7 @@ void robotbase_deinit(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		ROS_INFO("\tshutdown robotbase power");
-		set_led(0, 0);
+		set_led_mode(LED_STEADY, LED_OFF);
 		control_set(CTL_BUZZER, 0x00);
 		set_gyro_off();
 		usleep(40000);
@@ -306,9 +311,9 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[42] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc = receiStream[43];
 		sensor.omni_wheel = (receiStream[44]<<8)|receiStream[45];
-		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);// / 258.0f; //in mG
-		sensor.y_acc = static_cast<int16_t>((receiStream[48]<<8)|receiStream[49]);// / 258.0f; //in mG
-		sensor.z_acc = static_cast<int16_t>((receiStream[50]<<8)|receiStream[51]);// / 258.0f; //in mG
+		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);//in G
+		sensor.y_acc = static_cast<int16_t>((receiStream[48]<<8)|receiStream[49]);//in mG
+		sensor.z_acc = static_cast<int16_t>((receiStream[50]<<8)|receiStream[51]);//in mG
 		sensor.plan = receiStream[52];
 #elif __ROBOT_X400
 		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
@@ -330,10 +335,10 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc_ = receiStream[38];
 		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]) /258.0f; //in mG
-		sensor.y_acc_ = static_cast<int16_t>(((receiStream[43]<<8)|receiStream[44]) /258.0f; //in mG
-		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]) /258.0f; //in mG
-#endif	
+		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]); //in mG
+		sensor.y_acc_ = static_cast<int16_t>((receiStream[43]<<8)|receiStream[44]);//in mG
+		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]); //in mG
+#endif
 
 		pthread_mutex_lock(&serial_data_ready_mtx);
 		pthread_cond_broadcast(&serial_data_ready_cond);
@@ -396,7 +401,7 @@ void *serial_send_routine(void*)
 		if(get_sleep_mode_flag()){
 			continue;
 		}
-		/*-------------------speaker variable counter -----------------------*/
+		/*-------------------Process for beep and led -----------------------*/
 		// Force reset the beep action when beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
 		if (robotbase_beep_update_flag){
 			temp_speaker_sound_time_count = -1;
@@ -404,12 +409,13 @@ void *serial_send_routine(void*)
 			robotbase_beep_update_flag = false;
 		}
 		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
-		// If beep_time_count has ran out, it will not sound anymore and check the battary status. If low battary, it will constantly beep to alarm.
-		// If count > 0, it is processing for different alarm, if count < 0, it should be processing low battary alarm.
+		// If count > 0, it is processing for different alarm.
 		if (robotbase_speaker_sound_loop_count != 0){
 			process_beep();
 		}
-		/*-------------------counter end-------------------------------------*/
+
+		if (robotbase_led_update_flag)
+			process_led();
 
 		if(!is_send_busy()){
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
@@ -420,9 +426,6 @@ void *serial_send_routine(void*)
 	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);
 }
-
-/*---------process_beep()---------------*/
-/*--------author: austin---------------*/
 
 void process_beep()
 {
@@ -452,6 +455,61 @@ void process_beep()
 	if (temp_speaker_sound_time_count == -1){
 		temp_speaker_silence_time_count--;
 	}
+}
+
+void process_led()
+{
+	uint16_t led_brightness = 100;
+	switch (robotbase_led_type)
+	{
+		case LED_STEADY:
+		{
+			robotbase_led_update_flag = false;
+			break;
+		}
+		case LED_FLASH:
+		{
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_switch / 2)
+				led_brightness = 0;
+			break;
+		}
+		case LED_BREATH:
+		{
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_switch / 2)
+				led_brightness = led_brightness * (2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_switch - 1.0);
+			else
+				led_brightness = led_brightness * (1.0 - 2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_switch);
+			break;
+		}
+	}
+
+	if (live_led_cnt_for_switch++ > robotbase_led_cnt_for_switch)
+		live_led_cnt_for_switch = 0;
+
+	switch (robotbase_led_color)
+	{
+		case LED_GREEN:
+		{
+			set_led(led_brightness, 0);
+			break;
+		}
+		case LED_ORANGE:
+		{
+			set_led(led_brightness, led_brightness);
+			break;
+		}
+		case LED_RED:
+		{
+			set_led(0, led_brightness);
+			break;
+		}
+		case LED_OFF:
+		{
+			set_led(0, 0);
+			break;
+		}
+	}
+	//ROS_INFO("%s %d: live_led_cnt_for_switch: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch, led_brightness);
 }
 
 void robotbase_reset_odom_pose(void)

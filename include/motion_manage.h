@@ -8,6 +8,7 @@
 #include "laser.hpp"
 #include "slam.h"
 #include "mathematics.h"
+#include "obstacle_detector.h"
 
 class MotionManage {
 public:

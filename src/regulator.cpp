@@ -21,6 +21,7 @@
 extern uint16_t g_old_dir;
 extern Cell_t g_cell_history[];
 int jam=0;
+bool call_up_tilt_ = false;
 //bool g_is_should_follow_wall;
 
 static int16_t bumper_turn_angle()
@@ -359,6 +360,17 @@ bool TurnRegulator::isReach()
 bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
+	if(robot::instance()->isUpTilt() && !call_up_tilt_){
+		robot::instance()->upTiltCall(true);
+		call_up_tilt_ = true;
+		ROS_WARN("tilt call....");
+	}
+	else if(call_up_tilt_){
+		call_up_tilt_ = false;
+		//robot::instance()->upTiltCall(false);
+		ROS_WARN("tilt un_call...");
+	}
+
 	if(isReach() ||(! g_bumper_triggered  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_status()))
 	{
 		ROS_INFO("%s, %d: TurnRegulator should switch.", __FUNCTION__, __LINE__);
@@ -451,6 +463,17 @@ bool LinearRegulator::isReach()
 
 bool LinearRegulator::isSwitch()
 {
+	if(robot::instance()->isUpTilt() && !call_up_tilt_){
+		robot::instance()->upTiltCall(true);
+		call_up_tilt_ = true;
+		ROS_WARN("tilt call...");
+	}
+	else if(call_up_tilt_){
+		call_up_tilt_ = false;
+		//robot::instance()->upTiltCall(false);
+		ROS_WARN("tilt un_call...");
+	}
+
 	if ((! g_bumper_triggered && get_bumper_status())
 			|| (! g_cliff_triggered && get_cliff_status()))
 	{

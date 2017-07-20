@@ -35,17 +35,19 @@ void remote_mode_unregister_events(void);
 
 /* Bumper */
 define_remote_mode_handle_func(bumper)
-///* OBS */
+/* OBS */
 define_remote_mode_handle_func(obs)
 /* Cliff */
 define_remote_mode_handle_func(cliff_all)
 define_remote_mode_handle_func(cliff)
-///* Over Current */
+/* Over Current */
 define_remote_mode_handle_func(over_current_brush_left)
 define_remote_mode_handle_func(over_current_brush_right)
 define_remote_mode_handle_func(over_current_wheel_left)
 define_remote_mode_handle_func(over_current_wheel_right)
 define_remote_mode_handle_func(over_current_suction)
+/* Rcon */
+define_remote_mode_handle_func(rcon)
 /* Key */
 define_remote_mode_handle_func(key_clean)
 /* Remote */

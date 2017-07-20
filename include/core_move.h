@@ -59,6 +59,7 @@ extern uint16_t g_wall_distance;
 extern bool g_from_station;
 extern int g_trapped_mode;
 extern bool g_motion_init_succeeded;
+extern bool g_go_home_by_remote;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
@@ -82,6 +83,8 @@ uint8_t CM_MoveForward(void);
 
 uint8_t cm_touring(void);
 int cm_cleaning(void);
+
+void cm_check_should_go_home(void);
 
 Cell_t cm_update_position(bool is_turn = false);
 void cm_update_map_cleaned();
