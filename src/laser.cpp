@@ -25,14 +25,14 @@
 
 int read_line(int fd, char* buf){
 	char temp;
-		int i = 0;
-		do
-		{
-			if (read(fd, &temp, 1) == 0)break;
-			if (temp == '\n') break;
-			buf[i++] = temp;
-			printf("%c", temp);
-		}while(1);
+	int i = 0;
+	do
+	{
+		if (read(fd, &temp, 1) == 0)break;
+		if (temp == '\n') break;
+		buf[i++] = temp;
+		printf("%c", temp);
+	}while(1);
 	printf("\n");
 	return 1;
 }

@@ -573,17 +573,19 @@ bool robot::getBumperLeft()
 
 */
 
-#ifndef UPTILE_COUNT_REACH
-#define UPTILE_COUNT_REACH (10)
+#ifndef UPTILT_COUNT_REACH
+#define UPTILT_COUNT_REACH (10)
 #endif
 
-#define DIF_TILT_VAL 40
+#define DIF_TILT_X_VAL 50
+#define DIF_TILT_Y_VAL 80
+#define DIF_TILT_Z_VAL 40
 
 bool robot::isUpTilt()
 {
-	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_VAL){
-		if(++up_tilt_count_ > UPTILE_COUNT_REACH){
-			ROS_ERROR("%s,%d,robot head tilt !!",__FUNCTION__,__LINE__);
+	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL || absolute(y_acc_ - init_y_acc_) > DIF_TILT_Y_VAL){
+		if(++up_tilt_count_ > UPTILT_COUNT_REACH && absolute(z_acc_ - init_z_acc_)> DIF_TILT_Z_VAL){
+			ROS_ERROR("%s,%d,robot tilt !!",__FUNCTION__,__LINE__);
 			up_tilt_count_ = 0;
 			is_up_tilt_ = true;
 		}
