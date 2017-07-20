@@ -583,6 +583,8 @@ bool FollowWallRegulator::isReach()
 			{
 //				wav_play(WAV_CLEANING_START);
 //				g_trapped_mode = 0;
+				// This led light is for debug.
+				set_led_mode(LED_STEADY, LED_GREEN);
 				ret = true;
 			}
 		} else
