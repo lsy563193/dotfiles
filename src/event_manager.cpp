@@ -766,7 +766,7 @@ void em_default_handle_remote_plan(bool state_now, bool state_last)
 	if (get_plan_status() == 1 || get_plan_status() == 2)
 	{
 		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-		beep_for_command(false);
+		beep_for_command(INVALID);
 	}
 	else if (get_plan_status() == 3)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
@@ -778,56 +778,56 @@ void em_default_handle_remote_plan(bool state_now, bool state_last)
 void em_default_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_wall_follow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
 void em_default_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(false);
+	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
@@ -857,15 +857,11 @@ void em_default_handle_charge_detect(bool state_now, bool state_last)
 void em_default_handle_slam_error(bool state_now, bool state_last)
 {
 	static time_t slam_error_kill_timer_;
-	static uint8_t led_tick_cnt = 5;
-	static uint8_t led_brightness = 0;
 	static bool relaunch = false;
 
 	if (!state_last)
 	{
 		ROS_ERROR("%s %d: Slam process may be dead.", __FUNCTION__, __LINE__);
-		led_tick_cnt = 5;
-		led_brightness = 0;
 		relaunch = false;
 		slam_error_kill_timer_ = time(NULL);
 		system("rosnode kill /slam_karto &");
@@ -881,6 +877,7 @@ void em_default_handle_slam_error(bool state_now, bool state_last)
 		robotbase_restore_slam_correction();
 		MotionManage::s_slam->isMapReady(false);
 		relaunch = true;
+		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 	}
 
 	if (MotionManage::s_slam != nullptr)
@@ -891,19 +888,12 @@ void em_default_handle_slam_error(bool state_now, bool state_last)
 			ROS_WARN("Slam not ready yet.");
 			MotionManage::s_slam->enableMapUpdate();
 			usleep(100000);
-			led_tick_cnt--;
-			if (led_tick_cnt >= 0)
-			{
-				led_tick_cnt = 5;
-				led_brightness = 100 - led_brightness;
-				set_led(led_brightness, 0);
-			}
 			return;
 		}
 		else
 			MotionManage::s_laser->startShield();
 	}
-	set_led(100, 0);
+	set_led_mode(LED_STEADY, LED_GREEN);
 	// Wait for 0.2s to make sure it has process the first scan.
 	usleep(200000);
 	ROS_WARN("Slam restart successed.");

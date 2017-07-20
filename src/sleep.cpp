@@ -15,18 +15,19 @@ void sleep_mode(void)
 	bool eh_status_now=false, eh_status_last=false;
 	sleep_plan_reject_reason = 0;
 
-	beep(1, 4, 0, 1);
+	beep(1, 80, 0, 1);
 	usleep(100000);
-	beep(2, 4, 0, 1);
+	beep(2, 80, 0, 1);
 	usleep(100000);
-	beep(3, 4, 0, 1);
+	beep(3, 80, 0, 1);
 	usleep(100000);
-	beep(4, 4, 0, 1);
+	beep(4, 80, 0, 1);
 	usleep(100000);
-	set_led(0, 0);
+	set_led_mode(LED_STEADY, LED_OFF);
 
 	disable_motors();
 	set_main_pwr_byte(POWER_DOWN);
+	usleep(20000);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, get_main_pwr_byte());
 
 	reset_stop_event_status();
@@ -82,13 +83,13 @@ void sleep_mode(void)
 
 	sleep_unregister_events();
 
-	beep(4, 4, 0, 1);
+	beep(4, 80, 0, 1);
 	usleep(100000);
-	beep(3, 4, 0, 1);
+	beep(3, 80, 0, 1);
 	usleep(100000);
-	beep(2, 4, 0, 1);
+	beep(2, 80, 0, 1);
 	usleep(100000);
-	beep(1, 4, 4, 1);
+	beep(1, 80, 4, 1);
 
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
 	usleep(1500000);
@@ -190,7 +191,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 	reset_sleep_mode_flag();
 	usleep(20000);
 
-	beep_for_command(true);
+	beep_for_command(VALID);
 
 	while (get_key_press() == KEY_CLEAN)
 	{

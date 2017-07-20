@@ -32,10 +32,36 @@ void go_home(void)
 {
 	g_go_to_charger_failed = false;
 
+	set_led_mode(LED_STEADY, LED_ORANGE);
 	if (get_clean_mode() == Clean_Mode_GoHome)
+	{
 		during_cleaning = false;
+		if (!is_gyro_on())
+		{
+			// Restart the gyro.
+			set_gyro_off();
+			// Wait for 30ms to make sure the off command has been effectived.
+			usleep(30000);
+			// Set gyro on before wav_play can save the time for opening the gyro.
+			set_gyro_on();
+			wav_play(WAV_BACK_TO_CHARGER);
+
+			if (!wait_for_gyro_on())
+			{
+				set_clean_mode(Clean_Mode_Userinterface);
+				return;
+			}
+		}
+		else
+		{
+			wav_play(WAV_BACK_TO_CHARGER);
+		}
+	}
 	else
+	{
+		ROS_INFO("%s %d: set during_cleaning.", __FUNCTION__, __LINE__);
 		during_cleaning = true;
+	}
 
 	if (!during_cleaning)
 		event_manager_reset_status();
@@ -127,7 +153,6 @@ void go_to_charger(void)
 	g_bumper_right = false;
 
 	g_move_back_finished = true;
-	set_led(100, 100);
 	set_side_brush_pwm(30, 30);
 	set_main_brush_pwm(30);
 	set_bldc_speed(Vac_Speed_NormalL);
@@ -2403,7 +2428,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	time_t start_time;
 	bool reset_manual_pause = false;
-	beep_for_command(true);
+	beep_for_command(VALID);
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 	start_time = time(NULL);
@@ -2418,7 +2443,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 		{
 			if (!reset_manual_pause)
 			{
-				beep_for_command(true);
+				beep_for_command(VALID);
 				reset_manual_pause = true;
 			}
 			robot::instance()->resetManualPause();
@@ -2434,7 +2459,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 void go_home_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(true);
+	beep_for_command(VALID);
 	g_key_clean_pressed = true;
 	if (during_cleaning && get_clean_mode() == Clean_Mode_Navigation)
 		robot::instance()->setManualPause();

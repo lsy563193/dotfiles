@@ -89,27 +89,6 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
 				clear_manual_pause();
-				if (!is_gyro_on())
-				{
-					// Restart the gyro.
-					set_gyro_off();
-					// Wait for 30ms to make sure the off command has been effectived.
-					usleep(30000);
-					// Set gyro on before wav_play can save the time for opening the gyro.
-					set_gyro_on();
-					wav_play(WAV_BACK_TO_CHARGER);
-
-					if (!wait_for_gyro_on())
-					{
-						set_clean_mode(Clean_Mode_Userinterface);
-						break;
-					}
-				}
-				else
-				{
-					wav_play(WAV_BACK_TO_CHARGER);
-				}
-
 				go_home();
 				break;
 
@@ -245,7 +224,7 @@ int main(int argc, char **argv)
 		ros::spin();
 	} else {
 		printf("turn on led\n");
-		set_led(100, 100);
+		set_led_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
 

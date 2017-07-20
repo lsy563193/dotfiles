@@ -159,7 +159,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		remote_home_during_pause = true;
 	event_manager_reset_status();
 	if (remote_home_during_pause)
+	{
 		g_remote_home = true;
+		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
+	}
 	g_turn_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
@@ -422,7 +425,10 @@ bool MotionManage::initNavigationCleaning(void)
 	usleep(20000);
 
 	reset_work_time();
-	set_led(100, 0);
+	if (g_remote_home || g_go_home_by_remote)
+		set_led_mode(LED_STEADY, LED_ORANGE);
+	else
+		set_led_mode(LED_STEADY, LED_GREEN);
 
 	// Initialize motors and map.
 	extern bool g_resume_cleaning;
@@ -479,16 +485,12 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		ROS_WARN("Restore from manual pause");
 		wav_play(WAV_CLEANING_CONTINUE);
-		if (g_go_home || (!g_go_home && g_remote_home))
+		if (g_go_home)
 		{
 			wav_play(WAV_BACK_TO_CHARGER);
-			if (!g_go_home && g_remote_home)
-			{
-				cm_create_home_boundary();
-				g_go_home = true;
-				g_remote_home = false;
-			}
 		}
+		else
+			cm_check_should_go_home();
 	}
 	else if(g_plan_activated == true)
 	{
@@ -559,6 +561,7 @@ bool MotionManage::initNavigationCleaning(void)
 bool MotionManage::initWallFollowCleaning(void)
 {
 	cm_register_events();
+	set_led_mode(LED_STEADY, LED_GREEN);
 
 	extern std::vector<Pose16_t> g_wf_cell;
 	reset_work_time();
@@ -572,7 +575,6 @@ bool MotionManage::initWallFollowCleaning(void)
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
-	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
 	if (!wait_for_gyro_on())
@@ -609,6 +611,7 @@ bool MotionManage::initWallFollowCleaning(void)
 bool MotionManage::initSpotCleaning(void)
 {
 	cm_register_events();
+	set_led_mode(LED_STEADY, LED_GREEN);
 
 	reset_work_time();
 	reset_rcon_status();
@@ -622,7 +625,6 @@ bool MotionManage::initSpotCleaning(void)
 	usleep(30000);
 	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
-	set_led(100, 0);
 	//wav_play(WAV_SYSTEM_INITIALIZING);
 	wav_play(WAV_CLEANING_SPOT);
 	if (!wait_for_gyro_on())

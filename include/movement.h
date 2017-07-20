@@ -363,6 +363,21 @@ typedef enum{
 #define CMD_ACK						0x23
 #define CMD_NCK						0x25
 
+// For beep_for_command()
+#define VALID						true
+#define INVALID						false
+
+// For LED control
+// LED type
+#define LED_STEADY					0
+#define LED_FLASH					1
+#define LED_BREATH					2
+// LED color
+#define LED_OFF						0
+#define LED_GREEN					1
+#define LED_ORANGE					2
+#define LED_RED						3
+
 extern uint32_t g_rcon_status;
 
 extern volatile int16_t g_left_wall_baseline;
@@ -476,7 +491,6 @@ uint8_t get_clean_mode(void);
  * save: if save is ture,save this mode,next time clean will reload at interface
  * */
 void set_vacmode(uint8_t mode, bool is_save = false);
-
 
 void set_bldc_speed(uint32_t S);
 
@@ -704,7 +718,6 @@ uint8_t virtual_wall_turn_right();
 uint8_t virtual_wall_turn_left();
 
 int32_t abs_minus(int32_t A, int32_t B);
-#endif
 
 void set_plan_status(uint8_t Status);
 uint8_t get_plan_status(void);
@@ -727,3 +740,7 @@ void beep_for_command(bool valid);
 void reset_sp_turn_count();
 int32_t get_sp_turn_count();
 void add_sp_turn_count();
+
+void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
+
+#endif
