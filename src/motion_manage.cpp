@@ -587,6 +587,7 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 
+	robot::instance()->accInit4Tilt();//init accelerate for tile detect
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
@@ -637,6 +638,7 @@ bool MotionManage::initSpotCleaning(void)
 		return false;
 	}
 
+	robot::instance()->accInit4Tilt();//init accelerate for tile detect
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	g_home_point_old_path.clear();
