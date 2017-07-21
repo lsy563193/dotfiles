@@ -364,13 +364,13 @@ void cm_update_map()
 //	ROS_WARN("1 last(%d,%d),curr(%d,%d)",last.X, last.Y, curr.X, curr.Y);
 
 //	ROS_ERROR("2 last(%d,%d),curr(%d,%d)",last.X, last.Y,curr.X,curr.Y);
-	if (last != curr )
-	{
+//	if (last != curr )
+//	{
 
 //		cm_update_map_cleaned();
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
-		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-	}
+//		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	}
 
 	{
 		Cell_t next,target;
