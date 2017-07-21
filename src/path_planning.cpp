@@ -684,6 +684,28 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				t.target.Y = d;
 				t.points.clear();
 				g_targets.push_back(t);
+				if (t.target == map_get_curr_cell())
+				{
+					ROS_ERROR("%s %d: Target is current cell, mark +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
+					ROS_WARN("Before:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						printf("\n");
+					}
+					ROS_WARN("After:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+						{
+							if (map_get_cell(MAP, dx, dy) == UNCLEAN)
+								map_set_cell(MAP, dx, dy, CLEANED);
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						}
+						printf("\n");
+					}
+				}
 
 				x_min = x_min > c ? c : x_min;
 				x_max = x_max < c ? c : x_max;
