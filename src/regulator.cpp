@@ -924,6 +924,7 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 	robotbase_obs_adjust_count(50);
 	cm_set_event_manager_handler_state(true);
 
+	ROS_WARN("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);
 }
 
 RegulatorManage::~RegulatorManage()

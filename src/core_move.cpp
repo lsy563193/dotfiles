@@ -272,11 +272,11 @@ static void _update_map_rcon()
 	}
 	int32_t x,y;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-	ROS_ERROR("%s,%d:curr(%d,%d), mark(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
+//	ROS_ERROR("%s,%d:curr(%d,%d), mark(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
 	map_set_cell(MAP, x, y, BLOCKED_RCON);
 	if (dx2 != 0){
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-		ROS_ERROR("%s,%d: mark(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//		ROS_ERROR("%s,%d: mark(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 	}
 	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
