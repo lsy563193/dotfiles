@@ -21,7 +21,7 @@
 extern uint16_t g_old_dir;
 extern Cell_t g_cell_history[];
 int jam=0;
-bool call_up_tilt_ = false;
+bool g_call_up_tilt = false;
 //bool g_is_should_follow_wall;
 
 static int16_t bumper_turn_angle()
@@ -360,13 +360,13 @@ bool TurnRegulator::isReach()
 bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
-	if(robot::instance()->isUpTilt() && !call_up_tilt_){
+	if(robot::instance()->isUpTilt() && !g_call_up_tilt){
 		robot::instance()->upTiltCall(true);
-		call_up_tilt_ = true;
+		g_call_up_tilt = true;
 		ROS_WARN("tilt call....");
 	}
-	else if(call_up_tilt_){
-		call_up_tilt_ = false;
+	else if(g_call_up_tilt){
+		g_call_up_tilt = false;
 		//robot::instance()->upTiltCall(false);
 		ROS_WARN("tilt un_call...");
 	}
@@ -464,15 +464,15 @@ bool LinearRegulator::isReach()
 
 bool LinearRegulator::isSwitch()
 {
-	if(robot::instance()->isUpTilt() && !call_up_tilt_){
+	if(robot::instance()->isUpTilt() && !g_call_up_tilt){
 		robot::instance()->upTiltCall(true);
-		call_up_tilt_ = true;
-		ROS_WARN("tilt call...");
+		g_call_up_tilt = true;
+		ROS_WARN("%s,%d,tilt call...",__FUNCTION__,__LINE__);
 	}
-	else if(call_up_tilt_){
-		call_up_tilt_ = false;
+	else if(g_call_up_tilt){
+		g_call_up_tilt = false;
 		//robot::instance()->upTiltCall(false);
-		ROS_WARN("tilt un_call...");
+		ROS_WARN("%s,%d,tilt un_call...",__FUNCTION__,__LINE__);
 	}
 
 	if ((! g_bumper_triggered && get_bumper_status())
@@ -632,6 +632,8 @@ bool FollowWallRegulator::isReach()
 			{
 //				wav_play(WAV_CLEANING_START);
 				g_trapped_mode = 0;
+				// This led light is for debug.
+				set_led_mode(LED_STEADY, LED_GREEN);
 				ret = true;
 			}
 		} else

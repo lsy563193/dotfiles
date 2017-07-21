@@ -752,6 +752,7 @@ void cm_check_should_go_home(void)
 		g_battery_home = false;
 	}
 }
+
 /* Statement for cm_go_to_charger(void)
  * return : true -- going to charger has been stopped, either successfully or interrupted.
  *          false -- going to charger failed, move to next point.

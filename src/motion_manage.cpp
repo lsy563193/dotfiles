@@ -264,6 +264,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 	s_laser->startShield();
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
+
+
+	if (g_go_home_by_remote)
+		set_led_mode(LED_STEADY, LED_ORANGE);
+	else
+		set_led_mode(LED_STEADY, LED_GREEN);
 }
 
 MotionManage::~MotionManage()
@@ -427,9 +433,9 @@ bool MotionManage::initNavigationCleaning(void)
 
 	reset_work_time();
 	if (g_remote_home || g_go_home_by_remote)
-		set_led_mode(LED_STEADY, LED_ORANGE);
+		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
-		set_led_mode(LED_STEADY, LED_GREEN);
+		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
 	extern bool g_resume_cleaning;
@@ -562,7 +568,7 @@ bool MotionManage::initNavigationCleaning(void)
 bool MotionManage::initWallFollowCleaning(void)
 {
 	cm_register_events();
-	set_led_mode(LED_STEADY, LED_GREEN);
+	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	extern std::vector<Pose16_t> g_wf_cell;
 	reset_work_time();
@@ -583,6 +589,7 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 
+	robot::instance()->accInit4Tilt();//init accelerate for tile detect
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
@@ -612,7 +619,7 @@ bool MotionManage::initWallFollowCleaning(void)
 bool MotionManage::initSpotCleaning(void)
 {
 	cm_register_events();
-	set_led_mode(LED_STEADY, LED_GREEN);
+	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	reset_work_time();
 	reset_rcon_status();
@@ -633,6 +640,7 @@ bool MotionManage::initSpotCleaning(void)
 		return false;
 	}
 
+	robot::instance()->accInit4Tilt();//init accelerate for tile detect
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	g_home_point_old_path.clear();
