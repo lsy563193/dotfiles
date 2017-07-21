@@ -746,8 +746,8 @@ int get_rcon_trig_()
 	enum {left,fl1,fl2,fr2,fr1,right};
 	static int8_t cnt[6]={0,0,0,0,0,0};
 	const int MAX_CNT = 1;
-	if(get_rcon_status() != 0)
-		ROS_WARN("get_rcon_status(%d)",get_rcon_status());
+//	if(get_rcon_status() != 0)
+//		ROS_WARN("get_rcon_status(%d)",get_rcon_status());
 	if (get_rcon_status() & RconL_HomeT)
 		cnt[left]++;
 	if (get_rcon_status() & RconFL_HomeT)

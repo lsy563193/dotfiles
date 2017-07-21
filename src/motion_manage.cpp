@@ -263,6 +263,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 	s_laser->startShield();
+	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 }
 
 MotionManage::~MotionManage()

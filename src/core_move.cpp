@@ -132,7 +132,8 @@ bool is_map_front_block(int dx)
 //map--------------------------------------------------------
 static  void _update_map_obs()
 {
-	auto obs_trig = get_obs_status();
+	auto obs_trig = /*g_obs_triggered*/get_obs_status();
+	ROS_INFO("%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
 		return;
 	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
@@ -179,7 +180,7 @@ static  void _update_map_obs()
 
 static void _update_map_bumper()
 {
-	auto bumper_trig = get_bumper_status();
+	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
 	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
 		return;
@@ -208,7 +209,7 @@ static void _update_map_bumper()
 
 static void _update_map_cliff()
 {
-	auto cliff_trig = get_cliff_status();
+	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
 	if (g_cliff_jam || cliff_trig)
 		// During self check.
 		return;
@@ -238,7 +239,8 @@ static void _update_map_cliff()
 
 static void _update_map_rcon()
 {
-	auto rcon_trig = get_rcon_trig();
+	auto rcon_trig = g_rcon_triggered/*get_rcon_trig()*/;
+	g_rcon_triggered =0;
 	if(! rcon_trig)
 		return;
 
@@ -270,13 +272,16 @@ static void _update_map_rcon()
 	}
 	int32_t x,y;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+	ROS_ERROR("%s,%d:curr(%d,%d), mark(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
 	map_set_cell(MAP, x, y, BLOCKED_RCON);
-//	ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 	if (dx2 != 0){
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-//		ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		ROS_ERROR("%s,%d: mark(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 	}
+	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	stop_brifly();
+//	sleep(5);
 }
 
 static void update_map_blocked()
@@ -284,6 +289,7 @@ static void update_map_blocked()
 	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
 		return;
 
+	ROS_ERROR("----------------update_map_blocked");
 	_update_map_obs();
 	_update_map_bumper();
 	_update_map_rcon();
