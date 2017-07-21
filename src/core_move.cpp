@@ -261,6 +261,7 @@ static void _update_map_rcon()
 		case fl1:
 		case fr1:
 			dx = 2, dy = 0;
+			dx2 = 3, dy2 = 0;
 			break;
 		case fr2:
 			dx = 1, dy = -2;

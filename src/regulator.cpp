@@ -340,7 +340,7 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 }
 
 
-TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(13)
+TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(16)
 {
 	accurate_ = speed_max_ > 30 ? 30 : 10;
 	s_target_angle = angle;
