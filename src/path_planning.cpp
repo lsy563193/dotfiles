@@ -1301,14 +1301,14 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 		if (path_next_status == 1)
 		{
-			if (cm_check_loop_back(next))
-				switch_target = true;
-			else
-			{
+//			if (cm_check_loop_back(next))
+//				switch_target = true;
+//			else
+//			{
 				g_current_home_cell = target;
 				return_val = TARGET_FOUND;
 				break;
-			}
+//			}
 		}
 		else
 		{
@@ -1403,7 +1403,7 @@ int8_t path_get_continue_target(Cell_t& next, Cell_t& target)
 	set_explore_new_path_flag(false);
 	auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
 	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
-	if (path_next_status == 1 && !cm_check_loop_back(next))
+	if (path_next_status == 1/* && !cm_check_loop_back(next)*/)
 		return_val = TARGET_FOUND;
 	else
 		return_val = NO_TARGET_LEFT;
