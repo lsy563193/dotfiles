@@ -684,6 +684,28 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				t.target.Y = d;
 				t.points.clear();
 				g_targets.push_back(t);
+				if (t.target == map_get_curr_cell())
+				{
+					ROS_ERROR("%s %d: Target is current cell, mark +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
+					ROS_WARN("Before:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						printf("\n");
+					}
+					ROS_WARN("After:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+						{
+							if (map_get_cell(MAP, dx, dy) == UNCLEAN)
+								map_set_cell(MAP, dx, dy, CLEANED);
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						}
+						printf("\n");
+					}
+				}
 
 				x_min = x_min > c ? c : x_min;
 				x_max = x_max < c ? c : x_max;
@@ -1279,14 +1301,14 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 		if (path_next_status == 1)
 		{
-			if (cm_check_loop_back(next))
-				switch_target = true;
-			else
-			{
+//			if (cm_check_loop_back(next))
+//				switch_target = true;
+//			else
+//			{
 				g_current_home_cell = target;
 				return_val = TARGET_FOUND;
 				break;
-			}
+//			}
 		}
 		else
 		{
@@ -1381,7 +1403,7 @@ int8_t path_get_continue_target(Cell_t& next, Cell_t& target)
 	set_explore_new_path_flag(false);
 	auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
 	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
-	if (path_next_status == 1 && !cm_check_loop_back(next))
+	if (path_next_status == 1/* && !cm_check_loop_back(next)*/)
 		return_val = TARGET_FOUND;
 	else
 		return_val = NO_TARGET_LEFT;
