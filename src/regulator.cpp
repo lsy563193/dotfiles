@@ -631,6 +631,7 @@ bool FollowWallRegulator::isReach()
 			if (g_trapped_mode == 2 || (time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
 			{
 //				wav_play(WAV_CLEANING_START);
+				ROS_WARN("%s:%d: out of esc", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
 				// This led light is for debug.
 				set_led_mode(LED_STEADY, LED_GREEN);

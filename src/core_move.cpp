@@ -374,8 +374,13 @@ void cm_update_map()
 
 	{
 		Cell_t next,target;
+//		ROS_WARN("IN ESC");
 		if(last != curr && g_trapped_mode == 1 && path_target(next, target) == 1)
+		{
+
+			ROS_INFO("%s,%d: path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
 			g_trapped_mode = 2;
+		}
 	}
 
 }
