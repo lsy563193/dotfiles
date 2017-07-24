@@ -271,7 +271,8 @@ static bool is_isolate() {
 //	pnt16ArTmp[0] = out_cell;
 
 //	path_escape_set_trapped_cell(pnt16ArTmp, 1);
-	cm_update_map();
+//	cm_update_map();
+	cm_update_position();
 	debug_map(MAP, 0, 0);
 
 	Cell_t remote{0,0};

@@ -367,23 +367,13 @@ void cm_update_map()
 //	if (last != curr )
 //	{
 
-//		cm_update_map_cleaned();
+		cm_update_map_cleaned();
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 //	}
 
-	{
-		Cell_t next,target;
-//		ROS_WARN("IN ESC");
-		if(last != curr && g_trapped_mode == 1 && path_target(next, target) == 1)
-		{
-
-			ROS_INFO("%s,%d: path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
-			g_trapped_mode = 2;
-		}
-	}
-
 }
+
 //-------------------------------cm_move_back-----------------------------//
 
 uint16_t round_turn_distance()

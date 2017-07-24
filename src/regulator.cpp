@@ -259,12 +259,26 @@ void mark()
 				{
 					int x, y;
 					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-					ROS_ERROR("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
 					if (count_to_cell(y) -curr.Y <= 2);
 						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
 				}
 			}
 		}
+		{
+		Cell_t next,target;
+//		ROS_WARN("IN ESC");
+		if(last != curr && g_trapped_mode == 1 )
+		{
+			if(path_target(next, target) == 1){
+				ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
+				g_trapped_mode = 2;
+			}
+			else{
+				ROS_INFO("%s,%d:trapped_mode path_target false",__FUNCTION__,__LINE__);
+			}
+		}
+	}
 	}
 }
 
