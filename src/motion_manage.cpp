@@ -198,6 +198,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		//s_laser->startShield();
 		s_laser->lidarShieldDetect(true);
+		if (g_go_home_by_remote)
+			set_led_mode(LED_STEADY, LED_ORANGE);
+		else
+			set_led_mode(LED_STEADY, LED_GREEN);
 		return;
 	}
 	if (robot::instance()->isManualPaused() && s_slam != nullptr)
@@ -206,6 +210,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		robot::instance()->resetManualPause();
 		//s_laser->startShield();
 		s_laser->lidarShieldDetect(true);
+		if (g_go_home_by_remote)
+			set_led_mode(LED_STEADY, LED_ORANGE);
+		else
+			set_led_mode(LED_STEADY, LED_GREEN);
 		return;
 	}
 
