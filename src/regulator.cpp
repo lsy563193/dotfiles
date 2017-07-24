@@ -177,11 +177,11 @@ static int16_t laser_turn_angle()
 static int16_t _get_obs_value()
 {
 	if(get_front_obs() > get_front_obs_value())
-		return 1;
+		return Status_Front_OBS;
 	if(get_left_obs() > get_left_obs_value())
-		return 2;
+		return Status_Left_OBS;
 	if(get_right_obs() > get_right_obs_value())
-		return 3;
+		return Status_Right_OBS;
 	return 0;
 }
 
@@ -340,7 +340,7 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 }
 
 
-TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(13)
+TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(16)
 {
 	accurate_ = speed_max_ > 30 ? 30 : 10;
 	s_target_angle = angle;
@@ -378,6 +378,7 @@ bool TurnRegulator::isSwitch()
 		g_cliff_triggered = get_cliff_status();
 		reset_sp_turn_count();
 		reset_wheel_step();
+		reset_rcon_status();
 		return true;
 	}
 	return false;
@@ -506,20 +507,28 @@ bool LinearRegulator::_isStop()
 	auto rcon_tmp = get_rcon_trig();
 	auto obs_tmp = _get_obs_value();
 
-	if (obs_tmp == 1 || rcon_tmp)
+	if (obs_tmp == Status_Front_OBS || rcon_tmp)
 	{
-		if(obs_tmp == 1)
+		if(obs_tmp == Status_Front_OBS)
 			g_obs_triggered = obs_tmp;
 
 		if(rcon_tmp){
-			g_rcon_triggered = rcon_tmp;
-			path_set_home(map_get_curr_cell());
+//			if(g_cell_history[0] != map_get_curr_cell()){
+				g_rcon_triggered = rcon_tmp;
+				path_set_home(map_get_curr_cell());
+//			}
+//			else{
+//				ROS_ERROR("%s, %d: g_rcon_triggered but curr(%d,%d),g_h0=g_h1(%d,%d).", __FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y,g_cell_history[0].X, g_cell_history[0].Y);
+//				stop_brifly();
+//				sleep(5);
+//				return false;
+//			}
 		}
 /*		if(g_obs_triggered)
 			g_turn_angle = obs_turn_angle();
 		else
 			g_turn_angle = rcon_turn_angle();*/
-		ROS_INFO("%s, %d: LinearRegulator, g_obs_triggered || g_rcon_triggered.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s, %d: LinearRegulator, g_obs_triggered(%d) g_rcon_triggered(%d).", __FUNCTION__, __LINE__,g_obs_triggered, g_rcon_triggered);
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 			SpotMovement::instance()->setDirectChange();
@@ -622,6 +631,7 @@ bool FollowWallRegulator::isReach()
 			if (g_trapped_mode == 2 || (time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
 			{
 //				wav_play(WAV_CLEANING_START);
+				ROS_WARN("%s:%d: out of esc", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
 				// This led light is for debug.
 				set_led_mode(LED_STEADY, LED_GREEN);
@@ -683,7 +693,7 @@ bool FollowWallRegulator::isSwitch()
 	}
 	if( g_obs_triggered  || get_front_obs() >= get_front_obs_value()){
 		if(! g_obs_triggered)
-			g_obs_triggered = 1;
+			g_obs_triggered = Status_Front_OBS;
 		g_turn_angle = obs_turn_angle();
 		g_wall_distance = Wall_High_Limit;
 		g_straight_distance = 100;
@@ -915,6 +925,7 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 	robotbase_obs_adjust_count(50);
 	cm_set_event_manager_handler_state(true);
 
+	ROS_WARN("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);
 }
 
 RegulatorManage::~RegulatorManage()

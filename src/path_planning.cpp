@@ -1270,6 +1270,11 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 					// Try all the old path home point first.
 					set_explore_new_path_flag(false);
 				switch_target = false;
+
+				if (is_block_accessible(target.X, target.Y) == 0) {
+					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
+					map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
+				}
 			}
 			else if (get_clean_mode() == Clean_Mode_Navigation && !g_home_point_new_path.empty())
 			{
@@ -1280,6 +1285,11 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				g_home_point_new_path.pop_front();
 				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_new_path.size());
 				switch_target = false;
+
+				if (is_block_accessible(target.X, target.Y) == 0) {
+					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
+					map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
+				}
 			}
 			else // Target list is empty.
 			{
@@ -1290,11 +1300,6 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		}
 		else
 			target = g_current_home_cell;
-
-		if (is_block_accessible(target.X, target.Y) == 0) {
-			ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
-			map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
-		}
 
 		Cell_t pos{map_get_x_cell(), map_get_y_cell()};
 		auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
