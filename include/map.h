@@ -80,4 +80,5 @@ void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state
 
 void map_reset(uint8_t id);
 
+void map_set_realtime();
 #endif /* __MAP_H */

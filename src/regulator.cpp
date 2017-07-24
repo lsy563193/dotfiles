@@ -185,103 +185,6 @@ static int16_t _get_obs_value()
 	return 0;
 }
 
-void mark_linear(const Cell_t &start, const Cell_t &stop,CellState state)
-{
-	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
-
-	float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
-	float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
-
-	auto start_x = std::min(start.X, stop.X);
-	auto stop_x = std::max(start.X, stop.X);
-	for (auto x = start_x; x <= stop_x; x++)
-	{
-		auto y = (int16_t) (slop * (stop.X) + intercept);
-		ROS_ERROR("%s,%d: cell(%d,%d)",__FUNCTION__, __LINE__, x, y);
-		map_set_cell(MAP, cell_to_count(x), cell_to_count(y), state);
-	}
-}
-
-void mark_follow(Cell_t start)
-{
-	auto stop = map_get_curr_cell();
-	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
-	auto dx = stop.X - start.X;
-	if (dx != 0)
-	{
-		auto dy_ = (g_old_dir == POS_X ^ dx > 0) ? 3 : 2;
-		dy_ = (dx > 0 ^ mt_is_left()) ? -dy_ : dy_;
-		start.Y += dy_;
-		stop.Y += dy_;
-
-		auto dx_ = (g_old_dir == POS_X) ? 2 : -2;
-		start.X += dx_;
-		stop.X -= dx_;
-		auto new_dx = stop.X - start.X;
-		if(new_dx != 0 && dx>0 ^ new_dx<0)
-			mark_linear(start, stop, BLOCKED_CLIFF);
-	}
-}
-
-void mark()
-{
-	if (get_clean_mode() != Clean_Mode_Navigation)
-		return;
-
-	static Cell_t last{0, 0};
-	auto curr = map_get_curr_cell();
-	if (last != curr)
-	{
-//		ROS_ERROR("%s %d: mark.", __FUNCTION__, __LINE__);
-		last = curr;
-		cm_update_map_cleaned();
-		if(mt_is_follow_wall())
-		{
-			auto dx = curr.X - count_to_cell(RegulatorBase::s_origin.X);
-			if(dx == 0)
-				return;
-			auto dy = mt_is_left()  ?  2 : -2;
-			ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
-			if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
-			{
-				for (dx = -1; dx <= 0; dx++)
-				{
-					int x, y;
-					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-					if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
-						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
-				}
-			}
-			if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
-			{
-				for (dx = -1; dx <= 0; dx++)
-				{
-					int x, y;
-					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-					if (count_to_cell(y) -curr.Y <= 2);
-						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
-				}
-			}
-		}
-	{
-		Cell_t next,target;
-//		ROS_WARN("IN ESC");
-		if(g_trapped_mode == 1 )
-		{
-			if(path_target(next, target) == 1){
-				ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
-				g_trapped_mode = 2;
-			}
-			else{
-				ROS_INFO("%s,%d:trapped_mode path_target false",__FUNCTION__,__LINE__);
-			}
-		}
-	}
-	}
-}
-
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
 int16_t RegulatorBase::s_target_angle = 0;
@@ -465,7 +368,7 @@ LinearRegulator::LinearRegulator(Point32_t target):
 
 bool LinearRegulator::isReach()
 {
-	mark();
+	map_set_realtime();
 
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
@@ -625,7 +528,7 @@ bool FollowWallRegulator::isReach()
 {
 //	ROS_INFO("FollowWallRegulator isReach");
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
-	mark();
+	map_set_realtime();
 	bool ret = false;
 	auto start_y = s_origin.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)

@@ -2,6 +2,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <motion_manage.h>
+#include <robot.hpp>
+#include <core_move.h>
+#include <gyro.h>
+#include <movement.h>
+#include <event_manager.h>
+#include <move_type.h>
+#include <regulator.h>
 
 #include "map.h"
 #include "mathematics.h"
@@ -20,7 +28,9 @@ double xCount, yCount, relative_sin, relative_cos;
 uint16_t relative_theta = 3600;
 int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
-
+extern Cell_t g_cell_history[];
+extern uint16_t g_old_dir;
+extern Point32_t g_next_point, g_target_point;
 void map_init(void) {
 	uint8_t c, d;
 
@@ -345,3 +355,298 @@ void map_reset(uint8_t id)
 	}
 #endif
 }
+
+
+//map--------------------------------------------------------
+static  void map_set_obs()
+{
+	auto obs_trig = /*g_obs_triggered*/get_obs_status();
+	ROS_INFO("%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
+	if(! obs_trig)
+		return;
+	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
+	for (auto dir = 0; dir < 2; ++dir)
+	{
+		if (obs_trig & obs_lr[dir])
+		{
+			auto dx = 1;
+			auto dy = (dir==0) ?2:-2;
+			int32_t x,y;
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			if (get_wall_adc(dir) > 200)
+			{
+				if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BUMPER)
+				{
+					ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+					map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
+				}
+			}
+		}
+	}
+
+	uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
+	for (auto dy = 0; dy <= 2; ++dy) {
+		auto is_trig = obs_trig & obs_all[dy];
+		int32_t x, y;
+		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x, &y);
+		auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
+		if (is_trig && status != BLOCKED_BUMPER) {
+//			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			if(dy == 2 && g_turn_angle<0)
+//				ROS_ERROR("%s,%d: not map_set_realtime left in turn right, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			else if (dy == 0 && g_turn_angle>0)
+//				ROS_ERROR("%s,%d: not map_set_realtime right turn left, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			else
+//				map_set_cell(MAP, x, y, BLOCKED_OBS);
+			map_set_cell(MAP, x, y, BLOCKED_OBS);
+		} else if(! is_trig && status == BLOCKED_OBS){
+			ROS_INFO("%s,%d:unclean (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+			map_set_cell(MAP, x, y, UNCLEAN);
+		}
+	}
+}
+
+static void map_set_bumper()
+{
+	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
+	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
+		// During self check.
+		return;
+
+	std::vector<Cell_t> d_cells;
+
+	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
+		d_cells = {{2,-1}, {2,0}, {2,1}};
+	else if (bumper_trig & LeftBumperTrig) {
+		d_cells = {{2, 1}, {2,2},{1,2}};
+		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+			d_cells.push_back({2,0});
+	} else if (bumper_trig & RightBumperTrig) {
+		d_cells = {{2,-2},{2,-1},{1,-2}};
+		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
+			d_cells.push_back({2,0});
+	}
+
+	int32_t	x, y;
+	for(auto& d_cell : d_cells){
+		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
+		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
+	}
+}
+
+static void map_set_cliff()
+{
+	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
+	if (g_cliff_jam || cliff_trig)
+		// During self check.
+		return;
+
+	std::vector<Cell_t> d_cells;
+	if (cliff_trig & Status_Cliff_Front){
+		d_cells.push_back({2,-1});
+		d_cells.push_back({2, 0});
+		d_cells.push_back({2, 1});
+	}
+	if (cliff_trig & Status_Cliff_Left){
+		d_cells.push_back({2, 1});
+		d_cells.push_back({2, 2});
+	}
+	if (cliff_trig & Status_Cliff_Right){
+		d_cells.push_back({2,-1});
+		d_cells.push_back({2,-2});
+	}
+
+	int32_t	x, y;
+	for (auto& d_cell : d_cells) {
+		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
+		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+	}
+}
+
+static void map_set_rcon()
+{
+	auto rcon_trig = g_rcon_triggered/*get_rcon_trig()*/;
+	if(mt_is_linear())
+		g_rcon_triggered = 0;
+	if(! rcon_trig)
+		return;
+
+	enum {
+		left, fl2, fl1, fr1, fr2, right,
+	};
+	int dx = 0, dy = 0;
+	int dx2 = 0, dy2 = 0;
+	switch (rcon_trig - 1)
+	{
+		case left:
+			dx = 1, dy = 2;
+			break;
+		case fl2:
+			dx = 1, dy = 2;
+			dx2 = 2, dy2 = 1;
+			break;
+		case fl1:
+		case fr1:
+			dx = 2, dy = 0;
+			dx2 = 3, dy2 = 0;
+			break;
+		case fr2:
+			dx = 1, dy = -2;
+			dx2 = 2, dy2 = -1;
+			break;
+		case right:
+			dx = 1, dy = -2;
+			break;
+	}
+	int32_t x,y;
+	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+//	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
+	map_set_cell(MAP, x, y, BLOCKED_RCON);
+	if (dx2 != 0){
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
+//		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		map_set_cell(MAP, x, y, BLOCKED_RCON);
+	}
+	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	stop_brifly();
+//	sleep(5);
+}
+
+void map_set_blocked()
+{
+	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
+		return;
+
+//	ROS_ERROR("----------------map_set_blocked");
+	map_set_obs();
+	map_set_bumper();
+	map_set_rcon();
+	map_set_cliff();
+	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+}
+
+void map_set_cleaned()
+{
+	int32_t x, y;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+	{
+		for (auto dx = 0/*-ROBOT_SIZE_1_2*/; dx <= ROBOT_SIZE_1_2; ++dx)
+		{
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			auto status = map_get_cell(MAP, x, y);
+//			if (status > CLEANED && status < BLOCKED_BOUNDARY)
+//				ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+
+//			ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+			map_set_cell(MAP, x, y, CLEANED);
+		}
+	}
+}
+
+Cell_t cm_update_position(bool is_turn)
+{
+	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	map_set_position(pos_x, pos_y);
+	return map_get_curr_cell();
+}
+
+void map_set_linear(const Cell_t &start, const Cell_t &stop, CellState state)
+{
+	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
+
+	float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
+	float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
+
+	auto start_x = std::min(start.X, stop.X);
+	auto stop_x = std::max(start.X, stop.X);
+	for (auto x = start_x; x <= stop_x; x++)
+	{
+		auto y = (int16_t) (slop * (stop.X) + intercept);
+		ROS_ERROR("%s,%d: cell(%d,%d)",__FUNCTION__, __LINE__, x, y);
+		map_set_cell(MAP, cell_to_count(x), cell_to_count(y), state);
+	}
+}
+
+void map_set_follow(Cell_t start)
+{
+	auto stop = map_get_curr_cell();
+	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
+	auto dx = stop.X - start.X;
+	if (dx != 0)
+	{
+		auto dy_ = (g_old_dir == POS_X ^ dx > 0) ? 3 : 2;
+		dy_ = (dx > 0 ^ mt_is_left()) ? -dy_ : dy_;
+		start.Y += dy_;
+		stop.Y += dy_;
+
+		auto dx_ = (g_old_dir == POS_X) ? 2 : -2;
+		start.X += dx_;
+		stop.X -= dx_;
+		auto new_dx = stop.X - start.X;
+		if(new_dx != 0 && dx>0 ^ new_dx<0)
+			map_set_linear(start, stop, BLOCKED_CLIFF);
+	}
+}
+
+void map_set_realtime()
+{
+	if (get_clean_mode() != Clean_Mode_Navigation)
+		return;
+
+	static Cell_t last{0, 0};
+	auto curr = map_get_curr_cell();
+	if (last != curr)
+	{
+//		ROS_ERROR("%s %d: map_set_realtime.", __FUNCTION__, __LINE__);
+		last = curr;
+		map_set_cleaned();
+		if(mt_is_follow_wall())
+		{
+			auto dx = curr.X - count_to_cell(RegulatorBase::s_origin.X);
+			if(dx == 0)
+				return;
+			auto dy = mt_is_left()  ?  2 : -2;
+			ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
+			if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
+			{
+				for (dx = -1; dx <= 0; dx++)
+				{
+					int x, y;
+					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+					if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
+						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+				}
+			}
+			if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
+			{
+				for (dx = -1; dx <= 0; dx++)
+				{
+					int x, y;
+					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+					if (count_to_cell(y) -curr.Y <= 2);
+						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+				}
+			}
+		}
+	{
+		Cell_t next,target;
+//		ROS_WARN("IN ESC");
+		if(g_trapped_mode == 1 )
+		{
+			if(path_target(next, target) == 1){
+				ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
+				g_trapped_mode = 2;
+			}
+			else{
+				ROS_INFO("%s,%d:trapped_mode path_target false",__FUNCTION__,__LINE__);
+			}
+		}
+	}
+	}
+}
+

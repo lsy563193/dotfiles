@@ -87,7 +87,8 @@ int cm_cleaning(void);
 void cm_check_should_go_home(void);
 
 Cell_t cm_update_position(bool is_turn = false);
-void cm_update_map_cleaned();
+void map_set_cleaned();
+void map_set_blocked();
 //void cm_update_map();
 bool cm_curve_move_to_point();
 

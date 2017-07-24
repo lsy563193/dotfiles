@@ -686,7 +686,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				g_targets.push_back(t);
 				if (t.target == map_get_curr_cell())
 				{
-					ROS_ERROR("%s %d: Target is current cell, mark +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
+					ROS_ERROR("%s %d: Target is current cell, map_set_realtime +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
 					ROS_WARN("Before:");
 					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
 					{
