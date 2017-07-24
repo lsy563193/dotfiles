@@ -265,10 +265,10 @@ void mark()
 				}
 			}
 		}
-		{
+	{
 		Cell_t next,target;
 //		ROS_WARN("IN ESC");
-		if(last != curr && g_trapped_mode == 1 )
+		if(g_trapped_mode == 1 )
 		{
 			if(path_target(next, target) == 1){
 				ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
