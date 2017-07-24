@@ -178,7 +178,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	//2 start laser
 	s_laser = new Laser();
-	if (s_laser->isReady() == -1)
+	if (s_laser->isScanReady() == -1)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
 		set_error_code(Error_Code_Laser);
@@ -186,7 +186,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
-	else if (s_laser->isReady() == 0)
+	else if (s_laser->isScanReady() == 0)
 	{
 		initSucceeded(false);
 		return;
@@ -196,14 +196,16 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-		s_laser->startShield();
+		//s_laser->startShield();
+		s_laser->lidarShieldDetect(true);
 		return;
 	}
 	if (robot::instance()->isManualPaused() && s_slam != nullptr)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		robot::instance()->resetManualPause();
-		s_laser->startShield();
+		//s_laser->startShield();
+		s_laser->lidarShieldDetect(true);
 		return;
 	}
 
@@ -263,7 +265,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
-	s_laser->startShield();
+	//s_laser->startShield();
+	s_laser->lidarShieldDetect(true);
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 
 
