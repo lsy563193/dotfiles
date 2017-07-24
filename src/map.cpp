@@ -5,6 +5,7 @@
 
 #include "map.h"
 #include "mathematics.h"
+#include "robot.hpp"
 
 #define DEBUG_MSG_SIZE	1 // 20
 
@@ -344,4 +345,47 @@ void map_reset(uint8_t id)
 		memset((id == SPMAP ? spmap[idx] : map[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
 	}
 #endif
+}
+
+void ros_map_convert(void)
+{
+	std::vector<int8_t> *p_map_data;
+	uint32_t width, height;
+	float resolution;
+	double origin_x, origin_y;
+	width = robot::instance()->mapGetWidth();
+	height = robot::instance()->mapGetHeight();
+	resolution = robot::instance()->mapGetResolution();
+	origin_x = robot::instance()->mapGetOriginX();
+	origin_y = robot::instance()->mapGetOriginY();
+}
+
+unsigned char getCost(std::vector<int8_t> &p_map_data, uint32_t width, unsigned int mx, unsigned int my)
+{
+	return p_map_data[getIndex(width, mx, my)];
+}
+
+void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy)
+{
+	wx = origin_x_ + (mx + 0.5) * resolution_;
+	wy = origin_y_ + (my + 0.5) * resolution_;
+}
+
+bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my)
+{
+	if (wx < origin_x_ || wy < origin_y_)
+		return false;
+
+	mx = (int)((wx - origin_x_) / resolution_);
+	my = (int)((wy - origin_y_) / resolution_);
+
+	if (mx < size_x_ && my < size_y_)
+		return true;
+
+	return false;
+}
+
+unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my)
+{
+	return my * size_x_ + mx;
 }
