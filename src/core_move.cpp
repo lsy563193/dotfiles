@@ -240,7 +240,8 @@ static void _update_map_cliff()
 static void _update_map_rcon()
 {
 	auto rcon_trig = g_rcon_triggered/*get_rcon_trig()*/;
-	g_rcon_triggered =0;
+	if(mt_is_linear())
+		g_rcon_triggered = 0;
 	if(! rcon_trig)
 		return;
 
@@ -290,7 +291,7 @@ static void update_map_blocked()
 	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
 		return;
 
-	ROS_ERROR("----------------update_map_blocked");
+//	ROS_ERROR("----------------update_map_blocked");
 	_update_map_obs();
 	_update_map_bumper();
 	_update_map_rcon();
@@ -367,23 +368,13 @@ void cm_update_map()
 //	if (last != curr )
 //	{
 
-//		cm_update_map_cleaned();
+		cm_update_map_cleaned();
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 //	}
 
-	{
-		Cell_t next,target;
-//		ROS_WARN("IN ESC");
-		if(last != curr && g_trapped_mode == 1 && path_target(next, target) == 1)
-		{
-
-			ROS_INFO("%s,%d: path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
-			g_trapped_mode = 2;
-		}
-	}
-
 }
+
 //-------------------------------cm_move_back-----------------------------//
 
 uint16_t round_turn_distance()
