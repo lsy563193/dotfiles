@@ -240,7 +240,8 @@ static void _update_map_cliff()
 static void _update_map_rcon()
 {
 	auto rcon_trig = g_rcon_triggered/*get_rcon_trig()*/;
-	g_rcon_triggered =0;
+	if(mt_is_linear())
+		g_rcon_triggered = 0;
 	if(! rcon_trig)
 		return;
 
