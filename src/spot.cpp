@@ -79,11 +79,11 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	if ((clock() / CLOCKS_PER_SEC) % 2 == 0)
 	{
 		spiral_type_ = SPIRAL_LEFT_OUT;
-		ROS_INFO("%s %d ,spiral left out", __FUNCTION__, __LINE__);
+		ROS_INFO("\033[34m" "%s %d ,spiral left out" "\033[0m", __FUNCTION__, __LINE__);
 	} else
 	{
 		spiral_type_ = SPIRAL_RIGHT_OUT;
-		ROS_INFO("%s ,%d spiral right out", __FUNCTION__, __LINE__);
+		ROS_INFO("\033[34m" "%s ,%d spiral right out" "\033[0m", __FUNCTION__, __LINE__);
 	}
 	spot_diameter_ = diameter;
 	stop_point_ = {0, 0};
@@ -125,7 +125,7 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 			bp_ = tp_;
 		}
 	}
-	ROS_WARN("%s,%d,bumper point (%d,%d)",__FUNCTION__,__LINE__,bp_->X,bp_->Y);
+	ROS_INFO("\033[34m" "%s,%d,bumper point (%d,%d)" "\033[0m",__FUNCTION__,__LINE__,bp_->X,bp_->Y);
 
 	if (bp_ == targets_.begin())
 	{
@@ -153,8 +153,7 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 				*stp = { bp_->X, ( ( bp_->Y > 0 )? bp_->Y - 1: bp_->Y + 1 ) };
 		}
 	}
-	ROS_WARN("%s,%d, stop point (%d,%d)", __FUNCTION__, __LINE__, stop_point_.X, stop_point_.Y);
-}
+	ROS_INFO("\033[34m" "%s,%d, stop point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, stop_point_.X, stop_point_.Y); }
 
 uint8_t SpotMovement::changeSpiralType()
 {
@@ -164,7 +163,7 @@ uint8_t SpotMovement::changeSpiralType()
 		if (sout_od_cnt_ > OBS_DETECT_COUNT_MAX)
 		{
 			sout_od_cnt_ = 0;
-			ROS_WARN("%s,%d, spiral obs detect counter reached",__FUNCTION__,__LINE__);
+			ROS_INFO("\033[34m" "%s,%d, spiral obs detect counter reached" "\033[0m",__FUNCTION__,__LINE__);
 			spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN;
 		}
 		else
@@ -183,7 +182,7 @@ uint8_t SpotMovement::changeSpiralType()
 			is_stuck_ = 1;
 		}
 	}
-	ROS_WARN("%s,%d,spiral changed %s",__FUNCTION__, __LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
+	ROS_INFO("\033[34m" "%s,%d,spiral changed %s" "\033[0m",__FUNCTION__, __LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
 	return spiral_type_;
 }
 
@@ -217,7 +216,7 @@ uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 			tp_ ++;
 		}
 	}
-	ROS_WARN("%s,%d,%s near point (%d,%d)", __FUNCTION__, __LINE__,
+	ROS_INFO("\033[34m" "%s,%d,%s near point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,
 					(ret?"found":"not found"), tp_->X, tp_->Y);
 	return ret;
 }
@@ -237,7 +236,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 			spotInit(1.0, {0, 0});
 		/*---generate target ,and  set targets_ ---*/
 		genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
-		ROS_WARN("%s,%d , on spot init, get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
+		ROS_INFO("\033[34m" "%s,%d , on spot init, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
 		*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 		ret = 1;
 	}
@@ -262,13 +261,13 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 				*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 				setNextPointChange();
 				ret = 1;
-				ROS_WARN("%s,%d , on direction change, get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X,
+				ROS_INFO("\033[34m" "%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
 								 tp_->Y);
 			}
 			else// stuck
 			{
 				resetStuck();
-				ROS_WARN("%s,%d , is stucked, go back to begin point (%d %d) ", __FUNCTION__, __LINE__, begin_point_.X,
+				ROS_INFO("\033[34m" "%s,%d , is stucked, go back to begin point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X,
 								 begin_point_.Y);
 				*next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
 				ret = (spt == CLEAN_SPOT)?1:0;
@@ -305,7 +304,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 					}
 				}
 
-				ROS_WARN("%s,%d , get next point (%d %d) ", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
+				ROS_INFO("\033[34m" "%s,%d , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
 				*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 				ret = 1;
 			}
@@ -313,7 +312,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 			{
 				if (spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN)
 				{ //end spot movement
-					ROS_WARN("%s,%d , spot ending, ending point (%d %d) ", __FUNCTION__, __LINE__, begin_point_.X,
+					ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X,
 									 begin_point_.Y);
 					*next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};// go back to begin point
 					if (spt == CLEAN_SPOT){	ret = 1;}//clean_spot return 1
@@ -325,7 +324,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 				{//switch to anothor spiral type
 					spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_RIGHT_IN : SPIRAL_LEFT_IN;
 					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
-					ROS_WARN("%s,%d , %s ,set spiral in, get next point (%d %d) ", __FUNCTION__, __LINE__,
+					ROS_INFO("\033[34m" "%s,%d , %s ,set spiral in, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
 									 (spiral_type_ == SPIRAL_RIGHT_OUT) ? "right in" : " left in ", tp_->X, tp_->Y);
 					*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 					ret = 1;
@@ -347,7 +346,7 @@ void SpotMovement::genTargets(uint8_t sp_type,
 	x = x_l = beginpoint.X;
 	y = y_l = beginpoint.Y;
 	target->clear();
-	ROS_WARN("%s,%d,generate targets spiral type %s ",__FUNCTION__,__LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
+	ROS_INFO("\033[34m" "%s,%d,generate targets spiral type %s " "\033[0m",__FUNCTION__,__LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
 	uint16_t st_c = 1;//number of spiral count
 	uint16_t st_n = (uint16_t) (diameter * 1000 / CELL_SIZE);//number of spiral
 	//ROS_INFO("%s,%d,number of spiral %d",__FUNCTION__,__LINE__,st_n);
