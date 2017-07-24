@@ -447,8 +447,8 @@ void path_find_all_targets()
 		}
 	}
 
-	x = map_get_x_cell();
-	y = map_get_y_cell();
+	x = g_cell_history[0].X;
+	y = g_cell_history[0].Y;
 	/* Set the current robot position has the cost value of 1. */
 	map_set_cell(SPMAP, (int32_t) x, (int32_t) y, COST_1);
 
@@ -463,9 +463,9 @@ void path_find_all_targets()
 			if (i < g_x_min || i > g_x_max)
 				continue;
 
-				for (j = y - offset; j <= y + offset; j++) {
-					if (j < g_y_min || j > g_y_max)
-						continue;
+			for (j = y - offset; j <= y + offset; j++) {
+				if (j < g_y_min || j > g_y_max)
+					continue;
 
 				if(map_get_cell(SPMAP, i, j) == passValue) {
 					if (i - 1 >= g_x_min && map_get_cell(SPMAP, i - 1, j) == COST_NO) {
@@ -1302,8 +1302,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		else
 			target = g_current_home_cell;
 
-		Cell_t pos{map_get_x_cell(), map_get_y_cell()};
-		auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
+		auto path_next_status = (int8_t) path_next_best(g_cell_history[0], target.X, target.Y, next.X, next.Y);
 		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 		if (path_next_status == 1)
 		{
@@ -1405,9 +1404,8 @@ int8_t path_get_continue_target(Cell_t& next, Cell_t& target)
 		map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 	}
 
-	Cell_t pos{map_get_x_cell(), map_get_y_cell()};
 	set_explore_new_path_flag(false);
-	auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
+	auto path_next_status = (int8_t) path_next_best(g_cell_history[0], target.X, target.Y, next.X, next.Y);
 	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 	if (path_next_status == 1/* && !cm_check_loop_back(next)*/)
 		return_val = TARGET_FOUND;
