@@ -241,14 +241,14 @@ void mark()
 			if(dx == 0)
 				return;
 			auto dy = mt_is_left()  ?  2 : -2;
-			ROS_ERROR("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
+			ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
 			if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
 			{
 				for (dx = -1; dx <= 0; dx++)
 				{
 					int x, y;
 					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-					ROS_ERROR("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
 					if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
 						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
 				}

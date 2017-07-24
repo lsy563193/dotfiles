@@ -290,7 +290,7 @@ static void update_map_blocked()
 	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
 		return;
 
-	ROS_ERROR("----------------update_map_blocked");
+//	ROS_ERROR("----------------update_map_blocked");
 	_update_map_obs();
 	_update_map_bumper();
 	_update_map_rcon();
