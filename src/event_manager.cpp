@@ -213,16 +213,16 @@ void *event_manager_thread(void *data)
 */
 
 		/* Over Current */
-		if (1 || robot::instance()->getLbrushOc()) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+		if (1/* || robot::instance()->getLbrushOc()*/) {
+			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_LEFT)
 		}
 		if (robot::instance()->getMbrushOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_MAIN)
 		}
-		if (1 || robot::instance()->getRbrushOc()) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+		if (1/* || robot::instance()->getRbrushOc()*/) {
+			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_RIGHT)
 		}
 		if ((uint32_t)robot::instance()->getLwheelCurrent() > Wheel_Stall_Limit) {
@@ -469,6 +469,13 @@ void event_manager_register_handler(EventType type, void (*func)(bool state_now,
 void event_manager_enable_handler(EventType type, bool enabled)
 {
 	eat[evt_mgr_mode].handler_enabled[type] = enabled;
+	if ((type == EVT_OVER_CURRENT_BRUSH_LEFT || type == EVT_OVER_CURRENT_BRUSH_RIGHT) && !enabled)
+	{
+		extern bool g_reset_lbrush_oc;
+		extern bool g_reset_rbrush_oc;
+		g_reset_lbrush_oc = true;
+		g_reset_rbrush_oc = true;
+	}
 }
 
 uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
@@ -712,7 +719,7 @@ void em_default_handle_rcon_right(bool state_now, bool state_last)
 /* Over Current */
 void em_default_handle_over_current_brush_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!g_fatal_quit_event && check_left_brush_stall())
 	{
 		/*-----Set error-----*/
@@ -729,7 +736,7 @@ void em_default_handle_over_current_brush_main(bool state_now, bool state_last)
 
 void em_default_handle_over_current_brush_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!g_fatal_quit_event && check_right_brush_stall())
 	{
 		/*-----Set error-----*/
