@@ -355,7 +355,7 @@ void ros_map_convert(void)
 	double origin_x, origin_y;
 	unsigned int mx,my;
 	double wx, wy;
-	int16_t cx, cy;
+	int32_t cx, cy;
 	int8_t cost;
 	width = robot::instance()->mapGetWidth();
 	height = robot::instance()->mapGetHeight();
@@ -370,7 +370,7 @@ void ros_map_convert(void)
 		indexToCells(width, i, mx, my);
 		cost = (*p_map_data)[getIndex(width, mx, my)];
 		mapToWorld(origin_x, origin_y, resolution, mx, my, wx, wy);
-		worldToCell(wx, wy, cx, cy);
+		worldToCount(wx, wy, cx, cy);
 		if (cost == -1) {
 			//ROS_INFO("cost == -1");
 			//map_set_cell(MAP, cx, cy, CLEANED);
@@ -384,9 +384,9 @@ void ros_map_convert(void)
 			map_set_cell(MAP, cx, cy, BLOCKED);
 			//ROS_INFO("cost == 100");
 		}
-		//ROS_ERROR("size = %d, width = %d, height = %d, origin_x = %lf, origin_y = %lf, wx = %lf, wy = %lf, mx = %d, my = %d, cx = %d, cy = %d, cost = %d.", size, width, height, origin_x, origin_y, wx, wy, mx, my, cx, cy,cost);
 	}
 	ROS_WARN("end ros map convert");
+	ROS_ERROR("size = %d, width = %d, height = %d, origin_x = %lf, origin_y = %lf, wx = %lf, wy = %lf, mx = %d, my = %d, cx = %d, cy = %d, cost = %d.", size, width, height, origin_x, origin_y, wx, wy, mx, my, cx, cy,cost);
 }
 
 /* int8_t getCost(std::vector<int8_t> *p_map_data, uint32_t width, unsigned int mx, unsigned int my)
@@ -396,10 +396,10 @@ void ros_map_convert(void)
 
 void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy)
 {
-	//wx = origin_x_ + (mx + 0.5) * resolution_;
-	//wx = origin_x_ + (mx + 0.5) * resolution_;
-	wx = origin_x_ + (mx) * resolution_;
-	wy = origin_y_ + (my) * resolution_;
+	wx = origin_x_ + (mx + 0.5) * resolution_;
+	wy = origin_y_ + (my + 0.5) * resolution_;
+	//wx = origin_x_ + (mx) * resolution_;
+	//wy = origin_y_ + (my) * resolution_;
 }
 
 bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my)
@@ -427,7 +427,7 @@ void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned in
 	mx = index - (my * size_x_);
 }
 
-void worldToCell(double &wx, double &wy, int16_t &cx, int16_t &cy)
+void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 {
 	auto count_x = wx * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto count_y = wy * 1000 * CELL_COUNT_MUL / CELL_SIZE;

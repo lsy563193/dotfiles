@@ -88,5 +88,5 @@ void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned 
 bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my);
 unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
 void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
-void worldToCell(double &wx, double &wy, int16_t &cx, int16_t &cy);
+void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 #endif /* __MAP_H */
