@@ -69,6 +69,7 @@ uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between
 std::list <Cell_t> g_home_point_old_path;
 std::list <Cell_t> g_home_point_new_path;
 
+bool g_switch_home_cell = true;
 Cell_t g_current_home_cell;
 
 int16_t g_home_x = 0, g_home_y = 0;
@@ -447,8 +448,8 @@ void path_find_all_targets()
 		}
 	}
 
-	x = map_get_x_cell();
-	y = map_get_y_cell();
+	x = g_cell_history[0].X;
+	y = g_cell_history[0].Y;
 	/* Set the current robot position has the cost value of 1. */
 	map_set_cell(SPMAP, (int32_t) x, (int32_t) y, COST_1);
 
@@ -463,9 +464,9 @@ void path_find_all_targets()
 			if (i < g_x_min || i > g_x_max)
 				continue;
 
-				for (j = y - offset; j <= y + offset; j++) {
-					if (j < g_y_min || j > g_y_max)
-						continue;
+			for (j = y - offset; j <= y + offset; j++) {
+				if (j < g_y_min || j > g_y_max)
+					continue;
 
 				if(map_get_cell(SPMAP, i, j) == passValue) {
 					if (i - 1 >= g_x_min && map_get_cell(SPMAP, i - 1, j) == COST_NO) {
@@ -684,6 +685,28 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				t.target.Y = d;
 				t.points.clear();
 				g_targets.push_back(t);
+				if (t.target == map_get_curr_cell())
+				{
+					ROS_ERROR("%s %d: Target is current cell, map_set_realtime +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
+					ROS_WARN("Before:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						printf("\n");
+					}
+					ROS_WARN("After:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+						{
+							if (map_get_cell(MAP, dx, dy) == UNCLEAN)
+								map_set_cell(MAP, dx, dy, CLEANED);
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						}
+						printf("\n");
+					}
+				}
 
 				x_min = x_min > c ? c : x_min;
 				x_max = x_max < c ? c : x_max;
@@ -1126,6 +1149,9 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				if (ret == -2){
 					if(g_trapped_mode == 0){
 						g_trapped_mode = 1;
+						// This led light is for debug.
+//						wav_play(WAV_TEST_MODE);
+						set_led_mode(LED_FLASH, LED_GREEN, 300);
 						mt_set(CM_FOLLOW_LEFT_WALL);
 						extern uint32_t g_escape_trapped_timer;
 						g_escape_trapped_timer = time(NULL);
@@ -1219,18 +1245,10 @@ void path_set_home(Cell_t cell)
  */
 int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 {
-	static bool switch_target = true;
 	int8_t return_val;
 	while (ros::ok())
 	{
-		if (map_get_curr_cell() == g_current_home_cell)
-		{
-			// Reach this home cell.
-			switch_target = true;
-			ROS_WARN("%s %d: Target reached, switch target.", __FUNCTION__, __LINE__);
-		}
-
-		if (switch_target)
+		if (g_switch_home_cell)
 		{
 			// Get the home point.
 			if (!g_home_point_old_path.empty())
@@ -1245,7 +1263,12 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				else
 					// Try all the old path home point first.
 					set_explore_new_path_flag(false);
-				switch_target = false;
+				g_switch_home_cell = false;
+
+				if (is_block_accessible(target.X, target.Y) == 0) {
+					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
+					map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
+				}
 			}
 			else if (get_clean_mode() == Clean_Mode_Navigation && !g_home_point_new_path.empty())
 			{
@@ -1255,7 +1278,12 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				target = g_home_point_new_path.front();
 				g_home_point_new_path.pop_front();
 				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_new_path.size());
-				switch_target = false;
+				g_switch_home_cell = false;
+
+				if (is_block_accessible(target.X, target.Y) == 0) {
+					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
+					map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
+				}
 			}
 			else // Target list is empty.
 			{
@@ -1267,24 +1295,18 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		else
 			target = g_current_home_cell;
 
-		if (is_block_accessible(target.X, target.Y) == 0) {
-			ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
-			map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
-		}
-
-		Cell_t pos{map_get_x_cell(), map_get_y_cell()};
-		auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
+		auto path_next_status = (int8_t) path_next_best(g_cell_history[0], target.X, target.Y, next.X, next.Y);
 		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 		if (path_next_status == 1)
 		{
-			if (cm_check_loop_back(next))
-				switch_target = true;
-			else
-			{
+//			if (cm_check_loop_back(next))
+//				g_switch_home_cell = true;
+//			else
+//			{
 				g_current_home_cell = target;
 				return_val = TARGET_FOUND;
 				break;
-			}
+//			}
 		}
 		else
 		{
@@ -1294,7 +1316,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				g_home_point_new_path.push_back(target);
 				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, target.X, target.Y);
 			}
-			switch_target = true;
+			g_switch_home_cell = true;
 		}
 	}
 
@@ -1375,11 +1397,10 @@ int8_t path_get_continue_target(Cell_t& next, Cell_t& target)
 		map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 	}
 
-	Cell_t pos{map_get_x_cell(), map_get_y_cell()};
 	set_explore_new_path_flag(false);
-	auto path_next_status = (int8_t) path_next_best(pos, target.X, target.Y, next.X, next.Y);
+	auto path_next_status = (int8_t) path_next_best(g_cell_history[0], target.X, target.Y, next.X, next.Y);
 	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
-	if (path_next_status == 1 && !cm_check_loop_back(next))
+	if (path_next_status == 1/* && !cm_check_loop_back(next)*/)
 		return_val = TARGET_FOUND;
 	else
 		return_val = NO_TARGET_LEFT;

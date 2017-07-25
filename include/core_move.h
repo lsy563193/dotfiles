@@ -87,11 +87,14 @@ int cm_cleaning(void);
 void cm_check_should_go_home(void);
 
 Cell_t cm_update_position(bool is_turn = false);
-void cm_update_map_cleaned();
-void cm_update_map();
+void map_set_cleaned();
+void map_set_blocked();
+//void cm_update_map();
 bool cm_curve_move_to_point();
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+
+void mark_offset(int16_t dx, int16_t dy, CellState status);
 
 void cm_move_back_(uint16_t dist);
 

@@ -131,7 +131,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 	ROS_DEBUG("%s %d: Get the line", __FUNCTION__, __LINE__);
 //	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	line_angle = segmentss.min_distant_segment_angle();
-
+/*
 	// If get line_angle from the scan data, turn 180 degrees.
 	// Else, the line_angle should be 0(Actually there is very little chance that the line_angle from scan data is exactly 0).
 	if (line_angle > 0)
@@ -141,6 +141,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 	{
 		line_angle += 180;
 	}
+*/
 //	return line_angle;
 	return true;
 }
@@ -177,7 +178,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	//2 start laser
 	s_laser = new Laser();
-	if (s_laser->isReady() == -1)
+	if (s_laser->isScanReady() == -1)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
 		set_error_code(Error_Code_Laser);
@@ -185,7 +186,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
-	else if (s_laser->isReady() == 0)
+	else if (s_laser->isScanReady() == 0)
 	{
 		initSucceeded(false);
 		return;
@@ -195,14 +196,24 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-		s_laser->startShield();
+		//s_laser->startShield();
+		s_laser->lidarShieldDetect(true);
+		if (g_go_home_by_remote)
+			set_led_mode(LED_STEADY, LED_ORANGE);
+		else
+			set_led_mode(LED_STEADY, LED_GREEN);
 		return;
 	}
 	if (robot::instance()->isManualPaused() && s_slam != nullptr)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		robot::instance()->resetManualPause();
-		s_laser->startShield();
+		//s_laser->startShield();
+		s_laser->lidarShieldDetect(true);
+		if (g_go_home_by_remote)
+			set_led_mode(LED_STEADY, LED_ORANGE);
+		else
+			set_led_mode(LED_STEADY, LED_GREEN);
 		return;
 	}
 
@@ -262,7 +273,15 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
-	s_laser->startShield();
+	//s_laser->startShield();
+	s_laser->lidarShieldDetect(true);
+	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
+
+
+	if (g_go_home_by_remote)
+		set_led_mode(LED_STEADY, LED_ORANGE);
+	else
+		set_led_mode(LED_STEADY, LED_GREEN);
 }
 
 MotionManage::~MotionManage()
@@ -426,9 +445,9 @@ bool MotionManage::initNavigationCleaning(void)
 
 	reset_work_time();
 	if (g_remote_home || g_go_home_by_remote)
-		set_led_mode(LED_STEADY, LED_ORANGE);
+		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
-		set_led_mode(LED_STEADY, LED_GREEN);
+		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
 	extern bool g_resume_cleaning;
@@ -465,6 +484,9 @@ bool MotionManage::initNavigationCleaning(void)
 		extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
 		g_have_seen_charge_stub = false;
 		g_start_point_seen_charger = false;
+
+		extern bool g_switch_home_cell;
+		g_switch_home_cell = true;
 	}
 
 	reset_touch();
@@ -561,7 +583,7 @@ bool MotionManage::initNavigationCleaning(void)
 bool MotionManage::initWallFollowCleaning(void)
 {
 	cm_register_events();
-	set_led_mode(LED_STEADY, LED_GREEN);
+	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	extern std::vector<Pose16_t> g_wf_cell;
 	reset_work_time();
@@ -582,6 +604,7 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 
+	robot::instance()->accInit4Tilt();//init accelerate for tile detect
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	//Initital home point
@@ -603,6 +626,9 @@ bool MotionManage::initWallFollowCleaning(void)
 	extern bool g_have_seen_charge_stub;
 	g_have_seen_charge_stub = false;
 
+	extern bool g_switch_home_cell;
+	g_switch_home_cell = true;
+
 	work_motor_configure();
 
 	return true;
@@ -611,7 +637,7 @@ bool MotionManage::initWallFollowCleaning(void)
 bool MotionManage::initSpotCleaning(void)
 {
 	cm_register_events();
-	set_led_mode(LED_STEADY, LED_GREEN);
+	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	reset_work_time();
 	reset_rcon_status();
@@ -632,6 +658,7 @@ bool MotionManage::initSpotCleaning(void)
 		return false;
 	}
 
+	robot::instance()->accInit4Tilt();//init accelerate for tile detect
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	g_home_point_old_path.clear();

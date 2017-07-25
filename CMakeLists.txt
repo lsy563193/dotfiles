@@ -11,7 +11,7 @@ FILE(GLOB PP_SRC
 	src/gyro.cpp
 	src/laser.cpp
 	src/main.cpp
-#	test/regulator.cpp
+#	test/test_path_update_cell.cpp
 	src/map.cpp
 	src/mathematics.cpp
 	src/motion_manage.cpp
@@ -43,6 +43,7 @@ find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	rospy
 	sensor_msgs
+	std_srvs
 	std_msgs
 	geometry_msgs
 	visualization_msgs
@@ -78,6 +79,7 @@ add_message_files(
 generate_messages(
 	DEPENDENCIES
 	std_msgs
+	std_srvs
 	visualization_msgs
 	geometry_msgs
 	sensor_msgs
@@ -89,6 +91,7 @@ catkin_package(
 	roscpp
 	rospy
 	std_msgs
+	std_srvs
 	visualization_msgs
 	geometry_msgs
 	sensor_msgs

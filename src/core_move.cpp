@@ -129,195 +129,6 @@ bool is_map_front_block(int dx)
 	return false;
 }
 
-//map--------------------------------------------------------
-static  void _update_map_obs()
-{
-	auto obs_trig = get_obs_status();
-	if(! obs_trig)
-		return;
-	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
-	for (auto dir = 0; dir < 2; ++dir)
-	{
-		if (obs_trig & obs_lr[dir])
-		{
-			auto dx = 1;
-			auto dy = (dir==0) ?2:-2;
-			int32_t x,y;
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-			if (get_wall_adc(dir) > 200)
-			{
-				if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BUMPER)
-				{
-					ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-					map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
-				}
-			}
-		}
-	}
-
-	uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
-	for (auto dy = 0; dy <= 2; ++dy) {
-		auto is_trig = obs_trig & obs_all[dy];
-		int32_t x, y;
-		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x, &y);
-		auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
-		if (is_trig && status != BLOCKED_BUMPER) {
-//			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-//			if(dy == 2 && g_turn_angle<0)
-//				ROS_ERROR("%s,%d: not mark left in turn right, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-//			else if (dy == 0 && g_turn_angle>0)
-//				ROS_ERROR("%s,%d: not mark right turn left, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-//			else
-//				map_set_cell(MAP, x, y, BLOCKED_OBS);
-			map_set_cell(MAP, x, y, BLOCKED_OBS);
-		} else if(! is_trig && status == BLOCKED_OBS){
-			ROS_INFO("%s,%d:unclean (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-			map_set_cell(MAP, x, y, UNCLEAN);
-		}
-	}
-}
-
-static void _update_map_bumper()
-{
-	auto bumper_trig = get_bumper_status();
-	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
-		// During self check.
-		return;
-
-	std::vector<Cell_t> d_cells;
-
-	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
-		d_cells = {{2,-1}, {2,0}, {2,1}};
-	else if (bumper_trig & LeftBumperTrig) {
-		d_cells = {{2, 1}, {2,2},{1,2}};
-		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-			d_cells.push_back({2,0});
-	} else if (bumper_trig & RightBumperTrig) {
-		d_cells = {{2,-2},{2,-1},{1,-2}};
-		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
-			d_cells.push_back({2,0});
-	}
-
-	int32_t	x, y;
-	for(auto& d_cell : d_cells){
-		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
-		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
-	}
-}
-
-static void _update_map_cliff()
-{
-	auto cliff_trig = get_cliff_status();
-	if (g_cliff_jam || cliff_trig)
-		// During self check.
-		return;
-
-	std::vector<Cell_t> d_cells;
-	if (cliff_trig & Status_Cliff_Front){
-		d_cells.push_back({2,-1});
-		d_cells.push_back({2, 0});
-		d_cells.push_back({2, 1});
-	}
-	if (cliff_trig & Status_Cliff_Left){
-		d_cells.push_back({2, 1});
-		d_cells.push_back({2, 2});
-	}
-	if (cliff_trig & Status_Cliff_Right){
-		d_cells.push_back({2,-1});
-		d_cells.push_back({2,-2});
-	}
-
-	int32_t	x, y;
-	for (auto& d_cell : d_cells) {
-		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
-		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-		map_set_cell(MAP, x, y, BLOCKED_CLIFF);
-	}
-}
-
-static void _update_map_rcon()
-{
-	auto rcon_trig = get_rcon_trig();
-	if(! rcon_trig)
-		return;
-
-	enum {
-		left, fl2, fl1, fr1, fr2, right,
-	};
-	int dx = 0, dy = 0;
-	int dx2 = 0, dy2 = 0;
-	switch (rcon_trig - 1)
-	{
-		case left:
-			dx = 1, dy = 2;
-			break;
-		case fl2:
-			dx = 1, dy = 2;
-			dx2 = 2, dy2 = 1;
-			break;
-		case fl1:
-		case fr1:
-			dx = 2, dy = 0;
-			break;
-		case fr2:
-			dx = 1, dy = -2;
-			dx2 = 2, dy2 = -1;
-			break;
-		case right:
-			dx = 1, dy = -2;
-			break;
-	}
-	int32_t x,y;
-	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-	map_set_cell(MAP, x, y, BLOCKED_RCON);
-//	ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-	if (dx2 != 0){
-		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-//		ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-		map_set_cell(MAP, x, y, BLOCKED_RCON);
-	}
-}
-
-static void update_map_blocked()
-{
-	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
-		return;
-
-	_update_map_obs();
-	_update_map_bumper();
-	_update_map_rcon();
-	_update_map_cliff();
-	extern Point32_t g_next_point, g_target_point;
-	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-}
-
-void cm_update_map_cleaned()
-{
-	int32_t x, y;
-	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
-	{
-		for (auto dx = 0/*-ROBOT_SIZE_1_2*/; dx <= ROBOT_SIZE_1_2; ++dx)
-		{
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-			auto status = map_get_cell(MAP, x, y);
-//			if (status > CLEANED && status < BLOCKED_BOUNDARY)
-//				ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-
-//			ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-			map_set_cell(MAP, x, y, CLEANED);
-		}
-	}
-}
-
-Cell_t cm_update_position(bool is_turn)
-{
-	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	map_set_position(pos_x, pos_y);
-	return map_get_curr_cell();
-}
-
 //--------------------------------------------------------
 static double radius_of(Cell_t cell_0,Cell_t cell_1)
 {
@@ -329,7 +140,12 @@ void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long,
 	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long)));
 	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long)));
 }
-
+void mark_offset(int16_t dx, int16_t dy, CellState status)
+{
+	int x,y;
+	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE*dx, &x, &y);
+	map_set_cell(MAP, x,y,status);
+}
 int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
 											double origin_x, double origin_y)
 {
@@ -352,21 +168,16 @@ void cm_update_map()
 //	ROS_WARN("1 last(%d,%d),curr(%d,%d)",last.X, last.Y, curr.X, curr.Y);
 
 //	ROS_ERROR("2 last(%d,%d),curr(%d,%d)",last.X, last.Y,curr.X,curr.Y);
-	if (last != curr )
-	{
+//	if (last != curr )
+//	{
 
-//		cm_update_map_cleaned();
+	map_set_cleaned();
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
-		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-	}
-
-	{
-		Cell_t next,target;
-		if(last != curr && g_trapped_mode == 1 && path_target(next, target) == 1)
-			g_trapped_mode = 2;
-	}
+//		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	}
 
 }
+
 //-------------------------------cm_move_back-----------------------------//
 
 uint16_t round_turn_distance()
@@ -481,13 +292,13 @@ bool cm_move_to(Point32_t target)
 
 		if (rm.isReach() || rm.isStop()){
 //			ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
-			update_map_blocked();
+			map_set_blocked();
 			return true;
 		}
 
 		if (rm.isSwitch()){
 //			ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
-			update_map_blocked();
+			map_set_blocked();
 			rm.switchToNext();
 		}
 
@@ -706,6 +517,8 @@ int cm_cleaning()
 							return -1;
 						else if (!g_go_home_by_remote)
 							set_led_mode(LED_STEADY, LED_GREEN);
+						extern bool g_switch_home_cell;
+						g_switch_home_cell = true;
 				}
 			}
 		}
@@ -741,6 +554,7 @@ void cm_check_should_go_home(void)
 		g_battery_home = false;
 	}
 }
+
 /* Statement for cm_go_to_charger(void)
  * return : true -- going to charger has been stopped, either successfully or interrupted.
  *          false -- going to charger failed, move to next point.
@@ -1499,7 +1313,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 
 	g_rcon_triggered = get_rcon_trig_();
 	if(g_rcon_triggered != 0){
-		_update_map_rcon();
+		map_set_rcon();
 	}
 	reset_rcon_status();*/
 }

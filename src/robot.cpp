@@ -283,7 +283,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			}
 		}
 //		if(! is_turn())
-			cm_update_map();
+//			cm_update_map();
+		cm_update_position();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
@@ -583,17 +584,20 @@ bool robot::getBumperLeft()
 
 */
 
-#ifndef UPTILE_COUNT_REACH
-#define UPTILE_COUNT_REACH (10)
+#ifndef UPTILT_COUNT_REACH
+#define UPTILT_COUNT_REACH (10)
 #endif
 
-#define DIF_TILT_VAL 40
+#define DIF_TILT_X_VAL 50
+#define DIF_TILT_Y_VAL 80
+#define DIF_TILT_Z_VAL 40
 
 bool robot::isUpTilt()
 {
-	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_VAL){
-		if(++up_tilt_count_ > UPTILE_COUNT_REACH){
-			ROS_ERROR("%s,%d,robot head tilt !!",__FUNCTION__,__LINE__);
+	//if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL || absolute(y_acc_ - init_y_acc_) > DIF_TILT_Y_VAL){
+	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL){
+		if(++up_tilt_count_ > UPTILT_COUNT_REACH && absolute(z_acc_ - init_z_acc_)> DIF_TILT_Z_VAL){
+			ROS_INFO("\033[34m" "robot.cpp, %s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
 			up_tilt_count_ = 0;
 			is_up_tilt_ = true;
 		}
@@ -616,9 +620,9 @@ void robot::upTiltCall(bool v)
 		tri.request.data = false;
 	}
 	if(up_tilt_cli_.call(tri)){
-		ROS_WARN("%s,%d,up tilt call %s",__FUNCTION__,__LINE__,tri.response.success == true?"publish":"no publish");
+		ROS_INFO("\033[34m" "robot.cpp %s,%d,up tilt call response %s" "\033[0m",__FUNCTION__,__LINE__,tri.response.success == true?"publish":"no publish");
 	}
 	else{
-		ROS_ERROR("%s,%d,fail to call uptilt",__FUNCTION__,__LINE__);
+		ROS_INFO("\033[34m" "%s,%d,fail to call uptilt" "\033[0m",__FUNCTION__,__LINE__);
 	}
 }

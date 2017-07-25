@@ -16,10 +16,12 @@ public:
 
 	bool getLaserDistance(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
 
-	void isReady(uint8_t val);
-	int8_t isReady();
+	void setScanReady(uint8_t val);
+	int8_t isScanReady();
 	bool isNewDataReady();
+
 	double getLaserDistance(uint16_t angle);
+
 	bool lineFit(const std::vector<Double_Point> &points, double &a, double &b, double &c);
 
 	bool splitLine(const std::vector<Double_Point> &points, double consecutive_lim, int points_count_lim);
@@ -35,24 +37,30 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void startShield(void);
-	void stopShield(void);
-
+	//void startShield(void);
+	//void stopShield(void);
+	void lidarShieldDetect(bool sd);
+	void lidarMotorCtrl(bool orf);
 private:
-	void stop(void);
-	void start(void);
+
+	//void stop(void);
+	//void start(void);
 	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+
 	int8_t is_ready_;
 	bool is_scanDataReady_;
+
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;
 
 	sensor_msgs::LaserScan laser_scan_data_;
 
-	ros::ServiceClient start_motor_cli_;
-	ros::ServiceClient stop_motor_cli_;
-	ros::ServiceClient start_laser_shield_cli_;
-	ros::ServiceClient stop_laser_shield_cli_;
+	//ros::ServiceClient start_motor_cli_;
+	//ros::ServiceClient stop_motor_cli_;
+	//ros::ServiceClient start_laser_shield_cli_;
+	//ros::ServiceClient stop_laser_shield_cli_;
+	ros::ServiceClient lidar_motor_cli_;
+	ros::ServiceClient lidar_shield_detect_;
 
 	std::vector<Double_Point>	Laser_Point;
 	std::vector<std::vector<Double_Point> >	Laser_Group;
