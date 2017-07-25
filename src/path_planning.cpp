@@ -1211,7 +1211,8 @@ void path_set_home(Cell_t cell)
 	}
 	if (found == false) {
 		extern bool g_have_seen_charge_stub;
-		g_have_seen_charge_stub = true;
+		if(get_clean_mode() != Clean_Mode_Spot)
+			g_have_seen_charge_stub = true;
 		g_home_point_old_path.push_front(cell);
 		// If cell near (0, 0)
 		if (abs(cell.X) <= 5 && abs(cell.Y) <= 5)
@@ -1231,7 +1232,7 @@ void path_set_home(Cell_t cell)
 			path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
 		}
 	}
-	else if(cell.X == 0 && cell.Y == 0)
+	else if(cell.X == 0 && cell.Y == 0 && get_clean_mode() != Clean_Mode_Spot)
 	{
 		extern bool g_start_point_seen_charger, g_have_seen_charge_stub;
 		g_start_point_seen_charger = true;
