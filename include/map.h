@@ -81,7 +81,7 @@ void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state
 
 void map_reset(uint8_t id);
 
-void ros_map_convert(void);
+void ros_map_convert(bool is_mark_cleaned);
 
 unsigned char getCost(std::vector<int8_t> &p_map_data, unsigned int mx, unsigned int my);
 void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy);

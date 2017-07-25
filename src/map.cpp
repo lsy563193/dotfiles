@@ -357,7 +357,7 @@ void map_reset(uint8_t id)
 #endif
 }
 
-void ros_map_convert(void)
+void ros_map_convert(bool is_mark_cleaned)
 {
 	std::vector<int8_t> *p_map_data;
 	uint32_t width, height;
@@ -384,10 +384,10 @@ void ros_map_convert(void)
 		if (cost == -1) {
 			//ROS_INFO("cost == -1");
 			//map_set_cell(MAP, cx, cy, CLEANED);
-		} else if (cost == 0) {
+		} else if (cost == 0 && is_mark_cleaned) {
 			//map_set_cell(MAP, cell_to_count(cx), cell_to_count(cy), CLEANED);
 			//map_set_cell(MAP, cx, cy, BLOCKED_RCON);
-			//map_set_cell(MAP, cx, cy, CLEANED);
+			map_set_cell(MAP, cx, cy, CLEANED);
 			//ROS_INFO("cost == 0");
 		} else if (cost == 100) {
 			//map_set_cell(MAP, cell_to_count(cx), cell_to_count(cy), BLOCKED);
