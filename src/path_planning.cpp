@@ -69,6 +69,7 @@ uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between
 std::list <Cell_t> g_home_point_old_path;
 std::list <Cell_t> g_home_point_new_path;
 
+bool g_switch_home_cell = true;
 Cell_t g_current_home_cell;
 
 int16_t g_home_x = 0, g_home_y = 0;
@@ -1244,18 +1245,10 @@ void path_set_home(Cell_t cell)
  */
 int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 {
-	static bool switch_target = true;
 	int8_t return_val;
 	while (ros::ok())
 	{
-		if (map_get_curr_cell() == g_current_home_cell)
-		{
-			// Reach this home cell.
-			switch_target = true;
-			ROS_WARN("%s %d: Target reached, switch target.", __FUNCTION__, __LINE__);
-		}
-
-		if (switch_target)
+		if (g_switch_home_cell)
 		{
 			// Get the home point.
 			if (!g_home_point_old_path.empty())
@@ -1270,7 +1263,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				else
 					// Try all the old path home point first.
 					set_explore_new_path_flag(false);
-				switch_target = false;
+				g_switch_home_cell = false;
 
 				if (is_block_accessible(target.X, target.Y) == 0) {
 					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
@@ -1285,7 +1278,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				target = g_home_point_new_path.front();
 				g_home_point_new_path.pop_front();
 				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_new_path.size());
-				switch_target = false;
+				g_switch_home_cell = false;
 
 				if (is_block_accessible(target.X, target.Y) == 0) {
 					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
@@ -1307,7 +1300,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		if (path_next_status == 1)
 		{
 //			if (cm_check_loop_back(next))
-//				switch_target = true;
+//				g_switch_home_cell = true;
 //			else
 //			{
 				g_current_home_cell = target;
@@ -1323,7 +1316,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				g_home_point_new_path.push_back(target);
 				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, target.X, target.Y);
 			}
-			switch_target = true;
+			g_switch_home_cell = true;
 		}
 	}
 

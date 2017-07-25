@@ -484,6 +484,9 @@ bool MotionManage::initNavigationCleaning(void)
 		extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
 		g_have_seen_charge_stub = false;
 		g_start_point_seen_charger = false;
+
+		extern bool g_switch_home_cell;
+		g_switch_home_cell = true;
 	}
 
 	reset_touch();
@@ -622,6 +625,9 @@ bool MotionManage::initWallFollowCleaning(void)
 
 	extern bool g_have_seen_charge_stub;
 	g_have_seen_charge_stub = false;
+
+	extern bool g_switch_home_cell;
+	g_switch_home_cell = true;
 
 	work_motor_configure();
 

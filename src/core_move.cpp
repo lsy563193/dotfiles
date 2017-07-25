@@ -517,6 +517,8 @@ int cm_cleaning()
 							return -1;
 						else if (!g_go_home_by_remote)
 							set_led_mode(LED_STEADY, LED_GREEN);
+						extern bool g_switch_home_cell;
+						g_switch_home_cell = true;
 				}
 			}
 		}
