@@ -21,6 +21,7 @@
 #include "event_manager.h"
 
 #include "std_srvs/Empty.h"
+#include "map.h"
 using namespace obstacle_detector;
 
 static	robot *robot_obj = NULL;
@@ -358,7 +359,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	origin_y_ = map->info.origin.position.y;
 	map_data_ = map->data;
 	map_ptr_ = &(map_data_);
-
+	//ros_map_convert();
 	MotionManage::s_slam->isMapReady(true);
 
 	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);

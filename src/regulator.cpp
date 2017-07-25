@@ -412,7 +412,6 @@ LinearRegulator::LinearRegulator(Point32_t target):
 bool LinearRegulator::isReach()
 {
 	mark();
-
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
 		ROS_INFO("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
