@@ -15,22 +15,27 @@
 
 extern float saved_pos_x, saved_pos_y;
 /*----------------------------------------------------------------GO Home  ----------------*/
-#define GO_HOME_INIT -1
-#define GO_HOME 0
-#define AROUND_CHARGER_STATION_INIT 1
-#define AROUND_CHARGER_STATION 2
-#define CHECK_POSITION_INIT 3
-#define CHECK_POSITION 4
-#define BY_PATH_INIT 5
-#define BY_PATH 6
+#define GO_HOME_INIT 0
+#define CHECK_NEAR_CHARGER_STATION 1
+#define AWAY_FROM_CHARGER_STATION 2
+#define GO_HOME 3
+#define AROUND_CHARGER_STATION_INIT 4
+#define AROUND_CHARGER_STATION 5
+#define CHECK_POSITION_INIT 6
+#define CHECK_POSITION 7
+#define BY_PATH_INIT 8
+#define BY_PATH 9
 int8_t g_go_home_state_now = GO_HOME_INIT;
 bool g_bumper_left = false, g_bumper_right = false;
 bool g_go_to_charger_failed = false;
 bool during_cleaning = false;
+bool should_check_near_home = true;
+uint8_t counter_for_move_away = 0;
 
 void go_home(void)
 {
 	g_go_to_charger_failed = false;
+	should_check_near_home = true;
 
 	set_led_mode(LED_STEADY, LED_ORANGE);
 	if (get_clean_mode() == Clean_Mode_GoHome)
@@ -238,12 +243,105 @@ void go_to_charger(void)
 				g_bumper_left = g_bumper_right = true;
 			}
 			g_move_back_finished = true;
-			g_go_home_state_now = GO_HOME;
 
 			// Save the start angle.
 			last_angle = robot::instance()->getAngle();
 			// Enable the charge function
 			set_start_charge();
+
+			if(should_check_near_home)
+			{
+				should_check_near_home = false;
+				g_go_home_state_now = CHECK_NEAR_CHARGER_STATION;
+			}
+			else
+			{
+				g_go_home_state_now = GO_HOME;
+			}
+		}
+		/*---check if near charger station---*/
+		else if(g_go_home_state_now == CHECK_NEAR_CHARGER_STATION)
+		{
+			if(nosignal_counter < 20)
+			{
+				receive_code = get_rcon_status();
+				ROS_INFO("receive_code: %d", receive_code);
+				if(receive_code&RconAll_Home_LR)
+				{
+					reset_rcon_status();
+					ROS_INFO("receive LR");
+					if(receive_code&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR))
+					{
+						ROS_INFO("turn 180");
+						target_distance = 0.1;
+						g_move_back_finished = false;
+
+						go_home_target_angle = ranged_angle(gyro_get_angle() + 1800);
+						turn_finished = false;
+					}
+					else if(receive_code&(RconR_HomeL|RconR_HomeR))
+					{
+						ROS_INFO("turn left 90");
+						target_distance = 0.1;
+						g_move_back_finished = false;
+
+						go_home_target_angle = ranged_angle(gyro_get_angle() + 900);
+						turn_finished = false;
+					}
+					else if(receive_code&(RconL_HomeL|RconL_HomeR))
+					{
+						ROS_INFO("turn right 90");
+						target_distance = 0.1;
+						g_move_back_finished = false;
+
+						go_home_target_angle = ranged_angle(gyro_get_angle() - 900);
+						turn_finished = false;
+					}
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+					g_go_home_state_now = AWAY_FROM_CHARGER_STATION;
+					nosignal_counter = 0;
+					continue;
+				}
+				else
+				{
+					nosignal_counter++;
+				}
+			}
+			else
+			{
+				g_go_home_state_now = GO_HOME;
+				nosignal_counter = 0;
+			}
+		}
+		/*---move forward to keep away from charger station---*/
+		else if(g_go_home_state_now == AWAY_FROM_CHARGER_STATION)
+		{
+			move_forward(30, 30);
+			if(g_bumper_left || g_bumper_right)
+			{
+				stop_brifly();
+				target_distance = 0.03;
+				g_move_back_finished = false;
+				g_go_home_state_now = GO_HOME;
+				continue;
+			}
+			if(g_cliff_triggered)
+			{
+				stop_brifly();
+				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+				g_cliff_cnt++;
+				target_distance = 0.03;
+				g_move_back_finished = false;
+				g_go_home_state_now = GO_HOME_INIT;
+				counter_for_move_away = 0;
+				continue;
+			}
+			if(counter_for_move_away++ > 20)
+			{
+				g_go_home_state_now = GO_HOME;
+				counter_for_move_away = 0;
+			}
 		}
 		/*---go_home main while---*/
 		else if(g_go_home_state_now == GO_HOME)
