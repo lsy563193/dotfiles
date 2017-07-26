@@ -130,9 +130,18 @@ public:
 	int16_t getOmniWheel() const
 	{
 #if __ROBOT_X9000
-		return sensor.omni_wheel;
+		//return sensor.omni_wheel;
+		return omni_wheel_;
 #elif __ROBOT_X400
 		return 0;
+#endif
+	}
+
+	void resetOmniWheel()
+	{
+#if __ROBOT_X9000
+		omni_wheel_ = 0;
+		void reset_mobility_step();
 #endif
 	}
 
@@ -559,7 +568,7 @@ private:
 	//new variable visual wall
 	int16_t visual_wall;
 	//new variable in x900 robot
-	int16_t omni_wheel;
+	int16_t omni_wheel_;
 	//new variable plan
 	int8_t plan;
 	#endif

@@ -33,8 +33,8 @@
 //#include "../include/obstacle_detector.h"
 #include <motion_manage.h>
 #include <slam.h>
-#include <event_manager.h>
-#include <mathematics.h>
+#include "event_manager.h"
+#include "mathematics.h"
 #include "wall_follow_slam.h"
 #include <move_type.h>
 //#include "obstacle_detector.h"
@@ -664,7 +664,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (g_bumper_jam || g_cliff_jam)
+	if (g_bumper_jam || g_cliff_jam || g_omni_notmove)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
@@ -912,6 +912,13 @@ void cm_self_check(void)
 				}
 			}
 		}
+		else if (g_omni_notmove)
+		{
+			ROS_ERROR("\033[1m" "%s,%d,omni detect" "\033[0m",__FUNCTION__,__LINE__);
+			set_error_code(Error_Code_Omni);
+			g_fatal_quit_event = true;
+			break;
+		}
 		else
 			break;
 
@@ -921,7 +928,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction);
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove);
 }
 
 /* Event handler functions. */

@@ -160,7 +160,7 @@ void Laser::lidarMotorCtrl(bool onoff)
 		trigger.request.data = false;
 	}
 
-	while((isScanReady() < 1) && ros::ok()){
+	while((isScanReady() <= 0) && ros::ok()){
 		
 		if (onoff && (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered))
 		{
@@ -185,11 +185,16 @@ void Laser::lidarMotorCtrl(bool onoff)
 			break;
 		}
 
-		while(( isScanReady() < 1 )&& ros::ok()){
+		while(( isScanReady() <= 0 )&& ros::ok()){
 			usleep(20000);
 			if(difftime(time(NULL),start_time) > 5){ //time out
 				ROS_WARN("\033[34m" "laser.cpp %s,%d,start lidar motor timeout retry" "\033[0m",__FUNCTION__,__LINE__);
 				trigger.request.data = false;
+				lidar_motor_cli_.call(trigger);
+				laser_pm_gpio('0');
+				usleep(200000);
+				trigger.request.data = true;
+				laser_pm_gpio('1');
 				break;
 			}
 		}

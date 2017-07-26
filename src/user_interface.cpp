@@ -149,13 +149,13 @@ void user_interface(void)
 			}
 		}
 		// Alarm for error.
-		else if (get_error_code())
+		else if (get_error_code()){
 			if (error_alarm_counter == 3 || (error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
 			{
 				error_alarm_counter--;
 				alarm_error();
 			}
-
+		}
 		if(temp_mode != 0)
 		{
 			set_clean_mode(temp_mode);
@@ -301,7 +301,7 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
-
+	g_omni_notmove = false;
 	if (get_error_code())
 	{
 		if (get_rcon_remote() == Remote_Clean)
@@ -454,6 +454,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
+	g_omni_notmove = false;
 	time_t key_press_start_time = time(NULL);
 
 	if (check_error_cleared(get_error_code()))

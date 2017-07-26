@@ -35,6 +35,21 @@ uint8_t remote_rcon_cnt = 0;
 
 void remote_mode(void)
 {
+	if (!is_gyro_on())
+	{
+		// Restart the gyro.
+		set_gyro_off();
+		// Wait for 30ms to make sure the off command has been effectived.
+		usleep(30000);
+		// Set gyro on before wav_play can save the time for opening the gyro.
+		set_gyro_on();
+		wav_play(WAV_SYSTEM_INITIALIZING);
+		if (!wait_for_gyro_on())
+		{
+			set_clean_mode(Clean_Mode_Userinterface);
+			return;
+		}
+	}
 	remote_exit = false;
 	g_battery_low_cnt = 0;
 

@@ -59,6 +59,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	bumper_left_ = 0;
 	bumper_right_ = 0;
 
+	omni_wheel_ = 0;
 	linear_x_ = 0.0;
 	linear_y_ = 0.0;
 	linear_z_ = 0.0;
@@ -137,7 +138,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	bumper_left_ = msg->lbumper;
 
-	omni_wheel = msg->omni_wheel;
+	omni_wheel_ = msg->omni_wheel;
 
 	visual_wall = msg->visual_wall;
 

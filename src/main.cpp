@@ -100,22 +100,6 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_Remote);
 				robot::instance()->resetLowBatPause();
 				clear_manual_pause();
-				if (!is_gyro_on())
-				{
-					// Restart the gyro.
-					set_gyro_off();
-					// Wait for 30ms to make sure the off command has been effectived.
-					usleep(30000);
-					// Set gyro on before wav_play can save the time for opening the gyro.
-					set_gyro_on();
-					wav_play(WAV_SYSTEM_INITIALIZING);
-					if (!wait_for_gyro_on())
-					{
-						set_clean_mode(Clean_Mode_Userinterface);
-						break;
-					}
-				}
-
 				remote_mode();
 				break;
 
@@ -139,9 +123,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Sleep mode------\n");
 				//set_main_pwr_byte(Clean_Mode_Sleep);
 				robot::instance()->resetLowBatPause();
-
 				clear_manual_pause();
-
 				disable_motors();
 				sleep_mode();
 				break;

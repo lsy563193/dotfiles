@@ -158,6 +158,11 @@ void alarm_error(void)
 			wav_play(WAV_ERROR_BUMPER);
 			break;
 		}
+		case Error_Code_Omni:
+		{
+			wav_play(WAV_ERROR_MOBILITY_WHEEL);
+			break;
+		}
 		default:
 		{
 			break;
@@ -192,6 +197,15 @@ bool check_error_cleared(uint8_t error_code)
 			if (get_bumper_status())
 			{
 				ROS_WARN("%s %d: Bumper still triggered.", __FUNCTION__, __LINE__);
+				error_cleared = false;
+			}
+			break;
+		}
+		case Error_Code_Omni:
+		{
+			if(g_omni_notmove)
+			{
+				ROS_WARN("%s %d: Omni still triggered.", __FUNCTION__, __LINE__);
 				error_cleared = false;
 			}
 			break;
@@ -1934,8 +1948,6 @@ void control_set(uint8_t type, uint8_t val)
 	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO)
 	{
 		g_send_stream[type] = val;
-		//g_send_stream[SEND_LEN-3] = calc_buf_crc8((char *)g_send_stream, SEND_LEN-3);
-		//serial_write(SEND_LEN, g_send_stream);
 	}
 	reset_send_flag();
 }
@@ -2174,7 +2186,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 	return -1;
 }
 
-uint8_t is_send_busy(void)
+uint8_t is_flag_set(void)
 {
 	return g_sendflag;
 }

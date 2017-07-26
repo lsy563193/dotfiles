@@ -768,7 +768,7 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 		set_dir_backward();
 		left_speed = right_speed = 18;
 	}
-	else //if (g_bumper_jam)
+	else if (g_bumper_jam)
 	{
 		switch (bumper_jam_state)
 		{
@@ -796,6 +796,10 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 				break;
 			}
 		}
+	}
+	else if(g_omni_notmove){
+		//set_dir_backward();
+		//left_speed = right_speed = RUN_TOP_SPEED;
 	}
 
 	set_wheel_speed(left_speed, right_speed);
