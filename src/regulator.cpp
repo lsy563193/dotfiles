@@ -540,7 +540,6 @@ bool FollowWallRegulator::isReach()
 		}
 	} else if (get_clean_mode() == Clean_Mode_Navigation)
 	{
-
 		extern int g_trapped_mode;
 		if (g_trapped_mode != 0)
 		{

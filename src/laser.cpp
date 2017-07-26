@@ -76,7 +76,7 @@ Laser::Laser():nh_(),is_ready_(0),is_scanDataReady_(false)
 	lidar_motor_cli_ = nh_.serviceClient<std_srvs::SetBool>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 
-	lidarShieldDetect(true);
+	//lidarShieldDetect(true);
 	lidarMotorCtrl(true);
 	//start();
 }
