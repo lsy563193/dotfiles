@@ -204,17 +204,20 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			set_led_mode(LED_STEADY, LED_GREEN);
 		return;
 	}
-	if (robot::instance()->isManualPaused() && s_slam != nullptr)
+	if (robot::instance()->isManualPaused())
 	{
-		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		robot::instance()->resetManualPause();
-		//s_laser->startShield();
-		s_laser->lidarShieldDetect(true);
-		if (g_go_home_by_remote)
-			set_led_mode(LED_STEADY, LED_ORANGE);
-		else
-			set_led_mode(LED_STEADY, LED_GREEN);
-		return;
+		if (s_slam != nullptr)
+		{
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+			//s_laser->startShield();
+			s_laser->lidarShieldDetect(true);
+			if (g_go_home_by_remote)
+				set_led_mode(LED_STEADY, LED_ORANGE);
+			else
+				set_led_mode(LED_STEADY, LED_GREEN);
+			return;
+		}
 	}
 
 	//3 calculate offsetAngle

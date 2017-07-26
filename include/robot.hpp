@@ -435,6 +435,37 @@ public:
 
 	void upTiltCall(bool v);
 
+	uint32_t mapGetWidth()
+	{
+		return width_;
+	}
+
+	uint32_t mapGetHeight()
+	{
+		return height_;
+	}
+
+	float mapGetResolution()
+	{
+		return resolution_;
+	}
+
+	double mapGetOriginX()
+	{
+		return origin_x_;
+	}
+
+	double mapGetOriginY()
+	{
+		return origin_y_;
+	}
+
+	std::vector<int8_t> *mapGetMapData()
+	{
+		return map_ptr_;
+	}
+
+
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
@@ -600,6 +631,15 @@ private:
 	float	correction_x_;
 	float	correction_y_;
 	float	correction_yaw_;
+
+	/*for ros map*/
+	uint32_t width_;
+	uint32_t height_;
+	float resolution_;
+	double origin_x_;
+	double origin_y_;
+	std::vector<int8_t> map_data_;
+	std::vector<int8_t> *map_ptr_;
 
 	ros::NodeHandle robot_nh_;
 	ros::Subscriber sensor_sub_;

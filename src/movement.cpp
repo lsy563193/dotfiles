@@ -92,6 +92,9 @@ volatile uint8_t g_error_code = 0;
 
 //Variable for checking spot turn in wall follow mode
 volatile int32_t g_wf_sp_turn_count;
+
+bool g_reset_lbrush_oc = false;
+bool g_reset_rbrush_oc = false;
 /*----------------------- Work Timer functions--------------------------*/
 void reset_work_time()
 {
@@ -2795,6 +2798,15 @@ uint8_t check_left_brush_stall(void)
 	static uint8_t lbrush_error_counter = 0;
 	static uint8_t left_brush_status = 1;
 	/*---------------------------------Left Brush Stall---------------------------------*/
+	if (g_reset_lbrush_oc)
+	{
+		lbrush_error_counter = 0;
+		left_brush_status = 1;
+		g_reset_lbrush_oc = false;
+		ROS_WARN("%s %d: Reset left brush.", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
 	switch (left_brush_status)
 	{
 		case 1:
@@ -2880,9 +2892,19 @@ uint8_t check_right_brush_stall(void)
 {
 	static time_t time_rbrush;
 	static uint8_t rbrush_error_counter = 0;
-	static uint8_t rightbrush_status = 1;
+	static uint8_t right_brush_status = 1;
 	/*---------------------------------Left Brush Stall---------------------------------*/
-	switch (rightbrush_status)
+
+	if (g_reset_rbrush_oc)
+	{
+		rbrush_error_counter = 0;
+		right_brush_status = 1;
+		g_reset_rbrush_oc = false;
+		ROS_WARN("%s %d: Reset right brush.", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
+	switch (right_brush_status)
 	{
 		case 1:
 		{
@@ -2898,7 +2920,7 @@ uint8_t check_right_brush_stall(void)
 			{
 				/*-----Left Brush is stall, stop the brush-----*/
 				set_right_brush_pwm(0);
-				rightbrush_status = 2;
+				right_brush_status = 2;
 				time_rbrush = time(NULL);
 				ROS_WARN("%s %d: Stop the brush for 5s.", __FUNCTION__, __LINE__);
 			}
@@ -2911,7 +2933,7 @@ uint8_t check_right_brush_stall(void)
 			{
 				// Then restart brush and let it fully operated.
 				set_right_brush_pwm(100);
-				rightbrush_status = 3;
+				right_brush_status = 3;
 				time_rbrush = time(NULL);
 				ROS_WARN("%s %d: Fully operate the brush for 5s.", __FUNCTION__, __LINE__);
 			}
@@ -2933,12 +2955,12 @@ uint8_t check_right_brush_stall(void)
 			{
 				/*-----Brush is still stall, stop the brush and increase error counter -----*/
 				set_right_brush_pwm(0);
-				rightbrush_status = 2;
+				right_brush_status = 2;
 				time_rbrush = time(NULL);
 				rbrush_error_counter++;
 				if (rbrush_error_counter > 2)
 				{
-					rightbrush_status = 1;
+					right_brush_status = 1;
 					g_oc_brush_right_cnt = 0;
 					rbrush_error_counter = 0;
 					return 1;
@@ -2953,7 +2975,7 @@ uint8_t check_right_brush_stall(void)
 					ROS_WARN("%s %d: Restore from fully operated.", __FUNCTION__, __LINE__);
 					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
 					set_right_brush_pwm(g_r_brush_pwm);
-					rightbrush_status = 1;
+					right_brush_status = 1;
 					g_oc_brush_right_cnt = 0;
 					rbrush_error_counter = 0;
 				}
