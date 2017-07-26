@@ -387,7 +387,9 @@ void ros_map_convert(bool is_mark_cleaned)
 		} else if (cost == 0 && is_mark_cleaned) {
 			//map_set_cell(MAP, cell_to_count(cx), cell_to_count(cy), CLEANED);
 			//map_set_cell(MAP, cx, cy, BLOCKED_RCON);
-			map_set_cell(MAP, cx, cy, CLEANED);
+			if (map_get_cell(MAP, count_to_cell(cx), count_to_cell(cy)) <= 1) {
+				map_set_cell(MAP, cx, cy, CLEANED);
+			}
 			//ROS_INFO("cost == 0");
 		} else if (cost == 100) {
 			//map_set_cell(MAP, cell_to_count(cx), cell_to_count(cy), BLOCKED);
