@@ -305,8 +305,7 @@ MotionManage::~MotionManage()
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
 		SpotMovement::instance()->spotDeinit();// clear the variables.
-		// Wait for 1s before playing wavs so the noise of suction will be less and the wavs will be clearer.
-		sleep(1);
+		//sleep(1);
 	}
 
 	if (!g_fatal_quit_event && g_key_clean_pressed && robot::instance()->isManualPaused())
