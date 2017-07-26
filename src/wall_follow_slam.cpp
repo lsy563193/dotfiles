@@ -320,6 +320,8 @@ uint8_t wf_clear(void)
 	robot::instance()->setBaselinkFrameType( Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
 	cm_update_position();
 	wf_mark_home_point();
+	map_reset(MAP);
+	ros_map_convert(true);
 	//wf_break_wall_follow();
 	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
 	g_wf_cell.clear();

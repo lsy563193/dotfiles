@@ -1088,7 +1088,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 {
 	Cell_t next = g_curr;
 	Cell_t target = next;
-
+	//ros_map_convert(false);
 	extern bool g_go_home;
 	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
@@ -1260,7 +1260,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u old path targets left, %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
 				if (get_clean_mode() == Clean_Mode_WallFollow)
 					// Always explore the new path.
-					set_explore_new_path_flag(true);
+					set_explore_new_path_flag(false);
 				else
 					// Try all the old path home point first.
 					set_explore_new_path_flag(false);

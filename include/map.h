@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "mathematics.h"
+#include <vector>
 
 #define MAP 0
 #define SPMAP 1
@@ -80,5 +81,13 @@ void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state
 
 void map_reset(uint8_t id);
 
+void ros_map_convert(bool is_mark_cleaned);
+
+unsigned char getCost(std::vector<int8_t> &p_map_data, unsigned int mx, unsigned int my);
+void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy);
+bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my);
+unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
+void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
+void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 void map_set_realtime();
 #endif /* __MAP_H */

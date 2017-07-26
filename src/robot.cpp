@@ -21,6 +21,7 @@
 #include "event_manager.h"
 
 #include "std_srvs/Empty.h"
+#include "map.h"
 using namespace obstacle_detector;
 
 static	robot *robot_obj = NULL;
@@ -352,7 +353,16 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
+	width_ = map->info.width;
+	height_ = map->info.height;
+	resolution_ = map->info.resolution;
+	origin_x_ = map->info.origin.position.x;
+	origin_y_ = map->info.origin.position.y;
+	map_data_ = map->data;
+	map_ptr_ = &(map_data_);
+	//ros_map_convert();
 	MotionManage::s_slam->isMapReady(true);
+
 	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
 
 }
