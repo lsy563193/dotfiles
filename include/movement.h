@@ -298,6 +298,7 @@ typedef enum{
 #define Error_Code_Laser		((uint8_t)0x13)
 #define Error_Code_Test			((uint8_t)0x14)
 #define Error_Code_Test_Null	((uint8_t)0x15)
+#define Error_Code_Omni         ((uint8_t)0x16)
 
 #define Display_Full				4
 #define Display_Low					5
@@ -625,7 +626,7 @@ uint16_t get_battery_voltage();
 
 uint16_t get_key_time(uint16_t key);
 	
-uint8_t is_send_busy(void);
+uint8_t is_flag_set(void);
 
 void set_send_flag(void);
 

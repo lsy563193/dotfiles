@@ -21,18 +21,19 @@
 #include "config.h"
 #include "robot.hpp"
 #include "wav.h"
+#include "event_manager.h"
 
 #define ROBOTBASE "robotbase"
 #define _H_LEN 2
 #if __ROBOT_X400
-uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+uint8_t receiStream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
 uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
 
 #elif __ROBOT_X900
-uint8_t receiStream[RECEI_LEN]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+uint8_t receiStream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -265,7 +266,8 @@ void *robotbase_routine(void*)
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
-
+	uint32_t omni_detect_cnt = 0;
+	uint32_t last_omni_wheel = 0;
 	while (ros::ok() && !robotbase_thread_stop)
 	{
 		if(pthread_mutex_lock(&recev_lock)!=0)ROS_ERROR("robotbase pthread receive lock fail");
@@ -276,8 +278,8 @@ void *robotbase_routine(void*)
 		boost::mutex::scoped_lock(odom_mutex);
 		lw_speed = (receiStream[2] << 8) | receiStream[3];
 		rw_speed = (receiStream[4] << 8) | receiStream[5];
-		sensor.lw_vel = (lw_speed > 0x7fff) ? -((float)(lw_speed - 0x8000) / 1000.0) : (float)(lw_speed) / 1000.0;
-		sensor.rw_vel = (rw_speed > 0x7fff) ? -((float)(rw_speed - 0x8000) / 1000.0) : (float)(rw_speed) / 1000.0;
+		sensor.lw_vel = (lw_speed & 0x8000) ? -((float)((lw_speed & 0x7fff) / 1000.0)) : (float)((lw_speed & 0x7fff) / 1000.0);
+		sensor.rw_vel = (rw_speed & 0x8000) ? -((float)((rw_speed & 0x7fff) / 1000.0)) : (float)((rw_speed & 0x7fff) / 1000.0);
 		sensor.angle = -(float)(int16_t)((receiStream[6] << 8) | receiStream[7]) / 100;
 
 		sensor.angle -= robot::instance()->offsetAngle();
@@ -311,7 +313,7 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[42] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc = receiStream[43];
 		sensor.omni_wheel = (receiStream[44]<<8)|receiStream[45];
-		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);//in G
+		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);//in mG
 		sensor.y_acc = static_cast<int16_t>((receiStream[48]<<8)|receiStream[49]);//in mG
 		sensor.z_acc = static_cast<int16_t>((receiStream[50]<<8)|receiStream[51]);//in mG
 		sensor.plan = receiStream[52];
@@ -353,6 +355,7 @@ void *robotbase_routine(void*)
 		pose_x += (vx * cos(th) - 0 * sin(th)) * dt;
 		pose_y += (vx * sin(th) + 0 * cos(th)) * dt;
 		odom_quat = tf::createQuaternionMsgFromYaw(th);
+
 		odom.header.stamp = cur_time;
 		odom.header.frame_id = "odom";
 		odom.child_frame_id = "base_link";
@@ -363,6 +366,7 @@ void *robotbase_routine(void*)
 		odom.twist.twist.linear.x = vx;
 		odom.twist.twist.linear.y = 0.0;
 		odom.twist.twist.angular.z = vth;
+
 		odom_trans.header.stamp = cur_time;
 		odom_trans.header.frame_id = "odom";
 		odom_trans.child_frame_id = "base_link";
@@ -371,7 +375,6 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-		odom_pub.publish(odom);
 
 /*
 		if(get_angle_offset() == 2){
@@ -379,10 +382,34 @@ void *robotbase_routine(void*)
 			g_cond_var.notify_all();
 		}
 */
+		odom_pub.publish(odom);
 		sensor_pub.publish(sensor);
 		/*---------------publish end --------------------------*/
 		// Dynamic adjust obs
 		obs_dynamic_base(OBS_adjust_count);
+
+		// start omni wheel detect...
+#if __ROBOT_X900
+		if(sensor.rw_vel == sensor.lw_vel && (sensor.rw_vel != 0 || sensor.lw_vel != 0) ){
+			omni_detect_cnt ++;
+			if(omni_detect_cnt >= 40){
+				omni_detect_cnt = 0;
+				if(absolute(sensor.omni_wheel - last_omni_wheel) <= 1){
+					g_omni_notmove = true;
+				}
+				else
+					g_omni_notmove = false;
+				last_omni_wheel = sensor.omni_wheel;
+			}
+		}
+		else{
+			g_omni_notmove = false;
+		}
+		if(sensor.omni_wheel >= 10000){
+			reset_mobility_step();
+		}
+#endif
+		//end omni detect...
 	}
 	ROS_INFO("robotbase thread exit");
 	//pthread_exit(NULL);
@@ -417,11 +444,14 @@ void *serial_send_routine(void*)
 		if (robotbase_led_update_flag)
 			process_led();
 
-		if(!is_send_busy()){
+		if(!is_flag_set()){
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			buf[CTL_CRC] = calc_buf_crc8((char *) buf, sl);
 			serial_write(SEND_LEN, buf);
 		}
+		//reset omni wheel bit
+		if(g_send_stream[CTL_OMNI_RESET] & 0x01)
+			clear_reset_mobility_step();
 	}
 	ROS_INFO("serial send pthread exit");
 	//pthread_exit(NULL);

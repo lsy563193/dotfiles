@@ -85,6 +85,8 @@ extern uint8_t g_charge_detect_cnt;
 extern bool g_slam_error;
 /* Plan */
 extern bool g_plan_activated;
+/* Omni wheel*/
+extern bool g_omni_notmove;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,

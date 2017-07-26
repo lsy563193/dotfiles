@@ -153,7 +153,8 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 				*stp = { bp_->X, ( ( bp_->Y > 0 )? bp_->Y - 1: bp_->Y + 1 ) };
 		}
 	}
-	ROS_INFO("\033[34m" "%s,%d, stop point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, stop_point_.X, stop_point_.Y); }
+	ROS_INFO("\033[34m" "%s,%d, stop point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, stp->X, stp->Y);
+}
 
 uint8_t SpotMovement::changeSpiralType()
 {
@@ -196,6 +197,7 @@ uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 			break;
 		}
 	}
+	/*
 	if(!ret){//if not find then find point near to stop point
 		float dist = 0.0;
 		int pos = 0, i = 0;
@@ -216,6 +218,7 @@ uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 			tp_ ++;
 		}
 	}
+	*/
 	ROS_INFO("\033[34m" "%s,%d,%s near point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,
 					(ret?"found":"not found"), tp_->X, tp_->Y);
 	return ret;
@@ -256,12 +259,18 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 					changeSpiralType();
 					setStopPoint(&stop_point_);
 					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
-					getNearPoint(stop_point_);
+					if(!getNearPoint(stop_point_)){
+						spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN;
+						setStopPoint(&stop_point_);
+						genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
+						if(!getNearPoint(stop_point_))
+							ROS_WARN("\033[34m" "spot.cpp,%s,%d,not find neaer point,while search all points" "\033[0m",__FUNCTION__,__LINE__);
+					}
 				}
 				*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 				setNextPointChange();
 				ret = 1;
-				ROS_INFO("\033[34m" "%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
+				ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
 								 tp_->Y);
 			}
 			else// stuck
@@ -282,7 +291,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 			{
 				uint8_t in_row=0,in_col=0;
 
-				while(tp_!= targets_.end())//stright to the end of col or row
+				while(tp_!= targets_.end())//stright to the end of column or row
 				{
 					if( tp_->X == (tp_+1)->X && !in_row)
 					{
