@@ -281,7 +281,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 				*next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
 				ret = (spt == CLEAN_SPOT)?1:0;
 				spotDeinit();//clear all spot variable
-				sleep(1);
+				//sleep(1);
 			}
 		}
 		else//no bumper/obs detect
@@ -327,7 +327,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 					if (spt == CLEAN_SPOT){	ret = 1;}//clean_spot return 1
 					else {ret = 0;} //normal_spot return 0
 					spotDeinit();//clear all spot variable
-					sleep(1);
+					//sleep(1);
 				}
 				else
 				{//switch to anothor spiral type

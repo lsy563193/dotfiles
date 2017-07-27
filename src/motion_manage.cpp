@@ -221,17 +221,24 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 
 	//3 calculate offsetAngle
-	nh_.param<bool>("is_active_align", is_align_active_, false);
-	if (get_clean_mode() == Clean_Mode_Navigation && is_align_active_)
+	if(g_from_station)
 	{
-		ObstacleDetector od;
-		float align_angle=0;
-		if(!get_align_angle(align_angle))
+		robot::instance()->offsetAngle(180);
+	}
+	else
+	{
+		nh_.param<bool>("is_active_align", is_align_active_, false);
+		if (get_clean_mode() == Clean_Mode_Navigation && is_align_active_)
 		{
-			initSucceeded(false);
-			return;
+			ObstacleDetector od;
+			float align_angle = 0;
+			if (!get_align_angle(align_angle))
+			{
+				initSucceeded(false);
+				return;
+			}
+			robot::instance()->offsetAngle(align_angle);
 		}
-		robot::instance()->offsetAngle(align_angle);
 	}
 
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
@@ -305,8 +312,7 @@ MotionManage::~MotionManage()
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
 		SpotMovement::instance()->spotDeinit();// clear the variables.
-		// Wait for 1s before playing wavs so the noise of suction will be less and the wavs will be clearer.
-		sleep(1);
+		//sleep(1);
 	}
 
 	if (!g_fatal_quit_event && g_key_clean_pressed && robot::instance()->isManualPaused())
