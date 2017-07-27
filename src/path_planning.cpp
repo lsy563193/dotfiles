@@ -1090,6 +1090,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 	Cell_t target = next;
 	//ros_map_convert(false);
 	extern bool g_go_home;
+	extern bool g_keep_on_wf;
 	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
 		if(mt_is_linear()){
@@ -1112,6 +1113,10 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				cm_create_home_boundary();
 				wav_play(WAV_BACK_TO_CHARGER);
 
+			} else if (g_keep_on_wf) {
+				ROS_INFO("keep on follow wall");
+				mt_set(CM_FOLLOW_LEFT_WALL);
+				g_keep_on_wf = false;
 			} else {
 				ROS_INFO("CM_LINEARMOVE");
 				mt_set(CM_LINEARMOVE);

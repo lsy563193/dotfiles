@@ -103,6 +103,9 @@ bool g_motion_init_succeeded = false;
 
 bool g_go_home_by_remote = false;
 
+//Flag for judge if keep on wall follow
+bool g_keep_on_wf = false;
+
 int16_t ranged_angle(int16_t angle)
 {
 	while (angle > 1800 || angle <= -1800)
@@ -453,7 +456,6 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 int cm_cleaning()
 {
 	MotionManage motion;
-
 	if (!motion.initSucceeded())
 		return 0;
 
@@ -502,8 +504,10 @@ int cm_cleaning()
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
 				cm_set_event_manager_handler_state(true);
 				cm_self_check();
-				if(get_clean_mode() == Clean_Mode_WallFollow)
-					wf_break_wall_follow();
+				if(get_clean_mode() == Clean_Mode_WallFollow) {
+					g_keep_on_wf = true;
+					//wf_break_wall_follow();
+				}
 				cm_set_event_manager_handler_state(false);
 			}
 			else if(g_go_home)
