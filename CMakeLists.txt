@@ -10,8 +10,8 @@ FILE(GLOB PP_SRC
 	src/des.cpp
 	src/gyro.cpp
 	src/laser.cpp
-	src/main.cpp
-#	test/test_path_update_cell.cpp
+#	src/main.cpp
+	test/test_path_update_cell.cpp
 	src/map.cpp
 	src/mathematics.cpp
 	src/motion_manage.cpp

@@ -282,12 +282,9 @@ uint8_t is_block_blocked(int16_t x, int16_t y)
 
 bool path_lane_is_cleaned(Cell_t& next)
 {
-	int16_t i, is_found, min, max, min_stop, max_stop, x_tmp, y_tmp;
+	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
 
-	min_stop = max_stop = is_found = 0;
-	min = max = SHRT_MAX;
-	x_tmp = next.X;
-	y_tmp = next.Y;
+	auto tmp = next;
 
 	for (i = 1; (min_stop == 0 || max_stop == 0); i++)
 	{
@@ -295,14 +292,14 @@ bool path_lane_is_cleaned(Cell_t& next)
 		if (min_stop == 0)
 		{
 			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(x_tmp - i, y_tmp) == 1 || is_block_boundary(x_tmp - i, y_tmp) == 1)
+			if (is_block_blocked(tmp.X - i, tmp.Y) == 1 || is_block_boundary(tmp.X - i, tmp.Y) == 1)
 			{
 				min_stop = 1;
 			} else
 			{
-				if (is_brush_block_unclean(x_tmp - i, y_tmp))
+				if (is_brush_block_unclean(tmp.X - i, tmp.Y))
 				{
-					if (is_block_blocked(x_tmp - (i + 1), y_tmp) == 0)
+					if (is_block_blocked(tmp.X - (i + 1), tmp.Y) == 0)
 						min = i;
 					min_stop = 1;
 				}
@@ -313,14 +310,14 @@ bool path_lane_is_cleaned(Cell_t& next)
 		if (max_stop == 0)
 		{
 			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(x_tmp + i, y_tmp) == 1 || is_block_boundary(x_tmp + i, y_tmp) == 1)
+			if (is_block_blocked(tmp.X + i, tmp.Y) == 1 || is_block_boundary(tmp.X + i, tmp.Y) == 1)
 			{
 				max_stop = 1;
 			} else
 			{
-				if (is_brush_block_unclean(x_tmp + i, y_tmp))
+				if (is_brush_block_unclean(tmp.X + i, tmp.Y))
 				{
-					if (is_block_blocked(x_tmp + i + 1, y_tmp) == 0)
+					if (is_block_blocked(tmp.X + i + 1, tmp.Y) == 0)
 						max = i;
 					max_stop = 1;
 				}
@@ -328,7 +325,12 @@ bool path_lane_is_cleaned(Cell_t& next)
 		}
 	}
 
-	ROS_INFO("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, min, max);
+	ROS_WARN("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, min, max);
+	ROS_WARN("%s %d: ch0(%d,%d),ch1(%d,%d),ch2(%d,%d)", __FUNCTION__, __LINE__,
+					 g_cell_history[0].X,g_cell_history[0].Y,
+					 g_cell_history[1].X,g_cell_history[1].Y,
+					 g_cell_history[2].X,g_cell_history[2].Y
+	);
 	/* Both ends are not cleaned. */
 	if (min != SHRT_MAX && max != SHRT_MAX)
 	{
@@ -336,53 +338,35 @@ bool path_lane_is_cleaned(Cell_t& next)
 		 * If the number of cells to clean are the same of both ends, choose either one base the
 		 * previous robot g_cell_history. Otherwise, move to the end that have more unclean cells.
 		 */
-		if (min == max)
+		if (min > max)
+			next.X += max;
+		else if (min < max)
+			next.X -= min;
+		else
 		{
 			if (g_cell_history[2].Y == g_cell_history[1].Y)
 			{
-				if (g_cell_history[2].X == g_cell_history[1].X)
-				{
-					if (g_cell_history[0].X == g_cell_history[1].X)
-					{
-						next.X += max;
-					} else if (g_cell_history[0].X > g_cell_history[1].X)
-					{
-						next.X -= min;
-					} else
-					{
-						next.X += max;
-					}
-				} else if (g_cell_history[2].X > g_cell_history[1].X)
-				{
+				if (g_cell_history[2].X > g_cell_history[1].X)
 					next.X -= min;
-				} else
-				{
+				else if (g_cell_history[2].X < g_cell_history[1].X)
 					next.X += max;
+				else
+				{
+					if (g_cell_history[0].X <= g_cell_history[1].X)
+						next.X += max;
+					else
+						next.X -= min;
 				}
 			} else if (g_cell_history[0].Y == g_cell_history[1].Y)
 			{
-				if (g_cell_history[0].X == g_cell_history[1].X)
-				{
+				if (g_cell_history[0].X >= g_cell_history[1].X)
 					next.X += max;
-				} else if (g_cell_history[0].X > g_cell_history[1].X)
-				{
-					next.X += max;
-				} else
-				{
+				else
 					next.X -= min;
-				}
 			} else
-			{
 				next.X += max;
-			}
-		} else if (min > max)
-		{
-			next.X += max;
-		} else
-		{
-			next.X -= min;
 		}
-
+		ROS_INFO("%s %d: next(%d,%d)", __FUNCTION__, __LINE__, next.X,next.Y);
 		is_found = 2;
 	} else if (min != SHRT_MAX)
 	{
@@ -424,6 +408,7 @@ bool path_lane_is_cleaned(Cell_t& next)
 			next.X += dx1;
 		}
 	}
+
 	return is_found>0;
 }
 
