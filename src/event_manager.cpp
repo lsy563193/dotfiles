@@ -895,7 +895,7 @@ void em_default_handle_slam_error(bool state_now, bool state_last)
 		if (!MotionManage::s_slam->isMapReady())
 		{
 			//MotionManage::s_laser->stopShield();
-			MotionManage::s_laser->lidarShieldDetect(false);
+			MotionManage::s_laser->lidarShieldDetect(OFF);
 			ROS_WARN("Slam not ready yet.");
 			MotionManage::s_slam->enableMapUpdate();
 			usleep(100000);
@@ -903,7 +903,7 @@ void em_default_handle_slam_error(bool state_now, bool state_last)
 		}
 		else
 			//MotionManage::s_laser->startShield();
-			MotionManage::s_laser->lidarShieldDetect(true);
+			MotionManage::s_laser->lidarShieldDetect(ON);
 	}
 	set_led_mode(LED_STEADY, LED_GREEN);
 	// Wait for 0.2s to make sure it has process the first scan.

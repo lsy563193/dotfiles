@@ -18,81 +18,26 @@
 #include <move_type.h>
 
 #include "core_move.h"
-//#include <obstacle_detector.h>
-//#include <figures/point.h>
 
-//using namespace obstacle_detector;
-
-
-int read_line(int fd, char* buf){
-	char temp;
-	int i = 0;
-	do
-	{
-		if (read(fd, &temp, 1) == 0)break;
-		if (temp == '\n') break;
-		buf[i++] = temp;
-		printf("%c", temp);
-	}while(1);
-	printf("\n");
-	return 1;
-}
-
-void laser_pm_gpio(char val)
-{
-
-	if(val != '1' && val != '0'){
-		ROS_ERROR("ERROR, laser_pm_gpio has wrong param, default set 1");
-		val = '1';
-	}
-
-	char w_buf[] = {val};
-	char r_buf[28] = {0};
-
-	int fd = open("/proc/driver/wifi-pm/power", O_RDWR);
-
-/*		ap6212 : wl power state on
- *		ap6212 : wl power state off
- *		check	25th bit diff in " o 'n' " or "o 'f' f"
- */
-	char r_val = (val == '1') ? 'n' : 'f';
-	do
-	{
-		write(fd, w_buf, 1);
-		usleep(200000);
-		read_line(fd, r_buf);
-//		ROS_INFO("laser gpio val %s", r_buf);
-	}while(r_buf[25] != r_val);
-
-	close(fd);
-}
 Laser::Laser():nh_(),is_ready_(0),is_scanDataReady_(false)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
-	//start_motor_cli_ = nh_.serviceClient<std_srvs::Empty>("start_motor");
-	//stop_motor_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_motor");
-	//start_laser_shield_cli_ = nh_.serviceClient<std_srvs::Empty>("start_laser_shield");
-	//stop_laser_shield_cli_ = nh_.serviceClient<std_srvs::Empty>("stop_laser_shield");
 	lidar_motor_cli_ = nh_.serviceClient<std_srvs::SetBool>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 
-	//lidarShieldDetect(true);
-	lidarMotorCtrl(true);
-	//start();
+	lidarMotorCtrl(ON);
 }
 
 Laser::~Laser()
 {
-	//stop();
-	lidarShieldDetect(false);
-	lidarMotorCtrl(false);
+	lidarShieldDetect(OFF);
+	lidarMotorCtrl(OFF);
 	setScanReady(0);
-//	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 //	scan_sub_.shutdown();
 //	start_motor_cli_.shutdown();
 //	stop_motor_cli_.shutdown();
 //	nh_.shutdown();
-	ROS_INFO("Laser stop");
+	ROS_INFO("\033[34m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
 
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -146,176 +91,90 @@ void Laser::setScanReady(uint8_t val)
 	is_ready_ = val;
 }
 
-void Laser::lidarMotorCtrl(bool onoff)
+void Laser::lidarMotorCtrl(bool switch_)
 {
 	std_srvs::SetBool trigger;
 	time_t start_time = time(NULL);
-	setScanReady(0);
-	uint8_t trytime = 0;
-	if(onoff == true){
-		laser_pm_gpio('1');
-		trigger.request.data = true;
-	}
-	else{
-		trigger.request.data = false;
-	}
+	uint8_t try_times = 0;
+	bool eh_status_now = false, eh_status_last = false;
+	bool request_sent = false;
+	bool temp_switch_ = switch_;
 
-	while((isScanReady() <= 0) && ros::ok()){
-		
-		if (onoff && (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered))
-		{
-			setScanReady(0);
-			ROS_ERROR("laser.cpp, %s %d: Laser starting interrupted, status: %d", __FUNCTION__, __LINE__, isScanReady());
-			break;
-		}
-		
-		if(lidar_motor_cli_.call(trigger)){
-			ROS_INFO("\033[34m" "laser.cpp, %s,%d,service receive called!" "\033[0m",__FUNCTION__,__LINE__);
-		}
-		else{
-			ROS_ERROR("laser.cpp,%s,%d,service not recive called !",__FUNCTION__,__LINE__);
-			break;
-		}
-
-		ROS_INFO("\033[34m" "laser.cpp, %s,%d,lidar motor control response %s" "\033[0m" ,__FUNCTION__,__LINE__, trigger.response.message.c_str());
-
-		if(onoff == false){
-			usleep(20000);
-			laser_pm_gpio('0');
-			break;
-		}
-
-		while(( isScanReady() <= 0 )&& ros::ok()){
-			usleep(20000);
-			if(difftime(time(NULL),start_time) > 5){ //time out
-				ROS_WARN("\033[34m" "laser.cpp %s,%d,start lidar motor timeout retry" "\033[0m",__FUNCTION__,__LINE__);
-				trigger.request.data = false;
-				lidar_motor_cli_.call(trigger);
-				laser_pm_gpio('0');
-				usleep(200000);
-				trigger.request.data = true;
-				laser_pm_gpio('1');
-				break;
-			}
-		}
-
-		start_time = time(NULL);
-		if(trytime>=2){
-			ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
-			setScanReady(-1);//open lidar fail ,stop process
-			break;
-		}
-		trytime++;
-
-	}
-
-}
-#if 0
-void Laser::start(void)
-{
-	std_srvs::Empty empty;
-	time_t start_time = time(NULL);
-	time_t stop_time = time(NULL);
-	uint8_t try_times = 1;
-	bool stopped = false;
-	bool eh_status_now=false, eh_status_last=false;
-
-	laser_pm_gpio('1');
-	usleep(20000);
-	ROS_INFO("%s %d: Start laser for the %d time.", __FUNCTION__, __LINE__, try_times);
-	start_motor_cli_.call(empty);
-
-	while (ros::ok() && try_times <= 2)
+	while(ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
+		if (switch_ && (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)) // Interrupt only happens during starting laser.
 		{
-			setScanReady(0);
-			ROS_INFO("%s %d: Laser starting interrupted, status: %d", __FUNCTION__, __LINE__, isScanReady());
-			return;
+			if (!g_fatal_quit_event)
+			{
+				setScanReady(0);
+				ROS_WARN("\033[34m" "%s %d: Laser starting interrupted, status: %d" "\033[0m", __FUNCTION__, __LINE__, isScanReady());
+			}
+			else
+				setScanReady(-1);//open lidar fail ,stop process
+			break;
 		}
 
-		if (stopped)
+		if (!request_sent)
 		{
-			if (time(NULL) - stop_time > 0)
-			{
-				laser_pm_gpio('1');
-				usleep(20000);
-				ROS_INFO("%s %d: Start laser for %d time.", __FUNCTION__, __LINE__, try_times);
-				start_motor_cli_.call(empty);
-				start_time = time(NULL);
-				stopped = false;
+			trigger.request.data = temp_switch_;
+			request_sent = true;
+			start_time = time(NULL);
+			usleep(20000);
+			if (lidar_motor_cli_.call(trigger)){
+				ROS_INFO("\033[34m" "%s %d: Service receive command %s! Response: %s" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF", trigger.response.message.c_str());
+				if (!temp_switch_){
+					setScanReady(0);
+					if (!switch_)
+						// For stop command.
+						break;
+				}
+			}
+			else{
+				ROS_ERROR("\033[34m" "%s %d: Service not received!" "\033[0m",__FUNCTION__,__LINE__);
+				setScanReady(0);
+				break;
 			}
 		}
-		else
-		{
-			if (isScanReady() == 1)
-			{
-				ROS_INFO("%s %d: Laser start successed, status:%d.", __FUNCTION__, __LINE__, isScanReady());
-				return;
-			}
 
-			if (time(NULL) - start_time > 5)
-			{
-				try_times++;
-				ROS_INFO("%s %d: Laser starting failed, power off before retry.", __FUNCTION__, __LINE__);
-				stop();
-				stop_time = time(NULL);
-				stopped = true;
+		if (switch_ && isScanReady())
+		{
+			ROS_INFO("\033[34m" "%s %d: Start laser successed." "\033[0m", __FUNCTION__, __LINE__);
+			break;
+		}
+
+		if (temp_switch_ && time(NULL) - start_time > 4){ // Time out
+			try_times++;
+			if(try_times > 2){
+				//ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
+				g_fatal_quit_event = true;
+				continue;
 			}
+			ROS_WARN("\033[34m" "%s %d: Start lidar motor timeout, retry for the %d times." "\033[0m", __FUNCTION__, __LINE__, try_times);
+			temp_switch_ = false;
+			request_sent = false;
+		}
+		else if (!temp_switch_ && time(NULL) - start_time >= 1){ // Wait for turning off.
+			temp_switch_ = true;
+			request_sent = false;
 		}
 	}
-
-	setScanReady(-1);
-	ROS_ERROR("%s %d: Laser start timeout, status:%d.", __FUNCTION__, __LINE__, isScanReady());
 }
 
-void Laser::stop(void)
-{
-	stopShield();
-	std_srvs::Empty empty;
-	setScanReady(0);
-	is_scanDataReady_ = false;
-	ROS_INFO("%s %d: Stop laser.", __FUNCTION__, __LINE__);
-	stop_motor_cli_.call(empty);
-	laser_pm_gpio('0');
-}
-#endif
-
-void Laser::lidarShieldDetect(bool onoff){
+void Laser::lidarShieldDetect(bool switch_){
 	std_srvs::SetBool trig;
-	if(onoff){
-		trig.request.data = true;
-	}
-	else{
-		trig.request.data = false;
-	}
-	if(lidar_shield_detect_.call(trig)){
-		ROS_INFO("\033[34m" "%s,%d, %s lidar shield detect,call success" "\033[0m",__FUNCTION__,__LINE__,onoff?"open":"close");
-	}
-	else{
-		ROS_ERROR("\033[34m" "%s,%d,lidar shield detect control call fail" "\033[0m",__FUNCTION__,__LINE__);
-	}
-	ROS_INFO("\033[34m" "%s,%d,lidar shield detect control response %s" "\033[0m",__FUNCTION__,__LINE__,trig.response.success?"true":"false");
-}
-#if 0
-void Laser::startShield(void)
-{
-	std_srvs::Empty empty;
-	start_laser_shield_cli_.call(empty);
-	ROS_INFO("%s %d: Start laser shield.", __FUNCTION__, __LINE__);
-}
 
-void Laser::stopShield(void)
-{
-	std_srvs::Empty empty;
-	stop_laser_shield_cli_.call(empty);
-	ROS_INFO("%s %d: Stop laser shield.", __FUNCTION__, __LINE__);
+	if(switch_)
+		trig.request.data = true;
+	else
+		trig.request.data = false;
+
+	lidar_shield_detect_.call(trig);
+	ROS_INFO("\033[34m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
-#endif
 
 bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
 {

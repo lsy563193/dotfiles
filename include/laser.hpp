@@ -6,6 +6,10 @@
 
 #include <sensor_msgs/LaserScan.h>
 #include "mathematics.h"
+
+#define ON true
+#define OFF false
+
 class Laser
 {
 public:

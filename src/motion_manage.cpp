@@ -197,7 +197,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		//s_laser->startShield();
-		s_laser->lidarShieldDetect(true);
+		s_laser->lidarShieldDetect(ON);
 		if (g_go_home_by_remote)
 			set_led_mode(LED_STEADY, LED_ORANGE);
 		else
@@ -211,7 +211,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 			//s_laser->startShield();
-			s_laser->lidarShieldDetect(true);
+			s_laser->lidarShieldDetect(ON);
 			if (g_go_home_by_remote)
 				set_led_mode(LED_STEADY, LED_ORANGE);
 			else
@@ -284,7 +284,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 	//s_laser->startShield();
-	s_laser->lidarShieldDetect(true);
+	s_laser->lidarShieldDetect(ON);
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 
 

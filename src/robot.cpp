@@ -47,7 +47,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	visualizeMarkerInit();
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
-	up_tilt_cli_ = robot_nh_.serviceClient<std_srvs::SetBool>("uptiltcall");
+	up_tilt_cli_ = robot_nh_.serviceClient<std_srvs::SetBool>("up_tilt_call");
 	//send_bumper_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("bumper_markers_",1);
 //  obstacles_pub_ = robot_nh_.advertise<Obstacles>("obstacles", 10);
 //  ROS_INFO("Obstacle Detector [ACTIVE]");
