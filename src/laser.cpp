@@ -18,8 +18,11 @@
 #include <move_type.h>
 
 #include "core_move.h"
+#include "robot.hpp"
 
-Laser::Laser():nh_(),is_ready_(0),is_scanDataReady_(false)
+boost::mutex scan_mutex_;
+
+Laser::Laser():nh_(),is_ready_(0)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	lidar_motor_cli_ = nh_.serviceClient<std_srvs::SetBool>("lidar_motor_ctrl");
@@ -43,15 +46,12 @@ Laser::~Laser()
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	int count = 0;
-	is_scanDataReady_ = false;
+	boost::mutex::scoped_lock(scan_mutex_);
 	laser_scan_data_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
-	is_scanDataReady_ = true;
 	setScanReady(1);
 }
-
-
 
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
@@ -67,6 +67,7 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 	angle_min = deg_to_rad((double) (angle % 360), 1) - atan(range_tmp / (distance + 0.155));
 	angle_max = deg_to_rad((double) (angle % 360), 1) + atan(range_tmp / (distance + 0.155));
 
+	boost::mutex::scoped_lock(scan_mutex_);
 	count = (int)((laser_scan_data_.angle_max - laser_scan_data_.angle_min) / laser_scan_data_.angle_increment);
 	//ROS_INFO("%s %d %f %f %f %f", __FUNCTION__, __LINE__, range_tmp, distance + 0.155, range_tmp / (distance + 0.155), atan(range_tmp / (distance + 0.155)));
 	//ROS_INFO("%s %d: angle min: %f max: %f\tcount: %d\tdtor: %f\ttan: %f", __FUNCTION__, __LINE__, angle_min, angle_max, count, deg_to_rad((double) (angle % 360), 1),  atan(range_tmp / (distance + 0.155)));
@@ -164,7 +165,8 @@ void Laser::lidarMotorCtrl(bool switch_)
 	}
 }
 
-void Laser::lidarShieldDetect(bool switch_){
+void Laser::lidarShieldDetect(bool switch_)
+{
 	std_srvs::SetBool trig;
 
 	if(switch_)
@@ -189,6 +191,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 	Double_Point	New_Laser_Point;
 	Laser_Point.clear();
 	ROS_INFO("getLaserDistance");
+	scan_mutex_.lock();
 	for (i = begin; i < end; i++) {//default:begin = 260, end =270
 		if (laser_scan_data_.ranges[i] < 4) {
 			th = i * 1.0;
@@ -201,6 +204,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 		//ROS_INFO("wall_distance = %lf, i = %d", laser_distance, i);
 		//ROS_INFO("Laser_Point_x = %lf, Laser_Point_y = %lf, th = %lf, distance = %lf", New_Laser_Point.x, New_Laser_Point.y, th, laser_scan_data_.ranges[i]);
 	}
+	scan_mutex_.unlock();
 	lineFit(Laser_Point, a, b, c);
 	splitLine(Laser_Point, 0.01, 10);
 	splitLine2nd(&Laser_Group, 0.01,10);
@@ -829,15 +833,4 @@ double Laser::getLaserDistance(uint16_t angle){
 	else{
 		return this->laser_scan_data_.ranges[angle];
 	}
-}
-
-/*
- * @author mengshige1988@qq.com
- * @brief 
- * @param None
- * @return bool
- * */
-bool Laser::isNewDataReady()
-{
-	return this->is_scanDataReady_;
 }
