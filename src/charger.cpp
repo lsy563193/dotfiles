@@ -324,10 +324,8 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 
 	// Key release detection, if user has not release the key, don't do anything.
 	while (get_key_press() & KEY_CLEAN)
-	{
-		ROS_WARN("%s %d: User hasn't release key.", __FUNCTION__, __LINE__);
 		usleep(20000);
-	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	reset_touch();
 }

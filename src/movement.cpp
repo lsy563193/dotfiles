@@ -2278,22 +2278,6 @@ uint8_t get_key_press(void)
 	return g_key_status;
 }
 
-uint16_t get_key_time(uint16_t key)
-{
-	// This time is count for 20ms.
-	uint16_t time = 0;
-	while (ros::ok())
-	{
-		time++;
-		if (time == 151)
-			beep_for_command(VALID);
-		if (time > 1500)break;
-		usleep(20000);
-		if (get_key_press() != key)break;
-	}
-	return time;
-}
-
 uint8_t is_front_close()
 {
 	if (robot::instance()->getObsFront() > g_front_obs_trig_value + 1500)

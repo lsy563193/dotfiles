@@ -461,7 +461,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	else
 		beep_for_command(INVALID);
 
-	while (get_key_press() == KEY_CLEAN)
+	while (get_key_press() & KEY_CLEAN)
 	{
 		if (time(NULL) - key_press_start_time >= 3)
 		{
@@ -469,15 +469,14 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 			{
 				long_press_to_sleep = true;
 				beep_for_command(VALID);
+				ROS_WARN("%s %d: Robot is going to sleep.", __FUNCTION__, __LINE__);
 			}
-			ROS_WARN("%s %d: User hasn't release the key and robot is going to sleep.", __FUNCTION__, __LINE__);
 		}
 		else
-		{
-			ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
-		}
+			ROS_DEBUG("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
 		usleep(40000);
 	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	if (long_press_to_sleep)
 	{
