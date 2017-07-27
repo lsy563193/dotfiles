@@ -1506,7 +1506,6 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
 	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
-		SpotMovement::instance()->spotDeinit();
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();
@@ -1545,7 +1544,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (mt_is_follow_wall() || g_slam_error)
+	if (get_clean_mode() == Clean_Mode_WallFollow || g_slam_error)
 	{
 		beep_for_command(INVALID);
 		reset_rcon_remote();
