@@ -90,4 +90,5 @@ unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
 void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
 void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 void map_set_realtime();
+void map_mark_robot();
 #endif /* __MAP_H */

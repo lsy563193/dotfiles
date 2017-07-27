@@ -273,6 +273,7 @@ static bool is_isolate() {
 //	path_escape_set_trapped_cell(pnt16ArTmp, 1);
 //	cm_update_map();
 	cm_update_position();
+	map_mark_robot();//to clear the obstacle when check isolated, please don't remove it!
 	debug_map(MAP, 0, 0);
 
 	Cell_t remote{0,0};

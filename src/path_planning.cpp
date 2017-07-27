@@ -1101,12 +1101,16 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 				ROS_INFO("reach 8m, go_home.");
 				wf_clear();
 				g_go_home = true;
+				cm_create_home_boundary();
+				wav_play(WAV_BACK_TO_CHARGER);
 			}
 		} else {
 			if(wf_is_go_home()) {
 				ROS_INFO("follow wall finish");
 				wf_clear();
 				g_go_home = true;
+				cm_create_home_boundary();
+				wav_play(WAV_BACK_TO_CHARGER);
 
 			} else {
 				ROS_INFO("CM_LINEARMOVE");

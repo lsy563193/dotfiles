@@ -637,6 +637,24 @@ void map_set_cleaned()
 	}
 }
 
+void map_mark_robot()
+{
+	int32_t x, y;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+	{
+		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+		{
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			auto status = map_get_cell(MAP, x, y);
+//			if (status > CLEANED && status < BLOCKED_BOUNDARY)
+//				ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+
+//			ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+			map_set_cell(MAP, x, y, CLEANED);
+		}
+	}
+}
+
 Cell_t cm_update_position(bool is_turn)
 {
 	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;

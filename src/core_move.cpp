@@ -493,9 +493,9 @@ int cm_cleaning()
 		else if (is_found == 1)
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if(! cm_move_to(g_next_point))
+			if(! cm_move_to(g_next_point)) {
 				return -1;
-
+			}
 			linear_mark_clean(start, map_point_to_cell(g_next_point));
 
 			if (cm_should_self_check()){
@@ -522,10 +522,10 @@ int cm_cleaning()
 				}
 			}
 		}
-		else if (is_found == 2)
+		else if (is_found == 2) {
 			return -1;
+		}
 	}
-
 	return 0;
 }
 
@@ -535,6 +535,8 @@ void cm_check_should_go_home(void)
 	{
 		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home and g_battery_home.", __FUNCTION__, __LINE__);
 		g_go_home = true;
+		if (get_clean_mode() == Clean_Mode_WallFollow)
+			wf_clear();
 		if (g_motion_init_succeeded)
 		{
 			work_motor_configure();
@@ -1521,8 +1523,6 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 		else{
 			g_remote_home = true;
 			beep_for_command(VALID);
-			if (get_clean_mode() == Clean_Mode_WallFollow)
-				wf_clear();
 			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
 				SpotMovement::instance()->spotDeinit();
 			}
