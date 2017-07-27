@@ -26,7 +26,6 @@ time_t charger_signal_start_time;
 uint16_t charger_signal_delay = 0;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 0;
-uint8_t error_alarm_counter = 3;
 bool battery_ready_to_clean = true;
 bool long_press_to_sleep = false;
 uint8_t user_interface_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
@@ -40,7 +39,7 @@ void user_interface(void)
 	bool eh_status_now=false, eh_status_last=false;
 
 	// Count for error alarm.
-	error_alarm_counter = 3;
+	uint8_t error_alarm_counter = 3;
 	charger_signal_delay = 0;
 	battery_low_delay = 0;
 	start_time = time(NULL);

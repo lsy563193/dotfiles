@@ -166,6 +166,11 @@ void alarm_error(void)
 			wav_play(WAV_ERROR_MOBILITY_WHEEL);
 			break;
 		}
+		case Error_Code_Laser:
+		{
+			wav_play(WAV_TEST_LIDAR);
+			break;
+		}
 		default:
 		{
 			break;
