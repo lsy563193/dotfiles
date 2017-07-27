@@ -511,8 +511,8 @@ int cm_cleaning()
 				extern Cell_t g_current_home_cell;
 				if(map_get_curr_cell() == g_current_home_cell)
 				{
-					if ((g_target_point.X == 0 && g_target_point.Y == 0 && g_start_point_seen_charger) ||
-							(g_target_point.X != 0 || g_target_point.Y != 0))
+					if ((g_current_home_cell.X == 0 && g_current_home_cell.Y == 0 && g_start_point_seen_charger) ||
+							(g_current_home_cell.X != 0 || g_current_home_cell.Y != 0))
 					{
 						if (cm_go_to_charger())
 							return -1;
