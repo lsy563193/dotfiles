@@ -15,7 +15,7 @@
 //#include "a_star.h"
 #include "map.h"
 
-
+extern Cell_t g_cell_history[5];
 extern void mark_follow(Cell_t start);
 int main(int argc, char **argv)
 {
@@ -102,12 +102,17 @@ int main(int argc, char **argv)
 
 	Cell_t start{0,0};
 	Cell_t stop{9,0};
+	Cell_t next{9,0};
 	auto point = map_cell_to_point(stop);
 	map_set_position(point.X,point.Y);
-	mt_set(CM_FOLLOW_LEFT_WALL);
+//	mt_set(CM_FOLLOW_LEFT_WALL);
 	g_old_dir = POS_X;
-	mark_follow(start);
+//	g_cell_history[2] = {10,0};
+//	g_cell_history[1] = {-10,0};
+//	g_cell_history[0] = {-10,2};
+	next = g_cell_history[0];
+	path_lane_is_cleaned(next);
 
-	debug_map(MAP,stop.X,stop.Y);
+//	debug_map(MAP,stop.X,stop.Y);
 	return 0;
 }
