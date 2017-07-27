@@ -476,9 +476,9 @@ int cm_cleaning()
 		path_update_cell_history();
 		path_update_cells();
 		path_reset_path_points();
-		int8_t is_found = path_next(&g_next_point, &g_target_point);
-//		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-		ROS_INFO("%s %d: is_found: %d, next point(%d, %d), target point(%d, %d).", __FUNCTION__, __LINE__, is_found, count_to_cell(g_next_point.X), count_to_cell(g_next_point.Y), count_to_cell(g_target_point.X), count_to_cell(g_target_point.Y));
+		int8_t is_found = path_next(&g_next_point);
+		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//		ROS_INFO("%s %d: is_found: %d, next point(%d, %d), target point(%d, %d).", __FUNCTION__, __LINE__, is_found, count_to_cell(g_next_point.X), count_to_cell(g_next_point.Y), count_to_cell(g_target_point.X), count_to_cell(g_target_point.Y));
 		if (is_found == 0) //No target point
 		{
 			// It means robot can not go to charger stub.

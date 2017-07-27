@@ -82,7 +82,7 @@ void wf_path_planning_initialize(Cell_t cell);
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(Point32_t *next_point, Point32_t *target_point);
+int8_t path_next(Point32_t *next_point);
 
 uint8_t path_home(int32_t *x, int32_t *y);
 

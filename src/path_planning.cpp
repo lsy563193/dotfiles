@@ -1069,8 +1069,9 @@ int16_t path_escape_trapped()
 	return val;
 }
 
-int8_t path_next(Point32_t *next_point, Point32_t *target_point)
+int8_t path_next(Point32_t *next_point)
 {
+	Point32_t target_point;
 	Cell_t next = g_curr;
 	Cell_t target = next;
 	//ros_map_convert(false);
@@ -1113,7 +1114,7 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 	}
 	else if( SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
         int8_t ret = SpotMovement::instance()->spotNextTarget(next_point);
-		*target_point = *next_point;
+		target_point = *next_point;
         return ret;
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
@@ -1159,11 +1160,11 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 
 	//found ==1
 	*next_point = map_cell_to_point(next);
-	*target_point = map_cell_to_point(target);
+	target_point = map_cell_to_point(target);
 
 	g_old_dir = g_new_dir;
 	if(get_clean_mode() == Clean_Mode_Navigation || g_go_home)
-		mt_update(next_point, *target_point, g_old_dir);
+		mt_update(next_point, target_point, g_old_dir);
 
 	if (g_curr.X == next.X)
 		g_new_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;

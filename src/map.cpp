@@ -601,7 +601,7 @@ static void map_set_rcon()
 //		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 	}
-	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 //	stop_brifly();
 //	sleep(5);
 }
@@ -616,7 +616,7 @@ void map_set_blocked()
 	map_set_bumper();
 	map_set_rcon();
 	map_set_cliff();
-	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 }
 
 void map_set_cleaned()
