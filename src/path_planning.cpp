@@ -1321,7 +1321,8 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		}
 		else
 		{
-			if (get_clean_mode() == Clean_Mode_Navigation && !g_home_point_old_path.empty())
+			Cell_t cell_zero{0, 0};
+			if (get_clean_mode() == Clean_Mode_Navigation && (target == cell_zero || !g_home_point_old_path.empty()))
 			{
 				// If can not reach this point, save this point to new path home point list.
 				g_home_point_new_path.push_back(target);
