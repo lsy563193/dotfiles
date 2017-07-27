@@ -540,11 +540,9 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	beep_for_command(VALID);
 	disable_motors();
-	while (get_key_press() == KEY_CLEAN)
-	{
-		ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
+	while (get_key_press() & KEY_CLEAN)
 		usleep(40000);
-	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 	set_clean_mode(Clean_Mode_Userinterface);
 	g_key_clean_pressed = true;
 	reset_touch();

@@ -83,9 +83,14 @@ bool wait_for_gyro_on(void)
 	// Count for 20ms that should skip checking to avoid robot still moving before re-open gyro again..
 	uint8_t skip_count = 0;
 	bool open_gyro_success = false;
+	bool	eh_status_now=false, eh_status_last=false;
+
 	ROS_INFO("waiting for gyro start");
 	while (error_count < 10)
 	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+			continue;
+
 		usleep(20000);
 
 		// This count is for how many count of looping should it skip after robot lifted up and put down during gyro opening.

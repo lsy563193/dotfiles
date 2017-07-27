@@ -1132,9 +1132,10 @@ int8_t path_next(Point32_t *next_point, Point32_t *target_point)
 		}
 	}
 	else if( SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
-        int8_t ret = SpotMovement::instance()->spotNextTarget(next_point);
-		*target_point = *next_point;
-        return ret;
+		if (!SpotMovement::instance()->spotNextTarget(next_point))
+			return 0;
+		next = map_point_to_cell(*next_point);
+		target = next;
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
 		extern bool g_resume_cleaning;

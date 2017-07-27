@@ -625,8 +625,6 @@ uint8_t get_key_press(void);
 
 uint16_t get_battery_voltage();
 
-uint16_t get_key_time(uint16_t key);
-	
 uint8_t is_flag_set(void);
 
 void set_send_flag(void);

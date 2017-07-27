@@ -26,7 +26,6 @@ time_t charger_signal_start_time;
 uint16_t charger_signal_delay = 0;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 0;
-uint8_t error_alarm_counter = 3;
 bool battery_ready_to_clean = true;
 bool long_press_to_sleep = false;
 uint8_t user_interface_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
@@ -40,7 +39,7 @@ void user_interface(void)
 	bool eh_status_now=false, eh_status_last=false;
 
 	// Count for error alarm.
-	error_alarm_counter = 3;
+	uint8_t error_alarm_counter = 3;
 	charger_signal_delay = 0;
 	battery_low_delay = 0;
 	start_time = time(NULL);
@@ -462,7 +461,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	else
 		beep_for_command(INVALID);
 
-	while (get_key_press() == KEY_CLEAN)
+	while (get_key_press() & KEY_CLEAN)
 	{
 		if (time(NULL) - key_press_start_time >= 3)
 		{
@@ -470,15 +469,14 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 			{
 				long_press_to_sleep = true;
 				beep_for_command(VALID);
+				ROS_WARN("%s %d: Robot is going to sleep.", __FUNCTION__, __LINE__);
 			}
-			ROS_WARN("%s %d: User hasn't release the key and robot is going to sleep.", __FUNCTION__, __LINE__);
 		}
 		else
-		{
-			ROS_WARN("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
-		}
+			ROS_DEBUG("%s %d: User hasn't release the key.", __FUNCTION__, __LINE__);
 		usleep(40000);
 	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	if (long_press_to_sleep)
 	{

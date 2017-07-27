@@ -1481,15 +1481,16 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 			{
 				beep_for_command(VALID);
 				reset_manual_pause = true;
+				robot::instance()->resetManualPause();
+				ROS_WARN("%s %d: Manual pause has been reset.", __FUNCTION__, __LINE__);
 			}
-			robot::instance()->resetManualPause();
-			ROS_WARN("%s %d: Key clean is not released and manual pause has been reset.", __FUNCTION__, __LINE__);
 		}
 		else
-			ROS_WARN("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
+			ROS_DEBUG("%s %d: Key clean is not released.", __FUNCTION__, __LINE__);
 		usleep(20000);
 	}
 
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 	reset_touch();
 }
 
@@ -1509,7 +1510,6 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
 	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
-		SpotMovement::instance()->spotDeinit();
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();
@@ -1548,7 +1548,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (mt_is_follow_wall() || g_slam_error)
+	if (get_clean_mode() == Clean_Mode_WallFollow || g_slam_error)
 	{
 		beep_for_command(INVALID);
 		reset_rcon_remote();
