@@ -511,14 +511,16 @@ int cm_cleaning()
 				extern Cell_t g_current_home_cell;
 				if(map_get_curr_cell() == g_current_home_cell)
 				{
-					 if ((g_target_point.X == 0 && g_target_point.Y == 0 && g_start_point_seen_charger)||
-						(g_target_point.X != 0 || g_target_point.Y != 0))
-						if(cm_go_to_charger())
+					if ((g_target_point.X == 0 && g_target_point.Y == 0 && g_start_point_seen_charger) ||
+							(g_target_point.X != 0 || g_target_point.Y != 0))
+					{
+						if (cm_go_to_charger())
 							return -1;
 						else if (!g_go_home_by_remote)
 							set_led_mode(LED_STEADY, LED_GREEN);
-						extern bool g_switch_home_cell;
-						g_switch_home_cell = true;
+					}
+					extern bool g_switch_home_cell;
+					g_switch_home_cell = true;
 				}
 			}
 		}
