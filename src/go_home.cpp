@@ -864,9 +864,18 @@ void go_to_charger(void)
 					break;
 				else
 				{
+					target_distance = 0.1;
+					ROS_WARN("%s %d: Turn connect failed, move back for %fm.", __FUNCTION__, __LINE__, target_distance);
 					g_move_back_finished = false;
-					target_distance = 0.3;
-					stop_brifly();
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+
+					go_home_target_angle = ranged_angle(gyro_get_angle() + 1800);
+					turn_finished = false;
+
+					g_go_home_state_now = AWAY_FROM_CHARGER_STATION;
+					continue;
+
 				}
 			}
 
@@ -966,7 +975,6 @@ void go_to_charger(void)
 			nosignal_counter=0;
 			temp_check_position=0;
 			near_counter=0;
-			go_home_bumper_counter=0;
 			side_counter=0;
 
 			reset_stop_event_status();
@@ -997,18 +1005,21 @@ void go_to_charger(void)
 					break;
 				else
 				{
-					target_distance = 0.3;
+					target_distance = 0.1;
 					ROS_WARN("%s %d: Turn connect failed, move back for %fm.", __FUNCTION__, __LINE__, target_distance);
 					g_move_back_finished = false;
-					g_go_home_state_now = GO_HOME_INIT;
 					saved_pos_x = robot::instance()->getOdomPositionX();
 					saved_pos_y = robot::instance()->getOdomPositionY();
+
+					go_home_target_angle = ranged_angle(gyro_get_angle() + 1800);
+					turn_finished = false;
+
+					g_go_home_state_now = AWAY_FROM_CHARGER_STATION;
 					continue;
 				}
 			}
 			if(g_bumper_left || g_bumper_right)
 			{
-				go_home_bumper_counter++;
 				ROS_INFO("bumper in by path!");
 				g_move_back_finished = false;
 				if(!position_far)
@@ -1017,9 +1028,16 @@ void go_to_charger(void)
 					if(turn_connect())
 						break;
 					ROS_WARN("%d: quick_back in !position_far", __LINE__);
-					target_distance = 0.3;
-					if(go_home_bumper_counter > 1)
-						g_go_home_state_now = GO_HOME_INIT;
+
+					target_distance = 0.1;
+					ROS_WARN("%s %d: Turn connect failed, move back for %fm.", __FUNCTION__, __LINE__, target_distance);
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+
+					go_home_target_angle = ranged_angle(gyro_get_angle() + 1800);
+					turn_finished = false;
+
+					g_go_home_state_now = AWAY_FROM_CHARGER_STATION;
 					continue;
 				}
 				else
