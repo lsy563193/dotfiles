@@ -131,7 +131,6 @@ bool MotionManage::get_align_angle(float &line_angle)
 	ROS_DEBUG("%s %d: Get the line", __FUNCTION__, __LINE__);
 //	auto line_angle = static_cast<int16_t>(segmentss.min_distant_segment_angle() *10);
 	line_angle = segmentss.min_distant_segment_angle();
-/*
 	// If get line_angle from the scan data, turn 180 degrees.
 	// Else, the line_angle should be 0(Actually there is very little chance that the line_angle from scan data is exactly 0).
 	if (line_angle > 0)
@@ -141,7 +140,6 @@ bool MotionManage::get_align_angle(float &line_angle)
 	{
 		line_angle += 180;
 	}
-*/
 //	return line_angle;
 	return true;
 }
