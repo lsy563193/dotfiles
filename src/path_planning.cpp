@@ -950,6 +950,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 
 	found = (final_cost != 1000) ? final_cost : 0 ;
 	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, target.X, target.Y);
+	debug_map(MAP, target.X, target.Y);
 
 	if(found == 0)
 		return 0;
@@ -1244,6 +1245,7 @@ void path_set_home(Cell_t cell)
 int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 {
 	int8_t return_val;
+	static bool going_old_paths = true;
 	while (ros::ok())
 	{
 		if (g_switch_home_cell)
@@ -1255,20 +1257,17 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				target = g_home_point_old_path.front();
 				g_home_point_old_path.pop_front();
 				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u old path targets left, %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
-				if (get_clean_mode() == Clean_Mode_WallFollow)
-					// Always explore the new path.
-					set_explore_new_path_flag(false);
-				else
-					// Try all the old path home point first.
-					set_explore_new_path_flag(false);
+				// Try all the old path home point first.
+				set_explore_new_path_flag(false);
 				g_switch_home_cell = false;
+				going_old_paths = true;
 
 				if (is_block_accessible(target.X, target.Y) == 0) {
 					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
 					map_set_cells(ROBOT_SIZE, target.X, target.Y, CLEANED);
 				}
 			}
-			else if (get_clean_mode() == Clean_Mode_Navigation && !g_home_point_new_path.empty())
+			else if (!g_home_point_new_path.empty())
 			{
 				// Try all the new path home point.
 				set_explore_new_path_flag(true);
@@ -1277,6 +1276,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 				g_home_point_new_path.pop_front();
 				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, target.X, target.Y, (uint)g_home_point_new_path.size());
 				g_switch_home_cell = false;
+				going_old_paths = false;
 
 				if (is_block_accessible(target.X, target.Y) == 0) {
 					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
@@ -1309,7 +1309,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		else
 		{
 			Cell_t cell_zero{0, 0};
-			if (get_clean_mode() == Clean_Mode_Navigation && (target == cell_zero || !g_home_point_old_path.empty()))
+			if (!g_home_point_old_path.empty() || (going_old_paths && target == cell_zero))
 			{
 				// If can not reach this point, save this point to new path home point list.
 				g_home_point_new_path.push_back(target);
