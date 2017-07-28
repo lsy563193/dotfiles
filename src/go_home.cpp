@@ -202,7 +202,18 @@ void go_to_charger(void)
 		if(!turn_finished)
 		{
 			if (!go_home_check_turn_finish(go_home_target_angle))
+			{
+				if(g_cliff_triggered)
+				{
+					ROS_INFO("%s, %d: cliff while turning!", __FUNCTION__, __LINE__);
+					target_distance = 0.1;
+					g_cliff_cnt++;
+					g_move_back_finished = false;
+					saved_pos_x = robot::instance()->getOdomPositionX();
+					saved_pos_y = robot::instance()->getOdomPositionY();
+				}
 				continue;
+			}
 
 			ROS_WARN("%s %d: Turn finish.", __FUNCTION__, __LINE__);
 			turn_finished = true;
@@ -2414,6 +2425,12 @@ bool go_home_check_turn_finish(int16_t target_angle)
 		set_dir_left();
 	else
 		set_dir_right();
+
+	if(g_cliff_triggered)
+	{
+		ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+		return false;
+	}
 
 	if(std::abs(diff) < 10)
 	{

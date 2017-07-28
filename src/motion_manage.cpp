@@ -293,8 +293,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-
-	reset_stop_event_status();
+	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
+	//if (get_clean_mode() == Clean_Mode_Spot)
+	{
+		SpotMovement::instance()->spotDeinit();// clear the variables.
+		//sleep(1);
+	}
+	// Disable motor here because there is a work_motor_configure() in spotDeinit().
 	disable_motors();
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
@@ -303,13 +308,6 @@ MotionManage::~MotionManage()
 	{
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
-	}
-
-	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
-	//if (get_clean_mode() == Clean_Mode_Spot)
-	{
-		SpotMovement::instance()->spotDeinit();// clear the variables.
-		//sleep(1);
 	}
 
 	if (!g_fatal_quit_event && g_key_clean_pressed && robot::instance()->isManualPaused())

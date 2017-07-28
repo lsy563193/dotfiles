@@ -106,6 +106,7 @@ bool g_go_home_by_remote = false;
 //Flag for judge if keep on wall follow
 bool g_keep_on_wf = false;
 
+time_t last_time_remote_spot = time(NULL);
 int16_t ranged_angle(int16_t angle)
 {
 	while (angle > 1800 || angle <= -1800)
@@ -1558,17 +1559,16 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 
 void cm_handle_remote_spot(bool state_now, bool state_last)
 {
-	static time_t last_valid_time = time(NULL);
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || get_clean_mode() != Clean_Mode_Navigation
 		|| g_go_home || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
-		|| time(NULL) - last_valid_time < 3)
+		|| time(NULL) - last_time_remote_spot < 3)
 		beep_for_command(INVALID);
 	else
 	{
 		g_remote_spot = true;
-		last_valid_time = time(NULL);
+		last_time_remote_spot = time(NULL);
 		beep_for_command(VALID);
 	}
 
