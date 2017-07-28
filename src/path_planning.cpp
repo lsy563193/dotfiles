@@ -1169,7 +1169,8 @@ int8_t path_next(Point32_t *next_point)
 	target_point = map_cell_to_point(target);
 
 	g_old_dir = g_new_dir;
-	if(get_clean_mode() == Clean_Mode_Navigation && !g_go_home && SpotMovement::instance()->getSpotType() == NO_SPOT)
+	mt_set(CM_LINEARMOVE);
+	if(get_clean_mode() == Clean_Mode_Navigation && ! g_go_home && SpotMovement::instance()->getSpotType() == NO_SPOT)
 		mt_update(next_point, target_point, g_old_dir);
 
 	if (g_curr.X == next.X)
