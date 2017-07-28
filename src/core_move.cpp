@@ -1535,7 +1535,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && !g_slam_error) {
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && !g_slam_error && !robot::instance()->isManualPaused()) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(INVALID);
@@ -1562,7 +1562,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || get_clean_mode() != Clean_Mode_Navigation
-		|| g_go_home || cm_should_self_check() || g_slam_error
+		|| g_go_home || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
 		|| time(NULL) - last_valid_time < 3)
 		beep_for_command(INVALID);
 	else
@@ -1586,7 +1586,7 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error)
+	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error && !robot::instance()->isManualPaused())
 	{
 		beep_for_command(VALID);
 		switch_vac_mode(true);
