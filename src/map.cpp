@@ -660,6 +660,7 @@ Cell_t cm_update_position(bool is_turn)
 	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	map_set_position(pos_x, pos_y);
+	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	return map_get_curr_cell();
 }
 
