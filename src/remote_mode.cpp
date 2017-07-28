@@ -146,7 +146,9 @@ void remote_move(void)
 				set_dir_backward();
 				set_wheel_speed(20, 20);
 
-				if (sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2)) < 0.02f)
+				float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+				ROS_DEBUG("%s %d: current pos(%f, %f), distance:%f.", __FUNCTION__, __LINE__, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY(), distance);
+				if (distance < 0.02f)
 					break;
 
 				if (g_bumper_triggered)
@@ -174,7 +176,7 @@ void remote_move(void)
 						continue;
 					}
 				}
-				else
+				else if (g_cliff_triggered)
 				{
 					if (!get_cliff_status())
 					{
@@ -199,15 +201,33 @@ void remote_move(void)
 						continue;
 					}
 				}
+				else if (g_rcon_triggered)
+					g_rcon_triggered = 0;
+
 				ROS_DEBUG("%s %d: Move back finished.", __FUNCTION__, __LINE__);
 				set_move_flag_(REMOTE_MODE_STAY);
 				break;
 			}
 			case REMOTE_MODE_STAY:
 			{
-				set_wheel_speed(0, 0);
-				moving_speed = 0;
-				remote_rcon_cnt = 0;
+				if (g_bumper_triggered || g_cliff_triggered || g_rcon_triggered)
+				{
+					if (robot::instance()->getLinearX() <= 0 && robot::instance()->getLinearY() <= 0)
+					{
+						saved_pos_x = robot::instance()->getOdomPositionX();
+						saved_pos_y = robot::instance()->getOdomPositionY();
+						ROS_WARN("%s %d: Move back. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
+						set_move_flag_(REMOTE_MODE_BACKWARD);
+					}
+					set_dir_backward();
+					set_wheel_speed(20, 20);
+				}
+				else
+				{
+					set_wheel_speed(0, 0);
+					moving_speed = 0;
+					remote_rcon_cnt = 0;
+				}
 				break;
 			}
 			case REMOTE_MODE_LEFT:
@@ -370,15 +390,12 @@ void remote_mode_unregister_events(void)
 
 void remote_mode_handle_bumper(bool state_now, bool state_last)
 {
-	g_bumper_triggered = true;
-
-	if (!state_last && g_move_back_finished)
+	if (!g_bumper_triggered)
 	{
-		saved_pos_x = robot::instance()->getOdomPositionX();
-		saved_pos_y = robot::instance()->getOdomPositionY();
-		ROS_WARN("%s %d: Bumper triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
+		ROS_WARN("%s %d: Bumper triggered.", __FUNCTION__, __LINE__);
+		g_bumper_triggered = true;
+		set_move_flag_(REMOTE_MODE_STAY);
 	}
-	set_move_flag_(REMOTE_MODE_BACKWARD);
 }
 
 void remote_mode_handle_cliff_all(bool state_now, bool state_last)
@@ -396,16 +413,12 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 
 void remote_mode_handle_cliff(bool state_now, bool state_last)
 {
-	g_cliff_triggered = Status_Cliff_All;
-
-	if (!state_last && g_move_back_finished)
+	if (!g_cliff_triggered)
 	{
-		saved_pos_x = robot::instance()->getOdomPositionX();
-		saved_pos_y = robot::instance()->getOdomPositionY();
-		ROS_WARN("%s %d: Cliff triggered. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
+		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
+		g_cliff_triggered = Status_Cliff_All;
+		set_move_flag_(REMOTE_MODE_STAY);
 	}
-	set_move_flag_(REMOTE_MODE_BACKWARD);
-
 }
 
 void remote_mode_handle_obs(bool state_now, bool state_last)
@@ -522,14 +535,13 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 
 void remote_mode_handle_rcon(bool state_now, bool state_last)
 {
-	if (get_move_flag_() == REMOTE_MODE_FORWARD && (get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+	if (get_move_flag_() == REMOTE_MODE_FORWARD && !g_rcon_triggered
+		&& get_rcon_status() & (RconFL_HomeL | RconFL_HomeR | RconFR_HomeL | RconFR_HomeR | RconFL2_HomeL | RconFL2_HomeR | RconFR2_HomeL | RconFR2_HomeR | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)
+		&& remote_rcon_cnt++ >= 2)
 	{
-		ROS_DEBUG("%s %d: Rcon HomeT signal received.", __FUNCTION__, __LINE__);
-		if (remote_rcon_cnt++ >= 2)
-		{
-			ROS_WARN("%s %d: Stop for rcon signal.", __FUNCTION__, __LINE__);
-			set_move_flag_(REMOTE_MODE_STAY);
-		}
+		ROS_WARN("%s %d: Move back for Rcon.", __FUNCTION__, __LINE__);
+		g_rcon_triggered = get_rcon_status();
+		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	reset_rcon_status();
 }

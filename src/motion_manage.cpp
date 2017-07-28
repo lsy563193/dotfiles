@@ -367,6 +367,7 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 	}
 
+	// Unregister here because robot may be lifted up during the wav playing for cleaning pause.
 	cm_unregister_events();
 	if (g_fatal_quit_event) // Also handles for g_battery_low/g_charge_detect/g_cliff_all_triggered.
 	{

@@ -265,10 +265,10 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 		return;
 	}
 
-	ROS_DEBUG("%s %d: user_interface detects charger signal for %ds.", __FUNCTION__, __LINE__, (int)(time(NULL) - charger_signal_start_time));
 	if (charger_signal_delay == 0)
 		charger_signal_start_time = time(NULL);
 
+	ROS_DEBUG("%s %d: user_interface detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
 	if (time(NULL) - charger_signal_start_time >= 180)// 3 mins
 	{
 		if (get_error_code())
