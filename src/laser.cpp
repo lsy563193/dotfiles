@@ -124,7 +124,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			trigger.request.data = temp_switch_;
 			request_sent = true;
 			start_time = time(NULL);
-			usleep(20000);
+			ROS_INFO("\033[34m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF");
 			if (lidar_motor_cli_.call(trigger)){
 				ROS_INFO("\033[34m" "%s %d: Service receive command %s! Response: %s" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF", trigger.response.message.c_str());
 				if (!temp_switch_){
