@@ -52,7 +52,6 @@ private:
 	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 
 	int8_t is_ready_;
-	bool is_scanDataReady_;
 
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;

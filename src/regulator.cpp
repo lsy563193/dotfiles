@@ -602,6 +602,7 @@ bool FollowWallRegulator::isSwitch()
 	if( g_rcon_triggered || rcon_tmp){
 		if(! g_rcon_triggered)
 			g_rcon_triggered = rcon_tmp;
+		path_set_home(map_get_curr_cell());
 		g_turn_angle = rcon_turn_angle();
 		g_straight_distance = 80;
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);

@@ -166,6 +166,11 @@ void alarm_error(void)
 			wav_play(WAV_ERROR_MOBILITY_WHEEL);
 			break;
 		}
+		case Error_Code_Laser:
+		{
+			wav_play(WAV_TEST_LIDAR);
+			break;
+		}
 		default:
 		{
 			break;
@@ -2271,22 +2276,6 @@ void reset_key_press(uint8_t key)
 uint8_t get_key_press(void)
 {
 	return g_key_status;
-}
-
-uint16_t get_key_time(uint16_t key)
-{
-	// This time is count for 20ms.
-	uint16_t time = 0;
-	while (ros::ok())
-	{
-		time++;
-		if (time == 151)
-			beep_for_command(VALID);
-		if (time > 1500)break;
-		usleep(20000);
-		if (get_key_press() != key)break;
-	}
-	return time;
 }
 
 uint8_t is_front_close()

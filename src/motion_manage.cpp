@@ -182,7 +182,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
 		set_error_code(Error_Code_Laser);
-		wav_play(WAV_TEST_LIDAR);
 		initSucceeded(false);
 		return;
 	}

@@ -1076,6 +1076,7 @@ int8_t path_next(Point32_t *next_point)
 	Cell_t target = next;
 	//ros_map_convert(false);
 	extern bool g_go_home;
+	extern bool g_keep_on_wf;
 	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
 		if(mt_is_linear()){
@@ -1098,6 +1099,10 @@ int8_t path_next(Point32_t *next_point)
 				cm_create_home_boundary();
 				wav_play(WAV_BACK_TO_CHARGER);
 
+			} else if (g_keep_on_wf) {
+				ROS_INFO("keep on follow wall");
+				mt_set(CM_FOLLOW_LEFT_WALL);
+				g_keep_on_wf = false;
 			} else {
 				ROS_INFO("CM_LINEARMOVE");
 				mt_set(CM_LINEARMOVE);
@@ -1113,9 +1118,10 @@ int8_t path_next(Point32_t *next_point)
 		}
 	}
 	else if( SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
-        int8_t ret = SpotMovement::instance()->spotNextTarget(next_point);
-		target_point = *next_point;
-        return ret;
+		if (!SpotMovement::instance()->spotNextTarget(next_point))
+			return 0;
+		next = map_point_to_cell(*next_point);
+		target = next;
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
 		extern bool g_resume_cleaning;
@@ -1301,7 +1307,8 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 		}
 		else
 		{
-			if (get_clean_mode() == Clean_Mode_Navigation && !g_home_point_old_path.empty())
+			Cell_t cell_zero{0, 0};
+			if (get_clean_mode() == Clean_Mode_Navigation && (target == cell_zero || !g_home_point_old_path.empty()))
 			{
 				// If can not reach this point, save this point to new path home point list.
 				g_home_point_new_path.push_back(target);

@@ -85,6 +85,7 @@ uint8_t cm_touring(void);
 int cm_cleaning(void);
 
 void cm_check_should_go_home(void);
+void cm_check_temp_spot(void);
 
 Cell_t cm_update_position(bool is_turn = false);
 void map_set_cleaned();
