@@ -123,7 +123,6 @@ protected:
 	bool isReach();
 
 private:
-	int32_t speed_max_;
 	int32_t integrated_;
 	int32_t base_speed_;
 	uint8_t integration_cycle_;

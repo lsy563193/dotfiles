@@ -43,6 +43,7 @@ typedef enum {
 
 #define IS_POS_AXIS(x) (x == POS_X || x == POS_Y || x == NONE)
 #define	IS_X_AXIS(x) (x == NEG_X || x == POS_X || x == NONE)
+#define	IS_Y_AXIS(x) (x == POS_Y || x == NEG_Y)
 
 void map_init(void);
 

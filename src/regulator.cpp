@@ -19,6 +19,7 @@
 #include <path_planning.h>
 
 extern uint16_t g_old_dir;
+extern uint16_t g_new_dir;
 extern Cell_t g_cell_history[];
 int jam=0;
 bool g_call_up_tilt = false;
@@ -359,7 +360,7 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 
 
 LinearRegulator::LinearRegulator(Point32_t target):
-				speed_max_(40),integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
+				integrated_(0),base_speed_(BASE_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
 {
 //	g_is_should_follow_wall = false;
 	s_target = target;
@@ -466,6 +467,13 @@ bool LinearRegulator::_isStop()
 		return true;
 	}
 
+if ((IS_X_AXIS(g_new_dir) && std::abs(s_target.Y - map_get_y_count()) > CELL_COUNT_MUL_1_2/5*4)
+	||  (IS_Y_AXIS(g_new_dir) && std::abs(s_target.X - map_get_x_count()) > CELL_COUNT_MUL_1_2/5*4))
+	{
+//		ROS_INFO("%s %d: LinearRegulator, warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
+		ROS_ERROR("%s %d: d_angle %d, d_Y(%d)", __FUNCTION__, __LINE__, diff, s_target.Y - map_get_y_count());
+		return true;
+	}
 	return false;
 }
 
@@ -477,7 +485,6 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto diff = ranged_angle(
 					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
 
-//	ROS_INFO("%s %d: angle %d(%d,%d) ", __FUNCTION__, __LINE__, diff,course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y),gyro_get_angle());
 	if (integration_cycle_++ > 10)
 	{
 		integration_cycle_ = 0;
@@ -486,16 +493,15 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	}
 
 	auto distance = two_points_distance(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y);
-	auto obstcal_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
+	auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
-	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || obstcal_detected)
+	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected)
 	{
 		integrated_ = 0;
 		diff = 0;
-		base_speed_ -= 1;
-		base_speed_ = base_speed_ < BASE_SPEED ? BASE_SPEED : base_speed_;
+		base_speed_ = std::max(base_speed_ - 1 , BASE_SPEED);
 	} else
-	if (base_speed_ < (int32_t) speed_max_)
+	if (base_speed_ < (int32_t) MAX_SPEED)
 	{
 		if (tick_++ > 5)
 		{
@@ -505,11 +511,19 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		integrated_ = 0;
 	}
 
+//	if ((IS_X_AXIS(g_new_dir) && std::abs(s_target.Y - map_get_y_count()) > CELL_COUNT_MUL_1_2/2)
+//	||  (IS_Y_AXIS(g_new_dir) && std::abs(s_target.X - map_get_x_count()) > CELL_COUNT_MUL_1_2/2))
+//	{
+//		if(IS_X_AXIS(g_new_dir))
+//			ROS_INFO("%s %d: LinearRegulator, warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
+//		ROS_ERROR("%s %d: d_angle %d, d_Y(%d)", __FUNCTION__, __LINE__, diff, s_target.Y - map_get_y_count());
+//	}
+
 	left_speed = base_speed_ - diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
 	right_speed = base_speed_ + diff / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
-	check_limit(left_speed, BASE_SPEED, speed_max_);
-	check_limit(right_speed, BASE_SPEED, speed_max_);
+	check_limit(left_speed, BASE_SPEED, MAX_SPEED);
+	check_limit(right_speed, BASE_SPEED, MAX_SPEED);
 	base_speed_ = (left_speed + right_speed) / 2;
 //	ROS_ERROR("left_speed(%d),right_speed(%d), base_speed_(%d), slow_down(%d),diff(%d)",left_speed, right_speed, base_speed_, is_map_front_block(3),diff);
 }
