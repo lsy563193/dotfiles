@@ -1118,7 +1118,7 @@ int8_t path_next(Point32_t *next_point)
 
 		}
 	}
-	else if( SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
+	else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
 		if (!SpotMovement::instance()->spotNextTarget(next_point))
 			return 0;
 		next = map_point_to_cell(*next_point);
@@ -1170,9 +1170,11 @@ int8_t path_next(Point32_t *next_point)
 	target_point = map_cell_to_point(target);
 
 	g_old_dir = g_new_dir;
-	mt_set(CM_LINEARMOVE);
-	if(get_clean_mode() == Clean_Mode_Navigation && ! g_go_home && SpotMovement::instance()->getSpotType() == NO_SPOT)
+	if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
+		mt_set(CM_LINEARMOVE);
+	else if(get_clean_mode() == Clean_Mode_Navigation)
 		mt_update(next_point, target_point, g_old_dir);
+	// else if wall follow mode, the move type has been set before here.
 
 	if (g_curr.X == next.X)
 		g_new_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
