@@ -113,6 +113,10 @@ void user_interface(void)
 				clear_manual_pause();
 		}
 
+		if(g_plan_activated)
+		{
+			temp_mode = Clean_Mode_Navigation;
+		}
 		// Check for wav playing.
 		if (long_press_to_sleep)
 		{
@@ -457,7 +461,6 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 					clear_manual_pause();
 				}
 				g_plan_activated = true;
-				temp_mode=Clean_Mode_Navigation;
 				break;
 			}
 		}
