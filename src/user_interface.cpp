@@ -103,7 +103,10 @@ void user_interface(void)
 		if (long_press_to_sleep)
 		{
 			long_press_to_sleep = false;
-			temp_mode = Clean_Mode_Sleep;
+			if (robot::instance()->isManualPaused())
+				clear_manual_pause();
+			else
+				temp_mode = Clean_Mode_Sleep;
 		}
 		else if (user_interface_reject_reason)
 		{
