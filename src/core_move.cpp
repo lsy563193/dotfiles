@@ -79,6 +79,7 @@ Point32_t g_next_point, g_target_point;
 bool	g_go_home = false;
 bool	g_from_station = 0;
 int16_t g_map_gyro_offset = 0;
+// This flag is indicating robot is resuming from low battery go home.
 bool g_resume_cleaning = false;
 
 // This flag is for checking whether map boundary is created.
