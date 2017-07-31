@@ -87,6 +87,7 @@ static bool is_reach(void)
 	/*check if spot turn*/
 	if  (get_sp_turn_count() > 400) {
 		reset_sp_turn_count();
+		ROS_WARN("%s,%d:sp_turn over 400",__FUNCTION__,__LINE__);
 		return true;
 	}
 	if ( g_reach_count < REACH_COUNT_LIMIT)
