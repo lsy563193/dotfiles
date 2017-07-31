@@ -424,7 +424,9 @@ public:
 		ROS_INFO("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
-	bool isUpTilt();
+	bool isTilt();
+
+	void tiltDetect();
 
 	void accInit4Tilt()
 	{
@@ -433,7 +435,22 @@ public:
 		init_z_acc_ = z_acc_;
 	}
 
-	void upTiltCall(bool v);
+	void tiltCall(bool v);
+
+	float getInitXAcc()
+	{
+		return init_x_acc_;	
+	}
+
+	float getInitYAcc()
+	{
+		return init_y_acc_;	
+	}
+
+	float getInitZAcc()
+	{
+		return init_z_acc_;	
+	}
 
 	uint32_t mapGetWidth()
 	{

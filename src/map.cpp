@@ -527,6 +527,36 @@ static void map_set_bumper()
 	}
 }
 
+void map_set_tilt()
+{
+	std::vector<Cell_t> d_cells;
+
+	if(robot::instance()->isTilt()){
+		if(robot::instance()->getYAcc() > 0)//left tilt
+		{
+			d_cells = {{2, 1}, {2,2},{1,2}};
+			if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+				d_cells.push_back({2,0});
+
+		}
+		else if(robot::instance()->getYAcc() < 0){ //right tilt
+			d_cells = {{2,-2},{2,-1},{1,-2}};
+			if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
+				d_cells.push_back({2,0});
+
+		}
+		else if(robot::instance()->getXAcc() > 0){
+			d_cells = {{2,-1}, {2,0}, {2,1}};
+		}
+	}
+	int32_t	x, y;
+	for(auto& d_cell : d_cells){
+		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
+		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
+	}
+}
+
 static void map_set_cliff()
 {
 	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
@@ -616,6 +646,7 @@ void map_set_blocked()
 	map_set_bumper();
 	map_set_rcon();
 	map_set_cliff();
+	map_set_tilt();
 //	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
 }
 

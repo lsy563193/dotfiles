@@ -106,6 +106,7 @@ bool g_go_home_by_remote = false;
 //Flag for judge if keep on wall follow
 bool g_keep_on_wf = false;
 
+
 time_t last_time_remote_spot = time(NULL);
 int16_t ranged_angle(int16_t angle)
 {
@@ -273,6 +274,10 @@ bool cm_move_to(Point32_t target)
 	RegulatorManage rm({map_get_x_count(), map_get_y_count()},target);
 
 	bool	eh_status_now=false, eh_status_last=false;
+
+	// for tilt detect 
+	bool call_up_tilt = false;
+
 	while (ros::ok())
 	{
 		if (get_clean_mode() == Clean_Mode_WallFollow && mt_is_linear()) {
@@ -293,19 +298,27 @@ bool cm_move_to(Point32_t target)
 			set_wheel_speed(0, 0);
 			continue;
 		}
+		robot::instance()->tiltDetect();
+		if(robot::instance()->isTilt()){
+			robot::instance()->tiltCall(true);
+			call_up_tilt = true;
+			ROS_INFO("\033[47;34m" "tilt call...." "\033[0m");
+		}
+		else if(call_up_tilt){
+			call_up_tilt = false;
+			robot::instance()->tiltCall(false);
+			ROS_INFO("\033[47;34m" "tilt uncall..." "\033[0m");
+		}
 
 		if (rm.isReach() || rm.isStop()){
-//			ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
 			map_set_blocked();
 			return true;
 		}
 
 		if (rm.isSwitch()){
-//			ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
 			map_set_blocked();
 			rm.switchToNext();
 		}
-
 		int32_t	 speed_left = 0, speed_right = 0;
 		rm.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);

@@ -585,19 +585,24 @@ bool robot::getBumperLeft()
 
 */
 
-#ifndef UPTILT_COUNT_REACH
-#define UPTILT_COUNT_REACH (10)
+#ifndef TILT_COUNT_REACH
+#define TILT_COUNT_REACH (20)
 #endif
 
 #define DIF_TILT_X_VAL 50
 #define DIF_TILT_Y_VAL 80
 #define DIF_TILT_Z_VAL 40
 
-bool robot::isUpTilt()
+bool robot::isTilt()
 {
-	//if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL || absolute(y_acc_ - init_y_acc_) > DIF_TILT_Y_VAL){
-	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL){
-		if(++up_tilt_count_ > UPTILT_COUNT_REACH && absolute(z_acc_ - init_z_acc_)> DIF_TILT_Z_VAL){
+	return is_up_tilt_;
+}
+
+void robot::tiltDetect()
+{
+	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL || absolute(y_acc_ - init_y_acc_) > DIF_TILT_Y_VAL){
+	//if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL){
+		if(++up_tilt_count_ > TILT_COUNT_REACH && absolute(z_acc_ - init_z_acc_)> DIF_TILT_Z_VAL){
 			ROS_INFO("\033[34m" "robot.cpp, %s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
 			up_tilt_count_ = 0;
 			is_up_tilt_ = true;
@@ -607,10 +612,9 @@ bool robot::isUpTilt()
 		up_tilt_count_ = 0;
 		is_up_tilt_ = false;
 	}
-	return is_up_tilt_;
-}
 
-void robot::upTiltCall(bool v)
+}
+void robot::tiltCall(bool v)
 {
 	std_srvs::SetBool tri;
 
