@@ -61,6 +61,7 @@
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
 int g_rcon_triggered = 0;//1~6
+bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 int16_t g_turn_angle;
 uint16_t g_wall_distance=20;
@@ -520,6 +521,13 @@ int cm_cleaning()
 					extern bool g_switch_home_cell;
 					g_switch_home_cell = true;
 				}
+				else if (g_rcon_during_go_home)
+				{
+					if (cm_go_to_charger())
+						return -1;
+					else if (!g_go_home_by_remote)
+						set_led_mode(LED_STEADY, LED_GREEN);
+				}
 			}
 		}
 		else if (is_found == 2) {
@@ -591,6 +599,7 @@ bool cm_go_to_charger()
 	cm_register_events();
 	if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 		return true;
+	work_motor_configure();
 	return false;
 }
 
