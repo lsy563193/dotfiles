@@ -796,11 +796,11 @@ int get_rcon_trig_()
 
 int get_rcon_trig(void)
 {
-	if (g_go_home) {
-//		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		reset_rcon_status();
-		return 0;
-	}
+//	if (g_go_home) {
+////		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+//		reset_rcon_status();
+//		return 0;
+//	}
 	if(mt_is_follow_wall()){
 //		ROS_WARN("%s %d: rcon(%d).", __FUNCTION__, __LINE__, (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
 //		ROS_WARN("%s %d: ~rcon(%d).", __FUNCTION__, __LINE__, ~(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));

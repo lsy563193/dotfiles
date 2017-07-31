@@ -203,7 +203,7 @@
 #define MAP_FIND_WALL_DISTANCE		(67 * 4)
 
 /* Escape time set to 9 minutes 540s*/
-#define ESCAPE_TRAPPED_TIME		(60)
+#define ESCAPE_TRAPPED_TIME		(540)
 
 /* Set trapped reference target size for robot to check that if it is trapped */
 #define ESCAPE_TRAPPED_REF_CELL_SIZE		(3)
@@ -255,11 +255,12 @@
 #define WHEEL_BASE			(218)
 
 /*
- * Range of BASE_SPEED should be better within 12 to 15.
+ * Range of LINEAR_MIN_SPEED should be better within 12 to 15.
  * When it is too small, it will move like shaking when robot startup.
  * When it is too large, it will fall down when reach the cliff.
  */
-#define BASE_SPEED						((int32_t) 15) // 15)
+#define LINEAR_MIN_SPEED						((int32_t) 15) // 15)
+#define LINEAR_MAX_SPEED						((int32_t) 40) // 15)
 #define ROTATE_TOP_SPEED				((uint8_t) 22) // 22)
 #define ROTATE_LOW_SPEED				((uint8_t) 7)
 #if __ROBOT_X900

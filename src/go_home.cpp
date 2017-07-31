@@ -273,10 +273,10 @@ void go_to_charger(void)
 		/*---check if near charger station---*/
 		else if(g_go_home_state_now == CHECK_NEAR_CHARGER_STATION)
 		{
-			if(nosignal_counter < 20)
+			if(nosignal_counter < 10)
 			{
 				receive_code = get_rcon_status();
-				ROS_INFO("receive_code: %d", receive_code);
+				ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
 				if(receive_code&RconAll_Home_LR)
 				{
 					reset_rcon_status();

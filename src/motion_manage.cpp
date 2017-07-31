@@ -371,6 +371,8 @@ MotionManage::~MotionManage()
 	{
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
+		extern bool g_resume_cleaning;
+		g_resume_cleaning = false;
 		if (g_cliff_all_triggered)
 		{
 			if(g_is_main_switch_off)
@@ -538,7 +540,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 	robot::instance()->accInit4Tilt();//init accelerate for tile detect
 
-	if (robot::instance()->isManualPaused() || robot::instance()->isLowBatPaused())
+	if (robot::instance()->isManualPaused() || g_resume_cleaning)
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
@@ -557,16 +559,16 @@ bool MotionManage::initNavigationCleaning(void)
 				if (g_fatal_quit_event)
 				{
 					robot::instance()->resetManualPause();
-					robot::instance()->resetLowBatPause();
+					g_resume_cleaning = false;
 				}
-				else if (g_key_clean_pressed && !robot::instance()->isLowBatPaused())
+				else if (g_key_clean_pressed && !g_resume_cleaning)
 					// Reset the odom position so when continue cleaning, the position robot stopped at will be the home point (0, 0).
 					robot::instance()->initOdomPosition();
 				else if (!g_fatal_quit_event && !g_key_clean_pressed)
 				{
 					ROS_WARN("%s %d: Fail to leave charger stub.", __FUNCTION__, __LINE__);
 					robot::instance()->resetManualPause();
-					robot::instance()->resetLowBatPause();
+					g_resume_cleaning = false;
 				}
 				return false;
 			}
@@ -581,7 +583,7 @@ bool MotionManage::initNavigationCleaning(void)
 	work_motor_configure();
 
 	extern bool g_go_home;
-	ROS_INFO("init g_go_home(%d), lowbat(%d), manualpaused(%d)", g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused());
+	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d).", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning);
 	return true;
 }
 

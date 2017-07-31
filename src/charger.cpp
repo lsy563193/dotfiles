@@ -106,6 +106,10 @@ void charge_function(void)
 			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
+		if(g_plan_activated)
+		{
+			set_clean_mode(Clean_Mode_Navigation);
+		}
 		if (charge_reject_reason)
 		{
 			switch (charge_reject_reason)
@@ -274,7 +278,6 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 					clear_manual_pause();
 				}
 				g_plan_activated = true;
-				set_clean_mode(Clean_Mode_Navigation);
 				break;
 			}
 		}

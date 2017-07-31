@@ -20,6 +20,7 @@
 #include "wav.h"
 #include "robot.hpp"
 #include "event_manager.h"
+#include "core_move.h"
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;
@@ -72,6 +73,12 @@ void user_interface(void)
 	event_manager_reset_status();
 	user_interface_register_events();
 
+	if (robot::instance()->isManualPaused())
+	{
+		saved_pos_x = robot::instance()->getOdomPositionX();
+		saved_pos_y = robot::instance()->getOdomPositionY();
+	}
+
 	while(ros::ok())
 	{
 		usleep(10000);
@@ -99,6 +106,17 @@ void user_interface(void)
 			break;
 		}
 
+		if (robot::instance()->isManualPaused())
+		{
+			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			if (distance > 0.1f)
+				clear_manual_pause();
+		}
+
+		if(g_plan_activated)
+		{
+			temp_mode = Clean_Mode_Navigation;
+		}
 		// Check for wav playing.
 		if (long_press_to_sleep)
 		{
@@ -443,7 +461,6 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 					clear_manual_pause();
 				}
 				g_plan_activated = true;
-				temp_mode=Clean_Mode_Navigation;
 				break;
 			}
 		}

@@ -560,7 +560,7 @@ void map_set_tilt()
 static void map_set_cliff()
 {
 	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
-	if (g_cliff_jam || cliff_trig)
+	if (g_cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
 		// During self check.
 		return;
 
@@ -691,6 +691,7 @@ Cell_t cm_update_position(bool is_turn)
 	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	map_set_position(pos_x, pos_y);
+	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	return map_get_curr_cell();
 }
 
@@ -774,7 +775,6 @@ void map_set_realtime()
 				}
 			}
 		}
-	{
 		Cell_t next,target;
 //		ROS_WARN("IN ESC");
 		if(g_trapped_mode == 1 )
@@ -787,7 +787,6 @@ void map_set_realtime()
 				ROS_INFO("%s,%d:trapped_mode path_target false",__FUNCTION__,__LINE__);
 			}
 		}
-	}
 	}
 }
 

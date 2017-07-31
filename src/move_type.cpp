@@ -37,12 +37,10 @@ CMMoveType mt_get()
 	return g_cm_move_type ;
 }
 void mt_update(Point32_t *next_point, Point32_t target_point, uint16_t dir) {
+	g_cm_move_type = CM_LINEARMOVE;
 	ROS_WARN("%s,%d: dir(%d),obs(%d),bumper(%d)",__FUNCTION__,__LINE__,dir,g_obs_triggered, g_bumper_triggered);
 	if (!IS_X_AXIS(dir) || (g_obs_triggered == 0 && g_bumper_triggered == 0) || next_point->Y == map_get_y_count())
-	{
-		g_cm_move_type = CM_LINEARMOVE;
 		return;
-	}
 
 	auto delta_y = count_to_cell(next_point->Y) - map_get_y_cell();
 

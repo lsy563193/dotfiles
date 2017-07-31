@@ -488,10 +488,10 @@ private:
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
-// These variable is for continue cleaning after charge.
+// These variable is indicating robot detects battery low, it is going back to home cells.
 	bool	low_bat_pause_cleaning_;
 
-// These variable is for continue cleaning after charge.
+// These variable is indicating robot is during pause of navigation mode.
 	bool	manual_pause_cleaning_;
 
 
