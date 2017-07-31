@@ -37,6 +37,7 @@
 #define SPOT_MAX_SPEED  (20)
 static SpotMovement *spot_obj = NULL;
 
+
 SpotMovement::SpotMovement(float diameter = 1.0)
 {
 	if (spot_obj == NULL)
@@ -51,7 +52,7 @@ SpotMovement::SpotMovement(float diameter = 1.0)
 	targets_.clear();
 	st_ = NO_SPOT;
 	spot_init_ = 0;
-
+	spot_bumper_cnt_ = 0;
 }
 
 SpotMovement::~SpotMovement()
@@ -73,7 +74,7 @@ static void spot_motor_configure()
 	set_side_brush_pwm(60, 60);
 }
 
-void SpotMovement::spotInit(float diameter, Point32_t cur_point)
+void SpotMovement::spotInit(float diameter, Cell_t cur_point)
 {
 
 	if ((clock() / CLOCKS_PER_SEC) % 2 == 0)
@@ -88,12 +89,15 @@ void SpotMovement::spotInit(float diameter, Point32_t cur_point)
 	spot_diameter_ = diameter;
 	stop_point_ = {0, 0};
 	begin_point_ = {cur_point.X, cur_point.Y};
+	bp_ = targets_.end();
+	tp_ = targets_.end();
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
 	sout_od_cnt_ = 0;
 	sin_od_cnt_ = 0;
 	targets_.clear();
 	spot_init_ = 1;
+	spot_bumper_cnt_ = (uint16_t)(diameter*1000/CELL_SIZE);
 	spot_motor_configure();
 }
 
@@ -101,6 +105,8 @@ void SpotMovement::spotDeinit()
 {
 	stop_point_ = {0, 0};
 	begin_point_ = {0, 0};
+	bp_ = targets_.end();
+	tp_ = targets_.end();
 	is_direct_change_ = 0;
 	is_stuck_ = 0;
 	sout_od_cnt_ = 0;
@@ -108,16 +114,20 @@ void SpotMovement::spotDeinit()
 	targets_.clear();
 	spot_diameter_ = 0;
 	spot_init_ = 0;
+	spot_bumper_cnt_ = 0;
 	if(getSpotType() == CLEAN_SPOT){
 		work_motor_configure();
 	}
 	resetSpotType();
 }
 
-void SpotMovement::setStopPoint(Point32_t *stp)
+void SpotMovement::setStopPoint(Cell_t *stp)
 {
-	Point32_t cur_point = { map_get_x_cell(),map_get_y_cell() };
+	Cell_t cur_point;
+	cur_point.X = map_get_x_cell();
+	cur_point.Y = map_get_y_cell();
 	bp_ = tp_;
+	ROS_INFO("\033[34m" "%s,%d,current point (%d,%d)" "\033[0m",__FUNCTION__,__LINE__,cur_point.X,cur_point.Y);
 	for(;tp_!=targets_.begin();--tp_)//search the bumper point,backward from curent tp_
 	{
 		if( cur_point.X == tp_->X && cur_point.Y == tp_->Y )
@@ -130,10 +140,10 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 	if (bp_ == targets_.begin())
 	{
 		if (spiral_type_ == SPIRAL_RIGHT_OUT ){
-			*stp = {bp_->X, (bp_->Y - 1)};
+			*stp = {bp_->X, (int16_t)(bp_->Y - 1)};
 		}
 		else if( spiral_type_ == SPIRAL_LEFT_OUT){
-			*stp = {bp_->X, (bp_->Y + 1)};
+			*stp = {bp_->X, (int16_t)(bp_->Y + 1)};
 		}
 	}
 	else
@@ -141,27 +151,27 @@ void SpotMovement::setStopPoint(Point32_t *stp)
 		if ( ( bp_-1 )->X == bp_->X )
 		{
 			if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
-				*stp = { ( ( bp_->X > 0 )? bp_->X + 1: bp_->X - 1), bp_->Y };
+				*stp = { (int16_t)( ( bp_->X > 0 )? bp_->X + 1: bp_->X - 1), bp_->Y };
 			else if (spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN)
-				*stp = { ( ( bp_->X > 0 )? bp_->X - 1: bp_->X + 1), bp_->Y };
+				*stp = { (int16_t)( ( bp_->X > 0 )? bp_->X - 1: bp_->X + 1), bp_->Y };
 		}
 		else if ( ( bp_-1 )->Y == bp_->Y)
 		{
 			if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
-				*stp = { bp_->X, ( ( bp_->Y > 0 )? bp_->Y + 1: bp_->Y - 1 ) };
+				*stp = { bp_->X, (int16_t)( ( bp_->Y > 0 )? bp_->Y + 1: bp_->Y - 1 ) };
 			else if (spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN)
-				*stp = { bp_->X, ( ( bp_->Y > 0 )? bp_->Y - 1: bp_->Y + 1 ) };
+				*stp = { bp_->X, (int16_t)( ( bp_->Y > 0 )? bp_->Y - 1: bp_->Y + 1 ) };
 		}
 	}
 	ROS_INFO("\033[34m" "%s,%d, stop point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, stp->X, stp->Y);
 }
 
-uint8_t SpotMovement::changeSpiralType()
+uint8_t SpotMovement::spotChgType()
 {
 	if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
 	{
 		sout_od_cnt_ += 1;
-		if (sout_od_cnt_ > OBS_DETECT_COUNT_MAX)
+		if (sout_od_cnt_ > spot_bumper_cnt_ )
 		{
 			sout_od_cnt_ = 0;
 			ROS_INFO("\033[34m" "%s,%d, spiral obs detect counter reached" "\033[0m",__FUNCTION__,__LINE__);
@@ -176,7 +186,7 @@ uint8_t SpotMovement::changeSpiralType()
 	{
 		spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_IN) ? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN;
 		sin_od_cnt_ += 1;
-		if (sin_od_cnt_ > OBS_DETECT_COUNT_MAX)
+		if (sin_od_cnt_ > spot_bumper_cnt_)
 		{
 			is_direct_change_ = 0;
 			sin_od_cnt_ = 0;
@@ -187,21 +197,26 @@ uint8_t SpotMovement::changeSpiralType()
 	return spiral_type_;
 }
 
-uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
+uint8_t SpotMovement::getNearPoint(Cell_t ref_point)
 {
 	int ret = 0;
-	for (tp_ = targets_.begin(); tp_ != targets_.end(); ++tp_)//find stop point in new target list
+	std::vector<Cell_t>::iterator ttp;
+	for (ttp = targets_.begin(); ttp != targets_.end(); ++ttp)//find stop point in new target list
 	{
-		if(ref_point.X == tp_->X && ref_point.Y == tp_->Y){
+		if(ref_point.X == ttp->X && ref_point.Y == ttp->Y){
 			ret = 1;
 			break;
 		}
 	}
-	/*
+	if(ret)
+		tp_ = ttp;
+	else
+		tp_ = targets_.begin();
+#if 0
 	if(!ret){//if not find then find point near to stop point
 		float dist = 0.0;
 		int pos = 0, i = 0;
-		std::vector<Point32_t>::reverse_iterator rtp_;
+		std::vector<Cell_t>::reverse_iterator rtp_;
 		for (rtp_ = targets_.rbegin(); rtp_ != targets_.rend(); ++rtp_){
 			dist = sqrt( pow((ref_point.X - rtp_->X), 2) + pow((ref_point.Y - rtp_->Y), 2) );
 			i++;
@@ -218,10 +233,142 @@ uint8_t SpotMovement::getNearPoint(Point32_t ref_point)
 			tp_ ++;
 		}
 	}
-	*/
+#endif
+
 	ROS_INFO("\033[34m" "%s,%d,%s near point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,
 					(ret?"found":"not found"), tp_->X, tp_->Y);
 	return ret;
+}
+
+void SpotMovement::genTargets(uint8_t sp_type, 
+									float diameter, 
+									std::vector<Cell_t> *target,
+									const Cell_t beginpoint)
+{
+	uint8_t spt = sp_type;
+	int16_t x, x_l, y, y_l;
+	x = x_l = beginpoint.X;
+	y = y_l = beginpoint.Y;
+	target->clear();
+	ROS_INFO("\033[34m" "%s,%d,generate targets spiral type %s " "\033[0m",__FUNCTION__,__LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
+	uint16_t st_c = 1;//number of spiral count
+	uint16_t st_n = (uint16_t) (diameter * 1000 / CELL_SIZE);//number of spiral
+	ROS_INFO( "%s,%d,number of spiral" "\033[35m" " %d" "\033[0m",__FUNCTION__,__LINE__,st_n);
+	int16_t i;
+	if(st_c == 1){
+		target->push_back({x,y});
+		st_c +=1;
+	}
+	if (spt == SPIRAL_LEFT_OUT || spt == SPIRAL_RIGHT_OUT)
+	{
+
+		printf("\033[35m" "spiral %s: (%d,%d)",(spt == SPIRAL_RIGHT_IN)?"right out":"left out",x,y);
+		while (ros::ok())
+		{
+			if (st_c > st_n){
+				if(st_n %2 == 0){
+					x = x -1;
+					target->push_back({x,y});
+					printf("\033[35m" "->(%d,%d)" "\033[0m",x,y);
+				}
+				break;
+			}
+			else if ((st_c % 2) == 0)
+			{
+				x = x_l + 1;
+				x_l = x;
+				for (i = 0; i < st_c; i++)
+				{
+					y = (spt == SPIRAL_LEFT_OUT) ? (y_l + i) : (y_l - i);
+					target->push_back({x, y});
+					printf("->(%d,%d)",x,y);
+				}
+				for (i = 1; i < st_c; i++)
+				{
+					x = x_l - i;
+					target->push_back({x,y});
+					printf("->(%d,%d)",x,y);
+				}
+			}
+			else
+			{
+				x = x_l - 1;
+				x_l = x;
+				for (i = 0; i < st_c; i++)
+				{
+					y = (spt == SPIRAL_LEFT_OUT) ? (y_l - i) : (y_l + i);
+					target->push_back({x, y});
+					printf("->(%d,%d)",x,y);
+				}
+				for (i = 1; i < st_c ; i++)
+				{
+					x = x_l + i ;
+					target->push_back({x,y});
+					printf("->(%d,%d)",x,y);
+				}
+			}
+			x_l = x;
+			y_l = y;
+			st_c += 1;
+		}
+		printf( "\033[0m" "\n");
+		tp_ = target->begin();
+	}
+	else if (spt == SPIRAL_RIGHT_IN || spt == SPIRAL_LEFT_IN)
+	{
+
+		printf("\033[32m" "spiral %s: (%d,%d)",(spt == SPIRAL_RIGHT_IN)?"right in":"left in",x,y);
+		while (ros::ok())
+		{
+			if (st_c > st_n){
+				if(st_n %2 == 0){
+					y = y + 1;
+					target->push_back({x,y});
+				}
+				break;
+			}
+			else if ((st_c % 2) == 0)
+			{
+				y = (spt == SPIRAL_RIGHT_IN) ? (y_l + 1) : (y_l - 1);
+				y_l = y;
+				for (i = 0; i < st_c; i++)
+				{
+					x = x_l - i;
+					target->push_back({x, y});
+					printf("<-(%d,%d)",x,y);
+				}
+				for (i = 1; i < st_c; i++)
+				{
+					y = (spt == SPIRAL_RIGHT_IN) ? (y_l - i) : (y_l + i);
+					target->push_back({x,y});
+					printf("<-(%d,%d)",x,y);
+				}
+			}
+			else
+			{
+				y = (spt == SPIRAL_RIGHT_IN) ? (y_l - 1) : (y_l + 1);
+				y_l = y;
+				for (i = 0; i < st_c; i++)
+				{
+					x = x_l + i;
+					target->push_back({x, y});
+					printf("<-(%d,%d)",x,y);
+				}
+				for (i = 1; i < st_c; i++)
+				{
+					y = (spt == SPIRAL_RIGHT_IN) ? (y_l + i) : (y_l - i);
+					target->push_back({x,y});
+					printf("<-(%d,%d)",x,y);
+				}
+			}
+			x_l = x;
+			y_l = y;
+			st_c += 1;
+		}
+		printf("\033[0m" "\n");
+		std::reverse(target->begin(), target->end());
+		tp_ = target->begin();
+	}
 }
 
 int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
@@ -256,15 +403,16 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 						tp_++;
 				}
 				else{
-					changeSpiralType();
+					spotChgType();
 					setStopPoint(&stop_point_);
 					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
 					if(!getNearPoint(stop_point_)){
+						ROS_INFO("\033[1m\033[34m" "reset spiral type to %s" "\033[0m",(spiral_type_ == SPIRAL_RIGHT_OUT) ? "SPIRAL_LEFT_IN" : "SPIRAL_RIGHT_INi");
 						spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN;
-						setStopPoint(&stop_point_);
+						setStopPoint(&stop_point_);//reset stop point
 						genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
 						if(!getNearPoint(stop_point_))
-							ROS_WARN("\033[34m" "spot.cpp,%s,%d,not find neaer point,while search all points" "\033[0m",__FUNCTION__,__LINE__);
+							ROS_WARN("\033[34m" "spot.cpp,%s,%d,not find near point,while search all points" "\033[0m",__FUNCTION__,__LINE__);
 					}
 				}
 				*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
@@ -345,139 +493,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 	return ret;
 }
 
-void SpotMovement::genTargets(uint8_t sp_type, 
-									float diameter, 
-									std::vector<Point32_t> *target,
-									const Point32_t beginpoint)
-{
-	uint8_t spt = sp_type;
-	int32_t x, x_l, y, y_l;
-	x = x_l = beginpoint.X;
-	y = y_l = beginpoint.Y;
-	target->clear();
-	ROS_INFO("\033[34m" "%s,%d,generate targets spiral type %s " "\033[0m",__FUNCTION__,__LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
-	uint16_t st_c = 1;//number of spiral count
-	uint16_t st_n = (uint16_t) (diameter * 1000 / CELL_SIZE);//number of spiral
-	//ROS_INFO("%s,%d,number of spiral %d",__FUNCTION__,__LINE__,st_n);
-	int16_t i;
-	if (spt == SPIRAL_LEFT_OUT || spt == SPIRAL_RIGHT_OUT)
-	{
 
-		while (ros::ok())
-		{
-			if (st_c > st_n)
-				break;
-			if (st_c == 1)
-			{
-				target->push_back({x, y});
-				printf("spiral %s: (%d,%d)->",(spt == SPIRAL_RIGHT_IN)?"right in":"left in",x,y);	
-			}
-			else if ((st_c % 2) == 0)
-			{//even number
-				x = x_l + 1;
-				x_l = x;
-				for (i = 0; i < st_c; i++)
-				{
-					y = (spt == SPIRAL_LEFT_OUT) ? (y_l + i) : (y_l - i);
-					//if (i == 0 || i == (st_c - 1)){
-						target->push_back({x, y});
-						printf("(%d,%d)->",x,y);
-					//}
-				}
-				for (i = 0; i < (st_c - 1); i++)
-				{
-					x = x_l - i - 1;
-					target->push_back({x,y});
-					printf("(%d,%d)->",x,y);
-				}
-			}
-			else
-			{//odd number
-				x = x_l - 1;
-				x_l = x;
-				for (i = 0; i < st_c; i++)
-				{
-					y = (spt == SPIRAL_LEFT_OUT) ? (y_l - i) : (y_l + i);
-					//if (i == 0 || i == (st_c - 1)){
-						target->push_back({x, y});
-						printf("(%d,%d)->",x,y);
-					//}
-				}
-				for (i = 0; i < (st_c - 1); i++)
-				{
-					x = x_l + i + 1;
-					target->push_back({x,y});
-					printf("(%d,%d)->",x,y);
-				}
-			}
-			x_l = x;
-			y_l = y;
-			st_c += 1;
-		}
-		target->push_back({x, y});
-		printf("(%d,%d)\n",x,y);
-		tp_ = target->begin();
-	}
-	else if (spt == SPIRAL_RIGHT_IN || spt == SPIRAL_LEFT_IN)
-	{
-
-		while (ros::ok())
-		{
-			if (st_c > st_n)
-				break;
-			if (st_c == 1)
-			{
-				target->push_back({x, y});
-				printf("spiral %s: (%d,%d)",(spt == SPIRAL_RIGHT_IN)?"right in":"left in",x,y);
-			}
-			else if ((st_c % 2) == 0)
-			{//even number
-				y = (spt == SPIRAL_RIGHT_IN) ? (y_l + 1) : (y_l - 1);
-				y_l = y;
-				for (i = 0; i < st_c; i++)
-				{
-					x = x_l - i;
-					//if (i == 0 || i == (st_c - 1)){
-						target->push_back({x, y});
-						printf("<-(%d,%d)",x,y);
-					//}
-				}
-				for (i = 0; i < (st_c - 1); i++)
-				{
-					y = (spt == SPIRAL_RIGHT_IN) ? (y_l - i - 1) : (y_l + i + 1);
-					target->push_back({x,y});
-					printf("<-(%d,%d)",x,y);
-				}
-			}
-			else
-			{ //odd number
-				y = (spt == SPIRAL_RIGHT_IN) ? (y_l - 1) : (y_l + 1);
-				y_l = y;
-				for (i = 0; i < st_c; i++)
-				{
-					x = x_l + i;
-					//if (i == 0 || i == (st_c - 1)){
-						target->push_back({x, y});
-						printf("<-(%d,%d)",x,y);
-					//}
-				}
-				for (i = 0; i < (st_c - 1); i++)
-				{
-					y = (spt == SPIRAL_RIGHT_IN) ? (y_l + i + 1) : (y_l - i - 1);
-					target->push_back({x,y});
-					printf("<-(%d,%d)",x,y);
-				}
-			}
-			x_l = x;
-			y_l = y;
-			st_c += 1;
-		}
-		target->push_back({x, y});
-		printf("<-(%d,%d)\n",x,y);
-		std::reverse(target->begin(), target->end());
-		tp_ = target->begin();
-	}
-}
 
 
 uint8_t Random_Dirt_Event(void)
