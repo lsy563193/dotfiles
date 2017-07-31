@@ -530,7 +530,7 @@ static void map_set_bumper()
 static void map_set_cliff()
 {
 	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
-	if (g_cliff_jam || cliff_trig)
+	if (g_cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
 		// During self check.
 		return;
 
