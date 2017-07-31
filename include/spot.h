@@ -25,7 +25,6 @@
 #define SPIRAL_LEFT_OUT  4
 #define SPIRAL_LEFT_IN    8
 #define First_Round       10
-#define OBS_DETECT_COUNT_MAX 8
 
 typedef enum {
 	NO_SPOT = 0,
@@ -39,15 +38,15 @@ private:
 
 	float spot_diameter_;//
 
-	std::vector<Point32_t> targets_;
+	std::vector<Cell_t> targets_;
 
-	std::vector<Point32_t>::const_iterator tp_;//target pointer
+	std::vector<Cell_t>::iterator tp_;//target pointer
 
-	std::vector<Point32_t>::const_iterator bp_;//bumper pointer
+	std::vector<Cell_t>::iterator bp_;//bumper pointer
 
-	Point32_t stop_point_;
+	Cell_t stop_point_;
 
-	Point32_t begin_point_;
+	Cell_t begin_point_;
 
 	SpotType st_;
 
@@ -66,6 +65,8 @@ private:
 	uint8_t sin_od_cnt_;//spiral in obs detect count
 
 	uint8_t np_chg_;//next point change
+
+	uint16_t spot_bumper_cnt_;
 
 public:
 
@@ -86,7 +87,7 @@ public:
  * @return void
  */
 
-	void spotInit(float diameter = 1.0, Point32_t cur_point = {0, 0});
+	void spotInit(float diameter = 1.0, Cell_t cur_point = {0, 0});
 
 /*
  * @author mengshige1988@qq.com
@@ -108,7 +109,7 @@ public:
  * @param stp(stop point)
  * @return None
  */
-	void setStopPoint(Point32_t *stp);
+	void setStopPoint(Cell_t *stp);
 
 /*
  * @author mengshige1988@qq.com
@@ -117,7 +118,7 @@ public:
  * @param None
  * return spiral type
  */
-	uint8_t changeSpiralType();
+	uint8_t spotChgType();
 
 /*
  * @author mengshige1988@qq.com
@@ -131,7 +132,7 @@ public:
  * @param4 begin point
  * @return None
  */
-	void genTargets(uint8_t spiral_type, float radian, std::vector<Point32_t> *target, Point32_t curpoint);
+	void genTargets(uint8_t spiral_type, float radian, std::vector<Cell_t> *target, Cell_t curpoint);
 
 /*
  * @author mengshige1988@qq.com
@@ -148,7 +149,7 @@ public:
 * @return None.
 * */
 
-	uint8_t getNearPoint(Point32_t ref_point);
+	uint8_t getNearPoint(Cell_t ref_point);
 
 	void setSpiralType(uint8_t spi_t)
 	{ spiral_type_ = spi_t; }
@@ -177,7 +178,7 @@ public:
 	void resetStuck(void)
 	{ is_stuck_ = 0; }
 
-	void setBeginPoint(Point32_t begin)
+	void setBeginPoint(Cell_t begin)
 	{
 		begin_point_.X = begin.X;
 		begin_point_.Y = begin.Y;

@@ -433,7 +433,10 @@ bool LinearRegulator::_isStop()
 		if(rcon_tmp){
 //			if(g_cell_history[0] != map_get_curr_cell()){
 				g_rcon_triggered = rcon_tmp;
-				path_set_home(map_get_curr_cell());
+				if (g_go_home)
+					g_rcon_during_go_home = true;
+				else
+					path_set_home(map_get_curr_cell());
 //			}
 //			else{
 //				ROS_ERROR("%s, %d: g_rcon_triggered but curr(%d,%d),g_h0=g_h1(%d,%d).", __FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y,g_cell_history[0].X, g_cell_history[0].Y);
@@ -563,7 +566,13 @@ bool FollowWallRegulator::isReach()
 		if (g_trapped_mode != 0)
 		{
 			extern uint32_t g_escape_trapped_timer;
-			if (g_trapped_mode == 2 || (time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
+			if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
+			{
+				ROS_WARN("%s %d: Escape trapped timeout.", __FUNCTION__, __LINE__);
+				g_fatal_quit_event = true;
+				ret = true;
+			}
+			else if (g_trapped_mode == 2)
 			{
 //				wav_play(WAV_CLEANING_START);
 				ROS_WARN("%s:%d: out of esc", __FUNCTION__, __LINE__);
@@ -830,6 +839,7 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 {
 	ROS_INFO("%s %d: origin(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, count_to_cell(origin.X), count_to_cell(origin.Y), count_to_cell(target.X), count_to_cell(target.Y));
 	g_bumper_cnt = g_cliff_cnt =0;
+	g_rcon_during_go_home = false;
 	reset_rcon_status();
 
 	back_reg_ = new BackRegulator();

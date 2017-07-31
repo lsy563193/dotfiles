@@ -203,7 +203,7 @@
 #define MAP_FIND_WALL_DISTANCE		(67 * 4)
 
 /* Escape time set to 9 minutes 540s*/
-#define ESCAPE_TRAPPED_TIME		(60)
+#define ESCAPE_TRAPPED_TIME		(540)
 
 /* Set trapped reference target size for robot to check that if it is trapped */
 #define ESCAPE_TRAPPED_REF_CELL_SIZE		(3)

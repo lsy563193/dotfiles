@@ -388,13 +388,13 @@ void *robotbase_routine(void*)
 		// Dynamic adjust obs
 		obs_dynamic_base(OBS_adjust_count);
 
-		// start omni wheel detect...
 #if __ROBOT_X900
-		if(sensor.rw_vel == sensor.lw_vel && (sensor.rw_vel != 0 || sensor.lw_vel != 0) ){
+		// start omni wheel detect...
+		if(sensor.rw_vel == sensor.lw_vel && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
 			omni_detect_cnt ++;
-			if(omni_detect_cnt >= 40){
+			if(omni_detect_cnt >= 50){
 				omni_detect_cnt = 0;
-				if(absolute(sensor.omni_wheel - last_omni_wheel) <= 1){
+				if(absolute(sensor.omni_wheel - last_omni_wheel) <= 0){
 					g_omni_notmove = true;
 				}
 				else
@@ -404,6 +404,7 @@ void *robotbase_routine(void*)
 		}
 		else{
 			g_omni_notmove = false;
+			omni_detect_cnt = 0;
 		}
 		if(sensor.omni_wheel >= 10000){
 			reset_mobility_step();

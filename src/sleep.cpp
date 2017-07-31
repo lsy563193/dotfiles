@@ -141,7 +141,7 @@ void sleep_unregister_events(void)
 void sleep_handle_rcon(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-	if (get_error_code() == Error_Code_None)
+	if (get_error_code() == Error_Code_None && get_plan_status() != 3 && get_clean_mode() == Clean_Mode_Sleep)
 	{
 		set_clean_mode(Clean_Mode_GoHome);
 		set_main_pwr_byte(Clean_Mode_GoHome);
