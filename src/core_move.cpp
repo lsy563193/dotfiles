@@ -466,6 +466,9 @@ int cm_cleaning()
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
+		if (g_key_clean_pressed || g_fatal_quit_event)
+			return -1;
+
 		cm_check_should_go_home();
 		cm_check_temp_spot();
 

@@ -547,7 +547,13 @@ bool FollowWallRegulator::isReach()
 		if (g_trapped_mode != 0)
 		{
 			extern uint32_t g_escape_trapped_timer;
-			if (g_trapped_mode == 2 || (time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
+			if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
+			{
+				ROS_WARN("%s %d: Escape trapped timeout.", __FUNCTION__, __LINE__);
+				g_fatal_quit_event = true;
+				ret = true;
+			}
+			else if (g_trapped_mode == 2)
 			{
 //				wav_play(WAV_CLEANING_START);
 				ROS_WARN("%s:%d: out of esc", __FUNCTION__, __LINE__);

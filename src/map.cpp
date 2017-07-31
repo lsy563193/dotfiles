@@ -743,7 +743,6 @@ void map_set_realtime()
 				}
 			}
 		}
-	{
 		Cell_t next,target;
 //		ROS_WARN("IN ESC");
 		if(g_trapped_mode == 1 )
@@ -756,7 +755,6 @@ void map_set_realtime()
 				ROS_INFO("%s,%d:trapped_mode path_target false",__FUNCTION__,__LINE__);
 			}
 		}
-	}
 	}
 }
 
