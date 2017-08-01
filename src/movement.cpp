@@ -33,7 +33,7 @@ uint8_t g_wheel_left_direction = 0;
 uint8_t g_wheel_right_direction = 0;
 static uint8_t g_remote_move_flag = 0;
 static uint8_t g_home_remote_flag = 0;
-uint32_t g_rcon_status;
+uint32_t movement_rcon_status;
 uint32_t g_average_move = 0;
 uint32_t g_average_counter = 0;
 uint32_t g_max_move = 0;
@@ -1545,18 +1545,18 @@ void switch_vac_mode(bool is_save)
 
 void set_rcon_status(uint32_t code)
 {
-	g_rcon_status = code;
+	movement_rcon_status = code;
 }
 
 void reset_rcon_status(void)
 {
-	g_rcon_status = 0;
+	movement_rcon_status = 0;
 }
 
 uint32_t get_rcon_status()
 {
-	//g_rcon_status = robot::instance()->getRcon();
-	return g_rcon_status;
+	//movement_rcon_status = robot::instance()->getRcon();
+	return movement_rcon_status;
 }
 
 /*----------------------------------------Remote--------------------------------*/

@@ -54,7 +54,6 @@ extern bool g_cliff_jam;
 extern uint8_t g_cliff_all_cnt;
 extern int g_cliff_cnt;
 /* RCON */
-extern int g_rcon_triggered;
 extern bool g_rcon_during_go_home;
 /* Over Current */
 extern bool g_oc_brush_main;
