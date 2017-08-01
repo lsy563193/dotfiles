@@ -150,8 +150,8 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	}
 
 	charge_stub_ = msg->c_stub;//charge stub signal
-	g_rcon_status |= charge_stub_;
-//	if(g_rcon_status != 0)
+	set_rcon_status(get_rcon_status() | charge_stub_);
+//	if(get_rcon_status())
 //	ROS_WARN("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
 
 	key = msg->key;

@@ -32,6 +32,7 @@ int16_t remote_target_angle;
 bool remote_exit;
 time_t remote_cmd_time;
 uint8_t remote_rcon_cnt = 0;
+bool remote_rcon_triggered = false;
 
 void remote_mode(void)
 {
@@ -52,6 +53,7 @@ void remote_mode(void)
 	}
 	remote_exit = false;
 	g_battery_low_cnt = 0;
+	remote_rcon_triggered = false;
 
 	set_led_mode(LED_STEADY, LED_GREEN);
 	reset_rcon_remote();
@@ -201,8 +203,8 @@ void remote_move(void)
 						continue;
 					}
 				}
-				else if (g_rcon_triggered)
-					g_rcon_triggered = 0;
+				else if (remote_rcon_triggered)
+					remote_rcon_triggered = false;
 
 				ROS_DEBUG("%s %d: Move back finished.", __FUNCTION__, __LINE__);
 				set_move_flag_(REMOTE_MODE_STAY);
@@ -210,7 +212,7 @@ void remote_move(void)
 			}
 			case REMOTE_MODE_STAY:
 			{
-				if (g_bumper_triggered || g_cliff_triggered || g_rcon_triggered)
+				if (g_bumper_triggered || g_cliff_triggered || remote_rcon_triggered)
 				{
 					if (robot::instance()->getLinearX() <= 0 && robot::instance()->getLinearY() <= 0)
 					{
@@ -535,12 +537,12 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 
 void remote_mode_handle_rcon(bool state_now, bool state_last)
 {
-	if (get_move_flag_() == REMOTE_MODE_FORWARD && !g_rcon_triggered
+	if (get_move_flag_() == REMOTE_MODE_FORWARD && !remote_rcon_triggered
 		&& get_rcon_status() & (RconFL_HomeL | RconFL_HomeR | RconFR_HomeL | RconFR_HomeR | RconFL2_HomeL | RconFL2_HomeR | RconFR2_HomeL | RconFR2_HomeR | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)
 		&& remote_rcon_cnt++ >= 2)
 	{
 		ROS_WARN("%s %d: Move back for Rcon.", __FUNCTION__, __LINE__);
-		g_rcon_triggered = get_rcon_status();
+		remote_rcon_triggered = true;
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	reset_rcon_status();

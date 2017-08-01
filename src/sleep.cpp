@@ -8,12 +8,14 @@
 #include "event_manager.h"
 
 uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
+bool sleep_rcon_triggered = false;
 /*----------------------------------------------------------------Sleep mode---------------------------*/
 void sleep_mode(void)
 {
 	time_t check_battery_time = time(NULL);
 	bool eh_status_now=false, eh_status_last=false;
 	sleep_plan_reject_reason = 0;
+	sleep_rcon_triggered = false;
 
 	beep(1, 80, 0, 1);
 	usleep(100000);
@@ -66,25 +68,13 @@ void sleep_mode(void)
 		}
 		/*--- Wake up events---*/
 		if(g_key_clean_pressed)
-		{
 			set_clean_mode(Clean_Mode_Userinterface);
-			set_main_pwr_byte(Clean_Mode_Userinterface);
-		}
 		else if(g_charge_detect)
-		{
 			set_clean_mode(Clean_Mode_Charging);
-			set_main_pwr_byte(Clean_Mode_Charging);
-		}
 		else if(g_plan_activated)
-		{
 			set_clean_mode(Clean_Mode_Navigation);
-			set_main_pwr_byte(Clean_Mode_Navigation);
-		}
-		else if(g_rcon_triggered)
-		{
+		else if(sleep_rcon_triggered)
 			set_clean_mode(Clean_Mode_GoHome);
-			set_main_pwr_byte(Clean_Mode_GoHome);
-		}
 
 		if (get_clean_mode() != Clean_Mode_Sleep)
 			break;
@@ -164,7 +154,8 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 	if (get_error_code() == Error_Code_None)
 	{
-		g_rcon_triggered = true;
+		set_main_pwr_byte(Clean_Mode_GoHome);
+		sleep_rcon_triggered = true;
 	}
 	reset_sleep_mode_flag();
 }
@@ -172,6 +163,7 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 void sleep_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
+	set_main_pwr_byte(Clean_Mode_Userinterface);
 	g_key_clean_pressed = true;
 	reset_sleep_mode_flag();
 }
@@ -193,6 +185,7 @@ void sleep_handle_remote_plan(bool state_now, bool state_last)
 		}
 		else
 		{
+			set_main_pwr_byte(Clean_Mode_Navigation);
 			g_plan_activated = true;
 		}
 	}
@@ -204,6 +197,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	g_key_clean_pressed = true;
+	set_main_pwr_byte(Clean_Mode_Userinterface);
 	reset_sleep_mode_flag();
 	usleep(20000);
 
@@ -219,6 +213,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 void sleep_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
+	set_main_pwr_byte(Clean_Mode_Charging);
 	g_charge_detect = true;
 	reset_sleep_mode_flag();
 }
