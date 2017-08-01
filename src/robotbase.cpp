@@ -390,11 +390,13 @@ void *robotbase_routine(void*)
 
 #if __ROBOT_X900
 		// start omni wheel detect...
-		if(sensor.rw_vel == sensor.lw_vel && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
+		if(absolute(sensor.rw_vel - sensor.lw_vel) < 0.1 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
 			omni_detect_cnt ++;
+			//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(sensor.rw_vel - sensor.lw_vel));
 			if(omni_detect_cnt >= 50){
 				omni_detect_cnt = 0;
 				if(absolute(sensor.omni_wheel - last_omni_wheel) <= 0){
+					ROS_INFO("\033[36m" "omni detetced \n" "\033[0m");
 					g_omni_notmove = true;
 				}
 				else
