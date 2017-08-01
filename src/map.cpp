@@ -545,7 +545,7 @@ void map_set_tilt()
 				d_cells.push_back({2,0});
 
 		}
-		else if(robot::instance()->getXAcc() > 0){
+		else if(robot::instance()->getXAcc() > 0){ //front tilt
 			d_cells = {{2,-1}, {2,0}, {2,1}};
 		}
 	}

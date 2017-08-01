@@ -622,7 +622,7 @@ private:
 	#endif
 
 	uint16_t up_tilt_count_;
-	bool	is_up_tilt_;
+	bool	is_tilt_;
 	ros::ServiceClient up_tilt_cli_;
 
 	float init_x_acc_;

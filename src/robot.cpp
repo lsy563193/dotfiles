@@ -85,7 +85,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 
 	up_tilt_count_ = 0;
-	is_up_tilt_ = false;
+	is_tilt_ = false;
 }
 
 robot::~robot()
@@ -595,7 +595,7 @@ bool robot::getBumperLeft()
 
 bool robot::isTilt()
 {
-	return is_up_tilt_;
+	return is_tilt_;
 }
 
 void robot::tiltDetect()
@@ -605,12 +605,12 @@ void robot::tiltDetect()
 		if(++up_tilt_count_ > TILT_COUNT_REACH && absolute(z_acc_ - init_z_acc_)> DIF_TILT_Z_VAL){
 			ROS_INFO("\033[34m" "robot.cpp, %s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
 			up_tilt_count_ = 0;
-			is_up_tilt_ = true;
+			is_tilt_ = true;
 		}
 	}
 	else{
 		up_tilt_count_ = 0;
-		is_up_tilt_ = false;
+		is_tilt_ = false;
 	}
 
 }
