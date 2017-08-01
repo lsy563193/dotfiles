@@ -8,12 +8,14 @@
 #include "event_manager.h"
 
 uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
+bool sleep_rcon_triggered = false;
 /*----------------------------------------------------------------Sleep mode---------------------------*/
 void sleep_mode(void)
 {
 	time_t check_battery_time = time(NULL);
 	bool eh_status_now=false, eh_status_last=false;
 	sleep_plan_reject_reason = 0;
+	sleep_rcon_triggered = false;
 
 	beep(1, 80, 0, 1);
 	usleep(100000);
@@ -71,7 +73,7 @@ void sleep_mode(void)
 			set_clean_mode(Clean_Mode_Charging);
 		else if(g_plan_activated)
 			set_clean_mode(Clean_Mode_Navigation);
-		else if(g_rcon_triggered)
+		else if(sleep_rcon_triggered)
 			set_clean_mode(Clean_Mode_GoHome);
 
 		if (get_clean_mode() != Clean_Mode_Sleep)
@@ -153,7 +155,7 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 	if (get_error_code() == Error_Code_None)
 	{
 		set_main_pwr_byte(Clean_Mode_GoHome);
-		g_rcon_triggered = true;
+		sleep_rcon_triggered = true;
 	}
 	reset_sleep_mode_flag();
 }
