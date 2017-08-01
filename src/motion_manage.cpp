@@ -385,7 +385,7 @@ MotionManage::~MotionManage()
 	else // Normal finish.
 	{
 		extern bool g_have_seen_charge_stub;
-		if(!g_charge_detect && g_have_seen_charge_stub)
+		if(g_go_home && !g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 		wav_play(WAV_CLEANING_FINISHED);
 	}
