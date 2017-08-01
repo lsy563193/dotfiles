@@ -66,25 +66,13 @@ void sleep_mode(void)
 		}
 		/*--- Wake up events---*/
 		if(g_key_clean_pressed)
-		{
 			set_clean_mode(Clean_Mode_Userinterface);
-			set_main_pwr_byte(Clean_Mode_Userinterface);
-		}
 		else if(g_charge_detect)
-		{
 			set_clean_mode(Clean_Mode_Charging);
-			set_main_pwr_byte(Clean_Mode_Charging);
-		}
 		else if(g_plan_activated)
-		{
 			set_clean_mode(Clean_Mode_Navigation);
-			set_main_pwr_byte(Clean_Mode_Navigation);
-		}
 		else if(g_rcon_triggered)
-		{
 			set_clean_mode(Clean_Mode_GoHome);
-			set_main_pwr_byte(Clean_Mode_GoHome);
-		}
 
 		if (get_clean_mode() != Clean_Mode_Sleep)
 			break;
@@ -164,6 +152,7 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 	if (get_error_code() == Error_Code_None)
 	{
+		set_main_pwr_byte(Clean_Mode_GoHome);
 		g_rcon_triggered = true;
 	}
 	reset_sleep_mode_flag();
@@ -172,6 +161,7 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 void sleep_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
+	set_main_pwr_byte(Clean_Mode_Userinterface);
 	g_key_clean_pressed = true;
 	reset_sleep_mode_flag();
 }
@@ -193,6 +183,7 @@ void sleep_handle_remote_plan(bool state_now, bool state_last)
 		}
 		else
 		{
+			set_main_pwr_byte(Clean_Mode_Navigation);
 			g_plan_activated = true;
 		}
 	}
@@ -204,6 +195,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	g_key_clean_pressed = true;
+	set_main_pwr_byte(Clean_Mode_Userinterface);
 	reset_sleep_mode_flag();
 	usleep(20000);
 
@@ -219,6 +211,7 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 void sleep_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
+	set_main_pwr_byte(Clean_Mode_Charging);
 	g_charge_detect = true;
 	reset_sleep_mode_flag();
 }
