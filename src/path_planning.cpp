@@ -155,7 +155,7 @@ void path_update_cell_history()
 	g_cell_history[2] = g_cell_history[1];
 	g_cell_history[1] = g_cell_history[0];
 
-	g_cell_history[0]= {map_get_x_cell(), map_get_y_cell()};
+	g_cell_history[0]= map_get_curr_cell();
 //	g_cell_history[0].dir = path_get_robot_direction();
 }
 
@@ -433,8 +433,17 @@ void path_find_all_targets()
 		}
 	}
 
-	x = g_cell_history[0].X;
-	y = g_cell_history[0].Y;
+	if (g_trapped_mode == 1)
+	{
+		x = map_get_x_cell();
+		y = map_get_y_cell();
+	}
+	else
+	{
+		x = g_cell_history[0].X;
+		y = g_cell_history[0].Y;
+	}
+
 	/* Set the current robot position has the cost value of 1. */
 	map_set_cell(SPMAP, (int32_t) x, (int32_t) y, COST_1);
 
@@ -722,6 +731,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 			ROS_WARN("%s %d: trapped", __FUNCTION__, __LINE__);
 			return -2;
 		}
+		ROS_INFO("%s %d: targets list empty.", __FUNCTION__, __LINE__);
 		return 0;
 	}
 
@@ -955,8 +965,15 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 	if(found == 0)
 		return 0;
 
+	Cell_t temp_cell;
+
+	if (g_trapped_mode == 1)
+		temp_cell = map_get_curr_cell();
+	else
+		temp_cell = g_cell_history[0];
+
 	set_explore_new_path_flag(true);
-	return path_next_best(g_curr, target.X, target.Y, next.X, next.Y);
+	return path_next_best(temp_cell, target.X, target.Y, next.X, next.Y);
 }
 
 void path_update_cells()
@@ -1004,7 +1021,14 @@ int16_t path_escape_trapped()
 
 	int16_t	val = 0;
 	uint16_t i = 0;
+	Cell_t temp_cell;
 
+	if (g_trapped_mode == 1)
+		temp_cell = map_get_curr_cell();
+	else
+		temp_cell = g_cell_history[0];
+
+	set_explore_new_path_flag(true);
 	if ( g_trapped_cell[0].X != g_home_x || g_trapped_cell[0].Y != g_home_y ){
 		for ( i = 0; i < g_trapped_cell_size; ++i ) {
 			ROS_WARN("%s %d Check %d trapped reference cell: x: %d, y: %d", __FUNCTION__, __LINE__,
@@ -1013,7 +1037,7 @@ int16_t path_escape_trapped()
 				map_set_cells(ROBOT_SIZE, g_trapped_cell[i].X, g_trapped_cell[i].Y, CLEANED);
 			}
 
-			val = path_find_shortest_path(map_get_curr_cell().X, map_get_curr_cell().Y, g_trapped_cell[i].X, g_trapped_cell[i].Y, 0);
+			val = path_find_shortest_path(temp_cell.X, temp_cell.Y, g_trapped_cell[i].X, g_trapped_cell[i].Y, 0);
 			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* No path to home, which is set when path planning is initialized. */
@@ -1025,14 +1049,14 @@ int16_t path_escape_trapped()
 		}
 	} else {
 		if (is_block_accessible(0, 0) == 1) {
-			val = path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			val = path_find_shortest_path(temp_cell.X, temp_cell.Y, 0, 0, 0);
 #if DEBUG_SM_MAP
 			debug_map(SPMAP, 0, 0);
 #endif
 //			ROS_WARN("%s %d: pos (%d, %d)\tval: %d", __FUNCTION__, __LINE__, g_cell_history[0].x, g_cell_history[0].y, val);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
-				val = path_find_shortest_path(map_get_curr_cell().X, map_get_curr_cell().Y, g_home_x, g_home_y, 0);
+				val = path_find_shortest_path(temp_cell.X, temp_cell.Y, g_home_x, g_home_y, 0);
 				ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_MAP
@@ -1048,7 +1072,7 @@ int16_t path_escape_trapped()
 				val = 1;
 			}
 		} else {
-			val = path_find_shortest_path(map_get_curr_cell().X, map_get_curr_cell().Y, g_home_x, g_home_y, 0);
+			val = path_find_shortest_path(temp_cell.X, temp_cell.Y, g_home_x, g_home_y, 0);
 			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_SM_MAP
@@ -1152,8 +1176,6 @@ int8_t path_next(Point32_t *next_point)
 						mt_set(CM_FOLLOW_LEFT_WALL);
 						extern uint32_t g_escape_trapped_timer;
 						g_escape_trapped_timer = time(NULL);
-					}else if(g_trapped_mode == 1){
-						return 2;
 					}
 					return 1;
 				}

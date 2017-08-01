@@ -5,6 +5,7 @@
 
 #include "debug.h"
 #include "path_planning.h"
+#include "core_move.h"
 
 char outString[256];
 
@@ -26,6 +27,12 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 #if ENABLE_DEBUG
 	int16_t		i, j, x_min, x_max, y_min, y_max, index;
 	CellState	cs;
+	Cell_t temp_cell;
+
+	if (g_trapped_mode == 1)
+		temp_cell = map_get_curr_cell();
+	else
+		temp_cell = g_cell_history[0];
 
 	path_get_range(&x_min, &x_max, &y_min, &y_max);
 
@@ -64,7 +71,7 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 
 		for (j = y_min; j <= y_max; j++) {
 			cs = map_get_cell(id, i, j);
-			if (i == g_cell_history[0].X && j == g_cell_history[0].Y) {
+			if (i == temp_cell.X && j == temp_cell.Y) {
 				outString[index++] = 'x';
 			} else if (i == endx && j == endy) {
 				outString[index++] = 'e';
