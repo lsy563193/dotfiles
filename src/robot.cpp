@@ -42,15 +42,11 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 	/*map subscriber for exploration*/
-//	map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
+	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	visualizeMarkerInit();
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
-	up_tilt_cli_ = robot_nh_.serviceClient<std_srvs::SetBool>("up_tilt_call");
-	//send_bumper_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("bumper_markers_",1);
-//  obstacles_pub_ = robot_nh_.advertise<Obstacles>("obstacles", 10);
-//  ROS_INFO("Obstacle Detector [ACTIVE]");
 	is_moving_ = false;
 	is_sensor_ready_ = false;
 	is_tf_ready_ = false;
@@ -84,8 +80,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-	up_tilt_count_ = 0;
-	is_tilt_ = false;
 }
 
 robot::~robot()
@@ -585,49 +579,8 @@ bool robot::getBumperLeft()
 
 */
 
-#ifndef TILT_COUNT_REACH
-#define TILT_COUNT_REACH (20)
-#endif
-
-#define DIF_TILT_X_VAL 50
-#define DIF_TILT_Y_VAL 80
-#define DIF_TILT_Z_VAL 40
-
 bool robot::isTilt()
 {
-	return is_tilt_;
+	return g_is_tilt;
 }
 
-void robot::tiltDetect()
-{
-	if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL || absolute(y_acc_ - init_y_acc_) > DIF_TILT_Y_VAL){
-	//if(absolute(x_acc_ - init_x_acc_)  > DIF_TILT_X_VAL){
-		if(++up_tilt_count_ > TILT_COUNT_REACH && absolute(z_acc_ - init_z_acc_)> DIF_TILT_Z_VAL){
-			ROS_INFO("\033[34m" "robot.cpp, %s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
-			up_tilt_count_ = 0;
-			is_tilt_ = true;
-		}
-	}
-	else{
-		up_tilt_count_ = 0;
-		is_tilt_ = false;
-	}
-
-}
-void robot::tiltCall(bool v)
-{
-	std_srvs::SetBool tri;
-
-	if(v){
-		tri.request.data = true;
-	}
-	else if(!v){
-		tri.request.data = false;
-	}
-	if(up_tilt_cli_.call(tri)){
-		ROS_INFO("\033[34m" "robot.cpp %s,%d,up tilt call response %s" "\033[0m",__FUNCTION__,__LINE__,tri.response.success == true?"publish":"no publish");
-	}
-	else{
-		ROS_INFO("\033[34m" "%s,%d,fail to call uptilt" "\033[0m",__FUNCTION__,__LINE__);
-	}
-}

@@ -47,6 +47,8 @@ uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
 bool send_stream_thread = false;
+bool g_is_tilt = false;
+
 pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
 pthread_t sendPortThread_id;
@@ -58,17 +60,11 @@ pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
 
-// This flag is for reset beep action
 bool robotbase_beep_update_flag = false;
-// Speaker totally sound time count, every count contains sound time and silence time, and the length depends on sound time counts and silence time counts, if this count < 0, it will be a constant beep action
 int robotbase_speaker_sound_loop_count = 0;
-// Sound code to be set in g_send_stream
 uint8_t robotbase_sound_code = 0;
-// A speaker sound loop contains one sound time and one silence time
-// Speaker sound time count in one speaker sound loop, every count means once of send streem loop
 int robotbase_speaker_sound_time_count = 0;
 int temp_speaker_sound_time_count = -1;
-// Speaker silence time count in one speaker sound loop, every count means once of send streem loop
 int robotbase_speaker_silence_time_count = 0;
 int temp_speaker_silence_time_count = 0;
 
@@ -268,8 +264,10 @@ void *robotbase_routine(void*)
 	last_time  = cur_time;
 	uint32_t omni_detect_cnt = 0;
 	uint32_t last_omni_wheel = 0;
+	uint32_t tilt_count = 0;
 	while (ros::ok() && !robotbase_thread_stop)
 	{
+		/*--------data extrict from serial com--------*/
 		if(pthread_mutex_lock(&recev_lock)!=0)ROS_ERROR("robotbase pthread receive lock fail");
 		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
@@ -283,7 +281,6 @@ void *robotbase_routine(void*)
 		sensor.angle = -(float)(int16_t)((receiStream[6] << 8) | receiStream[7]) / 100;
 
 		sensor.angle -= robot::instance()->offsetAngle();
-		//ROS_INFO("sensor:%f",robot::instance()->getAngle());
 
 		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
@@ -337,19 +334,20 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc_ = receiStream[38];
 		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc_ = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]); //in mG
-		sensor.y_acc_ = static_cast<int16_t>((receiStream[43]<<8)|receiStream[44]);//in mG
-		sensor.z_acc_ = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]); //in mG
+		sensor.x_acc = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]); //in mG
+		sensor.y_acc = static_cast<int16_t>((receiStream[43]<<8)|receiStream[44]);//in mG
+		sensor.z_acc = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]); //in mG
 #endif
+		/*---------extrict end-------*/
 
 		pthread_mutex_lock(&serial_data_ready_mtx);
 		pthread_cond_broadcast(&serial_data_ready_cond);
 		pthread_mutex_unlock(&serial_data_ready_mtx);
 
-		/*------------publish odom and robot_sensor topic -----------------------*/
+		/*------------publish odom and robot_sensor topic --------*/
 		cur_time = ros::Time::now();
 		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
-		float th = sensor.angle * 0.01745;					//turn degrees into radians
+		float th = sensor.angle * 0.01745;	//degree into radian
 		float dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		pose_x += (vx * cos(th) - 0 * sin(th)) * dt;
@@ -376,24 +374,18 @@ void *robotbase_routine(void*)
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
 
-/*
-		if(get_angle_offset() == 2){
-			set_angle_offset(3);
-			g_cond_var.notify_all();
-		}
-*/
 		odom_pub.publish(odom);
 		sensor_pub.publish(sensor);
-		/*---------------publish end --------------------------*/
+		/*------publish end -----------*/
+
 		// Dynamic adjust obs
 		obs_dynamic_base(OBS_adjust_count);
 
-#if __ROBOT_X900
-		// start omni wheel detect...
+		/*------start omni detect----*/
 		if(absolute(sensor.rw_vel - sensor.lw_vel) < 0.1 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
 			omni_detect_cnt ++;
 			//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(sensor.rw_vel - sensor.lw_vel));
-			if(omni_detect_cnt >= 50){
+			if(omni_detect_cnt >= 100){
 				omni_detect_cnt = 0;
 				if(absolute(sensor.omni_wheel - last_omni_wheel) <= 0){
 					ROS_INFO("\033[36m" "omni detetced \n" "\033[0m");
@@ -411,11 +403,27 @@ void *robotbase_routine(void*)
 		if(sensor.omni_wheel >= 10000){
 			reset_mobility_step();
 		}
-#endif
-		//end omni detect...
+		/*------end omni detect----*/
+
+		/*-------tilt detect-------*/
+		static int init_x_acc = sensor.x_acc;
+		static int init_y_acc = sensor.y_acc;
+		static int init_z_acc = sensor.z_acc;
+		if(absolute(sensor.x_acc - init_x_acc)  > DIF_TILT_X_VAL || absolute(sensor.y_acc - init_y_acc) > DIF_TILT_Y_VAL){
+		//if(absolute(sensor.x_acc - init_x_acc)  > DIF_TILT_X_VAL){
+			if(++tilt_count > TILT_COUNT_REACH && absolute(sensor.z_acc - init_z_acc)> DIF_TILT_Z_VAL){
+				ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
+				tilt_count = 0;
+				g_is_tilt = true;
+			}
+		}
+		else{
+			tilt_count = 0;
+			g_is_tilt = false;
+		}
+		/*----detect end---------*/
 	}
 	ROS_INFO("robotbase thread exit");
-	//pthread_exit(NULL);
 }
 
 void *serial_send_routine(void*)

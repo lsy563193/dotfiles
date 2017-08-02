@@ -278,7 +278,7 @@ bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");	
 
-	if(isReach() ||(! g_bumper_triggered  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_status()) || robot::instance()->isTilt())
+	if(isReach() ||(! g_bumper_triggered  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_status()) || g_is_tilt)
 	{
 		ROS_INFO("%s, %d: TurnRegulator should switch.", __FUNCTION__, __LINE__);
 		g_bumper_triggered = get_bumper_status();
@@ -373,7 +373,7 @@ bool LinearRegulator::isSwitch()
 {
 
 	if ((! g_bumper_triggered && get_bumper_status())
-			|| (! g_cliff_triggered && get_cliff_status()) || robot::instance()->isTilt())
+			|| (! g_cliff_triggered && get_cliff_status()) || g_is_tilt)
 	{
 //		g_is_should_follow_wall = true;
 		ROS_INFO("%s, %d:LinearRegulator g_bumper_triggered || g_cliff_triggered.", __FUNCTION__, __LINE__);
@@ -480,7 +480,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	if (base_speed_ > (int32_t) LINEAR_MIN_SPEED)
 	{
-		if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected || maybe_tilt())
+		if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected )
 		{
 			integrated_ = 0;
 			diff = 0;
@@ -586,7 +586,7 @@ bool FollowWallRegulator::isReach()
 bool FollowWallRegulator::isSwitch()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-	if( g_bumper_triggered || get_bumper_status()){
+	if( g_bumper_triggered || get_bumper_status() || g_is_tilt){
 		if(! g_bumper_triggered)
 			g_bumper_triggered = get_bumper_status();
 		g_turn_angle = bumper_turn_angle();
@@ -896,7 +896,7 @@ void RegulatorManage::switchToNext()
 {
 	if (p_reg_ == turn_reg_)
 	{
-		if(g_bumper_triggered || g_cliff_triggered || robot::instance()->isTilt()){
+		if(g_bumper_triggered || g_cliff_triggered || g_is_tilt){
 			p_reg_ = back_reg_;
 			ROS_INFO("%s %d: From turn_reg_ to back_reg_.", __FUNCTION__, __LINE__);
 		}
@@ -918,7 +918,7 @@ void RegulatorManage::switchToNext()
 			p_reg_ = turn_reg_;
 			ROS_INFO("%s %d: From mt_reg_ to turn_reg_.", __FUNCTION__, __LINE__);
 		}
-		else if (g_bumper_triggered || g_cliff_triggered || robot::instance()->isTilt() )
+		else if (g_bumper_triggered || g_cliff_triggered || g_is_tilt )
 		{
 			p_reg_ = back_reg_;
 			ROS_INFO("%s %d: From mt_reg_ to back_reg_.", __FUNCTION__, __LINE__);

@@ -278,7 +278,6 @@ bool cm_move_to(Point32_t target)
 	bool	eh_status_now=false, eh_status_last=false;
 
 	// for tilt detect 
-	bool call_up_tilt = false;
 
 	while (ros::ok())
 	{
@@ -300,17 +299,7 @@ bool cm_move_to(Point32_t target)
 			set_wheel_speed(0, 0);
 			continue;
 		}
-		robot::instance()->tiltDetect();
-		if(robot::instance()->isTilt()){
-			robot::instance()->tiltCall(true);
-			call_up_tilt = true;
-			ROS_INFO("\033[47;34m" "tilt call...." "\033[0m");
-		}
-		else if(call_up_tilt){
-			call_up_tilt = false;
-			robot::instance()->tiltCall(false);
-			ROS_INFO("\033[47;34m" "tilt uncall..." "\033[0m");
-		}
+	
 
 		if (rm.isReach() || rm.isStop()){
 			map_set_blocked();

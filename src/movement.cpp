@@ -3055,37 +3055,4 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
 	live_led_cnt_for_switch = 0;
 	robotbase_led_update_flag = true;
 }
-#define TILT_X_TRIGGER 60
-#define TILT_Y_TRIGGER 60
-#define TILT_Z_TRIGGER 40
-bool maybe_tilt()
-{
-	static int maybe_x_tilt_cnt = 0;
-	static int maybe_y_tilt_cnt = 0;
-	static int maybe_z_tilt_cnt = 0;
-	if(abs(robot::instance()->getXAcc() - robot::instance()->getInitXAcc()) >= TILT_X_TRIGGER){
-		if(++maybe_x_tilt_cnt > 5){
-			maybe_x_tilt_cnt = 0;
-			return true;
-		}
-	}
-	else if(abs(robot::instance()->getYAcc() - robot::instance()->getInitYAcc()) >= TILT_Y_TRIGGER){
-		if(++maybe_y_tilt_cnt > 5){
-			maybe_y_tilt_cnt = 0;
-			return true;
-		}
-	}
-	else if(abs(robot::instance()->getZAcc() - robot::instance()->getInitZAcc()) >= TILT_Z_TRIGGER){
-		if(++maybe_z_tilt_cnt > 5){
-			maybe_z_tilt_cnt = 0;
-			return true;
-		}
-	}
-	else{
-		maybe_x_tilt_cnt = 0;
-		maybe_y_tilt_cnt = 0;
-		maybe_z_tilt_cnt = 0;
-	}
-	return false;
 
-}

@@ -15,8 +15,16 @@ extern uint8_t receiStream[RECEI_LEN];
 extern uint8_t receiStream[RECEI_LEN];
 #define SEND_LEN 19
 #endif
+//for tilt detct
+#ifndef TILT_COUNT_REACH
+#define TILT_COUNT_REACH (20)
+#endif
 
+#define DIF_TILT_X_VAL 50
+#define DIF_TILT_Y_VAL 80
+#define DIF_TILT_Z_VAL 40
 
+extern bool g_is_tilt;
 
 extern uint8_t sendStream[SEND_LEN] ;
 extern bool robotbase_beep_update_flag;
