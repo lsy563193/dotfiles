@@ -54,7 +54,7 @@ extern uint8_t g_trapped_cell_size;
 extern Cell_t g_cell_history[5];
 extern uint8_t g_wheel_left_direction;
 extern uint8_t g_wheel_right_direction;
-bool	is_wf_go_home = false;
+bool	wf_time_out = false;
 
 //Timer
 uint32_t g_wall_follow_timer;
@@ -191,7 +191,7 @@ static bool is_time_out(void)
 	if (get_work_time() > WALL_FOLLOW_TIME) {
 		ROS_INFO("Wall Follow time longer than 60 minutes");
 		ROS_INFO("time now : %d", get_work_time());
-		is_wf_go_home = true;
+		wf_time_out = true;
 		return true;
 	} else {
 		return false;
@@ -232,6 +232,7 @@ static bool wf_is_reach_cleaned(void)
 	return false;
 }
 
+/*
 static void wf_mark_home_point(void)
 {
 	//path_planning_initialize(&, &g_home_point_old_path.front().Y);
@@ -258,7 +259,7 @@ static void wf_mark_home_point(void)
 		}
 	}
 }
-
+*/
 static bool is_isolate() {
 	path_update_cell_history();
 	int16_t	val = 0;
@@ -319,17 +320,11 @@ uint8_t wf_break_wall_follow(void)
 
 uint8_t wf_clear(void)
 {
-	robot::instance()->setBaselinkFrameType( Map_Position_Map_Angle);//inorder to use the slam angle to finsh the shortest path to home;
-	cm_update_position();
-	wf_mark_home_point();
-	map_reset(MAP);
-	ros_map_convert(true);
-	//wf_break_wall_follow();
 	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
 	g_wf_cell.clear();
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
 	g_isolate_count = 0;
-	is_wf_go_home = false;
+	wf_time_out = false;
 	return 0;
 }
 
@@ -386,7 +381,7 @@ bool wf_is_end()
 
 bool wf_is_go_home()
 {
-	if (g_isolate_count > 3 || is_wf_go_home) {
+	if (g_isolate_count > 3 || wf_time_out) {
 		return true;
 	} else {
 		return false;
