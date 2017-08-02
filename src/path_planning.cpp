@@ -1111,18 +1111,14 @@ int8_t path_next(Point32_t *next_point)
 				next = map_point_to_cell(*next_point);
 			}else{
 				ROS_INFO("reach 8m, go_home.");
-				wf_clear();
-				g_go_home = true;
-				cm_create_home_boundary();
-				wav_play(WAV_BACK_TO_CHARGER);
+				g_finish_cleaning_go_home = true;
+				cm_check_should_go_home();
 			}
 		} else {
 			if(wf_is_go_home()) {
 				ROS_INFO("follow wall finish");
-				wf_clear();
-				g_go_home = true;
-				cm_create_home_boundary();
-				wav_play(WAV_BACK_TO_CHARGER);
+				g_finish_cleaning_go_home = true;
+				cm_check_should_go_home();
 
 			} else if (g_keep_on_wf) {
 				ROS_INFO("keep on follow wall");
@@ -1163,9 +1159,8 @@ int8_t path_next(Point32_t *next_point)
 //				ROS_WARN("%s %d: path_target: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, next.X, next.Y, target.X, target.Y);
 				if (ret == 0)
 				{
-					g_go_home = true;
-					cm_create_home_boundary();
-					wav_play(WAV_BACK_TO_CHARGER);
+					g_finish_cleaning_go_home = true;
+					cm_check_should_go_home();
 				}
 				if (ret == -2){
 					if(g_trapped_mode == 0){

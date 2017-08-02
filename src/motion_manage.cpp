@@ -21,6 +21,7 @@
 #include "event_manager.h"
 #include "spot.h"
 #include "move_type.h"
+#include "wall_follow_slam.h"
 
 Segment_set segmentss;
 
@@ -152,6 +153,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_from_station = 0;
 	g_trapped_mode = 0;
+	g_finish_cleaning_go_home = false;
 	g_motion_init_succeeded = false;
 	bool remote_home_during_pause = false;
 	if (robot::instance()->isManualPaused() && g_remote_home)
@@ -293,6 +295,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
+	if (get_clean_mode() == Clean_Mode_WallFollow)
+		wf_clear();
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{

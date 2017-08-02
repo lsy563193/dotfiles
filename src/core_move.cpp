@@ -108,6 +108,7 @@ bool g_go_home_by_remote = false;
 //Flag for judge if keep on wall follow
 bool g_keep_on_wf = false;
 
+bool g_finish_cleaning_go_home = false;
 
 time_t last_time_remote_spot = time(NULL);
 int16_t ranged_angle(int16_t angle)
@@ -472,7 +473,9 @@ int cm_cleaning()
 		if (g_key_clean_pressed || g_fatal_quit_event)
 			return -1;
 
-		cm_check_should_go_home();
+		if (!g_go_home)
+			cm_check_should_go_home();
+
 		cm_check_temp_spot();
 
 		Cell_t start{map_get_x_cell(), map_get_y_cell()};
@@ -545,19 +548,21 @@ int cm_cleaning()
 
 void cm_check_should_go_home(void)
 {
-	if (!g_go_home && (g_remote_home || g_battery_home))
+	if (g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
-		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home ,set g_go_home, reset g_remote_home and g_battery_home.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home, or finish cleaning.", __FUNCTION__, __LINE__);
 		g_go_home = true;
+		work_motor_configure();
+		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 		if (get_clean_mode() == Clean_Mode_WallFollow)
-			wf_clear();
-		if (g_motion_init_succeeded)
 		{
-			work_motor_configure();
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
-			if (g_battery_home)
-				wav_play(WAV_BATTERY_LOW);
+			cm_update_position();
+			//wf_mark_home_point();
+			map_reset(MAP);
+			ros_map_convert(true);
 		}
+		if (g_battery_home)
+			wav_play(WAV_BATTERY_LOW);
 		if (g_remote_home)
 		{
 			set_led_mode(LED_STEADY, LED_ORANGE);
@@ -568,6 +573,7 @@ void cm_check_should_go_home(void)
 			cm_create_home_boundary();
 		g_remote_home = false;
 		g_battery_home = false;
+		g_finish_cleaning_go_home = false;
 	}
 }
 

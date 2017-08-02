@@ -55,7 +55,7 @@ extern bool g_move_back_finished;
 extern uint16_t g_straight_distance;
 extern int16_t g_turn_angle;
 extern uint16_t g_wall_distance;
-
+extern bool g_finish_cleaning_go_home;
 extern bool g_from_station;
 extern int g_trapped_mode;
 extern bool g_motion_init_succeeded;
