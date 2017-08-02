@@ -779,12 +779,12 @@ void map_set_realtime()
 //		ROS_WARN("IN ESC");
 		if(g_trapped_mode == 1 )
 		{
-			if(path_target(next, target) == 1){
+			if(path_target(next, target) >= 0){
 				ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
 				g_trapped_mode = 2;
 			}
 			else{
-				ROS_INFO("%s,%d:trapped_mode path_target false",__FUNCTION__,__LINE__);
+				ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
 			}
 		}
 	}
