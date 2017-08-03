@@ -312,6 +312,9 @@ MotionManage::~MotionManage()
 	// Disable motor here because there is a work_motor_configure() in spotDeinit().
 	disable_motors();
 
+	g_tilt_enable = false;
+	ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
+
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
 	if (s_laser != nullptr)

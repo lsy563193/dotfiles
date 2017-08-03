@@ -123,9 +123,6 @@ void go_to_charger(void)
 	uint8_t entrance_to_check_position = 0;
 	uint32_t receive_code = 0;
 
-	g_tilt_enable = false; //diable tilt detect
-	ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
-
 	uint8_t around_charger_stub_dir = 0;
 #define ROUND_LEFT			0x01
 #define ROUND_RIGHT			0x02

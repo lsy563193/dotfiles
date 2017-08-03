@@ -71,7 +71,7 @@ bool g_plan_activated = false;
 bool g_omni_notmove = false;
 bool g_omni_enable = false;
 /* tilt switch*/
-bool g_tilt_enable = true;
+bool g_tilt_enable = false;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 

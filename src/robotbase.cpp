@@ -409,10 +409,6 @@ void *robotbase_routine(void*)
 		/*------end omni detect----*/
 
 		/*-------start tilt detect-------*/
-		if(sensor.c_s > 0 && g_tilt_enable){
-			g_tilt_enable = false;
-			ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
-		}
 		if(g_tilt_enable){
 			if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL || absolute(sensor.y_acc - g_yacc_init_val) > DIF_TILT_Y_VAL){
 			//if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL){
