@@ -382,13 +382,13 @@ void *robotbase_routine(void*)
 		obs_dynamic_base(OBS_adjust_count);
 
 		/*------start omni detect----*/
-		if(absolute(sensor.rw_vel - sensor.lw_vel) < 0.1 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
+		if(absolute(sensor.rw_vel - sensor.lw_vel) <= 0.05 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
 			omni_detect_cnt ++;
 			//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(sensor.rw_vel - sensor.lw_vel));
-			if(omni_detect_cnt >= 100){
+			if(omni_detect_cnt >= 150){
 				omni_detect_cnt = 0;
 				if(absolute(sensor.omni_wheel - last_omni_wheel) <= 0){
-					ROS_INFO("\033[36m" "omni detetced \n" "\033[0m");
+					ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", sensor.rw_vel,sensor.lw_vel);
 					g_omni_notmove = true;
 				}
 				else
