@@ -59,6 +59,9 @@ pthread_mutex_t serial_data_ready_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
+static int g_xacc_init_val = sensor.x_acc;
+static int g_yacc_init_val = sensor.y_acc;
+static int g_zacc_init_val = sensor.z_acc;
 
 bool robotbase_beep_update_flag = false;
 int robotbase_speaker_sound_loop_count = 0;
@@ -382,46 +385,49 @@ void *robotbase_routine(void*)
 		obs_dynamic_base(OBS_adjust_count);
 
 		/*------start omni detect----*/
-		if(absolute(sensor.rw_vel - sensor.lw_vel) <= 0.05 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
-			omni_detect_cnt ++;
-			//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(sensor.rw_vel - sensor.lw_vel));
-			if(omni_detect_cnt >= 150){
-				omni_detect_cnt = 0;
-				if(absolute(sensor.omni_wheel - last_omni_wheel) <= 0){
-					ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", sensor.rw_vel,sensor.lw_vel);
-					g_omni_notmove = true;
+		if(g_omni_enable){
+			if(absolute(sensor.rw_vel - sensor.lw_vel) <= 0.05 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
+				if(absolute(sensor.omni_wheel - last_omni_wheel) == 0){
+					omni_detect_cnt ++;
+					//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(sensor.rw_vel - sensor.lw_vel));
+					if(omni_detect_cnt >= 150){
+						omni_detect_cnt = 0;
+						ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", sensor.rw_vel,sensor.lw_vel);
+						g_omni_notmove = true;
+					}
 				}
-				else
-					g_omni_notmove = false;
+			}
+			else{
+				//g_omni_notmove = false;
+				omni_detect_cnt = 0;
 				last_omni_wheel = sensor.omni_wheel;
 			}
-		}
-		else{
-			g_omni_notmove = false;
-			omni_detect_cnt = 0;
-		}
-		if(sensor.omni_wheel >= 10000){
-			reset_mobility_step();
+			if(sensor.omni_wheel >= 10000){
+				reset_mobility_step();
+			}
 		}
 		/*------end omni detect----*/
 
-		/*-------tilt detect-------*/
-		static int init_x_acc = sensor.x_acc;
-		static int init_y_acc = sensor.y_acc;
-		static int init_z_acc = sensor.z_acc;
-		if(absolute(sensor.x_acc - init_x_acc)  > DIF_TILT_X_VAL || absolute(sensor.y_acc - init_y_acc) > DIF_TILT_Y_VAL){
-		//if(absolute(sensor.x_acc - init_x_acc)  > DIF_TILT_X_VAL){
-			if(++tilt_count > TILT_COUNT_REACH && absolute(sensor.z_acc - init_z_acc)> DIF_TILT_Z_VAL){
-				ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
+		/*-------start tilt detect-------*/
+		if(sensor.c_s > 0 && g_tilt_enable){
+			g_tilt_enable = false;
+			ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
+		}
+		if(g_tilt_enable){
+			if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL || absolute(sensor.y_acc - g_yacc_init_val) > DIF_TILT_Y_VAL){
+			//if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL){
+				if(++tilt_count > TILT_COUNT_REACH && absolute(sensor.z_acc - g_zacc_init_val)> DIF_TILT_Z_VAL){
+					ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
+					tilt_count = 0;
+					g_is_tilt = true;
+				}
+			}
+			else{
 				tilt_count = 0;
-				g_is_tilt = true;
+				g_is_tilt = false;
 			}
 		}
-		else{
-			tilt_count = 0;
-			g_is_tilt = false;
-		}
-		/*----detect end---------*/
+		/*----tilt detect end---------*/
 	}
 	ROS_INFO("robotbase thread exit");
 }
@@ -584,4 +590,9 @@ bool is_turn(void)
 					(sensor.lw_vel * sensor.rw_vel < 0) ||
 					(sensor.lw_vel < 0 && sensor.rw_vel < 0)
 					);
+}
+void set_acc_init_data(){
+	g_xacc_init_val = sensor.x_acc;
+	g_yacc_init_val = sensor.y_acc;
+	g_zacc_init_val = sensor.z_acc;
 }

@@ -19,6 +19,7 @@
 #include "config.h"
 #include "wav.h"
 #include "robot.hpp"
+#include "robotbase.h"
 #include "event_manager.h"
 #include "core_move.h"
 
@@ -46,6 +47,10 @@ void user_interface(void)
 	start_time = time(NULL);
 	temp_mode=0;
 	battery_ready_to_clean = true;
+
+	set_acc_init_data();//set acc init data for tilt detect
+	g_tilt_enable = true;//temporary set enable titlt detect
+	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	disable_motors();
 	reset_rcon_remote();

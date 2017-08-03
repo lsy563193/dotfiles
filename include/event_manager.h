@@ -87,6 +87,9 @@ extern bool g_slam_error;
 extern bool g_plan_activated;
 /* Omni wheel*/
 extern bool g_omni_notmove;
+extern bool g_omni_enable;
+/* tilt enable */
+extern bool g_tilt_enable;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,

@@ -36,7 +36,6 @@ void charge_function(void)
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
 	uint16_t bat_v;
-
 	set_led_mode(LED_BREATH, LED_ORANGE);
 	set_start_charge();
 	set_plan_status(0);

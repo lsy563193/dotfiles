@@ -69,6 +69,9 @@ bool g_plan_activated = false;
 
 /* Omni wheel*/
 bool g_omni_notmove = false;
+bool g_omni_enable = false;
+/* tilt switch*/
+bool g_tilt_enable = true;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 

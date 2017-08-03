@@ -55,5 +55,5 @@ void robotbase_reset_odom_pose(void);
 void robotbase_restore_slam_correction(void);
 void robotbase_obs_adjust_count(int count);
 bool is_turn(void);
-
+void set_acc_init_data();
 #endif
