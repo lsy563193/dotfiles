@@ -150,7 +150,7 @@ void remote_move(void)
 
 				float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 				ROS_DEBUG("%s %d: current pos(%f, %f), distance:%f.", __FUNCTION__, __LINE__, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY(), distance);
-				if (distance < 0.02f)
+				if (distance < (remote_rcon_triggered ? 0.06f : 0.02f))
 					break;
 
 				if (g_bumper_triggered)
@@ -245,19 +245,12 @@ void remote_move(void)
 					tick_ = 0;
 				}
 
-				//tick_++;
-				////ROS_WARN("%s %d: tick_: %d, diff: %d. moving speed: %d.", __FUNCTION__, __LINE__, tick_,  diff, moving_speed);
-				//if (tick_ > 1)
-				//{
-				//	tick_ = 0;
 				if (std::abs(diff) > 80){
 					moving_speed = std::min(++moving_speed, ROTATE_TOP_SPEED);
-					//ROS_WARN("%s %d: tick_: %d, diff: %d. moving speed: %d.", __FUNCTION__, __LINE__, tick_,  diff, moving_speed);
 				}
 				else{
 					--moving_speed;
 					moving_speed = std::max(--moving_speed, ROTATE_LOW_SPEED);
-					//ROS_WARN("%s %d: tick_: %d, diff: %d. moving speed: %d.", __FUNCTION__, __LINE__, tick_,  diff, moving_speed);
 				}
 				//}
 
@@ -538,8 +531,8 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 void remote_mode_handle_rcon(bool state_now, bool state_last)
 {
 	if (get_move_flag_() == REMOTE_MODE_FORWARD && !remote_rcon_triggered
-		&& get_rcon_status() & (RconFL_HomeL | RconFL_HomeR | RconFR_HomeL | RconFR_HomeR | RconFL2_HomeL | RconFL2_HomeR | RconFR2_HomeL | RconFR2_HomeR | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)
-		&& remote_rcon_cnt++ >= 2)
+		&& get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)
+		&& ++remote_rcon_cnt >= 1)
 	{
 		ROS_WARN("%s %d: Move back for Rcon.", __FUNCTION__, __LINE__);
 		remote_rcon_triggered = true;

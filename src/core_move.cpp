@@ -560,6 +560,7 @@ void cm_check_should_go_home(void)
 			//wf_mark_home_point();
 			map_reset(MAP);
 			ros_map_convert(true);
+			map_mark_robot();//note: To clear the obstacles befor go home, please don't remove it!
 		}
 		if (g_battery_home)
 			wav_play(WAV_BATTERY_LOW);
