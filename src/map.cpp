@@ -452,6 +452,9 @@ void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 //map--------------------------------------------------------
 static  void map_set_obs()
 {
+#if LASER_MARKER
+	MotionManage::s_laser->laserMarker(true);
+#else
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();
 	ROS_INFO("%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
@@ -496,6 +499,7 @@ static  void map_set_obs()
 			map_set_cell(MAP, x, y, UNCLEAN);
 		}
 	}
+#endif
 }
 
 static void map_set_bumper()

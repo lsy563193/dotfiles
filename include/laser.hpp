@@ -46,7 +46,7 @@ public:
 	void lidarShieldDetect(bool sd);
 	void lidarMotorCtrl(bool orf);
 
-	bool laserMarker(void);
+	uint8_t laserMarker(bool is_mark);
 private:
 
 	//void stop(void);

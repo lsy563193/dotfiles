@@ -247,6 +247,7 @@ bool BackRegulator::isSwitch()
 
 bool BackRegulator::_isStop()
 {
+	MotionManage::s_laser->laserMarker(false);
 	return false;
 }
 
@@ -297,6 +298,7 @@ bool TurnRegulator::isSwitch()
 
 bool TurnRegulator::_isStop()
 {
+	MotionManage::s_laser->laserMarker(false);
 	return false;
 }
 
@@ -406,11 +408,14 @@ bool LinearRegulator::isSwitch()
 bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
-	auto obs_tmp = _get_obs_value();
 
-	if (obs_tmp == Status_Front_OBS || rcon_tmp)
+	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
+
+	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
+	if (obs_tmp != 0 || rcon_tmp)
 	{
-		if(obs_tmp == Status_Front_OBS)
+		//if(obs_tmp == Status_Front_OBS)
+		if(obs_tmp != 0)
 			g_obs_triggered = obs_tmp;
 
 		if(rcon_tmp){
@@ -631,6 +636,7 @@ bool FollowWallRegulator::isSwitch()
 bool FollowWallRegulator::_isStop()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
+	MotionManage::s_laser->laserMarker(false);
 	return false;
 }
 
