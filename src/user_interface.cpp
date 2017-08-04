@@ -229,6 +229,10 @@ void user_interface_register_events(void)
 	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
+
+#undef event_manager_register_and_enable_x
+
+	event_manager_set_enable(true);
 }
 
 void user_interface_unregister_events(void)
@@ -264,6 +268,9 @@ void user_interface_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+#undef event_manager_register_and_disable_x
+
+	event_manager_set_enable(false);
 }
 
 void user_interface_handle_cliff(bool state_now, bool state_last)

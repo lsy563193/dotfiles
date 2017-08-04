@@ -2490,6 +2490,9 @@ void go_home_register_events(void)
 	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
 	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
+#undef event_manager_register_and_enable_x
+
+	event_manager_set_enable(true);
 }
 
 void go_home_unregister_events(void)
@@ -2531,6 +2534,9 @@ void go_home_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
+#undef event_manager_register_and_disable_x
+
+	event_manager_set_enable(false);
 }
 
 void go_home_handle_charge_detect(bool state_now, bool state_last)

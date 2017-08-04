@@ -331,6 +331,9 @@ void remote_mode_register_events(void)
 	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
+#undef event_manager_register_and_enable_x
+
+	event_manager_set_enable(true);
 }
 
 void remote_mode_unregister_events(void)
@@ -381,6 +384,9 @@ void remote_mode_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
 	/* Charge Status */
 	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
+#undef event_manager_register_and_disable_x
+
+	event_manager_set_enable(false);
 }
 
 void remote_mode_handle_bumper(bool state_now, bool state_last)
