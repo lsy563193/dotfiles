@@ -364,7 +364,7 @@ LinearRegulator::LinearRegulator(Point32_t target):
 
 bool LinearRegulator::isReach()
 {
-	map_set_realtime();
+	//map_set_realtime();
 
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
@@ -551,7 +551,7 @@ bool FollowWallRegulator::isReach()
 {
 //	ROS_INFO("FollowWallRegulator isReach");
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
-	map_set_realtime();
+	//map_set_realtime();
 	bool ret = false;
 	auto start_y = s_origin.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)

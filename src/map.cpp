@@ -739,56 +739,36 @@ void map_set_follow(Cell_t start)
 
 void map_set_realtime()
 {
-	if (get_clean_mode() != Clean_Mode_Navigation)
-		return;
-
-	static Cell_t last{0, 0};
 	auto curr = map_get_curr_cell();
-	if (last != curr)
+//	ROS_ERROR("%s %d: map_set_realtime.", __FUNCTION__, __LINE__);
+	map_set_cleaned();
+	if(mt_is_follow_wall())
 	{
-//		ROS_ERROR("%s %d: map_set_realtime.", __FUNCTION__, __LINE__);
-		last = curr;
-		map_set_cleaned();
-		if(mt_is_follow_wall())
+		auto dx = curr.X - count_to_cell(RegulatorBase::s_origin.X);
+		if(dx == 0)
+			return;
+		auto dy = mt_is_left()  ?  2 : -2;
+		ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
+		if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
 		{
-			auto dx = curr.X - count_to_cell(RegulatorBase::s_origin.X);
-			if(dx == 0)
-				return;
-			auto dy = mt_is_left()  ?  2 : -2;
-			ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
-			if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
+			for (dx = -1; dx <= 0; dx++)
 			{
-				for (dx = -1; dx <= 0; dx++)
-				{
-					int x, y;
-					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-					if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
-						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
-				}
-			}
-			if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
-			{
-				for (dx = -1; dx <= 0; dx++)
-				{
-					int x, y;
-					cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-					ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-					if (count_to_cell(y) -curr.Y <= 2);
-						map_set_cell(MAP, x, y, BLOCKED_CLIFF);
-				}
+				int x, y;
+				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+				ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+				if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
+					map_set_cell(MAP, x, y, BLOCKED_CLIFF);
 			}
 		}
-		Cell_t next,target;
-//		ROS_WARN("IN ESC");
-		if(g_trapped_mode == 1 )
+		if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
 		{
-			if(path_target(next, target) >= 0){
-				ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
-				g_trapped_mode = 2;
-			}
-			else{
-				ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+			for (dx = -1; dx <= 0; dx++)
+			{
+				int x, y;
+				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+				ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+				if (count_to_cell(y) -curr.Y <= 2);
+					map_set_cell(MAP, x, y, BLOCKED_CLIFF);
 			}
 		}
 	}

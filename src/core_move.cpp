@@ -272,11 +272,19 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
  *			-1: Robot cannot move to target cell
  *			1: Robot arrive target cell
  */
-bool cm_move_to(const Cell_t &target)
+bool cm_move_to(const Cell_t &next)
 {
-	RegulatorManage rm({map_get_x_count(), map_get_y_count()}, map_cell_to_point(target));
+	auto start = map_get_curr_cell();
+	//extern uint16_t g_new_dir;
+	//if (mt_is_linear() && IS_X_AXIS(g_new_dir))
+	//	start.Y = next.Y;
+	RegulatorManage rm({map_get_x_count(), map_get_y_count()}, map_cell_to_point(next));
 
-	bool	eh_status_now=false, eh_status_last=false;
+	bool eh_status_now=false, eh_status_last=false;
+	bool ret = false;
+
+	std::vector<Cell_t> paths;
+	paths.push_back(start);
 
 	while (ros::ok())
 	{
@@ -298,23 +306,48 @@ bool cm_move_to(const Cell_t &target)
 			set_wheel_speed(0, 0);
 			continue;
 		}
-	
 
 		if (rm.isReach() || rm.isStop()){
-			map_set_blocked();
-			return true;
+			ret = true;
+			break;
 		}
 
 		if (rm.isSwitch()){
 			map_set_blocked();
 			rm.switchToNext();
 		}
+
+		if (get_clean_mode() == Clean_Mode_Navigation && (mt_is_linear() || mt_is_follow_wall()))
+		{
+			auto curr = map_get_curr_cell();
+			if (paths.empty() || paths.back() != curr)
+			{
+				map_set_realtime();
+				if (g_trapped_mode == 0)
+				{
+					paths.push_back(curr);
+				}
+				else if (g_trapped_mode == 1)
+				{
+					Cell_t next_tmp ,target_tmp;
+					if(path_target(next_tmp, target_tmp) >= 0){
+						ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
+						g_trapped_mode = 2;
+					}
+					else{
+						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+					}
+				}
+			}
+		}
+
 		int32_t	 speed_left = 0, speed_right = 0;
 		rm.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);
 	}
 
-	return false;
+	map_set_blocked();
+	return ret;
 }
 
 /*
