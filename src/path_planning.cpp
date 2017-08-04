@@ -284,7 +284,7 @@ bool path_lane_is_cleaned(Cell_t& next)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
 
-	auto tmp = next;
+	auto tmp = g_curr;
 
 	for (i = 1; (min_stop == 0 || max_stop == 0); i++)
 	{
@@ -292,14 +292,14 @@ bool path_lane_is_cleaned(Cell_t& next)
 		if (min_stop == 0)
 		{
 			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(tmp.X - i, tmp.Y) == 1 || is_block_boundary(tmp.X - i, tmp.Y) == 1)
+			if (is_block_blocked(g_curr.X - i, g_curr.Y) == 1 || is_block_boundary(g_curr.X - i, g_curr.Y) == 1)
 			{
 				min_stop = 1;
 			} else
 			{
-				if (is_brush_block_unclean(tmp.X - i, tmp.Y))
+				if (is_brush_block_unclean(g_curr.X - i, g_curr.Y))
 				{
-					if (is_block_blocked(tmp.X - (i + 1), tmp.Y) == 0)
+					if (is_block_blocked(g_curr.X - (i + 1), g_curr.Y) == 0)
 						min = i;
 					min_stop = 1;
 				}
@@ -310,14 +310,14 @@ bool path_lane_is_cleaned(Cell_t& next)
 		if (max_stop == 0)
 		{
 			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(tmp.X + i, tmp.Y) == 1 || is_block_boundary(tmp.X + i, tmp.Y) == 1)
+			if (is_block_blocked(g_curr.X + i, g_curr.Y) == 1 || is_block_boundary(g_curr.X + i, g_curr.Y) == 1)
 			{
 				max_stop = 1;
 			} else
 			{
-				if (is_brush_block_unclean(tmp.X + i, tmp.Y))
+				if (is_brush_block_unclean(g_curr.X + i, g_curr.Y))
 				{
-					if (is_block_blocked(tmp.X + i + 1, tmp.Y) == 0)
+					if (is_block_blocked(g_curr.X + i + 1, g_curr.Y) == 0)
 						max = i;
 					max_stop = 1;
 				}
@@ -339,44 +339,44 @@ bool path_lane_is_cleaned(Cell_t& next)
 		 * previous robot g_cell_history. Otherwise, move to the end that have more unclean cells.
 		 */
 		if (min > max)
-			next.X += max;
+			tmp.X += max;
 		else if (min < max)
-			next.X -= min;
+			tmp.X -= min;
 		else
 		{
 			if (g_cell_history[2].Y == g_cell_history[1].Y)
 			{
 				if (g_cell_history[2].X > g_cell_history[1].X)
-					next.X -= min;
+					tmp.X -= min;
 				else if (g_cell_history[2].X < g_cell_history[1].X)
-					next.X += max;
+					tmp.X += max;
 				else
 				{
 					if (g_cell_history[0].X <= g_cell_history[1].X)
-						next.X += max;
+						tmp.X += max;
 					else
-						next.X -= min;
+						tmp.X -= min;
 				}
 			} else if (g_cell_history[0].Y == g_cell_history[1].Y)
 			{
 				if (g_cell_history[0].X >= g_cell_history[1].X)
-					next.X += max;
+					tmp.X += max;
 				else
-					next.X -= min;
+					tmp.X -= min;
 			} else
-				next.X += max;
+				tmp.X += max;
 		}
-		ROS_INFO("%s %d: next(%d,%d)", __FUNCTION__, __LINE__, next.X,next.Y);
+		ROS_INFO("%s %d: tmp(%d,%d)", __FUNCTION__, __LINE__, tmp.X,tmp.Y);
 		is_found = 2;
 	} else if (min != SHRT_MAX)
 	{
 		/* Only the NEG_X end is not cleaned. */
-		next.X -= min;
+		tmp.X -= min;
 		is_found = 1;
 	} else if (max != SHRT_MAX)
 	{
 		/* Only the POS_X end is not cleaned. */
-		next.X += max;
+		tmp.X += max;
 		is_found = 1;
 	}
 	if (is_found == 1 && g_cell_history[0] == g_cell_history[1])
@@ -387,7 +387,7 @@ bool path_lane_is_cleaned(Cell_t& next)
 		uint8_t un_cleaned_cnt = 0;
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 			for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
-				if (map_get_cell(MAP, next.X + dx, next.Y + dy) == UNCLEAN)
+				if (map_get_cell(MAP, tmp.X + dx, tmp.Y + dy) == UNCLEAN)
 					un_cleaned_cnt++;
 
 		if (un_cleaned_cnt < 2)
@@ -399,15 +399,18 @@ bool path_lane_is_cleaned(Cell_t& next)
 	const Cell_t curr{g_cell_history[0].X, g_cell_history[0].Y};
 	if (is_found > 0)
 	{
-		auto dx1 = (next.X > curr.X) ? 1 : -1;
-		auto boundary = (next.X > curr.X) ? g_x_max : g_x_min;
-		while(next.X != boundary)
+		auto dx1 = (tmp.X > curr.X) ? 1 : -1;
+		auto boundary = (tmp.X > curr.X) ? g_x_max : g_x_min;
+		while(tmp.X != boundary)
 		{
-			if (! is_brush_block_unclean(next.X, next.Y))
+			if (! is_brush_block_unclean(tmp.X, tmp.Y))
 				break;
-			next.X += dx1;
+			tmp.X += dx1;
 		}
 	}
+
+	if (is_found)
+		next = tmp;
 
 	return is_found>0;
 }
@@ -1094,10 +1097,8 @@ int16_t path_escape_trapped()
 	return val;
 }
 
-int8_t path_next(Point32_t *next_point)
+int8_t path_next(Cell_t &next)
 {
-	Point32_t target_point;
-	Cell_t next = g_curr;
 	Cell_t target = next;
 	//ros_map_convert(false);
 	extern bool g_go_home;
@@ -1105,10 +1106,9 @@ int8_t path_next(Point32_t *next_point)
 	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
 		if(mt_is_linear()){
-			if(g_curr != map_point_to_cell(*next_point)){
+			if(g_curr != next){
 				ROS_INFO("start follow wall");
 				mt_set(CM_FOLLOW_LEFT_WALL);
-				next = map_point_to_cell(*next_point);
 			}else{
 				ROS_INFO("reach 8m, go_home.");
 				g_finish_cleaning_go_home = true;
@@ -1139,9 +1139,8 @@ int8_t path_next(Point32_t *next_point)
 		}
 	}
 	else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
-		if (!SpotMovement::instance()->spotNextTarget(next_point))
+		if (!SpotMovement::instance()->spotNextTarget(next))
 			return 0;
-		next = map_point_to_cell(*next_point);
 		target = next;
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
@@ -1182,15 +1181,11 @@ int8_t path_next(Point32_t *next_point)
 	if (g_go_home && path_get_home_target(next, target) == NO_TARGET_LEFT)
 		return 0;
 
-	//found ==1
-	*next_point = map_cell_to_point(next);
-	target_point = map_cell_to_point(target);
-
 	g_old_dir = g_new_dir;
 	if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
 		mt_set(CM_LINEARMOVE);
 	else if(get_clean_mode() == Clean_Mode_Navigation)
-		mt_update(next_point, target_point, g_old_dir);
+		mt_update(next, target, g_old_dir);
 	// else if wall follow mode, the move type has been set before here.
 
 	if (g_curr.X == next.X)
@@ -1198,6 +1193,8 @@ int8_t path_next(Point32_t *next_point)
 	else
 		g_new_dir = g_curr.X > next.X ? NEG_X : POS_X;
 
+	extern Cell_t g_target_cell;
+	g_target_cell = target;
 	return 1;
 }
 
@@ -1313,7 +1310,7 @@ int8_t path_get_home_target(Cell_t& next, Cell_t& target)
 			target = g_current_home_cell;
 
 		auto path_next_status = (int8_t) path_next_best(g_cell_history[0], target.X, target.Y, next.X, next.Y);
-		ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
+		ROS_INFO("%s %d: Path Find: %d\tNext cell: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, next.X, next.Y, map_get_x_cell(), map_get_y_cell());
 		if (path_next_status == 1)
 		{
 //			if (cm_check_loop_back(next))

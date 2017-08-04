@@ -73,7 +73,7 @@ bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
-Point32_t g_next_point, g_target_point;
+Cell_t g_next_cell, g_target_cell;
 
 //uint8_t	g_remote_go_home = 0;
 bool	g_go_home = false;
@@ -181,7 +181,7 @@ void cm_update_map()
 
 	map_set_cleaned();
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
-//		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 //	}
 
 }
@@ -272,13 +272,11 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
  *			-1: Robot cannot move to target cell
  *			1: Robot arrive target cell
  */
-bool cm_move_to(Point32_t target)
+bool cm_move_to(const Cell_t &target)
 {
-	RegulatorManage rm({map_get_x_count(), map_get_y_count()},target);
+	RegulatorManage rm({map_get_x_count(), map_get_y_count()}, map_cell_to_point(target));
 
 	bool	eh_status_now=false, eh_status_last=false;
-
-	// for tilt detect 
 
 	while (ros::ok())
 	{
@@ -482,9 +480,9 @@ int cm_cleaning()
 		path_update_cell_history();
 		path_update_cells();
 		path_reset_path_points();
-		int8_t is_found = path_next(&g_next_point);
-		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
-//		ROS_INFO("%s %d: is_found: %d, next point(%d, %d), target point(%d, %d).", __FUNCTION__, __LINE__, is_found, count_to_cell(g_next_point.X), count_to_cell(g_next_point.Y), count_to_cell(g_target_point.X), count_to_cell(g_target_point.Y));
+		int8_t is_found = path_next(g_next_cell);
+		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
+		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point
 		{
 			// It means robot can not go to charger stub.
@@ -499,10 +497,10 @@ int cm_cleaning()
 		else if (is_found == 1)
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if(! cm_move_to(g_next_point)) {
+			if(! cm_move_to(g_next_cell)) {
 				return -1;
 			}
-			linear_mark_clean(start, map_point_to_cell(g_next_point));
+			linear_mark_clean(start, g_next_cell);
 
 			if (cm_should_self_check()){
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.

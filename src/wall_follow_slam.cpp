@@ -330,7 +330,7 @@ uint8_t wf_clear(void)
 
 void wf_update_map()
 {
-	extern Point32_t g_next_point, g_target_point;
+	extern Cell_t g_next_cell, g_target_cell;
 
 	auto cell = cm_update_position();
 
@@ -343,7 +343,7 @@ void wf_update_map()
 		if (size >= 0)
 			map_set_cell(MAP, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);
 
-		MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 	}
 
 	int32_t x,y;
