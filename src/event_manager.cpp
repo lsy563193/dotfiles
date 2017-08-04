@@ -87,7 +87,7 @@ bool g_event_handler_status = false;
 pthread_mutex_t	event_handler_mtx;
 pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
 
-static bool gs_new_event_status[EVT_MAX];
+static bool g_new_event_status[EVT_MAX];
 
 void event_manager_init()
 {
@@ -104,13 +104,22 @@ void event_manager_init()
 			eat[i].handler_enabled[j] = false;
 		}
 
-		gs_new_event_status[i] = false;
+		g_new_event_status[i] = false;
 	}
 }
 
 void event_manager_set_enable(bool enable)
 {
 	g_event_manager_enabled = enable;
+	if (!enable)
+	{
+		ROS_WARN("%s %d: Disable all event under manager mode:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
+		for (int i = 0; i < EVT_MAX; i++) {
+			eat[evt_mgr_mode].handler[i] = NULL;
+			eat[evt_mgr_mode].handler_enabled[i] = false;
+		}
+		g_new_event_status[evt_mgr_mode] = false;
+	}
 }
 
 void *event_manager_thread(void *data)
@@ -135,7 +144,7 @@ void *event_manager_thread(void *data)
 		pthread_cond_wait(&serial_data_ready_cond, &serial_data_ready_mtx);
 		pthread_mutex_unlock(&serial_data_ready_mtx);
 
-//		ROS_DEBUG("%s %d: wake up by serial data arrive", __FUNCTION__, __LINE__);
+		//ROS_DEBUG("%s %d: wake up by serial data arrive", __FUNCTION__, __LINE__);
 
 #define	evt_set_status_x(x)	\
 	{ 						\
@@ -318,7 +327,7 @@ void *event_manager_thread(void *data)
 			//ROS_INFO("%s %d: going to broadcase new event", __FUNCTION__, __LINE__);
 			pthread_mutex_lock(&new_event_mtx);
 
-			memcpy(gs_new_event_status, status, sizeof(bool) * EVT_MAX);
+			memcpy(g_new_event_status, status, sizeof(bool) * EVT_MAX);
 			pthread_cond_broadcast(&new_event_cond);
 
 			pthread_mutex_unlock(&new_event_mtx);
@@ -338,9 +347,9 @@ void *event_handler_thread(void *data) {
 		pthread_cond_wait(&new_event_cond, &new_event_mtx);
 
 		memcpy(status_last, status_now, sizeof(bool) * EVT_MAX);
-		memcpy(status_now, gs_new_event_status, sizeof(bool) * EVT_MAX);
+		memcpy(status_now, g_new_event_status, sizeof(bool) * EVT_MAX);
 		for (int i = 0; i < EVT_MAX; i++) {
-			gs_new_event_status[i] = false;
+			g_new_event_status[i] = false;
 		}
 
 		pthread_mutex_unlock(&new_event_mtx);
@@ -690,6 +699,7 @@ void em_default_handle_cliff_right(bool state_now, bool state_last)
 void em_default_handle_rcon(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+	reset_rcon_status();
 }
 /*
 void em_default_handle_rcon_front_left(bool state_now, bool state_last)

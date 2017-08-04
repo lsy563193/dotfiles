@@ -31,7 +31,7 @@ int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 extern Cell_t g_cell_history[];
 extern uint16_t g_old_dir;
-extern Point32_t g_next_point, g_target_point;
+extern Cell_t g_next_cell, g_target_cell;
 void map_init(void) {
 	uint8_t c, d;
 
@@ -452,6 +452,9 @@ void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 //map--------------------------------------------------------
 static  void map_set_obs()
 {
+#if LASER_MARKER
+	MotionManage::s_laser->laserMarker(true);
+#else
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();
 	ROS_INFO("%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
@@ -496,6 +499,7 @@ static  void map_set_obs()
 			map_set_cell(MAP, x, y, UNCLEAN);
 		}
 	}
+#endif
 }
 
 static void map_set_bumper()
@@ -631,7 +635,7 @@ static void map_set_rcon()
 //		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 	}
-//	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 //	stop_brifly();
 //	sleep(5);
 }
@@ -647,7 +651,7 @@ void map_set_blocked()
 	map_set_rcon();
 	map_set_cliff();
 	map_set_tilt();
-//	MotionManage::pubCleanMapMarkers(MAP, g_next_point, g_target_point);
+//	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 }
 
 void map_set_cleaned()
