@@ -480,7 +480,7 @@ int8_t SpotMovement::spotNextTarget(Point32_t *next_point)
 				}
 				else
 				{ //end spot movement
-						spot_end:*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};// go back to begin point
+					spot_end:*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};// go back to begin point
 					ret = (spt == CLEAN_SPOT)?1:0;
 					spotDeinit();//clear all spot variable
 					ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);

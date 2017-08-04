@@ -277,11 +277,11 @@ void go_to_charger(void)
 			{
 				receive_code = get_rcon_status();
 				ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
-				if(receive_code&RconAll_Home_LR)
+				if(receive_code&RconAll_Home_T)
 				{
 					reset_rcon_status();
 					ROS_INFO("receive LR");
-					if(receive_code&(RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFL2_HomeL|RconFL2_HomeR|RconFR2_HomeL|RconFR2_HomeR))
+					if(receive_code&(RconFL_HomeT|RconFR_HomeT|RconFL2_HomeT|RconFR2_HomeT))
 					{
 						ROS_INFO("turn 180");
 						target_distance = 0.1;
@@ -290,7 +290,7 @@ void go_to_charger(void)
 						go_home_target_angle = ranged_angle(gyro_get_angle() + 1800);
 						turn_finished = false;
 					}
-					else if(receive_code&(RconR_HomeL|RconR_HomeR))
+					else if(receive_code&RconR_HomeT)
 					{
 						ROS_INFO("turn left 90");
 						target_distance = 0.1;
@@ -299,7 +299,7 @@ void go_to_charger(void)
 						go_home_target_angle = ranged_angle(gyro_get_angle() + 900);
 						turn_finished = false;
 					}
-					else if(receive_code&(RconL_HomeL|RconL_HomeR))
+					else if(receive_code&RconL_HomeT)
 					{
 						ROS_INFO("turn right 90");
 						target_distance = 0.1;
@@ -2490,6 +2490,9 @@ void go_home_register_events(void)
 	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
 	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
 	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
+#undef event_manager_register_and_enable_x
+
+	event_manager_set_enable(true);
 }
 
 void go_home_unregister_events(void)
@@ -2531,6 +2534,9 @@ void go_home_unregister_events(void)
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
+#undef event_manager_register_and_disable_x
+
+	event_manager_set_enable(false);
 }
 
 void go_home_handle_charge_detect(bool state_now, bool state_last)

@@ -83,6 +83,7 @@ void charge_function(void)
 			continue;
 		}
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
+		//ROS_WARN("%s %d: g_stop_charge_counter: %d", __FUNCTION__, __LINE__, g_stop_charge_counter);
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
 		{
 			if (g_resume_cleaning)
@@ -193,6 +194,9 @@ void charge_register_event(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
 	event_manager_enable_handler(EVT_REMOTE_MAX, true);
+#undef event_manager_register_and_enable_x
+
+	event_manager_set_enable(true);
 }
 
 void charge_unregister_event(void)
@@ -217,6 +221,9 @@ void charge_unregister_event(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
 	event_manager_enable_handler(EVT_REMOTE_MAX, false);
+#undef event_manager_register_and_disable_x
+
+	event_manager_set_enable(false);
 }
 
 void charge_handle_charge_detect(bool state_now, bool state_last)
