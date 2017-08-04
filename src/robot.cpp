@@ -391,19 +391,6 @@ void robot::visualizeMarkerInit(){
 	m_points_.z = 0.0;
 	clean_markers_.points.clear();
 	clean_markers_.points.push_back(m_points_);
-/*
-	bumper_markers_.id=1;
-	bumper_markers_.type=visualization_msgs::Marker::POINTS;
-	bumper_markers_.action=0;
-	bumper_markers_.lifetime=ros::Duration(0);
-	bumper_markers_.scale.x = 0.05;
-	bumper_markers_.scale.y = 0.1;
-	bumper_markers_.color.g = 1.0;
-	bumper_markers_.color.r = 1.0;
-	bumper_markers_.color.a =1.0;
-	bumper_markers_.header.frame_id = "/map";
-	bumper_markers_.header.stamp = ros::Time::now();
-*/
 
 	clean_map_markers_.ns = "cleaning_grid_map";
 	clean_map_markers_.id = 1;
@@ -478,6 +465,12 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.g = 1.0;
 		color_.b = 1.0;
 	}
+	else if (type == BLOCKED_TILT)
+	{
+		color_.r = 0.5;
+		color_.g = 0.5;
+		color_.b = 0.5;
+	}
 	clean_map_markers_.points.push_back(m_points_);
 	clean_map_markers_.colors.push_back(color_);
 }
@@ -488,18 +481,6 @@ void robot::pubCleanMapMarkers(void)
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();
 	clean_map_markers_.colors.clear();
-}
-
-void robot::pubBumperMarkers(){
-	float radius = 0.16;
-	float angle = yaw_;//angle*M_PI/180.0f;//transform into angle
-	float offset_x = sin(angle)*radius;
-	float offset_y = cos(angle)*radius;
-	m_points_.x = position_x_+offset_x;
-	m_points_.y = position_y_+offset_y;
-	bumper_markers_.header.stamp = ros::Time::now();
-	bumper_markers_.points.push_back(m_points_);
-	send_bumper_marker_pub_.publish(bumper_markers_);
 }
 
 void robot::initOdomPosition()

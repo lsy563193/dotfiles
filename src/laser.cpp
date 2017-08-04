@@ -127,7 +127,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			start_time = time(NULL);
 			ROS_INFO("\033[34m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF");
 			if (lidar_motor_cli_.call(trigger)){
-				ROS_INFO("\033[34m" "%s %d: Service receive command %s! Response: %s" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF", trigger.response.message.c_str());
+				ROS_INFO("\033[34m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__,trigger.response.message.c_str());
 				if (!temp_switch_){
 					setScanReady(0);
 					if (!switch_)
@@ -148,7 +148,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			break;
 		}
 
-		if (temp_switch_ && time(NULL) - start_time > 4){ // Time out
+		if (temp_switch_ && (time(NULL) - start_time > 4)){ // Time out
 			try_times++;
 			if(try_times > 2){
 				//ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
@@ -159,7 +159,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			temp_switch_ = false;
 			request_sent = false;
 		}
-		else if (!temp_switch_ && time(NULL) - start_time >= 1){ // Wait for turning off.
+		else if (!temp_switch_ && (time(NULL) - start_time >= 1)){ // Wait for turning off.
 			temp_switch_ = true;
 			request_sent = false;
 		}
@@ -847,8 +847,10 @@ uint8_t Laser::laserMarker(bool is_mark)
 	static  uint32_t seq = laser_scan_data_.header.seq;
 	bool	is_triggered = 0;
 	static	bool is_skip = 0;
-	const	double X_MIN = 0.167;//0.167
+	const	double X_MIN = 0.157;//0.167
 	const	double X_MAX = 0.237;//0.279
+	const	double Y_MIN = 0.157;//0.167
+	const	double Y_MAX = 0.237;//0.279
 	uint8_t laser_status;
 	//ROS_ERROR("is_skip = %d", is_skip);
 	//ROS_INFO("laserMarker");
@@ -957,6 +959,65 @@ uint8_t Laser::laserMarker(bool is_mark)
 		laser_status |= Status_Left_OBS;
 	}
 	count = 0;
+	//left left
+	for (i = 258; i < 281; i++) {//default:149, 168, 191, 210
+		if (laser_scan_data_.ranges[i] < 4) {
+			th = i * 1.0;
+			th = th + 180.0;
+			x = cos(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			//ROS_INFO("right right y = %lf", y);
+			if (y > Y_MIN && y < Y_MAX ) {
+				count++;
+				ROS_INFO("left left count = %d", count);
+			}
+		}
+	}
+	if (count > 10) {
+		int32_t x_tmp,y_tmp;
+		auto dx = 0;
+		auto dy = 2;
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		{
+			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x_tmp),count_to_cell(y_tmp));
+			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			//map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_RCON); //BLOCKED_OBS);
+		}
+		//is_triggered = 1;
+		//laser_status |= Status_Left_OBS;
+	}
+	count = 0;
+	//right right
+	for (i = 78; i < 101; i++) {//default:149, 168, 191, 210
+		if (laser_scan_data_.ranges[i] < 4) {
+			th = i * 1.0;
+			th = th + 180.0;
+			x = cos(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			y = 0 - sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			//ROS_INFO("right right y = %lf", y);
+			if (y > Y_MIN && y < Y_MAX ) {
+				count++;
+				ROS_INFO("right right count = %d", count);
+			}
+		}
+	}
+	if (count > 10) {
+		int32_t x_tmp,y_tmp;
+		auto dx = 0;
+		auto dy = -2;
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		{
+			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x_tmp),count_to_cell(y_tmp));
+			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			//map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_RCON); //BLOCKED_OBS);
+		}
+		//is_triggered = 1;
+		//laser_status |= Status_Left_OBS;
+	}
+	count = 0;
+
 	scan_mutex_.unlock();
 	if (is_triggered) {
 		return laser_status;

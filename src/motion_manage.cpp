@@ -354,7 +354,6 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 	}
 
-	cm_reset_go_home();
 
 	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
 	{
@@ -371,6 +370,8 @@ MotionManage::~MotionManage()
 			g_saved_work_time += get_work_time();
 			ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 			cm_unregister_events();
+
+			cm_reset_go_home();
 			return;
 		}
 		else
@@ -401,6 +402,7 @@ MotionManage::~MotionManage()
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 		wav_play(WAV_CLEANING_FINISHED);
 	}
+	cm_reset_go_home();
 
 	if (s_slam != nullptr)
 	{
@@ -530,8 +532,6 @@ bool MotionManage::initNavigationCleaning(void)
 		{
 			wav_play(WAV_BACK_TO_CHARGER);
 		}
-		else
-			cm_check_should_go_home();
 	}
 	else if(g_plan_activated == true)
 	{
@@ -554,6 +554,8 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
+		if (!g_go_home)
+			cm_check_should_go_home();
 	}
 
 	/*Move back from charge station*/
@@ -592,7 +594,6 @@ bool MotionManage::initNavigationCleaning(void)
 
 	work_motor_configure();
 
-	extern bool g_go_home;
 	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d).", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning);
 	return true;
 }

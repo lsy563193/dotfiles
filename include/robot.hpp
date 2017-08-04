@@ -41,7 +41,6 @@ public:
 	void pubCleanMarkers(void);
 	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
 	void pubCleanMapMarkers(void);
-	void pubBumperMarkers(void);
 	void visualizeMarkerInit();
 	void initOdomPosition();
 
