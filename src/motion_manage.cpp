@@ -354,7 +354,6 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 	}
 
-	cm_reset_go_home();
 
 	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
 	{
@@ -371,6 +370,8 @@ MotionManage::~MotionManage()
 			g_saved_work_time += get_work_time();
 			ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
 			cm_unregister_events();
+
+			cm_reset_go_home();
 			return;
 		}
 		else
@@ -401,6 +402,7 @@ MotionManage::~MotionManage()
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 		wav_play(WAV_CLEANING_FINISHED);
 	}
+	cm_reset_go_home();
 
 	if (s_slam != nullptr)
 	{
@@ -530,8 +532,6 @@ bool MotionManage::initNavigationCleaning(void)
 		{
 			wav_play(WAV_BACK_TO_CHARGER);
 		}
-		else
-			cm_check_should_go_home();
 	}
 	else if(g_plan_activated == true)
 	{
@@ -554,6 +554,8 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
+		if (!g_go_home)
+			cm_check_should_go_home();
 	}
 
 	/*Move back from charge station*/
@@ -592,7 +594,6 @@ bool MotionManage::initNavigationCleaning(void)
 
 	work_motor_configure();
 
-	extern bool g_go_home;
 	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d).", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning);
 	return true;
 }
@@ -693,29 +694,24 @@ bool MotionManage::initSpotCleaning(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, Point32_t next_point, Point32_t target_point)
+void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target)
 {
-	int16_t i, j, x_min, x_max, y_min, y_max, next_point_x, next_point_y, target_point_x, target_point_y;
+	int16_t i, j, x_min, x_max, y_min, y_max;
 	CellState cell_state;
 	path_get_range(&x_min, &x_max, &y_min, &y_max);
 
-	next_point_x = count_to_cell(next_point.X);
-	if (next_point_x == SHRT_MIN )
-		next_point_x = x_min;
-	else if (next_point_x == SHRT_MAX)
-		next_point_x = x_max;
-
-	next_point_y = count_to_cell(next_point.Y);
-	target_point_x = count_to_cell(target_point.X);
-	target_point_y = count_to_cell(target_point.Y);
+	if (next.X == SHRT_MIN )
+		next.X = x_min;
+	else if (next.X == SHRT_MAX)
+		next.X = x_max;
 
 	for (i = x_min; i <= x_max; i++)
 	{
 		for (j = y_min; j <= y_max; j++)
 		{
-			if (i == target_point_x && j == target_point_y)
+			if (i == target.X && j == target.Y)
 				robot::instance()->setCleanMapMarkers(i, j, TARGET_CLEAN);
-			else if (i == next_point_x && j == next_point_y)
+			else if (i == next.X && j == next.Y)
 				robot::instance()->setCleanMapMarkers(i, j, TARGET);
 			else
 			{

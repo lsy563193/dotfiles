@@ -591,5 +591,5 @@ void set_acc_init_data(){
 	g_xacc_init_val = sensor.x_acc;
 	g_yacc_init_val = sensor.y_acc;
 	g_zacc_init_val = sensor.z_acc;
-	ROS_INFO("\033[47;36m" "z y z acceleration init val(%d,%d,%d)" "\033[0m",g_xacc_init_val,g_yacc_init_val,g_zacc_init_val);
+	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m",g_xacc_init_val,g_yacc_init_val,g_zacc_init_val);
 }

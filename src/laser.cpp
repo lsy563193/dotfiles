@@ -127,7 +127,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			start_time = time(NULL);
 			ROS_INFO("\033[34m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF");
 			if (lidar_motor_cli_.call(trigger)){
-				ROS_INFO("\033[34m" "%s %d: Service receive command %s! Response: %s" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF", trigger.response.message.c_str());
+				ROS_INFO("\033[34m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__,trigger.response.message.c_str());
 				if (!temp_switch_){
 					setScanReady(0);
 					if (!switch_)
@@ -148,7 +148,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			break;
 		}
 
-		if (temp_switch_ && time(NULL) - start_time > 4){ // Time out
+		if (temp_switch_ && (time(NULL) - start_time > 4)){ // Time out
 			try_times++;
 			if(try_times > 2){
 				//ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
@@ -159,7 +159,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			temp_switch_ = false;
 			request_sent = false;
 		}
-		else if (!temp_switch_ && time(NULL) - start_time >= 1){ // Wait for turning off.
+		else if (!temp_switch_ && (time(NULL) - start_time >= 1)){ // Wait for turning off.
 			temp_switch_ = true;
 			request_sent = false;
 		}

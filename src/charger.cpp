@@ -46,7 +46,11 @@ void charge_function(void)
 
 	while(ros::ok())
 	{
-		usleep(10000);
+		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+		{
+			continue;
+		}
+
 		bat_v = get_battery_voltage();
 
 		if (g_resume_cleaning)
@@ -78,10 +82,6 @@ void charge_function(void)
 			show_batv_counter++;
 		}
 
-		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-		{
-			continue;
-		}
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
 		//ROS_WARN("%s %d: g_stop_charge_counter: %d", __FUNCTION__, __LINE__, g_stop_charge_counter);
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
@@ -194,6 +194,7 @@ void charge_register_event(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
 	event_manager_enable_handler(EVT_REMOTE_MAX, true);
+	event_manager_enable_handler(EVT_RCON, true);
 #undef event_manager_register_and_enable_x
 
 	event_manager_set_enable(true);
