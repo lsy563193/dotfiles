@@ -553,7 +553,7 @@ void map_set_tilt()
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
 		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
+		map_set_cell(MAP, x, y, BLOCKED_TILT);
 	}
 }
 
