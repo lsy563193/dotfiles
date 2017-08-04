@@ -371,6 +371,15 @@ bool LinearRegulator::isReach()
 		ROS_INFO("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
 		return true;
 	}
+	auto curr = (IS_X_AXIS(g_new_dir)) ? map_get_x_count() : map_get_y_count();
+	auto target = (IS_X_AXIS(g_new_dir)) ? s_target.X : s_target.Y;
+//	ROS_WARN("%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr(%d),target(%d)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr, target);
+	if( (IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL/4)) ||
+			(! IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL/4))
+		){
+		ROS_ERROR("%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr(%d),target(%d)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr, target);
+		return true;
+	}
 
 	return false;
 }
