@@ -1132,8 +1132,6 @@ void cm_unregister_events()
 
 #undef event_manager_register_and_disable_x
 
-	event_manager_set_current_mode(EVT_MODE_USER_INTERFACE);
-
 	event_manager_set_enable(false);
 }
 

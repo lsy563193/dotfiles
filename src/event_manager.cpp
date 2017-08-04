@@ -123,6 +123,7 @@ void *event_manager_thread(void *data)
 	while (ros::ok()) {
 		if (g_event_manager_enabled == false) {
 			usleep(10000);
+			continue;
 		}
 
 		set = false;
