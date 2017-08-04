@@ -269,7 +269,7 @@ void SpotMovement::genTargets(uint8_t sp_type,
 				if(st_n %2 == 0){
 					x = x -1;
 					target->push_back({x,y});
-					printf("\033[35m" "->(%d,%d)" "\033[0m",x,y);
+					printf( "->(%d,%d)",x,y);
 				}
 				break;
 			}
@@ -324,6 +324,7 @@ void SpotMovement::genTargets(uint8_t sp_type,
 				if(st_n %2 == 0){
 					y = y + 1;
 					target->push_back({x,y});
+					printf("<-(%d,%d)",x,y);
 				}
 				break;
 			}
@@ -401,10 +402,37 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 			if (!isStuck())
 			{
 				if(isNextPointChange()){
-					if (tp_+1 != targets_.end())
+					if (tp_+1 != targets_.end()){
 						tp_++;
-					else
-						goto spot_end;	
+						next.X = tp_->X;
+						next.Y = tp_->Y;
+						setNextPointChange();
+						ret = 1;
+						ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
+								 tp_->Y);
+					}
+					else{
+						//spot end;
+						if (spiral_type_ != SPIRAL_RIGHT_IN && spiral_type_ != SPIRAL_LEFT_IN)
+						{//switch to anothor spiral type
+							spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_RIGHT_IN : SPIRAL_LEFT_IN;
+							genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
+							ROS_INFO("\033[34m" "%s,%d , %s , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
+											 (spiral_type_ == SPIRAL_RIGHT_OUT) ? "right in" : " left in ", tp_->X, tp_->Y);
+							ret = 1;
+							//*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
+							next.X = tp_->X;
+							next.Y = tp_->Y;
+						}
+						else
+						{ //end spot movement
+							next = {begin_point_.X, begin_point_.Y};// go back to begin point
+							ret = (spt == CLEAN_SPOT)?1:0;
+							spotDeinit();//clear all spot variable
+							ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X, begin_point_.Y);
+						}
+
+					}
 				}
 				else{
 					spotChgType();
@@ -418,14 +446,14 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 						if(!getNearPoint(stop_point_))
 							ROS_WARN("\033[47;34m" "spot.cpp,%s,%d,not find near point,while search all points" "\033[0m",__FUNCTION__,__LINE__);
 					}
-				}
-				//*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
-				next.X = tp_->X;
-				next.Y = tp_->Y;
-				setNextPointChange();
-				ret = 1;
-				ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
+					next.X = tp_->X;
+					next.Y = tp_->Y;
+					setNextPointChange();
+					ret = 1;
+					ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
 								 tp_->Y);
+
+				}
 			}
 			else// stuck
 			{
@@ -476,12 +504,12 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 			else if ((tp_+1) == targets_.end())
 			{
 				
-				if (spiral_type_ != SPIRAL_RIGHT_IN || spiral_type_ != SPIRAL_LEFT_IN)
+				if (spiral_type_ != SPIRAL_RIGHT_IN && spiral_type_ != SPIRAL_LEFT_IN)
 				{//switch to anothor spiral type
 					spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_RIGHT_IN : SPIRAL_LEFT_IN;
 					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
-					ROS_INFO("\033[34m" "%s,%d , %s , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
-									 (spiral_type_ == SPIRAL_RIGHT_OUT) ? "right in" : " left in ", tp_->X, tp_->Y);
+					ROS_INFO("\033[47;34m" "%s,%d , %s , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
+									 (spiral_type_ == SPIRAL_RIGHT_OUT) ? "right in" : "left in ", tp_->X, tp_->Y);
 					ret = 1;
 					//*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
 					next.X = tp_->X;
@@ -489,11 +517,10 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 				}
 				else
 				{ //end spot movement
-					//spot_end:*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};// go back to begin point
-					spot_end:next = {tp_->X, tp_->Y};// go back to begin point
+					next = {begin_point_.X, begin_point_.Y};// go back to begin point
 					ret = (spt == CLEAN_SPOT)?1:0;
 					spotDeinit();//clear all spot variable
-					ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
+					ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X, begin_point_.Y);
 				}
 			}
 		}
