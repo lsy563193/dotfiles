@@ -296,7 +296,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	// enable titlt detct
 	set_acc_init_data();
 	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detct" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 }
 
 MotionManage::~MotionManage()
