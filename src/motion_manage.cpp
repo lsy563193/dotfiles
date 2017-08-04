@@ -532,8 +532,6 @@ bool MotionManage::initNavigationCleaning(void)
 		{
 			wav_play(WAV_BACK_TO_CHARGER);
 		}
-		else
-			cm_check_should_go_home();
 	}
 	else if(g_plan_activated == true)
 	{
@@ -556,6 +554,8 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
+		if (!g_go_home)
+			cm_check_should_go_home();
 	}
 
 	/*Move back from charge station*/
@@ -594,7 +594,6 @@ bool MotionManage::initNavigationCleaning(void)
 
 	work_motor_configure();
 
-	extern bool g_go_home;
 	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d).", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning);
 	return true;
 }

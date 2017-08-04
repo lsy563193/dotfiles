@@ -551,9 +551,9 @@ void cm_check_should_go_home(void)
 		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home, or finish cleaning.", __FUNCTION__, __LINE__);
 		g_go_home = true;
 		work_motor_configure();
-		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 		if (get_clean_mode() == Clean_Mode_WallFollow)
 		{
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 			cm_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
