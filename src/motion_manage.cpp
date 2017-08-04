@@ -108,7 +108,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 
 	if (line_align_ != start)
 	{
-		ROS_WARN("%s %d: Obstacle detector launch timeout, do not align.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Obstacle detector launch timeout,align fail.", __FUNCTION__, __LINE__);
 		line_angle = 0;
 		return true;
 	}
@@ -192,11 +192,15 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
+	// enable titlt detct
+	set_acc_init_data();
+	g_tilt_enable = true;
+	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+
 	extern bool g_resume_cleaning;
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-		//s_laser->startShield();
 		s_laser->lidarShieldDetect(ON);
 		if (g_go_home_by_remote)
 			set_led_mode(LED_STEADY, LED_ORANGE);
@@ -210,7 +214,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		if (s_slam != nullptr)
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-			//s_laser->startShield();
 			s_laser->lidarShieldDetect(ON);
 			if (g_go_home_by_remote)
 				set_led_mode(LED_STEADY, LED_ORANGE);
@@ -293,10 +296,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	else
 		set_led_mode(LED_STEADY, LED_GREEN);
 
-	// enable titlt detct
-	set_acc_init_data();
-	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 }
 
 MotionManage::~MotionManage()
