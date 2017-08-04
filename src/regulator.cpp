@@ -473,14 +473,16 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 //	ROS_INFO("BackRegulator::adjustSpeed");
 	set_dir_forward();
 
-	auto diff = ranged_angle(
+	auto angle_diff = ranged_angle(
 					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
-//	auto diff = IS_X_AXIS(g_new_dir) ? s_target.Y - map_get_y_count() :s_target.X - map_get_x_count() ;
-//	diff = IS_POS_AXIS(g_new_dir) ? diff : - diff;
+
+	auto dis_diff = IS_X_AXIS(g_new_dir) ? map_get_y_count() - s_target.Y : map_get_x_count() - s_target.X;
+	dis_diff = IS_POS_AXIS(g_new_dir) ^ IS_X_AXIS(g_new_dir) ? dis_diff :  -dis_diff;
+
 	if (integration_cycle_++ > 10)
 	{
 		integration_cycle_ = 0;
-		integrated_ += diff;
+		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
 	}
 
@@ -490,7 +492,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected )
 	{
 		integrated_ = 0;
-		diff = 0;
+		angle_diff = 0;
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED)
 			base_speed_--;
 	}else
@@ -504,17 +506,22 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		integrated_ = 0;
 	}
 
-//	if(std::abs(diff) > CELL_COUNT_MUL/4)
-//	{
-//		left_speed = base_speed_ - diff / 20 /*- integrated_ / 150*/; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-//		right_speed = base_speed_ + diff / 20 /*+ integrated_ / 150*/; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-//		ROS_WARN("left_speed(%d),right_speed(%d),diff(%d,%d)",left_speed, right_speed, diff,diff);
-//	}
-//	else{
-		left_speed = base_speed_ - diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-		right_speed = base_speed_ + diff / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-//		ROS_ERROR("left_speed(%d),right_speed(%d),diff(%d,%d)",left_speed, right_speed, diff,diff);
-//	}
+	if(FORCE_MOVE_LINE && std::abs(dis_diff) > CELL_COUNT_MUL/4 && distance > SLOW_DOWN_DISTANCE*4)
+	{
+		integrated_ = 0;
+
+		auto diff = (dis_diff > 0) ? (dis_diff - CELL_COUNT_MUL/4) : (dis_diff + CELL_COUNT_MUL/4);
+//		float cell = (diff/CELL_COUNT_MUL);
+		auto diff2 = (dis_diff > 0) ? 4 : -4;
+		left_speed = base_speed_ - diff / 100 - diff2 /*- integrated_ / 150*/; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+		right_speed = base_speed_ + diff / 100 + diff2 /*+ integrated_ / 150*/; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff1(%d),diff2(%d)",left_speed, right_speed, dis_diff, diff,diff2);
+	}
+	else{
+		left_speed = base_speed_ - angle_diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+		right_speed = base_speed_ + angle_diff / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+//		ROS_ERROR("left_speed(%d),right_speed(%d),angle_diff(%d,%d)",left_speed, right_speed, angle_diff,angle_diff);
+	}
 
 	check_limit(left_speed, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);
 	check_limit(right_speed, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);
