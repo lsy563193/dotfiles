@@ -110,7 +110,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (switch_ && (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)) // Interrupt only happens during starting laser.
 		{
-			if (!g_fatal_quit_event)
+			if (!g_fatal_quit_event || g_cliff_all_triggered)
 			{
 				setScanReady(0);
 				ROS_WARN("\033[34m" "%s %d: Laser starting interrupted, status: %d" "\033[0m", __FUNCTION__, __LINE__, isScanReady());

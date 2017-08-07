@@ -79,11 +79,11 @@ void SpotMovement::spotInit(float diameter, Cell_t cur_point)
 
 	if ((clock() / CLOCKS_PER_SEC) % 2 == 0)
 	{
-		spiral_type_ = SPIRAL_LEFT_OUT;
+		spiral_type_ = ANTI_CLOCKWISE_OUT;
 		ROS_INFO("\033[34m" "%s %d ,spiral left out" "\033[0m", __FUNCTION__, __LINE__);
 	} else
 	{
-		spiral_type_ = SPIRAL_RIGHT_OUT;
+		spiral_type_ = CLOCKWISE_OUT;
 		ROS_INFO("\033[34m" "%s ,%d spiral right out" "\033[0m", __FUNCTION__, __LINE__);
 	}
 	spot_diameter_ = diameter;
@@ -139,10 +139,10 @@ void SpotMovement::setStopPoint(Cell_t *stp)
 
 	if (bp_ == targets_.begin())
 	{
-		if (spiral_type_ == SPIRAL_RIGHT_OUT ){
+		if (spiral_type_ == CLOCKWISE_OUT ){
 			*stp = {bp_->X, (int16_t)(bp_->Y - 1)};
 		}
-		else if( spiral_type_ == SPIRAL_LEFT_OUT){
+		else if( spiral_type_ == ANTI_CLOCKWISE_OUT){
 			*stp = {bp_->X, (int16_t)(bp_->Y + 1)};
 		}
 	}
@@ -150,16 +150,16 @@ void SpotMovement::setStopPoint(Cell_t *stp)
 	{
 		if ( ( bp_-1 )->X == bp_->X )
 		{
-			if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
+			if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
 				*stp = { (int16_t)( ( bp_->X > 0 )? bp_->X + 1: bp_->X - 1), bp_->Y };
-			else if (spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN)
+			else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
 				*stp = { (int16_t)( ( bp_->X > 0 )? bp_->X - 1: bp_->X + 1), bp_->Y };
 		}
 		else if ( ( bp_-1 )->Y == bp_->Y)
 		{
-			if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
+			if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
 				*stp = { bp_->X, (int16_t)( ( bp_->Y > 0 )? bp_->Y + 1: bp_->Y - 1 ) };
-			else if (spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN)
+			else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
 				*stp = { bp_->X, (int16_t)( ( bp_->Y > 0 )? bp_->Y - 1: bp_->Y + 1 ) };
 		}
 	}
@@ -168,23 +168,23 @@ void SpotMovement::setStopPoint(Cell_t *stp)
 
 uint8_t SpotMovement::spotChgType()
 {
-	if (spiral_type_ == SPIRAL_RIGHT_OUT || spiral_type_ == SPIRAL_LEFT_OUT)
+	if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
 	{
 		sout_od_cnt_ += 1;
 		if (sout_od_cnt_ > spot_bumper_cnt_ )
 		{
 			sout_od_cnt_ = 0;
 			ROS_INFO("\033[34m" "%s,%d, spiral obs detect counter reached" "\033[0m",__FUNCTION__,__LINE__);
-			spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN;
+			spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
 		}
 		else
 		{
-			spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_LEFT_OUT : SPIRAL_RIGHT_OUT;
+			spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_OUT : CLOCKWISE_OUT;
 		}
 	}
-	else if (spiral_type_ == SPIRAL_RIGHT_IN || spiral_type_ == SPIRAL_LEFT_IN)
+	else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
 	{
-		spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_IN) ? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN;
+		spiral_type_ = (spiral_type_ == CLOCKWISE_IN) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
 		sin_od_cnt_ += 1;
 		if (sin_od_cnt_ > spot_bumper_cnt_)
 		{
@@ -259,15 +259,15 @@ void SpotMovement::genTargets(uint8_t sp_type,
 		target->push_back({x,y});
 		st_c +=1;
 	}
-	if (spt == SPIRAL_LEFT_OUT || spt == SPIRAL_RIGHT_OUT)
+	if (spt == ANTI_CLOCKWISE_OUT || spt == CLOCKWISE_OUT)
 	{
 
-		printf("\033[35m" "spiral %s: (%d,%d)",(spt == SPIRAL_RIGHT_IN)?"right out":"left out",x,y);
+		printf("\033[35m" "spiral %s: (%d,%d)",(spt == CLOCKWISE_IN)?"right out":"left out",x,y);
 		while (ros::ok())
 		{
 			if (st_c > st_n){
 				if(st_n %2 == 0){
-					x = x -1;
+					x = ANTI_CLOCKWISE_OUT?x -1:x +1;
 					target->push_back({x,y});
 					printf( "->(%d,%d)",x,y);
 				}
@@ -275,34 +275,34 @@ void SpotMovement::genTargets(uint8_t sp_type,
 			}
 			else if ((st_c % 2) == 0)
 			{
-				x = x_l + 1;
+				x = spt == ANTI_CLOCKWISE_OUT? x_l + 1 : x_l -1;
 				x_l = x;
 				for (i = 0; i < st_c; i++)
 				{
-					y = (spt == SPIRAL_LEFT_OUT) ? (y_l + i) : (y_l - i);
+					y = y_l + i;
 					target->push_back({x, y});
 					printf("->(%d,%d)",x,y);
 				}
 				for (i = 1; i < st_c; i++)
 				{
-					x = x_l - i;
+					x = (spt == ANTI_CLOCKWISE_OUT) ? x_l - i: x_l +i;
 					target->push_back({x,y});
 					printf("->(%d,%d)",x,y);
 				}
 			}
 			else
 			{
-				x = x_l - 1;
+				x = (spt == ANTI_CLOCKWISE_OUT) ? x_l - 1 : x_l + 1;
 				x_l = x;
 				for (i = 0; i < st_c; i++)
 				{
-					y = (spt == SPIRAL_LEFT_OUT) ? (y_l - i) : (y_l + i);
+					y = y_l - i;
 					target->push_back({x, y});
 					printf("->(%d,%d)",x,y);
 				}
 				for (i = 1; i < st_c ; i++)
 				{
-					x = x_l + i ;
+					x = (spt == ANTI_CLOCKWISE_OUT)? x_l + i : x_l -i ;
 					target->push_back({x,y});
 					printf("->(%d,%d)",x,y);
 				}
@@ -314,10 +314,10 @@ void SpotMovement::genTargets(uint8_t sp_type,
 		printf( "\033[0m" "\n");
 		tp_ = target->begin();
 	}
-	else if (spt == SPIRAL_RIGHT_IN || spt == SPIRAL_LEFT_IN)
+	else if (spt == CLOCKWISE_IN || spt == ANTI_CLOCKWISE_IN)
 	{
 
-		printf("\033[32m" "spiral %s: (%d,%d)",(spt == SPIRAL_RIGHT_IN)?"right in":"left in",x,y);
+		printf("\033[32m" "spiral %s: (%d,%d)",(spt == CLOCKWISE_IN)?"right in":"left in",x,y);
 		while (ros::ok())
 		{
 			if (st_c > st_n){
@@ -330,34 +330,34 @@ void SpotMovement::genTargets(uint8_t sp_type,
 			}
 			else if ((st_c % 2) == 0)
 			{
-				y = (spt == SPIRAL_RIGHT_IN) ? (y_l + 1) : (y_l - 1);
+				y = y_l - 1;
 				y_l = y;
 				for (i = 0; i < st_c; i++)
 				{
-					x = x_l - i;
+					x = (spt == CLOCKWISE_IN) ? x_l + i: x_l - i;
 					target->push_back({x, y});
 					printf("<-(%d,%d)",x,y);
 				}
 				for (i = 1; i < st_c; i++)
 				{
-					y = (spt == SPIRAL_RIGHT_IN) ? (y_l - i) : (y_l + i);
+					y = y_l + i;
 					target->push_back({x,y});
 					printf("<-(%d,%d)",x,y);
 				}
 			}
 			else
 			{
-				y = (spt == SPIRAL_RIGHT_IN) ? (y_l - 1) : (y_l + 1);
+				y = y_l + 1;
 				y_l = y;
 				for (i = 0; i < st_c; i++)
 				{
-					x = x_l + i;
+					x = (spt == CLOCKWISE_IN) ? x_l - i: x_l + i;
 					target->push_back({x, y});
 					printf("<-(%d,%d)",x,y);
 				}
 				for (i = 1; i < st_c; i++)
 				{
-					y = (spt == SPIRAL_RIGHT_IN) ? (y_l + i) : (y_l - i);
+					y = y_l - i;
 					target->push_back({x,y});
 					printf("<-(%d,%d)",x,y);
 				}
@@ -372,7 +372,7 @@ void SpotMovement::genTargets(uint8_t sp_type,
 	}
 }
 
-int8_t SpotMovement::spotNextTarget(Cell_t &next)
+int8_t SpotMovement::spotNextTarget(Cell_t &next_point)
 {
 	int8_t ret = 0;
 	SpotType spt = getSpotType();
@@ -388,14 +388,12 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 		/*---generate target ,and  set targets_ ---*/
 		genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
 		ROS_INFO("\033[34m" "%s,%d , on spot init, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
-		//*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
-		next.X = tp_->X;
-		next.Y = tp_->Y;
+		next_point = {tp_->X, tp_->Y};
 		ret = 1;
 	}
 	else if (tp_ != targets_.end() && spot_init_ == 1)
 	{
-		if (isDirectChange())// bumper/obs detect
+		if (isDirectChange())// directtion change
 		{
 			resetDirectChange();
 			
@@ -404,34 +402,14 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 				if(isNextPointChange()){
 					if (tp_+1 != targets_.end()){
 						tp_++;
-						next.X = tp_->X;
-						next.Y = tp_->Y;
+						next_point = {tp_->X,tp_->Y};
 						setNextPointChange();
 						ret = 1;
 						ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
 								 tp_->Y);
 					}
 					else{
-						//spot end;
-						if (spiral_type_ != SPIRAL_RIGHT_IN && spiral_type_ != SPIRAL_LEFT_IN)
-						{//switch to anothor spiral type
-							spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_RIGHT_IN : SPIRAL_LEFT_IN;
-							genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
-							ROS_INFO("\033[34m" "%s,%d , %s , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
-											 (spiral_type_ == SPIRAL_RIGHT_OUT) ? "right in" : " left in ", tp_->X, tp_->Y);
-							ret = 1;
-							//*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
-							next.X = tp_->X;
-							next.Y = tp_->Y;
-						}
-						else
-						{ //end spot movement
-							next = {begin_point_.X, begin_point_.Y};// go back to begin point
-							ret = (spt == CLEAN_SPOT)?1:0;
-							spotDeinit();//clear all spot variable
-							ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X, begin_point_.Y);
-						}
-
+						ret = endSpot(&next_point,spt);
 					}
 				}
 				else{
@@ -439,15 +417,14 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 					setStopPoint(&stop_point_);
 					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
 					if(!getNearPoint(stop_point_)){
-						ROS_INFO("\033[48;34m" "reset spiral type to %s" "\033[0m",(spiral_type_ == SPIRAL_RIGHT_OUT) ? "SPIRAL_LEFT_IN" : "SPIRAL_RIGHT_IN");
-						spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_LEFT_IN : SPIRAL_RIGHT_IN;
+						ROS_INFO("\033[48;34m" "reset spiral type to %s" "\033[0m",(spiral_type_ == CLOCKWISE_OUT) ? "ANTI_CLOCKWISE_IN" : "CLOCKWISE_IN");
+						spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
 						setStopPoint(&stop_point_);//reset stop point
 						genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
 						if(!getNearPoint(stop_point_))
 							ROS_WARN("\033[47;34m" "spot.cpp,%s,%d,not find near point,while search all points" "\033[0m",__FUNCTION__,__LINE__);
 					}
-					next.X = tp_->X;
-					next.Y = tp_->Y;
+					next_point = {tp_->X,tp_->Y};
 					setNextPointChange();
 					ret = 1;
 					ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
@@ -461,12 +438,12 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 				ROS_INFO("\033[34m" "%s,%d , is stucked, go back to begin point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X,
 								 begin_point_.Y);
 				//*next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
-				next = begin_point_;
+				next_point = begin_point_;
 				ret = (spt == CLEAN_SPOT)?1:0;
 				spotDeinit();//clear all spot variable
 			}
 		}
-		else//no bumper/obs detect
+		else//direction not change
 		{
 			resetNextPointChange();
 			if ((tp_+1) != targets_.end())
@@ -496,39 +473,40 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next)
 				}
 
 				ROS_INFO("\033[34m" "%s,%d , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
-				//*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
-				next.X = tp_->X;
-				next.Y = tp_->Y;
+				next_point = {tp_->X,tp_->Y};
 				ret = 1;
 			}
 			else if ((tp_+1) == targets_.end())
 			{
-				
-				if (spiral_type_ != SPIRAL_RIGHT_IN && spiral_type_ != SPIRAL_LEFT_IN)
-				{//switch to anothor spiral type
-					spiral_type_ = (spiral_type_ == SPIRAL_RIGHT_OUT) ? SPIRAL_RIGHT_IN : SPIRAL_LEFT_IN;
-					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
-					ROS_INFO("\033[47;34m" "%s,%d , %s , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
-									 (spiral_type_ == SPIRAL_RIGHT_OUT) ? "right in" : "left in ", tp_->X, tp_->Y);
-					ret = 1;
-					//*next_point = {cell_to_count(tp_->X), cell_to_count(tp_->Y)};
-					next.X = tp_->X;
-					next.Y = tp_->Y;
-				}
-				else
-				{ //end spot movement
-					next = {begin_point_.X, begin_point_.Y};// go back to begin point
-					ret = (spt == CLEAN_SPOT)?1:0;
-					spotDeinit();//clear all spot variable
-					ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X, begin_point_.Y);
-				}
+				ret = endSpot(&next_point,spt);
 			}
 		}
 	}
 	return ret;
 }
 
+int8_t SpotMovement::endSpot(Cell_t *next_point,SpotType spt)
+{
+	int8_t ret;
 
+	if (spiral_type_ != CLOCKWISE_IN && spiral_type_ != ANTI_CLOCKWISE_IN)
+	{//switch to anothor spiral type
+		spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? CLOCKWISE_IN : ANTI_CLOCKWISE_IN;
+		genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
+		ROS_INFO("\033[47;34m" "%s,%d , %s , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
+						 (spiral_type_ == CLOCKWISE_OUT) ? "right in" : "left in ", tp_->X, tp_->Y);
+		ret = 1;
+		*next_point = {tp_->X, tp_->Y};
+	}
+	else
+	{ //end spot movement
+		*next_point = {begin_point_.X, begin_point_.Y};// go back to begin point
+		ret = (spt == CLEAN_SPOT)?1:0;
+		spotDeinit();//clear all spot variable
+		ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X, begin_point_.Y);
+	}
+	return ret;
+}
 
 
 uint8_t Random_Dirt_Event(void)
@@ -637,7 +615,7 @@ uint8_t Random_Dirt_Event(void)
 				{
 					move_forward(0, 0);
 					reset_left_wheel_step();
-					Move_Style = SPIRAL_RIGHT_OUT;
+					Move_Style = CLOCKWISE_OUT;
 				}
 				set_dir_right();
 				set_wheel_speed(25, 10);
@@ -655,14 +633,14 @@ uint8_t Random_Dirt_Event(void)
 					stop_brifly();
 					turn_left(Turn_Speed, 2500);
 					move_forward(10, 10);
-					Move_Style = SPIRAL_LEFT_OUT;
+					Move_Style = ANTI_CLOCKWISE_OUT;
 					reset_wheel_step();
 					reset_wall_step();
 					OBS_Counter++;
 				}
 				break;
 
-			case SPIRAL_RIGHT_OUT:
+			case CLOCKWISE_OUT:
 				if (get_left_wheel_step() > (Radius * 3))
 				{
 					reset_left_wheel_step();
@@ -675,7 +653,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					if (Radius > 140)
 					{
-						Move_Style = SPIRAL_RIGHT_IN;
+						Move_Style = CLOCKWISE_IN;
 					}
 				}
 				if (get_bumper_status() || get_cliff_status() || spot_obs_status())
@@ -693,7 +671,7 @@ uint8_t Random_Dirt_Event(void)
 						move_back();
 					}
 					stop_brifly();
-					Move_Style = SPIRAL_LEFT_OUT;
+					Move_Style = ANTI_CLOCKWISE_OUT;
 					turn_left(Turn_Speed, 2500);
 					reset_wheel_step();
 					reset_wall_step();
@@ -705,7 +683,7 @@ uint8_t Random_Dirt_Event(void)
 
 				break;
 
-			case SPIRAL_RIGHT_IN:
+			case CLOCKWISE_IN:
 				if (get_left_wheel_step() > (Radius * 3))
 				{
 					reset_left_wheel_step();
@@ -736,7 +714,7 @@ uint8_t Random_Dirt_Event(void)
 						move_back();
 					}
 					stop_brifly();
-					Move_Style = SPIRAL_LEFT_IN;
+					Move_Style = ANTI_CLOCKWISE_IN;
 					turn_left(Turn_Speed, 2500);
 					reset_wheel_step();
 					reset_wall_step();
@@ -748,7 +726,7 @@ uint8_t Random_Dirt_Event(void)
 
 				break;
 
-			case SPIRAL_LEFT_OUT:
+			case ANTI_CLOCKWISE_OUT:
 				if (get_right_wheel_step() > (Radius * 3))
 				{
 					reset_right_wheel_step();
@@ -761,7 +739,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					if (Radius > 140)
 					{
-						Move_Style = SPIRAL_LEFT_IN;
+						Move_Style = ANTI_CLOCKWISE_IN;
 					}
 				}
 				if (get_bumper_status() || get_cliff_status() || spot_obs_status())
@@ -780,7 +758,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					stop_brifly();
 					turn_right(Turn_Speed, 2000);
-					Move_Style = SPIRAL_RIGHT_OUT;
+					Move_Style = CLOCKWISE_OUT;
 					reset_wheel_step();
 					reset_wall_step();
 					OBS_Counter++;
@@ -791,7 +769,7 @@ uint8_t Random_Dirt_Event(void)
 
 				break;
 
-			case SPIRAL_LEFT_IN:
+			case ANTI_CLOCKWISE_IN:
 				if (get_right_wheel_step() > (Radius * 2))
 				{
 					reset_right_wheel_step();
@@ -823,7 +801,7 @@ uint8_t Random_Dirt_Event(void)
 					}
 					stop_brifly();
 					turn_right(Turn_Speed, 2000);
-					Move_Style = SPIRAL_RIGHT_IN;
+					Move_Style = CLOCKWISE_IN;
 					reset_wheel_step();
 					reset_wall_step();
 					OBS_Counter++;

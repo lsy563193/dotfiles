@@ -20,10 +20,10 @@
 #include "mathematics.h"
 #include "core_move.h"
 
-#define SPIRAL_RIGHT_OUT  1
-#define SPIRAL_RIGHT_IN  2
-#define SPIRAL_LEFT_OUT  4
-#define SPIRAL_LEFT_IN    8
+#define CLOCKWISE_OUT  1
+#define CLOCKWISE_IN  2
+#define ANTI_CLOCKWISE_OUT  4
+#define ANTI_CLOCKWISE_IN    8
 #define First_Round       10
 
 typedef enum {
@@ -100,6 +100,8 @@ public:
 
 	uint8_t isSpotInit()
 	{ return spot_init_; }
+
+	int8_t endSpot(Cell_t *next_point,SpotType spt);
 
 	static SpotMovement *instance();
 

@@ -261,7 +261,7 @@ void *robotbase_routine(void*)
 	th_last = vth = pose_x = pose_y = 0.0;
 
 	sensor_pub = robotsensor_node.advertise<pp::x900sensor>("/robot_sensor",1);
-	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",5);
+	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",1);
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
@@ -281,11 +281,12 @@ void *robotbase_routine(void*)
 		rw_speed = (receiStream[4] << 8) | receiStream[5];
 		sensor.lw_vel = (lw_speed & 0x8000) ? -((float)((lw_speed & 0x7fff) / 1000.0)) : (float)((lw_speed & 0x7fff) / 1000.0);
 		sensor.rw_vel = (rw_speed & 0x8000) ? -((float)((rw_speed & 0x7fff) / 1000.0)) : (float)((rw_speed & 0x7fff) / 1000.0);
-		sensor.angle = -(float)(int16_t)((receiStream[6] << 8) | receiStream[7]) / 100;
+		sensor.angle = -(float)((int16_t)((receiStream[6] << 8) | receiStream[7])) / 100.0;//ros angle * -1
 
 		sensor.angle -= robot::instance()->offsetAngle();
 
-		sensor.angle_v = -(float)((receiStream[8] << 8) | receiStream[9]) / 100.0;
+		sensor.angle_v = -(float)((int16_t)((receiStream[8] << 8) | receiStream[9])) / 100.0;//ros angle * -1
+
 		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
 		sensor.rw_crt = (((receiStream[12] << 8) | receiStream[13]) & 0x7fff) * 1.622;
 		sensor.left_wall = ((receiStream[14] << 8)| receiStream[15]);
@@ -588,8 +589,17 @@ bool is_turn(void)
 					);
 }
 void set_acc_init_data(){
-	g_xacc_init_val = sensor.x_acc;
-	g_yacc_init_val = sensor.y_acc;
-	g_zacc_init_val = sensor.z_acc;
+	uint16_t count = 0;
+	while(ros::ok() && count <=10){
+		g_xacc_init_val += sensor.x_acc;
+		g_yacc_init_val += sensor.y_acc;
+		g_zacc_init_val += sensor.z_acc;
+		count++;
+		usleep(20000);
+
+	}
+	g_xacc_init_val = g_xacc_init_val/count;
+	g_yacc_init_val = g_yacc_init_val/count;
+	g_zacc_init_val = g_zacc_init_val/count;
 	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m",g_xacc_init_val,g_yacc_init_val,g_zacc_init_val);
 }
