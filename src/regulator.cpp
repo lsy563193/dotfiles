@@ -515,7 +515,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		integrated_ = 0;
 	}
 
-	if(FORCE_MOVE_LINE && std::abs(dis_diff) > CELL_COUNT_MUL/4 && distance > SLOW_DOWN_DISTANCE*4)
+	if((FORCE_MOVE_LINE && std::abs(dis_diff) > CELL_COUNT_MUL/4 && distance > SLOW_DOWN_DISTANCE*4) && (get_clean_mode() != Clean_Mode_WallFollow))
 	{
 		integrated_ = 0;
 
