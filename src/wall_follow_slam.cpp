@@ -36,6 +36,8 @@
 #include "robotbase.h"
 
 #include "motion_manage.h"
+
+#include "regulator.h"
 //Turn speed
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -55,11 +57,13 @@ extern Cell_t g_cell_history[5];
 extern uint8_t g_wheel_left_direction;
 extern uint8_t g_wheel_right_direction;
 bool	wf_time_out = false;
+bool	g_is_left_start;
 
 //Timer
 uint32_t g_wall_follow_timer;
 int32_t g_reach_count = 0;
 const static int32_t REACH_COUNT_LIMIT = 10;//10 represent the wall follow will end after overlap 10 cells
+const int16_t DIFF_LIMIT = 200;//1500 means 150 degrees, it is used by angle check.
 int32_t g_same_cell_count = 0;
 //MFW setting
 static const MapWallFollowSetting MFW_SETTING[6] = {{1200, 250, 150},
@@ -90,12 +94,17 @@ static bool is_reach(void)
 		ROS_WARN("%s,%d:sp_turn over 400",__FUNCTION__,__LINE__);
 		return true;
 	}
+	if (wf_is_reach_start()) {
+		ROS_WARN("%s,%d:reach the start point!",__FUNCTION__,__LINE__);
+		return true;
+	}
+#if 0
 	if ( g_reach_count < REACH_COUNT_LIMIT)
 		return false;
-	ROS_INFO("reach_count>10(%d)",g_reach_count);
+#endif
+	//ROS_INFO("reach_count>10(%d)",g_reach_count);
 	g_reach_count = 0;
 	int16_t th_diff;
-	int16_t DIFF_LIMIT = 1500;//1500 means 150 degrees, it is used by angle check.
 	int8_t pass_count = 0;
 	int8_t sum = REACH_COUNT_LIMIT;
 	bool fail_flag = 0;
@@ -103,6 +112,8 @@ static bool is_reach(void)
 	std::vector<Cell_t> reach_point;
 	reach_point.clear();
 	Cell_t new_point;
+/*old wall follow ending condition, overlap 10 cells*/
+#if 0
 	try
 	{
 		for (int i = 1; i <= REACH_COUNT_LIMIT; i++)
@@ -162,6 +173,39 @@ static bool is_reach(void)
 	catch (const std::out_of_range &oor)
 	{
 		std::cerr << "Out of range error:" << oor.what() << '\n';
+	}
+#endif
+	if (g_wf_cell.size() > REACH_COUNT_LIMIT) {
+		try
+		{
+			int i = REACH_COUNT_LIMIT;
+			Pose16_t cell = g_wf_cell[g_wf_cell.size() - 1];
+
+			for (std::vector<Pose16_t>::reverse_iterator r_iter = (g_wf_cell.rbegin() + i); r_iter != g_wf_cell.rend(); ++r_iter)
+			{
+				if (r_iter->X == cell.X && r_iter->Y == cell.Y)
+				{
+					new_point.X = r_iter->X;
+					new_point.Y = r_iter->Y;
+
+					th_diff = (abs(r_iter->TH - cell.TH));
+					ROS_INFO("r_iter->X = %d, r_iter->Y = %d, r_iter->TH = %d", r_iter->X, r_iter->Y, r_iter->TH);
+					if (th_diff > 1800)
+						th_diff = 3600 - th_diff;
+					if (th_diff <= DIFF_LIMIT)
+					{
+						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, DIFF_LIMIT);
+						return true;
+					} else{
+						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, DIFF_LIMIT);
+					}
+				}
+			}
+		}
+		catch (const std::out_of_range &oor)
+		{
+			std::cerr << "Out of range error:" << oor.what() << '\n';
+		}
 	}
 	return 0;
 }
@@ -391,4 +435,36 @@ bool wf_is_go_home()
 bool wf_is_first()
 {
 	return g_isolate_count == 0;
+}
+
+bool wf_is_reach_start()
+{
+	int32_t x_s = count_to_cell(RegulatorBase::s_origin.X);
+	int32_t y_s = count_to_cell(RegulatorBase::s_origin.Y);
+	int16_t origin_angle = RegulatorBase::s_origin_angle;
+	uint32_t dis = two_points_distance(x_s, y_s, g_wf_cell.back().X, g_wf_cell.back().Y);
+	int16_t th_diff;
+	ROS_WARN("%s,%d:dis = %d",__FUNCTION__,__LINE__,dis);
+	if (g_is_left_start) {
+		if (dis <= 1) {
+					th_diff = (abs(g_wf_cell.back().TH - origin_angle));
+					if (th_diff > 1800)
+						th_diff = 3600 - th_diff;
+					if (th_diff <= DIFF_LIMIT)
+					{
+						ROS_WARN("th_diff = %d <= %d, pass angle check!", th_diff, DIFF_LIMIT);
+					} else{
+						ROS_WARN("th_diff = %d > %d, fail angle check!", th_diff, DIFF_LIMIT);
+						return false;
+					}
+			return true;
+		}
+		else {
+			return false;
+		}
+	} else {
+		if (dis > 3)
+			g_is_left_start = true;
+	}
+
 }

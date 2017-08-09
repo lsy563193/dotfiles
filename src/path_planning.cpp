@@ -1128,7 +1128,7 @@ int8_t path_next(Cell_t &next)
 				ROS_INFO("CM_LINEARMOVE");
 				mt_set(CM_LINEARMOVE);
 				wf_break_wall_follow();
-				auto angle = wf_is_first() ? 0 : 2700;
+				auto angle = wf_is_first() ? 0 : -900;
 				int32_t x_point,y_point;
 				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 				cm_world_to_point(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, &x_point, &y_point);

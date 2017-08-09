@@ -191,6 +191,7 @@ static int16_t _get_obs_value()
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
+int16_t RegulatorBase::s_origin_angle = 0;
 int16_t RegulatorBase::s_target_angle = 0;
 float RegulatorBase::s_pos_x = 0;
 float RegulatorBase::s_pos_y = 0;
@@ -543,7 +544,9 @@ FollowWallRegulator::FollowWallRegulator(Point32_t origin, Point32_t target) : p
 	g_wall_distance = 400;
 	g_straight_distance = 300;
 	s_origin = origin;
+	s_origin_angle = gyro_get_angle();
 	s_target = target;
+	g_is_left_start = false;
 	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
@@ -866,6 +869,8 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 			g_turn_angle = 0;
 		if (LASER_FOLLOW_WALL)
 			g_turn_angle = laser_turn_angle();
+		if (!g_is_left_start)
+			s_origin_angle = gyro_get_angle() + g_turn_angle;
 	}else if(mt_is_linear())
 		g_turn_angle = ranged_angle(
 					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
