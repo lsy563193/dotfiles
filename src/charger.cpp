@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <wav.h>
 
+#include "go_home.hpp"
 #include "movement.h"
 #include "charger.hpp"
 #include "robot.hpp"
@@ -86,23 +87,39 @@ void charge_function(void)
 		//ROS_WARN("%s %d: g_stop_charge_counter: %d", __FUNCTION__, __LINE__, g_stop_charge_counter);
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
 		{
-			if (g_resume_cleaning)
+			g_charge_detect = 0;
+			if(!charge_turn_connect())
 			{
-				if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
+				if (g_resume_cleaning)
 				{
-					ROS_INFO("%s %d: Exit charger mode and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
-					set_clean_mode(Clean_Mode_Userinterface);
-					g_resume_cleaning = false;
+					if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
+					{
+						ROS_INFO("%s %d: Exit charger mode and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
+						set_clean_mode(Clean_Mode_Userinterface);
+						g_resume_cleaning = false;
+					}
+					else
+					{
+						ROS_INFO("%s %d: Exit charger mode and continue cleaning.", __FUNCTION__, __LINE__);
+						set_clean_mode(Clean_Mode_Navigation);
+					}
+					break;
 				}
-				else
-				{
-					ROS_INFO("%s %d: Exit charger mode and continue cleaning.", __FUNCTION__, __LINE__);
-					set_clean_mode(Clean_Mode_Navigation);
-				}
+
+				ROS_INFO("%s %d: Exit charger mode and go to userinterface mode.", __FUNCTION__, __LINE__);
+				set_clean_mode(Clean_Mode_Userinterface);
 				break;
 			}
-
-			ROS_INFO("%s %d: Exit charger mode and go to userinterface mode.", __FUNCTION__, __LINE__);
+			else
+			{
+				g_stop_charge_counter = 20;
+			}
+		}
+		if(g_cliff_all_triggered)
+		{
+			disable_motors();
+			wav_play(WAV_ERROR_LIFT_UP);
+			g_cliff_all_triggered = 0;
 			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
@@ -195,6 +212,8 @@ void charge_register_event(void)
 	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
 	event_manager_enable_handler(EVT_REMOTE_MAX, true);
 	event_manager_enable_handler(EVT_RCON, true);
+	/* Cliff */
+	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
 #undef event_manager_register_and_enable_x
 
 	event_manager_set_enable(true);
@@ -222,6 +241,8 @@ void charge_unregister_event(void)
 	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
 	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
 	event_manager_enable_handler(EVT_REMOTE_MAX, false);
+	/* Cliff */
+	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
 #undef event_manager_register_and_disable_x
 
 	event_manager_set_enable(false);
@@ -229,6 +250,7 @@ void charge_unregister_event(void)
 
 void charge_handle_charge_detect(bool state_now, bool state_last)
 {
+	g_charge_detect = 1;
 	g_stop_charge_counter = 20;
 }
 void charge_handle_remote_plan(bool state_now, bool state_last)
@@ -290,6 +312,15 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 		}
 	}
 	set_plan_status (0);
+}
+void charge_handle_cliff_all(bool state_now, bool state_last)
+{
+	g_cliff_all_cnt++;
+	if (g_cliff_all_cnt++ > 2)
+	{
+		g_fatal_quit_event = true;
+		g_cliff_all_triggered = true;
+	}
 }
 void charge_handle_key_clean(bool state_now, bool state_last)
 {
@@ -386,5 +417,66 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 		beep_for_command(INVALID);
 		reset_rcon_remote();
 	}
+}
+
+bool charge_turn_connect(void)
+{
+	ROS_INFO("%s %d: Start charge_turn_connect().", __FUNCTION__, __LINE__);
+	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
+	int8_t speed = 5;
+	if(g_charge_detect)
+	{
+		ROS_INFO("Reach charger without turning.");
+		return true;
+	}
+	// Start turning right.
+	set_dir_right();
+	set_wheel_speed(speed, speed);
+	for(int i=0; i<20; i++)
+	{
+		if (g_charge_detect)
+		{
+			g_charge_detect = 0;
+			disable_motors();
+			// Wait for a while to decide if it is really on the charger stub.
+			usleep(500000);
+			if (g_charge_detect)
+			{
+				ROS_INFO("Turn left reach charger.");
+				return true;
+			}
+			set_wheel_speed(speed, speed);
+		}
+		if(g_key_clean_pressed || g_fatal_quit_event)
+			return true;
+		usleep(50000);
+	}
+	stop_brifly();
+	// Start turning left.
+	set_dir_left();
+	set_wheel_speed(speed, speed);
+	for(int i=0; i<40; i++)
+	{
+		if (g_charge_detect)
+		{
+			g_charge_detect = 0;
+			disable_motors();
+			// Wait for a while to decide if it is really on the charger stub.
+			usleep(500000);
+			if (g_charge_detect)
+			{
+				ROS_INFO("Turn left reach charger.");
+				return true;
+			}
+			set_wheel_speed(speed, speed);
+		}
+		if(g_key_clean_pressed || g_fatal_quit_event)
+			return true;
+		usleep(50000);
+	}
+	stop_brifly();
+
+	return false;
+
 }
 
