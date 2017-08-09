@@ -20,8 +20,8 @@ extern uint8_t receiStream[RECEI_LEN];
 #define TILT_COUNT_REACH (20)
 #endif
 
-#define DIF_TILT_X_VAL 50
-#define DIF_TILT_Y_VAL 80
+#define DIF_TILT_X_VAL 70
+#define DIF_TILT_Y_VAL 70
 #define DIF_TILT_Z_VAL 40
 
 extern bool g_is_tilt;

@@ -308,7 +308,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 			temp_mode = Clean_Mode_GoHome;
 	}
 
-	charger_signal_delay = 20;
+	charger_signal_delay = 250;
 	reset_rcon_status();
 }
 

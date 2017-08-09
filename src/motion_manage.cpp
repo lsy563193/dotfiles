@@ -170,6 +170,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	initSucceeded(true);
 
+	
 	//1 Initialize for different mode.
 	if (!initCleaning(get_clean_mode()))
 	{
@@ -191,11 +192,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
-
-	// enable titlt detct
-	set_acc_init_data();
-	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	extern bool g_resume_cleaning;
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
@@ -512,13 +508,10 @@ bool MotionManage::initNavigationCleaning(void)
 
 	reset_touch();
 
-	// Restart the gyro.
 	set_gyro_off();
-	// Wait for 30ms to make sure the off command has been effectived.
 	usleep(30000);
-	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
-
+	
 	if (g_resume_cleaning)
 	{
 		ROS_WARN("Restore from low battery pause");
@@ -592,6 +585,11 @@ bool MotionManage::initNavigationCleaning(void)
 		g_from_station = 1;
 	}
 
+	// enable titlt detct
+	set_acc_init_data();//about 200ms delay
+	g_tilt_enable = true;
+	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+
 	work_motor_configure();
 
 	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d).", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning);
@@ -609,18 +607,19 @@ bool MotionManage::initWallFollowCleaning(void)
 	reset_rcon_status();
 	reset_stop_event_status();
 	reset_touch();
-	// Restart the gyro.
 	set_gyro_off();
-	// Wait for 30ms to make sure the off command has been effectived.
 	usleep(30000);
-	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
-	//wav_play(WAV_SYSTEM_INITIALIZING);
+	
 	wav_play(WAV_CLEANING_WALL_FOLLOW);
 	if (!wait_for_gyro_on())
 	{
 		return false;
 	}
+	// enable titlt detct
+	set_acc_init_data();//about 200ms delay
+	g_tilt_enable = true;
+	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
@@ -662,18 +661,19 @@ bool MotionManage::initSpotCleaning(void)
 	reset_stop_event_status();
 	reset_touch();
 
-	// Restart the gyro.
 	set_gyro_off();
-	// Wait for 30ms to make sure the off command has been effectived.
 	usleep(30000);
-	// Set gyro on before wav_play can save the time for opening the gyro.
 	set_gyro_on();
-	//wav_play(WAV_SYSTEM_INITIALIZING);
+	
 	wav_play(WAV_CLEANING_SPOT);
 	if (!wait_for_gyro_on())
 	{
 		return false;
 	}
+	// enable titlt detct
+	set_acc_init_data();//about 200ms delay
+	g_tilt_enable = true;
+	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
