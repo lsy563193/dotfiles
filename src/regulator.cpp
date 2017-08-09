@@ -658,7 +658,9 @@ bool FollowWallRegulator::isSwitch()
 bool FollowWallRegulator::_isStop()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-	MotionManage::s_laser->laserMarker(false);
+	if (get_clean_mode() != Clean_Mode_WallFollow) {
+		MotionManage::s_laser->laserMarker(true);
+	}
 	return false;
 }
 
