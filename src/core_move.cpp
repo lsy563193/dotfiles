@@ -179,7 +179,7 @@ void cm_update_map()
 //	if (last != curr )
 //	{
 
-	map_set_cleaned();
+	map_set_cleaned(curr);
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 //	}
@@ -284,7 +284,8 @@ bool cm_move_to(const Cell_t &next)
 	bool ret = false;
 
 	std::vector<Cell_t> paths;
-	paths.push_back(start);
+	if(!MAP_SET_REALTIME)
+		paths.push_back(start);
 
 	while (ros::ok())
 	{
@@ -322,16 +323,22 @@ bool cm_move_to(const Cell_t &next)
 			auto curr = map_get_curr_cell();
 			if (paths.empty() || paths.back() != curr)
 			{
-				map_set_realtime();
-				if (g_trapped_mode == 0)
+				paths.push_back(curr);
+				if(MAP_SET_REALTIME)
 				{
-					paths.push_back(curr);
+					//map_set_realtime();
+					map_set_cleaned(curr);
+					if (mt_is_follow_wall())
+						map_set_follow_wall(curr);
 				}
-				else if (g_trapped_mode == 1)
+
+				if (g_trapped_mode == 1)
 				{
 					Cell_t next_tmp ,target_tmp;
-					if(path_target(next_tmp, target_tmp) >= 0){
-						ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
+					auto is_block_clear = MAP_SET_REALTIME ? 1 : map_mark_robot();
+					if(is_block_clear && path_target(next_tmp, target_tmp) >= 0)
+					{
+						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
 						g_trapped_mode = 2;
 					}
 					else{
@@ -345,8 +352,15 @@ bool cm_move_to(const Cell_t &next)
 		rm.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);
 	}
+	if(! MAP_SET_REALTIME)
+	{
+		map_set_cleaned(paths);
+		if (!mt_is_linear())
+			map_set_follow_wall(paths);
 
-	map_set_blocked();
+		map_set_blocked();
+	}
+
 	return ret;
 }
 
