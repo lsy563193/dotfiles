@@ -82,7 +82,7 @@ void wf_path_planning_initialize(Cell_t cell);
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(Cell_t &next);
+int8_t path_next(const Cell_t& curr, Cell_t& next);
 
 uint8_t path_home(int32_t *x, int32_t *y);
 
@@ -142,7 +142,7 @@ void path_update_cells(void);
  * 		1 if either one end is not cleaned
  * 		2 if both ends are not cleaned
  */
-bool path_lane_is_cleaned(Cell_t& next);
+bool path_lane_is_cleaned(const Cell_t& curr, Cell_t& next);
 
 /*
  * Find how many cells ahead to clean with a given target.

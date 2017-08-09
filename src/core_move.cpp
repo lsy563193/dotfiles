@@ -524,11 +524,11 @@ int cm_cleaning()
 
 		cm_check_temp_spot();
 
-		Cell_t start{map_get_x_cell(), map_get_y_cell()};
+		Cell_t start = map_get_curr_cell();
 		path_update_cell_history();
 		path_update_cells();
 		path_reset_path_points();
-		int8_t is_found = path_next(g_next_cell);
+		int8_t is_found = path_next(start, g_next_cell);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point
