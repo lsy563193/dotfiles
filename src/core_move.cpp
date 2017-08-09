@@ -289,7 +289,7 @@ bool cm_move_to(const Cell_t &next)
 
 	while (ros::ok())
 	{
-		if (get_clean_mode() == Clean_Mode_WallFollow && mt_is_linear()) {
+		if (/*get_clean_mode() == Clean_Mode_WallFollow &&*/ mt_is_linear()) {
 			wall_dynamic_base(30);
 		}
 
