@@ -179,7 +179,7 @@ void cm_update_map()
 //	if (last != curr )
 //	{
 
-	map_set_cleaned();
+	map_set_cleaned(curr);
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 //	}
@@ -285,11 +285,12 @@ bool cm_move_to(const Cell_t &next)
 	bool ret = false;
 
 	std::vector<Cell_t> paths;
-	paths.push_back(start);
+	if(!MAP_SET_REALTIME)
+		paths.push_back(start);
 
 	while (ros::ok())
 	{
-		if (get_clean_mode() == Clean_Mode_WallFollow && mt_is_linear()) {
+		if (/*get_clean_mode() == Clean_Mode_WallFollow &&*/ mt_is_linear()) {
 			wall_dynamic_base(30);
 		}
 
@@ -323,16 +324,23 @@ bool cm_move_to(const Cell_t &next)
 			auto curr = map_get_curr_cell();
 			if (paths.empty() || paths.back() != curr)
 			{
-				map_set_realtime();
-				if (g_trapped_mode == 0)
+				paths.push_back(curr);
+				if(MAP_SET_REALTIME)
 				{
-					paths.push_back(curr);
+					//map_set_realtime();
+					if( g_trapped_mode==0 )
+						map_set_cleaned(curr);
+					if (mt_is_follow_wall())
+						map_set_follow_wall(curr);
 				}
-				else if (g_trapped_mode == 1)
+
+				if (g_trapped_mode == 1)
 				{
 					Cell_t next_tmp ,target_tmp;
-					if(path_target(next_tmp, target_tmp) >= 0){
-						ROS_INFO("%s,%d:trapped_mode path_target ok,OUT OF ESC",__FUNCTION__,__LINE__);
+					auto is_block_clear = map_mark_robot();
+					if(is_block_clear && path_target(next_tmp, target_tmp) >= 0)
+					{
+						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
 						g_trapped_mode = 2;
 					}
 					else{
@@ -346,8 +354,15 @@ bool cm_move_to(const Cell_t &next)
 		rm.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);
 	}
+	if(! MAP_SET_REALTIME)
+	{
+		map_set_cleaned(paths);
+		if (!mt_is_linear())
+			map_set_follow_wall(paths);
 
-	map_set_blocked();
+		map_set_blocked();
+	}
+
 	return ret;
 }
 
@@ -510,11 +525,11 @@ int cm_cleaning()
 
 		cm_check_temp_spot();
 
-		Cell_t start{map_get_x_cell(), map_get_y_cell()};
+		Cell_t start = map_get_curr_cell();
 		path_update_cell_history();
 		path_update_cells();
 		path_reset_path_points();
-		int8_t is_found = path_next(g_next_cell);
+		int8_t is_found = path_next(start, g_next_cell);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point

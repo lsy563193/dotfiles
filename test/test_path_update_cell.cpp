@@ -110,9 +110,10 @@ int main(int argc, char **argv)
 //	g_cell_history[2] = {10,0};
 //	g_cell_history[1] = {-10,0};
 //	g_cell_history[0] = {-10,2};
+	auto curr = map_get_curr_cell();
 	next = g_cell_history[0];
-	path_lane_is_cleaned(next);
+	path_lane_is_cleaned(curr, next);
 
-//	debug_map(MAP,stop.X,stop.Y);
+	debug_map(MAP,stop.X,stop.Y);
 	return 0;
 }

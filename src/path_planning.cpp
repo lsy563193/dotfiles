@@ -78,7 +78,6 @@ int16_t g_home_x = 0, g_home_y = 0;
 Cell_t g_continue_cell;
 
 Cell_t g_cell_history[5];
-const Cell_t& g_curr = g_cell_history[0];
 
 uint16_t g_new_dir;
 uint16_t g_old_dir;
@@ -280,11 +279,11 @@ uint8_t is_block_blocked(int16_t x, int16_t y)
 	return retval;
 }
 
-bool path_lane_is_cleaned(Cell_t& next)
+bool path_lane_is_cleaned(const Cell_t& curr, Cell_t& next)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
 
-	auto tmp = g_curr;
+	auto tmp = curr;
 
 	for (i = 1; (min_stop == 0 || max_stop == 0); i++)
 	{
@@ -292,14 +291,14 @@ bool path_lane_is_cleaned(Cell_t& next)
 		if (min_stop == 0)
 		{
 			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(g_curr.X - i, g_curr.Y) == 1 || is_block_boundary(g_curr.X - i, g_curr.Y) == 1)
+			if (is_block_blocked(curr.X - i, curr.Y) == 1 || is_block_boundary(curr.X - i, curr.Y) == 1)
 			{
 				min_stop = 1;
 			} else
 			{
-				if (is_brush_block_unclean(g_curr.X - i, g_curr.Y))
+				if (is_brush_block_unclean(curr.X - i, curr.Y))
 				{
-					if (is_block_blocked(g_curr.X - (i + 1), g_curr.Y) == 0)
+					if (is_block_blocked(curr.X - (i + 1), curr.Y) == 0)
 						min = i;
 					min_stop = 1;
 				}
@@ -310,14 +309,14 @@ bool path_lane_is_cleaned(Cell_t& next)
 		if (max_stop == 0)
 		{
 			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(g_curr.X + i, g_curr.Y) == 1 || is_block_boundary(g_curr.X + i, g_curr.Y) == 1)
+			if (is_block_blocked(curr.X + i, curr.Y) == 1 || is_block_boundary(curr.X + i, curr.Y) == 1)
 			{
 				max_stop = 1;
 			} else
 			{
-				if (is_brush_block_unclean(g_curr.X + i, g_curr.Y))
+				if (is_brush_block_unclean(curr.X + i, curr.Y))
 				{
-					if (is_block_blocked(g_curr.X + i + 1, g_curr.Y) == 0)
+					if (is_block_blocked(curr.X + i + 1, curr.Y) == 0)
 						max = i;
 					max_stop = 1;
 				}
@@ -396,7 +395,6 @@ bool path_lane_is_cleaned(Cell_t& next)
 
 	ROS_INFO("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
 
-	const Cell_t curr{g_cell_history[0].X, g_cell_history[0].Y};
 	if (is_found > 0)
 	{
 		auto dx1 = (tmp.X > curr.X) ? 1 : -1;
@@ -1097,7 +1095,7 @@ int16_t path_escape_trapped()
 	return val;
 }
 
-int8_t path_next(Cell_t &next)
+int8_t path_next(const Cell_t& curr, Cell_t& next)
 {
 	Cell_t target = next;
 	//ros_map_convert(false);
@@ -1106,7 +1104,7 @@ int8_t path_next(Cell_t &next)
 	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
 		if(mt_is_linear()){
-			if(g_curr != next){
+			if(curr != next){
 				ROS_INFO("start follow wall");
 				mt_set(CM_FOLLOW_LEFT_WALL);
 			}else{
@@ -1150,7 +1148,7 @@ int8_t path_next(Cell_t &next)
 
 		if (!g_resume_cleaning)
 		{
-			if (path_lane_is_cleaned(next))
+			if (path_lane_is_cleaned(curr, next))
 				target = next;
 			else
 			{
@@ -1188,10 +1186,10 @@ int8_t path_next(Cell_t &next)
 		mt_update(next, target, g_old_dir);
 	// else if wall follow mode, the move type has been set before here.
 
-	if (g_curr.X == next.X)
-		g_new_dir = g_curr.Y > next.Y ? NEG_Y : POS_Y;
+	if (curr.X == next.X)
+		g_new_dir = curr.Y > next.Y ? NEG_Y : POS_Y;
 	else
-		g_new_dir = g_curr.X > next.X ? NEG_X : POS_X;
+		g_new_dir = curr.X > next.X ? NEG_X : POS_X;
 
 	extern Cell_t g_target_cell;
 	g_target_cell = target;
