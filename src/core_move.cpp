@@ -327,7 +327,8 @@ bool cm_move_to(const Cell_t &next)
 				if(MAP_SET_REALTIME)
 				{
 					//map_set_realtime();
-					map_set_cleaned(curr);
+					if( g_trapped_mode==0 )
+						map_set_cleaned(curr);
 					if (mt_is_follow_wall())
 						map_set_follow_wall(curr);
 				}
@@ -335,7 +336,7 @@ bool cm_move_to(const Cell_t &next)
 				if (g_trapped_mode == 1)
 				{
 					Cell_t next_tmp ,target_tmp;
-					auto is_block_clear = MAP_SET_REALTIME ? 1 : map_mark_robot();
+					auto is_block_clear = map_mark_robot();
 					if(is_block_clear && path_target(next_tmp, target_tmp) >= 0)
 					{
 						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
