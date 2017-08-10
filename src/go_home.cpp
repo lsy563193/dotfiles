@@ -12,6 +12,7 @@
 #include "core_move.h"
 #include "event_manager.h"
 #include "charger.hpp"
+#include "map.h"
 
 extern float saved_pos_x, saved_pos_y;
 /*----------------------------------------------------------------GO Home  ----------------*/
@@ -190,6 +191,9 @@ void go_to_charger(void)
 		if(cm_should_self_check())
 			break;
 
+		if(during_cleaning)
+			map_set_cleaned(map_get_curr_cell());
+
 		if(!g_move_back_finished)
 		{
 			if (!go_home_check_move_back_finish(target_distance))
@@ -241,18 +245,6 @@ void go_to_charger(void)
 			reset_rcon_status();
 			gyro_step = 0;
 
-			if (get_cliff_status())
-			{
-				saved_pos_x = robot::instance()->getOdomPositionX();
-				saved_pos_y = robot::instance()->getOdomPositionY();
-				g_cliff_triggered = Status_Cliff_All;
-			}
-			else if (get_bumper_status())
-			{
-				saved_pos_x = robot::instance()->getOdomPositionX();
-				saved_pos_y = robot::instance()->getOdomPositionY();
-				g_bumper_left = g_bumper_right = true;
-			}
 			g_move_back_finished = true;
 
 			// Save the start angle.
@@ -332,6 +324,7 @@ void go_to_charger(void)
 			if(g_bumper_left || g_bumper_right)
 			{
 				stop_brifly();
+				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 				target_distance = 0.03;
 				g_move_back_finished = false;
 				g_go_home_state_now = GO_HOME;
@@ -2614,6 +2607,8 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 		g_fatal_quit_event = true;
 	}
 	g_cliff_triggered = Status_Cliff_All;
+	if (during_cleaning)
+		map_set_cliff();
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -2626,6 +2621,8 @@ void go_home_handle_cliff(bool state_now, bool state_last)
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
 		g_cliff_triggered = Status_Cliff_All;
+		if (during_cleaning)
+			map_set_cliff();
 	}
 }
 
@@ -2645,6 +2642,8 @@ void go_home_handle_bumper(bool state_now, bool state_last)
 			ROS_WARN("%s %d: Left bumper triggered.", __FUNCTION__, __LINE__);
 			g_bumper_right = true;
 		}
+		if (during_cleaning)
+			map_set_bumper();
 	}
 }
 

@@ -191,6 +191,7 @@ static int16_t _get_obs_value()
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
+int16_t RegulatorBase::s_origin_angle = 0;
 int16_t RegulatorBase::s_target_angle = 0;
 float RegulatorBase::s_pos_x = 0;
 float RegulatorBase::s_pos_y = 0;
@@ -257,6 +258,7 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	set_dir_backward();
 	speed_ += counter_ / 100;
 	speed_ = (speed_ > 18) ? 18 : speed_;
+	//speed_ = 18;
 	reset_wheel_step();
 	l_speed = r_speed = speed_;
 }
@@ -364,7 +366,7 @@ LinearRegulator::LinearRegulator(Point32_t target):
 
 bool LinearRegulator::isReach()
 {
-	map_set_realtime();
+	//map_set_realtime();
 
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
@@ -515,16 +517,19 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		integrated_ = 0;
 	}
 
-	if(FORCE_MOVE_LINE && std::abs(dis_diff) > CELL_COUNT_MUL/4 && distance > SLOW_DOWN_DISTANCE*4)
+	if((FORCE_MOVE_LINE && std::abs(dis_diff) > CELL_COUNT_MUL/4 && distance > SLOW_DOWN_DISTANCE*4) && (get_clean_mode() != Clean_Mode_WallFollow))
 	{
 		integrated_ = 0;
 
-		auto diff = (dis_diff > 0) ? (dis_diff - CELL_COUNT_MUL/4) : (dis_diff + CELL_COUNT_MUL/4);
+//		auto diff = (dis_diff > 0) ? (dis_diff - CELL_COUNT_MUL/4) : (dis_diff + CELL_COUNT_MUL/4);
 //		float cell = (diff/CELL_COUNT_MUL);
-		auto diff2 = (dis_diff > 0) ? 4 : -4;
-		left_speed = base_speed_ - diff / 100 - diff2 /*- integrated_ / 150*/; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-		right_speed = base_speed_ + diff / 100 + diff2 /*+ integrated_ / 150*/; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff1(%d),diff2(%d)",left_speed, right_speed, dis_diff, diff,diff2);
+
+//		auto diff2 = (std::abs(dis_diff) < CELL_COUNT_MUL/4) ? 1 : 3;
+//		if (dis_diff < 0)  diff2 = - diff2;
+		left_speed = base_speed_ - dis_diff / (CELL_COUNT_MUL/4)/* - diff2*/ /*- integrated_ / 150*/; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+		right_speed = base_speed_ + dis_diff / (CELL_COUNT_MUL/4) /*+ diff2 *//*+ integrated_ / 150*/; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+//		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff1(%d),diff2(%d)",left_speed, right_speed, dis_diff, diff,diff2);
+		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff(%d)",left_speed, right_speed, dis_diff, dis_diff / (CELL_COUNT_MUL/4));
 	}
 	else{
 		left_speed = base_speed_ - angle_diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
@@ -543,7 +548,9 @@ FollowWallRegulator::FollowWallRegulator(Point32_t origin, Point32_t target) : p
 	g_wall_distance = 400;
 	g_straight_distance = 300;
 	s_origin = origin;
+	s_origin_angle = gyro_get_angle();
 	s_target = target;
+	g_is_left_start = false;
 	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
@@ -551,7 +558,7 @@ bool FollowWallRegulator::isReach()
 {
 //	ROS_INFO("FollowWallRegulator isReach");
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
-	map_set_realtime();
+	//map_set_realtime();
 	bool ret = false;
 	auto start_y = s_origin.Y;
 	if (get_clean_mode() == Clean_Mode_WallFollow)
@@ -652,7 +659,9 @@ bool FollowWallRegulator::isSwitch()
 bool FollowWallRegulator::_isStop()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-	MotionManage::s_laser->laserMarker(false);
+	if (get_clean_mode() != Clean_Mode_WallFollow) {
+		MotionManage::s_laser->laserMarker(true);
+	}
 	return false;
 }
 
@@ -866,6 +875,8 @@ RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
 			g_turn_angle = 0;
 		if (LASER_FOLLOW_WALL)
 			g_turn_angle = laser_turn_angle();
+		if (!g_is_left_start)
+			s_origin_angle = gyro_get_angle() + g_turn_angle;
 	}else if(mt_is_linear())
 		g_turn_angle = ranged_angle(
 					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());

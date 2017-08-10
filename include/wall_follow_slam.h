@@ -15,4 +15,5 @@ bool wf_is_end();
 uint8_t wf_break_wall_follow(void);
 bool wf_is_go_home();
 bool wf_is_first();
+bool wf_is_reach_start();
 #endif

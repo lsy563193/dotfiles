@@ -179,7 +179,7 @@ void cm_update_map()
 //	if (last != curr )
 //	{
 
-	map_set_cleaned();
+	map_set_cleaned(curr);
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 //	}
@@ -272,15 +272,25 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
  *			-1: Robot cannot move to target cell
  *			1: Robot arrive target cell
  */
-bool cm_move_to(const Cell_t &target)
+bool cm_move_to(const Cell_t &next)
 {
-	RegulatorManage rm({map_get_x_count(), map_get_y_count()}, map_cell_to_point(target));
+	cm_update_position();
+	auto start = map_get_curr_cell();
+	//extern uint16_t g_new_dir;
+	//if (mt_is_linear() && IS_X_AXIS(g_new_dir))
+	//	start.Y = next.Y;
+	RegulatorManage rm({map_get_x_count(), map_get_y_count()}, map_cell_to_point(next));
 
-	bool	eh_status_now=false, eh_status_last=false;
+	bool eh_status_now=false, eh_status_last=false;
+	bool ret = false;
+
+	std::vector<Cell_t> paths;
+	if(!MAP_SET_REALTIME)
+		paths.push_back(start);
 
 	while (ros::ok())
 	{
-		if (get_clean_mode() == Clean_Mode_WallFollow && mt_is_linear()) {
+		if (/*get_clean_mode() == Clean_Mode_WallFollow &&*/ mt_is_linear()) {
 			wall_dynamic_base(30);
 		}
 
@@ -298,23 +308,62 @@ bool cm_move_to(const Cell_t &target)
 			set_wheel_speed(0, 0);
 			continue;
 		}
-	
 
 		if (rm.isReach() || rm.isStop()){
-			map_set_blocked();
-			return true;
+			ret = true;
+			break;
 		}
 
 		if (rm.isSwitch()){
 			map_set_blocked();
 			rm.switchToNext();
 		}
+
+		if (get_clean_mode() == Clean_Mode_Navigation && (mt_is_linear() || mt_is_follow_wall()))
+		{
+			auto curr = map_get_curr_cell();
+			if (paths.empty() || paths.back() != curr)
+			{
+				paths.push_back(curr);
+				if(MAP_SET_REALTIME)
+				{
+					//map_set_realtime();
+					if( g_trapped_mode==0 )
+						map_set_cleaned(curr);
+					if (mt_is_follow_wall())
+						map_set_follow_wall(curr);
+				}
+
+				if (g_trapped_mode == 1)
+				{
+					Cell_t next_tmp ,target_tmp;
+					auto is_block_clear = map_mark_robot();
+					if(is_block_clear && path_target(next_tmp, target_tmp) >= 0)
+					{
+						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
+						g_trapped_mode = 2;
+					}
+					else{
+						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+					}
+				}
+			}
+		}
+
 		int32_t	 speed_left = 0, speed_right = 0;
 		rm.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);
 	}
+	if(! MAP_SET_REALTIME)
+	{
+		map_set_cleaned(paths);
+		if (!mt_is_linear())
+			map_set_follow_wall(paths);
 
-	return false;
+		map_set_blocked();
+	}
+
+	return ret;
 }
 
 /*
@@ -476,11 +525,11 @@ int cm_cleaning()
 
 		cm_check_temp_spot();
 
-		Cell_t start{map_get_x_cell(), map_get_y_cell()};
+		Cell_t start = map_get_curr_cell();
 		path_update_cell_history();
 		path_update_cells();
 		path_reset_path_points();
-		int8_t is_found = path_next(g_next_cell);
+		int8_t is_found = path_next(start, g_next_cell);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point

@@ -892,7 +892,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("right count = %d", count);
+				//ROS_INFO("right count = %d", count);
 			}
 		}
 	}
@@ -948,7 +948,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("left count = %d", count);
+				//ROS_INFO("left count = %d", count);
 			}
 		}
 	}
@@ -977,7 +977,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			//ROS_INFO("right right y = %lf", y);
 			if (y > Y_MIN && y < Y_MAX ) {
 				count++;
-				ROS_INFO("left left count = %d", count);
+				//ROS_INFO("left left count = %d", count);
 			}
 		}
 	}
@@ -1006,7 +1006,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			//ROS_INFO("right right y = %lf", y);
 			if (y > Y_MIN && y < Y_MAX ) {
 				count++;
-				ROS_INFO("right right count = %d", count);
+				//ROS_INFO("right right count = %d", count);
 			}
 		}
 	}
@@ -1035,7 +1035,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("right count = %d", count);
+				//ROS_INFO("right count = %d", count);
 			}
 		}
 	}
@@ -1063,7 +1063,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("front count = %d", count);
+				//ROS_INFO("front count = %d", count);
 			}
 		}
 	}
@@ -1075,7 +1075,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("front count = %d", count);
+				//ROS_INFO("front count = %d", count);
 			}
 		}
 	}
@@ -1103,7 +1103,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("left count = %d", count);
+				//ROS_INFO("left count = %d", count);
 			}
 		}
 	}
