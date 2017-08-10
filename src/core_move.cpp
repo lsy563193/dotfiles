@@ -279,7 +279,7 @@ bool cm_move_to(const Cell_t &next)
 	//extern uint16_t g_new_dir;
 	//if (mt_is_linear() && IS_X_AXIS(g_new_dir))
 	//	start.Y = next.Y;
-	RegulatorManage rm({map_get_x_count(), map_get_y_count()}, map_cell_to_point(next));
+	RegulatorManage rm(start, next);
 
 	bool eh_status_now=false, eh_status_last=false;
 	bool ret = false;

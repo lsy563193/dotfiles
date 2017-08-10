@@ -133,7 +133,7 @@ private:
 
 class RegulatorManage:public RegulatorBase{
 public:
-	RegulatorManage(Point32_t origin, Point32_t target);
+	RegulatorManage(const Cell_t& origin,const Cell_t& target);
 	~RegulatorManage();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();

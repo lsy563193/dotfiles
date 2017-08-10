@@ -845,8 +845,10 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 
 
 //RegulatorManage
-RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
+RegulatorManage::RegulatorManage(const Cell_t& start_cell,const Cell_t& target_cell)
 {
+	auto origin = map_cell_to_point(start_cell);
+	auto target = map_cell_to_point(target_cell);
 	ROS_INFO("%s %d: origin(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, count_to_cell(origin.X), count_to_cell(origin.Y), count_to_cell(target.X), count_to_cell(target.Y));
 	g_bumper_cnt = g_cliff_cnt =0;
 	g_rcon_during_go_home = false;
