@@ -248,11 +248,10 @@ int8_t is_block_cleaned(int16_t x, int16_t y)
 
 bool is_brush_block_unclean(int16_t x, int16_t y)
 {
-	for (auto i = (y -1); i <= (y + 1); i++) {
-//		ROS_WARN("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, x,i);
-		if (map_get_cell(MAP, x, i) == UNCLEAN) {
+	for (auto dy  = -1; dy <=  + 1; dy++) {
+//		ROS_WARN("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, x,y+dy);
+		if (map_get_cell(MAP, x, y+dy) == UNCLEAN)
 			return true;
-		}
 	}
 	return false;
 //	return (map_get_cell(MAP, x, y) == UNCLEAN);
@@ -399,12 +398,13 @@ bool path_lane_is_cleaned(const Cell_t& curr, Cell_t& next)
 	}
 
 	ROS_INFO("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
-	ROS_INFO("%s %d: tmp = %d", __FUNCTION__, __LINE__, tmp.X);
+//	ROS_INFO("%s %d: tmp = %d", __FUNCTION__, __LINE__, tmp.X);
 
 	if (is_found > 0)
 	{
 		auto dx1 = (tmp.X > curr.X) ? 1 : -1;
 		auto boundary = (tmp.X > curr.X) ? g_x_max : g_x_min;
+//		ROS_INFO("%s %d: tmp = %d,boundary(%d),g_x_max(%d),g_x_min(%d)", __FUNCTION__, __LINE__, tmp.X,boundary, g_x_max,g_x_min);
 		while(tmp.X != boundary)
 		{
 			if (! is_brush_block_unclean(tmp.X, tmp.Y))
@@ -413,6 +413,7 @@ bool path_lane_is_cleaned(const Cell_t& curr, Cell_t& next)
 		}
 	}
 
+//	ROS_INFO("%s %d: tmp = %d", __FUNCTION__, __LINE__, tmp.X);
 	if (is_found)
 		next = tmp;
 

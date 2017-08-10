@@ -439,5 +439,5 @@
 /* ------------------------------------- Laser Marker Enable ------------------------------------- */
 #define LASER_MARKER					(1)
 #define FORCE_MOVE_LINE					(1)
-#define MAP_SET_REALTIME					(1)
+#define MAP_SET_REALTIME					(0)
 

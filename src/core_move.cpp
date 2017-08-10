@@ -360,9 +360,9 @@ bool cm_move_to(const Cell_t &next)
 		if (!mt_is_linear())
 			map_set_follow_wall(paths);
 
-		map_set_blocked();
 	}
-
+	linear_mark_clean(start, g_next_cell);
+	map_set_blocked();
 	return ret;
 }
 
@@ -495,7 +495,7 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 
 			auto start_x = std::min(start.X, stop.X);
 			auto stop_x = std::max(start.X, stop.X);
-			for (auto x = start_x; x<=stop_x+1; x++)
+			for (auto x = start_x-1; x<=stop_x+1; x++)
 			{
 				auto y = (int16_t) (slop * (stop.X) + intercept);
 				for(auto dy=-ROBOT_SIZE_1_2;dy<=ROBOT_SIZE_1_2;dy++)
@@ -549,7 +549,6 @@ int cm_cleaning()
 			if(! cm_move_to(g_next_cell)) {
 				return -1;
 			}
-			linear_mark_clean(start, g_next_cell);
 
 			if (cm_should_self_check()){
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.

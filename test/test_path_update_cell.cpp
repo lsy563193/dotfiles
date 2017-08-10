@@ -153,12 +153,15 @@ int main(int argc, char **argv)
 	Cell_t stop{15,0};
 //	linear_mark(start,stop, CLEANED);
 
-	linear_mark(start,stop,CLEANED);
+	map_mark_robot();
+	map_set_cell(MAP, cell_to_count(curr.X-1), cell_to_count(curr.Y-1), UNCLEAN);
+	debug_map(MAP,stop.X,stop.Y);
+//	linear_mark(start,stop,CLEANED);
 //	linear_mark_block(start,stop);
-	linear_mark_block_x(start.Y-1, -1, 3,UNCLEAN);
-	linear_mark_block_x(start.Y-1, 9, 10,UNCLEAN);
-	linear_mark_block_y(start.X-2, start.Y-1, start.Y+1);
-	linear_mark_block_y(stop.X+2, stop.Y-1, stop.Y+1);
+//	linear_mark_block_x(start.Y, -1, 3,UNCLEAN);
+//	linear_mark_block_x(start.Y, 9, 10,UNCLEAN);
+//	linear_mark_block_y(start.X-2, start.Y-1, start.Y+1);
+//	linear_mark_block_y(stop.X+2, stop.Y-1, stop.Y+1);
 //	start = {0,3};
 //	stop = {9,3};
 //	linear_mark(start,stop, CLEANED);
@@ -176,6 +179,5 @@ int main(int argc, char **argv)
 //	{
 		ROS_INFO("next:(%d,%d)",next.X, next.Y);
 //	}
-	debug_map(MAP,stop.X,stop.Y);
 	return 0;
 }
