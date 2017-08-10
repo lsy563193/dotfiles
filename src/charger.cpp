@@ -118,7 +118,6 @@ void charge_function(void)
 		if(g_cliff_all_triggered)
 		{
 			disable_motors();
-			wav_play(WAV_ERROR_LIFT_UP);
 			g_cliff_all_triggered = 0;
 			set_clean_mode(Clean_Mode_Userinterface);
 			break;
