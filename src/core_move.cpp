@@ -274,6 +274,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
  */
 bool cm_move_to(const Cell_t &next)
 {
+	cm_update_position();
 	auto start = map_get_curr_cell();
 	//extern uint16_t g_new_dir;
 	//if (mt_is_linear() && IS_X_AXIS(g_new_dir))

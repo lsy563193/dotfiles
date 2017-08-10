@@ -457,8 +457,6 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 bool MotionManage::initNavigationCleaning(void)
 {
-	// Wait for 20ms to make sure the event manager has start working.
-	usleep(20000);
 
 	reset_work_time();
 	if (g_remote_home || g_go_home_by_remote)
@@ -511,15 +509,20 @@ bool MotionManage::initNavigationCleaning(void)
 	set_gyro_off();
 	usleep(30000);
 	set_gyro_on();
-	
+
+	reset_rcon_status();
+	reset_touch();
+	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	if (g_resume_cleaning)
 	{
 		ROS_WARN("Restore from low battery pause");
+		cm_register_events();
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
 	else if (robot::instance()->isManualPaused())
 	{
 		ROS_WARN("Restore from manual pause");
+		cm_register_events();
 		wav_play(WAV_CLEANING_CONTINUE);
 		if (g_go_home)
 		{
@@ -528,17 +531,14 @@ bool MotionManage::initNavigationCleaning(void)
 	}
 	else if(g_plan_activated == true)
 	{
+		cm_register_events();
 		wav_play(WAV_PLAN_CLEANING_START);
 		g_plan_activated = false;
 	}
 	else{
+		cm_register_events();
 		wav_play(WAV_CLEANING_START);
 	}
-
-	reset_rcon_status();
-	reset_touch();
-	// Can't register until now because if register too early, the handler may affect the pause status, so it will play the wrong wav.
-	cm_register_events();
 
 	if (!wait_for_gyro_on())
 		return false;

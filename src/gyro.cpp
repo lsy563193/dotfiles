@@ -91,7 +91,7 @@ bool wait_for_gyro_on(void)
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 			continue;
 
-		usleep(20000);
+		usleep(10000);
 
 		// This count is for how many count of looping should it skip after robot lifted up and put down during gyro opening.
 		if (skip_count != 0)
@@ -159,12 +159,15 @@ bool check_gyro_stable()
 	float current_angle = 0;
 	// Count for 20ms that the angle is stable after turning the gyro on.
 	uint8_t check_stable_count = 0;
+	bool	eh_status_now=false, eh_status_last=false;
 
 	ROS_DEBUG("Gyro open success, check stablization.");
 	// Wait for 1s to see if the angle change too much.
 	while (check_stable_count < 50)
 	{
-		usleep(20000);
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+			continue;
+		usleep(10000);
 		if (g_key_clean_pressed || g_cliff_all_triggered || g_fatal_quit_event || is_direct_charge())
 			break;
 		current_angle = robot::instance()->getAngle();
