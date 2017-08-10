@@ -15,17 +15,21 @@
 #include <visualization_msgs/Marker.h>
 #include <ros/ros.h>
 #include <std_srvs/SetBool.h>
+#include <pp/SetLidar.h>
 #include <move_type.h>
 
 #include "core_move.h"
 #include "robot.hpp"
 #include "gyro.h"
 boost::mutex scan_mutex_;
+extern int g_xacc_init_val;
+extern int g_yacc_init_val;
+extern int g_zacc_init_val;
 
 Laser::Laser():nh_(),is_ready_(0)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
-	lidar_motor_cli_ = nh_.serviceClient<std_srvs::SetBool>("lidar_motor_ctrl");
+	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 
 	lidarMotorCtrl(ON);
@@ -95,13 +99,17 @@ void Laser::setScanReady(uint8_t val)
 
 void Laser::lidarMotorCtrl(bool switch_)
 {
-	std_srvs::SetBool trigger;
+	pp::SetLidar trigger;
 	time_t start_time = time(NULL);
 	uint8_t try_times = 0;
 	bool eh_status_now = false, eh_status_last = false;
 	bool request_sent = false;
 	bool temp_switch_ = switch_;
-
+	if(switch_){
+		trigger.request.x_acc_init= g_xacc_init_val;
+		trigger.request.y_acc_init= g_yacc_init_val;
+		trigger.request.z_acc_init= g_zacc_init_val;
+	}
 	while(ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
