@@ -258,6 +258,7 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	set_dir_backward();
 	speed_ += counter_ / 100;
 	speed_ = (speed_ > 18) ? 18 : speed_;
+	//speed_ = 18;
 	reset_wheel_step();
 	l_speed = r_speed = speed_;
 }

@@ -1,0 +1,7 @@
+bool data # e.g. for hardware enabling / disabling
+int32 x_acc_init # x axie initialize data
+int32 y_acc_init # y axie initialize data
+int32 z_acc_init # z axie initialize data
+---
+bool success   # indicate successful run of triggered service
+string message # informational, e.g. for error messages

@@ -450,7 +450,7 @@ void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 }
 
 //map--------------------------------------------------------
-static  void map_set_obs()
+void map_set_obs()
 {
 #if LASER_MARKER
 	MotionManage::s_laser->laserMarker(true);
@@ -502,7 +502,7 @@ static  void map_set_obs()
 #endif
 }
 
-static void map_set_bumper()
+void map_set_bumper()
 {
 	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
 	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
@@ -561,7 +561,7 @@ void map_set_tilt()
 	}
 }
 
-static void map_set_cliff()
+void map_set_cliff()
 {
 	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
 	if (g_cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
@@ -591,7 +591,7 @@ static void map_set_cliff()
 	}
 }
 
-static void map_set_rcon()
+void map_set_rcon()
 {
 	auto rcon_trig = g_rcon_triggered/*get_rcon_trig()*/;
 	if(mt_is_linear())

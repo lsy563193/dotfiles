@@ -59,9 +59,9 @@ pthread_mutex_t serial_data_ready_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
-static int g_xacc_init_val = sensor.x_acc;
-static int g_yacc_init_val = sensor.y_acc;
-static int g_zacc_init_val = sensor.z_acc;
+int g_xacc_init_val = sensor.x_acc;
+int g_yacc_init_val = sensor.y_acc;
+int g_zacc_init_val = sensor.z_acc;
 
 bool robotbase_beep_update_flag = false;
 int robotbase_speaker_sound_loop_count = 0;
