@@ -256,15 +256,17 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("BackRegulator::adjustSpeed");
 	set_dir_backward();
-	speed_ += counter_ / 100;
-	speed_ = (speed_ > 18) ? 18 : speed_;
-	//speed_ = 18;
+	if (get_clean_mode() != Clean_Mode_WallFollow)
+	{
+		speed_ += ++counter_;
+		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
+	}
 	reset_wheel_step();
 	l_speed = r_speed = speed_;
 }
 
 
-TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(16)
+TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(ROTATE_TOP_SPEED)
 {
 	accurate_ = speed_max_ > 30 ? 30 : 10;
 	s_target_angle = angle;
@@ -509,7 +511,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	}else
 	if (base_speed_ < (int32_t) LINEAR_MAX_SPEED)
 	{
-		if (tick_++ > 5)
+		if (tick_++ > 1)
 		{
 			tick_ = 0;
 			base_speed_++;

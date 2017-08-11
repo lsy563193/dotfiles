@@ -246,7 +246,8 @@ void remote_move(void)
 				}
 
 				if (std::abs(diff) > 80){
-					moving_speed = std::min(++moving_speed, ROTATE_TOP_SPEED);
+					//moving_speed = std::min(++moving_speed, ROTATE_TOP_SPEED);
+					moving_speed = ROTATE_TOP_SPEED;
 				}
 				else{
 					--moving_speed;
