@@ -742,9 +742,8 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 		ROS_ERROR("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	}
 	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
-	auto dx = diff>0 ^ g_old_dir == POS_X ? -2 : 2;
-	auto min = std::min(cells.front().X, cells.back().X) + dx;
-	auto max = std::max(cells.front().X, cells.back().X) - dx;
+	auto min = std::min(cells.front().X, cells.back().X) + 2;
+	auto max = std::max(cells.front().X, cells.back().X) - 2;
 
 	if(min >= max)
 		return;
@@ -825,3 +824,21 @@ void map_set_follow(Cell_t start)
 	}
 }
 
+float map_get_area(void) 
+{
+	uint32_t cleaned_count = 0;
+	float area = 0;
+	//ROS_INFO("g_x_min= %d, g_x_max = %d",g_x_min,g_x_max);
+	//ROS_INFO("g_y_min= %d, g_y_max = %d",g_y_min,g_y_max);
+	for (int i = g_x_min; i <= g_x_max; ++i) {
+		for (int j = g_y_min; j <= g_y_max; ++j) {
+			//ROS_INFO("i = %d, j = %d", i, j);
+			if (map_get_cell(MAP, i, j) == CLEANED) {
+				cleaned_count++;
+			}
+		}
+	}
+	area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+	//ROS_WARN("cleaned_count = %d, area = %.2fm2", cleaned_count, area);
+	return area;
+}

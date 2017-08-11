@@ -97,4 +97,5 @@ void map_set_bumper();
 void map_set_rcon();
 void map_set_cliff();
 void map_set_tilt();
+float map_get_area();
 #endif /* __MAP_H */

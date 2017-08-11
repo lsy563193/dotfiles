@@ -855,9 +855,9 @@ uint8_t Laser::laserMarker(bool is_mark)
 	static  uint32_t seq = laser_scan_data_.header.seq;
 	bool	is_triggered = 0;
 	static	bool is_skip = 0;
-	const	double X_MIN = 0.157;//0.167
+	const	double X_MIN = 0.140;//0.167
 	const	double X_MAX = 0.237;//0.279
-	const	double Y_MIN = 0.157;//0.167
+	const	double Y_MIN = 0.140;//0.167
 	const	double Y_MAX = 0.237;//0.279
 	uint8_t laser_status;
 	//ROS_ERROR("is_skip = %d", is_skip);
@@ -996,6 +996,35 @@ uint8_t Laser::laserMarker(bool is_mark)
 		//laser_status |= Status_Left_OBS;
 	}
 	count = 0;
+	//left front
+	for (i = 238; i < 258; i++) {//default:149, 168, 191, 210
+		if (laser_scan_data_.ranges[i] < 4) {
+			th = i * 1.0;
+			th = th + 180.0;
+			x = cos(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			//ROS_INFO("right right y = %lf", y);
+			if (y > Y_MIN && y < Y_MAX ) {
+				count++;
+				//ROS_INFO("left left count = %d", count);
+			}
+		}
+	}
+	if (count > 10) {
+		int32_t x_tmp,y_tmp;
+		auto dx = 1;
+		auto dy = 2;
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		{
+			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x_tmp),count_to_cell(y_tmp));
+			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			//map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_RCON); //BLOCKED_OBS);
+		}
+		//is_triggered = 1;
+		//laser_status |= Status_Left_OBS;
+	}
+	count = 0;
 	//right middle
 	for (i = 78; i < 101; i++) {//default:149, 168, 191, 210
 		if (laser_scan_data_.ranges[i] < 4) {
@@ -1026,6 +1055,35 @@ uint8_t Laser::laserMarker(bool is_mark)
 	}
 	count = 0;
 
+	//right front
+	for (i = 101; i < 121; i++) {//default:149, 168, 191, 210
+		if (laser_scan_data_.ranges[i] < 4) {
+			th = i * 1.0;
+			th = th + 180.0;
+			x = cos(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			y = 0 - sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			//ROS_INFO("right right y = %lf", y);
+			if (y > Y_MIN && y < Y_MAX ) {
+				count++;
+				//ROS_INFO("right right count = %d", count);
+			}
+		}
+	}
+	if (count > 10) {
+		int32_t x_tmp,y_tmp;
+		auto dx = 1;
+		auto dy = -2;
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		{
+			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x_tmp),count_to_cell(y_tmp));
+			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			//map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_RCON); //BLOCKED_OBS);
+		}
+		//is_triggered = 1;
+		//laser_status |= Status_Left_OBS;
+	}
+	count = 0;
 	//back right
 	for (i = 11; i < 30; i++) {//default:149, 168, 191, 210
 		if (laser_scan_data_.ranges[i] < 4) {

@@ -296,6 +296,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
+	ROS_WARN("cleaned area = %.2fm2", map_get_area());
 	if (get_clean_mode() == Clean_Mode_WallFollow)
 		wf_clear();
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)

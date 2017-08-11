@@ -259,8 +259,9 @@
  * When it is too small, it will move like shaking when robot startup.
  * When it is too large, it will fall down when reach the cliff.
  */
-#define LINEAR_MIN_SPEED						((int32_t) 15) // 15)
-#define LINEAR_MAX_SPEED						((int32_t) 40) // 15)
+#define BACK_MAX_SPEED					((int32_t) 18) // 15)
+#define LINEAR_MIN_SPEED				((int32_t) 15) // 15)
+#define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
 #define ROTATE_TOP_SPEED				((uint8_t) 22) // 22)
 #define ROTATE_LOW_SPEED				((uint8_t) 7)
 #if __ROBOT_X900
@@ -439,6 +440,6 @@
 /* ------------------------------------- Laser Marker Enable ------------------------------------- */
 #define LASER_MARKER					(1)
 #define FORCE_MOVE_LINE					(1)
-#define MAP_SET_REALTIME					(1)
+#define MAP_SET_REALTIME					(0)
 
 #define COLOR_DEBUG_MAP		(1)
