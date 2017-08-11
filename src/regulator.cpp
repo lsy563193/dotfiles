@@ -529,7 +529,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		left_speed = base_speed_ - dis_diff / (CELL_COUNT_MUL/4)/* - diff2*/ /*- integrated_ / 150*/; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
 		right_speed = base_speed_ + dis_diff / (CELL_COUNT_MUL/4) /*+ diff2 *//*+ integrated_ / 150*/; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 //		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff1(%d),diff2(%d)",left_speed, right_speed, dis_diff, diff,diff2);
-		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff(%d)",left_speed, right_speed, dis_diff, dis_diff / (CELL_COUNT_MUL/4));
+		//ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff(%d)",left_speed, right_speed, dis_diff, dis_diff / (CELL_COUNT_MUL/4));
 	}
 	else{
 		left_speed = base_speed_ - angle_diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;

@@ -441,3 +441,4 @@
 #define FORCE_MOVE_LINE					(1)
 #define MAP_SET_REALTIME					(1)
 
+#define COLOR_DEBUG_MAP		(1)
