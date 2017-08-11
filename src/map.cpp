@@ -742,9 +742,8 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 		ROS_ERROR("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	}
 	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
-	auto dx = diff>0 ^ g_old_dir == POS_X ? -2 : 2;
-	auto min = std::min(cells.front().X, cells.back().X) + dx;
-	auto max = std::max(cells.front().X, cells.back().X) - dx;
+	auto min = std::min(cells.front().X, cells.back().X) + 2;
+	auto max = std::max(cells.front().X, cells.back().X) - 2;
 
 	if(min >= max)
 		return;
