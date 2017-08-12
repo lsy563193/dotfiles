@@ -56,7 +56,7 @@ using namespace std;
 
 typedef struct {
 	Cell_t	target;
-	list <Cell_t> points;
+	list <Cell_t> cells;
 } PPTargetType;
 
 list <PPTargetType> g_targets;
@@ -532,7 +532,7 @@ void path_find_all_targets()
 
 			t.X = tracex;
 			t.Y = tracey;
-			it->points.push_back(t);
+			it->cells.push_back(t);
 
 			if ((tracex - 1 >= g_x_min) && (map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {
 				tracex--;
@@ -557,7 +557,7 @@ void path_find_all_targets()
 		if (tracex == x || tracey == y) {
 			t.X = tracex;
 			t.Y = tracey;
-			it->points.push_back(t);
+			it->cells.push_back(t);
 		}
 	}
 }
@@ -676,7 +676,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 	y_max_tmp = y_max;
 
 	for (auto& target : g_targets)
-		target.points.clear();
+		target.cells.clear();
 
 	g_targets.clear();
 	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
@@ -685,7 +685,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				PPTargetType t;
 				t.target.X = c;
 				t.target.Y = d;
-				t.points.clear();
+				t.cells.clear();
 				g_targets.push_back(t);
 				if (t.target == map_get_curr_cell())
 				{
@@ -726,7 +726,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 	path_find_all_targets();
 
 	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end();) {
-		if (it->points.empty() == true) {
+		if (it->cells.empty() == true) {
 			it = g_targets.erase(it);
 		} else {
 			it++;
@@ -746,9 +746,9 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, (int)g_targets.size());
 	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 		std::string	msg = __FUNCTION__;
-		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->points.size()) + ": ";
+		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
 
-		for (list<Cell_t>::iterator i = it->points.begin(); i != it->points.end(); ++i) {
+		for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
 			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
 		}
 		msg += "\n";
@@ -769,13 +769,13 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 			}
 
 			if (it->target.Y == d) {
-				if (it->points.size() > final_cost) {
+				if (it->cells.size() > final_cost) {
 					continue;
 				}
 
-				last_y = it->points.front().Y;
+				last_y = it->cells.front().Y;
 				within_range = true;
-				for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+				for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 					if (i->Y < map_get_y_cell() || i->Y > d) {
 						within_range = false;
 					}
@@ -788,7 +788,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				if (within_range == true) {
 					target.X = it->target.X;
 					target.Y = it->target.Y;
-					final_cost = it->points.size();
+					final_cost = it->cells.size();
 					stop = 1;
 				}
 			}
@@ -801,14 +801,14 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 			for (d = a; d <= y_max && stop == 0; ++d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 					if (it->target.Y == d) {
-						if (it->points.size() > final_cost) {
+						if (it->cells.size() > final_cost) {
 							continue;
 						}
 
 						within_range = true;
-						last_y = it->points.front().Y;
+						last_y = it->cells.front().Y;
 						bool turn = false;
-						for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 							if (i->Y < a || i->Y > (d > map_get_y_cell() ? d : map_get_y_cell())) {
 								within_range = false;
 							}
@@ -832,7 +832,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 						if (within_range == true) {
 							target.X = it->target.X;
 							target.Y = it->target.Y;
-							final_cost = it->points.size();
+							final_cost = it->cells.size();
 							stop = 1;
 						}
 					}
@@ -854,13 +854,13 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				}
 
 				if (it->target.Y == d) {
-					if (it->points.size() > final_cost) {
+					if (it->cells.size() > final_cost) {
 						continue;
 					}
 
-					last_y = it->points.front().Y;
+					last_y = it->cells.front().Y;
 					within_range = true;
-					for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+					for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 						if (i->Y > map_get_y_cell() || i->Y < d) {
 							within_range = false;
 						}
@@ -873,7 +873,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 					if (within_range == true) {
 						target.X = it->target.X;
 						target.Y = it->target.Y;
-						final_cost = it->points.size();
+						final_cost = it->cells.size();
 						stop = 1;
 					}
 				}
@@ -887,14 +887,14 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 			for (d = a; d >= y_min && stop == 0; --d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 					if (it->target.Y == d) {
-						if (it->points.size() > final_cost) {
+						if (it->cells.size() > final_cost) {
 							continue;
 						}
 
 						within_range = true;
-						last_y = it->points.front().Y;
+						last_y = it->cells.front().Y;
 						bool turn = false;
-						for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 							if (i->Y > a || i->Y < (d > map_get_y_cell() ? map_get_y_cell() : d)) {
 								within_range = false;
 							}
@@ -918,7 +918,7 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 						if (within_range == true) {
 							target.X = it->target.X;
 							target.Y = it->target.Y;
-							final_cost = it->points.size();
+							final_cost = it->cells.size();
 							stop = 1;
 						}
 					}
@@ -933,15 +933,15 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 					if (it->target.Y == d) {
 						within_range = true;
-						for (list<Cell_t>::iterator i = it->points.begin(); within_range == true && i != it->points.end(); ++i) {
+						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 							if (i->Y < map_get_y_cell() || i->Y > a) {
 								within_range = false;
 							}
 						}
-						if (within_range == true && it->points.size() < final_cost) {
+						if (within_range == true && it->cells.size() < final_cost) {
 							target.X = it->target.X;
 							target.Y = it->target.Y;
-							final_cost = it->points.size();
+							final_cost = it->cells.size();
 							stop = 1;
 						}
 					}
@@ -956,10 +956,10 @@ int16_t path_target(Cell_t& next, Cell_t& target)
 		for (c = x_min; c <= x_max; ++c) {
 			for (d = y_min; d <= y_max; ++d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-					if (it->points.size() < final_cost) {
+					if (it->cells.size() < final_cost) {
 						target.X = it->target.X;
 						target.Y = it->target.Y;
-						final_cost = it->points.size();
+						final_cost = it->cells.size();
 					}
 				}
 			}
@@ -1240,7 +1240,7 @@ void path_set_home(Cell_t cell)
 			// This g_temp_trapped_cell is for trapped reference point.
 			auto g_temp_trapped_cell = path_escape_get_trapped_cell();
 
-			// Update the trapped reference points
+			// Update the trapped reference cells
 			for (int8_t i = ESCAPE_TRAPPED_REF_CELL_SIZE - 1; i > 0; i--)
 			{
 				g_temp_trapped_cell[i] = g_temp_trapped_cell[i-1];
