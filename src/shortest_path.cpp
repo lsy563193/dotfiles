@@ -1322,7 +1322,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	t.Y = tracey_tmp;
 	path_points.push_back(t);
 
-	path_display_path_points();
+	path_display_path_points(path_points);
 
 	return totalCost;
 }
@@ -1419,26 +1419,24 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
  * robot position and the next target point. It the g_direct_go flag is not set, the robot
  * is limited to turn 90, 180 and/or 270 degree, then go to the target.
  *
- * @param pos	The current robot position
- * @param x	The target X Coordinate that the robot wants to go
- * @param y	The target Y Coordinate that the robot wants to go
- * @param *x_next	The next X Coordinate that the robot should go before reaching the target
- * @param *y_next	The next Y Coordinate that the robot should go before reaching the target
+ * @param curr	The current robot position
+ * @param target	The target cell that the robot wants to go
+ * @param path	The path that the robot should go before reaching the target
  *
  * @return	-2: Robot is trapped
  * 		-1: Path to target is not found
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, int16_t& x_next, int16_t &y_next) {
+int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& path) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
-	int16_t	i, j, ei, ej, si, sj, x_path, y_path, offset = 0;
+	int16_t	i, j, ei, ej, si, sj, x_path, y_path;
 
 	path_reset_path_points();
 
 	/* Find the shortest path to the target by using shorest path grid map. */
-	retval = path_find_shortest_path(curr.X, curr.Y, target_x, target_y, 0);
+	retval = path_find_shortest_path(curr.X, curr.Y, target.X, target.Y, 0);
 	if (retval < 0)
 		return retval;
 
@@ -1455,7 +1453,7 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 		 * in the way to the target, if obstcal is found, return the point that just before
 		 * finding the obstcal as the next point to move.
 		 */
-		while (x_path != target_x || y_path != target_y) {
+		while (x_path != target.X || y_path != target.Y) {
 			/*
 			 * Starting from the current robot position, finding the cells that marked as 6
 			 * in the shorest path grid map.
@@ -1464,19 +1462,19 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 			if (map_get_cell(SPMAP, x_path - 1, y_path) == COST_PATH) {
 				x_path--;
 				stage = 1;
-				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+				map_set_cell(SPMAP, x_path, y_path, COST_NO);
 			} else if (map_get_cell(SPMAP, x_path, y_path + 1) == COST_PATH) {
 				y_path++;
 				stage = 2;
-				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+				map_set_cell(SPMAP, x_path, y_path, COST_NO);
 			} else if (map_get_cell(SPMAP, x_path + 1, y_path) == COST_PATH) {
 				x_path++;
 				stage = 3;
-				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+				map_set_cell(SPMAP, x_path, y_path, COST_NO);
 			} else if (map_get_cell(SPMAP, x_path, y_path - 1) == COST_PATH) {
 				y_path--;
 				stage = 4;
-				map_set_cell(SPMAP, (int32_t) (x_path), (int32_t) (y_path), COST_NO);
+				map_set_cell(SPMAP, x_path, y_path, COST_NO);
 			}
 
 			if (stage == 0)
@@ -1511,13 +1509,12 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 				break;
 			}
 		}
-		x_next = x_path;
-		y_next = y_path;
+		path.target.X = x_path;
+		path.target.Y = y_path;
+		path.cells.push_front(path.target);
+		path.cells.push_front(curr);
 	}
 	else {
-		x_next = target_x;
-		y_next = target_y;
-
 		if (path_points.size() > 3) {
 			list<Cell_t>::iterator it = path_points.begin();
 			for (i = 0; i < path_points.size() - 3; i++) {
@@ -1560,7 +1557,7 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 					}
 
 					ROS_INFO("%s %d: x_min: %d\tx_max: %d\n", __FUNCTION__, __LINE__, x_min, x_max);
-					if (target_x != (x_min + x_max) / 2) {
+					if (target.X != (x_min + x_max) / 2) {
 						it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
 					}
 				} else {
@@ -1591,7 +1588,7 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 					}
 
 					ROS_INFO("%s %d: y_min: %d\ty_max: %d\n", __FUNCTION__, __LINE__, y_min, y_max);
-					if (target_y != (y_min + y_max) / 2) {
+					if (target.Y != (y_min + y_max) / 2) {
 						it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
 					}
 				}
@@ -1601,19 +1598,9 @@ int16_t path_next_best(const Cell_t &curr, int16_t target_x, int16_t target_y, i
 		}
 
 		path_points.reverse();
-		path_display_path_points();
-
-		if (path_points.size() > 1) {
-			i = 0;
-			for (list<Cell_t>::iterator it = path_points.begin(); it != path_points.end() && i <= 1; ++it, ++i) {
-				if (i != 1) {
-					continue;
-				} else {
-					x_next = it->X;
-					y_next = it->Y;
-				}
-			}
-		}
+		path.cells = path_points;
+		path.target = path.cells.back();
+		path_display_path_points(path.cells);
 	}
 
 	retval = 1;
@@ -1635,12 +1622,12 @@ void path_reset_path_points()
 	path_points.clear();
 }
 
-void path_display_path_points()
+void path_display_path_points(list<Cell_t> path)
 {
 	std::string     msg = __FUNCTION__;
 
 	msg += " " + std::to_string(__LINE__) + ": ";
-	for (list<Cell_t>::iterator it = path_points.begin(); it != path_points.end(); ++it) {
+	for (list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
 	msg += "\n";

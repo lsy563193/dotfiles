@@ -2,10 +2,11 @@
 #define __PATHPLANNING_H__
 
 #include "config.h"
-
 #include "map.h"
 #include "mathematics.h"
 #include "debug.h"
+
+#include <list>
 
 typedef struct PositionType_{
 	Cell_t	cell;
@@ -24,6 +25,11 @@ typedef struct {
 	uint8_t	state;
 	uint8_t	try_cnt;
 } TargetType;
+
+typedef struct {
+	Cell_t	target;
+	std::list <Cell_t> cells;
+} PPTargetType;
 
 /*
  * Function to find the X/Y range of the Map, if the range is to small,
@@ -82,7 +88,7 @@ void wf_path_planning_initialize(Cell_t cell);
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(const Cell_t& curr, Cell_t& next);
+int8_t path_next(const Cell_t& curr, PPTargetType& path);
 
 uint8_t path_home(int32_t *x, int32_t *y);
 
@@ -106,6 +112,8 @@ void path_reset_last_position(void);
  *		1 if the block is accessible
  */
 uint8_t is_block_accessible(int16_t x, int16_t y);
+
+int16_t path_target(const Cell_t& curr, PPTargetType& path);
 
 uint16_t path_targets_get_count(void);
 
@@ -142,7 +150,7 @@ void path_update_cells(void);
  * 		1 if either one end is not cleaned
  * 		2 if both ends are not cleaned
  */
-bool path_lane_is_cleaned(const Cell_t& curr, Cell_t& next);
+bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path);
 
 /*
  * Find how many cells ahead to clean with a given target.
@@ -178,7 +186,7 @@ Cell_t *path_escape_get_trapped_cell(void);
 
 void path_set_home(Cell_t cell);
 
-int8_t path_get_home_target(Cell_t& next, Cell_t& target);
+int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path);
 
 int16_t path_get_home_x(void);
 
@@ -278,6 +286,6 @@ uint16_t path_get_robot_direction(void);
 // This function is for setting the continue cell for robot to go after charge.
 void path_set_continue_cell(Cell_t cell);
 
-int8_t path_get_continue_target(Cell_t& next, Cell_t& target);
+int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path);
 
 #endif

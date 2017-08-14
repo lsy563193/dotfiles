@@ -75,7 +75,6 @@ void cm_head_to_course(uint8_t Speed, int16_t Angle);
 
 void cm_follow_wall_turn(uint16_t speed, int16_t angle);
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
-int16_t path_target(Cell_t& next, Cell_t& target);
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
 
 int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
@@ -99,6 +98,7 @@ void map_set_blocked();
 bool cm_curve_move_to_point();
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, Cell_t& cell);
 
 void mark_offset(int16_t dx, int16_t dy, CellState status);
 

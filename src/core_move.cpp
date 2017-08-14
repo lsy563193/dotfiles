@@ -148,6 +148,11 @@ void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long,
 	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long)));
 	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long)));
 }
+void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, Cell_t& cell)
+{
+	cell.X = count_to_cell(map_get_relative_x(heading, offset_lat, offset_long));
+	cell.Y = count_to_cell(map_get_relative_y(heading, offset_lat, offset_long));
+}
 void mark_offset(int16_t dx, int16_t dy, CellState status)
 {
 	int x,y;
@@ -272,21 +277,21 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
  *			-1: Robot cannot move to target cell
  *			1: Robot arrive target cell
  */
-bool cm_move_to(const Cell_t &next)
+bool cm_move_to(const PPTargetType& path)
 {
 	cm_update_position();
 	auto start = map_get_curr_cell();
 	//extern uint16_t g_new_dir;
 	//if (mt_is_linear() && IS_X_AXIS(g_new_dir))
 	//	start.Y = next.Y;
-	RegulatorManage rm(start, next);
+	RegulatorManage rm(start, g_next_cell);
 
 	bool eh_status_now=false, eh_status_last=false;
 	bool ret = false;
 
-	std::vector<Cell_t> paths;
+	std::vector<Cell_t> passed_path;
 	if(!MAP_SET_REALTIME)
-		paths.push_back(start);
+		passed_path.push_back(start);
 
 	while (ros::ok())
 	{
@@ -322,9 +327,9 @@ bool cm_move_to(const Cell_t &next)
 		if (get_clean_mode() == Clean_Mode_Navigation && (mt_is_linear() || mt_is_follow_wall()))
 		{
 			auto curr = map_get_curr_cell();
-			if (paths.empty() || paths.back() != curr)
+			if (passed_path.empty() || passed_path.back() != curr)
 			{
-				paths.push_back(curr);
+				passed_path.push_back(curr);
 				if(MAP_SET_REALTIME)
 				{
 					//map_set_realtime();
@@ -336,9 +341,9 @@ bool cm_move_to(const Cell_t &next)
 
 				if (g_trapped_mode == 1)
 				{
-					Cell_t next_tmp ,target_tmp;
 					auto is_block_clear = map_mark_robot();
-					if(is_block_clear && path_target(next_tmp, target_tmp) >= 0)
+					PPTargetType temp_path;
+					if(is_block_clear && path_target(curr, temp_path) >= 0)
 					{
 						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
 						g_trapped_mode = 2;
@@ -356,9 +361,9 @@ bool cm_move_to(const Cell_t &next)
 	}
 	if(! MAP_SET_REALTIME)
 	{
-		map_set_cleaned(paths);
+		map_set_cleaned(passed_path);
 		if (!mt_is_linear())
-			map_set_follow_wall(paths);
+			map_set_follow_wall(passed_path);
 
 	}
 	linear_mark_clean(start, g_next_cell);
@@ -508,6 +513,10 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 
 int cm_cleaning()
 {
+	PPTargetType cleaning_path;
+	cleaning_path.target.X = 0;
+	cleaning_path.target.Y = 0;
+	cleaning_path.cells.clear();
 	MotionManage motion;
 	if (!motion.initSucceeded())
 		return 0;
@@ -525,11 +534,11 @@ int cm_cleaning()
 
 		cm_check_temp_spot();
 
-		Cell_t start = map_get_curr_cell();
+		Cell_t curr = map_get_curr_cell();
 		path_update_cell_history();
 		path_update_cells();
-		path_reset_path_points();
-		int8_t is_found = path_next(start, g_next_cell);
+		//path_reset_path_points();
+		int8_t is_found = path_next(curr, cleaning_path);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point
@@ -546,7 +555,7 @@ int cm_cleaning()
 		else if (is_found == 1)
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if(! cm_move_to(g_next_cell)) {
+			if(! cm_move_to(cleaning_path)) {
 				return -1;
 			}
 
