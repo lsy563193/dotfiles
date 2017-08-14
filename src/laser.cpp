@@ -15,17 +15,21 @@
 #include <visualization_msgs/Marker.h>
 #include <ros/ros.h>
 #include <std_srvs/SetBool.h>
+#include <pp/SetLidar.h>
 #include <move_type.h>
 
 #include "core_move.h"
 #include "robot.hpp"
 #include "gyro.h"
 boost::mutex scan_mutex_;
+extern int g_xacc_init_val;
+extern int g_yacc_init_val;
+extern int g_zacc_init_val;
 
 Laser::Laser():nh_(),is_ready_(0)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
-	lidar_motor_cli_ = nh_.serviceClient<std_srvs::SetBool>("lidar_motor_ctrl");
+	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 
 	lidarMotorCtrl(ON);
@@ -95,13 +99,17 @@ void Laser::setScanReady(uint8_t val)
 
 void Laser::lidarMotorCtrl(bool switch_)
 {
-	std_srvs::SetBool trigger;
+	pp::SetLidar trigger;
 	time_t start_time = time(NULL);
 	uint8_t try_times = 0;
 	bool eh_status_now = false, eh_status_last = false;
 	bool request_sent = false;
 	bool temp_switch_ = switch_;
-
+	if(switch_){
+		trigger.request.x_acc_init= g_xacc_init_val;
+		trigger.request.y_acc_init= g_yacc_init_val;
+		trigger.request.z_acc_init= g_zacc_init_val;
+	}
 	while(ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -259,7 +267,7 @@ bool Laser::lineFit(const std::vector<Double_Point> &points, double &a, double &
 	double lambda = ( (Dxx + Dyy) - sqrt( (Dxx - Dyy) * (Dxx - Dyy) + 4 * Dxy * Dxy) ) / 2.0;
 	double den = sqrt( Dxy * Dxy + (lambda - Dxx) * (lambda - Dxx) );
 
-	//ROS_INFO("points.size = %d, den = %lf", size, den);
+	//ROS_INFO("cells.size = %d, den = %lf", size, den);
 	if(fabs(den) < 1e-5) {
 		if( fabs(Dxx / Dyy - 1) < 1e-5) {
 			ROS_INFO("line fit failed!");
@@ -817,7 +825,7 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
 	//ROS_INFO("Fit line laser_points_.x = %lf laser_points_.y = %lf",laser_points_.x, laser_points_.y);
 	fit_line_marker.points.push_back(laser_points_);
 	fit_line_marker_pub.publish(fit_line_marker);
-	//fit_line_marker.points.clear();
+	//fit_line_marker.cells.clear();
 }
 
 /*
@@ -847,9 +855,9 @@ uint8_t Laser::laserMarker(bool is_mark)
 	static  uint32_t seq = laser_scan_data_.header.seq;
 	bool	is_triggered = 0;
 	static	bool is_skip = 0;
-	const	double X_MIN = 0.157;//0.167
+	const	double X_MIN = 0.140;//0.167
 	const	double X_MAX = 0.237;//0.279
-	const	double Y_MIN = 0.157;//0.167
+	const	double Y_MIN = 0.140;//0.167
 	const	double Y_MAX = 0.237;//0.279
 	uint8_t laser_status;
 	//ROS_ERROR("is_skip = %d", is_skip);
@@ -884,7 +892,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("right count = %d", count);
+				//ROS_INFO("right count = %d", count);
 			}
 		}
 	}
@@ -912,7 +920,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("front count = %d", count);
+				//ROS_INFO("front count = %d", count);
 			}
 		}
 	}
@@ -940,7 +948,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("left count = %d", count);
+				//ROS_INFO("left count = %d", count);
 			}
 		}
 	}
@@ -969,13 +977,42 @@ uint8_t Laser::laserMarker(bool is_mark)
 			//ROS_INFO("right right y = %lf", y);
 			if (y > Y_MIN && y < Y_MAX ) {
 				count++;
-				ROS_INFO("left left count = %d", count);
+				//ROS_INFO("left left count = %d", count);
 			}
 		}
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
 		auto dx = 0;
+		auto dy = 2;
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		{
+			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x_tmp),count_to_cell(y_tmp));
+			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			//map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_RCON); //BLOCKED_OBS);
+		}
+		//is_triggered = 1;
+		//laser_status |= Status_Left_OBS;
+	}
+	count = 0;
+	//left front
+	for (i = 238; i < 258; i++) {//default:149, 168, 191, 210
+		if (laser_scan_data_.ranges[i] < 4) {
+			th = i * 1.0;
+			th = th + 180.0;
+			x = cos(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			//ROS_INFO("right right y = %lf", y);
+			if (y > Y_MIN && y < Y_MAX ) {
+				count++;
+				//ROS_INFO("left left count = %d", count);
+			}
+		}
+	}
+	if (count > 10) {
+		int32_t x_tmp,y_tmp;
+		auto dx = 1;
 		auto dy = 2;
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
@@ -998,7 +1035,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			//ROS_INFO("right right y = %lf", y);
 			if (y > Y_MIN && y < Y_MAX ) {
 				count++;
-				ROS_INFO("right right count = %d", count);
+				//ROS_INFO("right right count = %d", count);
 			}
 		}
 	}
@@ -1018,6 +1055,35 @@ uint8_t Laser::laserMarker(bool is_mark)
 	}
 	count = 0;
 
+	//right front
+	for (i = 101; i < 121; i++) {//default:149, 168, 191, 210
+		if (laser_scan_data_.ranges[i] < 4) {
+			th = i * 1.0;
+			th = th + 180.0;
+			x = cos(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			y = 0 - sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
+			//ROS_INFO("right right y = %lf", y);
+			if (y > Y_MIN && y < Y_MAX ) {
+				count++;
+				//ROS_INFO("right right count = %d", count);
+			}
+		}
+	}
+	if (count > 10) {
+		int32_t x_tmp,y_tmp;
+		auto dx = 1;
+		auto dy = -2;
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		{
+			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x_tmp),count_to_cell(y_tmp));
+			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			//map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_RCON); //BLOCKED_OBS);
+		}
+		//is_triggered = 1;
+		//laser_status |= Status_Left_OBS;
+	}
+	count = 0;
 	//back right
 	for (i = 11; i < 30; i++) {//default:149, 168, 191, 210
 		if (laser_scan_data_.ranges[i] < 4) {
@@ -1027,7 +1093,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("right count = %d", count);
+				//ROS_INFO("right count = %d", count);
 			}
 		}
 	}
@@ -1055,7 +1121,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("front count = %d", count);
+				//ROS_INFO("front count = %d", count);
 			}
 		}
 	}
@@ -1067,7 +1133,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("front count = %d", count);
+				//ROS_INFO("front count = %d", count);
 			}
 		}
 	}
@@ -1095,7 +1161,7 @@ uint8_t Laser::laserMarker(bool is_mark)
 			y = sin(th * PI / 180.0) * laser_scan_data_.ranges[i];
 			if (x > X_MIN && x < X_MAX ) {
 				count++;
-				ROS_INFO("left count = %d", count);
+				//ROS_INFO("left count = %d", count);
 			}
 		}
 	}

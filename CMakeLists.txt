@@ -73,7 +73,12 @@ add_message_files(
 	FILES
 	x900sensor.msg
 	slam_angle_offset.msg
-	robotmode.msg
+)
+
+add_service_files(
+	DIRECTORY srv
+	FILES
+	SetLidar.srv	
 )
 
 generate_messages(

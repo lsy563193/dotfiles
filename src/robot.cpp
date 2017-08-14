@@ -468,7 +468,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	else if (type == BLOCKED_TILT)
 	{
 		color_.r = 0.5;
-		color_.g = 0.5;
+		color_.g = 1.0;
 		color_.b = 0.5;
 	}
 	clean_map_markers_.points.push_back(m_points_);

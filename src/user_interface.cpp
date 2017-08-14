@@ -278,7 +278,7 @@ void user_interface_handle_cliff(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 
 	/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
-	if (!state_last && robot::instance()->isManualPaused())
+	if (user_interface_reject_reason != 2 && robot::instance()->isManualPaused())
 	{
 		ROS_WARN("%s %d: Robot lifted up during manual pause, reset manual pause status.", __FUNCTION__, __LINE__);
 		user_interface_reject_reason = 2;

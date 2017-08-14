@@ -422,7 +422,7 @@ int8_t SpotMovement::spotNextTarget(Cell_t &next_point)
 						setStopPoint(&stop_point_);//reset stop point
 						genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
 						if(!getNearPoint(stop_point_))
-							ROS_WARN("\033[47;34m" "spot.cpp,%s,%d,not find near point,while search all points" "\033[0m",__FUNCTION__,__LINE__);
+							ROS_WARN("\033[47;34m" "spot.cpp,%s,%d,not find near point,while search all cells" "\033[0m",__FUNCTION__,__LINE__);
 					}
 					next_point = {tp_->X,tp_->Y};
 					setNextPointChange();

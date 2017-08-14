@@ -15,7 +15,7 @@
  * to a give target point. There are 2 version of shortest path method is include.
  *
  * In the first version, it use the A-Star like algorithm, starting from the current
- * robot position point, assign a value to the points that have an offset 1, which
+ * robot position point, assign a value to the cells that have an offset 1, which
  * coordinate is (x -/+ offset, y -/+ offset), then increase the offset by 1, until the
  * cell for the target point is set or there is not more value to set in the map. If the
  * cell for the target point is set, trace back the path to the robot position. This

@@ -92,4 +92,10 @@ unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
 void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
 void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 bool map_mark_robot();
+void map_set_obs();
+void map_set_bumper();
+void map_set_rcon();
+void map_set_cliff();
+void map_set_tilt();
+float map_get_area();
 #endif /* __MAP_H */

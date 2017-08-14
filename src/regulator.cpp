@@ -257,14 +257,17 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("BackRegulator::adjustSpeed");
 	set_dir_backward();
-	speed_ += counter_ / 100;
-	speed_ = (speed_ > 18) ? 18 : speed_;
+	if (get_clean_mode() != Clean_Mode_WallFollow)
+	{
+		speed_ += ++counter_;
+		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
+	}
 	reset_wheel_step();
 	l_speed = r_speed = speed_;
 }
 
 
-TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(16)
+TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(ROTATE_TOP_SPEED)
 {
 	accurate_ = speed_max_ > 30 ? 30 : 10;
 	s_target_angle = angle;
@@ -509,7 +512,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	}else
 	if (base_speed_ < (int32_t) LINEAR_MAX_SPEED)
 	{
-		if (tick_++ > 5)
+		if (tick_++ > 1)
 		{
 			tick_ = 0;
 			base_speed_++;
@@ -529,7 +532,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		left_speed = base_speed_ - dis_diff / (CELL_COUNT_MUL/4)/* - diff2*/ /*- integrated_ / 150*/; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
 		right_speed = base_speed_ + dis_diff / (CELL_COUNT_MUL/4) /*+ diff2 *//*+ integrated_ / 150*/; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 //		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff1(%d),diff2(%d)",left_speed, right_speed, dis_diff, diff,diff2);
-		ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff(%d)",left_speed, right_speed, dis_diff, dis_diff / (CELL_COUNT_MUL/4));
+		//ROS_WARN("left_speed(%d),right_speed(%d),dis_diff(%d),diff(%d)",left_speed, right_speed, dis_diff, dis_diff / (CELL_COUNT_MUL/4));
 	}
 	else{
 		left_speed = base_speed_ - angle_diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
@@ -871,8 +874,10 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 
 
 //RegulatorManage
-RegulatorManage::RegulatorManage(Point32_t origin, Point32_t target)
+RegulatorManage::RegulatorManage(const Cell_t& start_cell,const Cell_t& target_cell)
 {
+	auto origin = map_cell_to_point(start_cell);
+	auto target = map_cell_to_point(target_cell);
 	ROS_INFO("%s %d: origin(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, count_to_cell(origin.X), count_to_cell(origin.Y), count_to_cell(target.X), count_to_cell(target.Y));
 	g_bumper_cnt = g_cliff_cnt =0;
 	g_rcon_during_go_home = false;

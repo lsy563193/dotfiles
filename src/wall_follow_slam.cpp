@@ -444,7 +444,7 @@ bool wf_is_reach_start()
 	int16_t origin_angle = RegulatorBase::s_origin_angle;
 	uint32_t dis = two_points_distance(x_s, y_s, g_wf_cell.back().X, g_wf_cell.back().Y);
 	int16_t th_diff;
-	ROS_WARN("%s,%d:dis = %d",__FUNCTION__,__LINE__,dis);
+	//ROS_WARN("%s,%d:dis = %d",__FUNCTION__,__LINE__,dis);
 	if (g_is_left_start) {
 		if (dis <= 1) {
 					th_diff = (abs(g_wf_cell.back().TH - origin_angle));
