@@ -22,6 +22,7 @@ extern uint16_t g_old_dir;
 extern uint16_t g_new_dir;
 extern Cell_t g_cell_history[];
 int jam=0;
+int16_t left_wall_buffer[3] = { 0 };
 //bool g_is_should_follow_wall;
 
 static int16_t bumper_turn_angle()
@@ -705,7 +706,6 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //		ROS_INFO("Wf_1.1, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 		if (g_wall_distance > 200)
 		{//over left
-
 			same_speed = wheel_speed_base + proportion / 8 + delta / 3; //12
 			diff_speed = wheel_speed_base - proportion / 9 - delta / 3; //10
 
@@ -743,7 +743,6 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}
 		else
 		{
-
 			same_speed = wheel_speed_base + proportion / 10 + delta / 3;//16
 			diff_speed = wheel_speed_base - proportion / 10 - delta / 4; //11
 //			ROS_INFO("Wf_4.1, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
@@ -770,6 +769,33 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				else
 				{
 					reset_sp_turn_count();
+				}
+			}
+		}
+		
+		left_wall_buffer[2] = left_wall_buffer[1];
+		left_wall_buffer[1] = left_wall_buffer[0];
+		left_wall_buffer[0] = robot::instance()->getLeftWall();	
+		
+		if (left_wall_buffer[0] < 100) 
+		{
+			if ((left_wall_buffer[1] - left_wall_buffer[0]) >= ((g_wall_distance / 16))) 
+			{
+				if ((left_wall_buffer[2] - left_wall_buffer[1]) >= ((g_wall_distance / 16))) 
+				{
+					if (same_dist>200) 
+					{
+						if ((get_right_wheel_speed()-get_left_wheel_speed()) >= -3) 
+						{
+							// Away from the wall.
+							ROS_WARN("%s,%d: usleep(300000) to walk straight",__FUNCTION__,__LINE__);
+							move_forward(20,15);
+							if(g_wall_distance<300)
+							g_wall_distance=g_wall_distance+100;
+							usleep(300000);
+							g_straight_distance = 250;
+						}
+					}
 				}
 			}
 		}
