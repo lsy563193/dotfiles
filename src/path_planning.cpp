@@ -243,13 +243,16 @@ int8_t is_block_cleaned(int16_t x, int16_t y)
 
 bool is_brush_block_unclean(int16_t x, int16_t y)
 {
-	for (auto dy  = -1; dy <=  + 1; dy++) {
-//		ROS_WARN("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, x,y+dy);
-		if (map_get_cell(MAP, x, y+dy) == UNCLEAN)
-			return true;
+	bool retval = false;
+	uint8_t unclean_cnt = 0;
+	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
+		if (map_get_cell(MAP, x, i) == UNCLEAN) {
+			unclean_cnt++;
+		}
 	}
-	return false;
-//	return (map_get_cell(MAP, x, y) == UNCLEAN);
+	if (unclean_cnt > 0)
+		retval = true;
+	return retval;
 }
 
 uint8_t is_block_boundary(int16_t x, int16_t y)
@@ -283,56 +286,55 @@ uint8_t is_block_blocked(int16_t x, int16_t y)
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
-
 	auto tmp = curr;
 
 	ROS_INFO("%s %d: curr(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
 	for (i = 1; (min_stop == 0 || max_stop == 0); i++)
 	{
+		//ROS_INFO("%s %d: i = %d, curr x - (i+1) = %d, curr x +i+1 = %d", __FUNCTION__, __LINE__, i, curr.X - (i + 1), curr.X + i + 1);
+		if (curr.X - (i + 1) < -MAP_SIZE && curr.X + i + 1 > MAP_SIZE)
+			break;
+
 		/* Find the unclean area in the NEG_X direction of the lane. */
-		if (min_stop == 0)
+		if (min_stop == 0 && curr.X - (i + 1) >= -MAP_SIZE)
 		{
-			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(curr.X - i, curr.Y) == 1 || is_block_boundary(curr.X - i, curr.Y) == 1)
+			if (is_block_blocked(curr.X - i, curr.Y) || is_block_boundary(curr.X - i, curr.Y))
 			{
+				/* Stop if the cells is blocked, or reach the boundary. */
 				min_stop = 1;
-			} else
+				//ROS_INFO("%s %d: min stop: %d, (%d, %d) = %d", __FUNCTION__, __LINE__, min, curr.X - i, curr.Y, map_get_cell(MAP, curr.X - i, curr.Y));
+			} else if (is_brush_block_unclean(curr.X - i, curr.Y))
 			{
-				if (is_brush_block_unclean(curr.X - i, curr.Y))
-				{
-					if (is_block_blocked(curr.X - (i + 1), curr.Y) == 0)
-						min = i;
-					min_stop = 1;
-				}
+				// Find the furthest unclean cell.
+				if (!is_block_blocked(curr.X - (i + 1), curr.Y) && !is_block_boundary(curr.X - (i + 1), curr.Y))
+					min = i;
 			}
-//			ROS_INFO("%s %d: min: %d", __FUNCTION__, __LINE__, min);
+			//ROS_INFO("%s %d: min: %d", __FUNCTION__, __LINE__, min);
 		}
 
 		/* Find the unclean area in the POS_X direction of the lane. */
-		if (max_stop == 0)
+		if (max_stop == 0 && curr.X + i + 1 <= MAP_SIZE)
 		{
 			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(curr.X + i, curr.Y) == 1 || is_block_boundary(curr.X + i, curr.Y) == 1)
+			if (is_block_blocked(curr.X + i, curr.Y) || is_block_boundary(curr.X + i, curr.Y))
 			{
 				max_stop = 1;
-			} else
+				//ROS_INFO("%s %d: max stop: %d, (%d, %d) = %d", __FUNCTION__, __LINE__, max, curr.X + i, curr.Y, map_get_cell(MAP, curr.X + i, curr.Y));
+			} else if (is_brush_block_unclean(curr.X + i, curr.Y))
 			{
-				if (is_brush_block_unclean(curr.X + i, curr.Y))
-				{
-					if (is_block_blocked(curr.X + i + 1, curr.Y) == 0)
-						max = i;
-					max_stop = 1;
-				}
+				// Find the furthest unclean cell.
+				if (!is_block_blocked(curr.X + i + 1, curr.Y) && !is_block_boundary(curr.X + i + 1, curr.Y))
+					max = i;
 			}
-//			ROS_INFO("%s %d: max: %d", __FUNCTION__, __LINE__, max);
+			//ROS_INFO("%s %d: max: %d", __FUNCTION__, __LINE__, max);
 		}
 	}
 
-	ROS_WARN("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, curr.X - min,curr.X + max);
-	/* Both ends are not cleaned. */
+	ROS_WARN("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, curr.X - min, curr.X + max);
 	if (min != SHRT_MAX && max != SHRT_MAX)
 	{
 		/*
+		 * Both ends are not cleaned.
 		 * If the number of cells to clean are the same of both ends, choose either one base the
 		 * previous robot g_cell_history. Otherwise, move to the end that have more unclean cells.
 		 */
@@ -364,7 +366,6 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 			} else
 				tmp.X += max;
 		}
-		ROS_INFO("%s %d: tmp(%d,%d)", __FUNCTION__, __LINE__, tmp.X,tmp.Y);
 		is_found = 2;
 	} else if (min != SHRT_MAX)
 	{
@@ -377,47 +378,38 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		tmp.X += max;
 		is_found = 1;
 	}
-	if (is_found == 1 && g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-		is_found = 0;
 
 	if (is_found == 1)
 	{
-		uint8_t un_cleaned_cnt = 0;
-		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
-			for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
-				if (map_get_cell(MAP, tmp.X + dx, tmp.Y + dy) == UNCLEAN)
-					un_cleaned_cnt++;
-
-		if (un_cleaned_cnt < 2)
+		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+			// Duplicated cleaning.
 			is_found = 0;
-	}
-
-	ROS_INFO("%s %d: is_found = %d", __FUNCTION__, __LINE__, is_found);
-//	ROS_INFO("%s %d: tmp = %d", __FUNCTION__, __LINE__, tmp.X);
-
-	if (is_found > 0)
-	{
-		auto dx1 = (tmp.X > curr.X) ? 1 : -1;
-		auto boundary = (tmp.X > curr.X) ? g_x_max : g_x_min;
-//		ROS_INFO("%s %d: tmp = %d,boundary(%d),g_x_max(%d),g_x_min(%d)", __FUNCTION__, __LINE__, tmp.X,boundary, g_x_max,g_x_min);
-		while(tmp.X != boundary)
+		else
 		{
-			if (! is_brush_block_unclean(tmp.X, tmp.Y))
-				break;
-			tmp.X += dx1;
+			uint8_t un_cleaned_cnt = 0;
+			for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+				for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+					if (map_get_cell(MAP, tmp.X + dx, tmp.Y + dy) == UNCLEAN)
+						un_cleaned_cnt++;
+
+			if (un_cleaned_cnt < 2)
+				// Uncleaned area is too small.
+				is_found = 0;
 		}
 	}
 
-//	ROS_INFO("%s %d: tmp = %d", __FUNCTION__, __LINE__, tmp.X);
+	ROS_INFO("%s %d: is_found = %d, target(%d, %d).", __FUNCTION__, __LINE__, is_found, tmp.X, tmp.Y);
 	if (is_found)
 	{
 		path.target = tmp;
+		path.cells.clear();
 		path.cells.push_front(path.target);
 		path.cells.push_front(curr);
 		path_display_path_points(path.cells);
+		return true;
 	}
-
-	return is_found>0;
+	else
+		return false;
 }
 
 void path_find_all_targets()
