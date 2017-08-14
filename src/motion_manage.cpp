@@ -427,7 +427,7 @@ MotionManage::~MotionManage()
 		if (get_clean_mode() == Clean_Mode_Spot)
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 		else
-			ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
 
 	g_saved_work_time += get_work_time();
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
@@ -479,7 +479,7 @@ bool MotionManage::initNavigationCleaning(void)
 		Cell_t cell{0, 0};
 		g_home_point_old_path.push_front(cell);
 
-		// Mark all the trapped reference points as (0, 0).
+		// Mark all the trapped reference cells as (0, 0).
 		Cell_t tmp_pnt{0, 0};
 		auto g_temp_trapped_cell = path_escape_get_trapped_cell();
 		for (int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i)

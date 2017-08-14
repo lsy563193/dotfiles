@@ -267,7 +267,7 @@ bool Laser::lineFit(const std::vector<Double_Point> &points, double &a, double &
 	double lambda = ( (Dxx + Dyy) - sqrt( (Dxx - Dyy) * (Dxx - Dyy) + 4 * Dxy * Dxy) ) / 2.0;
 	double den = sqrt( Dxy * Dxy + (lambda - Dxx) * (lambda - Dxx) );
 
-	//ROS_INFO("points.size = %d, den = %lf", size, den);
+	//ROS_INFO("cells.size = %d, den = %lf", size, den);
 	if(fabs(den) < 1e-5) {
 		if( fabs(Dxx / Dyy - 1) < 1e-5) {
 			ROS_INFO("line fit failed!");
@@ -825,7 +825,7 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
 	//ROS_INFO("Fit line laser_points_.x = %lf laser_points_.y = %lf",laser_points_.x, laser_points_.y);
 	fit_line_marker.points.push_back(laser_points_);
 	fit_line_marker_pub.publish(fit_line_marker);
-	//fit_line_marker.points.clear();
+	//fit_line_marker.cells.clear();
 }
 
 /*

@@ -153,10 +153,10 @@ int main(int argc, char **argv)
 	Cell_t stop{15,0};
 //	linear_mark(start,stop, CLEANED);
 
-	map_mark_robot();
-	map_set_cell(MAP, cell_to_count(curr.X-1), cell_to_count(curr.Y-1), UNCLEAN);
+//	map_mark_robot();
+//	map_set_cell(MAP, cell_to_count(curr.X-1), cell_to_count(curr.Y-1), UNCLEAN);
+	linear_mark(start,stop,CLEANED);
 	debug_map(MAP,stop.X,stop.Y);
-//	linear_mark(start,stop,CLEANED);
 //	linear_mark_block(start,stop);
 //	linear_mark_block_x(start.Y, -1, 3,UNCLEAN);
 //	linear_mark_block_x(start.Y, 9, 10,UNCLEAN);
