@@ -438,8 +438,10 @@
 #define LASER_FOLLOW_WALL					(1)
 
 /* ------------------------------------- Laser Marker Enable ------------------------------------- */
-#define LASER_MARKER					(1)
-#define FORCE_MOVE_LINE					(1)
+#define LASER_MARKER						(1)
+/* ------------------------------------- Moving config --------------------------------------------*/
+#define FORCE_MOVE_LINE						(0)
 #define MAP_SET_REALTIME					(0)
+#define LINEAR_MOVE_WITH_PATH				(1)
 
 #define COLOR_DEBUG_MAP		(1)

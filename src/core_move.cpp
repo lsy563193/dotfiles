@@ -284,7 +284,7 @@ bool cm_move_to(const PPTargetType& path)
 	//extern uint16_t g_new_dir;
 	//if (mt_is_linear() && IS_X_AXIS(g_new_dir))
 	//	start.Y = next.Y;
-	RegulatorManage rm(start, g_next_cell);
+	RegulatorManage rm(start, g_next_cell, path);
 
 	bool eh_status_now=false, eh_status_last=false;
 	bool ret = false;
