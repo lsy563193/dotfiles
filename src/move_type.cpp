@@ -42,7 +42,6 @@ void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir) {
 	if (!IS_X_AXIS(dir) || (g_obs_triggered == 0 && g_bumper_triggered == 0))
 		return;
 
-	extern Cell_t g_next_cell, g_target_cell;
 	auto delta_y = g_next_cell.Y - curr.Y;
 
 	ROS_WARN("%s,%d,abs: delta_y(%d)",__FUNCTION__, __LINE__,std::abs(delta_y));
