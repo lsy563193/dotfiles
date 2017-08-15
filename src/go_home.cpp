@@ -609,7 +609,7 @@ void go_to_charger(void)
 			else
 			{
 				no_signal_counter++;
-				if(no_signal_counter>200)
+				if(no_signal_counter>60)
 				{
 					ROS_WARN("No charger signal received.");
 					g_go_home_state_now = GO_HOME_INIT;
