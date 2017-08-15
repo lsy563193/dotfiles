@@ -1376,7 +1376,7 @@ void set_vac_speed(void)
 /*--------------------------------------Obs Dynamic adjust----------------------*/
 void obs_dynamic_base(uint16_t count)
 {
-	count = 20;
+//	count = 20;
 //	enum {front,left,right};
 	static uint32_t obs_cnt[] = {0,0,0};
 	static int32_t obs_sum[] = {0,0,0};
