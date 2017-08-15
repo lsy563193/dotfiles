@@ -149,12 +149,11 @@ int main(int argc, char **argv)
 //	path_lane_is_cleaned(next);
 //	std::vector<Cell_t> cells= {{0,0},{1,0},{2,0},{3,0},{4,0},{5,0},{6,0},{7,0}};
 //	map_set_cleaned(cells);
-	Cell_t start{-5,0};
-	Cell_t stop{15,0};
-//	linear_mark(start,stop, CLEANED);
-
-//	map_mark_robot();
-//	map_set_cell(MAP, cell_to_count(curr.X-1), cell_to_count(curr.Y-1), UNCLEAN);
+	Cell_t start{-5,-1};
+	Cell_t stop{15,-1};
+	linear_mark(start,stop,CLEANED);
+	start={-5,3};
+	stop={15,3};
 	linear_mark(start,stop,CLEANED);
 	debug_map(MAP,stop.X,stop.Y);
 //	linear_mark_block(start,stop);
@@ -172,7 +171,9 @@ int main(int argc, char **argv)
 //	path_target(next,target);
 //	path_target2(next,target);
 //	BoundingBox2 box;
-	path_lane_is_cleaned(curr, next);
+	  PPTargetType cleaning_path;
+//	if(path_lane_is_cleaned(curr, cleaning_path))
+		path_target(curr, cleaning_path);
 
 //	BoundingBox2 box2{{0,0},{6,6}};
 //	for(const auto& cell : box2)

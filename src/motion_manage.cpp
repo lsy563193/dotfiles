@@ -697,7 +697,7 @@ bool MotionManage::initSpotCleaning(void)
 
 void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target)
 {
-	int16_t i, j, x_min, x_max, y_min, y_max;
+	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
 	path_get_range(&x_min, &x_max, &y_min, &y_max);
 
@@ -706,19 +706,19 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target)
 	else if (next.X == SHRT_MAX)
 		next.X = x_max;
 
-	for (i = x_min; i <= x_max; i++)
+	for (x = x_min; x <= x_max; x++)
 	{
-		for (j = y_min; j <= y_max; j++)
+		for (y = y_min; y <= y_max; y++)
 		{
-			if (i == target.X && j == target.Y)
-				robot::instance()->setCleanMapMarkers(i, j, TARGET_CLEAN);
-			else if (i == next.X && j == next.Y)
-				robot::instance()->setCleanMapMarkers(i, j, TARGET);
+			if (x == target.X && y == target.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else if (x == next.X && y == next.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET);
 			else
 			{
-				cell_state = map_get_cell(id, i, j);
+				cell_state = map_get_cell(id, x, y);
 				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
-					robot::instance()->setCleanMapMarkers(i, j, cell_state);
+					robot::instance()->setCleanMapMarkers(x, y, cell_state);
 			}
 		}
 	}

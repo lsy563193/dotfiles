@@ -286,9 +286,15 @@ uint8_t is_block_blocked(int16_t x, int16_t y)
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
-	auto tmp = curr;
+
+	if(std::abs(curr.Y % 2) == 1){
+		ROS_WARN("%s %d: return, move only even line(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
+		return false;
+	}
+
 
 	ROS_INFO("%s %d: curr(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
+	auto tmp = curr;
 	for (i = 1; (min_stop == 0 || max_stop == 0); i++)
 	{
 		//ROS_INFO("%s %d: i = %d, curr x - (i+1) = %d, curr x +i+1 = %d", __FUNCTION__, __LINE__, i, curr.X - (i + 1), curr.X + i + 1);
@@ -583,7 +589,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 				continue;
 
 			if (c > g_x_min - 1 && map_get_cell(MAP, c - 1, d) == UNCLEAN) {
-				if (is_block_accessible(c - 1, d) == 1) {
+				if (is_block_accessible(c - 1, d) == 1 && (std::abs(d%2)==0)) {
 					map_set_cell(MAP, cell_to_count(c - 1), cell_to_count(d), TARGET);
 					x_min = x_min > (c - 1) ? (c - 1) : x_min;
 					x_max = x_max < (c - 1) ? (c - 1) : x_max;
@@ -593,7 +599,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 
 			if (c < g_x_max + 1 && map_get_cell(MAP, c + 1, d) == UNCLEAN) {
-				if (is_block_accessible(c + 1, d) == 1) {
+				if (is_block_accessible(c + 1, d) == 1 && (std::abs(d%2)==0)) {
 					map_set_cell(MAP, cell_to_count(c + 1), cell_to_count(d), TARGET);
 					x_min = x_min > (c + 1) ? (c + 1) : x_min;
 					x_max = x_max < (c + 1) ? (c + 1) : x_max;
@@ -603,7 +609,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 
 			if (d > g_y_min - 1 && map_get_cell(MAP, c, d - 1) == UNCLEAN) {
-				if (is_block_accessible(c, d - 1) == 1) {
+				if (is_block_accessible(c, d - 1) == 1 && (std::abs((d - 1)%2)==0)) {
 					map_set_cell(MAP, cell_to_count(c), cell_to_count(d - 1), TARGET);
 					x_min = x_min > c ? c : x_min;
 					x_max = x_max < c ? c : x_max;
@@ -613,7 +619,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 
 			if (d < g_y_max + 1 && map_get_cell(MAP, c, d + 1) == UNCLEAN) {
-				if (is_block_accessible(c, d + 1) == 1) {
+				if (is_block_accessible(c, d + 1) == 1 && (std::abs((d + 1)%2)==0)) {
 					map_set_cell(MAP, cell_to_count(c), cell_to_count(d + 1), TARGET);
 					x_min = x_min > c ? c : x_min;
 					x_max = x_max < c ? c : x_max;
@@ -624,6 +630,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
+  debug_map(MAP, g_home_x, g_home_y);
 	/* Narrow down the coodinate that robot should go */
 	for (d = y_min; d <= y_max; d++) {
 		start = end = SHRT_MAX;

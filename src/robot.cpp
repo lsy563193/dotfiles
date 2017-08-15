@@ -422,9 +422,17 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	if (type == CLEANED)
 	{
 		// Green
-		color_.r = 0.0;
-		color_.g = 1.0;
-		color_.b = 0.0;
+		if(y%2==0)
+		{
+			color_.r = 0.0;
+			color_.g = 0.5;
+			color_.b = 0.0;
+		}
+		else{
+			color_.r = 0.0;
+			color_.g = 1.0;
+			color_.b = 0.0;
+		}
 	}
 	else if (type == BLOCKED_OBS)
 	{
