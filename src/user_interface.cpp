@@ -82,11 +82,11 @@ void user_interface(void)
 
 	while(ros::ok())
 	{
-		usleep(10000);
-
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
 		}
+
+		usleep(10000);
 
 		if (charger_signal_delay > 0)
 			charger_signal_delay--;
