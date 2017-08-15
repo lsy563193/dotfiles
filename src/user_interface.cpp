@@ -330,6 +330,10 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
 	g_omni_notmove = false;
+
+	/* reset charger_signal_start_time when get remote cleaning */
+	charger_signal_start_time = time(NULL);
+
 	if (get_error_code())
 	{
 		if (get_rcon_remote() == Remote_Clean)
@@ -420,6 +424,9 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 	if (get_plan_status())
 		user_interface_plan_confirm_time = time(NULL);
 
+	/* reset charger_signal_start_time when get plan status */
+	charger_signal_start_time = time(NULL);
+
 	switch (get_plan_status())
 	{
 		case 1:
@@ -483,6 +490,9 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 
 	g_omni_notmove = false;
 	time_t key_press_start_time = time(NULL);
+
+	/* reset charger_signal_start_time when get key clean */
+	charger_signal_start_time = time(NULL);
 
 	if (check_error_cleared(get_error_code()))
 		beep_for_command(VALID);
