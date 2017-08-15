@@ -423,6 +423,18 @@ bool wf_is_end()
 	return false;
 }
 
+bool trapped_is_end()
+{
+	auto cell = cm_update_position();
+	Pose16_t curr_cell{cell.X, cell.Y, (int16_t) gyro_get_angle()};
+	wf_is_reach_new_cell(curr_cell);
+	ROS_INFO("cell.X = %d, cell.Y = %d", cell.X, cell.Y);
+
+	if (is_reach())
+		return true;
+	return false;
+}
+
 bool wf_is_go_home()
 {
 	if (g_isolate_count > 3 || wf_time_out) {
