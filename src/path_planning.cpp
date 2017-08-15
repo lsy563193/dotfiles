@@ -1171,7 +1171,6 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT)
 		return 0;
 
-	extern Cell_t g_next_cell, g_target_cell;
 	// Delete the first cell of list, it means current cell.
 	if (path.cells.size() > 1)
 		path.cells.pop_front();

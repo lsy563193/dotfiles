@@ -31,7 +31,6 @@ int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 extern Cell_t g_cell_history[];
 extern uint16_t g_old_dir;
-extern Cell_t g_next_cell, g_target_cell;
 void map_init(void) {
 	uint8_t c, d;
 
