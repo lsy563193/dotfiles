@@ -62,6 +62,7 @@ extern int g_trapped_mode;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
 extern int g_rcon_triggered;
+extern Cell_t g_next_cell, g_target_cell;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);

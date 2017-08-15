@@ -374,8 +374,6 @@ uint8_t wf_clear(void)
 
 void wf_update_map()
 {
-	extern Cell_t g_next_cell, g_target_cell;
-
 	auto cell = cm_update_position();
 
 	Pose16_t curr_cell{cell.X, cell.Y, (int16_t) gyro_get_angle()};

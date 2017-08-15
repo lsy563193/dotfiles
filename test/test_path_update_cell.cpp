@@ -155,13 +155,13 @@ int main(int argc, char **argv)
 	start={-5,3};
 	stop={15,3};
 	linear_mark(start,stop,CLEANED);
-	debug_map(MAP,stop.X,stop.Y);
 //	linear_mark_block(start,stop);
-//	linear_mark_block_x(start.Y, -1, 3,UNCLEAN);
+//	linear_mark_block_x(1, -6, -2,CLEANED);
+//	linear_mark_block_x(1, 12, 16,CLEANED);
 //	linear_mark_block_x(start.Y, 9, 10,UNCLEAN);
-//	linear_mark_block_y(start.X-2, start.Y-1, start.Y+1);
-//	linear_mark_block_y(stop.X+2, stop.Y-1, stop.Y+1);
-//	start = {0,3};
+	linear_mark_block_y(start.X-2, -3, start.Y+1);
+	linear_mark_block_y(stop.X+2, -3, stop.Y+1);
+	start = {0,3};
 //	stop = {9,3};
 //	linear_mark(start,stop, CLEANED);
 
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 //	BoundingBox2 box2{{0,0},{6,6}};
 //	for(const auto& cell : box2)
 //	{
-		ROS_INFO("next:(%d,%d)",next.X, next.Y);
+//		ROS_INFO("next:(%d,%d)",next.X, next.Y);
 //	}
 	return 0;
 }
