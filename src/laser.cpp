@@ -214,7 +214,6 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 		//ROS_INFO("Laser_Point_x = %lf, Laser_Point_y = %lf, th = %lf, distance = %lf", New_Laser_Point.x, New_Laser_Point.y, th, laser_scan_data_.ranges[i]);
 	}
 	scan_mutex_.unlock();
-	lineFit(Laser_Point, a, b, c);
 	splitLine(Laser_Point, 0.01, 10);
 	splitLine2nd(&Laser_Group, 0.01,10);
 	mergeLine(&Laser_Group, 0.01);
