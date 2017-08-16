@@ -9,6 +9,7 @@
 #include "slam.h"
 #include "mathematics.h"
 #include "obstacle_detector.h"
+#include <list>
 
 class MotionManage {
 public:
@@ -16,7 +17,7 @@ public:
 
 	~MotionManage();
 
-	static void pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target);
+	static void pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::list<Cell_t>& path);
 //private:
 	bool is_align_active(){
 		return is_align_active_;

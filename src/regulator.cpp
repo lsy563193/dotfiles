@@ -395,8 +395,8 @@ bool LinearRegulator::isReach()
 				g_new_dir = map_get_y_count() > s_target.Y ? NEG_Y : POS_Y;
 			else
 				g_new_dir = map_get_x_count() > s_target.X ? NEG_X : POS_X;
-			ROS_WARN("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), g_next_cell.X, g_next_cell.Y, g_new_dir);
-			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
+			//ROS_WARN("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), g_next_cell.X, g_next_cell.Y, g_new_dir);
+			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path_.cells);
 		}
 	}
 #else

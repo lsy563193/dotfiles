@@ -1596,11 +1596,13 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 				it++;
 			}
 		}
-
 		path_points.reverse();
+		path_display_path_points(path_points);
+#if LINEAR_MOVE_WITH_PATH
+		path_fill_path(path_points);
+#endif
 		path.cells = path_points;
 		path.target = path.cells.back();
-		path_display_path_points(path.cells);
 	}
 
 	retval = 1;
@@ -1630,7 +1632,7 @@ void path_display_path_points(list<Cell_t> path)
 	for (list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
-	msg += "\n";
+	//msg += "\n";
 	ROS_WARN("%s",msg.c_str());
 }
 
