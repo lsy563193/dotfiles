@@ -1598,9 +1598,6 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 		}
 		path_points.reverse();
 		path_display_path_points(path_points);
-#if LINEAR_MOVE_WITH_PATH
-		path_fill_path(path_points);
-#endif
 		path.cells = path_points;
 		path.target = path.cells.back();
 	}
