@@ -250,7 +250,7 @@ bool is_brush_block_unclean(int16_t x, int16_t y)
 			unclean_cnt++;
 		}
 	}
-	if (unclean_cnt > 0)
+	if (unclean_cnt > 1)
 		retval = true;
 	return retval;
 }
@@ -298,16 +298,21 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		/* Find the unclean area in the NEG_X direction of the lane. */
 		if (min_stop == 0 && curr.X - (i + 1) >= -MAP_SIZE)
 		{
-			if (is_block_blocked(curr.X - i, curr.Y) || is_block_boundary(curr.X - i, curr.Y))
+			if (is_block_blocked(curr.X - i, curr.Y))
 			{
-				/* Stop if the cells is blocked, or reach the boundary. */
+				// Stop if the cells is blocked.
 				min_stop = 1;
-				//ROS_INFO("%s %d: min stop: %d, (%d, %d) = %d", __FUNCTION__, __LINE__, min, curr.X - i, curr.Y, map_get_cell(MAP, curr.X - i, curr.Y));
+				// If block is near the unclean area, consider the block as unclean area.
+				min = (i == min + 1) ? i : min;
+				//ROS_INFO("%s %d: min stop:%d, (%d, %d) = %d", __FUNCTION__, __LINE__, min, curr.X - i, curr.Y, map_get_cell(MAP, curr.X - i, curr.Y));
+			} else if (is_block_boundary(curr.X - i, curr.Y))
+			{
+				// Stop if reach the boundary.
+				min_stop = 1;
 			} else if (is_brush_block_unclean(curr.X - i, curr.Y))
 			{
 				// Find the furthest unclean cell.
-				if (!is_block_blocked(curr.X - (i + 1), curr.Y) && !is_block_boundary(curr.X - (i + 1), curr.Y))
-					min = i;
+				min = is_block_boundary(curr.X - (i + 1), curr.Y) ? min : i;
 			}
 			//ROS_INFO("%s %d: min: %d", __FUNCTION__, __LINE__, min);
 		}
@@ -315,16 +320,21 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		/* Find the unclean area in the POS_X direction of the lane. */
 		if (max_stop == 0 && curr.X + i + 1 <= MAP_SIZE)
 		{
-			/* Stop if the cells is blocked, or reach the boundary. */
-			if (is_block_blocked(curr.X + i, curr.Y) || is_block_boundary(curr.X + i, curr.Y))
+			if (is_block_blocked(curr.X + i, curr.Y))
 			{
+				// Stop if the cells is blocked.
 				max_stop = 1;
-				//ROS_INFO("%s %d: max stop: %d, (%d, %d) = %d", __FUNCTION__, __LINE__, max, curr.X + i, curr.Y, map_get_cell(MAP, curr.X + i, curr.Y));
+				// If block is near the unclean area, consider the block as unclean area.
+				max = (i == max + 1) ? i : max;
+				//ROS_INFO("%s %d: max stop:%d, (%d, %d) = %d", __FUNCTION__, __LINE__, max, curr.X + i, curr.Y, map_get_cell(MAP, curr.X + i, curr.Y));
+			} else if (is_block_boundary(curr.X + i, curr.Y))
+			{
+				// Stop if reach the boundary.
+				max_stop = 1;
 			} else if (is_brush_block_unclean(curr.X + i, curr.Y))
 			{
 				// Find the furthest unclean cell.
-				if (!is_block_blocked(curr.X + i + 1, curr.Y) && !is_block_boundary(curr.X + i + 1, curr.Y))
-					max = i;
+				max = is_block_boundary(curr.X + i + 1, curr.Y) ? max : i;
 			}
 			//ROS_INFO("%s %d: max: %d", __FUNCTION__, __LINE__, max);
 		}
@@ -392,7 +402,7 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 					if (map_get_cell(MAP, tmp.X + dx, tmp.Y + dy) == UNCLEAN)
 						un_cleaned_cnt++;
 
-			if (un_cleaned_cnt < 2)
+			if (un_cleaned_cnt < 4)
 				// Uncleaned area is too small.
 				is_found = 0;
 		}
@@ -504,7 +514,7 @@ void path_find_all_targets()
 	}
 
 	ROS_INFO("%s %d: offset: %d\tx: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
-	debug_map(SPMAP, 0, 0);
+	//debug_map(SPMAP, 0, 0);
 
 	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 		if (map_get_cell(SPMAP, it->target.X, it->target.Y) == COST_NO ||
@@ -737,16 +747,16 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 	}
 
 	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, (int)g_targets.size());
-	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-		std::string	msg = __FUNCTION__;
-		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
+	//for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+	//	std::string	msg = __FUNCTION__;
+	//	msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
 
-		for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
-			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
-		}
-		msg += "\n";
-		ROS_INFO("%s",msg.c_str());
-	}
+	//	for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
+	//		msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
+	//	}
+	//	msg += "\n";
+	//	ROS_INFO("%s",msg.c_str());
+	//}
 
 #if 1
 	stop = 0;
@@ -1171,7 +1181,6 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT)
 		return 0;
 
-	extern Cell_t g_next_cell, g_target_cell;
 	// Delete the first cell of list, it means current cell.
 	if (path.cells.size() > 1)
 		path.cells.pop_front();

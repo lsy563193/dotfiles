@@ -31,7 +31,6 @@ int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 extern Cell_t g_cell_history[];
 extern uint16_t g_old_dir;
-extern Cell_t g_next_cell, g_target_cell;
 void map_init(void) {
 	uint8_t c, d;
 
@@ -524,11 +523,13 @@ void map_set_bumper()
 	}
 
 	int32_t	x, y;
+	std::string msg = "Cell:";
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
-		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + ")";
 		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
 	}
+	ROS_ERROR("%s,%d: %s",__FUNCTION__, __LINE__, msg.c_str());
 }
 
 void map_set_tilt()
@@ -651,7 +652,7 @@ void map_set_blocked()
 	map_set_rcon();
 	map_set_cliff();
 	map_set_tilt();
-//	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
+	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 }
 
 void map_set_cleaned(const Cell_t& curr)
@@ -717,9 +718,10 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 	cells.push_back(cb);
 //	auto is_follow_y_min = dx == 1 ^ mt_is_left();
 
+	std::string msg = "Cell:";
 	for (const auto& cell :  cells)
 	{
-		ROS_ERROR("%s,%d: cell(%d,%d)",__FUNCTION__, __LINE__, cell.X,cell.Y);
+		msg += "(" + std::to_string(cell.X) + "," + std::to_string(cell.Y) + ")";
 		for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
 		{
 			auto y = cell.Y + dy;
@@ -728,6 +730,7 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
 		}
 	}
+	ROS_ERROR("%s,%d: %s",__FUNCTION__, __LINE__, msg.c_str());
 }
 
 void map_set_follow_wall(std::vector<Cell_t>& cells)

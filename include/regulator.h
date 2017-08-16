@@ -6,6 +6,7 @@
 #define PP_REGULATOR_BASE_H
 
 #include <move_type.h>
+#include <path_planning.h>
 
 class RegulatorBase {
 public:
@@ -113,7 +114,7 @@ private:
 
 class LinearRegulator: public RegulatorBase{
 public:
-	LinearRegulator(Point32_t);
+	LinearRegulator(Point32_t, const PPTargetType&);
 	~LinearRegulator(){ };
 	bool _isStop();
 	bool isSwitch();
@@ -129,11 +130,12 @@ private:
 	uint8_t integration_cycle_;
 	uint32_t tick_;
 	uint8_t turn_speed_;
+	PPTargetType path_;
 };
 
 class RegulatorManage:public RegulatorBase{
 public:
-	RegulatorManage(const Cell_t& origin,const Cell_t& target);
+	RegulatorManage(const Cell_t& origin, const Cell_t& target, const PPTargetType& path);
 	~RegulatorManage();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
