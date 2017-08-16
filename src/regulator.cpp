@@ -584,11 +584,11 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 }
 
 
-FollowWallRegulator::FollowWallRegulator(Point32_t origin, Point32_t target) : previous_(0)
+FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target) : previous_(0)
 {
 	g_wall_distance = 400;
 	g_straight_distance = 300;
-	s_origin = origin;
+	s_origin = start_point;
 	s_origin_angle = gyro_get_angle();
 	s_target = target;
 	g_is_left_start = false;
@@ -948,9 +948,15 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 //RegulatorManage
 RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path)
 {
+#if FORCE_MOVE_LINE
 	auto origin = map_cell_to_point(start_cell);
+#else
+	Point32_t start_point;
+	start_point.X = map_get_x_count();
+	start_point.Y = map_get_y_count();
+#endif
 	auto target = map_cell_to_point(target_cell);
-	ROS_INFO("%s %d: origin(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, count_to_cell(origin.X), count_to_cell(origin.Y), count_to_cell(target.X), count_to_cell(target.Y));
+	ROS_INFO("%s %d: start cell(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y, count_to_cell(target.X), count_to_cell(target.Y));
 	g_bumper_cnt = g_cliff_cnt =0;
 	g_rcon_during_go_home = false;
 	reset_rcon_status();
@@ -958,7 +964,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	back_reg_ = new BackRegulator();
 
 	if (mt_is_follow_wall())
-		mt_reg_ = new FollowWallRegulator(origin, target);
+		mt_reg_ = new FollowWallRegulator(start_point, target);
 	else
 		mt_reg_ = new LinearRegulator(target, path);
 

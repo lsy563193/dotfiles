@@ -98,7 +98,7 @@ public:
 class FollowWallRegulator:public RegulatorBase{
 
 public:
-	FollowWallRegulator(Point32_t origin, Point32_t target);
+	FollowWallRegulator(Point32_t start_point, Point32_t target);
 	~FollowWallRegulator(){ set_wheel_speed(0,0); };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
@@ -135,7 +135,7 @@ private:
 
 class RegulatorManage:public RegulatorBase{
 public:
-	RegulatorManage(const Cell_t& origin, const Cell_t& target, const PPTargetType& path);
+	RegulatorManage(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~RegulatorManage();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
