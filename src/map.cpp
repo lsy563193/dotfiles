@@ -652,7 +652,9 @@ void map_set_blocked()
 	map_set_rcon();
 	map_set_cliff();
 	map_set_tilt();
-	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
+	std::list<Cell_t> empty_path;
+	empty_path.clear();
+	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, empty_path);
 }
 
 void map_set_cleaned(const Cell_t& curr)
