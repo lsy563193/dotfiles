@@ -193,7 +193,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-	extern bool g_resume_cleaning;
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
@@ -357,7 +356,6 @@ MotionManage::~MotionManage()
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
 		{
-			extern bool g_resume_cleaning;
 			g_resume_cleaning = true;
 			robot::instance()->resetLowBatPause();
 			set_clean_mode(Clean_Mode_Charging);
@@ -381,7 +379,6 @@ MotionManage::~MotionManage()
 	{
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
-		extern bool g_resume_cleaning;
 		g_resume_cleaning = false;
 		if (g_cliff_all_triggered)
 		{
@@ -466,7 +463,6 @@ bool MotionManage::initNavigationCleaning(void)
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	extern bool g_resume_cleaning;
 	if (!robot::instance()->isManualPaused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning)
 	{
 		g_saved_work_time = 0;

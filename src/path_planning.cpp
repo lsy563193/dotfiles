@@ -1157,7 +1157,6 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		path.cells.push_front(curr);
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
-		extern bool g_resume_cleaning;
 		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
 			g_resume_cleaning = false;
 
