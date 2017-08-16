@@ -1191,7 +1191,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT)
 		return 0;
 
-	// Delete the first cell of list, it means current cell.
+	// Delete the first cell of list, it means current cell. Do this for checking whether it should follow the wall.
 	if (path.cells.size() > 1)
 		path.cells.pop_front();
 	g_next_cell = path.cells.front();
@@ -1203,11 +1203,24 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	else if(get_clean_mode() == Clean_Mode_Navigation)
 		mt_update(curr, path, g_old_dir);
 	// else if wall follow mode, the move type has been set before here.
-
 	if (curr.X == g_next_cell.X)
 		g_new_dir = curr.Y > g_next_cell.Y ? NEG_Y : POS_Y;
 	else
 		g_new_dir = curr.X > g_next_cell.X ? NEG_X : POS_X;
+
+#if LINEAR_MOVE_WITH_PATH
+	if (mt_is_linear())
+	{
+		// Add current cell for filling the path, otherwise it will lack for the path from current to the first turning cell.
+		path.cells.push_front(curr);
+		path_fill_path(path.cells);
+		// Delete the current cell.
+		if (path.cells.size() > 1)
+			path.cells.pop_front();
+		//Update the g_next_cell because the path has been filled.
+		g_next_cell = path.cells.front();
+	}
+#endif
 	return 1;
 }
 
