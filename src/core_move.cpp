@@ -1677,6 +1677,10 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 void cm_handle_remote_direction(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
+	// For Debug
+	// g_battery_home = true;
+	// path_set_continue_cell(map_get_curr_cell());
+	// robot::instance()->setLowBatPause();
 	beep_for_command(INVALID);
 	reset_rcon_remote();
 }
