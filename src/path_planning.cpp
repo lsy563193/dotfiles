@@ -751,21 +751,21 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 	}
 
 	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, (int)g_targets.size());
-	//for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-	//	std::string	msg = __FUNCTION__;
-	//	msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
+	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+		std::string	msg = __FUNCTION__;
+		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
 
-	//	for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
-	//		msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
-	//	}
-	//	msg += "\n";
-	//	ROS_INFO("%s",msg.c_str());
-	//}
+		for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
+			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
+		}
+		msg += "\n";
+		ROS_INFO("%s",msg.c_str());
+	}
 
 #if 1
 	stop = 0;
-	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
 	for (d = y_max; d >= map_get_y_cell(); --d) {
+      ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
 		if (stop == 1 && d <= map_get_y_cell() + 1) {
 			break;
 		}
@@ -802,8 +802,8 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
-	ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
+      ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 		for (a = map_get_y_cell(); a >= y_min && stop == 0; --a) {
 			for (d = a; d <= y_max && stop == 0; ++d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
@@ -848,8 +848,8 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
-	ROS_INFO("%s %d: case 3, towards Y- only, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
+      ROS_INFO("%s %d: case 3, towards Y- only, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 		for (d = y_min; d >= map_get_y_cell(); ++d) {
 			if (stop == 1 && d >= map_get_y_cell() - 1) {
 				break;
@@ -888,8 +888,8 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
-	ROS_INFO("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
+      ROS_INFO("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 		for (a = map_get_y_cell(); a <= y_max && stop == 0; ++a) {
 			for (d = a; d >= y_min && stop == 0; --d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
@@ -933,8 +933,8 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 		}
 	}
-	ROS_INFO("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	if (stop == 0) {
+      ROS_INFO("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 		for (a = map_get_y_cell(); a <= y_max  && stop == 0; ++a) {
 	            for (d = map_get_y_cell(); d <= a && stop == 0; ++d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
@@ -957,9 +957,9 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 #endif
-	ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 	/* fallback to find unclean area */
 	if (stop == 0) {
+      ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
 		for (c = x_min; c <= x_max; ++c) {
 			for (d = y_min; d <= y_max; ++d) {
 				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
