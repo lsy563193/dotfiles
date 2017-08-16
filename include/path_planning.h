@@ -114,6 +114,7 @@ void path_reset_last_position(void);
 uint8_t is_block_accessible(int16_t x, int16_t y);
 
 int16_t path_target(const Cell_t& curr, PPTargetType& path);
+//int16_t path_target2(const Cell_t& curr, PPTargetType& path);
 
 uint16_t path_targets_get_count(void);
 

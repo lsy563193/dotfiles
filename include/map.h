@@ -98,4 +98,6 @@ void map_set_rcon();
 void map_set_cliff();
 void map_set_tilt();
 float map_get_area();
+void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state);
+void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState state);
 #endif /* __MAP_H */

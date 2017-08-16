@@ -14,6 +14,7 @@
 
 #endif
 
+/*
 typedef struct Cell_t_{
 	int16_t X;
 	int16_t Y;
@@ -26,292 +27,293 @@ typedef struct Cell_t_{
 		return !(left == right);
 	}
 } Cell_t;
-//
-//  /**
-//   * Represents a 2-dimensional vector (x, y)
-//   */
-// template<typename T>
-// class Vector2
-//{
-//  public:
-//    /**
-//     * Vector at the origin
-//     */
-//    Vector2()
+*/
+
+  /**
+   * Represents a 2-dimensional vector (x, y)
+   */
+ template<typename T>
+ class Vector2
+{
+  public:
+    /**
+     * Vector at the origin
+     */
+    Vector2()
+    {
+      X = 0;
+      Y = 0;
+    }
+
+    /**
+     * Vector at the given location
+     * @param x x
+     * @param y y
+     */
+    Vector2(T x, T y)
+    {
+      X = x;
+      Y = y;
+    }
+
+  public:
+    /**
+     * Gets the x-coordinate of this vector
+     * @return the x-coordinate of the vector
+     */
+    inline const T& GetX() const
+    {
+      return X;
+    }
+
+    /**
+     * Sets the x-coordinate of this vector
+     * @param x the x-coordinate of the vector
+     */
+    inline void SetX(const T& x)
+    {
+      X = x;
+    }
+
+    /**
+     * Gets the y-coordinate of this vector
+     * @return the y-coordinate of the vector
+     */
+    inline const T& GetY() const
+    {
+      return Y;
+    }
+
+    /**
+     * Sets the y-coordinate of this vector
+     * @param y the y-coordinate of the vector
+     */
+    inline void SetY(const T& y)
+    {
+      Y = y;
+    }
+
+    /**
+     * Floor point operator
+     * @param rOther vector
+     */
+    inline void MakeFloor(const Vector2& rOther)
+    {
+      if (rOther.X < X) X = rOther.X;
+      if (rOther.Y < Y) Y = rOther.Y;
+    }
+
+    /**
+     * Ceiling point operator
+     * @param rOther vector
+     */
+    inline void MakeCeil(const Vector2& rOther)
+    {
+      if (rOther.X > X) X = rOther.X;
+
+      if (rOther.Y > Y) Y = rOther.Y;
+    }
+
+    /**
+     * Returns the square of the length of the vector
+     * @return square of the length of the vector
+     */
+/*    inline int16_t SquaredLength() const
+    {
+      return math::Square(X) + math::Square(Y);
+    }*/
+
+    /**
+     * Returns the length of the vector
+     * @return length of the vector
+     */
+/*
+    inline int16_t Length() const
+    {
+      return sqrt(SquaredLength());
+    }
+*/
+
+    /**
+     * Returns the square of the distance to the given vector
+     * @param rOther vector
+     * @returns square of the distance to the given vector
+     */
+    inline int16_t SquaredDistance(const Vector2& rOther) const
+    {
+      return (*this - rOther).SquaredLength();
+    }
+
+    /**
+     * Gets the distance to the given vector
+     * @param rOther vector
+     * @return distance to given vector
+     */
+    inline int16_t Distance(const Vector2& rOther) const
+    {
+      return sqrt(SquaredDistance(rOther));
+    }
+/*
+
+    */
+/**
+     * Returns a string representation of this vector
+     * @return string representation of this vector
+     */
+
+/*
+    inline const String ToString() const
+    {
+      String valueString;
+      valueString.Append(StringHelper::ToString(GetX()));
+      valueString.Append(" ");
+      valueString.Append(StringHelper::ToString(GetY()));
+      return valueString;
+    }
+*/
+
+  public:
+    /**
+     * In-place vector addition
+     */
+    inline void operator+=(const Vector2& rOther)
+    {
+      X += rOther.X;
+      Y += rOther.Y;
+    }
+
+    /**
+     * In-place vector subtraction
+     */
+    inline void operator-=(const Vector2& rOther)
+    {
+      X -= rOther.X;
+      Y -= rOther.Y;
+    }
+
+    /**
+     * Vector addition
+     */
+    inline const Vector2 operator+(const Vector2& rOther) const
+    {
+      return Vector2(X + rOther.X, Y + rOther.Y);
+    }
+
+    /**
+     * Vector subtraction
+     */
+    inline const Vector2 operator-(const Vector2& rOther) const
+    {
+      return Vector2(X - rOther.X, Y - rOther.Y);
+    }
+
+    /**
+     * In-place scalar division
+     */
+    inline void operator/=(T scalar)
+    {
+      X /= scalar;
+      Y /= scalar;
+    }
+
+    /**
+     * Divides a vector by the scalar
+     */
+    inline const Vector2 operator/(T scalar) const
+    {
+      return Vector2(X / scalar, Y / scalar);
+    }
+
+    /**
+     * Vector dot-product
+     */
+    inline int16_t operator*(const Vector2& rOther) const
+    {
+      return X * rOther.X + Y * rOther.Y;
+    }
+
+    /**
+     * Scales the vector by the given scalar
+     */
+    inline const Vector2 operator*(T scalar) const
+    {
+      return Vector2(X * scalar, Y * scalar);
+    }
+
+    /**
+     * Subtract the vector by the given scalar
+     */
+    inline const Vector2 operator-(T scalar) const
+    {
+      return Vector2(X - scalar, Y - scalar);
+    }
+
+    /**
+     * In-place scalar multiplication
+     */
+    inline void operator*=(T scalar)
+    {
+      X *= scalar;
+      Y *= scalar;
+    }
+
+    /**
+     * Equality operator
+     */
+    inline bool operator==(const Vector2& rOther) const
+    {
+      return (X == rOther.X && Y == rOther.Y);
+    }
+
+    /**
+     * Inequality operator
+     */
+    inline bool operator!=(const Vector2& rOther) const
+    {
+      return (X != rOther.X || Y != rOther.Y);
+    }
+
+    /**
+     * Less than operator
+     * @param rOther vector
+     * @return true if left vector is 'less' than right vector by comparing corresponding x coordinates and then
+     * corresponding y coordinates
+     */
+    inline bool operator<(const Vector2& rOther) const
+    {
+      if (X < rOther.X)
+      {
+        return true;
+      }
+      else if (X > rOther.X)
+      {
+        return false;
+      }
+      else
+      {
+        return (Y < rOther.Y);
+      }
+    }
+
+    /**
+     * Write vector onto output stream
+     */
+//    friend std::ostream& operator<<(std::ostream& rStream, const Vector2& rVector)
 //    {
-//      X = 0;
-//      Y = 0;
+//      rStream << rVector.ToString().ToCString();
+//      return rStream;
 //    }
-//
-//    /**
-//     * Vector at the given location
-//     * @param x x
-//     * @param y y
-//     */
-//    Vector2(T x, T y)
-//    {
-//      X = x;
-//      Y = y;
-//    }
-//
-//  public:
-//    /**
-//     * Gets the x-coordinate of this vector
-//     * @return the x-coordinate of the vector
-//     */
-//    inline const T& GetX() const
-//    {
-//      return X;
-//    }
-//
-//    /**
-//     * Sets the x-coordinate of this vector
-//     * @param x the x-coordinate of the vector
-//     */
-//    inline void SetX(const T& x)
-//    {
-//      X = x;
-//    }
-//
-//    /**
-//     * Gets the y-coordinate of this vector
-//     * @return the y-coordinate of the vector
-//     */
-//    inline const T& GetY() const
-//    {
-//      return Y;
-//    }
-//
-//    /**
-//     * Sets the y-coordinate of this vector
-//     * @param y the y-coordinate of the vector
-//     */
-//    inline void SetY(const T& y)
-//    {
-//      Y = y;
-//    }
-//
-//    /**
-//     * Floor point operator
-//     * @param rOther vector
-//     */
-//    inline void MakeFloor(const Vector2& rOther)
-//    {
-//      if (rOther.X < X) X = rOther.X;
-//      if (rOther.Y < Y) Y = rOther.Y;
-//    }
-//
-//    /**
-//     * Ceiling point operator
-//     * @param rOther vector
-//     */
-//    inline void MakeCeil(const Vector2& rOther)
-//    {
-//      if (rOther.X > X) X = rOther.X;
-//
-//      if (rOther.Y > Y) Y = rOther.Y;
-//    }
-//
-//    /**
-//     * Returns the square of the length of the vector
-//     * @return square of the length of the vector
-//     */
-///*    inline int16_t SquaredLength() const
-//    {
-//      return math::Square(X) + math::Square(Y);
-//    }*/
-//
-//    /**
-//     * Returns the length of the vector
-//     * @return length of the vector
-//     */
-///*
-//    inline int16_t Length() const
-//    {
-//      return sqrt(SquaredLength());
-//    }
-//*/
-//
-//    /**
-//     * Returns the square of the distance to the given vector
-//     * @param rOther vector
-//     * @returns square of the distance to the given vector
-//     */
-//    inline int16_t SquaredDistance(const Vector2& rOther) const
-//    {
-//      return (*this - rOther).SquaredLength();
-//    }
-//
-//    /**
-//     * Gets the distance to the given vector
-//     * @param rOther vector
-//     * @return distance to given vector
-//     */
-//    inline int16_t Distance(const Vector2& rOther) const
-//    {
-//      return sqrt(SquaredDistance(rOther));
-//    }
-///*
-//
-//    */
-///**
-//     * Returns a string representation of this vector
-//     * @return string representation of this vector
-//     */
-//
-///*
-//    inline const String ToString() const
-//    {
-//      String valueString;
-//      valueString.Append(StringHelper::ToString(GetX()));
-//      valueString.Append(" ");
-//      valueString.Append(StringHelper::ToString(GetY()));
-//      return valueString;
-//    }
-//*/
-//
-//  public:
-//    /**
-//     * In-place vector addition
-//     */
-//    inline void operator+=(const Vector2& rOther)
-//    {
-//      X += rOther.X;
-//      Y += rOther.Y;
-//    }
-//
-//    /**
-//     * In-place vector subtraction
-//     */
-//    inline void operator-=(const Vector2& rOther)
-//    {
-//      X -= rOther.X;
-//      Y -= rOther.Y;
-//    }
-//
-//    /**
-//     * Vector addition
-//     */
-//    inline const Vector2 operator+(const Vector2& rOther) const
-//    {
-//      return Vector2(X + rOther.X, Y + rOther.Y);
-//    }
-//
-//    /**
-//     * Vector subtraction
-//     */
-//    inline const Vector2 operator-(const Vector2& rOther) const
-//    {
-//      return Vector2(X - rOther.X, Y - rOther.Y);
-//    }
-//
-//    /**
-//     * In-place scalar division
-//     */
-//    inline void operator/=(T scalar)
-//    {
-//      X /= scalar;
-//      Y /= scalar;
-//    }
-//
-//    /**
-//     * Divides a vector by the scalar
-//     */
-//    inline const Vector2 operator/(T scalar) const
-//    {
-//      return Vector2(X / scalar, Y / scalar);
-//    }
-//
-//    /**
-//     * Vector dot-product
-//     */
-//    inline int16_t operator*(const Vector2& rOther) const
-//    {
-//      return X * rOther.X + Y * rOther.Y;
-//    }
-//
-//    /**
-//     * Scales the vector by the given scalar
-//     */
-//    inline const Vector2 operator*(T scalar) const
-//    {
-//      return Vector2(X * scalar, Y * scalar);
-//    }
-//
-//    /**
-//     * Subtract the vector by the given scalar
-//     */
-//    inline const Vector2 operator-(T scalar) const
-//    {
-//      return Vector2(X - scalar, Y - scalar);
-//    }
-//
-//    /**
-//     * In-place scalar multiplication
-//     */
-//    inline void operator*=(T scalar)
-//    {
-//      X *= scalar;
-//      Y *= scalar;
-//    }
-//
-//    /**
-//     * Equality operator
-//     */
-//    inline bool operator==(const Vector2& rOther) const
-//    {
-//      return (X == rOther.X && Y == rOther.Y);
-//    }
-//
-//    /**
-//     * Inequality operator
-//     */
-//    inline bool operator!=(const Vector2& rOther) const
-//    {
-//      return (X != rOther.X || Y != rOther.Y);
-//    }
-//
-//    /**
-//     * Less than operator
-//     * @param rOther vector
-//     * @return true if left vector is 'less' than right vector by comparing corresponding x coordinates and then
-//     * corresponding y coordinates
-//     */
-//    inline bool operator<(const Vector2& rOther) const
-//    {
-//      if (X < rOther.X)
-//      {
-//        return true;
-//      }
-//      else if (X > rOther.X)
-//      {
-//        return false;
-//      }
-//      else
-//      {
-//        return (Y < rOther.Y);
-//      }
-//    }
-//
-//    /**
-//     * Write vector onto output stream
-//     */
-////    friend std::ostream& operator<<(std::ostream& rStream, const Vector2& rVector)
-////    {
-////      rStream << rVector.ToString().ToCString();
-////      return rStream;
-////    }
-//
-//  public:
-//    T X;
-//    T Y;
-//}; // class Vector2<T>
-///*
-//
-//  /**
-//   * Type declaration of int16_t Vector2 as Cell_t
-//   */
-//  typedef Vector2<int16_t> Cell_t;
+
+  public:
+    T X;
+    T Y;
+}; // class Vector2<T>
+/*
+
+  /**
+   * Type declaration of int16_t Vector2 as Cell_t
+   */
+  typedef Vector2<int16_t> Cell_t;
 
 
 typedef struct{
