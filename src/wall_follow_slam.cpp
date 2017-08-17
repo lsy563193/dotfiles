@@ -1,10 +1,10 @@
 /*
  ******************************************************************************
  * @file	AI Cleaning Robot
- * @author	ILife Team Dxsong
+ * @author	ILife Team Alvin Xie
  * @version V1.0
- * @date	17-Nov-2011
- * @brief	Move near the wall on the left in a certain distance
+ * @date	Feb-2017
+ * @brief	The logic and algorithm wall follow when the robot using laser slam
  ******************************************************************************
  * <h2><center>&copy; COPYRIGHT 2011 ILife CO.LTD</center></h2>
  ******************************************************************************
@@ -46,6 +46,7 @@
 
 std::vector<Pose16_t> g_wf_cell;
 int g_isolate_count = 0;
+bool g_isolate_triggered = false;
 // This list is for storing the position that robot sees the charger stub.
 extern std::list<Cell_t> g_home_point_old_path;
 extern bool g_from_station;
@@ -254,8 +255,8 @@ static void wf_update_cleaned()
 		{
 			for (auto d = 1; d >= -1; --d)
 			{
-				auto i = map_get_relative_x(heading, CELL_SIZE * c, CELL_SIZE * d);
-				auto j = map_get_relative_y(heading, CELL_SIZE * c, CELL_SIZE * d);
+				auto i = map_get_relative_x(heading, CELL_SIZE * c, CELL_SIZE * d, true);
+				auto j = map_get_relative_y(heading, CELL_SIZE * c, CELL_SIZE * d, true);
 				auto e = map_get_cell(MAP, count_to_cell(i), count_to_cell(j));
 
 				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER || e == BLOCKED_BOUNDARY)
@@ -312,15 +313,63 @@ static bool is_isolate() {
 	Point32_t	Remote_Point;
 	Remote_Point.X = 0;
 	Remote_Point.Y = 0;
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
+	path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
 	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 //	pnt16ArTmp[0] = out_cell;
 
 //	path_escape_set_trapped_cell(pnt16ArTmp, 1);
 //	cm_update_map();
 	cm_update_position();
-	map_mark_robot();//note: To clear the obstacle when check isolated, please don't remove it!
+	map_mark_robot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 	debug_map(MAP, 0, 0);
+
+	Cell_t remote{0,0};
+	if ( out_cell != remote){
+			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, out_cell.X, out_cell.Y, 0);
+			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
+	} else {
+		if (is_block_accessible(0, 0) == 1) {
+			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			if (val < 0 || val == SCHAR_MAX) {
+				/* Robot start position is blocked. */
+				val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+
+				if (val < 0 || val == SCHAR_MAX) {
+					val = 0;
+				} else {
+					val = 1;
+				};
+			} else {
+				val = 1;
+			}
+		} else {
+			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			if (val < 0 || val == SCHAR_MAX)
+				val = 0;
+			else
+				val = 1;
+		}
+	}
+	return val != 0;
+}
+
+static bool trapped_is_isolate() {
+	path_update_cell_history();
+	int16_t	val = 0;
+	uint16_t i = 0;
+	int16_t x_min, x_max, y_min, y_max;
+	Point32_t	Remote_Point;
+	Remote_Point.X = 0;
+	Remote_Point.Y = 0;
+	path_get_range(WFMAP, &x_min, &x_max, &y_min, &y_max);
+	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
+//	pnt16ArTmp[0] = out_cell;
+
+//	path_escape_set_trapped_cell(pnt16ArTmp, 1);
+//	cm_update_map();
+	cm_update_position();
+	map_mark_robot(WFMAP);//note: To clear the obstacle when check isolated, please don't remove it!
+	debug_map(WFMAP, 0, 0);
 
 	Cell_t remote{0,0};
 	if ( out_cell != remote){
@@ -357,7 +406,7 @@ uint8_t wf_break_wall_follow(void)
 {
 //	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
 	g_wf_cell.clear();
-	map_reset(MAP);
+	map_reset(WFMAP);
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
 	return 0;
 }
@@ -368,11 +417,12 @@ uint8_t wf_clear(void)
 	g_wf_cell.clear();
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
 	g_isolate_count = 0;
+	g_isolate_triggered = false;
 	wf_time_out = false;
 	return 0;
 }
 
-void wf_update_map()
+void wf_update_map(uint8_t id)
 {
 	auto cell = cm_update_position();
 
@@ -383,17 +433,17 @@ void wf_update_map()
 		ROS_INFO("reach_count(%d)",g_reach_count);
 		int size = (g_wf_cell.size() - 2);
 		if (size >= 0)
-			map_set_cell(MAP, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);
+			map_set_cell(id, cell_to_count(g_wf_cell[size].X), cell_to_count(g_wf_cell[size].Y), CLEANED);
 
 		std::list<Cell_t> empty_path;
 		empty_path.clear();
-		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, empty_path);
+		MotionManage::pubCleanMapMarkers(WFMAP, g_next_cell, g_target_cell, empty_path);
 	}
 
 	int32_t x,y;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE_2, 0, &x, &y);
-	if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) != BLOCKED_BOUNDARY)
-		map_set_cell(MAP, x, y, BLOCKED_OBS);
+	if (map_get_cell(id, count_to_cell(x), count_to_cell(y)) != BLOCKED_BOUNDARY)
+		map_set_cell(id, x, y, BLOCKED_OBS);
 }
 
 bool wf_is_reach_isolate()
@@ -401,8 +451,10 @@ bool wf_is_reach_isolate()
 	if(is_reach()){
 		ROS_INFO("is_reach()");
 		//g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
-		if (is_isolate()) {
+		//if (is_isolate()) {
+		if (trapped_is_isolate()) {
 			g_isolate_count++;
+			g_isolate_triggered = true;
 			//map_reset(MAP);
 			wf_break_wall_follow();
 			ROS_WARN("is_isolate");
@@ -419,7 +471,24 @@ bool wf_is_reach_isolate()
 bool wf_is_end()
 {
 	if (wf_is_reach_isolate() || is_time_out() || is_trap())
-			return true;
+		return true;
+	return false;
+}
+
+bool trapped_is_end()
+{
+	/*
+	auto cell = cm_update_position();
+	Pose16_t curr_cell{cell.X, cell.Y, (int16_t) gyro_get_angle()};
+	wf_is_reach_new_cell(curr_cell);
+	ROS_INFO("cell.X = %d, cell.Y = %d", cell.X, cell.Y);
+
+	if (is_reach())
+		return true;
+	return false;
+	*/
+	if (wf_is_reach_isolate() || is_trap())
+		return true;
 	return false;
 }
 

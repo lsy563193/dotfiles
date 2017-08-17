@@ -146,13 +146,13 @@ static double radius_of(Cell_t cell_0,Cell_t cell_1)
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
-	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long)));
-	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long)));
+	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, true)));
+	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long, true)));
 }
-void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, Cell_t& cell)
+void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
 {
-	cell.X = count_to_cell(map_get_relative_x(heading, offset_lat, offset_long));
-	cell.Y = count_to_cell(map_get_relative_y(heading, offset_lat, offset_long));
+	x = count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, false));
+	y = count_to_cell(map_get_relative_y(heading, offset_lat, offset_long, false));
 }
 void mark_offset(int16_t dx, int16_t dy, CellState status)
 {
@@ -345,7 +345,7 @@ bool cm_move_to(const PPTargetType& path)
 
 				if (g_trapped_mode == 1)
 				{
-					auto is_block_clear = map_mark_robot();
+					auto is_block_clear = map_mark_robot(MAP);
 					PPTargetType temp_path;
 					if(is_block_clear && path_target(curr, temp_path) >= 0)
 					{
@@ -618,7 +618,7 @@ void cm_check_should_go_home(void)
 			//wf_mark_home_point();
 			map_reset(MAP);
 			ros_map_convert(true);
-			map_mark_robot();//note: To clear the obstacles befor go home, please don't remove it!
+			map_mark_robot(MAP);//note: To clear the obstacles befor go home, please don't remove it!
 		}
 		if (g_battery_home)
 			wav_play(WAV_BATTERY_LOW);
@@ -1680,6 +1680,10 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 void cm_handle_remote_direction(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
+	// For Debug
+	// g_battery_home = true;
+	// path_set_continue_cell(map_get_curr_cell());
+	// robot::instance()->setLowBatPause();
 	beep_for_command(INVALID);
 	reset_rcon_remote();
 }

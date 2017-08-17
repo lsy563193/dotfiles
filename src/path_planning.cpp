@@ -89,6 +89,8 @@ uint8_t g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
+extern int16_t g_wf_x_min, g_wf_x_max, g_wf_y_min, g_wf_y_max;
+
 //void path_planning_initialize(int32_t *x, int32_t *y)
 void path_planning_initialize(Cell_t cell)
 {
@@ -127,7 +129,7 @@ void path_planning_initialize(Cell_t cell)
 #ifndef ZONE_WALLFOLLOW
 
 	/* Set the back as blocked, since robot will align the start angle with the wall. */
-	Map_SetCell(MAP, cellToCount(-3), cellToCount(0), BLOCKED_BUMPER);
+	Map_SetCell(MAP, cell_to_count(-3), cell_to_count(0), BLOCKED_BUMPER);
 
 #endif
 
@@ -162,12 +164,19 @@ uint16_t path_get_robot_direction()
 	return g_new_dir;
 }
 
-void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max)
+void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max)
 {
-	*x_range_min = g_x_min - (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
-	*x_range_max = g_x_max + (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
-	*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
-	*y_range_max = g_y_max + (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
+	if (id == MAP || id == SPMAP) {
+		*x_range_min = g_x_min - (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
+		*x_range_max = g_x_max + (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
+		*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
+		*y_range_max = g_y_max + (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
+	} else if(id == WFMAP) {
+		*x_range_min = g_wf_x_min - (abs(g_wf_x_min - g_wf_x_max) <= 3 ? 3 : 1);
+		*x_range_max = g_wf_x_max + (abs(g_wf_x_min - g_wf_x_max) <= 3 ? 3 : 1);
+		*y_range_min = g_wf_y_min - (abs(g_wf_y_min - g_wf_y_max) <= 3? 3 : 1);
+		*y_range_max = g_wf_y_max + (abs(g_wf_y_min - g_wf_y_max) <= 3 ? 3 : 1);
+	}
 
 //	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
 //		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
@@ -1815,7 +1824,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				wf_break_wall_follow();
 				auto angle = wf_is_first() ? 0 : -900;
 				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-				cm_world_to_cell(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, path.target);
+				cm_world_to_cell(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
 				path.cells.clear();
 				path.cells.push_front(path.target);
 				path.cells.push_front(curr);
@@ -1832,7 +1841,6 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		path.cells.push_front(curr);
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
-		extern bool g_resume_cleaning;
 		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
 			g_resume_cleaning = false;
 
@@ -1840,7 +1848,14 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		{
 			if (!path_lane_is_cleaned(curr, path))
 			{
-				auto ret = path_target(curr, path);//0 not target, 1,found, -2 trap
+				extern bool g_isolate_triggered;
+				int16_t ret;
+				if (g_isolate_triggered) {
+					ret = isolate_target(curr, path);
+					g_isolate_triggered = false;
+				} else {
+					ret = path_target(curr, path);//0 not target, 1,found, -2 trap
+				}
 				ROS_WARN("%s %d: path_target return: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
 				if (ret == 0)
 				{
@@ -1848,7 +1863,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 					cm_check_should_go_home();
 				}
 				if (ret == -2){
-					if(g_trapped_mode == 0){
+					if(g_trapped_mode == 0 ){
 						g_trapped_mode = 1;
 						// This led light is for debug.
 						set_led_mode(LED_FLASH, LED_GREEN, 300);
@@ -2204,3 +2219,22 @@ int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path)
 	return return_val;
 }
 
+int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
+	int16_t ret;
+	//extern int g_isolate_count;
+	//extern bool g_fatal_quit_event;
+	//if (g_isolate_count <= 3) { 
+		auto angle = -900;
+		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
+		cm_world_to_cell(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
+		path.cells.clear();
+		path.cells.push_front(path.target);
+		path.cells.push_front(curr);
+		ret = 1;
+		ROS_INFO("target.X = %d target.Y = %d", path.target.X, path.target.Y);
+	//} else {
+	//	g_fatal_quit_event = true;
+	//	ret = 0;
+	//}
+	return ret;
+}

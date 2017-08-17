@@ -34,7 +34,6 @@ uint16_t path_line_get_count(void);
 #endif
 
 int16_t path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
-int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 int16_t path_next_best(const Cell_t& curr, const Cell_t& target, PPTargetType& path);
 
 int path_get_path_points_count();
@@ -46,3 +45,5 @@ void path_display_path_points(list<Cell_t> path);
 
 #endif
 void set_explore_new_path_flag(bool flag);
+int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
+int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);

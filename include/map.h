@@ -7,6 +7,7 @@
 
 #define MAP 0
 #define SPMAP 1
+#define WFMAP 2
 
 typedef enum {
   UNCLEAN  = 0,
@@ -46,7 +47,7 @@ typedef enum {
 #define	IS_X_AXIS(x) (x == NEG_X || x == POS_X || x == NONE)
 #define	IS_Y_AXIS(x) (x == POS_Y || x == NEG_Y)
 
-void map_init(void);
+void map_init(uint8_t id);
 
 int32_t map_get_x_count(void);
 int32_t map_get_y_count(void);
@@ -56,8 +57,8 @@ int16_t map_get_y_cell(void);
 void map_move_to(double x, double y);
 void map_set_position(double x, double y);
 
-int32_t map_get_relative_x(int16_t heading, int16_t offset_lat, int16_t offset_long);
-int32_t map_get_relative_y(int16_t heading, int16_t offset_lat, int16_t offset_long);
+int32_t map_get_relative_x(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
+int32_t map_get_relative_y(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
 
 int16_t Map_GetLateralOffset(uint16_t heading);
 int16_t Map_GetLongitudinalOffset(uint16_t heading);
@@ -67,7 +68,7 @@ int16_t next_y_id(uint16_t heading, int16_t offset_lat, int16_t offset_long);
 
 void Map_GetRelativePosition(uint16_t heading, int16_t *x, int16_t *y);
 
-CellState map_get_cell(uint8_t id, int16_t x, int16_t y);
+CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map = false);
 Cell_t map_get_curr_cell();
 void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value);
 
@@ -83,6 +84,12 @@ void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state
 
 void map_reset(uint8_t id);
 
+/*
+ * @author Alvin Xie
+ * @brief Convert the ros map to grid map for the pathplanning algorithm.
+ * @param is_mark_cleaned to decide if mark the free space to CLENAED
+ * @return None
+ */
 void ros_map_convert(bool is_mark_cleaned);
 
 unsigned char getCost(std::vector<int8_t> &p_map_data, unsigned int mx, unsigned int my);
@@ -91,7 +98,7 @@ bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_
 unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
 void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
 void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
-bool map_mark_robot();
+bool map_mark_robot(uint8_t id);
 void map_set_obs();
 void map_set_bumper();
 void map_set_rcon();

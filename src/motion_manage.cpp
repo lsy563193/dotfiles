@@ -193,7 +193,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-	extern bool g_resume_cleaning;
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
@@ -297,8 +296,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 MotionManage::~MotionManage()
 {
 	ROS_WARN("cleaned area = %.2fm2", map_get_area());
-	if (get_clean_mode() == Clean_Mode_WallFollow)
-		wf_clear();
+	//if (get_clean_mode() == Clean_Mode_WallFollow)
+	wf_clear();
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
@@ -357,7 +356,6 @@ MotionManage::~MotionManage()
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
 		{
-			extern bool g_resume_cleaning;
 			g_resume_cleaning = true;
 			robot::instance()->resetLowBatPause();
 			set_clean_mode(Clean_Mode_Charging);
@@ -381,7 +379,6 @@ MotionManage::~MotionManage()
 	{
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
-		extern bool g_resume_cleaning;
 		g_resume_cleaning = false;
 		if (g_cliff_all_triggered)
 		{
@@ -466,7 +463,6 @@ bool MotionManage::initNavigationCleaning(void)
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	extern bool g_resume_cleaning;
 	if (!robot::instance()->isManualPaused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning)
 	{
 		g_saved_work_time = 0;
@@ -489,7 +485,8 @@ bool MotionManage::initNavigationCleaning(void)
 		path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
 
 		ROS_INFO("map_init-----------------------------");
-		map_init();
+		map_init(MAP);
+		map_init(WFMAP);
 		path_planning_initialize(g_home_point_old_path.front());
 
 		robot::instance()->initOdomPosition();
@@ -632,8 +629,10 @@ bool MotionManage::initWallFollowCleaning(void)
 	Cell_t cell{0, 0};
 	g_home_point_old_path.push_front(cell);
 
-	map_init();
-	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	map_init(MAP);
+	ROS_WARN("%s %d: map initialized", __FUNCTION__, __LINE__);
+	map_init(WFMAP);
+	ROS_WARN("%s %d: wf map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
 	wf_path_planning_initialize(g_home_point_old_path.front());
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
@@ -682,7 +681,7 @@ bool MotionManage::initSpotCleaning(void)
 	g_home_point_new_path.clear();
 	Cell_t cell{0, 0};
 	g_home_point_old_path.push_front(cell);//init home point
-	map_init();//init map
+	map_init(MAP);//init map
 	path_planning_initialize(g_home_point_old_path.front());//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
@@ -699,7 +698,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, 
 {
 	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
+	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
 		next.X = x_min;

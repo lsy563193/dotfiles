@@ -95,9 +95,15 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 	else
 		temp_cell = g_cell_history[0];
 
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
+	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
-	ROS_INFO("Map: %s", id == MAP ? "MAP" : "SPMAP");
+	if (id == MAP) {
+		ROS_INFO("Map: %s", "MAP");
+	} else if (id == WFMAP) {
+		ROS_INFO("Map: %s", "WFMAP");
+	} else if (id == SPMAP) {
+		ROS_INFO("Map: %s", "SPMAP");
+	}
 	index = 0;
 	outString[index++] = '\t';
 	for (j = y_min; j <= y_max; j++) {
