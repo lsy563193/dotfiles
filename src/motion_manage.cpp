@@ -193,7 +193,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-	extern bool g_resume_cleaning;
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
@@ -357,7 +356,6 @@ MotionManage::~MotionManage()
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
 		{
-			extern bool g_resume_cleaning;
 			g_resume_cleaning = true;
 			robot::instance()->resetLowBatPause();
 			set_clean_mode(Clean_Mode_Charging);
@@ -381,7 +379,6 @@ MotionManage::~MotionManage()
 	{
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
-		extern bool g_resume_cleaning;
 		g_resume_cleaning = false;
 		if (g_cliff_all_triggered)
 		{
@@ -466,7 +463,6 @@ bool MotionManage::initNavigationCleaning(void)
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	extern bool g_resume_cleaning;
 	if (!robot::instance()->isManualPaused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning)
 	{
 		g_saved_work_time = 0;
@@ -698,7 +694,7 @@ bool MotionManage::initSpotCleaning(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target)
+void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::list<Cell_t>& path)
 {
 	int16_t i, j, x_min, x_max, y_min, y_max;
 	CellState cell_state;
@@ -725,5 +721,15 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target)
 			}
 		}
 	}
+#if LINEAR_MOVE_WITH_PATH
+	if (!path.empty())
+	{
+		for (list<Cell_t>::const_iterator it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
+
+		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
+	}
+#endif
+
 	robot::instance()->pubCleanMapMarkers();
 }

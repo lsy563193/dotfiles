@@ -25,8 +25,6 @@ uint8_t charge_plan_status = 0;
 uint8_t charge_reject_reason = 0;
 time_t charge_plan_confirm_time = time(NULL);
 
-extern bool g_resume_cleaning;
-
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {

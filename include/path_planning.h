@@ -288,4 +288,13 @@ void path_set_continue_cell(Cell_t cell);
 
 int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path);
 
+/*
+ * Function to fill the path list with every cell that it will pass.
+ *
+ * @param path: Cell list that only contains the starting cells and the turning cells and destination.
+ *
+ * @return none. But it will change the path to cell list that contains all the cells in the path from starting cell to destination.
+ */
+void path_fill_path(std::list<Cell_t>& path);
+
 #endif

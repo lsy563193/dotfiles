@@ -419,8 +419,8 @@ void robot::pubCleanMarkers(){
 
 void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 {
-	m_points_.x = x * 0.112;
-	m_points_.y = y * 0.112;
+	m_points_.x = x * (float)CELL_SIZE / 1000;
+	m_points_.y = y * (float)CELL_SIZE / 1000;
 	m_points_.z = 0;
 	if (type == CLEANED)
 	{
