@@ -1357,7 +1357,7 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
 		ROS_INFO("%s %d: curr_x: %d\tcurr_y: %d\tend_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d\t return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
-		path_get_range(&x_min, &x_max, &y_min, &y_max);
+		path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
 		val = path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
 		ROS_INFO("%s %d: curr_x: %d\tcurr_y: %d\tend_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d\t return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	}
@@ -1392,16 +1392,16 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 		y_min = (yID > endy ? endy : yID) - 8;
 		y_max = (yID > endy ? yID : endy) + 8;
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
-		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
-		path_get_range(&x_min, &x_max, &y_min, &y_max);
+		path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
 		x_min = x_min - 8;
 		x_max = x_max + 8;
 		y_min = y_min - 8;
 		y_max = y_max + 8;
 
-		val =  path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
@@ -1639,4 +1639,234 @@ void path_display_path_points(list<Cell_t> path)
 void set_explore_new_path_flag(bool flag)
 {
 	explore_new_path_flag = flag;
+}
+
+int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
+	uint16_t	next;
+	int16_t	totalCost, costAtCell, targetCost, dest_dir;
+	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
+	CellState cs;
+
+	path_points.clear();
+
+	/* Find the direction of target with reference to the current robot position. */
+	if (curr_x == end_x) {
+		dest_dir = (curr_y > end_y ? NEG_Y : POS_Y);
+	} else if (curr_y == end_y) {
+		dest_dir = (curr_x > end_x ? NEG_X : POS_X);
+	} else if(abs(curr_x - end_x) > abs(curr_y - end_y)) {
+		dest_dir = (curr_x > end_x ? NEG_X : POS_X);
+	} else {
+		dest_dir = (curr_y > end_y ? NEG_Y : POS_Y);
+	}
+
+	/* Reset the cells in the shorest path map. */
+	for (i = x_min - 1; i <= x_max + 1; ++i) {
+		for (j = y_min - 1; j <= y_max + 1; ++j) {
+			map_set_cell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
+		}
+	}
+
+	/* Marked the obstcals to the shorest path map. */
+	for (i = x_min - 1; i <= x_max + 1; ++i) {
+		for (j = y_min - 1; j <= y_max + 1; ++j) {
+			cs = map_get_cell(WFMAP, i, j);
+			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
+				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++) {
+				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
+					for (n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
+						map_set_cell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
+					}
+				}
+			}
+			else if(cs == UNCLEAN && !explore_new_path_flag)
+				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
+		}
+	}
+
+	if (map_get_cell(SPMAP, end_x, end_y, true) == COST_HIGH) {
+		map_set_cell(SPMAP, end_x, end_y, COST_NO);
+	}
+
+	/* Set the current robot position has the cost value of 1. */
+	map_set_cell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
+
+	/*
+	 * Find the path to target from the current robot position. Set the cell values
+	 * in shorest path map either 1, 2, 3, 4 or 5. This is a method like A-Star, starting
+	 * from a start point, update the cells one level away, until we reach the target.
+	 */
+	offset = 0;
+	passSet = 1;
+	passValue = 1;
+	nextPassValue = 2;
+	while (map_get_cell(SPMAP, end_x, end_y, true) == COST_NO && passSet == 1) {
+		offset++;
+		passSet = 0;
+
+		/*
+		 * The following 2 for loops is for optimise the computational time.
+		 * Since there is not need to go through the whole map for seaching the
+		 * cell that have the next pass value.
+		 *
+		 * It can use the offset to limit the range of searching, since in each loop
+		 * the cell (X -/+ offset, Y -/+ offset) would be set only. The cells far away
+		 * to the robot position won't be set.
+		 */
+		for (i = curr_x - offset; i <= curr_x + offset; i++) {
+			if (i < x_min || i > x_max)
+				continue;
+
+			for (j = curr_y - offset; j <= curr_y + offset; j++) {
+				if (j < y_min || j > y_max)
+					continue;
+
+				/* Found a cell that has a pass value equal to the current pass value. */
+				if(map_get_cell(SPMAP, i, j, true) == passValue) {
+					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
+					if (map_get_cell(SPMAP, i - 1, j, true) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
+						passSet = 1;
+					}
+
+					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
+					if (map_get_cell(SPMAP, i + 1, j, true) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
+						passSet = 1;
+					}
+
+					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
+					if (map_get_cell(SPMAP, i, j - 1, true) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
+						passSet = 1;
+					}
+
+					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
+					if (map_get_cell(SPMAP, i, j + 1, true) == COST_NO) {
+						map_set_cell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
+						passSet = 1;
+					}
+				}
+			}
+		}
+
+		/* Update the pass value. */
+		passValue = nextPassValue;
+		nextPassValue++;
+
+		/* Reset the pass value, pass value can only between 1 to 5. */
+		if(nextPassValue == COST_PATH)
+			nextPassValue = 1;
+	}
+
+	/* The target position still have a cost of 0, which mean it is not reachable. */
+	totalCost = 0;
+	if (map_get_cell(SPMAP, end_x, end_y, true) == COST_NO) {
+		ROS_WARN("target point (%d, %d) is not reachable(0), return -2.", end_x, end_y);
+#ifdef	DEBUG_SM_MAP
+		debug_map(SPMAP, end_x, end_y);
+#endif
+		return -2;
+	}
+
+	/* If bound is set, not path tracing is needed. */
+	if (bound == 1) {
+		return 1;
+	}
+
+	/*
+	 * Start from the target position, trace back the path by the cost level.
+	 * Value of cells on the path is set to 6. Stops when reach the current
+	 * robot position.
+	 *
+	 * The last robot direction is use, this is to avoid using the path that
+	 * have the same direction as previous action.
+	 */
+	Cell_t t;
+	t.X = tracex = tracex_tmp = end_x;
+	t.Y = tracey = tracey_tmp = end_y;
+	path_points.push_back(t);
+
+	next = 0;
+	dest_dir = (path_get_robot_direction() == POS_Y || path_get_robot_direction() == NEG_Y) ? 1: 0;
+	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
+	while (tracex != curr_x || tracey != curr_y) {
+		costAtCell = map_get_cell(SPMAP, tracex, tracey, true);
+		targetCost = costAtCell - 1;
+
+		/* Reset target cost to 5, since cost only set from 1 to 5 in the shorest path map. */
+		if (targetCost == 0)
+			targetCost = COST_5;
+
+		/* Set the cell value to 6 if the cells is on the path. */
+		map_set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+
+#define COST_SOUTH	{											\
+				if (next == 0 && (map_get_cell(SPMAP, tracex - 1, tracey, true) == targetCost)) {	\
+					tracex--;								\
+					next = 1;								\
+					dest_dir = 1;								\
+				}										\
+			}
+
+#define COST_WEST	{											\
+				if (next == 0 && (map_get_cell(SPMAP, tracex, tracey - 1, true) == targetCost)) {	\
+					tracey--;								\
+					next = 1;								\
+					dest_dir = 0;								\
+				}										\
+			}
+
+#define COST_EAST	{											\
+				if (next == 0 && (map_get_cell(SPMAP, tracex, tracey + 1, true) == targetCost)) {	\
+					tracey++;								\
+					next = 1;								\
+					dest_dir = 0;								\
+				}										\
+			}
+
+#define COST_NORTH	{											\
+				if (next == 0 && map_get_cell(SPMAP, tracex + 1, tracey, true) == targetCost) {	\
+					tracex++;								\
+					next = 1;								\
+					dest_dir = 1;								\
+				}										\
+			}
+
+		next = 0;
+		if (dest_dir == 0) {
+			COST_WEST
+			COST_EAST
+			COST_SOUTH
+			COST_NORTH
+		} else {
+			COST_SOUTH
+			COST_NORTH
+			COST_WEST
+			COST_EAST
+		}
+
+#undef COST_EAST
+#undef COST_SOUTH
+#undef COST_WEST
+#undef COST_NORTH
+
+		totalCost++;
+		if (path_points.back().X != tracex && path_points.back().Y != tracey) {
+			t.X = tracex_tmp;
+			t.Y = tracey_tmp;
+			path_points.push_back(t);
+		}
+		tracex_tmp = tracex;
+		tracey_tmp = tracey;
+	}
+	map_set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+
+	t.X = tracex_tmp;
+	t.Y = tracey_tmp;
+	path_points.push_back(t);
+
+	path_display_path_points(path_points);
+
+	return totalCost;
 }

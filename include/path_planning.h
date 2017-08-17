@@ -32,7 +32,7 @@ typedef struct {
 } PPTargetType;
 
 /*
- * Function to find the X/Y range of the Map, if the range is to small,
+ * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
  *
  * @param *x_range_min	Pointer for minimum X value of the Map
@@ -42,7 +42,7 @@ typedef struct {
  *
  * @return
  */
-void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
 /*
  * Update current robot g_pos_history.
@@ -98,8 +98,6 @@ void path_set_max_try_cnt(uint8_t val);
 
 uint16_t path_get_robot_direction(void);
 
-void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
-
 void path_reset_last_position(void);
 
 /*
@@ -114,6 +112,8 @@ void path_reset_last_position(void);
 uint8_t is_block_accessible(int16_t x, int16_t y);
 
 int16_t path_target(const Cell_t& curr, PPTargetType& path);
+
+int16_t isolate_target(const Cell_t& curr, PPTargetType& path);
 
 uint16_t path_targets_get_count(void);
 

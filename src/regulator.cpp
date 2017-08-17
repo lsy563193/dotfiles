@@ -592,6 +592,7 @@ FollowWallRegulator::FollowWallRegulator(Point32_t origin, Point32_t target) : p
 	s_origin_angle = gyro_get_angle();
 	s_target = target;
 	g_is_left_start = false;
+	map_init(WFMAP);
 	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
@@ -615,13 +616,23 @@ bool FollowWallRegulator::isReach()
 		if (g_trapped_mode != 0)
 		{
 			extern uint32_t g_escape_trapped_timer;
-			if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME || trapped_is_end())
+			if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
+			//if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME || wf_is_end())
 			{
 				ROS_WARN("%s %d: Escape trapped timeout.", __FUNCTION__, __LINE__);
 				g_fatal_quit_event = true;
 				ret = true;
 			}
-			else if (g_trapped_mode == 2)
+			if (trapped_is_end()) {
+				ROS_WARN("%s %d: Trapped wall follow is loop closed. ", __FUNCTION__, __LINE__);
+				g_trapped_mode = 0;
+				extern int g_isolate_count;
+				if (g_isolate_count > 3) {
+					g_fatal_quit_event = true;
+				}
+				ret = true;
+			}
+			if (g_trapped_mode == 2)
 			{
 				wf_clear();
 //				wav_play(WAV_CLEANING_START);

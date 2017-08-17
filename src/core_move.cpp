@@ -341,7 +341,7 @@ bool cm_move_to(const PPTargetType& path)
 
 				if (g_trapped_mode == 1)
 				{
-					auto is_block_clear = map_mark_robot();
+					auto is_block_clear = map_mark_robot(MAP);
 					PPTargetType temp_path;
 					if(is_block_clear && path_target(curr, temp_path) >= 0)
 					{
@@ -615,7 +615,7 @@ void cm_check_should_go_home(void)
 			//wf_mark_home_point();
 			map_reset(MAP);
 			ros_map_convert(true);
-			map_mark_robot();//note: To clear the obstacles befor go home, please don't remove it!
+			map_mark_robot(MAP);//note: To clear the obstacles befor go home, please don't remove it!
 		}
 		if (g_battery_home)
 			wav_play(WAV_BATTERY_LOW);

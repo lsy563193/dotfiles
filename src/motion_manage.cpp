@@ -489,7 +489,8 @@ bool MotionManage::initNavigationCleaning(void)
 		path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
 
 		ROS_INFO("map_init-----------------------------");
-		map_init();
+		map_init(MAP);
+		map_init(WFMAP);
 		path_planning_initialize(g_home_point_old_path.front());
 
 		robot::instance()->initOdomPosition();
@@ -632,8 +633,10 @@ bool MotionManage::initWallFollowCleaning(void)
 	Cell_t cell{0, 0};
 	g_home_point_old_path.push_front(cell);
 
-	map_init();
-	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	map_init(MAP);
+	ROS_WARN("%s %d: map initialized", __FUNCTION__, __LINE__);
+	map_init(WFMAP);
+	ROS_WARN("%s %d: wf map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
 	wf_path_planning_initialize(g_home_point_old_path.front());
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
@@ -682,7 +685,7 @@ bool MotionManage::initSpotCleaning(void)
 	g_home_point_new_path.clear();
 	Cell_t cell{0, 0};
 	g_home_point_old_path.push_front(cell);//init home point
-	map_init();//init map
+	map_init(MAP);//init map
 	path_planning_initialize(g_home_point_old_path.front());//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
@@ -699,7 +702,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target)
 {
 	int16_t i, j, x_min, x_max, y_min, y_max;
 	CellState cell_state;
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
+	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
 		next.X = x_min;

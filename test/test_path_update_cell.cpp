@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 //	robot	robot_obj;
 /*
 	int32_t x=0,y=0;
-	map_init();
+	map_init(MAP);
 	path_planning_initialize(&x, &y);//init pathplan
 
 	Cell_t last{0,0};
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
 //	}*/
 
 	extern uint16_t g_old_dir;
-	map_init();
+	map_init(MAP);
 
 	Cell_t curr{7,0};
 	Cell_t next{9,0};
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 	Cell_t stop{15,0};
 //	linear_mark(start,stop, CLEANED);
 
-//	map_mark_robot();
+//	map_mark_robot(MAP);
 //	map_set_cell(MAP, cell_to_count(curr.X-1), cell_to_count(curr.Y-1), UNCLEAN);
 	linear_mark(start,stop,CLEANED);
 	debug_map(MAP,stop.X,stop.Y);
