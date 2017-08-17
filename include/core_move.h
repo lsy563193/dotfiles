@@ -100,7 +100,7 @@ void map_set_blocked();
 bool cm_curve_move_to_point();
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
-void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, Cell_t& cell);
+void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 void mark_offset(int16_t dx, int16_t dy, CellState status);
 

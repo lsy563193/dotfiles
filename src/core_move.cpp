@@ -145,13 +145,13 @@ static double radius_of(Cell_t cell_0,Cell_t cell_1)
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
-	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long)));
-	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long)));
+	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, true)));
+	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long, true)));
 }
-void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, Cell_t& cell)
+void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
 {
-	cell.X = count_to_cell(map_get_relative_x(heading, offset_lat, offset_long));
-	cell.Y = count_to_cell(map_get_relative_y(heading, offset_lat, offset_long));
+	x = count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, false));
+	y = count_to_cell(map_get_relative_y(heading, offset_lat, offset_long, false));
 }
 void mark_offset(int16_t dx, int16_t dy, CellState status)
 {

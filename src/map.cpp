@@ -318,7 +318,7 @@ void map_clear_blocks(void) {
 	map_set_cell(MAP, cell_to_count(map_get_x_cell()), cell_to_count(map_get_y_cell() - 1), CLEANED);
 }
 
-int32_t map_get_relative_x(int16_t heading, int16_t dx, int16_t dy) {
+int32_t map_get_relative_x(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos) {
 	if(heading != relative_theta) {
 		if(heading == 0) {
 			relative_sin = 0;
@@ -338,11 +338,17 @@ int32_t map_get_relative_x(int16_t heading, int16_t dx, int16_t dy) {
 		}
 	}
 
-	return map_get_x_count() + (int32_t)( ( ((double)dy * relative_cos * CELL_COUNT_MUL) -
-	                                      ((double)dx	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
+	if (using_point_pos)
+		// Using robot current count as position.
+		return map_get_x_count() + (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) -
+											((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
+	else
+		// Using middle of robot current cell as position.
+		return cell_to_count(map_get_x_cell()) + (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) -
+											((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
 }
 
-int32_t map_get_relative_y(int16_t heading, int16_t offset_lat, int16_t offset_long) {
+int32_t map_get_relative_y(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos) {
 	if(heading != relative_theta) {
 		if(heading == 0) {
 			relative_sin = 0;
@@ -362,8 +368,14 @@ int32_t map_get_relative_y(int16_t heading, int16_t offset_lat, int16_t offset_l
 		}
 	}
 
-	return map_get_y_count() + (int32_t)( ( ((double)offset_long * relative_sin * CELL_COUNT_MUL) +
-	                                      ((double)offset_lat *	relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
+	if (using_point_pos)
+		// Using robot current count as position.
+		return map_get_y_count() + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) +
+											((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
+	else
+		// Using middle of robot current cell as position.
+		return cell_to_count(map_get_y_cell()) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) +
+											((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
 }
 /*
 int16_t Map_GetLateralOffset(uint16_t heading) {
@@ -599,23 +611,28 @@ void map_set_bumper()
 	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
 		d_cells = {{2,-1}, {2,0}, {2,1}};
 	else if (bumper_trig & LeftBumperTrig) {
-		d_cells = {{2, 1}, {2,2}/*,{1,2}*/};
+		//d_cells = {{2, 1}, {2,2}/*,{1,2}*/};
+		d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
-		d_cells = {{2,-2},{2,-1}/*,{1,-2}*/};
+		//d_cells = {{2,-2},{2,-1}/*,{1,-2}*/};
+		d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
 
 	int32_t	x, y;
+	int16_t	x2, y2;
 	std::string msg = "Cell:";
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
-		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + ")";
-		map_set_cell(MAP, x, y, BLOCKED_BUMPER);
+		cm_world_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x2, y2);
+		ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d).", __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x, y, count_to_cell(x), count_to_cell(y), x2, y2);
+		msg += "(" + std::to_string(x2) + "," + std::to_string(y2) + ")";
+		map_set_cell(MAP, cell_to_count(x2), cell_to_count(y2), BLOCKED_BUMPER);
 	}
-	ROS_ERROR("%s,%d: %s",__FUNCTION__, __LINE__, msg.c_str());
+	ROS_ERROR("%s,%d: Current(%d, %d), mark %s",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
 }
 
 void map_set_tilt()

@@ -255,8 +255,8 @@ static void wf_update_cleaned()
 		{
 			for (auto d = 1; d >= -1; --d)
 			{
-				auto i = map_get_relative_x(heading, CELL_SIZE * c, CELL_SIZE * d);
-				auto j = map_get_relative_y(heading, CELL_SIZE * c, CELL_SIZE * d);
+				auto i = map_get_relative_x(heading, CELL_SIZE * c, CELL_SIZE * d, true);
+				auto j = map_get_relative_y(heading, CELL_SIZE * c, CELL_SIZE * d, true);
 				auto e = map_get_cell(MAP, count_to_cell(i), count_to_cell(j));
 
 				if (e == BLOCKED_OBS || e == BLOCKED_BUMPER || e == BLOCKED_BOUNDARY)
