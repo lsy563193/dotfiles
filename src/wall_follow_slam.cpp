@@ -437,7 +437,7 @@ void wf_update_map(uint8_t id)
 
 		std::list<Cell_t> empty_path;
 		empty_path.clear();
-		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, empty_path);
+		MotionManage::pubCleanMapMarkers(WFMAP, g_next_cell, g_target_cell, empty_path);
 	}
 
 	int32_t x,y;
