@@ -25,7 +25,7 @@
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;
-uint16_t charger_signal_delay = 0;
+bool charger_signal_received = false;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 0;
 bool battery_ready_to_clean = true;
@@ -42,7 +42,7 @@ void user_interface(void)
 
 	// Count for error alarm.
 	uint8_t error_alarm_counter = 3;
-	charger_signal_delay = 0;
+	charger_signal_received = false;
 	battery_low_delay = 0;
 	start_time = time(NULL);
 	temp_mode=0;
@@ -87,9 +87,6 @@ void user_interface(void)
 		}
 
 		usleep(10000);
-
-		if (charger_signal_delay > 0)
-			charger_signal_delay--;
 
 		if (battery_low_delay > 0)
 			battery_low_delay--;
@@ -294,21 +291,25 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 		return;
 	}
 
-	if (charger_signal_delay == 0)
-		charger_signal_start_time = time(NULL);
-
-	ROS_DEBUG("%s %d: user_interface detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
-	if (time(NULL) - charger_signal_start_time >= 180)// 3 mins
+	if (!charger_signal_received)
 	{
-		if (get_error_code())
-			ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
-		else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
-			ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-		else
-			temp_mode = Clean_Mode_GoHome;
+		ROS_DEBUG("%s, %d: the first time detects charger signal, set charger_signal_start_time", __FUNCTION__, __LINE__);
+		charger_signal_received = true;
+		charger_signal_start_time = time(NULL);
 	}
-
-	charger_signal_delay = 250;
+	else
+	{
+		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
+		if (time(NULL) - charger_signal_start_time >= 180)// 3 mins
+		{
+			if (get_error_code())
+				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
+			else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+			else
+				temp_mode = Clean_Mode_GoHome;
+		}
+	}
 	reset_rcon_status();
 }
 

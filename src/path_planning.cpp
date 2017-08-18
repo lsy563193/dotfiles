@@ -441,6 +441,16 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 				is_found = 0;
 		}
 	}
+//#else
+//	uint8_t un_cleaned_cnt = 0;
+//	for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+//				for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+//					if (map_get_cell(MAP, tmp.X + dx, tmp.Y + dy) == UNCLEAN)
+//						un_cleaned_cnt++;
+//
+//			if (un_cleaned_cnt <= 2)
+				 Uncleaned area is too small.
+//				is_found = 0;
 #endif
 
 	ROS_INFO("%s %d: is_found = %d, target(%d, %d).", __FUNCTION__, __LINE__, is_found, tmp.X, tmp.Y);
