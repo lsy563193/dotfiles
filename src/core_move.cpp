@@ -297,11 +297,20 @@ bool cm_move_to(const PPTargetType& path)
 	bool ret = false;
 
 	std::vector<Cell_t> passed_path;
-	if(!MAP_SET_REALTIME)
-		passed_path.push_back(start);
+	passed_path.clear();
+	passed_path.push_back(start);
 
 	while (ros::ok())
 	{
+		extern int g_trapped_mode;
+		/*for navigation trapped wall follow update map and push_back vector*/
+		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
+			wf_update_map(WFMAP);
+
+		/*for wall follow mode update map and push_back vector*/
+		if(!mt_is_linear() && get_clean_mode() == Clean_Mode_WallFollow && g_go_home == false)
+			wf_update_map(WFMAP);
+
 		if (/*get_clean_mode() == Clean_Mode_WallFollow &&*/ mt_is_linear()) {
 			wall_dynamic_base(30);
 		}
@@ -334,9 +343,14 @@ bool cm_move_to(const PPTargetType& path)
 		if (get_clean_mode() == Clean_Mode_Navigation && (mt_is_linear() || mt_is_follow_wall()))
 		{
 			auto curr = map_get_curr_cell();
-			if (passed_path.empty() || passed_path.back() != curr)
+			if (passed_path.back() != curr)
 			{
-				passed_path.push_back(curr);
+				extern uint16_t g_new_dir;
+				if (g_trapped_mode == 0)
+				{
+					if (!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X) // This checking is for avoiding position jumping back or aside during linear movement.
+						passed_path.push_back(curr);
+				}
 				if(MAP_SET_REALTIME)
 				{
 					//map_set_realtime();
@@ -354,6 +368,7 @@ bool cm_move_to(const PPTargetType& path)
 					{
 						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
 						g_trapped_mode = 2;
+						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
 					}
 					else{
 						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
@@ -372,8 +387,8 @@ bool cm_move_to(const PPTargetType& path)
 		if (!mt_is_linear())
 			map_set_follow_wall(passed_path);
 
+		linear_mark_clean(start, g_next_cell);
 	}
-	linear_mark_clean(start, g_next_cell);
 	map_set_blocked();
 	return ret;
 }
@@ -495,6 +510,7 @@ bool cm_curve_move_to_point()
 }
 */
 
+//#if 0
 void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 {
 	if (start.Y == target.Y)
@@ -507,7 +523,7 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 
 			auto start_x = std::min(start.X, stop.X);
 			auto stop_x = std::max(start.X, stop.X);
-			for (auto x = start_x-1; x<=stop_x+1; x++)
+			for (auto x = start_x; x<=stop_x; x++)
 			{
 				auto y = (int16_t) (slop * (stop.X) + intercept);
 				for(auto dy=-ROBOT_SIZE_1_2;dy<=ROBOT_SIZE_1_2;dy++)
@@ -516,7 +532,7 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 		}
 	}
 }
-
+//#endif
 
 int cm_cleaning()
 {

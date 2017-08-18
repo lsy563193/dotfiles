@@ -1061,7 +1061,7 @@ static bool is_path_valid(const PPTargetType &it,int16_t towards_y, int16_t re_t
 
 		last_y = cell.Y;
 	}
-	ROS_WARN("target:(%d,%d)~~~~~~~~~~~~~~~~~~~~",it.target.X, it.target.Y);
+//	ROS_WARN("target:(%d,%d)~~~~~~~~~~~~~~~~~~~~",it.target.X, it.target.Y);
 	return true;
 }
 
@@ -1085,12 +1085,12 @@ static int16_t path_target_next_line(const Cell_t &curr, int16_t y_min, int16_t 
 		auto towards_y_end = (dy == 1) ? y_max + 1: y_min - 1 ;
 		auto re_towards_y_end = (dy == 1)? y_min - 1: y_max + 1;
 		auto area_y_begin = area[i][START_Y];
-		ROS_WARN("%s %d: case %d, TOWARDS(%d), allow turn count: %d ", __FUNCTION__, __LINE__, i, area[i][TOWARDS], area[i][TURN]);
+//		ROS_WARN("%s %d: case %d, TOWARDS(%d), allow turn count: %d ", __FUNCTION__, __LINE__, i, area[i][TOWARDS], area[i][TURN]);
 		do {
-			ROS_INFO(" %s %d: y: towards_y_end(%d), re_towards_y_end(%d), area_y_begin(%d),", __FUNCTION__, __LINE__,towards_y_end, re_towards_y_end, area_y_begin);
+//			ROS_INFO(" %s %d: y: towards_y_end(%d), re_towards_y_end(%d), area_y_begin(%d),", __FUNCTION__, __LINE__,towards_y_end, re_towards_y_end, area_y_begin);
 			for (auto target_y = area_y_begin; target_y != towards_y_end; target_y += dy)
 			{
-				ROS_INFO(" %s %d: target_y(%d)", __FUNCTION__, __LINE__, target_y);
+//				ROS_INFO(" %s %d: target_y(%d)", __FUNCTION__, __LINE__, target_y);
 				for (const auto &target_it : g_targets)
 				{
 					if (target_y == target_it.target.Y)
@@ -1100,7 +1100,7 @@ static int16_t path_target_next_line(const Cell_t &curr, int16_t y_min, int16_t 
 						{
 							target = target_it.target;
 							cost = target_it.cells.size();
-              ROS_INFO(" %s %d: target_y(%d),cost %d", __FUNCTION__, __LINE__, target_y,cost);
+//              ROS_INFO(" %s %d: target_y(%d),cost %d", __FUNCTION__, __LINE__, target_y,cost);
 						}
 
 					}
@@ -1204,7 +1204,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
-	debug_map(MAP, g_home_x, g_home_y);
+//	debug_map(MAP, g_home_x, g_home_y);
 
 	for (auto &target : g_targets)
 		target.cells.clear();
@@ -1257,7 +1257,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 //		ROS_INFO("%s",msg.c_str());
 //	}
 
-	ROS_INFO("map: min(%d,%d),max(%d,%d)", map.min.X, map.min.Y, map.max.X, map.max.Y);
+//	ROS_INFO("map: min(%d,%d),max(%d,%d)", map.min.X, map.min.Y, map.max.X, map.max.Y);
 	if(!path_target_next_line(curr, map.min.Y, map.max.Y, target_tmp)){
 
 		return 0;
@@ -1368,10 +1368,10 @@ int16_t path_escape_trapped()
 			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
 
 #if DEBUG_SM_MAP
-			debug_map(SPMAP, 0, 0);
+//			debug_map(SPMAP, 0, 0);
 #endif
 #if DEBUG_MAP
-			debug_map(MAP, g_home_x, g_home_y);
+//			debug_map(MAP, g_home_x, g_home_y);
 #endif
 
 			if (val < 0 || val == SCHAR_MAX) {

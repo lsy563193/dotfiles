@@ -279,10 +279,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 //		if(! is_turn())
 //			cm_update_map();
-		extern int g_trapped_mode;
 		cm_update_position();
-		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
-			wf_update_map(WFMAP);
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
@@ -341,8 +338,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 
 //		cm_update_map();
-		if(! mt_is_linear())
-			wf_update_map(WFMAP);
 	}
 
 	gyro_set_angle(yaw_ * 1800 / M_PI);
