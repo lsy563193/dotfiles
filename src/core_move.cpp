@@ -295,6 +295,15 @@ bool cm_move_to(const PPTargetType& path)
 
 	while (ros::ok())
 	{
+		extern int g_trapped_mode;
+		/*for navigation trapped wall follow update map and push_back vector*/
+		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
+			wf_update_map(WFMAP);
+
+		/*for wall follow mode update map and push_back vector*/
+		if(!mt_is_linear() && get_clean_mode() == Clean_Mode_WallFollow && g_go_home == false)
+			wf_update_map(WFMAP);
+
 		if (/*get_clean_mode() == Clean_Mode_WallFollow &&*/ mt_is_linear()) {
 			wall_dynamic_base(30);
 		}
