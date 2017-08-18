@@ -247,17 +247,24 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
-		if(MotionManage::s_slam->isMapReady() && !g_slam_error)
+		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !g_slam_error)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
 				robot_tf_->lookupTransform("/map", "/odom", ros::Time(0), correction);
+				//ROS_ERROR("%s %d: Correction:(%f, %f, %f), Saved correction:(%f, %f, %f)", __FUNCTION__, __LINE__, correction.getOrigin().x(), correction.getOrigin().y(), tf::getYaw(correction.getRotation()), correction_x_, correction_y_, correction_yaw_);
+				if ((float)correction.getOrigin().x() != correction_x_ ||
+					(float)correction.getOrigin().y() != correction_y_ ||
+					(float)tf::getYaw(correction.getRotation()) != correction_yaw_)
+				{
+					correction_x_ = correction.getOrigin().x();
+					correction_y_ = correction.getOrigin().y();
+					correction_yaw_ = tf::getYaw(correction.getRotation());
+					//ROS_ERROR("%s %d: Saved correction:(%f, %f, %f)", __FUNCTION__, __LINE__, correction_x_, correction_y_, correction_yaw_);
+				}
 				position_x_ = transform.getOrigin().x();
 				position_y_ = transform.getOrigin().y();
 				yaw_ = tf::getYaw(transform.getRotation());
-				correction_x_ = correction.getOrigin().x();
-				correction_y_ = correction.getOrigin().y();
-				correction_yaw_ = tf::getYaw(correction.getRotation());
 			} catch(tf::TransformException e) {
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 				setTfReady(false);
@@ -287,16 +294,15 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		yaw_ = tf::getYaw(msg->pose.pose.orientation);
 		position_x_ = odom_pose_x_;
 		position_y_ = odom_pose_y_;
+		correction_x_ = 0;
+		correction_y_ = 0;
+		correction_yaw_ = 0;
 	}
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam->isMapReady() && !g_slam_error)
+		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !g_slam_error)
 		{
-			//yaw_ = tf::getYaw(msg->pose.pose.orientation);
-			//wf_position_x_ = odom_pose_x_;
-			//wf_position_y_ = odom_pose_y_;
-
 			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
 			ident.frame_id_ = "base_link";
@@ -306,12 +312,18 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				//yaw_ = tf::getYaw(transform.getRotation());
 				robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				//robot_tf_->lookupTransform("/map", "/odom", ros::Time(0), correction);
 				position_x_ = transform.getOrigin().x();
 				position_y_ = transform.getOrigin().y();
-				//correction_x_ = correction.getOrigin().x();
-				//correction_y_ = correction.getOrigin().y();
-				//correction_yaw_ = tf::getYaw(correction.getRotation());
+				robot_tf_->lookupTransform("/map", "/odom", ros::Time(0), correction);
+				if ((float)correction.getOrigin().x() != correction_x_ ||
+					(float)correction.getOrigin().y() != correction_y_ ||
+					(float)tf::getYaw(correction.getRotation()) != correction_yaw_)
+				{
+					correction_x_ = correction.getOrigin().x();
+					correction_y_ = correction.getOrigin().y();
+					correction_yaw_ = tf::getYaw(correction.getRotation());
+					//ROS_ERROR("%s %d: Saved correction:(%f, %f, %f)", __FUNCTION__, __LINE__, correction_x_, correction_y_, correction_yaw_);
+				}
 				robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
 				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
 				wf_position_x_ = transform.getOrigin().x();
