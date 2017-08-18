@@ -1135,14 +1135,14 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 	BoundingBox2 map_tmp{{int16_t(g_x_min-1),int16_t(g_y_min - 1)},{g_x_max,g_y_max}};
 	Cell_t target_tmp;
 
-	ROS_INFO("tmp: min(%d,%d),max(%d,%d)", map_tmp.min.X, map_tmp.min.Y, map_tmp.max.X, map_tmp.max.Y);
+//	ROS_INFO("tmp: min(%d,%d),max(%d,%d)", map_tmp.min.X, map_tmp.min.Y, map_tmp.max.X, map_tmp.max.Y);
 	for (const auto& cell : map_tmp)
 	{
 		if (map_get_cell(MAP, cell.X, cell.Y) != UNCLEAN)
 			map.Add(cell);
 	}
-	ROS_INFO("map: min(%d,%d),max(%d,%d)", map.min.X, map.min.Y, map.max.X, map.max.Y);
-	ROS_INFO("tmp: min(%d,%d),max(%d,%d)", map_tmp.min.X, map_tmp.min.Y, map_tmp.max.X, map_tmp.max.Y);
+//	ROS_INFO("map: min(%d,%d),max(%d,%d)", map.min.X, map.min.Y, map.max.X, map.max.Y);
+//	ROS_INFO("tmp: min(%d,%d),max(%d,%d)", map_tmp.min.X, map_tmp.min.Y, map_tmp.max.X, map_tmp.max.Y);
 
 	map_tmp = map;
 	for (const auto& cell : map_tmp)
@@ -1170,8 +1170,8 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
-	ROS_INFO("map: min(%d,%d),max(%d,%d)", map.min.X, map.min.Y, map.max.X, map.max.Y);
-	debug_map(MAP, g_home_x, g_home_y);
+//	ROS_INFO("map: min(%d,%d),max(%d,%d)", map.min.X, map.min.Y, map.max.X, map.max.Y);
+//	debug_map(MAP, g_home_x, g_home_y);
 //	return 0;
 //	 Narrow down the coodinate that robot should go
 	for (auto y = map.min.Y; y <= map.max.Y; y++)

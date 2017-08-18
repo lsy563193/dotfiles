@@ -612,12 +612,17 @@ void map_set_bumper()
 		d_cells = {{2,-1}, {2,0}, {2,1}};
 	else if (bumper_trig & LeftBumperTrig) {
 		//d_cells = {{2, 1}, {2,2}/*,{1,2}*/};
-		d_cells = {{2, 1}/*, {2,2},{1,2}*/};
+      if(mt_is_linear())
+				d_cells = {{2, 1}/*, {2,2},{1,2}*/};
+			else
+				d_cells = {{2, 1}, {2,2}, {1,2}};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
-		//d_cells = {{2,-2},{2,-1}/*,{1,-2}*/};
-		d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
+      if(mt_is_linear())
+				d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
+			else
+				d_cells = {{2,-2},{2,-1},{1,-2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
@@ -819,7 +824,7 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 	auto dx = (cells.front().X < cells.back().X) ? 1 : -1;//X_POS
 	Cell_t cf = {int16_t(cells.front().X - dx),cells.front().Y};
 	Cell_t cb = {int16_t(cells.back().X + dx),cells.back().Y};
-	cells.push_back(cf);
+//	cells.push_back(cf);
 	cells.push_back(cb);
 //	auto is_follow_y_min = dx == 1 ^ mt_is_left();
 
@@ -850,8 +855,8 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 		ROS_ERROR("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	}
 	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
-	auto min = std::min(cells.front().X, cells.back().X) + 2;
-	auto max = std::max(cells.front().X, cells.back().X) - 2;
+	auto min = std::min(cells.front().X, cells.back().X) + 3;
+	auto max = std::max(cells.front().X, cells.back().X) - 3;
 
 	if(min >= max)
 		return;
