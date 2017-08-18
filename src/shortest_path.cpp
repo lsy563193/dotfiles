@@ -1397,7 +1397,7 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
-		path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+		path_get_range(WFMAP, &x_min, &x_max, &y_min, &y_max);
 		x_min = x_min - 8;
 		x_max = x_max + 8;
 		y_min = y_min - 8;
