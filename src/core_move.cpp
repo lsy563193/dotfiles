@@ -284,9 +284,12 @@ bool cm_move_to(const PPTargetType& path)
 	Cell_t start;
 	start = map_get_curr_cell();
 	ROS_INFO("cm_move_to: target(%d,%d)");
+
+#if INTERLACED_MOVE
 	extern uint16_t g_new_dir;
 	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
 		start.Y = path.cells.front().Y;
+#endif
 	ROS_INFO("cm_move_to: start.Y(%d)",start.Y);
 	RegulatorManage rm(start, g_next_cell, path);
 

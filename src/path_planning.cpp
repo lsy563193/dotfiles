@@ -49,7 +49,6 @@
 #include "wav.h"
 #include "BoundingBox.h"
 
-#define INTERLACED_MOVE	(1)
 #define FINAL_COST (1000)
 #define NO_TARGET_LEFT 0
 #define TARGET_REACHED 0
@@ -423,14 +422,14 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		is_found = 1;
 	}
 
+#if !INTERLACED_MOVE
 	if (is_found == 1)
 	{
-//		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-			// Duplicated cleaning.
-//			is_found = 0;
-//		else
+		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+//			 Duplicated cleaning.
+			is_found = 0;
+		else
 		{
-#if !INTERLACED_MOVE
 			uint8_t un_cleaned_cnt = 0;
 			for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 				for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
@@ -440,9 +439,9 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 			if (un_cleaned_cnt < 4)
 				// Uncleaned area is too small.
 				is_found = 0;
-#endif
 		}
 	}
+#endif
 
 	ROS_INFO("%s %d: is_found = %d, target(%d, %d).", __FUNCTION__, __LINE__, is_found, tmp.X, tmp.Y);
 	if (is_found)
@@ -614,826 +613,423 @@ void path_find_all_targets()
 		}
 	}
 }
-//#if !INTERLACED_MOVE
-//int16_t path_target(const Cell_t& curr, PPTargetType& path)
-//{
-//	bool	within_range;
-//	int16_t found, final_cost, a, b, c, d, start, end, last_y;
-//	int16_t x_min, y_min, x_max, y_max, x_min_tmp, y_min_tmp, x_max_tmp, y_max_tmp, stop;
-//	Cell_t temp_target;
-//
-//	final_cost = 1000;
-//	found = 0;
-//	x_max = y_max = x_max_tmp = y_max_tmp = SHRT_MIN;
-//	x_min = y_min = x_min_tmp = y_min_tmp = SHRT_MAX;
-//
-//	for (c = g_x_min - 1; c < g_x_max + 1; ++c) {
-//		for (d = g_y_min - 1; d < g_y_max + 1; ++d) {
-//			if (map_get_cell(MAP, c, d) != UNCLEAN) {
-//				x_min_tmp = x_min_tmp > c ? c : x_min_tmp;
-//				x_max_tmp = x_max_tmp < c ? c : x_max_tmp;
-//				y_min_tmp = y_min_tmp > d ? d : y_min_tmp;
-//				y_max_tmp = y_max_tmp < d ? d : y_max_tmp;
-//			}
-//		}
-//	}
-//
-//	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
-//		for (d = y_min_tmp; d <= y_max_tmp; ++d) {
-//			if (map_get_cell(MAP, c, d) != CLEANED)
-//				continue;
-//
-//			if (c > g_x_min - 1 && map_get_cell(MAP, c - 1, d) == UNCLEAN) {
-//				if (is_block_accessible(c - 1, d) == 1) {
-//					map_set_cell(MAP, cell_to_count(c - 1), cell_to_count(d), TARGET);
-//					x_min = x_min > (c - 1) ? (c - 1) : x_min;
-//					x_max = x_max < (c - 1) ? (c - 1) : x_max;
-//					y_min = y_min > d ? d : y_min;
-//					y_max = y_max < d ? d : y_max;
-//				}
-//			}
-//
-//			if (c < g_x_max + 1 && map_get_cell(MAP, c + 1, d) == UNCLEAN) {
-//				if (is_block_accessible(c + 1, d) == 1) {
-//					map_set_cell(MAP, cell_to_count(c + 1), cell_to_count(d), TARGET);
-//					x_min = x_min > (c + 1) ? (c + 1) : x_min;
-//					x_max = x_max < (c + 1) ? (c + 1) : x_max;
-//					y_min = y_min > d ? d : y_min;
-//					y_max = y_max < d ? d : y_max;
-//				}
-//			}
-//
-//			if (d > g_y_min - 1 && map_get_cell(MAP, c, d - 1) == UNCLEAN) {
-//				if (is_block_accessible(c, d - 1) == 1) {
-//					map_set_cell(MAP, cell_to_count(c), cell_to_count(d - 1), TARGET);
-//					x_min = x_min > c ? c : x_min;
-//					x_max = x_max < c ? c : x_max;
-//					y_min = y_min > (d - 1) ? (d - 1) : y_min;
-//					y_max = y_max < (d - 1) ? (d - 1) : y_max;
-//				}
-//			}
-//
-//			if (d < g_y_max + 1 && map_get_cell(MAP, c, d + 1) == UNCLEAN) {
-//				if (is_block_accessible(c, d + 1) == 1) {
-//					map_set_cell(MAP, cell_to_count(c), cell_to_count(d + 1), TARGET);
-//					x_min = x_min > c ? c : x_min;
-//					x_max = x_max < c ? c : x_max;
-//					y_min = y_min > (d + 1) ? (d + 1) : y_min;
-//					y_max = y_max < (d + 1) ? (d + 1) : y_max;
-//				}
-//			}
-//		}
-//	}
-//
-//	/* Narrow down the coodinate that robot should go */
-//	for (d = y_min; d <= y_max; d++) {
-//		start = end = SHRT_MAX;
-//		for (c = x_min; c <= map_get_x_cell(); c++) {
-//			if (map_get_cell(MAP, c, d) == TARGET) {
-//				if (start == SHRT_MAX)
-//					start = c;
-//				if (start != SHRT_MAX)
-//					end = c;
-//			}
-//			if (map_get_cell(MAP, c, d) != TARGET || c == map_get_x_cell()){
-//				if ( start != SHRT_MAX) {
-//					for (a = start + 1; a < end; a++) {
-//						map_set_cell(MAP, cell_to_count(a), cell_to_count(d), UNCLEAN);
-//					}
-//				}
-//				start = end = SHRT_MAX;
-//			}
-//		}
-//
-//		start = end = SHRT_MIN;
-//		for (c = x_max; c >= map_get_x_cell(); c--) {
-//			if (map_get_cell(MAP, c, d) == TARGET) {
-//				if (start == SHRT_MIN)
-//					start = c;
-//				if (start != SHRT_MIN)
-//					end = c;
-//			}
-//			if (map_get_cell(MAP, c, d) != TARGET || c == map_get_x_cell()){
-//				if (end != SHRT_MIN) {
-//					for (a = start - 1; a > end; a--) {
-//						map_set_cell(MAP, cell_to_count(a), cell_to_count(d), UNCLEAN);
-//					}
-//				}
-//				start = end = SHRT_MIN;
-//			}
-//		}
-//	}
-//
-//	x_min_tmp = x_min;
-//	x_max_tmp = x_max;
-//	y_min_tmp = y_min;
-//	y_max_tmp = y_max;
-//
-//	for (auto& target : g_targets)
-//		target.cells.clear();
-//	g_targets.clear();
-//
-//	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
-//		for (d = y_min_tmp; d <= y_max_tmp; ++d) {
-//			if (map_get_cell(MAP, c, d) == TARGET) {
-//				PPTargetType t;
-//				t.target.X = c;
-//				t.target.Y = d;
-//				t.cells.clear();
-//				g_targets.push_back(t);
-//				if (t.target == map_get_curr_cell())
-//				{
-//					ROS_ERROR("%s %d: Target is current cell, map_set_realtime +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
-//					ROS_WARN("Before:");
-//					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
-//					{
-//						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
-//							printf("%d ", map_get_cell(MAP, dx, dy));
-//						printf("\n");
-//					}
-//					ROS_WARN("After:");
-//					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
-//					{
-//						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
-//						{
-//							if (map_get_cell(MAP, dx, dy) == UNCLEAN)
-//								map_set_cell(MAP, dx, dy, CLEANED);
-//							printf("%d ", map_get_cell(MAP, dx, dy));
-//						}
-//						printf("\n");
-//					}
-//				}
-//
-//				x_min = x_min > c ? c : x_min;
-//				x_max = x_max < c ? c : x_max;
-//				y_min = y_min > d ? d : y_min;
-//				y_max = y_max < d ? d : y_max;
-//			}
-//		}
-//	}
-//
-//	debug_map(MAP, g_home_x, g_home_y);
-//	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//		map_set_cell(MAP, cell_to_count(it->target.X), cell_to_count(it->target.Y), UNCLEAN);
-//	}
-//
-//	path_find_all_targets();
-//
-//	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end();) {
-//		if (it->cells.empty() == true) {
-//			it = g_targets.erase(it);
-//		} else {
-//			it++;
-//		}
-//	}
-//
-//	/* No more target to clean */
-//	if (g_targets.empty() == true) {
-//		if (path_escape_trapped() <= 0) {
-//			ROS_WARN("%s %d: trapped", __FUNCTION__, __LINE__);
-//			return -2;
-//		}
-//		ROS_INFO("%s %d: targets list empty.", __FUNCTION__, __LINE__);
-//		return 0;
-//	}
-//
-//	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, (int)g_targets.size());
-//	//for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//	//	std::string	msg = __FUNCTION__;
-//	//	msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
-//
-//	//	for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
-//	//		msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
-//	//	}
-//	//	msg += "\n";
-//	//	ROS_INFO("%s",msg.c_str());
-//	//}
-//
-//#if 1
-//	stop = 0;
-//	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
-//	for (d = y_max; d >= map_get_y_cell(); --d) {
-//		if (stop == 1 && d <= map_get_y_cell() + 1) {
-//			break;
-//		}
-//
-//		for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//			if (map_get_cell(MAP, it->target.X, it->target.Y - 1) != CLEANED) {
-//				continue;
-//			}
-//
-//			if (it->target.Y == d) {
-//				if (it->cells.size() > final_cost) {
-//					continue;
-//				}
-//
-//				last_y = it->cells.front().Y;
-//				within_range = true;
-//				for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//					if (i->Y < map_get_y_cell() || i->Y > d) {
-//						within_range = false;
-//					}
-//					if (i->Y > last_y) {
-//						within_range = false;
-//					} else {
-//						last_y = i->Y;
-//					}
-//				}
-//				if (within_range == true) {
-//					temp_target.X = it->target.X;
-//					temp_target.Y = it->target.Y;
-//					final_cost = it->cells.size();
-//					stop = 1;
-//				}
-//			}
-//		}
-//	}
-//
-//	ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//	if (stop == 0) {
-//		for (a = map_get_y_cell(); a >= y_min && stop == 0; --a) {
-//			for (d = a; d <= y_max && stop == 0; ++d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->target.Y == d) {
-//						if (it->cells.size() > final_cost) {
-//							continue;
-//						}
-//
-//						within_range = true;
-//						last_y = it->cells.front().Y;
-//						bool turn = false;
-//						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//							if (i->Y < a || i->Y > (d > map_get_y_cell() ? d : map_get_y_cell())) {
-//								within_range = false;
-//							}
-//							if (turn == false) {
-//								if (i->Y > last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							} else {
-//								if (i->Y < last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							}
-//							if (i->Y == a) {
-//								turn = true;
-//							}
-//						}
-//						if (within_range == true) {
-//							temp_target.X = it->target.X;
-//							temp_target.Y = it->target.Y;
-//							final_cost = it->cells.size();
-//							stop = 1;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	ROS_INFO("%s %d: case 3, towards Y- only, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//	if (stop == 0) {
-//		for (d = y_min; d >= map_get_y_cell(); ++d) {
-//			if (stop == 1 && d >= map_get_y_cell() - 1) {
-//				break;
-//			}
-//
-//			for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//				if (map_get_cell(MAP, it->target.X, it->target.Y + 1) != CLEANED) {
-//					continue;
-//				}
-//
-//				if (it->target.Y == d) {
-//					if (it->cells.size() > final_cost) {
-//						continue;
-//					}
-//
-//					last_y = it->cells.front().Y;
-//					within_range = true;
-//					for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//						if (i->Y > map_get_y_cell() || i->Y < d) {
-//							within_range = false;
-//						}
-//						if (i->Y < last_y) {
-//							within_range = false;
-//						} else {
-//							last_y = i->Y;
-//						}
-//					}
-//					if (within_range == true) {
-//						temp_target.X = it->target.X;
-//						temp_target.Y = it->target.Y;
-//						final_cost = it->cells.size();
-//						stop = 1;
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	ROS_INFO("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//	if (stop == 0) {
-//		for (a = map_get_y_cell(); a <= y_max && stop == 0; ++a) {
-//			for (d = a; d >= y_min && stop == 0; --d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->target.Y == d) {
-//						if (it->cells.size() > final_cost) {
-//							continue;
-//						}
-//
-//						within_range = true;
-//						last_y = it->cells.front().Y;
-//						bool turn = false;
-//						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//							if (i->Y > a || i->Y < (d > map_get_y_cell() ? map_get_y_cell() : d)) {
-//								within_range = false;
-//							}
-//							if (turn == false) {
-//								if (i->Y < last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							} else {
-//								if (i->Y > last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							}
-//							if (i->Y == a) {
-//								turn = true;
-//							}
-//						}
-//						if (within_range == true) {
-//							temp_target.X = it->target.X;
-//							temp_target.Y = it->target.Y;
-//							final_cost = it->cells.size();
-//							stop = 1;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//	ROS_INFO("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//	if (stop == 0) {
-//		for (a = map_get_y_cell(); a <= y_max  && stop == 0; ++a) {
-//	            for (d = map_get_y_cell(); d <= a && stop == 0; ++d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->target.Y == d) {
-//						within_range = true;
-//						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//							if (i->Y < map_get_y_cell() || i->Y > a) {
-//								within_range = false;
-//							}
-//						}
-//						if (within_range == true && it->cells.size() < final_cost) {
-//							temp_target.X = it->target.X;
-//							temp_target.Y = it->target.Y;
-//							final_cost = it->cells.size();
-//							stop = 1;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//#endif
-//	ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//	/* fallback to find unclean area */
-//	if (stop == 0) {
-//		for (c = x_min; c <= x_max; ++c) {
-//			for (d = y_min; d <= y_max; ++d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->cells.size() < final_cost) {
-//						temp_target.X = it->target.X;
-//						temp_target.Y = it->target.Y;
-//						final_cost = it->cells.size();
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	found = (final_cost != 1000) ? final_cost : 0 ;
-//	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, temp_target.X, temp_target.Y);
-//	debug_map(MAP, temp_target.X, temp_target.Y);
-//
-//	if(found == 0)
-//		return 0;
-//
-//	set_explore_new_path_flag(true);
-//	return path_next_best(curr, temp_target, path);
-//}
-//#else
-//int16_t path_target(const Cell_t& curr, PPTargetType& path)
-//{
-//	bool	within_range;
-//	int16_t found, final_cost, a, b, c, d, start, end, last_y;
-//	int16_t x_min, y_min, x_max, y_max, x_min_tmp, y_min_tmp, x_max_tmp, y_max_tmp, stop;
-//	Cell_t temp_target;
-//
-//	final_cost = 1000;
-//	found = 0;
-//	x_max = y_max = x_max_tmp = y_max_tmp = SHRT_MIN;
-//	x_min = y_min = x_min_tmp = y_min_tmp = SHRT_MAX;
-//
-//	for (c = g_x_min - 1; c < g_x_max + 1; ++c) {
-//		for (d = g_y_min - 1; d < g_y_max + 1; ++d) {
-//			if (map_get_cell(MAP, c, d) != UNCLEAN) {
-//				x_min_tmp = x_min_tmp > c ? c : x_min_tmp;
-//				x_max_tmp = x_max_tmp < c ? c : x_max_tmp;
-//				y_min_tmp = y_min_tmp > d ? d : y_min_tmp;
-//				y_max_tmp = y_max_tmp < d ? d : y_max_tmp;
-//			}
-//		}
-//	}
-//
-//	for (auto cell_X = x_min_tmp; cell_X <= x_max_tmp; ++cell_X) {
-//		for (auto cell_Y = y_min_tmp; cell_Y <= y_max_tmp; ++cell_Y) {
-//			{
-//				if (map_get_cell(MAP, cell_X, cell_Y) != CLEANED /*|| std::abs(cell.Y % 2) == 1*/)
-//					continue;
-//				Cell_t neighbor[4];
-//				neighbor[0] = {int16_t(cell_X - 1), cell_Y};
-//				neighbor[1] = {int16_t(cell_X + 1), cell_Y};
-//				neighbor[2] = {cell_X, int16_t(cell_Y - 1)};
-//				neighbor[3] = {cell_X, int16_t(cell_Y + 1)};
-//				for (auto i = 0; i < 4; i++) {
-//					if (std::abs(neighbor[i].Y % 2) == 0) {
-////						if(i == 0 || i==1)
-////							(curr.Y > cell_Y) ? neighbor[i].Y++ : neighbor[i].Y--;
-////						else if (i == 2)
-////							neighbor[i].Y--;
-////						else if (i == 3)
-////							neighbor[i].Y++;
-//					if (map_get_cell(MAP, neighbor[i].X, neighbor[i].Y) == UNCLEAN) {
-//						if (is_block_accessible(neighbor[i].X, neighbor[i].Y) == 1) {
-//							map_set_cell(MAP, cell_to_count(neighbor[i].X), cell_to_count(neighbor[i].Y), TARGET);
-//							x_min = x_min_tmp > cell_X ? cell_X : x_min_tmp;
-//							x_max = x_max_tmp < cell_X ? cell_X : x_max_tmp;
-//							y_min = y_min_tmp > cell_Y ? cell_Y : y_min_tmp;
-//							y_max = y_max_tmp < cell_Y ? cell_Y : y_max_tmp;
-//						}
-//					}
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//  debug_map(MAP, g_home_x, g_home_y);
-//	/* Narrow down the coodinate that robot should go */
-//	for (d = y_min; d <= y_max; d++) {
-//		start = end = SHRT_MAX;
-//		for (c = x_min; c <= map_get_x_cell(); c++) {
-//			if (map_get_cell(MAP, c, d) == TARGET) {
-//				if (start == SHRT_MAX)
-//					start = c;
-//				if (start != SHRT_MAX)
-//					end = c;
-//			}
-//			if (map_get_cell(MAP, c, d) != TARGET || c == map_get_x_cell()){
-//				if ( start != SHRT_MAX) {
-//					for (a = start + 1; a < end; a++) {
-//						map_set_cell(MAP, cell_to_count(a), cell_to_count(d), UNCLEAN);
-//					}
-//				}
-//				start = end = SHRT_MAX;
-//			}
-//		}
-//
-//		start = end = SHRT_MIN;
-//		for (c = x_max; c >= curr.X; c--) {
-//			if (map_get_cell(MAP, c, d) == TARGET) {
-//				if (start == SHRT_MIN)
-//					start = c;
-//				if (start != SHRT_MIN)
-//					end = c;
-//			}
-//			if (map_get_cell(MAP, c, d) != TARGET || c == map_get_x_cell()){
-//				if (end != SHRT_MIN) {
-//					for (a = start - 1; a > end; a--) {
-//						map_set_cell(MAP, cell_to_count(a), cell_to_count(d), UNCLEAN);
-//					}
-//				}
-//				start = end = SHRT_MIN;
-//			}
-//		}
-//	}
-//
-//	x_min_tmp = x_min;
-//	x_max_tmp = x_max;
-//	y_min_tmp = y_min;
-//	y_max_tmp = y_max;
-//
-//	for (auto& target : g_targets)
-//		target.cells.clear();
-//	g_targets.clear();
-//
-//	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
-//		for (d = y_min_tmp; d <= y_max_tmp; ++d) {
-//			if (map_get_cell(MAP, c, d) == TARGET) {
-//				PPTargetType t;
-//				t.target.X = c;
-//				t.target.Y = d;
-//				t.cells.clear();
-//				g_targets.push_back(t);
-//				if (t.target == map_get_curr_cell())
-//				{
-//					ROS_ERROR("%s %d: Target is current cell, map_set_realtime +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
-//					ROS_WARN("Before:");
-//					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
-//					{
-//						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
-//							printf("%d ", map_get_cell(MAP, dx, dy));
-//						printf("\n");
-//					}
-//					ROS_WARN("After:");
-//					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
-//					{
-//						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
-//						{
-//							if (map_get_cell(MAP, dx, dy) == UNCLEAN)
-//								map_set_cell(MAP, dx, dy, CLEANED);
-//							printf("%d ", map_get_cell(MAP, dx, dy));
-//						}
-//						printf("\n");
-//					}
-//				}
-//
-//				x_min = x_min > c ? c : x_min;
-//				x_max = x_max < c ? c : x_max;
-//				y_min = y_min > d ? d : y_min;
-//				y_max = y_max < d ? d : y_max;
-//			}
-//		}
-//	}
-//
-//	debug_map(MAP, g_home_x, g_home_y);
-//	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//		map_set_cell(MAP, cell_to_count(it->target.X), cell_to_count(it->target.Y), UNCLEAN);
-//	}
-//
-//	path_find_all_targets();
-//
-//	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end();) {
-//		if (it->cells.empty() == true) {
-//			it = g_targets.erase(it);
-//		} else {
-//			it++;
-//		}
-//	}
-//
-//	/* No more target to clean */
-//	if (g_targets.empty() == true) {
-//		if (path_escape_trapped() <= 0) {
-//			ROS_WARN("%s %d: trapped", __FUNCTION__, __LINE__);
-//			return -2;
-//		}
-//		ROS_INFO("%s %d: targets list empty.", __FUNCTION__, __LINE__);
-//		return 0;
-//	}
-//
-//	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, (int)g_targets.size());
-//	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//		std::string	msg = __FUNCTION__;
-//		msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
-//
-//		for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
-//			msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
-//		}
-//		msg += "\n";
-//		ROS_INFO("%s",msg.c_str());
-//	}
-//
-//#if 1
-//	stop = 0;
-//	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
-//	for (d = y_max; d >= curr.Y; --d) {
-//		if (stop == 1 && d <= curr.Y + 1) {
-//			break;
-//		}
-//
-//		for (auto it = g_targets.begin(); it != g_targets.end(); ++it) {
-//			if (map_get_cell(MAP, it->target.X, it->target.Y - 1) != CLEANED) {
-//				continue;
-//			}
-//
-//			if (it->target.Y == d) {
-//				if (it->cells.size() > final_cost) {
-//					continue;
-//				}
-//
-//				last_y = it->cells.front().Y;
-//				within_range = true;
-//				for (auto i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//					if (i->Y < map_get_y_cell() || i->Y > d) {
-//						within_range = false;
-//					}
-//					if (i->Y > last_y) {
-//						within_range = false;
-//					} else {
-//						last_y = i->Y;
-//					}
-//				}
-//				if (within_range == true) {
-//					temp_target.X = it->target.X;
-//					temp_target.Y = it->target.Y;
-//					final_cost = it->cells.size();
-//					stop = 1;
-//				}
-//			}
-//		}
-//	}
-//
-//	if (stop == 0) {
-//      ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//		for (a = map_get_y_cell(); a >= y_min && stop == 0; --a) {
-//			for (d = a; d <= y_max && stop == 0; ++d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->target.Y == d) {
-//						if (it->cells.size() > final_cost) {
-//							continue;
-//						}
-//
-//						within_range = true;
-//						last_y = it->cells.front().Y;
-//						bool turn = false;
-//						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//							if (i->Y < a || i->Y > (d > map_get_y_cell() ? d : map_get_y_cell())) {
-//								within_range = false;
-//							}
-//							if (turn == false) {
-//								if (i->Y > last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							} else {
-//								if (i->Y < last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							}
-//							if (i->Y == a) {
-//								turn = true;
-//							}
-//						}
-//						if (within_range == true) {
-//							temp_target.X = it->target.X;
-//							temp_target.Y = it->target.Y;
-//							final_cost = it->cells.size();
-//							stop = 1;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	if (stop == 0) {
-//      ROS_INFO("%s %d: case 3, towards Y- only, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//		for (d = y_min; d >= map_get_y_cell(); ++d) {
-//			if (stop == 1 && d >= map_get_y_cell() - 1) {
-//				break;
-//			}
-//
-//			for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//				if (map_get_cell(MAP, it->target.X, it->target.Y + 1) != CLEANED) {
-//					continue;
-//				}
-//
-//				if (it->target.Y == d) {
-//					if (it->cells.size() > final_cost) {
-//						continue;
-//					}
-//
-//					last_y = it->cells.front().Y;
-//					within_range = true;
-//					for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//						if (i->Y > map_get_y_cell() || i->Y < d) {
-//							within_range = false;
-//						}
-//						if (i->Y < last_y) {
-//							within_range = false;
-//						} else {
-//							last_y = i->Y;
-//						}
-//					}
-//					if (within_range == true) {
-//						temp_target.X = it->target.X;
-//						temp_target.Y = it->target.Y;
-//						final_cost = it->cells.size();
-//						stop = 1;
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	if (stop == 0) {
-//      ROS_INFO("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//		for (a = map_get_y_cell(); a <= y_max && stop == 0; ++a) {
-//			for (d = a; d >= y_min && stop == 0; --d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->target.Y == d) {
-//						if (it->cells.size() > final_cost) {
-//							continue;
-//						}
-//
-//						within_range = true;
-//						last_y = it->cells.front().Y;
-//						bool turn = false;
-//						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//							if (i->Y > a || i->Y < (d > map_get_y_cell() ? map_get_y_cell() : d)) {
-//								within_range = false;
-//							}
-//							if (turn == false) {
-//								if (i->Y < last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							} else {
-//								if (i->Y > last_y) {
-//									within_range = false;
-//								} else {
-//									last_y = i->Y;
-//								}
-//							}
-//							if (i->Y == a) {
-//								turn = true;
-//							}
-//						}
-//						if (within_range == true) {
-//							temp_target.X = it->target.X;
-//							temp_target.Y = it->target.Y;
-//							final_cost = it->cells.size();
-//							stop = 1;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//	if (stop == 0) {
-//      ROS_INFO("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//		for (a = map_get_y_cell(); a <= y_max  && stop == 0; ++a) {
-//	            for (d = map_get_y_cell(); d <= a && stop == 0; ++d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->target.Y == d) {
-//						within_range = true;
-//						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
-//							if (i->Y < map_get_y_cell() || i->Y > a) {
-//								within_range = false;
-//							}
-//						}
-//						if (within_range == true && it->cells.size() < final_cost) {
-//							temp_target.X = it->target.X;
-//							temp_target.Y = it->target.Y;
-//							final_cost = it->cells.size();
-//							stop = 1;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//#endif
-//	/* fallback to find unclean area */
-//	if (stop == 0) {
-//      ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
-//		for (c = x_min; c <= x_max; ++c) {
-//			for (d = y_min; d <= y_max; ++d) {
-//				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-//					if (it->cells.size() < final_cost) {
-//						temp_target.X = it->target.X;
-//						temp_target.Y = it->target.Y;
-//						final_cost = it->cells.size();
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	found = (final_cost != 1000) ? final_cost : 0 ;
-//	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, temp_target.X, temp_target.Y);
-//	debug_map(MAP, temp_target.X, temp_target.Y);
-//
-//	if(found == 0)
-//		return 0;
-//
-//	set_explore_new_path_flag(true);
-//	return path_next_best(curr, temp_target, path);
-//}
-//#endif
+#if !INTERLACED_MOVE
+int16_t path_target(const Cell_t& curr, PPTargetType& path)
+{
+	bool	within_range;
+	int16_t found, final_cost, a, b, c, d, start, end, last_y;
+	int16_t x_min, y_min, x_max, y_max, x_min_tmp, y_min_tmp, x_max_tmp, y_max_tmp, stop;
+	Cell_t temp_target;
+
+	final_cost = 1000;
+	found = 0;
+	x_max = y_max = x_max_tmp = y_max_tmp = SHRT_MIN;
+	x_min = y_min = x_min_tmp = y_min_tmp = SHRT_MAX;
+
+	for (c = g_x_min - 1; c < g_x_max + 1; ++c) {
+		for (d = g_y_min - 1; d < g_y_max + 1; ++d) {
+			if (map_get_cell(MAP, c, d) != UNCLEAN) {
+				x_min_tmp = x_min_tmp > c ? c : x_min_tmp;
+				x_max_tmp = x_max_tmp < c ? c : x_max_tmp;
+				y_min_tmp = y_min_tmp > d ? d : y_min_tmp;
+				y_max_tmp = y_max_tmp < d ? d : y_max_tmp;
+			}
+		}
+	}
+
+	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
+		for (d = y_min_tmp; d <= y_max_tmp; ++d) {
+			if (map_get_cell(MAP, c, d) != CLEANED)
+				continue;
+
+			if (c > g_x_min - 1 && map_get_cell(MAP, c - 1, d) == UNCLEAN) {
+				if (is_block_accessible(c - 1, d) == 1) {
+					map_set_cell(MAP, cell_to_count(c - 1), cell_to_count(d), TARGET);
+					x_min = x_min > (c - 1) ? (c - 1) : x_min;
+					x_max = x_max < (c - 1) ? (c - 1) : x_max;
+					y_min = y_min > d ? d : y_min;
+					y_max = y_max < d ? d : y_max;
+				}
+			}
+
+			if (c < g_x_max + 1 && map_get_cell(MAP, c + 1, d) == UNCLEAN) {
+				if (is_block_accessible(c + 1, d) == 1) {
+					map_set_cell(MAP, cell_to_count(c + 1), cell_to_count(d), TARGET);
+					x_min = x_min > (c + 1) ? (c + 1) : x_min;
+					x_max = x_max < (c + 1) ? (c + 1) : x_max;
+					y_min = y_min > d ? d : y_min;
+					y_max = y_max < d ? d : y_max;
+				}
+			}
+
+			if (d > g_y_min - 1 && map_get_cell(MAP, c, d - 1) == UNCLEAN) {
+				if (is_block_accessible(c, d - 1) == 1) {
+					map_set_cell(MAP, cell_to_count(c), cell_to_count(d - 1), TARGET);
+					x_min = x_min > c ? c : x_min;
+					x_max = x_max < c ? c : x_max;
+					y_min = y_min > (d - 1) ? (d - 1) : y_min;
+					y_max = y_max < (d - 1) ? (d - 1) : y_max;
+				}
+			}
+
+			if (d < g_y_max + 1 && map_get_cell(MAP, c, d + 1) == UNCLEAN) {
+				if (is_block_accessible(c, d + 1) == 1) {
+					map_set_cell(MAP, cell_to_count(c), cell_to_count(d + 1), TARGET);
+					x_min = x_min > c ? c : x_min;
+					x_max = x_max < c ? c : x_max;
+					y_min = y_min > (d + 1) ? (d + 1) : y_min;
+					y_max = y_max < (d + 1) ? (d + 1) : y_max;
+				}
+			}
+		}
+	}
+
+	/* Narrow down the coodinate that robot should go */
+	for (d = y_min; d <= y_max; d++) {
+		start = end = SHRT_MAX;
+		for (c = x_min; c <= map_get_x_cell(); c++) {
+			if (map_get_cell(MAP, c, d) == TARGET) {
+				if (start == SHRT_MAX)
+					start = c;
+				if (start != SHRT_MAX)
+					end = c;
+			}
+			if (map_get_cell(MAP, c, d) != TARGET || c == map_get_x_cell()){
+				if ( start != SHRT_MAX) {
+					for (a = start + 1; a < end; a++) {
+						map_set_cell(MAP, cell_to_count(a), cell_to_count(d), UNCLEAN);
+					}
+				}
+				start = end = SHRT_MAX;
+			}
+		}
+
+		start = end = SHRT_MIN;
+		for (c = x_max; c >= map_get_x_cell(); c--) {
+			if (map_get_cell(MAP, c, d) == TARGET) {
+				if (start == SHRT_MIN)
+					start = c;
+				if (start != SHRT_MIN)
+					end = c;
+			}
+			if (map_get_cell(MAP, c, d) != TARGET || c == map_get_x_cell()){
+				if (end != SHRT_MIN) {
+					for (a = start - 1; a > end; a--) {
+						map_set_cell(MAP, cell_to_count(a), cell_to_count(d), UNCLEAN);
+					}
+				}
+				start = end = SHRT_MIN;
+			}
+		}
+	}
+
+	x_min_tmp = x_min;
+	x_max_tmp = x_max;
+	y_min_tmp = y_min;
+	y_max_tmp = y_max;
+
+	for (auto& target : g_targets)
+		target.cells.clear();
+	g_targets.clear();
+
+	for (c = x_min_tmp; c <= x_max_tmp; ++c) {
+		for (d = y_min_tmp; d <= y_max_tmp; ++d) {
+			if (map_get_cell(MAP, c, d) == TARGET) {
+				PPTargetType t;
+				t.target.X = c;
+				t.target.Y = d;
+				t.cells.clear();
+				g_targets.push_back(t);
+				if (t.target == map_get_curr_cell())
+				{
+					ROS_ERROR("%s %d: Target is current cell, map_set_realtime +-1 cells to CLEANED.", __FUNCTION__, __LINE__);
+					ROS_WARN("Before:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						printf("\n");
+					}
+					ROS_WARN("After:");
+					for (auto dx = t.target.X - 1; dx <= t.target.X + 1; ++dx)
+					{
+						for (auto dy = t.target.Y - 1; dy <= t.target.Y + 1; ++dy)
+						{
+							if (map_get_cell(MAP, dx, dy) == UNCLEAN)
+								map_set_cell(MAP, dx, dy, CLEANED);
+							printf("%d ", map_get_cell(MAP, dx, dy));
+						}
+						printf("\n");
+					}
+				}
+
+				x_min = x_min > c ? c : x_min;
+				x_max = x_max < c ? c : x_max;
+				y_min = y_min > d ? d : y_min;
+				y_max = y_max < d ? d : y_max;
+			}
+		}
+	}
+
+	debug_map(MAP, g_home_x, g_home_y);
+	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+		map_set_cell(MAP, cell_to_count(it->target.X), cell_to_count(it->target.Y), UNCLEAN);
+	}
+
+	path_find_all_targets();
+
+	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end();) {
+		if (it->cells.empty() == true) {
+			it = g_targets.erase(it);
+		} else {
+			it++;
+		}
+	}
+
+	/* No more target to clean */
+	if (g_targets.empty() == true) {
+		if (path_escape_trapped() <= 0) {
+			ROS_WARN("%s %d: trapped", __FUNCTION__, __LINE__);
+			return -2;
+		}
+		ROS_INFO("%s %d: targets list empty.", __FUNCTION__, __LINE__);
+		return 0;
+	}
+
+	ROS_INFO("%s %d: targets count: %d", __FUNCTION__, __LINE__, (int)g_targets.size());
+	//for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+	//	std::string	msg = __FUNCTION__;
+	//	msg += " " + std::to_string(__LINE__) + ": target (" + std::to_string(it->target.X) + ", " + std::to_string(it->target.Y) + ") " + std::to_string(it->cells.size()) + ": ";
+
+	//	for (list<Cell_t>::iterator i = it->cells.begin(); i != it->cells.end(); ++i) {
+	//		msg += "(" + std::to_string(i->X) + ", " + std::to_string(i->Y) + ")->";
+	//	}
+	//	msg += "\n";
+	//	ROS_INFO("%s",msg.c_str());
+	//}
+
+#if 1
+	stop = 0;
+	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
+	for (d = y_max; d >= map_get_y_cell(); --d) {
+		if (stop == 1 && d <= map_get_y_cell() + 1) {
+			break;
+		}
+
+		for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+			if (map_get_cell(MAP, it->target.X, it->target.Y - 1) != CLEANED) {
+				continue;
+			}
+
+			if (it->target.Y == d) {
+				if (it->cells.size() > final_cost) {
+					continue;
+				}
+
+				last_y = it->cells.front().Y;
+				within_range = true;
+				for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
+					if (i->Y < map_get_y_cell() || i->Y > d) {
+						within_range = false;
+					}
+					if (i->Y > last_y) {
+						within_range = false;
+					} else {
+						last_y = i->Y;
+					}
+				}
+				if (within_range == true) {
+					temp_target.X = it->target.X;
+					temp_target.Y = it->target.Y;
+					final_cost = it->cells.size();
+					stop = 1;
+				}
+			}
+		}
+	}
+
+	ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
+	if (stop == 0) {
+		for (a = map_get_y_cell(); a >= y_min && stop == 0; --a) {
+			for (d = a; d <= y_max && stop == 0; ++d) {
+				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+					if (it->target.Y == d) {
+						if (it->cells.size() > final_cost) {
+							continue;
+						}
+
+						within_range = true;
+						last_y = it->cells.front().Y;
+						bool turn = false;
+						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
+							if (i->Y < a || i->Y > (d > map_get_y_cell() ? d : map_get_y_cell())) {
+								within_range = false;
+							}
+							if (turn == false) {
+								if (i->Y > last_y) {
+									within_range = false;
+								} else {
+									last_y = i->Y;
+								}
+							} else {
+								if (i->Y < last_y) {
+									within_range = false;
+								} else {
+									last_y = i->Y;
+								}
+							}
+							if (i->Y == a) {
+								turn = true;
+							}
+						}
+						if (within_range == true) {
+							temp_target.X = it->target.X;
+							temp_target.Y = it->target.Y;
+							final_cost = it->cells.size();
+							stop = 1;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ROS_INFO("%s %d: case 3, towards Y- only, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
+	if (stop == 0) {
+		for (d = y_min; d >= map_get_y_cell(); ++d) {
+			if (stop == 1 && d >= map_get_y_cell() - 1) {
+				break;
+			}
+
+			for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+				if (map_get_cell(MAP, it->target.X, it->target.Y + 1) != CLEANED) {
+					continue;
+				}
+
+				if (it->target.Y == d) {
+					if (it->cells.size() > final_cost) {
+						continue;
+					}
+
+					last_y = it->cells.front().Y;
+					within_range = true;
+					for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
+						if (i->Y > map_get_y_cell() || i->Y < d) {
+							within_range = false;
+						}
+						if (i->Y < last_y) {
+							within_range = false;
+						} else {
+							last_y = i->Y;
+						}
+					}
+					if (within_range == true) {
+						temp_target.X = it->target.X;
+						temp_target.Y = it->target.Y;
+						final_cost = it->cells.size();
+						stop = 1;
+					}
+				}
+			}
+		}
+	}
+
+	ROS_INFO("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
+	if (stop == 0) {
+		for (a = map_get_y_cell(); a <= y_max && stop == 0; ++a) {
+			for (d = a; d >= y_min && stop == 0; --d) {
+				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+					if (it->target.Y == d) {
+						if (it->cells.size() > final_cost) {
+							continue;
+						}
+
+						within_range = true;
+						last_y = it->cells.front().Y;
+						bool turn = false;
+						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
+							if (i->Y > a || i->Y < (d > map_get_y_cell() ? map_get_y_cell() : d)) {
+								within_range = false;
+							}
+							if (turn == false) {
+								if (i->Y < last_y) {
+									within_range = false;
+								} else {
+									last_y = i->Y;
+								}
+							} else {
+								if (i->Y > last_y) {
+									within_range = false;
+								} else {
+									last_y = i->Y;
+								}
+							}
+							if (i->Y == a) {
+								turn = true;
+							}
+						}
+						if (within_range == true) {
+							temp_target.X = it->target.X;
+							temp_target.Y = it->target.Y;
+							final_cost = it->cells.size();
+							stop = 1;
+						}
+					}
+				}
+			}
+		}
+	}
+	ROS_INFO("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
+	if (stop == 0) {
+		for (a = map_get_y_cell(); a <= y_max  && stop == 0; ++a) {
+	            for (d = map_get_y_cell(); d <= a && stop == 0; ++d) {
+				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+					if (it->target.Y == d) {
+						within_range = true;
+						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
+							if (i->Y < map_get_y_cell() || i->Y > a) {
+								within_range = false;
+							}
+						}
+						if (within_range == true && it->cells.size() < final_cost) {
+							temp_target.X = it->target.X;
+							temp_target.Y = it->target.Y;
+							final_cost = it->cells.size();
+							stop = 1;
+						}
+					}
+				}
+			}
+		}
+	}
+#endif
+	ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, stop);
+	/* fallback to find unclean area */
+	if (stop == 0) {
+		for (c = x_min; c <= x_max; ++c) {
+			for (d = y_min; d <= y_max; ++d) {
+				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+					if (it->cells.size() < final_cost) {
+						temp_target.X = it->target.X;
+						temp_target.Y = it->target.Y;
+						final_cost = it->cells.size();
+					}
+				}
+			}
+		}
+	}
+
+	found = (final_cost != 1000) ? final_cost : 0 ;
+	ROS_INFO("%s %d: found: %d (%d, %d)\n", __FUNCTION__, __LINE__, found, temp_target.X, temp_target.Y);
+	debug_map(MAP, temp_target.X, temp_target.Y);
+
+	if(found == 0)
+		return 0;
+
+	set_explore_new_path_flag(true);
+	return path_next_best(curr, temp_target, path);
+}
+#else
 
 static bool is_path_valid(const PPTargetType &it,int16_t towards_y, int16_t re_towards_y, int16_t target_y,int16_t curr_y, int16_t turnable)
 {
@@ -1670,6 +1266,8 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 	set_explore_new_path_flag(true);
 	return path_next_best(curr, target_tmp, path);
 }
+
+#endif
 
 void path_update_cells()
 {
