@@ -37,6 +37,7 @@
 #include "mathematics.h"
 #include "wall_follow_slam.h"
 #include <move_type.h>
+#include <path_planning.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -280,10 +281,16 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 bool cm_move_to(const PPTargetType& path)
 {
 	cm_update_position();
-	auto start = map_get_curr_cell();
-	//extern uint16_t g_new_dir;
-	//if (mt_is_linear() && IS_X_AXIS(g_new_dir))
-	//	start.Y = next.Y;
+	Cell_t start;
+	start = map_get_curr_cell();
+	ROS_INFO("cm_move_to: target(%d,%d)");
+
+#if INTERLACED_MOVE
+	extern uint16_t g_new_dir;
+	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
+		start.Y = path.cells.front().Y;
+#endif
+	ROS_INFO("cm_move_to: start.Y(%d)",start.Y);
 	RegulatorManage rm(start, g_next_cell, path);
 
 	bool eh_status_now=false, eh_status_last=false;
@@ -545,8 +552,7 @@ int cm_cleaning()
 
 		Cell_t curr = map_get_curr_cell();
 		path_update_cell_history();
-		path_update_cells();
-		//path_reset_path_points();
+//		path_update_cells();
 		int8_t is_found = path_next(curr, cleaning_path);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);

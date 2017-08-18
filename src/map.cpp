@@ -950,3 +950,23 @@ float map_get_area(void)
 	//ROS_WARN("cleaned_count = %d, area = %.2fm2", cleaned_count, area);
 	return area;
 }
+
+void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state)
+{
+	for (auto x = start.X; x <= stop.X; x++) {
+		for (auto y = start.Y; y <= stop.Y; y++)
+			map_set_cell(MAP, cell_to_count(x), cell_to_count(y), state);
+	}
+}
+
+void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState state)
+{
+	Cell_t bound = {1,1};
+
+  Cell_t b_start = start - bound;
+	Cell_t b_stop = stop + bound;
+
+	map_set_block(b_start, b_stop, BLOCKED);
+	map_set_block(start, stop, state);
+}
+
