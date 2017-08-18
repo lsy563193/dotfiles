@@ -1469,7 +1469,7 @@ static bool is_path_valid(const PPTargetType &it,int16_t towards_y, int16_t re_t
 	return true;
 }
 
-static int16_t path_target_next_line(const Cell_t &curr, int16_t y_min, int16_t y_max, Cell_t &target,BoundingBox2& map)
+static int16_t path_target_next_line(const Cell_t &curr, int16_t y_min, int16_t y_max, Cell_t &target)
 {
 	int16_t cost = FINAL_COST;
 	enum { START_Y, TOWARDS, TURN, Y_NUM };
@@ -1518,14 +1518,10 @@ static int16_t path_target_next_line(const Cell_t &curr, int16_t y_min, int16_t 
 			area_y_begin-=dy;
 		} while(area[i][TURN] && area_y_begin != re_towards_y_end);
 	}
-	for (auto c = map.min.X; c <= map.min.Y; ++c) {
-			for (auto d = map.min.X; d <= map.min.Y; ++d) {
-				for (auto target_it = g_targets.begin(); target_it != g_targets.end(); ++target_it) {
-					if (cost > target_it->cells.size()) {
-						target = target_it->target;
-						cost = target_it->cells.size();
-					}
-				}
+		for (const auto& target_it : g_targets) {
+			if (cost > target_it.cells.size()) {
+				target = target_it.target;
+				cost = target_it.cells.size();
 			}
 	}
 	if (cost != FINAL_COST)
@@ -1666,7 +1662,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 //	}
 
 	ROS_INFO("map: min(%d,%d),max(%d,%d)", map.min.X, map.min.Y, map.max.X, map.max.Y);
-	if(!path_target_next_line(curr, map.min.Y, map.max.Y, target_tmp,map)){
+	if(!path_target_next_line(curr, map.min.Y, map.max.Y, target_tmp)){
 
 		return 0;
 	}

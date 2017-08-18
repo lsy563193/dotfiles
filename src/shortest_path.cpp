@@ -1140,9 +1140,11 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 		}
 	}
 
-	if (map_get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
-		map_set_cell(SPMAP, end_x, end_y, COST_NO);
-	}
+	// Now it is always finding the path from robot to target, so comment below sentence.
+	// If needs to find path from target to robot, please uncomment below sentence.
+	//if (map_get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
+	//	map_set_cell(SPMAP, end_x, end_y, COST_NO);
+	//}
 
 	/* Set the current robot position has the cost value of 1. */
 	map_set_cell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
