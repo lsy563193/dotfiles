@@ -295,6 +295,11 @@ typedef struct Cell_t_{
       }
     }
 
+    inline bool operator>(const Vector2& rOther) const
+    {
+        Vector2 this_{X,Y};
+        return !(this_ < rOther || this_ == rOther);
+    }
     /**
      * Write vector onto output stream
      */

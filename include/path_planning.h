@@ -152,6 +152,8 @@ void path_update_cells(void);
  * 		2 if both ends are not cleaned
  */
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path);
+void path_find_all_targets(const Cell_t& curr, std::list <PPTargetType>& g_targets);
+bool path_full(const Cell_t& curr, PPTargetType& path,bool& is_found);
 
 /*
  * Find how many cells ahead to clean with a given target.
@@ -227,7 +229,7 @@ uint8_t is_block_boundary(int16_t x, int16_t y);
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-bool is_brush_block_unclean(int16_t x, int16_t y);
+bool is_block_unclean(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.

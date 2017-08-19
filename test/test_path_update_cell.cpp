@@ -51,20 +51,6 @@ static void linear_mark_block_x(const int16_t &y, const int16_t &start, const in
 
 }
 extern Cell_t g_cell_history[5];
-void case_1() {
-//	Cell_t start{-10, 0};
-//	Cell_t stop{10, 0};
-//	linear_mark(start, stop, CLEANED);
-//	start = {-10, 2};
-//	stop = {11, 2};
-//	linear_mark(start, stop, CLEANED);
-//	start = {-10, 4};
-//	stop = {11, 4};
-//	linear_mark(start, stop, CLEANED);
-//	linear_mark_block_y(start.X - 2, -3, start.Y + 1);
-//	linear_mark_block_y(stop.X + 2, -3, stop.Y + 1);
-
-}
 
 void case_2() {
 	map_set_block({-20,-20},{20,20},CLEANED);
@@ -72,14 +58,27 @@ void case_2() {
 	map_set_block_with_bound({-10,-5},{-7,5},UNCLEAN);
 	map_set_block({-11,-6},{6,-6},CLEANED);
 
-
 	map_set_block({-2,0},{3,0},UNCLEAN);
 }
-
+bool move_to(const Cell_t& curr, PPTargetType& path)
+{
+	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
+	std::vector<Cell_t> cells;
+	std::copy(path.cells.begin(),path.cells.end(),cells.begin());
+  for (const auto& cell :  cells)
+	{
+		ROS_INFO("cell(%d,%d)",cell.X,cell.Y);
+		for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
+		{
+			auto y = cell.Y + dy;
+			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
+		}
+	}
+}
 int main(int argc, char **argv)
 {
 
-	map_init();
+	map_init(MAP);
 
 	Cell_t curr{0,0};
 	auto point = map_cell_to_point(curr);
@@ -87,10 +86,21 @@ int main(int argc, char **argv)
 
 //    case_1();
 	case_2();
+	map_mark_robot(MAP);
+//	map_set_block({2,-1},{2,1},BLOCKED_BUMPER);
+//	map_set_block({-2,-1},{-2,1},BLOCKED_BUMPER);
+//	map_set_block({-2,-1},{-2,1},BLOCKED_BUMPER);
 	PPTargetType cleaning_path;
 //	path_target(curr, cleaning_path);
-  path_lane_is_cleaned(curr, cleaning_path);
 	debug_map(MAP, cleaning_path.target.X, cleaning_path.target.Y);
+	auto is_found = false;
+//	do {
+		path_full(curr, cleaning_path, is_found);
+		if(is_found)
+			move_to(curr, cleaning_path);
+//	}while(is_found);
+
+//	debug_map(MAP, cleaning_path.target.X, cleaning_path.target.Y);
 
 	return 0;
 }

@@ -283,7 +283,7 @@ bool cm_move_to(const PPTargetType& path)
 	cm_update_position();
 	Cell_t start;
 	start = map_get_curr_cell();
-	ROS_INFO("cm_move_to: target(%d,%d)");
+//	ROS_INFO("cm_move_to: target(%d,%d)");
 
 #if INTERLACED_MOVE
 	extern uint16_t g_new_dir;
