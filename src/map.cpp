@@ -611,13 +611,17 @@ void map_set_bumper()
 	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
 		d_cells = {{2,-1}, {2,0}, {2,1}};
 	else if (bumper_trig & LeftBumperTrig) {
-		//d_cells = {{2, 1}, {2,2}/*,{1,2}*/};
-		d_cells = {{2, 1}/*, {2,2},{1,2}*/};
+      if(mt_is_linear())
+				d_cells = {{2, 1}/*, {2,2},{1,2}*/};
+			else
+				d_cells = {{2, 1}, /*{0, 2}, */{1, 2}/*,{1, 1}*/};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
-		//d_cells = {{2,-2},{2,-1}/*,{1,-2}*/};
-		d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
+      if(mt_is_linear())
+				d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
+			else
+				d_cells = {{2,-1}, /*{0,-2},*/{1,-2}/*,{1,-1}*/};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
@@ -856,6 +860,17 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 		}
 	}
 
+	int32_t x, y;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+	{
+		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+		{
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == UNCLEAN){
+				map_set_cell(MAP, x, y, CLEANED);
+			}
+		}
+	}
 	ROS_ERROR("%s,%d: %s",__FUNCTION__, __LINE__, msg.c_str());
 }
 
@@ -871,8 +886,8 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 		ROS_ERROR("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	}
 	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
-	auto min = std::min(cells.front().X, cells.back().X) + 2;
-	auto max = std::max(cells.front().X, cells.back().X) - 2;
+	auto min = std::min(cells.front().X, cells.back().X) + 3;
+	auto max = std::max(cells.front().X, cells.back().X) - 3;
 
 	if(min >= max)
 		return;

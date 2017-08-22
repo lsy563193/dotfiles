@@ -387,8 +387,8 @@ bool cm_move_to(const PPTargetType& path)
 		if (!mt_is_linear())
 			map_set_follow_wall(passed_path);
 
+		linear_mark_clean(start, g_next_cell);
 	}
-	//linear_mark_clean(start, g_next_cell);
 	map_set_blocked();
 	return ret;
 }
@@ -510,7 +510,7 @@ bool cm_curve_move_to_point()
 }
 */
 
-#if 0
+//#if 0
 void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 {
 	if (start.Y == target.Y)
@@ -523,7 +523,7 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 
 			auto start_x = std::min(start.X, stop.X);
 			auto stop_x = std::max(start.X, stop.X);
-			for (auto x = start_x-1; x<=stop_x+1; x++)
+			for (auto x = start_x; x<=stop_x; x++)
 			{
 				auto y = (int16_t) (slop * (stop.X) + intercept);
 				for(auto dy=-ROBOT_SIZE_1_2;dy<=ROBOT_SIZE_1_2;dy++)
@@ -532,7 +532,7 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 		}
 	}
 }
-#endif
+//#endif
 
 int cm_cleaning()
 {

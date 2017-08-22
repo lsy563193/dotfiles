@@ -81,7 +81,15 @@ static int16_t cliff_turn_angle()
 
 static int16_t obs_turn_angle()
 {
-	g_turn_angle = -920;
+	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
+	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
+	if(g_obs_triggered == Status_Front_OBS)
+		g_turn_angle = -850;
+	else if(g_obs_triggered == diff_side)
+		g_turn_angle = -920;
+	else if(g_obs_triggered == same_side)
+		g_turn_angle = -300;
+
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
 //	ROS_WARN("g_turn_angle(%d)",g_turn_angle);
