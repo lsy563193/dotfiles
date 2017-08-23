@@ -1068,7 +1068,8 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
-#if !INTERLACED_MOVE
+//#if !INTERLACED_MOVE
+#if 1
 	if (!is_stop) {
 		ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto a = curr.Y; a >= map.min.Y && !is_stop; --a) {
