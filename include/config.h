@@ -431,8 +431,9 @@
 #define VERIFY_CPU_ID						(0)
 #define VERIFY_KEY							(0)
 
-/* ------------------------------------- Slam method for testing ------------------------------------- */
+/* ------------------------------------- Slam method ------------------------------------- */
 #define SLAM_METHOD_2						(1)
+#define USE_WORLD_TF						(1)
 
 /* ------------------------------------- Laser Follow Wall Enable ------------------------------------- */
 #define LASER_FOLLOW_WALL					(1)

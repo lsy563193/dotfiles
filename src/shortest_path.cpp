@@ -1519,6 +1519,7 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 		if (path_points.size() > 3) {
 			list<Cell_t>::iterator it = path_points.begin();
 			for (i = 0; i < path_points.size() - 3; i++) {
+				ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path_points.size());
 				list<Cell_t>::iterator it_ptr1 = it;
 
 				list<Cell_t>::iterator it_ptr2 = it_ptr1;

@@ -70,6 +70,7 @@ void Slam::enableMapUpdate()
 #if SLAM_METHOD_2
 	start_slam_cli_ = nh_.serviceClient<std_srvs::Empty>("Start_Slam");
 	start_slam_cli_.call(empty);
+	robot::instance()->resetCorrection();
 #else
 	align_cli_ = nh_.serviceClient<std_srvs::Empty>("align");
 //	align_cli_.waitForExistence(ros::Duration(10));
