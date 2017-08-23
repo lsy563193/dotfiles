@@ -153,7 +153,7 @@ void path_update_cells(void);
  */
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path);
 void path_find_all_targets(const Cell_t& curr, std::list <PPTargetType>& g_targets);
-bool path_full(const Cell_t& curr, PPTargetType& path,bool& is_found);
+bool path_full(const Cell_t& curr, PPTargetType& path);
 
 /*
  * Find how many cells ahead to clean with a given target.
@@ -241,7 +241,7 @@ bool is_block_unclean(int16_t x, int16_t y);
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-int8_t is_block_cleaned(int16_t x, int16_t y);
+int8_t is_block_cleaned_unblock(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
@@ -253,7 +253,7 @@ int8_t is_block_cleaned(int16_t x, int16_t y);
  * @return	0 if the block is not cleanable
  *		1 if the block is cleanable
  */
-int8_t is_block_cleanable(int16_t x, int16_t y);
+//int8_t is_block_cleanable(int16_t x, int16_t y);
 
 /*
  * Check a given point is blocked by bumper and/or cliff or not.
@@ -300,4 +300,5 @@ int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path);
  */
 void path_fill_path(std::list<Cell_t>& path);
 
+bool path_dijkstra(const Cell_t& curr, Cell_t& p_goal);
 #endif

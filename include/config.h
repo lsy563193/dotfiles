@@ -445,4 +445,5 @@
 #define LINEAR_MOVE_WITH_PATH				(1)
 
 #define COLOR_DEBUG_MAP		(1)
-#define INTERLACED_MOVE	(1)
+#define INTERLACED_MOVE	(0)
+#define PATH_ALGORITHM_V2	(0)
