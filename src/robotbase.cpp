@@ -268,6 +268,7 @@ void *robotbase_routine(void*)
 	uint32_t omni_detect_cnt = 0;
 	uint32_t last_omni_wheel = 0;
 	uint32_t tilt_count = 0;
+	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
 	while (ros::ok() && !robotbase_thread_stop)
 	{
 		/*--------data extrict from serial com--------*/
@@ -304,9 +305,33 @@ void *robotbase_routine(void*)
 		sensor.c_s = receiStream[33];
 		sensor.w_tank = (receiStream[34]>0)?true:false;
 		sensor.batv = (receiStream[35]);
-		sensor.lcliff = ((receiStream[36] << 8) | receiStream[37]);
-		sensor.fcliff = ((receiStream[38] << 8) | receiStream[39]);
-		sensor.rcliff = ((receiStream[40] << 8) | receiStream[41]);
+		if(((receiStream[36] << 8) | receiStream[37]) < 20)
+		{
+			if(last_lcliff > 20)
+				last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+			else
+				sensor.lcliff = last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+		}
+		else
+			sensor.lcliff = last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+		if(((receiStream[38] << 8) | receiStream[39]) < 20)
+		{
+			if(last_fcliff > 20)
+				last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+			else
+				sensor.fcliff = last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+		}
+		else
+			sensor.fcliff = last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+		if(((receiStream[40] << 8) | receiStream[41]) < 20)
+		{
+			if(last_rcliff > 20)
+				last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
+			else
+				sensor.rcliff = last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
+		}
+		else
+			sensor.rcliff = last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
 		sensor.vacuum_selfcheck_status = (receiStream[42] & 0x30);
 		sensor.lbrush_oc = (receiStream[42] & 0x08) ? true : false;		// left brush over current
 		sensor.mbrush_oc = (receiStream[42] & 0x04) ? true : false;		// main brush over current
