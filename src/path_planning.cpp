@@ -1016,7 +1016,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 
 	/* No more target to clean */
 	if (g_targets.empty()) {
-		if (path_escape_trapped() <= 0) {
+		if (path_escape_trapped(curr) <= 0) {
 			ROS_WARN("%s %d: trapped", __FUNCTION__, __LINE__);
 			return -2;
 		}
@@ -1286,17 +1286,12 @@ void path_update_cells()
 	}
 }
 
-int16_t path_escape_trapped()
+int16_t path_escape_trapped(const Cell_t& curr)
 {
 
 	int16_t	val = 0;
 	uint16_t i = 0;
 	Cell_t temp_cell;
-
-	if (g_trapped_mode == 1)
-		temp_cell = map_get_curr_cell();
-	else
-		temp_cell = g_cell_history[0];
 
 	set_explore_new_path_flag(true);
 	if ( g_trapped_cell[0].X != g_home_x || g_trapped_cell[0].Y != g_home_y ){
