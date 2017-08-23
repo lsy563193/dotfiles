@@ -89,7 +89,7 @@ int OBS_adjust_count;
 
 int robotbase_init(void)
 {
-	int		ser_ret, base_ret,sers_ret;
+	int		ser_ret, base_ret, sers_ret;
 	uint8_t	t_buf[2];
 
 	ser_ret = base_ret = 0;
@@ -253,10 +253,9 @@ void *robotbase_routine(void*)
 
 	geometry_msgs::TransformStamped	odom_trans;
 
-	ros::Publisher	odom_pub,sensor_pub;
+	ros::Publisher	odom_pub, sensor_pub;
 	ros::NodeHandle	robotsensor_node;
 	ros::NodeHandle	odom_node;
-	ros::NodeHandle	slam_angle_offset_node;
 
 	th_last = vth = pose_x = pose_y = 0.0;
 
@@ -372,6 +371,7 @@ void *robotbase_routine(void*)
 		pthread_mutex_lock(&serial_data_ready_mtx);
 		pthread_cond_broadcast(&serial_data_ready_cond);
 		pthread_mutex_unlock(&serial_data_ready_mtx);
+		sensor_pub.publish(sensor);
 
 		/*------------publish odom and robot_sensor topic --------*/
 		cur_time = ros::Time::now();
@@ -393,6 +393,7 @@ void *robotbase_routine(void*)
 		odom.twist.twist.linear.x = vx;
 		odom.twist.twist.linear.y = 0.0;
 		odom.twist.twist.angular.z = vth;
+		odom_pub.publish(odom);
 
 		odom_trans.header.stamp = cur_time;
 		odom_trans.header.frame_id = "odom";
@@ -402,9 +403,6 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-
-		odom_pub.publish(odom);
-		sensor_pub.publish(sensor);
 		/*------publish end -----------*/
 
 		// Dynamic adjust obs
@@ -462,7 +460,7 @@ void *serial_send_routine(void*)
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
 	reset_send_flag();
-	while(send_stream_thread){
+	while(ros::ok() && send_stream_thread){
 		r.sleep();
 		if(get_sleep_mode_flag()){
 			continue;
@@ -592,9 +590,9 @@ void robotbase_restore_slam_correction()
 {
 	// For restarting slam
 	boost::mutex::scoped_lock(odom_mutex);
-	pose_x += robot::instance()->getCorrectionX();
-	pose_y += robot::instance()->getCorrectionY();
-	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
+	pose_x += robot::instance()->getRobotCorrectionX();
+	pose_y += robot::instance()->getRobotCorrectionY();
+	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
 }
 
 void robotbase_obs_adjust_count(int count)
