@@ -433,7 +433,7 @@
 
 /* ------------------------------------- Slam method ------------------------------------- */
 #define SLAM_METHOD_2						(1)
-#define USE_WORLD_TF						(1)
+#define USE_ROBOT_TF						(1)
 
 /* ------------------------------------- Laser Follow Wall Enable ------------------------------------- */
 #define LASER_FOLLOW_WALL					(1)

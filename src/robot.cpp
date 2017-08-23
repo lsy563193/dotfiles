@@ -341,7 +341,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //		cm_update_map();
 	}
 
-#if USE_WORLD_TF
+#if USE_ROBOT_TF
 	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_, slam_correction_x_, slam_correction_y_, slam_correction_yaw_, robot_correction_x_, robot_correction_y_, robot_correction_yaw_, robot_x_, robot_y_, robot_yaw_);
 	//robot_x = (tmp_x + robot_x) / 2;
 	//robot_y = (tmp_y + robot_y) / 2;
