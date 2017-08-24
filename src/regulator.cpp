@@ -399,7 +399,7 @@ bool LinearRegulator::isReach()
 		{
 			path_.cells.pop_front();
 			g_next_cell = path_.cells.front();
-			ROS_INFO("\033[31m" "%s,%d,g_next_cell(%d,%d)" "\033[0m",__FUNCTION__,__LINE__,g_next_cell.X,g_next_cell.Y);
+			//ROS_INFO("\033[31m" "%s,%d,g_next_cell(%d,%d)" "\033[0m",__FUNCTION__,__LINE__,g_next_cell.X,g_next_cell.Y);
 			s_target = map_cell_to_point(g_next_cell);
 			if (std::abs(map_get_x_count() - s_target.X) < std::abs(map_get_y_count() - s_target.Y))
 				g_new_dir = map_get_y_count() > s_target.Y ? NEG_Y : POS_Y;
