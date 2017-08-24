@@ -152,7 +152,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (switch_ && isScanReady())
 		{
-			ROS_INFO("\033[35m" "%s %d: Start laser successed." "\033[0m", __FUNCTION__, __LINE__);
+			ROS_INFO("\033[34m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
 		}
 

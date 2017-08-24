@@ -1592,7 +1592,7 @@ void path_fill_path(std::list<Cell_t>& path)
 	for (std::list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
 		msg += "->(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")";
 	}
-	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
+	//ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size )

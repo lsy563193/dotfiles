@@ -1432,7 +1432,7 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& path) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
-	int16_t	i, j, ei, ej, si, sj, x_path, y_path;
+	int16_t	ei, ej, si, sj, x_path, y_path;
 
 	path_reset_path_points();
 
@@ -1488,8 +1488,8 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 			ej = pos.Y < y_path ? y_path : pos.Y;
 
 			blocked = 0;
-			for (i = si; i <= ei && blocked == 0; i++) {
-				for (j = sj; j <= ej && blocked == 0; j++) {
+			for (int16_t i = si; i <= ei && blocked == 0; i++) {
+				for (int16_t j = sj; j <= ej && blocked == 0; j++) {
 					if(map_get_cell(SPMAP, i, j) == COST_HIGH) {
 						blocked = 1;
 					}
@@ -1518,7 +1518,7 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 	else {
 		if (path_points.size() > 3) {
 			list<Cell_t>::iterator it = path_points.begin();
-			for (i = 0; i < path_points.size() - 3; i++) {
+			for (uint16_t i = 0; i < path_points.size() - 3; i++) {
 				ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path_points.size());
 				list<Cell_t>::iterator it_ptr1 = it;
 
@@ -1527,6 +1527,10 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 
 				list<Cell_t>::iterator it_ptr3 = it_ptr2;
 				it_ptr3++;
+
+				// Just for protection, in case the iterator overflow. It should not happen under (i < path_points.size() - 3).
+				if (it_ptr3 == path_points.end())
+					break;
 
 				bool blocked_min, blocked_max;
 				blocked_min = blocked_max = false;
@@ -1540,14 +1544,12 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 					ei = it_ptr2->Y > it_ptr3->Y ? it_ptr2->Y : it_ptr3->Y;
 
 					while (blocked_min == false || blocked_max == false) {
-						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
-							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
-								if (blocked_min == false && (x_min - 1 < sj || map_get_cell(SPMAP, x_min - 1, i) == COST_HIGH)) {
-									blocked_min = true;
-								}
-								if (blocked_max == false && (x_max + 1 > ej || map_get_cell(SPMAP, x_max + 1, i) == COST_HIGH)) {
-									blocked_max = true;
-								}
+						for (int16_t j = si; j <= ei && (blocked_min == false || blocked_max == false); j++) {
+							if (blocked_min == false && (x_min - 1 < sj || map_get_cell(SPMAP, x_min - 1, j) == COST_HIGH)) {
+								blocked_min = true;
+							}
+							if (blocked_max == false && (x_max + 1 > ej || map_get_cell(SPMAP, x_max + 1, j) == COST_HIGH)) {
+								blocked_max = true;
 							}
 						}
 						if (blocked_min == false) {
@@ -1558,10 +1560,10 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 						}
 					}
 
-					ROS_INFO("%s %d: x_min: %d\tx_max: %d\n", __FUNCTION__, __LINE__, x_min, x_max);
-					if (target.X != (x_min + x_max) / 2) {
+					if (it_ptr3->X != (x_min + x_max) / 2) {
 						it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
 					}
+					ROS_INFO("%s %d: Loop i:%d\tx_min: %d\tx_max: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min, x_max, (x_min + x_max) / 2);
 				} else {
 					int16_t y_min, y_max;
 					y_min = y_max = it_ptr2->Y;
@@ -1571,14 +1573,12 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 					si = it_ptr2->X > it_ptr3->X ? it_ptr3->X : it_ptr2->X;
 					ei = it_ptr2->X > it_ptr3->X ? it_ptr2->X : it_ptr3->X;
 					while (blocked_min == false || blocked_max == false) {
-						for (j = sj; j <= ej && (blocked_min == false || blocked_max == false); j++) {
-							for (i = si; i <= ei && (blocked_min == false || blocked_max == false); i++) {
-								if (blocked_min == false && (y_min - 1 < sj || map_get_cell(SPMAP, i, y_min - 1) == COST_HIGH)) {
-									blocked_min = true;
-								}
-								if (blocked_max == false && (y_max + 1 > ej || map_get_cell(SPMAP, i, y_max + 1) == COST_HIGH)) {
-									blocked_max = true;
-								}
+						for (int16_t j = si; j <= ei && (blocked_min == false || blocked_max == false); j++) {
+							if (blocked_min == false && (y_min - 1 < sj || map_get_cell(SPMAP, j, y_min - 1) == COST_HIGH)) {
+								blocked_min = true;
+							}
+							if (blocked_max == false && (y_max + 1 > ej || map_get_cell(SPMAP, j, y_max + 1) == COST_HIGH)) {
+								blocked_max = true;
 							}
 						}
 						if (blocked_min == false) {
@@ -1589,10 +1589,10 @@ int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& p
 						}
 					}
 
-					ROS_INFO("%s %d: y_min: %d\ty_max: %d\n", __FUNCTION__, __LINE__, y_min, y_max);
-					if (target.Y != (y_min + y_max) / 2) {
+					if (it_ptr3->Y != (y_min + y_max) / 2) {
 						it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
 					}
+					ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
 				}
 
 				it++;
