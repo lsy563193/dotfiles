@@ -44,7 +44,7 @@ Laser::~Laser()
 //	start_motor_cli_.shutdown();
 //	stop_motor_cli_.shutdown();
 //	nh_.shutdown();
-	ROS_INFO("\033[34m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
+	ROS_INFO("\033[47;35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
 
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -133,9 +133,9 @@ void Laser::lidarMotorCtrl(bool switch_)
 			trigger.request.data = temp_switch_;
 			request_sent = true;
 			start_time = time(NULL);
-			ROS_INFO("\033[34m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF");
+			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF");
 			if (lidar_motor_cli_.call(trigger)){
-				ROS_INFO("\033[34m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__,trigger.response.message.c_str());
+				ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__,trigger.response.message.c_str());
 				if (!temp_switch_){
 					setScanReady(0);
 					if (!switch_)
@@ -144,7 +144,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 				}
 			}
 			else{
-				ROS_ERROR("\033[34m" "%s %d: Service not received!" "\033[0m",__FUNCTION__,__LINE__);
+				ROS_ERROR("\033[35m" "%s %d: Service not received!" "\033[0m",__FUNCTION__,__LINE__);
 				setScanReady(0);
 				break;
 			}
@@ -152,7 +152,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (switch_ && isScanReady())
 		{
-			ROS_INFO("\033[34m" "%s %d: Start laser successed." "\033[0m", __FUNCTION__, __LINE__);
+			ROS_INFO("\033[35m" "%s %d: Start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -184,7 +184,7 @@ void Laser::lidarShieldDetect(bool switch_)
 		trig.request.data = false;
 
 	lidar_shield_detect_.call(trig);
-	ROS_INFO("\033[34m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
+	ROS_INFO("\033[35m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
 
 bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)

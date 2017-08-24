@@ -1428,11 +1428,13 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 	else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
-		if (!SpotMovement::instance()->spotNextTarget(path.target))
+		if (!SpotMovement::instance()->spotNextTarget(curr,&path))
 			return 0;
-		path.cells.clear();
-		path.cells.push_front(path.target);
+		debug_map(MAP, path.target.X, path.target.Y);
+		//path.cells.clear();
+		//path.cells.push_front(path.target);
 		path.cells.push_front(curr);
+
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
 		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
@@ -1482,7 +1484,8 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	g_target_cell = path.target;
 
 	g_old_dir = g_new_dir;
-	if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
+	//if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
+	if (g_go_home)
 		mt_set(CM_LINEARMOVE);
 	else if(get_clean_mode() == Clean_Mode_Navigation)
 		mt_update(curr, path, g_old_dir);
@@ -1493,6 +1496,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		g_new_dir = curr.X > g_next_cell.X ? NEG_X : POS_X;
 
 #if LINEAR_MOVE_WITH_PATH
+	//if (mt_is_linear() && SpotMovement::instance()->getSpotType() == NO_SPOT)
 	if (mt_is_linear())
 	{
 		// Add current cell for filling the path, otherwise it will lack for the path from current to the first turning cell.
@@ -1516,10 +1520,14 @@ void path_fill_path(std::list<Cell_t>& path)
 	path.clear();
 	//path_display_path_points(saved_path);
 
-	for (list<Cell_t>::iterator it = saved_path.begin(); it->X != saved_path.back().X || it->Y != saved_path.back().Y; it++)
+	//for (list<Cell_t>::iterator it = saved_path.begin(); it->X != saved_path.back().X || it->Y != saved_path.back().Y; it++)
+	for (list<Cell_t>::iterator it = saved_path.begin(); it != saved_path.end(); it++)
 	{
 		list<Cell_t>::iterator next_it = it;
-		next_it++; // Get the next turing point.
+		if(++next_it == saved_path.end()){
+			ROS_INFO("%s,%d,fill path to last interator",__FUNCTION__,__LINE__);
+			break;
+		}
 		//ROS_DEBUG("%s %d: it(%d, %d), next it(%d, %d).", __FUNCTION__, __LINE__, it->X, it->Y, next_it->X, next_it->Y);
 		if (next_it->X == it->X)
 			dir = next_it->Y > it->Y ? POS_Y : NEG_Y;
@@ -1581,10 +1589,10 @@ void path_fill_path(std::list<Cell_t>& path)
 	path.push_back(cell);
 	//ROS_DEBUG("%s %d: End cell(%d, %d).", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	std::string msg = "Filled path:";
-	for (list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
+	for (std::list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
+		msg += "->(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")";
 	}
-	ROS_DEBUG("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
+	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size )
