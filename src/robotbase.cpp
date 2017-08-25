@@ -84,9 +84,6 @@ boost::mutex odom_mutex;
 // Odom coordinate
 float pose_x, pose_y;
 
-// For obs dynamic adjustment
-int OBS_adjust_count;
-
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret, sers_ret;
@@ -405,9 +402,6 @@ void *robotbase_routine(void*)
 		odom_broad.sendTransform(odom_trans);
 		/*------publish end -----------*/
 
-		// Dynamic adjust obs
-		obs_dynamic_base(OBS_adjust_count);
-
 		/*------start omni detect----*/
 		if(g_omni_enable){
 			if(absolute(sensor.rw_vel - sensor.lw_vel) <= 0.05 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
@@ -593,14 +587,6 @@ void robotbase_restore_slam_correction()
 	pose_x += robot::instance()->getRobotCorrectionX();
 	pose_y += robot::instance()->getRobotCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
-}
-
-void robotbase_obs_adjust_count(int count)
-{
-#ifdef OBS_DYNAMIC
-	boost::mutex::scoped_lock(odom_mutex);
-	OBS_adjust_count = count;
-#endif
 }
 
 bool is_turn(void)

@@ -456,6 +456,8 @@ public:
 
 	void resetCorrection();
 
+	void obs_adjust_count(int count);
+
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);

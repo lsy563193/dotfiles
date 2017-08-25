@@ -37,6 +37,9 @@ int8_t key_release_count;
 
 int16_t slam_error_count;
 
+// For obs dynamic adjustment
+int OBS_adjust_count = 50;
+
 //extern pp::x900sensor sensor;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
@@ -208,17 +211,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	is_sensor_ready_ = true;
 
-//	if (is_sensor_ready_ == false) {
-//		if (time(NULL) - start_time > 2) {
-//			ROS_INFO("%s %d: Gyro starting angle: %d", __FUNCTION__, __LINE__, (int16_t)((angle * 10 + 3600)) % 3600);
 
-//			Gyro_SetImuOffset(((int16_t)(angle * 10 + 3600)) % 3600);
-//			Gyro_SetImuAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v_);
-//			is_sensor_ready_ = true;
-//		}
-//	} else {
-//		Gyro_SetImuAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v_);
-//	}
+	// Dynamic adjust obs
+	obs_dynamic_base(OBS_adjust_count);
 
 #if 0
 	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v_: %f", __FUNCTION__, __LINE__, angle, angle_v_);
@@ -651,4 +646,11 @@ void robot::resetCorrection()
 	robot_x_ = 0;
 	robot_y_ = 0;
 	robot_yaw_ = 0;
+}
+
+void robot::obs_adjust_count(int count)
+{
+#ifdef OBS_DYNAMIC
+	OBS_adjust_count = count;
+#endif
 }

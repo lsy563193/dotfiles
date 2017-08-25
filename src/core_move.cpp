@@ -835,7 +835,7 @@ void cm_self_check(void)
 
 	SelfCheckRegulator regulator;
 
-	robotbase_obs_adjust_count(50);
+	robot::instance()->obs_adjust_count(50);
 	while (ros::ok) {
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);

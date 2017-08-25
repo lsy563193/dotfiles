@@ -1015,7 +1015,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
 	p_reg_ = turn_reg_;
 
-	robotbase_obs_adjust_count(50);
+	robot::instance()->obs_adjust_count(50);
 	cm_set_event_manager_handler_state(true);
 
 	ROS_WARN("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);
