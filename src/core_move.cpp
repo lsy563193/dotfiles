@@ -290,7 +290,6 @@ bool cm_move_to(const PPTargetType& path)
 	cm_update_position();
 	Cell_t start;
 	start = map_get_curr_cell();
-	ROS_INFO("cm_move_to: target(%d,%d)");
 
 #if INTERLACED_MOVE
 	extern uint16_t g_new_dir;
@@ -347,7 +346,8 @@ bool cm_move_to(const PPTargetType& path)
 			rm.switchToNext();
 		}
 
-		if (get_clean_mode() == Clean_Mode_Navigation && (mt_is_linear() || mt_is_follow_wall()))
+		if (get_clean_mode() != Clean_Mode_WallFollow
+						&& (mt_is_linear() || mt_is_follow_wall()))
 		{
 			auto curr = map_get_curr_cell();
 			if (passed_path.back() != curr)
@@ -585,6 +585,7 @@ int cm_cleaning()
 				return -1;
 			}
 			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
+			ROS_INFO("%s,current cell(%d,%d)",__FUNCTION__,map_get_x_cell(),map_get_y_cell());
 			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
 				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
 				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))

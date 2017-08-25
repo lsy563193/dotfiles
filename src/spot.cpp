@@ -15,6 +15,7 @@
 #include "movement.h"
 #include "spot.h"
 #include "path_planning.h"
+#include "shortest_path.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "core_move.h"
@@ -37,19 +38,25 @@
 #define SPOT_MAX_SPEED  (20)
 static SpotMovement *spot_obj = NULL;
 
+static void spot_motor_configure()
+{
+	set_bldc_speed(Vac_Speed_Max);
+	set_main_brush_pwm(80);
+	set_side_brush_pwm(60, 60);
+}
 
 SpotMovement::SpotMovement(float diameter = 1.0)
 {
 	if (spot_obj == NULL)
 		spot_obj = this;
 	spot_diameter_ = diameter;
-	stop_point_ = {0, 0};
-	begin_point_ = {0, 0};
-	is_direct_change_ = 0;
+	near_cell_ = {0, 0};
+	begin_cell_ = {0, 0};
+	is_obs_trigger_ = 0;
 	is_stuck_ = 0;
 	sout_od_cnt_ = 0;
 	sin_od_cnt_ = 0;
-	targets_.clear();
+	targets_=NULL;
 	st_ = NO_SPOT;
 	spot_init_ = 0;
 	spot_bumper_cnt_ = 0;
@@ -67,51 +74,46 @@ SpotMovement *SpotMovement::instance()
 	return spot_obj;
 }
 
-static void spot_motor_configure()
-{
-	set_bldc_speed(Vac_Speed_Max);
-	set_main_brush_pwm(80);
-	set_side_brush_pwm(60, 60);
-}
 
-void SpotMovement::spotInit(float diameter, Cell_t cur_point)
+void SpotMovement::spotInit(float diameter, Cell_t cur_cell)
 {
 
-	if ((clock() / CLOCKS_PER_SEC) % 2 == 0)
+	if ((clock() / CLOCKS_PER_SEC) % 2 == 0)//random set spiral_type
 	{
-		spiral_type_ = ANTI_CLOCKWISE_OUT;
-		ROS_INFO("\033[34m" "%s %d ,spiral left out" "\033[0m", __FUNCTION__, __LINE__);
+		spiral_type_ = ANTI_CLOCKWISE;
+		ROS_INFO("\033[36m" "%s %d ,anti clockwise" "\033[0m", __FUNCTION__, __LINE__);
 	} else
 	{
-		spiral_type_ = CLOCKWISE_OUT;
-		ROS_INFO("\033[34m" "%s ,%d spiral right out" "\033[0m", __FUNCTION__, __LINE__);
+		spiral_type_ = CLOCKWISE;
+		ROS_INFO("\033[36m" "%s ,%d clockwise " "\033[0m", __FUNCTION__, __LINE__);
 	}
 	spot_diameter_ = diameter;
-	stop_point_ = {0, 0};
-	begin_point_ = {cur_point.X, cur_point.Y};
-	bp_ = targets_.end();
-	tp_ = targets_.end();
-	is_direct_change_ = 0;
+	near_cell_ = {0, 0};
+	begin_cell_ = {cur_cell.X, cur_cell.Y};
+	//bp_ = targets_->end();
+	//tp_ = targets_->end();
+	is_obs_trigger_ = 0;
 	is_stuck_ = 0;
 	sout_od_cnt_ = 0;
 	sin_od_cnt_ = 0;
-	targets_.clear();
+	targets_ = NULL;
 	spot_init_ = 1;
 	spot_bumper_cnt_ = (uint16_t)(diameter*1000/CELL_SIZE);
 	spot_motor_configure();
+	go_last_point_ = 0;
 }
 
 void SpotMovement::spotDeinit()
 {
-	stop_point_ = {0, 0};
-	begin_point_ = {0, 0};
-	bp_ = targets_.end();
-	tp_ = targets_.end();
-	is_direct_change_ = 0;
+	near_cell_ = {0, 0};
+	begin_cell_ = {0, 0};
+	//bp_ = targets_->end();
+	//tp_ = targets_->end();
+	is_obs_trigger_ = 0;
 	is_stuck_ = 0;
 	sout_od_cnt_ = 0;
 	sin_od_cnt_ = 0;
-	targets_.clear();
+	targets_ = NULL;
 	spot_diameter_ = 0;
 	spot_init_ = 0;
 	spot_bumper_cnt_ = 0;
@@ -121,389 +123,512 @@ void SpotMovement::spotDeinit()
 	resetSpotType();
 }
 
-void SpotMovement::setStopPoint(Cell_t *stp)
+#if 0
+void SpotMovement::getNeighbourCell(std::vector<Cell_t>::iterator &bp,Cell_t *np)
 {
-	Cell_t cur_point;
-	cur_point.X = map_get_x_cell();
-	cur_point.Y = map_get_y_cell();
-	bp_ = tp_;
-	ROS_INFO("\033[34m" "%s,%d,current point (%d,%d)" "\033[0m",__FUNCTION__,__LINE__,cur_point.X,cur_point.Y);
-	for(;tp_!=targets_.begin();--tp_)//search the bumper point,backward from curent tp_
+	if (bp == targets_->begin())
 	{
-		if( cur_point.X == tp_->X && cur_point.Y == tp_->Y )
+		if (spiral_type_ == CLOCKWISE_OUT ){
+			*np = {bp->X, (int16_t)(bp->Y - 1)};
+		}
+		else if( spiral_type_ == ANTI_CLOCKWISE_OUT){
+			*np = {bp->X, (int16_t)(bp->Y + 1)};
+		}
+	}
+	else
+	{
+		if ( ( bp-1 )->X == bp->X )
+		{
+			if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
+				*np = { (int16_t)( ( bp->X > 0 )? bp->X + 1: bp->X - 1), bp->Y };
+			else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
+				*np = { (int16_t)( ( bp->X > 0 )? bp->X - 1: bp->X + 1), bp->Y };
+		}
+		else if ( ( bp-1 )->Y == bp->Y)
+		{
+			if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
+				*np = { bp->X, (int16_t)( ( bp->Y > 0 )? bp->Y + 1: bp->Y - 1 ) };
+			else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
+				*np = { bp->X, (int16_t)( ( bp->Y > 0 )? bp->Y - 1: bp->Y + 1 ) };
+		}
+	}
+	ROS_INFO("\033[35m" "%s,%d, neighbour cell (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, np->X, np->Y);
+}
+#endif
+#if 0
+uint8_t SpotMovement::setNearCell(const Cell_t &cur_cell,Cell_t *nc)
+{
+	if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
+	{
+		targets_ = (spiral_type_ == CLOCKWISE_OUT) ? &targets_acw_out_ : &targets_cw_out_;
+		tp_ = targets_->begin();
+		spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_OUT : CLOCKWISE_OUT;
+	}
+	else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
+	{
+		targets_ = (spiral_type_ == CLOCKWISE_IN) ? &targets_acw_in_ : &targets_cw_in_;
+		tp_ = targets_->begin();
+		spiral_type_ = (spiral_type_ == CLOCKWISE_IN) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
+	}
+	ROS_INFO("\033[35m" "%s,%d,spiral changed %s" "\033[0m",__FUNCTION__, __LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"clokwise out":"anti clockwise out"):(spiral_type_ == 2?"clockwise in":"anti clockwise in"));
+	if(bp_->X == cur_cell.X && bp_->Y == cur_cell.Y){
+		tp_++;
+	}
+	for(;tp_!=targets_->end();++tp_)//search  interator in current cell
+	{
+		if( cur_cell.X == tp_->X && cur_cell.Y == tp_->Y )
 		{
 			bp_ = tp_;
 		}
 	}
-	ROS_INFO("\033[34m" "%s,%d,bumper point (%d,%d)" "\033[0m",__FUNCTION__,__LINE__,bp_->X,bp_->Y);
+	ROS_INFO("\033[35m" "%s,%d,current cell (%d,%d),bumper cell (%d,%d)" "\033[0m",__FUNCTION__,__LINE__,cur_cell.X,cur_cell.Y,bp_->X,bp_->Y);
 
-	if (bp_ == targets_.begin())
-	{
-		if (spiral_type_ == CLOCKWISE_OUT ){
-			*stp = {bp_->X, (int16_t)(bp_->Y - 1)};
-		}
-		else if( spiral_type_ == ANTI_CLOCKWISE_OUT){
-			*stp = {bp_->X, (int16_t)(bp_->Y + 1)};
-		}
-	}
-	else
-	{
-		if ( ( bp_-1 )->X == bp_->X )
-		{
-			if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
-				*stp = { (int16_t)( ( bp_->X > 0 )? bp_->X + 1: bp_->X - 1), bp_->Y };
-			else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
-				*stp = { (int16_t)( ( bp_->X > 0 )? bp_->X - 1: bp_->X + 1), bp_->Y };
-		}
-		else if ( ( bp_-1 )->Y == bp_->Y)
-		{
-			if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
-				*stp = { bp_->X, (int16_t)( ( bp_->Y > 0 )? bp_->Y + 1: bp_->Y - 1 ) };
-			else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
-				*stp = { bp_->X, (int16_t)( ( bp_->Y > 0 )? bp_->Y - 1: bp_->Y + 1 ) };
-		}
-	}
-	ROS_INFO("\033[34m" "%s,%d, stop point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, stp->X, stp->Y);
-}
-
-uint8_t SpotMovement::spotChgType()
-{
-	if (spiral_type_ == CLOCKWISE_OUT || spiral_type_ == ANTI_CLOCKWISE_OUT)
-	{
-		sout_od_cnt_ += 1;
-		if (sout_od_cnt_ > spot_bumper_cnt_ )
-		{
-			sout_od_cnt_ = 0;
-			ROS_INFO("\033[34m" "%s,%d, spiral obs detect counter reached" "\033[0m",__FUNCTION__,__LINE__);
-			spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
-		}
-		else
-		{
-			spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_OUT : CLOCKWISE_OUT;
-		}
-	}
-	else if (spiral_type_ == CLOCKWISE_IN || spiral_type_ == ANTI_CLOCKWISE_IN)
-	{
-		spiral_type_ = (spiral_type_ == CLOCKWISE_IN) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
-		sin_od_cnt_ += 1;
-		if (sin_od_cnt_ > spot_bumper_cnt_)
-		{
-			is_direct_change_ = 0;
-			sin_od_cnt_ = 0;
-			is_stuck_ = 1;
-		}
-	}
-	ROS_INFO("\033[34m" "%s,%d,spiral changed %s" "\033[0m",__FUNCTION__, __LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
-	return spiral_type_;
-}
-
-uint8_t SpotMovement::getNearPoint(Cell_t ref_point)
-{
 	int ret = 0;
 	std::vector<Cell_t>::iterator ttp;
-	for (ttp = targets_.begin(); ttp != targets_.end(); ++ttp)//find stop point in new target list
-	{
-		if(ref_point.X == ttp->X && ref_point.Y == ttp->Y){
-			ret = 1;
-			break;
-		}
-	}
-	if(ret)
-		tp_ = ttp;
-	else
-		tp_ = targets_.begin();
-#if 0
-	if(!ret){//if not find then find point near to stop point
-		float dist = 0.0;
-		int pos = 0, i = 0;
-		std::vector<Cell_t>::reverse_iterator rtp_;
-		for (rtp_ = targets_.rbegin(); rtp_ != targets_.rend(); ++rtp_){
-			dist = sqrt( pow((ref_point.X - rtp_->X), 2) + pow((ref_point.Y - rtp_->Y), 2) );
-			i++;
-			if(absolute(dist - 1.0) < 0.9){
+	int cnt = 0;
+	while(ros::ok()){
+		getNeighbourCell(bp_,nc);
+		for (ttp = targets_->begin(); ttp != targets_->end(); ++ttp)//search near interator in current target list
+		{
+			if(nc->X == ttp->X && nc->Y == ttp->Y){
 				ret = 1;
-				pos = (targets_.size() - i);
+				tp_ = ttp;
 				break;
 			}
-
 		}
-		tp_ = targets_.begin();
-		while(pos){// re pointer  tp_ to the current rtp_
-			pos--;
-			tp_ ++;
+		ROS_INFO("\033[35m" "%s,%d,%s near cell (%d,%d)" "\033[0m",__FUNCTION__,__LINE__,ret?"find":"not find",nc->X,nc->Y);
+		if(ret){
+			return ret;
+		}
+		if(++cnt >= 2){
+			return 0;
+		}
+		if(ret == 0 && (spiral_type_ != CLOCKWISE_IN || spiral_type_ != ANTI_CLOCKWISE_IN)){
+			spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
+			targets_ = (spiral_type_ == CLOCKWISE_IN) ? &targets_cw_in_ : &targets_acw_in_;
+			ROS_INFO("\033[36m" "%s,%d,not find neighbour cell change to %s" "\033[0m",__FUNCTION__,__LINE__,(spiral_type_ == CLOCKWISE_OUT) ? "ANTI_CLOCKWISE_IN" : "CLOCKWISE_IN");
+		}
+		else{
+			return ret;
 		}
 	}
+
+}
 #endif
 
-	ROS_INFO("\033[34m" "%s,%d,%s near point (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,
-					(ret?"found":"not found"), tp_->X, tp_->Y);
-	return ret;
-}
-
-void SpotMovement::genTargets(uint8_t sp_type, 
-									float diameter, 
-									std::vector<Cell_t> *target,
-									const Cell_t beginpoint)
+void SpotMovement::genTargets(uint8_t sp_type,float diameter,std::vector<Cell_t> *target,const Cell_t begincell)
 {
 	uint8_t spt = sp_type;
 	int16_t x, x_l, y, y_l;
-	x = x_l = beginpoint.X;
-	y = y_l = beginpoint.Y;
+	x = x_l = begincell.X;
+	y = y_l = begincell.Y;
 	target->clear();
-	ROS_INFO("\033[34m" "%s,%d,generate targets spiral type %s " "\033[0m",__FUNCTION__,__LINE__, (spiral_type_ == 1 || spiral_type_ == 4)? ((spiral_type_ == 1)?"right out":"left out"):(spiral_type_ == 2?"right in":"left in"));
 	uint16_t st_c = 1;//number of spiral count
-	uint16_t st_n = (uint16_t) (diameter * 1000 / CELL_SIZE);//number of spiral
-	ROS_INFO( "%s,%d,number of spiral" "\033[35m" " %d" "\033[0m",__FUNCTION__,__LINE__,st_n);
+	uint16_t c_c = 1;//cell counter
+	uint16_t st_n = (uint16_t) ceil(diameter * 1000 / (CELL_SIZE*2));//number of spiral
+	ROS_INFO( "%s,%d,number of cells" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,st_n);
 	int16_t i;
+	int mid_it;// for store the last pos in clockwise/anti clockwise out
+
 	if(st_c == 1){
 		target->push_back({x,y});
 		st_c +=1;
+		c_c +=2;
 	}
-	if (spt == ANTI_CLOCKWISE_OUT || spt == CLOCKWISE_OUT)
-	{
 
-		printf("\033[35m" "spiral %s: (%d,%d)",(spt == CLOCKWISE_IN)?"right out":"left out",x,y);
-		while (ros::ok())
+	if (spt == CLOCKWISE)
+	{
+		std::string msg("clockwise out: (");
+		msg +=std::to_string(x)+","+std::to_string(x)+")";
+		while (ros::ok()) //clockwise out
 		{
-			if (st_c > st_n){
-				if(st_n %2 == 0){
-					x = ANTI_CLOCKWISE_OUT?x -1:x +1;
+			if (st_c > st_n)
+			{
+				if(st_n %2 == 0)
+				{
+					x = x+ 2 ;//ANTI_CLOCKWISE_OUT ? x -2 : x +2;
 					target->push_back({x,y});
-					printf( "->(%d,%d)",x,y);
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				break;
 			}
 			else if ((st_c % 2) == 0)
 			{
-				x = spt == ANTI_CLOCKWISE_OUT? x_l + 1 : x_l -1;
+				x =  x_l -2;
 				x_l = x;
-				for (i = 0; i < st_c; i++)
+				for (i = 0; i < c_c; i=i+2)
 				{
 					y = y_l + i;
 					target->push_back({x, y});
-					printf("->(%d,%d)",x,y);
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
-				for (i = 1; i < st_c; i++)
+				for (i = 2; i < c_c; i=i+2)
 				{
-					x = (spt == ANTI_CLOCKWISE_OUT) ? x_l - i: x_l +i;
+					x =  x_l +i;
 					target->push_back({x,y});
-					printf("->(%d,%d)",x,y);
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
+
 			}
 			else
 			{
-				x = (spt == ANTI_CLOCKWISE_OUT) ? x_l - 1 : x_l + 1;
+				x = x_l + 2;
 				x_l = x;
-				for (i = 0; i < st_c; i++)
+				for (i = 0; i < c_c; i=i+2)
 				{
 					y = y_l - i;
 					target->push_back({x, y});
-					printf("->(%d,%d)",x,y);
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
-				for (i = 1; i < st_c ; i++)
+				for (i = 2; i < c_c ; i=i+2)
 				{
-					x = (spt == ANTI_CLOCKWISE_OUT)? x_l + i : x_l -i ;
+					x =  x_l -i ;
 					target->push_back({x,y});
-					printf("->(%d,%d)",x,y);
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
 			x_l = x;
 			y_l = y;
 			st_c += 1;
+			c_c += 2;
 		}
-		printf( "\033[0m" "\n");
-		tp_ = target->begin();
-	}
-	else if (spt == CLOCKWISE_IN || spt == ANTI_CLOCKWISE_IN)
-	{
-
-		printf("\033[32m" "spiral %s: (%d,%d)",(spt == CLOCKWISE_IN)?"right in":"left in",x,y);
-		while (ros::ok())
+		mid_it = target->size();
+		x = x_l = begincell.X;
+		y = y_l = begincell.Y;
+		st_c = 1;
+		c_c = 1;	
+		if(st_c == 1){
+			target->push_back({x,y});
+			st_c +=1;
+			c_c +=2;
+		}
+		msg+="\n clockwise in: ("+std::to_string(x)+","+std::to_string(y)+")";
+		while (ros::ok())//clockwise in
 		{
 			if (st_c > st_n){
 				if(st_n %2 == 0){
-					y = y + 1;
+					y = y + 2;
 					target->push_back({x,y});
-					printf("<-(%d,%d)",x,y);
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				break;
 			}
 			else if ((st_c % 2) == 0)
 			{
-				y = y_l - 1;
+				y = y_l - 2;
 				y_l = y;
-				for (i = 0; i < st_c; i++)
+				for (i = 0; i < c_c; i=i+2)
 				{
-					x = (spt == CLOCKWISE_IN) ? x_l + i: x_l - i;
+					x = x_l + i;
 					target->push_back({x, y});
-					printf("<-(%d,%d)",x,y);
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
-				for (i = 1; i < st_c; i++)
+				for (i = 2; i < c_c; i=i+2)
 				{
 					y = y_l + i;
 					target->push_back({x,y});
-					printf("<-(%d,%d)",x,y);
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
 			else
 			{
-				y = y_l + 1;
+				y = y_l + 2;
 				y_l = y;
-				for (i = 0; i < st_c; i++)
+				for (i = 0; i < c_c; i=i+2)
 				{
-					x = (spt == CLOCKWISE_IN) ? x_l - i: x_l + i;
+					x = x_l - i;
 					target->push_back({x, y});
-					printf("<-(%d,%d)",x,y);
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
-				for (i = 1; i < st_c; i++)
+				for (i = 2; i < c_c; i=i+2)
 				{
 					y = y_l - i;
 					target->push_back({x,y});
-					printf("<-(%d,%d)",x,y);
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
 			x_l = x;
 			y_l = y;
 			st_c += 1;
+			c_c += 2;
 		}
-		printf("\033[0m" "\n");
-		std::reverse(target->begin(), target->end());
-		tp_ = target->begin();
+		ROS_INFO("\033[36m""%s""\033[0m",msg.c_str());	
+		std::reverse(target->begin()+mid_it, target->end());
+	}
+	else if (spt == ANTI_CLOCKWISE)
+	{
+		std::string msg("anti clockwise out: (");
+		msg+=std::to_string(x)+","+std::to_string(y)+")";
+		while (ros::ok()) //anti clockwise out
+		{
+			if (st_c > st_n)
+			{
+				if(st_n %2 == 0)
+				{
+					x = x+ 2 ;
+					target->push_back({x,y});
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+				break;
+			}
+			else if ((st_c % 2) == 0)
+			{
+				x =  x_l + 2;
+				x_l = x;
+				for (i = 0; i < c_c; i=i+2)
+				{
+					y = y_l + i;
+					target->push_back({x, y});
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+				for (i = 2; i < c_c; i=i+2)
+				{
+					x =  x_l - i;
+					target->push_back({x,y});
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+
+			}
+			else
+			{
+				x = x_l - 2;
+				x_l = x;
+				for (i = 0; i < c_c; i=i+2)
+				{
+					y = y_l - i;
+					target->push_back({x, y});
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+				for (i = 2; i < c_c ; i=i+2)
+				{
+					x =  x_l + i ;
+					target->push_back({x,y});
+					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+			}
+			x_l = x;
+			y_l = y;
+			st_c += 1;
+			c_c += 2;
+		}
+		mid_it = target->size();
+		x = x_l = begincell.X;
+		y = y_l = begincell.Y;
+		st_c = 1;c_c = 1;
+		if(st_c == 1){
+			target->push_back({x,y});
+			st_c +=1;
+			c_c +=2;
+		}
+		msg+="\n anti clockwise in: ("+std::to_string(x)+","+std::to_string(y)+")";
+		while (ros::ok())//anti clockwise in
+		{
+			if (st_c > st_n){
+				if(st_n %2 == 0){
+					y = y + 2;
+					target->push_back({x,y});
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+				break;
+			}
+			else if ((st_c % 2) == 0)
+			{
+				y = y_l - 2;
+				y_l = y;
+				for (i = 0; i < c_c; i=i+2)
+				{
+					x = x_l - i;
+					target->push_back({x, y});
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+				for (i = 2; i < c_c; i=i+2)
+				{
+					y = y_l + i;
+					target->push_back({x,y});
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+			}
+			else
+			{
+				y = y_l + 2;
+				y_l = y;
+				for (i = 0; i < c_c; i=i+2)
+				{
+					x = x_l + i;
+					target->push_back({x, y});
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+				for (i = 2; i < c_c; i=i+2)
+				{
+					y = y_l - i;
+					target->push_back({x,y});
+					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
+				}
+			}
+			x_l = x;
+			y_l = y;
+			st_c += 1;
+			c_c += 2;
+		}
+		ROS_INFO("\033[36m""%s""\033[0m",msg.c_str());	
+		std::reverse(target->begin()+mid_it, target->end());
 	}
 }
 
-int8_t SpotMovement::spotNextTarget(Cell_t &next_point)
+void SpotMovement::stright2End(uint8_t spt, std::vector<Cell_t>::iterator &tp)
 {
-	int8_t ret = 0;
+	uint8_t in_row=0,in_col=0;
+	while((tp+1) != targets_->end() && ros::ok())//stright to the end of column or row
+	{
+		if( tp->X == (tp+1)->X && !in_row)
+		{
+			tp++;
+			in_col = 1;
+		}
+		else if(in_col)
+		{
+			break;
+		}
+		if( tp->Y == (tp+1)->Y && !in_col)
+		{
+			tp++;
+			in_row = 1;
+		}
+		else if(in_row)
+		{
+			break;
+		}
+	}
+}
+
+uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target_path)
+{
+	uint8_t ret = 0;
 	SpotType spt = getSpotType();
 	if (!isSpotInit() && spt != NO_SPOT)//for the first time
 	{
-		/*---init spot move and set begin point---*/
-		if (spt == CLEAN_SPOT){
+		/*---init spot move and set start cell---*/
+		if (spt == CLEAN_SPOT)
+		{
 			wav_play(WAV_CLEANING_SPOT);
-			spotInit(1.0, {map_get_x_cell(), map_get_y_cell()});
+			spotInit(1.0, cur_cell);//start from current cell
 		}
-		else if( spt == NORMAL_SPOT)
-			spotInit(1.0, {0, 0});
-		/*---generate target ,and  set targets_ ---*/
-		genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
-		ROS_INFO("\033[34m" "%s,%d , on spot init, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
-		next_point = {tp_->X, tp_->Y};
+		else if( spt == NORMAL_SPOT){
+			spotInit(1.0, {0, 0});//start from 0,0
+		}
+		/*---generate targets ---*/
+		genTargets( CLOCKWISE,      spot_diameter_, &targets_cw_,     begin_cell_);
+		genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_acw_,    begin_cell_);
+		/*---spiral out first-----*/
+		targets_ = (spiral_type_ == CLOCKWISE) ? &targets_cw_: &targets_acw_;
+		tp_ = targets_->begin();
+		/*----put all targets in target_path----*/
+		pushAllTargets(target_path);
+		target_last_.clear();
 		ret = 1;
 	}
-	else if (tp_ != targets_.end() && spot_init_ == 1)
+	else if (spot_init_ == 1 && isOBSTrigger())// bumper/obs trigger
 	{
-		if (isDirectChange())// directtion change
-		{
-			resetDirectChange();
-			
-			if (!isStuck())
-			{
-				if(isNextPointChange()){
-					if (tp_+1 != targets_.end()){
-						tp_++;
-						next_point = {tp_->X,tp_->Y};
-						setNextPointChange();
-						ret = 1;
-						ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
-								 tp_->Y);
-					}
-					else{
-						ret = endSpot(&next_point,spt);
-					}
-				}
-				else{
-					spotChgType();
-					setStopPoint(&stop_point_);
-					genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
-					if(!getNearPoint(stop_point_)){
-						ROS_INFO("\033[48;34m" "reset spiral type to %s" "\033[0m",(spiral_type_ == CLOCKWISE_OUT) ? "ANTI_CLOCKWISE_IN" : "CLOCKWISE_IN");
-						spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? ANTI_CLOCKWISE_IN : CLOCKWISE_IN;
-						setStopPoint(&stop_point_);//reset stop point
-						genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);//re_generate target
-						if(!getNearPoint(stop_point_))
-							ROS_WARN("\033[47;34m" "spot.cpp,%s,%d,not find near point,while search all cells" "\033[0m",__FUNCTION__,__LINE__);
-					}
-					next_point = {tp_->X,tp_->Y};
-					setNextPointChange();
+		ROS_INFO("\033[36m""spot.cpp bumper/obs trigger""\033[0m");
+		resetOBSTrigger();
+		debug_map(MAP,target_path->target.X,target_path->target.Y);
+		Cell_t current_cell = map_get_curr_cell();
+		ROS_INFO("\033[36m""current cell(%d,%d)""\033[0m",current_cell.X,current_cell.Y);
+		int pnb_ret = 0;
+		uint32_t size = target_path->cells.size();
+		if(target_last_.empty()){
+			target_last_ = target_path->cells;
+		}
+		else{
+			g_next_cell = target_last_.front();
+		}
+		target_path->cells.clear();
+		ROS_INFO("\033[36m""g_next_cell(%d,%d)""\033[0m",g_next_cell.X,g_next_cell.Y);
+		Cell_t next_cell;
+		/*---search cells---*/
+		for(int i = 0;i<size;i++){
+			next_cell = target_last_.front();
+			if(g_next_cell == next_cell){ 
+				target_last_.pop_front();
+				pnb_ret = path_next_best(current_cell, next_cell, *target_path);
+				if(pnb_ret == 1){
 					ret = 1;
-					ROS_INFO("\033[34m" "spot.cpp,%s,%d , on direction change, get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X,
-								 tp_->Y);
-
+					ROS_INFO("\033[36m" "%s,%d , bumper/obs trigger, get next cell (%d %d) " "\033[0m", __FUNCTION__, __LINE__, next_cell.X,next_cell.Y);
+					break;
 				}
+				g_next_cell = target_last_.front();
 			}
-			else// stuck
-			{
-				resetStuck();
-				ROS_INFO("\033[34m" "%s,%d , is stucked, go back to begin point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X,
-								 begin_point_.Y);
-				//*next_point = {cell_to_count(begin_point_.X), cell_to_count(begin_point_.Y)};
-				next_point = begin_point_;
-				ret = (spt == CLEAN_SPOT)?1:0;
-				spotDeinit();//clear all spot variable
+			else{
+				target_last_.pop_front();
 			}
+			ROS_INFO("\033[36m""drop target(%d,%d)""\033[0m",next_cell.X,next_cell.Y);
 		}
-		else//direction not change
-		{
-			resetNextPointChange();
-			if ((tp_+1) != targets_.end())
-			{
-				uint8_t in_row=0,in_col=0;
-
-				while(tp_!= targets_.end())//stright to the end of column or row
-				{
-					if( tp_->X == (tp_+1)->X && !in_row)
-					{
-						tp_++;
-						in_col = 1;
-					}
-					else if(in_col)
-					{
-						break;
-					}
-					if( tp_->Y == (tp_+1)->Y && !in_col)
-					{
-						tp_++;
-						in_row = 1;
-					}
-					else if(in_row)
-					{
-						break;
-					}
-				}
-
-				ROS_INFO("\033[34m" "%s,%d , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
-				next_point = {tp_->X,tp_->Y};
-				ret = 1;
-			}
-			else if ((tp_+1) == targets_.end())
-			{
-				ret = endSpot(&next_point,spt);
-			}
+		if(pnb_ret <= 0){
+			ROS_INFO("\033[36m" "%s,%d, no target find maybe stuck!" "\033[0m",__FUNCTION__,__LINE__);
+			ret = endSpot(target_path);
+			return ret;
 		}
+		target_path->target = target_path->cells.back();
+	}
+	else if(spot_init_ == 1 && !target_last_.empty())
+	{
+		ROS_INFO("\033[36m" "spot.cpp continue clean...""\033[0m");
+		target_path->target = target_last_.back();
+		target_path->cells.clear();
+		target_path->cells = target_last_;
+		std::list<Cell_t>::iterator it;
+		std::string msg("rest cells:");
+		/*-------print the rest of cells -----*/
+		for(it = target_path->cells.begin();it!=target_path->cells.end();it++){
+			msg+="("+std::to_string(it->X)+","+std::to_string(it->Y)+")"+"->";
+		}
+		ROS_INFO("\033[36m""%s""\033[0m",msg.c_str());	
+		target_last_.clear();
+		ret = 1;
+	}
+	else if(spot_init_ == 1 && tp_ == targets_->end())
+	{
+		ret = endSpot(target_path);
 	}
 	return ret;
 }
 
-int8_t SpotMovement::endSpot(Cell_t *next_point,SpotType spt)
+void SpotMovement::pushAllTargets(PPTargetType *target_path)
 {
-	int8_t ret;
-
-	if (spiral_type_ != CLOCKWISE_IN && spiral_type_ != ANTI_CLOCKWISE_IN)
-	{//switch to anothor spiral type
-		spiral_type_ = (spiral_type_ == CLOCKWISE_OUT) ? CLOCKWISE_IN : ANTI_CLOCKWISE_IN;
-		genTargets(spiral_type_, spot_diameter_, &targets_, begin_point_);
-		ROS_INFO("\033[47;34m" "%s,%d , %s , get next point (%d %d) " "\033[0m", __FUNCTION__, __LINE__,
-						 (spiral_type_ == CLOCKWISE_OUT) ? "right in" : "left in ", tp_->X, tp_->Y);
-		ret = 1;
-		*next_point = {tp_->X, tp_->Y};
+	target_path->cells.clear();
+	while(tp_ != targets_->end() && ros::ok()){
+		stright2End(spiral_type_, tp_ );
+		if ((tp_+1) != targets_->end())
+		{
+			ROS_INFO("\033[36m" "%s,%d , get next cell (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
+			target_path->cells.push_back({tp_->X,tp_->Y});
+		}
+		else
+		{
+			target_path->cells.push_back({tp_->X,tp_->Y});
+			tp_++;
+			break;
+		}
 	}
-	else
-	{ //end spot movement
-		*next_point = {begin_point_.X, begin_point_.Y};// go back to begin point
-		ret = (spt == CLEAN_SPOT)?1:0;
+	target_path->target = target_path->cells.back();
+}
+
+int8_t SpotMovement::endSpot(PPTargetType *target_path)
+{
+	int8_t ret;	
+	if(go_last_point_ == 0){
+		ROS_INFO("\033[36m""go back to begin cell""\033[0m");
+		target_path->cells.clear();
+		target_path->cells.push_back({begin_cell_.X, begin_cell_.Y});// go back to begin cell
+		target_path->target = target_path->cells.back();
+		ret = 1;
+		go_last_point_ = 1;
+	}
+	else{
+		ret = (getSpotType() == CLEAN_SPOT)?1:0;
 		spotDeinit();//clear all spot variable
-		ROS_INFO("\033[34m" "%s,%d , spot ending, ending point (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_point_.X, begin_point_.Y);
+		ROS_INFO("\033[36m" "%s,%d , spot ending, ending cell (%d %d) " "\033[0m", __FUNCTION__, __LINE__, begin_cell_.X, begin_cell_.Y);
+		go_last_point_ = 0;
 	}
 	return ret;
 }
