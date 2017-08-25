@@ -133,7 +133,7 @@ public:
 	{
 #if __ROBOT_X9000
 		omni_wheel_ = 0;
-		void reset_mobility_step();
+		reset_mobility_step();
 #endif
 	}
 

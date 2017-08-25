@@ -40,6 +40,9 @@ int16_t slam_error_count;
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
 
+uint32_t omni_detect_cnt = 0;
+uint32_t last_omni_wheel = 0;
+
 //extern pp::x900sensor sensor;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
@@ -215,6 +218,29 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	// Dynamic adjust obs
 	obs_dynamic_base(OBS_adjust_count);
 
+	/*------start omni detect----*/
+	if(g_omni_enable){
+		if(absolute(msg->rw_vel - msg->lw_vel) <= 0.05 && (msg->rw_vel != 0 && msg->lw_vel != 0) ){
+			if(absolute(msg->omni_wheel - last_omni_wheel) == 0){
+				omni_detect_cnt ++;
+				//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(msg->rw_vel - msg->lw_vel));
+				if(omni_detect_cnt >= 150){
+					omni_detect_cnt = 0;
+					ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", msg->rw_vel,msg->lw_vel);
+					g_omni_notmove = true;
+				}
+			}
+		}
+		else{
+			//g_omni_notmove = false;
+			omni_detect_cnt = 0;
+			last_omni_wheel = msg->omni_wheel;
+		}
+		if(msg->omni_wheel >= 10000){
+			reset_mobility_step();
+		}
+	}
+	/*------end omni detect----*/
 #if 0
 	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v_: %f", __FUNCTION__, __LINE__, angle, angle_v_);
 	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage_, brush_left_, brush_right_, brush_main_);
