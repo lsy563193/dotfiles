@@ -233,8 +233,9 @@ uint16_t bumper_straight_distance()
 }
 
 /*--------------------------Head Angle--------------------------------*/
-void cm_head_to_course(uint8_t speed_max, int16_t angle)
+bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 {
+	bool return_value = false;
 	stop_brifly();
 
 	cm_event_manager_turn(true);
@@ -254,6 +255,11 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 			)
 			break;
 
+		if(get_rcon_status())
+		{
+			return_value = true;
+			break;
+		}
 		auto diff = ranged_angle(angle - gyro_get_angle());
 
 		if (std::abs(diff) < 10) {
@@ -269,6 +275,7 @@ void cm_head_to_course(uint8_t speed_max, int16_t angle)
 
 	cm_event_manager_turn(false);
 	set_wheel_speed(0, 0);
+	return return_value;
 }
 
 /*
@@ -565,13 +572,32 @@ int cm_cleaning()
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point
 		{
-			// It means robot can not go to charger stub.
-			robot::instance()->resetLowBatPause();
+			uint8_t check_status = cm_check_charger_signal();
+			if(check_status == 1)/*---have seen charger signal---*/
+			{
+				if(cm_go_to_charger())
+					return -1;
+				else if(!g_go_home_by_remote)
+					set_led_mode(LED_STEADY, LED_GREEN);
+			}
+			else if(check_status == 2)/*---event happened---*/
+			{
+				return -1;
+			}
 			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
 			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
 				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
-				cm_head_to_course(ROTATE_TOP_SPEED, -angle);
+				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
+				{
+					if(cm_go_to_charger())
+						return -1;
+					else if(!g_go_home_by_remote)
+						set_led_mode(LED_STEADY, LED_GREEN);
+				}
 			}
+
+			// It means robot can not go to charger stub.
+			robot::instance()->resetLowBatPause();
 			return 0;
 		}
 		else if (is_found == 1)
@@ -1054,6 +1080,31 @@ void cm_self_check(void)
 bool cm_should_self_check(void)
 {
 	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove);
+}
+
+uint8_t cm_check_charger_signal(void)
+{
+	uint8_t time_counter = 130;
+	bool eh_status_now, eh_status_last;
+	while(time_counter)
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+		{
+			usleep(100);
+			continue;
+		}
+
+		if(get_rcon_status())
+		{
+			return 1;
+		}
+		else if(g_key_clean_pressed || g_fatal_quit_event)
+		{
+			return 2;
+		}
+		time_counter--;
+	}
+	return 0;
 }
 
 /* Event handler functions. */

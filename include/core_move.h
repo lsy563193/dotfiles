@@ -73,7 +73,7 @@ bool is_map_front_block(int dx);
 
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
-void cm_head_to_course(uint8_t Speed, int16_t Angle);
+bool cm_head_to_course(uint8_t Speed, int16_t Angle);
 
 void cm_follow_wall_turn(uint16_t speed, int16_t angle);
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
@@ -133,6 +133,7 @@ void cm_create_home_boundary(void);
 void cm_self_check(void);
 bool cm_should_self_check(void);
 
+uint8_t cm_check_charger_signal(void);
 /* Event handler functions. */
 void cm_register_events(void);
 void cm_unregister_events(void);
