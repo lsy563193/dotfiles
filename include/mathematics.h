@@ -313,9 +313,8 @@ typedef struct Cell_t_{
     T X;
     T Y;
 }; // class Vector2<T>
-/*
 
-  /**
+  /*
    * Type declaration of int16_t Vector2 as Cell_t
    */
   typedef Vector2<int16_t> Cell_t;

@@ -689,13 +689,14 @@ bool for_each_neighbor(const Cell_t& cell,CellState cost, Func_t func) {
 void path_find_all_targets(const Cell_t& curr)
 {
 	bool		all_set;
-	int16_t		i, j, x, y, offset, passValue, nextPassValue, passSet, tracex, tracey, targetCost;
+	int16_t		i, j, x, y, offset, passValue, nextPassValue, passSet, tracex, tracey, targetCost, x_min, x_max, y_min, y_max;
 	CellState	cs;
 
 	map_reset(SPMAP);
 
-	for (i = g_x_min; i <= g_x_max; ++i) {
-		for (j = g_y_min; j <= g_y_max; ++j) {
+	path_get_range(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	for (i = x_min; i <= x_max; ++i) {
+		for (j = y_min; j <= y_max; ++j) {
 			cs = map_get_cell(MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				for (x = ROBOT_RIGHT_OFFSET; x <= ROBOT_LEFT_OFFSET; x++) {
@@ -721,30 +722,30 @@ void path_find_all_targets(const Cell_t& curr)
 		offset++;
 		passSet = 0;
 		for (i = x - offset; i <= x + offset; i++) {
-			if (i < g_x_min || i > g_x_max)
+			if (i < x_min || i > x_max)
 				continue;
 
 			for (j = y - offset; j <= y + offset; j++) {
-				if (j < g_y_min || j > g_y_max)
+				if (j < y_min || j > y_max)
 					continue;
 
 				if(map_get_cell(SPMAP, i, j) == passValue) {
-					if (i - 1 >= g_x_min && map_get_cell(SPMAP, i - 1, j) == COST_NO) {
+					if (i - 1 >= x_min && map_get_cell(SPMAP, i - 1, j) == COST_NO) {
 						map_set_cell(SPMAP, (i - 1), (j), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if ((i + 1) <= g_x_max && map_get_cell(SPMAP, i + 1, j) == COST_NO) {
+					if ((i + 1) <= x_max && map_get_cell(SPMAP, i + 1, j) == COST_NO) {
 						map_set_cell(SPMAP, (i + 1), (j), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if (j - 1  >= g_y_min && map_get_cell(SPMAP, i, j - 1) == COST_NO) {
+					if (j - 1  >= y_min && map_get_cell(SPMAP, i, j - 1) == COST_NO) {
 						map_set_cell(SPMAP, (i), (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if ((j + 1) <= g_y_max && map_get_cell(SPMAP, i, j + 1) == COST_NO) {
+					if ((j + 1) <= y_max && map_get_cell(SPMAP, i, j + 1) == COST_NO) {
 						map_set_cell(SPMAP, (i), (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
@@ -792,22 +793,22 @@ void path_find_all_targets(const Cell_t& curr)
 			t.Y = tracey;
 			it->cells.push_back(t);
 
-			if ((tracex - 1 >= g_x_min) && (map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {
+			if ((tracex - 1 >= x_min) && (map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {
 				tracex--;
 				continue;
 			}
 
-			if ((tracex + 1 <= g_x_max) && (map_get_cell(SPMAP, tracex + 1, tracey) == targetCost)) {
+			if ((tracex + 1 <= x_max) && (map_get_cell(SPMAP, tracex + 1, tracey) == targetCost)) {
 				tracex++;
 				continue;
 			}
 
-			if ((tracey - 1 >= g_y_min) && (map_get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {
+			if ((tracey - 1 >= y_min) && (map_get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {
 				tracey--;
 				continue;
 			}
 
-			if ((tracey + 1 <= g_y_max) && (map_get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {
+			if ((tracey + 1 <= y_max) && (map_get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {
 				tracey++;
 				continue;
 			}
@@ -1290,7 +1291,11 @@ void path_update_cells()
 int16_t path_escape_trapped(const Cell_t& curr)
 {
 	int16_t	val = 0;
-	for (auto home_it = g_homes.rbegin(); home_it != g_homes.rend() && std::abs(std::distance(home_it, g_homes.rbegin()))<=ESCAPE_TRAPPED_REF_CELL_SIZE; ++home_it) {
+	for (auto home_it = g_homes.rbegin(); home_it != g_homes.rend(); ++home_it)
+	{
+		ROS_WARN("%s %d: home_it(%d,%d)", __FUNCTION__, __LINE__, home_it->X, home_it->Y);
+	}
+	for (auto home_it = g_homes.rbegin(); home_it != g_homes.rend() && std::abs(std::distance(home_it, g_homes.rbegin()))<ESCAPE_TRAPPED_REF_CELL_SIZE; ++home_it) {
 		ROS_WARN("%s %d: home_it distance(%d)", __FUNCTION__, __LINE__, std::distance(home_it, g_homes.rbegin()));
 		if (is_block_accessible(home_it->X, home_it->Y) == 0)
 			map_set_cells(ROBOT_SIZE, home_it->X, home_it->Y, CLEANED);
@@ -1344,11 +1349,13 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 	else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
-		if (!SpotMovement::instance()->spotNextTarget(path.target))
+		if (!SpotMovement::instance()->spotNextTarget(curr,&path))
 			return 0;
-		path.cells.clear();
-		path.cells.push_front(path.target);
+		debug_map(MAP, path.target.X, path.target.Y);
+		//path.cells.clear();
+		//path.cells.push_front(path.target);
 		path.cells.push_front(curr);
+
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
 		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
@@ -1432,7 +1439,8 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	g_target_cell = path.target;
 
 	g_old_dir = g_new_dir;
-	if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
+	//if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
+	if (g_go_home)
 		mt_set(CM_LINEARMOVE);
 	else if(get_clean_mode() == Clean_Mode_Navigation)
 		mt_update(curr, path, g_old_dir);
@@ -1443,6 +1451,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		g_new_dir = curr.X > g_next_cell.X ? NEG_X : POS_X;
 
 #if LINEAR_MOVE_WITH_PATH
+	//if (mt_is_linear() && SpotMovement::instance()->getSpotType() == NO_SPOT)
 	if (mt_is_linear())
 	{
 		// Add current cell for filling the path, otherwise it will lack for the path from current to the first turning cell.
@@ -1466,10 +1475,14 @@ void path_fill_path(std::list<Cell_t>& path)
 	path.clear();
 	//path_display_path_points(saved_path);
 
-	for (list<Cell_t>::iterator it = saved_path.begin(); it->X != saved_path.back().X || it->Y != saved_path.back().Y; it++)
+	//for (list<Cell_t>::iterator it = saved_path.begin(); it->X != saved_path.back().X || it->Y != saved_path.back().Y; it++)
+	for (list<Cell_t>::iterator it = saved_path.begin(); it != saved_path.end(); it++)
 	{
 		list<Cell_t>::iterator next_it = it;
-		next_it++; // Get the next turing point.
+		if(++next_it == saved_path.end()){
+			ROS_INFO("%s,%d,fill path to last interator",__FUNCTION__,__LINE__);
+			break;
+		}
 		//ROS_DEBUG("%s %d: it(%d, %d), next it(%d, %d).", __FUNCTION__, __LINE__, it->X, it->Y, next_it->X, next_it->Y);
 		if (next_it->X == it->X)
 			dir = next_it->Y > it->Y ? POS_Y : NEG_Y;
@@ -1531,10 +1544,10 @@ void path_fill_path(std::list<Cell_t>& path)
 	path.push_back(cell);
 	//ROS_DEBUG("%s %d: End cell(%d, %d).", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	std::string msg = "Filled path:";
-	for (list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
+	for (std::list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
+		msg += "->(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")";
 	}
-	ROS_DEBUG("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
+	//ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size )
@@ -1591,8 +1604,14 @@ void path_set_home(const Cell_t& curr)
  *        :TARGET_FOUND (1)
  */
 int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
-	if(g_home_way_list.empty())
+	if(g_home_way_list.empty()) {
 		g_home_way_it = _gen_home_ways(g_homes.size(), g_home_way_list);
+		BoundingBox2 map_tmp{{g_x_min, g_y_min}, {g_x_max, g_y_max}};
+		for (const auto &cell : map_tmp) {
+			if (map_get_cell(MAP, cell.X, cell.Y) == BLOCKED_RCON)
+				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), UNCLEAN);
+		}
+	}
 	for (; g_home_way_it != g_home_way_list.end(); ++g_home_way_it) {
 		auto way = *g_home_way_it % HOMEWAY_NUM;
 		auto cnt = *g_home_way_it / HOMEWAY_NUM;
@@ -1602,9 +1621,6 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 			g_home_gen_rosmap = false;
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map_convert" "\033[0m", __FUNCTION__, __LINE__);
 			ros_map_convert(MAP, false, true);
-		}
-		if (is_block_accessible(g_home.X, g_home.Y) == 0) {
-			map_set_cells(ROBOT_SIZE, g_home.X, g_home.Y, CLEANED);
 		}
 
 		if (path_next_shortest(curr, g_home, path) == 1) {

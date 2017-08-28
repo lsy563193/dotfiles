@@ -40,7 +40,6 @@ extern uint16_t robotbase_led_cnt_for_switch;
 extern uint16_t live_led_cnt_for_switch;
 
 extern bool key_or_clean_button_detected;
-extern int OBS_adjust_count;
 int robotbase_init();
 void robotbase_deinit(void);
 void robotbase_reset_send_stream(void);
@@ -48,12 +47,10 @@ bool is_robotbase_stop(void);
 void *serial_receive_routine(void*);
 void *robotbase_routine(void*);
 void *serial_send_routine(void*);
-void slam_angle_offset_callback(const pp::slam_angle_offset::ConstPtr& msg);
 void process_beep();
 void process_led();
 void robotbase_reset_odom_pose(void);
 void robotbase_restore_slam_correction(void);
-void robotbase_obs_adjust_count(int count);
 bool is_turn(void);
 void set_acc_init_data();
 #endif

@@ -694,7 +694,7 @@ void map_set_bumper()
 		msg += "(" + std::to_string(x2) + "," + std::to_string(y2) + ")";
 		map_set_cell(MAP, cell_to_count(x2), cell_to_count(y2), BLOCKED_BUMPER);
 	}
-	ROS_ERROR("%s,%d: Current(%d, %d), mark %s",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	ROS_INFO("\033[31m""%s,%d: Current(%d, %d), mark %s""\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
 }
 
 void map_set_tilt()
@@ -843,32 +843,32 @@ void map_set_cleaned(const Cell_t& curr)
 void map_set_follow_wall(const Cell_t& curr)
 {
 	auto dx = curr.X - count_to_cell(RegulatorBase::s_origin.X);
-	if(dx == 0)
-		return;
-	auto dy = mt_is_left()  ?  2 : -2;
-	ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
-	if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
-	{
-		for (dx = -1; dx <= 0; dx++)
+		if(dx == 0)
+			return;
+		auto dy = mt_is_left()  ?  2 : -2;
+		ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
+		if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
 		{
-			int x, y;
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-			ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-			if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
-				map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+			for (dx = -1; dx <= 0; dx++)
+			{
+				int x, y;
+				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+				ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+				if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
+					map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+			}
 		}
-	}
-	if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
-	{
-		for (dx = -1; dx <= 0; dx++)
+		if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
 		{
-			int x, y;
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-			ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-			if (count_to_cell(y) -curr.Y <= 2);
-			map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+			for (dx = -1; dx <= 0; dx++)
+			{
+				int x, y;
+				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+				ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
+				if (count_to_cell(y) -curr.Y <= 2);
+					map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+			}
 		}
-	}
 }
 
 void map_set_cleaned(std::vector<Cell_t>& cells)
@@ -877,27 +877,59 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 		return;
 	auto min_y = cells.front().Y - ROBOT_SIZE_1_2;
 	auto max_y = cells.front().Y + ROBOT_SIZE_1_2;
+	int8_t dx;
 
-	auto dx = (cells.front().X < cells.back().X) ? 1 : -1;//X_POS
-	Cell_t cf = {int16_t(cells.front().X - dx),cells.front().Y};
-	Cell_t cb = {int16_t(cells.back().X + dx),cells.back().Y};
-//	cells.push_back(cf);
-	cells.push_back(cb);
-//	auto is_follow_y_min = dx == 1 ^ mt_is_left();
+	if (!mt_is_linear())
+	{
+		dx = (cells.front().X < cells.back().X) ? 1 : -1;//X_POS
+		Cell_t cell_front = {int16_t(cells.front().X - dx),cells.front().Y};
+		Cell_t cell_back = {int16_t(cells.back().X + dx),cells.back().Y};
+		cells.push_back(cell_front);
+		cells.push_back(cell_back);
+//		auto is_follow_y_min = dx == 1 ^ mt_is_left();
+	}
+	else
+	{
+		extern uint16_t g_new_dir;
+		if (g_new_dir == POS_X)
+			dx = 1;
+		else if (g_new_dir == NEG_X)
+			dx = -1;
+		else // POS_Y/NEG_Y
+			dx = 0;
+
+		if (dx)
+		{
+			Cell_t cell = {int16_t(cells.back().X + dx),cells.back().Y};
+			cells.push_back(cell);
+		}
+	}
 
 	std::string msg = "Cell:";
 	for (const auto& cell :  cells)
 	{
-		msg += "(" + std::to_string(cell.X) + "," + std::to_string(cell.Y) + ")";
 		for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
 		{
 			auto y = cell.Y + dy;
 //			if((! is_follow_y_min && y < min_y) || (is_follow_y_min && y > max_y))
 //				continue;
 			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
+			msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
 		}
 	}
-	ROS_ERROR("%s,%d: %s",__FUNCTION__, __LINE__, msg.c_str());
+
+	int32_t x, y;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+	{
+		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+		{
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == UNCLEAN){
+				map_set_cell(MAP, x, y, CLEANED);
+			}
+		}
+	}
+	ROS_INFO("\033[31m""%s,%d: %s""\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
 void map_set_follow_wall(std::vector<Cell_t>& cells)
@@ -909,7 +941,7 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 
 	for (const auto &cell : cells)
 	{
-		ROS_ERROR("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, cell.X, cell.Y);
+		ROS_INFO("\033[47;31m""%s,%d: cell(%d,%d)""\033[0m", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	}
 	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	auto min = std::min(cells.front().X, cells.back().X) + 3;
@@ -923,10 +955,11 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 		if (cell.X >= min && cell.X <= max)
 		{
 			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y + dy), BLOCKED_CLIFF);
-			ROS_ERROR("%s,%d: cell(%d,%d)", __FUNCTION__, __LINE__, cell.X, cell.Y + dy);
+			ROS_INFO("\033[47;31m" "%s,%d: cell(%d,%d)" "\033[0m", __FUNCTION__, __LINE__, cell.X, cell.Y + dy);
 		}
 	}
 }
+
 bool map_mark_robot(uint8_t id)
 {
 	int32_t x, y;
@@ -938,7 +971,7 @@ bool map_mark_robot(uint8_t id)
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			auto status = map_get_cell(id, count_to_cell(x), count_to_cell(y));
 			if (status > CLEANED && status < BLOCKED_BOUNDARY){
-				ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
 				ret = true;
 			}
 			map_set_cell(id, x, y, CLEANED);

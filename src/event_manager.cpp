@@ -113,7 +113,7 @@ void event_manager_set_enable(bool enable)
 	g_event_manager_enabled = enable;
 	if (!enable)
 	{
-		ROS_WARN("%s %d: Disable all event under manager mode:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
+		//ROS_WARN("%s %d: Disable all event under manager mode:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
 			eat[evt_mgr_mode].handler[i] = NULL;
 			eat[evt_mgr_mode].handler_enabled[i] = false;

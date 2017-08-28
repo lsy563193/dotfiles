@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Point.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
 #include <vector>
@@ -44,15 +45,7 @@ public:
 	void visualizeMarkerInit();
 	void initOdomPosition();
 
-	//callback function
-private:
-	void sensorCb(const pp::x900sensor::ConstPtr &msg);
-	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
-//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
-	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
-
 	//get and set function
-public:
 	bool isSensorReady() const
 	{
 		return is_sensor_ready_;
@@ -140,7 +133,7 @@ public:
 	{
 #if __ROBOT_X9000
 		omni_wheel_ = 0;
-		void reset_mobility_step();
+		reset_mobility_step();
 #endif
 	}
 
@@ -265,7 +258,7 @@ public:
 
 	int16_t getYaw() const
 	{
-		return ((int16_t)(yaw_ * 1800 / M_PI));
+		return ((int16_t)(position_yaw_ * 1800 / M_PI));
 	}
 
 	float getPositionX() const
@@ -303,19 +296,24 @@ public:
 		return odom_pose_y_;
 	}
 
-	double getMapYaw() const
+	double getOdomPositionYaw() const
 	{
-		return yaw_;
+		return odom_pose_yaw_;
 	}
 
-	double getCorrectionX() const
+	float getRobotCorrectionX() const
 	{
-		return correction_x_;
+		return robot_correction_x_;
 	}
 
-	double getCorrectionY() const
+	float getRobotCorrectionY() const
 	{
-		return correction_y_;
+		return robot_correction_y_;
+	}
+
+	double getRobotCorrectionYaw() const
+	{
+		return robot_correction_yaw_;
 	}
 
 	float getXAcc() const
@@ -331,11 +329,6 @@ public:
 	float getZAcc() const
 	{
 		return z_acc_;
-	}
-
-	double getCorrectionYaw() const
-	{
-		return correction_yaw_;
 	}
 
 	void setTfReady(bool is_ready)
@@ -455,8 +448,22 @@ public:
 		return map_ptr_;
 	}
 
+	// The scale should be between 0 to 1.
+	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
+						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
+						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
+						float& robot_x, float& robot_y, double& robot_yaw);
 
+	void resetCorrection();
+
+	void obs_adjust_count(int count);
+
+	//callback function
 private:
+	void sensorCb(const pp::x900sensor::ConstPtr &msg);
+	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
+//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
+	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
@@ -607,16 +614,23 @@ private:
 	float	position_x_;
 	float	position_y_;
 	float	position_z_;
+	double	position_yaw_;
 	float	wf_position_x_;
 	float	wf_position_y_;
 	float	odom_pose_x_;
 	float	odom_pose_y_;
+	double	odom_pose_yaw_;
 
-	double	yaw_;
-
-	float	correction_x_;
-	float	correction_y_;
-	float	correction_yaw_;
+	// This is for the slam correction variables.
+	float	robot_correction_x_;
+	float	robot_correction_y_;
+	double	robot_correction_yaw_;
+	float	slam_correction_x_;
+	float	slam_correction_y_;
+	double	slam_correction_yaw_;
+	float	robot_x_;
+	float	robot_y_;
+	double	robot_yaw_;
 
 	/*for ros map*/
 	uint32_t width_;
@@ -633,7 +647,7 @@ private:
 	ros::Subscriber odom_sub_;
 	ros::Subscriber map_metadata_sub_;
 //	ros::Subscriber obstacles_sub;
-	ros::Publisher send_cmd_pub_;
+	ros::Publisher robot_odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher send_bumper_marker_pub_;
@@ -646,6 +660,10 @@ private:
 	tf::TransformListener		*robot_wf_tf_;
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
+
+	tf::TransformBroadcaster	robot_broad;
+	geometry_msgs::TransformStamped robot_trans;
+	nav_msgs::Odometry robot_odom;
 };
 
 #endif
