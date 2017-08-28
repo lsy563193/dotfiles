@@ -49,6 +49,7 @@
 #include "wav.h"
 #include "BoundingBox.h"
 #include <a_star.h>
+#include <numeric>
 
 #define FINAL_COST (1000)
 #define NO_TARGET_LEFT 0
@@ -65,14 +66,19 @@ uint8_t	g_first_start = 0;
 uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between current pos. & dest. */
 
 // This list is for storing the position that robot sees the charger stub.
-std::list <Cell_t> g_home_point_old_path;
-std::list <Cell_t> g_home_point_new_path;
+
+std::vector<Cell_t> g_homes;
+std::vector<int> g_home_way_list;
+std::vector<int>::iterator g_home_way_it;
+Cell_t g_home;
+bool g_is_switch_target = true;
+//int8_t g_home_cnt = 0;// g_homes.size()*HOMEWAY_NUM-1 3/9, 2/4, 1/2
+bool g_home_gen_rosmap = true;
 
 Cell_t g_index[4]={{1,0},{-1,0},{0,1},{0,-1}};
-bool g_switch_home_cell = true;
-Cell_t g_current_home_cell;
 
-int16_t g_home_x = 0, g_home_y = 0;
+const int16_t g_home_x = 0, g_home_y = 0;
+Cell_t g_zero_home = {0,0};
 
 // This is for the continue point for robot to go after charge.
 Cell_t g_continue_cell;
@@ -86,7 +92,7 @@ uint16_t g_old_dir;
 
 int g_trapped_mode = 1;
 
-Cell_t g_trapped_cell[ESCAPE_TRAPPED_REF_CELL_SIZE];
+//std::vector<Cell_t> g_homes = {{0,0},{0,0},{0,0}};
 
 uint8_t g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
@@ -94,17 +100,24 @@ extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 extern int16_t g_wf_x_min, g_wf_x_max, g_wf_y_min, g_wf_y_max;
 
+static std::vector<int>::iterator _gen_home_ways(int size, std::vector<int> &go_home_way_list) {
+	ROS_INFO("%s,%d: go_home_way_list 1:                       2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 3: 8,5,    7,4    6,3,   2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 4: 11,8,5, 10,7,4 9,6,3  2,1,0",__FUNCTION__, __LINE__);
+	go_home_way_list.resize(size * HOMEWAY_NUM,0);
+	std::iota(go_home_way_list.begin(), go_home_way_list.end(),0);
+	std::sort(go_home_way_list.begin(), go_home_way_list.end(), [](int x,int y){
+			return (x >= 3 && y >= 3) && (x % 3) < (y % 3);
+	});
+	std::reverse(go_home_way_list.begin(),go_home_way_list.end());
+	std::copy(go_home_way_list.begin(), go_home_way_list.end(),std::ostream_iterator<int>(std::cout, " "));
+	std::cout << std::endl;
+	return go_home_way_list.begin();
+}
 //void path_planning_initialize(int32_t *x, int32_t *y)
-void path_planning_initialize(Cell_t cell)
+void path_planning_initialize()
 {
-	int16_t i;
-
-	/* Save the starting point as home. */
-	for ( i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
-		g_trapped_cell[i] = cell;
-	}
-	g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
-
 #if (ROBOT_SIZE == 5)
 
 //	g_weight_cnt_threshold = 4;
@@ -118,11 +131,11 @@ void path_planning_initialize(Cell_t cell)
 	g_direct_go = 0;
 
 	g_cell_history[0] = {0,0};
-	g_new_dir = 0;
+	g_old_dir = 0;
 	g_new_dir = 0;
 
 	/* Reset the poisition list. */
-	for (i = 0; i < 3; i++) {
+	for (auto i = 0; i < 3; i++) {
 		g_cell_history[i] =  {int16_t(i+1), int16_t(i+1)};
 	}
 
@@ -132,22 +145,11 @@ void path_planning_initialize(Cell_t cell)
 #ifndef ZONE_WALLFOLLOW
 
 	/* Set the back as blocked, since robot will align the start angle with the wall. */
-	Map_SetCell(MAP, cell_to_count(-3), cell_to_count(0), BLOCKED_BUMPER);
+	map_set_cell(MAP, cell_to_count(-3), cell_to_count(0), BLOCKED_BUMPER);
 
 #endif
 
-	map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
-
-	/* Set the starting point as cleaned. */
-	map_set_cell(MAP, cell_to_count(-1), cell_to_count(-1), CLEANED);
-	map_set_cell(MAP, cell_to_count(-1), cell_to_count(0), CLEANED);
-	map_set_cell(MAP, cell_to_count(-1), cell_to_count(1), CLEANED);
-	map_set_cell(MAP, cell_to_count(0), cell_to_count(-1), CLEANED);
-	map_set_cell(MAP, cell_to_count(0), cell_to_count(0), CLEANED);
-	map_set_cell(MAP, cell_to_count(0), cell_to_count(1), CLEANED);
-	map_set_cell(MAP, cell_to_count(1), cell_to_count(-1), CLEANED);
-	map_set_cell(MAP, cell_to_count(1), cell_to_count(0), CLEANED);
-	map_set_cell(MAP, cell_to_count(1), cell_to_count(1), CLEANED);
+	map_mark_robot(MAP);
 }
 
 /* Update the robot position history. */
@@ -989,7 +991,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 		}
 	}
-	debug_map(MAP, g_home_x, g_home_y);
+//	debug_map(MAP, g_home_x, g_home_y);
 	map_tmp = map;
 	for (const auto& cell : map_tmp) {
 		if (map_get_cell(MAP, cell.X, cell.Y) == TARGET) {
@@ -1243,8 +1245,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 	if(is_found == 0)
 		return 0;
 
-	set_explore_new_path_flag(true);
-	return path_next_best(curr, temp_target, path);
+	return path_next_shortest(curr, temp_target, path);
 }
 
 void path_update_cells()
@@ -1288,81 +1289,23 @@ void path_update_cells()
 
 int16_t path_escape_trapped(const Cell_t& curr)
 {
-
 	int16_t	val = 0;
-	uint16_t i = 0;
-	Cell_t temp_cell;
+	for (auto home_it = g_homes.rbegin(); home_it != g_homes.rend() && std::abs(std::distance(home_it, g_homes.rbegin()))<=ESCAPE_TRAPPED_REF_CELL_SIZE; ++home_it) {
+		ROS_WARN("%s %d: home_it distance(%d)", __FUNCTION__, __LINE__, std::distance(home_it, g_homes.rbegin()));
+		if (is_block_accessible(home_it->X, home_it->Y) == 0)
+			map_set_cells(ROBOT_SIZE, home_it->X, home_it->Y, CLEANED);
 
-	set_explore_new_path_flag(true);
-	if ( g_trapped_cell[0].X != g_home_x || g_trapped_cell[0].Y != g_home_y ){
-		for ( i = 0; i < g_trapped_cell_size; ++i ) {
-			ROS_WARN("%s %d Check %d trapped reference cell: x: %d, y: %d", __FUNCTION__, __LINE__,
-			         i, g_trapped_cell[i].X, g_trapped_cell[i].Y);
-			if (is_block_accessible(g_trapped_cell[i].X, g_trapped_cell[i].Y) == 0) {
-				map_set_cells(ROBOT_SIZE, g_trapped_cell[i].X, g_trapped_cell[i].Y, CLEANED);
-			}
-
-			val = path_find_shortest_path(temp_cell.X, temp_cell.Y, g_trapped_cell[i].X, g_trapped_cell[i].Y, 0);
-			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* No path to home, which is set when path planning is initialized. */
-				val = 0;
-			} else {
-				val = 1;
-				break;
-			}
-		}
-	} else {
-		if (is_block_accessible(0, 0) == 1) {
-			val = path_find_shortest_path(temp_cell.X, temp_cell.Y, 0, 0, 0);
-#if DEBUG_SM_MAP
-			debug_map(SPMAP, 0, 0);
-#endif
-//			ROS_WARN("%s %d: pos (%d, %d)\tval: %d", __FUNCTION__, __LINE__, g_cell_history[0].x, g_cell_history[0].y, val);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* Robot start position is blocked. */
-				val = path_find_shortest_path(temp_cell.X, temp_cell.Y, g_home_x, g_home_y, 0);
-				ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
-
-#if DEBUG_MAP
-				debug_map(MAP, g_home_x, g_home_y);
-#endif
-
-				if (val < 0 || val == SCHAR_MAX) {
-					val = 0;
-				} else {
-					val = 1;
-				};
-			} else {
-				val = 1;
-			}
-		} else {
-			val = path_find_shortest_path(temp_cell.X, temp_cell.Y, g_home_x, g_home_y, 0);
-			ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
-
-#if DEBUG_SM_MAP
-//			debug_map(SPMAP, 0, 0);
-#endif
-#if DEBUG_MAP
-//			debug_map(MAP, g_home_x, g_home_y);
-#endif
-
-			if (val < 0 || val == SCHAR_MAX) {
-				/* No path to home, which is set when path planning is initialized. */
-				val = 0;
-			} else {
-				val = 1;
-			}
-		}
+		val = path_find_shortest_path(curr.X, curr.Y, home_it->X, home_it->Y, 0);
+		ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
+		val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
+		if(val == 1) break;
 	}
-
 	return val;
 }
 
 int8_t path_next(const Cell_t& curr, PPTargetType& path)
 {
 	//ros_map_convert(false);
-	extern bool g_go_home;
 	extern bool g_keep_on_wf;
 	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
@@ -1478,8 +1421,9 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 #endif
 	}
 
-	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT)
-		return 0;
+	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT) {
+			return 0;
+	}
 
 	// Delete the first cell of list, it means current cell. Do this for checking whether it should follow the wall.
 	if (path.cells.size() > 1)
@@ -1597,51 +1541,44 @@ void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size )
 {
 	g_trapped_cell_size = size;
 	for (auto i = 0; i < g_trapped_cell_size; ++i ) {
-		g_trapped_cell[i] = cell[i];
-		ROS_INFO("%s %d Set %d trapped reference cell: x: %d\ty:%d", __FUNCTION__, __LINE__, i, g_trapped_cell[i].X, g_trapped_cell[i].Y);
+		g_homes[i] = cell[i];
+		ROS_INFO("%s %d Set %d trapped reference cell: x: %d\ty:%d", __FUNCTION__, __LINE__, i, g_homes[i].X, g_homes[i].Y);
 	}
 }
 
-Cell_t *path_escape_get_trapped_cell()
+//Cell_t *path_escape_get_trapped_cell()
+//{
+//	return g_homes;
+//}
+
+void path_set_home(const Cell_t& curr)
 {
-	return g_trapped_cell;
-}
+	bool is_found = false;
 
-void path_set_home(Cell_t cell)
-{
-	bool found = false;
-
-	ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, cell.X, cell.Y);
-
-	for (list<Cell_t>::iterator it = g_home_point_old_path.begin(); found == false && it != g_home_point_old_path.end(); ++it) {
-		if (it->X == cell.X && it->Y == cell.Y) {
-			found = true;
+	for (const auto& it : g_homes) {
+		ROS_INFO("%s %d: curr(%d, %d) home_it(%d,%d).", __FUNCTION__, __LINE__, curr.X, curr.Y,it.X,it.Y);
+		if (it == curr) {
+			is_found = true;
+			break;
 		}
 	}
-	if (found == false) {
+	if (!is_found) {
+		ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
 		extern bool g_have_seen_charge_stub;
 		if(get_clean_mode() != Clean_Mode_Spot)
 			g_have_seen_charge_stub = true;
-		g_home_point_old_path.push_front(cell);
-		// If cell near (0, 0)
-		if (abs(cell.X) <= 5 && abs(cell.Y) <= 5)
+		// If curr near (0, 0)
+		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
 		{
-
-			// This g_temp_trapped_cell is for trapped reference point.
-			auto g_temp_trapped_cell = path_escape_get_trapped_cell();
-
-			// Update the trapped reference cells
-			for (int8_t i = ESCAPE_TRAPPED_REF_CELL_SIZE - 1; i > 0; i--)
-			{
-				g_temp_trapped_cell[i] = g_temp_trapped_cell[i-1];
-				ROS_DEBUG("i = %d, g_temp_trapped_cell[i].X = %d, g_temp_trapped_cell[i].Y = %d", i, g_temp_trapped_cell[i].X, g_temp_trapped_cell[i].Y);
-			}
-			g_temp_trapped_cell[0] = cell;
-			ROS_DEBUG("g_temp_trapped_cell[0].X = %d, g_temp_trapped_cell[0].Y = %d", g_temp_trapped_cell[0].X, g_temp_trapped_cell[0].Y);
-			path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
+        if(g_homes.size() >= ESCAPE_TRAPPED_REF_CELL_SIZE+1)//escape_count + zero_home = 3+1 = 4
+				{
+					std::copy(g_homes.begin() + 2, g_homes.end(), g_homes.begin()+1);//shift 1 but save zero_home
+					g_homes.pop_back();
+				}
+				g_homes.push_back(curr);
 		}
 	}
-	else if(cell.X == 0 && cell.Y == 0 && get_clean_mode() != Clean_Mode_Spot)
+	else if(curr == g_zero_home && get_clean_mode() != Clean_Mode_Spot)
 	{
 		extern bool g_start_point_seen_charger, g_have_seen_charge_stub;
 		g_start_point_seen_charger = true;
@@ -1653,85 +1590,28 @@ void path_set_home(Cell_t cell)
  * return :NO_TARGET_LEFT (0)
  *        :TARGET_FOUND (1)
  */
-int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path)
-{
-	int8_t return_val;
-	Cell_t temp_target;
-	static bool going_old_paths = true;
-	while (ros::ok())
-	{
-		if (g_switch_home_cell)
-		{
-			// Get the home point.
-			if (!g_home_point_old_path.empty())
-			{
-				// Get next home cell.
-				temp_target = g_home_point_old_path.front();
-				g_home_point_old_path.pop_front();
-				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u old path targets left, %u new targets left.", __FUNCTION__, __LINE__, temp_target.X, temp_target.Y, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
-				// Try all the old path home point first.
-				set_explore_new_path_flag(false);
-				g_switch_home_cell = false;
-				going_old_paths = true;
-
-				if (is_block_accessible(temp_target.X, temp_target.Y) == 0) {
-					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
-					map_set_cells(ROBOT_SIZE, temp_target.X, temp_target.Y, CLEANED);
-				}
-			}
-			else if (!g_home_point_new_path.empty())
-			{
-				// Try all the new path home point.
-				set_explore_new_path_flag(true);
-				// Get next home cell.
-				temp_target = g_home_point_new_path.front();
-				g_home_point_new_path.pop_front();
-				ROS_WARN("%s, %d: Go home Target: (%d, %d), %u new targets left.", __FUNCTION__, __LINE__, temp_target.X, temp_target.Y, (uint)g_home_point_new_path.size());
-				g_switch_home_cell = false;
-				going_old_paths = false;
-
-				if (is_block_accessible(temp_target.X, temp_target.Y) == 0) {
-					ROS_WARN("%s %d: target is blocked, unblock the target.\n", __FUNCTION__, __LINE__);
-					map_set_cells(ROBOT_SIZE, temp_target.X, temp_target.Y, CLEANED);
-				}
-			}
-			else // Target list is empty.
-			{
-				ROS_WARN("%s, %d: No targets left.", __FUNCTION__, __LINE__);
-				return_val = NO_TARGET_LEFT;
-				break;
-			}
+int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
+	if(g_home_way_list.empty())
+		g_home_way_it = _gen_home_ways(g_homes.size(), g_home_way_list);
+	for (; g_home_way_it != g_home_way_list.end(); ++g_home_way_it) {
+		auto way = *g_home_way_it % HOMEWAY_NUM;
+		auto cnt = *g_home_way_it / HOMEWAY_NUM;
+		g_home = g_homes[cnt];
+		ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home,way, cnt);
+		if (way == USE_ROS && g_home_gen_rosmap) {
+			g_home_gen_rosmap = false;
+			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map_convert" "\033[0m", __FUNCTION__, __LINE__);
+			ros_map_convert(MAP, false, true);
 		}
-		else
-			temp_target = g_current_home_cell;
-
-		auto path_next_status = (int8_t) path_next_best(curr, temp_target, path);
-		ROS_INFO("%s %d: Path Find: %d\tNext cell: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, path.cells.front().X, path.cells.front().Y, curr.X, curr.Y);
-		if (path_next_status == 1)
-		{
-//			if (cm_check_loop_back(next))
-//				g_switch_home_cell = true;
-//			else
-//			{
-				g_current_home_cell = temp_target;
-				return_val = TARGET_FOUND;
-				break;
-//			}
+		if (is_block_accessible(g_home.X, g_home.Y) == 0) {
+			map_set_cells(ROBOT_SIZE, g_home.X, g_home.Y, CLEANED);
 		}
-		else
-		{
-			Cell_t cell_zero{0, 0};
-			if (!g_home_point_old_path.empty() || (going_old_paths && temp_target == cell_zero))
-			{
-				// If can not reach this point, save this point to new path home point list.
-				g_home_point_new_path.push_back(temp_target);
-				ROS_WARN("%s %d: Can't reach this home point(%d, %d), push to home point of new path list.", __FUNCTION__, __LINE__, temp_target.X, temp_target.Y);
-			}
-			g_switch_home_cell = true;
+
+		if (path_next_shortest(curr, g_home, path) == 1) {
+			return TARGET_FOUND;
 		}
 	}
-
-	return return_val;
+	return NO_TARGET_LEFT;
 }
 
 int16_t path_get_home_x()
@@ -1744,7 +1624,7 @@ int16_t path_get_home_y()
 	return g_home_y;
 }
 
-void wf_path_planning_initialize(Cell_t cell)
+void wf_path_planning_initialize()
 {
 	int16_t i;
 
@@ -1753,13 +1633,6 @@ void wf_path_planning_initialize(Cell_t cell)
 //	preset_action_count = 0;
 
 //	weight_enabled = 1;
-
-	/* Save the starting point as home. */
-	for ( i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i ) {
-		g_trapped_cell[i] = cell;
-	}
-	g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
-
 
 #if (ROBOT_SIZE == 5)
 
@@ -1808,8 +1681,7 @@ int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path)
 		map_set_cells(ROBOT_SIZE, g_continue_cell.X, g_continue_cell.Y, CLEANED);
 	}
 
-	set_explore_new_path_flag(false);
-	auto path_next_status = (int8_t) path_next_best(curr, g_continue_cell, path);
+	auto path_next_status = (int8_t) path_next_shortest(curr, g_continue_cell, path);
 	ROS_INFO("%s %d: Path Find: %d\tNext point: (%d, %d)\tNow: (%d, %d)", __FUNCTION__, __LINE__, path_next_status, path.cells.front().X, path.cells.front().Y, curr.X, curr.Y);
 	if (path_next_status == 1/* && !cm_check_loop_back(next)*/)
 		return_val = TARGET_FOUND;
@@ -1884,4 +1756,9 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 		}
 	}
 	return is_found;
+}
+
+bool is_fobbit_free() {
+	//NOTE: g_home_way_it should last of g_home,for g_homeway_list may empty.
+	return (g_go_home && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
 }

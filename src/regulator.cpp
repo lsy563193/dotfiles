@@ -606,7 +606,6 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 
 bool FollowWallRegulator::isReach()
 {
-//	ROS_INFO("FollowWallRegulator isReach");
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	//map_set_realtime();
 	bool ret = false;
@@ -620,10 +619,8 @@ bool FollowWallRegulator::isReach()
 		}
 	} else if (get_clean_mode() == Clean_Mode_Navigation)
 	{
-		extern int g_trapped_mode;
 		if (g_trapped_mode != 0)
 		{
-			extern uint32_t g_escape_trapped_timer;
 			if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
 			//if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME || wf_is_end())
 			{
@@ -1035,8 +1032,9 @@ void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 bool RegulatorManage::isReach()
 {
-	if ( (mt_is_linear() && (p_reg_ == back_reg_ || p_reg_ == mt_reg_)) || (mt_is_follow_wall() && p_reg_ == mt_reg_) )
+	if ( (mt_is_linear() && (p_reg_ == back_reg_ || p_reg_ == mt_reg_)) || (mt_is_follow_wall() && p_reg_ == mt_reg_) ){
 		return p_reg_->isReach();
+	}
 	return false;
 }
 

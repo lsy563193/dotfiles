@@ -283,14 +283,12 @@ bool cm_move_to(const PPTargetType& path)
 	cm_update_position();
 	Cell_t start;
 	start = map_get_curr_cell();
-//	ROS_INFO("cm_move_to: target(%d,%d)");
 
 //#if INTERLACED_MOVE
 //	extern uint16_t g_new_dir;
 //	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
 //		start.Y = path.cells.front().Y;
 //#endif
-	ROS_INFO("cm_move_to: start.Y(%d)",start.Y);
 	RegulatorManage rm(start, g_next_cell, path);
 
 	bool eh_status_now=false, eh_status_last=false;
@@ -302,9 +300,8 @@ bool cm_move_to(const PPTargetType& path)
 
 	while (ros::ok())
 	{
-		extern int g_trapped_mode;
 		/*for navigation trapped wall follow update map and push_back vector*/
-		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
+		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && (g_trapped_mode == 1 || g_trapped_mode == 3))
 			wf_update_map(WFMAP);
 
 		/*for wall follow mode update map and push_back vector*/
@@ -360,7 +357,7 @@ bool cm_move_to(const PPTargetType& path)
 						map_set_follow_wall(curr);
 				}
 
-				if (g_trapped_mode == 1)
+				if (g_trapped_mode == 1 )
 				{
 					auto is_block_clear = map_mark_robot(MAP);
 					PPTargetType temp_path;
@@ -374,6 +371,19 @@ bool cm_move_to(const PPTargetType& path)
 						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
 					}
 				}
+				/*else if( g_trapped_mode == 3)
+				{
+					ROS_WARN("%s,%d:g_trapped_mode == 3", __FUNCTION__, __LINE__);
+					if(path_escape_trapped(curr) == 1)
+					{
+						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
+						g_trapped_mode = 2;
+						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
+					}
+					else{
+						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+					}
+				}*/
 			}
 		}
 
@@ -546,7 +556,6 @@ int cm_cleaning()
 
 	g_motion_init_succeeded = true;
 
-	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event)
@@ -593,19 +602,15 @@ int cm_cleaning()
 			}
 			else if(g_go_home)
 			{
-				extern Cell_t g_current_home_cell;
-				if(map_get_curr_cell() == g_current_home_cell)
+				if(map_get_curr_cell() == g_home)
 				{
-					if ((g_current_home_cell.X == 0 && g_current_home_cell.Y == 0 && g_start_point_seen_charger) ||
-							(g_current_home_cell.X != 0 || g_current_home_cell.Y != 0))
+					if (g_home != g_zero_home || g_start_point_seen_charger )
 					{
 						if (cm_go_to_charger())
 							return -1;
 						else if (!g_go_home_by_remote)
 							set_led_mode(LED_STEADY, LED_GREEN);
 					}
-					extern bool g_switch_home_cell;
-					g_switch_home_cell = true;
 				}
 				else if (g_rcon_during_go_home)
 				{
@@ -636,7 +641,7 @@ void cm_check_should_go_home(void)
 			cm_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
-			ros_map_convert(true);
+			ros_map_convert(MAP, true,false);
 			map_mark_robot(MAP);//note: To clear the obstacles befor go home, please don't remove it!
 		}
 		if (g_battery_home)
@@ -647,8 +652,8 @@ void cm_check_should_go_home(void)
 			g_go_home_by_remote = true;
 		}
 		wav_play(WAV_BACK_TO_CHARGER);
-		if (!g_battery_home && !g_map_boundary_created)
-			cm_create_home_boundary();
+//		if (!g_battery_home && !g_map_boundary_created)
+//			cm_create_home_boundary();
 		g_remote_home = false;
 		g_battery_home = false;
 		g_finish_cleaning_go_home = false;

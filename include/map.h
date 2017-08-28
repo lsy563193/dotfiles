@@ -8,6 +8,7 @@
 #define MAP 0
 #define SPMAP 1
 #define WFMAP 2
+#define ROSMAP 3
 
 typedef enum {
   UNCLEAN  = 0,
@@ -84,13 +85,14 @@ void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state
 
 void map_reset(uint8_t id);
 
+void map_copy(uint8_t id,uint8_t **new_map);
 /*
  * @author Alvin Xie
  * @brief Convert the ros map to grid map for the pathplanning algorithm.
  * @param is_mark_cleaned to decide if mark the free space to CLENAED
  * @return None
  */
-void ros_map_convert(bool is_mark_cleaned);
+void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_block);
 
 unsigned char getCost(std::vector<int8_t> &p_map_data, unsigned int mx, unsigned int my);
 void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy);

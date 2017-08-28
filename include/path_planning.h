@@ -7,6 +7,7 @@
 #include "debug.h"
 
 #include <list>
+#include <deque>
 
 typedef struct PositionType_{
 	Cell_t	cell;
@@ -30,7 +31,19 @@ typedef struct {
 	Cell_t	target;
 	std::list <Cell_t> cells;
 } PPTargetType;
-
+typedef enum {
+	USE_ROS,
+	USE_UNCLEAN,
+	USE_CLEANED,
+	HOMEWAY_NUM
+}HomeWay_t;
+extern std::vector<Cell_t> g_homes;
+extern std::vector<int> g_home_way_list;
+extern bool g_go_home;
+extern Cell_t g_home;
+extern Cell_t g_zero_home;
+extern bool g_home_gen_rosmap;
+extern uint32_t g_escape_trapped_timer;
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -61,7 +74,7 @@ void path_update_cell_history(void);
  *
  * @return
  */
-void path_planning_initialize(Cell_t cell);
+void path_planning_initialize();
 
 /*
  * Initialization function for path planning in wall follow mode, it sets the starting
@@ -71,7 +84,7 @@ void path_planning_initialize(Cell_t cell);
  *
  * @return
  */
-void wf_path_planning_initialize(Cell_t cell);
+void wf_path_planning_initialize();
 
 /*
  * Function to find the next target to clean. When the robot goes to a new
@@ -175,7 +188,7 @@ int16_t path_ahead_to_clean(int16_t x, Cell_t next);
  * @return	0 if the robot is trapped
  * 		1 if the robot is not trapped.
  */
-int16_t path_escape_trapped(void);
+int16_t path_escape_trapped(const Cell_t& curr);
 
  /* Set the around 9 cell as state */
 void path_set_9cell(int16_t cell_x, int16_t cell_y, CellState state);
@@ -187,7 +200,7 @@ void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
 Cell_t *path_escape_get_trapped_cell(void);
 
-void path_set_home(Cell_t cell);
+void path_set_home(const Cell_t& cell);
 
 int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path);
 
@@ -301,4 +314,6 @@ int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path);
 void path_fill_path(std::list<Cell_t>& path);
 
 bool path_dijkstra(const Cell_t& curr, Cell_t& p_goal);
+
+bool is_fobbit_free();
 #endif

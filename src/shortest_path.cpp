@@ -57,7 +57,7 @@
 static uint8_t g_direct_go = 0;
 
 // This flag is for deciding whether it should consider UNCLEAN block as valid path.
-bool explore_new_path_flag = false;
+//bool explore_new_path_flag = false;
 
 #ifdef SHORTEST_PATH_V2
 {
@@ -1123,6 +1123,8 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 		}
 	}
 
+	debug_map(MAP, end_x, end_y);
+	ROS_INFO("\033[1;46;37m" "%s %d:higt_free(%d)" "\033[0m", __FUNCTION__, __LINE__,is_fobbit_free());
 	/* Marked the obstcals to the shorest path map. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
@@ -1135,7 +1137,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 					}
 				}
 			}
-			else if(cs == UNCLEAN && !explore_new_path_flag)
+			else if(cs == UNCLEAN && is_fobbit_free())
 				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}
@@ -1348,6 +1350,7 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
+	ROS_INFO("%s %d: curr_x: %d\tcurr_y: %d\tend_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d\t return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	if (bound == 1) {
 		/* If bound is set, set the search range. */
 		x_min = (curr_x > end_x ? end_x : curr_x) - 8;
@@ -1429,7 +1432,7 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
  * 		1:  Path to target is found
  * 		(totalCost: from function path_find_shortest_path)
  */
-int16_t path_next_best(const Cell_t &curr, const Cell_t &target, PPTargetType& path) {
+int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetType &path) {
 	int16_t	retval;
 	uint8_t	blocked, stage;
 	int16_t	i, j, ei, ej, si, sj, x_path, y_path;
@@ -1636,10 +1639,10 @@ void path_display_path_points(list<Cell_t> path)
 
 #endif
 
-void set_explore_new_path_flag(bool flag)
-{
-	explore_new_path_flag = flag;
-}
+//void set_explore_new_path_flag(bool flag)
+//{
+//	explore_new_path_flag = flag;
+//}
 
 int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
 	uint16_t	next;
@@ -1679,7 +1682,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 					}
 				}
 			}
-			else if(cs == UNCLEAN && !explore_new_path_flag)
+			else if(cs == UNCLEAN && is_fobbit_free())
 				map_set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}

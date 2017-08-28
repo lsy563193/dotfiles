@@ -26,9 +26,6 @@
 
 Segment_set segmentss;
 
-extern std::list <Cell_t> g_home_point_old_path;
-extern std::list <Cell_t> g_home_point_new_path;
-
 uint32_t g_saved_work_time = 0;//temporary work time
 
 bool g_is_main_switch_off = false;
@@ -170,8 +167,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	initSucceeded(true);
 
-	
-	//1 Initialize for different mode.
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 	if (!initCleaning(get_clean_mode()))
 	{
 		initSucceeded(false);
@@ -326,16 +324,16 @@ MotionManage::~MotionManage()
 			extern bool g_go_home;
 			if (g_go_home)
 			{
-				extern Cell_t g_current_home_cell;
 				// The current home cell is still valid, so push it back to the home point list.
-				path_set_home(g_current_home_cell);
+				path_set_home(g_home);
 			}
 			set_clean_mode(Clean_Mode_Userinterface);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
-				ROS_WARN("%s %d: Pause going home, g_home_point_old_path list size: %u, g_home_point_new_path list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
+//				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
+			ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
 #else
 				ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
@@ -404,9 +402,6 @@ MotionManage::~MotionManage()
 		s_slam = nullptr;
 	}
 
-
-	g_home_point_old_path.clear();
-	g_home_point_new_path.clear();
 	robot::instance()->savedOffsetAngle(0);
 
 	if (g_fatal_quit_event)
@@ -467,27 +462,11 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		g_saved_work_time = 0;
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-		//Initital home point
-		g_home_point_old_path.clear();
-		g_home_point_new_path.clear();
-
 		// Push the start point into the home point list
-		Cell_t cell{0, 0};
-		g_home_point_old_path.push_front(cell);
-
-		// Mark all the trapped reference cells as (0, 0).
-		Cell_t tmp_pnt{0, 0};
-		auto g_temp_trapped_cell = path_escape_get_trapped_cell();
-		for (int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i)
-		{
-			g_temp_trapped_cell[i] = tmp_pnt;
-		}
-		path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
-
 		ROS_INFO("map_init-----------------------------");
 		map_init(MAP);
 		map_init(WFMAP);
-		path_planning_initialize(g_home_point_old_path.front());
+		path_planning_initialize();
 
 		robot::instance()->initOdomPosition();
 
@@ -498,8 +477,6 @@ bool MotionManage::initNavigationCleaning(void)
 		g_have_seen_charge_stub = false;
 		g_start_point_seen_charger = false;
 
-		extern bool g_switch_home_cell;
-		g_switch_home_cell = true;
 	}
 
 	reset_touch();
@@ -621,30 +598,20 @@ bool MotionManage::initWallFollowCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	//Initital home point
-	g_home_point_old_path.clear();
-	g_home_point_new_path.clear();
 	g_wf_cell.clear();
-	// Push the start point into the home point list
-	Cell_t cell{0, 0};
-	g_home_point_old_path.push_front(cell);
 
 	map_init(MAP);
 	ROS_WARN("%s %d: map initialized", __FUNCTION__, __LINE__);
 	map_init(WFMAP);
 	ROS_WARN("%s %d: wf map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
-	wf_path_planning_initialize(g_home_point_old_path.front());
+	wf_path_planning_initialize();
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
 	extern bool g_have_seen_charge_stub;
 	g_have_seen_charge_stub = false;
-
-	extern bool g_switch_home_cell;
-	g_switch_home_cell = true;
-
 	work_motor_configure();
 
 	return true;
@@ -677,12 +644,7 @@ bool MotionManage::initSpotCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	g_home_point_old_path.clear();
-	g_home_point_new_path.clear();
-	Cell_t cell{0, 0};
-	g_home_point_old_path.push_front(cell);//init home point
 	map_init(MAP);//init map
-	path_planning_initialize(g_home_point_old_path.front());//init pathplan
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 

@@ -48,11 +48,9 @@ std::vector<Pose16_t> g_wf_cell;
 int g_isolate_count = 0;
 bool g_isolate_triggered = false;
 // This list is for storing the position that robot sees the charger stub.
-extern std::list<Cell_t> g_home_point_old_path;
 extern bool g_from_station;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
-extern Cell_t g_trapped_cell[ESCAPE_TRAPPED_REF_CELL_SIZE];
 extern uint8_t g_trapped_cell_size;
 extern Cell_t g_cell_history[5];
 extern uint8_t g_wheel_left_direction;
@@ -280,10 +278,10 @@ static bool wf_is_reach_cleaned(void)
 /*
 static void wf_mark_home_point(void)
 {
-	//path_planning_initialize(&, &g_home_point_old_path.front().Y);
+	//path_planning_initialize(&, &g_homes.front().Y);
 	int32_t x, y;
 	int i, j;
-	std::list<Cell_t> WF_Home_Point = g_home_point_old_path;
+	std::list<Cell_t> WF_Home_Point = g_homes;
 
 	while (!WF_Home_Point.empty())
 	{
