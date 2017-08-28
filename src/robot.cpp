@@ -111,6 +111,9 @@ void robot::init()
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
+	lw_vel_ = msg->lw_vel;
+	rw_vel_ = msg->rw_vel;
+
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
@@ -409,6 +412,40 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
 }
 
+bool robot::isRobotStuck() const
+{
+	static float last_post_x = 0;
+	static float last_post_y = 0;
+	static float last_angle = 0;
+	static int rs_count = 0;
+	bool ret = false;
+	if(g_robot_stuck_enable && isTfReady()){
+		if(absolute(lw_vel_)>=0.001 || absolute(rw_vel_)>=0.001)
+		{
+			if(absolute(slam_correction_x_) > 0.01 || absolute(slam_correction_y_) > 0.01 || absolute(slam_correction_yaw_) > 0.01){
+				if((absolute(position_x_ - last_post_x ) <= 0.05 && absolute(position_y_ - last_post_y) <= 0.05) || absolute(position_yaw_ - last_angle) <=15.0)
+				{
+					last_post_x = position_x_;
+					last_post_y = position_y_;
+					last_angle = position_yaw_;
+					rs_count ++;
+					ROS_INFO("\033[35m""robot stuck %f,%f""\033[0m",position_x_ - last_post_x,position_y_ - last_post_y );
+					if(rs_count > 100)//about 2 second
+					{
+						rs_count = 0;
+						ret = true;
+					}
+				}
+				else{
+					rs_count = 0;
+					ret = false;
+				}
+			}
+		}
+	}
+	return ret;
+}
+
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
 	width_ = map->info.width;
@@ -542,7 +579,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	{
 		color_.r = 0.5;
 		color_.g = 1.0;
-		color_.b = 0.5;
+		color_.b = 1.0;
 	}
 	clean_map_markers_.points.push_back(m_points_);
 	clean_map_markers_.colors.push_back(color_);
