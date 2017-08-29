@@ -1091,9 +1091,11 @@ bool cm_should_self_check(void)
 
 uint8_t cm_check_charger_signal(void)
 {
-	uint8_t time_counter = 130;
+	time_t delay_counter;
 	bool eh_status_now, eh_status_last;
-	while(time_counter)
+
+	delay_counter = time(NULL);
+	while(time(NULL) - delay_counter > 1)
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 		{
@@ -1109,7 +1111,6 @@ uint8_t cm_check_charger_signal(void)
 		{
 			return 2;
 		}
-		time_counter--;
 	}
 	return 0;
 }
