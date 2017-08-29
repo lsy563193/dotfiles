@@ -541,6 +541,8 @@ void set_led(uint16_t G, uint16_t R);
 
 void stop_brifly(void);
 
+void delay(double ms);
+
 void set_main_brush_pwm(uint16_t PWM);
 
 void set_side_brush_pwm(uint16_t L, uint16_t R);

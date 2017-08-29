@@ -210,7 +210,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 			Laser_Point.push_back(New_Laser_Point);
 		}
 		//laser_distance = laser_scan_data_.ranges[i];
-		//ROS_INFO("wall_distance = %lf, i = %d", laser_distance, i);
+		//ROS_INFO("strength = %lf, i = %d", laser_distance, i);
 		//ROS_INFO("Laser_Point_x = %lf, Laser_Point_y = %lf, th = %lf, distance = %lf", New_Laser_Point.x, New_Laser_Point.y, th, laser_scan_data_.ranges[i]);
 	}
 	scan_mutex_.unlock();
@@ -712,7 +712,7 @@ double Laser::getLaserDistance(uint16_t angle){
 	}
 }
 
-uint8_t Laser::laserMarker(bool is_mark)
+uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 {
 	int		i;
 	int		count = 0;
@@ -723,8 +723,6 @@ uint8_t Laser::laserMarker(bool is_mark)
 	static  uint32_t seq = laser_scan_data_.header.seq;
 	bool	is_triggered = 0;
 	static	bool is_skip = 0;
-	const	double X_MIN = 0.140;//0.167
-	const	double X_MAX = 0.237;//0.279
 	const	double Y_MIN = 0.140;//0.167
 	const	double Y_MAX = 0.237;//0.279
 	uint8_t laser_status;

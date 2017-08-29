@@ -7,6 +7,9 @@
 
 #include <move_type.h>
 #include <path_planning.h>
+#define STRENGTH_WHITE_MIN 550
+#define STRENGTH_BLACK_MIN 120
+#define STRENGTH_BLACK_MAX 180
 
 class RegulatorBase {
 public:

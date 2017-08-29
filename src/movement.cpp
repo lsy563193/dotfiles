@@ -8,7 +8,6 @@
 #include <fcntl.h>
 #include <motion_manage.h>
 #include <move_type.h>
-
 #include "gyro.h"
 #include "movement.h"
 #include "crc8.h"
@@ -21,6 +20,7 @@
 #include "wav.h"
 #include "slam.h"
 #include "event_manager.h"
+#include <ctime>
 
 extern uint8_t g_send_stream[SEND_LEN];
 
@@ -3057,3 +3057,12 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
 	robotbase_led_update_flag = true;
 }
 
+void delay(double ms)
+{
+	auto start=ros::Time::now().toSec();
+	auto now=start;
+	while((now-start) < ms)
+	{
+		now=ros::Time::now().toSec();
+	}
+}

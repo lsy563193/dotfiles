@@ -22,7 +22,15 @@ extern uint16_t g_old_dir;
 extern uint16_t g_new_dir;
 extern Cell_t g_cell_history[];
 int jam=0;
-int16_t left_wall_buffer[3] = { 0 },right_wall_buffer[3] = { 0 };
+int16_t wall_buffer[3]={0};
+int strength=150; 
+//int last_strength=150;
+//int last_transit_strength=150;
+double transit_time=0;
+int factor=15;
+bool is_found;
+double wall_distance=0.8;
+float back_distance=0.01;
 //bool g_is_should_follow_wall;
 
 static int16_t bumper_turn_angle()
@@ -36,36 +44,28 @@ static int16_t bumper_turn_angle()
 
 	if (status == AllBumperTrig)
 	{
-		g_turn_angle = -850;
+		g_turn_angle = -60;
 		g_straight_distance = 150; //150;
-		g_wall_distance = std::min(g_wall_distance + 300, Wall_High_Limit);
 		jam = get_wheel_step() < 2000 ? ++jam : 0;
 	} else if (status == diff_side)
 	{
-		g_wall_distance = std::min(g_wall_distance + 300, Wall_High_Limit);
-		g_turn_angle = -920;
+		g_turn_angle = -850;
 	} else if (status == same_side)
 	{
-		g_wall_distance = std::max(g_wall_distance - 100, Wall_Low_Limit);
 		g_turn_angle =0;
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 		if (g_trapped_mode != 1) {
-			g_turn_angle = (jam >= 3 || (g_wall_distance < 200 && get_obs() <= get_obs_value() - 200)) ? -200 : -300;
+			g_turn_angle = (jam >= 3 || (get_obs() <= get_obs_value() - 200)) ? -180 : -280;
 		} else {
-			g_turn_angle = (jam >= 3 || (g_wall_distance < 200 && get_obs() <= get_obs_value() - 200)) ? -100 : -200;
+			g_turn_angle = (jam >= 3 || (get_obs() <= get_obs_value() - 200)) ? -100 : -200;
 		}
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
-
-		g_wall_distance = (jam < 3 && g_wall_distance<200 && get_obs()>(get_obs_value() - 200))
-											? Wall_High_Limit : g_wall_distance;
 
 		g_straight_distance = 250; //250;
 		jam = get_wheel_step() < 2000 ? ++jam : 0;
 	}
 	g_straight_distance = 200;
-//	g_left_buffer = {0, 0, 0};
 	reset_wheel_step();
-//	ROS_INFO("705, g_turn_angle(%d), g_straight_distance(%d),g_wall_distance(%d),jam(%d),get_right_wheel_step(%d) ", g_turn_angle,     g_straight_distance,    g_wall_distance,    jam,    get_right_wheel_step()  );
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
 	return g_turn_angle;
@@ -117,12 +117,12 @@ static int double_scale_10(double line_angle)
 static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int angle_max,double dis_limit=0.217)
 {
 	ROS_INFO("bumper (%d)!", get_bumper_status());
-	bool is_found;
 	double line_angle;
 	double distance;
-	auto RESET_WALL_DIS = 100;
+//	auto RESET_WALL_DIS = 100;
 	is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
-	RESET_WALL_DIS = int(distance * 1000);
+//	RESET_WALL_DIS = int(distance * 1000);
+
 	ROS_INFO("line_distance = %lf", distance);
 	ROS_INFO("line_angle_raw = %lf", line_angle);
 	auto angle = double_scale_10(line_angle);
@@ -133,8 +133,14 @@ static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int
 	ROS_INFO("line_angle = %d", angle);
 	if (is_found && angle >= angle_min && angle < angle_max)
 	{
+//		ROS_ERROR("distance: %f",(distance*100.0-16.7));
+		line_angle=fabs(line_angle);
+		if(line_angle > 90)
+			wall_distance=back_distance*100*sin(line_angle*3.1415/180.0);
+		else
+			wall_distance=back_distance*100*sin((180-line_angle)*3.1415/180.0);
+//		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_angle);
 		g_turn_angle = mt_is_right() ? angle : -angle;
-		g_wall_distance = RESET_WALL_DIS;
 		ROS_INFO("laser generate turn angle(%d)!",g_turn_angle);
 	}
 	return g_turn_angle;
@@ -217,7 +223,7 @@ bool BackRegulator::isReach()
 {
 	auto distance = sqrtf(powf(s_pos_x - robot::instance()->getOdomPositionX(), 2) +
 			   	powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
-	if(fabsf(distance) > 0.02f){
+	if(fabsf(distance) > back_distance){
 		ROS_INFO("%s, %d: BackRegulator ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
@@ -278,10 +284,48 @@ bool TurnRegulator::isReach()
 {
 	if (abs(s_target_angle - gyro_get_angle()) < accurate_){
 		ROS_INFO("%s, %d: TurnRegulator target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
+		
+		/*********************************************For wall follow**********************************************/
+		if(is_found)
+		{
+			strength = (mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+/*			if(strength < 10)	//set strength in U round
+			{
+				strength=last_strength;
+				ROS_ERROR("strength: %d",strength);
+				return true;
+			}*/
+		
+			ROS_INFO("strength: %d",strength);
+			if(strength < 150)  //150 is the experience value by testing in the closest position to black wall
+			{
+				strength+=(150-strength)/4*3;
+				if(strength < STRENGTH_BLACK_MIN)
+					strength=STRENGTH_BLACK_MIN;
+				ROS_WARN("strength_distance_adjust: %d",strength);
+			}
+			else if(strength >250 && strength < 320) // boardline invagination
+			{
+				strength +=(400-strength)/5*4;
+				ROS_WARN("boradline invagination，strength: %d",strength);
+			}
+			else if(strength > 320 && strength < 620)  //620 is the experience value by testing in the closest position to white wall
+			{	
+				strength+=(620-strength)/4*3;
+				if(strength < STRENGTH_WHITE_MIN)
+				strength=STRENGTH_WHITE_MIN;
+				ROS_WARN("strength_distance_adjust: %d",strength);
+			}
+//			last_strength=strength;
+			is_found=false;
+		}
+		else
+			ROS_WARN("line is not found");
 		return true;
 	}
-
-	return false;
+		/**********************************************END**********************************************************/
+	
+		return false;
 }
 
 bool TurnRegulator::isSwitch()
@@ -310,7 +354,16 @@ bool TurnRegulator::_isStop()
 void TurnRegulator::setTarget()
 {
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1)
+	{
+		set_wheel_speed(0, 0);
+		delay(0.25);
+/*		do
+		{
+			set_wheel_speed(0, 0);
+			usleep(300000);
+		} while (robot::instance()->isMoving());*/
 		g_turn_angle = laser_turn_angle();
+	}
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 	ROS_INFO("%s %d: TurnRegulator, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
@@ -452,8 +505,11 @@ bool LinearRegulator::isSwitch()
 bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
-
-	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
+	bool obs_tmp;
+	if(get_clean_mode()==Clean_Mode_WallFollow)
+		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): _get_obs_value();
+	else
+		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
 
 	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
 	if (obs_tmp != 0 || rcon_tmp)
@@ -477,10 +533,10 @@ bool LinearRegulator::_isStop()
 //				return false;
 //			}
 		}
-/*		if(g_obs_triggered)
+		if(g_obs_triggered)
 			g_turn_angle = obs_turn_angle();
 		else
-			g_turn_angle = rcon_turn_angle();*/
+			g_turn_angle = rcon_turn_angle();
 		ROS_INFO("%s, %d: LinearRegulator, g_obs_triggered(%d) g_rcon_triggered(%d).", __FUNCTION__, __LINE__,g_obs_triggered, g_rcon_triggered);
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
@@ -586,7 +642,6 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target) : previous_(0)
 {
-	g_wall_distance = 400;
 	g_straight_distance = 300;
 	s_origin = start_point;
 	s_origin_angle = gyro_get_angle();
@@ -697,15 +752,16 @@ bool FollowWallRegulator::isSwitch()
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-	if( g_obs_triggered  || get_front_obs() >= get_front_obs_value()){
+
+	if( g_obs_triggered  || get_front_obs() >= get_front_obs_value()+1000){
 		if(! g_obs_triggered)
 			g_obs_triggered = Status_Front_OBS;
 		g_turn_angle = obs_turn_angle();
-		g_wall_distance = Wall_High_Limit;
 		g_straight_distance = 100;
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
+
 	return false;
 }
 
@@ -730,10 +786,10 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto &diff_dist = (mt_is_left()) ? _r_step : _l_step;
 	auto &same_speed = (mt_is_left()) ? l_speed : r_speed;
 	auto &diff_speed = (mt_is_left()) ? r_speed : l_speed;
-	
-	
+	wall_buffer[2]=wall_buffer[1];
+	wall_buffer[1]=wall_buffer[0];
+	wall_buffer[0]=(mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
 		
-//	ROS_INFO("FollowWallRegulator adjustSpeed");
 //	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
 	if ((same_dist) < (uint32_t) g_straight_distance)
 	{
@@ -744,40 +800,36 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			speed = 23;
 		same_speed = diff_speed = speed;
 //		ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
-//		ROS_INFO("Wf_1, speed = %d, g_wall_distance = %d", speed, g_wall_distance, g_wall_distance);
 	}
 	else
 	{
-		auto wheel_speed_base = 15 + diff_dist / 150;
+		auto wheel_speed_base = 17 + diff_dist / 150;
 		if (wheel_speed_base > 28)wheel_speed_base = 28;
 
 		auto proportion = (mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
 
-		proportion = proportion * 100 / g_wall_distance;
-
-		proportion -= 100;
+		proportion = (proportion-strength) * 100 / strength;
 
 		auto delta = proportion - previous_;
 
-//		ROS_INFO("Wf_1.1, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
-		if (g_wall_distance > 200)
+		if (wall_distance > 0.8)
 		{//over left
-			same_speed = wheel_speed_base + proportion / 8 + delta / 3; //12
-			diff_speed = wheel_speed_base - proportion / 9 - delta / 3; //10
-
+			same_speed = wheel_speed_base + proportion / 7 + delta/2; //
+			diff_speed = wheel_speed_base - proportion / 7 - delta/2; //
+			
 			if (wheel_speed_base < 26)
 			{
 				reset_sp_turn_count();
 				if (diff_speed > wheel_speed_base + 6)
 				{
-					diff_speed = 34;
-					same_speed = 4;
+					diff_speed = 32;
+					same_speed = 6;
 //					ROS_INFO("Wf_2, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 				}
 				else if (same_speed > wheel_speed_base + 10)
 				{
-					diff_speed = 5;
-					same_speed = 30;
+					diff_speed = 6;
+					same_speed = 28;
 //					ROS_INFO("Wf_3, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 				}
 			}
@@ -786,8 +838,8 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				if (diff_speed > 35)
 				{
 					add_sp_turn_count();
-					diff_speed = 35;
-					same_speed = 4;
+					diff_speed = 34;
+					same_speed = 6;
 //					ROS_INFO("Wf_4, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 //					ROS_INFO("get_sp_turn_count() = %d", get_sp_turn_count());
 				}
@@ -799,16 +851,16 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}
 		else
 		{
-			same_speed = wheel_speed_base + proportion / 10 + delta / 3;//16
-			diff_speed = wheel_speed_base - proportion / 10 - delta / 4; //11
+			same_speed = wheel_speed_base + proportion / 11 + delta/2;//16
+			diff_speed = wheel_speed_base - proportion / 11 - delta/2; //11
 //			ROS_INFO("Wf_4.1, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 			if (wheel_speed_base < 26)
 			{
 				reset_sp_turn_count();
 				if (diff_speed > wheel_speed_base + 4)
 				{
-					diff_speed = 34;
-					same_speed = 4;
+					diff_speed = 32;
+					same_speed = 5;
 //					ROS_INFO("Wf_5, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 				}
 			}
@@ -817,8 +869,8 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				if (diff_speed > 32)
 				{
 					add_sp_turn_count();
-					diff_speed = 36;
-					same_speed = 4;
+					diff_speed = 35;
+					same_speed = 6;
 //					ROS_INFO("Wf_6, same_speed = %d, diff_speed = %d, g_wall_distance = %d", same_speed, diff_speed, g_wall_distance);
 //					ROS_INFO("g_sp_turn_count() = %d",get_sp_turn_count());
 				}
@@ -828,65 +880,114 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				}
 			}
 		}
-
-		if(mt_is_left())
-		{
-			left_wall_buffer[2] = left_wall_buffer[1];
-			left_wall_buffer[1] = left_wall_buffer[0];
-			left_wall_buffer[0] = robot::instance()->getLeftWall();	
-			if (left_wall_buffer[0] < 100) 
-			{
-				if ((left_wall_buffer[1] - left_wall_buffer[0]) >= ((g_wall_distance / 16))) 
-				{
-					if ((left_wall_buffer[2] - left_wall_buffer[1]) >= ((g_wall_distance / 16))) 
-					{						
-						if (same_dist>200) 
-						{
-							if ((get_right_wheel_speed()-get_left_wheel_speed()) >= -3) 
-							{
-								// Away from the wall.
-								ROS_WARN("%s,%d: usleep(300000) to walk straight",__FUNCTION__,__LINE__);
-								move_forward(20,15);
-								if(g_wall_distance<300)
-								g_wall_distance=g_wall_distance+100;
-								usleep(300000);
-								g_straight_distance = 250;
-							}
-						}
-					}
-				}
-			}
-		}
-		else 
-		{
-			right_wall_buffer[2] = right_wall_buffer[1];
-			right_wall_buffer[1] = right_wall_buffer[0];
-			right_wall_buffer[0] = robot::instance()->getRightWall();	
 		
-			if (right_wall_buffer[0] < 100) 
+		/****************************************************turn a right angular***************************************************/
+		if (wall_buffer[0] < 100) 
+		{
+			if(strength > 250)
+				factor=50;				//white
+			else
+				factor=13;				//black
+				
+//			ROS_WARN("strength: %d",strength);
+//			ROS_WARN("wall_buffer[1] - wall_buffer[0]: %d",wall_buffer[1] - wall_buffer[0]);
+			if ((wall_buffer[1] - wall_buffer[0]) >= strength/factor) 
 			{
-				if ((right_wall_buffer[1] - right_wall_buffer[0]) >= ((g_wall_distance / 16))) 
-				{
-					if ((right_wall_buffer[2] - right_wall_buffer[1]) >= ((g_wall_distance / 16))) 
+//				ROS_WARN("wall_buffer[2] - wall_buffer[1]: %d",wall_buffer[2] - wall_buffer[1]);
+				if ((wall_buffer[2] - wall_buffer[1]) >= strength/factor) 
+				{						
+					if (same_dist>200) 
 					{
-						if (diff_dist>200) 
+						if ((diff_speed-same_speed) >= -3) 
 						{
-							if ((get_left_wheel_speed()-get_right_wheel_speed()) >= -3) 
-							{
-								// Away from the wall.
-								ROS_WARN("%s,%d: usleep(300000) to walk straight",__FUNCTION__,__LINE__);
+							// Away from the wall.
+							ROS_WARN("%s,%d: delay(0.22) to walk straight",__FUNCTION__,__LINE__);
+//							if(ros::Time::now().toSec()-transit_time < 0.8 && (strength != last_transit_strength))
+//							{
+//								strength=last_transit_strength;
+//								ROS_WARN("set back strength: %d",strength);
+//							}
+							if(mt_is_left())
+								move_forward(20,15);
+							else
 								move_forward(15,20);
-								if(g_wall_distance<300)
-								g_wall_distance=g_wall_distance+100;
-								usleep(300000);
-								g_straight_distance = 250;
-							}
+//							strength+=15;
+							delay(0.22);
+//							g_straight_distance = 250;								
 						}
 					}
 				}
 			}
 		}
+		/****************************************************END**************************************************************/
+			
+		/*********************reset strength when transits from white wall to black wall**********************************/
+//		ROS_WARN("wall_buffer[0]:%d,wall_buffer[1]=%d,wall_buffer[2]:%d",wall_buffer[0],wall_buffer[1],wall_buffer[2]);			
+/*		if (wall_buffer[0] >150 && wall_buffer[0] < 300 && wall_buffer[1] > 200 &&wall_buffer[2] > 200 && wall_buffer[1] < wall_buffer[2] ) 
+		{		
+//			ROS_WARN("strength: %d",strength);
+//			ROS_WARN("wall_buffer[1] - wall_buffer[0]: %d",wall_buffer[1] - wall_buffer[0]);
+			if ((wall_buffer[1] - wall_buffer[0]) >= strength/30) 
+			{
+//				ROS_WARN("wall_buffer[2] - wall_buffer[1]: %d",wall_buffer[2] - wall_buffer[1]);
+				if ((wall_buffer[2] - wall_buffer[1]) >= strength/30 && ((wall_buffer[1] - wall_buffer[0]+10) > (wall_buffer[2] - wall_buffer[1]))) 
+				{					
+//					ROS_WARN("same_dist: %d",same_dist);
+					if (same_dist>200) 
+					{
+//						ROS_WARN("get_right_wheel_speed-get_left_wheel_speed: %d",get_right_wheel_speed()-get_left_wheel_speed());
+						if ((diff_speed-same_speed) >= -3) 
+						{
+							last_transit_strength=strength;
+							transit_time=ros::Time::now().toSec();
+							strength=wall_buffer[0];
+//							ROS_WARN("set strength from white wall to black wall: %d",strength);
+							if(strength < 300)  //620 is the experience value by testing in the closest position to white wall
+							{	
+								strength+=(150-strength)/4*3;
+								if(strength < STRENGTH_BLACK_MIN)
+									strength=STRENGTH_BLACK_MIN;
+								else if(strength > STRENGTH_BLACK_MAX)
+									strength=STRENGTH_BLACK_MAX;
+								ROS_WARN("transit from white wall to black wall,reset strength: %d",strength);
+							}
+						}
+					}
+				}
+			}
+		}*/
+		/****************************************************END**************************************************************/
 
+		/***************reset strength when transits from black wall to white wall**********************/
+/*		if(wall_buffer[0] > 350 && wall_buffer[1] < 420 && wall_buffer[2] < 420)
+		{
+//			ROS_WARN("wall_buffer[2]: %d,wall_buffer[1]: %d",wall_buffer[2],wall_buffer[0]);
+//			ROS_WARN("strength: %d",strength);
+//			ROS_WARN("wall_buffer[0] - wall_buffer[1]: %d",wall_buffer[0] - wall_buffer[1]);
+			if(wall_buffer[0]-wall_buffer[1] >=(strength / 5))
+			{
+//				ROS_WARN("wall_buffer[1] - wall_buffer[2]: %d",wall_buffer[1] - wall_buffer[2]);
+				if(wall_buffer[1]-wall_buffer[2] >= 0)
+					if(diff_dist > 200)
+						if((diff_speed-same_speed) >= -3)
+						{
+							strength=wall_buffer[0];
+							if(strength < 620)  //620 is the experience value by testing in the closest position to white wall
+							{	
+								strength+=(620-strength)/4*3;
+								if(strength < STRENGTH_WHITE_MIN)
+									strength=STRENGTH_WHITE_MIN;
+								ROS_WARN("transit from black wall to white wall,reset strength: %d",strength);
+							}
+						}
+			}
+		}*/
+		/******************************************END******************************************************/
+
+/*
+		ROS_ERROR("same_speed: %d",same_speed);
+		ROS_ERROR("diff_speed: %d",diff_speed);
+*/
 		previous_ = proportion;
 
 		if (same_speed > 39)same_speed = 39;
