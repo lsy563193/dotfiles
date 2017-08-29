@@ -331,6 +331,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
 	g_omni_notmove = false;
+	g_robot_stuck = false;
 
 	/* reset charger_signal_start_time when get remote cleaning */
 	charger_signal_start_time = time(NULL);
@@ -490,6 +491,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
 	g_omni_notmove = false;
+	g_robot_stuck = false;
 	time_t key_press_start_time = time(NULL);
 
 	/* reset charger_signal_start_time when get key clean */

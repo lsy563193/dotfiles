@@ -61,6 +61,10 @@
 #define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
+/*---cm_check_charger_signal() return value---*/
+#define SEEN_CHARGER 1
+#define EVENT_TRIGGERED 2
+
 int g_rcon_triggered = 0;//1~6
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
@@ -563,6 +567,7 @@ int cm_cleaning()
 		return 0;
 
 	g_motion_init_succeeded = true;
+	g_robot_stuck_enable = true;
 
 	while (ros::ok())
 	{
@@ -583,14 +588,14 @@ int cm_cleaning()
 		if (is_found == 0) //No target point
 		{
 			uint8_t check_status = cm_check_charger_signal();
-			if(check_status == 1)/*---have seen charger signal---*/
+			if(check_status == SEEN_CHARGER)/*---have seen charger signal---*/
 			{
 				if(cm_go_to_charger())
 					return -1;
 				else if(!g_go_home_by_remote)
 					set_led_mode(LED_STEADY, LED_GREEN);
 			}
-			else if(check_status == 2)/*---event happened---*/
+			else if(check_status == EVENT_TRIGGERED)/*---event triggered---*/
 			{
 				return -1;
 			}
@@ -826,7 +831,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (g_bumper_jam || g_cliff_jam || g_omni_notmove)
+	if (g_bumper_jam || g_cliff_jam || g_omni_notmove || g_robot_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
@@ -845,7 +850,7 @@ void cm_self_check(void)
 
 	SelfCheckRegulator regulator;
 
-	robot::instance()->obs_adjust_count(50);
+	robot::instance()->obsAdjustCount(50);
 	while (ros::ok) {
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
@@ -1081,6 +1086,12 @@ void cm_self_check(void)
 			g_fatal_quit_event = true;
 			break;
 		}
+		else if (g_robot_stuck){
+			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
+			set_error_code(Error_Code_Omni);
+			g_fatal_quit_event = true;
+			break;
+		}
 		else
 			break;
 
@@ -1090,14 +1101,17 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove);
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck);
 }
 
 uint8_t cm_check_charger_signal(void)
 {
-	uint8_t time_counter = 130;
+	time_t delay_counter;
 	bool eh_status_now, eh_status_last;
-	while(time_counter)
+
+	ROS_INFO("%s, %d: wait about 1s to check if charger signal is received.", __FUNCTION__, __LINE__);
+	delay_counter = time(NULL);
+	while(time(NULL) - delay_counter < 2)
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 		{
@@ -1107,13 +1121,14 @@ uint8_t cm_check_charger_signal(void)
 
 		if(get_rcon_status())
 		{
-			return 1;
+			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
+			return SEEN_CHARGER;
 		}
 		else if(g_key_clean_pressed || g_fatal_quit_event)
 		{
-			return 2;
+			ROS_INFO("%s, %d: event triggered, return now.", __FUNCTION__, __LINE__);
+			return EVENT_TRIGGERED;
 		}
-		time_counter--;
 	}
 	return 0;
 }

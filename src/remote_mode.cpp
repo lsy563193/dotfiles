@@ -64,7 +64,7 @@ void remote_mode(void)
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 	/* Dyanmic adjust obs trigger val . */
-	robot::instance()->obs_adjust_count(20);
+	robot::instance()->obsAdjustCount(20);
 #endif
 
 	while (ros::ok())

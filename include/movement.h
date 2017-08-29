@@ -380,6 +380,15 @@ typedef enum{
 #define LED_ORANGE					2
 #define LED_RED						3
 
+//for tilt detct
+#define TILT_COUNT_REACH			50
+#define DIF_TILT_X_VAL				70
+#define DIF_TILT_Y_VAL				70
+#define DIF_TILT_Z_VAL				40
+#define TILT_RIGHT					0x1
+#define TILT_FRONT					0x2
+#define TILT_LEFT					0x4
+
 extern uint32_t g_rcon_status;
 
 extern volatile int16_t g_left_wall_baseline;
@@ -744,5 +753,7 @@ void add_sp_turn_count();
 // time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
 void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 
-bool maybe_tilt();
+uint8_t check_tilt();
+void set_tilt_status(uint8_t status);
+uint8_t get_tilt_status();
 #endif

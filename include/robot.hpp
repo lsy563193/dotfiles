@@ -85,6 +85,14 @@ public:
 		return saved_offset_angle_;
 	};
 
+	float getLeftWheelSpeed() const
+	{
+		return lw_vel_;
+	}
+	float getRightWheelSpeed() const
+	{
+		return rw_vel_;
+	}
 	float getAngleV() const
 	{
 		return angle_v_;
@@ -316,19 +324,49 @@ public:
 		return robot_correction_yaw_;
 	}
 
-	float getXAcc() const
+	int16_t getXAcc() const
 	{
 		return x_acc_;
 	}
 
-	float getYAcc() const
+	int16_t getYAcc() const
 	{
 		return y_acc_;
 	}
 
-	float getZAcc() const
+	int16_t getZAcc() const
 	{
 		return z_acc_;
+	}
+
+	int16_t getInitXAcc() const
+	{
+		return init_x_acc_;
+	}
+
+	int16_t getInitYAcc() const
+	{
+		return init_y_acc_;
+	}
+
+	int16_t getInitZAcc() const
+	{
+		return init_z_acc_;
+	}
+
+	void setInitXAcc(int16_t val)
+	{
+		init_x_acc_ = val;
+	}
+
+	void setInitYAcc(int16_t val)
+	{
+		init_y_acc_ = val;
+	}
+
+	void setInitZAcc(int16_t val)
+	{
+		init_z_acc_ = val;
 	}
 
 	void setTfReady(bool is_ready)
@@ -416,8 +454,6 @@ public:
 		ROS_INFO("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
-	bool isTilt();	
-
 	uint32_t mapGetWidth()
 	{
 		return width_;
@@ -456,8 +492,11 @@ public:
 
 	void resetCorrection();
 
-	void obs_adjust_count(int count);
+	void obsAdjustCount(int count);
 
+	void setAccInitData();
+
+	bool isRobotStuck() const;
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
@@ -486,6 +525,9 @@ private:
 
 	float saved_offset_angle_;
 
+	/*2 byte*/
+	int16_t lw_vel_;
+	int16_t rw_vel_;
 	/* 1 byte */
 	float	angle_;
 
@@ -543,13 +585,13 @@ private:
 	uint16_t right_wall_; // left wall sensor
 	
 	/*? byte*/
-	float x_acc_; // accelaration of x
+	int16_t x_acc_; // accelaration of x
 	
 	/*? byte*/
-	float y_acc_; // accelaration of y
+	int16_t y_acc_; // accelaration of y
 	
 	/*? byte*/
-	float z_acc_; // accelaration of z
+	int16_t z_acc_; // accelaration of z
 	
 	/*1 byte*/
 	uint8_t gyro_dymc_; // ??
@@ -601,9 +643,9 @@ private:
 	int8_t plan;
 	#endif
 
-	float init_x_acc_;
-	float init_y_acc_;
-	float init_z_acc_;
+	int16_t init_x_acc_;
+	int16_t init_y_acc_;
+	int16_t init_z_acc_;
 
 	bool	is_moving_;
 

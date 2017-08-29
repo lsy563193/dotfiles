@@ -15,14 +15,6 @@ extern uint8_t receiStream[RECEI_LEN];
 extern uint8_t receiStream[RECEI_LEN];
 #define SEND_LEN 19
 #endif
-//for tilt detct
-#ifndef TILT_COUNT_REACH
-#define TILT_COUNT_REACH (20)
-#endif
-
-#define DIF_TILT_X_VAL 70
-#define DIF_TILT_Y_VAL 70
-#define DIF_TILT_Z_VAL 40
 
 extern bool g_is_tilt;
 
@@ -51,6 +43,4 @@ void process_beep();
 void process_led();
 void robotbase_reset_odom_pose(void);
 void robotbase_restore_slam_correction(void);
-bool is_turn(void);
-void set_acc_init_data();
 #endif
