@@ -48,7 +48,6 @@
 
 #include "wav.h"
 #include "BoundingBox.h"
-#include <a_star.h>
 #include <numeric>
 
 #define FINAL_COST (1000)

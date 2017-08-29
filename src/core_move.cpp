@@ -292,31 +292,31 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 bool cm_move_to(const PPTargetType& path)
 {
 	cm_update_position();
-	Cell_t start;
-	start = map_get_curr_cell();
+	Cell_t curr;
+	curr = map_get_curr_cell();
 
 //#if INTERLACED_MOVE
 //	extern uint16_t g_new_dir;
 //	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
-//		start.Y = path.cells.front().Y;
+//		curr.Y = path.cells.front().Y;
 //#endif
-	RegulatorManage rm(start, g_next_cell, path);
+	RegulatorManage rm(curr, g_next_cell, path);
 
 	bool eh_status_now=false, eh_status_last=false;
 	bool ret = false;
 
 	std::vector<Cell_t> passed_path;
 	passed_path.clear();
-	passed_path.push_back(start);
+	passed_path.push_back(curr);
 
 	while (ros::ok())
 	{
 		/*for navigation trapped wall follow update map and push_back vector*/
-		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && (g_trapped_mode == 1 || g_trapped_mode == 3))
+		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
 			wf_update_map(WFMAP);
 
 		/*for wall follow mode update map and push_back vector*/
-		if(!mt_is_linear() && get_clean_mode() == Clean_Mode_WallFollow && g_go_home == false)
+		if(!mt_is_linear() && get_clean_mode() == Clean_Mode_WallFollow && !g_go_home)
 			wf_update_map(WFMAP);
 
 		if (/*get_clean_mode() == Clean_Mode_WallFollow &&*/ mt_is_linear()) {
@@ -328,6 +328,8 @@ bool cm_move_to(const PPTargetType& path)
 			usleep(100);
 			continue;
 		}
+
+		rm.updatePosition({map_get_x_count(),map_get_y_count()});
 
 		if (rm.isExit())
 			break;
@@ -351,7 +353,7 @@ bool cm_move_to(const PPTargetType& path)
 		if (get_clean_mode() != Clean_Mode_WallFollow
 						&& (mt_is_linear() || mt_is_follow_wall()))
 		{
-			auto curr = map_get_curr_cell();
+			curr = map_get_curr_cell();
 			if (passed_path.back() != curr)
 			{
 				extern uint16_t g_new_dir;
@@ -409,7 +411,7 @@ bool cm_move_to(const PPTargetType& path)
 		if (!mt_is_linear())
 			map_set_follow_wall(passed_path);
 
-//		linear_mark_clean(start, g_next_cell);
+//		linear_mark_clean(curr, g_next_cell);
 	}
 	map_set_blocked();
 	return ret;
