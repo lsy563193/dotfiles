@@ -535,7 +535,6 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 		Cell_t current_cell = map_get_curr_cell();
 		ROS_INFO("\033[36m""current cell(%d,%d)""\033[0m",current_cell.X,current_cell.Y);
 		int pnb_ret = 0;
-		uint32_t size = target_path->cells.size();
 		if(target_last_.empty()){
 			target_last_ = target_path->cells;
 		}
@@ -546,6 +545,7 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 		ROS_INFO("\033[36m""g_next_cell(%d,%d)""\033[0m",g_next_cell.X,g_next_cell.Y);
 		Cell_t next_cell;
 		/*---search cells---*/
+		uint32_t size = target_last_.size();
 		for(int i = 0;i<size;i++){
 			next_cell = target_last_.front();
 			if(g_next_cell == next_cell){ 

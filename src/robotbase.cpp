@@ -84,9 +84,6 @@ boost::mutex odom_mutex;
 // Odom coordinate
 float pose_x, pose_y;
 
-// For obs dynamic adjustment
-int OBS_adjust_count;
-
 int robotbase_init(void)
 {
 	int		ser_ret, base_ret, sers_ret;
@@ -264,8 +261,6 @@ void *robotbase_routine(void*)
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
-	uint32_t omni_detect_cnt = 0;
-	uint32_t last_omni_wheel = 0;
 	uint32_t tilt_count = 0;
 	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
 	while (ros::ok() && !robotbase_thread_stop)
@@ -404,33 +399,6 @@ void *robotbase_routine(void*)
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
 		/*------publish end -----------*/
-
-		// Dynamic adjust obs
-		obs_dynamic_base(OBS_adjust_count);
-
-		/*------start omni detect----*/
-		if(g_omni_enable){
-			if(absolute(sensor.rw_vel - sensor.lw_vel) <= 0.05 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
-				if(absolute(sensor.omni_wheel - last_omni_wheel) == 0){
-					omni_detect_cnt ++;
-					//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(sensor.rw_vel - sensor.lw_vel));
-					if(omni_detect_cnt >= 150){
-						omni_detect_cnt = 0;
-						ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", sensor.rw_vel,sensor.lw_vel);
-						g_omni_notmove = true;
-					}
-				}
-			}
-			else{
-				//g_omni_notmove = false;
-				omni_detect_cnt = 0;
-				last_omni_wheel = sensor.omni_wheel;
-			}
-			if(sensor.omni_wheel >= 10000){
-				reset_mobility_step();
-			}
-		}
-		/*------end omni detect----*/
 
 		/*-------start tilt detect-------*/
 		if(g_tilt_enable){
@@ -593,14 +561,6 @@ void robotbase_restore_slam_correction()
 	pose_x += robot::instance()->getRobotCorrectionX();
 	pose_y += robot::instance()->getRobotCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
-}
-
-void robotbase_obs_adjust_count(int count)
-{
-#ifdef OBS_DYNAMIC
-	boost::mutex::scoped_lock(odom_mutex);
-	OBS_adjust_count = count;
-#endif
 }
 
 bool is_turn(void)

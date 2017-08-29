@@ -37,6 +37,12 @@ int8_t key_release_count;
 
 int16_t slam_error_count;
 
+// For obs dynamic adjustment
+int OBS_adjust_count = 50;
+
+uint32_t omni_detect_cnt = 0;
+uint32_t last_omni_wheel = 0;
+
 //extern pp::x900sensor sensor;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
@@ -105,6 +111,9 @@ void robot::init()
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
+	lw_vel_ = msg->lw_vel;
+	rw_vel_ = msg->rw_vel;
+
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
@@ -208,18 +217,33 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	is_sensor_ready_ = true;
 
-//	if (is_sensor_ready_ == false) {
-//		if (time(NULL) - start_time > 2) {
-//			ROS_INFO("%s %d: Gyro starting angle: %d", __FUNCTION__, __LINE__, (int16_t)((angle * 10 + 3600)) % 3600);
 
-//			Gyro_SetImuOffset(((int16_t)(angle * 10 + 3600)) % 3600);
-//			Gyro_SetImuAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v_);
-//			is_sensor_ready_ = true;
-//		}
-//	} else {
-//		Gyro_SetImuAngle(((int16_t)(angle * 10 + 3600)) % 3600, angle_v_);
-//	}
+	// Dynamic adjust obs
+	obs_dynamic_base(OBS_adjust_count);
 
+	/*------start omni detect----*/
+	if(g_omni_enable){
+		if(absolute(msg->rw_vel - msg->lw_vel) <= 0.05 && (msg->rw_vel != 0 && msg->lw_vel != 0) ){
+			if(absolute(msg->omni_wheel - last_omni_wheel) == 0){
+				omni_detect_cnt ++;
+				//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(msg->rw_vel - msg->lw_vel));
+				if(omni_detect_cnt >= 150){
+					omni_detect_cnt = 0;
+					ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", msg->rw_vel,msg->lw_vel);
+					g_omni_notmove = true;
+				}
+			}
+		}
+		else{
+			//g_omni_notmove = false;
+			omni_detect_cnt = 0;
+			last_omni_wheel = msg->omni_wheel;
+		}
+		if(msg->omni_wheel >= 10000){
+			reset_mobility_step();
+		}
+	}
+	/*------end omni detect----*/
 #if 0
 	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v_: %f", __FUNCTION__, __LINE__, angle, angle_v_);
 	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage_, brush_left_, brush_right_, brush_main_);
@@ -388,6 +412,40 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
 }
 
+bool robot::isRobotStuck() const
+{
+	static float last_post_x = 0;
+	static float last_post_y = 0;
+	static float last_angle = 0;
+	static int rs_count = 0;
+	bool ret = false;
+	if(g_robot_stuck_enable && isTfReady()){
+		if(absolute(lw_vel_)>=0.001 || absolute(rw_vel_)>=0.001)
+		{
+			if(absolute(slam_correction_x_) > 0.01 || absolute(slam_correction_y_) > 0.01 || absolute(slam_correction_yaw_) > 0.01){
+				if((absolute(position_x_ - last_post_x ) <= 0.05 && absolute(position_y_ - last_post_y) <= 0.05) || absolute(position_yaw_ - last_angle) <=15.0)
+				{
+					last_post_x = position_x_;
+					last_post_y = position_y_;
+					last_angle = position_yaw_;
+					rs_count ++;
+					ROS_INFO("\033[35m""robot stuck %f,%f""\033[0m",position_x_ - last_post_x,position_y_ - last_post_y );
+					if(rs_count > 100)//about 2 second
+					{
+						rs_count = 0;
+						ret = true;
+					}
+				}
+				else{
+					rs_count = 0;
+					ret = false;
+				}
+			}
+		}
+	}
+	return ret;
+}
+
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
 	width_ = map->info.width;
@@ -521,7 +579,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	{
 		color_.r = 0.5;
 		color_.g = 1.0;
-		color_.b = 0.5;
+		color_.b = 1.0;
 	}
 	clean_map_markers_.points.push_back(m_points_);
 	clean_map_markers_.colors.push_back(color_);
@@ -651,4 +709,11 @@ void robot::resetCorrection()
 	robot_x_ = 0;
 	robot_y_ = 0;
 	robot_yaw_ = 0;
+}
+
+void robot::obs_adjust_count(int count)
+{
+#ifdef OBS_DYNAMIC
+	OBS_adjust_count = count;
+#endif
 }

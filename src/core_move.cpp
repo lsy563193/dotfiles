@@ -552,7 +552,7 @@ int cm_cleaning()
 		return 0;
 
 	g_motion_init_succeeded = true;
-
+	g_robot_stuck_enable = true;
 	set_explore_new_path_flag(true);
 	while (ros::ok())
 	{
@@ -816,7 +816,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (g_bumper_jam || g_cliff_jam || g_omni_notmove)
+	if (g_bumper_jam || g_cliff_jam || g_omni_notmove || g_robot_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
@@ -835,7 +835,7 @@ void cm_self_check(void)
 
 	SelfCheckRegulator regulator;
 
-	robotbase_obs_adjust_count(50);
+	robot::instance()->obs_adjust_count(50);
 	while (ros::ok) {
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
@@ -1071,6 +1071,12 @@ void cm_self_check(void)
 			g_fatal_quit_event = true;
 			break;
 		}
+		else if (g_robot_stuck){
+			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
+			set_error_code(Error_Code_Omni);
+			g_fatal_quit_event = true;
+			break;
+		}
 		else
 			break;
 
@@ -1080,7 +1086,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove);
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck);
 }
 
 uint8_t cm_check_charger_signal(void)

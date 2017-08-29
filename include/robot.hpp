@@ -85,6 +85,14 @@ public:
 		return saved_offset_angle_;
 	};
 
+	float getLeftWheelSpeed() const
+	{
+		return lw_vel_;
+	}
+	float getRightWheelSpeed() const
+	{
+		return rw_vel_;
+	}
 	float getAngleV() const
 	{
 		return angle_v_;
@@ -133,7 +141,7 @@ public:
 	{
 #if __ROBOT_X9000
 		omni_wheel_ = 0;
-		void reset_mobility_step();
+		reset_mobility_step();
 #endif
 	}
 
@@ -456,6 +464,9 @@ public:
 
 	void resetCorrection();
 
+	void obs_adjust_count(int count);
+
+	bool isRobotStuck() const;
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
@@ -484,6 +495,9 @@ private:
 
 	float saved_offset_angle_;
 
+	/*2 byte*/
+	int16_t lw_vel_;
+	int16_t rw_vel_;
 	/* 1 byte */
 	float	angle_;
 

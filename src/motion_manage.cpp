@@ -308,6 +308,7 @@ MotionManage::~MotionManage()
 	disable_motors();
 
 	g_tilt_enable = false;
+	g_robot_stuck_enable =false;
 	ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);

@@ -73,6 +73,10 @@ bool g_omni_enable = false;
 /* tilt switch*/
 bool g_tilt_enable = false;
 
+/* robot stuck */
+bool g_robot_stuck = false;
+bool g_robot_stuck_enable = false;
+
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
 static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
@@ -321,6 +325,11 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_SLAM_ERROR)
 		}
+		/* robot stuck */
+		if(robot::instance()->isRobotStuck()){
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_ROBOT_STUCK)
+		}
 #undef evt_set_status_x
 
 		if (set) {
@@ -462,6 +471,8 @@ void *event_handler_thread(void *data) {
 		/* Slam Error */
 		evt_handle_check_event(EVT_SLAM_ERROR, slam_error)
 
+		/* robot stuck */
+		evt_handle_check_event(EVT_ROBOT_STUCK,robot_stuck)
 #undef evt_handle_event_x
 
 		pthread_mutex_lock(&event_handler_mtx);
@@ -565,6 +576,7 @@ void event_manager_reset_status(void)
 	g_charge_detect_cnt = 0;
 	/* Slam Error */
 	g_slam_error = false;
+	g_robot_stuck = false;
 }
 
 /* Below are the internal functions. */
@@ -924,6 +936,12 @@ void em_default_handle_slam_error(bool state_now, bool state_last)
 	usleep(200000);
 	ROS_WARN("Slam restart successed.");
 	g_slam_error = false;
+}
+
+void em_default_handle_robot_stuck(bool state_new,bool state_last)
+{
+	ROS_ERROR("%s,%d,robot stuck !! please check...",__FUNCTION__,__LINE__);
+	g_robot_stuck = true;
 }
 
 /* Default: empty hanlder */

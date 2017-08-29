@@ -475,13 +475,14 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 void path_find_all_targets()
 {
 	bool		all_set;
-	int16_t		i, j, x, y, offset, passValue, nextPassValue, passSet, tracex, tracey, targetCost;
+	int16_t		i, j, x, y, offset, passValue, nextPassValue, passSet, tracex, tracey, targetCost, x_min, x_max, y_min, y_max;
 	CellState	cs;
 
 	map_reset(SPMAP);
 
-	for (i = g_x_min; i <= g_x_max; ++i) {
-		for (j = g_y_min; j <= g_y_max; ++j) {
+	path_get_range(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	for (i = x_min; i <= x_max; ++i) {
+		for (j = y_min; j <= y_max; ++j) {
 			cs = map_get_cell(MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				for (x = ROBOT_RIGHT_OFFSET; x <= ROBOT_LEFT_OFFSET; x++) {
@@ -515,30 +516,30 @@ void path_find_all_targets()
 		offset++;
 		passSet = 0;
 		for (i = x - offset; i <= x + offset; i++) {
-			if (i < g_x_min || i > g_x_max)
+			if (i < x_min || i > x_max)
 				continue;
 
 			for (j = y - offset; j <= y + offset; j++) {
-				if (j < g_y_min || j > g_y_max)
+				if (j < y_min || j > y_max)
 					continue;
 
 				if(map_get_cell(SPMAP, i, j) == passValue) {
-					if (i - 1 >= g_x_min && map_get_cell(SPMAP, i - 1, j) == COST_NO) {
+					if (i - 1 >= x_min && map_get_cell(SPMAP, i - 1, j) == COST_NO) {
 						map_set_cell(SPMAP, (i - 1), (j), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if ((i + 1) <= g_x_max && map_get_cell(SPMAP, i + 1, j) == COST_NO) {
+					if ((i + 1) <= x_max && map_get_cell(SPMAP, i + 1, j) == COST_NO) {
 						map_set_cell(SPMAP, (i + 1), (j), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if (j - 1  >= g_y_min && map_get_cell(SPMAP, i, j - 1) == COST_NO) {
+					if (j - 1  >= y_min && map_get_cell(SPMAP, i, j - 1) == COST_NO) {
 						map_set_cell(SPMAP, (i), (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if ((j + 1) <= g_y_max && map_get_cell(SPMAP, i, j + 1) == COST_NO) {
+					if ((j + 1) <= y_max && map_get_cell(SPMAP, i, j + 1) == COST_NO) {
 						map_set_cell(SPMAP, (i), (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
@@ -586,22 +587,22 @@ void path_find_all_targets()
 			t.Y = tracey;
 			it->cells.push_back(t);
 
-			if ((tracex - 1 >= g_x_min) && (map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {
+			if ((tracex - 1 >= x_min) && (map_get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {
 				tracex--;
 				continue;
 			}
 
-			if ((tracex + 1 <= g_x_max) && (map_get_cell(SPMAP, tracex + 1, tracey) == targetCost)) {
+			if ((tracex + 1 <= x_max) && (map_get_cell(SPMAP, tracex + 1, tracey) == targetCost)) {
 				tracex++;
 				continue;
 			}
 
-			if ((tracey - 1 >= g_y_min) && (map_get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {
+			if ((tracey - 1 >= y_min) && (map_get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {
 				tracey--;
 				continue;
 			}
 
-			if ((tracey + 1 <= g_y_max) && (map_get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {
+			if ((tracey + 1 <= y_max) && (map_get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {
 				tracey++;
 				continue;
 			}
