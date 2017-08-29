@@ -585,7 +585,7 @@ bool MotionManage::initNavigationCleaning(void)
 	}
 
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -616,7 +616,7 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -672,7 +672,7 @@ bool MotionManage::initSpotCleaning(void)
 		return false;
 	}
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 

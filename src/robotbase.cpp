@@ -47,7 +47,6 @@ uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
 bool send_stream_thread = false;
-bool g_is_tilt = false;
 
 pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
@@ -59,9 +58,6 @@ pthread_mutex_t serial_data_ready_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
-int g_xacc_init_val = sensor.x_acc;
-int g_yacc_init_val = sensor.y_acc;
-int g_zacc_init_val = sensor.z_acc;
 
 bool robotbase_beep_update_flag = false;
 int robotbase_speaker_sound_loop_count = 0;
@@ -261,7 +257,6 @@ void *robotbase_routine(void*)
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
-	uint32_t tilt_count = 0;
 	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
 	while (ros::ok() && !robotbase_thread_stop)
 	{
@@ -400,22 +395,6 @@ void *robotbase_routine(void*)
 		odom_broad.sendTransform(odom_trans);
 		/*------publish end -----------*/
 
-		/*-------start tilt detect-------*/
-		if(g_tilt_enable){
-			if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL || absolute(sensor.y_acc - g_yacc_init_val) > DIF_TILT_Y_VAL){
-			//if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL){
-				if(++tilt_count > TILT_COUNT_REACH && absolute(sensor.z_acc - g_zacc_init_val)> DIF_TILT_Z_VAL){
-					ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
-					tilt_count = 0;
-					g_is_tilt = true;
-				}
-			}
-			else{
-				tilt_count = 0;
-				g_is_tilt = false;
-			}
-		}
-		/*----tilt detect end---------*/
 	}
 	ROS_INFO("robotbase thread exit");
 }
@@ -561,28 +540,4 @@ void robotbase_restore_slam_correction()
 	pose_x += robot::instance()->getRobotCorrectionX();
 	pose_y += robot::instance()->getRobotCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
-}
-
-bool is_turn(void)
-{
-	boost::mutex::scoped_lock(odom_mutex);
-	return ((abs(sensor.rw_vel - sensor.rw_vel) > 0.1) ||
-					(sensor.lw_vel * sensor.rw_vel < 0) ||
-					(sensor.lw_vel < 0 && sensor.rw_vel < 0)
-					);
-}
-void set_acc_init_data(){
-	uint16_t count = 0;
-	while(ros::ok() && count <=10){
-		g_xacc_init_val += sensor.x_acc;
-		g_yacc_init_val += sensor.y_acc;
-		g_zacc_init_val += sensor.z_acc;
-		count++;
-		usleep(20000);
-
-	}
-	g_xacc_init_val = g_xacc_init_val/count;
-	g_yacc_init_val = g_yacc_init_val/count;
-	g_zacc_init_val = g_zacc_init_val/count;
-	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m",g_xacc_init_val,g_yacc_init_val,g_zacc_init_val);
 }

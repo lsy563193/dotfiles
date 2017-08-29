@@ -72,6 +72,7 @@ bool g_omni_notmove = false;
 bool g_omni_enable = false;
 /* tilt switch*/
 bool g_tilt_enable = false;
+bool g_tilt_triggered = false;
 
 /* robot stuck */
 bool g_robot_stuck = false;
@@ -576,7 +577,11 @@ void event_manager_reset_status(void)
 	g_charge_detect_cnt = 0;
 	/* Slam Error */
 	g_slam_error = false;
+	/* robot stuck */
 	g_robot_stuck = false;
+	/* tilt switch*/
+	g_tilt_enable = false;
+	g_tilt_triggered = false;
 }
 
 /* Below are the internal functions. */

@@ -217,9 +217,11 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	is_sensor_ready_ = true;
 
-
 	// Dynamic adjust obs
 	obs_dynamic_base(OBS_adjust_count);
+
+	// Check if tilt.
+	check_tilt();
 
 	/*------start omni detect----*/
 	if(g_omni_enable){
@@ -545,18 +547,21 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_BUMPER)
 	{
+		// Red
 		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 0.0;
 	}
 	else if (type == BLOCKED_CLIFF)
 	{
+		// Magenta
 		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 1.0;
 	}
 	else if (type == BLOCKED_RCON)
 	{
+		// White
 		color_.r = 1.0;
 		color_.g = 1.0;
 		color_.b = 1.0;
@@ -577,9 +582,10 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_TILT)
 	{
+		// Gray
 		color_.r = 0.5;
-		color_.g = 1.0;
-		color_.b = 1.0;
+		color_.g = 0.5;
+		color_.b = 0.5;
 	}
 	clean_map_markers_.points.push_back(m_points_);
 	clean_map_markers_.colors.push_back(color_);
@@ -667,11 +673,6 @@ bool robot::getBumperLeft()
 
 */
 
-bool robot::isTilt()
-{
-	return g_is_tilt;
-}
-
 void robot::updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
 					const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
 					float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
@@ -711,9 +712,29 @@ void robot::resetCorrection()
 	robot_yaw_ = 0;
 }
 
-void robot::obs_adjust_count(int count)
+void robot::obsAdjustCount(int count)
 {
 #ifdef OBS_DYNAMIC
 	OBS_adjust_count = count;
 #endif
+}
+
+void robot::setAccInitData()
+{
+	uint8_t count = 0;
+	int16_t temp_x_acc = 0;
+	int16_t temp_y_acc = 0;
+	int16_t temp_z_acc = 0;
+	for (count = 0 ; count < 10 ; count++)
+	{
+		temp_x_acc += getXAcc();
+		temp_y_acc += getYAcc();
+		temp_z_acc += getZAcc();
+		usleep(20000);
+	}
+
+	setInitXAcc(temp_x_acc / count);
+	setInitYAcc(temp_y_acc / count);
+	setInitZAcc(temp_z_acc / count);
+	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m", getInitXAcc(), getInitYAcc(), getInitZAcc());
 }

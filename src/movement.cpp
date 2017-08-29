@@ -95,6 +95,9 @@ volatile int32_t g_wf_sp_turn_count;
 
 bool g_reset_lbrush_oc = false;
 bool g_reset_rbrush_oc = false;
+
+uint8_t g_tilt_status = 0;
+
 /*----------------------- Work Timer functions--------------------------*/
 void reset_work_time()
 {
@@ -3057,3 +3060,133 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
 	robotbase_led_update_flag = true;
 }
 
+uint8_t check_tilt()
+{
+	static bool last_tilt_enable_flag = false;
+	static uint16_t x_pos_tilt_count = 0;
+	static uint16_t y_pos_tilt_count = 0;
+	static uint16_t y_neg_tilt_count = 0;
+	static uint16_t z_tilt_count = 0;
+	static int16_t x_acc = 0;
+	static int16_t y_acc = 0;
+	static int16_t z_acc = 0;
+	static int16_t last_x_acc = 0;
+	static int16_t last_y_acc = 0;
+	static int16_t last_z_acc = 0;
+	uint8_t tmp_tilt_status = 0;
+
+	if (g_tilt_enable)
+	{
+		if (!last_tilt_enable_flag)
+		{
+			x_acc = last_x_acc = robot::instance()->getXAcc();
+			y_acc = last_y_acc = robot::instance()->getYAcc();
+			z_acc = last_z_acc = robot::instance()->getZAcc();
+		}
+		else
+		{
+			x_acc = (last_x_acc + robot::instance()->getXAcc()) / 2;
+			y_acc = (last_y_acc + robot::instance()->getYAcc()) / 2;
+			z_acc = (last_z_acc + robot::instance()->getZAcc()) / 2;
+			last_x_acc = robot::instance()->getXAcc();
+			last_y_acc = robot::instance()->getYAcc();
+			last_z_acc = robot::instance()->getZAcc();
+			if (x_acc - robot::instance()->getInitXAcc() > DIF_TILT_X_VAL)
+			{
+				x_pos_tilt_count += 2;
+				//ROS_WARN("%s %d: x(%d)\txi(%d), pos++.", __FUNCTION__, __LINE__, x_acc, robot::instance()->getInitXAcc());
+			}
+			else
+			{
+				if (x_pos_tilt_count > 0)
+					x_pos_tilt_count--;
+				else
+					x_pos_tilt_count = 0;
+			}
+			if (y_acc - robot::instance()->getInitYAcc() > DIF_TILT_Y_VAL)
+			{
+				y_pos_tilt_count++;
+				//ROS_WARN("%s %d: y(%d)\tyi(%d), pos++.", __FUNCTION__, __LINE__, y_acc, robot::instance()->getInitYAcc());
+			}
+			else
+			{
+				if (y_pos_tilt_count > 0)
+					y_pos_tilt_count--;
+				else
+					y_pos_tilt_count = 0;
+			}
+			if (y_acc - robot::instance()->getInitYAcc() < -1 * DIF_TILT_Y_VAL)
+			{
+				y_neg_tilt_count++;
+				//ROS_WARN("%s %d: y(%d)\tyi(%d), neg++.", __FUNCTION__, __LINE__, y_acc, robot::instance()->getInitYAcc());
+			}
+			else
+			{
+				if (y_neg_tilt_count > 0)
+					y_neg_tilt_count--;
+				else
+					y_neg_tilt_count = 0;
+			}
+			if (abs(z_acc - robot::instance()->getInitZAcc()) > DIF_TILT_Z_VAL)
+			{
+				z_tilt_count++;
+				//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, z_acc, robot::instance()->getInitZAcc());
+			}
+			else
+			{
+				if (z_tilt_count > 1)
+					z_tilt_count -= 2;
+				else
+					z_tilt_count = 0;
+			}
+
+			if (x_pos_tilt_count > 7 || y_pos_tilt_count > 7 || y_neg_tilt_count > 7 || z_tilt_count > 7)
+				ROS_WARN("%s %d: tilt_count x_pos:%d, y_pos:%d, y_neg:%d, z:%d", __FUNCTION__, __LINE__, x_pos_tilt_count, y_pos_tilt_count, y_neg_tilt_count, z_tilt_count);
+
+			if (x_pos_tilt_count + y_pos_tilt_count + y_neg_tilt_count + z_tilt_count > TILT_COUNT_REACH)
+			{
+				ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
+				if (y_pos_tilt_count > TILT_COUNT_REACH / 3)
+					tmp_tilt_status |= TILT_LEFT;
+				if (y_neg_tilt_count > TILT_COUNT_REACH / 3)
+					tmp_tilt_status |= TILT_RIGHT;
+
+				if (x_pos_tilt_count > TILT_COUNT_REACH / 3 || !tmp_tilt_status)
+					tmp_tilt_status |= TILT_FRONT;
+
+				set_tilt_status(tmp_tilt_status);
+				x_pos_tilt_count /= 3;
+				y_pos_tilt_count /= 3;
+				y_neg_tilt_count /= 3;
+				z_tilt_count /= 3;
+			}
+			else if (x_pos_tilt_count + y_pos_tilt_count + y_neg_tilt_count + z_tilt_count < TILT_COUNT_REACH / 4)
+				set_tilt_status(0);
+		}
+	}
+	else{
+		x_pos_tilt_count = 0;
+		y_pos_tilt_count = 0;
+		y_neg_tilt_count = 0;
+		z_tilt_count = 0;
+		x_acc = 0;
+		y_acc = 0;
+		z_acc = 0;
+		last_x_acc = 0;
+		last_y_acc = 0;
+		last_z_acc = 0;
+	}
+
+	last_tilt_enable_flag = g_tilt_enable;
+	return tmp_tilt_status;
+}
+
+void set_tilt_status(uint8_t status)
+{
+	g_tilt_status = status;
+}
+
+uint8_t get_tilt_status()
+{
+	return g_tilt_status;
+}
