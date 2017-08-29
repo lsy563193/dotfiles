@@ -641,32 +641,39 @@ void map_set_bumper()
 
 void map_set_tilt()
 {
+	auto tilt_trig = get_tilt_status();
+	if (!tilt_trig)
+		return;
+
 	std::vector<Cell_t> d_cells;
 
-	if(robot::instance()->isTilt()){
-		if(robot::instance()->getYAcc() > 0)//left tilt
-		{
-			d_cells = {{2, 1}, {2,2},{1,2}};
-			if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-				d_cells.push_back({2,0});
-
-		}
-		else if(robot::instance()->getYAcc() < 0){ //right tilt
-			d_cells = {{2,-2},{2,-1},{1,-2}};
-			if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
-				d_cells.push_back({2,0});
-
-		}
-		else if(robot::instance()->getXAcc() > 0){ //front tilt
-			d_cells = {{2,-1}, {2,0}, {2,1}};
-		}
+	if(tilt_trig & TILT_LEFT){
+		//d_cells = {{2, 1}, {2, 0}};
+		d_cells = {{2, 2}, {2, 1}, {2, 0}, {1, 2}, {1, 1}, {1, 0}, {0, 2}, {0, 1}, {0, 0}};
+		//if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+		//	d_cells.push_back({2,0});
 	}
+
+	if(tilt_trig & TILT_RIGHT){
+		//d_cells = {{2, -1}, {2, 0}};
+		d_cells = {{2, -2}, {2, -1}, {2, 0}, {1, -2}, {1, -1}, {1, 0}, {0, -2}, {0, -1}, {0, 0}};
+		//if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+		//	d_cells.push_back({2,0});
+	}
+
+	if(tilt_trig & TILT_FRONT)
+		//d_cells = {{2, 1}, {2, 0}, {2, -1}};
+		d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};
+
 	int32_t	x, y;
+	std::string msg = "Cell:";
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
 		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + ")";
 		map_set_cell(MAP, x, y, BLOCKED_TILT);
 	}
+	ROS_INFO("\033[31m""%s,%d: Current(%d, %d), mark %s""\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
 }
 
 void map_set_cliff()
@@ -855,7 +862,9 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 			auto y = cell.Y + dy;
 //			if((! is_follow_y_min && y < min_y) || (is_follow_y_min && y > max_y))
 //				continue;
-			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
+			auto status = map_get_cell(MAP, cell.X, y);
+			if (status != BLOCKED_TILT)
+				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
 			msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
 		}
 	}

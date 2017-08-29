@@ -308,6 +308,7 @@ MotionManage::~MotionManage()
 	disable_motors();
 
 	g_tilt_enable = false;
+	g_robot_stuck_enable =false;
 	ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
@@ -584,7 +585,7 @@ bool MotionManage::initNavigationCleaning(void)
 	}
 
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -615,7 +616,7 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -671,7 +672,7 @@ bool MotionManage::initSpotCleaning(void)
 		return false;
 	}
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 

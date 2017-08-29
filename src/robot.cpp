@@ -111,6 +111,9 @@ void robot::init()
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
+	lw_vel_ = msg->lw_vel;
+	rw_vel_ = msg->rw_vel;
+
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
@@ -214,9 +217,11 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	is_sensor_ready_ = true;
 
-
 	// Dynamic adjust obs
 	obs_dynamic_base(OBS_adjust_count);
+
+	// Check if tilt.
+	check_tilt();
 
 	/*------start omni detect----*/
 	if(g_omni_enable){
@@ -409,6 +414,40 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
 }
 
+bool robot::isRobotStuck() const
+{
+	static float last_post_x = 0;
+	static float last_post_y = 0;
+	static float last_angle = 0;
+	static int rs_count = 0;
+	bool ret = false;
+	if(g_robot_stuck_enable && isTfReady()){
+		if(absolute(lw_vel_)>=0.001 || absolute(rw_vel_)>=0.001)
+		{
+			if(absolute(slam_correction_x_) > 0.01 || absolute(slam_correction_y_) > 0.01 || absolute(slam_correction_yaw_) > 0.01){
+				if((absolute(position_x_ - last_post_x ) <= 0.05 && absolute(position_y_ - last_post_y) <= 0.05) || absolute(position_yaw_ - last_angle) <=15.0)
+				{
+					last_post_x = position_x_;
+					last_post_y = position_y_;
+					last_angle = position_yaw_;
+					rs_count ++;
+					ROS_INFO("\033[35m""robot stuck %f,%f""\033[0m",position_x_ - last_post_x,position_y_ - last_post_y );
+					if(rs_count > 100)//about 2 second
+					{
+						rs_count = 0;
+						ret = true;
+					}
+				}
+				else{
+					rs_count = 0;
+					ret = false;
+				}
+			}
+		}
+	}
+	return ret;
+}
+
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
 	width_ = map->info.width;
@@ -508,18 +547,21 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_BUMPER)
 	{
+		// Red
 		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 0.0;
 	}
 	else if (type == BLOCKED_CLIFF)
 	{
+		// Magenta
 		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 1.0;
 	}
 	else if (type == BLOCKED_RCON)
 	{
+		// White
 		color_.r = 1.0;
 		color_.g = 1.0;
 		color_.b = 1.0;
@@ -540,8 +582,9 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_TILT)
 	{
+		// Gray
 		color_.r = 0.5;
-		color_.g = 1.0;
+		color_.g = 0.5;
 		color_.b = 0.5;
 	}
 	clean_map_markers_.points.push_back(m_points_);
@@ -630,11 +673,6 @@ bool robot::getBumperLeft()
 
 */
 
-bool robot::isTilt()
-{
-	return g_is_tilt;
-}
-
 void robot::updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
 					const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
 					float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
@@ -674,9 +712,29 @@ void robot::resetCorrection()
 	robot_yaw_ = 0;
 }
 
-void robot::obs_adjust_count(int count)
+void robot::obsAdjustCount(int count)
 {
 #ifdef OBS_DYNAMIC
 	OBS_adjust_count = count;
 #endif
+}
+
+void robot::setAccInitData()
+{
+	uint8_t count = 0;
+	int16_t temp_x_acc = 0;
+	int16_t temp_y_acc = 0;
+	int16_t temp_z_acc = 0;
+	for (count = 0 ; count < 10 ; count++)
+	{
+		temp_x_acc += getXAcc();
+		temp_y_acc += getYAcc();
+		temp_z_acc += getZAcc();
+		usleep(20000);
+	}
+
+	setInitXAcc(temp_x_acc / count);
+	setInitYAcc(temp_y_acc / count);
+	setInitZAcc(temp_z_acc / count);
+	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m", getInitXAcc(), getInitYAcc(), getInitZAcc());
 }

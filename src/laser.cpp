@@ -22,9 +22,6 @@
 #include "robot.hpp"
 #include "gyro.h"
 boost::mutex scan_mutex_;
-extern int g_xacc_init_val;
-extern int g_yacc_init_val;
-extern int g_zacc_init_val;
 
 Laser::Laser():nh_(),is_ready_(0)
 {
@@ -106,9 +103,9 @@ void Laser::lidarMotorCtrl(bool switch_)
 	bool request_sent = false;
 	bool temp_switch_ = switch_;
 	if(switch_){
-		trigger.request.x_acc_init= g_xacc_init_val;
-		trigger.request.y_acc_init= g_yacc_init_val;
-		trigger.request.z_acc_init= g_zacc_init_val;
+		trigger.request.x_acc_init= robot::instance()->getInitXAcc();
+		trigger.request.y_acc_init= robot::instance()->getInitYAcc();
+		trigger.request.z_acc_init= robot::instance()->getInitZAcc();
 	}
 	while(ros::ok())
 	{

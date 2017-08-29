@@ -23,7 +23,7 @@ extern uint16_t g_new_dir;
 extern Cell_t g_cell_history[];
 int jam=0;
 int16_t wall_buffer[3]={0};
-int strength=150; 
+int strength=150;
 //int last_strength=150;
 //int last_transit_strength=150;
 double transit_time=0;
@@ -76,6 +76,30 @@ static int16_t cliff_turn_angle()
 	g_turn_angle = -750;
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
+	return g_turn_angle;
+}
+
+static int16_t tilt_turn_angle()
+{
+	auto tmp_status = get_tilt_status();
+	if (mt_is_left())
+	{
+		if (tmp_status | TILT_LEFT)
+			g_turn_angle = -600;
+		if (tmp_status | TILT_FRONT)
+			g_turn_angle = -850;
+		if (tmp_status | TILT_RIGHT)
+			g_turn_angle = -1100;
+	}
+	else
+	{
+		if (tmp_status | TILT_RIGHT)
+			g_turn_angle = 600;
+		if (tmp_status | TILT_FRONT)
+			g_turn_angle = 850;
+		if (tmp_status | TILT_LEFT)
+			g_turn_angle = 1100;
+	}
 	return g_turn_angle;
 }
 
@@ -231,7 +255,17 @@ bool BackRegulator::isReach()
 {
 	auto distance = sqrtf(powf(s_pos_x - robot::instance()->getOdomPositionX(), 2) +
 			   	powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
+	if (g_tilt_triggered)
+		back_distance = 0.05f;
+	else
+		back_distance = 0.01f;
 	if(fabsf(distance) > back_distance){
+		if (g_tilt_triggered && get_tilt_status())
+		{
+			// Still tilt.
+			BackRegulator::setTarget();
+			return false;
+		}
 		ROS_INFO("%s, %d: BackRegulator ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
@@ -292,7 +326,7 @@ bool TurnRegulator::isReach()
 {
 	if (abs(s_target_angle - gyro_get_angle()) < accurate_){
 		ROS_INFO("%s, %d: TurnRegulator target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
-		
+
 		/*********************************************For wall follow**********************************************/
 		if(is_found)
 		{
@@ -303,7 +337,7 @@ bool TurnRegulator::isReach()
 				ROS_ERROR("strength: %d",strength);
 				return true;
 			}*/
-		
+
 			ROS_INFO("strength: %d",strength);
 			if(strength < 150)  //150 is the experience value by testing in the closest position to black wall
 			{
@@ -318,7 +352,7 @@ bool TurnRegulator::isReach()
 				ROS_WARN("boradline invagination，strength: %d",strength);
 			}
 			else if(strength > 320 && strength < 620)  //620 is the experience value by testing in the closest position to white wall
-			{	
+			{
 				strength+=(620-strength)/4*3;
 				if(strength < STRENGTH_WHITE_MIN)
 				strength=STRENGTH_WHITE_MIN;
@@ -332,7 +366,7 @@ bool TurnRegulator::isReach()
 		return true;
 	}
 		/**********************************************END**********************************************************/
-	
+
 		return false;
 }
 
@@ -340,11 +374,12 @@ bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");	
 
-	if(isReach() ||(! g_bumper_triggered  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_status()) || g_is_tilt)
+	if(isReach() ||(! g_bumper_triggered  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_status()) || (!g_tilt_triggered && get_tilt_status()))
 	{
 		ROS_INFO("%s, %d: TurnRegulator should switch.", __FUNCTION__, __LINE__);
 		g_bumper_triggered = get_bumper_status();
 		g_cliff_triggered = get_cliff_status();
+		g_tilt_triggered = get_tilt_status();
 		reset_sp_turn_count();
 		reset_wheel_step();
 		reset_rcon_status();
@@ -486,14 +521,17 @@ bool LinearRegulator::isSwitch()
 {
 
 	if ((! g_bumper_triggered && get_bumper_status())
-			|| (! g_cliff_triggered && get_cliff_status()) || g_is_tilt)
+		|| (! g_cliff_triggered && get_cliff_status())
+		|| (! g_tilt_triggered && get_tilt_status()))
 	{
 //		g_is_should_follow_wall = true;
-		ROS_INFO("%s, %d:LinearRegulator g_bumper_triggered || g_cliff_triggered.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s, %d:LinearRegulator g_bumper_triggered || g_cliff_triggered || g_tilt_triggered.", __FUNCTION__, __LINE__);
 		if(get_bumper_status())
 			g_bumper_triggered = get_bumper_status();
 		if(get_cliff_status())
 			g_cliff_triggered = get_cliff_status();
+		if(get_tilt_status())
+			g_tilt_triggered = get_tilt_status();
 
 		SpotType spt = SpotMovement::instance() -> getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
@@ -733,7 +771,7 @@ bool FollowWallRegulator::isReach()
 bool FollowWallRegulator::isSwitch()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-	if( g_bumper_triggered || get_bumper_status() || g_is_tilt){
+	if( g_bumper_triggered || get_bumper_status()){
 		if(! g_bumper_triggered)
 			g_bumper_triggered = get_bumper_status();
 		g_turn_angle = bumper_turn_angle();
@@ -744,6 +782,13 @@ bool FollowWallRegulator::isSwitch()
 		if(! g_cliff_triggered)
 			g_cliff_triggered = get_cliff_status();
 		g_turn_angle = cliff_turn_angle();
+		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
+	}
+	if( g_tilt_triggered || get_tilt_status()){
+		if(! g_tilt_triggered)
+			g_tilt_triggered = get_tilt_status();
+		g_turn_angle = tilt_turn_angle();
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
@@ -799,7 +844,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	wall_buffer[2]=wall_buffer[1];
 	wall_buffer[1]=wall_buffer[0];
 	wall_buffer[0]=(mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
-		
+
 //	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
 	if ((same_dist) < (uint32_t) g_straight_distance)
 	{
@@ -826,7 +871,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		{//over left
 			same_speed = wheel_speed_base + proportion / 7 + delta/2; //
 			diff_speed = wheel_speed_base - proportion / 7 - delta/2; //
-			
+
 			if (wheel_speed_base < 26)
 			{
 				reset_sp_turn_count();
@@ -890,25 +935,25 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				}
 			}
 		}
-		
+
 		/****************************************************turn a right angular***************************************************/
-		if (wall_buffer[0] < 100) 
+		if (wall_buffer[0] < 100)
 		{
 			if(strength > 250)
 				factor=50;				//white
 			else
 				factor=13;				//black
-				
+
 //			ROS_WARN("strength: %d",strength);
 //			ROS_WARN("wall_buffer[1] - wall_buffer[0]: %d",wall_buffer[1] - wall_buffer[0]);
-			if ((wall_buffer[1] - wall_buffer[0]) >= strength/factor) 
+			if ((wall_buffer[1] - wall_buffer[0]) >= strength/factor)
 			{
 //				ROS_WARN("wall_buffer[2] - wall_buffer[1]: %d",wall_buffer[2] - wall_buffer[1]);
-				if ((wall_buffer[2] - wall_buffer[1]) >= strength/factor) 
-				{						
-					if (same_dist>200) 
+				if ((wall_buffer[2] - wall_buffer[1]) >= strength/factor)
+				{
+					if (same_dist>200)
 					{
-						if ((diff_speed-same_speed) >= -3) 
+						if ((diff_speed-same_speed) >= -3)
 						{
 							// Away from the wall.
 							ROS_WARN("%s,%d: delay(0.22) to walk straight",__FUNCTION__,__LINE__);
@@ -923,37 +968,37 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 								move_forward(15,20);
 //							strength+=15;
 							delay(0.22);
-//							g_straight_distance = 250;								
+//							g_straight_distance = 250;
 						}
 					}
 				}
 			}
 		}
 		/****************************************************END**************************************************************/
-			
+
 		/*********************reset strength when transits from white wall to black wall**********************************/
-//		ROS_WARN("wall_buffer[0]:%d,wall_buffer[1]=%d,wall_buffer[2]:%d",wall_buffer[0],wall_buffer[1],wall_buffer[2]);			
-/*		if (wall_buffer[0] >150 && wall_buffer[0] < 300 && wall_buffer[1] > 200 &&wall_buffer[2] > 200 && wall_buffer[1] < wall_buffer[2] ) 
-		{		
+//		ROS_WARN("wall_buffer[0]:%d,wall_buffer[1]=%d,wall_buffer[2]:%d",wall_buffer[0],wall_buffer[1],wall_buffer[2]);
+/*		if (wall_buffer[0] >150 && wall_buffer[0] < 300 && wall_buffer[1] > 200 &&wall_buffer[2] > 200 && wall_buffer[1] < wall_buffer[2] )
+		{
 //			ROS_WARN("strength: %d",strength);
 //			ROS_WARN("wall_buffer[1] - wall_buffer[0]: %d",wall_buffer[1] - wall_buffer[0]);
-			if ((wall_buffer[1] - wall_buffer[0]) >= strength/30) 
+			if ((wall_buffer[1] - wall_buffer[0]) >= strength/30)
 			{
 //				ROS_WARN("wall_buffer[2] - wall_buffer[1]: %d",wall_buffer[2] - wall_buffer[1]);
-				if ((wall_buffer[2] - wall_buffer[1]) >= strength/30 && ((wall_buffer[1] - wall_buffer[0]+10) > (wall_buffer[2] - wall_buffer[1]))) 
-				{					
+				if ((wall_buffer[2] - wall_buffer[1]) >= strength/30 && ((wall_buffer[1] - wall_buffer[0]+10) > (wall_buffer[2] - wall_buffer[1])))
+				{
 //					ROS_WARN("same_dist: %d",same_dist);
-					if (same_dist>200) 
+					if (same_dist>200)
 					{
 //						ROS_WARN("get_right_wheel_speed-get_left_wheel_speed: %d",get_right_wheel_speed()-get_left_wheel_speed());
-						if ((diff_speed-same_speed) >= -3) 
+						if ((diff_speed-same_speed) >= -3)
 						{
 							last_transit_strength=strength;
 							transit_time=ros::Time::now().toSec();
 							strength=wall_buffer[0];
 //							ROS_WARN("set strength from white wall to black wall: %d",strength);
 							if(strength < 300)  //620 is the experience value by testing in the closest position to white wall
-							{	
+							{
 								strength+=(150-strength)/4*3;
 								if(strength < STRENGTH_BLACK_MIN)
 									strength=STRENGTH_BLACK_MIN;
@@ -983,7 +1028,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 						{
 							strength=wall_buffer[0];
 							if(strength < 620)  //620 is the experience value by testing in the closest position to white wall
-							{	
+							{
 								strength+=(620-strength)/4*3;
 								if(strength < STRENGTH_WHITE_MIN)
 									strength=STRENGTH_WHITE_MIN;
@@ -1093,13 +1138,15 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 
 	if(mt_is_follow_wall())
 	{
-		ROS_WARN("%s %d: obs(%d), rcon(%d), bum(%d), cliff(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered);
+		ROS_WARN("%s %d: obs(%d), rcon(%d), bum(%d), cliff(%d), tilt(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered);
 		if (g_obs_triggered)
 			g_turn_angle = obs_turn_angle();
 		else if (g_bumper_triggered)
 			g_turn_angle = bumper_turn_angle();
 		else if (g_cliff_triggered)
 			g_turn_angle = cliff_turn_angle();
+		else if (g_tilt_triggered)
+			g_turn_angle = tilt_turn_angle();
 		else if (g_rcon_triggered)
 			g_turn_angle = rcon_turn_angle();
 		else
@@ -1116,7 +1163,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
 	p_reg_ = turn_reg_;
 
-	robot::instance()->obs_adjust_count(50);
+	robot::instance()->obsAdjustCount(50);
 	cm_set_event_manager_handler_state(true);
 
 	ROS_WARN("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);
@@ -1161,7 +1208,7 @@ void RegulatorManage::switchToNext()
 {
 	if (p_reg_ == turn_reg_)
 	{
-		if(g_bumper_triggered || g_cliff_triggered || g_is_tilt){
+		if(g_bumper_triggered || g_cliff_triggered || g_tilt_triggered){
 			p_reg_ = back_reg_;
 			ROS_INFO("%s %d: From turn_reg_ to back_reg_.", __FUNCTION__, __LINE__);
 		}
@@ -1183,22 +1230,19 @@ void RegulatorManage::switchToNext()
 			p_reg_ = turn_reg_;
 			ROS_INFO("%s %d: From mt_reg_ to turn_reg_.", __FUNCTION__, __LINE__);
 		}
-		else if (g_bumper_triggered || g_cliff_triggered || g_is_tilt )
+		else if (g_bumper_triggered || g_cliff_triggered || g_tilt_triggered )
 		{
 			p_reg_ = back_reg_;
 			ROS_INFO("%s %d: From mt_reg_ to back_reg_.", __FUNCTION__, __LINE__);
 		}
 	}
-	ROS_INFO("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered);
+	ROS_INFO("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d), g_tilt_triggered(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered);
 	setTarget();
 	if(p_reg_ != back_reg_){
-		g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
+		g_rcon_triggered = 0;
+		g_bumper_triggered = 0;
+		g_obs_triggered = 0;
 		g_cliff_triggered = 0;
+		g_tilt_triggered = 0;
 	}
-//	g_turn_angle = 0;
-//	if(p_reg_ == turn_reg_)
-//		robotbase_obs_adjust_count(0);
-//	else
-//		robotbase_obs_adjust_count(50);
-
 }
