@@ -3140,8 +3140,8 @@ uint8_t check_tilt()
 					z_tilt_count = 0;
 			}
 
-			if (x_pos_tilt_count > 7 || y_pos_tilt_count > 7 || y_neg_tilt_count > 7 || z_tilt_count > 7)
-				ROS_WARN("%s %d: tilt_count x_pos:%d, y_pos:%d, y_neg:%d, z:%d", __FUNCTION__, __LINE__, x_pos_tilt_count, y_pos_tilt_count, y_neg_tilt_count, z_tilt_count);
+			//if (x_pos_tilt_count > 7 || y_pos_tilt_count > 7 || y_neg_tilt_count > 7 || z_tilt_count > 7)
+			//	ROS_WARN("%s %d: tilt_count x_pos:%d, y_pos:%d, y_neg:%d, z:%d", __FUNCTION__, __LINE__, x_pos_tilt_count, y_pos_tilt_count, y_neg_tilt_count, z_tilt_count);
 
 			if (x_pos_tilt_count + y_pos_tilt_count + y_neg_tilt_count + z_tilt_count > TILT_COUNT_REACH)
 			{
