@@ -331,11 +331,11 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			ident.stamp_ = msg->header.stamp;
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
+				//robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				//robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
 				tmp_x = transform.getOrigin().x();
 				tmp_y = transform.getOrigin().y();
-				robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				//robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
 				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
 				tmp_yaw = tf::getYaw(transform.getRotation());
 				odom_pose_x_ = transform.getOrigin().x();
