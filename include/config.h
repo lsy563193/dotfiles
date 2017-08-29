@@ -262,8 +262,8 @@
 #define BACK_MAX_SPEED					((int32_t) 18) // 15)
 #define LINEAR_MIN_SPEED				((int32_t) 15) // 15)
 #define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
-#define ROTATE_TOP_SPEED				((uint8_t) 22) // 22)
-#define ROTATE_LOW_SPEED				((uint8_t) 7)
+#define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
+#define ROTATE_LOW_SPEED				((uint8_t) 5)
 #if __ROBOT_X900
 #define RUN_TOP_SPEED					((int32_t) 40) // 45)
 #elif __ROBOT_X400
