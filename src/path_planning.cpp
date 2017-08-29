@@ -48,7 +48,7 @@
 
 #include "wav.h"
 #include "BoundingBox.h"
-#include <a_star.h>
+//#include <a_star.h>
 #include <numeric>
 
 #define FINAL_COST (1000)
@@ -1451,8 +1451,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		g_new_dir = curr.X > g_next_cell.X ? NEG_X : POS_X;
 
 #if LINEAR_MOVE_WITH_PATH
-	//if (mt_is_linear() && SpotMovement::instance()->getSpotType() == NO_SPOT)
-	if (mt_is_linear())
+	if (mt_is_linear() && get_clean_mode() != Clean_Mode_WallFollow)
 	{
 		// Add current cell for filling the path, otherwise it will lack for the path from current to the first turning cell.
 		path.cells.push_front(curr);
