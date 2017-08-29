@@ -81,7 +81,15 @@ static int16_t cliff_turn_angle()
 
 static int16_t obs_turn_angle()
 {
-	g_turn_angle = -920;
+	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
+	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
+	if(g_obs_triggered == Status_Front_OBS)
+		g_turn_angle = -850;
+	else if(g_obs_triggered == diff_side)
+		g_turn_angle = -920;
+	else if(g_obs_triggered == same_side)
+		g_turn_angle = -300;
+
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
 //	ROS_WARN("g_turn_angle(%d)",g_turn_angle);
@@ -428,11 +436,12 @@ bool LinearRegulator::isReach()
 
 #if LINEAR_MOVE_WITH_PATH
 //	ROS_WARN("%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr(%d),target(%d)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr, target);
-	if (path_.cells.empty() || g_next_cell == path_.target)
+	if (path_.cells.empty() || path_.cells.size() == 1)
 	{
+		//ROS_INFO("\033[32m" "cells.empty(%s),cells.size(%d)""\033[0m",path_.cells.empty()?"true":"false", path_.cells.size());
 		if (std::abs(map_get_x_count() - s_target.X) < CELL_COUNT_MUL_1_2 && std::abs(map_get_y_count() - s_target.Y) < CELL_COUNT_MUL_1_2)
 		{
-			ROS_INFO("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
+			ROS_INFO("\033[32m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__ ,path_.target.X,path_.target.Y);
 			return true;
 		}
 	}
@@ -443,6 +452,7 @@ bool LinearRegulator::isReach()
 		{
 			path_.cells.pop_front();
 			g_next_cell = path_.cells.front();
+			//ROS_INFO("\033[31m" "%s,%d,g_next_cell(%d,%d)" "\033[0m",__FUNCTION__,__LINE__,g_next_cell.X,g_next_cell.Y);
 			s_target = map_cell_to_point(g_next_cell);
 			if (std::abs(map_get_x_count() - s_target.X) < std::abs(map_get_y_count() - s_target.Y))
 				g_new_dir = map_get_y_count() > s_target.Y ? NEG_Y : POS_Y;
@@ -455,7 +465,7 @@ bool LinearRegulator::isReach()
 #else
 	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
 	{
-		ROS_INFO("%s, %d: LinearRegulator.", __FUNCTION__, __LINE__);
+		ROS_INFO("\033[32m""%s, %d: LinearRegulator, reach the target cell!!""\033[0m", __FUNCTION__, __LINE__);
 		return true;
 	}
 #endif
@@ -465,7 +475,7 @@ bool LinearRegulator::isReach()
 	if( (IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL/4)) ||
 			(! IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL/4))
 		){
-		ROS_ERROR("%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr(%d),target(%d)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr, target);
+		ROS_INFO("\033[31m""%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr(%d),target(%d)""\033[0m", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr, target);
 		return true;
 	}
 
@@ -487,7 +497,7 @@ bool LinearRegulator::isSwitch()
 
 		SpotType spt = SpotMovement::instance() -> getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
-			SpotMovement::instance()->setDirectChange();
+			SpotMovement::instance()->setOBSTrigger();
 
 //		mt_set(CM_FOLLOW_LEFT_WALL);
 //		if(g_bumper_triggered)
@@ -540,7 +550,7 @@ bool LinearRegulator::_isStop()
 		ROS_INFO("%s, %d: LinearRegulator, g_obs_triggered(%d) g_rcon_triggered(%d).", __FUNCTION__, __LINE__,g_obs_triggered, g_rcon_triggered);
 		SpotType spt = SpotMovement::instance()->getSpotType();
 		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
-			SpotMovement::instance()->setDirectChange();
+			SpotMovement::instance()->setOBSTrigger();
 		return true;
 	}
 
@@ -1106,7 +1116,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
 	p_reg_ = turn_reg_;
 
-	robotbase_obs_adjust_count(50);
+	robot::instance()->obs_adjust_count(50);
 	cm_set_event_manager_handler_state(true);
 
 	ROS_WARN("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);

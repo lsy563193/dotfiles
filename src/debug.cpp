@@ -34,7 +34,10 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 				printf("\033[0;40;37m""%c""\033[0m",cs);//bright black
 			}
 			else if(cs == '1'){//clean
-				printf("\033[1;42;37m""%c""\033[0m",cs);//green
+				if(std::abs(j%2) == 0)
+					printf("\033[1;46;37m""%c""\033[0m",cs);//deep green
+         else
+					printf("\033[1;42;37m""%c""\033[0m",cs);//green
 			}
 			else if(cs == '2'){//bumper
 				printf("\033[1;44;37m""%c""\033[0m",cs);//blue

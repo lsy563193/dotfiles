@@ -2792,7 +2792,7 @@ uint8_t check_left_brush_stall(void)
 		lbrush_error_counter = 0;
 		left_brush_status = 1;
 		g_reset_lbrush_oc = false;
-		ROS_WARN("%s %d: Reset left brush.", __FUNCTION__, __LINE__);
+		//ROS_WARN("%s %d: Reset left brush.", __FUNCTION__, __LINE__);
 		return 0;
 	}
 
@@ -2889,7 +2889,7 @@ uint8_t check_right_brush_stall(void)
 		rbrush_error_counter = 0;
 		right_brush_status = 1;
 		g_reset_rbrush_oc = false;
-		ROS_WARN("%s %d: Reset right brush.", __FUNCTION__, __LINE__);
+		//ROS_WARN("%s %d: Reset right brush.", __FUNCTION__, __LINE__);
 		return 0;
 	}
 

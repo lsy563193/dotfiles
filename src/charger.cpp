@@ -24,7 +24,8 @@ uint8_t g_stop_charge_counter = 0;
 uint8_t charge_plan_status = 0;
 uint8_t charge_reject_reason = 0;
 time_t charge_plan_confirm_time = time(NULL);
-
+/* value for saving last charge status */
+uint8_t last_charge_status = 0;
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {
@@ -49,6 +50,10 @@ void charge_function(void)
 		{
 			continue;
 		}
+
+		/* refresh last_charge_status */
+		if(robot::instance()->getChargeStatus())
+			last_charge_status = robot::instance()->getChargeStatus();
 
 		bat_v = get_battery_voltage();
 
@@ -418,6 +423,9 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 
 bool charge_turn_connect(void)
 {
+	/* charging with adapter, no use to execute turn_connect */
+	if(last_charge_status == 4)
+		return false;
 	ROS_INFO("%s %d: Start charge_turn_connect().", __FUNCTION__, __LINE__);
 	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
 	int8_t speed = 5;
