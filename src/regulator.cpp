@@ -204,6 +204,7 @@ int16_t RegulatorBase::s_origin_angle = 0;
 int16_t RegulatorBase::s_target_angle = 0;
 float RegulatorBase::s_pos_x = 0;
 float RegulatorBase::s_pos_y = 0;
+Cell_t RegulatorBase::s_curr = {0,0};
 
 bool RegulatorBase::isExit(){
 	return g_fatal_quit_event || g_key_clean_pressed;
@@ -378,7 +379,7 @@ LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 
 bool LinearRegulator::isReach()
 {
-	auto curr = (IS_X_AXIS(g_new_dir)) ? map_get_x_count() : map_get_y_count();
+	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr.X : s_curr.Y;
 	auto target = (IS_X_AXIS(g_new_dir)) ? s_target.X : s_target.Y;
 
 #if LINEAR_MOVE_WITH_PATH
@@ -386,7 +387,7 @@ bool LinearRegulator::isReach()
 	if (path_.cells.empty() || path_.cells.size() == 1)
 	{
 		//ROS_INFO("\033[32m" "cells.empty(%s),cells.size(%d)""\033[0m",path_.cells.empty()?"true":"false", path_.cells.size());
-		if (std::abs(map_get_x_count() - s_target.X) < CELL_COUNT_MUL_1_2 && std::abs(map_get_y_count() - s_target.Y) < CELL_COUNT_MUL_1_2)
+		if (std::abs(s_curr.X - s_target.X) < CELL_COUNT_MUL_1_2 && std::abs(s_curr.Y - s_target.Y) < CELL_COUNT_MUL_1_2)
 		{
 			ROS_INFO("\033[32m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__ ,path_.target.X,path_.target.Y);
 			return true;
@@ -401,22 +402,22 @@ bool LinearRegulator::isReach()
 			g_next_cell = path_.cells.front();
 			//ROS_INFO("\033[31m" "%s,%d,g_next_cell(%d,%d)" "\033[0m",__FUNCTION__,__LINE__,g_next_cell.X,g_next_cell.Y);
 			s_target = map_cell_to_point(g_next_cell);
-			if (std::abs(map_get_x_count() - s_target.X) < std::abs(map_get_y_count() - s_target.Y))
-				g_new_dir = map_get_y_count() > s_target.Y ? NEG_Y : POS_Y;
+			if (std::abs(s_curr.X - s_target.X) < std::abs(s_curr.Y - s_target.Y))
+				g_new_dir = s_curr.Y > s_target.Y ? NEG_Y : POS_Y;
 			else
-				g_new_dir = map_get_x_count() > s_target.X ? NEG_X : POS_X;
+				g_new_dir = s_curr.X > s_target.X ? NEG_X : POS_X;
 			//ROS_WARN("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), g_next_cell.X, g_next_cell.Y, g_new_dir);
 			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path_.cells);
 		}
 	}
 #else
-	if (std::abs(map_get_x_count() - s_target.X) < 150 && std::abs(map_get_y_count() - s_target.Y) < 150)
+	if (std::abs(s_curr.X - s_target.X) < 150 && std::abs(s_curr.Y - s_target.Y) < 150)
 	{
 		ROS_INFO("\033[32m""%s, %d: LinearRegulator, reach the target cell!!""\033[0m", __FUNCTION__, __LINE__);
 		return true;
 	}
 #endif
-	curr = (IS_X_AXIS(g_new_dir)) ? map_get_x_count() : map_get_y_count();
+	curr = (IS_X_AXIS(g_new_dir)) ? s_curr.X : s_curr.Y;
 	target = (IS_X_AXIS(g_new_dir)) ? s_target.X : s_target.Y;
 //	ROS_WARN("%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr(%d),target(%d)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr, target);
 	if( (IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL/4)) ||
@@ -506,7 +507,7 @@ bool LinearRegulator::_isStop()
 
 #if !LINEAR_MOVE_WITH_PATH
 	auto diff = ranged_angle(
-					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
+					course_to_dest(s_curr.X, s_curr.Y, s_target.X, s_target.Y) - gyro_get_angle());
 	if ( std::abs(diff) > 300)
 	{
 		ROS_WARN("%s %d: LinearRegulator, warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
@@ -514,11 +515,11 @@ bool LinearRegulator::_isStop()
 	}
 #endif
 
-//if ((IS_X_AXIS(g_new_dir) && std::abs(s_target.Y - map_get_y_count()) > CELL_COUNT_MUL_1_2/5*4)
-//	||  (IS_Y_AXIS(g_new_dir) && std::abs(s_target.X - map_get_x_count()) > CELL_COUNT_MUL_1_2/5*4))
+//if ((IS_X_AXIS(g_new_dir) && std::abs(s_target.Y - s_curr.Y) > CELL_COUNT_MUL_1_2/5*4)
+//	||  (IS_Y_AXIS(g_new_dir) && std::abs(s_target.X - s_curr.X) > CELL_COUNT_MUL_1_2/5*4))
 //	{
 //		ROS_INFO("%s %d: LinearRegulator, warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
-//		ROS_ERROR("%s %d: d_angle %d, d_Y(%d)", __FUNCTION__, __LINE__, diff, s_target.Y - map_get_y_count());
+//		ROS_ERROR("%s %d: d_angle %d, d_Y(%d)", __FUNCTION__, __LINE__, diff, s_target.Y - s_curr.Y);
 //		return true;
 //	}
 	return false;
@@ -530,9 +531,9 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	set_dir_forward();
 
 	auto angle_diff = ranged_angle(
-					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
+					course_to_dest(s_curr.X, s_curr.Y, s_target.X, s_target.Y) - gyro_get_angle());
 
-	auto dis_diff = IS_X_AXIS(g_new_dir) ? map_get_y_count() - s_target.Y : map_get_x_count() - s_target.X;
+	auto dis_diff = IS_X_AXIS(g_new_dir) ? s_curr.Y - s_target.Y : s_curr.X - s_target.X;
 	dis_diff = IS_POS_AXIS(g_new_dir) ^ IS_X_AXIS(g_new_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10)
@@ -542,7 +543,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		check_limit(integrated_, -150, 150);
 	}
 
-	auto distance = two_points_distance(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y);
+	auto distance = two_points_distance(s_curr.X, s_curr.Y, s_target.X, s_target.Y);
 	auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
 	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected )
@@ -651,19 +652,19 @@ bool FollowWallRegulator::isReach()
 			}
 		} else
 		{
-			if ((start_y < s_target.Y ^ map_get_y_count() < s_target.Y))
+			if ((start_y < s_target.Y ^ s_curr.Y < s_target.Y))
 			{
 				ROS_WARN("%s %d: reach the target, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
-								 count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(map_get_y_count()));
+								 count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(s_curr.Y));
 				ret = true;
 			}
 
-			if ((s_target.Y > start_y && (start_y - map_get_y_count()) > 120) ||
-					(s_target.Y < start_y && (map_get_y_count() - start_y) > 120))
+			if ((s_target.Y > start_y && (start_y - s_curr.Y) > 120) ||
+					(s_target.Y < start_y && (s_curr.Y - start_y) > 120))
 			{
-				ROS_ERROR("start %d,curr %d, diff %d",start_y,map_get_y_count(),  start_y - map_get_y_count());
+				ROS_ERROR("start %d,curr %d, diff %d",start_y,s_curr.Y,  start_y - s_curr.Y);
 				ROS_WARN("%s %d: opposite direcition, old_dir(%d) start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
-								 g_old_dir, count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(map_get_y_count()));
+								 g_old_dir, count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(s_curr.Y));
 //				mark_offset(3,0,CLEANED);
 				ret = true;
 			}
@@ -971,8 +972,9 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	auto origin = map_cell_to_point(start_cell);
 #else
 	Point32_t start_point;
-	start_point.X = map_get_x_count();
-	start_point.Y = map_get_y_count();
+	s_curr = start_cell;
+	start_point.X = s_curr.X;
+	start_point.Y = s_curr.Y;
 #endif
 	auto target = map_cell_to_point(target_cell);
 	ROS_INFO("%s %d: start cell(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y, count_to_cell(target.X), count_to_cell(target.Y));
@@ -1006,7 +1008,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 			s_origin_angle = gyro_get_angle() + g_turn_angle;
 	}else if(mt_is_linear())
 		g_turn_angle = ranged_angle(
-					course_to_dest(map_get_x_count(), map_get_y_count(), s_target.X, s_target.Y) - gyro_get_angle());
+					course_to_dest(s_curr.X, s_curr.Y, s_target.X, s_target.Y) - gyro_get_angle());
 
 	ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
@@ -1099,3 +1101,4 @@ void RegulatorManage::switchToNext()
 //		robotbase_obs_adjust_count(50);
 
 }
+

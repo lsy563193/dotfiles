@@ -30,6 +30,7 @@ public:
 	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;
+	static Cell_t s_curr;
 };
 
 class BackRegulator: public RegulatorBase{
@@ -145,6 +146,10 @@ public:
 	void setTarget() {p_reg_->setTarget();}
 
 	void switchToNext();
+
+	void updateCurr(const Cell_t &curr){
+		s_curr = curr;
+	}
 private:
 	RegulatorBase* p_reg_;
 	RegulatorBase* mt_reg_;

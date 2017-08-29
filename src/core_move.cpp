@@ -334,6 +334,8 @@ bool cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
+		auto curr = map_get_curr_cell();
+		rm.updateCurr(curr);
 		if (rm.isReach() || rm.isStop()){
 			ret = true;
 			break;
@@ -347,7 +349,7 @@ bool cm_move_to(const PPTargetType& path)
 		if (get_clean_mode() != Clean_Mode_WallFollow
 						&& (mt_is_linear() || mt_is_follow_wall()))
 		{
-			auto curr = map_get_curr_cell();
+//			auto curr = map_get_curr_cell();
 			if (passed_path.back() != curr)
 			{
 				extern uint16_t g_new_dir;
