@@ -1123,7 +1123,6 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 		}
 	}
 
-	debug_map(MAP, end_x, end_y);
 	ROS_INFO("\033[1;46;37m" "%s %d:higt_free(%d)" "\033[0m", __FUNCTION__, __LINE__,is_fobbit_free());
 	/* Marked the obstcals to the shorest path map. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {

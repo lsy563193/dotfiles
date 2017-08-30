@@ -262,23 +262,16 @@ int8_t is_block_cleaned_unblock(int16_t x, int16_t y)
 	return false;
 }
 
-bool is_block_unclean(int16_t x, int16_t y)
+uint8_t is_block_unclean(int16_t x, int16_t y)
 {
-	bool retval = false;
 	uint8_t unclean_cnt = 0;
 	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
 		if (map_get_cell(MAP, x, i) == UNCLEAN) {
 			unclean_cnt++;
 		}
 	}
-#if INTERLACED_MOVE
-	if (unclean_cnt > 0)
-#else
-	if (unclean_cnt > 1)
-#endif
-		retval = true;
 //	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return retval;
+	return unclean_cnt;
 }
 
 uint8_t is_block_boundary(int16_t x, int16_t y)
@@ -313,6 +306,7 @@ uint8_t is_block_blocked(int16_t x, int16_t y)
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
+	uint16_t unclean_cnt_for_min = 0, unclean_cnt_for_max = 0;
 	Cell_t tmp = curr;
 #if INTERLACED_MOVE
 	if(curr.Y % 2 != 0) {
@@ -353,12 +347,16 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 			{
 				// Stop if reach the boundary.
 				min_stop = 1;
-			} else if (is_block_unclean(curr.X - i, curr.Y))
-			{
-				// Find the furthest unclean cell.
-				min = is_block_boundary(curr.X - (i + 1), curr.Y) ? min : i;
+			} else {
+				auto unclean_cnt = is_block_unclean(curr.X - i, curr.Y);
+				if (unclean_cnt)
+				{
+					// Find the furthest unclean cell.
+					min = is_block_boundary(curr.X - (i + 1), curr.Y) ? min : i;
+					unclean_cnt_for_min += unclean_cnt;
+					//ROS_INFO("%s %d: min: %d", __FUNCTION__, __LINE__, min);
+				}
 			}
-			//ROS_INFO("%s %d: min: %d", __FUNCTION__, __LINE__, min);
 		}
 
 		/* Find the unclean area in the POS_X direction of the lane. */
@@ -375,16 +373,33 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 			{
 				// Stop if reach the boundary.
 				max_stop = 1;
-			} else if (is_block_unclean(curr.X + i, curr.Y))
-			{
-				// Find the furthest unclean cell.
-				max = is_block_boundary(curr.X + i + 1, curr.Y) ? max : i;
+			} else {
+				auto unclean_cnt = is_block_unclean(curr.X + i, curr.Y);
+				if (unclean_cnt)
+				{
+					// Find the furthest unclean cell.
+					max = is_block_boundary(curr.X + i + 1, curr.Y) ? max : i;
+					unclean_cnt_for_max += unclean_cnt;
+					//ROS_INFO("%s %d: max: %d", __FUNCTION__, __LINE__, max);
+				}
 			}
-			//ROS_INFO("%s %d: max: %d", __FUNCTION__, __LINE__, max);
 		}
 	}
 
 	ROS_WARN("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, curr.X - min, curr.X + max);
+
+	// If unclean area is too small, do not clean that area.
+	if (max != SHRT_MAX && unclean_cnt_for_max < 3)
+	{
+		ROS_WARN("%s %d: Cleaning area for max direction is too small, drop it.", __FUNCTION__, __LINE__);
+		max = SHRT_MAX;
+	}
+	if (min != SHRT_MAX && unclean_cnt_for_min < 3)
+	{
+		ROS_WARN("%s %d: Cleaning area for min direction is too small, drop it.", __FUNCTION__, __LINE__);
+		min = SHRT_MAX;
+	}
+
 	if (min != SHRT_MAX && max != SHRT_MAX)
 	{
 		/*
@@ -439,29 +454,7 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 //			 Duplicated cleaning.
 			is_found = 0;
-		else
-		{
-			uint8_t un_cleaned_cnt = 0;
-			for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
-				for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
-					if (map_get_cell(MAP, tmp.X + dx, tmp.Y + dy) == UNCLEAN)
-						un_cleaned_cnt++;
-
-			if (un_cleaned_cnt < 4)
-				// Uncleaned area is too small.
-				is_found = 0;
-		}
 	}
-//#else
-//	uint8_t un_cleaned_cnt = 0;
-//	for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
-//				for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
-//					if (map_get_cell(MAP, tmp.X + dx, tmp.Y + dy) == UNCLEAN)
-//						un_cleaned_cnt++;
-//
-//			if (un_cleaned_cnt <= 2)
-//				 Uncleaned area is too small.
-//				is_found = 0;
 #endif
 
 	ROS_INFO("%s %d: is_found = %d, target(%d, %d).", __FUNCTION__, __LINE__, is_found, tmp.X, tmp.Y);

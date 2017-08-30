@@ -242,7 +242,7 @@ uint8_t is_block_boundary(int16_t x, int16_t y);
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-bool is_block_unclean(int16_t x, int16_t y);
+uint8_t is_block_unclean(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
