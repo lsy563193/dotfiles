@@ -475,13 +475,9 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 			path.cells.push_front(temp_cell);
 		// Displaying for debug.
 		list<Cell_t> temp_path;
-		if (is_found)
 		temp_path.push_back(path.cells.front());
-		if (is_found)
 		temp_path.push_back(path.cells.back());
-		if (is_found)
 		path_display_path_points(temp_path);
-		if (is_found)
 #else
 		path.cells.push_front(path.target);
 		path.cells.push_front(curr);
@@ -1392,39 +1388,38 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				}
 			}
 			//ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d), target(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
-		}
 #else
-        extern bool g_isolate_triggered;
-				int16_t ret;
-				if (g_isolate_triggered) {
-					ret = isolate_target(curr, path);
-					g_isolate_triggered = false;
+			extern bool g_isolate_triggered;
+			int16_t ret;
+			if (g_isolate_triggered) {
+				ret = isolate_target(curr, path);
+				g_isolate_triggered = false;
+			}
+			else {
+				ret = path_full(curr, path);//0 not target, 1,found, -2 trap
+				if(ret==0)
+					if (path_escape_trapped() <= 0)
+						ret = -2;
+			}
+			ROS_WARN("%s %d: path_target return: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+			if (ret == 0)
+			{
+				g_finish_cleaning_go_home = true;
+				cm_check_should_go_home();
+			}
+			if (ret == -2){
+				if(g_trapped_mode == 0 ){
+					g_trapped_mode = 1;
+					// This led light is for debug.
+					set_led_mode(LED_FLASH, LED_GREEN, 300);
+					mt_set(CM_FOLLOW_LEFT_WALL);
+					extern uint32_t g_escape_trapped_timer;
+					g_escape_trapped_timer = time(NULL);
 				}
-        else {
-					ret = path_full(curr, path);//0 not target, 1,found, -2 trap
-					if(ret==0)
-						if (path_escape_trapped() <= 0)
-							ret = -2;
-				}
-				ROS_WARN("%s %d: path_target return: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
-				if (ret == 0)
-				{
-					g_finish_cleaning_go_home = true;
-					cm_check_should_go_home();
-				}
-				if (ret == -2){
-					if(g_trapped_mode == 0 ){
-						g_trapped_mode = 1;
-						// This led light is for debug.
-						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						mt_set(CM_FOLLOW_LEFT_WALL);
-						extern uint32_t g_escape_trapped_timer;
-						g_escape_trapped_timer = time(NULL);
-					}
-					return 1;
-				}
+				return 1;
 			}
 #endif
+		}
 	}
 
 	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT) {
