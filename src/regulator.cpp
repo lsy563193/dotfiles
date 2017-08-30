@@ -1027,9 +1027,8 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 #if FORCE_MOVE_LINE
 	auto origin = map_cell_to_point(start_cell);
 #else
-	Point32_t start_point;
-	start_point.X = map_get_x_count();
-	start_point.Y = map_get_y_count();
+	s_curr_p.X = map_get_x_count();
+	s_curr_p.Y = map_get_y_count();
 #endif
 	auto target = map_cell_to_point(target_cell);
 	ROS_INFO("%s %d: start cell(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y, count_to_cell(target.X), count_to_cell(target.Y));
@@ -1040,7 +1039,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	back_reg_ = new BackRegulator();
 
 	if (mt_is_follow_wall())
-		mt_reg_ = new FollowWallRegulator(start_point, target);
+		mt_reg_ = new FollowWallRegulator(s_curr_p, target);
 	else
 		mt_reg_ = new LinearRegulator(target, path);
 
