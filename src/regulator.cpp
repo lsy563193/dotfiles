@@ -311,9 +311,9 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 }
 
 
-TurnRegulator::TurnRegulator(int16_t angle) : speed_max_(ROTATE_TOP_SPEED)
+TurnRegulator::TurnRegulator(int16_t angle) : speed_(ROTATE_LOW_SPEED)
 {
-	accurate_ = speed_max_ > 30 ? 30 : 10;
+	accurate_ = ROTATE_TOP_SPEED > 30 ? 30 : 15;
 	s_target_angle = angle;
 	ROS_WARN("%s %d: Init, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
@@ -357,6 +357,8 @@ void TurnRegulator::setTarget()
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1)
 		g_turn_angle = laser_turn_angle();
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
+	// Reset the speed.
+	speed_ = ROTATE_LOW_SPEED;
 	ROS_INFO("%s %d: TurnRegulator, s_target_angle: %d", __FUNCTION__, __LINE__, s_target_angle);
 }
 
@@ -368,16 +370,24 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	(diff >= 0) ? set_dir_left() : set_dir_right();
 
 //	ROS_INFO("TurnRegulator::adjustSpeed");
-	auto speed = speed_max_;
 
-	if (std::abs(diff) < 50)
-	{
-		speed = std::min((uint16_t) 5, speed);
-	} else if (std::abs(diff) < 200)
-	{
-		speed = std::min((uint16_t) 10, speed);
+	if (std::abs(diff) > 200){
+		speed_ += 1;
+		speed_ = std::min(speed_, ROTATE_TOP_SPEED);
 	}
-	l_speed = r_speed = speed;
+	else if (std::abs(diff) > 50){
+		speed_ -= 2;
+		uint8_t low_speed = ROTATE_LOW_SPEED + 5;
+		speed_ = std::max(speed_, low_speed);
+		ROS_DEBUG("%s %d: 50 - 200, speed = %d.", __FUNCTION__, __LINE__, speed_);
+	}
+	else{
+		speed_ -= 2;
+		speed_ = std::max(speed_, ROTATE_LOW_SPEED);
+		ROS_DEBUG("%s %d: 0 - 50, speed = %d.", __FUNCTION__, __LINE__, speed_);
+	}
+	l_speed = r_speed = speed_;
+
 }
 
 bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
