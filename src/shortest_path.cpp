@@ -1222,7 +1222,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	totalCost = 0;
 	if (map_get_cell(SPMAP, end_x, end_y) == COST_NO || map_get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y, map_get_cell(SPMAP, end_x, end_y));
-#ifdef	DEBUG_SM_MAP
+#if	DEBUG_SM_MAP
 		debug_map(SPMAP, end_x, end_y);
 #endif
 		return -2;
@@ -1408,7 +1408,9 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
+#if	DEBUG_SM_MAP
 	debug_map(SPMAP, endx, endy);
+#endif
 	return val;
 }
 
@@ -1768,7 +1770,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 	totalCost = 0;
 	if (map_get_cell(SPMAP, end_x, end_y, true) == COST_NO || map_get_cell(SPMAP, end_x, end_y, true) == COST_HIGH) {
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y, map_get_cell(SPMAP, end_x, end_y, true));
-#ifdef	DEBUG_SM_MAP
+#if	DEBUG_SM_MAP
 		debug_map(SPMAP, end_x, end_y);
 #endif
 		return -2;

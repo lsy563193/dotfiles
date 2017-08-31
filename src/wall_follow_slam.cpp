@@ -324,7 +324,9 @@ static bool is_isolate() {
 //	cm_update_map();
 	cm_update_position();
 	map_mark_robot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
+#if DEBUG_MAP
 	debug_map(MAP, 0, 0);
+#endif
 
 	Cell_t remote{0,0};
 	if ( out_cell != remote){
@@ -372,7 +374,9 @@ static bool trapped_is_isolate() {
 //	cm_update_map();
 	cm_update_position();
 	map_mark_robot(WFMAP);//note: To clear the obstacle when check isolated, please don't remove it!
+#if DEBUG_WF_MAP
 	debug_map(WFMAP, 0, 0);
+#endif
 
 	Cell_t remote{0,0};
 	if ( out_cell != remote){

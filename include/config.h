@@ -30,13 +30,18 @@
 /*
  * Enable debugging the grid map.
  */
-#define DEBUG_MAP			(1)
+#define DEBUG_MAP			(0)
+
+/*
+ * Enable debugging the grid map.
+ */
+#define DEBUG_WF_MAP			(0)
 
 /*
  * Enable debugging the shortest path map when finding the
  * shortest path is using the A* like method.
  */
-#define DEBUG_SM_MAP			(1)
+#define DEBUG_SM_MAP			(0)
 
 /*
  * Enable target debug.

@@ -508,7 +508,7 @@ bool LinearRegulator::isReach()
 			else
 				g_new_dir = s_curr_p.X > s_target.X ? NEG_X : POS_X;
 			//ROS_WARN("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), g_next_cell.X, g_next_cell.Y, g_new_dir);
-			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path_.cells);
+			//MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path_.cells);
 		}
 	}
 #else
@@ -762,9 +762,15 @@ bool FollowWallRegulator::isReach()
 			{
 				ROS_WARN("%s %d: reach the target, start_y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
 								 count_to_cell(start_y), count_to_cell(s_target.Y), count_to_cell(s_curr_p.Y));
-				ret = true;
+				auto dx = (start_y < s_target.Y  ^ mt_is_left()) ? +2 : -2;
+				if(is_block_blocked(count_to_cell(s_curr_p.X)+dx, count_to_cell(s_curr_p.Y)))
+				{
+					ROS_WARN("%s %d: is_map_front_block", __FUNCTION__, __LINE__);
+					ret = true;
+				}
+				if(std::abs(start_y - s_curr_p.Y) > CELL_COUNT_MUL*3)
+					ret = true;
 			}
-
 			if ((s_target.Y > start_y && (start_y - s_curr_p.Y) > 120) ||
 					(s_target.Y < start_y && (s_curr_p.Y - start_y) > 120))
 			{
