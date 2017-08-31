@@ -768,11 +768,8 @@ bool FollowWallRegulator::isReach()
 					ROS_WARN("%s %d: is_map_front_block", __FUNCTION__, __LINE__);
 					ret = true;
 				}
-				if(is_block_blocked(count_to_cell(s_curr_p.X)+dx, count_to_cell(s_curr_p.Y)))
-				{
-					if(std::abs(start_y - s_curr_p.Y) > CELL_COUNT_MUL*3)
-						return true;
-				}
+				if(std::abs(start_y - s_curr_p.Y) > CELL_COUNT_MUL*3)
+					ret = true;
 			}
 			if ((s_target.Y > start_y && (start_y - s_curr_p.Y) > 120) ||
 					(s_target.Y < start_y && (s_curr_p.Y - start_y) > 120))
