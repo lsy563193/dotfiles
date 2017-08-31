@@ -672,14 +672,14 @@ void map_set_bumper()
 		if(mt_is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
-			d_cells = {{2, 1}, {2,2}, {1,2}};
+			d_cells = {/*{2, 1}, {2,2}, */{1,2}};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
-			d_cells = {{2,-2},{2,-1},{1,-2}};
+			d_cells = {/*{2,-2},{2,-1},*/{1,-2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
