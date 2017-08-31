@@ -435,7 +435,7 @@ bool LinearRegulator::isReach()
 		//ROS_INFO("\033[32m" "cells.empty(%s),cells.size(%d)""\033[0m",path_.cells.empty()?"true":"false", path_.cells.size());
 		if (std::abs(s_curr_p.X - s_target.X) < CELL_COUNT_MUL_1_2 && std::abs(s_curr_p.Y - s_target.Y) < CELL_COUNT_MUL_1_2)
 		{
-			ROS_INFO("\033[32m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__ ,path_.target.X,path_.target.Y);
+			ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__ ,path_.target.X,path_.target.Y);
 			return true;
 		}
 	}

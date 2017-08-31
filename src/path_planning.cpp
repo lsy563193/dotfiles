@@ -1336,7 +1336,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 
 		}
 	}
-	else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
+	else if (!g_go_home && SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
 		if (!SpotMovement::instance()->spotNextTarget(curr,&path))
 			return 0;
 		debug_map(MAP, path.target.X, path.target.Y);

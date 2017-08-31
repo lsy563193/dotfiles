@@ -938,7 +938,7 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 			}
 		}
 	}
-	ROS_INFO("\033[31m""%s,%d: %s""\033[0m",__FUNCTION__, __LINE__, msg.c_str());
+	ROS_INFO("\033[32m""%s,%d: %s""\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
 void map_set_follow_wall(std::vector<Cell_t>& cells)
