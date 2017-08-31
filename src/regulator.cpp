@@ -26,11 +26,12 @@ int16_t wall_buffer[3]={0};
 int strength=150;
 //int last_strength=150;
 //int last_transit_strength=150;
-double transit_time=0;
+//double transit_time=0;
 int factor=15;
-bool is_found;
+bool line_is_found;
 double wall_distance=0.8;
 float back_distance=0.01;
+CMMoveType last_move_type;
 //bool g_is_should_follow_wall;
 
 static int16_t bumper_turn_angle()
@@ -44,7 +45,7 @@ static int16_t bumper_turn_angle()
 
 	if (status == AllBumperTrig)
 	{
-		g_turn_angle = -60;
+		g_turn_angle = -600;
 		g_straight_distance = 150; //150;
 		jam = get_wheel_step() < 2000 ? ++jam : 0;
 	} else if (status == diff_side)
@@ -152,7 +153,7 @@ static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
-	is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
+	line_is_found = MotionManage::s_laser->getLaserDistance(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
 //	RESET_WALL_DIS = int(distance * 1000);
 
 	ROS_INFO("line_distance = %lf", distance);
@@ -163,11 +164,11 @@ static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int
 		angle  = 1800-angle;
 
 	ROS_INFO("line_angle = %d", angle);
-	if (is_found && angle >= angle_min && angle < angle_max)
+	if (line_is_found && angle >= angle_min && angle < angle_max)
 	{
 //		ROS_ERROR("distance: %f",(distance*100.0-16.7));
 		line_angle=fabs(line_angle);
-		if(line_angle > 90)
+		if(line_angle < 90)
 			wall_distance=back_distance*100*sin(line_angle*3.1415/180.0);
 		else
 			wall_distance=back_distance*100*sin((180-line_angle)*3.1415/180.0);
@@ -329,7 +330,7 @@ bool TurnRegulator::isReach()
 		ROS_INFO("%s, %d: TurnRegulator target angle: %d, current angle: %d.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
 
 		/*********************************************For wall follow**********************************************/
-		if(is_found)
+		if(line_is_found)
 		{
 			strength = (mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
 /*			if(strength < 10)	//set strength in U round
@@ -356,11 +357,13 @@ bool TurnRegulator::isReach()
 			{
 				strength+=(620-strength)/4*3;
 				if(strength < STRENGTH_WHITE_MIN)
-				strength=STRENGTH_WHITE_MIN;
+					strength=STRENGTH_WHITE_MIN;
+				else if(strength > STRENGTH_WHITE_MAX)
+					strength=0.95*strength;
 				ROS_WARN("strength_distance_adjust: %d",strength);
 			}
 //			last_strength=strength;
-			is_found=false;
+			line_is_found=false;
 		}
 		else
 			ROS_WARN("line is not found");
@@ -373,7 +376,7 @@ bool TurnRegulator::isReach()
 
 bool TurnRegulator::isSwitch()
 {
-//	ROS_INFO("TurnRegulator::isSwitch");	
+//	ROS_INFO("TurnRegulator::isSwitch");
 
 	if(isReach() ||(! g_bumper_triggered  && get_bumper_status()) || (! g_cliff_triggered && get_cliff_status()) || (!g_tilt_triggered && get_tilt_status()))
 	{
@@ -400,7 +403,7 @@ void TurnRegulator::setTarget()
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1)
 	{
 		set_wheel_speed(0, 0);
-		delay(0.25);
+		delay_sec(0.25);
 /*		do
 		{
 			set_wheel_speed(0, 0);
@@ -964,7 +967,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 						if ((diff_speed-same_speed) >= -3)
 						{
 							// Away from the wall.
-							ROS_WARN("%s,%d: delay(0.22) to walk straight",__FUNCTION__,__LINE__);
+							ROS_WARN("%s,%d: delay_sec(0.22) to walk straight",__FUNCTION__,__LINE__);
 //							if(ros::Time::now().toSec()-transit_time < 0.8 && (strength != last_transit_strength))
 //							{
 //								strength=last_transit_strength;
@@ -975,8 +978,8 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 							else
 								move_forward(15,20);
 //							strength+=15;
-							delay(0.22);
-//							g_straight_distance = 250;
+							delay_sec(0.22);
+							g_straight_distance = 250;
 						}
 					}
 				}
@@ -1058,6 +1061,12 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 	}
+		if(get_clean_mode()==Clean_Mode_Navigation)
+		{
+				if(mt_get()!=last_move_type)
+						wall_buffer[0]=wall_buffer[1]=wall_buffer[2]=0;
+				last_move_type=mt_get();
+		}
 
 }
 

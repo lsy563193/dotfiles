@@ -3056,11 +3056,11 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
 	robotbase_led_update_flag = true;
 }
 
-void delay(double ms)
+void delay_sec(double s)
 {
 	auto start=ros::Time::now().toSec();
 	auto now=start;
-	while((now-start) < ms)
+	while((now-start) < s)
 	{
 		now=ros::Time::now().toSec();
 	}
