@@ -46,6 +46,8 @@
 
 std::vector<Pose16_t> g_wf_cell;
 int g_isolate_count = 0;
+int g_trapped_count = 0;
+const int TRAPPED_COUNT_LIMIT = 2;
 bool g_isolate_triggered = false;
 // This list is for storing the position that robot sees the charger stub.
 extern bool g_from_station;
@@ -93,9 +95,12 @@ static bool is_reach(void)
 		ROS_WARN("%s,%d:sp_turn over 400",__FUNCTION__,__LINE__);
 		return true;
 	}
-	if (wf_is_reach_start()) {
-		ROS_WARN("%s,%d:reach the start point!",__FUNCTION__,__LINE__);
-		return true;
+	extern int g_trapped_mode;
+	if (g_trapped_mode != 1) {
+		if (wf_is_reach_start()) {
+			ROS_WARN("%s,%d:reach the start point!",__FUNCTION__,__LINE__);
+			return true;
+		}
 	}
 #if 0
 	if ( g_reach_count < REACH_COUNT_LIMIT)
@@ -415,6 +420,7 @@ uint8_t wf_clear(void)
 	g_wf_cell.clear();
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);
 	g_isolate_count = 0;
+	g_trapped_count = 0;
 	g_isolate_triggered = false;
 	wf_time_out = false;
 	return 0;
@@ -485,8 +491,17 @@ bool trapped_is_end()
 		return true;
 	return false;
 	*/
-	if (wf_is_reach_isolate() || is_trap())
-		return true;
+	if (wf_is_reach_isolate() || is_trap()) {
+		g_trapped_count++;
+		wf_break_wall_follow();
+		ROS_WARN("g_trapped_count = %d", g_trapped_count);
+		if (g_trapped_count >= TRAPPED_COUNT_LIMIT) {
+			ROS_WARN("g_trapped_count >= TRAPPED_COUNT_LIMIT");
+			ROS_WARN("g_trapped_count = %d", g_trapped_count);
+			g_trapped_count = 0;
+			return true;
+		}
+	}
 	return false;
 }
 
