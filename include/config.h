@@ -30,13 +30,18 @@
 /*
  * Enable debugging the grid map.
  */
-#define DEBUG_MAP			(1)
+#define DEBUG_MAP			(0)
+
+/*
+ * Enable debugging the grid map.
+ */
+#define DEBUG_WF_MAP			(0)
 
 /*
  * Enable debugging the shortest path map when finding the
  * shortest path is using the A* like method.
  */
-#define DEBUG_SM_MAP			(1)
+#define DEBUG_SM_MAP			(0)
 
 /*
  * Enable target debug.
@@ -141,7 +146,7 @@
 #define ROBOT_BRUSH_LEFT_OFFSET		(0)
 #define ROBOT_BRUSH_RIGHT_OFFSET	(0)
 
-#define SLOW_DOWN_DISTANCE		(CELL_COUNT_MUL)
+#define SLOW_DOWN_DISTANCE		(1*CELL_COUNT_MUL)
 
 #endif
 

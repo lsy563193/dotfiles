@@ -672,14 +672,14 @@ void map_set_bumper()
 		if(mt_is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
-			d_cells = {{2, 1}, {2,2}, {1,2}};
+			d_cells = {{2, 1},/* {2,2}, */{1,2}};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
-			d_cells = {{2,-2},{2,-1},{1,-2}};
+			d_cells = {{2,-2},/*{2,-1},*/{1,-2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
@@ -824,9 +824,6 @@ void map_set_blocked()
 	map_set_rcon();
 	map_set_cliff();
 	map_set_tilt();
-	std::list<Cell_t> empty_path;
-	empty_path.clear();
-	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, empty_path);
 }
 
 void map_set_cleaned(const Cell_t& curr)

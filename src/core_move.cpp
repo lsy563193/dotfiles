@@ -347,6 +347,7 @@ bool cm_move_to(const PPTargetType& path)
 
 		if (rm.isSwitch()){
 			map_set_blocked();
+			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
 			rm.switchToNext();
 		}
 
@@ -414,6 +415,7 @@ bool cm_move_to(const PPTargetType& path)
 //		linear_mark_clean(curr, g_next_cell);
 	}
 	map_set_blocked();
+	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
 	return ret;
 }
 
