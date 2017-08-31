@@ -558,7 +558,9 @@ void path_find_target(const Cell_t& curr, PPTargetType& path) {
 			nextPassValue = 1;
 	}
 
+#if DEBUG_SM_MAP
 //	debug_map(SPMAP, 0, 0);
+#endif
 
 	if (map_get_cell(SPMAP, path.target.X, path.target.Y) == COST_NO ||
 			map_get_cell(SPMAP, path.target.X, path.target.Y) == COST_HIGH) {
@@ -639,7 +641,9 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 	}
 	ROS_INFO("%s %d: is_found(%d)", __FUNCTION__, __LINE__, is_found);
 	if (! is_found) {
+#if DEBUG_MAP
 //		debug_map(MAP, 0, 0);
+#endif
 		is_found = path_dijkstra(curr, target);
 		if(is_found) {
 			ROS_INFO("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
@@ -759,7 +763,9 @@ void path_find_all_targets(const Cell_t& curr)
 	}
 
 	ROS_INFO("%s %d: offset: %d\tx: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
+#if DEBUG_SM_MAP
 	debug_map(SPMAP, 0, 0);
+#endif
 
 	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 		if (map_get_cell(SPMAP, it->target.X, it->target.Y) == COST_NO ||
@@ -980,7 +986,9 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 		}
 	}
+#if DEBUG_MAP
 //	debug_map(MAP, g_home_x, g_home_y);
+#endif
 	map_tmp = map;
 	for (const auto& cell : map_tmp) {
 		if (map_get_cell(MAP, cell.X, cell.Y) == TARGET) {
@@ -1229,7 +1237,9 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 
 	is_found = (final_cost != 1000) ? final_cost : 0 ;
 	ROS_INFO("%s %d: is_found: %d (%d, %d)\n", __FUNCTION__, __LINE__, is_found, temp_target.X, temp_target.Y);
+#if DEBUG_MAP
 	debug_map(MAP, temp_target.X, temp_target.Y);
+#endif
 
 	if(is_found == 0)
 		return 0;
@@ -1339,7 +1349,9 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
 		if (!SpotMovement::instance()->spotNextTarget(curr,&path))
 			return 0;
+#if DEBUG_MAP
 		debug_map(MAP, path.target.X, path.target.Y);
+#endif
 		//path.cells.clear();
 		//path.cells.push_front(path.target);
 		path.cells.push_front(curr);
