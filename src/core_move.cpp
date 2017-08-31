@@ -594,10 +594,8 @@ int cm_cleaning()
 			uint8_t check_status = cm_check_charger_signal();
 			if(check_status == SEEN_CHARGER)/*---have seen charger signal---*/
 			{
-				if(cm_go_to_charger())
+				if(!cm_is_continue_go_to_charger())
 					return -1;
-				else if(!g_go_home_by_remote)
-					set_led_mode(LED_STEADY, LED_GREEN);
 			}
 			else if(check_status == EVENT_TRIGGERED)/*---event triggered---*/
 			{
@@ -609,10 +607,8 @@ int cm_cleaning()
 				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
 				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
 				{
-					if(cm_go_to_charger())
+					if(!cm_is_continue_go_to_charger())
 						return -1;
-					else if(!g_go_home_by_remote)
-						set_led_mode(LED_STEADY, LED_GREEN);
 				}
 			}
 
@@ -643,22 +639,31 @@ int cm_cleaning()
 				{
 					if (g_home != g_zero_home || g_start_point_seen_charger )
 					{
-						if (cm_go_to_charger())
+						if(!cm_is_continue_go_to_charger())
 							return -1;
-						else if (!g_go_home_by_remote)
-							set_led_mode(LED_STEADY, LED_GREEN);
 					} else
 					{
-						cm_head_to_course(ROTATE_TOP_SPEED, -(robot::instance()->offsetAngle() *10));
-						return 0;
+						uint8_t check_status = cm_check_charger_signal();
+						if (check_status == SEEN_CHARGER)/*---have seen charger signal---*/
+						{
+							if (!cm_is_continue_go_to_charger())
+								return -1;
+						} else if (check_status == EVENT_TRIGGERED)/*---event triggered---*/
+						{
+							return -1;
+						}
+						auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() * 10);
+						if (cm_head_to_course(ROTATE_TOP_SPEED, -angle)) {
+							if (!cm_is_continue_go_to_charger())
+								return -1;
+						}
+						return -1;
 					}
 				}
 				else if (g_rcon_during_go_home)
 				{
-					if (cm_go_to_charger())
+					if(!cm_is_continue_go_to_charger())
 						return -1;
-					else if (!g_go_home_by_remote)
-						set_led_mode(LED_STEADY, LED_GREEN);
 				}
 			}
 		}
@@ -722,11 +727,11 @@ void cm_check_temp_spot(void)
 	}
 }
 
-/* Statement for cm_go_to_charger(void)
+/* Statement for cm_go_to_charger_(void)
  * return : true -- going to charger has been stopped, either successfully or interrupted.
  *          false -- going to charger failed, move to next point.
  */
-bool cm_go_to_charger()
+bool cm_go_to_charger_()
 {
 	// Call GoHome() function to try to go to charger stub.
 	ROS_WARN("%s,%d,Call GoHome(), disable tilt detect.",__FUNCTION__,__LINE__);
@@ -741,7 +746,26 @@ bool cm_go_to_charger()
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detct" "\033[0m",__FUNCTION__,__LINE__);
 	return false;
 }
-
+bool cm_is_continue_go_to_charger()
+{
+	auto way = *g_home_way_it % HOMEWAY_NUM;
+	auto cnt = *g_home_way_it / HOMEWAY_NUM;
+	ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X,g_home.Y,way, cnt);
+	if(cm_go_to_charger_() || cnt == 0)
+	{
+		ROS_INFO("\033[1;46;37m" "%s,%d:cm_go_to_charger_ stop " "\033[0m", __FUNCTION__, __LINE__);
+		return false;
+	}
+	else if(!g_go_home_by_remote)
+		set_led_mode(LED_STEADY, LED_GREEN);
+	g_home_way_it += (way+1);
+	g_homes.pop_back();
+	g_home_way_list.clear();
+//	cnt = *g_home_way_it / HOMEWAY_NUM;
+//	way = *g_home_way_it % HOMEWAY_NUM;
+	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X, g_home.Y,way, cnt);
+	return true;
+}
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
