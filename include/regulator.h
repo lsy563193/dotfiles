@@ -11,6 +11,10 @@
 #include <movement.h>
 #include <robot.hpp>
 
+#define STRENGTH_WHITE_MIN 550
+#define STRENGTH_BLACK_MIN 120
+#define STRENGTH_BLACK_MAX 180
+
 class RegulatorBase {
 public:
 
