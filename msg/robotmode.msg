@@ -1,2 +1,0 @@
-#0x80~0x10 hand_mode,0x08 clean_mode,0x04 gohome_mode,0x02 random_mode ,0x01 spot_mode
-uint8 workmode

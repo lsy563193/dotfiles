@@ -5,7 +5,16 @@
 #ifndef PP_REGULATOR_BASE_H
 #define PP_REGULATOR_BASE_H
 
+#include <ros/ros.h>
 #include <move_type.h>
+#include <path_planning.h>
+#include <movement.h>
+#include <robot.hpp>
+
+#define STRENGTH_WHITE_MIN 550
+#define STRENGTH_WHITE_MAX 625
+#define STRENGTH_BLACK_MIN 120
+#define STRENGTH_BLACK_MAX 180
 
 class RegulatorBase {
 public:
@@ -29,11 +38,15 @@ public:
 	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;
+	static Point32_t s_curr_p;
 };
 
 class BackRegulator: public RegulatorBase{
 public:
 	BackRegulator();
+	~BackRegulator(){
+		set_wheel_speed(1, 1);
+	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
 	bool _isStop();
@@ -64,7 +77,7 @@ protected:
 
 private:
 	uint16_t accurate_;
-	uint16_t speed_max_;
+	uint8_t speed_;
 };
 
 class TurnSpeedRegulator{
@@ -72,7 +85,7 @@ public:
 	TurnSpeedRegulator(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
 					speed_max_(speed_max),speed_min_(speed_min), speed_(speed_start),tick_(0){};
 	~TurnSpeedRegulator() {
-		set_wheel_speed(0, 0);
+		//set_wheel_speed(0, 0);
 	}
 	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
 
@@ -97,8 +110,8 @@ public:
 class FollowWallRegulator:public RegulatorBase{
 
 public:
-	FollowWallRegulator(Point32_t origin, Point32_t target);
-	~FollowWallRegulator(){ set_wheel_speed(0,0); };
+	FollowWallRegulator(Point32_t start_point, Point32_t target);
+	~FollowWallRegulator(){ /*set_wheel_speed(0,0);*/ };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
 	bool _isStop();
@@ -113,7 +126,7 @@ private:
 
 class LinearRegulator: public RegulatorBase{
 public:
-	LinearRegulator(Point32_t);
+	LinearRegulator(Point32_t, const PPTargetType&);
 	~LinearRegulator(){ };
 	bool _isStop();
 	bool isSwitch();
@@ -129,11 +142,12 @@ private:
 	uint8_t integration_cycle_;
 	uint32_t tick_;
 	uint8_t turn_speed_;
+	PPTargetType path_;
 };
 
 class RegulatorManage:public RegulatorBase{
 public:
-	RegulatorManage(Point32_t origin, Point32_t target);
+	RegulatorManage(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~RegulatorManage();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
@@ -143,6 +157,10 @@ public:
 	void setTarget() {p_reg_->setTarget();}
 
 	void switchToNext();
+
+	void updatePosition(const Point32_t &curr_point){
+		s_curr_p = curr_point;
+	}
 private:
 	RegulatorBase* p_reg_;
 	RegulatorBase* mt_reg_;

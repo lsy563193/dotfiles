@@ -58,9 +58,9 @@ bool rbrush_oc
 bool vcum_oc
 
 # Acceleration for x, y, z
-float32 x_acc
-float32 y_acc
-float32 z_acc
+int16 x_acc
+int16 y_acc
+int16 z_acc
 
 # omni-wheel 0--10000
 int16 omni_wheel

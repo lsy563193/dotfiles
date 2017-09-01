@@ -47,7 +47,6 @@ uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
 bool send_stream_thread = false;
-bool g_is_tilt = false;
 
 pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
@@ -59,9 +58,6 @@ pthread_mutex_t serial_data_ready_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
-int g_xacc_init_val = sensor.x_acc;
-int g_yacc_init_val = sensor.y_acc;
-int g_zacc_init_val = sensor.z_acc;
 
 bool robotbase_beep_update_flag = false;
 int robotbase_speaker_sound_loop_count = 0;
@@ -84,12 +80,9 @@ boost::mutex odom_mutex;
 // Odom coordinate
 float pose_x, pose_y;
 
-// For obs dynamic adjustment
-int OBS_adjust_count;
-
 int robotbase_init(void)
 {
-	int		ser_ret, base_ret,sers_ret;
+	int		ser_ret, base_ret, sers_ret;
 	uint8_t	t_buf[2];
 
 	ser_ret = base_ret = 0;
@@ -141,9 +134,7 @@ void robotbase_deinit(void)
 		set_led_mode(LED_STEADY, LED_OFF);
 		control_set(CTL_BUZZER, 0x00);
 		set_gyro_off();
-		usleep(40000);
 		disable_motors();
-		usleep(40000);
 		set_main_pwr_byte(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
@@ -253,10 +244,9 @@ void *robotbase_routine(void*)
 
 	geometry_msgs::TransformStamped	odom_trans;
 
-	ros::Publisher	odom_pub,sensor_pub;
+	ros::Publisher	odom_pub, sensor_pub;
 	ros::NodeHandle	robotsensor_node;
 	ros::NodeHandle	odom_node;
-	ros::NodeHandle	slam_angle_offset_node;
 
 	th_last = vth = pose_x = pose_y = 0.0;
 
@@ -265,9 +255,7 @@ void *robotbase_routine(void*)
 
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
-	uint32_t omni_detect_cnt = 0;
-	uint32_t last_omni_wheel = 0;
-	uint32_t tilt_count = 0;
+	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
 	while (ros::ok() && !robotbase_thread_stop)
 	{
 		/*--------data extrict from serial com--------*/
@@ -304,9 +292,33 @@ void *robotbase_routine(void*)
 		sensor.c_s = receiStream[33];
 		sensor.w_tank = (receiStream[34]>0)?true:false;
 		sensor.batv = (receiStream[35]);
-		sensor.lcliff = ((receiStream[36] << 8) | receiStream[37]);
-		sensor.fcliff = ((receiStream[38] << 8) | receiStream[39]);
-		sensor.rcliff = ((receiStream[40] << 8) | receiStream[41]);
+		if(((receiStream[36] << 8) | receiStream[37]) < 20)
+		{
+			if(last_lcliff > 20)
+				last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+			else
+				sensor.lcliff = last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+		}
+		else
+			sensor.lcliff = last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+		if(((receiStream[38] << 8) | receiStream[39]) < 20)
+		{
+			if(last_fcliff > 20)
+				last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+			else
+				sensor.fcliff = last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+		}
+		else
+			sensor.fcliff = last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+		if(((receiStream[40] << 8) | receiStream[41]) < 20)
+		{
+			if(last_rcliff > 20)
+				last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
+			else
+				sensor.rcliff = last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
+		}
+		else
+			sensor.rcliff = last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
 		sensor.vacuum_selfcheck_status = (receiStream[42] & 0x30);
 		sensor.lbrush_oc = (receiStream[42] & 0x08) ? true : false;		// left brush over current
 		sensor.mbrush_oc = (receiStream[42] & 0x04) ? true : false;		// main brush over current
@@ -347,6 +359,7 @@ void *robotbase_routine(void*)
 		pthread_mutex_lock(&serial_data_ready_mtx);
 		pthread_cond_broadcast(&serial_data_ready_cond);
 		pthread_mutex_unlock(&serial_data_ready_mtx);
+		sensor_pub.publish(sensor);
 
 		/*------------publish odom and robot_sensor topic --------*/
 		cur_time = ros::Time::now();
@@ -368,6 +381,7 @@ void *robotbase_routine(void*)
 		odom.twist.twist.linear.x = vx;
 		odom.twist.twist.linear.y = 0.0;
 		odom.twist.twist.angular.z = vth;
+		odom_pub.publish(odom);
 
 		odom_trans.header.stamp = cur_time;
 		odom_trans.header.frame_id = "odom";
@@ -377,54 +391,8 @@ void *robotbase_routine(void*)
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-
-		odom_pub.publish(odom);
-		sensor_pub.publish(sensor);
 		/*------publish end -----------*/
 
-		// Dynamic adjust obs
-		obs_dynamic_base(OBS_adjust_count);
-
-		/*------start omni detect----*/
-		if(g_omni_enable){
-			if(absolute(sensor.rw_vel - sensor.lw_vel) <= 0.05 && (sensor.rw_vel != 0 && sensor.lw_vel != 0) ){
-				if(absolute(sensor.omni_wheel - last_omni_wheel) == 0){
-					omni_detect_cnt ++;
-					//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(sensor.rw_vel - sensor.lw_vel));
-					if(omni_detect_cnt >= 150){
-						omni_detect_cnt = 0;
-						ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", sensor.rw_vel,sensor.lw_vel);
-						g_omni_notmove = true;
-					}
-				}
-			}
-			else{
-				//g_omni_notmove = false;
-				omni_detect_cnt = 0;
-				last_omni_wheel = sensor.omni_wheel;
-			}
-			if(sensor.omni_wheel >= 10000){
-				reset_mobility_step();
-			}
-		}
-		/*------end omni detect----*/
-
-		/*-------start tilt detect-------*/
-		if(g_tilt_enable){
-			if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL || absolute(sensor.y_acc - g_yacc_init_val) > DIF_TILT_Y_VAL){
-			//if(absolute(sensor.x_acc - g_xacc_init_val)  > DIF_TILT_X_VAL){
-				if(++tilt_count > TILT_COUNT_REACH && absolute(sensor.z_acc - g_zacc_init_val)> DIF_TILT_Z_VAL){
-					ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
-					tilt_count = 0;
-					g_is_tilt = true;
-				}
-			}
-			else{
-				tilt_count = 0;
-				g_is_tilt = false;
-			}
-		}
-		/*----tilt detect end---------*/
 	}
 	ROS_INFO("robotbase thread exit");
 }
@@ -567,39 +535,7 @@ void robotbase_restore_slam_correction()
 {
 	// For restarting slam
 	boost::mutex::scoped_lock(odom_mutex);
-	pose_x += robot::instance()->getCorrectionX();
-	pose_y += robot::instance()->getCorrectionY();
-	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getCorrectionYaw());
-}
-
-void robotbase_obs_adjust_count(int count)
-{
-#ifdef OBS_DYNAMIC
-	boost::mutex::scoped_lock(odom_mutex);
-	OBS_adjust_count = count;
-#endif
-}
-
-bool is_turn(void)
-{
-	boost::mutex::scoped_lock(odom_mutex);
-	return ((abs(sensor.rw_vel - sensor.rw_vel) > 0.1) ||
-					(sensor.lw_vel * sensor.rw_vel < 0) ||
-					(sensor.lw_vel < 0 && sensor.rw_vel < 0)
-					);
-}
-void set_acc_init_data(){
-	uint16_t count = 0;
-	while(ros::ok() && count <=10){
-		g_xacc_init_val += sensor.x_acc;
-		g_yacc_init_val += sensor.y_acc;
-		g_zacc_init_val += sensor.z_acc;
-		count++;
-		usleep(20000);
-
-	}
-	g_xacc_init_val = g_xacc_init_val/count;
-	g_yacc_init_val = g_yacc_init_val/count;
-	g_zacc_init_val = g_zacc_init_val/count;
-	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m",g_xacc_init_val,g_yacc_init_val,g_zacc_init_val);
+	pose_x += robot::instance()->getRobotCorrectionX();
+	pose_y += robot::instance()->getRobotCorrectionY();
+	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
 }

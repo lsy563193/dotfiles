@@ -62,6 +62,8 @@ extern int g_trapped_mode;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
 extern int g_rcon_triggered;
+extern Cell_t g_next_cell, g_target_cell;
+extern bool g_resume_cleaning;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
@@ -71,11 +73,10 @@ bool is_map_front_block(int dx);
 
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
-void cm_head_to_course(uint8_t Speed, int16_t Angle);
+bool cm_head_to_course(uint8_t Speed, int16_t Angle);
 
 void cm_follow_wall_turn(uint16_t speed, int16_t angle);
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
-int16_t path_target(Cell_t& next, Cell_t& target);
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
 
 int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
@@ -99,6 +100,7 @@ void map_set_blocked();
 bool cm_curve_move_to_point();
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 void mark_offset(int16_t dx, int16_t dy, CellState status);
 
@@ -115,7 +117,7 @@ void cm_move_back_(uint16_t dist);
 	 */
 
 void cm_go_home(void);
-bool cm_go_to_charger();
+bool cm_is_continue_go_to_charger(void);
 //void CM_SetStationHome(void);
 
 void CM_ResetBoundaryBlocks(void);
@@ -131,6 +133,7 @@ void cm_create_home_boundary(void);
 void cm_self_check(void);
 bool cm_should_self_check(void);
 
+uint8_t cm_check_charger_signal(void);
 /* Event handler functions. */
 void cm_register_events(void);
 void cm_unregister_events(void);

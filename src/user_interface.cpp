@@ -25,7 +25,7 @@
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;
-uint16_t charger_signal_delay = 0;
+bool charger_signal_received = false;
 time_t battery_low_start_time;
 uint16_t battery_low_delay = 0;
 bool battery_ready_to_clean = true;
@@ -42,7 +42,7 @@ void user_interface(void)
 
 	// Count for error alarm.
 	uint8_t error_alarm_counter = 3;
-	charger_signal_delay = 0;
+	charger_signal_received = false;
 	battery_low_delay = 0;
 	start_time = time(NULL);
 	temp_mode=0;
@@ -82,14 +82,11 @@ void user_interface(void)
 
 	while(ros::ok())
 	{
-		usleep(10000);
-
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			continue;
 		}
 
-		if (charger_signal_delay > 0)
-			charger_signal_delay--;
+		usleep(10000);
 
 		if (battery_low_delay > 0)
 			battery_low_delay--;
@@ -294,21 +291,25 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 		return;
 	}
 
-	if (charger_signal_delay == 0)
-		charger_signal_start_time = time(NULL);
-
-	ROS_DEBUG("%s %d: user_interface detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
-	if (time(NULL) - charger_signal_start_time >= 180)// 3 mins
+	if (!charger_signal_received)
 	{
-		if (get_error_code())
-			ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
-		else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
-			ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-		else
-			temp_mode = Clean_Mode_GoHome;
+		ROS_DEBUG("%s, %d: the first time detects charger signal, set charger_signal_start_time", __FUNCTION__, __LINE__);
+		charger_signal_received = true;
+		charger_signal_start_time = time(NULL);
 	}
-
-	charger_signal_delay = 250;
+	else
+	{
+		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
+		if (time(NULL) - charger_signal_start_time >= 180)// 3 mins
+		{
+			if (get_error_code())
+				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
+			else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+				ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+			else
+				temp_mode = Clean_Mode_GoHome;
+		}
+	}
 	reset_rcon_status();
 }
 
@@ -330,6 +331,11 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
 	g_omni_notmove = false;
+	g_robot_stuck = false;
+
+	/* reset charger_signal_start_time when get remote cleaning */
+	charger_signal_start_time = time(NULL);
+
 	if (get_error_code())
 	{
 		if (get_rcon_remote() == Remote_Clean)
@@ -420,6 +426,9 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 	if (get_plan_status())
 		user_interface_plan_confirm_time = time(NULL);
 
+	/* reset charger_signal_start_time when get plan status */
+	charger_signal_start_time = time(NULL);
+
 	switch (get_plan_status())
 	{
 		case 1:
@@ -482,7 +491,11 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
 	g_omni_notmove = false;
+	g_robot_stuck = false;
 	time_t key_press_start_time = time(NULL);
+
+	/* reset charger_signal_start_time when get key clean */
+	charger_signal_start_time = time(NULL);
 
 	if (check_error_cleared(get_error_code()))
 		beep_for_command(VALID);

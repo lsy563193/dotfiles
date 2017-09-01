@@ -6,6 +6,7 @@
 #define PP_MOVETYPE_H
 
 #include "mathematics.h"
+#include "path_planning.h"
 
 typedef enum {
 	CM_LINEARMOVE = 0,
@@ -25,7 +26,7 @@ bool mt_is_linear();
 
 CMMoveType mt_get();
 
-void mt_update(Cell_t &next, const Cell_t &target, uint16_t dir);
+void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir);
 
 void mt_set(CMMoveType mt);
 /*

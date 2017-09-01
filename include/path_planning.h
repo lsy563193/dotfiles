@@ -2,10 +2,12 @@
 #define __PATHPLANNING_H__
 
 #include "config.h"
-
 #include "map.h"
 #include "mathematics.h"
 #include "debug.h"
+
+#include <list>
+#include <deque>
 
 typedef struct PositionType_{
 	Cell_t	cell;
@@ -25,8 +27,26 @@ typedef struct {
 	uint8_t	try_cnt;
 } TargetType;
 
+typedef struct {
+	Cell_t	target;
+	std::list <Cell_t> cells;
+} PPTargetType;
+typedef enum {
+	USE_ROS,
+	USE_UNCLEAN,
+	USE_CLEANED,
+	HOMEWAY_NUM
+}HomeWay_t;
+extern std::vector<Cell_t> g_homes;
+extern std::vector<int> g_home_way_list;
+extern std::vector<int>::iterator g_home_way_it;
+extern bool g_go_home;
+extern Cell_t g_home;
+extern Cell_t g_zero_home;
+extern bool g_home_gen_rosmap;
+extern uint32_t g_escape_trapped_timer;
 /*
- * Function to find the X/Y range of the Map, if the range is to small,
+ * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
  *
  * @param *x_range_min	Pointer for minimum X value of the Map
@@ -36,7 +56,7 @@ typedef struct {
  *
  * @return
  */
-void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
 /*
  * Update current robot g_pos_history.
@@ -55,7 +75,7 @@ void path_update_cell_history(void);
  *
  * @return
  */
-void path_planning_initialize(Cell_t cell);
+void path_planning_initialize();
 
 /*
  * Initialization function for path planning in wall follow mode, it sets the starting
@@ -65,7 +85,7 @@ void path_planning_initialize(Cell_t cell);
  *
  * @return
  */
-void wf_path_planning_initialize(Cell_t cell);
+void wf_path_planning_initialize();
 
 /*
  * Function to find the next target to clean. When the robot goes to a new
@@ -82,7 +102,7 @@ void wf_path_planning_initialize(Cell_t cell);
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(const Cell_t& curr, Cell_t& next);
+int8_t path_next(const Cell_t& curr, PPTargetType& path);
 
 uint8_t path_home(int32_t *x, int32_t *y);
 
@@ -91,8 +111,6 @@ void path_update_cell_history(void);
 void path_set_max_try_cnt(uint8_t val);
 
 uint16_t path_get_robot_direction(void);
-
-void path_get_range(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
 void path_reset_last_position(void);
 
@@ -106,6 +124,11 @@ void path_reset_last_position(void);
  *		1 if the block is accessible
  */
 uint8_t is_block_accessible(int16_t x, int16_t y);
+
+int16_t path_target(const Cell_t& curr, PPTargetType& path);
+//int16_t path_target2(const Cell_t& curr, PPTargetType& path);
+
+int16_t isolate_target(const Cell_t& curr, PPTargetType& path);
 
 uint16_t path_targets_get_count(void);
 
@@ -142,7 +165,9 @@ void path_update_cells(void);
  * 		1 if either one end is not cleaned
  * 		2 if both ends are not cleaned
  */
-bool path_lane_is_cleaned(const Cell_t& curr, Cell_t& next);
+bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path);
+void path_find_all_targets(const Cell_t& curr, std::list <PPTargetType>& g_targets);
+bool path_full(const Cell_t& curr, PPTargetType& path);
 
 /*
  * Find how many cells ahead to clean with a given target.
@@ -164,7 +189,7 @@ int16_t path_ahead_to_clean(int16_t x, Cell_t next);
  * @return	0 if the robot is trapped
  * 		1 if the robot is not trapped.
  */
-int16_t path_escape_trapped(void);
+int16_t path_escape_trapped(const Cell_t& curr);
 
  /* Set the around 9 cell as state */
 void path_set_9cell(int16_t cell_x, int16_t cell_y, CellState state);
@@ -176,9 +201,9 @@ void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
 Cell_t *path_escape_get_trapped_cell(void);
 
-void path_set_home(Cell_t cell);
+void path_set_home(const Cell_t& cell);
 
-int8_t path_get_home_target(Cell_t& next, Cell_t& target);
+int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path);
 
 int16_t path_get_home_x(void);
 
@@ -218,7 +243,7 @@ uint8_t is_block_boundary(int16_t x, int16_t y);
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-bool is_brush_block_unclean(int16_t x, int16_t y);
+uint8_t is_block_unclean(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
@@ -230,7 +255,7 @@ bool is_brush_block_unclean(int16_t x, int16_t y);
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-int8_t is_block_cleaned(int16_t x, int16_t y);
+int8_t is_block_cleaned_unblock(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
@@ -242,7 +267,7 @@ int8_t is_block_cleaned(int16_t x, int16_t y);
  * @return	0 if the block is not cleanable
  *		1 if the block is cleanable
  */
-int8_t is_block_cleanable(int16_t x, int16_t y);
+//int8_t is_block_cleanable(int16_t x, int16_t y);
 
 /*
  * Check a given point is blocked by bumper and/or cliff or not.
@@ -278,6 +303,18 @@ uint16_t path_get_robot_direction(void);
 // This function is for setting the continue cell for robot to go after charge.
 void path_set_continue_cell(Cell_t cell);
 
-int8_t path_get_continue_target(Cell_t& next, Cell_t& target);
+int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path);
 
+/*
+ * Function to fill the path list with every cell that it will pass.
+ *
+ * @param path: Cell list that only contains the starting cells and the turning cells and destination.
+ *
+ * @return none. But it will change the path to cell list that contains all the cells in the path from starting cell to destination.
+ */
+void path_fill_path(std::list<Cell_t>& path);
+
+bool path_dijkstra(const Cell_t& curr, Cell_t& p_goal);
+
+bool is_fobbit_free();
 #endif

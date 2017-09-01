@@ -15,105 +15,92 @@
 //#include "a_star.h"
 #include "map.h"
 
+const Cell_t MIN_CELL{-MAP_SIZE,-MAP_SIZE};
+const Cell_t MAX_CELL{ MAP_SIZE, MAP_SIZE};
 extern Cell_t g_cell_history[5];
-extern void mark_follow(Cell_t start);
+
+void case_2() {
+	map_set_block_with_bound({-15,-15},{15,15},CLEANED);
+	map_set_block_with_bound({-5,-5},{5,5},CLEANED);
+	map_set_block_with_bound({-10,-5},{-7,5},UNCLEAN);
+	map_set_block({-11,-6},{6,-6},CLEANED);
+
+//	map_set_block({-2,0},{3,0},);
+//	map_set_block({-2,0},{3,0},UNCLEAN);
+}
+bool move_to(const Cell_t& curr, PPTargetType& path,int dir)
+{
+//	std::vector<Cell_t> cells;
+//	std::copy(path.cells.begin(),path.cells.end(),cells.begin());
+  for (const auto& cell :  path.cells)
+	{
+		ROS_INFO("%s,%d: cell(%d,%d)",__FUNCTION__, __LINE__, cell.X,cell.Y);
+		for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
+		{
+			auto y = cell.Y + dy;
+			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
+		}
+	}
+	Cell_t index[4];
+	index[0] = { 2, 0};
+	index[1] = {-2, 0};
+	index[2] = { 0, 2};
+	index[3] = { 0,-2};
+  Cell_t  next = path.target + index[dir];
+	if ( next > MIN_CELL || next < MAX_CELL) {
+      next -= index[dir];
+      next -= index[dir];
+  }
+	ROS_INFO("%s,%d next(%d,%d)", __FUNCTION__,__LINE__,next.X, next.Y);
+    if(dir <2)
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
+		map_set_cell(MAP, cell_to_count(next.X), cell_to_count(next.Y+dy), BLOCKED_BUMPER);
+
+	next -= index[dir];
+	map_set_position(cell_to_count(next.X), cell_to_count(next.Y));
+  map_mark_robot(MAP);
+}
 int main(int argc, char **argv)
 {
-//	ros::init(argc, argv, "pp");
-//	ros::NodeHandle	nh_private("~");
 
-//	robot	robot_obj;
-/*
-	int32_t x=0,y=0;
-	map_init();
-	path_planning_initialize(&x, &y);//init pathplan
+	map_init(MAP);
 
-	Cell_t last{0,0};
-	Cell_t curr{10,0};
-	extern PositionType g_cell_history[5];
-	extern uint16_t g_last_dir;
-	g_last_dir=1800;
-	g_cell_history[0].x = curr.X;
-	g_cell_history[0].y = curr.Y;
-	g_cell_history[1].x = last.X;
-	g_cell_history[1].y = last.Y;
-
-//	debug_map(MAP,curr.X,curr.Y);
-	linear_mark_clean(last, curr);
-	debug_map(MAP,curr.X,curr.Y);
-	map_set_cell(MAP, cell_to_count(0), cell_to_count(-1), BLOCKED);
-	map_set_cell(MAP, cell_to_count(0), cell_to_count(1), BLOCKED);
-
-	map_set_cell(MAP, cell_to_count(5), cell_to_count(-1), BLOCKED);
-	map_set_cell(MAP, cell_to_count(5), cell_to_count(1), BLOCKED);
-
-	map_set_cell(MAP, cell_to_count(10), cell_to_count(-1), BLOCKED);
-	map_set_cell(MAP, cell_to_count(10), cell_to_count(1), BLOCKED);
-
-	map_set_cell(MAP, cell_to_count(12), cell_to_count(0), BLOCKED);
-	map_set_cell(MAP, cell_to_count(12), cell_to_count(1), BLOCKED);
-	map_set_cell(MAP, cell_to_count(12), cell_to_count(2), BLOCKED);
-	map_set_cell(MAP, cell_to_count(-2), cell_to_count(0), BLOCKED);
-	map_set_cell(MAP, cell_to_count(-2), cell_to_count(1), BLOCKED);
-	map_set_cell(MAP, cell_to_count(-2), cell_to_count(2), BLOCKED);
-	path_update_cells();
-//	CM_update_position();
-
-//	extern pp::x900sensor   sensor;
-
-//	sensor.lbumper = true;
-//	sensor.rbumper = true;
-//	sensor.rbumper = true;
-//	CM_update_map_bumper();
-
-//	sensor.fcliff = true;
-//	sensor.rcliff = true;
-//	sensor.lcliff = true;
-//	cm_update_map_cliff();
-//	debug_map(MAP,countToCell(curr.X),countToCell(curr.Y));
-//	Set_Clean_Mode(Clean_Mode_Spot);
-//	while (ros::ok)
-//	{
-//		Cell_t begin_cell{Map_GetXCell(),Map_GetYCell()};
-//		Point32_t next_point,targets;
-//		auto state = path_next_point(&next_point, &targets);
-//		if (state == 0)
-//		{
-//			ROS_INFO("go to continue cell");
-//			break;
-//		}
-//		if (state == 1)
-//		{
-//			Map_SetCount(next_point.X, next_point.Y);
-//
-//			CM_update_map_cleaned(begin_cell, Map_PointToCell(next_point));
-//			CM_update_map();
-//			debug_map(MAP,countToCell(next_point.X),countToCell(next_point.Y));
-//			sleep(3);
-//		} else if (state == 2)
-//		{
-//			ROS_INFO("go to escape mode");
-//			break;
-//		}
-//	}*/
-
-	extern uint16_t g_old_dir;
-	map_init();
-
-	Cell_t start{0,0};
-	Cell_t stop{9,0};
-	Cell_t next{9,0};
-	auto point = map_cell_to_point(stop);
+	Cell_t curr{0,0};
+	auto point = map_cell_to_point(curr);
 	map_set_position(point.X,point.Y);
-//	mt_set(CM_FOLLOW_LEFT_WALL);
-	g_old_dir = POS_X;
-//	g_cell_history[2] = {10,0};
-//	g_cell_history[1] = {-10,0};
-//	g_cell_history[0] = {-10,2};
-	auto curr = map_get_curr_cell();
-	next = g_cell_history[0];
-	path_lane_is_cleaned(curr, next);
 
-	debug_map(MAP,stop.X,stop.Y);
+//    case_1();
+	case_2();
+	map_mark_robot(MAP);
+	PPTargetType path;
+//	path_targets(curr, path);
+//	path_find_all_targets();
+	debug_map(MAP, path.target.X, path.target.Y);
+//  Cell_t target;
+//	path_dijkstra(curr,target);
+	auto is_found = false;
+	auto i = 0;
+	auto dir =0;
+//	do {
+		is_found = path_full(curr, path);
+		if(is_found){
+//			move_to(curr, path, dir);
+			debug_map(MAP, path.target.X, path.target.Y);
+		}
+//      i++;
+//		if(i>=3)
+//			break;
+//	}while(is_found);
+
+//  curr = map_get_curr_cell();
+//	is_found = path_full(curr, path,dir);
+//	if(is_found){
+//		move_to(curr, path, dir);
+//		map_set_position(path.target.X, path.target.Y);
+//		debug_map(MAP, path.target.X, path.target.Y);
+//	}
+
+//    is_found = path_full(curr, path,dir);
+
 	return 0;
 }

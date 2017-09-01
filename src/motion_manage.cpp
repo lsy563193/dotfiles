@@ -23,11 +23,10 @@
 #include "move_type.h"
 #include "wall_follow_slam.h"
 #include "robotbase.h"
+#include "debug.h"
+#include "map.h"
 
 Segment_set segmentss;
-
-extern std::list <Cell_t> g_home_point_old_path;
-extern std::list <Cell_t> g_home_point_new_path;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
@@ -170,8 +169,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	initSucceeded(true);
 
-	
-	//1 Initialize for different mode.
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 	if (!initCleaning(get_clean_mode()))
 	{
 		initSucceeded(false);
@@ -193,7 +193,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 
-	extern bool g_resume_cleaning;
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
@@ -296,8 +295,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-	if (get_clean_mode() == Clean_Mode_WallFollow)
-		wf_clear();
+	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
+	ROS_WARN("cleaned area = %.2fm2", map_get_area());
+	//if (get_clean_mode() == Clean_Mode_WallFollow)
+	wf_clear();
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
@@ -308,6 +309,7 @@ MotionManage::~MotionManage()
 	disable_motors();
 
 	g_tilt_enable = false;
+	g_robot_stuck_enable =false;
 	ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
@@ -326,16 +328,16 @@ MotionManage::~MotionManage()
 			extern bool g_go_home;
 			if (g_go_home)
 			{
-				extern Cell_t g_current_home_cell;
 				// The current home cell is still valid, so push it back to the home point list.
-				path_set_home(g_current_home_cell);
+				path_set_home(g_home);
 			}
 			set_clean_mode(Clean_Mode_Userinterface);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
-				ROS_WARN("%s %d: Pause going home, g_home_point_old_path list size: %u, g_home_point_new_path list size: %u.", __FUNCTION__, __LINE__, (uint)g_home_point_old_path.size(), (uint)g_home_point_new_path.size());
+//				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
+			ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
 #else
 				ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
@@ -356,7 +358,6 @@ MotionManage::~MotionManage()
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
 		{
-			extern bool g_resume_cleaning;
 			g_resume_cleaning = true;
 			robot::instance()->resetLowBatPause();
 			set_clean_mode(Clean_Mode_Charging);
@@ -380,7 +381,6 @@ MotionManage::~MotionManage()
 	{
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
-		extern bool g_resume_cleaning;
 		g_resume_cleaning = false;
 		if (g_cliff_all_triggered)
 		{
@@ -406,9 +406,6 @@ MotionManage::~MotionManage()
 		s_slam = nullptr;
 	}
 
-
-	g_home_point_old_path.clear();
-	g_home_point_new_path.clear();
 	robot::instance()->savedOffsetAngle(0);
 
 	if (g_fatal_quit_event)
@@ -426,7 +423,7 @@ MotionManage::~MotionManage()
 		if (get_clean_mode() == Clean_Mode_Spot)
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 		else
-			ROS_WARN("%s %d: Can not go to charger stub after going to all home points. Finish cleaning.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
 
 	g_saved_work_time += get_work_time();
 	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
@@ -465,31 +462,16 @@ bool MotionManage::initNavigationCleaning(void)
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	extern bool g_resume_cleaning;
 	if (!robot::instance()->isManualPaused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning)
 	{
 		g_saved_work_time = 0;
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-		//Initital home point
-		g_home_point_old_path.clear();
-		g_home_point_new_path.clear();
-
 		// Push the start point into the home point list
-		Cell_t cell{0, 0};
-		g_home_point_old_path.push_front(cell);
-
-		// Mark all the trapped reference points as (0, 0).
-		Cell_t tmp_pnt{0, 0};
-		auto g_temp_trapped_cell = path_escape_get_trapped_cell();
-		for (int i = 0; i < ESCAPE_TRAPPED_REF_CELL_SIZE; ++i)
-		{
-			g_temp_trapped_cell[i] = tmp_pnt;
-		}
-		path_escape_set_trapped_cell(g_temp_trapped_cell, ESCAPE_TRAPPED_REF_CELL_SIZE);
-
 		ROS_INFO("map_init-----------------------------");
-		map_init();
-		path_planning_initialize(g_home_point_old_path.front());
+		map_init(MAP);
+		map_init(WFMAP);
+		map_init(ROSMAP);
+		path_planning_initialize();
 
 		robot::instance()->initOdomPosition();
 
@@ -500,8 +482,6 @@ bool MotionManage::initNavigationCleaning(void)
 		g_have_seen_charge_stub = false;
 		g_start_point_seen_charger = false;
 
-		extern bool g_switch_home_cell;
-		g_switch_home_cell = true;
 	}
 
 	reset_touch();
@@ -586,7 +566,7 @@ bool MotionManage::initNavigationCleaning(void)
 	}
 
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -617,34 +597,26 @@ bool MotionManage::initWallFollowCleaning(void)
 		return false;
 	}
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	//Initital home point
-	g_home_point_old_path.clear();
-	g_home_point_new_path.clear();
 	g_wf_cell.clear();
-	// Push the start point into the home point list
-	Cell_t cell{0, 0};
-	g_home_point_old_path.push_front(cell);
 
-	map_init();
-	ROS_WARN("%s %d: grid map initialized", __FUNCTION__, __LINE__);
+	map_init(MAP);
+	ROS_WARN("%s %d: map initialized", __FUNCTION__, __LINE__);
+	map_init(WFMAP);
+	ROS_WARN("%s %d: wf map initialized", __FUNCTION__, __LINE__);
 	debug_map(MAP, 0, 0);
-	wf_path_planning_initialize(g_home_point_old_path.front());
+	wf_path_planning_initialize();
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
 	extern bool g_have_seen_charge_stub;
 	g_have_seen_charge_stub = false;
-
-	extern bool g_switch_home_cell;
-	g_switch_home_cell = true;
-
 	work_motor_configure();
 
 	return true;
@@ -671,18 +643,13 @@ bool MotionManage::initSpotCleaning(void)
 		return false;
 	}
 	// enable titlt detct
-	set_acc_init_data();//about 200ms delay
+	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	g_home_point_old_path.clear();
-	g_home_point_new_path.clear();
-	Cell_t cell{0, 0};
-	g_home_point_old_path.push_front(cell);//init home point
-	map_init();//init map
-	path_planning_initialize(g_home_point_old_path.front());//init pathplan
+	map_init(MAP);//init map
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
@@ -694,32 +661,42 @@ bool MotionManage::initSpotCleaning(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target)
+void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::list<Cell_t>& path)
 {
-	int16_t i, j, x_min, x_max, y_min, y_max;
+	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
+	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
 		next.X = x_min;
 	else if (next.X == SHRT_MAX)
 		next.X = x_max;
 
-	for (i = x_min; i <= x_max; i++)
+	for (x = x_min; x <= x_max; x++)
 	{
-		for (j = y_min; j <= y_max; j++)
+		for (y = y_min; y <= y_max; y++)
 		{
-			if (i == target.X && j == target.Y)
-				robot::instance()->setCleanMapMarkers(i, j, TARGET_CLEAN);
-			else if (i == next.X && j == next.Y)
-				robot::instance()->setCleanMapMarkers(i, j, TARGET);
+			if (x == target.X && y == target.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else if (x == next.X && y == next.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET);
 			else
 			{
-				cell_state = map_get_cell(id, i, j);
+				cell_state = map_get_cell(id, x, y);
 				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
-					robot::instance()->setCleanMapMarkers(i, j, cell_state);
+					robot::instance()->setCleanMapMarkers(x, y, cell_state);
 			}
 		}
 	}
+#if LINEAR_MOVE_WITH_PATH
+	if (!path.empty())
+	{
+		for (list<Cell_t>::const_iterator it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
+
+		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
+	}
+#endif
+
 	robot::instance()->pubCleanMapMarkers();
 }

@@ -30,13 +30,18 @@
 /*
  * Enable debugging the grid map.
  */
-#define DEBUG_MAP			(1)
+#define DEBUG_MAP			(0)
+
+/*
+ * Enable debugging the grid map.
+ */
+#define DEBUG_WF_MAP			(0)
 
 /*
  * Enable debugging the shortest path map when finding the
  * shortest path is using the A* like method.
  */
-#define DEBUG_SM_MAP			(1)
+#define DEBUG_SM_MAP			(0)
 
 /*
  * Enable target debug.
@@ -141,7 +146,7 @@
 #define ROBOT_BRUSH_LEFT_OFFSET		(0)
 #define ROBOT_BRUSH_RIGHT_OFFSET	(0)
 
-#define SLOW_DOWN_DISTANCE		(CELL_COUNT_MUL)
+#define SLOW_DOWN_DISTANCE		(1*CELL_COUNT_MUL)
 
 #endif
 
@@ -259,10 +264,11 @@
  * When it is too small, it will move like shaking when robot startup.
  * When it is too large, it will fall down when reach the cliff.
  */
-#define LINEAR_MIN_SPEED						((int32_t) 15) // 15)
-#define LINEAR_MAX_SPEED						((int32_t) 40) // 15)
-#define ROTATE_TOP_SPEED				((uint8_t) 22) // 22)
-#define ROTATE_LOW_SPEED				((uint8_t) 7)
+#define BACK_MAX_SPEED					((int32_t) 18) // 15)
+#define LINEAR_MIN_SPEED				((int32_t) 15) // 15)
+#define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
+#define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
+#define ROTATE_LOW_SPEED				((uint8_t) 5)
 #if __ROBOT_X900
 #define RUN_TOP_SPEED					((int32_t) 40) // 45)
 #elif __ROBOT_X400
@@ -430,14 +436,20 @@
 #define VERIFY_CPU_ID						(0)
 #define VERIFY_KEY							(0)
 
-/* ------------------------------------- Slam method for testing ------------------------------------- */
+/* ------------------------------------- Slam method ------------------------------------- */
 #define SLAM_METHOD_2						(1)
+#define USE_ROBOT_TF						(1)
 
 /* ------------------------------------- Laser Follow Wall Enable ------------------------------------- */
 #define LASER_FOLLOW_WALL					(1)
 
 /* ------------------------------------- Laser Marker Enable ------------------------------------- */
-#define LASER_MARKER					(1)
-#define FORCE_MOVE_LINE					(1)
-#define MAP_SET_REALTIME					(1)
+#define LASER_MARKER						(1)
+/* ------------------------------------- Moving config --------------------------------------------*/
+#define FORCE_MOVE_LINE						(0)
+#define MAP_SET_REALTIME					(0)
+#define LINEAR_MOVE_WITH_PATH				(1)
 
+#define COLOR_DEBUG_MAP		(1)
+#define INTERLACED_MOVE	(0)
+#define PATH_ALGORITHM_V2	(0)

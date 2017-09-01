@@ -6,13 +6,79 @@
 #include "debug.h"
 #include "path_planning.h"
 #include "core_move.h"
+#include <string>
 
 char outString[256];
 
 extern Cell_t g_cell_history[];
 
 #if defined(DEBUG_MAP) || defined(DEBUG_SM_MAP)
-
+#if COLOR_DEBUG_MAP
+void color_print(char *outString,int16_t y_min,int16_t y_max)
+{
+	int16_t j = 0;
+	char cs;
+	bool ready_print_map = 0;
+	std::string y_col("");
+	for(j =y_min; j<=y_max; j++){
+		cs = *(outString+j);
+		if(cs =='\t' && !ready_print_map){
+			ready_print_map = 1;
+			y_col+="\t";
+			//printf("\t");
+			continue;
+		}
+		else if(!ready_print_map){
+			y_col+=cs;
+			//printf("%c",cs);
+			continue;
+		}
+		if(ready_print_map){
+			if(cs == '0'){//unclean
+				y_col+=std::string("\033[0;40;37m0\033[0m");
+			}
+			else if(cs == '1'){//clean
+				if(std::abs(j%2) == 0)
+					y_col+=std::string("\033[1;46;37m1\033[0m");
+				else
+					y_col+=std::string("\033[1;42;37m1\033[0m");
+			}
+			else if(cs == '2'){//bumper
+				y_col+=std::string("\033[1;44;37m2\033[0m");
+			}
+			else if(cs == '3'){//obs
+				y_col+=std::string("\033[1;41;37m3\033[0m");
+			}
+			else if(cs == '4'){//cliff
+				y_col+=std::string("\033[1;45;37m4\033[0m");
+			}
+			else if(cs == '5'){//rcon
+				y_col+=std::string("\033[1;46;37m5\033[0m");
+			}
+			else if(cs == '6'){//tilt
+				y_col+=std::string("\033[1;47;37m6\033[0m");
+			}
+			else if(cs == '7'){//boudary
+				y_col+=std::string("\033[1;43;37m7\033[0m");
+			}
+			else if(cs == 'e'){//end point
+				y_col+=std::string("\033[7;43;37me\033[0m");
+			}
+			else if(cs == 'x'){//cur point
+				y_col+=std::string("\033[7;43;37mx\033[0m");
+			}
+			else if(cs == '>'){//target point
+				y_col+=std::string("\033[7;47;37m>\033[0m");
+			}
+			else{
+				y_col+=cs;
+			}
+		}
+	}
+	ROS_INFO("%s",y_col.c_str());
+	//printf("\n");
+}
+#endif
 /*
  * Function to print the robot cleaning map.
  *
@@ -24,7 +90,7 @@ extern Cell_t g_cell_history[];
  */
 void debug_map(uint8_t id, int16_t endx, int16_t endy)
 {
-#if ENABLE_DEBUG
+	#if ENABLE_DEBUG
 	int16_t		i, j, x_min, x_max, y_min, y_max, index;
 	CellState	cs;
 	Cell_t temp_cell;
@@ -34,9 +100,15 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 	else
 		temp_cell = g_cell_history[0];
 
-	path_get_range(&x_min, &x_max, &y_min, &y_max);
+	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
-	ROS_INFO("Map: %s", id == MAP ? "MAP" : "SPMAP");
+	if (id == MAP) {
+		ROS_INFO("Map: %s", "MAP");
+	} else if (id == WFMAP) {
+		ROS_INFO("Map: %s", "WFMAP");
+	} else if (id == SPMAP) {
+		ROS_INFO("Map: %s", "SPMAP");
+	}
 	index = 0;
 	outString[index++] = '\t';
 	for (j = y_min; j <= y_max; j++) {
@@ -50,16 +122,16 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 		}
 	}
 	outString[index++] = 0;
-	ROS_INFO("%s", outString);
 
+	ROS_INFO("%s",outString);
 	index = 0;
 	outString[index++] = '\t';
 	for (j = y_min; j <= y_max; j++) {
 		outString[index++] = abs(j) % 10 + 48;
 	}
 	outString[index++] = 0;
-	ROS_INFO("%s\n", outString);
-
+	ROS_INFO("%s\n",outString);
+	memset(outString,0,256);
 	for (i = x_min; i <= x_max; i++) {
 		index = 0;
 
@@ -79,9 +151,13 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 				outString[index++] = cs + 48;
 			}
 		}
+		#if COLOR_DEBUG_MAP 
+		color_print(outString, 0,index);
+		#else
 		ROS_INFO("%s", outString);
+		#endif
 	}
 	ROS_INFO("\n");
-#endif
+	#endif
 }
 #endif

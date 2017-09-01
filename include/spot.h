@@ -19,11 +19,17 @@
 
 #include "mathematics.h"
 #include "core_move.h"
+#include "path_planning.h"
+
+
+#define CLOCKWISE 1
+#define ANTI_CLOCKWISE 2
 
 #define CLOCKWISE_OUT  1
 #define CLOCKWISE_IN  2
 #define ANTI_CLOCKWISE_OUT  4
 #define ANTI_CLOCKWISE_IN    8
+
 #define First_Round       10
 
 typedef enum {
@@ -38,21 +44,26 @@ private:
 
 	float spot_diameter_;//
 
-	std::vector<Cell_t> targets_;
-
+	std::vector<Cell_t> *targets_;
+	std::vector<Cell_t> targets_cw_;
+	std::vector<Cell_t> targets_acw_;
+	std::vector<Cell_t> targets_been_;
+	std::list<Cell_t> target_last_;
 	std::vector<Cell_t>::iterator tp_;//target pointer
 
 	std::vector<Cell_t>::iterator bp_;//bumper pointer
 
-	Cell_t stop_point_;
+	Cell_t near_cell_;
 
-	Cell_t begin_point_;
+	Cell_t begin_cell_;
 
 	SpotType st_;
+	
+	uint8_t go_last_point_;
 
 	uint8_t spot_init_;
 
-	uint8_t is_direct_change_;
+	uint8_t is_obs_trigger_;
 
 	uint8_t spiral_type_;
 
@@ -87,7 +98,7 @@ public:
  * @return void
  */
 
-	void spotInit(float diameter = 1.0, Cell_t cur_point = {0, 0});
+	void spotInit(float diameter, Cell_t cur_point);
 
 /*
  * @author mengshige1988@qq.com
@@ -101,30 +112,21 @@ public:
 	uint8_t isSpotInit()
 	{ return spot_init_; }
 
-	int8_t endSpot(Cell_t *next_point,SpotType spt);
+	int8_t endSpot(PPTargetType *target_path);
 
 	static SpotMovement *instance();
 
 /*
  * @author mengshige1988@qq.com
- * @brief when obstical detcet spot set stop point
+ * @brief when obstical detcet spot set near cell
  * @param stp(stop point)
  * @return None
  */
-	void setStopPoint(Cell_t *stp);
+	//uint8_t setNearCell(const Cell_t& cur_cell,Cell_t *stp);
 
 /*
  * @author mengshige1988@qq.com
- * @brief when detect obstacle(rcon, cliff, bumper) from cm_linear_move_to_point() change spiral type
- * and set stop point
- * @param None
- * return spiral type
- */
-	uint8_t spotChgType();
-
-/*
- * @author mengshige1988@qq.com
- * @brief generate target points for spot move
+ * @brief generate target points
  * @param1 sp_type
  *		sp_type;SPIRAL_RIGHT_OUT,SPIRAL_LEFT_OUT,SPIRAL_RIGHT_OUT,SPIRAL_LEFT_IN.
  * @param2 diameter
@@ -142,17 +144,35 @@ public:
  * @param next target Point 's address
  * @return 1 found ,0 not found
  * */
-	int8_t spotNextTarget(Cell_t &next);
+	uint8_t spotNextTarget(const Cell_t &cur_cell,PPTargetType *target);
 
 /*
 * @author mengshige1988@qq.com
-* @brief get the first nearest point.
-* @param1 reference point.
+* @brief get neighbour cell from current iterator.
+* @param1 current interator.
+* @param2 neighbour cell.
 * @return None.
 * */
+	//void getNeighbourCell(std::vector<Cell_t>::iterator &bp,Cell_t *np);
+/*
+* @author mengshige1988@qq.com
+* @brief get stright to the colume or row end.
+* @param1 current target list interator
+* @return None.
+* */
+	void stright2End(uint8_t spt,std::vector<Cell_t>::iterator &tp);
 
-	uint8_t getNearPoint(Cell_t ref_point);
+	/*
+	* @author mengshige1988@qq.com
+	* @brief put all the targets int target_path
+	* @param1 target_path
+	* @return None.
+	* */
+	void pushAllTargets(PPTargetType *target_path);
 
+/*
+ *
+ * */
 	void setSpiralType(uint8_t spi_t)
 	{ spiral_type_ = spi_t; }
 
@@ -162,14 +182,14 @@ public:
 		sin_od_cnt_ = sin;
 	}
 
-	uint8_t isDirectChange(void)
-	{ return is_direct_change_; }
+	uint8_t isOBSTrigger(void)
+	{ return is_obs_trigger_; }
 
-	void setDirectChange(void)
-	{ is_direct_change_ = 1; }
+	void setOBSTrigger(void)
+	{ is_obs_trigger_ = 1; }
 
-	void resetDirectChange(void)
-	{ is_direct_change_ = 0; }
+	void resetOBSTrigger(void)
+	{ is_obs_trigger_ = 0; }
 
 	uint8_t isStuck(void)
 	{ return is_stuck_; }
@@ -180,10 +200,10 @@ public:
 	void resetStuck(void)
 	{ is_stuck_ = 0; }
 
-	void setBeginPoint(Cell_t begin)
+	void setBeginCell(Cell_t begin)
 	{
-		begin_point_.X = begin.X;
-		begin_point_.Y = begin.Y;
+		begin_cell_.X = begin.X;
+		begin_cell_.Y = begin.Y;
 	}
 
 	SpotType getSpotType(void)
@@ -195,13 +215,13 @@ public:
 	void resetSpotType(void)
 	{ st_ = NO_SPOT; }
 
-	void setNextPointChange(void)
+	void setNearCellChange(void)
 	{np_chg_ = 1;}
 
-	void resetNextPointChange(void)
+	void resetNearCellChange(void)
 	{np_chg_ = 0;}
 
-	uint8_t isNextPointChange(void)
+	uint8_t isNearCellChange(void)
 	{return np_chg_;}
 };
 

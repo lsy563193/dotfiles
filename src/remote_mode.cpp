@@ -64,7 +64,7 @@ void remote_mode(void)
 
 #ifdef OBS_DYNAMIC_MOVETOTARGET
 	/* Dyanmic adjust obs trigger val . */
-	robotbase_obs_adjust_count(20);
+	robot::instance()->obsAdjustCount(20);
 #endif
 
 	while (ros::ok())
@@ -246,7 +246,8 @@ void remote_move(void)
 				}
 
 				if (std::abs(diff) > 80){
-					moving_speed = std::min(++moving_speed, ROTATE_TOP_SPEED);
+					//moving_speed = std::min(++moving_speed, ROTATE_TOP_SPEED);
+					moving_speed = ROTATE_TOP_SPEED;
 				}
 				else{
 					--moving_speed;
