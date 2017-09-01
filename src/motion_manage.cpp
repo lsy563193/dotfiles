@@ -467,6 +467,7 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_INFO("map_init-----------------------------");
 		map_init(MAP);
 		map_init(WFMAP);
+		map_init(ROSMAP);
 		path_planning_initialize();
 
 		robot::instance()->initOdomPosition();
