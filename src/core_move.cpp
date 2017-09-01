@@ -679,6 +679,7 @@ void cm_check_should_go_home(void)
 	if (g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
 		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home, or finish cleaning.", __FUNCTION__, __LINE__);
+		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
 		if (get_clean_mode() == Clean_Mode_WallFollow)
