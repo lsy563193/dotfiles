@@ -624,52 +624,45 @@ void map_set_laser()
 	MotionManage::s_laser->laserMarker(true);
 #endif
 }
-void map_set_obs()
+void map_set_obs_follow()
 {
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();
-	ROS_WARN("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
+//	ROS_WARN("~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,obs_trig);
 	if(! obs_trig)
 		return;
-	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
-	for (auto dir = 0; dir < 2; ++dir)
-	{
-		if (obs_trig & obs_lr[dir])
-		{
-			auto dx = 1;
-			auto dy = (dir==0) ?2:-2;
-			int16_t x,y;
-			cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
-			if (get_wall_adc(dir) > 200)
-			{
-				if (map_get_cell(MAP, x, y) != BLOCKED_BUMPER)
-				{
-					ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,x,y);
+	if(get_clean_mode() == Clean_Mode_Navigation && mt_is_follow_wall()) {
+		uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
+		for (auto dir = 0; dir < 2; ++dir) {
+			if (obs_trig & obs_lr[dir]) {
+				auto dx = 1;
+				auto dy = (dir == 0) ? 2 : -2;
+				int16_t x, y;
+				cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+				if (get_wall_adc(dir) > 200) {
+					map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_OBS );//BLOCKED_OBS
 				}
-				map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
 			}
 		}
 	}
-/*
-	uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
-	for (auto dy = 0; dy <= 2; ++dy) {
-		auto is_trig = obs_trig & obs_all[dy];
-		int32_t x, y;
-		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x, &y);
-		auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
-		if (is_trig && status != BLOCKED_BUMPER) {
-//			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-//			if(dy == 2 && g_turn_angle<0)
-//				ROS_ERROR("%s,%d: not map_set_realtime left in turn right, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-//			else if (dy == 0 && g_turn_angle>0)
-//				ROS_ERROR("%s,%d: not map_set_realtime right turn left, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-//			else
-//				map_set_cell(MAP, x, y, BLOCKED_OBS);
-			map_set_cell(MAP, x, y, BLOCKED_OBS);
-		} else if(! is_trig && status == BLOCKED_OBS){
-			ROS_INFO("%s,%d:unclean (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
-			map_set_cell(MAP, x, y, UNCLEAN);
+}
+
+void map_set_obs_linear()
+{
+	auto obs_trig = /*g_obs_triggered*/get_obs_status();
+//	ROS_WARN("~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,obs_trig);
+	if(! obs_trig)
+		return;
+	if(get_clean_mode() == Clean_Mode_Navigation && mt_is_linear()) {
+		uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
+		for (auto dy = 0; dy <= 2; ++dy) {
+			auto is_trig = obs_trig & obs_all[dy];
+			int16_t x, y;
+			cm_world_to_cell(gyro_get_angle(), (dy - 1) * CELL_SIZE, CELL_SIZE_2, x, y);
+			if (is_trig) {
+				map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_OBS); //BLOCKED_OBS);
+			}
 		}
-	}*/
+	}
 }
 
 void map_set_bumper()
@@ -836,6 +829,7 @@ void map_set_blocked()
 
 //	ROS_ERROR("----------------map_set_blocked");
 //	map_set_obs();
+	map_set_obs_follow();
 	map_set_laser();
 	map_set_bumper();
 	map_set_rcon();

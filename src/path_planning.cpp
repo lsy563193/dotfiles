@@ -263,7 +263,7 @@ int8_t is_block_cleaned_unblock(int16_t x, int16_t y)
 		}
 	}
 
-	if (cleaned >= 8)
+	if (cleaned >= 6)
 		return true;
 	return false;
 }
@@ -301,6 +301,22 @@ uint8_t is_block_blocked(int16_t x, int16_t y)
 
 	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
 		if (is_a_block(x, i) == 1) {
+			retval = 1;
+		}
+	}
+
+//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
+	return retval;
+}
+
+uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
+{
+	uint8_t retval = 0;
+	int16_t x,y;
+	auto dy = mt_is_left()  ?  2 : -2;
+	for(auto dx =-1; dx<=1,retval == 0; dx++) {
+		cm_world_to_cell(gyro_get_angle(), CELL_SIZE*dy, CELL_SIZE*dx, x, y);
+		if (is_a_block(x, y) == 1) {
 			retval = 1;
 		}
 	}
@@ -493,9 +509,11 @@ bool is_axis_access(const Cell_t &start, int i, Cell_t &target)
 	auto is_found = false;
 	for (auto tmp = start; std::abs(tmp.X) < MAP_SIZE && std::abs(tmp.Y) < MAP_SIZE && std::abs(tmp.Y- start.Y)  <=1; tmp += g_index[i]) {
 //		ROS_INFO("%s, %d:tmp(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-		if(is_block_cleanable(tmp.X, tmp.Y)) {
+		if(is_block_cleanable(tmp.X, tmp.Y) && is_block_accessible(tmp.X,tmp.Y)) {
 			is_found = true;
-			target = tmp-g_index[i];
+			target = tmp;
+			if(i==2||i==3)
+				target-=g_index[i];
 		}else {
 			break;
 		}
@@ -635,13 +653,13 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 		is_found = is_axis_access(neighbor, i, target);
 		if(is_found) {
 			path.target = target;
-		path.cells.clear();
-    for(auto cell = path.target; cell != tmp; cell -= g_index[i]) {
-			path.cells.push_front(cell);
-        if(tmp != curr)
-					path.cells.push_front(curr);
+			path.cells.clear();
+			path.cells.push_back(curr);
+			path.cells.push_back(target);//next
+			path.cells.push_back(target);//target
+//       if(tmp != curr)
+//					path.cells.push_front(curr);
 //			ROS_INFO("%s %d: target(%d,%d), cell(%d,%d)", __FUNCTION__, __LINE__,target.X, target.Y, cell.X, cell.Y);
-		}
 			break;
 		}
 	}
@@ -1409,7 +1427,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 			else {
 				ret = path_full(curr, path);//0 not target, 1,found, -2 trap
 				if(ret==0)
-					if (path_escape_trapped() <= 0)
+					if (path_escape_trapped(curr) <= 0)
 						ret = -2;
 			}
 			ROS_WARN("%s %d: path_target return: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
@@ -1768,7 +1786,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 		queue.erase(start);
 
 //		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
-		if (is_block_unclean(next.X, next.Y) && is_block_accessible(next.X, next.Y))
+		if (!is_block_cleaned_unblock(next.X, next.Y) && is_block_accessible(next.X, next.Y))
 		{
 //			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
 			is_found = true;
