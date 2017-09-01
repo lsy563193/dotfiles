@@ -23,6 +23,8 @@
 #include "move_type.h"
 #include "wall_follow_slam.h"
 #include "robotbase.h"
+#include "debug.h"
+#include "map.h"
 
 Segment_set segmentss;
 
@@ -293,6 +295,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
+	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 	ROS_WARN("cleaned area = %.2fm2", map_get_area());
 	//if (get_clean_mode() == Clean_Mode_WallFollow)
 	wf_clear();
@@ -467,6 +470,7 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_INFO("map_init-----------------------------");
 		map_init(MAP);
 		map_init(WFMAP);
+		map_init(ROSMAP);
 		path_planning_initialize();
 
 		robot::instance()->initOdomPosition();

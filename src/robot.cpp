@@ -681,9 +681,11 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 	if (get_left_wheel_speed() * get_right_wheel_speed() > 0)
 	{
 		float scale;
-		scale = slam_correction_x - robot_correction_x > 0.05 ? 0.1 * (slam_correction_x - robot_correction_x) / 0.05 : 0.03;
+		scale = fabs(slam_correction_x - robot_correction_x) > 0.05 ? 0.1 * fabs(slam_correction_x - robot_correction_x) / 0.05 : 0.03;
+		scale = scale > 1.0 ? 1.0 : scale;
 		robot_correction_x += (slam_correction_x - robot_correction_x) * scale;
-		scale = slam_correction_y - robot_correction_y > 0.05 ? 0.1 * (slam_correction_y - robot_correction_y) / 0.05 : 0.03;
+		scale = fabs(slam_correction_y - robot_correction_y) > 0.05 ? 0.1 * fabs(slam_correction_y - robot_correction_y) / 0.05 : 0.03;
+		scale = scale > 1.0 ? 1.0 : scale;
 		robot_correction_y += (slam_correction_y - robot_correction_y) * scale;
 		double yaw = slam_correction_yaw - robot_correction_yaw;
 		while (yaw < -3.141592)
