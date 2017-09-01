@@ -39,6 +39,7 @@ typedef enum {
 }HomeWay_t;
 extern std::vector<Cell_t> g_homes;
 extern std::vector<int> g_home_way_list;
+extern std::vector<int>::iterator g_home_way_it;
 extern bool g_go_home;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;

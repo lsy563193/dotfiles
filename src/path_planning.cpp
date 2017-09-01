@@ -99,12 +99,18 @@ extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 extern int16_t g_wf_x_min, g_wf_x_max, g_wf_y_min, g_wf_y_max;
 
+extern int16_t g_ros_x_min, g_ros_x_max, g_ros_y_min, g_ros_y_max;
+
 static std::vector<int>::iterator _gen_home_ways(int size, std::vector<int> &go_home_way_list) {
 	ROS_INFO("%s,%d: go_home_way_list 1:                       2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
-	ROS_INFO("%s,%d: go_home_way_list 3: 8,5,    7,4    6,3,   2,1,0", __FUNCTION__, __LINE__);
-	ROS_INFO("%s,%d: go_home_way_list 4: 11,8,5, 10,7,4 9,6,3  2,1,0",__FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 3: 8,5,    7,4,   6,3,   2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 4: 11,8,5, 10,7,4,9,6,3, 2,1,0",__FUNCTION__, __LINE__);
 	go_home_way_list.resize(size * HOMEWAY_NUM,0);
+//	if(size == 4) 			go_home_way_list = {11,8,5, 10,7,4,9,6,3, 2,1,0};
+//	else if(size == 3)	go_home_way_list = {8,5,    7,4,   6,3,   2,1,0};
+//	else if(size == 2)	go_home_way_list = {5,      4,     3,     2,1,0};
+//	else if(size == 1)	go_home_way_list = {                      2,1,0};
 	std::iota(go_home_way_list.begin(), go_home_way_list.end(),0);
 	std::sort(go_home_way_list.begin(), go_home_way_list.end(), [](int x,int y){
 			return (x >= 3 && y >= 3) && (x % 3) < (y % 3);
@@ -1617,8 +1623,23 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 		ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home,way, cnt);
 		if (way == USE_ROS && g_home_gen_rosmap) {
 			g_home_gen_rosmap = false;
+			BoundingBox2 map{{g_x_min, g_y_min}, {g_x_max, g_y_max}};
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map_convert" "\033[0m", __FUNCTION__, __LINE__);
-			ros_map_convert(MAP, false, true);
+			map_reset(ROSMAP);
+//			debug_map(MAP, 0, 0);
+			ros_map_convert(ROSMAP, false, true);
+//			debug_map(MAP, 0, 0);
+			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map" "\033[0m", __FUNCTION__, __LINE__);
+//			debug_map(ROSMAP, 0, 0);
+			for (const auto &cell : map){
+				auto rm_status = map_get_cell(ROSMAP, cell.X, cell.Y);
+				auto m_status = map_get_cell(MAP, cell.X, cell.Y);
+//				ROS_INFO("\033[1;46;37m" "%s,%d:cell_it(%d,%d), rms(%d),ms(%d)" "\033[0m", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
+				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_OBS) && rm_status == CLEANED){
+					ROS_WARN("%s,%d:cell_it(%d,%d), rms(%d),ms(%d)", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
+					map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
+				}
+			}
 		}
 
 		if (path_next_shortest(curr, g_home, path) == 1) {
