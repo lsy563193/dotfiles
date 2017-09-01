@@ -412,6 +412,7 @@ static bool trapped_is_isolate() {
 uint8_t wf_break_wall_follow(void)
 {
 //	ROS_INFO("%s %d: /*****************************************Release Memory************************************/", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: wf_break_wall_follow", __FUNCTION__, __LINE__);
 	g_wf_cell.clear();
 	map_reset(WFMAP);
 	std::vector<Pose16_t>(g_wf_cell).swap(g_wf_cell);

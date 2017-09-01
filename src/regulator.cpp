@@ -62,10 +62,10 @@ static int16_t bumper_turn_angle()
 		}
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
-		g_straight_distance = 250; //250;
+		g_straight_distance = 100; //250;
 		jam = get_wheel_step() < 2000 ? ++jam : 0;
 	}
-	g_straight_distance = 200;
+	g_straight_distance = 100;
 	reset_wheel_step();
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
@@ -704,13 +704,19 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target) : previous_(0)
 {
-	g_straight_distance = 300;
-	s_origin = start_point;
-	s_origin_angle = gyro_get_angle();
-	s_target = target;
-	g_is_left_start = false;
-	map_init(WFMAP);
-	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
+	extern bool g_keep_on_wf;
+	if (!g_keep_on_wf) {
+		g_straight_distance = 300;
+		s_origin = start_point;
+		s_origin_angle = gyro_get_angle();
+		s_target = target;
+		g_is_left_start = false;
+		map_init(WFMAP);
+		ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
+	} else {
+		g_keep_on_wf = false;
+		ROS_INFO("reset g_keep_on_wf");
+	}
 }
 
 bool FollowWallRegulator::isReach()
