@@ -263,7 +263,7 @@ int8_t is_block_cleaned_unblock(int16_t x, int16_t y)
 		}
 	}
 
-	if (cleaned >= 6)
+	if (cleaned >= 7)
 		return true;
 	return false;
 }
@@ -509,11 +509,13 @@ bool is_axis_access(const Cell_t &start, int i, Cell_t &target)
 	auto is_found = false;
 	for (auto tmp = start; std::abs(tmp.X) < MAP_SIZE && std::abs(tmp.Y) < MAP_SIZE && std::abs(tmp.Y- start.Y)  <=1; tmp += g_index[i]) {
 //		ROS_INFO("%s, %d:tmp(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-		if(is_block_cleanable(tmp.X, tmp.Y) && is_block_accessible(tmp.X,tmp.Y)) {
-			is_found = true;
-			target = tmp;
-			if(i==2||i==3)
-				target-=g_index[i];
+		if(is_block_cleanable(tmp.X, tmp.Y) ) {
+			if ((i == 0 || i == 1) || is_block_accessible(tmp.X, tmp.Y)) {
+				is_found = true;
+				target = tmp;
+				if (i == 2 || i == 3)
+					target -= g_index[i];
+			}
 		}else {
 			break;
 		}
@@ -628,7 +630,7 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 	auto is_found = false;
 	auto target = curr;
 	auto tmp = curr;
-  if(curr.Y % 2 != 0) {
+  /*if(curr.Y % 2 != 0) {
 		if (mt_is_follow_wall()) {
 			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
 			auto step = curr.Y - g_cell_history[1].Y;
@@ -643,7 +645,7 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 			ROS_ERROR("%s %d:mt_is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,
 								g_cell_history[1].X, g_cell_history[1].Y, curr.X, curr.Y);
 		}
-	}
+	}*/
 	ROS_INFO("%s %d: curr(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
 	auto i=0;
 	for(;i<4;i++)
@@ -672,14 +674,14 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 		if(is_found) {
 			ROS_INFO("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
 //			pathFind(curr, target, path.cells);
-//			if( target.Y%2 != 0) {
-//				ROS_ERROR("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
-//				if(curr.Y < target.Y && is_block_accessible(target.X,target.Y+1))
-//					target.Y += 1;
-//				else if(curr.Y > target.Y && is_block_accessible(target.X,target.Y-1))
-//					target.Y -= 1;
-//				ROS_ERROR("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
-//			}
+			if( target.Y%2 != 0) {
+				ROS_ERROR("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
+				if(curr.Y < target.Y/* && is_block_accessible(target.X,target.Y+1)*/)
+					target.Y = curr.Y+2;
+				else if(curr.Y > target.Y/* && is_block_accessible(target.X,target.Y+1))*/)
+					target.Y = curr.Y-2;
+				ROS_ERROR("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
+			}
 			path.target = target;
 			path.cells.clear();
 			path_find_target(curr, path);
