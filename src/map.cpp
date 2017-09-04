@@ -627,7 +627,7 @@ void map_set_laser()
 void map_set_obs()
 {
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();
-	ROS_WARN("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
+	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
 		return;
 	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
@@ -643,7 +643,7 @@ void map_set_obs()
 			{
 				if (map_get_cell(MAP, x, y) != BLOCKED_BUMPER)
 				{
-					ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,x,y);
+					ROS_INFO("%s,%d: \033[34m(%d,%d)\033[0m",__FUNCTION__,__LINE__,x,y);
 				}
 				map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
 			}
@@ -710,7 +710,7 @@ void map_set_bumper()
 		msg += "(" + std::to_string(x2) + "," + std::to_string(y2) + ")";
 		map_set_cell(MAP, cell_to_count(x2), cell_to_count(y2), BLOCKED_BUMPER);
 	}
-	ROS_INFO("\033[31m""%s,%d: Current(%d, %d), mark %s""\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
 }
 
 void map_set_tilt()
@@ -955,19 +955,20 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 			}
 		}
 	}
-	ROS_INFO("\033[31m""%s,%d: %s""\033[0m",__FUNCTION__, __LINE__, msg.c_str());
+	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
 void map_set_follow_wall(std::vector<Cell_t>& cells)
 {
 	auto diff = cells.back().X - cells.front().X;
 
+	std::string pri_msg("");
 	if (cells.size() < 2 || std::abs(diff) <= 4)
 		return;
 
 	for (const auto &cell : cells)
 	{
-		ROS_INFO("\033[47;31m""%s,%d: cell(%d,%d)""\033[0m", __FUNCTION__, __LINE__, cell.X, cell.Y);
+		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 	}
 	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	auto min = std::min(cells.front().X, cells.back().X) + 3;
@@ -976,14 +977,16 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	if(min >= max)
 		return;
 
+
 	for (const auto &cell : cells)
 	{
 		if (cell.X >= min && cell.X <= max)
 		{
 			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y + dy), BLOCKED_CLIFF);
-			ROS_INFO("\033[47;31m" "%s,%d: cell(%d,%d)" "\033[0m", __FUNCTION__, __LINE__, cell.X, cell.Y + dy);
+			pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 		}
 	}
+	ROS_INFO("%s,%d,cells:\033[35m%s\033[0m",__FUNCTION__,__LINE__,pri_msg.c_str());
 }
 
 bool map_mark_robot(uint8_t id)

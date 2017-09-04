@@ -238,7 +238,7 @@ float RegulatorBase::s_pos_y = 0;
 Point32_t RegulatorBase::s_curr_p = {0,0};
 
 bool RegulatorBase::isExit(){
-	return g_fatal_quit_event || g_key_clean_pressed;
+	return g_fatal_quit_event || g_key_clean_pressed ;
 }
 
 bool RegulatorBase::_isStop()
@@ -300,7 +300,10 @@ bool BackRegulator::isSwitch()
 bool BackRegulator::_isStop()
 {
 	MotionManage::s_laser->laserMarker(false);
-	return false;
+	bool ret = false;
+	if(g_robot_stuck)
+		ret = true;
+	return ret;
 }
 
 void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
@@ -394,8 +397,11 @@ bool TurnRegulator::isSwitch()
 
 bool TurnRegulator::_isStop()
 {
+	bool ret = false;
 	MotionManage::s_laser->laserMarker(false);
-	return false;
+	if(g_robot_stuck)
+		ret = true;
+	return ret;
 }
 
 void TurnRegulator::setTarget()
@@ -568,13 +574,16 @@ bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
 	bool obs_tmp;
+		if(g_robot_stuck)
+		return true;
+
 	if(get_clean_mode()==Clean_Mode_WallFollow)
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): _get_obs_value();
 	else
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
 
 	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
-	if (obs_tmp != 0 || rcon_tmp)
+	if (obs_tmp != 0 || rcon_tmp )
 	{
 		//if(obs_tmp == Status_Front_OBS)
 		if(obs_tmp != 0)

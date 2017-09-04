@@ -331,9 +331,9 @@ bool cm_move_to(const PPTargetType& path)
 
 		rm.updatePosition({map_get_x_count(),map_get_y_count()});
 
-		if (rm.isExit())
+		if (rm.isExit()){
 			break;
-
+		}
 		if (g_slam_error)
 		{
 			set_wheel_speed(0, 0);
@@ -602,7 +602,6 @@ int cm_cleaning()
 				return -1;
 			}
 			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
-			ROS_INFO("%s,current cell(%d,%d)",__FUNCTION__,map_get_x_cell(),map_get_y_cell());
 			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
 				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
 				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
@@ -1116,7 +1115,7 @@ void cm_self_check(void)
 		}
 		else if (g_robot_stuck){
 			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
-			set_error_code(Error_Code_Omni);
+			set_error_code(Error_Code_Stuck);
 			g_fatal_quit_event = true;
 			break;
 		}
@@ -1235,7 +1234,8 @@ void cm_register_events()
 
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-
+	/* robot stuck */
+	event_manager_enable_handler(EVT_ROBOT_STUCK,true);
 	/* Slam Error */
 	event_manager_enable_handler(EVT_SLAM_ERROR, true);
 

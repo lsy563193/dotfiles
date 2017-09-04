@@ -327,7 +327,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_SLAM_ERROR)
 		}
 		/* robot stuck */
-		if(robot::instance()->isRobotStuck()){
+		if(is_robot_stuck()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_STUCK)
 		}

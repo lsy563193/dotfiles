@@ -44,10 +44,10 @@ void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir) {
 
 	auto delta_y = g_next_cell.Y - curr.Y;
 
-	ROS_WARN("%s,%d,abs: delta_y(%d)",__FUNCTION__, __LINE__,std::abs(delta_y));
+	ROS_INFO("\033[31m""%s,%d,abs: delta_y(%d)""\033[0m",__FUNCTION__, __LINE__,std::abs(delta_y));
 	if ( delta_y != 0 && std::abs(delta_y) <= 2) {
 		g_cm_move_type = (dir == POS_X) ^ (delta_y > 0) ? CM_FOLLOW_LEFT_WALL: CM_FOLLOW_RIGHT_WALL;
-		ROS_ERROR("%s,%d,next, 2_left_3_right(%d)",__FUNCTION__, __LINE__,g_cm_move_type);
+		ROS_INFO("\033[31m""%s,%d,next, 2_left_3_right(%d)""\033[0m",__FUNCTION__, __LINE__,g_cm_move_type);
 	} else if(delta_y == 0){
 //		ROS_ERROR("%s,%d: next delta_y == 0",__FUNCTION__,__LINE__);
 		if (!(g_next_cell.X == SHRT_MAX || g_next_cell.X == SHRT_MIN)) {
@@ -57,7 +57,7 @@ void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir) {
 				path.cells.push_front(g_target_cell);
 				g_next_cell = g_target_cell;
 				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
-				ROS_ERROR("%s,%d: target:, 2_left_3_right(%d)",__FUNCTION__, __LINE__, g_cm_move_type);
+				ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m",__FUNCTION__, __LINE__, g_cm_move_type);
 			}
 		}
 	}

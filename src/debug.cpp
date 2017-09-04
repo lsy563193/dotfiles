@@ -25,59 +25,56 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 		if(cs =='\t' && !ready_print_map){
 			ready_print_map = 1;
 			y_col+="\t";
-			//printf("\t");
 			continue;
 		}
 		else if(!ready_print_map){
 			y_col+=cs;
-			//printf("%c",cs);
 			continue;
 		}
 		if(ready_print_map){
 			if(cs == '0'){//unclean
-				y_col+=std::string("\033[0;40;37m0");
+				y_col+="\033[0;40;37m0";
 			}
 			else if(cs == '1'){//clean
 				if(std::abs(j%2) == 0)
-					y_col+=std::string("\033[1;46;37m1");
+					y_col+="\033[1;46;37m1";
 				else
-					y_col+=std::string("\033[1;42;37m1");
+					y_col+="\033[1;42;37m1";
 			}
 			else if(cs == '2'){//bumper
-				y_col+=std::string("\033[1;44;37m2");
+				y_col+="\033[1;44;37m2";
 			}
 			else if(cs == '3'){//obs
-				y_col+=std::string("\033[1;41;37m3");
+				y_col+="\033[1;41;37m3";
 			}
 			else if(cs == '4'){//cliff
-				y_col+=std::string("\033[1;45;37m4");
+				y_col+="\033[1;45;37m4";
 			}
 			else if(cs == '5'){//rcon
-				y_col+=std::string("\033[1;46;37m5");
+				y_col+="\033[1;46;37m5";
 			}
 			else if(cs == '6'){//tilt
-				y_col+=std::string("\033[1;47;37m6");
+				y_col+="\033[1;47;37m6";
 			}
 			else if(cs == '7'){//boudary
-				y_col+=std::string("\033[1;43;37m7");
+				y_col+="\033[1;43;37m7";
 			}
 			else if(cs == 'e'){//end point
-				y_col+=std::string("\033[5;43;37me");
+				y_col+="\033[5;43;37me";
 			}
 			else if(cs == 'x'){//cur point
-				y_col+=std::string("\033[5;43;37mx");
+				y_col+="\033[5;43;37mx";
 			}
 			else if(cs == '>'){//target point
-				y_col+=std::string("\033[5;47;37m>");
+				y_col+="\033[5;47;37m>";
 			}
 			else{
 				y_col+=cs;
 			}
 		}
 	}
-	y_col+=std::string("\033[0m");
+	y_col+="\033[0m";
 	ROS_INFO("%s",y_col.c_str());
-	//printf("\n");
 }
 #endif
 /*
