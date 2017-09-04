@@ -212,7 +212,7 @@ void *serial_receive_routine(void *)
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
 		} else {
-			ROS_WARN( " in serial read ,data crc error\n");
+			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d,exit!",__FUNCTION__,__LINE__);
