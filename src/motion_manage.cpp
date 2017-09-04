@@ -23,6 +23,8 @@
 #include "move_type.h"
 #include "wall_follow_slam.h"
 #include "robotbase.h"
+#include "debug.h"
+#include "map.h"
 
 Segment_set segmentss;
 
@@ -294,6 +296,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 MotionManage::~MotionManage()
 {
 	ROS_INFO("cleaned area = \033[32m%.2fm2\033[0m", map_get_area());
+	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 	//if (get_clean_mode() == Clean_Mode_WallFollow)
 	wf_clear();
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)

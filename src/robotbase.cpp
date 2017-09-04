@@ -128,9 +128,7 @@ void robotbase_deinit(void)
 		set_led_mode(LED_STEADY, LED_OFF);
 		control_set(CTL_BUZZER, 0x00);
 		set_gyro_off();
-		usleep(40000);
 		disable_motors();
-		usleep(40000);
 		set_main_pwr_byte(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
@@ -401,7 +399,7 @@ void *serial_send_routine(void*)
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
 	reset_send_flag();
-	while(ros::ok() && send_stream_thread){
+	while(send_stream_thread){
 		r.sleep();
 		if(get_sleep_mode_flag()){
 			continue;

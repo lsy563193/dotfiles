@@ -1336,7 +1336,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 			} else if (g_keep_on_wf) {
 				ROS_INFO("keep on follow wall");
 				mt_set(CM_FOLLOW_LEFT_WALL);
-				g_keep_on_wf = false;
+				//g_keep_on_wf = false;
 			} else {
 				ROS_INFO("CM_LINEARMOVE");
 				mt_set(CM_LINEARMOVE);
