@@ -281,7 +281,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
-	//s_laser->startShield();
 	s_laser->lidarShieldDetect(ON);
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 
@@ -310,7 +309,7 @@ MotionManage::~MotionManage()
 
 	g_tilt_enable = false;
 	g_robot_stuck_enable =false;
-	ROS_INFO("\033[47;35m" "disable tilt detect & robot stuck detect" "\033[0m");
+	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 

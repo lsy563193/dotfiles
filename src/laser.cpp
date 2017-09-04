@@ -45,7 +45,7 @@ Laser::~Laser()
 //	stop_motor_cli_.shutdown();
 //	nh_.shutdown();
 	//delete []last_ranges_;
-	ROS_INFO("\033[47;35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
+	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
 
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)

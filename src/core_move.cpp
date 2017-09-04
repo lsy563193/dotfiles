@@ -734,7 +734,7 @@ void cm_check_temp_spot(void)
 bool cm_go_to_charger_()
 {
 	// Call GoHome() function to try to go to charger stub.
-	ROS_WARN("%s,%d,Call GoHome(), disable tilt detect.",__FUNCTION__,__LINE__);
+	ROS_INFO("%s,%d,Call GoHome(),\033[35m disable tilt detect\033[0m.",__FUNCTION__,__LINE__);
 	g_tilt_enable = false; //disable tilt detect
 	cm_unregister_events();
 	go_home();
@@ -743,7 +743,7 @@ bool cm_go_to_charger_()
 		return true;
 	work_motor_configure();
 	g_tilt_enable = true; //enable tilt detect
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detct" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 	return false;
 }
 bool cm_is_continue_go_to_charger()
