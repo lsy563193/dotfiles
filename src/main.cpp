@@ -180,9 +180,9 @@ int main(int argc, char **argv)
 #if 1
 		ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
 		if (ret1 != 0) {
-			ROS_ERROR("%s %d: event manager thread fails to run!", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: event_manager_thread fails to run!", __FUNCTION__, __LINE__);
 		} else {
-			ROS_INFO("%s %d: event manager thread is up!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: \033[32mevent_manager_thread\033[0m is up!", __FUNCTION__, __LINE__);
 		}
 #endif
 
@@ -190,9 +190,9 @@ int main(int argc, char **argv)
 #if 1
 		ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
 		if (ret1 != 0) {
-			ROS_ERROR("%s %d: event handler thread fails to run!", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: event_handler_thread fails to run!", __FUNCTION__, __LINE__);
 		} else {
-			ROS_INFO("%s %d: event handler thread is up!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: \033[32mevent_handler_thread\033[0m is up!", __FUNCTION__, __LINE__);
 		}
 #endif
 
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
 		if (ret1 != 0) {
 			core_move_thread_state = 0;
 		} else {
-			ROS_INFO("%s %d: core_move thread is up!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: \033[32mcore_move_thread\033[0m is up!", __FUNCTION__, __LINE__);
 			core_move_thread_state = 1;
 		}
 		ros::spin();

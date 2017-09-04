@@ -572,7 +572,7 @@ int cm_cleaning()
 
 	g_motion_init_succeeded = true;
 	g_robot_stuck_enable = true;
-
+	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event)

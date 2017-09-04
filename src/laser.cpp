@@ -723,15 +723,16 @@ double Laser::getLaserDistance(uint16_t angle){
 	}
 }
 
-static uint8_t setLaserMarkerAcc2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *laser_status,uint8_t obs_status)
+static uint8_t setLaserMarkerAor2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *laser_status,uint8_t obs_status)
 {
 	double x,y,th;
 	const	double Y_MIN = 0.140;//0.167
 	const	double Y_MAX = 0.237;//0.279
 	int count = 0;
 	uint8_t ret = 0;
-	for (int i = angle_from; i < angle_to; i++) {
-		i = i>359? i-359:i;
+	int i =angle_from;
+	for (int j = angle_from; j < angle_to; j++) {
+		i = j>359? j-359:j;
 		if (scan_range->ranges[i] < 4) {
 			th = i * 1.0;
 			th = th + 180.0;
@@ -747,9 +748,8 @@ static uint8_t setLaserMarkerAcc2Dir(double X_MIN,double X_MAX,int angle_from,in
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 		{
-			ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x_tmp),count_to_cell(y_tmp));
+			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp));
 			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
-			//map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_RCON); //BLOCKED_OBS);
 		}
 		ret = 1;
 		*laser_status |= obs_status;
@@ -790,30 +790,27 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 		return false;
 	}*/
 	//ROS_INFO("new laser! seq = %d", laserScanData_.header.seq);
-	scan_mutex_.lock();
-
+	boost::mutex::scoped_lock(scan_mutex_);
 	//front right
-	is_triggered = setLaserMarkerAcc2Dir(X_MIN,X_MAX,149,168,2,-1,&laserScanData_,&laser_status,Status_Right_OBS);
-	
+	is_triggered = setLaserMarkerAor2Dir(X_MIN,X_MAX,149,168,2,-1,&laserScanData_,&laser_status,Status_Right_OBS);	
 	//front front
-	is_triggered = setLaserMarkerAcc2Dir(X_MIN,X_MAX,168,191,2,0,&laserScanData_,&laser_status,Status_Front_OBS);
+	is_triggered = setLaserMarkerAor2Dir(X_MIN,X_MAX,168,191,2,0,&laserScanData_,&laser_status,Status_Front_OBS);
 	//front left
-	is_triggered = setLaserMarkerAcc2Dir(X_MIN,X_MAX,191,210,2,1,&laserScanData_,&laser_status,Status_Left_OBS);
+	is_triggered = setLaserMarkerAor2Dir(X_MIN,X_MAX,191,210,2,1,&laserScanData_,&laser_status,Status_Left_OBS);
 	//left middle
-	setLaserMarkerAcc2Dir(X_MIN,X_MAX,258,281,0,2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAor2Dir(X_MIN,X_MAX,258,281,0,2,&laserScanData_,&laser_status,0);
 	//left front
-	setLaserMarkerAcc2Dir(X_MIN,X_MAX,238,258,1,2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAor2Dir(X_MIN,X_MAX,238,258,1,2,&laserScanData_,&laser_status,0);
 	//right middle
-	setLaserMarkerAcc2Dir(X_MIN,X_MAX,78,101,0,-2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAor2Dir(X_MIN,X_MAX,78,101,0,-2,&laserScanData_,&laser_status,0);
 	//right front
-	setLaserMarkerAcc2Dir(X_MIN,X_MAX,101,121,1,-2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAor2Dir(X_MIN,X_MAX,101,121,1,-2,&laserScanData_,&laser_status,0);
 	//back right
-	setLaserMarkerAcc2Dir(X_MIN,X_MAX,11,30,-2,-1,&laserScanData_,&laser_status,0);
+	setLaserMarkerAor2Dir(X_MIN,X_MAX,11,30,-2,-1,&laserScanData_,&laser_status,0);
 	//back middle
-	setLaserMarkerAcc2Dir(X_MIN,X_MAX,348,369,-2,0,&laserScanData_,&laser_status,0);
+	setLaserMarkerAor2Dir(X_MIN,X_MAX,348,369,-2,0,&laserScanData_,&laser_status,0);
 	//back left
-	setLaserMarkerAcc2Dir(X_MIN,X_MAX,329,348,-2,1,&laserScanData_,&laser_status,0);
-	scan_mutex_.unlock();
+	setLaserMarkerAor2Dir(X_MIN,X_MAX,329,348,-2,1,&laserScanData_,&laser_status,0);
 	if (is_triggered) {
 		return laser_status;
 	} else {
