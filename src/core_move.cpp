@@ -604,7 +604,7 @@ int cm_cleaning()
 			}
 			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
 			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
-				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+				auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
 				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
 				{
 					if(!cm_is_continue_go_to_charger())
@@ -641,23 +641,12 @@ int cm_cleaning()
 					{
 						if(!cm_is_continue_go_to_charger())
 							return -1;
-					} else
+					}
+					else
 					{
-						uint8_t check_status = cm_check_charger_signal();
-						if (check_status == SEEN_CHARGER)/*---have seen charger signal---*/
-						{
-							if (!cm_is_continue_go_to_charger())
-								return -1;
-						} else if (check_status == EVENT_TRIGGERED)/*---event triggered---*/
-						{
-							return -1;
-						}
-						auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() * 10);
-						if (cm_head_to_course(ROTATE_TOP_SPEED, -angle)) {
-							if (!cm_is_continue_go_to_charger())
-								return -1;
-						}
-						return -1;
+						// Reach g_zero_home(0, 0).
+						g_homes.pop_back();
+						g_home_way_list.clear();
 					}
 				}
 				else if (g_rcon_during_go_home)
@@ -747,6 +736,7 @@ bool cm_go_to_charger_()
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 	return false;
 }
+
 bool cm_is_continue_go_to_charger()
 {
 	auto way = *g_home_way_it % HOMEWAY_NUM;

@@ -1637,7 +1637,7 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 		auto way = *g_home_way_it % HOMEWAY_NUM;
 		auto cnt = *g_home_way_it / HOMEWAY_NUM;
 		g_home = g_homes[cnt];
-		ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home,way, cnt);
+		ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d, %d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__, g_home.X, g_home.Y ,way, cnt);
 		if (way == USE_ROS && g_home_gen_rosmap) {
 			g_home_gen_rosmap = false;
 			BoundingBox2 map{{g_x_min, g_y_min}, {g_x_max, g_y_max}};
@@ -1663,6 +1663,7 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 			return TARGET_FOUND;
 		}
 	}
+	ROS_INFO("%s %d: No more home targets.", __FUNCTION__, __LINE__);
 	return NO_TARGET_LEFT;
 }
 
