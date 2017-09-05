@@ -161,7 +161,7 @@ void robotbase_reset_send_stream(void)
 void *serial_receive_routine(void *)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("\033[32m%s\033[0m,%d thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d thread is up",__FUNCTION__,__LINE__);
 	int i, j, ret, wh_len, wht_len, whtc_len;
 
 	uint8_t r_crc, c_crc;
@@ -221,7 +221,7 @@ void *serial_receive_routine(void *)
 void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("\033[32m%s\033[0m,%d, thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, thread running",__FUNCTION__,__LINE__);
 	float	th_last, vth;
 
 	uint16_t	lw_speed, rw_speed;
@@ -394,7 +394,7 @@ void *robotbase_routine(void*)
 void *serial_send_routine(void*)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("\033[32m%s\033[0m,%d thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d thread running",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
