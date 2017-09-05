@@ -1356,7 +1356,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 			} else if (g_keep_on_wf) {
 				ROS_INFO("keep on follow wall");
 				mt_set(CM_FOLLOW_LEFT_WALL);
-				g_keep_on_wf = false;
+				//g_keep_on_wf = false;
 			} else {
 				ROS_INFO("CM_LINEARMOVE");
 				mt_set(CM_LINEARMOVE);
@@ -1378,10 +1378,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 #if DEBUG_MAP
 		debug_map(MAP, path.target.X, path.target.Y);
 #endif
-		//path.cells.clear();
-		//path.cells.push_front(path.target);
 		path.cells.push_front(curr);
-
 	}
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
 		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)

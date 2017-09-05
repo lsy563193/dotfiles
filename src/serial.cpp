@@ -83,11 +83,8 @@ void serial_init(const char* port,int baudrate) {
 
 	if (tcsetattr(crport_fd, TCSANOW, &curopt) == 0){
 		serial_init_done = true;
-		ROS_INFO("serial init done...\n");
+		ROS_INFO("\033[32mserial.cpp\033[0m init done...\n");
 	}
-
-	//log_msg(LOG_TRACE, "Serial port (%s): initialized, fd(%d)!\n", buf, crport_fd);
-	//read(crport_fd, buf, 1024);
 }
 
 bool is_serial_ready(){
@@ -153,7 +150,7 @@ int serial_read(int len,uint8_t *buf){
 			return -1;
 		}
 		else if(s_ret ==0){
-			ROS_INFO("%s %d: ----select function timeout!!----------", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: select function \033[33mtimeout!\033[0m", __FUNCTION__, __LINE__);
 			return 0;
 		}
 		else if(s_ret >0){

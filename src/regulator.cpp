@@ -62,10 +62,10 @@ static int16_t bumper_turn_angle()
 		}
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
-		g_straight_distance = 250; //250;
+		g_straight_distance = 100; //250;
 		jam = get_wheel_step() < 2000 ? ++jam : 0;
 	}
-	g_straight_distance = 200;
+	g_straight_distance = 100;
 	reset_wheel_step();
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
@@ -185,7 +185,7 @@ static int16_t laser_turn_angle()
 
 	if (g_obs_triggered != 0)
 	{
-		ROS_ERROR("%s %d: front obs trigger.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: \033[32mfront obs trigger.\033[0m", __FUNCTION__, __LINE__);
 		return _laser_turn_angle(90, 270, 450, 1800, 0.25);
 	}
 	else if(g_bumper_triggered != 0)
@@ -238,7 +238,7 @@ float RegulatorBase::s_pos_y = 0;
 Point32_t RegulatorBase::s_curr_p = {0,0};
 
 bool RegulatorBase::isExit(){
-	return g_fatal_quit_event || g_key_clean_pressed;
+	return g_fatal_quit_event || g_key_clean_pressed ;
 }
 
 bool RegulatorBase::_isStop()
@@ -300,7 +300,10 @@ bool BackRegulator::isSwitch()
 bool BackRegulator::_isStop()
 {
 	MotionManage::s_laser->laserMarker(false);
-	return false;
+	bool ret = false;
+	if(g_robot_stuck)
+		ret = true;
+	return ret;
 }
 
 void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
@@ -394,8 +397,11 @@ bool TurnRegulator::isSwitch()
 
 bool TurnRegulator::_isStop()
 {
+	bool ret = false;
 	MotionManage::s_laser->laserMarker(false);
-	return false;
+	if(g_robot_stuck)
+		ret = true;
+	return ret;
 }
 
 void TurnRegulator::setTarget()
@@ -568,13 +574,16 @@ bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
 	bool obs_tmp;
+		if(g_robot_stuck)
+		return true;
+
 	if(get_clean_mode()==Clean_Mode_WallFollow)
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): _get_obs_value();
 	else
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
 
 	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
-	if (obs_tmp != 0 || rcon_tmp)
+	if (obs_tmp != 0 || rcon_tmp )
 	{
 		//if(obs_tmp == Status_Front_OBS)
 		if(obs_tmp != 0)
@@ -704,13 +713,19 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target) : previous_(0)
 {
-	g_straight_distance = 300;
-	s_origin = start_point;
-	s_origin_angle = gyro_get_angle();
-	s_target = target;
-	g_is_left_start = false;
-	map_init(WFMAP);
-	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
+	extern bool g_keep_on_wf;
+	if (!g_keep_on_wf) {
+		g_straight_distance = 300;
+		s_origin = start_point;
+		s_origin_angle = gyro_get_angle();
+		s_target = target;
+		g_is_left_start = false;
+		map_init(WFMAP);
+		ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
+	} else {
+		g_keep_on_wf = false;
+		ROS_INFO("reset g_keep_on_wf");
+	}
 }
 
 bool FollowWallRegulator::isReach()
@@ -1181,7 +1196,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 
 	if(mt_is_follow_wall())
 	{
-		ROS_WARN("%s %d: obs(%d), rcon(%d), bum(%d), cliff(%d), tilt(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered);
+		ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered);
 		if (g_obs_triggered)
 			g_turn_angle = obs_turn_angle();
 		else if (g_bumper_triggered)
@@ -1202,14 +1217,14 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 		g_turn_angle = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y) - gyro_get_angle());
 
-	ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
+	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)",__FUNCTION__,__LINE__, g_turn_angle);
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
 	p_reg_ = turn_reg_;
 
 	robot::instance()->obsAdjustCount(50);
 	cm_set_event_manager_handler_state(true);
 
-	ROS_WARN("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);
+	ROS_INFO("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);
 }
 
 RegulatorManage::~RegulatorManage()

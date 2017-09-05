@@ -624,53 +624,63 @@ void map_set_laser()
 	MotionManage::s_laser->laserMarker(true);
 #endif
 }
-void map_set_obs_follow()
+uint8_t map_set_obs()
 {
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();
-//	ROS_WARN("~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,obs_trig);
+	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
-		return;
-	if(get_clean_mode() == Clean_Mode_Navigation && mt_is_follow_wall()) {
-		uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
-		for (auto dir = 0; dir < 2; ++dir) {
-			if (obs_trig & obs_lr[dir]) {
-				auto dx = 1;
-				auto dy = (dir == 0) ? 2 : -2;
-				int16_t x, y;
-				cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
-				if (get_wall_adc(dir) > 200) {
-					map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_OBS );//BLOCKED_OBS
+		return 0;
+	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
+	uint8_t block_count = 0;
+	for (auto dir = 0; dir < 2; ++dir)
+	{
+		if (obs_trig & obs_lr[dir])
+		{
+			auto dx = 1;
+			auto dy = (dir==0) ?2:-2;
+			int16_t x,y;
+			cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+			if (get_wall_adc(dir) > 200)
+			{
+				if (map_get_cell(MAP, x, y) != BLOCKED_BUMPER)
+				{
+					ROS_INFO("%s,%d: \033[34m(%d,%d)\033[0m",__FUNCTION__,__LINE__,x,y);
 				}
+				map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
+				block_count++;
 			}
 		}
 	}
-}
-
-void map_set_obs_linear()
-{
-	auto obs_trig = /*g_obs_triggered*/get_obs_status();
-//	ROS_WARN("~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,obs_trig);
-	if(! obs_trig)
-		return;
-	if(get_clean_mode() == Clean_Mode_Navigation && mt_is_linear()) {
-		uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
-		for (auto dy = 0; dy <= 2; ++dy) {
-			auto is_trig = obs_trig & obs_all[dy];
-			int16_t x, y;
-			cm_world_to_cell(gyro_get_angle(), (dy - 1) * CELL_SIZE, CELL_SIZE_2, x, y);
-			if (is_trig) {
-				map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_OBS); //BLOCKED_OBS);
-			}
+	return block_count;
+/*
+	uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
+	for (auto dy = 0; dy <= 2; ++dy) {
+		auto is_trig = obs_trig & obs_all[dy];
+		int32_t x, y;
+		cm_world_to_point(gyro_get_angle(), (dy-1) * CELL_SIZE, CELL_SIZE_2, &x, &y);
+		auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
+		if (is_trig && status != BLOCKED_BUMPER) {
+//			ROS_WARN("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			if(dy == 2 && g_turn_angle<0)
+//				ROS_ERROR("%s,%d: not map_set_realtime left in turn right, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			else if (dy == 0 && g_turn_angle>0)
+//				ROS_ERROR("%s,%d: not map_set_realtime right turn left, (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+//			else
+//				map_set_cell(MAP, x, y, BLOCKED_OBS);
+			map_set_cell(MAP, x, y, BLOCKED_OBS);
+		} else if(! is_trig && status == BLOCKED_OBS){
+			ROS_INFO("%s,%d:unclean (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+			map_set_cell(MAP, x, y, UNCLEAN);
 		}
-	}
+	}*/
 }
 
-void map_set_bumper()
+uint8_t map_set_bumper()
 {
 	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
 	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
-		return;
+		return 0;
 
 	std::vector<Cell_t> d_cells;
 
@@ -681,20 +691,21 @@ void map_set_bumper()
 		if(mt_is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
-			d_cells = {/*{2, 1},*//* {2,2}, */{1,2}};
+			d_cells = {{2, 1},/* {2,2}, */{1,2}};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
-			d_cells = {/*{2,-2},*//*{2,-1},*/{1,-2}};
+			d_cells = {{2,-2},/*{2,-1},*/{1,-2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
 
 	int32_t	x, y;
 	int16_t	x2, y2;
+	uint8_t block_count = 0;
 	std::string msg = "Cell:";
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
@@ -702,15 +713,17 @@ void map_set_bumper()
 		ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d).", __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x, y, count_to_cell(x), count_to_cell(y), x2, y2);
 		msg += "(" + std::to_string(x2) + "," + std::to_string(y2) + ")";
 		map_set_cell(MAP, cell_to_count(x2), cell_to_count(y2), BLOCKED_BUMPER);
+		block_count++;
 	}
-	ROS_INFO("\033[31m""%s,%d: Current(%d, %d), mark %s""\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	return block_count;
 }
 
-void map_set_tilt()
+uint8_t map_set_tilt()
 {
 	auto tilt_trig = get_tilt_status();
 	if (!tilt_trig)
-		return;
+		return 0;
 
 	std::vector<Cell_t> d_cells;
 
@@ -733,22 +746,25 @@ void map_set_tilt()
 		d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};
 
 	int32_t	x, y;
+	uint8_t block_count = 0;
 	std::string msg = "Cell:";
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
 		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + ")";
 		map_set_cell(MAP, x, y, BLOCKED_TILT);
+		block_count++;
 	}
 	ROS_INFO("\033[31m""%s,%d: Current(%d, %d), mark %s""\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	return block_count;
 }
 
-void map_set_cliff()
+uint8_t map_set_cliff()
 {
 	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
 	if (g_cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
 		// During self check.
-		return;
+		return 0;
 
 	std::vector<Cell_t> d_cells;
 	if (cliff_trig & Status_Cliff_Front){
@@ -766,20 +782,23 @@ void map_set_cliff()
 	}
 
 	int32_t	x, y;
+	uint8_t block_count = 0;
 	for (auto& d_cell : d_cells) {
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
 		ROS_INFO("%s,%d: (%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+		block_count++;
 	}
+	return block_count;
 }
 
-void map_set_rcon()
+uint8_t map_set_rcon()
 {
 	auto rcon_trig = g_rcon_triggered/*get_rcon_trig()*/;
 	if(mt_is_linear())
 		g_rcon_triggered = 0;
 	if(! rcon_trig)
-		return;
+		return 0;
 
 	enum {
 			left, fl2, fl1, fr1, fr2, right,
@@ -809,6 +828,7 @@ void map_set_rcon()
 					break;
 	}
 	int32_t x,y;
+	uint8_t block_count = 0;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 //	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
 	map_set_cell(MAP, x, y, BLOCKED_RCON);
@@ -816,28 +836,27 @@ void map_set_rcon()
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
 //		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
+		block_count++;
 	}
-//	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
-//	stop_brifly();
-//	sleep(5);
+	return block_count;
 }
 
-void map_set_blocked()
+uint8_t map_set_blocked()
 {
-	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
-		return;
+	if(get_clean_mode() != Clean_Mode_Navigation)
+		return 0;
 
+	uint8_t block_count = 0;
 //	ROS_ERROR("----------------map_set_blocked");
 //	map_set_obs();
-	map_set_obs_follow();
+	map_set_obs();
 	map_set_laser();
-	map_set_bumper();
-	map_set_rcon();
-	map_set_cliff();
-	map_set_tilt();
-	std::list<Cell_t> empty_path;
-	empty_path.clear();
-	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, empty_path);
+	block_count += map_set_bumper();
+	block_count += map_set_rcon();
+	block_count += map_set_cliff();
+	block_count += map_set_tilt();
+
+	return block_count;
 }
 
 void map_set_cleaned(const Cell_t& curr)
@@ -949,19 +968,20 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 			}
 		}
 	}
-	ROS_INFO("\033[31m""%s,%d: %s""\033[0m",__FUNCTION__, __LINE__, msg.c_str());
+	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
 void map_set_follow_wall(std::vector<Cell_t>& cells)
 {
 	auto diff = cells.back().X - cells.front().X;
 
+	std::string pri_msg("");
 	if (cells.size() < 2 || std::abs(diff) <= 4)
 		return;
 
 	for (const auto &cell : cells)
 	{
-		ROS_INFO("\033[47;31m""%s,%d: cell(%d,%d)""\033[0m", __FUNCTION__, __LINE__, cell.X, cell.Y);
+		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 	}
 	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	auto min = std::min(cells.front().X, cells.back().X) + 3;
@@ -970,14 +990,16 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	if(min >= max)
 		return;
 
+
 	for (const auto &cell : cells)
 	{
 		if (cell.X >= min && cell.X <= max)
 		{
 			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y + dy), BLOCKED_CLIFF);
-			ROS_INFO("\033[47;31m" "%s,%d: cell(%d,%d)" "\033[0m", __FUNCTION__, __LINE__, cell.X, cell.Y + dy);
+			pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 		}
 	}
+	ROS_INFO("%s,%d,cells:\033[35m%s\033[0m",__FUNCTION__,__LINE__,pri_msg.c_str());
 }
 
 bool map_mark_robot(uint8_t id)

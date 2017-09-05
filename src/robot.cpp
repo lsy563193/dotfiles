@@ -414,40 +414,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
 }
 
-bool robot::isRobotStuck() const
-{
-	static float last_post_x = 0;
-	static float last_post_y = 0;
-	static float last_angle = 0;
-	static int rs_count = 0;
-	bool ret = false;
-	if(g_robot_stuck_enable && isTfReady()){
-		if(absolute(lw_vel_)>=0.001 || absolute(rw_vel_)>=0.001)
-		{
-			if(absolute(slam_correction_x_) > 0.01 || absolute(slam_correction_y_) > 0.01 || absolute(slam_correction_yaw_) > 0.01){
-				if((absolute(position_x_ - last_post_x ) <= 0.05 && absolute(position_y_ - last_post_y) <= 0.05) || absolute(position_yaw_ - last_angle) <=15.0)
-				{
-					last_post_x = position_x_;
-					last_post_y = position_y_;
-					last_angle = position_yaw_;
-					rs_count ++;
-					ROS_INFO("\033[35m""robot stuck %f,%f""\033[0m",position_x_ - last_post_x,position_y_ - last_post_y );
-					if(rs_count > 100)//about 2 second
-					{
-						rs_count = 0;
-						ret = true;
-					}
-				}
-				else{
-					rs_count = 0;
-					ret = false;
-				}
-			}
-		}
-	}
-	return ret;
-}
-
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
 	width_ = map->info.width;
@@ -681,9 +647,11 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 	if (get_left_wheel_speed() * get_right_wheel_speed() > 0)
 	{
 		float scale;
-		scale = slam_correction_x - robot_correction_x > 0.05 ? 0.1 * (slam_correction_x - robot_correction_x) / 0.05 : 0.03;
+		scale = fabs(slam_correction_x - robot_correction_x) > 0.05 ? 0.1 * fabs(slam_correction_x - robot_correction_x) / 0.05 : 0.03;
+		scale = scale > 1.0 ? 1.0 : scale;
 		robot_correction_x += (slam_correction_x - robot_correction_x) * scale;
-		scale = slam_correction_y - robot_correction_y > 0.05 ? 0.1 * (slam_correction_y - robot_correction_y) / 0.05 : 0.03;
+		scale = fabs(slam_correction_y - robot_correction_y) > 0.05 ? 0.1 * fabs(slam_correction_y - robot_correction_y) / 0.05 : 0.03;
+		scale = scale > 1.0 ? 1.0 : scale;
 		robot_correction_y += (slam_correction_y - robot_correction_y) * scale;
 		double yaw = slam_correction_yaw - robot_correction_yaw;
 		while (yaw < -3.141592)

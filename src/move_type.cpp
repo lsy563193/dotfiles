@@ -58,7 +58,7 @@ void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir) {
 				path.cells.push_front(g_target_cell);
 				g_next_cell = g_target_cell;
 				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
-				ROS_ERROR("%s,%d: target:, 2_left_3_right(%d)",__FUNCTION__, __LINE__, g_cm_move_type);
+				ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m",__FUNCTION__, __LINE__, g_cm_move_type);
 			}
 //		}
 //	}
