@@ -611,9 +611,6 @@ int cm_cleaning()
 						return -1;
 				}
 			}
-
-			// It means robot can not go to charger stub.
-			robot::instance()->resetLowBatPause();
 			return 0;
 		}
 		else if (is_found == 1)

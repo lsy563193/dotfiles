@@ -352,6 +352,9 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 	}
 
+	if (!g_charge_detect)
+		// It means robot can not go to charger stub.
+		robot::instance()->resetLowBatPause();
 
 	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
 	{
