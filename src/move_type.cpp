@@ -40,7 +40,7 @@ CMMoveType mt_get()
 void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir) {
 	g_cm_move_type = CM_LINEARMOVE;
 	ROS_WARN("%s,%d: dir(%d),obs(%d),bumper(%d)",__FUNCTION__,__LINE__,dir,g_obs_triggered, g_bumper_triggered);
-	if (!IS_X_AXIS(dir) || (g_obs_triggered == 0 && g_bumper_triggered == 0) || g_trapped_mode == 1 && path.cells.size()>2)
+	if (!IS_X_AXIS(dir) || (g_obs_triggered == 0 && g_bumper_triggered == 0) || g_trapped_mode == 1 || path.cells.size()>3)
 		return;
 
 //	auto delta_y = g_next_cell.Y - curr.Y;

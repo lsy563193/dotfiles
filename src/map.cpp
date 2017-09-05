@@ -627,7 +627,7 @@ void map_set_laser()
 uint8_t map_set_obs()
 {
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();
-	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
+//	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
 		return 0;
 	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
@@ -642,10 +642,10 @@ uint8_t map_set_obs()
 			cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
 			if (get_wall_adc(dir) > 200)
 			{
-				if (map_get_cell(MAP, x, y) != BLOCKED_BUMPER)
-				{
-					ROS_INFO("%s,%d: \033[34m(%d,%d)\033[0m",__FUNCTION__,__LINE__,x,y);
-				}
+//				if (map_get_cell(MAP, x, y) != BLOCKED_BUMPER)
+//				{
+//					ROS_INFO("%s,%d: \033[34m(%d,%d)\033[0m",__FUNCTION__,__LINE__,x,y);
+//				}
 				map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
 				block_count++;
 			}

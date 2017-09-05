@@ -734,7 +734,7 @@ bool FollowWallRegulator::isReach()
 	//map_set_realtime();
 	if (get_clean_mode() != Clean_Mode_WallFollow) {
 		MotionManage::s_laser->laserMarker(true);
-		map_set_obs_follow();
+		map_set_obs();
 //		map_set_obs();
 	}
 	bool ret = false;
