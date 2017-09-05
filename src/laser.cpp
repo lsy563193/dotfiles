@@ -723,7 +723,8 @@ double Laser::getLaserDistance(uint16_t angle){
 	}
 }
 
-static uint8_t setLaserMarkerAor2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *laser_status,uint8_t obs_status)
+/*----set laser marker according to direction-----*/
+static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *laser_status,uint8_t obs_status)
 {
 	double x,y,th;
 	const	double Y_MIN = 0.140;//0.167
@@ -734,12 +735,34 @@ static uint8_t setLaserMarkerAor2Dir(double X_MIN,double X_MAX,int angle_from,in
 	for (int j = angle_from; j < angle_to; j++) {
 		i = j>359? j-359:j;
 		if (scan_range->ranges[i] < 4) {
-			th = i * 1.0;
-			th = th + 180.0;
-			x = cos(th * PI / 180.0) * scan_range->ranges[i];
-			y = sin(th * PI / 180.0) * scan_range->ranges[i];
-			if (x > X_MIN && x < X_MAX ) {
-				count++;
+			th = i*1.0 + 180.0;
+			if(j >= 314 && j < 404){//314~44
+				x = -cos(th * PI / 180.0) * scan_range->ranges[i];
+				//y = -sin(th * PI / 180.0) * scan_range->ranges[i];
+				if (x > X_MIN && x < X_MAX ) {
+					count++;
+				}
+			}
+			else if( j >= 44 && j < 134){
+				//x = cos(th * PI / 180.0) * scan_range->ranges[i];
+				y = -sin(th * PI / 180.0) * scan_range->ranges[i];
+				if (y > Y_MIN && y < Y_MAX ) {
+					count++;
+				}
+			}
+			else if( j >= 134 && j < 214){
+				x = cos(th * PI / 180.0) * scan_range->ranges[i];
+				//y = sin(th * PI / 180.0) * scan_range->ranges[i];
+				if (x > X_MIN && x < X_MAX ) {
+					count++;
+				}
+			}
+			else if( j >= 214 && j < 314){
+				x = cos(th * PI / 180.0) * scan_range->ranges[i];
+				//y = sin(th * PI / 180.0) * scan_range->ranges[i];
+				if (x > X_MIN && x < X_MAX ) {
+					count++;
+				}
 			}
 		}
 	}
@@ -792,25 +815,25 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 	//ROS_INFO("new laser! seq = %d", laserScanData_.header.seq);
 	boost::mutex::scoped_lock(scan_mutex_);
 	//front right
-	is_triggered = setLaserMarkerAor2Dir(X_MIN,X_MAX,149,168,2,-1,&laserScanData_,&laser_status,Status_Right_OBS);	
+	is_triggered = setLaserMarkerAcr2Dir(X_MIN,X_MAX,149,168,2,-1,&laserScanData_,&laser_status,Status_Right_OBS);	
 	//front front
-	is_triggered = setLaserMarkerAor2Dir(X_MIN,X_MAX,168,191,2,0,&laserScanData_,&laser_status,Status_Front_OBS);
+	is_triggered = setLaserMarkerAcr2Dir(X_MIN,X_MAX,168,191,2,0,&laserScanData_,&laser_status,Status_Front_OBS);
 	//front left
-	is_triggered = setLaserMarkerAor2Dir(X_MIN,X_MAX,191,210,2,1,&laserScanData_,&laser_status,Status_Left_OBS);
+	is_triggered = setLaserMarkerAcr2Dir(X_MIN,X_MAX,191,210,2,1,&laserScanData_,&laser_status,Status_Left_OBS);
 	//left middle
-	setLaserMarkerAor2Dir(X_MIN,X_MAX,258,281,0,2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAcr2Dir(X_MIN,X_MAX,258,281,0,2,&laserScanData_,&laser_status,0);
 	//left front
-	setLaserMarkerAor2Dir(X_MIN,X_MAX,238,258,1,2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAcr2Dir(X_MIN,X_MAX,238,258,1,2,&laserScanData_,&laser_status,0);
 	//right middle
-	setLaserMarkerAor2Dir(X_MIN,X_MAX,78,101,0,-2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAcr2Dir(X_MIN,X_MAX,78,101,0,-2,&laserScanData_,&laser_status,0);
 	//right front
-	setLaserMarkerAor2Dir(X_MIN,X_MAX,101,121,1,-2,&laserScanData_,&laser_status,0);
+	setLaserMarkerAcr2Dir(X_MIN,X_MAX,101,121,1,-2,&laserScanData_,&laser_status,0);
 	//back right
-	setLaserMarkerAor2Dir(X_MIN,X_MAX,11,30,-2,-1,&laserScanData_,&laser_status,0);
+	setLaserMarkerAcr2Dir(X_MIN,X_MAX,11,30,-2,-1,&laserScanData_,&laser_status,0);
 	//back middle
-	setLaserMarkerAor2Dir(X_MIN,X_MAX,348,369,-2,0,&laserScanData_,&laser_status,0);
+	setLaserMarkerAcr2Dir(X_MIN,X_MAX,348,369,-2,0,&laserScanData_,&laser_status,0);
 	//back left
-	setLaserMarkerAor2Dir(X_MIN,X_MAX,329,348,-2,1,&laserScanData_,&laser_status,0);
+	setLaserMarkerAcr2Dir(X_MIN,X_MAX,329,348,-2,1,&laserScanData_,&laser_status,0);
 	if (is_triggered) {
 		return laser_status;
 	} else {

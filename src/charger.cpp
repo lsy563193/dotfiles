@@ -31,7 +31,7 @@ void charge_function(void)
 {
 	bool battery_full = false;
 	// This counter is for debug message.
-	uint8_t show_batv_counter=0;
+	uint16_t show_batv_counter=0;
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
@@ -76,14 +76,11 @@ void charge_function(void)
 				break;
 			}
 		}
-		if(show_batv_counter > 250)
+
+		if(++show_batv_counter > 500)//about 10 second
 		{
-			ROS_INFO("%s %d: In charge mode looping , battery voltage %5.2f V.", __FUNCTION__, __LINE__, bat_v/100.0);
+			ROS_INFO("%s %d: In charge mode looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)bat_v/100.0);
 			show_batv_counter = 0;
-		}
-		else
-		{
-			show_batv_counter++;
 		}
 
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
