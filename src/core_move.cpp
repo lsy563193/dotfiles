@@ -641,23 +641,12 @@ int cm_cleaning()
 					{
 						if(!cm_is_continue_go_to_charger())
 							return -1;
-					} else
+					}
+					else
 					{
-						uint8_t check_status = cm_check_charger_signal();
-						if (check_status == SEEN_CHARGER)/*---have seen charger signal---*/
-						{
-							if (!cm_is_continue_go_to_charger())
-								return -1;
-						} else if (check_status == EVENT_TRIGGERED)/*---event triggered---*/
-						{
-							return -1;
-						}
-						auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() * 10);
-						if (cm_head_to_course(ROTATE_TOP_SPEED, -angle)) {
-							if (!cm_is_continue_go_to_charger())
-								return -1;
-						}
-						return -1;
+						// Reach g_zero_home(0, 0).
+						g_homes.pop_back();
+						g_home_way_list.clear();
 					}
 				}
 				else if (g_rcon_during_go_home)

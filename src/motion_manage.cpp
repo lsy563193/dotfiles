@@ -169,9 +169,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	initSucceeded(true);
 
-	g_homes.resize(1,g_zero_home);
-	g_home_gen_rosmap = true;
-	g_home_way_list.clear();
 	if (!initCleaning(get_clean_mode()))
 	{
 		initSucceeded(false);
@@ -485,6 +482,9 @@ bool MotionManage::initNavigationCleaning(void)
 		g_have_seen_charge_stub = false;
 		g_start_point_seen_charger = false;
 
+		g_homes.resize(1,g_zero_home);
+		g_home_gen_rosmap = true;
+		g_home_way_list.clear();
 	}
 
 	reset_touch();
@@ -618,6 +618,9 @@ bool MotionManage::initWallFollowCleaning(void)
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 	extern bool g_have_seen_charge_stub;
 	g_have_seen_charge_stub = false;
 	work_motor_configure();
@@ -655,6 +658,10 @@ bool MotionManage::initSpotCleaning(void)
 	map_init(MAP);//init map
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
+
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 
 	set_vac_mode(Vac_Max);
 	set_vac_speed();
