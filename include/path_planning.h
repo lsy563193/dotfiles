@@ -39,6 +39,7 @@ typedef enum {
 }HomeWay_t;
 extern std::vector<Cell_t> g_homes;
 extern std::vector<int> g_home_way_list;
+extern std::vector<int>::iterator g_home_way_it;
 extern bool g_go_home;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
@@ -220,6 +221,7 @@ int16_t path_get_home_y(void);
  */
 uint8_t is_block_blocked(int16_t x, int16_t y);
 
+uint8_t is_block_blocked_x_axis(int16_t x, int16_t y);
 /*
  * Check a block is on the boundary or not, a block is defined as have the same size of robot.
  *

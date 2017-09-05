@@ -299,7 +299,7 @@ typedef enum{
 #define Error_Code_Laser		((uint8_t)0x13)
 #define Error_Code_Test			((uint8_t)0x14)
 #define Error_Code_Test_Null	((uint8_t)0x15)
-#define Error_Code_Omni         ((uint8_t)0x16)
+#define Error_Code_Omni			((uint8_t)0x16)
 
 #define Display_Full				4
 #define Display_Low					5
@@ -758,4 +758,5 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 uint8_t check_tilt();
 void set_tilt_status(uint8_t status);
 uint8_t get_tilt_status();
+uint8_t is_robot_stuck();
 #endif

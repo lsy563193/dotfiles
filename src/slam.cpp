@@ -53,6 +53,7 @@ void Slam::stop(void)
 	end_slam_cli_ = nh_.serviceClient<std_srvs::Empty>("End_Slam");
 	std_srvs::Empty empty;
 	end_slam_cli_.call(empty);
+	robot::instance()->resetCorrection();
 	ROS_INFO("%s %d: End slam request finished.", __FUNCTION__, __LINE__);
 #else
 	if (slam_type_ == 0)
@@ -69,8 +70,8 @@ void Slam::enableMapUpdate()
 	std_srvs::Empty empty;
 #if SLAM_METHOD_2
 	start_slam_cli_ = nh_.serviceClient<std_srvs::Empty>("Start_Slam");
-	start_slam_cli_.call(empty);
 	robot::instance()->resetCorrection();
+	start_slam_cli_.call(empty);
 #else
 	align_cli_ = nh_.serviceClient<std_srvs::Empty>("align");
 //	align_cli_.waitForExistence(ros::Duration(10));

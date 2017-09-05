@@ -91,11 +91,6 @@ void cm_check_should_go_home(void);
 void cm_check_temp_spot(void);
 
 Cell_t cm_update_position(bool is_turn = false);
-void map_set_cleaned(const Cell_t& curr);
-void map_set_follow_wall(const Cell_t& curr);
-void map_set_cleaned(std::vector<Cell_t>& cells);
-void map_set_follow_wall(std::vector<Cell_t>& cells);
-void map_set_blocked();
 //void cm_update_map();
 bool cm_curve_move_to_point();
 
@@ -117,7 +112,7 @@ void cm_move_back_(uint16_t dist);
 	 */
 
 void cm_go_home(void);
-bool cm_go_to_charger();
+bool cm_is_continue_go_to_charger(void);
 //void CM_SetStationHome(void);
 
 void CM_ResetBoundaryBlocks(void);

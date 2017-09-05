@@ -23,6 +23,8 @@
 #include "move_type.h"
 #include "wall_follow_slam.h"
 #include "robotbase.h"
+#include "debug.h"
+#include "map.h"
 
 Segment_set segmentss;
 
@@ -279,7 +281,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
-	//s_laser->startShield();
 	s_laser->lidarShieldDetect(ON);
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 
@@ -293,7 +294,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-	ROS_WARN("cleaned area = %.2fm2", map_get_area());
+	ROS_INFO("cleaned area = \033[32m%.2fm2\033[0m", map_get_area());
+	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 	//if (get_clean_mode() == Clean_Mode_WallFollow)
 	wf_clear();
 	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
@@ -307,7 +309,7 @@ MotionManage::~MotionManage()
 
 	g_tilt_enable = false;
 	g_robot_stuck_enable =false;
-	ROS_INFO("\033[47;35m" "disable tilt detect" "\033[0m");
+	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
@@ -423,7 +425,7 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
 
 	g_saved_work_time += get_work_time();
-	ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+	ROS_INFO("%s %d: Cleaning time: \033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
 
 	if (g_battery_low)
 		set_clean_mode(Clean_Mode_Sleep);
@@ -467,6 +469,7 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_INFO("map_init-----------------------------");
 		map_init(MAP);
 		map_init(WFMAP);
+		map_init(ROSMAP);
 		path_planning_initialize();
 
 		robot::instance()->initOdomPosition();
