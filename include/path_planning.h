@@ -221,6 +221,7 @@ int16_t path_get_home_y(void);
  */
 uint8_t is_block_blocked(int16_t x, int16_t y);
 
+uint8_t is_block_blocked_x_axis(int16_t x, int16_t y);
 /*
  * Check a block is on the boundary or not, a block is defined as have the same size of robot.
  *
