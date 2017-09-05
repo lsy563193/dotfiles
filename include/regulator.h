@@ -15,6 +15,8 @@
 #define STRENGTH_WHITE_MAX 625
 #define STRENGTH_BLACK_MIN 120
 #define STRENGTH_BLACK_MAX 180
+#define STRENGTH_HIGHT_LIMIT 625
+#define STRENGTH_LOW_LIMIT 150
 
 class RegulatorBase {
 public:

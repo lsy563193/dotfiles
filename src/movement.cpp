@@ -45,8 +45,8 @@ uint8_t g_sleep_mode_flag = 0;
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
 static int16_t g_right_wheel_speed = 0;
-static uint32_t g_left_wheel_step = 0;
-static uint32_t g_right_wheel_step = 0;
+static int32_t g_left_wheel_step = 0;
+static int32_t g_right_wheel_step = 0;
 static uint32_t g_leftwall_step = 0;
 static uint32_t g_rightwall_step = 0;
 
@@ -228,7 +228,7 @@ bool check_error_cleared(uint8_t error_code)
 	return error_cleared;
 }
 
-uint32_t get_right_wheel_step(void)
+int32_t get_right_wheel_step(void)
 {
 	double t, step;
 	double rwsp;
@@ -242,7 +242,7 @@ uint32_t get_right_wheel_step(void)
 	return g_right_wheel_step;
 }
 
-uint32_t get_left_wheel_step(void)
+int32_t get_left_wheel_step(void)
 {
 	double t, step;
 	double lwsp;
