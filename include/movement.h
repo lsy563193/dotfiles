@@ -402,8 +402,8 @@ uint8_t get_error_code(void);
 void alarm_error(void);
 bool check_error_cleared(uint8_t error_code);
 
-uint32_t get_right_wheel_step(void);
-uint32_t get_left_wheel_step(void);
+int32_t get_right_wheel_step(void);
+int32_t get_left_wheel_step(void);
 void reset_right_wheel_step();
 void reset_left_wheel_step();
 void set_wheel_step(uint32_t Left, uint32_t Right);

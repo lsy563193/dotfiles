@@ -1717,7 +1717,6 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 		reset_rcon_remote();
 		return;
 	}
-
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
 	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
