@@ -604,7 +604,7 @@ int cm_cleaning()
 			}
 			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
 			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
-				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+				auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
 				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
 				{
 					if(!cm_is_continue_go_to_charger())
@@ -747,6 +747,7 @@ bool cm_go_to_charger_()
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 	return false;
 }
+
 bool cm_is_continue_go_to_charger()
 {
 	auto way = *g_home_way_it % HOMEWAY_NUM;
