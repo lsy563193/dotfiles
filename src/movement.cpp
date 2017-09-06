@@ -3,12 +3,14 @@
 #include <math.h>
 #include <time.h>
 #include <ros/ros.h>
-#include "robot.hpp"
 #include <time.h>
 #include <fcntl.h>
 #include <motion_manage.h>
 #include <move_type.h>
+#include <ctime>
+
 #include "gyro.h"
+#include "robot.hpp"
 #include "movement.h"
 #include "crc8.h"
 #include "serial.h"
@@ -20,7 +22,7 @@
 #include "wav.h"
 #include "slam.h"
 #include "event_manager.h"
-#include <ctime>
+#include "laser.hpp"
 
 extern uint8_t g_send_stream[SEND_LEN];
 
@@ -45,8 +47,8 @@ uint8_t g_sleep_mode_flag = 0;
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
 static int16_t g_right_wheel_speed = 0;
-static uint32_t g_left_wheel_step = 0;
-static uint32_t g_right_wheel_step = 0;
+static int32_t g_left_wheel_step = 0;
+static int32_t g_right_wheel_step = 0;
 static uint32_t g_leftwall_step = 0;
 static uint32_t g_rightwall_step = 0;
 
@@ -174,6 +176,11 @@ void alarm_error(void)
 			wav_play(WAV_TEST_LIDAR);
 			break;
 		}
+		case Error_Code_Stuck:
+		{
+			wav_play(WAV_ROBOT_STUCK);
+			break;
+		}
 		default:
 		{
 			break;
@@ -228,7 +235,7 @@ bool check_error_cleared(uint8_t error_code)
 	return error_cleared;
 }
 
-uint32_t get_right_wheel_step(void)
+int32_t get_right_wheel_step(void)
 {
 	double t, step;
 	double rwsp;
@@ -242,7 +249,7 @@ uint32_t get_right_wheel_step(void)
 	return g_right_wheel_step;
 }
 
-uint32_t get_left_wheel_step(void)
+int32_t get_left_wheel_step(void)
 {
 	double t, step;
 	double lwsp;
@@ -3194,4 +3201,16 @@ void set_tilt_status(uint8_t status)
 uint8_t get_tilt_status()
 {
 	return g_tilt_status;
+}
+
+uint8_t is_robot_stuck()
+{
+	uint8_t ret = 0;
+	if(Laser::isScanReady()){
+		if(Laser::isRobotStuck()){
+			ROS_INFO("\033[35m""%s,%d,robot stuck!!""\033[0m",__FUNCTION__,__LINE__);
+			ret = 1;
+		}
+	}
+	return ret;
 }

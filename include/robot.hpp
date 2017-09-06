@@ -73,7 +73,17 @@ public:
 		return offset_angle_;
 	};
 
-	void savedOffsetAngle(float angle)
+	void startAngle(float angle)
+	{
+		start_angle_ = angle;
+	};
+
+	float startAngle(void) const
+	{
+		return start_angle_;
+	};
+
+void savedOffsetAngle(float angle)
 	{
 		if (angle > 180)
 			angle -= 360;
@@ -496,7 +506,6 @@ public:
 
 	void setAccInitData();
 
-	bool isRobotStuck() const;
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
@@ -518,16 +527,16 @@ private:
 
 	bool	is_tf_ready_;
 
-	float offset_angle_;
     bool temp_spot_set_;
 
 	boost::mutex offset_angle_metux_;
-
+	float offset_angle_;
+	float start_angle_;
 	float saved_offset_angle_;
 
 	/*2 byte*/
-	int16_t lw_vel_;
-	int16_t rw_vel_;
+	float lw_vel_;
+	float rw_vel_;
 	/* 1 byte */
 	float	angle_;
 

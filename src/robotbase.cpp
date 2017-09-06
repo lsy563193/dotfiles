@@ -90,17 +90,12 @@ int robotbase_init(void)
 	send_stream_thread = true;
 	
 	if (!is_serial_ready()) {
-		ROS_INFO("[robotbase] serial not ready\n");
+		ROS_ERROR("serial not ready\n");
 		return -1;
 	}
 	set_main_pwr_byte(POWER_ACTIVE);
 	g_send_stream[SEND_LEN-3] = calc_buf_crc8((char *) g_send_stream, SEND_LEN - 3);
-	ROS_INFO("[robotbase] waiting robotbase awake ");
-//	do {
-//		serial_write(SEND_LEN,g_send_stream);
-//		usleep(20000);
-//	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
-	//ROS_INFO("OK!");
+	ROS_INFO("waiting robotbase awake ");
 	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);
@@ -108,9 +103,9 @@ int robotbase_init(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		send_stream_thread = false;
-		if (base_ret < 0) {ROS_INFO("[robotbase] fail to create robotbase thread!! %s ", strerror(base_ret));}
-		if (ser_ret < 0) {ROS_INFO("[robotbase] fail to create serial receive thread!! %s ", strerror(ser_ret));}
-		if (sers_ret < 0){ROS_INFO("[robotbase] fail to create serial send therad!! %s ",strerror(sers_ret));}
+		if (base_ret < 0) {ROS_INFO("%s,%d, fail to create robotbase thread!! %s ", __FUNCTION__,__LINE__,strerror(base_ret));}
+		if (ser_ret < 0) {ROS_INFO("%s,%d, fail to create serial receive thread!! %s ",__FUNCTION__,__LINE__, strerror(ser_ret));}
+		if (sers_ret < 0){ROS_INFO("%s,%d, fail to create serial send therad!! %s ",__FUNCTION__,__LINE__,strerror(sers_ret));}
 		return -1;
 	}
 	is_robotbase_init = true;
@@ -127,16 +122,13 @@ void robotbase_deinit(void)
 	uint8_t buf[2];
 
 	if (is_robotbase_init) {
-		ROS_INFO("%s,%d",__FUNCTION__,__LINE__);
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
-		ROS_INFO("\tshutdown robotbase power");
+		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
 		set_led_mode(LED_STEADY, LED_OFF);
 		control_set(CTL_BUZZER, 0x00);
 		set_gyro_off();
-		usleep(40000);
 		disable_motors();
-		usleep(40000);
 		set_main_pwr_byte(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
@@ -169,7 +161,7 @@ void robotbase_reset_send_stream(void)
 void *serial_receive_routine(void *)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("%s,%d thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d thread is up",__FUNCTION__,__LINE__);
 	int i, j, ret, wh_len, wht_len, whtc_len;
 
 	uint8_t r_crc, c_crc;
@@ -220,16 +212,16 @@ void *serial_receive_routine(void *)
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
 		} else {
-			ROS_WARN( " in serial read ,data crc error\n");
+			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
-	ROS_INFO("pthread serial read exit!");
+	ROS_INFO("\033[32m%s\033[0m,%d,exit!",__FUNCTION__,__LINE__);
 }
 
 void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("%s.%d, thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, thread running",__FUNCTION__,__LINE__);
 	float	th_last, vth;
 
 	uint16_t	lw_speed, rw_speed;
@@ -396,18 +388,18 @@ void *robotbase_routine(void*)
 		/*------publish end -----------*/
 
 	}
-	ROS_INFO("robotbase thread exit");
+	ROS_INFO("\033[32m%s\033[0m,%d,robotbase thread exit",__FUNCTION__,__LINE__);
 }
 
 void *serial_send_routine(void*)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("%s,%d thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d thread running",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
 	reset_send_flag();
-	while(ros::ok() && send_stream_thread){
+	while(send_stream_thread){
 		r.sleep();
 		if(get_sleep_mode_flag()){
 			continue;
@@ -437,7 +429,7 @@ void *serial_send_routine(void*)
 		if(g_send_stream[CTL_OMNI_RESET] & 0x01)
 			clear_reset_mobility_step();
 	}
-	ROS_INFO("serial send pthread exit");
+	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }
 

@@ -56,11 +56,11 @@ void user_interface(void)
 	reset_touch();
 	set_vacmode(Vac_Save);
 
-	ROS_INFO("%s,%d ,BatteryVoltage = %dmv.",__FUNCTION__,__LINE__, get_battery_voltage());
+	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, get_battery_voltage());
 	// Check the battery to warn the user.
 	if(!check_bat_ready_to_clean() && !robot::instance()->isManualPaused())
 	{
-		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV).", __FUNCTION__, __LINE__, get_battery_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		ROS_WARN("%s %d: Battery Level Low = \033[31m%4dmV\033[0m(limit = \033[33m%4dmV\033[0m).", __FUNCTION__, __LINE__, get_battery_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		battery_ready_to_clean = false;
 		set_led_mode(LED_BREATH, LED_ORANGE);
 		wav_play(WAV_BATTERY_LOW);

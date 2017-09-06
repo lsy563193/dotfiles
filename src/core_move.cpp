@@ -309,7 +309,7 @@ bool cm_move_to(const PPTargetType& path)
 	passed_path.clear();
 	passed_path.push_back(curr);
 
-		int32_t	 speed_left = 0, speed_right = 0;
+	int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
 	{
 		/*for navigation trapped wall follow update map and push_back vector*/
@@ -332,9 +332,9 @@ bool cm_move_to(const PPTargetType& path)
 
 		rm.updatePosition({map_get_x_count(),map_get_y_count()});
 
-		if (rm.isExit())
+		if (rm.isExit()){
 			break;
-
+		}
 		if (g_slam_error)
 		{
 			set_wheel_speed(0, 0);
@@ -415,6 +415,7 @@ bool cm_move_to(const PPTargetType& path)
 //		linear_mark_clean(curr, g_next_cell);
 	}
 	map_set_blocked();
+
 	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
 	return ret;
 }
@@ -572,7 +573,7 @@ int cm_cleaning()
 
 	g_motion_init_succeeded = true;
 	g_robot_stuck_enable = true;
-
+	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event)
@@ -602,18 +603,14 @@ int cm_cleaning()
 				return -1;
 			}
 			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
-			ROS_INFO("%s,current cell(%d,%d)",__FUNCTION__,map_get_x_cell(),map_get_y_cell());
 			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
-				auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() *10);
+				auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
 				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
 				{
 					if(!cm_is_continue_go_to_charger())
 						return -1;
 				}
 			}
-
-			// It means robot can not go to charger stub.
-			robot::instance()->resetLowBatPause();
 			return 0;
 		}
 		else if (is_found == 1)
@@ -641,23 +638,12 @@ int cm_cleaning()
 					{
 						if(!cm_is_continue_go_to_charger())
 							return -1;
-					} else
+					}
+					else
 					{
-						uint8_t check_status = cm_check_charger_signal();
-						if (check_status == SEEN_CHARGER)/*---have seen charger signal---*/
-						{
-							if (!cm_is_continue_go_to_charger())
-								return -1;
-						} else if (check_status == EVENT_TRIGGERED)/*---event triggered---*/
-						{
-							return -1;
-						}
-						auto angle = static_cast<int16_t>(robot::instance()->offsetAngle() * 10);
-						if (cm_head_to_course(ROTATE_TOP_SPEED, -angle)) {
-							if (!cm_is_continue_go_to_charger())
-								return -1;
-						}
-						return -1;
+						// Reach g_zero_home(0, 0).
+						g_homes.pop_back();
+						g_home_way_list.clear();
 					}
 				}
 				else if (g_rcon_during_go_home)
@@ -679,6 +665,7 @@ void cm_check_should_go_home(void)
 	if (g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
 		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home, or finish cleaning.", __FUNCTION__, __LINE__);
+		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
 		if (get_clean_mode() == Clean_Mode_WallFollow)
@@ -734,7 +721,7 @@ void cm_check_temp_spot(void)
 bool cm_go_to_charger_()
 {
 	// Call GoHome() function to try to go to charger stub.
-	ROS_WARN("%s,%d,Call GoHome(), disable tilt detect.",__FUNCTION__,__LINE__);
+	ROS_INFO("%s,%d,Call GoHome(),\033[35m disable tilt detect\033[0m.",__FUNCTION__,__LINE__);
 	g_tilt_enable = false; //disable tilt detect
 	cm_unregister_events();
 	go_home();
@@ -743,9 +730,10 @@ bool cm_go_to_charger_()
 		return true;
 	work_motor_configure();
 	g_tilt_enable = true; //enable tilt detect
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detct" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 	return false;
 }
+
 bool cm_is_continue_go_to_charger()
 {
 	auto way = *g_home_way_it % HOMEWAY_NUM;
@@ -1116,7 +1104,7 @@ void cm_self_check(void)
 		}
 		else if (g_robot_stuck){
 			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
-			set_error_code(Error_Code_Omni);
+			set_error_code(Error_Code_Stuck);
 			g_fatal_quit_event = true;
 			break;
 		}
@@ -1235,7 +1223,8 @@ void cm_register_events()
 
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-
+	/* robot stuck */
+	event_manager_enable_handler(EVT_ROBOT_STUCK,true);
 	/* Slam Error */
 	event_manager_enable_handler(EVT_SLAM_ERROR, true);
 
@@ -1728,7 +1717,6 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 		reset_rcon_remote();
 		return;
 	}
-
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
 	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
