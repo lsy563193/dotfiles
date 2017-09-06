@@ -376,14 +376,16 @@ bool cm_move_to(const PPTargetType& path)
 				{
 					auto is_block_clear = map_mark_robot(MAP);
 					PPTargetType temp_path;
+					auto path_target_time = ros::Time::now().toSec();
 					if(is_block_clear && path_target(curr, temp_path) >= 0)
 					{
+						ROS_ERROR("path_target_time_ms:%lf",(ros::Time::now().toSec()-path_target_time)*1000);
 						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
 						g_trapped_mode = 2;
 						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
 					}
 					else{
-						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+//						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
 					}
 				}
 				/*else if( g_trapped_mode == 3)
@@ -587,7 +589,9 @@ int cm_cleaning()
 		Cell_t curr = map_get_curr_cell();
 		path_update_cell_history();
 //		path_update_cells();
+		auto path_next_time = ros::Time::now().toSec();
 		int8_t is_found = path_next(curr, cleaning_path);
+		ROS_ERROR("path_next_time_ms:%lf",(ros::Time::now().toSec()-path_next_time)*1000);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point
@@ -665,6 +669,7 @@ void cm_check_should_go_home(void)
 	if (g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
 		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home, or finish cleaning.", __FUNCTION__, __LINE__);
+		ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
