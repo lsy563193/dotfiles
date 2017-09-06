@@ -978,53 +978,66 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 		}
 	}
+
+	/* Clear the target list and path list. */
 	for (auto& target : g_targets)
 		target.cells.clear();
 	g_targets.clear();
 
-//	 Narrow down the coodinate that robot should go
+	/* Filter the targets. */
 	for (auto y = map.min.Y; y <= map.max.Y; y++)
 	{
-		for(auto i =0;i<2;i++)
+		auto start = SHRT_MAX;
+		auto end = SHRT_MAX;
+		PPTargetType t;
+		t.cells.clear();
+		for (auto x = map.min.X; x != map.max.X; x++)
 		{
-			auto dx = i==0 ? 1 : -1;
-			auto bound = i==0 ? SHRT_MAX : SHRT_MIN;
-			auto start =bound;
-			auto end = bound;
-			auto begin_x = i==0 ? map.min.X : map.max.X;
-			auto end_x = curr.X+dx;
-			for (auto x = begin_x; x != end_x; x += dx)
+			if (map_get_cell(MAP, x, y) == TARGET)
 			{
-				if (map_get_cell(MAP, x, y) == TARGET)
+				if (start == SHRT_MAX)
 				{
-					if (start == bound) start = x;
-					if (start != bound) end = x;
+					// Save the start target of this target line.
+					start = x;
+					t.target = {static_cast<int16_t>(start), y};
+					g_targets.push_back(t);
 				}
-				if (map_get_cell(MAP, x, y) != TARGET || x == curr.X)
+				if (start != SHRT_MAX)
+					end = x;
+			}
+			if (map_get_cell(MAP, x, y) != TARGET)
+			{
+				if (start != SHRT_MAX && end != start)
 				{
-					if (start != bound &&std::abs(end-start) > 1) {
-						for (auto it_x = start + dx; it_x != end; it_x += dx)
-							if (map_get_cell(MAP, it_x, y) == TARGET)
+					// Save the end target of this target line.
+					t.target = {static_cast<int16_t>(end), y};
+					g_targets.push_back(t);
+					if (end - start > 1)
+					{
+						// Clear the targets between start and end, it means finding the both end of the unclean lane.
+						for (auto it_x = start + 1; it_x != end; it_x++)
+						{
+							if (it_x != curr.X)
 								map_set_cell(MAP, cell_to_count(it_x), cell_to_count(y), UNCLEAN);
-						start = end = bound;
+							else
+							{
+								// Save the target with the same X of current cell.
+								t.target = {static_cast<int16_t>(it_x), y};
+								g_targets.push_back(t);
+							}
+						}
 					}
 				}
+				start = end = SHRT_MAX;
 			}
 		}
 	}
 #if DEBUG_MAP
+	// Print for map that contains all targets.
 //	debug_map(MAP, g_home_x, g_home_y);
 #endif
-	map_tmp = map;
-	for (const auto& cell : map_tmp) {
-		if (map_get_cell(MAP, cell.X, cell.Y) == TARGET) {
-			PPTargetType t;
-			t.target = cell;
-			t.cells.clear();
-			g_targets.push_back(t);
-			map.Add(cell);
-		}
-	}
+
+	// Restore the target cells in MAP to unclean.
 	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 		map_set_cell(MAP, cell_to_count(it->target.X), cell_to_count(it->target.Y), UNCLEAN);
 	}
