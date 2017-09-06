@@ -308,7 +308,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 //		if(! is_turn())
 //			cm_update_map();
-		cm_update_position();
+//		cm_update_position();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
