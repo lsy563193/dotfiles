@@ -309,6 +309,7 @@ bool cm_move_to(const PPTargetType& path)
 	passed_path.clear();
 	passed_path.push_back(curr);
 
+		int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
 	{
 		/*for navigation trapped wall follow update map and push_back vector*/
@@ -402,7 +403,6 @@ bool cm_move_to(const PPTargetType& path)
 			}
 		}
 
-		int32_t	 speed_left = 0, speed_right = 0;
 		rm.adjustSpeed(speed_left, speed_right);
 		set_wheel_speed(speed_left, speed_right);
 	}

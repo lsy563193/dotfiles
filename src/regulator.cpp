@@ -31,6 +31,7 @@ int factor=15;
 bool line_is_found;
 double wall_distance=0.8;
 float back_distance=0.01;
+uint8_t seen_charger_counter = 0;
 CMMoveType last_move_type;
 //bool g_is_should_follow_wall;
 
@@ -709,6 +710,7 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 	s_origin_angle = gyro_get_angle();
 	s_target = target;
 	g_is_left_start = false;
+	seen_charger_counter = 0;
 	map_init(WFMAP);
 	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 }
@@ -811,10 +813,12 @@ bool FollowWallRegulator::isSwitch()
 	}
 //	if(get_rcon_status() != 0)
 //		ROS_ERROR("%s,%d: rcon_status(%x)",__FUNCTION__, __LINE__, get_rcon_status());
-
+#if 0
 	auto rcon_tmp = get_rcon_trig();
 //	if(rcon_tmp != 0)
 //		ROS_WARN("rcon_tmp(%d)",rcon_tmp);
+
+	/*---rcon handled in adjustSpeed()---*/
 	if( g_rcon_triggered || rcon_tmp){
 		if(! g_rcon_triggered)
 			g_rcon_triggered = rcon_tmp;
@@ -824,7 +828,7 @@ bool FollowWallRegulator::isSwitch()
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-
+#endif
 	if( g_obs_triggered  || get_front_obs() >= get_front_obs_value()+1000){
 		if(! g_obs_triggered)
 			g_obs_triggered = Status_Front_OBS;
@@ -852,6 +856,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	ROS_DEBUG("%s %d: FollowWallRegulator.", __FUNCTION__, __LINE__);
 	set_dir_forward();
 //	uint32_t same_dist = (get_right_wheel_step() / 100) * 11 ;
+	uint32_t rcon_status = 0;
 	auto _l_step = get_left_wheel_step();
 	auto _r_step = get_right_wheel_step();
 	auto &same_dist = (mt_is_left()) ? _l_step : _r_step;
@@ -861,6 +866,78 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	wall_buffer[2]=wall_buffer[1];
 	wall_buffer[1]=wall_buffer[0];
 	wall_buffer[0]=(mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+
+	rcon_status = get_rcon_status();
+	/*---only use a part of the Rcon signal---*/
+	#if 0
+	rcon_status &= (RconFL2_HomeT|RconFL2_HomeL|RconFL2_HomeR|
+					RconFR_HomeT|RconFR_HomeL|RconFR_HomeR|
+					RconFL_HomeT|RconFL_HomeL|RconFL_HomeR|
+					RconFR2_HomeT|RconFR2_HomeL|RconFR2_HomeR|
+					RconL_HomeL|RconL_HomeR|
+					RconR_HomeL|RconR_HomeR);
+	#endif
+	rcon_status &= (RconFL2_HomeT|RconFL2_HomeL|RconFL2_HomeR|
+					RconFR_HomeT|RconFR_HomeL|RconFR_HomeR|
+					RconFL_HomeT|RconFL_HomeL|RconFL_HomeR|
+					RconFR2_HomeT|RconFR2_HomeL|RconFR2_HomeR);
+	if(rcon_status)
+	{
+		int32_t linear_speed = 24;
+		/* angular speed notes						*
+		 * larger than 0 means move away from wall	*
+		 * less than 0 means move close to wall		*/
+		int32_t angular_speed = 0;
+
+		seen_charger_counter = 30;
+		if(rcon_status & (RconFR_HomeT|RconFR_HomeL|RconFR_HomeR|RconFL_HomeT|RconFL_HomeL|RconFL_HomeR))
+		{
+			angular_speed = 12;
+		}
+		else if(rcon_status & (RconFR2_HomeT|RconFR2_HomeL|RconFR2_HomeR))
+		{
+			if(mt_is_left())
+				angular_speed = 15;
+			else if(mt_is_right())
+				angular_speed = 10;
+		}
+		else if(rcon_status & (RconFL2_HomeT|RconFL2_HomeL|RconFL2_HomeR))
+		{
+			if(mt_is_left())
+				angular_speed = 10;
+			else if(mt_is_right())
+				angular_speed = 15;
+		}
+		#if 0
+		else if(rcon_status & (RconL_HomeL|RconL_HomeR))
+		{
+			if(mt_is_left())
+				angular_speed = -3;
+			else if(mt_is_right())
+				seen_charger_counter = 0;/*---no use to elude the charger---*/
+		}
+		else if(rcon_status & (RconR_HomeL|RconR_HomeR))
+		{
+			if(mt_is_left())
+				seen_charger_counter = 0;/*---no use to elude the charger---*/
+			else if(mt_is_right())
+				angular_speed = -3;
+		}
+		#endif
+		reset_rcon_status();
+		/*---check if should eloud the charger---*/
+		if(seen_charger_counter)
+		{
+			same_speed = linear_speed + angular_speed;
+			diff_speed = linear_speed - angular_speed;
+			return ;
+		}
+	}
+	if(seen_charger_counter)
+	{
+		seen_charger_counter--;
+		return ;
+	}
 
 //	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
 	if ((same_dist) < (uint32_t) g_straight_distance)
@@ -1169,8 +1246,8 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 			g_turn_angle = cliff_turn_angle();
 		else if (g_tilt_triggered)
 			g_turn_angle = tilt_turn_angle();
-		else if (g_rcon_triggered)
-			g_turn_angle = rcon_turn_angle();
+	//	else if (g_rcon_triggered)
+	//		g_turn_angle = rcon_turn_angle();
 		else
 			g_turn_angle = 0;
 		if (LASER_FOLLOW_WALL)
