@@ -373,15 +373,21 @@ bool cm_move_to(const PPTargetType& path)
 				if (g_trapped_mode == 1 )
 				{
 					auto is_block_clear = map_mark_robot(MAP);
-					PPTargetType temp_path;
-					if(is_block_clear && path_target(curr, temp_path) >= 0)
+					if(is_block_clear)
 					{
-						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
-						g_trapped_mode = 2;
-						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-					}
-					else{
-						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+						BoundingBox2 map;
+						if (get_reachable_targets(curr, map))
+						{
+							ROS_WARN("%s %d: Found reachable targets, exit trapped.", __FUNCTION__, __LINE__);
+							g_trapped_mode = 2;
+							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
+						} else if (path_escape_trapped(curr))
+						{
+							ROS_WARN("%s %d: Found reachable home, exit trapped.", __FUNCTION__, __LINE__);
+							g_trapped_mode = 2;
+							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
+						} else
+							ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
 					}
 				}
 			}

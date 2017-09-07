@@ -807,6 +807,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
 		map_set_cell(MAP, cell_to_count(it->target.X), cell_to_count(it->target.Y), UNCLEAN);
 	}
+	ROS_INFO("%s %d: Found %lu targets from MAP.", __FUNCTION__, __LINE__, g_targets.size());
 }
 
 void generate_SPMAP(const Cell_t& curr)
@@ -914,7 +915,8 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 		else
 			it++;
 	}
-	
+
+	ROS_INFO("%s %d: Get %lu reachable targets.", __FUNCTION__, __LINE__, g_targets.size());
 	if (g_targets.empty())
 		return false;
 	else
@@ -1075,14 +1077,12 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 	if (!get_reachable_targets(curr, map)) {
 		/* No more target to clean */
 		if (path_escape_trapped(curr) <= 0) {
-			ROS_WARN("%s %d: trapped", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Detect trapped!!", __FUNCTION__, __LINE__);
 			return -2;
 		}
-		ROS_INFO("%s %d: targets list empty.", __FUNCTION__, __LINE__);
-		return 0;
+		else
+			return 0;
 	}
-	else
-		ROS_INFO("%s %d: targets count: %lu", __FUNCTION__, __LINE__, g_targets.size());
 
 	generate_path_to_targets(curr);
 
@@ -1093,10 +1093,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 	if (path_select_target(curr, temp_target, map))
 		return path_next_shortest(curr, temp_target, path);
 	else
-	{
-		ROS_INFO("%s %d: No target selected.", __FUNCTION__, __LINE__);
 		return 0;
-	}
 }
 
 bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingBox2& map)
@@ -1354,7 +1351,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 	}
 
 	is_found = (final_cost != 1000) ? final_cost : 0 ;
-	ROS_INFO("%s %d: is_found: %d (%d, %d)\n", __FUNCTION__, __LINE__, is_found, temp_target.X, temp_target.Y);
+	ROS_INFO("%s %d: is_found: %d target(%d, %d)\n", __FUNCTION__, __LINE__, is_found, temp_target.X, temp_target.Y);
 #if DEBUG_MAP
 	debug_map(MAP, temp_target.X, temp_target.Y);
 #endif
