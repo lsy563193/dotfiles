@@ -101,6 +101,11 @@ extern int16_t g_wf_x_min, g_wf_x_max, g_wf_y_min, g_wf_y_max;
 
 extern int16_t g_ros_x_min, g_ros_x_max, g_ros_y_min, g_ros_y_max;
 
+bool sort_g_targets_y_ascend(PPTargetType a, PPTargetType b)
+{
+	return a.target.Y < b.target.Y;
+}
+
 static std::vector<int>::iterator _gen_home_ways(int size, std::vector<int> &go_home_way_list) {
 	ROS_INFO("%s,%d: go_home_way_list 1:                       2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
@@ -1068,12 +1073,58 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 //		path_display_path_points(path_it.cells);
 
 	bool is_stop = false, is_found = false, within_range=false;
-  int16_t last_y;
+	int16_t y_max;
 	Cell_t temp_target;
-	auto final_cost = 1000;
+	list <PPTargetType> temp_targets;
+	temp_targets.clear();
+	uint16_t final_cost = 1000;
 	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
-	for (auto d = map.max.Y; d >= curr.Y; --d) {
-		if (is_stop && d <= curr.Y + 1) {
+	// Filter targets in Y+ direction of curr.
+	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+		if (map_get_cell(MAP, it->target.X, it->target.Y - 1) != CLEANED) {
+			continue;
+		}
+		if (it->target.Y > curr.Y + 1)
+		{
+			PPTargetType temp_it;
+			temp_it.target = it->target;
+			temp_it.cells = it->cells;
+			temp_targets.push_front(temp_it);
+		}
+	}
+	// Sort targets with Y ascend order.
+	temp_targets.sort(sort_g_targets_y_ascend);
+
+	for (list<PPTargetType>::iterator it = temp_targets.begin(); it != temp_targets.end(); ++it) {
+		ROS_ERROR("%s %d: target:(%d, %d), cells.front:(%d, %d).", __FUNCTION__, __LINE__, it->target.X, it->target.Y, it->cells.front().X, it->cells.front().Y);
+		if (is_stop)
+			break;
+
+		if (it->cells.size() > final_cost)
+			continue;
+
+		y_max = it->target.Y;
+		within_range = true;
+		for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
+			if (i->Y < curr.Y)
+				// All turning cells should be in Y+ area, so quit it.
+				within_range = false;
+			if (i->Y > y_max)
+				// Not allow path towards Y- direction.
+				within_range = false;
+			else
+				y_max = i->Y;
+		}
+		if (within_range == true) {
+			temp_target = it->target;
+			final_cost = it->cells.size();
+			is_stop = true;
+		}
+	}
+
+/*
+	for (auto d = map.max.Y; d > curr.Y + 1; --d) {
+		if (is_stop) {
 			break;
 		}
 		for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
@@ -1085,16 +1136,16 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 					continue;
 				}
 
-				last_y = it->cells.front().Y;
+				y_max = it->cells.front().Y;
 				within_range = true;
 				for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 					if (i->Y < curr.Y || i->Y > d) {
 						within_range = false;
 					}
-					if (i->Y > last_y) {
+					if (i->Y > y_max) {
 						within_range = false;
 					} else {
-						last_y = i->Y;
+						y_max = i->Y;
 					}
 				}
 				if (within_range == true) {
@@ -1105,6 +1156,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 			}
 		}
 	}
+*/
 
 //#if !INTERLACED_MOVE
 #if 1
@@ -1119,23 +1171,23 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 						}
 
 						within_range = true;
-						last_y = it->cells.front().Y;
+						y_max = it->cells.front().Y;
 						bool turn = false;
 						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 							if (i->Y < a || i->Y > (d > curr.Y ? d : curr.Y)) {
 								within_range = false;
 							}
 							if (turn == false) {
-								if (i->Y > last_y) {
+								if (i->Y > y_max) {
 									within_range = false;
 								} else {
-									last_y = i->Y;
+									y_max = i->Y;
 								}
 							} else {
-								if (i->Y < last_y) {
+								if (i->Y < y_max) {
 									within_range = false;
 								} else {
-									last_y = i->Y;
+									y_max = i->Y;
 								}
 							}
 							if (i->Y == a) {
@@ -1170,16 +1222,16 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 						continue;
 					}
 
-					last_y = it->cells.front().Y;
+					y_max = it->cells.front().Y;
 					within_range = true;
 					for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 						if (i->Y > curr.Y || i->Y < d) {
 							within_range = false;
 						}
-						if (i->Y < last_y) {
+						if (i->Y < y_max) {
 							within_range = false;
 						} else {
-							last_y = i->Y;
+							y_max = i->Y;
 						}
 					}
 					if (within_range == true) {
@@ -1203,23 +1255,23 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 						}
 
 						within_range = true;
-						last_y = it->cells.front().Y;
+						y_max = it->cells.front().Y;
 						bool turn = false;
 						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 							if (i->Y > a || i->Y < (d > curr.Y ? curr.Y : d)) {
 								within_range = false;
 							}
 							if (turn == false) {
-								if (i->Y < last_y) {
+								if (i->Y < y_max) {
 									within_range = false;
 								} else {
-									last_y = i->Y;
+									y_max = i->Y;
 								}
 							} else {
-								if (i->Y > last_y) {
+								if (i->Y > y_max) {
 									within_range = false;
 								} else {
-									last_y = i->Y;
+									y_max = i->Y;
 								}
 							}
 							if (i->Y == a) {
