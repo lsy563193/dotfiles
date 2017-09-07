@@ -169,9 +169,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	initSucceeded(true);
 
-	g_homes.resize(1,g_zero_home);
-	g_home_gen_rosmap = true;
-	g_home_way_list.clear();
 	if (!initCleaning(get_clean_mode()))
 	{
 		initSucceeded(false);
@@ -355,6 +352,9 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 	}
 
+	if (!g_charge_detect)
+		// It means robot can not go to charger stub.
+		robot::instance()->resetLowBatPause();
 
 	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
 	{
@@ -485,6 +485,9 @@ bool MotionManage::initNavigationCleaning(void)
 		g_have_seen_charge_stub = false;
 		g_start_point_seen_charger = false;
 
+		g_homes.resize(1,g_zero_home);
+		g_home_gen_rosmap = true;
+		g_home_way_list.clear();
 	}
 
 	reset_touch();
@@ -561,8 +564,8 @@ bool MotionManage::initNavigationCleaning(void)
 				return false;
 			}
 		}
-		auto cell = cm_update_position();
-		path_set_home(cell);
+		auto curr = map_get_curr_cell();
+		path_set_home(curr);
 		stop_brifly();
 		extern bool g_from_station;
 		g_from_station = 1;
@@ -617,6 +620,9 @@ bool MotionManage::initWallFollowCleaning(void)
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 	extern bool g_have_seen_charge_stub;
 	g_have_seen_charge_stub = false;
 	work_motor_configure();
@@ -654,6 +660,10 @@ bool MotionManage::initSpotCleaning(void)
 	map_init(MAP);//init map
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
+
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 
 	set_vac_mode(Vac_Max);
 	set_vac_speed();

@@ -5,6 +5,7 @@
 #include "map.h"
 #include "mathematics.h"
 #include "debug.h"
+#include "BoundingBox.h"
 
 #include <list>
 #include <deque>
@@ -104,43 +105,23 @@ void wf_path_planning_initialize();
  */
 int8_t path_next(const Cell_t& curr, PPTargetType& path);
 
-uint8_t path_home(int32_t *x, int32_t *y);
-
 void path_update_cell_history(void);
-
-void path_set_max_try_cnt(uint8_t val);
 
 uint16_t path_get_robot_direction(void);
 
-void path_reset_last_position(void);
-
-/*
- * Check a block is accessible or not, a block is defined as have the same size of robot.
- *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
- *
- * @return	0 if the block is not accessible
- *		1 if the block is accessible
- */
-uint8_t is_block_accessible(int16_t x, int16_t y);
-
 int16_t path_target(const Cell_t& curr, PPTargetType& path);
 //int16_t path_target2(const Cell_t& curr, PPTargetType& path);
+void path_find_all_targets(const Cell_t& curr, BoundingBox2& map);
+
+void generate_SPMAP(const Cell_t& curr);
+
+bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map);
+
+void generate_path_to_targets(const Cell_t& curr);
+
+bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingBox2& map);
 
 int16_t isolate_target(const Cell_t& curr, PPTargetType& path);
-
-uint16_t path_targets_get_count(void);
-
-void path_targets_clear_list(void);
-
-uint8_t path_targets_get_last(int16_t *x, int16_t *y);
-
-uint8_t path_targets_try_add_one(int16_t x, int16_t y, uint8_t accessible);
-
-void path_targets_add_one(int16_t x, int16_t y, uint8_t accessible);
-
-void path_targets_update(void);
 
 /*
  * Update the Map cells for when robot move towards NORTH or SOUTH.
@@ -166,19 +147,7 @@ void path_update_cells(void);
  * 		2 if both ends are not cleaned
  */
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path);
-void path_find_all_targets(const Cell_t& curr, std::list <PPTargetType>& g_targets);
 bool path_full(const Cell_t& curr, PPTargetType& path);
-
-/*
- * Find how many cells ahead to clean with a given target.
- *
- * @param x	X coordinate of robot before moving to the target
- * @param y	Y coordinate of robot before moving to the target
- * @param x_next	X coordinate of target
- *
- * @return
- */
-int16_t path_ahead_to_clean(int16_t x, Cell_t next);
 
 /*
  * Check whether the robot is trapped or not. The robot is trapped if there
@@ -190,12 +159,6 @@ int16_t path_ahead_to_clean(int16_t x, Cell_t next);
  * 		1 if the robot is not trapped.
  */
 int16_t path_escape_trapped(const Cell_t& curr);
-
- /* Set the around 9 cell as state */
-void path_set_9cell(int16_t cell_x, int16_t cell_y, CellState state);
-
- /* Set the around 9 cell as state */
-void path_set_25cell(int16_t cell_x, int16_t cell_y, CellState state);
 
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
@@ -300,6 +263,17 @@ uint8_t is_a_block(int16_t x, int16_t y);
  * @return	Last robot direction
  */
 uint16_t path_get_robot_direction(void);
+
+/*
+ * Check a block is accessible or not, a block is defined as have the same size of robot.
+ *
+ * @param x	X coordinate of the block
+ * @param y	Y coordinate of the block
+ *
+ * @return	0 if the block is not accessible
+ *		1 if the block is accessible
+ */
+uint8_t is_block_accessible(int16_t x, int16_t y);
 
 // This function is for setting the continue cell for robot to go after charge.
 void path_set_continue_cell(Cell_t cell);

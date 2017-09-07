@@ -308,7 +308,7 @@ static void wf_mark_home_point(void)
 	}
 }
 */
-static bool is_isolate() {
+/*static bool is_isolate() {
 	path_update_cell_history();
 	int16_t	val = 0;
 	uint16_t i = 0;
@@ -336,7 +336,7 @@ static bool is_isolate() {
 		if (is_block_accessible(0, 0) == 1) {
 			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
-				/* Robot start position is blocked. */
+				*//* Robot start position is blocked. *//*
 				val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
 
 				if (val < 0 || val == SCHAR_MAX) {
@@ -356,7 +356,7 @@ static bool is_isolate() {
 		}
 	}
 	return val != 0;
-}
+}*/
 
 static bool trapped_is_isolate() {
 	path_update_cell_history();
@@ -372,7 +372,7 @@ static bool trapped_is_isolate() {
 
 //	path_escape_set_trapped_cell(pnt16ArTmp, 1);
 //	cm_update_map();
-	cm_update_position();
+//	cm_update_position();
 	map_mark_robot(WFMAP);//note: To clear the obstacle when check isolated, please don't remove it!
 #if DEBUG_WF_MAP
 	debug_map(WFMAP, 0, 0);
@@ -433,7 +433,7 @@ uint8_t wf_clear(void)
 
 void wf_update_map(uint8_t id)
 {
-	auto cell = cm_update_position();
+	auto cell = map_get_curr_cell();
 
 	Pose16_t curr_cell{cell.X, cell.Y, (int16_t) gyro_get_angle()};
 	if (wf_is_reach_new_cell(curr_cell))
