@@ -913,18 +913,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 	rcon_status = get_rcon_status();
 	/*---only use a part of the Rcon signal---*/
-	#if 0
-	rcon_status &= (RconFL2_HomeT|RconFL2_HomeL|RconFL2_HomeR|
-					RconFR_HomeT|RconFR_HomeL|RconFR_HomeR|
-					RconFL_HomeT|RconFL_HomeL|RconFL_HomeR|
-					RconFR2_HomeT|RconFR2_HomeL|RconFR2_HomeR|
-					RconL_HomeL|RconL_HomeR|
-					RconR_HomeL|RconR_HomeR);
-	#endif
-	rcon_status &= (RconFL2_HomeT|RconFL2_HomeL|RconFL2_HomeR|
-					RconFR_HomeT|RconFR_HomeL|RconFR_HomeR|
-					RconFL_HomeT|RconFL_HomeL|RconFL_HomeR|
-					RconFR2_HomeT|RconFR2_HomeL|RconFR2_HomeR);
+	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
 	if(rcon_status)
 	{
 		int32_t linear_speed = 24;
@@ -934,40 +923,24 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		int32_t angular_speed = 0;
 
 		seen_charger_counter = 30;
-		if(rcon_status & (RconFR_HomeT|RconFR_HomeL|RconFR_HomeR|RconFL_HomeT|RconFL_HomeL|RconFL_HomeR))
+		if(rcon_status & (RconFR_HomeT|RconFL_HomeT))
 		{
 			angular_speed = 12;
 		}
-		else if(rcon_status & (RconFR2_HomeT|RconFR2_HomeL|RconFR2_HomeR))
+		else if(rcon_status & RconFR2_HomeT)
 		{
 			if(mt_is_left())
 				angular_speed = 15;
 			else if(mt_is_right())
 				angular_speed = 10;
 		}
-		else if(rcon_status & (RconFL2_HomeT|RconFL2_HomeL|RconFL2_HomeR))
+		else if(rcon_status & RconFL2_HomeT)
 		{
 			if(mt_is_left())
 				angular_speed = 10;
 			else if(mt_is_right())
 				angular_speed = 15;
 		}
-		#if 0
-		else if(rcon_status & (RconL_HomeL|RconL_HomeR))
-		{
-			if(mt_is_left())
-				angular_speed = -3;
-			else if(mt_is_right())
-				seen_charger_counter = 0;/*---no use to elude the charger---*/
-		}
-		else if(rcon_status & (RconR_HomeL|RconR_HomeR))
-		{
-			if(mt_is_left())
-				seen_charger_counter = 0;/*---no use to elude the charger---*/
-			else if(mt_is_right())
-				angular_speed = -3;
-		}
-		#endif
 		reset_rcon_status();
 		/*---check if should eloud the charger---*/
 		if(seen_charger_counter)
