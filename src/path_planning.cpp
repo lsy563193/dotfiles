@@ -991,7 +991,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		auto end = SHRT_MAX;
 		PPTargetType t;
 		t.cells.clear();
-		for (auto x = map.min.X; x != map.max.X; x++)
+		for (auto x = map.min.X; x <= map.max.X; x++)
 		{
 			if (map_get_cell(MAP, x, y) == TARGET)
 			{
