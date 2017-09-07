@@ -1397,7 +1397,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				} else {
 					ret = path_target(curr, path);//0 not target, 1,found, -2 trap
 				}
-				ROS_WARN("%s %d: path_target return: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+				ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
 				if (ret == 0)
 				{
 					g_finish_cleaning_go_home = true;
@@ -1429,7 +1429,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 					if (path_escape_trapped(curr) <= 0)
 						ret = -2;
 			}
-			ROS_WARN("%s %d: path_target return: %d. Next(%d,%d), Target(%d,%d).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+			ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
 			if (ret == 0)
 			{
 				g_finish_cleaning_go_home = true;
@@ -1590,26 +1590,26 @@ void path_set_home(const Cell_t& curr)
 	bool is_found = false;
 
 	for (const auto& it : g_homes) {
-		ROS_INFO("%s %d: curr(%d, %d) home_it(%d,%d).", __FUNCTION__, __LINE__, curr.X, curr.Y,it.X,it.Y);
+		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.X, curr.Y,it.X,it.Y);
 		if (it == curr) {
 			is_found = true;
 			break;
 		}
 	}
 	if (!is_found) {
-		ROS_INFO("%s %d: Push new reachable home: (%d, %d) to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
+		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
 		extern bool g_have_seen_charge_stub;
 		if(get_clean_mode() != Clean_Mode_Spot)
 			g_have_seen_charge_stub = true;
 		// If curr near (0, 0)
 		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
 		{
-        if(g_homes.size() >= ESCAPE_TRAPPED_REF_CELL_SIZE+1)//escape_count + zero_home = 3+1 = 4
-				{
-					std::copy(g_homes.begin() + 2, g_homes.end(), g_homes.begin()+1);//shift 1 but save zero_home
-					g_homes.pop_back();
-				}
-				g_homes.push_back(curr);
+			if(g_homes.size() >= ESCAPE_TRAPPED_REF_CELL_SIZE+1)//escape_count + zero_home = 3+1 = 4
+			{
+				std::copy(g_homes.begin() + 2, g_homes.end(), g_homes.begin()+1);//shift 1 but save zero_home
+				g_homes.pop_back();
+			}
+			g_homes.push_back(curr);
 		}
 	}
 	else if(curr == g_zero_home && get_clean_mode() != Clean_Mode_Spot)

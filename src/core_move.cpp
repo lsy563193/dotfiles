@@ -573,10 +573,11 @@ int cm_cleaning()
 
 	g_motion_init_succeeded = true;
 	g_robot_stuck_enable = true;
+	g_robot_stuck = false;
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event)
+		if (g_key_clean_pressed || g_fatal_quit_event || g_robot_stuck)
 			return -1;
 
 		if (!g_go_home)
@@ -1116,10 +1117,11 @@ void cm_self_check(void)
 			g_fatal_quit_event = true;
 			break;
 		}
-		else if (g_robot_stuck){
+		else if (g_robot_stuck)
+		{
 			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
 			set_error_code(Error_Code_Stuck);
-			g_fatal_quit_event = true;
+			//g_fatal_quit_event = true;
 			break;
 		}
 		else

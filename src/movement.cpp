@@ -3012,25 +3012,6 @@ void reset_sleep_mode_flag()
 	g_sleep_mode_flag = 0;
 }
 
-void clear_manual_pause(void)
-{
-	if (robot::instance()->isManualPaused())
-	{
-		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
-		ROS_WARN("Reset manual pause status.");
-		wav_play(WAV_CLEANING_STOP);
-		robot::instance()->resetManualPause();
-		robot::instance()->savedOffsetAngle(0);
-		if (MotionManage::s_slam != nullptr)
-		{
-			delete MotionManage::s_slam;
-			MotionManage::s_slam = nullptr;
-		}
-		cm_reset_go_home();
-		g_resume_cleaning = false;
-	}
-}
-
 void beep_for_command(bool valid)
 {
 	if (valid)
@@ -3206,11 +3187,41 @@ uint8_t get_tilt_status()
 uint8_t is_robot_stuck()
 {
 	uint8_t ret = 0;
-	if(Laser::isScanReady()){
+	if(Laser::isScan2Ready() && (get_tilt_status() == 0) ){
 		if(Laser::isRobotStuck()){
 			ROS_INFO("\033[35m""%s,%d,robot stuck!!""\033[0m",__FUNCTION__,__LINE__);
 			ret = 1;
 		}
 	}
 	return ret;
+}
+
+bool is_clean_paused()
+{
+	bool ret = false;
+	if(robot::instance()->isManualPaused() || g_robot_stuck)
+	{
+		ret= true;
+	}
+	return ret;
+}
+
+void reset_clean_paused(void)
+{
+	if (robot::instance()->isManualPaused() || g_robot_stuck)
+	{
+		g_robot_stuck = false;
+		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
+		ROS_WARN("Reset manual/stuck pause status.");
+		wav_play(WAV_CLEANING_STOP);
+		robot::instance()->resetManualPause();
+		robot::instance()->savedOffsetAngle(0);
+		if (MotionManage::s_slam != nullptr)
+		{
+			delete MotionManage::s_slam;
+			MotionManage::s_slam = nullptr;
+		}
+		cm_reset_go_home();
+		g_resume_cleaning = false;
+	}
 }

@@ -136,7 +136,7 @@ void charge_function(void)
 					break;
 				case 2:
 					wav_play(WAV_ERROR_LIFT_UP);
-					clear_manual_pause();
+					reset_clean_paused();
 					charge_reject_reason = 0;
 					break;
 				case 3:
@@ -301,9 +301,9 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 			{
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
-				if (robot::instance()->isManualPaused())
+				if (is_clean_paused())
 				{
-					clear_manual_pause();
+					reset_clean_paused();
 				}
 				g_plan_activated = true;
 				break;

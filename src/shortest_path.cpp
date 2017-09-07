@@ -1349,7 +1349,7 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
-	ROS_INFO("%s %d: curr_x: %d\tcurr_y: %d\tend_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d\t return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
+	ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d\ty: %d - %d\t return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	if (bound == 1) {
 		/* If bound is set, set the search range. */
 		x_min = (curr_x > end_x ? end_x : curr_x) - 8;
@@ -1357,12 +1357,12 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
 		y_min = (curr_y > end_y ? end_y : curr_y) - 8;
 		y_max = (curr_y > end_y ? curr_y : end_y) + 8;
 		val = path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
-		ROS_INFO("%s %d: curr_x: %d\tcurr_y: %d\tend_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d\t return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
+		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	} else {
 		/* If bound is not set, set the search range to the whole map. */
 		path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
 		val = path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
-		ROS_INFO("%s %d: curr_x: %d\tcurr_y: %d\tend_x: %d\tend_y: %d\tx: %d - %d\ty: %d - %d\t return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
+		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	}
 
 	return val;
