@@ -815,8 +815,9 @@ bool FollowWallRegulator::isReach()
 //				}
 				auto angle_diff = ranged_angle( gyro_get_angle());
 				auto target_angel  = (s_target.Y > s_origin.Y) ? -900 : 900;
+				auto curr = map_point_to_cell(s_curr_p);
 				ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
-				if(std::abs(gyro_get_angle()-target_angel) <100)
+				if(std::abs(gyro_get_angle()-target_angel) <50 || is_block_cleaned_unblock(curr.X,curr.Y))
 				{
 					ROS_WARN("%s %d: is_map_front_block", __FUNCTION__, __LINE__);
 					ret = true;

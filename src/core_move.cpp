@@ -177,11 +177,11 @@ int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32
 	return index;
 }
 
-void cm_update_map()
-{
-	auto last = map_get_curr_cell();
+//void cm_update_map()
+//{
+//	auto last = map_get_curr_cell();
 
-	auto curr = cm_update_position();
+//	auto curr = cm_update_position();
 
 //	ROS_WARN("1 last(%d,%d),curr(%d,%d)",last.X, last.Y, curr.X, curr.Y);
 
@@ -189,12 +189,12 @@ void cm_update_map()
 //	if (last != curr )
 //	{
 
-	map_set_cleaned(curr);
+//	map_set_cleaned(curr);
 //		if (get_bumper_status() != 0 || get_cliff_status() != 0 || get_obs_status() != 0)
 //		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell);
 //	}
 
-}
+//}
 
 //-------------------------------cm_move_back-----------------------------//
 
@@ -291,10 +291,7 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
  */
 bool cm_move_to(const PPTargetType& path)
 {
-	cm_update_position();
-	Cell_t curr;
-	curr = map_get_curr_cell();
-
+	Cell_t curr = cm_update_position();
 //#if INTERLACED_MOVE
 //	extern uint16_t g_new_dir;
 //	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
@@ -330,6 +327,7 @@ bool cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
+		curr = cm_update_position();
 		rm.updatePosition({map_get_x_count(),map_get_y_count()});
 
 		if (rm.isExit()){
@@ -355,7 +353,6 @@ bool cm_move_to(const PPTargetType& path)
 		if (get_clean_mode() != Clean_Mode_WallFollow
 						&& (mt_is_linear() || mt_is_follow_wall()))
 		{
-			curr = map_get_curr_cell();
 			if (passed_path.back() != curr)
 			{
 				extern uint16_t g_new_dir;
@@ -387,19 +384,6 @@ bool cm_move_to(const PPTargetType& path)
 						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
 					}
 				}
-				/*else if( g_trapped_mode == 3)
-				{
-					ROS_WARN("%s,%d:g_trapped_mode == 3", __FUNCTION__, __LINE__);
-					if(path_escape_trapped(curr) == 1)
-					{
-						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
-						g_trapped_mode = 2;
-						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-					}
-					else{
-						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
-					}
-				}*/
 			}
 		}
 
@@ -571,6 +555,7 @@ int cm_cleaning()
 	if (!motion.initSucceeded())
 		return 0;
 
+	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
 	g_robot_stuck_enable = true;
 	ROS_INFO("\033[35menable robot stuck\033[0m");
@@ -584,9 +569,9 @@ int cm_cleaning()
 
 		cm_check_temp_spot();
 
-		Cell_t curr = map_get_curr_cell();
 		path_update_cell_history();
 //		path_update_cells();
+		curr = map_get_curr_cell();
 		int8_t is_found = path_next(curr, cleaning_path);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
@@ -603,7 +588,7 @@ int cm_cleaning()
 				return -1;
 			}
 			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
-			if (map_get_x_cell() == 0 && map_get_y_cell() == 0) {
+			if (curr == g_zero_home) {
 				auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
 				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
 				{
@@ -632,7 +617,7 @@ int cm_cleaning()
 			}
 			else if(g_go_home)
 			{
-				if(map_get_curr_cell() == g_home)
+				if(curr == g_home)
 				{
 					if (g_home != g_zero_home || g_start_point_seen_charger )
 					{
@@ -699,7 +684,7 @@ void cm_check_temp_spot(void)
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-			Cell_t curr_cell = cm_update_position();
+			Cell_t curr_cell = map_get_curr_cell();
 			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
 			SpotMovement::instance() ->setSpotType(CLEAN_SPOT);
 			set_wheel_speed(0, 0);
