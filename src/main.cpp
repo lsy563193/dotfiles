@@ -61,7 +61,7 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_WallFollow);
 				robot::instance()->resetLowBatPause();
 
-				clear_manual_pause();
+				reset_clean_paused();
 
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				cm_cleaning();
@@ -69,7 +69,7 @@ void *core_move_thread(void *)
 			//case Clean_Mode_RandomMode:
 			//	ROS_INFO("\n-------Random_Running mode------\n");
 
-			//	clear_manual_pause();
+			//	reset_clean_paused();
 
 			//	Random_Running_Mode();
 			//	break;
@@ -88,7 +88,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------GoHome mode------\n");
 				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				go_home();
 				break;
 
@@ -99,7 +99,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Remote mode------\n");
 				set_main_pwr_byte(Clean_Mode_Remote);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				remote_mode();
 				break;
 
@@ -107,7 +107,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Spot mode------\n");
 				set_main_pwr_byte(Clean_Mode_Spot);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				reset_rcon_remote();
 				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
 				cm_cleaning();
@@ -123,7 +123,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Sleep mode------\n");
 				//set_main_pwr_byte(Clean_Mode_Sleep);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				disable_motors();
 				sleep_mode();
 				break;

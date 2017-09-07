@@ -402,8 +402,8 @@ uint8_t get_error_code(void);
 void alarm_error(void);
 bool check_error_cleared(uint8_t error_code);
 
-uint32_t get_right_wheel_step(void);
-uint32_t get_left_wheel_step(void);
+int32_t get_right_wheel_step(void);
+int32_t get_left_wheel_step(void);
 void reset_right_wheel_step();
 void reset_left_wheel_step();
 void set_wheel_step(uint32_t Left, uint32_t Right);
@@ -742,10 +742,6 @@ void reset_sleep_mode_flag();
 
 uint8_t get_self_check_vacuum_status(void);
 
-//#if MANUAL_PAUSE_CLEANING
-void clear_manual_pause(void);
-//#endif
-
 void beep_for_command(bool valid);
 
 void reset_sp_turn_count();
@@ -759,4 +755,6 @@ uint8_t check_tilt();
 void set_tilt_status(uint8_t status);
 uint8_t get_tilt_status();
 uint8_t is_robot_stuck();
+bool is_clean_paused();
+void reset_clean_paused();
 #endif

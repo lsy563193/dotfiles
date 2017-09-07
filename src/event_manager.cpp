@@ -578,7 +578,7 @@ void event_manager_reset_status(void)
 	/* Slam Error */
 	g_slam_error = false;
 	/* robot stuck */
-	g_robot_stuck = false;
+	//g_robot_stuck = false;
 	/* tilt switch*/
 	g_tilt_enable = false;
 	g_tilt_triggered = false;

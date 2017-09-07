@@ -308,7 +308,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 //		if(! is_turn())
 //			cm_update_map();
-		cm_update_position();
+//		cm_update_position();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
@@ -426,7 +426,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	//ros_map_convert();
 	MotionManage::s_slam->isMapReady(true);
 
-	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d:finished map callback,map_size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),map_origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
 
 }
 

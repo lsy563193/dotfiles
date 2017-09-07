@@ -54,7 +54,7 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 				y_col+="\033[1;46;37m5";
 			}
 			else if(cs == '6'){//tilt
-				y_col+="\033[1;47;37m6";
+				y_col+="\033[1;47;30m6";
 			}
 			else if(cs == '7'){//boudary
 				y_col+="\033[1;43;37m7";
@@ -66,7 +66,7 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 				y_col+="\033[5;43;37mx";
 			}
 			else if(cs == '>'){//target point
-				y_col+="\033[5;47;37m>";
+				y_col+="\033[5;40;37m>";
 			}
 			else{
 				y_col+=cs;

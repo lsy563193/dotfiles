@@ -21,7 +21,9 @@ public:
 	bool getLaserDistance(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
 
 	void setScanReady(uint8_t val);
+	void setScan2Ready(uint8_t val);
 	static int8_t isScanReady();
+	static int8_t isScan2Ready();
 	bool isNewDataReady();
 
 	double getLaserDistance(uint16_t angle);
@@ -56,6 +58,7 @@ private:
 	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
 
 	static uint8_t is_ready_;
+	static uint8_t is_scan2_ready_;
 
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;

@@ -156,7 +156,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_finish_cleaning_go_home = false;
 	g_motion_init_succeeded = false;
 	bool remote_home_during_pause = false;
-	if (robot::instance()->isManualPaused() && g_remote_home)
+	if (is_clean_paused() && g_remote_home)
 		remote_home_during_pause = true;
 	event_manager_reset_status();
 	if (remote_home_during_pause)
@@ -169,9 +169,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	initSucceeded(true);
 
-	g_homes.resize(1,g_zero_home);
-	g_home_gen_rosmap = true;
-	g_home_way_list.clear();
 	if (!initCleaning(get_clean_mode()))
 	{
 		initSucceeded(false);
@@ -203,9 +200,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			set_led_mode(LED_STEADY, LED_GREEN);
 		return;
 	}
-	if (robot::instance()->isManualPaused())
+	if (is_clean_paused())
 	{
 		robot::instance()->resetManualPause();
+		g_robot_stuck = false;
 		if (s_slam != nullptr)
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
@@ -306,7 +304,6 @@ MotionManage::~MotionManage()
 	//if (get_clean_mode() == Clean_Mode_Spot)
 	{
 		SpotMovement::instance()->spotDeinit();// clear the variables.
-		//sleep(1);
 	}
 	// Disable motor here because there is a work_motor_configure() in spotDeinit().
 	disable_motors();
@@ -323,7 +320,7 @@ MotionManage::~MotionManage()
 		s_laser = nullptr;
 	}
 
-	if (!g_fatal_quit_event && g_key_clean_pressed && robot::instance()->isManualPaused())
+	if (!g_fatal_quit_event && g_key_clean_pressed && is_clean_paused())
 	{
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
@@ -336,18 +333,18 @@ MotionManage::~MotionManage()
 			}
 			set_clean_mode(Clean_Mode_Userinterface);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-			ROS_INFO("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			if (g_go_home)
 #if MANUAL_PAUSE_CLEANING
 //				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
-			ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
 #else
 				ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 #endif
 			else
 				ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
 			g_saved_work_time += get_work_time();
-			ROS_INFO("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+			ROS_INFO("%s %d: Cleaning time: \033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
 			cm_unregister_events();
 			return;
 		}
@@ -355,6 +352,9 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 	}
 
+	if (!g_charge_detect)
+		// It means robot can not go to charger stub.
+		robot::instance()->resetLowBatPause();
 
 	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
 	{
@@ -368,7 +368,7 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
 			g_saved_work_time += get_work_time();
-			ROS_WARN("%s %d: Cleaning time: %d(s)", __FUNCTION__, __LINE__, g_saved_work_time);
+			ROS_INFO("%s %d: Cleaning time:\033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
 			cm_unregister_events();
 
 			cm_reset_go_home();
@@ -465,7 +465,7 @@ bool MotionManage::initNavigationCleaning(void)
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	if (!robot::instance()->isManualPaused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning)
+	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
 	{
 		g_saved_work_time = 0;
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
@@ -485,6 +485,9 @@ bool MotionManage::initNavigationCleaning(void)
 		g_have_seen_charge_stub = false;
 		g_start_point_seen_charger = false;
 
+		g_homes.resize(1,g_zero_home);
+		g_home_gen_rosmap = true;
+		g_home_way_list.clear();
 	}
 
 	reset_touch();
@@ -502,7 +505,7 @@ bool MotionManage::initNavigationCleaning(void)
 		cm_register_events();
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
-	else if (robot::instance()->isManualPaused())
+	else if (is_clean_paused())
 	{
 		ROS_WARN("Restore from manual pause");
 		cm_register_events();
@@ -526,7 +529,7 @@ bool MotionManage::initNavigationCleaning(void)
 	if (!wait_for_gyro_on())
 		return false;
 
-	if (robot::instance()->isManualPaused() || g_resume_cleaning)
+	if (is_clean_paused() || g_resume_cleaning )
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
@@ -536,7 +539,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 	/*Move back from charge station*/
 	if (is_on_charger_stub()) {
-		ROS_WARN("%s %d: calling moving back", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		set_side_brush_pwm(30, 30);
 		// Set i < 7 for robot to move back for approximately 500mm.
 		for (int i = 0; i < 7; i++) {
@@ -561,21 +564,20 @@ bool MotionManage::initNavigationCleaning(void)
 				return false;
 			}
 		}
-		auto cell = cm_update_position();
-		path_set_home(cell);
+		auto curr = map_get_curr_cell();
+		path_set_home(curr);
 		stop_brifly();
 		extern bool g_from_station;
 		g_from_station = 1;
 	}
 
-	// enable titlt detct
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	work_motor_configure();
 
-	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d).", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning);
+	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
 	return true;
 }
 
@@ -618,6 +620,9 @@ bool MotionManage::initWallFollowCleaning(void)
 	//pthread_t	escape_thread_id;
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 	extern bool g_have_seen_charge_stub;
 	g_have_seen_charge_stub = false;
 	work_motor_configure();
@@ -655,6 +660,10 @@ bool MotionManage::initSpotCleaning(void)
 	map_init(MAP);//init map
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
+
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 
 	set_vac_mode(Vac_Max);
 	set_vac_speed();
