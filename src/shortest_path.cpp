@@ -1567,7 +1567,7 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 					if (it_ptr3->X != (x_min + x_max) / 2) {
 						it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
 					}
-					ROS_INFO("%s %d: Loop i:%d\tx_min: %d\tx_max: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min, x_max, (x_min + x_max) / 2);
+					//ROS_INFO("%s %d: Loop i:%d\tx_min: %d\tx_max: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min, x_max, (x_min + x_max) / 2);
 				} else {
 					int16_t y_min, y_max;
 					y_min = y_max = it_ptr2->Y;
@@ -1596,7 +1596,7 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 					if (it_ptr3->Y != (y_min + y_max) / 2) {
 						it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
 					}
-					ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
+					//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
 				}
 
 				it++;
