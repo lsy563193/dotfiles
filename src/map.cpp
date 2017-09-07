@@ -844,7 +844,7 @@ uint8_t map_set_rcon()
 
 uint8_t map_set_blocked()
 {
-	if(get_clean_mode() != Clean_Mode_Navigation)
+	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
 		return 0;
 
 	uint8_t block_count = 0;
