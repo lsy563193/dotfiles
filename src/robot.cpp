@@ -48,6 +48,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
 	init();
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
+	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 	/*map subscriber for exploration*/
@@ -57,6 +58,8 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
 	robot_odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom",1);
+	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl",1);
+
 	is_moving_ = false;
 	is_sensor_ready_ = false;
 	is_tf_ready_ = false;
@@ -73,9 +76,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	resetCorrection();
 
-	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
-
-	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 
 	// Initialize the low battery pause variable.
@@ -88,6 +88,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 
+	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -222,6 +223,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	// Check if tilt.
 	check_tilt();
+
+	// Check for whether robot should publish this frame of scan.
+	scan_ctrl_.allow_publishing = check_pub_scan();
+	scan_ctrl_pub_.publish(scan_ctrl_);
 
 	/*------start omni detect----*/
 	if(g_omni_enable){

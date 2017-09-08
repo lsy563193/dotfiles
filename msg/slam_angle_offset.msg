@@ -1,2 +1,0 @@
-float32 slam_angle_offset
-float32 home_angle_offset_
