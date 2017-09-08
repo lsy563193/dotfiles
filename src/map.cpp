@@ -618,12 +618,13 @@ void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 }
 
 //map--------------------------------------------------------
-void map_set_laser()
+uint8_t map_set_laser()
 {
 #if LASER_MARKER
 	MotionManage::s_laser->laserMarker(true);
 #endif
 }
+
 uint8_t map_set_obs()
 {
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();

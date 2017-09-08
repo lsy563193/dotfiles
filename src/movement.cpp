@@ -3053,6 +3053,7 @@ void delay_sec(double s)
 		now=ros::Time::now().toSec();
 	}
 }
+
 uint8_t check_tilt()
 {
 	static bool last_tilt_enable_flag = false;
@@ -3182,6 +3183,11 @@ void set_tilt_status(uint8_t status)
 uint8_t get_tilt_status()
 {
 	return g_tilt_status;
+}
+
+bool check_pub_scan()
+{
+	return true;
 }
 
 uint8_t is_robot_stuck()

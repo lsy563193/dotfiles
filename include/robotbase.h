@@ -3,7 +3,6 @@
 
 #include <sys/types.h>
 #include <ros/ros.h>
-#include <pp/slam_angle_offset.h>
 #include "config.h"
 
 #if __ROBOT_X900

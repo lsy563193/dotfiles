@@ -69,11 +69,11 @@ static int16_t bumper_turn_angle()
 		}
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
-		g_straight_distance = 100; //250;
+		g_straight_distance = 250; //250;
 		jam = get_wheel_step() < 2000 ? ++jam : 0;
 	}
 	ROS_INFO("strength in bumper_turn_angular: %d",strength);
-	g_straight_distance = 100;
+	g_straight_distance = 200;
 	reset_wheel_step();
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
@@ -739,7 +739,8 @@ bool FollowWallRegulator::isReach()
 //	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
 	//map_set_realtime();
 	if (get_clean_mode() != Clean_Mode_WallFollow) {
-		MotionManage::s_laser->laserMarker(true);
+//		MotionManage::s_laser->laserMarker(true);
+		map_set_laser();
 		map_set_obs();
 //		map_set_obs();
 	}
