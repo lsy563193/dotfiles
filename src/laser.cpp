@@ -20,10 +20,12 @@
 #include "robot.hpp"
 #include "gyro.h"
 boost::mutex scan_mutex_;
-
+//boost::mutex sca2_mutex_;
 //float* Laser::last_ranges_ = NULL;
 uint8_t Laser::is_ready_ = 0;
+uint8_t Laser::is_scan2_ready_ = 0;
 sensor_msgs::LaserScan Laser::laserScanData_2_ = sensor_msgs::LaserScan();
+
 Laser::Laser():nh_()
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
@@ -67,7 +69,7 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 	
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
-	setScanReady(1);
+	setScan2Ready(1);
 }
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
@@ -98,6 +100,10 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 	return found;
 }
 
+int8_t Laser::isScan2Ready()
+{
+	return is_scan2_ready_;
+}
 int8_t Laser::isScanReady()
 {
 	return is_ready_;
@@ -108,6 +114,10 @@ void Laser::setScanReady(uint8_t val)
 	is_ready_ = val;
 }
 
+void Laser::setScan2Ready(uint8_t val)
+{
+	is_scan2_ready_ = val;
+}
 void Laser::lidarMotorCtrl(bool switch_)
 {
 	pp::SetLidar trigger;
@@ -852,8 +862,9 @@ uint8_t Laser::isRobotStuck()
 	uint16_t same_count = 0;
 	uint8_t ret = 0;
 	uint16_t tol_count = 0;
-	if(g_robot_stuck_enable && seq != laserScanData_2_.header.seq && isScanReady() && (absolute(robot::instance()->getLeftWheelSpeed() + robot::instance()->getRightWheelSpeed())/2.0 >= 0.01) ){
-		boost::mutex::scoped_lock(scan_mutex_);
+	if(g_robot_stuck_enable && seq != laserScanData_2_.header.seq && isScanReady() && ( robot::instance()->getLeftWheelSpeed() >= 0.01 || robot::instance()->getRightWheelSpeed() >= 0.01 ) )
+	{
+		//boost::mutex::scoped_lock(scan2_mutex_);
 		seq = laserScanData_2_.header.seq;
 		if(last_ranges_init == 0){
 			last_ranges_init = 1;
@@ -875,20 +886,27 @@ uint8_t Laser::isRobotStuck()
 				}
 			}
 		}
-		if(++seq_count >2){//store the last laser scan
+		if(++seq_count >2){//store last ranges after 2 sequance
 			seq_count=0;
 			last_ranges = laserScanData_2_.ranges;
 		}
 		//ROS_INFO("\033[1;45;37msame_count %d,tol_count %d,\033[0m",same_count, tol_count );
-		if((same_count*1.0)/(tol_count*1.0) >= 0.8){//about 80% 
-			stuck_count++;
-			if(stuck_count >= 10){//about 2 second
+		if((same_count*1.0)/(tol_count*1.0) >= 0.8){//about 80% match
+			if(++stuck_count >= 10){//about 2 second
 				stuck_count = 0;
 				ret = 1;
 			}
 		}
 		else
 			stuck_count = 0;
+	}
+	else if(!g_robot_stuck_enable)
+	{
+		seq = 0;
+		seq_count = 0;
+		stuck_count = 0;
+		last_ranges_init = 0;
+		last_ranges.clear();
 	}
 	return ret;
 }

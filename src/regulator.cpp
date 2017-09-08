@@ -252,7 +252,7 @@ bool RegulatorBase::isExit(){
 bool RegulatorBase::_isStop()
 {
 //	ROS_INFO("reg_base _isStop");
-	return g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check();
+	return g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check() || g_robot_stuck;
 }
 
 
@@ -489,7 +489,7 @@ LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 //	g_is_should_follow_wall = false;
 	s_target = target;
 	path_ = path;
-	ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
+	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
 }
 
 bool LinearRegulator::isReach()
@@ -515,7 +515,6 @@ bool LinearRegulator::isReach()
 		{
 			path_.cells.pop_front();
 			g_next_cell = path_.cells.front();
-			//ROS_INFO("\033[31m" "%s,%d,g_next_cell(%d,%d)" "\033[0m",__FUNCTION__,__LINE__,g_next_cell.X,g_next_cell.Y);
 			s_target = map_cell_to_point(g_next_cell);
 			if (std::abs(s_curr_p.X - s_target.X) < std::abs(s_curr_p.Y - s_target.Y))
 				g_new_dir = s_curr_p.Y > s_target.Y ? NEG_Y : POS_Y;
@@ -538,7 +537,7 @@ bool LinearRegulator::isReach()
 	if( (IS_POS_AXIS(g_new_dir) && (curr_p > target + CELL_COUNT_MUL/4)) ||
 			(! IS_POS_AXIS(g_new_dir) && (curr_p < target - CELL_COUNT_MUL/4))
 		){
-		ROS_INFO("\033[31m""%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr_p(%d),target(%d)""\033[0m", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr_p, target);
+		ROS_INFO("%s, %d: LinearRegulator2: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr_p(\033[32m%d\033[0m),target(\033[32m%d\033[0m)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr_p, target);
 		return true;
 	}
 
@@ -580,11 +579,10 @@ bool LinearRegulator::isSwitch()
 
 bool LinearRegulator::_isStop()
 {
+	if(g_robot_stuck)
+		return true;
 	auto rcon_tmp = get_rcon_trig();
 	bool obs_tmp;
-		if(g_robot_stuck)
-		return true;
-
 	if(get_clean_mode()==Clean_Mode_WallFollow)
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): _get_obs_value();
 	else
@@ -891,8 +889,10 @@ bool FollowWallRegulator::isSwitch()
 bool FollowWallRegulator::_isStop()
 {
 //	ROS_INFO("FollowWallRegulator isSwitch");
-
-	return false;
+	bool ret = false;
+	if(g_robot_stuck)
+		ret = true;
+	return ret;
 }
 
 
@@ -1239,7 +1239,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	s_curr_p.Y = map_get_y_count();
 #endif
 	auto target = map_cell_to_point(target_cell);
-	ROS_INFO("%s %d: start cell(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y, count_to_cell(target.X), count_to_cell(target.Y));
+	ROS_INFO("%s %d: start cell\033[33m(%d, %d)\033[0m, target\033[33m(%d, %d)\033[0m.", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y, count_to_cell(target.X), count_to_cell(target.Y));
 	g_bumper_cnt = g_cliff_cnt =0;
 	g_rcon_during_go_home = false;
 	reset_rcon_status();

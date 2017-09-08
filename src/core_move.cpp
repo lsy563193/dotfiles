@@ -373,15 +373,21 @@ bool cm_move_to(const PPTargetType& path)
 				if (g_trapped_mode == 1 )
 				{
 					auto is_block_clear = map_mark_robot(MAP);
-					PPTargetType temp_path;
-					if(is_block_clear && path_target(curr, temp_path) >= 0)
+					if(is_block_clear)
 					{
-						ROS_WARN("%s,%d:trapped_mode path_target ok,OUT OF ESC", __FUNCTION__, __LINE__);
-						g_trapped_mode = 2;
-						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-					}
-					else{
-						ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+						BoundingBox2 map;
+						if (get_reachable_targets(curr, map))
+						{
+							ROS_WARN("%s %d: Found reachable targets, exit trapped.", __FUNCTION__, __LINE__);
+							g_trapped_mode = 2;
+							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
+						} else if (path_escape_trapped(curr))
+						{
+							ROS_WARN("%s %d: Found reachable home, exit trapped.", __FUNCTION__, __LINE__);
+							g_trapped_mode = 2;
+							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
+						} else
+							ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
 					}
 				}
 			}
@@ -558,10 +564,11 @@ int cm_cleaning()
 	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
 	g_robot_stuck_enable = true;
+	g_robot_stuck = false;
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event)
+		if (g_key_clean_pressed || g_fatal_quit_event || g_robot_stuck)
 			return -1;
 
 		if (!g_go_home)
@@ -1090,10 +1097,11 @@ void cm_self_check(void)
 			g_fatal_quit_event = true;
 			break;
 		}
-		else if (g_robot_stuck){
+		else if (g_robot_stuck)
+		{
 			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
 			set_error_code(Error_Code_Stuck);
-			g_fatal_quit_event = true;
+			//g_fatal_quit_event = true;
 			break;
 		}
 		else

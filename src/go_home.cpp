@@ -78,13 +78,15 @@ void go_home(void)
 	{
 		if (g_fatal_quit_event || g_key_clean_pressed || g_go_to_charger_failed)
 		{
-			if(!during_cleaning && g_cliff_all_triggered)
+			if(!during_cleaning)
 			{
-				disable_motors();
-				wav_play(WAV_ERROR_LIFT_UP);
-				g_key_clean_pressed = false;
+				if (g_cliff_all_triggered)
+				{
+					disable_motors();
+					wav_play(WAV_ERROR_LIFT_UP);
+				}
+				set_clean_mode(Clean_Mode_Userinterface);
 			}
-			set_clean_mode(Clean_Mode_Userinterface);
 			break;
 		}
 		if(g_charge_detect)
