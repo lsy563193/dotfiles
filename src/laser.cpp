@@ -861,7 +861,7 @@ uint8_t Laser::isRobotStuck()
 	const float PERCENT = 0.8;//80%
 	const float acur1 = 0.05;//accuracy 1 ,in meters
 	const float acur2 = 0.01;//accuracy 2 ,in meters
-	const int COUNT = 5;//stuck count number
+	const int COUNT = 10;//stuck count number
 
 	uint16_t same_count = 0;
 	uint8_t ret = 0;
@@ -890,7 +890,7 @@ uint8_t Laser::isRobotStuck()
 				}
 			}
 		}
-		if(++seq_count >2){//store last ranges after 2 sequance
+		if(++seq_count >=4){//store last ranges after 4 sequance
 			seq_count=0;
 			last_ranges = laserScanData_2_.ranges;
 		}
