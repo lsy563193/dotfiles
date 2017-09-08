@@ -575,8 +575,10 @@ int cm_cleaning()
 		int8_t is_found = path_next(curr, cleaning_path);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
-		if (is_found == 0) //No target point
+		if (is_found == 0 ) //No target point
 		{
+			if(get_clean_mode() == Clean_Mode_Spot)
+				return 0;
 			uint8_t check_status = cm_check_charger_signal();
 			if(check_status == SEEN_CHARGER)/*---have seen charger signal---*/
 			{
@@ -718,6 +720,7 @@ bool cm_go_to_charger_()
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 	return false;
 }
+
 
 bool cm_is_continue_go_to_charger()
 {
