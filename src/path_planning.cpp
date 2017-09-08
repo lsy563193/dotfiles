@@ -1409,7 +1409,7 @@ int16_t path_escape_trapped(const Cell_t& curr)
 		ROS_WARN("%s %d: home_it(%d,%d)", __FUNCTION__, __LINE__, home_it->X, home_it->Y);
 	}
 	for (auto home_it = g_homes.rbegin(); home_it != g_homes.rend() && std::abs(std::distance(home_it, g_homes.rbegin()))<ESCAPE_TRAPPED_REF_CELL_SIZE; ++home_it) {
-		ROS_WARN("%s %d: home_it distance(%d)", __FUNCTION__, __LINE__, std::distance(home_it, g_homes.rbegin()));
+		ROS_WARN("%s %d: home_it distance(%ld)", __FUNCTION__, __LINE__, std::distance(home_it, g_homes.rbegin()));
 		if (is_block_accessible(home_it->X, home_it->Y) == 0)
 			map_set_cells(ROBOT_SIZE, home_it->X, home_it->Y, CLEANED);
 

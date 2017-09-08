@@ -73,7 +73,7 @@ add_message_files(
 	DIRECTORY msg
 	FILES
 	x900sensor.msg
-	slam_angle_offset.msg
+	scan_ctrl.msg
 )
 
 add_service_files(

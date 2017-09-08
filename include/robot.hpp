@@ -12,6 +12,7 @@
 #include <tf/transform_broadcaster.h>
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
+#include <pp/scan_ctrl.h>
 #include <vector>
 #include "config.h"
 #include "map.h"
@@ -83,7 +84,7 @@ public:
 		return start_angle_;
 	};
 
-void savedOffsetAngle(float angle)
+	void savedOffsetAngle(float angle)
 	{
 		if (angle > 180)
 			angle -= 360;
@@ -696,13 +697,10 @@ private:
 	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
-	ros::Subscriber map_metadata_sub_;
-//	ros::Subscriber obstacles_sub;
 	ros::Publisher robot_odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
-	ros::Publisher send_bumper_marker_pub_;
-//	ros::Publisher obstacles_pub_;
+	ros::Publisher scan_ctrl_pub_;
 
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	geometry_msgs::Point m_points_;
@@ -715,6 +713,7 @@ private:
 	tf::TransformBroadcaster	robot_broad;
 	geometry_msgs::TransformStamped robot_trans;
 	nav_msgs::Odometry robot_odom;
+	pp::scan_ctrl scan_ctrl_;
 };
 
 #endif
