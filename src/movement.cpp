@@ -3193,7 +3193,15 @@ uint8_t get_tilt_status()
 
 bool check_pub_scan()
 {
-	return true;
+	//ROS_INFO("%s %d: get_left_wheel_speed() = %d, get_right_wheel_speed() = %d.", __FUNCTION__, __LINE__, get_left_wheel_speed(), get_right_wheel_speed());
+	if ((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
+		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
+		|| get_bumper_status() || get_tilt_status()
+		|| abs(get_left_wheel_speed() - get_right_wheel_speed()) > 100
+		|| get_left_wheel_speed() * get_right_wheel_speed() < 0)
+		return false;
+	else
+		return true;
 }
 
 uint8_t is_robot_stuck()
