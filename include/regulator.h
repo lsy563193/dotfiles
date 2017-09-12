@@ -15,8 +15,10 @@
 #define STRENGTH_WHITE_MAX 625
 #define STRENGTH_BLACK_MIN 120
 #define STRENGTH_BLACK_MAX 180
-#define STRENGTH_HIGHT_LIMIT 625
+#define STRENGTH_HIGH_LIMIT 625
 #define STRENGTH_LOW_LIMIT 150
+
+extern int16_t g_turn_angle;
 
 class RegulatorBase {
 public:
@@ -52,10 +54,7 @@ public:
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
 	bool _isStop();
-	void setTarget(){
-		s_pos_x = robot::instance()->getOdomPositionX();
-		s_pos_y = robot::instance()->getOdomPositionY();
-	}
+	void setTarget();
 
 protected:
 	bool isReach();
@@ -122,8 +121,8 @@ protected:
 	bool isReach();
 
 private:
-	int32_t	 previous_;
-	int jam_;
+	int32_t previous_;
+	uint8_t seen_charger_counter;
 };
 
 class LinearRegulator: public RegulatorBase{

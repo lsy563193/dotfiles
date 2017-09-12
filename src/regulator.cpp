@@ -21,7 +21,6 @@
 extern uint16_t g_old_dir;
 extern uint16_t g_new_dir;
 extern Cell_t g_cell_history[];
-int jam=0;
 int16_t wall_buffer[3]={0};
 int strength = STRENGTH_LOW_LIMIT;
 //int last_strength=150;
@@ -31,13 +30,14 @@ int factor=15;
 double bumper_turn_factor=0.85;
 bool line_is_found;
 double wall_distance=0.8;
-float back_distance=0.01;
-uint8_t seen_charger_counter = 0;
 CMMoveType last_move_type;
 //bool g_is_should_follow_wall;
+int16_t g_turn_angle;
+float g_back_distance = 0.01;
 
 static int16_t bumper_turn_angle()
 {
+	static int bumper_jam_cnt_ = 0;
 	auto get_wheel_step = (mt_is_left()) ? get_right_wheel_step : get_left_wheel_step;
 	auto get_obs = (mt_is_left()) ? get_left_obs : get_right_obs;
 	auto get_obs_value = (mt_is_left()) ? get_left_obs_value : get_right_obs_value;
@@ -49,12 +49,12 @@ static int16_t bumper_turn_angle()
 	{
 		g_turn_angle = -600;
 		g_straight_distance = 150; //150;
-		jam = get_wheel_step() < 2000 ? ++jam : 0;
-		strength = STRENGTH_HIGHT_LIMIT;
+		bumper_jam_cnt_ = get_wheel_step() < 2000 ? ++bumper_jam_cnt_ : 0;
+		strength = STRENGTH_HIGH_LIMIT;
 		} else if (status == diff_side)
 	{
 		g_turn_angle = -850;
-		strength = STRENGTH_HIGHT_LIMIT;
+		strength = STRENGTH_HIGH_LIMIT;
 	} else if (status == same_side)
 	{
 		strength = bumper_turn_factor * strength;
@@ -63,14 +63,14 @@ static int16_t bumper_turn_angle()
 		g_turn_angle =0;
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 		if (g_trapped_mode != 1) {
-			g_turn_angle = (jam >= 3 || (get_obs() <= get_obs_value() - 200)) ? -180 : -280;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || (get_obs() <= get_obs_value() - 200)) ? -180 : -280;
 		} else {
-			g_turn_angle = (jam >= 3 || (get_obs() <= get_obs_value() - 200)) ? -100 : -200;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || (get_obs() <= get_obs_value() - 200)) ? -100 : -200;
 		}
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
 		g_straight_distance = 250; //250;
-		jam = get_wheel_step() < 2000 ? ++jam : 0;
+		bumper_jam_cnt_ = get_wheel_step() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
 	ROS_INFO("strength in bumper_turn_angular: %d",strength);
 	g_straight_distance = 200;
@@ -177,9 +177,9 @@ static int16_t _laser_turn_angle(int laser_min, int laser_max, int angle_min,int
 //		ROS_ERROR("distance: %f",(distance*100.0-16.7));
 		line_angle=fabs(line_angle);
 		if(line_angle < 90)
-			wall_distance=back_distance*100*sin(line_angle*3.1415/180.0);
+			wall_distance=g_back_distance*100*sin(line_angle*3.1415/180.0);
 		else
-			wall_distance=back_distance*100*sin((180-line_angle)*3.1415/180.0);
+			wall_distance=g_back_distance*100*sin((180-line_angle)*3.1415/180.0);
 //		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_angle);
 		g_turn_angle = mt_is_right() ? angle : -angle;
 		ROS_INFO("laser generate turn angle(%d)!",g_turn_angle);
@@ -261,15 +261,21 @@ BackRegulator::BackRegulator() : speed_(8), counter_(0)
 //	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
+void BackRegulator::setTarget()
+{
+	s_pos_x = robot::instance()->getOdomPositionX();
+	s_pos_y = robot::instance()->getOdomPositionY();
+	if (g_tilt_triggered)
+		g_back_distance = 0.05;
+	else
+		g_back_distance = 0.01;
+}
+
 bool BackRegulator::isReach()
 {
 	auto distance = sqrtf(powf(s_pos_x - robot::instance()->getOdomPositionX(), 2) +
-			   	powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
-	if (g_tilt_triggered)
-		back_distance = 0.05f;
-	else
-		back_distance = 0.01f;
-	if(fabsf(distance) > back_distance){
+				powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
+	if(fabsf(distance) > g_back_distance){
 		if (g_tilt_triggered && get_tilt_status())
 		{
 			// Still tilt.
@@ -569,7 +575,7 @@ bool LinearRegulator::isSwitch()
 //			g_turn_angle = bumper_turn_angle();
 //		else
 //			g_turn_angle = cliff_turn_angle();
-		mt_set(CM_LINEARMOVE);
+//		mt_set(CM_LINEARMOVE);
 
 		return true;
 	}
@@ -717,7 +723,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 }
 
 
-FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target) : previous_(0)
+FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target) : previous_(0), seen_charger_counter(0)
 {
 	extern bool g_keep_on_wf;
 	if (!g_keep_on_wf) {
@@ -880,7 +886,7 @@ bool FollowWallRegulator::isSwitch()
 		if(! g_obs_triggered)
 			g_obs_triggered = Status_Front_OBS;
 		if(g_trapped_mode == 1)
-			strength = STRENGTH_HIGHT_LIMIT;
+			strength = STRENGTH_HIGH_LIMIT;
 		g_turn_angle = obs_turn_angle();
 		g_straight_distance = 100;
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
@@ -1294,7 +1300,7 @@ RegulatorManage::~RegulatorManage()
 	delete back_reg_;
 	delete mt_reg_;
 	set_wheel_speed(0,0);
-	strength=STRENGTH_HIGHT_LIMIT;
+	strength=STRENGTH_HIGH_LIMIT;
 	bumper_turn_factor=0.85;
 	cm_set_event_manager_handler_state(false);
 }

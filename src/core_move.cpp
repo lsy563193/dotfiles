@@ -68,7 +68,6 @@
 int g_rcon_triggered = 0;//1~6
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
-int16_t g_turn_angle;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 uint32_t g_escape_trapped_timer;
