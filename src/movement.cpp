@@ -997,9 +997,12 @@ void set_left_wheel_speed(uint8_t speed)
 	int16_t l_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	l_speed = (int16_t) (speed * SPEED_ALF);
-	if (g_wheel_left_direction == 1)
-		l_speed |= 0x8000;
 	g_left_wheel_speed = l_speed;
+	if (g_wheel_left_direction == 1)
+	{
+		l_speed |= 0x8000;
+		g_left_wheel_speed *= -1;
+	}
 	control_set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
 
@@ -1010,9 +1013,12 @@ void set_right_wheel_speed(uint8_t speed)
 	int16_t r_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	r_speed = (int16_t) (speed * SPEED_ALF);
-	if (g_wheel_right_direction == 1)
-		r_speed |= 0x8000;
 	g_right_wheel_speed = r_speed;
+	if (g_wheel_right_direction == 1)
+	{
+		r_speed |= 0x8000;
+		g_right_wheel_speed *= -1;
+	}
 	control_set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
 }
@@ -3187,7 +3193,15 @@ uint8_t get_tilt_status()
 
 bool check_pub_scan()
 {
-	return true;
+	//ROS_INFO("%s %d: get_left_wheel_speed() = %d, get_right_wheel_speed() = %d.", __FUNCTION__, __LINE__, get_left_wheel_speed(), get_right_wheel_speed());
+	if ((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
+		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
+		|| get_bumper_status() || get_tilt_status()
+		|| abs(get_left_wheel_speed() - get_right_wheel_speed()) > 100
+		|| get_left_wheel_speed() * get_right_wheel_speed() < 0)
+		return false;
+	else
+		return true;
 }
 
 uint8_t is_robot_stuck()
