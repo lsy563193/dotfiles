@@ -971,8 +971,7 @@ uint8_t is_obs_near(void)
 	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
 	return 0;
 }
-
-void set_wheel_speed(uint8_t Left, uint8_t Right)
+void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p, float PID_i, float PID_d)
 {
 	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
 
