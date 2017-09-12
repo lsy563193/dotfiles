@@ -320,7 +320,7 @@ MotionManage::~MotionManage()
 		s_laser = nullptr;
 	}
 
-	if (!g_fatal_quit_event && g_key_clean_pressed && is_clean_paused())
+	if (!g_fatal_quit_event && ( ( g_key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
 	{
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)

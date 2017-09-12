@@ -784,6 +784,7 @@ bool FollowWallRegulator::isReach()
 			}
 		} else
 		{
+			auto curr = map_point_to_cell(s_curr_p);
 			if ((s_origin.Y < s_target.Y ^ s_curr_p.Y < s_target.Y))
 			{
 				ROS_WARN("%s %d: reach the target, s_origin.Y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
@@ -814,9 +815,8 @@ bool FollowWallRegulator::isReach()
 //				}
 				auto angle_diff = ranged_angle( gyro_get_angle());
 				auto target_angel  = (s_target.Y > s_origin.Y) ? -900 : 900;
-				auto curr = map_point_to_cell(s_curr_p);
 				ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
-				if(std::abs(gyro_get_angle()-target_angel) <50 || is_block_cleaned_unblock(curr.X,curr.Y))
+				if(std::abs(gyro_get_angle()-target_angel) <100 || is_block_cleaned_unblock(curr.X,curr.Y))
 				{
 					ROS_WARN("%s %d: is_map_front_block", __FUNCTION__, __LINE__);
 					ret = true;
@@ -826,8 +826,9 @@ bool FollowWallRegulator::isReach()
 				s_origin.Y = s_curr_p.Y;
 //				ROS_WARN("%s %d: opposite direcition, origin.Y(%d), s_target_y(%d)", __FUNCTION__, __LINE__, s_origin.Y, s_target.Y);
 			}
-			if(s_curr_p.X < std::min(s_origin.X , s_target.X) - CELL_COUNT_MUL || s_curr_p.X > std::max(s_origin.X , s_target.X) + CELL_COUNT_MUL)
-				ret = true;
+			if(s_curr_p.X < std::min(s_origin.X , s_target.X) - CELL_COUNT_MUL*2 || s_curr_p.X > std::max(s_origin.X , s_target.X) + CELL_COUNT_MUL*2)
+				if(is_block_cleaned_unblock(curr.X,curr.Y))
+					ret = true;
 		}
 	}
 	return ret;
