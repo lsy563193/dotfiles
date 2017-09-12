@@ -627,7 +627,7 @@ uint8_t map_set_laser()
 
 uint8_t map_set_obs()
 {
-	auto obs_trig = /*g_obs_triggered*/get_obs_status();
+	auto obs_trig = g_obs_triggered/*get_obs_status()*/;
 //	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
 		return 0;
@@ -678,7 +678,7 @@ uint8_t map_set_obs()
 
 uint8_t map_set_bumper()
 {
-	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
+	auto bumper_trig = g_bumper_triggered/*get_bumper_status()*/;
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
 	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
@@ -977,7 +977,10 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 {
 	auto diff = cells.back().X - cells.front().X;
 
+//	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
+//	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	std::string pri_msg("");
+	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
 	if (cells.size() < 2 || std::abs(diff) <= 4)
 		return;
 
@@ -985,7 +988,6 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	{
 		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 	}
-	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	auto min = std::min(cells.front().X, cells.back().X) + 3;
 	auto max = std::max(cells.front().X, cells.back().X) - 3;
 

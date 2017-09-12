@@ -1360,7 +1360,7 @@ void RegulatorManage::switchToNext()
 	}
 	ROS_INFO("%s %d: g_obs_triggered(%d), g_rcon_triggered(%d), g_bumper_hitted(%d), g_cliff_triggered(%d), g_tilt_triggered(%d)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered);
 	setTarget();
-	if(p_reg_ != back_reg_){
+	if(p_reg_ != back_reg_){//note: save when robot leave move_to
 		g_rcon_triggered = 0;
 		g_bumper_triggered = 0;
 		g_obs_triggered = 0;
