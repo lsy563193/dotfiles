@@ -903,6 +903,7 @@ void generate_SPMAP(const Cell_t& curr)
 
 bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 {
+	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
 	generate_SPMAP(curr);
 
