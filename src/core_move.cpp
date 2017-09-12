@@ -609,6 +609,7 @@ int cm_cleaning()
 		}
 		else if (is_found == 1)
 		{
+//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 			if(! cm_move_to(cleaning_path)) {
 				return -1;
 			}

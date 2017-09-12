@@ -826,6 +826,8 @@ bool FollowWallRegulator::isReach()
 				s_origin.Y = s_curr_p.Y;
 //				ROS_WARN("%s %d: opposite direcition, origin.Y(%d), s_target_y(%d)", __FUNCTION__, __LINE__, s_origin.Y, s_target.Y);
 			}
+			if(s_curr_p.X < std::min(s_origin.X , s_target.X) - CELL_COUNT_MUL || s_curr_p.X > std::max(s_origin.X , s_target.X) + CELL_COUNT_MUL)
+				ret = true;
 		}
 	}
 	return ret;
