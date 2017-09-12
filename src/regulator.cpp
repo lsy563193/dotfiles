@@ -752,7 +752,7 @@ bool FollowWallRegulator::isReach()
 			//wf_break_wall_follow();
 			ret = true;
 		}
-	} else if (get_clean_mode() == Clean_Mode_Navigation)
+	} else if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 	{
 		if (g_trapped_mode != 0)
 		{
@@ -1161,7 +1161,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 	}
-		if(get_clean_mode()==Clean_Mode_Navigation)
+		if(get_clean_mode()==Clean_Mode_Navigation || get_clean_mode()==Clean_Mode_Exploration)
 		{
 				if(mt_get()!=last_move_type)
 						wall_buffer[0]=wall_buffer[1]=wall_buffer[2]=0;

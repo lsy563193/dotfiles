@@ -254,7 +254,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam = new Slam();
 
 	robot::instance()->setTfReady(false);
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot)
+	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot || get_clean_mode() == Clean_Mode_Exploration)
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	else if (get_clean_mode() == Clean_Mode_WallFollow)
 		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
@@ -444,6 +444,8 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:
+			return initNavigationCleaning();
+		case Clean_Mode_Exploration:
 			return initNavigationCleaning();
 		case Clean_Mode_WallFollow:
 			return initWallFollowCleaning();

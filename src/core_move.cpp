@@ -313,6 +313,10 @@ bool cm_move_to(const PPTargetType& path)
 		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
 			wf_update_map(WFMAP);
 
+		/*for exploration trapped wall follow update map and push_back vector*/
+		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Exploration && g_trapped_mode == 1)
+			wf_update_map(WFMAP);
+
 		/*for wall follow mode update map and push_back vector*/
 		if(!mt_is_linear() && get_clean_mode() == Clean_Mode_WallFollow && !g_go_home)
 			wf_update_map(WFMAP);
@@ -1676,7 +1680,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration)
 		robot::instance()->setManualPause();
 
 	start_time = time(NULL);
@@ -1714,7 +1718,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	}
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration){
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();

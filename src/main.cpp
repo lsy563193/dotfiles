@@ -92,6 +92,15 @@ void *core_move_thread(void *)
 				go_home();
 				break;
 
+			case Clean_Mode_Exploration:
+				//goto_charger();
+				ROS_INFO("\n-------Exploration mode------\n");
+				set_main_pwr_byte(Clean_Mode_Exploration);
+				robot::instance()->resetLowBatPause();
+				reset_clean_paused();
+				cm_cleaning();
+				break;
+
 			case Clean_Mode_Test:
 				break;
 
