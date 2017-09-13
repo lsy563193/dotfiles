@@ -20,10 +20,12 @@
 #include "robot.hpp"
 #include "gyro.h"
 boost::mutex scan_mutex_;
-
+//boost::mutex sca2_mutex_;
 //float* Laser::last_ranges_ = NULL;
 uint8_t Laser::is_ready_ = 0;
+uint8_t Laser::is_scan2_ready_ = 0;
 sensor_msgs::LaserScan Laser::laserScanData_2_ = sensor_msgs::LaserScan();
+
 Laser::Laser():nh_()
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
@@ -67,7 +69,7 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 	
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
-	setScanReady(1);
+	setScan2Ready(1);
 }
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
@@ -98,6 +100,10 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 	return found;
 }
 
+int8_t Laser::isScan2Ready()
+{
+	return is_scan2_ready_;
+}
 int8_t Laser::isScanReady()
 {
 	return is_ready_;
@@ -108,6 +114,10 @@ void Laser::setScanReady(uint8_t val)
 	is_ready_ = val;
 }
 
+void Laser::setScan2Ready(uint8_t val)
+{
+	is_scan2_ready_ = val;
+}
 void Laser::lidarMotorCtrl(bool switch_)
 {
 	pp::SetLidar trigger;
@@ -753,7 +763,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 			else if( j >= 134 && j < 224){
 				x = cos(th * PI / 180.0) * scan_range->ranges[i];
 				//y = sin(th * PI / 180.0) * scan_range->ranges[i];
-			  if (x > X_MIN && x < X_MAX ) {
+				if (x > X_MIN && x < X_MAX ) {
 					count++;
 				}
 			}
@@ -816,13 +826,13 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 	boost::mutex::scoped_lock(scan_mutex_);
 	if(!mt_is_follow_wall()) {
 		//front right
-		is_triggered = setLaserMarkerAcr2Dir(X_MIN, X_MAX, 149, 168, 2, -1, &laserScanData_, &laser_status,
+		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 149, 168, 2, -1, &laserScanData_, &laser_status,
 																				 Status_Right_OBS);
 		//front front
-		is_triggered = setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &laserScanData_, &laser_status,
+		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &laserScanData_, &laser_status,
 																				 Status_Front_OBS);
 		//front left
-		is_triggered = setLaserMarkerAcr2Dir(X_MIN, X_MAX, 191, 210, 2, 1, &laserScanData_, &laser_status,
+		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 191, 210, 2, 1, &laserScanData_, &laser_status,
 																				 Status_Left_OBS);
 		//left middle
 		setLaserMarkerAcr2Dir(X_MIN, X_MAX, 258, 281, 0, 2, &laserScanData_, &laser_status, 0);
@@ -852,17 +862,22 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 
 uint8_t Laser::isRobotStuck()
 {
-	static uint16_t stuck_count = 0;
+	static int16_t stuck_count = 0;
 	static uint16_t seq_count = 0;
 	static uint32_t seq=0;
 	static uint8_t last_ranges_init = 0;
 	static std::vector<float> last_ranges ;
+	const float PERCENT = 0.8;//80%
+	const float acur1 = 0.05;//accuracy 1 ,in meters
+	const float acur2 = 0.01;//accuracy 2 ,in meters
+	const int COUNT = 10;//stuck count number
 
 	uint16_t same_count = 0;
 	uint8_t ret = 0;
 	uint16_t tol_count = 0;
-	if(g_robot_stuck_enable && seq != laserScanData_2_.header.seq && isScanReady() && (absolute(robot::instance()->getLeftWheelSpeed() + robot::instance()->getRightWheelSpeed())/2.0 >= 0.01) ){
-		boost::mutex::scoped_lock(scan_mutex_);
+	if(g_robot_stuck_enable && seq != laserScanData_2_.header.seq && isScanReady() && ( robot::instance()->getLeftWheelSpeed() >= 0.01 || robot::instance()->getRightWheelSpeed() >= 0.01 ) )
+	{
+		//boost::mutex::scoped_lock(scan2_mutex_);
 		seq = laserScanData_2_.header.seq;
 		if(last_ranges_init == 0){
 			last_ranges_init = 1;
@@ -873,31 +888,39 @@ uint8_t Laser::isRobotStuck()
 			if(laserScanData_2_.ranges[i] < 3.5){
 				tol_count++;
 				if(laserScanData_2_.ranges[i] >0.5){//
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= 0.05 ){
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
 				}
 				else if(laserScanData_2_.ranges[i] <= 0.5){
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= 0.01 ){
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
 					}
 				}
 			}
 		}
-		if(++seq_count >2){//store the last laser scan
+		if(++seq_count >=4){//store last ranges after 4 sequance
 			seq_count=0;
 			last_ranges = laserScanData_2_.ranges;
 		}
 		//ROS_INFO("\033[1;45;37msame_count %d,tol_count %d,\033[0m",same_count, tol_count );
-		if((same_count*1.0)/(tol_count*1.0) >= 0.8){//about 80% 
-			stuck_count++;
-			if(stuck_count >= 10){//about 2 second
+		if((same_count*1.0)/(tol_count*1.0) >= PERCENT){//about 80% match
+			if(++stuck_count >= COUNT){
 				stuck_count = 0;
 				ret = 1;
 			}
 		}
-		else
-			stuck_count = 0;
+		else{
+			stuck_count = (stuck_count>0)? stuck_count-1: 0;
+		}
+	}
+	else if(!g_robot_stuck_enable)
+	{
+		seq = 0;
+		seq_count = 0;
+		stuck_count = 0;
+		last_ranges_init = 0;
+		last_ranges.clear();
 	}
 	return ret;
 }

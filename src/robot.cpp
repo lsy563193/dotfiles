@@ -48,6 +48,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
 	init();
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
+	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 	/*map subscriber for exploration*/
@@ -57,6 +58,8 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
 	robot_odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom",1);
+	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl",1);
+
 	is_moving_ = false;
 	is_sensor_ready_ = false;
 	is_tf_ready_ = false;
@@ -73,9 +76,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	resetCorrection();
 
-	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
-
-	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 
 	// Initialize the low battery pause variable.
@@ -88,6 +88,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 
+	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -223,6 +224,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	// Check if tilt.
 	check_tilt();
 
+	// Check for whether robot should publish this frame of scan.
+	scan_ctrl_.allow_publishing = check_pub_scan();
+	scan_ctrl_pub_.publish(scan_ctrl_);
+
 	/*------start omni detect----*/
 	if(g_omni_enable){
 		if(absolute(msg->rw_vel - msg->lw_vel) <= 0.05 && (msg->rw_vel != 0 && msg->lw_vel != 0) ){
@@ -308,7 +313,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 //		if(! is_turn())
 //			cm_update_map();
-		cm_update_position();
+//		cm_update_position();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
@@ -426,7 +431,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	//ros_map_convert();
 	MotionManage::s_slam->isMapReady(true);
 
-	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d:finished map callback,map_size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),map_origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
 
 }
 

@@ -618,12 +618,13 @@ void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 }
 
 //map--------------------------------------------------------
-void map_set_laser()
+uint8_t map_set_laser()
 {
 #if LASER_MARKER
 	MotionManage::s_laser->laserMarker(true);
 #endif
 }
+
 uint8_t map_set_obs()
 {
 	auto obs_trig = /*g_obs_triggered*/get_obs_status();
@@ -646,7 +647,7 @@ uint8_t map_set_obs()
 //				{
 //					ROS_INFO("%s,%d: \033[34m(%d,%d)\033[0m",__FUNCTION__,__LINE__,x,y);
 //				}
-				map_set_cell(MAP, x, y, BLOCKED_OBS); //BLOCKED_OBS);
+				map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_OBS); //BLOCKED_OBS);
 				block_count++;
 			}
 		}
@@ -678,10 +679,11 @@ uint8_t map_set_obs()
 uint8_t map_set_bumper()
 {
 	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
+//	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
 	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
 		return 0;
-
+//	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
 	std::vector<Cell_t> d_cells;
 
 	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
@@ -691,14 +693,14 @@ uint8_t map_set_bumper()
 		if(mt_is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
-			d_cells = {{2, 1},/* {2,2}, */{1,2}};
+			d_cells = {/*{2, 1},*//* {2,2}, */{1,2}};
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
-			d_cells = {{2,-2},/*{2,-1},*/{1,-2}};
+			d_cells = {/*{2,-1},*//*{2,-1},*/{1,-2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
@@ -843,7 +845,7 @@ uint8_t map_set_rcon()
 
 uint8_t map_set_blocked()
 {
-	if(get_clean_mode() != Clean_Mode_Navigation)
+	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
 		return 0;
 
 	uint8_t block_count = 0;

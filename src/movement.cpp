@@ -971,8 +971,7 @@ uint8_t is_obs_near(void)
 	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
 	return 0;
 }
-
-void set_wheel_speed(uint8_t Left, uint8_t Right)
+void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p, float PID_i, float PID_d)
 {
 	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
 
@@ -997,9 +996,12 @@ void set_left_wheel_speed(uint8_t speed)
 	int16_t l_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	l_speed = (int16_t) (speed * SPEED_ALF);
-	if (g_wheel_left_direction == 1)
-		l_speed |= 0x8000;
 	g_left_wheel_speed = l_speed;
+	if (g_wheel_left_direction == 1)
+	{
+		l_speed |= 0x8000;
+		g_left_wheel_speed *= -1;
+	}
 	control_set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
 
@@ -1010,9 +1012,12 @@ void set_right_wheel_speed(uint8_t speed)
 	int16_t r_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	r_speed = (int16_t) (speed * SPEED_ALF);
-	if (g_wheel_right_direction == 1)
-		r_speed |= 0x8000;
 	g_right_wheel_speed = r_speed;
+	if (g_wheel_right_direction == 1)
+	{
+		r_speed |= 0x8000;
+		g_right_wheel_speed *= -1;
+	}
 	control_set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
 }
@@ -3012,25 +3017,6 @@ void reset_sleep_mode_flag()
 	g_sleep_mode_flag = 0;
 }
 
-void clear_manual_pause(void)
-{
-	if (robot::instance()->isManualPaused())
-	{
-		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
-		ROS_WARN("Reset manual pause status.");
-		wav_play(WAV_CLEANING_STOP);
-		robot::instance()->resetManualPause();
-		robot::instance()->savedOffsetAngle(0);
-		if (MotionManage::s_slam != nullptr)
-		{
-			delete MotionManage::s_slam;
-			MotionManage::s_slam = nullptr;
-		}
-		cm_reset_go_home();
-		g_resume_cleaning = false;
-	}
-}
-
 void beep_for_command(bool valid)
 {
 	if (valid)
@@ -3072,6 +3058,7 @@ void delay_sec(double s)
 		now=ros::Time::now().toSec();
 	}
 }
+
 uint8_t check_tilt()
 {
 	static bool last_tilt_enable_flag = false;
@@ -3203,17 +3190,60 @@ uint8_t get_tilt_status()
 	return g_tilt_status;
 }
 
+bool check_pub_scan()
+{
+	//ROS_INFO("%s %d: get_left_wheel_speed() = %d, get_right_wheel_speed() = %d.", __FUNCTION__, __LINE__, get_left_wheel_speed(), get_right_wheel_speed());
+	if (g_motion_init_succeeded &&
+		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
+		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
+		|| get_bumper_status() || get_tilt_status()
+		|| abs(get_left_wheel_speed() - get_right_wheel_speed()) > 100
+		|| get_left_wheel_speed() * get_right_wheel_speed() < 0))
+		return false;
+	else
+		return true;
+}
+
 uint8_t is_robot_stuck()
 {
-
 	uint8_t ret = 0;
-	if(Laser::isScanReady()){
+	if(Laser::isScan2Ready() && (get_tilt_status() == 0) ){
 		if(Laser::isRobotStuck()){
 			ROS_INFO("\033[35m""%s,%d,robot stuck!!""\033[0m",__FUNCTION__,__LINE__);
 			ret = 1;
 		}
 	}
 	return ret;
+}
+
+bool is_clean_paused()
+{
+	bool ret = false;
+	if(robot::instance()->isManualPaused() || g_robot_stuck)
+	{
+		ret= true;
+	}
+	return ret;
+}
+
+void reset_clean_paused(void)
+{
+	if (robot::instance()->isManualPaused() || g_robot_stuck)
+	{
+		g_robot_stuck = false;
+		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
+		ROS_WARN("Reset manual/stuck pause status.");
+		wav_play(WAV_CLEANING_STOP);
+		robot::instance()->resetManualPause();
+		robot::instance()->savedOffsetAngle(0);
+		if (MotionManage::s_slam != nullptr)
+		{
+			delete MotionManage::s_slam;
+			MotionManage::s_slam = nullptr;
+		}
+		cm_reset_go_home();
+		g_resume_cleaning = false;
+	}
 }
 
 bool is_decelerate_wall(void)

@@ -476,7 +476,7 @@ void set_rcon_status(uint32_t code);
 // If robot going straight, should turn off gyro dynamic adjustment.
 // If robot turning, should turn on gyro dynamic adjustment.
  */
-void set_wheel_speed(uint8_t Left, uint8_t Right);
+void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
@@ -743,10 +743,6 @@ void reset_sleep_mode_flag();
 
 uint8_t get_self_check_vacuum_status(void);
 
-//#if MANUAL_PAUSE_CLEANING
-void clear_manual_pause(void);
-//#endif
-
 void beep_for_command(bool valid);
 
 void reset_sp_turn_count();
@@ -759,5 +755,10 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 uint8_t check_tilt();
 void set_tilt_status(uint8_t status);
 uint8_t get_tilt_status();
+
+bool check_pub_scan();
+
 uint8_t is_robot_stuck();
+bool is_clean_paused();
+void reset_clean_paused();
 #endif
