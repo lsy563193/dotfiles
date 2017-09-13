@@ -35,7 +35,7 @@ bool mt_is_linear()
 
 bool mt_is_go_to_charger()
 {
-	return g_cm_move_type == CM_GO_TO_CHANGER;
+	return g_cm_move_type == CM_GO_TO_CHARGER;
 }
 
 CMMoveType mt_get()

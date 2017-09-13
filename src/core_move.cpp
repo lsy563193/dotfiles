@@ -716,9 +716,15 @@ bool cm_go_to_charger_()
 	// Call GoHome() function to try to go to charger stub.
 	ROS_INFO("%s,%d,Call GoHome(),\033[35m disable tilt detect\033[0m.",__FUNCTION__,__LINE__);
 	g_tilt_enable = false; //disable tilt detect
+#if GO_HOME_REGULATOR
+	mt_set(CM_GO_TO_CHARGER);
+	PPTargetType path_empty;
+	cm_move_to(path_empty);
+#else
 	cm_unregister_events();
 	go_home();
 	cm_register_events();
+#endif
 	if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 		return true;
 	work_motor_configure();

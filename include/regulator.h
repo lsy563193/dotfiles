@@ -19,6 +19,16 @@
 #define STRENGTH_LOW_LIMIT 150
 
 extern int16_t g_turn_angle;
+#define GO_TO_CHARGER_INIT 0
+#define CHECK_NEAR_CHARGER_STATION 1
+#define AWAY_FROM_CHARGER_STATION 2
+#define TURN_FOR_CHARGER_SIGNAL 3
+#define AROUND_CHARGER_STATION_INIT 4
+#define AROUND_CHARGER_STATION 5
+#define CHECK_POSITION_INIT 6
+#define CHECK_POSITION 7
+#define BY_PATH_INIT 8
+#define BY_PATH 9
 
 class RegulatorBase {
 public:
@@ -144,6 +154,42 @@ private:
 	uint32_t tick_;
 	uint8_t turn_speed_;
 	PPTargetType path_;
+};
+
+class GoToChargerRegulator: public RegulatorBase{
+public:
+	GoToChargerRegulator();
+	~GoToChargerRegulator(){ };
+	bool _isStop();
+	bool isSwitch();
+	void adjustSpeed(int32_t&, int32_t&);
+	void setTarget() { };
+	void resetGoToChargerVariables()
+	{
+		no_signal_cnt = 0;
+		move_away_from_charger_cnt = 0;
+		receive_code = 0;
+		current_angle = 0;
+		last_angle = 0;
+		angle_offset = 0;
+		gyro_step = 0;
+		around_charger_stub_dir = 0;
+	}
+
+protected:
+	bool isReach();
+
+private:
+	int8_t go_home_state_now;
+	uint16_t no_signal_cnt;
+	uint8_t move_away_from_charger_cnt;
+	uint32_t receive_code;
+	// This variables is for robot turning.
+	float current_angle;
+	float last_angle;
+	float angle_offset;
+	float gyro_step;
+	uint8_t around_charger_stub_dir;
 };
 
 class RegulatorManage:public RegulatorBase{
