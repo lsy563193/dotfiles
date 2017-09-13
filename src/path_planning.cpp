@@ -1626,7 +1626,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	//if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
 	if (g_go_home)
 		mt_set(CM_LINEARMOVE);
-	else if(get_clean_mode() == Clean_Mode_Navigation && get_clean_mode() == Clean_Mode_Exploration)
+	else if(get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 		mt_update(curr, path, g_old_dir);
 	// else if wall follow mode, the move type has been set before here.
 	if (curr.X == g_next_cell.X)
