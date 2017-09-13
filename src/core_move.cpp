@@ -68,7 +68,6 @@
 int g_rcon_triggered = 0;//1~6
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
-uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 uint32_t g_escape_trapped_timer;
 
@@ -203,7 +202,7 @@ uint16_t round_turn_distance()
 	if (mt_is_left())
 		wall = robot::instance()->getRightWall();
 
-	auto distance = wall > (Wall_Low_Limit) ? wall / 3 : g_wall_distance + 200;
+	auto distance = wall > (Wall_Low_Limit) ? wall / 3 : 220;
 	check_limit(distance, Wall_Low_Limit, Wall_High_Limit);
 	return distance;
 }

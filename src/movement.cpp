@@ -3254,3 +3254,12 @@ void reset_clean_paused(void)
 		g_resume_cleaning = false;
 	}
 }
+
+bool is_decelerate_wall(void)
+{
+	auto status = (robot::instance()->getObsFront() > (g_front_obs_trig_value));
+	if(is_map_front_block(3) || status)
+		return true;
+	else
+		return false;
+}
