@@ -25,6 +25,7 @@
 #include "robotbase.h"
 #include "debug.h"
 #include "map.h"
+#include "regulator.h"
 
 Segment_set segmentss;
 

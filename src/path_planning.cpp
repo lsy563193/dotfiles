@@ -719,6 +719,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 	}
 
 	map_tmp = map;
+	map_tmp.pos_=map.min;
 	for (const auto& cell : map_tmp)
 	{
 		if (map_get_cell(MAP, cell.X, cell.Y) != CLEANED /*|| std::abs(cell.Y % 2) == 1*/)
@@ -783,14 +784,14 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 						// Clear the targets between start and end, it means finding the both end of the unclean lane.
 						for (auto it_x = start + 1; it_x != end; it_x++)
 						{
-							if (it_x != curr.X)
+//							if (it_x != curr.X)
 								map_set_cell(MAP, cell_to_count(it_x), cell_to_count(y), UNCLEAN);
-							else
-							{
+//							else
+//							{
 								// Save the target with the same X of current cell.
-								t.target = {static_cast<int16_t>(it_x), y};
-								g_targets.push_back(t);
-							}
+//								t.target = {static_cast<int16_t>(it_x), y};
+//								g_targets.push_back(t);
+//							}
 						}
 					}
 				}
@@ -902,6 +903,7 @@ void generate_SPMAP(const Cell_t& curr)
 
 bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 {
+	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
 	generate_SPMAP(curr);
 

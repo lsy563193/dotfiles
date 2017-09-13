@@ -53,7 +53,6 @@ typedef struct {
 extern float saved_pos_x, saved_pos_y;
 extern bool g_move_back_finished;
 extern uint16_t g_straight_distance;
-extern int16_t g_turn_angle;
 extern uint16_t g_wall_distance;
 extern bool g_is_left_start;
 extern bool g_finish_cleaning_go_home;

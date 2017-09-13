@@ -68,7 +68,6 @@
 int g_rcon_triggered = 0;//1~6
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
-int16_t g_turn_angle;
 uint16_t g_wall_distance=20;
 uint16_t g_straight_distance;
 uint32_t g_escape_trapped_timer;
@@ -617,6 +616,7 @@ int cm_cleaning()
 		}
 		else if (is_found == 1)
 		{
+//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 			if(! cm_move_to(cleaning_path)) {
 				return -1;
 			}
