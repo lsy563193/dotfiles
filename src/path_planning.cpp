@@ -1463,7 +1463,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 
 		}
 	}
-	else if (!g_go_home && SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT){
+	else if (!g_go_home && (SpotMovement::instance()->getSpotType() == CLEAN_SPOT || SpotMovement::instance()->getSpotType() == NORMAL_SPOT)){
 		if (!SpotMovement::instance()->spotNextTarget(curr,&path))
 			return 0;
 #if DEBUG_MAP
@@ -1495,7 +1495,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 					cm_check_should_go_home();
 				}
 				if (ret == -2){
-					if(g_trapped_mode == 0 ){
+					if (g_trapped_mode == 0){
 						g_trapped_mode = 1;
 						// This led light is for debug.
 						set_led_mode(LED_FLASH, LED_GREEN, 300);
@@ -1538,6 +1538,14 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				return 1;
 			}
 #endif
+			if (g_trapped_mode == 1 || g_trapped_mode == 2) // For cases that robot exit escape status during cm_self_check().
+			{
+				wf_clear();
+				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
+				g_trapped_mode = 0;
+				// This led light is for debug.
+				set_led_mode(LED_STEADY, LED_GREEN);
+			}
 		}
 	}
 
