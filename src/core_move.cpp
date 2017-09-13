@@ -28,7 +28,7 @@
 #include <future>
 #include <list>
 #include <charger.hpp>
-
+#include "space_exploration.h"
 #include <wav.h>
 //#include "../include/obstacle_detector.h"
 #include <motion_manage.h>
@@ -309,6 +309,10 @@ bool cm_move_to(const PPTargetType& path)
 	int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
 	{
+		/*for exploration mark the map*/
+		if (get_clean_mode() == Clean_Mode_Exploration) {
+			explore_update_map();
+		}
 		/*for navigation trapped wall follow update map and push_back vector*/
 		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
 			wf_update_map(WFMAP);
@@ -671,7 +675,7 @@ void cm_check_should_go_home(void)
 			cm_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
-			ros_map_convert(MAP, true,false);
+			ros_map_convert(MAP, true,false, false);
 			map_mark_robot(MAP);//note: To clear the obstacles befor go home, please don't remove it!
 		}
 		if (g_battery_home)

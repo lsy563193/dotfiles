@@ -1540,14 +1540,15 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	}
 
 	/*Exploration Mode*/
-	else if(get_clean_mode() == Clean_Mode_Exploration) {
+	else if(!g_go_home && get_clean_mode() == Clean_Mode_Exploration) {
 		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
 			g_resume_cleaning = false;
 
 		if (!g_resume_cleaning)
 		{
 #if !PATH_ALGORITHM_V2
-			if (!path_lane_is_cleaned(curr, path))
+			//if (!path_lane_is_cleaned(curr, path))
+			if (1)
 			{
 				extern bool g_isolate_triggered;
 				int16_t ret;
@@ -1623,7 +1624,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	//if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
 	if (g_go_home)
 		mt_set(CM_LINEARMOVE);
-	else if(get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
+	else if(get_clean_mode() == Clean_Mode_Navigation)
 		mt_update(curr, path, g_old_dir);
 	// else if wall follow mode, the move type has been set before here.
 	if (curr.X == g_next_cell.X)
@@ -1803,7 +1804,7 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map_convert" "\033[0m", __FUNCTION__, __LINE__);
 			map_reset(ROSMAP);
 //			debug_map(MAP, 0, 0);
-			ros_map_convert(ROSMAP, false, true);
+			ros_map_convert(ROSMAP, false, true, false);
 //			debug_map(MAP, 0, 0);
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map" "\033[0m", __FUNCTION__, __LINE__);
 //			debug_map(ROSMAP, 0, 0);
