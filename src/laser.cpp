@@ -835,7 +835,7 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 191, 210, 2, 1, &laserScanData_, &laser_status,
 																				 Status_Left_OBS);
 	}else{
-		is_triggered = setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &laserScanData_, &laser_status,
+		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &laserScanData_, &laser_status,
 																				 Status_Front_OBS);
 	}
 	if(get_clean_mode() == Clean_Mode_Navigation)
