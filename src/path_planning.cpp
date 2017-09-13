@@ -330,21 +330,21 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
-int16_t path_lane_distance(bool is_min)
-{
-	int angle = gyro_get_angle();
-	if(is_min)
-		angle = uranged_angle(angle + 1800);
-	angle /= 10;
-	auto dis = MotionManage::s_laser->getLaserDistance(angle);
-	int16_t cell_dis = dis * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	if(is_min)
-		ROS_INFO("min cell_dis(%d)",count_to_cell(cell_dis) );
-	else
-		ROS_INFO("max cell_dis(%d)",count_to_cell(cell_dis) );
-
-	return cell_dis;
-}
+//int16_t path_lane_distance(bool is_min)
+//{
+//	int angle = gyro_get_angle();
+//	if(is_min)
+//		angle = uranged_angle(angle + 1800);
+//	angle /= 10;
+//	auto dis = MotionManage::s_laser->getLaserDistance(angle);
+//	int16_t cell_dis = dis * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+//	if(is_min)
+//		ROS_INFO("min cell_dis(%d)",count_to_cell(cell_dis) );
+//	else
+//		ROS_INFO("max cell_dis(%d)",count_to_cell(cell_dis) );
+//
+//	return cell_dis;
+//}
 
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {

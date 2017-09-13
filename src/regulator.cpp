@@ -921,6 +921,8 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
 	if(rcon_status)
 	{
+//		g_rcon_triggered = get_rcon_trig();
+//		map_set_rcon();
 		int32_t linear_speed = 24;
 		/* angular speed notes						*
 		 * larger than 0 means move away from wall	*

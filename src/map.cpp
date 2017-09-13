@@ -627,7 +627,7 @@ uint8_t map_set_laser()
 
 uint8_t map_set_obs()
 {
-	auto obs_trig = g_obs_triggered/*get_obs_status()*/;
+	auto obs_trig = /*g_obs_triggered*/get_obs_status();
 //	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
 		return 0;
@@ -678,7 +678,7 @@ uint8_t map_set_obs()
 
 uint8_t map_set_bumper()
 {
-	auto bumper_trig = g_bumper_triggered/*get_bumper_status()*/;
+	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
 	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
@@ -832,11 +832,11 @@ uint8_t map_set_rcon()
 	int32_t x,y;
 	uint8_t block_count = 0;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-//	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
+	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
 	map_set_cell(MAP, x, y, BLOCKED_RCON);
 	if (dx2 != 0){
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-//		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 		block_count++;
 	}
@@ -978,9 +978,9 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	auto diff = cells.back().X - cells.front().X;
 
 //	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
-//	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
+	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	std::string pri_msg("");
-	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
+//	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
 	if (cells.size() < 2 || std::abs(diff) <= 4)
 		return;
 
