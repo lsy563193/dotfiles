@@ -978,9 +978,9 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	auto diff = cells.back().X - cells.front().X;
 
 //	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
-//	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
+	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	std::string pri_msg("");
-	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
+//	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
 	if (cells.size() < 2 || std::abs(diff) <= 4)
 		return;
 
