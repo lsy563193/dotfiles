@@ -20,6 +20,7 @@ public:
 
 	bool getLaserDistance(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
 
+	int compLaneDistance();
 	void setScanReady(uint8_t val);
 	void setScan2Ready(uint8_t val);
 	static int8_t isScanReady();

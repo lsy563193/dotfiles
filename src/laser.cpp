@@ -724,8 +724,9 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
  * @return distance value (meter)
  * */
 double Laser::getLaserDistance(uint16_t angle){
+	ROS_INFO("%s,%d,input angle = %u",__FUNCTION__,__LINE__,angle);
 	if(angle >359 || angle < 0){
-		ROS_INFO("%s,%d,angle should be in range 0 to 359,input angle = %u",__FUNCTION__,__LINE__,angle);
+		ROS_WARN("%s,%d,angle should be in range 0 to 359,input angle = %u",__FUNCTION__,__LINE__,angle);
 		return 0;
 	}
 	else{
@@ -733,6 +734,19 @@ double Laser::getLaserDistance(uint16_t angle){
 	}
 }
 
+//pos 1,nag -1
+int Laser::compLaneDistance(){
+	int ret = 0;
+//	int angle = gyro_get_angle();
+//	auto pos_dis = getLaserDistance(angle);
+//	angle = ranged_angle(angle + 180);
+//	auto nag_dis = getLaserDistance(angle);
+//	if(pos_dis > nag_dis)
+//		ret = 1;
+//	else if(pos_dis < nag_dis)
+//		ret = -1;
+	return ret;
+}
 /*----set laser marker according to direction-----*/
 static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *laser_status,uint8_t obs_status)
 {
@@ -915,3 +929,4 @@ uint8_t Laser::isRobotStuck()
 	}
 	return ret;
 }
+
