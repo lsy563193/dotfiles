@@ -589,9 +589,7 @@ int cm_cleaning()
 		Cell_t curr = map_get_curr_cell();
 		path_update_cell_history();
 //		path_update_cells();
-		auto path_next_time = ros::Time::now().toSec();
 		int8_t is_found = path_next(curr, cleaning_path);
-		ROS_ERROR("path_next_time_ms:%lf",(ros::Time::now().toSec()-path_next_time)*1000);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0) //No target point

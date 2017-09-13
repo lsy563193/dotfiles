@@ -33,6 +33,9 @@ bool line_is_found;
 double wall_distance=0.8;
 float back_distance=0.01;
 CMMoveType last_move_type;
+int next_linear_speed = INT_MAX;
+double wall_follow_detect_distance=0.20;
+int32_t old_same_speed,old_diff_speed;
 //bool g_is_should_follow_wall;
 
 static int16_t bumper_turn_angle()
@@ -353,27 +356,27 @@ bool TurnRegulator::isReach()
 			ROS_INFO("strength: %d",strength);
 			if(strength < 150)  //150 is the experience value by testing in the closest position to black wall
 			{
-				strength+=(150-strength)/4*3;
+				strength += (150 - strength) / 4 * 3;
 				if(strength < STRENGTH_BLACK_MIN)
-					strength=STRENGTH_BLACK_MIN;
+					strength = STRENGTH_BLACK_MIN;
 				ROS_INFO("strength_distance_adjust: %d",strength);
-			}
-			else if(strength >250 && strength < 320) // boardline invagination
+			} else if(strength > 250 && strength < 320) // boardline invagination
 			{
-				strength +=(400-strength)/5*4;
+				strength += (400 - strength) / 5 * 4;
 				ROS_INFO("boradline invagination，strength: %d",strength);
-			}
-			else if(strength > 320 && strength < 620)  //620 is the experience value by testing in the closest position to white wall
+			} else if(strength > 320 && strength < 620)  //620 is the experience value by testing in the closest position to white wall
 			{
-				strength+=(620-strength)/4*3;
+				strength += (620 - strength) / 4 * 3;
 				if(strength < STRENGTH_WHITE_MIN)
-					strength=STRENGTH_WHITE_MIN;
-				else if(strength > STRENGTH_WHITE_MAX)
-					strength=0.95*strength;
+					strength = STRENGTH_WHITE_MIN;
+				ROS_INFO("strength_distance_adjust: %d",strength);
+			}else if(strength > STRENGTH_WHITE_MAX)
+			{
+				strength = STRENGTH_WHITE_MAX + 0.3 * (strength - STRENGTH_WHITE_MAX);
 				ROS_INFO("strength_distance_adjust: %d",strength);
 			}
 //			last_strength=strength;
-			line_is_found=false;
+			line_is_found = false;
 		}
 		else
 			ROS_INFO("line is not found");
@@ -413,6 +416,7 @@ bool TurnRegulator::_isStop()
 
 void TurnRegulator::setTarget()
 {
+
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1)
 	{
 		set_wheel_speed(0, 0);
@@ -869,9 +873,22 @@ bool FollowWallRegulator::isSwitch()
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-
+/*
 	if( g_obs_triggered  || get_front_obs() >= get_front_obs_value()+1000){
 		if(! g_obs_triggered)
+			g_obs_triggered = Status_Front_OBS;
+		if(g_trapped_mode == 1)
+			strength = STRENGTH_HIGHT_LIMIT;
+		g_turn_angle = obs_turn_angle();
+		g_straight_distance = 100;
+		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
+	}
+*/
+	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_value());
+	if(obs_tmp) {
+//		ROS_INFO("Laser Stop in wall follow");
+		if(! g_obs_triggered )
 			g_obs_triggered = Status_Front_OBS;
 		if(g_trapped_mode == 1)
 			strength = STRENGTH_HIGHT_LIMIT;
@@ -1018,18 +1035,36 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 						if ((diff_speed-same_speed) >= -3)
 						{
 							// Away from the wall.
-							ROS_WARN("%s,%d: delay_sec(0.22) to walk straight",__FUNCTION__,__LINE__);
+//						ROS_WARN("%s,%d: delay_sec(0.22) to walk straight",__FUNCTION__,__LINE__);
 //							if(ros::Time::now().toSec()-transit_time < 0.8 && (strength != last_transit_strength))
 //							{
 //								strength=last_transit_strength;
 //								ROS_WARN("set back strength: %d",strength);
 //							}
-							if(mt_is_left())
-								move_forward(20,15);
+							if(mt_is_left()) {
+								if (is_decelerate_wall()) {
+									move_forward((2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15)) / 2,
+															 (2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15)) / 2);
+									delay_sec(0.4);
+//									ROS_WARN("delay_decelerate");
+								} else {
+									move_forward(20, 15);
+									delay_sec(0.22);
+									ROS_WARN("%s,%d: delay_sec(0.22) to walk straight",__FUNCTION__,__LINE__);
+								}
+							}
 							else
-								move_forward(15,20);
+							{
+								if(is_decelerate_wall()) {
+									move_forward((2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15)) / 2,
+															 (2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15)) / 2);
+									delay_sec(0.3);
+								}else {
+									move_forward(15, 20);
+									delay_sec(0.22);
+								}
+							}
 //							strength+=15;
-							delay_sec(0.22);
 							g_straight_distance = 250;
 						}
 					}
@@ -1101,7 +1136,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}*/
 		/******************************************END******************************************************/
 #endif
-//		ROS_WARN("same_speed:%d,diff_speed:%d",same_speed,diff_speed);
+//		ROS_ERROR("same_speed:%d,diff_speed:%d",same_speed,diff_speed);
 
 		previous_ = proportion;
 
@@ -1110,13 +1145,44 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 	}
-		if(get_clean_mode()==Clean_Mode_Navigation)
-		{
-				if(mt_get()!=last_move_type)
-						wall_buffer[0]=wall_buffer[1]=wall_buffer[2]=0;
-				last_move_type=mt_get();
-		}
 
+	if (is_decelerate_wall()) {
+		old_same_speed = same_speed;
+		old_diff_speed = diff_speed;
+		if (next_linear_speed > (300 * (wall_follow_detect_distance - 0.167))){
+			if(next_linear_speed == INT_MAX)
+				next_linear_speed = (old_same_speed + old_diff_speed) / 2 - 1;
+			same_speed = (2 * next_linear_speed + next_linear_speed * (old_same_speed - old_diff_speed) / (old_same_speed + old_diff_speed)) / 2;
+			diff_speed = (2 * next_linear_speed - next_linear_speed * (old_same_speed - old_diff_speed) / (old_same_speed + old_diff_speed)) / 2;
+			next_linear_speed = (same_speed + diff_speed) / 2 - 1;
+//			ROS_ERROR("decelerate:same_speed:%d,diff_speed:%d,next_linear_speed:%d",same_speed,diff_speed,next_linear_speed);
+		} else{
+			//the first parameter 300 must below 638 to ensure the linear velocity below to the calculating linear velocity
+				same_speed = (2 * (300 * (wall_follow_detect_distance - 0.167)) + old_same_speed - old_diff_speed) / 2;
+				diff_speed = (2 * (300 * (wall_follow_detect_distance - 0.167)) + old_diff_speed - old_same_speed) / 2;
+//				ROS_ERROR("continue:same_speed:%d,diff_speed:%d,linear_speed:%d",same_speed,diff_speed,(same_speed + diff_speed) / 2);
+		}
+		if(same_speed < 0) {
+			diff_speed -= same_speed;
+			same_speed = 0;
+//			ROS_ERROR("below zero by same_speed:same_speed:%d,diff_speed:%d",same_speed,diff_speed);
+		}
+		else if(diff_speed < 0)
+		{
+			same_speed -= diff_speed;
+			diff_speed = 0;
+//			ROS_ERROR("below zero by diff_speed:same_speed:%d,diff_speed:%d",same_speed,diff_speed);
+		}
+	} else{
+		next_linear_speed = INT_MAX;
+	}
+
+	if(get_clean_mode()==Clean_Mode_Navigation)
+	{
+		if(mt_get()!=last_move_type)
+			wall_buffer[0]=wall_buffer[1]=wall_buffer[2]=0;
+		last_move_type=mt_get();
+	}
 }
 
 
@@ -1188,6 +1254,8 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	s_curr_p.X = map_get_x_count();
 	s_curr_p.Y = map_get_y_count();
 #endif
+	strength=STRENGTH_HIGHT_LIMIT;
+	bumper_turn_factor=0.85;
 	auto target = map_cell_to_point(target_cell);
 	ROS_INFO("%s %d: start cell(%d, %d), target(%d, %d).", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y, count_to_cell(target.X), count_to_cell(target.Y));
 	g_bumper_cnt = g_cliff_cnt =0;
@@ -1240,8 +1308,6 @@ RegulatorManage::~RegulatorManage()
 	delete back_reg_;
 	delete mt_reg_;
 	set_wheel_speed(0,0);
-	strength=STRENGTH_HIGHT_LIMIT;
-	bumper_turn_factor=0.85;
 	cm_set_event_manager_handler_state(false);
 }
 void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

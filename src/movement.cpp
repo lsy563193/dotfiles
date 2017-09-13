@@ -3205,6 +3205,7 @@ uint8_t get_tilt_status()
 
 uint8_t is_robot_stuck()
 {
+
 	uint8_t ret = 0;
 	if(Laser::isScanReady()){
 		if(Laser::isRobotStuck()){
@@ -3213,4 +3214,13 @@ uint8_t is_robot_stuck()
 		}
 	}
 	return ret;
+}
+
+bool is_decelerate_wall(void)
+{
+	auto status = (robot::instance()->getObsFront() > (g_front_obs_trig_value));
+	if(is_map_front_block(3) || status)
+		return true;
+	else
+		return false;
 }
