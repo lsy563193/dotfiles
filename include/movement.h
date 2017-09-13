@@ -409,6 +409,7 @@ void reset_left_wheel_step();
 void set_wheel_step(uint32_t Left, uint32_t Right);
 void reset_wheel_step(void);
 void reset_wall_step(void);
+bool is_decelerate_wall(void);
 uint32_t get_left_wall_step(void);
 uint32_t get_right_wall_step(void);
 
@@ -475,7 +476,7 @@ void set_rcon_status(uint32_t code);
 // If robot going straight, should turn off gyro dynamic adjustment.
 // If robot turning, should turn on gyro dynamic adjustment.
  */
-void set_wheel_speed(uint8_t Left, uint8_t Right);
+void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 

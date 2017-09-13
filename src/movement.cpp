@@ -971,8 +971,7 @@ uint8_t is_obs_near(void)
 	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
 	return 0;
 }
-
-void set_wheel_speed(uint8_t Left, uint8_t Right)
+void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p, float PID_i, float PID_d)
 {
 	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
 
@@ -3194,11 +3193,12 @@ uint8_t get_tilt_status()
 bool check_pub_scan()
 {
 	//ROS_INFO("%s %d: get_left_wheel_speed() = %d, get_right_wheel_speed() = %d.", __FUNCTION__, __LINE__, get_left_wheel_speed(), get_right_wheel_speed());
-	if ((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
+	if (g_motion_init_succeeded &&
+		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
 		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
 		|| get_bumper_status() || get_tilt_status()
 		|| abs(get_left_wheel_speed() - get_right_wheel_speed()) > 100
-		|| get_left_wheel_speed() * get_right_wheel_speed() < 0)
+		|| get_left_wheel_speed() * get_right_wheel_speed() < 0))
 		return false;
 	else
 		return true;
@@ -3244,4 +3244,13 @@ void reset_clean_paused(void)
 		cm_reset_go_home();
 		g_resume_cleaning = false;
 	}
+}
+
+bool is_decelerate_wall(void)
+{
+	auto status = (robot::instance()->getObsFront() > (g_front_obs_trig_value));
+	if(is_map_front_block(3) || status)
+		return true;
+	else
+		return false;
 }
