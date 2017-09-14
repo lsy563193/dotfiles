@@ -311,8 +311,11 @@ bool cm_move_to(const PPTargetType& path)
 		/*for exploration mark the map and detect the rcon signal*/
 		if (get_clean_mode() == Clean_Mode_Exploration) {
 			explore_update_map();
-			if (get_rcon_status())
+			/*if (get_rcon_status()) {
 				g_exploration_home = true;
+				ret = true;
+				break;
+			}*/
 		}
 		/*for navigation trapped wall follow update map and push_back vector*/
 		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
