@@ -832,11 +832,11 @@ uint8_t map_set_rcon()
 	int32_t x,y;
 	uint8_t block_count = 0;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-//	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
+	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
 	map_set_cell(MAP, x, y, BLOCKED_RCON);
 	if (dx2 != 0){
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-//		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 		block_count++;
 	}
@@ -977,7 +977,10 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 {
 	auto diff = cells.back().X - cells.front().X;
 
+//	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
+	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	std::string pri_msg("");
+//	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
 	if (cells.size() < 2 || std::abs(diff) <= 4)
 		return;
 
@@ -985,7 +988,6 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	{
 		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 	}
-	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	auto min = std::min(cells.front().X, cells.back().X) + 3;
 	auto max = std::max(cells.front().X, cells.back().X) - 3;
 

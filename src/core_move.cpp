@@ -373,8 +373,10 @@ bool cm_move_to(const PPTargetType& path)
 					auto is_block_clear = map_mark_robot(MAP);
 					if(is_block_clear)
 					{
-						BoundingBox2 map;
-						if (get_reachable_targets(curr, map))
+						Cell_t target;
+						if(path_dijkstra(curr, target))
+//						BoundingBox2 map;
+//						if (get_reachable_targets(curr, map))
 						{
 							ROS_WARN("%s %d: Found reachable targets, exit trapped.", __FUNCTION__, __LINE__);
 							g_trapped_mode = 2;

@@ -49,6 +49,7 @@
 
 #include "wav.h"
 #include <numeric>
+#include <motion_manage.h>
 
 #define FINAL_COST (1000)
 #define NO_TARGET_LEFT 0
@@ -330,6 +331,22 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
+//int16_t path_lane_distance(bool is_min)
+//{
+//	int angle = gyro_get_angle();
+//	if(is_min)
+//		angle = uranged_angle(angle + 1800);
+//	angle /= 10;
+//	auto dis = MotionManage::s_laser->getLaserDistance(angle);
+//	int16_t cell_dis = dis * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+//	if(is_min)
+//		ROS_INFO("min cell_dis(%d)",count_to_cell(cell_dis) );
+//	else
+//		ROS_INFO("max cell_dis(%d)",count_to_cell(cell_dis) );
+//
+//	return cell_dis;
+//}
+
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
@@ -434,34 +451,44 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		 * If the number of cells to clean are the same of both ends, choose either one base the
 		 * previous robot g_cell_history. Otherwise, move to the end that have more unclean cells.
 		 */
-		if (min > max)
-			tmp.X += max;
-		else if (min < max)
-			tmp.X -= min;
-		else
+//		min = std::min(min, MotionManage::s_laser->nag_dis)
+		//ture means min
+		//false means max
+//		min = std::min(min, path_lane_distance(true));
+//		max = std::min(max, path_lane_distance(false));
+		auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
+		if(pos_or_nag == 1)
 		{
-			if (g_cell_history[2].Y == g_cell_history[1].Y)
-			{
-				if (g_cell_history[2].X > g_cell_history[1].X)
-					tmp.X -= min;
-				else if (g_cell_history[2].X < g_cell_history[1].X)
-					tmp.X += max;
-				else
-				{
-					if (g_cell_history[0].X <= g_cell_history[1].X)
+			tmp.X += max;
+		}else if(pos_or_nag == -1){
+			tmp.X -= min;
+		}else {
+			if (min > max)
+				tmp.X += max;
+			else if (min < max)
+				tmp.X -= min;
+			else {
+				if (g_cell_history[2].Y == g_cell_history[1].Y) {
+					if (g_cell_history[2].X > g_cell_history[1].X)
+						tmp.X -= min;
+					else if (g_cell_history[2].X < g_cell_history[1].X)
+						tmp.X += max;
+					else {
+						if (g_cell_history[0].X <= g_cell_history[1].X)
+							tmp.X += max;
+						else
+							tmp.X -= min;
+					}
+				} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
+					if (g_cell_history[0].X >= g_cell_history[1].X)
 						tmp.X += max;
 					else
 						tmp.X -= min;
-				}
-			} else if (g_cell_history[0].Y == g_cell_history[1].Y)
-			{
-				if (g_cell_history[0].X >= g_cell_history[1].X)
+				} else
 					tmp.X += max;
-				else
-					tmp.X -= min;
-			} else
-				tmp.X += max;
+			}
 		}
+
 		is_found = 2;
 	} else if (min != SHRT_MAX)
 	{
