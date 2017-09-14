@@ -11,12 +11,12 @@
 #include <movement.h>
 #include <robot.hpp>
 
-#define STRENGTH_WHITE_MIN 550
-#define STRENGTH_WHITE_MAX 625
-#define STRENGTH_BLACK_MIN 120
-#define STRENGTH_BLACK_MAX 180
-#define STRENGTH_HIGH_LIMIT 625
-#define STRENGTH_LOW_LIMIT 150
+#define WALL_DISTANCE_WHITE_MIN 550
+#define WALL_DISTANCE_WHITE_MAX 625
+#define WALL_DISTANCE_BLACK_MIN 120
+#define WALL_DISTANCE_BLACK_MAX 180
+#define WALL_DISTANCE_HIGH_LIMIT 625
+#define WALL_DISTANCE_LOW_LIMIT 150
 
 extern int16_t g_turn_angle;
 
@@ -123,6 +123,16 @@ protected:
 private:
 	int32_t previous_;
 	uint8_t seen_charger_counter;
+	int next_linear_speed = INT_MAX;
+	double wall_follow_detect_distance=0.20;
+	int32_t old_same_speed,old_diff_speed;
+	int turn_right_angle_factor=15;
+	int16_t wall_buffer[3]={0};
+//CMMoveType last_move_type;
+//bool g_is_should_follow_wall;
+	//int last_strength=150;
+//int last_transit_strength=150;
+//double transit_time=0;
 };
 
 class LinearRegulator: public RegulatorBase{

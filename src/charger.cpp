@@ -84,7 +84,8 @@ void charge_function(void)
 		}
 
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
-		//ROS_WARN("%s %d: g_stop_charge_counter: %d", __FUNCTION__, __LINE__, g_stop_charge_counter);
+		if(g_stop_charge_counter <15)
+			ROS_WARN("%s %d: g_stop_charge_counter: %d, charge_status: %d", __FUNCTION__, __LINE__, g_stop_charge_counter, robot::instance()->getChargeStatus());
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
 		{
 			g_charge_detect = 0;

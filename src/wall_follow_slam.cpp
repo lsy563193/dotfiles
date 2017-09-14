@@ -325,6 +325,7 @@ static void wf_mark_home_point(void)
 	cm_update_position();
 	map_mark_robot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 #if DEBUG_MAP
+	ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
 	debug_map(MAP, 0, 0);
 #endif
 

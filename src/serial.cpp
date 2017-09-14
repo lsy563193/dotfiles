@@ -136,7 +136,8 @@ int serial_read(int len,uint8_t *buf){
 		if(ioctl(crport_fd,FIONREAD,return_size)==-1)return -1;
 		if(*return_size >= (size_t)len){
 			r_ret = read(crport_fd,t_buf,len);
-			memcpy(buf,t_buf,r_ret);
+			if(r_ret >0)
+				memcpy(buf,t_buf,r_ret);
 			return r_ret;
 		}
 	}
@@ -158,7 +159,8 @@ int serial_read(int len,uint8_t *buf){
 			if(ioctl(crport_fd,FIONREAD,return_size)==-1)return -1;
 			if(*return_size >= (size_t)len){
 				r_ret = read(crport_fd,t_buf,len);
-				memcpy(buf,t_buf,r_ret);
+				if(r_ret >0)
+					memcpy(buf,t_buf,r_ret);
 				return r_ret;
 			}
 			else{
