@@ -831,7 +831,7 @@ bool FollowWallRegulator::isReach()
 //				if(is_block_cleaned_unblock(curr.X,curr.Y))
 //					ret = true;
 				ROS_WARN("%s %d: curr_angle(%d), origin_angle(%d),diff(%d)", __FUNCTION__, __LINE__,gyro_get_angle(), s_origin_angle,std::abs(gyro_get_angle() - s_origin_angle));
-				if(std::abs(gyro_get_angle() - s_origin_angle) > 1350 && is_block_cleaned_unblock(curr.X,curr.Y))
+				if(std::abs(gyro_get_angle() - s_origin_angle) > 900 && is_block_cleaned_unblock(curr.X,curr.Y))
 					ret = true;
 			}
 		}
