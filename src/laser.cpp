@@ -793,14 +793,10 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 {
-	int		i;
-	int		count = 0;
 	//double	angle_min, angle_max, tmp, range_tmp;
 	//double	laser_distance = 0;
-	int		sum = 0;
 	static  uint32_t seq = laserScanData_.header.seq;
 	bool	is_triggered = 0;
-	static	bool is_skip = 0;
 	uint8_t laser_status;
 	//ROS_ERROR("is_skip = %d", is_skip);
 	//ROS_INFO("laserMarker");
@@ -811,11 +807,6 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 	seq = laserScanData_.header.seq;
 	if (!is_mark)
 		return 0;
-	if (is_skip == 0) {
-		is_skip = 1;
-	} else if (is_skip == 1) {
-		is_skip = 0;
-	}
 	//ROS_ERROR("2 : is_skip = %d", is_skip);
 	/*if (is_skip) {
 		//is_skip = 0;
