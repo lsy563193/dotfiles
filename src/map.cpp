@@ -831,38 +831,77 @@ uint8_t map_set_rcon()
 	};
 	int dx = 0, dy = 0;
 	int dx2 = 0, dy2 = 0;
+	std::vector<Cell_t> d_cells;
 	switch (rcon_trig - 1)
 	{
 		case left:
-			dx = 1, dy = 2;
-					break;
+			d_cells.push_back({1,2});
+			d_cells.push_back({1,3});
+			d_cells.push_back({1,4});
+			d_cells.push_back({2,2});
+			d_cells.push_back({2,3});
+			d_cells.push_back({2,4});
+			d_cells.push_back({3,2});
+			d_cells.push_back({3,3});
+			d_cells.push_back({3,4});
+			break;
 		case fl2:
-			dx = 1, dy = 2;
-					dx2 = 2, dy2 = 1;
-					break;
+			d_cells.push_back({2,1});
+			d_cells.push_back({2,2});
+			d_cells.push_back({2,3});
+			d_cells.push_back({3,1});
+			d_cells.push_back({3,2});
+			d_cells.push_back({3,3});
+			d_cells.push_back({4,1});
+			d_cells.push_back({4,2});
+			d_cells.push_back({4,3});
+//			dx = 1, dy = 2;
+//			dx2 = 2, dy2 = 1;
+			break;
 		case fl1:
 		case fr1:
-			dx = 2, dy = 0;
-					dx2 = 3, dy2 = 0;
-					break;
+			d_cells.push_back({2,0});
+			d_cells.push_back({3,0});
+			d_cells.push_back({4,0});
+			d_cells.push_back({2,-1});
+			d_cells.push_back({3,-1});
+			d_cells.push_back({4,-1});
+			d_cells.push_back({2,1});
+			d_cells.push_back({3,1});
+			d_cells.push_back({4,1});
+			break;
 		case fr2:
-			dx = 1, dy = -2;
-					dx2 = 2, dy2 = -1;
-					break;
+//			dx = 1, dy = -2;
+//			dx2 = 2, dy2 = -1;
+			d_cells.push_back({2,-1});
+			d_cells.push_back({2,-2});
+			d_cells.push_back({2,-3});
+			d_cells.push_back({3,-1});
+			d_cells.push_back({3,-2});
+			d_cells.push_back({3,-3});
+			d_cells.push_back({4,-1});
+			d_cells.push_back({4,-2});
+			d_cells.push_back({4,-3});
+			break;
 		case right:
-			dx = 1, dy = -2;
-					break;
+			d_cells.push_back({1,-2});
+			d_cells.push_back({1,-3});
+			d_cells.push_back({1,-4});
+			d_cells.push_back({2,-2});
+			d_cells.push_back({2,-3});
+			d_cells.push_back({2,-4});
+			d_cells.push_back({3,-2});
+			d_cells.push_back({3,-3});
+			d_cells.push_back({3,-4});
+			break;
 	}
 	int32_t x,y;
 	uint8_t block_count = 0;
-	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
-	map_set_cell(MAP, x, y, BLOCKED_RCON);
-	if (dx2 != 0){
-		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+	for(const auto& d_cell : d_cells) {
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * d_cell.Y, CELL_SIZE * d_cell.X, &x, &y);
+		ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)", __FUNCTION__, __LINE__, map_get_curr_cell().X,
+							map_get_curr_cell().Y, count_to_cell(x), count_to_cell(y), rcon_trig);
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
-		block_count++;
 	}
 	return block_count;
 }

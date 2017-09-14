@@ -982,6 +982,12 @@ int Laser::compLaneDistance(){
 		}
 	}
 	ROS_INFO("x_front_min = %lf, x_back_min = %lf", x_front_min, x_back_min);
-	ret = (x_front_min < x_back_min) ? 1 : 0;
+//	ret = (x_front_min < x_back_min) ? 1 : 0;
+	if(x_front_min < x_back_min)
+		ret = 1;
+	if(x_front_min > x_back_min)
+		ret = -1;
+	if(x_front_min == x_back_min)
+		ret = 0;
 	return ret;
 }

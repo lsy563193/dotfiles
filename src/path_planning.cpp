@@ -457,6 +457,7 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 //		min = std::min(min, path_lane_distance(true));
 //		max = std::min(max, path_lane_distance(false));
 		auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
+		ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
 		if(pos_or_nag == 1)
 		{
 			tmp.X += max;
