@@ -734,19 +734,6 @@ double Laser::getLaserDistance(uint16_t angle){
 	}
 }
 
-//pos 1,nag -1
-int Laser::compLaneDistance(){
-	int ret = 0;
-//	int angle = gyro_get_angle();
-//	auto pos_dis = getLaserDistance(angle);
-//	angle = ranged_angle(angle + 180);
-//	auto nag_dis = getLaserDistance(angle);
-//	if(pos_dis > nag_dis)
-//		ret = 1;
-//	else if(pos_dis < nag_dis)
-//		ret = -1;
-	return ret;
-}
 /*----set laser marker according to direction-----*/
 static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *laser_status,uint8_t obs_status)
 {
@@ -933,3 +920,68 @@ uint8_t Laser::isRobotStuck()
 	return ret;
 }
 
+/*
+ * @author Alvin Xie
+ * @brief make use of lidar to judge x+ or x- is more closer to the wall
+ * @return the closer direction of x to the wall
+ * if x+ is closer, return 1, else return 0
+ * */
+int Laser::compLaneDistance(){
+	int ret = 0;
+	static  uint32_t seq = 0;
+	double x,y,th,x1,y1;
+	int angle_from, angle_to;
+	double x_front_min = 4;
+	double x_back_min = 4;
+	if (laserScanData_.header.seq == seq) {
+		//ROS_WARN("laser seq still same, quit!seq = %d", laserScanData_.header.seq);
+		return 0;
+	}
+	ROS_INFO("compLaneDistance");
+	seq = laserScanData_.header.seq;
+	boost::mutex::scoped_lock(scan_mutex_);
+	int cur_angle = gyro_get_angle() / 10;
+	angle_from = 149 - cur_angle;
+	angle_to = 210 - cur_angle;
+	//ROS_INFO("cur_angle = %d", cur_angle);
+	for (int j = angle_from; j < angle_to; j++) {
+		int i = j>359? j-360:j;
+		if (laserScanData_.ranges[i] < 4) {
+			th = i*1.0 + 180.0;
+			x = cos(th * PI / 180.0) * laserScanData_.ranges[i];
+			y = sin(th * PI / 180.0) * laserScanData_.ranges[i];
+			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
+			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0- cur_angle * PI / 180.0);
+			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
+		}
+		if (fabs(y1) < 0.167) {
+			if (fabs(x1) <= x_front_min) {
+				x_front_min = fabs(x1);
+				//ROS_WARN("x_front_min = %lf", x_front_min);
+			}
+		}
+	}
+
+	angle_from = 329 - cur_angle;
+	angle_to = 400 - cur_angle;
+	for (int j = angle_from; j < angle_to; j++) {
+		int i = j>359? j-360:j;
+		if (laserScanData_.ranges[i] < 4) {
+			th = i*1.0 + 180.0;
+			x = cos(th * PI / 180.0) * laserScanData_.ranges[i];
+			y = sin(th * PI / 180.0) * laserScanData_.ranges[i];
+			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
+			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0 - cur_angle * PI / 180.0);
+			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
+		}
+		if (fabs(y1) < 0.167) {
+			if (fabs(x1) <= x_back_min) {
+				x_back_min = fabs(x1);
+				//ROS_WARN("x_back_min = %lf", x_back_min);
+			}
+		}
+	}
+	ROS_INFO("x_front_min = %lf, x_back_min = %lf", x_front_min, x_back_min);
+	ret = (x_front_min < x_back_min) ? 1 : 0;
+	return ret;
+}
