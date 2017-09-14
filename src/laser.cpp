@@ -20,7 +20,7 @@
 #include "robot.hpp"
 #include "gyro.h"
 boost::mutex scan_mutex_;
-//boost::mutex sca2_mutex_;
+boost::mutex scan2_mutex_;
 //float* Laser::last_ranges_ = NULL;
 uint8_t Laser::is_ready_ = 0;
 uint8_t Laser::is_scan2_ready_ = 0;
@@ -64,7 +64,7 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	int count = 0;
-	boost::mutex::scoped_lock(scan_mutex_);
+	boost::mutex::scoped_lock(scan2_mutex_);
 	laserScanData_2_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 	
@@ -757,7 +757,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	uint8_t ret = 0;
 	int i =angle_from;
 	for (int j = angle_from; j < angle_to; j++) {
-		i = j>359? j-359:j;
+		i = j>359? j-360:j;
 		if (scan_range->ranges[i] < 4) {
 			th = i*1.0 + 180.0;
 			if(j >= 314 && j < 404){//314~44
@@ -849,7 +849,7 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 191, 210, 2, 1, &laserScanData_, &laser_status,
 																				 Status_Left_OBS);
 	}else{
-		is_triggered = setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &laserScanData_, &laser_status,
+		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &laserScanData_, &laser_status,
 																				 Status_Front_OBS);
 	}
 	if(get_clean_mode() == Clean_Mode_Navigation)

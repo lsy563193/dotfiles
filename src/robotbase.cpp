@@ -174,15 +174,15 @@ void *serial_receive_routine(void *)
 
 	while (ros::ok() && (!robotbase_thread_stop)) {
 		ret = serial_read(1, &header[0]);
-		if (ret != 1 ){
-			ROS_WARN("%s, %d, serial read %d bytes,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
+		if (ret <= 0 ){
+			ROS_WARN("%s, %d, serial read return %d ,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
 		if(header[0] != h1)
 			continue;
 		ret= serial_read(1,&header[1]);
-		if (ret != 1 ){
-			ROS_WARN("%s,%d,serial read %d bytes, requst %d byte",__FUNCTION__,__LINE__,ret,1);
+		if (ret <= 0 ){
+			ROS_WARN("%s,%d,serial read return %d , requst %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
 		if(header[1] != h2){
@@ -191,6 +191,9 @@ void *serial_receive_routine(void *)
 		ret = serial_read(wh_len, receiData);
 		if(ret != wh_len){
 			ROS_WARN("%s,%d,serial read %d bytes, requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
+		}
+		if(ret <=0){
+			ROS_WARN("%s,%d,serial read return %d , requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
 			continue;
 		}
 		r_crc = receiData[whtc_len];

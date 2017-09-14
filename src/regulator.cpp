@@ -883,6 +883,13 @@ bool FollowWallRegulator::isSwitch()
 #endif
 	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_value());
 	if(obs_tmp) {
+		if( g_bumper_triggered || get_bumper_status()){
+			if(! g_bumper_triggered)
+				g_bumper_triggered = get_bumper_status();
+			g_turn_angle = bumper_turn_angle();
+			ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+			return true;
+		}
 //		ROS_INFO("Laser Stop in wall follow");
 		if(! g_obs_triggered )
 			g_obs_triggered = Status_Front_OBS;
