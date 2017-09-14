@@ -28,6 +28,8 @@ double robot_to_wall_distance=0.8;
 int16_t g_turn_angle;
 float g_back_distance = 0.01;
 
+extern bool g_exploration_home;
+
 static int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
@@ -244,8 +246,18 @@ bool RegulatorBase::isExit(){
 
 bool RegulatorBase::_isStop()
 {
+	bool ret = false;
 //	ROS_INFO("reg_base _isStop");
-	return g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check() || g_robot_stuck;
+
+/*for exploration mark the map and detect the rcon signal*/
+	if (get_clean_mode() == Clean_Mode_Exploration) {
+		if (get_rcon_status()) {
+			g_exploration_home = true;
+			ret = true;
+		}
+	}
+	ret |=  g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check() || g_robot_stuck; 
+	return ret;
 }
 
 
@@ -751,7 +763,7 @@ bool FollowWallRegulator::isReach()
 			//wf_break_wall_follow();
 			ret = true;
 		}
-	} else if (get_clean_mode() == Clean_Mode_Navigation)
+	} else if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 	{
 		if (g_trapped_mode != 0)
 		{

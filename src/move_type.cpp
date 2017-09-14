@@ -59,11 +59,13 @@ void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir) {
 //		if (!(g_next_cell.X == SHRT_MAX || g_next_cell.X == SHRT_MIN)) {
 		auto 	delta_y = g_target_cell.Y - curr.Y;
 //			ROS_ERROR("%s,%d: target delta_y(%d)",__FUNCTION__,__LINE__,delta_y);
-			if (delta_y != 0 && std::abs(delta_y) <= 2) {
-				path.cells.push_front(g_target_cell);
-				g_next_cell = g_target_cell;
-				g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
-				ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m",__FUNCTION__, __LINE__, g_cm_move_type);
+			if (get_clean_mode() != Clean_Mode_Exploration) {
+				if (delta_y != 0 && std::abs(delta_y) <= 2) {
+					path.cells.push_front(g_target_cell);
+					g_next_cell = g_target_cell;
+					g_cm_move_type = ((dir == POS_X ^ delta_y > 0 ) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
+					ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m",__FUNCTION__, __LINE__, g_cm_move_type);
+				}
 			}
 //		}
 //	}

@@ -51,6 +51,7 @@ private:
 
 	bool initCleaning(uint8_t cleaning_mode);
 	bool initNavigationCleaning(void);
+	bool initExplorationCleaning(void);
 	bool initWallFollowCleaning(void);
 	bool initSpotCleaning(void);
 };

@@ -28,7 +28,7 @@
 #include <future>
 #include <list>
 #include <charger.hpp>
-
+#include "space_exploration.h"
 #include <wav.h>
 //#include "../include/obstacle_detector.h"
 #include <motion_manage.h>
@@ -66,6 +66,7 @@
 #define EVENT_TRIGGERED 2
 
 int g_rcon_triggered = 0;//1~6
+bool g_exploration_home = false;
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
@@ -307,8 +308,21 @@ bool cm_move_to(const PPTargetType& path)
 	int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
 	{
+		/*for exploration mark the map and detect the rcon signal*/
+		if (get_clean_mode() == Clean_Mode_Exploration) {
+			explore_update_map();
+			/*if (get_rcon_status()) {
+				g_exploration_home = true;
+				ret = true;
+				break;
+			}*/
+		}
 		/*for navigation trapped wall follow update map and push_back vector*/
 		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
+			wf_update_map(WFMAP);
+
+		/*for exploration trapped wall follow update map and push_back vector*/
+		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Exploration && g_trapped_mode == 1)
 			wf_update_map(WFMAP);
 
 		/*for wall follow mode update map and push_back vector*/
@@ -582,6 +596,16 @@ int cm_cleaning()
 		int8_t is_found = path_next(curr, cleaning_path);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
+		/*for exploration to climb the charge stub*/
+		if(get_clean_mode() == Clean_Mode_Exploration) {
+			if (g_exploration_home) {
+				ROS_WARN("Exploration receive rcon signal");
+				g_exploration_home = false;
+				if(cm_go_to_charger_())
+					return -1;
+			}
+		}
+
 		if (is_found == 0 ) //No target point
 		{
 			if(get_clean_mode() == Clean_Mode_Spot)
@@ -607,7 +631,7 @@ int cm_cleaning()
 			}
 			return 0;
 		}
-		else if (is_found == 1)
+		else if (is_found == 1)//exist target
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 			if(! cm_move_to(cleaning_path)) {
@@ -668,7 +692,7 @@ void cm_check_should_go_home(void)
 			cm_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
-			ros_map_convert(MAP, true,false);
+			ros_map_convert(MAP, true,false, false);
 			map_mark_robot(MAP);//note: To clear the obstacles befor go home, please don't remove it!
 		}
 		if (g_battery_home)
@@ -1677,7 +1701,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration)
 		robot::instance()->setManualPause();
 
 	start_time = time(NULL);
@@ -1715,7 +1739,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	}
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration){
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();
