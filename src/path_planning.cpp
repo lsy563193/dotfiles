@@ -1589,8 +1589,8 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		if (!g_resume_cleaning)
 		{
 #if !PATH_ALGORITHM_V2
-			//if (!path_lane_is_cleaned(curr, path))
-			if (1)
+			if (!path_lane_is_cleaned(curr, path))
+			//if (1)
 			{
 				extern bool g_isolate_triggered;
 				int16_t ret;
