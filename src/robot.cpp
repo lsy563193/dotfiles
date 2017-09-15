@@ -22,6 +22,7 @@
 
 #include "std_srvs/Empty.h"
 #include "map.h"
+#include "space_exploration.h"
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
@@ -42,6 +43,8 @@ int OBS_adjust_count = 50;
 
 uint32_t omni_detect_cnt = 0;
 uint32_t last_omni_wheel = 0;
+
+boost::mutex ros_map_mutex_;
 
 //extern pp::x900sensor sensor;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
@@ -421,6 +424,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
+	ros_map_mutex_.lock();
 	width_ = map->info.width;
 	height_ = map->info.height;
 	resolution_ = map->info.resolution;
@@ -428,7 +432,13 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	origin_y_ = map->info.origin.position.y;
 	map_data_ = map->data;
 	map_ptr_ = &(map_data_);
-	//ros_map_convert();
+	ros_map_mutex_.unlock();
+
+
+	/*for exploration update map*/
+	if (get_clean_mode() == Clean_Mode_Exploration) {
+		ros_map_convert(MAP, false, false, true);
+	}
 	MotionManage::s_slam->isMapReady(true);
 
 	ROS_INFO("%s %d:finished map callback,map_size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),map_origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
@@ -536,6 +546,19 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.r = 1.0;
 		color_.g = 1.0;
 		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_TILT)
+	{
+		// Gray
+		color_.r = 0.5;
+		color_.g = 0.5;
+		color_.b = 0.5;
+	}
+	else if (type == BLOCKED_ROS_MAP)
+	{
+		color_.r = 0.75;
+		color_.g = 0.33;
+		color_.b = 0.50;
 	}
 	else if (type == TARGET)// Next point
 	{
