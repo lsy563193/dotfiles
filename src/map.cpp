@@ -711,7 +711,7 @@ uint8_t map_set_bumper()
 	std::vector<Cell_t> d_cells;
 
 	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
-		d_cells = {{2,-1}, {2,0}, {2,1}};
+		d_cells = {/*{2,-1},*/ {2,0}/*, {2,1}*/};
 	else if (bumper_trig & LeftBumperTrig) {
 		//d_cells = {{2, 1}, {2,2}/*,{1,2}*/};
 		if(mt_is_linear())
