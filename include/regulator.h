@@ -166,7 +166,7 @@ public:
 	bool isReach();
 	void mark();
 	bool isTurn(){
-		p_reg_ = turn_reg_;
+		return p_reg_ == turn_reg_;
 	};
 	void setTarget() {p_reg_->setTarget();}
 

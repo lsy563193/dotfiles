@@ -1069,7 +1069,7 @@ void cm_self_check(void)
 						g_cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(gyro_get_angle() - target_angle) < 50)
+					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
@@ -1086,7 +1086,7 @@ void cm_self_check(void)
 						g_cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(gyro_get_angle() - target_angle) < 50)
+					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						g_fatal_quit_event = true;

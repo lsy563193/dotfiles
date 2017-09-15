@@ -1492,7 +1492,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				wf_break_wall_follow();
 				auto angle = wf_is_first() ? 0 : -900;
 				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-				cm_world_to_cell(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
+				cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
 				path.cells.clear();
 				path.cells.push_front(path.target);
 				path.cells.push_front(curr);
@@ -1963,7 +1963,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 	//if (g_isolate_count <= 3) {
 		auto angle = -900;
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-		cm_world_to_cell(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
+		cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
 		path.cells.clear();
 		path.cells.push_front(path.target);
 		path.cells.push_front(curr);
