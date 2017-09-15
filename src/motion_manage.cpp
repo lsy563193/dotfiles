@@ -310,7 +310,7 @@ MotionManage::~MotionManage()
 	disable_motors();
 
 	g_tilt_enable = false;
-	g_robot_stuck_enable =false;
+	g_robot_slip_enable =false;
 	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
@@ -574,7 +574,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	work_motor_configure();
 
@@ -654,7 +654,7 @@ bool MotionManage::initSpotCleaning(void)
 	// enable titlt detct
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[33m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);

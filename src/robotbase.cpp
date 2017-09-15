@@ -189,11 +189,11 @@ void *serial_receive_routine(void *)
 			continue;
 		}
 		ret = serial_read(wh_len, receiData);
-		if(ret != wh_len){
+		if(ret < wh_len){
 			ROS_WARN("%s,%d,serial read %d bytes, requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
 		}
-		if(ret <=0){
-			ROS_WARN("%s,%d,serial read return %d , requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
+		if(ret<= 0){
+			ROS_WARN("%s,%d,serial read return %d",__FUNCTION__,__LINE__,ret);
 			continue;
 		}
 		r_crc = receiData[whtc_len];
@@ -202,15 +202,14 @@ void *serial_receive_routine(void *)
 		for (i = 0; i < whtc_len; i++){
 			tmpSet[i + 2] = receiData[i];
 		}
-
 		c_crc = calc_buf_crc8((char *) tmpSet, wh_len - 1);
 		if (r_crc == c_crc){
 			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
 				for (j = 0; j < wht_len; j++) {
 					receiStream[j + 2] = receiData[j];
 				}
-				if(pthread_cond_signal(&recev_cond)<0)
-					ROS_ERROR(" in serial read, pthread signal fail !");//if receive data corret than send signal
+				if(pthread_cond_signal(&recev_cond)<0)//if receive data corret than send signal
+					ROS_ERROR(" in serial read, pthread signal fail !");
 			} else {
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
@@ -224,7 +223,7 @@ void *serial_receive_routine(void *)
 void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, is up!",__FUNCTION__,__LINE__);
 	float	th_last, vth;
 
 	uint16_t	lw_speed, rw_speed;
@@ -323,9 +322,9 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[42] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc = receiStream[43];
 		sensor.omni_wheel = (receiStream[44]<<8)|receiStream[45];
-		sensor.x_acc = static_cast<int16_t>((receiStream[46]<<8)|receiStream[47]);//in mG
-		sensor.y_acc = static_cast<int16_t>((receiStream[48]<<8)|receiStream[49]);//in mG
-		sensor.z_acc = static_cast<int16_t>((receiStream[50]<<8)|receiStream[51]);//in mG
+		sensor.x_acc = (receiStream[46]<<8)|receiStream[47];//in mG
+		sensor.y_acc = (receiStream[48]<<8)|receiStream[49];//in mG
+		sensor.z_acc = (receiStream[50]<<8)|receiStream[51];//in mG
 		sensor.plan = receiStream[52];
 #elif __ROBOT_X400
 		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
@@ -347,9 +346,9 @@ void *robotbase_routine(void*)
 		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc_ = receiStream[38];
 		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc = static_cast<int16_t>((receiStream[41]<<8)|receiStream[42]); //in mG
-		sensor.y_acc = static_cast<int16_t>((receiStream[43]<<8)|receiStream[44]);//in mG
-		sensor.z_acc = static_cast<int16_t>((receiStream[45]<<8)|receiStream[46]); //in mG
+		sensor.x_acc = (receiStream[41]<<8)|receiStream[42]; //in mG
+		sensor.y_acc = (receiStream[43]<<8)|receiStream[44];//in mG
+		sensor.z_acc = (receiStream[45]<<8)|receiStream[46]; //in mG
 #endif
 		/*---------extrict end-------*/
 
@@ -397,7 +396,7 @@ void *robotbase_routine(void*)
 void *serial_send_routine(void*)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d thread running",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;

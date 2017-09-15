@@ -761,6 +761,26 @@ uint8_t map_set_tilt()
 	return block_count;
 }
 
+uint8_t map_set_slip()
+{
+	if (!g_robot_slip)
+		return 0;
+
+	std::vector<Cell_t> d_cells;
+	d_cells = {{1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}, {-1, 1}, {-1, 0}, {-1, -1}};
+	int32_t	x, y;
+	uint8_t block_count = 0;
+	std::string msg("Cell:");
+	for(auto& d_cell : d_cells){
+		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
+		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + ")";
+		map_set_cell(MAP, x, y, BLOCKED_SLIP);
+		block_count++;
+	}
+	ROS_INFO("%s,%d: Current(%d, %d), mark \033[36m%s\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	return block_count;
+}
+
 uint8_t map_set_cliff()
 {
 	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
@@ -857,6 +877,7 @@ uint8_t map_set_blocked()
 	block_count += map_set_rcon();
 	block_count += map_set_cliff();
 	block_count += map_set_tilt();
+	block_count += map_set_slip();
 
 	return block_count;
 }
@@ -953,7 +974,7 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 //			if((! is_follow_y_min && y < min_y) || (is_follow_y_min && y > max_y))
 //				continue;
 			auto status = map_get_cell(MAP, cell.X, y);
-			if (status != BLOCKED_TILT)
+			if (status != BLOCKED_TILT && status != BLOCKED_SLIP)
 				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
 			msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
 		}

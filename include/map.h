@@ -19,7 +19,8 @@ typedef enum {
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
   BLOCKED_TILT = 6,
-  BLOCKED_BOUNDARY = 7,
+  BLOCKED_SLIP = 7,
+  BLOCKED_BOUNDARY = 8,
   TARGET_CLEAN = 13,
   TARGET = 14,
   COST_NO = 0,
@@ -108,6 +109,7 @@ uint8_t map_set_bumper();
 uint8_t map_set_rcon();
 uint8_t map_set_cliff();
 uint8_t map_set_tilt();
+uint8_t map_set_slip();
 uint8_t map_set_blocked();
 void map_set_cleaned(const Cell_t& curr);
 void map_set_follow_wall(const Cell_t& curr);

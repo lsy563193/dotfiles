@@ -558,6 +558,13 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.g = 0.5;
 		color_.b = 0.5;
 	}
+	else if (type == BLOCKED_SLIP)
+	{
+		// i dont know what color it is..
+		color_.r = 0.7;
+		color_.g = 0.7;
+		color_.b = 0.2;
+	}
 	clean_map_markers_.points.push_back(m_points_);
 	clean_map_markers_.colors.push_back(color_);
 }
@@ -709,5 +716,5 @@ void robot::setAccInitData()
 	setInitXAcc(temp_x_acc / count);
 	setInitYAcc(temp_y_acc / count);
 	setInitZAcc(temp_z_acc / count);
-	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m", getInitXAcc(), getInitYAcc(), getInitZAcc());
+	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
 }

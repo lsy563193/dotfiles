@@ -561,8 +561,9 @@ int cm_cleaning()
 
 	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
-	g_robot_stuck_enable = true;
+	g_robot_slip_enable = true;
 	g_robot_stuck = false;
+	g_robot_slip = false;
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
@@ -656,7 +657,7 @@ void cm_check_should_go_home(void)
 {
 	if (g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
-		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home, or finish cleaning.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Receive g_remote_home(\033[32m%d\033[0m), g_battery_home(\033[32m%d\033[0m), finish cleaning(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,g_remote_home,g_battery_home,g_finish_cleaning_go_home);
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
@@ -1097,9 +1098,18 @@ void cm_self_check(void)
 		}
 		else if (g_robot_stuck)
 		{
-			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
+			/*
+			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			ROS_INFO("%s,%d,\033[35mrobot stuck\033[0m",__FUNCTION__,__LINE__);
+			if (fabsf(distance) >= 0.30f)
+			{
+				ROS_INFO("%s %d: \033[35mrobot stuck reached distance!!\033[0m", __FUNCTION__, __LINE__);
+				//g_fatal_quit_event = true;
+				set_error_code(Error_Code_Stuck);
+				break;
+			}
+			*/
 			set_error_code(Error_Code_Stuck);
-			//g_fatal_quit_event = true;
 			break;
 		}
 		else
@@ -1111,7 +1121,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck);
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck );
 }
 
 uint8_t cm_check_charger_signal(void)
@@ -1218,7 +1228,7 @@ void cm_register_events()
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 	/* robot stuck */
-	event_manager_enable_handler(EVT_ROBOT_STUCK,true);
+	event_manager_enable_handler(EVT_ROBOT_SLIP,true);
 	/* Slam Error */
 	event_manager_enable_handler(EVT_SLAM_ERROR, true);
 
@@ -1294,6 +1304,8 @@ void cm_unregister_events()
 
 	/* Slam Error */
 	event_manager_register_and_disable_x(EVT_SLAM_ERROR);
+	/* robot slip */
+	//event_manager_register_and_disable_x(EVT_ROBOT_SLIP);
 
 #undef event_manager_register_and_disable_x
 
@@ -1611,7 +1623,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
 		g_oc_wheel_left = true;
 	}
@@ -1628,7 +1640,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
 		g_oc_wheel_right = true;
 	}
@@ -1798,7 +1810,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && ! g_go_home) {
-		ROS_WARN("%s %d: low battery, battery = %dmv ", __FUNCTION__, __LINE__,
+		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
 
