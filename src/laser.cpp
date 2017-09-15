@@ -867,8 +867,11 @@ uint8_t Laser::isRobotSlip()
 	static uint8_t last_ranges_init = 0;
 	static std::vector<float> last_ranges ;
 	const float PERCENT = 0.8;//80%
-	const float acur1 = 0.05;//accuracy 1 ,in meters
-	const float acur2 = 0.01;//accuracy 2 ,in meters
+
+	const float acur1 = 0.07;//accuracy 1 ,in meters
+	const float acur2 = 0.05;//accuracy 2 ,in meters
+	const float acur3 = 0.03;//accuracy 3 ,in meters
+	const float acur4 = 0.01;//accuracy 4 ,in meters
 	const int COUNT = 5;//stuck count number
 
 	uint16_t same_count = 0;
@@ -885,19 +888,29 @@ uint8_t Laser::isRobotSlip()
 		for(int i =0;i<=359;i=i+2){
 			if(laserScanData_2_.ranges[i] < 3.5){
 				tol_count++;
-				if(laserScanData_2_.ranges[i] >0.5){//
+				if(laserScanData_2_.ranges[i] >2.5 && laserScanData_2_.ranges[i] < 3.5){//	
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
+						same_count++;
+					}
+				} 
+				else if(laserScanData_2_.ranges[i] >1.5 && laserScanData_2_.ranges[i] < 2.5){//
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
+						same_count++;
+					}
+				}
+				else if(laserScanData_2_.ranges[i] >0.5 && laserScanData_2_.ranges[i] < 1.5){//
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
 						same_count++;
 					}
 				}
 				else if(laserScanData_2_.ranges[i] <= 0.5){
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
 						same_count++;
 					}
 				}
 			}
 		}
-		if(++seq_count >1){//store last ranges after 2 sequance
+		if(++seq_count >2){//store last ranges after 2 sequance
 			seq_count=0;
 			last_ranges = laserScanData_2_.ranges;
 		}
