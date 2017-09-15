@@ -28,6 +28,8 @@ double robot_to_wall_distance=0.8;
 int16_t g_turn_angle;
 float g_back_distance = 0.01;
 
+extern bool g_exploration_home;
+
 static int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
@@ -244,8 +246,18 @@ bool RegulatorBase::isExit(){
 
 bool RegulatorBase::_isStop()
 {
+	bool ret = false;
 //	ROS_INFO("reg_base _isStop");
-	return g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check() || g_robot_stuck;
+
+/*for exploration mark the map and detect the rcon signal*/
+	if (get_clean_mode() == Clean_Mode_Exploration) {
+		if (get_rcon_status()) {
+			g_exploration_home = true;
+			ret = true;
+		}
+	}
+	ret |=  g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check() || g_robot_stuck; 
+	return ret;
 }
 
 
@@ -751,7 +763,7 @@ bool FollowWallRegulator::isReach()
 			//wf_break_wall_follow();
 			ret = true;
 		}
-	} else if (get_clean_mode() == Clean_Mode_Navigation)
+	} else if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 	{
 		if (g_trapped_mode != 0)
 		{
@@ -788,8 +800,6 @@ bool FollowWallRegulator::isReach()
 			auto origin = map_point_to_cell(s_origin);
 			if ((s_origin.Y < s_target.Y ^ s_curr_p.Y < s_target.Y))
 			{
-				ROS_WARN("%s %d: reach the target, s_origin.Y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
-								 count_to_cell(s_origin.Y), count_to_cell(s_target.Y), count_to_cell(s_curr_p.Y));
 				auto dx = (s_origin.Y < s_target.Y  ^ mt_is_left()) ? +2 : -2;
 				if(is_block_blocked(count_to_cell(s_curr_p.X)+dx, count_to_cell(s_curr_p.Y)))
 				{
@@ -797,14 +807,14 @@ bool FollowWallRegulator::isReach()
 					ret = true;
 				}
 				if(std::abs(s_origin.Y - s_curr_p.Y) > CELL_COUNT_MUL*3)
+				{
+					ROS_WARN("%s %d: reach the target, CELL_COUNT_MUL*3, s_origin.Y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, count_to_cell(s_origin.Y), count_to_cell(s_target.Y), count_to_cell(s_curr_p.Y));
 					ret = true;
+				}
 			}else
 			if ((s_target.Y > s_origin.Y && (s_origin.Y - s_curr_p.Y) > 120) ||
 					(s_target.Y < s_origin.Y && (s_curr_p.Y - s_origin.Y) > 120))
 			{
-				ROS_WARN("%s %d: opposite direcition, old_dir(%d) s_origin.Y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__,
-								 g_old_dir, count_to_cell(s_origin.Y), count_to_cell(s_target.Y), count_to_cell(s_curr_p.Y));
-
 //				auto dy = (s_origin.Y < s_target.Y  ^ mt_is_left()) ? +2 : -2;
 				PPTargetType path_;
 				path_.cells.clear();
@@ -816,9 +826,10 @@ bool FollowWallRegulator::isReach()
 //				}
 //				auto angle_diff = ranged_angle( gyro_get_angle());
 				auto target_angel  = (s_target.Y > s_origin.Y) ? -900 : 900;
-				ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
+//				ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
 				if(std::abs(gyro_get_angle()-target_angel) <100 || is_block_cleaned_unblock(curr.X,curr.Y))
 				{
+					ROS_WARN("%s %d: opposite direcition, old_dir(%d) s_origin.Y(%d), target.Y(%d),curr_y(%d)", __FUNCTION__, __LINE__, g_old_dir, count_to_cell(s_origin.Y), count_to_cell(s_target.Y), count_to_cell(s_curr_p.Y));
 					ROS_WARN("%s %d: is_map_front_block", __FUNCTION__, __LINE__);
 					ret = true;
 				}
@@ -830,9 +841,11 @@ bool FollowWallRegulator::isReach()
 //			if(s_curr_p.X < std::min(s_origin.X , s_target.X) - CELL_COUNT_MUL*2 || s_curr_p.X > std::max(s_origin.X , s_target.X) + CELL_COUNT_MUL*2)
 //				if(is_block_cleaned_unblock(curr.X,curr.Y))
 //					ret = true;
-				ROS_WARN("%s %d: curr_angle(%d), origin_angle(%d),diff(%d)", __FUNCTION__, __LINE__,gyro_get_angle(), s_origin_angle,std::abs(gyro_get_angle() - s_origin_angle));
 				if(std::abs(gyro_get_angle() - s_origin_angle) > 900 && is_block_cleaned_unblock(curr.X,curr.Y))
+				{
+					ROS_WARN("%s %d: curr_angle(%d), origin_angle(%d),diff(%d)", __FUNCTION__, __LINE__,gyro_get_angle(), s_origin_angle,std::abs(gyro_get_angle() - s_origin_angle));
 					ret = true;
+				}
 			}
 		}
 	}

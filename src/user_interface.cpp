@@ -408,7 +408,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 					temp_mode = Clean_Mode_Navigation;
 				}
 				else
-					temp_mode = Clean_Mode_GoHome;
+					temp_mode = Clean_Mode_Exploration;
 				break;
 			}
 			case Remote_Wall_Follow:

@@ -50,6 +50,7 @@ typedef enum {
 	WAV_CLEANING_STOP				= 44,
 	WAV_CHECK_SWITCH				= 45,
 	WAV_ROBOT_STUCK					= 46,
+	WAV_EXPLORATION_START			= 47,
 }WavType;
 
 void wav_play(WavType action);

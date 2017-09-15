@@ -242,6 +242,7 @@
 #define Clean_Mode_Spot				12
 #define Clean_Mode_Mobility			13
 #define Clean_Mode_Navigation		14
+#define Clean_Mode_Exploration		15
 
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7

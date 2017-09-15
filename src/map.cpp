@@ -521,7 +521,7 @@ void map_reset(uint8_t id)
 #endif
 }
 
-void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block)
+void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block, bool is_freshen_map)
 {
 	std::vector<int8_t> *p_map_data;
 	uint32_t width, height;
@@ -530,7 +530,10 @@ void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block)
 	unsigned int mx,my;
 	double wx, wy;
 	int32_t cx, cy;
+	int16_t cell_x,cell_y;
 	int8_t cost;
+	extern boost::mutex ros_map_mutex_;
+	ros_map_mutex_.lock();
 	width = robot::instance()->mapGetWidth();
 	height = robot::instance()->mapGetHeight();
 	resolution = robot::instance()->mapGetResolution();
@@ -545,27 +548,47 @@ void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block)
 		cost = (*p_map_data)[getIndex(width, mx, my)];
 		mapToWorld(origin_x, origin_y, resolution, mx, my, wx, wy);
 		worldToCount(wx, wy, cx, cy);
-		if (cost == -1) {
-			//ROS_INFO("cost == -1");
-			//map_set_cell(MAP, cx, cy, CLEANED);
-		} else if (cost == 0 ) {
-			//map_set_cell(MAP, cell_to_count(cx), cell_to_count(cy), CLEANED);
-			//map_set_cell(MAP, cx, cy, BLOCKED_RCON);
-			auto status = map_get_cell(id, count_to_cell(cx), count_to_cell(cy));
-      if(is_mark_cleaned && status <= 1)
-					map_set_cell(id, cx, cy, CLEANED);
+		auto temp_cell_x = count_to_cell(cx);
+		auto temp_cell_y = count_to_cell(cy);
+		//auto status = map_get_cell(id, cell_x, cell_y);
+		auto status = map_get_cell(id, temp_cell_x, temp_cell_y);
+#if 0
+		if (cell_x == temp_cell_x && cell_y == temp_cell_y) {
+			/*if (status == BLOCKED_ROS_MAP) {
+				continue;
+			}*/
+			continue;
+		} else {
+			cell_x = temp_cell_x;
+			cell_y = temp_cell_y;
+		}
+#endif
+		if (cost == -1) {/*unkown space*/
+			//ROS_INFO("unkown space");
+		} else if (cost == 100) {/*occupied place*/
+			if (is_freshen_map) {
+				if((status < BLOCKED || status > BLOCKED_BOUNDARY) && (status != BLOCKED_ROS_MAP)) {
+					map_set_cell(id, cx, cy, BLOCKED_ROS_MAP);
+				}
+			} else {
+				map_set_cell(id, cx, cy, BLOCKED_ROS_MAP);
+			}
+		} else if (cost == 0 ) {/*free space*/
+			if(is_mark_cleaned && status <= 1)
+				map_set_cell(id, cx, cy, CLEANED);
 			if(is_clear_false_block && (status < BLOCKED || status > BLOCKED_BOUNDARY))
 			{
 				map_set_cell(id, cx, cy, CLEANED);
 				auto status = map_get_cell(id, count_to_cell(cx), count_to_cell(cy));
 			}
-		} else if (cost == 100) {
-			//map_set_cell(MAP, cell_to_count(cx), cell_to_count(cy), BLOCKED);
-			map_set_cell(id, cx, cy, BLOCKED);
-			//ROS_INFO("cost == 100");
+			/*freshen the map*/
+			if (is_freshen_map && (status == BLOCKED_ROS_MAP)) {
+				map_set_cell(id, cx, cy, CLEANED);
+			}
 		}
 	}
-	ROS_WARN("end ros map convert");
+	ros_map_mutex_.unlock();
+	//ROS_WARN("end ros map convert");
 //	ROS_ERROR("size = %d, width = %d, height = %d, origin_x = %lf, origin_y = %lf, wx = %lf, wy = %lf, mx = %d, my = %d, cx = %d, cy = %d, cost = %d.", size, width, height, origin_x, origin_y, wx, wy, mx, my, cx, cy,cost);
 }
 
@@ -607,7 +630,7 @@ void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned in
 	mx = index - (my * size_x_);
 }
 
-void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
+bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 {
 	auto count_x = wx * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto count_y = wy * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -615,6 +638,7 @@ void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 	cx = count_x;
 //cy = count_to_cell(count_y);
 	cy = count_y;
+	return true;
 }
 
 //map--------------------------------------------------------
@@ -807,38 +831,77 @@ uint8_t map_set_rcon()
 	};
 	int dx = 0, dy = 0;
 	int dx2 = 0, dy2 = 0;
+	std::vector<Cell_t> d_cells;
 	switch (rcon_trig - 1)
 	{
 		case left:
-			dx = 1, dy = 2;
-					break;
+			d_cells.push_back({1,2});
+			d_cells.push_back({1,3});
+			d_cells.push_back({1,4});
+			d_cells.push_back({2,2});
+			d_cells.push_back({2,3});
+			d_cells.push_back({2,4});
+			d_cells.push_back({3,2});
+			d_cells.push_back({3,3});
+			d_cells.push_back({3,4});
+			break;
 		case fl2:
-			dx = 1, dy = 2;
-					dx2 = 2, dy2 = 1;
-					break;
+			d_cells.push_back({2,1});
+			d_cells.push_back({2,2});
+			d_cells.push_back({2,3});
+			d_cells.push_back({3,1});
+			d_cells.push_back({3,2});
+			d_cells.push_back({3,3});
+			d_cells.push_back({4,1});
+			d_cells.push_back({4,2});
+			d_cells.push_back({4,3});
+//			dx = 1, dy = 2;
+//			dx2 = 2, dy2 = 1;
+			break;
 		case fl1:
 		case fr1:
-			dx = 2, dy = 0;
-					dx2 = 3, dy2 = 0;
-					break;
+			d_cells.push_back({2,0});
+			d_cells.push_back({3,0});
+			d_cells.push_back({4,0});
+			d_cells.push_back({2,-1});
+			d_cells.push_back({3,-1});
+			d_cells.push_back({4,-1});
+			d_cells.push_back({2,1});
+			d_cells.push_back({3,1});
+			d_cells.push_back({4,1});
+			break;
 		case fr2:
-			dx = 1, dy = -2;
-					dx2 = 2, dy2 = -1;
-					break;
+//			dx = 1, dy = -2;
+//			dx2 = 2, dy2 = -1;
+			d_cells.push_back({2,-1});
+			d_cells.push_back({2,-2});
+			d_cells.push_back({2,-3});
+			d_cells.push_back({3,-1});
+			d_cells.push_back({3,-2});
+			d_cells.push_back({3,-3});
+			d_cells.push_back({4,-1});
+			d_cells.push_back({4,-2});
+			d_cells.push_back({4,-3});
+			break;
 		case right:
-			dx = 1, dy = -2;
-					break;
+			d_cells.push_back({1,-2});
+			d_cells.push_back({1,-3});
+			d_cells.push_back({1,-4});
+			d_cells.push_back({2,-2});
+			d_cells.push_back({2,-3});
+			d_cells.push_back({2,-4});
+			d_cells.push_back({3,-2});
+			d_cells.push_back({3,-3});
+			d_cells.push_back({3,-4});
+			break;
 	}
 	int32_t x,y;
 	uint8_t block_count = 0;
-	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-	ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)",__FUNCTION__,__LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, count_to_cell(x),count_to_cell(y),rcon_trig);
-	map_set_cell(MAP, x, y, BLOCKED_RCON);
-	if (dx2 != 0){
-		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy2, CELL_SIZE * dx2, &x, &y);
-		ROS_ERROR("%s,%d: map_set_realtime(%d,%d)",__FUNCTION__,__LINE__,count_to_cell(x),count_to_cell(y));
+	for(const auto& d_cell : d_cells) {
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * d_cell.Y, CELL_SIZE * d_cell.X, &x, &y);
+		ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)", __FUNCTION__, __LINE__, map_get_curr_cell().X,
+							map_get_curr_cell().Y, count_to_cell(x), count_to_cell(y), rcon_trig);
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
-		block_count++;
 	}
 	return block_count;
 }
