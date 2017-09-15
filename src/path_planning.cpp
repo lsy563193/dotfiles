@@ -50,6 +50,7 @@
 #include "wav.h"
 #include <numeric>
 #include <motion_manage.h>
+#include <regulator.h>
 
 #define FINAL_COST (1000)
 #define NO_TARGET_LEFT 0
@@ -456,39 +457,47 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		//false means max
 //		min = std::min(min, path_lane_distance(true));
 //		max = std::min(max, path_lane_distance(false));
-		auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
-		ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
-		if(pos_or_nag == 1)
+		if(mt_is_follow_wall() && g_is_reach)
 		{
-			tmp.X += max;
-		}else if(pos_or_nag == -1){
-			tmp.X -= min;
-		}else {
-			if (min > max)
-				tmp.X += max;
-			else if (min < max)
+			if(mt_is_left() ^ RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y)
 				tmp.X -= min;
-			else {
-				if (g_cell_history[2].Y == g_cell_history[1].Y) {
-					if (g_cell_history[2].X > g_cell_history[1].X)
-						tmp.X -= min;
-					else if (g_cell_history[2].X < g_cell_history[1].X)
-						tmp.X += max;
-					else {
-						if (g_cell_history[0].X <= g_cell_history[1].X)
+			else
+				tmp.X += max;
+		}else {
+			auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
+			ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
+			if (pos_or_nag == 1) {
+				tmp.X += max;
+			} else if (pos_or_nag == -1) {
+				tmp.X -= min;
+			} else {
+				if (min > max)
+					tmp.X += max;
+				else if (min < max)
+					tmp.X -= min;
+				else {
+					if (g_cell_history[2].Y == g_cell_history[1].Y) {
+						if (g_cell_history[2].X > g_cell_history[1].X)
+							tmp.X -= min;
+						else if (g_cell_history[2].X < g_cell_history[1].X)
+							tmp.X += max;
+						else {
+							if (g_cell_history[0].X <= g_cell_history[1].X)
+								tmp.X += max;
+							else
+								tmp.X -= min;
+						}
+					} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
+						if (g_cell_history[0].X >= g_cell_history[1].X)
 							tmp.X += max;
 						else
 							tmp.X -= min;
-					}
-				} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
-					if (g_cell_history[0].X >= g_cell_history[1].X)
+					} else
 						tmp.X += max;
-					else
-						tmp.X -= min;
-				} else
-					tmp.X += max;
+				}
 			}
 		}
+
 
 		is_found = 2;
 	} else if (min != SHRT_MAX)

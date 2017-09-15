@@ -71,6 +71,7 @@ bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
 uint32_t g_escape_trapped_timer;
+int g_is_reach = 1;
 
 extern int g_trapped_mode;
 bool g_should_follow_wall;
@@ -583,6 +584,7 @@ int cm_cleaning()
 	cleaning_path.target.X = 0;
 	cleaning_path.target.Y = 0;
 	cleaning_path.cells.clear();
+	g_is_reach = REATH_TARGET;
 	MotionManage motion;
 	if (!motion.initSucceeded())
 		return 0;
@@ -646,7 +648,7 @@ int cm_cleaning()
 		else if (is_found == 1)//exist target
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if(cm_move_to(cleaning_path) == EXIT_CLEAN) {
+			if(g_is_reach = cm_move_to(cleaning_path) == EXIT_CLEAN) {
 				return -1;
 			}
 
