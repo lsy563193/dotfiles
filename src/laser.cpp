@@ -42,10 +42,13 @@ Laser::~Laser()
 	lidarShieldDetect(OFF);
 	lidarMotorCtrl(OFF);
 	setScanReady(0);
-//	scan_sub_.shutdown();
+	scan_sub_.shutdown();
+	scan_sub2_.shutdown();
+	lidar_motor_cli_.shutdown();
+	lidar_shield_detect_.shutdown();
 //	start_motor_cli_.shutdown();
 //	stop_motor_cli_.shutdown();
-//	nh_.shutdown();
+	nh_.shutdown();
 	//delete []last_ranges_;
 	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
