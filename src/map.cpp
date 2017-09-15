@@ -717,14 +717,21 @@ uint8_t map_set_bumper()
 		if(mt_is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
+		{
 			d_cells = {/*{2, 1},*//* {2,2}, */{1,2}};
+//			if(mt_is_left())
+//				if(std::abs(  ranged_angle(std::abs(gyro_get_angle())  -900)< 300 ))
+//			{
+//				d_cells.push_back({2,0});
+//			}
+		}
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
-			d_cells = {/*{2,-1},*//*{2,-1},*/{1,-2}};
+			d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
@@ -1040,14 +1047,13 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 {
 	auto diff = cells.back().X - cells.front().X;
 
-
 	std::string pri_msg("");
 //	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
-	if (cells.size() < 2 || std::abs(diff) <= 4)
+	if (cells.size() < 2)
 		return;
 
-	auto dy = (RegulatorBase::s_target.Y - RegulatorBase::s_origin.Y>0) ^ mt_is_left() ? -2 : 2;
-	if((std::abs(ranged_angle(std::abs(gyro_get_angle()))-900))< 450)
+	auto dy = mt_is_left() ? 2 : -2;
+	if(std::abs(  ranged_angle(  std::abs(gyro_get_angle())-900 )  )< 450)
 	{
 		Cell_t cell;
 		cm_world_to_cell(gyro_get_angle(),CELL_SIZE*dy,0,cell.X,cell.Y);
@@ -1057,6 +1063,8 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	{
 		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 	}
+	if(std::abs(diff) <= 4)
+		return;
 	auto min = std::min(cells.front().X, cells.back().X) + 3;
 	auto max = std::max(cells.front().X, cells.back().X) - 3;
 

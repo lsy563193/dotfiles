@@ -648,7 +648,7 @@ int cm_cleaning()
 		else if (is_found == 1)//exist target
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if(g_is_reach = cm_move_to(cleaning_path) == EXIT_CLEAN) {
+			if((g_is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN) {
 				return -1;
 			}
 

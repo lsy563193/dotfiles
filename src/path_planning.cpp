@@ -457,12 +457,19 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		//false means max
 //		min = std::min(min, path_lane_distance(true));
 //		max = std::min(max, path_lane_distance(false));
-		if(mt_is_follow_wall() && g_is_reach)
+		ROS_WARN("%s %d: g_is_reach.(%d), dir(%d)", __FUNCTION__, __LINE__, g_is_reach,(RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y));
+		if(mt_is_follow_wall() && g_is_reach==1)
 		{
-			if(mt_is_left() ^ RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y)
+			if(mt_is_left() ^ (RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y))
+			{
+				ROS_WARN("%s %d:tmp.X -= min", __FUNCTION__, __LINE__);
 				tmp.X -= min;
+			}
 			else
+			{
+				ROS_WARN("%s %d:tmp.X += max", __FUNCTION__, __LINE__);
 				tmp.X += max;
+			}
 		}else {
 			auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
 			ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
@@ -839,7 +846,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 	}
 #if DEBUG_MAP
 	// Print for map that contains all targets.
-//	debug_map(MAP, g_home_x, g_home_y);
+	debug_map(MAP, g_home_x, g_home_y);
 #endif
 
 	// Restore the target cells in MAP to unclean.
