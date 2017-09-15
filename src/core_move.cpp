@@ -290,7 +290,7 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
  */
 bool cm_move_to(const PPTargetType& path)
 {
-	Cell_t curr = cm_update_position();
+	Cell_t curr = map_get_curr_cell();
 //#if INTERLACED_MOVE
 //	extern uint16_t g_new_dir;
 //	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
@@ -303,7 +303,7 @@ bool cm_move_to(const PPTargetType& path)
 
 	std::vector<Cell_t> passed_path;
 	passed_path.clear();
-	passed_path.push_back(curr);
+//	passed_path.push_back(curr);
 
 	int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
@@ -339,8 +339,11 @@ bool cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
-		curr = cm_update_position();
-		rm.updatePosition({map_get_x_count(),map_get_y_count()});
+		if(!rm.isTurn())
+		{
+			curr = cm_update_position();
+			rm.updatePosition({map_get_x_count(),map_get_y_count()});
+		}
 
 		if (rm.isExit()){
 			break;
@@ -365,12 +368,12 @@ bool cm_move_to(const PPTargetType& path)
 		if (get_clean_mode() != Clean_Mode_WallFollow
 						&& (mt_is_linear() || mt_is_follow_wall()))
 		{
-			if (passed_path.back() != curr)
+			if (!rm.isTurn() &&(passed_path.empty() || passed_path.back() != curr))
 			{
 				extern uint16_t g_new_dir;
 				if (g_trapped_mode == 0)
 				{
-					if (!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X) // This checking is for avoiding position jumping back or aside during linear movement.
+					if (passed_path.empty() ||(!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X)) // This checking is for avoiding position jumping back or aside during linear movement.
 						passed_path.push_back(curr);
 				}
 				if(MAP_SET_REALTIME)
