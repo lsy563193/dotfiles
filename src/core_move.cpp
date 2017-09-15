@@ -288,7 +288,12 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
  *			-1: Robot cannot move to target cell
  *			1: Robot arrive target cell
  */
-bool cm_move_to(const PPTargetType& path)
+enum {
+	EXIT_CLEAN=-1,
+	NO_REATH_TARGET=0,
+	REATH_TARGET=1,
+};
+int cm_move_to(const PPTargetType& path)
 {
 	Cell_t curr = map_get_curr_cell();
 //#if INTERLACED_MOVE
@@ -299,7 +304,7 @@ bool cm_move_to(const PPTargetType& path)
 	RegulatorManage rm(curr, g_next_cell, path);
 
 	bool eh_status_now=false, eh_status_last=false;
-	bool ret = false;
+	int ret = EXIT_CLEAN;
 
 	std::vector<Cell_t> passed_path;
 	passed_path.clear();
@@ -354,11 +359,15 @@ bool cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
-		if (rm.isReach() || rm.isStop()){
-			ret = true;
+		if (rm.isReach()){
+			ret = REATH_TARGET;
 			break;
 		}
 
+		if (rm.isStop()){
+			ret = NO_REATH_TARGET;
+			break;
+		}
 		if (rm.isSwitch()){
 			map_set_blocked();
 			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
@@ -637,7 +646,7 @@ int cm_cleaning()
 		else if (is_found == 1)//exist target
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if(! cm_move_to(cleaning_path)) {
+			if(cm_move_to(cleaning_path) == EXIT_CLEAN) {
 				return -1;
 			}
 
