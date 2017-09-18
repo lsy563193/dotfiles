@@ -364,7 +364,6 @@ int cm_move_to(const PPTargetType& path)
 			ret = REATH_TARGET;
 			break;
 		}
-
 		if (rm.isStop()){
 			ret = NO_REATH_TARGET;
 			break;
@@ -386,11 +385,11 @@ int cm_move_to(const PPTargetType& path)
 					if (passed_path.empty() ||(!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X)) // This checking is for avoiding position jumping back or aside during linear movement.
 						passed_path.push_back(curr);
 				}
-				if(MAP_SET_REALTIME)
+//				if(MAP_SET_REALTIME)
 				{
 					//map_set_realtime();
-					if( g_trapped_mode==0 )
-						map_set_cleaned(curr);
+//					if( g_trapped_mode==0 )
+//						map_set_cleaned(curr);
 					if (mt_is_follow_wall())
 						map_set_follow_wall(curr);
 				}
