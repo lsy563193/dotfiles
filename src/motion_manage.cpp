@@ -255,7 +255,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam = new Slam();
 
 	robot::instance()->setTfReady(false);
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot)
+	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot || get_clean_mode() == Clean_Mode_Exploration)
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	else if (get_clean_mode() == Clean_Mode_WallFollow)
 		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
@@ -288,7 +288,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 
 
-	if (g_go_home_by_remote)
+	if (g_go_home_by_remote || (get_clean_mode() == Clean_Mode_Exploration))
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	else
 		set_led_mode(LED_STEADY, LED_GREEN);
@@ -310,7 +310,7 @@ MotionManage::~MotionManage()
 	disable_motors();
 
 	g_tilt_enable = false;
-	g_robot_stuck_enable =false;
+	g_robot_slip_enable =false;
 	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
@@ -446,6 +446,8 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 	{
 		case Clean_Mode_Navigation:
 			return initNavigationCleaning();
+		case Clean_Mode_Exploration:
+			return initExplorationCleaning();
 		case Clean_Mode_WallFollow:
 			return initWallFollowCleaning();
 		case Clean_Mode_Spot:
@@ -574,11 +576,65 @@ bool MotionManage::initNavigationCleaning(void)
 
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	work_motor_configure();
 
 	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
+	return true;
+}
+
+bool MotionManage::initExplorationCleaning(void)
+{
+
+	reset_work_time();
+	if (g_remote_home || g_go_home_by_remote)
+		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
+	else
+		set_led_mode(LED_FLASH, LED_GREEN, 1000);
+
+	// Initialize motors and map.
+	g_saved_work_time = 0;
+	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
+	// Push the start point into the home point list
+	ROS_INFO("map_init-----------------------------");
+	map_init(MAP);
+	map_init(WFMAP);
+	map_init(ROSMAP);
+	path_planning_initialize();
+
+	robot::instance()->initOdomPosition();
+
+	// If it it the first time cleaning, initialize the g_continue_point.
+	extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
+	g_have_seen_charge_stub = false;
+	g_start_point_seen_charger = false;
+
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
+
+	reset_touch();
+
+	set_gyro_off();
+	usleep(30000);
+	set_gyro_on();
+
+	reset_rcon_status();
+	reset_touch();
+	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
+	cm_register_events();
+	wav_play(WAV_EXPLORATION_START);
+
+	if (!wait_for_gyro_on())
+		return false;
+
+	robot::instance()->setAccInitData();//about 200ms delay
+	g_tilt_enable = true;
+	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+
+	work_motor_configure();
+
 	return true;
 }
 
@@ -654,7 +710,7 @@ bool MotionManage::initSpotCleaning(void)
 	// enable titlt detct
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[33m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);

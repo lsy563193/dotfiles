@@ -34,6 +34,7 @@
 #include <mathematics.h>
 #include <wall_follow_slam.h>
 #include <move_type.h>
+#include <event_manager.h>
 #include <path_planning.h>
 
 #include "core_move.h"
@@ -48,6 +49,7 @@
 
 #include "wav.h"
 #include <numeric>
+#include <motion_manage.h>
 
 #define FINAL_COST (1000)
 #define NO_TARGET_LEFT 0
@@ -329,6 +331,22 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
+//int16_t path_lane_distance(bool is_min)
+//{
+//	int angle = gyro_get_angle();
+//	if(is_min)
+//		angle = uranged_angle(angle + 1800);
+//	angle /= 10;
+//	auto dis = MotionManage::s_laser->getLaserDistance(angle);
+//	int16_t cell_dis = dis * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+//	if(is_min)
+//		ROS_INFO("min cell_dis(%d)",count_to_cell(cell_dis) );
+//	else
+//		ROS_INFO("max cell_dis(%d)",count_to_cell(cell_dis) );
+//
+//	return cell_dis;
+//}
+
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
@@ -433,34 +451,45 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		 * If the number of cells to clean are the same of both ends, choose either one base the
 		 * previous robot g_cell_history. Otherwise, move to the end that have more unclean cells.
 		 */
-		if (min > max)
-			tmp.X += max;
-		else if (min < max)
-			tmp.X -= min;
-		else
+//		min = std::min(min, MotionManage::s_laser->nag_dis)
+		//ture means min
+		//false means max
+//		min = std::min(min, path_lane_distance(true));
+//		max = std::min(max, path_lane_distance(false));
+		auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
+		ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
+		if(pos_or_nag == 1)
 		{
-			if (g_cell_history[2].Y == g_cell_history[1].Y)
-			{
-				if (g_cell_history[2].X > g_cell_history[1].X)
-					tmp.X -= min;
-				else if (g_cell_history[2].X < g_cell_history[1].X)
-					tmp.X += max;
-				else
-				{
-					if (g_cell_history[0].X <= g_cell_history[1].X)
+			tmp.X += max;
+		}else if(pos_or_nag == -1){
+			tmp.X -= min;
+		}else {
+			if (min > max)
+				tmp.X += max;
+			else if (min < max)
+				tmp.X -= min;
+			else {
+				if (g_cell_history[2].Y == g_cell_history[1].Y) {
+					if (g_cell_history[2].X > g_cell_history[1].X)
+						tmp.X -= min;
+					else if (g_cell_history[2].X < g_cell_history[1].X)
+						tmp.X += max;
+					else {
+						if (g_cell_history[0].X <= g_cell_history[1].X)
+							tmp.X += max;
+						else
+							tmp.X -= min;
+					}
+				} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
+					if (g_cell_history[0].X >= g_cell_history[1].X)
 						tmp.X += max;
 					else
 						tmp.X -= min;
-				}
-			} else if (g_cell_history[0].Y == g_cell_history[1].Y)
-			{
-				if (g_cell_history[0].X >= g_cell_history[1].X)
+				} else
 					tmp.X += max;
-				else
-					tmp.X -= min;
-			} else
-				tmp.X += max;
+			}
 		}
+
 		is_found = 2;
 	} else if (min != SHRT_MAX)
 	{
@@ -1499,7 +1528,11 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 						g_trapped_mode = 1;
 						// This led light is for debug.
 						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						mt_set(CM_FOLLOW_LEFT_WALL);
+						ROS_ERROR("g_obs_triggered:%d,g_bumper_triggered:%d",g_obs_triggered,g_bumper_triggered);
+						if(g_obs_triggered == Status_Right_OBS || g_bumper_triggered == RightBumperTrig)
+							mt_set(CM_FOLLOW_RIGHT_WALL);
+						else
+							mt_set(CM_FOLLOW_LEFT_WALL);
 						extern uint32_t g_escape_trapped_timer;
 						g_escape_trapped_timer = time(NULL);
 					}
@@ -1549,6 +1582,77 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
+	/*Exploration Mode*/
+	else if(!g_go_home && get_clean_mode() == Clean_Mode_Exploration) {
+		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
+			g_resume_cleaning = false;
+
+		if (!g_resume_cleaning)
+		{
+#if !PATH_ALGORITHM_V2
+			if (!path_lane_is_cleaned(curr, path))
+			//if (1)
+			{
+				extern bool g_isolate_triggered;
+				int16_t ret;
+				if (g_isolate_triggered) {
+					ret = isolate_target(curr, path);
+					g_isolate_triggered = false;
+				} else {
+					ret = path_target(curr, path);//0 not target, 1,found, -2 trap
+				}
+				ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+				if (ret == 0)
+				{
+					g_finish_cleaning_go_home = true;
+					cm_check_should_go_home();
+				}
+				if (ret == -2){
+					if(g_trapped_mode == 0 ){
+						g_trapped_mode = 1;
+						// This led light is for debug.
+						set_led_mode(LED_FLASH, LED_GREEN, 300);
+						mt_set(CM_FOLLOW_LEFT_WALL);
+						extern uint32_t g_escape_trapped_timer;
+						g_escape_trapped_timer = time(NULL);
+					}
+					return 1;
+				}
+			}
+			//ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d), target(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+#else
+			extern bool g_isolate_triggered;
+			int16_t ret;
+			if (g_isolate_triggered) {
+				ret = isolate_target(curr, path);
+				g_isolate_triggered = false;
+			}
+			else {
+				ret = path_full(curr, path);//0 not target, 1,found, -2 trap
+				if(ret==0)
+					if (path_escape_trapped(curr) <= 0)
+						ret = -2;
+			}
+			ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+			if (ret == 0)
+			{
+				g_finish_cleaning_go_home = true;
+				cm_check_should_go_home();
+			}
+			if (ret == -2){
+				if(g_trapped_mode == 0 ){
+					g_trapped_mode = 1;
+					// This led light is for debug.
+					set_led_mode(LED_FLASH, LED_GREEN, 300);
+					mt_set(CM_FOLLOW_LEFT_WALL);
+					extern uint32_t g_escape_trapped_timer;
+					g_escape_trapped_timer = time(NULL);
+				}
+				return 1;
+			}
+#endif
+		}
+	}
 	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT) {
 			return 0;
 	}
@@ -1563,7 +1667,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	//if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
 	if (g_go_home)
 		mt_set(CM_LINEARMOVE);
-	else if(get_clean_mode() == Clean_Mode_Navigation)
+	else if(get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 		mt_update(curr, path, g_old_dir);
 	// else if wall follow mode, the move type has been set before here.
 	if (curr.X == g_next_cell.X)
@@ -1743,7 +1847,7 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map_convert" "\033[0m", __FUNCTION__, __LINE__);
 			map_reset(ROSMAP);
 //			debug_map(MAP, 0, 0);
-			ros_map_convert(ROSMAP, false, true);
+			ros_map_convert(ROSMAP, false, true, false);
 //			debug_map(MAP, 0, 0);
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map" "\033[0m", __FUNCTION__, __LINE__);
 //			debug_map(ROSMAP, 0, 0);

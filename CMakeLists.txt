@@ -36,6 +36,7 @@ FILE(GLOB PP_SRC
 	src/regulator.cpp
 	src/move_type.cpp
 #	src/a_star.cpp
+	src/space_exploration.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

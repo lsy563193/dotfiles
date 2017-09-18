@@ -110,7 +110,7 @@ private:
 class SelfCheckRegulator{
 public:
 	SelfCheckRegulator(){
-		ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
+		ROS_INFO("\033[33m%s\033[0m, %d: ", __FUNCTION__, __LINE__);
 	};
 	~SelfCheckRegulator(){
 		set_wheel_speed(0, 0);

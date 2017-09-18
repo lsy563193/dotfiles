@@ -526,7 +526,8 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 		disable_motors();
 		remote_exit = true;
 		if (get_rcon_remote() == Remote_Home)
-			set_clean_mode(Clean_Mode_GoHome);
+			//set_clean_mode(Clean_Mode_Gohome);
+			set_clean_mode(Clean_Mode_Exploration);
 		else
 			set_clean_mode(Clean_Mode_Userinterface);
 	}

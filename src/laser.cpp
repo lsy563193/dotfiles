@@ -32,6 +32,8 @@ Laser::Laser():nh_()
 	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
 	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
+	setScanReady(0);
+	setScan2Ready(0);
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
 	lidarMotorCtrl(ON);
@@ -42,10 +44,12 @@ Laser::~Laser()
 	lidarShieldDetect(OFF);
 	lidarMotorCtrl(OFF);
 	setScanReady(0);
-//	scan_sub_.shutdown();
-//	start_motor_cli_.shutdown();
-//	stop_motor_cli_.shutdown();
-//	nh_.shutdown();
+	setScan2Ready(0);
+	scan_sub_.shutdown();
+	scan_sub2_.shutdown();
+	lidar_motor_cli_.shutdown();
+	lidar_shield_detect_.shutdown();
+	nh_.shutdown();
 	//delete []last_ranges_;
 	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
@@ -173,7 +177,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (switch_ && isScanReady())
 		{
-			ROS_INFO("\033[34m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
+			ROS_INFO("\033[32m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -724,8 +728,9 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
  * @return distance value (meter)
  * */
 double Laser::getLaserDistance(uint16_t angle){
+	ROS_INFO("%s,%d,input angle = %u",__FUNCTION__,__LINE__,angle);
 	if(angle >359 || angle < 0){
-		ROS_INFO("%s,%d,angle should be in range 0 to 359,input angle = %u",__FUNCTION__,__LINE__,angle);
+		ROS_WARN("%s,%d,angle should be in range 0 to 359,input angle = %u",__FUNCTION__,__LINE__,angle);
 		return 0;
 	}
 	else{
@@ -793,14 +798,10 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 {
-	int		i;
-	int		count = 0;
 	//double	angle_min, angle_max, tmp, range_tmp;
 	//double	laser_distance = 0;
-	int		sum = 0;
 	static  uint32_t seq = laserScanData_.header.seq;
 	bool	is_triggered = 0;
-	static	bool is_skip = 0;
 	uint8_t laser_status;
 	//ROS_ERROR("is_skip = %d", is_skip);
 	//ROS_INFO("laserMarker");
@@ -811,11 +812,6 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 	seq = laserScanData_.header.seq;
 	if (!is_mark)
 		return 0;
-	if (is_skip == 0) {
-		is_skip = 1;
-	} else if (is_skip == 1) {
-		is_skip = 0;
-	}
 	//ROS_ERROR("2 : is_skip = %d", is_skip);
 	/*if (is_skip) {
 		//is_skip = 0;
@@ -863,67 +859,151 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 	}
 }
 
-uint8_t Laser::isRobotStuck()
+uint8_t Laser::isRobotSlip()
 {
-	static int16_t stuck_count = 0;
+	static int16_t slip_count= 0;
 	static uint16_t seq_count = 0;
 	static uint32_t seq=0;
 	static uint8_t last_ranges_init = 0;
 	static std::vector<float> last_ranges ;
 	const float PERCENT = 0.8;//80%
-	const float acur1 = 0.05;//accuracy 1 ,in meters
-	const float acur2 = 0.01;//accuracy 2 ,in meters
-	const int COUNT = 10;//stuck count number
+
+	const float acur1 = 0.07;//accuracy 1 ,in meters
+	const float acur2 = 0.05;//accuracy 2 ,in meters
+	const float acur3 = 0.03;//accuracy 3 ,in meters
+	const float acur4 = 0.01;//accuracy 4 ,in meters
+	const int COUNT = 5;//stuck count number
 
 	uint16_t same_count = 0;
 	uint8_t ret = 0;
 	uint16_t tol_count = 0;
-	if(g_robot_stuck_enable && seq != laserScanData_2_.header.seq && isScanReady() && ( robot::instance()->getLeftWheelSpeed() >= 0.01 || robot::instance()->getRightWheelSpeed() >= 0.01 ) )
+	if(g_robot_slip_enable && seq != laserScanData_2_.header.seq && isScan2Ready() && ( absolute(robot::instance()->getLeftWheelSpeed()) >= 0.04 || absolute(robot::instance()->getRightWheelSpeed()) >= 0.04 ) )
 	{
-		//boost::mutex::scoped_lock(scan2_mutex_);
 		seq = laserScanData_2_.header.seq;
 		if(last_ranges_init == 0){
-			last_ranges_init = 1;
+			last_ranges_init = 2;
 			last_ranges = laserScanData_2_.ranges;
 			return ret;
 		}
-		for(int i =0;i<=359;i=i+5){
+		for(int i =0;i<=359;i=i+2){
 			if(laserScanData_2_.ranges[i] < 3.5){
 				tol_count++;
-				if(laserScanData_2_.ranges[i] >0.5){//
+				if(laserScanData_2_.ranges[i] >2.5 && laserScanData_2_.ranges[i] < 3.5){//	
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
-				}
-				else if(laserScanData_2_.ranges[i] <= 0.5){
+				} 
+				else if(laserScanData_2_.ranges[i] >1.5 && laserScanData_2_.ranges[i] < 2.5){//
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
 					}
 				}
+				else if(laserScanData_2_.ranges[i] >0.5 && laserScanData_2_.ranges[i] < 1.5){//
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
+						same_count++;
+					}
+				}
+				else if(laserScanData_2_.ranges[i] <= 0.5){
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
+						same_count++;
+					}
+				}
 			}
 		}
-		if(++seq_count >=4){//store last ranges after 4 sequance
+		if(++seq_count >2){//store last ranges after 2 sequance
 			seq_count=0;
 			last_ranges = laserScanData_2_.ranges;
 		}
 		//ROS_INFO("\033[1;45;37msame_count %d,tol_count %d,\033[0m",same_count, tol_count );
-		if((same_count*1.0)/(tol_count*1.0) >= PERCENT){//about 80% match
-			if(++stuck_count >= COUNT){
-				stuck_count = 0;
+		if((same_count*1.0)/(tol_count*1.0) >= PERCENT){
+			if(++slip_count>= COUNT){
+				slip_count = 0;
 				ret = 1;
 			}
 		}
 		else{
-			stuck_count = (stuck_count>0)? stuck_count-1: 0;
+			//slip_count= (slip_count>0)? slip_count - 1: 0;
+			slip_count = 0;
 		}
 	}
-	else if(!g_robot_stuck_enable)
+	else if(!g_robot_slip_enable)
 	{
 		seq = 0;
 		seq_count = 0;
-		stuck_count = 0;
+		slip_count= 0;
 		last_ranges_init = 0;
-		last_ranges.clear();
 	}
+	return ret;
+}
+
+/*
+ * @author Alvin Xie
+ * @brief make use of lidar to judge x+ or x- is more closer to the wall
+ * @return the closer direction of x to the wall
+ * if x+ is closer, return 1, else return 0
+ * */
+int Laser::compLaneDistance(){
+	int ret = 0;
+	static  uint32_t seq = 0;
+	double x,y,th,x1,y1;
+	int angle_from, angle_to;
+	double x_front_min = 4;
+	double x_back_min = 4;
+	if (laserScanData_.header.seq == seq) {
+		//ROS_WARN("laser seq still same, quit!seq = %d", laserScanData_.header.seq);
+		return 0;
+	}
+	ROS_INFO("compLaneDistance");
+	seq = laserScanData_.header.seq;
+	boost::mutex::scoped_lock(scan_mutex_);
+	int cur_angle = gyro_get_angle() / 10;
+	angle_from = 149 - cur_angle;
+	angle_to = 210 - cur_angle;
+	//ROS_INFO("cur_angle = %d", cur_angle);
+	for (int j = angle_from; j < angle_to; j++) {
+		int i = j>359? j-360:j;
+		if (laserScanData_.ranges[i] < 4) {
+			th = i*1.0 + 180.0;
+			x = cos(th * PI / 180.0) * laserScanData_.ranges[i];
+			y = sin(th * PI / 180.0) * laserScanData_.ranges[i];
+			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
+			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0- cur_angle * PI / 180.0);
+			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
+		}
+		if (fabs(y1) < 0.167) {
+			if (fabs(x1) <= x_front_min) {
+				x_front_min = fabs(x1);
+				//ROS_WARN("x_front_min = %lf", x_front_min);
+			}
+		}
+	}
+
+	angle_from = 329 - cur_angle;
+	angle_to = 400 - cur_angle;
+	for (int j = angle_from; j < angle_to; j++) {
+		int i = j>359? j-360:j;
+		if (laserScanData_.ranges[i] < 4) {
+			th = i*1.0 + 180.0;
+			x = cos(th * PI / 180.0) * laserScanData_.ranges[i];
+			y = sin(th * PI / 180.0) * laserScanData_.ranges[i];
+			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
+			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0 - cur_angle * PI / 180.0);
+			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
+		}
+		if (fabs(y1) < 0.167) {
+			if (fabs(x1) <= x_back_min) {
+				x_back_min = fabs(x1);
+				//ROS_WARN("x_back_min = %lf", x_back_min);
+			}
+		}
+	}
+	ROS_INFO("x_front_min = %lf, x_back_min = %lf", x_front_min, x_back_min);
+//	ret = (x_front_min < x_back_min) ? 1 : 0;
+	if(x_front_min < x_back_min)
+		ret = 1;
+	if(x_front_min > x_back_min)
+		ret = -1;
+	if(x_front_min == x_back_min)
+		ret = 0;
 	return ret;
 }

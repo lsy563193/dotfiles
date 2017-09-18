@@ -56,8 +56,11 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 			else if(cs == '6'){//tilt
 				y_col+="\033[1;47;30m6\033[0m";
 			}
-			else if(cs == '7'){//boudary
+			else if(cs == '7'){//slip
 				y_col+="\033[1;43;37m7\033[0m";
+			}
+			else if(cs == '8'){//bundary
+				y_col+="\033[1;43;37m8\033[0m";
 			}
 			else if(cs == 'e'){//end point
 				y_col+="\033[1;43;37me\033[0m";
@@ -66,7 +69,7 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 				y_col+="\033[1;43;37mx\033[0m";
 			}
 			else if(cs == '>'){//target point
-				y_col+="\033[5;40;37m>\033[0m";
+				y_col+="\033[1;40;37m>\033[0m";
 			}
 			else{
 				y_col+=cs;
@@ -154,7 +157,7 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 		printf("%s\n", outString);
 		#endif
 	}
-	ROS_INFO("\n");
+	printf("\n");
 	#endif
 }
 #endif

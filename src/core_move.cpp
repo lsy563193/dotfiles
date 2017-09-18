@@ -28,7 +28,7 @@
 #include <future>
 #include <list>
 #include <charger.hpp>
-
+#include "space_exploration.h"
 #include <wav.h>
 //#include "../include/obstacle_detector.h"
 #include <motion_manage.h>
@@ -66,6 +66,7 @@
 #define EVENT_TRIGGERED 2
 
 int g_rcon_triggered = 0;//1~6
+bool g_exploration_home = false;
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
@@ -307,8 +308,21 @@ bool cm_move_to(const PPTargetType& path)
 	int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
 	{
+		/*for exploration mark the map and detect the rcon signal*/
+		if (get_clean_mode() == Clean_Mode_Exploration) {
+			explore_update_map();
+			/*if (get_rcon_status()) {
+				g_exploration_home = true;
+				ret = true;
+				break;
+			}*/
+		}
 		/*for navigation trapped wall follow update map and push_back vector*/
 		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
+			wf_update_map(WFMAP);
+
+		/*for exploration trapped wall follow update map and push_back vector*/
+		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Exploration && g_trapped_mode == 1)
 			wf_update_map(WFMAP);
 
 		/*for wall follow mode update map and push_back vector*/
@@ -373,8 +387,10 @@ bool cm_move_to(const PPTargetType& path)
 					auto is_block_clear = map_mark_robot(MAP);
 					if(is_block_clear)
 					{
-						BoundingBox2 map;
-						if (get_reachable_targets(curr, map))
+						Cell_t target;
+						if(path_dijkstra(curr, target))
+//						BoundingBox2 map;
+//						if (get_reachable_targets(curr, map))
 						{
 							ROS_WARN("%s %d: Found reachable targets, exit trapped.", __FUNCTION__, __LINE__);
 							g_trapped_mode = 2;
@@ -561,8 +577,9 @@ int cm_cleaning()
 
 	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
-	g_robot_stuck_enable = true;
+	g_robot_slip_enable = true;
 	g_robot_stuck = false;
+	g_robot_slip = false;
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
@@ -580,6 +597,16 @@ int cm_cleaning()
 		int8_t is_found = path_next(curr, cleaning_path);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
+		/*for exploration to climb the charge stub*/
+		if(get_clean_mode() == Clean_Mode_Exploration) {
+			if (g_exploration_home) {
+				ROS_WARN("Exploration receive rcon signal");
+				g_exploration_home = false;
+				if(cm_go_to_charger_())
+					return -1;
+			}
+		}
+
 		if (is_found == 0 ) //No target point
 		{
 			if(get_clean_mode() == Clean_Mode_Spot)
@@ -605,7 +632,7 @@ int cm_cleaning()
 			}
 			return 0;
 		}
-		else if (is_found == 1)
+		else if (is_found == 1)//exist target
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 			if(! cm_move_to(cleaning_path)) {
@@ -656,7 +683,7 @@ void cm_check_should_go_home(void)
 {
 	if (g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
-		ROS_WARN("%s %d: Receive g_remote_home or g_battery_home, or finish cleaning.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Receive g_remote_home(\033[32m%d\033[0m), g_battery_home(\033[32m%d\033[0m), finish cleaning(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,g_remote_home,g_battery_home,g_finish_cleaning_go_home);
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
@@ -666,7 +693,7 @@ void cm_check_should_go_home(void)
 			cm_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
-			ros_map_convert(MAP, true,false);
+			ros_map_convert(MAP, true,false, false);
 			map_mark_robot(MAP);//note: To clear the obstacles befor go home, please don't remove it!
 		}
 		if (g_battery_home)
@@ -1103,9 +1130,18 @@ void cm_self_check(void)
 		}
 		else if (g_robot_stuck)
 		{
-			ROS_ERROR("%s,%d,robot stuck",__FUNCTION__,__LINE__);
+			/*
+			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			ROS_INFO("%s,%d,\033[35mrobot stuck\033[0m",__FUNCTION__,__LINE__);
+			if (fabsf(distance) >= 0.30f)
+			{
+				ROS_INFO("%s %d: \033[35mrobot stuck reached distance!!\033[0m", __FUNCTION__, __LINE__);
+				//g_fatal_quit_event = true;
+				set_error_code(Error_Code_Stuck);
+				break;
+			}
+			*/
 			set_error_code(Error_Code_Stuck);
-			//g_fatal_quit_event = true;
 			break;
 		}
 		else
@@ -1117,7 +1153,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck);
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck );
 }
 
 uint8_t cm_check_charger_signal(void)
@@ -1224,7 +1260,7 @@ void cm_register_events()
 	/* Charge Status */
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 	/* robot stuck */
-	event_manager_enable_handler(EVT_ROBOT_STUCK,true);
+	event_manager_enable_handler(EVT_ROBOT_SLIP,true);
 	/* Slam Error */
 	event_manager_enable_handler(EVT_SLAM_ERROR, true);
 
@@ -1300,6 +1336,8 @@ void cm_unregister_events()
 
 	/* Slam Error */
 	event_manager_register_and_disable_x(EVT_SLAM_ERROR);
+	/* robot slip */
+	//event_manager_register_and_disable_x(EVT_ROBOT_SLIP);
 
 #undef event_manager_register_and_disable_x
 
@@ -1617,7 +1655,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
 		g_oc_wheel_left = true;
 	}
@@ -1634,7 +1672,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
 		g_oc_wheel_right = true;
 	}
@@ -1681,7 +1719,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow)
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration)
 		robot::instance()->setManualPause();
 
 	start_time = time(NULL);
@@ -1719,7 +1757,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	}
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow){
+	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration){
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();
@@ -1804,7 +1842,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && ! g_go_home) {
-		ROS_WARN("%s %d: low battery, battery = %dmv ", __FUNCTION__, __LINE__,
+		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
 

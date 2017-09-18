@@ -17,7 +17,7 @@
 #define Check_Left_Brush			0x20
 #define Check_Right_Brush			0x40
 
-#define Wheel_Stall_Limit			((uint16_t) 580)
+#define Wheel_Stall_Limit			((uint16_t) 750)//origin 580
 
 #define Check_Main_Brush			0x08
 #define Check_Vacuum				0x10
@@ -242,6 +242,7 @@
 #define Clean_Mode_Spot				12
 #define Clean_Mode_Mobility			13
 #define Clean_Mode_Navigation		14
+#define Clean_Mode_Exploration		15
 
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
@@ -758,7 +759,7 @@ uint8_t get_tilt_status();
 
 bool check_pub_scan();
 
-uint8_t is_robot_stuck();
+uint8_t is_robot_slip();
 bool is_clean_paused();
 void reset_clean_paused();
 #endif
