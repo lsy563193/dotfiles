@@ -29,6 +29,8 @@ extern int16_t g_turn_angle;
 #define CHECK_POSITION 7
 #define BY_PATH_INIT 8
 #define BY_PATH 9
+#define ROUND_LEFT 1
+#define ROUND_RIGHT 2
 
 class RegulatorBase {
 public:
@@ -180,10 +182,13 @@ public:
 		move_away_from_charger_cnt = 0;
 		receive_code = 0;
 		current_angle = 0;
-		last_angle = 0;
+		last_angle = robot::instance()->getAngle();
 		angle_offset = 0;
 		gyro_step = 0;
 		around_charger_stub_dir = 0;
+		go_home_bumper_cnt = 0;
+		check_position_dir = 0;
+		around_move_cnt = 0;
 	}
 
 protected:
@@ -200,6 +205,9 @@ private:
 	float angle_offset;
 	float gyro_step;
 	uint8_t around_charger_stub_dir;
+	uint8_t go_home_bumper_cnt;
+	uint8_t check_position_dir;
+	uint8_t around_move_cnt;
 };
 
 class RegulatorManage:public RegulatorBase{
