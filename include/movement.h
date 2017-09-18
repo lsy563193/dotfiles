@@ -89,7 +89,7 @@
 #define RconFrontAll_Home_T		(uint32_t)0x02222220
 #define RconAll_Home_T			(uint32_t)0x22222222
 #define RconAll_Home_LR			(uint32_t)0x55555555
-#define RconFrontAlL_Home_LR	(uint32_t)0x05555550
+#define RconFrontAll_Home_LR	(uint32_t)0x05555550
 #define RconAll_Home_TLR		(uint32_t)0x77777777
 #define RconFrontAll_Home_TLR	(uint32_t)0x07777770
 

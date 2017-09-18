@@ -187,7 +187,6 @@ public:
 		gyro_step = 0;
 		around_charger_stub_dir = 0;
 		go_home_bumper_cnt = 0;
-		check_position_dir = 0;
 		around_move_cnt = 0;
 	}
 
@@ -196,6 +195,7 @@ protected:
 
 private:
 	int8_t go_home_state_now;
+	int8_t go_home_state_last;
 	uint16_t no_signal_cnt;
 	uint8_t move_away_from_charger_cnt;
 	uint32_t receive_code;
