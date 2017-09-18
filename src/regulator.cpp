@@ -1364,33 +1364,38 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 
 	if(mt_is_follow_wall())
 	{
-		ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered,g_robot_slip);
-		int16_t block_angle=0;
-		if (g_obs_triggered)
-			block_angle = obs_turn_angle();
-		else if (g_bumper_triggered)
-			block_angle = bumper_turn_angle();
-		else if (g_cliff_triggered)
-			block_angle = cliff_turn_angle();
-		else if (g_tilt_triggered)
-			block_angle = tilt_turn_angle();
-	//	else if (g_rcon_triggered)
-	//		block_angle = rcon_turn_angle();
-		else
-			block_angle = 0;
-		if (LASER_FOLLOW_WALL)
-			block_angle = laser_turn_angle();
+		if(get_clean_mode() == Clean_Mode_WallFollow) {
+			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
+							 __FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered,
+							 g_tilt_triggered, g_robot_slip);
+			int16_t block_angle = 0;
+			if (g_obs_triggered)
+				block_angle = obs_turn_angle();
+			else if (g_bumper_triggered)
+				block_angle = bumper_turn_angle();
+			else if (g_cliff_triggered)
+				block_angle = cliff_turn_angle();
+			else if (g_tilt_triggered)
+				block_angle = tilt_turn_angle();
+				//	else if (g_rcon_triggered)
+				//		block_angle = rcon_turn_angle();
+			else
+				block_angle = 0;
+			if (LASER_FOLLOW_WALL)
+				block_angle = laser_turn_angle();
+			g_turn_angle = block_angle;
 //		int16_t target_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y) - gyro_get_angle());
 //		g_turn_angle = std::max(std::abs(block_angle), std::abs(target_angle));
 //		g_turn_angle = std::max(std::abs(block_angle), std::abs(target_angle));
-		g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y) - gyro_get_angle());
+		}else
+			g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y) - gyro_get_angle());
+
 		if (!g_is_left_start)
 			s_origin_angle = gyro_get_angle() + g_turn_angle;
 	}else if(mt_is_linear())
 	{
 		g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y) - gyro_get_angle());
 	}
-
 	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)",__FUNCTION__,__LINE__, g_turn_angle);
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
 	p_reg_ = turn_reg_;
