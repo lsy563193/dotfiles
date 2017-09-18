@@ -457,7 +457,7 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		//false means max
 //		min = std::min(min, path_lane_distance(true));
 //		max = std::min(max, path_lane_distance(false));
-		ROS_WARN("%s %d: g_is_reach.(%d), dir(%d)", __FUNCTION__, __LINE__, g_is_reach,(RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y));
+		ROS_WARN("%s %d: g_is_reach.(%d), nag dir(%d)", __FUNCTION__, __LINE__, g_is_reach,(RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y));
 		if(mt_is_follow_wall() && g_is_reach==1)
 		{
 			if(mt_is_left() ^ (RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y))
