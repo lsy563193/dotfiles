@@ -110,7 +110,8 @@ int serial_close()
 	return reval;
 }
 
-int serial_write(uint8_t len, uint8_t *buf) {
+int serial_write(uint8_t len, uint8_t *buf)
+{
 	int	retval;
 
 	//log_msg(LOG_VERBOSE, TAG "Output %d byte(s)\n", __LINE__, len);
@@ -120,7 +121,8 @@ int serial_write(uint8_t len, uint8_t *buf) {
 	return retval;
 }
 
-int serial_read(int len,uint8_t *buf){
+int serial_read(int len,uint8_t *buf)
+{
 	int r_ret=0,s_ret=0;
 	uint8_t *t_buf;
 	t_buf = (uint8_t*)malloc(len*sizeof(uint8_t));
@@ -129,15 +131,19 @@ int serial_read(int len,uint8_t *buf){
 	struct timeval timeout;
 	timeout.tv_sec = 4;
 	timeout.tv_usec = 0;// ms
-	size_t *return_size;
 	size_t length = 0;
-	return_size = (size_t*)&length;
 	if(is_serial_ready()){
-		if(ioctl(crport_fd,FIONREAD,return_size)==-1)return -1;
-		if(*return_size >= (size_t)len){
+		if(ioctl(crport_fd,FIONREAD,&length)==-1)
+		{
+			ROS_WARN("%s,%d,ioctl return -1",__FUNCTION__,__LINE__);
+			free(t_buf);
+			return -1;
+		}
+		if( length >= (size_t)len){
 			r_ret = read(crport_fd,t_buf,len);
 			if(r_ret >0)
 				memcpy(buf,t_buf,r_ret);
+			free(t_buf);
 			return r_ret;
 		}
 	}
@@ -148,29 +154,38 @@ int serial_read(int len,uint8_t *buf){
 		s_ret = select(crport_fd+1,&read_serial_fds,NULL,NULL,&timeout);
 		if (s_ret <0){
 			ROS_ERROR("%s %d: -------select error------------", __FUNCTION__, __LINE__);
+			free(t_buf);
 			return -1;
 		}
 		else if(s_ret ==0){
 			ROS_INFO("%s %d: select function \033[33mtimeout!\033[0m", __FUNCTION__, __LINE__);
+			free(t_buf);
 			return 0;
 		}
 		else if(s_ret >0){
 			assert(FD_ISSET(crport_fd,&read_serial_fds));
-			if(ioctl(crport_fd,FIONREAD,return_size)==-1)return -1;
-			if(*return_size >= (size_t)len){
+			if(ioctl(crport_fd,FIONREAD,&length)==-1)
+			{
+				ROS_WARN("%s,%d,ioctl return -1",__FUNCTION__,__LINE__);
+				free(t_buf);
+				return -1;
+			}
+			if(length>= (size_t)len){
 				r_ret = read(crport_fd,t_buf,len);
 				if(r_ret >0)
 					memcpy(buf,t_buf,r_ret);
+				free(t_buf);
 				return r_ret;
 			}
 			else{
 				int time_remain = timeout.tv_sec*1000000 + timeout.tv_usec;
-				int time_expect = (len - *return_size)*1000000*8/_bardrate;
+				int time_expect = (len - length)*1000000*8/_bardrate;
 				if(time_remain > time_expect)
 					usleep(time_expect);
 			}
 		}
 	}
+	free(t_buf);
 	return s_ret;
 	
 }

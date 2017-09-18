@@ -32,6 +32,8 @@ Laser::Laser():nh_()
 	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
 	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
+	setScanReady(0);
+	setScan2Ready(0);
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
 	lidarMotorCtrl(ON);
@@ -42,10 +44,12 @@ Laser::~Laser()
 	lidarShieldDetect(OFF);
 	lidarMotorCtrl(OFF);
 	setScanReady(0);
-//	scan_sub_.shutdown();
-//	start_motor_cli_.shutdown();
-//	stop_motor_cli_.shutdown();
-//	nh_.shutdown();
+	setScan2Ready(0);
+	scan_sub_.shutdown();
+	scan_sub2_.shutdown();
+	lidar_motor_cli_.shutdown();
+	lidar_shield_detect_.shutdown();
+	nh_.shutdown();
 	//delete []last_ranges_;
 	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
@@ -173,7 +177,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (switch_ && isScanReady())
 		{
-			ROS_INFO("\033[34m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
+			ROS_INFO("\033[32m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -855,67 +859,79 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 	}
 }
 
-uint8_t Laser::isRobotStuck()
+uint8_t Laser::isRobotSlip()
 {
-	static int16_t stuck_count = 0;
+	static int16_t slip_count= 0;
 	static uint16_t seq_count = 0;
 	static uint32_t seq=0;
 	static uint8_t last_ranges_init = 0;
 	static std::vector<float> last_ranges ;
 	const float PERCENT = 0.8;//80%
-	const float acur1 = 0.05;//accuracy 1 ,in meters
-	const float acur2 = 0.01;//accuracy 2 ,in meters
-	const int COUNT = 10;//stuck count number
+
+	const float acur1 = 0.07;//accuracy 1 ,in meters
+	const float acur2 = 0.05;//accuracy 2 ,in meters
+	const float acur3 = 0.03;//accuracy 3 ,in meters
+	const float acur4 = 0.01;//accuracy 4 ,in meters
+	const int COUNT = 5;//stuck count number
 
 	uint16_t same_count = 0;
 	uint8_t ret = 0;
 	uint16_t tol_count = 0;
-	if(g_robot_stuck_enable && seq != laserScanData_2_.header.seq && isScanReady() && ( robot::instance()->getLeftWheelSpeed() >= 0.01 || robot::instance()->getRightWheelSpeed() >= 0.01 ) )
+	if(g_robot_slip_enable && seq != laserScanData_2_.header.seq && isScan2Ready() && ( absolute(robot::instance()->getLeftWheelSpeed()) >= 0.04 || absolute(robot::instance()->getRightWheelSpeed()) >= 0.04 ) )
 	{
-		//boost::mutex::scoped_lock(scan2_mutex_);
 		seq = laserScanData_2_.header.seq;
 		if(last_ranges_init == 0){
-			last_ranges_init = 1;
+			last_ranges_init = 2;
 			last_ranges = laserScanData_2_.ranges;
 			return ret;
 		}
-		for(int i =0;i<=359;i=i+5){
+		for(int i =0;i<=359;i=i+2){
 			if(laserScanData_2_.ranges[i] < 3.5){
 				tol_count++;
-				if(laserScanData_2_.ranges[i] >0.5){//
+				if(laserScanData_2_.ranges[i] >2.5 && laserScanData_2_.ranges[i] < 3.5){//	
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
-				}
-				else if(laserScanData_2_.ranges[i] <= 0.5){
+				} 
+				else if(laserScanData_2_.ranges[i] >1.5 && laserScanData_2_.ranges[i] < 2.5){//
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
 					}
 				}
+				else if(laserScanData_2_.ranges[i] >0.5 && laserScanData_2_.ranges[i] < 1.5){//
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
+						same_count++;
+					}
+				}
+				else if(laserScanData_2_.ranges[i] <= 0.5){
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
+						same_count++;
+					}
+				}
 			}
 		}
-		if(++seq_count >=4){//store last ranges after 4 sequance
+		if(++seq_count >2){//store last ranges after 2 sequance
 			seq_count=0;
 			last_ranges = laserScanData_2_.ranges;
 		}
 		//ROS_INFO("\033[1;45;37msame_count %d,tol_count %d,\033[0m",same_count, tol_count );
-		if((same_count*1.0)/(tol_count*1.0) >= PERCENT){//about 80% match
-			if(++stuck_count >= COUNT){
-				stuck_count = 0;
+		if((same_count*1.0)/(tol_count*1.0) >= PERCENT){
+			if(++slip_count>= COUNT){
+				slip_count = 0;
 				ret = 1;
 			}
 		}
 		else{
-			stuck_count = (stuck_count>0)? stuck_count-1: 0;
+			//slip_count= (slip_count>0)? slip_count - 1: 0;
+			slip_count = 0;
 		}
 	}
-	else if(!g_robot_stuck_enable)
+	else if(!g_robot_slip_enable)
 	{
 		seq = 0;
 		seq_count = 0;
-		stuck_count = 0;
+		slip_count= 0;
 		last_ranges_init = 0;
-		last_ranges.clear();
 	}
 	return ret;
 }

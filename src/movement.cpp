@@ -3204,12 +3204,12 @@ bool check_pub_scan()
 		return true;
 }
 
-uint8_t is_robot_stuck()
+uint8_t is_robot_slip()
 {
 	uint8_t ret = 0;
 	if(Laser::isScan2Ready() && (get_tilt_status() == 0) ){
-		if(Laser::isRobotStuck()){
-			ROS_INFO("\033[35m""%s,%d,robot stuck!!""\033[0m",__FUNCTION__,__LINE__);
+		if(Laser::isRobotSlip()){
+			ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
 			ret = 1;
 		}
 	}

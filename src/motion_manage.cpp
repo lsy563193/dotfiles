@@ -310,7 +310,7 @@ MotionManage::~MotionManage()
 	disable_motors();
 
 	g_tilt_enable = false;
-	g_robot_stuck_enable =false;
+	g_robot_slip_enable =false;
 	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
@@ -576,7 +576,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	work_motor_configure();
 
@@ -594,30 +594,25 @@ bool MotionManage::initExplorationCleaning(void)
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
-	{
-		g_saved_work_time = 0;
-		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-		// Push the start point into the home point list
-		ROS_INFO("map_init-----------------------------");
-		map_init(MAP);
-		map_init(WFMAP);
-		map_init(ROSMAP);
-		path_planning_initialize();
+	g_saved_work_time = 0;
+	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
+	// Push the start point into the home point list
+	ROS_INFO("map_init-----------------------------");
+	map_init(MAP);
+	map_init(WFMAP);
+	map_init(ROSMAP);
+	path_planning_initialize();
 
-		robot::instance()->initOdomPosition();
+	robot::instance()->initOdomPosition();
 
-		// If it it the first time cleaning, initialize the g_continue_point.
-		extern Cell_t g_continue_cell;
-		g_continue_cell.X = g_continue_cell.Y = 0;
-		extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
-		g_have_seen_charge_stub = false;
-		g_start_point_seen_charger = false;
+	// If it it the first time cleaning, initialize the g_continue_point.
+	extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
+	g_have_seen_charge_stub = false;
+	g_start_point_seen_charger = false;
 
-		g_homes.resize(1,g_zero_home);
-		g_home_gen_rosmap = true;
-		g_home_way_list.clear();
-	}
+	g_homes.resize(1,g_zero_home);
+	g_home_gen_rosmap = true;
+	g_home_way_list.clear();
 
 	reset_touch();
 
@@ -628,77 +623,11 @@ bool MotionManage::initExplorationCleaning(void)
 	reset_rcon_status();
 	reset_touch();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
-	if (g_resume_cleaning)
-	{
-		ROS_WARN("Restore from low battery pause");
-		cm_register_events();
-		wav_play(WAV_CLEANING_CONTINUE);
-	}
-	else if (is_clean_paused())
-	{
-		ROS_WARN("Restore from manual pause");
-		cm_register_events();
-		wav_play(WAV_CLEANING_CONTINUE);
-		if (g_go_home)
-		{
-			wav_play(WAV_BACK_TO_CHARGER);
-		}
-	}
-	else if(g_plan_activated == true)
-	{
-		cm_register_events();
-		wav_play(WAV_PLAN_CLEANING_START);
-		g_plan_activated = false;
-	}
-	else{
-		cm_register_events();
-		wav_play(WAV_EXPLORATION_START);
-	}
+	cm_register_events();
+	wav_play(WAV_EXPLORATION_START);
 
 	if (!wait_for_gyro_on())
 		return false;
-
-	if (is_clean_paused() || g_resume_cleaning )
-	{
-		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
-		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
-		if (!g_go_home)
-			cm_check_should_go_home();
-	}
-
-	/*Move back from charge station*/
-	if (is_on_charger_stub()) {
-		ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
-		set_side_brush_pwm(30, 30);
-		// Set i < 7 for robot to move back for approximately 500mm.
-		for (int i = 0; i < 7; i++) {
-			// Move back for distance of 72mm, it takes approximately 0.5s.
-			quick_back(20, 72);
-			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
-				disable_motors();
-				if (g_fatal_quit_event)
-				{
-					robot::instance()->resetManualPause();
-					g_resume_cleaning = false;
-				}
-				else if (g_key_clean_pressed && !g_resume_cleaning)
-					// Reset the odom position so when continue cleaning, the position robot stopped at will be the home point (0, 0).
-					robot::instance()->initOdomPosition();
-				else if (!g_fatal_quit_event && !g_key_clean_pressed)
-				{
-					ROS_WARN("%s %d: Fail to leave charger stub.", __FUNCTION__, __LINE__);
-					robot::instance()->resetManualPause();
-					g_resume_cleaning = false;
-				}
-				return false;
-			}
-		}
-		auto curr = map_get_curr_cell();
-		path_set_home(curr);
-		stop_brifly();
-		extern bool g_from_station;
-		g_from_station = 1;
-	}
 
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
@@ -706,9 +635,9 @@ bool MotionManage::initExplorationCleaning(void)
 
 	work_motor_configure();
 
-	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
 	return true;
 }
+
 bool MotionManage::initWallFollowCleaning(void)
 {
 	cm_register_events();
@@ -781,7 +710,7 @@ bool MotionManage::initSpotCleaning(void)
 	// enable titlt detct
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
-	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+	ROS_INFO("\033[33m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);

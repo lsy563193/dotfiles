@@ -93,7 +93,10 @@ extern bool g_tilt_enable;
 extern bool g_tilt_triggered;
 /* robot stuck */
 extern bool g_robot_stuck;
-extern bool g_robot_stuck_enable;
+extern bool g_robot_slip;
+extern bool g_robot_slip_enable;
+extern uint8_t g_slip_cnt;
+extern bool g_slip_triggered;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,
@@ -162,7 +165,7 @@ typedef enum {
 
 	EVT_SLAM_ERROR,
 
-	EVT_ROBOT_STUCK,
+	EVT_ROBOT_SLIP,
 	EVT_MAX,
 } EventType;
 
@@ -281,7 +284,7 @@ define_em_handler_func(charge_detect)
 define_em_handler_func(slam_error)
 
 /* robot stuck */
-define_em_handler_func(robot_stuck)
+define_em_handler_func(robot_slip)
 
 define_em_handler_func(empty)
 

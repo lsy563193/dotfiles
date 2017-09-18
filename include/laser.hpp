@@ -50,7 +50,7 @@ public:
 	void lidarMotorCtrl(bool orf);
 
 	uint8_t laserMarker(bool is_mark,double X_MIN = 0.140,double X_MAX = 0.237);
-	static uint8_t isRobotStuck();
+	static uint8_t isRobotSlip();
 private:
 
 	//void stop(void);
