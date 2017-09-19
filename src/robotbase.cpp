@@ -424,6 +424,18 @@ void *serial_send_routine(void*)
 
 		if(!is_flag_set()){
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
+
+			/*---pid for wheels---*/
+			extern struct pid_struct left_pid, right_pid;
+			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
+			wheels_pid(&left_pid);
+			wheels_pid(&right_pid);
+			if(left_pid.actual_speed < 0)g_wheel_left_direction = BACKWARD;
+			if(right_pid.actual_speed < 0)g_wheel_right_direction = BACKWARD;
+			ROS_INFO("l: %f, r: %f", left_pid.actual_speed, right_pid.actual_speed);
+
+			set_left_wheel_speed((uint8_t)abs(left_pid.actual_speed));
+			set_right_wheel_speed((uint8_t)abs(right_pid.actual_speed));
 			buf[CTL_CRC] = calc_buf_crc8((char *) buf, sl);
 			serial_write(SEND_LEN, buf);
 		}
