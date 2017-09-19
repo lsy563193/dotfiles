@@ -969,11 +969,11 @@ int Laser::compLaneDistance(){
 			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
 			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0- cur_angle * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
-		}
-		if (fabs(y1) < 0.167) {
-			if (fabs(x1) <= x_front_min) {
-				x_front_min = fabs(x1);
-				//ROS_WARN("x_front_min = %lf", x_front_min);
+			if (fabs(y1) < 0.167) {
+				if (fabs(x1) <= x_front_min) {
+					x_front_min = fabs(x1);
+					//ROS_WARN("x_front_min = %lf", x_front_min);
+				}
 			}
 		}
 	}
@@ -989,11 +989,11 @@ int Laser::compLaneDistance(){
 			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
 			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0 - cur_angle * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
-		}
-		if (fabs(y1) < 0.167) {
-			if (fabs(x1) <= x_back_min) {
-				x_back_min = fabs(x1);
-				//ROS_WARN("x_back_min = %lf", x_back_min);
+			if (fabs(y1) < 0.167) {
+				if (fabs(x1) <= x_back_min) {
+					x_back_min = fabs(x1);
+					//ROS_WARN("x_back_min = %lf", x_back_min);
+				}
 			}
 		}
 	}
