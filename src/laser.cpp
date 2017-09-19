@@ -212,7 +212,7 @@ void Laser::lidarShieldDetect(bool switch_)
 	ROS_INFO("\033[35m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
 
-bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
+bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
 {
 	int		i, count;
 	bool	found = false;
@@ -224,7 +224,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 	//double	line_angle;
 	Double_Point	New_Laser_Point;
 	Laser_Point.clear();
-	ROS_INFO("getLaserDistance");
+	ROS_WARN("laserGetFitLine");
 	scan_mutex_.lock();
 	for (i = begin; i < end; i++) {//default:begin = 260, end =270
 		if (laserScanData_.ranges[i] < 4) {
