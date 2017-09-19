@@ -1128,17 +1128,11 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			else
 				turn_right_angle_factor = 13;				//black
 
-//			ROS_WARN("g_wall_distance: %d",g_wall_distance);
-//			ROS_WARN("wall_buffer[1] - wall_buffer[0]: %d",wall_buffer[1] - wall_buffer[0]);
-			if ((wall_buffer[1] - wall_buffer[0]) >= g_wall_distance / turn_right_angle_factor)
-			{
-//				ROS_WARN("wall_buffer[2] - wall_buffer[1]: %d",wall_buffer[2] - wall_buffer[1]);
-				if ((wall_buffer[2] - wall_buffer[1]) >= g_wall_distance / turn_right_angle_factor)
-				{
-					if (same_dist>200)
-					{
-						if ((diff_speed-same_speed) >= -3)
-						{
+			if ((wall_buffer[1] - wall_buffer[0]) >= g_wall_distance / turn_right_angle_factor &&
+					(wall_buffer[2] - wall_buffer[1]) >= g_wall_distance / turn_right_angle_factor &&
+					same_dist > 200 &&
+					(diff_speed-same_speed) >= -3) {
+#if 0
 							// Away from the wall.
 //						ROS_WARN("%s,%d: delay_sec(0.22) to walk straight",__FUNCTION__,__LINE__);
 //							if(ros::Time::now().toSec()-transit_time < 0.8 && (g_wall_distance != last_transit_g_wall_distance))
@@ -1146,33 +1140,34 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //								g_wall_distance=last_transit_g_wall_distance;
 //								ROS_WARN("set back g_wall_distance: %d",g_wall_distance);
 //							}
-							if(mt_is_left()) {
-								if (is_decelerate_wall()) {
-									move_forward((2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15)) / 2,
-															 (2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15)) / 2);
-									delay_sec(0.4);
-//									ROS_WARN("delay_decelerate");
-								} else {
-									move_forward(20, 15);
-									delay_sec(0.22);
-									ROS_WARN("%s,%d: delay_sec(0.22) to walk straight",__FUNCTION__,__LINE__);
-								}
-							}
-							else
-							{
-								if(is_decelerate_wall()) {
-									move_forward((2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15)) / 2,
-															 (2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15)) / 2);
-									delay_sec(0.3);
-								}else {
-									move_forward(15, 20);
-									delay_sec(0.22);
-								}
-							}
-//							g_wall_distance+=15;
-							g_straight_distance = 250;
-						}
-					}
+#endif
+				is_right_angle = true;
+			}
+		}
+
+		if(is_right_angle)
+		{
+			if(time_right_angle == 0)
+				time_right_angle = ros::Time::now().toSec();
+			if(is_decelerate_wall()) {
+				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
+					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
+					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
+					return;
+				}
+				else{
+					time_right_angle = 0;
+					is_right_angle = 0;
+				}
+			}else {
+				if(ros::Time::now().toSec() - time_right_angle < 0.44) {
+					same_speed = 20;
+					diff_speed = 15;
+					ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
+					return;
+				}else{
+					time_right_angle = 0;
+					is_right_angle = 0;
 				}
 			}
 		}
