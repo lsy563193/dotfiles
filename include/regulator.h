@@ -169,7 +169,10 @@ public:
 		return p_reg_ == turn_reg_;
 	};
 	void setTarget() {p_reg_->setTarget();}
-
+	bool isMt(void)
+	{
+		return p_reg_ == mt_reg_;
+	}
 	void switchToNext();
 
 	void updatePosition(const Point32_t &curr_point){
