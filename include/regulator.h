@@ -128,6 +128,8 @@ private:
 	int32_t old_same_speed,old_diff_speed;
 	int turn_right_angle_factor=15;
 	int16_t wall_buffer[3]={0};
+	bool is_right_angle;
+	double time_right_angle;
 //CMMoveType last_move_type;
 //bool g_is_should_follow_wall;
 	//int last_strength=150;
