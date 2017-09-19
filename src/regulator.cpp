@@ -1051,6 +1051,8 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 		auto delta = proportion - previous_;
 
+		previous_ = proportion;
+
 		if (robot_to_wall_distance > 0.8 || abs(adc_value - g_wall_distance) > 150 )
 		{//over left
 			same_speed = wheel_speed_base + proportion / 7 + delta/2; //
@@ -1142,20 +1144,22 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //							}
 #endif
 				is_right_angle = true;
+				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
 		}
 
 		if(is_right_angle)
 		{
-			if(time_right_angle == 0)
+			if(time_right_angle == 0) {
 				time_right_angle = ros::Time::now().toSec();
+				ROS_INFO("update time_right_angle");
+			}
 			if(is_decelerate_wall()) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
 					return;
-				}
-				else{
+				}else {
 					time_right_angle = 0;
 					is_right_angle = 0;
 				}
@@ -1163,11 +1167,11 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				if(ros::Time::now().toSec() - time_right_angle < 0.44) {
 					same_speed = 20;
 					diff_speed = 15;
-					ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 					return;
 				}else{
 					time_right_angle = 0;
 					is_right_angle = 0;
+					ROS_INFO("reset time_right_angle,is_right_angle");
 				}
 			}
 		}
@@ -1237,8 +1241,6 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		/******************************************END******************************************************/
 #endif
 //		ROS_ERROR("same_speed:%d,diff_speed:%d",same_speed,diff_speed);
-
-		previous_ = proportion;
 
 		if (same_speed > 39)same_speed = 39;
 		if (same_speed < 0)same_speed = 0;
