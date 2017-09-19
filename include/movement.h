@@ -6,6 +6,23 @@
 #include "config.h"
 #include "main.h"
 
+struct pid_struct
+{
+	float err;
+	float err_sum;
+	float err_last;
+	float target_speed;
+	float actual_speed;
+	float last_target_speed;
+	uint8_t wheel_tab;
+};
+struct pid_argu_struct
+{
+	bool PID_Enable;
+	float Kp;
+	float Ki;
+	float Kd;
+};
 #define Brush_Power					128
 #define MainBrush_Power				70
 
@@ -390,6 +407,9 @@ typedef enum{
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
 
+// for wheel direction
+#define FORWARD						0
+#define BACKWARD					1
 extern uint32_t g_rcon_status;
 
 extern volatile int16_t g_left_wall_baseline;
@@ -477,7 +497,9 @@ void set_rcon_status(uint32_t code);
 // If robot going straight, should turn off gyro dynamic adjustment.
 // If robot turning, should turn on gyro dynamic adjustment.
  */
-void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p = 1, float PID_i = 0, float PID_d = 0);
+void set_argu_for_pid(bool PID_Enable, float Kp, float Ki, float Kd);
+void wheels_pid(struct pid_struct *hpid);
+void set_wheel_speed(uint8_t Left, uint8_t Right, bool PID_Enable = true, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
