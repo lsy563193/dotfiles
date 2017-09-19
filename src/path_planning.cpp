@@ -1528,11 +1528,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 						g_trapped_mode = 1;
 						// This led light is for debug.
 						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						ROS_ERROR("g_obs_triggered:%d,g_bumper_triggered:%d",g_obs_triggered,g_bumper_triggered);
-						if(g_obs_triggered == Status_Right_OBS || g_bumper_triggered == RightBumperTrig)
-							mt_set(CM_FOLLOW_RIGHT_WALL);
-						else
-							mt_set(CM_FOLLOW_LEFT_WALL);
+						mt_set(CM_FOLLOW_LEFT_WALL);
 						extern uint32_t g_escape_trapped_timer;
 						g_escape_trapped_timer = time(NULL);
 					}
