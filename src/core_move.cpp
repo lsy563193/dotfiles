@@ -420,7 +420,11 @@ int cm_move_to(const PPTargetType& path)
 		}
 
 		rm.adjustSpeed(speed_left, speed_right);
-		set_wheel_speed(speed_left, speed_right);
+		/*---PID is useless in wall follow mode---*/
+		if(rm.isMt() && mt_is_follow_wall())
+			set_wheel_speed(speed_left, speed_right, false);
+		else
+			set_wheel_speed(speed_left, speed_right, true);
 	}
 	if(! MAP_SET_REALTIME)
 	{
