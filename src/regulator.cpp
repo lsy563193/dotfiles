@@ -1134,17 +1134,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 					(wall_buffer[2] - wall_buffer[1]) >= g_wall_distance / turn_right_angle_factor &&
 					same_dist > 200 &&
 					(diff_speed-same_speed) >= -3) {
-#if 0
-							// Away from the wall.
-//						ROS_WARN("%s,%d: delay_sec(0.22) to walk straight",__FUNCTION__,__LINE__);
-//							if(ros::Time::now().toSec()-transit_time < 0.8 && (g_wall_distance != last_transit_g_wall_distance))
-//							{
-//								g_wall_distance=last_transit_g_wall_distance;
-//								ROS_WARN("set back g_wall_distance: %d",g_wall_distance);
-//							}
-#endif
 				is_right_angle = true;
-				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
 		}
 
@@ -1152,7 +1142,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		{
 			if(time_right_angle == 0) {
 				time_right_angle = ros::Time::now().toSec();
-				ROS_INFO("update time_right_angle");
+				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
 			if(is_decelerate_wall()) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
@@ -1165,7 +1155,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				}
 			}else {
 				if(ros::Time::now().toSec() - time_right_angle < 0.44) {
-					same_speed = 20;
+					same_speed = 15;
 					diff_speed = 15;
 					return;
 				}else{
@@ -1176,107 +1166,49 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			}
 		}
 		/****************************************************END**************************************************************/
-#if 0
-		/*********************reset g_wall_distance when transits from white wall to black wall**********************************/
-//		ROS_WARN("wall_buffer[0]:%d,wall_buffer[1]=%d,wall_buffer[2]:%d",wall_buffer[0],wall_buffer[1],wall_buffer[2]);
-/*		if (wall_buffer[0] >150 && wall_buffer[0] < 300 && wall_buffer[1] > 200 &&wall_buffer[2] > 200 && wall_buffer[1] < wall_buffer[2] )
-		{
-//			ROS_WARN("g_wall_distance: %d",g_wall_distance);
-//			ROS_WARN("wall_buffer[1] - wall_buffer[0]: %d",wall_buffer[1] - wall_buffer[0]);
-			if ((wall_buffer[1] - wall_buffer[0]) >= g_wall_distance/30)
-			{
-//				ROS_WARN("wall_buffer[2] - wall_buffer[1]: %d",wall_buffer[2] - wall_buffer[1]);
-				if ((wall_buffer[2] - wall_buffer[1]) >= g_wall_distance/30 && ((wall_buffer[1] - wall_buffer[0]+10) > (wall_buffer[2] - wall_buffer[1])))
-				{
-//					ROS_WARN("same_dist: %d",same_dist);
-					if (same_dist>200)
-					{
-//						ROS_WARN("get_right_wheel_speed-get_left_wheel_speed: %d",get_right_wheel_speed()-get_left_wheel_speed());
-						if ((diff_speed-same_speed) >= -3)
-						{
-							last_transit_g_wall_distance=g_wall_distance;
-							transit_time=ros::Time::now().toSec();
-							g_wall_distance=wall_buffer[0];
-//							ROS_WARN("set g_wall_distance from white wall to black wall: %d",g_wall_distance);
-							if(g_wall_distance < 300)  //620 is the experience value by testing in the closest position to white wall
-							{
-								g_wall_distance+=(150-g_wall_distance)/4*3;
-								if(g_wall_distance < WALL_DISTANCE_BLACK_MIN)
-									g_wall_distance=WALL_DISTANCE_BLACK_MIN;
-								else if(g_wall_distance > WALL_DISTANCE_BLACK_MAX)
-									g_wall_distance=WALL_DISTANCE_BLACK_MAX;
-								ROS_WARN("transit from white wall to black wall,reset g_wall_distance: %d",g_wall_distance);
-							}
-						}
-					}
-				}
-			}
-		}*/
-		/****************************************************END**************************************************************/
-
-		/***************reset g_wall_distance when transits from black wall to white wall**********************/
-/*		if(wall_buffer[0] > 350 && wall_buffer[1] < 420 && wall_buffer[2] < 420)
-		{
-//			ROS_WARN("wall_buffer[2]: %d,wall_buffer[1]: %d",wall_buffer[2],wall_buffer[0]);
-//			ROS_WARN("g_wall_distance: %d",g_wall_distance);
-//			ROS_WARN("wall_buffer[0] - wall_buffer[1]: %d",wall_buffer[0] - wall_buffer[1]);
-			if(wall_buffer[0]-wall_buffer[1] >=(g_wall_distance / 5))
-			{
-//				ROS_WARN("wall_buffer[1] - wall_buffer[2]: %d",wall_buffer[1] - wall_buffer[2]);
-				if(wall_buffer[1]-wall_buffer[2] >= 0)
-					if(diff_dist > 200)
-						if((diff_speed-same_speed) >= -3)
-						{
-							g_wall_distance=wall_buffer[0];
-							if(g_wall_distance < 620)  //620 is the experience value by testing in the closest position to white wall
-							{
-								g_wall_distance+=(620-g_wall_distance)/4*3;
-								if(g_wall_distance < WALL_DISTANCE_WHITE_MIN)
-									g_wall_distance=WALL_DISTANCE_WHITE_MIN;
-								ROS_WARN("transit from black wall to white wall,reset g_wall_distance: %d",g_wall_distance);
-							}
-						}
-			}
-		}*/
-		/******************************************END******************************************************/
-#endif
 //		ROS_ERROR("same_speed:%d,diff_speed:%d",same_speed,diff_speed);
 
 		if (same_speed > 39)same_speed = 39;
-		if (same_speed < 0)same_speed = 0;
+		if (same_speed < 0)same_speed = 0;t
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
-	}
 
-	if (is_decelerate_wall()) {
-		old_same_speed = same_speed;
-		old_diff_speed = diff_speed;
-		if (next_linear_speed > (300 * (wall_follow_detect_distance - 0.167))){
-			if(next_linear_speed == INT_MAX)
-				next_linear_speed = (old_same_speed + old_diff_speed) / 2 - 1;
-			same_speed = (2 * next_linear_speed + next_linear_speed * (old_same_speed - old_diff_speed) / (old_same_speed + old_diff_speed)) / 2;
-			diff_speed = (2 * next_linear_speed - next_linear_speed * (old_same_speed - old_diff_speed) / (old_same_speed + old_diff_speed)) / 2;
-			next_linear_speed = (same_speed + diff_speed) / 2 - 1;
+		if (is_decelerate_wall()) {
+			old_same_speed = same_speed;
+			old_diff_speed = diff_speed;
+			if (next_linear_speed > (300 * (wall_follow_detect_distance - 0.167))){
+				if(next_linear_speed == INT_MAX)
+					next_linear_speed = (old_same_speed + old_diff_speed) / 2 - 1;
+				same_speed = (2 * next_linear_speed + next_linear_speed * (old_same_speed - old_diff_speed) / (old_same_speed + old_diff_speed)) / 2;
+				diff_speed = (2 * next_linear_speed - next_linear_speed * (old_same_speed - old_diff_speed) / (old_same_speed + old_diff_speed)) / 2;
+				next_linear_speed = (same_speed + diff_speed) / 2 - 1;
 //			ROS_ERROR("decelerate:same_speed:%d,diff_speed:%d,next_linear_speed:%d",same_speed,diff_speed,next_linear_speed);
-		} else{
-			//the first parameter 300 must below 638 to ensure the linear velocity below to the calculating linear velocity
+			} else{
+				//the first parameter 300 must below 638 to ensure the linear velocity below to the calculating linear velocity
 				same_speed = (2 * (300 * (wall_follow_detect_distance - 0.167)) + old_same_speed - old_diff_speed) / 2;
 				diff_speed = (2 * (300 * (wall_follow_detect_distance - 0.167)) + old_diff_speed - old_same_speed) / 2;
 //				ROS_ERROR("continue:same_speed:%d,diff_speed:%d,linear_speed:%d",same_speed,diff_speed,(same_speed + diff_speed) / 2);
-		}
-		if(same_speed < 0) {
-			diff_speed -= same_speed;
-			same_speed = 0;
+			}
+			if(same_speed < 0) {
+				diff_speed -= same_speed;
+				same_speed = 0;
 //			ROS_ERROR("below zero by same_speed:same_speed:%d,diff_speed:%d",same_speed,diff_speed);
-		}
-		else if(diff_speed < 0)
-		{
-			same_speed -= diff_speed;
-			diff_speed = 0;
+			}
+			else if(diff_speed < 0)
+			{
+				same_speed -= diff_speed;
+				diff_speed = 0;
 //			ROS_ERROR("below zero by diff_speed:same_speed:%d,diff_speed:%d",same_speed,diff_speed);
+			}
+		} else{
+			next_linear_speed = INT_MAX;
 		}
-	} else{
-		next_linear_speed = INT_MAX;
+
+		if(same_speed > diff_speed && diff_speed < (0.210 * same_speed)) {
+			diff_speed = 0.210 * same_speed;
+		}if(same_speed < diff_speed && same_speed < (0.210 * diff_speed)) {
+			same_speed = 0.210 * diff_speed;
+		}
 	}
 }
 
