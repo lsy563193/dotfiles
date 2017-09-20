@@ -77,7 +77,6 @@ bool g_tilt_triggered = false;
 /* robot slip & stuck */
 uint8_t g_slip_cnt = 0;
 bool g_robot_slip = false;
-bool g_slip_triggered = false;
 bool g_robot_slip_enable = false;
 bool g_robot_stuck = false;
 
@@ -584,7 +583,6 @@ void event_manager_reset_status(void)
 	//g_robot_stuck = false;
 	g_robot_slip = false;
 	g_slip_cnt = 0;
-	g_slip_triggered = false;
 	/* tilt switch*/
 	g_tilt_enable = false;
 	g_tilt_triggered = false;
@@ -954,6 +952,7 @@ void em_default_handle_robot_slip(bool state_new,bool state_last)
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
 	beep_for_command(true);
 	g_robot_slip = true;
+	g_slip_cnt ++;
 }
 
 /* Default: empty hanlder */
