@@ -125,7 +125,8 @@ private:
 	uint8_t seen_charger_counter;
 	int next_linear_speed = INT_MAX;
 	double wall_follow_detect_distance=0.20;
-	int32_t old_same_speed,old_diff_speed;
+	int32_t old_same_speed = 0;
+	int32_t old_diff_speed = 0;
 	int turn_right_angle_factor=15;
 	int16_t wall_buffer[3]={0};
 	bool is_right_angle = false;
