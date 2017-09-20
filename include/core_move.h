@@ -60,6 +60,7 @@ extern int g_trapped_mode;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
 extern int g_rcon_triggered;
+extern int g_is_reach;
 extern Cell_t g_next_cell, g_target_cell;
 extern bool g_resume_cleaning;
 

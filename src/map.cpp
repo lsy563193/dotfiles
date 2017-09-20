@@ -10,6 +10,7 @@
 #include <event_manager.h>
 #include <move_type.h>
 #include <regulator.h>
+#include <mathematics.h>
 
 #include "map.h"
 #include "mathematics.h"
@@ -711,20 +712,27 @@ uint8_t map_set_bumper()
 	std::vector<Cell_t> d_cells;
 
 	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
-		d_cells = {{2,-1}, {2,0}, {2,1}};
+		d_cells = {/*{2,-1},*/ {2,0}/*, {2,1}*/};
 	else if (bumper_trig & LeftBumperTrig) {
 		//d_cells = {{2, 1}, {2,2}/*,{1,2}*/};
 		if(mt_is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
+		{
 			d_cells = {/*{2, 1},*//* {2,2}, */{1,2}};
+//			if(mt_is_left())
+//				if(std::abs(  ranged_angle(std::abs(gyro_get_angle())  -900)< 300 ))
+//			{
+//				d_cells.push_back({2,0});
+//			}
+		}
 		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
-			d_cells = {/*{2,-1},*//*{2,-1},*/{1,-2}};
+			d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
 		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
 			d_cells.push_back({2,0});
 	}
@@ -781,7 +789,7 @@ uint8_t map_set_tilt()
 		map_set_cell(MAP, x, y, BLOCKED_TILT);
 		block_count++;
 	}
-	ROS_INFO("\033[31m""%s,%d: Current(%d, %d), mark %s""\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark %s\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
 	return block_count;
 }
 
@@ -963,35 +971,18 @@ void map_set_cleaned(const Cell_t& curr)
 	}
 }
 
-void map_set_follow_wall(const Cell_t& curr)
-{
-	auto dx = curr.X - count_to_cell(RegulatorBase::s_origin.X);
-		if(dx == 0)
-			return;
-		auto dy = mt_is_left()  ?  2 : -2;
-		ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)",__FUNCTION__,__LINE__,mt_is_left(),dx, dy);
-		if((g_old_dir == POS_X && dx <= -2) || (g_old_dir == NEG_X && dx >= 2))
-		{
-			for (dx = -1; dx <= 0; dx++)
-			{
-				int x, y;
-				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-				ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-				if ( std::abs(count_to_cell(y) - curr.Y) >= 2 )
-					map_set_cell(MAP, x, y, BLOCKED_CLIFF);
-			}
-		}
-		if((g_old_dir == POS_X && dx >= 2) || (g_old_dir == NEG_X && dx <= -2))
-		{
-			for (dx = -1; dx <= 0; dx++)
-			{
-				int x, y;
-				cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-				ROS_INFO("%s,%d: diff_y(%d)",__FUNCTION__, __LINE__, count_to_cell(y) - curr.Y);
-				if (count_to_cell(y) -curr.Y <= 2);
-					map_set_cell(MAP, x, y, BLOCKED_CLIFF);
-			}
-		}
+void map_set_follow_wall(const Cell_t& curr) {
+
+	auto distance = sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin.Y, 2));
+	if(distance<0.1)
+		return;
+
+	auto dy = mt_is_left() ? 2 : -2;
+//	ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)", __FUNCTION__, __LINE__, mt_is_left(), dx, dy);
+	int x, y;
+	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, 0, &x, &y);
+	ROS_INFO("%s,%d: map_fw_curr(%d)", __FUNCTION__, __LINE__, x, y);
+	map_set_cell(MAP, x, y, BLOCKED_CLIFF);
 }
 
 void map_set_cleaned(std::vector<Cell_t>& cells)
@@ -1059,19 +1050,28 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 
 void map_set_follow_wall(std::vector<Cell_t>& cells)
 {
+	if(cells.empty())
+		return;
 	auto diff = cells.back().X - cells.front().X;
 
-//	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
-	auto dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	std::string pri_msg("");
 //	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
-	if (cells.size() < 2 || std::abs(diff) <= 4)
+	if (cells.size() < 2)
 		return;
 
+	auto dy = mt_is_left() ? 2 : -2;
+//	if(std::abs(  ranged_angle(  std::abs(gyro_get_angle())-900 )  )< 450)
+//	{
+//		Cell_t cell;
+//		cm_world_to_cell(gyro_get_angle(),CELL_SIZE*dy,0,cell.X,cell.Y);
+//		map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), BLOCKED_CLIFF);
+//	}
 	for (const auto &cell : cells)
 	{
 		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 	}
+	if(std::abs(diff) <= 4)
+		return;
 	auto min = std::min(cells.front().X, cells.back().X) + 3;
 	auto max = std::max(cells.front().X, cells.back().X) - 3;
 
@@ -1079,6 +1079,7 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 		return;
 
 
+	dy = diff>0 ^ mt_is_left() ? -2 : 2;
 	for (const auto &cell : cells)
 	{
 		if (cell.X >= min && cell.X <= max)

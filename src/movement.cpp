@@ -463,16 +463,16 @@ void turn_left(uint16_t speed, int16_t angle)
 			stop_brifly();
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -523,7 +523,7 @@ void turn_left(uint16_t speed, int16_t angle)
 
 void turn_right(uint16_t speed, int16_t angle)
 {
-	auto target_angle = gyro_get_angle() - angle;
+	auto target_angle = ranged_angle(gyro_get_angle() - angle);
 	if (target_angle < 0)
 	{
 		target_angle = 3600 + target_angle;
@@ -548,16 +548,16 @@ void turn_right(uint16_t speed, int16_t angle)
 			stop_brifly();
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -622,16 +622,16 @@ void jam_turn_left(uint16_t speed, int16_t angle)
 	if (speed > 30) accurate = 30;
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -677,16 +677,16 @@ void jam_turn_right(uint16_t speed, int16_t angle)
 	if (speed > 30) accurate = 30;
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -2493,11 +2493,11 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 					 gyro_get_angle(), speed);
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < 20)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 20)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			set_wheel_speed(speed / 2, speed / 2);
 		} else
@@ -2554,11 +2554,11 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 					 gyro_get_angle(), speed);
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < 20)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 20)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			set_wheel_speed(speed / 2, speed / 2);
 		} else

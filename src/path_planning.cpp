@@ -50,6 +50,7 @@
 #include "wav.h"
 #include <numeric>
 #include <motion_manage.h>
+#include <regulator.h>
 
 #define FINAL_COST (1000)
 #define NO_TARGET_LEFT 0
@@ -456,39 +457,54 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		//false means max
 //		min = std::min(min, path_lane_distance(true));
 //		max = std::min(max, path_lane_distance(false));
-		auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
-		ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
-		if(pos_or_nag == 1)
+		ROS_WARN("%s %d: g_is_reach.(%d), nag dir(%d)", __FUNCTION__, __LINE__, g_is_reach,(RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y));
+		if(mt_is_follow_wall() && g_is_reach==1)
 		{
-			tmp.X += max;
-		}else if(pos_or_nag == -1){
-			tmp.X -= min;
-		}else {
-			if (min > max)
-				tmp.X += max;
-			else if (min < max)
+			if(mt_is_left() ^ (RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y))
+			{
+				ROS_WARN("%s %d:tmp.X -= min", __FUNCTION__, __LINE__);
 				tmp.X -= min;
-			else {
-				if (g_cell_history[2].Y == g_cell_history[1].Y) {
-					if (g_cell_history[2].X > g_cell_history[1].X)
-						tmp.X -= min;
-					else if (g_cell_history[2].X < g_cell_history[1].X)
-						tmp.X += max;
-					else {
-						if (g_cell_history[0].X <= g_cell_history[1].X)
+			}
+			else
+			{
+				ROS_WARN("%s %d:tmp.X += max", __FUNCTION__, __LINE__);
+				tmp.X += max;
+			}
+		}else {
+			auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
+			ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
+			if (pos_or_nag == 1) {
+				tmp.X += max;
+			} else if (pos_or_nag == -1) {
+				tmp.X -= min;
+			} else {
+				if (min > max)
+					tmp.X += max;
+				else if (min < max)
+					tmp.X -= min;
+				else {
+					if (g_cell_history[2].Y == g_cell_history[1].Y) {
+						if (g_cell_history[2].X > g_cell_history[1].X)
+							tmp.X -= min;
+						else if (g_cell_history[2].X < g_cell_history[1].X)
+							tmp.X += max;
+						else {
+							if (g_cell_history[0].X <= g_cell_history[1].X)
+								tmp.X += max;
+							else
+								tmp.X -= min;
+						}
+					} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
+						if (g_cell_history[0].X >= g_cell_history[1].X)
 							tmp.X += max;
 						else
 							tmp.X -= min;
-					}
-				} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
-					if (g_cell_history[0].X >= g_cell_history[1].X)
+					} else
 						tmp.X += max;
-					else
-						tmp.X -= min;
-				} else
-					tmp.X += max;
+				}
 			}
 		}
+
 
 		is_found = 2;
 	} else if (min != SHRT_MAX)
@@ -830,7 +846,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 	}
 #if DEBUG_MAP
 	// Print for map that contains all targets.
-//	debug_map(MAP, g_home_x, g_home_y);
+	debug_map(MAP, g_home_x, g_home_y);
 #endif
 
 	// Restore the target cells in MAP to unclean.
@@ -1214,7 +1230,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 */
 
 //#if !INTERLACED_MOVE
-#if 1
+#if 0
 	if (!is_stop) {
 		ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto a = curr.Y; a >= map.min.Y && !is_stop; --a) {
@@ -1483,7 +1499,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				wf_break_wall_follow();
 				auto angle = wf_is_first() ? 0 : -900;
 				const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-				cm_world_to_cell(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
+				cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
 				path.cells.clear();
 				path.cells.push_front(path.target);
 				path.cells.push_front(curr);
@@ -1528,11 +1544,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 						g_trapped_mode = 1;
 						// This led light is for debug.
 						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						ROS_ERROR("g_obs_triggered:%d,g_bumper_triggered:%d",g_obs_triggered,g_bumper_triggered);
-						if(g_obs_triggered == Status_Right_OBS || g_bumper_triggered == RightBumperTrig)
-							mt_set(CM_FOLLOW_RIGHT_WALL);
-						else
-							mt_set(CM_FOLLOW_LEFT_WALL);
+						mt_set(CM_FOLLOW_LEFT_WALL);
 						extern uint32_t g_escape_trapped_timer;
 						g_escape_trapped_timer = time(NULL);
 					}
@@ -1954,7 +1966,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 	//if (g_isolate_count <= 3) {
 		auto angle = -900;
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-		cm_world_to_cell(gyro_get_angle() + angle, 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
+		cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, path.target.X, path.target.Y);
 		path.cells.clear();
 		path.cells.push_front(path.target);
 		path.cells.push_front(curr);

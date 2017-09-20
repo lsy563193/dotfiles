@@ -71,6 +71,7 @@ bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
 uint32_t g_escape_trapped_timer;
+int g_is_reach = 1;
 
 extern int g_trapped_mode;
 bool g_should_follow_wall;
@@ -288,9 +289,14 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
  *			-1: Robot cannot move to target cell
  *			1: Robot arrive target cell
  */
-bool cm_move_to(const PPTargetType& path)
+enum {
+	EXIT_CLEAN=-1,
+	NO_REATH_TARGET=0,
+	REATH_TARGET=1,
+};
+int cm_move_to(const PPTargetType& path)
 {
-	Cell_t curr = cm_update_position();
+	Cell_t curr = map_get_curr_cell();
 //#if INTERLACED_MOVE
 //	extern uint16_t g_new_dir;
 //	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
@@ -299,11 +305,11 @@ bool cm_move_to(const PPTargetType& path)
 	RegulatorManage rm(curr, g_next_cell, path);
 
 	bool eh_status_now=false, eh_status_last=false;
-	bool ret = false;
+	int ret = EXIT_CLEAN;
 
 	std::vector<Cell_t> passed_path;
 	passed_path.clear();
-	passed_path.push_back(curr);
+//	passed_path.push_back(curr);
 
 	int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
@@ -339,8 +345,11 @@ bool cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
-		curr = cm_update_position();
-		rm.updatePosition({map_get_x_count(),map_get_y_count()});
+		if(!rm.isTurn())
+		{
+			curr = cm_update_position();
+			rm.updatePosition({map_get_x_count(),map_get_y_count()});
+		}
 
 		if (rm.isExit()){
 			break;
@@ -351,11 +360,14 @@ bool cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
-		if (rm.isReach() || rm.isStop()){
-			ret = true;
+		if (rm.isReach()){
+			ret = REATH_TARGET;
 			break;
 		}
-
+		if (rm.isStop()){
+			ret = NO_REATH_TARGET;
+			break;
+		}
 		if (rm.isSwitch()){
 			map_set_blocked();
 			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
@@ -365,19 +377,19 @@ bool cm_move_to(const PPTargetType& path)
 		if (get_clean_mode() != Clean_Mode_WallFollow
 						&& (mt_is_linear() || mt_is_follow_wall()))
 		{
-			if (passed_path.back() != curr)
+			if (!rm.isTurn() &&(passed_path.empty() || passed_path.back() != curr))
 			{
 				extern uint16_t g_new_dir;
 				if (g_trapped_mode == 0)
 				{
-					if (!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X) // This checking is for avoiding position jumping back or aside during linear movement.
+					if (passed_path.empty() ||(!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X)) // This checking is for avoiding position jumping back or aside during linear movement.
 						passed_path.push_back(curr);
 				}
-				if(MAP_SET_REALTIME)
+//				if(MAP_SET_REALTIME)
 				{
 					//map_set_realtime();
-					if( g_trapped_mode==0 )
-						map_set_cleaned(curr);
+//					if( g_trapped_mode==0 )
+//						map_set_cleaned(curr);
 					if (mt_is_follow_wall())
 						map_set_follow_wall(curr);
 				}
@@ -571,6 +583,7 @@ int cm_cleaning()
 	cleaning_path.target.X = 0;
 	cleaning_path.target.Y = 0;
 	cleaning_path.cells.clear();
+	g_is_reach = REATH_TARGET;
 	MotionManage motion;
 	if (!motion.initSucceeded())
 		return 0;
@@ -583,7 +596,7 @@ int cm_cleaning()
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event || g_robot_stuck)
+		if (g_key_clean_pressed || g_fatal_quit_event )
 			return -1;
 
 		if (!g_go_home)
@@ -635,7 +648,7 @@ int cm_cleaning()
 		else if (is_found == 1)//exist target
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if(! cm_move_to(cleaning_path)) {
+			if((g_is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN) {
 				return -1;
 			}
 
@@ -873,7 +886,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (g_bumper_jam || g_cliff_jam || g_omni_notmove || g_robot_stuck)
+	if (g_bumper_jam || g_cliff_jam || g_omni_notmove )
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
@@ -1062,7 +1075,7 @@ void cm_self_check(void)
 						g_cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(gyro_get_angle() - target_angle) < 50)
+					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
@@ -1079,7 +1092,7 @@ void cm_self_check(void)
 						g_cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(gyro_get_angle() - target_angle) < 50)
+					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						g_fatal_quit_event = true;
@@ -1128,21 +1141,38 @@ void cm_self_check(void)
 			g_fatal_quit_event = true;
 			break;
 		}
-		else if (g_robot_stuck)
+		else if (g_slip_cnt >= 2)
 		{
+			if(g_slip_cnt < 3 && g_robot_slip){
+				g_robot_slip = false;
+				target_angle = ranged_angle(gyro_get_angle() + 900);	
+				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
+			}
+			else if(g_slip_cnt <4 && g_robot_slip){
+				g_robot_slip = false;
+				target_angle = ranged_angle(gyro_get_angle() - 900);
+				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
+			}
 			/*
-			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-			ROS_INFO("%s,%d,\033[35mrobot stuck\033[0m",__FUNCTION__,__LINE__);
-			if (fabsf(distance) >= 0.30f)
-			{
-				ROS_INFO("%s %d: \033[35mrobot stuck reached distance!!\033[0m", __FUNCTION__, __LINE__);
-				//g_fatal_quit_event = true;
-				set_error_code(Error_Code_Stuck);
-				break;
+			if(g_robot_slip){
+				g_robot_slip = false;
+				ROS_INFO("%s,%d,robot slip again",__FUNCTION__,__LINE__);
 			}
 			*/
-			set_error_code(Error_Code_Stuck);
-			break;
+			if( abs(gyro_get_angle() - target_angle) <= 50 ){
+				g_slip_cnt = 0;
+				g_robot_slip = false;
+				ROS_INFO("\033[32m%s,%d,reach target angle\033[0m ",__FUNCTION__,__LINE__);
+				break;
+			}
+			if(g_slip_cnt>=4){
+				ROS_INFO("%s,%d,robot stuck slip count\033[32m %d \033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
+				g_slip_cnt = 0;
+				g_robot_stuck = true;
+				set_error_code(Error_Code_Stuck);
+				g_fatal_quit_event = true;
+				break;
+			}
 		}
 		else
 			break;
@@ -1153,7 +1183,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck );
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_slip_cnt >= 2);
 }
 
 uint8_t cm_check_charger_signal(void)
