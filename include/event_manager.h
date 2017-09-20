@@ -96,7 +96,6 @@ extern bool g_robot_stuck;
 extern bool g_robot_slip;
 extern bool g_robot_slip_enable;
 extern uint8_t g_slip_cnt;
-extern bool g_slip_triggered;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,

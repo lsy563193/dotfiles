@@ -781,7 +781,7 @@ uint8_t map_set_tilt()
 		map_set_cell(MAP, x, y, BLOCKED_TILT);
 		block_count++;
 	}
-	ROS_INFO("\033[31m""%s,%d: Current(%d, %d), mark %s""\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark %s\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
 	return block_count;
 }
 
