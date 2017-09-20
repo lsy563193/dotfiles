@@ -1158,7 +1158,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //		ROS_ERROR("same_speed:%d,diff_speed:%d",same_speed,diff_speed);
 
 		if (same_speed > 39)same_speed = 39;
-		if (same_speed < 0)same_speed = 0;t
+		if (same_speed < 0)same_speed = 0;
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
