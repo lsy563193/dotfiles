@@ -773,8 +773,8 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 				}
 			}
 			else if( j >= 224 && j < 314){
-				y = cos(th * PI / 180.0) * scan_range->ranges[i];
-				//y = sin(th * PI / 180.0) * scan_range->ranges[i];
+				//x = cos(th * PI / 180.0) * scan_range->ranges[i];
+				y = sin(th * PI / 180.0) * scan_range->ranges[i];
 				if (y > Y_MIN && y < Y_MAX ) {
 					count++;
 				}
