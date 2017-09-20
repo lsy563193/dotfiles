@@ -866,13 +866,13 @@ uint8_t Laser::isRobotSlip()
 	static uint32_t seq=0;
 	static uint8_t last_ranges_init = 0;
 	static std::vector<float> last_ranges ;
-	const float PERCENT = 0.8;//80%
+	const float PERCENT = 0.85;//85%
 
 	const float acur1 = 0.07;//accuracy 1 ,in meters
 	const float acur2 = 0.05;//accuracy 2 ,in meters
 	const float acur3 = 0.03;//accuracy 3 ,in meters
 	const float acur4 = 0.01;//accuracy 4 ,in meters
-	const int COUNT = 5;//stuck count number
+	const int COUNT = 6;//stuck count number
 
 	uint16_t same_count = 0;
 	uint8_t ret = 0;
