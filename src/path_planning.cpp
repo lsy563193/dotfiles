@@ -1984,7 +1984,6 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 	typedef std::multimap<double, Cell_t> Queue;
 	typedef std::pair<double, Cell_t> Entry;
 
-//	int plan[g_x_max - g_x_min][g_y_max - g_y_min];
 	map_reset(SPMAP);
 
 	map_set_cell(SPMAP,curr.X,curr.Y,COST_1);
@@ -1992,6 +1991,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 	Entry startPoint(0.0, curr);
 	queue.insert(startPoint);
 	bool is_found = false;
+//	debug_map(MAP,curr.X, curr.Y);
 	ROS_INFO("Do full search with weightless Dijkstra-Algorithm\n");
 	while (!queue.empty())
 	{
@@ -2001,9 +2001,9 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 		queue.erase(start);
 
 //		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
-		if (!is_block_cleaned_unblock(next.X, next.Y) && is_block_accessible(next.X, next.Y))
+		if (map_get_cell(MAP, next.X,next.Y) == UNCLEAN && !is_block_cleaned_unblock(next.X, next.Y))
 		{
-//			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
+			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
 			is_found = true;
 			target = next;
 			break;
