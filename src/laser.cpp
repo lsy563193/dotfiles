@@ -212,7 +212,7 @@ void Laser::lidarShieldDetect(bool switch_)
 	ROS_INFO("\033[35m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
 
-bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
+bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
 {
 	int		i, count;
 	bool	found = false;
@@ -224,7 +224,7 @@ bool Laser::getLaserDistance(int begin, int end, double range, double dis_lim, d
 	//double	line_angle;
 	Double_Point	New_Laser_Point;
 	Laser_Point.clear();
-	ROS_INFO("getLaserDistance");
+	ROS_WARN("laserGetFitLine");
 	scan_mutex_.lock();
 	for (i = begin; i < end; i++) {//default:begin = 260, end =270
 		if (laserScanData_.ranges[i] < 4) {
@@ -834,7 +834,7 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &laserScanData_, &laser_status,
 																				 Status_Front_OBS);
 	}
-	if(get_clean_mode() == Clean_Mode_Navigation)
+	if(get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 	{
 		//left middle
 		setLaserMarkerAcr2Dir(X_MIN, X_MAX, 258, 281, 0, 2, &laserScanData_, &laser_status, 0);
@@ -969,11 +969,11 @@ int Laser::compLaneDistance(){
 			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
 			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0- cur_angle * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
-		}
-		if (fabs(y1) < 0.167) {
-			if (fabs(x1) <= x_front_min) {
-				x_front_min = fabs(x1);
-				//ROS_WARN("x_front_min = %lf", x_front_min);
+			if (fabs(y1) < 0.167) {
+				if (fabs(x1) <= x_front_min) {
+					x_front_min = fabs(x1);
+					//ROS_WARN("x_front_min = %lf", x_front_min);
+				}
 			}
 		}
 	}
@@ -989,11 +989,11 @@ int Laser::compLaneDistance(){
 			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
 			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0 - cur_angle * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
-		}
-		if (fabs(y1) < 0.167) {
-			if (fabs(x1) <= x_back_min) {
-				x_back_min = fabs(x1);
-				//ROS_WARN("x_back_min = %lf", x_back_min);
+			if (fabs(y1) < 0.167) {
+				if (fabs(x1) <= x_back_min) {
+					x_back_min = fabs(x1);
+					//ROS_WARN("x_back_min = %lf", x_back_min);
+				}
 			}
 		}
 	}
