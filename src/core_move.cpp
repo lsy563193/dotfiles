@@ -596,7 +596,7 @@ int cm_cleaning()
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event || g_robot_stuck)
+		if (g_key_clean_pressed || g_fatal_quit_event )
 			return -1;
 
 		if (!g_go_home)
@@ -880,7 +880,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (g_bumper_jam || g_cliff_jam || g_omni_notmove || g_robot_stuck)
+	if (g_bumper_jam || g_cliff_jam || g_omni_notmove )
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
@@ -1135,21 +1135,38 @@ void cm_self_check(void)
 			g_fatal_quit_event = true;
 			break;
 		}
-		else if (g_robot_stuck)
+		else if (g_slip_cnt >= 2)
 		{
+			if(g_slip_cnt < 3 && g_robot_slip){
+				g_robot_slip = false;
+				target_angle = ranged_angle(gyro_get_angle() + 900);	
+				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
+			}
+			else if(g_slip_cnt <4 && g_robot_slip){
+				g_robot_slip = false;
+				target_angle = ranged_angle(gyro_get_angle() - 900);
+				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
+			}
 			/*
-			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-			ROS_INFO("%s,%d,\033[35mrobot stuck\033[0m",__FUNCTION__,__LINE__);
-			if (fabsf(distance) >= 0.30f)
-			{
-				ROS_INFO("%s %d: \033[35mrobot stuck reached distance!!\033[0m", __FUNCTION__, __LINE__);
-				//g_fatal_quit_event = true;
-				set_error_code(Error_Code_Stuck);
-				break;
+			if(g_robot_slip){
+				g_robot_slip = false;
+				ROS_INFO("%s,%d,robot slip again",__FUNCTION__,__LINE__);
 			}
 			*/
-			set_error_code(Error_Code_Stuck);
-			break;
+			if( abs(gyro_get_angle() - target_angle) <= 50 ){
+				g_slip_cnt = 0;
+				g_robot_slip = false;
+				ROS_INFO("\033[32m%s,%d,reach target angle\033[0m ",__FUNCTION__,__LINE__);
+				break;
+			}
+			if(g_slip_cnt>=4){
+				ROS_INFO("%s,%d,robot stuck slip count\033[32m %d \033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
+				g_slip_cnt = 0;
+				g_robot_stuck = true;
+				set_error_code(Error_Code_Stuck);
+				g_fatal_quit_event = true;
+				break;
+			}
 		}
 		else
 			break;
@@ -1160,7 +1177,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_robot_stuck );
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_slip_cnt >= 2);
 }
 
 uint8_t cm_check_charger_signal(void)

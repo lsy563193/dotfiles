@@ -297,7 +297,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-	ROS_INFO("cleaned area = \033[32m%.2fm2\033[0m", map_get_area());
+	auto map_area = map_get_area();
 	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 	//if (get_clean_mode() == Clean_Mode_WallFollow)
 	wf_clear();
@@ -430,8 +430,9 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
 
 	g_saved_work_time += get_work_time();
-	ROS_INFO("%s %d: Cleaning time: \033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
-
+	ROS_INFO("cleaned area = \033[32m%.2fm2\033[0m", map_area);
+	ROS_INFO("%s %d: Cleaning time: \033[32m%d(s) %.2f(min)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time, double(g_saved_work_time) / 60);
+	ROS_INFO("%s %d: Cleaning speed: \033[32m%.2f(m2/min)\033[0m", __FUNCTION__, __LINE__, map_area / (double(g_saved_work_time) / 60));
 	if (g_battery_low)
 		set_clean_mode(Clean_Mode_Sleep);
 	else if (g_charge_detect)
