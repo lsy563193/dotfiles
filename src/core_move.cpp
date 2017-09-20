@@ -400,7 +400,8 @@ int cm_move_to(const PPTargetType& path)
 					if(is_block_clear)
 					{
 						Cell_t target;
-						if(path_dijkstra(curr, target))
+						int count = 0;
+						if(path_dijkstra(curr, target,count))
 //						BoundingBox2 map;
 //						if (get_reachable_targets(curr, map))
 						{

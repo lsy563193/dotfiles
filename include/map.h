@@ -116,7 +116,7 @@ void map_set_cleaned(const Cell_t& curr);
 void map_set_follow_wall(const Cell_t& curr);
 void map_set_cleaned(std::vector<Cell_t>& cells);
 void map_set_follow_wall(std::vector<Cell_t>& cells);
-float map_get_area();
+uint32_t map_get_area();
 void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state);
 void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState state);
 #endif /* __MAP_H */

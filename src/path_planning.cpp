@@ -719,7 +719,8 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 #if DEBUG_MAP
 //		debug_map(MAP, 0, 0);
 #endif
-		is_found = path_dijkstra(curr, target);
+		int cleaned_count;
+		is_found = path_dijkstra(curr, target, cleaned_count);
 		if(is_found) {
 			ROS_INFO("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
 //			pathFind(curr, target, path.cells);
@@ -1122,8 +1123,23 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 {
 	BoundingBox2 map;
 	if (!get_reachable_targets(curr, map)) {
-		/* No more target to clean */
-		if (path_escape_trapped(curr) <= 0) {
+		ROS_WARN("%s %d: No more target to clean!!", __FUNCTION__, __LINE__);
+		int escape_cleaned_count=0;
+		bool is_found = path_dijkstra(curr,path.target, escape_cleaned_count);
+		auto map_cleand_count = map_get_area();
+
+		double clean_proportion =0.0;
+		clean_proportion = (double)escape_cleaned_count / (double)map_cleand_count;
+		ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__,escape_cleaned_count);
+		ROS_WARN("%s %d: escape map_cleand_count(%d)!!", __FUNCTION__, __LINE__,map_cleand_count);
+		if(is_found)
+		{
+		ROS_ERROR("!!!!!!!!!!!!!!!!!!path_dijkstra is found but tarth_is not found!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		clean_proportion = 1;
+		}
+
+		ROS_WARN("%s %d: clean_proportion(%f)!!", __FUNCTION__, __LINE__,clean_proportion);
+		if (clean_proportion < 0.8 || path_escape_trapped(curr) <= 0) {
 			ROS_WARN("%s %d: Detect trapped!!", __FUNCTION__, __LINE__);
 			return -2;
 		}
@@ -1979,7 +1995,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 	return ret;
 }
 
-bool path_dijkstra(const Cell_t& curr, Cell_t& target)
+bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 {
 	typedef std::multimap<double, Cell_t> Queue;
 	typedef std::pair<double, Cell_t> Entry;
@@ -2013,12 +2029,19 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 			{
 				auto neighbor = next + g_index[it];
 //				ROS_INFO("g_index[%d],next(%d,%d)", it, neighbor.X,neighbor.Y);
-//				ROS_INFO("plan(%d)", map_get_cell(SPMAP, neighbor.X, neighbor.Y));
-				if (map_get_cell(SPMAP, neighbor.X, neighbor.Y) == COST_NO && is_block_accessible(neighbor.X, neighbor.Y) )
-				{
+				if (map_get_cell(SPMAP, neighbor.X, neighbor.Y) == COST_NO) {
+//					ROS_INFO("(%d,%d),", neighbor.X, neighbor.Y);
+					if (map_get_cell(MAP, neighbor.X, neighbor.Y) == CLEANED)
+					{
+						cleaned_count++;
+//						ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor.X, neighbor.Y, cleaned_count);
+					}
+
+					if (is_block_accessible(neighbor.X, neighbor.Y)) {
 //					ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
-					queue.insert(Entry(0, neighbor));
-					map_set_cell(SPMAP,neighbor.X, neighbor.Y,COST_1);
+						queue.insert(Entry(0, neighbor));
+						map_set_cell(SPMAP, neighbor.X, neighbor.Y, COST_1);
+					}
 				}
 			}
 		}

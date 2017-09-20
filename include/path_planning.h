@@ -289,7 +289,7 @@ int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path);
  */
 void path_fill_path(std::list<Cell_t>& path);
 
-bool path_dijkstra(const Cell_t& curr, Cell_t& p_goal);
+bool path_dijkstra(const Cell_t& curr, Cell_t& p_goal, int& cleaned_count);
 
 bool is_fobbit_free();
 #endif
