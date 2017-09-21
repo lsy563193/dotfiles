@@ -86,12 +86,15 @@
 #define RconBR_HomeT		(uint32_t)0x00000002
 #define RconBR_HomeR		(uint32_t)0x00000001
 
-#define RconFrontAll_Home_T		(uint32_t)0x02222220
 #define RconAll_Home_T			(uint32_t)0x22222222
 #define RconAll_Home_LR			(uint32_t)0x55555555
-#define RconFrontAlL_Home_LR	(uint32_t)0x05555550
 #define RconAll_Home_TLR		(uint32_t)0x77777777
+#define RconFrontAll_Home_T		(uint32_t)0x02222220
+#define RconFrontAll_Home_LR	(uint32_t)0x05555550
 #define RconFrontAll_Home_TLR	(uint32_t)0x07777770
+#define RconFront_Home_T		(uint32_t)0x00222200
+#define RconFront_Home_LR		(uint32_t)0x00555500
+#define RconFront_Home_TLR		(uint32_t)0x00777700
 
 #ifdef VIRTUAL_WALL
 

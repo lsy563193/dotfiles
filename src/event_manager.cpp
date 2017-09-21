@@ -211,7 +211,7 @@ void *event_manager_thread(void *data)
 
 		/* RCON */
 		if (get_rcon_status()) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON)
 		}
 /*
@@ -371,7 +371,7 @@ void *event_handler_thread(void *data) {
 		pthread_cond_broadcast(&event_handler_cond);
 		pthread_mutex_unlock(&event_handler_mtx);
 
-		ROS_DEBUG("%s %d: handler thread is up, new event to handle", __FUNCTION__, __LINE__);
+		//ROS_DEBUG("%s %d: handler thread is up, new event to handle", __FUNCTION__, __LINE__);
 
 #define	evt_handle_event_x(name, y)	\
 	{																			\

@@ -27,8 +27,14 @@ bool line_is_found;
 double robot_to_wall_distance=0.8;
 int16_t g_turn_angle;
 float g_back_distance = 0.01;
+// Back distance for go to charger regulator
+bool g_go_to_charger_back_30cm = false;
+bool g_go_to_charger_back_10cm = false;
+bool g_go_to_charger_back_0cm = false;
+
 double g_time_straight = 0.3;
 double time_start_straight = 0;
+
 static bool g_slip_backward = false;
 
 extern bool g_exploration_home;
@@ -253,7 +259,7 @@ bool RegulatorBase::_isStop()
 //	ROS_INFO("reg_base _isStop");
 
 /*for exploration mark the map and detect the rcon signal*/
-	if (get_clean_mode() == Clean_Mode_Exploration) {
+	if (get_clean_mode() == Clean_Mode_Exploration && mt_is_linear()) {
 		if (get_rcon_status()) {
 			g_exploration_home = true;
 			ret = true;
@@ -280,15 +286,22 @@ void BackRegulator::setTarget()
 	}
 	else if (g_tilt_triggered)
 		g_back_distance = 0.05;
-	else // bumper
+	else if (g_go_to_charger_back_10cm)
+		g_back_distance = 0.10;
+	else if (g_go_to_charger_back_30cm)
+		g_back_distance = 0.30;
+	else if (g_go_to_charger_back_0cm)
+		g_back_distance = 0.0;
+	else
 		g_back_distance = 0.01;
+	ROS_INFO("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, g_back_distance);
 }
 
 bool BackRegulator::isReach()
 {
 	auto distance = sqrtf(powf(s_pos_x - robot::instance()->getOdomPositionX(), 2) +
 				powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
-
+	ROS_DEBUG("%s, %d: BackRegulator distance %f", __FUNCTION__, __LINE__, distance);
 	/*---------slip detect------*/
 	if(g_robot_slip && g_slip_cnt >= 2){
 		g_robot_slip = false;
@@ -304,24 +317,30 @@ bool BackRegulator::isReach()
 			g_slip_backward= false;
 			return true;
 		}
-		if (g_tilt_triggered && get_tilt_status())
-		{
-			// Still tilt.
-			BackRegulator::setTarget();
-			return false;
-		}
-		ROS_INFO("\033[32m%s\033[0m, %d: \033[33mBack Regulator\033[0m ", __FUNCTION__, __LINE__);
+
+		ROS_INFO("\033[32m%s\033[0m, %d: \033[33mBackRegulator\033[0m ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
 
-		if(g_bumper_cnt == 0 && g_cliff_cnt == 0)
-			return true;
-		if(g_bumper_cnt >= 2 || g_cliff_cnt >= 2 )
+		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !get_tilt_status())
 		{
-			if(g_cliff_cnt >= 2)
-				g_cliff_jam = true;
-			else if(g_bumper_cnt >= 2)
-				g_bumper_jam = true;
+			if (mt_is_go_to_charger())
+			{
+
+				g_go_to_charger_back_30cm = false;
+				g_go_to_charger_back_10cm = false;
+				g_go_to_charger_back_0cm = false;
+			}
+			return true;
+		}
+		if (g_cliff_cnt >= 2)
+		{
+			g_cliff_jam = true;
+			return false;
+		}
+		else if (g_bumper_cnt >= 2)
+		{
+			g_bumper_jam = true;
 			return false;
 		}
 		else
@@ -333,7 +352,7 @@ bool BackRegulator::isReach()
 bool BackRegulator::isSwitch()
 {
 //	ROS_INFO("BackRegulator::isSwitch");
-	if(mt_is_follow_wall())
+	if(mt_is_follow_wall() || mt_is_go_to_charger())
 		return isReach();
 	if(mt_is_linear())
 		return false;
@@ -445,7 +464,7 @@ bool TurnRegulator::_isStop()
 
 void TurnRegulator::setTarget()
 {
-	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 )
+	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 && !mt_is_go_to_charger())
 	{
 		set_wheel_speed(0, 0);
 		delay_sec(0.33);
@@ -904,7 +923,7 @@ bool FollowWallRegulator::isSwitch()
 
 bool FollowWallRegulator::_isStop()
 {
-//	ROS_INFO("FollowWallRegulator isSwitch");
+//	ROS_INFO("FollowWallRegulator _isStop");
 	bool ret = false;
 	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 	{
@@ -956,7 +975,6 @@ bool FollowWallRegulator::_isStop()
 	}
 	return ret;
 }
-
 
 void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
@@ -1204,6 +1222,1860 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	}
 }
 
+GoToChargerRegulator::GoToChargerRegulator()
+{
+	ROS_INFO("%s %d: Init", __FUNCTION__, __LINE__);
+	go_home_state_now = GO_TO_CHARGER_INIT;
+}
+
+bool GoToChargerRegulator::isReach()
+{
+	if (g_charge_detect)
+		return true;
+	return false;
+}
+
+bool GoToChargerRegulator::isSwitch()
+{
+	if (go_home_state_now == GO_TO_CHARGER_INIT)
+	{
+		resetGoToChargerVariables();
+		g_go_to_charger_back_30cm = false;
+		g_go_to_charger_back_10cm = false;
+		g_go_to_charger_back_0cm = false;
+		go_home_state_now = CHECK_NEAR_CHARGER_STATION;
+	}
+	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
+	{
+		if(no_signal_cnt < 10)
+		{
+			receive_code = get_rcon_trig();
+			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
+			if(receive_code&RconAll_Home_T)
+			{
+				ROS_INFO("receive LR");
+				if(receive_code&(RconFL_HomeT|RconFR_HomeT|RconFL2_HomeT|RconFR2_HomeT))
+				{
+					ROS_INFO("%s %d: turn 180", __FUNCTION__, __LINE__);
+					g_go_to_charger_back_10cm = true;
+					g_turn_angle = 1800;
+				}
+				else if(receive_code&RconR_HomeT)
+				{
+					ROS_INFO("%s %d: turn left 90", __FUNCTION__, __LINE__);
+					g_go_to_charger_back_10cm = true;
+					g_turn_angle = 900;
+				}
+				else if(receive_code&RconL_HomeT)
+				{
+					ROS_INFO("%s %d: turn right 90", __FUNCTION__, __LINE__);
+					g_go_to_charger_back_10cm = true;
+					g_turn_angle = 900;
+				}
+				else //receive_code&RconBL_HomeT || receive_code&RconBR_HomeT
+				{
+					ROS_INFO("%s %d: go straight", __FUNCTION__, __LINE__);
+					g_go_to_charger_back_0cm = true;
+					g_turn_angle = 0;
+				}
+				go_home_state_now = AWAY_FROM_CHARGER_STATION;
+				resetGoToChargerVariables();
+				return true;
+			}
+			else
+				no_signal_cnt++;
+		}
+		else
+		{
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			resetGoToChargerVariables();
+		}
+	}
+	if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
+	{
+		g_bumper_triggered = get_bumper_status();
+		if(g_bumper_triggered)
+		{
+			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			g_turn_angle = 0;
+			resetGoToChargerVariables();
+			return true;
+		}
+		g_cliff_triggered = get_cliff_status();
+		if(g_cliff_triggered)
+		{
+			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			g_turn_angle = 0;
+			resetGoToChargerVariables();
+			return true;
+		}
+		if(move_away_from_charger_cnt++ > 50)
+		{
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			resetGoToChargerVariables();
+		}
+	}
+	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
+	{
+		if(gyro_step < 360)
+		{
+			// Handle for angle
+			current_angle = robot::instance()->getAngle();
+			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
+			ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
+			if (angle_offset < 0)
+				gyro_step += (-angle_offset);
+			last_angle = current_angle;
+
+			// Handle for bumper and cliff
+			g_bumper_triggered = get_bumper_status();
+			if(g_bumper_triggered)
+			{
+				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
+				g_turn_angle = 0;
+				resetGoToChargerVariables();
+				return true;
+			}
+			g_cliff_triggered = get_cliff_status();
+			if(g_cliff_triggered)
+			{
+				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+				resetGoToChargerVariables();
+				g_turn_angle = 0;
+				go_home_state_now = GO_TO_CHARGER_INIT;
+				return true;
+			}
+
+			// Handle for rcon signal
+			receive_code = get_rcon_trig();
+			if (receive_code)
+			{
+				go_home_state_now = AROUND_CHARGER_STATION_INIT;
+			}
+			else
+				g_turn_angle = 0;
+
+			// HomeL
+			if(receive_code & (RconFL_HomeL | RconFR_HomeL))
+			{
+				g_turn_angle = -900;
+				around_charger_stub_dir = 1;
+				if(receive_code & RconFL_HomeL)//FL H_L
+					ROS_INFO("Start with FL-L.");
+				else if(receive_code&RconFR_HomeL)//FR H_L
+					ROS_INFO("Start with FR-L.");
+			}
+			else if(receive_code&RconFL2_HomeL)//FL2 H_L
+			{
+				ROS_INFO("Start with FL2-L.");
+				g_turn_angle = -600;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconFR2_HomeL)//FR2 H_L
+			{
+				ROS_INFO("Start with FR2-L.");
+				g_turn_angle = -850;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconL_HomeL)// L  H_L
+			{
+				ROS_INFO("Start with L-L.");
+				g_turn_angle = 0;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconR_HomeL)// R  H_L
+			{
+				ROS_INFO("Start with R-L.");
+				g_turn_angle = -1500;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconBL_HomeL)//BL H_L
+			{
+				ROS_INFO("Start with BL-L.");
+				g_turn_angle = 800;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconBR_HomeL)//BL H_L
+			{
+				ROS_INFO("Start with BR-L.");
+				g_turn_angle = -800;
+				around_charger_stub_dir = 0;
+			}
+			// HomeR
+			else if(receive_code & (RconFL_HomeR | RconFR_HomeR))
+			{
+				g_turn_angle = 900;
+				around_charger_stub_dir = 0;
+				if(receive_code&RconFL_HomeR)//FL H_R
+					ROS_INFO("Start with FL-R.");
+				else if(receive_code&RconFR_HomeR)//FR H_R
+					ROS_INFO("Start with FR-R.");
+			}
+			else if(receive_code&RconFL2_HomeR)//FL2 H_R
+			{
+				ROS_INFO("Start with FL2-R.");
+				g_turn_angle = 850;
+				around_charger_stub_dir = 0;
+			}
+			else if(receive_code&RconFR2_HomeR)//FR2 H_R
+			{
+				ROS_INFO("Start with FR2-R.");
+				g_turn_angle = 600;
+				around_charger_stub_dir = 0;
+			}
+			else if(receive_code&RconL_HomeR)// L  H_R
+			{
+				ROS_INFO("Start with L-R.");
+				g_turn_angle = 1500;
+				around_charger_stub_dir = 0;
+			}
+			else if(receive_code&RconR_HomeR)// R  H_R
+			{
+				ROS_INFO("Start with R-R.");
+				g_turn_angle = 0;
+				around_charger_stub_dir = 0;
+			}
+			else if(receive_code&RconBR_HomeR)//BR H_R
+			{
+				ROS_INFO("Start with BR-R.");
+				g_turn_angle = -800;
+				around_charger_stub_dir = 0;
+			}
+			else if(receive_code&RconBL_HomeR)//BL H_R
+			{
+				ROS_INFO("Start with BL-R.");
+				g_turn_angle = 800;
+				around_charger_stub_dir = 1;
+			}
+			// HomeT
+			else if(receive_code&RconFL_HomeT)//FL H_T
+			{
+				ROS_INFO("Start with FL-T.");
+				g_turn_angle = -600;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconFR_HomeT)//FR H_T
+			{
+				ROS_INFO("Start with FR-T.");
+				g_turn_angle = -800;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconFL2_HomeT)//FL2 H_T
+			{
+				ROS_INFO("Start with FL2-T.");
+				g_turn_angle = -600;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconFR2_HomeT)//FR2 H_T
+			{
+				ROS_INFO("Start with FR2-T.");
+				g_turn_angle = -800;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconL_HomeT)// L  H_T
+			{
+				ROS_INFO("Start with L-T.");
+				g_turn_angle = -1200;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconR_HomeT)// R  H_T
+			{
+				ROS_INFO("Start with R-T.");
+				g_turn_angle = -1200;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconBL_HomeT)//BL H_T
+			{
+				ROS_INFO("Start with BL-T.");
+				g_turn_angle = 300;
+				around_charger_stub_dir = 1;
+			}
+			else if(receive_code&RconBR_HomeT)//BR H_T
+			{
+				ROS_INFO("Start with BR-T.");
+				g_turn_angle = -300;
+				around_charger_stub_dir = 0;
+			}
+
+			if (g_turn_angle != 0)
+			{
+				g_go_to_charger_back_0cm = true;
+				return true;
+			}
+		}
+		// gyro_step > 360 is handled in GoToChargerRegulator::_isStop()
+	}
+	if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
+	{
+		go_home_bumper_cnt = 0;
+		//move_forward(9, 9);
+		reset_rcon_status();
+		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
+		go_home_state_now = AROUND_CHARGER_STATION;
+		around_move_cnt = 0;
+	}
+	else if (go_home_state_now == AROUND_CHARGER_STATION)
+	{
+		g_cliff_triggered = get_cliff_status();
+		if(g_cliff_triggered)
+		{
+			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+			g_turn_angle = 1750;
+			go_home_state_now = GO_TO_CHARGER_INIT;
+			return true;
+		}
+		g_bumper_triggered = get_bumper_status();
+		if(g_bumper_triggered)
+		{
+			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
+			around_charger_stub_dir = 1 - around_charger_stub_dir;
+			g_turn_angle = 1800;
+			if(++go_home_bumper_cnt > 1)
+			{
+				go_home_state_now = GO_TO_CHARGER_INIT;
+			}
+			return true;
+		}
+
+		if (--around_move_cnt <= 0)
+		{
+			around_move_cnt = 7;
+			receive_code = get_rcon_trig();
+			if(receive_code)
+				no_signal_cnt = 0;
+			else if(++no_signal_cnt > 60)
+			{
+				ROS_WARN("%s %d:No charger signal received.", __FUNCTION__, __LINE__);
+				go_home_state_now = GO_TO_CHARGER_INIT;
+			}
+
+			//ROS_DEBUG("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, around_charger_stub_dir);
+			if(around_charger_stub_dir == 1)//10.30
+			{
+				if(receive_code&(RconFR_HomeR|RconFL_HomeR))
+				{
+					go_home_state_now = BY_PATH_INIT;
+					g_turn_angle = 0;
+					if(receive_code&RconFR_HomeR)
+						ROS_INFO("%s, %d: Detect FR-R, call By_Path().", __FUNCTION__, __LINE__);
+					else if(receive_code&RconFL_HomeR)
+						ROS_INFO("%s, %d: Detect FL-R, call By_Path().", __FUNCTION__, __LINE__);
+				}
+				else if(receive_code&RconL_HomeR)
+				{
+					ROS_INFO("%s, %d: Detect L-R, Check position left.", __FUNCTION__, __LINE__);
+					check_position_dir = ROUND_LEFT;
+					go_home_state_now = CHECK_POSITION_INIT;
+					g_turn_angle = 0;
+				}
+				else if(receive_code&(RconFL_HomeL|RconFL_HomeT))
+				{
+					g_turn_angle = -500;
+					if(receive_code&RconFL_HomeL)//FL_HL
+						ROS_DEBUG("%s, %d: Detect FL-L.", __FUNCTION__, __LINE__);
+					else if(receive_code&RconFL_HomeT)//FL_HT
+						ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
+				}
+				else if(receive_code&RconFR_HomeT)//FR_HT
+				{
+					ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
+					g_turn_angle = -800;
+				}
+				else if(receive_code&RconFR2_HomeT)//FR2_T
+				{
+					ROS_DEBUG("%s, %d: Detect FR2-T.", __FUNCTION__, __LINE__);
+					g_turn_angle = -900;
+				}
+				else if(receive_code&RconR_HomeT)//R_HT
+				{
+					ROS_DEBUG("%s, %d: Detect R-T.", __FUNCTION__, __LINE__);
+					g_turn_angle = -1100;
+					around_charger_stub_dir = 0;
+				}
+				else
+					g_turn_angle = 0;
+
+				if (g_turn_angle != 0)
+				{
+					g_go_to_charger_back_0cm = true;
+					return true;
+				}
+			}
+			else //around_charger_stub_dir == 0
+			{
+				if(receive_code&(RconFL_HomeL|RconFR_HomeL))
+				{
+					go_home_state_now = BY_PATH_INIT;
+					g_turn_angle = 0;
+					if(receive_code&(RconFL_HomeL))
+						ROS_INFO("%s, %d: Detect FL-L, call By_Path().", __FUNCTION__, __LINE__);
+					else if(receive_code&(RconFR_HomeL))
+						ROS_INFO("%s, %d: Detect FR-L, call By_Path().", __FUNCTION__, __LINE__);
+				}
+				else if(receive_code&(RconR_HomeL))
+				{
+					ROS_INFO("%s, %d: Detect R-L, check position right.", __FUNCTION__, __LINE__);
+					check_position_dir = ROUND_RIGHT;
+					go_home_state_now = CHECK_POSITION_INIT;
+					g_turn_angle = 0;
+				}
+				else if(receive_code&(RconFR_HomeR|RconFR_HomeT))
+				{
+					g_turn_angle = 500;
+					if(receive_code&RconFR_HomeR)
+						ROS_DEBUG("%s, %d: Detect FR-R.", __FUNCTION__, __LINE__);
+					else if(receive_code&RconFR_HomeT)
+						ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
+				}
+				else if(receive_code&RconFL_HomeT)
+				{
+					ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
+					g_turn_angle = 800;
+				}
+				else if(receive_code&RconFL2_HomeT)
+				{
+					ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
+					g_turn_angle = 900;
+				}
+				else if(receive_code&RconL_HomeT)
+				{
+					ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
+					g_turn_angle = 1100;
+					around_charger_stub_dir = 1;
+				}
+				else
+					g_turn_angle = 0;
+
+				if (g_turn_angle != 0)
+				{
+					g_go_to_charger_back_0cm = true;
+					return true;
+				}
+			}
+		}
+	}
+	if (go_home_state_now == CHECK_POSITION_INIT)
+	{
+		resetGoToChargerVariables();
+		go_home_state_now = CHECK_POSITION;
+	}
+	if (go_home_state_now == CHECK_POSITION)
+	{
+		g_bumper_triggered = get_bumper_status();
+		if(g_bumper_triggered)
+		{
+			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
+			around_charger_stub_dir = 1 - around_charger_stub_dir;
+			if(++go_home_bumper_cnt > 1)
+				go_home_state_now = GO_TO_CHARGER_INIT;
+			else
+				go_home_state_now = AROUND_CHARGER_STATION_INIT;
+			g_turn_angle = 1800;
+			return true;
+		}
+		g_cliff_triggered = get_cliff_status();
+		if(g_cliff_triggered)
+		{
+			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
+			go_home_state_now = GO_TO_CHARGER_INIT;
+			g_turn_angle = 1800;
+			return true;
+		}
+
+		if(gyro_step < 360)
+		{
+			current_angle = robot::instance()->getAngle();
+			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
+			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
+			if (check_position_dir == ROUND_LEFT && angle_offset > 0)
+				gyro_step += angle_offset;
+			if (check_position_dir == ROUND_RIGHT && angle_offset < 0)
+				gyro_step += (-angle_offset);
+			last_angle = current_angle;
+
+			ROS_DEBUG("%s %d: Check_Position get_rcon_status() == %8x, R... == %8x.", __FUNCTION__, __LINE__, get_rcon_status(), RconFrontAll_Home_LR);
+			receive_code = (get_rcon_trig()&RconFrontAll_Home_LR);
+			ROS_DEBUG("%s %d: receive code: %8x.", __FUNCTION__, __LINE__, receive_code);
+			if(receive_code)
+			{
+				if (receive_code & RconL_HomeL)ROS_DEBUG("Check_Position get L-L");
+				if (receive_code & RconL_HomeR)ROS_DEBUG("Check_Position get L-R");
+				if (receive_code & RconFL_HomeL)ROS_DEBUG("Check_Position get FL-L");
+				if (receive_code & RconFL_HomeR)ROS_DEBUG("Check_Position get FL-R");
+				if (receive_code & RconFL2_HomeL)ROS_DEBUG("Check_Position get FL2-L");
+				if (receive_code & RconFL2_HomeR)ROS_DEBUG("Check_Position get FL2-R");
+				if (receive_code & RconR_HomeL)ROS_DEBUG("Check_Position get R-L");
+				if (receive_code & RconR_HomeR)ROS_DEBUG("Check_Position get R-R");
+				if (receive_code & RconFR_HomeL)ROS_DEBUG("Check_Position get FR-L");
+				if (receive_code & RconFR_HomeR)ROS_DEBUG("Check_Position get FR-R");
+				if (receive_code & RconFR2_HomeL)ROS_DEBUG("Check_Position get FR2-L");
+				if (receive_code & RconFR2_HomeR)ROS_DEBUG("Check_Position get FR2-R");
+			}
+
+			if(receive_code & (RconFR_HomeL|RconFR_HomeR) && check_position_dir == ROUND_LEFT)
+				go_home_state_now = BY_PATH_INIT;
+			if(receive_code & (RconFL_HomeL|RconFL_HomeR) && check_position_dir == ROUND_RIGHT)
+				go_home_state_now = BY_PATH_INIT;
+		}
+		if(gyro_step >= 360)
+		{
+			ROS_INFO("%s, %d: Robot can't see charger, restart go to charger process.", __FUNCTION__, __LINE__);
+			g_turn_angle = 1000;
+			g_go_to_charger_back_0cm = true;
+			go_home_state_now = GO_TO_CHARGER_INIT;
+			return true;
+		}
+	}
+	if (go_home_state_now == BY_PATH_INIT)
+	{
+		resetGoToChargerVariables();
+		go_home_state_now = BY_PATH;
+	}
+	if (go_home_state_now == BY_PATH)
+	{
+		g_bumper_triggered = get_bumper_status();
+		if(g_bumper_triggered)
+		{
+			ROS_INFO("bumper in by path!");
+			if(!position_far)
+			{
+				go_home_state_now = TURN_CONNECT;
+				turn_connect_dir = ROUND_RIGHT;
+				turn_connect_cnt = 0;
+			}
+			else
+			{
+				if((get_rcon_status()&RconFront_Home_LR) == 0)
+					go_home_state_now = GO_TO_CHARGER_INIT;
+				g_go_to_charger_back_10cm = true;
+				if(g_bumper_triggered & LeftBumperTrig)
+					g_turn_angle = -1100;
+				else
+					g_turn_angle = 1100;
+				ROS_WARN("%d: quick_back in position_far", __LINE__);
+				return true;
+			}
+		}
+		g_cliff_triggered = get_cliff_status();
+		if(g_cliff_triggered)
+		{
+			g_turn_angle = 1750;
+			go_home_state_now = GO_TO_CHARGER_INIT;
+			return true;
+		}
+
+		if (--by_path_move_cnt < 0)
+		{
+			by_path_move_cnt = 25;
+			receive_code = get_rcon_trig();
+			if(receive_code)
+			{
+				if(receive_code&RconFR_HomeT && receive_code&RconFL_HomeT)
+				{
+					position_far = false;
+					ROS_DEBUG("%s, %d: Robot face HomeT, position_far = false.", __FUNCTION__, __LINE__);
+				}
+				else if(receive_code&(RconFL2_HomeT|RconFR2_HomeT|RconL_HomeT|RconR_HomeT))
+				{
+					position_far = false;
+					ROS_DEBUG("%s, %d: Robot side face HomeT, position_far = false.", __FUNCTION__, __LINE__);
+				}
+				if(receive_code&RconFrontAll_Home_T)
+				{
+					if(++near_counter > 1)
+					{
+						position_far = false;
+						ROS_DEBUG("%s, %d: Robot near HomeT counter > 1, position_far = false.", __FUNCTION__, __LINE__);
+					}
+					else
+						near_counter = 0;
+					if((receive_code&RconFront_Home_LR) == 0 && ++side_counter > 5)
+					{
+						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode.", __FUNCTION__, __LINE__);
+						go_home_state_now = GO_TO_CHARGER_INIT;
+						g_go_to_charger_back_0cm = true;
+						g_turn_angle = 0;
+						return true;
+					}
+					else
+						side_counter = 0;
+				}
+
+				if(receive_code&RconFL_HomeL && receive_code&RconFR_HomeR)
+				{
+					ROS_DEBUG("%s, %d: Robot sees HomeL or HomeR, position_far = false.", __FUNCTION__, __LINE__);
+					position_far = false;
+				}
+				no_signal_cnt = 0;
+
+				auto temp_code = receive_code;
+				temp_code &= RconFrontAll_Home_LR;
+				if (temp_code)
+				{
+					g_go_to_charger_back_0cm = true;
+					if(position_far)
+					{
+						switch(temp_code)
+						{
+							case (RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: position_far, FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconFR2_HomeL|RconFR2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = -350;
+								return true;
+							case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconR_HomeR|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -400;
+								return true;
+							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -450;
+								return true;
+							case (RconR_HomeR|RconR_HomeL):
+								ROS_DEBUG("%s, %d: position_far, R_R/R_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -550;
+								return true;
+							case (RconR_HomeL|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -500;
+								return true;
+							case (RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconFL2_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 350;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, L_L/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 400;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+								ROS_DEBUG("%s, %d: position_far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 450;
+								return true;
+							case (RconL_HomeR|RconL_HomeL):
+								ROS_DEBUG("%s, %d: position_far, L_R/L_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = 500;
+								return true;
+							case (RconL_HomeR):
+								ROS_DEBUG("%s, %d: position_far, L_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 550;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
+								ROS_DEBUG("%s, %d: position_far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconL_HomeR|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: position_far, L_R/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 500;
+								return true;
+						}
+					}
+					else
+					{
+						switch(temp_code)
+						{
+							case (RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconFR2_HomeL|RconFR2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = -350;
+								return true;
+							case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconR_HomeR|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -400;
+								return true;
+							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -450;
+								return true;
+							case (RconR_HomeR|RconR_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, R_R/R_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -500;
+								return true;
+							case (RconR_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, R_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -550;
+								return true;
+							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -250;
+								return true;
+							case (RconR_HomeL|RconFR2_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = -500;
+								return true;
+							case (RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconFL2_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 350;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 400;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 450;
+								return true;
+							case (RconL_HomeR|RconL_HomeL):
+								ROS_DEBUG("%s, %d: !position_far, L_R/L_L.", __FUNCTION__, __LINE__);
+								g_turn_angle = 500;
+								return true;
+							case (RconL_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, L_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 250;
+								return true;
+							case (RconL_HomeR|RconFL2_HomeR):
+								ROS_DEBUG("%s, %d: !position_far, L_R/FL2_R.", __FUNCTION__, __LINE__);
+								g_turn_angle = 500;
+								return true;
+						}
+					}
+					g_go_to_charger_back_0cm = false;
+				}
+			}
+			else
+			{
+				near_counter = 0;
+				if(++no_signal_cnt > 50)
+				{
+					ROS_INFO("%s %d: No signal in by path, switch to check position.", __FUNCTION__, __LINE__);
+					check_position_dir = ROUND_LEFT;
+					go_home_state_now = CHECK_POSITION_INIT;
+				}
+			}
+		}
+	}
+	if (go_home_state_now == TURN_CONNECT)
+	{
+		if (turn_connect_dir == ROUND_RIGHT && ++turn_connect_cnt > 50)
+		{
+			turn_connect_dir = ROUND_LEFT;
+			turn_connect_cnt = 0;
+		}
+		if (turn_connect_dir == ROUND_LEFT && ++turn_connect_cnt > 50)
+		{
+			turn_connect_cnt = 0;
+			g_go_to_charger_back_10cm = true;
+			ROS_WARN("%s %d: Turn connect failed, move back for 0.1m.", __FUNCTION__, __LINE__);
+			g_turn_angle = 1800;
+			go_home_state_now = AWAY_FROM_CHARGER_STATION;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool GoToChargerRegulator::_isStop()
+{
+	bool ret = false;
+	if(g_robot_stuck)
+		ret = true;
+	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360)
+		ret = true;
+	if (ret)
+		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
+	return ret;
+}
+
+void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
+{
+	/*---check if near charger station---*/
+	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
+		l_speed = r_speed = 0;
+	else if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
+	{
+		set_dir_forward();
+		l_speed = r_speed = 30;
+	}
+	else if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
+	{
+		set_dir_right();
+		l_speed = r_speed = 10;
+	}
+	else if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
+	{
+		set_dir_forward();
+		l_speed = r_speed = 9;
+		around_move_cnt = 0;
+	}
+	else if (go_home_state_now == AROUND_CHARGER_STATION)
+	{
+		if (around_move_cnt == 7 && around_charger_stub_dir == 1)
+		{
+			if(receive_code&RconL_HomeT)
+			{
+				ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 22;
+				r_speed = 12;
+			}
+			else if(receive_code&RconL_HomeL)
+			{
+				ROS_DEBUG("%s, %d: Detect L-L.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 22;
+				r_speed = 12;
+			}
+			else if(receive_code&RconFL2_HomeT)
+			{
+				ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 23;
+				r_speed = 14;
+			}
+			else if(receive_code&RconFL2_HomeL)
+			{
+				ROS_DEBUG("%s, %d: Detect FL2-L.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 20;
+				r_speed = 14;
+			}
+			else if(receive_code&RconFL2_HomeR)
+			{
+				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 15;
+				r_speed = 21;
+			}
+			else
+			{
+				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 14;
+				r_speed = 21;
+			}
+		}
+		else if (around_move_cnt == 7 && around_charger_stub_dir == 0)
+		{
+			if(receive_code&RconR_HomeT)
+			{
+				ROS_DEBUG("%s %d Detect R-T.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 12;
+				r_speed = 22;
+			}
+			else if(receive_code&RconR_HomeR)
+			{
+				ROS_DEBUG("%s %d Detect R-R.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 12;
+				r_speed = 22;
+			}
+			else if(receive_code&RconFR2_HomeT)
+			{
+				ROS_DEBUG("%s %d Detect FR2-T.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 14;
+				r_speed = 23;
+			}
+			else if(receive_code&RconFR2_HomeR)
+			{
+				ROS_DEBUG("%s %d Detect FR2-R.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 14;
+				r_speed = 20;
+			}
+			else if(receive_code&RconFR2_HomeL)
+			{
+				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 21;
+				r_speed = 15;
+			}
+			else
+			{
+				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
+				set_dir_forward();
+				l_speed = 21;
+				r_speed = 14;
+			}
+		}
+	}
+	else if (go_home_state_now == CHECK_POSITION)
+	{
+		ROS_DEBUG("%s, %d: Check position dir: %d.", __FUNCTION__, __LINE__, check_position_dir);
+		if(check_position_dir == ROUND_LEFT)
+			set_dir_left();
+		else if(check_position_dir == ROUND_RIGHT)
+			set_dir_right();
+		l_speed = r_speed = 10;
+	}
+	else if (go_home_state_now == BY_PATH)
+	{
+		set_dir_forward();
+		auto temp_code = receive_code;
+		temp_code &= RconFrontAll_Home_LR;
+		if (by_path_move_cnt == 25 && temp_code)
+		{
+			if(position_far)
+			{
+				switch(temp_code)
+				{
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR2_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR2_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 9;
+						break;
+					case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 8;
+						break;
+					case (RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 8;
+						break;
+					case (RconFR_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 8;
+						break;
+					case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 7;
+						break;
+					case (RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 7;
+						break;
+					case (RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 7;
+						break;
+					case (RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 6;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 10;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 10;
+						break;
+					case (RconFR_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FR_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 10;
+						break;
+					case (RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 8;
+						break;
+					case (RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 10;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 10;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 12;
+						break;
+					case (RconR_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, R_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 2;
+						break;
+					case (RconR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, R_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 0;
+						break;
+					case (RconL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, L_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 1;
+						break;
+					case (RconL_HomeL|RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, L_L/FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 6;
+						break;
+					case (RconR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, R_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 0;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 13;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 14;
+						r_speed = 4;
+						break;
+					case (RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 12;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 13;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 13;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 11;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FL_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 13;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 13;
+						break;
+					case (RconFL2_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL2_L.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 14;
+						break;
+					case (RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeR|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_R/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL_L.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FL_R/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 12;
+						break;
+					case (RconL_HomeL|RconFL2_HomeL|RconFL_HomeL):
+						ROS_DEBUG("%s, %d: position_far, L_L/FL2_L/FL_L.", __FUNCTION__, __LINE__);
+						l_speed = 2;
+						r_speed = 9;
+						break;
+					case (RconL_HomeL|RconFL2_HomeL):
+						ROS_DEBUG("%s, %d: position_far, L_L/FL2_L.", __FUNCTION__, __LINE__);
+						l_speed = 0;
+						r_speed = 9;
+						break;
+					case (RconR_HomeR|RconFL2_HomeL):
+						ROS_DEBUG("%s, %d: position_far, R_R/FL2_L.", __FUNCTION__, __LINE__);
+						l_speed = 1;
+						r_speed = 9;
+						break;
+					case (RconR_HomeR|RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, R_R/FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 9;
+						break;
+					case (RconL_HomeL):
+						ROS_DEBUG("%s, %d: position_far, L_L.", __FUNCTION__, __LINE__);
+						l_speed = 0;
+						r_speed = 10;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					case (RconFL_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: position_far, FL_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 12;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: position_far, FL2_L/FL2_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 11;
+						r_speed = 12;
+						break;
+					default:
+						ROS_DEBUG("%s, %d: position_far, else:%x.", __FUNCTION__, __LINE__, temp_code);
+						l_speed = 10;
+						r_speed = 12;
+				}
+			}
+			else
+			{
+				switch(temp_code)
+				{
+					case (RconFL_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL-L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = r_speed = 8;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR2_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR2_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFR2_HomeR|RconFR_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR2_R/FR_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 7;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 6;
+						break;
+					case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 6;
+						break;
+					case (RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 6;
+						break;
+					case (RconFR_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 4;
+						break;
+					case (RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 3;
+						break;
+					case (RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 5;
+						break;
+					case (RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 3;
+						break;
+					case (RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 3;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 6;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 7;
+						break;
+					case (RconFR_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FR_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 4;
+						break;
+					case (RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 6;
+						break;
+					case (RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 7;
+						break;
+					case (RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 6;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 3;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 3;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR_L/FR_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 8;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 6;
+						break;
+					case (RconR_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, R_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 2;
+						break;
+					case (RconR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, R_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 0;
+						break;
+					case (RconL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, L_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 1;
+						break;
+					case (RconL_HomeL|RconFL2_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, L_L/FL2_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 6;
+						break;
+					case (RconR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, R_R.", __FUNCTION__, __LINE__);
+						l_speed = 10;
+						r_speed = 0;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 7;
+						break;
+					case (RconFL_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 2;
+						break;
+					case (RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 9;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 10;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 8;
+						break;
+					case (RconFL_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 4;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FL_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 3;
+						r_speed = 7;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 5;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 3;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L.", __FUNCTION__, __LINE__);
+						l_speed = 3;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeR|RconFL_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_R/FL_R.", __FUNCTION__, __LINE__);
+						l_speed = 4;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeL|RconFR_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL_L.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR2_L.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 3;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FL_L/FL_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 3;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeL|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FL_L/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFR_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FR_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FL_R/FR_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL_HomeL|RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_L/FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeL|RconFL_HomeL|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL_L/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL_HomeR|RconFR_HomeL|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_R/FR_L/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeR|RconFR_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL_R/FR_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 9;
+						break;
+					case (RconL_HomeL|RconFL2_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, L_L/FL2_L.", __FUNCTION__, __LINE__);
+						l_speed = 0;
+						r_speed = 9;
+						break;
+					case (RconR_HomeR|RconFL2_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, R_R/FL2_L.", __FUNCTION__, __LINE__);
+						l_speed = 1;
+						r_speed = 9;
+						break;
+					case (RconR_HomeR|RconFL2_HomeL|RconFL_HomeL|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, R_R/FL2_L/FL_L/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 6;
+						r_speed = 9;
+						break;
+					case (RconL_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, L_L.", __FUNCTION__, __LINE__);
+						l_speed = 0;
+						r_speed = 10;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR|RconFR2_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FL_R/FR2_R.", __FUNCTION__, __LINE__);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+					case (RconFL2_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 9;
+						break;
+					case (RconFL_HomeR|RconFR_HomeL):
+						ROS_DEBUG("%s, %d: !position_far, FL_R/FR_L.", __FUNCTION__, __LINE__);
+						l_speed = 2;
+						r_speed = 9;
+						break;
+					case (RconFL2_HomeL|RconFL2_HomeR|RconFR_HomeR):
+						ROS_DEBUG("%s, %d: !position_far, FL2_L/FL2_R/FR_R.", __FUNCTION__, __LINE__);
+						l_speed = 8;
+						r_speed = 9;
+						break;
+					default:
+						ROS_DEBUG("%s, %d: !position_far, else:%x.", __FUNCTION__, __LINE__, temp_code);
+						l_speed = 7;
+						r_speed = 8;
+						break;
+				}
+			}
+		}
+	}
+	else if (go_home_state_now == TURN_CONNECT)
+	{
+		if (turn_connect_dir == ROUND_RIGHT)
+			set_dir_right();
+		else if (turn_connect_dir == ROUND_LEFT)
+			set_dir_left();
+		l_speed = r_speed = 5;
+	}
+}
 
 void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 {
@@ -1272,7 +3144,6 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	set_wheel_speed(left_speed, right_speed);
 }
 
-
 //RegulatorManage
 RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path)
 {
@@ -1294,12 +3165,9 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 
 	back_reg_ = new BackRegulator();
 
-	if (mt_is_follow_wall())
-		mt_reg_ = new FollowWallRegulator(s_curr_p, target);
-	else
-		mt_reg_ = new LinearRegulator(target, path);
 	if(mt_is_follow_wall())
 	{
+		mt_reg_ = new FollowWallRegulator(s_curr_p, target);
 		if(get_clean_mode() == Clean_Mode_WallFollow) {
 			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
 							 __FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered,
@@ -1330,7 +3198,14 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 			s_origin_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 	}else if(mt_is_linear())
 	{
-		g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y) - gyro_get_angle());
+		mt_reg_ = new LinearRegulator(target, path);
+		g_turn_angle = ranged_angle(
+					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y) - gyro_get_angle());
+	}
+	else if (mt_is_go_to_charger())
+	{
+		mt_reg_ = new GoToChargerRegulator();
+		g_turn_angle = 0;
 	}
 	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)",__FUNCTION__,__LINE__, g_turn_angle);
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
@@ -1399,15 +3274,16 @@ void RegulatorManage::switchToNext()
 	}
 	else if (p_reg_ == mt_reg_)
 	{
-		if (g_obs_triggered || g_rcon_triggered)
-		{
-			p_reg_ = turn_reg_;
-			ROS_INFO("%s %d: From mt_reg_ to turn_reg_.", __FUNCTION__, __LINE__);
-		}
-		else if (g_robot_slip || g_bumper_triggered || g_cliff_triggered || g_tilt_triggered )
+		if (g_robot_slip || g_bumper_triggered || g_cliff_triggered || g_tilt_triggered 
+			|| mt_is_go_to_charger())
 		{
 			p_reg_ = back_reg_;
 			ROS_INFO("%s %d: From mt_reg_ to back_reg_.", __FUNCTION__, __LINE__);
+		}
+		else/* if (g_obs_triggered || g_rcon_triggered)*/
+		{
+			p_reg_ = turn_reg_;
+			ROS_INFO("%s %d: From mt_reg_ to turn_reg_.", __FUNCTION__, __LINE__);
 		}
 	}
 	ROS_INFO("%s %d: g_obs_triggered(\033[32m%d\033[0m), g_rcon_triggered(\033[32m%d\033[0m), g_bumper_hitted(\033[32m%d\033[0m), g_cliff_triggered(\033[32m%d\033[0m), g_tilt_triggered(\033[32m%d\033[0m),g_robot_slip(\033[32m%d\033[0m)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered,g_robot_slip);
@@ -1420,4 +3296,3 @@ void RegulatorManage::switchToNext()
 		g_tilt_triggered = 0;
 	}
 }
-

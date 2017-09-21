@@ -819,6 +819,8 @@ int get_rcon_trig(void)
 			reset_rcon_status();
 			return 0;
 		}
+		else
+			return get_rcon_trig_();
 	}
 	else if (mt_is_linear()){
 //		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
@@ -827,10 +829,17 @@ int get_rcon_trig(void)
 			reset_rcon_status();
 			return 0;
 		}
-
+		else
+			return get_rcon_trig_();
+	}
+	else if (mt_is_go_to_charger())
+	{
+		auto rcon_status = get_rcon_status();
+		reset_rcon_status();
+		return rcon_status;
 	}
 
-	return get_rcon_trig_();
+	return 0;
 }
 
 uint8_t cliff_escape(void)

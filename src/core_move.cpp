@@ -756,9 +756,15 @@ bool cm_go_to_charger_()
 	// Call GoHome() function to try to go to charger stub.
 	ROS_INFO("%s,%d,Call GoHome(),\033[35m disable tilt detect\033[0m.",__FUNCTION__,__LINE__);
 	g_tilt_enable = false; //disable tilt detect
+#if GO_HOME_REGULATOR
+	mt_set(CM_GO_TO_CHARGER);
+	PPTargetType path_empty;
+	cm_move_to(path_empty);
+#else
 	cm_unregister_events();
 	go_home();
 	cm_register_events();
+#endif
 	if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 		return true;
 	work_motor_configure();
@@ -1917,9 +1923,9 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 void cm_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
-	if (robot::instance()->getChargeStatus() == 3)
+	if (robot::instance()->getChargeStatus())
 	{
-		if (g_charge_detect_cnt++ > 5)
+		if (g_charge_detect_cnt++ > 2)
 		{
 			g_charge_detect = robot::instance()->getChargeStatus();
 			g_fatal_quit_event = true;
