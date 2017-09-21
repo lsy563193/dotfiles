@@ -1158,7 +1158,7 @@ void map_set_follow(Cell_t start)
 	}
 }
 
-float map_get_area(void)
+uint32_t map_get_cleaned_area(void)
 {
 	uint32_t cleaned_count = 0;
 	float area = 0;
@@ -1172,9 +1172,8 @@ float map_get_area(void)
 			}
 		}
 	}
-	area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
 //ROS_WARN("cleaned_count = %d, area = %.2fm2", cleaned_count, area);
-	return area;
+	return cleaned_count;
 }
 
 void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state)

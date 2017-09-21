@@ -719,7 +719,8 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 #if DEBUG_MAP
 //		debug_map(MAP, 0, 0);
 #endif
-		is_found = path_dijkstra(curr, target);
+		int cleaned_count;
+		is_found = path_dijkstra(curr, target, cleaned_count);
 		if(is_found) {
 			ROS_INFO("%s %d: is_found(%d), i(%d) target(%d,%d)", __FUNCTION__, __LINE__, is_found, i, target.X, target.Y);
 //			pathFind(curr, target, path.cells);
@@ -1118,12 +1119,31 @@ static int16_t path_area_target(const Cell_t &curr, int16_t y_min, int16_t y_max
 	return 0;
 }
 
+int16_t path_is_trapped(const Cell_t& curr, PPTargetType& path)
+{
+
+}
 int16_t path_target(const Cell_t& curr, PPTargetType& path)
 {
 	BoundingBox2 map;
 	if (!get_reachable_targets(curr, map)) {
-		/* No more target to clean */
-		if (path_escape_trapped(curr) <= 0) {
+		ROS_WARN("%s %d: No more target to clean!!", __FUNCTION__, __LINE__);
+		int escape_cleaned_count=0;
+		bool is_found = path_dijkstra(curr,path.target, escape_cleaned_count);
+		auto map_cleand_count = map_get_cleaned_area();
+
+		double clean_proportion =0.0;
+		clean_proportion = (double)escape_cleaned_count / (double)map_cleand_count;
+		ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__,escape_cleaned_count);
+		ROS_WARN("%s %d: escape map_cleand_count(%d)!!", __FUNCTION__, __LINE__,map_cleand_count);
+		if(is_found)
+		{
+		ROS_ERROR("!!!!!!!!!!!!!!!!!!path_dijkstra is found but tarth_is not found!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		clean_proportion = 1;
+		}
+
+		ROS_WARN("%s %d: clean_proportion(%f)!!", __FUNCTION__, __LINE__,clean_proportion);
+		if (clean_proportion < 0.7 || path_escape_trapped(curr) <= 0) {
 			ROS_WARN("%s %d: Detect trapped!!", __FUNCTION__, __LINE__);
 			return -2;
 		}
@@ -1979,12 +1999,11 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 	return ret;
 }
 
-bool path_dijkstra(const Cell_t& curr, Cell_t& target)
+bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 {
 	typedef std::multimap<double, Cell_t> Queue;
 	typedef std::pair<double, Cell_t> Entry;
 
-//	int plan[g_x_max - g_x_min][g_y_max - g_y_min];
 	map_reset(SPMAP);
 
 	map_set_cell(SPMAP,curr.X,curr.Y,COST_1);
@@ -1992,6 +2011,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 	Entry startPoint(0.0, curr);
 	queue.insert(startPoint);
 	bool is_found = false;
+//	debug_map(MAP,curr.X, curr.Y);
 	ROS_INFO("Do full search with weightless Dijkstra-Algorithm\n");
 	while (!queue.empty())
 	{
@@ -2001,9 +2021,9 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 		queue.erase(start);
 
 //		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
-		if (!is_block_cleaned_unblock(next.X, next.Y) && is_block_accessible(next.X, next.Y))
+		if (map_get_cell(MAP, next.X,next.Y) == UNCLEAN && !is_block_cleaned_unblock(next.X, next.Y))
 		{
-//			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
+			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
 			is_found = true;
 			target = next;
 			break;
@@ -2013,12 +2033,19 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target)
 			{
 				auto neighbor = next + g_index[it];
 //				ROS_INFO("g_index[%d],next(%d,%d)", it, neighbor.X,neighbor.Y);
-//				ROS_INFO("plan(%d)", map_get_cell(SPMAP, neighbor.X, neighbor.Y));
-				if (map_get_cell(SPMAP, neighbor.X, neighbor.Y) == COST_NO && is_block_accessible(neighbor.X, neighbor.Y) )
-				{
+				if (map_get_cell(SPMAP, neighbor.X, neighbor.Y) == COST_NO) {
+//					ROS_INFO("(%d,%d),", neighbor.X, neighbor.Y);
+					if (map_get_cell(MAP, neighbor.X, neighbor.Y) == CLEANED)
+					{
+						cleaned_count++;
+//						ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor.X, neighbor.Y, cleaned_count);
+					}
+
+					if (is_block_accessible(neighbor.X, neighbor.Y)) {
 //					ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
-					queue.insert(Entry(0, neighbor));
-					map_set_cell(SPMAP,neighbor.X, neighbor.Y,COST_1);
+						queue.insert(Entry(0, neighbor));
+						map_set_cell(SPMAP, neighbor.X, neighbor.Y, COST_1);
+					}
 				}
 			}
 		}

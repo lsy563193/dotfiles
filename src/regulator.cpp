@@ -32,6 +32,8 @@ bool g_go_to_charger_back_30cm = false;
 bool g_go_to_charger_back_10cm = false;
 bool g_go_to_charger_back_0cm = false;
 
+double g_time_straight = 0.3;
+double time_start_straight = 0;
 
 static bool g_slip_backward = false;
 
@@ -53,7 +55,7 @@ static int16_t bumper_turn_angle()
 		g_straight_distance = 150; //150;
 		bumper_jam_cnt_ = get_wheel_step() < 2000 ? ++bumper_jam_cnt_ : 0;
 		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-		} else if (status == diff_side)
+	} else if (status == diff_side)
 	{
 		g_turn_angle = -850;
 		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
@@ -428,6 +430,7 @@ bool TurnRegulator::isReach()
 		}
 		else
 			ROS_INFO("turn regulator,%s,%d,\033[32mline is not found\033[0m",__FUNCTION__,__LINE__);
+		time_start_straight = ros::Time::now().toSec();
 		return true;
 	}
 		/**********************************************END**********************************************************/
@@ -464,7 +467,7 @@ void TurnRegulator::setTarget()
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 )
 	{
 		set_wheel_speed(0, 0);
-		delay_sec(0.25);
+		delay_sec(0.33);
 /*		do
 		{
 			set_wheel_speed(0, 0);
@@ -906,7 +909,8 @@ bool FollowWallRegulator::isSwitch()
 		if(g_trapped_mode == 1)
 			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 		g_turn_angle = obs_turn_angle();
-		g_straight_distance = 100;
+//		g_straight_distance = 100;
+		g_time_straight = 0.2;
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
@@ -1036,15 +1040,15 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	}
 
 //	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
-	if ((same_dist) < (uint32_t) g_straight_distance)
+	if (ros::Time::now().toSec() - time_start_straight < g_time_straight)
 	{
-		int32_t speed;
-		if (same_dist < 500)
-			speed = (same_dist < 100)? 10 :15;
+		auto tmp = ros::Time::now().toSec() - time_start_straight;
+		if(tmp < (g_time_straight / 3))
+			same_speed = diff_speed = 8;
+		else if(tmp < (2 * g_time_straight / 3))
+			same_speed = diff_speed = 13;
 		else
-			speed = 23;
-		same_speed = diff_speed = speed;
-//		ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
+			same_speed = diff_speed =18;
 	}
 	else
 	{
