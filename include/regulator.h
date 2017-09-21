@@ -190,6 +190,11 @@ public:
 		around_charger_stub_dir = 0;
 		go_home_bumper_cnt = 0;
 		around_move_cnt = 0;
+		position_far = true;
+		near_counter = 0;
+		side_counter = 0;
+		by_path_move_cnt = 0;
+		reset_rcon_status();
 	}
 
 protected:
@@ -197,7 +202,6 @@ protected:
 
 private:
 	int8_t go_home_state_now;
-	int8_t go_home_state_last;
 	uint16_t no_signal_cnt;
 	uint8_t move_away_from_charger_cnt;
 	uint32_t receive_code;
@@ -209,7 +213,11 @@ private:
 	uint8_t around_charger_stub_dir;
 	uint8_t go_home_bumper_cnt;
 	uint8_t check_position_dir;
-	uint8_t around_move_cnt;
+	int8_t around_move_cnt;
+	bool position_far;
+	uint8_t near_counter;
+	uint8_t side_counter;
+	int8_t by_path_move_cnt;
 };
 
 class RegulatorManage:public RegulatorBase{
