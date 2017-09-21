@@ -1613,57 +1613,17 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 			}
 		}
 	}
-
-	/*Exploration Mode*/
 	else if(!g_go_home && get_clean_mode() == Clean_Mode_Exploration) {
-		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
-			g_resume_cleaning = false;
-
-		if (!g_resume_cleaning)
-		{
 #if !PATH_ALGORITHM_V2
-			if (!path_lane_is_cleaned(curr, path))
-			//if (1)
-			{
-				extern bool g_isolate_triggered;
-				int16_t ret;
-				if (g_isolate_triggered) {
-					ret = isolate_target(curr, path);
-					g_isolate_triggered = false;
-				} else {
-					ret = path_target(curr, path);//0 not target, 1,found, -2 trap
-				}
-				ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
-				if (ret == 0)
-				{
-					g_finish_cleaning_go_home = true;
-					cm_check_should_go_home();
-				}
-				if (ret == -2){
-					if(g_trapped_mode == 0 ){
-						g_trapped_mode = 1;
-						// This led light is for debug.
-						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						mt_set(CM_FOLLOW_LEFT_WALL);
-						extern uint32_t g_escape_trapped_timer;
-						g_escape_trapped_timer = time(NULL);
-					}
-					return 1;
-				}
-			}
-			//ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d), target(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
-#else
+		if (!path_lane_is_cleaned(curr, path))
+		{
 			extern bool g_isolate_triggered;
 			int16_t ret;
 			if (g_isolate_triggered) {
 				ret = isolate_target(curr, path);
 				g_isolate_triggered = false;
-			}
-			else {
-				ret = path_full(curr, path);//0 not target, 1,found, -2 trap
-				if(ret==0)
-					if (path_escape_trapped(curr) <= 0)
-						ret = -2;
+			} else {
+				ret = path_target(curr, path);//0 not target, 1,found, -2 trap
 			}
 			ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
 			if (ret == 0)
@@ -1682,8 +1642,39 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				}
 				return 1;
 			}
-#endif
 		}
+		//ROS_WARN("%s,%d: curr(%d,%d), next(%d,%d), target(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+#else
+		extern bool g_isolate_triggered;
+		int16_t ret;
+		if (g_isolate_triggered) {
+			ret = isolate_target(curr, path);
+			g_isolate_triggered = false;
+		}
+		else {
+			ret = path_full(curr, path);//0 not target, 1,found, -2 trap
+			if(ret==0)
+				if (path_escape_trapped(curr) <= 0)
+					ret = -2;
+		}
+		ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).", __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X, path.cells.back().Y);
+		if (ret == 0)
+		{
+			g_finish_cleaning_go_home = true;
+			cm_check_should_go_home();
+		}
+		if (ret == -2){
+			if(g_trapped_mode == 0 ){
+				g_trapped_mode = 1;
+				// This led light is for debug.
+				set_led_mode(LED_FLASH, LED_GREEN, 300);
+				mt_set(CM_FOLLOW_LEFT_WALL);
+				extern uint32_t g_escape_trapped_timer;
+				g_escape_trapped_timer = time(NULL);
+			}
+			return 1;
+		}
+#endif
 	}
 	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT) {
 			return 0;
@@ -1696,11 +1687,13 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	g_target_cell = path.target;
 
 	g_old_dir = g_new_dir;
-	//if (g_go_home || SpotMovement::instance()->getSpotType() != NO_SPOT)
-	if (g_go_home)
+	if (g_go_home || get_clean_mode() == Clean_Mode_Exploration)
 		mt_set(CM_LINEARMOVE);
-	else if(get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
+	else if(get_clean_mode() == Clean_Mode_Navigation)
+	{
+		mt_set(CM_LINEARMOVE);
 		mt_update(curr, path, g_old_dir);
+	}
 	// else if wall follow mode, the move type has been set before here.
 	if (curr.X == g_next_cell.X)
 		g_new_dir = curr.Y > g_next_cell.Y ? NEG_Y : POS_Y;

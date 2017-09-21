@@ -611,16 +611,6 @@ int cm_cleaning()
 		int8_t is_found = path_next(curr, cleaning_path);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
-		/*for exploration to climb the charge stub*/
-		if(get_clean_mode() == Clean_Mode_Exploration) {
-			if (g_exploration_home) {
-				ROS_WARN("Exploration receive rcon signal");
-				g_exploration_home = false;
-				if(cm_go_to_charger_())
-					return -1;
-			}
-		}
-
 		if (is_found == 0 ) //No target point
 		{
 			if(get_clean_mode() == Clean_Mode_Spot)
@@ -685,6 +675,15 @@ int cm_cleaning()
 						return -1;
 				}
 			}
+			//for exploration to climb the charge stub
+			else if (g_exploration_home)
+			{
+				ROS_WARN("Exploration receive rcon signal");
+				g_exploration_home = false;
+				if (cm_go_to_charger())
+					return -1;
+			}
+
 		}
 		else if (is_found == 2) {
 			return -1;
@@ -751,15 +750,17 @@ void cm_check_temp_spot(void)
  * return : true -- going to charger has been stopped, either successfully or interrupted.
  *          false -- going to charger failed, move to next point.
  */
-bool cm_go_to_charger_()
+bool cm_go_to_charger()
 {
 	// Call GoHome() function to try to go to charger stub.
 	ROS_INFO("%s,%d,Call GoHome(),\033[35m disable tilt detect\033[0m.",__FUNCTION__,__LINE__);
 	g_tilt_enable = false; //disable tilt detect
 #if GO_HOME_REGULATOR
+	set_led_mode(LED_STEADY, LED_ORANGE);
 	mt_set(CM_GO_TO_CHARGER);
 	PPTargetType path_empty;
 	cm_move_to(path_empty);
+	set_led_mode(LED_STEADY, LED_GREEN);
 #else
 	cm_unregister_events();
 	go_home();
@@ -773,13 +774,12 @@ bool cm_go_to_charger_()
 	return false;
 }
 
-
 bool cm_is_continue_go_to_charger()
 {
 	auto way = *g_home_way_it % HOMEWAY_NUM;
 	auto cnt = *g_home_way_it / HOMEWAY_NUM;
 	ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X,g_home.Y,way, cnt);
-	if(cm_go_to_charger_() || cnt == 0)
+	if(cm_go_to_charger() || cnt == 0)
 	{
 		ROS_INFO("\033[1;46;37m" "%s,%d:cm_go_to_charger_ stop " "\033[0m", __FUNCTION__, __LINE__);
 		return false;
@@ -794,6 +794,7 @@ bool cm_is_continue_go_to_charger()
 	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X, g_home.Y,way, cnt);
 	return true;
 }
+
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);

@@ -37,8 +37,6 @@ double time_start_straight = 0;
 
 static bool g_slip_backward = false;
 
-extern bool g_exploration_home;
-
 static int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
@@ -258,13 +256,6 @@ bool RegulatorBase::_isStop()
 	bool ret = false;
 //	ROS_INFO("reg_base _isStop");
 
-/*for exploration mark the map and detect the rcon signal*/
-	if (get_clean_mode() == Clean_Mode_Exploration && mt_is_linear()) {
-		if (get_rcon_status()) {
-			g_exploration_home = true;
-			ret = true;
-		}
-	}
 	ret |=  g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check() ;
 	return ret;
 }
@@ -310,7 +301,7 @@ bool BackRegulator::isReach()
 		beep_for_command(false);
 		return true;
 	}
-	if(fabsf(distance) > g_back_distance)
+	if(fabsf(distance) >= g_back_distance)
 	{	
 		if(g_slip_backward){
 			ROS_WARN("%s,%d,\033[1mrobot slip backward reach!! distance(%f),back_distance(%f)\033[0m",__FUNCTION__,__LINE__,distance,g_back_distance);
@@ -636,28 +627,31 @@ bool LinearRegulator::_isStop()
 	else
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
 
+//	if (get_clean_mode() == Clean_Mode_Exploration)
+//		// For exploration mode detecting the rcon signal
+//		rcon_tmp &= RconFrontAll_Home_T;
+
+	ROS_WARN("%s %d: rcon_tmp = %d.", __FUNCTION__, __LINE__, rcon_tmp);
 	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
 	if (obs_tmp != 0 || rcon_tmp )
 	{
+		if(rcon_tmp){
+			g_rcon_triggered = rcon_tmp;
+			if (g_go_home)
+				g_rcon_during_go_home = true;
+			else
+				path_set_home(map_get_curr_cell());
+			if (get_clean_mode() == Clean_Mode_Exploration)
+			{
+				// Directly go to charger
+				g_exploration_home = true;
+				path_set_home(map_get_curr_cell());
+				return true;
+			}
+		}
 		//if(obs_tmp == Status_Front_OBS)
 		if(obs_tmp != 0)
 			g_obs_triggered = obs_tmp;
-
-		if(rcon_tmp){
-//			if(g_cell_history[0] != map_get_curr_cell()){
-				g_rcon_triggered = rcon_tmp;
-				if (g_go_home)
-					g_rcon_during_go_home = true;
-				else
-					path_set_home(map_get_curr_cell());
-//			}
-//			else{
-//				ROS_ERROR("%s, %d: g_rcon_triggered but curr(%d,%d),g_h0=g_h1(%d,%d).", __FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y,g_cell_history[0].X, g_cell_history[0].Y);
-//				stop_brifly();
-//				sleep(5);
-//				return false;
-//			}
-		}
 		if(g_obs_triggered)
 			g_turn_angle = obs_turn_angle();
 		else
@@ -829,7 +823,7 @@ bool FollowWallRegulator::isReach()
 				set_led_mode(LED_STEADY, LED_GREEN);
 				ret = true;
 			}
-		} else
+		} else if (get_clean_mode() == Clean_Mode_Navigation)
 		{
 			if ((s_origin.Y < s_target.Y ^ s_curr_p.Y < s_target.Y))
 			{
@@ -925,12 +919,12 @@ bool FollowWallRegulator::_isStop()
 {
 //	ROS_INFO("FollowWallRegulator _isStop");
 	bool ret = false;
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
+	if (get_clean_mode() == Clean_Mode_Navigation)
 	{
 		if (g_trapped_mode == 0) {
 			auto curr = map_point_to_cell(s_curr_p);
-			auto target = map_point_to_cell(s_target);
-			auto origin = map_point_to_cell(s_origin);
+//			auto target = map_point_to_cell(s_target);
+//			auto origin = map_point_to_cell(s_origin);
 			if ((s_target.Y > s_origin.Y && (s_origin.Y - s_curr_p.Y) > 120) ||
 					(s_target.Y < s_origin.Y && (s_curr_p.Y - s_origin.Y) > 120)) {
 //				auto dy = (s_origin.Y < s_target.Y  ^ mt_is_left()) ? +2 : -2;
@@ -966,13 +960,25 @@ bool FollowWallRegulator::_isStop()
 //				if(is_block_cleaned_unblock(curr.X,curr.Y))
 //					ret = true;
 				if (std::abs(ranged_angle(gyro_get_angle() - s_origin_angle)) > 900 && is_block_cleaned_unblock(curr.X, curr.Y)) {
-					ROS_WARN("%s %d: curr_angle(%d), origin_angle(%d),diff(%d)", __FUNCTION__, __LINE__, gyro_get_angle(),
+					ROS_WARN("%s %d: curr_angle(%d), origin_angle(%d),diff(%f)", __FUNCTION__, __LINE__, gyro_get_angle(),
 									 s_origin_angle, std::abs(ranged_angle(gyro_get_angle() - s_origin_angle)));
 					ret = true;
 				}
 			}
 		}
 	}
+	else if (get_clean_mode() == Clean_Mode_Exploration)
+	{
+		// For exploration mode detecting the rcon signal
+		auto rcon_status = get_rcon_status();
+		rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
+		if (rcon_status)
+		{
+			g_exploration_home = true;
+			ret = true;
+		}
+	}
+
 	return ret;
 }
 
@@ -1747,13 +1753,14 @@ bool GoToChargerRegulator::isSwitch()
 			}
 			else
 			{
-				if((get_rcon_status()&RconFront_Home_LR) == 0)
-					go_home_state_now = GO_TO_CHARGER_INIT;
+				//if((get_rcon_status()&RconFront_Home_LR) == 0)
+				//	go_home_state_now = GO_TO_CHARGER_INIT;
+				go_home_state_now = GO_TO_CHARGER_INIT;
 				g_go_to_charger_back_10cm = true;
-				if(g_bumper_triggered & LeftBumperTrig)
-					g_turn_angle = -1100;
-				else
-					g_turn_angle = 1100;
+				//if(g_bumper_triggered & LeftBumperTrig)
+				//	g_turn_angle = -1100;
+				//else
+				//	g_turn_angle = 1100;
 				ROS_WARN("%d: quick_back in position_far", __LINE__);
 				return true;
 			}
@@ -1808,7 +1815,6 @@ bool GoToChargerRegulator::isSwitch()
 					ROS_DEBUG("%s, %d: Robot sees HomeL or HomeR, position_far = false.", __FUNCTION__, __LINE__);
 					position_far = false;
 				}
-				no_signal_cnt = 0;
 
 				auto temp_code = receive_code;
 				temp_code &= RconFrontAll_Home_LR;
@@ -1985,11 +1991,12 @@ bool GoToChargerRegulator::isSwitch()
 					}
 					g_go_to_charger_back_0cm = false;
 				}
+				no_signal_cnt = 0;
 			}
 			else
 			{
 				near_counter = 0;
-				if(++no_signal_cnt > 50)
+				if(++no_signal_cnt > 1)
 				{
 					ROS_INFO("%s %d: No signal in by path, switch to check position.", __FUNCTION__, __LINE__);
 					check_position_dir = ROUND_LEFT;
@@ -2035,7 +2042,10 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	/*---check if near charger station---*/
 	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
+	{
+		set_dir_forward();
 		l_speed = r_speed = 0;
+	}
 	else if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
 	{
 		set_dir_forward();
