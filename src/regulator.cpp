@@ -464,7 +464,7 @@ bool TurnRegulator::_isStop()
 
 void TurnRegulator::setTarget()
 {
-	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 )
+	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 && !mt_is_go_to_charger())
 	{
 		set_wheel_speed(0, 0);
 		delay_sec(0.33);
@@ -1663,37 +1663,6 @@ bool GoToChargerRegulator::isSwitch()
 	}
 	if (go_home_state_now == CHECK_POSITION)
 	{
-		/*
-		if(g_charge_detect)
-		{
-			if(g_charge_detect_cnt == 0)
-				g_charge_detect_cnt++;
-			else
-				break;
-		}
-		else if(g_charge_detect_cnt > 0)
-		{
-			g_charge_detect_cnt = 0;
-			if(turn_connect())
-				break;
-			else
-			{
-				target_distance = 0.1;
-				ROS_WARN("%s %d: Turn connect failed, move back for %fm.", __FUNCTION__, __LINE__, target_distance);
-				g_move_back_finished = false;
-				saved_pos_x = robot::instance()->getOdomPositionX();
-				saved_pos_y = robot::instance()->getOdomPositionY();
-
-				go_home_target_angle = ranged_angle(gyro_get_angle() + 1800);
-				turn_finished = false;
-
-				g_go_home_state_now = AWAY_FROM_CHARGER_STATION;
-				continue;
-
-			}
-		}
-		*/
-
 		g_bumper_triggered = get_bumper_status();
 		if(g_bumper_triggered)
 		{
@@ -1772,14 +1741,9 @@ bool GoToChargerRegulator::isSwitch()
 			ROS_INFO("bumper in by path!");
 			if(!position_far)
 			{
-				//if(turn_connect())
-				//	break;
-				g_go_to_charger_back_10cm = true;
-				ROS_WARN("%s %d: Turn connect failed, move back for 10cm.", __FUNCTION__, __LINE__);
-				//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Dont forget this.
-				g_turn_angle = 1800;
-				go_home_state_now = AWAY_FROM_CHARGER_STATION;
-				return true;
+				go_home_state_now = TURN_CONNECT;
+				turn_connect_dir = ROUND_RIGHT;
+				turn_connect_cnt = 0;
 			}
 			else
 			{
@@ -2032,6 +1996,23 @@ bool GoToChargerRegulator::isSwitch()
 					go_home_state_now = CHECK_POSITION_INIT;
 				}
 			}
+		}
+	}
+	if (go_home_state_now == TURN_CONNECT)
+	{
+		if (turn_connect_dir == ROUND_RIGHT && ++turn_connect_cnt > 50)
+		{
+			turn_connect_dir = ROUND_LEFT;
+			turn_connect_cnt = 0;
+		}
+		if (turn_connect_dir == ROUND_LEFT && ++turn_connect_cnt > 50)
+		{
+			turn_connect_cnt = 0;
+			g_go_to_charger_back_10cm = true;
+			ROS_WARN("%s %d: Turn connect failed, move back for 0.1m.", __FUNCTION__, __LINE__);
+			g_turn_angle = 1800;
+			go_home_state_now = AWAY_FROM_CHARGER_STATION;
+			return true;
 		}
 	}
 
@@ -2629,7 +2610,7 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 					default:
 						ROS_DEBUG("%s, %d: position_far, else:%x.", __FUNCTION__, __LINE__, temp_code);
 						l_speed = 10;
-						r_speed = 11;
+						r_speed = 12;
 				}
 			}
 			else
@@ -3085,6 +3066,14 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				}
 			}
 		}
+	}
+	else if (go_home_state_now == TURN_CONNECT)
+	{
+		if (turn_connect_dir == ROUND_RIGHT)
+			set_dir_right();
+		else if (turn_connect_dir == ROUND_LEFT)
+			set_dir_left();
+		l_speed = r_speed = 5;
 	}
 }
 

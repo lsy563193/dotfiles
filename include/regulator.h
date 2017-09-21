@@ -29,6 +29,7 @@ extern int16_t g_turn_angle;
 #define CHECK_POSITION 7
 #define BY_PATH_INIT 8
 #define BY_PATH 9
+#define TURN_CONNECT 10
 #define ROUND_LEFT 1
 #define ROUND_RIGHT 2
 
@@ -196,6 +197,8 @@ public:
 		side_counter = 0;
 		by_path_move_cnt = 0;
 		reset_rcon_status();
+		turn_connect_cnt = 0;
+		turn_connect_dir = ROUND_RIGHT;
 	}
 
 protected:
@@ -219,6 +222,8 @@ private:
 	uint8_t near_counter;
 	uint8_t side_counter;
 	int8_t by_path_move_cnt;
+	uint8_t turn_connect_cnt;
+	uint8_t turn_connect_dir;
 };
 
 class RegulatorManage:public RegulatorBase{
