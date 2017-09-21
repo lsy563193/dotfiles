@@ -297,7 +297,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-	auto cleaned_count = map_get_area();
+	auto cleaned_count = map_get_cleaned_area();
 	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 	//if (get_clean_mode() == Clean_Mode_WallFollow)
 	wf_clear();

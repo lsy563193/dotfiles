@@ -1119,6 +1119,10 @@ static int16_t path_area_target(const Cell_t &curr, int16_t y_min, int16_t y_max
 	return 0;
 }
 
+int16_t path_is_trapped(const Cell_t& curr, PPTargetType& path)
+{
+
+}
 int16_t path_target(const Cell_t& curr, PPTargetType& path)
 {
 	BoundingBox2 map;
@@ -1126,7 +1130,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		ROS_WARN("%s %d: No more target to clean!!", __FUNCTION__, __LINE__);
 		int escape_cleaned_count=0;
 		bool is_found = path_dijkstra(curr,path.target, escape_cleaned_count);
-		auto map_cleand_count = map_get_area();
+		auto map_cleand_count = map_get_cleaned_area();
 
 		double clean_proportion =0.0;
 		clean_proportion = (double)escape_cleaned_count / (double)map_cleand_count;
@@ -1139,7 +1143,7 @@ int16_t path_target(const Cell_t& curr, PPTargetType& path)
 		}
 
 		ROS_WARN("%s %d: clean_proportion(%f)!!", __FUNCTION__, __LINE__,clean_proportion);
-		if (clean_proportion < 0.8 || path_escape_trapped(curr) <= 0) {
+		if (clean_proportion < 0.7 || path_escape_trapped(curr) <= 0) {
 			ROS_WARN("%s %d: Detect trapped!!", __FUNCTION__, __LINE__);
 			return -2;
 		}

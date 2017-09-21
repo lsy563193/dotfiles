@@ -408,12 +408,12 @@ int cm_move_to(const PPTargetType& path)
 							ROS_WARN("%s %d: Found reachable targets, exit trapped.", __FUNCTION__, __LINE__);
 							g_trapped_mode = 2;
 							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-						} else if (path_escape_trapped(curr))
+						} /*else if ((double)count / (double)map_get_cleaned_area() < 0.8)
 						{
 							ROS_WARN("%s %d: Found reachable home, exit trapped.", __FUNCTION__, __LINE__);
 							g_trapped_mode = 2;
 							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-						} else
+						}*/ else
 							ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
 					}
 				}

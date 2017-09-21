@@ -1158,7 +1158,7 @@ void map_set_follow(Cell_t start)
 	}
 }
 
-uint32_t map_get_area(void)
+uint32_t map_get_cleaned_area(void)
 {
 	uint32_t cleaned_count = 0;
 	float area = 0;
