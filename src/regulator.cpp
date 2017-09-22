@@ -631,7 +631,6 @@ bool LinearRegulator::_isStop()
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
 
-	ROS_WARN("%s %d: rcon_tmp = %d.", __FUNCTION__, __LINE__, rcon_tmp);
 	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
 	if (obs_tmp != 0 || rcon_tmp )
 	{
