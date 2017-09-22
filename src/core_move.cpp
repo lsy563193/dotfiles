@@ -625,13 +625,28 @@ int cm_cleaning()
 			{
 				return -1;
 			}
-			// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
-			if (curr == g_zero_home) {
-				auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
-				if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
-				{
-					if(!cm_is_continue_go_to_charger())
-						return -1;
+			extern bool g_have_seen_charge_stub;
+			ROS_INFO("g_have_seen_charge_stub = %d", g_have_seen_charge_stub);
+			if (get_clean_mode() == Clean_Mode_Exploration || g_have_seen_charge_stub == false) {
+				if (curr == g_zero_home) {
+					auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
+					if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
+					{
+						if(!cm_is_continue_go_to_charger())
+							return -1;
+					}
+				}
+			} else {/*this case is for exploration when seen the charge stub before, but it can't climb it at last*/
+				// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
+				if (curr == g_zero_home) {
+					auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
+					if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
+					{
+						if(!cm_is_continue_go_to_charger())
+							return -1;
+					}
+					turn_into_exploration();
+					continue;
 				}
 			}
 			return 0;

@@ -33,6 +33,7 @@ public:
 	{
 		init_succeeded_ = status;
 	}
+
 private:
 
 	bool turn_to_align(int16_t angle);
@@ -51,9 +52,9 @@ private:
 
 	bool initCleaning(uint8_t cleaning_mode);
 	bool initNavigationCleaning(void);
-	bool initExplorationCleaning(void);
 	bool initWallFollowCleaning(void);
 	bool initSpotCleaning(void);
+	bool initExplorationCleaning(void);
 };
 
 #endif //PP_MOTION_MANAGE_H
