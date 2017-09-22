@@ -1939,7 +1939,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 void cm_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
-	if ((get_clean_mode() == Clean_Mode_Exploration && robot::instance()->getChargeStatus()) ||
+	if (((get_clean_mode() == Clean_Mode_Exploration || g_go_home) && robot::instance()->getChargeStatus()) ||
 		(get_clean_mode() != Clean_Mode_Exploration && robot::instance()->getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)
