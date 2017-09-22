@@ -150,8 +150,8 @@ void *core_move_thread(void *)
 
 int main(int argc, char **argv)
 {
-	int			baudrate, ret1, core_move_thread_state;
-	bool		line_align_active, verify_ok = true;
+	int		baudrate, ret1, core_move_thread_state;
+	bool	verify_ok = true;
 	pthread_t	core_move_thread_id, event_manager_thread_id, event_handler_thread_id;
 	std::string	serial_port;
 
