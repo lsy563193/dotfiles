@@ -710,8 +710,8 @@ private:
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	tf::TransformBroadcaster	robot_broad;
-	geometry_msgs::TransformStamped robot_trans;
+	//tf::TransformBroadcaster	robot_broad;
+	//geometry_msgs::TransformStamped robot_trans;
 	nav_msgs::Odometry robot_odom;
 	pp::scan_ctrl scan_ctrl_;
 };

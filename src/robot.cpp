@@ -383,16 +383,16 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	// Publish the robot tf.
 	ros::Time cur_time;
-	robot_trans.header.stamp = cur_time;
-	robot_trans.header.frame_id = "map";
-	robot_trans.child_frame_id = "robot";
-	geometry_msgs::Quaternion	robot_quat;
-	robot_trans.transform.translation.x = robot_x_;
-	robot_trans.transform.translation.y = robot_y_;
-	robot_trans.transform.translation.z = 0.0;
-	robot_quat = tf::createQuaternionMsgFromYaw(robot_yaw_);
-	robot_trans.transform.rotation = robot_quat;
-	robot_broad.sendTransform(robot_trans);
+	//robot_trans.header.stamp = cur_time;
+	//robot_trans.header.frame_id = "map";
+	//robot_trans.child_frame_id = "robot";
+	//geometry_msgs::Quaternion	robot_quat;
+	//robot_trans.transform.translation.x = robot_x_;
+	//robot_trans.transform.translation.y = robot_y_;
+	//robot_trans.transform.translation.z = 0.0;
+	//robot_quat = tf::createQuaternionMsgFromYaw(robot_yaw_);
+	//robot_trans.transform.rotation = robot_quat;
+	//robot_broad.sendTransform(robot_trans);
 	//ROS_WARN("%s %d: World position (%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw);
 	robot_odom.header.stamp = cur_time;
 	robot_odom.header.frame_id = "map";
@@ -400,7 +400,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	robot_odom.pose.pose.position.x = robot_x_;
 	robot_odom.pose.pose.position.y = robot_y_;
 	robot_odom.pose.pose.position.z = 0.0;
-	robot_odom.pose.pose.orientation = robot_quat;
+	robot_odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
 	robot_odom.twist.twist.linear.x = 0.0;
 	robot_odom.twist.twist.linear.y = 0.0;
 	robot_odom.twist.twist.angular.z = 0.0;
