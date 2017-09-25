@@ -1043,12 +1043,28 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	if (ros::Time::now().toSec() - time_start_straight < g_time_straight)
 	{
 		auto tmp = ros::Time::now().toSec() - time_start_straight;
-		if(tmp < (g_time_straight / 3))
-			same_speed = diff_speed = 8;
-		else if(tmp < (2 * g_time_straight / 3))
-			same_speed = diff_speed = 13;
-		else
-			same_speed = diff_speed =18;
+		if(tmp < (g_time_straight / 3)) {
+			if(same_speed < 8 )
+				same_speed = diff_speed += 1;
+			else
+				same_speed = diff_speed = 8;
+		}
+		else if(tmp < (2 * g_time_straight / 3)) {
+			if(same_speed < 8)
+				same_speed = diff_speed = 8;
+			if(same_speed < 13)
+				same_speed = diff_speed += 1;
+			else
+				same_speed = diff_speed = 13;
+		}
+		else {
+			if (same_speed < 13)
+				same_speed = diff_speed = 13;
+			if(same_speed < 18)
+			same_speed = diff_speed += 1;
+			else
+				same_speed = diff_speed = 18;
+		}
 	}
 	else
 	{
@@ -1062,7 +1078,6 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		auto delta = proportion - previous_;
 
 		previous_ = proportion;
-
 		if (robot_to_wall_distance > 0.8 || abs(adc_value - g_wall_distance) > 150 )
 		{//over left
 			same_speed = wheel_speed_base + proportion / 7 + delta/2; //
