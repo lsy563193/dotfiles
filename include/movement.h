@@ -17,7 +17,7 @@
 #define Check_Left_Brush			0x20
 #define Check_Right_Brush			0x40
 
-#define Wheel_Stall_Limit			((uint16_t) 580)
+#define Wheel_Stall_Limit			((uint16_t) 750)//origin 580
 
 #define Check_Main_Brush			0x08
 #define Check_Vacuum				0x10
@@ -86,12 +86,15 @@
 #define RconBR_HomeT		(uint32_t)0x00000002
 #define RconBR_HomeR		(uint32_t)0x00000001
 
-#define RconFrontAll_Home_T		(uint32_t)0x02222220
 #define RconAll_Home_T			(uint32_t)0x22222222
 #define RconAll_Home_LR			(uint32_t)0x55555555
-#define RconFrontAlL_Home_LR	(uint32_t)0x05555550
 #define RconAll_Home_TLR		(uint32_t)0x77777777
+#define RconFrontAll_Home_T		(uint32_t)0x02222220
+#define RconFrontAll_Home_LR	(uint32_t)0x05555550
 #define RconFrontAll_Home_TLR	(uint32_t)0x07777770
+#define RconFront_Home_T		(uint32_t)0x00222200
+#define RconFront_Home_LR		(uint32_t)0x00555500
+#define RconFront_Home_TLR		(uint32_t)0x00777700
 
 #ifdef VIRTUAL_WALL
 
@@ -242,6 +245,7 @@
 #define Clean_Mode_Spot				12
 #define Clean_Mode_Mobility			13
 #define Clean_Mode_Navigation		14
+#define Clean_Mode_Exploration		15
 
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
@@ -299,7 +303,7 @@ typedef enum{
 #define Error_Code_Laser		((uint8_t)0x13)
 #define Error_Code_Test			((uint8_t)0x14)
 #define Error_Code_Test_Null	((uint8_t)0x15)
-#define Error_Code_Omni         ((uint8_t)0x16)
+#define Error_Code_Omni			((uint8_t)0x16)
 
 #define Display_Full				4
 #define Display_Low					5
@@ -402,13 +406,14 @@ uint8_t get_error_code(void);
 void alarm_error(void);
 bool check_error_cleared(uint8_t error_code);
 
-uint32_t get_right_wheel_step(void);
-uint32_t get_left_wheel_step(void);
+int32_t get_right_wheel_step(void);
+int32_t get_left_wheel_step(void);
 void reset_right_wheel_step();
 void reset_left_wheel_step();
 void set_wheel_step(uint32_t Left, uint32_t Right);
 void reset_wheel_step(void);
 void reset_wall_step(void);
+bool is_decelerate_wall(void);
 uint32_t get_left_wall_step(void);
 uint32_t get_right_wall_step(void);
 
@@ -475,7 +480,7 @@ void set_rcon_status(uint32_t code);
 // If robot going straight, should turn off gyro dynamic adjustment.
 // If robot turning, should turn on gyro dynamic adjustment.
  */
-void set_wheel_speed(uint8_t Left, uint8_t Right);
+void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
@@ -742,10 +747,6 @@ void reset_sleep_mode_flag();
 
 uint8_t get_self_check_vacuum_status(void);
 
-//#if MANUAL_PAUSE_CLEANING
-void clear_manual_pause(void);
-//#endif
-
 void beep_for_command(bool valid);
 
 void reset_sp_turn_count();
@@ -758,4 +759,10 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 uint8_t check_tilt();
 void set_tilt_status(uint8_t status);
 uint8_t get_tilt_status();
+
+bool check_pub_scan();
+
+uint8_t is_robot_slip();
+bool is_clean_paused();
+void reset_clean_paused();
 #endif

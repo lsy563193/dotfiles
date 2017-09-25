@@ -31,7 +31,7 @@ void charge_function(void)
 {
 	bool battery_full = false;
 	// This counter is for debug message.
-	uint8_t show_batv_counter=0;
+	uint16_t show_batv_counter=0;
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
@@ -76,18 +76,16 @@ void charge_function(void)
 				break;
 			}
 		}
-		if(show_batv_counter > 250)
+
+		if(++show_batv_counter > 500)//about 10 second
 		{
-			ROS_INFO("%s %d: In charge mode looping , battery voltage %5.2f V.", __FUNCTION__, __LINE__, bat_v/100.0);
+			ROS_INFO("%s %d: In charge mode looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)bat_v/100.0);
 			show_batv_counter = 0;
-		}
-		else
-		{
-			show_batv_counter++;
 		}
 
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
-		//ROS_WARN("%s %d: g_stop_charge_counter: %d", __FUNCTION__, __LINE__, g_stop_charge_counter);
+		if(g_stop_charge_counter <15)
+			ROS_WARN("%s %d: g_stop_charge_counter: %d, charge_status: %d", __FUNCTION__, __LINE__, g_stop_charge_counter, robot::instance()->getChargeStatus());
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
 		{
 			g_charge_detect = 0;
@@ -139,7 +137,7 @@ void charge_function(void)
 					break;
 				case 2:
 					wav_play(WAV_ERROR_LIFT_UP);
-					clear_manual_pause();
+					reset_clean_paused();
 					charge_reject_reason = 0;
 					break;
 				case 3:
@@ -304,9 +302,9 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 			{
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
-				if (robot::instance()->isManualPaused())
+				if (is_clean_paused())
 				{
-					clear_manual_pause();
+					reset_clean_paused();
 				}
 				g_plan_activated = true;
 				break;

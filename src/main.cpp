@@ -34,11 +34,11 @@
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
-	ROS_INFO("Waiting for robot sensor ready.");
+	//ROS_INFO("Waiting for robot sensor ready.");
 	while (!robot::instance()->isSensorReady()) {
 		usleep(1000);
 	}
-	ROS_INFO("Robot sensor ready.");
+	//ROS_INFO("Robot sensor ready.");
 	//wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
 
@@ -61,7 +61,7 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_WallFollow);
 				robot::instance()->resetLowBatPause();
 
-				clear_manual_pause();
+				reset_clean_paused();
 
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				cm_cleaning();
@@ -69,7 +69,7 @@ void *core_move_thread(void *)
 			//case Clean_Mode_RandomMode:
 			//	ROS_INFO("\n-------Random_Running mode------\n");
 
-			//	clear_manual_pause();
+			//	reset_clean_paused();
 
 			//	Random_Running_Mode();
 			//	break;
@@ -88,8 +88,17 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------GoHome mode------\n");
 				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				go_home();
+				break;
+
+			case Clean_Mode_Exploration:
+				//goto_charger();
+				ROS_INFO("\n-------Exploration mode------\n");
+				set_main_pwr_byte(Clean_Mode_Exploration);
+				robot::instance()->resetLowBatPause();
+				reset_clean_paused();
+				cm_cleaning();
 				break;
 
 			case Clean_Mode_Test:
@@ -99,7 +108,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Remote mode------\n");
 				set_main_pwr_byte(Clean_Mode_Remote);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				remote_mode();
 				break;
 
@@ -107,7 +116,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Spot mode------\n");
 				set_main_pwr_byte(Clean_Mode_Spot);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				reset_rcon_remote();
 				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
 				cm_cleaning();
@@ -123,7 +132,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Sleep mode------\n");
 				//set_main_pwr_byte(Clean_Mode_Sleep);
 				robot::instance()->resetLowBatPause();
-				clear_manual_pause();
+				reset_clean_paused();
 				disable_motors();
 				sleep_mode();
 				break;
@@ -141,8 +150,8 @@ void *core_move_thread(void *)
 
 int main(int argc, char **argv)
 {
-	int			baudrate, ret1, core_move_thread_state;
-	bool		line_align_active, verify_ok = true;
+	int		baudrate, ret1, core_move_thread_state;
+	bool	verify_ok = true;
 	pthread_t	core_move_thread_id, event_manager_thread_id, event_handler_thread_id;
 	std::string	serial_port;
 
@@ -180,9 +189,9 @@ int main(int argc, char **argv)
 #if 1
 		ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
 		if (ret1 != 0) {
-			ROS_ERROR("%s %d: event manager thread fails to run!", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: event_manager_thread fails to run!", __FUNCTION__, __LINE__);
 		} else {
-			ROS_INFO("%s %d: event manager thread is up!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: \033[32mevent_manager_thread\033[0m is up!", __FUNCTION__, __LINE__);
 		}
 #endif
 
@@ -190,9 +199,9 @@ int main(int argc, char **argv)
 #if 1
 		ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
 		if (ret1 != 0) {
-			ROS_ERROR("%s %d: event handler thread fails to run!", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: event_handler_thread fails to run!", __FUNCTION__, __LINE__);
 		} else {
-			ROS_INFO("%s %d: event handler thread is up!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: \033[32mevent_handler_thread\033[0m is up!", __FUNCTION__, __LINE__);
 		}
 #endif
 
@@ -200,7 +209,7 @@ int main(int argc, char **argv)
 		if (ret1 != 0) {
 			core_move_thread_state = 0;
 		} else {
-			ROS_INFO("%s %d: core_move thread is up!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: \033[32mcore_move_thread\033[0m is up!", __FUNCTION__, __LINE__);
 			core_move_thread_state = 1;
 		}
 		ros::spin();

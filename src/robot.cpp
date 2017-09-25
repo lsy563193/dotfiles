@@ -22,6 +22,7 @@
 
 #include "std_srvs/Empty.h"
 #include "map.h"
+#include "space_exploration.h"
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
@@ -43,11 +44,14 @@ int OBS_adjust_count = 50;
 uint32_t omni_detect_cnt = 0;
 uint32_t last_omni_wheel = 0;
 
+boost::mutex ros_map_mutex_;
+
 //extern pp::x900sensor sensor;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
 	init();
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
+	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 	/*map subscriber for exploration*/
@@ -57,6 +61,8 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
 	robot_odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom",1);
+	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl",1);
+
 	is_moving_ = false;
 	is_sensor_ready_ = false;
 	is_tf_ready_ = false;
@@ -73,9 +79,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	resetCorrection();
 
-	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
-
-	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 	start_time = time(NULL);
 
 	// Initialize the low battery pause variable.
@@ -88,6 +91,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 
+	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -223,6 +227,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	// Check if tilt.
 	check_tilt();
 
+	// Check for whether robot should publish this frame of scan.
+	scan_ctrl_.allow_publishing = check_pub_scan();
+	scan_ctrl_pub_.publish(scan_ctrl_);
+
 	/*------start omni detect----*/
 	if(g_omni_enable){
 		if(absolute(msg->rw_vel - msg->lw_vel) <= 0.05 && (msg->rw_vel != 0 && msg->lw_vel != 0) ){
@@ -308,7 +316,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		}
 //		if(! is_turn())
 //			cm_update_map();
-		cm_update_position();
+//		cm_update_position();
 	}
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
@@ -375,16 +383,16 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	// Publish the robot tf.
 	ros::Time cur_time;
-	robot_trans.header.stamp = cur_time;
-	robot_trans.header.frame_id = "map";
-	robot_trans.child_frame_id = "robot";
-	geometry_msgs::Quaternion	robot_quat;
-	robot_trans.transform.translation.x = robot_x_;
-	robot_trans.transform.translation.y = robot_y_;
-	robot_trans.transform.translation.z = 0.0;
-	robot_quat = tf::createQuaternionMsgFromYaw(robot_yaw_);
-	robot_trans.transform.rotation = robot_quat;
-	robot_broad.sendTransform(robot_trans);
+	//robot_trans.header.stamp = cur_time;
+	//robot_trans.header.frame_id = "map";
+	//robot_trans.child_frame_id = "robot";
+	//geometry_msgs::Quaternion	robot_quat;
+	//robot_trans.transform.translation.x = robot_x_;
+	//robot_trans.transform.translation.y = robot_y_;
+	//robot_trans.transform.translation.z = 0.0;
+	//robot_quat = tf::createQuaternionMsgFromYaw(robot_yaw_);
+	//robot_trans.transform.rotation = robot_quat;
+	//robot_broad.sendTransform(robot_trans);
 	//ROS_WARN("%s %d: World position (%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw);
 	robot_odom.header.stamp = cur_time;
 	robot_odom.header.frame_id = "map";
@@ -392,7 +400,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	robot_odom.pose.pose.position.x = robot_x_;
 	robot_odom.pose.pose.position.y = robot_y_;
 	robot_odom.pose.pose.position.z = 0.0;
-	robot_odom.pose.pose.orientation = robot_quat;
+	robot_odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
 	robot_odom.twist.twist.linear.x = 0.0;
 	robot_odom.twist.twist.linear.y = 0.0;
 	robot_odom.twist.twist.angular.z = 0.0;
@@ -411,45 +419,12 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
 	gyro_set_angle(ranged_angle(position_yaw_ * 1800 / M_PI));
-	//ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
-}
-
-bool robot::isRobotStuck() const
-{
-	static float last_post_x = 0;
-	static float last_post_y = 0;
-	static float last_angle = 0;
-	static int rs_count = 0;
-	bool ret = false;
-	if(g_robot_stuck_enable && isTfReady()){
-		if(absolute(lw_vel_)>=0.001 || absolute(rw_vel_)>=0.001)
-		{
-			if(absolute(slam_correction_x_) > 0.01 || absolute(slam_correction_y_) > 0.01 || absolute(slam_correction_yaw_) > 0.01){
-				if((absolute(position_x_ - last_post_x ) <= 0.05 && absolute(position_y_ - last_post_y) <= 0.05) || absolute(position_yaw_ - last_angle) <=15.0)
-				{
-					last_post_x = position_x_;
-					last_post_y = position_y_;
-					last_angle = position_yaw_;
-					rs_count ++;
-					ROS_INFO("\033[35m""robot stuck %f,%f""\033[0m",position_x_ - last_post_x,position_y_ - last_post_y );
-					if(rs_count > 100)//about 2 second
-					{
-						rs_count = 0;
-						ret = true;
-					}
-				}
-				else{
-					rs_count = 0;
-					ret = false;
-				}
-			}
-		}
-	}
-	return ret;
+//	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
+	ros_map_mutex_.lock();
 	width_ = map->info.width;
 	height_ = map->info.height;
 	resolution_ = map->info.resolution;
@@ -457,10 +432,16 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	origin_y_ = map->info.origin.position.y;
 	map_data_ = map->data;
 	map_ptr_ = &(map_data_);
-	//ros_map_convert();
+	ros_map_mutex_.unlock();
+
+
+	/*for exploration update map*/
+	if (get_clean_mode() == Clean_Mode_Exploration) {
+		ros_map_convert(MAP, false, false, true);
+	}
 	MotionManage::s_slam->isMapReady(true);
 
-	ROS_INFO("%s %d:finished map callback", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d:finished map callback,map_size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),map_origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
 
 }
 
@@ -566,6 +547,19 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.g = 1.0;
 		color_.b = 1.0;
 	}
+	else if (type == BLOCKED_TILT)
+	{
+		// Gray
+		color_.r = 0.5;
+		color_.g = 0.5;
+		color_.b = 0.5;
+	}
+	else if (type == BLOCKED_ROS_MAP)
+	{
+		color_.r = 0.75;
+		color_.g = 0.33;
+		color_.b = 0.50;
+	}
 	else if (type == TARGET)// Next point
 	{
 		// Yellow
@@ -586,6 +580,13 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.r = 0.5;
 		color_.g = 0.5;
 		color_.b = 0.5;
+	}
+	else if (type == BLOCKED_SLIP)
+	{
+		// i dont know what color it is..
+		color_.r = 0.7;
+		color_.g = 0.7;
+		color_.b = 0.2;
 	}
 	clean_map_markers_.points.push_back(m_points_);
 	clean_map_markers_.colors.push_back(color_);
@@ -738,5 +739,5 @@ void robot::setAccInitData()
 	setInitXAcc(temp_x_acc / count);
 	setInitYAcc(temp_y_acc / count);
 	setInitZAcc(temp_z_acc / count);
-	ROS_INFO("\033[47;36m" "x y z acceleration init val(%d,%d,%d)" "\033[0m", getInitXAcc(), getInitYAcc(), getInitZAcc());
+	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
 }

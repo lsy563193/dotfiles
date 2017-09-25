@@ -19,7 +19,9 @@ typedef enum {
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
   BLOCKED_TILT = 6,
-  BLOCKED_BOUNDARY = 7,
+  BLOCKED_SLIP = 7,
+  BLOCKED_ROS_MAP = 8,
+  BLOCKED_BOUNDARY = 9,
   TARGET_CLEAN = 13,
   TARGET = 14,
   COST_NO = 0,
@@ -92,21 +94,29 @@ void map_copy(uint8_t id,uint8_t **new_map);
  * @param is_mark_cleaned to decide if mark the free space to CLENAED
  * @return None
  */
-void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_block);
+void ros_map_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map);
 
 unsigned char getCost(std::vector<int8_t> &p_map_data, unsigned int mx, unsigned int my);
 void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy);
 bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my);
 unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
 void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
-void worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
+bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 bool map_mark_robot(uint8_t id);
-void map_set_obs();
-void map_set_bumper();
-void map_set_rcon();
-void map_set_cliff();
-void map_set_tilt();
-float map_get_area();
+uint8_t map_set_laser();
+uint8_t map_set_obs();
+uint8_t map_set_bumper();
+//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
+uint8_t map_set_rcon();
+uint8_t map_set_cliff();
+uint8_t map_set_tilt();
+uint8_t map_set_slip();
+uint8_t map_set_blocked();
+void map_set_cleaned(const Cell_t& curr);
+void map_set_follow_wall(const Cell_t& curr);
+void map_set_cleaned(std::vector<Cell_t>& cells);
+void map_set_follow_wall(std::vector<Cell_t>& cells);
+uint32_t map_get_cleaned_area();
 void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state);
 void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState state);
 #endif /* __MAP_H */

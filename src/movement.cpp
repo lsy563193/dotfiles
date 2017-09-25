@@ -3,12 +3,14 @@
 #include <math.h>
 #include <time.h>
 #include <ros/ros.h>
-#include "robot.hpp"
 #include <time.h>
 #include <fcntl.h>
 #include <motion_manage.h>
 #include <move_type.h>
+#include <ctime>
+
 #include "gyro.h"
+#include "robot.hpp"
 #include "movement.h"
 #include "crc8.h"
 #include "serial.h"
@@ -20,7 +22,7 @@
 #include "wav.h"
 #include "slam.h"
 #include "event_manager.h"
-#include <ctime>
+#include "laser.hpp"
 
 extern uint8_t g_send_stream[SEND_LEN];
 
@@ -45,8 +47,8 @@ uint8_t g_sleep_mode_flag = 0;
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
 static int16_t g_right_wheel_speed = 0;
-static uint32_t g_left_wheel_step = 0;
-static uint32_t g_right_wheel_step = 0;
+static int32_t g_left_wheel_step = 0;
+static int32_t g_right_wheel_step = 0;
 static uint32_t g_leftwall_step = 0;
 static uint32_t g_rightwall_step = 0;
 
@@ -174,6 +176,11 @@ void alarm_error(void)
 			wav_play(WAV_TEST_LIDAR);
 			break;
 		}
+		case Error_Code_Stuck:
+		{
+			wav_play(WAV_ROBOT_STUCK);
+			break;
+		}
 		default:
 		{
 			break;
@@ -228,7 +235,7 @@ bool check_error_cleared(uint8_t error_code)
 	return error_cleared;
 }
 
-uint32_t get_right_wheel_step(void)
+int32_t get_right_wheel_step(void)
 {
 	double t, step;
 	double rwsp;
@@ -242,7 +249,7 @@ uint32_t get_right_wheel_step(void)
 	return g_right_wheel_step;
 }
 
-uint32_t get_left_wheel_step(void)
+int32_t get_left_wheel_step(void)
 {
 	double t, step;
 	double lwsp;
@@ -456,16 +463,16 @@ void turn_left(uint16_t speed, int16_t angle)
 			stop_brifly();
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -516,7 +523,7 @@ void turn_left(uint16_t speed, int16_t angle)
 
 void turn_right(uint16_t speed, int16_t angle)
 {
-	auto target_angle = gyro_get_angle() - angle;
+	auto target_angle = ranged_angle(gyro_get_angle() - angle);
 	if (target_angle < 0)
 	{
 		target_angle = 3600 + target_angle;
@@ -541,16 +548,16 @@ void turn_right(uint16_t speed, int16_t angle)
 			stop_brifly();
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -615,16 +622,16 @@ void jam_turn_left(uint16_t speed, int16_t angle)
 	if (speed > 30) accurate = 30;
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -670,16 +677,16 @@ void jam_turn_right(uint16_t speed, int16_t angle)
 	if (speed > 30) accurate = 30;
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < accurate)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
 			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(target_angle - gyro_get_angle()) < 200)
+		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
 		{
 			auto speed_ = std::min((uint16_t) 5, speed);
 			set_wheel_speed(speed_, speed_);
@@ -812,6 +819,8 @@ int get_rcon_trig(void)
 			reset_rcon_status();
 			return 0;
 		}
+		else
+			return get_rcon_trig_();
 	}
 	else if (mt_is_linear()){
 //		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
@@ -820,10 +829,17 @@ int get_rcon_trig(void)
 			reset_rcon_status();
 			return 0;
 		}
-
+		else
+			return get_rcon_trig_();
+	}
+	else if (mt_is_go_to_charger())
+	{
+		auto rcon_status = get_rcon_status();
+		reset_rcon_status();
+		return rcon_status;
 	}
 
-	return get_rcon_trig_();
+	return 0;
 }
 
 uint8_t cliff_escape(void)
@@ -964,8 +980,7 @@ uint8_t is_obs_near(void)
 	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
 	return 0;
 }
-
-void set_wheel_speed(uint8_t Left, uint8_t Right)
+void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p, float PID_i, float PID_d)
 {
 	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
 
@@ -990,9 +1005,12 @@ void set_left_wheel_speed(uint8_t speed)
 	int16_t l_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	l_speed = (int16_t) (speed * SPEED_ALF);
-	if (g_wheel_left_direction == 1)
-		l_speed |= 0x8000;
 	g_left_wheel_speed = l_speed;
+	if (g_wheel_left_direction == 1)
+	{
+		l_speed |= 0x8000;
+		g_left_wheel_speed *= -1;
+	}
 	control_set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
 
@@ -1003,9 +1021,12 @@ void set_right_wheel_speed(uint8_t speed)
 	int16_t r_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	r_speed = (int16_t) (speed * SPEED_ALF);
-	if (g_wheel_right_direction == 1)
-		r_speed |= 0x8000;
 	g_right_wheel_speed = r_speed;
+	if (g_wheel_right_direction == 1)
+	{
+		r_speed |= 0x8000;
+		g_right_wheel_speed *= -1;
+	}
 	control_set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
 	control_set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
 }
@@ -2472,11 +2493,11 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 					 gyro_get_angle(), speed);
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < 20)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 20)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			set_wheel_speed(speed / 2, speed / 2);
 		} else
@@ -2533,11 +2554,11 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 					 gyro_get_angle(), speed);
 	while (ros::ok())
 	{
-		if (abs(target_angle - gyro_get_angle()) < 20)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 20)
 		{
 			break;
 		}
-		if (abs(target_angle - gyro_get_angle()) < 50)
+		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
 		{
 			set_wheel_speed(speed / 2, speed / 2);
 		} else
@@ -3005,25 +3026,6 @@ void reset_sleep_mode_flag()
 	g_sleep_mode_flag = 0;
 }
 
-void clear_manual_pause(void)
-{
-	if (robot::instance()->isManualPaused())
-	{
-		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
-		ROS_WARN("Reset manual pause status.");
-		wav_play(WAV_CLEANING_STOP);
-		robot::instance()->resetManualPause();
-		robot::instance()->savedOffsetAngle(0);
-		if (MotionManage::s_slam != nullptr)
-		{
-			delete MotionManage::s_slam;
-			MotionManage::s_slam = nullptr;
-		}
-		cm_reset_go_home();
-		g_resume_cleaning = false;
-	}
-}
-
 void beep_for_command(bool valid)
 {
 	if (valid)
@@ -3065,6 +3067,7 @@ void delay_sec(double s)
 		now=ros::Time::now().toSec();
 	}
 }
+
 uint8_t check_tilt()
 {
 	static bool last_tilt_enable_flag = false;
@@ -3194,4 +3197,69 @@ void set_tilt_status(uint8_t status)
 uint8_t get_tilt_status()
 {
 	return g_tilt_status;
+}
+
+bool check_pub_scan()
+{
+	//ROS_INFO("%s %d: get_left_wheel_speed() = %d, get_right_wheel_speed() = %d.", __FUNCTION__, __LINE__, get_left_wheel_speed(), get_right_wheel_speed());
+	if (g_motion_init_succeeded &&
+		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
+		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
+		|| get_bumper_status() || get_tilt_status()
+		|| abs(get_left_wheel_speed() - get_right_wheel_speed()) > 100
+		|| get_left_wheel_speed() * get_right_wheel_speed() < 0))
+		return false;
+	else
+		return true;
+}
+
+uint8_t is_robot_slip()
+{
+	uint8_t ret = 0;
+	if(Laser::isScan2Ready() && (get_tilt_status() == 0) ){
+		if(Laser::isRobotSlip()){
+			ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
+			ret = 1;
+		}
+	}
+	return ret;
+}
+
+bool is_clean_paused()
+{
+	bool ret = false;
+	if(robot::instance()->isManualPaused() || g_robot_stuck)
+	{
+		ret= true;
+	}
+	return ret;
+}
+
+void reset_clean_paused(void)
+{
+	if (robot::instance()->isManualPaused() || g_robot_stuck)
+	{
+		g_robot_stuck = false;
+		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
+		ROS_WARN("Reset manual/stuck pause status.");
+		wav_play(WAV_CLEANING_STOP);
+		robot::instance()->resetManualPause();
+		robot::instance()->savedOffsetAngle(0);
+		if (MotionManage::s_slam != nullptr)
+		{
+			delete MotionManage::s_slam;
+			MotionManage::s_slam = nullptr;
+		}
+		cm_reset_go_home();
+		g_resume_cleaning = false;
+	}
+}
+
+bool is_decelerate_wall(void)
+{
+	auto status = (robot::instance()->getObsFront() > (g_front_obs_trig_value));
+	if(is_map_front_block(3) || status)
+		return true;
+	else
+		return false;
 }

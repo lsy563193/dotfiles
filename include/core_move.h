@@ -53,8 +53,6 @@ typedef struct {
 extern float saved_pos_x, saved_pos_y;
 extern bool g_move_back_finished;
 extern uint16_t g_straight_distance;
-extern int16_t g_turn_angle;
-extern uint16_t g_wall_distance;
 extern bool g_is_left_start;
 extern bool g_finish_cleaning_go_home;
 extern bool g_from_station;
@@ -62,8 +60,10 @@ extern int g_trapped_mode;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
 extern int g_rcon_triggered;
+extern int g_is_reach;
 extern Cell_t g_next_cell, g_target_cell;
 extern bool g_resume_cleaning;
+extern bool g_exploration_home;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
@@ -91,11 +91,6 @@ void cm_check_should_go_home(void);
 void cm_check_temp_spot(void);
 
 Cell_t cm_update_position(bool is_turn = false);
-void map_set_cleaned(const Cell_t& curr);
-void map_set_follow_wall(const Cell_t& curr);
-void map_set_cleaned(std::vector<Cell_t>& cells);
-void map_set_follow_wall(std::vector<Cell_t>& cells);
-void map_set_blocked();
 //void cm_update_map();
 bool cm_curve_move_to_point();
 
@@ -117,6 +112,7 @@ void cm_move_back_(uint16_t dist);
 	 */
 
 void cm_go_home(void);
+bool cm_go_to_charger(void);
 bool cm_is_continue_go_to_charger(void);
 //void CM_SetStationHome(void);
 

@@ -11,10 +11,27 @@
 #include <movement.h>
 #include <robot.hpp>
 
-#define STRENGTH_WHITE_MIN 550
-#define STRENGTH_WHITE_MAX 625
-#define STRENGTH_BLACK_MIN 120
-#define STRENGTH_BLACK_MAX 180
+#define WALL_DISTANCE_WHITE_MIN 550
+#define WALL_DISTANCE_WHITE_MAX 625
+#define WALL_DISTANCE_BLACK_MIN 120
+#define WALL_DISTANCE_BLACK_MAX 180
+#define WALL_DISTANCE_HIGH_LIMIT 625
+#define WALL_DISTANCE_LOW_LIMIT 150
+
+extern int16_t g_turn_angle;
+#define GO_TO_CHARGER_INIT 0
+#define CHECK_NEAR_CHARGER_STATION 1
+#define AWAY_FROM_CHARGER_STATION 2
+#define TURN_FOR_CHARGER_SIGNAL 3
+#define AROUND_CHARGER_STATION_INIT 4
+#define AROUND_CHARGER_STATION 5
+#define CHECK_POSITION_INIT 6
+#define CHECK_POSITION 7
+#define BY_PATH_INIT 8
+#define BY_PATH 9
+#define TURN_CONNECT 10
+#define ROUND_LEFT 1
+#define ROUND_RIGHT 2
 
 class RegulatorBase {
 public:
@@ -50,10 +67,7 @@ public:
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
 	bool _isStop();
-	void setTarget(){
-		s_pos_x = robot::instance()->getOdomPositionX();
-		s_pos_y = robot::instance()->getOdomPositionY();
-	}
+	void setTarget();
 
 protected:
 	bool isReach();
@@ -99,7 +113,7 @@ private:
 class SelfCheckRegulator{
 public:
 	SelfCheckRegulator(){
-		ROS_WARN("%s, %d: ", __FUNCTION__, __LINE__);
+		ROS_INFO("\033[33m%s\033[0m, %d: ", __FUNCTION__, __LINE__);
 	};
 	~SelfCheckRegulator(){
 		set_wheel_speed(0, 0);
@@ -120,8 +134,21 @@ protected:
 	bool isReach();
 
 private:
-	int32_t	 previous_;
-	int jam_;
+	int32_t previous_;
+	uint8_t seen_charger_counter;
+	int next_linear_speed = INT_MAX;
+	double wall_follow_detect_distance=0.20;
+	int32_t old_same_speed = 0;
+	int32_t old_diff_speed = 0;
+	int turn_right_angle_factor=15;
+	int16_t wall_buffer[3]={0};
+	bool is_right_angle = false;
+	double time_right_angle = 0;
+//CMMoveType last_move_type;
+//bool g_is_should_follow_wall;
+	//int last_strength=150;
+//int last_transit_strength=150;
+//double transit_time=0;
 };
 
 class LinearRegulator: public RegulatorBase{
@@ -145,6 +172,60 @@ private:
 	PPTargetType path_;
 };
 
+class GoToChargerRegulator: public RegulatorBase{
+public:
+	GoToChargerRegulator();
+	~GoToChargerRegulator(){ };
+	bool _isStop();
+	bool isSwitch();
+	void adjustSpeed(int32_t&, int32_t&);
+	void setTarget() { };
+	void resetGoToChargerVariables()
+	{
+		no_signal_cnt = 0;
+		move_away_from_charger_cnt = 0;
+		receive_code = 0;
+		current_angle = 0;
+		last_angle = robot::instance()->getAngle();
+		angle_offset = 0;
+		gyro_step = 0;
+		around_charger_stub_dir = 0;
+		go_home_bumper_cnt = 0;
+		around_move_cnt = 0;
+		position_far = true;
+		near_counter = 0;
+		side_counter = 0;
+		by_path_move_cnt = 0;
+		reset_rcon_status();
+		turn_connect_cnt = 0;
+		turn_connect_dir = ROUND_RIGHT;
+	}
+
+protected:
+	bool isReach();
+
+private:
+	int8_t go_home_state_now;
+	uint16_t no_signal_cnt;
+	uint8_t move_away_from_charger_cnt;
+	uint32_t receive_code;
+	// This variables is for robot turning.
+	float current_angle;
+	float last_angle;
+	float angle_offset;
+	float gyro_step;
+	uint8_t around_charger_stub_dir;
+	uint8_t go_home_bumper_cnt;
+	uint8_t check_position_dir;
+	int8_t around_move_cnt;
+	bool position_far;
+	uint8_t near_counter;
+	uint8_t side_counter;
+	int8_t by_path_move_cnt;
+	uint8_t turn_connect_cnt;
+	uint8_t turn_connect_dir;
+};
+
 class RegulatorManage:public RegulatorBase{
 public:
 	RegulatorManage(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
@@ -154,6 +235,9 @@ public:
 	bool _isStop();
 	bool isReach();
 	void mark();
+	bool isTurn(){
+		return p_reg_ == turn_reg_;
+	};
 	void setTarget() {p_reg_->setTarget();}
 
 	void switchToNext();

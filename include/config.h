@@ -30,7 +30,7 @@
 /*
  * Enable debugging the grid map.
  */
-#define DEBUG_MAP			(0)
+#define DEBUG_MAP			(1)
 
 /*
  * Enable debugging the grid map.
@@ -311,20 +311,20 @@
  * Definition relates to a grid cell.
  */
 #if (ROBOT_SIZE == 5)
-#define CELL_SIZE			(65) // 65
+#define CELL_SIZE			(65) // 65 // in mm
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
-#define CELL_COUNT_MUL			(349) // 375  // 207
+#define CELL_COUNT_MUL			(349) // 375  // 207 // wheel encoder counter
 #define CELL_COUNT_MUL_1_2		(175) // 187  // 103
 
 #else
 
 #if __ROBOT_X900
 #define SPEED_ALF    (7.83)
-#define CELL_SIZE			(112) // 65
+#define CELL_SIZE			(112) // 65 // in mm
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
-#define CELL_COUNT_MUL			(573) // 375  // 207
+#define CELL_COUNT_MUL			(573) // 375  // 207 // wheel encoder counter
 #define CELL_COUNT_MUL_1_2		(286) // 187  // 103
 #elif __ROBOT_X400
 #define SPEED_ALF    (7.23)
@@ -453,3 +453,4 @@
 #define COLOR_DEBUG_MAP		(1)
 #define INTERLACED_MOVE	(0)
 #define PATH_ALGORITHM_V2	(0)
+#define GO_HOME_REGULATOR	(1)

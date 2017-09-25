@@ -13,7 +13,7 @@ typedef enum {
 	CM_CURVEMOVE,
 	CM_FOLLOW_LEFT_WALL,
 	CM_FOLLOW_RIGHT_WALL,
-	CM_GO_TO_CHANGER,
+	CM_GO_TO_CHARGER,
 } CMMoveType;
 
 bool mt_is_right();
@@ -23,6 +23,8 @@ bool mt_is_left();
 bool mt_is_follow_wall();
 
 bool mt_is_linear();
+
+bool mt_is_go_to_charger();
 
 CMMoveType mt_get();
 

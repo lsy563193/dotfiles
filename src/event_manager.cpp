@@ -74,9 +74,11 @@ bool g_omni_enable = false;
 bool g_tilt_enable = false;
 bool g_tilt_triggered = false;
 
-/* robot stuck */
+/* robot slip & stuck */
+uint8_t g_slip_cnt = 0;
+bool g_robot_slip = false;
+bool g_robot_slip_enable = false;
 bool g_robot_stuck = false;
-bool g_robot_stuck_enable = false;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -209,7 +211,7 @@ void *event_manager_thread(void *data)
 
 		/* RCON */
 		if (get_rcon_status()) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON)
 		}
 /*
@@ -326,10 +328,10 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_SLAM_ERROR)
 		}
-		/* robot stuck */
-		if(robot::instance()->isRobotStuck()){
+		/* robot slip */
+		if(is_robot_slip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_ROBOT_STUCK)
+			evt_set_status_x(EVT_ROBOT_SLIP)
 		}
 #undef evt_set_status_x
 
@@ -369,7 +371,7 @@ void *event_handler_thread(void *data) {
 		pthread_cond_broadcast(&event_handler_cond);
 		pthread_mutex_unlock(&event_handler_mtx);
 
-		ROS_DEBUG("%s %d: handler thread is up, new event to handle", __FUNCTION__, __LINE__);
+		//ROS_DEBUG("%s %d: handler thread is up, new event to handle", __FUNCTION__, __LINE__);
 
 #define	evt_handle_event_x(name, y)	\
 	{																			\
@@ -472,8 +474,8 @@ void *event_handler_thread(void *data) {
 		/* Slam Error */
 		evt_handle_check_event(EVT_SLAM_ERROR, slam_error)
 
-		/* robot stuck */
-		evt_handle_check_event(EVT_ROBOT_STUCK,robot_stuck)
+		/* robot slip*/
+		evt_handle_check_event(EVT_ROBOT_SLIP,robot_slip)
 #undef evt_handle_event_x
 
 		pthread_mutex_lock(&event_handler_mtx);
@@ -578,7 +580,9 @@ void event_manager_reset_status(void)
 	/* Slam Error */
 	g_slam_error = false;
 	/* robot stuck */
-	g_robot_stuck = false;
+	//g_robot_stuck = false;
+	g_robot_slip = false;
+	g_slip_cnt = 0;
 	/* tilt switch*/
 	g_tilt_enable = false;
 	g_tilt_triggered = false;
@@ -943,10 +947,12 @@ void em_default_handle_slam_error(bool state_now, bool state_last)
 	g_slam_error = false;
 }
 
-void em_default_handle_robot_stuck(bool state_new,bool state_last)
+void em_default_handle_robot_slip(bool state_new,bool state_last)
 {
-	ROS_ERROR("%s,%d,robot stuck !! please check...",__FUNCTION__,__LINE__);
-	g_robot_stuck = true;
+	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
+	beep_for_command(true);
+	g_robot_slip = true;
+	g_slip_cnt ++;
 }
 
 /* Default: empty hanlder */

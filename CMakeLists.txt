@@ -36,6 +36,7 @@ FILE(GLOB PP_SRC
 	src/regulator.cpp
 	src/move_type.cpp
 #	src/a_star.cpp
+	src/space_exploration.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS
@@ -73,7 +74,7 @@ add_message_files(
 	DIRECTORY msg
 	FILES
 	x900sensor.msg
-	slam_angle_offset.msg
+	scan_ctrl.msg
 )
 
 add_service_files(

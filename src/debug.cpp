@@ -25,58 +25,58 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 		if(cs =='\t' && !ready_print_map){
 			ready_print_map = 1;
 			y_col+="\t";
-			//printf("\t");
 			continue;
 		}
 		else if(!ready_print_map){
 			y_col+=cs;
-			//printf("%c",cs);
 			continue;
 		}
 		if(ready_print_map){
 			if(cs == '0'){//unclean
-				y_col+=std::string("\033[0;40;37m0\033[0m");
+				y_col+=cs;
 			}
 			else if(cs == '1'){//clean
 				if(std::abs(j%2) == 0)
-					y_col+=std::string("\033[1;46;37m1\033[0m");
+					y_col+="\033[1;46;37m1\033[0m";
 				else
-					y_col+=std::string("\033[1;42;37m1\033[0m");
+					y_col+="\033[1;42;37m1\033[0m";
 			}
 			else if(cs == '2'){//bumper
-				y_col+=std::string("\033[1;44;37m2\033[0m");
+				y_col+="\033[1;44;37m2\033[0m";
 			}
 			else if(cs == '3'){//obs
-				y_col+=std::string("\033[1;41;37m3\033[0m");
+				y_col+="\033[1;41;37m3\033[0m";
 			}
 			else if(cs == '4'){//cliff
-				y_col+=std::string("\033[1;45;37m4\033[0m");
+				y_col+="\033[1;45;37m4\033[0m";
 			}
 			else if(cs == '5'){//rcon
-				y_col+=std::string("\033[1;46;37m5\033[0m");
+				y_col+="\033[1;46;37m5\033[0m";
 			}
 			else if(cs == '6'){//tilt
-				y_col+=std::string("\033[1;47;37m6\033[0m");
+				y_col+="\033[1;47;30m6\033[0m";
 			}
-			else if(cs == '7'){//boudary
-				y_col+=std::string("\033[1;43;37m7\033[0m");
+			else if(cs == '7'){//slip
+				y_col+="\033[1;43;37m7\033[0m";
+			}
+			else if(cs == '8'){//bundary
+				y_col+="\033[1;43;37m8\033[0m";
 			}
 			else if(cs == 'e'){//end point
-				y_col+=std::string("\033[7;43;37me\033[0m");
+				y_col+="\033[1;43;37me\033[0m";
 			}
 			else if(cs == 'x'){//cur point
-				y_col+=std::string("\033[7;43;37mx\033[0m");
+				y_col+="\033[1;43;37mx\033[0m";
 			}
 			else if(cs == '>'){//target point
-				y_col+=std::string("\033[7;47;37m>\033[0m");
+				y_col+="\033[1;40;37m>\033[0m";
 			}
 			else{
 				y_col+=cs;
 			}
 		}
 	}
-	ROS_INFO("%s",y_col.c_str());
-	//printf("\n");
+	printf("%s\033[0m\n",y_col.c_str());
 }
 #endif
 /*
@@ -123,14 +123,14 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 	}
 	outString[index++] = 0;
 
-	ROS_INFO("%s",outString);
+	printf("%s\n",outString);
 	index = 0;
 	outString[index++] = '\t';
 	for (j = y_min; j <= y_max; j++) {
 		outString[index++] = abs(j) % 10 + 48;
 	}
 	outString[index++] = 0;
-	ROS_INFO("%s\n",outString);
+	printf("%s\n",outString);
 	memset(outString,0,256);
 	for (i = x_min; i <= x_max; i++) {
 		index = 0;
@@ -154,10 +154,10 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 		#if COLOR_DEBUG_MAP 
 		color_print(outString, 0,index);
 		#else
-		ROS_INFO("%s", outString);
+		printf("%s\n", outString);
 		#endif
 	}
-	ROS_INFO("\n");
+	printf("\n");
 	#endif
 }
 #endif

@@ -12,6 +12,7 @@
 #include <tf/transform_broadcaster.h>
 #include <visualization_msgs/Marker.h>
 #include <pp/x900sensor.h>
+#include <pp/scan_ctrl.h>
 #include <vector>
 #include "config.h"
 #include "map.h"
@@ -71,6 +72,16 @@ public:
 	{
 		boost::mutex::scoped_lock(offset_angle_metux_);
 		return offset_angle_;
+	};
+
+	void startAngle(float angle)
+	{
+		start_angle_ = angle;
+	};
+
+	float startAngle(void) const
+	{
+		return start_angle_;
 	};
 
 	void savedOffsetAngle(float angle)
@@ -496,7 +507,6 @@ public:
 
 	void setAccInitData();
 
-	bool isRobotStuck() const;
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
@@ -518,16 +528,16 @@ private:
 
 	bool	is_tf_ready_;
 
-	float offset_angle_;
     bool temp_spot_set_;
 
 	boost::mutex offset_angle_metux_;
-
+	float offset_angle_;
+	float start_angle_;
 	float saved_offset_angle_;
 
 	/*2 byte*/
-	int16_t lw_vel_;
-	int16_t rw_vel_;
+	float lw_vel_;
+	float rw_vel_;
 	/* 1 byte */
 	float	angle_;
 
@@ -687,13 +697,10 @@ private:
 	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
-	ros::Subscriber map_metadata_sub_;
-//	ros::Subscriber obstacles_sub;
 	ros::Publisher robot_odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
-	ros::Publisher send_bumper_marker_pub_;
-//	ros::Publisher obstacles_pub_;
+	ros::Publisher scan_ctrl_pub_;
 
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	geometry_msgs::Point m_points_;
@@ -703,9 +710,10 @@ private:
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	tf::TransformBroadcaster	robot_broad;
-	geometry_msgs::TransformStamped robot_trans;
+	//tf::TransformBroadcaster	robot_broad;
+	//geometry_msgs::TransformStamped robot_trans;
 	nav_msgs::Odometry robot_odom;
+	pp::scan_ctrl scan_ctrl_;
 };
 
 #endif
