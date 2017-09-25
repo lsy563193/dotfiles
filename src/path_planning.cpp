@@ -1492,6 +1492,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 {
 	//ros_map_convert(false);
 	extern bool g_keep_on_wf;
+	extern bool g_no_uncleaned_target;
 	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
 		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
 		if(mt_is_linear()){
@@ -1557,6 +1558,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				if (ret == 0)
 				{
 					g_finish_cleaning_go_home = true;
+					g_no_uncleaned_target = true;
 					cm_check_should_go_home();
 				}
 				if (ret == -2){
@@ -1589,6 +1591,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 			if (ret == 0)
 			{
 				g_finish_cleaning_go_home = true;
+				g_no_uncleaned_target = true;
 				cm_check_should_go_home();
 			}
 			if (ret == -2){

@@ -115,6 +115,8 @@ bool g_keep_on_wf = false;
 
 bool g_finish_cleaning_go_home = false;
 
+bool g_no_uncleaned_target = false;
+
 time_t last_time_remote_spot = time(NULL);
 int16_t ranged_angle(int16_t angle)
 {
@@ -627,7 +629,9 @@ int cm_cleaning()
 			}
 			extern bool g_have_seen_charge_stub;
 			ROS_INFO("g_have_seen_charge_stub = %d", g_have_seen_charge_stub);
-			if (get_clean_mode() == Clean_Mode_Exploration || g_have_seen_charge_stub == false) {
+			ROS_INFO("g_no_uncleaned_target = %d", g_no_uncleaned_target);
+			if (get_clean_mode() == Clean_Mode_Exploration || g_no_uncleaned_target) {
+				g_no_uncleaned_target = false;
 				if (curr == g_zero_home) {
 					auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
 					if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
@@ -645,7 +649,10 @@ int cm_cleaning()
 						if(!cm_is_continue_go_to_charger())
 							return -1;
 					}
-					turn_into_exploration();
+					if (g_have_seen_charge_stub == false)
+						turn_into_exploration(false);
+					else
+						turn_into_exploration(true);
 					continue;
 				}
 			}
