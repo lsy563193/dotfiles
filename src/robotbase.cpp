@@ -428,11 +428,11 @@ void *serial_send_routine(void*)
 			/*---pid for wheels---*/
 			extern struct pid_struct left_pid, right_pid;
 			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
-			wheels_pid(&left_pid);
-			wheels_pid(&right_pid);
-			if(left_pid.actual_speed < 0)g_wheel_left_direction = BACKWARD;
-			if(right_pid.actual_speed < 0)g_wheel_right_direction = BACKWARD;
-			ROS_INFO("l: %f, r: %f", left_pid.actual_speed, right_pid.actual_speed);
+			wheels_pid();
+			if(left_pid.actual_speed < 0)	g_wheel_left_direction = BACKWARD;
+			else							g_wheel_left_direction = FORWARD;
+			if(right_pid.actual_speed < 0)	g_wheel_right_direction = BACKWARD;
+			else							g_wheel_right_direction = FORWARD;
 
 			set_left_wheel_speed((uint8_t)abs(left_pid.actual_speed));
 			set_right_wheel_speed((uint8_t)abs(right_pid.actual_speed));

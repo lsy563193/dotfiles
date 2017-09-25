@@ -971,144 +971,113 @@ uint8_t is_obs_near(void)
 	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
 	return 0;
 }
-#define NONE_WHEEL	0x00
-#define LEFT_WHEEL	0x01
-#define RIGHT_WHEEL	0x02
-#define BOTH_WHEEL	0x03
-struct pid_argu_struct argu_for_pid = {0,0,0};
-struct pid_struct left_pid = {0,0,0,0,0,0,LEFT_WHEEL}, right_pid = {0,0,0,0,0,0,RIGHT_WHEEL};
+struct pid_argu_struct argu_for_pid = {REG_TYPE_LINEAR,0,0,0};
+struct pid_struct left_pid = {0,0,0,0,0,0,0}, right_pid = {0,0,0,0,0,0,0};
 
-void set_argu_for_pid(bool PID_Enable, float Kp, float Ki, float Kd)
+void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd)
 {
-	argu_for_pid.PID_Enable = PID_Enable;
+	argu_for_pid.reg_type = reg_type;
 	argu_for_pid.Kp = Kp;
 	argu_for_pid.Ki = Ki;
 	argu_for_pid.Kd = Kd;
 }
-void wheels_pid(struct pid_struct *hpid)
+void wheels_pid(void)
 {
-	static uint8_t changing_direction_wheel = NONE_WHEEL;
-	static bool is_wheel_stoped = NONE_WHEEL;
-	float variation = 0;
-	uint8_t direction = 0;
-	/*---check PID enable---*/
-	if(!argu_for_pid.PID_Enable)
-	{
-		hpid->actual_speed = hpid->target_speed;
-		hpid->err_sum = 0;
-		hpid->err_last = 0;
-		hpid->last_target_speed = 0;
-		return ;
-	}
+	float variation_limit = 0;
 #if 0
-	float delta = 0;
-
-	hpid->err = hpid->target_speed - hpid->actual_speed;
+	left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
 	/*---target speed changed, reset err_sum---*/
-	if(hpid->last_target_speed != hpid->target_speed)
-		hpid->err_sum = 0;
-	hpid->err_sum += hpid->err;
+	if(left_pid.last_target_speed != left_pid.target_speed)
+		left_pid.delta_sum = 0;
+	left_pid.delta_sum += left_pid.delta;
 
 	/*---pid---*/
-	delta = argu_for_pid.Kp*hpid->err + argu_for_pid.Ki*hpid->err_sum + argu_for_pid.Kd*(hpid->err - hpid->err_last);
-	hpid->actual_speed += delta;
+	left_pid.variation = argu_for_pid.Kp*left_pid.delta + argu_for_pid.Ki*left_pid.delta_sum + argu_for_pid.Kd*(left_pid.delta - left_pid.delta_last);
+	left_pid.actual_speed += left_pid.variation;
 
 	/*---update status---*/
-	hpid->last_target_speed = hpid->target_speed;
-	hpid->err_last = hpid->err;
-#endif
-	/*---if one of the wheels should change direction, set both target_speed to 0 first---*/
-	if(hpid->target_speed * hpid->actual_speed < 0)
+	left_pid.last_target_speed = left_pid.target_speed;
+	left_pid.delta_last = left_pid.delta;
+
+	right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
+	/*---target speed changed, reset err_sum---*/
+	if(right_pid.last_target_speed != right_pid.target_speed)
+		right_pid.delta_sum = 0;
+	right_pid.delta_sum += right_pid.delta;
+
+	/*---pid---*/
+	right_pid.variation = argu_for_pid.Kp*right_pid.delta + argu_for_pid.Ki*right_pid.delta_sum + argu_for_pid.Kd*(right_pid.delta - right_pid.delta_last);
+	right_pid.actual_speed += right_pid.variation;
+
+	/*---update status---*/
+	right_pid.last_target_speed = right_pid.target_speed;
+	right_pid.delta_last = right_pid.delta;
+#else
+	if(argu_for_pid.reg_type == REG_TYPE_WALLFOLLOW)
 	{
-		if(hpid->wheel_tab == LEFT_WHEEL)
-			changing_direction_wheel |= LEFT_WHEEL;
-		else if(hpid->wheel_tab == RIGHT_WHEEL)
-			changing_direction_wheel |= RIGHT_WHEEL;;
+		left_pid.actual_speed = left_pid.target_speed;
+		right_pid.actual_speed = right_pid.target_speed;
 	}
-	if(hpid->wheel_tab == LEFT_WHEEL)
-	{
-		if(changing_direction_wheel & LEFT_WHEEL)
-		{
-			if(hpid->actual_speed != 0)
-				hpid->target_speed = 0;
-			else
-			{
-				is_wheel_stoped |= LEFT_WHEEL;
-				changing_direction_wheel &= ~LEFT_WHEEL;
-			}
-		}
-		if(changing_direction_wheel & RIGHT_WHEEL)
-			hpid->target_speed = 0;
-	}
-	else if(hpid->wheel_tab == RIGHT_WHEEL)
-	{
-		if(changing_direction_wheel & LEFT_WHEEL)
-			hpid->target_speed = 0;
-		if(changing_direction_wheel & RIGHT_WHEEL)
-		{
-			if(hpid->actual_speed != 0)
-				hpid->target_speed = 0;
-			else
-			{
-				changing_direction_wheel &= ~RIGHT_WHEEL;
-				is_wheel_stoped |= RIGHT_WHEEL;
-			}
-		}
-	}
-	/*---stop the wheel when the other is stoped---*/
-	if(	((hpid->wheel_tab == LEFT_WHEEL) && (is_wheel_stoped & RIGHT_WHEEL))	||
-		((hpid->wheel_tab == RIGHT_WHEEL) && (is_wheel_stoped & LEFT_WHEEL))	)
-	{
-		hpid->target_speed = 0;
-		hpid->actual_speed = 0;
-		is_wheel_stoped = NONE_WHEEL;
-	}
-	/*---start pid---*/
-	if(hpid->target_speed > 0 || hpid->actual_speed > 0)
-		direction = FORWARD;
 	else
-		direction = BACKWARD;
-
-	hpid->err = hpid->target_speed - hpid->actual_speed;
-//	if(direction == FORWARD)
 	{
-		if(hpid->err > 20)
-			variation = 2;
-		else if(hpid->err > 0)
-			variation = 1;
-		else if(hpid->err == 0)
-			variation = 0;
-		else if(hpid->err > -20)
-			variation = -1;
-		else
-			variation = -2;
+	#if 0
+		/*---if one of the wheels should change direction, set both target_speed to 0 first---*/
+		if((left_pid.actual_speed * left_pid.target_speed < 0) || (right_pid.actual_speed * right_pid.target_speed < 0))
+		{
+			left_pid.target_speed = 0;
+			right_pid.target_speed = 0;
+		}
+		left_pid.variation = left_pid.target_speed - left_pid.actual_speed;
+		right_pid.variation = right_pid.target_speed - right_pid.actual_speed;
+		/*---set variation limit---*/
+		if(argu_for_pid.reg_type == REG_TYPE_LINEAR)
+			variation_limit = 1;
+		else if(argu_for_pid.reg_type == REG_TYPE_CURVE)
+			variation_limit = 8;
+		else if(argu_for_pid.reg_type == REG_TYPE_TURN)
+			variation_limit = 4;
+		else if(argu_for_pid.reg_type == REG_TYPE_BACK)
+			variation_limit = 20;
+		/*---adjust speed---*/
+		if(left_pid.variation > variation_limit)left_pid.variation = variation_limit;
+		else if(left_pid.variation < -variation_limit)left_pid.variation = -variation_limit;
+		if(right_pid.variation > variation_limit)right_pid.variation = variation_limit;
+		else if(right_pid.variation < -variation_limit)right_pid.variation = -variation_limit;
+
+		left_pid.actual_speed += left_pid.variation;
+		right_pid.actual_speed += right_pid.variation;
+	#endif
+		if(left_pid.actual_speed <= 10)
+		{
+			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
+			if(left_pid.delta > 0)
+				left_pid.actual_speed++;
+			else if(left_pid.delta < 0)
+				left_pid.actual_speed--;
+		}
+		if(right_pid.target_speed <= 10)
+		{
+			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
+			if(right_pid.delta > 0)
+				right_pid.actual_speed++;
+			else if(right_pid.delta < 0)
+				right_pid.actual_speed--;
+		}
+		if(left_pid.actual_speed > RUN_TOP_SPEED)left_pid.actual_speed = (int8_t)RUN_TOP_SPEED;
+		else if(left_pid.actual_speed < -RUN_TOP_SPEED)left_pid.actual_speed = -(int8_t)RUN_TOP_SPEED;
+		if(right_pid.actual_speed > RUN_TOP_SPEED)right_pid.actual_speed = (int8_t)RUN_TOP_SPEED;
+		else if(right_pid.actual_speed < -RUN_TOP_SPEED)right_pid.actual_speed = -(int8_t)RUN_TOP_SPEED;
 	}
-/*	else
-	{
-		if(hpid->err > 15)
-			variation = 5;
-		else if(hpid->err > 5)
-			variation = 3;
-		else if(hpid->err > 0)
-			variation = 1;
-		else if(hpid->err == 0)
-			variation = 0;
-		else if(hpid->err > -5)
-			variation = -1;
-		else if(hpid->err > -15)
-			variation = -3;
-		else
-			variation = -5;
-	}*/
-	hpid->actual_speed += variation;
-	if(hpid->actual_speed > RUN_TOP_SPEED)hpid->actual_speed = (int8_t)RUN_TOP_SPEED;
-	if(hpid->actual_speed < -RUN_TOP_SPEED)hpid->actual_speed = -(int8_t)RUN_TOP_SPEED;
 
+	/*---update status---*/
+	left_pid.last_target_speed = left_pid.target_speed;
+	right_pid.last_target_speed = right_pid.target_speed;
+#endif
 }
-void set_wheel_speed(uint8_t Left, uint8_t Right, bool PID_Enable, float PID_p, float PID_i, float PID_d)
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p, float PID_i, float PID_d)
 {
 	int8_t signed_left_speed = (int8_t)Left, signed_right_speed = (int8_t)Right;
-	set_argu_for_pid(PID_Enable, PID_p, PID_i, PID_d);
+	set_argu_for_pid(reg_type, PID_p, PID_i, PID_d);
 
 	if(g_wheel_left_direction == BACKWARD)
 		signed_left_speed *= -1;

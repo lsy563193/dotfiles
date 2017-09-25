@@ -8,17 +8,17 @@
 
 struct pid_struct
 {
-	float err;
-	float err_sum;
-	float err_last;
+	float delta;
+	float delta_sum;
+	float delta_last;
 	float target_speed;
 	float actual_speed;
 	float last_target_speed;
-	uint8_t wheel_tab;
+	float variation;
 };
 struct pid_argu_struct
 {
-	bool PID_Enable;
+	uint8_t reg_type;
 	float Kp;
 	float Ki;
 	float Kd;
@@ -410,6 +410,14 @@ typedef enum{
 // for wheel direction
 #define FORWARD						0
 #define BACKWARD					1
+
+//regulator type
+#define REG_TYPE_WALLFOLLOW     1
+#define REG_TYPE_LINEAR         2
+#define REG_TYPE_TURN           3
+#define REG_TYPE_BACK           4
+#define REG_TYPE_CURVE			5
+
 extern uint32_t g_rcon_status;
 
 extern volatile int16_t g_left_wall_baseline;
@@ -497,9 +505,9 @@ void set_rcon_status(uint32_t code);
 // If robot going straight, should turn off gyro dynamic adjustment.
 // If robot turning, should turn on gyro dynamic adjustment.
  */
-void set_argu_for_pid(bool PID_Enable, float Kp, float Ki, float Kd);
-void wheels_pid(struct pid_struct *hpid);
-void set_wheel_speed(uint8_t Left, uint8_t Right, bool PID_Enable = true, float PID_p = 1, float PID_i = 0, float PID_d = 0);
+void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd);
+void wheels_pid(void);
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_LINEAR, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
