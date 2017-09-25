@@ -63,6 +63,7 @@ extern int g_rcon_triggered;
 extern int g_is_reach;
 extern Cell_t g_next_cell, g_target_cell;
 extern bool g_resume_cleaning;
+extern bool g_exploration_home;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
@@ -111,7 +112,7 @@ void cm_move_back_(uint16_t dist);
 	 */
 
 void cm_go_home(void);
-bool cm_go_to_charger_(void);
+bool cm_go_to_charger(void);
 bool cm_is_continue_go_to_charger(void);
 //void CM_SetStationHome(void);
 
