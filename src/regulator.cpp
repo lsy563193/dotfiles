@@ -363,11 +363,8 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	set_dir_backward();
 	if (get_clean_mode() != Clean_Mode_WallFollow)
 	{
-#if 0
 		speed_ += ++counter_;
 		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
-#endif
-		speed_ = BACK_MAX_SPEED;
 	}
 	reset_wheel_step();
 	l_speed = r_speed = speed_;
@@ -483,7 +480,6 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	(diff >= 0) ? set_dir_left() : set_dir_right();
 
 //	ROS_INFO("TurnRegulator::adjustSpeed");
-#if 0
 	if (std::abs(diff) > 200){
 		speed_ += 1;
 		speed_ = std::min(speed_, ROTATE_TOP_SPEED);
@@ -499,13 +495,6 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		speed_ = std::max(speed_, ROTATE_LOW_SPEED);
 		ROS_DEBUG("%s %d: 0 - 50, speed = %d.", __FUNCTION__, __LINE__, speed_);
 	}
-#endif
-	if(std::abs(diff) > 200)
-		speed_ = ROTATE_TOP_SPEED;
-	else if(std::abs(diff) > 50)
-		speed_ = ROTATE_LOW_SPEED + 5;
-	else
-		speed_ = ROTATE_LOW_SPEED;
 
 	l_speed = r_speed = speed_;
 
@@ -522,7 +511,6 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 	if (tick_ > 2)
 	{
 		tick_ = 0;
-#if 0
 		if (std::abs(diff) > 350){
 			speed_ = std::min(++speed_, speed_max_);
 		}
@@ -530,11 +518,6 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 			--speed_;
 			speed_ = std::max(--speed_, speed_min_);
 		}
-#endif
-		if(std::abs(diff) > 350)
-			speed_ = speed_max_;
-		else
-			speed_ = speed_min_;
 	}
 	speed = speed_;
 	return true;
@@ -731,22 +714,16 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		if (distance < SLOW_DOWN_DISTANCE)
 			angle_diff = 0;
 		integrated_ = 0;
-#if 0
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED)
 			base_speed_--;
-#endif
-		base_speed_ = LINEAR_MIN_SPEED;
 	}else
 	if (base_speed_ < (int32_t) LINEAR_MAX_SPEED)
 	{
-#if 0
 		if (tick_++ > 1)
 		{
 			tick_ = 0;
 			base_speed_++;
 		}
-#endif
-		base_speed_ = LINEAR_MAX_SPEED;
 		integrated_ = 0;
 	}
 

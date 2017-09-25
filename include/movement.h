@@ -510,7 +510,7 @@ void set_rcon_status(uint32_t code);
  */
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd);
 void wheels_pid(void);
-void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_LINEAR, float PID_p = 1, float PID_i = 0, float PID_d = 0);
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_WALLFOLLOW, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
