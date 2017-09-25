@@ -254,7 +254,7 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event
+		if (g_fatal_quit_event || g_charge_detect
 			|| g_key_clean_pressed || (!g_go_home && (g_battery_home || g_remote_home))
 			|| g_oc_wheel_left || g_oc_wheel_right
 			|| g_bumper_triggered || g_cliff_triggered
@@ -423,7 +423,19 @@ int cm_move_to(const PPTargetType& path)
 		}
 
 		rm.adjustSpeed(speed_left, speed_right);
-		set_wheel_speed(speed_left, speed_right);
+		#if 0
+		/*---PID is useless in wall follow mode---*/
+		if(rm.isMt() && mt_is_follow_wall())
+			set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
+		else if(rm.isMt() && mt_is_linear())
+			set_wheel_speed(speed_left, speed_right, REG_TYPE_LINEAR);
+		else if(rm.isBack())
+			set_wheel_speed(speed_left, speed_right, REG_TYPE_BACK);
+		else if(rm.isTurn())
+			set_wheel_speed(speed_left, speed_right, REG_TYPE_TURN);
+		#endif
+		/*---PID is useless in wall follow mode---*/
+		set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
 	}
 	if(! MAP_SET_REALTIME)
 	{
@@ -599,7 +611,7 @@ int cm_cleaning()
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event )
+		if (g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
 			return -1;
 
 		if (!g_go_home)
@@ -936,7 +948,7 @@ void cm_self_check(void)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed)
+		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
 			break;
 
 		if (g_slam_error)
@@ -1230,7 +1242,7 @@ uint8_t cm_check_charger_signal(void)
 			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
 			return SEEN_CHARGER;
 		}
-		else if(g_key_clean_pressed || g_fatal_quit_event)
+		else if(g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
 		{
 			ROS_INFO("%s, %d: event triggered, return now.", __FUNCTION__, __LINE__);
 			return EVENT_TRIGGERED;
@@ -1952,7 +1964,8 @@ void cm_handle_charge_detect(bool state_now, bool state_last)
 		if (g_charge_detect_cnt++ > 2)
 		{
 			g_charge_detect = robot::instance()->getChargeStatus();
-			g_fatal_quit_event = true;
+			if (get_clean_mode() != Clean_Mode_Exploration && robot::instance()->getChargeStatus() == 3)
+				g_fatal_quit_event = true;
 			ROS_WARN("%s %d: g_charge_detect has been set to %d.", __FUNCTION__, __LINE__, g_charge_detect);
 			g_charge_detect_cnt = 0;
 		}

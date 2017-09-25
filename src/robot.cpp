@@ -693,7 +693,7 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 			yaw += 6.283184;
 		while (yaw > 3.141592)
 			yaw -= 6.283184;
-		robot_correction_yaw += (yaw) * 0.5;
+		robot_correction_yaw += (yaw) * 0.8;
 		//printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y, RAD2DEG(slam_correction_yaw), robot_correction_x, robot_correction_y, RAD2DEG(robot_correction_yaw));
 	}
 
