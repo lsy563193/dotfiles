@@ -248,7 +248,7 @@ float RegulatorBase::s_pos_y = 0;
 Point32_t RegulatorBase::s_curr_p = {0,0};
 
 bool RegulatorBase::isExit(){
-	return g_fatal_quit_event || g_key_clean_pressed ;
+	return g_fatal_quit_event || g_key_clean_pressed || g_charge_detect;
 }
 
 bool RegulatorBase::_isStop()

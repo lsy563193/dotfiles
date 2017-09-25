@@ -431,9 +431,7 @@ MotionManage::~MotionManage()
 
 	g_saved_work_time += get_work_time();
 	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
-	ROS_INFO("cleaned area = \033[32m%.2fm2\033[0m", map_area);
-	ROS_INFO("%s %d: Cleaning time: \033[32m%d(s) %.2f(min)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time, double(g_saved_work_time) / 60);
-	ROS_INFO("%s %d: Cleaning speed: \033[32m%.2f(m2/min)\033[0m", __FUNCTION__, __LINE__, map_area / (double(g_saved_work_time) / 60));
+	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
 	if (g_battery_low)
 		set_clean_mode(Clean_Mode_Sleep);
 	else if (g_charge_detect)
