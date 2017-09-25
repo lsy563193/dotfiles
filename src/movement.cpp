@@ -31,8 +31,8 @@ static int16_t g_front_obs_trig_value = 500;
 static int16_t g_right_obs_trig_value = 500;
 volatile int16_t g_obs_trig_value = 800;
 static int16_t g_leftwall_obs_trig_vale = 500;
-uint8_t g_wheel_left_direction = 0;
-uint8_t g_wheel_right_direction = 0;
+uint8_t g_wheel_left_direction = FORWARD;
+uint8_t g_wheel_right_direction = FORWARD;
 static uint8_t g_remote_move_flag = 0;
 static uint8_t g_home_remote_flag = 0;
 uint32_t movement_rcon_status;
@@ -306,14 +306,14 @@ int32_t get_wall_adc(int8_t dir)
 
 void set_dir_backward(void)
 {
-	g_wheel_left_direction = 1;
-	g_wheel_right_direction = 1;
+	g_wheel_left_direction = BACKWARD;
+	g_wheel_right_direction = BACKWARD;
 }
 
 void set_dir_forward(void)
 {
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 }
 
 uint8_t is_encoder_fail(void)
@@ -424,8 +424,8 @@ void quick_back(uint8_t speed, uint16_t distance)
 	saved_x = robot::instance()->getOdomPositionX();
 	saved_y = robot::instance()->getOdomPositionY();
 	// Quickly move back for a distance.
-	g_wheel_left_direction = 1;
-	g_wheel_right_direction = 1;
+	g_wheel_left_direction = BACKWARD;
+	g_wheel_right_direction = BACKWARD;
 	reset_wheel_step();
 	set_wheel_speed(speed, speed);
 	while (sqrtf(powf(saved_x - robot::instance()->getOdomPositionX(), 2) +
@@ -513,8 +513,8 @@ void turn_left(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
@@ -598,8 +598,8 @@ void turn_right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
@@ -652,8 +652,8 @@ void jam_turn_left(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
@@ -707,8 +707,8 @@ void jam_turn_right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
@@ -980,15 +980,120 @@ uint8_t is_obs_near(void)
 	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
 	return 0;
 }
-void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p, float PID_i, float PID_d)
+struct pid_argu_struct argu_for_pid = {REG_TYPE_LINEAR,0,0,0};
+struct pid_struct left_pid = {0,0,0,0,0,0,0}, right_pid = {0,0,0,0,0,0,0};
+
+void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd)
 {
-	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
+	argu_for_pid.reg_type = reg_type;
+	argu_for_pid.Kp = Kp;
+	argu_for_pid.Ki = Ki;
+	argu_for_pid.Kd = Kd;
+}
+void wheels_pid(void)
+{
+	float variation_limit = 0;
+#if 0
+	left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
+	/*---target speed changed, reset err_sum---*/
+	if(left_pid.last_target_speed != left_pid.target_speed)
+		left_pid.delta_sum = 0;
+	left_pid.delta_sum += left_pid.delta;
 
-	Left = Left < RUN_TOP_SPEED ? Left : RUN_TOP_SPEED;
-	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
+	/*---pid---*/
+	left_pid.variation = argu_for_pid.Kp*left_pid.delta + argu_for_pid.Ki*left_pid.delta_sum + argu_for_pid.Kd*(left_pid.delta - left_pid.delta_last);
+	left_pid.actual_speed += left_pid.variation;
 
-	set_left_wheel_speed(Left);
-	set_right_wheel_speed(Right);
+	/*---update status---*/
+	left_pid.last_target_speed = left_pid.target_speed;
+	left_pid.delta_last = left_pid.delta;
+
+	right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
+	/*---target speed changed, reset err_sum---*/
+	if(right_pid.last_target_speed != right_pid.target_speed)
+		right_pid.delta_sum = 0;
+	right_pid.delta_sum += right_pid.delta;
+
+	/*---pid---*/
+	right_pid.variation = argu_for_pid.Kp*right_pid.delta + argu_for_pid.Ki*right_pid.delta_sum + argu_for_pid.Kd*(right_pid.delta - right_pid.delta_last);
+	right_pid.actual_speed += right_pid.variation;
+
+	/*---update status---*/
+	right_pid.last_target_speed = right_pid.target_speed;
+	right_pid.delta_last = right_pid.delta;
+#else
+	if(argu_for_pid.reg_type == REG_TYPE_WALLFOLLOW)
+	{
+		left_pid.actual_speed = left_pid.target_speed;
+		right_pid.actual_speed = right_pid.target_speed;
+	}
+	else
+	{
+	#if 0
+		/*---if one of the wheels should change direction, set both target_speed to 0 first---*/
+		if((left_pid.actual_speed * left_pid.target_speed < 0) || (right_pid.actual_speed * right_pid.target_speed < 0))
+		{
+			left_pid.target_speed = 0;
+			right_pid.target_speed = 0;
+		}
+		left_pid.variation = left_pid.target_speed - left_pid.actual_speed;
+		right_pid.variation = right_pid.target_speed - right_pid.actual_speed;
+		/*---set variation limit---*/
+		if(argu_for_pid.reg_type == REG_TYPE_LINEAR)
+			variation_limit = 1;
+		else if(argu_for_pid.reg_type == REG_TYPE_CURVE)
+			variation_limit = 8;
+		else if(argu_for_pid.reg_type == REG_TYPE_TURN)
+			variation_limit = 4;
+		else if(argu_for_pid.reg_type == REG_TYPE_BACK)
+			variation_limit = 20;
+		/*---adjust speed---*/
+		if(left_pid.variation > variation_limit)left_pid.variation = variation_limit;
+		else if(left_pid.variation < -variation_limit)left_pid.variation = -variation_limit;
+		if(right_pid.variation > variation_limit)right_pid.variation = variation_limit;
+		else if(right_pid.variation < -variation_limit)right_pid.variation = -variation_limit;
+
+		left_pid.actual_speed += left_pid.variation;
+		right_pid.actual_speed += right_pid.variation;
+	#endif
+		if(left_pid.actual_speed <= 10)
+		{
+			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
+			if(left_pid.delta > 0)
+				left_pid.actual_speed++;
+			else if(left_pid.delta < 0)
+				left_pid.actual_speed--;
+		}
+		if(right_pid.target_speed <= 10)
+		{
+			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
+			if(right_pid.delta > 0)
+				right_pid.actual_speed++;
+			else if(right_pid.delta < 0)
+				right_pid.actual_speed--;
+		}
+		if(left_pid.actual_speed > RUN_TOP_SPEED)left_pid.actual_speed = (int8_t)RUN_TOP_SPEED;
+		else if(left_pid.actual_speed < -RUN_TOP_SPEED)left_pid.actual_speed = -(int8_t)RUN_TOP_SPEED;
+		if(right_pid.actual_speed > RUN_TOP_SPEED)right_pid.actual_speed = (int8_t)RUN_TOP_SPEED;
+		else if(right_pid.actual_speed < -RUN_TOP_SPEED)right_pid.actual_speed = -(int8_t)RUN_TOP_SPEED;
+	}
+
+	/*---update status---*/
+	left_pid.last_target_speed = left_pid.target_speed;
+	right_pid.last_target_speed = right_pid.target_speed;
+#endif
+}
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p, float PID_i, float PID_d)
+{
+	int8_t signed_left_speed = (int8_t)Left, signed_right_speed = (int8_t)Right;
+	set_argu_for_pid(reg_type, PID_p, PID_i, PID_d);
+
+	if(g_wheel_left_direction == BACKWARD)
+		signed_left_speed *= -1;
+	if(g_wheel_right_direction == BACKWARD)
+		signed_right_speed *= -1;
+	left_pid.target_speed = (float)signed_left_speed;
+	right_pid.target_speed = (float)signed_right_speed;
 #if GYRO_DYNAMIC_ADJUSTMENT
 	if (abs(Left - Right) > 1)
 	{
@@ -999,14 +1104,13 @@ void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p, float PID_i, floa
 	}
 #endif
 }
-
 void set_left_wheel_speed(uint8_t speed)
 {
 	int16_t l_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	l_speed = (int16_t) (speed * SPEED_ALF);
 	g_left_wheel_speed = l_speed;
-	if (g_wheel_left_direction == 1)
+	if (g_wheel_left_direction == BACKWARD)
 	{
 		l_speed |= 0x8000;
 		g_left_wheel_speed *= -1;
@@ -1022,7 +1126,7 @@ void set_right_wheel_speed(uint8_t speed)
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	r_speed = (int16_t) (speed * SPEED_ALF);
 	g_right_wheel_speed = r_speed;
-	if (g_wheel_right_direction == 1)
+	if (g_wheel_right_direction == BACKWARD)
 	{
 		r_speed |= 0x8000;
 		g_right_wheel_speed *= -1;
@@ -1657,15 +1761,15 @@ uint8_t check_bat_set_motors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint3
 void set_dir_left(void)
 {
 	set_direction_flag(Direction_Flag_Left);
-	g_wheel_left_direction = 1;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = BACKWARD;
+	g_wheel_right_direction = FORWARD;
 }
 
 void set_dir_right(void)
 {
 	set_direction_flag(Direction_Flag_Right);
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 1;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = BACKWARD;
 }
 
 void set_led(uint16_t G, uint16_t R)
