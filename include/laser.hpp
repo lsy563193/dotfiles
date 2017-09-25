@@ -50,7 +50,7 @@ public:
 	void lidarMotorCtrl(bool orf);
 
 	uint8_t laserMarker(bool is_mark,double X_MIN = 0.140,double X_MAX = 0.237);
-	static uint8_t isRobotSlip();
+	uint8_t isRobotSlip();
 private:
 
 	//void stop(void);
@@ -66,7 +66,7 @@ private:
 	ros::Subscriber	scan_sub2_;
 
 	sensor_msgs::LaserScan laserScanData_;
-	static sensor_msgs::LaserScan laserScanData_2_;
+	sensor_msgs::LaserScan laserScanData_2_;
 
 	//ros::ServiceClient start_motor_cli_;
 	//ros::ServiceClient stop_motor_cli_;
