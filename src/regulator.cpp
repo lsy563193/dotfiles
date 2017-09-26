@@ -827,14 +827,17 @@ bool FollowWallRegulator::isReach()
 				ROS_WARN("%s:%d: out of esc", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
 				// This led light is for debug.
-				set_led_mode(LED_STEADY, LED_GREEN);
+				if (get_clean_mode() == Clean_Mode_Exploration)
+					set_led_mode(LED_STEADY, LED_ORANGE);
+				else
+					set_led_mode(LED_STEADY, LED_GREEN);
 				ret = true;
 			}
 		} else if (get_clean_mode() == Clean_Mode_Navigation)
 		{
 			if ((s_origin.Y < s_target.Y ^ s_curr_p.Y < s_target.Y))
 			{
-				auto dx = (s_origin.Y < s_target.Y  ^ mt_is_left()) ? +2 : -2;
+				auto dx = ((s_origin.Y < s_target.Y) ^ mt_is_left()) ? +2 : -2;
 				if(is_block_blocked(count_to_cell(s_curr_p.X)+dx, count_to_cell(s_curr_p.Y)))
 				{
 					ROS_WARN("%s %d: is_map_front_block", __FUNCTION__, __LINE__);
@@ -1315,7 +1318,7 @@ bool GoToChargerRegulator::isSwitch()
 		}
 		else
 		{
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			resetGoToChargerVariables();
 		}
 	}
@@ -1325,7 +1328,7 @@ bool GoToChargerRegulator::isSwitch()
 		if(g_bumper_triggered)
 		{
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			g_turn_angle = 0;
 			resetGoToChargerVariables();
 			return true;
@@ -1334,16 +1337,24 @@ bool GoToChargerRegulator::isSwitch()
 		if(g_cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			g_turn_angle = 0;
 			resetGoToChargerVariables();
 			return true;
 		}
 		if(move_away_from_charger_cnt++ > 50)
 		{
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			resetGoToChargerVariables();
 		}
+	}
+	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL_INIT)
+	{
+		resetGoToChargerVariables();
+		g_go_to_charger_back_30cm = false;
+		g_go_to_charger_back_10cm = false;
+		g_go_to_charger_back_0cm = false;
+		go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
 	}
 	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
 	{
@@ -1372,7 +1383,7 @@ bool GoToChargerRegulator::isSwitch()
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				resetGoToChargerVariables();
 				g_turn_angle = 0;
-				go_home_state_now = GO_TO_CHARGER_INIT;
+				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				return true;
 			}
 
@@ -1551,7 +1562,7 @@ bool GoToChargerRegulator::isSwitch()
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 			g_turn_angle = 1750;
-			go_home_state_now = GO_TO_CHARGER_INIT;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			return true;
 		}
 		g_bumper_triggered = get_bumper_status();
@@ -1561,9 +1572,7 @@ bool GoToChargerRegulator::isSwitch()
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
 			g_turn_angle = 1800;
 			if(++go_home_bumper_cnt > 1)
-			{
-				go_home_state_now = GO_TO_CHARGER_INIT;
-			}
+				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			return true;
 		}
 
@@ -1576,7 +1585,7 @@ bool GoToChargerRegulator::isSwitch()
 			else if(++no_signal_cnt > 60)
 			{
 				ROS_WARN("%s %d:No charger signal received.", __FUNCTION__, __LINE__);
-				go_home_state_now = GO_TO_CHARGER_INIT;
+				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			}
 
 			//ROS_DEBUG("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, around_charger_stub_dir);
@@ -1697,7 +1706,7 @@ bool GoToChargerRegulator::isSwitch()
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
 			if(++go_home_bumper_cnt > 1)
-				go_home_state_now = GO_TO_CHARGER_INIT;
+				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			else
 				go_home_state_now = AROUND_CHARGER_STATION_INIT;
 			g_turn_angle = 1800;
@@ -1707,7 +1716,7 @@ bool GoToChargerRegulator::isSwitch()
 		if(g_cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
-			go_home_state_now = GO_TO_CHARGER_INIT;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			g_turn_angle = 1800;
 			return true;
 		}
@@ -1752,7 +1761,7 @@ bool GoToChargerRegulator::isSwitch()
 			ROS_INFO("%s, %d: Robot can't see charger, restart go to charger process.", __FUNCTION__, __LINE__);
 			g_turn_angle = 1000;
 			g_go_to_charger_back_0cm = true;
-			go_home_state_now = GO_TO_CHARGER_INIT;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			return true;
 		}
 	}
@@ -1776,8 +1785,8 @@ bool GoToChargerRegulator::isSwitch()
 			else
 			{
 				//if((get_rcon_status()&RconFront_Home_LR) == 0)
-				//	go_home_state_now = GO_TO_CHARGER_INIT;
-				go_home_state_now = GO_TO_CHARGER_INIT;
+				//	go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				g_go_to_charger_back_10cm = true;
 				//if(g_bumper_triggered & LeftBumperTrig)
 				//	g_turn_angle = -1100;
@@ -1791,7 +1800,7 @@ bool GoToChargerRegulator::isSwitch()
 		if(g_cliff_triggered)
 		{
 			g_turn_angle = 1750;
-			go_home_state_now = GO_TO_CHARGER_INIT;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			return true;
 		}
 
@@ -1823,7 +1832,7 @@ bool GoToChargerRegulator::isSwitch()
 					if((receive_code&RconFront_Home_LR) == 0 && ++side_counter > 5)
 					{
 						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode.", __FUNCTION__, __LINE__);
-						go_home_state_now = GO_TO_CHARGER_INIT;
+						go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 						g_go_to_charger_back_0cm = true;
 						g_turn_angle = 0;
 						return true;
@@ -2037,10 +2046,10 @@ bool GoToChargerRegulator::isSwitch()
 		if (turn_connect_dir == ROUND_LEFT && ++turn_connect_cnt > 50)
 		{
 			turn_connect_cnt = 0;
-			g_go_to_charger_back_10cm = true;
+			g_go_to_charger_back_30cm = true;
 			ROS_WARN("%s %d: Turn connect failed, move back for 0.1m.", __FUNCTION__, __LINE__);
-			g_turn_angle = 1800;
-			go_home_state_now = AWAY_FROM_CHARGER_STATION;
+			g_turn_angle = 0;
+			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			return true;
 		}
 	}
@@ -2050,7 +2059,6 @@ bool GoToChargerRegulator::isSwitch()
 
 bool GoToChargerRegulator::_isStop()
 {
-	ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
 	bool ret = false;
 	if(g_robot_stuck)
 		ret = true;
