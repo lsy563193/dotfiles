@@ -64,10 +64,7 @@ void explore_update_map(void)
 void turn_into_exploration(bool is_reset_map)
 {
 	reset_work_time();
-	if (g_remote_home || g_go_home_by_remote)
-		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
-	else
-		set_led_mode(LED_FLASH, LED_GREEN, 1000);
+	set_led_mode(LED_STEADY, LED_ORANGE);
 
 	// Initialize motors and map.
 	extern uint32_t g_saved_work_time;

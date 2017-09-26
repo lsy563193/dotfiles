@@ -1612,7 +1612,10 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
 				// This led light is for debug.
-				set_led_mode(LED_STEADY, LED_GREEN);
+				if (get_clean_mode() == Clean_Mode_Exploration)
+					set_led_mode(LED_STEADY, LED_ORANGE);
+				else
+					set_led_mode(LED_STEADY, LED_GREEN);
 			}
 		}
 	}
