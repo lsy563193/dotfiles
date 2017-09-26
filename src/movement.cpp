@@ -824,8 +824,14 @@ int get_rcon_trig(void)
 	}
 	else if (mt_is_linear()){
 //		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		if (get_clean_mode() == Clean_Mode_Exploration)
+		{
+			auto rcon_status = get_rcon_status() & RconAll_Home_T;
+			reset_rcon_status();
+			return rcon_status;
+		}
 		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
-		if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
+		else if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
 			reset_rcon_status();
 			return 0;
 		}
