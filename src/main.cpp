@@ -89,7 +89,11 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
 				reset_clean_paused();
+#if GO_HOME_REGULATOR
+				cm_cleaning();
+#else
 				go_home();
+#endif
 				break;
 
 			case Clean_Mode_Exploration:

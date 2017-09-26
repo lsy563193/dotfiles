@@ -603,6 +603,12 @@ int cm_cleaning()
 	if (!motion.initSucceeded())
 		return 0;
 
+	if (get_clean_mode() == Clean_Mode_GoHome)
+	{
+		cm_go_to_charger();
+		return 0;
+	}
+
 	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
 	g_robot_slip_enable = true;
@@ -786,8 +792,8 @@ void cm_check_temp_spot(void)
  */
 bool cm_go_to_charger()
 {
-	// Call GoHome() function to try to go to charger stub.
-	ROS_INFO("%s,%d,Call GoHome(),\033[35m disable tilt detect\033[0m.",__FUNCTION__,__LINE__);
+	// Try to go to charger stub.
+	ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
 	g_tilt_enable = false; //disable tilt detect
 #if GO_HOME_REGULATOR
 	set_led_mode(LED_STEADY, LED_ORANGE);
@@ -1785,13 +1791,13 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration)
+	if(get_clean_mode() == Clean_Mode_Navigation)
 		robot::instance()->setManualPause();
 
 	start_time = time(NULL);
 	while (get_key_press() & KEY_CLEAN)
 	{
-		if (time(NULL) - start_time > 3) {
+		if (get_clean_mode() == Clean_Mode_Navigation && time(NULL) - start_time > 3) {
 			if (!reset_manual_pause)
 			{
 				beep_for_command(VALID);
@@ -1823,7 +1829,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	}
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
-	if(SpotMovement::instance()->getSpotType() != NORMAL_SPOT && get_clean_mode() != Clean_Mode_WallFollow && get_clean_mode() != Clean_Mode_Exploration){
+	if(get_clean_mode() == Clean_Mode_Navigation){
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();
@@ -1958,7 +1964,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 void cm_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
-	if (((get_clean_mode() == Clean_Mode_Exploration || g_go_home) && robot::instance()->getChargeStatus()) ||
+	if (((get_clean_mode() == Clean_Mode_Exploration || get_clean_mode() == Clean_Mode_GoHome || g_go_home) && robot::instance()->getChargeStatus()) ||
 		(get_clean_mode() != Clean_Mode_Exploration && robot::instance()->getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)

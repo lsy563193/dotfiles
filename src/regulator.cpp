@@ -352,7 +352,11 @@ bool BackRegulator::isSwitch()
 
 bool BackRegulator::_isStop()
 {
-	MotionManage::s_laser->laserMarker(false);
+	if (get_clean_mode() != Clean_Mode_GoHome)
+	{
+		// Only update the scan seq.
+		MotionManage::s_laser->laserMarker(false);
+	}
 	bool ret = false;
 	return ret;
 }
@@ -449,7 +453,12 @@ bool TurnRegulator::isSwitch()
 bool TurnRegulator::_isStop()
 {
 	bool ret = false;
-	MotionManage::s_laser->laserMarker(false);
+	if (get_clean_mode() != Clean_Mode_GoHome)
+	{
+		// Only update the scan seq.
+		MotionManage::s_laser->laserMarker(false);
+	}
+
 	return ret;
 }
 
@@ -2041,6 +2050,7 @@ bool GoToChargerRegulator::isSwitch()
 
 bool GoToChargerRegulator::_isStop()
 {
+	ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
 	bool ret = false;
 	if(g_robot_stuck)
 		ret = true;

@@ -165,7 +165,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		g_remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
-	g_turn_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
 	initSucceeded(true);
@@ -175,6 +174,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
+
+	// No need to start laser or slam if it is go home mode.
+	if (get_clean_mode() == Clean_Mode_GoHome)
+		return;
 
 	//2 start laser
 	s_laser = new Laser();
@@ -297,14 +300,16 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-	auto cleaned_count = map_get_cleaned_area();
-	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
-	//if (get_clean_mode() == Clean_Mode_WallFollow)
-	wf_clear();
-	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
-	//if (get_clean_mode() == Clean_Mode_Spot)
+	if (get_clean_mode() != Clean_Mode_GoHome)
 	{
-		SpotMovement::instance()->spotDeinit();// clear the variables.
+		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
+		//if (get_clean_mode() == Clean_Mode_WallFollow)
+		wf_clear();
+		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
+		//if (get_clean_mode() == Clean_Mode_Spot)
+		{
+			SpotMovement::instance()->spotDeinit();// clear the variables.
+		}
 	}
 	// Disable motor here because there is a work_motor_configure() in spotDeinit().
 	disable_motors();
@@ -400,7 +405,8 @@ MotionManage::~MotionManage()
 		extern bool g_have_seen_charge_stub;
 		if(g_go_home && !g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		wav_play(WAV_CLEANING_FINISHED);
+		if (get_clean_mode() != Clean_Mode_GoHome)
+			wav_play(WAV_CLEANING_FINISHED);
 	}
 	cm_reset_go_home();
 
@@ -426,12 +432,18 @@ MotionManage::~MotionManage()
 	else
 		if (get_clean_mode() == Clean_Mode_Spot)
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		else if (get_clean_mode() == Clean_Mode_GoHome)
+			ROS_WARN("%s %d: Could not go to charger stub.", __FUNCTION__, __LINE__);
 		else
 			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
 
-	g_saved_work_time += get_work_time();
-	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
-	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
+	if (get_clean_mode() != Clean_Mode_GoHome)
+	{
+		g_saved_work_time += get_work_time();
+		auto cleaned_count = map_get_cleaned_area();
+		auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
+	}
 	if (g_battery_low)
 		set_clean_mode(Clean_Mode_Sleep);
 	else if (g_charge_detect)
@@ -452,6 +464,8 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 			return initWallFollowCleaning();
 		case Clean_Mode_Spot:
 			return initSpotCleaning();
+		case Clean_Mode_GoHome:
+			return initGoHome();
 		default:
 			ROS_ERROR("This mode (%d) should not use MotionManage.", cleaning_mode);
 			return false;
@@ -727,6 +741,25 @@ bool MotionManage::initSpotCleaning(void)
 	set_main_brush_pwm(80);
 	set_side_brush_pwm(60, 60);
 
+	return true;
+}
+
+bool MotionManage::initGoHome(void)
+{
+	set_led_mode(LED_FLASH, LED_ORANGE, 1000);
+	map_init(MAP);
+	set_gyro_off();
+	usleep(30000);
+	set_gyro_on();
+	reset_touch();
+	cm_register_events();
+	wav_play(WAV_BACK_TO_CHARGER);
+
+	if (!wait_for_gyro_on())
+		return false;
+
+	work_motor_configure();
+	reset_rcon_status();
 	return true;
 }
 

@@ -1,3 +1,6 @@
+// It has been moved to regulator.cpp.
+#if !GO_HOME_REGULATOR
+
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <stdio.h>
@@ -2726,3 +2729,4 @@ void go_home_handle_over_current_suction(bool state_now, bool state_last)
 	}
 }
 
+#endif
