@@ -841,7 +841,7 @@ uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
 		is_triggered |= setLaserMarkerAcr2Dir(X_MIN, X_MAX, 168, 191, 2, 0, &tmp_scan_data, &laser_status,
 																				 Status_Front_OBS);
 	}
-	if(get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
+	if(cm_is_navigation() || cm_is_exploration())
 	{
 		//left middle
 		setLaserMarkerAcr2Dir(X_MIN, X_MAX, 258, 281, 0, 2, &tmp_scan_data, &laser_status, 0);

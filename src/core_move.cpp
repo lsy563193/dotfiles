@@ -317,7 +317,7 @@ int cm_move_to(const PPTargetType& path)
 	while (ros::ok())
 	{
 		/*for exploration mark the map and detect the rcon signal*/
-		if (get_clean_mode() == Clean_Mode_Exploration) {
+		if (cm_is_exploration()) {
 			explore_update_map();
 			/*if (get_rcon_status()) {
 				g_exploration_home = true;
@@ -325,19 +325,15 @@ int cm_move_to(const PPTargetType& path)
 				break;
 			}*/
 		}
-		/*for navigation trapped wall follow update map and push_back vector*/
-		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Navigation && g_trapped_mode == 1)
-			wf_update_map(WFMAP);
-
-		/*for exploration trapped wall follow update map and push_back vector*/
-		if((!mt_is_linear()) && get_clean_mode() == Clean_Mode_Exploration && g_trapped_mode == 1)
-			wf_update_map(WFMAP);
-
-		/*for wall follow mode update map and push_back vector*/
-		if(!mt_is_linear() && get_clean_mode() == Clean_Mode_WallFollow && !g_go_home)
-			wf_update_map(WFMAP);
-
-		if (/*get_clean_mode() == Clean_Mode_WallFollow &&*/ mt_is_linear()) {
+		if((!mt_is_linear())) {
+			/*for navigation trapped wall follow update map and push_back vector*/
+			/*for exploration trapped wall follow update map and push_back vector*/
+			/*for wall follow mode update map and push_back vector*/
+			if ((g_trapped_mode == 1 && (cm_is_navigation() || cm_is_exploration())) ||
+					(!g_go_home && cm_is_wall_follow())
+							)
+				wf_update_map(WFMAP);
+		}else {
 			wall_dynamic_base(30);
 		}
 
@@ -361,7 +357,10 @@ int cm_move_to(const PPTargetType& path)
 			set_wheel_speed(0, 0);
 			continue;
 		}
-
+		if (rm.isMt() && mt_is_follow_wall() && !cm_is_wall_follow()) {
+			map_set_laser();
+			map_set_obs();
+		}
 		if (rm.isReach()){
 			ret = REATH_TARGET;
 			break;
@@ -376,7 +375,7 @@ int cm_move_to(const PPTargetType& path)
 			rm.switchToNext();
 		}
 
-		if (get_clean_mode() != Clean_Mode_WallFollow
+		if (!cm_is_wall_follow()
 						&& (mt_is_linear() || mt_is_follow_wall()))
 		{
 			if (!rm.isTurn() &&(passed_path.empty() || passed_path.back() != curr))
@@ -603,7 +602,7 @@ int cm_cleaning()
 	if (!motion.initSucceeded())
 		return 0;
 
-	if (get_clean_mode() == Clean_Mode_GoHome)
+	if (cm_get() == Clean_Mode_GoHome)
 	{
 		cm_go_to_charger();
 		return 0;
@@ -633,7 +632,7 @@ int cm_cleaning()
 		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
 		if (is_found == 0 ) //No target point
 		{
-			if(get_clean_mode() == Clean_Mode_Spot)
+			if(cm_get() == Clean_Mode_Spot)
 				return 0;
 			uint8_t check_status = cm_check_charger_signal();
 			if(check_status == SEEN_CHARGER)/*---have seen charger signal---*/
@@ -648,7 +647,7 @@ int cm_cleaning()
 			extern bool g_have_seen_charge_stub;
 			ROS_INFO("g_have_seen_charge_stub = %d", g_have_seen_charge_stub);
 			ROS_INFO("g_no_uncleaned_target = %d", g_no_uncleaned_target);
-			if (get_clean_mode() == Clean_Mode_Exploration || g_no_uncleaned_target) {
+			if (cm_is_exploration() || g_no_uncleaned_target) {
 				g_no_uncleaned_target = false;
 				if (curr == g_zero_home) {
 					auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
@@ -687,7 +686,7 @@ int cm_cleaning()
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
 				cm_set_event_manager_handler_state(true);
 				cm_self_check();
-				if(get_clean_mode() == Clean_Mode_WallFollow) {
+				if(cm_is_wall_follow()) {
 					g_keep_on_wf = true;
 					//wf_break_wall_follow();
 				}
@@ -740,7 +739,7 @@ void cm_check_should_go_home(void)
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
-		if (get_clean_mode() == Clean_Mode_WallFollow)
+		if (cm_is_wall_follow())
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 			cm_update_position();
@@ -1791,13 +1790,13 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	set_wheel_speed(0, 0);
 	g_key_clean_pressed = true;
 
-	if(get_clean_mode() == Clean_Mode_Navigation)
+	if(cm_is_navigation())
 		robot::instance()->setManualPause();
 
 	start_time = time(NULL);
 	while (get_key_press() & KEY_CLEAN)
 	{
-		if (get_clean_mode() == Clean_Mode_Navigation && time(NULL) - start_time > 3) {
+		if (cm_is_navigation() && time(NULL) - start_time > 3) {
 			if (!reset_manual_pause)
 			{
 				beep_for_command(VALID);
@@ -1829,7 +1828,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	}
 	beep_for_command(VALID);
 	g_key_clean_pressed = true;
-	if(get_clean_mode() == Clean_Mode_Navigation){
+	if(cm_is_navigation()){
 		robot::instance()->setManualPause();
 	}
 	reset_rcon_remote();
@@ -1864,7 +1863,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!g_motion_init_succeeded || get_clean_mode() != Clean_Mode_Navigation
+	if (!g_motion_init_succeeded || !cm_is_navigation()
 		|| g_go_home || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
 		|| time(NULL) - last_time_remote_spot < 3)
 		beep_for_command(INVALID);
@@ -1964,13 +1963,13 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 void cm_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
-	if (((get_clean_mode() == Clean_Mode_Exploration || get_clean_mode() == Clean_Mode_GoHome || g_go_home) && robot::instance()->getChargeStatus()) ||
-		(get_clean_mode() != Clean_Mode_Exploration && robot::instance()->getChargeStatus() == 3))
+	if (((cm_is_exploration() || cm_get() == Clean_Mode_GoHome || g_go_home) && robot::instance()->getChargeStatus()) ||
+		(!cm_is_exploration() && robot::instance()->getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)
 		{
 			g_charge_detect = robot::instance()->getChargeStatus();
-			if (get_clean_mode() != Clean_Mode_Exploration && robot::instance()->getChargeStatus() == 3)
+			if (!cm_is_exploration() && robot::instance()->getChargeStatus() == 3)
 				g_fatal_quit_event = true;
 			ROS_WARN("%s %d: g_charge_detect has been set to %d.", __FUNCTION__, __LINE__, g_charge_detect);
 			g_charge_detect_cnt = 0;

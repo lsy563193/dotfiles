@@ -65,7 +65,7 @@ uint8_t spiral(void)
 				reset_rcon_remote();
 				if(Temp_Dirt_Status==1)
 				{
-					set_clean_mode(Clean_Mode_Userinterface);
+					cm_set(Clean_Mode_Userinterface);
 					return 1;
 				}
 				return 0;
@@ -74,7 +74,7 @@ uint8_t spiral(void)
 			{
 				turn_left(Turn_Speed, 700);
 				move_forward(30, 30);
-				set_clean_mode(Clean_Mode_RandomMode);
+				cm_set(Clean_Mode_RandomMode);
 				reset_rcon_remote();
 				return 1;
 			}
@@ -82,13 +82,13 @@ uint8_t spiral(void)
 			{
 				turn_right(Turn_Speed, 560);
 				move_forward(30, 30);
-				set_clean_mode(Clean_Mode_RandomMode);
+				cm_set(Clean_Mode_RandomMode);
 				reset_rcon_remote();
 				return 1;
 			}
 			if(remote_key(Remote_Home)) //                                    Check Key Home
 			{
-				set_clean_mode(Clean_Mode_GoHome);
+				cm_set(Clean_Mode_GoHome);
 				reset_rcon_remote();
 				set_home_remote();
 				return 1;
@@ -98,7 +98,7 @@ uint8_t spiral(void)
 			{
 				turn_right(Turn_Speed,560);
 				move_forward(30,30);
-				set_clean_mode(Clean_Mode_RandomMode);
+				cm_set(Clean_Mode_RandomMode);
 				reset_rcon_remote();
 				return 1;
 			}*/

@@ -436,7 +436,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 
 	/*for exploration update map*/
-	if (get_clean_mode() == Clean_Mode_Exploration) {
+	if (cm_is_exploration()) {
 		ros_map_convert(MAP, false, false, true);
 	}
 	MotionManage::s_slam->isMapReady(true);

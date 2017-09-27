@@ -97,7 +97,7 @@ void turn_into_exploration(bool is_reset_map)
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 
-	set_clean_mode(Clean_Mode_Exploration);
+	cm_set(Clean_Mode_Exploration);
 	ros_map_convert(MAP, false, false, true);
 	explore_update_map();
 }

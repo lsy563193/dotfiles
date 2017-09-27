@@ -5,6 +5,7 @@
 #include <time.h>
 #include "config.h"
 #include "main.h"
+#include "clean_mode.h"
 
 struct pid_struct
 {
@@ -248,22 +249,6 @@ struct pid_argu_struct
 #define Display_Zizag				2
 #define Display_Remote				3
 
-#define Clean_Mode_Userinterface	1
-#define Clean_Mode_Spiral			2
-#define Clean_Mode_WallFollow		3
-#define Clean_Mode_RandomMode		4
-#define Clean_Mode_Charging			5
-#define Clean_Mode_GoHome			6
-#define Clean_Mode_Sleep			7
-#define Clean_Mode_SelfCheck		8
-#define Clean_Mode_Test				9
-#define Clean_Mode_Zigzag			10
-#define Clean_Mode_Remote			11
-#define Clean_Mode_Spot				12
-#define Clean_Mode_Mobility			13
-#define Clean_Mode_Navigation		14
-#define Clean_Mode_Exploration		15
-
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
 
@@ -506,7 +491,7 @@ uint8_t check_bat_full(void);
 
 uint8_t check_bat_ready_to_clean(void);
 
-uint8_t get_clean_mode(void);
+uint8_t cm_get(void);
 
 /*
  * Set the mode for vacuum.
@@ -598,7 +583,7 @@ bool is_charge_on(void);
 
 uint8_t is_water_tank(void);
 
-void set_clean_mode(uint8_t mode);
+void cm_set(uint8_t mode);
 
 void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
 

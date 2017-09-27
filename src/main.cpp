@@ -43,13 +43,13 @@ void *core_move_thread(void *)
 	usleep(200000);
 
 	if (is_direct_charge() || is_on_charger_stub())
-		set_clean_mode(Clean_Mode_Charging);
+		cm_set(Clean_Mode_Charging);
 	else if (check_bat_ready_to_clean())
 		wav_play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
-		switch(get_clean_mode()){
+		switch(cm_get()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------user_interface mode------\n");
 				set_main_pwr_byte(Clean_Mode_Userinterface);
@@ -141,7 +141,7 @@ void *core_move_thread(void *)
 				sleep_mode();
 				break;
 			default:
-				set_clean_mode(Clean_Mode_Userinterface);
+				cm_set(Clean_Mode_Userinterface);
 				break;
 
 		}
