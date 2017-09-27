@@ -212,7 +212,7 @@ void user_interface_register_events(void)
 	/* Rcon */
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
-	//event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_FORWARD, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);
