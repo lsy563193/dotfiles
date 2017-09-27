@@ -3326,7 +3326,7 @@ bool check_pub_scan()
 uint8_t is_robot_slip()
 {
 	uint8_t ret = 0;
-	if(!get_tilt_status() && MotionManage::s_laser != nullptr && MotionManage::s_laser->isScan2Ready() && MotionManage::s_laser->isRobotSlip()){
+	if(MotionManage::s_laser != nullptr && MotionManage::s_laser->isScan2Ready() && MotionManage::s_laser->isRobotSlip()){
 		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
 		ret = 1;
 	}
