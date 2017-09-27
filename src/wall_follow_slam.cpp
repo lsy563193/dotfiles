@@ -214,7 +214,7 @@ static bool is_reach(void)
 	return 0;
 }
 
-static bool is_trap(void)
+bool wf_is_trap(void)
 {
 	if (g_same_cell_count >= 1000)
 	{
@@ -234,7 +234,7 @@ static bool is_trap(void)
 	return false;
 }
 
-static bool is_time_out(void)
+bool wf_is_time_out(void)
 {
 	if (get_work_time() > WALL_FOLLOW_TIME) {
 		ROS_INFO("Wall Follow time longer than 60 minutes");
@@ -456,75 +456,6 @@ void wf_update_map(uint8_t id)
 		map_set_cell(id, x, y, BLOCKED_OBS);
 }
 
-bool wf_is_reach_isolate()
-{
-	if(is_reach()){
-		ROS_INFO("is_reach()");
-		//g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
-		//if (is_isolate()) {
-		if (trapped_is_isolate()) {
-			g_isolate_count++;
-			g_isolate_triggered = true;
-			//map_reset(MAP);
-			wf_break_wall_follow();
-			ROS_WARN("is_isolate");
-		} else {
-			g_isolate_count = 4;
-			ROS_WARN("is not isolate");
-		}
-		ROS_INFO("isolate_count(%d)", g_isolate_count);
-		return true;
-	}
-	return false;
-}
-
-bool wf_is_end()
-{
-	if (wf_is_reach_isolate() || is_time_out() || is_trap())
-		return true;
-	return false;
-}
-
-bool trapped_is_end()
-{
-	/*
-	auto cell = cm_update_position();
-	Pose16_t curr_cell{cell.X, cell.Y, (int16_t) gyro_get_angle()};
-	wf_is_reach_new_cell(curr_cell);
-	ROS_INFO("cell.X = %d, cell.Y = %d", cell.X, cell.Y);
-
-	if (is_reach())
-		return true;
-	return false;
-	*/
-	if (wf_is_reach_isolate() || is_trap()) {
-		g_trapped_count++;
-		wf_break_wall_follow();
-		ROS_WARN("g_trapped_count = %d", g_trapped_count);
-		if (g_trapped_count >= TRAPPED_COUNT_LIMIT) {
-			ROS_WARN("g_trapped_count >= TRAPPED_COUNT_LIMIT");
-			ROS_WARN("g_trapped_count = %d", g_trapped_count);
-			g_trapped_count = 0;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool wf_is_go_home()
-{
-	if (g_isolate_count > 3 || wf_time_out) {
-		return true;
-	} else {
-		return false;
-	}
-};
-
-bool wf_is_first()
-{
-	return g_isolate_count == 0;
-}
-
 bool wf_is_reach_start()
 {
 	int32_t x_s = count_to_cell(RegulatorBase::s_origin.X);
@@ -556,3 +487,67 @@ bool wf_is_reach_start()
 	}
 
 }
+
+bool wf_is_reach_isolate()
+{
+	if(is_reach()){
+		ROS_INFO("is_reach()");
+		//g_isolate_count = is_isolate() ? g_isolate_count+1 : 4;
+		//if (is_isolate()) {
+		if (trapped_is_isolate()) {
+			g_isolate_count++;
+			g_isolate_triggered = true;
+			//map_reset(MAP);
+			wf_break_wall_follow();
+			ROS_WARN("is_isolate");
+		} else {
+			g_isolate_count = 4;
+			ROS_WARN("is not isolate");
+		}
+		ROS_INFO("isolate_count(%d)", g_isolate_count);
+		return true;
+	}
+	return false;
+}
+
+bool trapped_is_end()
+{
+	/*
+	auto cell = cm_update_position();
+	Pose16_t curr_cell{cell.X, cell.Y, (int16_t) gyro_get_angle()};
+	wf_is_reach_new_cell(curr_cell);
+	ROS_INFO("cell.X = %d, cell.Y = %d", cell.X, cell.Y);
+
+	if (is_reach())
+		return true;
+	return false;
+	*/
+	if (wf_is_reach_isolate()) {
+		g_trapped_count++;
+		wf_break_wall_follow();
+		ROS_WARN("g_trapped_count = %d", g_trapped_count);
+		if (g_trapped_count >= TRAPPED_COUNT_LIMIT) {
+			ROS_WARN("g_trapped_count >= TRAPPED_COUNT_LIMIT");
+			ROS_WARN("g_trapped_count = %d", g_trapped_count);
+			g_trapped_count = 0;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool wf_is_go_home()
+{
+	if (g_isolate_count > 3 || wf_time_out) {
+		return true;
+	} else {
+		return false;
+	}
+};
+
+bool wf_is_first()
+{
+	return g_isolate_count == 0;
+}
+

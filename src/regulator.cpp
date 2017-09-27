@@ -787,22 +787,14 @@ bool FollowWallRegulator::isReach()
 	bool ret = false;
 	if (get_clean_mode() == Clean_Mode_WallFollow)
 	{
-		if (wf_is_end())
+		if (wf_is_reach_isolate())
 		{
-			//wf_break_wall_follow();
 			ret = true;
 		}
 	} else if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
 	{
 		if (g_trapped_mode != 0)
 		{
-			if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
-			//if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME || wf_is_end())
-			{
-				ROS_WARN("%s %d: Escape trapped timeout.", __FUNCTION__, __LINE__);
-				g_fatal_quit_event = true;
-				ret = true;
-			}
 			if (trapped_is_end()) {
 				ROS_WARN("%s %d: Trapped wall follow is loop closed. ", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
@@ -827,7 +819,7 @@ bool FollowWallRegulator::isReach()
 			}
 		} else if (get_clean_mode() == Clean_Mode_Navigation)
 		{
-			if ((s_origin.Y < s_target.Y ^ s_curr_p.Y < s_target.Y))
+			if (s_origin.Y < s_target.Y ^ s_curr_p.Y < s_target.Y)
 			{
 				auto dx = ((s_origin.Y < s_target.Y) ^ mt_is_left()) ? +2 : -2;
 				if(is_block_blocked(count_to_cell(s_curr_p.X)+dx, count_to_cell(s_curr_p.Y)))
@@ -921,7 +913,12 @@ bool FollowWallRegulator::_isStop()
 {
 //	ROS_INFO("FollowWallRegulator _isStop");
 	bool ret = false;
-	if (get_clean_mode() == Clean_Mode_Navigation)
+
+	if (get_clean_mode() == Clean_Mode_WallFollow)
+	{
+		ret = wf_is_time_out() || wf_is_trap();
+	}
+	else if (get_clean_mode() == Clean_Mode_Navigation)
 	{
 		if (g_trapped_mode == 0) {
 			auto curr = map_point_to_cell(s_curr_p);
@@ -980,7 +977,15 @@ bool FollowWallRegulator::_isStop()
 			ret = true;
 		}
 	}
-
+	if ((get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration) && g_trapped_mode != 0) {
+		if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
+			//if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME || wf_is_end())
+		{
+			ROS_WARN("%s %d: Escape trapped timeout.", __FUNCTION__, __LINE__);
+			g_fatal_quit_event = true;
+			ret = true;
+		}
+	}
 	return ret;
 }
 

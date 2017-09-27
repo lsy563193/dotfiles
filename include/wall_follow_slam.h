@@ -11,10 +11,14 @@
 
 uint8_t wf_clear(void);
 void wf_update_map(uint8_t id);
-bool wf_is_end();
+bool wf_is_reach_isolate();
 uint8_t wf_break_wall_follow(void);
 bool wf_is_go_home();
 bool wf_is_first();
 bool wf_is_reach_start();
 bool trapped_is_end();
+bool wf_is_stop();
+
+bool wf_is_time_out();
+bool wf_is_trap();
 #endif
