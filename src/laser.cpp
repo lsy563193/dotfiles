@@ -879,6 +879,12 @@ uint8_t Laser::isRobotSlip()
 	const float acur2 = 0.05;//accuracy 2 ,in meters
 	const float acur3 = 0.03;//accuracy 3 ,in meters
 	const float acur4 = 0.01;//accuracy 4 ,in meters
+
+	const float dist1 = 3.5;//range distance 1
+	const float dist2 = 2.5;//range distance 2
+	const float dist3 = 1.5;//range distance 3
+	const float dist4 = 0.5;//range distance 4
+
 	const int COUNT = 6;//stuck count number
 
 	uint16_t same_count = 0;
@@ -898,23 +904,23 @@ uint8_t Laser::isRobotSlip()
 		for(int i =0;i<=359;i=i+2){
 			if(tmp_scan_data.ranges[i] < 3.5){
 				tol_count++;
-				if(tmp_scan_data.ranges[i] >2.5 && tmp_scan_data.ranges[i] < 3.5){//	
-					if(absolute( tmp_scan_data.ranges[i] - last_ranges[i] ) <= acur1 ){
+				if(laserScanData_2_.ranges[i] >2.5 && laserScanData_2_.ranges[i] < dist1){//
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
 				} 
-				else if(tmp_scan_data.ranges[i] >1.5 && tmp_scan_data.ranges[i] < 2.5){//
-					if(absolute( tmp_scan_data.ranges[i] - last_ranges[i] ) <= acur2 ){
+				else if(laserScanData_2_.ranges[i] >1.5 && laserScanData_2_.ranges[i] < dist2){//
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
 					}
 				}
-				else if(tmp_scan_data.ranges[i] >0.5 && tmp_scan_data.ranges[i] < 1.5){//
-					if(absolute( tmp_scan_data.ranges[i] - last_ranges[i] ) <= acur3 ){
+				else if(laserScanData_2_.ranges[i] >0.5 && laserScanData_2_.ranges[i] < dist3){//
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
 						same_count++;
 					}
 				}
-				else if(tmp_scan_data.ranges[i] <= 0.5){
-					if(absolute( tmp_scan_data.ranges[i] - last_ranges[i] ) <= acur4 ){
+				else if(laserScanData_2_.ranges[i] <= dist4){
+					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
 						same_count++;
 					}
 				}

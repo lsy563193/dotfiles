@@ -96,7 +96,6 @@ void user_interface(void)
 			battery_ready_to_clean = false;
 			set_led_mode(LED_BREATH, LED_ORANGE);
 		}
-
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
 			ROS_WARN("%s %d: Userinterface mode didn't receive any command in 10mins, go to sleep mode.", __FUNCTION__, __LINE__);
@@ -213,7 +212,7 @@ void user_interface_register_events(void)
 	/* Rcon */
 	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
 	/* Battery */
-	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
+	//event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
 	/* Remote */
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_FORWARD, true);
 	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);

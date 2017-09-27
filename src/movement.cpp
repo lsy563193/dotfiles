@@ -2097,7 +2097,7 @@ void control_set(uint8_t type, uint8_t val)
 void control_append_crc()
 {
 	set_send_flag();
-	g_send_stream[CTL_CRC] = calc_buf_crc8((char *) g_send_stream, SEND_LEN - 3);
+	g_send_stream[CTL_CRC] = calc_buf_crc8(g_send_stream, SEND_LEN - 3);
 	reset_send_flag();
 }
 
@@ -2113,7 +2113,7 @@ void control_stop_all(void)
 			g_send_stream[i] = 0x00;
 	}
 	reset_send_flag();
-	//g_send_stream[SEND_LEN-3] = calc_buf_crc8((char *)g_send_stream, SEND_LEN-3);
+	//g_send_stream[SEND_LEN-3] = calc_buf_crc8(g_send_stream, SEND_LEN-3);
 	//serial_write(SEND_LEN, g_send_stream);
 }
 
@@ -2180,7 +2180,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 
 
 			memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-			buf[CTL_CRC] = calc_buf_crc8((char *) buf, SEND_LEN - 3);
+			buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 			serial_write(SEND_LEN, buf);
 
 #if VERIFY_DEBUG
@@ -2304,7 +2304,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 			for (int k = 0; k < 20; k++)
 			{
 				memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-				buf[CTL_CRC] = calc_buf_crc8((char *) buf, SEND_LEN - 3);
+				buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 				serial_write(SEND_LEN, buf);
 
 				usleep(500);

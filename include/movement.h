@@ -335,28 +335,7 @@ typedef enum{
 #define KEY_HOME  0x08
 #define KEY_PLAN  0x10
 
-#define	CTL_WHEEL_LEFT_HIGH 2
-#define	CTL_WHEEL_LEFT_LOW  3
-#define	CTL_WHEEL_RIGHT_HIGH  4
-#define	CTL_WHEEL_RIGHT_LOW 5
-#define	CTL_VACCUM_PWR 6
-#define	CTL_BRUSH_LEFT 7
-#define	CTL_BRUSH_RIGHT 8
-#define	CTL_BRUSH_MAIN 9
-#define	CTL_BUZZER 10
-#define	CTL_MAIN_PWR 11
-#define	CTL_CHARGER 12
-#define	CTL_LED_RED 13
-#define	CTL_LED_GREEN 14
-#if __ROBOT_X400
-#define	CTL_GYRO 15
-#define	CTL_CRC 16
-#elif __ROBOT_X900
-#define CTL_OMNI_RESET 15
-#define CTL_GYRO 16
-#define CTL_CMD				17
-#define CTL_CRC				18
-#endif
+
 #define Direction_Flag_Right 0x01
 #define Direction_Flag_Left  0x02
 
