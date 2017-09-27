@@ -72,7 +72,7 @@ void charge_function(void)
 			if (bat_enough_to_continue_cleaning_counter > 500)// About 10 seconds.
 			{
 				ROS_INFO("%s %d: Robot finish charging, continue cleaning.", __FUNCTION__, __LINE__);
-				set_clean_mode(Clean_Mode_Navigation);
+				cm_set(Clean_Mode_Navigation);
 				break;
 			}
 		}
@@ -96,19 +96,19 @@ void charge_function(void)
 					if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
 					{
 						ROS_INFO("%s %d: Exit charger mode and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
-						set_clean_mode(Clean_Mode_Userinterface);
+						cm_set(Clean_Mode_Userinterface);
 						g_resume_cleaning = false;
 					}
 					else
 					{
 						ROS_INFO("%s %d: Exit charger mode and continue cleaning.", __FUNCTION__, __LINE__);
-						set_clean_mode(Clean_Mode_Navigation);
+						cm_set(Clean_Mode_Navigation);
 					}
 					break;
 				}
 
 				ROS_INFO("%s %d: Exit charger mode and go to userinterface mode.", __FUNCTION__, __LINE__);
-				set_clean_mode(Clean_Mode_Userinterface);
+				cm_set(Clean_Mode_Userinterface);
 				break;
 			}
 			else
@@ -120,12 +120,12 @@ void charge_function(void)
 		{
 			disable_motors();
 			g_cliff_all_triggered = 0;
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 			break;
 		}
 		if(g_plan_activated)
 		{
-			set_clean_mode(Clean_Mode_Navigation);
+			cm_set(Clean_Mode_Navigation);
 		}
 		if (charge_reject_reason)
 		{
@@ -166,7 +166,7 @@ void charge_function(void)
 				charge_plan_status = 0;
 			}
 		}
-		if (get_clean_mode() == Clean_Mode_Navigation)
+		if (cm_is_navigation())
 			break;
 
 		if (check_bat_full() && !battery_full)
@@ -360,7 +360,7 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Exit charger mode and go to navigation mode.", __FUNCTION__, __LINE__);
 		beep_for_command(VALID);
-		set_clean_mode(Clean_Mode_Navigation);
+		cm_set(Clean_Mode_Navigation);
 	}
 
 	// Key release detection, if user has not release the key, don't do anything.
@@ -410,7 +410,7 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Exit charger mode and go to navigation mode.", __FUNCTION__, __LINE__);
 			beep_for_command(VALID);
-			set_clean_mode(Clean_Mode_Navigation);
+			cm_set(Clean_Mode_Navigation);
 		}
 	}
 	else{

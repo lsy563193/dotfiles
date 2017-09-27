@@ -352,7 +352,7 @@ bool BackRegulator::isSwitch()
 
 bool BackRegulator::_isStop()
 {
-	if (get_clean_mode() != Clean_Mode_GoHome)
+	if (cm_get() != Clean_Mode_GoHome)
 	{
 		// Only update the scan seq.
 		MotionManage::s_laser->laserMarker(false);
@@ -365,7 +365,7 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("BackRegulator::adjustSpeed");
 	set_dir_backward();
-	if (get_clean_mode() != Clean_Mode_WallFollow)
+	if (!cm_is_wall_follow())
 	{
 		speed_ += ++counter_;
 		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
@@ -453,7 +453,7 @@ bool TurnRegulator::isSwitch()
 bool TurnRegulator::_isStop()
 {
 	bool ret = false;
-	if (get_clean_mode() != Clean_Mode_GoHome)
+	if (cm_get() != Clean_Mode_GoHome)
 	{
 		// Only update the scan seq.
 		MotionManage::s_laser->laserMarker(false);
@@ -630,12 +630,12 @@ bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
 	bool obs_tmp;
-	if(get_clean_mode()==Clean_Mode_WallFollow)
+	if(cm_is_wall_follow())
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): _get_obs_value();
 	else
 		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
 
-//	if (get_clean_mode() == Clean_Mode_Exploration)
+//	if (cm_is_exploration())
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
 
@@ -648,7 +648,7 @@ bool LinearRegulator::_isStop()
 				g_rcon_during_go_home = true;
 			else
 				path_set_home(map_get_curr_cell());
-			if (get_clean_mode() == Clean_Mode_Exploration)
+			if (cm_is_exploration())
 			{
 				// Directly go to charger
 				g_exploration_home = true;
@@ -735,7 +735,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		integrated_ = 0;
 	}
 
-	if((FORCE_MOVE_LINE && std::abs(dis_diff) > CELL_COUNT_MUL/4 && distance > SLOW_DOWN_DISTANCE*4) && (get_clean_mode() != Clean_Mode_WallFollow))
+	if((FORCE_MOVE_LINE && std::abs(dis_diff) > CELL_COUNT_MUL/4 && distance > SLOW_DOWN_DISTANCE*4) && (!cm_is_wall_follow()))
 	{
 		integrated_ = 0;
 
@@ -785,13 +785,13 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 bool FollowWallRegulator::isReach()
 {
 	bool ret = false;
-	if (get_clean_mode() == Clean_Mode_WallFollow)
+	if (cm_is_wall_follow())
 	{
 		if (wf_is_reach_isolate())
 		{
 			ret = true;
 		}
-	} else if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration)
+	} else if (cm_is_navigation() || cm_is_exploration())
 	{
 		if (g_trapped_mode != 0)
 		{
@@ -811,13 +811,13 @@ bool FollowWallRegulator::isReach()
 				ROS_WARN("%s:%d: out of esc", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
 				// This led light is for debug.
-				if (get_clean_mode() == Clean_Mode_Exploration)
+				if (cm_is_exploration())
 					set_led_mode(LED_STEADY, LED_ORANGE);
 				else
 					set_led_mode(LED_STEADY, LED_GREEN);
 				ret = true;
 			}
-		} else if (get_clean_mode() == Clean_Mode_Navigation)
+		} else if (cm_is_navigation())
 		{
 			if (s_origin.Y < s_target.Y ^ s_curr_p.Y < s_target.Y)
 			{
@@ -914,11 +914,11 @@ bool FollowWallRegulator::_isStop()
 //	ROS_INFO("FollowWallRegulator _isStop");
 	bool ret = false;
 
-	if (get_clean_mode() == Clean_Mode_WallFollow)
+	if (cm_is_wall_follow())
 	{
 		ret = wf_is_time_out() || wf_is_trap();
 	}
-	else if (get_clean_mode() == Clean_Mode_Navigation)
+	else if (cm_is_navigation())
 	{
 		if (g_trapped_mode == 0) {
 			auto curr = map_point_to_cell(s_curr_p);
@@ -966,7 +966,7 @@ bool FollowWallRegulator::_isStop()
 			}
 		}
 	}
-	else if (get_clean_mode() == Clean_Mode_Exploration)
+	else if (cm_is_exploration())
 	{
 		// For exploration mode detecting the rcon signal
 		auto rcon_status = get_rcon_status();
@@ -977,7 +977,7 @@ bool FollowWallRegulator::_isStop()
 			ret = true;
 		}
 	}
-	if ((get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Exploration) && g_trapped_mode != 0) {
+	if ((cm_is_navigation() || cm_is_exploration()) && g_trapped_mode != 0) {
 		if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME)
 			//if ((time(NULL) - g_escape_trapped_timer) > ESCAPE_TRAPPED_TIME || wf_is_end())
 		{
@@ -3207,7 +3207,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	if(mt_is_follow_wall())
 	{
 		mt_reg_ = new FollowWallRegulator(s_curr_p, target);
-		if(get_clean_mode() == Clean_Mode_WallFollow) {
+		if(cm_is_wall_follow()) {
 			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
 							 __FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered,
 							 g_tilt_triggered, g_robot_slip);

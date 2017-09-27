@@ -35,6 +35,7 @@ FILE(GLOB PP_SRC
 	src/go_home.cpp
 	src/regulator.cpp
 	src/move_type.cpp
+	src/clean_mode.cpp
 #	src/a_star.cpp
 	src/space_exploration.cpp
 )

@@ -63,7 +63,7 @@ static uint8_t g_direction_flag = 0;
 
 volatile uint8_t g_vac_mode;
 volatile uint8_t g_vac_mode_save;
-static uint8_t g_cleaning_mode = 0;
+//static uint8_t g_cleaning_mode = 0;
 static uint8_t g_sendflag = 0;
 static time_t g_start_work_time;
 ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
@@ -824,7 +824,7 @@ int get_rcon_trig(void)
 	}
 	else if (mt_is_linear()){
 //		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		if (get_clean_mode() == Clean_Mode_Exploration)
+		if (cm_is_exploration())
 		{
 			auto rcon_status = get_rcon_status() & RconAll_Home_T;
 			reset_rcon_status();
@@ -1234,7 +1234,7 @@ uint8_t self_check(uint8_t Check_Code)
 	uint8_t Right_Wheel_Slow = 0;
 
 /*
-	if(get_clean_mode() == Clean_Mode_Navigation)
+	if(cm_is_navigation())
 		cm_move_back_(COR_BACK_20MM);
 	else
 		quick_back(30,20);
@@ -1436,7 +1436,7 @@ uint8_t check_bat_full(void)
 uint8_t check_bat_ready_to_clean(void)
 {
 	uint16_t battery_limit;
-	if (get_clean_mode() == Clean_Mode_Charging)
+	if (cm_get() == Clean_Mode_Charging)
 	{
 		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE + 60;
 	} else
@@ -1452,10 +1452,10 @@ uint8_t check_bat_ready_to_clean(void)
 	return 0;
 }
 
-uint8_t get_clean_mode(void)
-{
-	return g_cleaning_mode;
-}
+//uint8_t cm_get(void)
+//{
+//	return g_cleaning_mode;
+//}
 
 void set_vacmode(uint8_t mode, bool is_save)
 {
@@ -1873,7 +1873,7 @@ uint8_t stop_event(void)
 		{
 			ROS_WARN("Touch status == 1");
 #if MANUAL_PAUSE_CLEANING
-			if (get_clean_mode() == Clean_Mode_Navigation)
+			if (cm_is_navigation())
 				robot::instance()->setManualPause();
 #endif
 			reset_touch();
@@ -1884,7 +1884,7 @@ uint8_t stop_event(void)
 			ROS_WARN("remote_key clean.");
 			reset_rcon_remote();
 #if MANUAL_PAUSE_CLEANING
-			if (get_clean_mode() == Clean_Mode_Navigation)
+			if (cm_is_navigation())
 				robot::instance()->setManualPause();
 #endif
 			g_stop_event_status = 2;
@@ -1978,10 +1978,10 @@ uint8_t is_water_tank(void)
 }
 
 
-void set_clean_mode(uint8_t mode)
-{
-	g_cleaning_mode = mode;
-}
+//void cm_set(uint8_t mode)
+//{
+//	g_cleaning_mode = mode;
+//}
 
 void beep(uint8_t Sound_Code, int Sound_Time_Ms, int Silence_Time_Ms, int Total_Time_Count)
 {
@@ -2876,7 +2876,7 @@ uint8_t is_bumper_jamed()
 					if (get_bumper_status())
 					{
 						ROS_INFO("JAM5");
-						set_clean_mode(Clean_Mode_Userinterface);
+						cm_set(Clean_Mode_Userinterface);
 						set_error_code(Error_Code_Bumper);
 						alarm_error();
 						return 1;

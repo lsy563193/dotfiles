@@ -151,7 +151,7 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
-	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
+	mt_set(cm_is_wall_follow() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_from_station = 0;
 	g_trapped_mode = 0;
 	g_finish_cleaning_go_home = false;
@@ -169,14 +169,14 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	initSucceeded(true);
 
-	if (!initCleaning(get_clean_mode()))
+	if (!initCleaning(cm_get()))
 	{
 		initSucceeded(false);
 		return;
 	}
 
 	// No need to start laser or slam if it is go home mode.
-	if (get_clean_mode() == Clean_Mode_GoHome)
+	if (cm_get() == Clean_Mode_GoHome)
 		return;
 
 	//2 start laser
@@ -229,7 +229,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	else
 	{
 		nh_.param<bool>("is_active_align", is_align_active_, false);
-		if (get_clean_mode() == Clean_Mode_Navigation && is_align_active_)
+		if (cm_is_navigation() && is_align_active_)
 		{
 			ObstacleDetector od;
 			float align_angle = 0;
@@ -258,9 +258,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam = new Slam();
 
 	robot::instance()->setTfReady(false);
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot || get_clean_mode() == Clean_Mode_Exploration)
+	if (cm_is_navigation() || cm_get() == Clean_Mode_Spot || cm_is_exploration())
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-	else if (get_clean_mode() == Clean_Mode_WallFollow)
+	else if (cm_is_wall_follow())
 		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 500;
@@ -291,7 +291,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 
 
-	if (g_go_home_by_remote || (get_clean_mode() == Clean_Mode_Exploration))
+	if (g_go_home_by_remote || (cm_is_exploration()))
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	else
 		set_led_mode(LED_STEADY, LED_GREEN);
@@ -300,13 +300,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-	if (get_clean_mode() != Clean_Mode_GoHome)
+	if (cm_get() != Clean_Mode_GoHome)
 	{
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
-		//if (get_clean_mode() == Clean_Mode_WallFollow)
+		//if (cm_is_wall_follow())
 		wf_clear();
 		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
-		//if (get_clean_mode() == Clean_Mode_Spot)
+		//if (cm_get() == Clean_Mode_Spot)
 		{
 			SpotMovement::instance()->spotDeinit();// clear the variables.
 		}
@@ -337,7 +337,7 @@ MotionManage::~MotionManage()
 				// The current home cell is still valid, so push it back to the home point list.
 				path_set_home(g_home);
 			}
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			if (g_go_home)
@@ -369,7 +369,7 @@ MotionManage::~MotionManage()
 		{
 			g_resume_cleaning = true;
 			robot::instance()->resetLowBatPause();
-			set_clean_mode(Clean_Mode_Charging);
+			cm_set(Clean_Mode_Charging);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
@@ -405,7 +405,7 @@ MotionManage::~MotionManage()
 		extern bool g_have_seen_charge_stub;
 		if(g_go_home && !g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		if (get_clean_mode() != Clean_Mode_GoHome)
+		if (cm_get() != Clean_Mode_GoHome)
 			wav_play(WAV_CLEANING_FINISHED);
 	}
 	cm_reset_go_home();
@@ -430,14 +430,14 @@ MotionManage::~MotionManage()
 	else if (g_battery_low)
 		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
 	else
-		if (get_clean_mode() == Clean_Mode_Spot)
+		if (cm_get() == Clean_Mode_Spot)
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
-		else if (get_clean_mode() == Clean_Mode_GoHome)
+		else if (cm_get() == Clean_Mode_GoHome)
 			ROS_WARN("%s %d: Could not go to charger stub.", __FUNCTION__, __LINE__);
 		else
 			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
 
-	if (get_clean_mode() != Clean_Mode_GoHome)
+	if (cm_get() != Clean_Mode_GoHome)
 	{
 		g_saved_work_time += get_work_time();
 		auto cleaned_count = map_get_cleaned_area();
@@ -445,11 +445,11 @@ MotionManage::~MotionManage()
 		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
 	}
 	if (g_battery_low)
-		set_clean_mode(Clean_Mode_Sleep);
+		cm_set(Clean_Mode_Sleep);
 	else if (g_charge_detect)
-		set_clean_mode(Clean_Mode_Charging);
+		cm_set(Clean_Mode_Charging);
 	else
-		set_clean_mode(Clean_Mode_Userinterface);
+		cm_set(Clean_Mode_Userinterface);
 }
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)

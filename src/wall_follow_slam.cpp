@@ -226,7 +226,7 @@ bool wf_is_trap(void)
 		} else
 		{
 			ROS_WARN("Trapped!");
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 			return 0;
 		}*/
 		return 0;

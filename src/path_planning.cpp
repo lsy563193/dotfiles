@@ -1431,7 +1431,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 
 void path_update_cells()
 {
-	if(get_clean_mode() != Clean_Mode_Navigation)
+	if(!cm_is_navigation())
 		return;
 	/* Skip, if robot is not moving towards POS_X. */
 	if ((g_new_dir % 1800) != 0)
@@ -1493,8 +1493,8 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	//ros_map_convert(false);
 	extern bool g_keep_on_wf;
 	extern bool g_no_uncleaned_target;
-	if(!g_go_home && get_clean_mode() == Clean_Mode_WallFollow){
-		ROS_INFO("path_next Clean_Mode:(%d)", get_clean_mode());
+	if(!g_go_home && cm_is_wall_follow()){
+		ROS_INFO("path_next Clean_Mode:(%d)", cm_get());
 		if(mt_is_linear()){
 			if(curr != path.target){
 				ROS_INFO("start follow wall");
@@ -1537,7 +1537,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 #endif
 		path.cells.push_front(curr);
 	}
-	else if(!g_go_home && get_clean_mode() == Clean_Mode_Navigation) {
+	else if(!g_go_home && cm_is_navigation()) {
 		if (g_resume_cleaning && path_get_continue_target(curr, path) != TARGET_FOUND)
 			g_resume_cleaning = false;
 
@@ -1612,14 +1612,14 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
 				// This led light is for debug.
-				if (get_clean_mode() == Clean_Mode_Exploration)
+				if (cm_is_exploration())
 					set_led_mode(LED_STEADY, LED_ORANGE);
 				else
 					set_led_mode(LED_STEADY, LED_GREEN);
 			}
 		}
 	}
-	else if(!g_go_home && get_clean_mode() == Clean_Mode_Exploration) {
+	else if(!g_go_home && cm_is_exploration()) {
 #if !PATH_ALGORITHM_V2
 		if (!path_lane_is_cleaned(curr, path))
 		{
@@ -1693,9 +1693,9 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 	g_target_cell = path.target;
 
 	g_old_dir = g_new_dir;
-	if (g_go_home || get_clean_mode() == Clean_Mode_Exploration)
+	if (g_go_home || cm_is_exploration())
 		mt_set(CM_LINEARMOVE);
-	else if(get_clean_mode() == Clean_Mode_Navigation)
+	else if(cm_is_navigation())
 	{
 		mt_set(CM_LINEARMOVE);
 		mt_update(curr, path, g_old_dir);
@@ -1707,7 +1707,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		g_new_dir = curr.X > g_next_cell.X ? NEG_X : POS_X;
 
 #if LINEAR_MOVE_WITH_PATH
-	if (mt_is_linear() && get_clean_mode() != Clean_Mode_WallFollow)
+	if (mt_is_linear() && !cm_is_wall_follow())
 	{
 		// Add current cell for filling the path, otherwise it will lack for the path from current to the first turning cell.
 		path.cells.push_front(curr);
@@ -1833,7 +1833,7 @@ void path_set_home(const Cell_t& curr)
 	if (!is_found) {
 		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
 		extern bool g_have_seen_charge_stub;
-		if(get_clean_mode() != Clean_Mode_Spot)
+		if(cm_get() != Clean_Mode_Spot)
 			g_have_seen_charge_stub = true;
 		// If curr near (0, 0)
 		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
@@ -1846,7 +1846,7 @@ void path_set_home(const Cell_t& curr)
 			g_homes.push_back(curr);
 		}
 	}
-	else if(curr == g_zero_home && get_clean_mode() != Clean_Mode_Spot)
+	else if(curr == g_zero_home && cm_get() != Clean_Mode_Spot)
 	{
 		extern bool g_start_point_seen_charger, g_have_seen_charge_stub;
 		g_start_point_seen_charger = true;

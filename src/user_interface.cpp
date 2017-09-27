@@ -100,7 +100,7 @@ void user_interface(void)
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
 			ROS_WARN("%s %d: Userinterface mode didn't receive any command in 10mins, go to sleep mode.", __FUNCTION__, __LINE__);
-			set_clean_mode(Clean_Mode_Sleep);
+			cm_set(Clean_Mode_Sleep);
 			break;
 		}
 
@@ -178,7 +178,7 @@ void user_interface(void)
 		}
 		if(temp_mode != 0)
 		{
-			set_clean_mode(temp_mode);
+			cm_set(temp_mode);
 			break;
 		}
 	}
