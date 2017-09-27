@@ -361,7 +361,10 @@ int cm_move_to(const PPTargetType& path)
 			set_wheel_speed(0, 0);
 			continue;
 		}
-
+		if (rm.isMt() && mt_is_follow_wall() && get_clean_mode() != Clean_Mode_WallFollow) {
+			map_set_laser();
+			map_set_obs();
+		}
 		if (rm.isReach()){
 			ret = REATH_TARGET;
 			break;

@@ -784,14 +784,6 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 
 bool FollowWallRegulator::isReach()
 {
-//	ROS_INFO("target_(%d,%d)",s_target.X,s_target.Y);
-	//map_set_realtime();
-	if (get_clean_mode() != Clean_Mode_WallFollow) {
-//		MotionManage::s_laser->laserMarker(true);
-		map_set_laser();
-		map_set_obs();
-//		map_set_obs();
-	}
 	bool ret = false;
 	if (get_clean_mode() == Clean_Mode_WallFollow)
 	{
