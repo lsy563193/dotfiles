@@ -458,8 +458,8 @@ void *serial_send_routine(void*)
 			if(right_pid.actual_speed < 0)	g_wheel_right_direction = BACKWARD;
 			else							g_wheel_right_direction = FORWARD;
 
-			set_left_wheel_speed((uint8_t)abs(left_pid.actual_speed));
-			set_right_wheel_speed((uint8_t)abs(right_pid.actual_speed));
+			set_left_wheel_speed((uint8_t)fabsf(left_pid.actual_speed));
+			set_right_wheel_speed((uint8_t)fabsf(right_pid.actual_speed));
 			//memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			for(int i=0;i<SEND_LEN;i++)
 				buf[i] = g_send_stream[i];

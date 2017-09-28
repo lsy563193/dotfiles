@@ -7,23 +7,6 @@
 #include "main.h"
 #include "clean_mode.h"
 
-struct pid_struct
-{
-	float delta;
-	float delta_sum;
-	float delta_last;
-	float target_speed;
-	float actual_speed;
-	float last_target_speed;
-	float variation;
-};
-struct pid_argu_struct
-{
-	uint8_t reg_type;
-	float Kp;
-	float Ki;
-	float Kd;
-};
 #define Brush_Power					128
 #define MainBrush_Power				70
 
@@ -379,16 +362,39 @@ typedef enum{
 #define BACKWARD					1
 
 //regulator type
-#define REG_TYPE_WALLFOLLOW     1
-#define REG_TYPE_LINEAR         2
-#define REG_TYPE_TURN           3
-#define REG_TYPE_BACK           4
+#define REG_TYPE_NONE			0
+#define REG_TYPE_WALLFOLLOW		1
+#define REG_TYPE_LINEAR			2
+#define REG_TYPE_TURN			3
+#define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
 extern uint32_t g_rcon_status;
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
+
+struct pid_struct
+{
+	float delta;
+	float delta_sum;
+	float delta_last;
+	float target_speed;
+	float actual_speed;
+	float last_target_speed;
+	uint8_t last_reg_type;
+	float variation;
+};
+struct pid_argu_struct
+{
+	uint8_t reg_type; // Regulator type
+	float Kp;
+	float Ki;
+	float Kd;
+};
+
+extern struct pid_argu_struct argu_for_pid;
+extern struct pid_struct left_pid, right_pid;
 
 void reset_work_time();
 uint32_t get_work_time();
@@ -474,7 +480,7 @@ void set_rcon_status(uint32_t code);
  */
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd);
 void wheels_pid(void);
-void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_WALLFOLLOW, float PID_p = 1, float PID_i = 0, float PID_d = 0);
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
