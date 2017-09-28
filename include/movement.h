@@ -5,24 +5,8 @@
 #include <time.h>
 #include "config.h"
 #include "main.h"
+#include "clean_mode.h"
 
-struct pid_struct
-{
-	float delta;
-	float delta_sum;
-	float delta_last;
-	float target_speed;
-	float actual_speed;
-	float last_target_speed;
-	float variation;
-};
-struct pid_argu_struct
-{
-	uint8_t reg_type;
-	float Kp;
-	float Ki;
-	float Kd;
-};
 #define Brush_Power					128
 #define MainBrush_Power				70
 
@@ -248,22 +232,6 @@ struct pid_argu_struct
 #define Display_Zizag				2
 #define Display_Remote				3
 
-#define Clean_Mode_Userinterface	1
-#define Clean_Mode_Spiral			2
-#define Clean_Mode_WallFollow		3
-#define Clean_Mode_RandomMode		4
-#define Clean_Mode_Charging			5
-#define Clean_Mode_GoHome			6
-#define Clean_Mode_Sleep			7
-#define Clean_Mode_SelfCheck		8
-#define Clean_Mode_Test				9
-#define Clean_Mode_Zigzag			10
-#define Clean_Mode_Remote			11
-#define Clean_Mode_Spot				12
-#define Clean_Mode_Mobility			13
-#define Clean_Mode_Navigation		14
-#define Clean_Mode_Exploration		15
-
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
 
@@ -335,28 +303,7 @@ typedef enum{
 #define KEY_HOME  0x08
 #define KEY_PLAN  0x10
 
-#define	CTL_WHEEL_LEFT_HIGH 2
-#define	CTL_WHEEL_LEFT_LOW  3
-#define	CTL_WHEEL_RIGHT_HIGH  4
-#define	CTL_WHEEL_RIGHT_LOW 5
-#define	CTL_VACCUM_PWR 6
-#define	CTL_BRUSH_LEFT 7
-#define	CTL_BRUSH_RIGHT 8
-#define	CTL_BRUSH_MAIN 9
-#define	CTL_BUZZER 10
-#define	CTL_MAIN_PWR 11
-#define	CTL_CHARGER 12
-#define	CTL_LED_RED 13
-#define	CTL_LED_GREEN 14
-#if __ROBOT_X400
-#define	CTL_GYRO 15
-#define	CTL_CRC 16
-#elif __ROBOT_X900
-#define CTL_OMNI_RESET 15
-#define CTL_GYRO 16
-#define CTL_CMD				17
-#define CTL_CRC				18
-#endif
+
 #define Direction_Flag_Right 0x01
 #define Direction_Flag_Left  0x02
 
@@ -415,16 +362,39 @@ typedef enum{
 #define BACKWARD					1
 
 //regulator type
-#define REG_TYPE_WALLFOLLOW     1
-#define REG_TYPE_LINEAR         2
-#define REG_TYPE_TURN           3
-#define REG_TYPE_BACK           4
+#define REG_TYPE_NONE			0
+#define REG_TYPE_WALLFOLLOW		1
+#define REG_TYPE_LINEAR			2
+#define REG_TYPE_TURN			3
+#define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
 extern uint32_t g_rcon_status;
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
+
+struct pid_struct
+{
+	float delta;
+	float delta_sum;
+	float delta_last;
+	float target_speed;
+	float actual_speed;
+	float last_target_speed;
+	uint8_t last_reg_type;
+	float variation;
+};
+struct pid_argu_struct
+{
+	uint8_t reg_type; // Regulator type
+	float Kp;
+	float Ki;
+	float Kd;
+};
+
+extern struct pid_argu_struct argu_for_pid;
+extern struct pid_struct left_pid, right_pid;
 
 void reset_work_time();
 uint32_t get_work_time();
@@ -510,7 +480,7 @@ void set_rcon_status(uint32_t code);
  */
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd);
 void wheels_pid(void);
-void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_WALLFOLLOW, float PID_p = 1, float PID_i = 0, float PID_d = 0);
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
@@ -527,7 +497,7 @@ uint8_t check_bat_full(void);
 
 uint8_t check_bat_ready_to_clean(void);
 
-uint8_t get_clean_mode(void);
+uint8_t cm_get(void);
 
 /*
  * Set the mode for vacuum.
@@ -619,7 +589,7 @@ bool is_charge_on(void);
 
 uint8_t is_water_tank(void);
 
-void set_clean_mode(uint8_t mode);
+void cm_set(uint8_t mode);
 
 void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
 

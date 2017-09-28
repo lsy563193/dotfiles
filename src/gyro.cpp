@@ -9,6 +9,7 @@
 #include "wav.h"
 #include "mathematics.h"
 #include "robot.hpp"
+#include "robotbase.h"
 #include "event_manager.h"
 
 int16_t gyro_angle;   //[3:3]   = Angle

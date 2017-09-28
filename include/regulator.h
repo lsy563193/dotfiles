@@ -63,7 +63,7 @@ class BackRegulator: public RegulatorBase{
 public:
 	BackRegulator();
 	~BackRegulator(){
-		set_wheel_speed(1, 1);
+		//set_wheel_speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
@@ -76,6 +76,7 @@ protected:
 private:
 	int counter_;
 	int32_t speed_;
+	float distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -239,9 +240,16 @@ public:
 	bool isTurn(){
 		return p_reg_ == turn_reg_;
 	};
+
 	void setTarget() {p_reg_->setTarget();}
-	bool isMt(void){return p_reg_ == mt_reg_;}
-	bool isBack(void){return p_reg_ == back_reg_;}
+	bool isMt(void) const
+	{
+		return p_reg_ == mt_reg_;
+	}
+	bool isBack(void) const
+	{
+		return p_reg_ == back_reg_;
+	}
 	void switchToNext();
 
 	void updatePosition(const Point32_t &curr_point){

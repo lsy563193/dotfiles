@@ -68,15 +68,15 @@ void sleep_mode(void)
 		}
 		/*--- Wake up events---*/
 		if(g_key_clean_pressed)
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 		else if(g_charge_detect)
-			set_clean_mode(Clean_Mode_Charging);
+			cm_set(Clean_Mode_Charging);
 		else if(g_plan_activated)
-			set_clean_mode(Clean_Mode_Navigation);
+			cm_set(Clean_Mode_Navigation);
 		else if(sleep_rcon_triggered)
-			set_clean_mode(Clean_Mode_GoHome);
+			cm_set(Clean_Mode_GoHome);
 
-		if (get_clean_mode() != Clean_Mode_Sleep)
+		if (cm_get() != Clean_Mode_Sleep)
 			break;
 
 		if (time(NULL) - check_battery_time > 30)
