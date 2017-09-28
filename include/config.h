@@ -454,3 +454,8 @@
 #define INTERLACED_MOVE	(0)
 #define PATH_ALGORITHM_V2	(0)
 #define GO_HOME_REGULATOR	(1)
+
+/* ------------------------------------- Lidar Relative Position --------------------------------------------*/
+#define LIDAR_THETA							(0)//1950
+#define LIDAR_OFFSET_X						(0)//0.031
+#define LIDAR_OFFSET_Y						(0)//0

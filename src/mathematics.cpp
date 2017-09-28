@@ -293,3 +293,9 @@ uint8_t is_same_point_and_angle(Point32_t pnt1, uint16_t angle1, Point32_t pnt2,
 		return 1;
 	else return 0;
 }
+
+void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y)
+{
+	matrix_rotate(x, y, theta);
+	matrix_translate(x, y, offset_x, offset_y);
+}
