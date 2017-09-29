@@ -131,7 +131,7 @@ int16_t map_get_y_cell(void) {
 
 Cell_t map_get_curr_cell()
 {
-	return Cell_t{map_get_x_cell(), map_get_y_cell()};
+	return Cell_t{map_get_x_cell(), map_get_y_cell(),gyro_get_angle()};
 }
 
 void map_move_to(double d_x, double d_y) {
@@ -971,18 +971,23 @@ void map_set_cleaned(const Cell_t& curr)
 	}
 }
 
-void map_set_follow_wall(const Cell_t& curr) {
+double rm_distance(void) {
+	return sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin.Y, 2));
+}
+void map_set_follow_wall(uint8_t id, const Cell_t& curr) {
 
-	auto distance = sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin.Y, 2));
-	if(distance<0.1)
-		return;
+	if(id==MAP)
+	{
+		if(rm_distance()<0.1)
+			return;
+	}
 
 	auto dy = mt_is_left() ? 2 : -2;
 //	ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)", __FUNCTION__, __LINE__, mt_is_left(), dx, dy);
 	int x, y;
 	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, 0, &x, &y);
 	ROS_INFO("%s,%d: map_fw_curr(%d)", __FUNCTION__, __LINE__, x, y);
-	map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+	map_set_cell(id, x, y, BLOCKED_CLIFF);
 }
 
 void map_set_cleaned(std::vector<Cell_t>& cells)

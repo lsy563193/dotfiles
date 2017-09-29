@@ -45,7 +45,7 @@ extern bool g_go_home;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;
-extern uint32_t g_escape_trapped_timer;
+extern int g_wf_reach_count;
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -292,4 +292,6 @@ void path_fill_path(std::list<Cell_t>& path);
 bool path_dijkstra(const Cell_t& curr, Cell_t& p_goal, int& cleaned_count);
 
 bool is_fobbit_free();
+
+bool fw_is_time_up();
 #endif

@@ -39,7 +39,7 @@ bool cm_is_navigation()
 	return g_cleaning_mode == Clean_Mode_Navigation;
 }
 
-bool cm_is_wall_follow()
+bool cm_is_follow_wall()
 {
 	return g_cleaning_mode == Clean_Mode_WallFollow;
 }

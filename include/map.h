@@ -113,7 +113,9 @@ uint8_t map_set_tilt();
 uint8_t map_set_slip();
 uint8_t map_set_blocked();
 void map_set_cleaned(const Cell_t& curr);
-void map_set_follow_wall(const Cell_t& curr);
+
+double rm_distance(void);
+void map_set_follow_wall(uint8_t id, const Cell_t& curr);
 void map_set_cleaned(std::vector<Cell_t>& cells);
 void map_set_follow_wall(std::vector<Cell_t>& cells);
 uint32_t map_get_cleaned_area();

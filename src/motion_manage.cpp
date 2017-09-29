@@ -21,7 +21,6 @@
 #include "event_manager.h"
 #include "spot.h"
 #include "move_type.h"
-#include "wall_follow_slam.h"
 #include "robotbase.h"
 #include "debug.h"
 #include "map.h"
@@ -151,7 +150,7 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
-	mt_set(cm_is_wall_follow() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
+	mt_set(cm_is_follow_wall() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_from_station = 0;
 	g_trapped_mode = 0;
 	g_finish_cleaning_go_home = false;
@@ -168,7 +167,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	bool eh_status_now=false, eh_status_last=false;
 
 	initSucceeded(true);
-
+	reset_work_time();
+	map_init(MAP);
+	map_init(WFMAP);
+	map_init(ROSMAP);
 	if (!initCleaning(cm_get()))
 	{
 		initSucceeded(false);
@@ -260,7 +262,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	robot::instance()->setTfReady(false);
 	if (cm_is_navigation() || cm_get() == Clean_Mode_Spot || cm_is_exploration())
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-	else if (cm_is_wall_follow())
+	else if (cm_is_follow_wall())
 		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 500;
@@ -303,15 +305,15 @@ MotionManage::~MotionManage()
 	if (cm_get() != Clean_Mode_GoHome)
 	{
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
-		//if (cm_is_wall_follow())
-		wf_clear();
+		//if (cm_is_follow_wall())
+		g_wf_reach_count = 0;
 		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
 		//if (cm_get() == Clean_Mode_Spot)
 		{
 			SpotMovement::instance()->spotDeinit();// clear the variables.
 		}
 	}
-	// Disable motor here because there is a work_motor_configure() in spotDeinit().
+	// Disable motor here because there ie a work_motor_configure() in spotDeinit().
 	disable_motors();
 
 	g_tilt_enable = false;
@@ -475,7 +477,6 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 bool MotionManage::initNavigationCleaning(void)
 {
 
-	reset_work_time();
 	if (g_remote_home || g_go_home_by_remote)
 		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
@@ -488,9 +489,7 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 		// Push the start point into the home point list
 		ROS_INFO("map_init-----------------------------");
-		map_init(MAP);
-		map_init(WFMAP);
-		map_init(ROSMAP);
+
 		path_planning_initialize();
 
 		robot::instance()->initOdomPosition();
@@ -601,7 +600,6 @@ bool MotionManage::initNavigationCleaning(void)
 bool MotionManage::initExplorationCleaning(void)
 {
 
-	reset_work_time();
 	if (g_remote_home || g_go_home_by_remote)
 		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
@@ -611,10 +609,6 @@ bool MotionManage::initExplorationCleaning(void)
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	// Push the start point into the home point list
-	ROS_INFO("map_init-----------------------------");
-	map_init(MAP);
-	map_init(WFMAP);
-	map_init(ROSMAP);
 	path_planning_initialize();
 
 	robot::instance()->initOdomPosition();
@@ -657,8 +651,8 @@ bool MotionManage::initWallFollowCleaning(void)
 	cm_register_events();
 	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
-	extern std::vector<Pose16_t> g_wf_cell;
-	reset_work_time();
+	g_wf_start_timer = time(NULL);
+	g_wf_diff_timer = WALL_FOLLOW_TIME;
 	reset_move_with_remote();
 	reset_rcon_status();
 	reset_stop_event_status();
@@ -679,13 +673,6 @@ bool MotionManage::initWallFollowCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	g_wf_cell.clear();
-
-	map_init(MAP);
-	ROS_WARN("%s %d: map initialized", __FUNCTION__, __LINE__);
-	map_init(WFMAP);
-	ROS_WARN("%s %d: wf map initialized", __FUNCTION__, __LINE__);
-	debug_map(MAP, 0, 0);
 	wf_path_planning_initialize();
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
@@ -706,7 +693,6 @@ bool MotionManage::initSpotCleaning(void)
 	cm_register_events();
 	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
-	reset_work_time();
 	reset_rcon_status();
 	reset_move_with_remote();
 	reset_stop_event_status();
@@ -728,7 +714,6 @@ bool MotionManage::initSpotCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	map_init(MAP);//init map
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
@@ -747,7 +732,6 @@ bool MotionManage::initSpotCleaning(void)
 bool MotionManage::initGoHome(void)
 {
 	set_led_mode(LED_FLASH, LED_ORANGE, 1000);
-	map_init(MAP);
 	set_gyro_off();
 	usleep(30000);
 	set_gyro_on();
