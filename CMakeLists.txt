@@ -28,7 +28,7 @@ FILE(GLOB PP_SRC
 	src/spot.cpp
 	src/user_interface.cpp
 	src/verify.cpp
-	src/wall_follow_slam.cpp
+#	src/wall_follow_slam.cpp
 	src/wav.cpp
 	src/slam.cpp
 	src/event_manager.cpp

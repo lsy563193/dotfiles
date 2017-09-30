@@ -252,6 +252,8 @@ public:
 	}
 	void switchToNext();
 
+	bool wf_is_reach(const std::vector<Cell_t>& passed_path);
+
 	void updatePosition(const Point32_t &curr_point){
 		s_curr_p = curr_point;
 	}
