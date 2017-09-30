@@ -218,6 +218,7 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 	int		i, count;
 	bool	found = false;
 	double	angle_min, angle_max, tmp, range_tmp;
+	double	laser_range_offset;
 	double	laser_distance = 0;
 	int		sum = 0;
 	double	th;
@@ -229,12 +230,25 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 	scan_mutex_.lock();
 	auto tmp_scan_data = laserScanData_;
 	scan_mutex_.unlock();
-	for (i = begin; i < end; i++) {//default:begin = 260, end =270
+	laser_range_offset = atan2(LIDAR_OFFSET_X, ROBOT_RADIUS) * 180 / PI;
+	if (begin != 180)
+		begin = begin - int(laser_range_offset);
+	if (end != 180)
+		end = end + int(laser_range_offset);
+	//ROS_INFO("laser_range_offset = %d", int(laser_range_offset));
+	if (begin < 0 || end > 359) {
+		ROS_ERROR("%s %d: laser_range_offset error! Return!", __FUNCTION__, __LINE__);
+		return false;
+	}
+	for (int j = begin; j < end; j++) {//default:begin = 260, end =270
+		i = j + int(LIDAR_THETA / 10);
+		i = i>359? i-360:i;
 		if (tmp_scan_data.ranges[i] < 4) {
-			th = i * 1.0;
+			th = j * 1.0;
 			th = th + 180.0;
 			New_Laser_Point.x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			New_Laser_Point.y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
+			coordinate_transform(&New_Laser_Point.x, &New_Laser_Point.y, 0, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 			Laser_Point.push_back(New_Laser_Point);
 		}
 		//laser_distance = tmp_scan_data.ranges[i];
@@ -807,7 +821,6 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 	int dx, dy;
 	const	double Y_MIN = 0.140;//0.167
 	const	double Y_MAX = 0.237;//0.279
-	const	double ROBOT_RADIUS = 0.167;
 	const	double TRIGGER_RANGE = X_MAX;//0.278
 	int count = 0;
 	uint8_t ret = 0;
