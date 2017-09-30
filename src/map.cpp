@@ -672,7 +672,7 @@ uint8_t map_set_obs()
 //				{
 //					ROS_INFO("%s,%d: \033[34m(%d,%d)\033[0m",__FUNCTION__,__LINE__,x,y);
 //				}
-				map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_OBS); //BLOCKED_OBS);
+				map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_RCON); //BLOCKED_OBS);
 				block_count++;
 			}
 		}

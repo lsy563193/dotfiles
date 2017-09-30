@@ -96,7 +96,6 @@ void user_interface(void)
 			battery_ready_to_clean = false;
 			set_led_mode(LED_BREATH, LED_ORANGE);
 		}
-
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
 			ROS_WARN("%s %d: Userinterface mode didn't receive any command in 10mins, go to sleep mode.", __FUNCTION__, __LINE__);

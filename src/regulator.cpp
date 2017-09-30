@@ -201,7 +201,7 @@ static bool laser_turn_angle(int16_t& turn_angle)
 	else if(g_bumper_triggered != 0)
 	{
 		int angle_min, angle_max;
-		if (mt_is_left() ^ g_bumper_triggered == LeftBumperTrig)
+		if (mt_is_left() ^ (g_bumper_triggered == LeftBumperTrig))
 		{
 			angle_min = 600;
 			angle_max = 1800;
@@ -295,8 +295,7 @@ bool RegulatorBase::_isStop()
 	return ret;
 }
 
-
-BackRegulator::BackRegulator() : speed_(8), counter_(0)
+BackRegulator::BackRegulator() : counter_(0), speed_(BACK_MAX_SPEED), distance(0)
 {
 //	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 }
@@ -325,7 +324,7 @@ void BackRegulator::setTarget()
 
 bool BackRegulator::isReach()
 {
-	auto distance = sqrtf(powf(s_pos_x - robot::instance()->getOdomPositionX(), 2) +
+	distance = sqrtf(powf(s_pos_x - robot::instance()->getOdomPositionX(), 2) +
 				powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
 	ROS_DEBUG("%s, %d: BackRegulator distance %f", __FUNCTION__, __LINE__, distance);
 	/*---------slip detect------*/
@@ -406,9 +405,15 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
 	}
 	reset_wheel_step();
-	l_speed = r_speed = speed_;
+	if (fabsf(distance) >= g_back_distance * 0.8)
+	{
+		l_speed = r_speed = speed_--;
+		check_limit(l_speed, BACK_MIN_SPEED, BACK_MAX_SPEED);
+		check_limit(r_speed, BACK_MIN_SPEED, BACK_MAX_SPEED);
+	}
+	else
+		l_speed = r_speed = speed_;
 }
-
 
 TurnRegulator::TurnRegulator(int16_t angle) : speed_(ROTATE_LOW_SPEED)
 {
@@ -418,7 +423,7 @@ TurnRegulator::TurnRegulator(int16_t angle) : speed_(ROTATE_LOW_SPEED)
 }
 
 bool TurnRegulator::isReach()
-{	
+{
 	if (abs(ranged_angle(s_target_angle - gyro_get_angle())) < accurate_){
 		ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
 
@@ -501,14 +506,18 @@ void TurnRegulator::setTarget()
 {
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 && !mt_is_go_to_charger())
 	{
+#if GLOBAL_PID
+		set_wheel_speed(0, 0, REG_TYPE_TURN);
+#else
 		set_wheel_speed(0, 0);
+#endif
 		delay_sec(0.33);
 /*		do
 		{
 			set_wheel_speed(0, 0);
 			usleep(300000);
 		} while (robot::instance()->isMoving());*/
-		 laser_turn_angle(g_turn_angle);
+		laser_turn_angle(g_turn_angle);
 	}
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 	// Reset the speed.
@@ -528,16 +537,16 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		speed_ += 1;
 		speed_ = std::min(speed_, ROTATE_TOP_SPEED);
 	}
-	else if (std::abs(diff) > 50){
+	else if (std::abs(diff) > 100){
 		speed_ -= 2;
 		uint8_t low_speed = ROTATE_LOW_SPEED + 5;
 		speed_ = std::max(speed_, low_speed);
-		ROS_DEBUG("%s %d: 50 - 200, speed = %d.", __FUNCTION__, __LINE__, speed_);
+		ROS_DEBUG("%s %d: 100 - 200, speed = %d.", __FUNCTION__, __LINE__, speed_);
 	}
 	else{
 		speed_ -= 2;
 		speed_ = std::max(speed_, ROTATE_LOW_SPEED);
-		ROS_DEBUG("%s %d: 0 - 50, speed = %d.", __FUNCTION__, __LINE__, speed_);
+		ROS_DEBUG("%s %d: 0 - 100, speed = %d.", __FUNCTION__, __LINE__, speed_);
 	}
 
 	l_speed = r_speed = speed_;
@@ -566,7 +575,6 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 	speed = speed_;
 	return true;
 }
-
 
 LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 				integrated_(0),base_speed_(LINEAR_MIN_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
@@ -3248,7 +3256,6 @@ RegulatorManage::~RegulatorManage()
 	delete turn_reg_;
 	delete back_reg_;
 	delete mt_reg_;
-	set_wheel_speed(0,0);
 	cm_set_event_manager_handler_state(false);
 }
 void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

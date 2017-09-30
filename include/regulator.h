@@ -63,7 +63,7 @@ class BackRegulator: public RegulatorBase{
 public:
 	BackRegulator();
 	~BackRegulator(){
-		set_wheel_speed(1, 1);
+		//set_wheel_speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
@@ -76,6 +76,7 @@ protected:
 private:
 	int counter_;
 	int32_t speed_;
+	float distance;
 };
 
 class TurnRegulator: public RegulatorBase{

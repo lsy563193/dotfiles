@@ -148,6 +148,11 @@ static double radius_of(Cell_t cell_0,Cell_t cell_1)
 	return (abs(cell_to_count(cell_0.X - cell_1.X)) + abs(cell_to_count(cell_0.Y - cell_1.Y))) / 2;
 }
 
+void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
+{
+	*x = map_get_relative_x(heading, offset_lat, offset_long, true);
+	*y = map_get_relative_y(heading, offset_lat, offset_long, true);
+}
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, true)));
@@ -422,20 +427,38 @@ int cm_move_to(const PPTargetType& path)
 		}
 
 		rm.adjustSpeed(speed_left, speed_right);
-		#if 0
+#if GLOBAL_PID
 		/*---PID is useless in wall follow mode---*/
 		if(rm.isMt() && mt_is_follow_wall())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
 		else if(rm.isMt() && mt_is_linear())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_LINEAR);
+		else if(rm.isMt() && mt_is_go_to_charger())
+			set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
 		else if(rm.isBack())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_BACK);
 		else if(rm.isTurn())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_TURN);
-		#endif
+#else
 		/*---PID is useless in wall follow mode---*/
-		set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
+		set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
+#endif
 	}
+#if GLOBAL_PID
+	if(rm.isMt() && mt_is_follow_wall())
+		set_wheel_speed(0, 0, REG_TYPE_WALLFOLLOW);
+	else if(rm.isMt() && mt_is_linear())
+		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
+	else if(rm.isMt() && mt_is_go_to_charger())
+		set_wheel_speed(0, 0, REG_TYPE_NONE);
+	else if(rm.isBack())
+		set_wheel_speed(0, 0, REG_TYPE_BACK);
+	else if(rm.isTurn())
+		set_wheel_speed(0, 0, REG_TYPE_TURN);
+#else
+	set_wheel_speed(0, 0, REG_TYPE_NONE);
+#endif
+
 	if(! MAP_SET_REALTIME)
 	{
 		map_set_cleaned(passed_path);
