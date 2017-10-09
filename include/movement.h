@@ -446,12 +446,6 @@ void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 
-uint8_t get_obs_status(void);
-
-int32_t get_front_obs(void);
-int32_t get_left_obs(void);
-int32_t get_right_obs(void);
-
 uint8_t get_bumper_status(void);
 
 uint8_t get_cliff_status(void);
@@ -519,10 +513,14 @@ int16_t get_front_obs_value(void);
 int16_t get_left_obs_value(void);
 int16_t get_right_obs_value(void);
 uint8_t is_wall_obs_near(void);
-void adjust_obs_value(void);
-void reset_obst_value(void);
-uint8_t spot_obs_status(void);
+//void adjust_obs_value(void);
+//void reset_obst_value(void);
+//uint8_t spot_obs_status(void);
 uint8_t get_obs_status(void);
+
+int32_t get_front_obs(void);
+int32_t get_left_obs(void);
+int32_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
@@ -699,7 +697,7 @@ void clear_reset_mobility_step();
 
 uint32_t  get_mobility_step();
 
-void adjust_obs_value();
+//void adjust_obs_value();
 
 void check_mobility(void);
 
