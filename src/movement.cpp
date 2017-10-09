@@ -28,7 +28,6 @@ extern uint8_t g_send_stream[SEND_LEN];
 static int16_t g_left_obs_trig_value = 500;
 static int16_t g_front_obs_trig_value = 500;
 static int16_t g_right_obs_trig_value = 500;
-volatile int16_t g_obs_trig_value = 800;
 static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
@@ -1651,6 +1650,7 @@ uint8_t is_wall_obs_near(void)
 	return 0;
 }
 
+/*
 void adjust_obs_value(void)
 {
 	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
@@ -1676,6 +1676,7 @@ uint8_t spot_obs_status(void)
 	if (robot::instance()->getObsFront() > 1500)status |= Status_Front_OBS;
 	return status;
 }
+*/
 
 uint8_t get_obs_status(void)
 {

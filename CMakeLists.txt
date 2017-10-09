@@ -24,7 +24,7 @@ FILE(GLOB PP_SRC
 	src/serial.cpp
 	src/shortest_path.cpp
 	src/sleep.cpp
-	src/spiral.cpp
+#	src/spiral.cpp
 	src/spot.cpp
 	src/user_interface.cpp
 	src/verify.cpp
