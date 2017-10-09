@@ -2,25 +2,27 @@
 // Created by lsy563193 on 17-3-7.
 //
 #include <obstacle_detector/SegmentObstacle.h>
-#include "Angles.h"
+#include <mathematics.h>
+#include "ros/ros.h"
+
 using namespace std;
-using namespace obstacle_detector;
 
 int main(int argc, char *argv[])
 {
-//  Segment s1(Point(20, 20), Point(20,-20));
-//  Segment s2(Point(20.04, 20), Point(20,-20));
-//  Segment s3(Point(20.02, 20), Point(20,-20));
+  std::vector<Cell_t> passed_path;
+  passed_path.clear();
+  passed_path.push_back({1,1,1});
+  passed_path.push_back({1,2,1});
+  passed_path.push_back({2,1,1});
+	passed_path.push_back({2,2,1});
+	Cell_t curr{2,3,0};
+	ROS_INFO("passed_path.size(%d)", passed_path.size());
+	auto pos = std::find(passed_path.begin(), passed_path.end(), curr);
+	if(pos == passed_path.end())
+		passed_path.push_back(curr);
 
-  Segment s1(Point(20, 20), Point(20,-20));
-  Segment s2(Point(20, 20), Point(20,-20.02));
-  Segment s3(Point(20, 20), Point(20,-20.04));
-  Segment inputs[] = {s1,s2,s3};
-  Segment_set segment_ss;
-  for (auto& seg:inputs)
-    segment_ss.classify(seg);
-
-  auto seg = segment_ss.min_distant_segment();
-  cout << "min_seg: " << seg <<endl;
-
+	for(const auto& cell: passed_path)
+	{
+		ROS_INFO("cell(%d, %d, %d)", cell.X,cell.Y,cell.TH);
+	}
 }

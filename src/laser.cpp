@@ -803,6 +803,8 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::LaserScan *scan_range, uint8_t *laser_status, bool is_wall_follow)
 {
+//	ROS_INFO("  %s,%d" __FUNCTION__,__LINE__);
+	ROS_INFO("  checkCellTrigger");
 	double x, y, th;
 	int dx, dy;
 	const	double Y_MIN = 0.140;//0.167
@@ -892,82 +894,82 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					dx = 2;
 					dy = 0;
 					*laser_status |= Status_Front_OBS;
-					ROS_INFO("front middle");
+					ROS_INFO("  front middle");
 					break;
 				}
 				case 1 : {
 					dx = 2;
 					dy = 1;
 					*laser_status |= Status_Left_OBS;
-					ROS_INFO("front left");
+					ROS_INFO("    front left");
 					break;
 				}
 				case 2 : {
 					dx = 2;
 					dy = -1;
 					*laser_status |= Status_Right_OBS;
-					ROS_INFO("front right");
+					ROS_INFO("    front right");
 					break;
 				}
 				case 3 : {
 					dx = -2;
 					dy = 0;
-					ROS_INFO("back middle");
+					ROS_INFO("    back middle");
 					break;
 				}
 				case 4 : {
 					dx = -2;
 					dy = 1;
-					ROS_INFO("back left");
+					ROS_INFO("    back left");
 					break;
 				}
 				case 5 : {
 					dx = -2;
 					dy = -1;
-					ROS_INFO("back right");
+					ROS_INFO("    back right");
 					break;
 				}
 				case 6 : {
 					dx = 0;
 					dy = 2;
-					ROS_INFO("left middle");
+					ROS_INFO("    left middle");
 					break;
 				}
 				case 7 : {
 					dx = 1;
 					dy = 2;
-					ROS_INFO("left front");
+					ROS_INFO("    left front");
 					break;
 				}
 				case 8 : {
 					dx = -1;
 					dy = 2;
-					ROS_INFO("left back");
+					ROS_INFO("    left back");
 					break;
 				}
 				case 9 : {
 					dx = 0;
 					dy = -2;
-					ROS_INFO("right middle");
+					ROS_INFO("    right middle");
 					break;
 				}
 				case 10 : {
 					dx = 1;
 					dy = -2;
-					ROS_INFO("right front");
+					ROS_INFO("    right front");
 					break;
 				}
 				case 11 : {
 					dx = -1;
 					dy = -2;
-					ROS_INFO("right back");
+					ROS_INFO("    right back");
 					break;
 				}
 			}
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 			{
-				ROS_INFO("\033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
+				ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
 			}
 			if (is_wall_follow) {

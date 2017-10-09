@@ -287,36 +287,33 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 	return return_value;
 }
 
-bool wf_is_reach(const std::vector<Cell_t>& passed_path)
+bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
 {
+	ROS_INFO("  %s %d:?? curr(%d,%d,%d)",__FUNCTION__,__LINE__, curr.X, curr.Y, curr.TH);
 	const int16_t DIFF_LIMIT = 200;//1500 means 150 degrees, it is used by angle check.
 	/*check if spot turn*/
 	if(get_sp_turn_count() > 400) {
 		reset_sp_turn_count();
-		ROS_WARN("%s,%d:sp_turn over 400",__FUNCTION__,__LINE__);
+		ROS_WARN("  yes! sp_turn over 400");
 		return true;
 	}
 
-	if (g_trapped_mode != 1) {
-		ROS_INFO("%s %d:wf_is_reach_start()",__FUNCTION__,__LINE__);
-		if (passed_path.size()>5 && rm_distance() <= 0.1 && abs(ranged_angle(gyro_get_angle() - RegulatorBase::s_origin_angle)) <= DIFF_LIMIT) {
-			ROS_WARN("%s,%d: yes reach the start point!",__FUNCTION__,__LINE__);
-			return true;
-		}
-	}
+	if (passed_path.size() > 5) {
+		ROS_WARN("  trapped(%d),distance(%f),{curr,start}_th(%d,%d),", g_trapped_mode, world_distance(), curr.TH, passed_path.front().TH);
 
-	const static int32_t REACH_COUNT_LIMIT = 10;//10 represent the wall follow will end after overlap 10 cells
-	if (passed_path.size() > REACH_COUNT_LIMIT) {
-		int i = REACH_COUNT_LIMIT;
-		auto curr = passed_path.back();
-		for (auto r_iter = (passed_path.rbegin() + i); r_iter != passed_path.rend(); ++r_iter) {
-			if (*r_iter == curr && ((abs(ranged_angle(r_iter->TH - curr.TH))) <= DIFF_LIMIT))
-			{
-				ROS_WARN("%s,%d: yes it reach the cleaned point!",__FUNCTION__,__LINE__);
+		if (g_trapped_mode != 1 && world_distance() <= 0.05 && rm_angle(curr.TH, passed_path.front().TH) <= DIFF_LIMIT) {
+				ROS_WARN("  yes! reach the start point!");
+				return true;
+		}
+
+		for (auto r_iter = (passed_path.begin()); r_iter != passed_path.end() - 5; ++r_iter) {
+			if (*r_iter == curr && ((abs(ranged_angle(r_iter->TH - curr.TH))) <= DIFF_LIMIT)) {
+				ROS_WARN("  yes! reach the cleaned point(%d)!", std::distance(passed_path.begin(), r_iter));
 				return true;
 			}
 		}
 	}
+	ROS_WARN("  NO!");
 	return false;
 }
 
@@ -336,12 +333,13 @@ int cm_move_to(const PPTargetType& path)
 {
 	ROS_WARN("%s %d:", __FUNCTION__, __LINE__);
 	Cell_t curr = map_get_curr_cell();
+	Cell_t last = curr;
 	RegulatorManage rm(curr, g_next_cell, path);
 
-	int32_t same_cell_count = 0;
 	Cell_t target; int count = 0;
 	bool eh_status_now=false, eh_status_last=false;
 	int ret = EXIT_CLEAN;
+	auto wf_start_timer =  0;
 
 	std::vector<Cell_t> passed_path;
 	passed_path.clear();
@@ -359,9 +357,9 @@ int cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
-		if(!rm.isTurn())
+		if(rm.isMt())
 		{
-			curr = cm_update_position();
+			curr = cm_update_position();//note:cell = {x,y,angle}
 			rm.updatePosition({map_get_x_count(),map_get_y_count()});
 		}
 
@@ -388,14 +386,21 @@ int cm_move_to(const PPTargetType& path)
 			rm.switchToNext();
 		}
 		if(rm.isMt()) {
-			if ((passed_path.empty() || passed_path.back() != curr)) {
-//				ROS_INFO("passed_path.empty() || passed_path.back() != curr");
-				same_cell_count = 0;
-				// This checking is for avoiding position jumping back or aside during linear movement.
-				if (passed_path.empty() || (!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X))
+//			if (mt_is_follow_wall() && wf_start_timer == 0)
+//				wf_start_timer = time(NULL);
+			if (passed_path.empty() || last != curr)
+			{
+				last = curr;
+				if (std::find(passed_path.begin(), passed_path.end(), curr) == passed_path.end())
+				{
+					curr.TH = gyro_get_angle();
 					passed_path.push_back(curr);
+					for(const auto& cell: passed_path)
+						ROS_INFO("cell(%d,%d,%d)",cell.X,cell.Y,cell.TH);
+				}
+
 				if (mt_is_follow_wall()) {
-//					ROS_INFO("  mt_is_fw");
+					ROS_INFO("  mt_is_fw(%d,%d,%d)", curr.X, curr.Y, curr.TH);
 					map_set_follow_wall(MAP, curr);
 					if (g_trapped_mode == 1 && map_mark_robot(MAP) && path_dijkstra(curr, target, count)) {
 						ROS_WARN("  %d:Found targets(%d,%d), exit trapped.", __LINE__, target.X, target.Y);
@@ -405,23 +410,19 @@ int cm_move_to(const PPTargetType& path)
 					if (cm_is_follow_wall() || g_trapped_mode == 1) {
 						ROS_INFO("  %d:cm_is_follow_wall() || g_trapped_mode == 1 ", __LINE__);
 						map_set_follow_wall(WFMAP, curr);
-						g_wf_is_reach = wf_is_reach(passed_path);
+						g_wf_is_reach = wf_is_reach(curr, passed_path);
 					}
 				} else {
 //					ROS_INFO("  %d:mt_is_linear", __LINE__);
 					if (cm_is_exploration())
 						explore_update_map();
 				}
-				if (passed_path.size()>3 && RegulatorBase::s_origin_angle == 0)
-					RegulatorBase::s_origin_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
-			} else {
-				if (!passed_path.empty() && mt_is_follow_wall()) {
-//					ROS_WARN("  %d:is robot traped in local,count(%d) <= 1000", __LINE__, same_cell_count);
-					same_cell_count++;
-					if (same_cell_count >= 1000) {
-						ret = EXIT_CLEAN;
-						break;
-					}
+//			} else {
+				if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && passed_path.size() < 5) {
+					ROS_WARN("  {curr,start}_time(%d,%d), passed_path.size(%d): ", time(NULL), wf_start_timer, passed_path.size());
+					//todo
+//					ret = EXIT_CLEAN;
+//					break;
 				}
 			}
 		}
