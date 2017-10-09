@@ -16,9 +16,8 @@
 #include <vector>
 #include "config.h"
 #include "map.h"
+#include "movement.h"
 
-extern volatile int16_t g_left_wall_baseline;
-extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
 
 typedef enum {
@@ -232,17 +231,17 @@ public:
 
 	int16_t getObsLeft() const
 	{
-		return sensor.l_obs;
+		return sensor.l_obs - g_obs_left_baseline;
 	}
 
 	int16_t getObsRight() const
 	{
-		return sensor.r_obs;
+		return sensor.r_obs - g_obs_right_baseline;
 	}
 
 	int16_t getObsFront() const
 	{
-		return sensor.f_obs;
+		return sensor.f_obs - g_obs_front_baseline;
 	}
 
 	bool getWaterTank() const

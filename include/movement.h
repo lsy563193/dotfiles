@@ -371,6 +371,10 @@ typedef enum{
 
 extern uint32_t g_rcon_status;
 
+extern int16_t g_obs_left_baseline;
+extern int16_t g_obs_front_baseline;
+extern int16_t g_obs_right_baseline;
+
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
 

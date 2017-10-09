@@ -25,9 +25,12 @@
 
 extern uint8_t g_send_stream[SEND_LEN];
 
-static int16_t obs_left_trig_value = 500;
-static int16_t obs_front_trig_value = 500;
-static int16_t obs_right_trig_value = 500;
+static int16_t obs_left_trig_value = 350;
+static int16_t obs_front_trig_value = 350;
+static int16_t obs_right_trig_value = 350;
+int16_t g_obs_left_baseline = 100;
+int16_t g_obs_front_baseline = 100;
+int16_t g_obs_right_baseline = 100;
 static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
@@ -1563,11 +1566,10 @@ void obs_dynamic_base(uint16_t count)
 {
 //	count = 20;
 //	enum {front,left,right};
-	static uint32_t obs_cnt[] = {0,0,0};
-	static int32_t obs_sum[] = {0,0,0};
-	const int16_t OBS_DIFF = 350;
-	const int16_t LIMIT_LOW = 100;
-	int16_t* p_obs_trig_value[] = {&obs_front_trig_value,&obs_left_trig_value,&obs_right_trig_value};
+	static uint16_t obs_cnt[] = {0,0,0};
+	static int16_t obs_sum[] = {0,0,0};
+	const int16_t obs_dynamic_limit = 500;
+	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
 	typedef int32_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
 //	if(count == 0)
@@ -1581,13 +1583,13 @@ void obs_dynamic_base(uint16_t count)
 //		if(i == 2)
 //			ROS_WARN("right-------------------------");
 
-		auto p_obs_trig_val = p_obs_trig_value[i];
+		auto p_obs_baseline_ = p_obs_baseline[i];
 		auto obs_get = p_get_obs[i]();
 
-//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_trig_val, obs_get);
+//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_baseline_, obs_get);
 		obs_sum[i] += obs_get;
 		obs_cnt[i]++;
-		auto obs_avg = obs_sum[i] / obs_cnt[i];
+		int16_t obs_avg = obs_sum[i] / obs_cnt[i];
 //		ROS_WARN("obs_avg(%d), (%d / %d), ",obs_avg, obs_sum[i], obs_cnt[i]);
 		auto diff = abs_minus(obs_avg , obs_get);
 		if (diff > 50)
@@ -1600,17 +1602,17 @@ void obs_dynamic_base(uint16_t count)
 		{
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
-			obs_get = (obs_avg + *p_obs_trig_val - OBS_DIFF) / 2;
-			if (obs_get < LIMIT_LOW)
-				obs_get = LIMIT_LOW;
+			obs_get = (obs_avg + *p_obs_baseline_) / 2;
+			if (obs_get > obs_dynamic_limit)
+				obs_get = obs_dynamic_limit;
 
-			*p_obs_trig_val = obs_get + OBS_DIFF;
+			*p_obs_baseline_ = obs_get;
 //			if(i == 0)
-//				ROS_WARN("obs front = %d.", obs_front_trig_value);
+//				ROS_WARN("obs front baseline = %d.", *p_obs_baseline_);
 //			else if(i == 1)
-//				ROS_WARN("obs left = %d.", obs_left_trig_value);
+//				ROS_WARN("obs left baseline = %d.", *p_obs_baseline_);
 //			else if(i == 2)
-//				ROS_WARN("obs right = %d.", obs_right_trig_value);
+//				ROS_WARN("obs right baseline = %d.", *p_obs_baseline_);
 		}
 	}
 }
