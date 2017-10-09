@@ -166,11 +166,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 	bool eh_status_now=false, eh_status_last=false;
 
-	initSucceeded(true);
-	reset_work_time();
-	map_init(MAP);
-	map_init(WFMAP);
-	map_init(ROSMAP);
 	if (!initCleaning(cm_get()))
 	{
 		initSucceeded(false);
@@ -456,6 +451,14 @@ MotionManage::~MotionManage()
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
 {
+
+	initSucceeded(true);
+	reset_work_time();
+	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
+		map_init(MAP);
+
+	map_init(WFMAP);
+	map_init(ROSMAP);
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:
