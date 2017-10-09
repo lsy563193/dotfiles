@@ -25,9 +25,9 @@
 
 extern uint8_t g_send_stream[SEND_LEN];
 
-static int16_t g_left_obs_trig_value = 500;
-static int16_t g_front_obs_trig_value = 500;
-static int16_t g_right_obs_trig_value = 500;
+static int16_t obs_left_trig_value = 500;
+static int16_t obs_front_trig_value = 500;
+static int16_t obs_right_trig_value = 500;
 static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
@@ -984,9 +984,10 @@ uint8_t is_move_with_remote(void)
 
 uint8_t is_obs_near(void)
 {
-	if (robot::instance()->getObsFront() > (g_front_obs_trig_value - 200))return 1;
-	if (robot::instance()->getObsRight() > (g_right_obs_trig_value - 200))return 1;
-	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
+	if (robot::instance()->getObsFront() > get_left_obs_trig_value() ||
+		robot::instance()->getObsRight() > get_right_obs_trig_value() ||
+		robot::instance()->getObsRight() > get_front_obs_trig_value())
+		return 1;
 	return 0;
 }
 
@@ -1566,7 +1567,7 @@ void obs_dynamic_base(uint16_t count)
 	static int32_t obs_sum[] = {0,0,0};
 	const int16_t OBS_DIFF = 350;
 	const int16_t LIMIT_LOW = 100;
-	int16_t* p_obs_trig_value[] = {&g_front_obs_trig_value,&g_left_obs_trig_value,&g_right_obs_trig_value};
+	int16_t* p_obs_trig_value[] = {&obs_front_trig_value,&obs_left_trig_value,&obs_right_trig_value};
 	typedef int32_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
 //	if(count == 0)
@@ -1605,90 +1606,51 @@ void obs_dynamic_base(uint16_t count)
 
 			*p_obs_trig_val = obs_get + OBS_DIFF;
 //			if(i == 0)
-//				ROS_WARN("obs front = %d.", g_front_obs_trig_value);
+//				ROS_WARN("obs front = %d.", obs_front_trig_value);
 //			else if(i == 1)
-//				ROS_WARN("obs left = %d.", g_left_obs_trig_value);
+//				ROS_WARN("obs left = %d.", obs_left_trig_value);
 //			else if(i == 2)
-//				ROS_WARN("obs right = %d.", g_right_obs_trig_value);
+//				ROS_WARN("obs right = %d.", obs_right_trig_value);
 		}
 	}
 }
 
-int16_t get_front_obs_value(void)
+int16_t get_front_obs_trig_value(void)
 {
-	return g_front_obs_trig_value + 1700;
+	return obs_front_trig_value;
 }
 
-int16_t get_left_obs_value(void)
+int16_t get_left_obs_trig_value(void)
 {
-	return g_left_obs_trig_value + 200;
+	return obs_left_trig_value;
 }
 
-int16_t get_right_obs_value(void)
+int16_t get_right_obs_trig_value(void)
 {
-	return g_right_obs_trig_value + 200;
+	return obs_right_trig_value;
 }
 
 uint8_t is_wall_obs_near(void)
 {
-	if (robot::instance()->getObsFront() > (g_front_obs_trig_value + 500))
-	{
+	if (robot::instance()->getObsFront() > (get_front_obs_trig_value() + 500) ||
+		robot::instance()->getObsRight() > (get_right_obs_trig_value() + 500) ||
+		robot::instance()->getObsLeft() > (get_left_obs_trig_value() + 1000) ||
+		robot::instance()->getLeftWall() > (g_leftwall_obs_trig_vale + 500))
 		return 1;
-	}
-	if (robot::instance()->getObsRight() > (g_right_obs_trig_value + 500))
-	{
-		return 1;
-	}
-	if (robot::instance()->getObsLeft() > (g_front_obs_trig_value + 1000))
-	{
-		return 1;
-	}
-	if (robot::instance()->getLeftWall() > (g_leftwall_obs_trig_vale + 500))
-	{
-		return 1;
-	}
 	return 0;
 }
-
-/*
-void adjust_obs_value(void)
-{
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
-		g_front_obs_trig_value += 800;
-	if (robot::instance()->getObsLeft() > g_left_obs_trig_value)
-		g_left_obs_trig_value += 800;
-	if (robot::instance()->getObsRight() > g_right_obs_trig_value)
-		g_right_obs_trig_value += 800;
-}
-
-void reset_obst_value(void)
-{
-	g_left_obs_trig_value = robot::instance()->getObsFront() + 1000;
-	g_front_obs_trig_value = robot::instance()->getObsLeft() + 1000;
-	g_right_obs_trig_value = robot::instance()->getObsRight() + 1000;
-}
-
-uint8_t spot_obs_status(void)
-{
-	uint8_t status = 0;
-	if (robot::instance()->getObsLeft() > 1000)status |= Status_Left_OBS;
-	if (robot::instance()->getObsRight() > 1000)status |= Status_Right_OBS;
-	if (robot::instance()->getObsFront() > 1500)status |= Status_Front_OBS;
-	return status;
-}
-*/
 
 uint8_t get_obs_status(void)
 {
 	uint8_t Status = 0;
 
-	if (robot::instance()->getObsLeft() > g_left_obs_trig_value)
+	if (robot::instance()->getObsLeft() > get_left_obs_trig_value())
 		Status |= Status_Left_OBS;
 
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
+	if (robot::instance()->getObsFront() > get_front_obs_trig_value())
 		Status |= Status_Front_OBS;
 
-	if (robot::instance()->getObsRight() > g_right_obs_trig_value)
+	if (robot::instance()->getObsRight() > get_right_obs_trig_value())
 		Status |= Status_Right_OBS;
 
 	return Status;
@@ -2462,14 +2424,6 @@ void reset_key_press(uint8_t key)
 uint8_t get_key_press(void)
 {
 	return g_key_status;
-}
-
-uint8_t is_front_close()
-{
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value + 1500)
-		return 1;
-	else
-		return 0;
 }
 
 uint8_t is_virtual_wall(void)
@@ -3417,7 +3371,7 @@ void reset_clean_paused(void)
 
 bool is_decelerate_wall(void)
 {
-	auto status = (robot::instance()->getObsFront() > (g_front_obs_trig_value));
+	auto status = (robot::instance()->getObsFront() > get_front_obs_trig_value());
 	if(is_map_front_block(3) || status)
 		return true;
 	else

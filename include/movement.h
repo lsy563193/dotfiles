@@ -509,9 +509,9 @@ void set_vac_mode(uint8_t mode);
 void set_vac_speed(void);
 
 void obs_dynamic_base(uint16_t Cy);
-int16_t get_front_obs_value(void);
-int16_t get_left_obs_value(void);
-int16_t get_right_obs_value(void);
+int16_t get_front_obs_trig_value(void);
+int16_t get_left_obs_trig_value(void);
+int16_t get_right_obs_trig_value(void);
 uint8_t is_wall_obs_near(void);
 //void adjust_obs_value(void);
 //void reset_obst_value(void);
@@ -654,8 +654,6 @@ void reset_bumper_error(void);
 uint8_t is_bumper_fail(void);
 
 uint8_t is_turn_remote(void);
-
-uint8_t is_front_close(void);
 
 void set_left_wheel_step(uint32_t step);
 

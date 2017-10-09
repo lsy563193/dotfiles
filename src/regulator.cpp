@@ -41,7 +41,7 @@ static int16_t bumper_turn_angle()
 	static int bumper_jam_cnt_ = 0;
 	auto get_wheel_step = (mt_is_left()) ? get_right_wheel_step : get_left_wheel_step;
 	auto get_obs = (mt_is_left()) ? get_left_obs : get_right_obs;
-	auto get_obs_value = (mt_is_left()) ? get_left_obs_value : get_right_obs_value;
+	auto get_obs_value = (mt_is_left()) ? get_left_obs_trig_value : get_right_obs_trig_value;
 	auto status = g_bumper_triggered;
 	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
 	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
@@ -64,9 +64,9 @@ static int16_t bumper_turn_angle()
 		g_turn_angle =0;
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 		if (g_trapped_mode != 1) {
-			g_turn_angle = (bumper_jam_cnt_ >= 3 || (get_obs() <= get_obs_value() - 200)) ? -180 : -280;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -180 : -280;
 		} else {
-			g_turn_angle = (bumper_jam_cnt_ >= 3 || (get_obs() <= get_obs_value() - 200)) ? -100 : -200;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -100 : -200;
 		}
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
@@ -227,13 +227,14 @@ static bool laser_turn_angle(int16_t& turn_angle)
 	}
 	return false;
 }
+
 static int16_t _get_obs_value()
 {
-	if(get_front_obs() > get_front_obs_value())
+	if(get_front_obs() > get_front_obs_trig_value() + 1700)
 		return Status_Front_OBS;
-	if(get_left_obs() > get_left_obs_value())
+	if(get_left_obs() > get_left_obs_trig_value() + 200)
 		return Status_Left_OBS;
-	if(get_right_obs() > get_right_obs_value())
+	if(get_right_obs() > get_right_obs_trig_value() + 200)
 		return Status_Right_OBS;
 	return 0;
 }
@@ -882,7 +883,7 @@ bool FollowWallRegulator::isSwitch()
 		return true;
 	}
 #endif
-	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_value());
+	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_trig_value() + 1700);
 	if(obs_tmp) {
 		if( g_bumper_triggered || get_bumper_status()){
 			if(! g_bumper_triggered)
