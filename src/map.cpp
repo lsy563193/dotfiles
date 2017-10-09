@@ -646,7 +646,7 @@ bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 uint8_t map_set_laser()
 {
 #if LASER_MARKER
-	MotionManage::s_laser->laserMarker(true);
+	//MotionManage::s_laser->laserMarker(true);
 #endif
 }
 
