@@ -240,7 +240,6 @@ static int16_t _get_obs_value()
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
-int16_t RegulatorBase::s_origin_angle = 0;
 int16_t RegulatorBase::s_target_angle = 0;
 float RegulatorBase::s_pos_x = 0;
 float RegulatorBase::s_pos_y = 0;
@@ -405,13 +404,13 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
 	}
 	reset_wheel_step();
-	if (fabsf(distance) >= g_back_distance * 0.8)
+	/*if (fabsf(distance) >= g_back_distance * 0.8)
 	{
 		l_speed = r_speed = speed_--;
 		check_limit(l_speed, BACK_MIN_SPEED, BACK_MAX_SPEED);
 		check_limit(r_speed, BACK_MIN_SPEED, BACK_MAX_SPEED);
 	}
-	else
+	else*/
 		l_speed = r_speed = speed_;
 }
 
@@ -814,7 +813,6 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 	if (!g_keep_on_wf) {
 		g_straight_distance = 300;
 		s_origin = start_point;
-		s_origin_angle = gyro_get_angle();
 		s_target = target;
 		map_init(WFMAP);
 		ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);

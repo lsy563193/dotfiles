@@ -166,11 +166,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 	bool eh_status_now=false, eh_status_last=false;
 
-	initSucceeded(true);
-	reset_work_time();
-	map_init(MAP);
-	map_init(WFMAP);
-	map_init(ROSMAP);
 	if (!initCleaning(cm_get()))
 	{
 		initSucceeded(false);
@@ -407,7 +402,7 @@ MotionManage::~MotionManage()
 		extern bool g_have_seen_charge_stub;
 		if(g_go_home && !g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		if (cm_get() != Clean_Mode_GoHome)
+		if (cm_get() != Clean_Mode_GoHome && !cm_is_exploration())
 			wav_play(WAV_CLEANING_FINISHED);
 	}
 	cm_reset_go_home();
@@ -456,6 +451,14 @@ MotionManage::~MotionManage()
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
 {
+
+	initSucceeded(true);
+	reset_work_time();
+	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
+		map_init(MAP);
+
+	map_init(WFMAP);
+	map_init(ROSMAP);
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:

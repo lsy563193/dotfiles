@@ -52,7 +52,6 @@ public:
 public:
 	static Point32_t s_target;
 	static Point32_t s_origin;
-	static int16_t s_origin_angle;
 	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;

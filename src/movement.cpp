@@ -17,7 +17,6 @@
 #include "robotbase.h"
 #include "config.h"
 #include "core_move.h"
-#include "wall_follow_slam.h"
 #include "wall_follow_trapped.h"
 #include "wav.h"
 #include "slam.h"
