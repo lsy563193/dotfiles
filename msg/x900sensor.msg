@@ -21,6 +21,7 @@ int16 r_obs
 # bumper value:1 hit,0 not hit
 bool rbumper
 bool lbumper
+bool lidar_bumper
 
 # ir controler signal
 uint8 ir_ctrl

@@ -41,7 +41,7 @@ static int16_t bumper_turn_angle()
 	static int bumper_jam_cnt_ = 0;
 	auto get_wheel_step = (mt_is_left()) ? get_right_wheel_step : get_left_wheel_step;
 	auto get_obs = (mt_is_left()) ? get_left_obs : get_right_obs;
-	auto get_obs_value = (mt_is_left()) ? get_left_obs_value : get_right_obs_value;
+	auto get_obs_value = (mt_is_left()) ? get_left_obs_trig_value : get_right_obs_trig_value;
 	auto status = g_bumper_triggered;
 	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
 	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
@@ -64,9 +64,9 @@ static int16_t bumper_turn_angle()
 		g_turn_angle =0;
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 		if (g_trapped_mode != 1) {
-			g_turn_angle = (bumper_jam_cnt_ >= 3 || (get_obs() <= get_obs_value() - 200)) ? -180 : -280;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -180 : -280;
 		} else {
-			g_turn_angle = (bumper_jam_cnt_ >= 3 || (get_obs() <= get_obs_value() - 200)) ? -100 : -200;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -100 : -200;
 		}
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
@@ -227,16 +227,6 @@ static bool laser_turn_angle(int16_t& turn_angle)
 	}
 	return false;
 }
-static int16_t _get_obs_value()
-{
-	if(get_front_obs() > get_front_obs_value())
-		return Status_Front_OBS;
-	if(get_left_obs() > get_left_obs_value())
-		return Status_Left_OBS;
-	if(get_right_obs() > get_right_obs_value())
-		return Status_Right_OBS;
-	return 0;
-}
 
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
@@ -316,6 +306,8 @@ void BackRegulator::setTarget()
 		g_back_distance = 0.30;
 	else if (g_go_to_charger_back_0cm)
 		g_back_distance = 0.0;
+	//else if (g_lidar_bumper)
+	//	g_back_distnce = 0.15;
 	else
 		g_back_distance = 0.01;
 	ROS_INFO("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, g_back_distance);
@@ -345,6 +337,7 @@ bool BackRegulator::isReach()
 		ROS_INFO("\033[32m%s\033[0m, %d: \033[33mBackRegulator\033[0m ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
+		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
 		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !get_tilt_status())
 		{
@@ -367,6 +360,11 @@ bool BackRegulator::isReach()
 			g_bumper_jam = true;
 			return false;
 		}
+		//else if (g_lidar_bumper_cnt >= 2)
+		//{
+		//	g_lidar_bumper_jam = true;
+		//	return false;
+		//}
 		else
 			setTarget();
 	}
@@ -643,13 +641,13 @@ bool LinearRegulator::isSwitch()
 		|| (! g_tilt_triggered && get_tilt_status()) || g_robot_slip)
 	{
 //		g_is_should_follow_wall = true;
-		ROS_INFO("%s, %d,g_bumper_triggered(\033[32m%d\033[0m) g_cliff_triggered(\033[32m%d\033[0m) g_tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,g_bumper_triggered,g_cliff_triggered,g_tilt_triggered,g_robot_slip);
 		if(get_bumper_status())
 			g_bumper_triggered = get_bumper_status();
 		if(get_cliff_status())
 			g_cliff_triggered = get_cliff_status();
 		if(get_tilt_status())
 			g_tilt_triggered = get_tilt_status();
+		ROS_INFO("%s, %d,g_bumper_triggered(\033[32m%d\033[0m) g_cliff_triggered(\033[32m%d\033[0m) g_tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,g_bumper_triggered,g_cliff_triggered,g_tilt_triggered,g_robot_slip);
 
 		SpotType spt = SpotMovement::instance() -> getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
@@ -671,18 +669,18 @@ bool LinearRegulator::isSwitch()
 bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
-	bool obs_tmp;
+	uint8_t obs_tmp;
 	if(cm_is_follow_wall())
-		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): _get_obs_value();
+		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
 	else
-		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
+		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): get_obs_status(200, 1700, 200);
 
 //	if (cm_is_exploration())
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
 
 	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
-	if (obs_tmp != 0 || rcon_tmp )
+	if (obs_tmp || rcon_tmp)
 	{
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
@@ -759,7 +757,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y);
 	auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
-	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected )
+	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected )
 	{
 		if (distance < SLOW_DOWN_DISTANCE)
 			angle_diff = 0;
@@ -882,7 +880,7 @@ bool FollowWallRegulator::isSwitch()
 		return true;
 	}
 #endif
-	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_value());
+	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_trig_value() + 1700);
 	if(obs_tmp) {
 		if( g_bumper_triggered || get_bumper_status()){
 			if(! g_bumper_triggered)

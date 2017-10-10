@@ -241,6 +241,7 @@
 
 #define LeftBumperTrig				1
 #define RightBumperTrig				2
+#define LidarBumperTrig				4
 #define AllBumperTrig				3
 
 #define LeftCliffTrig							1
@@ -308,7 +309,6 @@ typedef enum{
 #define Direction_Flag_Left  0x02
 
 #define STEP_PER_MM  186
-#define Cliff_Limit         (int16_t)20
 
 #define Two_Hours         7200
 
@@ -370,6 +370,10 @@ typedef enum{
 #define REG_TYPE_CURVE			5
 
 extern uint32_t g_rcon_status;
+
+extern int16_t g_obs_left_baseline;
+extern int16_t g_obs_front_baseline;
+extern int16_t g_obs_right_baseline;
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
@@ -448,9 +452,18 @@ void wall_dynamic_base(uint32_t Cy);
 
 uint8_t get_bumper_status(void);
 
+uint8_t get_lidar_bumper_status(void);
+
 uint8_t get_cliff_status(void);
 
 int get_rcon_trig(void);
+
+int16_t get_front_cliff_trig_value(void);
+int16_t get_left_cliff_trig_value(void);
+int16_t get_right_cliff_trig_value(void);
+int16_t get_front_cliff(void);
+int16_t get_left_cliff(void);
+int16_t get_right_cliff(void);
 
 bool is_on_charger_stub(void);
 
@@ -461,8 +474,6 @@ void set_home_remote(void);
 void reset_home_remote(void);
 
 uint8_t is_home_remote(void);
-
-uint8_t is_obs_near(void);
 
 uint32_t get_rcon_status(void);
 
@@ -509,18 +520,14 @@ void set_vac_mode(uint8_t mode);
 void set_vac_speed(void);
 
 void obs_dynamic_base(uint16_t Cy);
-int16_t get_front_obs_value(void);
-int16_t get_left_obs_value(void);
-int16_t get_right_obs_value(void);
-uint8_t is_wall_obs_near(void);
-//void adjust_obs_value(void);
-//void reset_obst_value(void);
-//uint8_t spot_obs_status(void);
-uint8_t get_obs_status(void);
+int16_t get_front_obs_trig_value(void);
+int16_t get_left_obs_trig_value(void);
+int16_t get_right_obs_trig_value(void);
+uint8_t get_obs_status(int16_t left_obs_offset = 0, int16_t front_obs_offset = 0, int16_t right_obs_offset = 0);
 
-int32_t get_front_obs(void);
-int32_t get_left_obs(void);
-int32_t get_right_obs(void);
+int16_t get_front_obs(void);
+int16_t get_left_obs(void);
+int16_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
@@ -655,8 +662,6 @@ uint8_t is_bumper_fail(void);
 
 uint8_t is_turn_remote(void);
 
-uint8_t is_front_close(void);
-
 void set_left_wheel_step(uint32_t step);
 
 void set_right_wheel_step(uint32_t step);
@@ -706,10 +711,6 @@ void add_average(uint32_t data);
 uint32_t get_average_move(void);
 
 uint32_t reset_average_counter(void);
-
-uint8_t cliff_escape(void);
-
-uint8_t cliff_event(uint8_t temp_status);
 
 void reset_virtual_wall();
 
@@ -763,4 +764,6 @@ bool check_pub_scan();
 uint8_t is_robot_slip();
 bool is_clean_paused();
 void reset_clean_paused();
+int8_t lidar_bumper_init(const char* device);
+int8_t lidar_bumper_deinit();
 #endif

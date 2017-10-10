@@ -25,9 +25,18 @@
 
 extern uint8_t g_send_stream[SEND_LEN];
 
-static int16_t g_left_obs_trig_value = 500;
-static int16_t g_front_obs_trig_value = 500;
-static int16_t g_right_obs_trig_value = 500;
+static int16_t obs_left_trig_value = 350;
+static int16_t obs_front_trig_value = 350;
+static int16_t obs_right_trig_value = 350;
+int16_t g_obs_left_baseline = 100;
+int16_t g_obs_front_baseline = 100;
+int16_t g_obs_right_baseline = 100;
+static int16_t cliff_left_trig_value = 20;
+static int16_t cliff_front_trig_value = 20;
+static int16_t cliff_right_trig_value = 20;
+int16_t g_cliff_left_baseline = 100;
+int16_t g_cliff_front_baseline = 100;
+int16_t g_cliff_right_baseline = 100;
 static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
@@ -718,21 +727,6 @@ void jam_turn_right(uint16_t speed, int16_t angle)
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
 }
 
-int32_t get_front_obs(void)
-{
-	return (int32_t) robot::instance()->getObsFront();
-}
-
-int32_t get_left_obs(void)
-{
-	return (int32_t) robot::instance()->getObsLeft();
-}
-
-int32_t get_right_obs(void)
-{
-	return (int32_t) robot::instance()->getObsRight();
-}
-
 uint8_t get_bumper_status(void)
 {
 	uint8_t Temp_Status = 0;
@@ -745,34 +739,116 @@ uint8_t get_bumper_status(void)
 	{
 		Temp_Status |= RightBumperTrig;
 	}
+	if (robot::instance()->getLidarBumper())
+	{
+		Temp_Status |= LidarBumperTrig;
+	}
 	return Temp_Status;
 }
 
 uint8_t get_cliff_status(void)
 {
-	uint8_t Cliff_Status = 0x00;
-	int16_t cl, cr, cf;
-	cl = robot::instance()->getCliffLeft();
-	cr = robot::instance()->getCliffRight();
-	cf = robot::instance()->getCliffFront();
-	if (cl < Cliff_Limit)
+	uint8_t status = 0x00;
+
+	if (get_left_cliff() < get_left_cliff_trig_value())
+		status |= Status_Cliff_Left;
+
+	if (get_front_cliff() < get_front_cliff_trig_value())
+		status |= Status_Cliff_Front;
+
+	if (get_right_cliff() < get_right_cliff_trig_value())
+		status |= Status_Cliff_Right;
+
+	//if (status != 0x00){
+	//	ROS_WARN("Return Cliff status:%x.", status);
+	//}
+	return status;
+}
+
+//--------------------------------------Cliff Dynamic adjust----------------------
+void cliff_dynamic_base(uint16_t count)
+{
+//	count = 20;
+//	enum {front,left,right};
+	static uint16_t cliff_cnt[] = {0,0,0};
+	static int16_t cliff_sum[] = {0,0,0};
+	const int16_t cliff_dynamic_limit = 500;
+	int16_t* p_cliff_baseline[] = {&g_cliff_front_baseline, &g_cliff_left_baseline, &g_cliff_right_baseline};
+	typedef int16_t(*Func_t)(void);
+	Func_t p_get_cliff[] = {&get_front_cliff, &get_left_cliff, &get_right_cliff};
+//	if(count == 0)
+//		return ;
+	for(int i =0;i<3;i++)
 	{
-		Cliff_Status |= LeftCliffTrig;
+//		if(i == 0)
+//			ROS_WARN("front-------------------------");
+//		if(i == 1)
+//			ROS_WARN("left-------------------------");
+//		if(i == 2)
+//			ROS_WARN("right-------------------------");
+
+		auto p_cliff_baseline_ = p_cliff_baseline[i];
+		auto cliff_get = p_get_cliff[i]();
+
+//		ROS_WARN("cliff_trig_val(%d),cliff_get(%d)", *p_cliff_baseline_, cliff_get);
+		cliff_sum[i] += cliff_get;
+		cliff_cnt[i]++;
+		int16_t cliff_avg = cliff_sum[i] / cliff_cnt[i];
+//		ROS_WARN("cliff_avg(%d), (%d / %d), ",cliff_avg, cliff_sum[i], cliff_cnt[i]);
+		auto diff = abs_minus(cliff_avg , cliff_get);
+		if (diff > 50)
+		{
+//			ROS_WARN("diff = (%d) > 50.", diff);
+			cliff_cnt[i] = 0;
+			cliff_sum[i] = 0;
+		}
+		if (cliff_cnt[i] > count)
+		{
+			cliff_cnt[i] = 0;
+			cliff_sum[i] = 0;
+			cliff_get = (cliff_avg + *p_cliff_baseline_) / 2;
+			if (cliff_get > cliff_dynamic_limit)
+				cliff_get = cliff_dynamic_limit;
+
+			*p_cliff_baseline_ = cliff_get;
+//			if(i == 0)
+//				ROS_WARN("cliff front baseline = %d.", *p_cliff_baseline_);
+//			else if(i == 1)
+//				ROS_WARN("cliff left baseline = %d.", *p_cliff_baseline_);
+//			else if(i == 2)
+//				ROS_WARN("cliff right baseline = %d.", *p_cliff_baseline_);
+		}
 	}
-	if (cr < Cliff_Limit)
-	{
-		Cliff_Status |= RightCliffTrig;
-	}
-	if (cf < Cliff_Limit)
-	{
-		Cliff_Status |= FrontCliffTrig;
-	}
-	/*
-	if (Cliff_Status != 0x00){
-		ROS_WARN("Return Cliff status:%x.", Cliff_Status);
-	}
-	*/
-	return Cliff_Status;
+}
+
+int16_t get_front_cliff_trig_value(void)
+{
+	return cliff_front_trig_value;
+}
+
+int16_t get_left_cliff_trig_value(void)
+{
+	return cliff_left_trig_value;
+}
+
+int16_t get_right_cliff_trig_value(void)
+{
+	return cliff_right_trig_value;
+}
+
+int16_t get_front_cliff(void)
+{
+	return robot::instance()->getCliffFront();
+}
+
+int16_t get_left_cliff(void)
+{
+	return robot::instance()->getCliffLeft();
+}
+
+int16_t get_right_cliff(void)
+{
+	return robot::instance()->getCliffRight();
 }
 
 
@@ -851,97 +927,6 @@ int get_rcon_trig(void)
 	return 0;
 }
 
-uint8_t cliff_escape(void)
-{
-	uint8_t count = 1;
-	uint8_t cc;
-	while (ros::ok())
-	{
-		cc = get_cliff_status();
-		if (cc)
-		{
-			if (cc == (Status_Cliff_Left | Status_Cliff_Right | Status_Cliff_Front))
-			{
-				return 1;
-			}
-			switch (count++)
-			{
-				case 1:
-					cliff_turn_right(30, 300);
-					break;
-				case 2:
-					cliff_turn_left(30, 300);
-					break;
-				case 3:
-					cliff_turn_right(30, 300);
-					break;
-				case 4:
-					cliff_turn_left(30, 300);
-					break;
-				case 5:
-					move_back();
-					cliff_turn_left(30, 800);
-					break;
-				default:
-					return 1;
-			}
-
-		} else
-			return 0;
-	}
-	return 0;
-}
-
-uint8_t cliff_event(uint8_t event)
-{
-	uint16_t temp_adjust = 0, random_factor = 0;
-	uint8_t d_flag = 0;
-	// There is 50% chance that the temp_adjust = 450.
-	//if(g_left_wheel_step%2)temp_adjust = 450;
-	if (((int) ros::Time::now().toSec()) % 2)temp_adjust = 450;
-	else temp_adjust = 0;
-	// There is 33% chance that the random_factor = 1.
-	//if(g_right_wheel_step%3)random_factor = 1;
-	if (((int) ros::Time::now().toSec()) % 3)random_factor = 1;
-	else random_factor = 0;
-
-	switch (event)
-	{
-		case Status_Cliff_Left:
-			cliff_turn_right(Turn_Speed, temp_adjust + 900);
-			break;
-		case Status_Cliff_Right:
-			cliff_turn_left(Turn_Speed, temp_adjust + 900);
-			d_flag = 1;
-			break;
-		case Status_Cliff_Front:
-			if (random_factor)
-			{
-				cliff_turn_left(Turn_Speed, 1200 + temp_adjust);
-				d_flag = 1;
-			} else cliff_turn_right(Turn_Speed, 1300 + temp_adjust);
-			break;
-		case (Status_Cliff_Left | Status_Cliff_Front):
-			cliff_turn_right(Turn_Speed, 1650 + temp_adjust);
-			break;
-		case (Status_Cliff_Right | Status_Cliff_Front):
-			cliff_turn_left(Turn_Speed, 1650 + temp_adjust);
-			d_flag = 1;
-			break;
-		case (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right):
-			cliff_turn_right(Turn_Speed, 1700);
-			break;
-		case 0:
-			break;
-		default:
-			cliff_turn_left(Turn_Speed, 1800);
-			d_flag = 1;
-			break;
-	}
-	move_forward(30, 30);
-	if (d_flag)return 1;
-	return 0;
-}
 /*-------------------------------Check if at charger stub------------------------------------*/
 bool is_on_charger_stub(void)
 {
@@ -980,14 +965,6 @@ uint8_t is_home_remote(void)
 uint8_t is_move_with_remote(void)
 {
 	return g_remote_move_flag;
-}
-
-uint8_t is_obs_near(void)
-{
-	if (robot::instance()->getObsFront() > (g_front_obs_trig_value - 200))return 1;
-	if (robot::instance()->getObsRight() > (g_right_obs_trig_value - 200))return 1;
-	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
-	return 0;
 }
 
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd)
@@ -1557,17 +1534,16 @@ void set_vac_speed(void)
 	}
 }
 
-/*--------------------------------------Obs Dynamic adjust----------------------*/
+//--------------------------------------Obs Dynamic adjust----------------------
 void obs_dynamic_base(uint16_t count)
 {
 //	count = 20;
 //	enum {front,left,right};
-	static uint32_t obs_cnt[] = {0,0,0};
-	static int32_t obs_sum[] = {0,0,0};
-	const int16_t OBS_DIFF = 350;
-	const int16_t LIMIT_LOW = 100;
-	int16_t* p_obs_trig_value[] = {&g_front_obs_trig_value,&g_left_obs_trig_value,&g_right_obs_trig_value};
-	typedef int32_t(*Func_t)(void);
+	static uint16_t obs_cnt[] = {0,0,0};
+	static int16_t obs_sum[] = {0,0,0};
+	const int16_t obs_dynamic_limit = 500;
+	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
+	typedef int16_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
 //	if(count == 0)
 //		return ;
@@ -1580,13 +1556,13 @@ void obs_dynamic_base(uint16_t count)
 //		if(i == 2)
 //			ROS_WARN("right-------------------------");
 
-		auto p_obs_trig_val = p_obs_trig_value[i];
+		auto p_obs_baseline_ = p_obs_baseline[i];
 		auto obs_get = p_get_obs[i]();
 
-//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_trig_val, obs_get);
+//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_baseline_, obs_get);
 		obs_sum[i] += obs_get;
 		obs_cnt[i]++;
-		auto obs_avg = obs_sum[i] / obs_cnt[i];
+		int16_t obs_avg = obs_sum[i] / obs_cnt[i];
 //		ROS_WARN("obs_avg(%d), (%d / %d), ",obs_avg, obs_sum[i], obs_cnt[i]);
 		auto diff = abs_minus(obs_avg , obs_get);
 		if (diff > 50)
@@ -1599,99 +1575,65 @@ void obs_dynamic_base(uint16_t count)
 		{
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
-			obs_get = (obs_avg + *p_obs_trig_val - OBS_DIFF) / 2;
-			if (obs_get < LIMIT_LOW)
-				obs_get = LIMIT_LOW;
+			obs_get = (obs_avg + *p_obs_baseline_) / 2;
+			if (obs_get > obs_dynamic_limit)
+				obs_get = obs_dynamic_limit;
 
-			*p_obs_trig_val = obs_get + OBS_DIFF;
+			*p_obs_baseline_ = obs_get;
 //			if(i == 0)
-//				ROS_WARN("obs front = %d.", g_front_obs_trig_value);
+//				ROS_WARN("obs front baseline = %d.", *p_obs_baseline_);
 //			else if(i == 1)
-//				ROS_WARN("obs left = %d.", g_left_obs_trig_value);
+//				ROS_WARN("obs left baseline = %d.", *p_obs_baseline_);
 //			else if(i == 2)
-//				ROS_WARN("obs right = %d.", g_right_obs_trig_value);
+//				ROS_WARN("obs right baseline = %d.", *p_obs_baseline_);
 		}
 	}
 }
 
-int16_t get_front_obs_value(void)
+int16_t get_front_obs_trig_value(void)
 {
-	return g_front_obs_trig_value + 1700;
+	return obs_front_trig_value;
 }
 
-int16_t get_left_obs_value(void)
+int16_t get_left_obs_trig_value(void)
 {
-	return g_left_obs_trig_value + 200;
+	return obs_left_trig_value;
 }
 
-int16_t get_right_obs_value(void)
+int16_t get_right_obs_trig_value(void)
 {
-	return g_right_obs_trig_value + 200;
+	return obs_right_trig_value;
 }
 
-uint8_t is_wall_obs_near(void)
+int16_t get_front_obs(void)
 {
-	if (robot::instance()->getObsFront() > (g_front_obs_trig_value + 500))
-	{
-		return 1;
-	}
-	if (robot::instance()->getObsRight() > (g_right_obs_trig_value + 500))
-	{
-		return 1;
-	}
-	if (robot::instance()->getObsLeft() > (g_front_obs_trig_value + 1000))
-	{
-		return 1;
-	}
-	if (robot::instance()->getLeftWall() > (g_leftwall_obs_trig_vale + 500))
-	{
-		return 1;
-	}
-	return 0;
+	return robot::instance()->getObsFront();
 }
 
-/*
-void adjust_obs_value(void)
+int16_t get_left_obs(void)
 {
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
-		g_front_obs_trig_value += 800;
-	if (robot::instance()->getObsLeft() > g_left_obs_trig_value)
-		g_left_obs_trig_value += 800;
-	if (robot::instance()->getObsRight() > g_right_obs_trig_value)
-		g_right_obs_trig_value += 800;
+	return robot::instance()->getObsLeft();
 }
 
-void reset_obst_value(void)
+int16_t get_right_obs(void)
 {
-	g_left_obs_trig_value = robot::instance()->getObsFront() + 1000;
-	g_front_obs_trig_value = robot::instance()->getObsLeft() + 1000;
-	g_right_obs_trig_value = robot::instance()->getObsRight() + 1000;
+	return robot::instance()->getObsRight();
 }
 
-uint8_t spot_obs_status(void)
+uint8_t get_obs_status(int16_t left_obs_offset, int16_t front_obs_offset, int16_t right_obs_offset)
 {
 	uint8_t status = 0;
-	if (robot::instance()->getObsLeft() > 1000)status |= Status_Left_OBS;
-	if (robot::instance()->getObsRight() > 1000)status |= Status_Right_OBS;
-	if (robot::instance()->getObsFront() > 1500)status |= Status_Front_OBS;
+
+	if (get_left_obs() > get_left_obs_trig_value() + left_obs_offset)
+		status |= Status_Left_OBS;
+
+	if (get_front_obs() > get_front_obs_trig_value() + front_obs_offset)
+		status |= Status_Front_OBS;
+
+	if (get_right_obs() > get_right_obs_trig_value() + right_obs_offset)
+		status |= Status_Right_OBS;
+
 	return status;
-}
-*/
-
-uint8_t get_obs_status(void)
-{
-	uint8_t Status = 0;
-
-	if (robot::instance()->getObsLeft() > g_left_obs_trig_value)
-		Status |= Status_Left_OBS;
-
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
-		Status |= Status_Front_OBS;
-
-	if (robot::instance()->getObsRight() > g_right_obs_trig_value)
-		Status |= Status_Right_OBS;
-
-	return Status;
 }
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
@@ -2462,14 +2404,6 @@ void reset_key_press(uint8_t key)
 uint8_t get_key_press(void)
 {
 	return g_key_status;
-}
-
-uint8_t is_front_close()
-{
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value + 1500)
-		return 1;
-	else
-		return 0;
 }
 
 uint8_t is_virtual_wall(void)
@@ -3417,9 +3351,66 @@ void reset_clean_paused(void)
 
 bool is_decelerate_wall(void)
 {
-	auto status = (robot::instance()->getObsFront() > (g_front_obs_trig_value));
+	auto status = (robot::instance()->getObsFront() > get_front_obs_trig_value());
 	if(is_map_front_block(3) || status)
 		return true;
 	else
 		return false;
+}
+
+static int lidar_bumper_fd = -1;
+static uint8_t is_lidar_bumper_init = 0;
+
+int8_t lidar_bumper_init(const char* device)
+{
+	if(lidar_bumper_fd != -1)
+		return 0;
+	char buf[128];
+	sprintf(buf,"%s",device);
+	lidar_bumper_fd = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if(lidar_bumper_fd > 0)
+	{
+		is_lidar_bumper_init = 1;	
+		ROS_INFO("%s,%d,open %s success!,lidar_bumper_fd = %d",__FUNCTION__,__LINE__,buf,lidar_bumper_fd);
+		return 1;
+	}
+	else if(lidar_bumper_fd <= 0 )
+	{
+		lidar_bumper_fd = -1;
+		is_lidar_bumper_init = 0;
+		ROS_INFO("%s,%d,no such file \033[32m %s \033[0m open fail!!",__FUNCTION__,__LINE__,buf);
+		return -1;
+	}
+
+}
+
+uint8_t get_lidar_bumper_status()
+{	
+	if(is_lidar_bumper_init && lidar_bumper_fd != -1)
+	{
+		uint8_t temp_buf[32] = {0};
+		int reval;
+		reval = read(lidar_bumper_fd,temp_buf,32);
+		if(reval >=0){
+			ROS_INFO("read lidar bumper value:\n\033[32m%d\033[0m\n",temp_buf[12]);
+			return temp_buf[12];
+		}
+		else
+			return 0;
+	}
+	return 0;
+}
+
+int8_t lidar_bumper_deinit()
+{
+	if(lidar_bumper_fd == -1)
+		return 0;
+	int c_ret;
+	c_ret = close(lidar_bumper_fd);
+	if(c_ret > 0)
+	{
+		lidar_bumper_fd = -1;
+		is_lidar_bumper_init = 0;
+	}
+	return c_ret;
 }

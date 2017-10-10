@@ -80,6 +80,11 @@ bool g_robot_slip = false;
 bool g_robot_slip_enable = false;
 bool g_robot_stuck = false;
 
+/* lidar bumper */
+//bool g_lidar_bumper = false;
+//bool g_lidar_bumper_jam =false;
+//int g_lidar_bumper_cnt = 0;
+
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
 static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
@@ -172,15 +177,15 @@ void *event_manager_thread(void *data)
 		}
 
 		/* OBS */
-		if (get_front_obs() > get_front_obs_value()) {
+		if (get_front_obs() > get_front_obs_trig_value() + 1700) {
 			ROS_DEBUG("%s %d: setting event: front obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_FRONT)
 		}
-		if (get_left_obs() > get_left_obs_value()) {
+		if (get_left_obs() > get_left_obs_trig_value() + 200) {
 			ROS_DEBUG("%s %d: setting event: left obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_LEFT)
 		}
-		if (get_right_obs() > get_right_obs_value()) {
+		if (get_right_obs() > get_right_obs_trig_value() + 200) {
 			ROS_DEBUG("%s %d: setting event: right obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_RIGHT)
 		}
@@ -333,6 +338,12 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP)
 		}
+		/*
+		if(robot::instance()->getLidarBumper()){
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_LIDAR_BUMPER)
+		}
+		*/
 #undef evt_set_status_x
 
 		if (set) {
@@ -476,6 +487,9 @@ void *event_handler_thread(void *data) {
 
 		/* robot slip*/
 		evt_handle_check_event(EVT_ROBOT_SLIP,robot_slip)
+
+		/* lidar bumper*/
+		//evt_handle_check_event(EVT_LIDAR_BUMPER,lidar_bumper)
 #undef evt_handle_event_x
 
 		pthread_mutex_lock(&event_handler_mtx);
@@ -586,6 +600,10 @@ void event_manager_reset_status(void)
 	/* tilt switch*/
 	g_tilt_enable = false;
 	g_tilt_triggered = false;
+	/* lidar bumper */
+	//g_lidar_bumper = false;
+	//g_lidar_bumper_cnt =0;
+	//g_lidar_bumper_jam = false;
 }
 
 /* Below are the internal functions. */
@@ -954,7 +972,12 @@ void em_default_handle_robot_slip(bool state_new,bool state_last)
 	g_robot_slip = true;
 	g_slip_cnt ++;
 }
-
+/*
+void em_default_handle_lidar_bumper(bool state_new,bool state_last)
+{
+	g_lidar_bumper = robot::instance()->getLidarBumper();
+}
+*/
 /* Default: empty hanlder */
 void em_default_handle_empty(bool state_now, bool state_last)
 {

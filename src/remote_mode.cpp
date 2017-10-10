@@ -128,7 +128,7 @@ void remote_move(void)
 		{
 			case REMOTE_MODE_FORWARD:
 			{
-				if(get_obs_status())
+				if (get_obs_status())
 				{
 					if(moving_speed>10)moving_speed--;
 					move_forward(moving_speed, moving_speed);
