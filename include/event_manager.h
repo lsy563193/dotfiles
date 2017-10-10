@@ -97,6 +97,11 @@ extern bool g_robot_slip;
 extern bool g_robot_slip_enable;
 extern uint8_t g_slip_cnt;
 
+/* lidar bumper */
+//extern bool g_lidar_bumper;
+//extern bool g_lidar_bumper_jam;
+//extern int g_lidar_bumper_cnt;
+
 typedef enum {
 	EVT_BUMPER_ALL = 0,
 	EVT_BUMPER_LEFT,
@@ -165,6 +170,8 @@ typedef enum {
 	EVT_SLAM_ERROR,
 
 	EVT_ROBOT_SLIP,
+
+	EVT_LIDAR_BUMPER,
 	EVT_MAX,
 } EventType;
 
@@ -284,6 +291,9 @@ define_em_handler_func(slam_error)
 
 /* robot stuck */
 define_em_handler_func(robot_slip)
+
+/* lidar bumper*/
+define_em_handler_func(lidar_bumper)
 
 define_em_handler_func(empty)
 

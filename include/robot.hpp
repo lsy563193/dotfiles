@@ -365,6 +365,11 @@ public:
 		return init_z_acc_;
 	}
 
+	uint8_t getLidarBumper() const
+	{
+		return (uint8_t)sensor.lidar_bumper;
+	}
+
 	void setInitXAcc(int16_t val)
 	{
 		init_x_acc_ = val;

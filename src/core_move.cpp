@@ -1207,7 +1207,7 @@ void cm_self_check(void)
 				break;
 			}
 			if(g_slip_cnt>=4){
-				ROS_INFO("%s,%d,robot stuck slip count\033[32m %d \033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
+				ROS_INFO("%s,%d,robot stuck ,slip count\033[32m %d \033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 				g_slip_cnt = 0;
 				g_robot_stuck = true;
 				set_error_code(Error_Code_Stuck);
@@ -1332,6 +1332,8 @@ void cm_register_events()
 	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
 	/* robot stuck */
 	event_manager_enable_handler(EVT_ROBOT_SLIP,true);
+	/* lidar bumper */
+	//event_manager_enable_handler(EVT_LIDAR_BUMPER,true);
 	/* Slam Error */
 	event_manager_enable_handler(EVT_SLAM_ERROR, true);
 
@@ -1409,6 +1411,8 @@ void cm_unregister_events()
 	event_manager_register_and_disable_x(EVT_SLAM_ERROR);
 	/* robot slip */
 	//event_manager_register_and_disable_x(EVT_ROBOT_SLIP);
+	/* lidar bumper*/
+	//event_manager_register_and_disable_x(EVT_LIDAR_BUMPER);
 
 #undef event_manager_register_and_disable_x
 

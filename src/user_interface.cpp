@@ -88,6 +88,7 @@ void user_interface(void)
 
 		usleep(10000);
 
+		//get_lidar_bumper_status();
 		if (battery_low_delay > 0)
 			battery_low_delay--;
 

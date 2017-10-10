@@ -258,6 +258,7 @@ struct pid_argu_struct
 
 #define LeftBumperTrig				1
 #define RightBumperTrig				2
+#define LidarBumperTrig				4
 #define AllBumperTrig				3
 
 #define LeftCliffTrig							1
@@ -447,6 +448,8 @@ int32_t get_left_obs(void);
 int32_t get_right_obs(void);
 
 uint8_t get_bumper_status(void);
+
+uint8_t get_lidar_bumper_status(void);
 
 uint8_t get_cliff_status(void);
 
@@ -759,4 +762,6 @@ bool check_pub_scan();
 uint8_t is_robot_slip();
 bool is_clean_paused();
 void reset_clean_paused();
+int8_t lidar_bumper_init(const char* device);
+int8_t lidar_bumper_deinit();
 #endif

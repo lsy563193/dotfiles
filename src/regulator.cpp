@@ -283,6 +283,8 @@ void BackRegulator::setTarget()
 		g_back_distance = 0.30;
 	else if (g_go_to_charger_back_0cm)
 		g_back_distance = 0.0;
+	//else if (g_lidar_bumper)
+	//	g_back_distnce = 0.15;
 	else
 		g_back_distance = 0.01;
 	ROS_INFO("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, g_back_distance);
@@ -312,6 +314,7 @@ bool BackRegulator::isReach()
 		ROS_INFO("\033[32m%s\033[0m, %d: \033[33mBackRegulator\033[0m ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
+		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
 		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !get_tilt_status())
 		{
@@ -334,6 +337,11 @@ bool BackRegulator::isReach()
 			g_bumper_jam = true;
 			return false;
 		}
+		//else if (g_lidar_bumper_cnt >= 2)
+		//{
+		//	g_lidar_bumper_jam = true;
+		//	return false;
+		//}
 		else
 			setTarget();
 	}
