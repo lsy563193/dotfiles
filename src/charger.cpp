@@ -435,7 +435,7 @@ bool charge_turn_connect(void)
 	// Start turning right.
 	set_dir_right();
 	set_wheel_speed(speed, speed);
-	for(int i=0; i<20; i++)
+	for(int i=0; i<25; i++)
 	{
 		if (g_charge_detect)
 		{

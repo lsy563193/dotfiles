@@ -55,7 +55,12 @@ typedef struct Cell_t_{
       X = x;
       Y = y;
     }
-
+    Vector2(T x, T y,int16_t th)
+    {
+      X = x;
+      Y = y;
+      TH = th;
+    }
   public:
     /**
      * Gets the x-coordinate of this vector
@@ -312,6 +317,7 @@ typedef struct Cell_t_{
   public:
     T X;
     T Y;
+    int16_t	TH;
 }; // class Vector2<T>
 
   /*
@@ -335,7 +341,7 @@ typedef struct{
 	double x;
 	double y;
 } Double_Point;
-
+/*
 typedef struct Pose16_t_{
 	int16_t X;
 	int16_t Y;
@@ -348,7 +354,7 @@ typedef struct Pose16_t_{
 	{
 		return !(left == right);
 	}
-} Pose16_t;
+} Pose16_t;*/
 
 double absolute(double d);
 double deg_to_rad(double deg, int8_t scale);
@@ -374,4 +380,5 @@ double two_lines_angle(LineABC la, LineABC lb);
 double line_angle(LineABC l, uint8_t mode);
 uint8_t is_same_point_and_angle(Point32_t pnt1, uint16_t angle1, Point32_t pnt2, uint16_t angle2,
 																uint32_t pntThres, uint16_t angleThres);
+void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y);
 #endif

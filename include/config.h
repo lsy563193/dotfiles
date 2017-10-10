@@ -264,7 +264,8 @@
  * When it is too small, it will move like shaking when robot startup.
  * When it is too large, it will fall down when reach the cliff.
  */
-#define BACK_MAX_SPEED					((int32_t) 18) // 15)
+#define BACK_MAX_SPEED					((int32_t) 11) // 15)
+#define BACK_MIN_SPEED					((int32_t) 11)
 #define LINEAR_MIN_SPEED				((int32_t) 15) // 15)
 #define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
 #define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
@@ -454,3 +455,11 @@
 #define INTERLACED_MOVE	(0)
 #define PATH_ALGORITHM_V2	(0)
 #define GO_HOME_REGULATOR	(1)
+
+/* ------------------------------------- Lidar Relative Position --------------------------------------------*/
+#define LIDAR_THETA							(0)//2050
+#define LIDAR_OFFSET_X						(0)//0.031
+#define LIDAR_OFFSET_Y						(0)//0
+#define ROBOT_RADIUS						(0.167)
+
+#define GLOBAL_PID			(0)

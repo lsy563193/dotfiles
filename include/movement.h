@@ -7,23 +7,6 @@
 #include "main.h"
 #include "clean_mode.h"
 
-struct pid_struct
-{
-	float delta;
-	float delta_sum;
-	float delta_last;
-	float target_speed;
-	float actual_speed;
-	float last_target_speed;
-	float variation;
-};
-struct pid_argu_struct
-{
-	uint8_t reg_type;
-	float Kp;
-	float Ki;
-	float Kd;
-};
 #define Brush_Power					128
 #define MainBrush_Power				70
 
@@ -380,16 +363,43 @@ typedef enum{
 #define BACKWARD					1
 
 //regulator type
-#define REG_TYPE_WALLFOLLOW     1
-#define REG_TYPE_LINEAR         2
-#define REG_TYPE_TURN           3
-#define REG_TYPE_BACK           4
+#define REG_TYPE_NONE			0
+#define REG_TYPE_WALLFOLLOW		1
+#define REG_TYPE_LINEAR			2
+#define REG_TYPE_TURN			3
+#define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
 extern uint32_t g_rcon_status;
 
+extern int16_t g_obs_left_baseline;
+extern int16_t g_obs_front_baseline;
+extern int16_t g_obs_right_baseline;
+
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
+
+struct pid_struct
+{
+	float delta;
+	float delta_sum;
+	float delta_last;
+	float target_speed;
+	float actual_speed;
+	float last_target_speed;
+	uint8_t last_reg_type;
+	float variation;
+};
+struct pid_argu_struct
+{
+	uint8_t reg_type; // Regulator type
+	float Kp;
+	float Ki;
+	float Kd;
+};
+
+extern struct pid_argu_struct argu_for_pid;
+extern struct pid_struct left_pid, right_pid;
 
 void reset_work_time();
 uint32_t get_work_time();
@@ -441,12 +451,6 @@ void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 
-uint8_t get_obs_status(void);
-
-int32_t get_front_obs(void);
-int32_t get_left_obs(void);
-int32_t get_right_obs(void);
-
 uint8_t get_bumper_status(void);
 
 uint8_t get_lidar_bumper_status(void);
@@ -465,8 +469,6 @@ void reset_home_remote(void);
 
 uint8_t is_home_remote(void);
 
-uint8_t is_obs_near(void);
-
 uint32_t get_rcon_status(void);
 
 void set_rcon_status(uint32_t code);
@@ -477,7 +479,7 @@ void set_rcon_status(uint32_t code);
  */
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd);
 void wheels_pid(void);
-void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_WALLFOLLOW, float PID_p = 1, float PID_i = 0, float PID_d = 0);
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
@@ -512,14 +514,14 @@ void set_vac_mode(uint8_t mode);
 void set_vac_speed(void);
 
 void obs_dynamic_base(uint16_t Cy);
-int16_t get_front_obs_value(void);
-int16_t get_left_obs_value(void);
-int16_t get_right_obs_value(void);
-uint8_t is_wall_obs_near(void);
-void adjust_obs_value(void);
-void reset_obst_value(void);
-uint8_t spot_obs_status(void);
-uint8_t get_obs_status(void);
+int16_t get_front_obs_trig_value(void);
+int16_t get_left_obs_trig_value(void);
+int16_t get_right_obs_trig_value(void);
+uint8_t get_obs_status(int16_t left_obs_offset = 0, int16_t front_obs_offset = 0, int16_t right_obs_offset = 0);
+
+int32_t get_front_obs(void);
+int32_t get_left_obs(void);
+int32_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
@@ -654,8 +656,6 @@ uint8_t is_bumper_fail(void);
 
 uint8_t is_turn_remote(void);
 
-uint8_t is_front_close(void);
-
 void set_left_wheel_step(uint32_t step);
 
 void set_right_wheel_step(uint32_t step);
@@ -696,7 +696,7 @@ void clear_reset_mobility_step();
 
 uint32_t  get_mobility_step();
 
-void adjust_obs_value();
+//void adjust_obs_value();
 
 void check_mobility(void);
 

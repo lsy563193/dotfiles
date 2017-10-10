@@ -11,7 +11,7 @@ FILE(GLOB PP_SRC
 	src/gyro.cpp
 	src/laser.cpp
 	src/main.cpp
-#	test/test_path_update_cell.cpp
+#	test/angle_test.cpp
 	src/map.cpp
 	src/mathematics.cpp
 	src/motion_manage.cpp
@@ -24,11 +24,11 @@ FILE(GLOB PP_SRC
 	src/serial.cpp
 	src/shortest_path.cpp
 	src/sleep.cpp
-	src/spiral.cpp
+#	src/spiral.cpp
 	src/spot.cpp
 	src/user_interface.cpp
 	src/verify.cpp
-	src/wall_follow_slam.cpp
+#	src/wall_follow_slam.cpp
 	src/wav.cpp
 	src/slam.cpp
 	src/event_manager.cpp

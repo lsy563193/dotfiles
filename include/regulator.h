@@ -52,7 +52,6 @@ public:
 public:
 	static Point32_t s_target;
 	static Point32_t s_origin;
-	static int16_t s_origin_angle;
 	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;
@@ -63,7 +62,7 @@ class BackRegulator: public RegulatorBase{
 public:
 	BackRegulator();
 	~BackRegulator(){
-		set_wheel_speed(1, 1);
+		//set_wheel_speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
@@ -76,6 +75,7 @@ protected:
 private:
 	int counter_;
 	int32_t speed_;
+	float distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -250,6 +250,8 @@ public:
 		return p_reg_ == back_reg_;
 	}
 	void switchToNext();
+
+	bool wf_is_reach(const std::vector<Cell_t>& passed_path);
 
 	void updatePosition(const Point32_t &curr_point){
 		s_curr_p = curr_point;

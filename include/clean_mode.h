@@ -23,7 +23,7 @@ Clean_Mode_Navigation,
 Clean_Mode_Exploration
 };
 
-bool cm_is_wall_follow();
+bool cm_is_follow_wall();
 bool cm_is_navigation();
 bool cm_is_exploration();
 void cm_set(uint8_t mode);

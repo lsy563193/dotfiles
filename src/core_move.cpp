@@ -35,7 +35,6 @@
 #include <slam.h>
 #include "event_manager.h"
 #include "mathematics.h"
-#include "wall_follow_slam.h"
 #include <move_type.h>
 #include <path_planning.h>
 //#include "obstacle_detector.h"
@@ -65,16 +64,15 @@
 #define SEEN_CHARGER 1
 #define EVENT_TRIGGERED 2
 
+extern uint16_t g_new_dir;
+bool g_wf_is_reach;
 int g_rcon_triggered = 0;//1~6
 bool g_exploration_home = false;
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
-uint32_t g_escape_trapped_timer;
 int g_is_reach = 1;
 
-extern int g_trapped_mode;
-bool g_should_follow_wall;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
@@ -111,7 +109,7 @@ bool g_motion_init_succeeded = false;
 bool g_go_home_by_remote = false;
 
 //Flag for judge if keep on wall follow
-bool g_keep_on_wf = false;
+bool g_keep_on_wf;
 
 bool g_finish_cleaning_go_home = false;
 
@@ -150,6 +148,11 @@ static double radius_of(Cell_t cell_0,Cell_t cell_1)
 	return (abs(cell_to_count(cell_0.X - cell_1.X)) + abs(cell_to_count(cell_0.Y - cell_1.Y))) / 2;
 }
 
+void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
+{
+	*x = map_get_relative_x(heading, offset_lat, offset_long, true);
+	*y = map_get_relative_y(heading, offset_lat, offset_long, true);
+}
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, true)));
@@ -284,6 +287,36 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 	return return_value;
 }
 
+bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
+{
+	ROS_INFO("  %s %d:?? curr(%d,%d,%d)",__FUNCTION__,__LINE__, curr.X, curr.Y, curr.TH);
+	const int16_t DIFF_LIMIT = 200;//1500 means 150 degrees, it is used by angle check.
+	/*check if spot turn*/
+	if(get_sp_turn_count() > 400) {
+		reset_sp_turn_count();
+		ROS_WARN("  yes! sp_turn over 400");
+		return true;
+	}
+
+	if (passed_path.size() > 5) {
+		ROS_WARN("  trapped(%d),distance(%f),{curr,start}_th(%d,%d),", g_trapped_mode, world_distance(), curr.TH, passed_path.front().TH);
+
+		if (g_trapped_mode != 1 && world_distance() <= 0.05 && rm_angle(curr.TH, passed_path.front().TH) <= DIFF_LIMIT) {
+				ROS_WARN("  yes! reach the start point!");
+				return true;
+		}
+
+		for (auto r_iter = (passed_path.begin()); r_iter != passed_path.end() - 5; ++r_iter) {
+			if (*r_iter == curr && ((abs(ranged_angle(r_iter->TH - curr.TH))) <= DIFF_LIMIT)) {
+				ROS_WARN("  yes! reach the cleaned point(%d)!", std::distance(passed_path.begin(), r_iter));
+				return true;
+			}
+		}
+	}
+	ROS_WARN("  NO!");
+	return false;
+}
+
 /*
  * Robot move to target cell
  * @param target: Target cell.
@@ -298,42 +331,23 @@ enum {
 };
 int cm_move_to(const PPTargetType& path)
 {
+	ROS_WARN("%s %d:", __FUNCTION__, __LINE__);
 	Cell_t curr = map_get_curr_cell();
-//#if INTERLACED_MOVE
-//	extern uint16_t g_new_dir;
-//	if (mt_is_linear() && IS_X_AXIS(g_new_dir))
-//		curr.Y = path.cells.front().Y;
-//#endif
+	Cell_t last = curr;
 	RegulatorManage rm(curr, g_next_cell, path);
 
+	Cell_t target; int count = 0;
 	bool eh_status_now=false, eh_status_last=false;
 	int ret = EXIT_CLEAN;
+	auto wf_start_timer =  0;
 
 	std::vector<Cell_t> passed_path;
 	passed_path.clear();
-//	passed_path.push_back(curr);
 
 	int32_t	 speed_left = 0, speed_right = 0;
 	while (ros::ok())
 	{
-		/*for exploration mark the map and detect the rcon signal*/
-		if (cm_is_exploration()) {
-			explore_update_map();
-			/*if (get_rcon_status()) {
-				g_exploration_home = true;
-				ret = true;
-				break;
-			}*/
-		}
-		if((!mt_is_linear())) {
-			/*for navigation trapped wall follow update map and push_back vector*/
-			/*for exploration trapped wall follow update map and push_back vector*/
-			/*for wall follow mode update map and push_back vector*/
-			if ((g_trapped_mode == 1 && (cm_is_navigation() || cm_is_exploration())) ||
-					(!g_go_home && cm_is_wall_follow())
-							)
-				wf_update_map(WFMAP);
-		}else {
+		if(mt_is_linear()){
 			wall_dynamic_base(30);
 		}
 
@@ -343,9 +357,9 @@ int cm_move_to(const PPTargetType& path)
 			continue;
 		}
 
-		if(!rm.isTurn())
+		if(rm.isMt())
 		{
-			curr = cm_update_position();
+			curr = cm_update_position();//note:cell = {x,y,angle}
 			rm.updatePosition({map_get_x_count(),map_get_y_count()});
 		}
 
@@ -357,10 +371,7 @@ int cm_move_to(const PPTargetType& path)
 			set_wheel_speed(0, 0);
 			continue;
 		}
-		if (rm.isMt() && mt_is_follow_wall() && !cm_is_wall_follow()) {
-			map_set_laser();
-			map_set_obs();
-		}
+
 		if (rm.isReach()){
 			ret = REATH_TARGET;
 			break;
@@ -374,73 +385,86 @@ int cm_move_to(const PPTargetType& path)
 			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
 			rm.switchToNext();
 		}
-
-		if (!cm_is_wall_follow()
-						&& (mt_is_linear() || mt_is_follow_wall()))
-		{
-			if (!rm.isTurn() &&(passed_path.empty() || passed_path.back() != curr))
+		if(rm.isMt()) {
+//			if (mt_is_follow_wall() && wf_start_timer == 0)
+//				wf_start_timer = time(NULL);
+			if (passed_path.empty() || last != curr)
 			{
-				extern uint16_t g_new_dir;
-				if (g_trapped_mode == 0)
+				last = curr;
+				if (std::find(passed_path.begin(), passed_path.end(), curr) == passed_path.end())
 				{
-					if (passed_path.empty() ||(!mt_is_linear() || curr.X > passed_path.back().X ^ g_new_dir != POS_X)) // This checking is for avoiding position jumping back or aside during linear movement.
-						passed_path.push_back(curr);
-				}
-//				if(MAP_SET_REALTIME)
-				{
-					//map_set_realtime();
-//					if( g_trapped_mode==0 )
-//						map_set_cleaned(curr);
-					if (mt_is_follow_wall())
-						map_set_follow_wall(curr);
+					curr.TH = gyro_get_angle();
+					passed_path.push_back(curr);
+					for(const auto& cell: passed_path)
+						ROS_INFO("cell(%d,%d,%d)",cell.X,cell.Y,cell.TH);
 				}
 
-				if (g_trapped_mode == 1 )
-				{
-					auto is_block_clear = map_mark_robot(MAP);
-					if(is_block_clear)
-					{
-						Cell_t target;
-						int count = 0;
-						if(path_dijkstra(curr, target,count))
-//						BoundingBox2 map;
-//						if (get_reachable_targets(curr, map))
-						{
-							ROS_WARN("%s %d: Found reachable targets, exit trapped.", __FUNCTION__, __LINE__);
-							g_trapped_mode = 2;
-							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-						} /*else if ((double)count / (double)map_get_cleaned_area() < 0.8)
-						{
-							ROS_WARN("%s %d: Found reachable home, exit trapped.", __FUNCTION__, __LINE__);
-							g_trapped_mode = 2;
-							passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-						}*/ else
-							ROS_INFO("%s %d:Still trapped.",__FUNCTION__,__LINE__);
+				if (mt_is_follow_wall()) {
+					ROS_INFO("  mt_is_fw(%d,%d,%d)", curr.X, curr.Y, curr.TH);
+					map_set_follow_wall(MAP, curr);
+					if (g_trapped_mode == 1 && map_mark_robot(MAP) && path_dijkstra(curr, target, count)) {
+						ROS_WARN("  %d:Found targets(%d,%d), exit trapped.", __LINE__, target.X, target.Y);
+						g_trapped_mode = 2;
+						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
 					}
+					if (cm_is_follow_wall() || g_trapped_mode == 1) {
+						ROS_INFO("  %d:cm_is_follow_wall() || g_trapped_mode == 1 ", __LINE__);
+						map_set_follow_wall(WFMAP, curr);
+						g_wf_is_reach = wf_is_reach(curr, passed_path);
+					}
+				} else {
+//					ROS_INFO("  %d:mt_is_linear", __LINE__);
+					if (cm_is_exploration())
+						explore_update_map();
+				}
+//			} else {
+				if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && passed_path.size() < 5) {
+					ROS_WARN("  {curr,start}_time(%d,%d), passed_path.size(%d): ", time(NULL), wf_start_timer, passed_path.size());
+					//todo
+//					ret = EXIT_CLEAN;
+//					break;
 				}
 			}
 		}
 
 		rm.adjustSpeed(speed_left, speed_right);
-		#if 0
+#if GLOBAL_PID
 		/*---PID is useless in wall follow mode---*/
 		if(rm.isMt() && mt_is_follow_wall())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
 		else if(rm.isMt() && mt_is_linear())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_LINEAR);
+		else if(rm.isMt() && mt_is_go_to_charger())
+			set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
 		else if(rm.isBack())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_BACK);
 		else if(rm.isTurn())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_TURN);
-		#endif
+#else
 		/*---PID is useless in wall follow mode---*/
-		set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
+		set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
+#endif
 	}
+#if GLOBAL_PID
+	if(rm.isMt() && mt_is_follow_wall())
+		set_wheel_speed(0, 0, REG_TYPE_WALLFOLLOW);
+	else if(rm.isMt() && mt_is_linear())
+		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
+	else if(rm.isMt() && mt_is_go_to_charger())
+		set_wheel_speed(0, 0, REG_TYPE_NONE);
+	else if(rm.isBack())
+		set_wheel_speed(0, 0, REG_TYPE_BACK);
+	else if(rm.isTurn())
+		set_wheel_speed(0, 0, REG_TYPE_TURN);
+#else
+	set_wheel_speed(0, 0, REG_TYPE_NONE);
+#endif
+
 	if(! MAP_SET_REALTIME)
 	{
 		map_set_cleaned(passed_path);
-		if (!mt_is_linear())
-			map_set_follow_wall(passed_path);
+//		if (!mt_is_linear())
+//			map_set_follow_wall(passed_path);
 
 //		linear_mark_clean(curr, g_next_cell);
 	}
@@ -613,6 +637,7 @@ int cm_cleaning()
 	g_robot_slip_enable = true;
 	g_robot_stuck = false;
 	g_robot_slip = false;
+	g_wf_is_reach = false;
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
@@ -686,7 +711,7 @@ int cm_cleaning()
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
 				cm_set_event_manager_handler_state(true);
 				cm_self_check();
-				if(cm_is_wall_follow()) {
+				if(cm_is_follow_wall()) {
 					g_keep_on_wf = true;
 					//wf_break_wall_follow();
 				}
@@ -739,7 +764,7 @@ void cm_check_should_go_home(void)
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
-		if (cm_is_wall_follow())
+		if (cm_is_follow_wall())
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 			cm_update_position();

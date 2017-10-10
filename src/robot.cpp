@@ -7,7 +7,6 @@
 #include <movement.h>
 #include <motion_manage.h>
 #include <core_move.h>
-#include <wall_follow_slam.h>
 #include <move_type.h>
 #include <std_srvs/SetBool.h>
 
