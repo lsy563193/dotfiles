@@ -641,7 +641,7 @@ int cm_cleaning()
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
-		if (g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
+		if (g_key_clean_pressed || g_fatal_quit_event || g_charge_detect || g_robot_stuck)
 			return -1;
 
 		if (!g_go_home)
@@ -1236,7 +1236,7 @@ void cm_self_check(void)
 				g_slip_cnt = 0;
 				g_robot_stuck = true;
 				set_error_code(Error_Code_Stuck);
-				g_fatal_quit_event = true;
+				//g_fatal_quit_event = true;
 				break;
 			}
 		}
