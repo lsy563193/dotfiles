@@ -462,4 +462,4 @@
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)
 
-#define GLOBAL_PID			(0)
+#define GLOBAL_PID			(1)

@@ -1007,21 +1007,23 @@ void wheels_pid(void)
 	right_pid.last_target_speed = right_pid.target_speed;
 	right_pid.delta_last = right_pid.delta;
 #else
-	if (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type)
+	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
-		ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
+		//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
 		if (left_pid.actual_speed < 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -3 ? left_pid.actual_speed : static_cast<int>(left_pid.actual_speed) / 3;
+			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
 		else if (left_pid.actual_speed > 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 3 ? left_pid.actual_speed : static_cast<int>(left_pid.actual_speed) / 3;
+			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
 		if (right_pid.actual_speed < 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -3 ? right_pid.actual_speed : static_cast<int>(right_pid.actual_speed) / 3;
+			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
 		else if (right_pid.actual_speed > 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 3 ? right_pid.actual_speed : static_cast<int>(right_pid.actual_speed) / 3;
+			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
 
-		if (left_pid.actual_speed == 0 && right_pid.actual_speed == 0)
+		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
 		{
 			ROS_INFO("%s %d: Update the last_reg_type.", __FUNCTION__, __LINE__);
+			left_pid.actual_speed = 0;
+			right_pid.actual_speed = 0;
 			left_pid.last_reg_type = right_pid.last_reg_type = argu_for_pid.reg_type;
 		}
 	}
@@ -1061,7 +1063,14 @@ void wheels_pid(void)
 		left_pid.actual_speed += left_pid.variation;
 		right_pid.actual_speed += right_pid.variation;
 	#endif
-		if(fabsf(left_pid.actual_speed) <= 15)
+		if(fabsf(left_pid.actual_speed) <= 6)
+		{
+			if(left_pid.target_speed > 0)
+				left_pid.actual_speed = (left_pid.target_speed > 7) ? 7 : left_pid.target_speed;
+			else
+				left_pid.actual_speed = (left_pid.target_speed < -7) ? -7 : left_pid.target_speed;
+		}
+		else if(fabsf(left_pid.actual_speed) <= 15)
 		{
 			// For low actual speed cases.
 			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
@@ -1082,7 +1091,14 @@ void wheels_pid(void)
 		else
 			left_pid.actual_speed = left_pid.target_speed;
 
-		if(fabsf(right_pid.actual_speed) <= 15)
+		if(fabsf(right_pid.actual_speed) <= 6)
+		{
+			if(right_pid.target_speed > 0)
+				right_pid.actual_speed = (right_pid.target_speed > 7) ? 7 : right_pid.target_speed;
+			else
+				right_pid.actual_speed = (right_pid.target_speed < -7) ? -7 : right_pid.target_speed;
+		}
+		else if(fabsf(right_pid.actual_speed) <= 15)
 		{
 			// For low actual speed cases.
 			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
