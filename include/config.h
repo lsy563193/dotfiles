@@ -455,4 +455,4 @@
 #define INTERLACED_MOVE	(0)
 #define PATH_ALGORITHM_V2	(0)
 #define GO_HOME_REGULATOR	(1)
-#define GLOBAL_PID			(0)
+#define GLOBAL_PID			(1)
