@@ -985,15 +985,6 @@ uint8_t is_move_with_remote(void)
 	return g_remote_move_flag;
 }
 
-uint8_t is_obs_near(void)
-{
-	if (robot::instance()->getObsFront() > get_left_obs_trig_value() ||
-		robot::instance()->getObsRight() > get_right_obs_trig_value() ||
-		robot::instance()->getObsRight() > get_front_obs_trig_value())
-		return 1;
-	return 0;
-}
-
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd)
 {
 	boost::mutex::scoped_lock(pid_lock);
@@ -1632,30 +1623,20 @@ int16_t get_right_obs_trig_value(void)
 	return obs_right_trig_value;
 }
 
-uint8_t is_wall_obs_near(void)
+uint8_t get_obs_status(uint16_t left_obs_offset, uint16_t front_obs_offset, uint16_t right_obs_offset)
 {
-	if (robot::instance()->getObsFront() > (get_front_obs_trig_value() + 500) ||
-		robot::instance()->getObsRight() > (get_right_obs_trig_value() + 500) ||
-		robot::instance()->getObsLeft() > (get_left_obs_trig_value() + 1000) ||
-		robot::instance()->getLeftWall() > (g_leftwall_obs_trig_vale + 500))
-		return 1;
-	return 0;
-}
+	uint8_t status = 0;
 
-uint8_t get_obs_status(void)
-{
-	uint8_t Status = 0;
+	if (robot::instance()->getObsLeft() > get_left_obs_trig_value() + left_obs_offset)
+		status |= Status_Left_OBS;
 
-	if (robot::instance()->getObsLeft() > get_left_obs_trig_value())
-		Status |= Status_Left_OBS;
+	if (robot::instance()->getObsFront() > get_front_obs_trig_value() + front_obs_offset)
+		status |= Status_Front_OBS;
 
-	if (robot::instance()->getObsFront() > get_front_obs_trig_value())
-		Status |= Status_Front_OBS;
+	if (robot::instance()->getObsRight() > get_right_obs_trig_value() + right_obs_offset)
+		status |= Status_Right_OBS;
 
-	if (robot::instance()->getObsRight() > get_right_obs_trig_value())
-		Status |= Status_Right_OBS;
-
-	return Status;
+	return status;
 }
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)

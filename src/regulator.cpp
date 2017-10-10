@@ -228,17 +228,6 @@ static bool laser_turn_angle(int16_t& turn_angle)
 	return false;
 }
 
-static int16_t _get_obs_value()
-{
-	if(get_front_obs() > get_front_obs_trig_value() + 1700)
-		return Status_Front_OBS;
-	if(get_left_obs() > get_left_obs_trig_value() + 200)
-		return Status_Left_OBS;
-	if(get_right_obs() > get_right_obs_trig_value() + 200)
-		return Status_Right_OBS;
-	return 0;
-}
-
 Point32_t RegulatorBase::s_target = {0,0};
 Point32_t RegulatorBase::s_origin = {0,0};
 int16_t RegulatorBase::s_target_angle = 0;
@@ -672,18 +661,18 @@ bool LinearRegulator::isSwitch()
 bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
-	bool obs_tmp;
+	uint8_t obs_tmp;
 	if(cm_is_follow_wall())
-		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): _get_obs_value();
+		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
 	else
-		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): _get_obs_value();
+		 obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true): get_obs_status(200, 1700, 200);
 
 //	if (cm_is_exploration())
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
 
 	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
-	if (obs_tmp != 0 || rcon_tmp )
+	if (obs_tmp || rcon_tmp)
 	{
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
@@ -760,7 +749,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y);
 	auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
-	if (get_obs_status() || is_obs_near() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected )
+	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || laser_detected )
 	{
 		if (distance < SLOW_DOWN_DISTANCE)
 			angle_diff = 0;

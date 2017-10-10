@@ -466,8 +466,6 @@ void reset_home_remote(void);
 
 uint8_t is_home_remote(void);
 
-uint8_t is_obs_near(void);
-
 uint32_t get_rcon_status(void);
 
 void set_rcon_status(uint32_t code);
@@ -516,11 +514,7 @@ void obs_dynamic_base(uint16_t Cy);
 int16_t get_front_obs_trig_value(void);
 int16_t get_left_obs_trig_value(void);
 int16_t get_right_obs_trig_value(void);
-uint8_t is_wall_obs_near(void);
-//void adjust_obs_value(void);
-//void reset_obst_value(void);
-//uint8_t spot_obs_status(void);
-uint8_t get_obs_status(void);
+uint8_t get_obs_status(int16_t left_obs_offset = 0, int16_t front_obs_offset = 0, int16_t right_obs_offset = 0);
 
 int32_t get_front_obs(void);
 int32_t get_left_obs(void);
