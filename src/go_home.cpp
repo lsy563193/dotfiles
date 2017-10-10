@@ -11,7 +11,6 @@
 #include "go_home.hpp"
 #include "robot.hpp"
 #include "gyro.h"
-#include "random_runing.h"
 #include "core_move.h"
 #include "event_manager.h"
 #include "charger.hpp"

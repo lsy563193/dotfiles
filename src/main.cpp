@@ -19,9 +19,7 @@
 #include "spot.h"
 #include "user_interface.h"
 #include "remote_mode.h"
-#include "random_runing.h"
 #include "sleep.h"
-#include "wall_follow_slam.h"
 #include "wall_follow_trapped.h"
 #include "event_manager.h"
 #include "go_home.hpp"
@@ -66,13 +64,6 @@ void *core_move_thread(void *)
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				cm_cleaning();
 				break;
-			//case Clean_Mode_RandomMode:
-			//	ROS_INFO("\n-------Random_Running mode------\n");
-
-			//	reset_clean_paused();
-
-			//	Random_Running_Mode();
-			//	break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode------\n");
 				set_main_pwr_byte(Clean_Mode_Navigation);
