@@ -74,6 +74,7 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	setScan2Ready(1);
 }
+
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
 	int		i, count;
