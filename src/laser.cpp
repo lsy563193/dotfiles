@@ -74,6 +74,7 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	setScan2Ready(1);
 }
+
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
 	int		i, count;
@@ -1146,9 +1147,10 @@ int Laser::compLaneDistance(){
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
 	int cur_angle = gyro_get_angle() / 10;
+#if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;
-	//ROS_INFO("cur_angle = %d", cur_angle);
+	ROS_INFO("cur_angle = %d", cur_angle);
 	for (int j = angle_from; j < angle_to; j++) {
 		int i = j>359? j-360:j;
 		if (tmp_scan_data.ranges[i] < 4) {
@@ -1187,7 +1189,31 @@ int Laser::compLaneDistance(){
 		}
 	}
 	ROS_INFO("x_front_min = %lf, x_back_min = %lf", x_front_min, x_back_min);
+#endif
 //	ret = (x_front_min < x_back_min) ? 1 : 0;
+	for (int i = 0; i < 360; i++) {
+		if (tmp_scan_data.ranges[i] < 4) {
+			th = i*1.0 + 180.0;
+			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
+			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
+			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+			coordinate_transform(&x, &y, cur_angle * 10, 0, 0);
+			//ROS_INFO("x = %lf, y = %lf", x, y);
+			if (fabs(y) < 0.167) {
+				if (x >= 0){
+					if (fabs(x) <= x_front_min) {
+						x_front_min = fabs(x);
+						ROS_WARN("x_front_min = %lf",x_front_min);
+					}
+				} else {
+					if (fabs(x) <= x_back_min) {
+						x_back_min = fabs(x);
+						ROS_ERROR("x_back_min = %lf", x_back_min);
+					}
+				}
+			}
+		}
+	}
 	if(x_front_min < x_back_min)
 		ret = 1;
 	if(x_front_min > x_back_min)

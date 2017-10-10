@@ -741,7 +741,8 @@ uint8_t get_bumper_status(void)
 	}
 	if (robot::instance()->getLidarBumper())
 	{
-		Temp_Status |= LidarBumperTrig;
+		//Temp_Status |= LidarBumperTrig;
+		Temp_Status |= AllBumperTrig;
 	}
 	return Temp_Status;
 }
@@ -760,7 +761,8 @@ uint8_t get_cliff_status(void)
 		status |= Status_Cliff_Right;
 
 	//if (status != 0x00){
-	//	ROS_WARN("Return Cliff status:%x.", status);
+	//	ROS_WARN("%s %d: Return Cliff status:%x.", __FUNCTION__, __LINE__, status);
+	//	beep_for_command(true);
 	//}
 	return status;
 }
@@ -1007,21 +1009,23 @@ void wheels_pid(void)
 	right_pid.last_target_speed = right_pid.target_speed;
 	right_pid.delta_last = right_pid.delta;
 #else
-	if (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type)
+	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
-		ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
+		//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
 		if (left_pid.actual_speed < 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -3 ? left_pid.actual_speed : static_cast<int>(left_pid.actual_speed) / 3;
+			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
 		else if (left_pid.actual_speed > 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 3 ? left_pid.actual_speed : static_cast<int>(left_pid.actual_speed) / 3;
+			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
 		if (right_pid.actual_speed < 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -3 ? right_pid.actual_speed : static_cast<int>(right_pid.actual_speed) / 3;
+			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
 		else if (right_pid.actual_speed > 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 3 ? right_pid.actual_speed : static_cast<int>(right_pid.actual_speed) / 3;
+			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
 
-		if (left_pid.actual_speed == 0 && right_pid.actual_speed == 0)
+		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
 		{
 			ROS_INFO("%s %d: Update the last_reg_type.", __FUNCTION__, __LINE__);
+			left_pid.actual_speed = 0;
+			right_pid.actual_speed = 0;
 			left_pid.last_reg_type = right_pid.last_reg_type = argu_for_pid.reg_type;
 		}
 	}
@@ -1061,7 +1065,14 @@ void wheels_pid(void)
 		left_pid.actual_speed += left_pid.variation;
 		right_pid.actual_speed += right_pid.variation;
 	#endif
-		if(fabsf(left_pid.actual_speed) <= 15)
+		if(fabsf(left_pid.actual_speed) <= 6)
+		{
+			if(left_pid.target_speed > 0)
+				left_pid.actual_speed = (left_pid.target_speed > 7) ? 7 : left_pid.target_speed;
+			else
+				left_pid.actual_speed = (left_pid.target_speed < -7) ? -7 : left_pid.target_speed;
+		}
+		else if(fabsf(left_pid.actual_speed) <= 15)
 		{
 			// For low actual speed cases.
 			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
@@ -1082,7 +1093,14 @@ void wheels_pid(void)
 		else
 			left_pid.actual_speed = left_pid.target_speed;
 
-		if(fabsf(right_pid.actual_speed) <= 15)
+		if(fabsf(right_pid.actual_speed) <= 6)
+		{
+			if(right_pid.target_speed > 0)
+				right_pid.actual_speed = (right_pid.target_speed > 7) ? 7 : right_pid.target_speed;
+			else
+				right_pid.actual_speed = (right_pid.target_speed < -7) ? -7 : right_pid.target_speed;
+		}
+		else if(fabsf(right_pid.actual_speed) <= 15)
 		{
 			// For low actual speed cases.
 			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
@@ -2824,69 +2842,6 @@ uint32_t get_wall_accelerate()
 	return g_wall_accelerate = get_right_wheel_step();
 }
 
-/*---------------------------------Bumper Error ----------------------------------------*/
-uint8_t is_bumper_jamed()
-{
-	if (get_bumper_status())
-	{
-		ROS_INFO("JAM1");
-		move_back();
-		if (stop_event())
-		{
-			ROS_INFO("%s, %d: Stop event in JAM1", __FUNCTION__, __LINE__);
-			return 0;
-		}
-		if (get_bumper_status())
-		{
-			ROS_INFO("JAM2");
-			// Quick back will not set speed to 100, it will be limited by the RUN_TOP_SPEED.
-			quick_back(100, 200);
-			if (stop_event())
-			{
-				ROS_INFO("%s, %d: Stop event in JAM2", __FUNCTION__, __LINE__);
-				return 0;
-			}
-			if (get_bumper_status())
-			{
-				ROS_INFO("JAM3");
-				jam_turn_right(60, 900);
-				if (stop_event())
-				{
-					ROS_INFO("%s, %d: Stop event in JAM3", __FUNCTION__, __LINE__);
-					return 0;
-				}
-				if (get_bumper_status())
-				{
-					ROS_INFO("JAM4");
-					jam_turn_left(60, 1800);
-					if (get_bumper_status())
-					{
-						ROS_INFO("JAM5");
-						cm_set(Clean_Mode_Userinterface);
-						set_error_code(Error_Code_Bumper);
-						alarm_error();
-						return 1;
-					}
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-void reset_bumper_error(void)
-{
-	g_bumper_error = 0;
-}
-
-uint8_t is_bumper_fail(void)
-{
-	g_bumper_error++;
-	ROS_INFO("Buper_Error = %d", g_bumper_error);
-	if (g_bumper_error > 3)return 1;
-	else return 0;
-}
-
 uint8_t is_virtual_wall_()
 {
 	return 0;
@@ -3384,19 +3339,19 @@ int8_t lidar_bumper_init(const char* device)
 
 }
 
-uint8_t get_lidar_bumper_status()
-{	
+int8_t get_lidar_bumper_status()
+{
 	if(is_lidar_bumper_init && lidar_bumper_fd != -1)
 	{
 		uint8_t temp_buf[32] = {0};
 		int reval;
 		reval = read(lidar_bumper_fd,temp_buf,32);
 		if(reval >=0){
-			ROS_INFO("read lidar bumper value:\n\033[32m%d\033[0m\n",temp_buf[12]);
+			ROS_INFO("read lidar bumper value:\033[32m%d\033[0m",temp_buf[12]);
 			return temp_buf[12];
 		}
 		else
-			return 0;
+			return -1;
 	}
 	return 0;
 }
