@@ -309,7 +309,6 @@ typedef enum{
 #define Direction_Flag_Left  0x02
 
 #define STEP_PER_MM  186
-#define Cliff_Limit         (int16_t)20
 
 #define Two_Hours         7200
 
@@ -459,6 +458,13 @@ uint8_t get_cliff_status(void);
 
 int get_rcon_trig(void);
 
+int16_t get_front_cliff_trig_value(void);
+int16_t get_left_cliff_trig_value(void);
+int16_t get_right_cliff_trig_value(void);
+int16_t get_front_cliff(void);
+int16_t get_left_cliff(void);
+int16_t get_right_cliff(void);
+
 bool is_on_charger_stub(void);
 
 bool is_direct_charge(void);
@@ -519,9 +525,9 @@ int16_t get_left_obs_trig_value(void);
 int16_t get_right_obs_trig_value(void);
 uint8_t get_obs_status(int16_t left_obs_offset = 0, int16_t front_obs_offset = 0, int16_t right_obs_offset = 0);
 
-int32_t get_front_obs(void);
-int32_t get_left_obs(void);
-int32_t get_right_obs(void);
+int16_t get_front_obs(void);
+int16_t get_left_obs(void);
+int16_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
@@ -705,10 +711,6 @@ void add_average(uint32_t data);
 uint32_t get_average_move(void);
 
 uint32_t reset_average_counter(void);
-
-uint8_t cliff_escape(void);
-
-uint8_t cliff_event(uint8_t temp_status);
 
 void reset_virtual_wall();
 
