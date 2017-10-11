@@ -395,12 +395,12 @@ int cm_move_to(const PPTargetType& path)
 				{
 					curr.TH = gyro_get_angle();
 					passed_path.push_back(curr);
-					for(const auto& cell: passed_path)
-						ROS_INFO("cell(%d,%d,%d)",cell.X,cell.Y,cell.TH);
+//					for(const auto& cell: passed_path)
+//						ROS_INFO("cell(%d,%d,%d)",cell.X,cell.Y,cell.TH);
 				}
 
 				if (mt_is_follow_wall()) {
-					ROS_INFO("  mt_is_fw(%d,%d,%d)", curr.X, curr.Y, curr.TH);
+//					ROS_INFO("  mt_is_fw(%d,%d,%d)", curr.X, curr.Y, curr.TH);
 					map_set_follow_wall(MAP, curr);
 					if (g_trapped_mode == 1 && map_mark_robot(MAP) && path_dijkstra(curr, target, count)) {
 						ROS_WARN("  %d:Found targets(%d,%d), exit trapped.", __LINE__, target.X, target.Y);
@@ -408,7 +408,7 @@ int cm_move_to(const PPTargetType& path)
 						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
 					}
 					if (cm_is_follow_wall() || g_trapped_mode == 1) {
-						ROS_INFO("  %d:cm_is_follow_wall() || g_trapped_mode == 1 ", __LINE__);
+//						ROS_INFO("  %d:cm_is_follow_wall() || g_trapped_mode == 1 ", __LINE__);
 						map_set_follow_wall(WFMAP, curr);
 						g_wf_is_reach = wf_is_reach(curr, passed_path);
 					}

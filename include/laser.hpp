@@ -21,6 +21,7 @@ public:
 	bool laserGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
 
 	int compLaneDistance();
+	double getObstacleDistance(uint8_t dir, double range);
 	void setScanReady(uint8_t val);
 	void setScan2Ready(uint8_t val);
 	static int8_t isScanReady();

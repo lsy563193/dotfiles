@@ -293,7 +293,13 @@ void *robotbase_routine(void*)
 
 		sensor.lbumper = (g_receive_stream[REC_BUMPER] & 0xf0) ? true : false;
 		sensor.rbumper = (g_receive_stream[REC_BUMPER] & 0x0f) ? true : false;
-		sensor.lidar_bumper = get_lidar_bumper_status();
+		auto lidar_bumper_status = get_lidar_bumper_status();
+		if (lidar_bumper_status == 1)
+			sensor.lidar_bumper = 1;
+		else if (lidar_bumper_status == 0)
+			sensor.lidar_bumper = 0;
+		// else if (lidar_bumper_status == -1)
+		// sensor.lidar_bumper = sensor.lidar_bumper;
 
 		sensor.ir_ctrl = g_receive_stream[REC_REMOTE_IR];
 

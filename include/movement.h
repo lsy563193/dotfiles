@@ -452,7 +452,7 @@ void wall_dynamic_base(uint32_t Cy);
 
 uint8_t get_bumper_status(void);
 
-uint8_t get_lidar_bumper_status(void);
+int8_t get_lidar_bumper_status(void);
 
 uint8_t get_cliff_status(void);
 
