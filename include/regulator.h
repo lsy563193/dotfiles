@@ -75,6 +75,7 @@ private:
 	int counter_;
 	int32_t speed_;
 	float distance;
+	float laser_detect_distance;
 };
 
 class TurnRegulator: public RegulatorBase{

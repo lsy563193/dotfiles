@@ -326,7 +326,7 @@ bool BackRegulator::isReach()
 		beep_for_command(false);
 		return true;
 	}
-	if(fabsf(distance) >= g_back_distance)
+	if(fabsf(distance) >= g_back_distance || (laser_detect_distance < 0.03 && g_back_distance > 0.05))
 	{	
 		if(g_slip_backward){
 			ROS_WARN("%s,%d,\033[1mrobot slip backward reach!! distance(%f),back_distance(%f)\033[0m",__FUNCTION__,__LINE__,distance,g_back_distance);
@@ -387,6 +387,9 @@ bool BackRegulator::_isStop()
 	{
 		// Only update the scan seq.
 		MotionManage::s_laser->laserMarker(false);
+		float tmp_distance = MotionManage::s_laser->getObstacleDistance(1,ROBOT_RADIUS);
+		if(tmp_distance != 0)
+			laser_detect_distance = tmp_distance - ROBOT_RADIUS;
 	}
 	bool ret = false;
 	return ret;
