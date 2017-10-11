@@ -757,7 +757,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y);
 	//auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
-	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3)/* || laser_detected */)
+	if (/*get_obs_status() ||*/ (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3)/* || laser_detected */)
 	{
 		if (distance < SLOW_DOWN_DISTANCE)
 			angle_diff = 0;

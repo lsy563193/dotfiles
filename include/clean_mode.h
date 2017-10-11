@@ -26,6 +26,8 @@ Clean_Mode_Exploration
 bool cm_is_follow_wall();
 bool cm_is_navigation();
 bool cm_is_exploration();
+bool cm_is_spot();
+bool cm_is_go_home();
 void cm_set(uint8_t mode);
 uint8_t cm_get(void);
 

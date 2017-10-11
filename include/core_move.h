@@ -119,7 +119,6 @@ void cm_move_back_(uint16_t dist);
 	 * way like this).
 	 */
 
-void cm_go_home(void);
 bool cm_go_to_charger(void);
 bool cm_is_continue_go_to_charger(void);
 //void CM_SetStationHome(void);

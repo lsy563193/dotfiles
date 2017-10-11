@@ -745,7 +745,7 @@ bool MotionManage::initGoHome(void)
 	set_gyro_on();
 	reset_touch();
 	cm_register_events();
-	wav_play(WAV_BACK_TO_CHARGER);
+//	wav_play(WAV_BACK_TO_CHARGER);
 
 	if (!wait_for_gyro_on())
 		return false;

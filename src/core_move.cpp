@@ -325,6 +325,7 @@ bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
 
 int cm_move_to(const PPTargetType& path)
 {
+	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
 	ROS_WARN("%s %d:", __FUNCTION__, __LINE__);
 	Cell_t curr = map_get_curr_cell();
 	Cell_t last = curr;
@@ -468,123 +469,6 @@ int cm_move_to(const PPTargetType& path)
 	return ret;
 }
 
-/*
-
-bool cm_turn_move_to_point(Point32_t Target, uint8_t speed_left, uint8_t speed_right)
-{
-	auto angle_start = gyro_get_angle();
-	move_forward(speed_left, speed_right);
-
-	bool eh_status_now = false;
-	bool eh_status_last = false;
-	cm_set_event_manager_handler_state(true);
-	while (ros::ok())
-	{
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-		{
-			usleep(100);
-			continue;
-		}
-
-		if (g_fatal_quit_event || g_key_clean_pressed
-			|| g_bumper_triggered || g_obs_triggered || g_cliff_triggered || g_rcon_triggered
-			|| (!g_go_home && (g_battery_home || g_remote_home))
-			|| g_remote_spot // It will only be set if robot is not during spot.
-			|| g_remote_direction_keys) // It will only be set if robot is during spot.
-			return false;
-
-		auto angle_diff = ranged_angle(gyro_get_angle() - angle_start);
-		if (abs(angle_diff) >= 900){
-			ROS_WARN("%s %d: reach line between point 1 & 2: \n", __FUNCTION__, __LINE__);
-			break;
-		}
-	}
-	stop_brifly();
-
-	cm_set_event_manager_handler_state(false);
-
-	return true;
-}
-
-bool cm_curve_move_to_point()
-{
-	auto *path_cells = path_get_path_points();
-	std::vector<Cell_t>	cells;
-	std::copy_n((*path_cells).begin(), 3, std::back_inserter(cells));
-	path_reset_path_points();
-	std::string msg;
-	for (auto& cell : cells) {
-		msg += "(" + std::to_string(cell.X) + ", " + std::to_string(cell.Y) + ")->";
-	}
-	ROS_ERROR("cells:%s", msg.c_str());
-
-	auto radius_1 = radius_of(cells[1], cells[0]);
-	auto radius_2 = radius_of(cells[2], cells[1]);
-
-	if (radius_1 < RADIUS_CELL || radius_2 < RADIUS_CELL){
-		ROS_WARN("%s %d: radius_1: %f\tradius_2: %f (%d)\n", __FUNCTION__, __LINE__, radius_1, radius_2, 3 * CELL_COUNT_MUL);
-		return false;
-	}
-
-	auto radius = std::min(radius_1, radius_2);
-
-	Point32_t target{cell_to_count(cells[1].X), cell_to_count(cells[1].Y)};
-#define IS_MOVE_FOLLOW_Y_AXIS_FIRST (cells[0].X == cells[1].X)
-#define IS_IN_NAV_X_AXIS (cells[0].X < cells[2].X)
-#define IS_IN_NAV_Y_AXIS (cells[0].Y < cells[2].Y)
-	if (IS_MOVE_FOLLOW_Y_AXIS_FIRST) {
-		target.Y += (IS_IN_NAV_X_AXIS ? -radius : radius);
-	} else {
-		target.X += (IS_IN_NAV_Y_AXIS ? -radius : radius);
-	}
-
-	//1/3 move to first target
-	if(!cm_move_to(target) )
-		return false;
-
-	//2/3 calculate the curve speed.
-	auto speed = (uint8_t) ceil(MAX_SPEED * (radius / CELL_COUNT - WHEEL_BASE_HALF) / (radius / CELL_COUNT + WHEEL_BASE_HALF));
-	uint8_t speed_left = MAX_SPEED;
-	uint8_t speed_right = MAX_SPEED;
-	*/
-/*
- *             -x
- *  x^y   -         +
- *        0 >-  1 -<0
- *        v         v
- *        +         +
- *   -y   1     2   1 +y
- *        +         +
- *        ^         ^
- *        0 >-  1 -<0
- * x^y    +         -
- *     x^y      +x     x^y
-*//*
-
-	auto is_speed_right = (IS_IN_NAV_X_AXIS) ^ (IS_IN_NAV_Y_AXIS) ^ (IS_MOVE_FOLLOW_Y_AXIS_FIRST);
-	(is_speed_right ? speed_right : speed_left) = speed;
-
-	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
-
-	if ( speed_left < 0 || speed_left > MAX_SPEED || speed_right < 0 || speed_right > MAX_SPEED)
-		return false;
-
-	//2/3 move to last route
-	if(!cm_turn_move_to_point(target, speed_left, speed_right))
-		return false;
-
-	target.X = cell_to_count(cells[2].X);
-	target.Y = cell_to_count(cells[2].Y);
-
-	//3/3 continue to move to target
-	ROS_ERROR("is_speed_right(%d),speed_left(%d),speed_right(%d)",is_speed_right,speed_left,speed_right);
-	if(!cm_move_to(target))
-		return false;
-
-	return true;
-}
-*/
-
 //#if 0
 void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 {
@@ -626,55 +510,33 @@ void cm_cleaning()
 	if (!motion.initSucceeded())
 		return;
 
-	if (cm_get() == Clean_Mode_GoHome)
-	{
-		cm_go_to_charger();
-		return;
-	}
-
 	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
 	PPTargetType cleaning_path;
 	cleaning_path.target = g_zero_home;
 	cleaning_path.cells.clear();
 	auto is_reach = REATH_TARGET;
-	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event || g_charge_detect || g_robot_stuck)
 			return;
 
-		if (!g_go_home)
-			cm_check_should_go_home();
-
 		cm_check_temp_spot();
-
 		path_update_cell_history();
 		curr = map_get_curr_cell();
-		int8_t is_found = path_next(curr, cleaning_path, is_reach);
-		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
-		if (is_found == NO_TARGET_LEFT ) //No target point
+		if(path_next(curr, cleaning_path, is_reach))
 		{
-			if (cm_get() == Clean_Mode_Spot || \
-				cm_turn_and_check_charger_signal() == EVENT_TRIGGERED || \
-				!cm_is_continue_go_to_charger() || \
-				cm_is_exploration()
-			) return;
-
-			turn_into_exploration(g_have_seen_charge_stub);
+			if((is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN)
+				return;
+			if (cm_should_self_check())
+				cm_self_check_with_handle();
 		}
-		else if (is_found == TARGET_FOUND)//exist target
-		{
-			if((is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN) return;
-			if (cm_should_self_check()) cm_self_check_with_handle();
-		}
-		else return;
 	}
 }
 
 void cm_check_should_go_home(void)
 {
-	if (g_remote_home || g_battery_home || g_finish_cleaning_go_home)
+	if (cm_is_go_home() || g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
 		ROS_WARN("%s %d: Receive g_remote_home(\033[32m%d\033[0m), g_battery_home(\033[32m%d\033[0m), finish cleaning(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,g_remote_home,g_battery_home,g_finish_cleaning_go_home);
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
@@ -735,26 +597,21 @@ bool cm_go_to_charger()
 	// Try to go to charger stub.
 	ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
 	g_tilt_enable = false; //disable tilt detect
-#if GO_HOME_REGULATOR
 	set_led_mode(LED_STEADY, LED_ORANGE);
 	mt_set(CM_GO_TO_CHARGER);
-	PPTargetType path_empty;
-	cm_move_to(path_empty);
-	set_led_mode(LED_STEADY, LED_GREEN);
-#else
-	cm_unregister_events();
-	go_home();
-	cm_register_events();
-#endif
-	if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
-		return true;
-	work_motor_configure();
-	g_tilt_enable = true; //enable tilt detect
-	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
+//	PPTargetType path_empty;
+//	cm_move_to(path_empty);
+//	set_led_mode(LED_STEADY, LED_GREEN);
+//
+//	if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
+//		return true;
+//	work_motor_configure();
+//	g_tilt_enable = true; //enable tilt detect
+//	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 	return false;
 }
 
-bool cm_is_continue_go_to_charger()
+/*bool cm_is_continue_go_to_charger()
 {
 	auto way = *g_home_way_it % HOMEWAY_NUM;
 	auto cnt = *g_home_way_it / HOMEWAY_NUM;
@@ -771,7 +628,7 @@ bool cm_is_continue_go_to_charger()
 	g_home_way_list.clear();
 	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X, g_home.Y,way, cnt);
 	return true;
-}
+}*/
 
 void cm_reset_go_home(void)
 {
