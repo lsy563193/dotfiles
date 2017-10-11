@@ -38,6 +38,9 @@ typedef enum {
 	USE_CLEANED,
 	HOMEWAY_NUM
 }HomeWay_t;
+#define NO_TARGET_LEFT 0
+#define TARGET_REACHED 0
+#define TARGET_FOUND 1
 extern std::vector<Cell_t> g_homes;
 extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
@@ -103,7 +106,7 @@ void wf_path_planning_initialize();
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(const Cell_t& curr, PPTargetType& path);
+int8_t path_next(const Cell_t& curr, PPTargetType& path, const int is_reach);
 
 void path_update_cell_history(void);
 
@@ -146,7 +149,6 @@ void path_update_cells(void);
  * 		1 if either one end is not cleaned
  * 		2 if both ends are not cleaned
  */
-bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path);
 bool path_full(const Cell_t& curr, PPTargetType& path);
 
 /*
@@ -166,7 +168,7 @@ Cell_t *path_escape_get_trapped_cell(void);
 
 void path_set_home(const Cell_t& cell);
 
-int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path);
+int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path, const int is_reach);
 
 int16_t path_get_home_x(void);
 

@@ -60,18 +60,16 @@
 #define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
-/*---cm_check_charger_signal() return value---*/
+/*---cm_turn_and_check_charger_signal() return value---*/
 #define SEEN_CHARGER 1
 #define EVENT_TRIGGERED 2
 
 extern uint16_t g_new_dir;
-bool g_wf_is_reach;
 int g_rcon_triggered = 0;//1~6
 bool g_exploration_home = false;
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
-int g_is_reach = 1;
 
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
@@ -324,11 +322,7 @@ bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
  *			-1: Robot cannot move to target cell
  *			1: Robot arrive target cell
  */
-enum {
-	EXIT_CLEAN=-1,
-	NO_REATH_TARGET=0,
-	REATH_TARGET=1,
-};
+
 int cm_move_to(const PPTargetType& path)
 {
 	ROS_WARN("%s %d:", __FUNCTION__, __LINE__);
@@ -615,34 +609,40 @@ void linear_mark_clean(const Cell_t &start, const Cell_t &target)
 }
 //#endif
 
-int cm_cleaning()
+void cm_self_check_with_handle(void)
 {
-	PPTargetType cleaning_path;
-	cleaning_path.target.X = 0;
-	cleaning_path.target.Y = 0;
-	cleaning_path.cells.clear();
-	g_is_reach = REATH_TARGET;
+	// Can not set handler state inside cm_self_check(), because it is actually a universal function.
+	cm_set_event_manager_handler_state(true);
+	cm_self_check();
+	if(cm_is_follow_wall()) {
+		g_keep_on_wf = true;
+	}
+	cm_set_event_manager_handler_state(false);
+}
+
+void cm_cleaning()
+{
 	MotionManage motion;
 	if (!motion.initSucceeded())
-		return 0;
+		return;
 
 	if (cm_get() == Clean_Mode_GoHome)
 	{
 		cm_go_to_charger();
-		return 0;
+		return;
 	}
 
 	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
-	g_robot_slip_enable = true;
-	g_robot_stuck = false;
-	g_robot_slip = false;
-	g_wf_is_reach = false;
+	PPTargetType cleaning_path;
+	cleaning_path.target = g_zero_home;
+	cleaning_path.cells.clear();
+	auto is_reach = REATH_TARGET;
 	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
-			return -1;
+			return;
 
 		if (!g_go_home)
 			cm_check_should_go_home();
@@ -650,110 +650,26 @@ int cm_cleaning()
 		cm_check_temp_spot();
 
 		path_update_cell_history();
-//		path_update_cells();
 		curr = map_get_curr_cell();
-		int8_t is_found = path_next(curr, cleaning_path);
+		int8_t is_found = path_next(curr, cleaning_path, is_reach);
 		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, cleaning_path.cells);
-		ROS_INFO("%s %d: is_found: %d, next cell(%d, %d).", __FUNCTION__, __LINE__, is_found, g_next_cell.X, g_next_cell.Y);
-		if (is_found == 0 ) //No target point
+		if (is_found == NO_TARGET_LEFT ) //No target point
 		{
-			if(cm_get() == Clean_Mode_Spot)
-				return 0;
-			uint8_t check_status = cm_check_charger_signal();
-			if(check_status == SEEN_CHARGER)/*---have seen charger signal---*/
-			{
-				if(!cm_is_continue_go_to_charger())
-					return -1;
-			}
-			else if(check_status == EVENT_TRIGGERED)/*---event triggered---*/
-			{
-				return -1;
-			}
-			extern bool g_have_seen_charge_stub;
-			ROS_INFO("g_have_seen_charge_stub = %d", g_have_seen_charge_stub);
-			ROS_INFO("g_no_uncleaned_target = %d", g_no_uncleaned_target);
-			if (cm_is_exploration() || g_no_uncleaned_target) {
-				g_no_uncleaned_target = false;
-				if (curr == g_zero_home) {
-					auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
-					if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
-					{
-						if(!cm_is_continue_go_to_charger())
-							return -1;
-					}
-				}
-			} else {/*this case is for exploration when seen the charge stub before, but it can't climb it at last*/
-				// If it is at (0, 0), it means all other home point not reachable, except (0, 0).
-				if (curr == g_zero_home) {
-					auto angle = static_cast<int16_t>(robot::instance()->startAngle() *10);
-					if(cm_head_to_course(ROTATE_TOP_SPEED, -angle))
-					{
-						if(!cm_is_continue_go_to_charger())
-							return -1;
-					}
-					if (g_have_seen_charge_stub == false)
-						turn_into_exploration(false);
-					else
-						turn_into_exploration(true);
-					continue;
-				}
-			}
-			return 0;
+			if (cm_get() == Clean_Mode_Spot || \
+				cm_turn_and_check_charger_signal() == EVENT_TRIGGERED || \
+				!cm_is_continue_go_to_charger() || \
+				cm_is_exploration()
+			) return;
+
+			turn_into_exploration(g_have_seen_charge_stub);
 		}
-		else if (is_found == 1)//exist target
+		else if (is_found == TARGET_FOUND)//exist target
 		{
-//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if((g_is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN) {
-				return -1;
-			}
-
-			if (cm_should_self_check()){
-				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
-				cm_set_event_manager_handler_state(true);
-				cm_self_check();
-				if(cm_is_follow_wall()) {
-					g_keep_on_wf = true;
-					//wf_break_wall_follow();
-				}
-				cm_set_event_manager_handler_state(false);
-			}
-			else if(g_go_home)
-			{
-				if(curr == g_home)
-				{
-					if (g_home != g_zero_home || g_start_point_seen_charger )
-					{
-						if(!cm_is_continue_go_to_charger())
-							return -1;
-					}
-					else
-					{
-						// Reach g_zero_home(0, 0).
-						g_homes.pop_back();
-						g_home_way_list.clear();
-					}
-				}
-				else if (g_rcon_during_go_home)
-				{
-					if(!cm_is_continue_go_to_charger())
-						return -1;
-				}
-			}
-			//for exploration to climb the charge stub
-			else if (g_exploration_home)
-			{
-				ROS_WARN("Exploration receive rcon signal");
-				g_exploration_home = false;
-				if (cm_go_to_charger())
-					return -1;
-			}
-
+			if((is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN) return;
+			if (cm_should_self_check()) cm_self_check_with_handle();
 		}
-		else if (is_found == 2) {
-			return -1;
-		}
+		else return;
 	}
-	return 0;
 }
 
 void cm_check_should_go_home(void)
@@ -853,8 +769,6 @@ bool cm_is_continue_go_to_charger()
 	g_home_way_it += (way+1);
 	g_homes.pop_back();
 	g_home_way_list.clear();
-//	cnt = *g_home_way_it / HOMEWAY_NUM;
-//	way = *g_home_way_it % HOMEWAY_NUM;
 	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X, g_home.Y,way, cnt);
 	return true;
 }
@@ -1252,7 +1166,7 @@ bool cm_should_self_check(void)
 	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_slip_cnt >= 2);
 }
 
-uint8_t cm_check_charger_signal(void)
+uint8_t cm_turn_and_check_charger_signal(void)
 {
 	time_t delay_counter;
 	bool eh_status_now, eh_status_last;

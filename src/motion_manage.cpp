@@ -30,6 +30,7 @@ Segment_set segmentss;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
+bool g_wf_is_reach;
 bool g_is_main_switch_off = false;
 /*
 int g_enable_angle_offset = 0;
@@ -293,6 +294,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	else
 		set_led_mode(LED_STEADY, LED_GREEN);
 
+		g_robot_slip_enable = true;
+	g_robot_stuck = false;
+	g_robot_slip = false;
+	g_wf_is_reach = false;
 }
 
 MotionManage::~MotionManage()

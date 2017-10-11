@@ -819,7 +819,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::LaserScan *scan_range, uint8_t *laser_status, bool is_wall_follow)
 {
 //	ROS_INFO("  %s,%d" __FUNCTION__,__LINE__);
-	ROS_INFO("  checkCellTrigger");
+//	ROS_INFO("  checkCellTrigger");
 	double x, y, th;
 	int dx, dy;
 	const	double Y_MIN = 0.140;//0.167

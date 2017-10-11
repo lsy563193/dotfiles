@@ -52,9 +52,7 @@
 #include <regulator.h>
 
 #define FINAL_COST (1000)
-#define NO_TARGET_LEFT 0
-#define TARGET_REACHED 0
-#define TARGET_FOUND 1
+
 #define TRAPPED 2
 using namespace std;
 const int ISOLATE_COUNT_LIMIT = 4;
@@ -349,7 +347,7 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 //	return cell_dis;
 //}
 
-bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
+bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path,const int is_reach)
 {
 	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
 	uint16_t unclean_cnt_for_min = 0, unclean_cnt_for_max = 0;
@@ -458,8 +456,8 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		//false means max
 //		min = std::min(min, path_lane_distance(true));
 //		max = std::min(max, path_lane_distance(false));
-		ROS_WARN("%s %d: g_is_reach.(%d), nag dir(%d)", __FUNCTION__, __LINE__, g_is_reach,(RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y));
-		if(mt_is_follow_wall() && g_is_reach==1)
+		ROS_WARN("%s %d: is_reach.(%d), nag dir(%d)", __FUNCTION__, __LINE__, is_reach,(RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y));
+		if(mt_is_follow_wall() && is_reach==1)
 		{
 			if(mt_is_left() ^ (RegulatorBase::s_target.Y<RegulatorBase::s_origin.Y))
 			{
@@ -1529,7 +1527,7 @@ int16_t path_escape_trapped(const Cell_t& curr)
 	return val;
 }
 
-int8_t path_next(const Cell_t& curr, PPTargetType& path)
+int8_t path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 {
 	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
 	extern bool g_keep_on_wf;
@@ -1594,7 +1592,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 
 		if (!g_resume_cleaning)
 		{
-			if (!path_lane_is_cleaned(curr, path))
+			if (!path_lane_is_cleaned(curr, path,is_reach))
 			{
 				int16_t ret;
 				if (g_wf_reach_count>0) {
@@ -1635,7 +1633,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 	else if(!g_go_home && cm_is_exploration()) {
-		if (!path_lane_is_cleaned(curr, path))
+		if (!path_lane_is_cleaned(curr, path, is_reach))
 		{
 			int16_t ret;
 			if (g_wf_reach_count>0) {
@@ -1663,7 +1661,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 			}
 		}
 	}
-	if (g_go_home && path_get_home_target(curr, path) == NO_TARGET_LEFT) {
+	if (g_go_home && path_get_home_target(curr, path,is_reach) == NO_TARGET_LEFT) {
 			return 0;
 	}
 
@@ -1839,7 +1837,7 @@ void path_set_home(const Cell_t& curr)
  * return :NO_TARGET_LEFT (0)
  *        :TARGET_FOUND (1)
  */
-int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
+int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path,const int is_reach) {
 	if(g_home_way_list.empty()) {
 		g_home_way_it = _gen_home_ways(g_homes.size(), g_home_way_list);
 		BoundingBox2 map_tmp{{g_x_min, g_y_min}, {g_x_max, g_y_max}};
@@ -1847,6 +1845,9 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 			if (map_get_cell(MAP, cell.X, cell.Y) == BLOCKED_RCON)
 				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), UNCLEAN);
 		}
+	}else if(is_reach == REATH_TARGET)
+	{
+		return NO_TARGET_LEFT;
 	}
 	for (; g_home_way_it != g_home_way_list.end(); ++g_home_way_it) {
 		auto way = *g_home_way_it % HOMEWAY_NUM;
