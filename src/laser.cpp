@@ -74,7 +74,6 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	setScan2Ready(1);
 }
-
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
 	int		i, count;
@@ -103,6 +102,7 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 		}
 	}
 
+	return found;
 	return found;
 }
 
@@ -1128,7 +1128,8 @@ uint8_t Laser::isRobotSlip()
  * @return the closer direction of x to the wall
  * if x+ is closer, return 1, else return 0
  * */
-int Laser::compLaneDistance(){
+int Laser::compLaneDistance()
+{
 	int ret = 0;
 	static  uint32_t seq = 0;
 	double x,y,th,x1,y1;
@@ -1158,7 +1159,6 @@ int Laser::compLaneDistance(){
 			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
-			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0- cur_angle * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
 			if (fabs(y1) < 0.167) {
 				if (fabs(x1) <= x_front_min) {
@@ -1220,5 +1220,87 @@ int Laser::compLaneDistance(){
 		ret = -1;
 	if(x_front_min == x_back_min)
 		ret = 0;
+	return ret;
+}
+
+/*
+ * @author Alvin Xie
+ * @brief make use of lidar to get the obstacle distance
+ * @param dir:0-front 1-back 2-left 3-right
+ *        range: dectect range
+ * @return the distance to the obstacle
+ * */
+double Laser::getObstacleDistance(uint8_t dir, double range)
+{
+	double ret = 4;
+	static  uint32_t seq = 0;
+	double x,y,th,x1,y1;
+	int angle_from, angle_to;
+	double x_front_min = 4;
+	double x_back_min = 4;
+	double y_front_min = 4;
+	double y_back_min = 4;
+
+	scan_mutex_.lock();
+	auto tmp_scan_data = laserScanData_;
+	scan_mutex_.unlock();
+
+	if (tmp_scan_data.header.seq == seq) {
+		//ROS_WARN("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
+		return 0;
+	}
+	ROS_INFO("compLaneDistance");
+	seq = tmp_scan_data.header.seq;
+	int cur_angle = gyro_get_angle() / 10;
+	for (int i = 0; i < 360; i++) {
+		if (tmp_scan_data.ranges[i] < 4) {
+			th = i*1.0 + 180.0;
+			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
+			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
+			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+			//ROS_INFO("x = %lf, y = %lf", x, y);
+			if (dir == 0) {
+				if (fabs(y) < range) {
+					if (x >= 0){
+						if (fabs(x) <= x_front_min) {
+							x_front_min = fabs(x);
+							ret = x_front_min;
+							ROS_WARN("x_front_min = %lf",x_front_min);
+						}
+					}
+				}
+			} else if (dir == 1) {
+				if (fabs(y) < range) {
+					if (x < 0){
+						if (fabs(x) <= x_back_min) {
+							x_back_min = fabs(x);
+							ret = x_back_min;
+							ROS_ERROR("x_back_min = %lf", x_back_min);
+						}
+					}
+				}
+			} else if (dir == 2) {
+				if (fabs(x) < range) {
+					if (y >= 0){
+						if (fabs(y) <= y_front_min) {
+							y_front_min = fabs(y);
+							ret = y_front_min;
+							ROS_WARN("y_front_min = %lf",y_front_min);
+						}
+					}
+				}
+			} else if (dir == 3) {
+				if (fabs(x) < range) {
+					if (y < 0){
+						if (fabs(y) <= y_back_min) {
+							y_back_min = fabs(y);
+							ret = y_back_min;
+							ROS_WARN("y_back_min = %lf",y_back_min);
+						}
+					}
+				}
+			}
+		}
+	}
 	return ret;
 }
