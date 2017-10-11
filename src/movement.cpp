@@ -322,6 +322,27 @@ void set_dir_backward(void)
 	g_wheel_right_direction = BACKWARD;
 }
 
+void correct_laser_distance(double* tmp_laser_distance,float* odom_x_start,float* odom_y_start)
+{
+	double tmp = DBL_MAX;
+	if(MotionManage::s_laser->isNewDataReady()) {
+		*tmp_laser_distance = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
+//		ROS_ERROR("new:laser=%lf",*tmp_laser_distance);
+	}else if(*tmp_laser_distance == DBL_MAX){
+		return;
+	}else{
+		tmp = two_points_distance_double(robot::instance()->getOdomPositionX(),robot::instance()->getOdomPositionY(),*odom_x_start,*odom_y_start);
+		*tmp_laser_distance -= tmp;
+//		ROS_ERROR("old: diff=%lf  laser=%lf",tmp, *tmp_laser_distance);
+	}
+	if(tmp != 0) {
+		*odom_x_start = robot::instance()->getOdomPositionX();
+		*odom_y_start = robot::instance()->getOdomPositionY();
+	} else{
+//		ROS_ERROR("dont update");
+	}
+}
+
 void set_dir_forward(void)
 {
 	g_wheel_left_direction = FORWARD;
@@ -375,7 +396,6 @@ void wall_dynamic_base(uint32_t Cy)
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
 		Left_Temp_Wall_Buffer = 0;
-		//ROS_INFO("Set Left Wall base value as: %d.", get_wall_base(0));
 	}
 
 	// Dynamic adjust for right wall sensor.
@@ -1593,7 +1613,7 @@ void obs_dynamic_base(uint16_t count)
 		{
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
-			obs_get = (obs_avg + *p_obs_baseline_) / 2;
+			obs_get = (obs_avg + *p_obs_baseline_);
 			if (obs_get > obs_dynamic_limit)
 				obs_get = obs_dynamic_limit;
 

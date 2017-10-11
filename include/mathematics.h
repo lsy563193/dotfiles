@@ -361,6 +361,7 @@ double deg_to_rad(double deg, int8_t scale);
 double rad_2_deg(double rad, int8_t scale);
 uint16_t course_to_dest(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
 uint32_t two_points_distance(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
+float two_points_distance_double(float startx,float starty,float destx,float desty);
 int32_t two_points_distance_at_direction(int32_t startx, int32_t starty, int32_t destx, int32_t desty, int16_t theta);
 int16_t distance2line(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t px, int32_t py);
 uint16_t angle_delta(uint16_t a, uint16_t b);

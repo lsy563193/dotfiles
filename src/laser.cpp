@@ -59,7 +59,7 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	boost::mutex::scoped_lock(scan_mutex_);
 	laserScanData_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-	
+
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	setScanReady(1);
 }
@@ -104,6 +104,24 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 
 	return found;
 	return found;
+}
+
+bool Laser::isNewDataReady()
+{
+	scan_mutex_.lock();
+	static uint32_t seq;
+	if(seq == 0) {
+		seq = laserScanData_.header.seq;
+		scan_mutex_.unlock();
+		return true;
+	}
+	if(laserScanData_.header.seq == seq) {
+		scan_mutex_.unlock();
+		return false;
+	}
+	seq = laserScanData_.header.seq;
+	scan_mutex_.unlock();
+	return true;
 }
 
 int8_t Laser::isScan2Ready()
@@ -744,6 +762,7 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
  * @angle angle from 0 to 359
  * @return distance value (meter)
  * */
+
 double Laser::getLaserDistance(uint16_t angle){
 	ROS_INFO("%s,%d,input angle = %u",__FUNCTION__,__LINE__,angle);
 	if(angle >359 || angle < 0){

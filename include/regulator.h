@@ -10,7 +10,6 @@
 #include <path_planning.h>
 #include <movement.h>
 #include <robot.hpp>
-
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
@@ -171,6 +170,9 @@ private:
 	uint32_t tick_;
 	uint8_t turn_speed_;
 	PPTargetType path_;
+	float odom_x_start = 0;
+	float odom_y_start = 0;
+	double laser_front_distance = DBL_MAX;
 };
 
 class GoToChargerRegulator: public RegulatorBase{
