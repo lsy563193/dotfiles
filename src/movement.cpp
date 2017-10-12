@@ -3255,6 +3255,7 @@ uint8_t check_tilt()
 		last_x_acc = 0;
 		last_y_acc = 0;
 		last_z_acc = 0;
+		set_tilt_status(0);
 	}
 
 	last_tilt_enable_flag = g_tilt_enable;
