@@ -50,6 +50,8 @@ uint32_t g_auto_work_time = 2800;
 uint32_t g_room_work_time = 3600;
 uint8_t g_room_mode = 0;
 uint8_t g_sleep_mode_flag = 0;
+double obstacle_distance_right = 0,obstacle_distance_left = 0;
+double tmp_distance_right = 0,tmp_distance_left = 0;
 
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
@@ -322,6 +324,28 @@ void set_dir_backward(void)
 	g_wheel_right_direction = BACKWARD;
 }
 
+void correct_laser_distance(double* tmp_laser_distance,float* odom_x_start,float* odom_y_start)
+{
+	double tmp = DBL_MAX;
+	static uint32_t seq = 0;
+	if(MotionManage::s_laser->isNewDataReady()) {
+		*tmp_laser_distance = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS,seq);
+//		ROS_ERROR("new:laser=%lf",*tmp_laser_distance);
+	}else if(*tmp_laser_distance == DBL_MAX){
+		return;
+	}else{
+		tmp = two_points_distance_double(robot::instance()->getOdomPositionX(),robot::instance()->getOdomPositionY(),*odom_x_start,*odom_y_start);
+		*tmp_laser_distance -= tmp;
+//		ROS_ERROR("old: diff=%lf  laser=%lf",tmp, *tmp_laser_distance);
+	}
+	if(tmp != 0) {
+		*odom_x_start = robot::instance()->getOdomPositionX();
+		*odom_y_start = robot::instance()->getOdomPositionY();
+	} else{
+//		ROS_ERROR("dont update");
+	}
+}
+
 void set_dir_forward(void)
 {
 	g_wheel_left_direction = FORWARD;
@@ -350,15 +374,30 @@ void wall_dynamic_base(uint32_t Cy)
 	static int32_t Left_Wall_Everage_Value = 0, Right_Wall_Everage_Value = 0;
 	static int32_t Left_Wall_E_Counter = 0, Right_Wall_E_Counter = 0;
 	static int32_t Left_Temp_Wall_Buffer = 0, Right_Temp_Wall_Buffer = 0;
-
+	static uint32_t  seq_left = 0;
+	static uint32_t  seq_right = 0;
 	// Dynamic adjust for left wall sensor.
 	Left_Temp_Wall_Buffer = get_wall_adc(0);
 	Left_Wall_Sum_Value += Left_Temp_Wall_Buffer;
 	Left_Wall_E_Counter++;
 	Left_Wall_Everage_Value = Left_Wall_Sum_Value / Left_Wall_E_Counter;
 
-	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20)
+	obstacle_distance_left = MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS,seq_left);
+	obstacle_distance_right = MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS,seq_right);
+	if(obstacle_distance_left == 0)
+		obstacle_distance_left = tmp_distance_left;
+	else{
+		tmp_distance_left = obstacle_distance_left;
+	}
+	if(obstacle_distance_right == 0)
+		obstacle_distance_right = tmp_distance_right;
+	else{
+		tmp_distance_right = obstacle_distance_right;
+	}
+
+	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || tmp_distance_left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
 	{
+//		ROS_ERROR("left_reset");
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -371,6 +410,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Left_Wall_Everage_Value > 300)Left_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for left wall sensor.
 		set_wall_base(0, Left_Wall_Everage_Value);
+//		ROS_ERROR("left_wall_value:%d",Left_Wall_Everage_Value);
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -384,8 +424,9 @@ void wall_dynamic_base(uint32_t Cy)
 	Right_Wall_E_Counter++;
 	Right_Wall_Everage_Value = Right_Wall_Sum_Value / Right_Wall_E_Counter;
 
-	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20)
+	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
 	{
+//		ROS_ERROR("right_reset");
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -398,6 +439,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Right_Wall_Everage_Value > 300)Right_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for right wall sensor.
 		set_wall_base(1, Right_Wall_Everage_Value);
+		ROS_ERROR("right_wall_value:%d",Right_Wall_Everage_Value);
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -1568,7 +1610,7 @@ void obs_dynamic_base(uint16_t count)
 //	enum {front,left,right};
 	static uint16_t obs_cnt[] = {0,0,0};
 	static int16_t obs_sum[] = {0,0,0};
-	const int16_t obs_dynamic_limit = 500;
+	const int16_t obs_dynamic_limit = 1000;
 	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
 	typedef int16_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
@@ -1602,7 +1644,7 @@ void obs_dynamic_base(uint16_t count)
 		{
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
-			obs_get = (obs_avg + *p_obs_baseline_) / 2;
+			obs_get = obs_avg / 2 + *p_obs_baseline_;
 			if (obs_get > obs_dynamic_limit)
 				obs_get = obs_dynamic_limit;
 
@@ -3243,6 +3285,7 @@ uint8_t check_tilt()
 		last_x_acc = 0;
 		last_y_acc = 0;
 		last_z_acc = 0;
+		set_tilt_status(0);
 	}
 
 	last_tilt_enable_flag = g_tilt_enable;
