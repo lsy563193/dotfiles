@@ -1011,15 +1011,24 @@ void wheels_pid(void)
 #else
 	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
-		//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
-		if (left_pid.actual_speed < 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
-		else if (left_pid.actual_speed > 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
-		if (right_pid.actual_speed < 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
-		else if (right_pid.actual_speed > 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
+		if(argu_for_pid.reg_type == REG_TYPE_BACK)
+		{
+			/*---brake when turn to back regulator---*/
+			left_pid.actual_speed = 0;
+			right_pid.actual_speed = 0;
+		}
+		else
+		{
+			//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
+			if (left_pid.actual_speed < 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
+			else if (left_pid.actual_speed > 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
+			if (right_pid.actual_speed < 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
+			else if (right_pid.actual_speed > 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
+		}
 
 		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
 		{
