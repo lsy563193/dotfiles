@@ -94,6 +94,10 @@ protected:
 private:
 	uint16_t accurate_;
 	uint8_t speed_;
+	uint8_t stage_;
+	double wait_sec_;
+	double waiting_start_sec_;
+	bool waiting_finished;
 };
 
 class TurnSpeedRegulator{
