@@ -522,7 +522,7 @@ void TurnRegulator::setTarget()
 		else
 		{
 			double tmp_sec = ros::Time::now().toSec() - waiting_start_sec_;
-			ROS_INFO("%s %d: Has been wait for %f sec.", __FUNCTION__, __LINE__, tmp_sec);
+			//ROS_INFO("%s %d: Has been wait for %f sec.", __FUNCTION__, __LINE__, tmp_sec);
 			if (tmp_sec > wait_sec_)
 			{
 				waiting_finished = true;

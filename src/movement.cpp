@@ -1199,7 +1199,7 @@ void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p,
 	left_pid.target_speed = (float)signed_left_speed;
 	right_pid.target_speed = (float)signed_right_speed;
 #if GYRO_DYNAMIC_ADJUSTMENT
-	if (abs(Left - Right) > 1)
+	if (Left < 2 && Right < 2)
 	{
 		set_gyro_dynamic_on();
 	} else
@@ -1612,7 +1612,7 @@ void obs_dynamic_base(uint16_t count)
 //	enum {front,left,right};
 	static uint16_t obs_cnt[] = {0,0,0};
 	static int16_t obs_sum[] = {0,0,0};
-	const int16_t obs_dynamic_limit = 1000;
+	const int16_t obs_dynamic_limit = 2000;
 	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
 	typedef int16_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
@@ -1638,7 +1638,7 @@ void obs_dynamic_base(uint16_t count)
 		auto diff = abs_minus(obs_avg , obs_get);
 		if (diff > 50)
 		{
-//			ROS_WARN("diff = (%d) > 50.", diff);
+//			ROS_WARN("i = %d, diff = (%d) > 50.", i, diff);
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
 		}
