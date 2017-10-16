@@ -72,6 +72,7 @@ protected:
 	bool isReach();
 
 private:
+	uint32_t seq;
 	int counter_;
 	int32_t speed_;
 	float distance;

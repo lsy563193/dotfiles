@@ -1249,10 +1249,9 @@ int Laser::compLaneDistance()
  *        range: dectect range
  * @return the distance to the obstacle
  * */
-double Laser::getObstacleDistance(uint8_t dir, double range)
+double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
 {
 	double ret = 4;
-	static  uint32_t seq = 0;
 	double x,y,th,x1,y1;
 	int angle_from, angle_to;
 	double x_front_min = 4;

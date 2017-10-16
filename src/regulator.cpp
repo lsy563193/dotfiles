@@ -387,7 +387,7 @@ bool BackRegulator::_isStop()
 	{
 		// Only update the scan seq.
 		MotionManage::s_laser->laserMarker(false);
-		float tmp_distance = MotionManage::s_laser->getObstacleDistance(1,ROBOT_RADIUS);
+		float tmp_distance = MotionManage::s_laser->getObstacleDistance(1,ROBOT_RADIUS,seq);
 		if(tmp_distance != 0)
 			laser_detect_distance = tmp_distance - ROBOT_RADIUS;
 	}
