@@ -1053,6 +1053,7 @@ void wheels_pid(void)
 #else
 	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
+#if 1
 		if(argu_for_pid.reg_type == REG_TYPE_BACK)
 		{
 			/*---brake when turn to back regulator---*/
@@ -1060,6 +1061,7 @@ void wheels_pid(void)
 			right_pid.actual_speed = 0;
 		}
 		else
+#endif
 		{
 			//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
 			if (left_pid.actual_speed < 0)
