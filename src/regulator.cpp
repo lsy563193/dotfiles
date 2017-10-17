@@ -673,13 +673,16 @@ bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
 	uint8_t obs_tmp;
-	obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
+	if(cm_is_follow_wall())
+		obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
+	else
+		obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.23): get_obs_status(200, 1700, 200);
 
 //	if (cm_is_exploration())
-	if(laser_front_distance < 0.21)
-	{
-		obs_tmp = true;
-	}
+//	if(laser_front_distance < 0.21)
+//	{
+//		obs_tmp = true;
+//	}
 //	if (get_clean_mode() == Clean_Mode_Exploration)
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
@@ -762,9 +765,9 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y);
 	//auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
 
-	correct_laser_distance(&laser_front_distance,&odom_x_start,&odom_y_start);
+//	correct_laser_distance(&laser_front_distance,&odom_x_start,&odom_y_start);
 
-	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (laser_front_distance < 0.4))
+	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3)/* || (laser_front_distance < 0.4)*/)
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
