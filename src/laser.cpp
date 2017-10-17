@@ -1272,7 +1272,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
 		//ROS_WARN("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
 		return 0;
 	}
-	ROS_INFO("compLaneDistance");
+	//ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
 	int cur_angle = gyro_get_angle() / 10;
 	for (int i = 0; i < 360; i++) {
@@ -1288,7 +1288,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
 						if (fabs(x) <= x_front_min) {
 							x_front_min = fabs(x);
 							ret = x_front_min;
-							ROS_WARN("x_front_min = %lf",x_front_min);
+							//ROS_WARN("x_front_min = %lf",x_front_min);
 						}
 					}
 				}
@@ -1298,7 +1298,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
 						if (fabs(x) <= x_back_min) {
 							x_back_min = fabs(x);
 							ret = x_back_min;
-							ROS_ERROR("x_back_min = %lf", x_back_min);
+							//ROS_WARN("x_back_min = %lf", x_back_min);
 						}
 					}
 				}
@@ -1308,7 +1308,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
 						if (fabs(y) <= y_front_min) {
 							y_front_min = fabs(y);
 							ret = y_front_min;
-							ROS_WARN("y_front_min = %lf",y_front_min);
+							//ROS_WARN("y_front_min = %lf",y_front_min);
 						}
 					}
 				}
@@ -1318,7 +1318,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
 						if (fabs(y) <= y_back_min) {
 							y_back_min = fabs(y);
 							ret = y_back_min;
-							ROS_WARN("y_back_min = %lf",y_back_min);
+							//ROS_WARN("y_back_min = %lf",y_back_min);
 						}
 					}
 				}

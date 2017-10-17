@@ -17,6 +17,9 @@
 #include <robotbase.h>
 #include <path_planning.h>
 
+#define TURN_REGULATOR_WAITING_FOR_LASER 1
+#define TURN_REGULATOR_TURNING 2
+
 extern uint16_t g_old_dir;
 extern uint16_t g_new_dir;
 extern Cell_t g_cell_history[];
@@ -415,16 +418,19 @@ void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		l_speed = r_speed = speed_;
 }
 
-TurnRegulator::TurnRegulator(int16_t angle) : speed_(ROTATE_LOW_SPEED)
+TurnRegulator::TurnRegulator(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(TURN_REGULATOR_TURNING), wait_sec_(0.33), waiting_finished(true)
 {
 	accurate_ = ROTATE_TOP_SPEED > 30 ? 30 : 15;
+	waiting_start_sec_ = ros::Time::now().toSec();
 	s_target_angle = angle;
 	ROS_INFO("%s %d: Init, \033[32ms_target_angle: %d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
 }
 
 bool TurnRegulator::isReach()
 {
-	if (abs(ranged_angle(s_target_angle - gyro_get_angle())) < accurate_){
+	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
+		setTarget();
+	else if (abs(ranged_angle(s_target_angle - gyro_get_angle())) < accurate_){
 		ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
 
 		/*********************************************For wall follow**********************************************/
@@ -506,27 +512,47 @@ void TurnRegulator::setTarget()
 {
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 && !mt_is_go_to_charger())
 	{
-#if GLOBAL_PID
-		set_wheel_speed(0, 0, REG_TYPE_TURN);
-#else
-		set_wheel_speed(0, 0);
-#endif
-		delay_sec(0.33);
-/*		do
+		if (waiting_finished)
 		{
-			set_wheel_speed(0, 0);
-			usleep(300000);
-		} while (robot::instance()->isMoving());*/
-		laser_turn_angle(g_turn_angle);
+			stage_ = TURN_REGULATOR_WAITING_FOR_LASER;
+			waiting_finished = false;
+			waiting_start_sec_ = ros::Time::now().toSec();
+			s_target_angle = gyro_get_angle();
+		}
+		else
+		{
+			double tmp_sec = ros::Time::now().toSec() - waiting_start_sec_;
+			//ROS_INFO("%s %d: Has been wait for %f sec.", __FUNCTION__, __LINE__, tmp_sec);
+			if (tmp_sec > wait_sec_)
+			{
+				waiting_finished = true;
+				stage_ = TURN_REGULATOR_TURNING;
+				laser_turn_angle(g_turn_angle);
+				s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
+				// Reset the speed.
+				speed_ = ROTATE_LOW_SPEED;
+				ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
+			}
+		}
 	}
-	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
-	// Reset the speed.
-	speed_ = ROTATE_LOW_SPEED;
-	ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
+	else
+	{
+		s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
+		stage_ = TURN_REGULATOR_TURNING;
+		// Reset the speed.
+		speed_ = ROTATE_LOW_SPEED;
+		ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
+	}
 }
 
 void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
+	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
+	{
+		l_speed = r_speed = 0;
+		return;
+	}
+
 	auto diff = ranged_angle(s_target_angle - gyro_get_angle());
 //	ROS_INFO("TurnRegulator::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, gyro_get_angle());
 	ROS_DEBUG("%s %d: TurnRegulator diff: %d, s_target_angle: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_angle, gyro_get_angle());

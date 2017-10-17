@@ -1053,15 +1053,26 @@ void wheels_pid(void)
 #else
 	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
-		//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
-		if (left_pid.actual_speed < 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
-		else if (left_pid.actual_speed > 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
-		if (right_pid.actual_speed < 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
-		else if (right_pid.actual_speed > 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
+#if 1
+		if(argu_for_pid.reg_type == REG_TYPE_BACK)
+		{
+			/*---brake when turn to back regulator---*/
+			left_pid.actual_speed = 0;
+			right_pid.actual_speed = 0;
+		}
+		else
+#endif
+		{
+			//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
+			if (left_pid.actual_speed < 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
+			else if (left_pid.actual_speed > 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
+			if (right_pid.actual_speed < 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
+			else if (right_pid.actual_speed > 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
+		}
 
 		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
 		{
@@ -1188,7 +1199,7 @@ void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p,
 	left_pid.target_speed = (float)signed_left_speed;
 	right_pid.target_speed = (float)signed_right_speed;
 #if GYRO_DYNAMIC_ADJUSTMENT
-	if (abs(Left - Right) > 1)
+	if (Left < 2 && Right < 2)
 	{
 		set_gyro_dynamic_on();
 	} else
@@ -1601,7 +1612,7 @@ void obs_dynamic_base(uint16_t count)
 //	enum {front,left,right};
 	static uint16_t obs_cnt[] = {0,0,0};
 	static int16_t obs_sum[] = {0,0,0};
-	const int16_t obs_dynamic_limit = 1000;
+	const int16_t obs_dynamic_limit = 2000;
 	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
 	typedef int16_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
@@ -1627,7 +1638,7 @@ void obs_dynamic_base(uint16_t count)
 		auto diff = abs_minus(obs_avg , obs_get);
 		if (diff > 50)
 		{
-//			ROS_WARN("diff = (%d) > 50.", diff);
+//			ROS_WARN("i = %d, diff = (%d) > 50.", i, diff);
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
 		}
