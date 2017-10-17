@@ -1599,6 +1599,7 @@ int8_t path_next(const Cell_t& curr, PPTargetType& path)
 				int16_t ret;
 				if (g_wf_reach_count>0) {
 					ret = isolate_target(curr, path);
+					g_wf_reach_count = 0;
 				} else {
 					ret = path_target(curr, path);//0 not target, 1,found, -2 trap
 				}
