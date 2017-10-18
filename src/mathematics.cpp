@@ -59,6 +59,19 @@ uint32_t two_points_distance(int32_t startx, int32_t starty, int32_t destx, int3
 	return (uint32_t)round(sqrt(d + e));
 }
 
+float two_points_distance_double(float startx,float starty,float destx,float desty)
+{
+
+	double d,e;
+
+	d = (double)destx - (double)startx;
+	e = (double)desty - (double)starty;
+	d *= d;
+	e *= e;
+	return sqrt(d + e);
+
+}
+
 int32_t two_points_distance_at_direction(int32_t startx, int32_t starty, int32_t destx, int32_t desty, int16_t theta)
 {
 	return (int32_t)round(cos(deg_to_rad(theta, 10)) * (destx - startx) + sin(deg_to_rad(theta, 10)) * (desty - starty));

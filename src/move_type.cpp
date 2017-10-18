@@ -42,11 +42,14 @@ CMMoveType mt_get()
 {
 	return g_cm_move_type ;
 }
+
 void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir) {
 	ROS_WARN("%s,%d: dir(%d),obs(%d),bumper(%d)",__FUNCTION__,__LINE__,dir,g_obs_triggered, g_bumper_triggered);
 	if (!IS_X_AXIS(dir) || (g_obs_triggered == 0 && g_bumper_triggered == 0) || g_trapped_mode == 1 || path.size()>3)
 		return;
 
+	if(g_tilt_triggered)
+		return;
 //	ROS_WARN("%s,%d,abs: delta_y(%d)",__FUNCTION__, __LINE__,std::abs(delta_y));
 //	ROS_ERROR("%s,%d: next delta_y == 0",__FUNCTION__,__LINE__);
 	auto 	delta_y = path.back().Y - curr.Y;

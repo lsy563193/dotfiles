@@ -59,7 +59,7 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	boost::mutex::scoped_lock(scan_mutex_);
 	laserScanData_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-	
+
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	setScanReady(1);
 }
@@ -104,6 +104,24 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 
 	return found;
 	return found;
+}
+
+bool Laser::isNewDataReady()
+{
+	scan_mutex_.lock();
+	static uint32_t seq;
+	if(seq == 0) {
+		seq = laserScanData_.header.seq;
+		scan_mutex_.unlock();
+		return true;
+	}
+	if(laserScanData_.header.seq == seq) {
+		scan_mutex_.unlock();
+		return false;
+	}
+	seq = laserScanData_.header.seq;
+	scan_mutex_.unlock();
+	return true;
 }
 
 int8_t Laser::isScan2Ready()
@@ -236,20 +254,25 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 		begin = begin - int(laser_range_offset);
 	if (end != 180)
 		end = end + int(laser_range_offset);
-	//ROS_INFO("laser_range_offset = %d", int(laser_range_offset));
+	ROS_INFO("laser_range_offset = %d, begin = %d, end = %d", int(laser_range_offset), begin, end);
 	if (begin < 0 || end > 359) {
 		ROS_ERROR("%s %d: laser_range_offset error! Return!", __FUNCTION__, __LINE__);
 		return false;
 	}
 	for (int j = begin; j < end; j++) {//default:begin = 260, end =270
-		i = j + int(LIDAR_THETA / 10);
-		i = i>359? i-360:i;
+		i = j - int(LIDAR_THETA / 10);
+		if (i > 359) {
+			i = i - 360;
+		} else if (i < 0) {
+			i = i + 360;
+		}
+		//ROS_INFO("i = %d", i);
 		if (tmp_scan_data.ranges[i] < 4) {
-			th = j * 1.0;
+			th = i * 1.0;
 			th = th + 180.0;
 			New_Laser_Point.x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			New_Laser_Point.y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
-			coordinate_transform(&New_Laser_Point.x, &New_Laser_Point.y, 0, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+			coordinate_transform(&New_Laser_Point.x, &New_Laser_Point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 			Laser_Point.push_back(New_Laser_Point);
 		}
 		//laser_distance = tmp_scan_data.ranges[i];
@@ -744,6 +767,7 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
  * @angle angle from 0 to 359
  * @return distance value (meter)
  * */
+
 double Laser::getLaserDistance(uint16_t angle){
 	ROS_INFO("%s,%d,input angle = %u",__FUNCTION__,__LINE__,angle);
 	if(angle >359 || angle < 0){
@@ -1230,10 +1254,9 @@ int Laser::compLaneDistance()
  *        range: dectect range
  * @return the distance to the obstacle
  * */
-double Laser::getObstacleDistance(uint8_t dir, double range)
+double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
 {
 	double ret = 4;
-	static  uint32_t seq = 0;
 	double x,y,th,x1,y1;
 	int angle_from, angle_to;
 	double x_front_min = 4;
@@ -1249,7 +1272,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 		//ROS_WARN("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
 		return 0;
 	}
-	ROS_INFO("compLaneDistance");
+	//ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
 	int cur_angle = gyro_get_angle() / 10;
 	for (int i = 0; i < 360; i++) {
@@ -1265,7 +1288,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 						if (fabs(x) <= x_front_min) {
 							x_front_min = fabs(x);
 							ret = x_front_min;
-							ROS_WARN("x_front_min = %lf",x_front_min);
+							//ROS_WARN("x_front_min = %lf",x_front_min);
 						}
 					}
 				}
@@ -1275,7 +1298,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 						if (fabs(x) <= x_back_min) {
 							x_back_min = fabs(x);
 							ret = x_back_min;
-							ROS_ERROR("x_back_min = %lf", x_back_min);
+							//ROS_WARN("x_back_min = %lf", x_back_min);
 						}
 					}
 				}
@@ -1285,7 +1308,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 						if (fabs(y) <= y_front_min) {
 							y_front_min = fabs(y);
 							ret = y_front_min;
-							ROS_WARN("y_front_min = %lf",y_front_min);
+							//ROS_WARN("y_front_min = %lf",y_front_min);
 						}
 					}
 				}
@@ -1295,7 +1318,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 						if (fabs(y) <= y_back_min) {
 							y_back_min = fabs(y);
 							ret = y_back_min;
-							ROS_WARN("y_back_min = %lf",y_back_min);
+							//ROS_WARN("y_back_min = %lf",y_back_min);
 						}
 					}
 				}

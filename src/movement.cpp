@@ -50,6 +50,7 @@ uint32_t g_auto_work_time = 2800;
 uint32_t g_room_work_time = 3600;
 uint8_t g_room_mode = 0;
 uint8_t g_sleep_mode_flag = 0;
+double tmp_distance_right = 0,tmp_distance_left = 0;
 
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
@@ -322,6 +323,28 @@ void set_dir_backward(void)
 	g_wheel_right_direction = BACKWARD;
 }
 
+void correct_laser_distance(double* tmp_laser_distance,float* odom_x_start,float* odom_y_start)
+{
+	double tmp = DBL_MAX;
+	static uint32_t seq = 0;
+	if(MotionManage::s_laser->isNewDataReady()) {
+		*tmp_laser_distance = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS,seq);
+//		ROS_ERROR("new:laser=%lf",*tmp_laser_distance);
+	}else if(*tmp_laser_distance == DBL_MAX){
+		return;
+	}else{
+		tmp = two_points_distance_double(robot::instance()->getOdomPositionX(),robot::instance()->getOdomPositionY(),*odom_x_start,*odom_y_start);
+		*tmp_laser_distance -= tmp;
+//		ROS_ERROR("old: diff=%lf  laser=%lf",tmp, *tmp_laser_distance);
+	}
+	if(tmp != 0) {
+		*odom_x_start = robot::instance()->getOdomPositionX();
+		*odom_y_start = robot::instance()->getOdomPositionY();
+	} else{
+//		ROS_ERROR("dont update");
+	}
+}
+
 void set_dir_forward(void)
 {
 	g_wheel_left_direction = FORWARD;
@@ -350,15 +373,31 @@ void wall_dynamic_base(uint32_t Cy)
 	static int32_t Left_Wall_Everage_Value = 0, Right_Wall_Everage_Value = 0;
 	static int32_t Left_Wall_E_Counter = 0, Right_Wall_E_Counter = 0;
 	static int32_t Left_Temp_Wall_Buffer = 0, Right_Temp_Wall_Buffer = 0;
-
+	double obstacle_distance_right = 0,obstacle_distance_left = 0;
+	static uint32_t  seq_left = 0;
+	static uint32_t  seq_right = 0;
 	// Dynamic adjust for left wall sensor.
 	Left_Temp_Wall_Buffer = get_wall_adc(0);
 	Left_Wall_Sum_Value += Left_Temp_Wall_Buffer;
 	Left_Wall_E_Counter++;
 	Left_Wall_Everage_Value = Left_Wall_Sum_Value / Left_Wall_E_Counter;
 
-	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20)
+	obstacle_distance_left = MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS,seq_left);
+	obstacle_distance_right = MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS,seq_right);
+	if(obstacle_distance_left == 0)
+		obstacle_distance_left = tmp_distance_left;
+	else{
+		tmp_distance_left = obstacle_distance_left;
+	}
+	if(obstacle_distance_right == 0)
+		obstacle_distance_right = tmp_distance_right;
+	else{
+		tmp_distance_right = obstacle_distance_right;
+	}
+
+	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
 	{
+//		ROS_ERROR("left_reset");
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -371,6 +410,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Left_Wall_Everage_Value > 300)Left_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for left wall sensor.
 		set_wall_base(0, Left_Wall_Everage_Value);
+//		ROS_ERROR("left_wall_value:%d",Left_Wall_Everage_Value);
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -384,8 +424,9 @@ void wall_dynamic_base(uint32_t Cy)
 	Right_Wall_E_Counter++;
 	Right_Wall_Everage_Value = Right_Wall_Sum_Value / Right_Wall_E_Counter;
 
-	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20)
+	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
 	{
+//		ROS_ERROR("right_reset");
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -398,6 +439,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Right_Wall_Everage_Value > 300)Right_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for right wall sensor.
 		set_wall_base(1, Right_Wall_Everage_Value);
+//		ROS_ERROR("right_wall_value:%d",Right_Wall_Everage_Value);
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -1011,15 +1053,26 @@ void wheels_pid(void)
 #else
 	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
-		//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
-		if (left_pid.actual_speed < 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
-		else if (left_pid.actual_speed > 0)
-			left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
-		if (right_pid.actual_speed < 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
-		else if (right_pid.actual_speed > 0)
-			right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
+#if 1
+		if(argu_for_pid.reg_type == REG_TYPE_BACK)
+		{
+			/*---brake when turn to back regulator---*/
+			left_pid.actual_speed = 0;
+			right_pid.actual_speed = 0;
+		}
+		else
+#endif
+		{
+			//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
+			if (left_pid.actual_speed < 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
+			else if (left_pid.actual_speed > 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
+			if (right_pid.actual_speed < 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
+			else if (right_pid.actual_speed > 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
+		}
 
 		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
 		{
@@ -1146,7 +1199,7 @@ void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p,
 	left_pid.target_speed = (float)signed_left_speed;
 	right_pid.target_speed = (float)signed_right_speed;
 #if GYRO_DYNAMIC_ADJUSTMENT
-	if (abs(Left - Right) > 1)
+	if (Left < 2 && Right < 2)
 	{
 		set_gyro_dynamic_on();
 	} else
@@ -1585,7 +1638,7 @@ void obs_dynamic_base(uint16_t count)
 		auto diff = abs_minus(obs_avg , obs_get);
 		if (diff > 50)
 		{
-//			ROS_WARN("diff = (%d) > 50.", diff);
+//			ROS_WARN("i = %d, diff = (%d) > 50.", i, diff);
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
 		}
@@ -1593,7 +1646,7 @@ void obs_dynamic_base(uint16_t count)
 		{
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
-			obs_get = (obs_avg + *p_obs_baseline_);
+			obs_get = obs_avg / 2 + *p_obs_baseline_;
 			if (obs_get > obs_dynamic_limit)
 				obs_get = obs_dynamic_limit;
 
@@ -3234,6 +3287,7 @@ uint8_t check_tilt()
 		last_x_acc = 0;
 		last_y_acc = 0;
 		last_z_acc = 0;
+		set_tilt_status(0);
 	}
 
 	last_tilt_enable_flag = g_tilt_enable;

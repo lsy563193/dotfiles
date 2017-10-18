@@ -10,7 +10,6 @@
 #include <path_planning.h>
 #include <movement.h>
 #include <robot.hpp>
-
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
@@ -73,9 +72,11 @@ protected:
 	bool isReach();
 
 private:
+	uint32_t seq;
 	int counter_;
 	int32_t speed_;
 	float distance;
+	float laser_detect_distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -93,6 +94,10 @@ protected:
 private:
 	uint16_t accurate_;
 	uint8_t speed_;
+	uint8_t stage_;
+	double wait_sec_;
+	double waiting_start_sec_;
+	bool waiting_finished;
 };
 
 class TurnSpeedRegulator{
@@ -171,6 +176,9 @@ private:
 	uint32_t tick_;
 	uint8_t turn_speed_;
 	PPTargetType path_;
+	float odom_x_start = 0;
+	float odom_y_start = 0;
+	double laser_front_distance = DBL_MAX;
 };
 
 class GoToChargerRegulator: public RegulatorBase{

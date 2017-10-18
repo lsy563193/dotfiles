@@ -420,6 +420,7 @@ uint32_t get_left_wall_step(void);
 uint32_t get_right_wall_step(void);
 
 int32_t get_wall_adc(int8_t dir);
+void correct_laser_distance(double* tmp_laser_distance,float* odom_x_start,float* odom_y_start);
 
 void set_dir_backward(void);
 void set_dir_forward(void);
