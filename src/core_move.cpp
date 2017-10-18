@@ -70,11 +70,12 @@ bool g_exploration_home = false;
 bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
-
+PPTargetType g_plan_path;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
-Cell_t g_next_cell, g_target_cell;
+//Cell_t g_next_cell;
+//Cell_t g_target_cell;
 
 //uint8_t	g_remote_go_home = 0;
 bool	g_go_home = false;
@@ -323,106 +324,8 @@ bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
  *			1: Robot arrive target cell
  */
 
-int cm_move_to(const PPTargetType& path)
+void set_wheel_speed_pid(RegulatorManage &rm,int32_t speed_left,int32_t speed_right)
 {
-	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
-	ROS_WARN("%s %d:", __FUNCTION__, __LINE__);
-	Cell_t curr = map_get_curr_cell();
-	Cell_t last = curr;
-	RegulatorManage rm(curr, g_next_cell, path);
-
-	Cell_t target; int count = 0;
-	bool eh_status_now=false, eh_status_last=false;
-	int ret = EXIT_CLEAN;
-	auto wf_start_timer =  0;
-
-	std::vector<Cell_t> passed_path;
-	passed_path.clear();
-
-	int32_t	 speed_left = 0, speed_right = 0;
-	while (ros::ok())
-	{
-		if(mt_is_linear()){
-			wall_dynamic_base(30);
-		}
-
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-		{
-			usleep(100);
-			continue;
-		}
-
-		if(rm.isMt())
-		{
-			curr = cm_update_position();//note:cell = {x,y,angle}
-			rm.updatePosition({map_get_x_count(),map_get_y_count()});
-		}
-
-		if (rm.isExit()){
-			break;
-		}
-		if (g_slam_error)
-		{
-			set_wheel_speed(0, 0);
-			continue;
-		}
-
-		if (rm.isReach()){
-			ret = REATH_TARGET;
-			break;
-		}
-		if (rm.isStop()){
-			ret = NO_REATH_TARGET;
-			break;
-		}
-		if (rm.isSwitch()){
-			map_set_blocked();
-			MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
-			rm.switchToNext();
-		}
-		if(rm.isMt()) {
-//			if (mt_is_follow_wall() && wf_start_timer == 0)
-//				wf_start_timer = time(NULL);
-			if (passed_path.empty() || last != curr)
-			{
-				last = curr;
-				if (std::find(passed_path.begin(), passed_path.end(), curr) == passed_path.end())
-				{
-					curr.TH = gyro_get_angle();
-					passed_path.push_back(curr);
-//					for(const auto& cell: passed_path)
-//						ROS_INFO("cell(%d,%d,%d)",cell.X,cell.Y,cell.TH);
-				}
-
-				if (mt_is_follow_wall()) {
-//					ROS_INFO("  mt_is_fw(%d,%d,%d)", curr.X, curr.Y, curr.TH);
-					map_set_follow_wall(MAP, curr);
-					if (g_trapped_mode == 1 && map_mark_robot(MAP) && path_dijkstra(curr, target, count)) {
-						ROS_WARN("  %d:Found targets(%d,%d), exit trapped.", __LINE__, target.X, target.Y);
-						g_trapped_mode = 2;
-						passed_path.clear(); // No need to update the cleaned path because map_mark_robot() has finished it.
-					}
-					if (cm_is_follow_wall() || g_trapped_mode == 1) {
-//						ROS_INFO("  %d:cm_is_follow_wall() || g_trapped_mode == 1 ", __LINE__);
-						map_set_follow_wall(WFMAP, curr);
-						g_wf_is_reach = wf_is_reach(curr, passed_path);
-					}
-				} else {
-//					ROS_INFO("  %d:mt_is_linear", __LINE__);
-					if (cm_is_exploration())
-						explore_update_map();
-				}
-//			} else {
-				if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && passed_path.size() < 5) {
-					ROS_WARN("  {curr,start}_time(%d,%d), passed_path.size(%d): ", time(NULL), wf_start_timer, passed_path.size());
-					//todo
-//					ret = EXIT_CLEAN;
-//					break;
-				}
-			}
-		}
-
-		rm.adjustSpeed(speed_left, speed_right);
 #if GLOBAL_PID
 		/*---PID is useless in wall follow mode---*/
 		if(rm.isMt() && mt_is_follow_wall())
@@ -439,59 +342,7 @@ int cm_move_to(const PPTargetType& path)
 		/*---PID is useless in wall follow mode---*/
 		set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
 #endif
-	}
-#if GLOBAL_PID
-	if(rm.isMt() && mt_is_follow_wall())
-		set_wheel_speed(0, 0, REG_TYPE_WALLFOLLOW);
-	else if(rm.isMt() && mt_is_linear())
-		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
-	else if(rm.isMt() && mt_is_go_to_charger())
-		set_wheel_speed(0, 0, REG_TYPE_NONE);
-	else if(rm.isBack())
-		set_wheel_speed(0, 0, REG_TYPE_BACK);
-	else if(rm.isTurn())
-		set_wheel_speed(0, 0, REG_TYPE_TURN);
-#else
-	set_wheel_speed(0, 0, REG_TYPE_NONE);
-#endif
-
-	if(! MAP_SET_REALTIME)
-	{
-		map_set_cleaned(passed_path);
-//		if (!mt_is_linear())
-//			map_set_follow_wall(passed_path);
-
-//		linear_mark_clean(curr, g_next_cell);
-	}
-	map_set_blocked();
-
-	MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path.cells);
-	return ret;
 }
-
-//#if 0
-void linear_mark_clean(const Cell_t &start, const Cell_t &target)
-{
-	if (start.Y == target.Y)
-	{
-		Cell_t stop = {map_get_x_cell(), map_get_y_cell()};
-		if (start.X != stop.X && (abs(start.Y - stop.Y) <= 2))
-		{
-			float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
-			float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
-
-			auto start_x = std::min(start.X, stop.X);
-			auto stop_x = std::max(start.X, stop.X);
-			for (auto x = start_x; x<=stop_x; x++)
-			{
-				auto y = (int16_t) (slop * (stop.X) + intercept);
-				for(auto dy=-ROBOT_SIZE_1_2;dy<=ROBOT_SIZE_1_2;dy++)
-					map_set_cell(MAP, cell_to_count(x), cell_to_count(y + dy), CLEANED);
-			}
-		}
-	}
-}
-//#endif
 
 void cm_self_check_with_handle(void)
 {
@@ -504,33 +355,113 @@ void cm_self_check_with_handle(void)
 	cm_set_event_manager_handler_state(false);
 }
 
-void cm_cleaning()
-{
+void cm_move_to(RegulatorManage& rm, PPTargetType path) {
+	if (mt_is_linear()) {
+		wall_dynamic_base(30);
+	}
+
+	if (rm.isSwitch()) {
+		map_set_blocked();
+//		MotionManage::pubCleanMapMarkers(MAP, g_next_cell, g_target_cell, path);
+		rm.switchToNext(path);
+	}
+//	if(rm.isReach())
+//		path.pop_front();
+//	if(rm.isStop())
+//		path.clear();
+
+	int32_t speed_left = 0, speed_right = 0;
+	rm.adjustSpeed(speed_left, speed_right);
+	set_wheel_speed_pid(rm, speed_left, speed_right);
+}
+
+void cm_cleaning() {
 	MotionManage motion;
 	if (!motion.initSucceeded())
 		return;
 
-	Cell_t curr = cm_update_position();
 	g_motion_init_succeeded = true;
-	PPTargetType cleaning_path;
-	cleaning_path.target = g_zero_home;
-	cleaning_path.cells.clear();
+	Cell_t curr = cm_update_position();
+	g_plan_path.clear();
 	auto is_reach = REATH_TARGET;
-	while (ros::ok())
-	{
-		if (g_key_clean_pressed || g_fatal_quit_event || g_charge_detect || g_robot_stuck)
-			return;
 
-		cm_check_temp_spot();
-		path_update_cell_history();
-		curr = map_get_curr_cell();
-		if(path_next(curr, cleaning_path, is_reach))
-		{
-			if((is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN)
-				return;
-			if (cm_should_self_check())
-				cm_self_check_with_handle();
+	Cell_t last = curr;
+	RegulatorManage rm(curr, g_plan_path.front(), g_plan_path);
+
+	Cell_t target;
+	int count = 0;
+	bool eh_status_now = false, eh_status_last = false;
+	int is_ready = EXIT_CLEAN;
+	auto is_near = false; auto is_stop = false; auto is_time_up = false; auto is_trapped = false;
+	auto wf_start_timer = 0;
+
+	std::vector<Cell_t> passed_path;
+	passed_path.clear();
+	passed_path.push_back(curr);
+
+	auto is_found = true;
+	while (ros::ok()) {
+
+	if (rm.isExit()) {
+		break;
+	}
+
+	if (g_slam_error) {
+		set_wheel_speed(0, 0);
+		continue;
+	}
+
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			usleep(100);
+			continue;
 		}
+		cm_check_temp_spot();
+		if (rm.isMt()) {
+			curr = cm_update_position();//note:cell = {x,y,angle}
+			rm.updatePosition({map_get_x_count(), map_get_y_count()});
+/*			if (mt_is_follow_wall() && wf_start_timer == 0)
+				wf_start_timer = time(NULL);*/
+			if (last != curr) {
+				last = curr;
+				if (std::find(passed_path.begin(), passed_path.end(), curr) == passed_path.end()) {
+					passed_path.push_back(curr);
+				}
+
+				/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && passed_path.size() < 5) {
+					ROS_WARN("  {curr,start}_time(%d,%d), passed_path.size(%d): ", time(NULL), wf_start_timer, passed_path.size());
+				}*/
+			}
+		}
+		if (g_plan_path.empty() || is_near || rm.isReach() || rm.isStop() || is_time_up || g_trapped_mode == 1) {
+//					set_wheel_speed_pid(rm, speed_left, speed_right);
+			map_set_cleaned(passed_path);
+			map_set_blocked();
+			map_mark_robot(MAP);
+			if (mt_is_follow_wall())
+				map_set_follow_wall(MAP, curr);
+
+			debug_map(MAP, curr.X, curr.Y);
+//			passed_path.clear();
+			is_found = path_next(curr, g_plan_path, is_reach);
+			MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.front(), g_plan_path);
+			path_display_path_points(g_plan_path);
+			rm.setMt();
+/*		if (mt_is_follow_wall()) {
+				if (cm_is_follow_wall() || g_trapped_mode == 1) {
+//				ROS_INFO("  %d:cm_is_follow_wall() || g_trapped_mode == 1 ", __LINE__);
+					map_set_follow_wall(WFMAP, curr);
+					g_wf_is_reach = wf_is_reach(curr, passed_path);
+				}
+			} else {
+				if (cm_is_exploration())
+				explore_update_map();
+			}*/
+		}
+		if (!is_found)
+			return;
+		cm_move_to(rm,g_plan_path);
+		if (cm_should_self_check())
+			cm_self_check_with_handle();
 	}
 }
 
@@ -600,7 +531,6 @@ bool cm_go_to_charger()
 	set_led_mode(LED_STEADY, LED_ORANGE);
 	mt_set(CM_GO_TO_CHARGER);
 //	PPTargetType path_empty;
-//	cm_move_to(path_empty);
 //	set_led_mode(LED_STEADY, LED_GREEN);
 //
 //	if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect)
@@ -637,6 +567,7 @@ void cm_reset_go_home(void)
 	g_map_boundary_created = false;
 	g_go_home_by_remote = false;
 }
+/*
 
 bool cm_check_loop_back(Cell_t target)
 {
@@ -654,6 +585,7 @@ bool cm_check_loop_back(Cell_t target)
 
 	return retval;
 }
+*/
 
 void cm_create_home_boundary(void)
 {

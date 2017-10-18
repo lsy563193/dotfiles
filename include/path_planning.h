@@ -28,10 +28,11 @@ typedef struct {
 	uint8_t	try_cnt;
 } TargetType;
 
-typedef struct {
-	Cell_t	target;
-	std::list <Cell_t> cells;
-} PPTargetType;
+//typedef struct {
+//	Cell_t	target;
+//	std::list <Cell_t> cells;
+//} PPTargetType;
+typedef std::list <Cell_t> PPTargetType;
 typedef enum {
 	USE_ROS,
 	USE_UNCLEAN,
@@ -71,7 +72,7 @@ void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int1
  *
  * @return
  */
-void path_update_cell_history(void);
+//void path_update_cell_history(void);
 
 /*
  * Initialization function for path planning, it sets the starting
@@ -110,7 +111,7 @@ void wf_path_planning_initialize();
  */
 bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach);
 
-void path_update_cell_history(void);
+//void path_update_cell_history(void);
 
 uint16_t path_get_robot_direction(void);
 

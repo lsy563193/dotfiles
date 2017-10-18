@@ -1559,7 +1559,7 @@ void obs_dynamic_base(uint16_t count)
 //	enum {front,left,right};
 	static uint16_t obs_cnt[] = {0,0,0};
 	static int16_t obs_sum[] = {0,0,0};
-	const int16_t obs_dynamic_limit = 1000;
+	const int16_t obs_dynamic_limit = 2000;
 	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
 	typedef int16_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};

@@ -50,8 +50,8 @@ public:
 	virtual bool isReach() = 0;
 
 public:
-	static Point32_t s_target;
-	static Point32_t s_origin;
+	static Point32_t s_target_p;
+	static Point32_t s_origin_p;
 	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;
@@ -130,7 +130,7 @@ public:
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
 	bool _isStop();
-	void setTarget(){ };
+	void setTarget();
 protected:
 	bool isReach();
 
@@ -159,7 +159,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
-	void setTarget() { };
+	void setTarget();
 
 protected:
 	bool isReach();
@@ -180,7 +180,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
-	void setTarget() { };
+	void setTarget();
 	void resetGoToChargerVariables()
 	{
 		no_signal_cnt = 0;
@@ -245,11 +245,18 @@ public:
 	{
 		return p_reg_ == mt_reg_;
 	}
+	void reset(void)
+	{
+		p_reg_ = turn_reg_;
+		setTarget();
+	}
+	void setMt(void);
+
 	bool isBack(void) const
 	{
 		return p_reg_ == back_reg_;
 	}
-	void switchToNext();
+	void switchToNext(PPTargetType& path);
 
 	bool wf_is_reach(const std::vector<Cell_t>& passed_path);
 
@@ -258,6 +265,9 @@ public:
 	}
 private:
 	RegulatorBase* p_reg_;
+	RegulatorBase* fw_reg_;
+	RegulatorBase* line_reg_;
+	RegulatorBase* gh_reg_;
 	RegulatorBase* mt_reg_;
 	TurnRegulator* turn_reg_;
 	BackRegulator* back_reg_;

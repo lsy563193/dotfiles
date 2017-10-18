@@ -662,7 +662,7 @@ uint8_t map_set_laser()
 
 uint8_t map_set_obs()
 {
-	auto obs_trig = /*g_obs_triggered*/get_obs_status();
+	auto obs_trig = g_obs_triggered/*get_obs_status()*/;
 //	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
 		return 0;
@@ -713,7 +713,7 @@ uint8_t map_set_obs()
 
 uint8_t map_set_bumper()
 {
-	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
+	auto bumper_trig = g_bumper_triggered/*get_bumper_status()*/;
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
 	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
@@ -736,15 +736,15 @@ uint8_t map_set_bumper()
 //				d_cells.push_back({2,0});
 //			}
 		}
-		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-			d_cells.push_back({2,0});
+//		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+//			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
 			d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
-		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
-			d_cells.push_back({2,0});
+//		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
+//			d_cells.push_back({2,0});
 	}
 
 	int32_t	x, y;
@@ -825,7 +825,7 @@ uint8_t map_set_slip()
 
 uint8_t map_set_cliff()
 {
-	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
+	auto cliff_trig = g_cliff_triggered/*get_cliff_status()*/;
 	if (g_cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
 		// During self check.
 		return 0;
@@ -982,9 +982,9 @@ void map_set_cleaned(const Cell_t& curr)
 }
 
 double world_distance(void) {
-	auto dis = sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin.Y, 2));
+	auto dis = sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin_p.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin_p.Y, 2));
 
-//	auto dis =  two_points_distance(RegulatorBase::s_origin.X, RegulatorBase::s_origin.Y , \
+//	auto dis =  two_points_distance(RegulatorBase::s_origin_p.X, RegulatorBase::s_origin_p.Y , \
 //														RegulatorBase::s_curr_p.X, RegulatorBase::s_curr_p.Y);
 	return dis*CELL_SIZE/CELL_COUNT_MUL/1000;
 }
@@ -1071,6 +1071,10 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
+void map_mark()
+{
+
+}
 void map_set_follow_wall(std::vector<Cell_t>& cells)
 {
 	if(cells.empty())
@@ -1116,6 +1120,8 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 
 bool map_mark_robot(uint8_t id)
 {
+	if(g_trapped_mode != 1)
+		return false;
 	int32_t x, y;
 	bool ret = false;
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)

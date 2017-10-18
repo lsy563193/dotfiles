@@ -1514,10 +1514,8 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 				break;
 			}
 		}
-		path.target.X = x_path;
-		path.target.Y = y_path;
-		path.cells.push_front(path.target);
-		path.cells.push_front(curr);
+		path.push_front({x_path,y_path});
+		path.push_front(curr);
 	}
 	else {
 		if (path_points.size() > 3) {
@@ -1604,8 +1602,7 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 		}
 		path_points.reverse();
 		path_display_path_points(path_points);
-		path.cells = path_points;
-		path.target = path.cells.back();
+		path = path_points;
 	}
 
 	retval = 1;
