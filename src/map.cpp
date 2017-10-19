@@ -935,12 +935,13 @@ uint8_t map_set_rcon()
 	}
 	int32_t x,y;
 	uint8_t block_count = 0;
+	std::string msg = "Cell:";
 	for(const auto& d_cell : d_cells) {
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * d_cell.Y, CELL_SIZE * d_cell.X, &x, &y);
-		ROS_ERROR("%s,%d:curr(%d,%d), map_set_realtime(%d,%d),rcon_trig(%d)", __FUNCTION__, __LINE__, map_get_curr_cell().X,
-							map_get_curr_cell().Y, count_to_cell(x), count_to_cell(y), rcon_trig);
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
+		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + ")";
 	}
+	ROS_ERROR("%s %d: curr(%d,%d), rcon_trig(%d), mark:%s", __FUNCTION__, __LINE__, map_get_curr_cell().X, map_get_curr_cell().Y, rcon_trig, msg.c_str());
 	return block_count;
 }
 
@@ -1052,8 +1053,10 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 //				continue;
 			auto status = map_get_cell(MAP, cell.X, y);
 			if (status != BLOCKED_TILT && status != BLOCKED_SLIP)
+			{
 				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
-			msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
+				msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
+			}
 		}
 	}
 
