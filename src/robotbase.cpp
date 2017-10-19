@@ -316,27 +316,27 @@ void *robotbase_routine(void*)
 
 		sensor.batv = (g_receive_stream[REC_BAT_V]);
 
-		if(((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]) < 20)
+		if(((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]) < CLIFF_LIMIT)
 		{
-			if(last_lcliff > 20)
+			if(last_lcliff > CLIFF_LIMIT)
 				last_lcliff = ((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]);
 			else
 				sensor.lcliff = last_lcliff = ((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]);
 		}
 		else
 			sensor.lcliff = last_lcliff = ((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]);
-		if(((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]) < 20)
+		if(((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]) < CLIFF_LIMIT)
 		{
-			if(last_fcliff > 20)
+			if(last_fcliff > CLIFF_LIMIT)
 				last_fcliff = ((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]);
 			else
 				sensor.fcliff = last_fcliff = ((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]);
 		}
 		else
 			sensor.fcliff = last_fcliff = ((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]);
-		if(((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]) < 20)
+		if(((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]) < CLIFF_LIMIT)
 		{
-			if(last_rcliff > 20)
+			if(last_rcliff > CLIFF_LIMIT)
 				last_rcliff = ((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]);
 			else
 				sensor.rcliff = last_rcliff = ((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]);

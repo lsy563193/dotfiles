@@ -369,6 +369,8 @@ typedef enum{
 #define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
+//cliff limit
+#define CLIFF_LIMIT				80
 extern uint32_t g_rcon_status;
 
 extern int16_t g_obs_left_baseline;
