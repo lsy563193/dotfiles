@@ -3423,3 +3423,8 @@ int8_t lidar_bumper_deinit()
 	}
 	return c_ret;
 }
+
+bool check_laser_stuck()
+{
+	return false;
+}

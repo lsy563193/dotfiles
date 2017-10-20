@@ -350,9 +350,9 @@ typedef enum{
 
 //for tilt detct
 #define TILT_COUNT_REACH			50
-#define DIF_TILT_X_VAL				70
-#define DIF_TILT_Y_VAL				70
-#define DIF_TILT_Z_VAL				40
+#define DIF_TILT_X_VAL				170
+#define DIF_TILT_Y_VAL				170
+#define DIF_TILT_Z_VAL				70
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
@@ -769,4 +769,6 @@ bool is_clean_paused();
 void reset_clean_paused();
 int8_t lidar_bumper_init(const char* device);
 int8_t lidar_bumper_deinit();
+
+bool check_laser_stuck();
 #endif
