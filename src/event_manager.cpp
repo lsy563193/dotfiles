@@ -85,6 +85,9 @@ bool g_robot_stuck = false;
 //bool g_lidar_bumper_jam =false;
 //int g_lidar_bumper_cnt = 0;
 
+// laser stuck
+bool g_laser_stuck = false;
+
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
 static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
@@ -344,6 +347,12 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_LIDAR_BUMPER)
 		}
 		*/
+
+		// Laser stuck
+		if (check_laser_stuck()) {
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_LASER_STUCK)
+		}
 #undef evt_set_status_x
 
 		if (set) {
@@ -490,6 +499,9 @@ void *event_handler_thread(void *data) {
 
 		/* lidar bumper*/
 		//evt_handle_check_event(EVT_LIDAR_BUMPER,lidar_bumper)
+
+		// Laser stuck
+		evt_handle_check_event(EVT_LASER_STUCK, laser_stuck)
 #undef evt_handle_event_x
 
 		pthread_mutex_lock(&event_handler_mtx);
@@ -978,6 +990,13 @@ void em_default_handle_lidar_bumper(bool state_new,bool state_last)
 	g_lidar_bumper = robot::instance()->getLidarBumper();
 }
 */
+
+// Laser stuck
+void em_default_handle_laser_stuck(bool state_new,bool state_last)
+{
+	ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
+}
+
 /* Default: empty hanlder */
 void em_default_handle_empty(bool state_now, bool state_last)
 {
