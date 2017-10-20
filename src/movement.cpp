@@ -31,9 +31,9 @@ static int16_t obs_right_trig_value = 350;
 int16_t g_obs_left_baseline = 100;
 int16_t g_obs_front_baseline = 100;
 int16_t g_obs_right_baseline = 100;
-static int16_t cliff_left_trig_value = 20;
-static int16_t cliff_front_trig_value = 20;
-static int16_t cliff_right_trig_value = 20;
+static int16_t cliff_left_trig_value = CLIFF_LIMIT;
+static int16_t cliff_front_trig_value = CLIFF_LIMIT;
+static int16_t cliff_right_trig_value = CLIFF_LIMIT;
 int16_t g_cliff_left_baseline = 100;
 int16_t g_cliff_front_baseline = 100;
 int16_t g_cliff_right_baseline = 100;
@@ -1611,7 +1611,7 @@ void obs_dynamic_base(uint16_t count)
 //	count = 20;
 //	enum {front,left,right};
 	static uint16_t obs_cnt[] = {0,0,0};
-	static int16_t obs_sum[] = {0,0,0};
+	static int32_t obs_sum[] = {0,0,0};
 	const int16_t obs_dynamic_limit = 2000;
 	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
 	typedef int16_t(*Func_t)(void);
@@ -3426,4 +3426,9 @@ int8_t lidar_bumper_deinit()
 		is_lidar_bumper_init = 0;
 	}
 	return c_ret;
+}
+
+bool check_laser_stuck()
+{
+	return false;
 }
