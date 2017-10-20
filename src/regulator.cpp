@@ -239,6 +239,36 @@ float RegulatorBase::s_pos_x = 0;
 float RegulatorBase::s_pos_y = 0;
 Point32_t RegulatorBase::s_curr_p = {0,0};
 
+bool wf_is_reach()
+{
+	auto curr = map_point_to_cell(RegulatorBase::s_curr_p);
+	ROS_INFO("  %s %d:?? curr(%d,%d,%d)",__FUNCTION__,__LINE__, curr.X, curr.Y, curr.TH);
+	const int16_t DIFF_LIMIT = 200;//1500 means 150 degrees, it is used by angle check.
+	/*check if spot turn*/
+	if(get_sp_turn_count() > 400) {
+		reset_sp_turn_count();
+		ROS_WARN("  yes! sp_turn over 400");
+		return true;
+	}
+
+	if (g_passed_path.size() > 5) {
+		ROS_WARN("  trapped(%d),distance(%f),{curr,start}_th(%d,%d),", g_trapped_mode, world_distance(), curr.TH, g_passed_path.front().TH);
+
+		if (g_trapped_mode != 1 && world_distance() <= 0.05 && rm_angle(curr.TH, g_passed_path.front().TH) <= DIFF_LIMIT) {
+				ROS_WARN("  yes! reach the start point!");
+				return true;
+		}
+
+		for (auto r_iter = (g_passed_path.begin()); r_iter != g_passed_path.end() - 5; ++r_iter) {
+			if (*r_iter == curr && ((abs(ranged_angle(r_iter->TH - curr.TH))) <= DIFF_LIMIT)) {
+				ROS_WARN("  yes! reach the cleaned point(%d)!", std::distance(g_passed_path.begin(), r_iter));
+				return true;
+			}
+		}
+	}
+	ROS_WARN("  NO!");
+	return false;
+}
 
 static bool wf_nv_is_reach(void) {
 	auto ret = false;
@@ -813,7 +843,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3)/* || (laser_front_distance < 0.4)*/)
 	{
-//		ROS_WARN("decelarate");
+		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
 			angle_diff = 0;
 		integrated_ = 0;
@@ -869,7 +899,7 @@ bool FollowWallRegulator::isReach()
 
 	if (cm_is_follow_wall())
 	{
-		ret = g_wf_is_reach;
+		ret = wf_is_reach();
 	} else
 	if (cm_is_navigation()) {
 		ret = wf_nv_is_reach();
@@ -1275,6 +1305,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed < 5)diff_speed = 5;
 
 		if (is_decelerate_wall()) {
+			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;
 			if (next_linear_speed > (300 * (wall_follow_detect_distance - 0.167))){
@@ -3254,16 +3285,7 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 //RegulatorManage
 RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
-	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-	bumper_turn_factor = 0.85;
 	auto target = map_cell_to_point(target_cell);
-	ROS_INFO("%s %d: start cell\033[33m(%d, %d)\033[0m, target\033[33m(%d, %d)\033[0m.", __FUNCTION__, __LINE__,
-					 start_cell.X, start_cell.Y, count_to_cell(target.X), count_to_cell(target.Y));
-	g_bumper_cnt = g_cliff_cnt = 0;
-	g_slip_cnt = 0;
-	g_slip_backward = false;
-	g_rcon_during_go_home = false;
-	reset_rcon_status();
 
 	back_reg_ = new BackRegulator();
 	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
@@ -3279,8 +3301,6 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 //	}
 //	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)", __FUNCTION__, __LINE__, g_turn_angle);
 //	p_reg_ = turn_reg_;
-
-	robot::instance()->obsAdjustCount(50);
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: RegulatorManage finish", __FUNCTION__, __LINE__);
@@ -3322,7 +3342,7 @@ bool RegulatorManage::isSwitch()
 void RegulatorManage::setMt()
 {
 	s_origin_p = {map_get_x_count(), map_get_y_count()};
-	s_target_p = map_cell_to_point(g_plan_path.back());
+	s_target_p = map_cell_to_point(g_plan_path.front());
 	if(mt_is_follow_wall())
 	{
 		mt_reg_ = fw_reg_;
@@ -3357,7 +3377,6 @@ void RegulatorManage::setMt()
 		mt_reg_ = line_reg_;
 		g_turn_angle = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
-//		ROS_INFO("%s,%d",__FUNCTION__, __LINE__,);
 	}
 	else if (mt_is_go_to_charger())
 	{
@@ -3367,6 +3386,15 @@ void RegulatorManage::setMt()
 	p_reg_ = turn_reg_;
 //	s_target_angle = g_turn_angle;
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
+	ROS_INFO("%s,%d, set_target_angle(%d)",__FUNCTION__, __LINE__,s_target_angle);
+	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+	bumper_turn_factor = 0.85;
+	g_bumper_cnt = g_cliff_cnt = 0;
+	g_slip_cnt = 0;
+	g_slip_backward = false;
+	g_rcon_during_go_home = false;
+	reset_rcon_status();
+	robot::instance()->obsAdjustCount(50);
 }
 
 bool RegulatorManage::_isStop()

@@ -83,7 +83,7 @@ Cell_t g_continue_cell;
 const Cell_t MIN_CELL{-MAP_SIZE,-MAP_SIZE};
 const Cell_t MAX_CELL{ MAP_SIZE, MAP_SIZE};
 
-Cell_t g_cell_history[5];
+//Cell_t g_cell_history[5];
 
 uint16_t g_new_dir;
 uint16_t g_old_dir;
@@ -1451,7 +1451,6 @@ void path_update_cells()
 */
 
 bool wf_is_isolate() {
-	extern Cell_t g_cell_history[5];
 //	path_update_cell_history();
 	int16_t	val = 0;
 	uint16_t i = 0;
@@ -1460,17 +1459,19 @@ bool wf_is_isolate() {
 	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 
 	map_mark_robot(WFMAP);//note: To clear the obstacle when check isolated, please don't remove it!
+	auto curr = map_point_to_cell(RegulatorBase::s_curr_p);
+	debug_map(WFMAP, curr.X, curr.Y);
+	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
 
-	Cell_t remote{0,0};
-	if ( out_cell != remote){
-			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, out_cell.X, out_cell.Y, 0);
+	if ( out_cell != g_zero_home){
+			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
 		if (is_block_accessible(0, 0) == 1) {
-			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
-				val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+				val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
 
 				if (val < 0 || val == SCHAR_MAX) {
 					val = 0;
@@ -1481,7 +1482,7 @@ bool wf_is_isolate() {
 				val = 1;
 			}
 		} else {
-			val = wf_path_find_shortest_path(g_cell_history[0].X, g_cell_history[0].Y, 0, 0, 0);
+			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX)
 				val = 0;
 			else
@@ -1490,6 +1491,7 @@ bool wf_is_isolate() {
 	}
 	return val != 0;
 }
+
 int16_t path_escape_trapped(const Cell_t& curr)
 {
 	int16_t	val = 0;
@@ -1619,6 +1621,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 			}
 		}
 		else if (cm_is_exploration()) {
+			path.clear();
 			if (!path_lane_is_cleaned(curr, path, is_reach)) {
 				int16_t ret;
 				if (g_wf_reach_count > 0) {
@@ -1675,19 +1678,6 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 	else
 		g_new_dir = curr.X > path.front().X ? NEG_X : POS_X;
 
-//#if LINEAR_MOVE_WITH_PATH
-//	if (mt_is_linear() && !cm_is_follow_wall())
-//	{
-//		 Add current cell for filling the path, otherwise it will lack for the path from current to the first turning cell.
-//		path.cells.push_front(curr);
-//		path_fill_path(path.cells);
-//		 Delete the current cell.
-//		if (path.cells.size() > 1)
-//			path.cells.pop_front();
-		//Update the g_next_cell because the path has been filled.
-//		g_next_cell = path.cells.front();
-//	}
-//#endif
 	return true;
 }
 

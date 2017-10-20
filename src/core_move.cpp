@@ -71,6 +71,7 @@ bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
 PPTargetType g_plan_path;
+std::vector<Cell_t> g_passed_path;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
@@ -157,6 +158,7 @@ void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long,
 	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, true)));
 	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long, true)));
 }
+
 void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
 {
 	x = count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, false));
@@ -388,34 +390,34 @@ void cm_cleaning() {
 	Cell_t last = curr;
 	RegulatorManage rm(curr, g_plan_path.front(), g_plan_path);
 
-	Cell_t target;
-	int count = 0;
 	bool eh_status_now = false, eh_status_last = false;
-	int is_ready = EXIT_CLEAN;
-	auto is_near = false; auto is_stop = false; auto is_time_up = false; auto is_trapped = false;
+	auto is_near = false;
+	auto is_time_up = false;
+	auto is_trapped = false;
 	auto wf_start_timer = 0;
 
-	std::vector<Cell_t> passed_path;
-	passed_path.clear();
-	passed_path.push_back(curr);
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
 
 	auto is_found = true;
 	while (ros::ok()) {
 
-	if (rm.isExit()) {
-		break;
-	}
+		if (rm.isExit()) {
+			break;
+		}
 
-	if (g_slam_error) {
-		set_wheel_speed(0, 0);
-		continue;
-	}
+		if (g_slam_error) {
+			set_wheel_speed(0, 0);
+			continue;
+		}
 
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
 			continue;
 		}
+
 		cm_check_temp_spot();
+
 		if (rm.isMt()) {
 			curr = cm_update_position();//note:cell = {x,y,angle}
 			rm.updatePosition({map_get_x_count(), map_get_y_count()});
@@ -423,43 +425,49 @@ void cm_cleaning() {
 				wf_start_timer = time(NULL);*/
 			if (last != curr) {
 				last = curr;
-				if (std::find(passed_path.begin(), passed_path.end(), curr) == passed_path.end()) {
-					passed_path.push_back(curr);
+				if (std::find(g_passed_path.begin(), g_passed_path.end(), curr) == g_passed_path.end()) {
+					g_passed_path.push_back(curr);
 				}
-
-				/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && passed_path.size() < 5) {
-					ROS_WARN("  {curr,start}_time(%d,%d), passed_path.size(%d): ", time(NULL), wf_start_timer, passed_path.size());
-				}*/
+				if (mt_is_follow_wall()) {
+					if (cm_is_navigation()) {
+						map_set_follow_wall(MAP, curr);
+						if (g_trapped_mode == 1)
+							map_set_follow_wall(WFMAP, curr);
+					}
+					if (cm_is_follow_wall()) {
+						map_set_follow_wall(WFMAP, curr);
+					}
+				}
+				else {
+					if (cm_is_exploration())
+						explore_update_map();
+				}
 			}
+			/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && g_passed_path.size() < 5) {
+				ROS_WARN("  {curr,start}_time(%d,%d), g_passed_path.size(%d): ", time(NULL), wf_start_timer, g_passed_path.size());
+			}*/
 		}
+
 		if (g_plan_path.empty() || is_near || rm.isReach() || rm.isStop() || is_time_up || g_trapped_mode == 1) {
 //					set_wheel_speed_pid(rm, speed_left, speed_right);
-			map_set_cleaned(passed_path);
+			map_set_cleaned(g_passed_path);
 			map_set_blocked();
 			map_mark_robot(MAP);
-			if (mt_is_follow_wall())
-				map_set_follow_wall(MAP, curr);
-
 			debug_map(MAP, curr.X, curr.Y);
-//			passed_path.clear();
+			debug_map(WFMAP, curr.X, curr.Y);
+//			g_passed_path.clear();
 			is_found = path_next(curr, g_plan_path, is_reach);
 			MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.front(), g_plan_path);
 			path_display_path_points(g_plan_path);
 			rm.setMt();
-/*		if (mt_is_follow_wall()) {
-				if (cm_is_follow_wall() || g_trapped_mode == 1) {
-//				ROS_INFO("  %d:cm_is_follow_wall() || g_trapped_mode == 1 ", __LINE__);
-					map_set_follow_wall(WFMAP, curr);
-					g_wf_is_reach = wf_is_reach(curr, passed_path);
-				}
-			} else {
-				if (cm_is_exploration())
-				explore_update_map();
-			}*/
+			g_passed_path.clear();
 		}
+
 		if (!is_found)
 			return;
-		cm_move_to(rm,g_plan_path);
+
+		cm_move_to(rm, g_plan_path);
+
 		if (cm_should_self_check())
 			cm_self_check_with_handle();
 	}

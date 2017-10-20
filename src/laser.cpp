@@ -932,82 +932,82 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					dx = 2;
 					dy = 0;
 					*laser_status |= Status_Front_OBS;
-					ROS_INFO("  front middle");
+					ROS_DEBUG("  front middle");
 					break;
 				}
 				case 1 : {
 					dx = 2;
 					dy = 1;
 					*laser_status |= Status_Left_OBS;
-					ROS_INFO("    front left");
+					ROS_DEBUG("    front left");
 					break;
 				}
 				case 2 : {
 					dx = 2;
 					dy = -1;
 					*laser_status |= Status_Right_OBS;
-					ROS_INFO("    front right");
+					ROS_DEBUG("    front right");
 					break;
 				}
 				case 3 : {
 					dx = -2;
 					dy = 0;
-					ROS_INFO("    back middle");
+					ROS_DEBUG("    back middle");
 					break;
 				}
 				case 4 : {
 					dx = -2;
 					dy = 1;
-					ROS_INFO("    back left");
+					ROS_DEBUG("    back left");
 					break;
 				}
 				case 5 : {
 					dx = -2;
 					dy = -1;
-					ROS_INFO("    back right");
+					ROS_DEBUG("    back right");
 					break;
 				}
 				case 6 : {
 					dx = 0;
 					dy = 2;
-					ROS_INFO("    left middle");
+					ROS_DEBUG("    left middle");
 					break;
 				}
 				case 7 : {
 					dx = 1;
 					dy = 2;
-					ROS_INFO("    left front");
+					ROS_DEBUG("    left front");
 					break;
 				}
 				case 8 : {
 					dx = -1;
 					dy = 2;
-					ROS_INFO("    left back");
+					ROS_DEBUG("    left back");
 					break;
 				}
 				case 9 : {
 					dx = 0;
 					dy = -2;
-					ROS_INFO("    right middle");
+					ROS_DEBUG("    right middle");
 					break;
 				}
 				case 10 : {
 					dx = 1;
 					dy = -2;
-					ROS_INFO("    right front");
+					ROS_DEBUG("    right front");
 					break;
 				}
 				case 11 : {
 					dx = -1;
 					dy = -2;
-					ROS_INFO("    right back");
+					ROS_DEBUG("    right back");
 					break;
 				}
 			}
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 			{
-				ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
+				ROS_DEBUG("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
 			}
 			if (is_wall_follow) {

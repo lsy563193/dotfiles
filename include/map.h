@@ -118,7 +118,7 @@ double world_distance(void);
 int16_t rm_angle(int16_t a1, int16_t a2);
 void map_set_follow_wall(uint8_t id, const Cell_t& curr);
 void map_set_cleaned(std::vector<Cell_t>& cells);
-void map_set_follow_wall(std::vector<Cell_t>& cells);
+void map_set_follow_wall(const std::vector<Cell_t>& cells);
 uint32_t map_get_cleaned_area();
 void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state);
 void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState state);

@@ -72,6 +72,7 @@ extern int g_rcon_triggered;
 //extern Cell_t g_target_cell;
 extern bool g_resume_cleaning;
 extern bool g_exploration_home;
+extern std::vector<Cell_t> g_passed_path;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);

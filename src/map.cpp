@@ -484,6 +484,7 @@ Cell_t map_point_to_cell(Point32_t pnt) {
 	Cell_t cell;
 	cell.X = count_to_cell(pnt.X);
 	cell.Y = count_to_cell(pnt.Y);
+	cell.TH = gyro_get_angle();
 	return cell;
 }
 
@@ -1075,48 +1076,25 @@ void map_mark()
 {
 
 }
-void map_set_follow_wall(std::vector<Cell_t>& cells)
+
+/*
+void map_set_follow_wall(const std::vector<Cell_t>& cells)
 {
-	if(cells.empty())
-		return;
-	auto diff = cells.back().X - cells.front().X;
-
 	std::string pri_msg("");
-//	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
-	if (cells.size() < 2)
-		return;
-
-	auto dy = mt_is_left() ? 2 : -2;
-//	if(std::abs(  ranged_angle(  std::abs(gyro_get_angle())-900 )  )< 450)
-//	{
-//		Cell_t cell;
-//		cm_world_to_cell(gyro_get_angle(),CELL_SIZE*dy,0,cell.X,cell.Y);
-//		map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), BLOCKED_CLIFF);
-//	}
 	for (const auto &cell : cells)
 	{
-		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
-	}
-	if(std::abs(diff) <= 4)
-		return;
-	auto min = std::min(cells.front().X, cells.back().X) + 3;
-	auto max = std::max(cells.front().X, cells.back().X) - 3;
-
-	if(min >= max)
-		return;
-
-
-	dy = diff>0 ^ mt_is_left() ? -2 : 2;
-	for (const auto &cell : cells)
-	{
-		if (cell.X >= min && cell.X <= max)
-		{
-			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y + dy), BLOCKED_CLIFF);
-			pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
-		}
+		pri_msg += "(" + std::to_string(cell.X) + "," + std::to_string(cell.Y) + std::to_string(cell.TH) + "),";
 	}
 	ROS_INFO("%s,%d,cells:\033[35m%s\033[0m",__FUNCTION__,__LINE__,pri_msg.c_str());
+
+	auto dy = mt_is_left() ? 2 : -2;
+	int x, y;
+	for (const auto &cell : cells) {
+		cm_world_to_point(cell.TH, CELL_SIZE * cell.Y, 0, &x, &y);
+		map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+	}
 }
+*/
 
 bool map_mark_robot(uint8_t id)
 {
