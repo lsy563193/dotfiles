@@ -638,7 +638,6 @@ int cm_cleaning()
 	g_robot_stuck = false;
 	g_robot_slip = false;
 	g_wf_is_reach = false;
-	ROS_INFO("\033[35menable robot stuck\033[0m");
 	while (ros::ok())
 	{
 		if (g_key_clean_pressed || g_fatal_quit_event || g_charge_detect || g_robot_stuck)
@@ -659,6 +658,7 @@ int cm_cleaning()
 		{
 			if(cm_get() == Clean_Mode_Spot)
 				return 0;
+			g_from_station = 0;//reset this variable which enable charge signal detect
 			uint8_t check_status = cm_check_charger_signal();
 			if(check_status == SEEN_CHARGER)/*---have seen charger signal---*/
 			{
@@ -703,10 +703,11 @@ int cm_cleaning()
 		else if (is_found == 1)//exist target
 		{
 //			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-			if((g_is_reach = cm_move_to(cleaning_path)) == EXIT_CLEAN) {
+//
+			g_is_reach = cm_move_to(cleaning_path);
+			if(g_is_reach  == EXIT_CLEAN) {
 				return -1;
 			}
-
 			if (cm_should_self_check()){
 				// Can not set handler state inside cm_self_check(), because it is actually a universal function.
 				cm_set_event_manager_handler_state(true);
@@ -842,7 +843,7 @@ bool cm_is_continue_go_to_charger()
 {
 	auto way = *g_home_way_it % HOMEWAY_NUM;
 	auto cnt = *g_home_way_it / HOMEWAY_NUM;
-	ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X,g_home.Y,way, cnt);
+	ROS_INFO("%s,%d:g_home(\033[1;46;37m%d,%d\033[0m), way(\033[1;46;37m%d\033[0m), cnt(\033[1;46;37m%d\033[0m) ", __FUNCTION__, __LINE__,g_home.X,g_home.Y,way, cnt);
 	if(cm_go_to_charger() || cnt == 0)
 	{
 		ROS_INFO("\033[1;46;37m" "%s,%d:cm_go_to_charger_ stop " "\033[0m", __FUNCTION__, __LINE__);

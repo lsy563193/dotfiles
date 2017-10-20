@@ -18,10 +18,11 @@ typedef enum {
   BLOCKED_BUMPER = 3,
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
-  BLOCKED_TILT = 6,
-  BLOCKED_SLIP = 7,
-  BLOCKED_ROS_MAP = 8,
-  BLOCKED_BOUNDARY = 9,
+  BLOCKED_LASER = 6,
+  BLOCKED_TILT = 7,
+  BLOCKED_SLIP = 8,
+  BLOCKED_ROS_MAP = 9,
+  BLOCKED_BOUNDARY = 10,
   TARGET_CLEAN = 13,
   TARGET = 14,
   COST_NO = 0,
@@ -111,6 +112,7 @@ uint8_t map_set_rcon();
 uint8_t map_set_cliff();
 uint8_t map_set_tilt();
 uint8_t map_set_slip();
+uint8_t map_set_charge_position(const Cell_t homepoint);
 uint8_t map_set_blocked();
 void map_set_cleaned(const Cell_t& curr);
 

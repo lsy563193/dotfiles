@@ -938,7 +938,8 @@ bool FollowWallRegulator::isSwitch()
 	if(g_robot_slip)
 	{
 		return true;
-	}
+	}	
+
 	return false;
 }
 
@@ -1012,6 +1013,11 @@ bool FollowWallRegulator::_isStop()
 //					ret = true;
 //				}
 			}
+		}
+		CellState state = map_get_cell(MAP,map_get_x_cell(),map_get_y_cell());
+		if( (state == BLOCKED_RCON || state == BLOCKED_TILT) ){
+			mt_set(CM_LINEARMOVE);
+			ret = true;
 		}
 	}
 	return ret;

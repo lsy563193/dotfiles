@@ -447,7 +447,7 @@ uint8_t is_encoder_fail(void);
 
 void set_right_brush_stall(uint8_t R);
 
-void wall_dynamic_base(uint32_t Cy);
+//void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 

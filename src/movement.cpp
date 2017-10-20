@@ -439,7 +439,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Right_Wall_Everage_Value > 300)Right_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for right wall sensor.
 		set_wall_base(1, Right_Wall_Everage_Value);
-//		ROS_ERROR("right_wall_value:%d",Right_Wall_Everage_Value);
+		//ROS_INFO("%s,%d:right_wall_value: \033[31m%d\033[0m",__FUNCTION__,__LINE__,Right_Wall_Everage_Value);
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -1754,8 +1754,12 @@ void reset_rcon_status(void)
 
 uint32_t get_rcon_status()
 {
-	//movement_rcon_status = robot::instance()->getRcon();
-	return movement_rcon_status;
+	extern Cell_t g_stub_cell;
+	if( g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()//check if robot start from charge station
+				&& two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20)
+		return 0;
+	else
+		return movement_rcon_status;
 }
 
 /*----------------------------------------Remote--------------------------------*/
@@ -3380,7 +3384,7 @@ int8_t lidar_bumper_init(const char* device)
 	if(lidar_bumper_fd > 0)
 	{
 		is_lidar_bumper_init = 1;	
-		ROS_INFO("%s,%d,open %s success!,lidar_bumper_fd = %d",__FUNCTION__,__LINE__,buf,lidar_bumper_fd);
+		ROS_INFO("%s,%d,open %s success!",__FUNCTION__,__LINE__,buf);
 		return 1;
 	}
 	else if(lidar_bumper_fd <= 0 )

@@ -533,11 +533,15 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	if (is_found)
 	{
 		int8_t dir = tmp.X > curr.X ? -1 : 1;
+		CellState state =  map_get_cell(MAP,tmp.X,tmp.Y);
+		if(  state == BLOCKED_RCON || state == BLOCKED_TILT )
+			tmp.X +=dir;
 		path.target = tmp;
 		path.cells.clear();
 #if LINEAR_MOVE_WITH_PATH
-		for (auto temp_cell = path.target; temp_cell.X != curr.X; temp_cell.X += dir)
+		for (auto temp_cell = path.target; temp_cell.X != curr.X; temp_cell.X += dir){
 			path.cells.push_front(temp_cell);
+		}
 		// Displaying for debug.
 		list<Cell_t> temp_path;
 		temp_path.push_back(path.cells.front());
@@ -1868,7 +1872,7 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 				auto rm_status = map_get_cell(ROSMAP, cell.X, cell.Y);
 				auto m_status = map_get_cell(MAP, cell.X, cell.Y);
 //				ROS_INFO("\033[1;46;37m" "%s,%d:cell_it(%d,%d), rms(%d),ms(%d)" "\033[0m", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
-				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_OBS) && rm_status == CLEANED){
+				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_LASER) && rm_status == CLEANED){
 					ROS_WARN("%s,%d:cell_it(%d,%d), rms(%d),ms(%d)", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
 					map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
 				}

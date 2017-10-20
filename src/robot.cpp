@@ -520,10 +520,9 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_OBS)
 	{
-		// Blue
-		color_.r = 0.0;
-		color_.g = 0.0;
-		color_.b = 1.0;
+		color_.r = 0.2;
+		color_.g = 0.1;
+		color_.b = 0.5;
 	}
 	else if (type == BLOCKED_BUMPER)
 	{
@@ -544,6 +543,13 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		// White
 		color_.r = 1.0;
 		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_LASER)
+	{
+		//Blue
+		color_.r = 0.0;
+		color_.g = 0.0;
 		color_.b = 1.0;
 	}
 	else if (type == BLOCKED_TILT)

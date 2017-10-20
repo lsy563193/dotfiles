@@ -42,6 +42,9 @@ int16_t xWfRangeMin, xWfRangeMax, yWfRangeMin, yWfRangeMax;
 int16_t xRosRangeMin, xRosRangeMax, yRosRangeMin, yRosRangeMax;
 extern Cell_t g_cell_history[];
 extern uint16_t g_old_dir;
+
+Cell_t g_stub_cell(0,0);
+
 void map_init(uint8_t id) {
 	uint8_t c, d;
 	if (id == MAP) {
@@ -365,8 +368,8 @@ void map_clear_blocks(void) {
 
 	for(c = g_x_min; c < g_x_max; ++c) {
 		for(d = g_y_min; d < g_y_max; ++d) {
-			if(map_get_cell(MAP, c, d) == BLOCKED_OBS || map_get_cell(MAP, c, d) == BLOCKED_BUMPER ||
-							map_get_cell(MAP, c, d) == BLOCKED_CLIFF) {
+			CellState state = map_get_cell(MAP, c, d);
+			if(state == BLOCKED_LASER || state == BLOCKED_BUMPER ||	state == BLOCKED_CLIFF || state  == BLOCKED_OBS) {
 				if(map_get_cell(MAP, c - 1, d) != UNCLEAN && map_get_cell(MAP, c, d + 1) != UNCLEAN &&
 								map_get_cell(MAP, c + 1, d) != UNCLEAN &&
 								map_get_cell(MAP, c, d - 1) != UNCLEAN) {
@@ -682,7 +685,7 @@ uint8_t map_set_obs()
 //				{
 //					ROS_INFO("%s,%d: \033[34m(%d,%d)\033[0m",__FUNCTION__,__LINE__,x,y);
 //				}
-				map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_RCON); //BLOCKED_OBS);
+				map_set_cell(MAP, cell_to_count(x), cell_to_count(y), BLOCKED_OBS);
 				block_count++;
 			}
 		}
@@ -863,7 +866,8 @@ uint8_t map_set_rcon()
 		g_rcon_triggered = 0;
 	if(! rcon_trig)
 		return 0;
-
+	if( g_from_station)
+		return 0;
 	enum {
 			left, fl2, fl1, fr1, fr2, right,
 	};
@@ -935,14 +939,35 @@ uint8_t map_set_rcon()
 	}
 	int32_t x,y;
 	uint8_t block_count = 0;
-	std::string msg = "Cell:";
+	std::string msg("Cells:");
 	for(const auto& d_cell : d_cells) {
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * d_cell.Y, CELL_SIZE * d_cell.X, &x, &y);
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
-		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + ")";
+		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + "),";
 	}
-	ROS_ERROR("%s %d: curr(%d,%d), rcon_trig(%d), mark:%s", __FUNCTION__, __LINE__, map_get_curr_cell().X, map_get_curr_cell().Y, rcon_trig, msg.c_str());
+	ROS_INFO("%s,%d: curr(%d,%d), rcon_trig(%d), mark:\033[32m%s\033[0m", __FUNCTION__, __LINE__, map_get_curr_cell().X,
+							map_get_curr_cell().Y, rcon_trig,msg.c_str() );
 	return block_count;
+}
+
+uint8_t map_set_charge_position(const Cell_t home_point)
+{
+	int offsetx=-2;
+	int offsety=-2;
+	g_stub_cell.X =  home_point.X;
+	g_stub_cell.Y =  home_point.Y;
+	ROS_INFO("%s,%d: set g_stub_cell(%d,%d)",__FUNCTION__,__LINE__,g_stub_cell.X,g_stub_cell.Y);
+	int32_t x,y;
+	std::string msg("");
+	for(int i=0;i<4;i++){//hight
+		for(int j = 0;j<5;j++){//width
+			cm_world_to_point(gyro_get_angle(),CELL_SIZE*(offsety+j+home_point.Y),CELL_SIZE*(offsetx+i+home_point.X),&x,&y); 
+			map_set_cell(MAP,x,y,BLOCKED_RCON);
+			msg+="("+std::to_string(count_to_cell(x))+","+std::to_string(count_to_cell(y))+"),";
+		}
+	}
+	ROS_INFO("%s,%d: set charge stub area:%s",__FUNCTION__,__LINE__,msg.c_str());
+	return 0;
 }
 
 uint8_t map_set_blocked()
@@ -951,8 +976,6 @@ uint8_t map_set_blocked()
 		return 0;
 
 	uint8_t block_count = 0;
-//	ROS_ERROR("----------------map_set_blocked");
-//	map_set_obs();
 	map_set_obs();
 	map_set_laser();
 	block_count += map_set_bumper();
@@ -1004,9 +1027,11 @@ void map_set_follow_wall(uint8_t id, const Cell_t& curr) {
 	auto dy = mt_is_left() ? 2 : -2;
 //	ROS_INFO("%s,%d: mt(%d),dx(%d),dy(%d)", __FUNCTION__, __LINE__, mt_is_left(), dx, dy);
 	int x, y;
-	cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, 0, &x, &y);
-	ROS_INFO("%s,%d: map_fw_curr(%d,%d)", __FUNCTION__, __LINE__, x, y);
-	map_set_cell(id, x, y, BLOCKED_CLIFF);
+	if(!g_from_station){
+		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, 0, &x, &y);
+		ROS_INFO("%s,%d: map_fw_curr(%d,%d)", __FUNCTION__, __LINE__, x, y);
+		map_set_cell(id, x, y, BLOCKED_CLIFF);
+	}
 }
 
 void map_set_cleaned(std::vector<Cell_t>& cells)
@@ -1052,10 +1077,10 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 //			if((! is_follow_y_min && y < min_y) || (is_follow_y_min && y > max_y))
 //				continue;
 			auto status = map_get_cell(MAP, cell.X, y);
-			if (status != BLOCKED_TILT && status != BLOCKED_SLIP)
+			if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
 			{
 				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
-				msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
+				msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + "),";
 			}
 		}
 	}
@@ -1066,8 +1091,10 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-			if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == UNCLEAN){
+			auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
+			if (status == UNCLEAN && status != BLOCKED_RCON){
 				map_set_cell(MAP, x, y, CLEANED);
+				msg += "(" + std::to_string(x) + "," + std::to_string(y) + "),";
 			}
 		}
 	}
@@ -1110,8 +1137,10 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 	{
 		if (cell.X >= min && cell.X <= max)
 		{
-			map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y + dy), BLOCKED_CLIFF);
-			pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
+			if( map_get_cell(MAP, cell.X, cell.Y+dy) != BLOCKED_RCON ){
+				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y + dy), BLOCKED_CLIFF);
+				pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
+			}
 		}
 	}
 	ROS_INFO("%s,%d,cells:\033[35m%s\033[0m",__FUNCTION__,__LINE__,pri_msg.c_str());
@@ -1127,11 +1156,11 @@ bool map_mark_robot(uint8_t id)
 		{
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			auto status = map_get_cell(id, count_to_cell(x), count_to_cell(y));
-			if (status > CLEANED && status < BLOCKED_BOUNDARY){
+			if (status > CLEANED && status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
 				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+				map_set_cell(id, x, y, CLEANED);
 				ret = true;
 			}
-			map_set_cell(id, x, y, CLEANED);
 		}
 	}
 	return ret;
@@ -1148,19 +1177,21 @@ Cell_t cm_update_position(bool is_turn)
 
 void map_set_linear(const Cell_t &start, const Cell_t &stop, CellState state)
 {
-	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
+	ROS_INFO("%s,%d: start(\033[32m%d,%d\033[0m),stop(\033[32m%d,%d\0330m)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
 
 	float slop = (((float) start.Y) - ((float) stop.Y)) / (((float) start.X) - ((float) stop.X));
 	float intercept = ((float) (stop.Y)) - slop * ((float) (stop.X));
 
 	auto start_x = std::min(start.X, stop.X);
 	auto stop_x = std::max(start.X, stop.X);
+	std::string msg("");
 	for (auto x = start_x; x <= stop_x; x++)
 	{
 		auto y = (int16_t) (slop * (stop.X) + intercept);
-		ROS_ERROR("%s,%d: cell(%d,%d)",__FUNCTION__, __LINE__, x, y);
+		msg+="("+std::to_string(x)+","+std::to_string(y)+")";
 		map_set_cell(MAP, cell_to_count(x), cell_to_count(y), state);
 	}
+	ROS_INFO("%s,%d: cells%s",msg.c_str());
 }
 
 void map_set_follow(Cell_t start)
