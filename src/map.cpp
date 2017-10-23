@@ -866,7 +866,7 @@ uint8_t map_set_rcon()
 		g_rcon_triggered = 0;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_station)
+	if( g_from_station && g_in_charge_signal_range)
 		return 0;
 	enum {
 			left, fl2, fl1, fr1, fr2, right,
@@ -1191,7 +1191,7 @@ void map_set_linear(const Cell_t &start, const Cell_t &stop, CellState state)
 		msg+="("+std::to_string(x)+","+std::to_string(y)+")";
 		map_set_cell(MAP, cell_to_count(x), cell_to_count(y), state);
 	}
-	ROS_INFO("%s,%d: cells%s",msg.c_str());
+	ROS_INFO("%s,%d: cells%s",__FUNCTION__,__LINE__,msg.c_str());
 }
 
 void map_set_follow(Cell_t start)

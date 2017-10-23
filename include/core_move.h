@@ -56,6 +56,8 @@ extern uint16_t g_straight_distance;
 extern bool g_is_left_start;
 extern bool g_finish_cleaning_go_home;
 extern bool g_from_station;
+extern bool g_in_charge_signal_range;
+
 extern int g_trapped_mode;
 extern uint32_t g_wf_start_timer;
 extern uint32_t g_wf_diff_timer;

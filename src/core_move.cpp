@@ -81,6 +81,8 @@ Cell_t g_next_cell, g_target_cell;
 //uint8_t	g_remote_go_home = 0;
 bool	g_go_home = false;
 bool	g_from_station = 0;
+bool	g_in_charge_signal_range;
+
 int16_t g_map_gyro_offset = 0;
 // This flag is indicating robot is resuming from low battery go home.
 bool g_resume_cleaning = false;

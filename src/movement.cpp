@@ -1755,9 +1755,17 @@ void reset_rcon_status(void)
 uint32_t get_rcon_status()
 {
 	extern Cell_t g_stub_cell;
-	if( g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()//check if robot start from charge station
-				&& two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20)
-		return 0;
+	extern bool g_in_charge_signal_range;
+	if( g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
+		if(two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20){
+			g_in_charge_signal_range = true;
+			return 0;
+		}
+		else{
+			g_in_charge_signal_range = false;
+			return movement_rcon_status;
+		}
+	}
 	else
 		return movement_rcon_status;
 }
