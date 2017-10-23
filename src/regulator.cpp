@@ -1310,7 +1310,8 @@ bool GoToChargerRegulator::isSwitch()
 	}
 	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
 	{
-		if(no_signal_cnt < 10)
+		extern bool g_charge_turn_connect_fail;
+		if(g_charge_turn_connect_fail && no_signal_cnt < 10)
 		{
 			receive_code = get_rcon_trig();
 			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
@@ -1352,6 +1353,7 @@ bool GoToChargerRegulator::isSwitch()
 		{
 			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			resetGoToChargerVariables();
+			g_charge_turn_connect_fail = false;
 		}
 	}
 	if (go_home_state_now == AWAY_FROM_CHARGER_STATION)

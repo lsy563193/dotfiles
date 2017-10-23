@@ -25,6 +25,7 @@ uint8_t charge_reject_reason = 0;
 time_t charge_plan_confirm_time = time(NULL);
 /* value for saving last charge status */
 uint8_t last_charge_status = 0;
+bool g_charge_turn_connect_fail = false;
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {
@@ -477,7 +478,7 @@ bool charge_turn_connect(void)
 		usleep(50000);
 	}
 	stop_brifly();
-
+	g_charge_turn_connect_fail = true;
 	return false;
 
 }
