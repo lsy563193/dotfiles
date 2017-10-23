@@ -175,7 +175,7 @@ private:
 	uint8_t integration_cycle_;
 	uint32_t tick_;
 	uint8_t turn_speed_;
-	PPTargetType path_;
+//	PPTargetType path_;
 	float odom_x_start = 0;
 	float odom_y_start = 0;
 	double laser_front_distance = DBL_MAX;

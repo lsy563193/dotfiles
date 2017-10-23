@@ -1065,7 +1065,7 @@ static uint8_t g_direct_go = 0;
 
 #else
 
-list <Cell_t> path_points;
+deque <Cell_t> path_points;
 
 /*
  * Give a target point, find the shorest path from the current robot position to the
@@ -1519,15 +1519,15 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 	}
 	else {
 		if (path_points.size() > 3) {
-			list<Cell_t>::iterator it = path_points.begin();
+			auto it = path_points.begin();
 			for (uint16_t i = 0; i < path_points.size() - 3; i++) {
 				ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path_points.size());
-				list<Cell_t>::iterator it_ptr1 = it;
+				auto it_ptr1 = it;
 
-				list<Cell_t>::iterator it_ptr2 = it_ptr1;
+				auto it_ptr2 = it_ptr1;
 				it_ptr2++;
 
-				list<Cell_t>::iterator it_ptr3 = it_ptr2;
+				auto it_ptr3 = it_ptr2;
 				it_ptr3++;
 
 				// Just for protection, in case the iterator overflow. It should not happen under (i < path_points.size() - 3).
@@ -1600,7 +1600,7 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 				it++;
 			}
 		}
-		path_points.reverse();
+		std::reverse(path_points.begin(),path_points.end());
 		path_display_path_points(path_points);
 		path = path_points;
 	}
@@ -1614,22 +1614,22 @@ int path_get_path_points_count()
 	return path_points.size();
 }
 
-list<Cell_t> *path_get_path_points()
-{
-	return &path_points;
-}
+//list<Cell_t> *path_get_path_points()
+//{
+//	return &path_points;
+//}
 
 void path_reset_path_points()
 {
 	path_points.clear();
 }
 
-void path_display_path_points(list<Cell_t> path)
+void path_display_path_points(const deque<Cell_t>& path)
 {
 	std::string     msg = __FUNCTION__;
 
 	msg += " " + std::to_string(__LINE__) + ": ";
-	for (list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
+	for (auto it = path.begin(); it != path.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
 	//msg += "\n";

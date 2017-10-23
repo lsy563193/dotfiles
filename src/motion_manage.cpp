@@ -755,7 +755,7 @@ bool MotionManage::initGoHome(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::list<Cell_t>& path)
+void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::deque<Cell_t>& path)
 {
 	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
@@ -785,7 +785,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, 
 #if LINEAR_MOVE_WITH_PATH
 	if (!path.empty())
 	{
-		for (list<Cell_t>::const_iterator it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
 			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
 
 		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);

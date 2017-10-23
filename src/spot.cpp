@@ -575,10 +575,9 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 		ROS_INFO("\033[36m" "spot.cpp continue clean...""\033[0m");
 		(*target_path).clear();
 		*target_path = target_last_;
-		std::list<Cell_t>::iterator it;
 		std::string msg("rest cells:");
 		/*-------print the rest of cells -----*/
-		for(it = (*target_path).begin();it!=(*target_path).end();it++){
+		for(auto it = (*target_path).begin();it!=(*target_path).end();it++){
 			msg+="("+std::to_string(it->X)+","+std::to_string(it->Y)+")"+"->";
 		}
 		ROS_INFO("\033[36m""%s""\033[0m",msg.c_str());	

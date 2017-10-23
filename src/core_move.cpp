@@ -71,7 +71,7 @@ bool g_rcon_during_go_home = false;
 bool g_rcon_dirction = false;
 uint16_t g_straight_distance;
 PPTargetType g_plan_path;
-std::vector<Cell_t> g_passed_path;
+std::deque<Cell_t> g_passed_path;
 //std::vector<int16_t> g_left_buffer;
 //std::vector<int16_t> g_right_buffer;
 
@@ -449,18 +449,21 @@ void cm_cleaning() {
 		}
 
 		if (g_plan_path.empty() || is_near || rm.isReach() || rm.isStop() || is_time_up || g_trapped_mode == 1) {
+			g_plan_path.empty();
+			ROS_INFO("%s %d:g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
 //					set_wheel_speed_pid(rm, speed_left, speed_right);
 			map_set_cleaned(g_passed_path);
 			map_set_blocked();
 			map_mark_robot(MAP);
-			debug_map(MAP, curr.X, curr.Y);
-			debug_map(WFMAP, curr.X, curr.Y);
+//			debug_map(MAP, curr.X, curr.Y);
+//			debug_map(WFMAP, curr.X, curr.Y);
 //			g_passed_path.clear();
 			is_found = path_next(curr, g_plan_path, is_reach);
-			MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.front(), g_plan_path);
+			MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.back(), g_plan_path);
 			path_display_path_points(g_plan_path);
 			rm.setMt();
 			g_passed_path.clear();
+			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),trapped(%d),",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), g_trapped_mode == 1);
 		}
 
 		if (!is_found)

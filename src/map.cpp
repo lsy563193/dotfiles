@@ -1009,7 +1009,7 @@ void map_set_follow_wall(uint8_t id, const Cell_t& curr) {
 	map_set_cell(id, x, y, BLOCKED_CLIFF);
 }
 
-void map_set_cleaned(std::vector<Cell_t>& cells)
+void map_set_cleaned(std::deque<Cell_t>& cells)
 {
 	if(cells.empty())
 		return;

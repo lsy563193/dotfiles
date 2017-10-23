@@ -32,7 +32,7 @@ typedef struct {
 //	Cell_t	target;
 //	std::list <Cell_t> cells;
 //} PPTargetType;
-typedef std::list <Cell_t> PPTargetType;
+typedef std::deque<Cell_t> PPTargetType;
 typedef enum {
 	USE_ROS,
 	USE_UNCLEAN,

@@ -108,22 +108,33 @@ bool sort_g_targets_y_ascend(PPTargetType a, PPTargetType b)
 }
 
 static std::vector<int>::iterator _gen_home_ways(int size, std::vector<int> &go_home_way_list) {
-	ROS_INFO("%s,%d: go_home_way_list 1:                       2,1,0", __FUNCTION__, __LINE__);
+	/*	ROS_INFO("%s,%d: go_home_way_list 1:                       2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 3: 8,5,    7,4,   6,3,   2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 4: 11,8,5, 10,7,4,9,6,3, 2,1,0",__FUNCTION__, __LINE__);
 	go_home_way_list.resize(size * HOMEWAY_NUM,0);
-//	if(size == 4) 			go_home_way_list = {11,8,5, 10,7,4,9,6,3, 2,1,0};
-//	else if(size == 3)	go_home_way_list = {8,5,    7,4,   6,3,   2,1,0};
-//	else if(size == 2)	go_home_way_list = {5,      4,     3,     2,1,0};
-//	else if(size == 1)	go_home_way_list = {                      2,1,0};
-	std::iota(go_home_way_list.begin(), go_home_way_list.end(),0);
+	if(size == 4) 			go_home_way_list = {11,8,5, 10,7,4,9,6,3, 2,1,0};
+	else if(size == 3)	go_home_way_list = {8,5,    7,4,   6,3,   2,1,0};
+	else if(size == 2)	go_home_way_list = {5,      4,     3,     2,1,0};
+	else if(size == 1)	go_home_way_list = {                      2,1,0};
+
+std::iota(go_home_way_list.begin(), go_home_way_list.end(),0);
 	std::sort(go_home_way_list.begin(), go_home_way_list.end(), [](int x,int y){
 			return (x >= 3 && y >= 3) && (x % 3) < (y % 3);
 	});
 	std::reverse(go_home_way_list.begin(),go_home_way_list.end());
-	std::copy(go_home_way_list.begin(), go_home_way_list.end(),std::ostream_iterator<int>(std::cout, " "));
+	std::copy(go_home_way_list.begin(), go_home_way_list.end(),std::ostream_iterator<int>(std::cout, " "));*/
+
+	ROS_INFO("%s,%d: go_home_way_list 1:                       2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 3: 8,5,    7,4,   6,3,   2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 4: 11,8,5, 10,7,4,9,6,3, 2,1,0",__FUNCTION__, __LINE__);
+	if(size == 4) 			go_home_way_list = {5,8,11, 4,7,10,3,6,9, 2,1,0};
+	else if(size == 3)	go_home_way_list = {5,8,    4,7,   3,6,   2,1,0};
+	else if(size == 2)	go_home_way_list = {5,      4,     3,     2,1,0};
+	else if(size == 1)	go_home_way_list = {                      2,1,0};
 	std::cout << std::endl;
+
 	return go_home_way_list.begin();
 }
 //void path_planning_initialize(int32_t *x, int32_t *y)
@@ -672,7 +683,7 @@ void path_find_target(const Cell_t& curr, PPTargetType& path,const Cell_t& targe
 		path.push_back(tmp);
 	}
 
-	path.reverse();
+	std::reverse(path.begin(), path.end());
 }
 
 bool path_full(const Cell_t& curr, PPTargetType& path)
@@ -840,7 +851,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 	}
 #if DEBUG_MAP
 	// Print for map that contains all targets.
-	debug_map(MAP, g_home_x, g_home_y);
+//	debug_map(MAP, g_home_x, g_home_y);
 #endif
 
 	// Restore the target cells in MAP to unclean.
@@ -1155,8 +1166,8 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
 	// Filter targets in Y+ direction of curr.
 	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-		ROS_INFO("target(%d,%d)", it->front().X, it->front().Y);
-		path_display_path_points(*it);
+//		ROS_INFO("target(%d,%d)", it->front().X, it->front().Y);
+//		path_display_path_points(*it);
 		if (map_get_cell(MAP, it->front().X, it->front().Y - 1) != CLEANED) {
 			continue;
 		}
@@ -1177,7 +1188,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 
 		y_max = it->front().Y;
 		within_range = true;
-		for (list<Cell_t>::iterator i = it->begin(); within_range == true && i != it->end(); ++i) {
+		for (auto i = it->begin(); within_range == true && i != it->end(); ++i) {
 			if (i->Y < curr.Y)
 				// All turning cells should be in Y+ area, so quit it.
 				within_range = false;
@@ -1631,8 +1642,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 					ret = path_target(curr, path);//0 not target, 1,found, -2 trap
 				}
 				ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).",
-								 __FUNCTION__, __LINE__, ret, path.front().X, path.front().Y, path.back().X,
-								 path.back().Y);
+								 __FUNCTION__, __LINE__, ret, path.front().X, path.front().Y, path.back().X, path.back().Y);
 				if (ret == 0) {
 					g_finish_cleaning_go_home = true;
 					cm_check_should_go_home();
