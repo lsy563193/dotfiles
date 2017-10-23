@@ -77,6 +77,9 @@ uint16_t live_led_cnt_for_switch = 0;
 // Lock for odom coordinate
 boost::mutex odom_mutex;
 
+// Lock for g_send_stream
+boost::mutex g_send_stream_mutex;
+
 // Odom coordinate
 float pose_x, pose_y;
 
@@ -85,7 +88,7 @@ int robotbase_init(void)
 	int	serr_ret;
 	int base_ret;
 	int sers_ret;
-	uint8_t	t_buf[2];
+	uint8_t buf[SEND_LEN];
 
 	robotbase_thread_stop = false;
 	send_stream_thread = true;
@@ -95,7 +98,12 @@ int robotbase_init(void)
 		return -1;
 	}
 	set_main_pwr_byte(POWER_ACTIVE);
-	g_send_stream[SEND_LEN-3] = calc_buf_crc8(g_send_stream, SEND_LEN - 3);
+	g_send_stream_mutex.lock();
+	memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
+	g_send_stream_mutex.unlock();
+	uint8_t crc;
+	crc = calc_buf_crc8(buf, SEND_LEN - 3);
+	control_set(SEND_LEN - 3, crc);
 	ROS_INFO("waiting robotbase awake ");
 	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
@@ -147,16 +155,17 @@ void robotbase_deinit(void)
 
 void robotbase_reset_send_stream(void)
 {
+	boost::mutex::scoped_lock(g_send_stream_mutex);
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
-			g_send_stream[i] = 0x0;
+			control_set(i, 0x00);
 		else
-			g_send_stream[i] = 0x64;
+			control_set(i, 0x64);
 	}
-	g_send_stream[0] = 0xaa;
-	g_send_stream[1] = 0x55;
-	g_send_stream[SEND_LEN - 2] = 0xcc;
-	g_send_stream[SEND_LEN - 1] = 0x33;
+	control_set(0, 0xaa);
+	control_set(1, 0x55);
+	control_set(SEND_LEN - 2, 0xcc);
+	control_set(SEND_LEN - 1, 0x33);
 }
 
 void *serial_receive_routine(void *)
@@ -455,7 +464,7 @@ void *serial_send_routine(void*)
 		if (robotbase_led_update_flag)
 			process_led();
 
-		if(!is_flag_set()){
+		//if(!is_flag_set()){
 			/*---pid for wheels---*/
 			extern struct pid_struct left_pid, right_pid;
 			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
@@ -467,14 +476,14 @@ void *serial_send_routine(void*)
 
 			set_left_wheel_speed((uint8_t)fabsf(left_pid.actual_speed));
 			set_right_wheel_speed((uint8_t)fabsf(right_pid.actual_speed));
-			//memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
-			for(int i=0;i<SEND_LEN;i++)
-				buf[i] = g_send_stream[i];
+			g_send_stream_mutex.lock();
+			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
+			g_send_stream_mutex.unlock();
 			buf[CTL_CRC] = calc_buf_crc8(buf, sl);
 			serial_write(SEND_LEN, buf);
-		}
+		//}
 		//reset omni wheel bit
-		if(g_send_stream[CTL_OMNI_RESET] & 0x01)
+		if(control_get(CTL_OMNI_RESET) & 0x01)
 			clear_reset_mobility_step();
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);

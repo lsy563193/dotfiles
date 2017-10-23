@@ -619,6 +619,8 @@ void reset_self_check_vacuum_controler(void);
 
 void control_set(uint8_t type, uint8_t val);
 
+uint8_t control_get(uint8_t seq);
+
 void control_append_crc(void);
 
 void control_stop_all(void);
