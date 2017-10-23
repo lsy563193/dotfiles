@@ -23,8 +23,6 @@
 #include "event_manager.h"
 #include "laser.hpp"
 
-extern uint8_t g_send_stream[SEND_LEN];
-
 static int16_t obs_left_trig_value = 350;
 static int16_t obs_front_trig_value = 350;
 static int16_t obs_right_trig_value = 350;
@@ -2118,7 +2116,7 @@ void set_main_pwr_byte(uint8_t val)
 
 uint8_t get_main_pwr_byte()
 {
-	return g_send_stream[CTL_MAIN_PWR];
+	return control_get(CTL_MAIN_PWR);
 }
 
 void set_clean_tool_power(uint8_t vacuum_val, uint8_t left_brush_val, uint8_t right_brush_val, uint8_t main_brush_val)
@@ -2140,17 +2138,20 @@ void set_clean_tool_power(uint8_t vacuum_val, uint8_t left_brush_val, uint8_t ri
 
 void start_self_check_vacuum(void)
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x02);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
 }
 
 void end_self_check_vacuum(void)
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x04);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x04);
 }
 
 void reset_self_check_vacuum_controler(void)
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] & ~0x06);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
 }
 
 void control_set(uint8_t type, uint8_t val)
@@ -2163,25 +2164,40 @@ void control_set(uint8_t type, uint8_t val)
 	reset_send_flag();
 }
 
+uint8_t control_get(uint8_t seq)
+{
+	uint8_t tmp_data;
+	g_send_stream_mutex.lock();
+	tmp_data = g_send_stream[seq];
+	g_send_stream_mutex.unlock();
+	return tmp_data;
+}
+
 void control_append_crc()
 {
-	set_send_flag();
-	g_send_stream[CTL_CRC] = calc_buf_crc8(g_send_stream, SEND_LEN - 3);
-	reset_send_flag();
+	//set_send_flag();
+	uint8_t tmp_data;
+	uint8_t buf[SEND_LEN];
+	g_send_stream_mutex.lock();
+	memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
+	g_send_stream_mutex.unlock();
+	tmp_data = calc_buf_crc8(buf, SEND_LEN - 3);
+	control_set(CTL_CRC, tmp_data);
+	//reset_send_flag();
 }
 
 void control_stop_all(void)
 {
 	uint8_t i;
-	set_send_flag();
+	//set_send_flag();
 	for (i = 2; i < (SEND_LEN) - 2; i++)
 	{
 		if (i == CTL_MAIN_PWR)
-			g_send_stream[i] = 0x01;
+			control_set(i, 0x01);
 		else
-			g_send_stream[i] = 0x00;
+			control_set(i, 0x00);
 	}
-	reset_send_flag();
+	//reset_send_flag();
 	//g_send_stream[SEND_LEN-3] = calc_buf_crc8(g_send_stream, SEND_LEN-3);
 	//serial_write(SEND_LEN, g_send_stream);
 }
@@ -2198,11 +2214,11 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 	{
 		//Populate dummy.
 		for (int j = 0; j < DUMMY_DOWNLINK_LENGTH; j++)
-			g_send_stream[j + DUMMY_DOWNLINK_OFFSET] = (uint8_t) (rand() % 256);
+			control_set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) (rand() % 256));
 
 		//Populate Sequence number.
 		for (int j = 0; j < SEQUENCE_DOWNLINK_LENGTH; j++)
-			g_send_stream[j + SEQUENCE_DOWNLINK_OFFSET] = (uint8_t) ((sequence_number >> 8 * j) % 256);
+			control_set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) ((sequence_number >> 8 * j) % 256));
 
 		//Populate key.
 #if VERIFY_DEBUG
@@ -2211,7 +2227,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 
 		for (int k = 0; k < KEY_DOWNLINK_LENGTH; k++)
 		{
-			g_send_stream[k + KEY_DOWNLINK_OFFSET] = key[i * KEY_DOWNLINK_LENGTH + k];
+			control_set(k + KEY_DOWNLINK_OFFSET, key[i * KEY_DOWNLINK_LENGTH + k]);
 
 #if VERIFY_DEBUG
 			printf("%02x ", g_send_stream[k + KEY_DOWNLINK_OFFSET]);
@@ -2225,13 +2241,13 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		switch (i)
 		{
 			case 0:
-				g_send_stream[SEND_LEN - 4] = CMD_KEY1;
+				control_set(SEND_LEN - 4, CMD_KEY1);
 				break;
 			case 1:
-				g_send_stream[SEND_LEN - 4] = CMD_KEY2;
+				control_set(SEND_LEN - 4, CMD_KEY2);
 				break;
 			case 2:
-				g_send_stream[SEND_LEN - 4] = CMD_KEY3;
+				control_set(SEND_LEN - 4, CMD_KEY3);
 				break;
 			default:
 
@@ -2247,8 +2263,9 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		{  //200ms (round trip takes at leat 15ms)
 			int counter = 0, ret;
 
-
+			g_send_stream_mutex.lock();
 			memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
+			g_send_stream_mutex.unlock();
 			buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 			serial_write(SEND_LEN, buf);
 
@@ -2305,7 +2322,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 				if (ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK)
 				{  //set finished
 					//printf("Downlink command ACKed!!\n");
-					g_send_stream[CTL_CMD] = 0;                              //clear command byte
+					control_set(CTL_CMD, 0x00);
 					break;
 				}
 			} else
@@ -2369,16 +2386,18 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 				sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
 
 			//Send acknowledge back to MCU.
-			g_send_stream[CTL_CMD] = CMD_ACK;
+			control_set(CTL_CMD, CMD_ACK);
 			for (int k = 0; k < 20; k++)
 			{
+				g_send_stream_mutex.lock();
 				memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
+				g_send_stream_mutex.unlock();
 				buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 				serial_write(SEND_LEN, buf);
 
 				usleep(500);
 			}
-			g_send_stream[CTL_CMD] = 0;
+			control_set(CTL_CMD, 0x00);
 
 #if VERIFY_DEBUG
 			printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -2388,7 +2407,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		}
 		usleep(500);
 	}
-	g_send_stream[CTL_CMD] = 0;
+	control_set(CTL_CMD, 0x00);
 
 #if VERIFY_DEBUG
 	printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -2806,12 +2825,14 @@ void set_mobility_step(uint32_t Steps)
 
 void reset_mobility_step()
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x01);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x01);
 }
 
 void clear_reset_mobility_step()
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] & ~0x01);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte & ~0x01);
 }
 
 uint32_t get_mobility_step()
