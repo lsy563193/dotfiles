@@ -589,4 +589,5 @@ void robotbase_restore_slam_correction()
 	pose_x += robot::instance()->getRobotCorrectionX();
 	pose_y += robot::instance()->getRobotCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
+	ROS_INFO("%s %d: Restore slam correction as x: %f, y: %f, angle: %f.", __FUNCTION__, __LINE__, robot::instance()->getRobotCorrectionX(), robot::instance()->getRobotCorrectionY(), robot::instance()->getRobotCorrectionYaw());
 }

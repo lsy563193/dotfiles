@@ -116,10 +116,19 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
 	lw_vel_ = msg->lw_vel;
 	rw_vel_ = msg->rw_vel;
-
+#if GYRO_DYNAMIC_ADJUSTMENT
+	if (lw_vel_ < 0.01 && rw_vel_ < 0.01)
+	{
+		set_gyro_dynamic_on();
+	} else
+	{
+		set_gyro_dynamic_off();
+	}
+#endif
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
+	//ROS_WARN("%s %d: angle v: %f.", __FUNCTION__, __LINE__, angle_v_);
 
 	lw_crt_ = msg->lw_crt;
 	
@@ -207,9 +216,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
 
 	lbrush_oc_ = msg->lbrush_oc;
-		
+
 	rbrush_oc_ = msg->rbrush_oc;
-	
+
 	mbrush_oc_ = msg->mbrush_oc;
 
 	vacuum_oc_ = msg->vcum_oc;

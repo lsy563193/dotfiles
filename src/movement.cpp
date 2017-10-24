@@ -1196,15 +1196,6 @@ void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p,
 		signed_right_speed *= -1;
 	left_pid.target_speed = (float)signed_left_speed;
 	right_pid.target_speed = (float)signed_right_speed;
-#if GYRO_DYNAMIC_ADJUSTMENT
-	if (Left < 2 && Right < 2)
-	{
-		set_gyro_dynamic_on();
-	} else
-	{
-		set_gyro_dynamic_off();
-	}
-#endif
 }
 void set_left_wheel_speed(uint8_t speed)
 {
