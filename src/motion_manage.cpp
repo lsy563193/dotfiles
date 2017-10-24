@@ -221,6 +221,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		robot::instance()->offsetAngle(180);
 		robot::instance()->startAngle(180);
+		Cell_t home_point(-4,0);
+		map_set_charge_position(home_point);
 	}
 	else
 	{
@@ -241,7 +243,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		}
 		robot::instance()->startAngle(0);
 	}
-
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
 
@@ -559,11 +560,15 @@ bool MotionManage::initNavigationCleaning(void)
 	/*Move back from charge station*/
 	if (is_on_charger_stub()) {
 		ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
+		auto curr = map_get_curr_cell();
+		path_set_home(curr);
+		extern bool g_from_station;
+		g_from_station = 1;
+
 		set_side_brush_pwm(30, 30);
-		// Set i < 7 for robot to move back for approximately 500mm.
-		for (int i = 0; i < 7; i++) {
-			// Move back for distance of 72mm, it takes approximately 0.5s.
-			quick_back(20, 72);
+		int back_segment = (int)MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
+		for (int i = 0; i < back_segment; i++) {
+			quick_back(20,SIGMENT_LEN);
 			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
 				disable_motors();
 				if (g_fatal_quit_event)
@@ -583,13 +588,9 @@ bool MotionManage::initNavigationCleaning(void)
 				return false;
 			}
 		}
-		auto curr = map_get_curr_cell();
-		path_set_home(curr);
 		stop_brifly();
-		extern bool g_from_station;
-		g_from_station = 1;
+		robot::instance()->initOdomPosition();
 	}
-
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);

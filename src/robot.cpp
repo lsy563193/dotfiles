@@ -116,10 +116,19 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
 	lw_vel_ = msg->lw_vel;
 	rw_vel_ = msg->rw_vel;
-
+#if GYRO_DYNAMIC_ADJUSTMENT
+	if (lw_vel_ < 0.01 && rw_vel_ < 0.01)
+	{
+		set_gyro_dynamic_on();
+	} else
+	{
+		set_gyro_dynamic_off();
+	}
+#endif
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
+	//ROS_WARN("%s %d: angle v: %f.", __FUNCTION__, __LINE__, angle_v_);
 
 	lw_crt_ = msg->lw_crt;
 	
@@ -207,9 +216,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
 
 	lbrush_oc_ = msg->lbrush_oc;
-		
+
 	rbrush_oc_ = msg->rbrush_oc;
-	
+
 	mbrush_oc_ = msg->mbrush_oc;
 
 	vacuum_oc_ = msg->vcum_oc;
@@ -520,10 +529,9 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_OBS)
 	{
-		// Blue
-		color_.r = 0.0;
-		color_.g = 0.0;
-		color_.b = 1.0;
+		color_.r = 0.2;
+		color_.g = 0.1;
+		color_.b = 0.5;
 	}
 	else if (type == BLOCKED_BUMPER)
 	{
@@ -544,6 +552,13 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		// White
 		color_.r = 1.0;
 		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_LASER)
+	{
+		//Blue
+		color_.r = 0.0;
+		color_.g = 0.0;
 		color_.b = 1.0;
 	}
 	else if (type == BLOCKED_TILT)

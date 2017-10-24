@@ -29,6 +29,7 @@
 	}
 
 #include "stdint.h"
+#include <pthread.h>
 
 /* Events variables */
 /* The fatal quit event includes any of the following case:
@@ -102,6 +103,9 @@ extern uint8_t g_slip_cnt;
 //extern bool g_lidar_bumper_jam;
 //extern int g_lidar_bumper_cnt;
 
+// laser stuck
+extern bool g_laser_stuck;
+
 typedef enum {
 	EVT_BUMPER_ALL = 0,
 	EVT_BUMPER_LEFT,
@@ -172,6 +176,9 @@ typedef enum {
 	EVT_ROBOT_SLIP,
 
 	EVT_LIDAR_BUMPER,
+
+	EVT_LASER_STUCK,
+
 	EVT_MAX,
 } EventType;
 
@@ -294,6 +301,9 @@ define_em_handler_func(robot_slip)
 
 /* lidar bumper*/
 define_em_handler_func(lidar_bumper)
+
+// Laser stuck
+define_em_handler_func(laser_stuck)
 
 define_em_handler_func(empty)
 

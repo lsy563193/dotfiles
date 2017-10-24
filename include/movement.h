@@ -351,9 +351,9 @@ typedef enum{
 
 //for tilt detct
 #define TILT_COUNT_REACH			50
-#define DIF_TILT_X_VAL				70
-#define DIF_TILT_Y_VAL				70
-#define DIF_TILT_Z_VAL				40
+#define DIF_TILT_X_VAL				170
+#define DIF_TILT_Y_VAL				170
+#define DIF_TILT_Z_VAL				70
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
@@ -370,6 +370,8 @@ typedef enum{
 #define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
+//cliff limit
+#define CLIFF_LIMIT				80
 extern uint32_t g_rcon_status;
 
 extern int16_t g_obs_left_baseline;
@@ -464,7 +466,7 @@ uint8_t is_encoder_fail(void);
 
 void set_right_brush_stall(uint8_t R);
 
-void wall_dynamic_base(uint32_t Cy);
+//void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 
@@ -634,6 +636,8 @@ void reset_self_check_vacuum_controler(void);
 
 void control_set(uint8_t type, uint8_t val);
 
+uint8_t control_get(uint8_t seq);
+
 void control_append_crc(void);
 
 void control_stop_all(void);
@@ -784,4 +788,6 @@ bool is_clean_paused();
 void reset_clean_paused();
 int8_t lidar_bumper_init(const char* device);
 int8_t lidar_bumper_deinit();
+
+bool check_laser_stuck();
 #endif

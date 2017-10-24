@@ -211,11 +211,11 @@ bool check_gyro_stable()
 
 void set_gyro_off()
 {
-	control_set(CTL_GYRO, 0x00);
 	if (!is_gyro_on()){
 		ROS_INFO("gyro stop already");
 		return;
 	}
+	control_set(CTL_GYRO, 0x00);
 	uint8_t count = 0;
 	uint8_t sum = 0;
 
@@ -250,23 +250,25 @@ void set_gyro_dynamic_on(void)
 {
 	if (is_gyro_on())
 	{
-		control_set(CTL_GYRO, 0x03);
+		uint8_t gyro_byte = control_get(CTL_GYRO);
+		control_set(CTL_GYRO, gyro_byte | 0x01);
 	}
-	else
-	{
-		control_set(CTL_GYRO, 0x01);
-	}
+	//else
+	//{
+	//	control_set(CTL_GYRO, 0x01);
+	//}
 }
 
 void set_gyro_dynamic_off(void)
 {
 	if (is_gyro_on())
 	{
-		control_set(CTL_GYRO, 0x02);
+		uint8_t gyro_byte = control_get(CTL_GYRO);
+		control_set(CTL_GYRO, gyro_byte | 0x00);
 	}
-	else
-	{
-		control_set(CTL_GYRO, 0x00);
-	}
+	//else
+	//{
+	//	control_set(CTL_GYRO, 0x00);
+	//}
 }
 #endif

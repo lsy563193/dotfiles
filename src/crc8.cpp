@@ -40,7 +40,7 @@ uint8_t calc_buf_crc8(const uint8_t *inBuf, uint32_t inBufSz)
 {
 	uint8_t		crc_base = 0;
 	uint32_t	i;
-    
+
 	for (i = 0; i < inBufSz; i++) {
 		crc8(&crc_base, inBuf[i]);
 	}

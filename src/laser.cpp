@@ -832,7 +832,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 		{
 			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp));
-			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER);
 		}
 		ret = 1;
 		*laser_status |= obs_status;
@@ -844,7 +844,6 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::LaserScan *scan_range, uint8_t *laser_status, bool is_wall_follow)
 {
 //	ROS_INFO("  %s,%d" __FUNCTION__,__LINE__);
-	ROS_INFO("  checkCellTrigger");
 	double x, y, th;
 	int dx, dy;
 	const	double Y_MIN = 0.140;//0.167
@@ -925,6 +924,8 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 		}
 	}
 
+	std::string msg = "";
+	std::string direction_msg = "";
 	for (int i = 0; i < 12; i++) {
 		if (count_array[i] > 10) {
 			int32_t x_tmp,y_tmp;
@@ -933,84 +934,85 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					dx = 2;
 					dy = 0;
 					*laser_status |= Status_Front_OBS;
-					ROS_INFO("  front middle");
+					direction_msg = "front middle";
 					break;
 				}
 				case 1 : {
 					dx = 2;
 					dy = 1;
 					*laser_status |= Status_Left_OBS;
-					ROS_INFO("    front left");
+					direction_msg = "front left";
 					break;
 				}
 				case 2 : {
 					dx = 2;
 					dy = -1;
 					*laser_status |= Status_Right_OBS;
-					ROS_INFO("    front right");
+					direction_msg = "front right";
 					break;
 				}
 				case 3 : {
 					dx = -2;
 					dy = 0;
-					ROS_INFO("    back middle");
+					direction_msg = "back middle";
 					break;
 				}
 				case 4 : {
 					dx = -2;
 					dy = 1;
-					ROS_INFO("    back left");
+					direction_msg = "back left";
 					break;
 				}
 				case 5 : {
 					dx = -2;
 					dy = -1;
-					ROS_INFO("    back right");
+					direction_msg = "back right";
 					break;
 				}
 				case 6 : {
 					dx = 0;
 					dy = 2;
-					ROS_INFO("    left middle");
+					direction_msg = "left middle";
 					break;
 				}
 				case 7 : {
 					dx = 1;
 					dy = 2;
-					ROS_INFO("    left front");
+					direction_msg = "left front";
 					break;
 				}
 				case 8 : {
 					dx = -1;
 					dy = 2;
-					ROS_INFO("    left back");
+					direction_msg = "left back";
 					break;
 				}
 				case 9 : {
 					dx = 0;
 					dy = -2;
-					ROS_INFO("    right middle");
+					direction_msg = "right middle";
 					break;
 				}
 				case 10 : {
 					dx = 1;
 					dy = -2;
-					ROS_INFO("    right front");
+					direction_msg = "right front";
 					break;
 				}
 				case 11 : {
 					dx = -1;
 					dy = -2;
-					ROS_INFO("    right back");
+					direction_msg = "right back";
 					break;
 				}
 			}
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+			auto cell_status = map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp));
+			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
-				ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				ROS_ERROR("laserMarker");
-				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+				//ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
+				msg += direction_msg + "(" + std::to_string(count_to_cell(x_tmp)) + ", " + std::to_string(count_to_cell(y_tmp)) + ")";
+				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
 			}
 			if (is_wall_follow) {
 				if (i == 0)
@@ -1022,6 +1024,8 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 			}
 		}
 	}
+	if (!msg.empty())
+		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
 	return ret;
 
 }
@@ -1076,41 +1080,41 @@ uint8_t Laser::isRobotSlip()
 	const float acur3 = 0.03;//accuracy 3 ,in meters
 	const float acur4 = 0.01;//accuracy 4 ,in meters
 
-	const float dist1 = 3.5;//range distance 1
+	const float dist1 = 3.5;//range distance 1 ,in meters
 	const float dist2 = 2.5;//range distance 2
 	const float dist3 = 1.5;//range distance 3
 	const float dist4 = 0.5;//range distance 4
 
-	const int COUNT = 6;//stuck count number
-
+	const int COUNT = 6;//count number before trigger stuck
+	const float WSL = 0.04; //wheel speed limit ,in m/s
 	uint16_t same_count = 0;
 	uint8_t ret = 0;
 	uint16_t tol_count = 0;
 	scan2_mutex_.lock();
 	auto tmp_scan_data = laserScanData_2_;
 	scan2_mutex_.unlock();
-	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScan2Ready() && ( absolute(robot::instance()->getLeftWheelSpeed()) >= 0.04 || absolute(robot::instance()->getRightWheelSpeed()) >= 0.04 ) )
+	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScan2Ready() && ( absolute(robot::instance()->getLeftWheelSpeed()) >= WSL || absolute(robot::instance()->getRightWheelSpeed()) >= WSL ) )
 	{
 		seq = tmp_scan_data.header.seq;
-		if(last_ranges_init == 0){
-			last_ranges_init = 2;
+		if(last_ranges_init == 0){//for the first time
+			last_ranges_init = 1;
 			last_ranges = tmp_scan_data.ranges;
 			return ret;
 		}
 		for(int i =0;i<=359;i=i+2){
-			if(tmp_scan_data.ranges[i] < 3.5){
+			if(tmp_scan_data.ranges[i] < dist1){
 				tol_count++;
-				if(laserScanData_2_.ranges[i] >2.5 && laserScanData_2_.ranges[i] < dist1){//
+				if(laserScanData_2_.ranges[i] >dist2 && laserScanData_2_.ranges[i] < dist1){//
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
 				} 
-				else if(laserScanData_2_.ranges[i] >1.5 && laserScanData_2_.ranges[i] < dist2){//
+				else if(laserScanData_2_.ranges[i] >dist3 && laserScanData_2_.ranges[i] < dist2){//
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
 					}
 				}
-				else if(laserScanData_2_.ranges[i] >0.5 && laserScanData_2_.ranges[i] < dist3){//
+				else if(laserScanData_2_.ranges[i] >dist4 && laserScanData_2_.ranges[i] < dist3){//
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
 						same_count++;
 					}

@@ -41,10 +41,10 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 				else
 					y_col+="\033[1;42;37m1\033[0m";
 			}
-			else if(cs == '2'){//bumper
+			else if(cs == '2'){//obs
 				y_col+="\033[1;44;37m2\033[0m";
 			}
-			else if(cs == '3'){//obs
+			else if(cs == '3'){//bumper
 				y_col+="\033[1;41;37m3\033[0m";
 			}
 			else if(cs == '4'){//cliff
@@ -53,13 +53,22 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 			else if(cs == '5'){//rcon
 				y_col+="\033[1;46;37m5\033[0m";
 			}
-			else if(cs == '6'){//tilt
+			else if(cs == '6'){//laser maker
+				y_col+="\033[1;44;37m6\033[0m";
+			}
+			else if(cs == '7'){//tilt
 				y_col+="\033[1;47;30m6\033[0m";
 			}
-			else if(cs == '7'){//slip
+			else if(cs == '8'){//slip
 				y_col+="\033[1;43;37m7\033[0m";
 			}
-			else if(cs == '8'){//bundary
+			else if(cs == '9'){
+				if(std::abs(j%2) == 0)
+					y_col+="\033[1;46;37m1\033[0m";
+				else
+					y_col+="\033[1;42;37m1\033[0m";
+			}
+			else if(cs == 'a'){//bundary
 				y_col+="\033[1;43;37m8\033[0m";
 			}
 			else if(cs == 'e'){//end point

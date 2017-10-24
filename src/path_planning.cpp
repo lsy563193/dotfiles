@@ -110,6 +110,7 @@ bool sort_g_targets_y_ascend(PPTargetType a, PPTargetType b)
 }
 
 static std::vector<int>::iterator _gen_home_ways(int size, std::vector<int> &go_home_way_list) {
+	/*
 	ROS_INFO("%s,%d: go_home_way_list 1:                       2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 3: 8,5,    7,4,   6,3,   2,1,0", __FUNCTION__, __LINE__);
@@ -126,8 +127,24 @@ static std::vector<int>::iterator _gen_home_ways(int size, std::vector<int> &go_
 	std::reverse(go_home_way_list.begin(),go_home_way_list.end());
 	std::copy(go_home_way_list.begin(), go_home_way_list.end(),std::ostream_iterator<int>(std::cout, " "));
 	std::cout << std::endl;
+
+	*/
+	ROS_INFO("%s,%d: go_home_way_list 1: 2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 2: 5, 4, 3, 2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 3: 8,5, 7,4, 6,3, 2,1,0", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: go_home_way_list 4: 11,8,5, 10,7,4,9,6,3, 2,1,0",__FUNCTION__, __LINE__);
+	if(size == 4) 
+		go_home_way_list = {5,8,11, 4,7,10,3,6,9, 2,1,0}; 
+	else if(size == 3)
+		go_home_way_list = {5,8, 4,7, 3,6, 2,1,0};
+   	else if(size == 2)
+		go_home_way_list = {5, 4, 3, 2,1,0};
+	else if(size == 1)
+		go_home_way_list = { 2,1,0};
+	std::cout << std::endl;
 	return go_home_way_list.begin();
 }
+
 //void path_planning_initialize(int32_t *x, int32_t *y)
 void path_planning_initialize()
 {
@@ -533,11 +550,15 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	if (is_found)
 	{
 		int8_t dir = tmp.X > curr.X ? -1 : 1;
+		CellState state =  map_get_cell(MAP,tmp.X,tmp.Y);
+		if(  state == BLOCKED_RCON || state == BLOCKED_TILT )
+			tmp.X +=dir;
 		path.target = tmp;
 		path.cells.clear();
 #if LINEAR_MOVE_WITH_PATH
-		for (auto temp_cell = path.target; temp_cell.X != curr.X; temp_cell.X += dir)
+		for (auto temp_cell = path.target; temp_cell.X != curr.X; temp_cell.X += dir){
 			path.cells.push_front(temp_cell);
+		}
 		// Displaying for debug.
 		list<Cell_t> temp_path;
 		temp_path.push_back(path.cells.front());
@@ -1868,7 +1889,7 @@ int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 				auto rm_status = map_get_cell(ROSMAP, cell.X, cell.Y);
 				auto m_status = map_get_cell(MAP, cell.X, cell.Y);
 //				ROS_INFO("\033[1;46;37m" "%s,%d:cell_it(%d,%d), rms(%d),ms(%d)" "\033[0m", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
-				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_OBS) && rm_status == CLEANED){
+				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_LASER) && rm_status == CLEANED){
 					ROS_WARN("%s,%d:cell_it(%d,%d), rms(%d),ms(%d)", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
 					map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), CLEANED);
 				}
@@ -2087,6 +2108,7 @@ bool is_fobbit_free() {
 	//NOTE: g_home_way_it should last of g_home,for g_homeway_list may empty.
 	return (g_go_home && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
 }
+
 bool fw_is_time_up()
 {
 	return ((uint32_t)difftime(time(NULL), g_wf_start_timer)) > g_wf_diff_timer;

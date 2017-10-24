@@ -111,8 +111,11 @@ extern uint8_t g_receive_stream[RECEI_LEN];
 extern uint8_t g_receive_stream[RECEI_LEN];
 #define SEND_LEN 21
 
-
 #endif
+
+extern uint8_t g_send_stream[SEND_LEN];
+extern boost::mutex g_send_stream_mutex;
+
 extern bool g_is_tilt;
 
 extern uint8_t sendStream[SEND_LEN] ;
