@@ -399,7 +399,7 @@ void cm_cleaning() {
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
 
-	auto is_found = true;
+//	auto is_found = true;
 	while (ros::ok()) {
 
 		if (rm.isExit()) {
@@ -425,6 +425,7 @@ void cm_cleaning() {
 				wf_start_timer = time(NULL);*/
 			if (last != curr) {
 				last = curr;
+				is_time_up = true;
 				if (std::find(g_passed_path.begin(), g_passed_path.end(), curr) == g_passed_path.end()) {
 					g_passed_path.push_back(curr);
 				}
@@ -448,7 +449,8 @@ void cm_cleaning() {
 			}*/
 		}
 
-		if (g_plan_path.empty() || is_near || rm.isReach() || rm.isStop() || is_time_up || g_trapped_mode == 1) {
+		if (g_plan_path.empty() || is_near || rm.isReach() || rm.isStop() || (is_time_up && g_trapped_mode == 1)) {
+			is_time_up = false;
 			g_plan_path.empty();
 			ROS_INFO("%s %d:g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
 //					set_wheel_speed_pid(rm, speed_left, speed_right);
@@ -458,15 +460,15 @@ void cm_cleaning() {
 //			debug_map(MAP, curr.X, curr.Y);
 //			debug_map(WFMAP, curr.X, curr.Y);
 //			g_passed_path.clear();
-			is_found = path_next(curr, g_plan_path, is_reach);
+			path_next(curr, g_plan_path, is_reach);
 			MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.back(), g_plan_path);
 			path_display_path_points(g_plan_path);
 			rm.setMt();
 			g_passed_path.clear();
-			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),trapped(%d),",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), g_trapped_mode == 1);
+			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),trapped(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), g_trapped_mode == 1);
 		}
 
-		if (!is_found)
+		if (!g_plan_path.empty() && g_trapped_mode == 0)
 			return;
 
 		cm_move_to(rm, g_plan_path);

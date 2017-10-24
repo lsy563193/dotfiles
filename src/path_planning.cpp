@@ -957,7 +957,7 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 	path_find_all_targets(curr, map);
 	generate_SPMAP(curr);
 
-	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end();) {
+	for (auto it = g_targets.begin(); it != g_targets.end();) {
 		if (map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_NO ||
 						map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_HIGH) {
 			// Drop the unreachable targets.
@@ -1119,32 +1119,31 @@ int16_t path_is_trapped(const Cell_t& curr, PPTargetType& path)
 {
 
 }
+
+bool is_trapped(const Cell_t& curr, PPTargetType& path) {
+	int escape_cleaned_count = 0;
+	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
+	auto map_cleand_count = map_get_cleaned_area();
+
+	double clean_proportion = 0.0;
+	clean_proportion = (double) escape_cleaned_count / (double) map_cleand_count;
+	ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__, escape_cleaned_count);
+	ROS_WARN("%s %d: escape map_cleand_count(%d)!!", __FUNCTION__, __LINE__, map_cleand_count);
+	if (is_found) {
+		ROS_ERROR("!!!!!!!!!!!!!!!!!!path_dijkstra is found but tarth_is not found!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		clean_proportion = 1;
+	}
+
+	ROS_WARN("%s %d: clean_proportion(%f) ,when prop < 0,8, is trapped!!", __FUNCTION__, __LINE__, clean_proportion);
+	return (clean_proportion < 0.8 || path_escape_trapped(curr) <= 0);
+}
+
 int16_t path_target(const Cell_t& curr, PPTargetType& path)
 {
 	BoundingBox2 map;
 	if (!get_reachable_targets(curr, map)) {
-		ROS_WARN("%s %d: No more target to clean!!", __FUNCTION__, __LINE__);
-		int escape_cleaned_count=0;
-		bool is_found = path_dijkstra(curr,path.back(), escape_cleaned_count);
-		auto map_cleand_count = map_get_cleaned_area();
-
-		double clean_proportion =0.0;
-		clean_proportion = (double)escape_cleaned_count / (double)map_cleand_count;
-		ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__,escape_cleaned_count);
-		ROS_WARN("%s %d: escape map_cleand_count(%d)!!", __FUNCTION__, __LINE__,map_cleand_count);
-		if(is_found)
-		{
-		ROS_ERROR("!!!!!!!!!!!!!!!!!!path_dijkstra is found but tarth_is not found!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		clean_proportion = 1;
-		}
-
-		ROS_WARN("%s %d: clean_proportion(%f) ,when prop < 0,8, is trapped!!", __FUNCTION__, __LINE__,clean_proportion);
-		if (clean_proportion < 0.8 || path_escape_trapped(curr) <= 0) {
-			ROS_WARN("%s %d: Detect trapped!!", __FUNCTION__, __LINE__);
-			return -2;
-		}
-		else
-			return 0;
+		ROS_WARN("%s %d: No more target to clean,check is_trapped()?!!", __FUNCTION__, __LINE__);
+		return -1;
 	}
 
 	generate_path_to_targets(curr);
@@ -1165,7 +1164,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 	uint16_t final_cost = 1000;
 	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
 	// Filter targets in Y+ direction of curr.
-	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+	for (auto it = g_targets.begin(); it != g_targets.end(); ++it) {
 //		ROS_INFO("target(%d,%d)", it->front().X, it->front().Y);
 //		path_display_path_points(*it);
 		if (map_get_cell(MAP, it->front().X, it->front().Y - 1) != CLEANED) {
@@ -1523,6 +1522,38 @@ int16_t path_escape_trapped(const Cell_t& curr)
 	return val;
 }
 
+bool path_nav_target(const Cell_t& curr, PPTargetType& path, const int is_reach)
+{
+	if (g_resume_cleaning && !path_get_continue_target(curr, path))
+				g_resume_cleaning = false;
+
+	if (!g_resume_cleaning) {
+		if (!path_lane_is_cleaned(curr, path, is_reach)) {
+			int16_t ret;
+			if (g_wf_reach_count > 0) {
+				ret = isolate_target(curr, path);
+			}
+			else {
+				ret = path_target(curr, path);//-1 not target, 0 found
+			}
+			if (ret == 0) {
+				g_finish_cleaning_go_home = true;
+				g_no_uncleaned_target = true;
+				cm_check_should_go_home();
+			}
+			if (ret == -2) {
+				if (g_trapped_mode == 0) {
+
+				}
+			}
+		}
+		if (g_trapped_mode == 1 || g_trapped_mode == 2) {
+
+		}
+	}
+	return true;
+}
+
 bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 {
 	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
@@ -1587,48 +1618,26 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 		}
 		else if (cm_is_navigation()) {
 			path.clear();
-			if (g_resume_cleaning && !path_get_continue_target(curr, path))
-				g_resume_cleaning = false;
-
-			if (!g_resume_cleaning) {
-				if (!path_lane_is_cleaned(curr, path, is_reach)) {
-					int16_t ret;
-					if (g_wf_reach_count > 0) {
-						ret = isolate_target(curr, path);
-					} else {
-						ret = path_target(curr, path);//0 not target, 1,found, -2 trap
-					}
-//					ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).",
-//									 __FUNCTION__, __LINE__, ret, path.cells.front().X, path.cells.front().Y, path.cells.back().X,
-//									 path.cells.back().Y);
-					if (ret == 0) {
-						g_finish_cleaning_go_home = true;
-						g_no_uncleaned_target = true;
-						cm_check_should_go_home();
-					}
-					if (ret == -2) {
-						if (g_trapped_mode == 0) {
-							g_trapped_mode = 1;
-							// This led light is for debug.
-							set_led_mode(LED_FLASH, LED_GREEN, 300);
-							mt_set(CM_FOLLOW_LEFT_WALL);
-							g_wf_start_timer = time(NULL);
-							g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
-						}
-					}
-				}
-				if (g_trapped_mode == 1 ||
-						g_trapped_mode == 2) // For cases that robot exit escape status during cm_self_check().
+			if(g_trapped_mode == 0){
+				if(path_nav_target(curr, path, is_reach) && is_trapped(curr, path))
 				{
-					g_wf_reach_count = 0;
-					ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
-					g_trapped_mode = 0;
+					g_trapped_mode = 1;
 					// This led light is for debug.
-					if (cm_is_exploration())
-						set_led_mode(LED_STEADY, LED_ORANGE);
-					else
-						set_led_mode(LED_STEADY, LED_GREEN);
+					set_led_mode(LED_FLASH, LED_GREEN, 300);
+					mt_set(CM_FOLLOW_LEFT_WALL);
+					g_wf_start_timer = time(NULL);
+					g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 				}
+			}
+			else if(is_trapped(curr, path) && path_nav_target(curr, path, is_reach)) {
+				g_wf_reach_count = 0;
+				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
+				g_trapped_mode = 0;
+				// This led light is for debug.
+				if (cm_is_exploration())
+					set_led_mode(LED_STEADY, LED_ORANGE);
+				else
+					set_led_mode(LED_STEADY, LED_GREEN);
 			}
 		}
 		else if (cm_is_exploration()) {
@@ -1655,6 +1664,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 						mt_set(CM_FOLLOW_LEFT_WALL);
 						g_wf_start_timer = time(NULL);
 						g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
+						g_passed_path.push_back({0,0,0});
 					}
 					return true;
 				}
