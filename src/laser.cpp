@@ -24,6 +24,8 @@ boost::mutex scan2_mutex_;
 //float* Laser::last_ranges_ = NULL;
 uint8_t Laser::is_ready_ = 0;
 uint8_t Laser::is_scan2_ready_ = 0;
+uint32_t new_laser_seq;
+
 
 Laser::Laser():nh_()
 {
@@ -109,17 +111,16 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 bool Laser::isNewDataReady()
 {
 	scan_mutex_.lock();
-	static uint32_t seq;
-	if(seq == 0) {
-		seq = laserScanData_.header.seq;
-		scan_mutex_.unlock();
-		return true;
-	}
-	if(laserScanData_.header.seq == seq) {
+	if(new_laser_seq == 0) {
+		new_laser_seq = laserScanData_.header.seq;
 		scan_mutex_.unlock();
 		return false;
 	}
-	seq = laserScanData_.header.seq;
+	if(laserScanData_.header.seq == new_laser_seq) {
+		scan_mutex_.unlock();
+		return false;
+	}
+	new_laser_seq = laserScanData_.header.seq;
 	scan_mutex_.unlock();
 	return true;
 }
@@ -866,11 +867,11 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					count_array[0]++;
 				}
 				//left
-				if (y > 0.056 && y < 0.195) {
+				if (y > 0.056 && y < 0.168) {
 					count_array[1]++;
 				}
 				//right
-				if (y > -0.195 && y < -0.056) {
+				if (y > -0.168 && y < -0.056) {
 					count_array[2]++;
 				}
 			}
@@ -881,11 +882,11 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					count_array[3]++;
 				}
 				//left
-				if (y > 0.056 && y < 0.195) {
+				if (y > 0.056 && y < 0.168) {
 					count_array[4]++;
 				}
 				//right
-				if (y > -0.195 && y < -0.056) {
+				if (y > -0.168 && y < -0.056) {
 					count_array[5]++;
 				}
 			}
@@ -896,12 +897,12 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					count_array[6]++;
 				}
 				//front
-				if (x > 0.056 && x < 0.195) {
+				if (x > 0.056 && x < 0.168) {
 					count_array[7]++;
 				}
 				//back
 				/*
-				if (x > -0.195 && x < -0.056) {
+				if (x > -0.168 && x < -0.056) {
 					count_array[8]++;
 				}*/
 			}
@@ -912,12 +913,12 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					count_array[9]++;
 				}
 				//front
-				if (x > 0.056 && x < 0.195) {
+				if (x > 0.056 && x < 0.168) {
 					count_array[10]++;
 				}
 				//back
 				/*
-				if (x > -0.195 && x < -0.056) {
+				if (x > -0.168 && x < -0.056) {
 					count_array[11]++;
 				}*/
 			}
@@ -1008,6 +1009,7 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 			{
 				ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
+				ROS_ERROR("laserMarker");
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
 			}
 			if (is_wall_follow) {
@@ -1246,6 +1248,29 @@ int Laser::compLaneDistance()
 		ret = 0;
 	return ret;
 }
+void Laser::laserDataFilter(sensor_msgs::LaserScan& laserScanData,double delta){
+	for(int i = 0;i < 360; i++) {
+		if (i == 0) {
+			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[0]) > delta &&
+					fabs(laserScanData.ranges[1] - laserScanData.ranges[0]) > delta) {
+//				ROS_WARN("laserDataNoise[359]:%f,laserDataNoise[0]:%f,laserDataNoise[1]:%f",laserScanData.ranges[359],laserScanData.ranges[0],laserScanData.ranges[1]);
+				laserScanData.ranges[0] = DBL_MAX;
+			}
+		} else if (i == 359) {
+			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[358]) > delta &&
+					fabs(laserScanData.ranges[359] - laserScanData.ranges[0]) > delta) {
+//				ROS_WARN("laserDataNoise[358]:%f,laserDataNoise[359]:%f,laserDataNoise[0]:%f",laserScanData.ranges[358],laserScanData.ranges[359],laserScanData.ranges[0]);
+				laserScanData.ranges[359] = DBL_MAX;
+			}
+		}else {
+			if(fabs(laserScanData.ranges[i+1] - laserScanData.ranges[i]) > delta &&
+				 fabs(laserScanData.ranges[i-1] - laserScanData.ranges[i]) > delta) {
+//				ROS_WARN("laserDataNoise[%d]:%f,laserDataNoise[%d]:%f,laserDataNoise[%d]:%f",i-1,laserScanData.ranges[i-1],i,laserScanData.ranges[i],i+1,laserScanData.ranges[i+1]);
+				laserScanData.ranges[i] = DBL_MAX;
+			}
+		}
+	}
+}
 
 /*
  * @author Alvin Xie
@@ -1254,76 +1279,88 @@ int Laser::compLaneDistance()
  *        range: dectect range
  * @return the distance to the obstacle
  * */
-double Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq)
+bool Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserDistance& laser_distance)
 {
-	double ret = 4;
-	double x,y,th,x1,y1;
-	int angle_from, angle_to;
-	double x_front_min = 4;
-	double x_back_min = 4;
-	double y_front_min = 4;
-	double y_back_min = 4;
-
+	double x,y,th;
+	double x_to_robot,y_to_robot;
 	scan_mutex_.lock();
 	auto tmp_scan_data = laserScanData_;
 	scan_mutex_.unlock();
-
+	if(range < 0.056)
+	{
+		ROS_ERROR("range should be higher than 0.056");
+		return 0;
+	}
 	if (tmp_scan_data.header.seq == seq) {
 		//ROS_WARN("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
 		return 0;
 	}
 	//ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = gyro_get_angle() / 10;
+	laser_distance.front[0] = laser_distance.front[1] = laser_distance.front[2] =
+	laser_distance.back = laser_distance.right = laser_distance.left = 4;
+	this->laserDataFilter(tmp_scan_data,0.02);
+//	laser_filter_pub.publish(tmp_scan_data);
 	for (int i = 0; i < 360; i++) {
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i*1.0 + 180.0;
 			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+			x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
+			y_to_robot = fabs(y) - ROBOT_RADIUS * sin(acos(fabs(x) / ROBOT_RADIUS));
 			//ROS_INFO("x = %lf, y = %lf", x, y);
 			if (dir == 0) {
-				if (fabs(y) < range) {
+				if (y > 0.056 && y <= range) {
 					if (x >= 0){
-						if (fabs(x) <= x_front_min) {
-							x_front_min = fabs(x);
-							ret = x_front_min;
-							//ROS_WARN("x_front_min = %lf",x_front_min);
+						if (x_to_robot < laser_distance.front[0]) {
+							laser_distance.front[0] = x_to_robot;
+						}
+					}
+				}
+				if (y >= -0.056 && y < 0.056) {
+					if (x >= 0){
+						if (x_to_robot <= laser_distance.front[1]) {
+							laser_distance.front[1] = x_to_robot;
+						}
+					}
+				}
+				if (y >= -range && y <= -0.056) {
+					if (x >= 0){
+						if (x_to_robot <= laser_distance.front[2]) {
+							laser_distance.front[2] = x_to_robot;
 						}
 					}
 				}
 			} else if (dir == 1) {
 				if (fabs(y) < range) {
 					if (x < 0){
-						if (fabs(x) <= x_back_min) {
-							x_back_min = fabs(x);
-							ret = x_back_min;
-							//ROS_WARN("x_back_min = %lf", x_back_min);
+						if (x_to_robot < laser_distance.back) {
+							laser_distance.back = x_to_robot;
+							//ROS_WARN("back = %lf", back);
 						}
 					}
 				}
 			} else if (dir == 2) {
 				if (fabs(x) < range) {
-					if (y >= 0){
-						if (fabs(y) <= y_front_min) {
-							y_front_min = fabs(y);
-							ret = y_front_min;
-							//ROS_WARN("y_front_min = %lf",y_front_min);
+					if (y >= 0 && x > 0){
+						if (y_to_robot < laser_distance.left) {
+							laser_distance.left = y_to_robot;
+							//ROS_WARN("left = %lf",left);
 						}
 					}
 				}
 			} else if (dir == 3) {
 				if (fabs(x) < range) {
-					if (y < 0){
-						if (fabs(y) <= y_back_min) {
-							y_back_min = fabs(y);
-							ret = y_back_min;
-							//ROS_WARN("y_back_min = %lf",y_back_min);
+					if (y < 0 && x > 0){
+						if (y_to_robot < laser_distance.right) {
+							laser_distance.right = y_to_robot;
+							//ROS_WARN("right = %lf",right);
 						}
 					}
 				}
 			}
 		}
 	}
-	return ret;
+	return true;
 }

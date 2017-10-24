@@ -357,7 +357,6 @@ void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value) {
 			}
 		}
 	}
-
 }
 
 void map_clear_blocks(void) {

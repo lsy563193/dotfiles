@@ -323,19 +323,49 @@ void set_dir_backward(void)
 	g_wheel_right_direction = BACKWARD;
 }
 
-void correct_laser_distance(double* tmp_laser_distance,float* odom_x_start,float* odom_y_start)
+void set_cell_by_compensate(laserDistance laser_distance)
+{
+	int x_tmp,y_tmp,dx,dy;
+	for(int i = 0;i < 3;i++){
+		if(i == 0){
+			dx = 2;
+			dy = 1;
+		}
+		if(i == 1){
+			dx = 2;
+			dy = 0;
+		}
+		if(i == 2){
+			dx = 2;
+			dy = -1;
+		}
+		if(laser_distance.front[i] < CELL_SIZE * 0.001){
+			ROS_WARN("laser_distance[%d]:%lf",i,laser_distance.front[i]);
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+			{
+				ROS_ERROR("compensate set cell %d",i);
+				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_OBS); //BLOCKED_OBS);
+			}
+		}
+	}
+}
+
+void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start)
 {
 	double tmp = DBL_MAX;
 	static uint32_t seq = 0;
 	if(MotionManage::s_laser->isNewDataReady()) {
-		*tmp_laser_distance = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS,seq);
-//		ROS_ERROR("new:laser=%lf",*tmp_laser_distance);
-	}else if(*tmp_laser_distance == DBL_MAX){
+		MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS,seq,laser_distance);
+//		ROS_ERROR("new:left=%lf, middle=%lf, right=%lf",laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
+	}else if(laser_distance.front[0] == laser_distance.front[1] == laser_distance.front[2]){
 		return;
 	}else{
 		tmp = two_points_distance_double(robot::instance()->getOdomPositionX(),robot::instance()->getOdomPositionY(),*odom_x_start,*odom_y_start);
-		*tmp_laser_distance -= tmp;
-//		ROS_ERROR("old: diff=%lf  laser=%lf",tmp, *tmp_laser_distance);
+		laser_distance.front[0] -= tmp;
+		laser_distance.front[1] -= tmp;
+		laser_distance.front[2] -= tmp;
+//		ROS_ERROR("old: diff=%lf  left=%lf, middle=%lf, right=%lf",tmp,laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
 	}
 	if(tmp != 0) {
 		*odom_x_start = robot::instance()->getOdomPositionX();
@@ -343,6 +373,14 @@ void correct_laser_distance(double* tmp_laser_distance,float* odom_x_start,float
 	} else{
 //		ROS_ERROR("dont update");
 	}
+/*	static uint32_t seq = 0;
+	while(1) {
+		if (MotionManage::s_laser->isNewDataReady()) {
+			MotionManage::s_laser->getObstacleDistance(0, ROBOT_RADIUS, seq, laser_distance);
+			ROS_ERROR("left:%lf ,middle:%lf ,right:%lf", laser_distance.front[0], laser_distance.front[1],
+								laser_distance.front[2]);
+		}
+	}*/
 }
 
 void set_dir_forward(void)
@@ -373,7 +411,8 @@ void wall_dynamic_base(uint32_t Cy)
 	static int32_t Left_Wall_Everage_Value = 0, Right_Wall_Everage_Value = 0;
 	static int32_t Left_Wall_E_Counter = 0, Right_Wall_E_Counter = 0;
 	static int32_t Left_Temp_Wall_Buffer = 0, Right_Temp_Wall_Buffer = 0;
-	double obstacle_distance_right = 0,obstacle_distance_left = 0;
+	laserDistance obstacle_distance_right;
+	laserDistance obstacle_distance_left;
 	static uint32_t  seq_left = 0;
 	static uint32_t  seq_right = 0;
 	// Dynamic adjust for left wall sensor.
@@ -382,20 +421,20 @@ void wall_dynamic_base(uint32_t Cy)
 	Left_Wall_E_Counter++;
 	Left_Wall_Everage_Value = Left_Wall_Sum_Value / Left_Wall_E_Counter;
 
-	obstacle_distance_left = MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS,seq_left);
-	obstacle_distance_right = MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS,seq_right);
-	if(obstacle_distance_left == 0)
-		obstacle_distance_left = tmp_distance_left;
+	MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS,seq_left,obstacle_distance_left);
+	MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS,seq_right,obstacle_distance_right);
+	if(obstacle_distance_left.left == 0)
+		obstacle_distance_left.left = tmp_distance_left;
 	else{
-		tmp_distance_left = obstacle_distance_left;
+		tmp_distance_left = obstacle_distance_left.left;
 	}
-	if(obstacle_distance_right == 0)
-		obstacle_distance_right = tmp_distance_right;
+	if(obstacle_distance_right.right == 0)
+		obstacle_distance_right.right = tmp_distance_right;
 	else{
-		tmp_distance_right = obstacle_distance_right;
+		tmp_distance_right = obstacle_distance_right.right;
 	}
 
-	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
+	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left.left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
 	{
 //		ROS_ERROR("left_reset");
 		Left_Wall_Everage_Value = 0;
@@ -424,7 +463,7 @@ void wall_dynamic_base(uint32_t Cy)
 	Right_Wall_E_Counter++;
 	Right_Wall_Everage_Value = Right_Wall_Sum_Value / Right_Wall_E_Counter;
 
-	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
+	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right.right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
 	{
 //		ROS_ERROR("right_reset");
 		Right_Wall_Everage_Value = 0;

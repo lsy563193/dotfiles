@@ -5,6 +5,7 @@
 #ifndef PP_REGULATOR_BASE_H
 #define PP_REGULATOR_BASE_H
 
+#include <laser.hpp>
 #include <ros/ros.h>
 #include <move_type.h>
 #include <path_planning.h>
@@ -18,6 +19,7 @@
 #define WALL_DISTANCE_LOW_LIMIT 150
 
 extern int16_t g_turn_angle;
+extern uint32_t new_laser_seq;
 #define GO_TO_CHARGER_INIT 0
 #define CHECK_NEAR_CHARGER_STATION 1
 #define AWAY_FROM_CHARGER_STATION 2
@@ -77,6 +79,7 @@ private:
 	int32_t speed_;
 	float distance;
 	float laser_detect_distance;
+	laserDistance laser_back_distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -178,7 +181,7 @@ private:
 	PPTargetType path_;
 	float odom_x_start = 0;
 	float odom_y_start = 0;
-	double laser_front_distance = DBL_MAX;
+	laserDistance laser_distance;
 };
 
 class GoToChargerRegulator: public RegulatorBase{
