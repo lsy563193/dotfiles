@@ -211,11 +211,11 @@ bool check_gyro_stable()
 
 void set_gyro_off()
 {
+	control_set(CTL_GYRO, 0x00);
 	if (!is_gyro_on()){
 		ROS_INFO("gyro stop already");
 		return;
 	}
-	control_set(CTL_GYRO, 0x00);
 	uint8_t count = 0;
 	uint8_t sum = 0;
 
