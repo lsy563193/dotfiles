@@ -100,7 +100,9 @@ private:
 	uint8_t stage_;
 	double wait_sec_;
 	double waiting_start_sec_;
-	bool waiting_finished;
+	bool waiting_finished_;
+	// It will use laser points to get the turn angle for every skip_laser_turn_angle_cnt_ times.
+	uint8_t skip_laser_turn_angle_cnt_;
 };
 
 class TurnSpeedRegulator{
