@@ -438,6 +438,9 @@ struct laserDistance{
 			return this->front[2];
 		return 4;
 	}
+	void reset(){
+		this->front[0] = this->front[1] = this->front[2] = back = left = right = 4;
+	}
 };
 void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start);
 void set_cell_by_compensate(laserDistance laser_distance);

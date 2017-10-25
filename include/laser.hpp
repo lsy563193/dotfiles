@@ -81,6 +81,8 @@ private:
 	std::vector<std::vector<Double_Point> >	Laser_Group;
 	std::vector<std::vector<Double_Point> >	Laser_Group_2nd;
 	std::vector<LineABC>	fit_line;
+	bool isNoiseLast = false;
+	bool isNoiseNow = false;
 	//static float *last_ranges_;
 	ros::Publisher line_marker_pub = nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	ros::Publisher fit_line_marker_pub = nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);

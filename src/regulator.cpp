@@ -701,7 +701,7 @@ bool LinearRegulator::_isStop()
 	uint8_t obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
 
 //	if (cm_is_exploration())
-	if(laser_distance.getFrontMin() < 0.035)
+	if(obs_tmp == 0 && laser_distance.getFrontMin() < 0.035)
 	{
 //	ROS_ERROR("set true,laser_distance:%lf",laser_distance.getFrontMin());
 		set_cell_by_compensate(laser_distance);

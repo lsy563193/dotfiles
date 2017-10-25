@@ -1255,25 +1255,35 @@ int Laser::compLaneDistance()
 void Laser::laserDataFilter(sensor_msgs::LaserScan& laserScanData,double delta){
 	for(int i = 0;i < 360; i++) {
 		if (i == 0) {
-			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[0]) > delta &&
+			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[0]) > delta ||
 					fabs(laserScanData.ranges[1] - laserScanData.ranges[0]) > delta) {
 //				ROS_WARN("laserDataNoise[359]:%f,laserDataNoise[0]:%f,laserDataNoise[1]:%f",laserScanData.ranges[359],laserScanData.ranges[0],laserScanData.ranges[1]);
-				laserScanData.ranges[0] = DBL_MAX;
+				isNoiseNow = true;
+			} else{
+				isNoiseNow = false;
 			}
 		} else if (i == 359) {
-			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[358]) > delta &&
+			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[358]) > delta ||
 					fabs(laserScanData.ranges[359] - laserScanData.ranges[0]) > delta) {
 //				ROS_WARN("laserDataNoise[358]:%f,laserDataNoise[359]:%f,laserDataNoise[0]:%f",laserScanData.ranges[358],laserScanData.ranges[359],laserScanData.ranges[0]);
-				laserScanData.ranges[359] = DBL_MAX;
+				isNoiseNow = true;
+			} else{
+				isNoiseNow = false;
 			}
 		}else {
-			if(fabs(laserScanData.ranges[i+1] - laserScanData.ranges[i]) > delta &&
+			if(fabs(laserScanData.ranges[i+1] - laserScanData.ranges[i]) > delta ||
 				 fabs(laserScanData.ranges[i-1] - laserScanData.ranges[i]) > delta) {
 //				ROS_WARN("laserDataNoise[%d]:%f,laserDataNoise[%d]:%f,laserDataNoise[%d]:%f",i-1,laserScanData.ranges[i-1],i,laserScanData.ranges[i],i+1,laserScanData.ranges[i+1]);
-				laserScanData.ranges[i] = DBL_MAX;
+				isNoiseNow = true;
+			} else{
+				isNoiseNow = false;
 			}
 		}
+		if(isNoiseLast == true)
+			laserScanData.ranges[i-1] = DBL_MAX;
+		isNoiseLast = isNoiseNow;
 	}
+	isNoiseLast = isNoiseNow = false;
 }
 
 /*
@@ -1301,8 +1311,7 @@ bool Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserD
 	}
 	//ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	laser_distance.front[0] = laser_distance.front[1] = laser_distance.front[2] =
-	laser_distance.back = laser_distance.right = laser_distance.left = 4;
+	laser_distance.reset();
 	this->laserDataFilter(tmp_scan_data,0.02);
 //	laser_filter_pub.publish(tmp_scan_data);
 	for (int i = 0; i < 360; i++) {
