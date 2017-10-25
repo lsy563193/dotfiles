@@ -45,6 +45,8 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
+	void pubPointMarker(std::vector<Double_Point> *point);
+
 	//void startShield(void);
 	//void stopShield(void);
 	void lidarShieldDetect(bool sd);
@@ -85,6 +87,7 @@ private:
 	bool isNoiseNow = false;
 	//static float *last_ranges_;
 	ros::Publisher line_marker_pub = nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
+	ros::Publisher point_marker_pub = nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	ros::Publisher fit_line_marker_pub = nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 //	ros::Publisher laser_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("laser_filter",1);
 	visualization_msgs::Marker fit_line_marker;

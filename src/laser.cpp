@@ -1377,3 +1377,38 @@ bool Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserD
 	}
 	return true;
 }
+void Laser::pubPointMarker(std::vector<Double_Point> *point)
+{
+	int points_size;
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = "point_marker";
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.action= 0;//add
+	point_marker.lifetime=ros::Duration(0);
+	point_marker.scale.x = 0.01;
+	point_marker.scale.y = 0.01;
+	point_marker.scale.z = 0.01;
+	point_marker.color.r = 0.0;
+	point_marker.color.g = 1.0;
+	point_marker.color.b = 0.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = "/base_link";
+	point_marker.header.stamp = ros::Time::now();
+	laser_points_.x = 0.0;
+	laser_points_.y = 0.0;
+	laser_points_.z = 0.0;
+
+	if (!(*point).empty()) {
+		for (std::vector<Double_Point>::iterator iter = (*point).begin(); iter != (*point).end(); ++iter) {
+			laser_points_.x = iter->x;
+			laser_points_.y = iter->y;
+			point_marker.points.push_back(laser_points_);
+		}
+		point_marker_pub.publish(point_marker);
+		point_marker.points.clear();
+	} else {
+		point_marker.points.clear();
+		point_marker_pub.publish(point_marker);
+	}
+}
