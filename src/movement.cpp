@@ -17,22 +17,27 @@
 #include "robotbase.h"
 #include "config.h"
 #include "core_move.h"
-#include "wall_follow_slam.h"
 #include "wall_follow_trapped.h"
 #include "wav.h"
 #include "slam.h"
 #include "event_manager.h"
 #include "laser.hpp"
 
-extern uint8_t g_send_stream[SEND_LEN];
-
-static int16_t g_left_obs_trig_value = 500;
-static int16_t g_front_obs_trig_value = 500;
-static int16_t g_right_obs_trig_value = 500;
-volatile int16_t g_obs_trig_value = 800;
+static int16_t obs_left_trig_value = 350;
+static int16_t obs_front_trig_value = 350;
+static int16_t obs_right_trig_value = 350;
+int16_t g_obs_left_baseline = 100;
+int16_t g_obs_front_baseline = 100;
+int16_t g_obs_right_baseline = 100;
+static int16_t cliff_left_trig_value = CLIFF_LIMIT;
+static int16_t cliff_front_trig_value = CLIFF_LIMIT;
+static int16_t cliff_right_trig_value = CLIFF_LIMIT;
+int16_t g_cliff_left_baseline = 100;
+int16_t g_cliff_front_baseline = 100;
+int16_t g_cliff_right_baseline = 100;
 static int16_t g_leftwall_obs_trig_vale = 500;
-uint8_t g_wheel_left_direction = 0;
-uint8_t g_wheel_right_direction = 0;
+uint8_t g_wheel_left_direction = FORWARD;
+uint8_t g_wheel_right_direction = FORWARD;
 static uint8_t g_remote_move_flag = 0;
 static uint8_t g_home_remote_flag = 0;
 uint32_t movement_rcon_status;
@@ -43,6 +48,8 @@ uint32_t g_auto_work_time = 2800;
 uint32_t g_room_work_time = 3600;
 uint8_t g_room_mode = 0;
 uint8_t g_sleep_mode_flag = 0;
+double tmp_distance_right = 0,tmp_distance_left = 0;
+double new_laser_start = 0;
 
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
@@ -63,7 +70,7 @@ static uint8_t g_direction_flag = 0;
 
 volatile uint8_t g_vac_mode;
 volatile uint8_t g_vac_mode_save;
-static uint8_t g_cleaning_mode = 0;
+//static uint8_t g_cleaning_mode = 0;
 static uint8_t g_sendflag = 0;
 static time_t g_start_work_time;
 ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
@@ -99,6 +106,11 @@ bool g_reset_lbrush_oc = false;
 bool g_reset_rbrush_oc = false;
 
 uint8_t g_tilt_status = 0;
+
+// For wheel PID adjustment
+struct pid_argu_struct argu_for_pid = {REG_TYPE_NONE,0,0,0};
+struct pid_struct left_pid = {0,0,0,0,0,0,0,0}, right_pid = {0,0,0,0,0,0,0,0};
+boost::mutex pid_lock;
 
 /*----------------------- Work Timer functions--------------------------*/
 void reset_work_time()
@@ -306,14 +318,83 @@ int32_t get_wall_adc(int8_t dir)
 
 void set_dir_backward(void)
 {
-	g_wheel_left_direction = 1;
-	g_wheel_right_direction = 1;
+	g_wheel_left_direction = BACKWARD;
+	g_wheel_right_direction = BACKWARD;
+}
+
+void set_cell_by_compensate(laserDistance laser_distance)
+{
+	int x_tmp,y_tmp,dx,dy;
+	for(int i = 0;i < 3;i++){
+		if(i == 0){
+			dx = 2;
+			dy = 1;
+		}
+		if(i == 1){
+			dx = 2;
+			dy = 0;
+		}
+		if(i == 2){
+			dx = 2;
+			dy = -1;
+		}
+		if(laser_distance.front[i] < CELL_SIZE * 0.001){
+			ROS_WARN("laser_distance[%d]:%lf",i,laser_distance.front[i]);
+			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+			{
+				ROS_ERROR("compensate set cell %d",i);
+				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
+			}
+		}
+	}
+}
+
+void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start)
+{
+	double tmp = DBL_MAX;
+	static uint32_t seq = 0;
+	if(MotionManage::s_laser->isNewDataReady()) {
+		new_laser_start = ros::Time::now().toSec();
+		MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS,seq,laser_distance);
+//		ROS_ERROR("new:left=%lf, middle=%lf, right=%lf",laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
+	}else if(laser_distance.front[0] == laser_distance.front[1] == laser_distance.front[2]){
+		return;
+	}else{
+		if(ros::Time::now().toSec() - new_laser_start > 0.6) {
+			laser_distance.reset();
+			return;
+		}
+		tmp = two_points_distance_double(robot::instance()->getOdomPositionX(),robot::instance()->getOdomPositionY(),*odom_x_start,*odom_y_start);
+		laser_distance.front[0] -= tmp;
+		laser_distance.front[1] -= tmp;
+		laser_distance.front[2] -= tmp;
+//		ROS_ERROR("old: diff=%lf  left=%lf, middle=%lf, right=%lf",tmp,laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
+	}
+	if(tmp != 0) {
+		*odom_x_start = robot::instance()->getOdomPositionX();
+		*odom_y_start = robot::instance()->getOdomPositionY();
+	} else{
+//		ROS_ERROR("dont update");
+	}
+/*	static uint32_t seq = 0;
+	set_wheel_speed(0,0);
+	while(1) {
+		if (MotionManage::s_laser->isNewDataReady()) {
+			*//*MotionManage::s_laser->getObstacleDistance(0, ROBOT_RADIUS, seq, laser_distance);
+			ROS_ERROR("left:%lf ,middle:%lf ,right:%lf", laser_distance.front[0], laser_distance.front[1],
+								laser_distance.front[2]);*//*
+			LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
+			delay_sec(2);
+			map_reset(MAP);
+		}
+	}*/
 }
 
 void set_dir_forward(void)
 {
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 }
 
 uint8_t is_encoder_fail(void)
@@ -338,15 +419,32 @@ void wall_dynamic_base(uint32_t Cy)
 	static int32_t Left_Wall_Everage_Value = 0, Right_Wall_Everage_Value = 0;
 	static int32_t Left_Wall_E_Counter = 0, Right_Wall_E_Counter = 0;
 	static int32_t Left_Temp_Wall_Buffer = 0, Right_Temp_Wall_Buffer = 0;
-
+	laserDistance obstacle_distance_right;
+	laserDistance obstacle_distance_left;
+	static uint32_t  seq_left = 0;
+	static uint32_t  seq_right = 0;
 	// Dynamic adjust for left wall sensor.
 	Left_Temp_Wall_Buffer = get_wall_adc(0);
 	Left_Wall_Sum_Value += Left_Temp_Wall_Buffer;
 	Left_Wall_E_Counter++;
 	Left_Wall_Everage_Value = Left_Wall_Sum_Value / Left_Wall_E_Counter;
 
-	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20)
+	MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS,seq_left,obstacle_distance_left);
+	MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS,seq_right,obstacle_distance_right);
+	if(obstacle_distance_left.left == 0)
+		obstacle_distance_left.left = tmp_distance_left;
+	else{
+		tmp_distance_left = obstacle_distance_left.left;
+	}
+	if(obstacle_distance_right.right == 0)
+		obstacle_distance_right.right = tmp_distance_right;
+	else{
+		tmp_distance_right = obstacle_distance_right.right;
+	}
+
+	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left.left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
 	{
+//		ROS_ERROR("left_reset");
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -359,6 +457,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Left_Wall_Everage_Value > 300)Left_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for left wall sensor.
 		set_wall_base(0, Left_Wall_Everage_Value);
+//		ROS_ERROR("left_wall_value:%d",Left_Wall_Everage_Value);
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -372,8 +471,9 @@ void wall_dynamic_base(uint32_t Cy)
 	Right_Wall_E_Counter++;
 	Right_Wall_Everage_Value = Right_Wall_Sum_Value / Right_Wall_E_Counter;
 
-	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20)
+	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right.right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
 	{
+//		ROS_ERROR("right_reset");
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -386,6 +486,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Right_Wall_Everage_Value > 300)Right_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for right wall sensor.
 		set_wall_base(1, Right_Wall_Everage_Value);
+		//ROS_INFO("%s,%d:right_wall_value: \033[31m%d\033[0m",__FUNCTION__,__LINE__,Right_Wall_Everage_Value);
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -424,8 +525,8 @@ void quick_back(uint8_t speed, uint16_t distance)
 	saved_x = robot::instance()->getOdomPositionX();
 	saved_y = robot::instance()->getOdomPositionY();
 	// Quickly move back for a distance.
-	g_wheel_left_direction = 1;
-	g_wheel_right_direction = 1;
+	g_wheel_left_direction = BACKWARD;
+	g_wheel_right_direction = BACKWARD;
 	reset_wheel_step();
 	set_wheel_speed(speed, speed);
 	while (sqrtf(powf(saved_x - robot::instance()->getOdomPositionX(), 2) +
@@ -513,8 +614,8 @@ void turn_left(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
@@ -598,8 +699,8 @@ void turn_right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
@@ -652,8 +753,8 @@ void jam_turn_left(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
@@ -707,27 +808,12 @@ void jam_turn_right(uint16_t speed, int16_t angle)
 		usleep(10000);
 		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
 	}
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = FORWARD;
 
 	set_wheel_speed(0, 0);
 
 	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
-}
-
-int32_t get_front_obs(void)
-{
-	return (int32_t) robot::instance()->getObsFront();
-}
-
-int32_t get_left_obs(void)
-{
-	return (int32_t) robot::instance()->getObsLeft();
-}
-
-int32_t get_right_obs(void)
-{
-	return (int32_t) robot::instance()->getObsRight();
 }
 
 uint8_t get_bumper_status(void)
@@ -742,34 +828,118 @@ uint8_t get_bumper_status(void)
 	{
 		Temp_Status |= RightBumperTrig;
 	}
+	if (robot::instance()->getLidarBumper())
+	{
+		//Temp_Status |= LidarBumperTrig;
+		Temp_Status |= AllBumperTrig;
+	}
 	return Temp_Status;
 }
 
 uint8_t get_cliff_status(void)
 {
-	uint8_t Cliff_Status = 0x00;
-	int16_t cl, cr, cf;
-	cl = robot::instance()->getCliffLeft();
-	cr = robot::instance()->getCliffRight();
-	cf = robot::instance()->getCliffFront();
-	if (cl < Cliff_Limit)
+	uint8_t status = 0x00;
+
+	if (get_left_cliff() < get_left_cliff_trig_value())
+		status |= Status_Cliff_Left;
+
+	if (get_front_cliff() < get_front_cliff_trig_value())
+		status |= Status_Cliff_Front;
+
+	if (get_right_cliff() < get_right_cliff_trig_value())
+		status |= Status_Cliff_Right;
+
+	//if (status != 0x00){
+	//	ROS_WARN("%s %d: Return Cliff status:%x.", __FUNCTION__, __LINE__, status);
+	//	beep_for_command(true);
+	//}
+	return status;
+}
+
+//--------------------------------------Cliff Dynamic adjust----------------------
+void cliff_dynamic_base(uint16_t count)
+{
+//	count = 20;
+//	enum {front,left,right};
+	static uint16_t cliff_cnt[] = {0,0,0};
+	static int16_t cliff_sum[] = {0,0,0};
+	const int16_t cliff_dynamic_limit = 500;
+	int16_t* p_cliff_baseline[] = {&g_cliff_front_baseline, &g_cliff_left_baseline, &g_cliff_right_baseline};
+	typedef int16_t(*Func_t)(void);
+	Func_t p_get_cliff[] = {&get_front_cliff, &get_left_cliff, &get_right_cliff};
+//	if(count == 0)
+//		return ;
+	for(int i =0;i<3;i++)
 	{
-		Cliff_Status |= LeftCliffTrig;
+//		if(i == 0)
+//			ROS_WARN("front-------------------------");
+//		if(i == 1)
+//			ROS_WARN("left-------------------------");
+//		if(i == 2)
+//			ROS_WARN("right-------------------------");
+
+		auto p_cliff_baseline_ = p_cliff_baseline[i];
+		auto cliff_get = p_get_cliff[i]();
+
+//		ROS_WARN("cliff_trig_val(%d),cliff_get(%d)", *p_cliff_baseline_, cliff_get);
+		cliff_sum[i] += cliff_get;
+		cliff_cnt[i]++;
+		int16_t cliff_avg = cliff_sum[i] / cliff_cnt[i];
+//		ROS_WARN("cliff_avg(%d), (%d / %d), ",cliff_avg, cliff_sum[i], cliff_cnt[i]);
+		auto diff = abs_minus(cliff_avg , cliff_get);
+		if (diff > 50)
+		{
+//			ROS_WARN("diff = (%d) > 50.", diff);
+			cliff_cnt[i] = 0;
+			cliff_sum[i] = 0;
+		}
+		if (cliff_cnt[i] > count)
+		{
+			cliff_cnt[i] = 0;
+			cliff_sum[i] = 0;
+			cliff_get = (cliff_avg + *p_cliff_baseline_) / 2;
+			if (cliff_get > cliff_dynamic_limit)
+				cliff_get = cliff_dynamic_limit;
+
+			*p_cliff_baseline_ = cliff_get;
+//			if(i == 0)
+//				ROS_WARN("cliff front baseline = %d.", *p_cliff_baseline_);
+//			else if(i == 1)
+//				ROS_WARN("cliff left baseline = %d.", *p_cliff_baseline_);
+//			else if(i == 2)
+//				ROS_WARN("cliff right baseline = %d.", *p_cliff_baseline_);
+		}
 	}
-	if (cr < Cliff_Limit)
-	{
-		Cliff_Status |= RightCliffTrig;
-	}
-	if (cf < Cliff_Limit)
-	{
-		Cliff_Status |= FrontCliffTrig;
-	}
-	/*
-	if (Cliff_Status != 0x00){
-		ROS_WARN("Return Cliff status:%x.", Cliff_Status);
-	}
-	*/
-	return Cliff_Status;
+}
+
+int16_t get_front_cliff_trig_value(void)
+{
+	return cliff_front_trig_value;
+}
+
+int16_t get_left_cliff_trig_value(void)
+{
+	return cliff_left_trig_value;
+}
+
+int16_t get_right_cliff_trig_value(void)
+{
+	return cliff_right_trig_value;
+}
+
+int16_t get_front_cliff(void)
+{
+	return robot::instance()->getCliffFront();
+}
+
+int16_t get_left_cliff(void)
+{
+	return robot::instance()->getCliffLeft();
+}
+
+int16_t get_right_cliff(void)
+{
+	return robot::instance()->getCliffRight();
 }
 
 
@@ -824,8 +994,14 @@ int get_rcon_trig(void)
 	}
 	else if (mt_is_linear()){
 //		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
+		if (cm_is_exploration())
+		{
+			auto rcon_status = get_rcon_status() & RconAll_Home_T;
+			reset_rcon_status();
+			return rcon_status;
+		}
 		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
-		if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
+		else if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
 			reset_rcon_status();
 			return 0;
 		}
@@ -842,97 +1018,6 @@ int get_rcon_trig(void)
 	return 0;
 }
 
-uint8_t cliff_escape(void)
-{
-	uint8_t count = 1;
-	uint8_t cc;
-	while (ros::ok())
-	{
-		cc = get_cliff_status();
-		if (cc)
-		{
-			if (cc == (Status_Cliff_Left | Status_Cliff_Right | Status_Cliff_Front))
-			{
-				return 1;
-			}
-			switch (count++)
-			{
-				case 1:
-					cliff_turn_right(30, 300);
-					break;
-				case 2:
-					cliff_turn_left(30, 300);
-					break;
-				case 3:
-					cliff_turn_right(30, 300);
-					break;
-				case 4:
-					cliff_turn_left(30, 300);
-					break;
-				case 5:
-					move_back();
-					cliff_turn_left(30, 800);
-					break;
-				default:
-					return 1;
-			}
-
-		} else
-			return 0;
-	}
-	return 0;
-}
-
-uint8_t cliff_event(uint8_t event)
-{
-	uint16_t temp_adjust = 0, random_factor = 0;
-	uint8_t d_flag = 0;
-	// There is 50% chance that the temp_adjust = 450.
-	//if(g_left_wheel_step%2)temp_adjust = 450;
-	if (((int) ros::Time::now().toSec()) % 2)temp_adjust = 450;
-	else temp_adjust = 0;
-	// There is 33% chance that the random_factor = 1.
-	//if(g_right_wheel_step%3)random_factor = 1;
-	if (((int) ros::Time::now().toSec()) % 3)random_factor = 1;
-	else random_factor = 0;
-
-	switch (event)
-	{
-		case Status_Cliff_Left:
-			cliff_turn_right(Turn_Speed, temp_adjust + 900);
-			break;
-		case Status_Cliff_Right:
-			cliff_turn_left(Turn_Speed, temp_adjust + 900);
-			d_flag = 1;
-			break;
-		case Status_Cliff_Front:
-			if (random_factor)
-			{
-				cliff_turn_left(Turn_Speed, 1200 + temp_adjust);
-				d_flag = 1;
-			} else cliff_turn_right(Turn_Speed, 1300 + temp_adjust);
-			break;
-		case (Status_Cliff_Left | Status_Cliff_Front):
-			cliff_turn_right(Turn_Speed, 1650 + temp_adjust);
-			break;
-		case (Status_Cliff_Right | Status_Cliff_Front):
-			cliff_turn_left(Turn_Speed, 1650 + temp_adjust);
-			d_flag = 1;
-			break;
-		case (Status_Cliff_Left | Status_Cliff_Front | Status_Cliff_Right):
-			cliff_turn_right(Turn_Speed, 1700);
-			break;
-		case 0:
-			break;
-		default:
-			cliff_turn_left(Turn_Speed, 1800);
-			d_flag = 1;
-			break;
-	}
-	move_forward(30, 30);
-	if (d_flag)return 1;
-	return 0;
-}
 /*-------------------------------Check if at charger stub------------------------------------*/
 bool is_on_charger_stub(void)
 {
@@ -973,40 +1058,201 @@ uint8_t is_move_with_remote(void)
 	return g_remote_move_flag;
 }
 
-uint8_t is_obs_near(void)
+void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd)
 {
-	if (robot::instance()->getObsFront() > (g_front_obs_trig_value - 200))return 1;
-	if (robot::instance()->getObsRight() > (g_right_obs_trig_value - 200))return 1;
-	if (robot::instance()->getObsLeft() > (g_left_obs_trig_value - 200))return 1;
-	return 0;
+	boost::mutex::scoped_lock(pid_lock);
+	argu_for_pid.reg_type = reg_type;
+	argu_for_pid.Kp = Kp;
+	argu_for_pid.Ki = Ki;
+	argu_for_pid.Kd = Kd;
 }
-void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p, float PID_i, float PID_d)
+void wheels_pid(void)
 {
-	//ROS_INFO("Set wheel speed:%d, %d.", Left, Right);
+	boost::mutex::scoped_lock(pid_lock);
+#if 0
+	left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
+	/*---target speed changed, reset err_sum---*/
+	if(left_pid.last_target_speed != left_pid.target_speed)
+		left_pid.delta_sum = 0;
+	left_pid.delta_sum += left_pid.delta;
 
-	Left = Left < RUN_TOP_SPEED ? Left : RUN_TOP_SPEED;
-	Right = Right < RUN_TOP_SPEED ? Right : RUN_TOP_SPEED;
+	/*---pid---*/
+	left_pid.variation = argu_for_pid.Kp*left_pid.delta + argu_for_pid.Ki*left_pid.delta_sum + argu_for_pid.Kd*(left_pid.delta - left_pid.delta_last);
+	left_pid.actual_speed += left_pid.variation;
 
-	set_left_wheel_speed(Left);
-	set_right_wheel_speed(Right);
-#if GYRO_DYNAMIC_ADJUSTMENT
-	if (abs(Left - Right) > 1)
+	/*---update status---*/
+	left_pid.last_target_speed = left_pid.target_speed;
+	left_pid.delta_last = left_pid.delta;
+
+	right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
+	/*---target speed changed, reset err_sum---*/
+	if(right_pid.last_target_speed != right_pid.target_speed)
+		right_pid.delta_sum = 0;
+	right_pid.delta_sum += right_pid.delta;
+
+	/*---pid---*/
+	right_pid.variation = argu_for_pid.Kp*right_pid.delta + argu_for_pid.Ki*right_pid.delta_sum + argu_for_pid.Kd*(right_pid.delta - right_pid.delta_last);
+	right_pid.actual_speed += right_pid.variation;
+
+	/*---update status---*/
+	right_pid.last_target_speed = right_pid.target_speed;
+	right_pid.delta_last = right_pid.delta;
+#else
+	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
-		set_gyro_dynamic_on();
-	} else
-	{
-		set_gyro_dynamic_off();
+#if 1
+		if(argu_for_pid.reg_type == REG_TYPE_BACK)
+		{
+			/*---brake when turn to back regulator---*/
+			left_pid.actual_speed = 0;
+			right_pid.actual_speed = 0;
+		}
+		else
+#endif
+		{
+			//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
+			if (left_pid.actual_speed < 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) >= -6 ? left_pid.actual_speed : floor(left_pid.actual_speed / 10.0);
+			else if (left_pid.actual_speed > 0)
+				left_pid.actual_speed -= static_cast<int8_t>(left_pid.actual_speed) <= 6 ? left_pid.actual_speed : ceil(left_pid.actual_speed / 10.0);
+			if (right_pid.actual_speed < 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) >= -6 ? right_pid.actual_speed : floor(right_pid.actual_speed / 10.0);
+			else if (right_pid.actual_speed > 0)
+				right_pid.actual_speed -= static_cast<int8_t>(right_pid.actual_speed) <= 6 ? right_pid.actual_speed : ceil(right_pid.actual_speed / 10.0);
+		}
+
+		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
+		{
+			ROS_INFO("%s %d: Update the last_reg_type.", __FUNCTION__, __LINE__);
+			left_pid.actual_speed = 0;
+			right_pid.actual_speed = 0;
+			left_pid.last_reg_type = right_pid.last_reg_type = argu_for_pid.reg_type;
+		}
 	}
+	else if(argu_for_pid.reg_type == REG_TYPE_NONE || argu_for_pid.reg_type == REG_TYPE_WALLFOLLOW)
+	{
+		left_pid.actual_speed = left_pid.target_speed;
+		right_pid.actual_speed = right_pid.target_speed;
+		left_pid.last_reg_type = right_pid.last_reg_type = argu_for_pid.reg_type;
+	}
+	else
+	{
+	#if 0
+		/*---if one of the wheels should change direction, set both target_speed to 0 first---*/
+		if((left_pid.actual_speed * left_pid.target_speed < 0) || (right_pid.actual_speed * right_pid.target_speed < 0))
+		{
+			left_pid.target_speed = 0;
+			right_pid.target_speed = 0;
+		}
+		left_pid.variation = left_pid.target_speed - left_pid.actual_speed;
+		right_pid.variation = right_pid.target_speed - right_pid.actual_speed;
+		/*---set variation limit---*/
+		float variation_limit = 0;
+		if(argu_for_pid.reg_type == REG_TYPE_LINEAR)
+			variation_limit = 1;
+		else if(argu_for_pid.reg_type == REG_TYPE_CURVE)
+			variation_limit = 8;
+		else if(argu_for_pid.reg_type == REG_TYPE_TURN)
+			variation_limit = 4;
+		else if(argu_for_pid.reg_type == REG_TYPE_BACK)
+			variation_limit = 20;
+		/*---adjust speed---*/
+		if(left_pid.variation > variation_limit)left_pid.variation = variation_limit;
+		else if(left_pid.variation < -variation_limit)left_pid.variation = -variation_limit;
+		if(right_pid.variation > variation_limit)right_pid.variation = variation_limit;
+		else if(right_pid.variation < -variation_limit)right_pid.variation = -variation_limit;
+
+		left_pid.actual_speed += left_pid.variation;
+		right_pid.actual_speed += right_pid.variation;
+	#endif
+		if(fabsf(left_pid.actual_speed) <= 6)
+		{
+			if(left_pid.target_speed > 0)
+				left_pid.actual_speed = (left_pid.target_speed > 7) ? 7 : left_pid.target_speed;
+			else
+				left_pid.actual_speed = (left_pid.target_speed < -7) ? -7 : left_pid.target_speed;
+		}
+		else if(fabsf(left_pid.actual_speed) <= 15)
+		{
+			// For low actual speed cases.
+			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
+			if(left_pid.delta > 0)
+				left_pid.actual_speed += left_pid.actual_speed > 0 ? 1 : 0.5;
+			else if(left_pid.delta < 0)
+				left_pid.actual_speed -= left_pid.actual_speed < 0 ? 1 : 0.5;
+		}
+		else if (fabsf(left_pid.target_speed) <= 10)
+		{
+			// For high actual speed cases.
+			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
+			if(left_pid.delta > 0)
+				left_pid.actual_speed += 4;
+			else if(left_pid.delta < 0)
+				left_pid.actual_speed -= 4;
+		}
+		else
+			left_pid.actual_speed = left_pid.target_speed;
+
+		if(fabsf(right_pid.actual_speed) <= 6)
+		{
+			if(right_pid.target_speed > 0)
+				right_pid.actual_speed = (right_pid.target_speed > 7) ? 7 : right_pid.target_speed;
+			else
+				right_pid.actual_speed = (right_pid.target_speed < -7) ? -7 : right_pid.target_speed;
+		}
+		else if(fabsf(right_pid.actual_speed) <= 15)
+		{
+			// For low actual speed cases.
+			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
+			if(right_pid.delta > 0)
+				right_pid.actual_speed += right_pid.actual_speed > 0 ? 1 : 0.5;
+			else if(right_pid.delta < 0)
+				right_pid.actual_speed -= right_pid.actual_speed < 0 ? 1 : 0.5;
+		}
+		else if (fabsf(right_pid.target_speed) <= 10)
+		{
+			// For high actual speed cases.
+			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
+			if(right_pid.delta > 0)
+				right_pid.actual_speed += 4;
+			else if(right_pid.delta < 0)
+				right_pid.actual_speed -= 4;
+		}
+		else
+			right_pid.actual_speed = right_pid.target_speed;
+
+		if(left_pid.actual_speed > RUN_TOP_SPEED)left_pid.actual_speed = (int8_t)RUN_TOP_SPEED;
+		else if(left_pid.actual_speed < -RUN_TOP_SPEED)left_pid.actual_speed = -(int8_t)RUN_TOP_SPEED;
+		if(right_pid.actual_speed > RUN_TOP_SPEED)right_pid.actual_speed = (int8_t)RUN_TOP_SPEED;
+		else if(right_pid.actual_speed < -RUN_TOP_SPEED)right_pid.actual_speed = -(int8_t)RUN_TOP_SPEED;
+	}
+	//ROS_INFO("%s %d: real speed: %f, %f, target speed: %f, %f, reg_type: %d.", __FUNCTION__, __LINE__, left_pid.actual_speed, right_pid.actual_speed, left_pid.target_speed, right_pid.target_speed, argu_for_pid.reg_type);
+
+	/*---update status---*/
+	left_pid.last_target_speed = left_pid.target_speed;
+	right_pid.last_target_speed = right_pid.target_speed;
 #endif
 }
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p, float PID_i, float PID_d)
+{
+	int8_t signed_left_speed = (int8_t)Left;
+	int8_t signed_right_speed = (int8_t)Right;
+	set_argu_for_pid(reg_type, PID_p, PID_i, PID_d);
 
+	if(g_wheel_left_direction == BACKWARD)
+		signed_left_speed *= -1;
+	if(g_wheel_right_direction == BACKWARD)
+		signed_right_speed *= -1;
+	left_pid.target_speed = (float)signed_left_speed;
+	right_pid.target_speed = (float)signed_right_speed;
+}
 void set_left_wheel_speed(uint8_t speed)
 {
 	int16_t l_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	l_speed = (int16_t) (speed * SPEED_ALF);
 	g_left_wheel_speed = l_speed;
-	if (g_wheel_left_direction == 1)
+	if (g_wheel_left_direction == BACKWARD)
 	{
 		l_speed |= 0x8000;
 		g_left_wheel_speed *= -1;
@@ -1022,7 +1268,7 @@ void set_right_wheel_speed(uint8_t speed)
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	r_speed = (int16_t) (speed * SPEED_ALF);
 	g_right_wheel_speed = r_speed;
-	if (g_wheel_right_direction == 1)
+	if (g_wheel_right_direction == BACKWARD)
 	{
 		r_speed |= 0x8000;
 		g_right_wheel_speed *= -1;
@@ -1124,7 +1370,7 @@ uint8_t self_check(uint8_t Check_Code)
 	uint8_t Right_Wheel_Slow = 0;
 
 /*
-	if(get_clean_mode() == Clean_Mode_Navigation)
+	if(cm_is_navigation())
 		cm_move_back_(COR_BACK_20MM);
 	else
 		quick_back(30,20);
@@ -1326,7 +1572,7 @@ uint8_t check_bat_full(void)
 uint8_t check_bat_ready_to_clean(void)
 {
 	uint16_t battery_limit;
-	if (get_clean_mode() == Clean_Mode_Charging)
+	if (cm_get() == Clean_Mode_Charging)
 	{
 		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE + 60;
 	} else
@@ -1342,10 +1588,10 @@ uint8_t check_bat_ready_to_clean(void)
 	return 0;
 }
 
-uint8_t get_clean_mode(void)
-{
-	return g_cleaning_mode;
-}
+//uint8_t cm_get(void)
+//{
+//	return g_cleaning_mode;
+//}
 
 void set_vacmode(uint8_t mode, bool is_save)
 {
@@ -1397,17 +1643,16 @@ void set_vac_speed(void)
 	}
 }
 
-/*--------------------------------------Obs Dynamic adjust----------------------*/
+//--------------------------------------Obs Dynamic adjust----------------------
 void obs_dynamic_base(uint16_t count)
 {
 //	count = 20;
 //	enum {front,left,right};
-	static uint32_t obs_cnt[] = {0,0,0};
+	static uint16_t obs_cnt[] = {0,0,0};
 	static int32_t obs_sum[] = {0,0,0};
-	const int16_t OBS_DIFF = 350;
-	const int16_t LIMIT_LOW = 100;
-	int16_t* p_obs_trig_value[] = {&g_front_obs_trig_value,&g_left_obs_trig_value,&g_right_obs_trig_value};
-	typedef int32_t(*Func_t)(void);
+	const int16_t obs_dynamic_limit = 2000;
+	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
+	typedef int16_t(*Func_t)(void);
 	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
 //	if(count == 0)
 //		return ;
@@ -1420,18 +1665,18 @@ void obs_dynamic_base(uint16_t count)
 //		if(i == 2)
 //			ROS_WARN("right-------------------------");
 
-		auto p_obs_trig_val = p_obs_trig_value[i];
+		auto p_obs_baseline_ = p_obs_baseline[i];
 		auto obs_get = p_get_obs[i]();
 
-//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_trig_val, obs_get);
+//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_baseline_, obs_get);
 		obs_sum[i] += obs_get;
 		obs_cnt[i]++;
-		auto obs_avg = obs_sum[i] / obs_cnt[i];
+		int16_t obs_avg = obs_sum[i] / obs_cnt[i];
 //		ROS_WARN("obs_avg(%d), (%d / %d), ",obs_avg, obs_sum[i], obs_cnt[i]);
 		auto diff = abs_minus(obs_avg , obs_get);
 		if (diff > 50)
 		{
-//			ROS_WARN("diff = (%d) > 50.", diff);
+//			ROS_WARN("i = %d, diff = (%d) > 50.", i, diff);
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
 		}
@@ -1439,97 +1684,65 @@ void obs_dynamic_base(uint16_t count)
 		{
 			obs_cnt[i] = 0;
 			obs_sum[i] = 0;
-			obs_get = (obs_avg + *p_obs_trig_val - OBS_DIFF) / 2;
-			if (obs_get < LIMIT_LOW)
-				obs_get = LIMIT_LOW;
+			obs_get = obs_avg / 2 + *p_obs_baseline_;
+			if (obs_get > obs_dynamic_limit)
+				obs_get = obs_dynamic_limit;
 
-			*p_obs_trig_val = obs_get + OBS_DIFF;
+			*p_obs_baseline_ = obs_get;
 //			if(i == 0)
-//				ROS_WARN("obs front = %d.", g_front_obs_trig_value);
+//				ROS_WARN("obs front baseline = %d.", *p_obs_baseline_);
 //			else if(i == 1)
-//				ROS_WARN("obs left = %d.", g_left_obs_trig_value);
+//				ROS_WARN("obs left baseline = %d.", *p_obs_baseline_);
 //			else if(i == 2)
-//				ROS_WARN("obs right = %d.", g_right_obs_trig_value);
+//				ROS_WARN("obs right baseline = %d.", *p_obs_baseline_);
 		}
 	}
 }
 
-int16_t get_front_obs_value(void)
+int16_t get_front_obs_trig_value(void)
 {
-	return g_front_obs_trig_value + 1700;
+	return obs_front_trig_value;
 }
 
-int16_t get_left_obs_value(void)
+int16_t get_left_obs_trig_value(void)
 {
-	return g_left_obs_trig_value + 200;
+	return obs_left_trig_value;
 }
 
-int16_t get_right_obs_value(void)
+int16_t get_right_obs_trig_value(void)
 {
-	return g_right_obs_trig_value + 200;
+	return obs_right_trig_value;
 }
 
-uint8_t is_wall_obs_near(void)
+int16_t get_front_obs(void)
 {
-	if (robot::instance()->getObsFront() > (g_front_obs_trig_value + 500))
-	{
-		return 1;
-	}
-	if (robot::instance()->getObsRight() > (g_right_obs_trig_value + 500))
-	{
-		return 1;
-	}
-	if (robot::instance()->getObsLeft() > (g_front_obs_trig_value + 1000))
-	{
-		return 1;
-	}
-	if (robot::instance()->getLeftWall() > (g_leftwall_obs_trig_vale + 500))
-	{
-		return 1;
-	}
-	return 0;
+	return robot::instance()->getObsFront();
 }
 
-void adjust_obs_value(void)
+int16_t get_left_obs(void)
 {
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
-		g_front_obs_trig_value += 800;
-	if (robot::instance()->getObsLeft() > g_left_obs_trig_value)
-		g_left_obs_trig_value += 800;
-	if (robot::instance()->getObsRight() > g_right_obs_trig_value)
-		g_right_obs_trig_value += 800;
+	return robot::instance()->getObsLeft();
 }
 
-void reset_obst_value(void)
+int16_t get_right_obs(void)
 {
-	g_left_obs_trig_value = robot::instance()->getObsFront() + 1000;
-	g_front_obs_trig_value = robot::instance()->getObsLeft() + 1000;
-	g_right_obs_trig_value = robot::instance()->getObsRight() + 1000;
+	return robot::instance()->getObsRight();
 }
 
-uint8_t spot_obs_status(void)
+uint8_t get_obs_status(int16_t left_obs_offset, int16_t front_obs_offset, int16_t right_obs_offset)
 {
 	uint8_t status = 0;
-	if (robot::instance()->getObsLeft() > 1000)status |= Status_Left_OBS;
-	if (robot::instance()->getObsRight() > 1000)status |= Status_Right_OBS;
-	if (robot::instance()->getObsFront() > 1500)status |= Status_Front_OBS;
+
+	if (get_left_obs() > get_left_obs_trig_value() + left_obs_offset)
+		status |= Status_Left_OBS;
+
+	if (get_front_obs() > get_front_obs_trig_value() + front_obs_offset)
+		status |= Status_Front_OBS;
+
+	if (get_right_obs() > get_right_obs_trig_value() + right_obs_offset)
+		status |= Status_Right_OBS;
+
 	return status;
-}
-
-uint8_t get_obs_status(void)
-{
-	uint8_t Status = 0;
-
-	if (robot::instance()->getObsLeft() > g_left_obs_trig_value)
-		Status |= Status_Left_OBS;
-
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value)
-		Status |= Status_Front_OBS;
-
-	if (robot::instance()->getObsRight() > g_right_obs_trig_value)
-		Status |= Status_Right_OBS;
-
-	return Status;
 }
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
@@ -1579,8 +1792,20 @@ void reset_rcon_status(void)
 
 uint32_t get_rcon_status()
 {
-	//movement_rcon_status = robot::instance()->getRcon();
-	return movement_rcon_status;
+	extern Cell_t g_stub_cell;
+	extern bool g_in_charge_signal_range;
+	if( g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
+		if(two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20){
+			g_in_charge_signal_range = true;
+			return 0;
+		}
+		else{
+			g_in_charge_signal_range = false;
+			return movement_rcon_status;
+		}
+	}
+	else
+		return movement_rcon_status;
 }
 
 /*----------------------------------------Remote--------------------------------*/
@@ -1657,15 +1882,15 @@ uint8_t check_bat_set_motors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint3
 void set_dir_left(void)
 {
 	set_direction_flag(Direction_Flag_Left);
-	g_wheel_left_direction = 1;
-	g_wheel_right_direction = 0;
+	g_wheel_left_direction = BACKWARD;
+	g_wheel_right_direction = FORWARD;
 }
 
 void set_dir_right(void)
 {
 	set_direction_flag(Direction_Flag_Right);
-	g_wheel_left_direction = 0;
-	g_wheel_right_direction = 1;
+	g_wheel_left_direction = FORWARD;
+	g_wheel_right_direction = BACKWARD;
 }
 
 void set_led(uint16_t G, uint16_t R)
@@ -1682,7 +1907,7 @@ void stop_brifly(void)
 	//ROS_INFO("%s %d: stopping robot.", __FUNCTION__, __LINE__);
 	do
 	{
-		set_wheel_speed(0, 0);
+		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
 		usleep(15000);
 		//ROS_INFO("%s %d: linear speed: (%f, %f, %f)", __FUNCTION__, __LINE__,
 		//	robot::instance()->getLinearX(), robot::instance()->getLinearY(), robot::instance()->getLinearZ());
@@ -1763,7 +1988,7 @@ uint8_t stop_event(void)
 		{
 			ROS_WARN("Touch status == 1");
 #if MANUAL_PAUSE_CLEANING
-			if (get_clean_mode() == Clean_Mode_Navigation)
+			if (cm_is_navigation())
 				robot::instance()->setManualPause();
 #endif
 			reset_touch();
@@ -1774,7 +1999,7 @@ uint8_t stop_event(void)
 			ROS_WARN("remote_key clean.");
 			reset_rcon_remote();
 #if MANUAL_PAUSE_CLEANING
-			if (get_clean_mode() == Clean_Mode_Navigation)
+			if (cm_is_navigation())
 				robot::instance()->setManualPause();
 #endif
 			g_stop_event_status = 2;
@@ -1868,10 +2093,10 @@ uint8_t is_water_tank(void)
 }
 
 
-void set_clean_mode(uint8_t mode)
-{
-	g_cleaning_mode = mode;
-}
+//void cm_set(uint8_t mode)
+//{
+//	g_cleaning_mode = mode;
+//}
 
 void beep(uint8_t Sound_Code, int Sound_Time_Ms, int Silence_Time_Ms, int Total_Time_Count)
 {
@@ -1939,7 +2164,7 @@ void set_main_pwr_byte(uint8_t val)
 
 uint8_t get_main_pwr_byte()
 {
-	return g_send_stream[CTL_MAIN_PWR];
+	return control_get(CTL_MAIN_PWR);
 }
 
 void set_clean_tool_power(uint8_t vacuum_val, uint8_t left_brush_val, uint8_t right_brush_val, uint8_t main_brush_val)
@@ -1961,17 +2186,20 @@ void set_clean_tool_power(uint8_t vacuum_val, uint8_t left_brush_val, uint8_t ri
 
 void start_self_check_vacuum(void)
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x02);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
 }
 
 void end_self_check_vacuum(void)
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x04);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x04);
 }
 
 void reset_self_check_vacuum_controler(void)
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] & ~0x06);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
 }
 
 void control_set(uint8_t type, uint8_t val)
@@ -1984,26 +2212,41 @@ void control_set(uint8_t type, uint8_t val)
 	reset_send_flag();
 }
 
+uint8_t control_get(uint8_t seq)
+{
+	uint8_t tmp_data;
+	g_send_stream_mutex.lock();
+	tmp_data = g_send_stream[seq];
+	g_send_stream_mutex.unlock();
+	return tmp_data;
+}
+
 void control_append_crc()
 {
-	set_send_flag();
-	g_send_stream[CTL_CRC] = calc_buf_crc8((char *) g_send_stream, SEND_LEN - 3);
-	reset_send_flag();
+	//set_send_flag();
+	uint8_t tmp_data;
+	uint8_t buf[SEND_LEN];
+	g_send_stream_mutex.lock();
+	memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
+	g_send_stream_mutex.unlock();
+	tmp_data = calc_buf_crc8(buf, SEND_LEN - 3);
+	control_set(CTL_CRC, tmp_data);
+	//reset_send_flag();
 }
 
 void control_stop_all(void)
 {
 	uint8_t i;
-	set_send_flag();
+	//set_send_flag();
 	for (i = 2; i < (SEND_LEN) - 2; i++)
 	{
 		if (i == CTL_MAIN_PWR)
-			g_send_stream[i] = 0x01;
+			control_set(i, 0x01);
 		else
-			g_send_stream[i] = 0x00;
+			control_set(i, 0x00);
 	}
-	reset_send_flag();
-	//g_send_stream[SEND_LEN-3] = calc_buf_crc8((char *)g_send_stream, SEND_LEN-3);
+	//reset_send_flag();
+	//g_send_stream[SEND_LEN-3] = calc_buf_crc8(g_send_stream, SEND_LEN-3);
 	//serial_write(SEND_LEN, g_send_stream);
 }
 
@@ -2019,11 +2262,11 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 	{
 		//Populate dummy.
 		for (int j = 0; j < DUMMY_DOWNLINK_LENGTH; j++)
-			g_send_stream[j + DUMMY_DOWNLINK_OFFSET] = (uint8_t) (rand() % 256);
+			control_set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) (rand() % 256));
 
 		//Populate Sequence number.
 		for (int j = 0; j < SEQUENCE_DOWNLINK_LENGTH; j++)
-			g_send_stream[j + SEQUENCE_DOWNLINK_OFFSET] = (uint8_t) ((sequence_number >> 8 * j) % 256);
+			control_set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) ((sequence_number >> 8 * j) % 256));
 
 		//Populate key.
 #if VERIFY_DEBUG
@@ -2032,7 +2275,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 
 		for (int k = 0; k < KEY_DOWNLINK_LENGTH; k++)
 		{
-			g_send_stream[k + KEY_DOWNLINK_OFFSET] = key[i * KEY_DOWNLINK_LENGTH + k];
+			control_set(k + KEY_DOWNLINK_OFFSET, key[i * KEY_DOWNLINK_LENGTH + k]);
 
 #if VERIFY_DEBUG
 			printf("%02x ", g_send_stream[k + KEY_DOWNLINK_OFFSET]);
@@ -2046,13 +2289,13 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		switch (i)
 		{
 			case 0:
-				g_send_stream[SEND_LEN - 4] = CMD_KEY1;
+				control_set(SEND_LEN - 4, CMD_KEY1);
 				break;
 			case 1:
-				g_send_stream[SEND_LEN - 4] = CMD_KEY2;
+				control_set(SEND_LEN - 4, CMD_KEY2);
 				break;
 			case 2:
-				g_send_stream[SEND_LEN - 4] = CMD_KEY3;
+				control_set(SEND_LEN - 4, CMD_KEY3);
 				break;
 			default:
 
@@ -2068,9 +2311,10 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		{  //200ms (round trip takes at leat 15ms)
 			int counter = 0, ret;
 
-
+			g_send_stream_mutex.lock();
 			memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-			buf[CTL_CRC] = calc_buf_crc8((char *) buf, SEND_LEN - 3);
+			g_send_stream_mutex.unlock();
+			buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 			serial_write(SEND_LEN, buf);
 
 #if VERIFY_DEBUG
@@ -2126,7 +2370,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 				if (ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK)
 				{  //set finished
 					//printf("Downlink command ACKed!!\n");
-					g_send_stream[CTL_CMD] = 0;                              //clear command byte
+					control_set(CTL_CMD, 0x00);
 					break;
 				}
 			} else
@@ -2190,16 +2434,18 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 				sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
 
 			//Send acknowledge back to MCU.
-			g_send_stream[CTL_CMD] = CMD_ACK;
+			control_set(CTL_CMD, CMD_ACK);
 			for (int k = 0; k < 20; k++)
 			{
+				g_send_stream_mutex.lock();
 				memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-				buf[CTL_CRC] = calc_buf_crc8((char *) buf, SEND_LEN - 3);
+				g_send_stream_mutex.unlock();
+				buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 				serial_write(SEND_LEN, buf);
 
 				usleep(500);
 			}
-			g_send_stream[CTL_CMD] = 0;
+			control_set(CTL_CMD, 0x00);
 
 #if VERIFY_DEBUG
 			printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -2209,7 +2455,7 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		}
 		usleep(500);
 	}
-	g_send_stream[CTL_CMD] = 0;
+	control_set(CTL_CMD, 0x00);
 
 #if VERIFY_DEBUG
 	printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -2300,14 +2546,6 @@ void reset_key_press(uint8_t key)
 uint8_t get_key_press(void)
 {
 	return g_key_status;
-}
-
-uint8_t is_front_close()
-{
-	if (robot::instance()->getObsFront() > g_front_obs_trig_value + 1500)
-		return 1;
-	else
-		return 0;
 }
 
 uint8_t is_virtual_wall(void)
@@ -2635,12 +2873,14 @@ void set_mobility_step(uint32_t Steps)
 
 void reset_mobility_step()
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] | 0x01);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x01);
 }
 
 void clear_reset_mobility_step()
 {
-	control_set(CTL_OMNI_RESET, g_send_stream[CTL_OMNI_RESET] & ~0x01);
+	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
+	control_set(CTL_OMNI_RESET, omni_reset_byte & ~0x01);
 }
 
 uint32_t get_mobility_step()
@@ -2726,69 +2966,6 @@ void reset_wall_accelerate()
 uint32_t get_wall_accelerate()
 {
 	return g_wall_accelerate = get_right_wheel_step();
-}
-
-/*---------------------------------Bumper Error ----------------------------------------*/
-uint8_t is_bumper_jamed()
-{
-	if (get_bumper_status())
-	{
-		ROS_INFO("JAM1");
-		move_back();
-		if (stop_event())
-		{
-			ROS_INFO("%s, %d: Stop event in JAM1", __FUNCTION__, __LINE__);
-			return 0;
-		}
-		if (get_bumper_status())
-		{
-			ROS_INFO("JAM2");
-			// Quick back will not set speed to 100, it will be limited by the RUN_TOP_SPEED.
-			quick_back(100, 200);
-			if (stop_event())
-			{
-				ROS_INFO("%s, %d: Stop event in JAM2", __FUNCTION__, __LINE__);
-				return 0;
-			}
-			if (get_bumper_status())
-			{
-				ROS_INFO("JAM3");
-				jam_turn_right(60, 900);
-				if (stop_event())
-				{
-					ROS_INFO("%s, %d: Stop event in JAM3", __FUNCTION__, __LINE__);
-					return 0;
-				}
-				if (get_bumper_status())
-				{
-					ROS_INFO("JAM4");
-					jam_turn_left(60, 1800);
-					if (get_bumper_status())
-					{
-						ROS_INFO("JAM5");
-						set_clean_mode(Clean_Mode_Userinterface);
-						set_error_code(Error_Code_Bumper);
-						alarm_error();
-						return 1;
-					}
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-void reset_bumper_error(void)
-{
-	g_bumper_error = 0;
-}
-
-uint8_t is_bumper_fail(void)
-{
-	g_bumper_error++;
-	ROS_INFO("Buper_Error = %d", g_bumper_error);
-	if (g_bumper_error > 3)return 1;
-	else return 0;
 }
 
 uint8_t is_virtual_wall_()
@@ -3183,6 +3360,7 @@ uint8_t check_tilt()
 		last_x_acc = 0;
 		last_y_acc = 0;
 		last_z_acc = 0;
+		set_tilt_status(0);
 	}
 
 	last_tilt_enable_flag = g_tilt_enable;
@@ -3216,11 +3394,9 @@ bool check_pub_scan()
 uint8_t is_robot_slip()
 {
 	uint8_t ret = 0;
-	if(Laser::isScan2Ready() && (get_tilt_status() == 0) ){
-		if(Laser::isRobotSlip()){
-			ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
-			ret = 1;
-		}
+	if(MotionManage::s_laser != nullptr && MotionManage::s_laser->isScan2Ready() && MotionManage::s_laser->isRobotSlip()){
+		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
+		ret = 1;
 	}
 	return ret;
 }
@@ -3257,9 +3433,71 @@ void reset_clean_paused(void)
 
 bool is_decelerate_wall(void)
 {
-	auto status = (robot::instance()->getObsFront() > (g_front_obs_trig_value));
+	auto status = (robot::instance()->getObsFront() > get_front_obs_trig_value());
 	if(is_map_front_block(3) || status)
 		return true;
 	else
 		return false;
+}
+
+static int lidar_bumper_fd = -1;
+static uint8_t is_lidar_bumper_init = 0;
+
+int8_t lidar_bumper_init(const char* device)
+{
+	if(lidar_bumper_fd != -1)
+		return 0;
+	char buf[128];
+	sprintf(buf,"%s",device);
+	lidar_bumper_fd = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if(lidar_bumper_fd > 0)
+	{
+		is_lidar_bumper_init = 1;	
+		ROS_INFO("%s,%d,open %s success!",__FUNCTION__,__LINE__,buf);
+		return 1;
+	}
+	else if(lidar_bumper_fd <= 0 )
+	{
+		lidar_bumper_fd = -1;
+		is_lidar_bumper_init = 0;
+		ROS_INFO("%s,%d,no such file \033[32m %s \033[0m open fail!!",__FUNCTION__,__LINE__,buf);
+		return -1;
+	}
+
+}
+
+int8_t get_lidar_bumper_status()
+{
+	if(is_lidar_bumper_init && lidar_bumper_fd != -1)
+	{
+		uint8_t temp_buf[32] = {0};
+		int reval;
+		reval = read(lidar_bumper_fd,temp_buf,32);
+		if(reval >=0){
+			ROS_INFO("read lidar bumper value:\033[32m%d\033[0m",temp_buf[12]);
+			return temp_buf[12];
+		}
+		else
+			return -1;
+	}
+	return 0;
+}
+
+int8_t lidar_bumper_deinit()
+{
+	if(lidar_bumper_fd == -1)
+		return 0;
+	int c_ret;
+	c_ret = close(lidar_bumper_fd);
+	if(c_ret > 0)
+	{
+		lidar_bumper_fd = -1;
+		is_lidar_bumper_init = 0;
+	}
+	return c_ret;
+}
+
+bool check_laser_stuck()
+{
+	return false;
 }

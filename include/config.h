@@ -264,8 +264,9 @@
  * When it is too small, it will move like shaking when robot startup.
  * When it is too large, it will fall down when reach the cliff.
  */
-#define BACK_MAX_SPEED					((int32_t) 18) // 15)
-#define LINEAR_MIN_SPEED				((int32_t) 15) // 15)
+#define BACK_MAX_SPEED					((int32_t) 11) // 15)
+#define BACK_MIN_SPEED					((int32_t) 11)
+#define LINEAR_MIN_SPEED				((int32_t) 10) // 15)
 #define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
 #define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
 #define ROTATE_LOW_SPEED				((uint8_t) 5)
@@ -314,7 +315,7 @@
 #define CELL_SIZE			(65) // 65 // in mm
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
-#define CELL_COUNT_MUL			(349) // 375  // 207 // wheel encoder counter
+#define CELL_COUNT_MUL			(349) // 375  // 207 // wheel encode count
 #define CELL_COUNT_MUL_1_2		(175) // 187  // 103
 
 #else
@@ -324,7 +325,7 @@
 #define CELL_SIZE			(112) // 65 // in mm
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
-#define CELL_COUNT_MUL			(573) // 375  // 207 // wheel encoder counter
+#define CELL_COUNT_MUL			(573) // 375  // 207 // wheel encoder count
 #define CELL_COUNT_MUL_1_2		(286) // 187  // 103
 #elif __ROBOT_X400
 #define SPEED_ALF    (7.23)
@@ -454,3 +455,17 @@
 #define INTERLACED_MOVE	(0)
 #define PATH_ALGORITHM_V2	(0)
 #define GO_HOME_REGULATOR	(1)
+
+/* ------------------------------------- Lidar Relative Position --------------------------------------------*/
+#define LIDAR_THETA							(0)//2050
+#define LIDAR_OFFSET_X						(0)//0.031
+#define LIDAR_OFFSET_Y						(0)//0
+#define ROBOT_RADIUS						(0.167)
+
+#define GLOBAL_PID			(1)
+
+
+/*------for move back from charge stub------*/
+
+#define MOVE_BACK_FROM_STUB_DIST (500) // in millimeter
+#define SIGMENT_LEN (100)  //in millimeter

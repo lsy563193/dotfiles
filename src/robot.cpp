@@ -7,7 +7,6 @@
 #include <movement.h>
 #include <motion_manage.h>
 #include <core_move.h>
-#include <wall_follow_slam.h>
 #include <move_type.h>
 #include <std_srvs/SetBool.h>
 
@@ -117,10 +116,19 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
 	lw_vel_ = msg->lw_vel;
 	rw_vel_ = msg->rw_vel;
-
+#if GYRO_DYNAMIC_ADJUSTMENT
+	if (lw_vel_ < 0.01 && rw_vel_ < 0.01)
+	{
+		set_gyro_dynamic_on();
+	} else
+	{
+		set_gyro_dynamic_off();
+	}
+#endif
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
+	//ROS_WARN("%s %d: angle v: %f.", __FUNCTION__, __LINE__, angle_v_);
 
 	lw_crt_ = msg->lw_crt;
 	
@@ -208,9 +216,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
 
 	lbrush_oc_ = msg->lbrush_oc;
-		
+
 	rbrush_oc_ = msg->rbrush_oc;
-	
+
 	mbrush_oc_ = msg->mbrush_oc;
 
 	vacuum_oc_ = msg->vcum_oc;
@@ -436,7 +444,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 
 	/*for exploration update map*/
-	if (get_clean_mode() == Clean_Mode_Exploration) {
+	if (cm_is_exploration()) {
 		ros_map_convert(MAP, false, false, true);
 	}
 	MotionManage::s_slam->isMapReady(true);
@@ -521,10 +529,9 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	}
 	else if (type == BLOCKED_OBS)
 	{
-		// Blue
-		color_.r = 0.0;
-		color_.g = 0.0;
-		color_.b = 1.0;
+		color_.r = 0.2;
+		color_.g = 0.1;
+		color_.b = 0.5;
 	}
 	else if (type == BLOCKED_BUMPER)
 	{
@@ -545,6 +552,13 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		// White
 		color_.r = 1.0;
 		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_LASER)
+	{
+		//Blue
+		color_.r = 0.0;
+		color_.g = 0.0;
 		color_.b = 1.0;
 	}
 	else if (type == BLOCKED_TILT)
@@ -693,7 +707,7 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 			yaw += 6.283184;
 		while (yaw > 3.141592)
 			yaw -= 6.283184;
-		robot_correction_yaw += (yaw) * 0.5;
+		robot_correction_yaw += (yaw) * 0.8;
 		//printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y, RAD2DEG(slam_correction_yaw), robot_correction_x, robot_correction_y, RAD2DEG(robot_correction_yaw));
 	}
 

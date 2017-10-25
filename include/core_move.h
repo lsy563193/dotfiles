@@ -56,10 +56,15 @@ extern uint16_t g_straight_distance;
 extern bool g_is_left_start;
 extern bool g_finish_cleaning_go_home;
 extern bool g_from_station;
+extern bool g_in_charge_signal_range;
+
 extern int g_trapped_mode;
+extern uint32_t g_wf_start_timer;
+extern uint32_t g_wf_diff_timer;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
 extern int g_rcon_triggered;
+extern bool g_wf_is_reach;
 extern int g_is_reach;
 extern Cell_t g_next_cell, g_target_cell;
 extern bool g_resume_cleaning;
@@ -95,6 +100,7 @@ Cell_t cm_update_position(bool is_turn = false);
 bool cm_curve_move_to_point();
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 void mark_offset(int16_t dx, int16_t dy, CellState status);

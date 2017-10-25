@@ -59,6 +59,19 @@ uint32_t two_points_distance(int32_t startx, int32_t starty, int32_t destx, int3
 	return (uint32_t)round(sqrt(d + e));
 }
 
+float two_points_distance_double(float startx,float starty,float destx,float desty)
+{
+
+	double d,e;
+
+	d = (double)destx - (double)startx;
+	e = (double)desty - (double)starty;
+	d *= d;
+	e *= e;
+	return sqrt(d + e);
+
+}
+
 int32_t two_points_distance_at_direction(int32_t startx, int32_t starty, int32_t destx, int32_t desty, int16_t theta)
 {
 	return (int32_t)round(cos(deg_to_rad(theta, 10)) * (destx - startx) + sin(deg_to_rad(theta, 10)) * (desty - starty));
@@ -292,4 +305,10 @@ uint8_t is_same_point_and_angle(Point32_t pnt1, uint16_t angle1, Point32_t pnt2,
 	     abs(degree_delta_angle_vector(angle1, angle2) ) < angleThres )
 		return 1;
 	else return 0;
+}
+
+void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y)
+{
+	matrix_rotate(x, y, theta);
+	matrix_translate(x, y, offset_x, offset_y);
 }

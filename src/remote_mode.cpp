@@ -47,7 +47,7 @@ void remote_mode(void)
 		wav_play(WAV_SYSTEM_INITIALIZING);
 		if (!wait_for_gyro_on())
 		{
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 			return;
 		}
 	}
@@ -71,7 +71,7 @@ void remote_mode(void)
 	{
 		if (g_fatal_quit_event)
 		{
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 			break;
 		}
 
@@ -114,12 +114,12 @@ void remote_move(void)
 			continue;
 		}
 
-		if (g_fatal_quit_event || cm_should_self_check() || get_clean_mode() != Clean_Mode_Remote)
+		if (g_fatal_quit_event || cm_should_self_check() || cm_get() != Clean_Mode_Remote)
 			break;
 
 		if (time(NULL) - remote_cmd_time >= remote_timeout)
 		{
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 			remote_exit = true;
 			break;
 		}
@@ -128,7 +128,7 @@ void remote_move(void)
 		{
 			case REMOTE_MODE_FORWARD:
 			{
-				if(get_obs_status())
+				if (get_obs_status())
 				{
 					if(moving_speed>10)moving_speed--;
 					move_forward(moving_speed, moving_speed);
@@ -517,7 +517,7 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	{
 		beep_for_command(VALID);
 		g_key_clean_pressed = true;
-		set_clean_mode(Clean_Mode_Userinterface);
+		cm_set(Clean_Mode_Userinterface);
 		disable_motors();
 	}
 	else if (!g_bumper_jam && !g_cliff_jam)
@@ -526,10 +526,10 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 		disable_motors();
 		remote_exit = true;
 		if (get_rcon_remote() == Remote_Home)
-			//set_clean_mode(Clean_Mode_Gohome);
-			set_clean_mode(Clean_Mode_Exploration);
+			//cm_set(Clean_Mode_Gohome);
+			cm_set(Clean_Mode_Exploration);
 		else
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 	}
 	else
 		beep_for_command(INVALID);
@@ -558,7 +558,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 	while (get_key_press() & KEY_CLEAN)
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	set_clean_mode(Clean_Mode_Userinterface);
+	cm_set(Clean_Mode_Userinterface);
 	g_key_clean_pressed = true;
 	reset_touch();
 }
@@ -568,7 +568,7 @@ void remote_mode_handle_charge_detect(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 	if (robot::instance()->getChargeStatus() == 3)
 	{
-		set_clean_mode(Clean_Mode_Charging);
+		cm_set(Clean_Mode_Charging);
 		disable_motors();
 	}
 }

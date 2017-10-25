@@ -21,7 +21,6 @@
 #include "event_manager.h"
 #include "spot.h"
 #include "move_type.h"
-#include "wall_follow_slam.h"
 #include "robotbase.h"
 #include "debug.h"
 #include "map.h"
@@ -105,7 +104,6 @@ bool MotionManage::get_align_angle(float &line_angle)
 			return false;
 		}
 	}
-
 	if (line_align_ != start)
 	{
 		ROS_WARN("%s %d: Obstacle detector launch timeout,align fail.", __FUNCTION__, __LINE__);
@@ -151,7 +149,7 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
-	mt_set(get_clean_mode() == Clean_Mode_WallFollow ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
+	mt_set(cm_is_follow_wall() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_from_station = 0;
 	g_trapped_mode = 0;
 	g_finish_cleaning_go_home = false;
@@ -165,16 +163,17 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		g_remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
-	g_turn_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	initSucceeded(true);
-
-	if (!initCleaning(get_clean_mode()))
+	if (!initCleaning(cm_get()))
 	{
 		initSucceeded(false);
 		return;
 	}
+
+	// No need to start laser or slam if it is go home mode.
+	if (cm_get() == Clean_Mode_GoHome)
+		return;
 
 	//2 start laser
 	s_laser = new Laser();
@@ -222,11 +221,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		robot::instance()->offsetAngle(180);
 		robot::instance()->startAngle(180);
+		Cell_t home_point(-4,0);
+		map_set_charge_position(home_point);
 	}
 	else
 	{
 		nh_.param<bool>("is_active_align", is_align_active_, false);
-		if (get_clean_mode() == Clean_Mode_Navigation && is_align_active_)
+		if (cm_is_navigation() && is_align_active_)
 		{
 			ObstacleDetector od;
 			float align_angle = 0;
@@ -235,13 +236,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 				initSucceeded(false);
 				return;
 			}
+			align_angle += (float)(LIDAR_THETA / 10);
 			robot::instance()->offsetAngle(align_angle);
 			robot::instance()->startAngle(align_angle);
 			ROS_INFO("%s %d: Start angle (%f).", __FUNCTION__, __LINE__, robot::instance()->startAngle());
 		}
 		robot::instance()->startAngle(0);
 	}
-
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
 
@@ -255,9 +256,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam = new Slam();
 
 	robot::instance()->setTfReady(false);
-	if (get_clean_mode() == Clean_Mode_Navigation || get_clean_mode() == Clean_Mode_Spot || get_clean_mode() == Clean_Mode_Exploration)
+	if (cm_is_navigation() || cm_get() == Clean_Mode_Spot || cm_is_exploration())
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-	else if (get_clean_mode() == Clean_Mode_WallFollow)
+	else if (cm_is_follow_wall())
 		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 500;
@@ -288,7 +289,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
 
 
-	if (g_go_home_by_remote || (get_clean_mode() == Clean_Mode_Exploration))
+	if (g_go_home_by_remote || (cm_is_exploration()))
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	else
 		set_led_mode(LED_STEADY, LED_GREEN);
@@ -297,16 +298,18 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 MotionManage::~MotionManage()
 {
-	auto cleaned_count = map_get_cleaned_area();
-	debug_map(MAP, map_get_x_cell(), map_get_y_cell());
-	//if (get_clean_mode() == Clean_Mode_WallFollow)
-	wf_clear();
-	if (SpotMovement::instance()->getSpotType() != NO_SPOT)
-	//if (get_clean_mode() == Clean_Mode_Spot)
+	if (cm_get() != Clean_Mode_GoHome)
 	{
-		SpotMovement::instance()->spotDeinit();// clear the variables.
+		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
+		//if (cm_is_follow_wall())
+		g_wf_reach_count = 0;
+		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
+		//if (cm_get() == Clean_Mode_Spot)
+		{
+			SpotMovement::instance()->spotDeinit();// clear the variables.
+		}
 	}
-	// Disable motor here because there is a work_motor_configure() in spotDeinit().
+	// Disable motor here because there ie a work_motor_configure() in spotDeinit().
 	disable_motors();
 
 	g_tilt_enable = false;
@@ -332,7 +335,7 @@ MotionManage::~MotionManage()
 				// The current home cell is still valid, so push it back to the home point list.
 				path_set_home(g_home);
 			}
-			set_clean_mode(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Userinterface);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			if (g_go_home)
@@ -364,7 +367,7 @@ MotionManage::~MotionManage()
 		{
 			g_resume_cleaning = true;
 			robot::instance()->resetLowBatPause();
-			set_clean_mode(Clean_Mode_Charging);
+			cm_set(Clean_Mode_Charging);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
@@ -400,7 +403,8 @@ MotionManage::~MotionManage()
 		extern bool g_have_seen_charge_stub;
 		if(g_go_home && !g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		wav_play(WAV_CLEANING_FINISHED);
+		if (cm_get() != Clean_Mode_GoHome && !cm_is_exploration())
+			wav_play(WAV_CLEANING_FINISHED);
 	}
 	cm_reset_go_home();
 
@@ -424,26 +428,38 @@ MotionManage::~MotionManage()
 	else if (g_battery_low)
 		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
 	else
-		if (get_clean_mode() == Clean_Mode_Spot)
+		if (cm_get() == Clean_Mode_Spot)
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		else if (cm_get() == Clean_Mode_GoHome)
+			ROS_WARN("%s %d: Could not go to charger stub.", __FUNCTION__, __LINE__);
 		else
 			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
 
-	g_saved_work_time += get_work_time();
-	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
-	ROS_INFO("cleaned area = \033[32m%.2fm2\033[0m", map_area);
-	ROS_INFO("%s %d: Cleaning time: \033[32m%d(s) %.2f(min)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time, double(g_saved_work_time) / 60);
-	ROS_INFO("%s %d: Cleaning speed: \033[32m%.2f(m2/min)\033[0m", __FUNCTION__, __LINE__, map_area / (double(g_saved_work_time) / 60));
+	if (cm_get() != Clean_Mode_GoHome)
+	{
+		g_saved_work_time += get_work_time();
+		auto cleaned_count = map_get_cleaned_area();
+		auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
+	}
 	if (g_battery_low)
-		set_clean_mode(Clean_Mode_Sleep);
+		cm_set(Clean_Mode_Sleep);
 	else if (g_charge_detect)
-		set_clean_mode(Clean_Mode_Charging);
+		cm_set(Clean_Mode_Charging);
 	else
-		set_clean_mode(Clean_Mode_Userinterface);
+		cm_set(Clean_Mode_Userinterface);
 }
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)
 {
+
+	initSucceeded(true);
+	reset_work_time();
+	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
+		map_init(MAP);
+
+	map_init(WFMAP);
+	map_init(ROSMAP);
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:
@@ -454,6 +470,8 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 			return initWallFollowCleaning();
 		case Clean_Mode_Spot:
 			return initSpotCleaning();
+		case Clean_Mode_GoHome:
+			return initGoHome();
 		default:
 			ROS_ERROR("This mode (%d) should not use MotionManage.", cleaning_mode);
 			return false;
@@ -463,7 +481,6 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 bool MotionManage::initNavigationCleaning(void)
 {
 
-	reset_work_time();
 	if (g_remote_home || g_go_home_by_remote)
 		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
@@ -476,9 +493,7 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 		// Push the start point into the home point list
 		ROS_INFO("map_init-----------------------------");
-		map_init(MAP);
-		map_init(WFMAP);
-		map_init(ROSMAP);
+
 		path_planning_initialize();
 
 		robot::instance()->initOdomPosition();
@@ -545,11 +560,15 @@ bool MotionManage::initNavigationCleaning(void)
 	/*Move back from charge station*/
 	if (is_on_charger_stub()) {
 		ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
+		auto curr = map_get_curr_cell();
+		path_set_home(curr);
+		extern bool g_from_station;
+		g_from_station = 1;
+
 		set_side_brush_pwm(30, 30);
-		// Set i < 7 for robot to move back for approximately 500mm.
-		for (int i = 0; i < 7; i++) {
-			// Move back for distance of 72mm, it takes approximately 0.5s.
-			quick_back(20, 72);
+		int back_segment = (int)MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
+		for (int i = 0; i < back_segment; i++) {
+			quick_back(20,SIGMENT_LEN);
 			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
 				disable_motors();
 				if (g_fatal_quit_event)
@@ -569,13 +588,9 @@ bool MotionManage::initNavigationCleaning(void)
 				return false;
 			}
 		}
-		auto curr = map_get_curr_cell();
-		path_set_home(curr);
 		stop_brifly();
-		extern bool g_from_station;
-		g_from_station = 1;
+		robot::instance()->initOdomPosition();
 	}
-
 	robot::instance()->setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
@@ -589,7 +604,6 @@ bool MotionManage::initNavigationCleaning(void)
 bool MotionManage::initExplorationCleaning(void)
 {
 
-	reset_work_time();
 	if (g_remote_home || g_go_home_by_remote)
 		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
@@ -599,10 +613,6 @@ bool MotionManage::initExplorationCleaning(void)
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	// Push the start point into the home point list
-	ROS_INFO("map_init-----------------------------");
-	map_init(MAP);
-	map_init(WFMAP);
-	map_init(ROSMAP);
 	path_planning_initialize();
 
 	robot::instance()->initOdomPosition();
@@ -645,8 +655,8 @@ bool MotionManage::initWallFollowCleaning(void)
 	cm_register_events();
 	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
-	extern std::vector<Pose16_t> g_wf_cell;
-	reset_work_time();
+	g_wf_start_timer = time(NULL);
+	g_wf_diff_timer = WALL_FOLLOW_TIME;
 	reset_move_with_remote();
 	reset_rcon_status();
 	reset_stop_event_status();
@@ -667,13 +677,6 @@ bool MotionManage::initWallFollowCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	g_wf_cell.clear();
-
-	map_init(MAP);
-	ROS_WARN("%s %d: map initialized", __FUNCTION__, __LINE__);
-	map_init(WFMAP);
-	ROS_WARN("%s %d: wf map initialized", __FUNCTION__, __LINE__);
-	debug_map(MAP, 0, 0);
 	wf_path_planning_initialize();
 	ROS_WARN("%s %d: path planning initialized", __FUNCTION__, __LINE__);
 	//pthread_t	escape_thread_id;
@@ -694,7 +697,6 @@ bool MotionManage::initSpotCleaning(void)
 	cm_register_events();
 	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
-	reset_work_time();
 	reset_rcon_status();
 	reset_move_with_remote();
 	reset_stop_event_status();
@@ -716,7 +718,6 @@ bool MotionManage::initSpotCleaning(void)
 
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
-	map_init(MAP);//init map
 
 	robot::instance()->initOdomPosition();// for reset odom position to zero.
 
@@ -729,6 +730,24 @@ bool MotionManage::initSpotCleaning(void)
 	set_main_brush_pwm(80);
 	set_side_brush_pwm(60, 60);
 
+	return true;
+}
+
+bool MotionManage::initGoHome(void)
+{
+	set_led_mode(LED_FLASH, LED_ORANGE, 1000);
+	set_gyro_off();
+	usleep(30000);
+	set_gyro_on();
+	reset_touch();
+	cm_register_events();
+	wav_play(WAV_BACK_TO_CHARGER);
+
+	if (!wait_for_gyro_on())
+		return false;
+
+	work_motor_configure();
+	reset_rcon_status();
 	return true;
 }
 

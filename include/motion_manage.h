@@ -55,6 +55,7 @@ private:
 	bool initWallFollowCleaning(void);
 	bool initSpotCleaning(void);
 	bool initExplorationCleaning(void);
+	bool initGoHome(void);
 };
 
 #endif //PP_MOTION_MANAGE_H

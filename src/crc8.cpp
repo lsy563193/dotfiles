@@ -4,12 +4,12 @@
 #define DI		0x07
 
 static int made_table = 0;
-static unsigned char crc8_table[256];	/* 8-bit table */
+static uint8_t crc8_table[256];	/* 8-bit table */
 
 void init_crc8(void)
 {
-	int				i, j;
-	unsigned char	crc;
+	int		i, j;
+	uint8_t crc;
   
 	if (!made_table) {
 		for (i = 0; i < 256; i++) {
@@ -26,7 +26,7 @@ void init_crc8(void)
  * For a byte array whose accumulated crc value is stored in *crc, computes
  * resultant crc obtained by appending m to the byte array
  */
-void crc8(unsigned char *crc, unsigned char m)
+void crc8(uint8_t *crc, const uint8_t m)
 {
 	if (!made_table) {
 		init_crc8();
@@ -36,11 +36,11 @@ void crc8(unsigned char *crc, unsigned char m)
 	*crc &= 0xFF;
 }
 
-uint8_t calc_buf_crc8(char *inBuf, uint32_t inBufSz)
+uint8_t calc_buf_crc8(const uint8_t *inBuf, uint32_t inBufSz)
 {
 	uint8_t		crc_base = 0;
 	uint32_t	i;
-    
+
 	for (i = 0; i < inBufSz; i++) {
 		crc8(&crc_base, inBuf[i]);
 	}

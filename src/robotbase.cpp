@@ -26,14 +26,14 @@
 #define ROBOTBASE "robotbase"
 #define _H_LEN 2
 #if __ROBOT_X400
-uint8_t receiStream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+uint8_t g_receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
 uint8_t g_send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
 
 #elif __ROBOT_X900
-uint8_t receiStream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+uint8_t g_receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 										0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -77,15 +77,19 @@ uint16_t live_led_cnt_for_switch = 0;
 // Lock for odom coordinate
 boost::mutex odom_mutex;
 
+// Lock for g_send_stream
+boost::mutex g_send_stream_mutex;
+
 // Odom coordinate
 float pose_x, pose_y;
 
 int robotbase_init(void)
 {
-	int		ser_ret, base_ret, sers_ret;
-	uint8_t	t_buf[2];
+	int	serr_ret;
+	int base_ret;
+	int sers_ret;
+	uint8_t buf[SEND_LEN];
 
-	ser_ret = base_ret = 0;
 	robotbase_thread_stop = false;
 	send_stream_thread = true;
 	
@@ -94,17 +98,22 @@ int robotbase_init(void)
 		return -1;
 	}
 	set_main_pwr_byte(POWER_ACTIVE);
-	g_send_stream[SEND_LEN-3] = calc_buf_crc8((char *) g_send_stream, SEND_LEN - 3);
+	g_send_stream_mutex.lock();
+	memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
+	g_send_stream_mutex.unlock();
+	uint8_t crc;
+	crc = calc_buf_crc8(buf, SEND_LEN - 3);
+	control_set(SEND_LEN - 3, crc);
 	ROS_INFO("waiting robotbase awake ");
-	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
+	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);
-	if (base_ret != 0 || ser_ret != 0 || sers_ret !=0) {
+	if (base_ret < 0 || serr_ret < 0 || sers_ret < 0) {
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		send_stream_thread = false;
 		if (base_ret < 0) {ROS_INFO("%s,%d, fail to create robotbase thread!! %s ", __FUNCTION__,__LINE__,strerror(base_ret));}
-		if (ser_ret < 0) {ROS_INFO("%s,%d, fail to create serial receive thread!! %s ",__FUNCTION__,__LINE__, strerror(ser_ret));}
+		if (serr_ret < 0) {ROS_INFO("%s,%d, fail to create serial receive thread!! %s ",__FUNCTION__,__LINE__, strerror(serr_ret));}
 		if (sers_ret < 0){ROS_INFO("%s,%d, fail to create serial send therad!! %s ",__FUNCTION__,__LINE__,strerror(sers_ret));}
 		return -1;
 	}
@@ -146,16 +155,17 @@ void robotbase_deinit(void)
 
 void robotbase_reset_send_stream(void)
 {
+	boost::mutex::scoped_lock(g_send_stream_mutex);
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
-			g_send_stream[i] = 0x0;
+			control_set(i, 0x00);
 		else
-			g_send_stream[i] = 0x64;
+			control_set(i, 0x64);
 	}
-	g_send_stream[0] = 0xaa;
-	g_send_stream[1] = 0x55;
-	g_send_stream[SEND_LEN - 2] = 0xcc;
-	g_send_stream[SEND_LEN - 1] = 0x33;
+	control_set(0, 0xaa);
+	control_set(1, 0x55);
+	control_set(SEND_LEN - 2, 0xcc);
+	control_set(SEND_LEN - 1, 0x33);
 }
 
 void *serial_receive_routine(void *)
@@ -166,26 +176,30 @@ void *serial_receive_routine(void *)
 
 	uint8_t r_crc, c_crc;
 	uint8_t h1 = 0xaa, h2 = 0x55, header[2], t1 = 0xcc, t2 = 0x33;
-	uint8_t tmpSet[RECEI_LEN], receiData[RECEI_LEN];
+	uint8_t header1 = 0x00;
+	uint8_t header2 = 0x00;
+	uint8_t tempData[RECEI_LEN], receiData[RECEI_LEN];
+	tempData[0] = h1;
+	tempData[1] = h2;
 
 	wh_len = RECEI_LEN - 2; //length without header bytes
 	wht_len = wh_len - 2; //length without header and tail bytes
 	whtc_len = wht_len - 1; //length without header and tail and crc bytes
 
 	while (ros::ok() && (!robotbase_thread_stop)) {
-		ret = serial_read(1, &header[0]);
+		ret = serial_read(1, &header1);
 		if (ret <= 0 ){
 			ROS_WARN("%s, %d, serial read return %d ,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
-		if(header[0] != h1)
+		if(header1 != h1)
 			continue;
-		ret= serial_read(1,&header[1]);
+		ret= serial_read(1,&header2);
 		if (ret <= 0 ){
 			ROS_WARN("%s,%d,serial read return %d , requst %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
-		if(header[1] != h2){
+		if(header2 != h2){
 			continue;
 		}
 		ret = serial_read(wh_len, receiData);
@@ -196,17 +210,18 @@ void *serial_receive_routine(void *)
 			ROS_WARN("%s,%d,serial read return %d",__FUNCTION__,__LINE__,ret);
 			continue;
 		}
-		r_crc = receiData[whtc_len];
-		tmpSet[0] = h1;
-		tmpSet[1] = h2;
+
 		for (i = 0; i < whtc_len; i++){
-			tmpSet[i + 2] = receiData[i];
+			tempData[i + 2] = receiData[i];
 		}
-		c_crc = calc_buf_crc8((char *) tmpSet, wh_len - 1);
+
+		c_crc = calc_buf_crc8(tempData, wh_len - 1);//calculate crc8 with header bytes
+		r_crc = receiData[whtc_len];
+
 		if (r_crc == c_crc){
 			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
 				for (j = 0; j < wht_len; j++) {
-					receiStream[j + 2] = receiData[j];
+					g_receive_stream[j + 2] = receiData[j];
 				}
 				if(pthread_cond_signal(&recev_cond)<0)//if receive data corret than send signal
 					ROS_ERROR(" in serial read, pthread signal fail !");
@@ -225,7 +240,7 @@ void *robotbase_routine(void*)
 	pthread_detach(pthread_self());
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, is up!",__FUNCTION__,__LINE__);
 	float	th_last, vth;
-
+	float vx,th,dt;
 	uint16_t	lw_speed, rw_speed;
 
 	ros::Rate	r(_RATE);
@@ -261,94 +276,122 @@ void *robotbase_routine(void*)
 		//ros::spinOnce();
 
 		boost::mutex::scoped_lock(odom_mutex);
-		lw_speed = (receiStream[2] << 8) | receiStream[3];
-		rw_speed = (receiStream[4] << 8) | receiStream[5];
+
+		lw_speed = (g_receive_stream[REC_LW_S_H] << 8) | g_receive_stream[REC_LW_S_L];
+		rw_speed = (g_receive_stream[REC_RW_S_H] << 8) | g_receive_stream[REC_RW_S_L];
+
 		sensor.lw_vel = (lw_speed & 0x8000) ? -((float)((lw_speed & 0x7fff) / 1000.0)) : (float)((lw_speed & 0x7fff) / 1000.0);
 		sensor.rw_vel = (rw_speed & 0x8000) ? -((float)((rw_speed & 0x7fff) / 1000.0)) : (float)((rw_speed & 0x7fff) / 1000.0);
-		sensor.angle = -(float)((int16_t)((receiStream[6] << 8) | receiStream[7])) / 100.0;//ros angle * -1
 
+		sensor.angle = -(float)((int16_t)((g_receive_stream[REC_ANGLE_H] << 8) | g_receive_stream[REC_ANGLE_L])) / 100.0;//ros angle * -1
 		sensor.angle -= robot::instance()->offsetAngle();
+		sensor.angle_v = -(float)((int16_t)((g_receive_stream[REC_ANGLE_V_H] << 8) | g_receive_stream[REC_ANGLE_V_L])) / 100.0;//ros angle * -1
 
-		sensor.angle_v = -(float)((int16_t)((receiStream[8] << 8) | receiStream[9])) / 100.0;//ros angle * -1
+		sensor.lw_crt = (((g_receive_stream[REC_LW_C_H] << 8) | g_receive_stream[REC_LW_C_L]) & 0x7fff) * 1.622;
+		sensor.rw_crt = (((g_receive_stream[REC_RW_C_H] << 8) | g_receive_stream[REC_RW_C_L]) & 0x7fff) * 1.622;
 
-		sensor.lw_crt = (((receiStream[10] << 8) | receiStream[11]) & 0x7fff) * 1.622;
-		sensor.rw_crt = (((receiStream[12] << 8) | receiStream[13]) & 0x7fff) * 1.622;
-		sensor.left_wall = ((receiStream[14] << 8)| receiStream[15]);
-		sensor.l_obs = ((receiStream[16] << 8) | receiStream[17]);
-		sensor.f_obs = ((receiStream[18] << 8) | receiStream[19]);
-		sensor.r_obs = ((receiStream[20] << 8) | receiStream[21]);
+		sensor.left_wall = ((g_receive_stream[REC_L_WALL_H] << 8)| g_receive_stream[REC_L_WALL_L]);
+
+		sensor.l_obs = ((g_receive_stream[REC_L_OBS_H] << 8) | g_receive_stream[REC_L_OBS_L]);
+		sensor.f_obs = ((g_receive_stream[REC_F_OBS_H] << 8) | g_receive_stream[REC_F_OBS_L]);
+		sensor.r_obs = ((g_receive_stream[REC_R_OBS_H] << 8) | g_receive_stream[REC_R_OBS_L]);
+
 #if __ROBOT_X900
-		sensor.right_wall = ((receiStream[22]<<8)|receiStream[23]);		
-		sensor.lbumper = (receiStream[24] & 0xf0) ? true : false;
-		sensor.rbumper = (receiStream[24] & 0x0f) ? true : false;
-		sensor.ir_ctrl = receiStream[25];
-		sensor.c_stub = (receiStream[26] << 24 ) | (receiStream[27] << 16) | (receiStream[28] << 8) | receiStream[29];
-		sensor.visual_wall = (receiStream[30] << 8)| receiStream[31];
-		sensor.key = receiStream[32];
-		sensor.c_s = receiStream[33];
-		sensor.w_tank = (receiStream[34]>0)?true:false;
-		sensor.batv = (receiStream[35]);
-		if(((receiStream[36] << 8) | receiStream[37]) < 20)
+
+		sensor.right_wall = ((g_receive_stream[REC_R_WALL_H]<<8)|g_receive_stream[REC_R_WALL_L]);
+
+		sensor.lbumper = (g_receive_stream[REC_BUMPER] & 0xf0) ? true : false;
+		sensor.rbumper = (g_receive_stream[REC_BUMPER] & 0x0f) ? true : false;
+		auto lidar_bumper_status = get_lidar_bumper_status();
+		if (lidar_bumper_status == 1)
+			sensor.lidar_bumper = 1;
+		else if (lidar_bumper_status == 0)
+			sensor.lidar_bumper = 0;
+		// else if (lidar_bumper_status == -1)
+		// sensor.lidar_bumper = sensor.lidar_bumper;
+
+		sensor.ir_ctrl = g_receive_stream[REC_REMOTE_IR];
+
+		sensor.c_stub = (g_receive_stream[REC_CHARGE_STUB_4] << 24 ) | (g_receive_stream[REC_CHARGE_STUB_3] << 16) 
+			| (g_receive_stream[REC_CHARGE_STUB_2] << 8) | g_receive_stream[REC_CHARGE_STUB_1];
+
+		sensor.visual_wall = (g_receive_stream[REC_VISUAL_WALL_H] << 8)| g_receive_stream[REC_VISUAL_WALL_L];
+
+		sensor.key = g_receive_stream[REC_KEY];
+
+		sensor.c_s = g_receive_stream[REC_CHARGE_STATE];
+
+		sensor.w_tank = (g_receive_stream[REC_WATER_TANK]>0)?true:false;
+
+		sensor.batv = (g_receive_stream[REC_BAT_V]);
+
+		if(((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]) < CLIFF_LIMIT)
 		{
-			if(last_lcliff > 20)
-				last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+			if(last_lcliff > CLIFF_LIMIT)
+				last_lcliff = ((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]);
 			else
-				sensor.lcliff = last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
+				sensor.lcliff = last_lcliff = ((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]);
 		}
 		else
-			sensor.lcliff = last_lcliff = ((receiStream[36] << 8) | receiStream[37]);
-		if(((receiStream[38] << 8) | receiStream[39]) < 20)
+			sensor.lcliff = last_lcliff = ((g_receive_stream[REC_L_CLIFF_H] << 8) | g_receive_stream[REC_L_CLIFF_L]);
+		if(((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]) < CLIFF_LIMIT)
 		{
-			if(last_fcliff > 20)
-				last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+			if(last_fcliff > CLIFF_LIMIT)
+				last_fcliff = ((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]);
 			else
-				sensor.fcliff = last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
+				sensor.fcliff = last_fcliff = ((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]);
 		}
 		else
-			sensor.fcliff = last_fcliff = ((receiStream[38] << 8) | receiStream[39]);
-		if(((receiStream[40] << 8) | receiStream[41]) < 20)
+			sensor.fcliff = last_fcliff = ((g_receive_stream[REC_F_CLIFF_H] << 8) | g_receive_stream[REC_F_CLIFF_L]);
+		if(((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]) < CLIFF_LIMIT)
 		{
-			if(last_rcliff > 20)
-				last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
+			if(last_rcliff > CLIFF_LIMIT)
+				last_rcliff = ((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]);
 			else
-				sensor.rcliff = last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
+				sensor.rcliff = last_rcliff = ((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]);
 		}
 		else
-			sensor.rcliff = last_rcliff = ((receiStream[40] << 8) | receiStream[41]);
-		sensor.vacuum_selfcheck_status = (receiStream[42] & 0x30);
-		sensor.lbrush_oc = (receiStream[42] & 0x08) ? true : false;		// left brush over current
-		sensor.mbrush_oc = (receiStream[42] & 0x04) ? true : false;		// main brush over current
-		sensor.rbrush_oc = (receiStream[42] & 0x02) ? true : false;		// right brush over current
-		sensor.vcum_oc = (receiStream[42] & 0x01) ? true : false;		// vaccum over current
-		sensor.gyro_dymc = receiStream[43];
-		sensor.omni_wheel = (receiStream[44]<<8)|receiStream[45];
-		sensor.x_acc = (receiStream[46]<<8)|receiStream[47];//in mG
-		sensor.y_acc = (receiStream[48]<<8)|receiStream[49];//in mG
-		sensor.z_acc = (receiStream[50]<<8)|receiStream[51];//in mG
-		sensor.plan = receiStream[52];
+			sensor.rcliff = last_rcliff = ((g_receive_stream[REC_R_CLIFF_H] << 8) | g_receive_stream[REC_R_CLIFF_L]);
+
+		sensor.vacuum_selfcheck_status = (g_receive_stream[REC_CL_OC] & 0x30);
+		sensor.lbrush_oc = (g_receive_stream[REC_CL_OC] & 0x08) ? true : false;		// left brush over current
+		sensor.mbrush_oc = (g_receive_stream[REC_CL_OC] & 0x04) ? true : false;		// main brush over current
+		sensor.rbrush_oc = (g_receive_stream[REC_CL_OC] & 0x02) ? true : false;		// right brush over current
+		sensor.vcum_oc = (g_receive_stream[REC_CL_OC] & 0x01) ? true : false;		// vaccum over current
+
+		sensor.gyro_dymc = g_receive_stream[REC_GYRO_DYMC];
+
+		sensor.omni_wheel = (g_receive_stream[REC_OMNI_W_H]<<8)|g_receive_stream[REC_OMNI_W_L];
+
+		sensor.x_acc = (g_receive_stream[REC_XACC_H]<<8)|g_receive_stream[REC_XACC_L];//in mG
+		sensor.y_acc = (g_receive_stream[REC_YACC_H]<<8)|g_receive_stream[REC_YACC_L];//in mG
+		sensor.z_acc = (g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L];//in mG
+
+		sensor.plan = g_receive_stream[REC_PLAN];
+
 #elif __ROBOT_X400
-		sensor.lbumper = (receiStream[22] & 0xf0)?true:false;
-		sensor.rbumper = (receiStream[22] & 0x0f)?true:false;
-		sensor.ir_ctrl_ = receiStream[23];
-		sensor.c_stub = (receiStream[24] << 16) | (receiStream[25] << 8) | receiStream[26];
-		sensor.key = receiStream[27];
-		sensor.c_s = receiStream[28];
-		sensor.w_tank_ = (receiStream[29] > 0) ? true : false;
-		sensor.batv = receiStream[30];
+		sensor.lbumper = (g_receive_stream[22] & 0xf0)?true:false;
+		sensor.rbumper = (g_receive_stream[22] & 0x0f)?true:false;
+		sensor.ir_ctrl_ = g_receive_stream[23];
+		sensor.c_stub = (g_receive_stream[24] << 16) | (g_receive_stream[25] << 8) | g_receive_stream[26];
+		sensor.key = g_receive_stream[27];
+		sensor.c_s = g_receive_stream[28];
+		sensor.w_tank_ = (g_receive_stream[29] > 0) ? true : false;
+		sensor.batv = g_receive_stream[30];
 
-		sensor.lcliff = ((receiStream[31] << 8) | receiStream[32]);
-		sensor.fcliff = ((receiStream[33] << 8) | receiStream[34]);
-		sensor.rcliff = ((receiStream[35] << 8) | receiStream[36]);
+		sensor.lcliff = ((g_receive_stream[31] << 8) | g_receive_stream[32]);
+		sensor.fcliff = ((g_receive_stream[33] << 8) | g_receive_stream[34]);
+		sensor.rcliff = ((g_receive_stream[35] << 8) | g_receive_stream[36]);
 
-		sensor.lbrush_oc_ = (receiStream[37] & 0x08) ? true : false;		// left brush over current
-		sensor.mbrush_oc_ = (receiStream[37] & 0x04) ? true : false;		// main brush over current
-		sensor.rbrush_oc_ = (receiStream[37] & 0x02) ? true : false;		// right brush over current
-		sensor.vcum_oc = (receiStream[37] & 0x01) ? true : false;		// vaccum over current
-		sensor.gyro_dymc_ = receiStream[38];
-		sensor.right_wall_ = ((receiStream[39]<<8)|receiStream[40]);
-		sensor.x_acc = (receiStream[41]<<8)|receiStream[42]; //in mG
-		sensor.y_acc = (receiStream[43]<<8)|receiStream[44];//in mG
-		sensor.z_acc = (receiStream[45]<<8)|receiStream[46]; //in mG
+		sensor.lbrush_oc_ = (g_receive_stream[37] & 0x08) ? true : false;		// left brush over current
+		sensor.mbrush_oc_ = (g_receive_stream[37] & 0x04) ? true : false;		// main brush over current
+		sensor.rbrush_oc_ = (g_receive_stream[37] & 0x02) ? true : false;		// right brush over current
+		sensor.vcum_oc = (g_receive_stream[37] & 0x01) ? true : false;		// vaccum over current
+		sensor.gyro_dymc_ = g_receive_stream[38];
+		sensor.right_wall_ = ((g_receive_stream[39]<<8)|g_receive_stream[40]);
+		sensor.x_acc = (g_receive_stream[41]<<8)|g_receive_stream[42]; //in mG
+		sensor.y_acc = (g_receive_stream[43]<<8)|g_receive_stream[44];//in mG
+		sensor.z_acc = (g_receive_stream[45]<<8)|g_receive_stream[46]; //in mG
 #endif
 		/*---------extrict end-------*/
 
@@ -359,14 +402,13 @@ void *robotbase_routine(void*)
 
 		/*------------publish odom and robot_sensor topic --------*/
 		cur_time = ros::Time::now();
-		float vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
-		float th = sensor.angle * 0.01745;	//degree into radian
-		float dt = (cur_time - last_time).toSec();
+		vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
+		th = sensor.angle * 0.01745;	//degree into radian
+		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		pose_x += (vx * cos(th) - 0 * sin(th)) * dt;
 		pose_y += (vx * sin(th) + 0 * cos(th)) * dt;
 		odom_quat = tf::createQuaternionMsgFromYaw(th);
-
 		odom.header.stamp = cur_time;
 		odom.header.frame_id = "odom";
 		odom.child_frame_id = "base_link";
@@ -389,7 +431,7 @@ void *robotbase_routine(void*)
 		odom_broad.sendTransform(odom_trans);
 		/*------publish end -----------*/
 
-	}
+	}//end while
 	ROS_INFO("\033[32m%s\033[0m,%d,robotbase thread exit",__FUNCTION__,__LINE__);
 }
 
@@ -422,13 +464,26 @@ void *serial_send_routine(void*)
 		if (robotbase_led_update_flag)
 			process_led();
 
-		if(!is_flag_set()){
+		//if(!is_flag_set()){
+			/*---pid for wheels---*/
+			extern struct pid_struct left_pid, right_pid;
+			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
+			wheels_pid();
+			if(left_pid.actual_speed < 0)	g_wheel_left_direction = BACKWARD;
+			else							g_wheel_left_direction = FORWARD;
+			if(right_pid.actual_speed < 0)	g_wheel_right_direction = BACKWARD;
+			else							g_wheel_right_direction = FORWARD;
+
+			set_left_wheel_speed((uint8_t)fabsf(left_pid.actual_speed));
+			set_right_wheel_speed((uint8_t)fabsf(right_pid.actual_speed));
+			g_send_stream_mutex.lock();
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
-			buf[CTL_CRC] = calc_buf_crc8((char *) buf, sl);
+			g_send_stream_mutex.unlock();
+			buf[CTL_CRC] = calc_buf_crc8(buf, sl);
 			serial_write(SEND_LEN, buf);
-		}
+		//}
 		//reset omni wheel bit
-		if(g_send_stream[CTL_OMNI_RESET] & 0x01)
+		if(control_get(CTL_OMNI_RESET) & 0x01)
 			clear_reset_mobility_step();
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
@@ -534,4 +589,5 @@ void robotbase_restore_slam_correction()
 	pose_x += robot::instance()->getRobotCorrectionX();
 	pose_y += robot::instance()->getRobotCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
+	ROS_INFO("%s %d: Restore slam correction as x: %f, y: %f, angle: %f.", __FUNCTION__, __LINE__, robot::instance()->getRobotCorrectionX(), robot::instance()->getRobotCorrectionY(), robot::instance()->getRobotCorrectionYaw());
 }

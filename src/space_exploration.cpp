@@ -61,13 +61,10 @@ void explore_update_map(void)
 	}
 }
 
-void turn_into_exploration(void)
+void turn_into_exploration(bool is_reset_map)
 {
 	reset_work_time();
-	if (g_remote_home || g_go_home_by_remote)
-		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
-	else
-		set_led_mode(LED_FLASH, LED_GREEN, 1000);
+	set_led_mode(LED_STEADY, LED_ORANGE);
 
 	// Initialize motors and map.
 	extern uint32_t g_saved_work_time;
@@ -75,14 +72,15 @@ void turn_into_exploration(void)
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	// Push the start point into the home point list
 	ROS_INFO("map_init-----------------------------");
-	map_init(MAP);
+	if (is_reset_map)
+		map_init(MAP);
 	map_init(WFMAP);
 	map_init(ROSMAP);
 	path_planning_initialize();
+	work_motor_configure();
 	cm_reset_go_home();
 
 
-	// If it it the first time cleaning, initialize the g_continue_point.
 	extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
 	g_have_seen_charge_stub = false;
 	g_start_point_seen_charger = false;
@@ -99,7 +97,7 @@ void turn_into_exploration(void)
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 
-	set_clean_mode(Clean_Mode_Exploration);
+	cm_set(Clean_Mode_Exploration);
 	ros_map_convert(MAP, false, false, true);
 	explore_update_map();
 }

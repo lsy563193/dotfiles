@@ -16,9 +16,8 @@
 #include <vector>
 #include "config.h"
 #include "map.h"
+#include "movement.h"
 
-extern volatile int16_t g_left_wall_baseline;
-extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
 
 typedef enum {
@@ -230,19 +229,25 @@ public:
 		return sensor.lbumper;
 	}
 
-	int16_t getObsLeft() const
+	int16_t getObsLeft()
 	{
-		return sensor.l_obs;
+		int16_t left_obs = sensor.l_obs - g_obs_left_baseline;
+		//ROS_INFO("%s %d: sensor.l_obs(%d) - obs_l_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.l_obs, g_obs_left_baseline, left_obs);
+		return left_obs;
 	}
 
-	int16_t getObsRight() const
+	int16_t getObsRight()
 	{
-		return sensor.r_obs;
+		int16_t right_obs = sensor.r_obs - g_obs_right_baseline;
+		//ROS_INFO("%s %d: sensor.r_obs(%d) - obs_r_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.r_obs, g_obs_right_baseline, right_obs);
+		return right_obs;
 	}
 
-	int16_t getObsFront() const
+	int16_t getObsFront()
 	{
-		return sensor.f_obs;
+		int16_t front_obs = sensor.f_obs - g_obs_front_baseline;
+		//ROS_INFO("%s %d: sensor.f_obs(%d) - obs_f_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.f_obs, g_obs_front_baseline, front_obs);
+		return front_obs;
 	}
 
 	bool getWaterTank() const
@@ -363,6 +368,11 @@ public:
 	int16_t getInitZAcc() const
 	{
 		return init_z_acc_;
+	}
+
+	uint8_t getLidarBumper() const
+	{
+		return (uint8_t)sensor.lidar_bumper;
 	}
 
 	void setInitXAcc(int16_t val)

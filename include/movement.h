@@ -1,10 +1,12 @@
 #ifndef __MOVEMENT_H__
 #define __MOVEMENT_H__
 
+#include <algorithm>
 #include <stdint.h>
 #include <time.h>
 #include "config.h"
 #include "main.h"
+#include "clean_mode.h"
 
 #define Brush_Power					128
 #define MainBrush_Power				70
@@ -231,22 +233,6 @@
 #define Display_Zizag				2
 #define Display_Remote				3
 
-#define Clean_Mode_Userinterface	1
-#define Clean_Mode_Spiral			2
-#define Clean_Mode_WallFollow		3
-#define Clean_Mode_RandomMode		4
-#define Clean_Mode_Charging			5
-#define Clean_Mode_GoHome			6
-#define Clean_Mode_Sleep			7
-#define Clean_Mode_SelfCheck		8
-#define Clean_Mode_Test				9
-#define Clean_Mode_Zigzag			10
-#define Clean_Mode_Remote			11
-#define Clean_Mode_Spot				12
-#define Clean_Mode_Mobility			13
-#define Clean_Mode_Navigation		14
-#define Clean_Mode_Exploration		15
-
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
 
@@ -256,6 +242,7 @@
 
 #define LeftBumperTrig				1
 #define RightBumperTrig				2
+#define LidarBumperTrig				4
 #define AllBumperTrig				3
 
 #define LeftCliffTrig							1
@@ -318,33 +305,11 @@ typedef enum{
 #define KEY_HOME  0x08
 #define KEY_PLAN  0x10
 
-#define	CTL_WHEEL_LEFT_HIGH 2
-#define	CTL_WHEEL_LEFT_LOW  3
-#define	CTL_WHEEL_RIGHT_HIGH  4
-#define	CTL_WHEEL_RIGHT_LOW 5
-#define	CTL_VACCUM_PWR 6
-#define	CTL_BRUSH_LEFT 7
-#define	CTL_BRUSH_RIGHT 8
-#define	CTL_BRUSH_MAIN 9
-#define	CTL_BUZZER 10
-#define	CTL_MAIN_PWR 11
-#define	CTL_CHARGER 12
-#define	CTL_LED_RED 13
-#define	CTL_LED_GREEN 14
-#if __ROBOT_X400
-#define	CTL_GYRO 15
-#define	CTL_CRC 16
-#elif __ROBOT_X900
-#define CTL_OMNI_RESET 15
-#define CTL_GYRO 16
-#define CTL_CMD				17
-#define CTL_CRC				18
-#endif
+
 #define Direction_Flag_Right 0x01
 #define Direction_Flag_Left  0x02
 
 #define STEP_PER_MM  186
-#define Cliff_Limit         (int16_t)20
 
 #define Two_Hours         7200
 
@@ -386,17 +351,57 @@ typedef enum{
 
 //for tilt detct
 #define TILT_COUNT_REACH			50
-#define DIF_TILT_X_VAL				70
-#define DIF_TILT_Y_VAL				70
-#define DIF_TILT_Z_VAL				40
+#define DIF_TILT_X_VAL				170
+#define DIF_TILT_Y_VAL				170
+#define DIF_TILT_Z_VAL				70
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
 
+// for wheel direction
+#define FORWARD						0
+#define BACKWARD					1
+
+//regulator type
+#define REG_TYPE_NONE			0
+#define REG_TYPE_WALLFOLLOW		1
+#define REG_TYPE_LINEAR			2
+#define REG_TYPE_TURN			3
+#define REG_TYPE_BACK			4
+#define REG_TYPE_CURVE			5
+
+//cliff limit
+#define CLIFF_LIMIT				80
 extern uint32_t g_rcon_status;
+
+extern int16_t g_obs_left_baseline;
+extern int16_t g_obs_front_baseline;
+extern int16_t g_obs_right_baseline;
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
+
+struct pid_struct
+{
+	float delta;
+	float delta_sum;
+	float delta_last;
+	float target_speed;
+	float actual_speed;
+	float last_target_speed;
+	uint8_t last_reg_type;
+	float variation;
+};
+struct pid_argu_struct
+{
+	uint8_t reg_type; // Regulator type
+	float Kp;
+	float Ki;
+	float Kd;
+};
+
+extern struct pid_argu_struct argu_for_pid;
+extern struct pid_struct left_pid, right_pid;
 
 void reset_work_time();
 uint32_t get_work_time();
@@ -419,6 +424,26 @@ uint32_t get_right_wall_step(void);
 
 int32_t get_wall_adc(int8_t dir);
 
+struct laserDistance{
+	double front[3] = {4,4,4}; // left, midle, right
+	double back = 4;
+	double left = 4;
+	double right = 4;
+	double getFrontMin(){
+		if(this->front[0] < this->front[1] && this->front[0] < this->front[2])
+			return this->front[0];
+		if(this->front[1] < this->front[0] && this->front[1] < this->front[2])
+			return this->front[1];
+		if(this->front[2] < this->front[0] && this->front[2] < this->front[1])
+			return this->front[2];
+		return 4;
+	}
+	void reset(){
+		this->front[0] = this->front[1] = this->front[2] = back = left = right = 4;
+	}
+};
+void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start);
+void set_cell_by_compensate(laserDistance laser_distance);
 void set_dir_backward(void);
 void set_dir_forward(void);
 
@@ -444,21 +469,24 @@ uint8_t is_encoder_fail(void);
 
 void set_right_brush_stall(uint8_t R);
 
-void wall_dynamic_base(uint32_t Cy);
+//void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 
-uint8_t get_obs_status(void);
-
-int32_t get_front_obs(void);
-int32_t get_left_obs(void);
-int32_t get_right_obs(void);
-
 uint8_t get_bumper_status(void);
+
+int8_t get_lidar_bumper_status(void);
 
 uint8_t get_cliff_status(void);
 
 int get_rcon_trig(void);
+
+int16_t get_front_cliff_trig_value(void);
+int16_t get_left_cliff_trig_value(void);
+int16_t get_right_cliff_trig_value(void);
+int16_t get_front_cliff(void);
+int16_t get_left_cliff(void);
+int16_t get_right_cliff(void);
 
 bool is_on_charger_stub(void);
 
@@ -470,8 +498,6 @@ void reset_home_remote(void);
 
 uint8_t is_home_remote(void);
 
-uint8_t is_obs_near(void);
-
 uint32_t get_rcon_status(void);
 
 void set_rcon_status(uint32_t code);
@@ -480,7 +506,9 @@ void set_rcon_status(uint32_t code);
 // If robot going straight, should turn off gyro dynamic adjustment.
 // If robot turning, should turn on gyro dynamic adjustment.
  */
-void set_wheel_speed(uint8_t Left, uint8_t Right, float PID_p = 1, float PID_i = 0, float PID_d = 0);
+void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd);
+void wheels_pid(void);
+void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
@@ -497,7 +525,7 @@ uint8_t check_bat_full(void);
 
 uint8_t check_bat_ready_to_clean(void);
 
-uint8_t get_clean_mode(void);
+uint8_t cm_get(void);
 
 /*
  * Set the mode for vacuum.
@@ -515,14 +543,14 @@ void set_vac_mode(uint8_t mode);
 void set_vac_speed(void);
 
 void obs_dynamic_base(uint16_t Cy);
-int16_t get_front_obs_value(void);
-int16_t get_left_obs_value(void);
-int16_t get_right_obs_value(void);
-uint8_t is_wall_obs_near(void);
-void adjust_obs_value(void);
-void reset_obst_value(void);
-uint8_t spot_obs_status(void);
-uint8_t get_obs_status(void);
+int16_t get_front_obs_trig_value(void);
+int16_t get_left_obs_trig_value(void);
+int16_t get_right_obs_trig_value(void);
+uint8_t get_obs_status(int16_t left_obs_offset = 0, int16_t front_obs_offset = 0, int16_t right_obs_offset = 0);
+
+int16_t get_front_obs(void);
+int16_t get_left_obs(void);
+int16_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
@@ -589,7 +617,7 @@ bool is_charge_on(void);
 
 uint8_t is_water_tank(void);
 
-void set_clean_mode(uint8_t mode);
+void cm_set(uint8_t mode);
 
 void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
 
@@ -610,6 +638,8 @@ void End_SelfCheck_Vacuumm(void);
 void reset_self_check_vacuum_controler(void);
 
 void control_set(uint8_t type, uint8_t val);
+
+uint8_t control_get(uint8_t seq);
 
 void control_append_crc(void);
 
@@ -657,8 +687,6 @@ uint8_t is_bumper_fail(void);
 
 uint8_t is_turn_remote(void);
 
-uint8_t is_front_close(void);
-
 void set_left_wheel_step(uint32_t step);
 
 void set_right_wheel_step(uint32_t step);
@@ -699,7 +727,7 @@ void clear_reset_mobility_step();
 
 uint32_t  get_mobility_step();
 
-void adjust_obs_value();
+//void adjust_obs_value();
 
 void check_mobility(void);
 
@@ -708,10 +736,6 @@ void add_average(uint32_t data);
 uint32_t get_average_move(void);
 
 uint32_t reset_average_counter(void);
-
-uint8_t cliff_escape(void);
-
-uint8_t cliff_event(uint8_t temp_status);
 
 void reset_virtual_wall();
 
@@ -765,4 +789,8 @@ bool check_pub_scan();
 uint8_t is_robot_slip();
 bool is_clean_paused();
 void reset_clean_paused();
+int8_t lidar_bumper_init(const char* device);
+int8_t lidar_bumper_deinit();
+
+bool check_laser_stuck();
 #endif

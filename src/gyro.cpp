@@ -9,6 +9,7 @@
 #include "wav.h"
 #include "mathematics.h"
 #include "robot.hpp"
+#include "robotbase.h"
 #include "event_manager.h"
 
 int16_t gyro_angle;   //[3:3]   = Angle
@@ -249,23 +250,25 @@ void set_gyro_dynamic_on(void)
 {
 	if (is_gyro_on())
 	{
-		control_set(CTL_GYRO, 0x03);
+		uint8_t gyro_byte = control_get(CTL_GYRO);
+		control_set(CTL_GYRO, gyro_byte | 0x01);
 	}
-	else
-	{
-		control_set(CTL_GYRO, 0x01);
-	}
+	//else
+	//{
+	//	control_set(CTL_GYRO, 0x01);
+	//}
 }
 
 void set_gyro_dynamic_off(void)
 {
 	if (is_gyro_on())
 	{
-		control_set(CTL_GYRO, 0x02);
+		uint8_t gyro_byte = control_get(CTL_GYRO);
+		control_set(CTL_GYRO, gyro_byte | 0x00);
 	}
-	else
-	{
-		control_set(CTL_GYRO, 0x00);
-	}
+	//else
+	//{
+	//	control_set(CTL_GYRO, 0x00);
+	//}
 }
 #endif

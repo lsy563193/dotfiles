@@ -32,6 +32,7 @@ bool battery_ready_to_clean = true;
 bool long_press_to_sleep = false;
 uint8_t user_interface_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 uint8_t user_interface_plan_status = 0;
+extern bool g_charge_turn_connect_fail;
 time_t user_interface_plan_confirm_time = time(NULL);
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void user_interface(void)
@@ -88,6 +89,7 @@ void user_interface(void)
 
 		usleep(10000);
 
+		//get_lidar_bumper_status();
 		if (battery_low_delay > 0)
 			battery_low_delay--;
 
@@ -96,12 +98,10 @@ void user_interface(void)
 			battery_ready_to_clean = false;
 			set_led_mode(LED_BREATH, LED_ORANGE);
 		}
-
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
 			ROS_WARN("%s %d: Userinterface mode didn't receive any command in 10mins, go to sleep mode.", __FUNCTION__, __LINE__);
-			set_clean_mode(Clean_Mode_Sleep);
-			break;
+			temp_mode = Clean_Mode_Sleep;
 		}
 
 		if (is_clean_paused())
@@ -178,7 +178,7 @@ void user_interface(void)
 		}
 		if(temp_mode != 0)
 		{
-			set_clean_mode(temp_mode);
+			cm_set(temp_mode);
 			break;
 		}
 	}
@@ -191,6 +191,10 @@ void user_interface(void)
 	else if (user_interface_plan_status == 1)
 		wav_play(WAV_APPOINTMENT_DONE);
 	user_interface_plan_status = 0;
+
+	/*--- reset g_charge_turn_connect_fail except Clean_Mode_GoHome and Clean_Mode_Exploration ---*/
+	if(temp_mode != Clean_Mode_GoHome && temp_mode != Clean_Mode_Exploration)
+		g_charge_turn_connect_fail = false;
 }
 
 void user_interface_register_events(void)
@@ -282,6 +286,8 @@ void user_interface_handle_cliff(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Robot lifted up during manual/stuck pause, reset manual/stuck pause status.", __FUNCTION__, __LINE__);
 		user_interface_reject_reason = 2;
 	}
+	/*--- reset g_charge_turn_connect_fail when cliff triggered ---*/
+	g_charge_turn_connect_fail = false;
 }
 
 void user_interface_handle_rcon(bool state_now, bool state_last)

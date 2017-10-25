@@ -19,9 +19,7 @@
 #include "spot.h"
 #include "user_interface.h"
 #include "remote_mode.h"
-#include "random_runing.h"
 #include "sleep.h"
-#include "wall_follow_slam.h"
 #include "wall_follow_trapped.h"
 #include "event_manager.h"
 #include "go_home.hpp"
@@ -43,13 +41,13 @@ void *core_move_thread(void *)
 	usleep(200000);
 
 	if (is_direct_charge() || is_on_charger_stub())
-		set_clean_mode(Clean_Mode_Charging);
+		cm_set(Clean_Mode_Charging);
 	else if (check_bat_ready_to_clean())
 		wav_play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
-		switch(get_clean_mode()){
+		switch(cm_get()){
 			case Clean_Mode_Userinterface:
 				ROS_INFO("\n-------user_interface mode------\n");
 				set_main_pwr_byte(Clean_Mode_Userinterface);
@@ -66,13 +64,6 @@ void *core_move_thread(void *)
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				cm_cleaning();
 				break;
-			//case Clean_Mode_RandomMode:
-			//	ROS_INFO("\n-------Random_Running mode------\n");
-
-			//	reset_clean_paused();
-
-			//	Random_Running_Mode();
-			//	break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode------\n");
 				set_main_pwr_byte(Clean_Mode_Navigation);
@@ -89,7 +80,11 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_GoHome);
 				robot::instance()->resetLowBatPause();
 				reset_clean_paused();
+#if GO_HOME_REGULATOR
+				cm_cleaning();
+#else
 				go_home();
+#endif
 				break;
 
 			case Clean_Mode_Exploration:
@@ -137,7 +132,7 @@ void *core_move_thread(void *)
 				sleep_mode();
 				break;
 			default:
-				set_clean_mode(Clean_Mode_Userinterface);
+				cm_set(Clean_Mode_Userinterface);
 				break;
 
 		}
@@ -154,7 +149,7 @@ int main(int argc, char **argv)
 	bool	verify_ok = true;
 	pthread_t	core_move_thread_id, event_manager_thread_id, event_handler_thread_id;
 	std::string	serial_port;
-
+	std::string lidar_bumper;
 
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
@@ -167,9 +162,12 @@ int main(int argc, char **argv)
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 57600);
-
+	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper, "/dev/input/event0");
+	
 	serial_init(serial_port.c_str(), baudrate);
-
+	if(lidar_bumper_init(lidar_bumper.c_str()) == -1){
+		ROS_ERROR(" lidar bumper open fail!");
+	}
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
 		verify_ok = false;
@@ -218,7 +216,7 @@ int main(int argc, char **argv)
 		set_led_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
-
+	lidar_bumper_deinit();
 	robotbase_deinit();
 	return 0;
 }

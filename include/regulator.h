@@ -5,12 +5,12 @@
 #ifndef PP_REGULATOR_BASE_H
 #define PP_REGULATOR_BASE_H
 
+#include <laser.hpp>
 #include <ros/ros.h>
 #include <move_type.h>
 #include <path_planning.h>
 #include <movement.h>
 #include <robot.hpp>
-
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
@@ -19,17 +19,19 @@
 #define WALL_DISTANCE_LOW_LIMIT 150
 
 extern int16_t g_turn_angle;
+extern uint32_t new_laser_seq;
 #define GO_TO_CHARGER_INIT 0
 #define CHECK_NEAR_CHARGER_STATION 1
 #define AWAY_FROM_CHARGER_STATION 2
-#define TURN_FOR_CHARGER_SIGNAL 3
-#define AROUND_CHARGER_STATION_INIT 4
-#define AROUND_CHARGER_STATION 5
-#define CHECK_POSITION_INIT 6
-#define CHECK_POSITION 7
-#define BY_PATH_INIT 8
-#define BY_PATH 9
-#define TURN_CONNECT 10
+#define TURN_FOR_CHARGER_SIGNAL_INIT 3
+#define TURN_FOR_CHARGER_SIGNAL 4
+#define AROUND_CHARGER_STATION_INIT 5
+#define AROUND_CHARGER_STATION 6
+#define CHECK_POSITION_INIT 7
+#define CHECK_POSITION 8
+#define BY_PATH_INIT 9
+#define BY_PATH 10
+#define TURN_CONNECT 11
 #define ROUND_LEFT 1
 #define ROUND_RIGHT 2
 
@@ -51,7 +53,6 @@ public:
 public:
 	static Point32_t s_target;
 	static Point32_t s_origin;
-	static int16_t s_origin_angle;
 	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;
@@ -62,7 +63,7 @@ class BackRegulator: public RegulatorBase{
 public:
 	BackRegulator();
 	~BackRegulator(){
-		set_wheel_speed(1, 1);
+		//set_wheel_speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isSwitch();
@@ -73,8 +74,12 @@ protected:
 	bool isReach();
 
 private:
+	uint32_t seq;
 	int counter_;
 	int32_t speed_;
+	float distance;
+	float laser_detect_distance;
+	laserDistance laser_back_distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -92,6 +97,12 @@ protected:
 private:
 	uint16_t accurate_;
 	uint8_t speed_;
+	uint8_t stage_;
+	double wait_sec_;
+	double waiting_start_sec_;
+	bool waiting_finished_;
+	// It will use laser points to get the turn angle for every skip_laser_turn_angle_cnt_ times.
+	uint8_t skip_laser_turn_angle_cnt_;
 };
 
 class TurnSpeedRegulator{
@@ -170,6 +181,9 @@ private:
 	uint32_t tick_;
 	uint8_t turn_speed_;
 	PPTargetType path_;
+	float odom_x_start = 0;
+	float odom_y_start = 0;
+	laserDistance laser_distance;
 };
 
 class GoToChargerRegulator: public RegulatorBase{
@@ -238,9 +252,19 @@ public:
 	bool isTurn(){
 		return p_reg_ == turn_reg_;
 	};
-	void setTarget() {p_reg_->setTarget();}
 
+	void setTarget() {p_reg_->setTarget();}
+	bool isMt(void) const
+	{
+		return p_reg_ == mt_reg_;
+	}
+	bool isBack(void) const
+	{
+		return p_reg_ == back_reg_;
+	}
 	void switchToNext();
+
+	bool wf_is_reach(const std::vector<Cell_t>& passed_path);
 
 	void updatePosition(const Point32_t &curr_point){
 		s_curr_p = curr_point;
