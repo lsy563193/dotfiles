@@ -1123,36 +1123,29 @@ int16_t path_is_trapped(const Cell_t& curr, PPTargetType& path)
 bool is_trapped(const Cell_t& curr, PPTargetType& path) {
 	int escape_cleaned_count = 0;
 	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
+	if(is_found)
+		return false;
 	auto map_cleand_count = map_get_cleaned_area();
-
 	double clean_proportion = 0.0;
 	clean_proportion = (double) escape_cleaned_count / (double) map_cleand_count;
 	ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__, escape_cleaned_count);
 	ROS_WARN("%s %d: escape map_cleand_count(%d)!!", __FUNCTION__, __LINE__, map_cleand_count);
-	if (is_found) {
-		ROS_ERROR("!!!!!!!!!!!!!!!!!!path_dijkstra is found but tarth_is not found!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		clean_proportion = 1;
-	}
-
 	ROS_WARN("%s %d: clean_proportion(%f) ,when prop < 0,8, is trapped!!", __FUNCTION__, __LINE__, clean_proportion);
 	return (clean_proportion < 0.8 || path_escape_trapped(curr) <= 0);
 }
 
-int16_t path_target(const Cell_t& curr, PPTargetType& path)
+bool path_target(const Cell_t& curr, PPTargetType& path)
 {
 	BoundingBox2 map;
 	if (!get_reachable_targets(curr, map)) {
 		ROS_WARN("%s %d: No more target to clean,check is_trapped()?!!", __FUNCTION__, __LINE__);
-		return -1;
+		return false;
 	}
 
 	generate_path_to_targets(curr);
 
 	Cell_t temp_target;
-	if (path_select_target(curr, temp_target, map))
-		return path_next_shortest(curr, temp_target, path);
-	else
-		return 0;
+	return (path_select_target(curr, temp_target, map) && path_next_shortest(curr, temp_target, path) == 1);
 }
 
 bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingBox2& map)
@@ -1524,34 +1517,21 @@ int16_t path_escape_trapped(const Cell_t& curr)
 
 bool path_nav_target(const Cell_t& curr, PPTargetType& path, const int is_reach)
 {
+	bool ret = true;
 	if (g_resume_cleaning && !path_get_continue_target(curr, path))
 				g_resume_cleaning = false;
 
 	if (!g_resume_cleaning) {
 		if (!path_lane_is_cleaned(curr, path, is_reach)) {
-			int16_t ret;
 			if (g_wf_reach_count > 0) {
-				ret = isolate_target(curr, path);
+				isolate_target(curr, path);
 			}
 			else {
 				ret = path_target(curr, path);//-1 not target, 0 found
 			}
-			if (ret == 0) {
-				g_finish_cleaning_go_home = true;
-				g_no_uncleaned_target = true;
-				cm_check_should_go_home();
-			}
-			if (ret == -2) {
-				if (g_trapped_mode == 0) {
-
-				}
-			}
-		}
-		if (g_trapped_mode == 1 || g_trapped_mode == 2) {
-
 		}
 	}
-	return true;
+	return ret;
 }
 
 bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
@@ -1591,7 +1571,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 						if (g_wf_reach_count == 0) {
 							angle = 0;
 						}
-						g_wf_reach_count++;
+//						g_wf_reach_count++;
 						const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 						Cell_t cell;
 						cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
@@ -1618,18 +1598,23 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 		}
 		else if (cm_is_navigation()) {
 			path.clear();
-			if(g_trapped_mode == 0){
-				if(path_nav_target(curr, path, is_reach) && is_trapped(curr, path))
-				{
-					g_trapped_mode = 1;
-					// This led light is for debug.
-					set_led_mode(LED_FLASH, LED_GREEN, 300);
-					mt_set(CM_FOLLOW_LEFT_WALL);
-					g_wf_start_timer = time(NULL);
-					g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
+			if(g_trapped_mode == 0) {
+				if (!path_nav_target(curr, path, is_reach)) {
+					if (is_trapped(curr, path)) {
+						g_trapped_mode = 1;
+						// This led light is for debug.
+						set_led_mode(LED_FLASH, LED_GREEN, 300);
+						g_wf_start_timer = time(NULL);
+						g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
+					}
+					else {
+						g_finish_cleaning_go_home = true;
+						g_no_uncleaned_target = true;
+						cm_check_should_go_home();
+					}
 				}
-			}
-			else if(is_trapped(curr, path) && path_nav_target(curr, path, is_reach)) {
+			}//check trapped first
+			else if(!is_trapped(curr, path) && path_nav_target(curr, path, is_reach)) {
 				g_wf_reach_count = 0;
 				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
@@ -1670,15 +1655,18 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 				}
 			}
 		}
-	}else
-	if (cm_is_go_home() || curr == g_home || !path_get_home_target(curr, path,is_reach)) {
-//		cm_go_to_charger();
-		ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
-		g_tilt_enable = false; //disable tilt detect
-		set_led_mode(LED_STEADY, LED_ORANGE);
-		mt_set(CM_GO_TO_CHARGER);
-		return true;
 	}
+	if(g_go_home) {
+		if (cm_is_go_home() || curr == g_home || !path_get_home_target(curr, path, is_reach)) {
+//		cm_go_to_charger();
+			ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
+			g_tilt_enable = false; //disable tilt detect
+			set_led_mode(LED_STEADY, LED_ORANGE);
+			mt_set(CM_GO_TO_CHARGER);
+			return true;
+		}
+	}
+
 
 	// Delete the first cell of list, it means current cell. Do this for checking whether it should follow the wall.
 	if (path.size() > 1)
@@ -1692,6 +1680,8 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 		mt_set(CM_LINEARMOVE);
 		mt_update(curr, path, g_old_dir);
 	}
+	if(g_trapped_mode == 1)
+		mt_set(CM_FOLLOW_LEFT_WALL);
 	// else if wall follow mode, the move type has been set before here.
 	if (curr.X == path.front().X)
 		g_new_dir = curr.Y > path.front().Y ? NEG_Y : POS_Y;

@@ -115,7 +115,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach);
 
 uint16_t path_get_robot_direction(void);
 
-int16_t path_target(const Cell_t& curr, PPTargetType& path);
+bool path_target(const Cell_t& curr, PPTargetType& path);
 //int16_t path_target2(const Cell_t& curr, PPTargetType& path);
 void path_find_all_targets(const Cell_t& curr, BoundingBox2& map);
 

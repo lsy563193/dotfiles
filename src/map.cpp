@@ -1043,7 +1043,7 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 		}
 	}
 
-	std::string msg = "Cell:";
+//	std::string msg = "Cell:\n";
 	for (const auto& cell :  cells)
 	{
 		for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
@@ -1054,8 +1054,9 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 			auto status = map_get_cell(MAP, cell.X, y);
 			if (status != BLOCKED_TILT && status != BLOCKED_SLIP)
 				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
-			msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
+//			msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
 		}
+//		msg += '\n';
 	}
 
 	int32_t x, y;
@@ -1069,7 +1070,7 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 			}
 		}
 	}
-	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
+//	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
 void map_mark()

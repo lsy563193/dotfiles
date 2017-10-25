@@ -1630,7 +1630,7 @@ void path_display_path_points(const deque<Cell_t>& path)
 
 	msg += " " + std::to_string(__LINE__) + ": ";
 	for (auto it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
+		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + ")->";
 	}
 	//msg += "\n";
 	ROS_WARN("%s",msg.c_str());
