@@ -82,13 +82,15 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	}
 	if (scan2_valid_cnt > 30)
 	{
-		boost::mutex::scoped_lock(scan2_mutex_);
-		laserScanData_2_ = *scan;
-		count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-		setScan2Ready(1);
-		scan2_update_time = ros::Time::now().toSec();
-		//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
+		// laser has been covered.
 	}
+
+	boost::mutex::scoped_lock(scan2_mutex_);
+	laserScanData_2_ = *scan;
+	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
+	setScan2Ready(1);
+	scan2_update_time = ros::Time::now().toSec();
+	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
 }
 
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
@@ -1431,12 +1433,18 @@ void Laser::pubPointMarker(std::vector<Double_Point> *point)
 
 bool Laser::laserCheckFresh(float duration, uint8_t type)
 {
-	double time_gap = ros::Time::now().toSec() - scan_update_time;
-	ROS_INFO("%s %d: time_gap = %lf.", __FUNCTION__, __LINE__, time_gap);
+	double time_gap;
 	if (type == 1 && time_gap < duration)
-		return true;
-	if (type == 2 && time_gap < duration)
-		return true;
+		time_gap = ros::Time::now().toSec() - scan_update_time;
+	if (type == 2)
+		time_gap = ros::Time::now().toSec() - scan2_update_time;
 
+	if (time_gap < duration)
+	{
+		//ROS_INFO("%s %d: time_gap(%lf) < duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
+		return true;
+	}
+
+	//ROS_INFO("%s %d: time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
 	return false;
 }

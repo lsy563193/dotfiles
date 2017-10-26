@@ -994,7 +994,9 @@ void em_default_handle_lidar_bumper(bool state_new,bool state_last)
 // Laser stuck
 void em_default_handle_laser_stuck(bool state_new,bool state_last)
 {
-	ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
+	beep_for_command(true);
+	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
+	g_laser_stuck = true;
 }
 
 /* Default: empty hanlder */

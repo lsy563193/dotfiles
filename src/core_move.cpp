@@ -1364,6 +1364,8 @@ void cm_register_events()
 	//event_manager_enable_handler(EVT_LIDAR_BUMPER,true);
 	/* Slam Error */
 	event_manager_enable_handler(EVT_SLAM_ERROR, true);
+	// Laser stuck
+	event_manager_enable_handler(EVT_LASER_STUCK, true);
 
 #undef event_manager_register_and_enable_x
 
@@ -1438,9 +1440,11 @@ void cm_unregister_events()
 	/* Slam Error */
 	event_manager_register_and_disable_x(EVT_SLAM_ERROR);
 	/* robot slip */
-	//event_manager_register_and_disable_x(EVT_ROBOT_SLIP);
+	event_manager_register_and_disable_x(EVT_ROBOT_SLIP);
 	/* lidar bumper*/
 	//event_manager_register_and_disable_x(EVT_LIDAR_BUMPER);
+	// Laser stuck
+	event_manager_register_and_disable_x(EVT_LASER_STUCK);
 
 #undef event_manager_register_and_disable_x
 

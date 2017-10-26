@@ -3499,6 +3499,8 @@ int8_t lidar_bumper_deinit()
 
 bool check_laser_stuck()
 {
+	if (MotionManage::s_laser != nullptr && !MotionManage::s_laser->laserCheckFresh(3, 2))
+		return true;
 	return false;
 }
 
