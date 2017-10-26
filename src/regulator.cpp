@@ -618,7 +618,7 @@ bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 }
 
 LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
-				integrated_(0),base_speed_(LINEAR_MIN_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4)
+				integrated_(0),base_speed_(LINEAR_MIN_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4),odom_y_start(0.0),odom_x_start(0.0)
 {
 //	g_is_should_follow_wall = false;
 	s_target = target;
@@ -681,7 +681,7 @@ bool LinearRegulator::isReach()
 bool LinearRegulator::isSwitch()
 {
 
-	if ((! g_bumper_triggered && get_bumper_status())
+	if ((! g_bumper_triggered && get_bumper_status() )
 		|| (! g_cliff_triggered && get_cliff_status())
 		|| (! g_tilt_triggered && get_tilt_status()) || g_robot_slip)
 	{
@@ -805,7 +805,8 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y);
 	//auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
-	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (laser_distance.getFrontMin() < 0.25))
+	uint8_t obs_state = get_obs_status();
+	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (laser_distance.getFrontMin() < 0.25))
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
@@ -814,7 +815,10 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED){
 			if(laser_distance.getFrontMin() > 0.025 && laser_distance.getFrontMin() < 0.125 && (left_speed > 20 || right_speed > 20)) {
 				base_speed_ -= 2;
-			}else
+			}
+			else if(obs_state & Status_Front_OBS)
+				base_speed_ -=2;
+			else if(obs_state & (Status_Left_OBS | Status_Right_OBS))
 				base_speed_ --;
 		}
 	}else if (base_speed_ < (int32_t) LINEAR_MAX_SPEED)
@@ -1082,7 +1086,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				angular_speed = 15;
 		}
 		reset_rcon_status();
-		/*---check if should eloud the charger---*/
+		/*---check if should aloud the charger---*/
 		if(seen_charger_counter)
 		{
 			same_speed = linear_speed + angular_speed;
@@ -3296,7 +3300,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	turn_reg_ = new TurnRegulator(ranged_angle(gyro_get_angle() + g_turn_angle));
 	p_reg_ = turn_reg_;
 
-	robot::instance()->obsAdjustCount(50);
+	robot::instance()->obsAdjustCount(20);
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: RegulatorManage finish",__FUNCTION__,__LINE__);

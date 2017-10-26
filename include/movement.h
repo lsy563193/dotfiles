@@ -7,6 +7,7 @@
 #include "config.h"
 #include "main.h"
 #include "clean_mode.h"
+#include "mathematics.h"
 
 #define Brush_Power					128
 #define MainBrush_Power				70
@@ -392,6 +393,7 @@ struct pid_struct
 	uint8_t last_reg_type;
 	float variation;
 };
+
 struct pid_argu_struct
 {
 	uint8_t reg_type; // Regulator type
@@ -399,6 +401,15 @@ struct pid_argu_struct
 	float Ki;
 	float Kd;
 };
+
+#define RCON_SENSOR_FLFR 0 //define the rcon sensor angle on robotbase (degree)
+#define RCON_SENSOR_FLFR2 30
+#define RCON_SENSOR_LR 60
+typedef struct {
+	int32_t x;
+	int32_t y;
+	int16_t sensor_angle;
+}Rcon_Point_t;
 
 extern struct pid_argu_struct argu_for_pid;
 extern struct pid_struct left_pid, right_pid;
@@ -793,4 +804,6 @@ int8_t lidar_bumper_init(const char* device);
 int8_t lidar_bumper_deinit();
 
 bool check_laser_stuck();
+
+uint8_t estimate_charger_position(Rcon_Point_t point_a,Rcon_Point_t piont_b,Cell_t *pos);
 #endif

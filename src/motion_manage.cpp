@@ -150,8 +150,8 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
 	mt_set(cm_is_follow_wall() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
-	g_from_station = 0;
 	g_trapped_mode = 0;
+	g_from_station = g_from_station>0?g_from_station:0;
 	g_finish_cleaning_go_home = false;
 	g_motion_init_succeeded = false;
 	bool remote_home_during_pause = false;
@@ -198,6 +198,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			set_led_mode(LED_STEADY, LED_ORANGE);
 		else
 			set_led_mode(LED_STEADY, LED_GREEN);
+
 		return;
 	}
 	if (is_clean_paused())
@@ -221,7 +222,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		robot::instance()->offsetAngle(180);
 		robot::instance()->startAngle(180);
-		Cell_t home_point(-4,0);
+		ROS_INFO("%s,%d,\033[32m charge stub postion estiamate on(%d,%d)\033[0m",__FUNCTION__,__LINE__,(-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
+		Cell_t home_point((-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
 		map_set_charge_position(home_point);
 	}
 	else

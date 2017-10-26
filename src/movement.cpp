@@ -23,9 +23,9 @@
 #include "event_manager.h"
 #include "laser.hpp"
 
-static int16_t obs_left_trig_value = 350;
-static int16_t obs_front_trig_value = 350;
-static int16_t obs_right_trig_value = 350;
+static int16_t obs_left_trig_value = 100;
+static int16_t obs_front_trig_value = 100;
+static int16_t obs_right_trig_value = 100;
 int16_t g_obs_left_baseline = 100;
 int16_t g_obs_front_baseline = 100;
 int16_t g_obs_right_baseline = 100;
@@ -3500,4 +3500,33 @@ int8_t lidar_bumper_deinit()
 bool check_laser_stuck()
 {
 	return false;
+}
+
+uint8_t estimate_charger_position(Rcon_Point_t rcon_point_a, Rcon_Point_t rcon_point_b,Cell_t *pos)
+{
+	float charger_dist_est_a,charger_dist_est_b;
+	int32_t ax = rcon_point_a.x;//point a postition
+	int32_t ay = rcon_point_a.y;
+	float angle_a = (float)deg_to_rad(rcon_point_a.sensor_angle*1.0,1);
+
+	int32_t bx = rcon_point_b.x;//point b position
+	int32_t by = rcon_point_b.y;
+	float angle_b = (float)deg_to_rad(rcon_point_b.sensor_angle*1.0,1);
+
+	float diff_angle_a = atanf((ax - bx)/(ay - by));
+	float diff_angle_b = PI - diff_angle_a;
+
+	float angle_A = PI/2 - angle_a - diff_angle_a;
+	float angle_B = PI - angle_b - diff_angle_b;
+
+	uint32_t dist = two_points_distance(ax,ay,bx,by);
+
+	charger_dist_est_a = dist * sinf(angle_B)/sinf(PI-(angle_B+angle_A)); 
+	charger_dist_est_b = dist * sinf(angle_A)/sinf(PI-(angle_B+angle_A));
+
+	pos->X = count_to_cell(cosf(angle_a)*charger_dist_est_a + ax);
+	pos->Y = count_to_cell(sinf(angle_a)*charger_dist_est_a + ay);
+
+	ROS_INFO("%s,%d,estimate charger stub position on (%d,%d)",__FUNCTION__,__LINE__,pos->X,pos->Y);
+	return 1;
 }

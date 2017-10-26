@@ -865,7 +865,7 @@ uint8_t map_set_rcon()
 		g_rcon_triggered = 0;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_station && g_in_charge_signal_range)
+	if( g_from_station && g_in_charge_signal_range && g_go_home)//while in g_go_home mode or from_station dont mark rcon signal
 		return 0;
 	enum {
 			left, fl2, fl1, fr1, fr2, right,
@@ -951,21 +951,21 @@ uint8_t map_set_rcon()
 
 uint8_t map_set_charge_position(const Cell_t home_point)
 {
-	int offsetx=-2;
-	int offsety=-2;
+	int ltx=-2;
+	int lty=-2;
 	g_stub_cell.X =  home_point.X;
 	g_stub_cell.Y =  home_point.Y;
 	ROS_INFO("%s,%d: set g_stub_cell(%d,%d)",__FUNCTION__,__LINE__,g_stub_cell.X,g_stub_cell.Y);
 	int32_t x,y;
-	std::string msg("");
+	std::string print_msg("");
 	for(int i=0;i<4;i++){//hight
 		for(int j = 0;j<5;j++){//width
-			cm_world_to_point(gyro_get_angle(),CELL_SIZE*(offsety+j+home_point.Y),CELL_SIZE*(offsetx+i+home_point.X),&x,&y); 
+			cm_world_to_point(gyro_get_angle(),CELL_SIZE*(lty+j+home_point.Y),CELL_SIZE*(ltx+i+home_point.X),&x,&y); 
 			map_set_cell(MAP,x,y,BLOCKED_RCON);
-			msg+="("+std::to_string(count_to_cell(x))+","+std::to_string(count_to_cell(y))+"),";
+			print_msg+="("+std::to_string(count_to_cell(x))+","+std::to_string(count_to_cell(y))+"),";
 		}
 	}
-	ROS_INFO("%s,%d: set charge stub area:%s",__FUNCTION__,__LINE__,msg.c_str());
+	ROS_INFO("%s,%d: set charge stub area:%s",__FUNCTION__,__LINE__,print_msg.c_str());
 	return 0;
 }
 

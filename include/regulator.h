@@ -181,8 +181,8 @@ private:
 	uint32_t tick_;
 	uint8_t turn_speed_;
 	PPTargetType path_;
-	float odom_x_start = 0;
-	float odom_y_start = 0;
+	float odom_x_start;
+	float odom_y_start;
 	laserDistance laser_distance;
 };
 
