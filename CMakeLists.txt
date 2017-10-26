@@ -114,9 +114,9 @@ target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIE
 add_executable(syscheck src/signature.c src/crc8.cpp src/des.cpp src/serial.cpp src/syscheck.cpp)
 target_link_libraries(syscheck ${catkin_LIBRARIES} -lm "-T ../ilife_ldscript.lds -Wl,--verbose")
 
-#add_executable(reg_test ${PP_SRC} )
-#target_link_libraries(reg_test ${catkin_LIBRARIES} -lm -lpthread)
-#target_link_libraries(reg_test ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
+add_executable(reg_test ${PP_SRC} )
+target_link_libraries(reg_test ${catkin_LIBRARIES} -lm -lpthread)
+target_link_libraries(reg_test ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 
 install(TARGETS pp syscheck
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
