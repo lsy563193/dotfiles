@@ -1272,7 +1272,6 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 */
 
 //#if !INTERLACED_MOVE
-#if 0
 	if (!is_stop) {
 		ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto a = curr.Y; a >= map.min.Y && !is_stop; --a) {
@@ -1423,7 +1422,6 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 			}
 		}
 	}
-#endif
 	/* fallback to find unclean area */
 	if (!is_stop) {
 		ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
