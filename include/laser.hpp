@@ -24,8 +24,8 @@ public:
 	bool getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserDistance& laser_distance);
 	void setScanReady(uint8_t val);
 	void setScan2Ready(uint8_t val);
-	static int8_t isScanReady();
-	static int8_t isScan2Ready();
+	int8_t isScanReady();
+	int8_t isScan2Ready();
 	bool isNewDataReady();
 
 	double getLaserDistance(uint16_t angle);
@@ -54,6 +54,8 @@ public:
 
 	uint8_t laserMarker(bool is_mark,double X_MIN = 0.140,double X_MAX = 0.237);
 	uint8_t isRobotSlip();
+
+	bool laserCheckFresh(float duration, uint8_t type = 1);
 private:
 
 	//void stop(void);
@@ -62,15 +64,17 @@ private:
 	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void laserDataFilter(sensor_msgs::LaserScan& laserScanData, double delta);
 
-	static uint8_t is_ready_;
-	static uint8_t is_scan2_ready_;
+	uint8_t is_scan_ready_;
+	uint8_t is_scan2_ready_;
 
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;
 	ros::Subscriber	scan_sub2_;
 
 	sensor_msgs::LaserScan laserScanData_;
+	double scan_update_time;
 	sensor_msgs::LaserScan laserScanData_2_;
+	double scan2_update_time;
 
 	//ros::ServiceClient start_motor_cli_;
 	//ros::ServiceClient stop_motor_cli_;

@@ -22,8 +22,6 @@
 boost::mutex scan_mutex_;
 boost::mutex scan2_mutex_;
 //float* Laser::last_ranges_ = NULL;
-uint8_t Laser::is_ready_ = 0;
-uint8_t Laser::is_scan2_ready_ = 0;
 uint32_t new_laser_seq;
 
 
@@ -35,6 +33,8 @@ Laser::Laser():nh_()
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 	setScanReady(0);
 	setScan2Ready(0);
+	scan_update_time = ros::Time::now().toSec();
+	scan2_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
 	lidarMotorCtrl(ON);
@@ -62,20 +62,35 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	laserScanData_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 
-	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	setScanReady(1);
+	scan_update_time = ros::Time::now().toSec();
+	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan_update_time);
 }
 
 void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	int count = 0;
-	boost::mutex::scoped_lock(scan2_mutex_);
-	laserScanData_2_ = *scan;
-	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-	
-	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
-	setScan2Ready(1);
+	uint8_t scan2_valid_cnt = 0;
+
+	for (uint16_t i = 0; i < 360; i++)
+	{
+		if (scan->ranges[i] != std::numeric_limits<float>::infinity())
+		{
+			if (++scan2_valid_cnt > 30)
+				break;
+		}
+	}
+	if (scan2_valid_cnt > 30)
+	{
+		boost::mutex::scoped_lock(scan2_mutex_);
+		laserScanData_2_ = *scan;
+		count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
+		setScan2Ready(1);
+		scan2_update_time = ros::Time::now().toSec();
+		//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
+	}
 }
+
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
 {
 	int		i, count;
@@ -129,14 +144,15 @@ int8_t Laser::isScan2Ready()
 {
 	return is_scan2_ready_;
 }
+
 int8_t Laser::isScanReady()
 {
-	return is_ready_;
+	return is_scan_ready_;
 }
 
 void Laser::setScanReady(uint8_t val)
 {
-	is_ready_ = val;
+	is_scan_ready_ = val;
 }
 
 void Laser::setScan2Ready(uint8_t val)
@@ -1411,4 +1427,16 @@ void Laser::pubPointMarker(std::vector<Double_Point> *point)
 		point_marker.points.clear();
 		point_marker_pub.publish(point_marker);
 	}
+}
+
+bool Laser::laserCheckFresh(float duration, uint8_t type)
+{
+	double time_gap = ros::Time::now().toSec() - scan_update_time;
+	ROS_INFO("%s %d: time_gap = %lf.", __FUNCTION__, __LINE__, time_gap);
+	if (type == 1 && time_gap < duration)
+		return true;
+	if (type == 2 && time_gap < duration)
+		return true;
+
+	return false;
 }
