@@ -818,6 +818,10 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 			(!IS_POS_AXIS(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
 		if(g_plan_path.size()>1)
 			g_plan_path.pop_front();
+		else{
+			g_is_near = true;
+			ROS_WARN("%s %d: g_is_near(%d)", __FUNCTION__, __LINE__, g_is_near);
+		}
 		target_p = map_cell_to_point(g_plan_path.front());
 		target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
 		if (std::abs(s_curr_p.X - target_p.X) < std::abs(s_curr_p.Y - target_p.Y))
@@ -993,6 +997,8 @@ bool FollowWallRegulator::_isStop()
 		reach_count =2;
 	if (g_wf_reach_count >= reach_count) {
 		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, reach_count);
+		if(g_trapped_mode ==1)
+			g_fatal_quit_event = true;
 		g_trapped_mode = 0;
 		ret = true;
 	}

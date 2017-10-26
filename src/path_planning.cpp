@@ -763,6 +763,7 @@ bool for_each_neighbor(const Cell_t& cell,CellState cost, Func_t func) {
 void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 {
 	BoundingBox2 map_tmp{{int16_t(g_x_min-1),int16_t(g_y_min - 1)},{g_x_max,g_y_max}};
+	PPTargetType t;
 
 	for (const auto& cell : map_tmp)
 	{
@@ -816,7 +817,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 				{
 					// Save the start target of this target line.
 					start = x;
-					PPTargetType t{{start,y}};
+					t = {{start,y}};
 					g_targets.push_back(t);
 				}
 				if (start != SHRT_MAX)
@@ -827,21 +828,21 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
 				if (start != SHRT_MAX && end != start)
 				{
 					// Save the end target of this target line.
-					PPTargetType t{{end,y}};
+					t={{end,y}};
 					g_targets.push_back(t);
 					if (end - start > 1)
 					{
 						// Clear the targets between start and end, it means finding the both end of the unclean lane.
 						for (auto it_x = start + 1; it_x != end; it_x++)
 						{
-//							if (it_x != curr.X)
+							if (it_x != curr.X)
 								map_set_cell(MAP, cell_to_count(it_x), cell_to_count(y), UNCLEAN);
-//							else
-//							{
+							else
+							{
 								// Save the target with the same X of current cell.
-//								t.target = {static_cast<int16_t>(it_x), y};
-//								g_targets.push_back(t);
-//							}
+								t={{end,y}};
+								g_targets.push_back(t);
+							}
 						}
 					}
 				}
@@ -1534,7 +1535,7 @@ bool path_nav_target(const Cell_t& curr, PPTargetType& path, const int is_reach)
 	return ret;
 }
 
-bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
+bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 {
 	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
 
@@ -1545,7 +1546,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 		if (cm_is_follow_wall()){
 			ROS_INFO("  path_next Clean_Mode:(%d)", cm_get());
 			if (mt_is_linear()) {
-				if (curr != path.back()) {
+				if (start != path.back()) {
 					ROS_INFO("  start follow wall");
 					mt_set(CM_FOLLOW_LEFT_WALL);
 				} else {
@@ -1577,7 +1578,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 						cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 						path.clear();
 						path.push_front(cell);
-						path.push_front(curr);
+						path.push_front(start);
 						ROS_INFO("  target.X = %d target.Y = %d", cell.X, cell.Y);
 					} else {
 						ROS_INFO("  yes isolate_count(%d),times(%d),", g_wf_reach_count, get_work_time() > WALL_FOLLOW_TIME);
@@ -1589,18 +1590,18 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 		}
 		else if ((SpotMovement::instance()->getSpotType() == CLEAN_SPOT ||
 														SpotMovement::instance()->getSpotType() == NORMAL_SPOT)) {
-			if (!SpotMovement::instance()->spotNextTarget(curr, &path))
+			if (!SpotMovement::instance()->spotNextTarget(start, &path))
 				return false;
 #if DEBUG_MAP
 			debug_map(MAP, path.back().X, path.back().Y);
 #endif
-			path.push_front(curr);
+			path.push_front(start);
 		}
-		else if (cm_is_navigation()) {
+		else if (cm_is_navigation() || cm_is_exploration()) {
 			path.clear();
 			if(g_trapped_mode == 0) {
-				if (!path_nav_target(curr, path, is_reach)) {
-					if (is_trapped(curr, path)) {
+				if (!path_nav_target(start, path, is_reach)) {
+					if (is_trapped(start, path)) {
 						g_trapped_mode = 1;
 						// This led light is for debug.
 						set_led_mode(LED_FLASH, LED_GREEN, 300);
@@ -1614,7 +1615,7 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 					}
 				}
 			}//check trapped first
-			else if(!is_trapped(curr, path) && path_nav_target(curr, path, is_reach)) {
+			else if(!is_trapped(start, path) && path_nav_target(start, path, is_reach)) {
 				g_wf_reach_count = 0;
 				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
 				g_trapped_mode = 0;
@@ -1625,39 +1626,9 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 					set_led_mode(LED_STEADY, LED_GREEN);
 			}
 		}
-		else if (cm_is_exploration()) {
-			path.clear();
-			if (!path_lane_is_cleaned(curr, path, is_reach)) {
-				int16_t ret;
-				if (g_wf_reach_count > 0) {
-					ret = isolate_target(curr, path);
-					g_wf_reach_count = 0;
-				} else {
-					ret = path_target(curr, path);//0 not target, 1,found, -2 trap
-				}
-				ROS_INFO("%s %d: path_target return: %d. Next(\033[32m%d,%d\033[0m), Target(\033[32m%d,%d\033[0m).",
-								 __FUNCTION__, __LINE__, ret, path.front().X, path.front().Y, path.back().X, path.back().Y);
-				if (ret == 0) {
-					g_finish_cleaning_go_home = true;
-					cm_check_should_go_home();
-				}
-				if (ret == -2) {
-					if (g_trapped_mode == 0) {
-						g_trapped_mode = 1;
-						// This led light is for debug.
-						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						mt_set(CM_FOLLOW_LEFT_WALL);
-						g_wf_start_timer = time(NULL);
-						g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
-						g_passed_path.push_back({0,0,0});
-					}
-					return true;
-				}
-			}
-		}
 	}
 	if(g_go_home) {
-		if (cm_is_go_home() || curr == g_home || !path_get_home_target(curr, path, is_reach)) {
+		if (cm_is_go_home() || start == g_home || !path_get_home_target(start, path, is_reach)) {
 //		cm_go_to_charger();
 			ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
 			g_tilt_enable = false; //disable tilt detect
@@ -1678,15 +1649,15 @@ bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach)
 	else if(cm_is_navigation())
 	{
 		mt_set(CM_LINEARMOVE);
-		mt_update(curr, path, g_old_dir);
+		mt_update(start, path, g_old_dir);
 	}
 	if(g_trapped_mode == 1)
 		mt_set(CM_FOLLOW_LEFT_WALL);
 	// else if wall follow mode, the move type has been set before here.
-	if (curr.X == path.front().X)
-		g_new_dir = curr.Y > path.front().Y ? NEG_Y : POS_Y;
+	if (start.X == path.front().X)
+		g_new_dir = start.Y > path.front().Y ? NEG_Y : POS_Y;
 	else
-		g_new_dir = curr.X > path.front().X ? NEG_X : POS_X;
+		g_new_dir = start.X > path.front().X ? NEG_X : POS_X;
 
 	return true;
 }
