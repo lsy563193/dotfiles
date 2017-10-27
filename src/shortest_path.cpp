@@ -1515,7 +1515,7 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 			}
 		}
 		path.push_front({x_path,y_path});
-		path.push_front(curr);
+//		path.push_front(curr);
 	}
 	else {
 		if (path_points.size() > 3) {
@@ -1603,6 +1603,7 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 		std::reverse(path_points.begin(),path_points.end());
 		path_display_path_points(path_points);
 		path = path_points;
+		path.pop_front();
 	}
 
 	retval = 1;

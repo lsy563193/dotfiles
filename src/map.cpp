@@ -1028,10 +1028,10 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 	}
 	else
 	{
-		extern uint16_t g_new_dir;
-		if (g_new_dir == POS_X)
+		auto dir = g_plan_path.front().TH;
+		if (dir == POS_X)
 			dx = 1;
-		else if (g_new_dir == NEG_X)
+		else if (dir == NEG_X)
 			dx = -1;
 		else // POS_Y/NEG_Y
 			dx = 0;
@@ -1145,7 +1145,7 @@ void map_set_linear(const Cell_t &start, const Cell_t &stop, CellState state)
 	}
 }
 
-void map_set_follow(Cell_t start)
+/*void map_set_follow(Cell_t start)
 {
 	auto stop = map_get_curr_cell();
 	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
@@ -1164,7 +1164,7 @@ void map_set_follow(Cell_t start)
 		if(new_dx != 0 && dx>0 ^ new_dx<0)
 			map_set_linear(start, stop, BLOCKED_CLIFF);
 	}
-}
+}*/
 
 uint32_t map_get_cleaned_area(void)
 {

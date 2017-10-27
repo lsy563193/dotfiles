@@ -41,10 +41,10 @@ typedef enum {
   POS_Y = 900,
   NS_PY = 1350,
   NEG_X = 1800,
-  NX_NY = 2250,
-  NEG_Y = 2700,
-  PX_NY = 3150,
-  NONE = 3600,
+  NX_NY =-1350,
+  NEG_Y =-900,
+  PX_NY =-450,
+  NONE = 0,
 } Direction_Cardinal;
 
 #define IS_POS_AXIS(x) (x == POS_X || x == POS_Y || x == NONE)

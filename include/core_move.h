@@ -73,6 +73,7 @@ extern int g_rcon_triggered;
 extern bool g_resume_cleaning;
 extern bool g_exploration_home;
 extern std::deque<Cell_t> g_passed_path;
+extern std::deque<Cell_t> g_plan_path;
 extern long g_distance;
 extern bool g_is_near;
 

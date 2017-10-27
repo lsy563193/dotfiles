@@ -21,8 +21,8 @@
 #define TURN_REGULATOR_TURNING 2
 
 extern PPTargetType g_plan_path;
-extern uint16_t g_old_dir;
-extern uint16_t g_new_dir;
+//extern uint16_t g_old_dir;
+//extern uint16_t g_new_dir;
 extern Cell_t g_cell_history[];
 int g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
 double bumper_turn_factor=0.85;
@@ -195,6 +195,7 @@ static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max,
 
 static bool laser_turn_angle(int16_t& turn_angle)
 {
+//	ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
 	stop_brifly();
 
 	if (g_obs_triggered != 0)
@@ -634,6 +635,7 @@ LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 bool LinearRegulator::isReach()
 {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
+	auto g_new_dir = g_plan_path.front().TH;
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = map_cell_to_point(g_plan_path.back());
 	auto target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
@@ -810,6 +812,7 @@ void LinearRegulator::setTarget()
 void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
 	set_dir_forward();
+	auto g_new_dir = g_plan_path.front().TH;
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = map_cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
@@ -824,12 +827,8 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 		}
 		target_p = map_cell_to_point(g_plan_path.front());
 		target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
-		if (std::abs(s_curr_p.X - target_p.X) < std::abs(s_curr_p.Y - target_p.Y))
-			g_new_dir = s_curr_p.Y > target_p.Y ? NEG_Y : POS_Y;
-		else
-			g_new_dir = s_curr_p.X > target_p.X ? NEG_X : POS_X;
 		ROS_WARN("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
-						 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
+						 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_plan_path.front().TH);
 	}
 
 	int16_t angle_diff = 0;
@@ -3360,6 +3359,7 @@ void RegulatorManage::setMt()
 				if(!laser_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
 		}else{
+//			ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
 			if (LASER_FOLLOW_WALL)
 				if(!laser_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());

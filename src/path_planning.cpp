@@ -85,8 +85,7 @@ const Cell_t MAX_CELL{ MAP_SIZE, MAP_SIZE};
 
 //Cell_t g_cell_history[5];
 
-uint16_t g_new_dir;
-uint16_t g_old_dir;
+//uint16_t g_old_dir;
 
 int g_trapped_mode = 1;
 uint32_t g_wf_start_timer;
@@ -153,8 +152,7 @@ void path_planning_initialize()
 	g_direct_go = 0;
 
 //	g_cell_history[0] = {0,0};
-	g_old_dir = 0;
-	g_new_dir = 0;
+//	g_old_dir = 0;
 
 	/* Reset the poisition list. */
 /*	for (auto i = 0; i < 3; i++) {
@@ -188,7 +186,7 @@ void path_planning_initialize()
 
 uint16_t path_get_robot_direction()
 {
-	return g_new_dir;
+	return g_plan_path.front().TH;
 }
 
 void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max)
@@ -1638,26 +1636,34 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 		}
 	}
 
-
-	// Delete the first cell of list, it means current cell. Do this for checking whether it should follow the wall.
-	if (path.size() > 1)
-		path.pop_front();
-
-	g_old_dir = g_new_dir;
+//	g_old_dir = g_new_dir;
 	if (g_go_home || cm_is_exploration())
 		mt_set(CM_LINEARMOVE);
 	else if(cm_is_navigation())
 	{
 		mt_set(CM_LINEARMOVE);
-		mt_update(start, path, g_old_dir);
+		mt_update(start, path);
 	}
 	if(g_trapped_mode == 1)
 		mt_set(CM_FOLLOW_LEFT_WALL);
 	// else if wall follow mode, the move type has been set before here.
-	if (start.X == path.front().X)
-		g_new_dir = start.Y > path.front().Y ? NEG_Y : POS_Y;
-	else
-		g_new_dir = start.X > path.front().X ? NEG_X : POS_X;
+	path.push_front(start);
+	for(auto it = path.begin(); it < path.end(); ++it) {
+		auto it_next = it+1;
+		if (it->X == it_next->X)
+			it->TH = it->Y > it_next->Y ? NEG_Y : POS_Y;
+		else
+			it->TH = it->X > it_next->X ? NEG_X : POS_X;
+	}
+	if(!(g_resume_cleaning || g_go_home))
+	{
+//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
+		path.back().TH = (path.end()-2)->TH;
+//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
+	}
+
+	path_display_path_points(path);
+	path.pop_front();
 
 	return true;
 }
@@ -1874,7 +1880,6 @@ void wf_path_planning_initialize()
 	g_direct_go = 0;
 
 //	g_cell_history[0] = {0,0};
-	g_new_dir = 0;
 
 	/* Reset the poisition list. */
 /*	for (i = 0; i < 3; i++) {

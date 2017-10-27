@@ -430,18 +430,18 @@ void cm_cleaning() {
 /*			if (mt_is_follow_wall() && wf_start_timer == 0)
 				wf_start_timer = time(NULL);*/
 			if (!is_equal(curr, last)) {
-				printf("\n\n\n");
+//				printf("\n\n\n");
 				is_time_up = (last != curr);
 				last = curr;
 				auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it){
 						return is_equal(curr, it);
 				});
 				g_distance = std::distance(loc, g_passed_path.end());
-				ROS_INFO("%s,%d:g_distance(%d)", __FUNCTION__, __LINE__, g_distance);
+//				ROS_INFO("%s,%d:g_distance(%d)", __FUNCTION__, __LINE__, g_distance);
 				if (g_distance == 0) {
-					ROS_INFO("curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
+//					ROS_INFO("curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
 					g_passed_path.push_back(curr);
-					path_display_path_points(g_passed_path);
+//					path_display_path_points(g_passed_path);
 				}
 				if (g_distance >5) {
 					g_distance =0;
@@ -449,7 +449,7 @@ void cm_cleaning() {
 					g_passed_path.clear();
 //					g_passed_path.push_back(curr);
 				}
-				ROS_WARN("!!!!!!!!!!!!!!!!!!!%s,%d: g_distance(%d)! reach_count(%d)  curr(%d,%d,%d),loc(%d,%d,%d)",__FUNCTION__, __LINE__, g_distance,g_wf_reach_count, curr.X,curr.Y,curr.TH, loc->X,loc->Y,loc->TH);
+//				ROS_WARN("!!!!!!!!!!!!!!!!!!!%s,%d: g_distance(%d)! reach_count(%d)  curr(%d,%d,%d),loc(%d,%d,%d)",__FUNCTION__, __LINE__, g_distance,g_wf_reach_count, curr.X,curr.Y,curr.TH, loc->X,loc->Y,loc->TH);
 				if (mt_is_follow_wall()) {
 					if (cm_is_navigation()) {
 						map_set_follow_wall(MAP, curr);
@@ -475,14 +475,15 @@ void cm_cleaning() {
 			is_time_up = false;
 			printf("\n\n\n\n\n\n");
 			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
-			path_display_path_points(g_passed_path);
+//			path_display_path_points(g_passed_path);
 //					set_wheel_speed_pid(rm, speed_left, speed_right);
 			map_set_cleaned(g_passed_path);
 			map_set_blocked();
 			map_mark_robot(MAP);
-			g_plan_path.empty();
+//			g_plan_path.empty();
 			auto tmp_tm = g_trapped_mode;
 			auto start = curr;
+			start.TH = g_plan_path.front().TH;
 			if(g_is_near)
 			{
 				ROS_WARN("%s %d: Curr(%d, %d), g_is_near(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, g_is_near);
@@ -490,7 +491,6 @@ void cm_cleaning() {
 			}
 			path_next(start, g_plan_path, is_reach);
 			MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.back(), g_plan_path);
-			path_display_path_points(g_plan_path);
 			if( !((tmp_tm == 1 && g_trapped_mode == 1)||g_is_near) )
 			{
 				rm.setMt();
