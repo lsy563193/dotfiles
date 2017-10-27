@@ -121,6 +121,22 @@ int robotbase_init(void)
 	return 0;
 }
 
+void debug_received_stream()
+{
+	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < RECEI_LEN; i++)
+		printf("%02x ", g_receive_stream[i]);
+	printf("\n");
+}
+
+void debug_send_stream(uint8_t *buf)
+{
+	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < SEND_LEN; i++)
+		printf("%02x ", *(buf + i));
+	printf("\n");
+}
+
 bool is_robotbase_stop(void)
 {
 	return robotbase_thread_stop ? true : false;
