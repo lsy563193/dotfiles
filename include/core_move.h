@@ -141,7 +141,6 @@ void cm_create_home_boundary(void);
 void cm_self_check(void);
 bool cm_should_self_check(void);
 
-uint8_t cm_turn_and_check_charger_signal(void);
 /* Event handler functions. */
 void cm_register_events(void);
 void cm_unregister_events(void);

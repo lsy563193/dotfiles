@@ -221,7 +221,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if(g_from_station)
 	{
 		robot::instance()->offsetAngle(180);
-		robot::instance()->startAngle(180);
+//		robot::instance()->startAngle(180);
+		g_homes[0].TH = 180;
 	}
 	else
 	{
@@ -237,10 +238,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			}
 			align_angle += (float)(LIDAR_THETA / 10);
 			robot::instance()->offsetAngle(align_angle);
-			robot::instance()->startAngle(align_angle);
-			ROS_INFO("%s %d: Start angle (%f).", __FUNCTION__, __LINE__, robot::instance()->startAngle());
+//			robot::instance()->startAngle(align_angle);
+			g_homes[0].TH = -(int16_t)(align_angle *10);
+			ROS_INFO("%s %d: g_homes[0].TH (%d).", __FUNCTION__, __LINE__, g_homes[0].TH);
 		}
-		robot::instance()->startAngle(0);
+//		robot::instance()->startAngle(0);
+//		g_homes[0].TH=0;
 	}
 
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");

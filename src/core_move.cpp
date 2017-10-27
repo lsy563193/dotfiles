@@ -60,11 +60,6 @@
 #define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
 #define RADIUS_CELL (3 * CELL_COUNT_MUL)
 
-/*---cm_turn_and_check_charger_signal() return value---*/
-#define SEEN_CHARGER 1
-#define EVENT_TRIGGERED 2
-
-extern uint16_t g_new_dir;
 int g_rcon_triggered = 0;//1~6
 bool g_exploration_home = false;
 bool g_rcon_during_go_home = false;
@@ -404,7 +399,10 @@ void cm_cleaning() {
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
-
+	for(const auto&home : g_homes)
+	{
+		printf("home(%d,%d,%d)\n",home.X, home.Y, home.TH);
+	}
 //	auto is_found = true;
 	while (ros::ok()) {
 
@@ -500,7 +498,7 @@ void cm_cleaning() {
 			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),trapped(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), g_trapped_mode == 1);
 		}
 
-		if (g_plan_path.empty() && g_trapped_mode == 0)
+		if (g_plan_path.empty() && g_trapped_mode == 0 && !mt_is_go_to_charger())
 			return;
 
 		cm_move_to(rm, g_plan_path);
@@ -998,35 +996,6 @@ void cm_self_check(void)
 bool cm_should_self_check(void)
 {
 	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_slip_cnt >= 2);
-}
-
-uint8_t cm_turn_and_check_charger_signal(void)
-{
-	time_t delay_counter;
-	bool eh_status_now, eh_status_last;
-
-	ROS_INFO("%s, %d: wait about 1s to check if charger signal is received.", __FUNCTION__, __LINE__);
-	delay_counter = time(NULL);
-	while(time(NULL) - delay_counter < 2)
-	{
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-		{
-			usleep(100);
-			continue;
-		}
-
-		if(get_rcon_status())
-		{
-			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
-			return SEEN_CHARGER;
-		}
-		else if(g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
-		{
-			ROS_INFO("%s, %d: event triggered, return now.", __FUNCTION__, __LINE__);
-			return EVENT_TRIGGERED;
-		}
-	}
-	return 0;
 }
 
 /* Event handler functions. */

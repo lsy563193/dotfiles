@@ -56,6 +56,7 @@
 #define TRAPPED 2
 using namespace std;
 const int ISOLATE_COUNT_LIMIT = 4;
+int16_t g_new_dir;
 int g_wf_reach_count;
 list <PPTargetType> g_targets;
 
@@ -1533,6 +1534,35 @@ bool path_nav_target(const Cell_t& curr, PPTargetType& path, const int is_reach)
 	return ret;
 }
 
+bool cm_turn_and_check_charger_signal(void)
+{
+	time_t delay_counter;
+	bool eh_status_now, eh_status_last;
+
+	ROS_INFO("%s, %d: wait about 1s to check if charger signal is received.", __FUNCTION__, __LINE__);
+	delay_counter = time(NULL);
+	while(time(NULL) - delay_counter < 2)
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
+		{
+			usleep(100);
+			continue;
+		}
+
+		if(get_rcon_status())
+		{
+			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
+			return true;
+		}
+		else if(g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
+		{
+			ROS_INFO("%s, %d: event triggered, return now.", __FUNCTION__, __LINE__);
+			return false;
+		}
+	}
+	return false;
+}
+
 bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 {
 	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
@@ -1628,6 +1658,12 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 	if(g_go_home) {
 		if (cm_is_go_home() || start == g_home || !path_get_home_target(start, path, is_reach)) {
 //		cm_go_to_charger();
+			g_plan_path.clear();
+			if(start == g_home && g_home == g_zero_home)
+			{
+				if(!cm_turn_and_check_charger_signal())
+					return false;
+			}
 			ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
 			g_tilt_enable = false; //disable tilt detect
 			set_led_mode(LED_STEADY, LED_ORANGE);
@@ -1655,14 +1691,24 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 		else
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
-	if(!(g_resume_cleaning || g_go_home))
+//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
+	path.back().TH = (path.end()-2)->TH;
+//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
+	/*if(g_go_home)
 	{
-//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
 		path.back().TH = (path.end()-2)->TH;
-//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
-	}
+		if(rm_angle(g_home.TH, path.back().TH)>200)
+		{
+			path.push_back(g_home);
+			ROS_WARN("angle_delta >200,add last target to move to heading(%d)",g_home.TH);
+		}
+		else{
+			ROS_WARN("angle_delta <=200,don't add last target to move to heading(%d)",g_home.TH);
+		}
+	}*/
 
 	path_display_path_points(path);
+	g_new_dir = g_plan_path.front().TH;
 	path.pop_front();
 
 	return true;
@@ -1817,7 +1863,7 @@ bool path_get_home_target(const Cell_t& curr, PPTargetType& path,const int is_re
 		auto way = *g_home_way_it % HOMEWAY_NUM;
 		auto cnt = *g_home_way_it / HOMEWAY_NUM;
 		g_home = g_homes[cnt];
-		ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d, %d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__, g_home.X, g_home.Y ,way, cnt);
+		ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d, %d, %d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__, g_home.X, g_home.Y, g_home.TH, way, cnt);
 		if (way == USE_ROS && g_home_gen_rosmap) {
 			g_home_gen_rosmap = false;
 			BoundingBox2 map{{g_x_min, g_y_min}, {g_x_max, g_y_max}};
