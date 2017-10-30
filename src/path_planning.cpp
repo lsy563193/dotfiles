@@ -1691,21 +1691,13 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 		else
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
-//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
+		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 	path.back().TH = (path.end()-2)->TH;
-//		ROS_INFO("path.back(%d,%d,%d), path.end-2(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH, (path.end()-2)->X, (path.end()-2)->Y, (path.end()-2)->TH);
-	/*if(g_go_home)
+	if(g_go_home && g_home == g_zero_home)
 	{
-		path.back().TH = (path.end()-2)->TH;
-		if(rm_angle(g_home.TH, path.back().TH)>200)
-		{
-			path.push_back(g_home);
-			ROS_WARN("angle_delta >200,add last target to move to heading(%d)",g_home.TH);
-		}
-		else{
-			ROS_WARN("angle_delta <=200,don't add last target to move to heading(%d)",g_home.TH);
-		}
-	}*/
+		path.back().TH = g_home.TH;
+	}
+	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 
 	path_display_path_points(path);
 	g_new_dir = g_plan_path.front().TH;

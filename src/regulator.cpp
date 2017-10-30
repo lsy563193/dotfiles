@@ -536,6 +536,10 @@ void TurnRegulator::setTarget()
 {
 	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 && !mt_is_go_to_charger())
 	{
+		if(g_go_home && map_point_to_cell(s_curr_p) == g_zero_home)
+		{
+			s_target_angle = g_home.TH;
+		}else
 		if (waiting_finished)
 		{
 			stage_ = TURN_REGULATOR_WAITING_FOR_LASER;
@@ -555,7 +559,6 @@ void TurnRegulator::setTarget()
 				s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 				// Reset the speed.
 				speed_ = ROTATE_LOW_SPEED;
-				ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
 			}
 		}
 	}
@@ -565,8 +568,8 @@ void TurnRegulator::setTarget()
 		stage_ = TURN_REGULATOR_TURNING;
 		// Reset the speed.
 		speed_ = ROTATE_LOW_SPEED;
-		ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
 	}
+	ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
 }
 
 void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
@@ -696,7 +699,8 @@ bool LinearRegulator::isSwitch()
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
 	if ((! g_bumper_triggered && get_bumper_status())
 		|| (! g_cliff_triggered && get_cliff_status())
-		|| (! g_tilt_triggered && get_tilt_status()) || g_robot_slip)
+		|| (! g_tilt_triggered && get_tilt_status()) || g_robot_slip
+					|| isReach())
 	{
 //		g_is_should_follow_wall = true;
 		if(get_bumper_status())
@@ -3316,9 +3320,14 @@ void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		p_reg_->adjustSpeed(left_speed, right_speed);
 }
 
-bool RegulatorManage::isReach()
-{
-	if ( (mt_is_linear() && (p_reg_ == back_reg_ || p_reg_ == mt_reg_)) || (mt_is_follow_wall() && p_reg_ == mt_reg_) ){
+bool RegulatorManage::isReach() {
+	if ((mt_is_linear() &&
+			 (p_reg_ == back_reg_ ||
+				(p_reg_ == turn_reg_ && map_point_to_cell(s_curr_p) == g_plan_path.back()))
+			) ||
+			(mt_is_follow_wall() &&
+			 p_reg_ == mt_reg_)
+					) {
 		return p_reg_->isReach();
 	}
 //	ROS_INFO("isMt(%d),isTurn(%d),isBack(%d)", isMt(),isTurn(), isBack());
