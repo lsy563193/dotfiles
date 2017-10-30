@@ -19,7 +19,7 @@ EXEC_FILE="/opt/ros/indigo/bin/start_pp.sh"
 
 do_start() {
 	if [ -x $EXEC_FILE ]; then
-	        [ "$VERBOSE" != no ] 
+		[ "$VERBOSE" != no ]
 		$EXEC_FILE
 		ES=$?
 		[ "$VERBOSE" != no ]

@@ -243,7 +243,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			robot::instance()->startAngle(align_angle);
 			ROS_INFO("%s %d: Start angle (%f).", __FUNCTION__, __LINE__, robot::instance()->startAngle());
 		}
-		robot::instance()->startAngle(0);
 	}
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
