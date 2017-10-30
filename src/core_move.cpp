@@ -516,6 +516,7 @@ void cm_check_should_go_home(void)
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 		g_go_home = true;
 		work_motor_configure();
+		stop_brifly();
 		if (cm_is_follow_wall())
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
