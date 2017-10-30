@@ -395,7 +395,10 @@ MotionManage::~MotionManage()
 		if (g_cliff_all_triggered)
 		{
 			if(g_is_main_switch_off)
+			{
 				wav_play(WAV_CHECK_SWITCH);
+				g_is_main_switch_off = false;
+			}
 			else
 				wav_play(WAV_ERROR_LIFT_UP);
 		}

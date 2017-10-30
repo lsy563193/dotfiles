@@ -355,6 +355,9 @@ typedef enum{
 #define DIF_TILT_X_VAL				170
 #define DIF_TILT_Y_VAL				170
 #define DIF_TILT_Z_VAL				70
+#define FRONT_TILT_LIMIT			120
+#define LEFT_TILT_LIMIT				120
+#define RIGHT_TILT_LIMIT			120
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
@@ -791,6 +794,12 @@ void add_sp_turn_count();
 // time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
 void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 
+int16_t get_front_acc();
+int16_t get_left_acc();
+int16_t get_right_acc();
+int16_t get_front_init_acc();
+int16_t get_left_init_acc();
+int16_t get_right_init_acc();
 uint8_t check_tilt();
 void set_tilt_status(uint8_t status);
 uint8_t get_tilt_status();
