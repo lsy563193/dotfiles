@@ -1076,7 +1076,7 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 //			if((! is_follow_y_min && y < min_y) || (is_follow_y_min && y > max_y))
 //				continue;
 			auto status = map_get_cell(MAP, cell.X, y);
-			if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
+			if (status != BLOCKED_TILT && status != BLOCKED_SLIP)
 			{
 				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
 				msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + "),";
@@ -1091,7 +1091,7 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 		{
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
-			if (status == UNCLEAN && status != BLOCKED_RCON){
+			if (status == UNCLEAN){
 				map_set_cell(MAP, x, y, CLEANED);
 				msg += "(" + std::to_string(x) + "," + std::to_string(y) + "),";
 			}

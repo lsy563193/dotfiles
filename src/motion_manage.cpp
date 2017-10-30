@@ -151,7 +151,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
 	mt_set(cm_is_follow_wall() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
 	g_trapped_mode = 0;
-	g_from_station = g_from_station>0?g_from_station:0;
+	if(!is_clean_paused())
+		g_from_station = 0;
 	g_finish_cleaning_go_home = false;
 	g_motion_init_succeeded = false;
 	bool remote_home_during_pause = false;
@@ -312,7 +313,6 @@ MotionManage::~MotionManage()
 	}
 	// Disable motor here because there ie a work_motor_configure() in spotDeinit().
 	disable_motors();
-
 	g_tilt_enable = false;
 	g_robot_slip_enable =false;
 	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
@@ -324,7 +324,6 @@ MotionManage::~MotionManage()
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
-
 	if (!g_fatal_quit_event && ( ( g_key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
 	{
 		wav_play(WAV_CLEANING_PAUSE);
@@ -355,6 +354,9 @@ MotionManage::~MotionManage()
 		}
 		else
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+	}
+	else{
+		g_from_station = 0;
 	}
 
 	if (!g_charge_detect)
