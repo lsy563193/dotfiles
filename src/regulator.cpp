@@ -3231,6 +3231,11 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			set_dir_right();
 		left_speed = right_speed = ROTATE_TOP_SPEED;
 	}
+	else if (g_laser_stuck)
+	{
+		set_dir_backward();
+		left_speed = right_speed = 2;
+	}
 
 	set_wheel_speed(left_speed, right_speed);
 }
