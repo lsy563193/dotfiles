@@ -686,7 +686,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (g_bumper_jam || g_cliff_jam || g_omni_notmove )
+	if (g_bumper_jam || g_cliff_jam || g_omni_notmove || g_laser_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
@@ -706,7 +706,7 @@ void cm_self_check(void)
 	SelfCheckRegulator regulator;
 
 	robot::instance()->obsAdjustCount(50);
-	while (ros::ok) {
+	while (ros::ok()) {
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
 			continue;
@@ -974,6 +974,22 @@ void cm_self_check(void)
 				break;
 			}
 		}
+		else if (g_laser_stuck)
+		{
+			if (!check_laser_stuck())
+			{
+				ROS_WARN("%s %d: Restore from laser stuck.", __FUNCTION__, __LINE__);
+				g_laser_stuck = false;
+			}
+
+			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			if (fabsf(distance) > 0.35f)
+			{
+				ROS_WARN("%s %d: Laser stuck.", __FUNCTION__, __LINE__);
+				g_fatal_quit_event = true;
+				set_error_code(Error_Code_Laser);
+			}
+		}
 		else
 			break;
 
@@ -983,7 +999,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_slip_cnt >= 2);
+	return (g_oc_wheel_left || g_oc_wheel_right || g_bumper_jam || g_cliff_jam || g_oc_suction || g_omni_notmove || g_slip_cnt >= 2 || g_laser_stuck);
 }
 
 /* Event handler functions. */

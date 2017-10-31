@@ -616,6 +616,8 @@ void event_manager_reset_status(void)
 	//g_lidar_bumper = false;
 	//g_lidar_bumper_cnt =0;
 	//g_lidar_bumper_jam = false;
+	// laser stuck
+	g_laser_stuck = false;
 }
 
 /* Below are the internal functions. */
