@@ -363,17 +363,13 @@ void cm_move_to(RegulatorManage& rm, PPTargetType path) {
 		MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.back(), g_plan_path);
 		rm.switchToNext(path);
 	}
-//	if(rm.isReach())
-//		path.pop_front();
-//	if(rm.isStop())
-//		path.clear();
 
 	int32_t speed_left = 0, speed_right = 0;
 	rm.adjustSpeed(speed_left, speed_right);
 	set_wheel_speed_pid(rm, speed_left, speed_right);
 }
 
-bool is_equal(const Cell_t &l, const Cell_t &r)
+bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
 {
 	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
@@ -399,11 +395,7 @@ void cm_cleaning() {
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
-	for(const auto&home : g_homes)
-	{
-		printf("home(%d,%d,%d)\n",home.X, home.Y, home.TH);
-	}
-//	auto is_found = true;
+
 	while (ros::ok()) {
 
 		if (rm.isExit()) {
@@ -420,34 +412,31 @@ void cm_cleaning() {
 			continue;
 		}
 
-		cm_check_temp_spot();
-
+		/* update_positon */
 		curr = cm_update_position();//note:cell = {x,y,angle}
-//		ROS_INFO("curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
 		rm.updatePosition({map_get_x_count(), map_get_y_count()});
 /*			if (mt_is_follow_wall() && wf_start_timer == 0)
 				wf_start_timer = time(NULL);*/
-			if (!is_equal(curr, last)) {
-//				printf("\n\n\n");
+			if (!is_equal_with_angle(curr, last)) {
 				is_time_up = (last != curr);
 				last = curr;
+				/* is ever clean? */
 				auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it){
-						return is_equal(curr, it);
+						return is_equal_with_angle(curr, it);
 				});
 				g_distance = std::distance(loc, g_passed_path.end());
 //				ROS_INFO("%s,%d:g_distance(%d)", __FUNCTION__, __LINE__, g_distance);
 				if (g_distance == 0) {
-//					ROS_INFO("curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
+//					ROS_INFO("new place ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
 					g_passed_path.push_back(curr);
 //					path_display_path_points(g_passed_path);
 				}
 				if (g_distance >5) {
+//					ROS_INFO("have ever reach here ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
 					g_distance =0;
 					g_wf_reach_count++;
 					g_passed_path.clear();
-//					g_passed_path.push_back(curr);
 				}
-//				ROS_WARN("!!!!!!!!!!!!!!!!!!!%s,%d: g_distance(%d)! reach_count(%d)  curr(%d,%d,%d),loc(%d,%d,%d)",__FUNCTION__, __LINE__, g_distance,g_wf_reach_count, curr.X,curr.Y,curr.TH, loc->X,loc->Y,loc->TH);
 				if (mt_is_follow_wall()) {
 					if (cm_is_navigation()) {
 						map_set_follow_wall(MAP, curr);
@@ -462,15 +451,12 @@ void cm_cleaning() {
 					if (cm_is_exploration())
 						explore_update_map();
 				}
-			}
+			}else
+				is_time_up = g_trapped_mode == 0;
 			/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && g_passed_path.size() < 5) {
 				ROS_WARN("  {curr,start}_time(%d,%d), g_passed_path.size(%d): ", time(NULL), wf_start_timer, g_passed_path.size());
 			}*/
-
-		if (	(g_trapped_mode == 0 && g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop()) || \
-					(g_trapped_mode == 1 && is_time_up)
-				) {
-			is_time_up = false;
+		if ( (g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop() ) && is_time_up) {
 			printf("\n\n\n\n\n\n");
 			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
 //			path_display_path_points(g_passed_path);
@@ -542,9 +528,9 @@ void cm_check_should_go_home(void)
 	}
 }
 
-void cm_check_temp_spot(void)
+void cm_check_should_spot(void)
 {
-	if (!g_go_home && g_remote_spot)
+	if (g_remote_spot)
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);

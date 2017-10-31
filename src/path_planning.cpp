@@ -1570,6 +1570,9 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 	if (!g_go_home)
 		cm_check_should_go_home();
 
+	if(!g_go_home)
+		cm_check_should_spot();
+
 	if(!g_go_home) {
 		if (cm_is_follow_wall()){
 			ROS_INFO("  path_next Clean_Mode:(%d)", cm_get());
@@ -1623,7 +1626,7 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 #if DEBUG_MAP
 			debug_map(MAP, path.back().X, path.back().Y);
 #endif
-			path.push_front(start);
+//			path.push_front(start);
 		}
 		else if (cm_is_navigation() || cm_is_exploration()) {
 			path.clear();
@@ -1673,6 +1676,7 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 	}
 
 //	g_old_dir = g_new_dir;
+	//set move_type
 	if (g_go_home || cm_is_exploration())
 		mt_set(CM_LINEARMOVE);
 	else if(cm_is_navigation())
@@ -1682,7 +1686,7 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 	}
 	if(g_trapped_mode == 1)
 		mt_set(CM_FOLLOW_LEFT_WALL);
-	// else if wall follow mode, the move type has been set before here.
+	//full cell heading
 	path.push_front(start);
 	for(auto it = path.begin(); it < path.end(); ++it) {
 		auto it_next = it+1;
@@ -1699,9 +1703,9 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 	}
 	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 
-	path_display_path_points(path);
 	g_new_dir = g_plan_path.front().TH;
 	path.pop_front();
+	path_display_path_points(path);
 
 	return true;
 }

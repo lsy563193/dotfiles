@@ -100,7 +100,7 @@ uint8_t cm_touring(void);
 void cm_cleaning(void);
 
 void cm_check_should_go_home(void);
-void cm_check_temp_spot(void);
+void cm_check_should_spot(void);
 
 Cell_t cm_update_position(bool is_turn = false);
 //void cm_update_map();
@@ -139,6 +139,7 @@ MapTouringType cm_handle_ext_event(void);
 void cm_create_home_boundary(void);
 
 void cm_self_check(void);
+
 bool cm_should_self_check(void);
 
 /* Event handler functions. */
