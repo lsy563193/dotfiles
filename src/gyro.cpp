@@ -108,15 +108,6 @@ bool wait_for_gyro_on(void)
 			set_gyro_on();
 		}
 
-		if(g_cliff_all_triggered)
-		{
-			if(robot::instance()->getChargeStatus() == 2)
-			{
-				extern bool g_is_main_switch_off;
-				g_is_main_switch_off = true;
-			}
-			break;
-		}
 		if (g_key_clean_pressed || g_cliff_all_triggered || g_fatal_quit_event || is_direct_charge())
 			break;
 
