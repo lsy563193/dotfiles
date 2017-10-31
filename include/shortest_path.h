@@ -38,10 +38,10 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 
 int path_get_path_points_count();
 
-list<Cell_t> *path_get_path_points();
+//list<Cell_t> *path_get_path_points();
 void path_reset_path_points();
 
-void path_display_path_points(list<Cell_t> path);
+void path_display_path_points(const deque<Cell_t>& path);
 
 #endif
 //void set_explore_new_path_flag(bool flag);

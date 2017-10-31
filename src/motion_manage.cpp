@@ -30,6 +30,7 @@ Segment_set segmentss;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
+bool g_wf_is_reach;
 bool g_is_main_switch_off = false;
 /*
 int g_enable_angle_offset = 0;
@@ -222,10 +223,11 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if(g_from_station)
 	{
 		robot::instance()->offsetAngle(180);
-		robot::instance()->startAngle(180);
+//		robot::instance()->startAngle(180);
 		ROS_INFO("%s,%d,\033[32m charge stub postion estiamate on(%d,%d)\033[0m",__FUNCTION__,__LINE__,(-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
 		Cell_t home_point((-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
 		map_set_charge_position(home_point);
+		g_homes[0].TH = 180;
 	}
 	else
 	{
@@ -241,9 +243,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			}
 			align_angle += (float)(LIDAR_THETA / 10);
 			robot::instance()->offsetAngle(align_angle);
-			robot::instance()->startAngle(align_angle);
-			ROS_INFO("%s %d: Start angle (%f).", __FUNCTION__, __LINE__, robot::instance()->startAngle());
+//			robot::instance()->startAngle(align_angle);
+			g_homes[0].TH = -(int16_t)(align_angle *10);
+			ROS_INFO("%s %d: g_homes[0].TH (%d).", __FUNCTION__, __LINE__, g_homes[0].TH);
 		}
+//		robot::instance()->startAngle(0);
+//		g_homes[0].TH=0;
 	}
 	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
 	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
@@ -296,6 +301,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	else
 		set_led_mode(LED_STEADY, LED_GREEN);
 
+		g_robot_slip_enable = true;
+	g_robot_stuck = false;
+	g_robot_slip = false;
+	g_wf_is_reach = false;
 }
 
 MotionManage::~MotionManage()
@@ -747,7 +756,7 @@ bool MotionManage::initGoHome(void)
 	set_gyro_on();
 	reset_touch();
 	cm_register_events();
-	wav_play(WAV_BACK_TO_CHARGER);
+//	wav_play(WAV_BACK_TO_CHARGER);
 
 	if (!wait_for_gyro_on())
 		return false;
@@ -757,7 +766,7 @@ bool MotionManage::initGoHome(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::list<Cell_t>& path)
+void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::deque<Cell_t>& path)
 {
 	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
@@ -787,7 +796,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, 
 #if LINEAR_MOVE_WITH_PATH
 	if (!path.empty())
 	{
-		for (list<Cell_t>::const_iterator it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
 			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
 
 		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);

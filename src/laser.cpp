@@ -264,7 +264,7 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 	//double	line_angle;
 	Double_Point	New_Laser_Point;
 	Laser_Point.clear();
-	ROS_WARN("laserGetFitLine");
+	ROS_DEBUG("laserGetFitLine");
 	scan_mutex_.lock();
 	auto tmp_scan_data = laserScanData_;
 	scan_mutex_.unlock();
@@ -313,10 +313,10 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 			*distance = fabs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-		ROS_INFO("line_angle = %lf", *line_angle);
+		ROS_DEBUG("line_angle = %lf", *line_angle);
 		return true;
 	} else {
-		ROS_INFO("no line to fit!");
+		ROS_DEBUG("no line to fit!");
 		return false;
 	}
 }
@@ -640,7 +640,7 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 			loop_count++;
 		}
 	}
-	ROS_INFO("pub line marker");
+	ROS_DEBUG("pub line marker");
 	pubLineMarker(&Laser_Group);
 	return true;
 }
@@ -716,8 +716,8 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			x_0 = 0 - c / a;
 			y_0 = 0 - c / b;
 			line_angle = atan2(y_0, 0 - x_0) * 180 / PI;
-			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-			ROS_INFO("x_0 = %lf, y_0 = %lf", x_0, y_0);
+			ROS_DEBUG("a = %lf, b = %lf, c = %lf", a, b, c);
+			ROS_DEBUG("x_0 = %lf, y_0 = %lf", x_0, y_0);
 			/*erase the lines which are far away from the robot*/
 			//double x_l = fabs(c / a);
 			//double y_l = fabs(c / b);
@@ -725,14 +725,14 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			//if ((x_l > L) && (y_l > L)) {
 			if (dis > dis_lim || dis < 0.167 || x_0 < 0) {
 				//ROS_INFO("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
-				ROS_INFO("the line is too far away from robot. dis = %lf", dis);
+				ROS_DEBUG("the line is too far away from robot. dis = %lf", dis);
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
 			//pubFitLineMarker(a, b, c, -0.5, 0.5);
 			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
 			//ROS_INFO("iter->begin()->y = %lf, (iter->end() - 1)->y= %lf",iter->begin()->y, (iter->end() - 1)->y);
-			ROS_INFO("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
+			ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
 	} else {
@@ -862,6 +862,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::LaserScan *scan_range, uint8_t *laser_status, bool is_wall_follow)
 {
 //	ROS_INFO("  %s,%d" __FUNCTION__,__LINE__);
+//	ROS_INFO("  checkCellTrigger");
 	double x, y, th;
 	int dx, dy;
 	const	double Y_MIN = 0.140;//0.167

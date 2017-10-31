@@ -486,6 +486,7 @@ Cell_t map_point_to_cell(Point32_t pnt) {
 	Cell_t cell;
 	cell.X = count_to_cell(pnt.X);
 	cell.Y = count_to_cell(pnt.Y);
+	cell.TH = gyro_get_angle();
 	return cell;
 }
 
@@ -738,15 +739,15 @@ uint8_t map_set_bumper()
 //				d_cells.push_back({2,0});
 //			}
 		}
-		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-			d_cells.push_back({2,0});
+//		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
+//			d_cells.push_back({2,0});
 	} else if (bumper_trig & RightBumperTrig) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
 			d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
-		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
-			d_cells.push_back({2,0});
+//		if (g_cell_history[0] == g_cell_history[1]  && g_cell_history[0] == g_cell_history[2])
+//			d_cells.push_back({2,0});
 	}
 
 	int32_t	x, y;
@@ -827,7 +828,7 @@ uint8_t map_set_slip()
 
 uint8_t map_set_cliff()
 {
-	auto cliff_trig = /*g_cliff_triggered*/get_cliff_status();
+	auto cliff_trig = g_cliff_triggered/*get_cliff_status()*/;
 	if (g_cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
 		// During self check.
 		return 0;
@@ -960,7 +961,7 @@ uint8_t map_set_charge_position(const Cell_t home_point)
 	std::string print_msg("");
 	for(int i=0;i<4;i++){//hight
 		for(int j = 0;j<5;j++){//width
-			cm_world_to_point(gyro_get_angle(),CELL_SIZE*(lty+j+home_point.Y),CELL_SIZE*(ltx+i+home_point.X),&x,&y); 
+			cm_world_to_point(gyro_get_angle(),CELL_SIZE*(lty+j+home_point.Y),CELL_SIZE*(ltx+i+home_point.X),&x,&y);
 			map_set_cell(MAP,x,y,BLOCKED_RCON);
 			print_msg+="("+std::to_string(count_to_cell(x))+","+std::to_string(count_to_cell(y))+"),";
 		}
@@ -1005,9 +1006,9 @@ void map_set_cleaned(const Cell_t& curr)
 }
 
 double world_distance(void) {
-	auto dis = sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin.Y, 2));
+	auto dis = sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin_p.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin_p.Y, 2));
 
-//	auto dis =  two_points_distance(RegulatorBase::s_origin.X, RegulatorBase::s_origin.Y , \
+//	auto dis =  two_points_distance(RegulatorBase::s_origin_p.X, RegulatorBase::s_origin_p.Y , \
 //														RegulatorBase::s_curr_p.X, RegulatorBase::s_curr_p.Y);
 	return dis*CELL_SIZE/CELL_COUNT_MUL/1000;
 }
@@ -1033,7 +1034,7 @@ void map_set_follow_wall(uint8_t id, const Cell_t& curr) {
 	}
 }
 
-void map_set_cleaned(std::vector<Cell_t>& cells)
+void map_set_cleaned(std::deque<Cell_t>& cells)
 {
 	if(cells.empty())
 		return;
@@ -1052,10 +1053,10 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 	}
 	else
 	{
-		extern uint16_t g_new_dir;
-		if (g_new_dir == POS_X)
+		auto dir = g_plan_path.front().TH;
+		if (dir == POS_X)
 			dx = 1;
-		else if (g_new_dir == NEG_X)
+		else if (dir == NEG_X)
 			dx = -1;
 		else // POS_Y/NEG_Y
 			dx = 0;
@@ -1067,7 +1068,7 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 		}
 	}
 
-	std::string msg = "Cell:";
+//	std::string msg = "Cell:\n";
 	for (const auto& cell :  cells)
 	{
 		for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
@@ -1079,9 +1080,11 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 			if (status != BLOCKED_TILT && status != BLOCKED_SLIP)
 			{
 				map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(y), CLEANED);
-				msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + "),";
+//				msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + "),";
 			}
+//			msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + ")";
 		}
+//		msg += '\n';
 	}
 
 	int32_t x, y;
@@ -1093,31 +1096,22 @@ void map_set_cleaned(std::vector<Cell_t>& cells)
 			auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
 			if (status == UNCLEAN){
 				map_set_cell(MAP, x, y, CLEANED);
-				msg += "(" + std::to_string(x) + "," + std::to_string(y) + "),";
+//				msg += "(" + std::to_string(x) + "," + std::to_string(y) + "),";
 			}
 		}
 	}
-	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
+//	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
-void map_set_follow_wall(std::vector<Cell_t>& cells)
+void map_mark()
 {
-	if(cells.empty())
-		return;
-	auto diff = cells.back().X - cells.front().X;
 
+}
+
+/*
+void map_set_follow_wall(const std::vector<Cell_t>& cells)
+{
 	std::string pri_msg("");
-//	map_set_cell(MAP, cell_to_count(cells.front().X +1), cell_to_count(cells.front().Y + dy), BLOCKED_CLIFF);
-	if (cells.size() < 2)
-		return;
-
-	auto dy = mt_is_left() ? 2 : -2;
-//	if(std::abs(  ranged_angle(  std::abs(gyro_get_angle())-900 )  )< 450)
-//	{
-//		Cell_t cell;
-//		cm_world_to_cell(gyro_get_angle(),CELL_SIZE*dy,0,cell.X,cell.Y);
-//		map_set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), BLOCKED_CLIFF);
-//	}
 	for (const auto &cell : cells)
 	{
 		pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
@@ -1141,12 +1135,23 @@ void map_set_follow_wall(std::vector<Cell_t>& cells)
 				pri_msg+="("+std::to_string(cell.X)+","+std::to_string(cell.Y)+"),";
 			}
 		}
+		pri_msg += "(" + std::to_string(cell.X) + "," + std::to_string(cell.Y) + std::to_string(cell.TH) + "),";
 	}
 	ROS_INFO("%s,%d,cells:\033[35m%s\033[0m",__FUNCTION__,__LINE__,pri_msg.c_str());
+
+	auto dy = mt_is_left() ? 2 : -2;
+	int x, y;
+	for (const auto &cell : cells) {
+		cm_world_to_point(cell.TH, CELL_SIZE * cell.Y, 0, &x, &y);
+		map_set_cell(MAP, x, y, BLOCKED_CLIFF);
+	}
 }
+*/
 
 bool map_mark_robot(uint8_t id)
 {
+	if(g_trapped_mode != 1)
+		return false;
 	int32_t x, y;
 	bool ret = false;
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
@@ -1193,7 +1198,7 @@ void map_set_linear(const Cell_t &start, const Cell_t &stop, CellState state)
 	ROS_INFO("%s,%d: cells%s",__FUNCTION__,__LINE__,msg.c_str());
 }
 
-void map_set_follow(Cell_t start)
+/*void map_set_follow(Cell_t start)
 {
 	auto stop = map_get_curr_cell();
 	ROS_ERROR("%s,%d: start(%d,%d),stop(%d,%d)",__FUNCTION__, __LINE__, start.X,start.Y,stop.X,stop.Y);
@@ -1212,7 +1217,7 @@ void map_set_follow(Cell_t start)
 		if(new_dx != 0 && dx>0 ^ new_dx<0)
 			map_set_linear(start, stop, BLOCKED_CLIFF);
 	}
-}
+}*/
 
 uint32_t map_get_cleaned_area(void)
 {

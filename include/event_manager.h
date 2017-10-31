@@ -95,6 +95,7 @@ extern bool g_tilt_triggered;
 /* robot stuck */
 extern bool g_robot_stuck;
 extern bool g_robot_slip;
+extern bool g_wf_is_reach;
 extern bool g_robot_slip_enable;
 extern uint8_t g_slip_cnt;
 

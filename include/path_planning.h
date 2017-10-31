@@ -28,20 +28,27 @@ typedef struct {
 	uint8_t	try_cnt;
 } TargetType;
 
-typedef struct {
-	Cell_t	target;
-	std::list <Cell_t> cells;
-} PPTargetType;
+//typedef struct {
+//	Cell_t	target;
+//	std::list <Cell_t> cells;
+//} PPTargetType;
+typedef std::deque<Cell_t> PPTargetType;
 typedef enum {
 	USE_ROS,
 	USE_UNCLEAN,
 	USE_CLEANED,
 	HOMEWAY_NUM
 }HomeWay_t;
+//#define NO_TARGET_LEFT 0
+//#define TARGET_REACHED 0
+//#define TARGET_FOUND 1
 extern std::vector<Cell_t> g_homes;
 extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
 extern bool g_go_home;
+extern bool g_keep_on_wf;
+extern int16_t g_new_dir;
+extern bool g_no_uncleaned_target;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;
@@ -66,7 +73,7 @@ void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int1
  *
  * @return
  */
-void path_update_cell_history(void);
+//void path_update_cell_history(void);
 
 /*
  * Initialization function for path planning, it sets the starting
@@ -103,13 +110,13 @@ void wf_path_planning_initialize();
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-int8_t path_next(const Cell_t& curr, PPTargetType& path);
+bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach);
 
-void path_update_cell_history(void);
+//void path_update_cell_history(void);
 
 uint16_t path_get_robot_direction(void);
 
-int16_t path_target(const Cell_t& curr, PPTargetType& path);
+bool path_target(const Cell_t& curr, PPTargetType& path);
 //int16_t path_target2(const Cell_t& curr, PPTargetType& path);
 void path_find_all_targets(const Cell_t& curr, BoundingBox2& map);
 
@@ -146,7 +153,6 @@ void path_update_cells(void);
  * 		1 if either one end is not cleaned
  * 		2 if both ends are not cleaned
  */
-bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path);
 bool path_full(const Cell_t& curr, PPTargetType& path);
 
 /*
@@ -166,7 +172,7 @@ Cell_t *path_escape_get_trapped_cell(void);
 
 void path_set_home(const Cell_t& cell);
 
-int8_t path_get_home_target(const Cell_t& curr, PPTargetType& path);
+bool path_get_home_target(const Cell_t& curr, PPTargetType& path, const int is_reach);
 
 int16_t path_get_home_x(void);
 
@@ -278,7 +284,7 @@ uint8_t is_block_accessible(int16_t x, int16_t y);
 // This function is for setting the continue cell for robot to go after charge.
 void path_set_continue_cell(Cell_t cell);
 
-int8_t path_get_continue_target(const Cell_t& curr, PPTargetType& path);
+bool path_get_continue_target(const Cell_t& curr, PPTargetType& path);
 
 /*
  * Function to fill the path list with every cell that it will pass.

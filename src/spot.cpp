@@ -503,6 +503,7 @@ void SpotMovement::stright2End(uint8_t spt, std::vector<Cell_t>::iterator &tp)
 
 uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target_path)
 {
+	auto last = target_path->front();
 	uint8_t ret = 0;
 	SpotType spt = getSpotType();
 	if (!isSpotInit() && spt != NO_SPOT)//for the first time
@@ -531,32 +532,32 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 	{
 		ROS_INFO("\033[36m""spot.cpp bumper/obs trigger""\033[0m");
 		resetOBSTrigger();
-		debug_map(MAP,target_path->target.X,target_path->target.Y);
+		debug_map(MAP,target_path->back().X,target_path->back().Y);
 		Cell_t current_cell = map_get_curr_cell();
 		ROS_INFO("\033[36m""current cell(%d,%d)""\033[0m",current_cell.X,current_cell.Y);
 		int pnb_ret = 0;
 		if(target_last_.empty()){
-			target_last_ = target_path->cells;
+			target_last_ = *target_path;
 		}
 		else{
-			g_next_cell = target_last_.front();
+			last = target_last_.front();
 		}
-		target_path->cells.clear();
-		ROS_INFO("\033[36m""g_next_cell(%d,%d)""\033[0m",g_next_cell.X,g_next_cell.Y);
+		target_path->clear();
+		ROS_INFO("\033[36m""last(%d,%d)""\033[0m",last.X,last.Y);
 		Cell_t next_cell;
 		/*---search cells---*/
 		uint32_t size = target_last_.size();
 		for(int i = 0;i<size;i++){
 			next_cell = target_last_.front();
-			if(g_next_cell == next_cell){ 
+			if(last == next_cell){ 
 				target_last_.pop_front();
 				pnb_ret = path_next_shortest(current_cell, next_cell, *target_path);
 				if(pnb_ret == 1){
 					ret = 1;
-					ROS_INFO("\033[36m" "%s,%d , bumper/obs trigger, get next cell (%d %d) " "\033[0m", __FUNCTION__, __LINE__, next_cell.X,next_cell.Y);
+					ROS_INFO("\033[36m" "%s,%d , bumper/obs trigger, get last cell (%d %d) " "\033[0m", __FUNCTION__, __LINE__, next_cell.X,next_cell.Y);
 					break;
 				}
-				g_next_cell = target_last_.front();
+				last = target_last_.front();
 			}
 			else{
 				target_last_.pop_front();
@@ -568,18 +569,15 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 			ret = endSpot(target_path);
 			return ret;
 		}
-		target_path->target = target_path->cells.back();
 	}
 	else if(spot_init_ == 1 && !target_last_.empty())
 	{
 		ROS_INFO("\033[36m" "spot.cpp continue clean...""\033[0m");
-		target_path->target = target_last_.back();
-		target_path->cells.clear();
-		target_path->cells = target_last_;
-		std::list<Cell_t>::iterator it;
+		(*target_path).clear();
+		*target_path = target_last_;
 		std::string msg("rest cells:");
 		/*-------print the rest of cells -----*/
-		for(it = target_path->cells.begin();it!=target_path->cells.end();it++){
+		for(auto it = (*target_path).begin();it!=(*target_path).end();it++){
 			msg+="("+std::to_string(it->X)+","+std::to_string(it->Y)+")"+"->";
 		}
 		ROS_INFO("\033[36m""%s""\033[0m",msg.c_str());	
@@ -595,22 +593,21 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 
 void SpotMovement::pushAllTargets(PPTargetType *target_path)
 {
-	target_path->cells.clear();
+	(*target_path).clear();
 	while(tp_ != targets_->end() && ros::ok()){
 		stright2End(spiral_type_, tp_ );
 		if ((tp_+1) != targets_->end())
 		{
 			ROS_INFO("\033[36m" "%s,%d , get next cell (%d %d) " "\033[0m", __FUNCTION__, __LINE__, tp_->X, tp_->Y);
-			target_path->cells.push_back({tp_->X,tp_->Y});
+			(*target_path).push_back({tp_->X,tp_->Y});
 		}
 		else
 		{
-			target_path->cells.push_back({tp_->X,tp_->Y});
+			(*target_path).push_back({tp_->X,tp_->Y});
 			tp_++;
 			break;
 		}
 	}
-	target_path->target = target_path->cells.back();
 }
 
 int8_t SpotMovement::endSpot(PPTargetType *target_path)
@@ -618,9 +615,8 @@ int8_t SpotMovement::endSpot(PPTargetType *target_path)
 	int8_t ret;	
 	if(go_last_point_ == 0){
 		ROS_INFO("\033[36m""go back to begin cell""\033[0m");
-		target_path->cells.clear();
-		target_path->cells.push_back({begin_cell_.X, begin_cell_.Y});// go back to begin cell
-		target_path->target = target_path->cells.back();
+		(*target_path).clear();
+		(*target_path).push_back({begin_cell_.X, begin_cell_.Y});// go back to begin cell
 		ret = 1;
 		go_last_point_ = 1;
 	}

@@ -3482,10 +3482,7 @@ void reset_clean_paused(void)
 bool is_decelerate_wall(void)
 {
 	auto status = (robot::instance()->getObsFront() > get_front_obs_trig_value());
-	if(is_map_front_block(3) || status)
-		return true;
-	else
-		return false;
+	return is_map_front_block(3) || status;
 }
 
 static int lidar_bumper_fd = -1;
