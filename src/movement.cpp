@@ -822,17 +822,19 @@ uint8_t get_bumper_status(void)
 
 	if (robot::instance()->getBumperLeft())
 	{
-		Temp_Status |= LeftBumperTrig;
+		Temp_Status |= BLOCK_LEFT;
 	}
 	if (robot::instance()->getBumperRight())
 	{
-		Temp_Status |= RightBumperTrig;
+		Temp_Status |= BLOCK_RIGHT;
 	}
 	if (robot::instance()->getLidarBumper())
 	{
 		//Temp_Status |= LidarBumperTrig;
-		Temp_Status |= AllBumperTrig;
+		Temp_Status |= BLOCK_FRONT;
 	}
+	if(Temp_Status == (BLOCK_LEFT | BLOCK_RIGHT) || (Temp_Status & BLOCK_FRONT) !=0)
+		Temp_Status = BLOCK_ALL;
 	return Temp_Status;
 }
 
@@ -841,13 +843,13 @@ uint8_t get_cliff_status(void)
 	uint8_t status = 0x00;
 
 	if (get_left_cliff() < get_left_cliff_trig_value())
-		status |= Status_Cliff_Left;
+		status |= BLOCK_LEFT;
 
 	if (get_front_cliff() < get_front_cliff_trig_value())
-		status |= Status_Cliff_Front;
+		status |= BLOCK_FRONT;
 
 	if (get_right_cliff() < get_right_cliff_trig_value())
-		status |= Status_Cliff_Right;
+		status |= BLOCK_RIGHT;
 
 	//if (status != 0x00){
 	//	ROS_WARN("%s %d: Return Cliff status:%x.", __FUNCTION__, __LINE__, status);
@@ -1734,13 +1736,13 @@ uint8_t get_obs_status(int16_t left_obs_offset, int16_t front_obs_offset, int16_
 	uint8_t status = 0;
 
 	if (get_left_obs() > get_left_obs_trig_value() + left_obs_offset)
-		status |= Status_Left_OBS;
+		status |= BLOCK_LEFT;
 
 	if (get_front_obs() > get_front_obs_trig_value() + front_obs_offset)
-		status |= Status_Front_OBS;
+		status |= BLOCK_FRONT;
 
 	if (get_right_obs() > get_right_obs_trig_value() + right_obs_offset)
-		status |= Status_Right_OBS;
+		status |= BLOCK_RIGHT;
 
 	return status;
 }
@@ -2717,7 +2719,7 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 	// This decides whether robot should stop when left cliff triggered.
 	bool right_cliff_triggered = false;
 
-	if (get_cliff_status() & Status_Cliff_Right)
+	if (get_cliff_status() & BLOCK_RIGHT)
 	{
 		right_cliff_triggered = true;
 	}
@@ -2754,7 +2756,7 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 			return;
 		}
 		if (is_turn_remote())return;
-		if (!right_cliff_triggered && (get_cliff_status() & Status_Cliff_Right))
+		if (!right_cliff_triggered && (get_cliff_status() & BLOCK_RIGHT))
 		{
 			stop_brifly();
 			return;
@@ -2778,7 +2780,7 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 	// This decides whether robot should stop when left cliff triggered.
 	bool left_cliff_triggered = false;
 
-	if (get_cliff_status() & Status_Cliff_Left)
+	if (get_cliff_status() & BLOCK_LEFT)
 	{
 		left_cliff_triggered = true;
 	}
@@ -2815,7 +2817,7 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 			return;
 		}
 		if (is_turn_remote())return;
-		if (!left_cliff_triggered && (get_cliff_status() & Status_Cliff_Left))
+		if (!left_cliff_triggered && (get_cliff_status() & BLOCK_LEFT))
 		{
 			stop_brifly();
 			return;

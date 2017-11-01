@@ -47,10 +47,10 @@ static int16_t bumper_turn_angle()
 	auto get_obs = (mt_is_left()) ? get_left_obs : get_right_obs;
 	auto get_obs_value = (mt_is_left()) ? get_left_obs_trig_value : get_right_obs_trig_value;
 	auto status = g_bumper_triggered;
-	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
-	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
+	auto diff_side = (mt_is_left()) ? BLOCK_RIGHT : BLOCK_LEFT;
+	auto same_side = (mt_is_left()) ? BLOCK_LEFT : BLOCK_RIGHT;
 
-	if (status == AllBumperTrig)
+	if (status == BLOCK_ALL)
 	{
 		g_turn_angle = -600;
 		g_straight_distance = 150; //150;
@@ -119,9 +119,9 @@ static int16_t tilt_turn_angle()
 
 static int16_t obs_turn_angle()
 {
-	auto diff_side = (mt_is_left()) ? RightBumperTrig : LeftBumperTrig;
-	auto same_side = (mt_is_left()) ? LeftBumperTrig : RightBumperTrig;
-	if(g_obs_triggered == Status_Front_OBS)
+	auto diff_side = (mt_is_left()) ? BLOCK_RIGHT : BLOCK_LEFT;
+	auto same_side = (mt_is_left()) ? BLOCK_LEFT : BLOCK_RIGHT;
+	if(g_obs_triggered == BLOCK_FRONT)
 		g_turn_angle = -850;
 	else if(g_obs_triggered == diff_side)
 		g_turn_angle = -920;
@@ -206,7 +206,7 @@ static bool laser_turn_angle(int16_t& turn_angle)
 	else if(g_bumper_triggered != 0)
 	{
 		int angle_min, angle_max;
-		if (mt_is_left() ^ (g_bumper_triggered == LeftBumperTrig))
+		if (mt_is_left() ^ (g_bumper_triggered == BLOCK_LEFT))
 		{
 			angle_min = 600;
 			angle_max = 1800;
@@ -217,15 +217,15 @@ static bool laser_turn_angle(int16_t& turn_angle)
 			angle_max = 900;
 		}
 
-		if (g_bumper_triggered == AllBumperTrig) {
+		if (g_bumper_triggered == BLOCK_ALL) {
 //			ROS_INFO("%s %d: AllBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(turn_angle, 90, 270, 900, 1800);
 		}
-		else if (g_bumper_triggered == RightBumperTrig) {
+		else if (g_bumper_triggered == BLOCK_RIGHT) {
 //			ROS_INFO("%s %d: RightBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(turn_angle, 90, 180, angle_min, angle_max);
 		}
-		else if (g_bumper_triggered == LeftBumperTrig) {
+		else if (g_bumper_triggered == BLOCK_LEFT) {
 //			ROS_INFO("%s %d: LeftBumper trigger.", __FUNCTION__, __LINE__);
 			return _laser_turn_angle(turn_angle, 180, 270, angle_min, angle_max);
 		}
@@ -754,7 +754,7 @@ bool LinearRegulator::_isStop()
 	if(obs_tmp == 0 && laser_distance.getFrontMin() < 0.035)
 	{
 //	ROS_ERROR("set true,laser_distance:%lf",laser_distance.getFrontMin());
-		set_cell_by_compensate(laser_distance);
+//		set_cell_by_compensate(laser_distance);
 //		beep(2,40,0,3);
 		obs_tmp = true;
 	}
@@ -762,7 +762,7 @@ bool LinearRegulator::_isStop()
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
 
-	//if (obs_tmp == Status_Front_OBS || rcon_tmp)
+	//if (obs_tmp == BLOCK_FRONT || rcon_tmp)
 	if (obs_tmp || rcon_tmp)
 	{
 		if(rcon_tmp){
@@ -779,7 +779,7 @@ bool LinearRegulator::_isStop()
 				return true;
 			}
 		}
-		//if(obs_tmp == Status_Front_OBS)
+		//if(obs_tmp == BLOCK_FRONT)
 		if(obs_tmp != 0)
 			g_obs_triggered = obs_tmp;
 		if(g_obs_triggered)
@@ -887,9 +887,9 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 			if(laser_distance.getFrontMin() > 0.025 && laser_distance.getFrontMin() < 0.125 && (left_speed > 20 || right_speed > 20)) {
 				base_speed_ -= 2;
 			}
-			else if(obs_state & Status_Front_OBS)
+			else if(obs_state & BLOCK_FRONT)
 				base_speed_ -=2;
-			else if(obs_state & (Status_Left_OBS | Status_Right_OBS))
+			else if(obs_state & (BLOCK_LEFT | BLOCK_RIGHT))
 				base_speed_ --;
 		}
 	}
@@ -991,7 +991,7 @@ bool FollowWallRegulator::isSwitch()
 	if(obs_tmp) {
 //		ROS_INFO("Laser Stop in wall follow");
 		if(! g_obs_triggered )
-			g_obs_triggered = Status_Front_OBS;
+			g_obs_triggered = BLOCK_FRONT;
 		if(g_trapped_mode == 1)
 			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 		g_turn_angle = obs_turn_angle();
@@ -1898,7 +1898,7 @@ bool GoToChargerRegulator::isSwitch()
 				//	go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				g_go_to_charger_back_10cm = true;
-				//if(g_bumper_triggered & LeftBumperTrig)
+				//if(g_bumper_triggered & BLOCK_LEFT)
 				//	g_turn_angle = -1100;
 				//else
 				//	g_turn_angle = 1100;
@@ -3471,6 +3471,7 @@ void RegulatorManage::switchToNext(PPTargetType& path)
 	ROS_INFO("%s %d: g_obs_triggered(\033[32m%d\033[0m), g_rcon_triggered(\033[32m%d\033[0m), g_bumper_hitted(\033[32m%d\033[0m), g_cliff_triggered(\033[32m%d\033[0m), g_tilt_triggered(\033[32m%d\033[0m),g_robot_slip(\033[32m%d\033[0m)",__FUNCTION__, __LINE__, g_obs_triggered, g_rcon_triggered, g_bumper_triggered, g_cliff_triggered, g_tilt_triggered,g_robot_slip);
 	setTarget();
 	if(p_reg_ != back_reg_){//note: save when robot leave move_to
+		g_laser_triggered = 0;
 		g_rcon_triggered = 0;
 		g_bumper_triggered = 0;
 		g_obs_triggered = 0;

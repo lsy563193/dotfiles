@@ -185,7 +185,7 @@ void sleep_handle_remote_plan(bool state_now, bool state_last)
 			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 			sleep_plan_reject_reason = 1;
 		}
-		else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+		else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			sleep_plan_reject_reason = 2;

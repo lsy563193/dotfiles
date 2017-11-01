@@ -1712,7 +1712,7 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 
 void path_fill_path(std::list<Cell_t>& path)
 {
-	uint16_t dir;
+	int16_t dir;
 	Cell_t cell;
 	list<Cell_t> saved_path = path;
 	path.clear();

@@ -214,8 +214,8 @@ uint16_t round_turn_distance()
 
 uint16_t round_turn_speed()
 {
-	if ((mt_is_left()) && (get_bumper_status()  == RightBumperTrig) ||
-			(mt_is_right()) && (get_bumper_status()  == LeftBumperTrig) )
+	if ((mt_is_left()) && (get_bumper_status()  == BLOCK_RIGHT) ||
+			(mt_is_right()) && (get_bumper_status()  == BLOCK_LEFT) )
 		return 15;
 	return 10;
 }
@@ -226,13 +226,13 @@ std::vector<int16_t> reset_rounding_wall_buffer()
 }
 uint16_t bumper_straight_distance()
 {
-	if(get_bumper_status() == AllBumperTrig){
+	if(get_bumper_status() == BLOCK_ALL){
 		return 150;
-	}else if(get_bumper_status() == LeftBumperTrig)
+	}else if(get_bumper_status() == BLOCK_LEFT)
 	{
 		if (mt_is_left()) return 250;
 		else return 375;
-	}else if(get_bumper_status() == RightBumperTrig)
+	}else if(get_bumper_status() == BLOCK_RIGHT)
 	{
 		if (mt_is_left()) return 375;
 		else return 259;
@@ -1198,7 +1198,7 @@ void cm_event_manager_turn(bool state)
 
 void cm_handle_bumper_all(bool state_now, bool state_last)
 {
-//	g_bumper_triggered = AllBumperTrig;
+//	g_bumper_triggered = BLOCK_ALL;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1216,7 +1216,7 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 {
 //	if(g_bumper_triggered != 0)
 //		return;
-//	g_bumper_triggered = LeftBumperTrig;
+//	g_bumper_triggered = BLOCK_LEFT;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1234,7 +1234,7 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 //	if(g_bumper_triggered != 0)
 //		return;
 //
-//	g_bumper_triggered = RightBumperTrig;
+//	g_bumper_triggered = BLOCK_RIGHT;
 
 //	if (!state_last && g_move_back_finished)
 //	{
@@ -1275,7 +1275,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 		g_cliff_all_triggered = true;
 		g_fatal_quit_event = true;
 	}
-	g_cliff_triggered = Status_Cliff_All;
+	g_cliff_triggered = BLOCK_ALL;
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }

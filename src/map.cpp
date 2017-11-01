@@ -669,7 +669,7 @@ uint8_t map_set_obs()
 //	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
 	if(! obs_trig)
 		return 0;
-	uint8_t obs_lr[] = {Status_Left_OBS, Status_Right_OBS};
+	uint8_t obs_lr[] = {BLOCK_LEFT, BLOCK_RIGHT};
 	uint8_t block_count = 0;
 	for (auto dir = 0; dir < 2; ++dir)
 	{
@@ -692,7 +692,7 @@ uint8_t map_set_obs()
 	}
 	return block_count;
 /*
-	uint8_t obs_all[] = {Status_Right_OBS, Status_Front_OBS, Status_Left_OBS};
+	uint8_t obs_all[] = {BLOCK_RIGHT, BLOCK_FRONT, BLOCK_LEFT};
 	for (auto dy = 0; dy <= 2; ++dy) {
 		auto is_trig = obs_trig & obs_all[dy];
 		int32_t x, y;
@@ -724,9 +724,9 @@ uint8_t map_set_bumper()
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
 	std::vector<Cell_t> d_cells;
 
-	if ((bumper_trig & RightBumperTrig) && (bumper_trig & LeftBumperTrig))
+	if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
 		d_cells = {/*{2,-1},*/ {2,0}/*, {2,1}*/};
-	else if (bumper_trig & LeftBumperTrig) {
+	else if (bumper_trig & BLOCK_LEFT) {
 		//d_cells = {{2, 1}, {2,2}/*,{1,2}*/};
 		if(mt_is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
@@ -741,7 +741,7 @@ uint8_t map_set_bumper()
 		}
 //		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
 //			d_cells.push_back({2,0});
-	} else if (bumper_trig & RightBumperTrig) {
+	} else if (bumper_trig & BLOCK_RIGHT) {
 		if(mt_is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
@@ -834,16 +834,16 @@ uint8_t map_set_cliff()
 		return 0;
 
 	std::vector<Cell_t> d_cells;
-	if (cliff_trig & Status_Cliff_Front){
+	if (cliff_trig & BLOCK_FRONT){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2, 0});
 		d_cells.push_back({2, 1});
 	}
-	if (cliff_trig & Status_Cliff_Left){
+	if (cliff_trig & BLOCK_LEFT){
 		d_cells.push_back({2, 1});
 		d_cells.push_back({2, 2});
 	}
-	if (cliff_trig & Status_Cliff_Right){
+	if (cliff_trig & BLOCK_RIGHT){
 		d_cells.push_back({2,-1});
 		d_cells.push_back({2,-2});
 	}

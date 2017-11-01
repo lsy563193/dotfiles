@@ -312,7 +312,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 		{
 			if (get_error_code())
 				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
-			else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 				ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			else
 				temp_mode = Clean_Mode_GoHome;
@@ -368,7 +368,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			beep_for_command(INVALID);
 		}
 	}
-	else if (get_cliff_status() == Status_Cliff_All)
+	else if (get_cliff_status() == BLOCK_ALL)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		beep_for_command(INVALID);
@@ -463,7 +463,7 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 				user_interface_plan_status = 2;
 				break;
 			}
-			else if(get_cliff_status() == Status_Cliff_All)
+			else if(get_cliff_status() == BLOCK_ALL)
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				user_interface_reject_reason = 2;
@@ -544,7 +544,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 		else
 			user_interface_reject_reason = 1;
 	}
-	else if(get_cliff_status() == Status_Cliff_All)
+	else if(get_cliff_status() == BLOCK_ALL)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		user_interface_reject_reason = 2;
