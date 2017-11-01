@@ -154,6 +154,9 @@ private:
 	int16_t wall_buffer[3]={0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
+
+	int32_t same_speed_;
+	int32_t diff_speed_;
 //CMMoveType last_move_type;
 //bool g_is_should_follow_wall;
 	//int last_strength=150;

@@ -1148,12 +1148,16 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		{
 			same_speed = linear_speed + angular_speed;
 			diff_speed = linear_speed - angular_speed;
+			same_speed_ = same_speed;
+			diff_speed_ = diff_speed;
 			return ;
 		}
 	}
 	if(seen_charger_counter)
 	{
 		seen_charger_counter--;
+		same_speed = same_speed_;
+		diff_speed = diff_speed_;
 		return ;
 	}
 
