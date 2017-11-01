@@ -434,7 +434,7 @@ void wall_dynamic_base(uint32_t Cy)
 
 	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
 	{
-		ROS_ERROR("left_reset");
+//		ROS_ERROR("left_reset");
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -447,7 +447,7 @@ void wall_dynamic_base(uint32_t Cy)
 		if (Left_Wall_Everage_Value > 300)Left_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for left wall sensor.
 		set_wall_base(0, Left_Wall_Everage_Value);
-		ROS_ERROR("left_wall_value:%d",Left_Wall_Everage_Value);
+//		ROS_ERROR("left_wall_value:%d",Left_Wall_Everage_Value);
 		Left_Wall_Everage_Value = 0;
 		Left_Wall_E_Counter = 0;
 		Left_Wall_Sum_Value = 0;
@@ -463,7 +463,7 @@ void wall_dynamic_base(uint32_t Cy)
 
 	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
 	{
-		ROS_ERROR("right_reset");
+//		ROS_ERROR("right_reset");
 		Right_Wall_Everage_Value = 0;
 		Right_Wall_E_Counter = 0;
 		Right_Wall_Sum_Value = 0;
@@ -475,7 +475,7 @@ void wall_dynamic_base(uint32_t Cy)
 		Right_Wall_Everage_Value += get_wall_base(1);
 		if (Right_Wall_Everage_Value > 300)Right_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for right wall sensor.
-		ROS_ERROR("right_wall_value:%d",Right_Wall_Everage_Value);
+//		ROS_ERROR("right_wall_value:%d",Right_Wall_Everage_Value);
 		set_wall_base(1, Right_Wall_Everage_Value);
 		//ROS_INFO("%s,%d:right_wall_value: \033[31m%d\033[0m",__FUNCTION__,__LINE__,Right_Wall_Everage_Value);
 		Right_Wall_Everage_Value = 0;
