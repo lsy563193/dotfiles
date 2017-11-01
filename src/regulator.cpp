@@ -866,14 +866,14 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
 	}
-	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y);
+	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	if(MotionManage::s_laser->isNewLaserCompensate()){
 		obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	}else{
 		obstalce_distance_front = DBL_MAX;
 	}
 	uint8_t obs_state = get_obs_status();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstacle_distance_front < 0.25))
+	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
