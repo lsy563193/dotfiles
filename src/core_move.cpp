@@ -438,20 +438,7 @@ void cm_cleaning() {
 					g_wf_reach_count++;
 					g_passed_path.clear();
 				}
-				if (mt_is_follow_wall()) {
-					if (cm_is_navigation()) {
-						map_set_follow_wall(MAP, curr);
-						if (g_trapped_mode == 1)
-							map_set_follow_wall(WFMAP, curr);
-					}
-					if (cm_is_follow_wall()) {
-						map_set_follow_wall(WFMAP, curr);
-					}
-				}
-				else {
-					if (cm_is_exploration())
-						explore_update_map();
-				}
+				fw_marker(curr);
 			}else
 				is_time_up = g_trapped_mode == 0;
 			/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && g_passed_path.size() < 5) {

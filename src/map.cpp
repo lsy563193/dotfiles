@@ -11,6 +11,7 @@
 #include <move_type.h>
 #include <regulator.h>
 #include <mathematics.h>
+#include <space_exploration.h>
 
 #include "map.h"
 #include "mathematics.h"
@@ -1254,4 +1255,21 @@ void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState 
 
 	map_set_block(b_start, b_stop, BLOCKED);
 	map_set_block(start, stop, state);
+}
+
+void fw_marker(const Cell_t&  curr){
+	if (mt_is_follow_wall()) {
+		if (cm_is_navigation()) {
+			map_set_follow_wall(MAP, curr);
+			if (g_trapped_mode == 1)
+				map_set_follow_wall(WFMAP, curr);
+		}
+		if (cm_is_follow_wall()) {
+			map_set_follow_wall(WFMAP, curr);
+		}
+	}
+	else {
+		if (cm_is_exploration())
+			explore_update_map();
+	}
 }

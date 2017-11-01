@@ -125,4 +125,5 @@ void map_set_follow_wall(const std::vector<Cell_t>& cells);
 uint32_t map_get_cleaned_area();
 void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state);
 void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState state);
+void fw_marker(const Cell_t&  curr);
 #endif /* __MAP_H */
