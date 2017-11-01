@@ -973,7 +973,7 @@ uint8_t map_set_charge_position(const Cell_t home_point)
 
 uint8_t map_set_blocked()
 {
-	if(robot::instance()->getBaselinkFrameType() != Map_Position_Map_Angle)
+	if(cm_is_follow_wall() || cm_is_go_home())
 		return 0;
 
 	uint8_t block_count = 0;

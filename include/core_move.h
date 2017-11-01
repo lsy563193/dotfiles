@@ -78,6 +78,7 @@ extern std::deque<Cell_t> g_passed_path;
 extern std::deque<Cell_t> g_plan_path;
 extern long g_distance;
 extern bool g_is_near;
+extern bool g_during_go_to_charger;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);

@@ -861,7 +861,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 
 	if (integration_cycle_++ > 10) {
 		auto t = map_point_to_cell(target_p);
-		MotionManage::pubCleanMapMarkers(MAP, t, g_plan_path.back(), g_plan_path);
+		MotionManage::pubCleanMapMarkers(MAP, g_plan_path, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
@@ -2165,14 +2165,13 @@ bool GoToChargerRegulator::isSwitch()
 
 bool GoToChargerRegulator::_isStop()
 {
-	bool ret = false;
-	if(g_robot_stuck)
-		ret = true;
-	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360)
-		ret = true;
-	if (ret)
+	if (g_robot_stuck || (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360))
+	{
 		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
-	return ret;
+		g_during_go_to_charger = false;
+		return true;
+	}
+	return false;
 }
 
 void GoToChargerRegulator::setTarget()
@@ -2295,6 +2294,12 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				l_speed = 21;
 				r_speed = 14;
 			}
+		}
+		else
+		{
+			set_dir_forward();
+			l_speed = left_speed_;
+			r_speed = right_speed_;
 		}
 	}
 	else if (go_home_state_now == CHECK_POSITION)
@@ -3218,6 +3223,12 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				}
 			}
 		}
+		else
+		{
+			set_dir_forward();
+			l_speed = left_speed_;
+			r_speed = right_speed_;
+		}
 	}
 	else if (go_home_state_now == TURN_CONNECT)
 	{
@@ -3227,6 +3238,8 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			set_dir_left();
 		l_speed = r_speed = 5;
 	}
+	left_speed_ = l_speed;
+	right_speed_ = r_speed;
 }
 
 void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
@@ -3338,6 +3351,8 @@ void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	if (p_reg_ != nullptr)
 		p_reg_->adjustSpeed(left_speed, right_speed);
+	left_speed_ = left_speed;
+	right_speed_ = right_speed;
 }
 
 bool RegulatorManage::isReach() {
