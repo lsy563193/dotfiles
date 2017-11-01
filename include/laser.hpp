@@ -27,8 +27,8 @@ public:
 	double getObstacleDistance(uint8_t dir, double range);
 	void setScanReady(uint8_t val);
 	void setScan2Ready(uint8_t val);
-	static int8_t isScanReady();
-	static int8_t isScan2Ready();
+	int8_t isScanReady();
+	int8_t isScan2Ready();
 	bool isNewDataReady();
 
 	double getLaserDistance(uint16_t angle);
@@ -60,6 +60,8 @@ public:
 
 	bool laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
+
+	bool laserCheckFresh(float duration, uint8_t type = 1);
 private:
 
 	//void stop(void);
@@ -69,8 +71,8 @@ private:
 	void odomCb(const nav_msgs::Odometry::ConstPtr &msg);
 	void laserDataFilter(sensor_msgs::LaserScan& laserScanData, double delta);
 
-	static uint8_t is_ready_;
-	static uint8_t is_scan2_ready_;
+	uint8_t is_scan_ready_;
+	uint8_t is_scan2_ready_;
 	double new_laser_time = 0;
 
 	ros::NodeHandle	nh_;
@@ -79,7 +81,9 @@ private:
 	ros::Subscriber	odom_sub_;
 
 	sensor_msgs::LaserScan laserScanData_;
+	double scan_update_time;
 	sensor_msgs::LaserScan laserScanData_2_;
+	double scan2_update_time;
 
 	//ros::ServiceClient start_motor_cli_;
 	//ros::ServiceClient stop_motor_cli_;

@@ -179,8 +179,19 @@ void charge_function(void)
 	charge_unregister_event();
 	set_stop_charge();
 	// Wait for 20ms to make sure stop charging command has been sent.
-	usleep(20000);
+	usleep(30000);
 
+	if (cm_is_navigation())
+	{
+		// Wait for updated cliff status.
+		usleep(30000);
+		// Cliff triggered means switch is off, aborting switching to navigation mode.
+		if (get_cliff_status())
+		{
+			cm_set(Clean_Mode_Charging);
+			wav_play(WAV_CHECK_SWITCH);
+		}
+	}
 	if (charge_plan_status == 2)
 		wav_play(WAV_CANCEL_APPOINTMENT);
 	else if (charge_plan_status == 1)
@@ -284,7 +295,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 				charge_plan_status = 2;
 				break;
 			}
-			else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+			else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 2;
@@ -344,7 +355,7 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 		}
 		reset_stop_event_status();
 	}
-	else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+	else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 	{
 		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 		beep_for_command(INVALID);
@@ -394,7 +405,7 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 			}
 			reset_stop_event_status();
 		}
-		else if(get_cliff_status() & (Status_Cliff_Left|Status_Cliff_Front|Status_Cliff_Right))
+		else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 			beep_for_command(INVALID);

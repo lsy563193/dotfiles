@@ -48,6 +48,7 @@ extern bool g_bumper_jam;
 extern int g_bumper_cnt;
 /* OBS */
 extern int g_obs_triggered;
+extern int g_laser_triggered;
 /* Cliff */
 extern bool g_cliff_all_triggered;
 extern int g_cliff_triggered;
@@ -95,6 +96,7 @@ extern bool g_tilt_triggered;
 /* robot stuck */
 extern bool g_robot_stuck;
 extern bool g_robot_slip;
+extern bool g_wf_is_reach;
 extern bool g_robot_slip_enable;
 extern uint8_t g_slip_cnt;
 

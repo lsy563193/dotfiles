@@ -23,9 +23,9 @@
 #include "event_manager.h"
 #include "laser.hpp"
 
-static int16_t obs_left_trig_value = 350;
-static int16_t obs_front_trig_value = 350;
-static int16_t obs_right_trig_value = 350;
+static int16_t obs_left_trig_value = 100;
+static int16_t obs_front_trig_value = 100;
+static int16_t obs_right_trig_value = 100;
 int16_t g_obs_left_baseline = 100;
 int16_t g_obs_front_baseline = 100;
 int16_t g_obs_right_baseline = 100;
@@ -813,17 +813,19 @@ uint8_t get_bumper_status(void)
 
 	if (robot::instance()->getBumperLeft())
 	{
-		Temp_Status |= LeftBumperTrig;
+		Temp_Status |= BLOCK_LEFT;
 	}
 	if (robot::instance()->getBumperRight())
 	{
-		Temp_Status |= RightBumperTrig;
+		Temp_Status |= BLOCK_RIGHT;
 	}
 	if (robot::instance()->getLidarBumper())
 	{
 		//Temp_Status |= LidarBumperTrig;
-		Temp_Status |= AllBumperTrig;
+		Temp_Status |= BLOCK_FRONT;
 	}
+	if(Temp_Status == (BLOCK_LEFT | BLOCK_RIGHT) || (Temp_Status & BLOCK_FRONT) !=0)
+		Temp_Status = BLOCK_ALL;
 	return Temp_Status;
 }
 
@@ -832,13 +834,13 @@ uint8_t get_cliff_status(void)
 	uint8_t status = 0x00;
 
 	if (get_left_cliff() < get_left_cliff_trig_value())
-		status |= Status_Cliff_Left;
+		status |= BLOCK_LEFT;
 
 	if (get_front_cliff() < get_front_cliff_trig_value())
-		status |= Status_Cliff_Front;
+		status |= BLOCK_FRONT;
 
 	if (get_right_cliff() < get_right_cliff_trig_value())
-		status |= Status_Cliff_Right;
+		status |= BLOCK_RIGHT;
 
 	//if (status != 0x00){
 	//	ROS_WARN("%s %d: Return Cliff status:%x.", __FUNCTION__, __LINE__, status);
@@ -1663,7 +1665,7 @@ void obs_dynamic_base(uint16_t count)
 		obs_sum[i] += obs_get;
 		obs_cnt[i]++;
 		int16_t obs_avg = obs_sum[i] / obs_cnt[i];
-//		ROS_WARN("obs_avg(%d), (%d / %d), ",obs_avg, obs_sum[i], obs_cnt[i]);
+//		ROS_WARN("i = %d, obs_avg(%d), (%d / %d), ",i, obs_avg, obs_sum[i], obs_cnt[i]);
 		auto diff = abs_minus(obs_avg , obs_get);
 		if (diff > 50)
 		{
@@ -1725,13 +1727,13 @@ uint8_t get_obs_status(int16_t left_obs_offset, int16_t front_obs_offset, int16_
 	uint8_t status = 0;
 
 	if (get_left_obs() > get_left_obs_trig_value() + left_obs_offset)
-		status |= Status_Left_OBS;
+		status |= BLOCK_LEFT;
 
 	if (get_front_obs() > get_front_obs_trig_value() + front_obs_offset)
-		status |= Status_Front_OBS;
+		status |= BLOCK_FRONT;
 
 	if (get_right_obs() > get_right_obs_trig_value() + right_obs_offset)
-		status |= Status_Right_OBS;
+		status |= BLOCK_RIGHT;
 
 	return status;
 }
@@ -2708,7 +2710,7 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 	// This decides whether robot should stop when left cliff triggered.
 	bool right_cliff_triggered = false;
 
-	if (get_cliff_status() & Status_Cliff_Right)
+	if (get_cliff_status() & BLOCK_RIGHT)
 	{
 		right_cliff_triggered = true;
 	}
@@ -2745,7 +2747,7 @@ void cliff_turn_left(uint16_t speed, uint16_t angle)
 			return;
 		}
 		if (is_turn_remote())return;
-		if (!right_cliff_triggered && (get_cliff_status() & Status_Cliff_Right))
+		if (!right_cliff_triggered && (get_cliff_status() & BLOCK_RIGHT))
 		{
 			stop_brifly();
 			return;
@@ -2769,7 +2771,7 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 	// This decides whether robot should stop when left cliff triggered.
 	bool left_cliff_triggered = false;
 
-	if (get_cliff_status() & Status_Cliff_Left)
+	if (get_cliff_status() & BLOCK_LEFT)
 	{
 		left_cliff_triggered = true;
 	}
@@ -2806,7 +2808,7 @@ void cliff_turn_right(uint16_t speed, uint16_t angle)
 			return;
 		}
 		if (is_turn_remote())return;
-		if (!left_cliff_triggered && (get_cliff_status() & Status_Cliff_Left))
+		if (!left_cliff_triggered && (get_cliff_status() & BLOCK_LEFT))
 		{
 			stop_brifly();
 			return;
@@ -3236,125 +3238,173 @@ void delay_sec(double s)
 	}
 }
 
+int16_t get_front_acc()
+{
+#if GYRO_FRONT_X_POS
+	return -robot::instance()->getXAcc();
+#elif GYRO_FRONT_X_NEG
+	return robot::instance()->getXAcc();
+#elif GYRO_FRONT_Y_POS
+	return -robot::instance()->getYAcc();
+#elif GYRO_FRONT_Y_NEG
+	return robot::instance()->getYAcc();
+#endif
+}
+
+int16_t get_left_acc()
+{
+#if GYRO_FRONT_X_POS
+	return -robot::instance()->getYAcc();
+#elif GYRO_FRONT_X_NEG
+	return robot::instance()->getYAcc();
+#elif GYRO_FRONT_Y_POS
+	return robot::instance()->getXAcc();
+#elif GYRO_FRONT_Y_NEG
+	return -robot::instance()->getXAcc();
+#endif
+}
+
+int16_t get_right_acc()
+{
+#if GYRO_FRONT_X_POS
+	return -robot::instance()->getYAcc();
+#elif GYRO_FRONT_X_NEG
+	return robot::instance()->getYAcc();
+#elif GYRO_FRONT_Y_POS
+	return robot::instance()->getXAcc();
+#elif GYRO_FRONT_Y_NEG
+	return -robot::instance()->getXAcc();
+#endif
+}
+
+int16_t get_front_init_acc()
+{
+#if GYRO_FRONT_X_POS
+	return -robot::instance()->getInitXAcc();
+#elif GYRO_FRONT_X_NEG
+	return robot::instance()->getInitXAcc();
+#elif GYRO_FRONT_Y_POS
+	return -robot::instance()->getInitYAcc();
+#elif GYRO_FRONT_Y_NEG
+	return robot::instance()->getInitYAcc();
+#endif
+}
+
+int16_t get_left_init_acc()
+{
+#if GYRO_FRONT_X_POS
+	return -robot::instance()->getInitYAcc();
+#elif GYRO_FRONT_X_NEG
+	return robot::instance()->getInitYAcc();
+#elif GYRO_FRONT_Y_POS
+	return robot::instance()->getInitXAcc();
+#elif GYRO_FRONT_Y_NEG
+	return -robot::instance()->getInitXAcc();
+#endif
+}
+
+int16_t get_right_init_acc()
+{
+#if GYRO_FRONT_X_POS
+	return -robot::instance()->getInitYAcc();
+#elif GYRO_FRONT_X_NEG
+	return robot::instance()->getInitYAcc();
+#elif GYRO_FRONT_Y_POS
+	return robot::instance()->getInitXAcc();
+#elif GYRO_FRONT_Y_NEG
+	return -robot::instance()->getInitXAcc();
+#endif
+}
+
 uint8_t check_tilt()
 {
-	static bool last_tilt_enable_flag = false;
-	static uint16_t x_pos_tilt_count = 0;
-	static uint16_t y_pos_tilt_count = 0;
-	static uint16_t y_neg_tilt_count = 0;
+	static uint16_t front_tilt_count = 0;
+	static uint16_t left_tilt_count = 0;
+	static uint16_t right_tilt_count = 0;
 	static uint16_t z_tilt_count = 0;
-	static int16_t x_acc = 0;
-	static int16_t y_acc = 0;
-	static int16_t z_acc = 0;
-	static int16_t last_x_acc = 0;
-	static int16_t last_y_acc = 0;
-	static int16_t last_z_acc = 0;
 	uint8_t tmp_tilt_status = 0;
 
 	if (g_tilt_enable)
 	{
-		if (!last_tilt_enable_flag)
+		if (get_front_acc() - get_front_init_acc() > FRONT_TILT_LIMIT)
 		{
-			x_acc = last_x_acc = robot::instance()->getXAcc();
-			y_acc = last_y_acc = robot::instance()->getYAcc();
-			z_acc = last_z_acc = robot::instance()->getZAcc();
+			front_tilt_count += 2;
+			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, get_front_acc(), get_front_init_acc(), front_tilt_count);
 		}
 		else
 		{
-			x_acc = (last_x_acc + robot::instance()->getXAcc()) / 2;
-			y_acc = (last_y_acc + robot::instance()->getYAcc()) / 2;
-			z_acc = (last_z_acc + robot::instance()->getZAcc()) / 2;
-			last_x_acc = robot::instance()->getXAcc();
-			last_y_acc = robot::instance()->getYAcc();
-			last_z_acc = robot::instance()->getZAcc();
-			if (x_acc - robot::instance()->getInitXAcc() > DIF_TILT_X_VAL)
-			{
-				x_pos_tilt_count += 2;
-				//ROS_WARN("%s %d: x(%d)\txi(%d), pos++.", __FUNCTION__, __LINE__, x_acc, robot::instance()->getInitXAcc());
-			}
+			if (front_tilt_count > 0)
+				front_tilt_count--;
 			else
-			{
-				if (x_pos_tilt_count > 0)
-					x_pos_tilt_count--;
-				else
-					x_pos_tilt_count = 0;
-			}
-			if (y_acc - robot::instance()->getInitYAcc() > DIF_TILT_Y_VAL)
-			{
-				y_pos_tilt_count++;
-				//ROS_WARN("%s %d: y(%d)\tyi(%d), pos++.", __FUNCTION__, __LINE__, y_acc, robot::instance()->getInitYAcc());
-			}
-			else
-			{
-				if (y_pos_tilt_count > 0)
-					y_pos_tilt_count--;
-				else
-					y_pos_tilt_count = 0;
-			}
-			if (y_acc - robot::instance()->getInitYAcc() < -1 * DIF_TILT_Y_VAL)
-			{
-				y_neg_tilt_count++;
-				//ROS_WARN("%s %d: y(%d)\tyi(%d), neg++.", __FUNCTION__, __LINE__, y_acc, robot::instance()->getInitYAcc());
-			}
-			else
-			{
-				if (y_neg_tilt_count > 0)
-					y_neg_tilt_count--;
-				else
-					y_neg_tilt_count = 0;
-			}
-			if (abs(z_acc - robot::instance()->getInitZAcc()) > DIF_TILT_Z_VAL)
-			{
-				z_tilt_count++;
-				//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, z_acc, robot::instance()->getInitZAcc());
-			}
-			else
-			{
-				if (z_tilt_count > 1)
-					z_tilt_count -= 2;
-				else
-					z_tilt_count = 0;
-			}
-
-			//if (x_pos_tilt_count > 7 || y_pos_tilt_count > 7 || y_neg_tilt_count > 7 || z_tilt_count > 7)
-			//	ROS_WARN("%s %d: tilt_count x_pos:%d, y_pos:%d, y_neg:%d, z:%d", __FUNCTION__, __LINE__, x_pos_tilt_count, y_pos_tilt_count, y_neg_tilt_count, z_tilt_count);
-
-			if (x_pos_tilt_count + y_pos_tilt_count + y_neg_tilt_count + z_tilt_count > TILT_COUNT_REACH)
-			{
-				ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
-				if (y_pos_tilt_count > TILT_COUNT_REACH / 3)
-					tmp_tilt_status |= TILT_LEFT;
-				if (y_neg_tilt_count > TILT_COUNT_REACH / 3)
-					tmp_tilt_status |= TILT_RIGHT;
-
-				if (x_pos_tilt_count > TILT_COUNT_REACH / 3 || !tmp_tilt_status)
-					tmp_tilt_status |= TILT_FRONT;
-
-				set_tilt_status(tmp_tilt_status);
-				x_pos_tilt_count /= 3;
-				y_pos_tilt_count /= 3;
-				y_neg_tilt_count /= 3;
-				z_tilt_count /= 3;
-			}
-			else if (x_pos_tilt_count + y_pos_tilt_count + y_neg_tilt_count + z_tilt_count < TILT_COUNT_REACH / 4)
-				set_tilt_status(0);
+				front_tilt_count = 0;
 		}
+		if (get_left_acc() - get_left_init_acc() > LEFT_TILT_LIMIT)
+		{
+			left_tilt_count++;
+			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, get_left_acc(), get_left_init_acc(), left_tilt_count);
+		}
+		else
+		{
+			if (left_tilt_count > 0)
+				left_tilt_count--;
+			else
+				left_tilt_count = 0;
+		}
+		if (get_right_acc() - get_right_init_acc() > RIGHT_TILT_LIMIT)
+		{
+			right_tilt_count++;
+			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, get_right_acc(), get_right_init_acc(), right_tilt_count);
+		}
+		else
+		{
+			if (right_tilt_count > 0)
+				right_tilt_count--;
+			else
+				right_tilt_count = 0;
+		}
+		if (abs(robot::instance()->getZAcc() - robot::instance()->getInitZAcc()) > DIF_TILT_Z_VAL)
+		{
+			z_tilt_count++;
+			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, robot::instance()->getZAcc(), robot::instance()->getInitZAcc());
+		}
+		else
+		{
+			if (z_tilt_count > 1)
+				z_tilt_count -= 2;
+			else
+				z_tilt_count = 0;
+		}
+
+		//if (left_tilt_count > 7 || front_tilt_count > 7 || right_tilt_count > 7 || z_tilt_count > 7)
+			//ROS_WARN("%s %d: tilt_count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_tilt_count, front_tilt_count, right_tilt_count, z_tilt_count);
+
+		if (front_tilt_count + left_tilt_count + right_tilt_count + z_tilt_count > TILT_COUNT_REACH)
+		{
+			ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
+			if (left_tilt_count > TILT_COUNT_REACH / 3)
+				tmp_tilt_status |= TILT_LEFT;
+			if (right_tilt_count > TILT_COUNT_REACH / 3)
+				tmp_tilt_status |= TILT_RIGHT;
+
+			if (front_tilt_count > TILT_COUNT_REACH / 3 || !tmp_tilt_status)
+				tmp_tilt_status |= TILT_FRONT;
+			set_tilt_status(tmp_tilt_status);
+			front_tilt_count /= 3;
+			left_tilt_count /= 3;
+			right_tilt_count /= 3;
+			z_tilt_count /= 3;
+		}
+		else if (front_tilt_count + left_tilt_count + right_tilt_count + z_tilt_count < TILT_COUNT_REACH / 4)
+			set_tilt_status(0);
 	}
 	else{
-		x_pos_tilt_count = 0;
-		y_pos_tilt_count = 0;
-		y_neg_tilt_count = 0;
+		front_tilt_count = 0;
+		left_tilt_count = 0;
+		right_tilt_count = 0;
 		z_tilt_count = 0;
-		x_acc = 0;
-		y_acc = 0;
-		z_acc = 0;
-		last_x_acc = 0;
-		last_y_acc = 0;
-		last_z_acc = 0;
 		set_tilt_status(0);
 	}
 
-	last_tilt_enable_flag = g_tilt_enable;
 	return tmp_tilt_status;
 }
 
@@ -3425,10 +3475,7 @@ void reset_clean_paused(void)
 bool is_decelerate_wall(void)
 {
 	auto status = (robot::instance()->getObsFront() > get_front_obs_trig_value());
-	if(is_map_front_block(3) || status)
-		return true;
-	else
-		return false;
+	return is_map_front_block(3) || status;
 }
 
 static int lidar_bumper_fd = -1;
@@ -3490,5 +3537,36 @@ int8_t lidar_bumper_deinit()
 
 bool check_laser_stuck()
 {
+	if (MotionManage::s_laser != nullptr && !MotionManage::s_laser->laserCheckFresh(3, 2))
+		return true;
 	return false;
+}
+
+uint8_t estimate_charger_position(Rcon_Point_t rcon_point_a, Rcon_Point_t rcon_point_b,Cell_t *pos)
+{
+	float charger_dist_est_a,charger_dist_est_b;
+	int32_t ax = rcon_point_a.x;//point a postition
+	int32_t ay = rcon_point_a.y;
+	float angle_a = (float)deg_to_rad(rcon_point_a.sensor_angle*1.0,1);
+
+	int32_t bx = rcon_point_b.x;//point b position
+	int32_t by = rcon_point_b.y;
+	float angle_b = (float)deg_to_rad(rcon_point_b.sensor_angle*1.0,1);
+
+	float diff_angle_a = atanf((ax - bx)/(ay - by));
+	float diff_angle_b = PI - diff_angle_a;
+
+	float angle_A = PI/2 - angle_a - diff_angle_a;
+	float angle_B = PI - angle_b - diff_angle_b;
+
+	uint32_t dist = two_points_distance(ax,ay,bx,by);
+
+	charger_dist_est_a = dist * sinf(angle_B)/sinf(PI-(angle_B+angle_A)); 
+	charger_dist_est_b = dist * sinf(angle_A)/sinf(PI-(angle_B+angle_A));
+
+	pos->X = count_to_cell(cosf(angle_a)*charger_dist_est_a + ax);
+	pos->Y = count_to_cell(sinf(angle_a)*charger_dist_est_a + ay);
+
+	ROS_INFO("%s,%d,estimate charger stub position on (%d,%d)",__FUNCTION__,__LINE__,pos->X,pos->Y);
+	return 1;
 }

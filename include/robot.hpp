@@ -73,15 +73,15 @@ public:
 		return offset_angle_;
 	};
 
-	void startAngle(float angle)
-	{
-		start_angle_ = angle;
-	};
+//	void startAngle(float angle)
+//	{
+//		start_angle_ = angle;
+//	};
 
-	float startAngle(void) const
-	{
-		return start_angle_;
-	};
+//	float startAngle(void) const
+//	{
+//		return start_angle_;
+//	};
 
 	void savedOffsetAngle(float angle)
 	{
@@ -231,21 +231,24 @@ public:
 
 	int16_t getObsLeft()
 	{
-		int16_t left_obs = sensor.l_obs - g_obs_left_baseline;
+		//int16_t left_obs = sensor.l_obs - g_obs_left_baseline;
+		int16_t left_obs = sensor.l_obs;
 		//ROS_INFO("%s %d: sensor.l_obs(%d) - obs_l_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.l_obs, g_obs_left_baseline, left_obs);
 		return left_obs;
 	}
 
 	int16_t getObsRight()
 	{
-		int16_t right_obs = sensor.r_obs - g_obs_right_baseline;
+		//int16_t right_obs = sensor.r_obs - g_obs_right_baseline;
+		int16_t right_obs = sensor.r_obs;
 		//ROS_INFO("%s %d: sensor.r_obs(%d) - obs_r_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.r_obs, g_obs_right_baseline, right_obs);
 		return right_obs;
 	}
 
 	int16_t getObsFront()
 	{
-		int16_t front_obs = sensor.f_obs - g_obs_front_baseline;
+		//int16_t front_obs = sensor.f_obs - g_obs_front_baseline;
+		int16_t front_obs = sensor.f_obs;
 		//ROS_INFO("%s %d: sensor.f_obs(%d) - obs_f_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.f_obs, g_obs_front_baseline, front_obs);
 		return front_obs;
 	}

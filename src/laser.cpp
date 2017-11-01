@@ -23,8 +23,6 @@ boost::mutex scan_mutex_;
 boost::mutex scan2_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
-uint8_t Laser::is_ready_ = 0;
-uint8_t Laser::is_scan2_ready_ = 0;
 uint32_t new_laser_seq;
 Eigen::MatrixXd laser_matrix = Eigen::MatrixXd::Ones(3,3);
 
@@ -37,6 +35,8 @@ Laser::Laser():nh_()
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 	setScanReady(0);
 	setScan2Ready(0);
+	scan_update_time = ros::Time::now().toSec();
+	scan2_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
 	lidarMotorCtrl(ON);
@@ -66,19 +66,36 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 	new_laser_time = ros::Time::now().toSec();
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
+
 	setScanReady(1);
-//	compensateLaserXY();
+	scan_update_time = ros::Time::now().toSec();
+	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan_update_time);
 }
 
 void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	int count = 0;
+	uint8_t scan2_valid_cnt = 0;
+
+	for (uint16_t i = 0; i < 360; i++)
+	{
+		if (scan->ranges[i] != std::numeric_limits<float>::infinity())
+		{
+			if (++scan2_valid_cnt > 30)
+				break;
+		}
+	}
+	if (scan2_valid_cnt > 30)
+	{
+		// laser has been covered.
+	}
+
 	boost::mutex::scoped_lock(scan2_mutex_);
 	laserScanData_2_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-	
-	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 	setScan2Ready(1);
+	scan2_update_time = ros::Time::now().toSec();
+	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
 }
 void Laser::odomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
@@ -139,14 +156,15 @@ int8_t Laser::isScan2Ready()
 {
 	return is_scan2_ready_;
 }
+
 int8_t Laser::isScanReady()
 {
-	return is_ready_;
+	return is_scan_ready_;
 }
 
 void Laser::setScanReady(uint8_t val)
 {
-	is_ready_ = val;
+	is_scan_ready_ = val;
 }
 
 void Laser::setScan2Ready(uint8_t val)
@@ -206,7 +224,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			}
 		}
 
-		if (switch_ && isScanReady())
+		if (switch_ && temp_switch_ && isScanReady())
 		{
 			ROS_INFO("\033[32m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
@@ -256,7 +274,7 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 	//double	line_angle;
 	Double_Point	New_Laser_Point;
 	Laser_Point.clear();
-	ROS_WARN("laserGetFitLine");
+	ROS_DEBUG("laserGetFitLine");
 	scan_mutex_.lock();
 	auto tmp_scan_data = laserScanData_;
 	scan_mutex_.unlock();
@@ -305,10 +323,10 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 			*distance = fabs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-		ROS_INFO("line_angle = %lf", *line_angle);
+		ROS_DEBUG("line_angle = %lf", *line_angle);
 		return true;
 	} else {
-		ROS_INFO("no line to fit!");
+		ROS_DEBUG("no line to fit!");
 		return false;
 	}
 }
@@ -632,7 +650,7 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 			loop_count++;
 		}
 	}
-	ROS_INFO("pub line marker");
+	ROS_DEBUG("pub line marker");
 	pubLineMarker(&Laser_Group);
 	return true;
 }
@@ -708,8 +726,8 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			x_0 = 0 - c / a;
 			y_0 = 0 - c / b;
 			line_angle = atan2(y_0, 0 - x_0) * 180 / PI;
-			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-			ROS_INFO("x_0 = %lf, y_0 = %lf", x_0, y_0);
+			ROS_DEBUG("a = %lf, b = %lf, c = %lf", a, b, c);
+			ROS_DEBUG("x_0 = %lf, y_0 = %lf", x_0, y_0);
 			/*erase the lines which are far away from the robot*/
 			//double x_l = fabs(c / a);
 			//double y_l = fabs(c / b);
@@ -717,14 +735,14 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			//if ((x_l > L) && (y_l > L)) {
 			if (dis > dis_lim || dis < 0.167 || x_0 < 0) {
 				//ROS_INFO("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
-				ROS_INFO("the line is too far away from robot. dis = %lf", dis);
+				ROS_DEBUG("the line is too far away from robot. dis = %lf", dis);
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
 			//pubFitLineMarker(a, b, c, -0.5, 0.5);
 			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
 			//ROS_INFO("iter->begin()->y = %lf, (iter->end() - 1)->y= %lf",iter->begin()->y, (iter->end() - 1)->y);
-			ROS_INFO("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
+			ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
 	} else {
@@ -853,7 +871,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::LaserScan *scan_range, uint8_t *laser_status, bool is_wall_follow)
 {
-//	ROS_INFO("  %s,%d" __FUNCTION__,__LINE__);
+	ROS_INFO("  %s,%d", __FUNCTION__,__LINE__);
 	double x, y, th;
 	int dx, dy;
 	const	double Y_MIN = 0.140;//0.167
@@ -943,21 +961,21 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 				case 0 : {
 					dx = 2;
 					dy = 0;
-					*laser_status |= Status_Front_OBS;
+					*laser_status |= BLOCK_FRONT;
 					direction_msg = "front middle";
 					break;
 				}
 				case 1 : {
 					dx = 2;
 					dy = 1;
-					*laser_status |= Status_Left_OBS;
+					*laser_status |= BLOCK_LEFT;
 					direction_msg = "front left";
 					break;
 				}
 				case 2 : {
 					dx = 2;
 					dy = -1;
-					*laser_status |= Status_Right_OBS;
+					*laser_status |= BLOCK_RIGHT;
 					direction_msg = "front right";
 					break;
 				}
@@ -1222,8 +1240,8 @@ bool Laser::laserMarker(double X_MAX)
 			}
 		}
 	}
-//	if (!msg.empty())
-//		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
+	if (!msg.empty())
+		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
 	return ret;
 }
 
@@ -1269,7 +1287,7 @@ uint8_t Laser::isRobotSlip()
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
-				}
+				} 
 				else if(laserScanData_2_.ranges[i] >dist3 && laserScanData_2_.ranges[i] < dist2){//
 					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
@@ -1522,11 +1540,11 @@ void Laser::pubPointMarker(std::vector<Double_Point> *point)
 	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action= 0;//add
 	point_marker.lifetime=ros::Duration(0);
-	point_marker.scale.x = 0.03;
-	point_marker.scale.y = 0.03;
-	point_marker.scale.z = 0.03;
-	point_marker.color.r = 1.0;
-	point_marker.color.g = 0.0;
+	point_marker.scale.x = 0.01;
+	point_marker.scale.y = 0.01;
+	point_marker.scale.z = 0.01;
+	point_marker.color.r = 0.0;
+	point_marker.color.g = 1.0;
 	point_marker.color.b = 0.0;
 	point_marker.color.a = 1.0;
 	point_marker.header.frame_id = "/base_link";
@@ -1636,4 +1654,22 @@ bool Laser::isNewLaserCompensate()
 		return true;
 	else
 		return false;
+}
+
+bool Laser::laserCheckFresh(float duration, uint8_t type)
+{
+	double time_gap;
+	if (type == 1 && time_gap < duration)
+		time_gap = ros::Time::now().toSec() - scan_update_time;
+	if (type == 2)
+		time_gap = ros::Time::now().toSec() - scan2_update_time;
+
+	if (time_gap < duration)
+	{
+		//ROS_INFO("%s %d: time_gap(%lf) < duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
+		return true;
+	}
+
+	//ROS_INFO("%s %d: time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
+	return false;
 }

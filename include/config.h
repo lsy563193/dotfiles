@@ -231,6 +231,12 @@
  */
 #define GYRO_CALIBRATION             (1)
 
+// Define the position of gyro, only one side could be chozen.
+#define GYRO_FRONT_X_POS	(0)
+#define GYRO_FRONT_X_NEG	(1)
+#define GYRO_FRONT_Y_POS	(0)
+#define GYRO_FRONT_Y_NEG	(0)
+
 /*
  * Defines for enabling/disabling tilted detect or not.
  * When detecting the robot is tilted, it will check the all the 3 cliff

@@ -2610,7 +2610,7 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 		g_cliff_all_triggered = true;
 		g_fatal_quit_event = true;
 	}
-	g_cliff_triggered = Status_Cliff_All;
+	g_cliff_triggered = BLOCK_ALL;
 	if (during_cleaning)
 		map_set_cliff();
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
@@ -2624,7 +2624,7 @@ void go_home_handle_cliff(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
-		g_cliff_triggered = Status_Cliff_All;
+		g_cliff_triggered = BLOCK_ALL;
 		if (during_cleaning)
 			map_set_cliff();
 	}
@@ -2636,12 +2636,12 @@ void go_home_handle_bumper(bool state_now, bool state_last)
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
-		if (get_bumper_status() & LeftBumperTrig)
+		if (get_bumper_status() & BLOCK_LEFT)
 		{
 			ROS_WARN("%s %d: Left bumper triggered.", __FUNCTION__, __LINE__);
 			g_bumper_left = true;
 		}
-		if (get_bumper_status() & RightBumperTrig)
+		if (get_bumper_status() & BLOCK_RIGHT)
 		{
 			ROS_WARN("%s %d: Left bumper triggered.", __FUNCTION__, __LINE__);
 			g_bumper_right = true;

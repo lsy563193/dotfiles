@@ -46,6 +46,12 @@ typedef enum {
 	ACTION_RT	= 0x10,
 } ActionType;
 
+enum {
+	EXIT_CLEAN=-1,
+	NO_REATH_TARGET=0,
+	REATH_TARGET=1,
+};
+
 typedef struct {
 	Cell_t	pos;
 } VWType;
@@ -64,11 +70,14 @@ extern uint32_t g_wf_diff_timer;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
 extern int g_rcon_triggered;
-extern bool g_wf_is_reach;
-extern int g_is_reach;
-extern Cell_t g_next_cell, g_target_cell;
+//extern Cell_t g_next_cell;
+//extern Cell_t g_target_cell;
 extern bool g_resume_cleaning;
 extern bool g_exploration_home;
+extern std::deque<Cell_t> g_passed_path;
+extern std::deque<Cell_t> g_plan_path;
+extern long g_distance;
+extern bool g_is_near;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
@@ -90,10 +99,10 @@ bool CM_Check_is_exploring();
 uint8_t CM_MoveForward(void);
 
 uint8_t cm_touring(void);
-int cm_cleaning(void);
+void cm_cleaning(void);
 
 void cm_check_should_go_home(void);
-void cm_check_temp_spot(void);
+void cm_check_should_spot(void);
 
 Cell_t cm_update_position(bool is_turn = false);
 //void cm_update_map();
@@ -117,7 +126,6 @@ void cm_move_back_(uint16_t dist);
 	 * way like this).
 	 */
 
-void cm_go_home(void);
 bool cm_go_to_charger(void);
 bool cm_is_continue_go_to_charger(void);
 //void CM_SetStationHome(void);
@@ -133,9 +141,9 @@ MapTouringType cm_handle_ext_event(void);
 void cm_create_home_boundary(void);
 
 void cm_self_check(void);
+
 bool cm_should_self_check(void);
 
-uint8_t cm_check_charger_signal(void);
 /* Event handler functions. */
 void cm_register_events(void);
 void cm_unregister_events(void);

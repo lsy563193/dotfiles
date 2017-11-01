@@ -121,6 +121,22 @@ int robotbase_init(void)
 	return 0;
 }
 
+void debug_received_stream()
+{
+	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < RECEI_LEN; i++)
+		printf("%02x ", g_receive_stream[i]);
+	printf("\n");
+}
+
+void debug_send_stream(uint8_t *buf)
+{
+	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < SEND_LEN; i++)
+		printf("%02x ", *(buf + i));
+	printf("\n");
+}
+
 bool is_robotbase_stop(void)
 {
 	return robotbase_thread_stop ? true : false;
@@ -267,6 +283,7 @@ void *robotbase_routine(void*)
 	cur_time = ros::Time::now();
 	last_time  = cur_time;
 	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
+	int16_t last_x_acc = -1000, last_y_acc = -1000, last_z_acc = -1000;
 	while (ros::ok() && !robotbase_thread_stop)
 	{
 		/*--------data extrict from serial com--------*/
@@ -292,9 +309,9 @@ void *robotbase_routine(void*)
 
 		sensor.left_wall = ((g_receive_stream[REC_L_WALL_H] << 8)| g_receive_stream[REC_L_WALL_L]);
 
-		sensor.l_obs = ((g_receive_stream[REC_L_OBS_H] << 8) | g_receive_stream[REC_L_OBS_L]);
-		sensor.f_obs = ((g_receive_stream[REC_F_OBS_H] << 8) | g_receive_stream[REC_F_OBS_L]);
-		sensor.r_obs = ((g_receive_stream[REC_R_OBS_H] << 8) | g_receive_stream[REC_R_OBS_L]);
+		sensor.l_obs = ((g_receive_stream[REC_L_OBS_H] << 8) | g_receive_stream[REC_L_OBS_L]) - g_obs_left_baseline;
+		sensor.f_obs = ((g_receive_stream[REC_F_OBS_H] << 8) | g_receive_stream[REC_F_OBS_L]) - g_obs_front_baseline;
+		sensor.r_obs = ((g_receive_stream[REC_R_OBS_H] << 8) | g_receive_stream[REC_R_OBS_L]) - g_obs_right_baseline;
 
 #if __ROBOT_X900
 
@@ -363,9 +380,18 @@ void *robotbase_routine(void*)
 
 		sensor.omni_wheel = (g_receive_stream[REC_OMNI_W_H]<<8)|g_receive_stream[REC_OMNI_W_L];
 
-		sensor.x_acc = (g_receive_stream[REC_XACC_H]<<8)|g_receive_stream[REC_XACC_L];//in mG
-		sensor.y_acc = (g_receive_stream[REC_YACC_H]<<8)|g_receive_stream[REC_YACC_L];//in mG
-		sensor.z_acc = (g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L];//in mG
+		if (last_x_acc == -1000)
+			sensor.x_acc = (g_receive_stream[REC_XACC_H]<<8)|g_receive_stream[REC_XACC_L];//in mG
+		else
+			sensor.x_acc = ((g_receive_stream[REC_XACC_H]<<8)|g_receive_stream[REC_XACC_L] + last_x_acc) / 2;//in mG
+		if (last_y_acc == -1000)
+			sensor.y_acc = (g_receive_stream[REC_YACC_H]<<8)|g_receive_stream[REC_YACC_L];//in mG
+		else
+			sensor.y_acc = ((g_receive_stream[REC_YACC_H]<<8)|g_receive_stream[REC_YACC_L] + last_y_acc) / 2;//in mG
+		if (last_z_acc == -1000)
+			sensor.z_acc = (g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L];//in mG
+		else
+			sensor.z_acc = ((g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L] + last_z_acc) / 2;//in mG
 
 		sensor.plan = g_receive_stream[REC_PLAN];
 
@@ -480,6 +506,7 @@ void *serial_send_routine(void*)
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			g_send_stream_mutex.unlock();
 			buf[CTL_CRC] = calc_buf_crc8(buf, sl);
+			//debug_send_stream(&buf[0]);
 			serial_write(SEND_LEN, buf);
 		//}
 		//reset omni wheel bit

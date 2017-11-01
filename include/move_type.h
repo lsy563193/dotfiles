@@ -28,7 +28,7 @@ bool mt_is_go_to_charger();
 
 CMMoveType mt_get();
 
-void mt_update(const Cell_t& curr, PPTargetType& path, uint16_t dir);
+void mt_update(const Cell_t& curr, PPTargetType& path);
 
 void mt_set(CMMoveType mt);
 /*

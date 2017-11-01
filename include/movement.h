@@ -7,6 +7,7 @@
 #include "config.h"
 #include "main.h"
 #include "clean_mode.h"
+#include "mathematics.h"
 
 #define Brush_Power					128
 #define MainBrush_Power				70
@@ -28,22 +29,27 @@
 #define Room_Mode_Auto (uint8_t)0x01
 #define Room_Mode_Large (uint8_t)0x00
 
+#define BLOCK_LEFT				((uint8_t) 0x01)
+#define BLOCK_RIGHT			((uint8_t) 0x02)
+#define BLOCK_FRONT			((uint8_t) 0x04)
+#define BLOCK_ALL			((uint8_t) 0x07)
+
 #define Status_Left_Wall			((uint8_t) 0x01)
-#define Status_Left_OBS				((uint8_t) 0x02)
+//#define Status_Left_OBS				((uint8_t) 0x02)
 #define Status_Left_OBS_2			((uint8_t) 0x04)
 
-#define Status_Front_OBS			((uint8_t) 0x80)
+//#define Status_Front_OBS			((uint8_t) 0x80)
 #define Status_Right_OBS_2			((uint8_t) 0x40)
-#define Status_Right_OBS			((uint8_t) 0x20)
+//#define Status_Right_OBS			((uint8_t) 0x20)
 #define Status_Right_Wall			((uint8_t) 0x10)
 
-#define Status_Cliff_Left			((uint8_t) 0x01)
-#define Status_Cliff_Right			((uint8_t) 0x02)
-#define Status_Cliff_Front			((uint8_t) 0x04)
-#define Status_Cliff_All			((uint8_t) 0x07)
-#define Status_Cliff_LF			((uint8_t) 0x05)
-#define Status_Cliff_RF			((uint8_t) 0x06)
-#define Status_Cliff_LR			((uint8_t) 0x03)
+//#define Status_Cliff_Left			((uint8_t) 0x01)
+//#define Status_Cliff_Right			((uint8_t) 0x02)
+//#define Status_Cliff_Front			((uint8_t) 0x04)
+//#define Status_Cliff_All			((uint8_t) 0x07)
+#define Status_Cliff_LF			((uint8_t) 0x08)
+#define Status_Cliff_RF			((uint8_t) 0x10)
+#define Status_Cliff_LR			((uint8_t) 0x20)
 
 
 #define Cliff_PWM_Duration			((uint16_t) 0x000D)	//set Cliff PWM Duration = 13
@@ -240,15 +246,15 @@
 #define Const_160Min_Time			19200 //160 minutes
 #define Const_Work_Time				14400 //120 minutes
 
-#define LeftBumperTrig				1
-#define RightBumperTrig				2
-#define LidarBumperTrig				4
-#define AllBumperTrig				3
+//#define LeftBumperTrig				1
+//#define RightBumperTrig				2
+//#define LidarBumperTrig				4
+//#define AllBumperTrig				3
 
-#define LeftCliffTrig							1
-#define RightCliffTrig						2
+//#define LeftCliffTrig							1
+//#define RightCliffTrig						2
 #define RightLeftCliffTrig				3
-#define FrontCliffTrig						4
+//#define FrontCliffTrig						4
 #define LeftFrontCliffTrig				5
 #define RightFrontCliffTrig				6
 /*
@@ -354,6 +360,9 @@ typedef enum{
 #define DIF_TILT_X_VAL				170
 #define DIF_TILT_Y_VAL				170
 #define DIF_TILT_Z_VAL				70
+#define FRONT_TILT_LIMIT			120
+#define LEFT_TILT_LIMIT				120
+#define RIGHT_TILT_LIMIT			120
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
@@ -371,7 +380,7 @@ typedef enum{
 #define REG_TYPE_CURVE			5
 
 //cliff limit
-#define CLIFF_LIMIT				80
+#define CLIFF_LIMIT				60
 extern uint32_t g_rcon_status;
 
 extern int16_t g_obs_left_baseline;
@@ -392,6 +401,7 @@ struct pid_struct
 	uint8_t last_reg_type;
 	float variation;
 };
+
 struct pid_argu_struct
 {
 	uint8_t reg_type; // Regulator type
@@ -399,6 +409,15 @@ struct pid_argu_struct
 	float Ki;
 	float Kd;
 };
+
+#define RCON_SENSOR_FLFR 0 //define the rcon sensor angle on robotbase (degree)
+#define RCON_SENSOR_FLFR2 30
+#define RCON_SENSOR_LR 60
+typedef struct {
+	int32_t x;
+	int32_t y;
+	int16_t sensor_angle;
+}Rcon_Point_t;
 
 extern struct pid_argu_struct argu_for_pid;
 extern struct pid_struct left_pid, right_pid;
@@ -780,6 +799,12 @@ void add_sp_turn_count();
 // time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
 void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 
+int16_t get_front_acc();
+int16_t get_left_acc();
+int16_t get_right_acc();
+int16_t get_front_init_acc();
+int16_t get_left_init_acc();
+int16_t get_right_init_acc();
 uint8_t check_tilt();
 void set_tilt_status(uint8_t status);
 uint8_t get_tilt_status();
@@ -793,4 +818,6 @@ int8_t lidar_bumper_init(const char* device);
 int8_t lidar_bumper_deinit();
 
 bool check_laser_stuck();
+
+uint8_t estimate_charger_position(Rcon_Point_t point_a,Rcon_Point_t piont_b,Cell_t *pos);
 #endif

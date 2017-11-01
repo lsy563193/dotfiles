@@ -29,6 +29,7 @@ bool g_bumper_jam = false;
 int g_bumper_cnt = 0;
 /* OBS */
 int g_obs_triggered = 0;
+int g_laser_triggered = 0;
 /* Cliff */
 bool g_cliff_all_triggered = false;
 int g_cliff_triggered = 0;
@@ -168,13 +169,13 @@ void *event_manager_thread(void *data)
 	}
 
 		/* Bumper */
-		if (get_bumper_status() == AllBumperTrig) {
+		if (get_bumper_status() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:all bumper trig ", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_ALL)
-		} else if (get_bumper_status() & LeftBumperTrig) {
+		} else if (get_bumper_status() & BLOCK_LEFT) {
 			ROS_DEBUG("%s %d: setting event: left bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_LEFT)
-		} else if (get_bumper_status() & RightBumperTrig) {
+		} else if (get_bumper_status() & BLOCK_RIGHT) {
 			ROS_DEBUG("%s %d: setting event: right bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_RIGHT)
 		}
@@ -194,25 +195,25 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Cliff */
-		if (get_cliff_status() == Status_Cliff_All) {
+		if (get_cliff_status() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL)
-		} else if (get_cliff_status() == (Status_Cliff_Front | Status_Cliff_Left)) {
+		} else if (get_cliff_status() == (BLOCK_FRONT | BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_LEFT)
-		} else if (get_cliff_status() == (Status_Cliff_Front | Status_Cliff_Right)) {
+		} else if (get_cliff_status() == (BLOCK_FRONT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT)
-		} else if (get_cliff_status() == (Status_Cliff_Left | Status_Cliff_Right)) {
+		} else if (get_cliff_status() == (BLOCK_LEFT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT)
-		} else if (get_cliff_status() == (Status_Cliff_Front)) {
+		} else if (get_cliff_status() == (BLOCK_FRONT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT)
-		} else if (get_cliff_status() == (Status_Cliff_Left)) {
+		} else if (get_cliff_status() == (BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT)
-		} else if (get_cliff_status() == (Status_Cliff_Right)) {
+		} else if (get_cliff_status() == (BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_RIGHT)
 		}
@@ -616,6 +617,8 @@ void event_manager_reset_status(void)
 	//g_lidar_bumper = false;
 	//g_lidar_bumper_cnt =0;
 	//g_lidar_bumper_jam = false;
+	// laser stuck
+	g_laser_stuck = false;
 }
 
 /* Below are the internal functions. */
@@ -994,7 +997,9 @@ void em_default_handle_lidar_bumper(bool state_new,bool state_last)
 // Laser stuck
 void em_default_handle_laser_stuck(bool state_new,bool state_last)
 {
-	ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
+	beep_for_command(true);
+	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
+	g_laser_stuck = true;
 }
 
 /* Default: empty hanlder */
