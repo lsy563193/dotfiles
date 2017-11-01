@@ -179,8 +179,19 @@ void charge_function(void)
 	charge_unregister_event();
 	set_stop_charge();
 	// Wait for 20ms to make sure stop charging command has been sent.
-	usleep(20000);
+	usleep(30000);
 
+	if (cm_is_navigation())
+	{
+		// Wait for updated cliff status.
+		usleep(30000);
+		// Cliff triggered means switch is off, aborting switching to navigation mode.
+		if (get_cliff_status())
+		{
+			cm_set(Clean_Mode_Charging);
+			wav_play(WAV_CHECK_SWITCH);
+		}
+	}
 	if (charge_plan_status == 2)
 		wav_play(WAV_CANCEL_APPOINTMENT);
 	else if (charge_plan_status == 1)
