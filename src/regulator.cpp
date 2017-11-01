@@ -329,7 +329,7 @@ bool BackRegulator::isReach()
 		beep_for_command(false);
 		return true;
 	}
-	if(fabsf(distance) >= g_back_distance || (laser_back_distance.back < 0.03 && g_back_distance > 0.05))
+	if(fabsf(distance) >= g_back_distance || (obstacle_distance_back < 0.03 && g_back_distance > 0.05))
 	{
 		if(g_slip_backward){
 			ROS_WARN("%s,%d,\033[1mrobot slip backward reach!! distance(%f),back_distance(%f)\033[0m",__FUNCTION__,__LINE__,distance,g_back_distance);
@@ -388,9 +388,11 @@ bool BackRegulator::_isStop()
 {
 	if (cm_get() != Clean_Mode_GoHome)
 	{
-		// Only update the scan seq.
-		MotionManage::s_laser->laserMarker(false);
-		MotionManage::s_laser->getObstacleDistance(1,ROBOT_RADIUS,seq,laser_back_distance);
+		if(MotionManage::s_laser->isNewLaserCompensate()) {
+			obstacle_distance_back = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
+		}else{
+			obstacle_distance_back = DBL_MAX;
+		}
 	}
 	bool ret = false;
 	return ret;
@@ -509,12 +511,6 @@ bool TurnRegulator::isSwitch()
 bool TurnRegulator::_isStop()
 {
 	bool ret = false;
-	if (cm_get() != Clean_Mode_GoHome)
-	{
-		// Only update the scan seq.
-		MotionManage::s_laser->laserMarker(false);
-	}
-
 	return ret;
 }
 
@@ -714,17 +710,14 @@ bool LinearRegulator::isSwitch()
 bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
-	correct_laser_distance(laser_distance, &odom_x_start, &odom_y_start);
-	uint8_t obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
-
+//	correct_laser_distance(laser_distance, &odom_x_start, &odom_y_start);
+	set_wheel_speed(0,0);
+	bool obs_tmp;
+	if(MotionManage::s_laser->isNewLaserCompensate())
+		obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(0.20) : get_obs_status(200, 1700, 200);
+	else
+		obs_tmp = false;
 //	if (cm_is_exploration())
-	if(obs_tmp == 0 && laser_distance.getFrontMin() < 0.035)
-	{
-//	ROS_ERROR("set true,laser_distance:%lf",laser_distance.getFrontMin());
-		set_cell_by_compensate(laser_distance);
-//		beep(2,40,0,3);
-		obs_tmp = true;
-	}
 //	if (get_clean_mode() == Clean_Mode_Exploration)
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
@@ -804,15 +797,19 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		check_limit(integrated_, -150, 150);
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, s_target.X, s_target.Y);
-	//auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
-	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (laser_distance.getFrontMin() < 0.25))
+	if(MotionManage::s_laser->isNewLaserCompensate()){
+		obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
+	}else{
+		obstalce_distance_front = DBL_MAX;
+	}
+	if (get_obs_status() || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
 			angle_diff = 0;
 		integrated_ = 0;
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED){
-			if(laser_distance.getFrontMin() > 0.025 && laser_distance.getFrontMin() < 0.125 && (left_speed > 20 || right_speed > 20)) {
+			if(obstalce_distance_front > 0.025 && obstalce_distance_front < 0.125 && (left_speed > 20 || right_speed > 20)) {
 				base_speed_ -= 2;
 			}else
 				base_speed_ --;
@@ -932,7 +929,7 @@ bool FollowWallRegulator::isSwitch()
 		return true;
 	}
 #endif
-	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_trig_value() + 1700);
+	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(wall_follow_detect_distance): (get_front_obs() > get_front_obs_trig_value() + 1700);
 	if(obs_tmp) {
 //		ROS_INFO("Laser Stop in wall follow");
 		if(! g_obs_triggered )
@@ -3311,6 +3308,10 @@ RegulatorManage::~RegulatorManage()
 }
 void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
+//	if(ros::Time::now().toSec() - test_time > 0.2 || test_time == 0){
+//	MotionManage::s_laser->compensateLaserXY();
+//	test_time = ros::Time::now().toSec();
+//	}
 	if (p_reg_ != nullptr)
 		p_reg_->adjustSpeed(left_speed, right_speed);
 }

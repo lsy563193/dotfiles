@@ -1,10 +1,13 @@
 #ifndef __LASER_H__
 #define __LASER_H__
 
+#include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <movement.h>
 #include <sensor_msgs/LaserScan.h>
+#include <Eigen/Core>
+#include <Eigen/Dense>
 #include "mathematics.h"
 
 #define ON true
@@ -21,7 +24,7 @@ public:
 	bool laserGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
 
 	int compLaneDistance();
-	bool getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserDistance& laser_distance);
+	double getObstacleDistance(uint8_t dir, double range);
 	void setScanReady(uint8_t val);
 	void setScan2Ready(uint8_t val);
 	static int8_t isScanReady();
@@ -47,12 +50,15 @@ public:
 
 	void pubPointMarker(std::vector<Double_Point> *point);
 
+	bool isNewLaserCompensate();
+
 	//void startShield(void);
 	//void stopShield(void);
 	void lidarShieldDetect(bool sd);
+	bool compensateLaserXY(double detect_distance = 0.50,double noise_delta = 0.02);
 	void lidarMotorCtrl(bool orf);
 
-	uint8_t laserMarker(bool is_mark,double X_MIN = 0.140,double X_MAX = 0.237);
+	bool laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
 private:
 
@@ -60,14 +66,17 @@ private:
 	//void start(void);
 	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void odomCb(const nav_msgs::Odometry::ConstPtr &msg);
 	void laserDataFilter(sensor_msgs::LaserScan& laserScanData, double delta);
 
 	static uint8_t is_ready_;
 	static uint8_t is_scan2_ready_;
+	double new_laser_time = 0;
 
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;
 	ros::Subscriber	scan_sub2_;
+	ros::Subscriber	odom_sub_;
 
 	sensor_msgs::LaserScan laserScanData_;
 	sensor_msgs::LaserScan laserScanData_2_;

@@ -74,12 +74,11 @@ protected:
 	bool isReach();
 
 private:
-	uint32_t seq;
+	double obstacle_distance_back = DBL_MAX;
 	int counter_;
 	int32_t speed_;
 	float distance;
 	float laser_detect_distance;
-	laserDistance laser_back_distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -183,7 +182,7 @@ private:
 	PPTargetType path_;
 	float odom_x_start = 0;
 	float odom_y_start = 0;
-	laserDistance laser_distance;
+	double obstalce_distance_front = DBL_MAX;
 };
 
 class GoToChargerRegulator: public RegulatorBase{
