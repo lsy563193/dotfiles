@@ -153,6 +153,9 @@ private:
 	int16_t wall_buffer[3]={0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
+
+	int32_t same_speed_;
+	int32_t diff_speed_;
 };
 
 class LinearRegulator: public RegulatorBase{
@@ -231,6 +234,9 @@ private:
 	int8_t by_path_move_cnt;
 	uint8_t turn_connect_cnt;
 	uint8_t turn_connect_dir;
+
+	int32_t left_speed_;
+	int32_t right_speed_;
 };
 
 class RegulatorManage:public RegulatorBase{
@@ -278,6 +284,8 @@ private:
 	TurnRegulator* turn_reg_;
 	BackRegulator* back_reg_;
 
+	int32_t left_speed_;
+	int32_t right_speed_;
 };
 
 #endif //PP_REGULATOR_BASE_H

@@ -17,7 +17,7 @@ public:
 
 	~MotionManage();
 
-	static void pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::deque<Cell_t>& path);
+	static void pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 //private:
 	bool is_align_active(){
 		return is_align_active_;
