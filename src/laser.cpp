@@ -88,15 +88,15 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	if (scan2_valid_cnt > 30)
 	{
 		// laser has been covered.
+		boost::mutex::scoped_lock(scan2_mutex_);
+		laserScanData_2_ = *scan;
+		count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
+		setScan2Ready(1);
+		scan2_update_time = ros::Time::now().toSec();
+		//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
 	}
-
-	boost::mutex::scoped_lock(scan2_mutex_);
-	laserScanData_2_ = *scan;
-	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-	setScan2Ready(1);
-	scan2_update_time = ros::Time::now().toSec();
-	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
 }
+
 void Laser::odomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 //	if(isNewLaserCompensate())

@@ -492,7 +492,7 @@ void cm_check_should_go_home(void)
 	if (cm_is_go_home() || g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
 		ROS_WARN("%s %d: cm_is_go_home(%d) || Receive g_remote_home(\033[32m%d\033[0m), g_battery_home(\033[32m%d\033[0m), finish cleaning(\033[32m%d\033[0m).", __FUNCTION__, __LINE__, cm_is_go_home(), g_remote_home,g_battery_home,g_finish_cleaning_go_home);
-		debug_map(MAP, map_get_x_cell(), map_get_y_cell();
+		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
 
 		// Set variables.
 		if (g_remote_home)
