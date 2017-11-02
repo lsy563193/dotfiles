@@ -23,6 +23,7 @@
 extern PPTargetType g_plan_path;
 //extern uint16_t g_old_dir;
 extern int16_t g_new_dir;
+extern Eigen::MatrixXd laser_matrix;
 extern Cell_t g_cell_history[];
 int g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
 double bumper_turn_factor=0.85;
@@ -412,11 +413,7 @@ bool BackRegulator::_isStop()
 {
 	if (cm_get() != Clean_Mode_GoHome)
 	{
-		if(MotionManage::s_laser->isNewLaserCompensate()) {
-			obstacle_distance_back = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
-		}else{
-			obstacle_distance_back = DBL_MAX;
-		}
+		obstacle_distance_back = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
 	}
 	bool ret = false;
 	return ret;
@@ -644,7 +641,6 @@ LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 //	g_is_should_follow_wall = false;
 //	s_target = target;
 //	path_ = path;
-	new_laser_seq = 0;
 	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
 }
 
@@ -744,11 +740,7 @@ bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
 //	correct_laser_distance(laser_distance, &odom_x_start, &odom_y_start);
-	bool obs_tmp;
-	if(MotionManage::s_laser->isNewLaserCompensate())
-		obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(0.20) : get_obs_status(200, 1700, 200);
-	else
-		obs_tmp = false;
+	bool obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(0.20) : get_obs_status(200, 1700, 200);
 //	if (cm_is_exploration())
 //	if (get_clean_mode() == Clean_Mode_Exploration)
 //		// For exploration mode detecting the rcon signal
@@ -867,11 +859,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 		check_limit(integrated_, -150, 150);
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
-	if(MotionManage::s_laser->isNewLaserCompensate()){
-		obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
-	}else{
-		obstalce_distance_front = DBL_MAX;
-	}
+	obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = get_obs_status();
 	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
 	{
@@ -983,7 +971,7 @@ bool FollowWallRegulator::isSwitch()
 		return true;
 	}
 #endif
-	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(wall_follow_detect_distance): (get_front_obs() > get_front_obs_trig_value() + 1700);
+	bool obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(wall_follow_detect_distance) : (get_front_obs() > get_front_obs_trig_value() + 1700);
 	if(obs_tmp) {
 //		ROS_INFO("Laser Stop in wall follow");
 		if(! g_obs_triggered )

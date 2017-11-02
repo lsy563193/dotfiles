@@ -50,8 +50,6 @@ public:
 
 	void pubPointMarker(std::vector<Double_Point> *point);
 
-	bool isNewLaserCompensate();
-
 	//void startShield(void);
 	//void stopShield(void);
 	void lidarShieldDetect(bool sd);

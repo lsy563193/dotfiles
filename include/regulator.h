@@ -19,7 +19,6 @@
 #define WALL_DISTANCE_LOW_LIMIT 150
 
 extern int16_t g_turn_angle;
-extern uint32_t new_laser_seq;
 #define GO_TO_CHARGER_INIT 0
 #define CHECK_NEAR_CHARGER_STATION 1
 #define AWAY_FROM_CHARGER_STATION 2
@@ -154,11 +153,6 @@ private:
 	int16_t wall_buffer[3]={0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
-//CMMoveType last_move_type;
-//bool g_is_should_follow_wall;
-	//int last_strength=150;
-//int last_transit_strength=150;
-//double transit_time=0;
 };
 
 class LinearRegulator: public RegulatorBase{

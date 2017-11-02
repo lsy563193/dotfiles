@@ -23,7 +23,6 @@ boost::mutex scan_mutex_;
 boost::mutex scan2_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
-uint32_t new_laser_seq;
 Eigen::MatrixXd laser_matrix = Eigen::MatrixXd::Ones(3,3);
 
 Laser::Laser():nh_()
@@ -64,7 +63,6 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	boost::mutex::scoped_lock(scan_mutex_);
 	laserScanData_ = *scan;
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-	new_laser_time = ros::Time::now().toSec();
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
 
 	setScanReady(1);
@@ -99,8 +97,10 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 }
 void Laser::odomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
-//	if(isNewLaserCompensate())
+	if(laserCheckFresh(5,1))
 		compensateLaserXY();
+	else
+		laser_matrix.resize(1,1);// make laser_matrix invalid
 }
 
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
@@ -132,24 +132,6 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 	}
 
 	return found;
-	return found;
-}
-
-bool Laser::isNewDataReady()
-{
-	scan_mutex_.lock();
-	if(new_laser_seq == 0) {
-		new_laser_seq = laserScanData_.header.seq;
-		scan_mutex_.unlock();
-		return false;
-	}
-	if(laserScanData_.header.seq == new_laser_seq) {
-		scan_mutex_.unlock();
-		return false;
-	}
-	new_laser_seq = laserScanData_.header.seq;
-	scan_mutex_.unlock();
-	return true;
 }
 
 int8_t Laser::isScan2Ready()
@@ -869,200 +851,14 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::LaserScan *scan_range, uint8_t *laser_status, bool is_wall_follow)
-{
-	ROS_INFO("  %s,%d", __FUNCTION__,__LINE__);
-	double x, y, th;
-	int dx, dy;
-	const	double Y_MIN = 0.140;//0.167
-	const	double Y_MAX = 0.237;//0.279
-	const	double TRIGGER_RANGE = X_MAX;//0.278
-	int count = 0;
-	uint8_t ret = 0;
-	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-	for (int i = 0; i < 360; i++) {
-		if (scan_range->ranges[i] < 4) {
-			th = i*1.0 + 180.0;
-			x = cos(th * PI / 180.0) * scan_range->ranges[i];
-			y = sin(th * PI / 180.0) * scan_range->ranges[i];
-			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			//front
-			if (x > ROBOT_RADIUS && x <  TRIGGER_RANGE) {
-				//middle
-				if (y > -0.056 && y < 0.056) {
-					count_array[0]++;
-				}
-				//left
-				if (y > 0.056 && y < 0.168) {
-					count_array[1]++;
-				}
-				//right
-				if (y > -0.168 && y < -0.056) {
-					count_array[2]++;
-				}
-			}
-			//back
-			if (x < (0 - ROBOT_RADIUS) && x > (0 - TRIGGER_RANGE)) {
-				//middle
-				if (y > -0.056 && y < 0.056) {
-					count_array[3]++;
-				}
-				//left
-				if (y > 0.056 && y < 0.168) {
-					count_array[4]++;
-				}
-				//right
-				if (y > -0.168 && y < -0.056) {
-					count_array[5]++;
-				}
-			}
-			//left
-			if (y > ROBOT_RADIUS && y <  TRIGGER_RANGE) {
-				//middle
-				if (x > -0.056 && x < 0.056) {
-					count_array[6]++;
-				}
-				//front
-				if (x > 0.056 && x < 0.168) {
-					count_array[7]++;
-				}
-				//back
-				/*
-				if (x > -0.168 && x < -0.056) {
-					count_array[8]++;
-				}*/
-			}
-			//right
-			if (y < (0 - ROBOT_RADIUS) && y >  (0 - TRIGGER_RANGE)) {
-				//middle
-				if (x > -0.056 && x < 0.056) {
-					count_array[9]++;
-				}
-				//front
-				if (x > 0.056 && x < 0.168) {
-					count_array[10]++;
-				}
-				//back
-				/*
-				if (x > -0.168 && x < -0.056) {
-					count_array[11]++;
-				}*/
-			}
-		}
-	}
-
-	std::string msg = "";
-	std::string direction_msg = "";
-	for (int i = 0; i < 12; i++) {
-		if (count_array[i] > 10) {
-			int32_t x_tmp,y_tmp;
-			switch(i) {
-				case 0 : {
-					dx = 2;
-					dy = 0;
-					*laser_status |= BLOCK_FRONT;
-					direction_msg = "front middle";
-					break;
-				}
-				case 1 : {
-					dx = 2;
-					dy = 1;
-					*laser_status |= BLOCK_LEFT;
-					direction_msg = "front left";
-					break;
-				}
-				case 2 : {
-					dx = 2;
-					dy = -1;
-					*laser_status |= BLOCK_RIGHT;
-					direction_msg = "front right";
-					break;
-				}
-				case 3 : {
-					dx = -2;
-					dy = 0;
-					direction_msg = "back middle";
-					break;
-				}
-				case 4 : {
-					dx = -2;
-					dy = 1;
-					direction_msg = "back left";
-					break;
-				}
-				case 5 : {
-					dx = -2;
-					dy = -1;
-					direction_msg = "back right";
-					break;
-				}
-				case 6 : {
-					dx = 0;
-					dy = 2;
-					direction_msg = "left middle";
-					break;
-				}
-				case 7 : {
-					dx = 1;
-					dy = 2;
-					direction_msg = "left front";
-					break;
-				}
-				case 8 : {
-					dx = -1;
-					dy = 2;
-					direction_msg = "left back";
-					break;
-				}
-				case 9 : {
-					dx = 0;
-					dy = -2;
-					direction_msg = "right middle";
-					break;
-				}
-				case 10 : {
-					dx = 1;
-					dy = -2;
-					direction_msg = "right front";
-					break;
-				}
-				case 11 : {
-					dx = -1;
-					dy = -2;
-					direction_msg = "right back";
-					break;
-				}
-			}
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-			auto cell_status = map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp));
-			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
-			{
-				//ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				msg += direction_msg + "(" + std::to_string(count_to_cell(x_tmp)) + ", " + std::to_string(count_to_cell(y_tmp)) + ")";
-				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
-			}
-			if (is_wall_follow) {
-				if (i == 0)
-					ret = 1;
-			} else {
-				if (i <= 2) {
-					ret = 1;
-				}
-			}
-		}
-	}
-	if (!msg.empty())
-		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
-	return ret;
-
-}
-
 bool Laser::laserMarker(double X_MAX)
 {
+
 	scanXY_mutex_.lock();
 	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
 	scanXY_mutex_.unlock();
+	if(tmp_laser_matrix.rows() != 3) //laser_matrix without compensate
+		return 0;
 	double x, y;
 	int dx, dy;
 //	const double X_MIN = 0.140;//0.167
@@ -1240,8 +1036,8 @@ bool Laser::laserMarker(double X_MAX)
 			}
 		}
 	}
-	if (!msg.empty())
-		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
+//	if (!msg.empty())
+//		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
 	return ret;
 }
 
@@ -1477,6 +1273,8 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 	scanXY_mutex_.lock();
 	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
 	scanXY_mutex_.unlock();
+	if(tmp_laser_matrix.rows() != 3)  //laser_matrix  wihtout compensate
+		return DBL_MAX;
 	double x,y;
 	double x_to_robot,y_to_robot;
 	double min_dis = DBL_MAX;
@@ -1581,10 +1379,10 @@ bool Laser::compensateLaserXY(double detect_distance,double noise_delta){
 	static Eigen::Matrix3d t_last;//world to last
 	double now_x,now_y,now_angle,last_x,last_y,last_angle;
 	//transform polar coordinate to cartesian coordinate
-	if (tmp_scan_data.header.seq != seq) {
+	if (tmp_scan_data.header.seq != seq && laserCheckFresh(0.02,1)) {
 		seq = tmp_scan_data.header.seq;
 		laserDataFilter(tmp_scan_data,noise_delta);
-		laser_matrix.resize(Eigen::NoChange,360);
+		laser_matrix.resize(3,360);
 		for (int i = 0; i < 360; i++) {
 			if(tmp_scan_data.ranges[i] < ROBOT_RADIUS + detect_distance) {
 				th = i * 1.0 + 180.0;
@@ -1606,7 +1404,7 @@ bool Laser::compensateLaserXY(double detect_distance,double noise_delta){
 							0, 0, 1;
 
 		Eigen::MatrixXd tmp_matrix = laser_matrix.block(0,0,3,count);
-		laser_matrix.resize(Eigen::NoChange,count);
+		laser_matrix.resize(3,count);
 		laser_matrix = tmp_matrix;
 		scanXY_mutex_.unlock();
 		return false;
@@ -1646,14 +1444,6 @@ bool Laser::compensateLaserXY(double detect_distance,double noise_delta){
 					0, 0, 1;
 	scanXY_mutex_.unlock();
 	return true;
-}
-
-bool Laser::isNewLaserCompensate()
-{
-	if(ros::Time::now().toSec() - new_laser_time < 3)
-		return true;
-	else
-		return false;
 }
 
 bool Laser::laserCheckFresh(float duration, uint8_t type)

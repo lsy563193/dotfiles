@@ -48,8 +48,7 @@ uint32_t g_auto_work_time = 2800;
 uint32_t g_room_work_time = 3600;
 uint8_t g_room_mode = 0;
 uint8_t g_sleep_mode_flag = 0;
-double tmp_distance_right = 0,tmp_distance_left = 0;
-double new_laser_start = 0;
+extern Eigen::MatrixXd laser_matrix;
 
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
@@ -322,75 +321,6 @@ void set_dir_backward(void)
 	g_wheel_right_direction = BACKWARD;
 }
 
-void set_cell_by_compensate(laserDistance laser_distance)
-{
-	int x_tmp,y_tmp,dx,dy;
-	for(int i = 0;i < 3;i++){
-		if(i == 0){
-			dx = 2;
-			dy = 1;
-		}
-		if(i == 1){
-			dx = 2;
-			dy = 0;
-		}
-		if(i == 2){
-			dx = 2;
-			dy = -1;
-		}
-		if(laser_distance.front[i] < CELL_SIZE * 0.001){
-			ROS_WARN("laser_distance[%d]:%lf",i,laser_distance.front[i]);
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
-			{
-				ROS_ERROR("compensate set cell %d",i);
-				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
-			}
-		}
-	}
-}
-
-void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start)
-{
-	double tmp = DBL_MAX;
-	static uint32_t seq = 0;
-	if(MotionManage::s_laser->isNewDataReady()) {
-		new_laser_start = ros::Time::now().toSec();
-//		MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS,seq,laser_distance);
-//		ROS_ERROR("new:left=%lf, middle=%lf, right=%lf",laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
-	}else if(laser_distance.front[0] == laser_distance.front[1] == laser_distance.front[2]){
-		return;
-	}else{
-		if(ros::Time::now().toSec() - new_laser_start > 0.6) {
-			laser_distance.reset();
-			return;
-		}
-		tmp = two_points_distance_double(robot::instance()->getOdomPositionX(),robot::instance()->getOdomPositionY(),*odom_x_start,*odom_y_start);
-		laser_distance.front[0] -= tmp;
-		laser_distance.front[1] -= tmp;
-		laser_distance.front[2] -= tmp;
-//		ROS_ERROR("old: diff=%lf  left=%lf, middle=%lf, right=%lf",tmp,laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
-	}
-	if(tmp != 0) {
-		*odom_x_start = robot::instance()->getOdomPositionX();
-		*odom_y_start = robot::instance()->getOdomPositionY();
-	} else{
-//		ROS_ERROR("dont update");
-	}
-/*	static uint32_t seq = 0;
-	set_wheel_speed(0,0);
-	while(1) {
-		if (MotionManage::s_laser->isNewDataReady()) {
-			*//*MotionManage::s_laser->getObstacleDistance(0, ROBOT_RADIUS, seq, laser_distance);
-			ROS_ERROR("left:%lf ,middle:%lf ,right:%lf", laser_distance.front[0], laser_distance.front[1],
-								laser_distance.front[2]);*//*
-			LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
-			delay_sec(2);
-			map_reset(MAP);
-		}
-	}*/
-}
-
 void set_dir_forward(void)
 {
 	g_wheel_left_direction = FORWARD;
@@ -427,10 +357,8 @@ void wall_dynamic_base(uint32_t Cy)
 	double obstacle_distance_left = DBL_MAX;
 	double obstacle_distance_right = DBL_MAX;
 
-	if(MotionManage::s_laser->isNewLaserCompensate()){
-		obstacle_distance_left = MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS);
-		obstacle_distance_right = MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS);
-	}
+	obstacle_distance_left = MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS);
+	obstacle_distance_right = MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS);
 
 	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
 	{

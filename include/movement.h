@@ -443,26 +443,6 @@ uint32_t get_right_wall_step(void);
 
 int32_t get_wall_adc(int8_t dir);
 
-struct laserDistance{
-	double front[3] = {4,4,4}; // left, midle, right
-	double back = 4;
-	double left = 4;
-	double right = 4;
-	double getFrontMin(){
-		if(this->front[0] < this->front[1] && this->front[0] < this->front[2])
-			return this->front[0];
-		if(this->front[1] < this->front[0] && this->front[1] < this->front[2])
-			return this->front[1];
-		if(this->front[2] < this->front[0] && this->front[2] < this->front[1])
-			return this->front[2];
-		return 4;
-	}
-	void reset(){
-		this->front[0] = this->front[1] = this->front[2] = back = left = right = 4;
-	}
-};
-void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start);
-void set_cell_by_compensate(laserDistance laser_distance);
 void set_dir_backward(void);
 void set_dir_forward(void);
 
