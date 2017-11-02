@@ -83,7 +83,6 @@ Cell_t g_zero_home = {0,0};
 Cell_t g_continue_cell;
 const Cell_t MIN_CELL{-MAP_SIZE,-MAP_SIZE};
 const Cell_t MAX_CELL{ MAP_SIZE, MAP_SIZE};
-
 //Cell_t g_cell_history[5];
 
 //uint16_t g_old_dir;
@@ -138,6 +137,11 @@ std::iota(go_home_way_list.begin(), go_home_way_list.end(),0);
 	return go_home_way_list.begin();
 }
 
+
+bool cell_is_out_of_range(const Cell_t &cell)
+{
+	return std::abs(cell.X) > MAP_SIZE || std::abs(cell.Y) > MAP_SIZE;
+}
 //void path_planning_initialize(int32_t *x, int32_t *y)
 void path_planning_initialize()
 {
@@ -293,7 +297,7 @@ uint8_t is_block_unclean(int16_t x, int16_t y)
 			unclean_cnt++;
 		}
 	}
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
+	ROS_INFO("%s, %d:unclean_cnt(%d)", __FUNCTION__, __LINE__, unclean_cnt);
 	return unclean_cnt;
 }
 
@@ -360,209 +364,50 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path,const int is_reach)
 {
-	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
-	uint16_t unclean_cnt_for_min = 0, unclean_cnt_for_max = 0;
-	Cell_t tmp = curr;
-#if INTERLACED_MOVE
-	if(curr.Y % 2 != 0) {
-		if (mt_is_follow_wall()) {
-			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
-			auto step = curr.Y - g_cell_history[1].Y;
-			auto is_local = (dir > 0) ? step <= 0 : step >= 0;
-			tmp.Y  = (is_local) ? g_cell_history[1].Y : path.target.Y;
-			ROS_ERROR("%s %d:follow_wall dir(%d),step(%d),tmp(%d,%d),his1(%d,%d)", __FUNCTION__, __LINE__, dir, step, tmp.X,
-								tmp.Y, g_cell_history[1].X, g_cell_history[1].Y);
-		}
-		if (mt_is_linear() && IS_X_AXIS(g_new_dir)) {
-			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
-			tmp.Y = g_cell_history[1].Y;
-			ROS_ERROR("%s %d:mt_is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,
-								g_cell_history[1].X, g_cell_history[1].Y, curr.X, curr.Y);
-		}
-	}
-#endif
-	ROS_INFO("%s %d: curr(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
-	for (i = 1; (min_stop == 0 || max_stop == 0); i++)
-	{
-		//ROS_INFO("%s %d: i = %d, curr x - (i+1) = %d, curr x +i+1 = %d", __FUNCTION__, __LINE__, i, curr.X - (i + 1), curr.X + i + 1);
-		if (curr.X - (i + 1) < -MAP_SIZE && curr.X + i + 1 > MAP_SIZE)
-			break;
+	int16_t is_found=0;
+	Cell_t it[2];
 
-		/* Find the unclean area in the NEG_X direction of the lane. */
-		if (min_stop == 0 && curr.X - (i + 1) >= -MAP_SIZE)
-		{
-			if (is_block_blocked(curr.X - i, curr.Y))
-			{
-				// Stop if the cells is blocked.
-				min_stop = 1;
-				// If block is near the unclean area, consider the block as unclean area.
-				min = (i == min + 1) ? i : min;
-				//ROS_INFO("%s %d: min stop:%d, (%d, %d) = %d", __FUNCTION__, __LINE__, min, curr.X - i, curr.Y, map_get_cell(MAP, curr.X - i, curr.Y));
-			} else if (is_block_boundary(curr.X - i, curr.Y))
-			{
-				// Stop if reach the boundary.
-				min_stop = 1;
-			} else {
-				auto unclean_cnt = is_block_unclean(curr.X - i, curr.Y);
-				if (unclean_cnt)
-				{
-					// Find the furthest unclean cell.
-					min = is_block_boundary(curr.X - (i + 1), curr.Y) ? min : i;
-					unclean_cnt_for_min += unclean_cnt;
-					//ROS_INFO("%s %d: min: %d", __FUNCTION__, __LINE__, min);
-				}
+	debug_map(MAP, 0, 0);
+	for (auto i = 0; i < 2; i++) {
+		it[i] = curr;
+		auto uc = 0;
+		for (Cell_t neighbor = it[i] + g_index[i]; !cell_is_out_of_range(neighbor + g_index[i]) && !is_block_blocked(neighbor.X, neighbor.Y); neighbor += g_index[i]) {
+			uc += is_block_unclean(neighbor.X, neighbor.Y);
+			if (uc >= 3) {
+				it[i] = neighbor;
+				uc = 0;
+				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].X, it[i].Y);
 			}
-		}
-
-		/* Find the unclean area in the POS_X direction of the lane. */
-		if (max_stop == 0 && curr.X + i + 1 <= MAP_SIZE)
-		{
-			if (is_block_blocked(curr.X + i, curr.Y))
-			{
-				// Stop if the cells is blocked.
-				max_stop = 1;
-				// If block is near the unclean area, consider the block as unclean area.
-				max = (i == max + 1) ? i : max;
-				//ROS_INFO("%s %d: max stop:%d, (%d, %d) = %d", __FUNCTION__, __LINE__, max, curr.X + i, curr.Y, map_get_cell(MAP, curr.X + i, curr.Y));
-			} else if (is_block_boundary(curr.X + i, curr.Y))
-			{
-				// Stop if reach the boundary.
-				max_stop = 1;
-			} else {
-				auto unclean_cnt = is_block_unclean(curr.X + i, curr.Y);
-				if (unclean_cnt)
-				{
-					// Find the furthest unclean cell.
-					max = is_block_boundary(curr.X + i + 1, curr.Y) ? max : i;
-					unclean_cnt_for_max += unclean_cnt;
-					//ROS_INFO("%s %d: max: %d", __FUNCTION__, __LINE__, max);
-				}
-			}
+			ROS_WARN("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].X, it[i].Y);
+			ROS_WARN("%s %d: nb(%d,%d)", __FUNCTION__, __LINE__, neighbor.X, neighbor.Y);
 		}
 	}
 
-	ROS_WARN("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, curr.X - min, curr.X + max);
-
-	// If unclean area is too small, do not clean that area.
-	if (max != SHRT_MAX && unclean_cnt_for_max < 3)
+	ROS_WARN("%s %d: it[0](%d,%d), it[1](%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
+	Cell_t target = it[0];
+	if (it[0].X != curr.X)
 	{
-		ROS_WARN("%s %d: Cleaning area for max direction is too small, drop it.", __FUNCTION__, __LINE__);
-		max = SHRT_MAX;
+		is_found++;
+	} else if (it[1].X != curr.X)
+	{
+		target = it[1];
+		is_found++;
 	}
-	if (min != SHRT_MAX && unclean_cnt_for_min < 3)
+	if (is_found == 2)
 	{
-		ROS_WARN("%s %d: Cleaning area for min direction is too small, drop it.", __FUNCTION__, __LINE__);
-		min = SHRT_MAX;
-	}
-
-	if (min != SHRT_MAX && max != SHRT_MAX)
-	{
-		/*
-		 * Both ends are not cleaned.
-		 * If the number of cells to clean are the same of both ends, choose either one base the
-		 * previous robot g_cell_history. Otherwise, move to the end that have more unclean cells.
-		 */
-//		min = std::min(min, MotionManage::s_laser->nag_dis)
-		//ture means min
-		//false means max
-//		min = std::min(min, path_lane_distance(true));
-//		max = std::min(max, path_lane_distance(false));
+		target = it[0];
 		ROS_WARN("%s %d: is_reach.(%d), nag dir(%d)", __FUNCTION__, __LINE__, is_reach,(RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
 		if(mt_is_follow_wall() && is_reach==1)
 		{
 			if(mt_is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
-			{
-				ROS_WARN("%s %d:tmp.X -= min", __FUNCTION__, __LINE__);
-				tmp.X -= min;
-			}
-			else
-			{
-				ROS_WARN("%s %d:tmp.X += max", __FUNCTION__, __LINE__);
-				tmp.X += max;
-			}
-		}else {
-			auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
-			ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
-			if (pos_or_nag == 1) {
-				tmp.X += max;
-			} else if (pos_or_nag == -1) {
-				tmp.X -= min;
-			} else {
-				if (min > max)
-					tmp.X += max;
-				else if (min < max)
-					tmp.X -= min;
-				else
-					tmp.X += max;
-				/*{
-					if (g_cell_history[2].Y == g_cell_history[1].Y) {
-						if (g_cell_history[2].X > g_cell_history[1].X)
-							tmp.X -= min;
-						else if (g_cell_history[2].X < g_cell_history[1].X)
-							tmp.X += max;
-						else {
-							if (g_cell_history[0].X <= g_cell_history[1].X)
-								tmp.X += max;
-							else
-								tmp.X -= min;
-						}
-					} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
-						if (g_cell_history[0].X >= g_cell_history[1].X)
-							tmp.X += max;
-						else
-							tmp.X -= min;
-					} else
-						tmp.X += max;
-				}*/
-
-			}
+				target = it[1];
 		}
-
-
-		is_found = 2;
-	} else if (min != SHRT_MAX)
-	{
-		/* Only the NEG_X end is not cleaned. */
-		tmp.X -= min;
-		is_found = 1;
-	} else if (max != SHRT_MAX)
-	{
-		/* Only the POS_X end is not cleaned. */
-		tmp.X += max;
-		is_found = 1;
 	}
 
-#if !INTERLACED_MOVE
-/*	if (is_found == 1)
-	{
-		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-//			 Duplicated cleaning.
-			is_found = 0;
-	}*/
-#endif
-
-	ROS_INFO("%s %d: is_found = %d, target(%d, %d).", __FUNCTION__, __LINE__, is_found, tmp.X, tmp.Y);
 	if (is_found)
-	{
-//		int8_t dir = tmp.X > curr.X ? -1 : 1;
-		path.push_front(tmp);
-//#if LINEAR_MOVE_WITH_PATH
-//		for (auto temp_cell = path.target; temp_cell.X != curr.X; temp_cell.X += dir)
-//			path.cells.push_front(temp_cell);
-		// Displaying for debug.
-//		list<Cell_t> temp_path;
-//		temp_path.push_back(path.cells.front());
-//		temp_path.push_back(path.cells.back());
-//		path_display_path_points(temp_path);
-//#else
-//		path.cells.push_front(path.target);
-//		path.cells.push_front(curr);
-//		path_display_path_points(path.cells);
-//#endif
-		return true;
-	}
-	else
-		return false;
+		path.push_front(target);
+
+	return is_found !=0;
 }
 
 bool is_axis_access(const Cell_t &start, int i, Cell_t &target)
@@ -1695,13 +1540,13 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 		else
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
-		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 	path.back().TH = (path.end()-2)->TH;
 	if(g_go_home && g_home == g_zero_home)
 	{
 		path.back().TH = g_home.TH;
 	}
-	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+//	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 
 	g_new_dir = g_plan_path.front().TH;
 	path.pop_front();

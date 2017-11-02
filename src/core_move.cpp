@@ -452,6 +452,7 @@ void cm_cleaning() {
 			map_set_cleaned(g_passed_path);
 			map_set_blocked();
 			map_mark_robot(MAP);
+//			ros_map_convert(MAP, false, false, false);
 //			g_plan_path.empty();
 			auto tmp_tm = g_trapped_mode;
 			auto start = curr;
@@ -472,7 +473,7 @@ void cm_cleaning() {
 			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),trapped(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), g_trapped_mode == 1);
 		}
 
-		if (g_plan_path.empty() && g_trapped_mode == 0 && !mt_is_go_to_charger())
+		if (g_plan_path.empty()/* && g_trapped_mode == 0 && !mt_is_go_to_charger()*/)
 			return;
 
 		cm_move_to(rm, g_plan_path);
