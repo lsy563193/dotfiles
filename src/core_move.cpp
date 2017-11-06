@@ -452,7 +452,7 @@ void cm_cleaning() {
 			map_set_cleaned(g_passed_path);
 			map_set_blocked();
 			map_mark_robot(MAP);
-//			ros_map_convert(MAP, false, false, false);
+//			ros_map_convert(MAP, false, false, true);
 //			g_plan_path.empty();
 			auto tmp_tm = g_trapped_mode;
 			auto start = curr;

@@ -868,8 +868,8 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 //	dis_diff = IS_POS_AXIS(g_new_dir) ^ IS_X_AXIS(g_new_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
-		auto t = map_point_to_cell(target_p);
-		MotionManage::pubCleanMapMarkers(MAP, t, g_plan_path.back(), g_plan_path);
+//		auto t = map_point_to_cell(target_p);
+//		MotionManage::pubCleanMapMarkers(MAP, t, g_plan_path.back(), g_plan_path);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
