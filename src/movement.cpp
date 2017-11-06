@@ -48,8 +48,7 @@ uint32_t g_auto_work_time = 2800;
 uint32_t g_room_work_time = 3600;
 uint8_t g_room_mode = 0;
 uint8_t g_sleep_mode_flag = 0;
-double tmp_distance_right = 0,tmp_distance_left = 0;
-double new_laser_start = 0;
+extern Eigen::MatrixXd laser_matrix;
 
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
@@ -322,75 +321,6 @@ void set_dir_backward(void)
 	g_wheel_right_direction = BACKWARD;
 }
 
-void set_cell_by_compensate(laserDistance laser_distance)
-{
-	int x_tmp,y_tmp,dx,dy;
-	for(int i = 0;i < 3;i++){
-		if(i == 0){
-			dx = 2;
-			dy = 1;
-		}
-		if(i == 1){
-			dx = 2;
-			dy = 0;
-		}
-		if(i == 2){
-			dx = 2;
-			dy = -1;
-		}
-		if(laser_distance.front[i] < CELL_SIZE * 0.001){
-			ROS_WARN("laser_distance[%d]:%lf",i,laser_distance.front[i]);
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-			if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
-			{
-				ROS_ERROR("compensate set cell %d",i);
-				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
-			}
-		}
-	}
-}
-
-void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start)
-{
-	double tmp = DBL_MAX;
-	static uint32_t seq = 0;
-	if(MotionManage::s_laser->isNewDataReady()) {
-		new_laser_start = ros::Time::now().toSec();
-		MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS,seq,laser_distance);
-//		ROS_ERROR("new:left=%lf, middle=%lf, right=%lf",laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
-	}else if(laser_distance.front[0] == laser_distance.front[1] == laser_distance.front[2]){
-		return;
-	}else{
-		if(ros::Time::now().toSec() - new_laser_start > 0.6) {
-			laser_distance.reset();
-			return;
-		}
-		tmp = two_points_distance_double(robot::instance()->getOdomPositionX(),robot::instance()->getOdomPositionY(),*odom_x_start,*odom_y_start);
-		laser_distance.front[0] -= tmp;
-		laser_distance.front[1] -= tmp;
-		laser_distance.front[2] -= tmp;
-//		ROS_ERROR("old: diff=%lf  left=%lf, middle=%lf, right=%lf",tmp,laser_distance.front[0],laser_distance.front[1],laser_distance.front[2]);
-	}
-	if(tmp != 0) {
-		*odom_x_start = robot::instance()->getOdomPositionX();
-		*odom_y_start = robot::instance()->getOdomPositionY();
-	} else{
-//		ROS_ERROR("dont update");
-	}
-/*	static uint32_t seq = 0;
-	set_wheel_speed(0,0);
-	while(1) {
-		if (MotionManage::s_laser->isNewDataReady()) {
-			*//*MotionManage::s_laser->getObstacleDistance(0, ROBOT_RADIUS, seq, laser_distance);
-			ROS_ERROR("left:%lf ,middle:%lf ,right:%lf", laser_distance.front[0], laser_distance.front[1],
-								laser_distance.front[2]);*//*
-			LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
-			delay_sec(2);
-			map_reset(MAP);
-		}
-	}*/
-}
-
 void set_dir_forward(void)
 {
 	g_wheel_left_direction = FORWARD;
@@ -419,30 +349,18 @@ void wall_dynamic_base(uint32_t Cy)
 	static int32_t Left_Wall_Everage_Value = 0, Right_Wall_Everage_Value = 0;
 	static int32_t Left_Wall_E_Counter = 0, Right_Wall_E_Counter = 0;
 	static int32_t Left_Temp_Wall_Buffer = 0, Right_Temp_Wall_Buffer = 0;
-	laserDistance obstacle_distance_right;
-	laserDistance obstacle_distance_left;
-	static uint32_t  seq_left = 0;
-	static uint32_t  seq_right = 0;
 	// Dynamic adjust for left wall sensor.
 	Left_Temp_Wall_Buffer = get_wall_adc(0);
 	Left_Wall_Sum_Value += Left_Temp_Wall_Buffer;
 	Left_Wall_E_Counter++;
 	Left_Wall_Everage_Value = Left_Wall_Sum_Value / Left_Wall_E_Counter;
+	double obstacle_distance_left = DBL_MAX;
+	double obstacle_distance_right = DBL_MAX;
 
-	MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS,seq_left,obstacle_distance_left);
-	MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS,seq_right,obstacle_distance_right);
-	if(obstacle_distance_left.left == 0)
-		obstacle_distance_left.left = tmp_distance_left;
-	else{
-		tmp_distance_left = obstacle_distance_left.left;
-	}
-	if(obstacle_distance_right.right == 0)
-		obstacle_distance_right.right = tmp_distance_right;
-	else{
-		tmp_distance_right = obstacle_distance_right.right;
-	}
+	obstacle_distance_left = MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS);
+	obstacle_distance_right = MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS);
 
-	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left.left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
+	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
 	{
 //		ROS_ERROR("left_reset");
 		Left_Wall_Everage_Value = 0;
@@ -471,7 +389,7 @@ void wall_dynamic_base(uint32_t Cy)
 	Right_Wall_E_Counter++;
 	Right_Wall_Everage_Value = Right_Wall_Sum_Value / Right_Wall_E_Counter;
 
-	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right.right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
+	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
 	{
 //		ROS_ERROR("right_reset");
 		Right_Wall_Everage_Value = 0;
@@ -485,6 +403,7 @@ void wall_dynamic_base(uint32_t Cy)
 		Right_Wall_Everage_Value += get_wall_base(1);
 		if (Right_Wall_Everage_Value > 300)Right_Wall_Everage_Value = 300;//set a limit
 		// Adjust the wall base line for right wall sensor.
+//		ROS_ERROR("right_wall_value:%d",Right_Wall_Everage_Value);
 		set_wall_base(1, Right_Wall_Everage_Value);
 		//ROS_INFO("%s,%d:right_wall_value: \033[31m%d\033[0m",__FUNCTION__,__LINE__,Right_Wall_Everage_Value);
 		Right_Wall_Everage_Value = 0;
@@ -1796,9 +1715,10 @@ uint32_t get_rcon_status()
 {
 	extern Cell_t g_stub_cell;
 	extern bool g_in_charge_signal_range;
-	if( g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
+	if(!g_go_home && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
 		if(two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20){
 			g_in_charge_signal_range = true;
+			reset_rcon_status();
 			return 0;
 		}
 		else{

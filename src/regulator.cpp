@@ -23,6 +23,7 @@
 extern PPTargetType g_plan_path;
 //extern uint16_t g_old_dir;
 extern int16_t g_new_dir;
+extern Eigen::MatrixXd laser_matrix;
 extern Cell_t g_cell_history[];
 int g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
 double bumper_turn_factor=0.85;
@@ -353,7 +354,7 @@ bool BackRegulator::isReach()
 		beep_for_command(false);
 		return true;
 	}
-	if(fabsf(distance) >= g_back_distance || (laser_back_distance.back < 0.03 && g_back_distance > 0.05))
+	if(fabsf(distance) >= g_back_distance || (obstacle_distance_back < 0.03 && g_back_distance > 0.05))
 	{
 		if(g_slip_backward){
 			ROS_WARN("%s,%d,\033[1mrobot slip backward reach!! distance(%f),back_distance(%f)\033[0m",__FUNCTION__,__LINE__,distance,g_back_distance);
@@ -412,9 +413,7 @@ bool BackRegulator::_isStop()
 {
 	if (cm_get() != Clean_Mode_GoHome)
 	{
-		// Only update the scan seq.
-		MotionManage::s_laser->laserMarker(false);
-		MotionManage::s_laser->getObstacleDistance(1,ROBOT_RADIUS,seq,laser_back_distance);
+		obstacle_distance_back = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
 	}
 	bool ret = false;
 	return ret;
@@ -533,12 +532,6 @@ bool TurnRegulator::isSwitch()
 bool TurnRegulator::_isStop()
 {
 	bool ret = false;
-	if (cm_get() != Clean_Mode_GoHome)
-	{
-		// Only update the scan seq.
-		MotionManage::s_laser->laserMarker(false);
-	}
-
 	return ret;
 }
 
@@ -648,7 +641,6 @@ LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 //	g_is_should_follow_wall = false;
 //	s_target = target;
 //	path_ = path;
-	new_laser_seq = 0;
 	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
 }
 
@@ -747,17 +739,9 @@ bool LinearRegulator::isSwitch()
 bool LinearRegulator::_isStop()
 {
 	auto rcon_tmp = get_rcon_trig();
-	correct_laser_distance(laser_distance, &odom_x_start, &odom_y_start);
-	uint8_t obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,0.20): get_obs_status(200, 1700, 200);
-
+//	correct_laser_distance(laser_distance, &odom_x_start, &odom_y_start);
+	bool obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(0.20) : get_obs_status(200, 1700, 200);
 //	if (cm_is_exploration())
-	if(obs_tmp == 0 && laser_distance.getFrontMin() < 0.035)
-	{
-//	ROS_ERROR("set true,laser_distance:%lf",laser_distance.getFrontMin());
-//		set_cell_by_compensate(laser_distance);
-//		beep(2,40,0,3);
-		obs_tmp = true;
-	}
 //	if (get_clean_mode() == Clean_Mode_Exploration)
 //		// For exploration mode detecting the rcon signal
 //		rcon_tmp &= RconFrontAll_Home_T;
@@ -868,23 +852,23 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 //	dis_diff = IS_POS_AXIS(g_new_dir) ^ IS_X_AXIS(g_new_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
-//		auto t = map_point_to_cell(target_p);
-//		MotionManage::pubCleanMapMarkers(MAP, t, g_plan_path.back(), g_plan_path);
+		auto t = map_point_to_cell(target_p);
+		MotionManage::pubCleanMapMarkers(MAP, g_plan_path, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
-	//auto laser_detected = MotionManage::s_laser->laserObstcalDetected(0.2, 0, -1.0);
+	obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = get_obs_status();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (laser_distance.getFrontMin() < 0.25))
+	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
 			angle_diff = 0;
 		integrated_ = 0;
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED){
-			if(laser_distance.getFrontMin() > 0.025 && laser_distance.getFrontMin() < 0.125 && (left_speed > 20 || right_speed > 20)) {
+			if(obstalce_distance_front > 0.025 && obstalce_distance_front < 0.125 && (left_speed > 20 || right_speed > 20)) {
 				base_speed_ -= 2;
 			}
 			else if(obs_state & BLOCK_FRONT)
@@ -987,7 +971,7 @@ bool FollowWallRegulator::isSwitch()
 		return true;
 	}
 #endif
-	auto obs_tmp = LASER_MARKER ?  MotionManage::s_laser->laserMarker(true,0.14,wall_follow_detect_distance): (get_front_obs() > get_front_obs_trig_value() + 1700);
+	bool obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(wall_follow_detect_distance) : (get_front_obs() > get_front_obs_trig_value() + 1700);
 	if(obs_tmp) {
 //		ROS_INFO("Laser Stop in wall follow");
 		if(! g_obs_triggered )
@@ -1152,12 +1136,16 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		{
 			same_speed = linear_speed + angular_speed;
 			diff_speed = linear_speed - angular_speed;
+			same_speed_ = same_speed;
+			diff_speed_ = diff_speed;
 			return ;
 		}
 	}
 	if(seen_charger_counter)
 	{
 		seen_charger_counter--;
+		same_speed = same_speed_;
+		diff_speed = diff_speed_;
 		return ;
 	}
 
@@ -2169,14 +2157,13 @@ bool GoToChargerRegulator::isSwitch()
 
 bool GoToChargerRegulator::_isStop()
 {
-	bool ret = false;
-	if(g_robot_stuck)
-		ret = true;
-	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360)
-		ret = true;
-	if (ret)
+	if (g_robot_stuck || (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360))
+	{
 		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
-	return ret;
+		g_during_go_to_charger = false;
+		return true;
+	}
+	return false;
 }
 
 void GoToChargerRegulator::setTarget()
@@ -2299,6 +2286,12 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				l_speed = 21;
 				r_speed = 14;
 			}
+		}
+		else
+		{
+			set_dir_forward();
+			l_speed = left_speed_;
+			r_speed = right_speed_;
 		}
 	}
 	else if (go_home_state_now == CHECK_POSITION)
@@ -3222,6 +3215,12 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				}
 			}
 		}
+		else
+		{
+			set_dir_forward();
+			l_speed = left_speed_;
+			r_speed = right_speed_;
+		}
 	}
 	else if (go_home_state_now == TURN_CONNECT)
 	{
@@ -3231,6 +3230,8 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			set_dir_left();
 		l_speed = r_speed = 5;
 	}
+	left_speed_ = l_speed;
+	right_speed_ = r_speed;
 }
 
 void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
@@ -3342,6 +3343,8 @@ void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	if (p_reg_ != nullptr)
 		p_reg_->adjustSpeed(left_speed, right_speed);
+	left_speed_ = left_speed;
+	right_speed_ = right_speed;
 }
 
 bool RegulatorManage::isReach() {

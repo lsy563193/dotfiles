@@ -19,7 +19,6 @@
 #define WALL_DISTANCE_LOW_LIMIT 150
 
 extern int16_t g_turn_angle;
-extern uint32_t new_laser_seq;
 #define GO_TO_CHARGER_INIT 0
 #define CHECK_NEAR_CHARGER_STATION 1
 #define AWAY_FROM_CHARGER_STATION 2
@@ -74,12 +73,11 @@ protected:
 	bool isReach();
 
 private:
-	uint32_t seq;
+	double obstacle_distance_back = DBL_MAX;
 	int counter_;
 	int32_t speed_;
 	float distance;
 	float laser_detect_distance;
-	laserDistance laser_back_distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -155,11 +153,9 @@ private:
 	int16_t wall_buffer[3]={0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
-//CMMoveType last_move_type;
-//bool g_is_should_follow_wall;
-	//int last_strength=150;
-//int last_transit_strength=150;
-//double transit_time=0;
+
+	int32_t same_speed_;
+	int32_t diff_speed_;
 };
 
 class LinearRegulator: public RegulatorBase{
@@ -183,7 +179,7 @@ private:
 //	PPTargetType path_;
 	float odom_x_start;
 	float odom_y_start;
-	laserDistance laser_distance;
+	double obstalce_distance_front = DBL_MAX;
 };
 
 class GoToChargerRegulator: public RegulatorBase{
@@ -238,6 +234,9 @@ private:
 	int8_t by_path_move_cnt;
 	uint8_t turn_connect_cnt;
 	uint8_t turn_connect_dir;
+
+	int32_t left_speed_;
+	int32_t right_speed_;
 };
 
 class RegulatorManage:public RegulatorBase{
@@ -285,6 +284,8 @@ private:
 	TurnRegulator* turn_reg_;
 	BackRegulator* back_reg_;
 
+	int32_t left_speed_;
+	int32_t right_speed_;
 };
 
 #endif //PP_REGULATOR_BASE_H

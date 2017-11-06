@@ -155,6 +155,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		g_from_station = 0;
 	g_finish_cleaning_go_home = false;
 	g_motion_init_succeeded = false;
+	g_during_go_to_charger = false;
+
 	bool remote_home_during_pause = false;
 	if (is_clean_paused() && g_remote_home)
 		remote_home_during_pause = true;
@@ -164,6 +166,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		g_remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
+
 	bool eh_status_now=false, eh_status_last=false;
 
 	if (!initCleaning(cm_get()))
@@ -747,7 +750,7 @@ bool MotionManage::initGoHome(void)
 	set_gyro_on();
 	reset_touch();
 	cm_register_events();
-//	wav_play(WAV_BACK_TO_CHARGER);
+	wav_play(WAV_BACK_TO_CHARGER);
 
 	if (!wait_for_gyro_on())
 		return false;
@@ -757,10 +760,16 @@ bool MotionManage::initGoHome(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::deque<Cell_t>& path)
+void MotionManage::pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path, Cell_t* cell_p)
 {
+	// temp_target is valid if only path is not empty.
+	if (path.empty())
+		return;
+
 	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
+	Cell_t next = path.front();
+	Cell_t target = path.back();
 	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
@@ -776,6 +785,8 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, 
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else if (x == next.X && y == next.Y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET);
+			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
 				cell_state = map_get_cell(id, x, y);

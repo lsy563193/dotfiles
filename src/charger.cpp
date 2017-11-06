@@ -188,6 +188,7 @@ void charge_function(void)
 		// Cliff triggered means switch is off, aborting switching to navigation mode.
 		if (get_cliff_status())
 		{
+			ROS_WARN("%s %d: Switch is not on.", __FUNCTION__, __LINE__);
 			cm_set(Clean_Mode_Charging);
 			wav_play(WAV_CHECK_SWITCH);
 		}

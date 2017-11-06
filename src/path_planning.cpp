@@ -1477,7 +1477,6 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 	}
 	if(g_go_home) {
 		if (cm_is_go_home() || start == g_home || !path_get_home_target(start, path, is_reach)) {
-//		cm_go_to_charger();
 			g_plan_path.clear();
 			if(start == g_home && g_home == g_zero_home)
 			{
@@ -1485,6 +1484,7 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 					return false;
 			}
 			ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
+			g_during_go_to_charger = true;
 			g_tilt_enable = false; //disable tilt detect
 			set_led_mode(LED_STEADY, LED_ORANGE);
 			mt_set(CM_GO_TO_CHARGER);

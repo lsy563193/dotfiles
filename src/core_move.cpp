@@ -94,6 +94,9 @@ long g_distance=0;
 bool g_is_near=false;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
+// This flag is for indicating robot is going to charger.
+bool g_during_go_to_charger = false;
+
 // Saved position for move back.
 float saved_pos_x, saved_pos_y;
 
@@ -361,7 +364,7 @@ void cm_move_to(RegulatorManage& rm, PPTargetType path) {
 
 	if (rm.isSwitch()) {
 		map_set_blocked();
-		MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.back(), g_plan_path);
+		MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 		rm.switchToNext(path);
 	}
 
@@ -413,37 +416,39 @@ void cm_cleaning() {
 			continue;
 		}
 
-		/* update_positon */
+		// Update position.
 		curr = cm_update_position();//note:cell = {x,y,angle}
 		rm.updatePosition({map_get_x_count(), map_get_y_count()});
-/*			if (mt_is_follow_wall() && wf_start_timer == 0)
-				wf_start_timer = time(NULL);*/
-			if (!is_equal_with_angle(curr, last)) {
-				is_time_up = (last != curr);
-				last = curr;
-				/* is ever clean? */
-				auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it){
-						return is_equal_with_angle(curr, it);
-				});
-				g_distance = std::distance(loc, g_passed_path.end());
-//				ROS_INFO("%s,%d:g_distance(%d)", __FUNCTION__, __LINE__, g_distance);
-				if (g_distance == 0) {
-//					ROS_INFO("new place ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
-					g_passed_path.push_back(curr);
-//					path_display_path_points(g_passed_path);
-				}
-				if (g_distance >5) {
-//					ROS_INFO("have ever reach here ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
-					g_distance =0;
-					g_wf_reach_count++;
-					g_passed_path.clear();
-				}
-				fw_marker(curr);
-			}else
-				is_time_up = g_trapped_mode == 0;
-			/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && g_passed_path.size() < 5) {
-				ROS_WARN("  {curr,start}_time(%d,%d), g_passed_path.size(%d): ", time(NULL), wf_start_timer, g_passed_path.size());
-			}*/
+		// Checking for wall follow closure.
+/*		if (mt_is_follow_wall() && wf_start_timer == 0)
+			wf_start_timer = time(NULL);*/
+		if (!is_equal_with_angle(curr, last)) {
+			is_time_up = (last != curr);
+			last = curr;
+			/* is ever clean? */
+			auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it){
+					return is_equal_with_angle(curr, it);
+			});
+			g_distance = std::distance(loc, g_passed_path.end());
+//			ROS_INFO("%s,%d:g_distance(%d)", __FUNCTION__, __LINE__, g_distance);
+			if (g_distance == 0) {
+//				ROS_INFO("new place ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
+				g_passed_path.push_back(curr);
+//				path_display_path_points(g_passed_path);
+			}
+			if (g_distance >5) {
+//				ROS_INFO("have ever reach here ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
+				g_distance =0;
+				g_wf_reach_count++;
+				g_passed_path.clear();
+			}
+			fw_marker(curr);
+		}else
+			is_time_up = g_trapped_mode == 0;
+		/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && g_passed_path.size() < 5) {
+			ROS_WARN("  {curr,start}_time(%d,%d), g_passed_path.size(%d): ", time(NULL), wf_start_timer, g_passed_path.size());
+		}*/
+
 		if ( (g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop() ) && is_time_up) {
 			printf("\n\n\n\n\n\n");
 			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
@@ -463,7 +468,7 @@ void cm_cleaning() {
 				start = g_plan_path.back();
 			}
 			path_next(start, g_plan_path, is_reach);
-			MotionManage::pubCleanMapMarkers(MAP, g_plan_path.front(), g_plan_path.back(), g_plan_path);
+			MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 			if( !((tmp_tm == 1 && g_trapped_mode == 1)||g_is_near) )
 			{
 				rm.setMt();
@@ -487,11 +492,24 @@ void cm_check_should_go_home(void)
 {
 	if (cm_is_go_home() || g_remote_home || g_battery_home || g_finish_cleaning_go_home)
 	{
-		ROS_WARN("%s %d: Receive g_remote_home(\033[32m%d\033[0m), g_battery_home(\033[32m%d\033[0m), finish cleaning(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,g_remote_home,g_battery_home,g_finish_cleaning_go_home);
+		ROS_WARN("%s %d: cm_is_go_home(%d) || Receive g_remote_home(\033[32m%d\033[0m), g_battery_home(\033[32m%d\033[0m), finish cleaning(\033[32m%d\033[0m).", __FUNCTION__, __LINE__, cm_is_go_home(), g_remote_home,g_battery_home,g_finish_cleaning_go_home);
 		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
+
+		// Set variables.
+		if (g_remote_home)
+			g_go_home_by_remote = true;
 		g_go_home = true;
+		g_remote_home = false;
+		g_battery_home = false;
+		g_finish_cleaning_go_home = false;
+
+		// Set motors and led.
 		work_motor_configure();
-		stop_brifly();
+		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
+		if (g_remote_home || cm_is_go_home())
+			set_led_mode(LED_STEADY, LED_ORANGE);
+
+		// Special handling for wall follow mode.
 		if (cm_is_follow_wall())
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
@@ -499,21 +517,13 @@ void cm_check_should_go_home(void)
 			//wf_mark_home_point();
 			map_reset(MAP);
 			ros_map_convert(MAP, true,false, false);
-			map_mark_robot(MAP);//note: To clear the obstacles befor go home, please don't remove it!
+			map_mark_robot(MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
+		// Play wavs.
 		if (g_battery_home)
 			wav_play(WAV_BATTERY_LOW);
-		if (g_remote_home)
-		{
-			set_led_mode(LED_STEADY, LED_ORANGE);
-			g_go_home_by_remote = true;
-		}
-		wav_play(WAV_BACK_TO_CHARGER);
-//		if (!g_battery_home && !g_map_boundary_created)
-//			cm_create_home_boundary();
-		g_remote_home = false;
-		g_battery_home = false;
-		g_finish_cleaning_go_home = false;
+		if (!cm_is_go_home())
+			wav_play(WAV_BACK_TO_CHARGER);
 	}
 }
 
