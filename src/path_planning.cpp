@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <list>
+#include <deque>
 #include <string>
 
 #include <ros/ros.h>
@@ -58,7 +58,7 @@ using namespace std;
 const int ISOLATE_COUNT_LIMIT = 4;
 int16_t g_new_dir;
 int g_wf_reach_count;
-list <PPTargetType> g_targets;
+deque <PPTargetType> g_targets;
 
 uint8_t	g_first_start = 0;
 
@@ -748,7 +748,7 @@ void generate_SPMAP(const Cell_t& curr)
 		}
 
 		all_set = true;
-		for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+		for (auto it = g_targets.begin(); it != g_targets.end(); ++it) {
 			if (map_get_cell(SPMAP, it->front().X, it->front().Y) == COST_NO) {
 				all_set = false;
 			}
@@ -972,7 +972,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 {
 	bool is_stop = false, is_found = false, within_range=false;
 	int16_t y_max;
-	list <PPTargetType> temp_targets;
+	deque <PPTargetType> temp_targets;
 	temp_targets.clear();
 	uint16_t final_cost = 1000;
 	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
@@ -989,7 +989,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		}
 	}
 	// Sort targets with Y ascend order.
-	temp_targets.sort(sort_g_targets_y_ascend);
+	std::sort(temp_targets.begin(),temp_targets.end(),sort_g_targets_y_ascend);
 
 	for (auto it = temp_targets.begin(); it != temp_targets.end(); ++it) {
 		if (is_stop && temp_target.Y != it->front().Y)
@@ -1210,7 +1210,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto c = map.min.X; c <= map.max.X; ++c) {
 			for (auto d = map.min.Y; d <= map.max.Y; ++d) {
-				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+				for (auto it = g_targets.begin(); it != g_targets.end(); ++it) {
 					if (it->size() < final_cost) {
 						temp_target = it->front();
 						final_cost = it->size();
@@ -1527,18 +1527,18 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 	return true;
 }
 
-void path_fill_path(std::list<Cell_t>& path)
+void path_fill_path(std::deque<Cell_t>& path)
 {
 	int16_t dir;
 	Cell_t cell;
-	list<Cell_t> saved_path = path;
+	auto saved_path = path;
 	path.clear();
 	//path_display_path_points(saved_path);
 
 	//for (list<Cell_t>::iterator it = saved_path.begin(); it->X != saved_path.back().X || it->Y != saved_path.back().Y; it++)
-	for (list<Cell_t>::iterator it = saved_path.begin(); it != saved_path.end(); it++)
+	for (auto it = saved_path.begin(); it != saved_path.end(); it++)
 	{
-		list<Cell_t>::iterator next_it = it;
+		auto next_it = it;
 		if(++next_it == saved_path.end()){
 			ROS_INFO("%s,%d,fill path to last interator",__FUNCTION__,__LINE__);
 			break;
@@ -1604,7 +1604,7 @@ void path_fill_path(std::list<Cell_t>& path)
 	path.push_back(cell);
 	//ROS_DEBUG("%s %d: End cell(%d, %d).", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	std::string msg = "Filled path:";
-	for (std::list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
+	for (auto it = path.begin(); it != path.end(); ++it) {
 		msg += "->(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")";
 	}
 	//ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());

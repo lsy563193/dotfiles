@@ -26,7 +26,6 @@
 #include <chrono>
 #include <functional>
 #include <future>
-#include <list>
 #include <charger.hpp>
 #include "space_exploration.h"
 #include <wav.h>
