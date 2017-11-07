@@ -8,8 +8,9 @@
 #include "laser.hpp"
 #include "slam.h"
 #include "mathematics.h"
-#include "obstacle_detector.h"
+//#include "obstacle_detector.h"
 #include <list>
+#include <deque>
 
 class MotionManage {
 public:
@@ -17,7 +18,7 @@ public:
 
 	~MotionManage();
 
-	static void pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::list<Cell_t>& path);
+	static void pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 //private:
 	bool is_align_active(){
 		return is_align_active_;
@@ -37,8 +38,8 @@ public:
 private:
 
 	bool turn_to_align(int16_t angle);
-	void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg);
-	bool get_align_angle(float & angle);
+	//void robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg);
+	//bool get_align_angle(float & angle);
 
 	ros::NodeHandle nh_;
 	bool is_align_active_;

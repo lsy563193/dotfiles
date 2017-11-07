@@ -408,7 +408,7 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 		g_cliff_all_triggered = true;
 		g_fatal_quit_event = true;
 	}
-	g_cliff_triggered = Status_Cliff_All;
+	g_cliff_triggered = BLOCK_ALL;
 	if (g_move_back_finished && !g_cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
@@ -418,7 +418,7 @@ void remote_mode_handle_cliff(bool state_now, bool state_last)
 	if (!g_cliff_triggered)
 	{
 		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
-		g_cliff_triggered = Status_Cliff_All;
+		g_cliff_triggered = BLOCK_ALL;
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 }

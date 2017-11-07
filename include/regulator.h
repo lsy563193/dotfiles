@@ -19,7 +19,6 @@
 #define WALL_DISTANCE_LOW_LIMIT 150
 
 extern int16_t g_turn_angle;
-extern uint32_t new_laser_seq;
 #define GO_TO_CHARGER_INIT 0
 #define CHECK_NEAR_CHARGER_STATION 1
 #define AWAY_FROM_CHARGER_STATION 2
@@ -51,8 +50,8 @@ public:
 	virtual bool isReach() = 0;
 
 public:
-	static Point32_t s_target;
-	static Point32_t s_origin;
+	static Point32_t s_target_p;
+	static Point32_t s_origin_p;
 	static int16_t s_target_angle;
 	static float s_pos_x;
 	static float s_pos_y;
@@ -74,12 +73,11 @@ protected:
 	bool isReach();
 
 private:
-	uint32_t seq;
+	double obstacle_distance_back = DBL_MAX;
 	int counter_;
 	int32_t speed_;
 	float distance;
 	float laser_detect_distance;
-	laserDistance laser_back_distance;
 };
 
 class TurnRegulator: public RegulatorBase{
@@ -140,7 +138,7 @@ public:
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isSwitch();
 	bool _isStop();
-	void setTarget(){ };
+	void setTarget();
 protected:
 	bool isReach();
 
@@ -155,11 +153,9 @@ private:
 	int16_t wall_buffer[3]={0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
-//CMMoveType last_move_type;
-//bool g_is_should_follow_wall;
-	//int last_strength=150;
-//int last_transit_strength=150;
-//double transit_time=0;
+
+	int32_t same_speed_;
+	int32_t diff_speed_;
 };
 
 class LinearRegulator: public RegulatorBase{
@@ -169,7 +165,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
-	void setTarget() { };
+	void setTarget();
 
 protected:
 	bool isReach();
@@ -180,10 +176,10 @@ private:
 	uint8_t integration_cycle_;
 	uint32_t tick_;
 	uint8_t turn_speed_;
-	PPTargetType path_;
+//	PPTargetType path_;
 	float odom_x_start;
 	float odom_y_start;
-	laserDistance laser_distance;
+	double obstalce_distance_front = DBL_MAX;
 };
 
 class GoToChargerRegulator: public RegulatorBase{
@@ -193,7 +189,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
-	void setTarget() { };
+	void setTarget();
 	void resetGoToChargerVariables()
 	{
 		no_signal_cnt = 0;
@@ -238,6 +234,9 @@ private:
 	int8_t by_path_move_cnt;
 	uint8_t turn_connect_cnt;
 	uint8_t turn_connect_dir;
+
+	int32_t left_speed_;
+	int32_t right_speed_;
 };
 
 class RegulatorManage:public RegulatorBase{
@@ -258,11 +257,18 @@ public:
 	{
 		return p_reg_ == mt_reg_;
 	}
+	void reset(void)
+	{
+		p_reg_ = turn_reg_;
+		setTarget();
+	}
+	void setMt(void);
+
 	bool isBack(void) const
 	{
 		return p_reg_ == back_reg_;
 	}
-	void switchToNext();
+	void switchToNext(PPTargetType& path);
 
 	bool wf_is_reach(const std::vector<Cell_t>& passed_path);
 
@@ -271,10 +277,15 @@ public:
 	}
 private:
 	RegulatorBase* p_reg_;
+	RegulatorBase* fw_reg_;
+	RegulatorBase* line_reg_;
+	RegulatorBase* gh_reg_;
 	RegulatorBase* mt_reg_;
 	TurnRegulator* turn_reg_;
 	BackRegulator* back_reg_;
 
+	int32_t left_speed_;
+	int32_t right_speed_;
 };
 
 #endif //PP_REGULATOR_BASE_H

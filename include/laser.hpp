@@ -1,10 +1,13 @@
 #ifndef __LASER_H__
 #define __LASER_H__
 
+#include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <movement.h>
 #include <sensor_msgs/LaserScan.h>
+#include <Eigen/Core>
+#include <Eigen/Dense>
 #include "mathematics.h"
 
 #define ON true
@@ -21,12 +24,11 @@ public:
 	bool laserGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
 
 	int compLaneDistance();
-	bool getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserDistance& laser_distance);
+	double getObstacleDistance(uint8_t dir, double range);
 	void setScanReady(uint8_t val);
 	void setScan2Ready(uint8_t val);
 	int8_t isScanReady();
 	int8_t isScan2Ready();
-	bool isNewDataReady();
 
 	double getLaserDistance(uint16_t angle);
 
@@ -45,31 +47,40 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void pubPointMarker(std::vector<Double_Point> *point);
+	void pubPointMarkers(const std::vector<Point_d_t> *point);
 
 	//void startShield(void);
 	//void stopShield(void);
 	void lidarShieldDetect(bool sd);
+	bool compensateLaserXY(double detect_distance = 0.50,double noise_delta = 0.02);
 	void lidarMotorCtrl(bool orf);
 
-	uint8_t laserMarker(bool is_mark,double X_MIN = 0.140,double X_MAX = 0.237);
+	bool laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
 
 	bool laserCheckFresh(float duration, uint8_t type = 1);
+	bool findLines(std::vector<LineABC> *lines);
+	void pubLineMarker(const std::vector<LineABC> *lines);
+	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
+
 private:
 
 	//void stop(void);
 	//void start(void);
 	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void odomCb(const nav_msgs::Odometry::ConstPtr &msg);
 	void laserDataFilter(sensor_msgs::LaserScan& laserScanData, double delta);
 
+	int angle_n_;
 	uint8_t is_scan_ready_;
 	uint8_t is_scan2_ready_;
+	double new_laser_time = 0;
 
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;
 	ros::Subscriber	scan_sub2_;
+	ros::Subscriber	odom_sub_;
 
 	sensor_msgs::LaserScan laserScanData_;
 	double scan_update_time;
@@ -91,6 +102,7 @@ private:
 	bool isNoiseNow = false;
 	//static float *last_ranges_;
 	ros::Publisher line_marker_pub = nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
+	ros::Publisher line_marker_pub2 = nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 	ros::Publisher point_marker_pub = nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	ros::Publisher fit_line_marker_pub = nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 //	ros::Publisher laser_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("laser_filter",1);

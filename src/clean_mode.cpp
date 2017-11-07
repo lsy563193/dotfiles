@@ -49,6 +49,16 @@ bool cm_is_exploration()
 	return g_cleaning_mode == Clean_Mode_Exploration;
 }
 
+bool cm_is_spot()
+{
+	return g_cleaning_mode == Clean_Mode_Spot;
+}
+
+
+bool cm_is_go_home()
+{
+	return g_cleaning_mode == Clean_Mode_GoHome;
+}
 void cm_set(uint8_t mode)
 {
 	g_cleaning_mode = mode;

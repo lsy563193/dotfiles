@@ -29,22 +29,27 @@
 #define Room_Mode_Auto (uint8_t)0x01
 #define Room_Mode_Large (uint8_t)0x00
 
+#define BLOCK_LEFT				((uint8_t) 0x01)
+#define BLOCK_RIGHT			((uint8_t) 0x02)
+#define BLOCK_FRONT			((uint8_t) 0x04)
+#define BLOCK_ALL			((uint8_t) 0x07)
+
 #define Status_Left_Wall			((uint8_t) 0x01)
-#define Status_Left_OBS				((uint8_t) 0x02)
+//#define Status_Left_OBS				((uint8_t) 0x02)
 #define Status_Left_OBS_2			((uint8_t) 0x04)
 
-#define Status_Front_OBS			((uint8_t) 0x80)
+//#define Status_Front_OBS			((uint8_t) 0x80)
 #define Status_Right_OBS_2			((uint8_t) 0x40)
-#define Status_Right_OBS			((uint8_t) 0x20)
+//#define Status_Right_OBS			((uint8_t) 0x20)
 #define Status_Right_Wall			((uint8_t) 0x10)
 
-#define Status_Cliff_Left			((uint8_t) 0x01)
-#define Status_Cliff_Right			((uint8_t) 0x02)
-#define Status_Cliff_Front			((uint8_t) 0x04)
-#define Status_Cliff_All			((uint8_t) 0x07)
-#define Status_Cliff_LF			((uint8_t) 0x05)
-#define Status_Cliff_RF			((uint8_t) 0x06)
-#define Status_Cliff_LR			((uint8_t) 0x03)
+//#define Status_Cliff_Left			((uint8_t) 0x01)
+//#define Status_Cliff_Right			((uint8_t) 0x02)
+//#define Status_Cliff_Front			((uint8_t) 0x04)
+//#define Status_Cliff_All			((uint8_t) 0x07)
+#define Status_Cliff_LF			((uint8_t) 0x08)
+#define Status_Cliff_RF			((uint8_t) 0x10)
+#define Status_Cliff_LR			((uint8_t) 0x20)
 
 
 #define Cliff_PWM_Duration			((uint16_t) 0x000D)	//set Cliff PWM Duration = 13
@@ -241,15 +246,15 @@
 #define Const_160Min_Time			19200 //160 minutes
 #define Const_Work_Time				14400 //120 minutes
 
-#define LeftBumperTrig				1
-#define RightBumperTrig				2
-#define LidarBumperTrig				4
-#define AllBumperTrig				3
+//#define LeftBumperTrig				1
+//#define RightBumperTrig				2
+//#define LidarBumperTrig				4
+//#define AllBumperTrig				3
 
-#define LeftCliffTrig							1
-#define RightCliffTrig						2
+//#define LeftCliffTrig							1
+//#define RightCliffTrig						2
 #define RightLeftCliffTrig				3
-#define FrontCliffTrig						4
+//#define FrontCliffTrig						4
 #define LeftFrontCliffTrig				5
 #define RightFrontCliffTrig				6
 /*
@@ -438,26 +443,6 @@ uint32_t get_right_wall_step(void);
 
 int32_t get_wall_adc(int8_t dir);
 
-struct laserDistance{
-	double front[3] = {4,4,4}; // left, midle, right
-	double back = 4;
-	double left = 4;
-	double right = 4;
-	double getFrontMin(){
-		if(this->front[0] < this->front[1] && this->front[0] < this->front[2])
-			return this->front[0];
-		if(this->front[1] < this->front[0] && this->front[1] < this->front[2])
-			return this->front[1];
-		if(this->front[2] < this->front[0] && this->front[2] < this->front[1])
-			return this->front[2];
-		return 4;
-	}
-	void reset(){
-		this->front[0] = this->front[1] = this->front[2] = back = left = right = 4;
-	}
-};
-void correct_laser_distance(laserDistance& laser_distance,float* odom_x_start,float* odom_y_start);
-void set_cell_by_compensate(laserDistance laser_distance);
 void set_dir_backward(void);
 void set_dir_forward(void);
 
