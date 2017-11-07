@@ -45,7 +45,6 @@ typedef enum {
 extern std::vector<Cell_t> g_homes;
 extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
-extern bool g_go_home;
 extern bool g_keep_on_wf;
 extern int16_t g_new_dir;
 extern bool g_no_uncleaned_target;

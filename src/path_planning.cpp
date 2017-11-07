@@ -50,6 +50,7 @@
 #include <numeric>
 #include <motion_manage.h>
 #include <regulator.h>
+#include <clean_state.h>
 
 #define FINAL_COST (1000)
 
@@ -1393,7 +1394,7 @@ void path_full_angle(const Cell_t& start, PPTargetType& path)
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 	path.back().TH = (path.end()-2)->TH;
-	if(g_go_home && g_home == g_zero_home)
+	if(cs_is_go_home() && g_home == g_zero_home)
 	{
 		path.back().TH = g_home.TH;
 	}
@@ -1406,13 +1407,13 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 {
 	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
 
-	if (!g_go_home)
+	if (!cs_is_go_home())
 		cm_check_should_go_home();
 
-	if(!g_go_home)
+	if(!cs_is_go_home())
 		cm_check_should_spot();
 
-	if(!g_go_home) {
+	if(!cs_is_go_home()) {
 		if (cm_is_follow_wall()){
 			ROS_INFO("  path_next Clean_Mode:(%d)", cm_get());
 			if (mt_is_linear()) {
@@ -1495,7 +1496,8 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 			}
 		}
 	}
-	if(g_go_home) {
+
+	if(cs_is_go_home()) {
 		if (cm_is_go_home() || start == g_home || !path_get_home_target(start, path, is_reach)) {
 			g_plan_path.clear();
 			if(start == g_home && g_home == g_zero_home)
@@ -1512,12 +1514,9 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 		}
 	}
 
-
 	mt_update(start,path);
-	//full cell heading
-	path_full_angle(start, path);
 
-	path_display_path_points(path);
+	path_full_angle(start, path);
 
 	return true;
 }
@@ -1901,7 +1900,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 
 bool is_fobbit_free() {
 	//NOTE: g_home_way_it should last of g_home,for g_homeway_list may empty.
-	return (g_go_home && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
+	return (cs_is_go_home() && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
 }
 
 bool fw_is_time_up()

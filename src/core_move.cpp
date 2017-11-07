@@ -36,6 +36,7 @@
 #include "mathematics.h"
 #include <move_type.h>
 #include <path_planning.h>
+#include <clean_state.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -73,7 +74,7 @@ std::deque<Cell_t> g_passed_path;
 //Cell_t g_target_cell;
 
 //uint8_t	g_remote_go_home = 0;
-bool	g_go_home = false;
+//bool	cs_is_go_home() = false;
 bool	g_from_station = 0;
 bool	g_in_charge_signal_range;
 
@@ -258,7 +259,7 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 		}
 
 		if (g_fatal_quit_event || g_charge_detect
-			|| g_key_clean_pressed || (!g_go_home && (g_battery_home || g_remote_home))
+			|| g_key_clean_pressed || (!cs_is_go_home() && (g_battery_home || g_remote_home))
 			|| g_oc_wheel_left || g_oc_wheel_right
 			|| g_bumper_triggered || g_cliff_triggered
 			)
@@ -497,7 +498,7 @@ void cm_check_should_go_home(void)
 		// Set variables.
 		if (g_remote_home)
 			g_go_home_by_remote = true;
-		g_go_home = true;
+		cs_set(CS_GO_HOME);
 		g_remote_home = false;
 		g_battery_home = false;
 		g_finish_cleaning_go_home = false;
@@ -591,7 +592,7 @@ bool cm_go_to_charger()
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
-	g_go_home = false;
+	cs_set(CS_CLEAN);
 	g_map_boundary_created = false;
 	g_go_home_by_remote = false;
 }
@@ -1381,7 +1382,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 /*
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_go_home) {
+	if (cs_is_go_home()) {
 		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -1588,7 +1589,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && !g_slam_error && !robot::instance()->isManualPaused()) {
+	if (g_motion_init_succeeded && !cs_is_go_home() && !cm_should_self_check() && !g_slam_error && !robot::instance()->isManualPaused()) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(INVALID);
@@ -1614,7 +1615,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || !cm_is_navigation()
-		|| g_go_home || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
+		|| cs_is_go_home() || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
 		|| time(NULL) - last_time_remote_spot < 3)
 		beep_for_command(INVALID);
 	else
@@ -1638,7 +1639,7 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !g_go_home && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error && !robot::instance()->isManualPaused())
+	if (g_motion_init_succeeded && !cs_is_go_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error && !robot::instance()->isManualPaused())
 	{
 		beep_for_command(VALID);
 		switch_vac_mode(true);
@@ -1662,7 +1663,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 /* Battery */
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
-	if (g_motion_init_succeeded && ! g_go_home) {
+	if (g_motion_init_succeeded && ! cs_is_go_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
@@ -1690,7 +1691,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 		t_vol = get_battery_voltage();
 		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
-		if (g_go_home) {
+		if (cs_is_go_home()) {
 			v_pwr = Home_Vac_Power / t_vol;
 			s_pwr = Home_SideBrush_Power / t_vol;
 			m_pwr = Home_MainBrush_Power / t_vol;
@@ -1713,7 +1714,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 void cm_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
-	if (((cm_is_exploration() || cm_get() == Clean_Mode_GoHome || g_go_home) && robot::instance()->getChargeStatus()) ||
+	if (((cm_is_exploration() || cm_is_go_home() || cs_is_go_home()) && robot::instance()->getChargeStatus()) ||
 		(!cm_is_exploration() && robot::instance()->getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)

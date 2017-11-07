@@ -72,7 +72,6 @@ extern uint8_t g_oc_suction_cnt;
 extern bool g_key_clean_pressed;
 /* Remote */
 extern bool g_remote_home;
-extern bool g_go_home;
 extern bool g_remote_spot;
 extern bool g_remote_wallfollow;
 extern bool g_remote_direction_keys;

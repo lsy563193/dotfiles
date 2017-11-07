@@ -8,6 +8,7 @@
 #include <core_move.h>
 #include <event_manager.h>
 #include <path_planning.h>
+#include <clean_state.h>
 #include "move_type.h"
 #include "spot.h"
 
@@ -46,7 +47,7 @@ CMMoveType mt_get()
 void mt_update(const Cell_t& curr, PPTargetType& path) {
 	//	g_old_dir = g_new_dir;
 	//set move_type
-	if (g_go_home || cm_is_exploration())
+	if (cs_is_go_home() || cm_is_exploration())
 		mt_set(CM_LINEARMOVE);
 	else if (cm_is_navigation()) {
 		mt_set(CM_LINEARMOVE);

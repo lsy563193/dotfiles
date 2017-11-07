@@ -16,6 +16,7 @@
 #include <segment_set.h>
 #include <slam.h>
 #include <move_type.h>
+#include <clean_state.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -340,8 +341,7 @@ MotionManage::~MotionManage()
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
 		{
-			extern bool g_go_home;
-			if (g_go_home)
+			if (cs_is_go_home())
 			{
 				// The current home cell is still valid, so push it back to the home point list.
 				path_set_home(g_home);
@@ -349,7 +349,7 @@ MotionManage::~MotionManage()
 			cm_set(Clean_Mode_Userinterface);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
-			if (g_go_home)
+			if (cs_is_go_home())
 #if MANUAL_PAUSE_CLEANING
 //				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
 				ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
@@ -410,7 +410,7 @@ MotionManage::~MotionManage()
 	else // Normal finish.
 	{
 		extern bool g_have_seen_charge_stub;
-		if(g_go_home && !g_charge_detect && g_have_seen_charge_stub)
+		if(cs_is_go_home() && !g_charge_detect && g_have_seen_charge_stub)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 		if (cm_get() != Clean_Mode_GoHome && !cm_is_exploration())
 			wav_play(WAV_CLEANING_FINISHED);
@@ -539,7 +539,7 @@ bool MotionManage::initNavigationCleaning(void)
 		ROS_WARN("Restore from manual pause");
 		cm_register_events();
 		wav_play(WAV_CLEANING_CONTINUE);
-		if (g_go_home)
+		if (cs_is_go_home())
 		{
 			wav_play(WAV_BACK_TO_CHARGER);
 		}
@@ -562,7 +562,7 @@ bool MotionManage::initNavigationCleaning(void)
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
-		if (!g_go_home)
+		if (!cs_is_go_home())
 			cm_check_should_go_home();
 	}
 
@@ -606,7 +606,7 @@ bool MotionManage::initNavigationCleaning(void)
 
 	work_motor_configure();
 
-	ROS_INFO("%s %d: Init g_go_home(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__, g_go_home, robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
+	ROS_INFO("%s %d: Init cs_is_go_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__, cs_is_go_home(), robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
 	return true;
 }
 

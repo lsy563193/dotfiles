@@ -16,6 +16,7 @@
 #include <spot.h>
 #include <robotbase.h>
 #include <path_planning.h>
+#include <clean_state.h>
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
 #define TURN_REGULATOR_TURNING 2
@@ -308,7 +309,7 @@ bool RegulatorBase::_isStop()
 	bool ret = false;
 //	ROS_INFO("reg_base _isStop");
 
-	ret |=  g_battery_home || g_remote_spot || (!g_go_home && g_remote_home) || cm_should_self_check() ;
+	ret |=  g_battery_home || g_remote_spot || (!cs_is_go_home() && g_remote_home) || cm_should_self_check() ;
 	return ret;
 }
 
@@ -538,7 +539,7 @@ bool TurnRegulator::_isStop()
 void TurnRegulator::setTarget()
 {
 	 // Use laser datas for generating target angle in every 3times of turning.
-	if(g_go_home && map_point_to_cell(s_curr_p) == g_zero_home)
+	if(cs_is_go_home() && map_point_to_cell(s_curr_p) == g_zero_home)
 	{
 		s_target_angle = g_home.TH;
 	}else
@@ -751,7 +752,7 @@ bool LinearRegulator::_isStop()
 	{
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
-			if (g_go_home)
+			if (cs_is_go_home())
 				g_rcon_during_go_home = true;
 			else
 				path_set_home(map_get_curr_cell());

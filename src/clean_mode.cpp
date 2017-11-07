@@ -59,6 +59,7 @@ bool cm_is_go_home()
 {
 	return g_cleaning_mode == Clean_Mode_GoHome;
 }
+
 void cm_set(uint8_t mode)
 {
 	g_cleaning_mode = mode;
