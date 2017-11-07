@@ -1381,7 +1381,27 @@ bool cm_turn_and_check_charger_signal(void)
 	}
 	return false;
 }
+void path_full_angle(const Cell_t& start, PPTargetType& path)
+{
+	path.push_front(start);
+	for(auto it = path.begin(); it < path.end(); ++it) {
+		auto it_next = it+1;
+		if (it->X == it_next->X)
+			it->TH = it->Y > it_next->Y ? NEG_Y : POS_Y;
+		else
+			it->TH = it->X > it_next->X ? NEG_X : POS_X;
+	}
+//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+	path.back().TH = (path.end()-2)->TH;
+	if(g_go_home && g_home == g_zero_home)
+	{
+		path.back().TH = g_home.TH;
+	}
+//	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+	g_new_dir = g_plan_path.front().TH;
+	path.pop_front();
 
+}
 bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 {
 	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
@@ -1492,36 +1512,11 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 		}
 	}
 
-//	g_old_dir = g_new_dir;
-	//set move_type
-	if (g_go_home || cm_is_exploration())
-		mt_set(CM_LINEARMOVE);
-	else if(cm_is_navigation())
-	{
-		mt_set(CM_LINEARMOVE);
-		mt_update(start, path);
-	}
-	if(g_trapped_mode == 1)
-		mt_set(CM_FOLLOW_LEFT_WALL);
-	//full cell heading
-	path.push_front(start);
-	for(auto it = path.begin(); it < path.end(); ++it) {
-		auto it_next = it+1;
-		if (it->X == it_next->X)
-			it->TH = it->Y > it_next->Y ? NEG_Y : POS_Y;
-		else
-			it->TH = it->X > it_next->X ? NEG_X : POS_X;
-	}
-//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-	path.back().TH = (path.end()-2)->TH;
-	if(g_go_home && g_home == g_zero_home)
-	{
-		path.back().TH = g_home.TH;
-	}
-//	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 
-	g_new_dir = g_plan_path.front().TH;
-	path.pop_front();
+	mt_update(start,path);
+	//full cell heading
+	path_full_angle(start, path);
+
 	path_display_path_points(path);
 
 	return true;
