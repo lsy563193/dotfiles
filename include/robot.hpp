@@ -73,15 +73,15 @@ public:
 		return offset_angle_;
 	};
 
-	void startAngle(float angle)
-	{
-		start_angle_ = angle;
-	};
+//	void startAngle(float angle)
+//	{
+//		start_angle_ = angle;
+//	};
 
-	float startAngle(void) const
-	{
-		return start_angle_;
-	};
+//	float startAngle(void) const
+//	{
+//		return start_angle_;
+//	};
 
 	void savedOffsetAngle(float angle)
 	{

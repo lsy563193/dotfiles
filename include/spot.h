@@ -49,7 +49,7 @@ private:
 	std::vector<Cell_t> targets_cw_;
 	std::vector<Cell_t> targets_acw_;
 	std::vector<Cell_t> targets_been_;
-	std::list<Cell_t> target_last_;
+	std::deque<Cell_t> target_last_;
 	std::vector<Cell_t>::iterator tp_;//target pointer
 
 	std::vector<Cell_t>::iterator bp_;//bumper pointer

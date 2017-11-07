@@ -28,7 +28,7 @@
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
-bool g_is_main_switch_off = false;
+bool g_wf_is_reach;
 /*
 int g_enable_angle_offset = 0;
 boost::mutex g_angle_offset_mt;
@@ -155,6 +155,8 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		g_from_station = 0;
 	g_finish_cleaning_go_home = false;
 	g_motion_init_succeeded = false;
+	g_during_go_to_charger = false;
+
 	bool remote_home_during_pause = false;
 	if (is_clean_paused() && g_remote_home)
 		remote_home_during_pause = true;
@@ -164,6 +166,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		g_remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
+
 	bool eh_status_now=false, eh_status_last=false;
 
 	if (!initCleaning(cm_get()))
@@ -222,10 +225,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if(g_from_station)
 	{
 		robot::instance()->offsetAngle(180);
-		robot::instance()->startAngle(180);
 		ROS_INFO("%s,%d,\033[32m charge stub postion estiamate on(%d,%d)\033[0m",__FUNCTION__,__LINE__,(-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
 		Cell_t home_point((-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
 		map_set_charge_position(home_point);
+		g_homes[0].TH = 180;
 	}
 
 	/*--- get aligment angle-----*/
@@ -252,9 +255,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	
 			align_angle += (float)(LIDAR_THETA / 10);
 			robot::instance()->offsetAngle(align_angle);
-			robot::instance()->startAngle(align_angle);
-			ROS_INFO("%s %d: align_angle and start angle (%f).", __FUNCTION__, __LINE__, robot::instance()->startAngle());
+			ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__,align_angle); 
+			g_homes[0].TH = -(int16_t)(align_angle);
+			ROS_INFO("%s %d: g_homes[0].TH (%d).", __FUNCTION__, __LINE__, g_homes[0].TH);
 		}
+//		robot::instance()->startAngle(0);
+//		g_homes[0].TH=0;
 	}
 	usleep(600000);// wait for tf ready
 
@@ -308,6 +314,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	else
 		set_led_mode(LED_STEADY, LED_GREEN);
 
+		g_robot_slip_enable = true;
+	g_robot_stuck = false;
+	g_robot_slip = false;
+	g_wf_is_reach = false;
 }
 
 MotionManage::~MotionManage()
@@ -405,15 +415,7 @@ MotionManage::~MotionManage()
 		robot::instance()->resetLowBatPause();
 		g_resume_cleaning = false;
 		if (g_cliff_all_triggered)
-		{
-			if(g_is_main_switch_off)
-			{
-				wav_play(WAV_CHECK_SWITCH);
-				g_is_main_switch_off = false;
-			}
-			else
-				wav_play(WAV_ERROR_LIFT_UP);
-		}
+			wav_play(WAV_ERROR_LIFT_UP);
 		wav_play(WAV_CLEANING_STOP);
 	}
 	else // Normal finish.
@@ -769,10 +771,16 @@ bool MotionManage::initGoHome(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, const std::list<Cell_t>& path)
+void MotionManage::pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path, Cell_t* cell_p)
 {
+	// temp_target is valid if only path is not empty.
+	if (path.empty())
+		return;
+
 	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
+	Cell_t next = path.front();
+	Cell_t target = path.back();
 	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
@@ -788,6 +796,8 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, 
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else if (x == next.X && y == next.Y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET);
+			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
 				cell_state = map_get_cell(id, x, y);
@@ -799,7 +809,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, 
 #if LINEAR_MOVE_WITH_PATH
 	if (!path.empty())
 	{
-		for (std::list<Cell_t>::const_iterator it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
 			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
 
 		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);

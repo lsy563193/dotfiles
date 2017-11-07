@@ -21,14 +21,15 @@
 #include "gyro.h"
 boost::mutex scan_mutex_;
 boost::mutex scan2_mutex_;
+boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
-uint32_t new_laser_seq;
-
+Eigen::MatrixXd laser_matrix = Eigen::MatrixXd::Ones(3,3);
 
 Laser::Laser():nh_(),angle_n_(0)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
+	odom_sub_ = nh_.subscribe("odom",1,&Laser::odomCb,this);
 	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 	setScanReady(0);
@@ -48,6 +49,7 @@ Laser::~Laser()
 	setScan2Ready(0);
 	scan_sub_.shutdown();
 	scan_sub2_.shutdown();
+	odom_sub_.shutdown();
 	lidar_motor_cli_.shutdown();
 	lidar_shield_detect_.shutdown();
 	nh_.shutdown();
@@ -84,14 +86,21 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	if (scan2_valid_cnt > 30)
 	{
 		// laser has been covered.
+		boost::mutex::scoped_lock(scan2_mutex_);
+		laserScanData_2_ = *scan;
+		count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
+		setScan2Ready(1);
+		scan2_update_time = ros::Time::now().toSec();
+		//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
 	}
+}
 
-	boost::mutex::scoped_lock(scan2_mutex_);
-	laserScanData_2_ = *scan;
-	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-	setScan2Ready(1);
-	scan2_update_time = ros::Time::now().toSec();
-	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan2_update_time);
+void Laser::odomCb(const nav_msgs::Odometry::ConstPtr &msg)
+{
+	if(laserCheckFresh(5,1))
+		compensateLaserXY();
+	else
+		laser_matrix.resize(1,1);// make laser_matrix invalid
 }
 
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
@@ -123,23 +132,6 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 	}
 
 	return found;
-}
-
-bool Laser::isNewDataReady()
-{
-	scan_mutex_.lock();
-	if(new_laser_seq == 0) {
-		new_laser_seq = laserScanData_.header.seq;
-		scan_mutex_.unlock();
-		return false;
-	}
-	if(laserScanData_.header.seq == new_laser_seq) {
-		scan_mutex_.unlock();
-		return false;
-	}
-	new_laser_seq = laserScanData_.header.seq;
-	scan_mutex_.unlock();
-	return true;
 }
 
 int8_t Laser::isScan2Ready()
@@ -214,7 +206,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 			}
 		}
 
-		if (switch_ && isScanReady())
+		if (switch_ && temp_switch_ && isScanReady())
 		{
 			ROS_INFO("\033[32m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
@@ -501,7 +493,7 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 	//double	line_angle;
 	Double_Point	New_Laser_Point;
 	Laser_Point.clear();
-	ROS_WARN("laserGetFitLine");
+	ROS_DEBUG("laserGetFitLine");
 	scan_mutex_.lock();
 	auto tmp_scan_data = laserScanData_;
 	scan_mutex_.unlock();
@@ -550,10 +542,10 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 			*distance = fabs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-		ROS_INFO("line_angle = %lf", *line_angle);
+		ROS_DEBUG("line_angle = %lf", *line_angle);
 		return true;
 	} else {
-		ROS_INFO("no line to fit!");
+		ROS_DEBUG("no line to fit!");
 		return false;
 	}
 }
@@ -877,7 +869,7 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 			loop_count++;
 		}
 	}
-	ROS_INFO("pub line marker");
+	ROS_DEBUG("pub line marker");
 	pubLineMarker(&Laser_Group);
 	return true;
 }
@@ -998,8 +990,8 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			x_0 = 0 - c / a;
 			y_0 = 0 - c / b;
 			line_angle = atan2(y_0, 0 - x_0) * 180 / PI;
-			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-			ROS_INFO("x_0 = %lf, y_0 = %lf", x_0, y_0);
+			ROS_DEBUG("a = %lf, b = %lf, c = %lf", a, b, c);
+			ROS_DEBUG("x_0 = %lf, y_0 = %lf", x_0, y_0);
 			/*erase the lines which are far away from the robot*/
 			//double x_l = fabs(c / a);
 			//double y_l = fabs(c / b);
@@ -1007,14 +999,14 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 			//if ((x_l > L) && (y_l > L)) {
 			if (dis > dis_lim || dis < 0.167 || x_0 < 0) {
 				//ROS_INFO("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
-				ROS_INFO("the line is too far away from robot. dis = %lf", dis);
+				ROS_DEBUG("the line is too far away from robot. dis = %lf", dis);
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
 			//pubFitLineMarker(a, b, c, -0.5, 0.5);
 			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
 			//ROS_INFO("iter->begin()->y = %lf, (iter->end() - 1)->y= %lf",iter->begin()->y, (iter->end() - 1)->y);
-			ROS_INFO("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
+			ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
 	} else {
@@ -1141,85 +1133,88 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::LaserScan *scan_range, uint8_t *laser_status, bool is_wall_follow)
+bool Laser::laserMarker(double X_MAX)
 {
-//	ROS_INFO("  %s,%d" __FUNCTION__,__LINE__);
-	double x, y, th;
+
+	scanXY_mutex_.lock();
+	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
+	scanXY_mutex_.unlock();
+	if(tmp_laser_matrix.rows() != 3) //laser_matrix without compensate
+		return 0;
+	double x, y;
 	int dx, dy;
-	const	double Y_MIN = 0.140;//0.167
-	const	double Y_MAX = 0.237;//0.279
-	const	double TRIGGER_RANGE = X_MAX;//0.278
-	int count = 0;
+//	const double X_MIN = 0.140;//0.167
+//	const	double Y_MIN = 0.167;//0.167
+	const	double Y_MAX = 0.20;//0.279
 	uint8_t ret = 0;
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	for (int i = 0; i < 360; i++) {
-		if (scan_range->ranges[i] < 4) {
-			th = i*1.0 + 180.0;
-			x = cos(th * PI / 180.0) * scan_range->ranges[i];
-			y = sin(th * PI / 180.0) * scan_range->ranges[i];
-			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			//front
-			if (x > ROBOT_RADIUS && x <  TRIGGER_RANGE) {
-				//middle
-				if (y > -0.056 && y < 0.056) {
-					count_array[0]++;
-				}
-				//left
-				if (y > 0.056 && y < 0.168) {
-					count_array[1]++;
-				}
-				//right
-				if (y > -0.168 && y < -0.056) {
-					count_array[2]++;
-				}
+	for (int i = 0; i < tmp_laser_matrix.cols(); i++) {
+		x = tmp_laser_matrix(0,i);
+		y = tmp_laser_matrix(1,i);
+		//front
+		if (x > ROBOT_RADIUS && x < X_MAX) {
+			//middle
+			if (y > -0.056 && y < 0.056) {
+				count_array[0]++;
 			}
-			//back
-			if (x < (0 - ROBOT_RADIUS) && x > (0 - TRIGGER_RANGE)) {
-				//middle
-				if (y > -0.056 && y < 0.056) {
-					count_array[3]++;
-				}
-				//left
-				if (y > 0.056 && y < 0.168) {
-					count_array[4]++;
-				}
-				//right
-				if (y > -0.168 && y < -0.056) {
-					count_array[5]++;
-				}
-			}
+		}
+		if (x > 0.056 && x < X_MAX) {
+			//middle
 			//left
-			if (y > ROBOT_RADIUS && y <  TRIGGER_RANGE) {
-				//middle
-				if (x > -0.056 && x < 0.056) {
-					count_array[6]++;
-				}
-				//front
-				if (x > 0.056 && x < 0.168) {
-					count_array[7]++;
-				}
-				//back
-				/*
-				if (x > -0.168 && x < -0.056) {
-					count_array[8]++;
-				}*/
+			if (y > 0.056 && y < 0.168) {
+				count_array[1]++;
 			}
 			//right
-			if (y < (0 - ROBOT_RADIUS) && y >  (0 - TRIGGER_RANGE)) {
-				//middle
-				if (x > -0.056 && x < 0.056) {
-					count_array[9]++;
+			if (y > -0.168 && y < -0.056) {
+				count_array[2]++;
+			}
+		}
+		//back
+		if (x < -ROBOT_RADIUS && x > (-X_MAX)) {
+			//middle
+			if (y > -0.056 && y < 0.056) {
+				count_array[3]++;
+			}
+		}
+		if (x < -0.056 && x > (-X_MAX)) {
+			//left
+			if (y > 0.056 && y < 0.168) {
+				count_array[4]++;
+			}
+			//right
+			if (y > -0.168 && y < -0.056) {
+				count_array[5]++;
+			}
+		}
+		//left
+		if (y > ROBOT_RADIUS && y < Y_MAX) {
+			//middle
+			if (x > -0.056 && x < 0.056) {
+				count_array[6]++;
+			}
+			//front
+			if (x > 0.056 && x < 0.168) {
+				count_array[7]++;
+			}
+			//back
+			if (x > -0.168 && x < -0.056) {
+				count_array[8]++;
 				}
-				//front
-				if (x > 0.056 && x < 0.168) {
-					count_array[10]++;
-				}
-				//back
-				/*
-				if (x > -0.168 && x < -0.056) {
-					count_array[11]++;
-				}*/
+		}
+			//right
+		if (y < (0 - ROBOT_RADIUS) && y >  (0 - Y_MAX)) {
+			//middle
+			if (x > -0.056 && x < 0.056) {
+				count_array[9]++;
+			}
+			//front
+			if (x > 0.056 && x < 0.168) {
+				count_array[10]++;
+			}
+			//back
+			if (x > -0.168 && x < -0.056) {
+				count_array[11]++;
 			}
 		}
 	}
@@ -1233,21 +1228,18 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 				case 0 : {
 					dx = 2;
 					dy = 0;
-					*laser_status |= Status_Front_OBS;
 					direction_msg = "front middle";
 					break;
 				}
 				case 1 : {
 					dx = 2;
 					dy = 1;
-					*laser_status |= Status_Left_OBS;
 					direction_msg = "front left";
 					break;
 				}
 				case 2 : {
 					dx = 2;
 					dy = -1;
-					*laser_status |= Status_Right_OBS;
 					direction_msg = "front right";
 					break;
 				}
@@ -1306,6 +1298,7 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 					break;
 				}
 			}
+
 			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 			auto cell_status = map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp));
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
@@ -1314,7 +1307,8 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 				msg += direction_msg + "(" + std::to_string(count_to_cell(x_tmp)) + ", " + std::to_string(count_to_cell(y_tmp)) + ")";
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
 			}
-			if (is_wall_follow) {
+
+			if (mt_is_follow_wall()) {
 				if (i == 0)
 					ret = 1;
 			} else {
@@ -1324,46 +1318,9 @@ static uint8_t checkCellTrigger(double X_MIN, double X_MAX, const sensor_msgs::L
 			}
 		}
 	}
-	if (!msg.empty())
-		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
+//	if (!msg.empty())
+//		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
 	return ret;
-
-}
-
-uint8_t Laser::laserMarker(bool is_mark,double X_MIN,double X_MAX)
-{
-	//double	angle_min, angle_max, tmp, range_tmp;
-	//double	laser_distance = 0;
-	scan_mutex_.lock();
-	auto tmp_scan_data = laserScanData_;
-	scan_mutex_.unlock();
-	static  uint32_t seq = tmp_scan_data.header.seq;
-	bool	is_triggered = 0;
-	uint8_t laser_status;
-	//ROS_ERROR("is_skip = %d", is_skip);
-	//ROS_INFO("laserMarker");
-	//ROS_INFO("seq = %d", tmp_scan_data.header.seq);
-	if (tmp_scan_data.header.seq == seq) {
-		//ROS_ERROR("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
-		return 0;
-	}
-	seq = tmp_scan_data.header.seq;
-	if (!is_mark)
-		return 0;
-	//ROS_ERROR("2 : is_skip = %d", is_skip);
-	/*if (is_skip) {
-		//is_skip = 0;
-		//ROS_INFO("skip!");
-		return false;
-	}*/
-	//ROS_INFO("new laser! seq = %d", tmp_scan_data.header.seq);
-	is_triggered |= checkCellTrigger(X_MIN, X_MAX, &tmp_scan_data, &laser_status, mt_is_follow_wall());
-
-	if (is_triggered) {
-		return laser_status;
-	} else {
-		return 0;
-	}
 }
 
 uint8_t Laser::isRobotSlip()
@@ -1593,94 +1550,71 @@ void Laser::laserDataFilter(sensor_msgs::LaserScan& laserScanData,double delta){
  *        range: dectect range
  * @return the distance to the obstacle
  * */
-bool Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserDistance& laser_distance)
+double Laser::getObstacleDistance(uint8_t dir, double range)
 {
-	double x,y,th;
+	scanXY_mutex_.lock();
+	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
+	scanXY_mutex_.unlock();
+	if(tmp_laser_matrix.rows() != 3)  //laser_matrix  wihtout compensate
+		return DBL_MAX;
+	double x,y;
 	double x_to_robot,y_to_robot;
-	scan_mutex_.lock();
-	auto tmp_scan_data = laserScanData_;
-	scan_mutex_.unlock();
+	double min_dis = DBL_MAX;
+
 	if(range < 0.056)
 	{
 		ROS_ERROR("range should be higher than 0.056");
 		return 0;
 	}
-	if (tmp_scan_data.header.seq == seq) {
-		//ROS_WARN("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
-		return 0;
-	}
-	//ROS_INFO("compLaneDistance");
-	seq = tmp_scan_data.header.seq;
-	laser_distance.reset();
-	this->laserDataFilter(tmp_scan_data,0.02);
-//	laser_filter_pub.publish(tmp_scan_data);
-	for (int i = 0; i < 360; i++) {
-		if (tmp_scan_data.ranges[i] < 4) {
-			th = i*1.0 + 180.0;
-			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
-			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
-			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
-			y_to_robot = fabs(y) - ROBOT_RADIUS * sin(acos(fabs(x) / ROBOT_RADIUS));
-			//ROS_INFO("x = %lf, y = %lf", x, y);
-			if (dir == 0) {
-				if (y > 0.056 && y <= range) {
-					if (x >= 0){
-						if (x_to_robot < laser_distance.front[0]) {
-							laser_distance.front[0] = x_to_robot;
+	for(int i = 0; i < tmp_laser_matrix.cols(); i++) {
+		x = tmp_laser_matrix(0,i);
+		y = tmp_laser_matrix(1,i);
+		x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
+		y_to_robot = fabs(y) - ROBOT_RADIUS * sin(acos(fabs(x) / ROBOT_RADIUS));
+		//ROS_INFO("x = %lf, y = %lf", x, y);
+		if (dir == 0) {
+			if(fabs(y) < range){
+				if(x > 0){
+					if (x_to_robot < min_dis) {
+						min_dis = x_to_robot;
+						//ROS_WARN("back = %lf", back);
 						}
 					}
-				}
-				if (y >= -0.056 && y < 0.056) {
-					if (x >= 0){
-						if (x_to_robot <= laser_distance.front[1]) {
-							laser_distance.front[1] = x_to_robot;
-						}
-					}
-				}
-				if (y >= -range && y <= -0.056) {
-					if (x >= 0){
-						if (x_to_robot <= laser_distance.front[2]) {
-							laser_distance.front[2] = x_to_robot;
-						}
-					}
-				}
-			} else if (dir == 1) {
+			}
+		} else if (dir == 1) {
 				if (fabs(y) < range) {
 					if (x < 0){
-						if (x_to_robot < laser_distance.back) {
-							laser_distance.back = x_to_robot;
+						if (x_to_robot < min_dis) {
+							min_dis = x_to_robot;
 							//ROS_WARN("back = %lf", back);
 						}
 					}
 				}
-			} else if (dir == 2) {
+		} else if (dir == 2) {
 				if (fabs(x) < range) {
 					if (y >= 0 && x > 0){
-						if (y_to_robot < laser_distance.left) {
-							laser_distance.left = y_to_robot;
+						if (y_to_robot < min_dis) {
+							min_dis = y_to_robot;
 							//ROS_WARN("left = %lf",left);
 						}
 					}
 				}
-			} else if (dir == 3) {
+		} else if (dir == 3) {
 				if (fabs(x) < range) {
 					if (y < 0 && x > 0){
-						if (y_to_robot < laser_distance.right) {
-							laser_distance.right = y_to_robot;
+						if (y_to_robot < min_dis) {
+							min_dis = y_to_robot;
 							//ROS_WARN("right = %lf",right);
 						}
 					}
 				}
-			}
 		}
 	}
-	return true;
+	return min_dis;
 }
 
 void Laser::pubPointMarkers(const std::vector<Point_d_t> *points)
 {
-	//int points_size;
 	visualization_msgs::Marker point_marker;
 	point_marker.ns = "point_marker";
 	point_marker.id = 0;
@@ -1717,6 +1651,87 @@ void Laser::pubPointMarkers(const std::vector<Point_d_t> *points)
 		point_marker_pub.publish(point_marker);
 	}
 	*/
+}
+bool Laser::compensateLaserXY(double detect_distance,double noise_delta){
+	if(!isScanReady())
+		return 0;
+	scanXY_mutex_.lock();
+	static int seq;
+	int count = 0;
+	scan_mutex_.lock();
+	auto tmp_scan_data = laserScanData_;
+	scan_mutex_.unlock();
+	double th;
+	Eigen::Vector3d coordinate = Eigen::Vector3d::Zero();
+	Eigen::Matrix3d t_now;//world to now
+	static Eigen::Matrix3d t_last;//world to last
+	double now_x,now_y,now_angle,last_x,last_y,last_angle;
+	//transform polar coordinate to cartesian coordinate
+	if (tmp_scan_data.header.seq != seq && laserCheckFresh(0.02,1)) {
+		seq = tmp_scan_data.header.seq;
+		laserDataFilter(tmp_scan_data,noise_delta);
+		laser_matrix.resize(3,360);
+		for (int i = 0; i < 360; i++) {
+			if(tmp_scan_data.ranges[i] < ROBOT_RADIUS + detect_distance) {
+				th = i * 1.0 + 180.0;
+				coordinate(0) = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
+				coordinate(1) = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
+				coordinate_transform(&coordinate(0), &coordinate(1), LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+				coordinate(2) = 1.0;
+				laser_matrix.col(count) = coordinate;
+				count++;
+			}
+		}
+		last_x = robot::instance()->getOdomPositionX();
+		last_y = robot::instance()->getOdomPositionY();
+		last_angle = robot::instance()->getOdomPositionYaw();
+		if(last_angle < 0.0)
+			last_angle += 2 * PI;
+		t_last << cos(last_angle), sin(last_angle), - last_y * sin(last_angle) - last_x * cos(last_angle),
+							-sin(last_angle), cos(last_angle), last_x * sin(last_angle) - last_y * cos(last_angle),
+							0, 0, 1;
+
+		Eigen::MatrixXd tmp_matrix = laser_matrix.block(0,0,3,count);
+		laser_matrix.resize(3,count);
+		laser_matrix = tmp_matrix;
+		scanXY_mutex_.unlock();
+		return false;
+	}
+	//compute transform matrix
+	now_x = robot::instance()->getOdomPositionX();
+	now_y = robot::instance()->getOdomPositionY();
+	now_angle = robot::instance()->getOdomPositionYaw();
+	if(now_angle < 0.0)
+		now_angle += 2 * PI;
+
+	t_now << cos(now_angle), sin(now_angle), - now_y * sin(now_angle) - now_x * cos(now_angle),
+					-sin(now_angle), cos(now_angle), now_x * sin(now_angle) - now_y * cos(now_angle),
+					0, 0, 1;
+	//compute the compensation laser_matrix
+	laser_matrix = t_now * t_last.inverse() * laser_matrix;
+
+	std::vector<Double_Point> points_vec;
+	Double_Point point;
+	for(int i = 0;i < laser_matrix.cols();i++)
+	{
+		point.x = laser_matrix(0,i);
+		point.y = laser_matrix(1,i);
+		if(point.x < 5 && point.y < 5)
+			points_vec.push_back(point);
+	}
+	pubPointMarkers(&points_vec);
+
+	last_x = robot::instance()->getOdomPositionX();
+	last_y = robot::instance()->getOdomPositionY();
+	last_angle = robot::instance()->getOdomPositionYaw();
+	if(last_angle < 0.0)
+		last_angle += 2 * PI;
+
+	t_last << cos(last_angle), sin(last_angle), - last_y * sin(last_angle) - last_x * cos(last_angle),
+					-sin(last_angle), cos(last_angle), last_x * sin(last_angle) - last_y * cos(last_angle),
+					0, 0, 1;
+	scanXY_mutex_.unlock();
+	return true;
 }
 
 bool Laser::laserCheckFresh(float duration, uint8_t type)

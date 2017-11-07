@@ -104,10 +104,10 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 	CellState	cs;
 	Cell_t temp_cell;
 
-	if (g_trapped_mode == 1)
+//	if (g_trapped_mode == 1)
 		temp_cell = map_get_curr_cell();
-	else
-		temp_cell = g_cell_history[0];
+//	else
+//		temp_cell = g_cell_history[0];
 
 	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
