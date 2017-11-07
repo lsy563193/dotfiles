@@ -2,20 +2,18 @@
 // Created by lsy563193 on 4/25/17.
 //
 
-#include <movement.h>
-#include <gyro.h>
-#include <robot.hpp>
-#include <wav.h>
-#include <config.h>
-#include <laser.hpp>
 #include <fcntl.h>
-
-#include "obstacle_detector.cpp"
-
 #include "motion_manage.h"
-#include <segment_set.h>
-#include <slam.h>
-#include <move_type.h>
+#include "movement.h"
+#include "gyro.h"
+#include "robot.hpp"
+#include "wav.h"
+#include "config.h"
+#include "laser.hpp"
+//#include "obstacle_detector.cpp"
+//#include <segment_set.h>
+#include "slam.h"
+#include "move_type.h"
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -26,7 +24,7 @@
 #include "map.h"
 #include "regulator.h"
 
-Segment_set segmentss;
+//Segment_set segmentss;
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
@@ -49,7 +47,7 @@ void set_angle_offset(int status)
 
 boost::condition_variable g_cond_var;
 */
-
+/*
 void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstPtr &msg)
 {
 //	ROS_WARN("robot_obstacles_cb");
@@ -80,7 +78,8 @@ void MotionManage::robot_obstacles_cb(const obstacle_detector::Obstacles::ConstP
 	}
 
 }
-
+*/
+/*
 bool MotionManage::get_align_angle(float &line_angle)
 {
 	time_t start_time;
@@ -143,6 +142,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 //	return line_angle;
 	return true;
 }
+*/
 
 Laser* MotionManage::s_laser = nullptr/*new Laser()*/;
 Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
@@ -176,7 +176,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (cm_get() == Clean_Mode_GoHome)
 		return;
 
-	//2 start laser
+	/*--- laser init ---*/
 	s_laser = new Laser();
 	if (s_laser->isScanReady() == -1)
 	{
@@ -190,6 +190,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		initSucceeded(false);
 		return;
 	}
+	/*---laser init end---*/
 
 	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
 	{
@@ -218,7 +219,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		}
 	}
 
-	//3 calculate offsetAngle
 	if(g_from_station)
 	{
 		robot::instance()->offsetAngle(180);
@@ -227,35 +227,47 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		Cell_t home_point((-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
 		map_set_charge_position(home_point);
 	}
-	else
+
+	/*--- get aligment angle-----*/
+	if( !( is_clean_paused() || g_resume_cleaning ))
 	{
 		nh_.param<bool>("is_active_align", is_align_active_, false);
 		if (cm_is_navigation() && is_align_active_)
 		{
-			ObstacleDetector od;
-			float align_angle = 0;
-			if (!get_align_angle(align_angle))
-			{
-				initSucceeded(false);
-				return;
+			//ObstacleDetector od;
+			std::vector<LineABC> lines;
+			time_t time_findline = time(NULL);
+			ROS_INFO("%s,%d,ready to find lines ",__FUNCTION__,__LINE__);
+			float align_angle = 0.0;
+			while(1){
+				if(s_laser->findLines(&lines)){
+					if(s_laser->getAlignAngle(&lines,&align_angle))
+						break;
+				}
+				if(difftime(time(NULL) ,time_findline) >= 2){
+					ROS_INFO("%s,%d,find lines timeout",__FUNCTION__,__LINE__);
+					break;
+				}
 			}
+	
 			align_angle += (float)(LIDAR_THETA / 10);
 			robot::instance()->offsetAngle(align_angle);
 			robot::instance()->startAngle(align_angle);
-			ROS_INFO("%s %d: Start angle (%f).", __FUNCTION__, __LINE__, robot::instance()->startAngle());
+			ROS_INFO("%s %d: align_angle and start angle (%f).", __FUNCTION__, __LINE__, robot::instance()->startAngle());
 		}
 	}
-	ROS_INFO("waiting 1s for translation odom_to_robotbase work");
-	sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
+	usleep(600000);// wait for tf ready
 
+	/*----slam init----*/
+	s_slam = new Slam();
 	//4 call start slam
 	while (g_slam_error)
 	{
 		// Wait for slam launch.
 		usleep(20000);
 	}
-
-	s_slam = new Slam();
+	//ROS_INFO("waiting 1s for translation odom_to_robotbase work");
+	//sleep(1); //wait for odom_pub send translation(odom->robotbase) to slam_karto,
 
 	robot::instance()->setTfReady(false);
 	if (cm_is_navigation() || cm_get() == Clean_Mode_Spot || cm_is_exploration())
@@ -289,7 +301,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 	s_laser->lidarShieldDetect(ON);
 	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
-
+	/*--- slam end ---*/
 
 	if (g_go_home_by_remote || (cm_is_exploration()))
 		set_led_mode(LED_STEADY, LED_ORANGE);
@@ -787,7 +799,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, Cell_t &next, Cell_t &target, 
 #if LINEAR_MOVE_WITH_PATH
 	if (!path.empty())
 	{
-		for (list<Cell_t>::const_iterator it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+		for (std::list<Cell_t>::const_iterator it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
 			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
 
 		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);

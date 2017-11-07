@@ -25,7 +25,7 @@ boost::mutex scan2_mutex_;
 uint32_t new_laser_seq;
 
 
-Laser::Laser():nh_()
+Laser::Laser():nh_(),angle_n_(0)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
@@ -57,14 +57,15 @@ Laser::~Laser()
 
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
-	int count = 0;
-	boost::mutex::scoped_lock(scan_mutex_);
-	laserScanData_ = *scan;
-	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
-
-	setScanReady(1);
+	if(1){
+		boost::mutex::scoped_lock(scan_mutex_);
+		laserScanData_ = *scan;
+		angle_n_ = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
+		setScanReady(1);
+	}
 	scan_update_time = ros::Time::now().toSec();
-	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan_update_time);
+	std::vector<LineABC> lines;
+	findLines(&lines);
 }
 
 void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -121,7 +122,6 @@ bool Laser::laserObstcalDetected(double distance, int angle, double range)
 		}
 	}
 
-	return found;
 	return found;
 }
 
@@ -250,6 +250,243 @@ void Laser::lidarShieldDetect(bool switch_)
 	lidar_shield_detect_.call(trig);
 	ROS_INFO("\033[35m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
+
+/*
+ * @author mengshige1988@qq.com
+ * @brief for combine each lines in lines
+ * @param1 lines before
+ * @param2 lines after
+ * @return false if no more lines for combine ,else return true.
+ * */
+static bool lineCombine(std::vector<LineABC> *lines_before,std::vector<LineABC> *lines_after)
+{
+	bool ret = false;
+	const float MIN_COMBINE_ANGLE=10.0;//in degrees
+	const float MIN_COMBINE_DIST=0.6;//in meters
+	LineABC line_tmp;
+	std::vector<LineABC>::iterator it;
+	for(it = lines_before->begin(); it != lines_before->end(); it++){
+		if( (it+1)!=lines_before->end() ){
+			if(abs(it->angle_x - (it+1)->angle_x) <= MIN_COMBINE_ANGLE){
+				if(two_points_distance_double(it->x2,it->y2,(it+1)->x1,(it+1)->y1) < MIN_COMBINE_DIST){
+					line_tmp.x1 = it->x1;
+					line_tmp.y1 = it->y1;
+					line_tmp.x2 = (it+1)->x2;
+					line_tmp.y2 = (it+1)->y2;
+					line_tmp.A = line_tmp.y2 - line_tmp.y1;
+					line_tmp.B = line_tmp.x1 - line_tmp.x2;
+					line_tmp.C = line_tmp.x2 * line_tmp.y1 - line_tmp.x1 * line_tmp.y2;
+					line_tmp.len = two_points_distance_double(line_tmp.x1,line_tmp.y1,line_tmp.x2,line_tmp.y2);
+					line_tmp.angle_x = atan(-1*(line_tmp.A / line_tmp.B))*180/PI;
+					lines_after->push_back(line_tmp);
+					it++;
+					ret = true;
+				}
+			}
+			else
+				lines_after->push_back(*it);
+		}
+	}
+	return ret;
+}
+
+/*
+ * @author mengshige1988@qq.com
+ * @brief find lines from scan data
+ * @param1 lines vector
+ * @return ture if found lines, alse return false
+ * */
+bool Laser::findLines(std::vector<LineABC> *lines)
+{
+	if(!isScanReady())
+		return false;
+	const float MAX_LASER_DIST = 4.0;
+	const float ACCR_PERSET = 0.05;//%5
+	static int seq = 0;
+
+	sensor_msgs::LaserScan scan_data;
+	//scan_mutex_.lock();
+	if(laserScanData_.header.seq != seq){
+		seq = laserScanData_.header.seq;
+		scan_data = laserScanData_;
+	}
+	else
+		return false;
+	//scan_mutex_.unlock();
+
+	/*---------translate laser distance to point set----------*/
+	int n_angle = angle_n_;
+	int i=0;
+	Point_d_t laser_point_pos;
+	std::vector<Point_d_t> point_set;
+	for(i=0;i<n_angle;i++){
+		if(scan_data.ranges[i] <= MAX_LASER_DIST){
+			double cor_yaw =(double) robot::instance()->getYaw()/10.0;
+			double cor_p_x =(double) robot::instance()->getPositionX();
+			double cor_p_y =(double) robot::instance()->getPositionY();
+
+			double ranges = scan_data.ranges[i];
+			laser_point_pos.x = cos(( i + cor_yaw + 180.0)*PI/180.0 ) *ranges + cor_p_x;//in meters
+			laser_point_pos.y = sin(( i + cor_yaw + 180.0)*PI/180.0 ) *ranges + cor_p_y;//in meters
+			coordinate_transform(&laser_point_pos.x, &laser_point_pos.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+			point_set.push_back(laser_point_pos);
+			laser_point_pos.x = 0.0;
+			laser_point_pos.y = 0.0;
+		}
+	}
+	//pubPointMarkers(&point_set);
+
+	if(point_set.size() <2)
+		return false;// not enough point to make lines , at least got 2 points
+
+	/*--------ready to find lines in point set-----------*/
+	LineABC line;
+	lines->clear();
+	const float LINE_n_P_DIST_MAX = 0.05;//max line and point distance
+	const float POINT_n_P_DIST_MAX = 0.3;//max point and point distance
+	int line_count = 0;
+	int point_count = 0;
+	bool find_next_line = true;
+	i = 0;
+	while(i < (point_set.size() -1)){ 
+		if(find_next_line){
+			double x1 = point_set.at(i).x;
+			double y1 = point_set.at(i).y;
+			i++;
+			double x2 = point_set.at(i).x;
+			double y2 = point_set.at(i).y;
+			double dist = two_points_distance_double(x1,y1,x2,y2);
+			if(dist > POINT_n_P_DIST_MAX)//find next line
+				continue;
+			find_next_line = false;
+			line.len = dist;
+			line.A = y2-y1;
+			line.B = x1-x2;
+			line.C = x2*y1-x1*y2;
+			line.angle_x = atan((-1)*line.A/line.B)*180/PI;
+			line.x1 = x1;
+			line.y1 = y1;
+			line.x2 = x2;
+			line.y2 = y2;
+			lines->push_back(line);
+			line_count++;
+			point_count+=2;
+		}
+		else{
+			double xn = point_set.at(i).x;
+			double yn = point_set.at(i).y;
+			double dist_p2l = fabs(line.A*xn+line.B*yn+line.C)/sqrt(line.A*line.A+line.B*line.B);//point to line distance
+			double dist_p2p = two_points_distance_double(point_set.at(i-1).x ,point_set.at(i-1).y ,xn ,yn);//current point to last point distance
+			point_count++;
+			if(dist_p2l> LINE_n_P_DIST_MAX || dist_p2p > POINT_n_P_DIST_MAX){ //find next line
+				find_next_line = true;
+				point_count = 0;
+				continue;
+			}
+			if(point_count>3){
+				double xn_2 = (point_set.at(i-1).x - point_set.at(i-2).x) /2.0 + point_set.at(i-2).x;
+				double yn_2 = (point_set.at(i-1).y - point_set.at(i-2).y) /2.0 + point_set.at(i-2).y;
+				/*---update A,B,C,x2,y2,angle_x---*/
+				LineABC *last_line = &lines->back();
+				last_line->A = yn_2 - line.y1;
+				last_line->B = line.x1 - xn_2;
+				last_line->C = xn_2*line.y1-line.x1*yn_2;
+				last_line->angle_x= atan(-1*(last_line->A / last_line->B))*180/PI;
+				last_line->x2 = xn_2;
+				last_line->y2 = yn_2;
+				last_line->len = two_points_distance_double(line.x1,line.y1,xn_2,yn_2);
+			}
+		}
+		i++;
+	}
+
+	/*------combine short lines to long lines------*/
+	std::vector<LineABC> lines_after;
+	while(lineCombine(lines,&lines_after)){
+		lines->clear();
+		*lines = lines_after;
+		lines_after.clear();
+	}
+
+	/*------print line data------*/
+	/*
+	std::string msg("");
+	std::vector<LineABC>::iterator it;
+	for(it = lines->begin();it!= lines->end();it++){
+		msg+= "\n[A:"+ std::to_string(it->A) +",B:" + std::to_string(it->B) +",C:" +
+			std::to_string(it->C)+",len = "+std::to_string(it->len)+",angle_x = " +
+			std::to_string(it->angle_x)+",("+std::to_string(it->x1)+","+
+			std::to_string(it->y1)+"),("+std::to_string(it->x2)+","+std::to_string(it->y2)+")]";
+	}
+	ROS_INFO("%s,%d,pub line markers,lines numbers \033[35m%u\033[0m, lines:\033[32m %s \033[0m",__FUNCTION__,__LINE__,lines->size(),msg.c_str());
+	*/
+	pubLineMarker(lines);
+	return true;
+}
+
+/*
+ * @auther mengshige1988@qq.com
+ * @breif get align angle
+ * @param1 liens vector
+ * @param2 align angle
+ * @retrun true if found align angle ,alse return false
+ * */
+bool Laser::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
+{
+	if(lines->empty())
+		return false;
+	const float DIF_ANG_RANGE = 10.0;//different angle ranges
+	const float LONG_ENOUGTH = 1.0;//in meters
+	std::vector<float> same_angle_count;
+	std::vector<LineABC>::const_iterator it1,it2;
+	float len = 0.0;
+	int i=0;
+	int pos = 0;
+	/*----find the longest one in lines---*/
+	for(it1 = lines->cbegin(); it1!= lines->cend(); it1++){
+		if(it1->len >= len){
+			len = it1->len;
+			pos = i;
+		}
+		i++;
+	}
+	if(lines->at(pos).len >= LONG_ENOUGTH){
+		*align_angle = lines->at(pos).angle_x;
+		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
+		return true;
+	}
+
+	/*---find those most populars in lines ---*/
+	float sum = 0.0;
+	float avg = 0.0;
+	i=0;
+	if(lines->size() >1){
+		for(it2 = lines->cbegin();it2!=lines->cend();it2++){
+			if(i > lines->size()/2)
+				return false;
+			i++;
+			sum = 0.0;
+			same_angle_count.clear();
+			for(it1 = it2;it1!= lines->cend(); it1++){
+				if((it1+1) != lines->cend()){
+					if(fabs((it1+1)->angle_x - it1->angle_x) < DIF_ANG_RANGE){
+						sum += it1->angle_x; 
+						same_angle_count.push_back(it1->angle_x);
+						printf("similar angle %f\n",it1->angle_x);
+						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
+							avg = sum / (1.0*same_angle_count.size());
+							*align_angle = avg;
+							ROS_INFO("%s,%d,get most popular line angle %f",__FUNCTION__,__LINE__,avg);
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
 
 bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, double *line_angle, double *distance)
 {
@@ -645,7 +882,52 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 	return true;
 }
 
-void Laser::pubLineMarker(std::vector<std::vector<Double_Point> > *groups) {
+void Laser::pubLineMarker( const std::vector<LineABC> *lines)
+{
+	visualization_msgs::Marker line_marker;
+	line_marker.ns = "line_marker_2";
+	line_marker.id = 0;
+	line_marker.type = visualization_msgs::Marker::LINE_LIST;
+	line_marker.action= 0;//add
+	line_marker.lifetime=ros::Duration(0);
+	line_marker.scale.x = 0.05;
+	//line_marker.scale.y = 0.05;
+	//line_marker.scale.z = 0.05;
+	line_marker.color.r = 0.5;
+	line_marker.color.g = 1.0;
+	line_marker.color.b = 0.2;
+	line_marker.color.a = 1.0;
+	line_marker.header.frame_id = "/map";
+	line_marker.header.stamp = ros::Time::now();
+	geometry_msgs::Point point1;
+	point1.z = 0.0;
+	geometry_msgs::Point point2;
+	point2.z = 0.0;
+	line_marker.points.clear();
+	std::vector<LineABC>::const_iterator it;
+	if(!lines->empty() && lines->size() >= 2){
+		for(it = lines->cbegin(); it != lines->cend();it++){
+			point1.x = it->x1;
+			point1.y = it->y1;
+			point2.x = it->x2;
+			point2.y = it->y2;
+			line_marker.points.push_back(point1);
+			line_marker.points.push_back(point2);
+		}
+		line_marker_pub2.publish(line_marker);
+		line_marker.points.clear();
+	}
+	/*
+	else{
+		line_marker.points.clear();
+		line_marker_pub2.publish(line_marker);
+	}
+	*/
+
+}
+
+void Laser::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
+{
 	int points_size;
 	visualization_msgs::Marker line_marker;
 	line_marker.ns = "line_marker";
@@ -1395,40 +1677,46 @@ bool Laser::getObstacleDistance(uint8_t dir, double range, uint32_t &seq, laserD
 	}
 	return true;
 }
-void Laser::pubPointMarker(std::vector<Double_Point> *point)
+
+void Laser::pubPointMarkers(const std::vector<Point_d_t> *points)
 {
-	int points_size;
+	//int points_size;
 	visualization_msgs::Marker point_marker;
 	point_marker.ns = "point_marker";
 	point_marker.id = 0;
-	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.type = visualization_msgs::Marker::POINTS;
 	point_marker.action= 0;//add
 	point_marker.lifetime=ros::Duration(0);
-	point_marker.scale.x = 0.01;
-	point_marker.scale.y = 0.01;
-	point_marker.scale.z = 0.01;
-	point_marker.color.r = 0.0;
+	point_marker.scale.x = 0.02;
+	point_marker.scale.y = 0.02;
+	point_marker.scale.z = 0.0;
+	point_marker.color.r = 1.0;
 	point_marker.color.g = 1.0;
-	point_marker.color.b = 0.0;
+	point_marker.color.b = 1.0;
 	point_marker.color.a = 1.0;
-	point_marker.header.frame_id = "/base_link";
+	point_marker.header.frame_id = "/map";
 	point_marker.header.stamp = ros::Time::now();
-	laser_points_.x = 0.0;
-	laser_points_.y = 0.0;
-	laser_points_.z = 0.0;
 
-	if (!(*point).empty()) {
-		for (std::vector<Double_Point>::iterator iter = (*point).begin(); iter != (*point).end(); ++iter) {
-			laser_points_.x = iter->x;
-			laser_points_.y = iter->y;
-			point_marker.points.push_back(laser_points_);
+	geometry_msgs::Point laser_points;
+	laser_points.z = 0;
+	if (!points->empty()) {
+		std::string msg("");
+		for (std::vector<Double_Point>::const_iterator iter = points->cbegin(); iter != points->cend(); ++iter) {
+			laser_points.x = iter->x;
+			laser_points.y = iter->y;
+			point_marker.points.push_back(laser_points);
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
 		}
 		point_marker_pub.publish(point_marker);
+		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
 		point_marker.points.clear();
-	} else {
+	}
+	/*
+	else {
 		point_marker.points.clear();
 		point_marker_pub.publish(point_marker);
 	}
+	*/
 }
 
 bool Laser::laserCheckFresh(float duration, uint8_t type)

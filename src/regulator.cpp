@@ -631,7 +631,6 @@ bool LinearRegulator::isReach()
 {
 	auto curr_p = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target = (IS_X_AXIS(g_new_dir)) ? s_target.X : s_target.Y;
-
 #if LINEAR_MOVE_WITH_PATH
 //	ROS_WARN("%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr_p(%d),target(%d)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr_p, target);
 	if (path_.cells.empty() || path_.cells.size() == 1)

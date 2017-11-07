@@ -45,7 +45,7 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void pubPointMarker(std::vector<Double_Point> *point);
+	void pubPointMarkers(const std::vector<Point_d_t> *point);
 
 	//void startShield(void);
 	//void stopShield(void);
@@ -56,6 +56,10 @@ public:
 	uint8_t isRobotSlip();
 
 	bool laserCheckFresh(float duration, uint8_t type = 1);
+	bool findLines(std::vector<LineABC> *lines);
+	void pubLineMarker(const std::vector<LineABC> *lines);
+	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
+
 private:
 
 	//void stop(void);
@@ -64,6 +68,7 @@ private:
 	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void laserDataFilter(sensor_msgs::LaserScan& laserScanData, double delta);
 
+	int angle_n_;
 	uint8_t is_scan_ready_;
 	uint8_t is_scan2_ready_;
 
@@ -91,6 +96,7 @@ private:
 	bool isNoiseNow = false;
 	//static float *last_ranges_;
 	ros::Publisher line_marker_pub = nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
+	ros::Publisher line_marker_pub2 = nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 	ros::Publisher point_marker_pub = nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	ros::Publisher fit_line_marker_pub = nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 //	ros::Publisher laser_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("laser_filter",1);

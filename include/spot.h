@@ -30,6 +30,7 @@
 #define ANTI_CLOCKWISE_OUT  4
 #define ANTI_CLOCKWISE_IN    8
 
+// legacy define remove?
 #define First_Round       10
 
 typedef enum {
@@ -42,7 +43,7 @@ class SpotMovement {
 
 private:
 
-	float spot_diameter_;//
+	float spot_diameter_;
 
 	std::vector<Cell_t> *targets_;
 	std::vector<Cell_t> targets_cw_;
@@ -81,32 +82,30 @@ private:
 
 public:
 
-/*
- * @author mengshige1988@qq.com
- * @brief SpotMovement instruction
- * @param diameter in meters
- * @return None
- */
+	/*
+	 * @author mengshige1988@qq.com
+	 * @brief SpotMovement instruction
+	 * @param diameter in meters
+	 * @return None
+	 */
 	SpotMovement(float diameter);
 
 	~SpotMovement();
 
-/*
- * @author mengshige1988@qq.com
- * @brief init spot while ready to spot movement
- * @param None
- * @return void
- */
-
+	/*
+	 * @author mengshige1988@qq.com
+	 * @brief init spot while ready to spot movement
+	 * @param None
+	 * @return void
+	 */
 	void spotInit(float diameter, Cell_t cur_point);
 
-/*
- * @author mengshige1988@qq.com
- * @brief spot deinit
- * @param None
- * @return None
- */
-
+	/*
+	 * @author mengshige1988@qq.com
+	 * @brief spot deinit
+	 * @param None
+	 * @return None
+	 */
 	void spotDeinit();
 
 	uint8_t isSpotInit()
@@ -116,50 +115,49 @@ public:
 
 	static SpotMovement *instance();
 
-/*
- * @author mengshige1988@qq.com
- * @brief when obstical detcet spot set near cell
- * @param stp(stop point)
- * @return None
- */
+	/*
+	 * @author mengshige1988@qq.com
+	 * @brief when obstical detcet spot set near cell
+	 * @param stp(stop point)
+	 * @return None
+	 **/
 	//uint8_t setNearCell(const Cell_t& cur_cell,Cell_t *stp);
 
-/*
- * @author mengshige1988@qq.com
- * @brief generate target points
- * @param1 sp_type
- *		sp_type;SPIRAL_RIGHT_OUT,SPIRAL_LEFT_OUT,SPIRAL_RIGHT_OUT,SPIRAL_LEFT_IN.
- * @param2 diameter
- *			spiral diameters in meters
- * @param3 *target
- *			target list pointer
- * @param4 begin point
- * @return None
- */
+	/*
+	 * @author mengshige1988@qq.com
+	 * @brief generate target points
+	 * @param1 sp_type;SPIRAL_RIGHT_OUT,SPIRAL_LEFT_OUT,SPIRAL_RIGHT_OUT,SPIRAL_LEFT_IN.
+	 * @param2 spiral diameters in meters
+	 * @param3 target list 
+	 * @param4 begin cell
+	 * @return None
+	 **/
 	void genTargets(uint8_t spiral_type, float radian, std::vector<Cell_t> *target, Cell_t curpoint);
 
-/*
- * @author mengshige1988@qq.com
- * @brief get next spot target
- * @param next target Point 's address
- * @return 1 found ,0 not found
- * */
+	/*
+	 * @author mengshige1988@qq.com
+	 * @brief get next spot targets
+	 * @param1 current cell(begin cell)
+	 * @param2 target list
+	 * @return 1 found ,0 not found
+	 * */
 	uint8_t spotNextTarget(const Cell_t &cur_cell,PPTargetType *target);
 
-/*
-* @author mengshige1988@qq.com
-* @brief get neighbour cell from current iterator.
-* @param1 current interator.
-* @param2 neighbour cell.
-* @return None.
-* */
+	/*
+	* @author mengshige1988@qq.com
+	* @brief get neighbour cell from current iterator.
+	* @param1 current interator.
+	* @param2 neighbour cell.
+	* @return None.
+	* */
 	//void getNeighbourCell(std::vector<Cell_t>::iterator &bp,Cell_t *np);
-/*
-* @author mengshige1988@qq.com
-* @brief get stright to the colume or row end.
-* @param1 current target list interator
-* @return None.
-* */
+
+	/*
+	* @author mengshige1988@qq.com
+	* @brief get stright to the colume or row end.
+	* @param1 current target list interator
+	* @return None.
+	* */
 	void stright2End(uint8_t spt,std::vector<Cell_t>::iterator &tp);
 
 	/*
@@ -170,9 +168,6 @@ public:
 	* */
 	void pushAllTargets(PPTargetType *target_path);
 
-/*
- *
- * */
 	void setSpiralType(uint8_t spi_t)
 	{ spiral_type_ = spi_t; }
 

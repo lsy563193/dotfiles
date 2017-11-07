@@ -3336,7 +3336,7 @@ uint8_t check_tilt()
 		if (get_front_acc() - get_front_init_acc() > FRONT_TILT_LIMIT)
 		{
 			front_tilt_count += 2;
-			ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, get_front_acc(), get_front_init_acc(), front_tilt_count);
+			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, get_front_acc(), get_front_init_acc(), front_tilt_count);
 		}
 		else
 		{
@@ -3348,7 +3348,7 @@ uint8_t check_tilt()
 		if (get_left_acc() - get_left_init_acc() > LEFT_TILT_LIMIT)
 		{
 			left_tilt_count++;
-			ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, get_left_acc(), get_left_init_acc(), left_tilt_count);
+			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, get_left_acc(), get_left_init_acc(), left_tilt_count);
 		}
 		else
 		{
@@ -3360,7 +3360,7 @@ uint8_t check_tilt()
 		if (get_right_acc() - get_right_init_acc() > RIGHT_TILT_LIMIT)
 		{
 			right_tilt_count++;
-			ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, get_right_acc(), get_right_init_acc(), right_tilt_count);
+			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, get_right_acc(), get_right_init_acc(), right_tilt_count);
 		}
 		else
 		{
@@ -3372,7 +3372,7 @@ uint8_t check_tilt()
 		if (abs(robot::instance()->getZAcc() - robot::instance()->getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
 			z_tilt_count++;
-			ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, robot::instance()->getZAcc(), robot::instance()->getInitZAcc());
+			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, robot::instance()->getZAcc(), robot::instance()->getInitZAcc());
 		}
 		else
 		{
@@ -3383,7 +3383,7 @@ uint8_t check_tilt()
 		}
 
 		if (left_tilt_count > 7 || front_tilt_count > 7 || right_tilt_count > 7 || z_tilt_count > 7)
-			ROS_WARN("%s %d: tilt_count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_tilt_count, front_tilt_count, right_tilt_count, z_tilt_count);
+			//ROS_WARN("%s %d: tilt_count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_tilt_count, front_tilt_count, right_tilt_count, z_tilt_count);
 
 		if (front_tilt_count + left_tilt_count + right_tilt_count + z_tilt_count > TILT_COUNT_REACH)
 		{
