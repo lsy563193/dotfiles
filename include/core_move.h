@@ -102,8 +102,14 @@ uint8_t CM_MoveForward(void);
 uint8_t cm_touring(void);
 void cm_cleaning(void);
 
-void cm_check_should_go_home(void);
-void cm_check_should_spot(void);
+void cs_setting(int cs);
+bool cs_is_switch_go_home(void);
+void cs_trapped_setting();
+void cs_clean_setting();
+bool cs_is_switch_tmp_spot(void);
+bool cs_is_switch_go_charger(const Cell_t& curr, PPTargetType& path);
+bool cs_is_switch_go_exploration(const Cell_t& start, PPTargetType& path);
+bool cs_is_switch_trapped(void);
 
 Cell_t cm_update_position(bool is_turn = false);
 //void cm_update_map();

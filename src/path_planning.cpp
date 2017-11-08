@@ -79,6 +79,7 @@ Cell_t g_index[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 
 const int16_t g_home_x = 0, g_home_y = 0;
 Cell_t g_zero_home = {0,0};
+Cell_t g_virtual_target = {SHRT_MAX,SHRT_MAX};//for followall
 
 // This is for the continue point for robot to go after charge.
 Cell_t g_continue_cell;
@@ -1335,22 +1336,57 @@ int16_t path_escape_trapped(const Cell_t& curr)
 	return val;
 }
 
-bool path_nav_target(const Cell_t& curr, PPTargetType& path, const int is_reach)
+bool cm_is_reach()
+{
+	return g_plan_path.empty();
+}
+
+bool path_next_spot(const Cell_t &start, PPTargetType &path) {
+	if (!SpotMovement::instance()->spotNextTarget(start, &path))
+		return false;
+}
+
+bool path_next_fw(const Cell_t &start, PPTargetType &path, const int is_reach) {
+	if (mt_is_linear()) {
+		if (cm_is_reach()) {
+			path.push_back(g_virtual_target);
+		}
+	}
+	else {
+		if (g_wf_reach_count == 0 ||
+				(g_wf_reach_count < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
+				 wf_is_isolate())) {
+			map_reset(WFMAP);
+			auto angle = -900;
+			if (g_wf_reach_count == 0) {
+				angle = 0;
+			}
+			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
+			Cell_t cell;
+			cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+			path.push_back(cell);
+		}
+	}
+
+}
+
+bool path_next_nav(const Cell_t &start, PPTargetType &path, const int is_reach)
 {
 	bool ret = true;
-	if (g_resume_cleaning && !path_get_continue_target(curr, path))
+	if (g_resume_cleaning && !path_get_continue_target(start, path))
 				g_resume_cleaning = false;
 
 	if (!g_resume_cleaning) {
-		if (!path_lane_is_cleaned(curr, path, is_reach)) {
+		if (!path_lane_is_cleaned(start, path, is_reach)) {
 			if (g_wf_reach_count > 0) {
-				isolate_target(curr, path);
+				isolate_target(start, path);
 			}
 			else {
-				ret = path_target(curr, path);//-1 not target, 0 found
+				ret = path_target(start, path);//-1 not target, 0 found
 			}
 		}
 	}
+	path_full_angle(start, path);
 	return ret;
 }
 
@@ -1401,123 +1437,60 @@ void path_full_angle(const Cell_t& start, PPTargetType& path)
 //	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 	g_new_dir = g_plan_path.front().TH;
 	path.pop_front();
-
 }
-bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
+
+bool path_next(const Cell_t& start, PPTargetType& path)
 {
-	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
+	auto is_reach = cm_is_reach();
+	if (cm_is_follow_wall()) {
+		return path_next_fw(start, path, is_reach);
+	}
+	else if (cm_is_spot()) {
+		return path_next_spot(start, path, is_reach);
+	}
+	else if (cm_is_navigation() || cm_is_exploration()) {
+		return path_next_nav(start, path, is_reach);
+	}
+}
 
-	if (!cs_is_go_home())
-		cm_check_should_go_home();
-
-	if(!cs_is_go_home())
-		cm_check_should_spot();
-
-	if(!cs_is_go_home()) {
-		if (cm_is_follow_wall()){
-			ROS_INFO("  path_next Clean_Mode:(%d)", cm_get());
-			if (mt_is_linear()) {
-				if (start != path.back()) {
-					ROS_INFO("  start follow wall");
-					mt_set(CM_FOLLOW_LEFT_WALL);
-				} else {
-					ROS_INFO("  reach 8m, go_home.");
-					g_finish_cleaning_go_home = true;
-					cm_check_should_go_home();
-				}
-			} else {
-				ROS_INFO("  wf_is_go_home");
-				if (g_keep_on_wf) {
-					ROS_INFO("  no  keep on follow wall");
-					mt_set(CM_FOLLOW_LEFT_WALL);
-					//g_keep_on_wf = false;
-				} else {
-					if (g_wf_reach_count == 0 ||
-							(g_wf_reach_count < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
-							 wf_is_isolate())) {
-						ROS_INFO("  no, CM_LINEARMOVE");
-						mt_set(CM_LINEARMOVE);
-						map_reset(WFMAP);
-						ROS_INFO("  g_wf_reach_count(%d)", g_wf_reach_count);
-						auto angle = -900;
-						if (g_wf_reach_count == 0) {
-							angle = 0;
-						}
-//						g_wf_reach_count++;
-						const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-						Cell_t cell;
-						cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
-						path.clear();
-						path.push_front(cell);
-						path.push_front(start);
-						ROS_INFO("  target.X = %d target.Y = %d", cell.X, cell.Y);
-					} else {
-						ROS_INFO("  yes isolate_count(%d),times(%d),", g_wf_reach_count, get_work_time() > WALL_FOLLOW_TIME);
-						g_finish_cleaning_go_home = true;
-						cm_check_should_go_home();
-					}
-				}
-			}
-		}
-		else if ((SpotMovement::instance()->getSpotType() == CLEAN_SPOT ||
-														SpotMovement::instance()->getSpotType() == NORMAL_SPOT)) {
-			if (!SpotMovement::instance()->spotNextTarget(start, &path))
-				return false;
-//			debug_map(MAP, path.back().X, path.back().Y);
-//			path.push_front(start);
-		}
-		else if (cm_is_navigation() || cm_is_exploration()) {
-			path.clear();
-			if(g_trapped_mode == 0) {
-				if (!path_nav_target(start, path, is_reach)) {
-					if (is_trapped(start, path)) {
-						g_trapped_mode = 1;
-						// This led light is for debug.
-						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						g_wf_start_timer = time(NULL);
-						g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
-					}
-					else {
-						g_finish_cleaning_go_home = true;
-						g_no_uncleaned_target = true;
-						cm_check_should_go_home();
-					}
-				}
-			}//check trapped first
-			else if(!is_trapped(start, path) && path_nav_target(start, path, is_reach)) {
-				g_wf_reach_count = 0;
-				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
-				g_trapped_mode = 0;
-				// This led light is for debug.
-				if (cm_is_exploration())
-					set_led_mode(LED_STEADY, LED_ORANGE);
-				else
-					set_led_mode(LED_STEADY, LED_GREEN);
-			}
+bool cs_path_next(const Cell_t& start, PPTargetType& path) {
+	if (!cs_is_go_home()) {
+		if ((cm_is_go_home() || g_remote_home || g_battery_home)) {//cs_is_switch_go_home()
+			cs_set(CS_GO_HOME);
 		}
 	}
 
-	if(cs_is_go_home()) {
-		if (cm_is_go_home() || start == g_home || !path_get_home_target(start, path, is_reach)) {
-			g_plan_path.clear();
-			if(start == g_home && g_home == g_zero_home)
-			{
-				if(!cm_turn_and_check_charger_signal())
-					return false;
-			}
-			ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
-			g_during_go_to_charger = true;
-			g_tilt_enable = false; //disable tilt detect
-			set_led_mode(LED_STEADY, LED_ORANGE);
-			mt_set(CM_GO_TO_CHARGER);
-			return true;
+	if (!cs_is_go_home()) {
+		if (g_remote_spot) {//cs_is_switch_tmp_spot()
+			cs_set(CS_TMP_SPOT);
 		}
 	}
 
-	mt_update(start,path);
+	if (cs_is_trapped()) {
+		if (!is_trapped(start, path))
+			cs_set(CS_CLEAN);
+	}
 
-	path_full_angle(start, path);
+	if (cs_is_clean()) {
+		if (!path_next(start, path)) {
+			if (is_trapped(start, path))
+				cs_set(CS_TRAPPED);
+			else
+				cs_set(CS_GO_HOME);
+		}
+	}
+	else if (cs_is_tmp_spot()) {
+		path_next_spot(start, path);
+	}
 
+	if (cs_is_go_home()) {
+		if (start == g_home || !path_get_home_target(start, path)) {
+			if (start == g_home && g_home == g_zero_home) {
+				if (!cm_turn_and_check_charger_signal())
+					cs_set(CS_GO_CHANGE);
+			}
+		}
+	}
 	return true;
 }
 
@@ -1657,7 +1630,7 @@ void path_set_home(const Cell_t& curr)
  * return :NO_TARGET_LEFT (0)
  *        :TARGET_FOUND (1)
  */
-bool path_get_home_target(const Cell_t& curr, PPTargetType& path,const int is_reach) {
+bool path_get_home_target(const Cell_t& curr, PPTargetType& path) {
 	if(g_home_way_list.empty()) {
 		g_home_way_it = _gen_home_ways(g_homes.size(), g_home_way_list);
 		BoundingBox2 map_tmp{{g_x_min, g_y_min}, {g_x_max, g_y_max}};

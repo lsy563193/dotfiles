@@ -109,7 +109,10 @@ void wf_path_planning_initialize();
  * 		2 if robot is trapped
  * 		-1 if target is blocked
  */
-bool path_next(const Cell_t& curr, PPTargetType& path, const int is_reach);
+bool path_next(const Cell_t& curr, PPTargetType& path);
+
+bool cs_path_next(const Cell_t& start, PPTargetType& path);
+void path_full_angle(const Cell_t& start, PPTargetType& path);
 
 //void path_update_cell_history(void);
 

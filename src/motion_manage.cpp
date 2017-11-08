@@ -154,7 +154,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_trapped_mode = 0;
 	if(!is_clean_paused())
 		g_from_station = 0;
-	g_finish_cleaning_go_home = false;
 	g_motion_init_succeeded = false;
 	g_during_go_to_charger = false;
 
@@ -563,7 +562,9 @@ bool MotionManage::initNavigationCleaning(void)
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 		if (!cs_is_go_home())
-			cm_check_should_go_home();
+			if(cs_is_switch_go_home())
+				cs_setting(CS_GO_HOME);
+
 	}
 
 	/*Move back from charge station*/

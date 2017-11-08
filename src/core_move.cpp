@@ -467,7 +467,11 @@ void cm_cleaning() {
 				ROS_WARN("%s %d: Curr(%d, %d), g_is_near(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, g_is_near);
 				start = g_plan_path.back();
 			}
-			path_next(start, g_plan_path, is_reach);
+
+			cs_path_next(start, g_plan_path);
+
+			mt_update(start, g_plan_path);
+
 			MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 			if( !((tmp_tm == 1 && g_trapped_mode == 1)||g_is_near) )
 			{
@@ -487,36 +491,20 @@ void cm_cleaning() {
 			cm_self_check_with_handle();
 	}
 }
-
-void cm_check_should_go_home(void)
-{
-	if (cm_is_go_home() || g_remote_home || g_battery_home || g_finish_cleaning_go_home)
-	{
-		ROS_WARN("%s %d: cm_is_go_home(%d) || Receive g_remote_home(\033[32m%d\033[0m), g_battery_home(\033[32m%d\033[0m), finish cleaning(\033[32m%d\033[0m).", __FUNCTION__, __LINE__, cm_is_go_home(), g_remote_home,g_battery_home,g_finish_cleaning_go_home);
-		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
-
-		// Set variables.
-		if (g_remote_home)
-			g_go_home_by_remote = true;
-		cs_set(CS_GO_HOME);
-		g_remote_home = false;
-		g_battery_home = false;
-		g_finish_cleaning_go_home = false;
-
-		// Set motors and led.
+void cs_setting(int cs) {
+	if(cs == CS_GO_HOME) {
 		work_motor_configure();
 		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
 		if (g_remote_home || cm_is_go_home())
 			set_led_mode(LED_STEADY, LED_ORANGE);
 
 		// Special handling for wall follow mode.
-		if (cm_is_follow_wall())
-		{
+		if (cm_is_follow_wall()) {
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
 			cm_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
-			ros_map_convert(MAP, true,false, false);
+			ros_map_convert(MAP, true, false, false);
 			map_mark_robot(MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.
@@ -524,12 +512,13 @@ void cm_check_should_go_home(void)
 			wav_play(WAV_BATTERY_LOW);
 		if (!cm_is_go_home())
 			wav_play(WAV_BACK_TO_CHARGER);
-	}
-}
 
-void cm_check_should_spot(void)
-{
-	if (g_remote_spot)
+		if (g_remote_home)
+			g_go_home_by_remote = true;
+		g_remote_home = false;
+		g_battery_home = false;
+	}
+	if(cs == CS_TMP_SPOT)
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
@@ -546,8 +535,26 @@ void cm_check_should_spot(void)
 		}
 		g_remote_spot = false;
 	}
+	if(cs == CS_TRAPPED)
+	{
+		g_wf_start_timer = time(NULL);
+		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
+		set_led_mode(LED_FLASH, LED_GREEN, 300);
+	}
+	if(cs == CS_CLEAN) {
+		g_wf_reach_count = 0;
+		// This led light is for debug.
+		if (cm_is_exploration())
+			set_led_mode(LED_STEADY, LED_ORANGE);
+		else
+			set_led_mode(LED_STEADY, LED_GREEN);
+	}
+	if(cs == CS_GO_CHANGE)
+	{
+		g_tilt_enable = false; //disable tilt detect
+		set_led_mode(LED_STEADY, LED_ORANGE);
+	}
 }
-
 /* Statement for cm_go_to_charger_(void)
  * return : true -- going to charger has been stopped, either successfully or interrupted.
  *          false -- going to charger failed, move to next point.
