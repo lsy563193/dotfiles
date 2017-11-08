@@ -2,9 +2,8 @@
 #define __MYMATH_H
 
 #include <stdint.h>
-
-#include "mathematics.h"
-#include "stdlib.h"
+#include <math.h>
+#include <stdlib.h>
 
 #define PI  3.141592653589793
 
@@ -323,25 +322,54 @@ typedef struct Cell_t_{
   /*
    * Type declaration of int16_t Vector2 as Cell_t
    */
-  typedef Vector2<int16_t> Cell_t;
+typedef Vector2<int16_t> Cell_t;
 
+typedef struct Point_d_t{
+	double x;
+	double y;
+} Double_Point;
 
+typedef struct Point_d_t Point_d_t;
 
-typedef struct{
+typedef struct
+{
   double A;
   double B;
   double C;
+  double len;
+  double x1;//point 1
+  double y1;
+  double x2;//point 2
+  double y2;
+  double angle_x; //line with x axis angle in degree
+  double dist_2_this_line(Point_d_t p){
+	  return fabs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
+  }
 } LineABC;
+
+// line: y=Kx+B
+typedef struct LineKB{
+	float K;
+	float B;
+	float len;
+	float x1;
+	float y1;
+	float x2;
+	float y2;
+	float get_x_by_y(const float y){
+		return (float)(y-B)/K;
+	}
+	float get_y_by_x(const float x){
+		return (float)(K*x)+B;
+	}
+} LineKB;
 
 typedef struct{
 	int32_t X;
 	int32_t Y;
 } Point32_t;
 
-typedef struct{
-	double x;
-	double y;
-} Double_Point;
+
 /*
 typedef struct Pose16_t_{
 	int16_t X;
