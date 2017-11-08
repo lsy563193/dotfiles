@@ -666,8 +666,8 @@ uint8_t map_set_laser()
 
 uint8_t map_set_obs()
 {
-	auto obs_trig = /*g_obs_triggered*/get_obs_status();
-//	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: g_obs_triggered(%d)",__FUNCTION__,__LINE__,g_obs_triggered);
+	auto obs_trig = /*ev.obs_triggered*/get_obs_status();
+//	ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s,%d: ev.obs_triggered(%d)",__FUNCTION__,__LINE__,ev.obs_triggered);
 	if(! obs_trig)
 		return 0;
 	uint8_t obs_lr[] = {BLOCK_LEFT, BLOCK_RIGHT};
@@ -717,12 +717,12 @@ uint8_t map_set_obs()
 
 uint8_t map_set_bumper()
 {
-	auto bumper_trig = /*g_bumper_triggered*/get_bumper_status();
-//	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
-	if (g_bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
+	auto bumper_trig = /*ev.bumper_triggered*/get_bumper_status();
+//	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, ev.bumper_jam, g_bumper_cnt, bumper_trig);
+	if (ev.bumper_jam || g_bumper_cnt>=2 || ! bumper_trig)
 		// During self check.
 		return 0;
-//	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, g_bumper_jam, g_bumper_cnt, bumper_trig);
+//	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, ev.bumper_jam, g_bumper_cnt, bumper_trig);
 	std::vector<Cell_t> d_cells;
 
 	if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
@@ -829,8 +829,8 @@ uint8_t map_set_slip()
 
 uint8_t map_set_cliff()
 {
-	auto cliff_trig = g_cliff_triggered/*get_cliff_status()*/;
-	if (g_cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
+	auto cliff_trig = ev.cliff_triggered/*get_cliff_status()*/;
+	if (ev.cliff_jam || g_cliff_cnt>=2 || ! cliff_trig)
 		// During self check.
 		return 0;
 
@@ -862,9 +862,9 @@ uint8_t map_set_cliff()
 
 uint8_t map_set_rcon()
 {
-	auto rcon_trig = g_rcon_triggered/*get_rcon_trig()*/;
+	auto rcon_trig = ev.rcon_triggered/*get_rcon_trig()*/;
 	if(mt_is_linear())
-		g_rcon_triggered = 0;
+		ev.rcon_triggered = 0;
 	if(! rcon_trig)
 		return 0;
 	if( g_from_station && g_in_charge_signal_range && cs_is_going_home())//while in cs_is_going_home() mode or from_station dont mark rcon signal

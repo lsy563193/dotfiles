@@ -16,6 +16,7 @@
 #include "movement.h"
 #include "user_interface.h"
 #include <ros/ros.h>
+#include <event_manager.h>
 #include "config.h"
 #include "wav.h"
 #include "robot.hpp"
@@ -408,7 +409,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			{
 				if (is_clean_paused())
 				{
-					g_remote_home = true;
+					ev.remote_home = true;
 					extern bool g_go_home_by_remote;
 					g_go_home_by_remote = true;
 					temp_mode = Clean_Mode_Navigation;

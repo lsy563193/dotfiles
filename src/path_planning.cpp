@@ -1339,7 +1339,7 @@ int16_t path_escape_trapped(const Cell_t& curr)
 
 bool cm_is_reach()
 {
-	return (g_bumper_triggered || g_obs_triggered || g_cliff_triggered || g_rcon_triggered);
+	return (ev.bumper_triggered || ev.obs_triggered || ev.cliff_triggered || ev.rcon_triggered);
 }
 
 bool path_next_spot(const Cell_t &start, PPTargetType &path) {
@@ -1413,7 +1413,7 @@ bool cm_turn_and_check_charger_signal(void)
 			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
 			return true;
 		}
-		else if(g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
+		else if(g_key_clean_pressed || ev.fatal_quit || g_charge_detect)
 		{
 			ROS_INFO("%s, %d: event triggered, return now.", __FUNCTION__, __LINE__);
 			return false;
@@ -1457,7 +1457,7 @@ bool path_next(const Cell_t& start, PPTargetType& path)
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 	if (!cs_is_going_home()) {
-		if ((g_remote_home || g_battery_home)) {//cs_is_switch_go_home()
+		if ((ev.remote_home || ev.battery_home)) {//cs_is_switch_go_home()
 			if(g_have_seen_charger)
 				cs_set(CS_GO_HOME_POINT);
 			else
@@ -1466,7 +1466,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 	}
 
 	if (!cs_is_going_home()) {
-		if (g_remote_spot) {//cs_is_switch_tmp_spot()
+		if (ev.remote_spot) {//cs_is_switch_tmp_spot()
 			cs_set(CS_TMP_SPOT);
 		}
 	}
@@ -1773,7 +1773,7 @@ bool path_get_continue_target(const Cell_t& curr, PPTargetType& path)
 int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 	int16_t ret;
 	//extern int g_wf_reach_count;
-	//extern bool g_fatal_quit_event;
+	//extern bool ev.fatal_quit;
 	//if (g_wf_reach_count <= 3) {
 		auto angle = -900;
 	Cell_t cell;
@@ -1785,7 +1785,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		ret = 1;
 		ROS_INFO("target.X = %d target.Y = %d", path.back().X, path.back().Y);
 	//} else {
-	//	g_fatal_quit_event = true;
+	//	ev.fatal_quit = true;
 	//	ret = 0;
 	//}
 	return ret;

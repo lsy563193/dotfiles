@@ -98,7 +98,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
+		if (ev.fatal_quit || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Launch obstacle detector interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -121,7 +121,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
+		if (ev.fatal_quit || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Detecting line interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -157,12 +157,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	g_during_go_to_charger = false;
 
 	bool remote_home_during_pause = false;
-	if (is_clean_paused() && g_remote_home)
+	if (is_clean_paused() && ev.remote_home)
 		remote_home_during_pause = true;
 	event_manager_reset_status();
 	if (remote_home_during_pause)
 	{
-		g_remote_home = true;
+		ev.remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
 
@@ -288,7 +288,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			continue;
 		}
 
-		if (g_fatal_quit_event || g_key_clean_pressed || g_cliff_all_triggered)
+		if (ev.fatal_quit || g_key_clean_pressed || g_cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Waiting for slam interrupted.", __FUNCTION__, __LINE__);
 			break;
@@ -305,7 +305,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		return;
 	}
 	s_laser->lidarShieldDetect(ON);
-	g_rcon_triggered = g_bumper_triggered =  g_obs_triggered  = 0;
+	ev.rcon_triggered = ev.bumper_triggered =  ev.obs_triggered  = 0;
 	/*--- slam end ---*/
 
 	if (g_go_home_by_remote || (cm_is_exploration()))
@@ -345,7 +345,7 @@ MotionManage::~MotionManage()
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
-	if (!g_fatal_quit_event && ( ( g_key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
+	if (!ev.fatal_quit && ( ( g_key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
 	{
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
@@ -383,7 +383,7 @@ MotionManage::~MotionManage()
 		// It means robot can not go to charger stub.
 		robot::instance()->resetLowBatPause();
 
-	if (!g_fatal_quit_event && robot::instance()->isLowBatPaused())
+	if (!ev.fatal_quit && robot::instance()->isLowBatPaused())
 	{
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!g_cliff_all_triggered)
@@ -407,7 +407,7 @@ MotionManage::~MotionManage()
 
 	// Unregister here because robot may be lifted up during the wav playing for cleaning pause.
 	cm_unregister_events();
-	if (g_fatal_quit_event) // Also handles for g_battery_low/g_charge_detect/g_cliff_all_triggered.
+	if (ev.fatal_quit) // Also handles for ev.battery_low/g_charge_detect/g_cliff_all_triggered.
 	{
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
@@ -433,7 +433,7 @@ MotionManage::~MotionManage()
 
 	robot::instance()->savedOffsetAngle(0);
 
-	if (g_fatal_quit_event)
+	if (ev.fatal_quit)
 		if (g_cliff_all_triggered)
 			ROS_WARN("%s %d: All Cliff are triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 		else
@@ -442,7 +442,7 @@ MotionManage::~MotionManage()
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 	else if (g_charge_detect)
 		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
-	else if (g_battery_low)
+	else if (ev.battery_low)
 		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
 	else
 		if (cm_get() == Clean_Mode_Spot)
@@ -459,7 +459,7 @@ MotionManage::~MotionManage()
 		auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
 		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
 	}
-	if (g_battery_low)
+	if (ev.battery_low)
 		cm_set(Clean_Mode_Sleep);
 	else if (g_charge_detect)
 		cm_set(Clean_Mode_Charging);
@@ -498,7 +498,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 bool MotionManage::initNavigationCleaning(void)
 {
 
-	if (g_remote_home || g_go_home_by_remote)
+	if (ev.remote_home || g_go_home_by_remote)
 		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
@@ -571,7 +571,7 @@ bool MotionManage::initNavigationCleaning(void)
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 		if (!cs_is_going_home())
-			if(g_remote_home || g_battery_home)
+			if(ev.remote_home || ev.battery_home)
 				cs_setting(CS_GO_HOME_POINT);
 
 	}
@@ -588,9 +588,9 @@ bool MotionManage::initNavigationCleaning(void)
 		int back_segment = (int)MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);
-			if (g_fatal_quit_event || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
+			if (ev.fatal_quit || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
 				disable_motors();
-				if (g_fatal_quit_event)
+				if (ev.fatal_quit)
 				{
 					robot::instance()->resetManualPause();
 					g_resume_cleaning = false;
@@ -598,7 +598,7 @@ bool MotionManage::initNavigationCleaning(void)
 				else if (g_key_clean_pressed && !g_resume_cleaning)
 					// Reset the odom position so when continue cleaning, the position robot stopped at will be the home point (0, 0).
 					robot::instance()->initOdomPosition();
-				else if (!g_fatal_quit_event && !g_key_clean_pressed)
+				else if (!ev.fatal_quit && !g_key_clean_pressed)
 				{
 					ROS_WARN("%s %d: Fail to leave charger stub.", __FUNCTION__, __LINE__);
 					robot::instance()->resetManualPause();
@@ -624,7 +624,7 @@ bool MotionManage::initNavigationCleaning(void)
 bool MotionManage::initExplorationCleaning(void)
 {
 
-	if (g_remote_home || g_go_home_by_remote)
+	if (ev.remote_home || g_go_home_by_remote)
 		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);

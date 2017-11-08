@@ -14,30 +14,24 @@
 
 /* Events variables */
 /* The fatal quit event includes any of the following case:
- *  g_bumper_jam
+ *  ev.bumper_jam
  * 	g_cliff_all_triggered
  * 	g_oc_brush_main
  * 	g_oc_wheel_left
  * 	g_oc_wheel_right
  * 	g_oc_suction
- * 	g_battery_low
+ * 	ev.battery_low
  */
-bool g_fatal_quit_event = false;
 /* Bumper */
-int g_bumper_triggered = false;
-bool g_bumper_jam = false;
 int g_bumper_cnt = 0;
 /* OBS */
-int g_obs_triggered = 0;
 int g_laser_triggered = 0;
 /* Cliff */
 bool g_cliff_all_triggered = false;
-int g_cliff_triggered = 0;
-bool g_cliff_jam = false;
 uint8_t g_cliff_all_cnt = 0;
 int g_cliff_cnt = 0;
 /* RCON */
-//int g_rcon_triggered = 0;
+//int ev.rcon_triggered = 0;
 /* Over Current */
 bool g_oc_brush_main = false;
 bool g_oc_wheel_left = false;
@@ -52,13 +46,9 @@ uint8_t g_oc_suction_cnt = 0;
 /* Key */
 bool g_key_clean_pressed = false;
 /* Remote */
-bool g_remote_home = false;
-bool g_remote_spot = false;
 bool g_remote_wallfollow = false;
 bool g_remote_direction_keys = false;
 /* Battery */
-bool g_battery_home = false;
-bool g_battery_low = false;
 uint8_t g_battery_low_cnt = 0;
 /* Charge Status */
 uint8_t g_charge_detect = 0;
@@ -81,6 +71,7 @@ bool g_robot_slip = false;
 bool g_robot_slip_enable = false;
 bool g_robot_stuck = false;
 
+Ev_t ev;
 /* lidar bumper */
 //bool g_lidar_bumper = false;
 //bool g_lidar_bumper_jam =false;
@@ -564,21 +555,20 @@ uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
 
 void event_manager_reset_status(void)
 {
-	g_fatal_quit_event = false;
+	ev.fatal_quit = false;
 	/* Bumper */
-	g_bumper_triggered = false;
-	g_bumper_jam = false;
+	ev.bumper_triggered = false;
+	ev.bumper_jam = false;
 	g_bumper_cnt = 0;
 	/* OBS */
-//	g_obs_triggered = false;
+//	ev.obs_triggered = false;
 	/* Cliff */
 	g_cliff_all_triggered = false;
-	g_cliff_triggered = 0;
-	g_cliff_jam = false;
+	ev.cliff_triggered = 0;
+	ev.cliff_jam = false;
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
-//	g_rcon_triggered = false;
 	/* Over Current */
 	g_oc_brush_main = false;
 	g_oc_wheel_left = false;
@@ -593,13 +583,13 @@ void event_manager_reset_status(void)
 	/* Key */
 	g_key_clean_pressed = false;
 	/* Remote */
-	g_remote_home = false;
-	g_remote_spot = false;
+	ev.remote_home = false;
+	ev.remote_spot = false;
 	g_remote_wallfollow = false;
 	g_remote_direction_keys = false;
 	/* Battery */
-	g_battery_home = false;
-	g_battery_low = false;
+	ev.battery_home = false;
+	ev.battery_low = false;
 	g_battery_low_cnt = 0;
 	/* Charge Status */
 	g_charge_detect = 0;
@@ -791,11 +781,11 @@ void em_default_handle_rcon_right(bool state_now, bool state_last)
 void em_default_handle_over_current_brush_left(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!g_fatal_quit_event && check_left_brush_stall())
+	if (!ev.fatal_quit && check_left_brush_stall())
 	{
 		/*-----Set error-----*/
 		set_error_code(Error_Code_LeftBrush);
-		g_fatal_quit_event = true;
+		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
 	}
 }
@@ -808,11 +798,11 @@ void em_default_handle_over_current_brush_main(bool state_now, bool state_last)
 void em_default_handle_over_current_brush_right(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!g_fatal_quit_event && check_right_brush_stall())
+	if (!ev.fatal_quit && check_right_brush_stall())
 	{
 		/*-----Set error-----*/
 		set_error_code(Error_Code_RightBrush);
-		g_fatal_quit_event = true;
+		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
 	}
 }

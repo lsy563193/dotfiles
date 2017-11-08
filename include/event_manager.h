@@ -33,7 +33,7 @@
 
 /* Events variables */
 /* The fatal quit event includes any of the following case:
- *  g_bumper_jam
+ *  ev.bumper_jam
  * 	g_cliff_all_triggered
  * 	g_oc_brush_main
  * 	g_oc_wheel_left
@@ -41,18 +41,28 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
-extern bool g_fatal_quit_event;
+typedef struct {
+	bool remote_home;
+	bool battery_home;
+	bool battery_low;
+	bool remote_spot;
+
+	bool battrey_home;
+	bool fatal_quit;
+	bool bumper_triggered;
+	int  rcon_triggered;
+	bool obs_triggered;
+	bool bumper_jam;
+	int cliff_triggered;
+	bool cliff_jam;
+}Ev_t;
+
 /* Bumper */
-extern int g_bumper_triggered;
-extern bool g_bumper_jam;
 extern int g_bumper_cnt;
 /* OBS */
-extern int g_obs_triggered;
 extern int g_laser_triggered;
 /* Cliff */
 extern bool g_cliff_all_triggered;
-extern int g_cliff_triggered;
-extern bool g_cliff_jam;
 extern uint8_t g_cliff_all_cnt;
 extern int g_cliff_cnt;
 /* RCON */
@@ -71,13 +81,10 @@ extern uint8_t g_oc_suction_cnt;
 /* Key */
 extern bool g_key_clean_pressed;
 /* Remote */
-extern bool g_remote_home;
-extern bool g_remote_spot;
+extern Ev_t ev;
 extern bool g_remote_wallfollow;
 extern bool g_remote_direction_keys;
 /* Battery */
-extern bool g_battery_home;
-extern bool g_battery_low;
 extern uint8_t g_battery_low_cnt;
 /* Charge status */
 extern uint8_t g_charge_detect;

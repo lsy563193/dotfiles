@@ -68,7 +68,6 @@ extern uint32_t g_wf_start_timer;
 extern uint32_t g_wf_diff_timer;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
-extern int g_rcon_triggered;
 //extern Cell_t g_next_cell;
 //extern Cell_t g_target_cell;
 extern bool g_resume_cleaning;

@@ -330,7 +330,7 @@ void charge_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
 	{
-		g_fatal_quit_event = true;
+		ev.fatal_quit = true;
 		g_cliff_all_triggered = true;
 	}
 }
@@ -462,7 +462,7 @@ bool charge_turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(g_key_clean_pressed || ev.fatal_quit)
 			return true;
 		usleep(50000);
 	}
@@ -485,7 +485,7 @@ bool charge_turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(g_key_clean_pressed || ev.fatal_quit)
 			return true;
 		usleep(50000);
 	}

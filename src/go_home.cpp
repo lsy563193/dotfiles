@@ -78,7 +78,7 @@ void go_home(void)
 
 	while (ros::ok())
 	{
-		if (g_fatal_quit_event || g_key_clean_pressed || g_go_to_charger_failed)
+		if (ev.fatal_quit || g_key_clean_pressed || g_go_to_charger_failed)
 		{
 			if(!during_cleaning)
 			{
@@ -98,7 +98,7 @@ void go_home(void)
 			disable_motors();
 			break;
 		}
-		if(g_battery_low)
+		if(ev.battery_low)
 		{
 			cm_set(Clean_Mode_Sleep);
 			break;
@@ -111,7 +111,7 @@ void go_home(void)
 
 	}
 
-	if(!during_cleaning && !g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed)
+	if(!during_cleaning && !g_charge_detect && !ev.fatal_quit && !g_key_clean_pressed)
 	{
 		disable_motors();
 		wav_play(WAV_BACK_TO_CHARGER_FAILED);
@@ -179,13 +179,13 @@ void go_to_charger(void)
 		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 			continue;
 
-		if(g_fatal_quit_event)
+		if(ev.fatal_quit)
 			break;
 		if(g_charge_detect && g_go_home_state_now != CHECK_POSITION)
 			break;
 		if(g_key_clean_pressed)
 			break;
-		if(g_battery_low)
+		if(ev.battery_low)
 			break;
 		if (g_slam_error)
 		{
@@ -211,7 +211,7 @@ void go_to_charger(void)
 		{
 			if (!go_home_check_turn_finish(go_home_target_angle))
 			{
-				if(g_cliff_triggered)
+				if(ev.cliff_triggered)
 				{
 					ROS_INFO("%s, %d: cliff while turning!", __FUNCTION__, __LINE__);
 					target_distance = 0.1;
@@ -334,7 +334,7 @@ void go_to_charger(void)
 				g_go_home_state_now = GO_HOME;
 				continue;
 			}
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				stop_brifly();
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
@@ -362,7 +362,7 @@ void go_to_charger(void)
 					g_move_back_finished = false;
 					continue;
 				}
-				if(g_cliff_triggered)
+				if(ev.cliff_triggered)
 				{
 					ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 					g_cliff_cnt++;
@@ -580,7 +580,7 @@ void go_to_charger(void)
 		/*-------around_chargestation main while-------*/
 		else if(g_go_home_state_now == AROUND_CHARGER_STATION)
 		{
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				g_cliff_cnt++;
@@ -902,7 +902,7 @@ void go_to_charger(void)
 				turn_finished = false;
 				continue;
 			}
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				g_cliff_cnt++;
@@ -1063,7 +1063,7 @@ void go_to_charger(void)
 					continue;
 				}
 			}
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				target_distance = 0.03;
 				g_move_back_finished = false;
@@ -2338,7 +2338,7 @@ bool turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(g_key_clean_pressed || ev.fatal_quit)
 			return true;
 	}
 	stop_brifly();
@@ -2361,7 +2361,7 @@ bool turn_connect(void)
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(g_key_clean_pressed || ev.fatal_quit)
 			return true;
 	}
 	stop_brifly();
@@ -2381,24 +2381,24 @@ bool go_home_check_move_back_finish(float target_distance)
 		return false;
 	else
 	{
-		if(g_cliff_triggered && get_cliff_status())
+		if(ev.cliff_triggered && get_cliff_status())
 		{
 			if(++g_cliff_cnt>2)
-				g_cliff_jam = true;
+				ev.cliff_jam = true;
 			return false;
 		}
 		else
 		{
-			if (g_cliff_triggered)
+			if (ev.cliff_triggered)
 				ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
-			g_cliff_triggered = 0;
+			ev.cliff_triggered = 0;
 			g_cliff_cnt = 0;
 		}
 
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
 		{
 			if(++g_bumper_cnt>2)
-				g_bumper_jam = true;
+				ev.bumper_jam = true;
 			return false;
 		}
 		else
@@ -2423,7 +2423,7 @@ bool go_home_check_turn_finish(int16_t target_angle)
 	else
 		set_dir_right();
 
-	if(g_cliff_triggered)
+	if(ev.cliff_triggered)
 	{
 		ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 		return false;
@@ -2608,12 +2608,12 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 	if (g_cliff_all_cnt++ > 2)
 	{
 		g_cliff_all_triggered = true;
-		g_fatal_quit_event = true;
+		ev.fatal_quit = true;
 	}
-	g_cliff_triggered = BLOCK_ALL;
+	ev.cliff_triggered = BLOCK_ALL;
 	if (during_cleaning)
 		map_set_cliff();
-	if (g_move_back_finished && !g_cliff_jam && !state_last)
+	if (g_move_back_finished && !ev.cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2624,7 +2624,7 @@ void go_home_handle_cliff(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
-		g_cliff_triggered = BLOCK_ALL;
+		ev.cliff_triggered = BLOCK_ALL;
 		if (during_cleaning)
 			map_set_cliff();
 	}
@@ -2654,7 +2654,7 @@ void go_home_handle_bumper(bool state_now, bool state_last)
 void go_home_handle_battery_low(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
-	g_battery_low = true;
+	ev.battery_low = true;
 }
 
 void go_home_handle_over_current_brush_main(bool state_now, bool state_last)
@@ -2672,7 +2672,7 @@ void go_home_handle_over_current_brush_main(bool state_now, bool state_last)
 
 		if (self_check(Check_Main_Brush) == 1) {
 			g_oc_brush_main = true;
-			g_fatal_quit_event = true;
+			ev.fatal_quit = true;
 		}
     }
 }
