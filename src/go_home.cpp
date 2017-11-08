@@ -41,7 +41,7 @@ void go_home(void)
 	should_check_near_home = true;
 
 	set_led_mode(LED_STEADY, LED_ORANGE);
-	if (cm_get() == Clean_Mode_GoHome)
+	if (cm_get() == Clean_Mode_Go_Charger)
 	{
 		during_cleaning = false;
 		if (!is_gyro_on())

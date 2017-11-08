@@ -11,7 +11,7 @@ Clean_Mode_Spiral,
 Clean_Mode_WallFollow,
 Clean_Mode_RandomMode,
 Clean_Mode_Charging,
-Clean_Mode_GoHome,
+Clean_Mode_Go_Charger,
 Clean_Mode_Sleep,
 Clean_Mode_SelfCheck,
 Clean_Mode_Test,
@@ -27,7 +27,7 @@ bool cm_is_follow_wall();
 bool cm_is_navigation();
 bool cm_is_exploration();
 bool cm_is_spot();
-bool cm_is_go_home();
+bool cm_is_go_charger();
 void cm_set(uint8_t mode);
 uint8_t cm_get(void);
 

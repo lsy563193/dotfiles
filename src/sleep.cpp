@@ -74,7 +74,7 @@ void sleep_mode(void)
 		else if(g_plan_activated)
 			cm_set(Clean_Mode_Navigation);
 		else if(sleep_rcon_triggered)
-			cm_set(Clean_Mode_GoHome);
+			cm_set(Clean_Mode_Go_Charger);
 
 		if (cm_get() != Clean_Mode_Sleep)
 			break;
@@ -161,7 +161,7 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 	if (get_error_code() == Error_Code_None)
 	{
-		set_main_pwr_byte(Clean_Mode_GoHome);
+		set_main_pwr_byte(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
 	}
 	reset_sleep_mode_flag();

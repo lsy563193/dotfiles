@@ -193,7 +193,7 @@ void user_interface(void)
 	user_interface_plan_status = 0;
 
 	/*--- reset g_charge_turn_connect_fail except Clean_Mode_GoHome and Clean_Mode_Exploration ---*/
-	if(temp_mode != Clean_Mode_GoHome && temp_mode != Clean_Mode_Exploration)
+	if(temp_mode != Clean_Mode_Go_Charger && temp_mode != Clean_Mode_Exploration)
 		g_charge_turn_connect_fail = false;
 }
 
@@ -315,7 +315,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 			else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 				ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			else
-				temp_mode = Clean_Mode_GoHome;
+				temp_mode = Clean_Mode_Go_Charger;
 		}
 	}
 	reset_rcon_status();

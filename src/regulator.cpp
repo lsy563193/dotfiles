@@ -69,7 +69,7 @@ static int16_t bumper_turn_angle()
 			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
 		g_turn_angle =0;
 		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
-		if (g_trapped_mode != 1) {
+		if (!cs_is_trapped()) {
 			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -180 : -280;
 		} else {
 			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -100 : -200;
@@ -309,7 +309,7 @@ bool RegulatorBase::_isStop()
 	bool ret = false;
 //	ROS_INFO("reg_base _isStop");
 
-	ret |=  g_battery_home || g_remote_spot || (!cs_is_go_home() && g_remote_home) || cm_should_self_check() ;
+	ret |=  g_battery_home || g_remote_spot || (!cs_is_going_home() && g_remote_home) || cm_should_self_check() ;
 	return ret;
 }
 
@@ -412,7 +412,7 @@ bool BackRegulator::isSwitch()
 
 bool BackRegulator::_isStop()
 {
-	if (cm_get() != Clean_Mode_GoHome)
+	if (cm_get() != Clean_Mode_Go_Charger)
 	{
 		obstacle_distance_back = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
 	}
@@ -539,11 +539,11 @@ bool TurnRegulator::_isStop()
 void TurnRegulator::setTarget()
 {
 	 // Use laser datas for generating target angle in every 3times of turning.
-	if(cs_is_go_home() && map_point_to_cell(s_curr_p) == g_zero_home)
+	if(cs_is_going_home() && map_point_to_cell(s_curr_p) == g_zero_home)
 	{
-		s_target_angle = g_home.TH;
+		s_target_angle = g_home_point.TH;
 	}else
-	if(LASER_FOLLOW_WALL && g_trapped_mode != 1 && !mt_is_go_to_charger() && skip_laser_turn_angle_cnt_ >= 2) {
+	if(LASER_FOLLOW_WALL && !cs_is_trapped() && !mt_is_go_to_charger() && skip_laser_turn_angle_cnt_ >= 2) {
 		if (waiting_finished_) {
 			stage_ = TURN_REGULATOR_WAITING_FOR_LASER;
 			waiting_finished_ = false;
@@ -752,7 +752,7 @@ bool LinearRegulator::_isStop()
 	{
 		if(rcon_tmp){
 			g_rcon_triggered = rcon_tmp;
-			if (cs_is_go_home())
+			if (cs_is_going_home())
 				g_rcon_during_go_home = true;
 			else
 				path_set_home(map_get_curr_cell());
@@ -977,7 +977,7 @@ bool FollowWallRegulator::isSwitch()
 //		ROS_INFO("Laser Stop in wall follow");
 		if(! g_obs_triggered )
 			g_obs_triggered = BLOCK_FRONT;
-		if(g_trapped_mode == 1)
+		if(cs_is_trapped())
 			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 		g_turn_angle = obs_turn_angle();
 //		g_straight_distance = 100;
@@ -998,23 +998,22 @@ bool FollowWallRegulator::_isStop()
 //	ROS_INFO("FollowWallRegulator _isStop");
 	bool ret = false;
 	auto reach_count =1;
-	if(g_trapped_mode != 0)
+	if(cs_is_trapped())
 		reach_count =2;
 	if (g_wf_reach_count >= reach_count) {
 		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, reach_count);
-		if(g_trapped_mode ==1)
+		if(cs_is_trapped())
 			g_fatal_quit_event = true;
-		g_trapped_mode = 0;
 		ret = true;
 	}
-	if ((cm_is_follow_wall() || g_trapped_mode ==1) && fw_is_time_up()) {
+	if ((cm_is_follow_wall() || cs_is_trapped()) && fw_is_time_up()) {
 		ROS_INFO("fw_is_time_up, curr(%d),start(%d),diff(%d)", time(NULL), g_wf_start_timer, g_wf_diff_timer);
 		ROS_WARN("%s %d:", __FUNCTION__, __LINE__);
 		g_fatal_quit_event = true;
 		ret = true;
 	}
 
-	if(cm_is_navigation() && g_trapped_mode == 0)
+	if(cm_is_navigation() && !cs_is_trapped())
 	{
 			auto curr = map_point_to_cell(s_curr_p);
 			if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120) ||
@@ -3318,7 +3317,7 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	gh_reg_ = new GoToChargerRegulator();
 	turn_reg_ = new TurnRegulator(0);
 	mt_reg_ = line_reg_;
-	if(cm_is_go_home())
+	if(cm_is_go_charger())
 		mt_reg_ = gh_reg_;
 	p_reg_ = mt_reg_;
 

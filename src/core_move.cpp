@@ -74,7 +74,7 @@ std::deque<Cell_t> g_passed_path;
 //Cell_t g_target_cell;
 
 //uint8_t	g_remote_go_home = 0;
-//bool	cs_is_go_home() = false;
+//bool	cs_is_going_home() = false;
 bool	g_from_station = 0;
 bool	g_in_charge_signal_range;
 
@@ -85,7 +85,7 @@ bool g_resume_cleaning = false;
 // This flag is for checking whether map boundary is created.
 bool g_map_boundary_created = false;
 
-bool g_have_seen_charge_stub = false;
+bool g_have_seen_charger = false;
 bool g_start_point_seen_charger = false;
 
 Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
@@ -259,7 +259,7 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 		}
 
 		if (g_fatal_quit_event || g_charge_detect
-			|| g_key_clean_pressed || (!cs_is_go_home() && (g_battery_home || g_remote_home))
+			|| g_key_clean_pressed || (!cs_is_going_home() && (g_battery_home || g_remote_home))
 			|| g_oc_wheel_left || g_oc_wheel_right
 			|| g_bumper_triggered || g_cliff_triggered
 			)
@@ -288,11 +288,11 @@ bool cm_head_to_course(uint8_t speed_max, int16_t angle)
 	return return_value;
 }
 
-bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
+/*bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
 {
 	ROS_INFO("  %s %d:?? curr(%d,%d,%d)",__FUNCTION__,__LINE__, curr.X, curr.Y, curr.TH);
 	const int16_t DIFF_LIMIT = 200;//1500 means 150 degrees, it is used by angle check.
-	/*check if spot turn*/
+	*//*check if spot turn*//*
 	if(get_sp_turn_count() > 400) {
 		reset_sp_turn_count();
 		ROS_WARN("  yes! sp_turn over 400");
@@ -302,7 +302,7 @@ bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
 	if (passed_path.size() > 5) {
 		ROS_WARN("  trapped(%d),distance(%f),{curr,start}_th(%d,%d),", g_trapped_mode, world_distance(), curr.TH, passed_path.front().TH);
 
-		if (g_trapped_mode != 1 && world_distance() <= 0.05 && rm_angle(curr.TH, passed_path.front().TH) <= DIFF_LIMIT) {
+		if (cs_is_trapped() && world_distance() <= 0.05 && rm_angle(curr.TH, passed_path.front().TH) <= DIFF_LIMIT) {
 				ROS_WARN("  yes! reach the start point!");
 				return true;
 		}
@@ -316,7 +316,7 @@ bool wf_is_reach(const Cell_t& curr, const std::vector<Cell_t>& passed_path)
 	}
 	ROS_WARN("  NO!");
 	return false;
-}
+}*/
 
 /*
  * Robot move to target cell
@@ -384,6 +384,7 @@ void cm_cleaning() {
 		return;
 
 	g_motion_init_succeeded = true;
+	cs_init();
 	Cell_t curr = cm_update_position();
 	g_plan_path.clear();
 	auto is_reach = REATH_TARGET;
@@ -393,7 +394,6 @@ void cm_cleaning() {
 
 	bool eh_status_now = false, eh_status_last = false;
 	auto is_time_up = false;
-	auto is_trapped = false;
 	auto wf_start_timer = 0;
 	g_is_near = false;
 
@@ -444,14 +444,14 @@ void cm_cleaning() {
 			}
 			fw_marker(curr);
 		}else
-			is_time_up = g_trapped_mode == 0;
+			is_time_up = !cs_is_trapped();
 		/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && g_passed_path.size() < 5) {
 			ROS_WARN("  {curr,start}_time(%d,%d), g_passed_path.size(%d): ", time(NULL), wf_start_timer, g_passed_path.size());
 		}*/
 
 		if ( (g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop() ) && is_time_up) {
 			printf("\n\n\n\n\n\n");
-			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
+//			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
 //			path_display_path_points(g_passed_path);
 //					set_wheel_speed_pid(rm, speed_left, speed_right);
 			map_set_cleaned(g_passed_path);
@@ -459,31 +459,34 @@ void cm_cleaning() {
 			map_mark_robot(MAP);
 //			ros_map_convert(MAP, false, false, true);
 //			g_plan_path.empty();
-			auto tmp_tm = g_trapped_mode;
+			auto cs_tmp = cs_get();
+			if(!g_plan_path.empty())
+				curr.TH = g_plan_path.back().TH;
 			auto start = curr;
-			start.TH = g_plan_path.front().TH;
+			g_old_dir = start.TH;
 			if(g_is_near)
 			{
 				ROS_WARN("%s %d: Curr(%d, %d), g_is_near(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, g_is_near);
 				start = g_plan_path.back();
 			}
+			g_plan_path.clear();
 
 			cs_path_next(start, g_plan_path);
 
-			mt_update(start, g_plan_path);
+			if (g_plan_path.empty() || cs_is_go_charger())
+				return;
 
+			ROS_INFO("%s %d:cs(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),cs_tmp,cs_get());
+			path_display_path_points(g_plan_path);
 			MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
-			if( !((tmp_tm == 1 && g_trapped_mode == 1)||g_is_near) )
+			if( !((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near) )
 			{
 				rm.setMt();
 				g_passed_path.clear();
 			}
 			g_is_near = false;
-			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),trapped(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), g_trapped_mode == 1);
+			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),cs(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), cs_get());
 		}
-
-		if (g_plan_path.empty()/* && g_trapped_mode == 0 && !mt_is_go_to_charger()*/)
-			return;
 
 		cm_move_to(rm, g_plan_path);
 
@@ -492,10 +495,10 @@ void cm_cleaning() {
 	}
 }
 void cs_setting(int cs) {
-	if(cs == CS_GO_HOME) {
+	if(cs == CS_GO_HOME_POINT) {
 		work_motor_configure();
 		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
-		if (g_remote_home || cm_is_go_home())
+		if (g_remote_home || cm_is_go_charger())
 			set_led_mode(LED_STEADY, LED_ORANGE);
 
 		// Special handling for wall follow mode.
@@ -510,13 +513,14 @@ void cs_setting(int cs) {
 		// Play wavs.
 		if (g_battery_home)
 			wav_play(WAV_BATTERY_LOW);
-		if (!cm_is_go_home())
+		if (!cm_is_go_charger())
 			wav_play(WAV_BACK_TO_CHARGER);
 
 		if (g_remote_home)
 			g_go_home_by_remote = true;
 		g_remote_home = false;
 		g_battery_home = false;
+		mt_set(CM_LINEARMOVE);
 	}
 	if(cs == CS_TMP_SPOT)
 	{
@@ -540,16 +544,18 @@ void cs_setting(int cs) {
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		set_led_mode(LED_FLASH, LED_GREEN, 300);
+		mt_set(CM_FOLLOW_LEFT_WALL);
 	}
 	if(cs == CS_CLEAN) {
 		g_wf_reach_count = 0;
-		// This led light is for debug.
-		if (cm_is_exploration())
-			set_led_mode(LED_STEADY, LED_ORANGE);
-		else
-			set_led_mode(LED_STEADY, LED_GREEN);
+		set_led_mode(LED_STEADY, LED_GREEN);
 	}
-	if(cs == CS_GO_CHANGE)
+	if(cs == CS_EXPLORATION) {
+		mt_set(CM_LINEARMOVE);
+		g_wf_reach_count = 0;
+		set_led_mode(LED_STEADY, LED_ORANGE);
+	}
+	if(cs == CS_GO_CHANGER)
 	{
 		g_tilt_enable = false; //disable tilt detect
 		set_led_mode(LED_STEADY, LED_ORANGE);
@@ -581,7 +587,7 @@ bool cm_go_to_charger()
 {
 	auto way = *g_home_way_it % HOMEWAY_NUM;
 	auto cnt = *g_home_way_it / HOMEWAY_NUM;
-	ROS_INFO("%s,%d:g_home(\033[1;46;37m%d,%d\033[0m), way(\033[1;46;37m%d\033[0m), cnt(\033[1;46;37m%d\033[0m) ", __FUNCTION__, __LINE__,g_home.X,g_home.Y,way, cnt);
+	ROS_INFO("%s,%d:g_home_point(\033[1;46;37m%d,%d\033[0m), way(\033[1;46;37m%d\033[0m), cnt(\033[1;46;37m%d\033[0m) ", __FUNCTION__, __LINE__,g_home_point.X,g_home_point.Y,way, cnt);
 	if(cm_go_to_charger() || cnt == 0)
 	{
 		ROS_INFO("\033[1;46;37m" "%s,%d:cm_go_to_charger_ stop " "\033[0m", __FUNCTION__, __LINE__);
@@ -592,7 +598,7 @@ bool cm_go_to_charger()
 	g_home_way_it += (way+1);
 	g_homes.pop_back();
 	g_home_way_list.clear();
-	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home.X, g_home.Y,way, cnt);
+	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home_point.X, g_home_point.Y,way, cnt);
 	return true;
 }*/
 
@@ -1389,7 +1395,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 /*
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (cs_is_go_home()) {
+	if (cs_is_going_home()) {
 		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -1596,7 +1602,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_go_home() && !cm_should_self_check() && !g_slam_error && !robot::instance()->isManualPaused()) {
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !g_slam_error && !robot::instance()->isManualPaused()) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(INVALID);
@@ -1622,7 +1628,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || !cm_is_navigation()
-		|| cs_is_go_home() || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
+		|| cs_is_going_home() || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
 		|| time(NULL) - last_time_remote_spot < 3)
 		beep_for_command(INVALID);
 	else
@@ -1646,7 +1652,7 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_go_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error && !robot::instance()->isManualPaused())
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error && !robot::instance()->isManualPaused())
 	{
 		beep_for_command(VALID);
 		switch_vac_mode(true);
@@ -1670,7 +1676,7 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 /* Battery */
 void cm_handle_battery_home(bool state_now, bool state_last)
 {
-	if (g_motion_init_succeeded && ! cs_is_go_home()) {
+	if (g_motion_init_succeeded && !cs_is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		g_battery_home = true;
@@ -1698,7 +1704,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 		t_vol = get_battery_voltage();
 		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
-		if (cs_is_go_home()) {
+		if (cs_is_going_home()) {
 			v_pwr = Home_Vac_Power / t_vol;
 			s_pwr = Home_SideBrush_Power / t_vol;
 			m_pwr = Home_MainBrush_Power / t_vol;
@@ -1721,7 +1727,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 void cm_handle_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
-	if (((cm_is_exploration() || cm_is_go_home() || cs_is_go_home()) && robot::instance()->getChargeStatus()) ||
+	if (((cm_is_exploration() || cm_is_go_charger() || cs_is_going_home()) && robot::instance()->getChargeStatus()) ||
 		(!cm_is_exploration() && robot::instance()->getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)

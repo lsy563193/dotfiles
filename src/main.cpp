@@ -74,10 +74,10 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_Charging);
 				charge_function();
 				break;
-			case Clean_Mode_GoHome:
+			case Clean_Mode_Go_Charger:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
-				set_main_pwr_byte(Clean_Mode_GoHome);
+				set_main_pwr_byte(Clean_Mode_Go_Charger);
 				robot::instance()->resetLowBatPause();
 				reset_clean_paused();
 #if GO_HOME_REGULATOR

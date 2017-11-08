@@ -898,7 +898,7 @@ int get_rcon_trig_()
 
 int get_rcon_trig(void)
 {
-//	if (cs_is_go_home()) {
+//	if (cs_is_going_home()) {
 ////		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 //		reset_rcon_status();
 //		return 0;
@@ -1211,8 +1211,7 @@ int16_t get_right_wheel_speed(void)
 
 void work_motor_configure(void)
 {
-	extern bool cs_is_go_home();
-	if (cs_is_go_home())
+	if (cs_is_going_home())
 	{
 		// Set the vacuum to a normal mode
 		set_vacmode(Vac_Normal, false);
@@ -1715,8 +1714,7 @@ void reset_rcon_status(void)
 uint32_t get_rcon_status()
 {
 	extern Cell_t g_stub_cell;
-	extern bool g_in_charge_signal_range;
-	if(!cs_is_go_home() && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
+	if(!cs_is_going_home() && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
 		if(two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20){
 			g_in_charge_signal_range = true;
 			reset_rcon_status();

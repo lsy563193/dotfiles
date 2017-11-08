@@ -45,17 +45,17 @@ CMMoveType mt_get()
 }
 
 void mt_update(const Cell_t& curr, PPTargetType& path) {
-	//	g_old_dir = g_new_dir;
 	//set move_type
-	if (cs_is_go_home() || cm_is_exploration())
-		mt_set(CM_LINEARMOVE);
-	else if (cm_is_navigation()) {
-		mt_set(CM_LINEARMOVE);
-		auto dir = curr.TH;
+	mt_set(CM_LINEARMOVE);
+	if (cm_is_follow_wall()) {
+		if(path.empty())
+			mt_set(CM_FOLLOW_LEFT_WALL);
+	}
+	if (cm_is_navigation()) {
+		auto dir = g_old_dir;
 		ROS_WARN("%s,%d: dir(%d),obs(%d),laser(%d), bumper(%d)", __FUNCTION__, __LINE__, dir, g_obs_triggered,
 						 g_laser_triggered, g_bumper_triggered);
-		if (!IS_X_AXIS(dir) || (g_obs_triggered == 0 && g_laser_triggered == 0 && g_bumper_triggered == 0) ||
-				g_trapped_mode == 1 || path.size() > 2)
+		if (!IS_X_AXIS(dir) || (g_obs_triggered == 0 && g_laser_triggered == 0 && g_bumper_triggered == 0) || path.size() > 2)
 			return;
 
 		if (g_tilt_triggered)
@@ -78,17 +78,11 @@ void mt_update(const Cell_t& curr, PPTargetType& path) {
 				return;
 			}
 		}
-
-//	ROS_ERROR("%s,%d: target delta_y(%d)",__FUNCTION__,__LINE__,delta_y);
 		if (std::abs(delta_y) <= 2) {
-//		path.push_front(g_target_cell);
-//		g_next_cell = g_target_cell;
 			g_cm_move_type = move_type_tmp;
 			ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m", __FUNCTION__, __LINE__, g_cm_move_type);
 		}
 	}
-	if (g_trapped_mode == 1)
-		mt_set(CM_FOLLOW_LEFT_WALL);
 }
 
 void mt_set(CMMoveType mt)

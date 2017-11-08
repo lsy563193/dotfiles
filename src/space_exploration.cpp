@@ -81,8 +81,7 @@ void turn_into_exploration(bool is_reset_map)
 	cm_reset_go_home();
 
 
-	extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
-	g_have_seen_charge_stub = false;
+	g_have_seen_charger = false;
 	g_start_point_seen_charger = false;
 
 	g_homes.resize(1,g_zero_home);

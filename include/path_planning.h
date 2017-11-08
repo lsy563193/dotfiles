@@ -47,10 +47,12 @@ extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
 extern bool g_keep_on_wf;
 extern int16_t g_new_dir;
+extern int16_t g_old_dir;
 extern bool g_no_uncleaned_target;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;
+extern Cell_t g_home_point;
 extern int g_wf_reach_count;
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
@@ -167,6 +169,7 @@ bool path_full(const Cell_t& curr, PPTargetType& path);
  * 		1 if the robot is not trapped.
  */
 int16_t path_escape_trapped(const Cell_t& curr);
+bool cm_is_reach();
 
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
@@ -174,7 +177,7 @@ Cell_t *path_escape_get_trapped_cell(void);
 
 void path_set_home(const Cell_t& cell);
 
-bool path_get_home_target(const Cell_t& curr, PPTargetType& path, const int is_reach);
+bool path_get_home_point_target(const Cell_t& curr, PPTargetType& path);
 
 int16_t path_get_home_x(void);
 

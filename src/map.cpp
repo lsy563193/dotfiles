@@ -43,7 +43,6 @@ int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 int16_t xWfRangeMin, xWfRangeMax, yWfRangeMin, yWfRangeMax;
 int16_t xRosRangeMin, xRosRangeMax, yRosRangeMin, yRosRangeMax;
 extern Cell_t g_cell_history[];
-extern uint16_t g_old_dir;
 
 Cell_t g_stub_cell(0,0);
 
@@ -868,7 +867,7 @@ uint8_t map_set_rcon()
 		g_rcon_triggered = 0;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_station && g_in_charge_signal_range && cs_is_go_home())//while in cs_is_go_home() mode or from_station dont mark rcon signal
+	if( g_from_station && g_in_charge_signal_range && cs_is_going_home())//while in cs_is_going_home() mode or from_station dont mark rcon signal
 		return 0;
 	enum {
 			left, fl2, fl1, fr1, fr2, right,
@@ -974,7 +973,7 @@ uint8_t map_set_charge_position(const Cell_t home_point)
 
 uint8_t map_set_blocked()
 {
-	if(cm_is_follow_wall() || cm_is_go_home())
+	if(cm_is_follow_wall() || cm_is_go_charger())
 		return 0;
 
 	uint8_t block_count = 0;
@@ -1152,7 +1151,7 @@ void map_set_follow_wall(const std::vector<Cell_t>& cells)
 
 bool map_mark_robot(uint8_t id)
 {
-	if(g_trapped_mode != 1)
+	if(!cs_is_trapped())
 		return false;
 	int32_t x, y;
 	bool ret = false;
@@ -1262,7 +1261,7 @@ void fw_marker(const Cell_t&  curr){
 	if (mt_is_follow_wall()) {
 		if (cm_is_navigation()) {
 			map_set_follow_wall(MAP, curr);
-			if (g_trapped_mode == 1)
+			if (cs_is_trapped())
 				map_set_follow_wall(WFMAP, curr);
 		}
 		if (cm_is_follow_wall()) {

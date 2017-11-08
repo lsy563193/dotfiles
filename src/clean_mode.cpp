@@ -55,9 +55,9 @@ bool cm_is_spot()
 }
 
 
-bool cm_is_go_home()
+bool cm_is_go_charger()
 {
-	return g_cleaning_mode == Clean_Mode_GoHome;
+	return g_cleaning_mode == Clean_Mode_Go_Charger;
 }
 
 void cm_set(uint8_t mode)

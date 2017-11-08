@@ -10,8 +10,6 @@
 
 char outString[256];
 
-extern Cell_t g_cell_history[];
-
 #if defined(DEBUG_MAP) || defined(DEBUG_SM_MAP)
 #if COLOR_DEBUG_MAP
 void color_print(char *outString,int16_t y_min,int16_t y_max)
@@ -104,10 +102,7 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 	CellState	cs;
 	Cell_t temp_cell;
 
-//	if (g_trapped_mode == 1)
 		temp_cell = map_get_curr_cell();
-//	else
-//		temp_cell = g_cell_history[0];
 
 	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
