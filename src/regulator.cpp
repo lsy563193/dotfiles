@@ -952,7 +952,8 @@ bool FollowWallRegulator::isBlockCleared()
 bool FollowWallRegulator::isOverOriginLine()
 {
 	auto curr = map_point_to_cell(s_curr_p);
-	if (s_target_p.Y > s_origin_p.Y ^ (s_origin_p.Y - s_curr_p.Y) < 120)
+	if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120)
+		|| (s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
 	{
 		auto target_angel = (s_target_p.Y > s_origin_p.Y) ? -900 : 900;
 		//ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
@@ -3747,7 +3748,7 @@ bool RegulatorManage::isSwitch()
 
 	if (old_p_reg_ != p_reg_)
 	{
-		ROS_WARN("%s %d: Switch from %s to %s.", __FUNCTION__, __LINE__, old_p_reg_->getName(), p_reg_->getName());
+		ROS_WARN("%s %d: Switch from %s to %s.", __FUNCTION__, __LINE__, (old_p_reg_->getName()).c_str(), (p_reg_->getName()).c_str());
 		setTarget();
 		return true;
 	}
