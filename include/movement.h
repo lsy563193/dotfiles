@@ -800,4 +800,6 @@ int8_t lidar_bumper_deinit();
 bool check_laser_stuck();
 
 uint8_t estimate_charger_position(Rcon_Point_t point_a,Rcon_Point_t piont_b,Cell_t *pos);
+
+uint8_t get_laser_status();
 #endif

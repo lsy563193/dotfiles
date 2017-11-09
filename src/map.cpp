@@ -866,16 +866,20 @@ uint8_t map_set_rcon()
 	if(mt_is_linear())
 		ev.rcon_triggered = 0;
 	if(! rcon_trig)
+	if(!ev.rcon_triggered)
 		return 0;
 	if( g_from_station && g_in_charge_signal_range && cs_is_going_home())//while in cs_is_going_home() mode or from_station dont mark rcon signal
+	{
+		ev.rcon_triggered = 0;
 		return 0;
+	}
+
+	path_set_home(map_get_curr_cell());
 	enum {
 			left, fl2, fl1, fr1, fr2, right,
 	};
-	int dx = 0, dy = 0;
-	int dx2 = 0, dy2 = 0;
 	std::vector<Cell_t> d_cells;
-	switch (rcon_trig - 1)
+	switch (ev.rcon_triggered - 1)
 	{
 		case left:
 			d_cells.push_back({1,2});
@@ -946,8 +950,8 @@ uint8_t map_set_rcon()
 		map_set_cell(MAP, x, y, BLOCKED_RCON);
 		msg += "(" + std::to_string(count_to_cell(x)) + "," + std::to_string(count_to_cell(y)) + "),";
 	}
-	ROS_INFO("%s,%d: curr(%d,%d), rcon_trig(%d), mark:\033[32m%s\033[0m", __FUNCTION__, __LINE__, map_get_curr_cell().X,
-							map_get_curr_cell().Y, rcon_trig,msg.c_str() );
+	ROS_INFO("%s,%d: curr(%d,%d), ev.rcon_triggered(%d), mark:\033[32m%s\033[0m", __FUNCTION__, __LINE__, map_get_curr_cell().X,
+							map_get_curr_cell().Y, ev.rcon_triggered, msg.c_str() );
 	return block_count;
 }
 
@@ -984,6 +988,7 @@ uint8_t map_set_blocked()
 	block_count += map_set_cliff();
 	block_count += map_set_tilt();
 	block_count += map_set_slip();
+	block_count += map_set_laser();
 
 	return block_count;
 }

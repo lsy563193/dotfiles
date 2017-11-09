@@ -3498,3 +3498,10 @@ uint8_t estimate_charger_position(Rcon_Point_t rcon_point_a, Rcon_Point_t rcon_p
 	ROS_INFO("%s,%d,estimate charger stub position on (%d,%d)",__FUNCTION__,__LINE__,pos->X,pos->Y);
 	return 1;
 }
+
+uint8_t get_laser_status()
+{
+	if (MotionManage::s_laser != nullptr)
+		return MotionManage::s_laser->laserMarker(0.20);
+	return 0;
+}

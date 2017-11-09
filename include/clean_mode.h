@@ -5,20 +5,16 @@
 #ifndef PP_CLEAN_MODE_H
 #define PP_CLEAN_MODE_H
 
-enum{
+enum {
 Clean_Mode_Userinterface = 1,
-Clean_Mode_Spiral,
 Clean_Mode_WallFollow,
 Clean_Mode_RandomMode,
 Clean_Mode_Charging,
 Clean_Mode_Go_Charger,
 Clean_Mode_Sleep,
-Clean_Mode_SelfCheck,
 Clean_Mode_Test,
-Clean_Mode_Zigzag,
 Clean_Mode_Remote,
 Clean_Mode_Spot,
-Clean_Mode_Mobility,
 Clean_Mode_Navigation,
 Clean_Mode_Exploration
 };

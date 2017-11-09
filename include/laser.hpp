@@ -55,7 +55,7 @@ public:
 	bool compensateLaserXY(double detect_distance = 0.50,double noise_delta = 0.02);
 	void lidarMotorCtrl(bool orf);
 
-	bool laserMarker(double X_MAX = 0.237);
+	uint8_t laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
 
 	bool laserCheckFresh(float duration, uint8_t type = 1);

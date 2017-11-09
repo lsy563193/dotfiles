@@ -119,10 +119,6 @@ void *core_move_thread(void *)
 				usleep(200000);
 				break;
 
-			case Clean_Mode_Mobility:
-
-				break;
-
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
 				//set_main_pwr_byte(Clean_Mode_Sleep);

@@ -265,52 +265,25 @@ bool wf_is_reach() {
 	return false;
 }
 
-static bool wf_nv_is_reach(void) {
-	auto ret = false;
-	auto is_pos = RegulatorBase::s_target_p.Y - RegulatorBase::s_origin_p.Y > 0;
-if (RegulatorBase::s_origin_p.Y < RegulatorBase::s_target_p.Y ^ RegulatorBase::s_curr_p.Y < RegulatorBase::s_target_p.Y) {
-		auto dx = (is_pos ^ mt_is_left()) ? +2 : -2;
-		if (is_block_blocked(count_to_cell(RegulatorBase::s_curr_p.X) + dx, count_to_cell(RegulatorBase::s_curr_p.Y))) {
-			ROS_WARN("%s %d: iRegulatorBase::s_map_front_block", __FUNCTION__, __LINE__);
-			ret = true;
-		}
-		auto target_y = RegulatorBase::s_target_p.Y + CELL_COUNT_MUL / 8 * 3 * is_pos;
-		if (std::abs(RegulatorBase::s_origin_p.Y - RegulatorBase::s_curr_p.Y) >
-				std::abs(RegulatorBase::s_origin_p.Y - target_y)) {
-			ROS_WARN("%s %d: reach the target, CELL_COUNT_MUL*3, RegulatorBase::s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
-							 __FUNCTION__,
-							 __LINE__, count_to_cell(RegulatorBase::s_origin_p.Y), count_to_cell(RegulatorBase::s_target_p.Y),
-							 count_to_cell(RegulatorBase::s_curr_p.Y));
-			ret = true;
-		}
+
+bool RegulatorBase::_isExit()
+{
+	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
+	{
+		ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
+		return true;
 	}
-	return ret;
-}
-
-static bool wf_ep_is_reach(void) {
-	// For exploration mode detecting the rcon signal
-	auto ret =false;
-		auto rcon_status = get_rcon_status();
-		rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
-		if (rcon_status)
-		{
-			g_exploration_home = true;
-			ret = true;
-		}
-	return ret;
-}
-
-bool RegulatorBase::isExit(){
-	return ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect;
+	return false;
 }
 
 bool RegulatorBase::_isStop()
 {
-	bool ret = false;
-//	ROS_INFO("reg_base _isStop");
-
-	ret |=  ev.battrey_home || ev.remote_spot || (!cs_is_going_home() && ev.remote_home) || cm_should_self_check() ;
-	return ret;
+	if (ev.battery_home || ev.remote_spot || (!cs_is_going_home() && ev.remote_home) || cm_should_self_check())
+	{
+		ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
+		return true;
+	}
+	return false;
 }
 
 BackRegulator::BackRegulator() : counter_(0), speed_(BACK_MAX_SPEED), distance(0)
@@ -355,7 +328,7 @@ bool BackRegulator::isReach()
 		beep_for_command(false);
 		return true;
 	}
-	if(fabsf(distance) >= g_back_distance || (obstacle_distance_back < 0.03 && g_back_distance > 0.05))
+	if(fabsf(distance) >= g_back_distance)
 	{
 		if(g_slip_backward){
 			ROS_WARN("%s,%d,\033[1mrobot slip backward reach!! distance(%f),back_distance(%f)\033[0m",__FUNCTION__,__LINE__,distance,g_back_distance);
@@ -377,15 +350,20 @@ bool BackRegulator::isReach()
 				g_go_to_charger_back_10cm = false;
 				g_go_to_charger_back_0cm = false;
 			}
+			ROS_WARN("%s, %d: Reach target.", __FUNCTION__, __LINE__);
 			return true;
 		}
 		if (g_cliff_cnt >= 2)
 		{
 			ev.cliff_jam = true;
+			ROS_WARN("%s, %d: Cliff jam.", __FUNCTION__, __LINE__);
+			ev.cliff_jam = true;
 			return false;
 		}
 		else if (g_bumper_cnt >= 2)
 		{
+			ev.bumper_jam = true;
+			ROS_WARN("%s, %d: Bumper jam.", __FUNCTION__, __LINE__);
 			ev.bumper_jam = true;
 			return false;
 		}
@@ -400,24 +378,16 @@ bool BackRegulator::isReach()
 	return false;
 }
 
-bool BackRegulator::isSwitch()
+bool BackRegulator::isLaserStop()
 {
-//	ROS_INFO("BackRegulator::isSwitch");
-	if(mt_is_follow_wall() || mt_is_go_to_charger())
-		return isReach();
-	if(mt_is_linear())
-		return false;
-	return false;
-}
-
-bool BackRegulator::_isStop()
-{
-	if (cm_get() != Clean_Mode_Go_Charger)
+	auto obstacle_distance = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
+	if (g_back_distance >= 0.05 && obstacle_distance < 0.03)
 	{
-		obstacle_distance_back = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
+		ROS_WARN("%s, %d: obstacle_distance:%f.", __FUNCTION__, __LINE__, obstacle_distance);
+		return true;
 	}
-	bool ret = false;
-	return ret;
+
+	return false;
 }
 
 void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
@@ -512,28 +482,21 @@ bool TurnRegulator::isReach()
 	return false;
 }
 
-bool TurnRegulator::isSwitch()
+bool TurnRegulator::shouldMoveBack()
 {
-//	ROS_INFO("TurnRegulator::isSwitch");
+	// Robot should move back for these cases.
+	ev.bumper_triggered = get_bumper_status();
+	ev.cliff_triggered = get_cliff_status();
+	ev.tilt_triggered = get_tilt_status();
 
-	if(isReach() ||(! ev.bumper_triggered  && get_bumper_status()) || (! ev.cliff_triggered && get_cliff_status()) || (!ev.tilt_triggered && get_tilt_status()) || g_robot_slip )
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
-		ROS_INFO("%s, %d: \033[32mTurnRegulator should switch\033[0m.", __FUNCTION__, __LINE__);
-		ev.bumper_triggered = get_bumper_status();
-		ev.cliff_triggered = get_cliff_status();
-		ev.tilt_triggered = get_tilt_status();
-		reset_sp_turn_count();
-		reset_wheel_step();
-		reset_rcon_status();
+		ROS_INFO("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
 		return true;
 	}
-	return false;
-}
 
-bool TurnRegulator::_isStop()
-{
-	bool ret = false;
-	return ret;
+	return false;
+
 }
 
 void TurnRegulator::setTarget()
@@ -645,162 +608,108 @@ LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
 }
 
-bool LinearRegulator::isReach()
+bool LinearRegulator::isCellReach()
 {
-//	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
+	// Checking if robot has reached target cell.
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = map_cell_to_point(g_plan_path.back());
 	auto target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
-
-//	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
-#if LINEAR_MOVE_WITH_PATH
-//	ROS_WARN("curr(%d),target(%d)",curr, target);
-//	ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__ ,path_.back().X,path_.back().Y);
-	if (g_plan_path.size() == 1) {
-//		ROS_INFO("\033[32m" "cells.empty(%s),cells.size(%d)""\033[0m",g_plan_path.empty()?"true":"false", g_plan_path.size());
-		if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
-				std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2) {
-			ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-							 g_plan_path.back().X, g_plan_path.back().Y);
-			return true;
-		}
-//		curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-//	target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
-//	ROS_WARN("%s, %d: LinearRegulator2:g_new_dir(%d),is_x_axis(%d),is_pos(%d),curr(%d),target(%d)", __FUNCTION__, __LINE__,g_new_dir,IS_X_AXIS(g_new_dir),IS_POS_AXIS(g_new_dir),curr, target);
-		if ((IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
-				(!IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4))
-						) {
-			ROS_INFO(
-							"%s, %d: LinearRegulator2: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-							__FUNCTION__, __LINE__, g_new_dir, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), curr, target);
-			return true;
-		}
-	}
-	/*else
+	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
+		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
 	{
-		if( (IS_POS_AXIS(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
-			(! IS_POS_AXIS(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL)))
-		{
-//			g_next_cell = path_.front();
-			path_.pop_front();
-			s_target_p = map_cell_to_point(path_.front());
-			if (std::abs(s_curr_p.X - target_p.X) < std::abs(s_curr_p.Y - target_p.Y))
-				g_new_dir = s_curr_p.Y > target_p.Y ? NEG_Y : POS_Y;
-			else
-				g_new_dir = s_curr_p.X > target_p.X ? NEG_X : POS_X;
-			ROS_WARN("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), path_.front().X, path_.front().Y, g_new_dir);
-//			MotionManage::pubCleanMapMarkers(MAP, path_.front(), path_.back(), path_);
-		}
-	}*/
-#else
-	if (std::abs(s_curr_p.X - s_target_p.X) < 150 && std::abs(s_curr_p.Y - s_target_p.Y) < 150)
-	{
-		ROS_INFO("\033[32m""%s, %d: LinearRegulator, reach the target cell!!""\033[0m", __FUNCTION__, __LINE__);
+		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
+						 g_plan_path.back().X, g_plan_path.back().Y);
 		return true;
 	}
-#endif
-
+	if ((IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
+		(!IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
+	{
+		ROS_INFO("%s, %d: LinearRegulator, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
+						__FUNCTION__, __LINE__, g_new_dir, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), curr, target);
+		return true;
+	}
 	return false;
 }
 
-bool LinearRegulator::isSwitch()
+bool LinearRegulator::isPoseReach()
 {
-
-	if ((! ev.bumper_triggered && get_bumper_status() )
-		|| (! ev.cliff_triggered && get_cliff_status())
-		|| (! ev.tilt_triggered && get_tilt_status()) || g_robot_slip
-					|| isReach())
+	// Checking if robot has reached target cell and target angle.
+	auto target_angle = g_plan_path.back().TH;
+	if (isCellReach() && std::abs(gyro_get_angle() - target_angle) < 20)
 	{
-//		g_is_should_follow_wall = true;
-		if(get_bumper_status())
-			ev.bumper_triggered = get_bumper_status();
-		if(get_cliff_status())
-			ev.cliff_triggered = get_cliff_status();
-		if(get_tilt_status())
-			ev.tilt_triggered = get_tilt_status();
+		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
+				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
+		return true;
+	}
+	return false;
+}
+
+bool LinearRegulator::shouldMoveBack()
+{
+	// Robot should move back for these cases.
+	ev.bumper_triggered = get_bumper_status();
+	ev.cliff_triggered = get_cliff_status();
+	ev.tilt_triggered = get_tilt_status();
+
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+	{
 		ROS_INFO("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
-
-		SpotType spt = SpotMovement::instance() -> getSpotType();
-		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
-			SpotMovement::instance()->setOBSTrigger();
-
-//		mt_set(CM_FOLLOW_LEFT_WALL);
-//		if(ev.bumper_triggered)
-//			g_turn_angle = bumper_turn_angle();
-//		else
-//			g_turn_angle = cliff_turn_angle();
-//		mt_set(CM_LINEARMOVE);
-
 		return true;
 	}
 
 	return false;
 }
 
-bool LinearRegulator::_isStop()
+bool LinearRegulator::isRconStop()
 {
-	auto rcon_tmp = get_rcon_trig();
-//	correct_laser_distance(laser_distance, &odom_x_start, &odom_y_start);
-	bool obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(0.20) : get_obs_status(200, 1700, 200);
-//	if (cm_is_exploration())
-//	if (get_clean_mode() == Clean_Mode_Exploration)
-//		// For exploration mode detecting the rcon signal
-//		rcon_tmp &= RconFrontAll_Home_T;
-
-	//if (obs_tmp == BLOCK_FRONT || rcon_tmp)
-	if (obs_tmp || rcon_tmp)
+	ev.rcon_triggered = get_rcon_trig();
+	if(ev.rcon_triggered)
 	{
-		if(rcon_tmp){
-			ev.rcon_triggered = rcon_tmp;
-			if (cs_is_going_home())
-				g_rcon_during_go_home = true;
-			else
-				path_set_home(map_get_curr_cell());
-			if (cm_is_exploration())
-			{
-				// Directly go to charger
-				g_exploration_home = true;
-				path_set_home(map_get_curr_cell());
-				return true;
-			}
-		}
-		//if(obs_tmp == BLOCK_FRONT)
-		if(obs_tmp != 0)
-			ev.obs_triggered = obs_tmp;
-		if(ev.obs_triggered)
-			g_turn_angle = obs_turn_angle();
-		else
-			g_turn_angle = rcon_turn_angle();
-		ROS_INFO("%s, %d: LinearRegulator, ev.obs_triggered(%d) ev.rcon_triggered(%d).", __FUNCTION__, __LINE__,ev.obs_triggered, ev.rcon_triggered);
-		SpotType spt = SpotMovement::instance()->getSpotType();
-		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
-			SpotMovement::instance()->setOBSTrigger();
+		g_turn_angle = rcon_turn_angle();
+		ROS_INFO("%s, %d: ev.rcon_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.rcon_triggered, g_turn_angle);
 		return true;
 	}
 
+	return false;
+}
+
+bool LinearRegulator::isOBSStop()
+{
+	// Now OBS sensor is just for slowing down.
+	return false;
+/*
+	ev.obs_triggered = get_obs_status(200, 1700, 200);
+	if(ev.obs_triggered)
+	{
+		g_turn_angle = obs_turn_angle();
+		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, g_turn_angle);
+		return true;
+	}
+
+	return false;*/
+}
+
+bool LinearRegulator::isLaserStop()
+{
+	ev.laser_triggered = get_laser_status();
+	if (ev.laser_triggered)
+	{
+		g_turn_angle = obs_turn_angle();
+		ROS_INFO("%s, %d: ev.laser_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.laser_triggered, g_turn_angle);
+		return true;
+	}
+
+	return false;
+}
+
+bool LinearRegulator::isBoundaryStop()
+{
 	if (is_map_front_block(2))
 	{
 		ROS_INFO("%s, %d: LinearRegulator, Blocked boundary.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
-#if !LINEAR_MOVE_WITH_PATH
-	auto diff = ranged_angle(
-					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
-	if ( std::abs(diff) > 300)
-	{
-		ROS_WARN("%s %d: LinearRegulator, warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
-		return true;
-	}
-#endif
-
-//if ((IS_X_AXIS(g_new_dir) && std::abs(s_target_p.Y - s_curr_p.Y) > CELL_COUNT_MUL_1_2/5*4)
-//	||  (IS_Y_AXIS(g_new_dir) && std::abs(s_target_p.X - s_curr_p.X) > CELL_COUNT_MUL_1_2/5*4))
-//	{
-//		ROS_INFO("%s %d: LinearRegulator, warning: angle is too big, angle: %d", __FUNCTION__, __LINE__, diff);
-//		ROS_ERROR("%s %d: d_angle %d, d_Y(%d)", __FUNCTION__, __LINE__, diff, s_target_p.Y - s_curr_p.Y);
-//		return true;
-//	}
 	return false;
 }
 
@@ -860,7 +769,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 		check_limit(integrated_, -150, 150);
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
-	obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
+	auto obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = get_obs_status();
 	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
 	{
@@ -916,170 +825,160 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 	}
 }
 
-bool FollowWallRegulator::isReach()
+bool FollowWallRegulator::isNewLineReach()
 {
-	bool ret = false;
-
-	if (cm_is_navigation()) {
-		ret = wf_nv_is_reach();
-	}else
-	if (cm_is_exploration())
+	auto ret = false;
+	auto is_pos_dir = s_target_p.Y - s_origin_p.Y > 0;
+	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
+	auto target_limit = s_target_p.Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
-		ret = wf_ep_is_reach();
+		ROS_WARN("%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+				 __FUNCTION__, __LINE__, count_to_cell(s_origin_p.Y), count_to_cell(s_target_p.Y),
+				 count_to_cell(s_curr_p.Y));
+		ret = true;
 	}
+	else if (is_pos_dir ^ s_curr_p.Y < s_target_p.Y)
+	{
+		// Robot has reached the target line center but still not reach target line limit.
+		// Check if the wall side has blocks on the map.
+		auto dx = (is_pos_dir ^ mt_is_left()) ? +2 : -2;
+		if (is_block_blocked(count_to_cell(s_curr_p.X) + dx, count_to_cell(s_curr_p.Y))) {
+			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+					 __FUNCTION__, __LINE__, count_to_cell(s_origin_p.Y), count_to_cell(s_target_p.Y),
+					 count_to_cell(s_curr_p.Y));
+			ret = true;
+		}
+	}
+
 	return ret;
 }
 
-bool FollowWallRegulator::isSwitch()
+bool FollowWallRegulator::isClosure(uint8_t closure_cnt)
 {
-//	ROS_INFO("FollowWallRegulator isSwitch");
-	if( ev.bumper_triggered || get_bumper_status()){
-		if(! ev.bumper_triggered)
-			ev.bumper_triggered = get_bumper_status();
-		g_turn_angle = bumper_turn_angle();
-		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+	if (g_wf_reach_count >= closure_cnt) {
+		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
 		return true;
 	}
-	if( ev.cliff_triggered || get_cliff_status()){
-		if(! ev.cliff_triggered)
-			ev.cliff_triggered = get_cliff_status();
-		g_turn_angle = cliff_turn_angle();
-		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-		return true;
-	}
-	if( ev.tilt_triggered || get_tilt_status()){
-		if(! ev.tilt_triggered)
-			ev.tilt_triggered = get_tilt_status();
-		g_turn_angle = tilt_turn_angle();
-		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-		return true;
-	}
-//	if(get_rcon_status() != 0)
-//		ROS_ERROR("%s,%d: rcon_status(%x)",__FUNCTION__, __LINE__, get_rcon_status());
-#if 0
-	auto rcon_tmp = get_rcon_trig();
-//	if(rcon_tmp != 0)
-//		ROS_WARN("rcon_tmp(%d)",rcon_tmp);
+	return false;
+}
 
-	/*---rcon handled in adjustSpeed()---*/
-	if( ev.rcon_triggered || rcon_tmp){
-		if(! ev.rcon_triggered)
-			ev.rcon_triggered = rcon_tmp;
-		path_set_home(map_get_curr_cell());
-		g_turn_angle = rcon_turn_angle();
-		g_straight_distance = 80;
-		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-		return true;
-	}
-#endif
-	bool obs_tmp = LASER_MARKER ? MotionManage::s_laser->laserMarker(wall_follow_detect_distance) : (get_front_obs() > get_front_obs_trig_value() + 1700);
-	if(obs_tmp) {
-//		ROS_INFO("Laser Stop in wall follow");
-		if(! ev.obs_triggered )
-			ev.obs_triggered = BLOCK_FRONT;
-		if(cs_is_trapped())
-			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-		g_turn_angle = obs_turn_angle();
-//		g_straight_distance = 100;
-		g_time_straight = 0.2;
-		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-		return true;
-	}
-	if(g_robot_slip)
-	{
+bool FollowWallRegulator::isIsolate()
+{
+	return false;
+}
+
+bool FollowWallRegulator::isTimeUp()
+{
+	if (fw_is_time_up()) {
+		ROS_WARN("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
+		ev.fatal_quit = true;
+		ROS_INFO("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
+		ev.fatal_quit = true;
 		return true;
 	}
 
 	return false;
 }
 
-bool FollowWallRegulator::_isStop()
+bool FollowWallRegulator::shouldMoveBack()
 {
-//	ROS_INFO("FollowWallRegulator _isStop");
-	bool ret = false;
-	auto reach_count =1;
-	if(cs_is_trapped())
-		reach_count =2;
-	if (g_wf_reach_count >= reach_count) {
-		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, reach_count);
-		if(cs_is_trapped())
-			ev.fatal_quit = true;
-		ret = true;
+	ev.bumper_triggered = get_bumper_status();
+	if (ev.bumper_triggered) {
+		g_turn_angle = bumper_turn_angle();
+		ROS_WARN("%s %d: Bumper triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
 	}
-	if ((cm_is_follow_wall() || cs_is_trapped()) && fw_is_time_up()) {
-		ROS_INFO("fw_is_time_up, curr(%d),start(%d),diff(%d)", time(NULL), g_wf_start_timer, g_wf_diff_timer);
-		ROS_WARN("%s %d:", __FUNCTION__, __LINE__);
-		ev.fatal_quit = true;
-		ret = true;
+	ev.cliff_triggered = get_cliff_status();
+	if (ev.cliff_triggered) {
+		g_turn_angle = cliff_turn_angle();
+		ROS_WARN("%s %d: Cliff triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
+	}
+	ev.tilt_triggered = get_tilt_status();
+	if (ev.tilt_triggered) {
+		g_turn_angle = tilt_turn_angle();
+		ROS_WARN("%s %d: Tilt triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
 	}
 
-	if(cm_is_navigation() && !cs_is_trapped())
+	if(g_robot_slip)
 	{
-			auto curr = map_point_to_cell(s_curr_p);
-			if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120) ||
-					(s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120)) {
-
-//				if (g_distance > 3) {
-					auto target_angel = (s_target_p.Y > s_origin_p.Y) ? -900 : 900;
-//				ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
-					if (std::abs(ranged_angle(gyro_get_angle() - target_angel)) < 50 ||
-							is_block_cleaned_unblock(curr.X, curr.Y)) {
-						ret = true;
-					}
-					s_target_p.Y += s_curr_p.Y - s_origin_p.Y;
-					s_origin_p.Y = s_curr_p.Y;
-//				}
-			}
-			else {
-//			if(s_curr_p.X < std::min(s_origin_p.X , s_target_p.X) - CELL_COUNT_MUL*2 || s_curr_p.X > std::max(s_origin_p.X , s_target_p.X) + CELL_COUNT_MUL*2)
-//				if(is_block_cleaned_unblock(curr.X,curr.Y))
-//					ret = true;
-//				if (std::abs(ranged_angle(gyro_get_angle() - s_origin_angle)) > 900 && is_block_cleaned_unblock(curr.X, curr.Y)) {
-//					ROS_WARN("%s %d: curr_angle(%d), origin_angle(%d),diff(%f)", __FUNCTION__, __LINE__, gyro_get_angle(),
-//									 s_origin_angle, std::abs(ranged_angle(gyro_get_angle() - s_origin_angle)));
-//					ret = true;
-		}
-		CellState state = map_get_cell(MAP,map_get_x_cell(),map_get_y_cell());
-		if( (state == BLOCKED_RCON || state == BLOCKED_TILT) ){
-			mt_set(CM_LINEARMOVE);
-			ret = true;
-		}
+		// Temporary use obs as laser triggered.
+		ev.obs_triggered = BLOCK_FRONT;
+		g_turn_angle = obs_turn_angle();
+		ROS_WARN("%s %d: slip triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
 	}
-	return ret;
+
+	return false;
 }
 
-void FollowWallRegulator::setTarget() {
-	ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
-	ROS_INFO(
-					"%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
-					__FUNCTION__, __LINE__, ev.obs_triggered, ev.rcon_triggered, ev.bumper_triggered, ev.cliff_triggered,
-					ev.tilt_triggered, g_robot_slip);
-	int16_t block_angle = 0;
-	if (ev.obs_triggered)
-		block_angle = obs_turn_angle();
-	else if (ev.bumper_triggered)
-		block_angle = bumper_turn_angle();
-	else if (ev.cliff_triggered)
-		block_angle = cliff_turn_angle();
-	else if (ev.tilt_triggered)
-		block_angle = tilt_turn_angle();
-		//	else if (ev.rcon_triggered)
-		//		block_angle = rcon_turn_angle();
-	else
-		block_angle = 0;
-	g_turn_angle = block_angle;
-	if (cm_is_follow_wall()) {
-		if (LASER_FOLLOW_WALL)
-			if (!laser_turn_angle(g_turn_angle))
-				g_turn_angle = ranged_angle(
-								course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
+bool FollowWallRegulator::shouldTurn()
+{
+	ev.laser_triggered = get_laser_status();
+	if (ev.laser_triggered)
+	{
+		// Temporary use obs as laser triggered.
+		ev.obs_triggered = BLOCK_FRONT;
+		g_turn_angle = obs_turn_angle();
+		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
 	}
-//	else {
-//		if (LASER_FOLLOW_WALL)
-//			if (!laser_turn_angle(g_turn_angle))
-//				g_turn_angle = ranged_angle(
-//								course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
-//	}
+
+	ev.obs_triggered = (get_front_obs() > get_front_obs_trig_value() + 1700);
+	if (ev.obs_triggered)
+	{
+		ev.obs_triggered = BLOCK_FRONT;
+		g_turn_angle = obs_turn_angle();
+		ROS_WARN("%s %d: OBS triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
+	}
+
+	return false;
+}
+
+bool FollowWallRegulator::isBlockCleared()
+{
+	if (!is_block_accessible(map_get_x_cell(), map_get_y_cell())) // Robot has step on blocks.
+	{
+		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		return true;
+	}
+
+	return false;
+}
+
+bool FollowWallRegulator::isOverOriginLine()
+{
+	auto curr = map_point_to_cell(s_curr_p);
+	if (s_target_p.Y > s_origin_p.Y ^ (s_origin_p.Y - s_curr_p.Y) < 120)
+	{
+		auto target_angel = (s_target_p.Y > s_origin_p.Y) ? -900 : 900;
+		//ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
+		if (std::abs(ranged_angle(gyro_get_angle() - target_angel)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+		{
+			ROS_WARN("%s %d: Opposite to target angle.", __FUNCTION__, __LINE__);
+			return true;
+		}
+		else if (is_block_cleaned_unblock(curr.X, curr.Y)) // If robot covers a big block, stop.
+		{
+			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d).", __FUNCTION__, __LINE__, curr.X, curr.Y);
+			return true;
+		}
+		else{
+			// Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean.
+			s_target_p.Y += s_curr_p.Y - s_origin_p.Y;
+			s_origin_p.Y = s_curr_p.Y;
+		}
+	}
+
+	return false;
+}
+
+void FollowWallRegulator::setTarget()
+{
+	// No need to set target here, it is set in path_next().
 }
 
 void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
@@ -1361,6 +1260,12 @@ bool GoToChargerRegulator::isReach()
 	return false;
 }
 
+bool GoToChargerRegulator::isChargerReach()
+{
+	if (ev.charge_detect)
+		return true;
+	return false;
+}
 
 bool GoToChargerRegulator::isSwitch()
 {
@@ -3314,11 +3219,12 @@ RegulatorManage::RegulatorManage(const Cell_t& start_cell, const Cell_t& target_
 	back_reg_ = new BackRegulator();
 	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
 	line_reg_ = new LinearRegulator(target, path);
-	gh_reg_ = new GoToChargerRegulator();
+	gtc_reg_ = new GoToChargerRegulator();
 	turn_reg_ = new TurnRegulator(0);
 	mt_reg_ = line_reg_;
+
 	if(cm_is_go_charger())
-		mt_reg_ = gh_reg_;
+		mt_reg_ = gtc_reg_;
 	p_reg_ = mt_reg_;
 
 //	else if (mt_is_go_to_charger()) {
@@ -3336,7 +3242,7 @@ RegulatorManage::~RegulatorManage()
 	delete back_reg_;
 	delete line_reg_;
 	delete fw_reg_;
-	delete gh_reg_;
+	delete gtc_reg_;
 	cm_set_event_manager_handler_state(false);
 }
 void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -3347,26 +3253,98 @@ void RegulatorManage::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	right_speed_ = right_speed;
 }
 
-bool RegulatorManage::isReach() {
-	if ((mt_is_linear() &&
-			 (p_reg_ == back_reg_ ||
-				(p_reg_ == turn_reg_ && map_point_to_cell(s_curr_p) == g_plan_path.back()))
-			) ||
-			(mt_is_follow_wall() &&
-			 p_reg_ == mt_reg_)
-					) {
-		return p_reg_->isReach();
-	}
-//	ROS_INFO("isMt(%d),isTurn(%d),isBack(%d)", isMt(),isTurn(), isBack());
-//	if (p_reg_ != nullptr)
-//		return p_reg_->isReach();
-	return false;
-}
-
-bool RegulatorManage::isSwitch()
+bool RegulatorManage::isReach()
 {
-	if (p_reg_ != nullptr)
-		return p_reg_->isSwitch();
+	if (cs_is_trapped()) // For trapped status.
+	{
+		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		{
+			if (isMt())
+				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+			else if (isBack())
+				return back_reg_->isReach();
+		}
+		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		{
+			if (isMt())
+				return fw_reg_->isBlockCleared();
+		}
+	}
+
+	else if (cs_is_tmp_spot()) // For temp spot during navigation.
+	{
+		if (mt_is_linear()) // Robot is cleaning current line.
+		{
+			if (isMt())
+				return line_reg_->isCellReach(); // For reaching target.
+			else if (isBack())
+				return back_reg_->isReach();
+		}
+	}
+
+	else if (cs_is_going_home())
+	{
+		if (mt_is_linear()) // Robot is cleaning current line.
+		{
+			if (isMt())
+				return line_reg_->isCellReach(); // For reaching target.
+			else if (isBack())
+				return back_reg_->isReach();
+		}
+	}
+
+	else if (cm_is_navigation())
+	{
+		if (mt_is_linear()) // Robot is cleaning current line.
+		{
+			if (isMt())
+				return line_reg_->isPoseReach();
+			else if (isBack())
+				return back_reg_->isReach();
+		}
+		else if (mt_is_follow_wall()) // Robot is going to new line.
+		{
+			if (isMt())
+				return fw_reg_->isNewLineReach();
+		}
+	}
+
+	else if (cm_is_follow_wall())
+	{
+		if (mt_is_linear())
+		{
+			if (isMt())
+				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+		}
+		else if (mt_is_follow_wall())
+		{
+			if (isMt())
+				return fw_reg_->isClosure(1);
+		}
+	}
+
+	else if (cm_is_spot())
+	{
+		if (mt_is_linear()) // Robot is cleaning current line.
+		{
+			if (isMt())
+				return line_reg_->isCellReach(); // For reaching target.
+			else if (isBack())
+				return back_reg_->isReach();
+		}
+	}
+
+	else if (cm_is_exploration())
+	{
+		if (mt_is_linear()) // Robot is cleaning current line.
+		{
+			if (isMt())
+				return line_reg_->isCellReach(); // For reaching target.
+			else if (isBack())
+				return back_reg_->isReach();
+		}
+	}
+
 	return false;
 }
 
@@ -3414,7 +3392,7 @@ void RegulatorManage::setMt()
 	}
 	else if (mt_is_go_to_charger())
 	{
-		mt_reg_ = gh_reg_;
+		mt_reg_ = gtc_reg_;
 		g_turn_angle = 0;
 	}
 	p_reg_ = turn_reg_;
@@ -3431,54 +3409,358 @@ void RegulatorManage::setMt()
 	robot::instance()->obsAdjustCount(20);
 }
 
-bool RegulatorManage::_isStop()
+bool RegulatorManage::_isExit()
 {
-	if (p_reg_ != nullptr)
-		return p_reg_->_isStop();
+	if (cs_is_trapped()) // For trapped status.
+	{
+		if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		{
+			if (isMt())
+				return fw_reg_->isTimeUp();
+		}
+	}
+
 	return false;
 }
 
-void RegulatorManage::switchToNext(PPTargetType& path)
+bool RegulatorManage::_isStop()
 {
-	if (p_reg_ == turn_reg_)
+	if (cs_is_trapped()) // For trapped status.
 	{
-		if(g_robot_slip || ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered ){
-			p_reg_ = back_reg_;
-			ROS_INFO("%s %d: From turn_reg_ to back_reg_.", __FUNCTION__, __LINE__);
-		}
-		else /*if(ev.obs_triggered || ev.rcon_triggered)*/
+		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
-			p_reg_ = mt_reg_;
-			ROS_INFO("%s %d: From turn_reg_ to mt_reg_.", __FUNCTION__, __LINE__);
+			if (isMt())
+				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+			else if (isBack())
+				return back_reg_->isLaserStop();
+		}
+		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		{
+			if (isMt())
+				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(2);
+			else if (isBack())
+				return back_reg_->isLaserStop();
 		}
 	}
-	else if (p_reg_ == back_reg_)
+
+	else if (cs_is_tmp_spot()) // For temp spot during navigation.
 	{
-		p_reg_ = turn_reg_;
-		ROS_INFO("%s %d: From back_reg_ to turn_reg_.", __FUNCTION__, __LINE__);
+		if (mt_is_linear()) // Robot is cleaning current line.
+		{
+			if (isMt())
+				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+			else if (isBack())
+				return back_reg_->isLaserStop();
+		}
 	}
-	else if (p_reg_ == mt_reg_)
+
+	else if (cs_is_going_home())
 	{
-		if (g_robot_slip || ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered
-			|| mt_is_go_to_charger())
+		if (mt_is_linear())
 		{
-			p_reg_ = back_reg_;
-			ROS_INFO("%s %d: From mt_reg_ to back_reg_.", __FUNCTION__, __LINE__);
-		}
-		else/* if (ev.obs_triggered || ev.rcon_triggered)*/
-		{
-			p_reg_ = turn_reg_;
-			ROS_INFO("%s %d: From mt_reg_ to turn_reg_.", __FUNCTION__, __LINE__);
+			if (isMt())
+				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+			else if (isBack())
+				return back_reg_->isLaserStop();
 		}
 	}
-	ROS_INFO("%s %d: ev.obs_triggered(\033[32m%d\033[0m), ev.rcon_triggered(\033[32m%d\033[0m), g_bumper_hitted(\033[32m%d\033[0m), ev.cliff_triggered(\033[32m%d\033[0m), ev.tilt_triggered(\033[32m%d\033[0m),g_robot_slip(\033[32m%d\033[0m)",__FUNCTION__, __LINE__, ev.obs_triggered, ev.rcon_triggered, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered,g_robot_slip);
-	setTarget();
-	if(p_reg_ != back_reg_){//note: save when robot leave move_to
-		ev.laser_triggered = 0;
-		ev.rcon_triggered = 0;
-		ev.bumper_triggered = 0;
-		ev.obs_triggered = 0;
-		ev.cliff_triggered = 0;
-		ev.tilt_triggered = 0;
+
+	else if (cs_is_clean())
+	{
+		if (cm_is_navigation())
+		{
+			if (mt_is_linear()) // Robot is cleaning current line.
+			{
+				if (isMt())
+					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+				else if (isBack())
+					return back_reg_->isLaserStop();
+			}
+			else if (mt_is_follow_wall()) // Robot is going to new line.
+			{
+				if (isMt())
+					return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(1) || fw_reg_->isIsolate();
+				else if (isBack())
+					return back_reg_->isLaserStop();
+			}
+		}
+
+		else if (cm_is_follow_wall())
+		{
+			if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode.
+								// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
+			{
+				if (isMt())
+					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+				else if (isBack())
+					return back_reg_->isLaserStop();
+			}
+			else if (mt_is_follow_wall()) // Robot is following wall for cleaning.
+			{
+				if (isMt())
+					return fw_reg_->isOverOriginLine() || fw_reg_->isIsolate();
+				else if (isBack())
+					return back_reg_->isLaserStop();
+			}
+		}
+
+		else if (cm_is_spot())
+		{
+			if (mt_is_linear())
+			{
+				if (isMt())
+					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+				else if (isBack())
+					return back_reg_->isLaserStop();
+			}
+		}
+
+		else if (cm_is_exploration())
+		{
+			if (mt_is_linear())
+			{
+				if (isMt())
+					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+				else if (isBack())
+					return back_reg_->isLaserStop();
+			}
+		}
 	}
+
+
+	return false;
+}
+
+bool RegulatorManage::isSwitch()
+{
+	auto old_p_reg_ = p_reg_;
+	if (cs_is_trapped()) // For trapped status.
+	{
+		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		{
+			if (isTurn())
+			{
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+			else if (isMt() && line_reg_->shouldMoveBack())
+				p_reg_ = back_reg_;
+		}
+		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		{
+			if (isTurn())
+			{
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+			else if (isMt())
+			{
+				if (fw_reg_->shouldMoveBack())
+				{
+					g_time_straight = 0.2;
+					g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+					p_reg_ = back_reg_;
+				}
+				else if (fw_reg_->shouldTurn())
+				{
+					g_time_straight = 0;
+					g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+					p_reg_ = turn_reg_;
+				}
+			}
+			else if (isBack() && back_reg_->isReach())
+			{
+				p_reg_ = turn_reg_;
+				resetTriggeredValue();
+			}
+		}
+	}
+
+	else if (cs_is_tmp_spot()) // For temp spot during navigation.
+	{
+		if (mt_is_linear()) // Robot is cleaning current line.
+		{
+			if (isTurn())
+			{
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+			else if (isMt() && line_reg_->shouldMoveBack())
+				p_reg_ = back_reg_;
+		}
+	}
+
+	else if (cs_is_going_home())
+	{
+		if (mt_is_linear()) // Robot is going straight with path.
+		{
+			if (isTurn())
+			{
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+			else if (isMt() && line_reg_->shouldMoveBack())
+				p_reg_ = back_reg_;
+		}
+	}
+
+	else if (cs_is_clean())
+	{
+		if (cm_is_navigation())
+		{
+			if (mt_is_linear()) // Robot is cleaning current line.
+			{
+				if (isTurn())
+				{
+					if (turn_reg_->isReach())
+						p_reg_ = mt_reg_;
+					else if (turn_reg_->shouldMoveBack())
+						p_reg_ = back_reg_;
+				}
+				else if (isMt() && line_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+			else if (mt_is_follow_wall()) // Robot is going to new line.
+			{
+				if (isTurn())
+				{
+					if (turn_reg_->isReach())
+						p_reg_ = mt_reg_;
+					else if (turn_reg_->shouldMoveBack())
+						p_reg_ = back_reg_;
+				}
+				else if (isMt())
+				{
+					if (fw_reg_->shouldMoveBack())
+					{
+						g_time_straight = 0.2;
+						p_reg_ = back_reg_;
+					}
+					else if (fw_reg_->shouldTurn())
+					{
+						g_time_straight = 0;
+						p_reg_ = turn_reg_;
+					}
+				}
+				else if (isBack() && back_reg_->isReach())
+				{
+					p_reg_ = turn_reg_;
+					resetTriggeredValue();
+				}
+			}
+		}
+
+		else if (cm_is_follow_wall())
+		{
+			if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode.
+								// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
+			{
+				if (isTurn())
+				{
+					if (turn_reg_->isReach())
+						p_reg_ = mt_reg_;
+					else if (turn_reg_->shouldMoveBack())
+						p_reg_ = back_reg_;
+				}
+				else if (isMt() && line_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+			else if (mt_is_follow_wall()) // Robot is following wall for cleaning.
+			{
+				if (isTurn())
+				{
+					if (turn_reg_->isReach())
+						p_reg_ = mt_reg_;
+					else if (turn_reg_->shouldMoveBack())
+						p_reg_ = back_reg_;
+				}
+				else if (isMt())
+				{
+					if (fw_reg_->shouldMoveBack())
+					{
+						g_time_straight = 0.2;
+						g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+						p_reg_ = back_reg_;
+					}
+					else if (fw_reg_->shouldTurn())
+					{
+						g_time_straight = 0;
+						g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+						p_reg_ = turn_reg_;
+					}
+				}
+				else if (isBack() && back_reg_->isReach())
+				{
+					p_reg_ = turn_reg_;
+					resetTriggeredValue();
+				}
+			}
+		}
+
+		else if (cm_is_spot())
+		{
+			if (mt_is_linear()) // Robot is cleaning current line.
+			{
+				if (isTurn())
+				{
+					if (turn_reg_->isReach())
+						p_reg_ = mt_reg_;
+					else if (turn_reg_->shouldMoveBack())
+						p_reg_ = back_reg_;
+				}
+				else if (isMt() && line_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+		}
+
+		else if (cm_is_exploration())
+		{
+			if (mt_is_linear()) // Robot is going straight to find charger.
+			{
+				if (isTurn())
+				{
+					if (turn_reg_->isReach())
+						p_reg_ = mt_reg_;
+					else if (turn_reg_->shouldMoveBack())
+						p_reg_ = back_reg_;
+				}
+				else if (isMt() && line_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+			}
+		}
+	}
+
+	if (old_p_reg_ != p_reg_)
+	{
+		ROS_WARN("%s %d: Switch from %s to %s.", __FUNCTION__, __LINE__, old_p_reg_->getName(), p_reg_->getName());
+		setTarget();
+		return true;
+	}
+
+	return false;
+}
+
+void RegulatorManage::resetTriggeredValue(void)
+{
+	ev.laser_triggered = 0;
+	ev.rcon_triggered = 0;
+	ev.bumper_triggered = 0;
+	ev.obs_triggered = 0;
+	ev.cliff_triggered = 0;
+	ev.tilt_triggered = 0;
 }
