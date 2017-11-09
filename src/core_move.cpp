@@ -36,6 +36,7 @@
 #include <move_type.h>
 #include <path_planning.h>
 #include <clean_state.h>
+#include <event_manager.h>
 //#include "obstacle_detector.h"
 //using namespace obstacle_detector;
 
@@ -209,7 +210,6 @@ void cm_move_to(RegulatorManage& rm, PPTargetType path) {
 	if (rm.isSwitch()) {
 		map_set_blocked();
 		MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
-		rm.switchToNext(path);
 	}
 
 	int32_t speed_left = 0, speed_right = 0;
@@ -267,7 +267,6 @@ void cm_cleaning() {
 /*		if (mt_is_follow_wall() && wf_start_timer == 0)
 			wf_start_timer = time(NULL);*/
 		if (!is_equal_with_angle(curr, last)) {
-			is_time_up = (last != curr);
 			last = curr;
 			/* is ever clean? */
 			auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it){
@@ -293,7 +292,8 @@ void cm_cleaning() {
 			ROS_WARN("  {curr,start}_time(%d,%d), g_passed_path.size(%d): ", time(NULL), wf_start_timer, g_passed_path.size());
 		}*/
 
-		if ( (g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop() ) && is_time_up) {
+		if (g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop())
+		{
 			printf("\n\n\n\n\n\n");
 //			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
 //			path_display_path_points(g_passed_path);
@@ -301,6 +301,12 @@ void cm_cleaning() {
 			map_set_cleaned(g_passed_path);
 			map_set_blocked();
 			map_mark_robot(MAP);
+			if (ev.rcon_triggered || ev.obs_triggered || ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+			{
+				SpotType spt = SpotMovement::instance()->getSpotType();
+				if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
+					SpotMovement::instance()->setOBSTrigger();
+			}
 //			ros_map_convert(MAP, false, false, true);
 //			g_plan_path.empty();
 			auto cs_tmp = cs_get();

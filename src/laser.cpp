@@ -1133,7 +1133,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-bool Laser::laserMarker(double X_MAX)
+uint8_t Laser::laserMarker(double X_MAX)
 {
 
 	scanXY_mutex_.lock();
@@ -1146,7 +1146,6 @@ bool Laser::laserMarker(double X_MAX)
 //	const double X_MIN = 0.140;//0.167
 //	const	double Y_MIN = 0.167;//0.167
 	const	double Y_MAX = 0.20;//0.279
-	uint8_t ret = 0;
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	for (int i = 0; i < tmp_laser_matrix.cols(); i++) {
@@ -1160,7 +1159,6 @@ bool Laser::laserMarker(double X_MAX)
 			}
 		}
 		if (x > 0.056 && x < X_MAX) {
-			//middle
 			//left
 			if (y > 0.056 && y < 0.168) {
 				count_array[1]++;
@@ -1221,6 +1219,7 @@ bool Laser::laserMarker(double X_MAX)
 
 	std::string msg = "";
 	std::string direction_msg = "";
+	uint8_t block_status = 0;
 	for (int i = 0; i < 12; i++) {
 		if (count_array[i] > 10) {
 			int32_t x_tmp,y_tmp;
@@ -1229,18 +1228,21 @@ bool Laser::laserMarker(double X_MAX)
 					dx = 2;
 					dy = 0;
 					direction_msg = "front middle";
+					block_status |= BLOCK_FRONT;
 					break;
 				}
 				case 1 : {
 					dx = 2;
 					dy = 1;
 					direction_msg = "front left";
+					block_status |= BLOCK_LEFT;
 					break;
 				}
 				case 2 : {
 					dx = 2;
 					dy = -1;
 					direction_msg = "front right";
+					block_status |= BLOCK_RIGHT;
 					break;
 				}
 				case 3 : {
@@ -1307,20 +1309,11 @@ bool Laser::laserMarker(double X_MAX)
 				msg += direction_msg + "(" + std::to_string(count_to_cell(x_tmp)) + ", " + std::to_string(count_to_cell(y_tmp)) + ")";
 				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
 			}
-
-			if (mt_is_follow_wall()) {
-				if (i == 0)
-					ret = 1;
-			} else {
-				if (i <= 2) {
-					ret = 1;
-				}
-			}
 		}
 	}
 //	if (!msg.empty())
 //		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
-	return ret;
+	return block_status;
 }
 
 uint8_t Laser::isRobotSlip()

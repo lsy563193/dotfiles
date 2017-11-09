@@ -124,21 +124,13 @@ void mark_offset(int16_t dx, int16_t dy, CellState status);
 	 */
 
 bool cm_go_to_charger(void);
-//void CM_SetStationHome(void);
-
-void CM_ResetBoundaryBlocks(void);
-
-void CM_AddTargets(Cell_t zone);
-
-bool cm_check_loop_back(Cell_t target);
-
-MapTouringType cm_handle_ext_event(void);
 
 void cm_create_home_boundary(void);
 
 void cm_self_check(void);
 
 bool cm_should_self_check(void);
+bool cm_should_go_to_charger(void);
 
 /* Event handler functions. */
 void cm_register_events(void);

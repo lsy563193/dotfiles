@@ -37,17 +37,11 @@ extern int16_t g_turn_angle;
 class RegulatorBase {
 public:
 
-	bool isExit();
-
-	bool isStop(){
-		return RegulatorBase::_isStop() || _isStop();
-	};
-
-	virtual bool isSwitch() = 0;
+	bool _isExit();
+	bool _isStop();
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
-	virtual bool _isStop()=0;
 	virtual void setTarget() = 0;
-	virtual bool isReach() = 0;
+	virtual std::string getName() = 0;
 
 public:
 	static Point32_t s_target_p;
@@ -65,15 +59,16 @@ public:
 		//set_wheel_speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
-	bool isSwitch();
-	bool _isStop();
+	bool isLaserStop();
 	void setTarget();
-
-protected:
 	bool isReach();
+	std::string getName()
+	{
+		std::string name = "BackRegulator";
+		return name;
+	}
 
 private:
-	double obstacle_distance_back = DBL_MAX;
 	int counter_;
 	int32_t speed_;
 	float distance;
@@ -85,12 +80,14 @@ public:
 
 	TurnRegulator(int16_t angle);
 	void adjustSpeed(int32_t&, int32_t&);
-	bool isSwitch();
-	bool _isStop();
 	void setTarget();
-
-protected:
 	bool isReach();
+	bool shouldMoveBack();
+	std::string getName()
+	{
+		std::string name = "TurnRegulator";
+		return name;
+	}
 
 private:
 	uint16_t accurate_;
@@ -136,11 +133,20 @@ public:
 	FollowWallRegulator(Point32_t start_point, Point32_t target);
 	~FollowWallRegulator(){ /*set_wheel_speed(0,0);*/ };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	bool isSwitch();
-	bool _isStop();
+	bool shouldMoveBack();
+	bool shouldTurn();
+	bool isBlockCleared();
+	bool isOverOriginLine();
+	bool isNewLineReach();
+	bool isClosure(uint8_t closure_cnt);
+	bool isIsolate();
+	bool isTimeUp();
 	void setTarget();
-protected:
-	bool isReach();
+	std::string getName()
+	{
+		std::string name = "FollowWallRegulator";
+		return name;
+	}
 
 private:
 	int32_t previous_;
@@ -162,13 +168,20 @@ class LinearRegulator: public RegulatorBase{
 public:
 	LinearRegulator(Point32_t, const PPTargetType&);
 	~LinearRegulator(){ };
-	bool _isStop();
-	bool isSwitch();
+	bool isRconStop();
+	bool isOBSStop();
+	bool isLaserStop();
+	bool isBoundaryStop();
+	bool isCellReach();
+	bool isPoseReach();
+	bool shouldMoveBack();
 	void adjustSpeed(int32_t&, int32_t&);
 	void setTarget();
-
-protected:
-	bool isReach();
+	std::string getName()
+	{
+		std::string name = "LinearRegulator";
+		return name;
+	}
 
 private:
 	int32_t integrated_;
@@ -179,7 +192,6 @@ private:
 //	PPTargetType path_;
 	float odom_x_start;
 	float odom_y_start;
-	double obstalce_distance_front = DBL_MAX;
 };
 
 class GoToChargerRegulator: public RegulatorBase{
@@ -190,6 +202,7 @@ public:
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
 	void setTarget();
+	bool isChargerReach();
 	void resetGoToChargerVariables()
 	{
 		no_signal_cnt = 0;
@@ -209,6 +222,11 @@ public:
 		reset_rcon_status();
 		turn_connect_cnt = 0;
 		turn_connect_dir = ROUND_RIGHT;
+	}
+	std::string getName()
+	{
+		std::string name = "GoToChargerRegulator";
+		return name;
 	}
 
 protected:
@@ -244,43 +262,52 @@ public:
 	RegulatorManage(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~RegulatorManage();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	bool isSwitch();
 	bool _isStop();
-	bool isReach();
-	void mark();
-	bool isTurn(){
-		return p_reg_ == turn_reg_;
+	bool isStop(){
+		return RegulatorBase::_isStop() || _isStop();
 	};
-
+	bool _isExit();
+	bool isExit(){
+		return RegulatorBase::_isExit() || _isExit();
+	};
+	bool isReach();
+	bool isSwitch();
 	void setTarget() {p_reg_->setTarget();}
 	bool isMt(void) const
 	{
 		return p_reg_ == mt_reg_;
 	}
-	void reset(void)
-	{
-		p_reg_ = turn_reg_;
-		setTarget();
-	}
-	void setMt(void);
-
 	bool isBack(void) const
 	{
 		return p_reg_ == back_reg_;
 	}
-	void switchToNext(PPTargetType& path);
+	bool isTurn(void) const
+	{
+		return p_reg_ == turn_reg_;
+	}
 
-	bool wf_is_reach(const std::vector<Cell_t>& passed_path);
-
+	void setMt(void);
+/*	void reset(void)
+	{
+		p_reg_ = turn_reg_;
+		setTarget();
+	}*/
 	void updatePosition(const Point32_t &curr_point){
 		s_curr_p = curr_point;
 	}
+	void resetTriggeredValue(void);
+	std::string getName()
+	{
+		std::string name = "RegulatorManage";
+		return name;
+	}
+
 private:
 	RegulatorBase* p_reg_;
-	RegulatorBase* fw_reg_;
-	RegulatorBase* line_reg_;
-	RegulatorBase* gh_reg_;
 	RegulatorBase* mt_reg_;
+	FollowWallRegulator* fw_reg_;
+	LinearRegulator* line_reg_;
+	GoToChargerRegulator* gtc_reg_;
 	TurnRegulator* turn_reg_;
 	BackRegulator* back_reg_;
 
