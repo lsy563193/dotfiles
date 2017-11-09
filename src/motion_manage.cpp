@@ -98,7 +98,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (ev.fatal_quit || g_key_clean_pressed || g_cliff_all_triggered)
+		if (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Launch obstacle detector interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -121,7 +121,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 			continue;
 		}
 
-		if (ev.fatal_quit || g_key_clean_pressed || g_cliff_all_triggered)
+		if (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Detecting line interrupted.", __FUNCTION__, __LINE__);
 			return false;
@@ -266,7 +266,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	/*----slam init----*/
 	s_slam = new Slam();
 	//4 call start slam
-	while (g_slam_error)
+	while (ev.slam_error)
 	{
 		// Wait for slam launch.
 		usleep(20000);
@@ -288,7 +288,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			continue;
 		}
 
-		if (ev.fatal_quit || g_key_clean_pressed || g_cliff_all_triggered)
+		if (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)
 		{
 			ROS_WARN("%s %d: Waiting for slam interrupted.", __FUNCTION__, __LINE__);
 			break;
@@ -345,10 +345,10 @@ MotionManage::~MotionManage()
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
-	if (!ev.fatal_quit && ( ( g_key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
+	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
 	{
 		wav_play(WAV_CLEANING_PAUSE);
-		if (!g_cliff_all_triggered)
+		if (!ev.cliff_all_triggered)
 		{
 			if (cs_is_going_home())
 			{
@@ -379,14 +379,14 @@ MotionManage::~MotionManage()
 		g_from_station = 0;
 	}
 
-	if (!g_charge_detect)
+	if (!ev.charge_detect)
 		// It means robot can not go to charger stub.
 		robot::instance()->resetLowBatPause();
 
 	if (!ev.fatal_quit && robot::instance()->isLowBatPaused())
 	{
 		wav_play(WAV_CLEANING_PAUSE);
-		if (!g_cliff_all_triggered)
+		if (!ev.cliff_all_triggered)
 		{
 			g_resume_cleaning = true;
 			robot::instance()->resetLowBatPause();
@@ -407,18 +407,18 @@ MotionManage::~MotionManage()
 
 	// Unregister here because robot may be lifted up during the wav playing for cleaning pause.
 	cm_unregister_events();
-	if (ev.fatal_quit) // Also handles for ev.battery_low/g_charge_detect/g_cliff_all_triggered.
+	if (ev.fatal_quit) // Also handles for ev.battery_low/ev.charge_detect/ev.cliff_all_triggered.
 	{
 		robot::instance()->resetManualPause();
 		robot::instance()->resetLowBatPause();
 		g_resume_cleaning = false;
-		if (g_cliff_all_triggered)
+		if (ev.cliff_all_triggered)
 			wav_play(WAV_ERROR_LIFT_UP);
 		wav_play(WAV_CLEANING_STOP);
 	}
 	else // Normal finish.
 	{
-		if(cs_is_going_home() && !g_charge_detect && g_have_seen_charger)
+		if(cs_is_going_home() && !ev.charge_detect && g_have_seen_charger)
 			wav_play(WAV_BACK_TO_CHARGER_FAILED);
 		if (cm_get() != Clean_Mode_Go_Charger && !cm_is_exploration())
 			wav_play(WAV_CLEANING_FINISHED);
@@ -434,13 +434,13 @@ MotionManage::~MotionManage()
 	robot::instance()->savedOffsetAngle(0);
 
 	if (ev.fatal_quit)
-		if (g_cliff_all_triggered)
+		if (ev.cliff_all_triggered)
 			ROS_WARN("%s %d: All Cliff are triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 		else
 			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
-	else if (g_key_clean_pressed)
+	else if (ev.key_clean_pressed)
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
-	else if (g_charge_detect)
+	else if (ev.charge_detect)
 		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
 	else if (ev.battery_low)
 		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
@@ -461,7 +461,7 @@ MotionManage::~MotionManage()
 	}
 	if (ev.battery_low)
 		cm_set(Clean_Mode_Sleep);
-	else if (g_charge_detect)
+	else if (ev.charge_detect)
 		cm_set(Clean_Mode_Charging);
 	else
 		cm_set(Clean_Mode_Userinterface);
@@ -588,17 +588,17 @@ bool MotionManage::initNavigationCleaning(void)
 		int back_segment = (int)MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);
-			if (ev.fatal_quit || g_key_clean_pressed || is_on_charger_stub() || g_cliff_all_triggered) {
+			if (ev.fatal_quit || ev.key_clean_pressed || is_on_charger_stub() || ev.cliff_all_triggered) {
 				disable_motors();
 				if (ev.fatal_quit)
 				{
 					robot::instance()->resetManualPause();
 					g_resume_cleaning = false;
 				}
-				else if (g_key_clean_pressed && !g_resume_cleaning)
+				else if (ev.key_clean_pressed && !g_resume_cleaning)
 					// Reset the odom position so when continue cleaning, the position robot stopped at will be the home point (0, 0).
 					robot::instance()->initOdomPosition();
-				else if (!ev.fatal_quit && !g_key_clean_pressed)
+				else if (!ev.fatal_quit && !ev.key_clean_pressed)
 				{
 					ROS_WARN("%s %d: Fail to leave charger stub.", __FUNCTION__, __LINE__);
 					robot::instance()->resetManualPause();

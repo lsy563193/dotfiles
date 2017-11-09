@@ -250,7 +250,7 @@ void cm_cleaning() {
 			break;
 		}
 
-		if (g_slam_error) {
+		if (ev.slam_error) {
 			set_wheel_speed(0, 0);
 			continue;
 		}
@@ -420,7 +420,7 @@ bool cm_go_to_charger()
 //	PPTargetType path_empty;
 //	set_led_mode(LED_STEADY, LED_GREEN);
 //
-//	if (ev.fatal_quit || g_key_clean_pressed || g_charge_detect)
+//	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
 //		return true;
 //	work_motor_configure();
 //	g_tilt_enable = true; //enable tilt detect
@@ -540,17 +540,17 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (ev.bumper_jam || ev.cliff_jam || g_omni_notmove || g_laser_stuck)
+	if (ev.bumper_jam || ev.cliff_jam || g_omni_notmove || ev.laser_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
 	}
 
-	if (g_oc_wheel_left || g_oc_wheel_right)
+	if (ev.oc_wheel_left || ev.oc_wheel_right)
 		disable_motors();
 
-	if (g_oc_suction)
+	if (ev.oc_suction)
 	{
 		ROS_WARN("%s, %d: Vacuum Self checking start", __FUNCTION__, __LINE__);
 		disable_motors();
@@ -566,17 +566,17 @@ void cm_self_check(void)
 			continue;
 		}
 
-		if (ev.fatal_quit || g_key_clean_pressed || g_charge_detect)
+		if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
 			break;
 
-		if (g_slam_error)
+		if (ev.slam_error)
 		{
 			set_wheel_speed(0, 0);
 			continue;
 		}
 
 		// Check for right wheel.
-		if (g_oc_wheel_left || g_oc_wheel_right)
+		if (ev.oc_wheel_left || ev.oc_wheel_right)
 		{
 			if (time(NULL) - start_time >= 1)
 			{
@@ -586,7 +586,7 @@ void cm_self_check(void)
 					if (resume_cnt >= 3)
 					{
 						disable_motors();
-						if (g_oc_wheel_left)
+						if (ev.oc_wheel_left)
 						{
 							ROS_WARN("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
 							set_error_code(Error_Code_LeftWheel);
@@ -610,23 +610,23 @@ void cm_self_check(void)
 				}
 				else
 				{
-					if (g_oc_wheel_left)
+					if (ev.oc_wheel_left)
 					{
 						ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
-						g_oc_wheel_left = false;
+						ev.oc_wheel_left = false;
 						work_motor_configure();
 					}
 					else
 					{
 						ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
-						g_oc_wheel_right = false;
+						ev.oc_wheel_right = false;
 						work_motor_configure();
 					}
 				}
 			}
 			else
 			{
-				if (g_oc_wheel_left)
+				if (ev.oc_wheel_left)
 					wheel_current_sum += (uint32_t) robot::instance()->getLwheelCurrent();
 				else
 					wheel_current_sum += (uint32_t) robot::instance()->getRwheelCurrent();
@@ -639,7 +639,7 @@ void cm_self_check(void)
 			{
 				ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
 				ev.cliff_triggered = 0;
-				g_cliff_all_triggered = false;
+				ev.cliff_all_triggered = false;
 				g_cliff_cnt = 0;
 				g_cliff_all_cnt = 0;
 				ev.cliff_jam = false;
@@ -756,7 +756,7 @@ void cm_self_check(void)
 				}
 			}
 		}
-		else if (g_oc_suction)
+		else if (ev.oc_suction)
 		{
 			if(vacuum_oc_state == 1)
 			{
@@ -782,7 +782,7 @@ void cm_self_check(void)
 				else if (get_self_check_vacuum_status() == 0x00)
 				{
 					ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
-					g_oc_suction = false;
+					ev.oc_suction = false;
 					g_oc_suction_cnt = 0;
 					break;
 				}
@@ -828,12 +828,12 @@ void cm_self_check(void)
 				break;
 			}
 		}
-		else if (g_laser_stuck)
+		else if (ev.laser_stuck)
 		{
 			if (!check_laser_stuck())
 			{
 				ROS_WARN("%s %d: Restore from laser stuck.", __FUNCTION__, __LINE__);
-				g_laser_stuck = false;
+				ev.laser_stuck = false;
 			}
 
 			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
@@ -853,7 +853,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (g_oc_wheel_left || g_oc_wheel_right || ev.bumper_jam || ev.cliff_jam || g_oc_suction || g_omni_notmove || g_slip_cnt >= 2 || g_laser_stuck);
+	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || g_omni_notmove || g_slip_cnt >= 2 || ev.laser_stuck);
 }
 
 /* Event handler functions. */
@@ -1126,7 +1126,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
 	{
-		g_cliff_all_triggered = true;
+		ev.cliff_all_triggered = true;
 		ev.fatal_quit = true;
 	}
 	ev.cliff_triggered = BLOCK_ALL;
@@ -1136,7 +1136,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_left(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+//	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LF;
 
 //	if (!state_last && g_move_back_finished)
@@ -1153,7 +1153,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_front_right(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+//	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_RF;
 
 //	if (!state_last && g_move_back_finished)
@@ -1170,7 +1170,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_left_right(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+//	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LR;
 
 //	if (!state_last && g_move_back_finished)
@@ -1186,7 +1186,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 
 void cm_handle_cliff_front(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+//	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Front;
 
 //	if (!state_last && g_move_back_finished)
@@ -1202,7 +1202,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 
 void cm_handle_cliff_left(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+//	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Left;
 
 //	if (!state_last && g_move_back_finished)
@@ -1218,7 +1218,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 
 void cm_handle_cliff_right(bool state_now, bool state_last)
 {
-//	g_cliff_all_triggered = false;
+//	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Right;
 
 //	if (!state_last && g_move_back_finished)
@@ -1294,7 +1294,7 @@ void cm_handle_over_current_brush_main(bool state_now, bool state_last)
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
 		if (self_check(Check_Main_Brush) == 1) {
-			g_oc_brush_main = true;
+			ev.oc_brush_main = true;
 			ev.fatal_quit = true;
 		}
     }
@@ -1335,7 +1335,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 		g_oc_wheel_left_cnt = 0;
 		ROS_WARN("%s %d: left wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
-		g_oc_wheel_left = true;
+		ev.oc_wheel_left = true;
 	}
 }
 
@@ -1352,7 +1352,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 		g_oc_wheel_right_cnt = 0;
 		ROS_WARN("%s %d: right wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
-		g_oc_wheel_right = true;
+		ev.oc_wheel_right = true;
 	}
 }
 
@@ -1369,7 +1369,7 @@ void cm_handle_over_current_suction(bool state_now, bool state_last)
 		g_oc_suction_cnt = 0;
 		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
 
-		g_oc_suction = true;
+		ev.oc_suction = true;
 	}
 }
 
@@ -1381,7 +1381,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_slam_error)
+	if (ev.slam_error)
 	{
 		beep_for_command(INVALID);
 		while (get_key_press() & KEY_CLEAN)
@@ -1395,7 +1395,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 
 	beep_for_command(VALID);
 	set_wheel_speed(0, 0);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 
 	if(cm_is_navigation())
 		robot::instance()->setManualPause();
@@ -1427,14 +1427,14 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_slam_error)
+	if (ev.slam_error)
 	{
 		beep_for_command(INVALID);
 		reset_rcon_remote();
 		return;
 	}
 	beep_for_command(VALID);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	if(cm_is_navigation()){
 		robot::instance()->setManualPause();
 	}
@@ -1445,7 +1445,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !g_slam_error && !robot::instance()->isManualPaused()) {
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !robot::instance()->isManualPaused()) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(INVALID);
@@ -1471,7 +1471,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || !cm_is_navigation()
-		|| cs_is_going_home() || cm_should_self_check() || g_slam_error || robot::instance()->isManualPaused()
+		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || robot::instance()->isManualPaused()
 		|| time(NULL) - last_time_remote_spot < 3)
 		beep_for_command(INVALID);
 	else
@@ -1495,7 +1495,7 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !g_slam_error && !robot::instance()->isManualPaused())
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !robot::instance()->isManualPaused())
 	{
 		beep_for_command(VALID);
 		switch_vac_mode(true);
@@ -1575,10 +1575,10 @@ void cm_handle_charge_detect(bool state_now, bool state_last)
 	{
 		if (g_charge_detect_cnt++ > 2)
 		{
-			g_charge_detect = robot::instance()->getChargeStatus();
+			ev.charge_detect = robot::instance()->getChargeStatus();
 			if (!cm_is_exploration() && robot::instance()->getChargeStatus() == 3)
 				ev.fatal_quit = true;
-			ROS_WARN("%s %d: g_charge_detect has been set to %d.", __FUNCTION__, __LINE__, g_charge_detect);
+			ROS_WARN("%s %d: ev.charge_detect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
 			g_charge_detect_cnt = 0;
 		}
 	}

@@ -301,7 +301,7 @@ static bool wf_ep_is_reach(void) {
 }
 
 bool RegulatorBase::isExit(){
-	return ev.fatal_quit || g_key_clean_pressed || g_charge_detect;
+	return ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect;
 }
 
 bool RegulatorBase::_isStop()
@@ -327,7 +327,7 @@ void BackRegulator::setTarget()
 		g_slip_backward= true;
 		g_robot_slip = false;
 	}
-	else if (g_tilt_triggered)
+	else if (ev.tilt_triggered)
 		g_back_distance = 0.05;
 	else if (g_go_to_charger_back_10cm)
 		g_back_distance = 0.10;
@@ -366,10 +366,10 @@ bool BackRegulator::isReach()
 		ROS_INFO("\033[32m%s\033[0m, %d: \033[33mBackRegulator\033[0m ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
-		g_tilt_triggered = get_tilt_status();
+		ev.tilt_triggered = get_tilt_status();
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
-		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !g_tilt_triggered)
+		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !ev.tilt_triggered)
 		{
 			if (mt_is_go_to_charger())
 			{
@@ -516,12 +516,12 @@ bool TurnRegulator::isSwitch()
 {
 //	ROS_INFO("TurnRegulator::isSwitch");
 
-	if(isReach() ||(! ev.bumper_triggered  && get_bumper_status()) || (! ev.cliff_triggered && get_cliff_status()) || (!g_tilt_triggered && get_tilt_status()) || g_robot_slip )
+	if(isReach() ||(! ev.bumper_triggered  && get_bumper_status()) || (! ev.cliff_triggered && get_cliff_status()) || (!ev.tilt_triggered && get_tilt_status()) || g_robot_slip )
 	{
 		ROS_INFO("%s, %d: \033[32mTurnRegulator should switch\033[0m.", __FUNCTION__, __LINE__);
 		ev.bumper_triggered = get_bumper_status();
 		ev.cliff_triggered = get_cliff_status();
-		g_tilt_triggered = get_tilt_status();
+		ev.tilt_triggered = get_tilt_status();
 		reset_sp_turn_count();
 		reset_wheel_step();
 		reset_rcon_status();
@@ -708,7 +708,7 @@ bool LinearRegulator::isSwitch()
 
 	if ((! ev.bumper_triggered && get_bumper_status() )
 		|| (! ev.cliff_triggered && get_cliff_status())
-		|| (! g_tilt_triggered && get_tilt_status()) || g_robot_slip
+		|| (! ev.tilt_triggered && get_tilt_status()) || g_robot_slip
 					|| isReach())
 	{
 //		g_is_should_follow_wall = true;
@@ -717,8 +717,8 @@ bool LinearRegulator::isSwitch()
 		if(get_cliff_status())
 			ev.cliff_triggered = get_cliff_status();
 		if(get_tilt_status())
-			g_tilt_triggered = get_tilt_status();
-		ROS_INFO("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) g_tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,g_tilt_triggered,g_robot_slip);
+			ev.tilt_triggered = get_tilt_status();
+		ROS_INFO("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
 
 		SpotType spt = SpotMovement::instance() -> getSpotType();
 		if(spt == CLEAN_SPOT || spt == NORMAL_SPOT)
@@ -947,9 +947,9 @@ bool FollowWallRegulator::isSwitch()
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-	if( g_tilt_triggered || get_tilt_status()){
-		if(! g_tilt_triggered)
-			g_tilt_triggered = get_tilt_status();
+	if( ev.tilt_triggered || get_tilt_status()){
+		if(! ev.tilt_triggered)
+			ev.tilt_triggered = get_tilt_status();
 		g_turn_angle = tilt_turn_angle();
 		ROS_INFO("%s %d: g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
@@ -1053,7 +1053,7 @@ void FollowWallRegulator::setTarget() {
 	ROS_INFO(
 					"%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
 					__FUNCTION__, __LINE__, ev.obs_triggered, ev.rcon_triggered, ev.bumper_triggered, ev.cliff_triggered,
-					g_tilt_triggered, g_robot_slip);
+					ev.tilt_triggered, g_robot_slip);
 	int16_t block_angle = 0;
 	if (ev.obs_triggered)
 		block_angle = obs_turn_angle();
@@ -1061,7 +1061,7 @@ void FollowWallRegulator::setTarget() {
 		block_angle = bumper_turn_angle();
 	else if (ev.cliff_triggered)
 		block_angle = cliff_turn_angle();
-	else if (g_tilt_triggered)
+	else if (ev.tilt_triggered)
 		block_angle = tilt_turn_angle();
 		//	else if (ev.rcon_triggered)
 		//		block_angle = rcon_turn_angle();
@@ -1356,7 +1356,7 @@ GoToChargerRegulator::GoToChargerRegulator()
 
 bool GoToChargerRegulator::isReach()
 {
-	if (g_charge_detect)
+	if (ev.charge_detect)
 		return true;
 	return false;
 }
@@ -3238,11 +3238,11 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 {
 	uint8_t left_speed;
 	uint8_t right_speed;
-	if (g_oc_suction)
+	if (ev.oc_suction)
 		left_speed = right_speed = 0;
-	else if (g_oc_wheel_left || g_oc_wheel_right)
+	else if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
-		if (g_oc_wheel_right) {
+		if (ev.oc_wheel_right) {
 			set_dir_right();
 		} else {
 			set_dir_left();
@@ -3297,7 +3297,7 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			set_dir_right();
 		left_speed = right_speed = ROTATE_TOP_SPEED;
 	}
-	else if (g_laser_stuck)
+	else if (ev.laser_stuck)
 	{
 		set_dir_backward();
 		left_speed = right_speed = 2;
@@ -3381,7 +3381,7 @@ void RegulatorManage::setMt()
 		if(cm_is_follow_wall()) {
 			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
 							 __FUNCTION__, __LINE__, ev.obs_triggered, ev.rcon_triggered, ev.bumper_triggered, ev.cliff_triggered,
-							 g_tilt_triggered, g_robot_slip);
+							 ev.tilt_triggered, g_robot_slip);
 			int16_t block_angle = 0;
 			if (ev.obs_triggered)
 				block_angle = obs_turn_angle();
@@ -3389,7 +3389,7 @@ void RegulatorManage::setMt()
 				block_angle = bumper_turn_angle();
 			else if (ev.cliff_triggered)
 				block_angle = cliff_turn_angle();
-			else if (g_tilt_triggered)
+			else if (ev.tilt_triggered)
 				block_angle = tilt_turn_angle();
 				//	else if (ev.rcon_triggered)
 				//		block_angle = rcon_turn_angle();
@@ -3442,7 +3442,7 @@ void RegulatorManage::switchToNext(PPTargetType& path)
 {
 	if (p_reg_ == turn_reg_)
 	{
-		if(g_robot_slip || ev.bumper_triggered || ev.cliff_triggered || g_tilt_triggered ){
+		if(g_robot_slip || ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered ){
 			p_reg_ = back_reg_;
 			ROS_INFO("%s %d: From turn_reg_ to back_reg_.", __FUNCTION__, __LINE__);
 		}
@@ -3459,7 +3459,7 @@ void RegulatorManage::switchToNext(PPTargetType& path)
 	}
 	else if (p_reg_ == mt_reg_)
 	{
-		if (g_robot_slip || ev.bumper_triggered || ev.cliff_triggered || g_tilt_triggered
+		if (g_robot_slip || ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered
 			|| mt_is_go_to_charger())
 		{
 			p_reg_ = back_reg_;
@@ -3471,14 +3471,14 @@ void RegulatorManage::switchToNext(PPTargetType& path)
 			ROS_INFO("%s %d: From mt_reg_ to turn_reg_.", __FUNCTION__, __LINE__);
 		}
 	}
-	ROS_INFO("%s %d: ev.obs_triggered(\033[32m%d\033[0m), ev.rcon_triggered(\033[32m%d\033[0m), g_bumper_hitted(\033[32m%d\033[0m), ev.cliff_triggered(\033[32m%d\033[0m), g_tilt_triggered(\033[32m%d\033[0m),g_robot_slip(\033[32m%d\033[0m)",__FUNCTION__, __LINE__, ev.obs_triggered, ev.rcon_triggered, ev.bumper_triggered, ev.cliff_triggered, g_tilt_triggered,g_robot_slip);
+	ROS_INFO("%s %d: ev.obs_triggered(\033[32m%d\033[0m), ev.rcon_triggered(\033[32m%d\033[0m), g_bumper_hitted(\033[32m%d\033[0m), ev.cliff_triggered(\033[32m%d\033[0m), ev.tilt_triggered(\033[32m%d\033[0m),g_robot_slip(\033[32m%d\033[0m)",__FUNCTION__, __LINE__, ev.obs_triggered, ev.rcon_triggered, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered,g_robot_slip);
 	setTarget();
 	if(p_reg_ != back_reg_){//note: save when robot leave move_to
-		g_laser_triggered = 0;
+		ev.laser_triggered = 0;
 		ev.rcon_triggered = 0;
 		ev.bumper_triggered = 0;
 		ev.obs_triggered = 0;
 		ev.cliff_triggered = 0;
-		g_tilt_triggered = 0;
+		ev.tilt_triggered = 0;
 	}
 }

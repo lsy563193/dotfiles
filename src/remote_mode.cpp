@@ -75,7 +75,7 @@ void remote_mode(void)
 			break;
 		}
 
-		if (g_key_clean_pressed || remote_exit)
+		if (ev.key_clean_pressed || remote_exit)
 			break;
 
 		remote_move();
@@ -90,7 +90,7 @@ void remote_mode(void)
 	if (ev.battery_low)
 		wav_play(WAV_BATTERY_LOW);
 
-	if (g_cliff_all_triggered)
+	if (ev.cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 }
 
@@ -405,7 +405,7 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
 	{
-		g_cliff_all_triggered = true;
+		ev.cliff_all_triggered = true;
 		ev.fatal_quit = true;
 	}
 	ev.cliff_triggered = BLOCK_ALL;
@@ -516,7 +516,7 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	if (get_rcon_remote() == Remote_Clean)
 	{
 		beep_for_command(VALID);
-		g_key_clean_pressed = true;
+		ev.key_clean_pressed = true;
 		cm_set(Clean_Mode_Userinterface);
 		disable_motors();
 	}
@@ -559,7 +559,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 	cm_set(Clean_Mode_Userinterface);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	reset_touch();
 }
 
@@ -585,7 +585,7 @@ void remote_mode_handle_over_current_wheel_left(bool state_now, bool state_last)
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
 		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
-		g_oc_wheel_left = true;
+		ev.oc_wheel_left = true;
 	}
 }
 
@@ -602,7 +602,7 @@ void remote_mode_handle_over_current_wheel_right(bool state_now, bool state_last
 		g_oc_wheel_right_cnt = 0;
 		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
-		g_oc_wheel_right = true;
+		ev.oc_wheel_right = true;
 	}
 }
 
@@ -619,7 +619,7 @@ void remote_mode_handle_over_current_suction(bool state_now, bool state_last)
 		g_oc_suction_cnt = 0;
 		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
 
-		g_oc_suction = true;
+		ev.oc_suction = true;
 	}
 }
 

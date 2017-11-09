@@ -15,47 +15,30 @@
 /* Events variables */
 /* The fatal quit event includes any of the following case:
  *  ev.bumper_jam
- * 	g_cliff_all_triggered
- * 	g_oc_brush_main
- * 	g_oc_wheel_left
- * 	g_oc_wheel_right
- * 	g_oc_suction
+ * 	ev.cliff_all_triggered
+ * 	ev.oc_brush_main
+ * 	ev.oc_wheel_left
+ * 	ev.oc_wheel_right
+ * 	ev.oc_suction
  * 	ev.battery_low
  */
 /* Bumper */
 int g_bumper_cnt = 0;
 /* OBS */
-int g_laser_triggered = 0;
-/* Cliff */
-bool g_cliff_all_triggered = false;
 uint8_t g_cliff_all_cnt = 0;
 int g_cliff_cnt = 0;
 /* RCON */
 //int ev.rcon_triggered = 0;
 /* Over Current */
-bool g_oc_brush_main = false;
-bool g_oc_wheel_left = false;
-bool g_oc_wheel_right = false;
-bool g_oc_suction = false;
 uint8_t g_oc_brush_left_cnt = 0;
 uint8_t g_oc_brush_main_cnt = 0;
 uint8_t g_oc_brush_right_cnt = 0;
 uint8_t g_oc_wheel_left_cnt = 0;
 uint8_t g_oc_wheel_right_cnt = 0;
 uint8_t g_oc_suction_cnt = 0;
-/* Key */
-bool g_key_clean_pressed = false;
-/* Remote */
-bool g_remote_wallfollow = false;
-bool g_remote_direction_keys = false;
-/* Battery */
+
 uint8_t g_battery_low_cnt = 0;
-/* Charge Status */
-uint8_t g_charge_detect = 0;
 uint8_t g_charge_detect_cnt = 0;
-/* Slam Error */
-bool g_slam_error = false;
-/* Plan */
 bool g_plan_activated = false;
 
 /* Omni wheel*/
@@ -63,7 +46,6 @@ bool g_omni_notmove = false;
 bool g_omni_enable = false;
 /* tilt switch*/
 bool g_tilt_enable = false;
-bool g_tilt_triggered = false;
 
 /* robot slip & stuck */
 uint8_t g_slip_cnt = 0;
@@ -78,7 +60,6 @@ Ev_t ev;
 //int g_lidar_bumper_cnt = 0;
 
 // laser stuck
-bool g_laser_stuck = false;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -324,7 +305,7 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Slam Error */
-		if (g_slam_error) {
+		if (ev.slam_error) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_SLAM_ERROR)
 		}
@@ -563,17 +544,17 @@ void event_manager_reset_status(void)
 	/* OBS */
 //	ev.obs_triggered = false;
 	/* Cliff */
-	g_cliff_all_triggered = false;
+	ev.cliff_all_triggered = false;
 	ev.cliff_triggered = 0;
 	ev.cliff_jam = false;
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
 	/* Over Current */
-	g_oc_brush_main = false;
-	g_oc_wheel_left = false;
-	g_oc_wheel_right = false;
-	g_oc_suction = false;
+	ev.oc_brush_main = false;
+	ev.oc_wheel_left = false;
+	ev.oc_wheel_right = false;
+	ev.oc_suction = false;
 	g_oc_brush_left_cnt = 0;
 	g_oc_brush_main_cnt = 0;
 	g_oc_brush_right_cnt = 0;
@@ -581,34 +562,34 @@ void event_manager_reset_status(void)
 	g_oc_wheel_right_cnt = 0;
 	g_oc_suction_cnt = 0;
 	/* Key */
-	g_key_clean_pressed = false;
+	ev.key_clean_pressed = false;
 	/* Remote */
 	ev.remote_home = false;
 	ev.remote_spot = false;
-	g_remote_wallfollow = false;
-	g_remote_direction_keys = false;
+	ev.remote_wallfollow = false;
+	ev.remote_direction_keys = false;
 	/* Battery */
 	ev.battery_home = false;
 	ev.battery_low = false;
 	g_battery_low_cnt = 0;
 	/* Charge Status */
-	g_charge_detect = 0;
+	ev.charge_detect = 0;
 	g_charge_detect_cnt = 0;
 	/* Slam Error */
-	g_slam_error = false;
+	ev.slam_error = false;
 	/* robot stuck */
 	//g_robot_stuck = false;
 	g_robot_slip = false;
 	g_slip_cnt = 0;
 	/* tilt switch*/
 	g_tilt_enable = false;
-	g_tilt_triggered = false;
+	ev.tilt_triggered = false;
 	/* lidar bumper */
 	//g_lidar_bumper = false;
 	//g_lidar_bumper_cnt =0;
 	//g_lidar_bumper_jam = false;
 	// laser stuck
-	g_laser_stuck = false;
+	ev.laser_stuck = false;
 }
 
 /* Below are the internal functions. */
@@ -915,8 +896,8 @@ void em_default_handle_charge_detect(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (g_charge_detect_cnt++ > 25)
 	{
-		g_charge_detect = robot::instance()->getChargeStatus();
-		ROS_WARN("%s %d: g_charge_detect has been set to %d.", __FUNCTION__, __LINE__, g_charge_detect);
+		ev.charge_detect = robot::instance()->getChargeStatus();
+		ROS_WARN("%s %d: ev.charge_detect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
 		g_charge_detect_cnt = 0;
 	}
 }
@@ -967,7 +948,7 @@ void em_default_handle_slam_error(bool state_now, bool state_last)
 	// Wait for 0.2s to make sure it has process the first scan.
 	usleep(200000);
 	ROS_WARN("Slam restart successed.");
-	g_slam_error = false;
+	ev.slam_error = false;
 }
 
 void em_default_handle_robot_slip(bool state_new,bool state_last)
@@ -989,7 +970,7 @@ void em_default_handle_laser_stuck(bool state_new,bool state_last)
 {
 	beep_for_command(true);
 	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
-	g_laser_stuck = true;
+	ev.laser_stuck = true;
 }
 
 /* Default: empty hanlder */

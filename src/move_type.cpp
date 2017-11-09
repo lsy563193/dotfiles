@@ -54,11 +54,11 @@ void mt_update(const Cell_t& curr, PPTargetType& path) {
 	if (cm_is_navigation()) {
 		auto dir = g_old_dir;
 		ROS_WARN("%s,%d: dir(%d),obs(%d),laser(%d), bumper(%d)", __FUNCTION__, __LINE__, dir, ev.obs_triggered,
-						 g_laser_triggered, ev.bumper_triggered);
-		if (!IS_X_AXIS(dir) || (ev.obs_triggered == 0 && g_laser_triggered == 0 && ev.bumper_triggered == 0) || path.size() > 2)
+						 ev.laser_triggered, ev.bumper_triggered);
+		if (!IS_X_AXIS(dir) || (ev.obs_triggered == 0 && ev.laser_triggered == 0 && ev.bumper_triggered == 0) || path.size() > 2)
 			return;
 
-		if (g_tilt_triggered)
+		if (ev.tilt_triggered)
 			return;
 
 		auto delta_y = path.back().Y - curr.Y;
@@ -67,14 +67,14 @@ void mt_update(const Cell_t& curr, PPTargetType& path) {
 		CMMoveType move_type_tmp = ((dir == POS_X ^ delta_y > 0) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
 		if (std::abs(delta_x) > 1 && (IS_POS_AXIS(dir) ^ (delta_x < 0))) {
 			auto is_right = (ev.obs_triggered == BLOCK_RIGHT || ev.bumper_triggered == BLOCK_RIGHT ||
-											 g_laser_triggered == BLOCK_RIGHT);
+											 ev.laser_triggered == BLOCK_RIGHT);
 			auto is_left = (ev.obs_triggered == BLOCK_LEFT || ev.bumper_triggered == BLOCK_LEFT ||
-											g_laser_triggered == BLOCK_LEFT);
+											ev.laser_triggered == BLOCK_LEFT);
 			if ((move_type_tmp == CM_FOLLOW_LEFT_WALL && is_right) ||
 					(move_type_tmp == CM_FOLLOW_RIGHT_WALL && is_left)) {
 				ROS_WARN(
-								"%s,%d: move_type_tmp same side with block(%d),ev.obs_triggered(%d),g_laser_triggered(%d), ev.bumper_triggered(%d)",
-								__FUNCTION__, __LINE__, move_type_tmp, ev.obs_triggered, g_laser_triggered, ev.bumper_triggered);
+								"%s,%d: move_type_tmp same side with block(%d),ev.obs_triggered(%d),ev.laser_triggered(%d), ev.bumper_triggered(%d)",
+								__FUNCTION__, __LINE__, move_type_tmp, ev.obs_triggered, ev.laser_triggered, ev.bumper_triggered);
 				return;
 			}
 		}

@@ -1413,7 +1413,7 @@ bool cm_turn_and_check_charger_signal(void)
 			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
 			return true;
 		}
-		else if(g_key_clean_pressed || ev.fatal_quit || g_charge_detect)
+		else if(ev.key_clean_pressed || ev.fatal_quit || ev.charge_detect)
 		{
 			ROS_INFO("%s, %d: event triggered, return now.", __FUNCTION__, __LINE__);
 			return false;

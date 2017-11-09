@@ -42,25 +42,38 @@
  * 	g_battery_low
  */
 typedef struct {
-	bool remote_home;
-	bool battery_home;
-	bool battery_low;
-	bool remote_spot;
+		bool remote_home;
+		bool battery_home;
+		bool battery_low;
+		bool remote_spot;
 
-	bool battrey_home;
-	bool fatal_quit;
-	bool bumper_triggered;
-	int  rcon_triggered;
-	bool obs_triggered;
-	bool bumper_jam;
-	int cliff_triggered;
-	bool cliff_jam;
+		bool battrey_home;
+		bool fatal_quit;
+		bool bumper_triggered;
+		int rcon_triggered;
+		bool obs_triggered;
+		bool bumper_jam;
+		int cliff_triggered;
+		bool cliff_jam;
+
+		bool oc_brush_main;
+		bool oc_wheel_left;
+		bool oc_wheel_right;
+		bool oc_suction;
+		bool key_clean_pressed;
+		bool remote_wallfollow;
+		bool remote_direction_keys;
+		bool slam_error;
+		bool tilt_triggered;
+		uint8_t charge_detect;
+		bool laser_stuck = false;
+		int laser_triggered;
+		bool cliff_all_triggered;
 }Ev_t;
 
 /* Bumper */
 extern int g_bumper_cnt;
 /* OBS */
-extern int g_laser_triggered;
 /* Cliff */
 extern bool g_cliff_all_triggered;
 extern uint8_t g_cliff_all_cnt;
@@ -68,10 +81,6 @@ extern int g_cliff_cnt;
 /* RCON */
 extern bool g_rcon_during_go_home;
 /* Over Current */
-extern bool g_oc_brush_main;
-extern bool g_oc_wheel_left;
-extern bool g_oc_wheel_right;
-extern bool g_oc_suction;
 extern uint8_t g_oc_brush_left_cnt;
 extern uint8_t g_oc_brush_main_cnt;
 extern uint8_t g_oc_brush_right_cnt;
@@ -82,15 +91,10 @@ extern uint8_t g_oc_suction_cnt;
 extern bool g_key_clean_pressed;
 /* Remote */
 extern Ev_t ev;
-extern bool g_remote_wallfollow;
-extern bool g_remote_direction_keys;
 /* Battery */
 extern uint8_t g_battery_low_cnt;
 /* Charge status */
-extern uint8_t g_charge_detect;
 extern uint8_t g_charge_detect_cnt;
-/* Slam Error */
-extern bool g_slam_error;
 /* Plan */
 extern bool g_plan_activated;
 /* Omni wheel*/
@@ -105,14 +109,6 @@ extern bool g_robot_slip;
 extern bool g_wf_is_reach;
 extern bool g_robot_slip_enable;
 extern uint8_t g_slip_cnt;
-
-/* lidar bumper */
-//extern bool g_lidar_bumper;
-//extern bool g_lidar_bumper_jam;
-//extern int g_lidar_bumper_cnt;
-
-// laser stuck
-extern bool g_laser_stuck;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,

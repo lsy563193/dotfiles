@@ -289,7 +289,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
-		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !g_slam_error)
+		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !ev.slam_error)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -309,7 +309,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					g_slam_error = true;
+					ev.slam_error = true;
 					slam_error_count = 0;
 				}
 				return;
@@ -339,7 +339,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !g_slam_error)
+		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !ev.slam_error)
 		{
 			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
@@ -366,7 +366,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					g_slam_error = true;
+					ev.slam_error = true;
 					slam_error_count = 0;
 				}
 				return;

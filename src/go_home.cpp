@@ -78,11 +78,11 @@ void go_home(void)
 
 	while (ros::ok())
 	{
-		if (ev.fatal_quit || g_key_clean_pressed || g_go_to_charger_failed)
+		if (ev.fatal_quit || ev.key_clean_pressed || g_go_to_charger_failed)
 		{
 			if(!during_cleaning)
 			{
-				if (g_cliff_all_triggered)
+				if (ev.cliff_all_triggered)
 				{
 					disable_motors();
 					wav_play(WAV_ERROR_LIFT_UP);
@@ -91,7 +91,7 @@ void go_home(void)
 			}
 			break;
 		}
-		if(g_charge_detect)
+		if(ev.charge_detect)
 		{
 			if(!during_cleaning)
 				cm_set(Clean_Mode_Charging);
@@ -111,7 +111,7 @@ void go_home(void)
 
 	}
 
-	if(!during_cleaning && !g_charge_detect && !ev.fatal_quit && !g_key_clean_pressed)
+	if(!during_cleaning && !ev.charge_detect && !ev.fatal_quit && !ev.key_clean_pressed)
 	{
 		disable_motors();
 		wav_play(WAV_BACK_TO_CHARGER_FAILED);
@@ -181,13 +181,13 @@ void go_to_charger(void)
 
 		if(ev.fatal_quit)
 			break;
-		if(g_charge_detect && g_go_home_state_now != CHECK_POSITION)
+		if(ev.charge_detect && g_go_home_state_now != CHECK_POSITION)
 			break;
-		if(g_key_clean_pressed)
+		if(ev.key_clean_pressed)
 			break;
 		if(ev.battery_low)
 			break;
-		if (g_slam_error)
+		if (ev.slam_error)
 		{
 			set_wheel_speed(0, 0);
 			continue;
@@ -858,7 +858,7 @@ void go_to_charger(void)
 		/*---check_position main while---*/
 		else if(g_go_home_state_now == CHECK_POSITION)
 		{
-			if(g_charge_detect)
+			if(ev.charge_detect)
 			{
 				if(g_charge_detect_cnt == 0)
 					g_charge_detect_cnt++;
@@ -995,7 +995,7 @@ void go_to_charger(void)
 		/*---by_path main while---*/
 		else if(g_go_home_state_now == BY_PATH)
 		{
-			if(g_charge_detect)
+			if(ev.charge_detect)
 			{
 				if(g_charge_detect_cnt == 0)g_charge_detect_cnt++;
 				else
@@ -2301,7 +2301,7 @@ void go_to_charger(void)
 }
 
 /* turn_connect()
- * return: true - event triggered, including g_charge_detect/g_key_clean_pressed/g_cliff_all_triggered.
+ * return: true - event triggered, including ev.charge_detect/ev.key_clean_pressed/ev.cliff_all_triggered.
  *         false - can't reach the charger stub.
  */
 bool turn_connect(void)
@@ -2314,7 +2314,7 @@ bool turn_connect(void)
 	set_start_charge();
 	// Wait for 200ms for charging activated.
 	usleep(200000);
-	if(g_charge_detect)
+	if(ev.charge_detect)
 	{
 		ROS_INFO("Reach charger without turning.");
 		return true;
@@ -2325,20 +2325,20 @@ bool turn_connect(void)
 	set_wheel_speed(speed, speed);
 	while (abs(ranged_angle(target_angle - gyro_get_angle())) > 20)
 	{
-		if (g_charge_detect)
+		if (ev.charge_detect)
 		{
-			g_charge_detect = 0;
+			ev.charge_detect = 0;
 			disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if (g_charge_detect)
+			if (ev.charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || ev.fatal_quit)
+		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 	}
 	stop_brifly();
@@ -2348,20 +2348,20 @@ bool turn_connect(void)
 	set_wheel_speed(speed, speed);
 	while (abs(ranged_angle(target_angle - gyro_get_angle())) > 20)
 	{
-		if (g_charge_detect)
+		if (ev.charge_detect)
 		{
-			g_charge_detect = 0;
+			ev.charge_detect = 0;
 			disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if (g_charge_detect)
+			if (ev.charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || ev.fatal_quit)
+		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 	}
 	stop_brifly();
@@ -2540,7 +2540,7 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 {
 	if(g_go_home_state_now == CHECK_POSITION)
 	{
-		g_charge_detect = 1;
+		ev.charge_detect = 1;
 	}
 	else
 	{
@@ -2549,7 +2549,7 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 			g_charge_detect_cnt++;
 			if(g_charge_detect_cnt > 2)
 			{
-				g_charge_detect = 1;
+				ev.charge_detect = 1;
 			}
 		}
 		else
@@ -2566,7 +2566,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 	bool reset_manual_pause = false;
 	beep_for_command(VALID);
 	set_wheel_speed(0, 0);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	start_time = time(NULL);
 
 	if (during_cleaning && cm_is_navigation())
@@ -2596,7 +2596,7 @@ void go_home_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(VALID);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	if (during_cleaning && cm_is_navigation())
 		robot::instance()->setManualPause();
 	reset_rcon_remote();
@@ -2607,7 +2607,7 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
 	{
-		g_cliff_all_triggered = true;
+		ev.cliff_all_triggered = true;
 		ev.fatal_quit = true;
 	}
 	ev.cliff_triggered = BLOCK_ALL;
@@ -2671,7 +2671,7 @@ void go_home_handle_over_current_brush_main(bool state_now, bool state_last)
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
 		if (self_check(Check_Main_Brush) == 1) {
-			g_oc_brush_main = true;
+			ev.oc_brush_main = true;
 			ev.fatal_quit = true;
 		}
     }
@@ -2690,7 +2690,7 @@ void go_home_handle_over_current_wheel_left(bool state_now, bool state_last)
 		g_oc_wheel_left_cnt = 0;
 		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
-		g_oc_wheel_left = true;
+		ev.oc_wheel_left = true;
 	}
 }
 
@@ -2707,7 +2707,7 @@ void go_home_handle_over_current_wheel_right(bool state_now, bool state_last)
 		g_oc_wheel_right_cnt = 0;
 		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
-		g_oc_wheel_right = true;
+		ev.oc_wheel_right = true;
 	}
 }
 
@@ -2724,7 +2724,7 @@ void go_home_handle_over_current_suction(bool state_now, bool state_last)
 		g_oc_suction_cnt = 0;
 		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
 
-		g_oc_suction = true;
+		ev.oc_suction = true;
 	}
 }
 
