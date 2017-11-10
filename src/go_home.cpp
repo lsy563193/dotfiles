@@ -196,7 +196,7 @@ void go_to_charger(void)
 			break;
 
 		if(during_cleaning)
-			map_set_cleaned(map_get_curr_cell());
+			//map_set_cleaned(map_get_curr_cell());
 
 		if(!g_move_back_finished)
 		{

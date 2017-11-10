@@ -229,7 +229,7 @@ void cm_cleaning() {
 
 	g_motion_init_succeeded = true;
 	cs_init();
-	Cell_t curr = cm_update_position();
+	Cell_t curr = map_update_position();
 	g_plan_path.clear();
 	auto is_reach = REATH_TARGET;
 
@@ -261,7 +261,7 @@ void cm_cleaning() {
 		}
 
 		// Update position.
-		curr = cm_update_position();//note:cell = {x,y,angle}
+		curr = map_update_position();//note:cell = {x,y,angle}
 		rm.updatePosition({map_get_x_count(), map_get_y_count()});
 		// Checking for wall follow closure.
 /*		if (mt_is_follow_wall() && wf_start_timer == 0)
@@ -356,7 +356,7 @@ void cs_setting(int cs) {
 		// Special handling for wall follow mode.
 		if (cm_is_follow_wall()) {
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
-			cm_update_position();
+			map_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
 			ros_map_convert(MAP, true, false, false);
