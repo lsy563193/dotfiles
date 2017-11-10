@@ -42,6 +42,7 @@ int path_get_path_points_count();
 void path_reset_path_points();
 
 void path_display_path_points(const deque<Cell_t>& path);
+void path_display_targets(const deque<Cell_t>& targets);
 
 #endif
 //void set_explore_new_path_flag(bool flag);

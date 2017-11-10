@@ -468,7 +468,7 @@ int32_t cell_to_count(int16_t i) {
 	return i * CELL_COUNT_MUL;
 }
 
-int16_t count_to_cell(double count) {
+int16_t count_to_cell(int32_t count) {
 	if(count < -CELL_COUNT_MUL_1_2) {
 		return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL - 1;
 	} else {
@@ -758,7 +758,7 @@ uint8_t map_set_bumper()
 	for(auto& d_cell : d_cells){
 		cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x, &y);
 		cm_world_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x2, y2);
-		ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d).", __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x, y, count_to_cell(x), count_to_cell(y), x2, y2);
+		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d).", __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x, y, count_to_cell(x), count_to_cell(y), x2, y2);
 		msg += "(" + std::to_string(x2) + "," + std::to_string(y2) + ")";
 		map_set_cell(MAP, cell_to_count(x2), cell_to_count(y2), BLOCKED_BUMPER);
 		block_count++;
@@ -1035,7 +1035,7 @@ void map_set_follow_wall(uint8_t id, const Cell_t& curr) {
 	int x, y;
 	if(!g_from_station){
 		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, 0, &x, &y);
-		ROS_INFO("%s,%d: map_fw_curr(%d,%d)", __FUNCTION__, __LINE__, x, y);
+		ROS_INFO("%s,%d: map_fw_curr(%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
 		map_set_cell(id, x, y, BLOCKED_CLIFF);
 	}
 }

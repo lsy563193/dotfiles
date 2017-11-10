@@ -76,6 +76,11 @@ bool g_is_switch_target = true;
 //int8_t g_home_cnt = 0;// g_homes.size()*HOMEWAY_NUM-1 3/9, 2/4, 1/2
 bool g_home_gen_rosmap = true;
 
+/*
+ *     ^x      4 0 5
+ *     |       2 8 3
+ * y<---       6 1 7
+ */
 Cell_t g_index[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 
 const int16_t g_home_x = 0, g_home_y = 0;
@@ -367,7 +372,7 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {
 	int16_t is_found=0;
-	Cell_t it[2];
+	Cell_t it[2]; // it[0] means the furthest cell of X positive direction, it[1] means the furthest cell of X negative direction.
 
 //	debug_map(MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
@@ -385,7 +390,6 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		}
 	}
 
-	ROS_WARN("%s %d: it[0](%d,%d), it[1](%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
 	Cell_t target = it[0];
 	if (it[0].X != curr.X)
 	{
@@ -398,8 +402,8 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	if (is_found == 2)
 	{
 		target = it[0];
-		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
 		//todo
+//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
 //		if(mt_is_follow_wall() && cm_is_reach())
 //		{
 //			if(mt_is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
@@ -408,7 +412,12 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	}
 
 	if (is_found)
+	{
 		path.push_front(target);
+		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
+	}
+	else
+		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target not found.", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
 
 	return is_found !=0;
 }
@@ -646,18 +655,20 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map) {
 	std::sort(cells.begin(),cells.end(),[](Cell_t l,Cell_t r){
 			return (l.Y < r.Y || (l.Y == r.Y && l.X < r.X));
 	});
-	path_display_path_points(cells);
+	path_display_targets(cells);
 
+	ROS_INFO("%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
+	std::deque<Cell_t>filtered_cells{};
 	/* Filter the targets. */
 	for(;!cells.empty();) {
 		auto y = cells.front().Y;
 		std::deque<Cell_t> tmp{};
 		std::remove_if(cells.begin(), cells.end(), [&y, &tmp](Cell_t &it) {
-				if (it.Y == y && (tmp.empty() || (it.X - tmp.back().X == 1))) {
-					tmp.push_back(it);
-					return true;
-				}
-				return false;
+			if (it.Y == y && (tmp.empty() || (it.X - tmp.back().X == 1))) {
+				tmp.push_back(it);
+				return true;
+			}
+			return false;
 		});
 		cells.resize(cells.size() - tmp.size());
 		if (tmp.size() > 2) {
@@ -666,11 +677,13 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map) {
 			}), tmp.end() - 1);
 		}
 		for(const auto& it:tmp){
-				PPTargetType t = {{it}};
-				g_paths.push_back(t);
+			PPTargetType t = {{it}};
+			g_paths.push_back(t);
+			filtered_cells.push_back(it);
 		};
 	}
 
+	path_display_targets(filtered_cells);
 //#if DEBUG_MAP
 	// Print for map that contains all targets.
 //	debug_map(MAP, g_home_x, g_home_y);
@@ -757,7 +770,7 @@ void generate_SPMAP(const Cell_t& curr)
 			}
 		}
 		if (all_set == true) {
-			ROS_INFO("%s %d: all possible target are checked & reachable.", __FUNCTION__, __LINE__);
+			//ROS_INFO("%s %d: all possible target are checked & reachable.", __FUNCTION__, __LINE__);
 			passSet = 0;
 		}
 
@@ -767,12 +780,10 @@ void generate_SPMAP(const Cell_t& curr)
 			nextPassValue = 1;
 	}
 
-	ROS_INFO("%s %d: offset: %d\tx: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
+	//ROS_INFO("%s %d: offset: %d\tx: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
 #if DEBUG_SM_MAP
 	debug_map(SPMAP, 0, 0);
 #endif
-	for(auto path:g_paths)
-		path_display_path_points(path);
 }
 
 bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
@@ -780,6 +791,7 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
 	generate_SPMAP(curr);
+	std::deque<Cell_t> reachable_targets{};
 	for (auto it = g_paths.begin(); it != g_paths.end();) {
 		if (map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_NO ||
 						map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_HIGH) {
@@ -788,10 +800,16 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 			continue;
 		}
 		else
+		{
+			reachable_targets.push_back(it->back());
 			it++;
+		}
 	}
 
-	ROS_INFO("%s %d: Get %lu reachable targets.", __FUNCTION__, __LINE__, g_paths.size());
+	ROS_INFO("%s %d: After generating SPMAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, g_paths.size());
+	if (!g_paths.empty())
+		path_display_targets(reachable_targets);
+
 	return !g_paths.empty();
 }
 

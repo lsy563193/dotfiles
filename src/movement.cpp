@@ -1045,10 +1045,10 @@ void wheels_pid(void)
 
 		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
 		{
-			ROS_INFO("%s %d: Update the last_reg_type.", __FUNCTION__, __LINE__);
 			left_pid.actual_speed = 0;
 			right_pid.actual_speed = 0;
 			left_pid.last_reg_type = right_pid.last_reg_type = argu_for_pid.reg_type;
+			//ROS_INFO("%s %d: Switch PID type to %d.", __FUNCTION__, __LINE__, argu_for_pid.reg_type);
 		}
 	}
 	else if(argu_for_pid.reg_type == REG_TYPE_NONE || argu_for_pid.reg_type == REG_TYPE_WALLFOLLOW)

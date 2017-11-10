@@ -68,18 +68,17 @@ static int16_t bumper_turn_angle()
 		if(g_wall_distance < 330)
 			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
 		g_turn_angle =0;
-		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 		if (!cs_is_trapped()) {
 			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -180 : -280;
 		} else {
 			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -100 : -200;
 		}
-		ROS_WARN("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
+		//ROS_INFO("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
 		g_straight_distance = 250; //250;
 		bumper_jam_cnt_ = get_wheel_step() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
-	ROS_INFO("g_wall_distance in bumper_turn_angular: %d",g_wall_distance);
+	//ROS_INFO("%s %d: g_wall_distance in bumper_turn_angular: %d", __FUNCTION__, __LINE__, g_wall_distance);
 	g_straight_distance = 200;
 	reset_wheel_step();
 	if(mt_is_right())
@@ -336,7 +335,6 @@ bool BackRegulator::isReach()
 			return true;
 		}
 
-		ROS_INFO("\033[32m%s\033[0m, %d: \033[33mBackRegulator\033[0m ", __FUNCTION__, __LINE__);
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
 		ev.tilt_triggered = get_tilt_status();
@@ -350,7 +348,7 @@ bool BackRegulator::isReach()
 				g_go_to_charger_back_10cm = false;
 				g_go_to_charger_back_0cm = false;
 			}
-			ROS_WARN("%s, %d: Reach target.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s, %d: BackRegulator reach target.", __FUNCTION__, __LINE__);
 			return true;
 		}
 		if (g_cliff_cnt >= 2)
@@ -435,7 +433,6 @@ bool TurnRegulator::isReach()
 	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
 		setTarget();
 	else if (abs(ranged_angle(s_target_angle - gyro_get_angle())) < accurate_){
-		ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
 
 		/*********************************************For wall follow**********************************************/
 		if(line_is_found)
@@ -448,7 +445,8 @@ bool TurnRegulator::isReach()
 				return true;
 			}*/
 
-			ROS_INFO("%s,%d,g_wall_distance: \033[32m%d\033[0m",__FUNCTION__,__LINE__,g_wall_distance);
+			ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, g_wall_distance:%d."
+					, __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle(), g_wall_distance);
 			if(g_wall_distance < 150)  //150 is the experience value by testing in the closest position to black wall
 			{
 				g_wall_distance += (150 - g_wall_distance) / 4 * 3;
@@ -474,7 +472,7 @@ bool TurnRegulator::isReach()
 			line_is_found = false;
 		}
 		else
-			ROS_INFO("turn regulator,%s,%d,\033[32mline is not found\033[0m",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, line is not found.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
 		time_start_straight = ros::Time::now().toSec();
 		return true;
 	}
@@ -491,7 +489,7 @@ bool TurnRegulator::shouldMoveBack()
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
-		ROS_INFO("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
+		ROS_WARN("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
 		return true;
 	}
 
@@ -513,12 +511,12 @@ void TurnRegulator::setTarget()
 			waiting_start_sec_ = ros::Time::now().toSec();
 			wait_sec_ = 0.33;
 			s_target_angle = gyro_get_angle();
-			ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
+			ROS_INFO("%s %d: TurnRegulator, start waiting for %fs.", __FUNCTION__, __LINE__, wait_sec_);
 		}
 		else {
 			// Wait for specific time, for a new scan and gyro dynamic adjustment.
 			double tmp_sec = ros::Time::now().toSec() - waiting_start_sec_;
-			ROS_INFO("%s %d: Has been wait for %f sec.", __FUNCTION__, __LINE__, tmp_sec);
+			//ROS_INFO("%s %d: Has been wait for %f sec.", __FUNCTION__, __LINE__, tmp_sec);
 			if (tmp_sec > wait_sec_) {
 				waiting_finished_ = true;
 				stage_ = TURN_REGULATOR_TURNING;
@@ -526,7 +524,8 @@ void TurnRegulator::setTarget()
 				s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
 				// Reset the speed.
 				speed_ = ROTATE_LOW_SPEED;
-				ROS_INFO("%s %d: TurnRegulator, \033[33ms_target_angle: \033[32m%d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
+				ROS_INFO("%s %d: TurnRegulator, current angle:%d, \033[33ms_target_angle: \033[32m%d\033[0m, after %fs waiting."
+						, __FUNCTION__, __LINE__, gyro_get_angle(), s_target_angle, tmp_sec);
 				skip_laser_turn_angle_cnt_ = 0;
 			}
 		}
@@ -625,7 +624,7 @@ bool LinearRegulator::isCellReach()
 		(!IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
 		ROS_INFO("%s, %d: LinearRegulator, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-						__FUNCTION__, __LINE__, g_new_dir, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), curr, target);
+				 __FUNCTION__, __LINE__, g_new_dir, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), curr, target);
 		return true;
 	}
 	return false;
@@ -653,7 +652,8 @@ bool LinearRegulator::shouldMoveBack()
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
-		ROS_INFO("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) g_robot_slip(%d)."
+				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
 		return true;
 	}
 
@@ -695,7 +695,7 @@ bool LinearRegulator::isLaserStop()
 	if (ev.laser_triggered)
 	{
 		g_turn_angle = obs_turn_angle();
-		ROS_INFO("%s, %d: ev.laser_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.laser_triggered, g_turn_angle);
+		ROS_WARN("%s, %d: ev.laser_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.laser_triggered, g_turn_angle);
 		return true;
 	}
 
@@ -739,12 +739,12 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 			if(g_plan_path.front() != g_zero_home)
 			{
 				g_is_near = true;
-				ROS_WARN("%s %d: g_is_near(%d)", __FUNCTION__, __LINE__, g_is_near);
+				ROS_INFO("%s %d: g_is_near(%d)", __FUNCTION__, __LINE__, g_is_near);
 			}
 		}
 		target_p = map_cell_to_point(g_plan_path.front());
 		target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
-		ROS_WARN("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
+		ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
 						 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
 	}
 
@@ -3748,7 +3748,7 @@ bool RegulatorManage::isSwitch()
 
 	if (old_p_reg_ != p_reg_)
 	{
-		ROS_WARN("%s %d: Switch from %s to %s.", __FUNCTION__, __LINE__, (old_p_reg_->getName()).c_str(), (p_reg_->getName()).c_str());
+		ROS_INFO("%s %d: Switch from %s to %s.", __FUNCTION__, __LINE__, (old_p_reg_->getName()).c_str(), (p_reg_->getName()).c_str());
 		setTarget();
 		return true;
 	}

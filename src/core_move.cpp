@@ -294,7 +294,7 @@ void cm_cleaning() {
 
 		if (g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop())
 		{
-			printf("\n\n\n\n\n\n");
+			printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
 //			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
 //			path_display_path_points(g_passed_path);
 //					set_wheel_speed_pid(rm, speed_left, speed_right);
@@ -326,7 +326,7 @@ void cm_cleaning() {
 			if (g_plan_path.empty() || cs_is_go_charger())
 				return;
 
-			ROS_INFO("%s %d:cs(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),cs_tmp,cs_get());
+			ROS_INFO("%s %d: cs_tmp(%d), cs(%d).",__FUNCTION__, __LINE__, cs_tmp, cs_get());
 			path_display_path_points(g_plan_path);
 			MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 			if( !((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near) )
@@ -335,7 +335,8 @@ void cm_cleaning() {
 				g_passed_path.clear();
 			}
 			g_is_near = false;
-			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),cs(%d),\n\n",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), cs_get());
+			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),cs(%d)",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), cs_get());
+			printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 		}
 
 		cm_move_to(rm, g_plan_path);
