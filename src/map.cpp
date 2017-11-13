@@ -942,8 +942,8 @@ uint8_t map_set_blocked()
 		return 0;
 
 	uint8_t block_count = 0;
-	map_set_obs();
-	map_set_laser();
+	block_count += map_set_obs();
+	block_count += map_set_laser();
 	block_count += map_set_bumper();
 	block_count += map_set_rcon();
 	block_count += map_set_cliff();

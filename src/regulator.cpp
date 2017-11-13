@@ -472,7 +472,8 @@ bool TurnRegulator::isReach()
 			line_is_found = false;
 		}
 		else
-			ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, line is not found.", __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
+			ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, line is not found."
+					, __FUNCTION__, __LINE__, s_target_angle, gyro_get_angle());
 		time_start_straight = ros::Time::now().toSec();
 		return true;
 	}
@@ -489,7 +490,8 @@ bool TurnRegulator::shouldMoveBack()
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m).", __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
+		ROS_WARN("%s, %d,TurnRegulator, ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m)."
+				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
 		return true;
 	}
 
@@ -694,6 +696,8 @@ bool LinearRegulator::isLaserStop()
 	ev.laser_triggered = get_laser_status();
 	if (ev.laser_triggered)
 	{
+		// Temporary use OBS to get angle.
+		ev.obs_triggered = ev.laser_triggered;
 		g_turn_angle = obs_turn_angle();
 		ROS_WARN("%s, %d: ev.laser_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.laser_triggered, g_turn_angle);
 		return true;
