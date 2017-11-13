@@ -5,6 +5,7 @@
 #ifndef PP_CLEAN_MODE_H
 #define PP_CLEAN_MODE_H
 
+#include "regulator.h"
 enum {
 Clean_Mode_Userinterface = 1,
 Clean_Mode_WallFollow,
@@ -26,5 +27,106 @@ bool cm_is_spot();
 bool cm_is_go_charger();
 void cm_set(uint8_t mode);
 uint8_t cm_get(void);
+
+class CleanMode:public RegulatorBase
+{
+public:
+//	CleanMode(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+//	~CleanMode();
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	virtual bool isStop()=0;
+	virtual bool isExit()=0;
+	virtual bool isReach() =0;
+	virtual bool isSwitch() = 0 ;
+//	virtual bool path_next()=0;
+	void setTarget() {p_reg_->setTarget();}
+	bool isMt(void) const
+	{
+		return p_reg_ == mt_reg_;
+	}
+	bool isBack(void) const
+	{
+		return p_reg_ == back_reg_;
+	}
+	bool isTurn(void) const
+	{
+		return p_reg_ == turn_reg_;
+	}
+
+	void setMt(void);
+
+	void updatePosition(const Point32_t &curr_point){
+		s_curr_p = curr_point;
+	}
+	void resetTriggeredValue(void);
+	std::string getName()
+	{
+		std::string name = "CleanMode";
+		return name;
+	}
+
+protected:
+	RegulatorBase* p_reg_;
+	RegulatorBase* mt_reg_;
+	FollowWallRegulator* fw_reg_;
+	LinearRegulator* line_reg_;
+	GoToChargerRegulator* gtc_reg_;
+	TurnRegulator* turn_reg_;
+	BackRegulator* back_reg_;
+
+	int32_t left_speed_;
+	int32_t right_speed_;
+};
+
+class NavigationClean:public CleanMode{
+public:
+	NavigationClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~NavigationClean();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+//	bool path_next();
+
+private:
+};
+
+class SpotClean:public CleanMode{
+public:
+	SpotClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~SpotClean();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+
+private:
+};
+
+class WallFollowClean:public CleanMode{
+public:
+	WallFollowClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~WallFollowClean();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+};
+
+class Exploration:public CleanMode{
+public:
+	Exploration(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~Exploration();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+
+private:
+};
 
 #endif //PP_CLEAN_MODE_H

@@ -32,7 +32,7 @@ FILE(GLOB PP_SRC
 	src/wav.cpp
 	src/slam.cpp
 	src/event_manager.cpp
-	src/go_home.cpp
+#	src/go_home.cpp
 	src/regulator.cpp
 	src/move_type.cpp
 	src/clean_mode.cpp
@@ -108,7 +108,7 @@ catkin_package(
 	DEPENDS Eigen3
 )
 
-add_executable(pp  ${PP_SRC})
+add_executable(pp  ${PP_SRC} include/pp.h)
 #target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 
