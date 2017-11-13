@@ -161,7 +161,7 @@ void cm_self_check_with_handle(void)
 	cm_set_event_manager_handler_state(false);
 }
 
-/*void cm_move_to(const CleanMode* p_cm, PPTargetType path) {
+void cm_move_to(CleanMode* p_cm, PPTargetType path) {
 if (mt_is_linear()) {
 		wall_dynamic_base(30);
 	}
@@ -174,11 +174,6 @@ if (mt_is_linear()) {
 	int32_t speed_left = 0, speed_right = 0;
 	p_cm->adjustSpeed(speed_left, speed_right);
 	set_wheel_speed_pid(p_cm, speed_left, speed_right);
-}*/
-
-bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
-{
-	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
 
 void cm_cleaning() {
@@ -227,37 +222,16 @@ void cm_cleaning() {
 			continue;
 		}
 
-		curr = map_update_position();//note:cell = {x,y,angle}
-		p_cm->updatePosition({map_get_x_count(), map_get_y_count()});
-		if (!is_equal_with_angle(curr, last)) {
-			last = curr;
-			auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it){
-					return is_equal_with_angle(curr, it);
-			});
-			g_distance = std::distance(loc, g_passed_path.end());
-			if (g_distance == 0) {
-				g_passed_path.push_back(curr);
-			}
-			if (g_distance >5) {
-				g_distance =0;
-				g_wf_reach_count++;
-				g_passed_path.clear();
-			}
-			fw_marker(curr);
-		}else
-			is_time_up = !cs_is_trapped();
+		curr = p_cm->updatePosition({map_get_x_count(), map_get_y_count()});
+
+		if(p_cm->updatePath(curr, last))//is_repeat?
+			g_wf_reach_count++;
+
 		if (g_plan_path.empty() || g_is_near || p_cm->isReach() || p_cm->isStop())
 		{
 			printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
-			map_set_cleaned(g_passed_path);
-			map_set_blocked();
-			map_mark_robot(MAP);
-			if (ev.rcon_triggered || ev.obs_triggered || ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-			{
-				SpotType spt = SpotMovement::instance()->getSpotType();
-				if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
-					SpotMovement::instance()->setOBSTrigger();
-			}
+			p_cm->mark();
+
 			auto cs_tmp = cs_get();
 			if(!g_plan_path.empty())
 				curr.TH = g_plan_path.back().TH;
@@ -265,44 +239,25 @@ void cm_cleaning() {
 			g_old_dir = start.TH;
 			if(g_is_near)
 			{
-				ROS_WARN("%s %d: Curr(%d, %d), g_is_near(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, g_is_near);
 				start = g_plan_path.back();
 			}
 			g_plan_path.clear();
-
-			ROS_INFO("%s %d: cs_tmp(%d), cs(%d).mt(%d)",__FUNCTION__, __LINE__, cs_tmp, cs_get(),mt_get());
 			cs_path_next(start, g_plan_path);
-
-			ROS_INFO("%s %d: cs_tmp(%d), cs(%d).mt(%d)",__FUNCTION__, __LINE__, cs_tmp, cs_get(),mt_get());
 
 			if (g_plan_path.empty() || cs_is_go_charger())
 				return;
 
-			path_display_path_points(g_plan_path);
-			MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
+			p_cm->display();
+
 			if( !((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near) )
 			{
 				p_cm->setMt();
 				g_passed_path.clear();
 			}
 			g_is_near = false;
-//			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),cs(%d)",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), cs_get());
 			printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 		}
-//		cm_move_to(p_cm, g_plan_path);
-
-	if (mt_is_linear()) {
-		wall_dynamic_base(30);
-	}
-
-	if (p_cm->isSwitch()) {
-		map_set_blocked();
-		MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
-	}
-
-	int32_t speed_left = 0, speed_right = 0;
-	p_cm->adjustSpeed(speed_left, speed_right);
-	set_wheel_speed_pid(p_cm, speed_left, speed_right);
+		cm_move_to(p_cm, g_plan_path);
 
 	if (cm_should_self_check())
 		cm_self_check_with_handle();

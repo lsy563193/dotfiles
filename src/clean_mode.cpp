@@ -43,7 +43,11 @@ uint8_t cm_get(void)
 	return clean_mode;
 }
 
-
+void CleanMode::mark() {
+	map_set_cleaned(g_passed_path);
+	map_set_blocked();
+	map_mark_robot(MAP);
+};
 
 bool CleanMode::isStop(){
 		return RegulatorBase::isStop();
@@ -114,6 +118,37 @@ void CleanMode::setMt()
 	robot::instance()->obsAdjustCount(20);
 }
 
+bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
+{
+	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
+}
+
+bool CleanMode::updatePath(const Cell_t& curr, Cell_t& last) {
+	auto ret = false;
+	if (!is_equal_with_angle(curr, last)) {
+		last = curr;
+		auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it) {
+				return is_equal_with_angle(curr, it);
+		});
+		auto distance = std::distance(loc, g_passed_path.end());
+		if (distance == 0) {
+			g_passed_path.push_back(curr);
+		}
+		if (distance > 5) {
+			g_passed_path.clear();
+			ret = true;
+		}
+		fw_marker(curr);
+	}
+//	else
+//		is_time_up = !cs_is_trapped();
+	return ret;
+}
+
+void CleanMode::display(){
+	path_display_path_points(g_plan_path);
+	MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
+}
 void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	if (p_reg_ != nullptr)
@@ -148,10 +183,6 @@ NavigationClean::NavigationClean(const Cell_t& start_cell, const Cell_t& target_
 		mt_reg_ = gtc_reg_;
 	p_reg_ = mt_reg_;
 
-//	else if (mt_is_go_to_charger()) {
-//	}
-//	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)", __FUNCTION__, __LINE__, g_turn_angle);
-//	p_reg_ = turn_reg_;
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
@@ -207,7 +238,6 @@ bool NavigationClean::isReach()
 		}
 	}
 
-	else if (cm_is_navigation())
 	{
 		if (mt_is_linear()) // Robot is cleaning current line.
 		{
@@ -523,14 +553,8 @@ SpotClean::SpotClean(const Cell_t& start_cell, const Cell_t& target_cell, const 
 	turn_reg_ = new TurnRegulator(0);
 	mt_reg_ = line_reg_;
 
-	if(cm_is_go_charger())
-		mt_reg_ = gtc_reg_;
 	p_reg_ = mt_reg_;
 
-//	else if (mt_is_go_to_charger()) {
-//	}
-//	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)", __FUNCTION__, __LINE__, g_turn_angle);
-//	p_reg_ = turn_reg_;
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: SpotClean finish", __FUNCTION__, __LINE__);
@@ -546,7 +570,20 @@ SpotClean::~SpotClean()
 	cm_set_event_manager_handler_state(false);
 }
 
-bool SpotClean::isReach() {
+void SpotClean::mark()
+{
+	CleanMode::mark();
+
+	if (ev.rcon_triggered || ev.obs_triggered || ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+	{
+		SpotType spt = SpotMovement::instance()->getSpotType();
+		if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
+			SpotMovement::instance()->setOBSTrigger();
+	}
+}
+
+bool SpotClean::isReach()
+{
 	if (mt_is_linear()) // Robot is cleaning current line.
 	{
 		if (isMt())
@@ -624,14 +661,8 @@ WallFollowClean::WallFollowClean(const Cell_t& start_cell, const Cell_t& target_
 	turn_reg_ = new TurnRegulator(0);
 	mt_reg_ = line_reg_;
 
-	if(cm_is_go_charger())
-		mt_reg_ = gtc_reg_;
 	p_reg_ = mt_reg_;
 
-//	else if (mt_is_go_to_charger()) {
-//	}
-//	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)", __FUNCTION__, __LINE__, g_turn_angle);
-//	p_reg_ = turn_reg_;
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: WallFollowClean finish", __FUNCTION__, __LINE__);
@@ -806,14 +837,8 @@ Exploration::Exploration(const Cell_t& start_cell, const Cell_t& target_cell, co
 	turn_reg_ = new TurnRegulator(0);
 	mt_reg_ = line_reg_;
 
-	if(cm_is_go_charger())
-		mt_reg_ = gtc_reg_;
 	p_reg_ = mt_reg_;
 
-//	else if (mt_is_go_to_charger()) {
-//	}
-//	ROS_INFO("%s, %d: g_turn_angle(\033[32m%d\033[0m)", __FUNCTION__, __LINE__, g_turn_angle);
-//	p_reg_ = turn_reg_;
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: Exploration finish", __FUNCTION__, __LINE__);

@@ -34,12 +34,16 @@ public:
 //	CleanMode(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 //	~CleanMode();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	virtual void mark()=0;
 	virtual bool isStop()=0;
 	virtual bool isExit()=0;
 	virtual bool isReach() =0;
 	virtual bool isSwitch() = 0 ;
 //	virtual bool path_next()=0;
 	void setTarget() {p_reg_->setTarget();}
+
+	void display();
+
 	bool isMt(void) const
 	{
 		return p_reg_ == mt_reg_;
@@ -55,9 +59,12 @@ public:
 
 	void setMt(void);
 
-	void updatePosition(const Point32_t &curr_point){
+	Cell_t updatePosition(const Point32_t &curr_point){
+		map_update_position();
 		s_curr_p = curr_point;
+		return map_get_curr_cell();
 	}
+	bool updatePath(const Cell_t& curr, Cell_t& last);
 	void resetTriggeredValue(void);
 	std::string getName()
 	{
@@ -83,6 +90,7 @@ public:
 	NavigationClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~NavigationClean();
 //	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	void mark() {CleanMode::mark();};
 	bool isStop();
 	bool isExit();
 	bool isReach();
@@ -97,6 +105,7 @@ public:
 	SpotClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~SpotClean();
 //	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	void mark();
 	bool isStop();
 	bool isExit();
 	bool isReach();
@@ -110,6 +119,7 @@ public:
 	WallFollowClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~WallFollowClean();
 //	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	void mark() {CleanMode::mark();};
 	bool isStop();
 	bool isExit();
 	bool isReach();
@@ -121,6 +131,7 @@ public:
 	Exploration(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~Exploration();
 //	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	void mark() {CleanMode::mark();};
 	bool isStop();
 	bool isExit();
 	bool isReach();

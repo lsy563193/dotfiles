@@ -254,18 +254,6 @@ bool sp_turn_over(const Cell_t& curr)
 	return false;
 }
 
-bool wf_is_reach() {
-	auto curr = map_point_to_cell(RegulatorBase::s_curr_p);
-	if (sp_turn_over(curr))
-		return true;
-	if(g_distance > 5){
-		ROS_WARN("  yes! reach the cleaned point(%d)!",g_distance);
-		return true;
-	}
-	return false;
-}
-
-
 bool RegulatorBase::isExit()
 {
 	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)

@@ -19,40 +19,7 @@
  * After the cleaning process is done, robot will back to its starting point and
  * finishes the cleaning.
  */
-#include <stdint.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
-#include <deque>
-#include <string>
-
-#include <ros/ros.h>
-#include <movement.h>
-#include <mathematics.h>
-#include <move_type.h>
-#include <event_manager.h>
-#include <path_planning.h>
-
-#include "core_move.h"
-#include "gyro.h"
-#include "mathematics.h"
-#include "map.h"
-#include "path_planning.h"
-#include "shortest_path.h"
-#include "spot.h"
-#include "robot.hpp"
-#include "movement.h"
-
-#include "wav.h"
-#include <numeric>
-#include <motion_manage.h>
-#include <regulator.h>
-#include <clean_state.h>
-#include "clean_mode.h"
-
+#include "pp.h"
 #define FINAL_COST (1000)
 
 #define TRAPPED 2
