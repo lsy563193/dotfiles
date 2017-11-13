@@ -4,6 +4,7 @@
 
 #include "ros/ros.h"
 #include <clean_mode.h>
+#include "clean_mode.h"
 
 //CMMoveType g_cm_move_type;
 static uint8_t clean_mode = 0;

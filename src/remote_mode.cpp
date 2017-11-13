@@ -23,6 +23,7 @@
 #include "robotbase.h"
 #include "event_manager.h"
 #include "core_move.h"
+#include "clean_mode.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 

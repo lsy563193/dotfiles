@@ -6,6 +6,7 @@
 #include "movement.h"
 #include "wav.h"
 #include "event_manager.h"
+#include "clean_mode.h"
 
 uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 bool sleep_rcon_triggered = false;

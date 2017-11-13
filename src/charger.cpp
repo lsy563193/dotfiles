@@ -10,6 +10,7 @@
 #include "gyro.h"
 #include "core_move.h"
 #include "event_manager.h"
+#include "clean_mode.h"
 
 #ifdef Turn_Speed
 #undef Turn_Speed

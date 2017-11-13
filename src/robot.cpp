@@ -22,6 +22,7 @@
 #include "std_srvs/Empty.h"
 #include "map.h"
 #include "space_exploration.h"
+#include "clean_mode.h"
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 

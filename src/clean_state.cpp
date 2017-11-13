@@ -5,6 +5,7 @@
 #include <core_move.h>
 #include <clean_mode.h>
 #include "clean_state.h"
+#include "clean_mode.h"
 
 static int cs = 0;//clean state
 

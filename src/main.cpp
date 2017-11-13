@@ -24,6 +24,7 @@
 #include "event_manager.h"
 #include "go_home.hpp"
 #include "wav.h"
+#include "clean_mode.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"

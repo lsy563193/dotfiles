@@ -23,6 +23,7 @@
 #include "slam.h"
 #include "event_manager.h"
 #include "laser.hpp"
+#include "clean_mode.h"
 
 static int16_t obs_left_trig_value = 100;
 static int16_t obs_front_trig_value = 100;

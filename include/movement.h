@@ -6,7 +6,6 @@
 #include <time.h>
 #include "config.h"
 #include "main.h"
-#include "clean_mode.h"
 #include "mathematics.h"
 
 #define Brush_Power					128

@@ -11,6 +11,7 @@
 #include <clean_state.h>
 #include "move_type.h"
 #include "spot.h"
+#include "clean_mode.h"
 
 CMMoveType g_cm_move_type;
 

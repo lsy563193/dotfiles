@@ -15,6 +15,7 @@
 #include "event_manager.h"
 #include "charger.hpp"
 #include "map.h"
+#include "clean_mode.h"
 
 extern float saved_pos_x, saved_pos_y;
 /*----------------------------------------------------------------GO Home  ----------------*/

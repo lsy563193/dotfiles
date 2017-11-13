@@ -8,6 +8,7 @@
 #include "event_manager.h"
 #include "path_planning.h"
 #include "wav.h"
+#include "clean_mode.h"
 #if 0
 void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
 {

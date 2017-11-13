@@ -23,6 +23,7 @@
 #include "robotbase.h"
 #include "event_manager.h"
 #include "core_move.h"
+#include "clean_mode.h"
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;

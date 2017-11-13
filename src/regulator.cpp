@@ -17,6 +17,7 @@
 #include <robotbase.h>
 #include <path_planning.h>
 #include <clean_state.h>
+#include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
 #define TURN_REGULATOR_TURNING 2

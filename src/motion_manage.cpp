@@ -24,6 +24,7 @@
 #include "debug.h"
 #include "map.h"
 #include "regulator.h"
+#include "clean_mode.h"
 
 //Segment_set segmentss;
 

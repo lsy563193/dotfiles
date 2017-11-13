@@ -51,6 +51,7 @@
 #include <motion_manage.h>
 #include <regulator.h>
 #include <clean_state.h>
+#include "clean_mode.h"
 
 #define FINAL_COST (1000)
 

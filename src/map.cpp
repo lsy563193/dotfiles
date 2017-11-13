@@ -17,6 +17,7 @@
 #include "map.h"
 #include "mathematics.h"
 #include "robot.hpp"
+#include "clean_mode.h"
 
 #define DEBUG_MSG_SIZE	1 // 20
 
