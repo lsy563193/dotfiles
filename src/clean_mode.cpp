@@ -103,7 +103,7 @@ void CleanMode::setMt()
 	p_reg_ = turn_reg_;
 //	s_target_angle = g_turn_angle;
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
-	ROS_INFO("%s,%d, set_target_angle(%d)",__FUNCTION__, __LINE__,s_target_angle);
+	ROS_INFO("%s,%d,curr(%d),set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), s_target_angle);
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
 	g_bumper_cnt = g_cliff_cnt = 0;
@@ -671,6 +671,8 @@ bool WallFollowClean::isReach() {
 
 bool WallFollowClean::isExit()
 {
+	if(CleanMode::isExit())
+		return true;
 	if (cs_is_trapped()) // For trapped status.
 	{
 		if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
@@ -685,6 +687,9 @@ bool WallFollowClean::isExit()
 
 bool WallFollowClean::isStop()
 {
+
+	if(CleanMode::isStop())
+		return true;
 
 	if (cs_is_going_home())
 	{
