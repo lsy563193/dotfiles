@@ -171,19 +171,19 @@ int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32
 	return index;
 }
 
-void set_wheel_speed_pid(RegulatorManage &rm,int32_t speed_left,int32_t speed_right)
+void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_right)
 {
 #if GLOBAL_PID
 		/*---PID is useless in wall follow mode---*/
-		if(rm.isMt() && mt_is_follow_wall())
+		if(rm->isMt() && mt_is_follow_wall())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
-		else if(rm.isMt() && mt_is_linear())
+		else if(rm->isMt() && mt_is_linear())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_LINEAR);
-		else if(rm.isMt() && mt_is_go_to_charger())
+		else if(rm->isMt() && mt_is_go_to_charger())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
-		else if(rm.isBack())
+		else if(rm->isBack())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_BACK);
-		else if(rm.isTurn())
+		else if(rm->isTurn())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_TURN);
 #else
 		/*---PID is useless in wall follow mode---*/
@@ -202,20 +202,20 @@ void cm_self_check_with_handle(void)
 	cm_set_event_manager_handler_state(false);
 }
 
-void cm_move_to(RegulatorManage& rm, PPTargetType path) {
-	if (mt_is_linear()) {
+/*void cm_move_to(const CleanMode* p_cm, PPTargetType path) {
+if (mt_is_linear()) {
 		wall_dynamic_base(30);
 	}
 
-	if (rm.isSwitch()) {
+	if (p_cm->isSwitch()) {
 		map_set_blocked();
 		MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 	}
 
 	int32_t speed_left = 0, speed_right = 0;
-	rm.adjustSpeed(speed_left, speed_right);
-	set_wheel_speed_pid(rm, speed_left, speed_right);
-}
+	p_cm->adjustSpeed(speed_left, speed_right);
+	set_wheel_speed_pid(p_cm, speed_left, speed_right);
+}*/
 
 bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
 {
@@ -234,7 +234,15 @@ void cm_cleaning() {
 	auto is_reach = REATH_TARGET;
 
 	Cell_t last = curr;
-	RegulatorManage rm(curr, g_plan_path.front(), g_plan_path);
+	CleanMode* p_cm;
+	if(cm_is_follow_wall())
+		p_cm = new WallFollowClean(curr, g_plan_path.front(), g_plan_path);
+	else if(cm_is_exploration())
+		p_cm = new Exploration(curr, g_plan_path.front(), g_plan_path);
+	else if(cm_is_spot())
+		p_cm = new SpotClean(curr, g_plan_path.front(), g_plan_path);
+	else
+		p_cm = new NavigationClean(curr, g_plan_path.front(), g_plan_path);
 
 	bool eh_status_now = false, eh_status_last = false;
 	auto is_time_up = false;
@@ -246,7 +254,7 @@ void cm_cleaning() {
 
 	while (ros::ok()) {
 
-		if (rm.isExit()) {
+		if (p_cm->isExit()) {
 			break;
 		}
 
@@ -260,27 +268,18 @@ void cm_cleaning() {
 			continue;
 		}
 
-		// Update position.
 		curr = map_update_position();//note:cell = {x,y,angle}
-		rm.updatePosition({map_get_x_count(), map_get_y_count()});
-		// Checking for wall follow closure.
-/*		if (mt_is_follow_wall() && wf_start_timer == 0)
-			wf_start_timer = time(NULL);*/
+		p_cm->updatePosition({map_get_x_count(), map_get_y_count()});
 		if (!is_equal_with_angle(curr, last)) {
 			last = curr;
-			/* is ever clean? */
 			auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it){
 					return is_equal_with_angle(curr, it);
 			});
 			g_distance = std::distance(loc, g_passed_path.end());
-//			ROS_INFO("%s,%d:g_distance(%d)", __FUNCTION__, __LINE__, g_distance);
 			if (g_distance == 0) {
-//				ROS_INFO("new place ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
 				g_passed_path.push_back(curr);
-//				path_display_path_points(g_passed_path);
 			}
 			if (g_distance >5) {
-//				ROS_INFO("have ever reach here ,push curr(%d,%d,%d)",curr.X,curr.Y,curr.TH);
 				g_distance =0;
 				g_wf_reach_count++;
 				g_passed_path.clear();
@@ -288,16 +287,9 @@ void cm_cleaning() {
 			fw_marker(curr);
 		}else
 			is_time_up = !cs_is_trapped();
-		/*if (mt_is_follow_wall() && (uint32_t) difftime(time(NULL), wf_start_timer) > 15 && g_passed_path.size() < 5) {
-			ROS_WARN("  {curr,start}_time(%d,%d), g_passed_path.size(%d): ", time(NULL), wf_start_timer, g_passed_path.size());
-		}*/
-
-		if (g_plan_path.empty() || g_is_near || rm.isReach() || rm.isStop())
+		if (g_plan_path.empty() || g_is_near || p_cm->isReach() || p_cm->isStop())
 		{
 			printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
-//			ROS_ERROR("%s %d:curr(%d,%d),g_plan_path.empty(%d),trapped(%d),",__FUNCTION__, __LINE__,curr.X, curr.Y, g_plan_path.empty(),/*rm.isReach(), rm.isStop(), */g_trapped_mode == 1);
-//			path_display_path_points(g_passed_path);
-//					set_wheel_speed_pid(rm, speed_left, speed_right);
 			map_set_cleaned(g_passed_path);
 			map_set_blocked();
 			map_mark_robot(MAP);
@@ -307,8 +299,6 @@ void cm_cleaning() {
 				if (spt == CLEAN_SPOT || spt == NORMAL_SPOT)
 					SpotMovement::instance()->setOBSTrigger();
 			}
-//			ros_map_convert(MAP, false, false, true);
-//			g_plan_path.empty();
 			auto cs_tmp = cs_get();
 			if(!g_plan_path.empty())
 				curr.TH = g_plan_path.back().TH;
@@ -321,28 +311,42 @@ void cm_cleaning() {
 			}
 			g_plan_path.clear();
 
+			ROS_INFO("%s %d: cs_tmp(%d), cs(%d).mt(%d)",__FUNCTION__, __LINE__, cs_tmp, cs_get(),mt_get());
 			cs_path_next(start, g_plan_path);
+
+			ROS_INFO("%s %d: cs_tmp(%d), cs(%d).mt(%d)",__FUNCTION__, __LINE__, cs_tmp, cs_get(),mt_get());
 
 			if (g_plan_path.empty() || cs_is_go_charger())
 				return;
 
-			ROS_INFO("%s %d: cs_tmp(%d), cs(%d).",__FUNCTION__, __LINE__, cs_tmp, cs_get());
 			path_display_path_points(g_plan_path);
 			MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 			if( !((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near) )
 			{
-				rm.setMt();
+				p_cm->setMt();
 				g_passed_path.clear();
 			}
 			g_is_near = false;
-			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),cs(%d)",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), cs_get());
+//			ROS_INFO("%s %d:g_plan_path.empty(%d),reach(%d),stop(%d),cs(%d)",__FUNCTION__, __LINE__,g_plan_path.empty(),rm.isReach(), rm.isStop(), cs_get());
 			printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 		}
+//		cm_move_to(p_cm, g_plan_path);
 
-		cm_move_to(rm, g_plan_path);
+	if (mt_is_linear()) {
+		wall_dynamic_base(30);
+	}
 
-		if (cm_should_self_check())
-			cm_self_check_with_handle();
+	if (p_cm->isSwitch()) {
+		map_set_blocked();
+		MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
+	}
+
+	int32_t speed_left = 0, speed_right = 0;
+	p_cm->adjustSpeed(speed_left, speed_right);
+	set_wheel_speed_pid(p_cm, speed_left, speed_right);
+
+	if (cm_should_self_check())
+		cm_self_check_with_handle();
 	}
 }
 

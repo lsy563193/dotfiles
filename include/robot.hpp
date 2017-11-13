@@ -18,6 +18,8 @@
 #include "map.h"
 #include "movement.h"
 
+extern volatile int16_t g_left_wall_baseline;
+extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
 
 typedef enum {

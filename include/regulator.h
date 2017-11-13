@@ -37,8 +37,8 @@ extern int16_t g_turn_angle;
 class RegulatorBase {
 public:
 
-	bool _isExit();
-	bool _isStop();
+	bool isExit();
+	bool isStop();
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void setTarget() = 0;
 	virtual std::string getName() = 0;
@@ -257,21 +257,17 @@ private:
 	int32_t right_speed_;
 };
 
-class RegulatorManage:public RegulatorBase{
+class CleanMode:public RegulatorBase
+{
 public:
-	RegulatorManage(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
-	~RegulatorManage();
+//	CleanMode(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+//	~CleanMode();
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	bool _isStop();
-	bool isStop(){
-		return RegulatorBase::_isStop() || _isStop();
-	};
-	bool _isExit();
-	bool isExit(){
-		return RegulatorBase::_isExit() || _isExit();
-	};
-	bool isReach();
-	bool isSwitch();
+	virtual bool isStop()=0;
+	virtual bool isExit()=0;
+	virtual bool isReach() =0;
+	virtual bool isSwitch() = 0 ;
+//	virtual bool path_next()=0;
 	void setTarget() {p_reg_->setTarget();}
 	bool isMt(void) const
 	{
@@ -287,22 +283,18 @@ public:
 	}
 
 	void setMt(void);
-/*	void reset(void)
-	{
-		p_reg_ = turn_reg_;
-		setTarget();
-	}*/
+
 	void updatePosition(const Point32_t &curr_point){
 		s_curr_p = curr_point;
 	}
 	void resetTriggeredValue(void);
 	std::string getName()
 	{
-		std::string name = "RegulatorManage";
+		std::string name = "CleanMode";
 		return name;
 	}
 
-private:
+protected:
 	RegulatorBase* p_reg_;
 	RegulatorBase* mt_reg_;
 	FollowWallRegulator* fw_reg_;
@@ -313,6 +305,57 @@ private:
 
 	int32_t left_speed_;
 	int32_t right_speed_;
+};
+
+class NavigationClean:public CleanMode{
+public:
+	NavigationClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~NavigationClean();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+//	bool path_next();
+
+private:
+};
+
+class SpotClean:public CleanMode{
+public:
+	SpotClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~SpotClean();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+
+private:
+};
+
+class WallFollowClean:public CleanMode{
+public:
+	WallFollowClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~WallFollowClean();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+};
+
+class Exploration:public CleanMode{
+public:
+	Exploration(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
+	~Exploration();
+//	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isStop();
+	bool isExit();
+	bool isReach();
+	bool isSwitch();
+
+private:
 };
 
 #endif //PP_REGULATOR_BASE_H

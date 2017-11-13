@@ -1366,13 +1366,16 @@ bool path_next_spot(const Cell_t &start, PPTargetType &path) {
 }
 
 bool path_next_fw(const Cell_t &start, PPTargetType &path) {
+	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 	if (mt_is_linear()) {
+		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (cm_is_reach()) {
-//			path.push_back(g_virtual_target);
+			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 			return true;
 		}
 	}
 	else {
+		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (g_wf_reach_count == 0 ||
 				(g_wf_reach_count < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
 				 wf_is_isolate())) {
@@ -1497,6 +1500,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 	if (cs_is_clean()) {
 		if (!path_next(start, path))
 		{
+			ROS_INFO("%s%d:", __FUNCTION__, __LINE__);
 			if (is_trapped(start, path))
 			{
 				cs_set(CS_TRAPPED);
