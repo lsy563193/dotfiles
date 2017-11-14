@@ -23,7 +23,6 @@ boost::mutex scan_mutex_;
 boost::mutex scan2_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
-Eigen::MatrixXd laser_matrix = Eigen::MatrixXd::Ones(3,3);
 
 Laser::Laser():nh_()
 {
@@ -60,11 +59,13 @@ Laser::~Laser()
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	int count = 0;
-	boost::mutex::scoped_lock(scan_mutex_);
+	scan_mutex_.lock();
 	laserScanData_ = *scan;
+	scan_mutex_.unlock();
 	count = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180]);
-
+	p_laser_matrix = &laser_matrix;
+	transformLaserToXY();
 	setScanReady(1);
 	scan_update_time = ros::Time::now().toSec();
 	//ROS_INFO("%s %d: seq: %d\tangle_min: %f\tangle_max: %f\tcount: %d\tdist: %f, time:%lf", __FUNCTION__, __LINE__, scan->header.seq, scan->angle_min, scan->angle_max, count, scan->ranges[180], scan_update_time);
@@ -100,7 +101,7 @@ void Laser::odomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	if(laserCheckFresh(5,1))
 		compensateLaserXY();
 	else
-		laser_matrix.resize(1,1);// make laser_matrix invalid
+		p_laser_matrix = NULL;// make laser_matrix invalid
 }
 
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
@@ -853,12 +854,11 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 bool Laser::laserMarker(double X_MAX)
 {
-
+	if(p_laser_matrix == NULL)
+		return false;
 	scanXY_mutex_.lock();
 	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
 	scanXY_mutex_.unlock();
-	if(tmp_laser_matrix.rows() != 3) //laser_matrix without compensate
-		return 0;
 	double x, y;
 	int dx, dy;
 //	const double X_MIN = 0.140;//0.167
@@ -1270,11 +1270,11 @@ void Laser::laserDataFilter(sensor_msgs::LaserScan& laserScanData,double delta){
  * */
 double Laser::getObstacleDistance(uint8_t dir, double range)
 {
+	if(p_laser_matrix == NULL)
+		return DBL_MAX;
 	scanXY_mutex_.lock();
 	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
 	scanXY_mutex_.unlock();
-	if(tmp_laser_matrix.rows() != 3)  //laser_matrix  wihtout compensate
-		return DBL_MAX;
 	double x,y;
 	double x_to_robot,y_to_robot;
 	double min_dis = DBL_MAX;
@@ -1338,9 +1338,9 @@ void Laser::pubPointMarker(std::vector<Double_Point> *point)
 	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action= 0;//add
 	point_marker.lifetime=ros::Duration(0);
-	point_marker.scale.x = 0.01;
-	point_marker.scale.y = 0.01;
-	point_marker.scale.z = 0.01;
+	point_marker.scale.x = 0.03;
+	point_marker.scale.y = 0.03;
+	point_marker.scale.z = 0.03;
 	point_marker.color.r = 0.0;
 	point_marker.color.g = 1.0;
 	point_marker.color.b = 0.0;
@@ -1364,63 +1364,39 @@ void Laser::pubPointMarker(std::vector<Double_Point> *point)
 		point_marker_pub.publish(point_marker);
 	}
 }
-bool Laser::compensateLaserXY(double detect_distance,double noise_delta){
-	if(!isScanReady())
-		return 0;
-	scanXY_mutex_.lock();
-	static int seq;
-	int count = 0;
+bool Laser::transformLaserToXY(double detect_distance,double noise_delta){
 	scan_mutex_.lock();
-	auto tmp_scan_data = laserScanData_;
+	auto tmp_laserScan = laserScanData_;
 	scan_mutex_.unlock();
-	double th;
-	Eigen::Vector3d coordinate = Eigen::Vector3d::Zero();
-	Eigen::Matrix3d t_now;//world to now
-	static Eigen::Matrix3d t_last;//world to last
-	double now_x,now_y,now_angle,last_x,last_y,last_angle;
+	scanXY_mutex_.lock();
 	//transform polar coordinate to cartesian coordinate
-	if (tmp_scan_data.header.seq != seq && laserCheckFresh(0.02,1)) {
-		seq = tmp_scan_data.header.seq;
-		laserDataFilter(tmp_scan_data,noise_delta);
-		laser_matrix.resize(3,360);
-		for (int i = 0; i < 360; i++) {
-			if(tmp_scan_data.ranges[i] < ROBOT_RADIUS + detect_distance) {
-				th = i * 1.0 + 180.0;
-				coordinate(0) = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
-				coordinate(1) = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
-				coordinate_transform(&coordinate(0), &coordinate(1), LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-				coordinate(2) = 1.0;
-				laser_matrix.col(count) = coordinate;
-				count++;
-			}
+	double th = 0;
+	int count = 0;
+	laserDataFilter(tmp_laserScan,noise_delta);
+	laser_matrix.resize(3,360);
+	for (int i = 0; i < 360; i++) {
+		if(tmp_laserScan.ranges[i] < ROBOT_RADIUS + detect_distance) {
+			th = i * 1.0 + 180.0;
+			coordinate(0) = cos(th * PI / 180.0) * tmp_laserScan.ranges[i];
+			coordinate(1) = sin(th * PI / 180.0) * tmp_laserScan.ranges[i];
+			coordinate_transform(&coordinate(0), &coordinate(1), LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+			coordinate(2) = 1.0;
+			laser_matrix.col(count) = coordinate;
+			count++;
 		}
-		last_x = robot::instance()->getOdomPositionX();
-		last_y = robot::instance()->getOdomPositionY();
-		last_angle = robot::instance()->getOdomPositionYaw();
-		if(last_angle < 0.0)
-			last_angle += 2 * PI;
-		t_last << cos(last_angle), sin(last_angle), - last_y * sin(last_angle) - last_x * cos(last_angle),
+	}
+	auto last_x = robot::instance()->getOdomPositionX();
+	auto last_y = robot::instance()->getOdomPositionY();
+	auto last_angle = robot::instance()->getOdomPositionYaw();
+	if(last_angle < 0)
+			last_angle += 2.0 * PI;
+	t_last << cos(last_angle), sin(last_angle), - last_y * sin(last_angle) - last_x * cos(last_angle),
 							-sin(last_angle), cos(last_angle), last_x * sin(last_angle) - last_y * cos(last_angle),
 							0, 0, 1;
 
-		Eigen::MatrixXd tmp_matrix = laser_matrix.block(0,0,3,count);
-		laser_matrix.resize(3,count);
-		laser_matrix = tmp_matrix;
-		scanXY_mutex_.unlock();
-		return false;
-	}
-	//compute transform matrix
-	now_x = robot::instance()->getOdomPositionX();
-	now_y = robot::instance()->getOdomPositionY();
-	now_angle = robot::instance()->getOdomPositionYaw();
-	if(now_angle < 0.0)
-		now_angle += 2 * PI;
-
-	t_now << cos(now_angle), sin(now_angle), - now_y * sin(now_angle) - now_x * cos(now_angle),
-					-sin(now_angle), cos(now_angle), now_x * sin(now_angle) - now_y * cos(now_angle),
-					0, 0, 1;
-	//compute the compensation laser_matrix
-	laser_matrix = t_now * t_last.inverse() * laser_matrix;
+	Eigen::MatrixXd tmp_matrix = laser_matrix.block(0,0,3,count);
+	laser_matrix.resize(3,count);
+	laser_matrix = tmp_matrix;
 
 	std::vector<Double_Point> points_vec;
 	Double_Point point;
@@ -1428,20 +1404,41 @@ bool Laser::compensateLaserXY(double detect_distance,double noise_delta){
 	{
 		point.x = laser_matrix(0,i);
 		point.y = laser_matrix(1,i);
-		if(point.x < 5 && point.y < 5)
+		if(point.x < 15 && point.y < 15)
 			points_vec.push_back(point);
 	}
 	pubPointMarker(&points_vec);
 
-	last_x = robot::instance()->getOdomPositionX();
-	last_y = robot::instance()->getOdomPositionY();
-	last_angle = robot::instance()->getOdomPositionYaw();
-	if(last_angle < 0.0)
-		last_angle += 2 * PI;
+	scanXY_mutex_.unlock();
+	return true;
+}
+bool Laser::compensateLaserXY(){
+	scanXY_mutex_.lock();
+	//compute transform matrix
+	auto now_x = robot::instance()->getOdomPositionX();
+	auto now_y = robot::instance()->getOdomPositionY();
+	auto now_angle = robot::instance()->getOdomPositionYaw();
+	if(now_angle < 0)
+		now_angle += 2 * PI;
 
-	t_last << cos(last_angle), sin(last_angle), - last_y * sin(last_angle) - last_x * cos(last_angle),
-					-sin(last_angle), cos(last_angle), last_x * sin(last_angle) - last_y * cos(last_angle),
+	t_now << cos(now_angle), sin(now_angle), - now_y * sin(now_angle) - now_x * cos(now_angle),
+					-sin(now_angle), cos(now_angle), now_x * sin(now_angle) - now_y * cos(now_angle),
 					0, 0, 1;
+	//compute the compensation laser_matrix
+	laser_matrix = t_now * t_last.inverse() * laser_matrix;
+	t_last = t_now;
+
+	std::vector<Double_Point> points_vec;
+	Double_Point point;
+	for(int i = 0;i < laser_matrix.cols();i++)
+	{
+		point.x = laser_matrix(0,i);
+		point.y = laser_matrix(1,i);
+		if(point.x < 15 && point.y < 15)
+			points_vec.push_back(point);
+	}
+	pubPointMarker(&points_vec);
+
 	scanXY_mutex_.unlock();
 	return true;
 }

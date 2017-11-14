@@ -53,11 +53,13 @@ public:
 	//void startShield(void);
 	//void stopShield(void);
 	void lidarShieldDetect(bool sd);
-	bool compensateLaserXY(double detect_distance = 0.50,double noise_delta = 0.02);
+	bool compensateLaserXY();
+	bool transformLaserToXY(double detect_distance = 0.50,double noise_delta = 0.02);
 	void lidarMotorCtrl(bool orf);
 
 	bool laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
+	Eigen::MatrixXd* p_laser_matrix = &laser_matrix;
 
 	bool laserCheckFresh(float duration, uint8_t type = 1);
 private:
@@ -72,6 +74,10 @@ private:
 	uint8_t is_scan_ready_;
 	uint8_t is_scan2_ready_;
 	double new_laser_time = 0;
+	Eigen::Vector3d coordinate = Eigen::Vector3d::Zero();
+	Eigen::Matrix3d t_now;//world to now
+	Eigen::Matrix3d t_last;//world to last
+	Eigen::MatrixXd laser_matrix = Eigen::MatrixXd::Ones(3,3);
 
 	ros::NodeHandle	nh_;
 	ros::Subscriber	scan_sub_;
