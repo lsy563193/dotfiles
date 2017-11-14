@@ -185,9 +185,7 @@ void cm_cleaning() {
 	cs_init();
 	Cell_t curr = map_update_position();
 	g_plan_path.clear();
-	auto is_reach = REATH_TARGET;
 
-	Cell_t last = curr;
 	CleanMode* p_cm;
 	if(cm_is_follow_wall())
 		p_cm = new WallFollowClean(curr, g_plan_path.front(), g_plan_path);
@@ -199,8 +197,6 @@ void cm_cleaning() {
 		p_cm = new NavigationClean(curr, g_plan_path.front(), g_plan_path);
 
 	bool eh_status_now = false, eh_status_last = false;
-	auto is_time_up = false;
-	auto wf_start_timer = 0;
 	g_is_near = false;
 
 	g_passed_path.clear();
@@ -224,11 +220,12 @@ void cm_cleaning() {
 
 		curr = p_cm->updatePosition({map_get_x_count(), map_get_y_count()});
 
-		if (g_plan_path.empty() || g_is_near || p_cm->isReach() || p_cm->isStop())
+		if (p_cm->isReach() || p_cm->isStop())
 		{
 			if(!p_cm->findTarget(curr))
 				return;
 		}
+
 		cm_move_to(p_cm, g_plan_path);
 
 	if (cm_should_self_check())

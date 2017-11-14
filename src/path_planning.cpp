@@ -1333,12 +1333,13 @@ bool path_next_spot(const Cell_t &start, PPTargetType &path) {
 		return false;
 }
 
-bool path_next_fw(const Cell_t &start, PPTargetType &path) {
+bool path_next_fw(const Cell_t &start) {
 	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 	if (mt_is_linear()) {
 		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (cm_is_reach()) {
 			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
+			mt_set(CM_FOLLOW_LEFT_WALL);
 			return true;
 		}
 	}
@@ -1355,7 +1356,8 @@ bool path_next_fw(const Cell_t &start, PPTargetType &path) {
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 			Cell_t cell;
 			cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
-			path.push_back(cell);
+			g_plan_path.push_back(cell);
+			mt_set(CM_LINEARMOVE);
 			return true;
 		}
 	}
@@ -1433,10 +1435,7 @@ void path_full_angle(const Cell_t& start, PPTargetType& path)
 
 bool path_next(const Cell_t& start, PPTargetType& path)
 {
-	if (cm_is_follow_wall()) {
-		return path_next_fw(start, path);
-	}
-	else if (cm_is_spot()) {
+	if (cm_is_spot()) {
 		return path_next_spot(start, path);
 	}
 	else if (cm_is_navigation()) {

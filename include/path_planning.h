@@ -171,6 +171,8 @@ bool path_full(const Cell_t& curr, PPTargetType& path);
 int16_t path_escape_trapped(const Cell_t& curr);
 bool cm_is_reach();
 
+bool path_next_fw(const Cell_t &start);
+bool path_next_nav(const Cell_t &start, PPTargetType &path);
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
 Cell_t *path_escape_get_trapped_cell(void);

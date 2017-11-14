@@ -45,6 +45,8 @@ public:
 
 	void display();
 
+	bool find_target(Cell_t& curr);
+
 	bool isMt(void) const
 	{
 		return p_reg_ == mt_reg_;
@@ -95,6 +97,7 @@ public:
 	bool isExit();
 	bool isReach();
 	bool isSwitch();
+	bool findTarget(Cell_t& curr);
 //	bool path_next();
 
 private:
@@ -124,6 +127,8 @@ public:
 	bool isExit();
 	bool isReach();
 	bool isSwitch();
+	bool findTarget(Cell_t& curr);
+	Cell_t updatePosition(const Point32_t &curr_point);
 };
 
 class Exploration:public CleanMode{
@@ -136,6 +141,7 @@ public:
 	bool isExit();
 	bool isReach();
 	bool isSwitch();
+	bool findTarget(Cell_t& curr);
 
 private:
 };

@@ -119,28 +119,7 @@ void CleanMode::setMt()
 }
 
 bool CleanMode::findTarget(Cell_t& curr) {
-	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
-	mark();
-	auto cs_tmp = cs_get();
-	if (!g_plan_path.empty())
-		curr.TH = g_plan_path.back().TH;
-	auto start = curr;
-	g_old_dir = start.TH;
-	if (g_is_near) {
-		start = g_plan_path.back();
-	}
-	g_plan_path.clear();
-	cs_path_next(start, g_plan_path);
-
-	display();
-
-	if (!((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near)) {
-		setMt();
-		g_passed_path.clear();
-	}
-	g_is_near = false;
-
-	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
+	return false;
 }
 
 bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
@@ -198,8 +177,35 @@ void CleanMode::resetTriggeredValue(void)
 	ev.tilt_triggered = 0;
 }
 
+bool CleanMode::find_target(Cell_t& curr)
+{
+	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
+	mark();
+	auto cs_tmp = cs_get();
+	if (!g_plan_path.empty())
+		curr.TH = g_plan_path.back().TH;
+	auto start = curr;
+	g_old_dir = start.TH;
+	if (g_is_near) {
+		start = g_plan_path.back();
+	}
+	g_plan_path.clear();
+	cs_path_next(start, g_plan_path);
+
+	display();
+
+	if (!((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near)) {
+		setMt();
+		g_passed_path.clear();
+	}
+	g_is_near = false;
+
+	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
+	return !g_plan_path.empty();
+}
+
 //NavigationClean
-NavigationClean::NavigationClean(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
+NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -214,6 +220,7 @@ NavigationClean::NavigationClean(const Cell_t& start_cell, const Cell_t& target_
 		mt_reg_ = gtc_reg_;
 	p_reg_ = mt_reg_;
 
+	path_next_nav(curr, g_plan_path);
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
@@ -236,7 +243,11 @@ bool NavigationClean::isReach()
 		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
+			{
+				if(g_is_near)
+					return true;
 				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+			}
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -572,6 +583,11 @@ bool NavigationClean::isSwitch()
 	return false;
 }
 
+bool NavigationClean::findTarget(Cell_t& curr)
+{
+	return find_target(curr);
+}
+
 Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
 {
 	auto curr = CleanMode::updatePosition(curr_point);
@@ -624,7 +640,11 @@ bool SpotClean::isReach()
 	if (mt_is_linear()) // Robot is cleaning current line.
 	{
 		if (isMt())
+		{
+			if(g_is_near)
+				return true;
 			return line_reg_->isCellReach(); // For reaching target.
+		}
 		else if (isBack())
 			return back_reg_->isReach();
 	}
@@ -687,7 +707,7 @@ bool SpotClean::isSwitch()
 }
 
 //WallFollowClean
-WallFollowClean::WallFollowClean(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
+WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -699,6 +719,7 @@ WallFollowClean::WallFollowClean(const Cell_t& start_cell, const Cell_t& target_
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
+	path_next_fw(curr);
 
 	cm_set_event_manager_handler_state(true);
 
@@ -862,6 +883,25 @@ bool WallFollowClean::isSwitch()
 	return false;
 }
 
+bool WallFollowClean::findTarget(Cell_t& curr)
+{
+	printf("\n\033[42m======================================WallFollowClean===========================================\033[0m\n");
+	mark();
+	g_plan_path.clear();
+	if(!path_next_fw(curr))
+		return false;
+	display();
+	setMt();
+	g_passed_path.clear();
+	g_is_near = false;
+	printf("\033[44m====================================WallFollowClean=========================================\033[0m\n\n");
+	return true;
+}
+Cell_t WallFollowClean::updatePosition(const Point32_t &curr_point)
+{
+	auto curr = CleanMode::updatePosition(curr_point);
+	return updatePath(curr);
+}
 //Exploration
 Exploration::Exploration(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
@@ -898,7 +938,11 @@ bool Exploration::isReach()
 		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
+			{
+				if(g_is_near)
+					return true;
 				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+			}
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -1097,3 +1141,9 @@ bool Exploration::isSwitch()
 
 	return false;
 }
+
+bool Exploration::findTarget(Cell_t& curr)
+{
+	find_target(curr);
+}
+
