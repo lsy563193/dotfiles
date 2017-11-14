@@ -167,7 +167,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
 
-	bool eh_status_now=false, eh_status_last=false;
 
 	if (!initCleaning(cm_get()))
 	{
@@ -283,6 +282,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	s_slam->enableMapUpdate();
 	auto count_n_10ms = 500;
 
+	bool eh_status_now=false, eh_status_last=false;
 	while (ros::ok() && !(s_slam->isMapReady() && robot::instance()->isTfReady()) && --count_n_10ms != 0)
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -496,9 +496,8 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 	}
 }
 
-bool MotionManage::initNavigationCleaning(void)
+void init_nav_before_gyro()
 {
-
 	if (ev.remote_home || g_go_home_by_remote)
 		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
@@ -563,10 +562,9 @@ bool MotionManage::initNavigationCleaning(void)
 		cm_register_events();
 		wav_play(WAV_CLEANING_START);
 	}
-
-	if (!wait_for_gyro_on())
-		return false;
-
+}
+void init_nav_gyro_charge()
+{
 	if (is_clean_paused() || g_resume_cleaning )
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
@@ -574,19 +572,30 @@ bool MotionManage::initNavigationCleaning(void)
 		if (!cs_is_going_home())
 			if(ev.remote_home || ev.battery_home)
 				cs_setting(CS_GO_HOME_POINT);
-
 	}
+}
+void init_nav_after_charge()
+{
+robot::instance()->setAccInitData();//about 200ms delay
+	g_tilt_enable = true;
+	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
-	/*Move back from charge station*/
-	if (is_on_charger_stub()) {
-		ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
+	work_motor_configure();
+
+	ROS_INFO("%s %d: Init cs_is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
+					 cs_is_going_home(), robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
+}
+
+bool wait_for_back_from_charge()
+{
+	ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		auto curr = map_get_curr_cell();
 		path_set_home(curr);
 		extern bool g_from_station;
 		g_from_station = 1;
 
 		set_side_brush_pwm(30, 30);
-		int back_segment = (int)MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
+		int back_segment = MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);
 			if (ev.fatal_quit || ev.key_clean_pressed || is_on_charger_stub() || ev.cliff_all_triggered) {
@@ -610,15 +619,27 @@ bool MotionManage::initNavigationCleaning(void)
 		}
 		stop_brifly();
 		robot::instance()->initOdomPosition();
+	return true;
+}
+
+bool MotionManage::initNavigationCleaning(void)
+{
+
+	init_nav_before_gyro();
+
+	if (!wait_for_gyro_on())
+		return false;
+
+	init_nav_gyro_charge();
+
+	/*Move back from charge station*/
+	if (is_on_charger_stub()) {
+		if (!wait_for_back_from_charge())
+			return false;
 	}
-	robot::instance()->setAccInitData();//about 200ms delay
-	g_tilt_enable = true;
-	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
-	work_motor_configure();
+	init_nav_after_charge();
 
-	ROS_INFO("%s %d: Init cs_is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
-					 cs_is_going_home(), robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
 	return true;
 }
 
