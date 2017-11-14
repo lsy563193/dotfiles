@@ -209,6 +209,7 @@ bool CleanMode::find_target(Cell_t& curr)
 
 //NavigationClean
 NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -227,6 +228,11 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
+	g_is_near = false;
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 NavigationClean::~NavigationClean()
@@ -597,8 +603,9 @@ Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
 	return updatePath(curr);
 }
 //SpotClean
-SpotClean::SpotClean(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path)
+SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path)
 {
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -614,6 +621,11 @@ SpotClean::SpotClean(const Cell_t& start_cell, const Cell_t& target_cell, const 
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: SpotClean finish", __FUNCTION__, __LINE__);
+	g_is_near = false;
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 SpotClean::~SpotClean()
@@ -711,6 +723,7 @@ bool SpotClean::isSwitch()
 
 //WallFollowClean
 WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -727,6 +740,10 @@ WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, 
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: WallFollowClean finish", __FUNCTION__, __LINE__);
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 WallFollowClean::~WallFollowClean()
@@ -906,7 +923,8 @@ Cell_t WallFollowClean::updatePosition(const Point32_t &curr_point)
 	return updatePath(curr);
 }
 //Exploration
-Exploration::Exploration(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
+Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -922,6 +940,12 @@ Exploration::Exploration(const Cell_t& start_cell, const Cell_t& target_cell, co
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: Exploration finish", __FUNCTION__, __LINE__);
+
+	g_is_near = false;
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 Exploration::~Exploration()

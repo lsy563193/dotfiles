@@ -185,7 +185,6 @@ void cm_cleaning() {
 	g_motion_init_succeeded = true;
 	cs_init();
 	Cell_t curr = map_update_position();
-	g_plan_path.clear();
 
 	CleanMode* p_cm;
 	if(cm_is_follow_wall())
@@ -198,10 +197,6 @@ void cm_cleaning() {
 		p_cm = new NavigationClean(curr, g_plan_path.front(), g_plan_path);
 
 	bool eh_status_now = false, eh_status_last = false;
-	g_is_near = false;
-
-	g_passed_path.clear();
-	g_passed_path.push_back(curr);
 
 	while (ros::ok()) {
 

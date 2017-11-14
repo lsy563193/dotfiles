@@ -148,378 +148,6 @@ bool MotionManage::get_align_angle(float &line_angle)
 
 Laser* MotionManage::s_laser = nullptr/*new Laser()*/;
 Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
-void init_before_gyro()
-{
-	mt_set(cm_is_follow_wall() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
-	if(!is_clean_paused())
-		g_from_station = 0;
-	g_motion_init_succeeded = false;
-	g_during_go_to_charger = false;
-
-	bool remote_home_during_pause = false;
-	if (is_clean_paused() && ev.remote_home)
-		remote_home_during_pause = true;
-	event_manager_reset_status();
-	if (remote_home_during_pause)
-	{
-		ev.remote_home = true;
-		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
-	}
-
-	reset_work_time();
-	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
-		map_init(MAP);
-
-	map_init(WFMAP);
-	map_init(ROSMAP);
-
-}
-bool MotionManage::laser_init()
-{
-	s_laser = new Laser();
-	if (s_laser->isScanReady() == -1)
-	{
-		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
-		set_error_code(Error_Code_Laser);
-		initSucceeded(false);
-		return false;
-	}
-	else if (s_laser->isScanReady() == 0)
-	{
-		initSucceeded(false);
-		return false;
-	}
-}
-
-void MotionManage::get_aligment_angle()
-{
-	/*--- get aligment angle-----*/
-	if( !( is_clean_paused() || g_resume_cleaning ))
-	{
-		nh_.param<bool>("is_active_align", is_align_active_, false);
-		if (cm_is_navigation() && is_align_active_)
-		{
-			//ObstacleDetector od;
-			std::vector<LineABC> lines;
-			time_t time_findline = time(NULL);
-			ROS_INFO("%s,%d,ready to find lines ",__FUNCTION__,__LINE__);
-			float align_angle = 0.0;
-			while(1){
-				if(s_laser->findLines(&lines)){
-					if(s_laser->getAlignAngle(&lines,&align_angle))
-						break;
-				}
-				if(difftime(time(NULL) ,time_findline) >= 2){
-					ROS_INFO("%s,%d,find lines timeout",__FUNCTION__,__LINE__);
-					break;
-				}
-			}
-
-			align_angle += (float)(LIDAR_THETA / 10);
-			robot::instance()->offsetAngle(align_angle);
-			ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__,align_angle);
-			g_homes[0].TH = -(int16_t)(align_angle);
-			ROS_INFO("%s %d: g_homes[0].TH (%d).", __FUNCTION__, __LINE__, g_homes[0].TH);
-		}
-//		robot::instance()->startAngle(0);
-//		g_homes[0].TH=0;
-	}
-}
-
-bool MotionManage::slam_init()
-{
-		s_slam = new Slam();
-	//4 call start slam
-	while (ev.slam_error)
-	{
-		// Wait for slam launch.
-		usleep(20000);
-	}
-
-	robot::instance()->setTfReady(false);
-	if (cm_is_navigation() || cm_get() == Clean_Mode_Spot || cm_is_exploration())
-		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-	else if (cm_is_follow_wall())
-		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
-	s_slam->enableMapUpdate();
-	auto count_n_10ms = 500;
-
-	bool eh_status_now=false, eh_status_last=false;
-	while (ros::ok() && !(s_slam->isMapReady() && robot::instance()->isTfReady()) && --count_n_10ms != 0)
-	{
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
-			continue;
-		}
-
-		if (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)
-		{
-			ROS_WARN("%s %d: Waiting for slam interrupted.", __FUNCTION__, __LINE__);
-			break;
-		}
-
-		usleep(20000);
-	}
-	if (count_n_10ms == 0)
-	{
-		ROS_ERROR("%s %d: Map or tf framework is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		set_error_code(Error_Code_Slam);
-		wav_play(WAV_TEST_LIDAR);
-		initSucceeded(false);
-		return false;
-	}
-	return true;
-}
-
-void MotionManage::init_after_slam()
-{
-s_laser->lidarShieldDetect(ON);
-	ev.rcon_triggered = ev.bumper_triggered =  ev.obs_triggered  = 0;
-	/*--- slam end ---*/
-
-	if (g_go_home_by_remote || (cm_is_exploration()))
-		set_led_mode(LED_STEADY, LED_ORANGE);
-	else
-		set_led_mode(LED_STEADY, LED_GREEN);
-
-		g_robot_slip_enable = true;
-	g_robot_stuck = false;
-	g_robot_slip = false;
-	g_wf_is_reach = false;
-}
-
-MotionManage::MotionManage():nh_("~"),is_align_active_(false)
-{
-	init_before_gyro();
-	initSucceeded(true);
-
-	if (!initCleaning(cm_get()))
-	{
-		initSucceeded(false);
-		return;
-	}
-
-	// No need to start laser or slam if it is go home mode.
-	if (cm_get() == Clean_Mode_Go_Charger)
-		return;
-
-	/*--- laser init ---*/
-	if(!laser_init())
-		return;
-
-	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
-	{
-		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-		s_laser->lidarShieldDetect(ON);
-		if (g_go_home_by_remote)
-			set_led_mode(LED_STEADY, LED_ORANGE);
-		else
-			set_led_mode(LED_STEADY, LED_GREEN);
-
-		return;
-	}
-	if (is_clean_paused())
-	{
-		robot::instance()->resetManualPause();
-		g_robot_stuck = false;
-		if (s_slam != nullptr)
-		{
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-			s_laser->lidarShieldDetect(ON);
-			if (g_go_home_by_remote)
-				set_led_mode(LED_STEADY, LED_ORANGE);
-			else
-				set_led_mode(LED_STEADY, LED_GREEN);
-			return;
-		}
-	}
-
-	if(g_from_station)
-	{
-		robot::instance()->offsetAngle(180);
-		ROS_INFO("%s,%d,\033[32m charge stub postion estiamate on(%d,%d)\033[0m",__FUNCTION__,__LINE__,(-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
-		Cell_t home_point((-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
-		map_set_charge_position(home_point);
-		g_homes[0].TH = 180;
-	}
-
-	get_aligment_angle();
-
-	usleep(600000);// wait for tf ready
-
-	/*----slam init----*/
-	if(!slam_init())
-		return;
-	init_after_slam();
-}
-
-MotionManage::~MotionManage()
-{
-	if (cm_get() != Clean_Mode_Go_Charger)
-	{
-		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
-		//if (cm_is_follow_wall())
-		g_wf_reach_count = 0;
-		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
-		//if (cm_get() == Clean_Mode_Spot)
-		{
-			SpotMovement::instance()->spotDeinit();// clear the variables.
-		}
-	}
-	// Disable motor here because there ie a work_motor_configure() in spotDeinit().
-	disable_motors();
-	g_tilt_enable = false;
-	g_robot_slip_enable =false;
-	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
-
-	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
-
-	if (s_laser != nullptr)
-	{
-		delete s_laser; // It takes about 1s.
-		s_laser = nullptr;
-	}
-	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
-	{
-		wav_play(WAV_CLEANING_PAUSE);
-		if (!ev.cliff_all_triggered)
-		{
-			if (cs_is_going_home())
-			{
-				// The current home cell is still valid, so push it back to the home point list.
-				path_set_home(g_home_point);
-			}
-			cm_set(Clean_Mode_Userinterface);
-			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
-			if (cs_is_going_home())
-#if MANUAL_PAUSE_CLEANING
-//				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
-				ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
-#else
-				ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
-#endif
-			else
-				ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
-			g_saved_work_time += get_work_time();
-			ROS_INFO("%s %d: Cleaning time: \033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
-			cm_unregister_events();
-			return;
-		}
-		else
-			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-	}
-	else{
-		g_from_station = 0;
-	}
-
-	if (!ev.charge_detect)
-		// It means robot can not go to charger stub.
-		robot::instance()->resetLowBatPause();
-
-	if (!ev.fatal_quit && robot::instance()->isLowBatPaused())
-	{
-		wav_play(WAV_CLEANING_PAUSE);
-		if (!ev.cliff_all_triggered)
-		{
-			g_resume_cleaning = true;
-			robot::instance()->resetLowBatPause();
-			cm_set(Clean_Mode_Charging);
-			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
-			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
-			g_saved_work_time += get_work_time();
-			ROS_INFO("%s %d: Cleaning time:\033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
-			cm_unregister_events();
-
-			cm_reset_go_home();
-			return;
-		}
-		else
-			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-	}
-
-	// Unregister here because robot may be lifted up during the wav playing for cleaning pause.
-	cm_unregister_events();
-	if (ev.fatal_quit) // Also handles for ev.battery_low/ev.charge_detect/ev.cliff_all_triggered.
-	{
-		robot::instance()->resetManualPause();
-		robot::instance()->resetLowBatPause();
-		g_resume_cleaning = false;
-		if (ev.cliff_all_triggered)
-			wav_play(WAV_ERROR_LIFT_UP);
-		wav_play(WAV_CLEANING_STOP);
-	}
-	else // Normal finish.
-	{
-		if(cs_is_going_home() && !ev.charge_detect && g_have_seen_charger)
-			wav_play(WAV_BACK_TO_CHARGER_FAILED);
-		if (cm_get() != Clean_Mode_Go_Charger && !cm_is_exploration())
-			wav_play(WAV_CLEANING_FINISHED);
-	}
-	cm_reset_go_home();
-
-	if (s_slam != nullptr)
-	{
-		delete s_slam;
-		s_slam = nullptr;
-	}
-
-	robot::instance()->savedOffsetAngle(0);
-
-	if (ev.fatal_quit)
-		if (ev.cliff_all_triggered)
-			ROS_WARN("%s %d: All Cliff are triggered. Finish cleaning.", __FUNCTION__, __LINE__);
-		else
-			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
-	else if (ev.key_clean_pressed)
-		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
-	else if (ev.charge_detect)
-		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
-	else if (ev.battery_low)
-		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
-	else
-		if (cm_get() == Clean_Mode_Spot)
-			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
-		else if (cm_get() == Clean_Mode_Go_Charger)
-			ROS_WARN("%s %d: Could not go to charger stub.", __FUNCTION__, __LINE__);
-		else
-			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
-
-	if (cm_get() != Clean_Mode_Go_Charger)
-	{
-		g_saved_work_time += get_work_time();
-		auto cleaned_count = map_get_cleaned_area();
-		auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
-		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
-	}
-	if (ev.battery_low)
-		cm_set(Clean_Mode_Sleep);
-	else if (ev.charge_detect)
-		cm_set(Clean_Mode_Charging);
-	else
-		cm_set(Clean_Mode_Userinterface);
-}
-
-bool MotionManage::initCleaning(uint8_t cleaning_mode)
-{
-
-	switch (cleaning_mode)
-	{
-		case Clean_Mode_Navigation:
-			return initNavigationCleaning();
-		case Clean_Mode_Exploration:
-			return initExplorationCleaning();
-		case Clean_Mode_WallFollow:
-			return initWallFollowCleaning();
-		case Clean_Mode_Spot:
-			return initSpotCleaning();
-		case Clean_Mode_Go_Charger:
-			return initGoHome();
-		default:
-			ROS_ERROR("This mode (%d) should not use MotionManage.", cleaning_mode);
-			return false;
-	}
-}
 
 void init_nav_before_gyro()
 {
@@ -787,6 +415,422 @@ bool wait_for_back_from_charge()
 		stop_brifly();
 		robot::instance()->initOdomPosition();
 	return true;
+}
+
+void init_before_gyro()
+{
+	mt_set(cm_is_follow_wall() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
+	if(!is_clean_paused())
+		g_from_station = 0;
+	g_motion_init_succeeded = false;
+	g_during_go_to_charger = false;
+
+	bool remote_home_during_pause = false;
+	if (is_clean_paused() && ev.remote_home)
+		remote_home_during_pause = true;
+	event_manager_reset_status();
+	if (remote_home_during_pause)
+	{
+		ev.remote_home = true;
+		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
+	}
+
+	reset_work_time();
+	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
+		map_init(MAP);
+
+	map_init(WFMAP);
+	map_init(ROSMAP);
+	switch (cm_get())
+	{
+		case Clean_Mode_Navigation:
+			init_nav_before_gyro();
+			break;
+		case Clean_Mode_Exploration:
+			init_exp_before_gyro();
+			break;
+		case Clean_Mode_WallFollow:
+			init_wf_before_gyro();
+			break;
+		case Clean_Mode_Spot:
+			init_spot_before_gyro();
+			break;
+		case Clean_Mode_Go_Charger:
+			init_go_home_before_gyro();
+			break;
+		default:
+			ROS_ERROR("This mode (%d) should not use MotionManage.", cm_get());
+			break;
+	}
+}
+
+bool MotionManage::laser_init()
+{
+	s_laser = new Laser();
+	if (s_laser->isScanReady() == -1)
+	{
+		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
+		set_error_code(Error_Code_Laser);
+		initSucceeded(false);
+		return false;
+	}
+	else if (s_laser->isScanReady() == 0)
+	{
+		initSucceeded(false);
+		return false;
+	}
+}
+
+void MotionManage::get_aligment_angle()
+{
+	/*--- get aligment angle-----*/
+	if( !( is_clean_paused() || g_resume_cleaning ))
+	{
+		nh_.param<bool>("is_active_align", is_align_active_, false);
+		if (cm_is_navigation() && is_align_active_)
+		{
+			//ObstacleDetector od;
+			std::vector<LineABC> lines;
+			time_t time_findline = time(NULL);
+			ROS_INFO("%s,%d,ready to find lines ",__FUNCTION__,__LINE__);
+			float align_angle = 0.0;
+			while(1){
+				if(s_laser->findLines(&lines)){
+					if(s_laser->getAlignAngle(&lines,&align_angle))
+						break;
+				}
+				if(difftime(time(NULL) ,time_findline) >= 2){
+					ROS_INFO("%s,%d,find lines timeout",__FUNCTION__,__LINE__);
+					break;
+				}
+			}
+
+			align_angle += (float)(LIDAR_THETA / 10);
+			robot::instance()->offsetAngle(align_angle);
+			ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__,align_angle);
+			g_homes[0].TH = -(int16_t)(align_angle);
+			ROS_INFO("%s %d: g_homes[0].TH (%d).", __FUNCTION__, __LINE__, g_homes[0].TH);
+		}
+//		robot::instance()->startAngle(0);
+//		g_homes[0].TH=0;
+	}
+}
+
+bool MotionManage::slam_init()
+{
+		s_slam = new Slam();
+	//4 call start slam
+	while (ev.slam_error)
+	{
+		// Wait for slam launch.
+		usleep(20000);
+	}
+
+	robot::instance()->setTfReady(false);
+	if (cm_is_navigation() || cm_get() == Clean_Mode_Spot || cm_is_exploration())
+		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+	else if (cm_is_follow_wall())
+		robot::instance()->setBaselinkFrameType(Map_Position_Odom_Angle);
+	s_slam->enableMapUpdate();
+	auto count_n_10ms = 500;
+
+	bool eh_status_now=false, eh_status_last=false;
+	while (ros::ok() && !(s_slam->isMapReady() && robot::instance()->isTfReady()) && --count_n_10ms != 0)
+	{
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			continue;
+		}
+
+		if (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)
+		{
+			ROS_WARN("%s %d: Waiting for slam interrupted.", __FUNCTION__, __LINE__);
+			break;
+		}
+
+		usleep(20000);
+	}
+	if (count_n_10ms == 0)
+	{
+		ROS_ERROR("%s %d: Map or tf framework is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
+		set_error_code(Error_Code_Slam);
+		wav_play(WAV_TEST_LIDAR);
+		initSucceeded(false);
+		return false;
+	}
+	return true;
+}
+
+void MotionManage::init_after_slam()
+{
+s_laser->lidarShieldDetect(ON);
+	ev.rcon_triggered = ev.bumper_triggered =  ev.obs_triggered  = 0;
+	/*--- slam end ---*/
+
+	if (g_go_home_by_remote || (cm_is_exploration()))
+		set_led_mode(LED_STEADY, LED_ORANGE);
+	else
+		set_led_mode(LED_STEADY, LED_GREEN);
+
+		g_robot_slip_enable = true;
+	g_robot_stuck = false;
+	g_robot_slip = false;
+	g_wf_is_reach = false;
+}
+
+MotionManage::MotionManage():nh_("~"),is_align_active_(false)
+{
+	init_before_gyro();
+	initSucceeded(true);
+
+
+	if (!wait_for_gyro_on())
+		return;
+
+	switch (cm_get())
+	{
+		case Clean_Mode_Navigation:
+			init_nav_gyro_charge();
+			if(!wait_for_back_from_charge())
+				return;
+			init_nav_after_charge();
+			break;
+		case Clean_Mode_Exploration:
+			init_exp_after_gyro();
+			break;
+		case Clean_Mode_WallFollow:
+			init_wf_after_gyro();
+			break;
+		case Clean_Mode_Spot:
+			init_spot_after_gyro();
+			break;
+		case Clean_Mode_Go_Charger:
+			init_go_home_after_gyro();
+			break;
+		default:
+			ROS_ERROR("This mode (%d) should not use MotionManage.", cm_get());
+			break;
+	}
+	// No need to start laser or slam if it is go home mode.
+	if (cm_get() == Clean_Mode_Go_Charger)
+		return;
+
+	/*--- laser init ---*/
+	if(!laser_init())
+		return;
+
+	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
+	{
+		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+		s_laser->lidarShieldDetect(ON);
+		if (g_go_home_by_remote)
+			set_led_mode(LED_STEADY, LED_ORANGE);
+		else
+			set_led_mode(LED_STEADY, LED_GREEN);
+
+		return;
+	}
+	if (is_clean_paused())
+	{
+		robot::instance()->resetManualPause();
+		g_robot_stuck = false;
+		if (s_slam != nullptr)
+		{
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+			s_laser->lidarShieldDetect(ON);
+			if (g_go_home_by_remote)
+				set_led_mode(LED_STEADY, LED_ORANGE);
+			else
+				set_led_mode(LED_STEADY, LED_GREEN);
+			return;
+		}
+	}
+
+	if(g_from_station)
+	{
+		robot::instance()->offsetAngle(180);
+		ROS_INFO("%s,%d,\033[32m charge stub postion estiamate on(%d,%d)\033[0m",__FUNCTION__,__LINE__,(-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
+		Cell_t home_point((-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
+		map_set_charge_position(home_point);
+		g_homes[0].TH = 180;
+	}
+
+	get_aligment_angle();
+
+	usleep(600000);// wait for tf ready
+
+	/*----slam init----*/
+	if(!slam_init())
+		return;
+	init_after_slam();
+}
+
+MotionManage::~MotionManage()
+{
+	if (cm_get() != Clean_Mode_Go_Charger)
+	{
+		debug_map(MAP, map_get_x_cell(), map_get_y_cell());
+		//if (cm_is_follow_wall())
+		g_wf_reach_count = 0;
+		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
+		//if (cm_get() == Clean_Mode_Spot)
+		{
+			SpotMovement::instance()->spotDeinit();// clear the variables.
+		}
+	}
+	// Disable motor here because there ie a work_motor_configure() in spotDeinit().
+	disable_motors();
+	g_tilt_enable = false;
+	g_robot_slip_enable =false;
+	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
+
+	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+
+	if (s_laser != nullptr)
+	{
+		delete s_laser; // It takes about 1s.
+		s_laser = nullptr;
+	}
+	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
+	{
+		wav_play(WAV_CLEANING_PAUSE);
+		if (!ev.cliff_all_triggered)
+		{
+			if (cs_is_going_home())
+			{
+				// The current home cell is still valid, so push it back to the home point list.
+				path_set_home(g_home_point);
+			}
+			cm_set(Clean_Mode_Userinterface);
+			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+			if (cs_is_going_home())
+#if MANUAL_PAUSE_CLEANING
+//				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
+				ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
+#else
+				ROS_WARN("%s %d: Clean key pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+#endif
+			else
+				ROS_INFO("%s %d: Pause cleanning.", __FUNCTION__, __LINE__);
+			g_saved_work_time += get_work_time();
+			ROS_INFO("%s %d: Cleaning time: \033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
+			cm_unregister_events();
+			return;
+		}
+		else
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+	}
+	else{
+		g_from_station = 0;
+	}
+
+	if (!ev.charge_detect)
+		// It means robot can not go to charger stub.
+		robot::instance()->resetLowBatPause();
+
+	if (!ev.fatal_quit && robot::instance()->isLowBatPaused())
+	{
+		wav_play(WAV_CLEANING_PAUSE);
+		if (!ev.cliff_all_triggered)
+		{
+			g_resume_cleaning = true;
+			robot::instance()->resetLowBatPause();
+			cm_set(Clean_Mode_Charging);
+			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
+			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
+			g_saved_work_time += get_work_time();
+			ROS_INFO("%s %d: Cleaning time:\033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
+			cm_unregister_events();
+
+			cm_reset_go_home();
+			return;
+		}
+		else
+			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+	}
+
+	// Unregister here because robot may be lifted up during the wav playing for cleaning pause.
+	cm_unregister_events();
+	if (ev.fatal_quit) // Also handles for ev.battery_low/ev.charge_detect/ev.cliff_all_triggered.
+	{
+		robot::instance()->resetManualPause();
+		robot::instance()->resetLowBatPause();
+		g_resume_cleaning = false;
+		if (ev.cliff_all_triggered)
+			wav_play(WAV_ERROR_LIFT_UP);
+		wav_play(WAV_CLEANING_STOP);
+	}
+	else // Normal finish.
+	{
+		if(cs_is_going_home() && !ev.charge_detect && g_have_seen_charger)
+			wav_play(WAV_BACK_TO_CHARGER_FAILED);
+		if (cm_get() != Clean_Mode_Go_Charger && !cm_is_exploration())
+			wav_play(WAV_CLEANING_FINISHED);
+	}
+	cm_reset_go_home();
+
+	if (s_slam != nullptr)
+	{
+		delete s_slam;
+		s_slam = nullptr;
+	}
+
+	robot::instance()->savedOffsetAngle(0);
+
+	if (ev.fatal_quit)
+		if (ev.cliff_all_triggered)
+			ROS_WARN("%s %d: All Cliff are triggered. Finish cleaning.", __FUNCTION__, __LINE__);
+		else
+			ROS_WARN("%s %d: Fatal quit and finish cleanning.", __FUNCTION__, __LINE__);
+	else if (ev.key_clean_pressed)
+		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+	else if (ev.charge_detect)
+		ROS_WARN("%s %d: Finish cleaning and stop in charger stub.", __FUNCTION__, __LINE__);
+	else if (ev.battery_low)
+		ROS_WARN("%s %d: Battery too low. Finish cleaning.", __FUNCTION__, __LINE__);
+	else
+		if (cm_get() == Clean_Mode_Spot)
+			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		else if (cm_get() == Clean_Mode_Go_Charger)
+			ROS_WARN("%s %d: Could not go to charger stub.", __FUNCTION__, __LINE__);
+		else
+			ROS_WARN("%s %d: Can not go to charger stub after going to all home cells. Finish cleaning.", __FUNCTION__, __LINE__);
+
+	if (cm_get() != Clean_Mode_Go_Charger)
+	{
+		g_saved_work_time += get_work_time();
+		auto cleaned_count = map_get_cleaned_area();
+		auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.", __FUNCTION__, __LINE__, map_area, g_saved_work_time, double(g_saved_work_time) / 60, map_area / (double(g_saved_work_time) / 60));
+	}
+	if (ev.battery_low)
+		cm_set(Clean_Mode_Sleep);
+	else if (ev.charge_detect)
+		cm_set(Clean_Mode_Charging);
+	else
+		cm_set(Clean_Mode_Userinterface);
+}
+
+bool MotionManage::initCleaning(uint8_t cleaning_mode)
+{
+
+	switch (cleaning_mode)
+	{
+		case Clean_Mode_Navigation:
+			return initNavigationCleaning();
+		case Clean_Mode_Exploration:
+			return initExplorationCleaning();
+		case Clean_Mode_WallFollow:
+			return initWallFollowCleaning();
+		case Clean_Mode_Spot:
+			return initSpotCleaning();
+		case Clean_Mode_Go_Charger:
+			return initGoHome();
+		default:
+			ROS_ERROR("This mode (%d) should not use MotionManage.", cleaning_mode);
+			return false;
+	}
 }
 
 bool MotionManage::initNavigationCleaning(void)
