@@ -39,6 +39,7 @@ public:
 	virtual bool isExit()=0;
 	virtual bool isReach() =0;
 	virtual bool isSwitch() = 0 ;
+	virtual bool findTarget(Cell_t& curr);
 //	virtual bool path_next()=0;
 	void setTarget() {p_reg_->setTarget();}
 
@@ -59,12 +60,9 @@ public:
 
 	void setMt(void);
 
-	Cell_t updatePosition(const Point32_t &curr_point){
-		map_update_position();
-		s_curr_p = curr_point;
-		return map_get_curr_cell();
-	}
-	bool updatePath(const Cell_t& curr, Cell_t& last);
+	virtual Cell_t updatePosition(const Point32_t &curr_point);
+
+	Cell_t updatePath(const Cell_t& curr);
 	void resetTriggeredValue(void);
 	std::string getName()
 	{
@@ -83,6 +81,7 @@ protected:
 
 	int32_t left_speed_;
 	int32_t right_speed_;
+	Cell_t last_;
 };
 
 class NavigationClean:public CleanMode{
@@ -90,6 +89,7 @@ public:
 	NavigationClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~NavigationClean();
 //	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	Cell_t updatePosition(const Point32_t &curr_point);
 	void mark() {CleanMode::mark();};
 	bool isStop();
 	bool isExit();

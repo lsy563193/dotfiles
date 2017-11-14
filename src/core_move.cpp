@@ -224,38 +224,10 @@ void cm_cleaning() {
 
 		curr = p_cm->updatePosition({map_get_x_count(), map_get_y_count()});
 
-		if(p_cm->updatePath(curr, last))//is_repeat?
-			g_wf_reach_count++;
-
 		if (g_plan_path.empty() || g_is_near || p_cm->isReach() || p_cm->isStop())
 		{
-			printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
-			p_cm->mark();
-
-			auto cs_tmp = cs_get();
-			if(!g_plan_path.empty())
-				curr.TH = g_plan_path.back().TH;
-			auto start = curr;
-			g_old_dir = start.TH;
-			if(g_is_near)
-			{
-				start = g_plan_path.back();
-			}
-			g_plan_path.clear();
-			cs_path_next(start, g_plan_path);
-
-			if (g_plan_path.empty() || cs_is_go_charger())
+			if(!p_cm->findTarget(curr))
 				return;
-
-			p_cm->display();
-
-			if( !((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near) )
-			{
-				p_cm->setMt();
-				g_passed_path.clear();
-			}
-			g_is_near = false;
-			printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 		}
 		cm_move_to(p_cm, g_plan_path);
 

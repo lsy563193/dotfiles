@@ -118,15 +118,46 @@ void CleanMode::setMt()
 	robot::instance()->obsAdjustCount(20);
 }
 
+bool CleanMode::findTarget(Cell_t& curr) {
+	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
+	mark();
+	auto cs_tmp = cs_get();
+	if (!g_plan_path.empty())
+		curr.TH = g_plan_path.back().TH;
+	auto start = curr;
+	g_old_dir = start.TH;
+	if (g_is_near) {
+		start = g_plan_path.back();
+	}
+	g_plan_path.clear();
+	cs_path_next(start, g_plan_path);
+
+	display();
+
+	if (!((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near)) {
+		setMt();
+		g_passed_path.clear();
+	}
+	g_is_near = false;
+
+	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
+}
+
 bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
 {
 	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
 
-bool CleanMode::updatePath(const Cell_t& curr, Cell_t& last) {
-	auto ret = false;
-	if (!is_equal_with_angle(curr, last)) {
-		last = curr;
+Cell_t CleanMode::updatePosition(const Point32_t &curr_point)
+{
+		map_update_position();
+		s_curr_p = curr_point;
+		return map_get_curr_cell();
+}
+
+Cell_t CleanMode::updatePath(const Cell_t& curr) {
+	if (!is_equal_with_angle(curr, last_)) {
+		last_ = curr;
 		auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it) {
 				return is_equal_with_angle(curr, it);
 		});
@@ -136,13 +167,13 @@ bool CleanMode::updatePath(const Cell_t& curr, Cell_t& last) {
 		}
 		if (distance > 5) {
 			g_passed_path.clear();
-			ret = true;
+			g_wf_reach_count++;
 		}
 		fw_marker(curr);
 	}
 //	else
 //		is_time_up = !cs_is_trapped();
-	return ret;
+	return curr;
 }
 
 void CleanMode::display(){
@@ -539,6 +570,12 @@ bool NavigationClean::isSwitch()
 	}
 
 	return false;
+}
+
+Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
+{
+	auto curr = CleanMode::updatePosition(curr_point);
+	return updatePath(curr);
 }
 //SpotClean
 SpotClean::SpotClean(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path)
