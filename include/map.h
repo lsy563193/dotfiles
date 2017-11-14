@@ -98,16 +98,24 @@ Cell_t map_update_position();
 uint8_t map_set_laser();
 uint8_t map_set_obs();
 uint8_t map_set_bumper();
-//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 uint8_t map_set_rcon();
 uint8_t map_set_cliff();
 uint8_t map_set_tilt();
 uint8_t map_set_slip();
 uint8_t map_set_charge_position(const Cell_t homepoint);
-uint8_t map_set_blocked();
+uint8_t map_set_follow_wall();
+uint8_t map_set_blocks();
+uint8_t map_save_laser();
+uint8_t map_save_obs();
+uint8_t map_save_bumper();
+uint8_t map_save_rcon();
+uint8_t map_save_cliff();
+uint8_t map_save_tilt();
+uint8_t map_save_slip();
+uint8_t map_save_follow_wall();
+uint8_t map_save_blocks();
 
 double world_distance(void);
-void map_set_follow_wall(uint8_t id, const Cell_t& curr);
 void map_set_cleaned(std::deque<Cell_t>& cells);
 uint32_t map_get_cleaned_area();
 void fw_marker(const Cell_t&  curr);
