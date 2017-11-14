@@ -1249,20 +1249,137 @@ uint32_t map_get_cleaned_area(void)
 //	ROS_INFO("cleaned_count = %d, area = %.2fm2", cleaned_count, area);
 	return cleaned_count;
 }
-/*
-void fw_marker(const Cell_t&  curr){
-	if (mt_is_follow_wall()) {
-		if (cm_is_navigation()) {
-			map_set_follow_wall(MAP, curr);
-			if (cs_is_trapped())
-				map_set_follow_wall(WFMAP, curr);
-		}
-		if (cm_is_follow_wall()) {
-			map_set_follow_wall(WFMAP, curr);
+
+uint8_t is_a_block(int16_t x, int16_t y)
+{
+	uint8_t retval = 0;
+	CellState cs;
+
+	cs = map_get_cell(MAP, x, y);
+	if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY)
+	//if (cs >= BLOCKED && cs <= BLOCKED_CLIFF)
+		retval = 1;
+
+	return retval;
+}
+
+uint8_t is_blocked_by_bumper(int16_t x, int16_t y)
+{
+	uint8_t retval = 0;
+	int16_t i, j;
+	CellState cs;
+
+	/* Check the point by using the robot size. */
+	for (i = ROBOT_RIGHT_OFFSET; retval == 0 && i <= ROBOT_LEFT_OFFSET; i++) {
+		for (j = ROBOT_RIGHT_OFFSET; retval == 0 && j <= ROBOT_LEFT_OFFSET; j++) {
+			cs = map_get_cell(MAP, x + i, y + j);
+			//if ((cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) && cs != BLOCKED_OBS) {
+			if ((cs >= BLOCKED && cs <= BLOCKED_CLIFF) && cs != BLOCKED_OBS) {
+				retval = 1;
+			}
 		}
 	}
-	else {
-		if (cm_is_exploration())
-			explore_update_map();
+
+	return retval;
+}
+
+uint8_t is_block_accessible(int16_t x, int16_t y)
+{
+	uint8_t retval = 1;
+	int16_t i, j;
+
+	for (i = ROBOT_RIGHT_OFFSET; retval == 1 && i <= ROBOT_LEFT_OFFSET; i++) {
+		for (j = ROBOT_RIGHT_OFFSET; retval == 1 && j <= ROBOT_LEFT_OFFSET; j++) {
+			if (is_a_block(x + i, y + j) == 1) {
+				retval = 0;
+			}
+		}
 	}
-}*/
+
+	return retval;
+}
+
+bool is_block_cleanable(int16_t x, int16_t y)
+{
+	auto retval = is_block_unclean(x, y) && !is_block_blocked(x, y);
+//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
+	return retval;
+}
+
+int8_t is_block_cleaned_unblock(int16_t x, int16_t y)
+{
+	uint8_t cleaned = 0;
+	int16_t i, j;
+
+	for (i = ROBOT_RIGHT_OFFSET; i <= ROBOT_LEFT_OFFSET; i++) {
+		for (j = ROBOT_RIGHT_OFFSET; j <= ROBOT_LEFT_OFFSET; j++) {
+			auto state = map_get_cell(MAP, x+i, y+j);
+			if (state == CLEANED) {
+				cleaned ++;
+			} else if(is_block_blocked(x,y))
+				return false;
+		}
+	}
+
+	if (cleaned >= 7)
+		return true;
+	return false;
+}
+
+uint8_t is_block_unclean(int16_t x, int16_t y)
+{
+	uint8_t unclean_cnt = 0;
+	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
+		if (map_get_cell(MAP, x, i) == UNCLEAN) {
+			unclean_cnt++;
+		}
+	}
+//	ROS_INFO("%s, %d:unclean_cnt(%d)", __FUNCTION__, __LINE__, unclean_cnt);
+	return unclean_cnt;
+}
+
+uint8_t is_block_boundary(int16_t x, int16_t y)
+{
+	uint8_t retval = 0;
+	int16_t i;
+
+	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
+		if (map_get_cell(MAP, x, i) == BLOCKED_BOUNDARY) {
+			retval = 1;
+		}
+	}
+
+	return retval;
+}
+
+uint8_t is_block_blocked(int16_t x, int16_t y)
+{
+	uint8_t retval = 0;
+	int16_t i;
+
+	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
+		if (is_a_block(x, i) == 1) {
+			retval = 1;
+		}
+	}
+
+//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
+	return retval;
+}
+
+uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
+{
+	uint8_t retval = 0;
+	int16_t x,y;
+	auto dy = mt_is_left()  ?  2 : -2;
+	for(auto dx =-1; dx<=1,retval == 0; dx++) {
+		cm_world_to_cell(gyro_get_angle(), CELL_SIZE*dy, CELL_SIZE*dx, x, y);
+		if (is_a_block(x, y) == 1) {
+			retval = 1;
+		}
+	}
+
+//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
+	return retval;
+}
+
