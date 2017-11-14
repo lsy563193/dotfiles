@@ -167,8 +167,9 @@ if (mt_is_linear()) {
 	}
 
 	if (p_cm->isSwitch()) {
-		map_set_blocked();
-		MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
+		map_save_blocks();
+		//map_set_blocks();
+		//MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 	}
 
 	int32_t speed_left = 0, speed_right = 0;

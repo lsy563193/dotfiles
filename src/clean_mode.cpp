@@ -44,8 +44,8 @@ uint8_t cm_get(void)
 }
 
 void CleanMode::mark() {
+	map_set_blocks();
 	map_set_cleaned(g_passed_path);
-	map_set_blocked();
 	map_mark_robot(MAP);
 };
 
@@ -134,7 +134,8 @@ Cell_t CleanMode::updatePosition(const Point32_t &curr_point)
 		return map_get_curr_cell();
 }
 
-Cell_t CleanMode::updatePath(const Cell_t& curr) {
+Cell_t CleanMode::updatePath(const Cell_t& curr)
+{
 	if (!is_equal_with_angle(curr, last_)) {
 		last_ = curr;
 		auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it) {
@@ -148,17 +149,19 @@ Cell_t CleanMode::updatePath(const Cell_t& curr) {
 			g_passed_path.clear();
 			g_wf_reach_count++;
 		}
-		fw_marker(curr);
+		map_save_blocks();
 	}
 //	else
 //		is_time_up = !cs_is_trapped();
 	return curr;
 }
 
-void CleanMode::display(){
+void CleanMode::display()
+{
 	path_display_path_points(g_plan_path);
 	MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 }
+
 void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	if (p_reg_ != nullptr)
