@@ -310,7 +310,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	else
 	{
 		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
-		if (time(NULL) - charger_signal_start_time >= 5)// 3 mins//180
+		if (time(NULL) - charger_signal_start_time >= 180)// 3 mins//180
 		{
 			if (get_error_code())
 				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
