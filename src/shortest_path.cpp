@@ -1634,7 +1634,22 @@ void path_display_path_points(const deque<Cell_t>& path)
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + ")->";
 	}
 	//msg += "\n";
-	ROS_WARN("%s",msg.c_str());
+	ROS_INFO("%s",msg.c_str());
+}
+
+void path_display_targets(const deque<Cell_t>& targets)
+{
+	std::string     msg = __FUNCTION__;
+
+	msg += " " + std::to_string(__LINE__) + ": ";
+	for (auto it = targets.begin(); it != targets.end(); ++it) {
+		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y);
+		if (it->TH != 0)
+			 msg += ", " + std::to_string(it->TH);
+		msg += "),";
+	}
+	//msg += "\n";
+	ROS_INFO("%s",msg.c_str());
 }
 
 #endif

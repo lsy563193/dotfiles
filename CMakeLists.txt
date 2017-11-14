@@ -32,10 +32,11 @@ FILE(GLOB PP_SRC
 	src/wav.cpp
 	src/slam.cpp
 	src/event_manager.cpp
-	src/go_home.cpp
+#	src/go_home.cpp
 	src/regulator.cpp
 	src/move_type.cpp
 	src/clean_mode.cpp
+	src/clean_state.cpp
 #	src/a_star.cpp
 	src/space_exploration.cpp
 )
@@ -107,18 +108,19 @@ catkin_package(
 	DEPENDS Eigen3
 )
 
-add_executable(pp  ${PP_SRC} )
+add_executable(pp  ${PP_SRC} include/pp.h)
 #target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 
-add_executable(syscheck src/signature.c src/crc8.cpp src/des.cpp src/serial.cpp src/syscheck.cpp)
-target_link_libraries(syscheck ${catkin_LIBRARIES} -lm "-T ../ilife_ldscript.lds -Wl,--verbose")
+#add_executable(syscheck src/signature.c src/crc8.cpp src/des.cpp src/serial.cpp src/syscheck.cpp)
+#target_link_libraries(syscheck ${catkin_LIBRARIES} -lm "-T ../ilife_ldscript.lds -Wl,--verbose")
+#
+#add_executable(reg_test ${PP_SRC} )
+#target_link_libraries(reg_test ${catkin_LIBRARIES} -lm -lpthread)
+#target_link_libraries(reg_test ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 
-add_executable(reg_test ${PP_SRC} )
-target_link_libraries(reg_test ${catkin_LIBRARIES} -lm -lpthread)
-target_link_libraries(reg_test ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
-
-install(TARGETS pp syscheck
+#install(TARGETS pp syscheck
+install(TARGETS pp
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -64,15 +64,15 @@ extern bool g_finish_cleaning_go_home;
 extern bool g_from_station;
 extern bool g_in_charge_signal_range;
 
-extern int g_trapped_mode;
 extern uint32_t g_wf_start_timer;
 extern uint32_t g_wf_diff_timer;
 extern bool g_motion_init_succeeded;
 extern bool g_go_home_by_remote;
-extern int g_rcon_triggered;
 //extern Cell_t g_next_cell;
 //extern Cell_t g_target_cell;
 extern bool g_resume_cleaning;
+extern bool g_have_seen_charger;
+extern bool	g_start_point_seen_charger;
 extern bool g_exploration_home;
 extern std::deque<Cell_t> g_passed_path;
 extern std::deque<Cell_t> g_plan_path;
@@ -102,12 +102,7 @@ uint8_t CM_MoveForward(void);
 uint8_t cm_touring(void);
 void cm_cleaning(void);
 
-void cm_check_should_go_home(void);
-void cm_check_should_spot(void);
-
-Cell_t cm_update_position(bool is_turn = false);
-//void cm_update_map();
-bool cm_curve_move_to_point();
+void cs_setting(int cs);
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
@@ -115,7 +110,6 @@ void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, 
 
 void mark_offset(int16_t dx, int16_t dy, CellState status);
 
-void cm_move_back_(uint16_t dist);
 
 	/* Robot will try to go to the cells in g_home_point_old_path list
 	 * first, and it will only go through the CLEANED area. If the
@@ -128,22 +122,13 @@ void cm_move_back_(uint16_t dist);
 	 */
 
 bool cm_go_to_charger(void);
-bool cm_is_continue_go_to_charger(void);
-//void CM_SetStationHome(void);
-
-void CM_ResetBoundaryBlocks(void);
-
-void CM_AddTargets(Cell_t zone);
-
-bool cm_check_loop_back(Cell_t target);
-
-MapTouringType cm_handle_ext_event(void);
 
 void cm_create_home_boundary(void);
 
 void cm_self_check(void);
 
 bool cm_should_self_check(void);
+bool cm_should_go_to_charger(void);
 
 /* Event handler functions. */
 void cm_register_events(void);

@@ -10,6 +10,7 @@
 #include "gyro.h"
 #include "core_move.h"
 #include "event_manager.h"
+#include "clean_mode.h"
 
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -88,7 +89,7 @@ void charge_function(void)
 			ROS_WARN("%s %d: g_stop_charge_counter: %d, charge_status: %d", __FUNCTION__, __LINE__, g_stop_charge_counter, robot::instance()->getChargeStatus());
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
 		{
-			g_charge_detect = 0;
+			ev.charge_detect = 0;
 			if(!charge_turn_connect())
 			{
 				if (g_resume_cleaning)
@@ -116,10 +117,10 @@ void charge_function(void)
 				g_stop_charge_counter = 20;
 			}
 		}
-		if(g_cliff_all_triggered)
+		if(ev.cliff_all_triggered)
 		{
 			disable_motors();
-			g_cliff_all_triggered = 0;
+			ev.cliff_all_triggered = 0;
 			cm_set(Clean_Mode_Userinterface);
 			break;
 		}
@@ -262,7 +263,7 @@ void charge_unregister_event(void)
 
 void charge_handle_charge_detect(bool state_now, bool state_last)
 {
-	g_charge_detect = 1;
+	ev.charge_detect = 1;
 	g_stop_charge_counter = 20;
 }
 void charge_handle_remote_plan(bool state_now, bool state_last)
@@ -330,8 +331,8 @@ void charge_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
 	{
-		g_fatal_quit_event = true;
-		g_cliff_all_triggered = true;
+		ev.fatal_quit = true;
+		ev.cliff_all_triggered = true;
 	}
 }
 void charge_handle_key_clean(bool state_now, bool state_last)
@@ -439,7 +440,7 @@ bool charge_turn_connect(void)
 	ROS_INFO("%s %d: Start charge_turn_connect().", __FUNCTION__, __LINE__);
 	// This function is for trying turning left and right to adjust the pose of robot, so that it can charge.
 	int8_t speed = 5;
-	if(g_charge_detect)
+	if(ev.charge_detect)
 	{
 		ROS_INFO("Reach charger without turning.");
 		return true;
@@ -449,20 +450,20 @@ bool charge_turn_connect(void)
 	set_wheel_speed(speed, speed);
 	for(int i=0; i<25; i++)
 	{
-		if (g_charge_detect)
+		if (ev.charge_detect)
 		{
-			g_charge_detect = 0;
+			ev.charge_detect = 0;
 			disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if (g_charge_detect)
+			if (ev.charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 		usleep(50000);
 	}
@@ -472,20 +473,20 @@ bool charge_turn_connect(void)
 	set_wheel_speed(speed, speed);
 	for(int i=0; i<40; i++)
 	{
-		if (g_charge_detect)
+		if (ev.charge_detect)
 		{
-			g_charge_detect = 0;
+			ev.charge_detect = 0;
 			disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if (g_charge_detect)
+			if (ev.charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 		usleep(50000);
 	}

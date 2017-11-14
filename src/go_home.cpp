@@ -15,6 +15,7 @@
 #include "event_manager.h"
 #include "charger.hpp"
 #include "map.h"
+#include "clean_mode.h"
 
 extern float saved_pos_x, saved_pos_y;
 /*----------------------------------------------------------------GO Home  ----------------*/
@@ -41,7 +42,7 @@ void go_home(void)
 	should_check_near_home = true;
 
 	set_led_mode(LED_STEADY, LED_ORANGE);
-	if (cm_get() == Clean_Mode_GoHome)
+	if (cm_get() == Clean_Mode_Go_Charger)
 	{
 		during_cleaning = false;
 		if (!is_gyro_on())
@@ -78,11 +79,11 @@ void go_home(void)
 
 	while (ros::ok())
 	{
-		if (g_fatal_quit_event || g_key_clean_pressed || g_go_to_charger_failed)
+		if (ev.fatal_quit || ev.key_clean_pressed || g_go_to_charger_failed)
 		{
 			if(!during_cleaning)
 			{
-				if (g_cliff_all_triggered)
+				if (ev.cliff_all_triggered)
 				{
 					disable_motors();
 					wav_play(WAV_ERROR_LIFT_UP);
@@ -91,14 +92,14 @@ void go_home(void)
 			}
 			break;
 		}
-		if(g_charge_detect)
+		if(ev.charge_detect)
 		{
 			if(!during_cleaning)
 				cm_set(Clean_Mode_Charging);
 			disable_motors();
 			break;
 		}
-		if(g_battery_low)
+		if(ev.battery_low)
 		{
 			cm_set(Clean_Mode_Sleep);
 			break;
@@ -111,7 +112,7 @@ void go_home(void)
 
 	}
 
-	if(!during_cleaning && !g_charge_detect && !g_fatal_quit_event && !g_key_clean_pressed)
+	if(!during_cleaning && !ev.charge_detect && !ev.fatal_quit && !ev.key_clean_pressed)
 	{
 		disable_motors();
 		wav_play(WAV_BACK_TO_CHARGER_FAILED);
@@ -179,15 +180,15 @@ void go_to_charger(void)
 		if(event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 			continue;
 
-		if(g_fatal_quit_event)
+		if(ev.fatal_quit)
 			break;
-		if(g_charge_detect && g_go_home_state_now != CHECK_POSITION)
+		if(ev.charge_detect && g_go_home_state_now != CHECK_POSITION)
 			break;
-		if(g_key_clean_pressed)
+		if(ev.key_clean_pressed)
 			break;
-		if(g_battery_low)
+		if(ev.battery_low)
 			break;
-		if (g_slam_error)
+		if (ev.slam_error)
 		{
 			set_wheel_speed(0, 0);
 			continue;
@@ -196,7 +197,7 @@ void go_to_charger(void)
 			break;
 
 		if(during_cleaning)
-			map_set_cleaned(map_get_curr_cell());
+			//map_set_cleaned(map_get_curr_cell());
 
 		if(!g_move_back_finished)
 		{
@@ -211,7 +212,7 @@ void go_to_charger(void)
 		{
 			if (!go_home_check_turn_finish(go_home_target_angle))
 			{
-				if(g_cliff_triggered)
+				if(ev.cliff_triggered)
 				{
 					ROS_INFO("%s, %d: cliff while turning!", __FUNCTION__, __LINE__);
 					target_distance = 0.1;
@@ -334,7 +335,7 @@ void go_to_charger(void)
 				g_go_home_state_now = GO_HOME;
 				continue;
 			}
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				stop_brifly();
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
@@ -362,7 +363,7 @@ void go_to_charger(void)
 					g_move_back_finished = false;
 					continue;
 				}
-				if(g_cliff_triggered)
+				if(ev.cliff_triggered)
 				{
 					ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 					g_cliff_cnt++;
@@ -580,7 +581,7 @@ void go_to_charger(void)
 		/*-------around_chargestation main while-------*/
 		else if(g_go_home_state_now == AROUND_CHARGER_STATION)
 		{
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				g_cliff_cnt++;
@@ -858,7 +859,7 @@ void go_to_charger(void)
 		/*---check_position main while---*/
 		else if(g_go_home_state_now == CHECK_POSITION)
 		{
-			if(g_charge_detect)
+			if(ev.charge_detect)
 			{
 				if(g_charge_detect_cnt == 0)
 					g_charge_detect_cnt++;
@@ -902,7 +903,7 @@ void go_to_charger(void)
 				turn_finished = false;
 				continue;
 			}
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				g_cliff_cnt++;
@@ -995,7 +996,7 @@ void go_to_charger(void)
 		/*---by_path main while---*/
 		else if(g_go_home_state_now == BY_PATH)
 		{
-			if(g_charge_detect)
+			if(ev.charge_detect)
 			{
 				if(g_charge_detect_cnt == 0)g_charge_detect_cnt++;
 				else
@@ -1063,7 +1064,7 @@ void go_to_charger(void)
 					continue;
 				}
 			}
-			if(g_cliff_triggered)
+			if(ev.cliff_triggered)
 			{
 				target_distance = 0.03;
 				g_move_back_finished = false;
@@ -2301,7 +2302,7 @@ void go_to_charger(void)
 }
 
 /* turn_connect()
- * return: true - event triggered, including g_charge_detect/g_key_clean_pressed/g_cliff_all_triggered.
+ * return: true - event triggered, including ev.charge_detect/ev.key_clean_pressed/ev.cliff_all_triggered.
  *         false - can't reach the charger stub.
  */
 bool turn_connect(void)
@@ -2314,7 +2315,7 @@ bool turn_connect(void)
 	set_start_charge();
 	// Wait for 200ms for charging activated.
 	usleep(200000);
-	if(g_charge_detect)
+	if(ev.charge_detect)
 	{
 		ROS_INFO("Reach charger without turning.");
 		return true;
@@ -2325,20 +2326,20 @@ bool turn_connect(void)
 	set_wheel_speed(speed, speed);
 	while (abs(ranged_angle(target_angle - gyro_get_angle())) > 20)
 	{
-		if (g_charge_detect)
+		if (ev.charge_detect)
 		{
-			g_charge_detect = 0;
+			ev.charge_detect = 0;
 			disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if (g_charge_detect)
+			if (ev.charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 	}
 	stop_brifly();
@@ -2348,20 +2349,20 @@ bool turn_connect(void)
 	set_wheel_speed(speed, speed);
 	while (abs(ranged_angle(target_angle - gyro_get_angle())) > 20)
 	{
-		if (g_charge_detect)
+		if (ev.charge_detect)
 		{
-			g_charge_detect = 0;
+			ev.charge_detect = 0;
 			disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
-			if (g_charge_detect)
+			if (ev.charge_detect)
 			{
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
 			set_wheel_speed(speed, speed);
 		}
-		if(g_key_clean_pressed || g_fatal_quit_event)
+		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 	}
 	stop_brifly();
@@ -2381,24 +2382,24 @@ bool go_home_check_move_back_finish(float target_distance)
 		return false;
 	else
 	{
-		if(g_cliff_triggered && get_cliff_status())
+		if(ev.cliff_triggered && get_cliff_status())
 		{
 			if(++g_cliff_cnt>2)
-				g_cliff_jam = true;
+				ev.cliff_jam = true;
 			return false;
 		}
 		else
 		{
-			if (g_cliff_triggered)
+			if (ev.cliff_triggered)
 				ROS_WARN("%s %d: reset for cliff.", __FUNCTION__, __LINE__);
-			g_cliff_triggered = 0;
+			ev.cliff_triggered = 0;
 			g_cliff_cnt = 0;
 		}
 
 		if((g_bumper_left || g_bumper_right) && get_bumper_status())
 		{
 			if(++g_bumper_cnt>2)
-				g_bumper_jam = true;
+				ev.bumper_jam = true;
 			return false;
 		}
 		else
@@ -2423,7 +2424,7 @@ bool go_home_check_turn_finish(int16_t target_angle)
 	else
 		set_dir_right();
 
-	if(g_cliff_triggered)
+	if(ev.cliff_triggered)
 	{
 		ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 		return false;
@@ -2540,7 +2541,7 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 {
 	if(g_go_home_state_now == CHECK_POSITION)
 	{
-		g_charge_detect = 1;
+		ev.charge_detect = 1;
 	}
 	else
 	{
@@ -2549,7 +2550,7 @@ void go_home_handle_charge_detect(bool state_now, bool state_last)
 			g_charge_detect_cnt++;
 			if(g_charge_detect_cnt > 2)
 			{
-				g_charge_detect = 1;
+				ev.charge_detect = 1;
 			}
 		}
 		else
@@ -2566,7 +2567,7 @@ void go_home_handle_key_clean(bool state_now, bool state_last)
 	bool reset_manual_pause = false;
 	beep_for_command(VALID);
 	set_wheel_speed(0, 0);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	start_time = time(NULL);
 
 	if (during_cleaning && cm_is_navigation())
@@ -2596,7 +2597,7 @@ void go_home_handle_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(VALID);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	if (during_cleaning && cm_is_navigation())
 		robot::instance()->setManualPause();
 	reset_rcon_remote();
@@ -2607,13 +2608,13 @@ void go_home_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
 	{
-		g_cliff_all_triggered = true;
-		g_fatal_quit_event = true;
+		ev.cliff_all_triggered = true;
+		ev.fatal_quit = true;
 	}
-	g_cliff_triggered = BLOCK_ALL;
+	ev.cliff_triggered = BLOCK_ALL;
 	if (during_cleaning)
 		map_set_cliff();
-	if (g_move_back_finished && !g_cliff_jam && !state_last)
+	if (g_move_back_finished && !ev.cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
@@ -2624,7 +2625,7 @@ void go_home_handle_cliff(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
-		g_cliff_triggered = BLOCK_ALL;
+		ev.cliff_triggered = BLOCK_ALL;
 		if (during_cleaning)
 			map_set_cliff();
 	}
@@ -2654,7 +2655,7 @@ void go_home_handle_bumper(bool state_now, bool state_last)
 void go_home_handle_battery_low(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Battery too low (< LOW_BATTERY_STOP_VOLTAGE)", __FUNCTION__, __LINE__);
-	g_battery_low = true;
+	ev.battery_low = true;
 }
 
 void go_home_handle_over_current_brush_main(bool state_now, bool state_last)
@@ -2671,8 +2672,8 @@ void go_home_handle_over_current_brush_main(bool state_now, bool state_last)
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
 		if (self_check(Check_Main_Brush) == 1) {
-			g_oc_brush_main = true;
-			g_fatal_quit_event = true;
+			ev.oc_brush_main = true;
+			ev.fatal_quit = true;
 		}
     }
 }
@@ -2690,7 +2691,7 @@ void go_home_handle_over_current_wheel_left(bool state_now, bool state_last)
 		g_oc_wheel_left_cnt = 0;
 		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
 
-		g_oc_wheel_left = true;
+		ev.oc_wheel_left = true;
 	}
 }
 
@@ -2707,7 +2708,7 @@ void go_home_handle_over_current_wheel_right(bool state_now, bool state_last)
 		g_oc_wheel_right_cnt = 0;
 		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
-		g_oc_wheel_right = true;
+		ev.oc_wheel_right = true;
 	}
 }
 
@@ -2724,7 +2725,7 @@ void go_home_handle_over_current_suction(bool state_now, bool state_last)
 		g_oc_suction_cnt = 0;
 		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
 
-		g_oc_suction = true;
+		ev.oc_suction = true;
 	}
 }
 

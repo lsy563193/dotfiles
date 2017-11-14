@@ -16,12 +16,14 @@
 #include "movement.h"
 #include "user_interface.h"
 #include <ros/ros.h>
+#include <event_manager.h>
 #include "config.h"
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "event_manager.h"
 #include "core_move.h"
+#include "clean_mode.h"
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;
@@ -193,7 +195,7 @@ void user_interface(void)
 	user_interface_plan_status = 0;
 
 	/*--- reset g_charge_turn_connect_fail except Clean_Mode_GoHome and Clean_Mode_Exploration ---*/
-	if(temp_mode != Clean_Mode_GoHome && temp_mode != Clean_Mode_Exploration)
+	if(temp_mode != Clean_Mode_Go_Charger && temp_mode != Clean_Mode_Exploration)
 		g_charge_turn_connect_fail = false;
 }
 
@@ -308,14 +310,14 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	else
 	{
 		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
-		if (time(NULL) - charger_signal_start_time >= 5)// 3 mins//180
+		if (time(NULL) - charger_signal_start_time >= 180)// 3 mins//180
 		{
 			if (get_error_code())
 				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
 			else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 				ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			else
-				temp_mode = Clean_Mode_GoHome;
+				temp_mode = Clean_Mode_Go_Charger;
 		}
 	}
 	reset_rcon_status();
@@ -408,7 +410,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 			{
 				if (is_clean_paused())
 				{
-					g_remote_home = true;
+					ev.remote_home = true;
 					extern bool g_go_home_by_remote;
 					g_go_home_by_remote = true;
 					temp_mode = Clean_Mode_Navigation;

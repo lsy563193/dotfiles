@@ -6,7 +6,6 @@
 #include <time.h>
 #include "config.h"
 #include "main.h"
-#include "clean_mode.h"
 #include "mathematics.h"
 
 #define Brush_Power					128
@@ -800,4 +799,6 @@ int8_t lidar_bumper_deinit();
 bool check_laser_stuck();
 
 uint8_t estimate_charger_position(Rcon_Point_t point_a,Rcon_Point_t piont_b,Cell_t *pos);
+
+uint8_t get_laser_status();
 #endif

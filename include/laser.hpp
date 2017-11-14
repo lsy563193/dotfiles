@@ -29,7 +29,6 @@ public:
 	void setScan2Ready(uint8_t val);
 	int8_t isScanReady();
 	int8_t isScan2Ready();
-	bool isNewDataReady();
 
 	double getLaserDistance(uint16_t angle);
 
@@ -48,7 +47,7 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void pubPointMarker(std::vector<Double_Point> *point);
+	void pubPointMarkers(const std::vector<Point_d_t> *point, std::string frame_id);
 
 	//void startShield(void);
 	//void stopShield(void);
@@ -57,11 +56,15 @@ public:
 	bool transformLaserToXY(double detect_distance = 0.50,double noise_delta = 0.02);
 	void lidarMotorCtrl(bool orf);
 
-	bool laserMarker(double X_MAX = 0.237);
+	uint8_t laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
 	Eigen::MatrixXd* p_laser_matrix = &laser_matrix;
 
 	bool laserCheckFresh(float duration, uint8_t type = 1);
+	bool findLines(std::vector<LineABC> *lines);
+	void pubLineMarker(const std::vector<LineABC> *lines);
+	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
+
 private:
 
 	//void stop(void);
@@ -71,6 +74,7 @@ private:
 	void odomCb(const nav_msgs::Odometry::ConstPtr &msg);
 	void laserDataFilter(sensor_msgs::LaserScan& laserScanData, double delta);
 
+	int angle_n_;
 	uint8_t is_scan_ready_;
 	uint8_t is_scan2_ready_;
 	double new_laser_time = 0;
@@ -104,6 +108,7 @@ private:
 	bool isNoiseNow = false;
 	//static float *last_ranges_;
 	ros::Publisher line_marker_pub = nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
+	ros::Publisher line_marker_pub2 = nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 	ros::Publisher point_marker_pub = nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	ros::Publisher fit_line_marker_pub = nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 //	ros::Publisher laser_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("laser_filter",1);

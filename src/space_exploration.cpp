@@ -8,6 +8,7 @@
 #include "event_manager.h"
 #include "path_planning.h"
 #include "wav.h"
+#include "clean_mode.h"
 #if 0
 void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
 {
@@ -81,8 +82,7 @@ void turn_into_exploration(bool is_reset_map)
 	cm_reset_go_home();
 
 
-	extern bool g_have_seen_charge_stub, g_start_point_seen_charger;
-	g_have_seen_charge_stub = false;
+	g_have_seen_charger = false;
 	g_start_point_seen_charger = false;
 
 	g_homes.resize(1,g_zero_home);

@@ -19,46 +19,17 @@
  * After the cleaning process is done, robot will back to its starting point and
  * finishes the cleaning.
  */
-#include <stdint.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
-#include <list>
-#include <string>
-
-#include <ros/ros.h>
-#include <movement.h>
-#include <mathematics.h>
-#include <move_type.h>
-#include <event_manager.h>
-#include <path_planning.h>
-
-#include "core_move.h"
-#include "gyro.h"
-#include "mathematics.h"
+#include "pp.h"
 #include "map.h"
-#include "path_planning.h"
-#include "shortest_path.h"
-#include "spot.h"
-#include "robot.hpp"
-#include "movement.h"
-
-#include "wav.h"
-#include <numeric>
-#include <motion_manage.h>
-#include <regulator.h>
-
 #define FINAL_COST (1000)
 
 #define TRAPPED 2
 using namespace std;
 const int ISOLATE_COUNT_LIMIT = 4;
 int16_t g_new_dir;
+int16_t g_old_dir;
 int g_wf_reach_count;
-list <PPTargetType> g_targets;
+std::deque <PPTargetType> g_paths;
 
 uint8_t	g_first_start = 0;
 
@@ -69,26 +40,30 @@ uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between
 std::vector<Cell_t> g_homes;
 std::vector<int> g_home_way_list;
 std::vector<int>::iterator g_home_way_it;
-Cell_t g_home;
+Cell_t g_home_point;
 bool g_is_switch_target = true;
 //int8_t g_home_cnt = 0;// g_homes.size()*HOMEWAY_NUM-1 3/9, 2/4, 1/2
 bool g_home_gen_rosmap = true;
 
+/*
+ *     ^x      4 0 5
+ *     |       2 8 3
+ * y<---       6 1 7
+ */
 Cell_t g_index[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 
 const int16_t g_home_x = 0, g_home_y = 0;
 Cell_t g_zero_home = {0,0};
+Cell_t g_virtual_target = {SHRT_MAX,SHRT_MAX};//for followall
 
 // This is for the continue point for robot to go after charge.
 Cell_t g_continue_cell;
 const Cell_t MIN_CELL{-MAP_SIZE,-MAP_SIZE};
 const Cell_t MAX_CELL{ MAP_SIZE, MAP_SIZE};
-
 //Cell_t g_cell_history[5];
 
 //uint16_t g_old_dir;
 
-int g_trapped_mode = 1;
 uint32_t g_wf_start_timer;
 uint32_t g_wf_diff_timer;
 
@@ -138,6 +113,11 @@ std::iota(go_home_way_list.begin(), go_home_way_list.end(),0);
 	return go_home_way_list.begin();
 }
 
+
+bool cell_is_out_of_range(const Cell_t &cell)
+{
+	return std::abs(cell.X) > MAP_SIZE || std::abs(cell.Y) > MAP_SIZE;
+}
 //void path_planning_initialize(int32_t *x, int32_t *y)
 void path_planning_initialize()
 {
@@ -209,139 +189,6 @@ void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int1
 //		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
 }
 
-uint8_t is_a_block(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	CellState cs;
-
-	cs = map_get_cell(MAP, x, y);
-	if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY)
-	//if (cs >= BLOCKED && cs <= BLOCKED_CLIFF)
-		retval = 1;
-
-	return retval;
-}
-
-uint8_t is_blocked_by_bumper(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	int16_t i, j;
-	CellState cs;
-
-	/* Check the point by using the robot size. */
-	for (i = ROBOT_RIGHT_OFFSET; retval == 0 && i <= ROBOT_LEFT_OFFSET; i++) {
-		for (j = ROBOT_RIGHT_OFFSET; retval == 0 && j <= ROBOT_LEFT_OFFSET; j++) {
-			cs = map_get_cell(MAP, x + i, y + j);
-			//if ((cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) && cs != BLOCKED_OBS) {
-			if ((cs >= BLOCKED && cs <= BLOCKED_CLIFF) && cs != BLOCKED_OBS) {
-				retval = 1;
-			}
-		}
-	}
-
-	return retval;
-}
-
-uint8_t is_block_accessible(int16_t x, int16_t y)
-{
-	uint8_t retval = 1;
-	int16_t i, j;
-
-	for (i = ROBOT_RIGHT_OFFSET; retval == 1 && i <= ROBOT_LEFT_OFFSET; i++) {
-		for (j = ROBOT_RIGHT_OFFSET; retval == 1 && j <= ROBOT_LEFT_OFFSET; j++) {
-			if (is_a_block(x + i, y + j) == 1) {
-				retval = 0;
-			}
-		}
-	}
-
-	return retval;
-}
-
-static bool is_block_cleanable(int16_t x, int16_t y)
-{
-	auto retval = is_block_unclean(x, y) && !is_block_blocked(x, y);
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return retval;
-}
-
-int8_t is_block_cleaned_unblock(int16_t x, int16_t y)
-{
-	uint8_t cleaned = 0;
-	int16_t i, j;
-
-	for (i = ROBOT_RIGHT_OFFSET; i <= ROBOT_LEFT_OFFSET; i++) {
-		for (j = ROBOT_RIGHT_OFFSET; j <= ROBOT_LEFT_OFFSET; j++) {
-			auto state = map_get_cell(MAP, x+i, y+j);
-			if (state == CLEANED) {
-				cleaned ++;
-			} else if(is_block_blocked(x,y))
-				return false;
-		}
-	}
-
-	if (cleaned >= 7)
-		return true;
-	return false;
-}
-
-uint8_t is_block_unclean(int16_t x, int16_t y)
-{
-	uint8_t unclean_cnt = 0;
-	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (map_get_cell(MAP, x, i) == UNCLEAN) {
-			unclean_cnt++;
-		}
-	}
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return unclean_cnt;
-}
-
-uint8_t is_block_boundary(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	int16_t i;
-
-	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (map_get_cell(MAP, x, i) == BLOCKED_BOUNDARY) {
-			retval = 1;
-		}
-	}
-
-	return retval;
-}
-
-uint8_t is_block_blocked(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	int16_t i;
-
-	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (is_a_block(x, i) == 1) {
-			retval = 1;
-		}
-	}
-
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return retval;
-}
-
-uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
-{
-	uint8_t retval = 0;
-	int16_t x,y;
-	auto dy = mt_is_left()  ?  2 : -2;
-	for(auto dx =-1; dx<=1,retval == 0; dx++) {
-		cm_world_to_cell(gyro_get_angle(), CELL_SIZE*dy, CELL_SIZE*dx, x, y);
-		if (is_a_block(x, y) == 1) {
-			retval = 1;
-		}
-	}
-
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return retval;
-}
-
 //int16_t path_lane_distance(bool is_min)
 //{
 //	int angle = gyro_get_angle();
@@ -358,211 +205,57 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 //	return cell_dis;
 //}
 
-bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path,const int is_reach)
+bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 {
-	int16_t i, is_found=0, min=SHRT_MAX, max=SHRT_MAX, min_stop=0, max_stop=0;
-	uint16_t unclean_cnt_for_min = 0, unclean_cnt_for_max = 0;
-	Cell_t tmp = curr;
-#if INTERLACED_MOVE
-	if(curr.Y % 2 != 0) {
-		if (mt_is_follow_wall()) {
-			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
-			auto step = curr.Y - g_cell_history[1].Y;
-			auto is_local = (dir > 0) ? step <= 0 : step >= 0;
-			tmp.Y  = (is_local) ? g_cell_history[1].Y : path.target.Y;
-			ROS_ERROR("%s %d:follow_wall dir(%d),step(%d),tmp(%d,%d),his1(%d,%d)", __FUNCTION__, __LINE__, dir, step, tmp.X,
-								tmp.Y, g_cell_history[1].X, g_cell_history[1].Y);
-		}
-		if (mt_is_linear() && IS_X_AXIS(g_new_dir)) {
-			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
-			tmp.Y = g_cell_history[1].Y;
-			ROS_ERROR("%s %d:mt_is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,
-								g_cell_history[1].X, g_cell_history[1].Y, curr.X, curr.Y);
-		}
-	}
-#endif
-	ROS_INFO("%s %d: curr(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
-	for (i = 1; (min_stop == 0 || max_stop == 0); i++)
-	{
-		//ROS_INFO("%s %d: i = %d, curr x - (i+1) = %d, curr x +i+1 = %d", __FUNCTION__, __LINE__, i, curr.X - (i + 1), curr.X + i + 1);
-		if (curr.X - (i + 1) < -MAP_SIZE && curr.X + i + 1 > MAP_SIZE)
-			break;
+	int16_t is_found=0;
+	Cell_t it[2]; // it[0] means the furthest cell of X positive direction, it[1] means the furthest cell of X negative direction.
 
-		/* Find the unclean area in the NEG_X direction of the lane. */
-		if (min_stop == 0 && curr.X - (i + 1) >= -MAP_SIZE)
-		{
-			if (is_block_blocked(curr.X - i, curr.Y))
-			{
-				// Stop if the cells is blocked.
-				min_stop = 1;
-				// If block is near the unclean area, consider the block as unclean area.
-				min = (i == min + 1) ? i : min;
-				//ROS_INFO("%s %d: min stop:%d, (%d, %d) = %d", __FUNCTION__, __LINE__, min, curr.X - i, curr.Y, map_get_cell(MAP, curr.X - i, curr.Y));
-			} else if (is_block_boundary(curr.X - i, curr.Y))
-			{
-				// Stop if reach the boundary.
-				min_stop = 1;
-			} else {
-				auto unclean_cnt = is_block_unclean(curr.X - i, curr.Y);
-				if (unclean_cnt)
-				{
-					// Find the furthest unclean cell.
-					min = is_block_boundary(curr.X - (i + 1), curr.Y) ? min : i;
-					unclean_cnt_for_min += unclean_cnt;
-					//ROS_INFO("%s %d: min: %d", __FUNCTION__, __LINE__, min);
-				}
+//	debug_map(MAP, 0, 0);
+	for (auto i = 0; i < 2; i++) {
+		it[i] = curr;
+		auto uc = 0;
+		for (Cell_t neighbor = it[i] + g_index[i]; !cell_is_out_of_range(neighbor + g_index[i]) && !is_block_blocked(neighbor.X, neighbor.Y); neighbor += g_index[i]) {
+			uc += is_block_unclean(neighbor.X, neighbor.Y);
+			if (uc >= 3) {
+				it[i] = neighbor;
+				uc = 0;
+//				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].X, it[i].Y);
 			}
-		}
-
-		/* Find the unclean area in the POS_X direction of the lane. */
-		if (max_stop == 0 && curr.X + i + 1 <= MAP_SIZE)
-		{
-			if (is_block_blocked(curr.X + i, curr.Y))
-			{
-				// Stop if the cells is blocked.
-				max_stop = 1;
-				// If block is near the unclean area, consider the block as unclean area.
-				max = (i == max + 1) ? i : max;
-				//ROS_INFO("%s %d: max stop:%d, (%d, %d) = %d", __FUNCTION__, __LINE__, max, curr.X + i, curr.Y, map_get_cell(MAP, curr.X + i, curr.Y));
-			} else if (is_block_boundary(curr.X + i, curr.Y))
-			{
-				// Stop if reach the boundary.
-				max_stop = 1;
-			} else {
-				auto unclean_cnt = is_block_unclean(curr.X + i, curr.Y);
-				if (unclean_cnt)
-				{
-					// Find the furthest unclean cell.
-					max = is_block_boundary(curr.X + i + 1, curr.Y) ? max : i;
-					unclean_cnt_for_max += unclean_cnt;
-					//ROS_INFO("%s %d: max: %d", __FUNCTION__, __LINE__, max);
-				}
-			}
+//			ROS_WARN("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].X, it[i].Y);
+//			ROS_WARN("%s %d: nb(%d,%d)", __FUNCTION__, __LINE__, neighbor.X, neighbor.Y);
 		}
 	}
 
-	ROS_WARN("%s %d: min: %d\tmax: %d", __FUNCTION__, __LINE__, curr.X - min, curr.X + max);
-
-	// If unclean area is too small, do not clean that area.
-	if (max != SHRT_MAX && unclean_cnt_for_max < 3)
+	Cell_t target = it[0];
+	if (it[0].X != curr.X)
 	{
-		ROS_WARN("%s %d: Cleaning area for max direction is too small, drop it.", __FUNCTION__, __LINE__);
-		max = SHRT_MAX;
+		is_found++;
+	} else if (it[1].X != curr.X)
+	{
+		target = it[1];
+		is_found++;
 	}
-	if (min != SHRT_MAX && unclean_cnt_for_min < 3)
+	if (is_found == 2)
 	{
-		ROS_WARN("%s %d: Cleaning area for min direction is too small, drop it.", __FUNCTION__, __LINE__);
-		min = SHRT_MAX;
-	}
-
-	if (min != SHRT_MAX && max != SHRT_MAX)
-	{
-		/*
-		 * Both ends are not cleaned.
-		 * If the number of cells to clean are the same of both ends, choose either one base the
-		 * previous robot g_cell_history. Otherwise, move to the end that have more unclean cells.
-		 */
-//		min = std::min(min, MotionManage::s_laser->nag_dis)
-		//ture means min
-		//false means max
-//		min = std::min(min, path_lane_distance(true));
-//		max = std::min(max, path_lane_distance(false));
-		ROS_WARN("%s %d: is_reach.(%d), nag dir(%d)", __FUNCTION__, __LINE__, is_reach,(RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
-		if(mt_is_follow_wall() && is_reach==1)
-		{
-			if(mt_is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
-			{
-				ROS_WARN("%s %d:tmp.X -= min", __FUNCTION__, __LINE__);
-				tmp.X -= min;
-			}
-			else
-			{
-				ROS_WARN("%s %d:tmp.X += max", __FUNCTION__, __LINE__);
-				tmp.X += max;
-			}
-		}else {
-			auto pos_or_nag = MotionManage::s_laser->compLaneDistance();
-			ROS_WARN("%s %d: pos_or_nag.(%d)", __FUNCTION__, __LINE__, pos_or_nag);
-			if (pos_or_nag == 1) {
-				tmp.X += max;
-			} else if (pos_or_nag == -1) {
-				tmp.X -= min;
-			} else {
-				if (min > max)
-					tmp.X += max;
-				else if (min < max)
-					tmp.X -= min;
-				else
-					tmp.X += max;
-				/*{
-					if (g_cell_history[2].Y == g_cell_history[1].Y) {
-						if (g_cell_history[2].X > g_cell_history[1].X)
-							tmp.X -= min;
-						else if (g_cell_history[2].X < g_cell_history[1].X)
-							tmp.X += max;
-						else {
-							if (g_cell_history[0].X <= g_cell_history[1].X)
-								tmp.X += max;
-							else
-								tmp.X -= min;
-						}
-					} else if (g_cell_history[0].Y == g_cell_history[1].Y) {
-						if (g_cell_history[0].X >= g_cell_history[1].X)
-							tmp.X += max;
-						else
-							tmp.X -= min;
-					} else
-						tmp.X += max;
-				}*/
-
-			}
-		}
-
-
-		is_found = 2;
-	} else if (min != SHRT_MAX)
-	{
-		/* Only the NEG_X end is not cleaned. */
-		tmp.X -= min;
-		is_found = 1;
-	} else if (max != SHRT_MAX)
-	{
-		/* Only the POS_X end is not cleaned. */
-		tmp.X += max;
-		is_found = 1;
+		target = it[0];
+		//todo
+//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
+//		if(mt_is_follow_wall() && cm_is_reach())
+//		{
+//			if(mt_is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
+//				target = it[1];
+//		}
 	}
 
-#if !INTERLACED_MOVE
-/*	if (is_found == 1)
-	{
-		if (g_cell_history[0] == g_cell_history[1] && g_cell_history[0] == g_cell_history[2])
-//			 Duplicated cleaning.
-			is_found = 0;
-	}*/
-#endif
-
-	ROS_INFO("%s %d: is_found = %d, target(%d, %d).", __FUNCTION__, __LINE__, is_found, tmp.X, tmp.Y);
 	if (is_found)
 	{
-//		int8_t dir = tmp.X > curr.X ? -1 : 1;
-		path.push_front(tmp);
-//#if LINEAR_MOVE_WITH_PATH
-//		for (auto temp_cell = path.target; temp_cell.X != curr.X; temp_cell.X += dir)
-//			path.cells.push_front(temp_cell);
-		// Displaying for debug.
-//		list<Cell_t> temp_path;
-//		temp_path.push_back(path.cells.front());
-//		temp_path.push_back(path.cells.back());
-//		path_display_path_points(temp_path);
-//#else
-//		path.cells.push_front(path.target);
-//		path.cells.push_front(curr);
-//		path_display_path_points(path.cells);
-//#endif
-		return true;
+		path.push_front(target);
+		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
 	}
 	else
-		return false;
+		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target not found.", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
+
+	return is_found !=0;
 }
 
 bool is_axis_access(const Cell_t &start, int i, Cell_t &target)
@@ -760,106 +453,83 @@ bool for_each_neighbor(const Cell_t& cell,CellState cost, Func_t func) {
 	}
 }
 
-void path_find_all_targets(const Cell_t& curr, BoundingBox2& map)
-{
-	BoundingBox2 map_tmp{{int16_t(g_x_min-1),int16_t(g_y_min - 1)},{g_x_max,g_y_max}};
-	PPTargetType t;
+void path_find_all_targets(const Cell_t& curr, BoundingBox2& map) {
+	BoundingBox2 map_tmp{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)},
+											 {g_x_max,              g_y_max}};
 
-	for (const auto& cell : map_tmp)
-	{
+	for (const auto &cell : map_tmp) {
 		if (map_get_cell(MAP, cell.X, cell.Y) != UNCLEAN)
 			map.Add(cell);
 	}
 
 	map_tmp = map;
-	map_tmp.pos_=map.min;
-	for (const auto& cell : map_tmp)
-	{
+	map_tmp.pos_ = map.min;
+
+	/* Clear the target list and path list. */
+	for (auto &target : g_paths)
+		target.clear();
+	g_paths.clear();
+
+	std::deque<Cell_t>cells{};
+
+	map_reset(SPMAP);
+	for (const auto &cell : map_tmp) {
 		if (map_get_cell(MAP, cell.X, cell.Y) != CLEANED /*|| std::abs(cell.Y % 2) == 1*/)
 			continue;
 
 		Cell_t neighbor;
-		for (auto i = 0; i < 4; i++)
-		{
-			neighbor = cell+g_index[i];
-			if (map_get_cell(MAP, neighbor.X, neighbor.Y) == UNCLEAN)
-			{
-				if (is_block_accessible(neighbor.X, neighbor.Y) == 1)
-				{
-#if INTERLACED_MOVE
-					if(neighbor.Y % 2 != 0)
-						neighbor.Y = cell.Y;
-					if(neighbor.Y % 2 != 0)
-						continue;
-#endif
-					map_set_cell(MAP, cell_to_count(neighbor.X), cell_to_count(neighbor.Y), TARGET);
-					map.Add(neighbor);
+		for (auto i = 0; i < 4; i++) {
+			neighbor = cell + g_index[i];
+			if (map_get_cell(MAP, neighbor.X, neighbor.Y) == UNCLEAN) {
+				if (is_block_accessible(neighbor.X, neighbor.Y) == 1 && map_get_cell(SPMAP, neighbor.X, neighbor.Y) == UNCLEAN) {
+					map_set_cell(SPMAP, neighbor.X, neighbor.Y, CLEANED);
+					cells.push_back(neighbor);
 				}
 			}
 		}
 	}
+	std::sort(cells.begin(),cells.end(),[](Cell_t l,Cell_t r){
+			return (l.Y < r.Y || (l.Y == r.Y && l.X < r.X));
+	});
+	path_display_targets(cells);
 
-	/* Clear the target list and path list. */
-	for (auto& target : g_targets)
-		target.clear();
-	g_targets.clear();
-
+	ROS_INFO("%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
+	std::deque<Cell_t>filtered_cells{};
 	/* Filter the targets. */
-	for (auto y = map.min.Y; y <= map.max.Y; y++)
-	{
-		int16_t start = SHRT_MAX;
-		int16_t end = SHRT_MAX;
-		for (auto x = map.min.X; x <= map.max.X; x++)
-		{
-			if (map_get_cell(MAP, x, y) == TARGET)
-			{
-				if (start == SHRT_MAX)
-				{
-					// Save the start target of this target line.
-					start = x;
-					t = {{start,y}};
-					g_targets.push_back(t);
-				}
-				if (start != SHRT_MAX)
-					end = x;
+	for(;!cells.empty();) {
+		auto y = cells.front().Y;
+		std::deque<Cell_t> tmp{};
+		std::remove_if(cells.begin(), cells.end(), [&y, &tmp](Cell_t &it) {
+			if (it.Y == y && (tmp.empty() || (it.X - tmp.back().X == 1))) {
+				tmp.push_back(it);
+				return true;
 			}
-			if (map_get_cell(MAP, x, y) != TARGET)
-			{
-				if (start != SHRT_MAX && end != start)
-				{
-					// Save the end target of this target line.
-					t={{end,y}};
-					g_targets.push_back(t);
-					if (end - start > 1)
-					{
-						// Clear the targets between start and end, it means finding the both end of the unclean lane.
-						for (auto it_x = start + 1; it_x != end; it_x++)
-						{
-							if (it_x != curr.X)
-								map_set_cell(MAP, cell_to_count(it_x), cell_to_count(y), UNCLEAN);
-							else
-							{
-								// Save the target with the same X of current cell.
-								t={{end,y}};
-								g_targets.push_back(t);
-							}
-						}
-					}
-				}
-				start = end = SHRT_MAX;
-			}
+			return false;
+		});
+		cells.resize(cells.size() - tmp.size());
+		if (tmp.size() > 2) {
+			tmp.erase(std::remove_if(tmp.begin() + 1, tmp.end() - 1, [&curr](Cell_t &it) {
+					return it.X != curr.X;
+			}), tmp.end() - 1);
 		}
+		for(const auto& it:tmp){
+			PPTargetType t = {{it}};
+			g_paths.push_back(t);
+			filtered_cells.push_back(it);
+		};
 	}
-#if DEBUG_MAP
+
+	path_display_targets(filtered_cells);
+//#if DEBUG_MAP
 	// Print for map that contains all targets.
 //	debug_map(MAP, g_home_x, g_home_y);
-#endif
+//#endif
 
 	// Restore the target cells in MAP to unclean.
-	for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
-		map_set_cell(MAP, cell_to_count(it->back().X), cell_to_count(it->back().Y), UNCLEAN);
-	}
-	ROS_INFO("%s %d: Found %lu targets from MAP.", __FUNCTION__, __LINE__, g_targets.size());
+//	for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
+//		map_set_cell(MAP, cell_to_count(it->back().X), cell_to_count(it->back().Y), UNCLEAN);
+//	}
+//	ROS_INFO("%s %d: Found %lu targets from MAP.", __FUNCTION__, __LINE__, g_paths.size());
 }
 
 void generate_SPMAP(const Cell_t& curr)
@@ -930,13 +600,13 @@ void generate_SPMAP(const Cell_t& curr)
 		}
 
 		all_set = true;
-		for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+		for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 			if (map_get_cell(SPMAP, it->front().X, it->front().Y) == COST_NO) {
 				all_set = false;
 			}
 		}
 		if (all_set == true) {
-			ROS_INFO("%s %d: all possible target are checked & reachable.", __FUNCTION__, __LINE__);
+			//ROS_INFO("%s %d: all possible target are checked & reachable.", __FUNCTION__, __LINE__);
 			passSet = 0;
 		}
 
@@ -946,7 +616,7 @@ void generate_SPMAP(const Cell_t& curr)
 			nextPassValue = 1;
 	}
 
-	ROS_INFO("%s %d: offset: %d\tx: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
+	//ROS_INFO("%s %d: offset: %d\tx: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, offset, x - offset, x + offset, y - offset, y + offset);
 #if DEBUG_SM_MAP
 	debug_map(SPMAP, 0, 0);
 #endif
@@ -957,27 +627,33 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
 	generate_SPMAP(curr);
-
-	for (auto it = g_targets.begin(); it != g_targets.end();) {
+	std::deque<Cell_t> reachable_targets{};
+	for (auto it = g_paths.begin(); it != g_paths.end();) {
 		if (map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_NO ||
 						map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_HIGH) {
 			// Drop the unreachable targets.
-			it = g_targets.erase(it);
+			it = g_paths.erase(it);
 			continue;
 		}
 		else
+		{
+			reachable_targets.push_back(it->back());
 			it++;
+		}
 	}
 
-	ROS_INFO("%s %d: Get %lu reachable targets.", __FUNCTION__, __LINE__, g_targets.size());
-	return !g_targets.empty();
+	ROS_INFO("%s %d: After generating SPMAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, g_paths.size());
+	if (!g_paths.empty())
+		path_display_targets(reachable_targets);
+
+	return !g_paths.empty();
 }
 
 void generate_path_to_targets(const Cell_t& curr)
 {
 	int16_t targetCost, x_min, x_max, y_min, y_max;
 	path_get_range(SPMAP, &x_min, &x_max, &y_min, &y_max);
-	for (auto& it : g_targets) {
+	for (auto& it : g_paths) {
 		auto trace = it.front();
 		it.pop_front();
 		while (trace != curr) {
@@ -1052,7 +728,7 @@ static bool is_path_valid(const PPTargetType &it,int16_t towards_y, int16_t re_t
 }
 
 static int16_t path_area_target(const Cell_t &curr, int16_t y_min, int16_t y_max, Cell_t &target,
-														 list<PPTargetType> &g_targets)
+														 list<PPTargetType> &g_paths)
 {
 	int16_t cost = FINAL_COST;
 	enum { START_Y, TOWARDS, TURN, Y_NUM };
@@ -1078,7 +754,7 @@ static int16_t path_area_target(const Cell_t &curr, int16_t y_min, int16_t y_max
 			for (auto target_y = area_y_begin; target_y != towards_y_end; target_y += dy)
 			{
 //				ROS_INFO(" %s %d: target_y(%d)", __FUNCTION__, __LINE__, target_y);
-				for (const auto &target_it : g_targets)
+				for (const auto &target_it : g_paths)
 				{
 					if (target_y == target_it.back().Y)
 					{
@@ -1101,7 +777,7 @@ static int16_t path_area_target(const Cell_t &curr, int16_t y_min, int16_t y_max
 			area_y_begin-=dy;
 		} while(area[i][TURN] && area_y_begin != re_towards_y_end);
 	}
-		for (const auto& target_it : g_targets) {
+		for (const auto& target_it : g_paths) {
 			if (cost > target_it.size()) {
 				target = target_it.back();
 				cost = target_it.size();
@@ -1131,8 +807,8 @@ bool is_trapped(const Cell_t& curr, PPTargetType& path) {
 	clean_proportion = (double) escape_cleaned_count / (double) map_cleand_count;
 	ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__, escape_cleaned_count);
 	ROS_WARN("%s %d: escape map_cleand_count(%d)!!", __FUNCTION__, __LINE__, map_cleand_count);
-	ROS_WARN("%s %d: clean_proportion(%f) ,when prop < 0,8, is trapped!!", __FUNCTION__, __LINE__, clean_proportion);
-	return (clean_proportion < 0.8 || path_escape_trapped(curr) <= 0);
+	ROS_WARN("%s %d: clean_proportion(%f) ,when prop < 0,8 is trapped ", __FUNCTION__, __LINE__, clean_proportion);
+	return (clean_proportion < 0.8 /*|| path_escape_trapped(curr) <= 0*/);
 }
 
 bool path_target(const Cell_t& curr, PPTargetType& path)
@@ -1153,12 +829,12 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 {
 	bool is_stop = false, is_found = false, within_range=false;
 	int16_t y_max;
-	list <PPTargetType> temp_targets;
+	deque <PPTargetType> temp_targets;
 	temp_targets.clear();
 	uint16_t final_cost = 1000;
 	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
 	// Filter targets in Y+ direction of curr.
-	for (auto it = g_targets.begin(); it != g_targets.end(); ++it) {
+	for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 //		ROS_INFO("target(%d,%d)", it->front().X, it->front().Y);
 //		path_display_path_points(*it);
 		if (map_get_cell(MAP, it->front().X, it->front().Y - 1) != CLEANED) {
@@ -1170,7 +846,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		}
 	}
 	// Sort targets with Y ascend order.
-	temp_targets.sort(sort_g_targets_y_ascend);
+	std::sort(temp_targets.begin(),temp_targets.end(),sort_g_targets_y_ascend);
 
 	for (auto it = temp_targets.begin(); it != temp_targets.end(); ++it) {
 		if (is_stop && temp_target.Y != it->front().Y)
@@ -1203,7 +879,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		if (is_stop) {
 			break;
 		}
-		for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+		for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 			if (map_get_cell(MAP, it->target.X, it->target.Y - 1) != CLEANED) {
 				continue;
 			}
@@ -1239,7 +915,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		ROS_INFO("%s %d: case 2, towards Y+, allow Y- shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto a = curr.Y; a >= map.min.Y && !is_stop; --a) {
 			for (auto d = a; d <= map.max.Y && !is_stop; ++d) {
-				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+				for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 					if (it->target.Y == d) {
 						if (it->cells.size() > final_cost) {
 							continue;
@@ -1287,7 +963,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 				break;
 			}
 
-			for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+			for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 				if (map_get_cell(MAP, it->target.X, it->target.Y + 1) != CLEANED) {
 					continue;
 				}
@@ -1323,7 +999,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		ROS_INFO("%s %d: case 4, towards Y-, allow Y+ shift, allow 1 turn, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto a = curr.Y; a <= map.max.Y && !is_stop; ++a) {
 			for (auto d = a; d >= map.min.Y && !is_stop; --d) {
-				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+				for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 					if (it->target.Y == d) {
 						if (it->cells.size() > final_cost) {
 							continue;
@@ -1332,7 +1008,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 						within_range = true;
 						y_max = it->cells.front().Y;
 						bool turn = false;
-						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
+						for (auto i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
 							if (i->Y > a || i->Y < (d > curr.Y ? curr.Y : d)) {
 								within_range = false;
 							}
@@ -1367,7 +1043,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		ROS_INFO("%s %d: case 5: towards Y+, allow Y- shift, allow turns, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto a = curr.Y; a <= map.max.Y  && is_stop == 0; ++a) {
 			for (auto d = curr.Y; d <= a && is_stop == 0; ++d) {
-				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+				for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 					if (it->target.Y == d) {
 						within_range = true;
 						for (list<Cell_t>::iterator i = it->cells.begin(); within_range == true && i != it->cells.end(); ++i) {
@@ -1391,7 +1067,7 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 		ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, is_stop);
 		for (auto c = map.min.X; c <= map.max.X; ++c) {
 			for (auto d = map.min.Y; d <= map.max.Y; ++d) {
-				for (list<PPTargetType>::iterator it = g_targets.begin(); it != g_targets.end(); ++it) {
+				for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
 					if (it->size() < final_cost) {
 						temp_target = it->front();
 						final_cost = it->size();
@@ -1515,22 +1191,62 @@ int16_t path_escape_trapped(const Cell_t& curr)
 	return val;
 }
 
-bool path_nav_target(const Cell_t& curr, PPTargetType& path, const int is_reach)
+bool cm_is_reach()
+{
+	return (ev.bumper_triggered || ev.obs_triggered || ev.cliff_triggered || ev.rcon_triggered);
+}
+
+bool path_next_spot(const Cell_t &start, PPTargetType &path) {
+	if (!SpotMovement::instance()->spotNextTarget(start, &path))
+		return false;
+}
+
+bool path_next_fw(const Cell_t &start, PPTargetType &path) {
+	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
+	if (mt_is_linear()) {
+		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
+		if (cm_is_reach()) {
+			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
+			return true;
+		}
+	}
+	else {
+		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
+		if (g_wf_reach_count == 0 ||
+				(g_wf_reach_count < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
+				 wf_is_isolate())) {
+			map_reset(WFMAP);
+			auto angle = -900;
+			if (g_wf_reach_count == 0) {
+				angle = 0;
+			}
+			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
+			Cell_t cell;
+			cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+			path.push_back(cell);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool path_next_nav(const Cell_t &start, PPTargetType &path)
 {
 	bool ret = true;
-	if (g_resume_cleaning && !path_get_continue_target(curr, path))
-				g_resume_cleaning = false;
+	if (g_resume_cleaning && !path_get_continue_target(start, path))
+			g_resume_cleaning = false;
 
 	if (!g_resume_cleaning) {
-		if (!path_lane_is_cleaned(curr, path, is_reach)) {
+		if (!path_lane_is_cleaned(start, path)) {
 			if (g_wf_reach_count > 0) {
-				isolate_target(curr, path);
+				isolate_target(start, path);
 			}
 			else {
-				ret = path_target(curr, path);//-1 not target, 0 found
+				ret = path_target(start, path);//-1 not target, 0 found
 			}
 		}
 	}
+	path_full_angle(start, path);
 	return ret;
 }
 
@@ -1554,7 +1270,7 @@ bool cm_turn_and_check_charger_signal(void)
 			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
 			return true;
 		}
-		else if(g_key_clean_pressed || g_fatal_quit_event || g_charge_detect)
+		else if(ev.key_clean_pressed || ev.fatal_quit || ev.charge_detect)
 		{
 			ROS_INFO("%s, %d: event triggered, return now.", __FUNCTION__, __LINE__);
 			return false;
@@ -1562,131 +1278,8 @@ bool cm_turn_and_check_charger_signal(void)
 	}
 	return false;
 }
-
-bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
+void path_full_angle(const Cell_t& start, PPTargetType& path)
 {
-	ROS_INFO("%s,%d", __FUNCTION__,__LINE__);
-
-	if (!g_go_home)
-		cm_check_should_go_home();
-
-	if(!g_go_home)
-		cm_check_should_spot();
-
-	if(!g_go_home) {
-		if (cm_is_follow_wall()){
-			ROS_INFO("  path_next Clean_Mode:(%d)", cm_get());
-			if (mt_is_linear()) {
-				if (start != path.back()) {
-					ROS_INFO("  start follow wall");
-					mt_set(CM_FOLLOW_LEFT_WALL);
-				} else {
-					ROS_INFO("  reach 8m, go_home.");
-					g_finish_cleaning_go_home = true;
-					cm_check_should_go_home();
-				}
-			} else {
-				ROS_INFO("  wf_is_go_home");
-				if (g_keep_on_wf) {
-					ROS_INFO("  no  keep on follow wall");
-					mt_set(CM_FOLLOW_LEFT_WALL);
-					//g_keep_on_wf = false;
-				} else {
-					if (g_wf_reach_count == 0 ||
-							(g_wf_reach_count < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
-							 wf_is_isolate())) {
-						ROS_INFO("  no, CM_LINEARMOVE");
-						mt_set(CM_LINEARMOVE);
-						map_reset(WFMAP);
-						ROS_INFO("  g_wf_reach_count(%d)", g_wf_reach_count);
-						auto angle = -900;
-						if (g_wf_reach_count == 0) {
-							angle = 0;
-						}
-//						g_wf_reach_count++;
-						const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-						Cell_t cell;
-						cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
-						path.clear();
-						path.push_front(cell);
-						path.push_front(start);
-						ROS_INFO("  target.X = %d target.Y = %d", cell.X, cell.Y);
-					} else {
-						ROS_INFO("  yes isolate_count(%d),times(%d),", g_wf_reach_count, get_work_time() > WALL_FOLLOW_TIME);
-						g_finish_cleaning_go_home = true;
-						cm_check_should_go_home();
-					}
-				}
-			}
-		}
-		else if ((SpotMovement::instance()->getSpotType() == CLEAN_SPOT ||
-														SpotMovement::instance()->getSpotType() == NORMAL_SPOT)) {
-			if (!SpotMovement::instance()->spotNextTarget(start, &path))
-				return false;
-#if DEBUG_MAP
-			debug_map(MAP, path.back().X, path.back().Y);
-#endif
-//			path.push_front(start);
-		}
-		else if (cm_is_navigation() || cm_is_exploration()) {
-			path.clear();
-			if(g_trapped_mode == 0) {
-				if (!path_nav_target(start, path, is_reach)) {
-					if (is_trapped(start, path)) {
-						g_trapped_mode = 1;
-						// This led light is for debug.
-						set_led_mode(LED_FLASH, LED_GREEN, 300);
-						g_wf_start_timer = time(NULL);
-						g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
-					}
-					else {
-						g_finish_cleaning_go_home = true;
-						g_no_uncleaned_target = true;
-						cm_check_should_go_home();
-					}
-				}
-			}//check trapped first
-			else if(!is_trapped(start, path) && path_nav_target(start, path, is_reach)) {
-				g_wf_reach_count = 0;
-				ROS_WARN("%s:%d: Escape trapped.", __FUNCTION__, __LINE__);
-				g_trapped_mode = 0;
-				// This led light is for debug.
-				if (cm_is_exploration())
-					set_led_mode(LED_STEADY, LED_ORANGE);
-				else
-					set_led_mode(LED_STEADY, LED_GREEN);
-			}
-		}
-	}
-	if(g_go_home) {
-		if (cm_is_go_home() || start == g_home || !path_get_home_target(start, path, is_reach)) {
-			g_plan_path.clear();
-			if(start == g_home && g_home == g_zero_home)
-			{
-				if(!cm_turn_and_check_charger_signal())
-					return false;
-			}
-			ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
-			g_during_go_to_charger = true;
-			g_tilt_enable = false; //disable tilt detect
-			set_led_mode(LED_STEADY, LED_ORANGE);
-			mt_set(CM_GO_TO_CHARGER);
-			return true;
-		}
-	}
-
-//	g_old_dir = g_new_dir;
-	//set move_type
-	if (g_go_home || cm_is_exploration())
-		mt_set(CM_LINEARMOVE);
-	else if(cm_is_navigation())
-	{
-		mt_set(CM_LINEARMOVE);
-		mt_update(start, path);
-	}
-	if(g_trapped_mode == 1)
-		mt_set(CM_FOLLOW_LEFT_WALL);
-	//full cell heading
 	path.push_front(start);
 	for(auto it = path.begin(); it < path.end(); ++it) {
 		auto it_next = it+1;
@@ -1695,33 +1288,107 @@ bool path_next(const Cell_t& start, PPTargetType& path, const int is_reach)
 		else
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
-		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 	path.back().TH = (path.end()-2)->TH;
-	if(g_go_home && g_home == g_zero_home)
+	if(cs_is_going_home() && g_home_point == g_zero_home)
 	{
-		path.back().TH = g_home.TH;
+		path.back().TH = g_home_point.TH;
 	}
-	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-
+//	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 	g_new_dir = g_plan_path.front().TH;
 	path.pop_front();
-	path_display_path_points(path);
+}
 
+bool path_next(const Cell_t& start, PPTargetType& path)
+{
+	if (cm_is_follow_wall()) {
+		return path_next_fw(start, path);
+	}
+	else if (cm_is_spot()) {
+		return path_next_spot(start, path);
+	}
+	else if (cm_is_navigation()) {
+		return path_next_nav(start, path);
+	}
+}
+
+bool cs_path_next(const Cell_t& start, PPTargetType& path) {
+	if (!cs_is_going_home()) {
+		if ((ev.remote_home || ev.battery_home)) {//cs_is_switch_go_home()
+			if(g_have_seen_charger)
+				cs_set(CS_GO_HOME_POINT);
+			else
+				cs_set(CS_EXPLORATION);
+		}
+	}
+
+	if (!cs_is_going_home()) {
+		if (ev.remote_spot) {//cs_is_switch_tmp_spot()
+			cs_set(CS_TMP_SPOT);
+		}
+	}
+
+	if (cs_is_trapped()) {
+		if (!is_trapped(start, path))
+			cs_set(CS_CLEAN);
+	}
+
+	if (cs_is_clean()) {
+		if (!path_next(start, path))
+		{
+			ROS_INFO("%s%d:", __FUNCTION__, __LINE__);
+			if (is_trapped(start, path))
+			{
+				cs_set(CS_TRAPPED);
+//				path.push_back(g_virtual_target);
+			}
+			else
+			{
+//				if(g_have_seen_charger)
+					cs_set(CS_GO_HOME_POINT);
+//				else
+//					cs_set(CS_EXPLORATION);
+			}
+		}else
+		mt_update(start,path);
+	}
+	else if (cs_is_tmp_spot()) {
+		path_next_spot(start, path);
+	}
+
+	if (cs_is_go_home_point()) {
+		if (start == g_home_point) {
+			if (g_home_point != g_zero_home ||cm_turn_and_check_charger_signal())
+					cs_set(CS_GO_CHANGER);
+		}else
+
+		if(path_get_home_point_target(start, path))
+			cs_set(CS_EXPLORATION);
+	}
+	if (cs_is_exploration()) {
+		if(g_have_seen_charger)
+			cs_set(CS_GO_CHANGER);
+		else
+			if(path_next_nav(start, path))
+				return false;
+	}
+	if(mt_is_follow_wall())
+		path.push_back(g_virtual_target);
 	return true;
 }
 
-void path_fill_path(std::list<Cell_t>& path)
+void path_fill_path(std::deque<Cell_t>& path)
 {
 	int16_t dir;
 	Cell_t cell;
-	list<Cell_t> saved_path = path;
+	auto saved_path = path;
 	path.clear();
 	//path_display_path_points(saved_path);
 
 	//for (list<Cell_t>::iterator it = saved_path.begin(); it->X != saved_path.back().X || it->Y != saved_path.back().Y; it++)
-	for (list<Cell_t>::iterator it = saved_path.begin(); it != saved_path.end(); it++)
+	for (auto it = saved_path.begin(); it != saved_path.end(); it++)
 	{
-		list<Cell_t>::iterator next_it = it;
+		auto next_it = it;
 		if(++next_it == saved_path.end()){
 			ROS_INFO("%s,%d,fill path to last interator",__FUNCTION__,__LINE__);
 			break;
@@ -1787,7 +1454,7 @@ void path_fill_path(std::list<Cell_t>& path)
 	path.push_back(cell);
 	//ROS_DEBUG("%s %d: End cell(%d, %d).", __FUNCTION__, __LINE__, cell.X, cell.Y);
 	std::string msg = "Filled path:";
-	for (std::list<Cell_t>::iterator it = path.begin(); it != path.end(); ++it) {
+	for (auto it = path.begin(); it != path.end(); ++it) {
 		msg += "->(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")";
 	}
 	//ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
@@ -1820,9 +1487,8 @@ void path_set_home(const Cell_t& curr)
 	}
 	if (!is_found) {
 		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
-		extern bool g_have_seen_charge_stub;
 		if(cm_get() != Clean_Mode_Spot)
-			g_have_seen_charge_stub = true;
+			g_have_seen_charger = true;
 		// If curr near (0, 0)
 		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
 		{
@@ -1836,9 +1502,8 @@ void path_set_home(const Cell_t& curr)
 	}
 	else if(curr == g_zero_home && cm_get() != Clean_Mode_Spot)
 	{
-		extern bool g_start_point_seen_charger, g_have_seen_charge_stub;
 		g_start_point_seen_charger = true;
-		g_have_seen_charge_stub = true;
+		g_have_seen_charger = true;
 	}
 }
 
@@ -1846,7 +1511,7 @@ void path_set_home(const Cell_t& curr)
  * return :NO_TARGET_LEFT (0)
  *        :TARGET_FOUND (1)
  */
-bool path_get_home_target(const Cell_t& curr, PPTargetType& path,const int is_reach) {
+bool path_get_home_point_target(const Cell_t &curr, PPTargetType &path) {
 	if(g_home_way_list.empty()) {
 		g_home_way_it = _gen_home_ways(g_homes.size(), g_home_way_list);
 		BoundingBox2 map_tmp{{g_x_min, g_y_min}, {g_x_max, g_y_max}};
@@ -1858,8 +1523,8 @@ bool path_get_home_target(const Cell_t& curr, PPTargetType& path,const int is_re
 	for (; g_home_way_it != g_home_way_list.end(); ++g_home_way_it) {
 		auto way = *g_home_way_it % HOMEWAY_NUM;
 		auto cnt = *g_home_way_it / HOMEWAY_NUM;
-		g_home = g_homes[cnt];
-		ROS_INFO("\033[1;46;37m" "%s,%d:g_home(%d, %d, %d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__, g_home.X, g_home.Y, g_home.TH, way, cnt);
+		g_home_point = g_homes[cnt];
+		ROS_INFO("\033[1;46;37m" "%s,%d:g_home_point(%d, %d, %d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__, g_home_point.X, g_home_point.Y, g_home_point.TH, way, cnt);
 		if (way == USE_ROS && g_home_gen_rosmap) {
 			g_home_gen_rosmap = false;
 			BoundingBox2 map{{g_x_min, g_y_min}, {g_x_max, g_y_max}};
@@ -1881,7 +1546,7 @@ bool path_get_home_target(const Cell_t& curr, PPTargetType& path,const int is_re
 			}
 		}
 
-		if (path_next_shortest(curr, g_home, path) == 1) {
+		if (path_next_shortest(curr, g_home_point, path) == 1) {
 			return true;
 		}
 	}
@@ -1966,7 +1631,7 @@ bool path_get_continue_target(const Cell_t& curr, PPTargetType& path)
 int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 	int16_t ret;
 	//extern int g_wf_reach_count;
-	//extern bool g_fatal_quit_event;
+	//extern bool ev.fatal_quit;
 	//if (g_wf_reach_count <= 3) {
 		auto angle = -900;
 	Cell_t cell;
@@ -1978,7 +1643,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		ret = 1;
 		ROS_INFO("target.X = %d target.Y = %d", path.back().X, path.back().Y);
 	//} else {
-	//	g_fatal_quit_event = true;
+	//	ev.fatal_quit = true;
 	//	ret = 0;
 	//}
 	return ret;
@@ -2088,8 +1753,8 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 }
 
 bool is_fobbit_free() {
-	//NOTE: g_home_way_it should last of g_home,for g_homeway_list may empty.
-	return (g_go_home && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
+	//NOTE: g_home_way_it should last of g_home_point,for g_homeway_list may empty.
+	return (cs_is_going_home() && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
 }
 
 bool fw_is_time_up()

@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <ros/ros.h>
 #include <time.h>
+#include "clean_mode.h"
 
 #ifdef Turn_Speed
 #undef Turn_Speed

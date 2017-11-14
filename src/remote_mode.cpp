@@ -23,6 +23,7 @@
 #include "robotbase.h"
 #include "event_manager.h"
 #include "core_move.h"
+#include "clean_mode.h"
 
 extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 
@@ -69,13 +70,13 @@ void remote_mode(void)
 
 	while (ros::ok())
 	{
-		if (g_fatal_quit_event)
+		if (ev.fatal_quit)
 		{
 			cm_set(Clean_Mode_Userinterface);
 			break;
 		}
 
-		if (g_key_clean_pressed || remote_exit)
+		if (ev.key_clean_pressed || remote_exit)
 			break;
 
 		remote_move();
@@ -87,10 +88,10 @@ void remote_mode(void)
 	disable_motors();
 	remote_mode_unregister_events();
 
-	if (g_battery_low)
+	if (ev.battery_low)
 		wav_play(WAV_BATTERY_LOW);
 
-	if (g_cliff_all_triggered)
+	if (ev.cliff_all_triggered)
 		wav_play(WAV_ERROR_LIFT_UP);
 }
 
@@ -114,7 +115,7 @@ void remote_move(void)
 			continue;
 		}
 
-		if (g_fatal_quit_event || cm_should_self_check() || cm_get() != Clean_Mode_Remote)
+		if (ev.fatal_quit || cm_should_self_check() || cm_get() != Clean_Mode_Remote)
 			break;
 
 		if (time(NULL) - remote_cmd_time >= remote_timeout)
@@ -153,20 +154,20 @@ void remote_move(void)
 				if (distance < (remote_rcon_triggered ? 0.06f : 0.02f))
 					break;
 
-				if (g_bumper_triggered)
+				if (ev.bumper_triggered)
 				{
 					// Check if still bumper triggered.
 					if(!get_bumper_status())
 					{
 						ROS_INFO("%s %d: Move back for bumper finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;
-						g_bumper_triggered = false;
+						ev.bumper_triggered = false;
 						g_bumper_cnt = 0;
 					}
 					else if (++g_bumper_cnt >= 2)
 					{
 						// Should switch to cm_self_check() function to resume.
-						g_bumper_jam = true;
+						ev.bumper_jam = true;
 						break;
 					}
 					else
@@ -178,20 +179,20 @@ void remote_move(void)
 						continue;
 					}
 				}
-				else if (g_cliff_triggered)
+				else if (ev.cliff_triggered)
 				{
 					if (!get_cliff_status())
 					{
 						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;
-						g_cliff_triggered = 0;
+						ev.cliff_triggered = 0;
 						g_cliff_cnt = 0;
 						g_cliff_all_cnt = 0;
 					}
 					else if (++g_cliff_cnt >= 2)
 					{
 						// Should switch to cm_self_check() function to resume.
-						g_cliff_jam = true;
+						ev.cliff_jam = true;
 						break;
 					}
 					else
@@ -212,7 +213,7 @@ void remote_move(void)
 			}
 			case REMOTE_MODE_STAY:
 			{
-				if (g_bumper_triggered || g_cliff_triggered || remote_rcon_triggered)
+				if (ev.bumper_triggered || ev.cliff_triggered || remote_rcon_triggered)
 				{
 					if (robot::instance()->getLinearX() <= 0 && robot::instance()->getLinearY() <= 0)
 					{
@@ -392,10 +393,10 @@ void remote_mode_unregister_events(void)
 
 void remote_mode_handle_bumper(bool state_now, bool state_last)
 {
-	if (!g_bumper_triggered)
+	if (!ev.bumper_triggered)
 	{
 		ROS_WARN("%s %d: Bumper triggered.", __FUNCTION__, __LINE__);
-		g_bumper_triggered = true;
+		ev.bumper_triggered = true;
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 }
@@ -405,20 +406,20 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
 	{
-		g_cliff_all_triggered = true;
-		g_fatal_quit_event = true;
+		ev.cliff_all_triggered = true;
+		ev.fatal_quit = true;
 	}
-	g_cliff_triggered = BLOCK_ALL;
-	if (g_move_back_finished && !g_cliff_jam && !state_last)
+	ev.cliff_triggered = BLOCK_ALL;
+	if (g_move_back_finished && !ev.cliff_jam && !state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void remote_mode_handle_cliff(bool state_now, bool state_last)
 {
-	if (!g_cliff_triggered)
+	if (!ev.cliff_triggered)
 	{
 		ROS_WARN("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
-		g_cliff_triggered = BLOCK_ALL;
+		ev.cliff_triggered = BLOCK_ALL;
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 }
@@ -436,7 +437,7 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || ev.bumper_jam || ev.cliff_jam)
 		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
@@ -455,7 +456,7 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || ev.bumper_jam || ev.cliff_jam)
 		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
@@ -478,7 +479,7 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
-	if (get_move_flag_() == REMOTE_MODE_BACKWARD || g_bumper_jam || g_cliff_jam)
+	if (get_move_flag_() == REMOTE_MODE_BACKWARD || ev.bumper_jam || ev.cliff_jam)
 		beep_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
@@ -499,7 +500,7 @@ void remote_mode_handle_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
-	if (!g_bumper_jam && !g_cliff_jam)
+	if (!ev.bumper_jam && !ev.cliff_jam)
 	{
 		beep_for_command(VALID);
 		switch_vac_mode(true);
@@ -516,11 +517,11 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	if (get_rcon_remote() == Remote_Clean)
 	{
 		beep_for_command(VALID);
-		g_key_clean_pressed = true;
+		ev.key_clean_pressed = true;
 		cm_set(Clean_Mode_Userinterface);
 		disable_motors();
 	}
-	else if (!g_bumper_jam && !g_cliff_jam)
+	else if (!ev.bumper_jam && !ev.cliff_jam)
 	{
 		beep_for_command(VALID);
 		disable_motors();
@@ -559,7 +560,7 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 	cm_set(Clean_Mode_Userinterface);
-	g_key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	reset_touch();
 }
 
@@ -585,7 +586,7 @@ void remote_mode_handle_over_current_wheel_left(bool state_now, bool state_last)
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
 		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
-		g_oc_wheel_left = true;
+		ev.oc_wheel_left = true;
 	}
 }
 
@@ -602,7 +603,7 @@ void remote_mode_handle_over_current_wheel_right(bool state_now, bool state_last
 		g_oc_wheel_right_cnt = 0;
 		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
 
-		g_oc_wheel_right = true;
+		ev.oc_wheel_right = true;
 	}
 }
 
@@ -619,7 +620,7 @@ void remote_mode_handle_over_current_suction(bool state_now, bool state_last)
 		g_oc_suction_cnt = 0;
 		ROS_WARN("%s %d: vacuum over current", __FUNCTION__, __LINE__);
 
-		g_oc_suction = true;
+		ev.oc_suction = true;
 	}
 }
 
@@ -630,7 +631,7 @@ void remote_mode_handle_battery_low(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, get_battery_voltage());
 		disable_motors();
-		g_battery_low = true;
-		g_fatal_quit_event = true;
+		ev.battery_low = true;
+		ev.fatal_quit = true;
 	}
 }

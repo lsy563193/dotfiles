@@ -8,6 +8,7 @@
 #include <motion_manage.h>
 #include <move_type.h>
 #include <ctime>
+#include <clean_state.h>
 
 #include "gyro.h"
 #include "robot.hpp"
@@ -22,6 +23,7 @@
 #include "slam.h"
 #include "event_manager.h"
 #include "laser.hpp"
+#include "clean_mode.h"
 
 static int16_t obs_left_trig_value = 100;
 static int16_t obs_front_trig_value = 100;
@@ -453,7 +455,7 @@ void quick_back(uint8_t speed, uint16_t distance)
 	{
 		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y,
 							robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
-		if (g_fatal_quit_event || g_key_clean_pressed || g_charge_detect || g_cliff_all_triggered)
+		if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect || ev.cliff_all_triggered)
 			break;
 		usleep(20000);
 	}
@@ -897,7 +899,7 @@ int get_rcon_trig_()
 
 int get_rcon_trig(void)
 {
-//	if (g_go_home) {
+//	if (cs_is_going_home()) {
 ////		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 //		reset_rcon_status();
 //		return 0;
@@ -1044,10 +1046,10 @@ void wheels_pid(void)
 
 		if (left_pid.actual_speed == 0 || right_pid.actual_speed == 0)
 		{
-			ROS_INFO("%s %d: Update the last_reg_type.", __FUNCTION__, __LINE__);
 			left_pid.actual_speed = 0;
 			right_pid.actual_speed = 0;
 			left_pid.last_reg_type = right_pid.last_reg_type = argu_for_pid.reg_type;
+			//ROS_INFO("%s %d: Switch PID type to %d.", __FUNCTION__, __LINE__, argu_for_pid.reg_type);
 		}
 	}
 	else if(argu_for_pid.reg_type == REG_TYPE_NONE || argu_for_pid.reg_type == REG_TYPE_WALLFOLLOW)
@@ -1210,8 +1212,7 @@ int16_t get_right_wheel_speed(void)
 
 void work_motor_configure(void)
 {
-	extern bool g_go_home;
-	if (g_go_home)
+	if (cs_is_going_home())
 	{
 		// Set the vacuum to a normal mode
 		set_vacmode(Vac_Normal, false);
@@ -1714,8 +1715,7 @@ void reset_rcon_status(void)
 uint32_t get_rcon_status()
 {
 	extern Cell_t g_stub_cell;
-	extern bool g_in_charge_signal_range;
-	if(!g_go_home && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
+	if(!cs_is_going_home() && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
 		if(two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20){
 			g_in_charge_signal_range = true;
 			reset_rcon_status();
@@ -3498,4 +3498,11 @@ uint8_t estimate_charger_position(Rcon_Point_t rcon_point_a, Rcon_Point_t rcon_p
 
 	ROS_INFO("%s,%d,estimate charger stub position on (%d,%d)",__FUNCTION__,__LINE__,pos->X,pos->Y);
 	return 1;
+}
+
+uint8_t get_laser_status()
+{
+	if (MotionManage::s_laser != nullptr)
+		return MotionManage::s_laser->laserMarker(0.20);
+	return 0;
 }
