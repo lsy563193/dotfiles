@@ -56,7 +56,7 @@ void cs_set(int state)
 {
 //	ROS_INFO("%s,%d:" __FUNCTION__,__LINE__);
 	cs = state;
-	cs_setting(state);
+	cm_apply_cs(state);
 }
 
 int cs_get(void)

@@ -234,7 +234,7 @@ void cm_cleaning() {
 	}
 }
 
-void cs_setting(int cs) {
+void cm_apply_cs(int cs) {
 	if(cs == CS_GO_HOME_POINT) {
 		work_motor_configure();
 		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
