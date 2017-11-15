@@ -4,7 +4,6 @@
 
 #include <pp.h>
 
-//CMMoveType g_cm_move_type;
 static uint8_t clean_mode = 0;
 static uint8_t clean_state = 0;
 

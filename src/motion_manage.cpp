@@ -151,7 +151,7 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
-	mt_set(cm_is_follow_wall() ? CM_FOLLOW_LEFT_WALL : CM_LINEARMOVE);
+	mt_set(cm_is_follow_wall() ? MT_FOLLOW_LEFT_WALL : MT_LINEARMOVE);
 	if(!is_clean_paused())
 		g_from_station = 0;
 	g_motion_init_succeeded = false;

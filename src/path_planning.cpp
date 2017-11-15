@@ -1207,7 +1207,7 @@ bool path_next_fw(const Cell_t &start) {
 		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (cm_is_reach()) {
 			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-			mt_set(CM_FOLLOW_LEFT_WALL);
+			mt_set(MT_FOLLOW_LEFT_WALL);
 			return true;
 		}
 	}
@@ -1225,7 +1225,7 @@ bool path_next_fw(const Cell_t &start) {
 			Cell_t cell;
 			cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
-			mt_set(CM_LINEARMOVE);
+			mt_set(MT_LINEARMOVE);
 			return true;
 		}
 	}

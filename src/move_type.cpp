@@ -4,7 +4,6 @@
 
 #include "ros/ros.h"
 #include <mathematics.h>
-#include <movement.h>
 #include <core_move.h>
 #include <event_manager.h>
 #include <path_planning.h>
@@ -14,44 +13,44 @@
 #include "spot.h"
 #include "clean_mode.h"
 
-CMMoveType g_cm_move_type;
+MoveType move_type;
 
 bool mt_is_left()
 {
-	return g_cm_move_type == CM_FOLLOW_LEFT_WALL;
+	return move_type == MT_FOLLOW_LEFT_WALL;
 }
 
 bool mt_is_right()
 {
-	return g_cm_move_type == CM_FOLLOW_RIGHT_WALL;
+	return move_type == MT_FOLLOW_RIGHT_WALL;
 }
 
 bool mt_is_follow_wall()
 {
-	return g_cm_move_type == CM_FOLLOW_LEFT_WALL || g_cm_move_type == CM_FOLLOW_RIGHT_WALL;
+	return move_type == MT_FOLLOW_LEFT_WALL || move_type == MT_FOLLOW_RIGHT_WALL;
 }
 
 bool mt_is_linear()
 {
-	return g_cm_move_type == CM_LINEARMOVE;
+	return move_type == MT_LINEARMOVE;
 }
 
 bool mt_is_go_to_charger()
 {
-	return g_cm_move_type == CM_GO_TO_CHARGER;
+	return move_type == MT_GO_TO_CHARGER;
 }
 
-CMMoveType mt_get()
+MoveType mt_get()
 {
-	return g_cm_move_type ;
+	return move_type ;
 }
 
 void mt_update(const Cell_t& curr, PPTargetType& path) {
 	//set move_type
-	mt_set(CM_LINEARMOVE);
+	mt_set(MT_LINEARMOVE);
 	if (cm_is_follow_wall()) {
 		if(path.empty())
-			mt_set(CM_FOLLOW_LEFT_WALL);
+			mt_set(MT_FOLLOW_LEFT_WALL);
 	}
 	else if (cm_is_navigation()) {
 		auto dir = g_old_dir;
@@ -63,13 +62,13 @@ void mt_update(const Cell_t& curr, PPTargetType& path) {
 		if (delta_y == 0)
 			return;
 		//auto delta_x = path.back().X - curr.X;
-		CMMoveType move_type_tmp = ((dir == POS_X ^ delta_y > 0) ? CM_FOLLOW_LEFT_WALL : CM_FOLLOW_RIGHT_WALL);
+		MoveType move_type_tmp = ((dir == POS_X ^ delta_y > 0) ? MT_FOLLOW_LEFT_WALL : MT_FOLLOW_RIGHT_WALL);
 /*		if (std::abs(delta_x) > 1 && (IS_POS_AXIS(dir) ^ (delta_x < 0))) {
 			auto is_right = (ev.obs_triggered == BLOCK_RIGHT || ev.bumper_triggered == BLOCK_RIGHT ||
 											 ev.laser_triggered == BLOCK_RIGHT);
 			auto is_left = (ev.obs_triggered == BLOCK_LEFT || ev.bumper_triggered == BLOCK_LEFT ||
 											ev.laser_triggered == BLOCK_LEFT);
-			if ((move_type_tmp == CM_FOLLOW_LEFT_WALL && is_right) || (move_type_tmp == CM_FOLLOW_RIGHT_WALL && is_left)) {
+			if ((move_type_tmp == MT_FOLLOW_LEFT_WALL && is_right) || (move_type_tmp == MT_FOLLOW_RIGHT_WALL && is_left)) {
 				ROS_WARN(
 								"%s,%d: move_type_tmp same side with block(%d),ev.obs_triggered(%d),ev.laser_triggered(%d), ev.bumper_triggered(%d)",
 								__FUNCTION__, __LINE__, move_type_tmp, ev.obs_triggered, ev.laser_triggered, ev.bumper_triggered);
@@ -83,8 +82,8 @@ void mt_update(const Cell_t& curr, PPTargetType& path) {
 	}
 }
 
-void mt_set(CMMoveType mt)
+void mt_set(MoveType mt)
 {
-	g_cm_move_type = mt;
+	move_type = mt;
 	ROS_WARN("%s %d: mt is set to %d.", __FUNCTION__, __LINE__, mt_get());
 }

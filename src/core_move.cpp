@@ -260,7 +260,7 @@ void cs_setting(int cs) {
 			g_go_home_by_remote = true;
 		ev.remote_home = false;
 		ev.battrey_home = false;
-		mt_set(CM_LINEARMOVE);
+		mt_set(MT_LINEARMOVE);
 	}
 	if(cs == CS_TMP_SPOT)
 	{
@@ -284,14 +284,14 @@ void cs_setting(int cs) {
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		set_led_mode(LED_FLASH, LED_GREEN, 300);
-		mt_set(CM_FOLLOW_LEFT_WALL);
+		mt_set(MT_FOLLOW_LEFT_WALL);
 	}
 	if(cs == CS_CLEAN) {
 		g_wf_reach_count = 0;
 		set_led_mode(LED_STEADY, LED_GREEN);
 	}
 	if(cs == CS_EXPLORATION) {
-		mt_set(CM_LINEARMOVE);
+		mt_set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	}
@@ -311,7 +311,7 @@ bool cm_go_to_charger()
 	ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
 	g_tilt_enable = false; //disable tilt detect
 	set_led_mode(LED_STEADY, LED_ORANGE);
-	mt_set(CM_GO_TO_CHARGER);
+	mt_set(MT_GO_TO_CHARGER);
 //	PPTargetType path_empty;
 //	set_led_mode(LED_STEADY, LED_GREEN);
 //
