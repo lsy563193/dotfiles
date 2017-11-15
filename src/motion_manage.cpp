@@ -582,7 +582,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	init_before_gyro();
 	initSucceeded(true);
 
-
 	if (!wait_for_gyro_on())
 		return;
 
@@ -590,7 +589,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	{
 		case Clean_Mode_Navigation:
 			init_nav_gyro_charge();
-			if(!wait_for_back_from_charge())
+			if(is_on_charger_stub() && !wait_for_back_from_charge())
 				return;
 			init_nav_after_charge();
 			break;
