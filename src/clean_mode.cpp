@@ -107,7 +107,8 @@ void CleanMode::setMt()
 	p_reg_ = turn_reg_;
 //	s_target_angle = g_turn_angle;
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
-	ROS_INFO("%s,%d,curr(%d),set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), s_target_angle);
+	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), g_turn_angle, s_target_angle);
+	resetTriggeredValue();
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
 	g_bumper_cnt = g_cliff_cnt = 0;
@@ -246,11 +247,7 @@ bool NavigationClean::isReach()
 		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
-			{
-				if(g_is_near)
-					return true;
 				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
-			}
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -287,7 +284,11 @@ bool NavigationClean::isReach()
 		if (mt_is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
+			{
+				if (g_is_near)
+					return true;
 				return line_reg_->isPoseReach();
+			}
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -501,6 +502,7 @@ bool NavigationClean::isSwitch()
 	{
 		if (cm_is_navigation())
 		{
+
 			if (mt_is_linear()) // Robot is cleaning current line.
 			{
 				if (isTurn())
