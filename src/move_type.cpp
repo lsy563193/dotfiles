@@ -45,6 +45,12 @@ MoveType mt_get()
 	return move_type ;
 }
 
+void mt_set(MoveType mt)
+{
+	move_type = mt;
+	//ROS_WARN("%s %d: mt is set to %d.", __FUNCTION__, __LINE__, mt_get());
+}
+
 void mt_update(const Cell_t& curr, PPTargetType& path) {
 	//set move_type
 	mt_set(MT_LINEARMOVE);
@@ -52,38 +58,30 @@ void mt_update(const Cell_t& curr, PPTargetType& path) {
 		if(path.empty())
 			mt_set(MT_FOLLOW_LEFT_WALL);
 	}
-	else if (cm_is_navigation()) {
-		auto dir = g_old_dir;
-		ROS_WARN("%s,%d: dir(%d),tilt(%d), rcon(%d)", __FUNCTION__, __LINE__, dir, ev.tilt_triggered, ev.rcon_triggered);
-		if (!IS_X_AXIS(dir) || path.size() > 3 || ev.tilt_triggered || ev.rcon_triggered)
-			return;
-
-		auto delta_y = path.back().Y - curr.Y;
-		if (delta_y == 0)
-			return;
-		//auto delta_x = path.back().X - curr.X;
-		MoveType move_type_tmp = ((dir == POS_X ^ delta_y > 0) ? MT_FOLLOW_LEFT_WALL : MT_FOLLOW_RIGHT_WALL);
-/*		if (std::abs(delta_x) > 1 && (IS_POS_AXIS(dir) ^ (delta_x < 0))) {
-			auto is_right = (ev.obs_triggered == BLOCK_RIGHT || ev.bumper_triggered == BLOCK_RIGHT ||
-											 ev.laser_triggered == BLOCK_RIGHT);
-			auto is_left = (ev.obs_triggered == BLOCK_LEFT || ev.bumper_triggered == BLOCK_LEFT ||
-											ev.laser_triggered == BLOCK_LEFT);
-			if ((move_type_tmp == MT_FOLLOW_LEFT_WALL && is_right) || (move_type_tmp == MT_FOLLOW_RIGHT_WALL && is_left)) {
-				ROS_WARN(
-								"%s,%d: move_type_tmp same side with block(%d),ev.obs_triggered(%d),ev.laser_triggered(%d), ev.bumper_triggered(%d)",
-								__FUNCTION__, __LINE__, move_type_tmp, ev.obs_triggered, ev.laser_triggered, ev.bumper_triggered);
-				return;
-			}
-		}*/
-		if (std::abs(delta_y) <= 2) {
+	else if (cm_is_navigation())
+	{
+		if (mt_should_follow_wall(g_old_dir, curr, path))
+		{
+			auto delta_y = path.back().Y - curr.Y;
+			MoveType move_type_tmp = ((g_old_dir == POS_X ^ delta_y > 0) ? MT_FOLLOW_LEFT_WALL : MT_FOLLOW_RIGHT_WALL);
 			mt_set(move_type_tmp);
-			ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m", __FUNCTION__, __LINE__, mt_get());
 		}
 	}
 }
 
-void mt_set(MoveType mt)
+bool mt_should_follow_wall(const int16_t dir, const Cell_t& curr, PPTargetType& path)
 {
-	move_type = mt;
-	ROS_WARN("%s %d: mt is set to %d.", __FUNCTION__, __LINE__, mt_get());
+	ROS_WARN("%s,%d: dir(%d),tilt(%d), rcon(%d)", __FUNCTION__, __LINE__, dir, ev.tilt_triggered, ev.rcon_triggered);
+	if (!IS_X_AXIS(dir) || path.size() > 3 || ev.tilt_triggered || ev.rcon_triggered)
+		return false;
+
+	auto delta_y = path.back().Y - curr.Y;
+	if (delta_y == 0)
+		return false;
+
+	else if (std::abs(delta_y) <= 2) {
+		ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m", __FUNCTION__, __LINE__, mt_get());
+		return true;
+	}
+	return false;
 }

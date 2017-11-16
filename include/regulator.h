@@ -190,6 +190,7 @@ public:
 	bool isOBSStop();
 	bool isLaserStop();
 	bool isBoundaryStop();
+	bool isPassTargetStop();
 	bool isCellReach();
 	bool isNearTarget();
 	bool isPoseReach();
