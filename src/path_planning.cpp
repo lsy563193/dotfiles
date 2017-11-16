@@ -31,8 +31,6 @@ int16_t g_old_dir;
 int g_wf_reach_count;
 std::deque <PPTargetType> g_paths;
 
-uint8_t	g_first_start = 0;
-
 uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between current pos. & dest. */
 
 // This list is for storing the position that robot sees the charger stub.
@@ -41,7 +39,6 @@ std::vector<Cell_t> g_homes;
 std::vector<int> g_home_way_list;
 std::vector<int>::iterator g_home_way_it;
 Cell_t g_home_point;
-bool g_is_switch_target = true;
 //int8_t g_home_cnt = 0;// g_homes.size()*HOMEWAY_NUM-1 3/9, 2/4, 1/2
 bool g_home_gen_rosmap = true;
 
@@ -627,7 +624,7 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
 	generate_SPMAP(curr);
-	std::deque<Cell_t> reachable_targets{};
+	PPTargetType reachable_targets{};
 	for (auto it = g_paths.begin(); it != g_paths.end();) {
 		if (map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_NO ||
 						map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_HIGH) {
@@ -1207,7 +1204,7 @@ bool path_next_fw(const Cell_t &start) {
 		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (cm_is_reach()) {
 			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-			mt_set(CM_FOLLOW_LEFT_WALL);
+			mt_set(MT_FOLLOW_LEFT_WALL);
 			return true;
 		}
 	}
@@ -1225,7 +1222,7 @@ bool path_next_fw(const Cell_t &start) {
 			Cell_t cell;
 			cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
-			mt_set(CM_LINEARMOVE);
+			mt_set(MT_LINEARMOVE);
 			return true;
 		}
 	}

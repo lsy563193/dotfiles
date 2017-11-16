@@ -47,7 +47,7 @@ bool g_start_point_seen_charger = false;
 Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
 long g_distance=0;
-bool g_is_near=false;
+bool g_check_path_in_advance=false;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 // This flag is for indicating robot is going to charger.
@@ -197,6 +197,8 @@ void cm_cleaning() {
 		p_cm = new NavigationClean(curr, g_plan_path.front(), g_plan_path);
 
 	bool eh_status_now = false, eh_status_last = false;
+	g_check_path_in_advance = false;
+
 
 	while (ros::ok()) {
 
@@ -229,7 +231,7 @@ void cm_cleaning() {
 	}
 }
 
-void cs_setting(int cs) {
+void cm_apply_cs(int cs) {
 	if(cs == CS_GO_HOME_POINT) {
 		work_motor_configure();
 		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
@@ -255,7 +257,7 @@ void cs_setting(int cs) {
 			g_go_home_by_remote = true;
 		ev.remote_home = false;
 		ev.battrey_home = false;
-		mt_set(CM_LINEARMOVE);
+		mt_set(MT_LINEARMOVE);
 	}
 	if(cs == CS_TMP_SPOT)
 	{
@@ -279,14 +281,14 @@ void cs_setting(int cs) {
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		set_led_mode(LED_FLASH, LED_GREEN, 300);
-		mt_set(CM_FOLLOW_LEFT_WALL);
+		mt_set(MT_FOLLOW_LEFT_WALL);
 	}
 	if(cs == CS_CLEAN) {
 		g_wf_reach_count = 0;
 		set_led_mode(LED_STEADY, LED_GREEN);
 	}
 	if(cs == CS_EXPLORATION) {
-		mt_set(CM_LINEARMOVE);
+		mt_set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	}
@@ -306,7 +308,7 @@ bool cm_go_to_charger()
 	ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
 	g_tilt_enable = false; //disable tilt detect
 	set_led_mode(LED_STEADY, LED_ORANGE);
-	mt_set(CM_GO_TO_CHARGER);
+	mt_set(MT_GO_TO_CHARGER);
 //	PPTargetType path_empty;
 //	set_led_mode(LED_STEADY, LED_GREEN);
 //

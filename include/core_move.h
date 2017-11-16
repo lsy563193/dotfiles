@@ -77,7 +77,7 @@ extern bool g_exploration_home;
 extern std::deque<Cell_t> g_passed_path;
 extern std::deque<Cell_t> g_plan_path;
 extern long g_distance;
-extern bool g_is_near;
+extern bool g_check_path_in_advance;
 extern bool g_during_go_to_charger;
 
 uint8_t angle_to_bumper_status(void);
@@ -102,7 +102,7 @@ uint8_t CM_MoveForward(void);
 uint8_t cm_touring(void);
 void cm_cleaning(void);
 
-void cs_setting(int cs);
+void cm_apply_cs(int cs);
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);

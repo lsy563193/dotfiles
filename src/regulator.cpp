@@ -634,6 +634,30 @@ bool LinearRegulator::isPoseReach()
 	return false;
 }
 
+bool LinearRegulator::isNearTarget()
+{
+	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = map_cell_to_point(g_plan_path.front());
+	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
+	if ((IS_POS_AXIS(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
+		(!IS_POS_AXIS(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
+		if(g_plan_path.size() > 1)
+		{
+			// Switch to next target for smoothly turning.
+			g_new_dir = g_plan_path.front().TH;
+			g_plan_path.pop_front();
+			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
+					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
+		}
+		else if(g_plan_path.front() != g_zero_home)
+		{
+			g_check_path_in_advance = true;
+			ROS_INFO("%s %d: g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, g_check_path_in_advance);
+			return true;
+		}
+	}
+	return false;
+}
 bool LinearRegulator::shouldMoveBack()
 {
 	// Robot should move back for these cases.
@@ -721,25 +745,6 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 	auto target_p = map_cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
 
-	if ((IS_POS_AXIS(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
-			(!IS_POS_AXIS(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
-		if(g_plan_path.size()>1)
-		{
-			g_new_dir = g_plan_path.front().TH;
-			g_plan_path.pop_front();
-		}
-		else{
-			if(g_plan_path.front() != g_zero_home)
-			{
-				g_is_near = true;
-				ROS_INFO("%s %d: g_is_near(%d)", __FUNCTION__, __LINE__, g_is_near);
-			}
-		}
-		target_p = map_cell_to_point(g_plan_path.front());
-		target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
-		ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
-						 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
-	}
 
 	int16_t angle_diff = 0;
 	int16_t dis = std::min(std::abs(curr - target), (int32_t) (1.5 * CELL_COUNT_MUL));

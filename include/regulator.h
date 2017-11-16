@@ -191,6 +191,7 @@ public:
 	bool isLaserStop();
 	bool isBoundaryStop();
 	bool isCellReach();
+	bool isNearTarget();
 	bool isPoseReach();
 	bool shouldMoveBack();
 	void adjustSpeed(int32_t&, int32_t&);

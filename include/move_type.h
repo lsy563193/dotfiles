@@ -9,12 +9,11 @@
 #include "path_planning.h"
 
 typedef enum {
-	CM_LINEARMOVE = 0,
-	CM_CURVEMOVE,
-	CM_FOLLOW_LEFT_WALL,
-	CM_FOLLOW_RIGHT_WALL,
-	CM_GO_TO_CHARGER,
-} CMMoveType;
+	MT_LINEARMOVE = 0,
+	MT_FOLLOW_LEFT_WALL,
+	MT_FOLLOW_RIGHT_WALL,
+	MT_GO_TO_CHARGER,
+} MoveType;
 
 bool mt_is_right();
 
@@ -26,16 +25,10 @@ bool mt_is_linear();
 
 bool mt_is_go_to_charger();
 
-CMMoveType mt_get();
+MoveType mt_get();
 
 void mt_update(const Cell_t& curr, PPTargetType& path);
 
-void mt_set(CMMoveType mt);
-/*
-class MoveType {
-
-};
-*/
-
+void mt_set(MoveType mt);
 
 #endif //PP_MOVETYPE_H

@@ -4,7 +4,6 @@
 
 #include <pp.h>
 
-//CMMoveType g_cm_move_type;
 static uint8_t clean_mode = 0;
 static uint8_t clean_state = 0;
 
@@ -107,7 +106,8 @@ void CleanMode::setMt()
 	p_reg_ = turn_reg_;
 //	s_target_angle = g_turn_angle;
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
-	ROS_INFO("%s,%d,curr(%d),set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), s_target_angle);
+	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), g_turn_angle, s_target_angle);
+	resetTriggeredValue();
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
 	g_bumper_cnt = g_cliff_cnt = 0;
@@ -184,24 +184,24 @@ bool CleanMode::find_target(Cell_t& curr)
 {
 	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
 	mark();
-	auto cs_tmp = cs_get();
-	if (!g_plan_path.empty())
-		curr.TH = g_plan_path.back().TH;
-	auto start = curr;
-	g_old_dir = start.TH;
-	if (g_is_near) {
-		start = g_plan_path.back();
-	}
+	auto previous_cs = cs_get();
+	auto previous_mt = mt_get();
+	g_old_dir = g_new_dir;
+	Cell_t start_cell;
+	if (g_check_path_in_advance)
+		start_cell = g_plan_path.back();
+	else
+		start_cell = curr;
 	g_plan_path.clear();
-	cs_path_next(start, g_plan_path);
+	cs_path_next(start_cell, g_plan_path);
 
 	display();
 
-	if (!((cs_tmp == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_is_near)) {
+	if (!((previous_cs == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_check_path_in_advance)) {
 		setMt();
 		g_passed_path.clear();
 	}
-	g_is_near = false;
+	g_check_path_in_advance = false;
 
 	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 	return !g_plan_path.empty();
@@ -252,11 +252,7 @@ bool NavigationClean::isReach()
 		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
-			{
-				if(g_is_near)
-					return true;
 				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
-			}
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -293,7 +289,7 @@ bool NavigationClean::isReach()
 		if (mt_is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
-				return line_reg_->isPoseReach();
+				return line_reg_->isPoseReach() || line_reg_->isNearTarget();
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -507,6 +503,7 @@ bool NavigationClean::isSwitch()
 	{
 		if (cm_is_navigation())
 		{
+
 			if (mt_is_linear()) // Robot is cleaning current line.
 			{
 				if (isTurn())
@@ -656,8 +653,6 @@ bool SpotClean::isReach()
 	{
 		if (isMt())
 		{
-			if(g_is_near)
-				return true;
 			return line_reg_->isCellReach(); // For reaching target.
 		}
 		else if (isBack())
@@ -913,7 +908,7 @@ bool WallFollowClean::findTarget(Cell_t& curr)
 	display();
 	setMt();
 	g_passed_path.clear();
-	g_is_near = false;
+	g_check_path_in_advance = false;
 	printf("\033[44m====================================WallFollowClean=========================================\033[0m\n\n");
 	return true;
 }
@@ -966,8 +961,6 @@ bool Exploration::isReach()
 		{
 			if (isMt())
 			{
-				if(g_is_near)
-					return true;
 				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
 			}
 			else if (isBack())
