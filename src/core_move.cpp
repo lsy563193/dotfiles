@@ -155,12 +155,10 @@ void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_ri
 void cm_self_check_with_handle(void)
 {
 	// Can not set handler state inside cm_self_check(), because it is actually a universal function.
-	cm_set_event_manager_handler_state(true);
 	cm_self_check();
 	if(cm_is_follow_wall()) {
 		g_keep_on_wf = true;
 	}
-	cm_set_event_manager_handler_state(false);
 }
 
 void cm_move_to(CleanMode* p_cm, PPTargetType path) {
@@ -300,125 +298,12 @@ void cm_apply_cs(int cs) {
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	}
 }
-/* Statement for cm_go_to_charger_(void)
- * return : true -- going to charger has been stopped, either successfully or interrupted.
- *          false -- going to charger failed, move to next point.
- */
-bool cm_go_to_charger()
-{
-	// Try to go to charger stub.
-	ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
-	g_tilt_enable = false; //disable tilt detect
-	set_led_mode(LED_STEADY, LED_ORANGE);
-	mt_set(MT_GO_TO_CHARGER);
-//	PPTargetType path_empty;
-//	set_led_mode(LED_STEADY, LED_GREEN);
-//
-//	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
-//		return true;
-//	work_motor_configure();
-//	g_tilt_enable = true; //enable tilt detect
-//	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
-	return false;
-}
-
-/*bool cm_is_continue_go_to_charger()
-{
-	auto way = *g_home_way_it % HOMEWAY_NUM;
-	auto cnt = *g_home_way_it / HOMEWAY_NUM;
-	ROS_INFO("%s,%d:g_home_point(\033[1;46;37m%d,%d\033[0m), way(\033[1;46;37m%d\033[0m), cnt(\033[1;46;37m%d\033[0m) ", __FUNCTION__, __LINE__,g_home_point.X,g_home_point.Y,way, cnt);
-	if(cm_go_to_charger() || cnt == 0)
-	{
-		ROS_INFO("\033[1;46;37m" "%s,%d:cm_go_to_charger_ stop " "\033[0m", __FUNCTION__, __LINE__);
-		return false;
-	}
-	else if(!g_go_home_by_remote)
-		set_led_mode(LED_STEADY, LED_GREEN);
-	g_home_way_it += (way+1);
-	g_homes.pop_back();
-	g_home_way_list.clear();
-	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home_point.X, g_home_point.Y,way, cnt);
-	return true;
-}*/
 
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
 	cs_set(CS_CLEAN);
 	g_go_home_by_remote = false;
-}
-/*
-
-bool cm_check_loop_back(Cell_t target)
-{
-	bool retval = false;
-	if ( target == g_cell_history[1] && target == g_cell_history[3]) {
-		ROS_WARN("%s %d Possible loop back (%d, %d), g_cell_history:(%d, %d) (%d, %d) (%d, %d) (%d, %d) (%d, %d).", __FUNCTION__, __LINE__,
-						target.X, target.Y,
-						g_cell_history[0].X, g_cell_history[0].Y,
-						g_cell_history[1].X, g_cell_history[1].Y,
-						g_cell_history[2].X, g_cell_history[2].Y,
-						g_cell_history[3].X, g_cell_history[3].Y,
-						g_cell_history[4].X, g_cell_history[4].Y);
-		retval	= true;
-	}
-
-	return retval;
-}
-*/
-
-void cm_create_home_boundary(void)
-{
-	int16_t i, j, k;
-	int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
-
-	k = 3;
-	xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
-	for (i = g_x_min; xMinSearch == SHRT_MAX; i++) {
-		for (j = g_y_min; j <= g_y_max; j++) {
-			if (map_get_cell(MAP, i, j) != UNCLEAN) {
-				xMinSearch = i - k;
-				break;
-			}
-		}
-	}
-	for (i = g_x_max; xMaxSearch == SHRT_MAX; i--) {
-		for (j = g_y_min; j <= g_y_max; j++) {
-			if (map_get_cell(MAP, i, j) != UNCLEAN) {
-				xMaxSearch = i + k;
-				break;
-			}
-		}
-	}
-	for (i = g_y_min; yMinSearch == SHRT_MAX; i++) {
-		for (j = g_x_min; j <= g_x_max; j++) {
-			if (map_get_cell(MAP, j, i) != UNCLEAN) {
-				yMinSearch = i - k;
-				break;
-			}
-		}
-	}
-	for (i = g_y_max; yMaxSearch == SHRT_MAX; i--) {
-		for (j = g_x_min; j <= g_x_max; j++) {
-			if (map_get_cell(MAP, j, i) != UNCLEAN) {
-				yMaxSearch = i + k;
-				break;
-			}
-		}
-	}
-	ROS_INFO("%s %d: x: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
-	for (i = xMinSearch; i <= xMaxSearch; i++) {
-		if (i == xMinSearch || i == xMaxSearch) {
-			for (j = yMinSearch; j <= yMaxSearch; j++) {
-				map_set_cell(MAP, cell_to_count(i), cell_to_count(j), BLOCKED_BUMPER);
-			}
-		} else {
-			map_set_cell(MAP, cell_to_count(i), cell_to_count(yMinSearch), BLOCKED_BUMPER);
-			map_set_cell(MAP, cell_to_count(i), cell_to_count(yMaxSearch), BLOCKED_BUMPER);
-		}
-	}
-
-	// Set the flag.
 }
 
 /*------------- Self check and resume-------------------*/
@@ -760,34 +645,6 @@ void cm_register_events()
 void cm_unregister_events()
 {
 	event_manager_set_enable(true);
-}
-
-void cm_set_event_manager_handler_state(bool state)
-{
-	event_manager_enable_handler(EVT_BUMPER_ALL, state);
-	event_manager_enable_handler(EVT_BUMPER_LEFT, state);
-	event_manager_enable_handler(EVT_BUMPER_RIGHT, state);
-
-	event_manager_enable_handler(EVT_OBS_FRONT, state);
-	//event_manager_enable_handler(EVT_OBS_LEFT, state);
-	//event_manager_enable_handler(EVT_OBS_RIGHT, state);
-
-	event_manager_enable_handler(EVT_RCON, state);
-/*
-	event_manager_enable_handler(EVT_RCON_FRONT_LEFT, state);
-	event_manager_enable_handler(EVT_RCON_FRONT_LEFT2, state);
-	event_manager_enable_handler(EVT_RCON_FRONT_RIGHT, state);
-	event_manager_enable_handler(EVT_RCON_FRONT_RIGHT2, state);
-	event_manager_enable_handler(EVT_RCON_LEFT, state);
-	event_manager_enable_handler(EVT_RCON_RIGHT, state);
-*/
-}
-
-void cm_event_manager_turn(bool state)
-{
-	event_manager_enable_handler(EVT_BUMPER_ALL, state);
-	event_manager_enable_handler(EVT_BUMPER_LEFT, state);
-	event_manager_enable_handler(EVT_BUMPER_RIGHT, state);
 }
 
 void CM_EventHandle::bumper_all(bool state_now, bool state_last)

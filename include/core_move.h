@@ -137,12 +137,7 @@ void cm_unregister_events(void);
 
 void cm_set_event_manager_handler_state(bool state);
 
-void cm_event_manager_turn(bool state);
-
 void cm_block_charger_stub(int8_t direction);
-#define define_func(name) \
-	void  ## name(bool state_now, bool state_last);
-
 
 
 class CM_EventHandle:public EventHandle {

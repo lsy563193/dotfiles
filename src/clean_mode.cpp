@@ -225,7 +225,6 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 	p_reg_ = mt_reg_;
 
 	path_next_nav(curr, g_plan_path);
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
 	g_check_path_in_advance = false;
@@ -242,7 +241,6 @@ NavigationClean::~NavigationClean()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 bool NavigationClean::isReach()
@@ -558,7 +556,6 @@ SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTarg
 
 	p_reg_ = mt_reg_;
 
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: SpotClean finish", __FUNCTION__, __LINE__);
 	g_check_path_in_advance = false;
@@ -575,7 +572,6 @@ SpotClean::~SpotClean()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 void SpotClean::mark()
@@ -675,7 +671,6 @@ WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, 
 	p_reg_ = mt_reg_;
 	path_next_fw(curr);
 
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: WallFollowClean finish", __FUNCTION__, __LINE__);
 
@@ -691,7 +686,6 @@ WallFollowClean::~WallFollowClean()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 bool WallFollowClean::isReach() {
@@ -875,7 +869,6 @@ Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PP
 
 	p_reg_ = mt_reg_;
 
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: Exploration finish", __FUNCTION__, __LINE__);
 
@@ -893,7 +886,6 @@ Exploration::~Exploration()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 bool Exploration::isReach()
