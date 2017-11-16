@@ -28,6 +28,8 @@ using namespace std;
 const int ISOLATE_COUNT_LIMIT = 4;
 int16_t g_new_dir;
 int16_t g_old_dir;
+bool g_check_path_in_advance = false;
+bool g_allow_path_in_advance = true;
 int g_wf_reach_count;
 std::deque <PPTargetType> g_paths;
 
@@ -248,6 +250,7 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	{
 		path.push_front(target);
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
+		debug_map(MAP, target.X, target.Y);
 	}
 	else
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target not found.", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
@@ -1246,6 +1249,18 @@ bool path_next_nav(const Cell_t &start, PPTargetType &path)
 		}
 	}
 	path_full_angle(start, path);
+	g_new_dir = path.front().TH;
+	return ret;
+}
+
+bool path_next_nav_in_advance(const Cell_t &start, PPTargetType &path)
+{
+	bool ret = true;
+	ret = path_lane_is_cleaned(start, path);
+	if (!ret)
+		ret = path_target(start, path);//-1 not target, 0 found
+	if (ret)
+		path_full_angle(start, path);
 	return ret;
 }
 
@@ -1288,13 +1303,12 @@ void path_full_angle(const Cell_t& start, PPTargetType& path)
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-	path.back().TH = (path.end()-2)->TH;
 	if(cs_is_going_home() && g_home_point == g_zero_home)
-	{
 		path.back().TH = g_home_point.TH;
-	}
-//	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-	g_new_dir = g_plan_path.front().TH;
+	else
+		path.back().TH = (path.end()-2)->TH;
+	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+//	ROS_INFO("path.front(%d,%d,%d)",path.front().X, path.front().Y, path.front().TH);
 	path.pop_front();
 }
 
@@ -1368,6 +1382,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 			if(path_next_nav(start, path))
 				return false;
 	}
+
 	if(mt_is_follow_wall())
 		path.push_back(g_virtual_target);
 	return true;

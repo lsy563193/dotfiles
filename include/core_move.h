@@ -78,7 +78,6 @@ extern bool g_exploration_home;
 extern std::deque<Cell_t> g_passed_path;
 extern std::deque<Cell_t> g_plan_path;
 extern long g_distance;
-extern bool g_check_path_in_advance;
 extern bool g_during_go_to_charger;
 
 uint8_t angle_to_bumper_status(void);

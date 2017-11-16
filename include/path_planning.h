@@ -54,6 +54,8 @@ extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;
 extern Cell_t g_home_point;
 extern int g_wf_reach_count;
+extern bool g_check_path_in_advance;
+extern bool g_allow_path_in_advance;
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -173,6 +175,7 @@ bool cm_is_reach();
 
 bool path_next_fw(const Cell_t &start);
 bool path_next_nav(const Cell_t &start, PPTargetType &path);
+bool path_next_nav_in_advance(const Cell_t &start, PPTargetType &path);
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
 Cell_t *path_escape_get_trapped_cell(void);
