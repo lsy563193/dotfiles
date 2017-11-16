@@ -112,6 +112,8 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 		ROS_INFO("Map: %s", "WFMAP");
 	} else if (id == SPMAP) {
 		ROS_INFO("Map: %s", "SPMAP");
+	} else if (id == ROSMAP2) {
+		ROS_INFO("Map: %s", "ROSMAP2");
 	}
 	index = 0;
 	outString[index++] = '\t';

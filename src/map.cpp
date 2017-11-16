@@ -30,18 +30,24 @@ uint8_t spmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
 uint8_t wfmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
 
 uint8_t rosmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
+
+/*---rosmap2 for decrease speed---*/
+uint8_t rosmap2[MAP_SIZE][((MAP_SIZE + 1) / 2)];
 //int16_t homeX, homeY;
 
 double xCount, yCount, relative_sin, relative_cos;
 double xWfCount, yWfCount;
 double xRosCount, yRosCount;
+double xRos2Count, yRos2Count;
 uint16_t relative_theta = 3600;
 int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 int16_t g_wf_x_min, g_wf_x_max, g_wf_y_min, g_wf_y_max;
 int16_t g_ros_x_min, g_ros_x_max, g_ros_y_min, g_ros_y_max;
+int16_t g_ros2_x_min, g_ros2_x_max, g_ros2_y_min, g_ros2_y_max;
 int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 int16_t xWfRangeMin, xWfRangeMax, yWfRangeMin, yWfRangeMax;
 int16_t xRosRangeMin, xRosRangeMax, yRosRangeMin, yRosRangeMax;
+int16_t xRos2RangeMin, xRos2RangeMax, yRos2RangeMin, yRos2RangeMax;
 
 Cell_t g_stub_cell(0,0);
 
@@ -93,6 +99,22 @@ void map_init(uint8_t id) {
 
 		xRosCount = 0;
 		yRosCount = 0;
+	}
+	else if(id == ROSMAP2){
+		for(c = 0; c < MAP_SIZE; ++c) {
+			for(d = 0; d < (MAP_SIZE + 1) / 2; ++d) {
+				rosmap2[c][d] = 0;
+			}
+		}
+
+		g_ros2_x_min = g_ros2_x_max = g_ros2_y_min = g_ros2_y_max = 0;
+		xRos2RangeMin = g_ros2_x_min - (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+		xRos2RangeMax = g_ros2_x_max + (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+		yRos2RangeMin = g_ros2_y_min - (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+		yRos2RangeMax = g_ros2_y_max + (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+
+		xRos2Count = 0;
+		yRos2Count = 0;
 	}
 }
 
@@ -170,6 +192,12 @@ CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map) {
 		y_min = yRosRangeMin;
 		y_max = yRosRangeMax;
 	}
+	if(id == ROSMAP2) {
+		x_min = xRos2RangeMin;
+		x_max = xRos2RangeMax;
+		y_min = yRos2RangeMin;
+		y_max = yRos2RangeMax;
+	}
 	if(x >= x_min && x <= x_max && y >= y_min && y <= y_max) {
 		x += MAP_SIZE + MAP_SIZE / 2;
 		x %= MAP_SIZE;
@@ -184,6 +212,8 @@ CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map) {
 			val = (CellState)(wfmap[x][y / 2]);
 		} else if (id == ROSMAP) {
 			val = (CellState)(rosmap[x][y / 2]);
+		} else if (id == ROSMAP2) {
+			val = (CellState)(rosmap2[x][y / 2]);
 		}
 		else if (id == SPMAP) {
 			val = (CellState)(spmap[x][y / 2]);
@@ -196,6 +226,8 @@ CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map) {
 			val = (CellState)(wfmap[x][y / 2]);
 		}else if (id == ROSMAP) {
 			val = (CellState)(rosmap[x][y / 2]);
+		}else if (id == ROSMAP2) {
+			val = (CellState)(rosmap2[x][y / 2]);
 		}
 #endif
 
@@ -203,7 +235,7 @@ CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map) {
 		val = (CellState) ((y % 2) == 0 ? (val >> 4) : (val & 0x0F));
 
 	} else {
-		if(id == MAP || id == WFMAP || id == ROSMAP) {
+		if(id == MAP || id == WFMAP || id == ROSMAP || id == ROSMAP2) {
 			val = BLOCKED_BOUNDARY;
 		} else {
 			val = COST_HIGH;
@@ -224,7 +256,7 @@ void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value) {
 	CellState val;
 	int16_t ROW, COLUMN;
 
-	if(id == MAP || id == WFMAP || id == ROSMAP) {
+	if(id == MAP || id == WFMAP || id == ROSMAP || id == ROSMAP2) {
 		if(value == CLEANED) {
 			ROW = cell_to_count(count_to_cell(x)) - x;
 			COLUMN = cell_to_count(count_to_cell(y)) - y;
@@ -343,6 +375,38 @@ void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value) {
 			val = (CellState) rosmap[ROW][COLUMN / 2];
 			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
 				rosmap[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+			}
+		}
+	}else if (id == ROSMAP2) {
+		if(x >= xRos2RangeMin && x <= xRos2RangeMax && y >= yRos2RangeMin && y <= yRos2RangeMax) {
+			if(x < g_ros2_x_min) {
+				g_ros2_x_min = x;
+				xRos2RangeMin = g_ros2_x_min - (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+				xRos2RangeMax = g_ros2_x_max + (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+			} else if(x > g_ros2_x_max) {
+				g_ros2_x_max = x;
+				xRos2RangeMin = g_ros2_x_min - (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+				xRos2RangeMax = g_ros2_x_max + (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+			}
+			if(y < g_ros2_y_min) {
+				g_ros2_y_min = y;
+				yRos2RangeMin = g_ros2_y_min - (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+				yRos2RangeMax = g_ros2_y_max + (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+			} else if(y > g_ros2_y_max) {
+				g_ros2_y_max = y;
+				yRos2RangeMin = g_ros2_y_min - (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+				yRos2RangeMax = g_ros2_y_max + (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+			}
+
+			ROW = x + MAP_SIZE + MAP_SIZE / 2;
+			ROW %= MAP_SIZE;
+			COLUMN = y + MAP_SIZE + MAP_SIZE / 2;
+			COLUMN %= MAP_SIZE;
+
+			val = (CellState) rosmap2[ROW][COLUMN / 2];
+
+			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
+				rosmap2[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
 			}
 		}
 	}
@@ -488,6 +552,10 @@ void map_reset(uint8_t id)
 		for (idx = 0; idx < MAP_SIZE; idx++) {
 			memset((rosmap[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
 		}
+	}else if (id == ROSMAP2) {
+		for (idx = 0; idx < MAP_SIZE; idx++) {
+			memset((rosmap2[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
+		}
 	}
 #endif
 }
@@ -542,7 +610,11 @@ void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block,
 					map_set_cell(id, cx, cy, BLOCKED_ROS_MAP);
 				}
 			} else {
-				map_set_cell(id, cx, cy, BLOCKED_ROS_MAP);
+				/*---increase the blocked possibility for each cell in ROSMAP2---*/
+				if(id == ROSMAP2)
+					map_increase_blocked_possibility(id, cx, cy);
+				else
+					map_set_cell(id, cx, cy, BLOCKED_ROS_MAP);
 			}
 		} else if (cost == 0 ) {/*free space*/
 			if(is_mark_cleaned && status <= 1)
@@ -559,6 +631,8 @@ void ros_map_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block,
 		}
 	}
 	ros_map_mutex_.unlock();
+	if(id == ROSMAP2)
+		map_check_possibility_set_blocked(id, 10);
 	//ROS_WARN("end ros map convert");
 //	ROS_ERROR("size = %d, width = %d, height = %d, origin_x = %lf, origin_y = %lf, wx = %lf, wy = %lf, mx = %d, my = %d, cx = %d, cy = %d, cost = %d.", size, width, height, origin_x, origin_y, wx, wy, mx, my, cx, cy,cost);
 }
@@ -1107,3 +1181,68 @@ void fw_marker(const Cell_t&  curr){
 			explore_update_map();
 	}
 }
+
+/*---when a rosmap cell is blocked, increase blocked possibility for the corresponding cell---*/
+void map_increase_blocked_possibility(uint8_t id, int32_t x, int32_t y)
+{
+	CellState val;
+	int16_t ROW, COLUMN;
+
+	map_reset(id);
+	x = count_to_cell(x);
+	y = count_to_cell(y);
+	if(id == ROSMAP2) {
+		if(x >= xRos2RangeMin && x <= xRos2RangeMax && y >= yRos2RangeMin && y <= yRos2RangeMax) {
+			if(x < g_ros2_x_min) {
+				g_ros2_x_min = x;
+				xRos2RangeMin = g_ros2_x_min - (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+				xRos2RangeMax = g_ros2_x_max + (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+			} else if(x > g_ros2_x_max) {
+				g_ros2_x_max = x;
+				xRos2RangeMin = g_ros2_x_min - (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+				xRos2RangeMax = g_ros2_x_max + (MAP_SIZE - (g_ros2_x_max - g_ros2_x_min + 1));
+			}
+			if(y < g_ros2_y_min) {
+				g_ros2_y_min = y;
+				yRos2RangeMin = g_ros2_y_min - (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+				yRos2RangeMax = g_ros2_y_max + (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+			} else if(y > g_ros2_y_max) {
+				g_ros2_y_max = y;
+				yRos2RangeMin = g_ros2_y_min - (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+				yRos2RangeMax = g_ros2_y_max + (MAP_SIZE - (g_ros2_y_max - g_ros2_y_min + 1));
+			}
+
+			ROW = x + MAP_SIZE + MAP_SIZE / 2;
+			ROW %= MAP_SIZE;
+			COLUMN = y + MAP_SIZE + MAP_SIZE / 2;
+			COLUMN %= MAP_SIZE;
+
+			/*---increase possibility---*/
+			rosmap2[ROW][COLUMN / 2]++;
+		}
+	}
+}
+
+/*---set cell to BLOCKED_ROS_MAP when blocked possibility is larger than the limit---*
+ *---NOTE: unit of limit: percent												  ---*/
+void map_check_possibility_set_blocked(uint8_t id, uint32_t limit)
+{
+	float map_resolution;
+	/*---sum of ros map points per cell---*/
+	uint32_t area_per_cell;
+	if(id == ROSMAP2)
+	{
+		map_resolution = robot::instance()->mapGetResolution();
+		area_per_cell = (uint32_t)((0.1 / map_resolution) * (0.1 / map_resolution));
+		limit = area_per_cell * limit / 100;
+		for (int i = g_ros2_x_min; i <= g_ros2_x_max; ++i) {
+			for (int j = g_ros2_y_min; j <= g_ros2_y_max; ++j) {
+				if (map_get_cell(ROSMAP2, i, j) > limit)
+					map_set_cell(ROSMAP2, cell_to_count(i), cell_to_count(j), BLOCKED_ROS_MAP);
+				else
+					map_set_cell(ROSMAP2, cell_to_count(i), cell_to_count(j), UNCLEAN);
+			}
+		}
+	}
+}
+

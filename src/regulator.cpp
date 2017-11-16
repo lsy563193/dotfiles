@@ -775,7 +775,8 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	auto obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = get_obs_status();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
+	bool should_rosmap2_decrease = is_rosmap2_block();
+	if (/*obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25) || */should_rosmap2_decrease)
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
@@ -788,6 +789,8 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 			else if(obs_state & BLOCK_FRONT)
 				base_speed_ -=2;
 			else if(obs_state & (BLOCK_LEFT | BLOCK_RIGHT))
+				base_speed_ --;
+			else if(should_rosmap2_decrease)
 				base_speed_ --;
 		}
 	}

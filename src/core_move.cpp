@@ -139,6 +139,24 @@ bool is_map_front_block(int dx)
 	return false;
 }
 
+bool is_rosmap2_block(void)
+{
+	bool retval = false;
+	int16_t x,y;
+	std::vector<Cell_t> d_cells;
+	d_cells = {{3,1},{3,0},{3,-1},{2,1},{2,0},{2,-1},{1,1},{1,0},{1,-1},{0,0}};
+
+	for(auto& d_cell : d_cells)
+	{
+		cm_world_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		if(map_get_cell(ROSMAP2, x, y) == BLOCKED_ROS_MAP)
+		{
+			retval = true;
+			break;
+		}
+	}
+	return retval;
+}
 //--------------------------------------------------------
 
 void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
@@ -246,6 +264,7 @@ void cm_cleaning() {
 
 	while (ros::ok()) {
 
+		MotionManage::pubCleanMapMarkers(ROSMAP2, g_plan_path);
 		if (rm.isExit()) {
 			break;
 		}

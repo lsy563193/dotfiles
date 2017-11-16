@@ -85,6 +85,7 @@ int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
 extern int16_t ranged_angle(int16_t angle);
 bool is_map_front_block(int dx);
+bool is_rosmap2_block(void);
 
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);

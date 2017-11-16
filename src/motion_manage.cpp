@@ -477,6 +477,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 
 	map_init(WFMAP);
 	map_init(ROSMAP);
+	map_init(ROSMAP2);
 	switch (cleaning_mode)
 	{
 		case Clean_Mode_Navigation:

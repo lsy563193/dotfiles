@@ -10,6 +10,7 @@
 #define SPMAP 1
 #define WFMAP 2
 #define ROSMAP 3
+#define ROSMAP2 4
 
 typedef enum {
   UNCLEAN  = 0,
@@ -111,4 +112,6 @@ void map_set_follow_wall(uint8_t id, const Cell_t& curr);
 void map_set_cleaned(std::deque<Cell_t>& cells);
 uint32_t map_get_cleaned_area();
 void fw_marker(const Cell_t&  curr);
+void map_increase_blocked_possibility(uint8_t id, int32_t x, int32_t y);
+void map_check_possibility_set_blocked(uint8_t id, uint32_t limit);
 #endif /* __MAP_H */

@@ -447,6 +447,10 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	if (cm_is_exploration()) {
 		ros_map_convert(MAP, false, false, true);
 	}
+	else if(cm_is_navigation())
+	{
+		ros_map_convert(ROSMAP2, false, false, false);
+	}
 	MotionManage::s_slam->isMapReady(true);
 
 	ROS_INFO("%s %d:finished map callback,map_size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),map_origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);

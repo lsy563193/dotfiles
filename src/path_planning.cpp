@@ -108,6 +108,8 @@ extern int16_t g_wf_x_min, g_wf_x_max, g_wf_y_min, g_wf_y_max;
 
 extern int16_t g_ros_x_min, g_ros_x_max, g_ros_y_min, g_ros_y_max;
 
+extern int16_t g_ros2_x_min, g_ros2_x_max, g_ros2_y_min, g_ros2_y_max;
+
 bool sort_g_targets_y_ascend(PPTargetType a, PPTargetType b)
 {
 	return a.back().Y < b.back().Y;
@@ -214,6 +216,11 @@ void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int1
 		*x_range_max = g_wf_x_max + (abs(g_wf_x_min - g_wf_x_max) <= 3 ? 3 : 1);
 		*y_range_min = g_wf_y_min - (abs(g_wf_y_min - g_wf_y_max) <= 3? 3 : 1);
 		*y_range_max = g_wf_y_max + (abs(g_wf_y_min - g_wf_y_max) <= 3 ? 3 : 1);
+	} else if(id == ROSMAP2) {
+		*x_range_min = g_ros2_x_min - (abs(g_ros2_x_min - g_ros2_x_max) <= 3 ? 3 : 1);
+		*x_range_max = g_ros2_x_max + (abs(g_ros2_x_min - g_ros2_x_max) <= 3 ? 3 : 1);
+		*y_range_min = g_ros2_y_min - (abs(g_ros2_y_min - g_ros2_y_max) <= 3? 3 : 1);
+		*y_range_max = g_ros2_y_max + (abs(g_ros2_y_min - g_ros2_y_max) <= 3 ? 3 : 1);
 	}
 
 //	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
