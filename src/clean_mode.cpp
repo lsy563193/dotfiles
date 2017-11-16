@@ -4,7 +4,6 @@
 
 #include <pp.h>
 
-//CMMoveType g_cm_move_type;
 static uint8_t clean_mode = 0;
 static uint8_t clean_state = 0;
 
@@ -107,7 +106,8 @@ void CleanMode::setMt()
 	p_reg_ = turn_reg_;
 //	s_target_angle = g_turn_angle;
 	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
-	ROS_INFO("%s,%d,curr(%d),set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), s_target_angle);
+	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), g_turn_angle, s_target_angle);
+	resetTriggeredValue();
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
 	g_bumper_cnt = g_cliff_cnt = 0;
@@ -118,16 +118,26 @@ void CleanMode::setMt()
 	robot::instance()->obsAdjustCount(20);
 }
 
+bool CleanMode::findTarget(Cell_t& curr) {
+	return false;
+}
+
 bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
 {
 	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
 
-bool CleanMode::updatePath(const Cell_t& curr, Cell_t& last)
+Cell_t CleanMode::updatePosition(const Point32_t &curr_point)
 {
-	auto ret = false;
-	if (!is_equal_with_angle(curr, last)) {
-		last = curr;
+		map_update_position();
+		s_curr_p = curr_point;
+		return map_get_curr_cell();
+}
+
+Cell_t CleanMode::updatePath(const Cell_t& curr)
+{
+	if (!is_equal_with_angle(curr, last_)) {
+		last_ = curr;
 		auto loc = std::find_if(g_passed_path.begin(), g_passed_path.end(), [&](Cell_t it) {
 				return is_equal_with_angle(curr, it);
 		});
@@ -137,13 +147,13 @@ bool CleanMode::updatePath(const Cell_t& curr, Cell_t& last)
 		}
 		if (distance > 5) {
 			g_passed_path.clear();
-			ret = true;
+			g_wf_reach_count++;
 		}
 		map_save_blocks();
 	}
 //	else
 //		is_time_up = !cs_is_trapped();
-	return ret;
+	return curr;
 }
 
 void CleanMode::display()
@@ -170,8 +180,36 @@ void CleanMode::resetTriggeredValue(void)
 	ev.tilt_triggered = 0;
 }
 
+bool CleanMode::find_target(Cell_t& curr)
+{
+	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
+	mark();
+	auto previous_cs = cs_get();
+	auto previous_mt = mt_get();
+	g_old_dir = g_new_dir;
+	Cell_t start_cell;
+	if (g_check_path_in_advance)
+		start_cell = g_plan_path.back();
+	else
+		start_cell = curr;
+	g_plan_path.clear();
+	cs_path_next(start_cell, g_plan_path);
+
+	display();
+
+	if (!((previous_cs == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_check_path_in_advance)) {
+		setMt();
+		g_passed_path.clear();
+	}
+	g_check_path_in_advance = false;
+
+	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
+	return !g_plan_path.empty();
+}
+
 //NavigationClean
-NavigationClean::NavigationClean(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
+NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -186,9 +224,15 @@ NavigationClean::NavigationClean(const Cell_t& start_cell, const Cell_t& target_
 		mt_reg_ = gtc_reg_;
 	p_reg_ = mt_reg_;
 
+	path_next_nav(curr, g_plan_path);
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
+	g_check_path_in_advance = false;
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 NavigationClean::~NavigationClean()
@@ -245,7 +289,7 @@ bool NavigationClean::isReach()
 		if (mt_is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
-				return line_reg_->isPoseReach();
+				return line_reg_->isPoseReach() || line_reg_->isNearTarget();
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -326,47 +370,21 @@ bool NavigationClean::isStop()
 
 	else if (cs_is_clean())
 	{
-		if (cm_is_navigation())
+		if (mt_is_linear()) // Robot is cleaning current line.
 		{
-			if (mt_is_linear()) // Robot is cleaning current line.
-			{
-				if (isMt())
-					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
-			else if (mt_is_follow_wall()) // Robot is going to new line.
-			{
-				if (isMt())
-					return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(1) || fw_reg_->isIsolate();
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
+			if (isMt())
+				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop()
+						|| line_reg_->isPassTargetStop());
+			else if (isBack())
+				return back_reg_->isLaserStop();
 		}
-
-		else if (cm_is_spot())
+		else if (mt_is_follow_wall()) // Robot is going to new line.
 		{
-			if (mt_is_linear())
-			{
-				if (isMt())
-					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
-		}
-
-		else if (cm_is_exploration())
-		{
-			if (mt_is_linear())
-			{
-				if (isMt())
-					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
+			if (isMt())
+				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(1) || fw_reg_->isIsolate();
+			else if (isBack())
+				return back_reg_->isLaserStop();
 		}
 	}
 
@@ -457,79 +475,49 @@ bool NavigationClean::isSwitch()
 
 	else if (cs_is_clean())
 	{
-		if (cm_is_navigation())
+		if (mt_is_linear()) // Robot is cleaning current line.
 		{
-			if (mt_is_linear()) // Robot is cleaning current line.
+			if (isTurn())
 			{
-				if (isTurn())
-				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt() && line_reg_->shouldMoveBack())
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
 					p_reg_ = back_reg_;
 			}
-			else if (mt_is_follow_wall()) // Robot is going to new line.
+			else if (isMt())
 			{
-				if (isTurn())
-				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt())
-				{
-					if (fw_reg_->shouldMoveBack())
-					{
-						g_time_straight = 0.2;
-						p_reg_ = back_reg_;
-					}
-					else if (fw_reg_->shouldTurn())
-					{
-						g_time_straight = 0;
-						p_reg_ = turn_reg_;
-					}
-				}
-				else if (isBack() && back_reg_->isReach())
-				{
+				if (line_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+				else if (line_reg_->isCellReach())
 					p_reg_ = turn_reg_;
-					resetTriggeredValue();
-				}
 			}
 		}
-
-		else if (cm_is_spot())
+		else if (mt_is_follow_wall()) // Robot is going to new line.
 		{
-			if (mt_is_linear()) // Robot is cleaning current line.
+			if (isTurn())
 			{
-				if (isTurn())
-				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt() && line_reg_->shouldMoveBack())
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
 					p_reg_ = back_reg_;
 			}
-		}
-
-		else if (cm_is_exploration())
-		{
-			if (mt_is_linear()) // Robot is going straight to find charger.
+			else if (isMt())
 			{
-				if (isTurn())
+				if (fw_reg_->shouldMoveBack())
 				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt() && line_reg_->shouldMoveBack())
+					g_time_straight = 0.2;
 					p_reg_ = back_reg_;
+				}
+				else if (fw_reg_->shouldTurn())
+				{
+					g_time_straight = 0;
+					p_reg_ = turn_reg_;
+				}
+			}
+			else if (isBack() && back_reg_->isReach())
+			{
+				p_reg_ = turn_reg_;
+				resetTriggeredValue();
 			}
 		}
 	}
@@ -543,9 +531,21 @@ bool NavigationClean::isSwitch()
 
 	return false;
 }
-//SpotClean
-SpotClean::SpotClean(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path)
+
+bool NavigationClean::findTarget(Cell_t& curr)
 {
+	return find_target(curr);
+}
+
+Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
+{
+	auto curr = CleanMode::updatePosition(curr_point);
+	return updatePath(curr);
+}
+//SpotClean
+SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path)
+{
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -561,6 +561,11 @@ SpotClean::SpotClean(const Cell_t& start_cell, const Cell_t& target_cell, const 
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: SpotClean finish", __FUNCTION__, __LINE__);
+	g_check_path_in_advance = false;
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 SpotClean::~SpotClean()
@@ -590,7 +595,9 @@ bool SpotClean::isReach()
 	if (mt_is_linear()) // Robot is cleaning current line.
 	{
 		if (isMt())
+		{
 			return line_reg_->isCellReach(); // For reaching target.
+		}
 		else if (isBack())
 			return back_reg_->isReach();
 	}
@@ -653,7 +660,8 @@ bool SpotClean::isSwitch()
 }
 
 //WallFollowClean
-WallFollowClean::WallFollowClean(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
+WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -665,10 +673,15 @@ WallFollowClean::WallFollowClean(const Cell_t& start_cell, const Cell_t& target_
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
+	path_next_fw(curr);
 
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: WallFollowClean finish", __FUNCTION__, __LINE__);
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 WallFollowClean::~WallFollowClean()
@@ -828,8 +841,28 @@ bool WallFollowClean::isSwitch()
 	return false;
 }
 
+bool WallFollowClean::findTarget(Cell_t& curr)
+{
+	printf("\n\033[42m======================================WallFollowClean===========================================\033[0m\n");
+	mark();
+	g_plan_path.clear();
+	if(!path_next_fw(curr))
+		return false;
+	display();
+	setMt();
+	g_passed_path.clear();
+	g_check_path_in_advance = false;
+	printf("\033[44m====================================WallFollowClean=========================================\033[0m\n\n");
+	return true;
+}
+Cell_t WallFollowClean::updatePosition(const Point32_t &curr_point)
+{
+	auto curr = CleanMode::updatePosition(curr_point);
+	return updatePath(curr);
+}
 //Exploration
-Exploration::Exploration(const Cell_t& start_cell, const Cell_t& target_cell, const PPTargetType& path) {
+Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
+	g_plan_path.clear();
 	s_curr_p = {map_get_x_count(),map_get_y_count()};
 	auto target = map_cell_to_point(target_cell);
 
@@ -845,6 +878,12 @@ Exploration::Exploration(const Cell_t& start_cell, const Cell_t& target_cell, co
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: Exploration finish", __FUNCTION__, __LINE__);
+
+	g_check_path_in_advance = false;
+
+	g_passed_path.clear();
+	g_passed_path.push_back(curr);
+
 }
 
 Exploration::~Exploration()
@@ -864,7 +903,9 @@ bool Exploration::isReach()
 		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
+			{
 				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+			}
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -1063,3 +1104,9 @@ bool Exploration::isSwitch()
 
 	return false;
 }
+
+bool Exploration::findTarget(Cell_t& curr)
+{
+	find_target(curr);
+}
+

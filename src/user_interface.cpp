@@ -202,7 +202,7 @@ void user_interface(void)
 void user_interface_register_events(void)
 {
 	ROS_INFO("%s %d: Register events", __FUNCTION__, __LINE__);
-	event_manager_set_current_mode(EVT_MODE_USER_INTERFACE);
+//	event_manager_set_current_mode(EVT_MODE_USER_INTERFACE);
 
 #define event_manager_register_and_enable_x(name, y, enabled) \
 	event_manager_register_handler(y, &user_interface_handle_ ##name); \

@@ -1111,7 +1111,7 @@ uint8_t map_save_follow_wall()
 		temp_MAP_follow_wall_cells.push_back({x, y});
 	temp_WFMAP_follow_wall_cells.push_back({x, y});
 	msg += "[0," + std::to_string(dy) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
-	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
+	//ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, map_get_x_cell(), map_get_y_cell(), msg.c_str());
 
 	return 1;
 }

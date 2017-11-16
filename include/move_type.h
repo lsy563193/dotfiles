@@ -9,12 +9,11 @@
 #include "path_planning.h"
 
 typedef enum {
-	CM_LINEARMOVE = 0,
-	CM_CURVEMOVE,
-	CM_FOLLOW_LEFT_WALL,
-	CM_FOLLOW_RIGHT_WALL,
-	CM_GO_TO_CHARGER,
-} CMMoveType;
+	MT_LINEARMOVE = 0,
+	MT_FOLLOW_LEFT_WALL,
+	MT_FOLLOW_RIGHT_WALL,
+	MT_GO_TO_CHARGER,
+} MoveType;
 
 bool mt_is_right();
 
@@ -26,16 +25,20 @@ bool mt_is_linear();
 
 bool mt_is_go_to_charger();
 
-CMMoveType mt_get();
+MoveType mt_get();
+
+void mt_set(MoveType mt);
 
 void mt_update(const Cell_t& curr, PPTargetType& path);
 
-void mt_set(CMMoveType mt);
 /*
-class MoveType {
-
-};
-*/
-
+ * param:	dir: The direction of last movement, actually it is for direction of linear movement.
+ * param:	curr: Current robot position.
+ * param:	path: The path to target cell.
+ *
+ * return:	true: Robot should switch move type to following wall.
+ * 			false: Robot should not switch move type to following wall.
+ */
+bool mt_should_follow_wall(const int16_t dir, const Cell_t& curr, PPTargetType& path);
 
 #endif //PP_MOVETYPE_H

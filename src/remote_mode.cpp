@@ -286,7 +286,7 @@ RemoteModeMoveType get_move_flag_(void)
 void remote_mode_register_events(void)
 {
 	ROS_WARN("%s %d: Register events", __FUNCTION__, __LINE__);
-	event_manager_set_current_mode(EVT_MODE_REMOTE);
+//	event_manager_set_current_mode(EVT_MODE_REMOTE);
 
 #define event_manager_register_and_enable_x(name, y, enabled) \
 	event_manager_register_handler(y, &remote_mode_handle_ ##name); \

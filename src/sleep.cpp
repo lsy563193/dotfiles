@@ -115,7 +115,7 @@ void sleep_mode(void)
 void sleep_register_events(void)
 {
 	ROS_WARN("%s %d: Register events", __FUNCTION__, __LINE__);
-	event_manager_set_current_mode(EVT_MODE_SLEEP);
+//	event_manager_set_current_mode(EVT_MODE_SLEEP);
 
 #define event_manager_register_and_enable_x(name, y, enabled) \
 	event_manager_register_handler(y, &sleep_handle_ ##name); \

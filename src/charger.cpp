@@ -204,7 +204,7 @@ void charge_function(void)
 void charge_register_event(void)
 {
 	ROS_WARN("%s, %d: Register events.", __FUNCTION__, __LINE__);
-	event_manager_set_current_mode(EVT_MODE_CHARGE);
+//	event_manager_set_current_mode(EVT_MODE_CHARGE);
 #define event_manager_register_and_enable_x(name, y, enabled) \
 	event_manager_register_handler(y, &charge_handle_ ##name); \
 	event_manager_enable_handler(y, enabled)
