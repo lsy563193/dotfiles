@@ -78,7 +78,8 @@ pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
 
 static bool g_new_event_status[EVT_MAX];
 
-PEHF default_handler[EVT_MAX];
+PEHF p_handler[EVT_MAX];
+EventHandle deh;
 void event_manager_init()
 {
 	int	j;
@@ -90,67 +91,67 @@ void event_manager_init()
 
 		for (j = 0; j < EVT_MAX; j++) {
 			eat.handler[j] = NULL;
-//			default_handler[j] = NULL;
+//			p_handler[j] = NULL;
 			eat.handler_enabled[j] = false;
 			g_new_event_status[j] = false;
 		}
-	default_handler[EVT_BUMPER_ALL] = &EventHandle::bumper_all;
-	default_handler[EVT_BUMPER_LEFT] = &EventHandle::bumper_left;
-	default_handler[EVT_BUMPER_RIGHT] = &EventHandle::bumper_right;
+	p_handler[EVT_BUMPER_ALL] = &EventHandle::bumper_all;
+	p_handler[EVT_BUMPER_LEFT] = &EventHandle::bumper_left;
+	p_handler[EVT_BUMPER_RIGHT] = &EventHandle::bumper_right;
 
-	default_handler[EVT_OBS_FRONT] = &EventHandle::obs_front;
-	default_handler[EVT_OBS_LEFT] = &EventHandle::obs_left;
-	default_handler[EVT_OBS_RIGHT] = &EventHandle::obs_right;
-	default_handler[EVT_OBS_WALL_LFET] = &EventHandle::obs_wall_left;
-	default_handler[EVT_OBS_WALL_RIGHT] = &EventHandle::obs_wall_right;
+	p_handler[EVT_OBS_FRONT] = &EventHandle::obs_front;
+	p_handler[EVT_OBS_LEFT] = &EventHandle::obs_left;
+	p_handler[EVT_OBS_RIGHT] = &EventHandle::obs_right;
+	p_handler[EVT_OBS_WALL_LFET] = &EventHandle::obs_wall_left;
+	p_handler[EVT_OBS_WALL_RIGHT] = &EventHandle::obs_wall_right;
 
-	default_handler[EVT_CLIFF_ALL] = &EventHandle::cliff_all;
-	default_handler[EVT_CLIFF_FRONT_LEFT] = &EventHandle::cliff_front_left;
-	default_handler[EVT_CLIFF_FRONT_RIGHT] = &EventHandle::cliff_front_right;
-	default_handler[EVT_CLIFF_LEFT_RIGHT] = &EventHandle::cliff_left_right;
-	default_handler[EVT_CLIFF_LEFT] = &EventHandle::cliff_left;
-	default_handler[EVT_CLIFF_RIGHT] = &EventHandle::cliff_right;
-	default_handler[EVT_CLIFF_FRONT] = &EventHandle::cliff_front;
+	p_handler[EVT_CLIFF_ALL] = &EventHandle::cliff_all;
+	p_handler[EVT_CLIFF_FRONT_LEFT] = &EventHandle::cliff_front_left;
+	p_handler[EVT_CLIFF_FRONT_RIGHT] = &EventHandle::cliff_front_right;
+	p_handler[EVT_CLIFF_LEFT_RIGHT] = &EventHandle::cliff_left_right;
+	p_handler[EVT_CLIFF_LEFT] = &EventHandle::cliff_left;
+	p_handler[EVT_CLIFF_RIGHT] = &EventHandle::cliff_right;
+	p_handler[EVT_CLIFF_FRONT] = &EventHandle::cliff_front;
 
-	default_handler[EVT_RCON] = &EventHandle::rcon;
+	p_handler[EVT_RCON] = &EventHandle::rcon;
 
-	default_handler[EVT_OVER_CURRENT_BRUSH_LEFT] = &EventHandle::over_current_brush_left;
-	default_handler[EVT_OVER_CURRENT_BRUSH_MAIN] = &EventHandle::over_current_brush_main;
-	default_handler[EVT_OVER_CURRENT_BRUSH_RIGHT] = &EventHandle::over_current_brush_right;
-	default_handler[EVT_OVER_CURRENT_WHEEL_LEFT] = &EventHandle::over_current_wheel_left;
-	default_handler[EVT_OVER_CURRENT_WHEEL_RIGHT] = &EventHandle::over_current_wheel_right;
-	default_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::over_current_suction;
+	p_handler[EVT_OVER_CURRENT_BRUSH_LEFT] = &EventHandle::over_current_brush_left;
+	p_handler[EVT_OVER_CURRENT_BRUSH_MAIN] = &EventHandle::over_current_brush_main;
+	p_handler[EVT_OVER_CURRENT_BRUSH_RIGHT] = &EventHandle::over_current_brush_right;
+	p_handler[EVT_OVER_CURRENT_WHEEL_LEFT] = &EventHandle::over_current_wheel_left;
+	p_handler[EVT_OVER_CURRENT_WHEEL_RIGHT] = &EventHandle::over_current_wheel_right;
+	p_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::over_current_suction;
 
-	default_handler[EVT_KEY_CLEAN] = &EventHandle::key_clean;
+	p_handler[EVT_KEY_CLEAN] = &EventHandle::key_clean;
 
-	default_handler[EVT_REMOTE_PLAN] = &EventHandle::remote_plan;
-	default_handler[EVT_REMOTE_CLEAN] = &EventHandle::remote_clean;
-	default_handler[EVT_REMOTE_HOME] = &EventHandle::remote_home;
+	p_handler[EVT_REMOTE_PLAN] = &EventHandle::remote_plan;
+	p_handler[EVT_REMOTE_CLEAN] = &EventHandle::remote_clean;
+	p_handler[EVT_REMOTE_HOME] = &EventHandle::remote_home;
 
 //	handler[EVT_REMOTE_DIRECTION_BACKWARD]=handler_remote_direction_forward;
-	default_handler[EVT_REMOTE_DIRECTION_FORWARD] = &EventHandle::remote_direction_forward;
-	default_handler[EVT_REMOTE_DIRECTION_LEFT] = &EventHandle::remote_direction_left;
-	default_handler[EVT_REMOTE_DIRECTION_RIGHT] = &EventHandle::remote_direction_right;
+	p_handler[EVT_REMOTE_DIRECTION_FORWARD] = &EventHandle::remote_direction_forward;
+	p_handler[EVT_REMOTE_DIRECTION_LEFT] = &EventHandle::remote_direction_left;
+	p_handler[EVT_REMOTE_DIRECTION_RIGHT] = &EventHandle::remote_direction_right;
 
-	default_handler[EVT_REMOTE_WALL_FOLLOW] = &EventHandle::remote_wall_follow;
-	default_handler[EVT_REMOTE_SPOT] = &EventHandle::remote_spot;
+	p_handler[EVT_REMOTE_WALL_FOLLOW] = &EventHandle::remote_wall_follow;
+	p_handler[EVT_REMOTE_SPOT] = &EventHandle::remote_spot;
 
-	default_handler[EVT_REMOTE_MAX] = &EventHandle::remote_max;
+	p_handler[EVT_REMOTE_MAX] = &EventHandle::remote_max;
 //	handler[EVT_REMOTE_TIMER]=handler_remote_max;
 //	handler[EVT_WATER_TANK]=handler_remote_max;
 
-	default_handler[EVT_BATTERY_HOME] = &EventHandle::battery_home;
-	default_handler[EVT_BATTERY_LOW] = &EventHandle::battery_low;
+	p_handler[EVT_BATTERY_HOME] = &EventHandle::battery_home;
+	p_handler[EVT_BATTERY_LOW] = &EventHandle::battery_low;
 
-	default_handler[EVT_CHARGE_DETECT] = &EventHandle::charge_detect;
+	p_handler[EVT_CHARGE_DETECT] = &EventHandle::charge_detect;
 
-	default_handler[EVT_SLAM_ERROR] = &EventHandle::slam_error;
+	p_handler[EVT_SLAM_ERROR] = &EventHandle::slam_error;
 
-	default_handler[EVT_ROBOT_SLIP] = &EventHandle::robot_slip;
+	p_handler[EVT_ROBOT_SLIP] = &EventHandle::robot_slip;
 
 //	handler[EVT_LIDAR_BUMPER]=handler_laser_stuck;
-	default_handler[EVT_LASER_STUCK] = &EventHandle::laser_stuck;
-	eat.eh = &eat.deh;
+	p_handler[EVT_LASER_STUCK] = &EventHandle::laser_stuck;
+	eat.peh = &deh;
 }
 
 void event_manager_set_enable(bool enable)
@@ -406,7 +407,7 @@ void *event_handler_thread(void *data) {
 	{
 		if (eat.handler_enabled[x]) {
 			if (eat.handler[x] == NULL) {
-				(eat.deh.*default_handler[x])(status_now[x], status_last[x]);
+				(eat.peh->*p_handler[x])(status_now[x], status_last[x]);
 			} else {
 				eat.handler[x](status_now[x], status_last[x]);
 			}

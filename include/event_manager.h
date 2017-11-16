@@ -332,8 +332,7 @@ typedef void(*event_handle_t)(bool state_now, bool state_last);
 typedef struct {
 //	EventModeType	emt;
 	bool	handler_enabled[EVT_MAX];
-	EventHandle* eh;
-	EventHandle deh;
+	EventHandle* peh;
 	event_handle_t handler[EVT_MAX];
 } EventActionType;
 
