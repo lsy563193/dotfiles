@@ -1223,7 +1223,7 @@ uint8_t Laser::laserMarker(double X_MAX)
 	uint8_t block_status = 0;
 	for (int i = 0; i < 12; i++) {
 		if (count_array[i] > 10) {
-			int32_t x_tmp,y_tmp;
+			int16_t x_tmp,y_tmp;
 			switch(i) {
 				case 0 : {
 					dx = 2;
@@ -1302,13 +1302,13 @@ uint8_t Laser::laserMarker(double X_MAX)
 				}
 			}
 
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-			auto cell_status = map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp));
+			cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			auto cell_status = map_get_cell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
 				//ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
 				msg += direction_msg + "(" + std::to_string(count_to_cell(x_tmp)) + ", " + std::to_string(count_to_cell(y_tmp)) + ")";
-				map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER); //BLOCKED_OBS);
+				map_set_cell(MAP, cell_to_count(x_tmp), cell_to_count(y_tmp), BLOCKED_LASER); //BLOCKED_OBS);
 			}
 		}
 	}
