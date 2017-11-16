@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <ros/ros.h>
+#include <pp.h>
 
 #include "config.h"
 #include "serial.h"
@@ -63,9 +64,9 @@ Ev_t ev;
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
-static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
+//static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
 
-static EventActionType	eat[EVT_MODE_MAX];
+static EventActionType	eat;
 
 pthread_mutex_t	new_event_mtx;
 pthread_cond_t new_event_cond = PTHREAD_COND_INITIALIZER;
@@ -79,21 +80,75 @@ static bool g_new_event_status[EVT_MAX];
 
 void event_manager_init()
 {
-	int	i, j;
+	int	j;
 
 	g_event_manager_enabled = g_event_handler_status = false;
 
 	bumper_all_cnt = bumper_left_cnt = bumper_right_cnt = 0;
 	event_manager_reset_status();
 
-	for (i = 0; i < EVT_MODE_MAX; i++) {
 		for (j = 0; j < EVT_MAX; j++) {
-			eat[i].handler[j] = NULL;
-			eat[i].handler_enabled[j] = false;
+			eat.handler[j] = NULL;
+			eat.default_handler[j] = NULL;
+			eat.handler_enabled[j] = false;
+			g_new_event_status[j] = false;
 		}
+	eat.default_handler[EVT_BUMPER_ALL] = em_default_handle_bumper_all;
+	eat.default_handler[EVT_BUMPER_LEFT] = em_default_handle_bumper_left;
+	eat.default_handler[EVT_BUMPER_RIGHT] = em_default_handle_bumper_right;
 
-		g_new_event_status[i] = false;
-	}
+	eat.default_handler[EVT_OBS_FRONT] = em_default_handle_obs_front;
+	eat.default_handler[EVT_OBS_LEFT] = em_default_handle_obs_left;
+	eat.default_handler[EVT_OBS_RIGHT] = em_default_handle_obs_right;
+	eat.default_handler[EVT_OBS_WALL_LFET] = em_default_handle_obs_wall_left;
+	eat.default_handler[EVT_OBS_WALL_RIGHT] = em_default_handle_obs_wall_right;
+
+	eat.default_handler[EVT_CLIFF_ALL] = em_default_handle_cliff_all;
+	eat.default_handler[EVT_CLIFF_FRONT_LEFT] = em_default_handle_cliff_front_left;
+	eat.default_handler[EVT_CLIFF_FRONT_RIGHT] = em_default_handle_cliff_front_right;
+	eat.default_handler[EVT_CLIFF_LEFT_RIGHT] = em_default_handle_cliff_left_right;
+	eat.default_handler[EVT_CLIFF_LEFT] = em_default_handle_cliff_left;
+	eat.default_handler[EVT_CLIFF_RIGHT] = em_default_handle_cliff_right;
+	eat.default_handler[EVT_CLIFF_FRONT] = em_default_handle_cliff_front;
+
+	eat.default_handler[EVT_RCON] = em_default_handle_rcon;
+
+	eat.default_handler[EVT_OVER_CURRENT_BRUSH_LEFT] = em_default_handle_over_current_brush_left;
+	eat.default_handler[EVT_OVER_CURRENT_BRUSH_MAIN] = em_default_handle_over_current_brush_main;
+	eat.default_handler[EVT_OVER_CURRENT_BRUSH_RIGHT] = em_default_handle_over_current_brush_right;
+	eat.default_handler[EVT_OVER_CURRENT_WHEEL_LEFT] = em_default_handle_over_current_wheel_left;
+	eat.default_handler[EVT_OVER_CURRENT_WHEEL_RIGHT] = em_default_handle_over_current_wheel_right;
+	eat.default_handler[EVT_OVER_CURRENT_SUCTION] = em_default_handle_over_current_suction;
+
+	eat.default_handler[EVT_KEY_CLEAN] = em_default_handle_key_clean;
+
+	eat.default_handler[EVT_REMOTE_PLAN] = em_default_handle_remote_plan;
+	eat.default_handler[EVT_REMOTE_CLEAN] = em_default_handle_remote_clean;
+	eat.default_handler[EVT_REMOTE_HOME] = em_default_handle_remote_home;
+
+//	handler[EVT_REMOTE_DIRECTION_BACKWARD]=handler_remote_direction_forward;
+	eat.default_handler[EVT_REMOTE_DIRECTION_FORWARD] = em_default_handle_remote_direction_forward;
+	eat.default_handler[EVT_REMOTE_DIRECTION_LEFT] = em_default_handle_remote_direction_left;
+	eat.default_handler[EVT_REMOTE_DIRECTION_RIGHT] = em_default_handle_remote_direction_right;
+
+	eat.default_handler[EVT_REMOTE_WALL_FOLLOW] = em_default_handle_remote_wall_follow;
+	eat.default_handler[EVT_REMOTE_SPOT] = em_default_handle_remote_spot;
+
+	eat.default_handler[EVT_REMOTE_MAX] = em_default_handle_remote_max;
+//	handler[EVT_REMOTE_TIMER]=handler_remote_max;
+//	handler[EVT_WATER_TANK]=handler_remote_max;
+
+	eat.default_handler[EVT_BATTERY_HOME] = em_default_handle_battery_home;
+	eat.default_handler[EVT_BATTERY_LOW] = em_default_handle_battery_low;
+
+	eat.default_handler[EVT_CHARGE_DETECT] = em_default_handle_charge_detect;
+
+	eat.default_handler[EVT_SLAM_ERROR] = em_default_handle_slam_error;
+
+	eat.default_handler[EVT_ROBOT_SLIP] = em_default_handle_robot_slip;
+
+//	handler[EVT_LIDAR_BUMPER]=handler_laser_stuck;
+	eat.default_handler[EVT_LASER_STUCK] = em_default_handle_laser_stuck;
 }
 
 void event_manager_set_enable(bool enable)
@@ -103,17 +158,23 @@ void event_manager_set_enable(bool enable)
 	{
 		//ROS_WARN("%s %d: Disable all event under manager mode:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
-			eat[evt_mgr_mode].handler[i] = NULL;
-			eat[evt_mgr_mode].handler_enabled[i] = false;
+			eat.handler[i] = NULL;
+			eat.handler_enabled[i] = false;
+			g_new_event_status[i] = false;
 		}
-		g_new_event_status[evt_mgr_mode] = false;
 	}
 }
+
 
 void *event_manager_thread(void *data)
 {
 	bool set = false;
 	bool status[EVT_MAX];
+	auto evt_set_status_x = [](EventType x)
+	{
+		status[x] = true;
+		set = true;
+	};
 
 	pthread_detach(pthread_self());
 
@@ -134,66 +195,61 @@ void *event_manager_thread(void *data)
 
 		//ROS_DEBUG("%s %d: wake up by serial data arrive", __FUNCTION__, __LINE__);
 
-#define	evt_set_status_x(x)	\
-	{ 						\
-		status[x] = true;	\
-		set = true;			\
-	}
 
 		/* Bumper */
 		if (get_bumper_status() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:all bumper trig ", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_BUMPER_ALL)
+			evt_set_status_x(EVT_BUMPER_ALL);
 		} else if (get_bumper_status() & BLOCK_LEFT) {
 			ROS_DEBUG("%s %d: setting event: left bumper trig", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_BUMPER_LEFT)
+			evt_set_status_x(EVT_BUMPER_LEFT);
 		} else if (get_bumper_status() & BLOCK_RIGHT) {
 			ROS_DEBUG("%s %d: setting event: right bumper trig", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_BUMPER_RIGHT)
+			evt_set_status_x(EVT_BUMPER_RIGHT);
 		}
 
 		/* OBS */
 		if (get_front_obs() > get_front_obs_trig_value() + 1700) {
 			ROS_DEBUG("%s %d: setting event: front obs", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OBS_FRONT)
+			evt_set_status_x(EVT_OBS_FRONT);
 		}
 		if (get_left_obs() > get_left_obs_trig_value() + 200) {
 			ROS_DEBUG("%s %d: setting event: left obs", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OBS_LEFT)
+			evt_set_status_x(EVT_OBS_LEFT);
 		}
 		if (get_right_obs() > get_right_obs_trig_value() + 200) {
 			ROS_DEBUG("%s %d: setting event: right obs", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OBS_RIGHT)
+			evt_set_status_x(EVT_OBS_RIGHT);
 		}
 
 		/* Cliff */
 		if (get_cliff_status() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CLIFF_ALL)
+			evt_set_status_x(EVT_CLIFF_ALL);
 		} else if (get_cliff_status() == (BLOCK_FRONT | BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CLIFF_FRONT_LEFT)
+			evt_set_status_x(EVT_CLIFF_FRONT_LEFT);
 		} else if (get_cliff_status() == (BLOCK_FRONT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT)
+			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT);
 		} else if (get_cliff_status() == (BLOCK_LEFT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT)
+			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT);
 		} else if (get_cliff_status() == (BLOCK_FRONT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CLIFF_FRONT)
+			evt_set_status_x(EVT_CLIFF_FRONT);
 		} else if (get_cliff_status() == (BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CLIFF_LEFT)
+			evt_set_status_x(EVT_CLIFF_LEFT);
 		} else if (get_cliff_status() == (BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CLIFF_RIGHT)
+			evt_set_status_x(EVT_CLIFF_RIGHT);
 		}
 
 		/* RCON */
 		if (get_rcon_status()) {
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_RCON)
+			evt_set_status_x(EVT_RCON);
 		}
 /*
 		if ((Get_Rcon_Status() & RconFL_HomeT) == RconFL_HomeT) {
@@ -220,99 +276,99 @@ void *event_manager_thread(void *data)
 		/* Over Current */
 		if (1/* || robot::instance()->getLbrushOc()*/) {
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_LEFT)
+			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_LEFT);
 		}
 		if (robot::instance()->getMbrushOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_MAIN)
+			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_MAIN);
 		}
 		if (1/* || robot::instance()->getRbrushOc()*/) {
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_RIGHT)
+			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
 		}
 		if ((uint32_t)robot::instance()->getLwheelCurrent() > Wheel_Stall_Limit) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_LEFT)
+			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 		}
 		if ((uint32_t)robot::instance()->getRwheelCurrent() > Wheel_Stall_Limit) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_RIGHT)
+			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 		}
 		if (robot::instance()->getVacuumOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_OVER_CURRENT_SUCTION)
+			evt_set_status_x(EVT_OVER_CURRENT_SUCTION);
 		}
 
 		/* Key */
 		if (get_touch_status()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_KEY_CLEAN)
+			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
 		if (get_plan_status()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_PLAN)
+			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
 
 		/* Remote */
 		if (remote_key(Remote_Clean)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_CLEAN)
+			evt_set_status_x(EVT_REMOTE_CLEAN);
 		}
 		if (remote_key(Remote_Home)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_HOME)
+			evt_set_status_x(EVT_REMOTE_HOME);
 		}
 		if (remote_key(Remote_Forward)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_DIRECTION_FORWARD)
+			evt_set_status_x(EVT_REMOTE_DIRECTION_FORWARD);
 		}
 		if (remote_key(Remote_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_DIRECTION_LEFT)
+			evt_set_status_x(EVT_REMOTE_DIRECTION_LEFT);
 		}
 		if (remote_key(Remote_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_DIRECTION_RIGHT)
+			evt_set_status_x(EVT_REMOTE_DIRECTION_RIGHT);
 		}
 		if (remote_key(Remote_Spot)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_SPOT)
+			evt_set_status_x(EVT_REMOTE_SPOT);
 		}
 		if (remote_key(Remote_Max)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_MAX)
+			evt_set_status_x(EVT_REMOTE_MAX);
 		}
 		if (remote_key(Remote_Wall_Follow)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_REMOTE_WALL_FOLLOW)
+			evt_set_status_x(EVT_REMOTE_WALL_FOLLOW);
 		}
 
 		/* Battery */
 		if (robot::instance()->getBatteryVoltage() && robot::instance()->getBatteryVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_BATTERY_HOME)
+			evt_set_status_x(EVT_BATTERY_HOME);
 		}
 		if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_BATTERY_LOW)
+			evt_set_status_x(EVT_BATTERY_LOW);
 		}
 
 		/* Charge Status */
 		if (robot::instance()->getChargeStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_CHARGE_DETECT)
+			evt_set_status_x(EVT_CHARGE_DETECT);
 		}
 
 		/* Slam Error */
 		if (ev.slam_error) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_SLAM_ERROR)
+			evt_set_status_x(EVT_SLAM_ERROR);
 		}
 		/* robot slip */
 		if(is_robot_slip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_ROBOT_SLIP)
+			evt_set_status_x(EVT_ROBOT_SLIP);
 		}
 		/*
 		if(robot::instance()->getLidarBumper()){
@@ -324,9 +380,8 @@ void *event_manager_thread(void *data)
 		// Laser stuck
 		if (check_laser_stuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_LASER_STUCK)
+			evt_set_status_x(EVT_LASER_STUCK);
 		}
-#undef evt_set_status_x
 
 		if (set) {
 			//ROS_INFO("%s %d: going to broadcase new event", __FUNCTION__, __LINE__);
@@ -344,6 +399,24 @@ void *event_manager_thread(void *data)
 
 void *event_handler_thread(void *data) {
 	bool status_now[EVT_MAX], status_last[EVT_MAX];
+
+	auto evt_handle_event_x = [&](EventType x)
+	{
+		if (eat.handler_enabled[x]) {
+			if (eat.handler[x] == NULL) {
+				eat.default_handler[x](status_now[x], status_last[x]);
+			} else {
+				eat.handler[x](status_now[x], status_last[x]);
+			}
+		}
+	};
+
+	auto evt_handle_check_event = [&](EventType x)
+	{
+		if (status_now[x]) {
+			evt_handle_event_x(x);
+		}
+	};
 
 	pthread_detach(pthread_self());
 
@@ -366,59 +439,39 @@ void *event_handler_thread(void *data) {
 
 		//ROS_DEBUG("%s %d: handler thread is up, new event to handle", __FUNCTION__, __LINE__);
 
-#define	evt_handle_event_x(name, y)	\
-	{																			\
-		if (eat[evt_mgr_mode].handler_enabled[y] == true) {						\
-			if (eat[evt_mgr_mode].handler[y] == NULL) {							\
-				em_default_handle_ ## name(status_now[y], status_last[y]);		\
-			} else {															\
-				eat[evt_mgr_mode].handler[y](status_now[y], status_last[y]);	\
-			}																	\
-		}																		\
-	}
-
-#define evt_handle_check_event(x, y) \
-	{									\
-		if (status_now[x] == true) {	\
-			evt_handle_event_x(y, x)	\
-		}								\
-	}
-
 		/* Bumper */
-		if (status_now[EVT_BUMPER_ALL] == true) {
-			evt_handle_event_x(bumper_all, EVT_BUMPER_ALL)
-		} else if (status_now[EVT_BUMPER_RIGHT] == true) {
-			evt_handle_event_x(bumper_right, EVT_BUMPER_RIGHT)
-		} else if (status_now[EVT_BUMPER_LEFT] == true) {
-			evt_handle_event_x(bumper_left, EVT_BUMPER_LEFT)
+		if (status_now[EVT_BUMPER_ALL]) {
+			evt_handle_event_x(EVT_BUMPER_ALL);
+		} else if (status_now[EVT_BUMPER_RIGHT]) {
+			evt_handle_event_x(EVT_BUMPER_RIGHT);
+		} else if (status_now[EVT_BUMPER_LEFT]) {
+			evt_handle_event_x(EVT_BUMPER_LEFT);
 		}
 
 		/* OBS */
-		evt_handle_check_event(EVT_OBS_FRONT, obs_front)
-		evt_handle_check_event(EVT_OBS_LEFT, obs_left)
-		evt_handle_check_event(EVT_OBS_RIGHT, obs_right)
+		evt_handle_check_event(EVT_OBS_FRONT);
+		evt_handle_check_event(EVT_OBS_LEFT);
+		evt_handle_check_event(EVT_OBS_RIGHT);
 
 		/* Cliff */
-		if (status_now[EVT_CLIFF_ALL] == true) {
-            evt_handle_event_x(cliff_all, EVT_CLIFF_ALL)
-		} else if (status_now[EVT_CLIFF_FRONT_LEFT] == true) {
-            evt_handle_event_x(cliff_front_left, EVT_CLIFF_FRONT_LEFT)
-		} else if (status_now[EVT_CLIFF_FRONT_RIGHT] == true) {
-            evt_handle_event_x(cliff_front_right, EVT_CLIFF_FRONT_RIGHT)
-		} else if (status_now[EVT_CLIFF_LEFT_RIGHT] == true) {
-            evt_handle_event_x(cliff_left_right, EVT_CLIFF_LEFT_RIGHT)
-		} else if (status_now[EVT_CLIFF_FRONT] == true) {
-            evt_handle_event_x(cliff_front, EVT_CLIFF_FRONT)
-		} else if (status_now[EVT_CLIFF_LEFT] == true) {
-            evt_handle_event_x(cliff_left, EVT_CLIFF_LEFT)
-		} else if (status_now[EVT_CLIFF_RIGHT] == true) {
-            evt_handle_event_x(cliff_right, EVT_CLIFF_RIGHT)
+		if (status_now[EVT_CLIFF_ALL]) {
+            evt_handle_event_x(EVT_CLIFF_ALL);
+		} else if (status_now[EVT_CLIFF_FRONT_LEFT]) {
+            evt_handle_event_x(EVT_CLIFF_FRONT_LEFT);
+		} else if (status_now[EVT_CLIFF_FRONT_RIGHT]) {
+            evt_handle_event_x(EVT_CLIFF_FRONT_RIGHT);
+		} else if (status_now[EVT_CLIFF_LEFT_RIGHT]) {
+            evt_handle_event_x(EVT_CLIFF_LEFT_RIGHT);
+		} else if (status_now[EVT_CLIFF_FRONT]) {
+            evt_handle_event_x(EVT_CLIFF_FRONT);
+		} else if (status_now[EVT_CLIFF_LEFT]) {
+            evt_handle_event_x(EVT_CLIFF_LEFT);
+		} else if (status_now[EVT_CLIFF_RIGHT]) {
+            evt_handle_event_x( EVT_CLIFF_RIGHT);
 		}
 
 		/* RCON */
-		if (status_now[EVT_RCON] == true) {
-			evt_handle_event_x(rcon, EVT_RCON)
-		}
+		evt_handle_check_event(EVT_RCON);
 /*
 		if (status_now[EVT_RCON_FRONT_LEFT] == true) {
             evt_handle_event_x(rcon_front_left, EVT_RCON_FRONT_LEFT)
@@ -436,46 +489,45 @@ void *event_handler_thread(void *data) {
 */
 
 		/* Over Current */
-		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_LEFT, over_current_brush_left)
-		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_MAIN, over_current_brush_main)
-		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_RIGHT, over_current_brush_right)
-		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_LEFT, over_current_wheel_left)
-		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_RIGHT, over_current_wheel_right)
-		evt_handle_check_event(EVT_OVER_CURRENT_SUCTION, over_current_suction)
+		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_LEFT);
+		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_MAIN);
+		evt_handle_check_event(EVT_OVER_CURRENT_BRUSH_RIGHT);
+		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_LEFT);
+		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_RIGHT);
+		evt_handle_check_event(EVT_OVER_CURRENT_SUCTION);
 		
 		/* Key */
-		evt_handle_check_event(EVT_KEY_CLEAN, key_clean)
+		evt_handle_check_event(EVT_KEY_CLEAN);
 
 		/* Remote */
-		evt_handle_check_event(EVT_REMOTE_PLAN, remote_plan)
-		evt_handle_check_event(EVT_REMOTE_CLEAN, remote_clean)
-		evt_handle_check_event(EVT_REMOTE_HOME, remote_home)
-		evt_handle_check_event(EVT_REMOTE_DIRECTION_FORWARD, remote_direction_forward)
-		evt_handle_check_event(EVT_REMOTE_DIRECTION_LEFT, remote_direction_left)
-		evt_handle_check_event(EVT_REMOTE_DIRECTION_RIGHT, remote_direction_right)
-		evt_handle_check_event(EVT_REMOTE_SPOT, remote_spot)
-		evt_handle_check_event(EVT_REMOTE_MAX, remote_max)
-		evt_handle_check_event(EVT_REMOTE_WALL_FOLLOW, remote_wall_follow)
+		evt_handle_check_event(EVT_REMOTE_PLAN);
+		evt_handle_check_event(EVT_REMOTE_CLEAN);
+		evt_handle_check_event(EVT_REMOTE_HOME);
+		evt_handle_check_event(EVT_REMOTE_DIRECTION_FORWARD);
+		evt_handle_check_event(EVT_REMOTE_DIRECTION_LEFT);
+		evt_handle_check_event(EVT_REMOTE_DIRECTION_RIGHT);
+		evt_handle_check_event(EVT_REMOTE_SPOT);
+		evt_handle_check_event(EVT_REMOTE_MAX);
+		evt_handle_check_event(EVT_REMOTE_WALL_FOLLOW);
 
 		/* Battery */
-		evt_handle_check_event(EVT_BATTERY_HOME, battery_home)
-		evt_handle_check_event(EVT_BATTERY_LOW, battery_low)
+		evt_handle_check_event(EVT_BATTERY_HOME);
+		evt_handle_check_event(EVT_BATTERY_LOW);
 
 		/* Charge Status */
-		evt_handle_check_event(EVT_CHARGE_DETECT, charge_detect)
+		evt_handle_check_event(EVT_CHARGE_DETECT);
 
 		/* Slam Error */
-		evt_handle_check_event(EVT_SLAM_ERROR, slam_error)
+		evt_handle_check_event(EVT_SLAM_ERROR);
 
 		/* robot slip*/
-		evt_handle_check_event(EVT_ROBOT_SLIP,robot_slip)
+		evt_handle_check_event(EVT_ROBOT_SLIP);
 
 		/* lidar bumper*/
 		//evt_handle_check_event(EVT_LIDAR_BUMPER,lidar_bumper)
 
 		// Laser stuck
-		evt_handle_check_event(EVT_LASER_STUCK, laser_stuck)
-#undef evt_handle_event_x
+		evt_handle_check_event(EVT_LASER_STUCK);
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
@@ -485,19 +537,19 @@ void *event_handler_thread(void *data) {
 	ROS_ERROR("%s %d: exit\n", __FUNCTION__, __LINE__);
 }
 
-void event_manager_set_current_mode(EventModeType mode)
-{
-	evt_mgr_mode = mode;
-}
+//void event_manager_set_current_mode(EventModeType mode)
+//{
+//	evt_mgr_mode = mode;
+//}
 
 void event_manager_register_handler(EventType type, void (*func)(bool state_now, bool state_last))
 {
-	eat[evt_mgr_mode].handler[type] = func;
+	eat.handler[type] = func;
 }
 
 void event_manager_enable_handler(EventType type, bool enabled)
 {
-	eat[evt_mgr_mode].handler_enabled[type] = enabled;
+	eat.handler_enabled[type] = enabled;
 	if ((type == EVT_OVER_CURRENT_BRUSH_LEFT || type == EVT_OVER_CURRENT_BRUSH_RIGHT) && !enabled)
 	{
 		extern bool g_reset_lbrush_oc;

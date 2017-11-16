@@ -750,7 +750,7 @@ bool cm_should_self_check(void)
 void cm_register_events()
 {
 	ROS_INFO("%s %d: Register events", __FUNCTION__, __LINE__);
-	event_manager_set_current_mode(EVT_MODE_NAVIGATION);
+//	event_manager_set_current_mode(EVT_MODE_NAVIGATION);
 
 	/* Bumper */
 	event_manager_register_handler(EVT_BUMPER_ALL, &cm_handle_bumper_all);

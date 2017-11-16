@@ -187,7 +187,7 @@ typedef enum {
 } EventType;
 
 
-typedef enum {
+/*typedef enum {
 	EVT_MODE_USER_INTERFACE = 0,
 	EVT_MODE_CLEAN,
 	EVT_MODE_HOME,
@@ -200,13 +200,13 @@ typedef enum {
 	EVT_MODE_SLEEP,
 	EVT_MODE_REMOTE,
 	EVT_MODE_MAX,
-} EventModeType;
-
+} EventModeType;*/
+typedef void(*event_handle_t)(bool state_now, bool state_last);
 typedef struct {
-	EventModeType	emt;
-
+//	EventModeType	emt;
 	bool	handler_enabled[EVT_MAX];
-	void	(*handler[EVT_MAX])(bool state_now, bool state_last);
+	event_handle_t default_handler[EVT_MAX];
+	event_handle_t handler[EVT_MAX];
 } EventActionType;
 
 extern bool	event_handler_status;
@@ -221,7 +221,7 @@ void *event_manager_thread(void *data);
 
 void *event_handler_thread(void *data);
 
-void event_manager_set_current_mode(EventModeType mode);
+//void event_manager_set_current_mode(EventModeType mode);
 
 void event_manager_register_handler(EventType type, void (*func)(bool state_now, bool state_last));
 
