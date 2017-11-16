@@ -157,7 +157,7 @@ void init_nav_before_gyro()
 		set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
+	if (!is_clean_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
 	{
 		g_saved_work_time = 0;
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
@@ -236,7 +236,7 @@ robot::instance()->setAccInitData();//about 200ms delay
 	work_motor_configure();
 
 	ROS_INFO("%s %d: Init cs_is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
-					 cs_is_going_home(), robot::instance()->isLowBatPaused(), robot::instance()->isManualPaused(), g_resume_cleaning,g_robot_stuck);
+					 cs_is_going_home(), g_is_low_bat_pause, g_is_manual_pause, g_resume_cleaning,g_robot_stuck);
 }
 
 void init_exp_before_gyro()
@@ -397,7 +397,7 @@ bool wait_for_back_from_charge()
 				disable_motors();
 				if (ev.fatal_quit)
 				{
-					robot::instance()->resetManualPause();
+					g_is_manual_pause = false;
 					g_resume_cleaning = false;
 				}
 				else if (ev.key_clean_pressed && !g_resume_cleaning)
@@ -406,7 +406,7 @@ bool wait_for_back_from_charge()
 				else if (!ev.fatal_quit && !ev.key_clean_pressed)
 				{
 					ROS_WARN("%s %d: Fail to leave charger stub.", __FUNCTION__, __LINE__);
-					robot::instance()->resetManualPause();
+					g_is_manual_pause = false;
 					g_resume_cleaning = false;
 				}
 				return false;
@@ -436,7 +436,7 @@ void init_before_gyro()
 	}
 
 	reset_work_time();
-	if (!is_clean_paused() && !robot::instance()->isLowBatPaused() && !g_resume_cleaning )
+	if (!is_clean_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
 		map_init(MAP);
 
 	map_init(WFMAP);
@@ -617,7 +617,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if(!laser_init())
 		return;
 
-	if (robot::instance()->isLowBatPaused() || g_resume_cleaning)
+	if (g_is_low_bat_pause || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		s_laser->lidarShieldDetect(ON);
@@ -630,7 +630,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 	if (is_clean_paused())
 	{
-		robot::instance()->resetManualPause();
+		g_is_manual_pause = false;
 		g_robot_stuck = false;
 		if (s_slam != nullptr)
 		{
@@ -725,15 +725,15 @@ MotionManage::~MotionManage()
 
 	if (!ev.charge_detect)
 		// It means robot can not go to charger stub.
-		robot::instance()->resetLowBatPause();
+		g_is_low_bat_pause = false;
 
-	if (!ev.fatal_quit && robot::instance()->isLowBatPaused())
+	if (!ev.fatal_quit && g_is_low_bat_pause)
 	{
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!ev.cliff_all_triggered)
 		{
 			g_resume_cleaning = true;
-			robot::instance()->resetLowBatPause();
+			g_is_low_bat_pause = false;
 			cm_set(Clean_Mode_Charging);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
@@ -753,8 +753,8 @@ MotionManage::~MotionManage()
 	cm_unregister_events();
 	if (ev.fatal_quit) // Also handles for ev.battery_low/ev.charge_detect/ev.cliff_all_triggered.
 	{
-		robot::instance()->resetManualPause();
-		robot::instance()->resetLowBatPause();
+		g_is_manual_pause = false;
+		g_is_low_bat_pause = false;
 		g_resume_cleaning = false;
 		if (ev.cliff_all_triggered)
 			wav_play(WAV_ERROR_LIFT_UP);

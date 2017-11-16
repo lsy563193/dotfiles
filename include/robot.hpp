@@ -28,6 +28,8 @@ typedef enum {
 	Map_Position_Odom_Angle,
 } Baselink_Frame_Type;
 
+extern bool	g_is_low_bat_pause;
+extern bool g_is_manual_pause;
 class robot
 {
 public:
@@ -415,6 +417,7 @@ public:
 
 //#if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
+/*
 	bool isLowBatPaused(void) const
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -423,7 +426,9 @@ public:
 		return false;
 #endif
 	}
+*/
 
+/*
 	void setLowBatPause(void)
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -431,7 +436,9 @@ public:
 		low_bat_pause_cleaning_ = true;
 #endif
 	}
+*/
 
+/*
 	void resetLowBatPause(void)
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -439,8 +446,10 @@ public:
 		low_bat_pause_cleaning_ = false;
 #endif
 	}
+*/
 
 // These 3 functions are for manual pause cleaning.
+/*
 	bool isManualPaused(void) const
 	{
 #if MANUAL_PAUSE_CLEANING
@@ -449,22 +458,23 @@ public:
 		return false;
 #endif
 	}
+*/
 
-	void setManualPause(void)
+/*	void setManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
 		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		manual_pause_cleaning_ = true;
 #endif
-	}
+	}*/
 
-	void resetManualPause(void)
+/*	void resetManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
 		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		manual_pause_cleaning_ = false;
 #endif
-	}
+	}*/
 
 	Baselink_Frame_Type getBaselinkFrameType(void)
 	{
@@ -533,10 +543,10 @@ private:
 	boost::mutex baselink_frame_type_mutex_;
 
 // These variable is indicating robot detects battery low, it is going back to home cells.
-	bool	low_bat_pause_cleaning_;
+//	bool	low_bat_pause_cleaning_;
 
 // These variable is indicating robot is during pause of navigation mode.
-	bool	manual_pause_cleaning_;
+//	bool	manual_pause_cleaning_;
 
 
 	bool	is_sensor_ready_;

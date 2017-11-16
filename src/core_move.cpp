@@ -994,7 +994,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	ev.key_clean_pressed = true;
 
 	if(cm_is_navigation())
-		robot::instance()->setManualPause();
+		g_is_manual_pause = true;
 
 	start_time = time(NULL);
 	while (get_key_press() & KEY_CLEAN)
@@ -1004,7 +1004,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 			{
 				beep_for_command(VALID);
 				reset_manual_pause = true;
-				robot::instance()->resetManualPause();
+				g_is_manual_pause = false;
 				ROS_WARN("%s %d: Manual pause has been reset.", __FUNCTION__, __LINE__);
 			}
 		}
@@ -1032,7 +1032,7 @@ void CM_EventHandle::remote_clean(bool state_now, bool state_last)
 	beep_for_command(VALID);
 	ev.key_clean_pressed = true;
 	if(cm_is_navigation()){
-		robot::instance()->setManualPause();
+		g_is_manual_pause = true;
 	}
 	reset_rcon_remote();
 }
@@ -1041,7 +1041,7 @@ void CM_EventHandle::remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !robot::instance()->isManualPaused()) {
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !g_is_manual_pause) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(INVALID);
@@ -1067,7 +1067,7 @@ void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || !cm_is_navigation()
-		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || robot::instance()->isManualPaused()
+		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || g_is_manual_pause
 		|| time(NULL) - last_time_remote_spot < 3)
 		beep_for_command(INVALID);
 	else
@@ -1084,7 +1084,7 @@ void CM_EventHandle::remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !robot::instance()->isManualPaused())
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
 	{
 		beep_for_command(VALID);
 		switch_vac_mode(true);
@@ -1132,7 +1132,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
 			path_set_continue_cell(map_get_curr_cell());
-			robot::instance()->setLowBatPause();
+			g_is_low_bat_pause = true;
 		}
 #endif
     }

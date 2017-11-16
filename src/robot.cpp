@@ -30,6 +30,8 @@ using namespace obstacle_detector;
 
 static	robot *robot_obj = NULL;
 
+bool	g_is_low_bat_pause=false;
+bool g_is_manual_pause=false;
 time_t	start_time;
 
 // For avoid key value palse.
@@ -82,12 +84,11 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	start_time = time(NULL);
 
 	// Initialize the low battery pause variable.
-	low_bat_pause_cleaning_ = false;
 	// Initialize the key press count.
 	key_press_count = 0;
 
 	// Initialize the manual pause variable.
-	manual_pause_cleaning_ = false;
+	g_is_manual_pause = false;
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 

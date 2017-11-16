@@ -41,6 +41,7 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
+
 typedef struct {
 		bool remote_home;
 		bool battery_home;

@@ -58,7 +58,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
 				set_main_pwr_byte(Clean_Mode_WallFollow);
-				robot::instance()->resetLowBatPause();
+				g_is_low_bat_pause = false;
 
 				reset_clean_paused();
 
@@ -79,7 +79,7 @@ void *core_move_thread(void *)
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode------\n");
 				set_main_pwr_byte(Clean_Mode_Go_Charger);
-				robot::instance()->resetLowBatPause();
+				g_is_low_bat_pause = false;
 				reset_clean_paused();
 #if GO_HOME_REGULATOR
 				cm_cleaning();
@@ -92,7 +92,7 @@ void *core_move_thread(void *)
 				//goto_charger();
 				ROS_INFO("\n-------Exploration mode------\n");
 				set_main_pwr_byte(Clean_Mode_Exploration);
-				robot::instance()->resetLowBatPause();
+				g_is_low_bat_pause = false;
 				reset_clean_paused();
 				cm_cleaning();
 				break;
@@ -101,17 +101,13 @@ void *core_move_thread(void *)
 				break;
 
 			case Clean_Mode_Remote:
-				ROS_INFO("\n-------Remote mode------\n");
-				set_main_pwr_byte(Clean_Mode_Remote);
-				robot::instance()->resetLowBatPause();
-				reset_clean_paused();
 				remote_mode();
 				break;
 
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode------\n");
 				set_main_pwr_byte(Clean_Mode_Spot);
-				robot::instance()->resetLowBatPause();
+				g_is_low_bat_pause = false;
 				reset_clean_paused();
 				reset_rcon_remote();
 				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
@@ -123,7 +119,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode------\n");
 				//set_main_pwr_byte(Clean_Mode_Sleep);
-				robot::instance()->resetLowBatPause();
+				g_is_low_bat_pause = false;
 				reset_clean_paused();
 				disable_motors();
 				sleep_mode();

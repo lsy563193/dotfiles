@@ -35,8 +35,15 @@ time_t remote_cmd_time;
 uint8_t remote_rcon_cnt = 0;
 bool remote_rcon_triggered = false;
 static RM_EventHandle eh;
+
 void remote_mode(void)
 {
+	ROS_INFO("\n-------Remote mode------\n");
+	set_main_pwr_byte(Clean_Mode_Remote);
+	g_is_low_bat_pause = false;
+	reset_clean_paused();
+
+
 	if (!is_gyro_on())
 	{
 		// Restart the gyro.

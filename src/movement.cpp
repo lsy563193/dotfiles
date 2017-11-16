@@ -1911,7 +1911,7 @@ uint8_t stop_event(void)
 			ROS_WARN("Touch status == 1");
 #if MANUAL_PAUSE_CLEANING
 			if (cm_is_navigation())
-				robot::instance()->setManualPause();
+				g_is_manual_pause = true;
 #endif
 			reset_touch();
 			g_stop_event_status = 1;
@@ -1922,7 +1922,7 @@ uint8_t stop_event(void)
 			reset_rcon_remote();
 #if MANUAL_PAUSE_CLEANING
 			if (cm_is_navigation())
-				robot::instance()->setManualPause();
+				g_is_manual_pause = true;
 #endif
 			g_stop_event_status = 2;
 		}
@@ -3374,7 +3374,7 @@ uint8_t is_robot_slip()
 bool is_clean_paused()
 {
 	bool ret = false;
-	if(robot::instance()->isManualPaused() || g_robot_stuck)
+	if(g_is_manual_pause || g_robot_stuck)
 	{
 		ret= true;
 	}
@@ -3383,13 +3383,13 @@ bool is_clean_paused()
 
 void reset_clean_paused(void)
 {
-	if (robot::instance()->isManualPaused() || g_robot_stuck)
+	if (g_is_manual_pause || g_robot_stuck)
 	{
 		g_robot_stuck = false;
 		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
 		ROS_WARN("Reset manual/stuck pause status.");
 		wav_play(WAV_CLEANING_STOP);
-		robot::instance()->resetManualPause();
+		g_is_manual_pause = false;
 		robot::instance()->savedOffsetAngle(0);
 		if (MotionManage::s_slam != nullptr)
 		{
