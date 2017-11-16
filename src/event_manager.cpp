@@ -170,7 +170,7 @@ void *event_manager_thread(void *data)
 {
 	bool set = false;
 	bool status[EVT_MAX];
-	auto evt_set_status_x = [](EventType x)
+	auto evt_set_status_x = [&](EventType x)
 	{
 		status[x] = true;
 		set = true;

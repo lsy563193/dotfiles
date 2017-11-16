@@ -609,6 +609,7 @@ bool LinearRegulator::isCellReach()
 	{
 		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 						 g_plan_path.back().X, g_plan_path.back().Y);
+		g_turn_angle = ranged_angle(g_new_dir - gyro_get_angle());
 		return true;
 	}
 	if ((IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||

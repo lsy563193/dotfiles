@@ -228,7 +228,7 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
-	g_is_near = false;
+	g_check_path_in_advance = false;
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
@@ -501,80 +501,49 @@ bool NavigationClean::isSwitch()
 
 	else if (cs_is_clean())
 	{
-		if (cm_is_navigation())
+		if (mt_is_linear()) // Robot is cleaning current line.
 		{
-
-			if (mt_is_linear()) // Robot is cleaning current line.
+			if (isTurn())
 			{
-				if (isTurn())
-				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt() && line_reg_->shouldMoveBack())
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
 					p_reg_ = back_reg_;
 			}
-			else if (mt_is_follow_wall()) // Robot is going to new line.
+			else if (isMt())
 			{
-				if (isTurn())
-				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt())
-				{
-					if (fw_reg_->shouldMoveBack())
-					{
-						g_time_straight = 0.2;
-						p_reg_ = back_reg_;
-					}
-					else if (fw_reg_->shouldTurn())
-					{
-						g_time_straight = 0;
-						p_reg_ = turn_reg_;
-					}
-				}
-				else if (isBack() && back_reg_->isReach())
-				{
+				if (line_reg_->shouldMoveBack())
+					p_reg_ = back_reg_;
+				else if (line_reg_->isCellReach())
 					p_reg_ = turn_reg_;
-					resetTriggeredValue();
-				}
 			}
 		}
-
-		else if (cm_is_spot())
+		else if (mt_is_follow_wall()) // Robot is going to new line.
 		{
-			if (mt_is_linear()) // Robot is cleaning current line.
+			if (isTurn())
 			{
-				if (isTurn())
-				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt() && line_reg_->shouldMoveBack())
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
 					p_reg_ = back_reg_;
 			}
-		}
-
-		else if (cm_is_exploration())
-		{
-			if (mt_is_linear()) // Robot is going straight to find charger.
+			else if (isMt())
 			{
-				if (isTurn())
+				if (fw_reg_->shouldMoveBack())
 				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt() && line_reg_->shouldMoveBack())
+					g_time_straight = 0.2;
 					p_reg_ = back_reg_;
+				}
+				else if (fw_reg_->shouldTurn())
+				{
+					g_time_straight = 0;
+					p_reg_ = turn_reg_;
+				}
+			}
+			else if (isBack() && back_reg_->isReach())
+			{
+				p_reg_ = turn_reg_;
+				resetTriggeredValue();
 			}
 		}
 	}
@@ -618,7 +587,7 @@ SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTarg
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: SpotClean finish", __FUNCTION__, __LINE__);
-	g_is_near = false;
+	g_check_path_in_advance = false;
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
@@ -936,7 +905,7 @@ Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PP
 
 	ROS_INFO("%s, %d: Exploration finish", __FUNCTION__, __LINE__);
 
-	g_is_near = false;
+	g_check_path_in_advance = false;
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
