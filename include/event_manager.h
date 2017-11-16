@@ -49,11 +49,11 @@ typedef struct {
 
 		bool battrey_home;
 		bool fatal_quit;
-		bool bumper_triggered;
+		uint8_t bumper_triggered;
 		int rcon_triggered;
-		bool obs_triggered;
+		uint8_t obs_triggered;
 		bool bumper_jam;
-		int cliff_triggered;
+		uint8_t cliff_triggered;
 		bool cliff_jam;
 
 		bool oc_brush_main;
@@ -67,7 +67,7 @@ typedef struct {
 		bool tilt_triggered;
 		uint8_t charge_detect;
 		bool laser_stuck = false;
-		int laser_triggered;
+		uint8_t laser_triggered;
 		bool cliff_all_triggered;
 }Ev_t;
 
