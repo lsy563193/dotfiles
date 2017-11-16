@@ -612,13 +612,7 @@ bool LinearRegulator::isCellReach()
 		g_turn_angle = ranged_angle(g_new_dir - gyro_get_angle());
 		return true;
 	}
-	if ((IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
-		(!IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
-	{
-		ROS_INFO("%s, %d: LinearRegulator, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-				 __FUNCTION__, __LINE__, g_new_dir, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), curr, target);
-		return true;
-	}
+
 	return false;
 }
 
@@ -729,6 +723,22 @@ bool LinearRegulator::isBoundaryStop()
 		return true;
 	}
 
+	return false;
+}
+
+bool LinearRegulator::isPassTargetStop()
+{
+	// Checking if robot has reached target cell.
+	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = map_cell_to_point(g_plan_path.back());
+	auto target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
+	if ((IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
+		(!IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
+	{
+		ROS_INFO("%s, %d: LinearRegulator, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
+				 __FUNCTION__, __LINE__, g_new_dir, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), curr, target);
+		return true;
+	}
 	return false;
 }
 

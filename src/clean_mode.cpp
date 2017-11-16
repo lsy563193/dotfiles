@@ -370,47 +370,21 @@ bool NavigationClean::isStop()
 
 	else if (cs_is_clean())
 	{
-		if (cm_is_navigation())
+		if (mt_is_linear()) // Robot is cleaning current line.
 		{
-			if (mt_is_linear()) // Robot is cleaning current line.
-			{
-				if (isMt())
-					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
-			else if (mt_is_follow_wall()) // Robot is going to new line.
-			{
-				if (isMt())
-					return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(1) || fw_reg_->isIsolate();
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
+			if (isMt())
+				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
+						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop()
+						|| line_reg_->isPassTargetStop());
+			else if (isBack())
+				return back_reg_->isLaserStop();
 		}
-
-		else if (cm_is_spot())
+		else if (mt_is_follow_wall()) // Robot is going to new line.
 		{
-			if (mt_is_linear())
-			{
-				if (isMt())
-					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
-		}
-
-		else if (cm_is_exploration())
-		{
-			if (mt_is_linear())
-			{
-				if (isMt())
-					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
-				else if (isBack())
-					return back_reg_->isLaserStop();
-			}
+			if (isMt())
+				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(1) || fw_reg_->isIsolate();
+			else if (isBack())
+				return back_reg_->isLaserStop();
 		}
 	}
 
