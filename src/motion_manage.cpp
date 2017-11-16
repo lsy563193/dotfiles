@@ -224,7 +224,7 @@ void init_nav_gyro_charge()
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 		if (!cs_is_going_home())
 			if(ev.remote_home || ev.battery_home)
-				cs_setting(CS_GO_HOME_POINT);
+				cs_set(CS_GO_HOME_POINT);
 	}
 }
 void init_nav_after_charge()

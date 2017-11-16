@@ -228,7 +228,7 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
-	g_is_near = false;
+	g_check_path_in_advance = false;
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
@@ -618,7 +618,7 @@ SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTarg
 	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: SpotClean finish", __FUNCTION__, __LINE__);
-	g_is_near = false;
+	g_check_path_in_advance = false;
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
@@ -936,7 +936,7 @@ Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PP
 
 	ROS_INFO("%s, %d: Exploration finish", __FUNCTION__, __LINE__);
 
-	g_is_near = false;
+	g_check_path_in_advance = false;
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
