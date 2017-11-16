@@ -625,7 +625,7 @@ bool LinearRegulator::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 	auto target_angle = g_plan_path.back().TH;
-	if (isCellReach() && std::abs(gyro_get_angle() - target_angle) < 20)
+	if (isCellReach() && std::abs(gyro_get_angle() - target_angle) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
@@ -658,6 +658,7 @@ bool LinearRegulator::isNearTarget()
 	}
 	return false;
 }
+
 bool LinearRegulator::shouldMoveBack()
 {
 	// Robot should move back for these cases.
