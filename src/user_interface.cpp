@@ -36,6 +36,7 @@ uint8_t user_interface_reject_reason = 0; // 1 for error exist, 2 for robot lift
 uint8_t user_interface_plan_status = 0;
 extern bool g_charge_turn_connect_fail;
 time_t user_interface_plan_confirm_time = time(NULL);
+static UI_EventHandle eh;
 /*------------------------------------------------------------User Interface ----------------------------------*/
 void user_interface(void)
 {
@@ -201,84 +202,16 @@ void user_interface(void)
 
 void user_interface_register_events(void)
 {
-	ROS_INFO("%s %d: Register events", __FUNCTION__, __LINE__);
-//	event_manager_set_current_mode(EVT_MODE_USER_INTERFACE);
-
-#define event_manager_register_and_enable_x(name, y, enabled) \
-	event_manager_register_handler(y, &user_interface_handle_ ##name); \
-	event_manager_enable_handler(y, enabled);
-
-	/* Cliff */
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_ALL, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_LEFT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
-	/* Rcon */
-	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
-	/* Battery */
-	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
-	/* Remote */
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_SPOT, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_HOME, true);
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_WALL_FOLLOW, true);
-	event_manager_enable_handler(EVT_REMOTE_MAX, true);
-	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
-	/* Key */
-	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-	/* Charge Status */
-	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-
-#undef event_manager_register_and_enable_x
-
+	event_manager_register_handler(&eh);
 	event_manager_set_enable(true);
 }
 
 void user_interface_unregister_events(void)
 {
-	ROS_WARN("%s %d: Unregister events", __FUNCTION__, __LINE__);
-#define event_manager_register_and_disable_x(x) \
-	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false);
-
-	/* Cliff */
-	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
-	/* Rcon */
-	event_manager_register_and_disable_x(EVT_RCON);
-	/* Battery */
-	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
-	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
-	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
-	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
-	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
-	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	/* Key */
-	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-	/* Charge Status */
-	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
-#undef event_manager_register_and_disable_x
-
 	event_manager_set_enable(false);
 }
 
-void user_interface_handle_cliff(bool state_now, bool state_last)
+void UI_EventHandle::cliff(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 
@@ -292,7 +225,32 @@ void user_interface_handle_cliff(bool state_now, bool state_last)
 	g_charge_turn_connect_fail = false;
 }
 
-void user_interface_handle_rcon(bool state_now, bool state_last)
+void UI_EventHandle::cliff_left(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+void UI_EventHandle::cliff_left_right(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+void UI_EventHandle::cliff_right(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+void UI_EventHandle::cliff_front(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+void UI_EventHandle::cliff_front_left(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+void UI_EventHandle::cliff_front_right(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+
+void UI_EventHandle::rcon(bool state_now, bool state_last)
 {
 	if (is_clean_paused())
 	{
@@ -323,7 +281,7 @@ void user_interface_handle_rcon(bool state_now, bool state_last)
 	reset_rcon_status();
 }
 
-void user_interface_handle_battery_low(bool state_now, bool state_last)
+void UI_EventHandle::battery_low(bool state_now, bool state_last)
 {
 	if (battery_low_delay == 0)
 		battery_low_start_time = time(NULL);
@@ -337,7 +295,7 @@ void user_interface_handle_battery_low(bool state_now, bool state_last)
 	battery_low_delay = 10;
 }
 
-void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
+void UI_EventHandle::remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
 	g_omni_notmove = false;
@@ -430,7 +388,7 @@ void user_interface_handle_remote_cleaning(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void user_interface_handle_remote_plan(bool state_now, bool state_last)
+void UI_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	/* -----------------------------Check if plan event ----------------------------------*/
 	if (get_plan_status())
@@ -496,7 +454,7 @@ void user_interface_handle_remote_plan(bool state_now, bool state_last)
 	set_plan_status(0);
 }
 
-void user_interface_handle_key_clean(bool state_now, bool state_last)
+void UI_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
@@ -564,7 +522,7 @@ void user_interface_handle_key_clean(bool state_now, bool state_last)
 	reset_touch();
 }
 
-void user_interface_handle_charge_detect(bool state_now, bool state_last)
+void UI_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 	temp_mode = Clean_Mode_Charging;

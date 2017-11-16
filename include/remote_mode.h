@@ -15,6 +15,7 @@
 #ifndef __Remote_Mode_H
 #define __Remote_Mode_H
 
+#include "event_manager.h"
 typedef enum {
 	REMOTE_MODE_FORWARD = 0,
 	REMOTE_MODE_LEFT,
@@ -30,35 +31,81 @@ RemoteModeMoveType get_move_flag_(void);
 void remote_mode_register_events(void);
 void remote_mode_unregister_events(void);
 
-#define define_remote_mode_handle_func(name) \
-	void remote_mode_handle_ ## name(bool state_now, bool state_last);
+#define define_func(name) \
+	void  ## name(bool state_now, bool state_last);
 
-/* Bumper */
-define_remote_mode_handle_func(bumper)
-/* OBS */
-define_remote_mode_handle_func(obs)
-/* Cliff */
-define_remote_mode_handle_func(cliff_all)
-define_remote_mode_handle_func(cliff)
-/* Over Current */
-define_remote_mode_handle_func(over_current_brush_left)
-define_remote_mode_handle_func(over_current_brush_right)
-define_remote_mode_handle_func(over_current_wheel_left)
-define_remote_mode_handle_func(over_current_wheel_right)
-define_remote_mode_handle_func(over_current_suction)
-/* Rcon */
-define_remote_mode_handle_func(rcon)
-/* Key */
-define_remote_mode_handle_func(key_clean)
-/* Remote */
-define_remote_mode_handle_func(remote_direction_forward)
-define_remote_mode_handle_func(remote_direction_left)
-define_remote_mode_handle_func(remote_direction_right)
-define_remote_mode_handle_func(remote_exit)
-define_remote_mode_handle_func(remote_max)
-/* Battery */
-define_remote_mode_handle_func(battery_low)
-/* Charge Status */
-define_remote_mode_handle_func(charge_detect)
+
+class RM_EventHandle:public EventHandle {
+
+	void bumper(bool state_now, bool state_last);
+
+	void bumper_all(bool state_now, bool state_last);
+
+	void bumper_right(bool state_now, bool state_last);
+
+	void bumper_left(bool state_now, bool state_last);
+
+	void cliff_all(bool state_now, bool state_last);
+
+	void cliff(bool state_now, bool state_last);
+
+	void cliff_front(bool state_now, bool state_last);
+
+	void cliff_left(bool state_now, bool state_last);
+
+	void cliff_right(bool state_now, bool state_last);
+
+	void cliff_left_right(bool state_now, bool state_last);
+
+	void cliff_front_left(bool state_now, bool state_last);
+
+	void cliff_front_right(bool state_now, bool state_last);
+
+	void obs(bool state_now, bool state_last);
+
+	void obs_front(bool state_now, bool state_last);
+
+	void obs_left(bool state_now, bool state_last);
+
+	void obs_right(bool state_now, bool state_last);
+
+	void remote_direction_forward(bool state_now, bool state_last);
+
+	void remote_direction_left(bool state_now, bool state_last);
+
+	void remote_direction_right(bool state_now, bool state_last);
+
+	void remote_max(bool state_now, bool state_last);
+
+	void remote_exit(bool state_now, bool state_last);
+
+	void remote_clean(bool state_now, bool state_last);
+
+	void remote_home(bool state_now, bool state_last);
+
+	void remote_spot(bool state_now, bool state_last);
+
+	void remote_wall_follow(bool state_now, bool state_last);
+
+	void rcon(bool state_now, bool state_last);
+
+	void key_clean(bool state_now, bool state_last);
+
+	void charge_detect(bool state_now, bool state_last);
+
+	void over_current_wheel_left(bool state_now, bool state_last);
+
+	void over_current_wheel_right(bool state_now, bool state_last);
+
+	void over_current_suction(bool state_now, bool state_last);
+
+	void over_current_brush_left(bool state_now, bool state_last) { df_over_current_brush_left(state_now, state_last); }
+
+	void over_current_brush_right(bool state_now, bool state_last) { df_over_current_brush_right(state_now, state_last); }
+
+	void battery_low(bool state_now, bool state_last);
+
+	void remote_plan(bool state_now, bool state_last) { df_remote_plan(state_now, state_last); }
+};
 
 #endif /*----Behaviors------*/

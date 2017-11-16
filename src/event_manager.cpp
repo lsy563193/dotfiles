@@ -90,9 +90,9 @@ void event_manager_init()
 	event_manager_reset_status();
 
 		for (j = 0; j < EVT_MAX; j++) {
-			eat.handler[j] = NULL;
+//			eat.handler[j] = NULL;
 //			p_handler[j] = NULL;
-			eat.handler_enabled[j] = false;
+//			eat.handler_enabled[j] = false;
 			g_new_event_status[j] = false;
 		}
 	p_handler[EVT_BUMPER_ALL] = &EventHandle::bumper_all;
@@ -161,8 +161,8 @@ void event_manager_set_enable(bool enable)
 	{
 		//ROS_WARN("%s %d: Disable all event under manager mode:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
-			eat.handler[i] = NULL;
-			eat.handler_enabled[i] = false;
+//			eat.handler[i] = NULL;
+//			eat.handler_enabled[i] = false;
 			g_new_event_status[i] = false;
 		}
 	}
@@ -405,13 +405,13 @@ void *event_handler_thread(void *data) {
 
 	auto evt_handle_event_x = [&](EventType x)
 	{
-		if (eat.handler_enabled[x]) {
-			if (eat.handler[x] == NULL) {
+//		if (eat.handler_enabled[x]) {
+//			if (eat.handler[x] == NULL) {
 				(eat.peh->*p_handler[x])(status_now[x], status_last[x]);
-			} else {
-				eat.handler[x](status_now[x], status_last[x]);
-			}
-		}
+//			} else {
+//				eat.handler[x](status_now[x], status_last[x]);
+//			}
+//		}
 	};
 
 	auto evt_handle_check_event = [&](EventType x)
@@ -545,14 +545,14 @@ void *event_handler_thread(void *data) {
 //	evt_mgr_mode = mode;
 //}
 
-void event_manager_register_handler(EventType type, void (*func)(bool state_now, bool state_last))
+void event_manager_register_handler(EventHandle* eh)
 {
-	eat.handler[type] = func;
+	eat.peh = eh;
 }
 
 void event_manager_enable_handler(EventType type, bool enabled)
 {
-	eat.handler_enabled[type] = enabled;
+//	eat.handler_enabled[type] = enabled;
 	if ((type == EVT_OVER_CURRENT_BRUSH_LEFT || type == EVT_OVER_CURRENT_BRUSH_RIGHT) && !enabled)
 	{
 		extern bool g_reset_lbrush_oc;
@@ -652,7 +652,7 @@ void event_manager_reset_status(void)
 /* Bumper */
 void EventHandle::bumper_all(bool state_now, bool state_last)
 {
-	if (state_now == true && state_last == true) {
+/*	if (state_now == true && state_last == true) {
 		bumper_all_cnt++;
 
 		if (bumper_all_cnt > 2) {
@@ -665,12 +665,12 @@ void EventHandle::bumper_all(bool state_now, bool state_last)
 	move_back();
 	stop_brifly();
 
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());*/
 }
 
 void EventHandle::bumper_left(bool state_now, bool state_last)
 {
-	if (state_now == true && state_last == true) {
+/*	if (state_now == true && state_last == true) {
 		bumper_left_cnt++;
 
 		if (bumper_left_cnt > 2) {
@@ -682,12 +682,12 @@ void EventHandle::bumper_left(bool state_now, bool state_last)
 
 	move_back();
 	stop_brifly();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());*/
 }
 
 void EventHandle::bumper_right(bool state_now, bool state_last)
 {
-
+/*
 	if (state_now == true && state_last == true) {
 		bumper_right_cnt++;
 
@@ -700,41 +700,41 @@ void EventHandle::bumper_right(bool state_now, bool state_last)
 
 	move_back();
 	stop_brifly();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());*/
 }
 
 /* OBS */
 void EventHandle::obs_front(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void EventHandle::obs_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void EventHandle::obs_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void EventHandle::obs_wall_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
 
 void EventHandle::obs_wall_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//stop_brifly();
 }
@@ -742,43 +742,47 @@ void EventHandle::obs_wall_right(bool state_now, bool state_last)
 /* Cliff */
 void EventHandle::cliff_all(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::cliff_front_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::cliff_front_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::cliff_left_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::cliff_front(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::cliff_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::cliff_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* RCON */
 void EventHandle::rcon(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	reset_rcon_status();
+}
+void df_rcon(bool state_now, bool state_last)
+{
 	reset_rcon_status();
 }
 /*
@@ -816,27 +820,32 @@ void EventHandle::rcon_right(bool state_now, bool state_last)
 /* Over Current */
 void EventHandle::over_current_brush_left(bool state_now, bool state_last)
 {
+
+}
+void df_over_current_brush_left(bool state_now, bool state_last)
+{
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && check_left_brush_stall())
 	{
-		/*-----Set error-----*/
 		set_error_code(Error_Code_LeftBrush);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
 	}
 }
 
+
 void EventHandle::over_current_brush_main(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::over_current_brush_right(bool state_now, bool state_last)
+{}
+void df_over_current_brush_right(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && check_right_brush_stall())
 	{
-		/*-----Set error-----*/
 		set_error_code(Error_Code_RightBrush);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
@@ -845,27 +854,31 @@ void EventHandle::over_current_brush_right(bool state_now, bool state_last)
 
 void EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 void EventHandle::over_current_suction(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* Key */
 void EventHandle::key_clean(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+//	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* Remote */
 void EventHandle::remote_plan(bool state_now, bool state_last)
+{
+
+}
+void df_remote_plan(bool state_now, bool state_last)
 {
 	if (get_plan_status() == 1 || get_plan_status() == 2)
 	{
@@ -880,6 +893,8 @@ void EventHandle::remote_plan(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_clean(bool state_now, bool state_last)
+{}
+void df_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -887,6 +902,8 @@ void EventHandle::remote_clean(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_home(bool state_now, bool state_last)
+{}
+void df_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -894,6 +911,8 @@ void EventHandle::remote_home(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_direction_forward(bool state_now, bool state_last)
+{}
+void df_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -901,6 +920,8 @@ void EventHandle::remote_direction_forward(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_wall_follow(bool state_now, bool state_last)
+{}
+void df_remote_wall_follow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -908,6 +929,8 @@ void EventHandle::remote_wall_follow(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_direction_left(bool state_now, bool state_last)
+{}
+void df_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -915,6 +938,8 @@ void EventHandle::remote_direction_left(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_direction_right(bool state_now, bool state_last)
+{}
+void df_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -922,6 +947,8 @@ void EventHandle::remote_direction_right(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_spot(bool state_now, bool state_last)
+{}
+void df_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -929,6 +956,8 @@ void EventHandle::remote_spot(bool state_now, bool state_last)
 }
 
 void EventHandle::remote_max(bool state_now, bool state_last)
+{}
+void df_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
@@ -947,6 +976,8 @@ void EventHandle::battery_low(bool state_now, bool state_last)
 }
 
 void EventHandle::charge_detect(bool state_now, bool state_last)
+{}
+void df_charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (g_charge_detect_cnt++ > 25)
@@ -959,6 +990,8 @@ void EventHandle::charge_detect(bool state_now, bool state_last)
 
 /* Slam Error */
 void EventHandle::slam_error(bool state_now, bool state_last)
+{}
+void df_slam_error(bool state_now, bool state_last)
 {
 	static time_t slam_error_kill_timer_;
 	static bool relaunch = false;
@@ -1007,6 +1040,8 @@ void EventHandle::slam_error(bool state_now, bool state_last)
 }
 
 void EventHandle::robot_slip(bool state_new,bool state_last)
+{}
+void df_robot_slip(bool state_new,bool state_last)
 {
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
 	beep_for_command(true);
@@ -1022,14 +1057,16 @@ void EventHandle::lidar_bumper(bool state_new,bool state_last)
 
 // Laser stuck
 void EventHandle::laser_stuck(bool state_new,bool state_last)
+{}
+void df_laser_stuck(bool state_new,bool state_last)
 {
 	beep_for_command(true);
 	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
 	ev.laser_stuck = true;
 }
 
-/* Default: empty hanlder */
-void EventHandle::empty(bool state_now, bool state_last)
-{
-	ROS_INFO("%s %d: is called", __FUNCTION__, __LINE__);
-}
+///* Default: empty hanlder */
+//void EventHandle::empty(bool state_now, bool state_last)
+//{
+////	ROS_INFO("%s %d: is called", __FUNCTION__, __LINE__);
+//}

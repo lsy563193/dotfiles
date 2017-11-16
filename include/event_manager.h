@@ -139,50 +139,50 @@ void rcon_right(bool state_now, bool state_last)
 */
 
 /* Over Current */
-void over_current_brush_left(bool state_now, bool state_last);
+virtual void over_current_brush_left(bool state_now, bool state_last);
 
-void over_current_brush_main(bool state_now, bool state_last);
+virtual void over_current_brush_main(bool state_now, bool state_last);
 
-void over_current_brush_right(bool state_now, bool state_last);
+virtual void over_current_brush_right(bool state_now, bool state_last);
 
-void over_current_wheel_left(bool state_now, bool state_last);
+virtual void over_current_wheel_left(bool state_now, bool state_last);
 
-void over_current_wheel_right(bool state_now, bool state_last);
+virtual void over_current_wheel_right(bool state_now, bool state_last);
 
-void over_current_suction(bool state_now, bool state_last);
+virtual void over_current_suction(bool state_now, bool state_last);
 
 /* Key */
-void key_clean(bool state_now, bool state_last);
+virtual void key_clean(bool state_now, bool state_last);
 
 /* Remote */
-void remote_plan(bool state_now, bool state_last);
+virtual void remote_plan(bool state_now, bool state_last);
 
-void remote_clean(bool state_now, bool state_last);
+virtual void remote_clean(bool state_now, bool state_last);
 
-void remote_home(bool state_now, bool state_last);
+virtual void remote_home(bool state_now, bool state_last);
 
-void remote_direction_forward(bool state_now, bool state_last);
+virtual void remote_direction_forward(bool state_now, bool state_last);
 
-void remote_wall_follow(bool state_now, bool state_last);
+virtual void remote_wall_follow(bool state_now, bool state_last);
 
-void remote_direction_left(bool state_now, bool state_last);
+virtual void remote_direction_left(bool state_now, bool state_last);
 
-void remote_direction_right(bool state_now, bool state_last);
+virtual void remote_direction_right(bool state_now, bool state_last);
 
-void remote_spot(bool state_now, bool state_last);
+virtual void remote_spot(bool state_now, bool state_last);
 
-void remote_max(bool state_now, bool state_last);
+virtual void remote_max(bool state_now, bool state_last);
 
 /* Battery */
-void battery_home(bool state_now, bool state_last);
+virtual void battery_home(bool state_now, bool state_last);
 
-void battery_low(bool state_now, bool state_last);
+virtual void battery_low(bool state_now, bool state_last);
 
-void charge_detect(bool state_now, bool state_last);
+virtual void charge_detect(bool state_now, bool state_last);
 /* Slam Error */
-void slam_error(bool state_now, bool state_last);
+virtual void slam_error(bool state_now, bool state_last);
 
-void robot_slip(bool state_new,bool state_last);
+virtual void robot_slip(bool state_new,bool state_last);
 /*
 void lidar_bumper(bool state_new,bool state_last)
 {
@@ -191,9 +191,9 @@ void lidar_bumper(bool state_new,bool state_last)
 */
 
 // Laser stuck
-void laser_stuck(bool state_new,bool state_last);
+virtual void laser_stuck(bool state_new,bool state_last);
 /* Default: empty hanlder */
-void empty(bool state_now, bool state_last);
+//void empty(bool state_now, bool state_last);
 
 };
 
@@ -331,9 +331,9 @@ typedef void(EventHandle::*PEHF)(bool state_now, bool state_last);
 typedef void(*event_handle_t)(bool state_now, bool state_last);
 typedef struct {
 //	EventModeType	emt;
-	bool	handler_enabled[EVT_MAX];
+//	bool	handler_enabled[EVT_MAX];
 	EventHandle* peh;
-	event_handle_t handler[EVT_MAX];
+//	event_handle_t handler[EVT_MAX];
 } EventActionType;
 
 extern bool	event_handler_status;
@@ -350,7 +350,7 @@ void *event_handler_thread(void *data);
 
 //void event_manager_set_current_mode(EventModeType mode);
 
-void event_manager_register_handler(EventType type, void (*func)(bool state_now, bool state_last));
+void event_manager_register_handler(EventHandle* eh);
 
 void event_manager_enable_handler(EventType type, bool enabled);
 
@@ -363,4 +363,20 @@ void event_manager_reset_status(void);
 
 /* Bumper */
 
+void df_rcon(bool state_now, bool state_last);
+void df_over_current_brush_left(bool state_now, bool state_last);
+void df_over_current_brush_right(bool state_now, bool state_last);
+void df_remote_plan(bool state_now, bool state_last);
+void df_remote_clean(bool state_now, bool state_last);
+void df_remote_home(bool state_now, bool state_last);
+void df_remote_direction_forward(bool state_now, bool state_last);
+void df_remote_wall_follow(bool state_now, bool state_last);
+void df_remote_direction_left(bool state_now, bool state_last);
+void df_remote_direction_right(bool state_now, bool state_last);
+void df_remote_spot(bool state_now, bool state_last);
+void df_remote_max(bool state_now, bool state_last);
+void df_charge_detect(bool state_now, bool state_last);
+void df_slam_error(bool state_now, bool state_last);
+void df_robot_slip(bool state_new,bool state_last);
+void df_laser_stuck(bool state_new,bool state_last);
 #endif

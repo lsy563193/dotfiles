@@ -27,6 +27,7 @@ time_t charge_plan_confirm_time = time(NULL);
 /* value for saving last charge status */
 uint8_t last_charge_status = 0;
 bool g_charge_turn_connect_fail = false;
+static Charge_EventHandle eh;
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {
@@ -203,70 +204,21 @@ void charge_function(void)
 
 void charge_register_event(void)
 {
-	ROS_WARN("%s, %d: Register events.", __FUNCTION__, __LINE__);
-//	event_manager_set_current_mode(EVT_MODE_CHARGE);
-#define event_manager_register_and_enable_x(name, y, enabled) \
-	event_manager_register_handler(y, &charge_handle_ ##name); \
-	event_manager_enable_handler(y, enabled)
-
-	/* Charge Status */
-	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-	/* Plan */
-	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
-	/* key */
-	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-	/* Remote */
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
-	event_manager_enable_handler(EVT_REMOTE_HOME, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
-	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
-	event_manager_enable_handler(EVT_REMOTE_MAX, true);
-	event_manager_enable_handler(EVT_RCON, true);
-	/* Cliff */
-	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
-#undef event_manager_register_and_enable_x
-
+	event_manager_register_handler(&eh);
 	event_manager_set_enable(true);
 }
 
 void charge_unregister_event(void)
 {
-	ROS_WARN("%s, %d: Unregister events.", __FUNCTION__, __LINE__);
-#define event_manager_register_and_disable_x(x) \
-	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false)
-
-	/* Charge Status */
-	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
-	/* Plan */
-	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	/* Key */
-	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_enable_handler(EVT_REMOTE_HOME, false);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, false);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, false);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, false);
-	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
-	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
-	event_manager_enable_handler(EVT_REMOTE_MAX, false);
-	/* Cliff */
-	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
-#undef event_manager_register_and_disable_x
-
 	event_manager_set_enable(false);
 }
 
-void charge_handle_charge_detect(bool state_now, bool state_last)
+void Charge_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ev.charge_detect = 1;
 	g_stop_charge_counter = 20;
 }
-void charge_handle_remote_plan(bool state_now, bool state_last)
+void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	if (get_plan_status())
 		charge_plan_confirm_time = time(NULL);
@@ -326,7 +278,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 	}
 	set_plan_status (0);
 }
-void charge_handle_cliff_all(bool state_now, bool state_last)
+void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -335,7 +287,7 @@ void charge_handle_cliff_all(bool state_now, bool state_last)
 		ev.cliff_all_triggered = true;
 	}
 }
-void charge_handle_key_clean(bool state_now, bool state_last)
+void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	if (is_direct_charge())
 	{
@@ -383,7 +335,7 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 
 	reset_touch();
 }
-void charge_handle_remote_cleaning(bool stat_now, bool state_last)
+void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
 	if (remote_key(Remote_Clean)) {
 		reset_rcon_remote();

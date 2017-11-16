@@ -72,6 +72,8 @@ bool g_finish_cleaning_go_home = false;
 bool g_no_uncleaned_target = false;
 
 time_t last_time_remote_spot = time(NULL);
+CM_EventHandle eh;
+
 int16_t ranged_angle(int16_t angle)
 {
 	while (angle > 1800 || angle <= -1800)
@@ -751,167 +753,13 @@ bool cm_should_self_check(void)
 /* Event handler functions. */
 void cm_register_events()
 {
-	ROS_INFO("%s %d: Register events", __FUNCTION__, __LINE__);
-//	event_manager_set_current_mode(EVT_MODE_NAVIGATION);
-
-	/* Bumper */
-	event_manager_register_handler(EVT_BUMPER_ALL, &cm_handle_bumper_all);
-	event_manager_register_handler(EVT_BUMPER_LEFT, &cm_handle_bumper_left);
-	event_manager_register_handler(EVT_BUMPER_RIGHT, &cm_handle_bumper_right);
-
-#define event_manager_register_and_enable_x(name, y, enabled) \
-	event_manager_register_handler(y, &cm_handle_ ##name); \
-	event_manager_enable_handler(y, enabled);
-
-	/* OBS */
-	event_manager_register_and_enable_x(obs_front, EVT_OBS_FRONT, true);
-	//event_manager_register_and_enable_x(obs_left, EVT_OBS_LEFT, true);
-	//event_manager_register_and_enable_x(obs_right, EVT_OBS_RIGHT, true);
-
-	/* Cliff */
-	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
-	event_manager_register_and_enable_x(cliff_front_left, EVT_CLIFF_FRONT_LEFT, true);
-	event_manager_register_and_enable_x(cliff_front_right, EVT_CLIFF_FRONT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff_left_right, EVT_CLIFF_LEFT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff_front, EVT_CLIFF_FRONT, true);
-	event_manager_register_and_enable_x(cliff_left, EVT_CLIFF_LEFT, true);
-	event_manager_register_and_enable_x(cliff_right, EVT_CLIFF_RIGHT, true);
-
-	/* RCON */
-	event_manager_register_and_enable_x(rcon, EVT_RCON, false);
-/*
-	event_manager_register_and_enable_x(rcon_front_left, EVT_RCON_FRONT_LEFT, false);
-	event_manager_register_and_enable_x(rcon_front_left2, EVT_RCON_FRONT_LEFT2, false);
-	event_manager_register_and_enable_x(rcon_front_right, EVT_RCON_FRONT_RIGHT, false);
-	event_manager_register_and_enable_x(rcon_front_right2, EVT_RCON_FRONT_RIGHT2, false);
-	event_manager_register_and_enable_x(rcon_left, EVT_RCON_LEFT, false);
-	event_manager_register_and_enable_x(rcon_right, EVT_RCON_RIGHT, false);
-*/
-
-	/* Over Current */
-	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_LEFT, true);
-	event_manager_register_and_enable_x(over_current_brush_main, EVT_OVER_CURRENT_BRUSH_MAIN, true);
-	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_RIGHT, true);
-	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
-	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
-	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
-
-	/* Key */
-	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-
-	/* Remote */
-	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
-	event_manager_register_and_enable_x(remote_wallfollow,EVT_REMOTE_WALL_FOLLOW, true);
-	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
-	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
-	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_FORWARD, true);
-
-	// Just enable the default handler.
-	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
-
-	/* Battery */
-	event_manager_register_and_enable_x(battery_home, EVT_BATTERY_HOME, true);
-	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
-
-	/* Charge Status */
-	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-	/* robot stuck */
-	event_manager_enable_handler(EVT_ROBOT_SLIP,true);
-	/* lidar bumper */
-	//event_manager_enable_handler(EVT_LIDAR_BUMPER,true);
-	/* Slam Error */
-	event_manager_enable_handler(EVT_SLAM_ERROR, true);
-
-	event_manager_enable_handler(EVT_LASER_STUCK, true);
-#undef event_manager_register_and_enable_x
-
+	event_manager_register_handler(&eh);
 	event_manager_set_enable(true);
 }
 
 void cm_unregister_events()
 {
-	ROS_INFO("%s %d: Unregister events", __FUNCTION__, __LINE__);
-#define event_manager_register_and_disable_x(x) \
-	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false);
-
-	/* Bumper */
-	event_manager_register_and_disable_x(EVT_BUMPER_ALL);
-	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
-	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
-
-	/* OBS */
-	event_manager_register_and_disable_x(EVT_OBS_FRONT);
-	//event_manager_register_and_disable_x(EVT_OBS_LEFT);
-	//event_manager_register_and_disable_x(EVT_OBS_RIGHT);
-
-	/* Cliff */
-	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
-
-	/* RCON */
-	event_manager_register_and_disable_x(EVT_RCON);
-/*
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT);
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT2);
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT);
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT2);
-	event_manager_register_and_disable_x(EVT_RCON_LEFT);
-	event_manager_register_and_disable_x(EVT_RCON_RIGHT);
-*/
-
-	/* Over Current */
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_LEFT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_MAIN);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
-
-	/* Key */
-	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-
-	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
-	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
-
-	/* Battery */
-	event_manager_register_and_disable_x(EVT_BATTERY_HOME);
-	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
-
-	/* Charge Status */
-	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
-
-	/* Slam Error */
-	event_manager_register_and_disable_x(EVT_SLAM_ERROR);
-	/* robot slip */
-	event_manager_register_and_disable_x(EVT_ROBOT_SLIP);
-	/* lidar bumper*/
-	//event_manager_register_and_disable_x(EVT_LIDAR_BUMPER);
-	// Laser stuck
-	event_manager_register_and_disable_x(EVT_LASER_STUCK);
-
-#undef event_manager_register_and_disable_x
-
-	event_manager_set_enable(false);
+	event_manager_set_enable(true);
 }
 
 void cm_set_event_manager_handler_state(bool state)
@@ -942,7 +790,7 @@ void cm_event_manager_turn(bool state)
 	event_manager_enable_handler(EVT_BUMPER_RIGHT, state);
 }
 
-void cm_handle_bumper_all(bool state_now, bool state_last)
+void CM_EventHandle::bumper_all(bool state_now, bool state_last)
 {
 //	ev.bumper_triggered = BLOCK_ALL;
 
@@ -958,7 +806,7 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 
 }
 
-void cm_handle_bumper_left(bool state_now, bool state_last)
+void CM_EventHandle::bumper_left(bool state_now, bool state_last)
 {
 //	if(ev.bumper_triggered != 0)
 //		return;
@@ -975,7 +823,7 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_bumper_right(bool state_now, bool state_last)
+void CM_EventHandle::bumper_right(bool state_now, bool state_last)
 {
 //	if(ev.bumper_triggered != 0)
 //		return;
@@ -994,26 +842,26 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 }
 
 /* OBS */
-void cm_handle_obs_front(bool state_now, bool state_last)
+void CM_EventHandle::obs_front(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Front_OBS;
 }
 
-void cm_handle_obs_left(bool state_now, bool state_last)
+void CM_EventHandle::obs_left(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Left_OBS;
 }
 
-void cm_handle_obs_right(bool state_now, bool state_last)
+void CM_EventHandle::obs_right(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Right_OBS;
 }
 
 /* Cliff */
-void cm_handle_cliff_all(bool state_now, bool state_last)
+void CM_EventHandle::cliff_all(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -1026,7 +874,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_front_left(bool state_now, bool state_last)
+void CM_EventHandle::cliff_front_left(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LF;
@@ -1043,7 +891,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 }
 
-void cm_handle_cliff_front_right(bool state_now, bool state_last)
+void CM_EventHandle::cliff_front_right(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_RF;
@@ -1060,7 +908,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 }
 
-void cm_handle_cliff_left_right(bool state_now, bool state_last)
+void CM_EventHandle::cliff_left_right(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LR;
@@ -1076,7 +924,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_front(bool state_now, bool state_last)
+void CM_EventHandle::cliff_front(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Front;
@@ -1092,7 +940,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_left(bool state_now, bool state_last)
+void CM_EventHandle::cliff_left(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Left;
@@ -1108,7 +956,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_right(bool state_now, bool state_last)
+void CM_EventHandle::cliff_right(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Right;
@@ -1125,7 +973,7 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 }
 
 /* RCON */
-void cm_handle_rcon(bool state_now, bool state_last)
+void CM_EventHandle::rcon(bool state_now, bool state_last)
 {
 /*
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
@@ -1151,7 +999,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 }
 
 /* Over Current */
-//void cm_handle_over_current_brush_left(bool state_now, bool state_last)
+//void CM_EventHandle::over_current_brush_left(bool state_now, bool state_last)
 //{
 //	static uint8_t stop_cnt = 0;
 //
@@ -1172,7 +1020,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 //	}
 //}
 
-void cm_handle_over_current_brush_main(bool state_now, bool state_last)
+void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1192,7 +1040,7 @@ void cm_handle_over_current_brush_main(bool state_now, bool state_last)
     }
 }
 
-//void cm_handle_over_current_brush_right(bool state_now, bool state_last)
+//void CM_EventHandle::over_current_brush_right(bool state_now, bool state_last)
 //{
 //	static uint8_t stop_cnt = 0;
 //
@@ -1214,7 +1062,7 @@ void cm_handle_over_current_brush_main(bool state_now, bool state_last)
 //	}
 //}
 
-void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
+void CM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1231,7 +1079,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 	}
 }
 
-void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
+void CM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1248,7 +1096,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 	}
 }
 
-void cm_handle_over_current_suction(bool state_now, bool state_last)
+void CM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1266,7 +1114,7 @@ void cm_handle_over_current_suction(bool state_now, bool state_last)
 }
 
 /* Key */
-void cm_handle_key_clean(bool state_now, bool state_last)
+void CM_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	time_t start_time;
 	bool reset_manual_pause = false;
@@ -1315,7 +1163,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 
 /* Remote */
 
-void cm_handle_remote_clean(bool state_now, bool state_last)
+void CM_EventHandle::remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1333,7 +1181,7 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_home(bool state_now, bool state_last)
+void CM_EventHandle::remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1358,7 +1206,7 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_spot(bool state_now, bool state_last)
+void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1376,14 +1224,7 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_wallfollow(bool state_now,bool state_last)
-{
-	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
-	beep_for_command(INVALID);
-	reset_rcon_remote();
-}
-
-void cm_handle_remote_max(bool state_now, bool state_last)
+void CM_EventHandle::remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1397,7 +1238,8 @@ void cm_handle_remote_max(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_direction(bool state_now,bool state_last)
+/*
+void CM_EventHandle::remote_direction(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
 	// For Debug
@@ -1408,8 +1250,20 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 	reset_rcon_remote();
 }
 
+void CM_EventHandle::remote_direction_left(bool state_now, bool state_last)
+{
+	remote_direction(state_now,state_last);
+}
+void CM_EventHandle::remote_direction_right(bool state_now, bool state_last){
+	remote_direction(state_now,state_last);
+}
+
+void CM_EventHandle::remote_direction_forward(bool state_now, bool state_last){
+	remote_direction(state_now,state_last);
+}
+*/
 /* Battery */
-void cm_handle_battery_home(bool state_now, bool state_last)
+void CM_EventHandle::battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && !cs_is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
@@ -1424,11 +1278,11 @@ void cm_handle_battery_home(bool state_now, bool state_last)
 			path_set_continue_cell(map_get_curr_cell());
 			robot::instance()->setLowBatPause();
 		}
-#endif 
+#endif
     }
 }
 
-void cm_handle_battery_low(bool state_now, bool state_last)
+void CM_EventHandle::battery_low(bool state_now, bool state_last)
 {
     uint8_t         v_pwr, s_pwr, m_pwr;
     uint16_t        t_vol;
@@ -1459,7 +1313,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 	}
 }
 
-void cm_handle_charge_detect(bool state_now, bool state_last)
+void CM_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
 	if (((cm_is_exploration() || cm_is_go_charger() || cs_is_going_home()) && robot::instance()->getChargeStatus()) ||

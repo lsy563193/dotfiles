@@ -25,6 +25,7 @@
 #define Edit_Sub      2
 
 #include "stdint.h"
+#include "event_manager.h"
 
 void user_interface(void);
 
@@ -49,22 +50,46 @@ void user_interface_register_events(void);
 
 void user_interface_unregister_events(void);
 
-#define define_user_interface_handle_func(name) \
-	void user_interface_handle_ ## name(bool state_now, bool state_last);
+#define define_func(name) \
+	void  ## name(bool state_now, bool state_last);
 
-/* Cliff */
-define_user_interface_handle_func(cliff)
-/* Rcon */
-define_user_interface_handle_func(rcon)
-/* Battery */
-define_user_interface_handle_func(battery_low)
-/* Remote */
-define_user_interface_handle_func(remote_cleaning)
-define_user_interface_handle_func(remote_plan)
-/* Key */
-define_user_interface_handle_func(key_clean)
-/* Charge Status */
-define_user_interface_handle_func(charge_detect)
+
+class UI_EventHandle:public EventHandle {
+	void cliff(bool state_now, bool state_last);
+
+	void cliff_left(bool state_now, bool state_last);
+
+	void cliff_left_right(bool state_now, bool state_last);
+
+	void cliff_right(bool state_now, bool state_last);
+
+	void cliff_front(bool state_now, bool state_last);
+
+	void cliff_front_left(bool state_now, bool state_last);
+
+	void cliff_front_right(bool state_now, bool state_last);
+
+	void rcon(bool state_now, bool state_last);
+
+	void battery_low(bool state_now, bool state_last);
+
+	void remote_cleaning(bool state_now, bool state_last);
+	void remote_direction_left(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_direction_right(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_direction_forward(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_home(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_spot(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_wall_follow(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_clean(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+
+	void remote_plan(bool state_now, bool state_last);
+
+	void key_clean(bool state_now, bool state_last);
+
+	void charge_detect(bool state_now, bool state_last);
+
+	void remote_max(bool stat_now, bool state_last) { df_remote_max(stat_now, state_last); }
+};
 
 #endif /* __DISPLAY_H */
 
