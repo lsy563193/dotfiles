@@ -1156,7 +1156,7 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 	}
 	else
 	{
-		auto dir = g_plan_path.front().TH;
+		/*auto dir = g_plan_path.front().TH;
 		if (dir == POS_X)
 			x_offset = 1;
 		else if (dir == NEG_X)
@@ -1168,7 +1168,7 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 		{
 			Cell_t cell = {int16_t(cells.back().X + x_offset),cells.back().Y};
 			cells.push_back(cell);
-		}
+		}*/
 	}
 
 	std::string msg = "Cell:\n";
