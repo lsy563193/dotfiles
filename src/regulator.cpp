@@ -416,7 +416,6 @@ TurnRegulator::TurnRegulator(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(T
 	}
 	ROS_INFO("%s %d: Init, \033[32ms_target_angle: %d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
 }
-
 bool TurnRegulator::isReach()
 {
 	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
@@ -490,12 +489,13 @@ bool TurnRegulator::shouldMoveBack()
 
 void TurnRegulator::setTarget()
 {
-	 // Use laser datas for generating target angle in every 3times of turning.
 	if(cs_is_going_home() && map_point_to_cell(s_curr_p) == g_zero_home)
 	{
 		s_target_angle = g_home_point.TH;
-	}else
-	if(LASER_FOLLOW_WALL && !cs_is_trapped() && !mt_is_go_to_charger() && skip_laser_turn_angle_cnt_ >= 2) {
+	}
+	else if(LASER_FOLLOW_WALL && !cs_is_trapped() && mt_is_follow_wall() && skip_laser_turn_angle_cnt_ >= 2)
+	{
+		// Use laser data for generating target angle in every 3 times of turning.
 		if (waiting_finished_) {
 			stage_ = TURN_REGULATOR_WAITING_FOR_LASER;
 			waiting_finished_ = false;
@@ -504,7 +504,8 @@ void TurnRegulator::setTarget()
 			s_target_angle = gyro_get_angle();
 			ROS_INFO("%s %d: TurnRegulator, start waiting for %fs.", __FUNCTION__, __LINE__, wait_sec_);
 		}
-		else {
+		else
+		{
 			// Wait for specific time, for a new scan and gyro dynamic adjustment.
 			double tmp_sec = ros::Time::now().toSec() - waiting_start_sec_;
 			//ROS_INFO("%s %d: Has been wait for %f sec.", __FUNCTION__, __LINE__, tmp_sec);
@@ -644,10 +645,11 @@ bool LinearRegulator::isNearTarget()
 			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
 					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
 		}
-		else if(g_plan_path.front() != g_zero_home)
+		else if(g_plan_path.front() != g_zero_home && g_allow_path_in_advance)
 		{
 			g_check_path_in_advance = true;
-			ROS_INFO("%s %d: g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, g_check_path_in_advance);
+			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, map_get_x_cell(),
+					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
 			return true;
 		}
 	}

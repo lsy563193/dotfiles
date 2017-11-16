@@ -47,7 +47,6 @@ bool g_start_point_seen_charger = false;
 Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
 long g_distance=0;
-bool g_check_path_in_advance=false;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 // This flag is for indicating robot is going to charger.
