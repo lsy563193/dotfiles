@@ -10,6 +10,7 @@
 #include "charger.hpp"
 #include "core_move.h"
 #include "gyro.h"
+#include "bumper.h"
 #include "movement.h"
 #include "laser.hpp"
 #include "robot.hpp"

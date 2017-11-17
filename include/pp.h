@@ -20,6 +20,7 @@
 #include "vacuum.h"
 #include "key.h"
 #include "cliff.h"
+#include "bumper.h"
 #include "brush.h"
 #include "map.h"
 #include "mathematics.h"

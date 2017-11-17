@@ -15,6 +15,7 @@
 
 #include "movement.h"
 #include "gyro.h"
+#include "bumper.h"
 #include "crc8.h"
 #include "serial.h"
 #include "robotbase.h"

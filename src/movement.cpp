@@ -98,6 +98,11 @@ struct pid_argu_struct argu_for_pid = {REG_TYPE_NONE,0,0,0};
 struct pid_struct left_pid = {0,0,0,0,0,0,0,0}, right_pid = {0,0,0,0,0,0,0,0};
 boost::mutex pid_lock;
 
+uint8_t get_direction_flag(void)
+{
+	return g_direction_flag;
+}
+
 /*----------------------- Work Timer functions--------------------------*/
 void reset_work_time()
 {
@@ -1512,11 +1517,6 @@ uint8_t is_turn_remote(void)
 	}
 }
 
-uint8_t get_direction_flag(void)
-{
-	return g_direction_flag;
-}
-
 void set_direction_flag(uint8_t flag)
 {
 	g_direction_flag = flag;
@@ -1841,10 +1841,6 @@ bool is_decelerate_wall(void)
 	auto status = (robot::instance()->getObsFront() > get_front_obs_trig_value());
 	return is_map_front_block(3) || status;
 }
-
-static int lidar_bumper_fd = -1;
-static uint8_t is_lidar_bumper_init = 0;
-
 bool check_laser_stuck()
 {
 	if (MotionManage::s_laser != nullptr && !MotionManage::s_laser->laserCheckFresh(3, 2))

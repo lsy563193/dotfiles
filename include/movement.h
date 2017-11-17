@@ -422,14 +422,8 @@ bool check_error_cleared(uint8_t error_code);
 
 int32_t get_right_wheel_step(void);
 int32_t get_left_wheel_step(void);
-void reset_right_wheel_step();
-void reset_left_wheel_step();
-void set_wheel_step(uint32_t Left, uint32_t Right);
 void reset_wheel_step(void);
-void reset_wall_step(void);
 bool is_decelerate_wall(void);
-uint32_t get_left_wall_step(void);
-uint32_t get_right_wall_step(void);
 
 int32_t get_wall_adc(int8_t dir);
 
@@ -445,27 +439,15 @@ int32_t get_wall_base(int8_t dir);
 
 void quick_back(uint8_t speed,uint16_t distance);
 
-
 void set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
-
-//void wall_dynamic_base(uint32_t Cy);
-
-//void Turn_Right(uint16_t speed,uint16_t angle);
-
 
 int get_rcon_trig(void);
 
 bool is_on_charger_stub(void);
 
 bool is_direct_charge(void);
-
-void set_home_remote(void);
-
-void reset_home_remote(void);
-
-uint8_t is_home_remote(void);
 
 uint32_t get_rcon_status(void);
 
@@ -480,8 +462,6 @@ void wheels_pid(void);
 void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
-
-uint8_t check_motor_current(void);
 
 uint8_t self_check(uint8_t Check_Code);
 
@@ -511,8 +491,6 @@ uint8_t get_rcon_remote(void);
 
 void reset_move_with_remote(void);
 
-void set_move_with_remote(void);
-
 void reset_rcon_status(void);
 
 void set_dir_left(void);
@@ -523,19 +501,9 @@ void set_led(uint16_t G, uint16_t R);
 
 void stop_brifly(void);
 
-void delay_sec(double s);
-
 uint8_t remote_key(uint8_t Key);
 
-uint8_t is_move_with_remote(void);
-
 void reset_stop_event_status(void);
-
-uint8_t stop_event(void);
-
-uint8_t is_station(void);
-
-bool is_charge_on(void);
 
 uint8_t is_water_tank(void);
 
@@ -549,11 +517,7 @@ void set_start_charge(void);
 
 void set_stop_charge(void);
 
-void set_clean_tool_power(uint8_t vaccum_val, uint8_t left_brush_val, uint8_t right_brush_val, uint8_t main_brush_val);
-
 void start_self_check_vacuum(void);
-
-void End_SelfCheck_Vacuumm(void);
 
 void reset_self_check_vacuum_controler(void);
 
@@ -561,15 +525,7 @@ void control_set(uint8_t type, uint8_t val);
 
 uint8_t control_get(uint8_t seq);
 
-void control_append_crc(void);
-
-void control_stop_all(void);
-
 int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number);
-
-void random_back(void);
-
-void move_back(void);
 
 void set_left_wheel_speed(uint8_t speed);
 
@@ -579,95 +535,23 @@ int16_t get_left_wheel_speed(void);
 
 int16_t get_right_wheel_speed(void);
 
-uint8_t  check_bat_stop();
-
 void set_key_press(uint8_t key);
 
 void reset_key_press(uint8_t key);
 
 uint8_t get_key_press(void);
 
-uint8_t is_flag_set(void);
-
 void set_send_flag(void);
 
 void reset_send_flag(void);
 
-uint8_t is_virtual_wall_(void);
-
-uint8_t is_bumper_jamed(void);
-
-void reset_bumper_error(void);
-
-uint8_t is_bumper_fail(void);
-
 uint8_t is_turn_remote(void);
 
-void set_left_wheel_step(uint32_t step);
-
-void set_right_wheel_step(uint32_t step);
-
 void set_direction_flag(uint8_t flag);
-
-uint8_t is_direction_right();
-
-uint8_t is_direction_left();
-
-uint8_t get_direction_flag();
-
-uint8_t is_right_wheel_reach(int32_t step);
-
-uint8_t is_left_wheel_reach(int32_t step);
-
-void wall_move_back(void);
-
-void reset_move_distance(void);
-
-uint8_t is_move_finished(int32_t distance);
-
-uint32_t get_move_distance(void);
-
-void obs_turn_left(uint16_t speed, uint16_t angle);
-
-void obs_turn_right(uint16_t speed, uint16_t angle);
-
-uint8_t get_random_factor();
-
-uint8_t is_near_station(void);
-
-void set_mobility_step(uint32_t Steps);
 
 void reset_mobility_step();
 
 void clear_reset_mobility_step();
-
-uint32_t  get_mobility_step();
-
-//void adjust_obs_value();
-
-void check_mobility(void);
-
-void add_average(uint32_t data);
-
-uint32_t get_average_move(void);
-
-uint32_t reset_average_counter(void);
-
-void reset_virtual_wall();
-
-uint8_t is_work_finish(uint8_t m);
-
-void set_room_mode(uint8_t m);
-
-uint8_t get_room_mode(void);
-
-uint32_t get_wall_accelerate();
-
-void reset_wall_accelerate();
-
-uint8_t virtual_wall_turn_right();
-
-uint8_t virtual_wall_turn_left();
 
 int32_t abs_minus(int32_t A, int32_t B);
 
@@ -709,8 +593,6 @@ bool is_clean_paused();
 void reset_clean_paused();
 
 bool check_laser_stuck();
-
-uint8_t estimate_charger_position(Rcon_Point_t point_a,Rcon_Point_t piont_b,Cell_t *pos);
 
 uint8_t get_laser_status();
 #endif

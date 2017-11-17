@@ -1,9 +1,14 @@
 //
 
+#include <fcntl.h>
 #include "pp.h"
 #include "bumper.h"
 
 Bumper bumper;
+
+
+static int lidar_bumper_fd = -1;
+static uint8_t is_lidar_bumper_init = 0;
 
 
 int8_t bumper_lidar_init(const char *device)
