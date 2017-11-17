@@ -794,13 +794,14 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 			angle_diff = 0;
 		integrated_ = 0;
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED){
-			if(obstalce_distance_front > 0.025 && obstalce_distance_front < 0.125 && (left_speed > 20 || right_speed > 20)) {
+			base_speed_--;
+			/*if(obstalce_distance_front > 0.025 && obstalce_distance_front < 0.125 && (left_speed > 20 || right_speed > 20)) {
 				base_speed_ -= 2;
 			}
 			else if(obs_state & BLOCK_FRONT)
 				base_speed_ -=2;
 			else if(obs_state & (BLOCK_LEFT | BLOCK_RIGHT))
-				base_speed_ --;
+				base_speed_ --;*/
 		}
 	}
 	else if (base_speed_ < (int32_t) LINEAR_MAX_SPEED) {
