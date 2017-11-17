@@ -969,34 +969,6 @@ uint8_t get_self_check_vacuum_status(void)
 	return (uint8_t) robot::instance()->getVacuumSelfCheckStatus();
 }
 
-uint8_t check_bat_full(void)
-{
-	// Check if battary is higher than the battery full voltage value.
-	if (get_battery_voltage() > BATTERY_FULL_VOLTAGE)
-	{
-		return 1;
-	}
-	return 0;
-}
-
-uint8_t check_bat_ready_to_clean(void)
-{
-	uint16_t battery_limit;
-	if (cm_get() == Clean_Mode_Charging)
-	{
-		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE + 60;
-	} else
-	{
-		battery_limit = BATTERY_READY_TO_CLEAN_VOLTAGE;
-	}
-	//ROS_INFO("%s %d: Battery limit is %d.", __FUNCTION__, __LINE__, battery_limit);
-	// Check if battary is lower than the low battery go home voltage value.
-	if (get_battery_voltage() >= battery_limit)
-	{
-		return 1;
-	}
-	return 0;
-}
 
 //uint8_t cm_get(void)
 //{
@@ -1564,11 +1536,6 @@ void set_send_flag(void)
 void reset_send_flag(void)
 {
 	g_sendflag = 0;
-}
-
-uint16_t get_battery_voltage()
-{
-	return robot::instance()->getBatteryVoltage();
 }
 
 void set_key_press(uint8_t key)

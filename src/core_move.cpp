@@ -1,3 +1,4 @@
+#include <battery.h>
 #include "pp.h"
 
 #ifdef TURN_SPEED
@@ -1123,7 +1124,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && !cs_is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
-						 robot::instance()->getBatteryVoltage());
+						 battery.get_voltage());
 		ev.battrey_home = true;
 
 		if (vacuum.mode() == Vac_Max) {
@@ -1146,7 +1147,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
     ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_battery_low_cnt++ > 50) {
-		t_vol = get_battery_voltage();
+		t_vol = battery.get_voltage();
 		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
 		if (cs_is_going_home()) {

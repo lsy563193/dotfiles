@@ -493,12 +493,6 @@ uint8_t check_right_brush_stall(void);
 
 uint8_t self_check(uint8_t Check_Code);
 
-uint8_t check_bat_home(void);
-
-uint8_t check_bat_full(void);
-
-uint8_t check_bat_ready_to_clean(void);
-
 uint8_t cm_get(void);
 
 void obs_dynamic_base(uint16_t Cy);
@@ -612,8 +606,6 @@ void set_key_press(uint8_t key);
 void reset_key_press(uint8_t key);
 
 uint8_t get_key_press(void);
-
-uint16_t get_battery_voltage();
 
 uint8_t is_flag_set(void);
 

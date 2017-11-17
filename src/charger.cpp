@@ -4,6 +4,7 @@
 #include <wav.h>
 #include <key.h>
 #include <cliff.h>
+#include <battery.h>
 
 #include "go_home.hpp"
 #include "movement.h"
@@ -59,7 +60,7 @@ void charge_function(void)
 		if(robot::instance()->getChargeStatus())
 			last_charge_status = robot::instance()->getChargeStatus();
 
-		bat_v = get_battery_voltage();
+		bat_v = battery.get_voltage();
 
 		if (g_resume_cleaning)
 		{
@@ -97,7 +98,7 @@ void charge_function(void)
 			{
 				if (g_resume_cleaning)
 				{
-					if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
+					if (battery.get_voltage() < LOW_BATTERY_STOP_VOLTAGE)
 					{
 						ROS_INFO("%s %d: Exit charger mode_ and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
 						cm_set(Clean_Mode_Idle);
@@ -173,7 +174,7 @@ void charge_function(void)
 		if (cm_is_navigation())
 			break;
 
-		if (check_bat_full() && !battery_full)
+		if (battery.is_full() && !battery_full)
 		{
 			battery_full = true;
 			set_led_mode(LED_STEADY, LED_OFF);
@@ -258,7 +259,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 				charge_plan_status = 2;
 				break;
 			}
-			else if (!check_bat_ready_to_clean())
+			else if (!battery.is_ready_to_clean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 3;
@@ -317,7 +318,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		beep_for_command(INVALID);
 		charge_reject_reason = 2;
 	}
-	else if (!check_bat_ready_to_clean())
+	else if (!battery.is_ready_to_clean())
 	{
 		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beep_for_command(INVALID);
@@ -367,7 +368,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			beep_for_command(INVALID);
 			charge_reject_reason = 2;
 		}
-		else if (!check_bat_ready_to_clean())
+		else if (!battery.is_ready_to_clean())
 		{
 			ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
 			charge_reject_reason = 3;

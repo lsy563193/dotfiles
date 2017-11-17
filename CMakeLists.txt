@@ -12,6 +12,7 @@ FILE(GLOB PP_SRC
 				src/dev/vacuum.cpp
 				src/dev/key.cpp
 			 src/dev/cliff.cpp
+				src/dev/battery.cpp
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp

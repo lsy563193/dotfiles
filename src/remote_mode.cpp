@@ -21,6 +21,7 @@
 #include <ros/ros.h>
 #include <vacuum.h>
 #include <cliff.h>
+#include <battery.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -613,7 +614,7 @@ void RM_EventHandle::battery_low(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: Detects battery low.", __FUNCTION__, __LINE__);
 	if (g_battery_low_cnt++ > 50)
 	{
-		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, get_battery_voltage());
+		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, battery.get_voltage());
 		disable_motors();
 		ev.battery_low = true;
 		ev.fatal_quit = true;

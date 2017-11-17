@@ -247,11 +247,6 @@ public:
 		return w_tank_;
 	}
 
-	uint16_t getBatteryVoltage() const
-	{
-		return battery_voltage_*10;
-	}
-
 	bool isMoving() const
 	{
 		return is_moving_;
@@ -572,9 +567,6 @@ private:
 
 	/*1 byte*/
 	bool w_tank_; //water tank
-
-	/* 1 byte */
-	uint16_t battery_voltage_;
 
 	/*1 byte*/
 	uint8_t vacuum_selfcheck_status_;
