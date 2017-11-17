@@ -15,6 +15,7 @@ FILE(GLOB PP_SRC
 				src/dev/battery.cpp
 				src/dev/brush.cpp
 				src/dev/bumper.cpp
+				src/dev/rcon.cpp
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp

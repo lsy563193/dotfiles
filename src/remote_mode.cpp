@@ -23,6 +23,7 @@
 #include <cliff.h>
 #include <battery.h>
 #include <bumper.h>
+#include <pp.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -526,14 +527,14 @@ void RM_EventHandle::remote_wall_follow(bool state_now, bool state_last)
 void RM_EventHandle::rcon(bool state_now, bool state_last)
 {
 	if (get_move_flag_() == REMOTE_MODE_FORWARD && !remote_rcon_triggered
-		&& get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)
+		&& c_rcon.get_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)
 		&& ++remote_rcon_cnt >= 1)
 	{
 		ROS_WARN("%s %d: Move back for Rcon.", __FUNCTION__, __LINE__);
 		remote_rcon_triggered = true;
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
-	reset_rcon_status();
+	c_rcon.reset_status();
 }
 
 void RM_EventHandle::key_clean(bool state_now, bool state_last)

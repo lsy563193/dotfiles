@@ -189,7 +189,7 @@ void init_nav_before_gyro()
 	usleep(30000);
 	set_gyro_on();
 
-	reset_rcon_status();
+	c_rcon.reset_status();
 	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	if (g_resume_cleaning)
@@ -272,7 +272,7 @@ void init_exp_before_gyro()
 	usleep(30000);
 	set_gyro_on();
 
-	reset_rcon_status();
+	c_rcon.reset_status();
 	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
@@ -296,7 +296,7 @@ void init_wf_before_gyro()
 	g_wf_start_timer = time(NULL);
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
 	reset_move_with_remote();
-	reset_rcon_status();
+	c_rcon.reset_status();
 	reset_stop_event_status();
 	key.reset();
 	set_gyro_off();
@@ -333,7 +333,7 @@ void init_spot_before_gyro()
 		cm_register_events();
 	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
-	reset_rcon_status();
+	c_rcon.reset_status();
 	reset_move_with_remote();
 	reset_stop_event_status();
 	key.reset();
@@ -380,7 +380,7 @@ void init_go_home_before_gyro()
 void init_go_home_after_gyro()
 {
 	work_motor_configure();
-	reset_rcon_status();
+	c_rcon.reset_status();
 
 }
 bool wait_for_back_from_charge()

@@ -9,6 +9,7 @@
 #include <core_move.h>
 #include <move_type.h>
 #include <std_srvs/SetBool.h>
+#include <pp.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -170,8 +171,8 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	}
 
 	charge_stub_ = msg->c_stub;//charge stub signal
-	set_rcon_status(get_rcon_status() | charge_stub_);
-//	if(get_rcon_status())
+	c_rcon.set_status(c_rcon.get_status() | charge_stub_);
+//	if(c_rcon.get_status())
 //	ROS_WARN("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
 
 	key_ = msg->key;

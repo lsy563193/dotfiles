@@ -20,6 +20,7 @@
 #include <ros/ros.h>
 #include <event_manager.h>
 #include <battery.h>
+#include <rcon.h>
 #include "config.h"
 #include "wav.h"
 #include "robot.hpp"
@@ -71,7 +72,7 @@ void idle(void)
 	reset_rcon_remote();
 	set_plan_status(0);
 	reset_stop_event_status();
-	reset_rcon_status();
+	c_rcon.reset_status();
 	key.reset();
 	vacuum.stop();
 
@@ -259,7 +260,7 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 {
 	if (is_clean_paused())
 	{
-		reset_rcon_status();
+		c_rcon.reset_status();
 		ROS_DEBUG("%s %d: user_interface detects charger signal, but ignore for manual/stuck pause.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -272,7 +273,7 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 	}
 	else
 	{
-		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, get_rcon_status(), (int)(time(NULL) - charger_signal_start_time));
+		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, c_rcon.get_status(), (int)(time(NULL) - charger_signal_start_time));
 		if (time(NULL) - charger_signal_start_time >= 180)// 3 mins//180
 		{
 			if (get_error_code())
@@ -283,7 +284,7 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 				temp_mode = Clean_Mode_Go_Charger;
 		}
 	}
-	reset_rcon_status();
+	c_rcon.reset_status();
 }
 
 void Idle_EventHandle::battery_low(bool state_now, bool state_last)

@@ -443,15 +443,12 @@ void set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
 
-int get_rcon_trig(void);
+int rcon_get_trig(void);
 
 bool is_on_charger_stub(void);
 
 bool is_direct_charge(void);
 
-uint32_t get_rcon_status(void);
-
-void set_rcon_status(uint32_t code);
 /*
 // Add handling for gyro dynamic adjustment.
 // If robot going straight, should turn off gyro dynamic adjustment.
@@ -490,8 +487,6 @@ void reset_rcon_remote(void);
 uint8_t get_rcon_remote(void);
 
 void reset_move_with_remote(void);
-
-void reset_rcon_status(void);
 
 void set_dir_left(void);
 

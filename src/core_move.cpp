@@ -847,14 +847,14 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 	}
 	else if (mt_is_linear())
 		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
-		if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+		if (!(c_rcon.get_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 		return;
 
-	ev.rcon_triggered = get_rcon_trig_();
+	ev.rcon_triggered = c_rcon.get_trig_();
 	if(ev.rcon_triggered != 0){
 		map_set_rcon();
 	}
-	reset_rcon_status();*/
+	c_rcon.reset_status();*/
 }
 
 /* Over Current */

@@ -250,7 +250,7 @@ void *event_manager_thread(void *data)
 		}
 
 		/* RCON */
-		if (get_rcon_status()) {
+		if (c_rcon.get_status()) {
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON);
 		}
@@ -270,7 +270,7 @@ void *event_manager_thread(void *data)
 		} else if ((Get_Rcon_Status() & RconL_HomeT) == RconL_HomeT) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_LEFT)
-		} else if ((get_rcon_status() & RconR_HomeT) == RconR_HomeT) {
+		} else if ((c_rcon.get_status() & RconR_HomeT) == RconR_HomeT) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_RCON_RIGHT)
 		}
@@ -767,11 +767,11 @@ void EventHandle::cliff_right(bool state_now, bool state_last)
 void EventHandle::rcon(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-//	reset_rcon_status();
+//	c_rcon.reset_status();
 }
 void df_rcon(bool state_now, bool state_last)
 {
-	reset_rcon_status();
+	c_rcon.reset_status();
 }
 /*
 void EventHandle::rcon_front_left(bool state_now, bool state_last)

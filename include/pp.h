@@ -22,6 +22,7 @@
 #include "cliff.h"
 #include "bumper.h"
 #include "brush.h"
+#include "rcon.h"
 #include "map.h"
 #include "mathematics.h"
 #include "path_planning.h"

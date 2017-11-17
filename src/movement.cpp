@@ -42,7 +42,6 @@ uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
 static uint8_t g_remote_move_flag = 0;
 static uint8_t g_home_remote_flag = 0;
-uint32_t movement_rcon_status;
 uint32_t g_average_move = 0;
 uint32_t g_average_counter = 0;
 uint32_t g_max_move = 0;
@@ -413,81 +412,6 @@ void quick_back(uint8_t speed, uint16_t distance)
 		usleep(20000);
 	}
 	ROS_INFO("quick_back finished.");
-}
-
-int get_rcon_trig_()
-{
-	enum {left,fl1,fl2,fr2,fr1,right};
-	static int8_t cnt[6]={0,0,0,0,0,0};
-	const int MAX_CNT = 1;
-//	if(get_rcon_status() != 0)
-//		ROS_WARN("get_rcon_status(%d)",get_rcon_status());
-	if (get_rcon_status() & RconL_HomeT)
-		cnt[left]++;
-	if (get_rcon_status() & RconFL_HomeT)
-		cnt[fl1]++;
-	if (get_rcon_status() & RconFL2_HomeT)
-		cnt[fl2]++;
-	if (get_rcon_status() & RconFR2_HomeT)
-		cnt[fr2]++;
-	if (get_rcon_status() & RconFR_HomeT)
-		cnt[fr1]++;
-	if (get_rcon_status() & RconR_HomeT)
-		cnt[right]++;
-	auto ret = 0;
-	for(int i=0;i<6;i++)
-		if(cnt[i] > MAX_CNT)
-		{
-			cnt[left] = cnt[fl1] = cnt[fl2] = cnt[fr2] = cnt[fr1] = cnt[right] = 0;
-			ret = i+1;
-			break;
-		}
-	reset_rcon_status();
-	return ret;
-}
-
-int get_rcon_trig(void)
-{
-//	if (cs_is_going_home()) {
-////		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-//		reset_rcon_status();
-//		return 0;
-//	}
-	if(mt_is_follow_wall()){
-//		ROS_WARN("%s %d: rcon(%d).", __FUNCTION__, __LINE__, (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
-//		ROS_WARN("%s %d: ~rcon(%d).", __FUNCTION__, __LINE__, ~(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
-//		ROS_WARN("%s %d: rcon_status(%d).", __FUNCTION__, __LINE__, (get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)));
-		if (!(get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
-			reset_rcon_status();
-			return 0;
-		}
-		else
-			return get_rcon_trig_();
-	}
-	else if (mt_is_linear()){
-//		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-		if (cm_is_exploration())
-		{
-			auto rcon_status = get_rcon_status() & RconAll_Home_T;
-			reset_rcon_status();
-			return rcon_status;
-		}
-		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
-		else if (!(get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))){
-			reset_rcon_status();
-			return 0;
-		}
-		else
-			return get_rcon_trig_();
-	}
-	else if (mt_is_go_to_charger())
-	{
-		auto rcon_status = get_rcon_status();
-		reset_rcon_status();
-		return rcon_status;
-	}
-
-	return 0;
 }
 
 /*-------------------------------Check if at charger stub------------------------------------*/
@@ -946,12 +870,6 @@ uint8_t get_self_check_vacuum_status(void)
 	return (uint8_t) robot::instance()->getVacuumSelfCheckStatus();
 }
 
-
-//uint8_t cm_get(void)
-//{
-//	return g_cleaning_mode;
-//}
-
 //--------------------------------------Obs Dynamic adjust----------------------
 void obs_dynamic_base(uint16_t count)
 {
@@ -1058,34 +976,6 @@ void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
 	set_dir_forward();
 	set_wheel_speed(Left_Speed, Right_Speed);
-}
-
-void set_rcon_status(uint32_t code)
-{
-	movement_rcon_status = code;
-}
-
-void reset_rcon_status(void)
-{
-	movement_rcon_status = 0;
-}
-
-uint32_t get_rcon_status()
-{
-	extern Cell_t g_stub_cell;
-	if(!cs_is_going_home() && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger()  && !mt_is_follow_wall()){//check if robot start from charge station
-		if(two_points_distance(g_stub_cell.X,g_stub_cell.Y,map_get_x_cell(),map_get_y_cell()) <= 20){
-			g_in_charge_signal_range = true;
-			reset_rcon_status();
-			return 0;
-		}
-		else{
-			g_in_charge_signal_range = false;
-			return movement_rcon_status;
-		}
-	}
-	else
-		return movement_rcon_status;
 }
 
 /*----------------------------------------Remote--------------------------------*/

@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <ros/ros.h>
 #include <cliff.h>
+#include <pp.h>
 
 #include "sleep.h"
 #include "key.h"
@@ -37,7 +38,7 @@ void sleep_mode(void)
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, get_main_pwr_byte());
 
 	reset_stop_event_status();
-	reset_rcon_status();
+	c_rcon.reset_status();
 	reset_rcon_remote();
 	key.reset();
 	set_plan_status(0);
@@ -109,7 +110,7 @@ void sleep_mode(void)
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode_ too soon after waking up.
 	usleep(1500000);
 
-	reset_rcon_status();
+	c_rcon.reset_status();
 	reset_rcon_remote();
 	reset_stop_event_status();
 	set_plan_status(0);

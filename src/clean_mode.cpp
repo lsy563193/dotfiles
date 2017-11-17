@@ -114,7 +114,7 @@ void CleanMode::setMt()
 	g_slip_cnt = 0;
 	g_slip_backward = false;
 	g_rcon_during_go_home = false;
-	reset_rcon_status();
+	c_rcon.reset_status();
 	robot::instance()->obsAdjustCount(20);
 }
 
