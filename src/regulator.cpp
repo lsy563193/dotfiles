@@ -25,12 +25,11 @@
 extern PPTargetType g_plan_path;
 //extern uint16_t g_old_dir;
 extern int16_t g_new_dir;
-extern Eigen::MatrixXd laser_matrix;
 extern Cell_t g_cell_history[];
 int g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
-double bumper_turn_factor=0.85;
+double bumper_turn_factor = 0.85;
 bool line_is_found;
-double robot_to_wall_distance=0.8;
+double robot_to_wall_distance = 0.8;
 int16_t g_turn_angle;
 float g_back_distance = 0.01;
 // Back distance for go to charger regulator
