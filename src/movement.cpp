@@ -40,8 +40,6 @@ int16_t g_obs_right_baseline = 100;
 static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
-static uint8_t g_remote_move_flag = 0;
-static uint8_t g_home_remote_flag = 0;
 uint32_t g_average_move = 0;
 uint32_t g_average_counter = 0;
 uint32_t g_max_move = 0;
@@ -65,18 +63,14 @@ static uint8_t g_direction_flag = 0;
 
 //static uint8_t g_cleaning_mode = 0;
 static uint8_t g_sendflag = 0;
-static time_t g_start_work_time;
 ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
 
-// Flag for homeremote
 volatile uint8_t g_r_h_flag = 0;
 
 // Value for wall sensor offset.
 volatile int16_t g_left_wall_baseline = 50;
 volatile int16_t g_right_wall_baseline = 50;
 
-// Variable for remote status, remote status is just for remote controller.
-volatile uint8_t g_remote_status = 0;
 // Variable for stop event status.
 volatile uint8_t g_stop_event_status = 0;
 
@@ -98,16 +92,6 @@ uint8_t get_direction_flag(void)
 	return g_direction_flag;
 }
 
-/*----------------------- Work Timer functions--------------------------*/
-void reset_work_time()
-{
-	g_start_work_time = time(NULL);
-}
-
-uint32_t get_work_time()
-{
-	return (uint32_t) difftime(time(NULL), g_start_work_time);
-}
 
 /*----------------------- Set error functions--------------------------*/
 void set_error_code(uint8_t code)
@@ -972,43 +956,6 @@ void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
 	set_dir_forward();
 	set_wheel_speed(Left_Speed, Right_Speed);
-}
-
-/*----------------------------------------Remote--------------------------------*/
-uint8_t remote_key(uint8_t key)
-{
-	// Debug
-	if (g_remote_status > 0)
-	{
-		ROS_DEBUG("%s, %d g_remote_status = %x", __FUNCTION__, __LINE__, g_remote_status);
-	}
-	if (g_remote_status & key)
-	{
-		return 1;
-	} else
-	{
-		return 0;
-	}
-}
-
-void set_rcon_remote(uint8_t cmd)
-{
-	g_remote_status |= cmd;
-}
-
-void reset_rcon_remote(void)
-{
-	g_remote_status = 0;
-}
-
-uint8_t get_rcon_remote(void)
-{
-	return g_remote_status;
-}
-
-void reset_move_with_remote(void)
-{
-	g_remote_move_flag = 0;
 }
 
 void set_dir_left(void)

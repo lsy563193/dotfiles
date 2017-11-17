@@ -22,6 +22,7 @@
 #include <battery.h>
 #include <rcon.h>
 #include <planer.h>
+#include <remote.h>
 #include "config.h"
 #include "wav.h"
 #include "robot.hpp"
@@ -70,7 +71,7 @@ void idle(void)
 	bat_ready_to_clean = true;
 
 	disable_motors();
-	reset_rcon_remote();
+	remote.reset();
 	planer.set_status(0);
 	reset_stop_event_status();
 	c_rcon.reset_status();
@@ -304,7 +305,7 @@ void Idle_EventHandle::battery_low(bool state_now, bool state_last)
 
 void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
+	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
 	g_omni_notmove = false;
 	//g_robot_stuck = false;
 
@@ -313,7 +314,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 
 	if (get_error_code())
 	{
-		if (get_rcon_remote() == Remote_Clean)
+		if (remote.get() == Remote_Clean)
 		{
 			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_error_code());
 			if (check_error_cleared(get_error_code()))
@@ -330,18 +331,19 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		}
 		else
 		{
-			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, get_rcon_remote(), get_error_code());
+			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), get_error_code());
 			reject_reason = 1;
 			beep_for_command(INVALID);
 		}
 	}
 	else if (cliff.get_status() == BLOCK_ALL)
 	{
-		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
+		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
 		beep_for_command(INVALID);
 		reject_reason = 2;
 	}
-	else if ((get_rcon_remote() != Remote_Forward && get_rcon_remote() != Remote_Left && get_rcon_remote() != Remote_Right && get_rcon_remote() != Remote_Home) && !bat_ready_to_clean)
+	else if ((remote.get() != Remote_Forward && remote.get() != Remote_Left && remote.get() != Remote_Right &&
+					remote.get() != Remote_Home) && !bat_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.get_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beep_for_command(INVALID);
@@ -351,7 +353,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 	if (!reject_reason)
 	{
 		beep_for_command(VALID);
-		switch (get_rcon_remote())
+		switch (remote.get())
 		{
 			case Remote_Forward:
 			case Remote_Left:
@@ -392,7 +394,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		}
 	}
 
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
@@ -506,14 +508,14 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 		if (check_error_cleared(get_error_code()))
 		{
 			reject_reason = 4;
-			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_rcon_remote());
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, remote.get());
 		}
 		else
 			reject_reason = 1;
 	}
 	else if(cliff.get_status() == BLOCK_ALL)
 	{
-		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
+		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
 		reject_reason = 2;
 	}
 	else if(!bat_ready_to_clean && !is_clean_paused())

@@ -5,6 +5,7 @@
 #include <brush.h>
 #include <bumper.h>
 #include <planer.h>
+#include <remote.h>
 
 #include "config.h"
 #include "serial.h"
@@ -315,35 +316,35 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Remote */
-		if (remote_key(Remote_Clean)) {
+		if (remote.key(Remote_Clean)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_CLEAN);
 		}
-		if (remote_key(Remote_Home)) {
+		if (remote.key(Remote_Home)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_HOME);
 		}
-		if (remote_key(Remote_Forward)) {
+		if (remote.key(Remote_Forward)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_FORWARD);
 		}
-		if (remote_key(Remote_Left)) {
+		if (remote.key(Remote_Left)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_LEFT);
 		}
-		if (remote_key(Remote_Right)) {
+		if (remote.key(Remote_Right)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_RIGHT);
 		}
-		if (remote_key(Remote_Spot)) {
+		if (remote.key(Remote_Spot)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_SPOT);
 		}
-		if (remote_key(Remote_Max)) {
+		if (remote.key(Remote_Max)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_MAX);
 		}
-		if (remote_key(Remote_Wall_Follow)) {
+		if (remote.key(Remote_Wall_Follow)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_WALL_FOLLOW);
 		}
@@ -878,7 +879,7 @@ void df_remote_plan(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
 
 	planer.set_status(0);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_clean(bool state_now, bool state_last)
@@ -887,7 +888,7 @@ void df_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_home(bool state_now, bool state_last)
@@ -896,7 +897,7 @@ void df_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_direction_forward(bool state_now, bool state_last)
@@ -905,7 +906,7 @@ void df_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_wall_follow(bool state_now, bool state_last)
@@ -914,7 +915,7 @@ void df_remote_wall_follow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_direction_left(bool state_now, bool state_last)
@@ -923,7 +924,7 @@ void df_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_direction_right(bool state_now, bool state_last)
@@ -932,7 +933,7 @@ void df_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_spot(bool state_now, bool state_last)
@@ -941,7 +942,7 @@ void df_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void EventHandle::remote_max(bool state_now, bool state_last)
@@ -950,7 +951,7 @@ void df_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 /* Battery */

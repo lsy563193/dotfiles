@@ -11,6 +11,7 @@
 #include <std_srvs/SetBool.h>
 #include <pp.h>
 #include <planer.h>
+#include <remote.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -168,7 +169,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	ir_ctrl_ = msg->ir_ctrl;
 	if (ir_ctrl_ > 0)
 	{
-		set_rcon_remote(ir_ctrl_);
+		remote.set(ir_ctrl_);
 	}
 
 	charge_stub_ = msg->c_stub;//charge stub signal

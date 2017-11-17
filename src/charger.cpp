@@ -5,6 +5,7 @@
 #include <key.h>
 #include <cliff.h>
 #include <battery.h>
+#include <remote.h>
 
 #include "go_home.hpp"
 #include "movement.h"
@@ -341,8 +342,8 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 }
 void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
-	if (remote_key(Remote_Clean)) {
-		reset_rcon_remote();
+	if (remote.key(Remote_Clean)) {
+		remote.reset();
 		if (is_direct_charge())
 		{
 			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
@@ -384,7 +385,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 	}
 	else{
 		beep_for_command(INVALID);
-		reset_rcon_remote();
+		remote.reset();
 	}
 }
 

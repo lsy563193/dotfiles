@@ -24,6 +24,7 @@
 #include <battery.h>
 #include <bumper.h>
 #include <pp.h>
+#include <remote.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -70,7 +71,7 @@ void remote_mode(void)
 	remote_rcon_triggered = false;
 
 	set_led_mode(LED_STEADY, LED_GREEN);
-	reset_rcon_remote();
+	remote.reset();
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
 	event_manager_reset_status();
@@ -420,7 +421,7 @@ void RM_EventHandle::remote_direction_forward(bool state_now, bool state_last)
 		set_move_flag_(REMOTE_MODE_STAY);
 		beep_for_command(VALID);
 	}
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
@@ -443,7 +444,7 @@ void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
 		beep_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
@@ -464,7 +465,7 @@ void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
 		beep_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void RM_EventHandle::remote_max(bool state_now, bool state_last)
@@ -478,14 +479,14 @@ void RM_EventHandle::remote_max(bool state_now, bool state_last)
 	}
 	else
 		beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
+	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, remote.get());
 	remote_cmd_time = time(NULL);
-	if (get_rcon_remote() == Remote_Clean)
+	if (remote.get() == Remote_Clean)
 	{
 		beep_for_command(VALID);
 		ev.key_clean_pressed = true;
@@ -497,7 +498,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 		beep_for_command(VALID);
 		disable_motors();
 		g_remote_exit = true;
-		if (get_rcon_remote() == Remote_Home)
+		if (remote.get() == Remote_Home)
 			//cm_set(Clean_Mode_Gohome);
 			cm_set(Clean_Mode_Exploration);
 		else
@@ -505,7 +506,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 	}
 	else
 		beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 void RM_EventHandle::remote_spot(bool state_now, bool state_last)
 {

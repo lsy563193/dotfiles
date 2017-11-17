@@ -4,6 +4,7 @@
 #include <cliff.h>
 #include <pp.h>
 #include <planer.h>
+#include <remote.h>
 
 #include "sleep.h"
 #include "key.h"
@@ -40,7 +41,7 @@ void sleep_mode(void)
 
 	reset_stop_event_status();
 	c_rcon.reset_status();
-	reset_rcon_remote();
+	remote.reset();
 	key.reset();
 	planer.set_status(0);
 
@@ -112,7 +113,7 @@ void sleep_mode(void)
 	usleep(1500000);
 
 	c_rcon.reset_status();
-	reset_rcon_remote();
+	remote.reset();
 	reset_stop_event_status();
 	planer.set_status(0);
 }

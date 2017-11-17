@@ -30,4 +30,6 @@ private:
 
 extern Planer planer;
 
+void reset_work_time();
+uint32_t get_work_time();
 #endif //PP_PLANER_H

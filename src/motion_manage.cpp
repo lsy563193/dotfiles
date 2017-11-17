@@ -18,6 +18,7 @@
 #include <clean_state.h>
 #include <vacuum.h>
 #include <brush.h>
+#include <remote.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -295,7 +296,7 @@ void init_wf_before_gyro()
 
 	g_wf_start_timer = time(NULL);
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
-	reset_move_with_remote();
+	remote.reset_move_with();
 	c_rcon.reset_status();
 	reset_stop_event_status();
 	key.reset();
@@ -334,7 +335,7 @@ void init_spot_before_gyro()
 	set_led_mode(LED_FLASH, LED_GREEN, 1000);
 
 	c_rcon.reset_status();
-	reset_move_with_remote();
+	remote.reset_move_with();
 	reset_stop_event_status();
 	key.reset();
 

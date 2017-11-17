@@ -1,6 +1,7 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
+#include <remote.h>
 #include "pp.h"
 
 #ifdef TURN_SPEED
@@ -1029,7 +1030,7 @@ void CM_EventHandle::remote_clean(bool state_now, bool state_last)
 	if (ev.slam_error)
 	{
 		beep_for_command(INVALID);
-		reset_rcon_remote();
+		remote.reset();
 		return;
 	}
 	beep_for_command(VALID);
@@ -1037,7 +1038,7 @@ void CM_EventHandle::remote_clean(bool state_now, bool state_last)
 	if(cm_is_navigation()){
 		g_is_manual_pause = true;
 	}
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void CM_EventHandle::remote_home(bool state_now, bool state_last)
@@ -1062,7 +1063,7 @@ void CM_EventHandle::remote_home(bool state_now, bool state_last)
 		beep_for_command(INVALID);
 		ROS_INFO("ev.remote_home = %d", ev.remote_home);
 	}
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void CM_EventHandle::remote_spot(bool state_now, bool state_last)
@@ -1080,7 +1081,7 @@ void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 		beep_for_command(VALID);
 	}
 
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void CM_EventHandle::remote_max(bool state_now, bool state_last)
@@ -1094,7 +1095,7 @@ void CM_EventHandle::remote_max(bool state_now, bool state_last)
 	}
 	else
 		beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 /*
@@ -1106,7 +1107,7 @@ void CM_EventHandle::remote_direction(bool state_now,bool state_last)
 	// path_set_continue_cell(map_get_curr_cell());
 	// robot::instance()->setLowBatPause();
 	beep_for_command(INVALID);
-	reset_rcon_remote();
+	remote.reset();
 }
 
 void CM_EventHandle::remote_direction_left(bool state_now, bool state_last)

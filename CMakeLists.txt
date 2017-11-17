@@ -17,6 +17,7 @@ FILE(GLOB PP_SRC
 				src/dev/bumper.cpp
 				src/dev/rcon.cpp
 				src/dev/planer.cpp
+				src/dev/remote.cpp
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp

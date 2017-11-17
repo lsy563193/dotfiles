@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <ros/ros.h>
 #include <battery.h>
+#include <remote.h>
 #include "charger.hpp"
 #include "core_move.h"
 #include "gyro.h"
@@ -111,7 +112,7 @@ void *core_move_thread(void *)
 				set_main_pwr_byte(Clean_Mode_Spot);
 				g_is_low_bat_pause = false;
 				reset_clean_paused();
-				reset_rcon_remote();
+				remote.reset();
 				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
 				cm_cleaning();
 				disable_motors();

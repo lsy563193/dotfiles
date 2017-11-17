@@ -476,18 +476,6 @@ int16_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
-/*
- * node:default is not save,go and spod mode is not save, key is save
- */
-
-void set_rcon_remote(uint8_t cmd);
-
-void reset_rcon_remote(void);
-
-uint8_t get_rcon_remote(void);
-
-void reset_move_with_remote(void);
-
 void set_dir_left(void);
 
 void set_dir_right(void);
