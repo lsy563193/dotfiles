@@ -6,6 +6,7 @@
 #include <bumper.h>
 #include <planer.h>
 #include <remote.h>
+#include <tilt.h>
 
 #include "config.h"
 #include "serial.h"
@@ -48,8 +49,6 @@ bool g_plan_activated = false;
 /* Omni wheel*/
 bool g_omni_notmove = false;
 bool g_omni_enable = false;
-/* tilt switch*/
-bool g_tilt_enable = false;
 
 /* robot slip & stuck */
 uint8_t g_slip_cnt = 0;
@@ -628,7 +627,7 @@ void event_manager_reset_status(void)
 	g_robot_slip = false;
 	g_slip_cnt = 0;
 	/* tilt switch*/
-	g_tilt_enable = false;
+	tilt.enable(false);
 	ev.tilt_triggered = false;
 	/* lidar bumper */
 	//g_lidar_bumper = false;

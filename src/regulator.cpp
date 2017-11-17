@@ -20,6 +20,7 @@
 #include <pp.h>
 #include <bumper.h>
 #include <obs.h>
+#include <tilt.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
@@ -99,7 +100,7 @@ int16_t cliff_turn_angle()
 
 int16_t tilt_turn_angle()
 {
-	auto tmp_status = get_tilt_status();
+	auto tmp_status = tilt.get_status();
 	if (mt_is_left())
 	{
 		if (tmp_status | TILT_LEFT)
@@ -328,7 +329,7 @@ bool BackRegulator::isReach()
 
 		g_bumper_cnt = bumper.get_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = cliff.get_status() == 0 ? 0 : g_cliff_cnt+1 ;
-		ev.tilt_triggered = get_tilt_status();
+		ev.tilt_triggered = tilt.get_status();
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
 		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !ev.tilt_triggered)
@@ -476,7 +477,7 @@ bool TurnRegulator::shouldMoveBack()
 	// Robot should move back for these cases.
 	ev.bumper_triggered = bumper.get_status();
 	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = get_tilt_status();
+	ev.tilt_triggered = tilt.get_status();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
@@ -665,7 +666,7 @@ bool LinearRegulator::shouldMoveBack()
 	// Robot should move back for these cases.
 	ev.bumper_triggered = bumper.get_status();
 	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = get_tilt_status();
+	ev.tilt_triggered = tilt.get_status();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
@@ -913,7 +914,7 @@ bool FollowWallRegulator::shouldMoveBack()
 		ROS_WARN("%s %d: Cliff triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-	ev.tilt_triggered = get_tilt_status();
+	ev.tilt_triggered = tilt.get_status();
 	if (ev.tilt_triggered) {
 		g_turn_angle = tilt_turn_angle();
 		ROS_WARN("%s %d: Tilt triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);

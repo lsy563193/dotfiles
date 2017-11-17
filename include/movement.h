@@ -531,10 +531,6 @@ void add_sp_turn_count();
 void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 
 
-uint8_t check_tilt();
-void set_tilt_status(uint8_t status);
-uint8_t get_tilt_status();
-
 bool check_pub_scan();
 
 uint8_t is_robot_slip();

@@ -2,6 +2,7 @@
 #include <brush.h>
 #include <bumper.h>
 #include <remote.h>
+#include <tilt.h>
 #include "pp.h"
 
 #ifdef TURN_SPEED
@@ -297,7 +298,7 @@ void cm_apply_cs(int cs) {
 	}
 	if(cs == CS_GO_CHANGER)
 	{
-		g_tilt_enable = false; //disable tilt detect
+		tilt.enable(false); //disable tilt detect
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	}
 }

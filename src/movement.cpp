@@ -16,6 +16,7 @@
 #include <controller.h>
 #include <obs.h>
 #include <accelerator.h>
+#include <tilt.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -62,7 +63,6 @@ volatile uint8_t g_error_code = 0;
 //Variable for checking spot turn in wall follow mode_
 volatile int32_t g_wf_sp_turn_count;
 
-uint8_t g_tilt_status = 0;
 
 // For wheel PID adjustment
 struct pid_argu_struct argu_for_pid = {REG_TYPE_NONE,0,0,0};
@@ -1028,115 +1028,13 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
 	robotbase_led_update_flag = true;
 }
 
-uint8_t check_tilt()
-{
-	static uint16_t front_tilt_count = 0;
-	static uint16_t left_tilt_count = 0;
-	static uint16_t right_tilt_count = 0;
-	static uint16_t z_tilt_count = 0;
-	uint8_t tmp_tilt_status = 0;
-
-	if (g_tilt_enable)
-	{
-		if (acc.get_front() - acc.get_front_init() > FRONT_TILT_LIMIT)
-		{
-			front_tilt_count += 2;
-			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, acc.get_front(), acc.get_front_init(), front_tilt_count);
-		}
-		else
-		{
-			if (front_tilt_count > 0)
-				front_tilt_count--;
-			else
-				front_tilt_count = 0;
-		}
-		if (acc.get_left() - acc.get_left_init() > LEFT_TILT_LIMIT)
-		{
-			left_tilt_count++;
-			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, acc.get_left(), acc.get_left_init(), left_tilt_count);
-		}
-		else
-		{
-			if (left_tilt_count > 0)
-				left_tilt_count--;
-			else
-				left_tilt_count = 0;
-		}
-		if (acc.get_right() - acc.get_right_init() > RIGHT_TILT_LIMIT)
-		{
-			right_tilt_count++;
-			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, acc.get_right(), acc.get_right_init(), right_tilt_count);
-		}
-		else
-		{
-			if (right_tilt_count > 0)
-				right_tilt_count--;
-			else
-				right_tilt_count = 0;
-		}
-		if (abs(acc.getZAcc() - acc.getInitZAcc()) > DIF_TILT_Z_VAL)
-		{
-			z_tilt_count++;
-			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, robot::instance()->getZAcc(), robot::instance()->getInitZAcc());
-		}
-		else
-		{
-			if (z_tilt_count > 1)
-				z_tilt_count -= 2;
-			else
-				z_tilt_count = 0;
-		}
-
-		//if (left_tilt_count > 7 || front_tilt_count > 7 || right_tilt_count > 7 || z_tilt_count > 7)
-			//ROS_WARN("%s %d: tilt_count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_tilt_count, front_tilt_count, right_tilt_count, z_tilt_count);
-
-		if (front_tilt_count + left_tilt_count + right_tilt_count + z_tilt_count > TILT_COUNT_REACH)
-		{
-			ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
-			if (left_tilt_count > TILT_COUNT_REACH / 3)
-				tmp_tilt_status |= TILT_LEFT;
-			if (right_tilt_count > TILT_COUNT_REACH / 3)
-				tmp_tilt_status |= TILT_RIGHT;
-
-			if (front_tilt_count > TILT_COUNT_REACH / 3 || !tmp_tilt_status)
-				tmp_tilt_status |= TILT_FRONT;
-			set_tilt_status(tmp_tilt_status);
-			front_tilt_count /= 3;
-			left_tilt_count /= 3;
-			right_tilt_count /= 3;
-			z_tilt_count /= 3;
-		}
-		else if (front_tilt_count + left_tilt_count + right_tilt_count + z_tilt_count < TILT_COUNT_REACH / 4)
-			set_tilt_status(0);
-	}
-	else{
-		front_tilt_count = 0;
-		left_tilt_count = 0;
-		right_tilt_count = 0;
-		z_tilt_count = 0;
-		set_tilt_status(0);
-	}
-
-	return tmp_tilt_status;
-}
-
-void set_tilt_status(uint8_t status)
-{
-	g_tilt_status = status;
-}
-
-uint8_t get_tilt_status()
-{
-	return g_tilt_status;
-}
-
 bool check_pub_scan()
 {
 	//ROS_INFO("%s %d: get_left_wheel_speed() = %d, get_right_wheel_speed() = %d.", __FUNCTION__, __LINE__, get_left_wheel_speed(), get_right_wheel_speed());
 	if (g_motion_init_succeeded &&
 		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
 		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
-		|| bumper.get_status() || get_tilt_status()
+		|| bumper.get_status() || tilt.get_status()
 		|| abs(get_left_wheel_speed() - get_right_wheel_speed()) > 100
 		|| get_left_wheel_speed() * get_right_wheel_speed() < 0))
 		return false;

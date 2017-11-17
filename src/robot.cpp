@@ -13,6 +13,7 @@
 #include <planer.h>
 #include <remote.h>
 #include <obs.h>
+#include <tilt.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -28,6 +29,7 @@
 #include "map.h"
 #include "space_exploration.h"
 #include "clean_mode.h"
+#include "tilt.h"
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
@@ -220,7 +222,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs_dynamic_base(OBS_adjust_count);
 
 	// Check if tilt.
-	check_tilt();
+	tilt.check();
 
 	// Check for whether robot should publish this frame of scan.
 	scan_ctrl_.allow_publishing = check_pub_scan();
