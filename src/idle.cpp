@@ -476,7 +476,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	else
 		beep_for_command(INVALID);
 
-	while (get_key_press() & KEY_CLEAN)
+	while (key.get_press() & KEY_CLEAN)
 	{
 		if (time(NULL) - key_press_start_time >= 3)
 		{

@@ -177,23 +177,23 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	key_ = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((key_ & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
+	if ((key_ & KEY_CLEAN) && !(key.get_press() & KEY_CLEAN))
 	{
 		key_press_count++;
 		if (key_press_count > 0)
 		{
-			set_key_press(KEY_CLEAN);
+			key.set_press(KEY_CLEAN);
 			key_press_count = 0;
 			// When key 'clean' is triggered, it will set touch status.
 			key.set();
 		}
 	}
-	else if (!(key_ & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
+	else if (!(key_ & KEY_CLEAN) && (key.get_press() & KEY_CLEAN))
 	{
 		key_release_count++;
 		if (key_release_count > 5)
 		{
-			reset_key_press(KEY_CLEAN);
+			key.reset_press(KEY_CLEAN);
 			key_release_count = 0;
 		}
 	}

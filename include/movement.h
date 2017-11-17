@@ -530,17 +530,9 @@ int16_t get_left_wheel_speed(void);
 
 int16_t get_right_wheel_speed(void);
 
-void set_key_press(uint8_t key);
-
-void reset_key_press(uint8_t key);
-
-uint8_t get_key_press(void);
-
 void set_send_flag(void);
 
 void reset_send_flag(void);
-
-uint8_t is_turn_remote(void);
 
 void set_direction_flag(uint8_t flag);
 

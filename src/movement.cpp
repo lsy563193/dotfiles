@@ -75,8 +75,6 @@ volatile uint8_t g_r_h_flag = 0;
 volatile int16_t g_left_wall_baseline = 50;
 volatile int16_t g_right_wall_baseline = 50;
 
-// Variable for key status, key may have many key types.
-volatile uint8_t g_key_status = 0;
 // Variable for remote status, remote status is just for remote controller.
 volatile uint8_t g_remote_status = 0;
 // Variable for stop event status.
@@ -1373,38 +1371,6 @@ void set_send_flag(void)
 void reset_send_flag(void)
 {
 	g_sendflag = 0;
-}
-
-void set_key_press(uint8_t key)
-{
-	g_key_status |= key;
-}
-
-void reset_key_press(uint8_t key)
-{
-	g_key_status &= ~key;
-}
-
-uint8_t get_key_press(void)
-{
-	return g_key_status;
-}
-
-uint8_t is_virtual_wall(void)
-{
-	return 0;
-}
-
-uint8_t is_turn_remote(void)
-{
-	if (remote_key(Remote_Max | Remote_Home | Remote_Spot | Remote_Wall_Follow))
-	{
-		reset_rcon_remote();
-		return 1;
-	} else
-	{
-		return 0;
-	}
 }
 
 void set_direction_flag(uint8_t flag)

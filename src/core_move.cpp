@@ -983,7 +983,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	if (ev.slam_error)
 	{
 		beep_for_command(INVALID);
-		while (get_key_press() & KEY_CLEAN)
+		while (key.get_press() & KEY_CLEAN)
 		{
 			usleep(20000);
 		}
@@ -1000,7 +1000,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 		g_is_manual_pause = true;
 
 	start_time = time(NULL);
-	while (get_key_press() & KEY_CLEAN)
+	while (key.get_press() & KEY_CLEAN)
 	{
 		if (cm_is_navigation() && time(NULL) - start_time > 3) {
 			if (!reset_manual_pause)

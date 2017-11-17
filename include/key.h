@@ -8,7 +8,10 @@
 
 class Key {
 public:
-Key(){ status_ = false; }
+Key(){
+	status_ = false;
+	g_status =0;
+}
 void reset(void)
 {
 	status_ = false;
@@ -23,8 +26,27 @@ void set()
 {
 	status_ = true;
 }
+
+
+void set_press(uint8_t key)
+{
+	g_status |= key;
+}
+
+void reset_press(uint8_t key)
+{
+	g_status &= ~key;
+}
+
+uint8_t get_press(void)
+{
+	return g_status;
+}
+
+
 private:
 	bool status_;
+	volatile uint8_t g_status;
 };
 
 
