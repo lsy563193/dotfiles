@@ -9,6 +9,7 @@
 #include <move_type.h>
 #include <ctime>
 #include <clean_state.h>
+#include <vacuum.h>
 
 #include "gyro.h"
 #include "robot.hpp"
@@ -67,10 +68,8 @@ static uint16_t g_r_brush_pwm = 0;
 static int32_t g_move_step_counter = 0;
 static uint32_t g_mobility_step = 0;
 static uint8_t g_direction_flag = 0;
-// Variable for vacuum mode
+// Variable for vacuum mode_
 
-volatile uint8_t g_vac_mode;
-volatile uint8_t g_vac_mode_save;
 //static uint8_t g_cleaning_mode = 0;
 static uint8_t g_sendflag = 0;
 static time_t g_start_work_time;
@@ -100,7 +99,7 @@ volatile uint8_t g_plan_status = 0;
 // Error code for exception case
 volatile uint8_t g_error_code = 0;
 
-//Variable for checking spot turn in wall follow mode
+//Variable for checking spot turn in wall follow mode_
 volatile int32_t g_wf_sp_turn_count;
 
 bool g_reset_lbrush_oc = false;
@@ -1214,12 +1213,10 @@ void work_motor_configure(void)
 {
 	if (cs_is_going_home())
 	{
-		// Set the vacuum to a normal mode
-		set_vacmode(Vac_Normal, false);
-		set_vac_speed();
+		// Set the vacuum to a normal mode_
+		vacuum.mode(Vac_Normal, false);
 	} else {
-		set_vacmode(Vac_Save);
-		set_vac_speed();
+		vacuum.mode(Vac_Save);
 	}
 
 	// Trun on the main brush and side brush
@@ -1515,56 +1512,6 @@ uint8_t check_bat_ready_to_clean(void)
 //	return g_cleaning_mode;
 //}
 
-void set_vacmode(uint8_t mode, bool is_save)
-{
-	// Set the mode for vacuum.
-	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
-	g_vac_mode = g_vac_mode_save;
-	if (mode != Vac_Save)
-	{
-		g_vac_mode = mode;
-		if (is_save)
-			g_vac_mode_save = g_vac_mode;
-	}
-
-	ROS_INFO("%s ,%d g_vac_mode(%d),g_vac_mode_save(%d)", __FUNCTION__, __LINE__, g_vac_mode, g_vac_mode_save);
-}
-
-void set_bldc_speed(uint32_t S)
-{
-	// Set the power of BLDC, S should be in range(0, 100).
-	S = S < 100 ? S : 100;
-	control_set(CTL_VACCUM_PWR, S & 0xff);
-}
-
-void set_vac_speed(void)
-{
-	// Set the power of BLDC according to different situation
-	// Stop the BLDC if rGobot carries the water tank
-	if (is_water_tank())
-	{
-		set_bldc_speed(0);
-	} else
-	{
-		// Set the BLDC power to max if robot in max mode
-		if (get_vac_mode() == Vac_Max)
-		{
-			set_bldc_speed(Vac_Speed_Max);
-		} else
-		{
-			// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-			if (get_work_time() < Two_Hours)
-			{
-				set_bldc_speed(Vac_Speed_Normal);
-			} else
-			{
-				//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
-				set_bldc_speed(Vac_Speed_NormalL);
-			}
-		}
-	}
-}
-
 //--------------------------------------Obs Dynamic adjust----------------------
 void obs_dynamic_base(uint16_t count)
 {
@@ -1673,35 +1620,6 @@ void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 	set_wheel_speed(Left_Speed, Right_Speed);
 }
 
-uint8_t get_vac_mode(void)
-{
-	// Return the vacuum mode
-	return g_vac_mode;
-}
-
-void set_vac_mode(uint8_t mode)
-{
-	if(mode <= Vac_Save)
-		g_vac_mode = mode;
-	else{
-		ROS_ERROR("%s,%d, variable error",__FUNCTION__,__LINE__);
-	}
-}
-
-void switch_vac_mode(bool is_save)
-{
-	// Switch the vacuum mode between Max and Normal
-	if (get_vac_mode() == Vac_Normal)
-	{
-		set_vacmode(Vac_Max, is_save);
-	} else
-	{
-		set_vacmode(Vac_Normal, is_save);
-	}
-	// Process the vacuum mode
-	set_vac_speed();
-}
-
 void set_rcon_status(uint32_t code)
 {
 	movement_rcon_status = code;
@@ -1771,35 +1689,6 @@ void reset_move_with_remote(void)
 {
 	g_remote_move_flag = 0;
 }
-
-uint8_t check_bat_set_motors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush)
-{
-	static uint8_t low_acc = 0;
-	if (check_bat_stop())
-	{
-		if (low_acc < 255)
-			low_acc++;
-		if (low_acc > 50)
-		{
-			low_acc = 0;
-			uint16_t t_vol = get_battery_voltage();
-			uint8_t v_pwr = Vacuum_Voltage / t_vol;
-			uint8_t s_pwr = Side_Brush / t_vol;
-			uint8_t m_pwr = Main_Brush / t_vol;
-
-			set_bldc_speed(v_pwr);
-			set_side_brush_pwm(s_pwr, s_pwr);
-			set_main_brush_pwm(m_pwr);
-			return 1;
-
-		} else
-			return 0;
-	} else
-	{
-		return 0;
-	}
-}
-
 
 void set_dir_left(void)
 {
@@ -2015,9 +1904,9 @@ uint8_t is_water_tank(void)
 }
 
 
-//void cm_set(uint8_t mode)
+//void cm_set(uint8_t mode_)
 //{
-//	g_cleaning_mode = mode;
+//	g_cleaning_mode = mode_;
 //}
 
 void beep(uint8_t Sound_Code, int Sound_Time_Ms, int Silence_Time_Ms, int Total_Time_Count)
@@ -2035,24 +1924,6 @@ void beep(uint8_t Sound_Code, int Sound_Time_Ms, int Silence_Time_Ms, int Total_
 	robotbase_beep_update_flag = true;
 }
 
-void initialize_motor(void)
-{
-#ifdef BLDC_INSTALL
-	Clear_BLDC_Fail();
-	BLDC_OFF;
-	delay(5000);
-	Set_BLDC_TPWM(40);
-	Set_Vac_Speed();
-#endif
-	set_main_brush_pwm(50);
-	set_side_brush_pwm(60, 60);
-	set_bldc_speed(40);
-//	move_forward(0,0);
-	stop_brifly();
-//	Left_Wheel_Slow=0;
-//	Right_Wheel_Slow=0;
-//	reset_bumper_error();
-}
 
 void disable_motors(void)
 {
@@ -2064,7 +1935,7 @@ void disable_motors(void)
 	// Stop the main brush
 	set_main_brush_pwm(0);
 	// Stop the vacuum, directly stop the BLDC
-	set_bldc_speed(0);
+	vacuum.stop();
 }
 
 void set_start_charge(void)
@@ -2075,7 +1946,7 @@ void set_start_charge(void)
 
 void set_stop_charge(void)
 {
-	// Set the flag to false so that it can quit charger mode.
+	// Set the flag to false so that it can quit charger mode_.
 	control_set(CTL_CHARGER, 0x00);
 }
 
@@ -2988,7 +2859,7 @@ uint8_t check_left_brush_stall(void)
 				if ((time(NULL) - time_lbrush) >= 5)
 				{
 					ROS_WARN("%s %d: Restore from fully operated.", __FUNCTION__, __LINE__);
-					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
+					/*-----brush is in max mode_ more than 5s, turn to normal mode_ and reset error counter-----*/
 					set_left_brush_pwm(g_l_brush_pwm);
 					left_brush_status = 1;
 					g_oc_brush_left_cnt = 0;
@@ -3085,7 +2956,7 @@ uint8_t check_right_brush_stall(void)
 				if ((time(NULL) - time_rbrush) >= 5)
 				{
 					ROS_WARN("%s %d: Restore from fully operated.", __FUNCTION__, __LINE__);
-					/*-----brush is in max mode more than 5s, turn to normal mode and reset error counter-----*/
+					/*-----brush is in max mode_ more than 5s, turn to normal mode_ and reset error counter-----*/
 					set_right_brush_pwm(g_r_brush_pwm);
 					right_brush_status = 1;
 					g_oc_brush_right_cnt = 0;

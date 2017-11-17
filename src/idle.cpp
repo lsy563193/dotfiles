@@ -14,6 +14,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "movement.h"
+#include "vacuum.h"
 #include "idle.h"
 #include <ros/ros.h>
 #include <event_manager.h>
@@ -69,7 +70,7 @@ void idle(void)
 	reset_stop_event_status();
 	reset_rcon_status();
 	reset_touch();
-	set_vacmode(Vac_Save);
+	vacuum.stop();
 
 	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, get_battery_voltage());
 	// Check the battery to warn the user.
@@ -114,7 +115,7 @@ void idle(void)
 		}
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
-			ROS_WARN("%s %d: Userinterface mode didn't receive any command in 10mins, go to sleep mode.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Userinterface mode_ didn't receive any command in 10mins, go to sleep mode_.", __FUNCTION__, __LINE__);
 			temp_mode = Clean_Mode_Sleep;
 		}
 

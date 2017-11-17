@@ -18,6 +18,7 @@
 #include "gyro.h"
 #include "remote_mode.h"
 #include <ros/ros.h>
+#include <vacuum.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -38,7 +39,7 @@ static RM_EventHandle eh;
 
 void remote_mode(void)
 {
-	ROS_INFO("\n-------Remote mode------\n");
+	ROS_INFO("\n-------Remote mode_------\n");
 	set_main_pwr_byte(Clean_Mode_Remote);
 	g_is_low_bat_pause = false;
 	reset_clean_paused();
@@ -468,7 +469,7 @@ void RM_EventHandle::remote_max(bool state_now, bool state_last)
 	if (!ev.bumper_jam && !ev.cliff_jam)
 	{
 		beep_for_command(VALID);
-		switch_vac_mode(true);
+		vacuum.switchToNext(true);
 	}
 	else
 		beep_for_command(INVALID);

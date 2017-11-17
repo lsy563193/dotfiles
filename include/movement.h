@@ -211,14 +211,6 @@
 #define Clean_Vac_Power				120000
 #define Home_Vac_Power				40000
 
-#define Vac_Speed_Max				100 //15500rpm
-#define Vac_Speed_Normal			60 //9000rpm
-#define Vac_Speed_NormalL			50 //8000rpm
-
-#define Vac_Normal					0
-#define Vac_Max						1
-#define Vac_Save					2
-
 #define Clean_MainBrush_Power		8500
 #define Home_MainBrush_Power		4000
 
@@ -525,21 +517,6 @@ uint8_t check_bat_ready_to_clean(void);
 
 uint8_t cm_get(void);
 
-/*
- * Set the mode for vacuum.
- * The mode should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL/Vac_Save
- * para
- * mode: Vac_Normal Vac_Max Vac_Save(load mode save last time)
- * save: if save is ture,save this mode,next time clean will reload at interface
- * */
-void set_vacmode(uint8_t mode, bool is_save = false);
-
-void set_bldc_speed(uint32_t S);
-
-void set_vac_mode(uint8_t mode);
-
-void set_vac_speed(void);
-
 void obs_dynamic_base(uint16_t Cy);
 int16_t get_front_obs_trig_value(void);
 int16_t get_left_obs_trig_value(void);
@@ -552,12 +529,9 @@ int16_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
-uint8_t get_vac_mode(void);
-
 /*
  * node:default is not save,go and spod mode is not save, key is save
  */
-void switch_vac_mode(bool save);
 
 void set_rcon_remote(uint8_t cmd);
 
@@ -568,8 +542,6 @@ uint8_t get_rcon_remote(void);
 void reset_move_with_remote(void);
 
 void set_move_with_remote(void);
-
-uint8_t check_bat_set_motors(uint32_t Vacuum_Voltage, uint32_t Side_Brush, uint32_t Main_Brush);
 
 void reset_rcon_status(void);
 
@@ -618,8 +590,6 @@ uint8_t is_water_tank(void);
 void cm_set(uint8_t mode);
 
 void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
-
-void initialize_motor(void);
 
 void disable_motors(void);
 

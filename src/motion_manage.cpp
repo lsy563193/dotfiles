@@ -15,6 +15,7 @@
 #include "slam.h"
 #include "move_type.h"
 #include <clean_state.h>
+#include <vacuum.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -358,8 +359,7 @@ void init_spot_after_gyro()
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	set_vac_mode(Vac_Max);
-	set_vac_speed();
+	vacuum.mode(Vac_Max);
 	set_main_brush_pwm(80);
 	set_side_brush_pwm(60, 60);
 
@@ -459,7 +459,7 @@ void init_before_gyro()
 			init_go_home_before_gyro();
 			break;
 		default:
-			ROS_ERROR("This mode (%d) should not use MotionManage.", cm_get());
+			ROS_ERROR("This mode_ (%d) should not use MotionManage.", cm_get());
 			break;
 	}
 }
@@ -606,10 +606,10 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			init_go_home_after_gyro();
 			break;
 		default:
-			ROS_ERROR("This mode (%d) should not use MotionManage.", cm_get());
+			ROS_ERROR("This mode_ (%d) should not use MotionManage.", cm_get());
 			break;
 	}
-	// No need to start laser or slam if it is go home mode.
+	// No need to start laser or slam if it is go home mode_.
 	if (cm_get() == Clean_Mode_Go_Charger)
 		return;
 
@@ -827,7 +827,7 @@ bool MotionManage::initCleaning(uint8_t cleaning_mode)
 		case Clean_Mode_Go_Charger:
 			return initGoHome();
 		default:
-			ROS_ERROR("This mode (%d) should not use MotionManage.", cleaning_mode);
+			ROS_ERROR("This mode_ (%d) should not use MotionManage.", cleaning_mode);
 			return false;
 	}
 }

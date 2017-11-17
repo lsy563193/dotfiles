@@ -1004,7 +1004,7 @@ uint8_t map_save_rcon()
 	auto rcon_trig = ev.rcon_triggered/*get_rcon_trig()*/;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_station && g_in_charge_signal_range && cs_is_going_home())//while in cs_is_going_home() mode or from_station dont mark rcon signal
+	if( g_from_station && g_in_charge_signal_range && cs_is_going_home())//while in cs_is_going_home() mode_ or from_station dont mark rcon signal
 	{
 		ev.rcon_triggered = 0;
 		return 0;

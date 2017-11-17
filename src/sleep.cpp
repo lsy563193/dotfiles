@@ -11,7 +11,7 @@
 uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 bool sleep_rcon_triggered = false;
 static Sleep_EventHandle eh;
-/*----------------------------------------------------------------Sleep mode---------------------------*/
+/*----------------------------------------------------------------Sleep mode_---------------------------*/
 void sleep_mode(void)
 {
 	time_t check_battery_time = time(NULL);
@@ -104,7 +104,7 @@ void sleep_mode(void)
 	usleep(100000);
 	beep(1, 80, 4, 1);
 
-	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
+	// Wait 1.5s to avoid gyro can't open if switch to navigation mode_ too soon after waking up.
 	usleep(1500000);
 
 	reset_rcon_status();

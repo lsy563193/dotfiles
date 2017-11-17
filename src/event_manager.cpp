@@ -159,7 +159,7 @@ void event_manager_set_enable(bool enable)
 	g_event_manager_enabled = enable;
 	if (!enable)
 	{
-		//ROS_WARN("%s %d: Disable all event under manager mode:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
+		//ROS_WARN("%s %d: Disable all event under manager mode_:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
 //			eat.handler[i] = NULL;
 //			eat.handler_enabled[i] = false;
@@ -540,9 +540,9 @@ void *event_handler_thread(void *data) {
 	ROS_ERROR("%s %d: exit\n", __FUNCTION__, __LINE__);
 }
 
-//void event_manager_set_current_mode(EventModeType mode)
+//void event_manager_set_current_mode(EventModeType mode_)
 //{
-//	evt_mgr_mode = mode;
+//	evt_mgr_mode = mode_;
 //}
 
 void event_manager_register_handler(EventHandle* eh)

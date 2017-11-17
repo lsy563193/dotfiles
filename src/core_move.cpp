@@ -134,7 +134,7 @@ int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32
 void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_right)
 {
 #if GLOBAL_PID
-		/*---PID is useless in wall follow mode---*/
+		/*---PID is useless in wall follow mode_---*/
 		if(rm->isMt() && mt_is_follow_wall())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
 		else if(rm->isMt() && mt_is_linear())
@@ -146,7 +146,7 @@ void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_ri
 		else if(rm->isTurn())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_TURN);
 #else
-		/*---PID is useless in wall follow mode---*/
+		/*---PID is useless in wall follow mode_---*/
 		set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
 #endif
 }
@@ -237,9 +237,9 @@ void cm_apply_cs(int cs) {
 		if (ev.remote_home || cm_is_go_charger())
 			set_led_mode(LED_STEADY, LED_ORANGE);
 
-		// Special handling for wall follow mode.
+		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
 			map_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
@@ -1087,7 +1087,7 @@ void CM_EventHandle::remote_max(bool state_now, bool state_last)
 	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
 	{
 		beep_for_command(VALID);
-		switch_vac_mode(true);
+		vacuum.switchToNext(true);
 	}
 	else
 		beep_for_command(INVALID);
@@ -1126,8 +1126,8 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 						 robot::instance()->getBatteryVoltage());
 		ev.battrey_home = true;
 
-		if (get_vac_mode() == Vac_Max) {
-			switch_vac_mode(false);
+		if (vacuum.mode() == Vac_Max) {
+			vacuum.switchToNext(false);
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
@@ -1160,7 +1160,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 		}
 
 		g_battery_low_cnt = 0;
-		set_bldc_speed(v_pwr);
+		vacuum.bldc_speed(v_pwr);
 		set_side_brush_pwm(s_pwr, s_pwr);
 		set_main_brush_pwm(m_pwr);
 

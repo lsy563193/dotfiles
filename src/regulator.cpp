@@ -1849,7 +1849,7 @@ bool GoToChargerRegulator::isSwitch()
 						near_counter = 0;
 					if((receive_code&RconFront_Home_LR) == 0 && ++side_counter > 5)
 					{
-						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode_.", __FUNCTION__, __LINE__);
 						go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 						g_go_to_charger_back_0cm = true;
 						g_turn_angle = 0;

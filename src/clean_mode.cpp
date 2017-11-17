@@ -782,7 +782,7 @@ bool WallFollowClean::isStop()
 	}
 
 	if (cm_is_follow_wall()) {
-		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode.
+		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
 			// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
@@ -823,7 +823,7 @@ bool WallFollowClean::isSwitch()
 	}
 
 	else if (cs_is_clean()) {
-		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode.
+		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
 			// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
 		{
 			if (isTurn()) {
