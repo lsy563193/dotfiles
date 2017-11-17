@@ -17,6 +17,7 @@
 #include <robotbase.h>
 #include <path_planning.h>
 #include <clean_state.h>
+#include <pp.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
@@ -621,7 +622,7 @@ bool LinearRegulator::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 	auto target_angle = g_plan_path.back().TH;
-	if (isCellReach() && std::abs(gyro_get_angle() - target_angle) < 200)
+	if (isCellReach() && std::abs(ranged_angle(gyro_get_angle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
@@ -931,9 +932,10 @@ bool FollowWallRegulator::shouldTurn()
 	ev.laser_triggered = get_laser_status();
 	if (ev.laser_triggered)
 	{
-		// Temporary use obs as laser triggered.
-		ev.obs_triggered = BLOCK_FRONT;
-		g_turn_angle = obs_turn_angle();
+		// Temporary use bumper as laser triggered.
+		ev.bumper_triggered = ev.laser_triggered;
+		g_turn_angle = bumper_turn_angle();
+		ev.bumper_triggered = 0;
 		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
