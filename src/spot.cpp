@@ -30,6 +30,7 @@
 #include <ros/ros.h>
 #include <time.h>
 #include <vacuum.h>
+#include <brush.h>
 #include "clean_mode.h"
 
 #ifdef Turn_Speed
@@ -43,8 +44,8 @@ static SpotMovement *spot_obj = NULL;
 static void spot_motor_configure()
 {
 	vacuum.mode(Vac_Max);
-	set_main_brush_pwm(80);
-	set_side_brush_pwm(60, 60);
+	brush.set_main_pwm(80);
+	brush.set_side_pwm(60, 60);
 }
 
 SpotMovement::SpotMovement(float diameter = 1.0)

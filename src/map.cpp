@@ -920,7 +920,7 @@ uint8_t map_save_obs()
 
 uint8_t map_save_cliff()
 {
-	auto cliff_trig = ev.cliff_triggered/*get_cliff_status()*/;
+	auto cliff_trig = ev.cliff_triggered/*cliff.get_status()*/;
 	if (! cliff_trig)
 		// During self check.
 		return 0;

@@ -1,3 +1,5 @@
+#include <battery.h>
+#include <brush.h>
 #include "pp.h"
 
 #ifdef TURN_SPEED
@@ -413,7 +415,7 @@ void cm_self_check(void)
 		}
 		else if (ev.cliff_jam)
 		{
-			if (!get_cliff_status())
+			if (!cliff.get_status())
 			{
 				ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
 				ev.cliff_triggered = 0;
@@ -461,7 +463,7 @@ void cm_self_check(void)
 					{
 						stop_brifly();
 						// If cliff jam during bumper self resume.
-						if (get_cliff_status() && ++g_cliff_cnt > 2)
+						if (cliff.get_status() && ++g_cliff_cnt > 2)
 						{
 							ev.cliff_jam = true;
 							resume_cnt = 0;
@@ -483,7 +485,7 @@ void cm_self_check(void)
 					if (fabsf(distance) > 0.05f)
 					{
 						// If cliff jam during bumper self resume.
-						if (get_cliff_status() && ++g_cliff_cnt > 2)
+						if (cliff.get_status() && ++g_cliff_cnt > 2)
 						{
 							ev.cliff_jam = true;
 							resume_cnt = 0;
@@ -502,7 +504,7 @@ void cm_self_check(void)
 				{
 					ROS_DEBUG("%s %d: gyro_get_angle(): %d", __FUNCTION__, __LINE__, gyro_get_angle());
 					// If cliff jam during bumper self resume.
-					if (get_cliff_status() && ++g_cliff_cnt > 2)
+					if (cliff.get_status() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						resume_cnt = 0;
@@ -519,7 +521,7 @@ void cm_self_check(void)
 				case 5:
 				{
 					// If cliff jam during bumper self resume.
-					if (get_cliff_status() && ++g_cliff_cnt > 2)
+					if (cliff.get_status() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						resume_cnt = 0;
@@ -855,23 +857,23 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 }
 
 /* Over Current */
-//void CM_EventHandle::over_current_brush_left(bool state_now, bool state_last)
+//void CM_EventHandle::over_current_brush.left(bool state_now, bool state_last)
 //{
 //	static uint8_t stop_cnt = 0;
 //
 //	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 //	if(!robot::instance()->getLbrushOc()) {
-//		g_oc_brush_left_cnt = 0;
+//		g_oc_brush.left_cnt = 0;
 //		if (stop_cnt++ > 250) {
-//			set_left_brush_pwm(30);
+//			brush.set_left_pwm(30);
 //		}
 //		return;
 //	}
 //
 //	stop_cnt = 0;
-//	if (g_oc_brush_left_cnt++ > 40) {
-//		g_oc_brush_left_cnt = 0;
-//		set_left_brush_pwm(0);
+//	if (g_oc_brush.left_cnt++ > 40) {
+//		g_oc_brush.left_cnt = 0;
+//		brush.set_left_pwm(0);
 //		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
 //	}
 //}
@@ -880,13 +882,13 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!robot::instance()->getMbrushOc()){
-		g_oc_brush_main_cnt = 0;
+	if (!brush.getMbrushOc()){
+		brush.oc_main_cnt = 0;
 		return;
 	}
 
-	if (g_oc_brush_main_cnt++ > 40) {
-		g_oc_brush_main_cnt = 0;
+	if (brush.oc_main_cnt++ > 40) {
+		brush.oc_main_cnt = 0;
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
 		if (self_check(Check_Main_Brush) == 1) {
@@ -896,24 +898,24 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
     }
 }
 
-//void CM_EventHandle::over_current_brush_right(bool state_now, bool state_last)
+//void CM_EventHandle::over_current_brush.right(bool state_now, bool state_last)
 //{
 //	static uint8_t stop_cnt = 0;
 //
 //	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 //
 //	if(!robot::instance()->getRbrushOc()) {
-//		g_oc_brush_right_cnt = 0;
+//		g_oc_brush.right_cnt = 0;
 //		if (stop_cnt++ > 250) {
-//			set_right_brush_pwm(30);
+//			brush.set_right_pwm(30);
 //		}
 //		return;
 //	}
 //
 //	stop_cnt = 0;
-//	if (g_oc_brush_right_cnt++ > 40) {
-//		g_oc_brush_right_cnt = 0;
-//		set_right_brush_pwm(0);
+//	if (g_oc_brush.right_cnt++ > 40) {
+//		g_oc_brush.right_cnt = 0;
+//		brush.set_right_pwm(0);
 //		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
 //	}
 //}
@@ -1123,7 +1125,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && !cs_is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
-						 robot::instance()->getBatteryVoltage());
+						 battery.get_voltage());
 		ev.battrey_home = true;
 
 		if (vacuum.mode() == Vac_Max) {
@@ -1146,7 +1148,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
     ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (g_battery_low_cnt++ > 50) {
-		t_vol = get_battery_voltage();
+		t_vol = battery.get_voltage();
 		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
 		if (cs_is_going_home()) {
@@ -1161,8 +1163,8 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 
 		g_battery_low_cnt = 0;
 		vacuum.bldc_speed(v_pwr);
-		set_side_brush_pwm(s_pwr, s_pwr);
-		set_main_brush_pwm(m_pwr);
+		brush.set_side_pwm(s_pwr, s_pwr);
+		brush.set_main_pwm(m_pwr);
 
 		ev.fatal_quit = true;
 		ev.battery_low = true;

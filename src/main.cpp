@@ -6,6 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <ros/ros.h>
+#include <battery.h>
 #include "charger.hpp"
 #include "core_move.h"
 #include "gyro.h"
@@ -43,7 +44,7 @@ void *core_move_thread(void *)
 
 	if (is_direct_charge() || is_on_charger_stub())
 		cm_set(Clean_Mode_Charging);
-	else if (check_bat_ready_to_clean())
+	else if (battery.is_ready_to_clean())
 		wav_play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){

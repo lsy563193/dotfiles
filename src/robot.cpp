@@ -208,21 +208,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	w_tank_ = msg->w_tank;
 
-	battery_voltage_ = msg->batv;
-
-	cliff_right_ = msg->rcliff;
-
-	cliff_left_ = msg->lcliff;
-
-	cliff_front_ = msg->fcliff;
-
 	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
-
-	lbrush_oc_ = msg->lbrush_oc;
-
-	rbrush_oc_ = msg->rbrush_oc;
-
-	mbrush_oc_ = msg->mbrush_oc;
 
 	vacuum_oc_ = msg->vcum_oc;
 

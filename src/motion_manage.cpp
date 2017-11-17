@@ -17,6 +17,7 @@
 #include "move_type.h"
 #include <clean_state.h>
 #include <vacuum.h>
+#include <brush.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -361,8 +362,8 @@ void init_spot_after_gyro()
 	g_home_way_list.clear();
 
 	vacuum.mode(Vac_Max);
-	set_main_brush_pwm(80);
-	set_side_brush_pwm(60, 60);
+	brush.set_main_pwm(80);
+	brush.set_side_pwm(60, 60);
 
 }
 
@@ -390,7 +391,7 @@ bool wait_for_back_from_charge()
 		extern bool g_from_station;
 		g_from_station = 1;
 
-		set_side_brush_pwm(30, 30);
+	brush.set_side_pwm(30, 30);
 		int back_segment = MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);

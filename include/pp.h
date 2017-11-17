@@ -19,6 +19,8 @@
 #include "gyro.h"
 #include "vacuum.h"
 #include "key.h"
+#include "cliff.h"
+#include "brush.h"
 #include "map.h"
 #include "mathematics.h"
 #include "path_planning.h"

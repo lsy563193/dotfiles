@@ -112,21 +112,6 @@ public:
 		return angle_v_;
 	}
 
-	int16_t getCliffRight() const
-	{
-		return sensor.rcliff;
-	}
-
-	int16_t getCliffLeft() const
-	{
-		return sensor.lcliff;
-	}
-
-	int16_t getCliffFront() const
-	{
-		return sensor.fcliff;
-	}
-
 	int16_t getLeftWall() const
 	{
 		return sensor.left_wall - g_left_wall_baseline;
@@ -171,21 +156,6 @@ public:
 	uint8_t getVacuumSelfCheckStatus() const
 	{
 		return vacuum_selfcheck_status_;
-	}
-
-	bool getLbrushOc() const
-	{
-		return lbrush_oc_;
-	}
-
-	bool getRbrushOc() const
-	{
-		return rbrush_oc_;
-	}
-
-	bool getMbrushOc() const
-	{
-		return mbrush_oc_;
 	}
 
 	bool getVacuumOc() const
@@ -260,11 +230,6 @@ public:
 	bool getWaterTank() const
 	{
 		return w_tank_;
-	}
-
-	uint16_t getBatteryVoltage() const
-	{
-		return battery_voltage_*10;
 	}
 
 	bool isMoving() const
@@ -579,15 +544,6 @@ private:
 	/* 1 byte */
 	int32_t brush_main_;
 
-	/* 2 bytes */
-	int16_t cliff_right_;
-
-	/* 2 bytes */
-	int16_t cliff_left_;
-
-	/* 2 bytes */
-	int16_t cliff_front_;
-
 	/*1 byte */
 	uint8_t key_;
 
@@ -597,14 +553,9 @@ private:
 	/*1 byte*/
 	bool w_tank_; //water tank
 
-	/* 1 byte */
-	uint16_t battery_voltage_;
-
 	/*1 byte*/
 	uint8_t vacuum_selfcheck_status_;
-	bool lbrush_oc_; //oc: over current
-	bool rbrush_oc_;
-	bool mbrush_oc_;
+
 	bool vacuum_oc_;
 
 	/*2 bytes*/

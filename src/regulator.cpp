@@ -325,7 +325,7 @@ bool BackRegulator::isReach()
 		}
 
 		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
-		g_cliff_cnt = get_cliff_status() == 0 ? 0 : g_cliff_cnt+1 ;
+		g_cliff_cnt = cliff.get_status() == 0 ? 0 : g_cliff_cnt+1 ;
 		ev.tilt_triggered = get_tilt_status();
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
@@ -473,7 +473,7 @@ bool TurnRegulator::shouldMoveBack()
 {
 	// Robot should move back for these cases.
 	ev.bumper_triggered = get_bumper_status();
-	ev.cliff_triggered = get_cliff_status();
+	ev.cliff_triggered = cliff.get_status();
 	ev.tilt_triggered = get_tilt_status();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
@@ -662,7 +662,7 @@ bool LinearRegulator::shouldMoveBack()
 {
 	// Robot should move back for these cases.
 	ev.bumper_triggered = get_bumper_status();
-	ev.cliff_triggered = get_cliff_status();
+	ev.cliff_triggered = cliff.get_status();
 	ev.tilt_triggered = get_tilt_status();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
@@ -905,7 +905,7 @@ bool FollowWallRegulator::shouldMoveBack()
 		ROS_WARN("%s %d: Bumper triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-	ev.cliff_triggered = get_cliff_status();
+	ev.cliff_triggered = cliff.get_status();
 	if (ev.cliff_triggered) {
 		g_turn_angle = cliff_turn_angle();
 		ROS_WARN("%s %d: Cliff triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
@@ -1354,7 +1354,7 @@ bool GoToChargerRegulator::isSwitch()
 			resetGoToChargerVariables();
 			return true;
 		}
-		ev.cliff_triggered = get_cliff_status();
+		ev.cliff_triggered = cliff.get_status();
 		if(ev.cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
@@ -1398,7 +1398,7 @@ bool GoToChargerRegulator::isSwitch()
 				resetGoToChargerVariables();
 				return true;
 			}
-			ev.cliff_triggered = get_cliff_status();
+			ev.cliff_triggered = cliff.get_status();
 			if(ev.cliff_triggered)
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
@@ -1578,7 +1578,7 @@ bool GoToChargerRegulator::isSwitch()
 	}
 	else if (go_home_state_now == AROUND_CHARGER_STATION)
 	{
-		ev.cliff_triggered = get_cliff_status();
+		ev.cliff_triggered = cliff.get_status();
 		if(ev.cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
@@ -1733,7 +1733,7 @@ bool GoToChargerRegulator::isSwitch()
 			g_turn_angle = 1800;
 			return true;
 		}
-		ev.cliff_triggered = get_cliff_status();
+		ev.cliff_triggered = cliff.get_status();
 		if(ev.cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
@@ -1817,7 +1817,7 @@ bool GoToChargerRegulator::isSwitch()
 				return true;
 			}
 		}
-		ev.cliff_triggered = get_cliff_status();
+		ev.cliff_triggered = cliff.get_status();
 		if(ev.cliff_triggered)
 		{
 			g_turn_angle = 1750;

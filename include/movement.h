@@ -28,6 +28,7 @@
 #define Room_Mode_Auto (uint8_t)0x01
 #define Room_Mode_Large (uint8_t)0x00
 
+#define CLIFF_LIMIT  60
 #define BLOCK_LEFT				((uint8_t) 0x01)
 #define BLOCK_RIGHT			((uint8_t) 0x02)
 #define BLOCK_FRONT			((uint8_t) 0x04)
@@ -370,8 +371,6 @@ typedef enum{
 #define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
-//cliff limit
-#define CLIFF_LIMIT				60
 extern uint32_t g_rcon_status;
 
 extern int16_t g_obs_left_baseline;
@@ -439,8 +438,6 @@ void set_dir_forward(void);
 
 uint8_t is_encoder_fail(void);
 
-void set_right_brush_stall(uint8_t R);
-void set_left_brush_stall(uint8_t L);
 
 void wall_dynamic_base(uint32_t Cy);
 void set_wall_base(int8_t dir, int32_t data);
@@ -448,16 +445,10 @@ int32_t get_wall_base(int8_t dir);
 
 void quick_back(uint8_t speed,uint16_t distance);
 
-void turn_left(uint16_t speed, int16_t angle);
-void turn_right(uint16_t speed, int16_t angle);
-void jam_turn_left(uint16_t speed, int16_t angle);
-void jam_turn_right(uint16_t speed, int16_t angle);
 
 void set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
-
-void set_right_brush_stall(uint8_t R);
 
 //void wall_dynamic_base(uint32_t Cy);
 
@@ -467,16 +458,7 @@ uint8_t get_bumper_status(void);
 
 int8_t get_lidar_bumper_status(void);
 
-uint8_t get_cliff_status(void);
-
 int get_rcon_trig(void);
-
-int16_t get_front_cliff_trig_value(void);
-int16_t get_left_cliff_trig_value(void);
-int16_t get_right_cliff_trig_value(void);
-int16_t get_front_cliff(void);
-int16_t get_left_cliff(void);
-int16_t get_right_cliff(void);
 
 bool is_on_charger_stub(void);
 
@@ -504,16 +486,7 @@ void work_motor_configure(void);
 
 uint8_t check_motor_current(void);
 
-uint8_t check_left_brush_stall(void);
-uint8_t check_right_brush_stall(void);
-
 uint8_t self_check(uint8_t Check_Code);
-
-uint8_t check_bat_home(void);
-
-uint8_t check_bat_full(void);
-
-uint8_t check_bat_ready_to_clean(void);
 
 uint8_t cm_get(void);
 
@@ -554,18 +527,6 @@ void set_led(uint16_t G, uint16_t R);
 void stop_brifly(void);
 
 void delay_sec(double s);
-
-void set_main_brush_pwm(uint16_t PWM);
-
-void set_side_brush_pwm(uint16_t L, uint16_t R);
-
-void set_left_brush_pwm(uint16_t L);
-
-void set_right_brush_pwm(uint16_t R);
-
-uint8_t get_left_brush_stall(void);
-
-uint8_t get_right_brush_stall(void);
 
 uint8_t remote_key(uint8_t Key);
 
@@ -613,8 +574,6 @@ void random_back(void);
 
 void move_back(void);
 
-void cliff_move_back(void);
-
 void set_left_wheel_speed(uint8_t speed);
 
 void set_right_wheel_speed(uint8_t speed);
@@ -630,8 +589,6 @@ void set_key_press(uint8_t key);
 void reset_key_press(uint8_t key);
 
 uint8_t get_key_press(void);
-
-uint16_t get_battery_voltage();
 
 uint8_t is_flag_set(void);
 
@@ -700,10 +657,6 @@ uint32_t get_average_move(void);
 uint32_t reset_average_counter(void);
 
 void reset_virtual_wall();
-
-void cliff_turn_left(uint16_t speed, uint16_t angle);
-
-void cliff_turn_right(uint16_t speed, uint16_t angle);
 
 uint8_t is_work_finish(uint8_t m);
 

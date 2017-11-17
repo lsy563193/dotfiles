@@ -47,7 +47,7 @@ typedef struct
 }Plan_Struct;
 
 class Idle_EventHandle:public EventHandle {
-	void cliff(bool state_now, bool state_last);
+	void cliff_(bool state_now, bool state_last);
 
 	void cliff_left(bool state_now, bool state_last);
 

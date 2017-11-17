@@ -208,9 +208,7 @@ extern int g_cliff_cnt;
 /* RCON */
 extern bool g_rcon_during_go_home;
 /* Over Current */
-extern uint8_t g_oc_brush_left_cnt;
-extern uint8_t g_oc_brush_main_cnt;
-extern uint8_t g_oc_brush_right_cnt;
+
 extern uint8_t g_oc_wheel_left_cnt;
 extern uint8_t g_oc_wheel_right_cnt;
 extern uint8_t g_oc_suction_cnt;
