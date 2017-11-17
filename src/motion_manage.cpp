@@ -699,7 +699,7 @@ MotionManage::~MotionManage()
 				// The current home cell is still valid, so push it back to the home point list.
 				path_set_home(g_home_point);
 			}
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
 			if (cs_is_going_home())
@@ -808,7 +808,7 @@ MotionManage::~MotionManage()
 	else if (ev.charge_detect)
 		cm_set(Clean_Mode_Charging);
 	else
-		cm_set(Clean_Mode_Userinterface);
+		cm_set(Clean_Mode_Idle);
 }
 
 bool MotionManage::initCleaning(uint8_t cleaning_mode)

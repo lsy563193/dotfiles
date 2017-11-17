@@ -49,9 +49,9 @@ void *core_move_thread(void *)
 	while(ros::ok()){
 		usleep(20000);
 		switch(cm_get()){
-			case Clean_Mode_Userinterface:
+			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode------\n");
-				set_main_pwr_byte(Clean_Mode_Userinterface);
+				set_main_pwr_byte(Clean_Mode_Idle);
 //				wav_play(WAV_TEST_MODE);
 				idle();
 				break;
@@ -125,7 +125,7 @@ void *core_move_thread(void *)
 				sleep_mode();
 				break;
 			default:
-				cm_set(Clean_Mode_Userinterface);
+				cm_set(Clean_Mode_Idle);
 				break;
 
 		}

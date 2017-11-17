@@ -70,7 +70,7 @@ void sleep_mode(void)
 		}
 		/*--- Wake up events---*/
 		if(ev.key_clean_pressed)
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 		else if(ev.charge_detect)
 			cm_set(Clean_Mode_Charging);
 		else if(g_plan_activated)
@@ -138,7 +138,7 @@ void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
-	set_main_pwr_byte(Clean_Mode_Userinterface);
+	set_main_pwr_byte(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
 	reset_sleep_mode_flag();
 }
@@ -172,7 +172,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
-	set_main_pwr_byte(Clean_Mode_Userinterface);
+	set_main_pwr_byte(Clean_Mode_Idle);
 	reset_sleep_mode_flag();
 	usleep(20000);
 

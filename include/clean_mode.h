@@ -7,7 +7,7 @@
 
 #include "regulator.h"
 enum {
-Clean_Mode_Userinterface = 1,
+Clean_Mode_Idle = 1,
 Clean_Mode_WallFollow,
 Clean_Mode_RandomMode,
 Clean_Mode_Charging,

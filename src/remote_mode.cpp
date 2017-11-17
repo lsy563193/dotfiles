@@ -55,7 +55,7 @@ void remote_mode(void)
 		wav_play(WAV_SYSTEM_INITIALIZING);
 		if (!wait_for_gyro_on())
 		{
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			return;
 		}
 	}
@@ -79,7 +79,7 @@ void remote_mode(void)
 	{
 		if (ev.fatal_quit)
 		{
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			break;
 		}
 
@@ -127,7 +127,7 @@ void remote_move(void)
 
 		if (time(NULL) - remote_cmd_time >= remote_timeout)
 		{
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			g_remote_exit = true;
 			break;
 		}
@@ -483,7 +483,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 	{
 		beep_for_command(VALID);
 		ev.key_clean_pressed = true;
-		cm_set(Clean_Mode_Userinterface);
+		cm_set(Clean_Mode_Idle);
 		disable_motors();
 	}
 	else if (!ev.bumper_jam && !ev.cliff_jam)
@@ -495,7 +495,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 			//cm_set(Clean_Mode_Gohome);
 			cm_set(Clean_Mode_Exploration);
 		else
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 	}
 	else
 		beep_for_command(INVALID);
@@ -540,7 +540,7 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 	while (get_key_press() & KEY_CLEAN)
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	cm_set(Clean_Mode_Userinterface);
+	cm_set(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
 	reset_touch();
 }

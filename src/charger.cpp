@@ -98,7 +98,7 @@ void charge_function(void)
 					if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
 					{
 						ROS_INFO("%s %d: Exit charger mode and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
-						cm_set(Clean_Mode_Userinterface);
+						cm_set(Clean_Mode_Idle);
 						g_resume_cleaning = false;
 					}
 					else
@@ -110,7 +110,7 @@ void charge_function(void)
 				}
 
 				ROS_INFO("%s %d: Exit charger mode and go to userinterface mode.", __FUNCTION__, __LINE__);
-				cm_set(Clean_Mode_Userinterface);
+				cm_set(Clean_Mode_Idle);
 				break;
 			}
 			else
@@ -122,7 +122,7 @@ void charge_function(void)
 		{
 			disable_motors();
 			ev.cliff_all_triggered = 0;
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			break;
 		}
 		if(g_plan_activated)
