@@ -16,6 +16,7 @@
 #include "movement.h"
 #include "vacuum.h"
 #include "idle.h"
+#include "key.h"
 #include <ros/ros.h>
 #include <event_manager.h>
 #include "config.h"
@@ -69,7 +70,7 @@ void idle(void)
 	set_plan_status(0);
 	reset_stop_event_status();
 	reset_rcon_status();
-	reset_touch();
+	key.reset();
 	vacuum.stop();
 
 	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, get_battery_voltage());
@@ -491,7 +492,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	if (long_press_to_sleep)
 	{
 		reset_stop_event_status();
-		reset_touch();
+		key.reset();
 		return;
 	}
 
@@ -520,7 +521,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 		temp_mode = Clean_Mode_Navigation;
 
 	reset_stop_event_status();
-	reset_touch();
+	key.reset();
 }
 
 void Idle_EventHandle::charge_detect(bool state_now, bool state_last)

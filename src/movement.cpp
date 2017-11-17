@@ -12,6 +12,7 @@
 #include <vacuum.h>
 
 #include "gyro.h"
+#include "key.h"
 #include "robot.hpp"
 #include "movement.h"
 #include "crc8.h"
@@ -87,8 +88,6 @@ volatile int16_t g_right_wall_baseline = 50;
 
 // Variable for key status, key may have many key types.
 volatile uint8_t g_key_status = 0;
-// Variable for touch status, touch status is just for KEY_CLEAN.
-volatile uint8_t g_touch_status = 0;
 // Variable for remote status, remote status is just for remote controller.
 volatile uint8_t g_remote_status = 0;
 // Variable for stop event status.
@@ -1767,26 +1766,11 @@ uint8_t get_right_brush_stall(void)
 }
 
 
-uint8_t get_touch_status(void)
-{
-	return g_touch_status;
-}
-
-void reset_touch(void)
-{
-	g_touch_status = 0;
-}
-
-void set_touch(void)
-{
-	g_touch_status = 1;
-}
-
 void reset_stop_event_status(void)
 {
 	g_stop_event_status = 0;
 	// For key release checking.
-	reset_touch();
+	key.reset();
 }
 
 uint8_t stop_event(void)
@@ -1795,14 +1779,14 @@ uint8_t stop_event(void)
 	if (!g_stop_event_status)
 	{
 		// Get the key value from robot sensor
-		if (get_touch_status())
+		if (key.get())
 		{
 			ROS_WARN("Touch status == 1");
 #if MANUAL_PAUSE_CLEANING
 			if (cm_is_navigation())
 				g_is_manual_pause = true;
 #endif
-			reset_touch();
+			key.reset();
 			g_stop_event_status = 1;
 		}
 		if (remote_key(Remote_Clean))

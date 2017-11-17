@@ -6,6 +6,7 @@
 #include "motion_manage.h"
 #include "movement.h"
 #include "gyro.h"
+#include "key.h"
 #include "robot.hpp"
 #include "wav.h"
 #include "config.h"
@@ -181,14 +182,14 @@ void init_nav_before_gyro()
 		g_home_way_list.clear();
 	}
 
-	reset_touch();
+	key.reset();
 
 	set_gyro_off();
 	usleep(30000);
 	set_gyro_on();
 
 	reset_rcon_status();
-	reset_touch();
+	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	if (g_resume_cleaning)
 	{
@@ -264,14 +265,14 @@ void init_exp_before_gyro()
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	reset_touch();
+	key.reset();
 
 	set_gyro_off();
 	usleep(30000);
 	set_gyro_on();
 
 	reset_rcon_status();
-	reset_touch();
+	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
 	wav_play(WAV_EXPLORATION_START);
@@ -296,7 +297,7 @@ void init_wf_before_gyro()
 	reset_move_with_remote();
 	reset_rcon_status();
 	reset_stop_event_status();
-	reset_touch();
+	key.reset();
 	set_gyro_off();
 	usleep(30000);
 	set_gyro_on();
@@ -334,7 +335,7 @@ void init_spot_before_gyro()
 	reset_rcon_status();
 	reset_move_with_remote();
 	reset_stop_event_status();
-	reset_touch();
+	key.reset();
 
 	set_gyro_off();
 	usleep(30000);
@@ -371,7 +372,7 @@ void init_go_home_before_gyro()
 	set_gyro_off();
 	usleep(30000);
 	set_gyro_on();
-	reset_touch();
+	key.reset();
 	cm_register_events();
 	wav_play(WAV_BACK_TO_CHARGER);
 }

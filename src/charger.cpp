@@ -2,6 +2,7 @@
 #include <ros/console.h>
 #include <stdio.h>
 #include <wav.h>
+#include <key.h>
 
 #include "go_home.hpp"
 #include "movement.h"
@@ -333,7 +334,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		usleep(20000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
-	reset_touch();
+	key.reset();
 }
 void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {

@@ -18,6 +18,7 @@
 
 #include "gyro.h"
 #include "vacuum.h"
+#include "key.h"
 #include "map.h"
 #include "mathematics.h"
 #include "path_planning.h"

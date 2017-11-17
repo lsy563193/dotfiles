@@ -303,7 +303,7 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Key */
-		if (get_touch_status()) {
+		if (key.get()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}

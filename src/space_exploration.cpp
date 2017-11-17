@@ -1,6 +1,7 @@
 #include "space_exploration.h"
 #include "map.h"
 #include "gyro.h"
+#include "key.h"
 #include "core_move.h"
 #include <ros/ros.h>
 #include "motion_manage.h"
@@ -90,7 +91,7 @@ void turn_into_exploration(bool is_reset_map)
 	g_home_way_list.clear();
 
 	reset_rcon_status();
-	reset_touch();
+	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	wav_play(WAV_EXPLORATION_START);
 

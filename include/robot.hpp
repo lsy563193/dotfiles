@@ -195,7 +195,7 @@ public:
 
 	uint8_t getKey() const
 	{
-		return key;
+		return key_;
 	}
 
 	int getChargeStatus() const
@@ -589,7 +589,7 @@ private:
 	int16_t cliff_front_;
 
 	/*1 byte */
-	uint8_t key;
+	uint8_t key_;
 
 	/*1 byte */
 	uint8_t charge_status_;

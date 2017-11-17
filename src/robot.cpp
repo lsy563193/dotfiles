@@ -11,6 +11,7 @@
 #include <std_srvs/SetBool.h>
 
 #include "gyro.h"
+#include "key.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "config.h"
@@ -173,9 +174,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 //	if(get_rcon_status())
 //	ROS_WARN("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
 
-	key = msg->key;
+	key_ = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((key & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
+	if ((key_ & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
 	{
 		key_press_count++;
 		if (key_press_count > 0)
@@ -183,10 +184,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 			set_key_press(KEY_CLEAN);
 			key_press_count = 0;
 			// When key 'clean' is triggered, it will set touch status.
-			set_touch();
+			key.set();
 		}
 	}
-	else if (!(key & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
+	else if (!(key_ & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
 	{
 		key_release_count++;
 		if (key_release_count > 5)

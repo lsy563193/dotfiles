@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 
 #include "sleep.h"
+#include "key.h"
 #include "movement.h"
 #include "wav.h"
 #include "event_manager.h"
@@ -37,7 +38,7 @@ void sleep_mode(void)
 	reset_stop_event_status();
 	reset_rcon_status();
 	reset_rcon_remote();
-	reset_touch();
+	key.reset();
 	set_plan_status(0);
 
 	event_manager_reset_status();
@@ -182,7 +183,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 		usleep(20000);
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	reset_touch();
+	key.reset();
 }
 
 void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)

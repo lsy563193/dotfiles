@@ -985,7 +985,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 			usleep(20000);
 		}
 		ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-		reset_touch();
+		key.reset();
 		return;
 	}
 
@@ -1014,7 +1014,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	reset_touch();
+	key.reset();
 }
 
 /* Remote */

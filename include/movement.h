@@ -571,12 +571,6 @@ uint8_t remote_key(uint8_t Key);
 
 uint8_t is_move_with_remote(void);
 
-uint8_t get_touch_status(void);
-
-void reset_touch(void);
-
-void set_touch(void);
-
 void reset_stop_event_status(void);
 
 uint8_t stop_event(void);

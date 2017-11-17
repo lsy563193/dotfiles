@@ -10,6 +10,7 @@ FILE(GLOB PP_SRC
 	src/des.cpp
 	src/gyro.cpp
 				src/dev/vacuum.cpp
+				src/dev/key.cpp
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp

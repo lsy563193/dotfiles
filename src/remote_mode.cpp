@@ -16,6 +16,7 @@
 
 #include "movement.h"
 #include "gyro.h"
+#include "key.h"
 #include "remote_mode.h"
 #include <ros/ros.h>
 #include <vacuum.h>
@@ -543,7 +544,7 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 	cm_set(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
-	reset_touch();
+	key.reset();
 }
 
 void RM_EventHandle::charge_detect(bool state_now, bool state_last)
