@@ -27,7 +27,7 @@
 #include "stdint.h"
 #include "event_manager.h"
 
-void user_interface(void);
+void idle(void);
 
 typedef struct
 {
@@ -46,15 +46,7 @@ typedef struct
 	uint32_t Sun;
 }Plan_Struct;
 
-void user_interface_register_events(void);
-
-void user_interface_unregister_events(void);
-
-#define define_func(name) \
-	void  ## name(bool state_now, bool state_last);
-
-
-class UI_EventHandle:public EventHandle {
+class Idle_EventHandle:public EventHandle {
 	void cliff(bool state_now, bool state_last);
 
 	void cliff_left(bool state_now, bool state_last);

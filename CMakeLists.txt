@@ -26,7 +26,7 @@ FILE(GLOB PP_SRC
 	src/sleep.cpp
 #	src/spiral.cpp
 	src/spot.cpp
-	src/user_interface.cpp
+	src/idle.cpp
 	src/verify.cpp
 #	src/wall_follow_slam.cpp
 	src/wav.cpp

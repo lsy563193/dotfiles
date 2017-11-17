@@ -17,7 +17,7 @@
 #include "crc8.h"
 #include "robotbase.h"
 #include "spot.h"
-#include "user_interface.h"
+#include "idle.h"
 #include "remote_mode.h"
 #include "sleep.h"
 #include "wall_follow_trapped.h"
@@ -50,10 +50,10 @@ void *core_move_thread(void *)
 		usleep(20000);
 		switch(cm_get()){
 			case Clean_Mode_Userinterface:
-				ROS_INFO("\n-------user_interface mode------\n");
+				ROS_INFO("\n-------idle mode------\n");
 				set_main_pwr_byte(Clean_Mode_Userinterface);
 //				wav_play(WAV_TEST_MODE);
-				user_interface();
+				idle();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode------\n");
