@@ -79,9 +79,6 @@ ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
 // Flag for homeremote
 volatile uint8_t g_r_h_flag = 0;
 
-// Counter for bumper error
-volatile uint8_t g_bumper_error = 0;
-
 // Value for wall sensor offset.
 volatile int16_t g_left_wall_baseline = 50;
 volatile int16_t g_right_wall_baseline = 50;
@@ -282,28 +279,6 @@ void reset_wheel_step(void)
 	g_left_wheel_step = 0;
 }
 
-void reset_wall_step(void)
-{
-	g_leftwall_step = 0;
-	g_rightwall_step = 0;
-}
-
-uint32_t get_left_wall_step(void)
-{
-	return g_leftwall_step = get_left_wheel_step();
-}
-
-uint32_t get_right_wall_step(void)
-{
-	return g_rightwall_step = get_right_wheel_step();
-}
-
-void set_wheel_step(uint32_t Left, uint32_t Right)
-{
-	g_left_wheel_step = Left;
-	g_right_wheel_step = Right;
-}
-
 int32_t get_wall_adc(int8_t dir)
 {
 	if (dir == 0)
@@ -325,21 +300,6 @@ void set_dir_forward(void)
 {
 	g_wheel_left_direction = FORWARD;
 	g_wheel_right_direction = FORWARD;
-}
-
-uint8_t is_encoder_fail(void)
-{
-	return 0;
-}
-
-void set_right_brush_stall(uint8_t R)
-{
-	R = R;
-}
-
-void set_left_brush_stall(uint8_t L)
-{
-	L = L;
 }
 
 void wall_dynamic_base(uint32_t Cy)
@@ -460,281 +420,6 @@ void quick_back(uint8_t speed, uint16_t distance)
 	ROS_INFO("quick_back finished.");
 }
 
-void turn_left(uint16_t speed, int16_t angle)
-{
-	auto target_angle = ranged_angle(gyro_get_angle() + angle);
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(),
-					 speed);
-
-	set_dir_left();
-
-	set_wheel_speed(speed, speed);
-
-	uint8_t oc = 0;
-	uint8_t accurate;
-	accurate = 10;
-	if (speed > 30) accurate = 30;
-	while (ros::ok())
-	{
-		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (is_charge_on())
-		{
-			ROS_DEBUG("Reach charger while turn left.");
-			stop_brifly();
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
-		{
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
-		} else
-		{
-			set_wheel_speed(speed, speed);
-		}
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			break;
-		if (stop_event())
-			break;
-		//prompt for useless remote command
-		if (get_rcon_remote() > 0)
-		{
-			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-			if (get_rcon_remote() & (Remote_Clean))
-			{
-			} else
-			{
-				beep_for_command(INVALID);
-				reset_rcon_remote();
-			}
-		}
-		/* check plan setting*/
-		if (get_plan_status() == 1)
-		{
-			set_plan_status(0);
-			beep_for_command(INVALID);
-		}
-		/*if(is_turn_remote())
-			break;*/
-		if (get_bumper_status())
-		{
-			break;
-		}
-		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
-	}
-	g_wheel_left_direction = FORWARD;
-	g_wheel_right_direction = FORWARD;
-
-	set_wheel_speed(0, 0);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
-}
-
-void turn_right(uint16_t speed, int16_t angle)
-{
-	auto target_angle = ranged_angle(gyro_get_angle() - angle);
-	if (target_angle < 0)
-	{
-		target_angle = 3600 + target_angle;
-	}
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(),
-					 speed);
-
-	set_dir_right();
-
-	set_wheel_speed(speed, speed);
-	uint8_t oc = 0;
-
-	uint8_t accurate;
-	accurate = 10;
-	if (speed > 30) accurate = 30;
-	while (ros::ok())
-	{
-		// For GoHome(), if reach the charger stub during turning, should stop immediately.
-		if (is_charge_on())
-		{
-			ROS_DEBUG("Reach charger while turn right.");
-			stop_brifly();
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
-		{
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
-		} else
-		{
-			set_wheel_speed(speed, speed);
-		}
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			break;
-		if (stop_event())
-			break;
-		//prompt for useless remote command
-		if (get_rcon_remote() > 0)
-		{
-			ROS_INFO("%s %d: Rcon", __FUNCTION__, __LINE__);
-			if (get_rcon_remote() & (Remote_Clean))
-			{
-			} else
-			{
-				beep_for_command(INVALID);
-				reset_rcon_remote();
-			}
-		}
-		/* check plan setting*/
-		if (get_plan_status() == 1)
-		{
-			set_plan_status(0);
-			beep_for_command(INVALID);
-		}
-		/*if(is_turn_remote())
-			break;*/
-		if (get_bumper_status())
-		{
-			break;
-		}
-		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
-	}
-	g_wheel_left_direction = FORWARD;
-	g_wheel_right_direction = FORWARD;
-
-	set_wheel_speed(0, 0);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
-}
-
-void jam_turn_left(uint16_t speed, int16_t angle)
-{
-	auto target_angle = ranged_angle(gyro_get_angle() + angle);
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 gyro_get_angle(), speed);
-
-	set_dir_left();
-
-	set_wheel_speed(speed, speed);
-
-	uint8_t oc = 0;
-	uint8_t accurate;
-	accurate = 10;
-	if (speed > 30) accurate = 30;
-	while (ros::ok())
-	{
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
-		{
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
-		} else
-		{
-			set_wheel_speed(speed, speed);
-		}
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			break;
-		if (stop_event())
-			break;
-		if (!get_bumper_status())
-			break;
-		/*if(is_turn_remote())
-			break;*/
-		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d,diff = %d", __FUNCTION__, __LINE__, angle, target_angle, Gyro_GetAngle(), speed,target_angle - gyro_get_angle());
-	}
-	g_wheel_left_direction = FORWARD;
-	g_wheel_right_direction = FORWARD;
-
-	set_wheel_speed(0, 0);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
-}
-
-void jam_turn_right(uint16_t speed, int16_t angle)
-{
-	auto target_angle = ranged_angle(gyro_get_angle() - angle);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 gyro_get_angle(), speed);
-
-	set_dir_right();
-
-	set_wheel_speed(speed, speed);
-	uint8_t oc = 0;
-
-	uint8_t accurate;
-	accurate = 10;
-	if (speed > 30) accurate = 30;
-	while (ros::ok())
-	{
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < accurate)
-		{
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 5);
-		} else if (abs(ranged_angle(target_angle - gyro_get_angle())) < 200)
-		{
-			auto speed_ = std::min((uint16_t) 5, speed);
-			set_wheel_speed(speed_, speed_);
-			//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), 10);
-		} else
-		{
-			set_wheel_speed(speed, speed);
-		}
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			break;
-		if (stop_event())
-			break;
-		if (!get_bumper_status())
-			break;
-		/*if(is_turn_remote())
-			break;*/
-		usleep(10000);
-		//ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle(), speed);
-	}
-	g_wheel_left_direction = FORWARD;
-	g_wheel_right_direction = FORWARD;
-
-	set_wheel_speed(0, 0);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\n", __FUNCTION__, __LINE__, angle, target_angle, gyro_get_angle());
-}
-
 uint8_t get_bumper_status(void)
 {
 	uint8_t Temp_Status = 0;
@@ -778,60 +463,6 @@ uint8_t get_cliff_status(void)
 }
 
 //--------------------------------------Cliff Dynamic adjust----------------------
-void cliff_dynamic_base(uint16_t count)
-{
-//	count = 20;
-//	enum {front,left,right};
-	static uint16_t cliff_cnt[] = {0,0,0};
-	static int16_t cliff_sum[] = {0,0,0};
-	const int16_t cliff_dynamic_limit = 500;
-	int16_t* p_cliff_baseline[] = {&g_cliff_front_baseline, &g_cliff_left_baseline, &g_cliff_right_baseline};
-	typedef int16_t(*Func_t)(void);
-	Func_t p_get_cliff[] = {&get_front_cliff, &get_left_cliff, &get_right_cliff};
-//	if(count == 0)
-//		return ;
-	for(int i =0;i<3;i++)
-	{
-//		if(i == 0)
-//			ROS_WARN("front-------------------------");
-//		if(i == 1)
-//			ROS_WARN("left-------------------------");
-//		if(i == 2)
-//			ROS_WARN("right-------------------------");
-
-		auto p_cliff_baseline_ = p_cliff_baseline[i];
-		auto cliff_get = p_get_cliff[i]();
-
-//		ROS_WARN("cliff_trig_val(%d),cliff_get(%d)", *p_cliff_baseline_, cliff_get);
-		cliff_sum[i] += cliff_get;
-		cliff_cnt[i]++;
-		int16_t cliff_avg = cliff_sum[i] / cliff_cnt[i];
-//		ROS_WARN("cliff_avg(%d), (%d / %d), ",cliff_avg, cliff_sum[i], cliff_cnt[i]);
-		auto diff = abs_minus(cliff_avg , cliff_get);
-		if (diff > 50)
-		{
-//			ROS_WARN("diff = (%d) > 50.", diff);
-			cliff_cnt[i] = 0;
-			cliff_sum[i] = 0;
-		}
-		if (cliff_cnt[i] > count)
-		{
-			cliff_cnt[i] = 0;
-			cliff_sum[i] = 0;
-			cliff_get = (cliff_avg + *p_cliff_baseline_) / 2;
-			if (cliff_get > cliff_dynamic_limit)
-				cliff_get = cliff_dynamic_limit;
-
-			*p_cliff_baseline_ = cliff_get;
-//			if(i == 0)
-//				ROS_WARN("cliff front baseline = %d.", *p_cliff_baseline_);
-//			else if(i == 1)
-//				ROS_WARN("cliff left baseline = %d.", *p_cliff_baseline_);
-//			else if(i == 2)
-//				ROS_WARN("cliff right baseline = %d.", *p_cliff_baseline_);
-		}
-	}
-}
 
 int16_t get_front_cliff_trig_value(void)
 {
@@ -958,25 +589,6 @@ bool is_direct_charge(void)
 		return true;
 	else
 		return false;
-}
-void set_home_remote(void)
-{
-	g_home_remote_flag = 1;
-}
-
-void reset_home_remote(void)
-{
-	g_home_remote_flag = 0;
-}
-
-uint8_t is_home_remote(void)
-{
-	return g_r_h_flag;
-}
-
-uint8_t is_move_with_remote(void)
-{
-	return g_remote_move_flag;
 }
 
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd)
@@ -1223,59 +835,6 @@ void work_motor_configure(void)
 	set_main_brush_pwm(30);
 }
 
-uint8_t check_motor_current(void)
-{
-	static uint8_t lwheel_oc_count = 0;
-	static uint8_t rwheel_oc_count = 0;
-	static uint8_t vacuum_oc_count = 0;
-	static uint8_t mbrush_oc_count = 0;
-	if ((uint32_t) robot::instance()->getLwheelCurrent() > Wheel_Stall_Limit)
-	{
-		lwheel_oc_count++;
-		if (lwheel_oc_count > 40)
-		{
-			lwheel_oc_count = 0;
-			ROS_WARN("%s,%d,left wheel over current,%u mA\n", __FUNCTION__, __LINE__,
-							 (uint32_t) robot::instance()->getLwheelCurrent());
-			return Check_Left_Wheel;
-		}
-	} else
-		lwheel_oc_count = 0;
-	if ((uint32_t) robot::instance()->getRwheelCurrent() > Wheel_Stall_Limit)
-	{
-		rwheel_oc_count++;
-		if (rwheel_oc_count > 40)
-		{
-			rwheel_oc_count = 0;
-			ROS_WARN("%s,%d,right wheel over current,%u mA", __FUNCTION__, __LINE__,
-							 (uint32_t) robot::instance()->getRwheelCurrent());
-			return Check_Right_Wheel;
-		}
-	} else
-		rwheel_oc_count = 0;
-	if (robot::instance()->getMbrushOc())
-	{
-		mbrush_oc_count++;
-		if (mbrush_oc_count > 40)
-		{
-			mbrush_oc_count = 0;
-			ROS_WARN("%s,%d,main brush over current", __FUNCTION__, __LINE__);
-			return Check_Main_Brush;
-		}
-	}
-	if (robot::instance()->getVacuumOc())
-	{
-		vacuum_oc_count++;
-		if (vacuum_oc_count > 40)
-		{
-			vacuum_oc_count = 0;
-			ROS_WARN("%s,%d,vacuum over current", __FUNCTION__, __LINE__);
-			return Check_Vacuum;
-		}
-	}
-	return 0;
-}
-
 /*-----------------------------------------------------------Self Check-------------------*/
 uint8_t self_check(uint8_t Check_Code)
 {
@@ -1465,16 +1024,6 @@ uint8_t self_check(uint8_t Check_Code)
 uint8_t get_self_check_vacuum_status(void)
 {
 	return (uint8_t) robot::instance()->getVacuumSelfCheckStatus();
-}
-
-uint8_t check_bat_home(void)
-{
-	// Check if battary is lower than the low battery go home voltage value.
-	if (get_battery_voltage() > 0 && get_battery_voltage() < LOW_BATTERY_GO_HOME_VOLTAGE)
-	{
-		return 1;
-	}
-	return 0;
 }
 
 uint8_t check_bat_full(void)
@@ -1679,11 +1228,6 @@ uint8_t get_rcon_remote(void)
 	return g_remote_status;
 }
 
-void set_move_with_remote(void)
-{
-	g_remote_move_flag = 1;
-}
-
 void reset_move_with_remote(void)
 {
 	g_remote_move_flag = 0;
@@ -1755,131 +1299,11 @@ void set_right_brush_pwm(uint16_t R)
 	control_set(CTL_BRUSH_RIGHT, R & 0xff);
 }
 
-uint8_t get_left_brush_stall(void)
-{
-	return 0;
-}
-
-uint8_t get_right_brush_stall(void)
-{
-	return 0;
-}
-
-
 void reset_stop_event_status(void)
 {
 	g_stop_event_status = 0;
 	// For key release checking.
 	key.reset();
-}
-
-uint8_t stop_event(void)
-{
-	// If it has already had a g_stop_event_status, then no need to check.
-	if (!g_stop_event_status)
-	{
-		// Get the key value from robot sensor
-		if (key.get())
-		{
-			ROS_WARN("Touch status == 1");
-#if MANUAL_PAUSE_CLEANING
-			if (cm_is_navigation())
-				g_is_manual_pause = true;
-#endif
-			key.reset();
-			g_stop_event_status = 1;
-		}
-		if (remote_key(Remote_Clean))
-		{
-			ROS_WARN("remote_key clean.");
-			reset_rcon_remote();
-#if MANUAL_PAUSE_CLEANING
-			if (cm_is_navigation())
-				g_is_manual_pause = true;
-#endif
-			g_stop_event_status = 2;
-		}
-		if (get_cliff_status() == 0x07)
-		{
-			ROS_WARN("Cliff triggered.");
-			g_stop_event_status = 3;
-		}
-
-		if (get_error_code())
-		{
-			ROS_WARN("Detects Error: %x!", get_error_code());
-			if (get_error_code() == Error_Code_Slam)
-			{
-				stop_brifly();
-				// Check if it is really stopped.
-				uint8_t slam_error_count = 0;
-				tf::StampedTransform transform;
-				for (uint8_t i = 0; i < 3; i++)
-				{
-					try
-					{
-						robot::instance()->robot_tf_->lookupTransform("/map", "base_link", ros::Time(0), transform);
-					} catch (tf::TransformException e)
-					{
-						ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
-						slam_error_count++;
-					}
-					if (slam_error_count > 0)
-						break;
-					i++;
-					usleep(20000);
-				}
-				if (slam_error_count > 0)
-				{
-					// beep for debug
-					//beep(3, 500, 500, 3);
-					system("rosnode kill /slam_karto &");
-					usleep(3000000);
-					system("roslaunch pp karto_slam.launch &");
-					robotbase_restore_slam_correction();
-					MotionManage::s_slam->isMapReady(false);
-					while (!MotionManage::s_slam->isMapReady())
-					{
-						ROS_WARN("Slam not ready yet.");
-						MotionManage::s_slam->enableMapUpdate();
-						usleep(500000);
-					}
-					ROS_WARN("Slam restart successed.");
-					// Wait for 0.5s to make sure it has process the first scan.
-					usleep(500000);
-				}
-				set_error_code(Error_Code_None);
-			} else
-			{
-				g_stop_event_status = 4;
-			}
-		}
-		if (is_direct_charge())
-		{
-			ROS_WARN("Detect direct charge!");
-			g_stop_event_status = 5;
-		}
-	}
-	return g_stop_event_status;
-}
-
-uint8_t is_station(void)
-{
-	if (get_rcon_status() & RconAll_Home_TLR) // It means eight rcon accepters receive any of the charger stub signal.
-	{
-		return 1;
-	}
-	return 0;
-}
-
-bool is_charge_on(void)
-{
-	// 1: On charger stub and charging.
-	// 4: Direct connect to charge line and charging.
-	if (robot::instance()->getChargeStatus() == 1 || robot::instance()->getChargeStatus() == 4)
-		return true;
-	else
-		return false;
 }
 
 uint8_t is_water_tank(void)
@@ -1944,33 +1368,10 @@ uint8_t get_main_pwr_byte()
 	return control_get(CTL_MAIN_PWR);
 }
 
-void set_clean_tool_power(uint8_t vacuum_val, uint8_t left_brush_val, uint8_t right_brush_val, uint8_t main_brush_val)
-{
-	int vacuum_pwr = vacuum_val;
-	vacuum_pwr = vacuum_pwr > 0 ? vacuum_pwr : 0;
-	vacuum_pwr = vacuum_pwr < 100 ? vacuum_pwr : 100;
-	control_set(CTL_VACCUM_PWR, vacuum_pwr & 0xff);
-
-	int brush_left = left_brush_val;
-	control_set(CTL_BRUSH_LEFT, brush_left & 0xff);
-
-	int brush_right = right_brush_val;
-	control_set(CTL_BRUSH_RIGHT, brush_right & 0xff);
-
-	int brush_main = main_brush_val;
-	control_set(CTL_BRUSH_MAIN, brush_main & 0xff);
-}
-
 void start_self_check_vacuum(void)
 {
 	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
 	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
-}
-
-void end_self_check_vacuum(void)
-{
-	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
-	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x04);
 }
 
 void reset_self_check_vacuum_controler(void)
@@ -1996,35 +1397,6 @@ uint8_t control_get(uint8_t seq)
 	tmp_data = g_send_stream[seq];
 	g_send_stream_mutex.unlock();
 	return tmp_data;
-}
-
-void control_append_crc()
-{
-	//set_send_flag();
-	uint8_t tmp_data;
-	uint8_t buf[SEND_LEN];
-	g_send_stream_mutex.lock();
-	memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-	g_send_stream_mutex.unlock();
-	tmp_data = calc_buf_crc8(buf, SEND_LEN - 3);
-	control_set(CTL_CRC, tmp_data);
-	//reset_send_flag();
-}
-
-void control_stop_all(void)
-{
-	uint8_t i;
-	//set_send_flag();
-	for (i = 2; i < (SEND_LEN) - 2; i++)
-	{
-		if (i == CTL_MAIN_PWR)
-			control_set(i, 0x01);
-		else
-			control_set(i, 0x00);
-	}
-	//reset_send_flag();
-	//g_send_stream[SEND_LEN-3] = calc_buf_crc8(g_send_stream, SEND_LEN-3);
-	//serial_write(SEND_LEN, g_send_stream);
 }
 
 int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number)
@@ -2241,11 +1613,6 @@ int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 	return -1;
 }
 
-uint8_t is_flag_set(void)
-{
-	return g_sendflag;
-}
-
 void set_send_flag(void)
 {
 	g_sendflag = 1;
@@ -2256,58 +1623,9 @@ void reset_send_flag(void)
 	g_sendflag = 0;
 }
 
-void random_back(void)
-{
-	stop_brifly();
-	quick_back(12, 30);
-
-}
-
-void move_back(void)
-{
-	stop_brifly();
-	quick_back(18, 30);
-}
-
-void cliff_move_back()
-{
-	stop_brifly();
-	quick_back(18, 60);
-}
-
-void set_right_wheel_step(uint32_t step)
-{
-	g_right_wheel_step = step;
-}
-
-void set_left_wheel_step(uint32_t step)
-{
-	g_left_wheel_step = step;
-}
-
-void reset_right_wheel_step()
-{
-	g_rw_t = ros::Time::now();
-	g_right_wheel_step = 0;
-}
-
-void reset_left_wheel_step()
-{
-	g_lw_t = ros::Time::now();
-	g_left_wheel_step = 0;
-}
-
 uint16_t get_battery_voltage()
 {
 	return robot::instance()->getBatteryVoltage();
-}
-
-uint8_t check_bat_stop()
-{
-	if (get_battery_voltage() < LOW_BATTERY_STOP_VOLTAGE)
-		return 1;
-	else
-		return 0;
 }
 
 void set_key_press(uint8_t key)
@@ -2352,302 +1670,6 @@ void set_direction_flag(uint8_t flag)
 	g_direction_flag = flag;
 }
 
-uint8_t is_direction_right(void)
-{
-	if (get_direction_flag() == Direction_Flag_Right)return 1;
-	return 0;
-}
-
-uint8_t is_direction_left(void)
-{
-	if (get_direction_flag() == Direction_Flag_Left)return 1;
-	return 0;
-}
-
-uint8_t is_left_wheel_reach(int32_t step)
-{
-	if (g_left_wheel_step > (uint32_t) step)
-		return 1;
-	else
-		return 0;
-}
-
-uint8_t is_right_wheel_reach(int32_t step)
-{
-	if (g_right_wheel_step > (uint32_t) step)
-		return 1;
-	else
-		return 0;
-}
-
-void wall_move_back(void)
-{
-	uint16_t count = 0;
-	uint16_t tp = 0;
-	uint8_t mc = 0;
-	set_dir_backward();
-	set_wheel_speed(3, 3);
-	usleep(20000);
-	reset_wheel_step();
-	while (((g_left_wheel_step < 100) || (g_right_wheel_step < 100)) && ros::ok())
-	{
-		tp = g_left_wheel_step / 3 + 8;
-		if (tp > 12)tp = 12;
-		set_wheel_speed(tp, tp);
-		usleep(1000);
-
-		if (stop_event())
-			return;
-		count++;
-		if (count > 3000);
-		return;
-		mc = check_motor_current();
-		if (mc == Check_Left_Wheel || mc == Check_Right_Wheel)
-			return;
-	}
-	set_dir_forward();
-	set_wheel_speed(0, 0);
-
-}
-
-void reset_move_distance()
-{
-	g_move_step_counter = 0;
-}
-
-uint8_t is_move_finished(int32_t distance)
-{
-	g_move_step_counter = get_left_wheel_step();
-	g_move_step_counter += get_right_wheel_step();
-	if ((g_move_step_counter / 2) > distance)
-		return 1;
-	else
-		return 0;
-}
-
-uint32_t get_move_distance(void)
-{
-	g_move_step_counter = get_left_wheel_step();
-	g_move_step_counter += get_right_wheel_step();
-
-	if (g_move_step_counter > 0)return (uint32_t) (g_move_step_counter / 2);
-	return 0;
-}
-
-void obs_turn_left(uint16_t speed, uint16_t angle)
-{
-	uint16_t counter = 0;
-	uint8_t oc = 0;
-	set_dir_left();
-	reset_rcon_remote();
-	set_wheel_speed(speed, speed);
-	reset_left_wheel_step();
-	while (ros::ok() && g_left_wheel_step < angle)
-	{
-		counter++;
-		if (counter > 3000)
-			return;
-		if (is_turn_remote())
-			return;
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			return;
-		usleep(1000);
-	}
-
-}
-
-void obs_turn_right(uint16_t speed, uint16_t angle)
-{
-	uint16_t counter = 0;
-	uint8_t oc = 0;
-	set_dir_right();
-	reset_rcon_remote();
-	set_wheel_speed(speed, speed);
-	reset_right_wheel_step();
-	while (ros::ok() && g_right_wheel_step < angle)
-	{
-		counter++;
-		if (counter > 3000)
-			//return;
-			break;
-		if (is_turn_remote())
-			//return;
-			break;
-		oc = check_motor_current();
-		if (oc == Check_Left_Wheel || oc == Check_Right_Wheel)
-			//return;
-			break;
-		usleep(1000);
-	}
-
-}
-
-void cliff_turn_left(uint16_t speed, uint16_t angle)
-{
-	uint16_t Counter_Watcher = 0;
-	//Left_Wheel_Step=0;
-	set_wheel_speed(speed, speed);
-	Counter_Watcher = 0;
-	reset_rcon_remote();
-	int16_t target_angle;
-	// This decides whether robot should stop when left cliff triggered.
-	bool right_cliff_triggered = false;
-
-	if (get_cliff_status() & BLOCK_RIGHT)
-	{
-		right_cliff_triggered = true;
-	}
-
-	target_angle = ranged_angle(gyro_get_angle() + angle);
-
-	set_dir_left();
-	set_wheel_speed(speed, speed);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 gyro_get_angle(), speed);
-	while (ros::ok())
-	{
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 20)
-		{
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
-		{
-			set_wheel_speed(speed / 2, speed / 2);
-		} else
-		{
-			set_wheel_speed(speed, speed);
-		}
-		//delay(10);
-		usleep(1000);
-		Counter_Watcher++;
-		if (Counter_Watcher > 3000)
-		{
-			if (is_encoder_fail())
-			{
-				set_error_code(Error_Code_Encoder);
-			}
-			return;
-		}
-		if (is_turn_remote())return;
-		if (!right_cliff_triggered && (get_cliff_status() & BLOCK_RIGHT))
-		{
-			stop_brifly();
-			return;
-		}
-		if (stop_event())
-		{
-			return;
-		}
-		if ((check_motor_current() == Check_Left_Wheel) || (check_motor_current() == Check_Right_Wheel))return;
-	}
-}
-
-void cliff_turn_right(uint16_t speed, uint16_t angle)
-{
-	uint16_t Counter_Watcher = 0;
-	//Left_Wheel_Step=0;
-	set_wheel_speed(speed, speed);
-	Counter_Watcher = 0;
-	reset_rcon_remote();
-	int16_t target_angle;
-	// This decides whether robot should stop when left cliff triggered.
-	bool left_cliff_triggered = false;
-
-	if (get_cliff_status() & BLOCK_LEFT)
-	{
-		left_cliff_triggered = true;
-	}
-
-	target_angle = ranged_angle(gyro_get_angle() - angle);
-
-	set_dir_right();
-	set_wheel_speed(speed, speed);
-
-	ROS_INFO("%s %d: angle: %d(%d)\tcurrent: %d\tspeed: %d\n", __FUNCTION__, __LINE__, angle, target_angle,
-					 gyro_get_angle(), speed);
-	while (ros::ok())
-	{
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 20)
-		{
-			break;
-		}
-		if (abs(ranged_angle(target_angle - gyro_get_angle())) < 50)
-		{
-			set_wheel_speed(speed / 2, speed / 2);
-		} else
-		{
-			set_wheel_speed(speed, speed);
-		}
-		//delay(10);
-		usleep(1000);
-		Counter_Watcher++;
-		if (Counter_Watcher > 3000)
-		{
-			if (is_encoder_fail())
-			{
-				set_error_code(Error_Code_Encoder);
-			}
-			return;
-		}
-		if (is_turn_remote())return;
-		if (!left_cliff_triggered && (get_cliff_status() & BLOCK_LEFT))
-		{
-			stop_brifly();
-			return;
-		}
-		if (stop_event())
-		{
-			return;
-		}
-		if ((check_motor_current() == Check_Left_Wheel) || (check_motor_current() == Check_Right_Wheel))return;
-	}
-}
-
-uint8_t get_random_factor(void)
-{
-	srand(time(0));
-	return (uint8_t) rand() % 100;
-}
-
-uint8_t is_near_station(void)
-{
-	static uint32_t s_count = 0;
-	static uint32_t no_s = 0;
-	static uint32_t s_rcon = 0;
-	s_rcon = get_rcon_status();
-	if (s_rcon & 0x00000f00)
-	{
-		return 1;
-	}
-	if (s_rcon & 0x0330ff)
-	{
-		no_s = 0;
-		s_count++;
-		reset_rcon_status();
-		if (s_count > 3)
-		{
-			s_count = 0;
-			return 1;
-		}
-	} else
-	{
-		no_s++;
-		if (no_s > 50)
-		{
-			no_s = 0;
-			s_count = 0;
-		}
-	}
-	return 0;
-}
-
-void set_mobility_step(uint32_t Steps)
-{
-	g_mobility_step = Steps;
-}
-
 void reset_mobility_step()
 {
 	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
@@ -2658,96 +1680,6 @@ void clear_reset_mobility_step()
 {
 	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
 	control_set(CTL_OMNI_RESET, omni_reset_byte & ~0x01);
-}
-
-uint32_t get_mobility_step()
-{
-	return g_mobility_step;
-}
-
-void check_mobility(void)
-{
-
-}
-
-void add_average(uint32_t data)
-{
-	g_average_move += data;
-	g_average_counter++;
-	if (data > g_max_move)
-		g_max_move = data;
-
-}
-
-uint32_t get_average_move(void)
-{
-	return (g_average_move / g_average_counter);
-}
-
-uint32_t reset_average_counter(void)
-{
-	g_average_move = 0;
-	g_average_counter = 0;
-}
-
-void reset_virtual_wall(void)
-{
-
-}
-
-uint8_t virtual_wall_turn_right()
-{
-	return 0;
-}
-
-uint8_t virtual_wall_turn_left()
-{
-	return 0;
-}
-
-uint8_t is_work_finish(uint8_t m)
-{
-	static uint8_t bat_count = 0;
-	uint32_t wt = get_work_time();
-	if (m)
-	{
-		if (wt > g_auto_work_time)return 1;
-	} else if (wt > Const_Work_Time)return 1;
-	if (get_battery_voltage() < 1420)
-	{
-		bat_count++;
-		if (bat_count > 50)return 1;
-	} else
-		bat_count = 0;
-	return 0;
-}
-
-uint8_t get_room_mode()
-{
-	return g_room_mode;
-}
-
-void set_room_mode(uint8_t m)
-{
-	if (m)
-		g_room_mode = 1;
-	else
-		g_room_mode = 0;
-}
-
-void reset_wall_accelerate()
-{
-	g_wall_accelerate = 0;
-}
-
-uint32_t get_wall_accelerate()
-{
-	return g_wall_accelerate = get_right_wheel_step();
-}
-
-uint8_t is_virtual_wall_()
-{
-	return 0;
 }
 
 int32_t abs_minus(int32_t A, int32_t B)
@@ -3010,16 +1942,6 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
 	robotbase_led_cnt_for_switch = time_ms / 20;
 	live_led_cnt_for_switch = 0;
 	robotbase_led_update_flag = true;
-}
-
-void delay_sec(double s)
-{
-	auto start=ros::Time::now().toSec();
-	auto now=start;
-	while((now-start) < s)
-	{
-		now=ros::Time::now().toSec();
-	}
 }
 
 int16_t get_front_acc()
@@ -3324,35 +2246,6 @@ bool check_laser_stuck()
 	if (MotionManage::s_laser != nullptr && !MotionManage::s_laser->laserCheckFresh(3, 2))
 		return true;
 	return false;
-}
-
-uint8_t estimate_charger_position(Rcon_Point_t rcon_point_a, Rcon_Point_t rcon_point_b,Cell_t *pos)
-{
-	float charger_dist_est_a,charger_dist_est_b;
-	int32_t ax = rcon_point_a.x;//point a postition
-	int32_t ay = rcon_point_a.y;
-	float angle_a = (float)deg_to_rad(rcon_point_a.sensor_angle*1.0,1);
-
-	int32_t bx = rcon_point_b.x;//point b position
-	int32_t by = rcon_point_b.y;
-	float angle_b = (float)deg_to_rad(rcon_point_b.sensor_angle*1.0,1);
-
-	float diff_angle_a = atanf((ax - bx)/(ay - by));
-	float diff_angle_b = PI - diff_angle_a;
-
-	float angle_A = PI/2 - angle_a - diff_angle_a;
-	float angle_B = PI - angle_b - diff_angle_b;
-
-	uint32_t dist = two_points_distance(ax,ay,bx,by);
-
-	charger_dist_est_a = dist * sinf(angle_B)/sinf(PI-(angle_B+angle_A)); 
-	charger_dist_est_b = dist * sinf(angle_A)/sinf(PI-(angle_B+angle_A));
-
-	pos->X = count_to_cell(cosf(angle_a)*charger_dist_est_a + ax);
-	pos->Y = count_to_cell(sinf(angle_a)*charger_dist_est_a + ay);
-
-	ROS_INFO("%s,%d,estimate charger stub position on (%d,%d)",__FUNCTION__,__LINE__,pos->X,pos->Y);
-	return 1;
 }
 
 uint8_t get_laser_status()

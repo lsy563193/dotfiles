@@ -439,8 +439,6 @@ void set_dir_forward(void);
 
 uint8_t is_encoder_fail(void);
 
-void set_right_brush_stall(uint8_t R);
-void set_left_brush_stall(uint8_t L);
 
 void wall_dynamic_base(uint32_t Cy);
 void set_wall_base(int8_t dir, int32_t data);
@@ -448,10 +446,6 @@ int32_t get_wall_base(int8_t dir);
 
 void quick_back(uint8_t speed,uint16_t distance);
 
-void turn_left(uint16_t speed, int16_t angle);
-void turn_right(uint16_t speed, int16_t angle);
-void jam_turn_left(uint16_t speed, int16_t angle);
-void jam_turn_right(uint16_t speed, int16_t angle);
 
 void set_dir_backward(void);
 
