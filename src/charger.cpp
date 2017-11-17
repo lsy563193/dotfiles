@@ -4,6 +4,7 @@
 #include <wav.h>
 #include <key.h>
 #include <cliff.h>
+#include <led.h>
 #include <battery.h>
 #include <remote.h>
 
@@ -43,7 +44,7 @@ void charge_function(void)
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
 	uint16_t bat_v;
-	set_led_mode(LED_BREATH, LED_ORANGE);
+	led_set_mode(LED_BREATH, LED_ORANGE);
 	set_start_charge();
 	planer.set_status(0);
 	charge_register_event();
@@ -179,7 +180,7 @@ void charge_function(void)
 		if (battery.is_full() && !battery_full)
 		{
 			battery_full = true;
-			set_led_mode(LED_STEADY, LED_OFF);
+			led_set_mode(LED_STEADY, LED_OFF);
 			wav_play(WAV_BATTERY_CHARGE_DONE);
 		}
 	}

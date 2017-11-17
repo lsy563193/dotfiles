@@ -71,7 +71,7 @@ void remote_mode(void)
 	g_battery_low_cnt = 0;
 	remote_rcon_triggered = false;
 
-	set_led_mode(LED_STEADY, LED_GREEN);
+	led_set_mode(LED_STEADY, LED_GREEN);
 	remote.reset();
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 

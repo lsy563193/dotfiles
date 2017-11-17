@@ -16,6 +16,23 @@
 uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 bool sleep_rcon_triggered = false;
 static Sleep_EventHandle eh;
+
+uint8_t g_sleep_mode_flag = 0;
+uint8_t get_sleep_mode_flag()
+{
+	return g_sleep_mode_flag;
+}
+
+void set_sleep_mode_flag()
+{
+	g_sleep_mode_flag = 1;
+}
+
+void reset_sleep_mode_flag()
+{
+	g_sleep_mode_flag = 0;
+}
+
 /*----------------------------------------------------------------Sleep mode_---------------------------*/
 void sleep_mode(void)
 {
@@ -32,7 +49,7 @@ void sleep_mode(void)
 	usleep(100000);
 	beep(4, 80, 0, 1);
 	usleep(100000);
-	set_led_mode(LED_STEADY, LED_OFF);
+	led_set_mode(LED_STEADY, LED_OFF);
 
 	disable_motors();
 	set_main_pwr_byte(POWER_DOWN);

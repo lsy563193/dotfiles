@@ -13,7 +13,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <controller.h>
+#include <led.h>
 #include <obs.h>
+#include <obs.h>
+#include <sleep.h>
 
 #include "movement.h"
 #include "gyro.h"
@@ -153,7 +156,7 @@ void robotbase_deinit(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
-		set_led_mode(LED_STEADY, LED_OFF);
+		led_set_mode(LED_STEADY, LED_OFF);
 		controller.set(CTL_BUZZER, 0x00);
 		set_gyro_off();
 		disable_motors();
@@ -583,22 +586,22 @@ void process_led()
 	{
 		case LED_GREEN:
 		{
-			set_led(led_brightness, 0);
+			led_set(led_brightness, 0);
 			break;
 		}
 		case LED_ORANGE:
 		{
-			set_led(led_brightness, led_brightness);
+			led_set(led_brightness, led_brightness);
 			break;
 		}
 		case LED_RED:
 		{
-			set_led(0, led_brightness);
+			led_set(0, led_brightness);
 			break;
 		}
 		case LED_OFF:
 		{
-			set_led(0, 0);
+			led_set(0, 0);
 			break;
 		}
 	}

@@ -25,6 +25,7 @@
 #include <remote.h>
 #include "config.h"
 #include "wav.h"
+#include "led.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "event_manager.h"
@@ -85,14 +86,14 @@ void idle(void)
 		ROS_WARN("%s %d: Battery Level Low = \033[31m%4dmV\033[0m(limit = \033[33m%4dmV\033[0m).", __FUNCTION__, __LINE__,
 						 battery.get_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		bat_ready_to_clean = false;
-		set_led_mode(LED_BREATH, LED_ORANGE);
+		led_set_mode(LED_BREATH, LED_ORANGE);
 		wav_play(WAV_BATTERY_LOW);
 	}
 	else
-		set_led_mode(LED_BREATH, LED_GREEN);
+		led_set_mode(LED_BREATH, LED_GREEN);
 
 	if(get_error_code())
-		set_led_mode(LED_STEADY, LED_RED);
+		led_set_mode(LED_STEADY, LED_RED);
 
 	event_manager_reset_status();
 	register_events();
@@ -118,7 +119,7 @@ void idle(void)
 		if(bat_ready_to_clean && !battery.is_ready_to_clean() && !is_clean_paused())
 		{
 			bat_ready_to_clean = false;
-			set_led_mode(LED_BREATH, LED_ORANGE);
+			led_set_mode(LED_BREATH, LED_ORANGE);
 		}
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
@@ -167,7 +168,7 @@ void idle(void)
 					reject_reason = 0;
 					break;
 				case 4:
-					set_led_mode(LED_BREATH, LED_GREEN);
+					led_set_mode(LED_BREATH, LED_GREEN);
 					wav_play(WAV_CLEAR_ERROR);
 					error_alarm_counter = 0;
 					set_error_code(Error_Code_None);

@@ -67,7 +67,7 @@ void explore_update_map(void)
 void turn_into_exploration(bool is_reset_map)
 {
 	reset_work_time();
-	set_led_mode(LED_STEADY, LED_ORANGE);
+	led_set_mode(LED_STEADY, LED_ORANGE);
 
 	// Initialize motors and map.
 	extern uint32_t g_saved_work_time;

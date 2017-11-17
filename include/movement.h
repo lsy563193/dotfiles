@@ -466,8 +466,6 @@ void set_dir_left(void);
 
 void set_dir_right(void);
 
-void set_led(uint16_t G, uint16_t R);
-
 void stop_brifly(void);
 
 uint8_t remote_key(uint8_t Key);
@@ -515,10 +513,6 @@ int32_t abs_minus(int32_t A, int32_t B);
 uint8_t get_main_pwr_byte();
 void set_main_pwr_byte(uint8_t val);
 
-void set_sleep_mode_flag();
-uint8_t get_sleep_mode_flag();
-void reset_sleep_mode_flag();
-
 uint8_t get_self_check_vacuum_status(void);
 
 void beep_for_command(bool valid);
@@ -526,10 +520,6 @@ void beep_for_command(bool valid);
 void reset_sp_turn_count();
 int32_t get_sp_turn_count();
 void add_sp_turn_count();
-
-// time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
-void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
-
 
 bool check_pub_scan();
 

@@ -21,6 +21,7 @@
 #include <remote.h>
 #include <accelerator.h>
 #include <tilt.h>
+#include <led.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -158,9 +159,9 @@ Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 void init_nav_before_gyro()
 {
 	if (ev.remote_home || g_go_home_by_remote)
-		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
+		led_set_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
-		set_led_mode(LED_FLASH, LED_GREEN, 1000);
+		led_set_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
 	if (!is_clean_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
@@ -249,9 +250,9 @@ void init_exp_before_gyro()
 {
 
 	if (ev.remote_home || g_go_home_by_remote)
-		set_led_mode(LED_FLASH, LED_ORANGE, 1000);
+		led_set_mode(LED_FLASH, LED_ORANGE, 1000);
 	else
-		set_led_mode(LED_FLASH, LED_GREEN, 1000);
+		led_set_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
 	g_saved_work_time = 0;
@@ -294,7 +295,7 @@ void init_exp_after_gyro()
 void init_wf_before_gyro()
 {
 	cm_register_events();
-	set_led_mode(LED_FLASH, LED_GREEN, 1000);
+	led_set_mode(LED_FLASH, LED_GREEN, 1000);
 
 	g_wf_start_timer = time(NULL);
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
@@ -334,7 +335,7 @@ void init_wf_after_gyro()
 void init_spot_before_gyro()
 {
 		cm_register_events();
-	set_led_mode(LED_FLASH, LED_GREEN, 1000);
+	led_set_mode(LED_FLASH, LED_GREEN, 1000);
 
 	c_rcon.reset_status();
 	remote.reset_move_with();
@@ -372,7 +373,7 @@ void init_spot_after_gyro()
 
 void init_go_home_before_gyro()
 {
-	set_led_mode(LED_FLASH, LED_ORANGE, 1000);
+	led_set_mode(LED_FLASH, LED_ORANGE, 1000);
 	set_gyro_off();
 	usleep(30000);
 	set_gyro_on();
@@ -572,9 +573,9 @@ s_laser->lidarShieldDetect(ON);
 	/*--- slam end ---*/
 
 	if (g_go_home_by_remote || (cm_is_exploration()))
-		set_led_mode(LED_STEADY, LED_ORANGE);
+		led_set_mode(LED_STEADY, LED_ORANGE);
 	else
-		set_led_mode(LED_STEADY, LED_GREEN);
+		led_set_mode(LED_STEADY, LED_GREEN);
 
 		g_robot_slip_enable = true;
 	g_robot_stuck = false;
@@ -627,9 +628,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 		s_laser->lidarShieldDetect(ON);
 		if (g_go_home_by_remote)
-			set_led_mode(LED_STEADY, LED_ORANGE);
+			led_set_mode(LED_STEADY, LED_ORANGE);
 		else
-			set_led_mode(LED_STEADY, LED_GREEN);
+			led_set_mode(LED_STEADY, LED_GREEN);
 
 		return;
 	}
@@ -642,9 +643,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 			s_laser->lidarShieldDetect(ON);
 			if (g_go_home_by_remote)
-				set_led_mode(LED_STEADY, LED_ORANGE);
+				led_set_mode(LED_STEADY, LED_ORANGE);
 			else
-				set_led_mode(LED_STEADY, LED_GREEN);
+				led_set_mode(LED_STEADY, LED_GREEN);
 			return;
 		}
 	}

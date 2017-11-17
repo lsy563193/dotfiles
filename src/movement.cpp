@@ -37,7 +37,6 @@
 
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
-uint8_t g_sleep_mode_flag = 0;
 
 static int16_t g_left_wheel_speed = 0;
 static int16_t g_right_wheel_speed = 0;
@@ -47,8 +46,6 @@ static uint8_t g_direction_flag = 0;
 
 //static uint8_t g_cleaning_mode = 0;
 ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
-
-volatile uint8_t g_r_h_flag = 0;
 
 // Value for wall sensor offset.
 volatile int16_t g_left_wall_baseline = 50;
@@ -852,15 +849,6 @@ void set_dir_right(void)
 	g_wheel_right_direction = BACKWARD;
 }
 
-void set_led(uint16_t G, uint16_t R)
-{
-	// Set the brightnesss of the LED within range(0, 100).
-	G = G < 100 ? G : 100;
-	R = R < 100 ? R : 100;
-	controller.set(CTL_LED_RED, R & 0xff);
-	controller.set(CTL_LED_GREEN, G & 0xff);
-}
-
 void stop_brifly(void)
 {
 	//ROS_INFO("%s %d: stopping robot.", __FUNCTION__, __LINE__);
@@ -981,21 +969,6 @@ int32_t abs_minus(int32_t A, int32_t B)
 	return B - A;
 }
 
-uint8_t get_sleep_mode_flag()
-{
-	return g_sleep_mode_flag;
-}
-
-void set_sleep_mode_flag()
-{
-	g_sleep_mode_flag = 1;
-}
-
-void reset_sleep_mode_flag()
-{
-	g_sleep_mode_flag = 0;
-}
-
 void beep_for_command(bool valid)
 {
 	if (valid)
@@ -1017,15 +990,6 @@ int32_t get_sp_turn_count()
 void add_sp_turn_count()
 {
 	g_wf_sp_turn_count++;
-}
-
-void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
-{
-	robotbase_led_type = type;
-	robotbase_led_color = color;
-	robotbase_led_cnt_for_switch = time_ms / 20;
-	live_led_cnt_for_switch = 0;
-	robotbase_led_update_flag = true;
 }
 
 bool check_pub_scan()

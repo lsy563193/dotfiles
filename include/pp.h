@@ -25,6 +25,7 @@
 #include "brush.h"
 #include "rcon.h"
 #include "map.h"
+#include "led.h"
 #include "mathematics.h"
 #include "path_planning.h"
 #include "rounding.h"

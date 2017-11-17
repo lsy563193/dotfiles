@@ -240,7 +240,7 @@ void cm_apply_cs(int cs) {
 		work_motor_configure();
 		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
-			set_led_mode(LED_STEADY, LED_ORANGE);
+			led_set_mode(LED_STEADY, LED_ORANGE);
 
 		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
@@ -284,22 +284,22 @@ void cm_apply_cs(int cs) {
 	{
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
-		set_led_mode(LED_FLASH, LED_GREEN, 300);
+		led_set_mode(LED_FLASH, LED_GREEN, 300);
 		mt_set(MT_FOLLOW_LEFT_WALL);
 	}
 	if(cs == CS_CLEAN) {
 		g_wf_reach_count = 0;
-		set_led_mode(LED_STEADY, LED_GREEN);
+		led_set_mode(LED_STEADY, LED_GREEN);
 	}
 	if(cs == CS_EXPLORATION) {
 		mt_set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
-		set_led_mode(LED_STEADY, LED_ORANGE);
+		led_set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if(cs == CS_GO_CHANGER)
 	{
 		tilt.enable(false); //disable tilt detect
-		set_led_mode(LED_STEADY, LED_ORANGE);
+		led_set_mode(LED_STEADY, LED_ORANGE);
 	}
 }
 

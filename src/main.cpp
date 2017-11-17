@@ -12,6 +12,7 @@
 #include "core_move.h"
 #include "gyro.h"
 #include "bumper.h"
+#include "led.h"
 #include "movement.h"
 #include "laser.hpp"
 #include "robot.hpp"
@@ -209,7 +210,7 @@ int main(int argc, char **argv)
 		ros::spin();
 	} else {
 		printf("turn on led\n");
-		set_led_mode(LED_STEADY, LED_ORANGE);
+		led_set_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
 	bumper_lidar_deinit();

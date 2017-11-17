@@ -1004,7 +1004,7 @@ void df_slam_error(bool state_now, bool state_last)
 		robotbase_restore_slam_correction();
 		MotionManage::s_slam->isMapReady(false);
 		relaunch = true;
-		set_led_mode(LED_FLASH, LED_GREEN, 1000);
+		led_set_mode(LED_FLASH, LED_GREEN, 1000);
 	}
 
 	if (MotionManage::s_slam != nullptr)
@@ -1022,7 +1022,7 @@ void df_slam_error(bool state_now, bool state_last)
 			//MotionManage::s_laser->startShield();
 			MotionManage::s_laser->lidarShieldDetect(ON);
 	}
-	set_led_mode(LED_STEADY, LED_GREEN);
+	led_set_mode(LED_STEADY, LED_GREEN);
 	// Wait for 0.2s to make sure it has process the first scan.
 	usleep(200000);
 	ROS_WARN("Slam restart successed.");
