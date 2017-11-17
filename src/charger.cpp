@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <wav.h>
 #include <key.h>
+#include <cliff.h>
 
 #include "go_home.hpp"
 #include "movement.h"
@@ -189,7 +190,7 @@ void charge_function(void)
 		// Wait for updated cliff status.
 		usleep(30000);
 		// Cliff triggered means switch is off, aborting switching to navigation mode_.
-		if (get_cliff_status())
+		if (cliff.get_status())
 		{
 			ROS_WARN("%s %d: Switch is not on.", __FUNCTION__, __LINE__);
 			cm_set(Clean_Mode_Charging);
@@ -250,7 +251,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 				charge_plan_status = 2;
 				break;
 			}
-			else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
+			else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 2;
@@ -310,7 +311,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		}
 		reset_stop_event_status();
 	}
-	else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
+	else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 	{
 		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 		beep_for_command(INVALID);
@@ -360,7 +361,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			}
 			reset_stop_event_status();
 		}
-		else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
+		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 			beep_for_command(INVALID);

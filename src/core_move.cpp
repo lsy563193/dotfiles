@@ -413,7 +413,7 @@ void cm_self_check(void)
 		}
 		else if (ev.cliff_jam)
 		{
-			if (!get_cliff_status())
+			if (!cliff.get_status())
 			{
 				ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
 				ev.cliff_triggered = 0;
@@ -461,7 +461,7 @@ void cm_self_check(void)
 					{
 						stop_brifly();
 						// If cliff jam during bumper self resume.
-						if (get_cliff_status() && ++g_cliff_cnt > 2)
+						if (cliff.get_status() && ++g_cliff_cnt > 2)
 						{
 							ev.cliff_jam = true;
 							resume_cnt = 0;
@@ -483,7 +483,7 @@ void cm_self_check(void)
 					if (fabsf(distance) > 0.05f)
 					{
 						// If cliff jam during bumper self resume.
-						if (get_cliff_status() && ++g_cliff_cnt > 2)
+						if (cliff.get_status() && ++g_cliff_cnt > 2)
 						{
 							ev.cliff_jam = true;
 							resume_cnt = 0;
@@ -502,7 +502,7 @@ void cm_self_check(void)
 				{
 					ROS_DEBUG("%s %d: gyro_get_angle(): %d", __FUNCTION__, __LINE__, gyro_get_angle());
 					// If cliff jam during bumper self resume.
-					if (get_cliff_status() && ++g_cliff_cnt > 2)
+					if (cliff.get_status() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						resume_cnt = 0;
@@ -519,7 +519,7 @@ void cm_self_check(void)
 				case 5:
 				{
 					// If cliff jam during bumper self resume.
-					if (get_cliff_status() && ++g_cliff_cnt > 2)
+					if (cliff.get_status() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						resume_cnt = 0;

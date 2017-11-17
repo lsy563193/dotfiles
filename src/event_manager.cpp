@@ -226,25 +226,25 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Cliff */
-		if (get_cliff_status() == BLOCK_ALL) {
+		if (cliff.get_status() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL);
-		} else if (get_cliff_status() == (BLOCK_FRONT | BLOCK_LEFT)) {
+		} else if (cliff.get_status() == (BLOCK_FRONT | BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_LEFT);
-		} else if (get_cliff_status() == (BLOCK_FRONT | BLOCK_RIGHT)) {
+		} else if (cliff.get_status() == (BLOCK_FRONT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT);
-		} else if (get_cliff_status() == (BLOCK_LEFT | BLOCK_RIGHT)) {
+		} else if (cliff.get_status() == (BLOCK_LEFT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT);
-		} else if (get_cliff_status() == (BLOCK_FRONT)) {
+		} else if (cliff.get_status() == (BLOCK_FRONT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT);
-		} else if (get_cliff_status() == (BLOCK_LEFT)) {
+		} else if (cliff.get_status() == (BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT);
-		} else if (get_cliff_status() == (BLOCK_RIGHT)) {
+		} else if (cliff.get_status() == (BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_RIGHT);
 		}

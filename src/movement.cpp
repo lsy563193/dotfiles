@@ -10,6 +10,7 @@
 #include <ctime>
 #include <clean_state.h>
 #include <vacuum.h>
+#include <cliff.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -33,12 +34,7 @@ static int16_t obs_right_trig_value = 100;
 int16_t g_obs_left_baseline = 100;
 int16_t g_obs_front_baseline = 100;
 int16_t g_obs_right_baseline = 100;
-static int16_t cliff_left_trig_value = CLIFF_LIMIT;
-static int16_t cliff_front_trig_value = CLIFF_LIMIT;
-static int16_t cliff_right_trig_value = CLIFF_LIMIT;
-int16_t g_cliff_left_baseline = 100;
-int16_t g_cliff_front_baseline = 100;
-int16_t g_cliff_right_baseline = 100;
+
 static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
@@ -211,7 +207,7 @@ bool check_error_cleared(uint8_t error_code)
 			break;
 		case Error_Code_Cliff:
 		{
-			if (get_cliff_status())
+			if (cliff.get_status())
 			{
 				ROS_WARN("%s %d: Cliff still triggered.", __FUNCTION__, __LINE__);
 				error_cleared = false;
@@ -441,59 +437,6 @@ uint8_t get_bumper_status(void)
 		Temp_Status = BLOCK_ALL;
 	return Temp_Status;
 }
-
-uint8_t get_cliff_status(void)
-{
-	uint8_t status = 0x00;
-
-	if (get_left_cliff() < get_left_cliff_trig_value())
-		status |= BLOCK_LEFT;
-
-	if (get_front_cliff() < get_front_cliff_trig_value())
-		status |= BLOCK_FRONT;
-
-	if (get_right_cliff() < get_right_cliff_trig_value())
-		status |= BLOCK_RIGHT;
-
-	//if (status != 0x00){
-	//	ROS_WARN("%s %d: Return Cliff status:%x.", __FUNCTION__, __LINE__, status);
-	//	beep_for_command(true);
-	//}
-	return status;
-}
-
-//--------------------------------------Cliff Dynamic adjust----------------------
-
-int16_t get_front_cliff_trig_value(void)
-{
-	return cliff_front_trig_value;
-}
-
-int16_t get_left_cliff_trig_value(void)
-{
-	return cliff_left_trig_value;
-}
-
-int16_t get_right_cliff_trig_value(void)
-{
-	return cliff_right_trig_value;
-}
-
-int16_t get_front_cliff(void)
-{
-	return robot::instance()->getCliffFront();
-}
-
-int16_t get_left_cliff(void)
-{
-	return robot::instance()->getCliffLeft();
-}
-
-int16_t get_right_cliff(void)
-{
-	return robot::instance()->getCliffRight();
-}
-
 
 int get_rcon_trig_()
 {

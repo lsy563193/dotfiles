@@ -28,6 +28,7 @@
 #define Room_Mode_Auto (uint8_t)0x01
 #define Room_Mode_Large (uint8_t)0x00
 
+#define CLIFF_LIMIT  60
 #define BLOCK_LEFT				((uint8_t) 0x01)
 #define BLOCK_RIGHT			((uint8_t) 0x02)
 #define BLOCK_FRONT			((uint8_t) 0x04)
@@ -370,8 +371,6 @@ typedef enum{
 #define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
-//cliff limit
-#define CLIFF_LIMIT				60
 extern uint32_t g_rcon_status;
 
 extern int16_t g_obs_left_baseline;
@@ -461,16 +460,7 @@ uint8_t get_bumper_status(void);
 
 int8_t get_lidar_bumper_status(void);
 
-uint8_t get_cliff_status(void);
-
 int get_rcon_trig(void);
-
-int16_t get_front_cliff_trig_value(void);
-int16_t get_left_cliff_trig_value(void);
-int16_t get_right_cliff_trig_value(void);
-int16_t get_front_cliff(void);
-int16_t get_left_cliff(void);
-int16_t get_right_cliff(void);
 
 bool is_on_charger_stub(void);
 
@@ -607,8 +597,6 @@ void random_back(void);
 
 void move_back(void);
 
-void cliff_move_back(void);
-
 void set_left_wheel_speed(uint8_t speed);
 
 void set_right_wheel_speed(uint8_t speed);
@@ -694,10 +682,6 @@ uint32_t get_average_move(void);
 uint32_t reset_average_counter(void);
 
 void reset_virtual_wall();
-
-void cliff_turn_left(uint16_t speed, uint16_t angle);
-
-void cliff_turn_right(uint16_t speed, uint16_t angle);
 
 uint8_t is_work_finish(uint8_t m);
 

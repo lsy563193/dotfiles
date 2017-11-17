@@ -26,6 +26,7 @@
 #include "event_manager.h"
 #include "core_move.h"
 #include "clean_mode.h"
+#include "cliff.h"
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;
@@ -213,7 +214,7 @@ void idle(void)
 		g_charge_turn_connect_fail = false;
 }
 
-void Idle_EventHandle::cliff(bool state_now, bool state_last)
+void Idle_EventHandle::cliff_(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 
@@ -229,27 +230,27 @@ void Idle_EventHandle::cliff(bool state_now, bool state_last)
 
 void Idle_EventHandle::cliff_left(bool state_now, bool state_last)
 {
-	cliff(state_now, state_last);
+	cliff_(state_now, state_last);
 }
 void Idle_EventHandle::cliff_left_right(bool state_now, bool state_last)
 {
-	cliff(state_now, state_last);
+	cliff_(state_now, state_last);
 }
 void Idle_EventHandle::cliff_right(bool state_now, bool state_last)
 {
-	cliff(state_now, state_last);
+	cliff_(state_now, state_last);
 }
 void Idle_EventHandle::cliff_front(bool state_now, bool state_last)
 {
-	cliff(state_now, state_last);
+	cliff_(state_now, state_last);
 }
 void Idle_EventHandle::cliff_front_left(bool state_now, bool state_last)
 {
-	cliff(state_now, state_last);
+	cliff_(state_now, state_last);
 }
 void Idle_EventHandle::cliff_front_right(bool state_now, bool state_last)
 {
-	cliff(state_now, state_last);
+	cliff_(state_now, state_last);
 }
 
 void Idle_EventHandle::rcon(bool state_now, bool state_last)
@@ -274,7 +275,7 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 		{
 			if (get_error_code())
 				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
-			else if(get_cliff_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
+			else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 				ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			else
 				temp_mode = Clean_Mode_Go_Charger;
@@ -330,7 +331,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 			beep_for_command(INVALID);
 		}
 	}
-	else if (get_cliff_status() == BLOCK_ALL)
+	else if (cliff.get_status() == BLOCK_ALL)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		beep_for_command(INVALID);
@@ -425,7 +426,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 				plan_status = 2;
 				break;
 			}
-			else if(get_cliff_status() == BLOCK_ALL)
+			else if(cliff.get_status() == BLOCK_ALL)
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				reject_reason = 2;
@@ -506,7 +507,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 		else
 			reject_reason = 1;
 	}
-	else if(get_cliff_status() == BLOCK_ALL)
+	else if(cliff.get_status() == BLOCK_ALL)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, get_rcon_remote());
 		reject_reason = 2;

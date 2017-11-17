@@ -20,6 +20,7 @@
 #include "remote_mode.h"
 #include <ros/ros.h>
 #include <vacuum.h>
+#include <cliff.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -190,7 +191,7 @@ void remote_move(void)
 				}
 				else if (ev.cliff_triggered)
 				{
-					if (!get_cliff_status())
+					if (!cliff.get_status())
 					{
 						ROS_INFO("%s %d: Move back for cliff finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;

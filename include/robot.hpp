@@ -112,21 +112,6 @@ public:
 		return angle_v_;
 	}
 
-	int16_t getCliffRight() const
-	{
-		return sensor.rcliff;
-	}
-
-	int16_t getCliffLeft() const
-	{
-		return sensor.lcliff;
-	}
-
-	int16_t getCliffFront() const
-	{
-		return sensor.fcliff;
-	}
-
 	int16_t getLeftWall() const
 	{
 		return sensor.left_wall - g_left_wall_baseline;
@@ -578,15 +563,6 @@ private:
 
 	/* 1 byte */
 	int32_t brush_main_;
-
-	/* 2 bytes */
-	int16_t cliff_right_;
-
-	/* 2 bytes */
-	int16_t cliff_left_;
-
-	/* 2 bytes */
-	int16_t cliff_front_;
 
 	/*1 byte */
 	uint8_t key_;

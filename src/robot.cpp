@@ -210,12 +210,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	battery_voltage_ = msg->batv;
 
-	cliff_right_ = msg->rcliff;
-
-	cliff_left_ = msg->lcliff;
-
-	cliff_front_ = msg->fcliff;
-
 	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
 
 	lbrush_oc_ = msg->lbrush_oc;
