@@ -20,6 +20,7 @@ FILE(GLOB PP_SRC
 				src/dev/remote.cpp
 				src/dev/controller.cpp
 				src/dev/obs.cpp
+				src/dev/accelerator.cpp
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp

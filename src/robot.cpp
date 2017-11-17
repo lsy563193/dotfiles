@@ -145,12 +145,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	right_wall_ = msg->right_wall;
 
-	x_acc_ = msg->x_acc;
-
-	y_acc_ = msg->y_acc;
-
-	z_acc_ = msg->z_acc;
-
 	gyro_dymc_ = msg->gyro_dymc;
 
 	obs_left_ = msg->l_obs;
@@ -719,22 +713,4 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
-void robot::setAccInitData()
-{
-	uint8_t count = 0;
-	int16_t temp_x_acc = 0;
-	int16_t temp_y_acc = 0;
-	int16_t temp_z_acc = 0;
-	for (count = 0 ; count < 10 ; count++)
-	{
-		temp_x_acc += getXAcc();
-		temp_y_acc += getYAcc();
-		temp_z_acc += getZAcc();
-		usleep(20000);
-	}
 
-	setInitXAcc(temp_x_acc / count);
-	setInitYAcc(temp_y_acc / count);
-	setInitZAcc(temp_z_acc / count);
-	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
-}

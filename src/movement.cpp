@@ -15,6 +15,7 @@
 #include <bumper.h>
 #include <controller.h>
 #include <obs.h>
+#include <accelerator.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -33,29 +34,15 @@
 #include "clean_mode.h"
 
 
-static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
 uint8_t g_wheel_right_direction = FORWARD;
-uint32_t g_average_move = 0;
-uint32_t g_average_counter = 0;
-uint32_t g_max_move = 0;
-uint32_t g_auto_work_time = 2800;
-uint32_t g_room_work_time = 3600;
-uint8_t g_room_mode = 0;
 uint8_t g_sleep_mode_flag = 0;
 
-static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;
 static int16_t g_right_wheel_speed = 0;
 static int32_t g_left_wheel_step = 0;
 static int32_t g_right_wheel_step = 0;
-static uint32_t g_leftwall_step = 0;
-static uint32_t g_rightwall_step = 0;
-
-static int32_t g_move_step_counter = 0;
-static uint32_t g_mobility_step = 0;
 static uint8_t g_direction_flag = 0;
-// Variable for vacuum mode_
 
 //static uint8_t g_cleaning_mode = 0;
 ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
@@ -1041,84 +1028,6 @@ void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms)
 	robotbase_led_update_flag = true;
 }
 
-int16_t get_front_acc()
-{
-#if GYRO_FRONT_X_POS
-	return -robot::instance()->getXAcc();
-#elif GYRO_FRONT_X_NEG
-	return robot::instance()->getXAcc();
-#elif GYRO_FRONT_Y_POS
-	return -robot::instance()->getYAcc();
-#elif GYRO_FRONT_Y_NEG
-	return robot::instance()->getYAcc();
-#endif
-}
-
-int16_t get_left_acc()
-{
-#if GYRO_FRONT_X_POS
-	return -robot::instance()->getYAcc();
-#elif GYRO_FRONT_X_NEG
-	return robot::instance()->getYAcc();
-#elif GYRO_FRONT_Y_POS
-	return robot::instance()->getXAcc();
-#elif GYRO_FRONT_Y_NEG
-	return -robot::instance()->getXAcc();
-#endif
-}
-
-int16_t get_right_acc()
-{
-#if GYRO_FRONT_X_POS
-	return -robot::instance()->getYAcc();
-#elif GYRO_FRONT_X_NEG
-	return robot::instance()->getYAcc();
-#elif GYRO_FRONT_Y_POS
-	return robot::instance()->getXAcc();
-#elif GYRO_FRONT_Y_NEG
-	return -robot::instance()->getXAcc();
-#endif
-}
-
-int16_t get_front_init_acc()
-{
-#if GYRO_FRONT_X_POS
-	return -robot::instance()->getInitXAcc();
-#elif GYRO_FRONT_X_NEG
-	return robot::instance()->getInitXAcc();
-#elif GYRO_FRONT_Y_POS
-	return -robot::instance()->getInitYAcc();
-#elif GYRO_FRONT_Y_NEG
-	return robot::instance()->getInitYAcc();
-#endif
-}
-
-int16_t get_left_init_acc()
-{
-#if GYRO_FRONT_X_POS
-	return -robot::instance()->getInitYAcc();
-#elif GYRO_FRONT_X_NEG
-	return robot::instance()->getInitYAcc();
-#elif GYRO_FRONT_Y_POS
-	return robot::instance()->getInitXAcc();
-#elif GYRO_FRONT_Y_NEG
-	return -robot::instance()->getInitXAcc();
-#endif
-}
-
-int16_t get_right_init_acc()
-{
-#if GYRO_FRONT_X_POS
-	return -robot::instance()->getInitYAcc();
-#elif GYRO_FRONT_X_NEG
-	return robot::instance()->getInitYAcc();
-#elif GYRO_FRONT_Y_POS
-	return robot::instance()->getInitXAcc();
-#elif GYRO_FRONT_Y_NEG
-	return -robot::instance()->getInitXAcc();
-#endif
-}
-
 uint8_t check_tilt()
 {
 	static uint16_t front_tilt_count = 0;
@@ -1129,10 +1038,10 @@ uint8_t check_tilt()
 
 	if (g_tilt_enable)
 	{
-		if (get_front_acc() - get_front_init_acc() > FRONT_TILT_LIMIT)
+		if (acc.get_front() - acc.get_front_init() > FRONT_TILT_LIMIT)
 		{
 			front_tilt_count += 2;
-			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, get_front_acc(), get_front_init_acc(), front_tilt_count);
+			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, acc.get_front(), acc.get_front_init(), front_tilt_count);
 		}
 		else
 		{
@@ -1141,10 +1050,10 @@ uint8_t check_tilt()
 			else
 				front_tilt_count = 0;
 		}
-		if (get_left_acc() - get_left_init_acc() > LEFT_TILT_LIMIT)
+		if (acc.get_left() - acc.get_left_init() > LEFT_TILT_LIMIT)
 		{
 			left_tilt_count++;
-			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, get_left_acc(), get_left_init_acc(), left_tilt_count);
+			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, acc.get_left(), acc.get_left_init(), left_tilt_count);
 		}
 		else
 		{
@@ -1153,10 +1062,10 @@ uint8_t check_tilt()
 			else
 				left_tilt_count = 0;
 		}
-		if (get_right_acc() - get_right_init_acc() > RIGHT_TILT_LIMIT)
+		if (acc.get_right() - acc.get_right_init() > RIGHT_TILT_LIMIT)
 		{
 			right_tilt_count++;
-			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, get_right_acc(), get_right_init_acc(), right_tilt_count);
+			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, acc.get_right(), acc.get_right_init(), right_tilt_count);
 		}
 		else
 		{
@@ -1165,7 +1074,7 @@ uint8_t check_tilt()
 			else
 				right_tilt_count = 0;
 		}
-		if (abs(robot::instance()->getZAcc() - robot::instance()->getInitZAcc()) > DIF_TILT_Z_VAL)
+		if (abs(acc.getZAcc() - acc.getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
 			z_tilt_count++;
 			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, robot::instance()->getZAcc(), robot::instance()->getInitZAcc());

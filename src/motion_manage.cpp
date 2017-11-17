@@ -19,6 +19,7 @@
 #include <vacuum.h>
 #include <brush.h>
 #include <remote.h>
+#include <accelerator.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -233,7 +234,7 @@ void init_nav_gyro_charge()
 }
 void init_nav_after_charge()
 {
-robot::instance()->setAccInitData();//about 200ms delay
+acc.setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -282,7 +283,7 @@ void init_exp_before_gyro()
 }
 void init_exp_after_gyro()
 {
-	robot::instance()->setAccInitData();//about 200ms delay
+	acc.setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -310,7 +311,7 @@ void init_wf_before_gyro()
 void init_wf_after_gyro()
 {
 		// enable titlt detct
-	robot::instance()->setAccInitData();//about 200ms delay
+	acc.setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
@@ -349,7 +350,7 @@ void init_spot_before_gyro()
 void init_spot_after_gyro()
 {
 		// enable titlt detct
-	robot::instance()->setAccInitData();//about 200ms delay
+	acc.setAccInitData();//about 200ms delay
 	g_tilt_enable = true;
 	ROS_INFO("\033[33m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 

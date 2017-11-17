@@ -530,12 +530,7 @@ void add_sp_turn_count();
 // time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
 void set_led_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 
-int16_t get_front_acc();
-int16_t get_left_acc();
-int16_t get_right_acc();
-int16_t get_front_init_acc();
-int16_t get_left_init_acc();
-int16_t get_right_init_acc();
+
 uint8_t check_tilt();
 void set_tilt_status(uint8_t status);
 uint8_t get_tilt_status();

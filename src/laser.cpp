@@ -12,6 +12,7 @@
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
 #include <move_type.h>
+#include <accelerator.h>
 
 #include "mathematics.h"
 #include "event_manager.h"
@@ -180,9 +181,9 @@ void Laser::lidarMotorCtrl(bool switch_)
 	bool request_sent = false;
 	bool temp_switch_ = switch_;
 	if(switch_){
-		trigger.request.x_acc_init= robot::instance()->getInitXAcc();
-		trigger.request.y_acc_init= robot::instance()->getInitYAcc();
-		trigger.request.z_acc_init= robot::instance()->getInitZAcc();
+		trigger.request.x_acc_init= acc.getInitXAcc();
+		trigger.request.y_acc_init= acc.getInitYAcc();
+		trigger.request.z_acc_init= acc.getInitZAcc();
 	}
 	while(ros::ok())
 	{

@@ -278,51 +278,6 @@ public:
 		return robot_correction_yaw_;
 	}
 
-	int16_t getXAcc() const
-	{
-		return x_acc_;
-	}
-
-	int16_t getYAcc() const
-	{
-		return y_acc_;
-	}
-
-	int16_t getZAcc() const
-	{
-		return z_acc_;
-	}
-
-	int16_t getInitXAcc() const
-	{
-		return init_x_acc_;
-	}
-
-	int16_t getInitYAcc() const
-	{
-		return init_y_acc_;
-	}
-
-	int16_t getInitZAcc() const
-	{
-		return init_z_acc_;
-	}
-
-	void setInitXAcc(int16_t val)
-	{
-		init_x_acc_ = val;
-	}
-
-	void setInitYAcc(int16_t val)
-	{
-		init_y_acc_ = val;
-	}
-
-	void setInitZAcc(int16_t val)
-	{
-		init_z_acc_ = val;
-	}
-
 	void setTfReady(bool is_ready)
 	{
 		is_tf_ready_ = is_ready;
@@ -456,8 +411,6 @@ public:
 
 	void obsAdjustCount(int count);
 
-	void setAccInitData();
-
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
@@ -530,16 +483,7 @@ private:
 	
 	/*1 byte*/
 	uint16_t right_wall_; // left wall sensor
-	
-	/*? byte*/
-	int16_t x_acc_; // accelaration of x
-	
-	/*? byte*/
-	int16_t y_acc_; // accelaration of y
-	
-	/*? byte*/
-	int16_t z_acc_; // accelaration of z
-	
+
 	/*1 byte*/
 	uint8_t gyro_dymc_; // ??
 	
@@ -589,10 +533,6 @@ private:
 	//new variable plan
 	int8_t plan;
 	#endif
-
-	int16_t init_x_acc_;
-	int16_t init_y_acc_;
-	int16_t init_z_acc_;
 
 	bool	is_moving_;
 
