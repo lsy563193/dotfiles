@@ -958,7 +958,7 @@ uint8_t map_save_cliff()
 
 uint8_t map_save_bumper()
 {
-	auto bumper_trig = ev.bumper_triggered/*get_bumper_status()*/;
+	auto bumper_trig = ev.bumper_triggered/*bumper.get_status()*/;
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,map_get_curr_cell().X,map_get_curr_cell().Y, ev.bumper_jam, g_bumper_cnt, bumper_trig);
 	if (!bumper_trig)
 		// During self check.

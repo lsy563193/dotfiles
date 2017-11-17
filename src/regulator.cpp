@@ -18,6 +18,7 @@
 #include <path_planning.h>
 #include <clean_state.h>
 #include <pp.h>
+#include <bumper.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
@@ -164,7 +165,7 @@ static int double_scale_10(double line_angle)
 
 static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max, int angle_min,int angle_max,double dis_limit=0.217)
 {
-//	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,get_bumper_status());
+//	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.get_status());
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
@@ -324,7 +325,7 @@ bool BackRegulator::isReach()
 			return true;
 		}
 
-		g_bumper_cnt =get_bumper_status() == 0 ? 0 : g_bumper_cnt+1 ;
+		g_bumper_cnt = bumper.get_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = cliff.get_status() == 0 ? 0 : g_cliff_cnt+1 ;
 		ev.tilt_triggered = get_tilt_status();
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
@@ -472,7 +473,7 @@ bool TurnRegulator::isReach()
 bool TurnRegulator::shouldMoveBack()
 {
 	// Robot should move back for these cases.
-	ev.bumper_triggered = get_bumper_status();
+	ev.bumper_triggered = bumper.get_status();
 	ev.cliff_triggered = cliff.get_status();
 	ev.tilt_triggered = get_tilt_status();
 
@@ -661,7 +662,7 @@ bool LinearRegulator::isNearTarget()
 bool LinearRegulator::shouldMoveBack()
 {
 	// Robot should move back for these cases.
-	ev.bumper_triggered = get_bumper_status();
+	ev.bumper_triggered = bumper.get_status();
 	ev.cliff_triggered = cliff.get_status();
 	ev.tilt_triggered = get_tilt_status();
 
@@ -899,7 +900,7 @@ bool FollowWallRegulator::isTimeUp()
 
 bool FollowWallRegulator::shouldMoveBack()
 {
-	ev.bumper_triggered = get_bumper_status();
+	ev.bumper_triggered = bumper.get_status();
 	if (ev.bumper_triggered) {
 		g_turn_angle = bumper_turn_angle();
 		ROS_WARN("%s %d: Bumper triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
@@ -1345,7 +1346,7 @@ bool GoToChargerRegulator::isSwitch()
 	}
 	if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
 	{
-		ev.bumper_triggered = get_bumper_status();
+		ev.bumper_triggered = bumper.get_status();
 		if(ev.bumper_triggered)
 		{
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
@@ -1390,7 +1391,7 @@ bool GoToChargerRegulator::isSwitch()
 			last_angle = current_angle;
 
 			// Handle for bumper and cliff
-			ev.bumper_triggered = get_bumper_status();
+			ev.bumper_triggered = bumper.get_status();
 			if(ev.bumper_triggered)
 			{
 				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
@@ -1586,7 +1587,7 @@ bool GoToChargerRegulator::isSwitch()
 			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 			return true;
 		}
-		ev.bumper_triggered = get_bumper_status();
+		ev.bumper_triggered = bumper.get_status();
 		if(ev.bumper_triggered)
 		{
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
@@ -1721,7 +1722,7 @@ bool GoToChargerRegulator::isSwitch()
 	}
 	if (go_home_state_now == CHECK_POSITION)
 	{
-		ev.bumper_triggered = get_bumper_status();
+		ev.bumper_triggered = bumper.get_status();
 		if(ev.bumper_triggered)
 		{
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
@@ -1793,7 +1794,7 @@ bool GoToChargerRegulator::isSwitch()
 	}
 	if (go_home_state_now == BY_PATH)
 	{
-		ev.bumper_triggered = get_bumper_status();
+		ev.bumper_triggered = bumper.get_status();
 		if(ev.bumper_triggered)
 		{
 			ROS_INFO("bumper in by path!");

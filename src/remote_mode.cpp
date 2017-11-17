@@ -22,6 +22,7 @@
 #include <vacuum.h>
 #include <cliff.h>
 #include <battery.h>
+#include <bumper.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -168,7 +169,7 @@ void remote_move(void)
 				if (ev.bumper_triggered)
 				{
 					// Check if still bumper triggered.
-					if(!get_bumper_status())
+					if(!bumper.get_status())
 					{
 						ROS_INFO("%s %d: Move back for bumper finished.", __FUNCTION__, __LINE__);
 						g_move_back_finished = true;

@@ -319,7 +319,7 @@ void *robotbase_routine(void*)
 
 		sensor.lbumper = (g_receive_stream[REC_BUMPER] & 0xf0) ? true : false;
 		sensor.rbumper = (g_receive_stream[REC_BUMPER] & 0x0f) ? true : false;
-		auto lidar_bumper_status = get_lidar_bumper_status();
+		auto lidar_bumper_status = bumper_get_lidar_status();
 		if (lidar_bumper_status == 1)
 			sensor.lidar_bumper = 1;
 		else if (lidar_bumper_status == 0)

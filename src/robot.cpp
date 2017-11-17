@@ -665,16 +665,6 @@ std::vector<int8_t> *robot::getMapData()
 //	return rcon_right_ = (charge_stub_ & 0x000f00) >> 8;
 //}
 
-bool robot::getBumperRight()
-{
-	return bumper_right_;
-}
-
-bool robot::getBumperLeft()
-{
-	return bumper_left_;
-}
-
 */
 
 void robot::updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,

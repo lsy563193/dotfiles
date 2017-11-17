@@ -108,7 +108,7 @@ void idle(void)
 
 		usleep(10000);
 
-		//get_lidar_bumper_status();
+		//bumper.get_lidar_status();
 		if (bat_low_delay > 0)
 			bat_low_delay--;
 

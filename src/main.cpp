@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper, "/dev/input/event0");
 	
 	serial_init(serial_port.c_str(), baudrate);
-	if(lidar_bumper_init(lidar_bumper.c_str()) == -1){
+	if(bumper_lidar_init(lidar_bumper.c_str()) == -1){
 		ROS_ERROR(" lidar bumper open fail!");
 	}
 #if VERIFY_CPU_ID
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 		set_led_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
-	lidar_bumper_deinit();
+	bumper_lidar_deinit();
 	robotbase_deinit();
 	return 0;
 }

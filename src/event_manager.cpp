@@ -3,6 +3,7 @@
 #include <pp.h>
 #include <battery.h>
 #include <brush.h>
+#include <bumper.h>
 
 #include "config.h"
 #include "serial.h"
@@ -199,13 +200,13 @@ void *event_manager_thread(void *data)
 
 
 		/* Bumper */
-		if (get_bumper_status() == BLOCK_ALL) {
+		if (bumper.get_status() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:all bumper trig ", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_ALL);
-		} else if (get_bumper_status() & BLOCK_LEFT) {
+		} else if (bumper.get_status() & BLOCK_LEFT) {
 			ROS_DEBUG("%s %d: setting event: left bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_LEFT);
-		} else if (get_bumper_status() & BLOCK_RIGHT) {
+		} else if (bumper.get_status() & BLOCK_RIGHT) {
 			ROS_DEBUG("%s %d: setting event: right bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_RIGHT);
 		}
@@ -652,7 +653,7 @@ void EventHandle::bumper_all(bool state_now, bool state_last)
 	move_back();
 	stop_brifly();
 
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
 
 void EventHandle::bumper_left(bool state_now, bool state_last)
@@ -669,7 +670,7 @@ void EventHandle::bumper_left(bool state_now, bool state_last)
 
 	move_back();
 	stop_brifly();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
 
 void EventHandle::bumper_right(bool state_now, bool state_last)
@@ -687,7 +688,7 @@ void EventHandle::bumper_right(bool state_now, bool state_last)
 
 	move_back();
 	stop_brifly();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, get_bumper_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
 
 /* OBS */

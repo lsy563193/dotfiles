@@ -12,6 +12,7 @@
 #include <vacuum.h>
 #include <cliff.h>
 #include <brush.h>
+#include <bumper.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -209,7 +210,7 @@ bool check_error_cleared(uint8_t error_code)
 		}
 		case Error_Code_Bumper:
 		{
-			if (get_bumper_status())
+			if (bumper.get_status())
 			{
 				ROS_WARN("%s %d: Bumper still triggered.", __FUNCTION__, __LINE__);
 				error_cleared = false;
@@ -407,28 +408,6 @@ void quick_back(uint8_t speed, uint16_t distance)
 		usleep(20000);
 	}
 	ROS_INFO("quick_back finished.");
-}
-
-uint8_t get_bumper_status(void)
-{
-	uint8_t Temp_Status = 0;
-
-	if (robot::instance()->getBumperLeft())
-	{
-		Temp_Status |= BLOCK_LEFT;
-	}
-	if (robot::instance()->getBumperRight())
-	{
-		Temp_Status |= BLOCK_RIGHT;
-	}
-	if (robot::instance()->getLidarBumper())
-	{
-		//Temp_Status |= LidarBumperTrig;
-		Temp_Status |= BLOCK_FRONT;
-	}
-	if(Temp_Status == (BLOCK_LEFT | BLOCK_RIGHT) || (Temp_Status & BLOCK_FRONT) !=0)
-		Temp_Status = BLOCK_ALL;
-	return Temp_Status;
 }
 
 int get_rcon_trig_()
@@ -1809,7 +1788,7 @@ bool check_pub_scan()
 	if (g_motion_init_succeeded &&
 		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
 		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
-		|| get_bumper_status() || get_tilt_status()
+		|| bumper.get_status() || get_tilt_status()
 		|| abs(get_left_wheel_speed() - get_right_wheel_speed()) > 100
 		|| get_left_wheel_speed() * get_right_wheel_speed() < 0))
 		return false;
@@ -1865,60 +1844,6 @@ bool is_decelerate_wall(void)
 
 static int lidar_bumper_fd = -1;
 static uint8_t is_lidar_bumper_init = 0;
-
-int8_t lidar_bumper_init(const char* device)
-{
-	if(lidar_bumper_fd != -1)
-		return 0;
-	char buf[128];
-	sprintf(buf,"%s",device);
-	lidar_bumper_fd = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	if(lidar_bumper_fd > 0)
-	{
-		is_lidar_bumper_init = 1;	
-		ROS_INFO("%s,%d,open %s success!",__FUNCTION__,__LINE__,buf);
-		return 1;
-	}
-	else if(lidar_bumper_fd <= 0 )
-	{
-		lidar_bumper_fd = -1;
-		is_lidar_bumper_init = 0;
-		ROS_INFO("%s,%d,no such file \033[32m %s \033[0m open fail!!",__FUNCTION__,__LINE__,buf);
-		return -1;
-	}
-
-}
-
-int8_t get_lidar_bumper_status()
-{
-	if(is_lidar_bumper_init && lidar_bumper_fd != -1)
-	{
-		uint8_t temp_buf[32] = {0};
-		int reval;
-		reval = read(lidar_bumper_fd,temp_buf,32);
-		if(reval >=0){
-			ROS_INFO("read lidar bumper value:\033[32m%d\033[0m",temp_buf[12]);
-			return temp_buf[12];
-		}
-		else
-			return -1;
-	}
-	return 0;
-}
-
-int8_t lidar_bumper_deinit()
-{
-	if(lidar_bumper_fd == -1)
-		return 0;
-	int c_ret;
-	c_ret = close(lidar_bumper_fd);
-	if(c_ret > 0)
-	{
-		lidar_bumper_fd = -1;
-		is_lidar_bumper_init = 0;
-	}
-	return c_ret;
-}
 
 bool check_laser_stuck()
 {

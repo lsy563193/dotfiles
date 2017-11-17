@@ -193,16 +193,6 @@ public:
 		return charge_stub_;
 	}
 
-	bool getBumperRight() const
-	{
-		return sensor.rbumper;
-	}
-
-	bool getBumperLeft() const
-	{
-		return sensor.lbumper;
-	}
-
 	int16_t getObsLeft()
 	{
 		//int16_t left_obs = sensor.l_obs - g_obs_left_baseline;
@@ -340,11 +330,6 @@ public:
 	int16_t getInitZAcc() const
 	{
 		return init_z_acc_;
-	}
-
-	uint8_t getLidarBumper() const
-	{
-		return (uint8_t)sensor.lidar_bumper;
 	}
 
 	void setInitXAcc(int16_t val)

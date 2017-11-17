@@ -454,9 +454,6 @@ uint8_t is_encoder_fail(void);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
 
-uint8_t get_bumper_status(void);
-
-int8_t get_lidar_bumper_status(void);
 
 int get_rcon_trig(void);
 
@@ -710,8 +707,6 @@ bool check_pub_scan();
 uint8_t is_robot_slip();
 bool is_clean_paused();
 void reset_clean_paused();
-int8_t lidar_bumper_init(const char* device);
-int8_t lidar_bumper_deinit();
 
 bool check_laser_stuck();
 

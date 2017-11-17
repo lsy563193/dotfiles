@@ -1,5 +1,6 @@
 #include <battery.h>
 #include <brush.h>
+#include <bumper.h>
 #include "pp.h"
 
 #ifdef TURN_SPEED
@@ -444,7 +445,7 @@ void cm_self_check(void)
 		}
 		else if (ev.bumper_jam)
 		{
-			if (!get_bumper_status())
+			if (!bumper.get_status())
 			{
 				ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 				ev.bumper_jam = false;
@@ -660,7 +661,7 @@ void CM_EventHandle::bumper_all(bool state_now, bool state_last)
 //	}
 
 //	if (g_move_back_finished && !ev.bumper_jam)
-//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, bumper.get_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 
 }
 
@@ -678,7 +679,7 @@ void CM_EventHandle::bumper_left(bool state_now, bool state_last)
 //	}
 
 //	if (g_move_back_finished && !ev.bumper_jam)
-//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, bumper.get_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 void CM_EventHandle::bumper_right(bool state_now, bool state_last)
@@ -696,7 +697,7 @@ void CM_EventHandle::bumper_right(bool state_now, bool state_last)
 //	}
 
 //	if (g_move_back_finished && !ev.bumper_jam)
-//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
+//		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, bumper.get_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
 /* OBS */
