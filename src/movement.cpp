@@ -13,6 +13,7 @@
 #include <cliff.h>
 #include <brush.h>
 #include <bumper.h>
+#include <controller.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -62,7 +63,6 @@ static uint8_t g_direction_flag = 0;
 // Variable for vacuum mode_
 
 //static uint8_t g_cleaning_mode = 0;
-static uint8_t g_sendflag = 0;
 ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
 
 volatile uint8_t g_r_h_flag = 0;
@@ -614,8 +614,8 @@ void set_left_wheel_speed(uint8_t speed)
 		l_speed |= 0x8000;
 		g_left_wheel_speed *= -1;
 	}
-	control_set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
-	control_set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
+	controller.set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
+	controller.set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
 
 }
 
@@ -630,8 +630,8 @@ void set_right_wheel_speed(uint8_t speed)
 		r_speed |= 0x8000;
 		g_right_wheel_speed *= -1;
 	}
-	control_set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
-	control_set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
+	controller.set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
+	controller.set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
 }
 
 int16_t get_left_wheel_speed(void)
@@ -977,8 +977,8 @@ void set_led(uint16_t G, uint16_t R)
 	// Set the brightnesss of the LED within range(0, 100).
 	G = G < 100 ? G : 100;
 	R = R < 100 ? R : 100;
-	control_set(CTL_LED_RED, R & 0xff);
-	control_set(CTL_LED_GREEN, G & 0xff);
+	controller.set(CTL_LED_RED, R & 0xff);
+	controller.set(CTL_LED_GREEN, G & 0xff);
 }
 
 void stop_brifly(void)
@@ -1044,278 +1044,35 @@ void disable_motors(void)
 void set_start_charge(void)
 {
 	// This function will turn on the charging function.
-	control_set(CTL_CHARGER, 0x01);
+	controller.set(CTL_CHARGER, 0x01);
 }
 
 void set_stop_charge(void)
 {
 	// Set the flag to false so that it can quit charger mode_.
-	control_set(CTL_CHARGER, 0x00);
+	controller.set(CTL_CHARGER, 0x00);
 }
 
 void set_main_pwr_byte(uint8_t val)
 {
-	control_set(CTL_MAIN_PWR, val & 0xff);
+	controller.set(CTL_MAIN_PWR, val & 0xff);
 }
 
 uint8_t get_main_pwr_byte()
 {
-	return control_get(CTL_MAIN_PWR);
+	return controller.get(CTL_MAIN_PWR);
 }
 
 void start_self_check_vacuum(void)
 {
-	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
-	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
+	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+	controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
 }
 
 void reset_self_check_vacuum_controler(void)
 {
-	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
-	control_set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
-}
-
-void control_set(uint8_t type, uint8_t val)
-{
-	set_send_flag();
-	if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO)
-	{
-		g_send_stream[type] = val;
-	}
-	reset_send_flag();
-}
-
-uint8_t control_get(uint8_t seq)
-{
-	uint8_t tmp_data;
-	g_send_stream_mutex.lock();
-	tmp_data = g_send_stream[seq];
-	g_send_stream_mutex.unlock();
-	return tmp_data;
-}
-
-int control_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number)
-{
-	int num_send_packets = key_length / KEY_DOWNLINK_LENGTH;
-	uint8_t ptr[RECEI_LEN], buf[SEND_LEN];
-
-	//Set random seed.
-	//srand(time(NULL));
-	//Send random key to robot.
-	for (int i = 0; i < num_send_packets; i++)
-	{
-		//Populate dummy.
-		for (int j = 0; j < DUMMY_DOWNLINK_LENGTH; j++)
-			control_set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) (rand() % 256));
-
-		//Populate Sequence number.
-		for (int j = 0; j < SEQUENCE_DOWNLINK_LENGTH; j++)
-			control_set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) ((sequence_number >> 8 * j) % 256));
-
-		//Populate key.
-#if VERIFY_DEBUG
-		printf("appending key: ");
-#endif
-
-		for (int k = 0; k < KEY_DOWNLINK_LENGTH; k++)
-		{
-			control_set(k + KEY_DOWNLINK_OFFSET, key[i * KEY_DOWNLINK_LENGTH + k]);
-
-#if VERIFY_DEBUG
-			printf("%02x ", g_send_stream[k + KEY_DOWNLINK_OFFSET]);
-			if (k == KEY_DOWNLINK_LENGTH - 1)
-				printf("\n");
-#endif
-
-		}
-
-		//Fill command field
-		switch (i)
-		{
-			case 0:
-				control_set(SEND_LEN - 4, CMD_KEY1);
-				break;
-			case 1:
-				control_set(SEND_LEN - 4, CMD_KEY2);
-				break;
-			case 2:
-				control_set(SEND_LEN - 4, CMD_KEY3);
-				break;
-			default:
-
-#if VERIFY_DEBUG
-				printf("control_get_sign : Error! key_length too large.");
-#endif
-
-				return -1;
-				//break;
-		}
-
-		for (int i = 0; i < 40; i++)
-		{  //200ms (round trip takes at leat 15ms)
-			int counter = 0, ret;
-
-			g_send_stream_mutex.lock();
-			memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-			g_send_stream_mutex.unlock();
-			buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
-			serial_write(SEND_LEN, buf);
-
-#if VERIFY_DEBUG
-			printf("sending data to robot: i: %d\n", i);
-			for (int j = 0; j < SEND_LEN; j++) {
-				printf("%02x ", buf[j]);
-			}
-			printf("\n");
-#endif
-
-			while (counter < 200)
-			{
-
-				ret = serial_read(1, ptr);
-				if (ptr[0] != 0xAA)
-					continue;
-
-				ret = serial_read(1, ptr);
-				if (ptr[0] != 0x55)
-					continue;
-
-				ret = serial_read(RECEI_LEN - 2, ptr);
-				if (RECEI_LEN - 2 != ret)
-				{
-
-#if VERIFY_DEBUG
-					printf("%s %d: receive count error: %d\n", __FUNCTION__, __LINE__, ret);
-#endif
-
-					usleep(100);
-					counter++;
-				} else
-				{
-					break;
-				}
-			}
-			if (counter < 200)
-			{
-
-#if VERIFY_DEBUG
-				printf("%s %d: counter: %d\tdata count: %d\treceive cmd: 0x%02x\n", __FUNCTION__, __LINE__, counter, ret, ptr[CMD_UPLINK_OFFSET]);
-
-				printf("receive from robot: %d\n");
-				for (int j = 0; j < RECEI_LEN - 2; j++) {
-					printf("%02x ", ptr[j]);
-				}
-				printf("\n");
-#endif
-
-				if (ptr[CMD_UPLINK_OFFSET - 2] == CMD_NCK)   //robot received bronen packet
-					continue;
-
-				if (ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK)
-				{  //set finished
-					//printf("Downlink command ACKed!!\n");
-					control_set(CTL_CMD, 0x00);
-					break;
-				}
-			} else
-			{
-
-#if VERIFY_DEBUG
-				printf("%s %d: max read count reached: %d\n", counter);
-#endif
-
-			}
-			usleep(500);
-		}
-	}
-
-	//Block and wait for signature.
-	for (int i = 0; i < 400; i++)
-	{                              //200ms (round trip takes at leat 15ms)
-		int counter = 0, ret;
-		while (counter < 400)
-		{
-			ret = serial_read(1, ptr);
-			if (ptr[0] != 0xAA)
-				continue;
-
-			ret = serial_read(1, ptr);
-			if (ptr[0] != 0x55)
-				continue;
-
-			ret = serial_read(RECEI_LEN - 2, ptr);
-
-#if VERIFY_DEBUG
-			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, ret, RECEI_LEN - 2, counter);
-#endif
-
-			if (RECEI_LEN - 2 != ret)
-			{
-				usleep(100);
-				counter++;
-			} else
-			{
-				break;
-			}
-		}
-
-#if VERIFY_DEBUG
-		for (int j = 0; j < RECEI_LEN - 2; j++) {
-			printf("%02x ", ptr[j]);
-		}
-		printf("\n");
-#endif
-
-		if (counter < 400 && ptr[CMD_UPLINK_OFFSET - 3] == CMD_ID)
-		{
-			//set finished
-
-#if VERIFY_DEBUG
-			printf("Signature received!!\n");
-#endif
-
-			for (int j = 0; j < KEY_UPLINK_LENGTH; j++)
-				sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
-
-			//Send acknowledge back to MCU.
-			control_set(CTL_CMD, CMD_ACK);
-			for (int k = 0; k < 20; k++)
-			{
-				g_send_stream_mutex.lock();
-				memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-				g_send_stream_mutex.unlock();
-				buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
-				serial_write(SEND_LEN, buf);
-
-				usleep(500);
-			}
-			control_set(CTL_CMD, 0x00);
-
-#if VERIFY_DEBUG
-			printf("%s %d: exit\n", __FUNCTION__, __LINE__);
-#endif
-
-			return KEY_UPLINK_LENGTH;
-		}
-		usleep(500);
-	}
-	control_set(CTL_CMD, 0x00);
-
-#if VERIFY_DEBUG
-	printf("%s %d: exit\n", __FUNCTION__, __LINE__);
-#endif
-
-	return -1;
-}
-
-void set_send_flag(void)
-{
-	g_sendflag = 1;
-}
-
-void reset_send_flag(void)
-{
-	g_sendflag = 0;
+	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+	controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
 }
 
 void set_direction_flag(uint8_t flag)
@@ -1325,14 +1082,14 @@ void set_direction_flag(uint8_t flag)
 
 void reset_mobility_step()
 {
-	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
-	control_set(CTL_OMNI_RESET, omni_reset_byte | 0x01);
+	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+	controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x01);
 }
 
 void clear_reset_mobility_step()
 {
-	uint8_t omni_reset_byte = control_get(CTL_OMNI_RESET);
-	control_set(CTL_OMNI_RESET, omni_reset_byte & ~0x01);
+	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+	controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x01);
 }
 
 int32_t abs_minus(int32_t A, int32_t B)

@@ -16,6 +16,7 @@
 #include "robotbase.h"
 #include "core_move.h"
 
+#include "controller.h"
 #include "gyro.h"
 #include "vacuum.h"
 #include "key.h"

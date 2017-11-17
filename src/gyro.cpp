@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <controller.h>
 
 #include "path_planning.h"
 #include "gyro.h"
@@ -70,7 +71,7 @@ void set_gyro_on(void)
 	else
 	{
 		//ROS_INFO("Set gyro on");
-		control_set(CTL_GYRO, 0x02);
+		controller.set(CTL_GYRO, 0x02);
 		ROS_DEBUG("Set gyro on");
 	}
 }
@@ -202,7 +203,7 @@ bool check_gyro_stable()
 
 void set_gyro_off()
 {
-	control_set(CTL_GYRO, 0x00);
+	controller.set(CTL_GYRO, 0x00);
 	if (!is_gyro_on()){
 		ROS_INFO("gyro stop already");
 		return;
@@ -215,7 +216,7 @@ void set_gyro_off()
 
 	while(count <= 10)
 	{
-		control_set(CTL_GYRO, 0x00);
+		controller.set(CTL_GYRO, 0x00);
 		usleep(20000);
 		count++;
 		if (robot::instance()->getAngleV() != angle_v){
@@ -241,12 +242,12 @@ void set_gyro_dynamic_on(void)
 {
 	if (is_gyro_on())
 	{
-		uint8_t gyro_byte = control_get(CTL_GYRO);
-		control_set(CTL_GYRO, gyro_byte | 0x01);
+		uint8_t gyro_byte = controller.get(CTL_GYRO);
+		controller.set(CTL_GYRO, gyro_byte | 0x01);
 	}
 	//else
 	//{
-	//	control_set(CTL_GYRO, 0x01);
+	//	controller.set(CTL_GYRO, 0x01);
 	//}
 }
 
@@ -254,12 +255,12 @@ void set_gyro_dynamic_off(void)
 {
 	if (is_gyro_on())
 	{
-		uint8_t gyro_byte = control_get(CTL_GYRO);
-		control_set(CTL_GYRO, gyro_byte | 0x00);
+		uint8_t gyro_byte = controller.get(CTL_GYRO);
+		controller.set(CTL_GYRO, gyro_byte | 0x00);
 	}
 	//else
 	//{
-	//	control_set(CTL_GYRO, 0x00);
+	//	controller.set(CTL_GYRO, 0x00);
 	//}
 }
 #endif

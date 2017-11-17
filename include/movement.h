@@ -504,11 +504,11 @@ void start_self_check_vacuum(void);
 
 void reset_self_check_vacuum_controler(void);
 
-void control_set(uint8_t type, uint8_t val);
+void controller_set(uint8_t type, uint8_t val);
 
-uint8_t control_get(uint8_t seq);
+uint8_t controller_get(uint8_t seq);
 
-int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number);
+int controller_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
 
 void set_left_wheel_speed(uint8_t speed);
 
@@ -517,10 +517,6 @@ void set_right_wheel_speed(uint8_t speed);
 int16_t get_left_wheel_speed(void);
 
 int16_t get_right_wheel_speed(void);
-
-void set_send_flag(void);
-
-void reset_send_flag(void);
 
 void set_direction_flag(uint8_t flag);
 

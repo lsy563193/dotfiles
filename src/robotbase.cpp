@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
+#include <controller.h>
 
 #include "movement.h"
 #include "gyro.h"
@@ -104,7 +105,7 @@ int robotbase_init(void)
 	g_send_stream_mutex.unlock();
 	uint8_t crc;
 	crc = calc_buf_crc8(buf, SEND_LEN - 3);
-	control_set(SEND_LEN - 3, crc);
+	controller.set(SEND_LEN - 3, crc);
 	ROS_INFO("waiting robotbase awake ");
 	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
@@ -152,7 +153,7 @@ void robotbase_deinit(void)
 		robotbase_thread_stop = true;
 		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
 		set_led_mode(LED_STEADY, LED_OFF);
-		control_set(CTL_BUZZER, 0x00);
+		controller.set(CTL_BUZZER, 0x00);
 		set_gyro_off();
 		disable_motors();
 		set_main_pwr_byte(POWER_DOWN);
@@ -175,14 +176,14 @@ void robotbase_reset_send_stream(void)
 	boost::mutex::scoped_lock(g_send_stream_mutex);
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
-			control_set(i, 0x00);
+			controller.set(i, 0x00);
 		else
-			control_set(i, 0x64);
+			controller.set(i, 0x64);
 	}
-	control_set(0, 0xaa);
-	control_set(1, 0x55);
-	control_set(SEND_LEN - 2, 0xcc);
-	control_set(SEND_LEN - 1, 0x33);
+	controller.set(0, 0xaa);
+	controller.set(1, 0x55);
+	controller.set(SEND_LEN - 2, 0xcc);
+	controller.set(SEND_LEN - 1, 0x33);
 }
 
 void *serial_receive_routine(void *)
@@ -511,7 +512,7 @@ void *serial_send_routine(void*)
 			serial_write(SEND_LEN, buf);
 		//}
 		//reset omni wheel bit
-		if(control_get(CTL_OMNI_RESET) & 0x01)
+		if(controller.get(CTL_OMNI_RESET) & 0x01)
 			clear_reset_mobility_step();
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
@@ -525,13 +526,13 @@ void process_beep()
 	if (temp_speaker_silence_time_count == 0){
 		temp_speaker_silence_time_count--;
 		temp_speaker_sound_time_count = robotbase_speaker_sound_time_count;
-		control_set(CTL_BUZZER, robotbase_sound_code & 0xFF);
+		controller.set(CTL_BUZZER, robotbase_sound_code & 0xFF);
 	}
 	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
 	if (temp_speaker_sound_time_count == 0){
 		temp_speaker_sound_time_count--;
 		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
-		control_set(CTL_BUZZER, 0x00);
+		controller.set(CTL_BUZZER, 0x00);
 		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
 		// If it is for constant beep, the loop count will be less than 0, it will not decrease either.
 		if (robotbase_speaker_sound_loop_count > 0){
