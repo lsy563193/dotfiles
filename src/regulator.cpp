@@ -636,6 +636,8 @@ bool LinearRegulator::isNearTarget()
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = map_cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
+	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
+	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
 	if ((IS_POS_AXIS(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
 		(!IS_POS_AXIS(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
 		if(g_plan_path.size() > 1)
@@ -646,7 +648,7 @@ bool LinearRegulator::isNearTarget()
 			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
 					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
 		}
-		else if(g_plan_path.front() != g_zero_home && g_allow_path_in_advance)
+		else if(g_plan_path.front() != g_zero_home && g_allow_check_path_in_advance)
 		{
 			g_check_path_in_advance = true;
 			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, map_get_x_cell(),
@@ -753,7 +755,8 @@ void LinearRegulator::setTarget()
 //	path_ = g_plan_path;
 }
 
-void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
+void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
+{
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
 	set_dir_forward();
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;

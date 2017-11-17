@@ -55,7 +55,7 @@ extern bool g_home_gen_rosmap;
 extern Cell_t g_home_point;
 extern int g_wf_reach_count;
 extern bool g_check_path_in_advance;
-extern bool g_allow_path_in_advance;
+extern bool g_allow_check_path_in_advance;
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -116,7 +116,14 @@ void wf_path_planning_initialize();
 bool path_next(const Cell_t& curr, PPTargetType& path);
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path);
-void path_full_angle(const Cell_t& start, PPTargetType& path);
+/*
+ * Generating the pose direction for every target cell in the path, and return the direction towards the first target.
+ * @param	start: Start cell of this path.
+ * @param	path: The target list.
+ *
+ * @return	POS_X/POS_Y/NEG_X/NEG_Y for indicating the direction from start cell to first target.
+ */
+int16_t path_full_angle(const Cell_t& start, PPTargetType& path);
 
 //void path_update_cell_history(void);
 
@@ -175,7 +182,16 @@ bool cm_is_reach();
 
 bool path_next_fw(const Cell_t &start);
 bool path_next_nav(const Cell_t &start, PPTargetType &path);
-bool path_next_nav_in_advance(const Cell_t &start, PPTargetType &path);
+/*
+ * Calculate the path to next target in advance.
+ * @param	dir: variable that saves the new direction from start cell towards first target if it returns true.
+ * @param	start: Start cell.
+ * @param	path: The target list.
+ *
+ * @return	true if there is any valid uncleaned targets.
+ * 			false if there is no more uncleaned targets.
+ */
+bool path_next_nav_in_advance(int16_t &dir, const Cell_t &start, PPTargetType &path);
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
 Cell_t *path_escape_get_trapped_cell(void);

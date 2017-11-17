@@ -29,7 +29,7 @@ const int ISOLATE_COUNT_LIMIT = 4;
 int16_t g_new_dir;
 int16_t g_old_dir;
 bool g_check_path_in_advance = false;
-bool g_allow_path_in_advance = true;
+bool g_allow_check_path_in_advance = true;
 int g_wf_reach_count;
 std::deque <PPTargetType> g_paths;
 
@@ -1248,19 +1248,20 @@ bool path_next_nav(const Cell_t &start, PPTargetType &path)
 			}
 		}
 	}
-	path_full_angle(start, path);
-	g_new_dir = path.front().TH;
+	g_new_dir = path_full_angle(start, path);
 	return ret;
 }
 
-bool path_next_nav_in_advance(const Cell_t &start, PPTargetType &path)
+bool path_next_nav_in_advance(int16_t &dir, const Cell_t &start, PPTargetType &path)
 {
 	bool ret = true;
 	ret = path_lane_is_cleaned(start, path);
 	if (!ret)
 		ret = path_target(start, path);//-1 not target, 0 found
 	if (ret)
-		path_full_angle(start, path);
+		dir = path_full_angle(start, path);
+	else
+		dir = 0;
 	return ret;
 }
 
@@ -1292,7 +1293,7 @@ bool cm_turn_and_check_charger_signal(void)
 	}
 	return false;
 }
-void path_full_angle(const Cell_t& start, PPTargetType& path)
+int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
 {
 	path.push_front(start);
 	for(auto it = path.begin(); it < path.end(); ++it) {
@@ -1307,9 +1308,11 @@ void path_full_angle(const Cell_t& start, PPTargetType& path)
 		path.back().TH = g_home_point.TH;
 	else
 		path.back().TH = (path.end()-2)->TH;
-	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-//	ROS_INFO("path.front(%d,%d,%d)",path.front().X, path.front().Y, path.front().TH);
+	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
+			 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+	int16_t dir = path.front().TH;
 	path.pop_front();
+	return dir;
 }
 
 bool path_next(const Cell_t& start, PPTargetType& path)
