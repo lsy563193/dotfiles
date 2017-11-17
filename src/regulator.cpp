@@ -19,6 +19,7 @@
 #include <clean_state.h>
 #include <pp.h>
 #include <bumper.h>
+#include <obs.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
@@ -48,8 +49,8 @@ int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
 	auto get_wheel_step = (mt_is_left()) ? get_right_wheel_step : get_left_wheel_step;
-	auto get_obs = (mt_is_left()) ? get_left_obs : get_right_obs;
-	auto get_obs_value = (mt_is_left()) ? get_left_obs_trig_value : get_right_obs_trig_value;
+	auto get_obs = (mt_is_left()) ? &Obs::get_left : &Obs::get_right;
+	auto get_obs_value = (mt_is_left()) ? &Obs::get_left_trig_value : &Obs::get_right_trig_value;
 	auto status = ev.bumper_triggered;
 	auto diff_side = (mt_is_left()) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (mt_is_left()) ? BLOCK_LEFT : BLOCK_RIGHT;
@@ -71,9 +72,9 @@ int16_t bumper_turn_angle()
 			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
 		g_turn_angle =0;
 		if (!cs_is_trapped()) {
-			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -180 : -280;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -180 : -280;
 		} else {
-			g_turn_angle = (bumper_jam_cnt_ >= 3 || get_obs() <= get_obs_value()) ? -100 : -200;
+			g_turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -100 : -200;
 		}
 		//ROS_INFO("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
@@ -694,7 +695,7 @@ bool LinearRegulator::isOBSStop()
 	// Now OBS sensor is just for slowing down.
 	return false;
 /*
-	ev.obs_triggered = get_obs_status(200, 1700, 200);
+	ev.obs_triggered = obs.get_status(200, 1700, 200);
 	if(ev.obs_triggered)
 	{
 		g_turn_angle = obs_turn_angle();
@@ -786,7 +787,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	auto obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
-	uint8_t obs_state = get_obs_status();
+	uint8_t obs_state = obs.get_status();
 	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
 	{
 //		ROS_WARN("decelarate");
@@ -944,7 +945,7 @@ bool FollowWallRegulator::shouldTurn()
 		return true;
 	}
 
-	ev.obs_triggered = (get_front_obs() > get_front_obs_trig_value() + 1700);
+	ev.obs_triggered = (obs.get_front() > obs.get_front_trig_value() + 1700);
 	if (ev.obs_triggered)
 	{
 		ev.obs_triggered = BLOCK_FRONT;

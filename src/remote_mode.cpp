@@ -25,6 +25,7 @@
 #include <bumper.h>
 #include <pp.h>
 #include <remote.h>
+#include <obs.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -143,7 +144,7 @@ void remote_move(void)
 		{
 			case REMOTE_MODE_FORWARD:
 			{
-				if (get_obs_status())
+				if (obs.get_status())
 				{
 					if(moving_speed>10)moving_speed--;
 					move_forward(moving_speed, moving_speed);

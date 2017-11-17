@@ -16,6 +16,7 @@
 #include "motion_manage.h"
 
 #include "event_manager.h"
+#include "obs.h"
 
 
 /* Events variables */
@@ -214,15 +215,15 @@ void *event_manager_thread(void *data)
 		}
 
 		/* OBS */
-		if (get_front_obs() > get_front_obs_trig_value() + 1700) {
+		if (obs.get_front() > obs.get_front_trig_value() + 1700) {
 			ROS_DEBUG("%s %d: setting event: front obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_FRONT);
 		}
-		if (get_left_obs() > get_left_obs_trig_value() + 200) {
+		if (obs.get_left() > obs.get_left_trig_value() + 200) {
 			ROS_DEBUG("%s %d: setting event: left obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_LEFT);
 		}
-		if (get_right_obs() > get_right_obs_trig_value() + 200) {
+		if (obs.get_right() > obs.get_right_trig_value() + 200) {
 			ROS_DEBUG("%s %d: setting event: right obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_RIGHT);
 		}

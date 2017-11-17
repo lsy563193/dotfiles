@@ -12,6 +12,7 @@
 #include <pp.h>
 #include <planer.h>
 #include <remote.h>
+#include <obs.h>
 
 #include "gyro.h"
 #include "key.h"

@@ -14,6 +14,7 @@
 #include <brush.h>
 #include <bumper.h>
 #include <controller.h>
+#include <obs.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -31,12 +32,6 @@
 #include "laser.hpp"
 #include "clean_mode.h"
 
-static int16_t obs_left_trig_value = 100;
-static int16_t obs_front_trig_value = 100;
-static int16_t obs_right_trig_value = 100;
-int16_t g_obs_left_baseline = 100;
-int16_t g_obs_front_baseline = 100;
-int16_t g_obs_right_baseline = 100;
 
 static int16_t g_leftwall_obs_trig_vale = 500;
 uint8_t g_wheel_left_direction = FORWARD;
@@ -850,108 +845,6 @@ uint8_t get_self_check_vacuum_status(void)
 	return (uint8_t) robot::instance()->getVacuumSelfCheckStatus();
 }
 
-//--------------------------------------Obs Dynamic adjust----------------------
-void obs_dynamic_base(uint16_t count)
-{
-//	count = 20;
-//	enum {front,left,right};
-	static uint16_t obs_cnt[] = {0,0,0};
-	static int32_t obs_sum[] = {0,0,0};
-	const int16_t obs_dynamic_limit = 2000;
-	int16_t* p_obs_baseline[] = {&g_obs_front_baseline, &g_obs_left_baseline, &g_obs_right_baseline};
-	typedef int16_t(*Func_t)(void);
-	Func_t p_get_obs[] = {&get_front_obs,&get_left_obs,&get_right_obs};
-//	if(count == 0)
-//		return ;
-	for(int i =0;i<3;i++)
-	{
-//		if(i == 0)
-//			ROS_WARN("front-------------------------");
-//		if(i == 1)
-//			ROS_WARN("left-------------------------");
-//		if(i == 2)
-//			ROS_WARN("right-------------------------");
-
-		auto p_obs_baseline_ = p_obs_baseline[i];
-		auto obs_get = p_get_obs[i]();
-
-//		ROS_WARN("obs_trig_val(%d),obs_get(%d)", *p_obs_baseline_, obs_get);
-		obs_sum[i] += obs_get;
-		obs_cnt[i]++;
-		int16_t obs_avg = obs_sum[i] / obs_cnt[i];
-//		ROS_WARN("i = %d, obs_avg(%d), (%d / %d), ",i, obs_avg, obs_sum[i], obs_cnt[i]);
-		auto diff = abs_minus(obs_avg , obs_get);
-		if (diff > 50)
-		{
-//			ROS_WARN("i = %d, diff = (%d) > 50.", i, diff);
-			obs_cnt[i] = 0;
-			obs_sum[i] = 0;
-		}
-		if (obs_cnt[i] > count)
-		{
-			obs_cnt[i] = 0;
-			obs_sum[i] = 0;
-			obs_get = obs_avg / 2 + *p_obs_baseline_;
-			if (obs_get > obs_dynamic_limit)
-				obs_get = obs_dynamic_limit;
-
-			*p_obs_baseline_ = obs_get;
-//			if(i == 0)
-//				ROS_WARN("obs front baseline = %d.", *p_obs_baseline_);
-//			else if(i == 1)
-//				ROS_WARN("obs left baseline = %d.", *p_obs_baseline_);
-//			else if(i == 2)
-//				ROS_WARN("obs right baseline = %d.", *p_obs_baseline_);
-		}
-	}
-}
-
-int16_t get_front_obs_trig_value(void)
-{
-	return obs_front_trig_value;
-}
-
-int16_t get_left_obs_trig_value(void)
-{
-	return obs_left_trig_value;
-}
-
-int16_t get_right_obs_trig_value(void)
-{
-	return obs_right_trig_value;
-}
-
-int16_t get_front_obs(void)
-{
-	return robot::instance()->getObsFront();
-}
-
-int16_t get_left_obs(void)
-{
-	return robot::instance()->getObsLeft();
-}
-
-int16_t get_right_obs(void)
-{
-	return robot::instance()->getObsRight();
-}
-
-uint8_t get_obs_status(int16_t left_obs_offset, int16_t front_obs_offset, int16_t right_obs_offset)
-{
-	uint8_t status = 0;
-
-	if (get_left_obs() > get_left_obs_trig_value() + left_obs_offset)
-		status |= BLOCK_LEFT;
-
-	if (get_front_obs() > get_front_obs_trig_value() + front_obs_offset)
-		status |= BLOCK_FRONT;
-
-	if (get_right_obs() > get_right_obs_trig_value() + right_obs_offset)
-		status |= BLOCK_RIGHT;
-
-	return status;
-}
-
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
 	set_dir_forward();
@@ -1384,7 +1277,7 @@ void reset_clean_paused(void)
 
 bool is_decelerate_wall(void)
 {
-	auto status = (robot::instance()->getObsFront() > get_front_obs_trig_value());
+	auto status = (obs.get_front() > obs.get_front_trig_value());
 	return is_map_front_block(3) || status;
 }
 bool check_laser_stuck()

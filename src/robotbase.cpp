@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <controller.h>
+#include <obs.h>
 
 #include "movement.h"
 #include "gyro.h"
@@ -311,9 +312,9 @@ void *robotbase_routine(void*)
 
 		sensor.left_wall = ((g_receive_stream[REC_L_WALL_H] << 8)| g_receive_stream[REC_L_WALL_L]);
 
-		sensor.l_obs = ((g_receive_stream[REC_L_OBS_H] << 8) | g_receive_stream[REC_L_OBS_L]) - g_obs_left_baseline;
-		sensor.f_obs = ((g_receive_stream[REC_F_OBS_H] << 8) | g_receive_stream[REC_F_OBS_L]) - g_obs_front_baseline;
-		sensor.r_obs = ((g_receive_stream[REC_R_OBS_H] << 8) | g_receive_stream[REC_R_OBS_L]) - g_obs_right_baseline;
+		sensor.l_obs = ((g_receive_stream[REC_L_OBS_H] << 8) | g_receive_stream[REC_L_OBS_L]) - obs.get_left_baseline();
+		sensor.f_obs = ((g_receive_stream[REC_F_OBS_H] << 8) | g_receive_stream[REC_F_OBS_L]) - obs.get_front_baseline();
+		sensor.r_obs = ((g_receive_stream[REC_R_OBS_H] << 8) | g_receive_stream[REC_R_OBS_L]) - obs.get_right_baseline();
 
 #if __ROBOT_X900
 

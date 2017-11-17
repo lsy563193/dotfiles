@@ -373,10 +373,6 @@ typedef enum{
 
 extern uint32_t g_rcon_status;
 
-extern int16_t g_obs_left_baseline;
-extern int16_t g_obs_front_baseline;
-extern int16_t g_obs_right_baseline;
-
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
 
@@ -463,16 +459,6 @@ void work_motor_configure(void);
 uint8_t self_check(uint8_t Check_Code);
 
 uint8_t cm_get(void);
-
-void obs_dynamic_base(uint16_t Cy);
-int16_t get_front_obs_trig_value(void);
-int16_t get_left_obs_trig_value(void);
-int16_t get_right_obs_trig_value(void);
-uint8_t get_obs_status(int16_t left_obs_offset = 0, int16_t front_obs_offset = 0, int16_t right_obs_offset = 0);
-
-int16_t get_front_obs(void);
-int16_t get_left_obs(void);
-int16_t get_right_obs(void);
 
 void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
 
