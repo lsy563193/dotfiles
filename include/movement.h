@@ -542,9 +542,6 @@ void clear_reset_mobility_step();
 
 int32_t abs_minus(int32_t A, int32_t B);
 
-void set_plan_status(uint8_t Status);
-uint8_t get_plan_status(void);
-
 uint8_t get_main_pwr_byte();
 void set_main_pwr_byte(uint8_t val);
 

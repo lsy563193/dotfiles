@@ -21,6 +21,7 @@
 #include <event_manager.h>
 #include <battery.h>
 #include <rcon.h>
+#include <planer.h>
 #include "config.h"
 #include "wav.h"
 #include "robot.hpp"
@@ -70,7 +71,7 @@ void idle(void)
 
 	disable_motors();
 	reset_rcon_remote();
-	set_plan_status(0);
+	planer.set_status(0);
 	reset_stop_event_status();
 	c_rcon.reset_status();
 	key.reset();
@@ -397,13 +398,13 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	/* -----------------------------Check if plan event ----------------------------------*/
-	if (get_plan_status())
+	if (planer.get_status())
 		plan_confirm_time = time(NULL);
 
 	/* reset charger_signal_start_time when get plan status */
 	charger_signal_start_time = time(NULL);
 
-	switch (get_plan_status())
+	switch (planer.get_status())
 	{
 		case 1:
 		{
@@ -457,7 +458,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 
-	set_plan_status(0);
+	planer.set_status(0);
 }
 
 void Idle_EventHandle::key_clean(bool state_now, bool state_last)

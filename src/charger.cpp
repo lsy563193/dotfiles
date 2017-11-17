@@ -14,6 +14,7 @@
 #include "core_move.h"
 #include "event_manager.h"
 #include "clean_mode.h"
+#include "planer.h"
 
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -43,7 +44,7 @@ void charge_function(void)
 	uint16_t bat_v;
 	set_led_mode(LED_BREATH, LED_ORANGE);
 	set_start_charge();
-	set_plan_status(0);
+	planer.set_status(0);
 	charge_register_event();
 	event_manager_reset_status();
 	wav_play(WAV_BATTERY_CHARGE);
@@ -223,10 +224,10 @@ void Charge_EventHandle::charge_detect(bool state_now, bool state_last)
 }
 void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 {
-	if (get_plan_status())
+	if (planer.get_status())
 		charge_plan_confirm_time = time(NULL);
 
-	switch(get_plan_status())
+	switch(planer.get_status())
 	{
 		case 1:
 		{
@@ -279,7 +280,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 			}
 		}
 	}
-	set_plan_status (0);
+	planer.set_status(0);
 }
 void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 {

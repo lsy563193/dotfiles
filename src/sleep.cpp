@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <cliff.h>
 #include <pp.h>
+#include <planer.h>
 
 #include "sleep.h"
 #include "key.h"
@@ -41,7 +42,7 @@ void sleep_mode(void)
 	c_rcon.reset_status();
 	reset_rcon_remote();
 	key.reset();
-	set_plan_status(0);
+	planer.set_status(0);
 
 	event_manager_reset_status();
 	sleep_register_events();
@@ -113,7 +114,7 @@ void sleep_mode(void)
 	c_rcon.reset_status();
 	reset_rcon_remote();
 	reset_stop_event_status();
-	set_plan_status(0);
+	planer.set_status(0);
 }
 
 void sleep_register_events(void)
@@ -149,7 +150,7 @@ void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
-	if (get_plan_status() == 3)
+	if (planer.get_status() == 3)
 	{
 		if (get_error_code() != Error_Code_None)
 		{
@@ -168,7 +169,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 	reset_sleep_mode_flag();
-	set_plan_status(0);
+	planer.set_status(0);
 }
 
 void Sleep_EventHandle::key_clean(bool state_now, bool state_last)

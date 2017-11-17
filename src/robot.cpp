@@ -10,6 +10,7 @@
 #include <move_type.h>
 #include <std_srvs/SetBool.h>
 #include <pp.h>
+#include <planer.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -215,7 +216,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	plan = msg->plan;
 	if(plan > 0)
-		set_plan_status(plan);
+		planer.set_status(plan);
 
 	is_sensor_ready_ = true;
 

@@ -79,8 +79,6 @@ volatile int16_t g_right_wall_baseline = 50;
 volatile uint8_t g_remote_status = 0;
 // Variable for stop event status.
 volatile uint8_t g_stop_event_status = 0;
-// Variable for plan status
-volatile uint8_t g_plan_status = 0;
 
 // Error code for exception case
 volatile uint8_t g_error_code = 0;
@@ -1397,18 +1395,6 @@ int32_t abs_minus(int32_t A, int32_t B)
 		return A - B;
 	}
 	return B - A;
-}
-
-void set_plan_status(uint8_t Status)
-{
-	g_plan_status = Status;
-	if (g_plan_status != 0)
-		ROS_DEBUG("Plan status return %d.", g_plan_status);
-}
-
-uint8_t get_plan_status()
-{
-	return g_plan_status;
 }
 
 uint8_t get_sleep_mode_flag()

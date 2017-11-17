@@ -4,6 +4,7 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
+#include <planer.h>
 
 #include "config.h"
 #include "serial.h"
@@ -308,7 +309,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
-		if (get_plan_status()) {
+		if (planer.get_status()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
@@ -868,15 +869,15 @@ void EventHandle::remote_plan(bool state_now, bool state_last)
 }
 void df_remote_plan(bool state_now, bool state_last)
 {
-	if (get_plan_status() == 1 || get_plan_status() == 2)
+	if (planer.get_status() == 1 || planer.get_status() == 2)
 	{
 		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 		beep_for_command(INVALID);
 	}
-	else if (get_plan_status() == 3)
+	else if (planer.get_status() == 3)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
 
-	set_plan_status(0);
+	planer.set_status(0);
 	reset_rcon_remote();
 }
 
