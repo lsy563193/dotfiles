@@ -2,6 +2,7 @@
 #include <ros/console.h>
 #include <stdio.h>
 #include <wav.h>
+#include <key.h>
 
 #include "go_home.hpp"
 #include "movement.h"
@@ -18,7 +19,7 @@
 #endif
 
 
-/* Exit charge mode when this counter equals to 0 */
+/* Exit charge mode_ when this counter equals to 0 */
 uint8_t g_stop_charge_counter = 0;
 
 uint8_t charge_plan_status = 0;
@@ -27,6 +28,7 @@ time_t charge_plan_confirm_time = time(NULL);
 /* value for saving last charge status */
 uint8_t last_charge_status = 0;
 bool g_charge_turn_connect_fail = false;
+static Charge_EventHandle eh;
 /*---------------------------------------------------------------- Charge Function ------------------------*/
 void charge_function(void)
 {
@@ -43,7 +45,7 @@ void charge_function(void)
 	charge_register_event();
 	event_manager_reset_status();
 	wav_play(WAV_BATTERY_CHARGE);
-	ROS_INFO("%s %d: Start charger mode.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Start charger mode_.", __FUNCTION__, __LINE__);
 
 	while(ros::ok())
 	{
@@ -80,14 +82,14 @@ void charge_function(void)
 
 		if(++show_batv_counter > 500)//about 10 second
 		{
-			ROS_INFO("%s %d: In charge mode looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)bat_v/100.0);
+			ROS_INFO("%s %d: In charge mode_ looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)bat_v/100.0);
 			show_batv_counter = 0;
 		}
 
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
 		if(g_stop_charge_counter <15)
 			ROS_WARN("%s %d: g_stop_charge_counter: %d, charge_status: %d", __FUNCTION__, __LINE__, g_stop_charge_counter, robot::instance()->getChargeStatus());
-		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode
+		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode_
 		{
 			ev.charge_detect = 0;
 			if(!charge_turn_connect())
@@ -96,20 +98,20 @@ void charge_function(void)
 				{
 					if (robot::instance()->getBatteryVoltage() < LOW_BATTERY_STOP_VOLTAGE)
 					{
-						ROS_INFO("%s %d: Exit charger mode and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
-						cm_set(Clean_Mode_Userinterface);
+						ROS_INFO("%s %d: Exit charger mode_ and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
+						cm_set(Clean_Mode_Idle);
 						g_resume_cleaning = false;
 					}
 					else
 					{
-						ROS_INFO("%s %d: Exit charger mode and continue cleaning.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: Exit charger mode_ and continue cleaning.", __FUNCTION__, __LINE__);
 						cm_set(Clean_Mode_Navigation);
 					}
 					break;
 				}
 
-				ROS_INFO("%s %d: Exit charger mode and go to userinterface mode.", __FUNCTION__, __LINE__);
-				cm_set(Clean_Mode_Userinterface);
+				ROS_INFO("%s %d: Exit charger mode_ and go to userinterface mode_.", __FUNCTION__, __LINE__);
+				cm_set(Clean_Mode_Idle);
 				break;
 			}
 			else
@@ -121,7 +123,7 @@ void charge_function(void)
 		{
 			disable_motors();
 			ev.cliff_all_triggered = 0;
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			break;
 		}
 		if(g_plan_activated)
@@ -186,7 +188,7 @@ void charge_function(void)
 	{
 		// Wait for updated cliff status.
 		usleep(30000);
-		// Cliff triggered means switch is off, aborting switching to navigation mode.
+		// Cliff triggered means switch is off, aborting switching to navigation mode_.
 		if (get_cliff_status())
 		{
 			ROS_WARN("%s %d: Switch is not on.", __FUNCTION__, __LINE__);
@@ -203,70 +205,21 @@ void charge_function(void)
 
 void charge_register_event(void)
 {
-	ROS_WARN("%s, %d: Register events.", __FUNCTION__, __LINE__);
-//	event_manager_set_current_mode(EVT_MODE_CHARGE);
-#define event_manager_register_and_enable_x(name, y, enabled) \
-	event_manager_register_handler(y, &charge_handle_ ##name); \
-	event_manager_enable_handler(y, enabled)
-
-	/* Charge Status */
-	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-	/* Plan */
-	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
-	/* key */
-	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-	/* Remote */
-	event_manager_register_and_enable_x(remote_cleaning, EVT_REMOTE_CLEAN, true);
-	event_manager_enable_handler(EVT_REMOTE_HOME, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
-	event_manager_enable_handler(EVT_REMOTE_SPOT, true);
-	event_manager_enable_handler(EVT_REMOTE_MAX, true);
-	event_manager_enable_handler(EVT_RCON, true);
-	/* Cliff */
-	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
-#undef event_manager_register_and_enable_x
-
+	event_manager_register_handler(&eh);
 	event_manager_set_enable(true);
 }
 
 void charge_unregister_event(void)
 {
-	ROS_WARN("%s, %d: Unregister events.", __FUNCTION__, __LINE__);
-#define event_manager_register_and_disable_x(x) \
-	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false)
-
-	/* Charge Status */
-	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
-	/* Plan */
-	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	/* Key */
-	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_enable_handler(EVT_REMOTE_HOME, false);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, false);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, false);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, false);
-	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, false);
-	event_manager_enable_handler(EVT_REMOTE_SPOT, false);
-	event_manager_enable_handler(EVT_REMOTE_MAX, false);
-	/* Cliff */
-	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
-#undef event_manager_register_and_disable_x
-
 	event_manager_set_enable(false);
 }
 
-void charge_handle_charge_detect(bool state_now, bool state_last)
+void Charge_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ev.charge_detect = 1;
 	g_stop_charge_counter = 20;
 }
-void charge_handle_remote_plan(bool state_now, bool state_last)
+void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	if (get_plan_status())
 		charge_plan_confirm_time = time(NULL);
@@ -326,7 +279,7 @@ void charge_handle_remote_plan(bool state_now, bool state_last)
 	}
 	set_plan_status (0);
 }
-void charge_handle_cliff_all(bool state_now, bool state_last)
+void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -335,11 +288,11 @@ void charge_handle_cliff_all(bool state_now, bool state_last)
 		ev.cliff_all_triggered = true;
 	}
 }
-void charge_handle_key_clean(bool state_now, bool state_last)
+void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	if (is_direct_charge())
 	{
-		ROS_WARN("%s %d: Can not go to navigation mode during direct charging.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 		beep_for_command(INVALID);
 	}
 	else if (get_error_code() != Error_Code_None)
@@ -365,13 +318,13 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 	}
 	else if (!check_bat_ready_to_clean())
 	{
-		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
+		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beep_for_command(INVALID);
 		charge_reject_reason = 3;
 	}
 	else if (is_on_charger_stub())
 	{
-		ROS_WARN("%s %d: Exit charger mode and go to navigation mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 		beep_for_command(VALID);
 		cm_set(Clean_Mode_Navigation);
 	}
@@ -381,15 +334,15 @@ void charge_handle_key_clean(bool state_now, bool state_last)
 		usleep(20000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
-	reset_touch();
+	key.reset();
 }
-void charge_handle_remote_cleaning(bool stat_now, bool state_last)
+void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
 	if (remote_key(Remote_Clean)) {
 		reset_rcon_remote();
 		if (is_direct_charge())
 		{
-			ROS_WARN("%s %d: Can not go to navigation mode during direct charging.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 			beep_for_command(INVALID);
 		}
 		else if (get_error_code() != Error_Code_None)
@@ -415,13 +368,13 @@ void charge_handle_remote_cleaning(bool stat_now, bool state_last)
 		}
 		else if (!check_bat_ready_to_clean())
 		{
-			ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
+			ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
 			charge_reject_reason = 3;
 			beep_for_command(INVALID);
 		}
 		else if (is_on_charger_stub())
 		{
-			ROS_WARN("%s %d: Exit charger mode and go to navigation mode.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 			beep_for_command(VALID);
 			cm_set(Clean_Mode_Navigation);
 		}

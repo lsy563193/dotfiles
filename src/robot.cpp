@@ -11,6 +11,7 @@
 #include <std_srvs/SetBool.h>
 
 #include "gyro.h"
+#include "key.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "config.h"
@@ -30,6 +31,8 @@ using namespace obstacle_detector;
 
 static	robot *robot_obj = NULL;
 
+bool	g_is_low_bat_pause=false;
+bool g_is_manual_pause=false;
 time_t	start_time;
 
 // For avoid key value palse.
@@ -82,12 +85,11 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	start_time = time(NULL);
 
 	// Initialize the low battery pause variable.
-	low_bat_pause_cleaning_ = false;
 	// Initialize the key press count.
 	key_press_count = 0;
 
 	// Initialize the manual pause variable.
-	manual_pause_cleaning_ = false;
+	g_is_manual_pause = false;
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 
@@ -172,9 +174,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 //	if(get_rcon_status())
 //	ROS_WARN("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
 
-	key = msg->key;
+	key_ = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((key & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
+	if ((key_ & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
 	{
 		key_press_count++;
 		if (key_press_count > 0)
@@ -182,10 +184,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 			set_key_press(KEY_CLEAN);
 			key_press_count = 0;
 			// When key 'clean' is triggered, it will set touch status.
-			set_touch();
+			key.set();
 		}
 	}
-	else if (!(key & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
+	else if (!(key_ & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
 	{
 		key_release_count++;
 		if (key_release_count > 5)

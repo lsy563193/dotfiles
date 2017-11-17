@@ -41,6 +41,7 @@
  * 	g_oc_suction
  * 	g_battery_low
  */
+
 typedef struct {
 		bool remote_home;
 		bool battery_home;
@@ -49,11 +50,11 @@ typedef struct {
 
 		bool battrey_home;
 		bool fatal_quit;
-		bool bumper_triggered;
+		uint8_t bumper_triggered;
 		int rcon_triggered;
-		bool obs_triggered;
+		uint8_t obs_triggered;
 		bool bumper_jam;
-		int cliff_triggered;
+		uint8_t cliff_triggered;
 		bool cliff_jam;
 
 		bool oc_brush_main;
@@ -67,9 +68,135 @@ typedef struct {
 		bool tilt_triggered;
 		uint8_t charge_detect;
 		bool laser_stuck = false;
-		int laser_triggered;
+		uint8_t laser_triggered;
 		bool cliff_all_triggered;
 }Ev_t;
+class EventHandle{
+public:
+void bumper_all(bool state_now, bool state_last);
+
+void bumper_left(bool state_now, bool state_last);
+
+void bumper_right(bool state_now, bool state_last);
+
+/* OBS */
+void obs_front(bool state_now, bool state_last);
+
+void obs_left(bool state_now, bool state_last);
+
+void obs_right(bool state_now, bool state_last);
+
+void obs_wall_left(bool state_now, bool state_last);
+
+void obs_wall_right(bool state_now, bool state_last);
+
+/* Cliff */
+void cliff_all(bool state_now, bool state_last);
+
+void cliff_front_left(bool state_now, bool state_last);
+
+void cliff_front_right(bool state_now, bool state_last);
+
+void cliff_left_right(bool state_now, bool state_last);
+
+void cliff_front(bool state_now, bool state_last);
+
+void cliff_left(bool state_now, bool state_last);
+
+void cliff_right(bool state_now, bool state_last);
+
+/* RCON */
+void rcon(bool state_now, bool state_last);
+/*
+void rcon_front_left(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
+void rcon_front_left2(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
+void rcon_front_right(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
+void rcon_front_right2(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
+void rcon_left(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+
+void rcon_right(bool state_now, bool state_last)
+{
+	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
+}
+*/
+
+/* Over Current */
+virtual void over_current_brush_left(bool state_now, bool state_last);
+
+virtual void over_current_brush_main(bool state_now, bool state_last);
+
+virtual void over_current_brush_right(bool state_now, bool state_last);
+
+virtual void over_current_wheel_left(bool state_now, bool state_last);
+
+virtual void over_current_wheel_right(bool state_now, bool state_last);
+
+virtual void over_current_suction(bool state_now, bool state_last);
+
+/* Key */
+virtual void key_clean(bool state_now, bool state_last);
+
+/* Remote */
+virtual void remote_plan(bool state_now, bool state_last);
+
+virtual void remote_clean(bool state_now, bool state_last);
+
+virtual void remote_home(bool state_now, bool state_last);
+
+virtual void remote_direction_forward(bool state_now, bool state_last);
+
+virtual void remote_wall_follow(bool state_now, bool state_last);
+
+virtual void remote_direction_left(bool state_now, bool state_last);
+
+virtual void remote_direction_right(bool state_now, bool state_last);
+
+virtual void remote_spot(bool state_now, bool state_last);
+
+virtual void remote_max(bool state_now, bool state_last);
+
+/* Battery */
+virtual void battery_home(bool state_now, bool state_last);
+
+virtual void battery_low(bool state_now, bool state_last);
+
+virtual void charge_detect(bool state_now, bool state_last);
+/* Slam Error */
+virtual void slam_error(bool state_now, bool state_last);
+
+virtual void robot_slip(bool state_new,bool state_last);
+/*
+void lidar_bumper(bool state_new,bool state_last)
+{
+	g_lidar_bumper = robot::instance()->getLidarBumper();
+}
+*/
+
+// Laser stuck
+virtual void laser_stuck(bool state_new,bool state_last);
+/* Default: empty hanlder */
+//void empty(bool state_now, bool state_last);
+
+};
 
 /* Bumper */
 extern int g_bumper_cnt;
@@ -201,12 +328,13 @@ typedef enum {
 	EVT_MODE_REMOTE,
 	EVT_MODE_MAX,
 } EventModeType;*/
+typedef void(EventHandle::*PEHF)(bool state_now, bool state_last);
 typedef void(*event_handle_t)(bool state_now, bool state_last);
 typedef struct {
 //	EventModeType	emt;
-	bool	handler_enabled[EVT_MAX];
-	event_handle_t default_handler[EVT_MAX];
-	event_handle_t handler[EVT_MAX];
+//	bool	handler_enabled[EVT_MAX];
+	EventHandle* peh;
+//	event_handle_t handler[EVT_MAX];
 } EventActionType;
 
 extern bool	event_handler_status;
@@ -223,7 +351,7 @@ void *event_handler_thread(void *data);
 
 //void event_manager_set_current_mode(EventModeType mode);
 
-void event_manager_register_handler(EventType type, void (*func)(bool state_now, bool state_last));
+void event_manager_register_handler(EventHandle* eh);
 
 void event_manager_enable_handler(EventType type, bool enabled);
 
@@ -232,83 +360,24 @@ uint8_t event_manager_check_event(bool *eh_status_now, bool *eh_status_last);
 void event_manager_reset_status(void);
 
 /* Below are the internal functions. */
-
-#define define_em_handler_func(name) \
-	void em_default_handle_ ## name(bool state_now, bool state_last);
+/* Below are the internal functions. */
 
 /* Bumper */
-define_em_handler_func(bumper_all)
-define_em_handler_func(bumper_left)
-define_em_handler_func(bumper_right)
 
-/* OBS */
-define_em_handler_func(obs_front)
-define_em_handler_func(obs_left)
-define_em_handler_func(obs_right)
-define_em_handler_func(obs_wall_left)
-define_em_handler_func(obs_wall_right)
-
-/* Cliff */
-define_em_handler_func(cliff_all)
-define_em_handler_func(cliff_front_left)
-define_em_handler_func(cliff_front_right)
-define_em_handler_func(cliff_left_right)
-define_em_handler_func(cliff_front)
-define_em_handler_func(cliff_left)
-define_em_handler_func(cliff_right)
-
-/* RCON */
-define_em_handler_func(rcon)
-/*
-define_em_handler_func(rcon_front_left)
-define_em_handler_func(rcon_front_left2)
-define_em_handler_func(rcon_front_right)
-define_em_handler_func(rcon_front_right2)
-define_em_handler_func(rcon_left)
-define_em_handler_func(rcon_right)
-*/
-
-/* Over Current */
-define_em_handler_func(over_current_brush_left)
-define_em_handler_func(over_current_brush_main)
-define_em_handler_func(over_current_brush_right)
-define_em_handler_func(over_current_wheel_left)
-define_em_handler_func(over_current_wheel_right)
-define_em_handler_func(over_current_suction)
-
-/* Key */
-define_em_handler_func(key_clean)
-
-/* Remote */
-define_em_handler_func(remote_plan)
-define_em_handler_func(remote_clean)
-define_em_handler_func(remote_home)
-define_em_handler_func(remote_direction_forward)
-define_em_handler_func(remote_direction_left)
-define_em_handler_func(remote_direction_right)
-define_em_handler_func(remote_spot)
-define_em_handler_func(remote_max)
-define_em_handler_func(remote_wall_follow)
-
-/* Battery */
-define_em_handler_func(battery_home)
-define_em_handler_func(battery_low)
-
-/* Charge Status */
-define_em_handler_func(charge_detect)
-
-/* Slam Error */
-define_em_handler_func(slam_error)
-
-/* robot stuck */
-define_em_handler_func(robot_slip)
-
-/* lidar bumper*/
-define_em_handler_func(lidar_bumper)
-
-// Laser stuck
-define_em_handler_func(laser_stuck)
-
-define_em_handler_func(empty)
-
+void df_rcon(bool state_now, bool state_last);
+void df_over_current_brush_left(bool state_now, bool state_last);
+void df_over_current_brush_right(bool state_now, bool state_last);
+void df_remote_plan(bool state_now, bool state_last);
+void df_remote_clean(bool state_now, bool state_last);
+void df_remote_home(bool state_now, bool state_last);
+void df_remote_direction_forward(bool state_now, bool state_last);
+void df_remote_wall_follow(bool state_now, bool state_last);
+void df_remote_direction_left(bool state_now, bool state_last);
+void df_remote_direction_right(bool state_now, bool state_last);
+void df_remote_spot(bool state_now, bool state_last);
+void df_remote_max(bool state_now, bool state_last);
+void df_charge_detect(bool state_now, bool state_last);
+void df_slam_error(bool state_now, bool state_last);
+void df_robot_slip(bool state_new,bool state_last);
+void df_laser_stuck(bool state_new,bool state_last);
 #endif

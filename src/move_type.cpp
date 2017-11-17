@@ -63,25 +63,23 @@ void mt_update(const Cell_t& curr, PPTargetType& path) {
 		if (mt_should_follow_wall(g_old_dir, curr, path))
 		{
 			auto delta_y = path.back().Y - curr.Y;
-			MoveType move_type_tmp = ((g_old_dir == POS_X ^ delta_y > 0) ? MT_FOLLOW_LEFT_WALL : MT_FOLLOW_RIGHT_WALL);
+			MoveType move_type_tmp = (g_old_dir == POS_X ^ delta_y > 0) ? MT_FOLLOW_LEFT_WALL : MT_FOLLOW_RIGHT_WALL;
 			mt_set(move_type_tmp);
+			ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, mt_get());
 		}
 	}
 }
 
 bool mt_should_follow_wall(const int16_t dir, const Cell_t& curr, PPTargetType& path)
 {
-	ROS_WARN("%s,%d: dir(%d),tilt(%d), rcon(%d)", __FUNCTION__, __LINE__, dir, ev.tilt_triggered, ev.rcon_triggered);
-	if (!IS_X_AXIS(dir) || path.size() > 3 || ev.tilt_triggered || ev.rcon_triggered)
-		return false;
-
+	bool ret = true;
 	auto delta_y = path.back().Y - curr.Y;
-	if (delta_y == 0)
-		return false;
+	ROS_INFO("%s,%d: path size(%u), dir(%d),tilt(%d), rcon(%d), delta_y(%d)",
+			 __FUNCTION__, __LINE__, path.size(), dir, ev.tilt_triggered, ev.rcon_triggered, delta_y);
 
-	else if (std::abs(delta_y) <= 2) {
-		ROS_INFO("\033[31m""%s,%d: target:, 2_left_3_right(%d)""\033[0m", __FUNCTION__, __LINE__, mt_get());
-		return true;
-	}
-	return false;
+	if (!IS_X_AXIS(dir) // If last movement is not x axis linear movement, should not follow wall.
+		|| path.size() > 3 || ev.tilt_triggered || ev.rcon_triggered || delta_y == 0 || std::abs(delta_y) > 2)
+		ret = false;
+
+	return ret;
 }

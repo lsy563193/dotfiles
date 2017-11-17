@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 
 #include "sleep.h"
+#include "key.h"
 #include "movement.h"
 #include "wav.h"
 #include "event_manager.h"
@@ -10,7 +11,8 @@
 
 uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 bool sleep_rcon_triggered = false;
-/*----------------------------------------------------------------Sleep mode---------------------------*/
+static Sleep_EventHandle eh;
+/*----------------------------------------------------------------Sleep mode_---------------------------*/
 void sleep_mode(void)
 {
 	time_t check_battery_time = time(NULL);
@@ -36,7 +38,7 @@ void sleep_mode(void)
 	reset_stop_event_status();
 	reset_rcon_status();
 	reset_rcon_remote();
-	reset_touch();
+	key.reset();
 	set_plan_status(0);
 
 	event_manager_reset_status();
@@ -69,7 +71,7 @@ void sleep_mode(void)
 		}
 		/*--- Wake up events---*/
 		if(ev.key_clean_pressed)
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 		else if(ev.charge_detect)
 			cm_set(Clean_Mode_Charging);
 		else if(g_plan_activated)
@@ -103,7 +105,7 @@ void sleep_mode(void)
 	usleep(100000);
 	beep(1, 80, 4, 1);
 
-	// Wait 1.5s to avoid gyro can't open if switch to navigation mode too soon after waking up.
+	// Wait 1.5s to avoid gyro can't open if switch to navigation mode_ too soon after waking up.
 	usleep(1500000);
 
 	reset_rcon_status();
@@ -114,50 +116,16 @@ void sleep_mode(void)
 
 void sleep_register_events(void)
 {
-	ROS_WARN("%s %d: Register events", __FUNCTION__, __LINE__);
-//	event_manager_set_current_mode(EVT_MODE_SLEEP);
-
-#define event_manager_register_and_enable_x(name, y, enabled) \
-	event_manager_register_handler(y, &sleep_handle_ ##name); \
-	event_manager_enable_handler(y, enabled);
-
-	/* Rcon */
-	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
-	/* Remote */
-	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_plan, EVT_REMOTE_PLAN, true);
-	/* Key */
-	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-	/* Charge Status */
-	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-
-#undef event_manager_register_and_enable_x
-
+	event_manager_register_handler(&eh);
 	event_manager_set_enable(true);
 }
 
 void sleep_unregister_events(void)
 {
-	ROS_WARN("%s %d: Unregister events", __FUNCTION__, __LINE__);
-#define event_manager_register_and_disable_x(x) \
-	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false);
-
-	/* Rcon */
-	event_manager_register_and_disable_x(EVT_RCON);
-	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	/* Key */
-	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-	/* Charge Status */
-	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
-#undef event_manager_register_and_disable_x
-
 	event_manager_set_enable(false);
 }
 
-void sleep_handle_rcon(bool state_now, bool state_last)
+void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 	if (get_error_code() == Error_Code_None)
@@ -168,15 +136,15 @@ void sleep_handle_rcon(bool state_now, bool state_last)
 	reset_sleep_mode_flag();
 }
 
-void sleep_handle_remote_clean(bool state_now, bool state_last)
+void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
-	set_main_pwr_byte(Clean_Mode_Userinterface);
+	set_main_pwr_byte(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
 	reset_sleep_mode_flag();
 }
 
-void sleep_handle_remote_plan(bool state_now, bool state_last)
+void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
 	if (get_plan_status() == 3)
@@ -201,11 +169,11 @@ void sleep_handle_remote_plan(bool state_now, bool state_last)
 	set_plan_status(0);
 }
 
-void sleep_handle_key_clean(bool state_now, bool state_last)
+void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
-	set_main_pwr_byte(Clean_Mode_Userinterface);
+	set_main_pwr_byte(Clean_Mode_Idle);
 	reset_sleep_mode_flag();
 	usleep(20000);
 
@@ -215,10 +183,10 @@ void sleep_handle_key_clean(bool state_now, bool state_last)
 		usleep(20000);
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	reset_touch();
+	key.reset();
 }
 
-void sleep_handle_charge_detect(bool state_now, bool state_last)
+void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
 	set_main_pwr_byte(Clean_Mode_Charging);

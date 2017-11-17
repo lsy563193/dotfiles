@@ -5,6 +5,7 @@
 #include "debug.h"
 #include <vector>
 #include <bitset>
+#include "event_manager.h"
 
 #define MS_Clear 		0x00
 #define MS_OBS   		0x01
@@ -77,7 +78,6 @@ extern bool g_exploration_home;
 extern std::deque<Cell_t> g_passed_path;
 extern std::deque<Cell_t> g_plan_path;
 extern long g_distance;
-extern bool g_check_path_in_advance;
 extern bool g_during_go_to_charger;
 
 uint8_t angle_to_bumper_status(void);
@@ -136,94 +136,136 @@ void cm_unregister_events(void);
 
 void cm_set_event_manager_handler_state(bool state);
 
-void cm_event_manager_turn(bool state);
-
 void cm_block_charger_stub(int8_t direction);
-#define define_cm_handle_func(name) \
-	void cm_handle_ ## name(bool state_now, bool state_last);
 
-/* Bumper */
-define_cm_handle_func(bumper_all)
 
-define_cm_handle_func(bumper_left)
+class CM_EventHandle:public EventHandle {
 
-define_cm_handle_func(bumper_right)
+	void bumper_all(bool state_now, bool state_last);
+
+	void bumper_left(bool state_now, bool state_last);
+
+	void bumper_right(bool state_now, bool state_last);
 
 /* OBS */
-define_cm_handle_func(obs_front)
+	void obs_front(bool state_now, bool state_last);
 
-define_cm_handle_func(obs_left)
+	void obs_left(bool state_now, bool state_last);
 
-define_cm_handle_func(obs_right)
+	void obs_right(bool state_now, bool state_last);
 
 /* Cliff */
-define_cm_handle_func(cliff_all)
+	void cliff_all(bool state_now, bool state_last);
 
-define_cm_handle_func(cliff_front_left)
+	void cliff_front_left(bool state_now, bool state_last);
 
-define_cm_handle_func(cliff_front_right)
+	void cliff_front_right(bool state_now, bool state_last);
 
-define_cm_handle_func(cliff_left_right)
+	void cliff_left_right(bool state_now, bool state_last);
 
-define_cm_handle_func(cliff_front)
+	void cliff_front(bool state_now, bool state_last);
 
-define_cm_handle_func(cliff_left)
+	void cliff_left(bool state_now, bool state_last);
 
-define_cm_handle_func(cliff_right)
+	void cliff_right(bool state_now, bool state_last);
 
 /* RCON */
-define_cm_handle_func(rcon)
+	void rcon(bool state_now, bool state_last);
+/* Over Current */
 /*
-define_cm_handle_func(rcon_front_left)
+void over_current_brush_left(bool state_now, bool state_last)
+{
+	static uint8_t stop_cnt = 0;
 
-define_cm_handle_func(rcon_front_left2)
+	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+	if(!robot::instance()->getLbrushOc()) {
+		g_oc_brush_left_cnt = 0;
+		if (stop_cnt++ > 250) {
+			set_left_brush_pwm(30);
+		}
+		return;
+	}
 
-define_cm_handle_func(rcon_front_right)
-
-define_cm_handle_func(rcon_front_right2)
-
-define_cm_handle_func(rcon_left)
-
-define_cm_handle_func(rcon_right)
+	stop_cnt = 0;
+	if (g_oc_brush_left_cnt++ > 40) {
+		g_oc_brush_left_cnt = 0;
+		set_left_brush_pwm(0);
+		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
+	}
+}
 */
 
-/* Over Current */
-//define_cm_handle_func(over_current_brush_left)
+	void over_current_brush_main(bool state_now, bool state_last);
 
-define_cm_handle_func(over_current_brush_main)
+	void over_current_brush_left(bool state_now, bool state_last) { df_over_current_brush_left(state_now, state_last); }
 
-//define_cm_handle_func(over_current_brush_right)
+	void over_current_brush_right(bool state_now, bool state_last) { df_over_current_brush_right(state_now, state_last); }
 
-define_cm_handle_func(over_current_wheel_left)
+/*
 
-define_cm_handle_func(over_current_wheel_right)
+//void over_current_brush_right(bool state_now, bool state_last)
+//{
+//	static uint8_t stop_cnt = 0;
+//
+//	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+//
+//	if(!robot::instance()->getRbrushOc()) {
+//		g_oc_brush_right_cnt = 0;
+//		if (stop_cnt++ > 250) {
+//			set_right_brush_pwm(30);
+//		}
+//		return;
+//	}
+//
+//	stop_cnt = 0;
+//	if (g_oc_brush_right_cnt++ > 40) {
+//		g_oc_brush_right_cnt = 0;
+//		set_right_brush_pwm(0);
+//		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
+//	}
+//}
+*/
 
-define_cm_handle_func(over_current_suction)
+	void over_current_wheel_left(bool state_now, bool state_last);
+
+	void over_current_wheel_right(bool state_now, bool state_last);
+
+	void over_current_suction(bool state_now, bool state_last);
 
 /* Key */
-define_cm_handle_func(key_clean)
+	void key_clean(bool state_now, bool state_last);
 
 /* Remote */
-define_cm_handle_func(remote_plan)
+	void remote_clean(bool state_now, bool state_last);
 
-define_cm_handle_func(remote_clean)
+	void remote_home(bool state_now, bool state_last);
 
-define_cm_handle_func(remote_home)
+	void remote_spot(bool state_now, bool state_last);
 
-define_cm_handle_func(remote_spot)
+	void remote_wall_follow(bool state_now, bool state_last) { df_remote_wall_follow(state_now, state_last); }
 
-define_cm_handle_func(remote_wallfollow);
+	void remote_max(bool state_now, bool state_last);
 
-define_cm_handle_func(remote_max)
+	void remote_direction_left(bool state_now, bool state_last) { df_remote_direction_left(state_now, state_last); }
 
-define_cm_handle_func(remote_direction)
+	void remote_direction_right(bool state_now, bool state_last) { df_remote_direction_right(state_now, state_last); }
+
+	void remote_direction_forward(bool state_now, bool state_last) { df_remote_direction_forward(state_now, state_last); }
+
+	void remote_plan(bool state_now, bool state_last) { df_remote_plan(state_now, state_last); }
 
 /* Battery */
-define_cm_handle_func(battery_home)
+	void battery_home(bool state_now, bool state_last);
 
-define_cm_handle_func(battery_low)
+	void battery_low(bool state_now, bool state_last);
 
-/* Charge Status */
-define_cm_handle_func(charge_detect)
+	void charge_detect(bool state_now, bool state_last);
+
+	void robot_slip(bool state_now, bool state_last) { df_robot_slip(state_now, state_last); }
+
+	void slam_error(bool state_now, bool state_last) { df_slam_error(state_now, state_last); }
+
+	void laser_stuck(bool state_now, bool state_last) { df_laser_stuck(state_now, state_last); }
+};
 #endif
 

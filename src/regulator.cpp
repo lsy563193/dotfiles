@@ -17,6 +17,7 @@
 #include <robotbase.h>
 #include <path_planning.h>
 #include <clean_state.h>
+#include <pp.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
@@ -415,7 +416,6 @@ TurnRegulator::TurnRegulator(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(T
 	}
 	ROS_INFO("%s %d: Init, \033[32ms_target_angle: %d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
 }
-
 bool TurnRegulator::isReach()
 {
 	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
@@ -489,12 +489,13 @@ bool TurnRegulator::shouldMoveBack()
 
 void TurnRegulator::setTarget()
 {
-	 // Use laser datas for generating target angle in every 3times of turning.
 	if(cs_is_going_home() && map_point_to_cell(s_curr_p) == g_zero_home)
 	{
 		s_target_angle = g_home_point.TH;
-	}else
-	if(LASER_FOLLOW_WALL && !cs_is_trapped() && !mt_is_go_to_charger() && skip_laser_turn_angle_cnt_ >= 2) {
+	}
+	else if(LASER_FOLLOW_WALL && !cs_is_trapped() && mt_is_follow_wall() && skip_laser_turn_angle_cnt_ >= 2)
+	{
+		// Use laser data for generating target angle in every 3 times of turning.
 		if (waiting_finished_) {
 			stage_ = TURN_REGULATOR_WAITING_FOR_LASER;
 			waiting_finished_ = false;
@@ -503,7 +504,8 @@ void TurnRegulator::setTarget()
 			s_target_angle = gyro_get_angle();
 			ROS_INFO("%s %d: TurnRegulator, start waiting for %fs.", __FUNCTION__, __LINE__, wait_sec_);
 		}
-		else {
+		else
+		{
 			// Wait for specific time, for a new scan and gyro dynamic adjustment.
 			double tmp_sec = ros::Time::now().toSec() - waiting_start_sec_;
 			//ROS_INFO("%s %d: Has been wait for %f sec.", __FUNCTION__, __LINE__, tmp_sec);
@@ -619,7 +621,7 @@ bool LinearRegulator::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 	auto target_angle = g_plan_path.back().TH;
-	if (isCellReach() && std::abs(gyro_get_angle() - target_angle) < 200)
+	if (isCellReach() && std::abs(ranged_angle(gyro_get_angle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
@@ -633,6 +635,8 @@ bool LinearRegulator::isNearTarget()
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = map_cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
+	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
+	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
 	if ((IS_POS_AXIS(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
 		(!IS_POS_AXIS(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
 		if(g_plan_path.size() > 1)
@@ -643,10 +647,11 @@ bool LinearRegulator::isNearTarget()
 			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
 					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
 		}
-		else if(g_plan_path.front() != g_zero_home)
+		else if(g_plan_path.front() != g_zero_home && g_allow_check_path_in_advance)
 		{
 			g_check_path_in_advance = true;
-			ROS_INFO("%s %d: g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, g_check_path_in_advance);
+			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, map_get_x_cell(),
+					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
 			return true;
 		}
 	}
@@ -749,7 +754,8 @@ void LinearRegulator::setTarget()
 //	path_ = g_plan_path;
 }
 
-void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
+void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
+{
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
 	set_dir_forward();
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
@@ -787,13 +793,14 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 			angle_diff = 0;
 		integrated_ = 0;
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED){
-			if(obstalce_distance_front > 0.025 && obstalce_distance_front < 0.125 && (left_speed > 20 || right_speed > 20)) {
+			base_speed_--;
+			/*if(obstalce_distance_front > 0.025 && obstalce_distance_front < 0.125 && (left_speed > 20 || right_speed > 20)) {
 				base_speed_ -= 2;
 			}
 			else if(obs_state & BLOCK_FRONT)
 				base_speed_ -=2;
 			else if(obs_state & (BLOCK_LEFT | BLOCK_RIGHT))
-				base_speed_ --;
+				base_speed_ --;*/
 		}
 	}
 	else if (base_speed_ < (int32_t) LINEAR_MAX_SPEED) {
@@ -928,9 +935,10 @@ bool FollowWallRegulator::shouldTurn()
 	ev.laser_triggered = get_laser_status();
 	if (ev.laser_triggered)
 	{
-		// Temporary use obs as laser triggered.
-		ev.obs_triggered = BLOCK_FRONT;
-		g_turn_angle = obs_turn_angle();
+		// Temporary use bumper as laser triggered.
+		ev.bumper_triggered = ev.laser_triggered;
+		g_turn_angle = bumper_turn_angle();
+		ev.bumper_triggered = 0;
 		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
@@ -1844,7 +1852,7 @@ bool GoToChargerRegulator::isSwitch()
 						near_counter = 0;
 					if((receive_code&RconFront_Home_LR) == 0 && ++side_counter > 5)
 					{
-						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode_.", __FUNCTION__, __LINE__);
 						go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 						g_go_to_charger_back_0cm = true;
 						g_turn_angle = 0;

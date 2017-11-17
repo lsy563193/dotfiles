@@ -9,6 +9,8 @@ FILE(GLOB PP_SRC
 	src/debug.cpp
 	src/des.cpp
 	src/gyro.cpp
+				src/dev/vacuum.cpp
+				src/dev/key.cpp
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp
@@ -26,7 +28,7 @@ FILE(GLOB PP_SRC
 	src/sleep.cpp
 #	src/spiral.cpp
 	src/spot.cpp
-	src/user_interface.cpp
+	src/idle.cpp
 	src/verify.cpp
 #	src/wall_follow_slam.cpp
 	src/wav.cpp
@@ -108,7 +110,7 @@ catkin_package(
 	DEPENDS Eigen3
 )
 
-add_executable(pp  ${PP_SRC} include/pp.h)
+add_executable(pp  ${PP_SRC})
 #target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 

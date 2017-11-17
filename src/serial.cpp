@@ -79,7 +79,7 @@ void serial_init(const char* port,int baudrate) {
 	curopt.c_cflag |= CREAD;
 	curopt.c_cflag |= CLOCAL;	//disable modem statuc check
 
-	cfmakeraw(&curopt);		//make raw mode
+	cfmakeraw(&curopt);		//make raw mode_
 
 	if (tcsetattr(crport_fd, TCSANOW, &curopt) == 0){
 		serial_init_done = true;

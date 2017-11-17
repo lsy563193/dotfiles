@@ -3,9 +3,9 @@
 //
 
 #include <pp.h>
+#include <path_planning.h>
 
 static uint8_t clean_mode = 0;
-static uint8_t clean_state = 0;
 
 bool cm_is_navigation()
 {
@@ -185,23 +185,17 @@ bool CleanMode::find_target(Cell_t& curr)
 	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
 	mark();
 	auto previous_cs = cs_get();
-	auto previous_mt = mt_get();
-	g_old_dir = g_new_dir;
-	Cell_t start_cell;
-	if (g_check_path_in_advance)
-		start_cell = g_plan_path.back();
-	else
-		start_cell = curr;
+	g_old_dir = g_new_dir; // Save current direction.
 	g_plan_path.clear();
-	cs_path_next(start_cell, g_plan_path);
+	cs_path_next(curr, g_plan_path);
 
 	display();
 
-	if (!((previous_cs == CS_TRAPPED && cs_get() == CS_TRAPPED) || g_check_path_in_advance)) {
+	if (!(previous_cs == CS_TRAPPED && cs_is_trapped())) {
 		setMt();
 		g_passed_path.clear();
 	}
-	g_check_path_in_advance = false;
+	g_allow_check_path_in_advance = true;
 
 	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 	return !g_plan_path.empty();
@@ -222,10 +216,9 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 
 	if(cm_is_go_charger())
 		mt_reg_ = gtc_reg_;
-	p_reg_ = mt_reg_;
+	p_reg_ = turn_reg_;
 
 	path_next_nav(curr, g_plan_path);
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: NavigationClean finish", __FUNCTION__, __LINE__);
 	g_check_path_in_advance = false;
@@ -242,7 +235,6 @@ NavigationClean::~NavigationClean()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 bool NavigationClean::isReach()
@@ -534,7 +526,54 @@ bool NavigationClean::isSwitch()
 
 bool NavigationClean::findTarget(Cell_t& curr)
 {
-	return find_target(curr);
+	ROS_INFO("%s %d: cs:%d, current(%d %d), g_check_path_in_advance:%d", __FUNCTION__, __LINE__, cs_get(), map_get_x_cell(), map_get_y_cell(), g_check_path_in_advance);
+	if (cs_is_clean() && g_check_path_in_advance)
+	{
+		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
+		mark();
+		int16_t current_dir = g_new_dir;
+		int16_t temp_new_dir;
+
+		auto start_cell = g_plan_path.back();
+		ROS_INFO("%s %d: start cell(%d %d)", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y);
+		PPTargetType path_in_advance;
+		if (path_next_nav_in_advance(temp_new_dir, start_cell, path_in_advance))
+		{
+			if (mt_should_follow_wall(current_dir, start_cell, path_in_advance)) {
+				// This is for follow wall case.
+				g_allow_check_path_in_advance = false;
+				ROS_INFO("%s %d: Fail for wall follow case.", __FUNCTION__, __LINE__);
+			}
+			else if ((IS_X_AXIS(current_dir) && IS_X_AXIS(temp_new_dir)) || (IS_Y_AXIS(current_dir) && IS_Y_AXIS(temp_new_dir))) // Old path and new path are in the same axis.
+			{
+				if (IS_POS_AXIS(current_dir) ^ IS_POS_AXIS(temp_new_dir))// For cases that target is at opposite direction.
+				{
+					g_allow_check_path_in_advance = false;
+					ROS_INFO("%s %d: Fail for opposite direction case.", __FUNCTION__, __LINE__);
+				}
+			}
+
+			if (g_allow_check_path_in_advance) // Switch new path.
+			{
+				g_plan_path.clear();
+				for (auto cell : path_in_advance)
+					g_plan_path.push_back(cell);
+				g_new_dir = temp_new_dir;
+				ROS_INFO("%s %d: Switch to new path.", __FUNCTION__, __LINE__);
+			}
+		}
+		else
+		{
+			g_allow_check_path_in_advance = false;
+			ROS_INFO("%s %d: Fail for no target case.", __FUNCTION__, __LINE__);
+		}
+
+		g_check_path_in_advance = false;
+		printf("\033[44m======================Generate path in advance End============================\033[0m\n\n");
+		return true;
+	}
+	else
+		return find_target(curr);
 }
 
 Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
@@ -558,7 +597,6 @@ SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTarg
 
 	p_reg_ = mt_reg_;
 
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: SpotClean finish", __FUNCTION__, __LINE__);
 	g_check_path_in_advance = false;
@@ -575,7 +613,6 @@ SpotClean::~SpotClean()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 void SpotClean::mark()
@@ -675,7 +712,6 @@ WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, 
 	p_reg_ = mt_reg_;
 	path_next_fw(curr);
 
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: WallFollowClean finish", __FUNCTION__, __LINE__);
 
@@ -691,7 +727,6 @@ WallFollowClean::~WallFollowClean()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 bool WallFollowClean::isReach() {
@@ -751,7 +786,7 @@ bool WallFollowClean::isStop()
 	}
 
 	if (cm_is_follow_wall()) {
-		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode.
+		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
 			// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
@@ -792,7 +827,7 @@ bool WallFollowClean::isSwitch()
 	}
 
 	else if (cs_is_clean()) {
-		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode.
+		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
 			// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
 		{
 			if (isTurn()) {
@@ -875,7 +910,6 @@ Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PP
 
 	p_reg_ = mt_reg_;
 
-	cm_set_event_manager_handler_state(true);
 
 	ROS_INFO("%s, %d: Exploration finish", __FUNCTION__, __LINE__);
 
@@ -893,7 +927,6 @@ Exploration::~Exploration()
 	delete line_reg_;
 	delete fw_reg_;
 	delete gtc_reg_;
-	cm_set_event_manager_handler_state(false);
 }
 
 bool Exploration::isReach()
@@ -1079,19 +1112,17 @@ bool Exploration::isSwitch()
 
 	else if (cs_is_clean())
 	{
+		if (mt_is_linear()) // Robot is going straight to find charger.
 		{
-			if (mt_is_linear()) // Robot is going straight to find charger.
+			if (isTurn())
 			{
-				if (isTurn())
-				{
-					if (turn_reg_->isReach())
-						p_reg_ = mt_reg_;
-					else if (turn_reg_->shouldMoveBack())
-						p_reg_ = back_reg_;
-				}
-				else if (isMt() && line_reg_->shouldMoveBack())
+				if (turn_reg_->isReach())
+					p_reg_ = mt_reg_;
+				else if (turn_reg_->shouldMoveBack())
 					p_reg_ = back_reg_;
 			}
+			else if (isMt() && line_reg_->shouldMoveBack())
+				p_reg_ = back_reg_;
 		}
 	}
 

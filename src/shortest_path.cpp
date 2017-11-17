@@ -1629,7 +1629,7 @@ void path_display_path_points(const deque<Cell_t>& path)
 {
 	std::string     msg = __FUNCTION__;
 
-	msg += " " + std::to_string(__LINE__) + ": ";
+	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
 	for (auto it = path.begin(); it != path.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + ")->";
 	}

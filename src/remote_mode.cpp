@@ -16,8 +16,10 @@
 
 #include "movement.h"
 #include "gyro.h"
+#include "key.h"
 #include "remote_mode.h"
 #include <ros/ros.h>
+#include <vacuum.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -30,13 +32,20 @@ extern volatile uint32_t Left_Wheel_Step,Right_Wheel_Step;
 RemoteModeMoveType move_flag = REMOTE_MODE_STAY;
 boost::mutex move_flag_mutex;
 int16_t remote_target_angle;
-bool remote_exit;
+bool g_remote_exit;
 time_t remote_cmd_time;
 uint8_t remote_rcon_cnt = 0;
 bool remote_rcon_triggered = false;
+static RM_EventHandle eh;
 
 void remote_mode(void)
 {
+	ROS_INFO("\n-------Remote mode_------\n");
+	set_main_pwr_byte(Clean_Mode_Remote);
+	g_is_low_bat_pause = false;
+	reset_clean_paused();
+
+
 	if (!is_gyro_on())
 	{
 		// Restart the gyro.
@@ -48,11 +57,11 @@ void remote_mode(void)
 		wav_play(WAV_SYSTEM_INITIALIZING);
 		if (!wait_for_gyro_on())
 		{
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			return;
 		}
 	}
-	remote_exit = false;
+	g_remote_exit = false;
 	g_battery_low_cnt = 0;
 	remote_rcon_triggered = false;
 
@@ -72,11 +81,11 @@ void remote_mode(void)
 	{
 		if (ev.fatal_quit)
 		{
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 			break;
 		}
 
-		if (ev.key_clean_pressed || remote_exit)
+		if (ev.key_clean_pressed || g_remote_exit)
 			break;
 
 		remote_move();
@@ -120,8 +129,8 @@ void remote_move(void)
 
 		if (time(NULL) - remote_cmd_time >= remote_timeout)
 		{
-			cm_set(Clean_Mode_Userinterface);
-			remote_exit = true;
+			cm_set(Clean_Mode_Idle);
+			g_remote_exit = true;
 			break;
 		}
 
@@ -285,113 +294,16 @@ RemoteModeMoveType get_move_flag_(void)
 
 void remote_mode_register_events(void)
 {
-	ROS_WARN("%s %d: Register events", __FUNCTION__, __LINE__);
-//	event_manager_set_current_mode(EVT_MODE_REMOTE);
-
-#define event_manager_register_and_enable_x(name, y, enabled) \
-	event_manager_register_handler(y, &remote_mode_handle_ ##name); \
-	event_manager_enable_handler(y, enabled);
-
-	/* Bumper */
-	event_manager_register_and_enable_x(bumper, EVT_BUMPER_ALL, true);
-	event_manager_register_and_enable_x(bumper, EVT_BUMPER_LEFT, true);
-	event_manager_register_and_enable_x(bumper, EVT_BUMPER_RIGHT, true);
-	/* Cliff */
-	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_LEFT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_FRONT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_LEFT, true);
-	event_manager_register_and_enable_x(cliff, EVT_CLIFF_RIGHT, true);
-	/* OBS */
-	event_manager_register_and_enable_x(obs, EVT_OBS_FRONT, true);
-	event_manager_register_and_enable_x(obs, EVT_OBS_LEFT, true);
-	event_manager_register_and_enable_x(obs, EVT_OBS_RIGHT, true);
-	/* Over Current */
-	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_LEFT, true);
-	//event_manager_register_and_enable_x(over_current_brush_main, EVT_OVER_CURRENT_BRUSH_MAIN, true);
-	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_RIGHT, true);
-	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
-	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
-	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
-	/* Rcon */
-	event_manager_register_and_enable_x(rcon, EVT_RCON, true);
-	/* Battery */
-	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
-	/* Key */
-	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-	/* Remote */
-	event_manager_register_and_enable_x(remote_direction_forward, EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_register_and_enable_x(remote_direction_left, EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_register_and_enable_x(remote_direction_right, EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
-	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_SPOT, true);
-	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_WALL_FOLLOW, true);
-	event_manager_register_and_enable_x(remote_exit, EVT_REMOTE_HOME, true);
-	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
-	/* Charge Status */
-	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-#undef event_manager_register_and_enable_x
-
+	event_manager_register_handler(&eh);
 	event_manager_set_enable(true);
 }
 
 void remote_mode_unregister_events(void)
 {
-	ROS_WARN("%s %d: Unregister events", __FUNCTION__, __LINE__);
-#define event_manager_register_and_disable_x(x) \
-	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false);
-
-	/* Bumper */
-	event_manager_register_and_disable_x(EVT_BUMPER_ALL);
-	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
-	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
-	/* Cliff */
-	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
-	/* OBS */
-	event_manager_register_and_disable_x(EVT_OBS_FRONT);
-	event_manager_register_and_disable_x(EVT_OBS_LEFT);
-	event_manager_register_and_disable_x(EVT_OBS_RIGHT);
-	/* Over Current */
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_LEFT);
-	//event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_MAIN);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
-	/* Rcon */
-	event_manager_register_and_disable_x(EVT_RCON);
-	/* Battery */
-	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
-	/* Key */
-	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
-	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
-	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
-	event_manager_register_and_disable_x(EVT_REMOTE_WALL_FOLLOW);
-	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	/* Charge Status */
-	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
-#undef event_manager_register_and_disable_x
-
 	event_manager_set_enable(false);
 }
 
-void remote_mode_handle_bumper(bool state_now, bool state_last)
+void RM_EventHandle::bumper(bool state_now, bool state_last)
 {
 	if (!ev.bumper_triggered)
 	{
@@ -401,7 +313,19 @@ void remote_mode_handle_bumper(bool state_now, bool state_last)
 	}
 }
 
-void remote_mode_handle_cliff_all(bool state_now, bool state_last)
+void RM_EventHandle::bumper_all(bool state_now, bool state_last)
+{
+	bumper(state_now, state_last);
+}
+void RM_EventHandle::bumper_right(bool state_now, bool state_last)
+{
+	bumper(state_now, state_last);
+}
+void RM_EventHandle::bumper_left(bool state_now, bool state_last)
+{
+	bumper(state_now, state_last);
+}
+void RM_EventHandle::cliff_all(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -414,7 +338,7 @@ void remote_mode_handle_cliff_all(bool state_now, bool state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void remote_mode_handle_cliff(bool state_now, bool state_last)
+void RM_EventHandle::cliff(bool state_now, bool state_last)
 {
 	if (!ev.cliff_triggered)
 	{
@@ -424,7 +348,37 @@ void remote_mode_handle_cliff(bool state_now, bool state_last)
 	}
 }
 
-void remote_mode_handle_obs(bool state_now, bool state_last)
+void RM_EventHandle::cliff_right(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+
+void RM_EventHandle::cliff_left(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+
+void RM_EventHandle::cliff_left_right(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+
+void RM_EventHandle::cliff_front(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+
+void RM_EventHandle::cliff_front_left(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+
+void RM_EventHandle::cliff_front_right(bool state_now, bool state_last)
+{
+	cliff(state_now, state_last);
+}
+
+void RM_EventHandle::obs(bool state_now, bool state_last)
 {
 	if (get_move_flag_() == REMOTE_MODE_FORWARD)
 	{
@@ -433,7 +387,20 @@ void remote_mode_handle_obs(bool state_now, bool state_last)
 	}
 }
 
-void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last)
+void RM_EventHandle::obs_front(bool state_now, bool state_last)
+{
+	obs(state_now, state_last);
+}
+void RM_EventHandle::obs_left(bool state_now, bool state_last)
+{
+	obs(state_now, state_last);
+}
+void RM_EventHandle::obs_right(bool state_now, bool state_last)
+{
+	obs(state_now, state_last);
+}
+
+void RM_EventHandle::remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -452,7 +419,7 @@ void remote_mode_handle_remote_direction_forward(bool state_now, bool state_last
 	reset_rcon_remote();
 }
 
-void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
+void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -475,7 +442,7 @@ void remote_mode_handle_remote_direction_left(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
+void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -496,21 +463,21 @@ void remote_mode_handle_remote_direction_right(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void remote_mode_handle_remote_max(bool state_now, bool state_last)
+void RM_EventHandle::remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (!ev.bumper_jam && !ev.cliff_jam)
 	{
 		beep_for_command(VALID);
-		switch_vac_mode(true);
+		vacuum.switchToNext(true);
 	}
 	else
 		beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
-void remote_mode_handle_remote_exit(bool state_now, bool state_last)
+void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, get_rcon_remote());
 	remote_cmd_time = time(NULL);
@@ -518,26 +485,42 @@ void remote_mode_handle_remote_exit(bool state_now, bool state_last)
 	{
 		beep_for_command(VALID);
 		ev.key_clean_pressed = true;
-		cm_set(Clean_Mode_Userinterface);
+		cm_set(Clean_Mode_Idle);
 		disable_motors();
 	}
 	else if (!ev.bumper_jam && !ev.cliff_jam)
 	{
 		beep_for_command(VALID);
 		disable_motors();
-		remote_exit = true;
+		g_remote_exit = true;
 		if (get_rcon_remote() == Remote_Home)
 			//cm_set(Clean_Mode_Gohome);
 			cm_set(Clean_Mode_Exploration);
 		else
-			cm_set(Clean_Mode_Userinterface);
+			cm_set(Clean_Mode_Idle);
 	}
 	else
 		beep_for_command(INVALID);
 	reset_rcon_remote();
 }
+void RM_EventHandle::remote_spot(bool state_now, bool state_last)
+{
+ remote_exit(state_now, state_last);
+}
+void RM_EventHandle::remote_clean(bool state_now, bool state_last)
+{
+ remote_exit(state_now, state_last);
+}
+void RM_EventHandle::remote_home(bool state_now, bool state_last)
+{
+ remote_exit(state_now, state_last);
+}
+void RM_EventHandle::remote_wall_follow(bool state_now, bool state_last)
+{
+ remote_exit(state_now, state_last);
+}
 
-void remote_mode_handle_rcon(bool state_now, bool state_last)
+void RM_EventHandle::rcon(bool state_now, bool state_last)
 {
 	if (get_move_flag_() == REMOTE_MODE_FORWARD && !remote_rcon_triggered
 		&& get_rcon_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)
@@ -550,7 +533,7 @@ void remote_mode_handle_rcon(bool state_now, bool state_last)
 	reset_rcon_status();
 }
 
-void remote_mode_handle_key_clean(bool state_now, bool state_last)
+void RM_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -559,12 +542,12 @@ void remote_mode_handle_key_clean(bool state_now, bool state_last)
 	while (get_key_press() & KEY_CLEAN)
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	cm_set(Clean_Mode_Userinterface);
+	cm_set(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
-	reset_touch();
+	key.reset();
 }
 
-void remote_mode_handle_charge_detect(bool state_now, bool state_last)
+void RM_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 	if (robot::instance()->getChargeStatus() == 3)
@@ -574,7 +557,7 @@ void remote_mode_handle_charge_detect(bool state_now, bool state_last)
 	}
 }
 
-void remote_mode_handle_over_current_wheel_left(bool state_now, bool state_last)
+void RM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -590,7 +573,7 @@ void remote_mode_handle_over_current_wheel_left(bool state_now, bool state_last)
 	}
 }
 
-void remote_mode_handle_over_current_wheel_right(bool state_now, bool state_last)
+void RM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -607,7 +590,7 @@ void remote_mode_handle_over_current_wheel_right(bool state_now, bool state_last
 	}
 }
 
-void remote_mode_handle_over_current_suction(bool state_now, bool state_last)
+void RM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -624,7 +607,7 @@ void remote_mode_handle_over_current_suction(bool state_now, bool state_last)
 	}
 }
 
-void remote_mode_handle_battery_low(bool state_now, bool state_last)
+void RM_EventHandle::battery_low(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detects battery low.", __FUNCTION__, __LINE__);
 	if (g_battery_low_cnt++ > 50)

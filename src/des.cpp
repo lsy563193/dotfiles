@@ -643,7 +643,7 @@ int mbedtls_des_crypt_ecb( mbedtls_des_context *ctx,
  * DES-CBC buffer encryption/decryption
  */
 int mbedtls_des_crypt_cbc( mbedtls_des_context *ctx,
-                    int mode,
+                    int mode_,
                     size_t length,
                     unsigned char iv[8],
                     const unsigned char *input,
@@ -655,7 +655,7 @@ int mbedtls_des_crypt_cbc( mbedtls_des_context *ctx,
     if( length % 8 )
         return( MBEDTLS_ERR_DES_INVALID_INPUT_LENGTH );
 
-    if( mode == MBEDTLS_DES_ENCRYPT )
+    if( mode_ == MBEDTLS_DES_ENCRYPT )
     {
         while( length > 0 )
         {
@@ -742,7 +742,7 @@ int mbedtls_des3_crypt_ecb( mbedtls_des3_context *ctx,
  * 3DES-CBC buffer encryption/decryption
  */
 int mbedtls_des3_crypt_cbc( mbedtls_des3_context *ctx,
-                     int mode,
+                     int mode_,
                      size_t length,
                      unsigned char iv[8],
                      const unsigned char *input,
@@ -754,7 +754,7 @@ int mbedtls_des3_crypt_cbc( mbedtls_des3_context *ctx,
     if( length % 8 )
         return( MBEDTLS_ERR_DES_INVALID_INPUT_LENGTH );
 
-    if( mode == MBEDTLS_DES_ENCRYPT )
+    if( mode_ == MBEDTLS_DES_ENCRYPT )
     {
         while( length > 0 )
         {
@@ -863,7 +863,7 @@ int mbedtls_des_self_test( int verbose )
     mbedtls_des_init( &ctx );
     mbedtls_des3_init( &ctx3 );
     /*
-     * ECB mode
+     * ECB mode_
      */
     for( i = 0; i < 6; i++ )
     {
@@ -936,7 +936,7 @@ int mbedtls_des_self_test( int verbose )
 
 #if defined(MBEDTLS_CIPHER_MODE_CBC)
     /*
-     * CBC mode
+     * CBC mode_
      */
     for( i = 0; i < 6; i++ )
     {

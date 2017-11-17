@@ -47,7 +47,6 @@ bool g_start_point_seen_charger = false;
 Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
 
 long g_distance=0;
-bool g_check_path_in_advance=false;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 
 // This flag is for indicating robot is going to charger.
@@ -72,6 +71,8 @@ bool g_finish_cleaning_go_home = false;
 bool g_no_uncleaned_target = false;
 
 time_t last_time_remote_spot = time(NULL);
+CM_EventHandle eh;
+
 int16_t ranged_angle(int16_t angle)
 {
 	while (angle > 1800 || angle <= -1800)
@@ -133,7 +134,7 @@ int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32
 void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_right)
 {
 #if GLOBAL_PID
-		/*---PID is useless in wall follow mode---*/
+		/*---PID is useless in wall follow mode_---*/
 		if(rm->isMt() && mt_is_follow_wall())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
 		else if(rm->isMt() && mt_is_linear())
@@ -145,7 +146,7 @@ void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_ri
 		else if(rm->isTurn())
 			set_wheel_speed(speed_left, speed_right, REG_TYPE_TURN);
 #else
-		/*---PID is useless in wall follow mode---*/
+		/*---PID is useless in wall follow mode_---*/
 		set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
 #endif
 }
@@ -153,12 +154,10 @@ void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_ri
 void cm_self_check_with_handle(void)
 {
 	// Can not set handler state inside cm_self_check(), because it is actually a universal function.
-	cm_set_event_manager_handler_state(true);
 	cm_self_check();
 	if(cm_is_follow_wall()) {
 		g_keep_on_wf = true;
 	}
-	cm_set_event_manager_handler_state(false);
 }
 
 void cm_move_to(CleanMode* p_cm, PPTargetType path) {
@@ -238,9 +237,9 @@ void cm_apply_cs(int cs) {
 		if (ev.remote_home || cm_is_go_charger())
 			set_led_mode(LED_STEADY, LED_ORANGE);
 
-		// Special handling for wall follow mode.
+		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode.
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
 			map_update_position();
 			//wf_mark_home_point();
 			map_reset(MAP);
@@ -298,125 +297,12 @@ void cm_apply_cs(int cs) {
 		set_led_mode(LED_STEADY, LED_ORANGE);
 	}
 }
-/* Statement for cm_go_to_charger_(void)
- * return : true -- going to charger has been stopped, either successfully or interrupted.
- *          false -- going to charger failed, move to next point.
- */
-bool cm_go_to_charger()
-{
-	// Try to go to charger stub.
-	ROS_INFO("%s %d: Try to go to charger stub,\033[35m disable tilt detect\033[0m.", __FUNCTION__, __LINE__);
-	g_tilt_enable = false; //disable tilt detect
-	set_led_mode(LED_STEADY, LED_ORANGE);
-	mt_set(MT_GO_TO_CHARGER);
-//	PPTargetType path_empty;
-//	set_led_mode(LED_STEADY, LED_GREEN);
-//
-//	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
-//		return true;
-//	work_motor_configure();
-//	g_tilt_enable = true; //enable tilt detect
-//	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
-	return false;
-}
-
-/*bool cm_is_continue_go_to_charger()
-{
-	auto way = *g_home_way_it % HOMEWAY_NUM;
-	auto cnt = *g_home_way_it / HOMEWAY_NUM;
-	ROS_INFO("%s,%d:g_home_point(\033[1;46;37m%d,%d\033[0m), way(\033[1;46;37m%d\033[0m), cnt(\033[1;46;37m%d\033[0m) ", __FUNCTION__, __LINE__,g_home_point.X,g_home_point.Y,way, cnt);
-	if(cm_go_to_charger() || cnt == 0)
-	{
-		ROS_INFO("\033[1;46;37m" "%s,%d:cm_go_to_charger_ stop " "\033[0m", __FUNCTION__, __LINE__);
-		return false;
-	}
-	else if(!g_go_home_by_remote)
-		set_led_mode(LED_STEADY, LED_GREEN);
-	g_home_way_it += (way+1);
-	g_homes.pop_back();
-	g_home_way_list.clear();
-	ROS_INFO("\033[1;46;37m" "%s,%d:cm_is_continue_go_to_charger_home(%d,%d), way(%d), cnt(%d) " "\033[0m", __FUNCTION__, __LINE__,g_home_point.X, g_home_point.Y,way, cnt);
-	return true;
-}*/
 
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
 	cs_set(CS_CLEAN);
 	g_go_home_by_remote = false;
-}
-/*
-
-bool cm_check_loop_back(Cell_t target)
-{
-	bool retval = false;
-	if ( target == g_cell_history[1] && target == g_cell_history[3]) {
-		ROS_WARN("%s %d Possible loop back (%d, %d), g_cell_history:(%d, %d) (%d, %d) (%d, %d) (%d, %d) (%d, %d).", __FUNCTION__, __LINE__,
-						target.X, target.Y,
-						g_cell_history[0].X, g_cell_history[0].Y,
-						g_cell_history[1].X, g_cell_history[1].Y,
-						g_cell_history[2].X, g_cell_history[2].Y,
-						g_cell_history[3].X, g_cell_history[3].Y,
-						g_cell_history[4].X, g_cell_history[4].Y);
-		retval	= true;
-	}
-
-	return retval;
-}
-*/
-
-void cm_create_home_boundary(void)
-{
-	int16_t i, j, k;
-	int16_t xMinSearch, xMaxSearch, yMinSearch, yMaxSearch;
-
-	k = 3;
-	xMinSearch = xMaxSearch = yMinSearch = yMaxSearch = SHRT_MAX;
-	for (i = g_x_min; xMinSearch == SHRT_MAX; i++) {
-		for (j = g_y_min; j <= g_y_max; j++) {
-			if (map_get_cell(MAP, i, j) != UNCLEAN) {
-				xMinSearch = i - k;
-				break;
-			}
-		}
-	}
-	for (i = g_x_max; xMaxSearch == SHRT_MAX; i--) {
-		for (j = g_y_min; j <= g_y_max; j++) {
-			if (map_get_cell(MAP, i, j) != UNCLEAN) {
-				xMaxSearch = i + k;
-				break;
-			}
-		}
-	}
-	for (i = g_y_min; yMinSearch == SHRT_MAX; i++) {
-		for (j = g_x_min; j <= g_x_max; j++) {
-			if (map_get_cell(MAP, j, i) != UNCLEAN) {
-				yMinSearch = i - k;
-				break;
-			}
-		}
-	}
-	for (i = g_y_max; yMaxSearch == SHRT_MAX; i--) {
-		for (j = g_x_min; j <= g_x_max; j++) {
-			if (map_get_cell(MAP, j, i) != UNCLEAN) {
-				yMaxSearch = i + k;
-				break;
-			}
-		}
-	}
-	ROS_INFO("%s %d: x: %d - %d\ty: %d - %d", __FUNCTION__, __LINE__, xMinSearch, xMaxSearch, yMinSearch, yMaxSearch);
-	for (i = xMinSearch; i <= xMaxSearch; i++) {
-		if (i == xMinSearch || i == xMaxSearch) {
-			for (j = yMinSearch; j <= yMaxSearch; j++) {
-				map_set_cell(MAP, cell_to_count(i), cell_to_count(j), BLOCKED_BUMPER);
-			}
-		} else {
-			map_set_cell(MAP, cell_to_count(i), cell_to_count(yMinSearch), BLOCKED_BUMPER);
-			map_set_cell(MAP, cell_to_count(i), cell_to_count(yMaxSearch), BLOCKED_BUMPER);
-		}
-	}
-
-	// Set the flag.
 }
 
 /*------------- Self check and resume-------------------*/
@@ -751,198 +637,16 @@ bool cm_should_self_check(void)
 /* Event handler functions. */
 void cm_register_events()
 {
-	ROS_INFO("%s %d: Register events", __FUNCTION__, __LINE__);
-//	event_manager_set_current_mode(EVT_MODE_NAVIGATION);
-
-	/* Bumper */
-	event_manager_register_handler(EVT_BUMPER_ALL, &cm_handle_bumper_all);
-	event_manager_register_handler(EVT_BUMPER_LEFT, &cm_handle_bumper_left);
-	event_manager_register_handler(EVT_BUMPER_RIGHT, &cm_handle_bumper_right);
-
-#define event_manager_register_and_enable_x(name, y, enabled) \
-	event_manager_register_handler(y, &cm_handle_ ##name); \
-	event_manager_enable_handler(y, enabled);
-
-	/* OBS */
-	event_manager_register_and_enable_x(obs_front, EVT_OBS_FRONT, true);
-	//event_manager_register_and_enable_x(obs_left, EVT_OBS_LEFT, true);
-	//event_manager_register_and_enable_x(obs_right, EVT_OBS_RIGHT, true);
-
-	/* Cliff */
-	event_manager_register_and_enable_x(cliff_all, EVT_CLIFF_ALL, true);
-	event_manager_register_and_enable_x(cliff_front_left, EVT_CLIFF_FRONT_LEFT, true);
-	event_manager_register_and_enable_x(cliff_front_right, EVT_CLIFF_FRONT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff_left_right, EVT_CLIFF_LEFT_RIGHT, true);
-	event_manager_register_and_enable_x(cliff_front, EVT_CLIFF_FRONT, true);
-	event_manager_register_and_enable_x(cliff_left, EVT_CLIFF_LEFT, true);
-	event_manager_register_and_enable_x(cliff_right, EVT_CLIFF_RIGHT, true);
-
-	/* RCON */
-	event_manager_register_and_enable_x(rcon, EVT_RCON, false);
-/*
-	event_manager_register_and_enable_x(rcon_front_left, EVT_RCON_FRONT_LEFT, false);
-	event_manager_register_and_enable_x(rcon_front_left2, EVT_RCON_FRONT_LEFT2, false);
-	event_manager_register_and_enable_x(rcon_front_right, EVT_RCON_FRONT_RIGHT, false);
-	event_manager_register_and_enable_x(rcon_front_right2, EVT_RCON_FRONT_RIGHT2, false);
-	event_manager_register_and_enable_x(rcon_left, EVT_RCON_LEFT, false);
-	event_manager_register_and_enable_x(rcon_right, EVT_RCON_RIGHT, false);
-*/
-
-	/* Over Current */
-	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_LEFT, true);
-	event_manager_register_and_enable_x(over_current_brush_main, EVT_OVER_CURRENT_BRUSH_MAIN, true);
-	event_manager_enable_handler(EVT_OVER_CURRENT_BRUSH_RIGHT, true);
-	event_manager_register_and_enable_x(over_current_wheel_left, EVT_OVER_CURRENT_WHEEL_LEFT, true);
-	event_manager_register_and_enable_x(over_current_wheel_right, EVT_OVER_CURRENT_WHEEL_RIGHT, true);
-	event_manager_register_and_enable_x(over_current_suction, EVT_OVER_CURRENT_SUCTION, true);
-
-	/* Key */
-	event_manager_register_and_enable_x(key_clean, EVT_KEY_CLEAN, true);
-
-	/* Remote */
-	event_manager_register_and_enable_x(remote_clean, EVT_REMOTE_CLEAN, true);
-	event_manager_register_and_enable_x(remote_home, EVT_REMOTE_HOME, true);
-	event_manager_register_and_enable_x(remote_wallfollow,EVT_REMOTE_WALL_FOLLOW, true);
-	event_manager_register_and_enable_x(remote_spot, EVT_REMOTE_SPOT, true);
-	event_manager_register_and_enable_x(remote_max, EVT_REMOTE_MAX, true);
-	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_register_and_enable_x(remote_direction, EVT_REMOTE_DIRECTION_FORWARD, true);
-
-	// Just enable the default handler.
-	event_manager_enable_handler(EVT_REMOTE_PLAN, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_FORWARD, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_LEFT, true);
-	event_manager_enable_handler(EVT_REMOTE_DIRECTION_RIGHT, true);
-	event_manager_enable_handler(EVT_REMOTE_WALL_FOLLOW, true);
-
-	/* Battery */
-	event_manager_register_and_enable_x(battery_home, EVT_BATTERY_HOME, true);
-	event_manager_register_and_enable_x(battery_low, EVT_BATTERY_LOW, true);
-
-	/* Charge Status */
-	event_manager_register_and_enable_x(charge_detect, EVT_CHARGE_DETECT, true);
-	/* robot stuck */
-	event_manager_enable_handler(EVT_ROBOT_SLIP,true);
-	/* lidar bumper */
-	//event_manager_enable_handler(EVT_LIDAR_BUMPER,true);
-	/* Slam Error */
-	event_manager_enable_handler(EVT_SLAM_ERROR, true);
-
-	event_manager_enable_handler(EVT_LASER_STUCK, true);
-#undef event_manager_register_and_enable_x
-
+	event_manager_register_handler(&eh);
 	event_manager_set_enable(true);
 }
 
 void cm_unregister_events()
 {
-	ROS_INFO("%s %d: Unregister events", __FUNCTION__, __LINE__);
-#define event_manager_register_and_disable_x(x) \
-	event_manager_register_handler(x, NULL); \
-	event_manager_enable_handler(x, false);
-
-	/* Bumper */
-	event_manager_register_and_disable_x(EVT_BUMPER_ALL);
-	event_manager_register_and_disable_x(EVT_BUMPER_LEFT);
-	event_manager_register_and_disable_x(EVT_BUMPER_RIGHT);
-
-	/* OBS */
-	event_manager_register_and_disable_x(EVT_OBS_FRONT);
-	//event_manager_register_and_disable_x(EVT_OBS_LEFT);
-	//event_manager_register_and_disable_x(EVT_OBS_RIGHT);
-
-	/* Cliff */
-	event_manager_register_and_disable_x(EVT_CLIFF_ALL);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT_RIGHT);
-	event_manager_register_and_disable_x(EVT_CLIFF_FRONT);
-	event_manager_register_and_disable_x(EVT_CLIFF_LEFT);
-	event_manager_register_and_disable_x(EVT_CLIFF_RIGHT);
-
-	/* RCON */
-	event_manager_register_and_disable_x(EVT_RCON);
-/*
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT);
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_LEFT2);
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT);
-	event_manager_register_and_disable_x(EVT_RCON_FRONT_RIGHT2);
-	event_manager_register_and_disable_x(EVT_RCON_LEFT);
-	event_manager_register_and_disable_x(EVT_RCON_RIGHT);
-*/
-
-	/* Over Current */
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_LEFT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_MAIN);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_LEFT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
-	event_manager_register_and_disable_x(EVT_OVER_CURRENT_SUCTION);
-
-	/* Key */
-	event_manager_register_and_disable_x(EVT_KEY_CLEAN);
-
-	/* Remote */
-	event_manager_register_and_disable_x(EVT_REMOTE_PLAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_CLEAN);
-	event_manager_register_and_disable_x(EVT_REMOTE_HOME);
-	event_manager_register_and_disable_x(EVT_REMOTE_SPOT);
-	event_manager_register_and_disable_x(EVT_REMOTE_MAX);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_LEFT);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_RIGHT);
-	event_manager_register_and_disable_x(EVT_REMOTE_DIRECTION_FORWARD);
-
-	/* Battery */
-	event_manager_register_and_disable_x(EVT_BATTERY_HOME);
-	event_manager_register_and_disable_x(EVT_BATTERY_LOW);
-
-	/* Charge Status */
-	event_manager_register_and_disable_x(EVT_CHARGE_DETECT);
-
-	/* Slam Error */
-	event_manager_register_and_disable_x(EVT_SLAM_ERROR);
-	/* robot slip */
-	event_manager_register_and_disable_x(EVT_ROBOT_SLIP);
-	/* lidar bumper*/
-	//event_manager_register_and_disable_x(EVT_LIDAR_BUMPER);
-	// Laser stuck
-	event_manager_register_and_disable_x(EVT_LASER_STUCK);
-
-#undef event_manager_register_and_disable_x
-
-	event_manager_set_enable(false);
+	event_manager_set_enable(true);
 }
 
-void cm_set_event_manager_handler_state(bool state)
-{
-	event_manager_enable_handler(EVT_BUMPER_ALL, state);
-	event_manager_enable_handler(EVT_BUMPER_LEFT, state);
-	event_manager_enable_handler(EVT_BUMPER_RIGHT, state);
-
-	event_manager_enable_handler(EVT_OBS_FRONT, state);
-	//event_manager_enable_handler(EVT_OBS_LEFT, state);
-	//event_manager_enable_handler(EVT_OBS_RIGHT, state);
-
-	event_manager_enable_handler(EVT_RCON, state);
-/*
-	event_manager_enable_handler(EVT_RCON_FRONT_LEFT, state);
-	event_manager_enable_handler(EVT_RCON_FRONT_LEFT2, state);
-	event_manager_enable_handler(EVT_RCON_FRONT_RIGHT, state);
-	event_manager_enable_handler(EVT_RCON_FRONT_RIGHT2, state);
-	event_manager_enable_handler(EVT_RCON_LEFT, state);
-	event_manager_enable_handler(EVT_RCON_RIGHT, state);
-*/
-}
-
-void cm_event_manager_turn(bool state)
-{
-	event_manager_enable_handler(EVT_BUMPER_ALL, state);
-	event_manager_enable_handler(EVT_BUMPER_LEFT, state);
-	event_manager_enable_handler(EVT_BUMPER_RIGHT, state);
-}
-
-void cm_handle_bumper_all(bool state_now, bool state_last)
+void CM_EventHandle::bumper_all(bool state_now, bool state_last)
 {
 //	ev.bumper_triggered = BLOCK_ALL;
 
@@ -958,7 +662,7 @@ void cm_handle_bumper_all(bool state_now, bool state_last)
 
 }
 
-void cm_handle_bumper_left(bool state_now, bool state_last)
+void CM_EventHandle::bumper_left(bool state_now, bool state_last)
 {
 //	if(ev.bumper_triggered != 0)
 //		return;
@@ -975,7 +679,7 @@ void cm_handle_bumper_left(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, get_bumper_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_bumper_right(bool state_now, bool state_last)
+void CM_EventHandle::bumper_right(bool state_now, bool state_last)
 {
 //	if(ev.bumper_triggered != 0)
 //		return;
@@ -994,26 +698,26 @@ void cm_handle_bumper_right(bool state_now, bool state_last)
 }
 
 /* OBS */
-void cm_handle_obs_front(bool state_now, bool state_last)
+void CM_EventHandle::obs_front(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Front_OBS;
 }
 
-void cm_handle_obs_left(bool state_now, bool state_last)
+void CM_EventHandle::obs_left(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Left_OBS;
 }
 
-void cm_handle_obs_right(bool state_now, bool state_last)
+void CM_EventHandle::obs_right(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Right_OBS;
 }
 
 /* Cliff */
-void cm_handle_cliff_all(bool state_now, bool state_last)
+void CM_EventHandle::cliff_all(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -1026,7 +730,7 @@ void cm_handle_cliff_all(bool state_now, bool state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_front_left(bool state_now, bool state_last)
+void CM_EventHandle::cliff_front_left(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LF;
@@ -1043,7 +747,7 @@ void cm_handle_cliff_front_left(bool state_now, bool state_last)
 
 }
 
-void cm_handle_cliff_front_right(bool state_now, bool state_last)
+void CM_EventHandle::cliff_front_right(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_RF;
@@ -1060,7 +764,7 @@ void cm_handle_cliff_front_right(bool state_now, bool state_last)
 
 }
 
-void cm_handle_cliff_left_right(bool state_now, bool state_last)
+void CM_EventHandle::cliff_left_right(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LR;
@@ -1076,7 +780,7 @@ void cm_handle_cliff_left_right(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_front(bool state_now, bool state_last)
+void CM_EventHandle::cliff_front(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Front;
@@ -1092,7 +796,7 @@ void cm_handle_cliff_front(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_left(bool state_now, bool state_last)
+void CM_EventHandle::cliff_left(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Left;
@@ -1108,7 +812,7 @@ void cm_handle_cliff_left(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void cm_handle_cliff_right(bool state_now, bool state_last)
+void CM_EventHandle::cliff_right(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Right;
@@ -1125,7 +829,7 @@ void cm_handle_cliff_right(bool state_now, bool state_last)
 }
 
 /* RCON */
-void cm_handle_rcon(bool state_now, bool state_last)
+void CM_EventHandle::rcon(bool state_now, bool state_last)
 {
 /*
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
@@ -1151,7 +855,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 }
 
 /* Over Current */
-//void cm_handle_over_current_brush_left(bool state_now, bool state_last)
+//void CM_EventHandle::over_current_brush_left(bool state_now, bool state_last)
 //{
 //	static uint8_t stop_cnt = 0;
 //
@@ -1172,7 +876,7 @@ void cm_handle_rcon(bool state_now, bool state_last)
 //	}
 //}
 
-void cm_handle_over_current_brush_main(bool state_now, bool state_last)
+void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1192,7 +896,7 @@ void cm_handle_over_current_brush_main(bool state_now, bool state_last)
     }
 }
 
-//void cm_handle_over_current_brush_right(bool state_now, bool state_last)
+//void CM_EventHandle::over_current_brush_right(bool state_now, bool state_last)
 //{
 //	static uint8_t stop_cnt = 0;
 //
@@ -1214,7 +918,7 @@ void cm_handle_over_current_brush_main(bool state_now, bool state_last)
 //	}
 //}
 
-void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
+void CM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1231,7 +935,7 @@ void cm_handle_over_current_wheel_left(bool state_now, bool state_last)
 	}
 }
 
-void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
+void CM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1248,7 +952,7 @@ void cm_handle_over_current_wheel_right(bool state_now, bool state_last)
 	}
 }
 
-void cm_handle_over_current_suction(bool state_now, bool state_last)
+void CM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1266,7 +970,7 @@ void cm_handle_over_current_suction(bool state_now, bool state_last)
 }
 
 /* Key */
-void cm_handle_key_clean(bool state_now, bool state_last)
+void CM_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	time_t start_time;
 	bool reset_manual_pause = false;
@@ -1281,7 +985,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 			usleep(20000);
 		}
 		ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-		reset_touch();
+		key.reset();
 		return;
 	}
 
@@ -1290,7 +994,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	ev.key_clean_pressed = true;
 
 	if(cm_is_navigation())
-		robot::instance()->setManualPause();
+		g_is_manual_pause = true;
 
 	start_time = time(NULL);
 	while (get_key_press() & KEY_CLEAN)
@@ -1300,7 +1004,7 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 			{
 				beep_for_command(VALID);
 				reset_manual_pause = true;
-				robot::instance()->resetManualPause();
+				g_is_manual_pause = false;
 				ROS_WARN("%s %d: Manual pause has been reset.", __FUNCTION__, __LINE__);
 			}
 		}
@@ -1310,12 +1014,12 @@ void cm_handle_key_clean(bool state_now, bool state_last)
 	}
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	reset_touch();
+	key.reset();
 }
 
 /* Remote */
 
-void cm_handle_remote_clean(bool state_now, bool state_last)
+void CM_EventHandle::remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1328,16 +1032,16 @@ void cm_handle_remote_clean(bool state_now, bool state_last)
 	beep_for_command(VALID);
 	ev.key_clean_pressed = true;
 	if(cm_is_navigation()){
-		robot::instance()->setManualPause();
+		g_is_manual_pause = true;
 	}
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_home(bool state_now, bool state_last)
+void CM_EventHandle::remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !robot::instance()->isManualPaused()) {
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !g_is_manual_pause) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beep_for_command(INVALID);
@@ -1358,12 +1062,12 @@ void cm_handle_remote_home(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_spot(bool state_now, bool state_last)
+void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || !cm_is_navigation()
-		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || robot::instance()->isManualPaused()
+		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || g_is_manual_pause
 		|| time(NULL) - last_time_remote_spot < 3)
 		beep_for_command(INVALID);
 	else
@@ -1376,28 +1080,22 @@ void cm_handle_remote_spot(bool state_now, bool state_last)
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_wallfollow(bool state_now,bool state_last)
-{
-	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
-	beep_for_command(INVALID);
-	reset_rcon_remote();
-}
-
-void cm_handle_remote_max(bool state_now, bool state_last)
+void CM_EventHandle::remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !robot::instance()->isManualPaused())
+	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
 	{
 		beep_for_command(VALID);
-		switch_vac_mode(true);
+		vacuum.switchToNext(true);
 	}
 	else
 		beep_for_command(INVALID);
 	reset_rcon_remote();
 }
 
-void cm_handle_remote_direction(bool state_now,bool state_last)
+/*
+void CM_EventHandle::remote_direction(bool state_now,bool state_last)
 {
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
 	// For Debug
@@ -1408,27 +1106,39 @@ void cm_handle_remote_direction(bool state_now,bool state_last)
 	reset_rcon_remote();
 }
 
+void CM_EventHandle::remote_direction_left(bool state_now, bool state_last)
+{
+	remote_direction(state_now,state_last);
+}
+void CM_EventHandle::remote_direction_right(bool state_now, bool state_last){
+	remote_direction(state_now,state_last);
+}
+
+void CM_EventHandle::remote_direction_forward(bool state_now, bool state_last){
+	remote_direction(state_now,state_last);
+}
+*/
 /* Battery */
-void cm_handle_battery_home(bool state_now, bool state_last)
+void CM_EventHandle::battery_home(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && !cs_is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
 						 robot::instance()->getBatteryVoltage());
 		ev.battrey_home = true;
 
-		if (get_vac_mode() == Vac_Max) {
-			switch_vac_mode(false);
+		if (vacuum.mode() == Vac_Max) {
+			vacuum.switchToNext(false);
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
 			path_set_continue_cell(map_get_curr_cell());
-			robot::instance()->setLowBatPause();
+			g_is_low_bat_pause = true;
 		}
-#endif 
+#endif
     }
 }
 
-void cm_handle_battery_low(bool state_now, bool state_last)
+void CM_EventHandle::battery_low(bool state_now, bool state_last)
 {
     uint8_t         v_pwr, s_pwr, m_pwr;
     uint16_t        t_vol;
@@ -1450,7 +1160,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 		}
 
 		g_battery_low_cnt = 0;
-		set_bldc_speed(v_pwr);
+		vacuum.bldc_speed(v_pwr);
 		set_side_brush_pwm(s_pwr, s_pwr);
 		set_main_brush_pwm(m_pwr);
 
@@ -1459,7 +1169,7 @@ void cm_handle_battery_low(bool state_now, bool state_last)
 	}
 }
 
-void cm_handle_charge_detect(bool state_now, bool state_last)
+void CM_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
 	if (((cm_is_exploration() || cm_is_go_charger() || cs_is_going_home()) && robot::instance()->getChargeStatus()) ||
