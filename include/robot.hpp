@@ -158,21 +158,6 @@ public:
 		return vacuum_selfcheck_status_;
 	}
 
-	bool getLbrushOc() const
-	{
-		return lbrush_oc_;
-	}
-
-	bool getRbrushOc() const
-	{
-		return rbrush_oc_;
-	}
-
-	bool getMbrushOc() const
-	{
-		return mbrush_oc_;
-	}
-
 	bool getVacuumOc() const
 	{
 		return vacuum_oc_;
@@ -570,9 +555,7 @@ private:
 
 	/*1 byte*/
 	uint8_t vacuum_selfcheck_status_;
-	bool lbrush_oc_; //oc: over current
-	bool rbrush_oc_;
-	bool mbrush_oc_;
+
 	bool vacuum_oc_;
 
 	/*2 bytes*/

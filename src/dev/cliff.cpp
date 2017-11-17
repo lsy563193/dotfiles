@@ -4,6 +4,6 @@
 #include "pp.h"
 #include "cliff.h"
 
-class Cliff cliff;
+Cliff cliff;
 
 

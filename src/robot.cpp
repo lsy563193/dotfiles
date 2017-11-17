@@ -210,12 +210,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
 
-	lbrush_oc_ = msg->lbrush_oc;
-
-	rbrush_oc_ = msg->rbrush_oc;
-
-	mbrush_oc_ = msg->mbrush_oc;
-
 	vacuum_oc_ = msg->vcum_oc;
 
 	plan = msg->plan;

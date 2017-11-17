@@ -450,8 +450,6 @@ void set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
 
-void set_right_brush_stall(uint8_t R);
-
 //void wall_dynamic_base(uint32_t Cy);
 
 //void Turn_Right(uint16_t speed,uint16_t angle);
@@ -487,9 +485,6 @@ void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NO
 void work_motor_configure(void);
 
 uint8_t check_motor_current(void);
-
-uint8_t check_left_brush_stall(void);
-uint8_t check_right_brush_stall(void);
 
 uint8_t self_check(uint8_t Check_Code);
 
@@ -532,18 +527,6 @@ void set_led(uint16_t G, uint16_t R);
 void stop_brifly(void);
 
 void delay_sec(double s);
-
-void set_main_brush_pwm(uint16_t PWM);
-
-void set_side_brush_pwm(uint16_t L, uint16_t R);
-
-void set_left_brush_pwm(uint16_t L);
-
-void set_right_brush_pwm(uint16_t R);
-
-uint8_t get_left_brush_stall(void);
-
-uint8_t get_right_brush_stall(void);
 
 uint8_t remote_key(uint8_t Key);
 

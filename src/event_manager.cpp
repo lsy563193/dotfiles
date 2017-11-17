@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <pp.h>
 #include <battery.h>
+#include <brush.h>
 
 #include "config.h"
 #include "serial.h"
@@ -32,9 +33,6 @@ int g_cliff_cnt = 0;
 /* RCON */
 //int ev.rcon_triggered = 0;
 /* Over Current */
-uint8_t g_oc_brush_left_cnt = 0;
-uint8_t g_oc_brush_main_cnt = 0;
-uint8_t g_oc_brush_right_cnt = 0;
 uint8_t g_oc_wheel_left_cnt = 0;
 uint8_t g_oc_wheel_right_cnt = 0;
 uint8_t g_oc_suction_cnt = 0;
@@ -282,7 +280,7 @@ void *event_manager_thread(void *data)
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_LEFT);
 		}
-		if (robot::instance()->getMbrushOc()) {
+		if (brush.getMbrushOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_MAIN);
 		}
@@ -551,18 +549,6 @@ void event_manager_register_handler(EventHandle* eh)
 	eat.peh = eh;
 }
 
-void event_manager_enable_handler(EventType type, bool enabled)
-{
-//	eat.handler_enabled[type] = enabled;
-	if ((type == EVT_OVER_CURRENT_BRUSH_LEFT || type == EVT_OVER_CURRENT_BRUSH_RIGHT) && !enabled)
-	{
-		extern bool g_reset_lbrush_oc;
-		extern bool g_reset_rbrush_oc;
-		g_reset_lbrush_oc = true;
-		g_reset_rbrush_oc = true;
-	}
-}
-
 uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
 {
 	struct timespec	ts;
@@ -611,9 +597,9 @@ void event_manager_reset_status(void)
 	ev.oc_wheel_left = false;
 	ev.oc_wheel_right = false;
 	ev.oc_suction = false;
-	g_oc_brush_left_cnt = 0;
-	g_oc_brush_main_cnt = 0;
-	g_oc_brush_right_cnt = 0;
+	brush.oc_left_cnt = 0;
+	brush.oc_main_cnt = 0;
+	brush.oc_right_cnt = 0;
 	g_oc_wheel_left_cnt = 0;
 	g_oc_wheel_right_cnt = 0;
 	g_oc_suction_cnt = 0;
@@ -826,7 +812,7 @@ void EventHandle::over_current_brush_left(bool state_now, bool state_last)
 void df_over_current_brush_left(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && check_left_brush_stall())
+	if (!ev.fatal_quit && brush.left_is_stall())
 	{
 		set_error_code(Error_Code_LeftBrush);
 		ev.fatal_quit = true;
@@ -845,7 +831,7 @@ void EventHandle::over_current_brush_right(bool state_now, bool state_last)
 void df_over_current_brush_right(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && check_right_brush_stall())
+	if (!ev.fatal_quit && brush.right_is_stall())
 	{
 		set_error_code(Error_Code_RightBrush);
 		ev.fatal_quit = true;
