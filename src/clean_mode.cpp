@@ -195,7 +195,7 @@ bool CleanMode::find_target(Cell_t& curr)
 		setMt();
 		g_passed_path.clear();
 	}
-	g_check_path_in_advance = false;
+	g_allow_check_path_in_advance = true;
 
 	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 	return !g_plan_path.empty();
@@ -531,36 +531,40 @@ bool NavigationClean::findTarget(Cell_t& curr)
 	{
 		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
 		mark();
+		int16_t current_dir = g_new_dir;
+		int16_t temp_new_dir;
+
 		auto start_cell = g_plan_path.back();
 		ROS_INFO("%s %d: start cell(%d %d)", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y);
 		PPTargetType path_in_advance;
-		if (path_next_nav_in_advance(start_cell, path_in_advance))
+		if (path_next_nav_in_advance(temp_new_dir, start_cell, path_in_advance))
 		{
-			if (mt_should_follow_wall(g_new_dir, start_cell, path_in_advance)) {
+			if (mt_should_follow_wall(current_dir, start_cell, path_in_advance)) {
 				// This is for follow wall case.
-				g_allow_path_in_advance = false;
+				g_allow_check_path_in_advance = false;
 				ROS_INFO("%s %d: Fail for wall follow case.", __FUNCTION__, __LINE__);
 			}
-			else if ((IS_X_AXIS(g_old_dir) && IS_X_AXIS(g_new_dir)) || (IS_Y_AXIS(g_old_dir) && IS_Y_AXIS(g_new_dir))) // Old path and new path are in the same axis.
+			else if ((IS_X_AXIS(current_dir) && IS_X_AXIS(temp_new_dir)) || (IS_Y_AXIS(current_dir) && IS_Y_AXIS(temp_new_dir))) // Old path and new path are in the same axis.
 			{
-				if (IS_POS_AXIS(g_old_dir) ^ IS_POS_AXIS(g_new_dir))// For cases that target is at opposite direction.
+				if (IS_POS_AXIS(current_dir) ^ IS_POS_AXIS(temp_new_dir))// For cases that target is at opposite direction.
 				{
-					g_allow_path_in_advance = false;
+					g_allow_check_path_in_advance = false;
 					ROS_INFO("%s %d: Fail for opposite direction case.", __FUNCTION__, __LINE__);
 				}
 			}
 
-			if (g_allow_path_in_advance) // Switch new path.
+			if (g_allow_check_path_in_advance) // Switch new path.
 			{
 				g_plan_path.clear();
 				for (auto cell : path_in_advance)
 					g_plan_path.push_back(cell);
+				g_new_dir = temp_new_dir;
 				ROS_INFO("%s %d: Switch to new path.", __FUNCTION__, __LINE__);
 			}
 		}
 		else
 		{
-			g_allow_path_in_advance = false;
+			g_allow_check_path_in_advance = false;
 			ROS_INFO("%s %d: Fail for no target case.", __FUNCTION__, __LINE__);
 		}
 

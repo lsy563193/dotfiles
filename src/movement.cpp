@@ -49,7 +49,6 @@ uint32_t g_auto_work_time = 2800;
 uint32_t g_room_work_time = 3600;
 uint8_t g_room_mode = 0;
 uint8_t g_sleep_mode_flag = 0;
-extern Eigen::MatrixXd laser_matrix;
 
 static uint32_t g_wall_accelerate = 0;
 static int16_t g_left_wheel_speed = 0;

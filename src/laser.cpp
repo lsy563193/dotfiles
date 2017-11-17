@@ -21,6 +21,7 @@
 #include "gyro.h"
 boost::mutex scan_mutex_;
 boost::mutex scan2_mutex_;
+boost::mutex scan3_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
 
@@ -28,7 +29,8 @@ Laser::Laser():nh_(),angle_n_(0)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
-	odom_sub_ = nh_.subscribe("odom",1,&Laser::odomCb,this);
+	scan_sub3_ = nh_.subscribe("scan3",1,&Laser::scanCb3,this);
+	marker_sub_ = nh_.subscribe("point_marker",1,&Laser::scanMarkerCb,this);
 	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 	setScanReady(0);
@@ -48,7 +50,7 @@ Laser::~Laser()
 	setScan2Ready(0);
 	scan_sub_.shutdown();
 	scan_sub2_.shutdown();
-	odom_sub_.shutdown();
+	marker_sub_.shutdown();
 	lidar_motor_cli_.shutdown();
 	lidar_shield_detect_.shutdown();
 	nh_.shutdown();
@@ -65,8 +67,6 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		angle_n_ = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 		setScanReady(1);
 	}
-	p_laser_matrix = &laser_matrix;
-	transformLaserToXY();
 	scan_update_time = ros::Time::now().toSec();
 	std::vector<LineABC> lines;
 	findLines(&lines);
@@ -97,12 +97,17 @@ void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
 	}
 }
 
-void Laser::odomCb(const nav_msgs::Odometry::ConstPtr &msg)
-{
-	if(laserCheckFresh(5,1))
-		compensateLaserXY();
-	else
-		p_laser_matrix = NULL;// make laser_matrix invalid
+void Laser::scanCb3(const sensor_msgs::LaserScan::ConstPtr &scan){
+	scan_mutex_.lock();
+	laserScanData_3_ = *scan;
+	scan_mutex_.unlock();
+	setScan3Ready(1);
+}
+
+void Laser::scanMarkerCb(const visualization_msgs::Marker &point_marker) {
+	scanXY_mutex_.lock();
+	laserXY_points = point_marker.points;
+	scanXY_mutex_.unlock();
 }
 
 bool Laser::laserObstcalDetected(double distance, int angle, double range)
@@ -146,6 +151,11 @@ int8_t Laser::isScanReady()
 	return is_scan_ready_;
 }
 
+int8_t Laser::isScan3Ready()
+{
+	return is_scan3_ready_;
+}
+
 void Laser::setScanReady(uint8_t val)
 {
 	is_scan_ready_ = val;
@@ -155,6 +165,12 @@ void Laser::setScan2Ready(uint8_t val)
 {
 	is_scan2_ready_ = val;
 }
+
+void Laser::setScan3Ready(uint8_t val)
+{
+	is_scan3_ready_ = val;
+}
+
 void Laser::lidarMotorCtrl(bool switch_)
 {
 	pp::SetLidar trigger;
@@ -1137,11 +1153,11 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 uint8_t Laser::laserMarker(double X_MAX)
 {
-	if(p_laser_matrix == NULL)
-		return false;
 	scanXY_mutex_.lock();
-	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
-	scanXY_mutex_.unlock();
+	if(laserXY_points.size() == 0){
+		scanXY_mutex_.unlock();
+		return false;
+	}
 	double x, y;
 	int dx, dy;
 //	const double X_MIN = 0.140;//0.167
@@ -1149,9 +1165,9 @@ uint8_t Laser::laserMarker(double X_MAX)
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	for (int i = 0; i < tmp_laser_matrix.cols(); i++) {
-		x = tmp_laser_matrix(0,i);
-		y = tmp_laser_matrix(1,i);
+	for(std::vector<geometry_msgs::Point>::const_iterator ite = laserXY_points.begin(); ite != laserXY_points.end(); ite++){
+		x = ite->x;
+		y = ite->y;
 		//front
 		if (x > ROBOT_RADIUS && x < X_MAX) {
 			//middle
@@ -1314,6 +1330,7 @@ uint8_t Laser::laserMarker(double X_MAX)
 	}
 //	if (!msg.empty())
 //		ROS_INFO("%s %d: \033[36mlaser marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
+	scanXY_mutex_.unlock();
 	return block_status;
 }
 
@@ -1503,39 +1520,6 @@ int Laser::compLaneDistance()
 		ret = 0;
 	return ret;
 }
-void Laser::laserDataFilter(sensor_msgs::LaserScan& laserScanData,double delta){
-	for(int i = 0;i < 360; i++) {
-		if (i == 0) {
-			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[0]) > delta ||
-					fabs(laserScanData.ranges[1] - laserScanData.ranges[0]) > delta) {
-//				ROS_WARN("laserDataNoise[359]:%f,laserDataNoise[0]:%f,laserDataNoise[1]:%f",laserScanData.ranges[359],laserScanData.ranges[0],laserScanData.ranges[1]);
-				isNoiseNow = true;
-			} else{
-				isNoiseNow = false;
-			}
-		} else if (i == 359) {
-			if (fabs(laserScanData.ranges[359] - laserScanData.ranges[358]) > delta ||
-					fabs(laserScanData.ranges[359] - laserScanData.ranges[0]) > delta) {
-//				ROS_WARN("laserDataNoise[358]:%f,laserDataNoise[359]:%f,laserDataNoise[0]:%f",laserScanData.ranges[358],laserScanData.ranges[359],laserScanData.ranges[0]);
-				isNoiseNow = true;
-			} else{
-				isNoiseNow = false;
-			}
-		}else {
-			if(fabs(laserScanData.ranges[i+1] - laserScanData.ranges[i]) > delta ||
-				 fabs(laserScanData.ranges[i-1] - laserScanData.ranges[i]) > delta) {
-//				ROS_WARN("laserDataNoise[%d]:%f,laserDataNoise[%d]:%f,laserDataNoise[%d]:%f",i-1,laserScanData.ranges[i-1],i,laserScanData.ranges[i],i+1,laserScanData.ranges[i+1]);
-				isNoiseNow = true;
-			} else{
-				isNoiseNow = false;
-			}
-		}
-		if(isNoiseLast == true)
-			laserScanData.ranges[i-1] = DBL_MAX;
-		isNoiseLast = isNoiseNow;
-	}
-	isNoiseLast = isNoiseNow = false;
-}
 
 /*
  * @author Alvin Xie
@@ -1546,11 +1530,11 @@ void Laser::laserDataFilter(sensor_msgs::LaserScan& laserScanData,double delta){
  * */
 double Laser::getObstacleDistance(uint8_t dir, double range)
 {
-	if(p_laser_matrix == NULL)
-		return DBL_MAX;
 	scanXY_mutex_.lock();
-	Eigen::MatrixXd tmp_laser_matrix = laser_matrix;
-	scanXY_mutex_.unlock();
+	if(laserXY_points.size() == 0){
+		scanXY_mutex_.unlock();
+		return DBL_MAX;
+	}
 	double x,y;
 	double x_to_robot,y_to_robot;
 	double min_dis = DBL_MAX;
@@ -1560,9 +1544,10 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 		ROS_ERROR("range should be higher than 0.056");
 		return 0;
 	}
-	for(int i = 0; i < tmp_laser_matrix.cols(); i++) {
-		x = tmp_laser_matrix(0,i);
-		y = tmp_laser_matrix(1,i);
+
+	for(std::vector<geometry_msgs::Point>::const_iterator ite = laserXY_points.begin(); ite != laserXY_points.end(); ite++){
+		x = ite->x;
+		y = ite->y;
 		x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
 		y_to_robot = fabs(y) - ROBOT_RADIUS * sin(acos(fabs(x) / ROBOT_RADIUS));
 		//ROS_INFO("x = %lf, y = %lf", x, y);
@@ -1604,6 +1589,7 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 				}
 		}
 	}
+	scanXY_mutex_.unlock();
 	return min_dis;
 }
 
@@ -1645,84 +1631,6 @@ void Laser::pubPointMarkers(const std::vector<Point_d_t> *points, std::string fr
 		point_marker_pub.publish(point_marker);
 	}
 	*/
-}
-bool Laser::transformLaserToXY(double detect_distance,double noise_delta){
-	scan_mutex_.lock();
-	auto tmp_laserScan = laserScanData_;
-	scan_mutex_.unlock();
-	scanXY_mutex_.lock();
-	//transform polar coordinate to cartesian coordinate
-	double th = 0;
-	int count = 0;
-	laserDataFilter(tmp_laserScan,noise_delta);
-	laser_matrix.resize(3,360);
-	for (int i = 0; i < 360; i++) {
-		if(tmp_laserScan.ranges[i] < ROBOT_RADIUS + detect_distance) {
-			th = i * 1.0 + 180.0;
-			coordinate(0) = cos(th * PI / 180.0) * tmp_laserScan.ranges[i];
-			coordinate(1) = sin(th * PI / 180.0) * tmp_laserScan.ranges[i];
-			coordinate_transform(&coordinate(0), &coordinate(1), LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			coordinate(2) = 1.0;
-			laser_matrix.col(count) = coordinate;
-			count++;
-		}
-	}
-	auto last_x = robot::instance()->getOdomPositionX();
-	auto last_y = robot::instance()->getOdomPositionY();
-	auto last_angle = robot::instance()->getOdomPositionYaw();
-	if(last_angle < 0)
-			last_angle += 2.0 * PI;
-	t_last << cos(last_angle), sin(last_angle), - last_y * sin(last_angle) - last_x * cos(last_angle),
-							-sin(last_angle), cos(last_angle), last_x * sin(last_angle) - last_y * cos(last_angle),
-							0, 0, 1;
-
-	Eigen::MatrixXd tmp_matrix = laser_matrix.block(0,0,3,count);
-	laser_matrix.resize(3,count);
-	laser_matrix = tmp_matrix;
-
-	std::vector<Double_Point> points_vec;
-	Double_Point point;
-	for(int i = 0;i < laser_matrix.cols();i++)
-	{
-		point.x = laser_matrix(0,i);
-		point.y = laser_matrix(1,i);
-		if(point.x < 15 && point.y < 15)
-			points_vec.push_back(point);
-	}
-	pubPointMarkers(&points_vec,"base_link");
-
-	scanXY_mutex_.unlock();
-	return true;
-}
-bool Laser::compensateLaserXY(){
-	scanXY_mutex_.lock();
-	//compute transform matrix
-	auto now_x = robot::instance()->getOdomPositionX();
-	auto now_y = robot::instance()->getOdomPositionY();
-	auto now_angle = robot::instance()->getOdomPositionYaw();
-	if(now_angle < 0)
-		now_angle += 2 * PI;
-
-	t_now << cos(now_angle), sin(now_angle), - now_y * sin(now_angle) - now_x * cos(now_angle),
-					-sin(now_angle), cos(now_angle), now_x * sin(now_angle) - now_y * cos(now_angle),
-					0, 0, 1;
-	//compute the compensation laser_matrix
-	laser_matrix = t_now * t_last.inverse() * laser_matrix;
-	t_last = t_now;
-
-	std::vector<Double_Point> points_vec;
-	Double_Point point;
-	for(int i = 0;i < laser_matrix.cols();i++)
-	{
-		point.x = laser_matrix(0,i);
-		point.y = laser_matrix(1,i);
-		if(point.x < 15 && point.y < 15)
-			points_vec.push_back(point);
-	}
-	pubPointMarkers(&points_vec,"base_link");
-
-	scanXY_mutex_.unlock();
-	return true;
 }
 
 bool Laser::laserCheckFresh(float duration, uint8_t type)
