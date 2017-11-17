@@ -374,7 +374,7 @@ void quick_back(uint8_t speed, uint16_t distance)
 }
 
 /*-------------------------------Check if at charger stub------------------------------------*/
-bool is_on_charger_stub(void)
+bool charger_is_on_stub(void)
 {
 	// 1: On charger stub and charging.
 	// 2: On charger stub but not charging.
@@ -384,7 +384,7 @@ bool is_on_charger_stub(void)
 		return false;
 }
 
-bool is_direct_charge(void)
+bool charge_is_directed(void)
 {
 	// 3: Direct connect to charge line but not charging.
 	// 4: Direct connect to charge line and charging.
@@ -869,11 +869,6 @@ void reset_stop_event_status(void)
 	key.reset();
 }
 
-uint8_t is_water_tank(void)
-{
-	return 0;
-}
-
 
 //void cm_set(uint8_t mode_)
 //{
@@ -909,13 +904,13 @@ void disable_motors(void)
 	vacuum.stop();
 }
 
-void set_start_charge(void)
+void charger_set_start(void)
 {
 	// This function will turn on the charging function.
 	controller.set(CTL_CHARGER, 0x01);
 }
 
-void set_stop_charge(void)
+void charger_set_stop(void)
 {
 	// Set the flag to false so that it can quit charger mode_.
 	controller.set(CTL_CHARGER, 0x00);
