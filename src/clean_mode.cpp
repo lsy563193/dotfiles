@@ -43,6 +43,7 @@ uint8_t cm_get(void)
 }
 
 void CleanMode::mark() {
+	map_save_blocks();
 	map_set_blocks();
 	map_set_cleaned(g_passed_path);
 	map_mark_robot(MAP);
