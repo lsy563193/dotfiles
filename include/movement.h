@@ -475,8 +475,6 @@ void reset_stop_event_status(void);
 
 void cm_set(uint8_t mode);
 
-void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
-
 void disable_motors(void);
 
 void charger_set_start(void);
@@ -513,8 +511,6 @@ uint8_t get_main_pwr_byte();
 void set_main_pwr_byte(uint8_t val);
 
 uint8_t get_self_check_vacuum_status(void);
-
-void beep_for_command(bool valid);
 
 void reset_sp_turn_count();
 int32_t get_sp_turn_count();
