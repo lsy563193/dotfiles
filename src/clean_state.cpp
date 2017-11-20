@@ -18,10 +18,12 @@ bool cs_init()
 	else
 		cs = CS_CLEAN;
 }
+
 bool cs_is_go_home_point()
 {
 	return cs == CS_GO_HOME_POINT;
 }
+
 bool cs_is_go_charger()
 {
 	return cs == CS_GO_CHANGER;
@@ -52,11 +54,16 @@ bool cs_is_trapped()
 	return cs == CS_TRAPPED;
 }
 
+bool cs_is_self_check()
+{
+	return cs == CS_SELF_CHECK;
+}
+
 void cs_set(int state)
 {
 //	ROS_INFO("%s,%d:" __FUNCTION__,__LINE__);
 	cs = state;
-	cm_apply_cs(state);
+	cm_apply_cs();
 }
 
 int cs_get(void)

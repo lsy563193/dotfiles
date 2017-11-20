@@ -235,8 +235,8 @@ void cm_cleaning() {
 	}
 }
 
-void cm_apply_cs(int cs) {
-	if(cs == CS_GO_HOME_POINT) {
+void cm_apply_cs(void) {
+	if (cs_is_go_home_point()) {
 		work_motor_configure();
 		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
@@ -263,7 +263,7 @@ void cm_apply_cs(int cs) {
 		ev.battrey_home = false;
 		mt_set(MT_LINEARMOVE);
 	}
-	if(cs == CS_TMP_SPOT)
+	if (cs_is_tmp_spot())
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
@@ -280,26 +280,30 @@ void cm_apply_cs(int cs) {
 		}
 		ev.remote_spot = false;
 	}
-	if(cs == CS_TRAPPED)
+	if (cs_is_trapped())
 	{
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		led_set_mode(LED_FLASH, LED_GREEN, 300);
 		mt_set(MT_FOLLOW_LEFT_WALL);
 	}
-	if(cs == CS_CLEAN) {
+	if (cs_is_clean()) {
 		g_wf_reach_count = 0;
 		led_set_mode(LED_STEADY, LED_GREEN);
 	}
-	if(cs == CS_EXPLORATION) {
+	if (cs_is_exploration()) {
 		mt_set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
 		led_set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if(cs == CS_GO_CHANGER)
+	if (cs_is_go_charger())
 	{
 		tilt.enable(false); //disable tilt detect
 		led_set_mode(LED_STEADY, LED_ORANGE);
+	}
+	if (cs_is_self_check())
+	{
+		led_set_mode(LED_STEADY, LED_GREEN);
 	}
 }
 
