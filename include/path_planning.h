@@ -56,6 +56,8 @@ extern Cell_t g_home_point;
 extern int g_wf_reach_count;
 extern bool g_check_path_in_advance;
 extern bool g_allow_check_path_in_advance;
+extern Cell_t g_virtual_target;//for followall
+
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.

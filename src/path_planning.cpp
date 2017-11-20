@@ -1208,6 +1208,7 @@ bool path_next_fw(const Cell_t &start) {
 		if (cm_is_reach()) {
 			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 			mt_set(MT_FOLLOW_LEFT_WALL);
+			g_plan_path.push_back(g_virtual_target);
 			return true;
 		}
 	}
@@ -1353,7 +1354,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 			if (is_trapped(start, path))
 			{
 				cs_set(CS_TRAPPED);
-//				path.push_back(g_virtual_target);
+				path.push_back(g_virtual_target);
 			}
 			else
 			{
@@ -1363,7 +1364,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 //					cs_set(CS_EXPLORATION);
 			}
 		}else
-		mt_update(start,path);
+			mt_update(start,path);
 	}
 	else if (cs_is_tmp_spot()) {
 		path_next_spot(start, path);
@@ -1386,8 +1387,6 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 				return false;
 	}
 
-	if(mt_is_follow_wall())
-		path.push_back(g_virtual_target);
 	return true;
 }
 
