@@ -22,6 +22,7 @@
 #include <obs.h>
 #include <tilt.h>
 #include <beep.h>
+#include <wall_follow.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
@@ -429,7 +430,7 @@ bool TurnRegulator::isReach()
 		/*********************************************For wall follow**********************************************/
 		if(line_is_found)
 		{
-			g_wall_distance = (mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+			g_wall_distance = (mt_is_left()) ? wall.getLeft() : wall.getRight();
 /*			if(g_wall_distance < 10)	//set g_wall_distance in U round
 			{
 				g_wall_distance=last_g_wall_distance;
@@ -1017,7 +1018,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto &diff_speed = (mt_is_left()) ? r_speed : l_speed;
 	wall_buffer[2]=wall_buffer[1];
 	wall_buffer[1]=wall_buffer[0];
-	wall_buffer[0]=(mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+	wall_buffer[0]=(mt_is_left()) ? wall.getLeft() : wall.getRight();
 
 	rcon_status = c_rcon.get_status();
 	/*---only use a part of the Rcon signal---*/
@@ -1102,7 +1103,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		auto wheel_speed_base = 17 + diff_dist / 150;
 		if (wheel_speed_base > 28)wheel_speed_base = 28;
 
-		auto adc_value = (mt_is_left()) ? robot::instance()->getLeftWall() : robot::instance()->getRightWall();
+		auto adc_value = (mt_is_left()) ? wall.getLeft() : wall.getRight();
 
 		auto proportion = (adc_value - g_wall_distance) * 100 / g_wall_distance;
 

@@ -27,7 +27,6 @@
 #include "robotbase.h"
 #include "config.h"
 #include "core_move.h"
-#include "wall_follow_trapped.h"
 #include "wav.h"
 #include "slam.h"
 #include "event_manager.h"
@@ -46,10 +45,6 @@ static uint8_t g_direction_flag = 0;
 
 //static uint8_t g_cleaning_mode = 0;
 ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
-
-// Value for wall sensor offset.
-volatile int16_t g_left_wall_baseline = 50;
-volatile int16_t g_right_wall_baseline = 50;
 
 // Variable for stop event status.
 volatile uint8_t g_stop_event_status = 0;
@@ -232,17 +227,6 @@ void reset_wheel_step(void)
 	g_left_wheel_step = 0;
 }
 
-int32_t get_wall_adc(int8_t dir)
-{
-	if (dir == 0)
-	{
-		return (int32_t) (int16_t) robot::instance()->getLeftWall();
-	} else
-	{
-		return (int32_t) (int16_t) robot::instance()->getRightWall();
-	}
-}
-
 void set_dir_backward(void)
 {
 	g_wheel_left_direction = BACKWARD;
@@ -253,101 +237,6 @@ void set_dir_forward(void)
 {
 	g_wheel_left_direction = FORWARD;
 	g_wheel_right_direction = FORWARD;
-}
-
-void wall_dynamic_base(uint32_t Cy)
-{
-	//ROS_INFO("Run wall_dynamic_base.");
-	static int32_t Left_Wall_Sum_Value = 0, Right_Wall_Sum_Value = 0;
-	static int32_t Left_Wall_Everage_Value = 0, Right_Wall_Everage_Value = 0;
-	static int32_t Left_Wall_E_Counter = 0, Right_Wall_E_Counter = 0;
-	static int32_t Left_Temp_Wall_Buffer = 0, Right_Temp_Wall_Buffer = 0;
-	// Dynamic adjust for left wall sensor.
-	Left_Temp_Wall_Buffer = get_wall_adc(0);
-	Left_Wall_Sum_Value += Left_Temp_Wall_Buffer;
-	Left_Wall_E_Counter++;
-	Left_Wall_Everage_Value = Left_Wall_Sum_Value / Left_Wall_E_Counter;
-	double obstacle_distance_left = DBL_MAX;
-	double obstacle_distance_right = DBL_MAX;
-
-	obstacle_distance_left = MotionManage::s_laser->getObstacleDistance(2,ROBOT_RADIUS);
-	obstacle_distance_right = MotionManage::s_laser->getObstacleDistance(3,ROBOT_RADIUS);
-
-	if (abs_minus(Left_Wall_Everage_Value, Left_Temp_Wall_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || robot::instance()->getLeftWall() > 300)
-	{
-//		ROS_ERROR("left_reset");
-		Left_Wall_Everage_Value = 0;
-		Left_Wall_E_Counter = 0;
-		Left_Wall_Sum_Value = 0;
-		Left_Temp_Wall_Buffer = 0;
-	}
-	if ((uint32_t) Left_Wall_E_Counter > Cy)
-	{
-		// Get the wall base line for left wall sensor.
-		Left_Wall_Everage_Value += get_wall_base(0);
-		if (Left_Wall_Everage_Value > 300)Left_Wall_Everage_Value = 300;//set a limit
-		// Adjust the wall base line for left wall sensor.
-		set_wall_base(0, Left_Wall_Everage_Value);
-//		ROS_ERROR("left_wall_value:%d",Left_Wall_Everage_Value);
-		Left_Wall_Everage_Value = 0;
-		Left_Wall_E_Counter = 0;
-		Left_Wall_Sum_Value = 0;
-		Left_Temp_Wall_Buffer = 0;
-		//ROS_INFO("Set Left Wall base value as: %d.", get_wall_base(0));
-	}
-
-	// Dynamic adjust for right wall sensor.
-	Right_Temp_Wall_Buffer = get_wall_adc(1);
-	Right_Wall_Sum_Value += Right_Temp_Wall_Buffer;
-	Right_Wall_E_Counter++;
-	Right_Wall_Everage_Value = Right_Wall_Sum_Value / Right_Wall_E_Counter;
-
-	if (abs_minus(Right_Wall_Everage_Value, Right_Temp_Wall_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || robot::instance()->getRightWall() > 300)
-	{
-//		ROS_ERROR("right_reset");
-		Right_Wall_Everage_Value = 0;
-		Right_Wall_E_Counter = 0;
-		Right_Wall_Sum_Value = 0;
-		Right_Temp_Wall_Buffer = 0;
-	}
-	if ((uint32_t) Right_Wall_E_Counter > Cy)
-	{
-		// Get the wall base line for right wall sensor.
-		Right_Wall_Everage_Value += get_wall_base(1);
-		if (Right_Wall_Everage_Value > 300)Right_Wall_Everage_Value = 300;//set a limit
-		// Adjust the wall base line for right wall sensor.
-//		ROS_ERROR("right_wall_value:%d",Right_Wall_Everage_Value);
-		set_wall_base(1, Right_Wall_Everage_Value);
-		//ROS_INFO("%s,%d:right_wall_value: \033[31m%d\033[0m",__FUNCTION__,__LINE__,Right_Wall_Everage_Value);
-		Right_Wall_Everage_Value = 0;
-		Right_Wall_E_Counter = 0;
-		Right_Wall_Sum_Value = 0;
-		Right_Temp_Wall_Buffer = 0;
-		//ROS_INFO("Set Right Wall base value as: %d.", get_wall_base(0));
-	}
-
-}
-
-void set_wall_base(int8_t dir, int32_t data)
-{
-	if (dir == 0)
-	{
-		g_left_wall_baseline = data;
-	} else
-	{
-		g_right_wall_baseline = data;
-	}
-}
-
-int32_t get_wall_base(int8_t dir)
-{
-	if (dir == 0)
-	{
-		return g_left_wall_baseline;
-	} else
-	{
-		return g_right_wall_baseline;
-	}
 }
 
 void quick_back(uint8_t speed, uint16_t distance)
@@ -990,6 +879,7 @@ bool is_decelerate_wall(void)
 	auto status = (obs.get_front() > obs.get_front_trig_value());
 	return is_map_front_block(3) || status;
 }
+
 bool check_laser_stuck()
 {
 	if (MotionManage::s_laser != nullptr && !MotionManage::s_laser->laserCheckFresh(3, 2))

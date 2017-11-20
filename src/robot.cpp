@@ -143,9 +143,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	
 	rw_crt_ = msg->rw_crt;
 
-	left_wall_ = msg->left_wall;
+//	left_wall_ = msg->left_wall;
 
-	right_wall_ = msg->right_wall;
+//	right_wall_ = msg->right_wall;
 
 	gyro_dymc_ = msg->gyro_dymc;
 

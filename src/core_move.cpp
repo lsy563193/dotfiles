@@ -5,6 +5,7 @@
 #include <tilt.h>
 #include <beep.h>
 #include <charger.h>
+#include <wall_follow.h>
 #include "pp.h"
 
 #ifdef TURN_SPEED
@@ -169,7 +170,7 @@ void cm_self_check_with_handle(void)
 
 void cm_move_to(CleanMode* p_cm, PPTargetType path) {
 if (mt_is_linear()) {
-		wall_dynamic_base(30);
+		wall.dynamic_base(30);
 	}
 
 	if (p_cm->isSwitch()) {

@@ -373,9 +373,6 @@ typedef enum{
 
 extern uint32_t g_rcon_status;
 
-extern volatile int16_t g_left_wall_baseline;
-extern volatile int16_t g_right_wall_baseline;
-
 struct pid_struct
 {
 	float delta;
@@ -421,17 +418,10 @@ int32_t get_left_wheel_step(void);
 void reset_wheel_step(void);
 bool is_decelerate_wall(void);
 
-int32_t get_wall_adc(int8_t dir);
-
 void set_dir_backward(void);
 void set_dir_forward(void);
 
 uint8_t is_encoder_fail(void);
-
-
-void wall_dynamic_base(uint32_t Cy);
-void set_wall_base(int8_t dir, int32_t data);
-int32_t get_wall_base(int8_t dir);
 
 void quick_back(uint8_t speed,uint16_t distance);
 

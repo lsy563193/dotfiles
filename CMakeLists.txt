@@ -25,6 +25,8 @@ FILE(GLOB PP_SRC
 				src/dev/led.cpp
 				src/dev/beep.cpp
 				src/dev/charger.cpp
+				src/dev/wall_follow.cpp
+
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp

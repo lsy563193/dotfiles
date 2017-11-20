@@ -112,20 +112,6 @@ public:
 		return angle_v_;
 	}
 
-	int16_t getLeftWall() const
-	{
-		return sensor.left_wall - g_left_wall_baseline;
-	}
-
-	int16_t getRightWall() const
-	{
-#if __ROBOT_X900
-		return sensor.right_wall - g_right_wall_baseline;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
 	int16_t getOmniWheel() const
 	{
 #if __ROBOT_X9000
@@ -469,12 +455,6 @@ private:
 	
 	/*2 bytes*/
 	float rw_crt_; // right wheel current
-
-	/*1 byte*/
-	uint16_t left_wall_; // left wall sensor
-	
-	/*1 byte*/
-	uint16_t right_wall_; // left wall sensor
 
 	/*1 byte*/
 	uint8_t gyro_dymc_; // ??
