@@ -568,7 +568,6 @@ bool MotionManage::slam_init()
 
 void MotionManage::init_after_slam()
 {
-s_laser->lidarShieldDetect(ON);
 	ev.rcon_triggered = ev.bumper_triggered =  ev.obs_triggered  = 0;
 	/*--- slam end ---*/
 
@@ -626,7 +625,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (g_is_low_bat_pause || g_resume_cleaning)
 	{
 		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-		s_laser->lidarShieldDetect(ON);
 		if (g_go_home_by_remote)
 			led_set_mode(LED_STEADY, LED_ORANGE);
 		else
@@ -641,7 +639,6 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 		if (s_slam != nullptr)
 		{
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-			s_laser->lidarShieldDetect(ON);
 			if (g_go_home_by_remote)
 				led_set_mode(LED_STEADY, LED_ORANGE);
 			else

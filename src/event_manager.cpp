@@ -1011,16 +1011,11 @@ void df_slam_error(bool state_now, bool state_last)
 	{
 		if (!MotionManage::s_slam->isMapReady())
 		{
-			//MotionManage::s_laser->stopShield();
-			MotionManage::s_laser->lidarShieldDetect(OFF);
 			ROS_WARN("Slam not ready yet.");
 			MotionManage::s_slam->enableMapUpdate();
 			usleep(100000);
 			return;
 		}
-		else
-			//MotionManage::s_laser->startShield();
-			MotionManage::s_laser->lidarShieldDetect(ON);
 	}
 	led_set_mode(LED_STEADY, LED_GREEN);
 	// Wait for 0.2s to make sure it has process the first scan.

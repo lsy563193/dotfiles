@@ -45,7 +45,6 @@ Laser::Laser():nh_(),angle_n_(0)
 
 Laser::~Laser()
 {
-	lidarShieldDetect(OFF);
 	lidarMotorCtrl(OFF);
 	setScanReady(0);
 	setScan2Ready(0);
@@ -247,19 +246,6 @@ void Laser::lidarMotorCtrl(bool switch_)
 			request_sent = false;
 		}
 	}
-}
-
-void Laser::lidarShieldDetect(bool switch_)
-{
-	std_srvs::SetBool trig;
-
-	if(switch_)
-		trig.request.data = true;
-	else
-		trig.request.data = false;
-
-	lidar_shield_detect_.call(trig);
-	ROS_INFO("\033[35m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
 
 /*

@@ -63,7 +63,6 @@ void CleanMode::setMt()
 	if(mt_is_follow_wall())
 	{
 		s_target_p = map_cell_to_point(g_plan_path.back());
-		ROS_INFO("%s,%d: mt_is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
 		mt_reg_ = fw_reg_;
 		if(cm_is_follow_wall()) {
 			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
@@ -91,6 +90,7 @@ void CleanMode::setMt()
 				if(!laser_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
 		}
+		ROS_INFO("%s,%d: mt_is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
 
 	}else if(mt_is_linear())
 	{
