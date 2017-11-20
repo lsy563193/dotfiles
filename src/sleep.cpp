@@ -78,17 +78,17 @@ void sleep_mode(void)
 		{
 			case 1:
 				error.alarm();
-				wav_play(WAV_CANCEL_APPOINTMENT);
+				wav.play(WAV_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 			case 2:
-				wav_play(WAV_ERROR_LIFT_UP);
-				wav_play(WAV_CANCEL_APPOINTMENT);
+				wav.play(WAV_ERROR_LIFT_UP);
+				wav.play(WAV_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 			case 3:
-				wav_play(WAV_BATTERY_LOW);
-				wav_play(WAV_CANCEL_APPOINTMENT);
+				wav.play(WAV_BATTERY_LOW);
+				wav.play(WAV_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 		}

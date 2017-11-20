@@ -514,7 +514,7 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 		/*---init spot move and set start cell---*/
 		if (spt == CLEAN_SPOT)
 		{
-			wav_play(WAV_CLEANING_SPOT);
+			wav.play(WAV_CLEANING_SPOT);
 			spotInit(1.0, cur_cell);//start from current cell
 		}
 		else if( spt == NORMAL_SPOT){

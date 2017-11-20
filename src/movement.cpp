@@ -235,7 +235,7 @@ void cs_paused_setting(void)
 		g_robot_stuck = false;
 		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
 		ROS_WARN("Reset manual/stuck pause status.");
-		wav_play(WAV_CLEANING_STOP);
+		wav.play(WAV_CLEANING_STOP);
 		g_is_manual_pause = false;
 		robot::instance()->savedOffsetAngle(0);
 		if (MotionManage::s_slam != nullptr)

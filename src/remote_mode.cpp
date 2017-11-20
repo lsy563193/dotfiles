@@ -61,9 +61,9 @@ void remote_mode(void)
 		set_gyro_off();
 		// Wait for 30ms to make sure the off command has been effectived.
 		usleep(30000);
-		// Set gyro on before wav_play can save the time for opening the gyro.
+		// Set gyro on before wav.play can save the time for opening the gyro.
 		set_gyro_on();
-		wav_play(WAV_SYSTEM_INITIALIZING);
+		wav.play(WAV_SYSTEM_INITIALIZING);
 		if (!wait_for_gyro_on())
 		{
 			cm_set(Clean_Mode_Idle);
@@ -107,10 +107,10 @@ void remote_mode(void)
 	remote_mode_unregister_events();
 
 	if (ev.battery_low)
-		wav_play(WAV_BATTERY_LOW);
+		wav.play(WAV_BATTERY_LOW);
 
 	if (ev.cliff_all_triggered)
-		wav_play(WAV_ERROR_LIFT_UP);
+		wav.play(WAV_ERROR_LIFT_UP);
 }
 
 void remote_move(void)

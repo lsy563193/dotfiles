@@ -43,13 +43,13 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	//ROS_INFO("Robot sensor ready.");
-	//wav_play(WAV_WELCOME_ILIFE);
+	//wav.play(WAV_WELCOME_ILIFE);
 	usleep(200000);
 
 	if (charger.is_directed() || charger.is_on_stub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.is_ready_to_clean())
-		wav_play(WAV_PLEASE_START_CLEANING);
+		wav.play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
@@ -57,7 +57,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
 				controller.set_status(Clean_Mode_Idle);
-//				wav_play(WAV_TEST_MODE);
+//				wav.play(WAV_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:

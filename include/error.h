@@ -28,57 +28,57 @@ void alarm(void)
 	{
 		case Error_Code_LeftWheel:
 		{
-			wav_play(WAV_ERROR_LEFT_WHEEL);
+			wav.play(WAV_ERROR_LEFT_WHEEL);
 			break;
 		}
 		case Error_Code_RightWheel:
 		{
-			wav_play(WAV_ERROR_RIGHT_WHEEL);
+			wav.play(WAV_ERROR_RIGHT_WHEEL);
 			break;
 		}
 		case Error_Code_LeftBrush:
 		{
-			wav_play(WAV_ERROR_LEFT_BRUSH);
+			wav.play(WAV_ERROR_LEFT_BRUSH);
 			break;
 		}
 		case Error_Code_RightBrush:
 		{
-			wav_play(WAV_ERROR_RIGHT_BRUSH);
+			wav.play(WAV_ERROR_RIGHT_BRUSH);
 			break;
 		}
 		case Error_Code_MainBrush:
 		{
-			wav_play(WAV_ERROR_MAIN_BRUSH);
+			wav.play(WAV_ERROR_MAIN_BRUSH);
 			break;
 		}
 		case Error_Code_Fan_H:
 		{
-			wav_play(WAV_ERROR_SUCTION_FAN);
+			wav.play(WAV_ERROR_SUCTION_FAN);
 			break;
 		}
 		case Error_Code_Cliff:
 		{
-			wav_play(WAV_ERROR_CLIFF);
+			wav.play(WAV_ERROR_CLIFF);
 			break;
 		}
 		case Error_Code_Bumper:
 		{
-			wav_play(WAV_ERROR_BUMPER);
+			wav.play(WAV_ERROR_BUMPER);
 			break;
 		}
 		case Error_Code_Omni:
 		{
-			wav_play(WAV_ERROR_MOBILITY_WHEEL);
+			wav.play(WAV_ERROR_MOBILITY_WHEEL);
 			break;
 		}
 		case Error_Code_Laser:
 		{
-			wav_play(WAV_TEST_LIDAR);
+			wav.play(WAV_TEST_LIDAR);
 			break;
 		}
 		case Error_Code_Stuck:
 		{
-			wav_play(WAV_ROBOT_STUCK);
+			wav.play(WAV_ROBOT_STUCK);
 			break;
 		}
 		default:

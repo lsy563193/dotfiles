@@ -171,7 +171,7 @@ bool check_gyro_stable()
 		if (current_angle > 0.02 || current_angle < -0.02)
 		{
 			set_gyro_off();
-			wav_play(WAV_SYSTEM_INITIALIZING);
+			wav.play(WAV_SYSTEM_INITIALIZING);
 			break;
 		}
 		check_stable_count++;
@@ -185,7 +185,7 @@ bool check_gyro_stable()
 			ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
 			set_gyro_off();
 			average_angle = 0;
-			wav_play(WAV_SYSTEM_INITIALIZING);
+			wav.play(WAV_SYSTEM_INITIALIZING);
 		}
 		else
 		{

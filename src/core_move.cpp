@@ -258,9 +258,9 @@ void cm_apply_cs(void) {
 		}
 		// Play wavs.
 		if (ev.battrey_home)
-			wav_play(WAV_BATTERY_LOW);
+			wav.play(WAV_BATTERY_LOW);
 		if (!cm_is_go_charger())
-			wav_play(WAV_BACK_TO_CHARGER);
+			wav.play(WAV_BACK_TO_CHARGER);
 
 		if (ev.remote_home)
 			g_go_home_by_remote = true;
@@ -281,7 +281,7 @@ void cm_apply_cs(void) {
 			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
 			SpotMovement::instance()->spotDeinit();
 			wheel.stop();
-			wav_play(WAV_CLEANING_CONTINUE);
+			wav.play(WAV_CLEANING_CONTINUE);
 		}
 		ev.remote_spot = false;
 	}

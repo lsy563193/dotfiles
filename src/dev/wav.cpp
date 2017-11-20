@@ -35,8 +35,7 @@ snd_mixer_t *mixer_fd;
 snd_mixer_elem_t *elem;
 FILE	*fp;
 char *buffer;
-
-void wav_play(WavType action)
+void Wav::play(WavType action)
 {
 	int	rc, ret, size, dir, channels, frequency, bit, datablock, nread;
 	char	audio_file[64];
@@ -77,21 +76,21 @@ void wav_play(WavType action)
 	bit = wav_header.bitsPerSample;
 	datablock = wav_header.blockAlign;
 
-	wav_open_pcm_driver();
+	open_pcm_driver();
 
 	snd_pcm_hw_params_alloca(&params);
 
 	rc = snd_pcm_hw_params_any(handle, params);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_any");
-		wav_close_pcm_driver();
+		close_pcm_driver();
 		return;
 	}
 
 	rc = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
 	if (rc < 0) {
 		ROS_ERROR("sed_pcm_hw_set_access");
-		wav_close_pcm_driver();
+		close_pcm_driver();
 		return;
 	}
 
@@ -100,7 +99,7 @@ void wav_play(WavType action)
 			rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_U8);
 			if (rc < 0) {
 				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
-				wav_close_pcm_driver();
+				close_pcm_driver();
 				return;
 			}
 			break ;
@@ -108,7 +107,7 @@ void wav_play(WavType action)
 			rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
 			if (rc < 0) {
 				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
-				wav_close_pcm_driver();
+				close_pcm_driver();
 				return;
 			}
 			break ;
@@ -116,7 +115,7 @@ void wav_play(WavType action)
 			rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S24_LE);
 			if (rc < 0) {
 				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
-				wav_close_pcm_driver();
+				close_pcm_driver();
 				return;
 			}
 			break ;
@@ -125,7 +124,7 @@ void wav_play(WavType action)
 	rc = snd_pcm_hw_params_set_channels(handle, params, channels);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_set_channels:");
-		wav_close_pcm_driver();
+		close_pcm_driver();
 		return;
 	}
 
@@ -133,21 +132,21 @@ void wav_play(WavType action)
 	rc = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_set_rate_near:");
-		wav_close_pcm_driver();
+		close_pcm_driver();
 		return;
 	}
- 
+
 	rc = snd_pcm_hw_params(handle, params);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params: ");
-		wav_close_pcm_driver();
+		close_pcm_driver();
 		return;
 	}
 
 	rc = snd_pcm_hw_params_get_period_size(params, &frames, &dir);
 	if (rc < 0) {
 		ROS_ERROR("snd_pcm_hw_params_get_period_size:");
-		wav_close_pcm_driver();
+		close_pcm_driver();
 		return;
 	}
 
@@ -178,37 +177,37 @@ void wav_play(WavType action)
 		}
 	}
 
-	wav_close_pcm_driver();
+	close_pcm_driver();
 	return;
 }
 
-bool wav_open_pcm_driver(void)
+bool Wav::open_pcm_driver(void)
 {
 	int rc = 0;
-	wav_launch_mixer();
-	wav_adjust_volume(0);
+	launch_mixer();
+	adjust_volume(0);
 	ROS_DEBUG("%s %d: Open wav driver.", __FUNCTION__, __LINE__);
 	rc = snd_pcm_open(&handle, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
 	if (rc < 0)	{
 		ROS_ERROR("open PCM device failed:");
 		return false;
 	}
-	wav_adjust_volume(55);
+	adjust_volume(55);
 	return true;
 }
 
-void wav_close_pcm_driver(void)
+void Wav::close_pcm_driver(void)
 {
 	ROS_DEBUG("%s %d: Close wav driver.", __FUNCTION__, __LINE__);
 	fclose(fp);
 	free(buffer);
-	wav_adjust_volume(0);
+	adjust_volume(0);
 	snd_pcm_drain(handle);
 	snd_pcm_close(handle);
 	snd_mixer_close(mixer_fd);
 }
 
-void wav_launch_mixer(void)
+void Wav::launch_mixer(void)
 {
 
 	int rc;
@@ -254,7 +253,7 @@ void wav_launch_mixer(void)
 	}
 }
 
-void wav_adjust_volume(long volume)
+void Wav::adjust_volume(long volume)
 {
 	long min_volume, max_volume;
 	// Adjust the volume.
@@ -273,3 +272,5 @@ void wav_adjust_volume(long volume)
 		}
 	}
 }
+
+Wav wav;

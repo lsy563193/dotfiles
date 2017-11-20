@@ -53,10 +53,19 @@ typedef enum {
 	WAV_EXPLORATION_START			= 47,
 }WavType;
 
-void wav_play(WavType action);
-bool wav_open_pcm_driver(void);
-void wav_close_pcm_driver(void);
-void wav_launch_mixer(void);
-void wav_adjust_volume(long volume);
+class Wav {
+public:
+	void play(WavType action);
 
+private:
+	bool open_pcm_driver(void);
+
+	void close_pcm_driver(void);
+
+	void launch_mixer(void);
+
+	void adjust_volume(long volume);
+};
+
+extern Wav wav;
 #endif

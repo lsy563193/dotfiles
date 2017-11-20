@@ -29,6 +29,7 @@ FILE(GLOB PP_SRC
 				src/dev/omni.cpp
 				src/dev/wheel.cpp
 				src/dev/laser.cpp
+				src/dev/wav.cpp
 	src/error.cpp
 	src/main.cpp
 #	test/angle_test.cpp
@@ -49,7 +50,6 @@ FILE(GLOB PP_SRC
 	src/idle.cpp
 	src/verify.cpp
 #	src/wall_follow_slam.cpp
-	src/wav.cpp
 	src/slam.cpp
 	src/event_manager.cpp
 #	src/go_home.cpp

@@ -94,7 +94,7 @@ void turn_into_exploration(bool is_reset_map)
 	c_rcon.reset_status();
 	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
-	wav_play(WAV_EXPLORATION_START);
+	wav.play(WAV_EXPLORATION_START);
 
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 

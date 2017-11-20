@@ -198,27 +198,27 @@ void init_nav_before_gyro()
 	{
 		ROS_WARN("Restore from low battery pause");
 		cm_register_events();
-		wav_play(WAV_CLEANING_CONTINUE);
+		wav.play(WAV_CLEANING_CONTINUE);
 	}
 	else if (cs_is_paused())
 	{
 		ROS_WARN("Restore from manual pause");
 		cm_register_events();
-		wav_play(WAV_CLEANING_CONTINUE);
+		wav.play(WAV_CLEANING_CONTINUE);
 		if (cs_is_going_home())
 		{
-			wav_play(WAV_BACK_TO_CHARGER);
+			wav.play(WAV_BACK_TO_CHARGER);
 		}
 	}
 	else if(g_plan_activated == true)
 	{
 		cm_register_events();
-		wav_play(WAV_PLAN_CLEANING_START);
+		wav.play(WAV_PLAN_CLEANING_START);
 		g_plan_activated = false;
 	}
 	else{
 		cm_register_events();
-		wav_play(WAV_CLEANING_START);
+		wav.play(WAV_CLEANING_START);
 	}
 }
 void init_nav_gyro_charge()
@@ -278,7 +278,7 @@ void init_exp_before_gyro()
 	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
-	wav_play(WAV_EXPLORATION_START);
+	wav.play(WAV_EXPLORATION_START);
 
 }
 void init_exp_after_gyro()
@@ -305,7 +305,7 @@ void init_wf_before_gyro()
 	usleep(30000);
 	set_gyro_on();
 
-	wav_play(WAV_CLEANING_WALL_FOLLOW);
+	wav.play(WAV_CLEANING_WALL_FOLLOW);
 }
 
 void init_wf_after_gyro()
@@ -343,7 +343,7 @@ void init_spot_before_gyro()
 	usleep(30000);
 	set_gyro_on();
 
-	wav_play(WAV_CLEANING_SPOT);
+	wav.play(WAV_CLEANING_SPOT);
 }
 
 void init_spot_after_gyro()
@@ -376,7 +376,7 @@ void init_go_home_before_gyro()
 	set_gyro_on();
 	key.reset();
 	cm_register_events();
-	wav_play(WAV_BACK_TO_CHARGER);
+	wav.play(WAV_BACK_TO_CHARGER);
 }
 void init_go_home_after_gyro()
 {
@@ -556,7 +556,7 @@ bool MotionManage::slam_init()
 	{
 		ROS_ERROR("%s %d: Map or tf framework is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
 		error.set(Error_Code_Slam);
-		wav_play(WAV_TEST_LIDAR);
+		wav.play(WAV_TEST_LIDAR);
 		initSucceeded(false);
 		return false;
 	}
@@ -691,7 +691,7 @@ MotionManage::~MotionManage()
 	}
 	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && cs_is_paused() ) || g_robot_stuck ) )
 	{
-		wav_play(WAV_CLEANING_PAUSE);
+		wav.play(WAV_CLEANING_PAUSE);
 		if (!ev.cliff_all_triggered)
 		{
 			if (cs_is_going_home())
@@ -729,7 +729,7 @@ MotionManage::~MotionManage()
 
 	if (!ev.fatal_quit && g_is_low_bat_pause)
 	{
-		wav_play(WAV_CLEANING_PAUSE);
+		wav.play(WAV_CLEANING_PAUSE);
 		if (!ev.cliff_all_triggered)
 		{
 			g_resume_cleaning = true;
@@ -757,15 +757,15 @@ MotionManage::~MotionManage()
 		g_is_low_bat_pause = false;
 		g_resume_cleaning = false;
 		if (ev.cliff_all_triggered)
-			wav_play(WAV_ERROR_LIFT_UP);
-		wav_play(WAV_CLEANING_STOP);
+			wav.play(WAV_ERROR_LIFT_UP);
+		wav.play(WAV_CLEANING_STOP);
 	}
 	else // Normal finish.
 	{
 		if(cs_is_going_home() && !ev.charge_detect && g_have_seen_charger)
-			wav_play(WAV_BACK_TO_CHARGER_FAILED);
+			wav.play(WAV_BACK_TO_CHARGER_FAILED);
 		if (cm_get() != Clean_Mode_Go_Charger && !cm_is_exploration())
-			wav_play(WAV_CLEANING_FINISHED);
+			wav.play(WAV_CLEANING_FINISHED);
 	}
 	cm_reset_go_home();
 
