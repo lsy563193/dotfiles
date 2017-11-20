@@ -13,6 +13,7 @@
 #include "event_manager.h"
 #include "clean_mode.h"
 #include "beep.h"
+#include "error.h"
 
 uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted up, 3 for battery low, 4 for key clean clear the error.
 bool sleep_rcon_triggered = false;
@@ -76,7 +77,7 @@ void sleep_mode(void)
 		switch (sleep_plan_reject_reason)
 		{
 			case 1:
-				alarm_error();
+				error.alarm();
 				wav_play(WAV_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
@@ -150,7 +151,7 @@ void sleep_unregister_events(void)
 void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-	if (get_error_code() == Error_Code_None)
+	if (error.get() == Error_Code_None)
 	{
 		controller.set_status(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
@@ -171,7 +172,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
 	if (planer.get_status() == 3)
 	{
-		if (get_error_code() != Error_Code_None)
+		if (error.get() != Error_Code_None)
 		{
 			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 			sleep_plan_reject_reason = 1;

@@ -15,133 +15,11 @@
 #include "core_move.h"
 #include "wav.h"
 #include "clean_mode.h"
+#include "error.h"
 
 
-volatile uint8_t g_error_code = 0;
 
 /*----------------------- Set error functions--------------------------*/
-void set_error_code(uint8_t code)
-{
-	g_error_code = code;
-}
-
-uint8_t get_error_code()
-{
-	return g_error_code;
-}
-
-void alarm_error(void)
-{
-	switch (get_error_code())
-	{
-		case Error_Code_LeftWheel:
-		{
-			wav_play(WAV_ERROR_LEFT_WHEEL);
-			break;
-		}
-		case Error_Code_RightWheel:
-		{
-			wav_play(WAV_ERROR_RIGHT_WHEEL);
-			break;
-		}
-		case Error_Code_LeftBrush:
-		{
-			wav_play(WAV_ERROR_LEFT_BRUSH);
-			break;
-		}
-		case Error_Code_RightBrush:
-		{
-			wav_play(WAV_ERROR_RIGHT_BRUSH);
-			break;
-		}
-		case Error_Code_MainBrush:
-		{
-			wav_play(WAV_ERROR_MAIN_BRUSH);
-			break;
-		}
-		case Error_Code_Fan_H:
-		{
-			wav_play(WAV_ERROR_SUCTION_FAN);
-			break;
-		}
-		case Error_Code_Cliff:
-		{
-			wav_play(WAV_ERROR_CLIFF);
-			break;
-		}
-		case Error_Code_Bumper:
-		{
-			wav_play(WAV_ERROR_BUMPER);
-			break;
-		}
-		case Error_Code_Omni:
-		{
-			wav_play(WAV_ERROR_MOBILITY_WHEEL);
-			break;
-		}
-		case Error_Code_Laser:
-		{
-			wav_play(WAV_TEST_LIDAR);
-			break;
-		}
-		case Error_Code_Stuck:
-		{
-			wav_play(WAV_ROBOT_STUCK);
-			break;
-		}
-		default:
-		{
-			break;
-		}
-	}
-
-}
-
-bool check_error_cleared(uint8_t error_code)
-{
-	bool error_cleared = true;
-	switch (error_code)
-	{
-		case Error_Code_LeftWheel:
-		case Error_Code_RightWheel:
-		case Error_Code_LeftBrush:
-		case Error_Code_RightBrush:
-		case Error_Code_MainBrush:
-		case Error_Code_Fan_H:
-			break;
-		case Error_Code_Cliff:
-		{
-			if (cliff.get_status())
-			{
-				ROS_WARN("%s %d: Cliff still triggered.", __FUNCTION__, __LINE__);
-				error_cleared = false;
-			}
-			break;
-		}
-		case Error_Code_Bumper:
-		{
-			if (bumper.get_status())
-			{
-				ROS_WARN("%s %d: Bumper still triggered.", __FUNCTION__, __LINE__);
-				error_cleared = false;
-			}
-			break;
-		}
-		case Error_Code_Omni:
-		{
-			if(g_omni_notmove)
-			{
-				ROS_WARN("%s %d: Omni still triggered.", __FUNCTION__, __LINE__);
-				error_cleared = false;
-			}
-			break;
-		}
-		default:
-			break;
-	}
-
-	return error_cleared;
-}
 
 /*-----------------------------------------------------------Self Check-------------------*/
 uint8_t cs_self_check(uint8_t Check_Code)
@@ -187,8 +65,8 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		{
 			cs_disable_motors();
 			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-			set_error_code(Error_Code_RightWheel);
-			alarm_error();
+			error.set(Error_Code_RightWheel);
+			error.alarm();
 			return 1;
 
 		}
@@ -196,7 +74,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		if(Right_Wheel_Slow>100)
 		{
 			cs_disable_motors();
-			set_error_code(Error_Code_RightWheel);
+			error.set(Error_Code_RightWheel);
 			return 1;
 		}
 		*/
@@ -228,15 +106,15 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		{
 			cs_disable_motors();
 			ROS_WARN("%s %d,left wheel stall maybe, please check!!", __FUNCTION__, __LINE__);
-			set_error_code(Error_Code_LeftWheel);
-			alarm_error();
+			error.set(Error_Code_LeftWheel);
+			error.alarm();
 			return 1;
 		}
 		/*
 		if(Left_Wheel_Slow>100)
 		{
 			cs_disable_motors();
-			set_error_code(Error_Code_RightWheel);
+			error.set(Error_Code_RightWheel);
 			return 1;
 		}
 		*/
@@ -252,9 +130,9 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		} else if ((uint32_t) difftime(time(NULL), mboctime) >= 3)
 		{
 			mbrushchecking = 0;
-			set_error_code(Error_Code_MainBrush);
+			error.set(Error_Code_MainBrush);
 			cs_disable_motors();
-			alarm_error();
+			error.alarm();
 			return 1;
 		}
 		return 0;
@@ -278,9 +156,9 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		{
 			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
 			/*-----vacuum error-----*/
-			set_error_code(Error_Code_Fan_H);
+			error.set(Error_Code_Fan_H);
 			cs_disable_motors();
-			alarm_error();
+			error.alarm();
 			vacuum.reset_self_check();
 			return 1;
 		}
@@ -303,22 +181,22 @@ uint8_t cs_self_check(uint8_t Check_Code)
 			}
 			usleep(50000);
 		}
-		set_error_code(Error_Code_Fan_H);
+		error.set(Error_Code_Fan_H);
 		cs_disable_motors();
 		Alarm_Error();
 		return 1;
 #endif
 	} else if (Check_Code == Check_Left_Brush)
 	{
-		set_error_code(Error_Code_LeftBrush);
+		error.set(Error_Code_LeftBrush);
 		cs_disable_motors();
-		alarm_error();
+		error.alarm();
 		return 1;
 	} else if (Check_Code == Check_Right_Brush)
 	{
-		set_error_code(Error_Code_RightBrush);
+		error.set(Error_Code_RightBrush);
 		cs_disable_motors();
-		alarm_error();
+		error.alarm();
 		return 1;
 	}
 	wheel.stop();

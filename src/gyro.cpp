@@ -13,6 +13,7 @@
 #include "robotbase.h"
 #include "event_manager.h"
 #include "charger.h"
+#include "error.h"
 
 int16_t gyro_angle;   //[3:3]   = Angle
 int16_t gyro_xacc;        //[7:8]   = X Acceleration
@@ -226,7 +227,7 @@ void set_gyro_off()
 			ROS_DEBUG("Current angle_v_ = %f, angle_v_ = %f, sum = %d.", robot::instance()->getAngleV(), angle_v, sum);
 			angle_v = robot::instance()->getAngleV();
 			if (sum > 10) {
-				set_error_code(Error_Code_Gyro);
+				error.set(Error_Code_Gyro);
 				ROS_WARN("%s,%d, gyro off failed!",__FUNCTION__,__LINE__);
 				return;
 			}

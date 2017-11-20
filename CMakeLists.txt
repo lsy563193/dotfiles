@@ -29,6 +29,7 @@ FILE(GLOB PP_SRC
 				src/dev/omni.cpp
 				src/dev/wheel.cpp
 				src/dev/laser.cpp
+	src/error.cpp
 	src/main.cpp
 #	test/angle_test.cpp
 	src/map.cpp

@@ -8,6 +8,7 @@
 #include <wall_follow.h>
 #include "pp.h"
 #include "wheel.h"
+#include "error.h"
 
 #ifdef TURN_SPEED
 #undef TURN_SPEED
@@ -380,12 +381,12 @@ void cm_self_check(void)
 						if (ev.oc_wheel_left)
 						{
 							ROS_WARN("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-							set_error_code(Error_Code_LeftWheel);
+							error.set(Error_Code_LeftWheel);
 						}
 						else
 						{
 							ROS_WARN("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-							set_error_code(Error_Code_RightWheel);
+							error.set(Error_Code_RightWheel);
 						}
 						ev.fatal_quit = true;
 						break;
@@ -443,7 +444,7 @@ void cm_self_check(void)
 				{
 					ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
-					set_error_code(Error_Code_Cliff);
+					error.set(Error_Code_Cliff);
 				}
 				else
 				{
@@ -541,7 +542,7 @@ void cm_self_check(void)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						ev.fatal_quit = true;
-						set_error_code(Error_Code_Bumper);
+						error.set(Error_Code_Bumper);
 					}
 					break;
 				}
@@ -566,7 +567,7 @@ void cm_self_check(void)
 				if (vacuum.get_self_check_status() == 0x20)
 				{
 					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
-					set_error_code(Error_Code_Fan_H);
+					error.set(Error_Code_Fan_H);
 					ev.fatal_quit = true;
 					break;
 				}
@@ -582,7 +583,7 @@ void cm_self_check(void)
 		else if (g_omni_notmove)
 		{
 			ROS_ERROR("\033[1m" "%s,%d,omni detect" "\033[0m",__FUNCTION__,__LINE__);
-			set_error_code(Error_Code_Omni);
+			error.set(Error_Code_Omni);
 			ev.fatal_quit = true;
 			break;
 		}
@@ -614,7 +615,7 @@ void cm_self_check(void)
 				ROS_INFO("%s,%d,robot stuck ,slip count\033[32m %d \033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 				g_slip_cnt = 0;
 				g_robot_stuck = true;
-				set_error_code(Error_Code_Stuck);
+				error.set(Error_Code_Stuck);
 				//ev.fatal_quit = true;
 				break;
 			}
@@ -632,7 +633,7 @@ void cm_self_check(void)
 			{
 				ROS_WARN("%s %d: Laser stuck.", __FUNCTION__, __LINE__);
 				ev.fatal_quit = true;
-				set_error_code(Error_Code_Laser);
+				error.set(Error_Code_Laser);
 			}
 		}
 		else

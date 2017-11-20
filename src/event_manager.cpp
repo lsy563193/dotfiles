@@ -20,6 +20,7 @@
 
 #include "event_manager.h"
 #include "obs.h"
+#include "error.h"
 
 
 /* Events variables */
@@ -819,7 +820,7 @@ void df_over_current_brush_left(bool state_now, bool state_last)
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && brush.left_is_stall())
 	{
-		set_error_code(Error_Code_LeftBrush);
+		error.set(Error_Code_LeftBrush);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
 	}
@@ -838,7 +839,7 @@ void df_over_current_brush_right(bool state_now, bool state_last)
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && brush.right_is_stall())
 	{
-		set_error_code(Error_Code_RightBrush);
+		error.set(Error_Code_RightBrush);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
 	}

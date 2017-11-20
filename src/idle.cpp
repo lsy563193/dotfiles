@@ -33,6 +33,7 @@
 #include "core_move.h"
 #include "clean_mode.h"
 #include "cliff.h"
+#include "error.h"
 
 uint8_t temp_mode=0;
 time_t charger_signal_start_time;
@@ -93,7 +94,7 @@ void idle(void)
 	else
 		led_set_mode(LED_BREATH, LED_GREEN);
 
-	if(get_error_code())
+	if(error.get())
 		led_set_mode(LED_STEADY, LED_RED);
 
 	event_manager_reset_status();
@@ -156,7 +157,7 @@ void idle(void)
 			{
 				case 1:
 					error_alarm_counter = 0;
-					alarm_error();
+					error.alarm();
 					reject_reason = 0;
 					break;
 				case 2:
@@ -172,7 +173,7 @@ void idle(void)
 					led_set_mode(LED_BREATH, LED_GREEN);
 					wav_play(WAV_CLEAR_ERROR);
 					error_alarm_counter = 0;
-					set_error_code(Error_Code_None);
+					error.set(Error_Code_None);
 					reject_reason = 0;
 					break;
 			}
@@ -193,11 +194,11 @@ void idle(void)
 			}
 		}
 		// Alarm for error.
-		else if (get_error_code()){
+		else if (error.get()){
 			if (error_alarm_counter == 3 || (error_alarm_counter == 2 && (time(NULL) - start_time) >= 10) || (error_alarm_counter == 1 && (time(NULL) - start_time) >= 20))
 			{
 				error_alarm_counter--;
-				alarm_error();
+				error.alarm();
 			}
 		}
 		if(temp_mode != 0)
@@ -280,8 +281,8 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, c_rcon.get_status(), (int)(time(NULL) - charger_signal_start_time));
 		if (time(NULL) - charger_signal_start_time >= 180)// 3 mins//180
 		{
-			if (get_error_code())
-				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, get_error_code());
+			if (error.get())
+				ROS_WARN("%s %d: Rcon set go home not valid because of error %d.", __FUNCTION__, __LINE__, error.get());
 			else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 				ROS_WARN("%s %d: Rcon set go home not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			else
@@ -314,12 +315,12 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 	/* reset charger_signal_start_time when get remote cleaning */
 	charger_signal_start_time = time(NULL);
 
-	if (get_error_code())
+	if (error.get())
 	{
 		if (remote.get() == Remote_Clean)
 		{
-			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, get_error_code());
-			if (check_error_cleared(get_error_code()))
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+			if (error.clear(error.get()))
 			{
 				beep_for_command(VALID);
 				reject_reason = 4;
@@ -333,7 +334,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		}
 		else
 		{
-			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), get_error_code());
+			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), error.get());
 			reject_reason = 1;
 			beep_for_command(INVALID);
 		}
@@ -427,7 +428,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 		case 3:
 		{
 			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-			if (get_error_code() != Error_Code_None)
+			if (error.get() != Error_Code_None)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				reject_reason = 1;
@@ -476,7 +477,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	/* reset charger_signal_start_time when get key clean */
 	charger_signal_start_time = time(NULL);
 
-	if (check_error_cleared(get_error_code()))
+	if (error.clear(error.get()))
 		beep_for_command(VALID);
 	else
 		beep_for_command(INVALID);
@@ -505,9 +506,9 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 		return;
 	}
 
-	if (get_error_code())
+	if (error.get())
 	{
-		if (check_error_cleared(get_error_code()))
+		if (error.clear(error.get()))
 		{
 			reject_reason = 4;
 			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, remote.get());

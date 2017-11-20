@@ -20,6 +20,7 @@
 #include "event_manager.h"
 #include "clean_mode.h"
 #include "planer.h"
+#include "error.h"
 
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -38,6 +39,18 @@ uint8_t last_charge_status = 0;
 bool g_charge_turn_connect_fail = false;
 static Charge_EventHandle eh;
 /*---------------------------------------------------------------- Charge Function ------------------------*/
+
+void register_event(void)
+{
+	event_manager_register_handler(&eh);
+	event_manager_set_enable(true);
+}
+
+void unregister_event(void)
+{
+	event_manager_set_enable(false);
+}
+
 void charge_function(void)
 {
 	bool battery_full = false;
@@ -46,11 +59,10 @@ void charge_function(void)
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
-	uint16_t bat_v;
 	led_set_mode(LED_BREATH, LED_ORANGE);
 	charger.set_start();
 	planer.set_status(0);
-	charge_register_event();
+	register_event();
 	event_manager_reset_status();
 	wav_play(WAV_BATTERY_CHARGE);
 	ROS_INFO("%s %d: Start charger mode_.", __FUNCTION__, __LINE__);
@@ -66,11 +78,9 @@ void charge_function(void)
 		if(charger.getChargeStatus())
 			last_charge_status = charger.getChargeStatus();
 
-		bat_v = battery.get_voltage();
-
 		if (g_resume_cleaning)
 		{
-			if (bat_v >= CONTINUE_CLEANING_VOLTAGE)
+			if (battery.get_voltage() >= CONTINUE_CLEANING_VOLTAGE)
 			{
 				bat_enough_to_continue_cleaning_counter++;
 				//ROS_INFO("Bat_Enough_To_Continue_Cleaning_Counter = %d.", bat_enough_to_continue_cleaning_counter);
@@ -90,7 +100,7 @@ void charge_function(void)
 
 		if(++show_batv_counter > 500)//about 10 second
 		{
-			ROS_INFO("%s %d: In charge mode_ looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)bat_v/100.0);
+			ROS_INFO("%s %d: In charge mode_ looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.get_voltage()/100.0);
 			show_batv_counter = 0;
 		}
 
@@ -143,7 +153,7 @@ void charge_function(void)
 			switch (charge_reject_reason)
 			{
 				case 1:
-					alarm_error();
+					error.alarm();
 					charge_reject_reason = 0;
 					break;
 				case 2:
@@ -158,7 +168,7 @@ void charge_function(void)
 				case 4:
 					wav_play(WAV_CLEAR_ERROR);
 					charge_reject_reason = 0;
-					set_error_code(Error_Code_None);
+					error.set(Error_Code_None);
 					break;
 			}
 		}
@@ -187,7 +197,7 @@ void charge_function(void)
 			wav_play(WAV_BATTERY_CHARGE_DONE);
 		}
 	}
-	charge_unregister_event();
+	unregister_event();
 	charger.set_stop();
 	// Wait for 20ms to make sure stop charging command has been sent.
 	usleep(30000);
@@ -209,17 +219,6 @@ void charge_function(void)
 	else if (charge_plan_status == 1)
 		wav_play(WAV_APPOINTMENT_DONE);
 	charge_plan_status = 0;
-}
-
-void charge_register_event(void)
-{
-	event_manager_register_handler(&eh);
-	event_manager_set_enable(true);
-}
-
-void charge_unregister_event(void)
-{
-	event_manager_set_enable(false);
 }
 
 void Charge_EventHandle::charge_detect(bool state_now, bool state_last)
@@ -251,7 +250,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 		case 3:
 		{
 			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-			if (get_error_code() != Error_Code_None)
+			if (error.get() != Error_Code_None)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 1;
@@ -303,10 +302,10 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 		beep_for_command(INVALID);
 	}
-	else if (get_error_code() != Error_Code_None)
+	else if (error.get() != Error_Code_None)
 	{
 		ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
-		if (check_error_cleared(get_error_code()))
+		if (error.clear(error.get()))
 		{
 			beep_for_command(VALID);
 			charge_reject_reason = 4;
@@ -353,10 +352,10 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 			beep_for_command(INVALID);
 		}
-		else if (get_error_code() != Error_Code_None)
+		else if (error.get() != Error_Code_None)
 		{
 			ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
-			if (check_error_cleared(get_error_code()))
+			if (error.clear(error.get()))
 			{
 				beep_for_command(VALID);
 				charge_reject_reason = 4;

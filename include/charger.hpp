@@ -28,7 +28,5 @@ class Charge_EventHandle:public EventHandle {
 	void rcon(bool stat_now, bool state_last) { df_rcon(stat_now, state_last); }
 };
 
-void charge_register_event(void);
-void charge_unregister_event(void);
 void charge_function();
 bool charge_turn_connect(void);

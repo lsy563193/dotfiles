@@ -11,9 +11,8 @@
 #include "wav.h"
 #include "config.h"
 #include "laser.hpp"
-//#include "obstacle_detector.cpp"
-//#include <segment_set.h>
 #include "slam.h"
+#include "error.h"
 #include "move_type.h"
 #include <clean_state.h>
 #include <vacuum.h>
@@ -178,7 +177,6 @@ void init_nav_before_gyro()
 		// If it it the first time cleaning, initialize the g_continue_point.
 		extern Cell_t g_continue_cell;
 		g_continue_cell.X = g_continue_cell.Y = 0;
-		extern bool g_have_seen_charger, g_start_point_seen_charger;
 		g_have_seen_charger = false;
 		g_start_point_seen_charger = false;
 
@@ -475,7 +473,7 @@ bool MotionManage::laser_init()
 	if (s_laser->isScanReady() == -1)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
-		set_error_code(Error_Code_Laser);
+		error.set(Error_Code_Laser);
 		initSucceeded(false);
 		return false;
 	}
@@ -557,7 +555,7 @@ bool MotionManage::slam_init()
 	if (count_n_10ms == 0)
 	{
 		ROS_ERROR("%s %d: Map or tf framework is still not ready after 10s, timeout and return.", __FUNCTION__, __LINE__);
-		set_error_code(Error_Code_Slam);
+		error.set(Error_Code_Slam);
 		wav_play(WAV_TEST_LIDAR);
 		initSucceeded(false);
 		return false;
