@@ -12,6 +12,7 @@
 #include <movement.h>
 #include <robot.hpp>
 #include <rcon.h>
+#include <wheel.h>
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
@@ -75,7 +76,7 @@ class BackRegulator: public RegulatorBase{
 public:
 	BackRegulator();
 	~BackRegulator(){
-		//set_wheel_speed(1, 1);
+		//set_wheel.speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isLaserStop();
@@ -124,7 +125,7 @@ public:
 	TurnSpeedRegulator(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
 					speed_max_(speed_max),speed_min_(speed_min), speed_(speed_start),tick_(0){};
 	~TurnSpeedRegulator() {
-		//set_wheel_speed(0, 0);
+		//set_wheel.speed(0, 0);
 	}
 	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
 
@@ -141,7 +142,7 @@ public:
 		ROS_INFO("\033[33m%s\033[0m, %d: ", __FUNCTION__, __LINE__);
 	};
 	~SelfCheckRegulator(){
-		set_wheel_speed(0, 0);
+		wheel.stop();
 	};
 	void adjustSpeed(uint8_t bumper_jam_state);
 };
@@ -150,7 +151,7 @@ class FollowWallRegulator:public RegulatorBase{
 
 public:
 	FollowWallRegulator(Point32_t start_point, Point32_t target);
-	~FollowWallRegulator(){ /*set_wheel_speed(0,0);*/ };
+	~FollowWallRegulator(){ /*set_wheel.speed(0,0);*/ };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool shouldMoveBack();
 	bool shouldTurn();

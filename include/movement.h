@@ -413,32 +413,18 @@ uint8_t get_error_code(void);
 void alarm_error(void);
 bool check_error_cleared(uint8_t error_code);
 
-int32_t get_right_wheel_step(void);
-int32_t get_left_wheel_step(void);
-void reset_wheel_step(void);
-bool is_decelerate_wall(void);
+int32_t wheel_get_right_step(void);
+int32_t wheel_get_left_step(void);
+void wheel_reset_step(void);
 
-void set_dir_backward(void);
-void set_dir_forward(void);
 
 uint8_t is_encoder_fail(void);
 
 void quick_back(uint8_t speed,uint16_t distance);
 
-void set_dir_backward(void);
+void wheel_set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
-
-int rcon_get_trig(void);
-
-/*
-// Add handling for gyro dynamic adjustment.
-// If robot going straight, should turn off gyro dynamic adjustment.
-// If robot turning, should turn on gyro dynamic adjustment.
- */
-void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd);
-void wheels_pid(void);
-void set_wheel_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
 void work_motor_configure(void);
 
@@ -446,38 +432,19 @@ uint8_t self_check(uint8_t Check_Code);
 
 uint8_t cm_get(void);
 
-void move_forward(uint8_t Left_Speed, uint8_t Right_Speed);
-
-void set_dir_left(void);
-
-void set_dir_right(void);
-
-void stop_brifly(void);
-
-uint8_t remote_key(uint8_t Key);
-
 void reset_stop_event_status(void);
-
 
 void cm_set(uint8_t mode);
 
 void disable_motors(void);
 
-void vacuum_reset_self_check(void);
+void wheel_set_left_speed(uint8_t speed);
 
-void controller_set(uint8_t type, uint8_t val);
+void wheel_set_right_speed(uint8_t speed);
 
-uint8_t controller_get(uint8_t seq);
+int16_t wheel_get_left_speed(void);
 
-int controller_get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
-
-void set_left_wheel_speed(uint8_t speed);
-
-void set_right_wheel_speed(uint8_t speed);
-
-int16_t get_left_wheel_speed(void);
-
-int16_t get_right_wheel_speed(void);
+int16_t wheel_get_right_speed(void);
 
 void set_direction_flag(uint8_t flag);
 

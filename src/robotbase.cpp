@@ -18,6 +18,7 @@
 #include <obs.h>
 #include <sleep.h>
 #include <omni.h>
+#include <wheel.h>
 
 #include "movement.h"
 #include "gyro.h"
@@ -499,16 +500,15 @@ void *serial_send_routine(void*)
 
 		//if(!is_flag_set()){
 			/*---pid for wheels---*/
-			extern struct pid_struct left_pid, right_pid;
 			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
-			wheels_pid();
-			if(left_pid.actual_speed < 0)	g_wheel_left_direction = BACKWARD;
-			else							g_wheel_left_direction = FORWARD;
-			if(right_pid.actual_speed < 0)	g_wheel_right_direction = BACKWARD;
-			else							g_wheel_right_direction = FORWARD;
+		wheel.set_pid();
+			if(left_pid.actual_speed < 0)	wheel.set_left_dir(BACKWARD);
+			else							wheel.set_left_dir(FORWARD);
+			if(right_pid.actual_speed < 0)	wheel.set_right_dir(BACKWARD);
+			else							wheel.set_right_dir(FORWARD);
 
-			set_left_wheel_speed((uint8_t)fabsf(left_pid.actual_speed));
-			set_right_wheel_speed((uint8_t)fabsf(right_pid.actual_speed));
+		wheel.set_left_speed((uint8_t) fabsf(left_pid.actual_speed));
+		wheel.set_right_speed((uint8_t) fabsf(right_pid.actual_speed));
 			g_send_stream_mutex.lock();
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			g_send_stream_mutex.unlock();

@@ -655,7 +655,7 @@ void EventHandle::bumper_all(bool state_now, bool state_last)
 	}
 
 	move_back();
-	stop_brifly();
+	wheel_stop();
 
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
@@ -673,7 +673,7 @@ void EventHandle::bumper_left(bool state_now, bool state_last)
 	}
 
 	move_back();
-	stop_brifly();
+	wheel_stop();
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
 
@@ -691,7 +691,7 @@ void EventHandle::bumper_right(bool state_now, bool state_last)
 	}
 
 	move_back();
-	stop_brifly();
+	wheel_stop();
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
 
@@ -700,35 +700,35 @@ void EventHandle::obs_front(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
-	//stop_brifly();
+	//wheel_stop();
 }
 
 void EventHandle::obs_left(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
-	//stop_brifly();
+	//wheel_stop();
 }
 
 void EventHandle::obs_right(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
-	//stop_brifly();
+	//wheel_stop();
 }
 
 void EventHandle::obs_wall_left(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
-	//stop_brifly();
+	//wheel_stop();
 }
 
 void EventHandle::obs_wall_right(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
-	//stop_brifly();
+	//wheel_stop();
 }
 
 /* Cliff */

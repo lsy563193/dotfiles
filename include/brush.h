@@ -22,6 +22,11 @@ public:
 		oc_right_cnt = 0;
 	}
 
+	void stop()
+	{
+		set_side_pwm(0, 0);
+		set_main_pwm(0);
+	}
 	void set_main_pwm(uint16_t PWM) {
 		// Set main brush PWM, the value of PWM should be in range (0, 100).
 		PWM = PWM < 100 ? PWM : 100;

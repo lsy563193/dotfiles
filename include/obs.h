@@ -72,6 +72,11 @@ public:
 		return sensor.r_obs;
 	}
 
+	bool is_wall_front(void) {
+		auto status = (get_front() > get_front_trig_value());
+		return  status;
+	}
+
 	friend	void obs_dynamic_base(uint16_t count);
 private:
 

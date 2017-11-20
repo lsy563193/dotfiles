@@ -7,6 +7,7 @@
 #include <charger.h>
 #include <wall_follow.h>
 #include "pp.h"
+#include "wheel.h"
 
 #ifdef TURN_SPEED
 #undef TURN_SPEED
@@ -144,18 +145,18 @@ void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_ri
 #if GLOBAL_PID
 		/*---PID is useless in wall follow mode_---*/
 		if(rm->isMt() && mt_is_follow_wall())
-			set_wheel_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
+			wheel.set_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
 		else if(rm->isMt() && mt_is_linear())
-			set_wheel_speed(speed_left, speed_right, REG_TYPE_LINEAR);
+			wheel.set_speed(speed_left, speed_right, REG_TYPE_LINEAR);
 		else if(rm->isMt() && mt_is_go_to_charger())
-			set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
+			wheel.set_speed(speed_left, speed_right, REG_TYPE_NONE);
 		else if(rm->isBack())
-			set_wheel_speed(speed_left, speed_right, REG_TYPE_BACK);
+			wheel.set_speed(speed_left, speed_right, REG_TYPE_BACK);
 		else if(rm->isTurn())
-			set_wheel_speed(speed_left, speed_right, REG_TYPE_TURN);
+			wheel.set_speed(speed_left, speed_right, REG_TYPE_TURN);
 #else
 		/*---PID is useless in wall follow mode_---*/
-		set_wheel_speed(speed_left, speed_right, REG_TYPE_NONE);
+		wheel.set_speed(speed_left, speed_right, REG_TYPE_NONE);
 #endif
 }
 
@@ -214,7 +215,7 @@ void cm_cleaning() {
 		}
 
 		if (ev.slam_error) {
-			set_wheel_speed(0, 0);
+			wheel.stop();
 			continue;
 		}
 
@@ -241,7 +242,7 @@ void cm_cleaning() {
 void cm_apply_cs(int cs) {
 	if(cs == CS_GO_HOME_POINT) {
 		work_motor_configure();
-		set_wheel_speed(0, 0, REG_TYPE_LINEAR);
+		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
 			led_set_mode(LED_STEADY, LED_ORANGE);
 
@@ -273,12 +274,12 @@ void cm_apply_cs(int cs) {
 			Cell_t curr_cell = map_get_curr_cell();
 			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
 			SpotMovement::instance() ->setSpotType(CLEAN_SPOT);
-			set_wheel_speed(0, 0);
+			wheel.stop();
 		}
 		else if(SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
 			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
 			SpotMovement::instance()->spotDeinit();
-			set_wheel_speed(0, 0);
+			wheel.stop();
 			wav_play(WAV_CLEANING_CONTINUE);
 		}
 		ev.remote_spot = false;
@@ -357,7 +358,7 @@ void cm_self_check(void)
 
 		if (ev.slam_error)
 		{
-			set_wheel_speed(0, 0);
+			wheel.stop();
 			continue;
 		}
 
@@ -442,7 +443,7 @@ void cm_self_check(void)
 				}
 				else
 				{
-					stop_brifly();
+					wheel.stop();
 					saved_pos_x = robot::instance()->getOdomPositionX();
 					saved_pos_y = robot::instance()->getOdomPositionY();
 				}
@@ -467,7 +468,7 @@ void cm_self_check(void)
 					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 					if (fabsf(distance) > 0.05f)
 					{
-						stop_brifly();
+						wheel.stop();
 						// If cliff jam during bumper self resume.
 						if (cliff.get_status() && ++g_cliff_cnt > 2)
 						{
@@ -662,7 +663,7 @@ void CM_EventHandle::bumper_all(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 
 //	if (g_move_back_finished && !ev.bumper_jam)
@@ -680,7 +681,7 @@ void CM_EventHandle::bumper_left(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 
 //	if (g_move_back_finished && !ev.bumper_jam)
@@ -698,7 +699,7 @@ void CM_EventHandle::bumper_right(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 
 //	if (g_move_back_finished && !ev.bumper_jam)
@@ -747,7 +748,7 @@ void CM_EventHandle::cliff_front_left(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 
 //	if (g_move_back_finished && !ev.cliff_jam && !state_last)
@@ -764,7 +765,7 @@ void CM_EventHandle::cliff_front_right(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 
 //	if (g_move_back_finished && !ev.cliff_jam && !state_last)
@@ -781,7 +782,7 @@ void CM_EventHandle::cliff_left_right(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 //
 //	if (g_move_back_finished && !ev.cliff_jam && !state_last)
@@ -797,7 +798,7 @@ void CM_EventHandle::cliff_front(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 //
 //	if (g_move_back_finished && !ev.cliff_jam && !state_last)
@@ -813,7 +814,7 @@ void CM_EventHandle::cliff_left(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 
 //	if (g_move_back_finished && !ev.cliff_jam && !state_last)
@@ -829,7 +830,7 @@ void CM_EventHandle::cliff_right(bool state_now, bool state_last)
 //	{
 //		saved_pos_x = robot::instance()->getOdomPositionX();
 //		saved_pos_y = robot::instance()->getOdomPositionY();
-//		set_wheel_speed(0, 0);
+//		wheel.stop();
 //	}
 
 //	if (g_move_back_finished && !ev.cliff_jam && !state_last)
@@ -998,7 +999,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 
 	beep_for_command(VALID);
-	set_wheel_speed(0, 0);
+	wheel.stop();
 	ev.key_clean_pressed = true;
 
 	if(cm_is_navigation())

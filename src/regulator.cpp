@@ -51,7 +51,7 @@ bool g_slip_backward = false;
 int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
-	auto get_wheel_step = (mt_is_left()) ? get_right_wheel_step : get_left_wheel_step;
+	auto get_wheel_step = (mt_is_left()) ? &Wheel::get_right_step : &Wheel::get_left_step;
 	auto get_obs = (mt_is_left()) ? &Obs::get_left : &Obs::get_right;
 	auto get_obs_value = (mt_is_left()) ? &Obs::get_left_trig_value : &Obs::get_right_trig_value;
 	auto status = ev.bumper_triggered;
@@ -62,7 +62,7 @@ int16_t bumper_turn_angle()
 	{
 		g_turn_angle = -600;
 		g_straight_distance = 150; //150;
-		bumper_jam_cnt_ = get_wheel_step() < 2000 ? ++bumper_jam_cnt_ : 0;
+		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	} else if (status == diff_side)
 	{
@@ -82,11 +82,11 @@ int16_t bumper_turn_angle()
 		//ROS_INFO("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
 		g_straight_distance = 250; //250;
-		bumper_jam_cnt_ = get_wheel_step() < 2000 ? ++bumper_jam_cnt_ : 0;
+		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
 	//ROS_INFO("%s %d: g_wall_distance in bumper_turn_angular: %d", __FUNCTION__, __LINE__, g_wall_distance);
 	g_straight_distance = 200;
-	reset_wheel_step();
+	wheel.reset_step();
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
 	return g_turn_angle;
@@ -203,7 +203,7 @@ static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max,
 bool laser_turn_angle(int16_t& turn_angle)
 {
 //	ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
-	stop_brifly();
+	wheel.stop();
 
 	if (ev.obs_triggered != 0)
 	{
@@ -385,13 +385,13 @@ bool BackRegulator::isLaserStop()
 void BackRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("BackRegulator::adjustSpeed");
-	set_dir_backward();
+	wheel.set_dir_backward();
 	if (!cm_is_follow_wall())
 	{
 		speed_ += ++counter_;
 		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
 	}
-	reset_wheel_step();
+	wheel.reset_step();
 	/*if (fabsf(distance) >= g_back_distance * 0.8)
 	{
 		l_speed = r_speed = speed_--;
@@ -549,7 +549,7 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto diff = ranged_angle(s_target_angle - gyro_get_angle());
 //	ROS_INFO("TurnRegulator::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, gyro_get_angle());
 	ROS_DEBUG("%s %d: TurnRegulator diff: %d, s_target_angle: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_angle, gyro_get_angle());
-	(diff >= 0) ? set_dir_left() : set_dir_right();
+	(diff >= 0) ? wheel.set_dir_left() : wheel.set_dir_right();
 
 //	ROS_INFO("TurnRegulator::adjustSpeed");
 	if (std::abs(diff) > 200){
@@ -575,9 +575,9 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 {
 	if ((diff >= 0) && (diff <= 1800))
-		set_dir_left();
+		wheel.set_dir_left();
 	else if ((diff <= 0) && (diff >= (-1800)))
-		set_dir_right();
+		wheel.set_dir_right();
 
 	tick_++;
 	if (tick_ > 2)
@@ -762,7 +762,7 @@ void LinearRegulator::setTarget()
 void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
-	set_dir_forward();
+	wheel.set_dir_forward();
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = map_cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
@@ -1007,11 +1007,11 @@ void FollowWallRegulator::setTarget()
 void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	ROS_DEBUG("%s %d: FollowWallRegulator.", __FUNCTION__, __LINE__);
-	set_dir_forward();
-//	uint32_t same_dist = (get_right_wheel_step() / 100) * 11 ;
+	wheel.set_dir_forward();
+//	uint32_t same_dist = (wheel.get_right_step() / 100) * 11 ;
 	uint32_t rcon_status = 0;
-	auto _l_step = get_left_wheel_step();
-	auto _r_step = get_right_wheel_step();
+	auto _l_step = wheel.get_left_step();
+	auto _r_step = wheel.get_right_step();
 	auto &same_dist = (mt_is_left()) ? _l_step : _r_step;
 	auto &diff_dist = (mt_is_left()) ? _r_step : _l_step;
 	auto &same_speed = (mt_is_left()) ? l_speed : r_speed;
@@ -1201,7 +1201,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				time_right_angle = ros::Time::now().toSec();
 				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
-			if(is_decelerate_wall()) {
+			if(obs.is_wall_front() || is_map_front_block(3) ) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
@@ -1230,7 +1230,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
-		if (is_decelerate_wall()) {
+		if (obs.is_wall_front() || is_map_front_block(3)) {
 //			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;
@@ -1575,7 +1575,7 @@ bool GoToChargerRegulator::isSwitch()
 	if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
 	{
 		go_home_bumper_cnt = 0;
-		//move_forward(9, 9);
+		//wheel.move_forward(9, 9);
 		c_rcon.reset_status();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
 		go_home_state_now = AROUND_CHARGER_STATION;
@@ -2105,22 +2105,22 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	/*---check if near charger station---*/
 	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
 	{
-		set_dir_forward();
+		wheel.set_dir_forward();
 		l_speed = r_speed = 0;
 	}
 	else if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
 	{
-		set_dir_forward();
+		wheel.set_dir_forward();
 		l_speed = r_speed = 30;
 	}
 	else if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
 	{
-		set_dir_right();
+		wheel.set_dir_right();
 		l_speed = r_speed = 10;
 	}
 	else if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
 	{
-		set_dir_forward();
+		wheel.set_dir_forward();
 		l_speed = r_speed = 9;
 		around_move_cnt = 0;
 	}
@@ -2131,42 +2131,42 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			if(receive_code&RconL_HomeT)
 			{
 				ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 22;
 				r_speed = 12;
 			}
 			else if(receive_code&RconL_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect L-L.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 22;
 				r_speed = 12;
 			}
 			else if(receive_code&RconFL2_HomeT)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 23;
 				r_speed = 14;
 			}
 			else if(receive_code&RconFL2_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-L.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 20;
 				r_speed = 14;
 			}
 			else if(receive_code&RconFL2_HomeR)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 15;
 				r_speed = 21;
 			}
 			else
 			{
 				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 14;
 				r_speed = 21;
 			}
@@ -2176,49 +2176,49 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			if(receive_code&RconR_HomeT)
 			{
 				ROS_DEBUG("%s %d Detect R-T.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 12;
 				r_speed = 22;
 			}
 			else if(receive_code&RconR_HomeR)
 			{
 				ROS_DEBUG("%s %d Detect R-R.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 12;
 				r_speed = 22;
 			}
 			else if(receive_code&RconFR2_HomeT)
 			{
 				ROS_DEBUG("%s %d Detect FR2-T.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 14;
 				r_speed = 23;
 			}
 			else if(receive_code&RconFR2_HomeR)
 			{
 				ROS_DEBUG("%s %d Detect FR2-R.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 14;
 				r_speed = 20;
 			}
 			else if(receive_code&RconFR2_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 21;
 				r_speed = 15;
 			}
 			else
 			{
 				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-				set_dir_forward();
+				wheel.set_dir_forward();
 				l_speed = 21;
 				r_speed = 14;
 			}
 		}
 		else
 		{
-			set_dir_forward();
+			wheel.set_dir_forward();
 			l_speed = left_speed_;
 			r_speed = right_speed_;
 		}
@@ -2227,14 +2227,14 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	{
 		ROS_DEBUG("%s, %d: Check position dir: %d.", __FUNCTION__, __LINE__, check_position_dir);
 		if(check_position_dir == ROUND_LEFT)
-			set_dir_left();
+			wheel.set_dir_left();
 		else if(check_position_dir == ROUND_RIGHT)
-			set_dir_right();
+			wheel.set_dir_right();
 		l_speed = r_speed = 10;
 	}
 	else if (go_home_state_now == BY_PATH)
 	{
-		set_dir_forward();
+		wheel.set_dir_forward();
 		auto temp_code = receive_code;
 		temp_code &= RconFrontAll_Home_LR;
 		if (by_path_move_cnt == 25 && temp_code)
@@ -3146,7 +3146,7 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}
 		else
 		{
-			set_dir_forward();
+			wheel.set_dir_forward();
 			l_speed = left_speed_;
 			r_speed = right_speed_;
 		}
@@ -3154,9 +3154,9 @@ void GoToChargerRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	else if (go_home_state_now == TURN_CONNECT)
 	{
 		if (turn_connect_dir == ROUND_RIGHT)
-			set_dir_right();
+			wheel.set_dir_right();
 		else if (turn_connect_dir == ROUND_LEFT)
-			set_dir_left();
+			wheel.set_dir_left();
 		l_speed = r_speed = 5;
 	}
 	left_speed_ = l_speed;
@@ -3172,16 +3172,16 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	else if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
 		if (ev.oc_wheel_right) {
-			set_dir_right();
+			wheel.set_dir_right();
 		} else {
-			set_dir_left();
+			wheel.set_dir_left();
 		}
 		left_speed = 30;
 		right_speed = 30;
 	}
 	else if (ev.cliff_jam)
 	{
-		set_dir_backward();
+		wheel.set_dir_backward();
 		left_speed = right_speed = 18;
 	}
 	else if (ev.bumper_jam)
@@ -3193,21 +3193,21 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			case 3:
 			{
 				// Quickly move back for a distance.
-				set_dir_backward();
+				wheel.set_dir_backward();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
 			case 4:
 			{
 				// Quickly turn right for 90 degrees.
-				set_dir_right();
+				wheel.set_dir_right();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
 			case 5:
 			{
 				// Quickly turn left for 180 degrees.
-				set_dir_left();
+				wheel.set_dir_left();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
@@ -3215,23 +3215,23 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	}
 	else if(g_omni_notmove)
 	{
-		//set_dir_backward();
+		//wheel.set_dir_backward();
 		//left_speed = right_speed = RUN_TOP_SPEED;
 	}
 	else if(g_slip_cnt>=2)
 	{
 		if(g_slip_cnt <3)
-			set_dir_left();
+			wheel.set_dir_left();
 		else if(g_slip_cnt <4)
-			set_dir_right();
+			wheel.set_dir_right();
 		left_speed = right_speed = ROTATE_TOP_SPEED;
 	}
 	else if (ev.laser_stuck)
 	{
-		set_dir_backward();
+		wheel.set_dir_backward();
 		left_speed = right_speed = 2;
 	}
 
-	set_wheel_speed(left_speed, right_speed);
+	wheel.set_speed(left_speed, right_speed);
 }
 

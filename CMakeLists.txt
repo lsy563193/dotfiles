@@ -27,6 +27,7 @@ FILE(GLOB PP_SRC
 				src/dev/charger.cpp
 				src/dev/wall_follow.cpp
 				src/dev/omni.cpp
+				src/dev/wheel.cpp
 
 	src/laser.cpp
 	src/main.cpp

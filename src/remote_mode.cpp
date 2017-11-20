@@ -28,6 +28,7 @@
 #include <obs.h>
 #include <beep.h>
 #include <charger.h>
+#include <wheel.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -149,22 +150,22 @@ void remote_move(void)
 				if (obs.get_status())
 				{
 					if(moving_speed>10)moving_speed--;
-					move_forward(moving_speed, moving_speed);
+					wheel.move_forward(moving_speed, moving_speed);
 				}
 				else
 				{
 					moving_speed++;
 					if(moving_speed<25)moving_speed=25;
 					if(moving_speed>42)moving_speed=42;
-					move_forward(moving_speed, moving_speed);
+					wheel.move_forward(moving_speed, moving_speed);
 				}
 				break;
 			}
 			case REMOTE_MODE_BACKWARD:
 			{
 				g_move_back_finished = false;
-				set_dir_backward();
-				set_wheel_speed(20, 20);
+				wheel.set_dir_backward();
+				wheel.set_speed(20, 20);
 
 				float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 				ROS_DEBUG("%s %d: current pos(%f, %f), distance:%f.", __FUNCTION__, __LINE__, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY(), distance);
@@ -239,12 +240,12 @@ void remote_move(void)
 						ROS_WARN("%s %d: Move back. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
 						set_move_flag_(REMOTE_MODE_BACKWARD);
 					}
-					set_dir_backward();
-					set_wheel_speed(20, 20);
+					wheel.set_dir_backward();
+					wheel.set_speed(20, 20);
 				}
 				else
 				{
-					set_wheel_speed(0, 0);
+					wheel.stop();
 					moving_speed = 0;
 					remote_rcon_cnt = 0;
 				}
@@ -256,7 +257,7 @@ void remote_move(void)
 				auto diff = ranged_angle(remote_target_angle - gyro_get_angle());
 
 				if (std::abs(diff) < 10) {
-					set_wheel_speed(0, 0);
+					wheel.stop();
 					ROS_INFO("%s %d: remote_target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, remote_target_angle,
 									 gyro_get_angle(), diff);
 					set_move_flag_(REMOTE_MODE_STAY);
@@ -274,10 +275,10 @@ void remote_move(void)
 				//}
 
 				if (get_move_flag_() == REMOTE_MODE_LEFT)
-					set_dir_left();
+					wheel.set_dir_left();
 				else
-					set_dir_right();
-				set_wheel_speed(moving_speed, moving_speed);
+					wheel.set_dir_right();
+				wheel.set_speed(moving_speed, moving_speed);
 				break;
 			}
 		}

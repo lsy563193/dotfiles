@@ -9,6 +9,7 @@
 #include <remote.h>
 #include <charger.h>
 #include <beep.h>
+#include <wheel.h>
 
 #include "go_home.hpp"
 #include "movement.h"
@@ -406,8 +407,8 @@ bool charge_turn_connect(void)
 		return true;
 	}
 	// Start turning right.
-	set_dir_right();
-	set_wheel_speed(speed, speed);
+	wheel.set_dir_right();
+	wheel.set_speed(speed, speed);
 	for(int i=0; i<25; i++)
 	{
 		if (ev.charge_detect)
@@ -421,16 +422,16 @@ bool charge_turn_connect(void)
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
-			set_wheel_speed(speed, speed);
+			wheel.set_speed(speed, speed);
 		}
 		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 		usleep(50000);
 	}
-	stop_brifly();
-	// Start turning left.
-	set_dir_left();
-	set_wheel_speed(speed, speed);
+	wheel.stop();
+	// Start turnin left.
+	wheel.set_dir_left();
+	wheel.set_speed(speed, speed);
 	for(int i=0; i<40; i++)
 	{
 		if (ev.charge_detect)
@@ -444,13 +445,13 @@ bool charge_turn_connect(void)
 				ROS_INFO("Turn left reach charger.");
 				return true;
 			}
-			set_wheel_speed(speed, speed);
+			wheel.set_speed(speed, speed);
 		}
 		if(ev.key_clean_pressed || ev.fatal_quit)
 			return true;
 		usleep(50000);
 	}
-	stop_brifly();
+	wheel.stop();
 	g_charge_turn_connect_fail = true;
 	return false;
 

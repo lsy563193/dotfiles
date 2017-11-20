@@ -419,7 +419,7 @@ bool wait_for_back_from_charge()
 				return false;
 			}
 		}
-		stop_brifly();
+	wheel.stop();
 		robot::instance()->initOdomPosition();
 	return true;
 }
