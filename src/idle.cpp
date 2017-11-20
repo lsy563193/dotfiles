@@ -21,7 +21,7 @@
 #include <event_manager.h>
 #include <battery.h>
 #include <rcon.h>
-#include <planer.h>
+#include <clean_timer.h>
 #include <remote.h>
 #include <beep.h>
 #include "config.h"
@@ -75,7 +75,7 @@ void idle(void)
 
 	cs_disable_motors();
 	remote.reset();
-	planer.set_status(0);
+	timer.set_status(0);
 	key.reset();
 	c_rcon.reset_status();
 	key.reset();
@@ -88,14 +88,14 @@ void idle(void)
 		ROS_WARN("%s %d: Battery Level Low = \033[31m%4dmV\033[0m(limit = \033[33m%4dmV\033[0m).", __FUNCTION__, __LINE__,
 						 battery.get_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		bat_ready_to_clean = false;
-		led_set_mode(LED_BREATH, LED_ORANGE);
+		led.set_mode(LED_BREATH, LED_ORANGE);
 		wav_play(WAV_BATTERY_LOW);
 	}
 	else
-		led_set_mode(LED_BREATH, LED_GREEN);
+		led.set_mode(LED_BREATH, LED_GREEN);
 
 	if(error.get())
-		led_set_mode(LED_STEADY, LED_RED);
+		led.set_mode(LED_STEADY, LED_RED);
 
 	event_manager_reset_status();
 	register_events();
@@ -121,7 +121,7 @@ void idle(void)
 		if(bat_ready_to_clean && !battery.is_ready_to_clean() && !cs_is_paused())
 		{
 			bat_ready_to_clean = false;
-			led_set_mode(LED_BREATH, LED_ORANGE);
+			led.set_mode(LED_BREATH, LED_ORANGE);
 		}
 		if(time(NULL) - start_time > USER_INTERFACE_TIMEOUT)
 		{
@@ -170,7 +170,7 @@ void idle(void)
 					reject_reason = 0;
 					break;
 				case 4:
-					led_set_mode(LED_BREATH, LED_GREEN);
+					led.set_mode(LED_BREATH, LED_GREEN);
 					wav_play(WAV_CLEAR_ERROR);
 					error_alarm_counter = 0;
 					error.set(Error_Code_None);
@@ -322,12 +322,12 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 			if (error.clear(error.get()))
 			{
-				beep_for_command(VALID);
+				beeper.play_for_command(VALID);
 				reject_reason = 4;
 			}
 			else
 			{
-				beep_for_command(INVALID);
+				beeper.play_for_command(INVALID);
 				reject_reason = 1;
 			}
 			key.reset();
@@ -336,26 +336,26 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), error.get());
 			reject_reason = 1;
-			beep_for_command(INVALID);
+			beeper.play_for_command(INVALID);
 		}
 	}
 	else if (cliff.get_status() == BLOCK_ALL)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		reject_reason = 2;
 	}
 	else if ((remote.get() != Remote_Forward && remote.get() != Remote_Left && remote.get() != Remote_Right &&
 					remote.get() != Remote_Home) && !bat_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.get_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		reject_reason = 3;
 	}
 
 	if (!reject_reason)
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		switch (remote.get())
 		{
 			case Remote_Forward:
@@ -403,24 +403,24 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	/* -----------------------------Check if plan event ----------------------------------*/
-	if (planer.get_status())
+	if (timer.get_status())
 		plan_confirm_time = time(NULL);
 
 	/* reset charger_signal_start_time when get plan status */
 	charger_signal_start_time = time(NULL);
 
-	switch (planer.get_status())
+	switch (timer.get_status())
 	{
 		case 1:
 		{
-			beep_for_command(VALID);
+			beeper.play_for_command(VALID);
 			plan_status = 1;
 			ROS_WARN("%s %d: Plan received, plan status: %d.", __FUNCTION__, __LINE__, plan_status);
 			break;
 		}
 		case 2:
 		{
-			beep_for_command(VALID);
+			beeper.play_for_command(VALID);
 			plan_status = 2;
 			ROS_WARN("%s %d: Plan cancel received, plan status: %d.", __FUNCTION__, __LINE__, plan_status);
 			break;
@@ -463,7 +463,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 
-	planer.set_status(0);
+	timer.set_status(0);
 }
 
 void Idle_EventHandle::key_clean(bool state_now, bool state_last)
@@ -478,9 +478,9 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	charger_signal_start_time = time(NULL);
 
 	if (error.clear(error.get()))
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 	else
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 
 	while (key.get_press() & KEY_CLEAN)
 	{
@@ -489,7 +489,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 			if (!long_press_to_sleep)
 			{
 				long_press_to_sleep = true;
-				beep_for_command(VALID);
+				beeper.play_for_command(VALID);
 				ROS_WARN("%s %d: Robot is going to sleep.", __FUNCTION__, __LINE__);
 			}
 		}

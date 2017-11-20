@@ -19,7 +19,7 @@
 #include "core_move.h"
 #include "event_manager.h"
 #include "clean_mode.h"
-#include "planer.h"
+#include "clean_timer.h"
 #include "error.h"
 
 #ifdef Turn_Speed
@@ -59,9 +59,9 @@ void charge_function(void)
 	// This counter is for checking if battery enough to continue cleaning.
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
-	led_set_mode(LED_BREATH, LED_ORANGE);
+	led.set_mode(LED_BREATH, LED_ORANGE);
 	charger.set_start();
-	planer.set_status(0);
+	timer.set_status(0);
 	register_event();
 	event_manager_reset_status();
 	wav_play(WAV_BATTERY_CHARGE);
@@ -193,7 +193,7 @@ void charge_function(void)
 		if (battery.is_full() && !battery_full)
 		{
 			battery_full = true;
-			led_set_mode(LED_STEADY, LED_OFF);
+			led.set_mode(LED_STEADY, LED_OFF);
 			wav_play(WAV_BATTERY_CHARGE_DONE);
 		}
 	}
@@ -228,21 +228,21 @@ void Charge_EventHandle::charge_detect(bool state_now, bool state_last)
 }
 void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 {
-	if (planer.get_status())
+	if (timer.get_status())
 		charge_plan_confirm_time = time(NULL);
 
-	switch(planer.get_status())
+	switch(timer.get_status())
 	{
 		case 1:
 		{
-			beep_for_command(VALID);
+			beeper.play_for_command(VALID);
 			charge_plan_status = 1;
 			ROS_WARN("%s %d: Plan received, plan status: %d.", __FUNCTION__, __LINE__, charge_plan_status);
 			break;
 		}
 		case 2:
 		{
-			beep_for_command(VALID);
+			beeper.play_for_command(VALID);
 			charge_plan_status = 2;
 			ROS_WARN("%s %d: Plan cancel received, plan status: %d.", __FUNCTION__, __LINE__, charge_plan_status);
 			break;
@@ -284,7 +284,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 			}
 		}
 	}
-	planer.set_status(0);
+	timer.set_status(0);
 }
 void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 {
@@ -300,19 +300,19 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 	if (charger.is_directed())
 	{
 		ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	}
 	else if (error.get() != Error_Code_None)
 	{
 		ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
 		if (error.clear(error.get()))
 		{
-			beep_for_command(VALID);
+			beeper.play_for_command(VALID);
 			charge_reject_reason = 4;
 		}
 		else
 		{
-			beep_for_command(INVALID);
+			beeper.play_for_command(INVALID);
 			charge_reject_reason = 1;
 		}
 		key.reset();
@@ -320,19 +320,19 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 	else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 	{
 		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		charge_reject_reason = 2;
 	}
 	else if (!battery.is_ready_to_clean())
 	{
 		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		charge_reject_reason = 3;
 	}
 	else if (charger.is_on_stub())
 	{
 		ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		cm_set(Clean_Mode_Navigation);
 	}
 
@@ -350,19 +350,19 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 		if (charger.is_directed())
 		{
 			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
-			beep_for_command(INVALID);
+			beeper.play_for_command(INVALID);
 		}
 		else if (error.get() != Error_Code_None)
 		{
 			ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
 			if (error.clear(error.get()))
 			{
-				beep_for_command(VALID);
+				beeper.play_for_command(VALID);
 				charge_reject_reason = 4;
 			}
 			else
 			{
-				beep_for_command(INVALID);
+				beeper.play_for_command(INVALID);
 				charge_reject_reason = 1;
 			}
 			key.reset();
@@ -370,24 +370,24 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
-			beep_for_command(INVALID);
+			beeper.play_for_command(INVALID);
 			charge_reject_reason = 2;
 		}
 		else if (!battery.is_ready_to_clean())
 		{
 			ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
 			charge_reject_reason = 3;
-			beep_for_command(INVALID);
+			beeper.play_for_command(INVALID);
 		}
 		else if (charger.is_on_stub())
 		{
 			ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
-			beep_for_command(VALID);
+			beeper.play_for_command(VALID);
 			cm_set(Clean_Mode_Navigation);
 		}
 	}
 	else{
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		remote.reset();
 	}
 }

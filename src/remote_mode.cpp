@@ -74,7 +74,7 @@ void remote_mode(void)
 	g_battery_low_cnt = 0;
 	remote_rcon_triggered = false;
 
-	led_set_mode(LED_STEADY, LED_GREEN);
+	led.set_mode(LED_STEADY, LED_GREEN);
 	remote.reset();
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
@@ -414,16 +414,16 @@ void RM_EventHandle::remote_direction_forward(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || ev.bumper_jam || ev.cliff_jam)
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		set_move_flag_(REMOTE_MODE_FORWARD);
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 	}
 	else
 	{
 		set_move_flag_(REMOTE_MODE_STAY);
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 	}
 	remote.reset();
 }
@@ -433,10 +433,10 @@ void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || ev.bumper_jam || ev.cliff_jam)
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		remote_target_angle = gyro_get_angle() + 300;
 		if (remote_target_angle >= 3600)
 			remote_target_angle -= 3600;
@@ -445,7 +445,7 @@ void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
 	}
 	else
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	remote.reset();
@@ -456,17 +456,17 @@ void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	if (get_move_flag_() == REMOTE_MODE_BACKWARD || ev.bumper_jam || ev.cliff_jam)
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		remote_target_angle = ranged_angle(gyro_get_angle() - 300);
 		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro_get_angle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
 	else
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		set_move_flag_(REMOTE_MODE_STAY);
 	}
 	remote.reset();
@@ -478,11 +478,11 @@ void RM_EventHandle::remote_max(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	if (!ev.bumper_jam && !ev.cliff_jam)
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		vacuum.switchToNext(true);
 	}
 	else
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -492,14 +492,14 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	if (remote.get() == Remote_Clean)
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		ev.key_clean_pressed = true;
 		cm_set(Clean_Mode_Idle);
 		cs_disable_motors();
 	}
 	else if (!ev.bumper_jam && !ev.cliff_jam)
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		cs_disable_motors();
 		g_remote_exit = true;
 		if (remote.get() == Remote_Home)
@@ -509,7 +509,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 			cm_set(Clean_Mode_Idle);
 	}
 	else
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	remote.reset();
 }
 void RM_EventHandle::remote_spot(bool state_now, bool state_last)
@@ -546,7 +546,7 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
-	beep_for_command(VALID);
+	beeper.play_for_command(VALID);
 	cs_disable_motors();
 	while (key.get_press() & KEY_CLEAN)
 		usleep(40000);

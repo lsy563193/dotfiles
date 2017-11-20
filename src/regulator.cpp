@@ -307,7 +307,7 @@ bool BackRegulator::isReach()
 		g_robot_slip = false;
 		g_slip_backward = false;
 		ROS_WARN("%s,%d,\033[1mrobot slip %d times!!\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
-		beep_for_command(false);
+		beeper.play_for_command(false);
 		return true;
 	}
 	if(fabsf(distance) >= g_back_distance)

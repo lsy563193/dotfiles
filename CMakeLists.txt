@@ -16,7 +16,7 @@ FILE(GLOB PP_SRC
 				src/dev/brush.cpp
 				src/dev/bumper.cpp
 				src/dev/rcon.cpp
-				src/dev/planer.cpp
+				src/dev/clean_timer.cpp
 				src/dev/remote.cpp
 				src/dev/controller.cpp
 				src/dev/obs.cpp

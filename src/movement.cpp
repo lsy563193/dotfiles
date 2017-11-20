@@ -5,7 +5,6 @@
 #include <ros/ros.h>
 #include <motion_manage.h>
 #include <vacuum.h>
-#include <cliff.h>
 #include <brush.h>
 #include <bumper.h>
 #include <tilt.h>
@@ -17,11 +16,6 @@
 #include "clean_mode.h"
 #include "error.h"
 
-
-
-/*----------------------- Set error functions--------------------------*/
-
-/*-----------------------------------------------------------Self Check-------------------*/
 uint8_t cs_self_check(uint8_t Check_Code)
 {
 	static time_t mboctime;
@@ -207,7 +201,6 @@ uint8_t cs_self_check(uint8_t Check_Code)
 	return 0;
 }
 
-//------------------------------------------------------------------------------------------------
 void cs_disable_motors(void)
 {
 	wheel.stop();

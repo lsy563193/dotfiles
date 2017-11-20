@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <cliff.h>
 #include <pp.h>
-#include <planer.h>
+#include <clean_timer.h>
 #include <remote.h>
 
 #include "sleep.h"
@@ -43,15 +43,15 @@ void sleep_mode(void)
 	sleep_plan_reject_reason = 0;
 	sleep_rcon_triggered = false;
 
-	beep(1, 80, 0, 1);
+	beeper.play(1, 80, 0, 1);
 	usleep(100000);
-	beep(2, 80, 0, 1);
+	beeper.play(2, 80, 0, 1);
 	usleep(100000);
-	beep(3, 80, 0, 1);
+	beeper.play(3, 80, 0, 1);
 	usleep(100000);
-	beep(4, 80, 0, 1);
+	beeper.play(4, 80, 0, 1);
 	usleep(100000);
-	led_set_mode(LED_STEADY, LED_OFF);
+	led.set_mode(LED_STEADY, LED_OFF);
 
 	cs_disable_motors();
 	controller.set_status(POWER_DOWN);
@@ -62,7 +62,7 @@ void sleep_mode(void)
 	c_rcon.reset_status();
 	remote.reset();
 	key.reset();
-	planer.set_status(0);
+	timer.set_status(0);
 
 	event_manager_reset_status();
 	sleep_register_events();
@@ -120,13 +120,13 @@ void sleep_mode(void)
 
 	sleep_unregister_events();
 
-	beep(4, 80, 0, 1);
+	beeper.play(4, 80, 0, 1);
 	usleep(100000);
-	beep(3, 80, 0, 1);
+	beeper.play(3, 80, 0, 1);
 	usleep(100000);
-	beep(2, 80, 0, 1);
+	beeper.play(2, 80, 0, 1);
 	usleep(100000);
-	beep(1, 80, 4, 1);
+	beeper.play(1, 80, 4, 1);
 
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode_ too soon after waking up.
 	usleep(1500000);
@@ -134,7 +134,7 @@ void sleep_mode(void)
 	c_rcon.reset_status();
 	remote.reset();
 	key.reset();
-	planer.set_status(0);
+	timer.set_status(0);
 }
 
 void sleep_register_events(void)
@@ -170,7 +170,7 @@ void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
-	if (planer.get_status() == 3)
+	if (timer.get_status() == 3)
 	{
 		if (error.get() != Error_Code_None)
 		{
@@ -189,7 +189,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 	reset_sleep_mode_flag();
-	planer.set_status(0);
+	timer.set_status(0);
 }
 
 void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
@@ -200,7 +200,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 	reset_sleep_mode_flag();
 	usleep(20000);
 
-	beep_for_command(VALID);
+	beeper.play_for_command(VALID);
 
 	while (key.get_press() & KEY_CLEAN)
 		usleep(20000);

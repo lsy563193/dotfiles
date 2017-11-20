@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 		ros::spin();
 	} else {
 		printf("turn on led\n");
-		led_set_mode(LED_STEADY, LED_ORANGE);
+		led.set_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
 	bumper_lidar_deinit();

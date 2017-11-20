@@ -4,7 +4,7 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
-#include <planer.h>
+#include <clean_timer.h>
 #include <remote.h>
 #include <tilt.h>
 #include <charger.h>
@@ -313,7 +313,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
-		if (planer.get_status()) {
+		if (timer.get_status()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
@@ -873,15 +873,15 @@ void EventHandle::remote_plan(bool state_now, bool state_last)
 }
 void df_remote_plan(bool state_now, bool state_last)
 {
-	if (planer.get_status() == 1 || planer.get_status() == 2)
+	if (timer.get_status() == 1 || timer.get_status() == 2)
 	{
 		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	}
-	else if (planer.get_status() == 3)
+	else if (timer.get_status() == 3)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
 
-	planer.set_status(0);
+	timer.set_status(0);
 	remote.reset();
 }
 
@@ -890,7 +890,7 @@ void EventHandle::remote_clean(bool state_now, bool state_last)
 void df_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -899,7 +899,7 @@ void EventHandle::remote_home(bool state_now, bool state_last)
 void df_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -908,7 +908,7 @@ void EventHandle::remote_direction_forward(bool state_now, bool state_last)
 void df_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -917,7 +917,7 @@ void EventHandle::remote_wall_follow(bool state_now, bool state_last)
 void df_remote_wall_follow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -926,7 +926,7 @@ void EventHandle::remote_direction_left(bool state_now, bool state_last)
 void df_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -935,7 +935,7 @@ void EventHandle::remote_direction_right(bool state_now, bool state_last)
 void df_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -944,7 +944,7 @@ void EventHandle::remote_spot(bool state_now, bool state_last)
 void df_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -953,7 +953,7 @@ void EventHandle::remote_max(bool state_now, bool state_last)
 void df_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -1007,7 +1007,7 @@ void df_slam_error(bool state_now, bool state_last)
 		robotbase_restore_slam_correction();
 		MotionManage::s_slam->isMapReady(false);
 		relaunch = true;
-		led_set_mode(LED_FLASH, LED_GREEN, 1000);
+		led.set_mode(LED_FLASH, LED_GREEN, 1000);
 	}
 
 	if (MotionManage::s_slam != nullptr)
@@ -1020,7 +1020,7 @@ void df_slam_error(bool state_now, bool state_last)
 			return;
 		}
 	}
-	led_set_mode(LED_STEADY, LED_GREEN);
+	led.set_mode(LED_STEADY, LED_GREEN);
 	// Wait for 0.2s to make sure it has process the first scan.
 	usleep(200000);
 	ROS_WARN("Slam restart successed.");
@@ -1032,7 +1032,7 @@ void EventHandle::robot_slip(bool state_new,bool state_last)
 void df_robot_slip(bool state_new,bool state_last)
 {
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
-	beep_for_command(true);
+	beeper.play_for_command(true);
 	g_robot_slip = true;
 	g_slip_cnt ++;
 }
@@ -1048,7 +1048,7 @@ void EventHandle::laser_stuck(bool state_new,bool state_last)
 {}
 void df_laser_stuck(bool state_new,bool state_last)
 {
-	beep_for_command(true);
+	beeper.play_for_command(true);
 	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
 	ev.laser_stuck = true;
 }

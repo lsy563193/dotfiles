@@ -10,7 +10,7 @@
 #include <move_type.h>
 #include <std_srvs/SetBool.h>
 #include <pp.h>
-#include <planer.h>
+#include <clean_timer.h>
 #include <remote.h>
 #include <obs.h>
 #include <tilt.h>
@@ -215,7 +215,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	plan = msg->plan;
 	if(plan > 0)
-		planer.set_status(plan);
+		timer.set_status(plan);
 
 	is_sensor_ready_ = true;
 

@@ -7,9 +7,9 @@
 
 
 //#include "pp.h"
-class Planer {
+class Timer {
 public:
-	Planer() {
+	Timer() {
 		uint8_t g_status = 0;
 	}
 
@@ -28,7 +28,7 @@ private:
 	uint8_t g_status;
 };
 
-extern Planer planer;
+extern Timer timer;
 
 void reset_work_time();
 uint32_t get_work_time();

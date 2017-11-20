@@ -245,7 +245,7 @@ void cm_apply_cs(void) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
-			led_set_mode(LED_STEADY, LED_ORANGE);
+			led.set_mode(LED_STEADY, LED_ORANGE);
 
 		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
@@ -289,26 +289,26 @@ void cm_apply_cs(void) {
 	{
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
-		led_set_mode(LED_FLASH, LED_GREEN, 300);
+		led.set_mode(LED_FLASH, LED_GREEN, 300);
 		mt_set(MT_FOLLOW_LEFT_WALL);
 	}
 	if (cs_is_clean()) {
 		g_wf_reach_count = 0;
-		led_set_mode(LED_STEADY, LED_GREEN);
+		led.set_mode(LED_STEADY, LED_GREEN);
 	}
 	if (cs_is_exploration()) {
 		mt_set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
-		led_set_mode(LED_STEADY, LED_ORANGE);
+		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if (cs_is_go_charger())
 	{
 		tilt.enable(false); //disable tilt detect
-		led_set_mode(LED_STEADY, LED_ORANGE);
+		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if (cs_is_self_check())
 	{
-		led_set_mode(LED_STEADY, LED_GREEN);
+		led.set_mode(LED_STEADY, LED_GREEN);
 	}
 }
 
@@ -993,7 +993,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 
 	if (ev.slam_error)
 	{
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		while (key.get_press() & KEY_CLEAN)
 		{
 			usleep(20000);
@@ -1003,7 +1003,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 		return;
 	}
 
-	beep_for_command(VALID);
+	beeper.play_for_command(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 
@@ -1016,7 +1016,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 		if (cm_is_navigation() && time(NULL) - start_time > 3) {
 			if (!reset_manual_pause)
 			{
-				beep_for_command(VALID);
+				beeper.play_for_command(VALID);
 				reset_manual_pause = true;
 				g_is_manual_pause = false;
 				ROS_WARN("%s %d: Manual pause has been reset.", __FUNCTION__, __LINE__);
@@ -1039,11 +1039,11 @@ void CM_EventHandle::remote_clean(bool state_now, bool state_last)
 
 	if (ev.slam_error)
 	{
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		remote.reset();
 		return;
 	}
-	beep_for_command(VALID);
+	beeper.play_for_command(VALID);
 	ev.key_clean_pressed = true;
 	if(cm_is_navigation()){
 		g_is_manual_pause = true;
@@ -1058,11 +1058,11 @@ void CM_EventHandle::remote_home(bool state_now, bool state_last)
 	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !g_is_manual_pause) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
-			beep_for_command(INVALID);
+			beeper.play_for_command(INVALID);
 		}
 		else{
 			ev.remote_home = true;
-			beep_for_command(VALID);
+			beeper.play_for_command(VALID);
 			if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT){
 				SpotMovement::instance()->spotDeinit();
 			}
@@ -1070,7 +1070,7 @@ void CM_EventHandle::remote_home(bool state_now, bool state_last)
 		ROS_INFO("ev.remote_home = %d", ev.remote_home);
 	}
 	else {
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 		ROS_INFO("ev.remote_home = %d", ev.remote_home);
 	}
 	remote.reset();
@@ -1083,12 +1083,12 @@ void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 	if (!g_motion_init_succeeded || !cm_is_navigation()
 		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || g_is_manual_pause
 		|| time(NULL) - last_time_remote_spot < 3)
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	else
 	{
 		ev.remote_spot = true;
 		last_time_remote_spot = time(NULL);
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 	}
 
 	remote.reset();
@@ -1100,11 +1100,11 @@ void CM_EventHandle::remote_max(bool state_now, bool state_last)
 
 	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
 	{
-		beep_for_command(VALID);
+		beeper.play_for_command(VALID);
 		vacuum.switchToNext(true);
 	}
 	else
-		beep_for_command(INVALID);
+		beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
@@ -1116,7 +1116,7 @@ void CM_EventHandle::remote_direction(bool state_now,bool state_last)
 	// ev.battrey_home = true;
 	// path_set_continue_cell(map_get_curr_cell());
 	// robot::instance()->setLowBatPause();
-	beep_for_command(INVALID);
+	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 

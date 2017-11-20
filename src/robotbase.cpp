@@ -158,7 +158,7 @@ void robotbase_deinit(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
-		led_set_mode(LED_STEADY, LED_OFF);
+		led.set_mode(LED_STEADY, LED_OFF);
 		controller.set(CTL_BUZZER, 0x00);
 		set_gyro_off();
 		cs_disable_motors();
@@ -482,8 +482,8 @@ void *serial_send_routine(void*)
 		if(get_sleep_mode_flag()){
 			continue;
 		}
-		/*-------------------Process for beep and led -----------------------*/
-		// Force reset the beep action when beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
+		/*-------------------Process for beeper.play and led -----------------------*/
+		// Force reset the beeper action when beeper() function is called, especially when last beeper action is not over. It can stop last beeper action and directly start the updated beeper.play action.
 		if (robotbase_beep_update_flag){
 			temp_speaker_sound_time_count = -1;
 			temp_speaker_silence_time_count = 0;
@@ -539,7 +539,7 @@ void process_beep()
 		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
 		controller.set(CTL_BUZZER, 0x00);
 		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
-		// If it is for constant beep, the loop count will be less than 0, it will not decrease either.
+		// If it is for constant beeper.play, the loop count will be less than 0, it will not decrease either.
 		if (robotbase_speaker_sound_loop_count > 0){
 			robotbase_speaker_sound_loop_count--;
 		}
@@ -587,22 +587,22 @@ void process_led()
 	{
 		case LED_GREEN:
 		{
-			led_set(led_brightness, 0);
+			led.set(led_brightness, 0);
 			break;
 		}
 		case LED_ORANGE:
 		{
-			led_set(led_brightness, led_brightness);
+			led.set(led_brightness, led_brightness);
 			break;
 		}
 		case LED_RED:
 		{
-			led_set(0, led_brightness);
+			led.set(0, led_brightness);
 			break;
 		}
 		case LED_OFF:
 		{
-			led_set(0, 0);
+			led.set(0, 0);
 			break;
 		}
 	}

@@ -6,13 +6,13 @@
 #define PP_BEEP_H
 
 
-class beep {
+class Beep {
+public:
+void play(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
+
+void play_for_command(bool valid);
 
 };
 
-void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
-
-void beep_for_command(bool valid);
-
-
+extern Beep beeper;
 #endif //PP_BEEP_H

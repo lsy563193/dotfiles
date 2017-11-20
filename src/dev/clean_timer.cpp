@@ -5,7 +5,7 @@
 #include "pp.h"
 #include "planer.h"
 
-Planer planer;
+Timer timer;
 
 /*----------------------- Work Timer functions--------------------------*/
 static time_t g_start_work_time;
