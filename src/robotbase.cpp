@@ -105,7 +105,7 @@ int robotbase_init(void)
 		ROS_ERROR("serial not ready\n");
 		return -1;
 	}
-	set_main_pwr_byte(POWER_ACTIVE);
+	controller.set_status(POWER_ACTIVE);
 	g_send_stream_mutex.lock();
 	memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
 	g_send_stream_mutex.unlock();
@@ -162,7 +162,7 @@ void robotbase_deinit(void)
 		controller.set(CTL_BUZZER, 0x00);
 		set_gyro_off();
 		disable_motors();
-		set_main_pwr_byte(POWER_DOWN);
+		controller.set_status(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
 		usleep(40000);

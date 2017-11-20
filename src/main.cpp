@@ -56,13 +56,13 @@ void *core_move_thread(void *)
 		switch(cm_get()){
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Idle);
+				controller.set_status(Clean_Mode_Idle);
 //				wav_play(WAV_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode_------\n");
-				set_main_pwr_byte(Clean_Mode_WallFollow);
+				controller.set_status(Clean_Mode_WallFollow);
 				g_is_low_bat_pause = false;
 
 				reset_clean_paused();
@@ -72,18 +72,18 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Navigation);
+				controller.set_status(Clean_Mode_Navigation);
 				cm_cleaning();
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Charging);
+				controller.set_status(Clean_Mode_Charging);
 				charge_function();
 				break;
 			case Clean_Mode_Go_Charger:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Go_Charger);
+				controller.set_status(Clean_Mode_Go_Charger);
 				g_is_low_bat_pause = false;
 				reset_clean_paused();
 #if GO_HOME_REGULATOR
@@ -96,7 +96,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Exploration:
 				//goto_charger();
 				ROS_INFO("\n-------Exploration mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Exploration);
+				controller.set_status(Clean_Mode_Exploration);
 				g_is_low_bat_pause = false;
 				reset_clean_paused();
 				cm_cleaning();
@@ -111,7 +111,7 @@ void *core_move_thread(void *)
 
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Spot);
+				controller.set_status(Clean_Mode_Spot);
 				g_is_low_bat_pause = false;
 				reset_clean_paused();
 				remote.reset();
@@ -123,7 +123,7 @@ void *core_move_thread(void *)
 
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode_------\n");
-				//set_main_pwr_byte(Clean_Mode_Sleep);
+				//controller.set_status(Clean_Mode_Sleep);
 				g_is_low_bat_pause = false;
 				reset_clean_paused();
 				disable_motors();

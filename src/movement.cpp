@@ -381,16 +381,6 @@ void disable_motors(void)
 	vacuum.stop();
 }
 
-void set_main_pwr_byte(uint8_t val)
-{
-	controller.set(CTL_MAIN_PWR, val & 0xff);
-}
-
-uint8_t get_main_pwr_byte()
-{
-	return controller.get(CTL_MAIN_PWR);
-}
-
 void set_direction_flag(uint8_t flag)
 {
 	g_direction_flag = flag;

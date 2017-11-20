@@ -53,9 +53,9 @@ void sleep_mode(void)
 	led_set_mode(LED_STEADY, LED_OFF);
 
 	disable_motors();
-	set_main_pwr_byte(POWER_DOWN);
+	controller.set_status(POWER_DOWN);
 	usleep(20000);
-	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, get_main_pwr_byte());
+	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, controller.get_status());
 
 	reset_stop_event_status();
 	c_rcon.reset_status();
@@ -152,7 +152,7 @@ void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 	if (get_error_code() == Error_Code_None)
 	{
-		set_main_pwr_byte(Clean_Mode_Go_Charger);
+		controller.set_status(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
 	}
 	reset_sleep_mode_flag();
@@ -161,7 +161,7 @@ void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
-	set_main_pwr_byte(Clean_Mode_Idle);
+	controller.set_status(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
 	reset_sleep_mode_flag();
 }
@@ -183,7 +183,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 		else
 		{
-			set_main_pwr_byte(Clean_Mode_Navigation);
+			controller.set_status(Clean_Mode_Navigation);
 			g_plan_activated = true;
 		}
 	}
@@ -195,7 +195,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
-	set_main_pwr_byte(Clean_Mode_Idle);
+	controller.set_status(Clean_Mode_Idle);
 	reset_sleep_mode_flag();
 	usleep(20000);
 
@@ -211,7 +211,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
-	set_main_pwr_byte(Clean_Mode_Charging);
+	controller.set_status(Clean_Mode_Charging);
 	ev.charge_detect = true;
 	reset_sleep_mode_flag();
 }

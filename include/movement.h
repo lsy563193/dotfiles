@@ -450,8 +450,8 @@ void set_direction_flag(uint8_t flag);
 
 int32_t abs_minus(int32_t A, int32_t B);
 
-uint8_t get_main_pwr_byte();
-void set_main_pwr_byte(uint8_t val);
+uint8_t controller_get_status();
+void controller_set_status(uint8_t val);
 
 uint8_t get_self_check_vacuum_status(void);
 
