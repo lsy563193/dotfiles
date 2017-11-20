@@ -723,7 +723,7 @@ uint8_t map_set_cliff()
 
 uint8_t map_set_rcon()
 {
-	if (temp_cliff_cells.empty())
+	if (temp_rcon_cells.empty())
 		return 0;
 
 	uint8_t block_count = 0;
@@ -1084,7 +1084,7 @@ uint8_t map_save_rcon()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		cm_world_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		cm_world_to_cell(g_new_dir, d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
