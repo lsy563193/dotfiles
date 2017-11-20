@@ -977,16 +977,18 @@ bool FollowWallRegulator::isOverOriginLine()
 	if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120)
 		|| (s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
 	{
-		auto target_angel = (s_target_p.Y > s_origin_p.Y) ? -900 : 900;
+		auto target_angle = (s_target_p.Y > s_origin_p.Y) ? -900 : 900;
 		//ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro_get_angle(), target_angel - gyro_get_angle());
-		if (std::abs(ranged_angle(gyro_get_angle() - target_angel)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+		if (std::abs(ranged_angle(gyro_get_angle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 		{
-			ROS_WARN("%s %d: Opposite to target angle.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), s_target_p(%d, %d), gyro(%d), target_angle(%d)",
+					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, gyro_get_angle(), target_angle);
 			return true;
 		}
 		else if (is_block_cleaned_unblock(curr.X, curr.Y)) // If robot covers a big block, stop.
 		{
-			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d).", __FUNCTION__, __LINE__, curr.X, curr.Y);
+			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), s_target_p(%d, %d).",
+					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y);
 			return true;
 		}
 		else{

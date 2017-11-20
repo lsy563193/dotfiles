@@ -102,7 +102,7 @@ uint8_t CM_MoveForward(void);
 uint8_t cm_touring(void);
 void cm_cleaning(void);
 
-void cm_apply_cs(int cs);
+void cm_apply_cs(void);
 
 void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);

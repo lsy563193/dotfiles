@@ -49,10 +49,7 @@ public:
 
 	void pubPointMarkers(const std::vector<Point_d_t> *point, std::string frame_id);
 
-	//void startShield(void);
-	//void stopShield(void);
-	void lidarShieldDetect(bool sd);
-	void lidarMotorCtrl(bool orf);
+	void laserMotorCtrl(bool switch_);
 
 	uint8_t laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();

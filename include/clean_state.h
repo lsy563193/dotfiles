@@ -12,6 +12,7 @@ enum{
 		CS_TMP_SPOT,
 		CS_TRAPPED,
 		CS_EXPLORATION,
+		CS_SELF_CHECK,
 		CS_STOP,
 };
 
@@ -23,6 +24,7 @@ bool cs_is_exploration();
 bool cs_is_clean();
 bool cs_is_tmp_spot();
 bool cs_is_trapped();
+bool cs_is_self_check();
 int cs_get(void);
 void cs_set(int);
 

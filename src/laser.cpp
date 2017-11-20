@@ -40,13 +40,12 @@ Laser::Laser():nh_(),angle_n_(0)
 	scan2_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
-	lidarMotorCtrl(ON);
+	laserMotorCtrl(ON);
 }
 
 Laser::~Laser()
 {
-	lidarShieldDetect(OFF);
-	lidarMotorCtrl(OFF);
+	laserMotorCtrl(OFF);
 	setScanReady(0);
 	setScan2Ready(0);
 	scan_sub_.shutdown();
@@ -172,14 +171,12 @@ void Laser::setScan3Ready(uint8_t val)
 	is_scan3_ready_ = val;
 }
 
-void Laser::lidarMotorCtrl(bool switch_)
+void Laser::laserMotorCtrl(bool switch_)
 {
 	pp::SetLidar trigger;
 	time_t start_time = time(NULL);
-	uint8_t try_times = 0;
 	bool eh_status_now = false, eh_status_last = false;
 	bool request_sent = false;
-	bool temp_switch_ = switch_;
 	if(switch_){
 		trigger.request.x_acc_init= acc.getInitXAcc();
 		trigger.request.y_acc_init= acc.getInitYAcc();
@@ -193,7 +190,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (switch_ && (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)) // Interrupt only happens during starting laser.
 		{
-			if (!ev.fatal_quit || ev.cliff_all_triggered)
+			if (!ev.fatal_quit)
 			{
 				setScanReady(0);
 				ROS_WARN("\033[34m" "%s %d: Laser starting interrupted, status: %d" "\033[0m", __FUNCTION__, __LINE__, isScanReady());
@@ -205,61 +202,35 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (!request_sent)
 		{
-			trigger.request.data = temp_switch_;
+			trigger.request.data = switch_;
 			request_sent = true;
-			start_time = time(NULL);
-			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF");
+			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, trigger.request.data ? "ON":"OFF");
 			if (lidar_motor_cli_.call(trigger)){
 				ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__,trigger.response.message.c_str());
-				if (!temp_switch_){
-					setScanReady(0);
-					if (!switch_)
-						// For stop command.
-						break;
-				}
+				start_time = time(NULL);
+				if (!switch_)
+					// For stop command.
+					break;
 			}
 			else{
 				ROS_ERROR("\033[35m" "%s %d: Service not received!" "\033[0m",__FUNCTION__,__LINE__);
+				request_sent = false;
 				setScanReady(0);
-				break;
 			}
 		}
 
-		if (switch_ && temp_switch_ && isScanReady())
+		if (switch_ && isScanReady())
 		{
 			ROS_INFO("\033[32m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
 		}
 
-		if (temp_switch_ && (time(NULL) - start_time > 4)){ // Time out
-			try_times++;
-			if(try_times > 2){
-				//ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
-				ev.fatal_quit = true;
-				continue;
-			}
-			ROS_WARN("\033[34m" "%s %d: Start lidar motor timeout, retry for the %d times." "\033[0m", __FUNCTION__, __LINE__, try_times);
-			temp_switch_ = false;
-			request_sent = false;
-		}
-		else if (!temp_switch_ && (time(NULL) - start_time >= 1)){ // Wait for turning off.
-			temp_switch_ = true;
-			request_sent = false;
+		if (switch_ && (time(NULL) - start_time > 8)){ // Time out
+			//ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
+			ev.fatal_quit = true;
+			continue;
 		}
 	}
-}
-
-void Laser::lidarShieldDetect(bool switch_)
-{
-	std_srvs::SetBool trig;
-
-	if(switch_)
-		trig.request.data = true;
-	else
-		trig.request.data = false;
-
-	lidar_shield_detect_.call(trig);
-	ROS_INFO("\033[35m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
 
 /*

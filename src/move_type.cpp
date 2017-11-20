@@ -74,11 +74,12 @@ bool mt_should_follow_wall(const int16_t dir, const Cell_t& curr, PPTargetType& 
 {
 	bool ret = true;
 	auto delta_y = path.back().Y - curr.Y;
-	ROS_INFO("%s,%d: path size(%u), dir(%d),tilt(%d), rcon(%d), delta_y(%d)",
-			 __FUNCTION__, __LINE__, path.size(), dir, ev.tilt_triggered, ev.rcon_triggered, delta_y);
+	ROS_INFO("%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), laser(%d), delta_y(%d)",
+			 __FUNCTION__, __LINE__, path.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered, ev.laser_triggered, delta_y);
 
 	if (!IS_X_AXIS(dir) // If last movement is not x axis linear movement, should not follow wall.
-		|| path.size() > 3 || ev.tilt_triggered || ev.rcon_triggered || delta_y == 0 || std::abs(delta_y) > 2)
+		|| path.size() > 2 || (!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.laser_triggered)
+		|| delta_y == 0 || std::abs(delta_y) > 2)
 		ret = false;
 
 	return ret;
