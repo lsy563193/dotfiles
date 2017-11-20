@@ -241,7 +241,7 @@ void cm_cleaning() {
 
 void cm_apply_cs(void) {
 	if (cs_is_go_home_point()) {
-		work_motor_configure();
+		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
 			led_set_mode(LED_STEADY, LED_ORANGE);
@@ -339,12 +339,12 @@ void cm_self_check(void)
 	}
 
 	if (ev.oc_wheel_left || ev.oc_wheel_right)
-		disable_motors();
+		cs_disable_motors();
 
 	if (ev.oc_suction)
 	{
 		ROS_WARN("%s, %d: Vacuum Self checking start", __FUNCTION__, __LINE__);
-		disable_motors();
+		cs_disable_motors();
 		vacuum.start_self_check();
 	}
 
@@ -376,7 +376,7 @@ void cm_self_check(void)
 				{
 					if (resume_cnt >= 3)
 					{
-						disable_motors();
+						cs_disable_motors();
 						if (ev.oc_wheel_left)
 						{
 							ROS_WARN("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
@@ -405,13 +405,13 @@ void cm_self_check(void)
 					{
 						ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 						ev.oc_wheel_left = false;
-						work_motor_configure();
+						cs_work_motor();
 					}
 					else
 					{
 						ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 						ev.oc_wheel_right = false;
-						work_motor_configure();
+						cs_work_motor();
 					}
 				}
 			}
@@ -902,7 +902,7 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 		brush.oc_main_cnt = 0;
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
-		if (self_check(Check_Main_Brush) == 1) {
+		if (cs_self_check(Check_Main_Brush) == 1) {
 			ev.oc_brush_main = true;
 			ev.fatal_quit = true;
 		}

@@ -65,7 +65,7 @@ void *core_move_thread(void *)
 				controller.set_status(Clean_Mode_WallFollow);
 				g_is_low_bat_pause = false;
 
-				reset_clean_paused();
+				cs_paused_setting();
 
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				cm_cleaning();
@@ -85,7 +85,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------GoHome mode_------\n");
 				controller.set_status(Clean_Mode_Go_Charger);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
+				cs_paused_setting();
 #if GO_HOME_REGULATOR
 				cm_cleaning();
 #else
@@ -98,7 +98,7 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Exploration mode_------\n");
 				controller.set_status(Clean_Mode_Exploration);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
+				cs_paused_setting();
 				cm_cleaning();
 				break;
 
@@ -113,11 +113,11 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Spot mode_------\n");
 				controller.set_status(Clean_Mode_Spot);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
+				cs_paused_setting();
 				remote.reset();
 				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
 				cm_cleaning();
-				disable_motors();
+				cs_disable_motors();
 				usleep(200000);
 				break;
 
@@ -125,8 +125,8 @@ void *core_move_thread(void *)
 				ROS_INFO("\n-------Sleep mode_------\n");
 				//controller.set_status(Clean_Mode_Sleep);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
-				disable_motors();
+				cs_paused_setting();
+				cs_disable_motors();
 				sleep_mode();
 				break;
 			default:

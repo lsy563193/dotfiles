@@ -52,7 +52,7 @@ void remote_mode(void)
 	ROS_INFO("\n-------Remote mode_------\n");
 	controller.set_status(Clean_Mode_Remote);
 	g_is_low_bat_pause = false;
-	reset_clean_paused();
+	cs_paused_setting();
 
 
 	if (!is_gyro_on())
@@ -103,7 +103,7 @@ void remote_mode(void)
 			cm_self_check();
 
 	}
-	disable_motors();
+	cs_disable_motors();
 	remote_mode_unregister_events();
 
 	if (ev.battery_low)
@@ -125,7 +125,7 @@ void remote_move(void)
 	remote_cmd_time = time(NULL);
 
 	set_move_flag_(REMOTE_MODE_STAY);
-	work_motor_configure();
+	cs_work_motor();
 
 	while(ros::ok())
 	{
@@ -495,12 +495,12 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 		beep_for_command(VALID);
 		ev.key_clean_pressed = true;
 		cm_set(Clean_Mode_Idle);
-		disable_motors();
+		cs_disable_motors();
 	}
 	else if (!ev.bumper_jam && !ev.cliff_jam)
 	{
 		beep_for_command(VALID);
-		disable_motors();
+		cs_disable_motors();
 		g_remote_exit = true;
 		if (remote.get() == Remote_Home)
 			//cm_set(Clean_Mode_Gohome);
@@ -547,7 +547,7 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
 	beep_for_command(VALID);
-	disable_motors();
+	cs_disable_motors();
 	while (key.get_press() & KEY_CLEAN)
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
@@ -562,7 +562,7 @@ void RM_EventHandle::charge_detect(bool state_now, bool state_last)
 	if (charger.getChargeStatus() == 3)
 	{
 		cm_set(Clean_Mode_Charging);
-		disable_motors();
+		cs_disable_motors();
 	}
 }
 
@@ -622,7 +622,7 @@ void RM_EventHandle::battery_low(bool state_now, bool state_last)
 	if (g_battery_low_cnt++ > 50)
 	{
 		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, battery.get_voltage());
-		disable_motors();
+		cs_disable_motors();
 		ev.battery_low = true;
 		ev.fatal_quit = true;
 	}

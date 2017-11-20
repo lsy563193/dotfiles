@@ -373,7 +373,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_SLAM_ERROR);
 		}
 		/* robot slip */
-		if(is_robot_slip()){
+		if(laser_is_robot_slip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP);
 		}

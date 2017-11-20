@@ -52,7 +52,7 @@ void sleep_mode(void)
 	usleep(100000);
 	led_set_mode(LED_STEADY, LED_OFF);
 
-	disable_motors();
+	cs_disable_motors();
 	controller.set_status(POWER_DOWN);
 	usleep(20000);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, controller.get_status());

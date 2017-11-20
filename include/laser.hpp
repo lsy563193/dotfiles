@@ -109,8 +109,9 @@ private:
 };
 
 bool laser_is_stuck();
-
 uint8_t laser_get_status();
+uint8_t laser_is_robot_slip();
+
 extern Laser* s_laser;
 
 #endif

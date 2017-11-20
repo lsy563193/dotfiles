@@ -121,7 +121,7 @@ void SpotMovement::spotDeinit()
 	spot_init_ = 0;
 	spot_bumper_cnt_ = 0;
 	if(getSpotType() == CLEAN_SPOT){
-		work_motor_configure();
+		cs_work_motor();
 	}
 	resetSpotType();
 }

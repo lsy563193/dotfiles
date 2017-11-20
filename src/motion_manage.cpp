@@ -164,7 +164,7 @@ void init_nav_before_gyro()
 		led_set_mode(LED_FLASH, LED_GREEN, 1000);
 
 	// Initialize motors and map.
-	if (!is_clean_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
+	if (!cs_is_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
 	{
 		g_saved_work_time = 0;
 		ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
@@ -202,7 +202,7 @@ void init_nav_before_gyro()
 		cm_register_events();
 		wav_play(WAV_CLEANING_CONTINUE);
 	}
-	else if (is_clean_paused())
+	else if (cs_is_paused())
 	{
 		ROS_WARN("Restore from manual pause");
 		cm_register_events();
@@ -225,7 +225,7 @@ void init_nav_before_gyro()
 }
 void init_nav_gyro_charge()
 {
-	if (is_clean_paused() || g_resume_cleaning )
+	if (cs_is_paused() || g_resume_cleaning )
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
@@ -240,7 +240,7 @@ acc.setAccInitData();//about 200ms delay
 	tilt.enable(true);
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
-	work_motor_configure();
+	cs_work_motor();
 
 	ROS_INFO("%s %d: Init cs_is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
 					 cs_is_going_home(), g_is_low_bat_pause, g_is_manual_pause, g_resume_cleaning,g_robot_stuck);
@@ -289,7 +289,7 @@ void init_exp_after_gyro()
 	tilt.enable(true);
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
-	work_motor_configure();
+	cs_work_motor();
 }
 
 void init_wf_before_gyro()
@@ -328,7 +328,7 @@ void init_wf_after_gyro()
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 	g_have_seen_charger = false;
-	work_motor_configure();
+	cs_work_motor();
 
 }
 
@@ -382,7 +382,7 @@ void init_go_home_before_gyro()
 }
 void init_go_home_after_gyro()
 {
-	work_motor_configure();
+	cs_work_motor();
 	c_rcon.reset_status();
 
 }
@@ -399,7 +399,7 @@ bool wait_for_back_from_charge()
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);
 			if (ev.fatal_quit || ev.key_clean_pressed || charger.is_on_stub() || ev.cliff_all_triggered) {
-				disable_motors();
+				cs_disable_motors();
 				if (ev.fatal_quit)
 				{
 					g_is_manual_pause = false;
@@ -425,13 +425,13 @@ bool wait_for_back_from_charge()
 void init_before_gyro()
 {
 	mt_set(cm_is_follow_wall() ? MT_FOLLOW_LEFT_WALL : MT_LINEARMOVE);
-	if(!is_clean_paused())
+	if(!cs_is_paused())
 		g_from_station = 0;
 	g_motion_init_succeeded = false;
 	g_during_go_to_charger = false;
 
 	bool remote_home_during_pause = false;
-	if (is_clean_paused() && ev.remote_home)
+	if (cs_is_paused() && ev.remote_home)
 		remote_home_during_pause = true;
 	event_manager_reset_status();
 	if (remote_home_during_pause)
@@ -441,7 +441,7 @@ void init_before_gyro()
 	}
 
 	reset_work_time();
-	if (!is_clean_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
+	if (!cs_is_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
 		map_init(MAP);
 
 	map_init(WFMAP);
@@ -489,7 +489,7 @@ bool MotionManage::laser_init()
 void MotionManage::get_aligment_angle()
 {
 	/*--- get aligment angle-----*/
-	if( !( is_clean_paused() || g_resume_cleaning ))
+	if( !(cs_is_paused() || g_resume_cleaning ))
 	{
 		nh_.param<bool>("is_active_align", is_align_active_, false);
 		if (cm_is_navigation() && is_align_active_)
@@ -631,7 +631,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 		return;
 	}
-	if (is_clean_paused())
+	if (cs_is_paused())
 	{
 		g_is_manual_pause = false;
 		g_robot_stuck = false;
@@ -678,8 +678,8 @@ MotionManage::~MotionManage()
 			SpotMovement::instance()->spotDeinit();// clear the variables.
 		}
 	}
-	// Disable motor here because there ie a work_motor_configure() in spotDeinit().
-	disable_motors();
+	// Disable motor here because there ie a cs_work_motor() in spotDeinit().
+	cs_disable_motors();
 	tilt.enable(false);
 	g_robot_slip_enable =false;
 	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
@@ -691,7 +691,7 @@ MotionManage::~MotionManage()
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
 	}
-	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && is_clean_paused() ) || g_robot_stuck ) )
+	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && cs_is_paused() ) || g_robot_stuck ) )
 	{
 		wav_play(WAV_CLEANING_PAUSE);
 		if (!ev.cliff_all_triggered)

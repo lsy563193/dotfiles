@@ -80,7 +80,7 @@ void turn_into_exploration(bool is_reset_map)
 	map_init(WFMAP);
 	map_init(ROSMAP);
 	path_planning_initialize();
-	work_motor_configure();
+	cs_work_motor();
 	cm_reset_go_home();
 
 

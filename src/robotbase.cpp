@@ -161,7 +161,7 @@ void robotbase_deinit(void)
 		led_set_mode(LED_STEADY, LED_OFF);
 		controller.set(CTL_BUZZER, 0x00);
 		set_gyro_off();
-		disable_motors();
+		cs_disable_motors();
 		controller.set_status(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;

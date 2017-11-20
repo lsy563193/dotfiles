@@ -72,7 +72,7 @@ void idle(void)
 	temp_mode=0;
 	bat_ready_to_clean = true;
 
-	disable_motors();
+	cs_disable_motors();
 	remote.reset();
 	planer.set_status(0);
 	key.reset();
@@ -82,7 +82,7 @@ void idle(void)
 
 	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, battery.get_voltage());
 	// Check the battery to warn the user.
-	if(!battery.is_ready_to_clean() && !is_clean_paused())
+	if(!battery.is_ready_to_clean() && !cs_is_paused())
 	{
 		ROS_WARN("%s %d: Battery Level Low = \033[31m%4dmV\033[0m(limit = \033[33m%4dmV\033[0m).", __FUNCTION__, __LINE__,
 						 battery.get_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
@@ -99,7 +99,7 @@ void idle(void)
 	event_manager_reset_status();
 	register_events();
 
-	if (is_clean_paused())
+	if (cs_is_paused())
 	{
 		saved_pos_x = robot::instance()->getOdomPositionX();
 		saved_pos_y = robot::instance()->getOdomPositionY();
@@ -117,7 +117,7 @@ void idle(void)
 		if (bat_low_delay > 0)
 			bat_low_delay--;
 
-		if(bat_ready_to_clean && !battery.is_ready_to_clean() && !is_clean_paused())
+		if(bat_ready_to_clean && !battery.is_ready_to_clean() && !cs_is_paused())
 		{
 			bat_ready_to_clean = false;
 			led_set_mode(LED_BREATH, LED_ORANGE);
@@ -128,11 +128,11 @@ void idle(void)
 			temp_mode = Clean_Mode_Sleep;
 		}
 
-		if (is_clean_paused())
+		if (cs_is_paused())
 		{
 			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
 			if (distance > 0.1f){
-				reset_clean_paused();
+				cs_paused_setting();
 				g_robot_stuck = false;
 			}
 		}
@@ -145,8 +145,8 @@ void idle(void)
 		if (long_press_to_sleep)
 		{
 			long_press_to_sleep = false;
-			if (is_clean_paused())
-				reset_clean_paused();
+			if (cs_is_paused())
+				cs_paused_setting();
 			else
 				temp_mode = Clean_Mode_Sleep;
 		}
@@ -161,7 +161,7 @@ void idle(void)
 					break;
 				case 2:
 					wav_play(WAV_ERROR_LIFT_UP);
-					reset_clean_paused();
+					cs_paused_setting();
 					reject_reason = 0;
 					break;
 				case 3:
@@ -226,7 +226,7 @@ void Idle_EventHandle::cliff_(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: Cliff triggered.", __FUNCTION__, __LINE__);
 
 	/*--------------------------------------------------------If manual pause cleaning, check cliff--------------*/
-	if (reject_reason != 2 && is_clean_paused())
+	if (reject_reason != 2 && cs_is_paused())
 	{
 		ROS_WARN("%s %d: Robot lifted up during manual/stuck pause, reset manual/stuck pause status.", __FUNCTION__, __LINE__);
 		reject_reason = 2;
@@ -262,7 +262,7 @@ void Idle_EventHandle::cliff_front_right(bool state_now, bool state_last)
 
 void Idle_EventHandle::rcon(bool state_now, bool state_last)
 {
-	if (is_clean_paused())
+	if (cs_is_paused())
 	{
 		c_rcon.reset_status();
 		ROS_DEBUG("%s %d: user_interface detects charger signal, but ignore for manual/stuck pause.", __FUNCTION__, __LINE__);
@@ -377,7 +377,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 			}
 			case Remote_Home:
 			{
-				if (is_clean_paused())
+				if (cs_is_paused())
 				{
 					ev.remote_home = true;
 					extern bool g_go_home_by_remote;
@@ -452,9 +452,9 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 			{
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
-				if (is_clean_paused())
+				if (cs_is_paused())
 				{
-					reset_clean_paused();
+					cs_paused_setting();
 				}
 				g_plan_activated = true;
 				break;
@@ -520,7 +520,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
 		reject_reason = 2;
 	}
-	else if(!bat_ready_to_clean && !is_clean_paused())
+	else if(!bat_ready_to_clean && !cs_is_paused())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.get_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		reject_reason = 3;

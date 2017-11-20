@@ -1641,3 +1641,13 @@ uint8_t laser_get_status()
 	return 0;
 }
 
+uint8_t laser_is_robot_slip()
+{
+	uint8_t ret = 0;
+	if(s_laser != nullptr && s_laser->isScan2Ready() && s_laser->isRobotSlip()){
+		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
+		ret = 1;
+	}
+	return ret;
+}
+

@@ -129,7 +129,7 @@ void charge_function(void)
 		}
 		if(ev.cliff_all_triggered)
 		{
-			disable_motors();
+			cs_disable_motors();
 			ev.cliff_all_triggered = 0;
 			cm_set(Clean_Mode_Idle);
 			break;
@@ -148,7 +148,7 @@ void charge_function(void)
 					break;
 				case 2:
 					wav_play(WAV_ERROR_LIFT_UP);
-					reset_clean_paused();
+					cs_paused_setting();
 					charge_reject_reason = 0;
 					break;
 				case 3:
@@ -276,9 +276,9 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 			{
 				// Sleep for 50ms cause the status 3 will be sent for 3 times.
 				usleep(50000);
-				if (is_clean_paused())
+				if (cs_is_paused())
 				{
-					reset_clean_paused();
+					cs_paused_setting();
 				}
 				g_plan_activated = true;
 				break;
@@ -414,7 +414,7 @@ bool charge_turn_connect(void)
 		if (ev.charge_detect)
 		{
 			ev.charge_detect = 0;
-			disable_motors();
+			cs_disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
 			if (ev.charge_detect)
@@ -437,7 +437,7 @@ bool charge_turn_connect(void)
 		if (ev.charge_detect)
 		{
 			ev.charge_detect = 0;
-			disable_motors();
+			cs_disable_motors();
 			// Wait for a while to decide if it is really on the charger stub.
 			usleep(500000);
 			if (ev.charge_detect)

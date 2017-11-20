@@ -3,35 +3,17 @@
 #include <math.h>
 #include <time.h>
 #include <ros/ros.h>
-#include <time.h>
-#include <fcntl.h>
 #include <motion_manage.h>
-#include <move_type.h>
-#include <ctime>
-#include <clean_state.h>
 #include <vacuum.h>
 #include <cliff.h>
 #include <brush.h>
 #include <bumper.h>
-#include <controller.h>
-#include <obs.h>
-#include <accelerator.h>
 #include <tilt.h>
 #include <wheel.h>
 
-#include "gyro.h"
-#include "key.h"
 #include "robot.hpp"
-#include "movement.h"
-#include "crc8.h"
-#include "serial.h"
-#include "robotbase.h"
-#include "config.h"
 #include "core_move.h"
 #include "wav.h"
-#include "slam.h"
-#include "event_manager.h"
-#include "laser.hpp"
 #include "clean_mode.h"
 
 
@@ -162,7 +144,7 @@ bool check_error_cleared(uint8_t error_code)
 }
 
 /*-----------------------------------------------------------Self Check-------------------*/
-uint8_t self_check(uint8_t Check_Code)
+uint8_t cs_self_check(uint8_t Check_Code)
 {
 	static time_t mboctime;
 	static time_t vacoctime;
@@ -178,7 +160,7 @@ uint8_t self_check(uint8_t Check_Code)
 	else
 		quick_back(30,20);
 */
-	disable_motors();
+	cs_disable_motors();
 	usleep(10000);
 	/*------------------------------Self Check right wheel -------------------*/
 	if (Check_Code == Check_Right_Wheel)
@@ -203,7 +185,7 @@ uint8_t self_check(uint8_t Check_Code)
 		Wheel_Current_Summary /= 50;
 		if (Wheel_Current_Summary > Wheel_Stall_Limit)
 		{
-			disable_motors();
+			cs_disable_motors();
 			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
 			set_error_code(Error_Code_RightWheel);
 			alarm_error();
@@ -213,7 +195,7 @@ uint8_t self_check(uint8_t Check_Code)
 		/*
 		if(Right_Wheel_Slow>100)
 		{
-			disable_motors();
+			cs_disable_motors();
 			set_error_code(Error_Code_RightWheel);
 			return 1;
 		}
@@ -244,7 +226,7 @@ uint8_t self_check(uint8_t Check_Code)
 		Wheel_Current_Summary /= 50;
 		if (Wheel_Current_Summary > Wheel_Stall_Limit)
 		{
-			disable_motors();
+			cs_disable_motors();
 			ROS_WARN("%s %d,left wheel stall maybe, please check!!", __FUNCTION__, __LINE__);
 			set_error_code(Error_Code_LeftWheel);
 			alarm_error();
@@ -253,7 +235,7 @@ uint8_t self_check(uint8_t Check_Code)
 		/*
 		if(Left_Wheel_Slow>100)
 		{
-			disable_motors();
+			cs_disable_motors();
 			set_error_code(Error_Code_RightWheel);
 			return 1;
 		}
@@ -271,7 +253,7 @@ uint8_t self_check(uint8_t Check_Code)
 		{
 			mbrushchecking = 0;
 			set_error_code(Error_Code_MainBrush);
-			disable_motors();
+			cs_disable_motors();
 			alarm_error();
 			return 1;
 		}
@@ -297,7 +279,7 @@ uint8_t self_check(uint8_t Check_Code)
 			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
 			/*-----vacuum error-----*/
 			set_error_code(Error_Code_Fan_H);
-			disable_motors();
+			cs_disable_motors();
 			alarm_error();
 			vacuum.reset_self_check();
 			return 1;
@@ -322,74 +304,60 @@ uint8_t self_check(uint8_t Check_Code)
 			usleep(50000);
 		}
 		set_error_code(Error_Code_Fan_H);
-		disable_motors();
+		cs_disable_motors();
 		Alarm_Error();
 		return 1;
 #endif
 	} else if (Check_Code == Check_Left_Brush)
 	{
 		set_error_code(Error_Code_LeftBrush);
-		disable_motors();
+		cs_disable_motors();
 		alarm_error();
 		return 1;
 	} else if (Check_Code == Check_Right_Brush)
 	{
 		set_error_code(Error_Code_RightBrush);
-		disable_motors();
+		cs_disable_motors();
 		alarm_error();
 		return 1;
 	}
 	wheel.stop();
 	Left_Wheel_Slow = 0;
 	Right_Wheel_Slow = 0;
-	work_motor_configure();
+	cs_work_motor();
 	//wheel.move_forward(5,5);
 	return 0;
 }
 
 //------------------------------------------------------------------------------------------------
-void disable_motors(void)
+void cs_disable_motors(void)
 {
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
 }
 
-bool check_pub_scan()
+void cs_work_motor(void)
 {
-	//ROS_INFO("%s %d: get_left_wheel.speed() = %d, get_right_wheel.speed() = %d.", __FUNCTION__, __LINE__, wheel.get_left_speed(), wheel.get_right_speed());
-	if (g_motion_init_succeeded &&
-		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
-		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
-		|| bumper.get_status() || tilt.get_status()
-		|| abs(wheel.get_left_speed() - wheel.get_right_speed()) > 100
-		|| wheel.get_left_speed() * wheel.get_right_speed() < 0))
-		return false;
-	else
-		return true;
-}
-
-uint8_t is_robot_slip()
-{
-	uint8_t ret = 0;
-	if(s_laser != nullptr && s_laser->isScan2Ready() && s_laser->isRobotSlip()){
-		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
-		ret = 1;
-	}
-	return ret;
-}
-
-bool is_clean_paused()
-{
-	bool ret = false;
-	if(g_is_manual_pause || g_robot_stuck)
+	if (cs_is_going_home())
 	{
-		ret= true;
+		// Set the vacuum to a normal mode_
+		vacuum.mode(Vac_Normal, false);
+	} else {
+		vacuum.mode(Vac_Save);
 	}
-	return ret;
+
+	// Turn on the main brush and side brush
+	brush.set_side_pwm(50, 50);
+	brush.set_main_pwm(30);
 }
 
-void reset_clean_paused(void)
+bool cs_is_paused()
+{
+	return (g_is_manual_pause || g_robot_stuck);
+}
+
+void cs_paused_setting(void)
 {
 	if (g_is_manual_pause || g_robot_stuck)
 	{
@@ -407,21 +375,6 @@ void reset_clean_paused(void)
 		cm_reset_go_home();
 		g_resume_cleaning = false;
 	}
-}
-
-void work_motor_configure(void)
-{
-	if (cs_is_going_home())
-	{
-		// Set the vacuum to a normal mode_
-		vacuum.mode(Vac_Normal, false);
-	} else {
-		vacuum.mode(Vac_Save);
-	}
-
-	// Turn on the main brush and side brush
-	brush.set_side_pwm(50, 50);
-	brush.set_main_pwm(30);
 }
 
 void quick_back(uint8_t speed, uint16_t distance)
@@ -446,8 +399,17 @@ void quick_back(uint8_t speed, uint16_t distance)
 	ROS_INFO("quick_back finished.");
 }
 
-//void cm_set(uint8_t mode_)
-//{
-//	g_cleaning_mode = mode_;
-//}
+bool check_pub_scan()
+{
+	//ROS_INFO("%s %d: get_left_wheel.speed() = %d, get_right_wheel.speed() = %d.", __FUNCTION__, __LINE__, wheel.get_left_speed(), wheel.get_right_speed());
+	if (g_motion_init_succeeded &&
+		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
+		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
+		|| bumper.get_status() || tilt.get_status()
+		|| abs(wheel.get_left_speed() - wheel.get_right_speed()) > 100
+		|| wheel.get_left_speed() * wheel.get_right_speed() < 0))
+		return false;
+	else
+		return true;
+}
 

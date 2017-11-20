@@ -426,15 +426,15 @@ void wheel_set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
 
-void work_motor_configure(void);
+void cs_work_motor(void);
 
-uint8_t self_check(uint8_t Check_Code);
+uint8_t cs_self_check(uint8_t Check_Code);
 
 uint8_t cm_get(void);
 
 void cm_set(uint8_t mode);
 
-void disable_motors(void);
+void cs_disable_motors(void);
 
 void wheel_set_left_speed(uint8_t speed);
 
@@ -455,8 +455,7 @@ void add_sp_turn_count();
 
 bool check_pub_scan();
 
-uint8_t is_robot_slip();
-bool is_clean_paused();
-void reset_clean_paused();
+bool cs_is_paused();
+void cs_paused_setting();
 
 #endif
