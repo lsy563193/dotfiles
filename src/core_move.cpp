@@ -552,7 +552,7 @@ void cm_self_check(void)
 			if(vacuum_oc_state == 1)
 			{
 				ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
-				if (get_self_check_vacuum_status() == 0x10)
+				if (vacuum.get_self_check_status() == 0x10)
 				{
 					ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
 					vacuum.reset_self_check();
@@ -563,14 +563,14 @@ void cm_self_check(void)
 			else if (vacuum_oc_state == 2)
 			{
 				ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
-				if (get_self_check_vacuum_status() == 0x20)
+				if (vacuum.get_self_check_status() == 0x20)
 				{
 					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
 					set_error_code(Error_Code_Fan_H);
 					ev.fatal_quit = true;
 					break;
 				}
-				else if (get_self_check_vacuum_status() == 0x00)
+				else if (vacuum.get_self_check_status() == 0x00)
 				{
 					ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_suction = false;

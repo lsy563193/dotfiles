@@ -449,8 +449,6 @@ void set_direction_flag(uint8_t flag);
 uint8_t controller_get_status();
 void controller_set_status(uint8_t val);
 
-uint8_t get_self_check_vacuum_status(void);
-
 void reset_sp_turn_count();
 int32_t get_sp_turn_count();
 void add_sp_turn_count();

@@ -139,11 +139,6 @@ public:
 #endif
 	}
 
-	uint8_t getVacuumSelfCheckStatus() const
-	{
-		return vacuum_selfcheck_status_;
-	}
-
 	bool getVacuumOc() const
 	{
 		return vacuum_oc_;
@@ -444,9 +439,6 @@ private:
 
 	/*1 byte*/
 	bool w_tank_; //water tank
-
-	/*1 byte*/
-	uint8_t vacuum_selfcheck_status_;
 
 	bool vacuum_oc_;
 

@@ -71,6 +71,16 @@ public:
 		return right_direction;
 	}
 
+uint8_t get_direction_flag(void)
+{
+	return g_direction_flag;
+}
+
+void set_direction_flag(uint8_t flag)
+{
+	g_direction_flag = flag;
+}
+
 private:
 	uint8_t left_direction;
 	uint8_t right_direction;
@@ -78,6 +88,7 @@ private:
 	int16_t right_speed;
 	int32_t left_step;
 	int32_t right_step;
+	uint8_t g_direction_flag = 0;
 };
 
 extern Wheel wheel;

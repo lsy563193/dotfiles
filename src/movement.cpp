@@ -34,14 +34,9 @@
 #include "laser.hpp"
 #include "clean_mode.h"
 
-static uint8_t g_direction_flag = 0;
 
 volatile uint8_t g_error_code = 0;
 
-uint8_t get_direction_flag(void)
-{
-	return g_direction_flag;
-}
 /*----------------------- Set error functions--------------------------*/
 void set_error_code(uint8_t code)
 {
@@ -189,7 +184,7 @@ uint8_t self_check(uint8_t Check_Code)
 	if (Check_Code == Check_Right_Wheel)
 	{
 		Right_Wheel_Slow = 0;
-		if (get_direction_flag() == Direction_Flag_Left)
+		if (wheel.get_direction_flag() == Direction_Flag_Left)
 		{
 			wheel.set_dir_right();
 		} else
@@ -230,7 +225,7 @@ uint8_t self_check(uint8_t Check_Code)
 	else if (Check_Code == Check_Left_Wheel)
 	{
 		Left_Wheel_Slow = 0;
-		if (get_direction_flag() == Direction_Flag_Right)
+		if (wheel.get_direction_flag() == Direction_Flag_Right)
 		{
 			wheel.set_dir_left();
 		} else
@@ -285,8 +280,8 @@ uint8_t self_check(uint8_t Check_Code)
 	{
 #ifndef BLDC_INSTALL
 		ROS_INFO("%s, %d: Vacuum Over Current!!", __FUNCTION__, __LINE__);
-		ROS_INFO("%d", get_self_check_vacuum_status());
-		while (get_self_check_vacuum_status() != 0x10)
+		ROS_INFO("%d", vacuum.get_self_check_status());
+		while (vacuum.get_self_check_status() != 0x10)
 		{
 			/*-----wait until self check begin-----*/
 			vacuum.start_self_check();
@@ -295,9 +290,9 @@ uint8_t self_check(uint8_t Check_Code)
 		/*-----reset command for start self check-----*/
 		vacuum.reset_self_check();
 		/*-----wait for the end of self check-----*/
-		while (get_self_check_vacuum_status() == 0x10);
+		while (vacuum.get_self_check_status() == 0x10);
 		ROS_INFO("%s, %d: end of Self checking", __FUNCTION__, __LINE__);
-		if (get_self_check_vacuum_status() == 0x20)
+		if (vacuum.get_self_check_status() == 0x20)
 		{
 			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
 			/*-----vacuum error-----*/
@@ -352,22 +347,12 @@ uint8_t self_check(uint8_t Check_Code)
 	return 0;
 }
 
-uint8_t get_self_check_vacuum_status(void)
-{
-	return (uint8_t) robot::instance()->getVacuumSelfCheckStatus();
-}
-
 //------------------------------------------------------------------------------------------------
 void disable_motors(void)
 {
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-}
-
-void set_direction_flag(uint8_t flag)
-{
-	g_direction_flag = flag;
 }
 
 bool check_pub_scan()
