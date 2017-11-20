@@ -385,7 +385,7 @@ void *event_manager_thread(void *data)
 		*/
 
 		// Laser stuck
-		if (check_laser_stuck()) {
+		if (laser_is_stuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_LASER_STUCK);
 		}

@@ -432,8 +432,6 @@ uint8_t self_check(uint8_t Check_Code);
 
 uint8_t cm_get(void);
 
-void reset_stop_event_status(void);
-
 void cm_set(uint8_t mode);
 
 void disable_motors(void);
@@ -447,8 +445,6 @@ int16_t wheel_get_left_speed(void);
 int16_t wheel_get_right_speed(void);
 
 void set_direction_flag(uint8_t flag);
-
-int32_t abs_minus(int32_t A, int32_t B);
 
 uint8_t controller_get_status();
 void controller_set_status(uint8_t val);
@@ -465,7 +461,4 @@ uint8_t is_robot_slip();
 bool is_clean_paused();
 void reset_clean_paused();
 
-bool check_laser_stuck();
-
-uint8_t get_laser_status();
 #endif

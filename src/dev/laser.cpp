@@ -26,6 +26,8 @@ boost::mutex scan3_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
 
+Laser* s_laser = nullptr;
+
 Laser::Laser():nh_(),angle_n_(0)
 {
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
@@ -1622,3 +1624,20 @@ bool Laser::laserCheckFresh(float duration, uint8_t type)
 	//ROS_INFO("%s %d: time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
 	return false;
 }
+
+
+
+bool laser_is_stuck()
+{
+	if (s_laser != nullptr && !s_laser->laserCheckFresh(3, 2))
+		return true;
+	return false;
+}
+
+uint8_t laser_get_status()
+{
+	if (s_laser != nullptr)
+		return s_laser->laserMarker(0.20);
+	return 0;
+}
+

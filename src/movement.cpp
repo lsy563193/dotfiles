@@ -36,28 +36,12 @@
 
 static uint8_t g_direction_flag = 0;
 
-//static uint8_t g_cleaning_mode = 0;
-
-// Variable for stop event status.
-volatile uint8_t g_stop_event_status = 0;
-
-// Error code for exception case
 volatile uint8_t g_error_code = 0;
-
-//Variable for checking spot turn in wall follow mode_
-volatile int32_t g_wf_sp_turn_count;
-
-
-// For wheel PID adjustment
-
-boost::mutex pid_lock;
 
 uint8_t get_direction_flag(void)
 {
 	return g_direction_flag;
 }
-
-
 /*----------------------- Set error functions--------------------------*/
 void set_error_code(uint8_t code)
 {
@@ -386,30 +370,6 @@ void set_direction_flag(uint8_t flag)
 	g_direction_flag = flag;
 }
 
-int32_t abs_minus(int32_t A, int32_t B)
-{
-	if (A > B)
-	{
-		return A - B;
-	}
-	return B - A;
-}
-
-void reset_sp_turn_count()
-{
-	g_wf_sp_turn_count = 0;
-}
-
-int32_t get_sp_turn_count()
-{
-	return g_wf_sp_turn_count;
-}
-
-void add_sp_turn_count()
-{
-	g_wf_sp_turn_count++;
-}
-
 bool check_pub_scan()
 {
 	//ROS_INFO("%s %d: get_left_wheel.speed() = %d, get_right_wheel.speed() = %d.", __FUNCTION__, __LINE__, wheel.get_left_speed(), wheel.get_right_speed());
@@ -427,7 +387,7 @@ bool check_pub_scan()
 uint8_t is_robot_slip()
 {
 	uint8_t ret = 0;
-	if(MotionManage::s_laser != nullptr && MotionManage::s_laser->isScan2Ready() && MotionManage::s_laser->isRobotSlip()){
+	if(s_laser != nullptr && s_laser->isScan2Ready() && s_laser->isRobotSlip()){
 		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
 		ret = 1;
 	}
@@ -464,21 +424,6 @@ void reset_clean_paused(void)
 	}
 }
 
-
-bool check_laser_stuck()
-{
-	if (MotionManage::s_laser != nullptr && !MotionManage::s_laser->laserCheckFresh(3, 2))
-		return true;
-	return false;
-}
-
-uint8_t get_laser_status()
-{
-	if (MotionManage::s_laser != nullptr)
-		return MotionManage::s_laser->laserMarker(0.20);
-	return 0;
-}
-
 void work_motor_configure(void)
 {
 	if (cs_is_going_home())
@@ -489,18 +434,10 @@ void work_motor_configure(void)
 		vacuum.mode(Vac_Save);
 	}
 
-	// Trun on the main brush and side brush
+	// Turn on the main brush and side brush
 	brush.set_side_pwm(50, 50);
 	brush.set_main_pwm(30);
 }
-
-void reset_stop_event_status(void)
-{
-	g_stop_event_status = 0;
-	// For key release checking.
-	key.reset();
-}
-
 
 void quick_back(uint8_t speed, uint16_t distance)
 {

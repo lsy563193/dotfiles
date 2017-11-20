@@ -147,36 +147,73 @@ public:
 	void adjustSpeed(uint8_t bumper_jam_state);
 };
 
-class FollowWallRegulator:public RegulatorBase{
+class FollowWallRegulator:public RegulatorBase {
 
 public:
 	FollowWallRegulator(Point32_t start_point, Point32_t target);
-	~FollowWallRegulator(){ /*set_wheel.speed(0,0);*/ };
+
+	~FollowWallRegulator() { /*set_wheel.speed(0,0);*/ };
+
+	void reset_sp_turn_count() {
+		turn_count = 0;
+	}
+
+	int32_t get_sp_turn_count() {
+		return turn_count;
+	}
+
+	void add_sp_turn_count() {
+		turn_count++;
+	}
+
+	bool sp_turn_over(const Cell_t &curr) {
+		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, curr.TH);
+		/*check if spot turn*/
+		if (get_sp_turn_count() > 400) {
+			reset_sp_turn_count();
+			ROS_WARN("  yes! sp_turn over 400");
+			return true;
+		}
+		return false;
+	}
+
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+
 	bool shouldMoveBack();
+
 	bool shouldTurn();
+
 	bool isBlockCleared();
+
 	bool isOverOriginLine();
+
 	bool isNewLineReach();
+
 	bool isClosure(uint8_t closure_cnt);
+
 	bool isIsolate();
+
 	bool isTimeUp();
+
 	void setTarget();
-	std::string getName()
-	{
+
+	std::string getName() {
 		std::string name = "FollowWallRegulator";
 		return name;
 	}
 
+
 private:
+//Variable for checking spot turn in wall follow mode_
+	volatile int32_t turn_count;
 	int32_t previous_;
 	uint8_t seen_charger_counter;
 	int next_linear_speed = INT_MAX;
-	double wall_follow_detect_distance=0.20;
+	double wall_follow_detect_distance = 0.20;
 	int32_t old_same_speed = 0;
 	int32_t old_diff_speed = 0;
-	int turn_right_angle_factor=15;
-	int16_t wall_buffer[3]={0};
+	int turn_right_angle_factor = 15;
+	int16_t wall_buffer[3] = {0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
 

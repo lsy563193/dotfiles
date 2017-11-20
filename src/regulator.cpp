@@ -173,7 +173,7 @@ static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max,
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
-	line_is_found = MotionManage::s_laser->laserGetFitLine(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
+	line_is_found = s_laser->laserGetFitLine(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
 //	RESET_WALL_DIS = int(distance * 1000);
 
 //	ROS_INFO("line_distance = %lf", distance);
@@ -247,17 +247,6 @@ float RegulatorBase::s_pos_x = 0;
 float RegulatorBase::s_pos_y = 0;
 Point32_t RegulatorBase::s_curr_p = {0,0};
 
-bool sp_turn_over(const Cell_t& curr)
-{
-	ROS_INFO("  %s %d:?? curr(%d,%d,%d)",__FUNCTION__,__LINE__, curr.X, curr.Y, curr.TH);
-	/*check if spot turn*/
-	if(get_sp_turn_count() > 400) {
-		reset_sp_turn_count();
-		ROS_WARN("  yes! sp_turn over 400");
-		return true;
-	}
-	return false;
-}
 
 bool RegulatorBase::isExit()
 {
@@ -372,7 +361,7 @@ bool BackRegulator::isReach()
 
 bool BackRegulator::isLaserStop()
 {
-	auto obstacle_distance = MotionManage::s_laser->getObstacleDistance(1, ROBOT_RADIUS);
+	auto obstacle_distance = s_laser->getObstacleDistance(1, ROBOT_RADIUS);
 	if (g_back_distance >= 0.05 && obstacle_distance < 0.03)
 	{
 		ROS_WARN("%s, %d: obstacle_distance:%f.", __FUNCTION__, __LINE__, obstacle_distance);
@@ -711,7 +700,7 @@ bool LinearRegulator::isOBSStop()
 
 bool LinearRegulator::isLaserStop()
 {
-	ev.laser_triggered = get_laser_status();
+	ev.laser_triggered = laser_get_status();
 	if (ev.laser_triggered)
 	{
 		// Temporary use OBS to get angle.
@@ -789,7 +778,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		check_limit(integrated_, -150, 150);
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
-	auto obstalce_distance_front = MotionManage::s_laser->getObstacleDistance(0,ROBOT_RADIUS);
+	auto obstalce_distance_front = s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.get_status();
 	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
 	{
@@ -937,7 +926,7 @@ bool FollowWallRegulator::shouldMoveBack()
 
 bool FollowWallRegulator::shouldTurn()
 {
-	ev.laser_triggered = get_laser_status();
+	ev.laser_triggered = laser_get_status();
 	if (ev.laser_triggered)
 	{
 		// Temporary use bumper as laser triggered.

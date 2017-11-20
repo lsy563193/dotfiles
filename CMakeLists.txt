@@ -28,8 +28,7 @@ FILE(GLOB PP_SRC
 				src/dev/wall_follow.cpp
 				src/dev/omni.cpp
 				src/dev/wheel.cpp
-
-	src/laser.cpp
+				src/dev/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp
 	src/map.cpp

@@ -621,7 +621,7 @@ void cm_self_check(void)
 		}
 		else if (ev.laser_stuck)
 		{
-			if (!check_laser_stuck())
+			if (!laser_is_stuck())
 			{
 				ROS_WARN("%s %d: Restore from laser stuck.", __FUNCTION__, __LINE__);
 				ev.laser_stuck = false;

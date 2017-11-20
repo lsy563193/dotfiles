@@ -154,7 +154,6 @@ bool MotionManage::get_align_angle(float &line_angle)
 }
 */
 
-Laser* MotionManage::s_laser = nullptr/*new Laser()*/;
 Slam* MotionManage::s_slam = nullptr/*new Slam()*/;
 
 void init_nav_before_gyro()
@@ -302,7 +301,7 @@ void init_wf_before_gyro()
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
 	remote.reset_move_with();
 	c_rcon.reset_status();
-	reset_stop_event_status();
+	key.reset();
 	key.reset();
 	set_gyro_off();
 	usleep(30000);
@@ -340,7 +339,6 @@ void init_spot_before_gyro()
 
 	c_rcon.reset_status();
 	remote.reset_move_with();
-	reset_stop_event_status();
 	key.reset();
 
 	set_gyro_off();
@@ -951,3 +949,4 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path
 
 	robot::instance()->pubCleanMapMarkers();
 }
+

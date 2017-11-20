@@ -75,7 +75,7 @@ void idle(void)
 	disable_motors();
 	remote.reset();
 	planer.set_status(0);
-	reset_stop_event_status();
+	key.reset();
 	c_rcon.reset_status();
 	key.reset();
 	vacuum.stop();
@@ -329,7 +329,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 				beep_for_command(INVALID);
 				reject_reason = 1;
 			}
-			reset_stop_event_status();
+			key.reset();
 		}
 		else
 		{
@@ -367,7 +367,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 			case Remote_Clean:
 			{
 				temp_mode = Clean_Mode_Navigation;
-				reset_stop_event_status();
+				key.reset();
 				break;
 			}
 			case Remote_Spot:
@@ -500,7 +500,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 
 	if (long_press_to_sleep)
 	{
-		reset_stop_event_status();
+		key.reset();
 		key.reset();
 		return;
 	}
@@ -529,7 +529,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	if (!reject_reason)
 		temp_mode = Clean_Mode_Navigation;
 
-	reset_stop_event_status();
+	key.reset();
 	key.reset();
 }
 

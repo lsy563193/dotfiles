@@ -316,7 +316,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 			beep_for_command(INVALID);
 			charge_reject_reason = 1;
 		}
-		reset_stop_event_status();
+		key.reset();
 	}
 	else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 	{
@@ -366,7 +366,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 				beep_for_command(INVALID);
 				charge_reject_reason = 1;
 			}
-			reset_stop_event_status();
+			key.reset();
 		}
 		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{

@@ -312,3 +312,13 @@ void coordinate_transform(double *x, double *y, double theta, double offset_x, d
 	matrix_rotate(x, y, theta);
 	matrix_translate(x, y, offset_x, offset_y);
 }
+
+
+int32_t abs_minus(int32_t A, int32_t B)
+{
+	if (A > B)
+	{
+		return A - B;
+	}
+	return B - A;
+}

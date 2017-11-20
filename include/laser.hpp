@@ -108,4 +108,9 @@ private:
 	geometry_msgs::Point laser_points_;
 };
 
+bool laser_is_stuck();
+
+uint8_t laser_get_status();
+extern Laser* s_laser;
+
 #endif

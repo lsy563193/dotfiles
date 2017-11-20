@@ -57,7 +57,7 @@ void sleep_mode(void)
 	usleep(20000);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, controller.get_status());
 
-	reset_stop_event_status();
+	key.reset();
 	c_rcon.reset_status();
 	remote.reset();
 	key.reset();
@@ -132,7 +132,7 @@ void sleep_mode(void)
 
 	c_rcon.reset_status();
 	remote.reset();
-	reset_stop_event_status();
+	key.reset();
 	planer.set_status(0);
 }
 
