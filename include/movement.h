@@ -463,9 +463,7 @@ void cm_set(uint8_t mode);
 
 void disable_motors(void);
 
-void start_self_check_vacuum(void);
-
-void reset_self_check_vacuum_controler(void);
+void vacuum_reset_self_check(void);
 
 void controller_set(uint8_t type, uint8_t val);
 
@@ -482,10 +480,6 @@ int16_t get_left_wheel_speed(void);
 int16_t get_right_wheel_speed(void);
 
 void set_direction_flag(uint8_t flag);
-
-void reset_mobility_step();
-
-void clear_reset_mobility_step();
 
 int32_t abs_minus(int32_t A, int32_t B);
 

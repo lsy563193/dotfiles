@@ -30,6 +30,7 @@
 #include "space_exploration.h"
 #include "clean_mode.h"
 #include "tilt.h"
+#include "omni.h"
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
@@ -247,7 +248,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 			last_omni_wheel = msg->omni_wheel;
 		}
 		if(msg->omni_wheel >= 10000){
-			reset_mobility_step();
+			omni.reset();
 		}
 	}
 	/*------end omni detect----*/

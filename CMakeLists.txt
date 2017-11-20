@@ -26,6 +26,7 @@ FILE(GLOB PP_SRC
 				src/dev/beep.cpp
 				src/dev/charger.cpp
 				src/dev/wall_follow.cpp
+				src/dev/omni.cpp
 
 	src/laser.cpp
 	src/main.cpp

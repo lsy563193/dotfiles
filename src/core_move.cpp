@@ -340,7 +340,7 @@ void cm_self_check(void)
 	{
 		ROS_WARN("%s, %d: Vacuum Self checking start", __FUNCTION__, __LINE__);
 		disable_motors();
-		start_self_check_vacuum();
+		vacuum.start_self_check();
 	}
 
 	SelfCheckRegulator regulator;
@@ -550,7 +550,7 @@ void cm_self_check(void)
 				if (get_self_check_vacuum_status() == 0x10)
 				{
 					ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
-					reset_self_check_vacuum_controler();
+					vacuum.reset_self_check();
 					vacuum_oc_state = 2;
 				}
 				continue;

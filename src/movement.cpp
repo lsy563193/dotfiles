@@ -629,11 +629,11 @@ uint8_t self_check(uint8_t Check_Code)
 		while (get_self_check_vacuum_status() != 0x10)
 		{
 			/*-----wait until self check begin-----*/
-			start_self_check_vacuum();
+			vacuum.start_self_check();
 		}
 		ROS_INFO("%s, %d: Vacuum Self checking", __FUNCTION__, __LINE__);
 		/*-----reset command for start self check-----*/
-		reset_self_check_vacuum_controler();
+		vacuum.reset_self_check();
 		/*-----wait for the end of self check-----*/
 		while (get_self_check_vacuum_status() == 0x10);
 		ROS_INFO("%s, %d: end of Self checking", __FUNCTION__, __LINE__);
@@ -644,10 +644,10 @@ uint8_t self_check(uint8_t Check_Code)
 			set_error_code(Error_Code_Fan_H);
 			disable_motors();
 			alarm_error();
-			reset_self_check_vacuum_controler();
+			vacuum.reset_self_check();
 			return 1;
 		}
-		reset_self_check_vacuum_controler();
+		vacuum.reset_self_check();
 #else
 		Disable_Motors();
 		//stop_brifly();
@@ -767,33 +767,9 @@ uint8_t get_main_pwr_byte()
 	return controller.get(CTL_MAIN_PWR);
 }
 
-void start_self_check_vacuum(void)
-{
-	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
-}
-
-void reset_self_check_vacuum_controler(void)
-{
-	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
-}
-
 void set_direction_flag(uint8_t flag)
 {
 	g_direction_flag = flag;
-}
-
-void reset_mobility_step()
-{
-	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x01);
-}
-
-void clear_reset_mobility_step()
-{
-	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x01);
 }
 
 int32_t abs_minus(int32_t A, int32_t B)

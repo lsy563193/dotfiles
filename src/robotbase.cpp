@@ -17,6 +17,7 @@
 #include <obs.h>
 #include <obs.h>
 #include <sleep.h>
+#include <omni.h>
 
 #include "movement.h"
 #include "gyro.h"
@@ -517,7 +518,7 @@ void *serial_send_routine(void*)
 		//}
 		//reset omni wheel bit
 		if(controller.get(CTL_OMNI_RESET) & 0x01)
-			clear_reset_mobility_step();
+			omni.clear();
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
