@@ -26,6 +26,8 @@
 #include <pp.h>
 #include <remote.h>
 #include <obs.h>
+#include <beep.h>
+#include <charger.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -556,7 +558,7 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 void RM_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
-	if (robot::instance()->getChargeStatus() == 3)
+	if (charger.getChargeStatus() == 3)
 	{
 		cm_set(Clean_Mode_Charging);
 		disable_motors();

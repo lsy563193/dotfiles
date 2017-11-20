@@ -23,6 +23,8 @@ FILE(GLOB PP_SRC
 				src/dev/accelerator.cpp
 				src/dev/tilt.cpp
 				src/dev/led.cpp
+				src/dev/beep.cpp
+				src/dev/charger.cpp
 	src/laser.cpp
 	src/main.cpp
 #	test/angle_test.cpp

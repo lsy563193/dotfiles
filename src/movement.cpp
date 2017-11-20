@@ -373,27 +373,6 @@ void quick_back(uint8_t speed, uint16_t distance)
 	ROS_INFO("quick_back finished.");
 }
 
-/*-------------------------------Check if at charger stub------------------------------------*/
-bool charger_is_on_stub(void)
-{
-	// 1: On charger stub and charging.
-	// 2: On charger stub but not charging.
-	if (robot::instance()->getChargeStatus() == 2 || robot::instance()->getChargeStatus() == 1)
-		return true;
-	else
-		return false;
-}
-
-bool charge_is_directed(void)
-{
-	// 3: Direct connect to charge line but not charging.
-	// 4: Direct connect to charge line and charging.
-	if (robot::instance()->getChargeStatus() == 3 || robot::instance()->getChargeStatus() == 4)
-		return true;
-	else
-		return false;
-}
-
 void set_argu_for_pid(uint8_t reg_type, float Kp, float Ki, float Kd)
 {
 	boost::mutex::scoped_lock(pid_lock);
@@ -887,18 +866,6 @@ void disable_motors(void)
 	brush.set_main_pwm(0);
 	// Stop the vacuum, directly stop the BLDC
 	vacuum.stop();
-}
-
-void charger_set_start(void)
-{
-	// This function will turn on the charging function.
-	controller.set(CTL_CHARGER, 0x01);
-}
-
-void charger_set_stop(void)
-{
-	// Set the flag to false so that it can quit charger mode_.
-	controller.set(CTL_CHARGER, 0x00);
 }
 
 void set_main_pwr_byte(uint8_t val)

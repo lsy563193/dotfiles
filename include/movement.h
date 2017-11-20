@@ -441,10 +441,6 @@ uint8_t is_encoder_fail(void);
 
 int rcon_get_trig(void);
 
-bool charger_is_on_stub(void);
-
-bool charge_is_directed(void);
-
 /*
 // Add handling for gyro dynamic adjustment.
 // If robot going straight, should turn off gyro dynamic adjustment.
@@ -476,10 +472,6 @@ void reset_stop_event_status(void);
 void cm_set(uint8_t mode);
 
 void disable_motors(void);
-
-void charger_set_start(void);
-
-void charger_set_stop(void);
 
 void start_self_check_vacuum(void);
 

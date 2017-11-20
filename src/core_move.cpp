@@ -3,6 +3,8 @@
 #include <bumper.h>
 #include <remote.h>
 #include <tilt.h>
+#include <beep.h>
+#include <charger.h>
 #include "pp.h"
 
 #ifdef TURN_SPEED
@@ -1176,14 +1178,14 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 
 void CM_EventHandle::charge_detect(bool state_now, bool state_last)
 {
-	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, robot::instance()->getChargeStatus(), g_charge_detect_cnt);
-	if (((cm_is_exploration() || cm_is_go_charger() || cs_is_going_home()) && robot::instance()->getChargeStatus()) ||
-		(!cm_is_exploration() && robot::instance()->getChargeStatus() == 3))
+	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, charger.getChargeStatus(), g_charge_detect_cnt);
+	if (((cm_is_exploration() || cm_is_go_charger() || cs_is_going_home()) && charger.getChargeStatus()) ||
+		(!cm_is_exploration() && charger.getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)
 		{
-			ev.charge_detect = robot::instance()->getChargeStatus();
-			if (!cm_is_exploration() && robot::instance()->getChargeStatus() == 3)
+			ev.charge_detect = charger.getChargeStatus();
+			if (!cm_is_exploration() && charger.getChargeStatus() == 3)
 				ev.fatal_quit = true;
 			ROS_WARN("%s %d: ev.charge_detect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
 			g_charge_detect_cnt = 0;

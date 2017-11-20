@@ -7,6 +7,8 @@
 #include <planer.h>
 #include <remote.h>
 #include <tilt.h>
+#include <charger.h>
+#include <beep.h>
 
 #include "config.h"
 #include "serial.h"
@@ -360,7 +362,7 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Charge Status */
-		if (robot::instance()->getChargeStatus()) {
+		if (charger.getChargeStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CHARGE_DETECT);
 		}
@@ -972,7 +974,7 @@ void df_charge_detect(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (g_charge_detect_cnt++ > 25)
 	{
-		ev.charge_detect = robot::instance()->getChargeStatus();
+		ev.charge_detect = charger.getChargeStatus();
 		ROS_WARN("%s %d: ev.charge_detect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
 		g_charge_detect_cnt = 0;
 	}

@@ -168,11 +168,6 @@ public:
 		return key_;
 	}
 
-	int getChargeStatus() const
-	{
-		return charge_status_;
-	}
-
 	uint8_t getIrCtrl() const
 	{
 		return  ir_ctrl_;
@@ -460,9 +455,6 @@ private:
 
 	/*1 byte */
 	uint8_t key_;
-
-	/*1 byte */
-	uint8_t charge_status_;
 
 	/*1 byte*/
 	bool w_tank_; //water tank

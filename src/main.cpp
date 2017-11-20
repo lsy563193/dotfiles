@@ -8,6 +8,7 @@
 #include <ros/ros.h>
 #include <battery.h>
 #include <remote.h>
+#include <charger.h>
 #include "charger.hpp"
 #include "core_move.h"
 #include "gyro.h"
@@ -45,7 +46,7 @@ void *core_move_thread(void *)
 	//wav_play(WAV_WELCOME_ILIFE);
 	usleep(200000);
 
-	if (charge_is_directed() || charger_is_on_stub())
+	if (charger.is_directed() || charger.is_on_stub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.is_ready_to_clean())
 		wav_play(WAV_PLEASE_START_CLEANING);

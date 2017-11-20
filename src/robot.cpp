@@ -202,7 +202,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 		key_release_count = 0;
 	}
 
-	charge_status_ = msg->c_s; //charge status
+//	charge_status_ = msg->c_s; //charge status
 	// Debug
 	//ROS_INFO("Subscribe charger status: %d.", charge_status_);
 

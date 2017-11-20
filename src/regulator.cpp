@@ -21,6 +21,7 @@
 #include <bumper.h>
 #include <obs.h>
 #include <tilt.h>
+#include <beep.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1

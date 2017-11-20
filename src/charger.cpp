@@ -7,6 +7,8 @@
 #include <led.h>
 #include <battery.h>
 #include <remote.h>
+#include <charger.h>
+#include <beep.h>
 
 #include "go_home.hpp"
 #include "movement.h"
@@ -45,7 +47,7 @@ void charge_function(void)
 	bool eh_status_now=false, eh_status_last=false;
 	uint16_t bat_v;
 	led_set_mode(LED_BREATH, LED_ORANGE);
-	charger_set_start();
+	charger.set_start();
 	planer.set_status(0);
 	charge_register_event();
 	event_manager_reset_status();
@@ -60,8 +62,8 @@ void charge_function(void)
 		}
 
 		/* refresh last_charge_status */
-		if(robot::instance()->getChargeStatus())
-			last_charge_status = robot::instance()->getChargeStatus();
+		if(charger.getChargeStatus())
+			last_charge_status = charger.getChargeStatus();
 
 		bat_v = battery.get_voltage();
 
@@ -93,7 +95,7 @@ void charge_function(void)
 
 		if(g_stop_charge_counter > 0)g_stop_charge_counter--;
 		if(g_stop_charge_counter <15)
-			ROS_WARN("%s %d: g_stop_charge_counter: %d, charge_status: %d", __FUNCTION__, __LINE__, g_stop_charge_counter, robot::instance()->getChargeStatus());
+			ROS_WARN("%s %d: g_stop_charge_counter: %d, charge_status: %d", __FUNCTION__, __LINE__, g_stop_charge_counter, charger.getChargeStatus());
 		if(g_stop_charge_counter == 0)	//disconnect to charger for 0.5s, exit charge mode_
 		{
 			ev.charge_detect = 0;
@@ -185,7 +187,7 @@ void charge_function(void)
 		}
 	}
 	charge_unregister_event();
-	charger_set_stop();
+	charger.set_stop();
 	// Wait for 20ms to make sure stop charging command has been sent.
 	usleep(30000);
 
@@ -295,7 +297,7 @@ void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 }
 void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 {
-	if (charge_is_directed())
+	if (charger.is_directed())
 	{
 		ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 		beep_for_command(INVALID);
@@ -327,7 +329,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		beep_for_command(INVALID);
 		charge_reject_reason = 3;
 	}
-	else if (charger_is_on_stub())
+	else if (charger.is_on_stub())
 	{
 		ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 		beep_for_command(VALID);
@@ -345,7 +347,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
 	if (remote.key(Remote_Clean)) {
 		remote.reset();
-		if (charge_is_directed())
+		if (charger.is_directed())
 		{
 			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 			beep_for_command(INVALID);
@@ -377,7 +379,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			charge_reject_reason = 3;
 			beep_for_command(INVALID);
 		}
-		else if (charger_is_on_stub())
+		else if (charger.is_on_stub())
 		{
 			ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 			beep_for_command(VALID);

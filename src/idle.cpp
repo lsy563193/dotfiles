@@ -23,6 +23,7 @@
 #include <rcon.h>
 #include <planer.h>
 #include <remote.h>
+#include <beep.h>
 #include "config.h"
 #include "wav.h"
 #include "led.h"
