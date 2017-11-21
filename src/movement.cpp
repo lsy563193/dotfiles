@@ -210,7 +210,7 @@ void cs_disable_motors(void)
 
 void cs_work_motor(void)
 {
-	if (cs_is_going_home())
+	if (cs.is_going_home())
 	{
 		// Set the vacuum to a normal mode_
 		vacuum.mode(Vac_Normal, false);

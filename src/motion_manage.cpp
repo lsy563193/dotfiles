@@ -205,7 +205,7 @@ void init_nav_before_gyro()
 		ROS_WARN("Restore from manual pause");
 		cm_register_events();
 		wav.play(WAV_CLEANING_CONTINUE);
-		if (cs_is_going_home())
+		if (cs.is_going_home())
 		{
 			wav.play(WAV_BACK_TO_CHARGER);
 		}
@@ -227,9 +227,9 @@ void init_nav_gyro_charge()
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
-		if (!cs_is_going_home())
+		if (!cs.is_going_home())
 			if(ev.remote_home || ev.battery_home)
-				cs_set(CS_GO_HOME_POINT);
+				cs.set(CS_GO_HOME_POINT);
 	}
 }
 void init_nav_after_charge()
@@ -240,8 +240,8 @@ acc.setAccInitData();//about 200ms delay
 
 	cs_work_motor();
 
-	ROS_INFO("%s %d: Init cs_is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
-					 cs_is_going_home(), g_is_low_bat_pause, g_is_manual_pause, g_resume_cleaning,g_robot_stuck);
+	ROS_INFO("%s %d: Init cs.is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
+					 cs.is_going_home(), g_is_low_bat_pause, g_is_manual_pause, g_resume_cleaning,g_robot_stuck);
 }
 
 void init_exp_before_gyro()
@@ -694,7 +694,7 @@ MotionManage::~MotionManage()
 		wav.play(WAV_CLEANING_PAUSE);
 		if (!ev.cliff_all_triggered)
 		{
-			if (cs_is_going_home())
+			if (cs.is_going_home())
 			{
 				// The current home cell is still valid, so push it back to the home point list.
 				path_set_home(g_home_point);
@@ -702,7 +702,7 @@ MotionManage::~MotionManage()
 			cm_set(Clean_Mode_Idle);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
-			if (cs_is_going_home())
+			if (cs.is_going_home())
 #if MANUAL_PAUSE_CLEANING
 //				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
 				ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
@@ -762,7 +762,7 @@ MotionManage::~MotionManage()
 	}
 	else // Normal finish.
 	{
-		if(cs_is_going_home() && !ev.charge_detect && g_have_seen_charger)
+		if(cs.is_going_home() && !ev.charge_detect && g_have_seen_charger)
 			wav.play(WAV_BACK_TO_CHARGER_FAILED);
 		if (cm_get() != Clean_Mode_Go_Charger && !cm_is_exploration())
 			wav.play(WAV_CLEANING_FINISHED);

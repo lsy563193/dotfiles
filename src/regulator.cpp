@@ -74,7 +74,7 @@ int16_t bumper_turn_angle()
 		if(g_wall_distance < 330)
 			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
 		g_turn_angle =0;
-		if (!cs_is_trapped()) {
+		if (!cs.is_trapped()) {
 			g_turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -180 : -280;
 		} else {
 			g_turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -100 : -200;
@@ -260,7 +260,7 @@ bool RegulatorBase::isExit()
 
 bool RegulatorBase::isStop()
 {
-	if (ev.battery_home || ev.remote_spot || (!cs_is_going_home() && ev.remote_home) || cm_should_self_check())
+	if (ev.battery_home || ev.remote_spot || (!cs.is_going_home() && ev.remote_home) || cm_should_self_check())
 	{
 		ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
 		return true;
@@ -483,11 +483,11 @@ bool TurnRegulator::shouldMoveBack()
 
 void TurnRegulator::setTarget()
 {
-	if(cs_is_going_home() && map_point_to_cell(s_curr_p) == g_zero_home)
+	if(cs.is_going_home() && map_point_to_cell(s_curr_p) == g_zero_home)
 	{
 		s_target_angle = g_home_point.TH;
 	}
-	else if(LASER_FOLLOW_WALL && !cs_is_trapped() && mt_is_follow_wall() && skip_laser_turn_angle_cnt_ >= 2)
+	else if(LASER_FOLLOW_WALL && !cs.is_trapped() && mt_is_follow_wall() && skip_laser_turn_angle_cnt_ >= 2)
 	{
 		// Use laser data for generating target angle in every 3 times of turning.
 		if (waiting_finished_) {
@@ -2080,7 +2080,7 @@ bool GoToChargerRegulator::_isStop()
 	if (g_robot_stuck || (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360))
 	{
 		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
-		cs_set(CS_CLEAN);
+		cs.set(CS_CLEAN);
 		return true;
 	}
 	return false;

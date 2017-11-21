@@ -7,66 +7,66 @@
 #include "clean_state.h"
 #include "clean_mode.h"
 
-static int cs = 0;//clean state
 
-bool cs_init()
+CleanState cs;
+bool CleanState::init()
 {
 	if(cm_is_go_charger())
-		cs = CS_GO_CHANGER;
+		cs_ = CS_GO_CHANGER;
 	if(cm_is_exploration())
-		cs = CS_EXPLORATION;
+		cs_ = CS_EXPLORATION;
 	else
-		cs = CS_CLEAN;
+		cs_ = CS_CLEAN;
 }
 
-bool cs_is_go_home_point()
+bool CleanState::is_go_home_point()
 {
-	return cs == CS_GO_HOME_POINT;
+	return cs_ == CS_GO_HOME_POINT;
 }
 
-bool cs_is_go_charger()
+bool CleanState::is_go_charger()
 {
-	return cs == CS_GO_CHANGER;
+	return cs_ == CS_GO_CHANGER;
 }
 
-bool cs_is_exploration()
+bool CleanState::is_exploration()
 {
-	return cs == CS_EXPLORATION;
+	return cs_ == CS_EXPLORATION;
 }
 
-bool cs_is_going_home()
+bool CleanState::is_going_home()
 {
-	return cs == CS_GO_HOME_POINT || cs == CS_GO_CHANGER /*||CS_EXPLORATION*/;
+	return cs_ == CS_GO_HOME_POINT || cs_ == CS_GO_CHANGER /*||CS_EXPLORATION*/;
 }
 
-bool cs_is_clean()
+bool CleanState::is_clean()
 {
-	return cs == CS_CLEAN;
+	return cs_ == CS_CLEAN;
 }
 
-bool cs_is_tmp_spot()
+bool CleanState::is_tmp_spot()
 {
-	return cs == CS_TMP_SPOT;
+	return cs_ == CS_TMP_SPOT;
 }
 
-bool cs_is_trapped()
+bool CleanState::is_trapped()
 {
-	return cs == CS_TRAPPED;
+	return cs_ == CS_TRAPPED;
 }
 
-bool cs_is_self_check()
+bool CleanState::is_self_check()
 {
-	return cs == CS_SELF_CHECK;
+	return cs_ == CS_SELF_CHECK;
 }
 
-void cs_set(int state)
+void CleanState::set(int state)
 {
 //	ROS_INFO("%s,%d:" __FUNCTION__,__LINE__);
-	cs = state;
+	cs_ = state;
 	cm_apply_cs();
 }
 
-int cs_get(void)
+int CleanState::get(void)
 {
-	return cs;
+	return cs_;
 }

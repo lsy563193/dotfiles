@@ -1305,7 +1305,7 @@ int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-	if(cs_is_going_home() && g_home_point == g_zero_home)
+	if(cs.is_going_home() && g_home_point == g_zero_home)
 		path.back().TH = g_home_point.TH;
 	else
 		path.back().TH = (path.end()-2)->TH;
@@ -1327,61 +1327,61 @@ bool path_next(const Cell_t& start, PPTargetType& path)
 }
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path) {
-	if (!cs_is_going_home()) {
-		if ((ev.remote_home || ev.battery_home)) {//cs_is_switch_go_home()
+	if (!cs.is_going_home()) {
+		if ((ev.remote_home || ev.battery_home)) {//cs.is_switch_go_home()
 			if(g_have_seen_charger)
-				cs_set(CS_GO_HOME_POINT);
+				cs.set(CS_GO_HOME_POINT);
 			else
-				cs_set(CS_EXPLORATION);
+				cs.set(CS_EXPLORATION);
 		}
 	}
 
-	if (!cs_is_going_home()) {
-		if (ev.remote_spot) {//cs_is_switch_tmp_spot()
-			cs_set(CS_TMP_SPOT);
+	if (!cs.is_going_home()) {
+		if (ev.remote_spot) {//cs.is_switch_tmp_spot()
+			cs.set(CS_TMP_SPOT);
 		}
 	}
 
-	if (cs_is_trapped()) {
+	if (cs.is_trapped()) {
 		if (!is_trapped(start, path))
-			cs_set(CS_CLEAN);
+			cs.set(CS_CLEAN);
 	}
 
-	if (cs_is_clean()) {
+	if (cs.is_clean()) {
 		if (!path_next(start, path))
 		{
 			ROS_INFO("%s%d:", __FUNCTION__, __LINE__);
 			if (is_trapped(start, path))
 			{
-				cs_set(CS_TRAPPED);
+				cs.set(CS_TRAPPED);
 				path.push_back(g_virtual_target);
 			}
 			else
 			{
 //				if(g_have_seen_charger)
-					cs_set(CS_GO_HOME_POINT);
+					cs.set(CS_GO_HOME_POINT);
 //				else
-//					cs_set(CS_EXPLORATION);
+//					cs.set(CS_EXPLORATION);
 			}
 		}else
 			mt_update(start,path);
 	}
-	else if (cs_is_tmp_spot()) {
+	else if (cs.is_tmp_spot()) {
 		path_next_spot(start, path);
 	}
 
-	if (cs_is_go_home_point()) {
+	if (cs.is_go_home_point()) {
 		if (start == g_home_point) {
 			if (g_home_point != g_zero_home ||cm_turn_and_check_charger_signal())
-					cs_set(CS_GO_CHANGER);
+					cs.set(CS_GO_CHANGER);
 		}else
 
 		if(path_get_home_point_target(start, path))
-			cs_set(CS_EXPLORATION);
+			cs.set(CS_EXPLORATION);
 	}
-	if (cs_is_exploration()) {
+	if (cs.is_exploration()) {
 		if(g_have_seen_charger)
-			cs_set(CS_GO_CHANGER);
+			cs.set(CS_GO_CHANGER);
 		else
 			if(path_next_nav(start, path))
 				return false;
@@ -1767,7 +1767,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 
 bool is_fobbit_free() {
 	//NOTE: g_home_way_it should last of g_home_point,for g_homeway_list may empty.
-	return (cs_is_going_home() && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
+	return (cs.is_going_home() && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
 }
 
 bool fw_is_time_up()

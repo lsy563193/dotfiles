@@ -762,7 +762,7 @@ uint8_t map_set_follow_wall()
 {
 	bool set_for_WFMAP = false;
 	bool set_for_MAP = false;
-	if (cs_is_trapped())
+	if (cs.is_trapped())
 		set_for_WFMAP = true;
 
 	if (cm_is_navigation())
@@ -1004,7 +1004,7 @@ uint8_t map_save_rcon()
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_station && g_in_charge_signal_range && cs_is_going_home())//while in cs_is_going_home() mode_ or from_station dont mark rcon signal
+	if( g_from_station && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont mark rcon signal
 	{
 		ev.rcon_triggered = 0;
 		return 0;
@@ -1207,7 +1207,7 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 
 bool map_mark_robot(uint8_t id)
 {
-	if(!cs_is_trapped())
+	if(!cs.is_trapped())
 		return false;
 	int32_t x, y;
 	bool ret = false;

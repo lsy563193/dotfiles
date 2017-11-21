@@ -16,16 +16,38 @@ enum{
 		CS_STOP,
 };
 
-bool cs_init();
-bool cs_is_going_home();
-bool cs_is_go_home_point();
-bool cs_is_go_charger();
-bool cs_is_exploration();
-bool cs_is_clean();
-bool cs_is_tmp_spot();
-bool cs_is_trapped();
-bool cs_is_self_check();
-int cs_get(void);
-void cs_set(int);
+class CleanState {
+public:
+	CleanState() {
+		cs_ = 0;
+	}
+
+public:
+	bool init();
+
+	bool is_going_home();
+
+	bool is_go_home_point();
+
+	bool is_go_charger();
+
+	bool is_exploration();
+
+	bool is_clean();
+
+	bool is_tmp_spot();
+
+	bool is_trapped();
+
+	bool is_self_check();
+
+	int get(void);
+
+	void set(int);
+
+private:
+	int cs_;//clean state
+};
+extern CleanState cs;
 
 #endif //PP_CLEAN_MODE_H

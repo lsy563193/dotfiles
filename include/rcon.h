@@ -7,8 +7,9 @@
 
 //#include "move_type.h"
 //#include "clean_mode.h"
+#include "clean_state.h"
 bool cm_is_exploration();
-bool cs_is_going_home();
+//bool cs.is_going_home();
 extern bool g_from_station;
 extern bool g_motion_init_succeeded;
 extern bool g_in_charge_signal_range;
@@ -51,7 +52,7 @@ public:
 	}
 
 	int get_trig(void) {
-//	if (cs_is_going_home()) {
+//	if (cs.is_going_home()) {
 ////		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 //		reset_status();
 //		return 0;
@@ -102,7 +103,7 @@ public:
 
 	uint32_t get_status() {
 		extern Cell_t g_stub_cell;
-		if (!cs_is_going_home() && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger() &&
+		if (!cs.is_going_home() && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger() &&
 				!mt_is_follow_wall()) {//check if robot start from charge station
 			if (two_points_distance(g_stub_cell.X, g_stub_cell.Y, map_get_x_cell(), map_get_y_cell()) <= 20) {
 				g_in_charge_signal_range = true;

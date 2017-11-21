@@ -41,7 +41,7 @@ bool g_rcon_during_go_home;
 //Cell_t g_target_cell;
 
 //uint8_t	g_remote_go_home = 0;
-//bool	cs_is_going_home() = false;
+//bool	cs.is_going_home() = false;
 bool	g_from_station = 0;
 bool	g_in_charge_signal_range;
 
@@ -192,7 +192,7 @@ void cm_cleaning() {
 		return;
 
 	g_motion_init_succeeded = true;
-	cs_init();
+	cs.init();
 	Cell_t curr = map_update_position();
 
 	CleanMode* p_cm;
@@ -241,7 +241,7 @@ void cm_cleaning() {
 }
 
 void cm_apply_cs(void) {
-	if (cs_is_go_home_point()) {
+	if (cs.is_go_home_point()) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
@@ -268,7 +268,7 @@ void cm_apply_cs(void) {
 		ev.battrey_home = false;
 		mt_set(MT_LINEARMOVE);
 	}
-	if (cs_is_tmp_spot())
+	if (cs.is_tmp_spot())
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
@@ -285,28 +285,28 @@ void cm_apply_cs(void) {
 		}
 		ev.remote_spot = false;
 	}
-	if (cs_is_trapped())
+	if (cs.is_trapped())
 	{
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 		mt_set(MT_FOLLOW_LEFT_WALL);
 	}
-	if (cs_is_clean()) {
+	if (cs.is_clean()) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
-	if (cs_is_exploration()) {
+	if (cs.is_exploration()) {
 		mt_set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (cs_is_go_charger())
+	if (cs.is_go_charger())
 	{
 		tilt.enable(false); //disable tilt detect
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (cs_is_self_check())
+	if (cs.is_self_check())
 	{
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
@@ -315,7 +315,7 @@ void cm_apply_cs(void) {
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
-	cs_set(CS_CLEAN);
+	cs.set(CS_CLEAN);
 	g_go_home_by_remote = false;
 }
 
@@ -848,7 +848,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 /*
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (cs_is_going_home()) {
+	if (cs.is_going_home()) {
 		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -1055,7 +1055,7 @@ void CM_EventHandle::remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !g_is_manual_pause) {
+	if (g_motion_init_succeeded && !cs.is_going_home() && !cm_should_self_check() && !ev.slam_error && !g_is_manual_pause) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beeper.play_for_command(INVALID);
@@ -1081,7 +1081,7 @@ void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || !cm_is_navigation()
-		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || g_is_manual_pause
+		|| cs.is_going_home() || cm_should_self_check() || ev.slam_error || g_is_manual_pause
 		|| time(NULL) - last_time_remote_spot < 3)
 		beeper.play_for_command(INVALID);
 	else
@@ -1098,7 +1098,7 @@ void CM_EventHandle::remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
+	if (g_motion_init_succeeded && !cs.is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
 	{
 		beeper.play_for_command(VALID);
 		vacuum.switchToNext(true);
@@ -1135,7 +1135,7 @@ void CM_EventHandle::remote_direction_forward(bool state_now, bool state_last){
 /* Battery */
 void CM_EventHandle::battery_home(bool state_now, bool state_last)
 {
-	if (g_motion_init_succeeded && !cs_is_going_home()) {
+	if (g_motion_init_succeeded && !cs.is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
 						 battery.get_voltage());
 		ev.battrey_home = true;
@@ -1163,7 +1163,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 		t_vol = battery.get_voltage();
 		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
-		if (cs_is_going_home()) {
+		if (cs.is_going_home()) {
 			v_pwr = Home_Vac_Power / t_vol;
 			s_pwr = Home_SideBrush_Power / t_vol;
 			m_pwr = Home_MainBrush_Power / t_vol;
@@ -1186,7 +1186,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 void CM_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, charger.getChargeStatus(), g_charge_detect_cnt);
-	if (((cm_is_exploration() || cm_is_go_charger() || cs_is_going_home()) && charger.getChargeStatus()) ||
+	if (((cm_is_exploration() || cm_is_go_charger() || cs.is_going_home()) && charger.getChargeStatus()) ||
 		(!cm_is_exploration() && charger.getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)
