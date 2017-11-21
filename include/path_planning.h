@@ -48,12 +48,15 @@ extern std::vector<int>::iterator g_home_way_it;
 extern bool g_keep_on_wf;
 extern int16_t g_new_dir;
 extern int16_t g_old_dir;
-extern bool g_no_uncleaned_target;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;
 extern Cell_t g_home_point;
 extern int g_wf_reach_count;
+extern bool g_check_path_in_advance;
+extern bool g_allow_check_path_in_advance;
+extern Cell_t g_virtual_target;//for followall
+
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -114,7 +117,14 @@ void wf_path_planning_initialize();
 bool path_next(const Cell_t& curr, PPTargetType& path);
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path);
-void path_full_angle(const Cell_t& start, PPTargetType& path);
+/*
+ * Generating the pose direction for every target cell in the path, and return the direction towards the first target.
+ * @param	start: Start cell of this path.
+ * @param	path: The target list.
+ *
+ * @return	POS_X/POS_Y/NEG_X/NEG_Y for indicating the direction from start cell to first target.
+ */
+int16_t path_full_angle(const Cell_t& start, PPTargetType& path);
 
 //void path_update_cell_history(void);
 
@@ -171,6 +181,18 @@ bool path_full(const Cell_t& curr, PPTargetType& path);
 int16_t path_escape_trapped(const Cell_t& curr);
 bool cm_is_reach();
 
+bool path_next_fw(const Cell_t &start);
+bool path_next_nav(const Cell_t &start, PPTargetType &path);
+/*
+ * Calculate the path to next target in advance.
+ * @param	dir: variable that saves the new direction from start cell towards first target if it returns true.
+ * @param	start: Start cell.
+ * @param	path: The target list.
+ *
+ * @return	true if there is any valid uncleaned targets.
+ * 			false if there is no more uncleaned targets.
+ */
+bool path_next_nav_in_advance(int16_t &dir, const Cell_t &start, PPTargetType &path);
 void path_escape_set_trapped_cell( Cell_t *cell, uint8_t size );
 
 Cell_t *path_escape_get_trapped_cell(void);
@@ -182,89 +204,6 @@ bool path_get_home_point_target(const Cell_t& curr, PPTargetType& path);
 int16_t path_get_home_x(void);
 
 int16_t path_get_home_y(void);
-
-/*
- * Check a block is accessible by the robot or not.
- * A block is defined as have the same size of robot.
- *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
- *
- * @return	0 if the block is not blocked by bumper, obs or cliff
- *		1 if the block is blocked
- */
-uint8_t is_block_blocked(int16_t x, int16_t y);
-
-uint8_t is_block_blocked_x_axis(int16_t x, int16_t y);
-/*
- * Check a block is on the boundary or not, a block is defined as have the same size of robot.
- *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
- *
- * @return	0 if the block is not on the boundary
- *		1 if the block is on the boundary
- */
-uint8_t is_block_boundary(int16_t x, int16_t y);
-
-/*
- * Check a block is uncleaned or not, a block is defined as have the same size of brush.
- * Since the brush occupies 3 cells, if there is any one of those 3 cells unclean, then the
- * block is treated as unclean.
- *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
- *
- * @return	0 if the block is cleaned
- *		1 if the block is uncleaned
- */
-uint8_t is_block_unclean(int16_t x, int16_t y);
-
-/*
- * Check a block is cleaned or not, a block is defined as have the same size of brush.
- *
- *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
- *
- * @return	0 if the block is not cleaned
- *		1 if the block is cleaned
- */
-int8_t is_block_cleaned_unblock(int16_t x, int16_t y);
-
-/*
- * Check a block is cleanable or not, a block is defined as have the same size of brush.
- *
- *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
- *
- * @return	0 if the block is not cleanable
- *		1 if the block is cleanable
- */
-//int8_t is_block_cleanable(int16_t x, int16_t y);
-
-/*
- * Check a given point is blocked by bumper and/or cliff or not.
- *
- * @param x	X coordinate of the given point
- * @param y	Y coordinate of the given point
- *
- * @return	0 if it is not blocked by bumper and/or cliff
- *		1 if it is blocked by bumper and/or cliff
- */
-uint8_t is_blocked_by_bumper(int16_t x, int16_t y);
-
-/*
- * Check whether a given point is an blocked or not.
- *
- * @param x	X coordinate of the give point.
- * @param y	Y coordinate of the give point.
- *
- * @return	0 if the given point is not blocked
- * 		1 if the given point is blocked
- */
-uint8_t is_a_block(int16_t x, int16_t y);
 
 /*
  * Function to get the last robot movement's direction.

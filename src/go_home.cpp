@@ -15,6 +15,7 @@
 #include "event_manager.h"
 #include "charger.hpp"
 #include "map.h"
+#include "clean_mode.h"
 
 extern float saved_pos_x, saved_pos_y;
 /*----------------------------------------------------------------GO Home  ----------------*/
@@ -50,9 +51,9 @@ void go_home(void)
 			set_gyro_off();
 			// Wait for 30ms to make sure the off command has been effectived.
 			usleep(30000);
-			// Set gyro on before wav_play can save the time for opening the gyro.
+			// Set gyro on before wav.play can save the time for opening the gyro.
 			set_gyro_on();
-			wav_play(WAV_BACK_TO_CHARGER);
+			wav.play(WAV_BACK_TO_CHARGER);
 
 			if (!wait_for_gyro_on())
 			{
@@ -62,7 +63,7 @@ void go_home(void)
 		}
 		else
 		{
-			wav_play(WAV_BACK_TO_CHARGER);
+			wav.play(WAV_BACK_TO_CHARGER);
 		}
 	}
 	else
@@ -85,7 +86,7 @@ void go_home(void)
 				if (ev.cliff_all_triggered)
 				{
 					disable_motors();
-					wav_play(WAV_ERROR_LIFT_UP);
+					wav.play(WAV_ERROR_LIFT_UP);
 				}
 				cm_set(Clean_Mode_Userinterface);
 			}
@@ -114,7 +115,7 @@ void go_home(void)
 	if(!during_cleaning && !ev.charge_detect && !ev.fatal_quit && !ev.key_clean_pressed)
 	{
 		disable_motors();
-		wav_play(WAV_BACK_TO_CHARGER_FAILED);
+		wav.play(WAV_BACK_TO_CHARGER_FAILED);
 	}
 
 	go_home_unregister_events();

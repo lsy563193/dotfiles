@@ -65,6 +65,9 @@ void map_set_position(double x, double y);
 int32_t map_get_relative_x(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
 int32_t map_get_relative_y(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
 
+void robot_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void robot_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
+
 CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map = false);
 Cell_t map_get_curr_cell();
 void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value);
@@ -100,17 +103,110 @@ Cell_t map_update_position();
 uint8_t map_set_laser();
 uint8_t map_set_obs();
 uint8_t map_set_bumper();
-//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
 uint8_t map_set_rcon();
 uint8_t map_set_cliff();
 uint8_t map_set_tilt();
 uint8_t map_set_slip();
 uint8_t map_set_charge_position(const Cell_t homepoint);
-uint8_t map_set_blocked();
+uint8_t map_set_follow_wall();
+uint8_t map_set_blocks();
+uint8_t map_save_laser();
+uint8_t map_save_obs();
+uint8_t map_save_bumper();
+uint8_t map_save_rcon();
+uint8_t map_save_cliff();
+uint8_t map_save_tilt();
+uint8_t map_save_slip();
+uint8_t map_save_follow_wall();
+uint8_t map_save_blocks();
 
 double world_distance(void);
-void map_set_follow_wall(uint8_t id, const Cell_t& curr);
 void map_set_cleaned(std::deque<Cell_t>& cells);
 uint32_t map_get_cleaned_area();
-void fw_marker(const Cell_t&  curr);
+
+/*
+ * Check a block is accessible by the robot or not.
+ * A block is defined as have the same size of robot.
+ *
+ * @param x	X coordinate of the block
+ * @param y	Y coordinate of the block
+ *
+ * @return	0 if the block is not blocked by bumper, obs or cliff
+ *		1 if the block is blocked
+ */
+uint8_t is_block_blocked(int16_t x, int16_t y);
+
+uint8_t is_block_blocked_x_axis(int16_t x, int16_t y);
+/*
+ * Check a block is on the boundary or not, a block is defined as have the same size of robot.
+ *
+ * @param x	X coordinate of the block
+ * @param y	Y coordinate of the block
+ *
+ * @return	0 if the block is not on the boundary
+ *		1 if the block is on the boundary
+ */
+uint8_t is_block_boundary(int16_t x, int16_t y);
+
+/*
+ * Check a block is uncleaned or not, a block is defined as have the same size of brush.
+ * Since the brush occupies 3 cells, if there is any one of those 3 cells unclean, then the
+ * block is treated as unclean.
+ *
+ * @param x	X coordinate of the block
+ * @param y	Y coordinate of the block
+ *
+ * @return	0 if the block is cleaned
+ *		1 if the block is uncleaned
+ */
+uint8_t is_block_unclean(int16_t x, int16_t y);
+
+/*
+ * Check a block is cleaned or not, a block is defined as have the same size of brush.
+ *
+ *
+ * @param x	X coordinate of the block
+ * @param y	Y coordinate of the block
+ *
+ * @return	0 if the block is not cleaned
+ *		1 if the block is cleaned
+ */
+int8_t is_block_cleaned_unblock(int16_t x, int16_t y);
+
+/*
+ * Check a block is cleanable or not, a block is defined as have the same size of brush.
+ *
+ *
+ * @param x	X coordinate of the block
+ * @param y	Y coordinate of the block
+ *
+ * @return	0 if the block is not cleanable
+ *		1 if the block is cleanable
+ */
+bool is_block_cleanable(int16_t x, int16_t y);
+
+/*
+ * Check a given point is blocked by bumper and/or cliff or not.
+ *
+ * @param x	X coordinate of the given point
+ * @param y	Y coordinate of the given point
+ *
+ * @return	0 if it is not blocked by bumper and/or cliff
+ *		1 if it is blocked by bumper and/or cliff
+ */
+uint8_t is_blocked_by_bumper(int16_t x, int16_t y);
+
+/*
+ * Check whether a given point is an blocked or not.
+ *
+ * @param x	X coordinate of the give point.
+ * @param y	Y coordinate of the give point.
+ *
+ * @return	0 if the given point is not blocked
+ * 		1 if the given point is blocked
+ */
+uint8_t is_a_block(int16_t x, int16_t y);
+
+bool is_front_block_boundary(int dx);
+
 #endif /* __MAP_H */

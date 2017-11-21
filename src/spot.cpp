@@ -29,6 +29,9 @@
 #include <algorithm>
 #include <ros/ros.h>
 #include <time.h>
+#include <vacuum.h>
+#include <brush.h>
+#include "clean_mode.h"
 
 #ifdef Turn_Speed
 #undef Turn_Speed
@@ -40,9 +43,9 @@ static SpotMovement *spot_obj = NULL;
 
 static void spot_motor_configure()
 {
-	set_bldc_speed(Vac_Speed_Max);
-	set_main_brush_pwm(80);
-	set_side_brush_pwm(60, 60);
+	vacuum.mode(Vac_Max);
+	brush.set_main_pwm(80);
+	brush.set_side_pwm(60, 60);
 }
 
 SpotMovement::SpotMovement(float diameter = 1.0)
@@ -118,7 +121,7 @@ void SpotMovement::spotDeinit()
 	spot_init_ = 0;
 	spot_bumper_cnt_ = 0;
 	if(getSpotType() == CLEAN_SPOT){
-		work_motor_configure();
+		cs_work_motor();
 	}
 	resetSpotType();
 }
@@ -511,7 +514,7 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 		/*---init spot move and set start cell---*/
 		if (spt == CLEAN_SPOT)
 		{
-			wav_play(WAV_CLEANING_SPOT);
+			wav.play(WAV_CLEANING_SPOT);
 			spotInit(1.0, cur_cell);//start from current cell
 		}
 		else if( spt == NORMAL_SPOT){

@@ -12,9 +12,17 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
+#include <controller.h>
+#include <led.h>
+#include <obs.h>
+#include <obs.h>
+#include <sleep.h>
+#include <omni.h>
+#include <wheel.h>
 
 #include "movement.h"
 #include "gyro.h"
+#include "bumper.h"
 #include "crc8.h"
 #include "serial.h"
 #include "robotbase.h"
@@ -97,13 +105,13 @@ int robotbase_init(void)
 		ROS_ERROR("serial not ready\n");
 		return -1;
 	}
-	set_main_pwr_byte(POWER_ACTIVE);
+	controller.set_status(POWER_ACTIVE);
 	g_send_stream_mutex.lock();
 	memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
 	g_send_stream_mutex.unlock();
 	uint8_t crc;
 	crc = calc_buf_crc8(buf, SEND_LEN - 3);
-	control_set(SEND_LEN - 3, crc);
+	controller.set(SEND_LEN - 3, crc);
 	ROS_INFO("waiting robotbase awake ");
 	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
@@ -150,11 +158,11 @@ void robotbase_deinit(void)
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
-		set_led_mode(LED_STEADY, LED_OFF);
-		control_set(CTL_BUZZER, 0x00);
+		led.set_mode(LED_STEADY, LED_OFF);
+		controller.set(CTL_BUZZER, 0x00);
 		set_gyro_off();
-		disable_motors();
-		set_main_pwr_byte(POWER_DOWN);
+		cs_disable_motors();
+		controller.set_status(POWER_DOWN);
 		usleep(40000);	
 		send_stream_thread = false;
 		usleep(40000);
@@ -174,14 +182,14 @@ void robotbase_reset_send_stream(void)
 	boost::mutex::scoped_lock(g_send_stream_mutex);
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
-			control_set(i, 0x00);
+			controller.set(i, 0x00);
 		else
-			control_set(i, 0x64);
+			controller.set(i, 0x64);
 	}
-	control_set(0, 0xaa);
-	control_set(1, 0x55);
-	control_set(SEND_LEN - 2, 0xcc);
-	control_set(SEND_LEN - 1, 0x33);
+	controller.set(0, 0xaa);
+	controller.set(1, 0x55);
+	controller.set(SEND_LEN - 2, 0xcc);
+	controller.set(SEND_LEN - 1, 0x33);
 }
 
 void *serial_receive_routine(void *)
@@ -309,9 +317,9 @@ void *robotbase_routine(void*)
 
 		sensor.left_wall = ((g_receive_stream[REC_L_WALL_H] << 8)| g_receive_stream[REC_L_WALL_L]);
 
-		sensor.l_obs = ((g_receive_stream[REC_L_OBS_H] << 8) | g_receive_stream[REC_L_OBS_L]) - g_obs_left_baseline;
-		sensor.f_obs = ((g_receive_stream[REC_F_OBS_H] << 8) | g_receive_stream[REC_F_OBS_L]) - g_obs_front_baseline;
-		sensor.r_obs = ((g_receive_stream[REC_R_OBS_H] << 8) | g_receive_stream[REC_R_OBS_L]) - g_obs_right_baseline;
+		sensor.l_obs = ((g_receive_stream[REC_L_OBS_H] << 8) | g_receive_stream[REC_L_OBS_L]) - obs.get_left_baseline();
+		sensor.f_obs = ((g_receive_stream[REC_F_OBS_H] << 8) | g_receive_stream[REC_F_OBS_L]) - obs.get_front_baseline();
+		sensor.r_obs = ((g_receive_stream[REC_R_OBS_H] << 8) | g_receive_stream[REC_R_OBS_L]) - obs.get_right_baseline();
 
 #if __ROBOT_X900
 
@@ -319,7 +327,7 @@ void *robotbase_routine(void*)
 
 		sensor.lbumper = (g_receive_stream[REC_BUMPER] & 0xf0) ? true : false;
 		sensor.rbumper = (g_receive_stream[REC_BUMPER] & 0x0f) ? true : false;
-		auto lidar_bumper_status = get_lidar_bumper_status();
+		auto lidar_bumper_status = bumper_get_lidar_status();
 		if (lidar_bumper_status == 1)
 			sensor.lidar_bumper = 1;
 		else if (lidar_bumper_status == 0)
@@ -474,8 +482,8 @@ void *serial_send_routine(void*)
 		if(get_sleep_mode_flag()){
 			continue;
 		}
-		/*-------------------Process for beep and led -----------------------*/
-		// Force reset the beep action when beep() function is called, especially when last beep action is not over. It can stop last beep action and directly start the updated beep action.
+		/*-------------------Process for beeper.play and led -----------------------*/
+		// Force reset the beeper action when beeper() function is called, especially when last beeper action is not over. It can stop last beeper action and directly start the updated beeper.play action.
 		if (robotbase_beep_update_flag){
 			temp_speaker_sound_time_count = -1;
 			temp_speaker_silence_time_count = 0;
@@ -492,16 +500,15 @@ void *serial_send_routine(void*)
 
 		//if(!is_flag_set()){
 			/*---pid for wheels---*/
-			extern struct pid_struct left_pid, right_pid;
 			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
-			wheels_pid();
-			if(left_pid.actual_speed < 0)	g_wheel_left_direction = BACKWARD;
-			else							g_wheel_left_direction = FORWARD;
-			if(right_pid.actual_speed < 0)	g_wheel_right_direction = BACKWARD;
-			else							g_wheel_right_direction = FORWARD;
+		wheel.set_pid();
+			if(left_pid.actual_speed < 0)	wheel.set_left_dir(BACKWARD);
+			else							wheel.set_left_dir(FORWARD);
+			if(right_pid.actual_speed < 0)	wheel.set_right_dir(BACKWARD);
+			else							wheel.set_right_dir(FORWARD);
 
-			set_left_wheel_speed((uint8_t)fabsf(left_pid.actual_speed));
-			set_right_wheel_speed((uint8_t)fabsf(right_pid.actual_speed));
+		wheel.set_left_speed((uint8_t) fabsf(left_pid.actual_speed));
+		wheel.set_right_speed((uint8_t) fabsf(right_pid.actual_speed));
 			g_send_stream_mutex.lock();
 			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
 			g_send_stream_mutex.unlock();
@@ -510,8 +517,8 @@ void *serial_send_routine(void*)
 			serial_write(SEND_LEN, buf);
 		//}
 		//reset omni wheel bit
-		if(control_get(CTL_OMNI_RESET) & 0x01)
-			clear_reset_mobility_step();
+		if(controller.get(CTL_OMNI_RESET) & 0x01)
+			omni.clear();
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
@@ -524,15 +531,15 @@ void process_beep()
 	if (temp_speaker_silence_time_count == 0){
 		temp_speaker_silence_time_count--;
 		temp_speaker_sound_time_count = robotbase_speaker_sound_time_count;
-		control_set(CTL_BUZZER, robotbase_sound_code & 0xFF);
+		controller.set(CTL_BUZZER, robotbase_sound_code & 0xFF);
 	}
 	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
 	if (temp_speaker_sound_time_count == 0){
 		temp_speaker_sound_time_count--;
 		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
-		control_set(CTL_BUZZER, 0x00);
+		controller.set(CTL_BUZZER, 0x00);
 		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
-		// If it is for constant beep, the loop count will be less than 0, it will not decrease either.
+		// If it is for constant beeper.play, the loop count will be less than 0, it will not decrease either.
 		if (robotbase_speaker_sound_loop_count > 0){
 			robotbase_speaker_sound_loop_count--;
 		}
@@ -580,22 +587,22 @@ void process_led()
 	{
 		case LED_GREEN:
 		{
-			set_led(led_brightness, 0);
+			led.set(led_brightness, 0);
 			break;
 		}
 		case LED_ORANGE:
 		{
-			set_led(led_brightness, led_brightness);
+			led.set(led_brightness, led_brightness);
 			break;
 		}
 		case LED_RED:
 		{
-			set_led(0, led_brightness);
+			led.set(0, led_brightness);
 			break;
 		}
 		case LED_OFF:
 		{
-			set_led(0, 0);
+			led.set(0, 0);
 			break;
 		}
 	}

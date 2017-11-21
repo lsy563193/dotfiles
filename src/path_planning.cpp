@@ -19,39 +19,8 @@
  * After the cleaning process is done, robot will back to its starting point and
  * finishes the cleaning.
  */
-#include <stdint.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
-#include <deque>
-#include <string>
-
-#include <ros/ros.h>
-#include <movement.h>
-#include <mathematics.h>
-#include <move_type.h>
-#include <event_manager.h>
-#include <path_planning.h>
-
-#include "core_move.h"
-#include "gyro.h"
-#include "mathematics.h"
+#include "pp.h"
 #include "map.h"
-#include "path_planning.h"
-#include "shortest_path.h"
-#include "spot.h"
-#include "robot.hpp"
-#include "movement.h"
-
-#include "wav.h"
-#include <numeric>
-#include <motion_manage.h>
-#include <regulator.h>
-#include <clean_state.h>
-
 #define FINAL_COST (1000)
 
 #define TRAPPED 2
@@ -59,10 +28,10 @@ using namespace std;
 const int ISOLATE_COUNT_LIMIT = 4;
 int16_t g_new_dir;
 int16_t g_old_dir;
+bool g_check_path_in_advance = false;
+bool g_allow_check_path_in_advance = true;
 int g_wf_reach_count;
 std::deque <PPTargetType> g_paths;
-
-uint8_t	g_first_start = 0;
 
 uint8_t g_direct_go = 0; /* Enable direct go when there is no obstcal in between current pos. & dest. */
 
@@ -72,7 +41,6 @@ std::vector<Cell_t> g_homes;
 std::vector<int> g_home_way_list;
 std::vector<int>::iterator g_home_way_it;
 Cell_t g_home_point;
-bool g_is_switch_target = true;
 //int8_t g_home_cnt = 0;// g_homes.size()*HOMEWAY_NUM-1 3/9, 2/4, 1/2
 bool g_home_gen_rosmap = true;
 
@@ -227,139 +195,6 @@ void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int1
 //		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
 }
 
-uint8_t is_a_block(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	CellState cs;
-
-	cs = map_get_cell(MAP, x, y);
-	if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY)
-	//if (cs >= BLOCKED && cs <= BLOCKED_CLIFF)
-		retval = 1;
-
-	return retval;
-}
-
-uint8_t is_blocked_by_bumper(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	int16_t i, j;
-	CellState cs;
-
-	/* Check the point by using the robot size. */
-	for (i = ROBOT_RIGHT_OFFSET; retval == 0 && i <= ROBOT_LEFT_OFFSET; i++) {
-		for (j = ROBOT_RIGHT_OFFSET; retval == 0 && j <= ROBOT_LEFT_OFFSET; j++) {
-			cs = map_get_cell(MAP, x + i, y + j);
-			//if ((cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) && cs != BLOCKED_OBS) {
-			if ((cs >= BLOCKED && cs <= BLOCKED_CLIFF) && cs != BLOCKED_OBS) {
-				retval = 1;
-			}
-		}
-	}
-
-	return retval;
-}
-
-uint8_t is_block_accessible(int16_t x, int16_t y)
-{
-	uint8_t retval = 1;
-	int16_t i, j;
-
-	for (i = ROBOT_RIGHT_OFFSET; retval == 1 && i <= ROBOT_LEFT_OFFSET; i++) {
-		for (j = ROBOT_RIGHT_OFFSET; retval == 1 && j <= ROBOT_LEFT_OFFSET; j++) {
-			if (is_a_block(x + i, y + j) == 1) {
-				retval = 0;
-			}
-		}
-	}
-
-	return retval;
-}
-
-static bool is_block_cleanable(int16_t x, int16_t y)
-{
-	auto retval = is_block_unclean(x, y) && !is_block_blocked(x, y);
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return retval;
-}
-
-int8_t is_block_cleaned_unblock(int16_t x, int16_t y)
-{
-	uint8_t cleaned = 0;
-	int16_t i, j;
-
-	for (i = ROBOT_RIGHT_OFFSET; i <= ROBOT_LEFT_OFFSET; i++) {
-		for (j = ROBOT_RIGHT_OFFSET; j <= ROBOT_LEFT_OFFSET; j++) {
-			auto state = map_get_cell(MAP, x+i, y+j);
-			if (state == CLEANED) {
-				cleaned ++;
-			} else if(is_block_blocked(x,y))
-				return false;
-		}
-	}
-
-	if (cleaned >= 7)
-		return true;
-	return false;
-}
-
-uint8_t is_block_unclean(int16_t x, int16_t y)
-{
-	uint8_t unclean_cnt = 0;
-	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (map_get_cell(MAP, x, i) == UNCLEAN) {
-			unclean_cnt++;
-		}
-	}
-//	ROS_INFO("%s, %d:unclean_cnt(%d)", __FUNCTION__, __LINE__, unclean_cnt);
-	return unclean_cnt;
-}
-
-uint8_t is_block_boundary(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	int16_t i;
-
-	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (map_get_cell(MAP, x, i) == BLOCKED_BOUNDARY) {
-			retval = 1;
-		}
-	}
-
-	return retval;
-}
-
-uint8_t is_block_blocked(int16_t x, int16_t y)
-{
-	uint8_t retval = 0;
-	int16_t i;
-
-	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (is_a_block(x, i) == 1) {
-			retval = 1;
-		}
-	}
-
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return retval;
-}
-
-uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
-{
-	uint8_t retval = 0;
-	int16_t x,y;
-	auto dy = mt_is_left()  ?  2 : -2;
-	for(auto dx =-1; dx<=1,retval == 0; dx++) {
-		cm_world_to_cell(gyro_get_angle(), CELL_SIZE*dy, CELL_SIZE*dx, x, y);
-		if (is_a_block(x, y) == 1) {
-			retval = 1;
-		}
-	}
-
-//	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
-	return retval;
-}
-
 //int16_t path_lane_distance(bool is_min)
 //{
 //	int angle = gyro_get_angle();
@@ -422,6 +257,7 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	{
 		path.push_front(target);
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
+		debug_map(MAP, target.X, target.Y);
 	}
 	else
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target not found.", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
@@ -798,7 +634,7 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
 	generate_SPMAP(curr);
-	std::deque<Cell_t> reachable_targets{};
+	PPTargetType reachable_targets{};
 	for (auto it = g_paths.begin(); it != g_paths.end();) {
 		if (map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_NO ||
 						map_get_cell(SPMAP, it->back().X, it->back().Y) == COST_HIGH) {
@@ -1372,14 +1208,19 @@ bool path_next_spot(const Cell_t &start, PPTargetType &path) {
 		return false;
 }
 
-bool path_next_fw(const Cell_t &start, PPTargetType &path) {
+bool path_next_fw(const Cell_t &start) {
+	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 	if (mt_is_linear()) {
+		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (cm_is_reach()) {
-//			path.push_back(g_virtual_target);
+			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
+			mt_set(MT_FOLLOW_LEFT_WALL);
+			g_plan_path.push_back(g_virtual_target);
 			return true;
 		}
 	}
 	else {
+		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (g_wf_reach_count == 0 ||
 				(g_wf_reach_count < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
 				 wf_is_isolate())) {
@@ -1390,8 +1231,9 @@ bool path_next_fw(const Cell_t &start, PPTargetType &path) {
 			}
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 			Cell_t cell;
-			cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
-			path.push_back(cell);
+			robot_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+			g_plan_path.push_back(cell);
+			mt_set(MT_LINEARMOVE);
 			return true;
 		}
 	}
@@ -1414,7 +1256,20 @@ bool path_next_nav(const Cell_t &start, PPTargetType &path)
 			}
 		}
 	}
-	path_full_angle(start, path);
+	g_new_dir = path_full_angle(start, path);
+	return ret;
+}
+
+bool path_next_nav_in_advance(int16_t &dir, const Cell_t &start, PPTargetType &path)
+{
+	bool ret = true;
+	ret = path_lane_is_cleaned(start, path);
+	if (!ret)
+		ret = path_target(start, path);//-1 not target, 0 found
+	if (ret)
+		dir = path_full_angle(start, path);
+	else
+		dir = 0;
 	return ret;
 }
 
@@ -1433,7 +1288,7 @@ bool cm_turn_and_check_charger_signal(void)
 			continue;
 		}
 
-		if(get_rcon_status())
+		if(c_rcon.get_status())
 		{
 			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
 			return true;
@@ -1446,7 +1301,7 @@ bool cm_turn_and_check_charger_signal(void)
 	}
 	return false;
 }
-void path_full_angle(const Cell_t& start, PPTargetType& path)
+int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
 {
 	path.push_front(start);
 	for(auto it = path.begin(); it < path.end(); ++it) {
@@ -1457,22 +1312,20 @@ void path_full_angle(const Cell_t& start, PPTargetType& path)
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-	path.back().TH = (path.end()-2)->TH;
 	if(cs_is_going_home() && g_home_point == g_zero_home)
-	{
 		path.back().TH = g_home_point.TH;
-	}
-//	ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-	g_new_dir = g_plan_path.front().TH;
+	else
+		path.back().TH = (path.end()-2)->TH;
+	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
+			 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+	int16_t dir = path.front().TH;
 	path.pop_front();
+	return dir;
 }
 
 bool path_next(const Cell_t& start, PPTargetType& path)
 {
-	if (cm_is_follow_wall()) {
-		return path_next_fw(start, path);
-	}
-	else if (cm_is_spot()) {
+	if (cm_is_spot()) {
 		return path_next_spot(start, path);
 	}
 	else if (cm_is_navigation()) {
@@ -1504,10 +1357,11 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 	if (cs_is_clean()) {
 		if (!path_next(start, path))
 		{
+			ROS_INFO("%s%d:", __FUNCTION__, __LINE__);
 			if (is_trapped(start, path))
 			{
 				cs_set(CS_TRAPPED);
-//				path.push_back(g_virtual_target);
+				path.push_back(g_virtual_target);
 			}
 			else
 			{
@@ -1517,7 +1371,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 //					cs_set(CS_EXPLORATION);
 			}
 		}else
-		mt_update(start,path);
+			mt_update(start,path);
 	}
 	else if (cs_is_tmp_spot()) {
 		path_next_spot(start, path);
@@ -1539,8 +1393,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 			if(path_next_nav(start, path))
 				return false;
 	}
-	if(mt_is_follow_wall())
-		path.push_back(g_virtual_target);
+
 	return true;
 }
 
@@ -1803,7 +1656,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		auto angle = -900;
 	Cell_t cell;
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-		cm_world_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+	robot_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 		path.clear();
 	path.push_front(cell);
 		path.push_front(curr);

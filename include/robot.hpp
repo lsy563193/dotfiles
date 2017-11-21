@@ -18,6 +18,8 @@
 #include "map.h"
 #include "movement.h"
 
+extern volatile int16_t g_left_wall_baseline;
+extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
 
 typedef enum {
@@ -26,6 +28,8 @@ typedef enum {
 	Map_Position_Odom_Angle,
 } Baselink_Frame_Type;
 
+extern bool	g_is_low_bat_pause;
+extern bool g_is_manual_pause;
 class robot
 {
 public:
@@ -108,35 +112,6 @@ public:
 		return angle_v_;
 	}
 
-	int16_t getCliffRight() const
-	{
-		return sensor.rcliff;
-	}
-
-	int16_t getCliffLeft() const
-	{
-		return sensor.lcliff;
-	}
-
-	int16_t getCliffFront() const
-	{
-		return sensor.fcliff;
-	}
-
-	int16_t getLeftWall() const
-	{
-		return sensor.left_wall - g_left_wall_baseline;
-	}
-
-	int16_t getRightWall() const
-	{
-#if __ROBOT_X900
-		return sensor.right_wall - g_right_wall_baseline;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
 	int16_t getOmniWheel() const
 	{
 #if __ROBOT_X9000
@@ -164,26 +139,6 @@ public:
 #endif
 	}
 
-	uint8_t getVacuumSelfCheckStatus() const
-	{
-		return vacuum_selfcheck_status_;
-	}
-
-	bool getLbrushOc() const
-	{
-		return lbrush_oc_;
-	}
-
-	bool getRbrushOc() const
-	{
-		return rbrush_oc_;
-	}
-
-	bool getMbrushOc() const
-	{
-		return mbrush_oc_;
-	}
-
 	bool getVacuumOc() const
 	{
 		return vacuum_oc_;
@@ -191,12 +146,7 @@ public:
 
 	uint8_t getKey() const
 	{
-		return key;
-	}
-
-	int getChargeStatus() const
-	{
-		return charge_status_;
+		return key_;
 	}
 
 	uint8_t getIrCtrl() const
@@ -219,48 +169,9 @@ public:
 		return charge_stub_;
 	}
 
-	bool getBumperRight() const
-	{
-		return sensor.rbumper;
-	}
-
-	bool getBumperLeft() const
-	{
-		return sensor.lbumper;
-	}
-
-	int16_t getObsLeft()
-	{
-		//int16_t left_obs = sensor.l_obs - g_obs_left_baseline;
-		int16_t left_obs = sensor.l_obs;
-		//ROS_INFO("%s %d: sensor.l_obs(%d) - obs_l_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.l_obs, g_obs_left_baseline, left_obs);
-		return left_obs;
-	}
-
-	int16_t getObsRight()
-	{
-		//int16_t right_obs = sensor.r_obs - g_obs_right_baseline;
-		int16_t right_obs = sensor.r_obs;
-		//ROS_INFO("%s %d: sensor.r_obs(%d) - obs_r_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.r_obs, g_obs_right_baseline, right_obs);
-		return right_obs;
-	}
-
-	int16_t getObsFront()
-	{
-		//int16_t front_obs = sensor.f_obs - g_obs_front_baseline;
-		int16_t front_obs = sensor.f_obs;
-		//ROS_INFO("%s %d: sensor.f_obs(%d) - obs_f_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.f_obs, g_obs_front_baseline, front_obs);
-		return front_obs;
-	}
-
 	bool getWaterTank() const
 	{
 		return w_tank_;
-	}
-
-	uint16_t getBatteryVoltage() const
-	{
-		return battery_voltage_*10;
 	}
 
 	bool isMoving() const
@@ -343,56 +254,6 @@ public:
 		return robot_correction_yaw_;
 	}
 
-	int16_t getXAcc() const
-	{
-		return x_acc_;
-	}
-
-	int16_t getYAcc() const
-	{
-		return y_acc_;
-	}
-
-	int16_t getZAcc() const
-	{
-		return z_acc_;
-	}
-
-	int16_t getInitXAcc() const
-	{
-		return init_x_acc_;
-	}
-
-	int16_t getInitYAcc() const
-	{
-		return init_y_acc_;
-	}
-
-	int16_t getInitZAcc() const
-	{
-		return init_z_acc_;
-	}
-
-	uint8_t getLidarBumper() const
-	{
-		return (uint8_t)sensor.lidar_bumper;
-	}
-
-	void setInitXAcc(int16_t val)
-	{
-		init_x_acc_ = val;
-	}
-
-	void setInitYAcc(int16_t val)
-	{
-		init_y_acc_ = val;
-	}
-
-	void setInitZAcc(int16_t val)
-	{
-		init_z_acc_ = val;
-	}
-
 	void setTfReady(bool is_ready)
 	{
 		is_tf_ready_ = is_ready;
@@ -413,6 +274,7 @@ public:
 
 //#if CONTINUE_CLEANING_AFTER_CHARGE
 // These 3 functions are for continue cleaning after charge.
+/*
 	bool isLowBatPaused(void) const
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -421,7 +283,9 @@ public:
 		return false;
 #endif
 	}
+*/
 
+/*
 	void setLowBatPause(void)
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -429,7 +293,9 @@ public:
 		low_bat_pause_cleaning_ = true;
 #endif
 	}
+*/
 
+/*
 	void resetLowBatPause(void)
 	{
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -437,8 +303,10 @@ public:
 		low_bat_pause_cleaning_ = false;
 #endif
 	}
+*/
 
 // These 3 functions are for manual pause cleaning.
+/*
 	bool isManualPaused(void) const
 	{
 #if MANUAL_PAUSE_CLEANING
@@ -447,22 +315,23 @@ public:
 		return false;
 #endif
 	}
+*/
 
-	void setManualPause(void)
+/*	void setManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
 		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		manual_pause_cleaning_ = true;
 #endif
-	}
+	}*/
 
-	void resetManualPause(void)
+/*	void resetManualPause(void)
 	{
 #if MANUAL_PAUSE_CLEANING
 		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
 		manual_pause_cleaning_ = false;
 #endif
-	}
+	}*/
 
 	Baselink_Frame_Type getBaselinkFrameType(void)
 	{
@@ -518,8 +387,6 @@ public:
 
 	void obsAdjustCount(int count);
 
-	void setAccInitData();
-
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
@@ -531,10 +398,10 @@ private:
 	boost::mutex baselink_frame_type_mutex_;
 
 // These variable is indicating robot detects battery low, it is going back to home cells.
-	bool	low_bat_pause_cleaning_;
+//	bool	low_bat_pause_cleaning_;
 
 // These variable is indicating robot is during pause of navigation mode.
-	bool	manual_pause_cleaning_;
+//	bool	manual_pause_cleaning_;
 
 
 	bool	is_sensor_ready_;
@@ -567,32 +434,12 @@ private:
 	/* 1 byte */
 	int32_t brush_main_;
 
-	/* 2 bytes */
-	int16_t cliff_right_;
-
-	/* 2 bytes */
-	int16_t cliff_left_;
-
-	/* 2 bytes */
-	int16_t cliff_front_;
-
 	/*1 byte */
-	uint8_t key;
-
-	/*1 byte */
-	uint8_t charge_status_;
+	uint8_t key_;
 
 	/*1 byte*/
 	bool w_tank_; //water tank
 
-	/* 1 byte */
-	uint16_t battery_voltage_;
-
-	/*1 byte*/
-	uint8_t vacuum_selfcheck_status_;
-	bool lbrush_oc_; //oc: over current
-	bool rbrush_oc_;
-	bool mbrush_oc_;
 	bool vacuum_oc_;
 
 	/*2 bytes*/
@@ -601,21 +448,6 @@ private:
 	/*2 bytes*/
 	float rw_crt_; // right wheel current
 
-	/*1 byte*/
-	uint16_t left_wall_; // left wall sensor
-	
-	/*1 byte*/
-	uint16_t right_wall_; // left wall sensor
-	
-	/*? byte*/
-	int16_t x_acc_; // accelaration of x
-	
-	/*? byte*/
-	int16_t y_acc_; // accelaration of y
-	
-	/*? byte*/
-	int16_t z_acc_; // accelaration of z
-	
 	/*1 byte*/
 	uint8_t gyro_dymc_; // ??
 	
@@ -665,10 +497,6 @@ private:
 	//new variable plan
 	int8_t plan;
 	#endif
-
-	int16_t init_x_acc_;
-	int16_t init_y_acc_;
-	int16_t init_z_acc_;
 
 	bool	is_moving_;
 

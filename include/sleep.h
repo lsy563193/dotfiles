@@ -1,21 +1,28 @@
 #include <stdint.h>
 #include <unistd.h>
+#include <event_manager.h>
 
 void sleep_mode(void);
 
+class Sleep_EventHandle:public EventHandle {
+
+	void rcon(bool state_now, bool state_last);
+
+	void remote_clean(bool state_now, bool state_last);
+
+	void remote_plan(bool state_now, bool state_last);
+
+	void key_clean(bool state_now, bool state_last);
+
+	void charge_detect(bool state_now, bool state_last);
+
+};
 void sleep_register_events(void);
 
 void sleep_unregister_events(void);
 
-#define define_sleep_handle_func(name) \
-	void sleep_handle_ ## name(bool state_now, bool state_last);
 
-/* Rcon */
-define_sleep_handle_func(rcon)
-/* Remote */
-define_sleep_handle_func(remote_clean)
-define_sleep_handle_func(remote_plan)
-/* Key */
-define_sleep_handle_func(key_clean)
-/* Charge Status */
-define_sleep_handle_func(charge_detect)
+void set_sleep_mode_flag();
+uint8_t get_sleep_mode_flag();
+void reset_sleep_mode_flag();
+

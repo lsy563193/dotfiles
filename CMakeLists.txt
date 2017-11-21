@@ -9,7 +9,28 @@ FILE(GLOB PP_SRC
 	src/debug.cpp
 	src/des.cpp
 	src/gyro.cpp
-	src/laser.cpp
+				src/dev/vacuum.cpp
+				src/dev/key.cpp
+			 src/dev/cliff.cpp
+				src/dev/battery.cpp
+				src/dev/brush.cpp
+				src/dev/bumper.cpp
+				src/dev/rcon.cpp
+				src/dev/clean_timer.cpp
+				src/dev/remote.cpp
+				src/dev/controller.cpp
+				src/dev/obs.cpp
+				src/dev/accelerator.cpp
+				src/dev/tilt.cpp
+				src/dev/led.cpp
+				src/dev/beep.cpp
+				src/dev/charger.cpp
+				src/dev/wall_follow.cpp
+				src/dev/omni.cpp
+				src/dev/wheel.cpp
+				src/dev/laser.cpp
+				src/dev/wav.cpp
+	src/error.cpp
 	src/main.cpp
 #	test/angle_test.cpp
 	src/map.cpp
@@ -26,13 +47,12 @@ FILE(GLOB PP_SRC
 	src/sleep.cpp
 #	src/spiral.cpp
 	src/spot.cpp
-	src/user_interface.cpp
+	src/idle.cpp
 	src/verify.cpp
 #	src/wall_follow_slam.cpp
-	src/wav.cpp
 	src/slam.cpp
 	src/event_manager.cpp
-	src/go_home.cpp
+#	src/go_home.cpp
 	src/regulator.cpp
 	src/move_type.cpp
 	src/clean_mode.cpp

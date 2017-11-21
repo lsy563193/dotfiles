@@ -11,6 +11,8 @@
 #include <path_planning.h>
 #include <movement.h>
 #include <robot.hpp>
+#include <rcon.h>
+#include <wheel.h>
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
@@ -34,11 +36,29 @@ extern int16_t g_turn_angle;
 #define ROUND_LEFT 1
 #define ROUND_RIGHT 2
 
+extern int g_wall_distance;
+extern double g_time_straight;
+extern double time_start_straight;
+extern bool g_slip_backward;
+extern double bumper_turn_factor;
+
+int16_t bumper_turn_angle();
+
+int16_t cliff_turn_angle();
+
+int16_t tilt_turn_angle();
+
+int16_t obs_turn_angle();
+
+int16_t rcon_turn_angle();
+
+bool laser_turn_angle(int16_t& turn_angle);
+
 class RegulatorBase {
 public:
 
-	bool _isExit();
-	bool _isStop();
+	bool isExit();
+	bool isStop();
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void setTarget() = 0;
 	virtual std::string getName() = 0;
@@ -56,7 +76,7 @@ class BackRegulator: public RegulatorBase{
 public:
 	BackRegulator();
 	~BackRegulator(){
-		//set_wheel_speed(1, 1);
+		//set_wheel.speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isLaserStop();
@@ -105,7 +125,7 @@ public:
 	TurnSpeedRegulator(uint8_t speed_max,uint8_t speed_min, uint8_t speed_start):
 					speed_max_(speed_max),speed_min_(speed_min), speed_(speed_start),tick_(0){};
 	~TurnSpeedRegulator() {
-		//set_wheel_speed(0, 0);
+		//set_wheel.speed(0, 0);
 	}
 	bool adjustSpeed(int16_t diff, uint8_t& speed_up);
 
@@ -122,41 +142,78 @@ public:
 		ROS_INFO("\033[33m%s\033[0m, %d: ", __FUNCTION__, __LINE__);
 	};
 	~SelfCheckRegulator(){
-		set_wheel_speed(0, 0);
+		wheel.stop();
 	};
 	void adjustSpeed(uint8_t bumper_jam_state);
 };
 
-class FollowWallRegulator:public RegulatorBase{
+class FollowWallRegulator:public RegulatorBase {
 
 public:
 	FollowWallRegulator(Point32_t start_point, Point32_t target);
-	~FollowWallRegulator(){ /*set_wheel_speed(0,0);*/ };
+
+	~FollowWallRegulator() { /*set_wheel.speed(0,0);*/ };
+
+	void reset_sp_turn_count() {
+		turn_count = 0;
+	}
+
+	int32_t get_sp_turn_count() {
+		return turn_count;
+	}
+
+	void add_sp_turn_count() {
+		turn_count++;
+	}
+
+	bool sp_turn_over(const Cell_t &curr) {
+		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, curr.TH);
+		/*check if spot turn*/
+		if (get_sp_turn_count() > 400) {
+			reset_sp_turn_count();
+			ROS_WARN("  yes! sp_turn over 400");
+			return true;
+		}
+		return false;
+	}
+
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+
 	bool shouldMoveBack();
+
 	bool shouldTurn();
+
 	bool isBlockCleared();
+
 	bool isOverOriginLine();
+
 	bool isNewLineReach();
+
 	bool isClosure(uint8_t closure_cnt);
+
 	bool isIsolate();
+
 	bool isTimeUp();
+
 	void setTarget();
-	std::string getName()
-	{
+
+	std::string getName() {
 		std::string name = "FollowWallRegulator";
 		return name;
 	}
 
+
 private:
+//Variable for checking spot turn in wall follow mode_
+	volatile int32_t turn_count;
 	int32_t previous_;
 	uint8_t seen_charger_counter;
 	int next_linear_speed = INT_MAX;
-	double wall_follow_detect_distance=0.20;
+	double wall_follow_detect_distance = 0.20;
 	int32_t old_same_speed = 0;
 	int32_t old_diff_speed = 0;
-	int turn_right_angle_factor=15;
-	int16_t wall_buffer[3]={0};
+	int turn_right_angle_factor = 15;
+	int16_t wall_buffer[3] = {0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
 
@@ -172,7 +229,9 @@ public:
 	bool isOBSStop();
 	bool isLaserStop();
 	bool isBoundaryStop();
+	bool isPassTargetStop();
 	bool isCellReach();
+	bool isNearTarget();
 	bool isPoseReach();
 	bool shouldMoveBack();
 	void adjustSpeed(int32_t&, int32_t&);
@@ -219,7 +278,7 @@ public:
 		near_counter = 0;
 		side_counter = 0;
 		by_path_move_cnt = 0;
-		reset_rcon_status();
+		c_rcon.reset_status();
 		turn_connect_cnt = 0;
 		turn_connect_dir = ROUND_RIGHT;
 	}
@@ -252,64 +311,6 @@ private:
 	int8_t by_path_move_cnt;
 	uint8_t turn_connect_cnt;
 	uint8_t turn_connect_dir;
-
-	int32_t left_speed_;
-	int32_t right_speed_;
-};
-
-class RegulatorManage:public RegulatorBase{
-public:
-	RegulatorManage(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
-	~RegulatorManage();
-	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	bool _isStop();
-	bool isStop(){
-		return RegulatorBase::_isStop() || _isStop();
-	};
-	bool _isExit();
-	bool isExit(){
-		return RegulatorBase::_isExit() || _isExit();
-	};
-	bool isReach();
-	bool isSwitch();
-	void setTarget() {p_reg_->setTarget();}
-	bool isMt(void) const
-	{
-		return p_reg_ == mt_reg_;
-	}
-	bool isBack(void) const
-	{
-		return p_reg_ == back_reg_;
-	}
-	bool isTurn(void) const
-	{
-		return p_reg_ == turn_reg_;
-	}
-
-	void setMt(void);
-/*	void reset(void)
-	{
-		p_reg_ = turn_reg_;
-		setTarget();
-	}*/
-	void updatePosition(const Point32_t &curr_point){
-		s_curr_p = curr_point;
-	}
-	void resetTriggeredValue(void);
-	std::string getName()
-	{
-		std::string name = "RegulatorManage";
-		return name;
-	}
-
-private:
-	RegulatorBase* p_reg_;
-	RegulatorBase* mt_reg_;
-	FollowWallRegulator* fw_reg_;
-	LinearRegulator* line_reg_;
-	GoToChargerRegulator* gtc_reg_;
-	TurnRegulator* turn_reg_;
-	BackRegulator* back_reg_;
 
 	int32_t left_speed_;
 	int32_t right_speed_;

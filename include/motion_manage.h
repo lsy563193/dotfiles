@@ -23,7 +23,6 @@ public:
 	bool is_align_active(){
 		return is_align_active_;
 	};
-	static Laser* s_laser;
 	static Slam* s_slam;
 
 	bool initSucceeded()
@@ -57,6 +56,11 @@ private:
 	bool initSpotCleaning(void);
 	bool initExplorationCleaning(void);
 	bool initGoHome(void);
+
+	bool laser_init();
+	void get_aligment_angle();
+	bool slam_init();
+	void init_after_slam();
 };
 
 #endif //PP_MOTION_MANAGE_H

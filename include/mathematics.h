@@ -386,6 +386,7 @@ typedef struct Pose16_t_{
 } Pose16_t;*/
 
 double absolute(double d);
+int16_t ranged_angle(int16_t angle);
 double deg_to_rad(double deg, int8_t scale);
 double rad_2_deg(double rad, int8_t scale);
 uint16_t course_to_dest(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
@@ -411,4 +412,7 @@ double line_angle(LineABC l, uint8_t mode);
 uint8_t is_same_point_and_angle(Point32_t pnt1, uint16_t angle1, Point32_t pnt2, uint16_t angle2,
 																uint32_t pntThres, uint16_t angleThres);
 void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y);
+
+int32_t abs_minus(int32_t A, int32_t B);
+
 #endif

@@ -1,13 +1,16 @@
 #include "space_exploration.h"
 #include "map.h"
 #include "gyro.h"
+#include "key.h"
 #include "core_move.h"
 #include <ros/ros.h>
+#include <pp.h>
 #include "motion_manage.h"
 #include "movement.h"
 #include "event_manager.h"
 #include "path_planning.h"
 #include "wav.h"
+#include "clean_mode.h"
 #if 0
 void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
 {
@@ -50,7 +53,7 @@ void explore_update_map(void)
 	angle = gyro_get_angle();
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
-			cm_world_to_point(angle + angle_i * 10, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
+			robot_to_point(angle + angle_i * 10, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
 			auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
 			if (status > CLEANED && status < BLOCKED_BOUNDARY) {
 				//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
@@ -64,7 +67,7 @@ void explore_update_map(void)
 void turn_into_exploration(bool is_reset_map)
 {
 	reset_work_time();
-	set_led_mode(LED_STEADY, LED_ORANGE);
+	led.set_mode(LED_STEADY, LED_ORANGE);
 
 	// Initialize motors and map.
 	extern uint32_t g_saved_work_time;
@@ -77,7 +80,7 @@ void turn_into_exploration(bool is_reset_map)
 	map_init(WFMAP);
 	map_init(ROSMAP);
 	path_planning_initialize();
-	work_motor_configure();
+	cs_work_motor();
 	cm_reset_go_home();
 
 
@@ -88,10 +91,10 @@ void turn_into_exploration(bool is_reset_map)
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	reset_rcon_status();
-	reset_touch();
+	c_rcon.reset_status();
+	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
-	wav_play(WAV_EXPLORATION_START);
+	wav.play(WAV_EXPLORATION_START);
 
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
