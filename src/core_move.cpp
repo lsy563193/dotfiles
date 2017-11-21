@@ -136,7 +136,7 @@ void cm_apply_cs(void) {
 			g_go_home_by_remote = true;
 		ev.remote_home = false;
 		ev.battrey_home = false;
-		mt_set(MT_LINEARMOVE);
+		mt.set(MT_LINEARMOVE);
 	}
 	if (cs.is_tmp_spot())
 	{
@@ -160,14 +160,14 @@ void cm_apply_cs(void) {
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
-		mt_set(MT_FOLLOW_LEFT_WALL);
+		mt.set(MT_FOLLOW_LEFT_WALL);
 	}
 	if (cs.is_clean()) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
 	if (cs.is_exploration()) {
-		mt_set(MT_LINEARMOVE);
+		mt.set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
@@ -722,11 +722,11 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
-	if(mt_is_follow_wall()){
+	if(mt.is_follow_wall()){
 		if (!(get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 			return;
 	}
-	else if (mt_is_linear())
+	else if (mt.is_linear())
 		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
 		if (!(c_rcon.get_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 		return;

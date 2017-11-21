@@ -65,7 +65,7 @@ void CleanMode::run()
 			if(!findTarget(curr))
 				return;
 		}
-		if (mt_is_linear()) {
+		if (mt.is_linear()) {
 			wall.dynamic_base(30);
 		}
 
@@ -96,7 +96,7 @@ bool CleanMode::isExit(){
 void CleanMode::setMt()
 {
 	s_origin_p = {map_get_x_count(), map_get_y_count()};
-	if(mt_is_follow_wall())
+	if(mt.is_follow_wall())
 	{
 		s_target_p = map_cell_to_point(g_plan_path.back());
 		mt_reg_ = fw_reg_;
@@ -121,22 +121,22 @@ void CleanMode::setMt()
 				if(!laser_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
 		}else{
-//			ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
+//			ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
 			if (LASER_FOLLOW_WALL)
 				if(!laser_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
 		}
-		ROS_INFO("%s,%d: mt_is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
+		ROS_INFO("%s,%d: mt.is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
 
-	}else if(mt_is_linear())
+	}else if(mt.is_linear())
 	{
-		ROS_INFO("%s,%d: mt_is_linear",__FUNCTION__, __LINE__);
+		ROS_INFO("%s,%d: mt.is_linear",__FUNCTION__, __LINE__);
 		s_target_p = map_cell_to_point(g_plan_path.front());
 		mt_reg_ = line_reg_;
 		g_turn_angle = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
 	}
-	else if (mt_is_go_to_charger())
+	else if (mt.is_go_to_charger())
 	{
 		mt_reg_ = gtc_reg_;
 		g_turn_angle = 0;
@@ -208,11 +208,11 @@ void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 #if GLOBAL_PID
 		/*---PID is useless in wall follow mode_---*/
-		if(isMt() && mt_is_follow_wall())
+		if(isMt() && mt.is_follow_wall())
 			wheel.set_speed(left_speed, right_speed, REG_TYPE_WALLFOLLOW);
-		else if(isMt() && mt_is_linear())
+		else if(isMt() && mt.is_linear())
 			wheel.set_speed(left_speed, right_speed, REG_TYPE_LINEAR);
-		else if(isMt() && mt_is_go_to_charger())
+		else if(isMt() && mt.is_go_to_charger())
 			wheel.set_speed(left_speed, right_speed, REG_TYPE_NONE);
 		else if(isBack())
 			wheel.set_speed(left_speed, right_speed, REG_TYPE_BACK);
@@ -295,14 +295,14 @@ bool NavigationClean::isReach()
 {
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
 				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
 			else if (isBack())
 				return back_reg_->isReach();
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isBlockCleared();
@@ -311,7 +311,7 @@ bool NavigationClean::isReach()
 
 	else if (cs.is_tmp_spot()) // For temp spot during navigation.
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return line_reg_->isCellReach(); // For reaching target.
@@ -322,7 +322,7 @@ bool NavigationClean::isReach()
 
 	else if (cs.is_going_home())
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return line_reg_->isCellReach(); // For reaching target.
@@ -332,14 +332,14 @@ bool NavigationClean::isReach()
 	}
 
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return line_reg_->isPoseReach() || line_reg_->isNearTarget();
 			else if (isBack())
 				return back_reg_->isReach();
 		}
-		else if (mt_is_follow_wall()) // Robot is going to new line.
+		else if (mt.is_follow_wall()) // Robot is going to new line.
 		{
 			if (isMt())
 				return fw_reg_->isNewLineReach();
@@ -356,7 +356,7 @@ bool NavigationClean::isExit()
 
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isTimeUp();
@@ -373,7 +373,7 @@ bool NavigationClean::isStop()
 
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -381,7 +381,7 @@ bool NavigationClean::isStop()
 			else if (isBack())
 				return back_reg_->isLaserStop();
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(2);
@@ -392,7 +392,7 @@ bool NavigationClean::isStop()
 
 	else if (cs.is_tmp_spot()) // For temp spot during navigation.
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -404,7 +404,7 @@ bool NavigationClean::isStop()
 
 	else if (cs.is_going_home())
 	{
-		if (mt_is_linear())
+		if (mt.is_linear())
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -416,7 +416,7 @@ bool NavigationClean::isStop()
 
 	else if (cs.is_clean())
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -425,7 +425,7 @@ bool NavigationClean::isStop()
 			else if (isBack())
 				return back_reg_->isLaserStop();
 		}
-		else if (mt_is_follow_wall()) // Robot is going to new line.
+		else if (mt.is_follow_wall()) // Robot is going to new line.
 		{
 			if (isMt())
 				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(1) || fw_reg_->isIsolate();
@@ -443,7 +443,7 @@ bool NavigationClean::isSwitch()
 	auto old_p_reg_ = p_reg_;
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isTurn())
 			{
@@ -455,7 +455,7 @@ bool NavigationClean::isSwitch()
 			else if (isMt() && line_reg_->shouldMoveBack())
 				p_reg_ = back_reg_;
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isTurn())
 			{
@@ -489,7 +489,7 @@ bool NavigationClean::isSwitch()
 
 	else if (cs.is_tmp_spot()) // For temp spot during navigation.
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isTurn())
 			{
@@ -505,7 +505,7 @@ bool NavigationClean::isSwitch()
 
 	else if (cs.is_going_home())
 	{
-		if (mt_is_linear()) // Robot is going straight with path.
+		if (mt.is_linear()) // Robot is going straight with path.
 		{
 			if (isTurn())
 			{
@@ -521,7 +521,7 @@ bool NavigationClean::isSwitch()
 
 	else if (cs.is_clean())
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isTurn())
 			{
@@ -538,7 +538,7 @@ bool NavigationClean::isSwitch()
 					p_reg_ = turn_reg_;
 			}
 		}
-		else if (mt_is_follow_wall()) // Robot is going to new line.
+		else if (mt.is_follow_wall()) // Robot is going to new line.
 		{
 			if (isTurn())
 			{
@@ -593,7 +593,7 @@ bool NavigationClean::findTarget(Cell_t& curr)
 		PPTargetType path_in_advance;
 		if (path_next_nav_in_advance(temp_new_dir, start_cell, path_in_advance))
 		{
-			if (mt_should_follow_wall(current_dir, start_cell, path_in_advance)) {
+			if (mt.should_follow_wall(current_dir, start_cell, path_in_advance)) {
 				// This is for follow wall case.
 				g_allow_check_path_in_advance = false;
 				ROS_INFO("%s %d: Fail for wall follow case.", __FUNCTION__, __LINE__);
@@ -683,7 +683,7 @@ void SpotClean::mark()
 
 bool SpotClean::isReach()
 {
-	if (mt_is_linear()) // Robot is cleaning current line.
+	if (mt.is_linear()) // Robot is cleaning current line.
 	{
 		if (isMt())
 		{
@@ -711,7 +711,7 @@ bool SpotClean::isStop()
 
 	else if (cs.is_clean())
 	{
-		if (mt_is_linear()) {
+		if (mt.is_linear()) {
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
 								|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
@@ -727,7 +727,7 @@ bool SpotClean::isSwitch()
 	auto old_p_reg_ = p_reg_;
 
 	if (cs.is_clean()) {
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isTurn()) {
 				if (turn_reg_->isReach())
@@ -785,7 +785,7 @@ WallFollowClean::~WallFollowClean()
 
 bool WallFollowClean::isReach() {
 	if (cs.is_going_home()) {
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return line_reg_->isCellReach(); // For reaching target.
@@ -794,11 +794,11 @@ bool WallFollowClean::isReach() {
 		}
 	}
 
-	if (mt_is_linear()) {
+	if (mt.is_linear()) {
 		if (isMt())
 			return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
 	}
-	else if (mt_is_follow_wall()) {
+	else if (mt.is_follow_wall()) {
 		if (isMt())
 			return fw_reg_->isClosure(1);
 	}
@@ -811,7 +811,7 @@ bool WallFollowClean::isExit()
 		return true;
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isTimeUp();
@@ -829,7 +829,7 @@ bool WallFollowClean::isStop()
 
 	if (cs.is_going_home())
 	{
-		if (mt_is_linear())
+		if (mt.is_linear())
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -840,7 +840,7 @@ bool WallFollowClean::isStop()
 	}
 
 	if (cm_is_follow_wall()) {
-		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
+		if (mt.is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
 			// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
@@ -849,7 +849,7 @@ bool WallFollowClean::isStop()
 			else if (isBack())
 				return back_reg_->isLaserStop();
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall for cleaning.
+		else if (mt.is_follow_wall()) // Robot is following wall for cleaning.
 		{
 			if (isMt())
 				return fw_reg_->isIsolate();
@@ -866,7 +866,7 @@ bool WallFollowClean::isSwitch()
 
 	if (cs.is_going_home())
 	{
-		if (mt_is_linear()) // Robot is going straight with path.
+		if (mt.is_linear()) // Robot is going straight with path.
 		{
 			if (isTurn())
 			{
@@ -881,7 +881,7 @@ bool WallFollowClean::isSwitch()
 	}
 
 	else if (cs.is_clean()) {
-		if (mt_is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
+		if (mt.is_linear()) // 1. Going straight to find the wall at the beginning of wall follow mode_.
 			// 2. Passed path is a closure or passed path is isolate, need to go straight to another wall.
 		{
 			if (isTurn()) {
@@ -893,7 +893,7 @@ bool WallFollowClean::isSwitch()
 			else if (isMt() && line_reg_->shouldMoveBack())
 				p_reg_ = back_reg_;
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall for cleaning.
+		else if (mt.is_follow_wall()) // Robot is following wall for cleaning.
 		{
 			if (isTurn()) {
 				if (turn_reg_->isReach())
@@ -987,7 +987,7 @@ bool Exploration::isReach()
 {
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
 			{
@@ -996,7 +996,7 @@ bool Exploration::isReach()
 			else if (isBack())
 				return back_reg_->isReach();
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isBlockCleared();
@@ -1005,7 +1005,7 @@ bool Exploration::isReach()
 
 	else if (cs.is_going_home())
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return line_reg_->isCellReach(); // For reaching target.
@@ -1016,7 +1016,7 @@ bool Exploration::isReach()
 
 	else if (cm_is_exploration())
 	{
-		if (mt_is_linear()) // Robot is cleaning current line.
+		if (mt.is_linear()) // Robot is cleaning current line.
 		{
 			if (isMt())
 				return line_reg_->isCellReach(); // For reaching target.
@@ -1035,7 +1035,7 @@ bool Exploration::isExit()
 
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isTimeUp();
@@ -1052,7 +1052,7 @@ bool Exploration::isStop()
 
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -1060,7 +1060,7 @@ bool Exploration::isStop()
 			else if (isBack())
 				return back_reg_->isLaserStop();
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(2);
@@ -1071,7 +1071,7 @@ bool Exploration::isStop()
 
 	else if (cs.is_going_home())
 	{
-		if (mt_is_linear())
+		if (mt.is_linear())
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -1084,7 +1084,7 @@ bool Exploration::isStop()
 	else if (cs.is_clean())
 	{
 		{
-			if (mt_is_linear())
+			if (mt.is_linear())
 			{
 				if (isMt())
 					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
@@ -1104,7 +1104,7 @@ bool Exploration::isSwitch()
 	auto old_p_reg_ = p_reg_;
 	if (cs.is_trapped()) // For trapped status.
 	{
-		if (mt_is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
+		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isTurn())
 			{
@@ -1116,7 +1116,7 @@ bool Exploration::isSwitch()
 			else if (isMt() && line_reg_->shouldMoveBack())
 				p_reg_ = back_reg_;
 		}
-		else if (mt_is_follow_wall()) // Robot is following wall to escape from trapped.
+		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isTurn())
 			{
@@ -1150,7 +1150,7 @@ bool Exploration::isSwitch()
 
 	else if (cs.is_going_home())
 	{
-		if (mt_is_linear()) // Robot is going straight with path.
+		if (mt.is_linear()) // Robot is going straight with path.
 		{
 			if (isTurn())
 			{
@@ -1166,7 +1166,7 @@ bool Exploration::isSwitch()
 
 	else if (cs.is_clean())
 	{
-		if (mt_is_linear()) // Robot is going straight to find charger.
+		if (mt.is_linear()) // Robot is going straight to find charger.
 		{
 			if (isTurn())
 			{

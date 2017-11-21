@@ -526,7 +526,7 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 	//*line_angle = atan2(-a, b) * 180 / PI;
 	Laser_Group.clear();
 	if (!fit_line.empty()) {
-		if (mt_is_left()) {
+		if (mt.is_left()) {
 			*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
 			*distance = fabs(fit_line.begin()->C / (sqrt(fit_line.begin()->A * fit_line.begin()->A + fit_line.begin()->B * fit_line.begin()->B)));
 		} else {

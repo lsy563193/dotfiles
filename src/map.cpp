@@ -779,12 +779,12 @@ uint8_t map_set_follow_wall()
 
 	if (cm_is_navigation())
 	{
-		if (mt_is_follow_wall())
+		if (mt.is_follow_wall())
 			set_for_MAP = true;
 	}
 	else if (cm_is_follow_wall())
 	{
-		if (mt_is_follow_wall())
+		if (mt.is_follow_wall())
 			set_for_WFMAP = true;
 	}
 
@@ -984,14 +984,14 @@ uint8_t map_save_bumper()
 		d_cells = {/*{2,-1},*/ {2,0}/*, {2,1}*/};
 	else if (bumper_trig & BLOCK_LEFT)
 	{
-		if(mt_is_linear())
+		if(mt.is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
 			d_cells = {/*{2, 1},*//* {2,2}, */{1,2}};
 	}
 	else if (bumper_trig & BLOCK_RIGHT)
 	{
-		if(mt_is_linear())
+		if(mt.is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
 			d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
@@ -1111,9 +1111,9 @@ uint8_t map_save_rcon()
 
 uint8_t map_save_follow_wall()
 {
-	bool should_save_for_MAP = !(cm_is_navigation() && mt_is_follow_wall() && world_distance() < 0.1);
+	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && world_distance() < 0.1);
 
-	auto dy = mt_is_left() ? 2 : -2;
+	auto dy = mt.is_left() ? 2 : -2;
 	int16_t x, y;
 	//int32_t	x2, y2;
 	std::string msg = "cell:";
@@ -1159,14 +1159,14 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 		return;
 	int8_t x_offset;
 
-	if (!mt_is_linear())
+	if (!mt.is_linear())
 	{
 		x_offset = (cells.front().X < cells.back().X) ? 1 : -1;//X_POS
 		Cell_t cell_front = {int16_t(cells.front().X - x_offset),cells.front().Y};
 		Cell_t cell_back = {int16_t(cells.back().X + x_offset),cells.back().Y};
 		cells.push_front(cell_front);
 		cells.push_back(cell_back);
-//		auto is_follow_y_min = x_offset == 1 ^ mt_is_left();
+//		auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
 	}
 	else
 	{
@@ -1387,7 +1387,7 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 {
 	uint8_t retval = 0;
 	int16_t x,y;
-	auto dy = mt_is_left()  ?  2 : -2;
+	auto dy = mt.is_left()  ?  2 : -2;
 	for(auto dx =-1; dx<=1,retval == 0; dx++) {
 		robot_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
 		if (is_a_block(x, y) == 1) {

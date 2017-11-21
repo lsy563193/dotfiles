@@ -239,9 +239,9 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		target = it[0];
 		//todo
 //		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
-//		if(mt_is_follow_wall() && cm_is_reach())
+//		if(mt.is_follow_wall() && cm_is_reach())
 //		{
-//			if(mt_is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
+//			if(mt.is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
 //				target = it[1];
 //		}
 	}
@@ -385,7 +385,7 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 	auto target = curr;
 	auto tmp = curr;
   /*if(curr.Y % 2 != 0) {
-		if (mt_is_follow_wall()) {
+		if (mt.is_follow_wall()) {
 			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
 			auto step = curr.Y - g_cell_history[1].Y;
 			auto is_local = (dir > 0) ? step <= 0 : step >= 0;
@@ -393,10 +393,10 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 			ROS_ERROR("%s %d:follow_wall dir(%d),step(%d),tmp(%d,%d),his1(%d,%d)", __FUNCTION__, __LINE__, dir, step, tmp.X,
 								tmp.Y, g_cell_history[1].X, g_cell_history[1].Y);
 		}
-		if (mt_is_linear() && IS_X_AXIS(g_new_dir)) {
+		if (mt.is_linear() && IS_X_AXIS(g_new_dir)) {
 			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
 			tmp.Y = g_cell_history[1].Y;
-			ROS_ERROR("%s %d:mt_is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,
+			ROS_ERROR("%s %d:mt.is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,
 								g_cell_history[1].X, g_cell_history[1].Y, curr.X, curr.Y);
 		}
 	}*/
@@ -1203,11 +1203,11 @@ bool path_next_spot(const Cell_t &start, PPTargetType &path) {
 
 bool path_next_fw(const Cell_t &start) {
 	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-	if (mt_is_linear()) {
+	if (mt.is_linear()) {
 		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (cm_is_reach()) {
 			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-			mt_set(MT_FOLLOW_LEFT_WALL);
+			mt.set(MT_FOLLOW_LEFT_WALL);
 			g_plan_path.push_back(g_virtual_target);
 			return true;
 		}
@@ -1226,7 +1226,7 @@ bool path_next_fw(const Cell_t &start) {
 			Cell_t cell;
 			robot_to_cell(ranged_angle(gyro.get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
-			mt_set(MT_LINEARMOVE);
+			mt.set(MT_LINEARMOVE);
 			return true;
 		}
 	}
@@ -1364,7 +1364,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 //					cs.set(CS_EXPLORATION);
 			}
 		}else
-			mt_update(start,path);
+			mt.update(start,path);
 	}
 	else if (cs.is_tmp_spot()) {
 		path_next_spot(start, path);

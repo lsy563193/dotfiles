@@ -422,7 +422,7 @@ bool wait_for_back_from_charge()
 
 void init_before_gyro()
 {
-	mt_set(cm_is_follow_wall() ? MT_FOLLOW_LEFT_WALL : MT_LINEARMOVE);
+	mt.set(cm_is_follow_wall() ? MT_FOLLOW_LEFT_WALL : MT_LINEARMOVE);
 	if(!cs_is_paused())
 		g_from_station = 0;
 	g_motion_init_succeeded = false;
