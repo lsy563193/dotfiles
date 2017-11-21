@@ -208,5 +208,5 @@ uint8_t is_blocked_by_bumper(int16_t x, int16_t y);
 uint8_t is_a_block(int16_t x, int16_t y);
 
 bool is_front_block_boundary(int dx);
-
+bool is_rosmap2_block(void);
 #endif /* __MAP_H */
