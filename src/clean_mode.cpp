@@ -4,6 +4,7 @@
 
 #include <pp.h>
 #include <path_planning.h>
+#include <wall_follow.h>
 
 static uint8_t clean_mode = 0;
 
@@ -40,6 +41,41 @@ void cm_set(uint8_t mode)
 uint8_t cm_get(void)
 {
 	return clean_mode;
+}
+
+void CleanMode::run()
+{
+	bool eh_status_now = false, eh_status_last = false;
+
+	while (ros::ok())
+	{
+		if (isExit()) {
+			break;
+		}
+
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			usleep(100);
+			continue;
+		}
+
+		auto curr = updatePosition({map_get_x_count(), map_get_y_count()});
+
+		if (isReach() || isStop())
+		{
+			if(!findTarget(curr))
+				return;
+		}
+		if (mt_is_linear()) {
+			wall.dynamic_base(30);
+		}
+
+		if (isSwitch()) {
+			map_save_blocks();
+		}
+
+		int32_t left_speed = 0, right_speed = 0;
+		adjustSpeed(left_speed, right_speed);
+	}
 }
 
 void CleanMode::mark() {
@@ -115,7 +151,6 @@ void CleanMode::setMt()
 	g_bumper_cnt = g_cliff_cnt = 0;
 	g_slip_cnt = 0;
 	g_slip_backward = false;
-	g_rcon_during_go_home = false;
 	c_rcon.reset_status();
 	robot::instance()->obsAdjustCount(20);
 }
@@ -170,6 +205,23 @@ void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		p_reg_->adjustSpeed(left_speed, right_speed);
 	left_speed_ = left_speed;
 	right_speed_ = right_speed;
+
+#if GLOBAL_PID
+		/*---PID is useless in wall follow mode_---*/
+		if(isMt() && mt_is_follow_wall())
+			wheel.set_speed(left_speed, right_speed, REG_TYPE_WALLFOLLOW);
+		else if(isMt() && mt_is_linear())
+			wheel.set_speed(left_speed, right_speed, REG_TYPE_LINEAR);
+		else if(isMt() && mt_is_go_to_charger())
+			wheel.set_speed(left_speed, right_speed, REG_TYPE_NONE);
+		else if(isBack())
+			wheel.set_speed(left_speed, right_speed, REG_TYPE_BACK);
+		else if(isTurn())
+			wheel.set_speed(left_speed, right_speed, REG_TYPE_TURN);
+#else
+		/*---PID is useless in wall follow mode_---*/
+		wheel.set_speed(speed_left, speed_right, REG_TYPE_NONE);
+#endif
 }
 
 void CleanMode::resetTriggeredValue(void)

@@ -53,7 +53,7 @@ void explore_update_map(void)
 	angle = gyro.get_angle();
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
-			cm_world_to_point(angle + angle_i * 10, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
+			robot_to_point(angle + angle_i * 10, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
 			auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
 			if (status > CLEANED && status < BLOCKED_BOUNDARY) {
 				//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));

@@ -48,7 +48,6 @@ extern std::vector<int>::iterator g_home_way_it;
 extern bool g_keep_on_wf;
 extern int16_t g_new_dir;
 extern int16_t g_old_dir;
-extern bool g_no_uncleaned_target;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;

@@ -386,6 +386,7 @@ typedef struct Pose16_t_{
 } Pose16_t;*/
 
 double absolute(double d);
+int16_t ranged_angle(int16_t angle);
 double deg_to_rad(double deg, int8_t scale);
 double rad_2_deg(double rad, int8_t scale);
 uint16_t course_to_dest(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
