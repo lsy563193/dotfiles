@@ -144,7 +144,7 @@ bool is_rosmap2_block(void)
 	bool retval = false;
 	int16_t x,y;
 	std::vector<Cell_t> d_cells;
-	d_cells = {{3,1},{3,0},{3,-1},{2,1},{2,0},{2,-1},{1,1},{1,0},{1,-1},{0,0}};
+	d_cells = {{2,2},{2,1},{2,0},{2,-1},{2,-2},{1,2},{1,1},{1,0},{1,-1},{1,-2},{0,0}};
 
 	for(auto& d_cell : d_cells)
 	{

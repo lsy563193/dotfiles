@@ -87,13 +87,14 @@ void map_copy(uint8_t id,uint8_t **new_map);
  * @param is_mark_cleaned to decide if mark the free space to CLENAED
  * @return None
  */
-void ros_map_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map);
+void ros_map_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map, uint8_t limit = 100);
 
 void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy);
 bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my);
 unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
 void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
 bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
+bool count_to_world(double &wx, double &wy, int32_t &cx, int32_t &cy);
 bool map_mark_robot(uint8_t id);
 Cell_t map_update_position();
 uint8_t map_set_laser();
@@ -112,6 +113,4 @@ void map_set_follow_wall(uint8_t id, const Cell_t& curr);
 void map_set_cleaned(std::deque<Cell_t>& cells);
 uint32_t map_get_cleaned_area();
 void fw_marker(const Cell_t&  curr);
-void map_increase_blocked_possibility(uint8_t id, int32_t x, int32_t y);
-void map_check_possibility_set_blocked(uint8_t id, uint32_t limit);
 #endif /* __MAP_H */

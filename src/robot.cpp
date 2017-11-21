@@ -449,7 +449,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	}
 	else if(cm_is_navigation())
 	{
-		ros_map_convert(ROSMAP2, false, false, false);
+		ros_map_convert(ROSMAP2, false, false, false, 20);
 	}
 	MotionManage::s_slam->isMapReady(true);
 
