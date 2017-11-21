@@ -59,6 +59,7 @@ public:
 		return p_reg_ == turn_reg_;
 	}
 
+	void run(void);
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	void setMt(void);
 

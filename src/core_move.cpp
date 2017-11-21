@@ -43,7 +43,6 @@ bool g_keep_on_wf;
 time_t last_time_remote_spot = time(NULL);
 CM_EventHandle eh;
 
-
 void cm_self_check_with_handle(void)
 {
 	// Can not set handler state inside cm_self_check(), because it is actually a universal function.
@@ -51,21 +50,6 @@ void cm_self_check_with_handle(void)
 	if(cm_is_follow_wall()) {
 		g_keep_on_wf = true;
 	}
-}
-
-void cm_move_to(CleanMode* p_cm, PPTargetType path) {
-if (mt_is_linear()) {
-		wall.dynamic_base(30);
-	}
-
-	if (p_cm->isSwitch()) {
-		map_save_blocks();
-		//map_set_blocks();
-		//MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
-	}
-
-	int32_t left_speed = 0, right_speed = 0;
-	p_cm->adjustSpeed(left_speed, right_speed);
 }
 
 void cm_cleaning() {
@@ -87,10 +71,10 @@ void cm_cleaning() {
 	else
 		p_cm = new NavigationClean(curr, g_plan_path.front(), g_plan_path);
 
-	bool eh_status_now = false, eh_status_last = false;
 	g_check_path_in_advance = false;
 
-
+	p_cm->run();
+/*
 	while (ros::ok()) {
 
 		if (p_cm->isExit()) {
@@ -115,11 +99,10 @@ void cm_cleaning() {
 				return;
 		}
 
-		cm_move_to(p_cm, g_plan_path);
 
 	if (cm_should_self_check())
 		cm_self_check_with_handle();
-	}
+	}*/
 }
 
 void cm_apply_cs(void) {

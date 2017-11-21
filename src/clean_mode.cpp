@@ -4,6 +4,7 @@
 
 #include <pp.h>
 #include <path_planning.h>
+#include <wall_follow.h>
 
 static uint8_t clean_mode = 0;
 
@@ -40,6 +41,41 @@ void cm_set(uint8_t mode)
 uint8_t cm_get(void)
 {
 	return clean_mode;
+}
+
+void CleanMode::run()
+{
+	bool eh_status_now = false, eh_status_last = false;
+
+	while (ros::ok())
+	{
+		if (isExit()) {
+			break;
+		}
+
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			usleep(100);
+			continue;
+		}
+
+		auto curr = updatePosition({map_get_x_count(), map_get_y_count()});
+
+		if (isReach() || isStop())
+		{
+			if(!findTarget(curr))
+				return;
+		}
+		if (mt_is_linear()) {
+			wall.dynamic_base(30);
+		}
+
+		if (isSwitch()) {
+			map_save_blocks();
+		}
+
+		int32_t left_speed = 0, right_speed = 0;
+		adjustSpeed(left_speed, right_speed);
+	}
 }
 
 void CleanMode::mark() {
