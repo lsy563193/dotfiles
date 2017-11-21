@@ -31,7 +31,7 @@ bool map_mark_robot(MAP)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
-			cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			cm_world_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
 			if (status > CLEANED && status < BLOCKED_BOUNDARY){
 				ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
@@ -50,7 +50,7 @@ void explore_update_map(void)
 	bool ret = false;
 	int16_t angle, laser_angle;
 	const int RADIUS_CELL = 10;//the radius of the robot can detect
-	angle = gyro_get_angle();
+	angle = gyro.get_angle();
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 			cm_world_to_point(angle + angle_i * 10, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);

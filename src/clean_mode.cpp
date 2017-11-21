@@ -83,12 +83,12 @@ void CleanMode::setMt()
 				block_angle = 0;
 			if (LASER_FOLLOW_WALL)
 				if(!laser_turn_angle(g_turn_angle))
-					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
+					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
 		}else{
 //			ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
 			if (LASER_FOLLOW_WALL)
 				if(!laser_turn_angle(g_turn_angle))
-					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
+					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
 		}
 		ROS_INFO("%s,%d: mt_is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
 
@@ -98,7 +98,7 @@ void CleanMode::setMt()
 		s_target_p = map_cell_to_point(g_plan_path.front());
 		mt_reg_ = line_reg_;
 		g_turn_angle = ranged_angle(
-					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro_get_angle());
+					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
 	}
 	else if (mt_is_go_to_charger())
 	{
@@ -107,8 +107,8 @@ void CleanMode::setMt()
 	}
 	p_reg_ = turn_reg_;
 //	s_target_angle = g_turn_angle;
-	s_target_angle = ranged_angle(gyro_get_angle() + g_turn_angle);
-	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, gyro_get_angle(), g_turn_angle, s_target_angle);
+	s_target_angle = ranged_angle(gyro.get_angle() + g_turn_angle);
+	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, gyro.get_angle(), g_turn_angle, s_target_angle);
 	resetTriggeredValue();
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;

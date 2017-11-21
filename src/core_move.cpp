@@ -102,7 +102,7 @@ bool is_map_front_block(int dx)
 	int32_t x, y;
 	for (auto dy = -1; dy <= 1; dy++)
 	{
-		cm_world_to_point(gyro_get_angle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
+		cm_world_to_point(gyro.get_angle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
 		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
 			return true;
 	}
@@ -506,7 +506,7 @@ void cm_self_check(void)
 						{
 							bumper_jam_state++;
 							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-							target_angle = ranged_angle(gyro_get_angle() - 900);
+							target_angle = ranged_angle(gyro.get_angle() - 900);
 							ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 						}
 					}
@@ -514,18 +514,18 @@ void cm_self_check(void)
 				}
 				case 4:
 				{
-					ROS_DEBUG("%s %d: gyro_get_angle(): %d", __FUNCTION__, __LINE__, gyro_get_angle());
+					ROS_DEBUG("%s %d: gyro.get_angle(): %d", __FUNCTION__, __LINE__, gyro.get_angle());
 					// If cliff jam during bumper self resume.
 					if (cliff.get_status() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
+					else if (abs(ranged_angle(gyro.get_angle() - target_angle)) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-						target_angle = ranged_angle(gyro_get_angle() + 900);
+						target_angle = ranged_angle(gyro.get_angle() + 900);
 						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 					}
 					break;
@@ -538,7 +538,7 @@ void cm_self_check(void)
 						ev.cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
+					else if (abs(ranged_angle(gyro.get_angle() - target_angle)) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						ev.fatal_quit = true;
@@ -591,12 +591,12 @@ void cm_self_check(void)
 		{
 			if(g_slip_cnt < 3 && g_robot_slip){
 				g_robot_slip = false;
-				target_angle = ranged_angle(gyro_get_angle() + 900);	
+				target_angle = ranged_angle(gyro.get_angle() + 900);
 				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 			}
 			else if(g_slip_cnt <4 && g_robot_slip){
 				g_robot_slip = false;
-				target_angle = ranged_angle(gyro_get_angle() - 900);
+				target_angle = ranged_angle(gyro.get_angle() - 900);
 				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 			}
 			/*
@@ -605,7 +605,7 @@ void cm_self_check(void)
 				ROS_INFO("%s,%d,robot slip again",__FUNCTION__,__LINE__);
 			}
 			*/
-			if( abs(gyro_get_angle() - target_angle) <= 50 ){
+			if( abs(gyro.get_angle() - target_angle) <= 50 ){
 				g_slip_cnt = 0;
 				g_robot_slip = false;
 				ROS_INFO("\033[32m%s,%d,reach target angle\033[0m ",__FUNCTION__,__LINE__);

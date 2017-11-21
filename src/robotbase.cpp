@@ -160,10 +160,10 @@ void robotbase_deinit(void)
 		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
 		led.set_mode(LED_STEADY, LED_OFF);
 		controller.set(CTL_BUZZER, 0x00);
-		set_gyro_off();
+		gyro.set_off();
 		cs_disable_motors();
 		controller.set_status(POWER_DOWN);
-		usleep(40000);	
+		usleep(40000);
 		send_stream_thread = false;
 		usleep(40000);
 		serial_close();
@@ -337,7 +337,7 @@ void *robotbase_routine(void*)
 
 		sensor.ir_ctrl = g_receive_stream[REC_REMOTE_IR];
 
-		sensor.c_stub = (g_receive_stream[REC_CHARGE_STUB_4] << 24 ) | (g_receive_stream[REC_CHARGE_STUB_3] << 16) 
+		sensor.c_stub = (g_receive_stream[REC_CHARGE_STUB_4] << 24 ) | (g_receive_stream[REC_CHARGE_STUB_3] << 16)
 			| (g_receive_stream[REC_CHARGE_STUB_2] << 8) | g_receive_stream[REC_CHARGE_STUB_1];
 
 		sensor.visual_wall = (g_receive_stream[REC_VISUAL_WALL_H] << 8)| g_receive_stream[REC_VISUAL_WALL_L];

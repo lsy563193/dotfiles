@@ -187,9 +187,9 @@ void init_nav_before_gyro()
 
 	key.reset();
 
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	c_rcon.reset_status();
 	key.reset();
@@ -270,9 +270,9 @@ void init_exp_before_gyro()
 
 	key.reset();
 
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	c_rcon.reset_status();
 	key.reset();
@@ -301,9 +301,9 @@ void init_wf_before_gyro()
 	c_rcon.reset_status();
 	key.reset();
 	key.reset();
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	wav.play(WAV_CLEANING_WALL_FOLLOW);
 }
@@ -339,9 +339,9 @@ void init_spot_before_gyro()
 	remote.reset_move_with();
 	key.reset();
 
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	wav.play(WAV_CLEANING_SPOT);
 }
@@ -371,9 +371,9 @@ void init_spot_after_gyro()
 void init_go_home_before_gyro()
 {
 	led.set_mode(LED_FLASH, LED_ORANGE, 1000);
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 	key.reset();
 	cm_register_events();
 	wav.play(WAV_BACK_TO_CHARGER);
@@ -584,7 +584,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	init_before_gyro();
 	initSucceeded(true);
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return;
 
 	switch (cm_get())
@@ -836,7 +836,7 @@ bool MotionManage::initNavigationCleaning(void)
 {
 	init_nav_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return false;
 
 	init_nav_gyro_charge();
@@ -856,7 +856,7 @@ bool MotionManage::initExplorationCleaning(void)
 {
 	init_exp_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return false;
 
 	init_exp_after_gyro();
@@ -868,7 +868,7 @@ bool MotionManage::initWallFollowCleaning(void)
 {
 	init_wf_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 	{
 		return false;
 	}
@@ -882,7 +882,7 @@ bool MotionManage::initSpotCleaning(void)
 
 	init_spot_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 	{
 		return false;
 	}
@@ -894,7 +894,7 @@ bool MotionManage::initSpotCleaning(void)
 bool MotionManage::initGoHome(void)
 {
 	init_go_home_before_gyro();
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return false;
 	init_go_home_after_gyro();
 	return true;

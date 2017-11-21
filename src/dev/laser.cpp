@@ -1112,7 +1112,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		cm_world_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 		{
 			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp));
@@ -1292,7 +1292,7 @@ uint8_t Laser::laserMarker(double X_MAX)
 				}
 			}
 
-			cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			cm_world_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
 			auto cell_status = map_get_cell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
@@ -1419,7 +1419,7 @@ int Laser::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = gyro_get_angle() / 10;
+	int cur_angle = gyro.get_angle() / 10;
 #if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;

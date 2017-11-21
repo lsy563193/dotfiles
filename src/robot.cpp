@@ -130,10 +130,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 #if GYRO_DYNAMIC_ADJUSTMENT
 	if (lw_vel_ < 0.01 && rw_vel_ < 0.01)
 	{
-		set_gyro_dynamic_on();
+		gyro.set_dynamic_on();
 	} else
 	{
-		set_gyro_dynamic_off();
+		gyro.set_dynamic_off();
 	}
 #endif
 	angle_ = msg->angle;
@@ -416,8 +416,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
-	gyro_set_angle(ranged_angle(position_yaw_ * 1800 / M_PI));
-//	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
+	gyro.set_angle(ranged_angle(position_yaw_ * 1800 / M_PI));
+//	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro.get_angle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
@@ -446,7 +446,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 void robot::displayPositions()
 {
 	ROS_INFO("base_link->map: (%f, %f) Gyro: %d yaw_: %f(%f)",
-		position_x_, position_y_, gyro_get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
+		position_x_, position_y_, gyro.get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
 }
 
 void robot::visualizeMarkerInit()
