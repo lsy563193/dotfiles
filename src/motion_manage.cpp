@@ -426,7 +426,6 @@ void init_before_gyro()
 	if(!cs_is_paused())
 		g_from_station = 0;
 	g_motion_init_succeeded = false;
-	g_during_go_to_charger = false;
 
 	bool remote_home_during_pause = false;
 	if (cs_is_paused() && ev.remote_home)

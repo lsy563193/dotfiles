@@ -9,6 +9,20 @@ double absolute(double d)
 	return ((d < 0) ? (d * (-1)) : d);
 }
 
+int16_t ranged_angle(int16_t angle)
+{
+	while (angle > 1800 || angle <= -1800)
+	{
+		if (angle > 1800) {
+			angle -= 3600;
+		} else
+		if (angle <= -1800) {
+			angle += 3600;
+		}
+	}
+	return angle;
+}
+
 double deg_to_rad(double deg, int8_t scale)
 {
 	return (deg * PI / (180 * scale));

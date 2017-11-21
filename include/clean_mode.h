@@ -33,7 +33,6 @@ class CleanMode:public RegulatorBase
 public:
 //	CleanMode(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 //	~CleanMode();
-	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	virtual void mark()=0;
 	virtual bool isStop()=0;
 	virtual bool isExit()=0;
@@ -60,6 +59,7 @@ public:
 		return p_reg_ == turn_reg_;
 	}
 
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	void setMt(void);
 
 	virtual Cell_t updatePosition(const Point32_t &curr_point);

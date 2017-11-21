@@ -10,42 +10,12 @@
 #include "wheel.h"
 #include "error.h"
 
-#ifdef TURN_SPEED
-#undef TURN_SPEED
-#endif
-
-#define TURN_SPEED	17
-/*
- * MOVE_TO_CELL_SEARCH_INCREMENT: offset from robot's current position.
- * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH: max searching radius from robot's current position.
- */
-#define MOVE_TO_CELL_SEARCH_INCREMENT 2
-#define MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH 10
-#define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH (2 * MOVE_TO_CELL_SEARCH_MAXIMUM_LENGTH / MOVE_TO_CELL_SEARCH_INCREMENT + 1)
-#define MOVE_TO_CELL_SEARCH_ARRAY_LENGTH_MID_IDX ((MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH - 1) / 2)
-
-#define	MAX_SPEED		(30)
-#define WHEEL_BASE_HALF			(((double)(WHEEL_BASE)) / 2)
-#define CELL_COUNT	(((double) (CELL_COUNT_MUL)) / CELL_SIZE)
-#define RADIUS_CELL (3 * CELL_COUNT_MUL)
-
-uint16_t g_straight_distance;
 PPTargetType g_plan_path;
 std::deque<Cell_t> g_passed_path;
-bool g_exploration_home;
-bool g_rcon_during_go_home;
-//std::vector<int16_t> g_left_buffer;
-//std::vector<int16_t> g_right_buffer;
 
-//Cell_t g_next_cell;
-//Cell_t g_target_cell;
-
-//uint8_t	g_remote_go_home = 0;
-//bool	cs_is_going_home() = false;
 bool	g_from_station = 0;
 bool	g_in_charge_signal_range;
 
-int16_t g_map_gyro_offset = 0;
 // This flag is indicating robot is resuming from low battery go home.
 bool g_resume_cleaning = false;
 
@@ -54,13 +24,7 @@ bool g_resume_cleaning = false;
 bool g_have_seen_charger = false;
 bool g_start_point_seen_charger = false;
 
-Cell_t g_relativePos[MOVE_TO_CELL_SEARCH_ARRAY_LENGTH * MOVE_TO_CELL_SEARCH_ARRAY_LENGTH] = {{0, 0}};
-
-long g_distance=0;
 extern int16_t g_x_min, g_x_max, g_y_min, g_y_max;
-
-// This flag is for indicating robot is going to charger.
-bool g_during_go_to_charger = false;
 
 // Saved position for move back.
 float saved_pos_x, saved_pos_y;
@@ -76,90 +40,9 @@ bool g_go_home_by_remote = false;
 //Flag for judge if keep on wall follow
 bool g_keep_on_wf;
 
-bool g_finish_cleaning_go_home = false;
-
-bool g_no_uncleaned_target = false;
-
 time_t last_time_remote_spot = time(NULL);
 CM_EventHandle eh;
 
-int16_t ranged_angle(int16_t angle)
-{
-	while (angle > 1800 || angle <= -1800)
-	{
-		if (angle > 1800) {
-			angle -= 3600;
-		} else
-		if (angle <= -1800) {
-			angle += 3600;
-		}
-	}
-	return angle;
-}
-
-bool is_map_front_block(int dx)
-{
-	int32_t x, y;
-	for (auto dy = -1; dy <= 1; dy++)
-	{
-		cm_world_to_point(gyro_get_angle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
-		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
-			return true;
-	}
-	return false;
-}
-
-//--------------------------------------------------------
-
-void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
-{
-	*x = map_get_relative_x(heading, offset_lat, offset_long, true);
-	*y = map_get_relative_y(heading, offset_lat, offset_long, true);
-}
-void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
-{
-	*x = cell_to_count(count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, true)));
-	*y = cell_to_count(count_to_cell(map_get_relative_y(heading, offset_lat, offset_long, true)));
-}
-
-void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
-{
-	x = count_to_cell(map_get_relative_x(heading, offset_lat, offset_long, false));
-	y = count_to_cell(map_get_relative_y(heading, offset_lat, offset_long, false));
-}
-
-int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
-											double origin_x, double origin_y)
-{
-	int index, grid_x, grid_y;
-
-	/*get index*/
-	grid_x = int(round((position_x - origin_x) / resolution));
-	grid_y = int(round((position_y - origin_y) / resolution));
-	index = grid_x + grid_y * width;
-	
-	return index;
-}
-
-void set_wheel_speed_pid(const CleanMode* rm,int32_t speed_left,int32_t speed_right)
-{
-#if GLOBAL_PID
-		/*---PID is useless in wall follow mode_---*/
-		if(rm->isMt() && mt_is_follow_wall())
-			wheel.set_speed(speed_left, speed_right, REG_TYPE_WALLFOLLOW);
-		else if(rm->isMt() && mt_is_linear())
-			wheel.set_speed(speed_left, speed_right, REG_TYPE_LINEAR);
-		else if(rm->isMt() && mt_is_go_to_charger())
-			wheel.set_speed(speed_left, speed_right, REG_TYPE_NONE);
-		else if(rm->isBack())
-			wheel.set_speed(speed_left, speed_right, REG_TYPE_BACK);
-		else if(rm->isTurn())
-			wheel.set_speed(speed_left, speed_right, REG_TYPE_TURN);
-#else
-		/*---PID is useless in wall follow mode_---*/
-		wheel.set_speed(speed_left, speed_right, REG_TYPE_NONE);
-#endif
-}
 
 void cm_self_check_with_handle(void)
 {
@@ -181,9 +64,8 @@ if (mt_is_linear()) {
 		//MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
 	}
 
-	int32_t speed_left = 0, speed_right = 0;
-	p_cm->adjustSpeed(speed_left, speed_right);
-	set_wheel_speed_pid(p_cm, speed_left, speed_right);
+	int32_t left_speed = 0, right_speed = 0;
+	p_cm->adjustSpeed(left_speed, right_speed);
 }
 
 void cm_cleaning() {

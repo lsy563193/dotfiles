@@ -61,7 +61,6 @@ int16_t bumper_turn_angle()
 	if (status == BLOCK_ALL)
 	{
 		g_turn_angle = -600;
-		g_straight_distance = 150; //150;
 		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	} else if (status == diff_side)
@@ -81,11 +80,9 @@ int16_t bumper_turn_angle()
 		}
 		//ROS_INFO("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
 
-		g_straight_distance = 250; //250;
 		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
 	//ROS_INFO("%s %d: g_wall_distance in bumper_turn_angular: %d", __FUNCTION__, __LINE__, g_wall_distance);
-	g_straight_distance = 200;
 	wheel.reset_step();
 	if(mt_is_right())
 		g_turn_angle = -g_turn_angle;
@@ -715,7 +712,7 @@ bool LinearRegulator::isLaserStop()
 
 bool LinearRegulator::isBoundaryStop()
 {
-	if (is_map_front_block(2))
+	if (is_front_block_boundary(2))
 	{
 		ROS_INFO("%s, %d: LinearRegulator, Blocked boundary.", __FUNCTION__, __LINE__);
 		return true;
@@ -780,7 +777,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	auto obstalce_distance_front = s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.get_status();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_map_front_block(3) || (obstalce_distance_front < 0.25))
+	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_front_block_boundary(3) || (obstalce_distance_front < 0.25))
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
@@ -824,7 +821,6 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target) : previous_(0), seen_charger_counter(0)
 {
 	if (!g_keep_on_wf) {
-		g_straight_distance = 300;
 		s_origin_p = start_point;
 		s_target_p = target;
 		map_init(WFMAP);
@@ -1062,7 +1058,6 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		return ;
 	}
 
-//	ROS_INFO("same_dist: %d < g_straight_distance : %d", same_dist, g_straight_distance);
 	if (ros::Time::now().toSec() - time_start_straight < g_time_straight)
 	{
 		auto tmp = ros::Time::now().toSec() - time_start_straight;
@@ -1192,7 +1187,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				time_right_angle = ros::Time::now().toSec();
 				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
-			if(obs.is_wall_front() || is_map_front_block(3) ) {
+			if(obs.is_wall_front() || is_front_block_boundary(3) ) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
@@ -1221,7 +1216,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
-		if (obs.is_wall_front() || is_map_front_block(3)) {
+		if (obs.is_wall_front() || is_front_block_boundary(3)) {
 //			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;
