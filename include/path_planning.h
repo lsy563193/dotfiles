@@ -48,7 +48,6 @@ extern std::vector<int>::iterator g_home_way_it;
 extern bool g_keep_on_wf;
 extern int16_t g_new_dir;
 extern int16_t g_old_dir;
-extern bool g_no_uncleaned_target;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;
@@ -56,6 +55,8 @@ extern Cell_t g_home_point;
 extern int g_wf_reach_count;
 extern bool g_check_path_in_advance;
 extern bool g_allow_check_path_in_advance;
+extern Cell_t g_virtual_target;//for followall
+
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.

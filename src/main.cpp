@@ -7,9 +7,13 @@
 #include <unistd.h>
 #include <ros/ros.h>
 #include <battery.h>
+#include <remote.h>
+#include <charger.h>
 #include "charger.hpp"
 #include "core_move.h"
 #include "gyro.h"
+#include "bumper.h"
+#include "led.h"
 #include "movement.h"
 #include "laser.hpp"
 #include "robot.hpp"
@@ -39,49 +43,49 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	//ROS_INFO("Robot sensor ready.");
-	//wav_play(WAV_WELCOME_ILIFE);
+	//wav.play(WAV_WELCOME_ILIFE);
 	usleep(200000);
 
-	if (is_direct_charge() || is_on_charger_stub())
+	if (charger.is_directed() || charger.is_on_stub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.is_ready_to_clean())
-		wav_play(WAV_PLEASE_START_CLEANING);
+		wav.play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
 		switch(cm_get()){
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Idle);
-//				wav_play(WAV_TEST_MODE);
+				controller.set_status(Clean_Mode_Idle);
+//				wav.play(WAV_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode_------\n");
-				set_main_pwr_byte(Clean_Mode_WallFollow);
+				controller.set_status(Clean_Mode_WallFollow);
 				g_is_low_bat_pause = false;
 
-				reset_clean_paused();
+				cs_paused_setting();
 
 //				wall_follow(Map_Wall_Follow_Escape_Trapped);
 				cm_cleaning();
 				break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Navigation);
+				controller.set_status(Clean_Mode_Navigation);
 				cm_cleaning();
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Charging);
+				controller.set_status(Clean_Mode_Charging);
 				charge_function();
 				break;
 			case Clean_Mode_Go_Charger:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Go_Charger);
+				controller.set_status(Clean_Mode_Go_Charger);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
+				cs_paused_setting();
 #if GO_HOME_REGULATOR
 				cm_cleaning();
 #else
@@ -92,9 +96,9 @@ void *core_move_thread(void *)
 			case Clean_Mode_Exploration:
 				//goto_charger();
 				ROS_INFO("\n-------Exploration mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Exploration);
+				controller.set_status(Clean_Mode_Exploration);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
+				cs_paused_setting();
 				cm_cleaning();
 				break;
 
@@ -107,22 +111,22 @@ void *core_move_thread(void *)
 
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode_------\n");
-				set_main_pwr_byte(Clean_Mode_Spot);
+				controller.set_status(Clean_Mode_Spot);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
-				reset_rcon_remote();
+				cs_paused_setting();
+				remote.reset();
 				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
 				cm_cleaning();
-				disable_motors();
+				cs_disable_motors();
 				usleep(200000);
 				break;
 
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode_------\n");
-				//set_main_pwr_byte(Clean_Mode_Sleep);
+				//controller.set_status(Clean_Mode_Sleep);
 				g_is_low_bat_pause = false;
-				reset_clean_paused();
-				disable_motors();
+				cs_paused_setting();
+				cs_disable_motors();
 				sleep_mode();
 				break;
 			default:
@@ -159,7 +163,7 @@ int main(int argc, char **argv)
 	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper, "/dev/input/event0");
 	
 	serial_init(serial_port.c_str(), baudrate);
-	if(lidar_bumper_init(lidar_bumper.c_str()) == -1){
+	if(bumper_lidar_init(lidar_bumper.c_str()) == -1){
 		ROS_ERROR(" lidar bumper open fail!");
 	}
 #if VERIFY_CPU_ID
@@ -207,10 +211,10 @@ int main(int argc, char **argv)
 		ros::spin();
 	} else {
 		printf("turn on led\n");
-		set_led_mode(LED_STEADY, LED_ORANGE);
+		led.set_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
-	lidar_bumper_deinit();
+	bumper_lidar_deinit();
 	robotbase_deinit();
 	return 0;
 }

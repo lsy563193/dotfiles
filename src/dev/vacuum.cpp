@@ -61,17 +61,14 @@ void Vacuum::bldc_speed(uint32_t S)
 {
 	// Set the power of BLDC, S should be in range(0, 100).
 	S = S < 100 ? S : 100;
-	control_set(CTL_VACCUM_PWR, S & 0xff);
+	controller.set(CTL_VACCUM_PWR, S & 0xff);
 }
 
 void Vacuum::set_speed_by_mode(void)
 {
 	// Set the power of BLDC according to different situation
 	// Stop the BLDC if rGobot carries the water tank
-	if (is_water_tank())
-	{
-		bldc_speed(0);
-	} else
+
 	{
 		// Set the BLDC power to max if robot in max mode_
 		if (mode() == Vac_Max)

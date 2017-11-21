@@ -9,6 +9,9 @@
 #define Vac_Speed_Normal			60 //9000rpm
 #define Vac_Speed_NormalL			50 //8000rpm
 
+#include <pp/x900sensor.h>
+#include "controller.h"
+extern pp::x900sensor sensor;
 enum {
 Vac_Normal=0,
 Vac_Max,
@@ -34,6 +37,27 @@ public:
 	uint8_t mode(void);
 	void bldc_speed(uint32_t S);
 
+void start_self_check(void)
+{
+	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+	controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
+}
+
+void reset_self_check(void)
+{
+	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+	controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
+}
+
+uint8_t get_self_check_status(void)
+{
+	return (uint8_t) getVacuumSelfCheckStatus();
+}
+
+uint8_t getVacuumSelfCheckStatus() const
+{
+	return sensor.vacuum_selfcheck_status;
+}
 private:
 	void set_speed_by_mode(void);
 	uint8_t mode_;

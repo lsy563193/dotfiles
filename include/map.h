@@ -64,6 +64,9 @@ void map_set_position(double x, double y);
 int32_t map_get_relative_x(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
 int32_t map_get_relative_y(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
 
+void robot_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+void robot_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
+
 CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map = false);
 Cell_t map_get_curr_cell();
 void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value);
@@ -201,5 +204,7 @@ uint8_t is_blocked_by_bumper(int16_t x, int16_t y);
  * 		1 if the given point is blocked
  */
 uint8_t is_a_block(int16_t x, int16_t y);
+
+bool is_front_block_boundary(int dx);
 
 #endif /* __MAP_H */

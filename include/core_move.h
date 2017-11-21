@@ -59,9 +59,7 @@ typedef struct {
 
 extern float saved_pos_x, saved_pos_y;
 extern bool g_move_back_finished;
-extern uint16_t g_straight_distance;
 extern bool g_is_left_start;
-extern bool g_finish_cleaning_go_home;
 extern bool g_from_station;
 extern bool g_in_charge_signal_range;
 
@@ -77,14 +75,10 @@ extern bool	g_start_point_seen_charger;
 extern bool g_exploration_home;
 extern std::deque<Cell_t> g_passed_path;
 extern std::deque<Cell_t> g_plan_path;
-extern long g_distance;
-extern bool g_during_go_to_charger;
 
 uint8_t angle_to_bumper_status(void);
 int16_t calc_target(int16_t);
 int16_t uranged_angle(int16_t angle);
-extern int16_t ranged_angle(int16_t angle);
-bool is_map_front_block(int dx);
 
 void CM_TouringCancel(void);
 void cm_reset_go_home(void);
@@ -94,19 +88,13 @@ void cm_follow_wall_turn(uint16_t speed, int16_t angle);
 void linear_mark_clean(const Cell_t &start, const Cell_t &target);
 MapTouringType CM_LinearMoveToPoint(Point32_t target);
 
-int cm_get_grid_index(float position_x, float position_y, uint32_t width, uint32_t height, float resolution,
-											double origin_x, double origin_y);
 bool CM_Check_is_exploring();
 uint8_t CM_MoveForward(void);
 
 uint8_t cm_touring(void);
 void cm_cleaning(void);
 
-void cm_apply_cs(int cs);
-
-void cm_world_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
-void cm_world_to_point_accurate(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
-void cm_world_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
+void cm_apply_cs(void);
 
 void mark_offset(int16_t dx, int16_t dy, CellState status);
 

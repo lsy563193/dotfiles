@@ -12,6 +12,7 @@
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
 #include <move_type.h>
+#include <accelerator.h>
 
 #include "mathematics.h"
 #include "event_manager.h"
@@ -24,6 +25,8 @@ boost::mutex scan2_mutex_;
 boost::mutex scan3_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
+
+Laser* s_laser = nullptr;
 
 Laser::Laser():nh_(),angle_n_(0)
 {
@@ -39,13 +42,12 @@ Laser::Laser():nh_(),angle_n_(0)
 	scan2_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
-	lidarMotorCtrl(ON);
+	laserMotorCtrl(ON);
 }
 
 Laser::~Laser()
 {
-	lidarShieldDetect(OFF);
-	lidarMotorCtrl(OFF);
+	laserMotorCtrl(OFF);
 	setScanReady(0);
 	setScan2Ready(0);
 	scan_sub_.shutdown();
@@ -171,18 +173,16 @@ void Laser::setScan3Ready(uint8_t val)
 	is_scan3_ready_ = val;
 }
 
-void Laser::lidarMotorCtrl(bool switch_)
+void Laser::laserMotorCtrl(bool switch_)
 {
 	pp::SetLidar trigger;
 	time_t start_time = time(NULL);
-	uint8_t try_times = 0;
 	bool eh_status_now = false, eh_status_last = false;
 	bool request_sent = false;
-	bool temp_switch_ = switch_;
 	if(switch_){
-		trigger.request.x_acc_init= robot::instance()->getInitXAcc();
-		trigger.request.y_acc_init= robot::instance()->getInitYAcc();
-		trigger.request.z_acc_init= robot::instance()->getInitZAcc();
+		trigger.request.x_acc_init= acc.getInitXAcc();
+		trigger.request.y_acc_init= acc.getInitYAcc();
+		trigger.request.z_acc_init= acc.getInitZAcc();
 	}
 	while(ros::ok())
 	{
@@ -192,7 +192,7 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (switch_ && (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)) // Interrupt only happens during starting laser.
 		{
-			if (!ev.fatal_quit || ev.cliff_all_triggered)
+			if (!ev.fatal_quit)
 			{
 				setScanReady(0);
 				ROS_WARN("\033[34m" "%s %d: Laser starting interrupted, status: %d" "\033[0m", __FUNCTION__, __LINE__, isScanReady());
@@ -204,61 +204,35 @@ void Laser::lidarMotorCtrl(bool switch_)
 
 		if (!request_sent)
 		{
-			trigger.request.data = temp_switch_;
+			trigger.request.data = switch_;
 			request_sent = true;
-			start_time = time(NULL);
-			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, temp_switch_?"ON":"OFF");
+			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, trigger.request.data ? "ON":"OFF");
 			if (lidar_motor_cli_.call(trigger)){
 				ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__,trigger.response.message.c_str());
-				if (!temp_switch_){
-					setScanReady(0);
-					if (!switch_)
-						// For stop command.
-						break;
-				}
+				start_time = time(NULL);
+				if (!switch_)
+					// For stop command.
+					break;
 			}
 			else{
 				ROS_ERROR("\033[35m" "%s %d: Service not received!" "\033[0m",__FUNCTION__,__LINE__);
+				request_sent = false;
 				setScanReady(0);
-				break;
 			}
 		}
 
-		if (switch_ && temp_switch_ && isScanReady())
+		if (switch_ && isScanReady())
 		{
 			ROS_INFO("\033[32m" "%s %d: Scan topic received, start laser successed." "\033[0m", __FUNCTION__, __LINE__);
 			break;
 		}
 
-		if (temp_switch_ && (time(NULL) - start_time > 4)){ // Time out
-			try_times++;
-			if(try_times > 2){
-				//ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
-				ev.fatal_quit = true;
-				continue;
-			}
-			ROS_WARN("\033[34m" "%s %d: Start lidar motor timeout, retry for the %d times." "\033[0m", __FUNCTION__, __LINE__, try_times);
-			temp_switch_ = false;
-			request_sent = false;
-		}
-		else if (!temp_switch_ && (time(NULL) - start_time >= 1)){ // Wait for turning off.
-			temp_switch_ = true;
-			request_sent = false;
+		if (switch_ && (time(NULL) - start_time > 8)){ // Time out
+			//ROS_ERROR("laser.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
+			ev.fatal_quit = true;
+			continue;
 		}
 	}
-}
-
-void Laser::lidarShieldDetect(bool switch_)
-{
-	std_srvs::SetBool trig;
-
-	if(switch_)
-		trig.request.data = true;
-	else
-		trig.request.data = false;
-
-	lidar_shield_detect_.call(trig);
-	ROS_INFO("\033[35m" "%s %d: Turn %s lidar shield detect %s." "\033[0m", __FUNCTION__, __LINE__, switch_?"on":"off", trig.response.success?"succeeded":"failed");
 }
 
 /*
@@ -1138,7 +1112,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		cm_world_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 		{
 			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp));
@@ -1318,7 +1292,7 @@ uint8_t Laser::laserMarker(double X_MAX)
 				}
 			}
 
-			cm_world_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			robot_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
 			auto cell_status = map_get_cell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
@@ -1445,7 +1419,7 @@ int Laser::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = gyro_get_angle() / 10;
+	int cur_angle = gyro.get_angle() / 10;
 #if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;
@@ -1650,3 +1624,30 @@ bool Laser::laserCheckFresh(float duration, uint8_t type)
 	//ROS_INFO("%s %d: time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
 	return false;
 }
+
+
+
+bool laser_is_stuck()
+{
+	if (s_laser != nullptr && !s_laser->laserCheckFresh(3, 2))
+		return true;
+	return false;
+}
+
+uint8_t laser_get_status()
+{
+	if (s_laser != nullptr)
+		return s_laser->laserMarker(0.20);
+	return 0;
+}
+
+uint8_t laser_is_robot_slip()
+{
+	uint8_t ret = 0;
+	if(s_laser != nullptr && s_laser->isScan2Ready() && s_laser->isRobotSlip()){
+		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
+		ret = 1;
+	}
+	return ret;
+}
+

@@ -9,6 +9,12 @@
 #include <core_move.h>
 #include <move_type.h>
 #include <std_srvs/SetBool.h>
+#include <pp.h>
+#include <clean_timer.h>
+#include <remote.h>
+#include <obs.h>
+#include <tilt.h>
+#include <wheel.h>
 
 #include "gyro.h"
 #include "key.h"
@@ -24,6 +30,8 @@
 #include "map.h"
 #include "space_exploration.h"
 #include "clean_mode.h"
+#include "tilt.h"
+#include "omni.h"
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
@@ -122,10 +130,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 #if GYRO_DYNAMIC_ADJUSTMENT
 	if (lw_vel_ < 0.01 && rw_vel_ < 0.01)
 	{
-		set_gyro_dynamic_on();
+		gyro.set_dynamic_on();
 	} else
 	{
-		set_gyro_dynamic_off();
+		gyro.set_dynamic_off();
 	}
 #endif
 	angle_ = msg->angle;
@@ -137,15 +145,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	
 	rw_crt_ = msg->rw_crt;
 
-	left_wall_ = msg->left_wall;
+//	left_wall_ = msg->left_wall;
 
-	right_wall_ = msg->right_wall;
-
-	x_acc_ = msg->x_acc;
-
-	y_acc_ = msg->y_acc;
-
-	z_acc_ = msg->z_acc;
+//	right_wall_ = msg->right_wall;
 
 	gyro_dymc_ = msg->gyro_dymc;
 
@@ -166,33 +168,33 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	ir_ctrl_ = msg->ir_ctrl;
 	if (ir_ctrl_ > 0)
 	{
-		set_rcon_remote(ir_ctrl_);
+		remote.set(ir_ctrl_);
 	}
 
 	charge_stub_ = msg->c_stub;//charge stub signal
-	set_rcon_status(get_rcon_status() | charge_stub_);
-//	if(get_rcon_status())
+	c_rcon.set_status(c_rcon.get_status() | charge_stub_);
+//	if(c_rcon.get_status())
 //	ROS_WARN("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
 
 	key_ = msg->key;
 	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((key_ & KEY_CLEAN) && !(get_key_press() & KEY_CLEAN))
+	if ((key_ & KEY_CLEAN) && !(key.get_press() & KEY_CLEAN))
 	{
 		key_press_count++;
 		if (key_press_count > 0)
 		{
-			set_key_press(KEY_CLEAN);
+			key.set_press(KEY_CLEAN);
 			key_press_count = 0;
 			// When key 'clean' is triggered, it will set touch status.
 			key.set();
 		}
 	}
-	else if (!(key_ & KEY_CLEAN) && (get_key_press() & KEY_CLEAN))
+	else if (!(key_ & KEY_CLEAN) && (key.get_press() & KEY_CLEAN))
 	{
 		key_release_count++;
 		if (key_release_count > 5)
 		{
-			reset_key_press(KEY_CLEAN);
+			key.reset_press(KEY_CLEAN);
 			key_release_count = 0;
 		}
 	}
@@ -202,19 +204,18 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 		key_release_count = 0;
 	}
 
-	charge_status_ = msg->c_s; //charge status
+//	charge_status_ = msg->c_s; //charge status
 	// Debug
 	//ROS_INFO("Subscribe charger status: %d.", charge_status_);
 
 	w_tank_ = msg->w_tank;
 
-	vacuum_selfcheck_status_ = msg->vacuum_selfcheck_status;
 
 	vacuum_oc_ = msg->vcum_oc;
 
 	plan = msg->plan;
 	if(plan > 0)
-		set_plan_status(plan);
+		timer.set_status(plan);
 
 	is_sensor_ready_ = true;
 
@@ -222,7 +223,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs_dynamic_base(OBS_adjust_count);
 
 	// Check if tilt.
-	check_tilt();
+	tilt.check();
 
 	// Check for whether robot should publish this frame of scan.
 	scan_ctrl_.allow_publishing = check_pub_scan();
@@ -247,7 +248,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 			last_omni_wheel = msg->omni_wheel;
 		}
 		if(msg->omni_wheel >= 10000){
-			reset_mobility_step();
+			omni.reset();
 		}
 	}
 	/*------end omni detect----*/
@@ -415,8 +416,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
-	gyro_set_angle(ranged_angle(position_yaw_ * 1800 / M_PI));
-//	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro_get_angle());
+	gyro.set_angle(ranged_angle(position_yaw_ * 1800 / M_PI));
+//	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro.get_angle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
@@ -445,7 +446,7 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 void robot::displayPositions()
 {
 	ROS_INFO("base_link->map: (%f, %f) Gyro: %d yaw_: %f(%f)",
-		position_x_, position_y_, gyro_get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
+		position_x_, position_y_, gyro.get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
 }
 
 void robot::visualizeMarkerInit()
@@ -665,16 +666,6 @@ std::vector<int8_t> *robot::getMapData()
 //	return rcon_right_ = (charge_stub_ & 0x000f00) >> 8;
 //}
 
-bool robot::getBumperRight()
-{
-	return bumper_right_;
-}
-
-bool robot::getBumperLeft()
-{
-	return bumper_left_;
-}
-
 */
 
 void robot::updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
@@ -682,7 +673,7 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 					float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
 					float& robot_x, float& robot_y, double& robot_yaw)
 {
-	if (get_left_wheel_speed() * get_right_wheel_speed() > 0)
+	if (wheel.get_left_speed() * wheel.get_right_speed() > 0)
 	{
 		float scale;
 		scale = fabs(slam_correction_x - robot_correction_x) > 0.05 ? 0.1 * fabs(slam_correction_x - robot_correction_x) / 0.05 : 0.03;
@@ -725,22 +716,4 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
-void robot::setAccInitData()
-{
-	uint8_t count = 0;
-	int16_t temp_x_acc = 0;
-	int16_t temp_y_acc = 0;
-	int16_t temp_z_acc = 0;
-	for (count = 0 ; count < 10 ; count++)
-	{
-		temp_x_acc += getXAcc();
-		temp_y_acc += getYAcc();
-		temp_z_acc += getZAcc();
-		usleep(20000);
-	}
 
-	setInitXAcc(temp_x_acc / count);
-	setInitYAcc(temp_y_acc / count);
-	setInitZAcc(temp_z_acc / count);
-	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
-}

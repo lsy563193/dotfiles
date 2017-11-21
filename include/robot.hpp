@@ -112,20 +112,6 @@ public:
 		return angle_v_;
 	}
 
-	int16_t getLeftWall() const
-	{
-		return sensor.left_wall - g_left_wall_baseline;
-	}
-
-	int16_t getRightWall() const
-	{
-#if __ROBOT_X900
-		return sensor.right_wall - g_right_wall_baseline;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
 	int16_t getOmniWheel() const
 	{
 #if __ROBOT_X9000
@@ -153,11 +139,6 @@ public:
 #endif
 	}
 
-	uint8_t getVacuumSelfCheckStatus() const
-	{
-		return vacuum_selfcheck_status_;
-	}
-
 	bool getVacuumOc() const
 	{
 		return vacuum_oc_;
@@ -166,11 +147,6 @@ public:
 	uint8_t getKey() const
 	{
 		return key_;
-	}
-
-	int getChargeStatus() const
-	{
-		return charge_status_;
 	}
 
 	uint8_t getIrCtrl() const
@@ -191,40 +167,6 @@ public:
 	uint32_t getRcon() const
 	{
 		return charge_stub_;
-	}
-
-	bool getBumperRight() const
-	{
-		return sensor.rbumper;
-	}
-
-	bool getBumperLeft() const
-	{
-		return sensor.lbumper;
-	}
-
-	int16_t getObsLeft()
-	{
-		//int16_t left_obs = sensor.l_obs - g_obs_left_baseline;
-		int16_t left_obs = sensor.l_obs;
-		//ROS_INFO("%s %d: sensor.l_obs(%d) - obs_l_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.l_obs, g_obs_left_baseline, left_obs);
-		return left_obs;
-	}
-
-	int16_t getObsRight()
-	{
-		//int16_t right_obs = sensor.r_obs - g_obs_right_baseline;
-		int16_t right_obs = sensor.r_obs;
-		//ROS_INFO("%s %d: sensor.r_obs(%d) - obs_r_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.r_obs, g_obs_right_baseline, right_obs);
-		return right_obs;
-	}
-
-	int16_t getObsFront()
-	{
-		//int16_t front_obs = sensor.f_obs - g_obs_front_baseline;
-		int16_t front_obs = sensor.f_obs;
-		//ROS_INFO("%s %d: sensor.f_obs(%d) - obs_f_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.f_obs, g_obs_front_baseline, front_obs);
-		return front_obs;
 	}
 
 	bool getWaterTank() const
@@ -310,56 +252,6 @@ public:
 	double getRobotCorrectionYaw() const
 	{
 		return robot_correction_yaw_;
-	}
-
-	int16_t getXAcc() const
-	{
-		return x_acc_;
-	}
-
-	int16_t getYAcc() const
-	{
-		return y_acc_;
-	}
-
-	int16_t getZAcc() const
-	{
-		return z_acc_;
-	}
-
-	int16_t getInitXAcc() const
-	{
-		return init_x_acc_;
-	}
-
-	int16_t getInitYAcc() const
-	{
-		return init_y_acc_;
-	}
-
-	int16_t getInitZAcc() const
-	{
-		return init_z_acc_;
-	}
-
-	uint8_t getLidarBumper() const
-	{
-		return (uint8_t)sensor.lidar_bumper;
-	}
-
-	void setInitXAcc(int16_t val)
-	{
-		init_x_acc_ = val;
-	}
-
-	void setInitYAcc(int16_t val)
-	{
-		init_y_acc_ = val;
-	}
-
-	void setInitZAcc(int16_t val)
-	{
-		init_z_acc_ = val;
 	}
 
 	void setTfReady(bool is_ready)
@@ -495,8 +387,6 @@ public:
 
 	void obsAdjustCount(int count);
 
-	void setAccInitData();
-
 	//callback function
 private:
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
@@ -547,14 +437,8 @@ private:
 	/*1 byte */
 	uint8_t key_;
 
-	/*1 byte */
-	uint8_t charge_status_;
-
 	/*1 byte*/
 	bool w_tank_; //water tank
-
-	/*1 byte*/
-	uint8_t vacuum_selfcheck_status_;
 
 	bool vacuum_oc_;
 
@@ -564,21 +448,6 @@ private:
 	/*2 bytes*/
 	float rw_crt_; // right wheel current
 
-	/*1 byte*/
-	uint16_t left_wall_; // left wall sensor
-	
-	/*1 byte*/
-	uint16_t right_wall_; // left wall sensor
-	
-	/*? byte*/
-	int16_t x_acc_; // accelaration of x
-	
-	/*? byte*/
-	int16_t y_acc_; // accelaration of y
-	
-	/*? byte*/
-	int16_t z_acc_; // accelaration of z
-	
 	/*1 byte*/
 	uint8_t gyro_dymc_; // ??
 	
@@ -628,10 +497,6 @@ private:
 	//new variable plan
 	int8_t plan;
 	#endif
-
-	int16_t init_x_acc_;
-	int16_t init_y_acc_;
-	int16_t init_z_acc_;
 
 	bool	is_moving_;
 

@@ -9,6 +9,20 @@ double absolute(double d)
 	return ((d < 0) ? (d * (-1)) : d);
 }
 
+int16_t ranged_angle(int16_t angle)
+{
+	while (angle > 1800 || angle <= -1800)
+	{
+		if (angle > 1800) {
+			angle -= 3600;
+		} else
+		if (angle <= -1800) {
+			angle += 3600;
+		}
+	}
+	return angle;
+}
+
 double deg_to_rad(double deg, int8_t scale)
 {
 	return (deg * PI / (180 * scale));
@@ -311,4 +325,14 @@ void coordinate_transform(double *x, double *y, double theta, double offset_x, d
 {
 	matrix_rotate(x, y, theta);
 	matrix_translate(x, y, offset_x, offset_y);
+}
+
+
+int32_t abs_minus(int32_t A, int32_t B)
+{
+	if (A > B)
+	{
+		return A - B;
+	}
+	return B - A;
 }

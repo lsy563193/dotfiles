@@ -23,7 +23,6 @@ public:
 	bool is_align_active(){
 		return is_align_active_;
 	};
-	static Laser* s_laser;
 	static Slam* s_slam;
 
 	bool initSucceeded()
