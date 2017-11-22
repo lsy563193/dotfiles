@@ -87,9 +87,9 @@ void color_print(char *outString,int16_t y_min,int16_t y_max)
 }
 #endif
 /*
- * Function to print the robot cleaning map.
+ * Function to print the robot cleaning costmap.
  *
- * @param id    MAP id, 0 for cleaning map, 1 for shortest path map.
+ * @param id    MAP id, 0 for cleaning costmap, 1 for shortest path costmap.
  * @param endx  X coordinate of target
  * @param endy  Y coordinate of target
  *
@@ -102,7 +102,7 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 	CellState	cs;
 	Cell_t temp_cell;
 
-		temp_cell = map_get_curr_cell();
+		temp_cell = cost_map.get_curr_cell();
 
 	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
 
@@ -146,7 +146,7 @@ void debug_map(uint8_t id, int16_t endx, int16_t endy)
 		outString[index++] = '\t';
 
 		for (j = y_min; j <= y_max; j++) {
-			cs = map_get_cell(id, i, j);
+			cs = cost_map.get_cell(id, i, j);
 			if (i == temp_cell.X && j == temp_cell.Y) {
 				outString[index++] = 'x';
 			} else if (i == endx && j == endy) {

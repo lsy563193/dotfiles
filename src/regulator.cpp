@@ -480,7 +480,7 @@ bool TurnRegulator::shouldMoveBack()
 
 void TurnRegulator::setTarget()
 {
-	if(cs.is_going_home() && map_point_to_cell(s_curr_p) == g_zero_home)
+	if(cs.is_going_home() && cost_map.point_to_cell(s_curr_p) == g_zero_home)
 	{
 		s_target_angle = g_home_point.TH;
 	}
@@ -587,14 +587,14 @@ LinearRegulator::LinearRegulator(Point32_t target, const PPTargetType& path):
 //	g_is_should_follow_wall = false;
 //	s_target = target;
 //	path_ = path;
-	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, map_get_x_cell(),map_get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
+	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, cost_map.get_x_cell(),cost_map.get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
 }
 
 bool LinearRegulator::isCellReach()
 {
 	// Checking if robot has reached target cell.
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = map_cell_to_point(g_plan_path.back());
+	auto target_p = cost_map.cell_to_point(g_plan_path.back());
 	auto target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
@@ -624,7 +624,7 @@ bool LinearRegulator::isPoseReach()
 bool LinearRegulator::isNearTarget()
 {
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = map_cell_to_point(g_plan_path.front());
+	auto target_p = cost_map.cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
 	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
 	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
@@ -635,14 +635,14 @@ bool LinearRegulator::isNearTarget()
 			// Switch to next target for smoothly turning.
 			g_new_dir = g_plan_path.front().TH;
 			g_plan_path.pop_front();
-			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, map_get_x_cell(),
-					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
+			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, cost_map.get_x_cell(),
+					 cost_map.get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
 		}
 		else if(g_plan_path.front() != g_zero_home && g_allow_check_path_in_advance)
 		{
 			g_check_path_in_advance = true;
-			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, map_get_x_cell(),
-					 map_get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
+			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, cost_map.get_x_cell(),
+					 cost_map.get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
 			return true;
 		}
 	}
@@ -712,7 +712,7 @@ bool LinearRegulator::isLaserStop()
 
 bool LinearRegulator::isBoundaryStop()
 {
-	if (is_front_block_boundary(2))
+	if (cost_map.is_front_block_boundary(2))
 	{
 		ROS_INFO("%s, %d: LinearRegulator, Blocked boundary.", __FUNCTION__, __LINE__);
 		return true;
@@ -725,7 +725,7 @@ bool LinearRegulator::isPassTargetStop()
 {
 	// Checking if robot has reached target cell.
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = map_cell_to_point(g_plan_path.back());
+	auto target_p = cost_map.cell_to_point(g_plan_path.back());
 	auto target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
 	if ((IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
@@ -741,7 +741,7 @@ void LinearRegulator::setTarget()
 {
 //	g_turn_angle = ranged_angle(
 //						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
-	s_target_p = map_cell_to_point(g_plan_path.back());
+	s_target_p = cost_map.cell_to_point(g_plan_path.back());
 //	path_ = g_plan_path;
 }
 
@@ -750,7 +750,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
 	wheel.set_dir_forward();
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = map_cell_to_point(g_plan_path.front());
+	auto target_p = cost_map.cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
 
 
@@ -768,7 +768,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 //	dis_diff = IS_POS_AXIS(g_new_dir) ^ IS_X_AXIS(g_new_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
-		auto t = map_point_to_cell(target_p);
+		auto t = cost_map.point_to_cell(target_p);
 		MotionManage::pubCleanMapMarkers(MAP, g_plan_path, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
@@ -777,7 +777,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	auto obstalce_distance_front = s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.get_status();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || is_front_block_boundary(3) || (obstalce_distance_front < 0.25))
+	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25))
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
@@ -823,7 +823,7 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 	if (!g_keep_on_wf) {
 		s_origin_p = start_point;
 		s_target_p = target;
-		map_init(WFMAP);
+		cost_map.init(WFMAP);
 		ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 	} else {
 		g_keep_on_wf = false;
@@ -840,19 +840,19 @@ bool FollowWallRegulator::isNewLineReach()
 	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
 		ROS_WARN("%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, count_to_cell(s_origin_p.Y), count_to_cell(s_target_p.Y),
-				 count_to_cell(s_curr_p.Y));
+				 __FUNCTION__, __LINE__, cost_map.count_to_cell(s_origin_p.Y), cost_map.count_to_cell(s_target_p.Y),
+				 cost_map.count_to_cell(s_curr_p.Y));
 		ret = true;
 	}
 	else if (is_pos_dir ^ s_curr_p.Y < s_target_p.Y)
 	{
 		// Robot has reached the target line center but still not reach target line limit.
-		// Check if the wall side has blocks on the map.
+		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
-		if (is_block_blocked(count_to_cell(s_curr_p.X) + dx, count_to_cell(s_curr_p.Y))) {
+		if (cost_map.is_block_blocked(cost_map.count_to_cell(s_curr_p.X) + dx, cost_map.count_to_cell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, count_to_cell(s_origin_p.Y), count_to_cell(s_target_p.Y),
-					 count_to_cell(s_curr_p.Y));
+					 __FUNCTION__, __LINE__, cost_map.count_to_cell(s_origin_p.Y), cost_map.count_to_cell(s_target_p.Y),
+					 cost_map.count_to_cell(s_curr_p.Y));
 			ret = true;
 		}
 	}
@@ -947,7 +947,7 @@ bool FollowWallRegulator::shouldTurn()
 
 bool FollowWallRegulator::isBlockCleared()
 {
-	if (!is_block_accessible(map_get_x_cell(), map_get_y_cell())) // Robot has step on blocks.
+	if (!cost_map.is_block_accessible(cost_map.get_x_cell(), cost_map.get_y_cell())) // Robot has step on blocks.
 	{
 		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
@@ -958,7 +958,7 @@ bool FollowWallRegulator::isBlockCleared()
 
 bool FollowWallRegulator::isOverOriginLine()
 {
-	auto curr = map_point_to_cell(s_curr_p);
+	auto curr = cost_map.point_to_cell(s_curr_p);
 	if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120)
 		|| (s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
 	{
@@ -970,7 +970,7 @@ bool FollowWallRegulator::isOverOriginLine()
 					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, gyro.get_angle(), target_angle);
 			return true;
 		}
-		else if (is_block_cleaned_unblock(curr.X, curr.Y)) // If robot covers a big block, stop.
+		else if (cost_map.is_block_cleaned_unblock(curr.X, curr.Y)) // If robot covers a big block, stop.
 		{
 			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), s_target_p(%d, %d).",
 					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y);
@@ -1013,7 +1013,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	if(rcon_status)
 	{
 //		ev.rcon_triggered = c_rcon.get_trig();
-//		map_set_rcon();
+//		cost_map.set_rcon();
 		int32_t linear_speed = 24;
 		/* angular speed notes						*
 		 * larger than 0 means move away from wall	*
@@ -1187,7 +1187,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				time_right_angle = ros::Time::now().toSec();
 				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
-			if(obs.is_wall_front() || is_front_block_boundary(3) ) {
+			if(obs.is_wall_front() || cost_map.is_front_block_boundary(3) ) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
@@ -1216,7 +1216,7 @@ void FollowWallRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
-		if (obs.is_wall_front() || is_front_block_boundary(3)) {
+		if (obs.is_wall_front() || cost_map.is_front_block_boundary(3)) {
 //			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;

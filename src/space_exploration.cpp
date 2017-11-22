@@ -53,13 +53,13 @@ void explore_update_map(void)
 	angle = gyro.get_angle();
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
-			robot_to_point(angle + angle_i * 10, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
-			auto status = map_get_cell(MAP, count_to_cell(x), count_to_cell(y));
+			cost_map.robot_to_point(angle + angle_i * 10, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
+			auto status = cost_map.get_cell(MAP, cost_map.count_to_cell(x), cost_map.count_to_cell(y));
 			if (status > CLEANED && status < BLOCKED_BOUNDARY) {
 				//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
 				break;
 			}
-			map_set_cell(MAP, x, y, CLEANED);
+			cost_map.set_cell(MAP, x, y, CLEANED);
 		}
 	}
 }
@@ -69,16 +69,16 @@ void turn_into_exploration(bool is_reset_map)
 	reset_work_time();
 	led.set_mode(LED_STEADY, LED_ORANGE);
 
-	// Initialize motors and map.
+	// Initialize motors and costmap.
 	extern uint32_t g_saved_work_time;
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	// Push the start point into the home point list
 	ROS_INFO("map_init-----------------------------");
 	if (is_reset_map)
-		map_init(MAP);
-	map_init(WFMAP);
-	map_init(ROSMAP);
+		cost_map.init(MAP);
+	cost_map.init(WFMAP);
+	cost_map.init(ROSMAP);
 	path_planning_initialize();
 	cs_work_motor();
 	cm_reset_go_home();
@@ -100,6 +100,6 @@ void turn_into_exploration(bool is_reset_map)
 
 
 	cm_set(Clean_Mode_Exploration);
-	ros_map_convert(MAP, false, false, true);
+	cost_map.ros_convert(MAP, false, false, true);
 	explore_update_map();
 }

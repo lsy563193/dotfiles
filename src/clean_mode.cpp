@@ -58,7 +58,7 @@ void CleanMode::run()
 			continue;
 		}
 
-		auto curr = updatePosition({map_get_x_count(), map_get_y_count()});
+		auto curr = updatePosition({cost_map.get_x_count(), cost_map.get_y_count()});
 
 		if (isReach() || isStop())
 		{
@@ -70,7 +70,7 @@ void CleanMode::run()
 		}
 
 		if (isSwitch()) {
-			map_save_blocks();
+			cost_map.save_blocks();
 		}
 
 		int32_t left_speed = 0, right_speed = 0;
@@ -79,10 +79,10 @@ void CleanMode::run()
 }
 
 void CleanMode::mark() {
-	map_save_blocks();
-	map_set_blocks();
-	map_set_cleaned(g_passed_path);
-	map_mark_robot(MAP);
+	cost_map.save_blocks();
+	cost_map.set_blocks();
+	cost_map.set_cleaned(g_passed_path);
+	cost_map.mark_robot(MAP);
 };
 
 bool CleanMode::isStop(){
@@ -95,10 +95,10 @@ bool CleanMode::isExit(){
 
 void CleanMode::setMt()
 {
-	s_origin_p = {map_get_x_count(), map_get_y_count()};
+	s_origin_p = {cost_map.get_x_count(), cost_map.get_y_count()};
 	if(mt.is_follow_wall())
 	{
-		s_target_p = map_cell_to_point(g_plan_path.back());
+		s_target_p = cost_map.cell_to_point(g_plan_path.back());
 		mt_reg_ = fw_reg_;
 		if(cm_is_follow_wall()) {
 			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
@@ -131,7 +131,7 @@ void CleanMode::setMt()
 	}else if(mt.is_linear())
 	{
 		ROS_INFO("%s,%d: mt.is_linear",__FUNCTION__, __LINE__);
-		s_target_p = map_cell_to_point(g_plan_path.front());
+		s_target_p = cost_map.cell_to_point(g_plan_path.front());
 		mt_reg_ = line_reg_;
 		g_turn_angle = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
@@ -166,9 +166,9 @@ bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
 
 Cell_t CleanMode::updatePosition(const Point32_t &curr_point)
 {
-		map_update_position();
+		cost_map.update_position();
 		s_curr_p = curr_point;
-		return map_get_curr_cell();
+		return cost_map.get_curr_cell();
 }
 
 Cell_t CleanMode::updatePath(const Cell_t& curr)
@@ -186,7 +186,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 			g_passed_path.clear();
 			g_wf_reach_count++;
 		}
-		map_save_blocks();
+		cost_map.save_blocks();
 	}
 //	else
 //		is_time_up = !cs.is_trapped();
@@ -258,8 +258,8 @@ bool CleanMode::find_target(Cell_t& curr)
 //NavigationClean
 NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	g_plan_path.clear();
-	s_curr_p = {map_get_x_count(),map_get_y_count()};
-	auto target = map_cell_to_point(target_cell);
+	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
+	auto target = cost_map.cell_to_point(target_cell);
 
 	back_reg_ = new BackRegulator();
 	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
@@ -580,7 +580,7 @@ bool NavigationClean::isSwitch()
 
 bool NavigationClean::findTarget(Cell_t& curr)
 {
-	ROS_INFO("%s %d: cs:%d, current(%d %d), g_check_path_in_advance:%d", __FUNCTION__, __LINE__, cs.get(), map_get_x_cell(), map_get_y_cell(), g_check_path_in_advance);
+	ROS_INFO("%s %d: cs:%d, current(%d %d), g_check_path_in_advance:%d", __FUNCTION__, __LINE__, cs.get(), cost_map.get_x_cell(), cost_map.get_y_cell(), g_check_path_in_advance);
 	if (cs.is_clean() && g_check_path_in_advance)
 	{
 		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
@@ -639,8 +639,8 @@ Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
 SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path)
 {
 	g_plan_path.clear();
-	s_curr_p = {map_get_x_count(),map_get_y_count()};
-	auto target = map_cell_to_point(target_cell);
+	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
+	auto target = cost_map.cell_to_point(target_cell);
 
 	back_reg_ = new BackRegulator();
 	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
@@ -753,8 +753,8 @@ bool SpotClean::isSwitch()
 //WallFollowClean
 WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	g_plan_path.clear();
-	s_curr_p = {map_get_x_count(),map_get_y_count()};
-	auto target = map_cell_to_point(target_cell);
+	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
+	auto target = cost_map.cell_to_point(target_cell);
 
 	back_reg_ = new BackRegulator();
 	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
@@ -952,8 +952,8 @@ Cell_t WallFollowClean::updatePosition(const Point32_t &curr_point)
 //Exploration
 Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	g_plan_path.clear();
-	s_curr_p = {map_get_x_count(),map_get_y_count()};
-	auto target = map_cell_to_point(target_cell);
+	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
+	auto target = cost_map.cell_to_point(target_cell);
 
 	back_reg_ = new BackRegulator();
 	fw_reg_ = new FollowWallRegulator(s_curr_p, target);

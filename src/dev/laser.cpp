@@ -882,7 +882,7 @@ void Laser::pubLineMarker( const std::vector<LineABC> *lines)
 	line_marker.color.g = 1.0;
 	line_marker.color.b = 0.2;
 	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/map";
+	line_marker.header.frame_id = "/costmap";
 	line_marker.header.stamp = ros::Time::now();
 	geometry_msgs::Point point1;
 	point1.z = 0.0;
@@ -1113,11 +1113,11 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		cost_map.robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (cost_map.get_cell(MAP, cost_map.count_to_cell(x_tmp), cost_map.count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 		{
-			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp));
-			map_set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER);
+			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",cost_map.count_to_cell(x_tmp),cost_map.count_to_cell(y_tmp));
+			cost_map.set_cell(MAP, x_tmp, y_tmp, BLOCKED_LASER);
 		}
 		ret = 1;
 		*laser_status |= obs_status;
@@ -1293,13 +1293,13 @@ uint8_t Laser::laserMarker(double X_MAX)
 				}
 			}
 
-			robot_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
-			auto cell_status = map_get_cell(MAP, x_tmp, y_tmp);
+			cost_map.robot_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			auto cell_status = cost_map.get_cell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
 				//ROS_INFO("    \033[36mlaser marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				msg += direction_msg + "(" + std::to_string(count_to_cell(x_tmp)) + ", " + std::to_string(count_to_cell(y_tmp)) + ")";
-				map_set_cell(MAP, cell_to_count(x_tmp), cell_to_count(y_tmp), BLOCKED_LASER); //BLOCKED_OBS);
+				msg += direction_msg + "(" + std::to_string(cost_map.count_to_cell(x_tmp)) + ", " + std::to_string(cost_map.count_to_cell(y_tmp)) + ")";
+				cost_map.set_cell(MAP, cost_map.cell_to_count(x_tmp), cost_map.cell_to_count(y_tmp), BLOCKED_LASER); //BLOCKED_OBS);
 			}
 		}
 	}
