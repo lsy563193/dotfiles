@@ -442,11 +442,6 @@ private:
 	uint32_t rcon_right_;
 
 	/* 1 byte */
-	bool bumper_right_;
-
-	/* 1 byte */
-	bool bumper_left_;
-	/* 1 byte */
 	int16_t obs_left_;
 
 	/* 1 byte */

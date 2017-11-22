@@ -80,9 +80,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	temp_spot_set_ = false;
 
-	bumper_left_ = 0;
-	bumper_right_ = 0;
-
 	omni_wheel_ = 0;
 	linear_x_ = 0.0;
 	linear_y_ = 0.0;
@@ -156,10 +153,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs_right_ = msg->r_obs;
 
 	obs_front_ = msg->f_obs;
-
-	bumper_right_ = msg->rbumper;
-
-	bumper_left_ = msg->lbumper;
 
 	omni_wheel_ = msg->omni_wheel;
 
@@ -250,7 +243,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 #if 0
 	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v_: %f", __FUNCTION__, __LINE__, angle, angle_v_);
 	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage_, brush_left_, brush_right_, brush_main_);
-	ROS_INFO("\t\tbumper_right_: %d\tbumper_left_: %d\tobs_left: %d\tobs_right: %d\tobs_front: %d", bumper_right_, bumper_left_, obs_left_, obs_right_ , obs_front_);
 	ROS_INFO("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d", cliff_right_, cliff_left_, cliff_front_, wall);
 	ROS_INFO("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d", rcon_left_, rcon_right_, rcon_front_left_, rcon_front_right_, rcon_back_left_, rcon_back_right_);
 #endif
