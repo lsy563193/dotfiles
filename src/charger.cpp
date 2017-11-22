@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <stdio.h>
+#include "dev.h"
 #include <wav.h>
 #include <key.h>
 #include <cliff.h>

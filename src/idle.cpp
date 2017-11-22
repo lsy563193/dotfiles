@@ -13,26 +13,15 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "movement.h"
-#include "vacuum.h"
-#include "idle.h"
-#include "key.h"
-#include <ros/ros.h>
-#include <event_manager.h>
-#include <battery.h>
-#include <rcon.h>
-#include <clean_timer.h>
-#include <remote.h>
-#include <beep.h>
 #include "config.h"
-#include "wav.h"
-#include "led.h"
+#include <thread>
+#include "dev.h"
+#include "idle.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "event_manager.h"
 #include "core_move.h"
 #include "clean_mode.h"
-#include "cliff.h"
 #include "error.h"
 
 uint8_t temp_mode=0;

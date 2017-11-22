@@ -293,11 +293,7 @@ typedef enum{
 #define Display_Full				4
 #define Display_Low					5
 
-#if __ROBOT_X900
-#define KEY_CLEAN 1
-#else
-#define KEY_CLEAN 0x02
-#endif
+
 #define KEY_CLOCK 0x01
 #define KEY_SPOT  0x04
 #define KEY_HOME  0x08

@@ -94,21 +94,6 @@ public:
 		return angle_v_;
 	}
 
-	uint8_t getKey() const
-	{
-		return key_;
-	}
-
-	uint8_t getIrCtrl() const
-	{
-		return  ir_ctrl_;
-	}
-
-	uint32_t getRcon() const
-	{
-		return charge_stub_;
-	}
-
 	bool isMoving() const
 	{
 		return is_moving_;
@@ -207,67 +192,6 @@ public:
 		return temp_spot_set_;
 	}
 
-//#if CONTINUE_CLEANING_AFTER_CHARGE
-// These 3 functions are for continue cleaning after charge.
-/*
-	bool isLowBatPaused(void) const
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		return low_bat_pause_cleaning_;
-#else
-		return false;
-#endif
-	}
-*/
-
-/*
-	void setLowBatPause(void)
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		low_bat_pause_cleaning_ = true;
-#endif
-	}
-*/
-
-/*
-	void resetLowBatPause(void)
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		low_bat_pause_cleaning_ = false;
-#endif
-	}
-*/
-
-// These 3 functions are for manual pause cleaning.
-/*
-	bool isManualPaused(void) const
-	{
-#if MANUAL_PAUSE_CLEANING
-		return manual_pause_cleaning_;
-#else
-		return false;
-#endif
-	}
-*/
-
-/*	void setManualPause(void)
-	{
-#if MANUAL_PAUSE_CLEANING
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		manual_pause_cleaning_ = true;
-#endif
-	}*/
-
-/*	void resetManualPause(void)
-	{
-#if MANUAL_PAUSE_CLEANING
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		manual_pause_cleaning_ = false;
-#endif
-	}*/
-
 	Baselink_Frame_Type getBaselinkFrameType(void)
 	{
 		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
@@ -336,7 +260,7 @@ private:
 
 	bool	is_tf_ready_;
 
-    bool temp_spot_set_;
+  bool temp_spot_set_;
 
 	boost::mutex offset_angle_metux_;
 	float offset_angle_;
@@ -349,56 +273,6 @@ private:
 	bool	is_align_active_;
 	/* 1 byte */
 	float	angle_v_;
-
-	/*1 byte */
-	uint8_t key_;
-
-	/*2 bytes*/
-	float lw_crt_;//left wheel current
-	
-	/*2 bytes*/
-	float rw_crt_; // right wheel current
-
-	/*1 byte*/
-	uint8_t gyro_dymc_; // ??
-	
-	/*1 byte*/
-	uint16_t ir_ctrl_;
-	
-	/*3 bytes*/
-	uint32_t charge_stub_;
-
-	/* 1 byte */
-	uint32_t rcon_front_left_;
-
-	/* 1 byte */
-	uint32_t rcon_front_right_;
-
-	/* 1 byte */
-	uint32_t rcon_back_left_;
-
-	/* 1 byte */
-	uint32_t rcon_back_right_;
-
-	/* 1 byte */
-	uint32_t rcon_left_;
-
-	/* 1 byte */
-	uint32_t rcon_right_;
-
-	/* 1 byte */
-	int16_t obs_left_;
-
-	/* 1 byte */
-	int16_t obs_right_;
-
-	/* 1 byte */
-	int16_t obs_front_;
-
-	#if __ROBOT_X900
-
-	int8_t plan;
-	#endif
 
 	bool	is_moving_;
 

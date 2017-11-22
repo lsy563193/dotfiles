@@ -7,31 +7,10 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <pp/x900sensor.h>
-#include <stdlib.h>
-#include <math.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <errno.h>
-#include <controller.h>
-#include <led.h>
-#include <obs.h>
-#include <obs.h>
+#include <dev.h>
+
 #include <sleep.h>
-#include <omni.h>
-#include <wheel.h>
-
-#include "movement.h"
-#include "gyro.h"
-#include "bumper.h"
-#include "crc8.h"
-#include "serial.h"
-#include "robotbase.h"
-#include "config.h"
-#include "robot.hpp"
-#include "wav.h"
-#include "event_manager.h"
-
-#define ROBOTBASE "robotbase"
+#include <clean_timer.h>
 #define _H_LEN 2
 #if __ROBOT_X400
 uint8_t g_receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -336,13 +315,17 @@ void *robotbase_routine(void*)
 		// sensor.lidar_bumper = sensor.lidar_bumper;
 
 		sensor.ir_ctrl = g_receive_stream[REC_REMOTE_IR];
+		if (sensor.ir_ctrl > 0)
+			remote.set(sensor.ir_ctrl);
 
 		sensor.c_stub = (g_receive_stream[REC_CHARGE_STUB_4] << 24 ) | (g_receive_stream[REC_CHARGE_STUB_3] << 16)
 			| (g_receive_stream[REC_CHARGE_STUB_2] << 8) | g_receive_stream[REC_CHARGE_STUB_1];
+		c_rcon.set_status(c_rcon.get_status() | sensor.c_stub);
 
 		sensor.visual_wall = (g_receive_stream[REC_VISUAL_WALL_H] << 8)| g_receive_stream[REC_VISUAL_WALL_L];
 
 		sensor.key = g_receive_stream[REC_KEY];
+		key.eliminate_jitter(sensor.key);
 
 		sensor.c_s = g_receive_stream[REC_CHARGE_STATE];
 
@@ -402,11 +385,12 @@ void *robotbase_routine(void*)
 			sensor.z_acc = ((g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L] + last_z_acc) / 2;//in mG
 
 		sensor.plan = g_receive_stream[REC_PLAN];
+		if(sensor.plan)
+			timer.set_status(sensor.plan);
 
 #elif __ROBOT_X400
 		sensor.lbumper = (g_receive_stream[22] & 0xf0)?true:false;
 		sensor.rbumper = (g_receive_stream[22] & 0x0f)?true:false;
-		sensor.ir_ctrl_ = g_receive_stream[23];
 		sensor.c_stub = (g_receive_stream[24] << 16) | (g_receive_stream[25] << 8) | g_receive_stream[26];
 		sensor.key = g_receive_stream[27];
 		sensor.c_s = g_receive_stream[28];

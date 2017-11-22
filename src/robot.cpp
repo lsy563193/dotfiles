@@ -43,9 +43,6 @@ bool	g_is_low_bat_pause=false;
 bool g_is_manual_pause=false;
 time_t	start_time;
 
-// For avoid key value palse.
-int8_t key_press_count;
-int8_t key_release_count;
 
 int16_t slam_error_count;
 
@@ -90,8 +87,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	// Initialize the low battery pause variable.
 	// Initialize the key press count.
-	key_press_count = 0;
-
 	// Initialize the manual pause variable.
 	g_is_manual_pause = false;
 
@@ -133,70 +128,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
-	//ROS_WARN("%s %d: angle v: %f.", __FUNCTION__, __LINE__, angle_v_);
-
-	lw_crt_ = msg->lw_crt;
-	
-	rw_crt_ = msg->rw_crt;
-
-//	left_wall_ = msg->left_wall;
-
-//	right_wall_ = msg->right_wall;
-
-	gyro_dymc_ = msg->gyro_dymc;
-
-	obs_left_ = msg->l_obs;
-
-	obs_right_ = msg->r_obs;
-
-	obs_front_ = msg->f_obs;
-
-	ir_ctrl_ = msg->ir_ctrl;
-	if (ir_ctrl_ > 0)
-	{
-		remote.set(ir_ctrl_);
-	}
-
-	charge_stub_ = msg->c_stub;//charge stub signal
-	c_rcon.set_status(c_rcon.get_status() | charge_stub_);
-//	if(c_rcon.get_status())
-//	ROS_WARN("%s %d: Rcon info: %x.", __FUNCTION__, __LINE__, charge_stub_);
-
-	key_ = msg->key;
-	// Mark down the key if key 'clean' is pressed. These functions is for anti-shake.
-	if ((key_ & KEY_CLEAN) && !(key.get_press() & KEY_CLEAN))
-	{
-		key_press_count++;
-		if (key_press_count > 0)
-		{
-			key.set_press(KEY_CLEAN);
-			key_press_count = 0;
-			// When key 'clean' is triggered, it will set touch status.
-			key.set();
-		}
-	}
-	else if (!(key_ & KEY_CLEAN) && (key.get_press() & KEY_CLEAN))
-	{
-		key_release_count++;
-		if (key_release_count > 5)
-		{
-			key.reset_press(KEY_CLEAN);
-			key_release_count = 0;
-		}
-	}
-	else
-	{
-		key_press_count = 0;
-		key_release_count = 0;
-	}
-
-//	charge_status_ = msg->c_s; //charge status
-	// Debug
-	//ROS_INFO("Subscribe charger status: %d.", charge_status_);
-
-	plan = msg->plan;
-	if(plan > 0)
-		timer.set_status(plan);
 
 	is_sensor_ready_ = true;
 
@@ -237,7 +168,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v_: %f", __FUNCTION__, __LINE__, angle, angle_v_);
 	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage_, brush_left_, brush_right_, brush_main_);
 	ROS_INFO("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d", cliff_right_, cliff_left_, cliff_front_, wall);
-	ROS_INFO("\t\trcon left: %d\trcon right: %d\trcon fl: %d\trcon fr: %d\trcon bl: %d\trcon br: %d", rcon_left_, rcon_right_, rcon_front_left_, rcon_front_right_, rcon_back_left_, rcon_back_right_);
 #endif
 }
 
@@ -593,60 +523,6 @@ void robot::initOdomPosition()
 	robotbase_reset_odom_pose();
 	visualizeMarkerInit();
 }
-
-/*
-
-std::vector<int8_t> *robot::getMapData()
-{
-	//ROS_INFO("%s %d: return the ptr address", __FUNCTION__, __LINE__);
-	//ROS_INFO("%s %d: vector_pointer_address = %d", __FUNCTION__, __LINE__, (*(ptr))[0]);
-	//ROS_INFO("%s %d: seq = %d", __FUNCTION__, __LINE__, seq);
-	return ptr;
-}
-
-//uint32_t robot::robot_get_rcon_front_left()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_: %x.", __FUNCTION__, __LINE__, (charge_stub_ & 0xf00000) >> 20);
-//	return this -> rcon_front_left_ = (charge_stub_ & 0xf00000) >> 20;
-//}
-//
-//uint32_t robot::robot_get_rcon_front_right()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0f0000) >> 16);
-//	return rcon_front_right_ = (charge_stub_ & 0x0f0000) >> 16;
-//}
-//
-//uint32_t robot::robot_get_rcon_back_left()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, (charge_stub_ & 0x0000f0) >> 4);
-//	return rcon_back_left_ = (charge_stub_ & 0x0000f0) >> 4;
-//}
-//
-//uint32_t robot::robot_get_rcon_back_right()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00000f) >> 0);
-//	return rcon_back_right_ = ( charge_stub_ & 0x00000f) >> 0;
-//}
-//
-//uint32_t robot::robot_get_rcon_left()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.", __FUNCTION__, __LINE__, ( charge_stub_ & 0x00f000) >> 12);
-//	return rcon_left_ = ( charge_stub_ & 0x00f000) >> 12;
-//}
-//
-//uint32_t robot::robot_get_rcon_right()
-//{
-//	// Move the 4 bits info to lowest bits
-//	//ROS_INFO("%s %d: charge_stub_:%x.",  __FUNCTION__, __LINE__, (charge_stub_ & 0x000f00) >> 8);
-//	return rcon_right_ = (charge_stub_ & 0x000f00) >> 8;
-//}
-
-*/
 
 void robot::updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
 					const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
