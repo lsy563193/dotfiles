@@ -1259,14 +1259,14 @@ uint8_t CostMap::is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_paths)
 {
 	bool		all_set;
-	int16_t		i, j, x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
+	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
 	CellState	cs;
 
 	reset(SPMAP);
 
 	path_get_range(SPMAP, &x_min, &x_max, &y_min, &y_max);
-	for (i = x_min; i <= x_max; ++i) {
-		for (j = y_min; j <= y_max; ++j) {
+	for (auto i = x_min; i <= x_max; ++i) {
+		for (auto j = y_min; j <= y_max; ++j) {
 			cs = get_cell(MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				for (x = ROBOT_RIGHT_OFFSET; x <= ROBOT_LEFT_OFFSET; x++) {
@@ -1291,11 +1291,11 @@ void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_pa
 	while (passSet == 1) {
 		offset++;
 		passSet = 0;
-		for (i = x - offset; i <= x + offset; i++) {
+		for (auto i = x - offset; i <= x + offset; i++) {
 			if (i < x_min || i > x_max)
 				continue;
 
-			for (j = y - offset; j <= y + offset; j++) {
+			for (auto j = y - offset; j <= y + offset; j++) {
 				if (j < y_min || j > y_max)
 					continue;
 
@@ -1329,7 +1329,7 @@ void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_pa
 				all_set = false;
 			}
 		}
-		if (all_set == true) {
+		if (all_set) {
 			//ROS_INFO("%s %d: all possible target are checked & reachable.", __FUNCTION__, __LINE__);
 			passSet = 0;
 		}
@@ -1339,6 +1339,7 @@ void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_pa
 		if(nextPassValue == COST_PATH)
 			nextPassValue = 1;
 	}
+	print(SPMAP, 0,0);
 }
 
 bool CostMap::is_front_block_boundary(int dx)
