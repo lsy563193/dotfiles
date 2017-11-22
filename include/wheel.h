@@ -5,6 +5,8 @@
 #ifndef PP_WHEEL_H
 #define PP_WHEEL_H
 
+#include <pp/x900sensor.h>
+extern pp::x900sensor sensor;
 
 class Wheel {
 public:
@@ -80,6 +82,16 @@ void set_direction_flag(uint8_t flag)
 {
 	g_direction_flag = flag;
 }
+
+	float getLwheelCurrent() const
+	{
+		return sensor.lw_crt;
+	}
+
+	float getRwheelCurrent() const
+	{
+		return sensor.rw_crt;
+	}
 
 private:
 	uint8_t left_direction;

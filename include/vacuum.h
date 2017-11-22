@@ -21,6 +21,7 @@ Vac_Save,
 class Vacuum {
 public:
 	Vacuum();
+
 /*
  * Set the mode for vacuum.
  * The mode should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL/Vac_Save
@@ -30,36 +31,42 @@ public:
  * */
 
 	void mode(uint8_t mode, bool is_save);
+
 	void mode(uint8_t mode);
+
 	void stop();
+
 	void switchToNext(bool is_save);
 
 	uint8_t mode(void);
+
 	void bldc_speed(uint32_t S);
 
-void start_self_check(void)
-{
-	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
-}
+	void start_self_check(void) {
+		uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+		controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
+	}
 
-void reset_self_check(void)
-{
-	uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
-}
+	void reset_self_check(void) {
+		uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
+		controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
+	}
 
-uint8_t get_self_check_status(void)
-{
-	return (uint8_t) getVacuumSelfCheckStatus();
-}
+	uint8_t get_self_check_status(void) {
+		return (uint8_t) getVacuumSelfCheckStatus();
+	}
 
-uint8_t getVacuumSelfCheckStatus() const
-{
-	return sensor.vacuum_selfcheck_status;
-}
+	uint8_t getVacuumSelfCheckStatus() const {
+		return sensor.vacuum_selfcheck_status;
+	}
+
+	bool getVacuumOc() const {
+		return sensor.vcum_oc;
+	}
+
 private:
 	void set_speed_by_mode(void);
+
 	uint8_t mode_;
 	uint8_t mode_save_;
 

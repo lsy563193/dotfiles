@@ -51,7 +51,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		Wheel_Current_Summary = 0;
 		while (Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t) robot::instance()->getRwheelCurrent();
+			Wheel_Current_Summary += (uint32_t) wheel.getRwheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary /= 50;
@@ -92,7 +92,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		Wheel_Current_Summary = 0;
 		while (Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t) robot::instance()->getLwheelCurrent();
+			Wheel_Current_Summary += (uint32_t) wheel.getLwheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary /= 50;

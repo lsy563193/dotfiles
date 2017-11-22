@@ -208,11 +208,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	// Debug
 	//ROS_INFO("Subscribe charger status: %d.", charge_status_);
 
-	w_tank_ = msg->w_tank;
-
-
-	vacuum_oc_ = msg->vcum_oc;
-
 	plan = msg->plan;
 	if(plan > 0)
 		timer.set_status(plan);

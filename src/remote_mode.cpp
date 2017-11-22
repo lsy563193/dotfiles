@@ -570,14 +570,14 @@ void RM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) robot::instance()->getLwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getLwheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_left_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getLwheelCurrent());
 		ev.oc_wheel_left = true;
 	}
 }
@@ -586,14 +586,14 @@ void RM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) robot::instance()->getRwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getRwheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_right_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getRwheelCurrent());
 
 		ev.oc_wheel_right = true;
 	}
@@ -603,7 +603,7 @@ void RM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!robot::instance()->getVacuumOc()) {
+	if (!vacuum.getVacuumOc()) {
 		g_oc_suction_cnt = 0;
 		return;
 	}

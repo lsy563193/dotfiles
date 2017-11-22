@@ -139,11 +139,6 @@ public:
 #endif
 	}
 
-	bool getVacuumOc() const
-	{
-		return vacuum_oc_;
-	}
-
 	uint8_t getKey() const
 	{
 		return key_;
@@ -154,24 +149,9 @@ public:
 		return  ir_ctrl_;
 	}
 
-	float getLwheelCurrent() const
-	{
-		return lw_crt_;
-	}
-
-	float getRwheelCurrent() const
-	{
-		return rw_crt_;
-	}
-
 	uint32_t getRcon() const
 	{
 		return charge_stub_;
-	}
-
-	bool getWaterTank() const
-	{
-		return w_tank_;
 	}
 
 	bool isMoving() const
@@ -425,22 +405,8 @@ private:
 	/* 1 byte */
 	float	angle_v_;
 
-	/* 1 byte */
-	int32_t brush_left_;
-
-	/* 1 byte */
-	int32_t brush_right_;
-
-	/* 1 byte */
-	int32_t brush_main_;
-
 	/*1 byte */
 	uint8_t key_;
-
-	/*1 byte*/
-	bool w_tank_; //water tank
-
-	bool vacuum_oc_;
 
 	/*2 bytes*/
 	float lw_crt_;//left wheel current
