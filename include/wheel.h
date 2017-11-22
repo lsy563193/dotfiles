@@ -93,6 +93,14 @@ void set_direction_flag(uint8_t flag)
 		return sensor.rw_crt;
 	}
 
+	float getLeftWheelSpeed() const
+	{
+		return sensor.lw_vel;
+	}
+	float getRightWheelSpeed() const
+	{
+		return sensor.lw_vel;
+	}
 private:
 	uint8_t left_direction;
 	uint8_t right_direction;

@@ -77,16 +77,6 @@ public:
 		return offset_angle_;
 	};
 
-//	void startAngle(float angle)
-//	{
-//		start_angle_ = angle;
-//	};
-
-//	float startAngle(void) const
-//	{
-//		return start_angle_;
-//	};
-
 	void savedOffsetAngle(float angle)
 	{
 		if (angle > 180)
@@ -99,44 +89,9 @@ public:
 		return saved_offset_angle_;
 	};
 
-	float getLeftWheelSpeed() const
-	{
-		return lw_vel_;
-	}
-	float getRightWheelSpeed() const
-	{
-		return rw_vel_;
-	}
 	float getAngleV() const
 	{
 		return angle_v_;
-	}
-
-	int16_t getOmniWheel() const
-	{
-#if __ROBOT_X9000
-		//return sensor.omni_wheel;
-		return omni_wheel_;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
-	void resetOmniWheel()
-	{
-#if __ROBOT_X9000
-		omni_wheel_ = 0;
-		reset_mobility_step();
-#endif
-	}
-
-	int16_t getVisualWall() const
-	{
-#if __ROBOT_X900
-		return sensor.visual_wall;
-#elif __ROBOT_X400
-		return 0;
-#endif
 	}
 
 	uint8_t getKey() const
@@ -377,13 +332,6 @@ private:
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
-// These variable is indicating robot detects battery low, it is going back to home cells.
-//	bool	low_bat_pause_cleaning_;
-
-// These variable is indicating robot is during pause of navigation mode.
-//	bool	manual_pause_cleaning_;
-
-
 	bool	is_sensor_ready_;
 
 	bool	is_tf_ready_;
@@ -395,9 +343,6 @@ private:
 	float start_angle_;
 	float saved_offset_angle_;
 
-	/*2 byte*/
-	float lw_vel_;
-	float rw_vel_;
 	/* 1 byte */
 	float	angle_;
 
@@ -451,11 +396,7 @@ private:
 	int16_t obs_front_;
 
 	#if __ROBOT_X900
-	//new variable visual wall
-	int16_t visual_wall;
-	//new variable in x900 robot
-	int16_t omni_wheel_;
-	//new variable plan
+
 	int8_t plan;
 	#endif
 

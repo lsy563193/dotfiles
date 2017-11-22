@@ -13,6 +13,7 @@
 #include <pp/SetLidar.h>
 #include <move_type.h>
 #include <accelerator.h>
+#include <wheel.h>
 
 #include "mathematics.h"
 #include "event_manager.h"
@@ -1335,7 +1336,7 @@ uint8_t Laser::isRobotSlip()
 	scan2_mutex_.lock();
 	auto tmp_scan_data = laserScanData_2_;
 	scan2_mutex_.unlock();
-	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScan2Ready() && ( absolute(robot::instance()->getLeftWheelSpeed()) >= WSL || absolute(robot::instance()->getRightWheelSpeed()) >= WSL ) )
+	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScan2Ready() && ( std::abs(wheel.getLeftWheelSpeed()) >= WSL || std::abs(wheel.getRightWheelSpeed()) >= WSL ) )
 	{
 		seq = tmp_scan_data.header.seq;
 		if(last_ranges_init == 0){//for the first time
@@ -1347,22 +1348,22 @@ uint8_t Laser::isRobotSlip()
 			if(tmp_scan_data.ranges[i] < dist1){
 				tol_count++;
 				if(laserScanData_2_.ranges[i] >dist2 && laserScanData_2_.ranges[i] < dist1){//
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
 				} 
 				else if(laserScanData_2_.ranges[i] >dist3 && laserScanData_2_.ranges[i] < dist2){//
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
 					}
 				}
 				else if(laserScanData_2_.ranges[i] >dist4 && laserScanData_2_.ranges[i] < dist3){//
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
 						same_count++;
 					}
 				}
 				else if(laserScanData_2_.ranges[i] <= dist4){
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
 						same_count++;
 					}
 				}

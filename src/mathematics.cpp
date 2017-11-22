@@ -4,11 +4,6 @@
 #include "mathematics.h"
 #include "ros/ros.h"
 
-double absolute(double d)
-{
-	return ((d < 0) ? (d * (-1)) : d);
-}
-
 int16_t ranged_angle(int16_t angle)
 {
 	while (angle > 1800 || angle <= -1800)
@@ -169,28 +164,28 @@ Cell_t cal_inters_point(Cell_t l1StartPnt, Cell_t l1EndPnt,
 	l2[0] = (double)(l2StartPnt.X); l2[1] = (double)(l2StartPnt.Y);
 	l2[2] = (double)(l2EndPnt.X);	 l2[3] = (double)(l2EndPnt.Y);
 	//Two line is vertical, return a special point 32766, 32766, means that no intersection point
-	if ( absolute(l1[0] - l1[2]) < 0.1 && absolute(l2[0] - l2[2]) < 0.1 ) {
+	if ( std::abs(l1[0] - l1[2]) < 0.1 && std::abs(l2[0] - l2[2]) < 0.1 ) {
 		p[0] = 32666;
 		p[1] = 32666;
 	}
 	//Two lines are horizontal
-	else if ( absolute((l1[1] - l1[3]) / (l1[0] - l1[2]) -
+	else if ( std::abs((l1[1] - l1[3]) / (l1[0] - l1[2]) -
 	                   (l2[1] - l2[3]) / (l2[0] - l2[2])) < 0.1 ) {
 		p[0] = 32767;
 		p[1] = 32767;
 	}
 	//Line l1 is horizontal and line l2 is not vertical
-	else if ( absolute(l1[1] - l1[3]) < 0.1 && absolute(l2[2] - l2[0]) > 0.1 ) {
+	else if ( std::abs(l1[1] - l1[3]) < 0.1 && std::abs(l2[2] - l2[0]) > 0.1 ) {
 		p[0] = (l1[1] - l2[1]) * (l2[2] - l2[0]) / (l2[3] - l2[1]) + l2[0];
 		p[1] = l1[1];
 	}
 	//Line l1 is horizontal and line l2 is vertical
-	else if ( absolute(l1[1] - l1[3]) < 0.1 && absolute(l2[2] - l2[0]) < 0.1 ) {
+	else if ( std::abs(l1[1] - l1[3]) < 0.1 && std::abs(l2[2] - l2[0]) < 0.1 ) {
 		p[0] = l2[0];
 		p[1] = l1[1];
 	}
 	//Line l1 is not horizontal and line l2 is not vertical, math calculation
-	else if ( absolute(l1[1] - l1[3]) > 0.1 && absolute(l2[2] - l2[0]) > 0.1 ) {
+	else if ( std::abs(l1[1] - l1[3]) > 0.1 && std::abs(l2[2] - l2[0]) > 0.1 ) {
 		double delta = ( l2[2] - l2[0] ) * ( l1[3] - l1[1] ) -
 		               ( l2[3] - l2[1] ) * ( l1[2] - l1[0] ),
 		          px = ( l2[1] - l1[1] ) * ( l1[0] - l1[2] ) * ( l2[0] - l2[2] ) -
@@ -200,7 +195,7 @@ Cell_t cal_inters_point(Cell_t l1StartPnt, Cell_t l1EndPnt,
 		p[1] = ( l2[1] - l2[3] ) * ( p[0] - l2[0] ) / ( l2[0] - l2[2] ) + l2[1];
 	}
 	//Line l1 is not horizontal and line l2 is vertical
-	else if ( absolute(l1[1] - l1[3]) > 0.1 && absolute(l2[2] - l2[0]) > 0.1 ) {
+	else if ( std::abs(l1[1] - l1[3]) > 0.1 && std::abs(l2[2] - l2[0]) > 0.1 ) {
 		p[0] = l2[0];
 		p[1] = ( l1[1] - l1[3] ) * ( p[0] - l1[0] ) / ( l1[0] - l1[2] ) + l1[1];
 	}
@@ -277,7 +272,7 @@ double arctan(double deltay, double deltax) {
 double two_lines_angle(LineABC la, LineABC lb) {
 	double tmp;
 	if ( la.A != 0.0 || la.B != 0.0 || lb.A == 0.0 || lb.B == 0.0 ) {
-		tmp = acos( absolute(la.A * lb.A + la.B * lb.B) / sqrt( (la.A * la.A + la.B * la.B) * (lb.A * lb.A + lb.B * lb.B) ) );
+		tmp = acos( std::abs(la.A * lb.A + la.B * lb.B) / sqrt( (la.A * la.A + la.B * la.B) * (lb.A * lb.A + lb.B * lb.B) ) );
 		if ( tmp > PI / 2 )
 			tmp = PI - tmp;
 		return tmp;
@@ -298,7 +293,7 @@ double line_angle(LineABC l, uint8_t mode) {
 		} else if ( l.B == 1.0 ) {
 			tmp = atan(-l.A);
 		} else {
-			if ( absolute(l.B) < 0.000001 ) {
+			if ( std::abs(l.B) < 0.000001 ) {
 				tmp = PI / 2;
 			} else {
 				tmp = atan(- l.A/l.B);

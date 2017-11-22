@@ -274,8 +274,8 @@ bool check_pub_scan()
 {
 	//ROS_INFO("%s %d: get_left_wheel.speed() = %d, get_right_wheel.speed() = %d.", __FUNCTION__, __LINE__, wheel.get_left_speed(), wheel.get_right_speed());
 	if (g_motion_init_succeeded &&
-		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
-		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
+		((fabs(wheel.getLeftWheelSpeed() - wheel.getRightWheelSpeed()) > 0.1)
+		|| (wheel.getLeftWheelSpeed() * wheel.getRightWheelSpeed() < 0)
 		|| bumper.get_status() || tilt.get_status()
 		|| abs(wheel.get_left_speed() - wheel.get_right_speed()) > 100
 		|| wheel.get_left_speed() * wheel.get_right_speed() < 0))

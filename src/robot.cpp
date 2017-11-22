@@ -80,7 +80,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	temp_spot_set_ = false;
 
-	omni_wheel_ = 0;
 	linear_x_ = 0.0;
 	linear_y_ = 0.0;
 	linear_z_ = 0.0;
@@ -122,10 +121,8 @@ void robot::init()
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
-	lw_vel_ = msg->lw_vel;
-	rw_vel_ = msg->rw_vel;
 #if GYRO_DYNAMIC_ADJUSTMENT
-	if (lw_vel_ < 0.01 && rw_vel_ < 0.01)
+	if (wheel.getLeftWheelSpeed() < 0.01 && wheel.getRightWheelSpeed() < 0.01)
 	{
 		gyro.set_dynamic_on();
 	} else
@@ -153,10 +150,6 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs_right_ = msg->r_obs;
 
 	obs_front_ = msg->f_obs;
-
-	omni_wheel_ = msg->omni_wheel;
-
-	visual_wall = msg->visual_wall;
 
 	ir_ctrl_ = msg->ir_ctrl;
 	if (ir_ctrl_ > 0)
@@ -219,10 +212,10 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 
 	/*------start omni detect----*/
 	if(g_omni_enable){
-		if(absolute(msg->rw_vel - msg->lw_vel) <= 0.05 && (msg->rw_vel != 0 && msg->lw_vel != 0) ){
-			if(absolute(msg->omni_wheel - last_omni_wheel) == 0){
+		if(std::abs(msg->rw_vel - msg->lw_vel) <= 0.05 && (msg->rw_vel != 0 && msg->lw_vel != 0) ){
+			if(std::abs(msg->omni_wheel - last_omni_wheel) == 0){
 				omni_detect_cnt ++;
-				//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,absolute(msg->rw_vel - msg->lw_vel));
+				//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,std::abs(msg->rw_vel - msg->lw_vel));
 				if(omni_detect_cnt >= 150){
 					omni_detect_cnt = 0;
 					ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", msg->rw_vel,msg->lw_vel);
