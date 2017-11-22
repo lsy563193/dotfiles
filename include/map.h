@@ -90,7 +90,7 @@ void map_copy(uint8_t id,uint8_t **new_map);
  * @param is_mark_cleaned to decide if mark the free space to CLENAED
  * @return None
  */
-void ros_map_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map, uint8_t limit = 100);
+void ros_map_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map, uint8_t limit = 20);
 
 void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy);
 bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my);
