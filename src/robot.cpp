@@ -35,9 +35,9 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	init();
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
-	map_sub_ = robot_nh_.subscribe("/costmap", 1, &robot::mapCb, this);
+	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
-	/*costmap subscriber for exploration*/
+	/*map subscriber for exploration*/
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	visualizeMarkerInit();
@@ -120,7 +120,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !ev.slam_error)
 		{
 			try {
-				robot_tf_->lookupTransform("/costmap", "/base_link", ros::Time(0), transform);
+				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
 				tmp_x = transform.getOrigin().x();
 				tmp_y = transform.getOrigin().y();
 				tmp_yaw = tf::getYaw(transform.getRotation());
@@ -132,7 +132,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_correction_y_ = tmp_y - odom_pose_y_;
 				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
 			} catch(tf::TransformException e) {
-				ROS_WARN("%s %d: Failed to compute costmap transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
+				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 				setTfReady(false);
 				slam_error_count++;
 				if (slam_error_count > 1)
@@ -174,9 +174,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 			ident.frame_id_ = "base_link";
 			ident.stamp_ = msg->header.stamp;
 			try {
-				robot_tf_->lookupTransform("/costmap", "/base_link", ros::Time(0), transform);
-				//robot_tf_->waitForTransform("/costmap", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-				//robot_tf_->lookupTransform("/costmap", "/base_link", ros::Time(0), transform);
+				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
+				//robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
+				//robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
 				tmp_x = transform.getOrigin().x();
 				tmp_y = transform.getOrigin().y();
 				//robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
@@ -189,7 +189,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_correction_y_ = tmp_y - odom_pose_y_;
 				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
 			} catch(tf::TransformException e) {
-				ROS_WARN("%s %d: Failed to compute costmap transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
+				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 				setTfReady(false);
 				slam_error_count++;
 				if (slam_error_count > 1)
@@ -220,7 +220,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	// Publish the robot tf.
 	ros::Time cur_time;
 	//robot_trans.header.stamp = cur_time;
-	//robot_trans.header.frame_id = "costmap";
+	//robot_trans.header.frame_id = "map";
 	//robot_trans.child_frame_id = "robot";
 	//geometry_msgs::Quaternion	robot_quat;
 	//robot_trans.transform.translation.x = robot_x_;
@@ -231,7 +231,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//robot_broad.sendTransform(robot_trans);
 	//ROS_WARN("%s %d: World position (%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw);
 	odom.header.stamp = cur_time;
-	odom.header.frame_id = "costmap";
+	odom.header.frame_id = "map";
 	odom.child_frame_id = "robot";
 	odom.pose.pose.position.x = robot_x_;
 	odom.pose.pose.position.y = robot_y_;
@@ -271,19 +271,19 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	ros_map_mutex_.unlock();
 
 
-	/*for exploration update costmap*/
+	/*for exploration update map*/
 	if (cm_is_exploration()) {
 		cost_map.ros_convert(MAP, false, false, true);
 	}
 	MotionManage::s_slam->isMapReady(true);
 
-//	ROS_INFO("%s %d:finished costmap callback,cost_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),cost_map.origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
+//	ROS_INFO("%s %d:finished map callback,cost_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),cost_map.origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
 
 }
 
 //void robot::displayPositions()
 //{
-//	ROS_INFO("base_link->costmap: (%f, %f) Gyro: %d yaw_: %f(%f)",
+//	ROS_INFO("base_link->map: (%f, %f) Gyro: %d yaw_: %f(%f)",
 //		position_x_, position_y_, gyro.get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
 //}
 
@@ -304,7 +304,7 @@ void robot::visualizeMarkerInit()
 	clean_markers_.color.g = 1.0;
 	clean_markers_.color.b = 0.0;
 	clean_markers_.color.a = 0.4;
-	clean_markers_.header.frame_id = "/costmap";
+	clean_markers_.header.frame_id = "/map";
 	clean_markers_.header.stamp = ros::Time::now();
 	m_points_.x = 0.0;
 	m_points_.y = 0.0;
@@ -320,7 +320,7 @@ void robot::visualizeMarkerInit()
 	clean_map_markers_.scale.x = 0.1;
 	clean_map_markers_.scale.y = 0.1;
 	color_.a = 0.7;
-	clean_map_markers_.header.frame_id = "/costmap";
+	clean_map_markers_.header.frame_id = "/map";
 	clean_map_markers_.points.clear();
 	clean_map_markers_.colors.clear();
 }

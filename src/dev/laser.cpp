@@ -882,7 +882,7 @@ void Laser::pubLineMarker( const std::vector<LineABC> *lines)
 	line_marker.color.g = 1.0;
 	line_marker.color.b = 0.2;
 	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/costmap";
+	line_marker.header.frame_id = "/map";
 	line_marker.header.stamp = ros::Time::now();
 	geometry_msgs::Point point1;
 	point1.z = 0.0;
