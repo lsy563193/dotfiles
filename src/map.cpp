@@ -1598,7 +1598,7 @@ bool is_rosmap2_block(void)
 
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robot_to_cell(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		if(map_get_cell(ROSMAP2, x, y) == BLOCKED_ROS_MAP)
 		{
 			retval = true;
