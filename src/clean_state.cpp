@@ -19,6 +19,26 @@ bool CleanState::init()
 		cs_ = CS_CLEAN;
 }
 
+bool CleanState::is_open_gyro()
+{
+	return cs_ == CS_OPEN_GYRO;
+}
+
+bool CleanState::is_back_from_charger()
+{
+	return cs_ == CS_OPEN_GYRO;
+}
+
+bool CleanState::is_open_laser()
+{
+	return cs_ == CS_OPEN_LASER;
+}
+
+bool CleanState::is_open_slam()
+{
+	return cs_ == CS_OPEN_SLAM;
+}
+
 bool CleanState::is_go_home_point()
 {
 	return cs_ == CS_GO_HOME_POINT;

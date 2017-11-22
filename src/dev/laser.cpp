@@ -33,7 +33,7 @@ Laser::Laser():nh_(),angle_n_(0)
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
 	scan_sub3_ = nh_.subscribe("scan3",1,&Laser::scanCb3,this);
-	marker_sub_ = nh_.subscribe("point_marker",1,&Laser::scanMarkerCb,this);
+	laserPoint_sub_ = nh_.subscribe("laserPoint",1,&Laser::laserPointCb,this);
 	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 	setScanReady(0);
@@ -52,7 +52,7 @@ Laser::~Laser()
 	setScan2Ready(0);
 	scan_sub_.shutdown();
 	scan_sub2_.shutdown();
-	marker_sub_.shutdown();
+	laserPoint_sub_.shutdown();
 	lidar_motor_cli_.shutdown();
 	lidar_shield_detect_.shutdown();
 	nh_.shutdown();
@@ -106,7 +106,7 @@ void Laser::scanCb3(const sensor_msgs::LaserScan::ConstPtr &scan){
 	setScan3Ready(1);
 }
 
-void Laser::scanMarkerCb(const visualization_msgs::Marker &point_marker) {
+void Laser::laserPointCb(const visualization_msgs::Marker &point_marker) {
 	scanXY_mutex_.lock();
 	laserXY_points = point_marker.points;
 	scanXY_mutex_.unlock();

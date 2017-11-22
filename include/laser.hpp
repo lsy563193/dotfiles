@@ -66,7 +66,7 @@ private:
 	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanMarkerCb(const visualization_msgs::Marker &point_marker);
+	void laserPointCb(const visualization_msgs::Marker &point_marker);
 
 	int angle_n_;
 	uint8_t is_scan_ready_;
@@ -78,7 +78,7 @@ private:
 	ros::Subscriber	scan_sub_;
 	ros::Subscriber	scan_sub2_;
 	ros::Subscriber	scan_sub3_;
-	ros::Subscriber marker_sub_;
+	ros::Subscriber laserPoint_sub_;
 
 	sensor_msgs::LaserScan laserScanData_;
 	sensor_msgs::LaserScan laserScanData_2_;
