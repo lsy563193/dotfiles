@@ -1,8 +1,6 @@
 #ifndef __GYRO_H__
 #define __GYRO_H__
 
-#include "debug.h"
-
 class Gyro {
 public:
 

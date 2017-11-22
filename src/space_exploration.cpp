@@ -76,9 +76,9 @@ void turn_into_exploration(bool is_reset_map)
 	// Push the start point into the home point list
 	ROS_INFO("map_init-----------------------------");
 	if (is_reset_map)
-		cost_map.init(MAP);
-	cost_map.init(WFMAP);
-	cost_map.init(ROSMAP);
+		cost_map.reset(MAP);
+	fw_map.reset(MAP);
+	ros_map.reset(MAP);
 	path_planning_initialize();
 	cs_work_motor();
 	cm_reset_go_home();

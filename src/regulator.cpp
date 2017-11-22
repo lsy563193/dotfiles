@@ -769,7 +769,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	if (integration_cycle_++ > 10) {
 		auto t = cost_map.point_to_cell(target_p);
-		MotionManage::pubCleanMapMarkers(MAP, g_plan_path, &t);
+		MotionManage::pubCleanMapMarkers(cost_map, g_plan_path, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
@@ -823,7 +823,7 @@ FollowWallRegulator::FollowWallRegulator(Point32_t start_point, Point32_t target
 	if (!g_keep_on_wf) {
 		s_origin_p = start_point;
 		s_target_p = target;
-		cost_map.init(WFMAP);
+		fw_map.reset(MAP);
 		ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 	} else {
 		g_keep_on_wf = false;

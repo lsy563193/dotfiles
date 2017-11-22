@@ -4,7 +4,6 @@
 #include "config.h"
 #include "map.h"
 #include "mathematics.h"
-#include "debug.h"
 #include "BoundingBox.h"
 
 #include <list>
@@ -32,7 +31,6 @@ typedef struct {
 //	Cell_t	target;
 //	std::list <Cell_t> cells;
 //} PPTargetType;
-typedef std::deque<Cell_t> PPTargetType;
 typedef enum {
 	USE_ROS,
 	USE_UNCLEAN,
@@ -56,19 +54,6 @@ extern int g_wf_reach_count;
 extern bool g_check_path_in_advance;
 extern bool g_allow_check_path_in_advance;
 extern Cell_t g_virtual_target;//for followall
-
-/*
- * Function to find the X/Y range of the Map or wfMap, if the range is to small,
- * use the offset of those value to 3.
- *
- * @param *x_range_min	Pointer for minimum X value of the Map
- * @param *x_range_max	Pointer for maximum X value of the Map
- * @param *y_range_min	Pointer for minimum Y value of the Map
- * @param *y_range_max	Pointer for maximum Y value of the Map
- *
- * @return
- */
-void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
 /*
  * Update current robot g_pos_history.
@@ -133,8 +118,6 @@ uint16_t path_get_robot_direction(void);
 bool path_target(const Cell_t& curr, PPTargetType& path);
 //int16_t path_target2(const Cell_t& curr, PPTargetType& path);
 void path_find_all_targets(const Cell_t& curr, BoundingBox2& map);
-
-void generate_SPMAP(const Cell_t& curr);
 
 bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map);
 

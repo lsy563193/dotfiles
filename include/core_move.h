@@ -1,10 +1,10 @@
 #ifndef __CORMOVE_H__
 #define __CORMOVE_H__
 
-#include "mathematics.h"
-#include "debug.h"
 #include <vector>
+#include <deque>
 #include <bitset>
+#include "mathematics.h"
 #include "event_manager.h"
 
 #define MS_Clear 		0x00
@@ -95,9 +95,6 @@ uint8_t cm_touring(void);
 void cm_cleaning(void);
 
 void cm_apply_cs(void);
-
-void mark_offset(int16_t dx, int16_t dy, CellState status);
-
 
 	/* Robot will try to go to the cells in g_home_point_old_path list
 	 * first, and it will only go through the CLEANED area. If the

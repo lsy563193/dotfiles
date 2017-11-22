@@ -2,14 +2,15 @@
 #define __MAP_H__
 
 #include "config.h"
-#include "mathematics.h"
 #include <deque>
 #include <vector>
+#include "mathematics.h"
+#include "BoundingBox.h"
 
 #define MAP 0
 #define SPMAP 1
-#define WFMAP 2
-#define ROSMAP 3
+
+typedef std::deque<Cell_t> PPTargetType;
 
 typedef enum {
   UNCLEAN  = 0,
@@ -54,7 +55,8 @@ typedef enum {
 
 class CostMap {
 public:
-	void init(uint8_t id);
+
+	CostMap();
 
 	int32_t get_x_count(void);
 
@@ -74,7 +76,7 @@ public:
 
 	void robot_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
-	CellState get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map = false);
+	CellState get_cell(int id, int16_t x, int16_t y);
 
 	Cell_t get_curr_cell();
 
@@ -138,7 +140,6 @@ public:
 
 	uint8_t set_follow_wall();
 
-	uint8_t set_blocks();
 
 	uint8_t save_laser();
 
@@ -157,6 +158,8 @@ public:
 	uint8_t save_follow_wall();
 
 	uint8_t save_blocks();
+
+	uint8_t set_blocks();
 
 	double world_distance(void);
 
@@ -251,12 +254,48 @@ public:
 
 	bool is_front_block_boundary(int dx);
 
+	void generate_SPMAP(const Cell_t& curr, std::deque<PPTargetType>& g_paths);
+/*
+ * Function to find the X/Y range of the Map or wfMap, if the range is to small,
+ * use the offset of those value to 3.
+ *
+ * @param *x_range_min	Pointer for minimum X value of the Map
+ * @param *x_range_max	Pointer for maximum X value of the Map
+ * @param *y_range_min	Pointer for minimum Y value of the Map
+ * @param *y_range_max	Pointer for maximum Y value of the Map
+ *
+ * @return
+ */
+
+	BoundingBox2 generateBound()
+	{
+		BoundingBox2 bound{{int16_t(g_x_min), int16_t(g_y_min)}, {g_x_max, g_y_max}};
+		return bound;
+	}
+
+	BoundingBox2 generateBound2()
+	{
+		BoundingBox2 bound{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)}, {g_x_max, g_y_max}};
+		return bound;
+	}
+	void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+
+	void color_print(char *outString, int16_t y_min, int16_t y_max);
+	void print(uint8_t id, int16_t endx, int16_t endy);
 private:
+	uint8_t costmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
+	uint8_t spmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
+
+	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
+	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
+	double xCount, yCount, relative_sin, relative_cos;
+
 };
 
+uint8_t map_set_blocks();
 extern CostMap cost_map;
-//CostMap sp_map;
-//CostMap wf_map;
-//CostMap ros_map;
+/*wf_map is to record the wall follow path to caculate the isolate islands*/
+extern CostMap fw_map;
+extern CostMap ros_map;
 
 #endif /* __MAP_H */

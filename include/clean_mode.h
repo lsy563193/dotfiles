@@ -93,7 +93,7 @@ public:
 	~NavigationClean();
 //	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	Cell_t updatePosition(const Point32_t &curr_point);
-	void mark() {CleanMode::mark();};
+	void mark();
 	bool isStop();
 	bool isExit();
 	bool isReach();
@@ -123,7 +123,7 @@ public:
 	WallFollowClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~WallFollowClean();
 //	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	void mark() {CleanMode::mark();};
+	void mark();
 	bool isStop();
 	bool isExit();
 	bool isReach();

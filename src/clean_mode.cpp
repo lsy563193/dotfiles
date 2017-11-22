@@ -78,11 +78,9 @@ void CleanMode::run()
 	}
 }
 
+//todo
 void CleanMode::mark() {
-	cost_map.save_blocks();
-	cost_map.set_blocks();
-	cost_map.set_cleaned(g_passed_path);
-	cost_map.mark_robot(MAP);
+
 };
 
 bool CleanMode::isStop(){
@@ -196,7 +194,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 void CleanMode::display()
 {
 	path_display_path_points(g_plan_path);
-	MotionManage::pubCleanMapMarkers(MAP, g_plan_path);
+	MotionManage::pubCleanMapMarkers(cost_map, g_plan_path);
 }
 
 void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -629,6 +627,17 @@ bool NavigationClean::findTarget(Cell_t& curr)
 	else
 		return find_target(curr);
 }
+void NavigationClean::mark()
+{
+	cost_map.save_blocks();
+	fw_map.save_follow_wall();
+
+	cost_map.set_blocks();
+	fw_map.set_blocks();
+
+	cost_map.set_cleaned(g_passed_path);
+	cost_map.mark_robot(MAP);
+}
 
 Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
 {
@@ -928,6 +937,13 @@ bool WallFollowClean::isSwitch()
 	}
 
 	return false;
+}
+
+void WallFollowClean::mark() {
+	fw_map.save_follow_wall();
+	fw_map.set_blocks();
+	cost_map.set_cleaned(g_passed_path);
+	cost_map.mark_robot(MAP);
 }
 
 bool WallFollowClean::findTarget(Cell_t& curr)

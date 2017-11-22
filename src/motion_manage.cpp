@@ -28,7 +28,6 @@
 #include "spot.h"
 #include "move_type.h"
 #include "robotbase.h"
-#include "debug.h"
 #include "map.h"
 #include "regulator.h"
 #include "clean_mode.h"
@@ -37,7 +36,6 @@
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
-bool g_wf_is_reach;
 /*
 int g_enable_angle_offset = 0;
 boost::mutex g_angle_offset_mt;
@@ -439,10 +437,10 @@ void init_before_gyro()
 
 	reset_work_time();
 	if (!cs_is_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
-		cost_map.init(MAP);
+		cost_map.reset(MAP);
 
-	cost_map.init(WFMAP);
-	cost_map.init(ROSMAP);
+	fw_map.reset(MAP);
+	ros_map.reset(MAP);
 	switch (cm_get())
 	{
 		case Clean_Mode_Navigation:
@@ -575,7 +573,6 @@ void MotionManage::init_after_slam()
 		g_robot_slip_enable = true;
 	g_robot_stuck = false;
 	g_robot_slip = false;
-	g_wf_is_reach = false;
 }
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
@@ -666,7 +663,7 @@ MotionManage::~MotionManage()
 {
 	if (cm_get() != Clean_Mode_Go_Charger)
 	{
-		debug_map(MAP, cost_map.get_x_cell(), cost_map.get_y_cell());
+		cost_map.print(MAP, cost_map.get_x_cell(), cost_map.get_y_cell());
 		//if (cm_is_follow_wall())
 		g_wf_reach_count = 0;
 		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
@@ -899,7 +896,7 @@ bool MotionManage::initGoHome(void)
 	return true;
 }
 
-void MotionManage::pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path, Cell_t* cell_p)
+void MotionManage::pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
 {
 	// temp_target is valid if only path is not empty.
 	if (path.empty())
@@ -909,7 +906,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path
 	CellState cell_state;
 	Cell_t next = path.front();
 	Cell_t target = path.back();
-	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
+	map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
 		next.X = x_min;
@@ -928,7 +925,7 @@ void MotionManage::pubCleanMapMarkers(uint8_t id, const std::deque<Cell_t>& path
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
-				cell_state = cost_map.get_cell(id, x, y);
+				cell_state = cost_map.get_cell(MAP, x, y);
 				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
 					robot::instance()->setCleanMapMarkers(x, y, cell_state);
 			}

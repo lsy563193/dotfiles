@@ -535,7 +535,7 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 	{
 		ROS_INFO("\033[36m""spot.cpp bumper/obs trigger""\033[0m");
 		resetOBSTrigger();
-		debug_map(MAP,target_path->back().X,target_path->back().Y);
+		cost_map.print(MAP, target_path->back().X, target_path->back().Y);
 		Cell_t current_cell = cost_map.get_curr_cell();
 		ROS_INFO("\033[36m""current cell(%d,%d)""\033[0m",current_cell.X,current_cell.Y);
 		int pnb_ret = 0;

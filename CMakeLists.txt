@@ -6,7 +6,6 @@ FILE(GLOB PP_SRC
 	src/charger.cpp
 	src/core_move.cpp
 	src/crc8.cpp
-	src/debug.cpp
 	src/des.cpp
 				src/dev/gyro.cpp
 				src/dev/vacuum.cpp
