@@ -94,10 +94,6 @@ public:
 		return angle_v_;
 	}
 
-	bool isMoving() const
-	{
-		return is_moving_;
-	}
 
 	float getLinearX() const
 	{
@@ -274,8 +270,6 @@ private:
 	/* 1 byte */
 	float	angle_v_;
 
-	bool	is_moving_;
-
 	float	linear_x_;
 	float	linear_y_;
 	float	linear_z_;
@@ -314,7 +308,7 @@ private:
 	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
-	ros::Publisher robot_odom_pub_;
+	ros::Publisher odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher scan_ctrl_pub_;
@@ -329,7 +323,7 @@ private:
 
 	//tf::TransformBroadcaster	robot_broad;
 	//geometry_msgs::TransformStamped robot_trans;
-	nav_msgs::Odometry robot_odom;
+	nav_msgs::Odometry odom;
 	pp::scan_ctrl scan_ctrl_;
 };
 

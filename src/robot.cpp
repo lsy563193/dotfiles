@@ -68,10 +68,9 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	visualizeMarkerInit();
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
-	robot_odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom",1);
+	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom",1);
 	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl",1);
 
-	is_moving_ = false;
 	is_sensor_ready_ = false;
 	is_tf_ready_ = false;
 
@@ -181,11 +180,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	linear_y_ = msg->twist.twist.linear.y;
 	linear_z_ = msg->twist.twist.linear.z;
 	//odom_eualr_angle;
-	if (linear_x_ == 0.0 && linear_y_ == 0.0 && linear_z_ == 0.0) {
-		is_moving_ = false;
-	} else {
-		is_moving_ = true;
-	}
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
@@ -302,17 +296,17 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//robot_trans.transform.rotation = robot_quat;
 	//robot_broad.sendTransform(robot_trans);
 	//ROS_WARN("%s %d: World position (%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw);
-	robot_odom.header.stamp = cur_time;
-	robot_odom.header.frame_id = "map";
-	robot_odom.child_frame_id = "robot";
-	robot_odom.pose.pose.position.x = robot_x_;
-	robot_odom.pose.pose.position.y = robot_y_;
-	robot_odom.pose.pose.position.z = 0.0;
-	robot_odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
-	robot_odom.twist.twist.linear.x = 0.0;
-	robot_odom.twist.twist.linear.y = 0.0;
-	robot_odom.twist.twist.angular.z = 0.0;
-	robot_odom_pub_.publish(robot_odom);
+	odom.header.stamp = cur_time;
+	odom.header.frame_id = "map";
+	odom.child_frame_id = "robot";
+	odom.pose.pose.position.x = robot_x_;
+	odom.pose.pose.position.y = robot_y_;
+	odom.pose.pose.position.z = 0.0;
+	odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
+	odom.twist.twist.linear.x = 0.0;
+	odom.twist.twist.linear.y = 0.0;
+	odom.twist.twist.angular.z = 0.0;
+	odom_pub_.publish(odom);
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
 	position_x_ = robot_x_;
 	position_y_ = robot_y_;
@@ -349,15 +343,15 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	}
 	MotionManage::s_slam->isMapReady(true);
 
-	ROS_INFO("%s %d:finished map callback,map_size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),map_origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
+//	ROS_INFO("%s %d:finished map callback,map_size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),map_origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
 
 }
 
-void robot::displayPositions()
-{
-	ROS_INFO("base_link->map: (%f, %f) Gyro: %d yaw_: %f(%f)",
-		position_x_, position_y_, gyro.get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
-}
+//void robot::displayPositions()
+//{
+//	ROS_INFO("base_link->map: (%f, %f) Gyro: %d yaw_: %f(%f)",
+//		position_x_, position_y_, gyro.get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
+//}
 
 void robot::visualizeMarkerInit()
 {
@@ -397,15 +391,15 @@ void robot::visualizeMarkerInit()
 	clean_map_markers_.colors.clear();
 }
 
-void robot::pubCleanMarkers()
-{
-	m_points_.x = position_x_;
-	m_points_.y = position_y_;
-	m_points_.z = 0;
-	clean_markers_.header.stamp = ros::Time::now();
-	clean_markers_.points.push_back(m_points_);
-	send_clean_marker_pub_.publish(clean_markers_);
-}
+//void robot::pubCleanMarkers()
+//{
+//	m_points_.x = position_x_;
+//	m_points_.y = position_y_;
+//	m_points_.z = 0;
+//	clean_markers_.header.stamp = ros::Time::now();
+//	clean_markers_.points.push_back(m_points_);
+//	send_clean_marker_pub_.publish(clean_markers_);
+//}
 
 void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 {
@@ -517,9 +511,9 @@ void robot::pubCleanMapMarkers(void)
 void robot::initOdomPosition()
 {
 	//is_tf_ready_ = false;
-	position_x_=0;
-	position_y_=0;
-	position_z_=0;
+//	position_x_=0;
+//	position_y_=0;
+//	position_z_=0;
 	robotbase_reset_odom_pose();
 	visualizeMarkerInit();
 }
