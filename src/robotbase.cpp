@@ -411,6 +411,18 @@ void *robotbase_routine(void*)
 		sensor.y_acc = (g_receive_stream[43]<<8)|g_receive_stream[44];//in mG
 		sensor.z_acc = (g_receive_stream[45]<<8)|g_receive_stream[46]; //in mG
 #endif
+	#if GYRO_DYNAMIC_ADJUSTMENT
+	if (wheel.getLeftWheelSpeed() < 0.01 && wheel.getRightWheelSpeed() < 0.01)
+	{
+		gyro.set_dynamic_on();
+	} else
+	{
+		gyro.set_dynamic_off();
+	}
+	tilt.check();
+	if(omni.isEnable())
+		omni.detect();
+#endif
 		/*---------extrict end-------*/
 
 		pthread_mutex_lock(&serial_data_ready_mtx);

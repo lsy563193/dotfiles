@@ -3199,11 +3199,11 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			}
 		}
 	}
-	else if(g_omni_notmove)
-	{
+//	else if(g_omni_notmove)
+//	{
 		//wheel.set_dir_backward();
 		//left_speed = right_speed = RUN_TOP_SPEED;
-	}
+//	}
 	else if(g_slip_cnt>=2)
 	{
 		if(g_slip_cnt <3)

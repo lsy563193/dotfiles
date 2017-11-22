@@ -49,9 +49,6 @@ uint8_t g_battery_low_cnt = 0;
 uint8_t g_charge_detect_cnt = 0;
 bool g_plan_activated = false;
 
-/* Omni wheel*/
-bool g_omni_notmove = false;
-bool g_omni_enable = false;
 
 /* robot slip & stuck */
 uint8_t g_slip_cnt = 0;

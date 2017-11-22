@@ -298,7 +298,7 @@ void Idle_EventHandle::battery_low(bool state_now, bool state_last)
 void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
-	g_omni_notmove = false;
+	omni.set_stop(false);
 	//g_robot_stuck = false;
 
 	/* reset charger_signal_start_time when get remote cleaning */
@@ -459,7 +459,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
-	g_omni_notmove = false;
+	omni.set_stop(false);
 	//g_robot_stuck = false;
 	time_t key_press_start_time = time(NULL);
 

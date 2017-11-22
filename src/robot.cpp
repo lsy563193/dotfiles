@@ -1,37 +1,14 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
-#include <string.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <vector>
 #include <movement.h>
 #include <motion_manage.h>
 #include <core_move.h>
-#include <move_type.h>
 #include <std_srvs/SetBool.h>
 #include <pp.h>
-#include <clean_timer.h>
-#include <remote.h>
-#include <obs.h>
-#include <tilt.h>
-#include <wheel.h>
-
-#include "gyro.h"
-#include "key.h"
-#include "robot.hpp"
-#include "robotbase.h"
-#include "config.h"
-#include "laser.hpp"
-#include "figures/segment.h"
-#include "slam.h"
-#include "event_manager.h"
 
 #include "std_srvs/Empty.h"
-#include "map.h"
-#include "space_exploration.h"
-#include "clean_mode.h"
-#include "tilt.h"
-#include "omni.h"
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
@@ -49,8 +26,6 @@ int16_t slam_error_count;
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
 
-uint32_t omni_detect_cnt = 0;
-uint32_t last_omni_wheel = 0;
 
 boost::mutex ros_map_mutex_;
 
@@ -115,15 +90,6 @@ void robot::init()
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
-#if GYRO_DYNAMIC_ADJUSTMENT
-	if (wheel.getLeftWheelSpeed() < 0.01 && wheel.getRightWheelSpeed() < 0.01)
-	{
-		gyro.set_dynamic_on();
-	} else
-	{
-		gyro.set_dynamic_off();
-	}
-#endif
 	angle_ = msg->angle;
 
 	angle_v_ = msg->angle_v;
@@ -133,41 +99,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	// Dynamic adjust obs
 	obs_dynamic_base(OBS_adjust_count);
 
-	// Check if tilt.
-	tilt.check();
-
 	// Check for whether robot should publish this frame of scan.
 	scan_ctrl_.allow_publishing = check_pub_scan();
 	scan_ctrl_pub_.publish(scan_ctrl_);
-
-	/*------start omni detect----*/
-	if(g_omni_enable){
-		if(std::abs(msg->rw_vel - msg->lw_vel) <= 0.05 && (msg->rw_vel != 0 && msg->lw_vel != 0) ){
-			if(std::abs(msg->omni_wheel - last_omni_wheel) == 0){
-				omni_detect_cnt ++;
-				//ROS_INFO("\033[35m" "omni count %d %f\n" "\033[0m",omni_detect_cnt,std::abs(msg->rw_vel - msg->lw_vel));
-				if(omni_detect_cnt >= 150){
-					omni_detect_cnt = 0;
-					ROS_INFO("\033[36m" "omni detetced ,wheel speed %f,%f  \n" "\033[0m", msg->rw_vel,msg->lw_vel);
-					g_omni_notmove = true;
-				}
-			}
-		}
-		else{
-			//g_omni_notmove = false;
-			omni_detect_cnt = 0;
-			last_omni_wheel = msg->omni_wheel;
-		}
-		if(msg->omni_wheel >= 10000){
-			omni.reset();
-		}
-	}
-	/*------end omni detect----*/
-#if 0
-	ROS_INFO("%s %d:\n\t\tangle: %f\tangle_v_: %f", __FUNCTION__, __LINE__, angle, angle_v_);
-	ROS_INFO("\t\tvaccum: %d\tbox: %d\tbattery_voltage: %d, brush left: %d\t brush right: %d\tbrush main: %d", vaccum, box, battery_voltage_, brush_left_, brush_right_, brush_main_);
-	ROS_INFO("\t\tcliff right: %d\tcliff left: %d\t cliff front: %d\t wall: %d", cliff_right_, cliff_left_, cliff_front_, wall);
-#endif
 }
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)

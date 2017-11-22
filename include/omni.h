@@ -12,6 +12,13 @@ extern pp::x900sensor sensor;
 
 class Omni {
 public:
+	Omni()
+	{
+		is_enable = false;
+		omni_detect_cnt=0;
+		last_omni_wheel=0;
+		stop_ = false;
+	}
 void reset()
 {
 	uint8_t reset_byte = controller.get(CTL_OMNI_RESET);
@@ -27,8 +34,21 @@ int16_t getOmniWheel()
 {
 	return sensor.omni_wheel;
 }
-
+	bool isEnable()
+	{return is_enable;}
+	void detect();
+	bool stop(){
+		return stop_;
+	};
+	bool set_stop(bool val){
+		return stop_ =val;
+	};
 private:
+	bool is_enable;
+
+	int16_t omni_detect_cnt;
+	int16_t last_omni_wheel;
+	bool stop_ = true;
 };
 
 extern Omni omni;
