@@ -259,7 +259,8 @@ bool RegulatorBase::isStop()
 {
 	if (ev.battery_home || ev.remote_spot || (!cs.is_going_home() && ev.remote_home) || cm_should_self_check())
 	{
-		ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: battery_home(%d), remote_spot(%d), remote_home(%d), should_self_check(%d)",
+				 __FUNCTION__, __LINE__, ev.battery_home, ev.remote_spot, ev.remote_home, cm_should_self_check());
 		return true;
 	}
 	return false;

@@ -470,6 +470,7 @@ void init_before_gyro()
 bool MotionManage::laser_init()
 {
 	s_laser = new Laser();
+	s_laser->laserMotorCtrl(ON);
 	if (s_laser->isScanReady() == -1)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);

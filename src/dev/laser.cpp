@@ -29,21 +29,14 @@ boost::mutex scanXY_mutex_;
 
 Laser* s_laser = nullptr;
 
-Laser::Laser():nh_(),angle_n_(0)
+Laser::Laser():angle_n_(0)
 {
-	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
-	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
-	scan_sub3_ = nh_.subscribe("scan3",1,&Laser::scanCb3,this);
-	laserPoint_sub_ = nh_.subscribe("laserPoint",1,&Laser::laserPointCb,this);
-	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
-	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 	setScanReady(0);
 	setScan2Ready(0);
 	scan_update_time = ros::Time::now().toSec();
 	scan2_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
-	laserMotorCtrl(ON);
 }
 
 Laser::~Laser()
@@ -51,12 +44,6 @@ Laser::~Laser()
 	laserMotorCtrl(OFF);
 	setScanReady(0);
 	setScan2Ready(0);
-	scan_sub_.shutdown();
-	scan_sub2_.shutdown();
-	laserPoint_sub_.shutdown();
-	lidar_motor_cli_.shutdown();
-	lidar_shield_detect_.shutdown();
-	nh_.shutdown();
 	//delete []last_ranges_;
 	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
@@ -176,15 +163,9 @@ void Laser::setScan3Ready(uint8_t val)
 
 void Laser::laserMotorCtrl(bool switch_)
 {
-	pp::SetLidar trigger;
 	time_t start_time = time(NULL);
 	bool eh_status_now = false, eh_status_last = false;
 	bool request_sent = false;
-	if(switch_){
-		trigger.request.x_acc_init= acc.getInitXAcc();
-		trigger.request.y_acc_init= acc.getInitYAcc();
-		trigger.request.z_acc_init= acc.getInitZAcc();
-	}
 	while(ros::ok())
 	{
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -205,11 +186,9 @@ void Laser::laserMotorCtrl(bool switch_)
 
 		if (!request_sent)
 		{
-			trigger.request.data = switch_;
 			request_sent = true;
-			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, trigger.request.data ? "ON":"OFF");
-			if (lidar_motor_cli_.call(trigger)){
-				ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__,trigger.response.message.c_str());
+			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, switch_ ? "ON":"OFF");
+			if (robot::instance()->laserMotorCtrl(switch_)){
 				start_time = time(NULL);
 				if (!switch_)
 					// For stop command.
@@ -405,7 +384,7 @@ bool Laser::findLines(std::vector<LineABC> *lines)
 	}
 	ROS_INFO("%s,%d,pub line markers,lines numbers \033[35m%u\033[0m, lines:\033[32m %s \033[0m",__FUNCTION__,__LINE__,lines->size(),msg.c_str());
 	*/
-	pubLineMarker(lines);
+	robot::instance()->pubLineMarker(lines);
 	return true;
 }
 
@@ -863,107 +842,9 @@ bool Laser::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 		}
 	}
 	ROS_DEBUG("pub line marker");
-	pubLineMarker(&Laser_Group);
+	robot::instance()->pubLineMarker(&Laser_Group);
 	return true;
 }
-
-void Laser::pubLineMarker( const std::vector<LineABC> *lines)
-{
-	visualization_msgs::Marker line_marker;
-	line_marker.ns = "line_marker_2";
-	line_marker.id = 0;
-	line_marker.type = visualization_msgs::Marker::LINE_LIST;
-	line_marker.action= 0;//add
-	line_marker.lifetime=ros::Duration(0);
-	line_marker.scale.x = 0.05;
-	//line_marker.scale.y = 0.05;
-	//line_marker.scale.z = 0.05;
-	line_marker.color.r = 0.5;
-	line_marker.color.g = 1.0;
-	line_marker.color.b = 0.2;
-	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/map";
-	line_marker.header.stamp = ros::Time::now();
-	geometry_msgs::Point point1;
-	point1.z = 0.0;
-	geometry_msgs::Point point2;
-	point2.z = 0.0;
-	line_marker.points.clear();
-	std::vector<LineABC>::const_iterator it;
-	if(!lines->empty() && lines->size() >= 2){
-		for(it = lines->cbegin(); it != lines->cend();it++){
-			point1.x = it->x1;
-			point1.y = it->y1;
-			point2.x = it->x2;
-			point2.y = it->y2;
-			line_marker.points.push_back(point1);
-			line_marker.points.push_back(point2);
-		}
-		line_marker_pub2.publish(line_marker);
-		line_marker.points.clear();
-	}
-	/*
-	else{
-		line_marker.points.clear();
-		line_marker_pub2.publish(line_marker);
-	}
-	*/
-
-}
-
-void Laser::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
-{
-	int points_size;
-	visualization_msgs::Marker line_marker;
-	line_marker.ns = "line_marker";
-	line_marker.id = 0;
-	line_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-	line_marker.action= 0;//add
-	line_marker.lifetime=ros::Duration(0);
-	line_marker.scale.x = 0.03;
-	line_marker.scale.y = 0.03;
-	line_marker.scale.z = 0.03;
-	line_marker.color.r = 0.0;
-	line_marker.color.g = 1.0;
-	line_marker.color.b = 0.0;
-	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/base_link";
-	line_marker.header.stamp = ros::Time::now();
-	laser_points_.x = 0.0;
-	laser_points_.y = 0.0;
-	laser_points_.z = 0.0;
-
-	/*line_marker.pose.position.x = 0.0;
-	line_marker.pose.position.y = 0.0;
-	line_marker.pose.position.z = 0.0;
-	line_marker.pose.orientation.x = 0.0;
-	line_marker.pose.orientation.y = 0.0;
-	line_marker.pose.orientation.z = 0.0;
-	line_marker.pose.orientation.w = 1.0;*/
-	if (!(*groups).empty()) {
-		for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
-			/*x1 = iter->begin()->x;
-			y1 = iter->begin()->y;
-			x2 = (iter->end() - 1)->x;
-			y2 = (iter->end() - 1)->y;*/
-			points_size = iter->size();
-			for (int j = 0; j < points_size; j++) {
-				//line_marker.pose.position.x = (iter->begin() + j)->x;
-				//line_marker.pose.position.y = (iter->begin() + j)->y;
-				laser_points_.x = (iter->begin() + j)->x;
-				laser_points_.y = (iter->begin() + j)->y;
-				//ROS_INFO("laser_points_.x = %lf laser_points_.y = %lf",laser_points_.x, laser_points_.y);
-				line_marker.points.push_back(laser_points_);
-			}
-		}
-		line_marker_pub.publish(line_marker);
-		line_marker.points.clear();
-	} else {
-		line_marker.points.clear();
-		line_marker_pub.publish(line_marker);
-	}
-}
-
 
 bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim) {
 	double 	a, b, c;
@@ -1004,7 +885,7 @@ bool Laser::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 		}
 	} else {
 		fit_line_marker.points.clear();
-		fit_line_marker_pub.publish(fit_line_marker);
+		robot::instance()->pubFitLineMarker(fit_line_marker);
 	}
 	fit_line_marker.points.clear();
 	return true;
@@ -1043,7 +924,7 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
 	laser_points_.y = y2;
 	//ROS_INFO("Fit line laser_points_.x = %lf laser_points_.y = %lf",laser_points_.x, laser_points_.y);
 	fit_line_marker.points.push_back(laser_points_);
-	fit_line_marker_pub.publish(fit_line_marker);
+	robot::instance()->pubFitLineMarker(fit_line_marker);
 	//fit_line_marker.cells.clear();
 }
 
@@ -1568,46 +1449,6 @@ double Laser::getObstacleDistance(uint8_t dir, double range)
 	return min_dis;
 }
 
-void Laser::pubPointMarkers(const std::vector<Point_d_t> *points, std::string frame_id)
-{
-	visualization_msgs::Marker point_marker;
-	point_marker.ns = "point_marker";
-	point_marker.id = 0;
-	point_marker.type = visualization_msgs::Marker::POINTS;
-	point_marker.action= 0;//add
-	point_marker.lifetime=ros::Duration(0),"base_link";
-	point_marker.scale.x = 0.02;
-	point_marker.scale.y = 0.02;
-	point_marker.scale.z = 0.0;
-	point_marker.color.r = 1.0;
-	point_marker.color.g = 1.0;
-	point_marker.color.b = 1.0;
-	point_marker.color.a = 1.0;
-	point_marker.header.frame_id = frame_id;
-	point_marker.header.stamp = ros::Time::now();
-
-	geometry_msgs::Point laser_points;
-	laser_points.z = 0;
-	if (!points->empty()) {
-		std::string msg("");
-		for (std::vector<Double_Point>::const_iterator iter = points->cbegin(); iter != points->cend(); ++iter) {
-			laser_points.x = iter->x;
-			laser_points.y = iter->y;
-			point_marker.points.push_back(laser_points);
-			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
-		}
-		point_marker_pub.publish(point_marker);
-		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
-		point_marker.points.clear();
-	}
-	/*
-	else {
-		point_marker.points.clear();
-		point_marker_pub.publish(point_marker);
-	}
-	*/
-}
-
 bool Laser::laserCheckFresh(float duration, uint8_t type)
 {
 	double time_gap;
@@ -1630,7 +1471,7 @@ bool Laser::laserCheckFresh(float duration, uint8_t type)
 
 bool laser_is_stuck()
 {
-	if (s_laser != nullptr && !s_laser->laserCheckFresh(3, 2))
+	if (s_laser != nullptr && !s_laser->laserCheckFresh(4, 2))
 		return true;
 	return false;
 }
