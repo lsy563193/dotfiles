@@ -167,7 +167,7 @@ int16_t map_get_y_cell(void) {
 
 Cell_t map_get_curr_cell()
 {
-	return Cell_t{map_get_x_cell(), map_get_y_cell(),gyro_get_angle()};
+	return Cell_t{map_get_x_cell(), map_get_y_cell(),gyro.get_angle()};
 }
 
 void map_set_position(double x, double y) {
@@ -540,7 +540,7 @@ Cell_t map_point_to_cell(Point32_t pnt) {
 	Cell_t cell;
 	cell.X = count_to_cell(pnt.X);
 	cell.Y = count_to_cell(pnt.Y);
-	cell.TH = gyro_get_angle();
+	cell.TH = gyro.get_angle();
 	return cell;
 }
 
@@ -940,8 +940,7 @@ uint8_t map_set_charge_position(const Cell_t home_point)
 	std::string print_msg("");
 	for(int i=0;i<4;i++){//hight
 		for(int j = 0;j<5;j++){//width
-			robot_to_point(gyro_get_angle(), CELL_SIZE * (lty + j + home_point.Y), CELL_SIZE * (ltx + i + home_point.X),
-						   &x, &y);
+			robot_to_point(gyro.get_angle(),CELL_SIZE*(lty+j+home_point.Y),CELL_SIZE*(ltx+i+home_point.X),&x,&y);
 			map_set_cell(MAP,x,y,BLOCKED_RCON);
 			print_msg+="("+std::to_string(count_to_cell(x))+","+std::to_string(count_to_cell(y))+"),";
 		}
@@ -954,17 +953,17 @@ uint8_t map_set_follow_wall()
 {
 	bool set_for_WFMAP = false;
 	bool set_for_MAP = false;
-	if (cs_is_trapped())
+	if (cs.is_trapped())
 		set_for_WFMAP = true;
 
 	if (cm_is_navigation())
 	{
-		if (mt_is_follow_wall())
+		if (mt.is_follow_wall())
 			set_for_MAP = true;
 	}
 	else if (cm_is_follow_wall())
 	{
-		if (mt_is_follow_wall())
+		if (mt.is_follow_wall())
 			set_for_WFMAP = true;
 	}
 
@@ -1030,10 +1029,10 @@ uint8_t map_save_slip()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		robot_to_cell(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		//cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_slip_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -1062,10 +1061,10 @@ uint8_t map_save_tilt()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		robot_to_cell(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		//cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_tilt_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -1098,10 +1097,12 @@ uint8_t map_save_obs()
 	{
 		if (d_cell.Y == 0 || (d_cell.Y == 1 & get_wall_adc(0) > 200) || (d_cell.Y == -1 & get_wall_adc(1) > 200))
 		{
+			cm_world_to_cell(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+			//cm_world_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 			robot_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 			//robot_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 			//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-			//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+			//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 			temp_obs_cells.push_back({x, y});
 			msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 		}
@@ -1137,8 +1138,8 @@ uint8_t map_save_cliff()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		robot_to_cell(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		//robot_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_cliff_cells.push_back({x, y});
@@ -1162,14 +1163,14 @@ uint8_t map_save_bumper()
 		d_cells = {/*{2,-1},*/ {2,0}/*, {2,1}*/};
 	else if (bumper_trig & BLOCK_LEFT)
 	{
-		if(mt_is_linear())
+		if(mt.is_linear())
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
 			d_cells = {/*{2, 1},*//* {2,2}, */{1,2}};
 	}
 	else if (bumper_trig & BLOCK_RIGHT)
 	{
-		if(mt_is_linear())
+		if(mt.is_linear())
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
 			d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
@@ -1180,10 +1181,10 @@ uint8_t map_save_bumper()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		robot_to_cell(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		//robot_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_bumper_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -1196,7 +1197,7 @@ uint8_t map_save_rcon()
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_station && g_in_charge_signal_range && cs_is_going_home())//while in cs_is_going_home() mode_ or from_station dont mark rcon signal
+	if( g_from_station && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont mark rcon signal
 	{
 		ev.rcon_triggered = 0;
 		return 0;
@@ -1277,9 +1278,9 @@ uint8_t map_save_rcon()
 	for(auto& d_cell : d_cells)
 	{
 		robot_to_cell(g_new_dir, d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		//robot_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_rcon_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -1289,14 +1290,14 @@ uint8_t map_save_rcon()
 
 uint8_t map_save_follow_wall()
 {
-	bool should_save_for_MAP = !(cm_is_navigation() && mt_is_follow_wall() && world_distance() < 0.1);
+	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && world_distance() < 0.1);
 
-	auto dy = mt_is_left() ? 2 : -2;
+	auto dy = mt.is_left() ? 2 : -2;
 	int16_t x, y;
 	//int32_t	x2, y2;
 	std::string msg = "cell:";
-	robot_to_cell(gyro_get_angle(), dy * CELL_SIZE, 0, x, y);
-	//robot_to_point(gyro_get_angle(), dy * CELL_SIZE, 0, &x2, &y2);
+	robot_to_cell(gyro.get_angle(), dy * CELL_SIZE, 0, x, y);
+	//robot_to_point(gyro.get_angle(), dy * CELL_SIZE, 0, &x2, &y2);
 	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 	//			, __FUNCTION__, __LINE__, dy, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 	if (should_save_for_MAP)
@@ -1337,14 +1338,14 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 		return;
 	int8_t x_offset;
 
-	if (!mt_is_linear())
+	if (!mt.is_linear())
 	{
 		x_offset = (cells.front().X < cells.back().X) ? 1 : -1;//X_POS
 		Cell_t cell_front = {int16_t(cells.front().X - x_offset),cells.front().Y};
 		Cell_t cell_back = {int16_t(cells.back().X + x_offset),cells.back().Y};
 		cells.push_front(cell_front);
 		cells.push_back(cell_back);
-//		auto is_follow_y_min = x_offset == 1 ^ mt_is_left();
+//		auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
 	}
 	else
 	{
@@ -1386,7 +1387,7 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
-			//robot_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			//robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			auto status = map_get_cell(MAP, map_get_x_cell() + dx, map_get_y_cell() + dy);
 			if (status == UNCLEAN){
 				map_set_cell(MAP, cell_to_count(map_get_x_cell() + dx), cell_to_count(map_get_y_cell() + dy), CLEANED);
@@ -1399,7 +1400,7 @@ void map_set_cleaned(std::deque<Cell_t>& cells)
 
 bool map_mark_robot(uint8_t id)
 {
-	if(!cs_is_trapped())
+	if(!cs.is_trapped())
 		return false;
 	int32_t x, y;
 	bool ret = false;
@@ -1407,7 +1408,7 @@ bool map_mark_robot(uint8_t id)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
-			robot_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			auto status = map_get_cell(id, count_to_cell(x), count_to_cell(y));
 			if (status > CLEANED && status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
 				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
@@ -1565,9 +1566,9 @@ uint8_t is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 {
 	uint8_t retval = 0;
 	int16_t x,y;
-	auto dy = mt_is_left()  ?  2 : -2;
+	auto dy = mt.is_left()  ?  2 : -2;
 	for(auto dx =-1; dx<=1,retval == 0; dx++) {
-		robot_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+		robot_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
 		if (is_a_block(x, y) == 1) {
 			retval = 1;
 		}
@@ -1582,7 +1583,7 @@ bool is_front_block_boundary(int dx)
 	int32_t x, y;
 	for (auto dy = -1; dy <= 1; dy++)
 	{
-		robot_to_point(gyro_get_angle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
+		robot_to_point(gyro.get_angle(), dy * CELL_SIZE, CELL_SIZE * dx, &x, &y);
 		if (map_get_cell(MAP, count_to_cell(x), count_to_cell(y)) == BLOCKED_BOUNDARY)
 			return true;
 	}

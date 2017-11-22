@@ -8,7 +8,7 @@ FILE(GLOB PP_SRC
 	src/crc8.cpp
 	src/debug.cpp
 	src/des.cpp
-	src/gyro.cpp
+				src/dev/gyro.cpp
 				src/dev/vacuum.cpp
 				src/dev/key.cpp
 			 src/dev/cliff.cpp

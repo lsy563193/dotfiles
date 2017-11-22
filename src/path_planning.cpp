@@ -197,7 +197,7 @@ void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int1
 
 //int16_t path_lane_distance(bool is_min)
 //{
-//	int angle = gyro_get_angle();
+//	int angle = gyro.get_angle();
 //	if(is_min)
 //		angle = uranged_angle(angle + 1800);
 //	angle /= 10;
@@ -246,9 +246,9 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 		target = it[0];
 		//todo
 //		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
-//		if(mt_is_follow_wall() && cm_is_reach())
+//		if(mt.is_follow_wall() && cm_is_reach())
 //		{
-//			if(mt_is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
+//			if(mt.is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
 //				target = it[1];
 //		}
 	}
@@ -392,7 +392,7 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 	auto target = curr;
 	auto tmp = curr;
   /*if(curr.Y % 2 != 0) {
-		if (mt_is_follow_wall()) {
+		if (mt.is_follow_wall()) {
 			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
 			auto step = curr.Y - g_cell_history[1].Y;
 			auto is_local = (dir > 0) ? step <= 0 : step >= 0;
@@ -400,10 +400,10 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 			ROS_ERROR("%s %d:follow_wall dir(%d),step(%d),tmp(%d,%d),his1(%d,%d)", __FUNCTION__, __LINE__, dir, step, tmp.X,
 								tmp.Y, g_cell_history[1].X, g_cell_history[1].Y);
 		}
-		if (mt_is_linear() && IS_X_AXIS(g_new_dir)) {
+		if (mt.is_linear() && IS_X_AXIS(g_new_dir)) {
 			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
 			tmp.Y = g_cell_history[1].Y;
-			ROS_ERROR("%s %d:mt_is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,
+			ROS_ERROR("%s %d:mt.is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,
 								g_cell_history[1].X, g_cell_history[1].Y, curr.X, curr.Y);
 		}
 	}*/
@@ -1210,11 +1210,11 @@ bool path_next_spot(const Cell_t &start, PPTargetType &path) {
 
 bool path_next_fw(const Cell_t &start) {
 	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-	if (mt_is_linear()) {
+	if (mt.is_linear()) {
 		ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
 		if (cm_is_reach()) {
 			ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-			mt_set(MT_FOLLOW_LEFT_WALL);
+			mt.set(MT_FOLLOW_LEFT_WALL);
 			g_plan_path.push_back(g_virtual_target);
 			return true;
 		}
@@ -1231,9 +1231,9 @@ bool path_next_fw(const Cell_t &start) {
 			}
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 			Cell_t cell;
-			robot_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+			robot_to_cell(ranged_angle(gyro.get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
-			mt_set(MT_LINEARMOVE);
+			mt.set(MT_LINEARMOVE);
 			return true;
 		}
 	}
@@ -1312,7 +1312,7 @@ int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
 			it->TH = it->X > it_next->X ? NEG_X : POS_X;
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
-	if(cs_is_going_home() && g_home_point == g_zero_home)
+	if(cs.is_going_home() && g_home_point == g_zero_home)
 		path.back().TH = g_home_point.TH;
 	else
 		path.back().TH = (path.end()-2)->TH;
@@ -1334,61 +1334,61 @@ bool path_next(const Cell_t& start, PPTargetType& path)
 }
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path) {
-	if (!cs_is_going_home()) {
-		if ((ev.remote_home || ev.battery_home)) {//cs_is_switch_go_home()
+	if (!cs.is_going_home()) {
+		if ((ev.remote_home || ev.battery_home)) {//cs.is_switch_go_home()
 			if(g_have_seen_charger)
-				cs_set(CS_GO_HOME_POINT);
+				cs.set(CS_GO_HOME_POINT);
 			else
-				cs_set(CS_EXPLORATION);
+				cs.set(CS_EXPLORATION);
 		}
 	}
 
-	if (!cs_is_going_home()) {
-		if (ev.remote_spot) {//cs_is_switch_tmp_spot()
-			cs_set(CS_TMP_SPOT);
+	if (!cs.is_going_home()) {
+		if (ev.remote_spot) {//cs.is_switch_tmp_spot()
+			cs.set(CS_TMP_SPOT);
 		}
 	}
 
-	if (cs_is_trapped()) {
+	if (cs.is_trapped()) {
 		if (!is_trapped(start, path))
-			cs_set(CS_CLEAN);
+			cs.set(CS_CLEAN);
 	}
 
-	if (cs_is_clean()) {
+	if (cs.is_clean()) {
 		if (!path_next(start, path))
 		{
 			ROS_INFO("%s%d:", __FUNCTION__, __LINE__);
 			if (is_trapped(start, path))
 			{
-				cs_set(CS_TRAPPED);
+				cs.set(CS_TRAPPED);
 				path.push_back(g_virtual_target);
 			}
 			else
 			{
 //				if(g_have_seen_charger)
-					cs_set(CS_GO_HOME_POINT);
+					cs.set(CS_GO_HOME_POINT);
 //				else
-//					cs_set(CS_EXPLORATION);
+//					cs.set(CS_EXPLORATION);
 			}
 		}else
-			mt_update(start,path);
+			mt.update(start,path);
 	}
-	else if (cs_is_tmp_spot()) {
+	else if (cs.is_tmp_spot()) {
 		path_next_spot(start, path);
 	}
 
-	if (cs_is_go_home_point()) {
+	if (cs.is_go_home_point()) {
 		if (start == g_home_point) {
 			if (g_home_point != g_zero_home ||cm_turn_and_check_charger_signal())
-					cs_set(CS_GO_CHANGER);
+					cs.set(CS_GO_CHANGER);
 		}else
 
 		if(path_get_home_point_target(start, path))
-			cs_set(CS_EXPLORATION);
+			cs.set(CS_EXPLORATION);
 	}
-	if (cs_is_exploration()) {
+	if (cs.is_exploration()) {
 		if(g_have_seen_charger)
-			cs_set(CS_GO_CHANGER);
+			cs.set(CS_GO_CHANGER);
 		else
 			if(path_next_nav(start, path))
 				return false;
@@ -1656,7 +1656,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		auto angle = -900;
 	Cell_t cell;
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-	robot_to_cell(ranged_angle(gyro_get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+	robot_to_cell(ranged_angle(gyro.get_angle() + angle), 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 		path.clear();
 	path.push_front(cell);
 		path.push_front(curr);
@@ -1774,7 +1774,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 
 bool is_fobbit_free() {
 	//NOTE: g_home_way_it should last of g_home_point,for g_homeway_list may empty.
-	return (cs_is_going_home() && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
+	return (cs.is_going_home() && *g_home_way_it % HOMEWAY_NUM == USE_CLEANED);
 }
 
 bool fw_is_time_up()

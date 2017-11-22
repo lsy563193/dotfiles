@@ -77,16 +77,6 @@ public:
 		return offset_angle_;
 	};
 
-//	void startAngle(float angle)
-//	{
-//		start_angle_ = angle;
-//	};
-
-//	float startAngle(void) const
-//	{
-//		return start_angle_;
-//	};
-
 	void savedOffsetAngle(float angle)
 	{
 		if (angle > 180)
@@ -99,85 +89,11 @@ public:
 		return saved_offset_angle_;
 	};
 
-	float getLeftWheelSpeed() const
-	{
-		return lw_vel_;
-	}
-	float getRightWheelSpeed() const
-	{
-		return rw_vel_;
-	}
 	float getAngleV() const
 	{
 		return angle_v_;
 	}
 
-	int16_t getOmniWheel() const
-	{
-#if __ROBOT_X9000
-		//return sensor.omni_wheel;
-		return omni_wheel_;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
-	void resetOmniWheel()
-	{
-#if __ROBOT_X9000
-		omni_wheel_ = 0;
-		reset_mobility_step();
-#endif
-	}
-
-	int16_t getVisualWall() const
-	{
-#if __ROBOT_X900
-		return sensor.visual_wall;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
-	bool getVacuumOc() const
-	{
-		return vacuum_oc_;
-	}
-
-	uint8_t getKey() const
-	{
-		return key_;
-	}
-
-	uint8_t getIrCtrl() const
-	{
-		return  ir_ctrl_;
-	}
-
-	float getLwheelCurrent() const
-	{
-		return lw_crt_;
-	}
-
-	float getRwheelCurrent() const
-	{
-		return rw_crt_;
-	}
-
-	uint32_t getRcon() const
-	{
-		return charge_stub_;
-	}
-
-	bool getWaterTank() const
-	{
-		return w_tank_;
-	}
-
-	bool isMoving() const
-	{
-		return is_moving_;
-	}
 
 	float getLinearX() const
 	{
@@ -272,67 +188,6 @@ public:
 		return temp_spot_set_;
 	}
 
-//#if CONTINUE_CLEANING_AFTER_CHARGE
-// These 3 functions are for continue cleaning after charge.
-/*
-	bool isLowBatPaused(void) const
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		return low_bat_pause_cleaning_;
-#else
-		return false;
-#endif
-	}
-*/
-
-/*
-	void setLowBatPause(void)
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		low_bat_pause_cleaning_ = true;
-#endif
-	}
-*/
-
-/*
-	void resetLowBatPause(void)
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		low_bat_pause_cleaning_ = false;
-#endif
-	}
-*/
-
-// These 3 functions are for manual pause cleaning.
-/*
-	bool isManualPaused(void) const
-	{
-#if MANUAL_PAUSE_CLEANING
-		return manual_pause_cleaning_;
-#else
-		return false;
-#endif
-	}
-*/
-
-/*	void setManualPause(void)
-	{
-#if MANUAL_PAUSE_CLEANING
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		manual_pause_cleaning_ = true;
-#endif
-	}*/
-
-/*	void resetManualPause(void)
-	{
-#if MANUAL_PAUSE_CLEANING
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		manual_pause_cleaning_ = false;
-#endif
-	}*/
-
 	Baselink_Frame_Type getBaselinkFrameType(void)
 	{
 		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
@@ -397,108 +252,23 @@ private:
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
-// These variable is indicating robot detects battery low, it is going back to home cells.
-//	bool	low_bat_pause_cleaning_;
-
-// These variable is indicating robot is during pause of navigation mode.
-//	bool	manual_pause_cleaning_;
-
-
 	bool	is_sensor_ready_;
 
 	bool	is_tf_ready_;
 
-    bool temp_spot_set_;
+  bool temp_spot_set_;
 
 	boost::mutex offset_angle_metux_;
 	float offset_angle_;
 	float start_angle_;
 	float saved_offset_angle_;
 
-	/*2 byte*/
-	float lw_vel_;
-	float rw_vel_;
 	/* 1 byte */
 	float	angle_;
 
 	bool	is_align_active_;
 	/* 1 byte */
 	float	angle_v_;
-
-	/* 1 byte */
-	int32_t brush_left_;
-
-	/* 1 byte */
-	int32_t brush_right_;
-
-	/* 1 byte */
-	int32_t brush_main_;
-
-	/*1 byte */
-	uint8_t key_;
-
-	/*1 byte*/
-	bool w_tank_; //water tank
-
-	bool vacuum_oc_;
-
-	/*2 bytes*/
-	float lw_crt_;//left wheel current
-	
-	/*2 bytes*/
-	float rw_crt_; // right wheel current
-
-	/*1 byte*/
-	uint8_t gyro_dymc_; // ??
-	
-	/*1 byte*/
-	uint16_t ir_ctrl_;
-	
-	/*3 bytes*/
-	uint32_t charge_stub_;
-
-	/* 1 byte */
-	uint32_t rcon_front_left_;
-
-	/* 1 byte */
-	uint32_t rcon_front_right_;
-
-	/* 1 byte */
-	uint32_t rcon_back_left_;
-
-	/* 1 byte */
-	uint32_t rcon_back_right_;
-
-	/* 1 byte */
-	uint32_t rcon_left_;
-
-	/* 1 byte */
-	uint32_t rcon_right_;
-
-	/* 1 byte */
-	bool bumper_right_;
-
-	/* 1 byte */
-	bool bumper_left_;
-	/* 1 byte */
-	int16_t obs_left_;
-
-	/* 1 byte */
-	int16_t obs_right_;
-
-	/* 1 byte */
-	int16_t obs_front_;
-
-	#if __ROBOT_X900
-	//new variable visual wall
-	int16_t visual_wall;
-	//new variable in x900 robot
-	int16_t omni_wheel_;
-	//new variable plan
-	int8_t plan;
-	#endif
-
-	bool	is_moving_;
 
 	float	linear_x_;
 	float	linear_y_;
@@ -538,7 +308,7 @@ private:
 	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
-	ros::Publisher robot_odom_pub_;
+	ros::Publisher odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher scan_ctrl_pub_;
@@ -553,7 +323,7 @@ private:
 
 	//tf::TransformBroadcaster	robot_broad;
 	//geometry_msgs::TransformStamped robot_trans;
-	nav_msgs::Odometry robot_odom;
+	nav_msgs::Odometry odom;
 	pp::scan_ctrl scan_ctrl_;
 };
 

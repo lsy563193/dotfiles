@@ -51,7 +51,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		Wheel_Current_Summary = 0;
 		while (Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t) robot::instance()->getRwheelCurrent();
+			Wheel_Current_Summary += (uint32_t) wheel.getRwheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary /= 50;
@@ -92,7 +92,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		Wheel_Current_Summary = 0;
 		while (Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t) robot::instance()->getLwheelCurrent();
+			Wheel_Current_Summary += (uint32_t) wheel.getLwheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary /= 50;
@@ -210,7 +210,7 @@ void cs_disable_motors(void)
 
 void cs_work_motor(void)
 {
-	if (cs_is_going_home())
+	if (cs.is_going_home())
 	{
 		// Set the vacuum to a normal mode_
 		vacuum.mode(Vac_Normal, false);
@@ -274,8 +274,8 @@ bool check_pub_scan()
 {
 	//ROS_INFO("%s %d: get_left_wheel.speed() = %d, get_right_wheel.speed() = %d.", __FUNCTION__, __LINE__, wheel.get_left_speed(), wheel.get_right_speed());
 	if (g_motion_init_succeeded &&
-		((fabs(robot::instance()->getLeftWheelSpeed() - robot::instance()->getRightWheelSpeed()) > 0.1)
-		|| (robot::instance()->getLeftWheelSpeed() * robot::instance()->getRightWheelSpeed() < 0)
+		((fabs(wheel.getLeftWheelSpeed() - wheel.getRightWheelSpeed()) > 0.1)
+		|| (wheel.getLeftWheelSpeed() * wheel.getRightWheelSpeed() < 0)
 		|| bumper.get_status() || tilt.get_status()
 		|| abs(wheel.get_left_speed() - wheel.get_right_speed()) > 100
 		|| wheel.get_left_speed() * wheel.get_right_speed() < 0))

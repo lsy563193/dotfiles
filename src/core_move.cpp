@@ -13,6 +13,11 @@
 PPTargetType g_plan_path;
 std::deque<Cell_t> g_passed_path;
 
+//Cell_t g_next_cell;
+//Cell_t g_target_cell;
+
+//uint8_t	g_remote_go_home = 0;
+//bool	cs.is_going_home() = false;
 bool	g_from_station = 0;
 bool	g_in_charge_signal_range;
 
@@ -58,7 +63,7 @@ void cm_cleaning() {
 		return;
 
 	g_motion_init_succeeded = true;
-	cs_init();
+	cs.init();
 	Cell_t curr = map_update_position();
 
 	CleanMode* p_cm;
@@ -106,7 +111,7 @@ void cm_cleaning() {
 }
 
 void cm_apply_cs(void) {
-	if (cs_is_go_home_point()) {
+	if (cs.is_go_home_point()) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
@@ -131,9 +136,9 @@ void cm_apply_cs(void) {
 			g_go_home_by_remote = true;
 		ev.remote_home = false;
 		ev.battrey_home = false;
-		mt_set(MT_LINEARMOVE);
+		mt.set(MT_LINEARMOVE);
 	}
-	if (cs_is_tmp_spot())
+	if (cs.is_tmp_spot())
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
@@ -150,28 +155,28 @@ void cm_apply_cs(void) {
 		}
 		ev.remote_spot = false;
 	}
-	if (cs_is_trapped())
+	if (cs.is_trapped())
 	{
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
-		mt_set(MT_FOLLOW_LEFT_WALL);
+		mt.set(MT_FOLLOW_LEFT_WALL);
 	}
-	if (cs_is_clean()) {
+	if (cs.is_clean()) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
-	if (cs_is_exploration()) {
-		mt_set(MT_LINEARMOVE);
+	if (cs.is_exploration()) {
+		mt.set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (cs_is_go_charger())
+	if (cs.is_go_charger())
 	{
 		tilt.enable(false); //disable tilt detect
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (cs_is_self_check())
+	if (cs.is_self_check())
 	{
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
@@ -180,7 +185,7 @@ void cm_apply_cs(void) {
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
-	cs_set(CS_CLEAN);
+	cs.set(CS_CLEAN);
 	g_go_home_by_remote = false;
 }
 
@@ -197,7 +202,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (ev.bumper_jam || ev.cliff_jam || g_omni_notmove || ev.laser_stuck)
+	if (ev.bumper_jam || ev.cliff_jam || omni.stop() || ev.laser_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = robot::instance()->getOdomPositionX();
@@ -284,9 +289,9 @@ void cm_self_check(void)
 			else
 			{
 				if (ev.oc_wheel_left)
-					wheel_current_sum += (uint32_t) robot::instance()->getLwheelCurrent();
+					wheel_current_sum += (uint32_t) wheel.getLwheelCurrent();
 				else
-					wheel_current_sum += (uint32_t) robot::instance()->getRwheelCurrent();
+					wheel_current_sum += (uint32_t) wheel.getRwheelCurrent();
 				wheel_current_sum_cnt++;
 			}
 		}
@@ -371,7 +376,7 @@ void cm_self_check(void)
 						{
 							bumper_jam_state++;
 							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-							target_angle = ranged_angle(gyro_get_angle() - 900);
+							target_angle = ranged_angle(gyro.get_angle() - 900);
 							ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 						}
 					}
@@ -379,18 +384,18 @@ void cm_self_check(void)
 				}
 				case 4:
 				{
-					ROS_DEBUG("%s %d: gyro_get_angle(): %d", __FUNCTION__, __LINE__, gyro_get_angle());
+					ROS_DEBUG("%s %d: gyro.get_angle(): %d", __FUNCTION__, __LINE__, gyro.get_angle());
 					// If cliff jam during bumper self resume.
 					if (cliff.get_status() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
+					else if (abs(ranged_angle(gyro.get_angle() - target_angle)) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-						target_angle = ranged_angle(gyro_get_angle() + 900);
+						target_angle = ranged_angle(gyro.get_angle() + 900);
 						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 					}
 					break;
@@ -403,7 +408,7 @@ void cm_self_check(void)
 						ev.cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(ranged_angle(gyro_get_angle() - target_angle)) < 50)
+					else if (abs(ranged_angle(gyro.get_angle() - target_angle)) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						ev.fatal_quit = true;
@@ -445,7 +450,7 @@ void cm_self_check(void)
 				}
 			}
 		}
-		else if (g_omni_notmove)
+		else if (omni.stop())
 		{
 			ROS_ERROR("\033[1m" "%s,%d,omni detect" "\033[0m",__FUNCTION__,__LINE__);
 			error.set(Error_Code_Omni);
@@ -456,12 +461,12 @@ void cm_self_check(void)
 		{
 			if(g_slip_cnt < 3 && g_robot_slip){
 				g_robot_slip = false;
-				target_angle = ranged_angle(gyro_get_angle() + 900);	
+				target_angle = ranged_angle(gyro.get_angle() + 900);
 				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 			}
 			else if(g_slip_cnt <4 && g_robot_slip){
 				g_robot_slip = false;
-				target_angle = ranged_angle(gyro_get_angle() - 900);
+				target_angle = ranged_angle(gyro.get_angle() - 900);
 				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 			}
 			/*
@@ -470,7 +475,7 @@ void cm_self_check(void)
 				ROS_INFO("%s,%d,robot slip again",__FUNCTION__,__LINE__);
 			}
 			*/
-			if( abs(gyro_get_angle() - target_angle) <= 50 ){
+			if( abs(gyro.get_angle() - target_angle) <= 50 ){
 				g_slip_cnt = 0;
 				g_robot_slip = false;
 				ROS_INFO("\033[32m%s,%d,reach target angle\033[0m ",__FUNCTION__,__LINE__);
@@ -510,7 +515,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || g_omni_notmove || g_slip_cnt >= 2 || ev.laser_stuck);
+	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || omni.stop() || g_slip_cnt >= 2 || ev.laser_stuck);
 }
 
 /* Event handler functions. */
@@ -713,15 +718,15 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 /*
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (cs_is_going_home()) {
+	if (cs.is_going_home()) {
 		ROS_DEBUG("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 		return;
 	}
-	if(mt_is_follow_wall()){
+	if(mt.is_follow_wall()){
 		if (!(get_rcon_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 			return;
 	}
-	else if (mt_is_linear())
+	else if (mt.is_linear())
 		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
 		if (!(c_rcon.get_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 		return;
@@ -801,14 +806,14 @@ void CM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) robot::instance()->getLwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getLwheelCurrent() < Wheel_Stall_Limit) {
         g_oc_wheel_left_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) wheel.getLwheelCurrent());
 
 		ev.oc_wheel_left = true;
 	}
@@ -818,14 +823,14 @@ void CM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) robot::instance()->getRwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getRwheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_right_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) wheel.getRwheelCurrent());
 
 		ev.oc_wheel_right = true;
 	}
@@ -835,7 +840,7 @@ void CM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!robot::instance()->getVacuumOc()) {
+	if (!vacuum.getVacuumOc()) {
 		g_oc_suction_cnt = 0;
 		return;
 	}
@@ -920,7 +925,7 @@ void CM_EventHandle::remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && !ev.slam_error && !g_is_manual_pause) {
+	if (g_motion_init_succeeded && !cs.is_going_home() && !cm_should_self_check() && !ev.slam_error && !g_is_manual_pause) {
 
 		if( SpotMovement::instance()->getSpotType()  == NORMAL_SPOT){
 			beeper.play_for_command(INVALID);
@@ -946,7 +951,7 @@ void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
 	if (!g_motion_init_succeeded || !cm_is_navigation()
-		|| cs_is_going_home() || cm_should_self_check() || ev.slam_error || g_is_manual_pause
+		|| cs.is_going_home() || cm_should_self_check() || ev.slam_error || g_is_manual_pause
 		|| time(NULL) - last_time_remote_spot < 3)
 		beeper.play_for_command(INVALID);
 	else
@@ -963,7 +968,7 @@ void CM_EventHandle::remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (g_motion_init_succeeded && !cs_is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
+	if (g_motion_init_succeeded && !cs.is_going_home() && !cm_should_self_check() && SpotMovement::instance()->getSpotType() == NO_SPOT && !ev.slam_error && !g_is_manual_pause)
 	{
 		beeper.play_for_command(VALID);
 		vacuum.switchToNext(true);
@@ -1000,7 +1005,7 @@ void CM_EventHandle::remote_direction_forward(bool state_now, bool state_last){
 /* Battery */
 void CM_EventHandle::battery_home(bool state_now, bool state_last)
 {
-	if (g_motion_init_succeeded && !cs_is_going_home()) {
+	if (g_motion_init_succeeded && !cs.is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
 						 battery.get_voltage());
 		ev.battrey_home = true;
@@ -1028,7 +1033,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 		t_vol = battery.get_voltage();
 		ROS_WARN("%s %d: low battery, battery < %umv is detected.", __FUNCTION__, __LINE__,t_vol);
 
-		if (cs_is_going_home()) {
+		if (cs.is_going_home()) {
 			v_pwr = Home_Vac_Power / t_vol;
 			s_pwr = Home_SideBrush_Power / t_vol;
 			m_pwr = Home_MainBrush_Power / t_vol;
@@ -1051,7 +1056,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 void CM_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, charger.getChargeStatus(), g_charge_detect_cnt);
-	if (((cm_is_exploration() || cm_is_go_charger() || cs_is_going_home()) && charger.getChargeStatus()) ||
+	if (((cm_is_exploration() || cm_is_go_charger() || cs.is_going_home()) && charger.getChargeStatus()) ||
 		(!cm_is_exploration() && charger.getChargeStatus() == 3))
 	{
 		if (g_charge_detect_cnt++ > 2)

@@ -55,16 +55,16 @@ void remote_mode(void)
 	cs_paused_setting();
 
 
-	if (!is_gyro_on())
+	if (!gyro.is_on())
 	{
 		// Restart the gyro.
-		set_gyro_off();
+		gyro.set_off();
 		// Wait for 30ms to make sure the off command has been effectived.
 		usleep(30000);
 		// Set gyro on before wav.play can save the time for opening the gyro.
-		set_gyro_on();
+		gyro.set_on();
 		wav.play(WAV_SYSTEM_INITIALIZING);
-		if (!wait_for_gyro_on())
+		if (!gyro.wait_for_on())
 		{
 			cm_set(Clean_Mode_Idle);
 			return;
@@ -254,12 +254,12 @@ void remote_move(void)
 			case REMOTE_MODE_LEFT:
 			case REMOTE_MODE_RIGHT:
 			{
-				auto diff = ranged_angle(remote_target_angle - gyro_get_angle());
+				auto diff = ranged_angle(remote_target_angle - gyro.get_angle());
 
 				if (std::abs(diff) < 10) {
 					wheel.stop();
 					ROS_INFO("%s %d: remote_target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, remote_target_angle,
-									 gyro_get_angle(), diff);
+									 gyro.get_angle(), diff);
 					set_move_flag_(REMOTE_MODE_STAY);
 					tick_ = 0;
 				}
@@ -437,10 +437,10 @@ void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beeper.play_for_command(VALID);
-		remote_target_angle = gyro_get_angle() + 300;
+		remote_target_angle = gyro.get_angle() + 300;
 		if (remote_target_angle >= 3600)
 			remote_target_angle -= 3600;
-		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro_get_angle());
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro.get_angle());
 		set_move_flag_(REMOTE_MODE_LEFT);
 	}
 	else
@@ -460,8 +460,8 @@ void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beeper.play_for_command(VALID);
-		remote_target_angle = ranged_angle(gyro_get_angle() - 300);
-		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro_get_angle());
+		remote_target_angle = ranged_angle(gyro.get_angle() - 300);
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro.get_angle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
 	else
@@ -570,14 +570,14 @@ void RM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) robot::instance()->getLwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getLwheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_left_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getLwheelCurrent());
 		ev.oc_wheel_left = true;
 	}
 }
@@ -586,14 +586,14 @@ void RM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) robot::instance()->getRwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getRwheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_right_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) robot::instance()->getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getRwheelCurrent());
 
 		ev.oc_wheel_right = true;
 	}
@@ -603,7 +603,7 @@ void RM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!robot::instance()->getVacuumOc()) {
+	if (!vacuum.getVacuumOc()) {
 		g_oc_suction_cnt = 0;
 		return;
 	}

@@ -5,16 +5,14 @@
 #ifndef PP_RCON_H
 #define PP_RCON_H
 
-//#include "move_type.h"
+#include "move_type.h"
 //#include "clean_mode.h"
+#include "clean_state.h"
 bool cm_is_exploration();
-bool cs_is_going_home();
+//bool cs.is_going_home();
 extern bool g_from_station;
 extern bool g_motion_init_succeeded;
 extern bool g_in_charge_signal_range;
-bool mt_is_follow_wall();
-bool mt_is_linear();
-bool mt_is_go_to_charger();
 class Rcon {
 
 public:
@@ -51,12 +49,12 @@ public:
 	}
 
 	int get_trig(void) {
-//	if (cs_is_going_home()) {
+//	if (cs.is_going_home()) {
 ////		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 //		reset_status();
 //		return 0;
 //	}
-		if (mt_is_follow_wall()) {
+		if (mt.is_follow_wall()) {
 //		ROS_WARN("%s %d: rcon(%d).", __FUNCTION__, __LINE__, (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
 //		ROS_WARN("%s %d: ~rcon(%d).", __FUNCTION__, __LINE__, ~(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
 //		ROS_WARN("%s %d: status(%d).", __FUNCTION__, __LINE__, (get_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)));
@@ -68,7 +66,7 @@ public:
 			else
 				return get_trig_();
 		}
-		else if (mt_is_linear()) {
+		else if (mt.is_linear()) {
 //		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
 			if (cm_is_exploration()) {
 				auto status = get_status() & RconAll_Home_T;
@@ -83,7 +81,7 @@ public:
 			else
 				return get_trig_();
 		}
-		else if (mt_is_go_to_charger()) {
+		else if (mt.is_go_to_charger()) {
 			auto status = get_status();
 			reset_status();
 			return status;
@@ -102,8 +100,8 @@ public:
 
 	uint32_t get_status() {
 		extern Cell_t g_stub_cell;
-		if (!cs_is_going_home() && g_from_station && g_motion_init_succeeded && !mt_is_go_to_charger() &&
-				!mt_is_follow_wall()) {//check if robot start from charge station
+		if (!cs.is_going_home() && g_from_station && g_motion_init_succeeded && !mt.is_go_to_charger() &&
+				!mt.is_follow_wall()) {//check if robot start from charge station
 			if (two_points_distance(g_stub_cell.X, g_stub_cell.Y, map_get_x_cell(), map_get_y_cell()) <= 20) {
 				g_in_charge_signal_range = true;
 				reset_status();

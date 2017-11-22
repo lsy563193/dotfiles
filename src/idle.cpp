@@ -13,26 +13,15 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "movement.h"
-#include "vacuum.h"
-#include "idle.h"
-#include "key.h"
-#include <ros/ros.h>
-#include <event_manager.h>
-#include <battery.h>
-#include <rcon.h>
-#include <clean_timer.h>
-#include <remote.h>
-#include <beep.h>
 #include "config.h"
-#include "wav.h"
-#include "led.h"
+#include <thread>
+#include "dev.h"
+#include "idle.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "event_manager.h"
 #include "core_move.h"
 #include "clean_mode.h"
-#include "cliff.h"
 #include "error.h"
 
 uint8_t temp_mode=0;
@@ -309,7 +298,7 @@ void Idle_EventHandle::battery_low(bool state_now, bool state_last)
 void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
-	g_omni_notmove = false;
+	omni.set_stop(false);
 	//g_robot_stuck = false;
 
 	/* reset charger_signal_start_time when get remote cleaning */
@@ -470,7 +459,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
-	g_omni_notmove = false;
+	omni.set_stop(false);
 	//g_robot_stuck = false;
 	time_t key_press_start_time = time(NULL);
 

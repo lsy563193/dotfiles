@@ -2,6 +2,7 @@
 #define __SERIAL_H__
 
 #include <stdint.h>
+#include <thread>
 
 typedef enum {
 	SERIAL_NONE = 0,

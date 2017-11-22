@@ -49,9 +49,6 @@ uint8_t g_battery_low_cnt = 0;
 uint8_t g_charge_detect_cnt = 0;
 bool g_plan_activated = false;
 
-/* Omni wheel*/
-bool g_omni_notmove = false;
-bool g_omni_enable = false;
 
 /* robot slip & stuck */
 uint8_t g_slip_cnt = 0;
@@ -294,15 +291,15 @@ void *event_manager_thread(void *data)
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
 		}
-		if ((uint32_t)robot::instance()->getLwheelCurrent() > Wheel_Stall_Limit) {
+		if ((uint32_t)wheel.getLwheelCurrent() > Wheel_Stall_Limit) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 		}
-		if ((uint32_t)robot::instance()->getRwheelCurrent() > Wheel_Stall_Limit) {
+		if ((uint32_t)wheel.getRwheelCurrent() > Wheel_Stall_Limit) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 		}
-		if (robot::instance()->getVacuumOc()) {
+		if (vacuum.getVacuumOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_SUCTION);
 		}

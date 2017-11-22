@@ -222,9 +222,6 @@ extern uint8_t g_battery_low_cnt;
 extern uint8_t g_charge_detect_cnt;
 /* Plan */
 extern bool g_plan_activated;
-/* Omni wheel*/
-extern bool g_omni_notmove;
-extern bool g_omni_enable;
 /* tilt enable */
 extern bool g_tilt_triggered;
 /* robot stuck */

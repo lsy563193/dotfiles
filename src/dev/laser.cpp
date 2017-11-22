@@ -13,6 +13,7 @@
 #include <pp/SetLidar.h>
 #include <move_type.h>
 #include <accelerator.h>
+#include <wheel.h>
 
 #include "mathematics.h"
 #include "event_manager.h"
@@ -33,7 +34,7 @@ Laser::Laser():nh_(),angle_n_(0)
 	scan_sub_ = nh_.subscribe("scan", 1, &Laser::scanCb, this);
 	scan_sub2_ = nh_.subscribe("scan2",1,&Laser::scanCb2, this);
 	scan_sub3_ = nh_.subscribe("scan3",1,&Laser::scanCb3,this);
-	marker_sub_ = nh_.subscribe("point_marker",1,&Laser::scanMarkerCb,this);
+	laserPoint_sub_ = nh_.subscribe("laserPoint",1,&Laser::laserPointCb,this);
 	lidar_motor_cli_ = nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	lidar_shield_detect_ = nh_.serviceClient<std_srvs::SetBool>("lidar_shield_ctrl");
 	setScanReady(0);
@@ -52,7 +53,7 @@ Laser::~Laser()
 	setScan2Ready(0);
 	scan_sub_.shutdown();
 	scan_sub2_.shutdown();
-	marker_sub_.shutdown();
+	laserPoint_sub_.shutdown();
 	lidar_motor_cli_.shutdown();
 	lidar_shield_detect_.shutdown();
 	nh_.shutdown();
@@ -106,7 +107,7 @@ void Laser::scanCb3(const sensor_msgs::LaserScan::ConstPtr &scan){
 	setScan3Ready(1);
 }
 
-void Laser::scanMarkerCb(const visualization_msgs::Marker &point_marker) {
+void Laser::laserPointCb(const visualization_msgs::Marker &point_marker) {
 	scanXY_mutex_.lock();
 	laserXY_points = point_marker.points;
 	scanXY_mutex_.unlock();
@@ -526,7 +527,7 @@ bool Laser::laserGetFitLine(int begin, int end, double range, double dis_lim, do
 	//*line_angle = atan2(-a, b) * 180 / PI;
 	Laser_Group.clear();
 	if (!fit_line.empty()) {
-		if (mt_is_left()) {
+		if (mt.is_left()) {
 			*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
 			*distance = fabs(fit_line.begin()->C / (sqrt(fit_line.begin()->A * fit_line.begin()->A + fit_line.begin()->B * fit_line.begin()->B)));
 		} else {
@@ -1112,7 +1113,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		robot_to_point(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 		if (map_get_cell(MAP, count_to_cell(x_tmp), count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 		{
 			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp));
@@ -1292,7 +1293,7 @@ uint8_t Laser::laserMarker(double X_MAX)
 				}
 			}
 
-			robot_to_cell(gyro_get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			robot_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
 			auto cell_status = map_get_cell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
@@ -1335,7 +1336,7 @@ uint8_t Laser::isRobotSlip()
 	scan2_mutex_.lock();
 	auto tmp_scan_data = laserScanData_2_;
 	scan2_mutex_.unlock();
-	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScan2Ready() && ( absolute(robot::instance()->getLeftWheelSpeed()) >= WSL || absolute(robot::instance()->getRightWheelSpeed()) >= WSL ) )
+	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScan2Ready() && ( std::abs(wheel.getLeftWheelSpeed()) >= WSL || std::abs(wheel.getRightWheelSpeed()) >= WSL ) )
 	{
 		seq = tmp_scan_data.header.seq;
 		if(last_ranges_init == 0){//for the first time
@@ -1347,22 +1348,22 @@ uint8_t Laser::isRobotSlip()
 			if(tmp_scan_data.ranges[i] < dist1){
 				tol_count++;
 				if(laserScanData_2_.ranges[i] >dist2 && laserScanData_2_.ranges[i] < dist1){//
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur1 ){
 						same_count++;
 					}
 				} 
 				else if(laserScanData_2_.ranges[i] >dist3 && laserScanData_2_.ranges[i] < dist2){//
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur2 ){
 						same_count++;
 					}
 				}
 				else if(laserScanData_2_.ranges[i] >dist4 && laserScanData_2_.ranges[i] < dist3){//
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur3 ){
 						same_count++;
 					}
 				}
 				else if(laserScanData_2_.ranges[i] <= dist4){
-					if(absolute( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
+					if(std::abs( laserScanData_2_.ranges[i] - last_ranges[i] ) <= acur4 ){
 						same_count++;
 					}
 				}
@@ -1419,7 +1420,7 @@ int Laser::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = gyro_get_angle() / 10;
+	int cur_angle = gyro.get_angle() / 10;
 #if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;

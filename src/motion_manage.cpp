@@ -187,9 +187,9 @@ void init_nav_before_gyro()
 
 	key.reset();
 
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	c_rcon.reset_status();
 	key.reset();
@@ -205,7 +205,7 @@ void init_nav_before_gyro()
 		ROS_WARN("Restore from manual pause");
 		cm_register_events();
 		wav.play(WAV_CLEANING_CONTINUE);
-		if (cs_is_going_home())
+		if (cs.is_going_home())
 		{
 			wav.play(WAV_BACK_TO_CHARGER);
 		}
@@ -227,9 +227,9 @@ void init_nav_gyro_charge()
 	{
 		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
-		if (!cs_is_going_home())
+		if (!cs.is_going_home())
 			if(ev.remote_home || ev.battery_home)
-				cs_set(CS_GO_HOME_POINT);
+				cs.set(CS_GO_HOME_POINT);
 	}
 }
 void init_nav_after_charge()
@@ -240,8 +240,8 @@ acc.setAccInitData();//about 200ms delay
 
 	cs_work_motor();
 
-	ROS_INFO("%s %d: Init cs_is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
-					 cs_is_going_home(), g_is_low_bat_pause, g_is_manual_pause, g_resume_cleaning,g_robot_stuck);
+	ROS_INFO("%s %d: Init cs.is_going_home()(%d), lowbat(%d), manualpaused(%d), g_resume_cleaning(%d),g_robot_stuck(%d)", __FUNCTION__, __LINE__,
+					 cs.is_going_home(), g_is_low_bat_pause, g_is_manual_pause, g_resume_cleaning,g_robot_stuck);
 }
 
 void init_exp_before_gyro()
@@ -270,9 +270,9 @@ void init_exp_before_gyro()
 
 	key.reset();
 
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	c_rcon.reset_status();
 	key.reset();
@@ -301,9 +301,9 @@ void init_wf_before_gyro()
 	c_rcon.reset_status();
 	key.reset();
 	key.reset();
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	wav.play(WAV_CLEANING_WALL_FOLLOW);
 }
@@ -339,9 +339,9 @@ void init_spot_before_gyro()
 	remote.reset_move_with();
 	key.reset();
 
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 
 	wav.play(WAV_CLEANING_SPOT);
 }
@@ -371,9 +371,9 @@ void init_spot_after_gyro()
 void init_go_home_before_gyro()
 {
 	led.set_mode(LED_FLASH, LED_ORANGE, 1000);
-	set_gyro_off();
+	gyro.set_off();
 	usleep(30000);
-	set_gyro_on();
+	gyro.set_on();
 	key.reset();
 	cm_register_events();
 	wav.play(WAV_BACK_TO_CHARGER);
@@ -422,7 +422,7 @@ bool wait_for_back_from_charge()
 
 void init_before_gyro()
 {
-	mt_set(cm_is_follow_wall() ? MT_FOLLOW_LEFT_WALL : MT_LINEARMOVE);
+	mt.set(cm_is_follow_wall() ? MT_FOLLOW_LEFT_WALL : MT_LINEARMOVE);
 	if(!cs_is_paused())
 		g_from_station = 0;
 	g_motion_init_succeeded = false;
@@ -584,7 +584,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	init_before_gyro();
 	initSucceeded(true);
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return;
 
 	switch (cm_get())
@@ -694,7 +694,7 @@ MotionManage::~MotionManage()
 		wav.play(WAV_CLEANING_PAUSE);
 		if (!ev.cliff_all_triggered)
 		{
-			if (cs_is_going_home())
+			if (cs.is_going_home())
 			{
 				// The current home cell is still valid, so push it back to the home point list.
 				path_set_home(g_home_point);
@@ -702,7 +702,7 @@ MotionManage::~MotionManage()
 			cm_set(Clean_Mode_Idle);
 			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
-			if (cs_is_going_home())
+			if (cs.is_going_home())
 #if MANUAL_PAUSE_CLEANING
 //				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
 				ROS_WARN("%s %d: Pause going home", __FUNCTION__, __LINE__);
@@ -762,7 +762,7 @@ MotionManage::~MotionManage()
 	}
 	else // Normal finish.
 	{
-		if(cs_is_going_home() && !ev.charge_detect && g_have_seen_charger)
+		if(cs.is_going_home() && !ev.charge_detect && g_have_seen_charger)
 			wav.play(WAV_BACK_TO_CHARGER_FAILED);
 		if (cm_get() != Clean_Mode_Go_Charger && !cm_is_exploration())
 			wav.play(WAV_CLEANING_FINISHED);
@@ -836,7 +836,7 @@ bool MotionManage::initNavigationCleaning(void)
 {
 	init_nav_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return false;
 
 	init_nav_gyro_charge();
@@ -856,7 +856,7 @@ bool MotionManage::initExplorationCleaning(void)
 {
 	init_exp_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return false;
 
 	init_exp_after_gyro();
@@ -868,7 +868,7 @@ bool MotionManage::initWallFollowCleaning(void)
 {
 	init_wf_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 	{
 		return false;
 	}
@@ -882,7 +882,7 @@ bool MotionManage::initSpotCleaning(void)
 
 	init_spot_before_gyro();
 
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 	{
 		return false;
 	}
@@ -894,7 +894,7 @@ bool MotionManage::initSpotCleaning(void)
 bool MotionManage::initGoHome(void)
 {
 	init_go_home_before_gyro();
-	if (!wait_for_gyro_on())
+	if (!gyro.wait_for_on())
 		return false;
 	init_go_home_after_gyro();
 	return true;

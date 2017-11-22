@@ -5,10 +5,7 @@
 #ifndef PP_ERROR_H
 #define PP_ERROR_H
 
-#include "wav.h"
-#include "bumper.h"
-#include "cliff.h"
-extern bool g_omni_notmove;
+#include "dev.h"
 class Error {
 public:
 	Error() {code =0;}
@@ -121,7 +118,7 @@ bool clear(uint8_t code)
 		}
 		case Error_Code_Omni:
 		{
-			if(g_omni_notmove)
+			if(omni.stop())
 			{
 				ROS_WARN("%s %d: Omni still triggered.", __FUNCTION__, __LINE__);
 				cleared = false;

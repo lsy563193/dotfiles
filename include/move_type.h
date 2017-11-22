@@ -8,28 +8,30 @@
 #include "mathematics.h"
 #include "path_planning.h"
 
-typedef enum {
-	MT_LINEARMOVE = 0,
-	MT_FOLLOW_LEFT_WALL,
-	MT_FOLLOW_RIGHT_WALL,
-	MT_GO_TO_CHARGER,
-} MoveType;
+const int MT_LINEARMOVE = 0;
+const int MT_FOLLOW_LEFT_WALL =1 ;
+const int MT_FOLLOW_RIGHT_WALL = 2;
+const int MT_GO_TO_CHARGER = 3;
 
-bool mt_is_right();
+class MoveType {
+public:
+	MoveType() { mt_ = MT_LINEARMOVE; }
 
-bool mt_is_left();
+	bool is_right();
 
-bool mt_is_follow_wall();
+	bool is_left();
 
-bool mt_is_linear();
+	bool is_follow_wall();
 
-bool mt_is_go_to_charger();
+	bool is_linear();
 
-MoveType mt_get();
+	bool is_go_to_charger();
 
-void mt_set(MoveType mt);
+	int get();
 
-void mt_update(const Cell_t& curr, PPTargetType& path);
+	void set(int mt);
+
+	void update(const Cell_t &curr, PPTargetType &path);
 
 /*
  * param:	dir: The direction of last movement, actually it is for direction of linear movement.
@@ -39,6 +41,10 @@ void mt_update(const Cell_t& curr, PPTargetType& path);
  * return:	true: Robot should switch move type to following wall.
  * 			false: Robot should not switch move type to following wall.
  */
-bool mt_should_follow_wall(const int16_t dir, const Cell_t& curr, PPTargetType& path);
+	bool should_follow_wall(const int16_t dir, const Cell_t &curr, PPTargetType &path);
 
+private:
+	int mt_;
+};
+extern MoveType mt;
 #endif //PP_MOVETYPE_H

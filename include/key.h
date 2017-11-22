@@ -8,45 +8,46 @@
 
 class Key {
 public:
-Key(){
-	status_ = false;
-	g_status =0;
-}
-void reset(void)
-{
-	status_ = false;
-}
+	Key() {
+		status_ = false;
+		g_status = 0;
+	}
 
-uint8_t get(void)
-{
-	return status_;
-}
+	void reset(void) {
+		status_ = false;
+	}
 
-void set()
-{
-	status_ = true;
-}
+	uint8_t get(void) {
+		return status_;
+	}
+
+	void set() {
+		status_ = true;
+	}
 
 
-void set_press(uint8_t key)
-{
-	g_status |= key;
-}
+	void set_press(uint8_t key) {
+		g_status |= key;
+	}
 
-void reset_press(uint8_t key)
-{
-	g_status &= ~key;
-}
+	void reset_press(uint8_t key) {
+		g_status &= ~key;
+	}
 
-uint8_t get_press(void)
-{
-	return g_status;
-}
+	uint8_t get_press(void) {
+		return g_status;
+	}
 
+	void eliminate_jitter(uint8_t key_);
 
 private:
 	bool status_;
 	volatile uint8_t g_status;
+
+// For avoid key value palse.
+	int8_t press_count;
+	int8_t release_count;
+
 };
 
 
