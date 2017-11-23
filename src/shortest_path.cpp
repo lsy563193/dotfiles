@@ -1097,7 +1097,8 @@ deque <Cell_t> path_points;
  * 		totalCost: Total cost
  *
  */
-int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
+int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max)
+{
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -1119,7 +1120,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	/* Reset the cells in the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			fw_map.set_cell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
+			cost_map.set_cell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
 		}
 	}
 
@@ -1127,28 +1128,28 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	/* Marked the obstcals to the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			cs = fw_map.get_cell(MAP, i, j);
+			cs = cost_map.get_cell(MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
-				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++) {
+				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
 				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 					for (n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-						fw_map.set_cell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
+						cost_map.set_cell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
 					}
 				}
 			}
 			else if(cs == UNCLEAN && is_fobbit_free())
-				fw_map.set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
+				cost_map.set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
 		}
 	}
 
 	// Now it is always finding the path from robot to target, so comment below sentence.
 	// If needs to find path from target to robot, please uncomment below sentence.
-	//if (fw_map.get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
-	//	fw_map.set_cell(SPMAP, end_x, end_y, COST_NO);
+	//if (cost_map.get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
+	//	cost_map.set_cell(SPMAP, end_x, end_y, COST_NO);
 	//}
 
 	/* Set the current robot position has the cost value of 1. */
-	fw_map.set_cell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
+	cost_map.set_cell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -1159,7 +1160,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	passSet = 1;
 	passValue = 1;
 	nextPassValue = 2;
-	while (fw_map.get_cell(SPMAP, end_x, end_y) == COST_NO && passSet == 1) {
+	while (cost_map.get_cell(SPMAP, end_x, end_y) == COST_NO && passSet == 1) {
 		offset++;
 		passSet = 0;
 
@@ -1181,28 +1182,28 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 					continue;
 
 				/* Found a cell that has a pass value equal to the current pass value. */
-				if(fw_map.get_cell(SPMAP, i, j) == passValue) {
+				if(cost_map.get_cell(SPMAP, i, j) == passValue) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
-					if (fw_map.get_cell(SPMAP, i - 1, j) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
+					if (cost_map.get_cell(SPMAP, i - 1, j) == COST_NO) {
+						cost_map.set_cell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
-					if (fw_map.get_cell(SPMAP, i + 1, j) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
+					if (cost_map.get_cell(SPMAP, i + 1, j) == COST_NO) {
+						cost_map.set_cell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
-					if (fw_map.get_cell(SPMAP, i, j - 1) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
+					if (cost_map.get_cell(SPMAP, i, j - 1) == COST_NO) {
+						cost_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
-					if (fw_map.get_cell(SPMAP, i, j + 1) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
+					if (cost_map.get_cell(SPMAP, i, j + 1) == COST_NO) {
+						cost_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 				}
@@ -1220,8 +1221,8 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 
 	/* The target position still have a cost of 0, which mean it is not reachable. */
 	totalCost = 0;
-	if (fw_map.get_cell(SPMAP, end_x, end_y) == COST_NO || fw_map.get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
-		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y, fw_map.get_cell(SPMAP, end_x, end_y));
+	if (cost_map.get_cell(SPMAP, end_x, end_y) == COST_NO || cost_map.get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
+		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y, cost_map.get_cell(SPMAP, end_x, end_y));
 #if	DEBUG_SM_MAP
 		debug_map(SPMAP, end_x, end_y);
 #endif
@@ -1249,7 +1250,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	dest_dir = (path_get_robot_direction() == POS_Y || path_get_robot_direction() == NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != curr_x || tracey != curr_y) {
-		costAtCell = fw_map.get_cell(SPMAP, tracex, tracey);
+		costAtCell = cost_map.get_cell(SPMAP, tracex, tracey);
 		targetCost = costAtCell - 1;
 
 		/* Reset target cost to 5, since cost only set from 1 to 5 in the shorest path costmap. */
@@ -1257,10 +1258,10 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 			targetCost = COST_5;
 
 		/* Set the cell value to 6 if the cells is on the path. */
-		fw_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+		cost_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 #define COST_SOUTH	{											\
-				if (next == 0 && (fw_map.get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
+				if (next == 0 && (cost_map.get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
 					tracex--;								\
 					next = 1;								\
 					dest_dir = 1;								\
@@ -1268,7 +1269,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 			}
 
 #define COST_WEST	{											\
-				if (next == 0 && (fw_map.get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {	\
+				if (next == 0 && (cost_map.get_cell(SPMAP, tracex, tracey - 1) == targetCost)) {	\
 					tracey--;								\
 					next = 1;								\
 					dest_dir = 0;								\
@@ -1276,7 +1277,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 			}
 
 #define COST_EAST	{											\
-				if (next == 0 && (fw_map.get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {	\
+				if (next == 0 && (cost_map.get_cell(SPMAP, tracex, tracey + 1) == targetCost)) {	\
 					tracey++;								\
 					next = 1;								\
 					dest_dir = 0;								\
@@ -1284,7 +1285,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 			}
 
 #define COST_NORTH	{											\
-				if (next == 0 && fw_map.get_cell(SPMAP, tracex + 1, tracey) == targetCost) {	\
+				if (next == 0 && cost_map.get_cell(SPMAP, tracex + 1, tracey) == targetCost) {	\
 					tracex++;								\
 					next = 1;								\
 					dest_dir = 1;								\
@@ -1318,7 +1319,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 		tracex_tmp = tracex;
 		tracey_tmp = tracey;
 	}
-	fw_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+	cost_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 	t.X = tracex_tmp;
 	t.Y = tracey_tmp;
@@ -1464,22 +1465,22 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 			 * in the shorest path grid costmap.
 			 */
 			stage = 0;
-			if (fw_map.get_cell(SPMAP, x_path - 1, y_path) == COST_PATH) {
+			if (cost_map.get_cell(SPMAP, x_path - 1, y_path) == COST_PATH) {
 				x_path--;
 				stage = 1;
-				fw_map.set_cell(SPMAP, x_path, y_path, COST_NO);
-			} else if (fw_map.get_cell(SPMAP, x_path, y_path + 1) == COST_PATH) {
+				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+			} else if (cost_map.get_cell(SPMAP, x_path, y_path + 1) == COST_PATH) {
 				y_path++;
 				stage = 2;
-				fw_map.set_cell(SPMAP, x_path, y_path, COST_NO);
-			} else if (fw_map.get_cell(SPMAP, x_path + 1, y_path) == COST_PATH) {
+				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+			} else if (cost_map.get_cell(SPMAP, x_path + 1, y_path) == COST_PATH) {
 				x_path++;
 				stage = 3;
-				fw_map.set_cell(SPMAP, x_path, y_path, COST_NO);
-			} else if (fw_map.get_cell(SPMAP, x_path, y_path - 1) == COST_PATH) {
+				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+			} else if (cost_map.get_cell(SPMAP, x_path, y_path - 1) == COST_PATH) {
 				y_path--;
 				stage = 4;
-				fw_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
 			}
 
 			if (stage == 0)
@@ -1494,7 +1495,7 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 			blocked = 0;
 			for (int16_t i = si; i <= ei && blocked == 0; i++) {
 				for (int16_t j = sj; j <= ej && blocked == 0; j++) {
-					if(fw_map.get_cell(SPMAP, i, j) == COST_HIGH) {
+					if(cost_map.get_cell(SPMAP, i, j) == COST_HIGH) {
 						blocked = 1;
 					}
 				}
@@ -1547,10 +1548,10 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 
 					while (blocked_min == false || blocked_max == false) {
 						for (int16_t j = si; j <= ei && (blocked_min == false || blocked_max == false); j++) {
-							if (blocked_min == false && (x_min - 1 < sj || fw_map.get_cell(SPMAP, x_min - 1, j) == COST_HIGH)) {
+							if (blocked_min == false && (x_min - 1 < sj || cost_map.get_cell(SPMAP, x_min - 1, j) == COST_HIGH)) {
 								blocked_min = true;
 							}
-							if (blocked_max == false && (x_max + 1 > ej || fw_map.get_cell(SPMAP, x_max + 1, j) == COST_HIGH)) {
+							if (blocked_max == false && (x_max + 1 > ej || cost_map.get_cell(SPMAP, x_max + 1, j) == COST_HIGH)) {
 								blocked_max = true;
 							}
 						}
@@ -1576,10 +1577,10 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 					ei = it_ptr2->X > it_ptr3->X ? it_ptr2->X : it_ptr3->X;
 					while (blocked_min == false || blocked_max == false) {
 						for (int16_t j = si; j <= ei && (blocked_min == false || blocked_max == false); j++) {
-							if (blocked_min == false && (y_min - 1 < sj || fw_map.get_cell(SPMAP, j, y_min - 1) == COST_HIGH)) {
+							if (blocked_min == false && (y_min - 1 < sj || cost_map.get_cell(SPMAP, j, y_min - 1) == COST_HIGH)) {
 								blocked_min = true;
 							}
-							if (blocked_max == false && (y_max + 1 > ej || fw_map.get_cell(SPMAP, j, y_max + 1) == COST_HIGH)) {
+							if (blocked_max == false && (y_max + 1 > ej || cost_map.get_cell(SPMAP, j, y_max + 1) == COST_HIGH)) {
 								blocked_max = true;
 							}
 						}

@@ -367,7 +367,14 @@ typedef struct LineKB{
 typedef struct{
 	int32_t X;
 	int32_t Y;
+  int16_t TH;
 } Point32_t;
+
+typedef struct{
+	int32_t X;
+	int32_t Y;
+  int16_t TH;
+} PointTh;
 
 
 /*

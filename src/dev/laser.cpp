@@ -1113,7 +1113,7 @@ static uint8_t setLaserMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		cost_map.robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		cost_map.robot_to_point(CostMap::get_curr_point(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
 		if (cost_map.get_cell(MAP, cost_map.count_to_cell(x_tmp), cost_map.count_to_cell(y_tmp)) != BLOCKED_BUMPER)
 		{
 			ROS_INFO("\033[36mlaser marker : (%d,%d)\033[0m",cost_map.count_to_cell(x_tmp),cost_map.count_to_cell(y_tmp));
@@ -1293,7 +1293,7 @@ uint8_t Laser::laserMarker(double X_MAX)
 				}
 			}
 
-			cost_map.robot_to_cell(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			cost_map.robot_to_cell(CostMap::get_curr_point(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
 			auto cell_status = cost_map.get_cell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{

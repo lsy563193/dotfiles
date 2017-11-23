@@ -58,37 +58,35 @@ public:
 
 	CostMap();
 
-	int32_t get_x_count(void);
+	static int32_t get_x_count(void);
 
-	int32_t get_y_count(void);
+	static int32_t get_y_count(void);
 
-	int16_t get_x_cell(void);
+	static Point32_t get_curr_point(void);
 
-	int16_t get_y_cell(void);
+	static int16_t get_x_cell(void);
 
-	void set_position(double x, double y);
+	static int16_t get_y_cell(void);
 
-	int32_t get_relative_x(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
-
-	int32_t get_relative_y(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
-
-	void robot_to_point(int16_t heading, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
-
-	void robot_to_cell(int16_t heading, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
-
-	CellState get_cell(int id, int16_t x, int16_t y);
-
-	Cell_t get_curr_cell();
+	static Cell_t get_curr_cell();
 
 	void set_cell(uint8_t id, int32_t x, int32_t y, CellState value);
 
+	static void set_position(double x, double y);
+
+	static Point32_t get_relative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
+
+	static void robot_to_point(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+
+	CellState get_cell(int id, int16_t x, int16_t y);
+
 	void clear_blocks(void);
 
-	int32_t cell_to_count(int16_t distance);
+	static int32_t cell_to_count(int16_t distance);
 
-	int16_t count_to_cell(int32_t count);
+	static int16_t count_to_cell(int32_t count);
 
-	Point32_t cell_to_point(const Cell_t &cell);
+	static Point32_t cell_to_point(const Cell_t &cell);
 
 	Cell_t point_to_cell(Point32_t pnt);
 
@@ -141,27 +139,28 @@ public:
 	uint8_t set_follow_wall();
 
 
-	uint8_t save_laser();
+	static uint8_t save_laser();
 
-	uint8_t save_obs();
+	static uint8_t save_obs();
 
-	uint8_t save_bumper();
+	static uint8_t save_bumper();
 
-	uint8_t save_rcon();
+	static uint8_t save_rcon();
 
-	uint8_t save_cliff();
+	static uint8_t save_cliff();
 
-	uint8_t save_tilt();
+	static uint8_t save_tilt();
 
-	uint8_t save_slip();
+	static uint8_t save_slip();
 
-	uint8_t save_follow_wall();
+	static uint8_t save_follow_wall();
 
-	uint8_t save_blocks();
+	static uint8_t save_blocks();
 
 	uint8_t set_blocks();
 
-	double world_distance(void);
+	static void robot_to_cell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
+
 
 	void set_cleaned(std::deque<Cell_t> &cells);
 
@@ -288,7 +287,7 @@ private:
 
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
-	double xCount, yCount, relative_sin, relative_cos;
+	static double xCount, yCount;
 
 };
 
@@ -298,4 +297,5 @@ extern CostMap cost_map;
 extern CostMap fw_map;
 extern CostMap ros_map;
 
+double world_distance(void);
 #endif /* __MAP_H */

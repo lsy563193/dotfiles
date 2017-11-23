@@ -70,7 +70,7 @@ void CleanMode::run()
 		}
 
 		if (isSwitch()) {
-			cost_map.save_blocks();
+			CostMap::save_blocks();
 		}
 
 		int32_t left_speed = 0, right_speed = 0;
@@ -184,7 +184,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 			g_passed_path.clear();
 			g_wf_reach_count++;
 		}
-		cost_map.save_blocks();
+		CostMap::save_blocks();
 	}
 //	else
 //		is_time_up = !cs.is_trapped();
@@ -629,14 +629,26 @@ bool NavigationClean::findTarget(Cell_t& curr)
 }
 void NavigationClean::mark()
 {
-	cost_map.save_blocks();
-	fw_map.save_follow_wall();
+	ROS_INFO("%s, %d: NavigationClean::mark", __FUNCTION__, __LINE__);
+	CostMap::save_blocks();
 
-	cost_map.set_blocks();
-	fw_map.set_blocks();
+//	uint8_t block_count = 0;
+	cost_map.set_obs();
+	cost_map.set_bumper();
+	cost_map.set_rcon();
+	cost_map.set_cliff();
+	cost_map.set_tilt();
+	cost_map.set_slip();
+	cost_map.set_laser();
+
+	if(mt.is_follow_wall())
+		cost_map.set_follow_wall();
+	if(cs.is_trapped())
+		fw_map.set_follow_wall();
 
 	cost_map.set_cleaned(g_passed_path);
 	cost_map.mark_robot(MAP);
+//	cost_map.print(MAP,0,0);
 }
 
 Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)
@@ -940,10 +952,22 @@ bool WallFollowClean::isSwitch()
 }
 
 void WallFollowClean::mark() {
-	fw_map.save_follow_wall();
-	fw_map.set_blocks();
-	cost_map.set_cleaned(g_passed_path);
-	cost_map.mark_robot(MAP);
+
+	CostMap::save_blocks();
+//	uint8_t block_count = 0;
+	if(mt.is_follow_wall()) {
+		fw_map.set_obs();
+		fw_map.set_bumper();
+		fw_map.set_rcon();
+		fw_map.set_cliff();
+		fw_map.set_tilt();
+		fw_map.set_slip();
+		fw_map.set_laser();
+		fw_map.set_follow_wall();
+	}
+
+//	cost_map.set_cleaned(g_passed_path);
+//	cost_map.mark_robot(MAP);
 }
 
 bool WallFollowClean::findTarget(Cell_t& curr)
