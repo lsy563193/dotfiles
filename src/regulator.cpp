@@ -259,7 +259,8 @@ bool RegulatorBase::isStop()
 {
 	if (ev.battery_home || ev.remote_spot || (!cs.is_going_home() && ev.remote_home) || cm_should_self_check())
 	{
-		ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: battery_home(%d), remote_spot(%d), remote_home(%d), should_self_check(%d)",
+				 __FUNCTION__, __LINE__, ev.battery_home, ev.remote_spot, ev.remote_home, cm_should_self_check());
 		return true;
 	}
 	return false;
@@ -777,7 +778,8 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	auto obstalce_distance_front = s_laser->getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.get_status();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25))
+	bool should_rosmap2_decrease = is_rosmap2_block();
+	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25) || should_rosmap2_decrease)
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)

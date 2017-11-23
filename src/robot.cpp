@@ -7,6 +7,8 @@
 #include <core_move.h>
 #include <std_srvs/SetBool.h>
 #include <pp.h>
+#include <pp/SetLidar.h>
+#include "laser.hpp"
 
 #include "std_srvs/Empty.h"
 
@@ -33,19 +35,32 @@ boost::mutex ros_map_mutex_;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
 {
 	init();
+	// Subscribers.
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
+	scan_sub_ = robot_nh_.subscribe("scan", 1, &robot::scanCb, this);
+	scan_sub2_ = robot_nh_.subscribe("scan2",1,&robot::scanCb2, this);
+	scan_sub3_ = robot_nh_.subscribe("scan3",1,&robot::scanCb3, this);
+	laserPoint_sub_ = robot_nh_.subscribe("laserPoint",1,&robot::laserPointCb, this);
+
+	// Service clients.
+	lidar_motor_cli_ = robot_nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 	/*map subscriber for exploration*/
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
-	visualizeMarkerInit();
+	// Publishers.
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
 	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
 	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom",1);
 	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl",1);
+	line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
+	line_marker_pub2_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
+	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
+	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
+	visualizeMarkerInit();
 	is_sensor_ready_ = false;
 	is_tf_ready_ = false;
 
@@ -275,17 +290,39 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	if (cm_is_exploration()) {
 		cost_map.ros_convert(MAP, false, false, true);
 	}
+	else if(cm_is_navigation())
+	{
+		ros_map_convert(ROSMAP2, false, false, false, 20);
+	}
 	MotionManage::s_slam->isMapReady(true);
 
 //	ROS_INFO("%s %d:finished map callback,cost_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),cost_map.origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
 
 }
 
-//void robot::displayPositions()
-//{
-//	ROS_INFO("base_link->map: (%f, %f) Gyro: %d yaw_: %f(%f)",
-//		position_x_, position_y_, gyro.get_angle(), position_yaw_, position_yaw_ * 1800 / M_PI);
-//}
+void robot::scanCb(const sensor_msgs::LaserScan::ConstPtr &msg)
+{
+	if (s_laser != nullptr)
+		s_laser->scanCb(msg);
+}
+
+void robot::scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg)
+{
+	if (s_laser != nullptr)
+		s_laser->scanCb2(msg);
+}
+
+void robot::scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg)
+{
+	if (s_laser != nullptr)
+		s_laser->scanCb3(msg);
+}
+
+void robot::laserPointCb(const visualization_msgs::Marker &point_marker)
+{
+	if (s_laser != nullptr)
+		s_laser->laserPointCb(point_marker);
+}
 
 void robot::visualizeMarkerInit()
 {
@@ -324,16 +361,6 @@ void robot::visualizeMarkerInit()
 	clean_map_markers_.points.clear();
 	clean_map_markers_.colors.clear();
 }
-
-//void robot::pubCleanMarkers()
-//{
-//	m_points_.x = position_x_;
-//	m_points_.y = position_y_;
-//	m_points_.z = 0;
-//	clean_markers_.header.stamp = ros::Time::now();
-//	clean_markers_.points.push_back(m_points_);
-//	send_clean_marker_pub_.publish(clean_markers_);
-//}
 
 void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 {
@@ -440,6 +467,167 @@ void robot::pubCleanMapMarkers(void)
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();
 	clean_map_markers_.colors.clear();
+}
+
+void robot::pubLineMarker(const std::vector<LineABC> *lines)
+{
+	visualization_msgs::Marker line_marker;
+	line_marker.ns = "line_marker_2";
+	line_marker.id = 0;
+	line_marker.type = visualization_msgs::Marker::LINE_LIST;
+	line_marker.action= 0;//add
+	line_marker.lifetime=ros::Duration(0);
+	line_marker.scale.x = 0.05;
+	//line_marker.scale.y = 0.05;
+	//line_marker.scale.z = 0.05;
+	line_marker.color.r = 0.5;
+	line_marker.color.g = 1.0;
+	line_marker.color.b = 0.2;
+	line_marker.color.a = 1.0;
+	line_marker.header.frame_id = "/map";
+	line_marker.header.stamp = ros::Time::now();
+	geometry_msgs::Point point1;
+	point1.z = 0.0;
+	geometry_msgs::Point point2;
+	point2.z = 0.0;
+	line_marker.points.clear();
+	std::vector<LineABC>::const_iterator it;
+	if(!lines->empty() && lines->size() >= 2){
+		for(it = lines->cbegin(); it != lines->cend();it++){
+			point1.x = it->x1;
+			point1.y = it->y1;
+			point2.x = it->x2;
+			point2.y = it->y2;
+			line_marker.points.push_back(point1);
+			line_marker.points.push_back(point2);
+		}
+		line_marker_pub2_.publish(line_marker);
+		line_marker.points.clear();
+	}
+	/*
+	else{
+		line_marker.points.clear();
+		line_marker_pub2.publish(line_marker);
+	}
+	*/
+
+}
+
+void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
+{
+	int points_size;
+	visualization_msgs::Marker line_marker;
+	line_marker.ns = "line_marker";
+	line_marker.id = 0;
+	line_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	line_marker.action= 0;//add
+	line_marker.lifetime=ros::Duration(0);
+	line_marker.scale.x = 0.03;
+	line_marker.scale.y = 0.03;
+	line_marker.scale.z = 0.03;
+	line_marker.color.r = 0.0;
+	line_marker.color.g = 1.0;
+	line_marker.color.b = 0.0;
+	line_marker.color.a = 1.0;
+	line_marker.header.frame_id = "/base_link";
+	line_marker.header.stamp = ros::Time::now();
+	geometry_msgs::Point laser_points_;
+	laser_points_.x = 0.0;
+	laser_points_.y = 0.0;
+	laser_points_.z = 0.0;
+
+	/*line_marker.pose.position.x = 0.0;
+	line_marker.pose.position.y = 0.0;
+	line_marker.pose.position.z = 0.0;
+	line_marker.pose.orientation.x = 0.0;
+	line_marker.pose.orientation.y = 0.0;
+	line_marker.pose.orientation.z = 0.0;
+	line_marker.pose.orientation.w = 1.0;*/
+	if (!(*groups).empty()) {
+		for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+			/*x1 = iter->begin()->x;
+			y1 = iter->begin()->y;
+			x2 = (iter->end() - 1)->x;
+			y2 = (iter->end() - 1)->y;*/
+			points_size = iter->size();
+			for (int j = 0; j < points_size; j++) {
+				//line_marker.pose.position.x = (iter->begin() + j)->x;
+				//line_marker.pose.position.y = (iter->begin() + j)->y;
+				laser_points_.x = (iter->begin() + j)->x;
+				laser_points_.y = (iter->begin() + j)->y;
+				//ROS_INFO("laser_points_.x = %lf laser_points_.y = %lf",laser_points_.x, laser_points_.y);
+				line_marker.points.push_back(laser_points_);
+			}
+		}
+		line_marker_pub_.publish(line_marker);
+		line_marker.points.clear();
+	} else {
+		line_marker.points.clear();
+		line_marker_pub_.publish(line_marker);
+	}
+}
+
+void robot::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
+{
+	fit_line_marker_pub_.publish(fit_line_marker);
+}
+
+void robot::pubPointMarkers(const std::vector<Point_d_t> *points, std::string frame_id)
+{
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = "point_marker";
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::POINTS;
+	point_marker.action= 0;//add
+	point_marker.lifetime=ros::Duration(0),"base_link";
+	point_marker.scale.x = 0.02;
+	point_marker.scale.y = 0.02;
+	point_marker.scale.z = 0.0;
+	point_marker.color.r = 1.0;
+	point_marker.color.g = 1.0;
+	point_marker.color.b = 1.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = frame_id;
+	point_marker.header.stamp = ros::Time::now();
+
+	geometry_msgs::Point laser_points;
+	laser_points.z = 0;
+	if (!points->empty()) {
+		std::string msg("");
+		for (std::vector<Double_Point>::const_iterator iter = points->cbegin(); iter != points->cend(); ++iter) {
+			laser_points.x = iter->x;
+			laser_points.y = iter->y;
+			point_marker.points.push_back(laser_points);
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
+		}
+		point_marker_pub_.publish(point_marker);
+		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+		point_marker.points.clear();
+	}
+	/*
+	else {
+		point_marker.points.clear();
+		point_marker_pub.publish(point_marker);
+	}
+	*/
+}
+
+bool robot::laserMotorCtrl(bool switch_)
+{
+	pp::SetLidar ctrl_message;
+	if(switch_){
+		ctrl_message.request.x_acc_init= acc.getInitXAcc();
+		ctrl_message.request.y_acc_init= acc.getInitYAcc();
+		ctrl_message.request.z_acc_init= acc.getInitZAcc();
+	}
+	ctrl_message.request.data = switch_;
+
+	if (lidar_motor_cli_.call(ctrl_message))
+	{
+		ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__, ctrl_message.response.message.c_str());
+		return true;
+	}
+	return false;
 }
 
 void robot::initOdomPosition()

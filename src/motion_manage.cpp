@@ -160,7 +160,7 @@ void init_nav_before_gyro()
 	else
 		led.set_mode(LED_FLASH, LED_GREEN, 1000);
 
-	// Initialize motors and costmap.
+	// Initialize motors and map.
 	if (!cs_is_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
 	{
 		g_saved_work_time = 0;
@@ -250,7 +250,7 @@ void init_exp_before_gyro()
 	else
 		led.set_mode(LED_FLASH, LED_GREEN, 1000);
 
-	// Initialize motors and costmap.
+	// Initialize motors and map.
 	g_saved_work_time = 0;
 	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	// Push the start point into the home point list
@@ -441,6 +441,7 @@ void init_before_gyro()
 
 	fw_map.reset(MAP);
 	ros_map.reset(MAP);
+	ros2_map.reset(MAP);
 	switch (cm_get())
 	{
 		case Clean_Mode_Navigation:
@@ -467,6 +468,7 @@ void init_before_gyro()
 bool MotionManage::laser_init()
 {
 	s_laser = new Laser();
+	s_laser->laserMotorCtrl(ON);
 	if (s_laser->isScanReady() == -1)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);

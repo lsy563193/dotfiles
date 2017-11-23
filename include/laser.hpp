@@ -41,13 +41,9 @@ public:
 
 	bool mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_lim);
 
-	void pubLineMarker(std::vector<std::vector<Double_Point> > *groups);
-
 	bool fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
-
-	void pubPointMarkers(const std::vector<Point_d_t> *point, std::string frame_id);
 
 	void laserMotorCtrl(bool switch_);
 
@@ -56,10 +52,7 @@ public:
 
 	bool laserCheckFresh(float duration, uint8_t type = 1);
 	bool findLines(std::vector<LineABC> *lines);
-	void pubLineMarker(const std::vector<LineABC> *lines);
 	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
-
-private:
 
 	//void stop(void);
 	//void start(void);
@@ -68,17 +61,12 @@ private:
 	void scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void laserPointCb(const visualization_msgs::Marker &point_marker);
 
+private:
 	int angle_n_;
 	uint8_t is_scan_ready_;
 	uint8_t is_scan2_ready_;
 	uint8_t is_scan3_ready_;
 	std::vector<geometry_msgs::Point> laserXY_points;
-
-	ros::NodeHandle	nh_;
-	ros::Subscriber	scan_sub_;
-	ros::Subscriber	scan_sub2_;
-	ros::Subscriber	scan_sub3_;
-	ros::Subscriber laserPoint_sub_;
 
 	sensor_msgs::LaserScan laserScanData_;
 	sensor_msgs::LaserScan laserScanData_2_;
@@ -86,22 +74,12 @@ private:
 	double scan_update_time;
 	double scan2_update_time;
 
-	//ros::ServiceClient start_motor_cli_;
-	//ros::ServiceClient stop_motor_cli_;
-	//ros::ServiceClient start_laser_shield_cli_;
-	//ros::ServiceClient stop_laser_shield_cli_;
-	ros::ServiceClient lidar_motor_cli_;
-	ros::ServiceClient lidar_shield_detect_;
-
 	std::vector<Double_Point>	Laser_Point;
 	std::vector<std::vector<Double_Point> >	Laser_Group;
 	std::vector<std::vector<Double_Point> >	Laser_Group_2nd;
 	std::vector<LineABC>	fit_line;
 	//static float *last_ranges_;
-	ros::Publisher line_marker_pub = nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
-	ros::Publisher line_marker_pub2 = nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
-	ros::Publisher point_marker_pub = nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
-	ros::Publisher fit_line_marker_pub = nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
+
 //	ros::Publisher laser_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("laser_filter",1);
 	visualization_msgs::Marker fit_line_marker;
 

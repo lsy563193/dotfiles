@@ -11,6 +11,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <visualization_msgs/Marker.h>
+#include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
 #include <pp/scan_ctrl.h>
 #include <vector>
@@ -42,12 +43,29 @@ public:
 
 	// core function
 	void init();
-	void displayPositions();
-	void pubCleanMarkers(void);
+
+	// Publisher functions.
+	void visualizeMarkerInit();
+	void pubLineMarker(const std::vector<LineABC> *lines);
+	void pubLineMarker(std::vector<std::vector<Double_Point> > *groups);
+	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
+	void pubPointMarkers(const std::vector<Point_d_t> *point, std::string frame_id);
 	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
 	void pubCleanMapMarkers(void);
-	void visualizeMarkerInit();
+
+	// Service caller functions.
+	bool laserMotorCtrl(bool switch_);
 	void initOdomPosition();
+
+	// The scale should be between 0 to 1.
+	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
+						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
+						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
+						float& robot_x, float& robot_y, double& robot_yaw);
+
+	void resetCorrection();
+
+	void obsAdjustCount(int count);
 
 	//get and set function
 	bool isSensorReady() const
@@ -232,22 +250,7 @@ public:
 		return map_ptr_;
 	}
 
-	// The scale should be between 0 to 1.
-	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
-						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
-						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
-						float& robot_x, float& robot_y, double& robot_yaw);
-
-	void resetCorrection();
-
-	void obsAdjustCount(int count);
-
-	//callback function
 private:
-	void sensorCb(const pp::x900sensor::ConstPtr &msg);
-	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
-//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
-	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
@@ -305,13 +308,25 @@ private:
 	std::vector<int8_t> *map_ptr_;
 
 	ros::NodeHandle robot_nh_;
+
 	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
+	ros::Subscriber	scan_sub_;
+	ros::Subscriber	scan_sub2_;
+	ros::Subscriber	scan_sub3_;
+	ros::Subscriber laserPoint_sub_;
+
 	ros::Publisher odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher scan_ctrl_pub_;
+	ros::Publisher line_marker_pub_;
+	ros::Publisher line_marker_pub2_;
+	ros::Publisher point_marker_pub_;
+	ros::Publisher fit_line_marker_pub_;
+
+	ros::ServiceClient lidar_motor_cli_;
 
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	geometry_msgs::Point m_points_;
@@ -321,10 +336,18 @@ private:
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	//tf::TransformBroadcaster	robot_broad;
-	//geometry_msgs::TransformStamped robot_trans;
 	nav_msgs::Odometry odom;
 	pp::scan_ctrl scan_ctrl_;
+
+	//callback function
+	void sensorCb(const pp::x900sensor::ConstPtr &msg);
+	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
+//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
+	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
+	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void laserPointCb(const visualization_msgs::Marker &point_marker);
 };
 
 #endif
