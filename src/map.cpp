@@ -23,6 +23,7 @@
 CostMap cost_map;
 CostMap fw_map;
 CostMap ros_map;
+CostMap ros2_map;
 
 #ifndef SHORTEST_PATH_V2
 #endif
@@ -287,7 +288,7 @@ void CostMap::clear_blocks(void) {
 //		// Using middle of robot current cell as position.
 //		return cell_to_count(count_to_cell(get_y_count())) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
 //}
-static Point32_t CostMap::get_relative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
+Point32_t CostMap::get_relative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
 	double relative_sin, relative_cos;
 	if(point.TH != relative_theta) {
 		if(point.TH == 0) {
@@ -389,7 +390,7 @@ void CostMap::reset(uint8_t id)
 #endif
 }
 
-void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block, bool is_freshen_map)
+void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block, bool is_freshen_map,int limit)
 {
 	std::vector<int8_t> *p_map_data;
 	uint32_t width, height;
@@ -1492,4 +1493,21 @@ void CostMap::color_print(char *outString, int16_t y_min, int16_t y_max)
 	}
 	printf("%s\033[0m\n",y_col.c_str());
 }
+bool CostMap::is_block(void)
+{
+	bool retval = false;
+	int16_t x,y;
+	std::vector<Cell_t> d_cells;
+	d_cells = {{2,1},{2,0},{2,-1},{1,2},{1,1},{1,0},{1,-1},{1,-2},{0,0}};
 
+	for(auto& d_cell : d_cells)
+	{
+		robot_to_cell(get_curr_point(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		if(get_cell(MAP, x, y) == BLOCKED_ROS_MAP)
+		{
+			retval = true;
+			break;
+		}
+	}
+	return retval;
+}

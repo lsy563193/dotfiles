@@ -102,7 +102,7 @@ public:
  * @param is_mark_cleaned to decide if mark the free space to CLENAED
  * @return None
  */
-	void ros_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map);
+	void ros_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map,int limit=0);
 
 	void to_world(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double &wx,
 								double &wy);
@@ -266,6 +266,7 @@ public:
  * @return
  */
 
+	bool is_block(void);
 	BoundingBox2 generateBound()
 	{
 		BoundingBox2 bound{{int16_t(g_x_min), int16_t(g_y_min)}, {g_x_max, g_y_max}};
@@ -296,6 +297,7 @@ extern CostMap cost_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern CostMap fw_map;
 extern CostMap ros_map;
+extern CostMap ros2_map;
 
 double world_distance(void);
 #endif /* __MAP_H */
