@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 2.8.3)
 project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
-	src/signature.c
 	src/charger.cpp
+	src/clean_mode.cpp
+	src/clean_state.cpp
 	src/core_move.cpp
 	src/crc8.cpp
 	src/des.cpp
@@ -30,29 +31,28 @@ FILE(GLOB PP_SRC
 	src/dev/laser.cpp
 	src/dev/wav.cpp
 	src/error.cpp
+	src/event_manager.cpp
+	src/idle.cpp
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp
 	src/motion_manage.cpp
+	src/move_type.cpp
 	src/movement.cpp
 	src/path_planning.cpp
 	src/pose.cpp
+	src/regulator.cpp
 	src/remote_mode.cpp
-	src/robotbase.cpp
 	src/robot.cpp
+	src/robotbase.cpp
 	src/serial.cpp
 	src/shortest_path.cpp
-	src/sleep.cpp
-	src/spot.cpp
-	src/idle.cpp
-	src/verify.cpp
+	src/signature.c
 	src/slam.cpp
-	src/event_manager.cpp
-	src/regulator.cpp
-	src/move_type.cpp
-	src/clean_mode.cpp
-	src/clean_state.cpp
+	src/sleep.cpp
 	src/space_exploration.cpp
+	src/spot.cpp
+	src/verify.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

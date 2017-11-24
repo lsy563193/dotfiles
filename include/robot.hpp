@@ -149,16 +149,6 @@ public:
 		return pose.getZ();
 	}
 
-	float getWfPositionX() const
-	{
-		return wf_position_x_;
-	}
-
-	float getWfPositionY() const
-	{
-		return wf_position_y_;
-	}
-
 	float getOdomPositionX() const
 	{
 		return odom_pose_x_;
@@ -230,7 +220,7 @@ private:
 
 	bool	is_tf_ready_;
 
-  bool temp_spot_set_;
+	bool temp_spot_set_;
 
 	boost::mutex offset_angle_metux_;
 	float offset_angle_;
@@ -250,8 +240,6 @@ private:
 
 	Pose pose;
 
-	float	wf_position_x_;
-	float	wf_position_y_;
 	float	odom_pose_x_;
 	float	odom_pose_y_;
 	double	odom_pose_yaw_;
