@@ -138,7 +138,7 @@ void robotbase_deinit(void)
 		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
 		led.set_mode(LED_STEADY, LED_OFF);
 		controller.set(CTL_BUZZER, 0x00);
-		gyro.set_off();
+		gyro.setOff();
 		cs_disable_motors();
 		controller.set_status(POWER_DOWN);
 		usleep(40000);
@@ -284,7 +284,9 @@ void *robotbase_routine(void*)
 
 		sensor.angle = -(float)((int16_t)((g_receive_stream[REC_ANGLE_H] << 8) | g_receive_stream[REC_ANGLE_L])) / 100.0;//ros angle * -1
 		sensor.angle -= robot::instance()->offsetAngle();
+		gyro.setAngle(sensor.angle);
 		sensor.angle_v = -(float)((int16_t)((g_receive_stream[REC_ANGLE_V_H] << 8) | g_receive_stream[REC_ANGLE_V_L])) / 100.0;//ros angle * -1
+		gyro.setAngleV(sensor.angle_v);
 
 		sensor.lw_crt = (((g_receive_stream[REC_LW_C_H] << 8) | g_receive_stream[REC_LW_C_L]) & 0x7fff) * 1.622;
 		sensor.rw_crt = (((g_receive_stream[REC_RW_C_H] << 8) | g_receive_stream[REC_RW_C_L]) & 0x7fff) * 1.622;
@@ -409,10 +411,10 @@ void *robotbase_routine(void*)
 	#if GYRO_DYNAMIC_ADJUSTMENT
 	if (wheel.getLeftWheelSpeed() < 0.01 && wheel.getRightWheelSpeed() < 0.01)
 	{
-		gyro.set_dynamic_on();
+		gyro.setDynamicOn();
 	} else
 	{
-		gyro.set_dynamic_off();
+		gyro.setDynamicOff();
 	}
 	tilt.check();
 	if(omni.isEnable())
@@ -431,7 +433,7 @@ void *robotbase_routine(void*)
 		odom.setAngleSpeed(sensor.angle_v);
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
-		angle_rad = static_cast<float>(odom.getAngle() * 0.01745);	//degree into radian
+		angle_rad = deg_to_rad(sensor.angle);
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));

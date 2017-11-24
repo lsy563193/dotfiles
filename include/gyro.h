@@ -14,39 +14,39 @@ public:
 		status_ = 0;
 	}
 
-	bool wait_for_on(void);
+	bool waitForOn(void);
 
-	bool is_stable(void);
+	bool isStable(void);
 
-	void set_off(void);
+	void setOff(void);
 
-	void set_on(void);
+	void setOn(void);
 
-	void set_status(void);
+	void setStatus(void);
 
-	void reset_status(void);
+	void resetStatus(void);
 
-	bool is_on(void);
+	bool isOn(void);
 
 #if GYRO_DYNAMIC_ADJUSTMENT
 
-	void set_dynamic_on(void);
+	void setDynamicOn(void);
 
-	void set_dynamic_off(void);
+	void setDynamicOff(void);
 
 #endif
 
-	int16_t get_x_acc(void);
+	int16_t getXAcc(void);
 
-	int16_t get_y_acc(void);
+	int16_t getYAcc(void);
 
-	int16_t get_z_acc(void);
+	int16_t getZAcc(void);
 
-	uint8_t get_calibration(void);
+	uint8_t getCalibration(void);
 
-	int16_t get_angle(void);
+	float getAngle(void);
 
-	void set_angle(int16_t angle);
+	void setAngle(float angle);
 
 	float getAngleV();
 
@@ -54,13 +54,13 @@ public:
 
 private:
 
-	int16_t angle_;   //[3:3]   = Angle
+	float angle_;   //[3:3]   = Angle
 	float angle_v_;   //[3:3]   = Angle
-	int16_t xacc;        //[7:8]   = X Acceleration
-	int16_t yacc;        //[9:10]  = Y Acceleration
-	int16_t zacc;        //[11:12] = Z Acceleration
+	float x_acc_;        //[7:8]   = X Acceleration
+	float y_acc_;        //[9:10]  = Y Acceleration
+	float z_acc_;        //[11:12] = Z Acceleration
 
-	uint8_t calibration;
+	bool calibration_status_;
 
 	bool status_;
 };

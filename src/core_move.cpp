@@ -736,7 +736,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 	if(ev.rcon_triggered != 0){
 		cost_map.set_rcon();
 	}
-	c_rcon.reset_status();*/
+	c_rcon.resetStatus();*/
 }
 
 /* Over Current */

@@ -769,7 +769,7 @@ void EventHandle::cliff_right(bool state_now, bool state_last)
 void EventHandle::rcon(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-//	c_rcon.reset_status();
+//	c_rcon.resetStatus();
 }
 void df_rcon(bool state_now, bool state_last)
 {

@@ -56,16 +56,16 @@ void remote_mode(void)
 	cs_paused_setting();
 
 
-	if (!gyro.is_on())
+	if (!gyro.isOn())
 	{
 		// Restart the gyro.
-		gyro.set_off();
+		gyro.setOff();
 		// Wait for 30ms to make sure the off command has been effectived.
 		usleep(30000);
 		// Set gyro on before wav.play can save the time for opening the gyro.
-		gyro.set_on();
+		gyro.setOn();
 		wav.play(WAV_SYSTEM_INITIALIZING);
-		if (!gyro.wait_for_on())
+		if (!gyro.waitForOn())
 		{
 			cm_set(Clean_Mode_Idle);
 			return;
