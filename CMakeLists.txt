@@ -7,56 +7,51 @@ FILE(GLOB PP_SRC
 	src/core_move.cpp
 	src/crc8.cpp
 	src/des.cpp
-				src/dev/gyro.cpp
-				src/dev/vacuum.cpp
-				src/dev/key.cpp
-			 src/dev/cliff.cpp
-				src/dev/battery.cpp
-				src/dev/brush.cpp
-				src/dev/bumper.cpp
-				src/dev/rcon.cpp
-				src/dev/clean_timer.cpp
-				src/dev/remote.cpp
-				src/dev/controller.cpp
-				src/dev/obs.cpp
-				src/dev/accelerator.cpp
-				src/dev/tilt.cpp
-				src/dev/led.cpp
-				src/dev/beep.cpp
-				src/dev/charger.cpp
-				src/dev/wall_follow.cpp
-				src/dev/omni.cpp
-				src/dev/wheel.cpp
-				src/dev/laser.cpp
-				src/dev/wav.cpp
+	src/dev/gyro.cpp
+	src/dev/vacuum.cpp
+	src/dev/key.cpp
+	src/dev/cliff.cpp
+	src/dev/battery.cpp
+	src/dev/brush.cpp
+	src/dev/bumper.cpp
+	src/dev/rcon.cpp
+	src/dev/clean_timer.cpp
+	src/dev/remote.cpp
+	src/dev/controller.cpp
+	src/dev/obs.cpp
+	src/dev/accelerator.cpp
+	src/dev/tilt.cpp
+	src/dev/led.cpp
+	src/dev/beep.cpp
+	src/dev/charger.cpp
+	src/dev/wall_follow.cpp
+	src/dev/omni.cpp
+	src/dev/wheel.cpp
+	src/dev/laser.cpp
+	src/dev/wav.cpp
 	src/error.cpp
 	src/main.cpp
-#	test/angle_test.cpp
 	src/map.cpp
 	src/mathematics.cpp
 	src/motion_manage.cpp
 	src/movement.cpp
 	src/path_planning.cpp
-#	src/random_running.cpp
+	src/pose.cpp
 	src/remote_mode.cpp
 	src/robotbase.cpp
 	src/robot.cpp
 	src/serial.cpp
 	src/shortest_path.cpp
 	src/sleep.cpp
-#	src/spiral.cpp
 	src/spot.cpp
 	src/idle.cpp
 	src/verify.cpp
-#	src/wall_follow_slam.cpp
 	src/slam.cpp
 	src/event_manager.cpp
-#	src/go_home.cpp
 	src/regulator.cpp
 	src/move_type.cpp
 	src/clean_mode.cpp
 	src/clean_state.cpp
-#	src/a_star.cpp
 	src/space_exploration.cpp
 )
 
@@ -70,7 +65,7 @@ find_package(catkin REQUIRED COMPONENTS
 	std_msgs
 	geometry_msgs
 	visualization_msgs
-    cmake_modules
+	cmake_modules
 	tf
 )
 
@@ -101,7 +96,7 @@ add_message_files(
 add_service_files(
 	DIRECTORY srv
 	FILES
-	SetLidar.srv	
+	SetLidar.srv
 )
 
 generate_messages(
