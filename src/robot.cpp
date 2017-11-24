@@ -245,31 +245,32 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//robot_trans.transform.rotation = robot_quat;
 	//robot_broad.sendTransform(robot_trans);
 	//ROS_WARN("%s %d: World position (%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw);
-	odom.header.stamp = cur_time;
-	odom.header.frame_id = "map";
-	odom.child_frame_id = "robot";
-	odom.pose.pose.position.x = robot_x_;
-	odom.pose.pose.position.y = robot_y_;
-	odom.pose.pose.position.z = 0.0;
-	odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
-	odom.twist.twist.linear.x = 0.0;
-	odom.twist.twist.linear.y = 0.0;
-	odom.twist.twist.angular.z = 0.0;
-	odom_pub_.publish(odom);
+	nav_msgs::Odometry robot_pose;
+	robot_pose.header.stamp = cur_time;
+	robot_pose.header.frame_id = "map";
+	robot_pose.child_frame_id = "robot";
+	robot_pose.pose.pose.position.x = robot_x_;
+	robot_pose.pose.pose.position.y = robot_y_;
+	robot_pose.pose.pose.position.z = 0.0;
+	robot_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
+	robot_pose.twist.twist.linear.x = 0.0;
+	robot_pose.twist.twist.linear.y = 0.0;
+	robot_pose.twist.twist.angular.z = 0.0;
+	odom_pub_.publish(robot_pose);
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-	position_x_ = robot_x_;
-	position_y_ = robot_y_;
-	position_yaw_ = robot_yaw_;
+	pose.setX(robot_x_);
+	pose.setY(robot_y_);
+	pose.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
 #else
-	position_x_ = tmp_x;
-	position_y_ = tmp_y;
-	position_yaw_ = tmp_yaw;
+	pose.setX(tmp_x_);
+	pose.setY(tmp_y_);
+	pose.setAngle(tmp_yaw_);
 #endif
 	//ROS_WARN("%s %d: Position (%f, %f), yaw: %f. Odom position(%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw, odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
-	gyro.set_angle(ranged_angle(position_yaw_ * 1800 / M_PI));
+	gyro.set_angle(pose.getAngle());
 //	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro.get_angle());
 }
 

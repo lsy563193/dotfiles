@@ -18,6 +18,7 @@
 #include "config.h"
 #include "map.h"
 #include "movement.h"
+#include "pose.h"
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
@@ -128,24 +129,24 @@ public:
 		return linear_z_;
 	}
 
-	int16_t getYaw() const
+	int16_t getPoseAngle()
 	{
-		return ((int16_t)(position_yaw_ * 1800 / M_PI));
+		return pose.getAngle();
 	}
 
-	float getPositionX() const
+	float getPoseX()
 	{
-		return position_x_;
+		return pose.getX();
 	}
 
-	float getPositionY() const
+	float getPoseY()
 	{
-		return position_y_;
+		return pose.getY();
 	}
 
-	float getPositionZ() const
+	float getPoseZ()
 	{
-		return position_z_;
+		return pose.getZ();
 	}
 
 	float getWfPositionX() const
@@ -247,10 +248,8 @@ private:
 	float	linear_y_;
 	float	linear_z_;
 
-	float	position_x_;
-	float	position_y_;
-	float	position_z_;
-	double	position_yaw_;
+	Pose pose;
+
 	float	wf_position_x_;
 	float	wf_position_y_;
 	float	odom_pose_x_;
@@ -297,7 +296,6 @@ private:
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	nav_msgs::Odometry odom;
 	pp::scan_ctrl scan_ctrl_;
 
 	//callback function

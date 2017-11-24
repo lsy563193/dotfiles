@@ -1061,8 +1061,8 @@ bool CostMap::mark_robot(uint8_t id)
 
 Cell_t CostMap::update_position()
 {
-	auto pos_x = robot::instance()->getPositionX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	auto pos_y = robot::instance()->getPositionY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_x = robot::instance()->getPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_y = robot::instance()->getPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	set_position(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	return get_curr_cell();

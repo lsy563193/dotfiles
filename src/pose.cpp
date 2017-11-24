@@ -4,7 +4,7 @@
 
 #include "pose.h"
 
-Pose::Pose()
+Pose::Pose():x_(0), y_(0), z_(0), angle_(0)
 {
 };
 

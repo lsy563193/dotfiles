@@ -4,6 +4,8 @@
 
 #include "ros/ros.h"
 #include "boost/thread.hpp"
+#include "pose.h"
+
 #ifndef PP_SLAM_H
 #define PP_SLAM_H
 class Slam
@@ -27,6 +29,8 @@ public:
 
 	void start(void);
 	void stop(void);
+
+	Pose pose;
 private:
 
 //	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map);
