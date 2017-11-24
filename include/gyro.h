@@ -5,12 +5,15 @@ class Gyro {
 public:
 
 	Gyro() {
-		angle_ = 0;   //[3:3]   = Angle
+		angle_ = 0;
 		angle_v_ = 0;
-		xacc = 0;        //[7:8]   = X Acceleration
-		yacc = 0;        //[9:10]  = Y Acceleration
-		zacc = 0;        //[11:12] = Z Acceleration
-		calibration = 255;
+		x_acc_ = 0;
+		y_acc_ = 0;
+		z_acc_ = 0;
+		init_x_acc_ = 0;
+		init_y_acc_ = 0;
+		init_z_acc_ = 0;
+		calibration_status_ = 255;
 		status_ = 0;
 	}
 
@@ -38,9 +41,15 @@ public:
 
 	int16_t getXAcc(void);
 
+	void setXAcc(int16_t x_acc);
+
 	int16_t getYAcc(void);
 
+	void setYAcc(int16_t y_acc);
+
 	int16_t getZAcc(void);
+
+	void setZAcc(int16_t z_acc);
 
 	uint8_t getCalibration(void);
 
@@ -52,13 +61,28 @@ public:
 
 	void setAngleV(float angle_v);
 
+	int16_t getInitXAcc() const;
+
+	int16_t getInitYAcc() const;
+
+	int16_t getInitZAcc() const;
+
+	void setInitXAcc(int16_t val);
+
+	void setInitYAcc(int16_t val);
+
+	void setInitZAcc(int16_t val);
+
 private:
 
-	float angle_;   //[3:3]   = Angle
-	float angle_v_;   //[3:3]   = Angle
-	float x_acc_;        //[7:8]   = X Acceleration
-	float y_acc_;        //[9:10]  = Y Acceleration
-	float z_acc_;        //[11:12] = Z Acceleration
+	float angle_;
+	float angle_v_;
+	float x_acc_;
+	float y_acc_;
+	float z_acc_;
+	float init_x_acc_;
+	float init_y_acc_;
+	float init_z_acc_;
 
 	bool calibration_status_;
 

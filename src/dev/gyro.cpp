@@ -19,17 +19,32 @@ Gyro gyro;
 
 int16_t Gyro::getXAcc(void)
 {
-	return xacc;
+	return x_acc_;
+}
+
+void Gyro::setXAcc(int16_t x_acc)
+{
+	x_acc_ = x_acc;
 }
 
 int16_t Gyro::getYAcc(void)
 {
-	return yacc;
+	return y_acc_;
+}
+
+void Gyro::setYAcc(int16_t y_acc)
+{
+	y_acc_ = y_acc;
 }
 
 int16_t Gyro::getZAcc(void)
 {
-	return zacc;
+	return z_acc_;
+}
+
+void Gyro::setZAcc(int16_t z_acc)
+{
+	z_acc_ = z_acc;
 }
 
 uint8_t Gyro::getCalibration(void)
@@ -55,6 +70,36 @@ float Gyro::getAngleV()
 void Gyro::setAngleV(float angle_v)
 {
 	angle_v_ = angle_v;
+}
+
+int16_t Gyro::getInitXAcc() const
+{
+	return init_x_acc_;
+}
+
+int16_t Gyro::getInitYAcc() const
+{
+	return init_y_acc_;
+}
+
+int16_t Gyro::getInitZAcc() const
+{
+	return init_z_acc_;
+}
+
+void Gyro::setInitXAcc(int16_t val)
+{
+	init_x_acc_ = val;
+}
+
+void Gyro::setInitYAcc(int16_t val)
+{
+	init_y_acc_ = val;
+}
+
+void Gyro::setInitZAcc(int16_t val)
+{
+	init_z_acc_ = val;
 }
 
 void Gyro::setStatus(void)

@@ -380,6 +380,20 @@ void *robotbase_routine(void*)
 			sensor.z_acc = (g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L];//in mG
 		else
 			sensor.z_acc = ((g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L] + last_z_acc) / 2;//in mG
+#if GYRO_FRONT_X_POS
+		gyro.setXAcc(sensor.x_acc);
+		gyro.setYAcc(sensor.y_acc);
+#elif GYRO_FRONT_X_NEG
+		gyro.setXAcc(-sensor.x_acc);
+		gyro.setYAcc(-sensor.y_acc);
+#elif GYRO_FRONT_Y_POS
+		gyro.setXAcc(sensor.y_acc)
+		gyro.setYAcc(-sensor.x_acc);
+#elif GYRO_FRONT_Y_NEG
+		gyro.setXAcc(-sensor.y_acc)
+		gyro.setYAcc(sensor.x_acc);
+#endif
+		gyro.setZAcc(sensor.z_acc);
 
 		sensor.plan = g_receive_stream[REC_PLAN];
 		if(sensor.plan)
