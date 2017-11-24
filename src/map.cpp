@@ -25,6 +25,10 @@ CostMap fw_map;
 CostMap ros_map;
 CostMap ros2_map;
 
+SlamMap slam_map;
+
+boost::mutex slam_map_mutex;
+
 #ifndef SHORTEST_PATH_V2
 #endif
 
@@ -96,7 +100,6 @@ Point32_t CostMap::get_curr_point(void)
 {
 	return {get_x_count(), get_y_count(),gyro.get_angle()};
 }
-
 
 int16_t CostMap::get_x_cell(void) {
 	return count_to_cell(xCount);
@@ -258,36 +261,6 @@ void CostMap::clear_blocks(void) {
 	set_cell(MAP, cell_to_count(get_x_cell()), cell_to_count(get_y_cell() - 1), CLEANED);
 }
 
-
-//int32_t CostMap::get_relative_y(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos) {
-//	double relative_sin, relative_cos;
-//	if(heading != relative_theta) {
-//		if(heading == 0) {
-//			relative_sin = 0;
-//			relative_cos = 1;
-//		} else if(heading == 900) {
-//			relative_sin = 1;
-//			relative_cos = 0;
-//		} else if(heading == 1800) {
-//			relative_sin = 0;
-//			relative_cos = -1;
-//		} else if(heading == -900) {
-//			relative_sin = -1;
-//			relative_cos = 0;
-//		} else {
-//			relative_sin = sin(deg_to_rad(heading, 10));
-//			relative_cos = cos(deg_to_rad(heading, 10));
-//		}
-//	}
-//
-//	if (using_point_pos)
-//		// Using robot current count as position.
-//		return get_y_count() + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) +
-//											((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
-//	else
-//		// Using middle of robot current cell as position.
-//		return cell_to_count(count_to_cell(get_y_count())) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
-//}
 Point32_t CostMap::get_relative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
 	double relative_sin, relative_cos;
 	if(point.TH != relative_theta) {
@@ -392,7 +365,7 @@ void CostMap::reset(uint8_t id)
 
 void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block, bool is_freshen_map,int limit)
 {
-	std::vector<int8_t> *p_map_data;
+	std::vector<int8_t> map_data;
 	uint32_t width, height;
 	float resolution;
 	double origin_x, origin_y;
@@ -401,20 +374,20 @@ void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_b
 	int32_t cx, cy;
 	int16_t cell_x,cell_y;
 	int8_t cost;
-	extern boost::mutex ros_map_mutex_;
-	ros_map_mutex_.lock();
-	width = robot::instance()->mapGetWidth();
-	height = robot::instance()->mapGetHeight();
-	resolution = robot::instance()->mapGetResolution();
-	origin_x = robot::instance()->mapGetOriginX();
-	origin_y = robot::instance()->mapGetOriginY();
-	p_map_data = robot::instance()->mapGetMapData();
+	slam_map_mutex.lock();
+	width = slam_map.getWidth();
+	height = slam_map.getHeight();
+	resolution = slam_map.getResolution();
+	origin_x = slam_map.getOriginX();
+	origin_y = slam_map.getOriginY();
+	map_data = slam_map.getData();
+	slam_map_mutex.unlock();
 //map_worldToMap(origin_x, origin_y,resolution, width, height, wx, wy, mx, my);
 //cost = getCost(p_map_data, width, mx, my);
-	int size = (*p_map_data).size();
+	int size = map_data.size();
 	for (int i = 0; i< size; i++) {
 		indexToCells(width, i, mx, my);
-		cost = (*p_map_data)[getIndex(width, mx, my)];
+		cost = map_data[getIndex(width, mx, my)];
 		to_world(origin_x, origin_y, resolution, mx, my, wx, wy);
 		worldToCount(wx, wy, cx, cy);
 		auto temp_cell_x = count_to_cell(cx);
@@ -456,7 +429,6 @@ void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_b
 			}
 		}
 	}
-	ros_map_mutex_.unlock();
 	//ROS_WARN("end ros costmap convert");
 //	ROS_ERROR("size = %d, width = %d, height = %d, origin_x = %lf, origin_y = %lf, wx = %lf, wy = %lf, mx = %d, my = %d, cx = %d, cy = %d, cost = %d.", size, width, height, origin_x, origin_y, wx, wy, mx, my, cx, cy,cost);
 }
@@ -1510,4 +1482,72 @@ bool CostMap::is_block(void)
 		}
 	}
 	return retval;
+}
+
+SlamMap::SlamMap()
+{
+}
+
+SlamMap::~SlamMap()
+{
+}
+
+void SlamMap::setWidth(uint32_t width)
+{
+	width_ = width;
+}
+
+uint32_t SlamMap::getWidth()
+{
+	return width_;
+}
+
+void SlamMap::setHeight(uint32_t height)
+{
+	height_ = height;
+}
+
+uint32_t SlamMap::getHeight()
+{
+	return height_;
+}
+
+void SlamMap::setResolution(float resolution)
+{
+	resolution_ = resolution;
+}
+
+float SlamMap::getResolution()
+{
+	return resolution_;
+}
+
+void SlamMap::setOriginX(double origin_x)
+{
+	origin_x_ = origin_x;
+}
+
+double SlamMap::getOriginX()
+{
+	return origin_x_;
+}
+
+void SlamMap::setOriginY(double origin_y)
+{
+	origin_y_ = origin_y;
+}
+
+double SlamMap::getOriginY()
+{
+	return origin_y_;
+}
+
+void SlamMap::setData(std::vector<int8_t> data)
+{
+	map_data_ = data;
+}
+
+std::vector<int8_t> SlamMap::getData()
+{
+	return map_data_;
 }

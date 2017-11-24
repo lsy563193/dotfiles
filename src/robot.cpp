@@ -9,6 +9,7 @@
 #include <pp.h>
 #include <pp/SetLidar.h>
 #include "laser.hpp"
+#include "robot.hpp"
 
 #include "std_srvs/Empty.h"
 
@@ -29,7 +30,6 @@ int16_t slam_error_count;
 int OBS_adjust_count = 50;
 
 
-boost::mutex ros_map_mutex_;
 
 //extern pp::x900sensor sensor;
 robot::robot():offset_angle_(0),saved_offset_angle_(0)
@@ -275,15 +275,14 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
-	ros_map_mutex_.lock();
-	width_ = map->info.width;
-	height_ = map->info.height;
-	resolution_ = map->info.resolution;
-	origin_x_ = map->info.origin.position.x;
-	origin_y_ = map->info.origin.position.y;
-	map_data_ = map->data;
-	map_ptr_ = &(map_data_);
-	ros_map_mutex_.unlock();
+	slam_map_mutex.lock();
+	slam_map.setWidth(map->info.width);
+	slam_map.setHeight(map->info.height);
+	slam_map.setResolution(map->info.resolution);
+	slam_map.setOriginX(map->info.origin.position.x);
+	slam_map.setOriginY(map->info.origin.position.y);
+	slam_map.setData(map->data);
+	slam_map_mutex.unlock();
 
 
 	/*for exploration update map*/
