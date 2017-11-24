@@ -255,12 +255,12 @@ void remote_move(void)
 			case REMOTE_MODE_LEFT:
 			case REMOTE_MODE_RIGHT:
 			{
-				auto diff = ranged_angle(remote_target_angle - gyro.get_angle());
+				auto diff = ranged_angle(remote_target_angle - robot::instance()->getPoseAngle());
 
 				if (std::abs(diff) < 10) {
 					wheel.stop();
 					ROS_INFO("%s %d: remote_target_angle: %d\tGyro: %d\tDiff: %d", __FUNCTION__, __LINE__, remote_target_angle,
-									 gyro.get_angle(), diff);
+									 robot::instance()->getPoseAngle(), diff);
 					set_move_flag_(REMOTE_MODE_STAY);
 					tick_ = 0;
 				}
@@ -438,10 +438,10 @@ void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beeper.play_for_command(VALID);
-		remote_target_angle = gyro.get_angle() + 300;
+		remote_target_angle = robot::instance()->getPoseAngle() + 300;
 		if (remote_target_angle >= 3600)
 			remote_target_angle -= 3600;
-		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro.get_angle());
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, robot::instance()->getPoseAngle());
 		set_move_flag_(REMOTE_MODE_LEFT);
 	}
 	else
@@ -461,8 +461,8 @@ void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
 	else if (get_move_flag_() == REMOTE_MODE_STAY)
 	{
 		beeper.play_for_command(VALID);
-		remote_target_angle = ranged_angle(gyro.get_angle() - 300);
-		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, gyro.get_angle());
+		remote_target_angle = ranged_angle(robot::instance()->getPoseAngle() - 300);
+		ROS_INFO("%s %d: angle: 300(%d)\tcurrent: %d", __FUNCTION__, __LINE__, remote_target_angle, robot::instance()->getPoseAngle());
 		set_move_flag_(REMOTE_MODE_RIGHT);
 	}
 	else

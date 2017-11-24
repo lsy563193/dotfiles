@@ -167,7 +167,7 @@ uint16_t path_get_robot_direction()
 
 //int16_t path_lane_distance(bool is_min)
 //{
-//	int angle = gyro.get_angle();
+//	int angle = robot::instance()->getPoseAngle();
 //	if(is_min)
 //		angle = uranged_angle(angle + 1800);
 //	angle /= 10;
@@ -1120,7 +1120,7 @@ bool path_next_fw(const Cell_t &start) {
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 			Cell_t cell;
 			auto point = CostMap::get_curr_point();
-			point.TH = ranged_angle(gyro.get_angle() + angle);
+			point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
 			cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
 			mt.set(MT_LINEARMOVE);
@@ -1547,7 +1547,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 	Cell_t cell;
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 	auto point = CostMap::get_curr_point();
-	point.TH = ranged_angle(gyro.get_angle() + angle);
+	point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
 	cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 		path.clear();
 	path.push_front(cell);

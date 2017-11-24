@@ -1301,7 +1301,7 @@ int Laser::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = gyro.get_angle() / 10;
+	int cur_angle = robot::instance()->getPoseAngle() / 10;
 #if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;
