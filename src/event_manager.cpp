@@ -1001,7 +1001,7 @@ void df_slam_error(bool state_now, bool state_last)
 	if (!relaunch)
 	{
 		system("roslaunch pp karto_slam.launch &");
-		robotbase_restore_slam_correction();
+		//robotbase_restore_slam_correction();
 		MotionManage::s_slam->isMapReady(false);
 		relaunch = true;
 		led.set_mode(LED_FLASH, LED_GREEN, 1000);

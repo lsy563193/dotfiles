@@ -113,22 +113,6 @@ public:
 		return angle_v_;
 	}
 
-
-	float getLinearX() const
-	{
-		return linear_x_;
-	}
-
-	float getLinearY() const
-	{
-		return linear_y_;
-	}
-
-	float getLinearZ() const
-	{
-		return linear_z_;
-	}
-
 	int16_t getPoseAngle()
 	{
 		return pose.getAngle();
@@ -147,21 +131,6 @@ public:
 	float getPoseZ()
 	{
 		return pose.getZ();
-	}
-
-	float getOdomPositionX() const
-	{
-		return odom_pose_x_;
-	}
-
-	float getOdomPositionY() const
-	{
-		return odom_pose_y_;
-	}
-
-	double getOdomPositionYaw() const
-	{
-		return odom_pose_yaw_;
 	}
 
 	float getRobotCorrectionX() const
@@ -234,15 +203,7 @@ private:
 	/* 1 byte */
 	float	angle_v_;
 
-	float	linear_x_;
-	float	linear_y_;
-	float	linear_z_;
-
 	Pose pose;
-
-	float	odom_pose_x_;
-	float	odom_pose_y_;
-	double	odom_pose_yaw_;
 
 	// This is for the slam correction variables.
 	float	robot_correction_x_;

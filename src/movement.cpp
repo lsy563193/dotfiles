@@ -9,6 +9,7 @@
 #include <bumper.h>
 #include <tilt.h>
 #include <wheel.h>
+#include <odom.h>
 
 #include "robot.hpp"
 #include "core_move.h"
@@ -252,17 +253,16 @@ void quick_back(uint8_t speed, uint16_t distance)
 {
 	// The distance is for mm.
 	float saved_x, saved_y;
-	saved_x = robot::instance()->getOdomPositionX();
-	saved_y = robot::instance()->getOdomPositionY();
+	saved_x = odom.getX();
+	saved_y = odom.getY();
 	// Quickly move back for a distance.
 	wheel.set_dir_backward();
 	wheel.reset_step();
 	wheel.set_speed(speed, speed);
-	while (sqrtf(powf(saved_x - robot::instance()->getOdomPositionX(), 2) +
-							 powf(saved_y - robot::instance()->getOdomPositionY(), 2)) < (float) distance / 1000)
+	while (sqrtf(powf(saved_x - odom.getX(), 2) + powf(saved_y - odom.getY(), 2)) < (float) distance / 1000)
 	{
-		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f.", __FUNCTION__, __LINE__, saved_x, saved_y,
-							robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY());
+		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f."
+				,__FUNCTION__, __LINE__, saved_x, saved_y, odom.getX(), odom.getY());
 		if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect || ev.cliff_all_triggered)
 			break;
 		usleep(20000);

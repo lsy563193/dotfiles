@@ -9,6 +9,7 @@
 #include "pp.h"
 #include "wheel.h"
 #include "error.h"
+#include "odom.h"
 
 PPTargetType g_plan_path;
 std::deque<Cell_t> g_passed_path;
@@ -205,8 +206,8 @@ void cm_self_check(void)
 	if (ev.bumper_jam || ev.cliff_jam || omni.stop() || ev.laser_stuck)
 	{
 		// Save current position for moving back detection.
-		saved_pos_x = robot::instance()->getOdomPositionX();
-		saved_pos_y = robot::instance()->getOdomPositionY();
+		saved_pos_x = odom.getX();
+		saved_pos_y = odom.getY();
 	}
 
 	if (ev.oc_wheel_left || ev.oc_wheel_right)
@@ -307,7 +308,7 @@ void cm_self_check(void)
 				ev.cliff_jam = false;
 			}
 			float distance;
-			distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
 			if (fabsf(distance) > 0.05f)
 			{
 				if (++resume_cnt >= 3)
@@ -319,8 +320,8 @@ void cm_self_check(void)
 				else
 				{
 					wheel.stop();
-					saved_pos_x = robot::instance()->getOdomPositionX();
-					saved_pos_y = robot::instance()->getOdomPositionY();
+					saved_pos_x = odom.getX();
+					saved_pos_y = odom.getY();
 				}
 			}
 		}
@@ -340,7 +341,7 @@ void cm_self_check(void)
 				case 2: // Move back for the second time.
 				{
 					float distance;
-					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+					distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
 					if (fabsf(distance) > 0.05f)
 					{
 						wheel.stop();
@@ -355,15 +356,15 @@ void cm_self_check(void)
 							bumper_jam_state++;
 							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
 						}
-						saved_pos_x = robot::instance()->getOdomPositionX();
-						saved_pos_y = robot::instance()->getOdomPositionY();
+						saved_pos_x = odom.getX();
+						saved_pos_y = odom.getY();
 					}
 					break;
 				}
 				case 3: // Move back for the third time.
 				{
 					float distance;
-					distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+					distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
 					if (fabsf(distance) > 0.05f)
 					{
 						// If cliff jam during bumper self resume.
@@ -498,7 +499,7 @@ void cm_self_check(void)
 				ev.laser_stuck = false;
 			}
 
-			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			float distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
 			if (fabsf(distance) > 0.35f)
 			{
 				ROS_WARN("%s %d: Laser stuck.", __FUNCTION__, __LINE__);

@@ -39,6 +39,7 @@ FILE(GLOB PP_SRC
 	src/motion_manage.cpp
 	src/move_type.cpp
 	src/movement.cpp
+	src/odom.cpp
 	src/path_planning.cpp
 	src/pose.cpp
 	src/regulator.cpp

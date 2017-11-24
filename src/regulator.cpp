@@ -23,6 +23,7 @@
 #include <tilt.h>
 #include <beep.h>
 #include <wall_follow.h>
+#include <odom.h>
 #include "clean_mode.h"
 
 #define TURN_REGULATOR_WAITING_FOR_LASER 1
@@ -273,8 +274,8 @@ BackRegulator::BackRegulator() : counter_(0), speed_(BACK_MAX_SPEED), distance(0
 
 void BackRegulator::setTarget()
 {
-	s_pos_x = robot::instance()->getOdomPositionX();
-	s_pos_y = robot::instance()->getOdomPositionY();
+	s_pos_x = odom.getX();
+	s_pos_y = odom.getY();
 	if (g_robot_slip){
 		g_back_distance = 0.30;
 		g_slip_backward= true;
@@ -297,8 +298,7 @@ void BackRegulator::setTarget()
 
 bool BackRegulator::isReach()
 {
-	distance = sqrtf(powf(s_pos_x - robot::instance()->getOdomPositionX(), 2) +
-				powf(s_pos_y - robot::instance()->getOdomPositionY(), 2));
+	distance = sqrtf(powf(s_pos_x - odom.getX(), 2) + powf(s_pos_y - odom.getY(), 2));
 	ROS_DEBUG("%s, %d: BackRegulator distance %f", __FUNCTION__, __LINE__, distance);
 	/*---------slip detect------*/
 	if(g_robot_slip && g_slip_cnt >= 2){

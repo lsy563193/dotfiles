@@ -11,6 +11,8 @@
 
 #include <sleep.h>
 #include <clean_timer.h>
+#include <odom.h>
+
 #define _H_LEN 2
 #if __ROBOT_X400
 uint8_t g_receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -66,9 +68,6 @@ boost::mutex odom_mutex;
 
 // Lock for g_send_stream
 boost::mutex g_send_stream_mutex;
-
-// Odom coordinate
-float pose_x, pose_y;
 
 int robotbase_init(void)
 {
@@ -242,8 +241,6 @@ void *robotbase_routine(void*)
 {
 	pthread_detach(pthread_self());
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, is up!",__FUNCTION__,__LINE__);
-	float	th_last, vth;
-	float vx,th,dt;
 	uint16_t	lw_speed, rw_speed;
 
 	ros::Rate	r(_RATE);
@@ -252,7 +249,7 @@ void *robotbase_routine(void*)
 	//Debug
 	uint16_t error_count = 0;
 
-	nav_msgs::Odometry			odom;
+	nav_msgs::Odometry			odom_msg;
 	tf::TransformBroadcaster	odom_broad;
 	geometry_msgs::Quaternion	odom_quat;
 
@@ -261,8 +258,6 @@ void *robotbase_routine(void*)
 	ros::Publisher	odom_pub, sensor_pub;
 	ros::NodeHandle	robotsensor_node;
 	ros::NodeHandle	odom_node;
-
-	th_last = vth = pose_x = pose_y = 0.0;
 
 	sensor_pub = robotsensor_node.advertise<pp::x900sensor>("/robot_sensor",1);
 	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",1);
@@ -430,32 +425,35 @@ void *robotbase_routine(void*)
 		pthread_mutex_unlock(&serial_data_ready_mtx);
 		sensor_pub.publish(sensor);
 
-		/*------------publish odom and robot_sensor topic --------*/
+		/*------------setting for odom and publish odom topic --------*/
+		odom.setMovingSpeed(static_cast<float>((sensor.lw_vel + sensor.rw_vel) / 2.0));
+		odom.setAngle(sensor.angle);
+		odom.setAngleSpeed(sensor.angle_v);
 		cur_time = ros::Time::now();
-		vx = (sensor.lw_vel + sensor.rw_vel) / 2.0;
-		th = sensor.angle * 0.01745;	//degree into radian
+		double angle_rad, dt;
+		angle_rad = static_cast<float>(odom.getAngle() * 0.01745);	//degree into radian
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
-		pose_x += (vx * cos(th) - 0 * sin(th)) * dt;
-		pose_y += (vx * sin(th) + 0 * cos(th)) * dt;
-		odom_quat = tf::createQuaternionMsgFromYaw(th);
-		odom.header.stamp = cur_time;
-		odom.header.frame_id = "odom";
-		odom.child_frame_id = "base_link";
-		odom.pose.pose.position.x = pose_x;
-		odom.pose.pose.position.y = pose_y;
-		odom.pose.pose.position.z = 0.0;
-		odom.pose.pose.orientation = odom_quat;
-		odom.twist.twist.linear.x = vx;
-		odom.twist.twist.linear.y = 0.0;
-		odom.twist.twist.angular.z = vth;
-		odom_pub.publish(odom);
+		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+		odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+		odom_quat = tf::createQuaternionMsgFromYaw(angle_rad);
+		odom_msg.header.stamp = cur_time;
+		odom_msg.header.frame_id = "odom";
+		odom_msg.child_frame_id = "base_link";
+		odom_msg.pose.pose.position.x = odom.getX();
+		odom_msg.pose.pose.position.y = odom.getY();
+		odom_msg.pose.pose.position.z = 0.0;
+		odom_msg.pose.pose.orientation = odom_quat;
+		odom_msg.twist.twist.linear.x = odom.getMovingSpeed();
+		odom_msg.twist.twist.linear.y = 0.0;
+		odom_msg.twist.twist.angular.z = odom.getAngleSpeed();
+		odom_pub.publish(odom_msg);
 
 		odom_trans.header.stamp = cur_time;
 		odom_trans.header.frame_id = "odom";
 		odom_trans.child_frame_id = "base_link";
-		odom_trans.transform.translation.x = pose_x;
-		odom_trans.transform.translation.y = pose_y;
+		odom_trans.transform.translation.x = odom.getX();
+		odom_trans.transform.translation.y = odom.getY();
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
@@ -609,9 +607,10 @@ void robotbase_reset_odom_pose(void)
 {
 	// Reset the odom pose to (0, 0)
 	boost::mutex::scoped_lock(pose_mutex);
-	pose_x = pose_y = 0;
+	odom.setX(0);
+	odom.setY(0);
 }
-
+/*
 void robotbase_restore_slam_correction()
 {
 	// For restarting slam
@@ -620,4 +619,4 @@ void robotbase_restore_slam_correction()
 	pose_y += robot::instance()->getRobotCorrectionY();
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
 	ROS_INFO("%s %d: Restore slam correction as x: %f, y: %f, angle: %f.", __FUNCTION__, __LINE__, robot::instance()->getRobotCorrectionX(), robot::instance()->getRobotCorrectionY(), robot::instance()->getRobotCorrectionYaw());
-}
+}*/

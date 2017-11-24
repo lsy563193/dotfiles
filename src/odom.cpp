@@ -4,6 +4,16 @@
 
 #include "odom.h"
 
+Odom odom;
+
+Odom::Odom():moving_speed_(0), angle_speed_(0)
+{
+}
+
+Odom::~Odom()
+{
+}
+
 void Odom::setX(float x)
 {
 	pose.setX(x);

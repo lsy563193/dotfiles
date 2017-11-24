@@ -5,6 +5,8 @@
 #ifndef PP_ODOM_H
 #define PP_ODOM_H
 
+#include "pose.h"
+
 class Odom
 {
 public:
@@ -34,4 +36,6 @@ private:
 	// In degrees.
 	float angle_speed_;
 };
+
+extern Odom odom;
 #endif //PP_ODOM_H

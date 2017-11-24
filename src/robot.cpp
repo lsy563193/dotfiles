@@ -8,6 +8,7 @@
 #include <std_srvs/SetBool.h>
 #include <pp.h>
 #include <pp/SetLidar.h>
+#include <odom.h>
 #include "laser.hpp"
 #include "robot.hpp"
 
@@ -66,10 +67,6 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 
 	temp_spot_set_ = false;
 
-	linear_x_ = 0.0;
-	linear_y_ = 0.0;
-	linear_z_ = 0.0;
-
 	resetCorrection();
 
 	start_time = time(NULL);
@@ -125,10 +122,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	float tmp_x = 0, tmp_y = 0;
 	double tmp_yaw = 0;
 
-	linear_x_ = msg->twist.twist.linear.x;
-	linear_y_ = msg->twist.twist.linear.y;
-	linear_z_ = msg->twist.twist.linear.z;
-	//odom_eualr_angle;
+	float	odom_pose_x_;
+	float	odom_pose_y_;
+	double	odom_pose_yaw_;
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
@@ -172,12 +168,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
 	{
 		//ROS_INFO("SLAM = 0");
-		odom_pose_x_ = msg->pose.pose.position.x;
-		odom_pose_y_ = msg->pose.pose.position.y;
+		odom_pose_x_ = odom.getX();
+		odom_pose_y_ = odom.getY();
 		odom_pose_yaw_ = tf::getYaw(msg->pose.pose.orientation);
-		tmp_x = odom_pose_x_;
-		tmp_y = odom_pose_y_;
-		tmp_yaw = odom_pose_yaw_;
 	}
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
@@ -227,7 +220,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	}
 
 #if USE_ROBOT_TF
-	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_, slam_correction_x_, slam_correction_y_, slam_correction_yaw_, robot_correction_x_, robot_correction_y_, robot_correction_yaw_, robot_x_, robot_y_, robot_yaw_);
+	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_,
+					slam_correction_x_, slam_correction_y_, slam_correction_yaw_,
+					robot_correction_x_, robot_correction_y_, robot_correction_yaw_,
+					robot_x_, robot_y_, robot_yaw_);
 	//robot_x = (tmp_x + robot_x) / 2;
 	//robot_y = (tmp_y + robot_y) / 2;
 	//robot_yaw = tmp_yaw;

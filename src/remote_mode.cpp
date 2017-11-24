@@ -29,6 +29,7 @@
 #include <beep.h>
 #include <charger.h>
 #include <wheel.h>
+#include <odom.h>
 #include "wav.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -167,8 +168,8 @@ void remote_move(void)
 				wheel.set_dir_backward();
 				wheel.set_speed(20, 20);
 
-				float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
-				ROS_DEBUG("%s %d: current pos(%f, %f), distance:%f.", __FUNCTION__, __LINE__, robot::instance()->getOdomPositionX(), robot::instance()->getOdomPositionY(), distance);
+				float distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
+				ROS_DEBUG("%s %d: current pos(%f, %f), distance:%f.", __FUNCTION__, __LINE__, odom.getX(), odom.getY(), distance);
 				if (distance < (remote_rcon_triggered ? 0.06f : 0.02f))
 					break;
 
@@ -192,8 +193,8 @@ void remote_move(void)
 					{
 						// Move back for one more time.
 						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
-						saved_pos_x = robot::instance()->getOdomPositionX();
-						saved_pos_y = robot::instance()->getOdomPositionY();
+						saved_pos_x = odom.getX();
+						saved_pos_y = odom.getY();
 						continue;
 					}
 				}
@@ -217,8 +218,8 @@ void remote_move(void)
 					{
 						// Move back for one more time.
 						ROS_WARN("%s %d: Move back for one more time.", __FUNCTION__, __LINE__);
-						saved_pos_x = robot::instance()->getOdomPositionX();
-						saved_pos_y = robot::instance()->getOdomPositionY();
+						saved_pos_x = odom.getX();
+						saved_pos_y = odom.getY();
 						continue;
 					}
 				}
@@ -233,10 +234,10 @@ void remote_move(void)
 			{
 				if (ev.bumper_triggered || ev.cliff_triggered || remote_rcon_triggered)
 				{
-					if (robot::instance()->getLinearX() <= 0 && robot::instance()->getLinearY() <= 0)
+					if (odom.getMovingSpeed() <= 0)
 					{
-						saved_pos_x = robot::instance()->getOdomPositionX();
-						saved_pos_y = robot::instance()->getOdomPositionY();
+						saved_pos_x = odom.getX();
+						saved_pos_y = odom.getY();
 						ROS_WARN("%s %d: Move back. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
 						set_move_flag_(REMOTE_MODE_BACKWARD);
 					}

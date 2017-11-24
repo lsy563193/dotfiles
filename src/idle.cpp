@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "config.h"
 #include <thread>
+#include <odom.h>
 #include "dev.h"
 #include "idle.h"
 #include "robot.hpp"
@@ -91,8 +92,8 @@ void idle(void)
 
 	if (cs_is_paused())
 	{
-		saved_pos_x = robot::instance()->getOdomPositionX();
-		saved_pos_y = robot::instance()->getOdomPositionY();
+		saved_pos_x = odom.getX();
+		saved_pos_y = odom.getY();
 	}
 
 	while(ros::ok())
@@ -120,7 +121,7 @@ void idle(void)
 
 		if (cs_is_paused())
 		{
-			float distance = sqrtf(powf(saved_pos_x - robot::instance()->getOdomPositionX(), 2) + powf(saved_pos_y - robot::instance()->getOdomPositionY(), 2));
+			float distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
 			if (distance > 0.1f){
 				cs_paused_setting();
 				g_robot_stuck = false;
