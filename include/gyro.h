@@ -6,6 +6,7 @@ public:
 
 	Gyro() {
 		angle_ = 0;   //[3:3]   = Angle
+		angle_v_ = 0;
 		xacc = 0;        //[7:8]   = X Acceleration
 		yacc = 0;        //[9:10]  = Y Acceleration
 		zacc = 0;        //[11:12] = Z Acceleration
@@ -47,9 +48,14 @@ public:
 
 	void set_angle(int16_t angle);
 
+	float getAngleV();
+
+	void setAngleV(float angle_v);
+
 private:
 
 	int16_t angle_;   //[3:3]   = Angle
+	float angle_v_;   //[3:3]   = Angle
 	int16_t xacc;        //[7:8]   = X Acceleration
 	int16_t yacc;        //[9:10]  = Y Acceleration
 	int16_t zacc;        //[11:12] = Z Acceleration

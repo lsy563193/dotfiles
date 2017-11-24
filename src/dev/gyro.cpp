@@ -41,6 +41,16 @@ void Gyro::set_angle(int16_t angle)
 	angle_ = angle;
 }
 
+float Gyro::getAngleV()
+{
+	return angle_v_;
+}
+
+void Gyro::setAngleV(float angle_v)
+{
+	angle_v_ = angle_v;
+}
+
 void Gyro::set_status(void)
 {
 	status_ = true;
