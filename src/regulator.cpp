@@ -1375,7 +1375,7 @@ bool GoToChargerRegulator::isSwitch()
 		if(gyro_step < 360)
 		{
 			// Handle for angle
-			current_angle = robot::instance()->getAngle();
+			current_angle = robot::instance()->getPoseAngle();
 			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
 			ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
 			if (angle_offset < 0)
@@ -1737,7 +1737,7 @@ bool GoToChargerRegulator::isSwitch()
 
 		if(gyro_step < 360)
 		{
-			current_angle = robot::instance()->getAngle();
+			current_angle = robot::instance()->getPoseAngle();
 			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (check_position_dir == ROUND_LEFT && angle_offset > 0)

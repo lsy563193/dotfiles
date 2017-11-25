@@ -79,11 +79,6 @@ public:
 		return is_tf_ready_;
 	}
 
-	float getAngle() const
-	{
-		return angle_;
-	}
-
 	void offsetAngle(float angle)
 	{
 		boost::mutex::scoped_lock(offset_angle_metux_);
@@ -195,9 +190,6 @@ private:
 	float offset_angle_;
 	float start_angle_;
 	float saved_offset_angle_;
-
-	/* 1 byte */
-	float	angle_;
 
 	bool	is_align_active_;
 	/* 1 byte */

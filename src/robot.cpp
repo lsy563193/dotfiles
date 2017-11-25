@@ -102,8 +102,6 @@ void robot::init()
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
-	angle_ = msg->angle;
-
 	angle_v_ = msg->angle_v;
 
 	is_sensor_ready_ = true;

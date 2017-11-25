@@ -170,7 +170,7 @@ bool Gyro::waitForOn(void)
 			success_count++;
 		}
 		ROS_DEBUG("Opening%d, angle_v_ = %f.angle = %f.", success_count, robot::instance()->getAngleV(),
-							robot::instance()->getAngle());
+							gyro.getAngle());
 		if (success_count == 5)
 		{
 			if (isStable())
@@ -217,7 +217,7 @@ bool Gyro::isStable()
 		usleep(10000);
 		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
 			break;
-		current_angle = robot::instance()->getAngle();
+		current_angle = gyro.getAngle();
 		ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.", check_stable_count,
 							robot::instance()->getAngleV(), current_angle, average_angle);
 		if (current_angle > 0.02 || current_angle < -0.02)
