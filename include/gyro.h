@@ -1,6 +1,13 @@
 #ifndef __GYRO_H__
 #define __GYRO_H__
 
+typedef enum{
+	WAIT_FOR_OPEN = 0,
+	WAIT_FOR_STABLE,
+	WAIT_FOR_REOPEN,
+	WAIT_FOR_CLOSE
+}GyroState;
+
 class Gyro {
 public:
 
@@ -24,6 +31,8 @@ public:
 	void setOff(void);
 
 	void setOn(void);
+
+	void reOpen(void);
 
 	void setStatus(void);
 
@@ -87,6 +96,14 @@ private:
 	bool calibration_status_;
 
 	bool status_;
+	GyroState open_state_;
+	// For gyro opening
+	uint8_t error_count_;
+	uint8_t success_count_;
+	uint8_t skip_count_;
+	float average_angle_;
+	uint8_t check_stable_count_;
+	float last_angle_v_;
 };
 
 extern Gyro gyro;

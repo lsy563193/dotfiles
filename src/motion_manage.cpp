@@ -579,11 +579,43 @@ void MotionManage::init_after_slam()
 
 MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 {
-	init_before_gyro();
+	// Initialize motors and map.
+	if (!(g_is_manual_pause || g_robot_stuck || g_is_low_bat_pause || g_resume_cleaning))
+	{
+		reset_work_time();
+		// Push the start point into the home point list
+		ROS_INFO("map_init-----------------------------");
+		cost_map.reset(MAP);
+		robot::instance()->initOdomPosition();
+		cost_map.mark_robot(MAP);
+
+		g_have_seen_charger = false;
+		g_start_point_seen_charger = false;
+
+		g_homes.resize(1,g_zero_home);
+		g_home_gen_rosmap = true;
+		g_home_way_list.clear();
+	}
+
+	fw_map.reset(MAP);
+	ros_map.reset(MAP);
+	ros2_map.reset(MAP);
+
+	cs.set(CS_OPEN_GYRO);
+	while (ros::ok())
+	{
+		if (cs.is_open_gyro())
+		{
+			gyro.waitForOn();
+			if (gyro.isOn())
+				break;
+		}
+	}
+/*	init_before_gyro();
 	initSucceeded(true);
 
 	if (!gyro.waitForOn())
-		return;
+		return;*/
 
 	switch (cm_get())
 	{
@@ -659,6 +691,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if(!slam_init())
 		return;
 	init_after_slam();
+	cs.set(CS_CLEAN);
 }
 
 MotionManage::~MotionManage()
