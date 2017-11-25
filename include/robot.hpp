@@ -103,11 +103,6 @@ public:
 		return saved_offset_angle_;
 	};
 
-	float getAngleV() const
-	{
-		return angle_v_;
-	}
-
 	int16_t getPoseAngle()
 	{
 		return pose.getAngle();
@@ -192,8 +187,6 @@ private:
 	float saved_offset_angle_;
 
 	bool	is_align_active_;
-	/* 1 byte */
-	float	angle_v_;
 
 	Pose pose;
 

@@ -166,11 +166,10 @@ bool Gyro::waitForOn(void)
 		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
 			break;
 
-		if (skip_count == 0 && robot::instance()->getAngleV() != 0){
+		if (skip_count == 0 && getAngleV() != 0){
 			success_count++;
 		}
-		ROS_DEBUG("Opening%d, angle_v_ = %f.angle = %f.", success_count, robot::instance()->getAngleV(),
-							gyro.getAngle());
+		ROS_DEBUG("Opening%d, angle_v_ = %f.angle = %f.", success_count, getAngleV(), getAngle());
 		if (success_count == 5)
 		{
 			if (isStable())
@@ -217,9 +216,9 @@ bool Gyro::isStable()
 		usleep(10000);
 		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
 			break;
-		current_angle = gyro.getAngle();
+		current_angle = getAngle();
 		ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.", check_stable_count,
-							robot::instance()->getAngleV(), current_angle, average_angle);
+							getAngleV(), current_angle, average_angle);
 		if (current_angle > 0.02 || current_angle < -0.02)
 		{
 			Gyro::setOff();
@@ -266,18 +265,18 @@ void Gyro::setOff()
 	uint8_t sum = 0;
 
 	ROS_INFO("waiting for gyro stop");
-	auto angle_v = robot::instance()->getAngleV();
+	auto angle_v = getAngleV();
 
 	while(count <= 10)
 	{
 		controller.set(CTL_GYRO, 0x00);
 		usleep(20000);
 		count++;
-		if (robot::instance()->getAngleV() != angle_v){
+		if (getAngleV() != angle_v){
 			count=0;
 			sum++;
-			ROS_DEBUG("Current angle_v_ = %f, angle_v_ = %f, sum = %d.", robot::instance()->getAngleV(), angle_v, sum);
-			angle_v = robot::instance()->getAngleV();
+			ROS_DEBUG("Current angle_v_ = %f, angle_v_ = %f, sum = %d.", getAngleV(), angle_v, sum);
+			angle_v = getAngleV();
 			if (sum > 10) {
 				error.set(Error_Code_Gyro);
 				ROS_WARN("%s,%d, gyro off failed!",__FUNCTION__,__LINE__);
