@@ -21,7 +21,7 @@
 #include "remote_mode.h"
 #include "random_runing.h"
 #include "sleep.h"
-
+#include "wall_follow_multi.h"
 
 void *core_move_thread(void *)
 {
@@ -39,6 +39,8 @@ void *core_move_thread(void *)
 				User_Interface();
 				break;
 			case Clean_Mode_WallFollow:
+				ROS_INFO("\n-------wall follow mode------\n");
+				Map_Wall_Follow(Map_Wall_Follow_Escape_Trapped);
 				break;
 			case Clean_Mode_RandomMode:
 				Random_Running_Mode();
