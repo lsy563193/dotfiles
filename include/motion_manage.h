@@ -63,6 +63,9 @@ private:
 	void get_aligment_angle();
 	bool slam_init();
 	void init_after_slam();
+
+	//For CS_BACK_FROM_CHARGER
+	Pose charger_pose;
 };
 
 #endif //PP_MOTION_MANAGE_H

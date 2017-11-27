@@ -8,6 +8,10 @@
 #include <pp/x900sensor.h>
 extern pp::x900sensor sensor;
 
+// for wheel direction
+#define FORWARD						0
+#define BACKWARD					1
+
 class Wheel {
 public:
 	Wheel() {

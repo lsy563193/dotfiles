@@ -355,10 +355,6 @@ typedef enum{
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
 
-// for wheel direction
-#define FORWARD						0
-#define BACKWARD					1
-
 //regulator type
 #define REG_TYPE_NONE			0
 #define REG_TYPE_WALLFOLLOW		1

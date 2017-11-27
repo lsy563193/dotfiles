@@ -22,6 +22,8 @@
 #include <tilt.h>
 #include <led.h>
 #include <charger.h>
+#include <event_manager.h>
+#include <odom.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -581,6 +583,23 @@ void MotionManage::init_after_slam()
 
 MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 {
+	// Set variables.
+	if(!cs_is_paused())
+		g_from_station = 0;
+	g_motion_init_succeeded = false;
+
+	bool remote_home_during_pause = false;
+	if (cs_is_paused() && ev.remote_home)
+		remote_home_during_pause = true;
+	event_manager_reset_status();
+	if (remote_home_during_pause)
+	{
+		ev.remote_home = true;
+		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
+	}
+
+	reset_work_time();
+
 	// Initialize motors and map.
 	if (!(g_is_manual_pause || g_robot_stuck || g_is_low_bat_pause || g_resume_cleaning))
 	{
@@ -623,7 +642,26 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			// switch
 			gyro.waitForOn();
 			if (gyro.isOn())
+			{
+				if (charger.is_on_stub())
+				{
+					cs.set(CS_BACK_FROM_CHARGER);
+					charger_pose.setX(odom.getX());
+					charger_pose.setY(odom.getY());
+				}
+				else
+					cs.set(CS_OPEN_LASER);
+			}
+		}
+		else if (cs.is_back_from_charger())
+		{
+			// run
+			wheel.set_speed(20, 20);
+
+			// switch
+			if (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5)
 				cs.set(CS_OPEN_LASER);
+
 		}
 		else if (cs.is_open_laser())
 		{
@@ -634,7 +672,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			if (laser.isScan2Ready() == 1)
 			{
 				// Open laser succeeded.
-				if (g_is_manual_pause || g_is_low_bat_pause)
+				if ((g_is_manual_pause || g_is_low_bat_pause) && slam.isMapReady())
 					cs.set(CS_CLEAN);
 				else
 					cs.set(CS_ALIGN);

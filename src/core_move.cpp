@@ -155,6 +155,12 @@ void cm_apply_cs(void) {
 			wav.play(WAV_CLEANING_START);
 		}
 	}
+	else if (cs.is_back_from_charger())
+	{
+		path_set_home(cost_map.get_curr_cell());
+		cs_work_motor();
+		wheel.set_dir_backward();
+	}
 	else if (cs.is_open_laser())
 	{
 		cs_work_motor();

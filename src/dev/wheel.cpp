@@ -51,10 +51,12 @@ void Wheel::set_dir_backward(void)
 {
 	left_direction = BACKWARD;
 	right_direction = BACKWARD;
+	//ROS_INFO("%s %d: dir left(%d), dir right(%d).", __FUNCTION__, __LINE__, left_direction, right_direction);
 }
 
 void Wheel::set_dir_forward(void)
 {
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 	left_direction = FORWARD;
 	right_direction = FORWARD;
 }
@@ -240,6 +242,8 @@ void Wheel::set_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p
 	int8_t signed_left_speed = (int8_t)Left;
 	int8_t signed_right_speed = (int8_t)Right;
 	set_pid_param(reg_type, PID_p, PID_i, PID_d);
+	//ROS_INFO("%s %d: Signed speed: left(%d), right(%d), dir left(%d), dir right(%d).",
+	//		 __FUNCTION__, __LINE__, signed_left_speed, signed_right_speed, left_direction, right_direction);
 
 	if(left_direction == BACKWARD)
 		signed_left_speed *= -1;
@@ -247,6 +251,7 @@ void Wheel::set_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p
 		signed_right_speed *= -1;
 	left_pid.target_speed = (float)signed_left_speed;
 	right_pid.target_speed = (float)signed_right_speed;
+	//ROS_INFO("%s %d: PID Target speed: left(%f), right(%f).", __FUNCTION__, __LINE__, left_pid.target_speed, right_pid.target_speed);
 }
 
 void Wheel::set_left_speed(float speed)
@@ -291,6 +296,7 @@ void Wheel::move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 
 void Wheel::set_dir_left(void)
 {
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 	set_direction_flag(Direction_Flag_Left);
 	left_direction = BACKWARD;
 	right_direction = FORWARD;
@@ -298,6 +304,7 @@ void Wheel::set_dir_left(void)
 
 void Wheel::set_dir_right(void)
 {
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 	set_direction_flag(Direction_Flag_Right);
 	left_direction = FORWARD;
 	right_direction = BACKWARD;

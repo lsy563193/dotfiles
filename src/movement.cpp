@@ -212,16 +212,18 @@ void cs_disable_motors(void)
 
 void cs_work_motor(void)
 {
-	if (cs.is_going_home())
+	if (cs.is_going_home() || cs.is_back_from_charger())
 	{
-		// Set the vacuum to a normal mode_
+		// Set the vacuum to a normal mode
 		vacuum.mode(Vac_Normal, false);
+		// Turn on the main brush and side brush
+		brush.set_side_pwm(30, 30);
 	} else {
 		vacuum.mode(Vac_Save);
+		// Turn on the main brush and side brush
+		brush.set_side_pwm(50, 50);
 	}
 
-	// Turn on the main brush and side brush
-	brush.set_side_pwm(50, 50);
 	brush.set_main_pwm(30);
 }
 

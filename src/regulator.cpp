@@ -250,7 +250,8 @@ bool RegulatorBase::isExit()
 {
 	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
 	{
-		ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: fatal_quit(%d), key_clean_pressed(%d), charge_detect(%d)",
+				 __FUNCTION__, __LINE__, ev.fatal_quit, ev.key_clean_pressed, ev.charge_detect);
 		return true;
 	}
 	return false;

@@ -350,7 +350,7 @@ bool NavigationClean::isReach()
 bool NavigationClean::isExit()
 {
 	//ROS_INFO("%s %d: Run isExit", __FUNCTION__, __LINE__);
-	if (cs.is_open_gyro() || cs.is_back_from_charger() /*|| cs.is_align()*/
+	if (cs.is_open_gyro() || cs.is_back_from_charger() || cs.is_align()
 		|| cs.is_clean() || cs.is_go_home_point() || cs.is_tmp_spot() || cs.is_exploration()
 		|| cs.is_self_check())
 	{
