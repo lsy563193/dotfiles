@@ -367,3 +367,5 @@
 /*robot type define,currently got two type "ROBOT_X600" "ROBOT_X400"*/
 #define ROBOT_X600 							(0)
 #define ROBOT_X400							(1)
+
+#define STANDARD_REMOTE   (1)

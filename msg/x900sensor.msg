@@ -56,4 +56,13 @@ float32 x_acc
 float32 y_acc
 float32 z_acc
 
+int16 obs0
+int16 obs1
+int16 obs2
+int16 obs3
+int16 obs4
+int16 obs5
+int16 obs6
+int16 obs7
+
 uint8 gyro_dymc

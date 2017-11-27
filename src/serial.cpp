@@ -36,7 +36,7 @@ void serial_init(const char* port, int baudrate) {
 	speed_t CR_BAUDRATE;
 	switch(baudrate){
 		case 9600:
-			CR_BAUDRATE = B19200;
+			CR_BAUDRATE = B9600;
 			break;
 		case 19200:
 			CR_BAUDRATE = B19200;
@@ -45,7 +45,7 @@ void serial_init(const char* port, int baudrate) {
 			CR_BAUDRATE = B38400;
 			break;
 		case 57600:
-			CR_BAUDRATE = B19200;
+			CR_BAUDRATE = B57600;
 			break;
 		case 115200:
 			CR_BAUDRATE = B115200;	
@@ -60,6 +60,7 @@ void serial_init(const char* port, int baudrate) {
 	cfsetispeed(&curopt, CR_BAUDRATE);
 	cfsetospeed(&curopt, CR_BAUDRATE);	
 
+	printf("serial speed %d\n",baudrate);
 	/* Mostly 8N1 */
 	curopt.c_cflag &= ~PARENB;
 	curopt.c_cflag &= ~CSTOPB;
@@ -134,7 +135,7 @@ int serial_read(int len,uint8_t *buf){
 			break;
 		} else if (s_ret > 0) {
 			if (FD_ISSET(crport_fd, &read_serial_fds)) {
-				usleep(3000);
+				usleep(6000);
 				r_ret = read(crport_fd, t_buf, len);
 				memcpy(buf, t_buf, r_ret);
 				/*

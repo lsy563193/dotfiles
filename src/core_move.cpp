@@ -160,7 +160,7 @@ bool CM_Check_is_exploring()//not yet minus the x_off
 					}else{
 						if ((*p_map_data)[CM_Get_grid_index(x_1, y, width, height, resolution, origin_x, origin_y)] == -1){
 							//printf("x_1=%f ,y=%f\n",x_1,y);
-							printf("exist unkown\n");
+							//printf("exist unkown\n");
 							return 1;
 						}
 					}
@@ -2708,7 +2708,7 @@ void CM_CorBack(uint16_t dist)
 	CM_update_position(Gyro_GetAngle(0), Gyro_GetAngle(1), WheelCount_Left, WheelCount_Right);
 	Set_Dir_Backward();
 	Set_Wheel_Speed(8, 8);
-	Set_Wheel_Step(0, 0);
+	Reset_Wheel_Step();
 	Counter_Watcher = 0;
 //	Reset_Touch();
 

@@ -362,7 +362,7 @@ uint8_t Random_Dirt_Event(void)
 #endif
 
 	Move_Forward(0, 0);
-	Set_Wheel_Step(0, 0);
+	Reset_Wheel_Step();
 	Reset_Wall_Step();
 	usleep(10000);
 

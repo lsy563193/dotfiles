@@ -30,36 +30,37 @@ uint8_t Spiral(void)
 	int32_t Right_Wheel_Speed=0;
 	uint8_t First_Round_Flag=1;
 	uint8_t Vac_Mode_Buffer=0;
-	
+	ROS_DEBUG("In Spiral ");	
 	Max_Radius = 180 + Get_Random_Factor();
 
-	Set_Wheel_Step(0,0);
+	Reset_Wheel_Step();
 	Move_Forward(38,0);
 	while(ros::ok())
-  {
-	  Motor_Check_Code=Check_Motor_Current();
+	{
+
+		Motor_Check_Code=Check_Motor_Current();
 		if(Motor_Check_Code)
 		{
-		  return 0;	  
+			return 0;	  
 		}
 		/*-------------------------------------------------------Check Battery ------------------*/
-	  if(Check_Bat_SetMotors(Clean_Vac_Power,Clean_SideBrush_Power,Clean_MainBrush_Power))//Low Battery Event
-    {
-      return 0;
-    }
+		if(Check_Bat_SetMotors(Clean_Vac_Power,Clean_SideBrush_Power,Clean_MainBrush_Power))//Low Battery Event
+		{
+			return 0;
+		}
 		/*------------------------------------------------------Touch and Remote event-----------------------*/
 		if(Touch_Detect())
 		{
-		  Reset_Touch();
-		  Set_Clean_Mode(Clean_Mode_Userinterface);
+			Reset_Touch();
+			Set_Clean_Mode(Clean_Mode_Userinterface);
 			return 1;
 		}
 		if(Get_Rcon_Remote()!=0)
 		{
 			if(Remote_Key(Remote_Spot))
 			{
-        Vac_Mode_Buffer = Get_VacMode();				
-			  Temp_Dirt_Status=Random_Dirt_Event();
+        		Vac_Mode_Buffer = Get_VacMode();				
+				Temp_Dirt_Status=Random_Dirt_Event();
 				Set_VacMode(Vac_Mode_Buffer);
 				Set_Vac_Speed();
 				if(Temp_Dirt_Status==1)
@@ -71,7 +72,7 @@ uint8_t Spiral(void)
 			}
 			if(Remote_Key(Remote_Left))
 			{
-			  Turn_Left(Turn_Speed,700);
+				Turn_Left(Turn_Speed,700);
 				Move_Forward(30,30);
 				Set_Clean_Mode(Clean_Mode_RandomMode);
 				Reset_Rcon_Remote();
@@ -79,26 +80,26 @@ uint8_t Spiral(void)
 			}
 			if(Remote_Key(Remote_Right))
 			{
-			  Turn_Right(Turn_Speed,560);
+				Turn_Right(Turn_Speed,560);
 				Move_Forward(30,30);
 				Set_Clean_Mode(Clean_Mode_RandomMode);
-        Reset_Rcon_Remote();
+				Reset_Rcon_Remote();
 				return 1;
 			}
 			if(Remote_Key(Remote_Home)) //                                    Check Key Home
 			{
 				Set_LED(100,100);
 				Set_Clean_Mode(Clean_Mode_GoHome);
-        Reset_Rcon_Remote();
+				Reset_Rcon_Remote();
 				SetHomeRemote();
 				return 1;
 			}
 			if(Remote_Key(Remote_Random)) //                                    Check Key Home
 			{
-			  Turn_Right(Turn_Speed,560);
+				Turn_Right(Turn_Speed,560);
 				Move_Forward(30,30);
 				Set_Clean_Mode(Clean_Mode_RandomMode);
-        Reset_Rcon_Remote();
+				Reset_Rcon_Remote();
 				return 1;
 			}
 		}
@@ -109,16 +110,15 @@ uint8_t Spiral(void)
 		
 		Set_Wheel_Speed(42,Right_Wheel_Speed);
 //		Move_Forward(42,Right_Wheel_Speed);
-    if(First_Round_Flag)
+		if(First_Round_Flag)
 		{
 			if(Get_LeftWheel_Step()>3000)First_Round_Flag=0;
 		}
-    else
+		else
 		{
 			if(Get_LeftWheel_Step()>(Radius))
 			{
-				Set_Wheel_Step(0,0);
-	//			Reset_Wheel_Step();
+				Reset_Wheel_Step();
 				if(Radius<100)
 				{
 					Radius+=1;
@@ -132,14 +132,14 @@ uint8_t Spiral(void)
 
 		if(Radius>Max_Radius)
 		{
-		  return 0;
+			return 0;
 		}
 		
-    if(Get_Bumper_Status()||Get_Cliff_Trig()||Get_OBS_Status())
+		if(Get_Bumper_Status()||Get_Cliff_Trig()||Get_OBS_Status())
 		{ 
-		  return 0;
+			return 0;
 		}
-  }
+	}
 	//return 0;
 }
 

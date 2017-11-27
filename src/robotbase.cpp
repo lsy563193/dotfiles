@@ -36,7 +36,8 @@ uint8_t receiStream[60]={				0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 #endif
 
 uint8_t sendStream[19]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
-static int TOPIC_PUB_RATE = 50;
+
+#define  _RATE 50 
 
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
@@ -89,10 +90,9 @@ int robotbase_init(void)
 	ROS_INFO("[robotbase] waiting robotbase awake ");
 	do {
 		serial_write(SEND_LEN,sendStream);
-		printf(".");
 		usleep(20000);
 	} while ((serial_read(2, t_buf) <= 0) && ros::ok());
-	printf("ok\n");
+	printf("OK!\n");
 	ser_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);
@@ -125,17 +125,17 @@ void robotbase_deinit(void)
 		printf("[robotbase]deinit...\n");
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
-		printf("\tshutdown robotbase power ");
+		printf("\tshutdown robotbase power \n");
 		Set_LED(0,0);
 		control_set(CTL_BUZZER, 0x00);
 		set_gyro(0,0);
-		usleep(20000);
+		usleep(40000);
 		Disable_Motors();
 		usleep(40000);
 		set_main_pwr(1);
-		usleep(20000);	
+		usleep(40000);	
 		send_stream_thread = false;
-		usleep(20000);
+		usleep(40000);
 		serial_close();
 		printf("[robotbase.cpp] Stop ok\n");
 		int mutex_ret = pthread_mutex_destroy(&send_lock);
@@ -199,7 +199,7 @@ void *robotbase_routine(void*)
 
 	uint16_t	lw_speed, rw_speed;
 
-	ros::Rate	r(TOPIC_PUB_RATE);
+	ros::Rate	r(_RATE);
 	ros::Time	cur_time, last_time;
 
 
@@ -362,7 +362,7 @@ void *robotbase_routine(void*)
 void *serial_send_routine(void*){
 	pthread_detach(pthread_self());
 	ros::Time start_t;
-	ros::Rate r(50);double proc_t;
+	ros::Rate r(_RATE);double proc_t;
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
 	ResetSendFlag();

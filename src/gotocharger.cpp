@@ -21,6 +21,7 @@ void goto_charger(){
 	bool set_charge_state = false;
 	uint8_t in_charge_stub_move = 1;
 	bool left_bumper,right_bumper;
+	bool mid_line = false;
 	uint8_t onside_left = 0,onside_right = 0,back_detect = 0;
 	uint8_t brush_pwr;
 	bool on_charger_stub= false;
@@ -31,7 +32,7 @@ void goto_charger(){
 	ros::Time startTime;
 	startTime = ros::Time::now();
 	while(ros::ok()){
-		usleep(10000);
+		usleep(20000);
 		if((ros::Time::now()-startTime).toSec()>GOTO_CHARGER_TIMEOUT){
 			control_set(CTL_CHARGER,0x00);
 			Set_CleanTool_Power(0,0,0,0);
@@ -107,6 +108,7 @@ void goto_charger(){
 				}
 			}
 			else if((fl|fr|l|r|bl|br)&stub_lr){
+				mid_line = true;
 				if(fl & stub_l || fr & stub_r){
 					if((fl & stub_r) && (fr & stub_r))
 						if(fobs>=100)
@@ -125,10 +127,10 @@ void goto_charger(){
 							movement_turn(180,80);
 				}
 				else if(l&stub_l || l&stub_r || bl&stub_l || bl&stub_r)
-					movement_rot_left(80);
+					movement_turn(-80,80);
 				else if(r&stub_l || r&stub_r || br&stub_r || br&stub_l)
-					movement_rot_right(80);
-			}else {	
+					movement_turn(80,-80);
+			}else if(!mid_line){	
 			#if 0
 				if(fl&stub_t&&fr&stub_t)
 					if(fobs>=100)
@@ -136,13 +138,13 @@ void goto_charger(){
 					else
 						movement_go(100);
 				else if(l&stub_t)
-					movement_rot_left(50);
+					movement_turn(-50,50);
 				else if(r&stub_t)
-					movement_rot_right(50);	
+					movement_turn(50,-50);	
 				else if(bl& stub_t) 
-					movement_rot_left(50);
+					movement_turn(-50,50);
 				else if(br&stub_t)
-					movement_rot_right(50);
+					movement_turn(50,-50);
 			#endif
 			#if 0
 				if(l&stub_t && !fl&stub_t && !fr&stub_t && !bl&stub_t && !br&stub_t){
@@ -187,12 +189,7 @@ void goto_charger(){
 				
 			#endif
 			#if 1
-				if(fobs <150){
-					search_mid_line();
-				}
-				else{
-					movement_turn(50,-50);
-				}
+				search_mid_line();
 			#endif
 			}
 		}//end if(rcon>0)

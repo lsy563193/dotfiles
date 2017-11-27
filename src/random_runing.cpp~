@@ -876,147 +876,147 @@ void Random_Running_Mode(void)
 								//Half_Turn_Right(Turn_Speed,750+Get_Random_Factor()*8);
 								Turn_Right(Turn_Speed,750+Get_Random_Factor()*8);
 
-						}
-						Set_Direction_Flag(Direction_Flag_Right);
-					}
-					else
-					{
-						if(Stunk>10)
-						{
-							if(Out_Trap_Right())break;
-							Stunk=0;
-							Turn_Left(Turn_Speed,240);
+							}
+							Set_Direction_Flag(Direction_Flag_Right);
 						}
 						else
 						{
-							Temp_OBS_Status>>=4;
-							if(Temp_OBS_Status==0x08)
+							if(Stunk>10)
 							{
-								if(Random_Factor)
+								if(Out_Trap_Right())break;
+								Stunk=0;
+								Turn_Left(Turn_Speed,240);
+							}
+							else
+							{
+								Temp_OBS_Status>>=4;
+								if(Temp_OBS_Status==0x08)
 								{
-									//Half_Turn_Left(Turn_Speed,750+Get_Random_Factor()*7);
-									Turn_Left(Turn_Speed,750+Get_Random_Factor()*7);
+									if(Random_Factor)
+									{
+										//Half_Turn_Left(Turn_Speed,750+Get_Random_Factor()*7);
+										Turn_Left(Turn_Speed,750+Get_Random_Factor()*7);
+										Set_Direction_Flag(Direction_Flag_Left);
+									}
+									else
+									{
+										//Half_Turn_Right(Turn_Speed,750+Get_Random_Factor()*7);
+										Turn_Right(Turn_Speed,750+Get_Random_Factor()*7);
+										Set_Direction_Flag(Direction_Flag_Right);
+									}
+								}
+								else if(Temp_OBS_Status>8)
+								{
+									//Half_Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
+									Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
 									Set_Direction_Flag(Direction_Flag_Left);
 								}
 								else
 								{
-									//Half_Turn_Right(Turn_Speed,750+Get_Random_Factor()*7);
-									Turn_Right(Turn_Speed,750+Get_Random_Factor()*7);
-									Set_Direction_Flag(Direction_Flag_Right);
+									if((Bumper_Counter%3)==0)
+										//Half_Turn_Left(Turn_Speed,850+Get_Random_Factor()*7);
+										Turn_Left(Turn_Speed,850+Get_Random_Factor()*7);
+									else 
+										//Half_Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
+										Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
+									Set_Direction_Flag(Direction_Flag_Left);
 								}
 							}
-							else if(Temp_OBS_Status>8)
-							{
-								//Half_Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
-								Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
-								Set_Direction_Flag(Direction_Flag_Left);
-							}
-							else
-							{
-								if((Bumper_Counter%3)==0)
-									//Half_Turn_Left(Turn_Speed,850+Get_Random_Factor()*7);
-									Turn_Left(Turn_Speed,850+Get_Random_Factor()*7);
-								else 
-									//Half_Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
-									Turn_Left(Turn_Speed,800+Get_Random_Factor()*7);
-								Set_Direction_Flag(Direction_Flag_Left);
-							}
 						}
 					}
 				}
-			}
-			OBS_Cycle = 0;
-			On_TrapOut_Flag=0;
-			if(Get_Rcon_Remote()==0)
-			{
-				if(Get_OBS_Status())
+				OBS_Cycle = 0;
+				On_TrapOut_Flag=0;
+				if(Get_Rcon_Remote()==0)
 				{
-					if(!N_H_T)
+					if(Get_OBS_Status())
 					{
-						Stop_Brifly();
-						Random_Back();
-						Stop_Brifly();
+						if(!N_H_T)
+						{
+							Stop_Brifly();
+							Random_Back();
+							Stop_Brifly();
+						}
+					
+						do
+						{
+							OBS_Cycle++;
+							Stunk++;
+							if(OBS_Cycle>3)
+							{
+								Adjust_OBST_Value();
+								Stunk=Stunk-OBS_Cycle;
+								break;
+							}
+							if(Is_Direction_Left())
+							{
+								if((Stunk>10)||(OBS_Cycle>7))
+								{
+									Stunk = 0;
+									On_TrapOut_Flag=1;
+									break;
+								}
+								else
+								{
+									OBS_Turn_Left(Turn_Speed-5,400);
+								}
+								Set_Direction_Flag(Direction_Flag_Left);
+							}	
+							else
+							{
+								if((Stunk>10)||(OBS_Cycle>7))
+								{
+									Stunk = 0;
+									On_TrapOut_Flag=2;
+									break;
+								}
+								else
+								{
+									OBS_Turn_Right(Turn_Speed-5,400);
+								}
+								Set_Direction_Flag(Direction_Flag_Right);
+							}
+							usleep(10000);
+						}while(Get_OBS_Status());
+						Reset_HalfTurn_Flag();
 					}
-				
-					do
-					{
-						OBS_Cycle++;
-						Stunk++;
-						if(OBS_Cycle>3)
-						{
-							Adjust_OBST_Value();
-							Stunk=Stunk-OBS_Cycle;
-							break;
-						}
-						if(Is_Direction_Left())
-						{
-							if((Stunk>10)||(OBS_Cycle>7))
-							{
-								Stunk = 0;
-								On_TrapOut_Flag=1;
-								break;
-							}
-							else
-							{
-								OBS_Turn_Left(Turn_Speed-5,400);
-							}
-							Set_Direction_Flag(Direction_Flag_Left);
-						}	
-						else
-						{
-							if((Stunk>10)||(OBS_Cycle>7))
-							{
-								Stunk = 0;
-								On_TrapOut_Flag=2;
-								break;
-							}
-							else
-							{
-								OBS_Turn_Right(Turn_Speed-5,400);
-							}
-							Set_Direction_Flag(Direction_Flag_Right);
-						}
-						usleep(10000);
-					}while(Get_OBS_Status());
-					Reset_HalfTurn_Flag();
 				}
-			}
-			if(On_TrapOut_Flag==1)
-			{
-				if(Out_Trap_Right())break;
-				Turn_Right(Turn_Speed-5,240);
-				Move_Forward(10,10);
-				Reset_TempPWM();
-			}
-			else if(On_TrapOut_Flag==2)
-			{
-				if(Out_Trap_Left())break;
-				Turn_Right(Turn_Speed-5,240);
-				Move_Forward(10,10);
-				Reset_TempPWM();
-			}
-			if(!Is_HalfTurn_Flag())
-			{
-				//Stop_Brifly();
-				Move_Forward(0,0);
-				Reset_TempPWM();
-				//usleep(50000);
-				Reset_Wheel_Step();
-				usleep(10000);
-			}
-			else
-			{
-				if(Get_LeftWheel_Step()>Get_RightWheel_Step())
+				if(On_TrapOut_Flag==1)
 				{
-					Set_RightWheel_Step(Get_LeftWheel_Step());
+					if(Out_Trap_Right())break;
+					Turn_Right(Turn_Speed-5,240);
+					Move_Forward(10,10);
+					Reset_TempPWM();
 				}
-				Set_RightWheel_Step(Get_RightWheel_Step()/2);
+				else if(On_TrapOut_Flag==2)
+				{
+					if(Out_Trap_Left())break;
+					Turn_Right(Turn_Speed-5,240);
+					Move_Forward(10,10);
+					Reset_TempPWM();
+				}
+				if(!Is_HalfTurn_Flag())
+				{
+					//Stop_Brifly();
+					Move_Forward(0,0);
+					Reset_TempPWM();
+					//usleep(50000);
+					Reset_Wheel_Step();
+					usleep(10000);
+				}
+				else
+				{
+					if(Get_LeftWheel_Step()>Get_RightWheel_Step())
+					{
+						Set_RightWheel_Step(Get_LeftWheel_Step());
+					}
+					Set_RightWheel_Step(Get_RightWheel_Step()/2);
+				}
+				Set_Mobility_Step(0);
+				Wall_Small_Counter++;
+				Wall_Mid_Counter++;
+				Temp_OBS_Status=0;
 			}
-			Set_Mobility_Step(0);
-			Wall_Small_Counter++;
-			Wall_Mid_Counter++;
-			Temp_OBS_Status=0;
-		}
 		/* -----------------------------Speed up ----------------------------------*/
     	//if(Wall_Small_Counter>40)Wall_Small_Counter=0;
 		if(Wall_Mid_Counter>70)

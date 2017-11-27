@@ -67,7 +67,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 	Temp_Mobility_Distance=0;
 	Mobility_Temp_Error=0;
 	Follow_Distance = 0;
-	
+	ROS_DEBUG("In Wall Follow short");	
 	if(Get_Work_Time()>9000)
 	{
 		Follow_Distance=30000;
@@ -110,7 +110,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 
   while(ros::ok())
   {
-
+	usleep(1000);
     if(Get_LeftWheel_Step()<500)
     {
       Mobility_Temp_Error=0;
@@ -380,27 +380,27 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 		/*------------------------------------------------------Short Distance Move-----------------------*/
 		if (Get_WallAccelerate() < (uint32_t) Wall_Straight_Distance)
 		{
-      if(Get_LeftWheel_Step()<500)
-      {
-        if(Get_WallAccelerate()<100)
-  			{
-  			  Move_Forward(15,15);
-  			}
-  			else
-  			{
-  			  Move_Forward(20,20);
-  			}
-      }
-      else
-      {
-        Move_Forward(25,25);
-      }
+      		if(Get_LeftWheel_Step()<500)
+      		{
+        		if(Get_WallAccelerate()<100)
+  				{
+  			  		Move_Forward(15,15);
+  				}
+  				else
+  				{
+  			  		Move_Forward(20,20);
+  				}
+      		}
+      		else
+      		{
+       			Move_Forward(25,25);
+      		}
 		}
 		else
 		{
 			/*------------------------------------------------------Wheel Speed adjustment-----------------------*/
-	    if(Get_FrontOBS()<Get_FrontOBST_Value())
-	    {
+	    	if(Get_FrontOBS()<Get_FrontOBST_Value())
+	    	{
 			  	Proportion = Get_Wall_ADC();
 					
 					Proportion = Proportion*100/Wall_Distance;
@@ -438,7 +438,7 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 					
 					Move_Forward(Left_Wall_Speed,Right_Wall_Speed);
 
-	      if(Get_RightWall_Step()>Get_LeftWall_Step())
+				if(Get_RightWall_Step()>Get_LeftWall_Step())
 				{
 					R=Get_RightWall_Step()-Get_LeftWall_Step();
 					if(R>7500)//turn over 3600 degree
@@ -447,47 +447,47 @@ uint8_t Wall_Follow_Short(uint32_t dis)
 					}
 				}
 	      
-	      if((Get_RightWall_Step()>Follow_Distance)||(Get_LeftWall_Step()>Follow_Distance))//about 5 Meter
-	      {
-          break; 
-	      }
+	      		if((Get_RightWall_Step()>Follow_Distance)||(Get_LeftWall_Step()>Follow_Distance))//about 5 Meter
+	      		{
+          			break; 
+	      		}
 				if(Get_WallAccelerate()>750)
 				{
 					//Set_Left_Brush(ENABLE);
-			    	//Set_Right_Brush(ENABLE);
+			   		//Set_Right_Brush(ENABLE);
 				}
-	    }
-	    else
-	    {
-        Stop_Brifly();
-			  if(Get_LeftWheel_Step()<12500)
+	   		}
+	    	else
+	    	{
+				Stop_Brifly();
+				if(Get_LeftWheel_Step()<12500)
 				{
-					  if(Get_FrontOBS()>Get_FrontOBST_Value())
+					if(Get_FrontOBS()>Get_FrontOBST_Value())
+					{
+						if(Get_WallAccelerate()<2000)
 						{
-						  if(Get_WallAccelerate()<2000)
-							{
-								Jam++;
-							}
-						  Turn_Right(Turn_Speed-5,800);
-				      Move_Forward(15,15);
+							Jam++;
 						}
-						else
-						{
-				      Turn_Right(Turn_Speed-5,500);
-				      Move_Forward(15,15);
-						}
+					Turn_Right(Turn_Speed-5,800);
+					Move_Forward(15,15);
+					}
+					else
+					{
+						Turn_Right(Turn_Speed-5,500);
+						Move_Forward(15,15);
+					}
 				}
 				else
 				{
-				  Turn_Right(Turn_Speed-5,900);
-			    Move_Forward(15,15);
+					Turn_Right(Turn_Speed-5,900);
+					Move_Forward(15,15);
 				}
-        Reset_Wheel_Step();
+				Reset_Wheel_Step();
 				Wall_Distance+=200;
 				if(Wall_Distance>Wall_High_Limit)Wall_Distance=Wall_High_Limit;
-	    }
+			}
 		}
-  }
+	}
 	Set_Direction_Flag(Direction_Flag_Right);
 	//Stop_Brifly();
 	//Wheel_Stop();

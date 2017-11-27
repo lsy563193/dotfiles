@@ -86,7 +86,7 @@ uint32_t Get_RightWheel_Step(void)
 	else
 		rwsp = (double)Right_Wheel_Speed;
 	t = (double)(ros::Time::now()-rw_t).toSec();
-	step = rwsp*t/0.10;//0.181
+	step = rwsp*t/0.12;//0.181
 	right_wheel_step = (uint32_t)step;
 	return right_wheel_step;
 }
@@ -99,7 +99,7 @@ uint32_t Get_LeftWheel_Step(void)
 	else
 		lwsp = (double)Left_Wheel_Speed;
 	t=(double)(ros::Time::now()-lw_t).toSec();
-	step = lwsp*t/0.100;//0.181
+	step = lwsp*t/0.120;//0.181
 	left_wheel_step = (uint32_t)step;
 	return left_wheel_step;
 }
@@ -120,12 +120,14 @@ void Reset_Wall_Step(void)
 
 uint32_t Get_LeftWall_Step(void)
 {
-	return leftwall_step;
+	return leftwall_step = Get_LeftWheel_Step();
 }
+
 uint32_t Get_RightWall_Step(void)
 {
-	return rightwall_step;
+	return rightwall_step = Get_RightWheel_Step();
 }
+
 void Set_Wheel_Step(uint32_t Left, uint32_t Right)
 {
 	left_wheel_step = Left;
@@ -432,7 +434,7 @@ uint8_t Is_AtHomeBase(void)
 {
 	// If the charge status is true, it means it is at home base charging.
 	//Debug
-	printf("[movement.cpp] Get charge status: %d.\n", robot::instance()->robot_get_charge_status());
+	ROS_DEBUG_NAMED(MOVEMENT,"Get charge status: %d.\n", robot::instance()->robot_get_charge_status());
 	if (robot::instance()->robot_get_charge_status() == 2 || robot::instance()->robot_get_charge_status() == 1){
 		return 1;
 	}else{
@@ -779,6 +781,7 @@ uint32_t Get_Rcon_Remote(void)
 	else 
 		return 0;
 }
+
 void Set_Rcon_Remote(uint8_t cmd)
 {
 	robot::instance()->robot_set_ir_cmd(cmd);

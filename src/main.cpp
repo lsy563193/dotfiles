@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	robot	robot_obj;
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
-	nh_private.param<int>("baudrate", baudrate, 115200);
+	nh_private.param<int>("baudrate", baudrate, 57600);
 	nh_private.param<bool>("line_align", line_align_active, false);
 
 	serial_init(serial_port.c_str(), baudrate);

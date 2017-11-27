@@ -243,7 +243,6 @@ void Turn_Right(uint16_t speed,uint16_t angle);
 void Set_Error_Code(uint8_t code);
 void Set_LeftBrush_Stall(uint8_t L);
 
-void Set_Wheel_Step(uint32_t Left,uint32_t Right);
 
 int32_t Get_Wall_ADC(void);
 
