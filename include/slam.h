@@ -5,6 +5,7 @@
 #include "ros/ros.h"
 #include "boost/thread.hpp"
 #include "pose.h"
+#include <nav_msgs/OccupancyGrid.h>
 
 #ifndef PP_SLAM_H
 #define PP_SLAM_H
@@ -14,37 +15,32 @@ public:
 	Slam();
 	~Slam();
 	//todo
-	void enableMapUpdate();
 	bool isMapReady(void)
 	{
-		boost::mutex::scoped_lock(is_map_ready_mutex_);
 		return is_map_ready_;
 	}
 
 	void isMapReady(bool val)
 	{
-		boost::mutex::scoped_lock(is_map_ready_mutex_);
 		is_map_ready_ = val;
 	}
 
 	void start(void);
+	bool openTimeOut(void);
 	void stop(void);
+
+	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map);
 
 	Pose pose;
 private:
 
-//	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map);
-	ros::ServiceClient align_cli_;
-#if SLAM_METHOD_2
-	ros::ServiceClient start_slam_cli_;
-	ros::ServiceClient end_slam_cli_;
-#endif
 	bool	is_map_ready_;
-	boost::mutex is_map_ready_mutex_;
-//	ros::Subscriber map_sub_;
-	ros::NodeHandle nh_;
-	ros::NodeHandle nh_local_;
 
+
+	// For opening slam.
+	time_t open_command_time_stamp_;
 };
+
+extern Slam slam;
 
 #endif //PP_SLAM_H

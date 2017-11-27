@@ -362,7 +362,7 @@ bool NavigationClean::isExit()
 	}
 	else if (cs.is_open_slam())
 	{
-		return CleanMode::isExit() /*|| slam.openTimeOut()*/;
+		return CleanMode::isExit() || slam.openTimeOut();
 	}
 	else if (cs.is_go_charger())
 	{

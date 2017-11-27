@@ -5,13 +5,17 @@
 #include <cstdlib>
 #include <movement.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <error.h>
+#include <event_manager.h>
 #include "slam.h"
 #include "robot.hpp"
 #include "std_srvs/Empty.h"
 
-Slam::Slam():nh_local_("~"),nh_("/"),is_map_ready_(false)
+Slam slam;
+
+Slam::Slam():is_map_ready_(false)
 {
-	start();
+	//todo: slam should add a status for setting mapReady in case slam still get a map after shutting down.
 };
 
 Slam::~Slam(){
@@ -22,61 +26,63 @@ Slam::~Slam(){
 //	nh_.shutdown();
 };
 
-void Slam::start(void)
-{
-
-#if SLAM_METHOD_2
-	return;
-#else
-	nh_local_.param<int>("slam_type",slam_type_,0);
-	if (slam_type_ == 0)
-		system("roslaunch pp gmapping.launch 2>/dev/null &");
-	else if (slam_type_ == 1)
-		system("roslaunch slam_karto karto_slam_w_params.launch 2>/dev/null &");
-	else if (slam_type_ == 2)
-		system("roslaunch pp cartographer_slam.launch 2>/dev/null &");
-/*
-	if(stop_event()){
-		stop();
-		return false;
-	}
-	return true;*/
-#endif
-}
-
 void Slam::stop(void)
 {
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
-	is_map_ready_ = false;
 
-#if SLAM_METHOD_2
-	end_slam_cli_ = nh_.serviceClient<std_srvs::Empty>("End_Slam");
-	std_srvs::Empty empty;
-	end_slam_cli_.call(empty);
+	robot::instance()->slamStop();
 	robot::instance()->resetCorrection();
+	isMapReady(false);
 	ROS_INFO("%s %d: End slam request finished.", __FUNCTION__, __LINE__);
-#else
-	if (slam_type_ == 0)
-		system("rosnode kill /slam_gmapping 2>/dev/null &");
-	else if (slam_type_ == 1)
-		system("rosnode kill /slam_karto 2>/dev/null &");
-	else if (slam_type_ == 2)
-		system("rosnode kill /cartographer_node 2>/dev/null &");
-#endif
 }
 
-void Slam::enableMapUpdate()
+void Slam::start(void)
 {
-	std_srvs::Empty empty;
-#if SLAM_METHOD_2
-	start_slam_cli_ = nh_.serviceClient<std_srvs::Empty>("Start_Slam");
+	isMapReady(false);
+	robot::instance()->slamStart();
 	robot::instance()->resetCorrection();
-	start_slam_cli_.call(empty);
-#else
-	align_cli_ = nh_.serviceClient<std_srvs::Empty>("align");
-//	align_cli_.waitForExistence(ros::Duration(10));
-	align_cli_.call(empty);
-#endif
+	open_command_time_stamp_ = time(NULL);
+}
+
+bool Slam::openTimeOut(void)
+{
+	auto time_diff = time(NULL) - open_command_time_stamp_;
+	//ROS_INFO("%s %d: Time diff:%d", __FUNCTION__, __LINE__, time_diff);
+	if (time_diff > 10)
+	{
+		ROS_ERROR("%s %d: Slam Open time out.", __FUNCTION__, __LINE__);
+		ev.fatal_quit = true;
+		error.set(Error_Code_Slam);
+		return true;
+	}
+
+	return false;
+}
+
+void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
+{
+	slam_map_mutex.lock();
+	slam_map.setWidth(map->info.width);
+	slam_map.setHeight(map->info.height);
+	slam_map.setResolution(map->info.resolution);
+	slam_map.setOriginX(map->info.origin.position.x);
+	slam_map.setOriginY(map->info.origin.position.y);
+	slam_map.setData(map->data);
+	slam_map_mutex.unlock();
+
+
+	/*for exploration update map*/
+	if (cm_is_exploration()) {
+		ros2_map.ros_convert(MAP, false, false, true);
+	}
+	else if(cm_is_navigation())
+	{
+		ros2_map.ros_convert(MAP, false, false, false, 20);
+	}
+	isMapReady(true);
+
+	ROS_INFO("%s %d:finished map callback,cost_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),cost_map.origin(\033[33m%f,%f\033[0m)",
+			 __FUNCTION__, __LINE__, slam_map.getWidth(), slam_map.getHeight(), slam_map.getResolution(), slam_map.getOriginX(), slam_map.getOriginY());
 
 }
 

@@ -16,6 +16,7 @@
 #include "wav.h"
 #include "clean_mode.h"
 #include "error.h"
+#include "slam.h"
 
 uint8_t cs_self_check(uint8_t Check_Code)
 {
@@ -239,11 +240,8 @@ void cs_paused_setting(void)
 		wav.play(WAV_CLEANING_STOP);
 		g_is_manual_pause = false;
 		robot::instance()->savedOffsetAngle(0);
-		if (MotionManage::s_slam != nullptr)
-		{
-			delete MotionManage::s_slam;
-			MotionManage::s_slam = nullptr;
-		}
+		if (slam.isMapReady())
+			slam.stop();
 		cm_reset_go_home();
 		g_resume_cleaning = false;
 	}

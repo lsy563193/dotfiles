@@ -56,6 +56,9 @@ public:
 
 	// Service caller functions.
 	bool laserMotorCtrl(bool switch_);
+	bool slamStart(void);
+	bool slamStop(void);
+
 	void initOdomPosition();
 
 	// The scale should be between 0 to 1.
@@ -221,6 +224,8 @@ private:
 	ros::Publisher fit_line_marker_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;
+	ros::ServiceClient start_slam_cli_;
+	ros::ServiceClient end_slam_cli_;
 
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	geometry_msgs::Point m_points_;

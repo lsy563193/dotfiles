@@ -44,12 +44,14 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	scan_sub2_ = robot_nh_.subscribe("scan2",1,&robot::scanCb2, this);
 	scan_sub3_ = robot_nh_.subscribe("scan3",1,&robot::scanCb3, this);
 	laserPoint_sub_ = robot_nh_.subscribe("laserPoint",1,&robot::laserPointCb, this);
+	/*map subscriber for exploration*/
+	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	// Service clients.
 	lidar_motor_cli_ = robot_nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
+	end_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("End_Slam");
+	start_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("Start_Slam");
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
-	/*map subscriber for exploration*/
-	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	// Publishers.
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
@@ -124,7 +126,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
-		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !ev.slam_error)
+		if(slam.isMapReady() && !ev.slam_error)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -171,7 +173,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !ev.slam_error)
+		if(slam.isMapReady() && !ev.slam_error)
 		{
 			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
@@ -267,28 +269,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
-	slam_map_mutex.lock();
-	slam_map.setWidth(map->info.width);
-	slam_map.setHeight(map->info.height);
-	slam_map.setResolution(map->info.resolution);
-	slam_map.setOriginX(map->info.origin.position.x);
-	slam_map.setOriginY(map->info.origin.position.y);
-	slam_map.setData(map->data);
-	slam_map_mutex.unlock();
-
-
-	/*for exploration update map*/
-	if (cm_is_exploration()) {
-		ros2_map.ros_convert(MAP, false, false, true);
-	}
-	else if(cm_is_navigation())
-	{
-		ros2_map.ros_convert(MAP, false, false, false, 20);
-	}
-	MotionManage::s_slam->isMapReady(true);
-
-//	ROS_INFO("%s %d:finished map callback,cost_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),cost_map.origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
-
+	slam.mapCb(map);
 }
 
 void robot::scanCb(const sensor_msgs::LaserScan::ConstPtr &msg)
@@ -619,6 +600,19 @@ bool robot::laserMotorCtrl(bool switch_)
 		return true;
 	}
 	return false;
+}
+
+bool robot::slamStart(void)
+{
+	std_srvs::Empty empty;
+	ROS_INFO("......................");
+	return start_slam_cli_.call(empty);
+}
+
+bool robot::slamStop(void)
+{
+	std_srvs::Empty empty;
+	return end_slam_cli_.call(empty);
 }
 
 void robot::initOdomPosition()

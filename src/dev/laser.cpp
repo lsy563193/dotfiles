@@ -32,7 +32,7 @@ Laser laser;
 
 Laser::Laser():angle_n_(0)
 {
-	//todo: laser should add a status for setting ScanReady in case laser still get a scan after shuttng down.
+	//todo: laser should add a status for setting ScanReady in case laser still get a scan after shutting down.
 //	setScanReady(0);
 //	setScan2Ready(0);
 //	scan_update_time = ros::Time::now().toSec();

@@ -983,7 +983,7 @@ void EventHandle::slam_error(bool state_now, bool state_last)
 {}
 void df_slam_error(bool state_now, bool state_last)
 {
-	static time_t slam_error_kill_timer_;
+/*	static time_t slam_error_kill_timer_;
 	static bool relaunch = false;
 
 	if (!state_last)
@@ -1021,7 +1021,7 @@ void df_slam_error(bool state_now, bool state_last)
 	// Wait for 0.2s to make sure it has process the first scan.
 	usleep(200000);
 	ROS_WARN("Slam restart successed.");
-	ev.slam_error = false;
+	ev.slam_error = false;*/
 }
 
 void EventHandle::robot_slip(bool state_new,bool state_last)

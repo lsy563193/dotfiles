@@ -520,9 +520,9 @@ void MotionManage::get_aligment_angle()
 	}
 }
 
-bool MotionManage::slam_init()
+/*bool MotionManage::slam_init()
 {
-		s_slam = new Slam();
+	s_slam = new Slam();
 	//4 call start slam
 	while (ev.slam_error)
 	{
@@ -562,7 +562,7 @@ bool MotionManage::slam_init()
 		return false;
 	}
 	return true;
-}
+}*/
 
 void MotionManage::init_after_slam()
 {
@@ -654,8 +654,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 
 			// switch
 			if (laser.alignTimeOut())
-				//cs.set(CS_OPEN_SLAM);
-				break;
+				cs.set(CS_OPEN_SLAM);
 			if (laser.alignFinish())
 			{
 				float align_angle = laser.alignAngle();
@@ -664,7 +663,14 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 				g_homes[0].TH = -(int16_t)(align_angle);
 				ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
 				usleep(230000);
-				//cs.set(CS_OPEN_SLAM);
+				cs.set(CS_OPEN_SLAM);
+			}
+		}
+		else if (cs.is_open_slam())
+		{
+			if (slam.isMapReady() && robot::instance()->isTfReady())
+			{
+				cs.set(CS_CLEAN);
 				break;
 			}
 		}
@@ -748,14 +754,13 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 
 	get_aligment_angle();
 */
-
+/*
 	usleep(600000);// wait for tf ready
 
-	/*----slam init----*/
+	*//*----slam init----*//*
 	if(!slam_init())
 		return;
-	init_after_slam();
-	cs.set(CS_CLEAN);
+	init_after_slam();*/
 }
 
 MotionManage::~MotionManage()
@@ -867,12 +872,15 @@ MotionManage::~MotionManage()
 			wav.play(WAV_CLEANING_FINISHED);
 	}
 	cm_reset_go_home();
+/*
 
 	if (s_slam != nullptr)
 	{
 		delete s_slam;
 		s_slam = nullptr;
 	}
+*/
+	slam.stop();
 
 	robot::instance()->savedOffsetAngle(0);
 	robot::instance()->offsetAngle(0);

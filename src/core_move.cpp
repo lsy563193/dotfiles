@@ -165,6 +165,21 @@ void cm_apply_cs(void) {
 	{
 		laser.startAlign();
 	}
+	else if (cs.is_open_slam())
+	{
+		if (!(g_is_manual_pause || g_resume_cleaning))
+		{
+			robot::instance()->setTfReady(false);
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+			slam.start();
+		}
+		else
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+	}
+	else if (cs.is_clean()) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_GREEN);
+	}
 	if (cs.is_go_home_point()) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
@@ -215,10 +230,6 @@ void cm_apply_cs(void) {
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 		mt.set(MT_FOLLOW_LEFT_WALL);
-	}
-	if (cs.is_clean()) {
-		g_wf_reach_count = 0;
-		led.set_mode(LED_STEADY, LED_GREEN);
 	}
 	if (cs.is_exploration()) {
 		mt.set(MT_LINEARMOVE);
