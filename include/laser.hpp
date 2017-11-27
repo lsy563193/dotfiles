@@ -46,6 +46,7 @@ public:
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
 	void motorCtrl(bool switch_);
+	bool openTimeOut();
 
 	uint8_t laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();

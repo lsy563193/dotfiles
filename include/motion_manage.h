@@ -12,10 +12,11 @@
 #include <list>
 #include <deque>
 #include <map.h>
+#include "clean_mode.h"
 
 class MotionManage {
 public:
-	MotionManage();
+	MotionManage(CleanMode* p_cm);
 
 	~MotionManage();
 

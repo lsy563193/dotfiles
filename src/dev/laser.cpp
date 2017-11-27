@@ -14,6 +14,7 @@
 #include <move_type.h>
 #include <accelerator.h>
 #include <wheel.h>
+#include <error.h>
 
 #include "mathematics.h"
 #include "event_manager.h"
@@ -1484,6 +1485,21 @@ bool Laser::laserCheckFresh(float duration, uint8_t type)
 	return false;
 }
 
+bool Laser::openTimeOut()
+{
+	auto time_diff = time(NULL) - open_command_time_stamp_;
+	//ROS_INFO("%s %d: Time diff:%d", __FUNCTION__, __LINE__, time_diff);
+	if (time_diff > 8)
+	{
+		motorCtrl(OFF);
+		ROS_ERROR("%s %d: Laser Open time out.", __FUNCTION__, __LINE__);
+		ev.fatal_quit = true;
+		error.set(Error_Code_Laser);
+		return true;
+	}
+
+	return false;
+}
 
 
 bool laser_is_stuck()

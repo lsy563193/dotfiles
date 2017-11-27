@@ -59,13 +59,8 @@ void cm_self_check_with_handle(void)
 }
 
 void cm_cleaning() {
-	MotionManage motion;
-	if (!motion.initSucceeded())
-		return;
-
-	g_motion_init_succeeded = true;
-	cs.init();
-	Cell_t curr = cost_map.update_position();
+//	Cell_t curr = cost_map.update_position();
+	Cell_t curr = {0, 0, 0};
 
 	CleanMode* p_cm;
 	if(cm_is_follow_wall())
@@ -76,6 +71,13 @@ void cm_cleaning() {
 		p_cm = new SpotClean(curr, g_plan_path.front(), g_plan_path);
 	else
 		p_cm = new NavigationClean(curr, g_plan_path.front(), g_plan_path);
+
+	MotionManage motion(p_cm);
+	if (!motion.initSucceeded())
+		return;
+
+	g_motion_init_succeeded = true;
+	cs.init();
 
 	g_check_path_in_advance = false;
 

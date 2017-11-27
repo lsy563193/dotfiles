@@ -579,7 +579,7 @@ void MotionManage::init_after_slam()
 	g_robot_slip = false;
 }
 
-MotionManage::MotionManage():nh_("~"),is_align_active_(false)
+MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 {
 	// Initialize motors and map.
 	if (!(g_is_manual_pause || g_robot_stuck || g_is_low_bat_pause || g_resume_cleaning))
@@ -611,6 +611,9 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 			usleep(100);
 			continue;
 		}
+
+		if (p_cm->isExit())
+			break;
 
 		if (cs.is_open_gyro())
 		{
@@ -753,6 +756,7 @@ MotionManage::~MotionManage()
 			}
 			cm_set(Clean_Mode_Idle);
 			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
+			robot::instance()->offsetAngle(0);
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getPoseAngle());
 			if (cs.is_going_home())
 #if MANUAL_PAUSE_CLEANING
@@ -788,6 +792,7 @@ MotionManage::~MotionManage()
 			g_is_low_bat_pause = false;
 			cm_set(Clean_Mode_Charging);
 			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
+			robot::instance()->offsetAngle(0);
 			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getPoseAngle());
 			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
 			g_saved_work_time += get_work_time();
@@ -828,6 +833,7 @@ MotionManage::~MotionManage()
 	}
 
 	robot::instance()->savedOffsetAngle(0);
+	robot::instance()->offsetAngle(0);
 
 	if (ev.fatal_quit)
 		if (ev.cliff_all_triggered)

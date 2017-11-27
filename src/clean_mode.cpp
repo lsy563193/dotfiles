@@ -349,6 +349,30 @@ bool NavigationClean::isReach()
 
 bool NavigationClean::isExit()
 {
+	//ROS_INFO("%s %d: Run isExit", __FUNCTION__, __LINE__);
+	if (cs.is_open_gyro() || cs.is_back_from_charger() /*|| cs.is_align()*/
+		|| cs.is_clean() || cs.is_go_home_point() || cs.is_tmp_spot() || cs.is_exploration()
+		|| cs.is_self_check())
+	{
+		return CleanMode::isExit();
+	}
+	else if (cs.is_open_laser())
+	{
+		return CleanMode::isExit() || laser.openTimeOut();
+	}
+	else if (cs.is_open_slam())
+	{
+		return CleanMode::isExit() /*|| slam.openTimeOut()*/;
+	}
+	else if (cs.is_go_charger())
+	{
+		return CleanMode::isExit() || ev.charge_detect;
+	}
+	if (cs.is_trapped()) // For trapped status.
+	{
+		return CleanMode::isExit() || fw_reg_->isTimeUp();
+	}
+/*
 	if(CleanMode::isExit())
 		return true;
 
@@ -361,7 +385,7 @@ bool NavigationClean::isExit()
 		}
 	}
 
-	return false;
+	return false;*/
 }
 
 bool NavigationClean::isStop()
