@@ -39,9 +39,9 @@ public:
 
 	void set_speed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1, float PID_i = 0, float PID_d = 0);
 
-	void set_left_speed(uint8_t speed);
+	void set_left_speed(float speed);
 
-	void set_right_speed(uint8_t speed);
+	void set_right_speed(float speed);
 
 	int16_t get_left_speed(void);
 

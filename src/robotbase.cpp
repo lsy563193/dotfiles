@@ -510,22 +510,16 @@ void *serial_send_routine(void*)
 
 		//if(!is_flag_set()){
 			/*---pid for wheels---*/
-			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
 		wheel.set_pid();
-			if(left_pid.actual_speed < 0)	wheel.set_left_dir(BACKWARD);
-			else							wheel.set_left_dir(FORWARD);
-			if(right_pid.actual_speed < 0)	wheel.set_right_dir(BACKWARD);
-			else							wheel.set_right_dir(FORWARD);
 
-		wheel.set_left_speed((uint8_t) fabsf(left_pid.actual_speed));
-		wheel.set_right_speed((uint8_t) fabsf(right_pid.actual_speed));
-			g_send_stream_mutex.lock();
-			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
-			g_send_stream_mutex.unlock();
-			buf[CTL_CRC] = calc_buf_crc8(buf, sl);
-			//debug_send_stream(&buf[0]);
-			serial_write(SEND_LEN, buf);
-		//}
+		wheel.set_left_speed(left_pid.actual_speed);
+		wheel.set_right_speed(right_pid.actual_speed);
+		g_send_stream_mutex.lock();
+		memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
+		g_send_stream_mutex.unlock();
+		buf[CTL_CRC] = calc_buf_crc8(buf, sl);
+		//debug_send_stream(&buf[0]);
+		serial_write(SEND_LEN, buf);
 		//reset omni wheel bit
 		if(controller.get(CTL_OMNI_RESET) & 0x01)
 			omni.clear();
