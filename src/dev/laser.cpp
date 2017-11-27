@@ -60,8 +60,8 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		setScanReady(1);
 	}
 	scan_update_time = ros::Time::now().toSec();
-	std::vector<LineABC> lines;
-	findLines(&lines);
+	//std::vector<LineABC> lines;
+	//findLines(&lines);
 }
 
 void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -406,6 +406,30 @@ bool Laser::findLines(std::vector<LineABC> *lines)
 	return true;
 }
 
+void Laser::startAlign()
+{
+	start_align_time_stamp_ = time(NULL);
+	align_finish_ = false;
+}
+
+bool Laser::alignTimeOut()
+{
+	auto time_diff = time(NULL) - start_align_time_stamp_;
+	//ROS_INFO("%s %d: Time diff:%d", __FUNCTION__, __LINE__, time_diff);
+	if (time_diff > 2)
+	{
+		ROS_WARN("%s %d: Align time out.", __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	return false;
+}
+
+bool Laser::alignFinish()
+{
+	return align_finish_;
+}
+
 /*
  * @auther mengshige1988@qq.com
  * @breif get align angle
@@ -435,6 +459,7 @@ bool Laser::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 	if(lines->at(pos).len >= LONG_ENOUGTH){
 		*align_angle = lines->at(pos).angle_x;
 		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
+		align_finish_ = true;
 		return true;
 	}
 
@@ -458,6 +483,7 @@ bool Laser::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
 							avg = sum / (1.0*same_angle_count.size());
 							*align_angle = avg;
+							align_finish_ = true;
 							ROS_INFO("%s,%d,get most popular line angle %f",__FUNCTION__,__LINE__,avg);
 							return true;
 						}

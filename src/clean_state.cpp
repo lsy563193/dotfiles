@@ -34,6 +34,11 @@ bool CleanState::is_open_laser()
 	return cs_ == CS_OPEN_LASER;
 }
 
+bool CleanState::is_align()
+{
+	return cs_ == CS_ALIGN;
+}
+
 bool CleanState::is_open_slam()
 {
 	return cs_ == CS_OPEN_SLAM;

@@ -617,14 +617,54 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 
 		if (cs.is_open_gyro())
 		{
+			// run
+			wheel.set_speed(0, 0);
+
+			// switch
 			gyro.waitForOn();
 			if (gyro.isOn())
 				cs.set(CS_OPEN_LASER);
 		}
 		else if (cs.is_open_laser())
 		{
+			// run
+			wheel.set_speed(0, 0);
+
+			// switch
 			if (laser.isScan2Ready() == 1)
 			{
+				// Open laser succeeded.
+				if (g_is_manual_pause || g_is_low_bat_pause)
+					cs.set(CS_CLEAN);
+				else
+					cs.set(CS_ALIGN);
+			}
+		}
+		else if (cs.is_align())
+		{
+			// run
+			wheel.set_speed(0, 0);
+			std::vector<LineABC> lines;
+			float align_angle = 0.0;
+			if(laser.findLines(&lines))
+			{
+				if (laser.getAlignAngle(&lines,&align_angle))
+					laser.alignAngle(align_angle);
+			}
+
+			// switch
+			if (laser.alignTimeOut())
+				//cs.set(CS_OPEN_SLAM);
+				break;
+			if (laser.alignFinish())
+			{
+				float align_angle = laser.alignAngle();
+				align_angle += (float)(LIDAR_THETA / 10);
+				robot::instance()->offsetAngle(align_angle);
+				g_homes[0].TH = -(int16_t)(align_angle);
+				ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
+				usleep(230000);
+				//cs.set(CS_OPEN_SLAM);
 				break;
 			}
 		}
@@ -670,6 +710,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 	if(!laser_init())
 		return;
 */
+/*
 
 	if (g_is_low_bat_pause || g_resume_cleaning)
 	{
@@ -706,6 +747,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 	}
 
 	get_aligment_angle();
+*/
 
 	usleep(600000);// wait for tf ready
 

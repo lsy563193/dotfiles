@@ -47,6 +47,17 @@ public:
 
 	void motorCtrl(bool switch_);
 	bool openTimeOut();
+	void startAlign();
+	bool alignTimeOut();
+	bool alignFinish();
+	float alignAngle(void)
+	{
+		return align_angle_;
+	}
+	void alignAngle(float angle)
+	{
+		align_angle_ = angle;
+	}
 
 	uint8_t laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
@@ -89,6 +100,10 @@ private:
 	// For opening laser.
 	time_t open_command_time_stamp_;
 
+	// For aligning.
+	time_t start_align_time_stamp_;
+	bool align_finish_;
+	float align_angle_;
 };
 
 bool laser_is_stuck();

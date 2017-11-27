@@ -161,6 +161,10 @@ void cm_apply_cs(void) {
 		laser.motorCtrl(ON);
 		laser.setScan2Ready(0);
 	}
+	else if (cs.is_align())
+	{
+		laser.startAlign();
+	}
 	if (cs.is_go_home_point()) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
