@@ -45,7 +45,7 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void laserMotorCtrl(bool switch_);
+	void motorCtrl(bool switch_);
 
 	uint8_t laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
@@ -84,12 +84,15 @@ private:
 	visualization_msgs::Marker fit_line_marker;
 
 	geometry_msgs::Point laser_points_;
+
+	// For opening laser.
+	time_t open_command_time_stamp_;
+
 };
 
 bool laser_is_stuck();
 uint8_t laser_get_status();
 uint8_t laser_is_robot_slip();
 
-extern Laser* s_laser;
-
+extern Laser laser;
 #endif

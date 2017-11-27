@@ -464,24 +464,26 @@ void init_before_gyro()
 			break;
 	}
 }
+/*
 
 bool MotionManage::laser_init()
 {
 	s_laser = new Laser();
-	s_laser->laserMotorCtrl(ON);
-	if (s_laser->isScanReady() == -1)
+	laser.motorCtrl(ON);
+	if (laser.isScanReady() == -1)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
 		error.set(Error_Code_Laser);
 		initSucceeded(false);
 		return false;
 	}
-	else if (s_laser->isScanReady() == 0)
+	else if (laser.isScanReady() == 0)
 	{
 		initSucceeded(false);
 		return false;
 	}
 }
+*/
 
 void MotionManage::get_aligment_angle()
 {
@@ -497,8 +499,8 @@ void MotionManage::get_aligment_angle()
 			ROS_INFO("%s,%d,ready to find lines ",__FUNCTION__,__LINE__);
 			float align_angle = 0.0;
 			while(1){
-				if(s_laser->findLines(&lines)){
-					if(s_laser->getAlignAngle(&lines,&align_angle))
+				if(laser.findLines(&lines)){
+					if(laser.getAlignAngle(&lines,&align_angle))
 						break;
 				}
 				if(difftime(time(NULL) ,time_findline) >= 2){
@@ -604,11 +606,24 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	cs.set(CS_OPEN_GYRO);
 	while (ros::ok())
 	{
+		bool eh_status_now = false, eh_status_last = false;
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			usleep(100);
+			continue;
+		}
+
 		if (cs.is_open_gyro())
 		{
 			gyro.waitForOn();
 			if (gyro.isOn())
+				cs.set(CS_OPEN_LASER);
+		}
+		else if (cs.is_open_laser())
+		{
+			if (laser.isScan2Ready() == 1)
+			{
 				break;
+			}
 		}
 	}
 /*	init_before_gyro();
@@ -616,6 +631,7 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 
 	if (!gyro.waitForOn())
 		return;*/
+/*
 
 	switch (cm_get())
 	{
@@ -645,9 +661,12 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (cm_get() == Clean_Mode_Go_Charger)
 		return;
 
-	/*--- laser init ---*/
+	*/
+/*--- laser init ---*//*
+
 	if(!laser_init())
 		return;
+*/
 
 	if (g_is_low_bat_pause || g_resume_cleaning)
 	{
@@ -715,11 +734,13 @@ MotionManage::~MotionManage()
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-	if (s_laser != nullptr)
+/*	if (s_laser != nullptr)
 	{
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
-	}
+	}*/
+	laser.motorCtrl(OFF);
+	laser.setScan2Ready(0);
 	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && cs_is_paused() ) || g_robot_stuck ) )
 	{
 		wav.play(WAV_CLEANING_PAUSE);

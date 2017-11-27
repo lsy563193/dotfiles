@@ -1047,7 +1047,7 @@ void df_laser_stuck(bool state_new,bool state_last)
 {
 	beeper.play_for_command(true);
 	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
-	ev.laser_stuck = true;
+	//ev.laser_stuck = true;
 }
 
 ///* Default: empty hanlder */

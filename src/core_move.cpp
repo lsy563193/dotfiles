@@ -153,6 +153,12 @@ void cm_apply_cs(void) {
 			wav.play(WAV_CLEANING_START);
 		}
 	}
+	else if (cs.is_open_laser())
+	{
+		cs_work_motor();
+		laser.motorCtrl(ON);
+		laser.setScan2Ready(0);
+	}
 	if (cs.is_go_home_point()) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);

@@ -27,25 +27,26 @@ boost::mutex scan3_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
 
-Laser* s_laser = nullptr;
+Laser laser;
 
 Laser::Laser():angle_n_(0)
 {
-	setScanReady(0);
-	setScan2Ready(0);
-	scan_update_time = ros::Time::now().toSec();
-	scan2_update_time = ros::Time::now().toSec();
+	//todo: laser should add a status for setting ScanReady in case laser still get a scan after shuttng down.
+//	setScanReady(0);
+//	setScan2Ready(0);
+//	scan_update_time = ros::Time::now().toSec();
+//	scan2_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
 }
 
 Laser::~Laser()
 {
-	laserMotorCtrl(OFF);
-	setScanReady(0);
-	setScan2Ready(0);
-	//delete []last_ranges_;
-	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
+//	motorCtrl(OFF);
+//	setScanReady(0);
+//	setScan2Ready(0);
+//	//delete []last_ranges_;
+//	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
 
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -161,9 +162,25 @@ void Laser::setScan3Ready(uint8_t val)
 	is_scan3_ready_ = val;
 }
 
-void Laser::laserMotorCtrl(bool switch_)
+void Laser::motorCtrl(bool switch_)
 {
-	time_t start_time = time(NULL);
+	if(switch_){
+		scan_update_time = ros::Time::now().toSec();
+		scan2_update_time = ros::Time::now().toSec();
+		open_command_time_stamp_ = time(NULL);
+	}
+
+	if (!robot::instance()->laserMotorCtrl(switch_))
+		ROS_ERROR("%s %d: Laser service not received!",__FUNCTION__,__LINE__);
+
+	if (!switch_)
+	{
+		setScanReady(0);
+		setScan2Ready(0);
+		//delete []last_ranges_;
+		ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
+	}
+/*	time_t start_time = time(NULL);
 	bool eh_status_now = false, eh_status_last = false;
 	bool request_sent = false;
 	while(ros::ok())
@@ -212,7 +229,7 @@ void Laser::laserMotorCtrl(bool switch_)
 			ev.fatal_quit = true;
 			continue;
 		}
-	}
+	}*/
 }
 
 /*
@@ -1459,11 +1476,11 @@ bool Laser::laserCheckFresh(float duration, uint8_t type)
 
 	if (time_gap < duration)
 	{
-		//ROS_INFO("%s %d: time_gap(%lf) < duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
+		//ROS_INFO("%s %d: type:%d, time_gap(%lf) < duration(%f).", __FUNCTION__, __LINE__, type, time_gap, duration);
 		return true;
 	}
 
-	//ROS_INFO("%s %d: time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
+	//ROS_INFO("%s %d: type:%d, time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, type, time_gap, duration);
 	return false;
 }
 
@@ -1471,22 +1488,23 @@ bool Laser::laserCheckFresh(float duration, uint8_t type)
 
 bool laser_is_stuck()
 {
-	if (s_laser != nullptr && !s_laser->laserCheckFresh(4, 2))
+	if (laser.isScan2Ready() && !laser.laserCheckFresh(4, 2))
 		return true;
 	return false;
 }
 
 uint8_t laser_get_status()
 {
-	if (s_laser != nullptr)
-		return s_laser->laserMarker(0.20);
+	if (laser.isScan2Ready())
+		return laser.laserMarker(0.20);
+
 	return 0;
 }
 
 uint8_t laser_is_robot_slip()
 {
 	uint8_t ret = 0;
-	if(s_laser != nullptr && s_laser->isScan2Ready() && s_laser->isRobotSlip()){
+	if(laser.isScan2Ready() && laser.isRobotSlip()){
 		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
 		ret = 1;
 	}

@@ -293,26 +293,23 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 void robot::scanCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	if (s_laser != nullptr)
-		s_laser->scanCb(msg);
+	laser.scanCb(msg);
 }
 
 void robot::scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	if (s_laser != nullptr)
-		s_laser->scanCb2(msg);
+	laser.scanCb2(msg);
 }
 
 void robot::scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	if (s_laser != nullptr)
-		s_laser->scanCb3(msg);
+	laser.scanCb3(msg);
 }
 
 void robot::laserPointCb(const visualization_msgs::Marker &point_marker)
 {
-	if (s_laser != nullptr)
-		s_laser->laserPointCb(point_marker);
+	if (laser.isScan2Ready())
+		laser.laserPointCb(point_marker);
 }
 
 void robot::visualizeMarkerInit()
@@ -607,9 +604,12 @@ bool robot::laserMotorCtrl(bool switch_)
 {
 	pp::SetLidar ctrl_message;
 	if(switch_){
-		ctrl_message.request.x_acc_init= acc.getInitXAcc();
+/*		ctrl_message.request.x_acc_init= acc.getInitXAcc();
 		ctrl_message.request.y_acc_init= acc.getInitYAcc();
-		ctrl_message.request.z_acc_init= acc.getInitZAcc();
+		ctrl_message.request.z_acc_init= acc.getInitZAcc();*/
+		ctrl_message.request.x_acc_init= 0;
+		ctrl_message.request.y_acc_init= 0;
+		ctrl_message.request.z_acc_init= 0;
 	}
 	ctrl_message.request.data = switch_;
 

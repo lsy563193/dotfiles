@@ -171,7 +171,7 @@ static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max,
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
-	line_is_found = s_laser->laserGetFitLine(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
+	line_is_found = laser.laserGetFitLine(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
 //	RESET_WALL_DIS = int(distance * 1000);
 
 //	ROS_INFO("line_distance = %lf", distance);
@@ -359,7 +359,7 @@ bool BackRegulator::isReach()
 
 bool BackRegulator::isLaserStop()
 {
-	auto obstacle_distance = s_laser->getObstacleDistance(1, ROBOT_RADIUS);
+	auto obstacle_distance = laser.getObstacleDistance(1, ROBOT_RADIUS);
 	if (g_back_distance >= 0.05 && obstacle_distance < 0.03)
 	{
 		ROS_WARN("%s, %d: obstacle_distance:%f.", __FUNCTION__, __LINE__, obstacle_distance);
@@ -776,7 +776,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 		check_limit(integrated_, -150, 150);
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
-	auto obstalce_distance_front = s_laser->getObstacleDistance(0,ROBOT_RADIUS);
+	auto obstalce_distance_front = laser.getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.get_status();
 	bool should_rosmap2_decrease = ros2_map.is_block();
 	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25) || should_rosmap2_decrease)
