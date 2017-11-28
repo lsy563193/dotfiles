@@ -62,6 +62,7 @@ void CleanMode::run()
 
 		if (isReach() || isStop())
 		{
+	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
 			if(!csm_next(curr)) //cs manage
 				return;
 		}
@@ -234,23 +235,23 @@ void CleanMode::resetTriggeredValue(void)
 
 bool CleanMode::find_target(Cell_t& curr)
 {
-	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
-	mark();
-	auto previous_cs = cs.get();
-	g_old_dir = g_new_dir; // Save current direction.
-	g_plan_path.clear();
-	cs_path_next(curr, g_plan_path);
-
-	display();
-
-	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
-		setMt();
-		g_passed_path.clear();
-	}
-	g_allow_check_path_in_advance = true;
-
-	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
-	return !g_plan_path.empty();
+//	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
+//	mark();
+//	auto previous_cs = cs.get();
+//	g_old_dir = g_new_dir; // Save current direction.
+//	g_plan_path.clear();
+//	cs_path_next(curr, g_plan_path);
+//
+//	display();
+//
+//	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
+//		setMt();
+//		g_passed_path.clear();
+//	}
+//	g_allow_check_path_in_advance = true;
+//
+//	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
+//	return !g_plan_path.empty();
 }
 
 //NavigationClean
@@ -277,13 +278,7 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 
 	g_passed_path.clear();
 	g_passed_path.push_back(curr);
-//	vss[0] = new GYRO_CS;
-	vss[CS_CLEAN] = new CleanCS;
-	vss[CS_GO_HOME_POINT] = new GoHomePointCS;
-	vss[CS_GO_CHANGER] = new GoChargeCS;
-	vss[CS_TMP_SPOT] = new TmpSpotCS;
-	vss[CS_TRAPPED] = new TrappedCS;
-	vss[CS_EXPLORATION] = new ExplorationCS;
+
 }
 
 NavigationClean::~NavigationClean()
@@ -658,17 +653,23 @@ bool NavigationClean::csm_next(Cell_t &curr)
 //		return find_target(curr);
 	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
 	mark();
+	auto previous_cs = cs.get();
 	g_old_dir = g_new_dir; // Save current direction.
 	g_plan_path.clear();
 //	cs_path_next(curr, g_plan_path);
-	while (cs_next(curr,g_plan_path));
+	while (cs.cs_next(curr,g_plan_path))
 
-//	display();
+	display();
 
+	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
+		setMt();
+		g_passed_path.clear();
+	}
 	g_allow_check_path_in_advance = true;
 
 	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
 	return !g_plan_path.empty();
+
 }
 void NavigationClean::mark()
 {
@@ -692,17 +693,6 @@ void NavigationClean::mark()
 	cost_map.set_cleaned(g_passed_path);
 	cost_map.mark_robot(MAP);
 //	cost_map.print(MAP,0,0);
-}
-
-void NavigationClean::setting(void)
-{
-
-}
-
-bool NavigationClean::cs_next(const Cell_t& start, PPTargetType& path)
-{
-	(vss[cs_])->cs_next(start,path);
-//	return false;
 }
 
 Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)

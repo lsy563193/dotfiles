@@ -124,8 +124,14 @@ class CleanStateManage:public CleanStateBase
 {
 
 public:
+	CleanStateManage();
+	void setting(void);
+	bool cs_next(const Cell_t& start, PPTargetType& path);
 
+private:
+	std::array<CleanStateBase*,CS_NUM> vss_;
 };
+
 extern CleanStateManage cs;
 //extern CleanStateBase* p_cs;
 

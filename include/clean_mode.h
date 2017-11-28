@@ -87,7 +87,7 @@ protected:
 	Cell_t last_;
 };
 
-class NavigationClean:public CleanMode,CleanStateBase{
+class NavigationClean:public CleanMode{
 public:
 	NavigationClean(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 	~NavigationClean();
@@ -99,11 +99,11 @@ public:
 	bool isReach();
 	bool isSwitch();
 	bool csm_next(Cell_t &curr);
-	void setting(void);
-	bool cs_next(const Cell_t& start, PPTargetType& path);
+//	void setting(void);
+//	bool cs_next(const Cell_t& start, PPTargetType& path);
 
-private:
-	std::array<CleanStateBase*,CS_NUM> vss;
+//private:
+//	std::array<CleanStateBase*,CS_NUM> vss;
 //	bool path_next();
 
 private:

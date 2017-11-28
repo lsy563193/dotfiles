@@ -149,8 +149,6 @@ bool CleanCS::cs_next(const Cell_t& start, PPTargetType& path)
 			return true;
 		}
 	}else{
-		setMt();
-		g_passed_path.clear();
 		mt.update(start,path);
 	}
 	return false;
@@ -272,3 +270,23 @@ void GoChargeCS::setting(void)
 	led.set_mode(LED_STEADY, LED_ORANGE);
 }
 
+CleanStateManage::CleanStateManage()
+{
+	vss_[CS_CLEAN] = new CleanCS();
+	vss_[CS_GO_HOME_POINT] = new GoHomePointCS();
+	vss_[CS_GO_CHANGER] = new GoChargeCS();
+	vss_[CS_TMP_SPOT] = new TmpSpotCS();
+	vss_[CS_TRAPPED] = new TrappedCS();
+	vss_[CS_EXPLORATION] = new ExplorationCS();
+};
+
+bool CleanStateManage::cs_next(const Cell_t& start, PPTargetType& path)
+{
+	vss_[cs_]->cs_next(start,path);
+}
+
+void CleanStateManage::setting(void)
+{
+//	tilt.enable(false); //disable tilt detect
+//	led.set_mode(LED_STEADY, LED_ORANGE);
+}
