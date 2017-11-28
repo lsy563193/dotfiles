@@ -597,9 +597,9 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		ev.remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
+	initSucceeded(true);
 
 	reset_work_time();
-	initSucceeded(true);
 
 	// Initialize motors and map.
 	if (!(g_is_manual_pause || g_robot_stuck || g_is_low_bat_pause || g_resume_cleaning))
