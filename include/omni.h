@@ -21,14 +21,14 @@ public:
 	}
 void reset()
 {
-	uint8_t reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, reset_byte | 0x01);
+	uint8_t reset_byte = controller.getSendData(CTL_OMNI_RESET);
+	controller.setSendData(CTL_OMNI_RESET, reset_byte | 0x01);
 }
 
 void clear()
 {
-	uint8_t reset_byte = controller.get(CTL_OMNI_RESET);
-	controller.set(CTL_OMNI_RESET, reset_byte & ~0x01);
+	uint8_t reset_byte = controller.getSendData(CTL_OMNI_RESET);
+	controller.setSendData(CTL_OMNI_RESET, reset_byte & ~0x01);
 }
 int16_t getOmniWheel()
 {

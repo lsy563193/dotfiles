@@ -30,27 +30,27 @@ public:
 	void set_main_pwm(uint16_t PWM) {
 		// Set main brush PWM, the value of PWM should be in range (0, 100).
 		PWM = PWM < 100 ? PWM : 100;
-		controller.set(CTL_BRUSH_MAIN, PWM & 0xff);
+		controller.setSendData(CTL_BRUSH_MAIN, PWM & 0xff);
 	}
 
 	void set_side_pwm(uint16_t L, uint16_t R) {
 		// Set left and right brush PWM, the value of L/R should be in range (0, 100).
 		L = L < 100 ? L : 100;
 		l_pwm = L;
-		controller.set(CTL_BRUSH_LEFT, L & 0xff);
+		controller.setSendData(CTL_BRUSH_LEFT, L & 0xff);
 		R = R < 100 ? R : 100;
 		r_pwm = R;
-		controller.set(CTL_BRUSH_RIGHT, R & 0xff);
+		controller.setSendData(CTL_BRUSH_RIGHT, R & 0xff);
 	}
 
 	void set_left_pwm(uint16_t L) {
 		L = L < 100 ? L : 100;
-		controller.set(CTL_BRUSH_LEFT, L & 0xff);
+		controller.setSendData(CTL_BRUSH_LEFT, L & 0xff);
 	}
 
 	void set_right_pwm(uint16_t R) {
 		R = R < 100 ? R : 100;
-		controller.set(CTL_BRUSH_RIGHT, R & 0xff);
+		controller.setSendData(CTL_BRUSH_RIGHT, R & 0xff);
 	}
 
 	uint8_t left_is_stall(void) {

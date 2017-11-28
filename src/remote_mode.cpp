@@ -51,7 +51,7 @@ static RM_EventHandle eh;
 void remote_mode(void)
 {
 	ROS_INFO("\n-------Remote mode_------\n");
-	controller.set_status(Clean_Mode_Remote);
+	controller.setCleanMode(Clean_Mode_Remote);
 	g_is_low_bat_pause = false;
 	cs_paused_setting();
 

@@ -43,13 +43,13 @@ public:
 	void bldc_speed(uint32_t S);
 
 	void start_self_check(void) {
-		uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-		controller.set(CTL_OMNI_RESET, omni_reset_byte | 0x02);
+		uint8_t omni_reset_byte = controller.getSendData(CTL_OMNI_RESET);
+		controller.setSendData(CTL_OMNI_RESET, omni_reset_byte | 0x02);
 	}
 
 	void reset_self_check(void) {
-		uint8_t omni_reset_byte = controller.get(CTL_OMNI_RESET);
-		controller.set(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
+		uint8_t omni_reset_byte = controller.getSendData(CTL_OMNI_RESET);
+		controller.setSendData(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
 	}
 
 	uint8_t get_self_check_status(void) {

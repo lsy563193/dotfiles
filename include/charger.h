@@ -32,12 +32,12 @@ public:
 
 	void set_start(void) {
 		// This function will turn on the charging function.
-		controller.set(CTL_CHARGER, 0x01);
+		controller.setSendData(CTL_CHARGER, 0x01);
 	}
 
 	void set_stop(void) {
 		// Set the flag to false so that it can quit charger mode_.
-		controller.set(CTL_CHARGER, 0x00);
+		controller.setSendData(CTL_CHARGER, 0x00);
 	}
 
 	int getChargeStatus() const

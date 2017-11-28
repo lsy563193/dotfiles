@@ -10,241 +10,146 @@
 #include "movement.h"
 #include "crc8.h"
 #include "serial.h"
+#include "config.h"
 
-extern uint8_t g_send_stream[SEND_LEN];
+#define RECEI_LEN 57
+#define SEND_LEN 21
+#define	CTL_WHEEL_LEFT_HIGH 2
+#define	CTL_WHEEL_LEFT_LOW  3
+#define	CTL_WHEEL_RIGHT_HIGH  4
+#define	CTL_WHEEL_RIGHT_LOW 5
+#define	CTL_VACCUM_PWR 6
+#define	CTL_BRUSH_LEFT 7
+#define	CTL_BRUSH_RIGHT 8
+#define	CTL_BRUSH_MAIN 9
+#define	CTL_BUZZER 10
+#define	CTL_MAIN_PWR 11
+#define	CTL_CHARGER 12
+#define	CTL_LED_RED 13
+#define	CTL_LED_GREEN 14
+
+#define REC_LW_S_H 2//left wheel speed high byte
+#define REC_LW_S_L 3
+#define REC_RW_S_H 4//right wheel speed high byte
+#define REC_RW_S_L 5
+
+#define REC_ANGLE_H 6 //angle high byte
+#define REC_ANGLE_L 7
+#define REC_ANGLE_V_H 8//angle velocity high byte
+#define REC_ANGLE_V_L 9
+
+#define REC_LW_C_H 10//left wheel current high byte
+#define REC_LW_C_L 11
+#define REC_RW_C_H 12
+#define REC_RW_C_L 13
+
+#define REC_L_WALL_H 14 //left wall sensor high byte
+#define REC_L_WALL_L 15
+
+#define REC_L_OBS_H 16 //left obs high byte
+#define REC_L_OBS_L 17
+#define REC_F_OBS_H 18//front obs high byte
+#define REC_F_OBS_L 19
+#define REC_R_OBS_H 20//right obs high byte
+#define REC_R_OBS_L 21
+
+#define REC_R_WALL_H 22//right wall sensor high byte
+#define REC_R_WALL_L 23//low byte
+
+#define REC_BUMPER 24//bumper
+
+#define REC_REMOTE_IR 25//remote ir control
+
+#define REC_CHARGE_STUB_4 26//charge stub signal byte 4
+#define REC_CHARGE_STUB_3 27//byte 3
+#define REC_CHARGE_STUB_2 28//byte 2
+#define REC_CHARGE_STUB_1 29//byte 1
+
+#define REC_VISUAL_WALL_H 30//visual wall high byte
+#define REC_VISUAL_WALL_L 31
+
+#define REC_KEY 32//key on robot
+
+#define REC_CHARGE_STATE 33
+
+#define REC_WATER_TANK 34
+
+#define REC_BAT_V 35//battery voltage
+
+#define REC_L_CLIFF_H 36//left cliff high byte
+#define REC_L_CLIFF_L 37
+#define REC_F_CLIFF_H 38//front cliff high byte
+#define REC_F_CLIFF_L 39
+#define REC_R_CLIFF_H 40//right cliff high byte
+#define REC_R_CLIFF_L 41
+
+#define REC_CL_OC 42//clean tools over current
+
+#define REC_GYRO_DYMC 43//gyro dynamic
+
+#define REC_OMNI_W_H 44//omni wheel count value high byte
+#define REC_OMNI_W_L 45
+
+#define REC_XACC_H 46//x acceleration high byte
+#define REC_XACC_L 47
+#define REC_YACC_H 48
+#define REC_YACC_L 49
+#define REC_ZACC_H 50
+#define REC_ZACC_L 51
+
+#define REC_PLAN 52//set clean plan
+
+#if __ROBOT_X400
+
+#define	CTL_GYRO 15
+#define	CTL_CRC 16
+
+#define RECEI_LEN	50
+#define SEND_LEN 19
+
+#elif __ROBOT_X900
+
+#define CTL_OMNI_RESET 15
+#define CTL_GYRO 16
+#define CTL_CMD				17
+#define CTL_CRC				18
+
+#endif
+
 extern boost::mutex g_send_stream_mutex;
-
-void set_send_flag(void);
-
-void reset_send_flag(void);
-
 
 class Controller {
 public:
-	void set(uint8_t type, uint8_t val) {
-		set_send_flag();
-		if (type >= CTL_WHEEL_LEFT_HIGH && type <= CTL_GYRO) {
-			g_send_stream[type] = val;
-		}
-		reset_send_flag();
-	}
+	void setSendData(uint8_t seq, uint8_t val);
 
-	uint8_t get(uint8_t seq) {
-		uint8_t tmp_data;
-		g_send_stream_mutex.lock();
-		tmp_data = g_send_stream[seq];
-		g_send_stream_mutex.unlock();
-		return tmp_data;
-	}
+	uint8_t getSendData(uint8_t seq);
 
-	int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number) {
-		int num_send_packets = key_length / KEY_DOWNLINK_LENGTH;
-		uint8_t ptr[RECEI_LEN], buf[SEND_LEN];
+	uint8_t getReceiveData(uint8_t seq);
 
-		//Set random seed.
-		//srand(time(NULL));
-		//Send random key to robot.
-		for (int i = 0; i < num_send_packets; i++) {
-			//Populate dummy.
-			for (int j = 0; j < DUMMY_DOWNLINK_LENGTH; j++)
-				set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) (rand() % 256));
+	void setReceiveData(uint8_t (&buf)[RECEI_LEN]);
 
-			//Populate Sequence number.
-			for (int j = 0; j < SEQUENCE_DOWNLINK_LENGTH; j++)
-				set(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) ((sequence_number >> 8 * j) % 256));
+	int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
 
-			//Populate key.
-#if VERIFY_DEBUG
-			printf("appending key: ");
+	void setCleanMode(uint8_t val);
+
+	uint8_t getCleanMode();
+
+#if __ROBOT_X400
+	uint8_t receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
+	uint8_t send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0xcc,0x33};
+
+#elif __ROBOT_X900
+	uint8_t receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x00,0xcc,0x33};
+	uint8_t send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 #endif
-
-			for (int k = 0; k < KEY_DOWNLINK_LENGTH; k++) {
-				set(k + KEY_DOWNLINK_OFFSET, key[i * KEY_DOWNLINK_LENGTH + k]);
-
-#if VERIFY_DEBUG
-				printf("%02x ", g_send_stream[k + KEY_DOWNLINK_OFFSET]);
-				if (k == KEY_DOWNLINK_LENGTH - 1)
-					printf("\n");
-#endif
-
-			}
-
-			//Fill command field
-			switch (i) {
-				case 0:
-					set(SEND_LEN - 4, CMD_KEY1);
-					break;
-				case 1:
-					set(SEND_LEN - 4, CMD_KEY2);
-					break;
-				case 2:
-					set(SEND_LEN - 4, CMD_KEY3);
-					break;
-				default:
-
-#if VERIFY_DEBUG
-					printf("control_get_sign : Error! key_length too large.");
-#endif
-
-					return -1;
-					//break;
-			}
-
-			for (int i = 0; i < 40; i++) {  //200ms (round trip takes at leat 15ms)
-				int counter = 0, ret;
-
-				g_send_stream_mutex.lock();
-				memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-				g_send_stream_mutex.unlock();
-				buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
-				serial_write(SEND_LEN, buf);
-
-#if VERIFY_DEBUG
-				printf("sending data to robot: i: %d\n", i);
-				for (int j = 0; j < SEND_LEN; j++) {
-					printf("%02x ", buf[j]);
-				}
-				printf("\n");
-#endif
-
-				while (counter < 200) {
-
-					ret = serial_read(1, ptr);
-					if (ptr[0] != 0xAA)
-						continue;
-
-					ret = serial_read(1, ptr);
-					if (ptr[0] != 0x55)
-						continue;
-
-					ret = serial_read(RECEI_LEN - 2, ptr);
-					if (RECEI_LEN - 2 != ret) {
-
-#if VERIFY_DEBUG
-						printf("%s %d: receive count error: %d\n", __FUNCTION__, __LINE__, ret);
-#endif
-
-						usleep(100);
-						counter++;
-					}
-					else {
-						break;
-					}
-				}
-				if (counter < 200) {
-
-#if VERIFY_DEBUG
-					printf("%s %d: counter: %d\tdata count: %d\treceive cmd: 0x%02x\n", __FUNCTION__, __LINE__, counter, ret, ptr[CMD_UPLINK_OFFSET]);
-
-					printf("receive from robot: %d\n");
-					for (int j = 0; j < RECEI_LEN - 2; j++) {
-						printf("%02x ", ptr[j]);
-					}
-					printf("\n");
-#endif
-
-					if (ptr[CMD_UPLINK_OFFSET - 2] == CMD_NCK)   //robot received bronen packet
-						continue;
-
-					if (ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK) {  //set finished
-						//printf("Downlink command ACKed!!\n");
-						set(CTL_CMD, 0x00);
-						break;
-					}
-				}
-				else {
-
-#if VERIFY_DEBUG
-					printf("%s %d: max read count reached: %d\n", counter);
-#endif
-
-				}
-				usleep(500);
-			}
-		}
-
-		//Block and wait for signature.
-		for (int i = 0; i < 400; i++) {                              //200ms (round trip takes at leat 15ms)
-			int counter = 0, ret;
-			while (counter < 400) {
-				ret = serial_read(1, ptr);
-				if (ptr[0] != 0xAA)
-					continue;
-
-				ret = serial_read(1, ptr);
-				if (ptr[0] != 0x55)
-					continue;
-
-				ret = serial_read(RECEI_LEN - 2, ptr);
-
-#if VERIFY_DEBUG
-				printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, ret, RECEI_LEN - 2, counter);
-#endif
-
-				if (RECEI_LEN - 2 != ret) {
-					usleep(100);
-					counter++;
-				}
-				else {
-					break;
-				}
-			}
-
-#if VERIFY_DEBUG
-			for (int j = 0; j < RECEI_LEN - 2; j++) {
-				printf("%02x ", ptr[j]);
-			}
-			printf("\n");
-#endif
-
-			if (counter < 400 && ptr[CMD_UPLINK_OFFSET - 3] == CMD_ID) {
-				//set finished
-
-#if VERIFY_DEBUG
-				printf("Signature received!!\n");
-#endif
-
-				for (int j = 0; j < KEY_UPLINK_LENGTH; j++)
-					sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
-
-				//Send acknowledge back to MCU.
-				set(CTL_CMD, CMD_ACK);
-				for (int k = 0; k < 20; k++) {
-					g_send_stream_mutex.lock();
-					memcpy(buf, g_send_stream, sizeof(uint8_t) * SEND_LEN);
-					g_send_stream_mutex.unlock();
-					buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
-					serial_write(SEND_LEN, buf);
-
-					usleep(500);
-				}
-				set(CTL_CMD, 0x00);
-
-#if VERIFY_DEBUG
-				printf("%s %d: exit\n", __FUNCTION__, __LINE__);
-#endif
-
-				return KEY_UPLINK_LENGTH;
-			}
-			usleep(500);
-		}
-		set(CTL_CMD, 0x00);
-
-#if VERIFY_DEBUG
-		printf("%s %d: exit\n", __FUNCTION__, __LINE__);
-#endif
-
-		return -1;
-	}
-
-	void set_status(uint8_t val) {
-		set(CTL_MAIN_PWR, val & 0xff);
-	}
-
-uint8_t get_status()
-{
-	return get(CTL_MAIN_PWR);
-}
 
 private:
 };

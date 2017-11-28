@@ -119,7 +119,7 @@ bool Gyro::isOn(void)
 
 void Gyro::setOn(void)
 {
-	controller.set(CTL_GYRO, 0x02);
+	controller.setSendData(CTL_GYRO, 0x02);
 	if (isOn()){
 		ROS_INFO("gyro on already");
 	}
@@ -364,7 +364,7 @@ bool Gyro::isStable()
 
 void Gyro::setOff()
 {
-	controller.set(CTL_GYRO, 0x00);
+	controller.setSendData(CTL_GYRO, 0x00);
 	if (!Gyro::isOn()){
 		ROS_INFO("gyro stop already");
 		return;
@@ -377,7 +377,7 @@ void Gyro::setOff()
 
 	while(count <= 10)
 	{
-		controller.set(CTL_GYRO, 0x00);
+		controller.setSendData(CTL_GYRO, 0x00);
 		usleep(20000);
 		count++;
 		if (getAngleV() != angle_v){
@@ -403,12 +403,12 @@ void Gyro::setDynamicOn(void)
 {
 	if (Gyro::isOn())
 	{
-		uint8_t byte = controller.get(CTL_GYRO);
-		controller.set(CTL_GYRO, byte | 0x01);
+		uint8_t byte = controller.getSendData(CTL_GYRO);
+		controller.setSendData(CTL_GYRO, byte | 0x01);
 	}
 	//else
 	//{
-	//	controller.set(CTL_GYRO, 0x01);
+	//	controller.setSendData(CTL_GYRO, 0x01);
 	//}
 }
 
@@ -416,12 +416,12 @@ void Gyro::setDynamicOff(void)
 {
 	if (isOn())
 	{
-		uint8_t byte = controller.get(CTL_GYRO);
-		controller.set(CTL_GYRO, byte | 0x00);
+		uint8_t byte = controller.getSendData(CTL_GYRO);
+		controller.setSendData(CTL_GYRO, byte | 0x00);
 	}
 	//else
 	//{
-	//	controller.set(CTL_GYRO, 0x00);
+	//	controller.setSendData(CTL_GYRO, 0x00);
 	//}
 }
 #endif
