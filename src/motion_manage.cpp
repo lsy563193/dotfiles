@@ -597,6 +597,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		ev.remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
+	initSucceeded(true);
 
 	reset_work_time();
 
@@ -632,7 +633,10 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		}
 
 		if (p_cm->isExit())
+		{
+			initSucceeded(false);
 			break;
+		}
 
 		if (cs.is_open_gyro())
 		{
