@@ -216,10 +216,10 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	{
 		target = it[0];
 		//todo
-//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
+//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (Movement::s_target_p.Y<Movement::s_origin_p.Y));
 //		if(mt.is_follow_wall() && cm_is_reach())
 //		{
-//			if(mt.is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
+//			if(mt.is_left() ^ (Movement::s_target_p.Y<Movement::s_origin_p.Y))
 //				target = it[1];
 //		}
 	}
@@ -1033,7 +1033,7 @@ bool wf_is_isolate() {
 	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 
 	fw_map.mark_robot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
-	auto curr = cost_map.point_to_cell(RegulatorBase::s_curr_p);
+	auto curr = cost_map.point_to_cell(Movement::s_curr_p);
 	fw_map.print(MAP, curr.X, curr.Y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
 

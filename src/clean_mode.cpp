@@ -85,11 +85,11 @@ void CleanMode::mark() {
 };
 
 bool CleanMode::isStop(){
-		return RegulatorBase::isStop();
+		return Movement::isStop();
 };
 
 bool CleanMode::isExit(){
-	return RegulatorBase::isExit();
+	return Movement::isExit();
 };
 
 void CleanMode::setMt()
@@ -260,11 +260,11 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	if(cm_is_go_charger())
@@ -707,11 +707,11 @@ SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTarg
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
@@ -821,11 +821,11 @@ WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, 
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
@@ -1039,11 +1039,11 @@ Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PP
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
