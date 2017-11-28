@@ -262,8 +262,8 @@ void Wheel::set_left_speed(float speed)
 	stream_l_speed = (uint16_t)(fabs(speed * SPEED_ALF));
 	if (speed < 0)
 		stream_l_speed |= 0x8000;
-	controller.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_l_speed >> 8) & 0xff);
-	controller.setSendData(CTL_WHEEL_LEFT_LOW, stream_l_speed & 0xff);
+	serial.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_l_speed >> 8) & 0xff);
+	serial.setSendData(CTL_WHEEL_LEFT_LOW, stream_l_speed & 0xff);
 }
 
 void Wheel::set_right_speed(float speed)
@@ -274,8 +274,8 @@ void Wheel::set_right_speed(float speed)
 	stream_r_speed = (uint16_t)(fabs(speed * SPEED_ALF));
 	if (right_direction == BACKWARD)
 		stream_r_speed |= 0x8000;
-	controller.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_r_speed >> 8) & 0xff);
-	controller.setSendData(CTL_WHEEL_RIGHT_LOW, stream_r_speed & 0xff);
+	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_r_speed >> 8) & 0xff);
+	serial.setSendData(CTL_WHEEL_RIGHT_LOW, stream_r_speed & 0xff);
 }
 
 int16_t Wheel::get_left_speed(void)

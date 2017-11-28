@@ -5,8 +5,6 @@
 #ifndef PP_OMNI_H
 #define PP_OMNI_H
 
-#include "controller.h"
-
 #include <pp/x900sensor.h>
 extern pp::x900sensor sensor;
 
@@ -21,14 +19,14 @@ public:
 	}
 void reset()
 {
-	uint8_t reset_byte = controller.getSendData(CTL_OMNI_RESET);
-	controller.setSendData(CTL_OMNI_RESET, reset_byte | 0x01);
+	uint8_t reset_byte = serial.getSendData(CTL_OMNI_RESET);
+	serial.setSendData(CTL_OMNI_RESET, reset_byte | 0x01);
 }
 
 void clear()
 {
-	uint8_t reset_byte = controller.getSendData(CTL_OMNI_RESET);
-	controller.setSendData(CTL_OMNI_RESET, reset_byte & ~0x01);
+	uint8_t reset_byte = serial.getSendData(CTL_OMNI_RESET);
+	serial.setSendData(CTL_OMNI_RESET, reset_byte & ~0x01);
 }
 int16_t getOmniWheel()
 {

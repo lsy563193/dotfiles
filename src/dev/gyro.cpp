@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <controller.h>
+#include <serial.h>
 
 #include "path_planning.h"
 #include "gyro.h"
@@ -34,7 +34,7 @@ bool Gyro::isOn(void)
 
 void Gyro::setOn(void)
 {
-	controller.setSendData(CTL_GYRO, 0x02);
+	serial.setSendData(CTL_GYRO, 0x02);
 	if (isOn()){
 		ROS_INFO("gyro on already");
 	}
@@ -279,7 +279,7 @@ bool Gyro::isStable()
 
 void Gyro::setOff()
 {
-	controller.setSendData(CTL_GYRO, 0x00);
+	serial.setSendData(CTL_GYRO, 0x00);
 	if (!Gyro::isOn()){
 		ROS_INFO("gyro stop already");
 		return;
@@ -292,7 +292,7 @@ void Gyro::setOff()
 
 	while(count <= 10)
 	{
-		controller.setSendData(CTL_GYRO, 0x00);
+		serial.setSendData(CTL_GYRO, 0x00);
 		usleep(20000);
 		count++;
 		if (getAngleV() != angle_v){
@@ -318,12 +318,12 @@ void Gyro::setDynamicOn(void)
 {
 	if (Gyro::isOn())
 	{
-		uint8_t byte = controller.getSendData(CTL_GYRO);
-		controller.setSendData(CTL_GYRO, byte | 0x01);
+		uint8_t byte = serial.getSendData(CTL_GYRO);
+		serial.setSendData(CTL_GYRO, byte | 0x01);
 	}
 	//else
 	//{
-	//	controller.setSendData(CTL_GYRO, 0x01);
+	//	serial.setSendData(CTL_GYRO, 0x01);
 	//}
 }
 
@@ -331,12 +331,12 @@ void Gyro::setDynamicOff(void)
 {
 	if (isOn())
 	{
-		uint8_t byte = controller.getSendData(CTL_GYRO);
-		controller.setSendData(CTL_GYRO, byte | 0x00);
+		uint8_t byte = serial.getSendData(CTL_GYRO);
+		serial.setSendData(CTL_GYRO, byte | 0x00);
 	}
 	//else
 	//{
-	//	controller.setSendData(CTL_GYRO, 0x00);
+	//	serial.setSendData(CTL_GYRO, 0x00);
 	//}
 }
 #endif

@@ -6,7 +6,6 @@ FILE(GLOB PP_SRC
 	src/clean_mode.cpp
 	src/clean_state.cpp
 	src/core_move.cpp
-	src/crc8.cpp
 	src/des.cpp
 	src/dev/gyro.cpp
 	src/dev/vacuum.cpp
@@ -18,7 +17,6 @@ FILE(GLOB PP_SRC
 	src/dev/rcon.cpp
 	src/dev/clean_timer.cpp
 	src/dev/remote.cpp
-	src/dev/controller.cpp
 	src/dev/obs.cpp
 	src/dev/led.cpp
 	src/dev/beep.cpp
