@@ -430,8 +430,51 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	clean_map_markers_.colors.push_back(color_);
 }
 
-void robot::pubCleanMapMarkers(void)
+void robot::pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
 {
+	// temp_target is valid if only path is not empty.
+	if (path.empty())
+		return;
+
+	int16_t x, y, x_min, x_max, y_min, y_max;
+	CellState cell_state;
+	Cell_t next = path.front();
+	Cell_t target = path.back();
+	map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+
+	if (next.X == SHRT_MIN )
+		next.X = x_min;
+	else if (next.X == SHRT_MAX)
+		next.X = x_max;
+
+	for (x = x_min; x <= x_max; x++)
+	{
+		for (y = y_min; y <= y_max; y++)
+		{
+			if (x == target.X && y == target.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else if (x == next.X && y == next.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET);
+			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else
+			{
+				cell_state = cost_map.get_cell(MAP, x, y);
+				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
+					robot::instance()->setCleanMapMarkers(x, y, cell_state);
+			}
+		}
+	}
+#if LINEAR_MOVE_WITH_PATH
+	if (!path.empty())
+	{
+		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
+
+		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
+	}
+#endif
+
 	clean_map_markers_.header.stamp = ros::Time::now();
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();

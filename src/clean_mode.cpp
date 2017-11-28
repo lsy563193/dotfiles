@@ -194,7 +194,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 void CleanMode::display()
 {
 	path_display_path_points(g_plan_path);
-	MotionManage::pubCleanMapMarkers(cost_map, g_plan_path);
+	robot::instance()->pubCleanMapMarkers(cost_map, g_plan_path);
 }
 
 void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

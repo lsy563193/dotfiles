@@ -771,7 +771,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	if (integration_cycle_++ > 10) {
 		auto t = cost_map.point_to_cell(target_p);
-		MotionManage::pubCleanMapMarkers(cost_map, g_plan_path, &t);
+		robot::instance()->pubCleanMapMarkers(cost_map, g_plan_path, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
