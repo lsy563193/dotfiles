@@ -284,11 +284,11 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 	/*for exploration update map*/
 	if (cm_is_exploration()) {
-		ros2_map.ros_convert(MAP, false, false, true);
+		cost_map.ros_convert(MAP, false, false, true);
 	}
 	else if(cm_is_navigation())
 	{
-		ros2_map.ros_convert(MAP, false, false, false, 20);
+		decrease_map.ros_convert(MAP, false, false, true);
 	}
 	MotionManage::s_slam->isMapReady(true);
 

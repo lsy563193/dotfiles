@@ -441,7 +441,7 @@ void init_before_gyro()
 
 	fw_map.reset(MAP);
 	ros_map.reset(MAP);
-	ros2_map.reset(MAP);
+	decrease_map.reset(MAP);
 	switch (cm_get())
 	{
 		case Clean_Mode_Navigation:

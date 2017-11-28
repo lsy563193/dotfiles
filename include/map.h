@@ -54,6 +54,38 @@ typedef enum {
 #define	IS_X_AXIS(x) (x == NEG_X || x == POS_X || x == NONE)
 #define	IS_Y_AXIS(x) (x == POS_Y || x == NEG_Y)
 
+class SlamMap
+{
+public:
+	SlamMap();
+	~SlamMap();
+
+	void setWidth(uint32_t width);
+	uint32_t getWidth();
+	void setHeight(uint32_t height);
+	uint32_t getHeight();
+	void setResolution(float resolution);
+	float getResolution();
+	void setOriginX(double origin_x);
+	double getOriginX();
+	void setOriginY(double origin_y);
+	double getOriginY();
+	void setData(std::vector<int8_t> data);
+	std::vector<int8_t> getData();
+
+private:
+	uint32_t width_;
+	uint32_t height_;
+	float resolution_;
+	double origin_x_;
+	double origin_y_;
+	std::vector<int8_t> map_data_;
+};
+
+extern SlamMap slam_map;
+extern boost::mutex slam_map_mutex;
+
+
 class CostMap {
 public:
 
@@ -103,7 +135,7 @@ public:
  * @param is_mark_cleaned to decide if mark the free space to CLENAED
  * @return None
  */
-	void ros_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map,int limit=0);
+	void ros_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map,int limit=20, SlamMap* slam_map_=&slam_map);
 
 	void to_world(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double &wx,
 								double &wy);
@@ -116,6 +148,8 @@ public:
 	void indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my);
 
 	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
+
+	bool countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy);
 
 	bool mark_robot(uint8_t id);
 
@@ -297,37 +331,8 @@ extern CostMap cost_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern CostMap fw_map;
 extern CostMap ros_map;
-extern CostMap ros2_map;
+extern CostMap decrease_map;
 
-class SlamMap
-{
-public:
-	SlamMap();
-	~SlamMap();
-
-	void setWidth(uint32_t width);
-	uint32_t getWidth();
-	void setHeight(uint32_t height);
-	uint32_t getHeight();
-	void setResolution(float resolution);
-	float getResolution();
-	void setOriginX(double origin_x);
-	double getOriginX();
-	void setOriginY(double origin_y);
-	double getOriginY();
-	void setData(std::vector<int8_t> data);
-	std::vector<int8_t> getData();
-
-private:
-	uint32_t width_;
-	uint32_t height_;
-	float resolution_;
-	double origin_x_;
-	double origin_y_;
-	std::vector<int8_t> map_data_;
-};
-
-extern SlamMap slam_map;
 extern boost::mutex slam_map_mutex;
 
 double world_distance(void);
