@@ -18,7 +18,6 @@
 #include <vacuum.h>
 #include <brush.h>
 #include <remote.h>
-#include <tilt.h>
 #include <led.h>
 #include <charger.h>
 #include <event_manager.h>
@@ -234,7 +233,7 @@ void init_nav_gyro_charge()
 void init_nav_after_charge()
 {
 	gyro.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	cs_work_motor();
@@ -283,7 +282,7 @@ void init_exp_before_gyro()
 void init_exp_after_gyro()
 {
 	gyro.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	cs_work_motor();
@@ -311,7 +310,7 @@ void init_wf_after_gyro()
 {
 		// enable titlt detct
 	gyro.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
@@ -349,7 +348,7 @@ void init_spot_after_gyro()
 {
 		// enable titlt detct
 	gyro.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[33m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
@@ -819,7 +818,7 @@ MotionManage::~MotionManage()
 	}
 	// Disable motor here because there ie a cs_work_motor() in spotDeinit().
 	cs_disable_motors();
-	tilt.enable(false);
+	gyro.TiltCheckingEnable(false);
 	g_robot_slip_enable =false;
 	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
 

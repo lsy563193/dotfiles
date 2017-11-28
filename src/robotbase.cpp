@@ -410,7 +410,7 @@ void *robotbase_routine(void*)
 	{
 		gyro.setDynamicOff();
 	}
-	tilt.check();
+	gyro.checkTilt();
 	if(omni.isEnable())
 		omni.detect();
 #endif

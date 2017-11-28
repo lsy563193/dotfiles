@@ -22,6 +22,7 @@ public:
 		init_z_acc_ = 0;
 		calibration_status_ = 255;
 		status_ = 0;
+		tilt_checking_status_ = 0;
 	}
 
 	void setStatus(void);
@@ -60,6 +61,12 @@ public:
 
 	void setDynamicOff(void);
 #endif
+
+	uint8_t checkTilt(void);
+
+	bool isTiltCheckingEnable(void);
+
+	void TiltCheckingEnable(bool val);
 
 	int16_t getXAcc(void)
 	{
@@ -105,7 +112,6 @@ public:
 	{
 		return angle_; 
 	}
-
 	void setAngle(float angle)
 	{
 		angle_ = angle;
@@ -151,6 +157,16 @@ public:
 		init_z_acc_ = val;
 	}
 
+	void setTiltCheckingStatus(uint8_t status)
+	{
+		tilt_checking_status_ = status;
+	}
+
+	uint8_t getTiltCheckingStatus()
+	{
+		return tilt_checking_status_;
+	}
+
 private:
 
 	float angle_;
@@ -173,6 +189,9 @@ private:
 	float average_angle_;
 	uint8_t check_stable_count_;
 	float last_angle_v_;
+	//for tilt checking
+	bool tilt_checking_enable_;
+	uint8_t tilt_checking_status_;
 };
 
 extern Gyro gyro;

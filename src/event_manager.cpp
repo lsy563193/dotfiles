@@ -6,7 +6,6 @@
 #include <bumper.h>
 #include <clean_timer.h>
 #include <remote.h>
-#include <tilt.h>
 #include <charger.h>
 #include <beep.h>
 
@@ -627,7 +626,7 @@ void event_manager_reset_status(void)
 	g_robot_slip = false;
 	g_slip_cnt = 0;
 	/* tilt switch*/
-	tilt.enable(false);
+	gyro.TiltCheckingEnable(false);
 	ev.tilt_triggered = false;
 	/* lidar bumper */
 	//g_lidar_bumper = false;

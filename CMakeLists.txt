@@ -20,7 +20,6 @@ FILE(GLOB PP_SRC
 	src/dev/remote.cpp
 	src/dev/controller.cpp
 	src/dev/obs.cpp
-	src/dev/tilt.cpp
 	src/dev/led.cpp
 	src/dev/beep.cpp
 	src/dev/charger.cpp
