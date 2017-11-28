@@ -628,9 +628,9 @@ bool robot::laserMotorCtrl(bool switch_)
 {
 	pp::SetLidar ctrl_message;
 	if(switch_){
-/*		ctrl_message.request.x_acc_init= acc.getInitXAcc();
-		ctrl_message.request.y_acc_init= acc.getInitYAcc();
-		ctrl_message.request.z_acc_init= acc.getInitZAcc();*/
+/*		ctrl_message.request.x_acc_init= gyro.getInitXAcc();
+		ctrl_message.request.y_acc_init= gyro.getInitYAcc();
+		ctrl_message.request.z_acc_init= gyro.getInitZAcc();*/
 		ctrl_message.request.x_acc_init= 0;
 		ctrl_message.request.y_acc_init= 0;
 		ctrl_message.request.z_acc_init= 0;

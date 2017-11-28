@@ -24,63 +24,132 @@ public:
 		status_ = 0;
 	}
 
-	bool waitForOn(void);
-
-	bool isStable(void);
-
-	void setOff(void);
-
-	void setOn(void);
-
-	void reOpen(void);
-
 	void setStatus(void);
 
 	void resetStatus(void);
 
 	bool isOn(void);
 
+	void setOn(void);
+
+	void reOpen(void);
+
+	bool waitForOn(void);
+
+	bool isStable(void);
+
+	void setOff(void);
+
+	int16_t getFront(void);
+
+	int16_t getLeft(void);
+
+	int16_t getRight(void);
+
+	int16_t getFrontInit(void);
+
+	int16_t getLeftInit(void);
+
+	int16_t getRightInit(void);
+
+	void setAccInitData(void);
+
 #if GYRO_DYNAMIC_ADJUSTMENT
 
 	void setDynamicOn(void);
 
 	void setDynamicOff(void);
-
 #endif
 
-	int16_t getXAcc(void);
+	int16_t getXAcc(void)
+	{
+		return x_acc_;
+	}
 
-	void setXAcc(int16_t x_acc);
+	void setXAcc(int16_t x_acc)
+	{
+		x_acc_ = x_acc;
+	}
 
-	int16_t getYAcc(void);
+	int16_t getYAcc(void)
+	{
+		return y_acc_;
+	}
 
-	void setYAcc(int16_t y_acc);
+	void setYAcc(int16_t y_acc)
+	{
+		y_acc_ = y_acc;
+	}
 
-	int16_t getZAcc(void);
+	int16_t getZAcc(void)
+	{
+		return z_acc_;
+	}
 
-	void setZAcc(int16_t z_acc);
+	void setZAcc(int16_t z_acc)
+	{
+		z_acc_ = z_acc;
+	}
 
-	uint8_t getCalibration(void);
+	uint8_t getCalibration(void)
+	{
+		return calibration_status_;
+	}
 
-	float getAngle(void);
+	void setCalibration(uint8_t val)
+	{
+		calibration_status_ = val;
+	}
 
-	void setAngle(float angle);
+	float getAngle(void)
+	{
+		return angle_; 
+	}
 
-	float getAngleV();
+	void setAngle(float angle)
+	{
+		angle_ = angle;
+	}
 
-	void setAngleV(float angle_v);
+	float getAngleV()
+	{
+		return angle_v_;
+	}
 
-	int16_t getInitXAcc() const;
+	void setAngleV(float angle_v)
+	{
+		angle_v_ = angle_v;
+	}
 
-	int16_t getInitYAcc() const;
+	int16_t getInitXAcc() const
+	{
+		return init_x_acc_;
+	}
 
-	int16_t getInitZAcc() const;
+	void setInitXAcc(uint16_t val)
+	{
+		init_x_acc_ = val;
+	}
 
-	void setInitXAcc(int16_t val);
+	int16_t getInitYAcc() const
+	{
+		return init_y_acc_;
+	}
 
-	void setInitYAcc(int16_t val);
+	void setInitYAcc(uint16_t val)
+	{
+		init_y_acc_ = val;
+	}
 
-	void setInitZAcc(int16_t val);
+	int16_t getInitZAcc() const
+	{
+		return init_z_acc_;
+	}
+
+	void setInitZAcc(int16_t val)
+	{
+		init_z_acc_ = val;
+	}
 
 private:
 

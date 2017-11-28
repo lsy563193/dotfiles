@@ -17,91 +17,6 @@
 
 Gyro gyro;
 
-int16_t Gyro::getXAcc(void)
-{
-	return x_acc_;
-}
-
-void Gyro::setXAcc(int16_t x_acc)
-{
-	x_acc_ = x_acc;
-}
-
-int16_t Gyro::getYAcc(void)
-{
-	return y_acc_;
-}
-
-void Gyro::setYAcc(int16_t y_acc)
-{
-	y_acc_ = y_acc;
-}
-
-int16_t Gyro::getZAcc(void)
-{
-	return z_acc_;
-}
-
-void Gyro::setZAcc(int16_t z_acc)
-{
-	z_acc_ = z_acc;
-}
-
-uint8_t Gyro::getCalibration(void)
-{
-	return calibration_status_;
-}
-
-float Gyro::getAngle(void)
-{
-	return angle_;
-}
-
-void Gyro::setAngle(float angle)
-{
-	angle_ = angle;
-}
-
-float Gyro::getAngleV()
-{
-	return angle_v_;
-}
-
-void Gyro::setAngleV(float angle_v)
-{
-	angle_v_ = angle_v;
-}
-
-int16_t Gyro::getInitXAcc() const
-{
-	return init_x_acc_;
-}
-
-int16_t Gyro::getInitYAcc() const
-{
-	return init_y_acc_;
-}
-
-int16_t Gyro::getInitZAcc() const
-{
-	return init_z_acc_;
-}
-
-void Gyro::setInitXAcc(int16_t val)
-{
-	init_x_acc_ = val;
-}
-
-void Gyro::setInitYAcc(int16_t val)
-{
-	init_y_acc_ = val;
-}
-
-void Gyro::setInitZAcc(int16_t val)
-{
-	init_z_acc_ = val;
-}
-
 void Gyro::setStatus(void)
 {
 	status_ = true;
@@ -425,3 +340,96 @@ void Gyro::setDynamicOff(void)
 	//}
 }
 #endif
+
+int16_t Gyro::getFront() {
+#if GYRO_FRONT_X_POS
+	return -sensor.x_acc;
+#elif GYRO_FRONT_X_NEG
+	return sensor.x_acc;
+#elif GYRO_FRONT_Y_POS
+	return -sensor.y_acc;
+#elif GYRO_FRONT_Y_NEG
+	return sensor.y_acc;
+#endif
+}
+
+int16_t Gyro::getLeft() {
+#if GYRO_FRONT_X_POS
+	return -sensor.y_acc;
+#elif GYRO_FRONT_X_NEG
+	return sensor.y_acc;
+#elif GYRO_FRONT_Y_POS
+	return sensor.x_acc;
+#elif GYRO_FRONT_Y_NEG
+	return -sensor.x_acc;
+#endif
+}
+
+int16_t Gyro::getRight() {
+#if GYRO_FRONT_X_POS
+	return -sensor.y_acc;
+#elif GYRO_FRONT_X_NEG
+	return sensor.y_acc;
+#elif GYRO_FRONT_Y_POS
+	return sensor.x_acc;
+#elif GYRO_FRONT_Y_NEG
+	return -sensor.x_acc;
+#endif
+}
+
+int16_t Gyro::getFrontInit() {
+#if GYRO_FRONT_X_POS
+	return -init_x_acc_;
+#elif GYRO_FRONT_X_NEG
+	return init_x_acc_;
+#elif GYRO_FRONT_Y_POS
+	return -init_y_acc_;
+#elif GYRO_FRONT_Y_NEG
+	return init_y_acc_;
+#endif
+}
+
+int16_t Gyro::getLeftInit() {
+#if GYRO_FRONT_X_POS
+	return -init_y_acc_;
+#elif GYRO_FRONT_X_NEG
+	return init_y_acc_;
+#elif GYRO_FRONT_Y_POS
+	return init_x_acc_;
+#elif GYRO_FRONT_Y_NEG
+	return -init_x_acc_;
+#endif
+}
+
+int16_t Gyro::getRightInit() {
+#if GYRO_FRONT_X_POS
+	return -init_y_acc_;
+#elif GYRO_FRONT_X_NEG
+	return init_y_acc_;
+#elif GYRO_FRONT_Y_POS
+	return init_x_acc_;
+#elif GYRO_FRONT_Y_NEG
+	return -init_x_acc_;
+#endif
+}
+
+void Gyro::setAccInitData()
+{
+	uint8_t count = 0;
+	int16_t temp_x_acc = 0;
+	int16_t temp_y_acc = 0;
+	int16_t temp_z_acc = 0;
+	for (count = 0 ; count < 10 ; count++)
+	{
+		temp_x_acc += getXAcc();
+		temp_y_acc += getYAcc();
+		temp_z_acc += getZAcc();
+		usleep(20000);
+	}
+
+	setInitXAcc(temp_x_acc / count);
+	setInitYAcc(temp_y_acc / count);
+	setInitZAcc(temp_z_acc / count);
+//	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
+}
+

@@ -12,7 +12,6 @@
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
 #include <move_type.h>
-#include <accelerator.h>
 #include <wheel.h>
 #include <error.h>
 

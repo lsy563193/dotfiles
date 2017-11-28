@@ -5,7 +5,6 @@
 #ifndef PP_TILT_H
 #define PP_TILT_H
 
-#include "accelerator.h"
 #include "gyro.h"
 
 class Tilt {
@@ -50,10 +49,10 @@ uint8_t check()
 			else
 				left_count = 0;
 		}
-		if (acc.get_right() - acc.get_right_init() > RIGHT_TILT_LIMIT)
+		if (gyro.getRight() - gyro.getRightInit() > RIGHT_TILT_LIMIT)
 		{
 			right_count++;
-			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, acc.get_right(), acc.get_right_init(), right_count);
+			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, gyro.getRight(), gyro.getRightInit(), right_count);
 		}
 		else
 		{
@@ -62,7 +61,7 @@ uint8_t check()
 			else
 				right_count = 0;
 		}
-		if (abs(acc.getZAcc() - acc.getInitZAcc()) > DIF_TILT_Z_VAL)
+		if (abs(gyro.getZAcc() - gyro.getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
 			z_count++;
 			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, robot::instance()->getZAcc(), robot::instance()->getInitZAcc());
