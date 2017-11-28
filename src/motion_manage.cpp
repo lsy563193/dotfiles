@@ -229,7 +229,7 @@ void init_nav_gyro_charge()
 		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 		if (!cs.is_going_home())
 			if(ev.remote_home || ev.battery_home)
-				cs.set(CS_GO_HOME_POINT);
+				cs.setNext(CS_GO_HOME_POINT);
 	}
 }
 void init_nav_after_charge()
@@ -622,7 +622,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 	ros_map.reset(MAP);
 	ros2_map.reset(MAP);
 
-	cs.set(CS_OPEN_GYRO);
+	cs.setNext(CS_OPEN_GYRO);
 	while (ros::ok())
 	{
 		bool eh_status_now = false, eh_status_last = false;
@@ -645,12 +645,12 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			{
 				if (charger.is_on_stub())
 				{
-					cs.set(CS_BACK_FROM_CHARGER);
+					cs.setNext(CS_BACK_FROM_CHARGER);
 					charger_pose.setX(odom.getX());
 					charger_pose.setY(odom.getY());
 				}
 				else
-					cs.set(CS_OPEN_LASER);
+					cs.setNext(CS_OPEN_LASER);
 			}
 		}
 		else if (cs.is_back_from_charger())
@@ -660,7 +660,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 
 			// switch
 			if (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5)
-				cs.set(CS_OPEN_LASER);
+				cs.setNext(CS_OPEN_LASER);
 
 		}
 		else if (cs.is_open_laser())
@@ -673,9 +673,9 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			{
 				// Open laser succeeded.
 				if ((g_is_manual_pause || g_is_low_bat_pause) && slam.isMapReady())
-					cs.set(CS_CLEAN);
+					cs.setNext(CS_CLEAN);
 				else
-					cs.set(CS_ALIGN);
+					cs.setNext(CS_ALIGN);
 			}
 		}
 		else if (cs.is_align())
@@ -692,7 +692,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 
 			// switch
 			if (laser.alignTimeOut())
-				cs.set(CS_OPEN_SLAM);
+				cs.setNext(CS_OPEN_SLAM);
 			if (laser.alignFinish())
 			{
 				float align_angle = laser.alignAngle();
@@ -701,14 +701,14 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 				g_homes[0].TH = -(int16_t)(align_angle);
 				ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
 				usleep(230000);
-				cs.set(CS_OPEN_SLAM);
+				cs.setNext(CS_OPEN_SLAM);
 			}
 		}
 		else if (cs.is_open_slam())
 		{
 			if (slam.isMapReady() && robot::instance()->isTfReady())
 			{
-				cs.set(CS_CLEAN);
+				cs.setNext(CS_CLEAN);
 				break;
 			}
 		}

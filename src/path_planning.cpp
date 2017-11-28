@@ -1092,8 +1092,7 @@ bool cm_is_reach()
 }
 
 bool path_next_spot(const Cell_t &start, PPTargetType &path) {
-	if (!SpotMovement::instance()->spotNextTarget(start, &path))
-		return false;
+	return SpotMovement::instance()->spotNextTarget(start, &path);
 }
 
 bool path_next_fw(const Cell_t &start) {
@@ -1191,6 +1190,7 @@ bool cm_turn_and_check_charger_signal(void)
 	}
 	return false;
 }
+
 int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
 {
 	path.push_front(start);
@@ -1224,7 +1224,7 @@ bool path_next(const Cell_t& start, PPTargetType& path)
 }
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path) {
-	if (!cs.is_going_home()) {
+/*	if (!cs.is_going_home()) {
 		if ((ev.remote_home || ev.battery_home)) {//cs.is_switch_go_home()
 			if(g_have_seen_charger)
 				cs.set(CS_GO_HOME_POINT);
@@ -1237,9 +1237,9 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 		if (ev.remote_spot) {//cs.is_switch_tmp_spot()
 			cs.set(CS_TMP_SPOT);
 		}
-	}
+	}*/
 
-	if (cs.is_trapped()) {
+/*if (cs.is_trapped()) {
 		if (!is_trapped(start, path))
 			cs.set(CS_CLEAN);
 	}
@@ -1284,7 +1284,8 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 				return false;
 	}
 
-	return true;
+	return true;*/
+
 }
 
 void path_fill_path(std::deque<Cell_t>& path)

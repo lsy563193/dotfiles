@@ -2078,7 +2078,7 @@ bool GoToChargerRegulator::_isStop()
 	if (g_robot_stuck || (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360))
 	{
 		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
-		cs.set(CS_CLEAN);
+		cs.setNext(CS_CLEAN);
 		return true;
 	}
 	return false;

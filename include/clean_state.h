@@ -19,11 +19,12 @@ enum{
 	CS_EXPLORATION,
 	CS_SELF_CHECK,
 	CS_STOP,
+	CS_NUM,
 };
 
-class CleanState {
+class CleanStateBase {
 public:
-	CleanState() {
+	CleanStateBase() {
 		cs_ = 0;
 	}
 
@@ -58,11 +59,74 @@ public:
 
 	int get(void);
 
-	void set(int);
+	void setNext(int);
 
-private:
-	int cs_;//clean state
+	virtual bool cs_next(const Cell_t& start, PPTargetType& path)=0;
+	virtual void setting()=0;
+
+protected:
+	bool isTrapped();
+
+protected:
+	static int cs_;//clean state
 };
-extern CleanState cs;
+
+class TrappedCS:public CleanStateBase
+{
+public:
+	bool cs_next(const Cell_t& start, PPTargetType& path);
+	void setting();
+};
+
+class CleanCS:public CleanStateBase
+{
+public:
+	bool cs_next(const Cell_t& start, PPTargetType& path);
+	void setting();
+};
+
+class TmpSpotCS:public CleanStateBase
+{
+public:
+	bool cs_next(const Cell_t& start, PPTargetType& path);
+	void setting();
+};
+
+class GoHomePointCS:public CleanStateBase
+{
+public:
+	void setting(void);
+	bool cs_next(const Cell_t& start, PPTargetType& path);
+};
+
+class ExplorationCS:public CleanStateBase
+{
+public:
+	bool cs_next(const Cell_t& start, PPTargetType& path);
+	void setting(void);
+};
+
+class SelfCheckCS:public CleanStateBase
+{
+public:
+	void setting(void);
+	bool cs_next(const Cell_t& start, PPTargetType& path);
+};
+
+class GoChargeCS:public CleanStateBase
+{
+public:
+	void setting(void);
+	bool cs_next(const Cell_t& start, PPTargetType& path);
+};
+
+class CleanStateManage:public CleanStateBase
+{
+
+public:
+
+};
+extern CleanStateManage cs;
+//extern CleanStateBase* p_cs;
 
 #endif //PP_CLEAN_MODE_H

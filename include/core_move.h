@@ -94,7 +94,7 @@ uint8_t CM_MoveForward(void);
 uint8_t cm_touring(void);
 void cm_cleaning(void);
 
-void cm_apply_cs(void);
+void cm_apply_cs(int next);
 
 	/* Robot will try to go to the cells in g_home_point_old_path list
 	 * first, and it will only go through the CLEANED area. If the
