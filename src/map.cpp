@@ -393,7 +393,7 @@ void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_b
 	auto cell_y_min = (int16_t)(origin_y * 1000.0 / CELL_SIZE);
 	auto cell_y_max = cell_y_min + (int16_t)(height / multi);
 
-	ROS_INFO("cell_x_min: %d, cell_x_max: %d, cell_y_min: %d, cell_y_max: %d", cell_x_min, cell_x_max, cell_y_min, cell_y_max);
+	//ROS_INFO("%s,%d: cell_x_min: %d, cell_x_max: %d, cell_y_min: %d, cell_y_max: %d", __FUNCTION__, __LINE__, cell_x_min, cell_x_max, cell_y_min, cell_y_max);
 	for (auto cell_x = cell_x_min; cell_x <= cell_x_max; ++cell_x)
 	{
 		for (auto cell_y = cell_y_min; cell_y <= cell_y_max; ++cell_y)
@@ -423,7 +423,7 @@ void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_b
 
 			if(unknown_counter == size)/*---unknown cell---*/
 			{
-			//	ROS_INFO("unknown cell");
+			//	ROS_INFO("---unknown cell---");
 			}
 			else if(occupied_counter > limit_count)/*---occupied cell---*/
 			{
