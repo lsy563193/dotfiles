@@ -117,12 +117,12 @@ void CleanMode::setMt()
 				block_angle = 0;
 			if (LASER_FOLLOW_WALL)
 				if(!laser_turn_angle(g_turn_angle))
-					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
+					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 		}else{
 //			ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
 			if (LASER_FOLLOW_WALL)
 				if(!laser_turn_angle(g_turn_angle))
-					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
+					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 		}
 		ROS_INFO("%s,%d: mt.is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
 
@@ -132,7 +132,7 @@ void CleanMode::setMt()
 		s_target_p = cost_map.cell_to_point(g_plan_path.front());
 		mt_reg_ = line_reg_;
 		g_turn_angle = ranged_angle(
-					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
+					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 	}
 	else if (mt.is_go_to_charger())
 	{
@@ -141,8 +141,8 @@ void CleanMode::setMt()
 	}
 	p_reg_ = turn_reg_;
 //	s_target_angle = g_turn_angle;
-	s_target_angle = ranged_angle(gyro.get_angle() + g_turn_angle);
-	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, gyro.get_angle(), g_turn_angle, s_target_angle);
+	s_target_angle = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
+	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, robot::instance()->getPoseAngle(), g_turn_angle, s_target_angle);
 	resetTriggeredValue();
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
@@ -194,7 +194,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 void CleanMode::display()
 {
 	path_display_path_points(g_plan_path);
-	MotionManage::pubCleanMapMarkers(cost_map, g_plan_path);
+	robot::instance()->pubCleanMapMarkers(cost_map, g_plan_path);
 }
 
 void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -349,6 +349,30 @@ bool NavigationClean::isReach()
 
 bool NavigationClean::isExit()
 {
+	//ROS_INFO("%s %d: Run isExit", __FUNCTION__, __LINE__);
+	if (cs.is_open_gyro() || cs.is_back_from_charger() || cs.is_align()
+		|| cs.is_clean() || cs.is_go_home_point() || cs.is_tmp_spot() || cs.is_exploration()
+		|| cs.is_self_check())
+	{
+		return CleanMode::isExit();
+	}
+	else if (cs.is_open_laser())
+	{
+		return CleanMode::isExit() || laser.openTimeOut();
+	}
+	else if (cs.is_open_slam())
+	{
+		return CleanMode::isExit() || slam.openTimeOut();
+	}
+	else if (cs.is_go_charger())
+	{
+		return CleanMode::isExit() || ev.charge_detect;
+	}
+	if (cs.is_trapped()) // For trapped status.
+	{
+		return CleanMode::isExit() || fw_reg_->isTimeUp();
+	}
+/*
 	if(CleanMode::isExit())
 		return true;
 
@@ -361,7 +385,7 @@ bool NavigationClean::isExit()
 		}
 	}
 
-	return false;
+	return false;*/
 }
 
 bool NavigationClean::isStop()

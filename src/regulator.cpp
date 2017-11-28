@@ -171,7 +171,7 @@ static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max,
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
-	line_is_found = s_laser->laserGetFitLine(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
+	line_is_found = laser.laserGetFitLine(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
 //	RESET_WALL_DIS = int(distance * 1000);
 
 //	ROS_INFO("line_distance = %lf", distance);
@@ -250,7 +250,8 @@ bool RegulatorBase::isExit()
 {
 	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
 	{
-		ROS_WARN("%s %d: ", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: fatal_quit(%d), key_clean_pressed(%d), charge_detect(%d)",
+				 __FUNCTION__, __LINE__, ev.fatal_quit, ev.key_clean_pressed, ev.charge_detect);
 		return true;
 	}
 	return false;
@@ -359,7 +360,7 @@ bool BackRegulator::isReach()
 
 bool BackRegulator::isLaserStop()
 {
-	auto obstacle_distance = s_laser->getObstacleDistance(1, ROBOT_RADIUS);
+	auto obstacle_distance = laser.getObstacleDistance(1, ROBOT_RADIUS);
 	if (g_back_distance >= 0.05 && obstacle_distance < 0.03)
 	{
 		ROS_WARN("%s, %d: obstacle_distance:%f.", __FUNCTION__, __LINE__, obstacle_distance);
@@ -412,7 +413,7 @@ bool TurnRegulator::isReach()
 {
 	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
 		setTarget();
-	else if (abs(ranged_angle(s_target_angle - gyro.get_angle())) < accurate_){
+	else if (abs(ranged_angle(s_target_angle - robot::instance()->getPoseAngle())) < accurate_){
 
 		/*********************************************For wall follow**********************************************/
 		if(line_is_found)
@@ -426,7 +427,7 @@ bool TurnRegulator::isReach()
 			}*/
 
 			ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, g_wall_distance:%d."
-					, __FUNCTION__, __LINE__, s_target_angle, gyro.get_angle(), g_wall_distance);
+					, __FUNCTION__, __LINE__, s_target_angle, robot::instance()->getPoseAngle(), g_wall_distance);
 			if(g_wall_distance < 150)  //150 is the experience value by testing in the closest position to black wall
 			{
 				g_wall_distance += (150 - g_wall_distance) / 4 * 3;
@@ -453,7 +454,7 @@ bool TurnRegulator::isReach()
 		}
 		else
 			ROS_INFO("%s, %d: TurnRegulator target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, line is not found."
-					, __FUNCTION__, __LINE__, s_target_angle, gyro.get_angle());
+					, __FUNCTION__, __LINE__, s_target_angle, robot::instance()->getPoseAngle());
 		time_start_straight = ros::Time::now().toSec();
 		return true;
 	}
@@ -493,7 +494,7 @@ void TurnRegulator::setTarget()
 			waiting_finished_ = false;
 			waiting_start_sec_ = ros::Time::now().toSec();
 			wait_sec_ = 0.33;
-			s_target_angle = gyro.get_angle();
+			s_target_angle = robot::instance()->getPoseAngle();
 			ROS_INFO("%s %d: TurnRegulator, start waiting for %fs.", __FUNCTION__, __LINE__, wait_sec_);
 		}
 		else
@@ -505,18 +506,18 @@ void TurnRegulator::setTarget()
 				waiting_finished_ = true;
 				stage_ = TURN_REGULATOR_TURNING;
 				laser_turn_angle(g_turn_angle);
-				s_target_angle = ranged_angle(gyro.get_angle() + g_turn_angle);
+				s_target_angle = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
 				// Reset the speed.
 				speed_ = ROTATE_LOW_SPEED;
 				ROS_INFO("%s %d: TurnRegulator, current angle:%d, \033[33ms_target_angle: \033[32m%d\033[0m, after %fs waiting."
-						, __FUNCTION__, __LINE__, gyro.get_angle(), s_target_angle, tmp_sec);
+						, __FUNCTION__, __LINE__, robot::instance()->getPoseAngle(), s_target_angle, tmp_sec);
 				skip_laser_turn_angle_cnt_ = 0;
 			}
 		}
 	}
 	else
 	{
-		s_target_angle = ranged_angle(gyro.get_angle() + g_turn_angle);
+		s_target_angle = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
 		stage_ = TURN_REGULATOR_TURNING;
 		// Reset the speed.
 		speed_ = ROTATE_LOW_SPEED;
@@ -533,9 +534,9 @@ void TurnRegulator::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		return;
 	}
 
-	auto diff = ranged_angle(s_target_angle - gyro.get_angle());
-//	ROS_INFO("TurnRegulator::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, gyro.get_angle());
-	ROS_DEBUG("%s %d: TurnRegulator diff: %d, s_target_angle: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_angle, gyro.get_angle());
+	auto diff = ranged_angle(s_target_angle - robot::instance()->getPoseAngle());
+//	ROS_INFO("TurnRegulator::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, robot::instance()->getPoseAngle());
+	ROS_DEBUG("%s %d: TurnRegulator diff: %d, s_target_angle: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_angle, robot::instance()->getPoseAngle());
 	(diff >= 0) ? wheel.set_dir_left() : wheel.set_dir_right();
 
 //	ROS_INFO("TurnRegulator::adjustSpeed");
@@ -602,7 +603,7 @@ bool LinearRegulator::isCellReach()
 	{
 		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 						 g_plan_path.back().X, g_plan_path.back().Y);
-		g_turn_angle = ranged_angle(g_new_dir - gyro.get_angle());
+		g_turn_angle = ranged_angle(g_new_dir - robot::instance()->getPoseAngle());
 		return true;
 	}
 
@@ -613,7 +614,7 @@ bool LinearRegulator::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 	auto target_angle = g_plan_path.back().TH;
-	if (isCellReach() && std::abs(ranged_angle(gyro.get_angle() - target_angle)) < 200)
+	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: LinearRegulator, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
@@ -741,7 +742,7 @@ bool LinearRegulator::isPassTargetStop()
 void LinearRegulator::setTarget()
 {
 //	g_turn_angle = ranged_angle(
-//						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - gyro.get_angle());
+//						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 	s_target_p = cost_map.cell_to_point(g_plan_path.back());
 //	path_ = g_plan_path;
 }
@@ -762,7 +763,7 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	target = curr + dis;
 
 	angle_diff = ranged_angle(
-					course_to_dest(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y) - gyro.get_angle());
+					course_to_dest(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y) - robot::instance()->getPoseAngle());
 
 //	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), dis, target_p.X, target_p.Y);
 //	auto dis_diff = IS_X_AXIS(g_new_dir) ? s_curr_p.Y - s_target_p.Y : s_curr_p.X - s_target_p.X;
@@ -770,13 +771,13 @@ void LinearRegulator::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	if (integration_cycle_++ > 10) {
 		auto t = cost_map.point_to_cell(target_p);
-		MotionManage::pubCleanMapMarkers(cost_map, g_plan_path, &t);
+		robot::instance()->pubCleanMapMarkers(cost_map, g_plan_path, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
-	auto obstalce_distance_front = s_laser->getObstacleDistance(0,ROBOT_RADIUS);
+	auto obstalce_distance_front = laser.getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.get_status();
 	bool is_decrease_blocked = decrease_map.is_block();
 	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25) || is_decrease_blocked)
@@ -965,11 +966,11 @@ bool FollowWallRegulator::isOverOriginLine()
 		|| (s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
 	{
 		auto target_angle = (s_target_p.Y > s_origin_p.Y) ? -900 : 900;
-		//ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, gyro.get_angle(), target_angel - gyro.get_angle());
-		if (std::abs(ranged_angle(gyro.get_angle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+		//ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, robot::instance()->getPoseAngle(), target_angel - robot::instance()->getPoseAngle());
+		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 		{
 			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), s_target_p(%d, %d), gyro(%d), target_angle(%d)",
-					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, gyro.get_angle(), target_angle);
+					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, robot::instance()->getPoseAngle(), target_angle);
 			return true;
 		}
 		else if (cost_map.is_block_cleaned_unblock(curr.X, curr.Y)) // If robot covers a big block, stop.
@@ -1375,7 +1376,7 @@ bool GoToChargerRegulator::isSwitch()
 		if(gyro_step < 360)
 		{
 			// Handle for angle
-			current_angle = robot::instance()->getAngle();
+			current_angle = robot::instance()->getPoseAngle();
 			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
 			ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
 			if (angle_offset < 0)
@@ -1737,7 +1738,7 @@ bool GoToChargerRegulator::isSwitch()
 
 		if(gyro_step < 360)
 		{
-			current_angle = robot::instance()->getAngle();
+			current_angle = robot::instance()->getPoseAngle();
 			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (check_position_dir == ROUND_LEFT && angle_offset > 0)

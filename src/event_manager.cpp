@@ -769,7 +769,7 @@ void EventHandle::cliff_right(bool state_now, bool state_last)
 void EventHandle::rcon(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-//	c_rcon.reset_status();
+//	c_rcon.resetStatus();
 }
 void df_rcon(bool state_now, bool state_last)
 {
@@ -983,7 +983,7 @@ void EventHandle::slam_error(bool state_now, bool state_last)
 {}
 void df_slam_error(bool state_now, bool state_last)
 {
-	static time_t slam_error_kill_timer_;
+/*	static time_t slam_error_kill_timer_;
 	static bool relaunch = false;
 
 	if (!state_last)
@@ -1021,7 +1021,7 @@ void df_slam_error(bool state_now, bool state_last)
 	// Wait for 0.2s to make sure it has process the first scan.
 	usleep(200000);
 	ROS_WARN("Slam restart successed.");
-	ev.slam_error = false;
+	ev.slam_error = false;*/
 }
 
 void EventHandle::robot_slip(bool state_new,bool state_last)
@@ -1047,7 +1047,7 @@ void df_laser_stuck(bool state_new,bool state_last)
 {
 	beeper.play_for_command(true);
 	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
-	ev.laser_stuck = true;
+	//ev.laser_stuck = true;
 }
 
 ///* Default: empty hanlder */

@@ -12,14 +12,14 @@
 #include <list>
 #include <deque>
 #include <map.h>
+#include "clean_mode.h"
 
 class MotionManage {
 public:
-	MotionManage();
+	MotionManage(CleanMode* p_cm);
 
 	~MotionManage();
 
-	static void pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 //private:
 	bool is_align_active(){
 		return is_align_active_;
@@ -62,6 +62,9 @@ private:
 	void get_aligment_angle();
 	bool slam_init();
 	void init_after_slam();
+
+	//For CS_BACK_FROM_CHARGER
+	Pose charger_pose;
 };
 
 #endif //PP_MOTION_MANAGE_H

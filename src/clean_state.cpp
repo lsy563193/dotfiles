@@ -26,12 +26,17 @@ bool CleanState::is_open_gyro()
 
 bool CleanState::is_back_from_charger()
 {
-	return cs_ == CS_OPEN_GYRO;
+	return cs_ == CS_BACK_FROM_CHARGER;
 }
 
 bool CleanState::is_open_laser()
 {
 	return cs_ == CS_OPEN_LASER;
+}
+
+bool CleanState::is_align()
+{
+	return cs_ == CS_ALIGN;
 }
 
 bool CleanState::is_open_slam()
@@ -81,7 +86,7 @@ bool CleanState::is_self_check()
 
 void CleanState::set(int state)
 {
-//	ROS_INFO("%s,%d:" __FUNCTION__,__LINE__);
+	ROS_INFO("%s %d:Clean mode set to %d.", __FUNCTION__,__LINE__, state);
 	cs_ = state;
 	cm_apply_cs();
 }

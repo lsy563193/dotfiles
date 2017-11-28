@@ -268,7 +268,7 @@ public:
 		move_away_from_charger_cnt = 0;
 		receive_code = 0;
 		current_angle = 0;
-		last_angle = robot::instance()->getAngle();
+		last_angle = robot::instance()->getPoseAngle();
 		angle_offset = 0;
 		gyro_step = 0;
 		around_charger_stub_dir = 0;

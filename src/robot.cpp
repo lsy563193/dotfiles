@@ -44,12 +44,14 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	scan_sub2_ = robot_nh_.subscribe("scan2",1,&robot::scanCb2, this);
 	scan_sub3_ = robot_nh_.subscribe("scan3",1,&robot::scanCb3, this);
 	laserPoint_sub_ = robot_nh_.subscribe("laserPoint",1,&robot::laserPointCb, this);
+	/*map subscriber for exploration*/
+	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	// Service clients.
 	lidar_motor_cli_ = robot_nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
+	end_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("End_Slam");
+	start_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("Start_Slam");
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
-	/*map subscriber for exploration*/
-	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	// Publishers.
 	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
@@ -102,10 +104,6 @@ void robot::init()
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 {
-	angle_ = msg->angle;
-
-	angle_v_ = msg->angle_v;
-
 	is_sensor_ready_ = true;
 
 	// Dynamic adjust obs
@@ -128,7 +126,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == Map_Position_Map_Angle)
 	{
-		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !ev.slam_error)
+		if(slam.isMapReady() && !ev.slam_error)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -175,7 +173,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(MotionManage::s_slam != nullptr && MotionManage::s_slam->isMapReady() && !ev.slam_error)
+		if(slam.isMapReady() && !ev.slam_error)
 		{
 			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
@@ -266,58 +264,33 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
-	gyro.set_angle(pose.getAngle());
 //	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro.get_angle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
-	slam_map_mutex.lock();
-	slam_map.setWidth(map->info.width);
-	slam_map.setHeight(map->info.height);
-	slam_map.setResolution(map->info.resolution);
-	slam_map.setOriginX(map->info.origin.position.x);
-	slam_map.setOriginY(map->info.origin.position.y);
-	slam_map.setData(map->data);
-	slam_map_mutex.unlock();
-
-
-	/*for exploration update map*/
-	if (cm_is_exploration()) {
-		cost_map.ros_convert(MAP, false, false, true);
-	}
-	else if(cm_is_navigation())
-	{
-		decrease_map.ros_convert(MAP, false, false, true);
-	}
-	MotionManage::s_slam->isMapReady(true);
-
-//	ROS_INFO("%s %d:finished map callback,cost_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),cost_map.origin(\033[33m%f,%f\033[0m)", __FUNCTION__, __LINE__,width_,height_,resolution_,origin_x_,origin_y_);
-
+	slam.mapCb(map);
 }
 
 void robot::scanCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	if (s_laser != nullptr)
-		s_laser->scanCb(msg);
+	laser.scanCb(msg);
 }
 
 void robot::scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	if (s_laser != nullptr)
-		s_laser->scanCb2(msg);
+	laser.scanCb2(msg);
 }
 
 void robot::scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	if (s_laser != nullptr)
-		s_laser->scanCb3(msg);
+	laser.scanCb3(msg);
 }
 
 void robot::laserPointCb(const visualization_msgs::Marker &point_marker)
 {
-	if (s_laser != nullptr)
-		s_laser->laserPointCb(point_marker);
+	if (laser.isScan2Ready())
+		laser.laserPointCb(point_marker);
 }
 
 void robot::visualizeMarkerInit()
@@ -457,8 +430,51 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	clean_map_markers_.colors.push_back(color_);
 }
 
-void robot::pubCleanMapMarkers(void)
+void robot::pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
 {
+	// temp_target is valid if only path is not empty.
+	if (path.empty())
+		return;
+
+	int16_t x, y, x_min, x_max, y_min, y_max;
+	CellState cell_state;
+	Cell_t next = path.front();
+	Cell_t target = path.back();
+	map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+
+	if (next.X == SHRT_MIN )
+		next.X = x_min;
+	else if (next.X == SHRT_MAX)
+		next.X = x_max;
+
+	for (x = x_min; x <= x_max; x++)
+	{
+		for (y = y_min; y <= y_max; y++)
+		{
+			if (x == target.X && y == target.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else if (x == next.X && y == next.Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET);
+			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
+				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else
+			{
+				cell_state = cost_map.get_cell(MAP, x, y);
+				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
+					robot::instance()->setCleanMapMarkers(x, y, cell_state);
+			}
+		}
+	}
+#if LINEAR_MOVE_WITH_PATH
+	if (!path.empty())
+	{
+		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
+			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
+
+		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
+	}
+#endif
+
 	clean_map_markers_.header.stamp = ros::Time::now();
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();
@@ -612,9 +628,12 @@ bool robot::laserMotorCtrl(bool switch_)
 {
 	pp::SetLidar ctrl_message;
 	if(switch_){
-		ctrl_message.request.x_acc_init= acc.getInitXAcc();
+/*		ctrl_message.request.x_acc_init= acc.getInitXAcc();
 		ctrl_message.request.y_acc_init= acc.getInitYAcc();
-		ctrl_message.request.z_acc_init= acc.getInitZAcc();
+		ctrl_message.request.z_acc_init= acc.getInitZAcc();*/
+		ctrl_message.request.x_acc_init= 0;
+		ctrl_message.request.y_acc_init= 0;
+		ctrl_message.request.z_acc_init= 0;
 	}
 	ctrl_message.request.data = switch_;
 
@@ -624,6 +643,19 @@ bool robot::laserMotorCtrl(bool switch_)
 		return true;
 	}
 	return false;
+}
+
+bool robot::slamStart(void)
+{
+	std_srvs::Empty empty;
+	ROS_INFO("......................");
+	return start_slam_cli_.call(empty);
+}
+
+bool robot::slamStop(void)
+{
+	std_srvs::Empty empty;
+	return end_slam_cli_.call(empty);
 }
 
 void robot::initOdomPosition()

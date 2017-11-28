@@ -138,7 +138,7 @@ void robotbase_deinit(void)
 		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
 		led.set_mode(LED_STEADY, LED_OFF);
 		controller.set(CTL_BUZZER, 0x00);
-		gyro.set_off();
+		gyro.setOff();
 		cs_disable_motors();
 		controller.set_status(POWER_DOWN);
 		usleep(40000);
@@ -284,7 +284,9 @@ void *robotbase_routine(void*)
 
 		sensor.angle = -(float)((int16_t)((g_receive_stream[REC_ANGLE_H] << 8) | g_receive_stream[REC_ANGLE_L])) / 100.0;//ros angle * -1
 		sensor.angle -= robot::instance()->offsetAngle();
+		gyro.setAngle(sensor.angle);
 		sensor.angle_v = -(float)((int16_t)((g_receive_stream[REC_ANGLE_V_H] << 8) | g_receive_stream[REC_ANGLE_V_L])) / 100.0;//ros angle * -1
+		gyro.setAngleV(sensor.angle_v);
 
 		sensor.lw_crt = (((g_receive_stream[REC_LW_C_H] << 8) | g_receive_stream[REC_LW_C_L]) & 0x7fff) * 1.622;
 		sensor.rw_crt = (((g_receive_stream[REC_RW_C_H] << 8) | g_receive_stream[REC_RW_C_L]) & 0x7fff) * 1.622;
@@ -378,6 +380,20 @@ void *robotbase_routine(void*)
 			sensor.z_acc = (g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L];//in mG
 		else
 			sensor.z_acc = ((g_receive_stream[REC_ZACC_H]<<8)|g_receive_stream[REC_ZACC_L] + last_z_acc) / 2;//in mG
+#if GYRO_FRONT_X_POS
+		gyro.setXAcc(sensor.x_acc);
+		gyro.setYAcc(sensor.y_acc);
+#elif GYRO_FRONT_X_NEG
+		gyro.setXAcc(-sensor.x_acc);
+		gyro.setYAcc(-sensor.y_acc);
+#elif GYRO_FRONT_Y_POS
+		gyro.setXAcc(sensor.y_acc)
+		gyro.setYAcc(-sensor.x_acc);
+#elif GYRO_FRONT_Y_NEG
+		gyro.setXAcc(-sensor.y_acc)
+		gyro.setYAcc(sensor.x_acc);
+#endif
+		gyro.setZAcc(sensor.z_acc);
 
 		sensor.plan = g_receive_stream[REC_PLAN];
 		if(sensor.plan)
@@ -409,10 +425,10 @@ void *robotbase_routine(void*)
 	#if GYRO_DYNAMIC_ADJUSTMENT
 	if (wheel.getLeftWheelSpeed() < 0.01 && wheel.getRightWheelSpeed() < 0.01)
 	{
-		gyro.set_dynamic_on();
+		gyro.setDynamicOn();
 	} else
 	{
-		gyro.set_dynamic_off();
+		gyro.setDynamicOff();
 	}
 	tilt.check();
 	if(omni.isEnable())
@@ -431,7 +447,7 @@ void *robotbase_routine(void*)
 		odom.setAngleSpeed(sensor.angle_v);
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
-		angle_rad = static_cast<float>(odom.getAngle() * 0.01745);	//degree into radian
+		angle_rad = deg_to_rad(sensor.angle);
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
@@ -494,22 +510,16 @@ void *serial_send_routine(void*)
 
 		//if(!is_flag_set()){
 			/*---pid for wheels---*/
-			extern uint8_t g_wheel_left_direction, g_wheel_right_direction;
 		wheel.set_pid();
-			if(left_pid.actual_speed < 0)	wheel.set_left_dir(BACKWARD);
-			else							wheel.set_left_dir(FORWARD);
-			if(right_pid.actual_speed < 0)	wheel.set_right_dir(BACKWARD);
-			else							wheel.set_right_dir(FORWARD);
 
-		wheel.set_left_speed((uint8_t) fabsf(left_pid.actual_speed));
-		wheel.set_right_speed((uint8_t) fabsf(right_pid.actual_speed));
-			g_send_stream_mutex.lock();
-			memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
-			g_send_stream_mutex.unlock();
-			buf[CTL_CRC] = calc_buf_crc8(buf, sl);
-			//debug_send_stream(&buf[0]);
-			serial_write(SEND_LEN, buf);
-		//}
+		wheel.set_left_speed(left_pid.actual_speed);
+		wheel.set_right_speed(right_pid.actual_speed);
+		g_send_stream_mutex.lock();
+		memcpy(buf,g_send_stream,sizeof(uint8_t)*SEND_LEN);
+		g_send_stream_mutex.unlock();
+		buf[CTL_CRC] = calc_buf_crc8(buf, sl);
+		//debug_send_stream(&buf[0]);
+		serial_write(SEND_LEN, buf);
 		//reset omni wheel bit
 		if(controller.get(CTL_OMNI_RESET) & 0x01)
 			omni.clear();

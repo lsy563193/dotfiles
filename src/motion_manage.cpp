@@ -22,6 +22,8 @@
 #include <tilt.h>
 #include <led.h>
 #include <charger.h>
+#include <event_manager.h>
+#include <odom.h>
 #include "path_planning.h"
 #include "core_move.h"
 #include "event_manager.h"
@@ -185,9 +187,9 @@ void init_nav_before_gyro()
 
 	key.reset();
 
-	gyro.set_off();
+	gyro.setOff();
 	usleep(30000);
-	gyro.set_on();
+	gyro.setOn();
 
 	c_rcon.reset_status();
 	key.reset();
@@ -268,9 +270,9 @@ void init_exp_before_gyro()
 
 	key.reset();
 
-	gyro.set_off();
+	gyro.setOff();
 	usleep(30000);
-	gyro.set_on();
+	gyro.setOn();
 
 	c_rcon.reset_status();
 	key.reset();
@@ -299,9 +301,9 @@ void init_wf_before_gyro()
 	c_rcon.reset_status();
 	key.reset();
 	key.reset();
-	gyro.set_off();
+	gyro.setOff();
 	usleep(30000);
-	gyro.set_on();
+	gyro.setOn();
 
 	wav.play(WAV_CLEANING_WALL_FOLLOW);
 }
@@ -337,9 +339,9 @@ void init_spot_before_gyro()
 	remote.reset_move_with();
 	key.reset();
 
-	gyro.set_off();
+	gyro.setOff();
 	usleep(30000);
-	gyro.set_on();
+	gyro.setOn();
 
 	wav.play(WAV_CLEANING_SPOT);
 }
@@ -369,9 +371,9 @@ void init_spot_after_gyro()
 void init_go_home_before_gyro()
 {
 	led.set_mode(LED_FLASH, LED_ORANGE, 1000);
-	gyro.set_off();
+	gyro.setOff();
 	usleep(30000);
-	gyro.set_on();
+	gyro.setOn();
 	key.reset();
 	cm_register_events();
 	wav.play(WAV_BACK_TO_CHARGER);
@@ -464,24 +466,26 @@ void init_before_gyro()
 			break;
 	}
 }
+/*
 
 bool MotionManage::laser_init()
 {
 	s_laser = new Laser();
-	s_laser->laserMotorCtrl(ON);
-	if (s_laser->isScanReady() == -1)
+	laser.motorCtrl(ON);
+	if (laser.isScanReady() == -1)
 	{
 		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
 		error.set(Error_Code_Laser);
 		initSucceeded(false);
 		return false;
 	}
-	else if (s_laser->isScanReady() == 0)
+	else if (laser.isScanReady() == 0)
 	{
 		initSucceeded(false);
 		return false;
 	}
 }
+*/
 
 void MotionManage::get_aligment_angle()
 {
@@ -497,8 +501,8 @@ void MotionManage::get_aligment_angle()
 			ROS_INFO("%s,%d,ready to find lines ",__FUNCTION__,__LINE__);
 			float align_angle = 0.0;
 			while(1){
-				if(s_laser->findLines(&lines)){
-					if(s_laser->getAlignAngle(&lines,&align_angle))
+				if(laser.findLines(&lines)){
+					if(laser.getAlignAngle(&lines,&align_angle))
 						break;
 				}
 				if(difftime(time(NULL) ,time_findline) >= 2){
@@ -518,9 +522,9 @@ void MotionManage::get_aligment_angle()
 	}
 }
 
-bool MotionManage::slam_init()
+/*bool MotionManage::slam_init()
 {
-		s_slam = new Slam();
+	s_slam = new Slam();
 	//4 call start slam
 	while (ev.slam_error)
 	{
@@ -560,7 +564,7 @@ bool MotionManage::slam_init()
 		return false;
 	}
 	return true;
-}
+}*/
 
 void MotionManage::init_after_slam()
 {
@@ -577,13 +581,148 @@ void MotionManage::init_after_slam()
 	g_robot_slip = false;
 }
 
-MotionManage::MotionManage():nh_("~"),is_align_active_(false)
+MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 {
-	init_before_gyro();
+	// Set variables.
+	if(!cs_is_paused())
+		g_from_station = 0;
+	g_motion_init_succeeded = false;
+
+	bool remote_home_during_pause = false;
+	if (cs_is_paused() && ev.remote_home)
+		remote_home_during_pause = true;
+	event_manager_reset_status();
+	if (remote_home_during_pause)
+	{
+		ev.remote_home = true;
+		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
+	}
+
+	reset_work_time();
 	initSucceeded(true);
 
-	if (!gyro.wait_for_on())
-		return;
+	// Initialize motors and map.
+	if (!(g_is_manual_pause || g_robot_stuck || g_is_low_bat_pause || g_resume_cleaning))
+	{
+		reset_work_time();
+		// Push the start point into the home point list
+		ROS_INFO("map_init-----------------------------");
+		cost_map.reset(MAP);
+		robot::instance()->initOdomPosition();
+		cost_map.mark_robot(MAP);
+
+		g_have_seen_charger = false;
+		g_start_point_seen_charger = false;
+
+		g_homes.resize(1,g_zero_home);
+		g_home_gen_rosmap = true;
+		g_home_way_list.clear();
+	}
+
+	fw_map.reset(MAP);
+	ros_map.reset(MAP);
+	decrease_map.reset(MAP);
+
+	cs.set(CS_OPEN_GYRO);
+	while (ros::ok())
+	{
+		bool eh_status_now = false, eh_status_last = false;
+		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
+			usleep(100);
+			continue;
+		}
+
+		if (p_cm->isExit())
+		{
+			initSucceeded(false);
+			break;
+		}
+
+		if (cs.is_open_gyro())
+		{
+			// run
+			wheel.set_speed(0, 0);
+
+			// switch
+			gyro.waitForOn();
+			if (gyro.isOn())
+			{
+				if (charger.is_on_stub())
+				{
+					cs.set(CS_BACK_FROM_CHARGER);
+					charger_pose.setX(odom.getX());
+					charger_pose.setY(odom.getY());
+				}
+				else
+					cs.set(CS_OPEN_LASER);
+			}
+		}
+		else if (cs.is_back_from_charger())
+		{
+			// run
+			wheel.set_speed(20, 20);
+
+			// switch
+			if (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5)
+				cs.set(CS_OPEN_LASER);
+
+		}
+		else if (cs.is_open_laser())
+		{
+			// run
+			wheel.set_speed(0, 0);
+
+			// switch
+			if (laser.isScan2Ready() == 1)
+			{
+				// Open laser succeeded.
+				if ((g_is_manual_pause || g_is_low_bat_pause) && slam.isMapReady())
+					cs.set(CS_CLEAN);
+				else
+					cs.set(CS_ALIGN);
+			}
+		}
+		else if (cs.is_align())
+		{
+			// run
+			wheel.set_speed(0, 0);
+			std::vector<LineABC> lines;
+			float align_angle = 0.0;
+			if(laser.findLines(&lines))
+			{
+				if (laser.getAlignAngle(&lines,&align_angle))
+					laser.alignAngle(align_angle);
+			}
+
+			// switch
+			if (laser.alignTimeOut())
+				cs.set(CS_OPEN_SLAM);
+			if (laser.alignFinish())
+			{
+				float align_angle = laser.alignAngle();
+				align_angle += (float)(LIDAR_THETA / 10);
+				robot::instance()->offsetAngle(align_angle);
+				g_homes[0].TH = -(int16_t)(align_angle);
+				ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
+				usleep(230000);
+				cs.set(CS_OPEN_SLAM);
+			}
+		}
+		else if (cs.is_open_slam())
+		{
+			if (slam.isMapReady() && robot::instance()->isTfReady())
+			{
+				cs.set(CS_CLEAN);
+				break;
+			}
+		}
+	}
+/*	init_before_gyro();
+	initSucceeded(true);
+
+	if (!gyro.waitForOn())
+		return;*/
+/*
 
 	switch (cm_get())
 	{
@@ -613,9 +752,13 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	if (cm_get() == Clean_Mode_Go_Charger)
 		return;
 
-	/*--- laser init ---*/
+	*/
+/*--- laser init ---*//*
+
 	if(!laser_init())
 		return;
+*/
+/*
 
 	if (g_is_low_bat_pause || g_resume_cleaning)
 	{
@@ -652,13 +795,14 @@ MotionManage::MotionManage():nh_("~"),is_align_active_(false)
 	}
 
 	get_aligment_angle();
-
+*/
+/*
 	usleep(600000);// wait for tf ready
 
-	/*----slam init----*/
+	*//*----slam init----*//*
 	if(!slam_init())
 		return;
-	init_after_slam();
+	init_after_slam();*/
 }
 
 MotionManage::~MotionManage()
@@ -682,11 +826,13 @@ MotionManage::~MotionManage()
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-	if (s_laser != nullptr)
+/*	if (s_laser != nullptr)
 	{
 		delete s_laser; // It takes about 1s.
 		s_laser = nullptr;
-	}
+	}*/
+	laser.motorCtrl(OFF);
+	laser.setScan2Ready(0);
 	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && cs_is_paused() ) || g_robot_stuck ) )
 	{
 		wav.play(WAV_CLEANING_PAUSE);
@@ -698,8 +844,9 @@ MotionManage::~MotionManage()
 				path_set_home(g_home_point);
 			}
 			cm_set(Clean_Mode_Idle);
-			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
+			robot::instance()->offsetAngle(0);
+			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getPoseAngle());
 			if (cs.is_going_home())
 #if MANUAL_PAUSE_CLEANING
 //				ROS_WARN("%s %d: Pause going home, g_homes list size: %u, g_new_homes list size: %u.", __FUNCTION__, __LINE__, (uint)g_homes.size(), (uint)g_new_homes.size());
@@ -733,8 +880,9 @@ MotionManage::~MotionManage()
 			g_resume_cleaning = true;
 			g_is_low_bat_pause = false;
 			cm_set(Clean_Mode_Charging);
-			robot::instance()->savedOffsetAngle(robot::instance()->getAngle());
-			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getAngle());
+			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
+			robot::instance()->offsetAngle(0);
+			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getPoseAngle());
 			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
 			g_saved_work_time += get_work_time();
 			ROS_INFO("%s %d: Cleaning time:\033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, g_saved_work_time);
@@ -766,14 +914,18 @@ MotionManage::~MotionManage()
 			wav.play(WAV_CLEANING_FINISHED);
 	}
 	cm_reset_go_home();
+/*
 
 	if (s_slam != nullptr)
 	{
 		delete s_slam;
 		s_slam = nullptr;
 	}
+*/
+	slam.stop();
 
 	robot::instance()->savedOffsetAngle(0);
+	robot::instance()->offsetAngle(0);
 
 	if (ev.fatal_quit)
 		if (ev.cliff_all_triggered)
@@ -834,7 +986,7 @@ bool MotionManage::initNavigationCleaning(void)
 {
 	init_nav_before_gyro();
 
-	if (!gyro.wait_for_on())
+	if (!gyro.waitForOn())
 		return false;
 
 	init_nav_gyro_charge();
@@ -854,7 +1006,7 @@ bool MotionManage::initExplorationCleaning(void)
 {
 	init_exp_before_gyro();
 
-	if (!gyro.wait_for_on())
+	if (!gyro.waitForOn())
 		return false;
 
 	init_exp_after_gyro();
@@ -866,7 +1018,7 @@ bool MotionManage::initWallFollowCleaning(void)
 {
 	init_wf_before_gyro();
 
-	if (!gyro.wait_for_on())
+	if (!gyro.waitForOn())
 	{
 		return false;
 	}
@@ -880,7 +1032,7 @@ bool MotionManage::initSpotCleaning(void)
 
 	init_spot_before_gyro();
 
-	if (!gyro.wait_for_on())
+	if (!gyro.waitForOn())
 	{
 		return false;
 	}
@@ -892,57 +1044,9 @@ bool MotionManage::initSpotCleaning(void)
 bool MotionManage::initGoHome(void)
 {
 	init_go_home_before_gyro();
-	if (!gyro.wait_for_on())
+	if (!gyro.waitForOn())
 		return false;
 	init_go_home_after_gyro();
 	return true;
-}
-
-void MotionManage::pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
-{
-	// temp_target is valid if only path is not empty.
-	if (path.empty())
-		return;
-
-	int16_t x, y, x_min, x_max, y_min, y_max;
-	CellState cell_state;
-	Cell_t next = path.front();
-	Cell_t target = path.back();
-	map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
-
-	if (next.X == SHRT_MIN )
-		next.X = x_min;
-	else if (next.X == SHRT_MAX)
-		next.X = x_max;
-
-	for (x = x_min; x <= x_max; x++)
-	{
-		for (y = y_min; y <= y_max; y++)
-		{
-			if (x == target.X && y == target.Y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else if (x == next.X && y == next.Y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET);
-			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else
-			{
-				cell_state = cost_map.get_cell(MAP, x, y);
-				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
-					robot::instance()->setCleanMapMarkers(x, y, cell_state);
-			}
-		}
-	}
-#if LINEAR_MOVE_WITH_PATH
-	if (!path.empty())
-	{
-		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
-			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
-
-		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
-	}
-#endif
-
-	robot::instance()->pubCleanMapMarkers();
 }
 

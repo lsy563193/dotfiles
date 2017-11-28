@@ -1,62 +1,109 @@
 #ifndef __GYRO_H__
 #define __GYRO_H__
 
+typedef enum{
+	WAIT_FOR_OPEN = 0,
+	WAIT_FOR_STABLE,
+	WAIT_FOR_REOPEN,
+	WAIT_FOR_CLOSE
+}GyroState;
+
 class Gyro {
 public:
 
 	Gyro() {
-		angle_ = 0;   //[3:3]   = Angle
-		xacc = 0;        //[7:8]   = X Acceleration
-		yacc = 0;        //[9:10]  = Y Acceleration
-		zacc = 0;        //[11:12] = Z Acceleration
-		calibration = 255;
+		angle_ = 0;
+		angle_v_ = 0;
+		x_acc_ = 0;
+		y_acc_ = 0;
+		z_acc_ = 0;
+		init_x_acc_ = 0;
+		init_y_acc_ = 0;
+		init_z_acc_ = 0;
+		calibration_status_ = 255;
 		status_ = 0;
 	}
 
-	bool wait_for_on(void);
+	bool waitForOn(void);
 
-	bool is_stable(void);
+	bool isStable(void);
 
-	void set_off(void);
+	void setOff(void);
 
-	void set_on(void);
+	void setOn(void);
 
-	void set_status(void);
+	void reOpen(void);
 
-	void reset_status(void);
+	void setStatus(void);
 
-	bool is_on(void);
+	void resetStatus(void);
+
+	bool isOn(void);
 
 #if GYRO_DYNAMIC_ADJUSTMENT
 
-	void set_dynamic_on(void);
+	void setDynamicOn(void);
 
-	void set_dynamic_off(void);
+	void setDynamicOff(void);
 
 #endif
 
-	int16_t get_x_acc(void);
+	int16_t getXAcc(void);
 
-	int16_t get_y_acc(void);
+	void setXAcc(int16_t x_acc);
 
-	int16_t get_z_acc(void);
+	int16_t getYAcc(void);
 
-	uint8_t get_calibration(void);
+	void setYAcc(int16_t y_acc);
 
-	int16_t get_angle(void);
+	int16_t getZAcc(void);
 
-	void set_angle(int16_t angle);
+	void setZAcc(int16_t z_acc);
+
+	uint8_t getCalibration(void);
+
+	float getAngle(void);
+
+	void setAngle(float angle);
+
+	float getAngleV();
+
+	void setAngleV(float angle_v);
+
+	int16_t getInitXAcc() const;
+
+	int16_t getInitYAcc() const;
+
+	int16_t getInitZAcc() const;
+
+	void setInitXAcc(int16_t val);
+
+	void setInitYAcc(int16_t val);
+
+	void setInitZAcc(int16_t val);
 
 private:
 
-	int16_t angle_;   //[3:3]   = Angle
-	int16_t xacc;        //[7:8]   = X Acceleration
-	int16_t yacc;        //[9:10]  = Y Acceleration
-	int16_t zacc;        //[11:12] = Z Acceleration
+	float angle_;
+	float angle_v_;
+	float x_acc_;
+	float y_acc_;
+	float z_acc_;
+	float init_x_acc_;
+	float init_y_acc_;
+	float init_z_acc_;
 
-	uint8_t calibration;
+	bool calibration_status_;
 
 	bool status_;
+	GyroState open_state_;
+	// For gyro opening
+	uint8_t error_count_;
+	uint8_t success_count_;
+	uint8_t skip_count_;
+	float average_angle_;
+	uint8_t check_stable_count_;
+	float last_angle_v_;
 };
 
 extern Gyro gyro;

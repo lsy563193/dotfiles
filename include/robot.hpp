@@ -52,10 +52,13 @@ public:
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::vector<Point_d_t> *point, std::string frame_id);
 	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
-	void pubCleanMapMarkers(void);
+	void pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 
 	// Service caller functions.
 	bool laserMotorCtrl(bool switch_);
+	bool slamStart(void);
+	bool slamStop(void);
+
 	void initOdomPosition();
 
 	// The scale should be between 0 to 1.
@@ -77,11 +80,6 @@ public:
 	bool isTfReady() const
 	{
 		return is_tf_ready_;
-	}
-
-	float getAngle() const
-	{
-		return angle_;
 	}
 
 	void offsetAngle(float angle)
@@ -107,11 +105,6 @@ public:
 	{
 		return saved_offset_angle_;
 	};
-
-	float getAngleV() const
-	{
-		return angle_v_;
-	}
 
 	int16_t getPoseAngle()
 	{
@@ -196,12 +189,7 @@ private:
 	float start_angle_;
 	float saved_offset_angle_;
 
-	/* 1 byte */
-	float	angle_;
-
 	bool	is_align_active_;
-	/* 1 byte */
-	float	angle_v_;
 
 	Pose pose;
 
@@ -236,6 +224,8 @@ private:
 	ros::Publisher fit_line_marker_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;
+	ros::ServiceClient start_slam_cli_;
+	ros::ServiceClient end_slam_cli_;
 
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	geometry_msgs::Point m_points_;

@@ -16,6 +16,7 @@
 #include "wav.h"
 #include "clean_mode.h"
 #include "error.h"
+#include "slam.h"
 
 uint8_t cs_self_check(uint8_t Check_Code)
 {
@@ -211,16 +212,18 @@ void cs_disable_motors(void)
 
 void cs_work_motor(void)
 {
-	if (cs.is_going_home())
+	if (cs.is_going_home() || cs.is_back_from_charger())
 	{
-		// Set the vacuum to a normal mode_
+		// Set the vacuum to a normal mode
 		vacuum.mode(Vac_Normal, false);
+		// Turn on the main brush and side brush
+		brush.set_side_pwm(30, 30);
 	} else {
 		vacuum.mode(Vac_Save);
+		// Turn on the main brush and side brush
+		brush.set_side_pwm(50, 50);
 	}
 
-	// Turn on the main brush and side brush
-	brush.set_side_pwm(50, 50);
 	brush.set_main_pwm(30);
 }
 
@@ -239,11 +242,8 @@ void cs_paused_setting(void)
 		wav.play(WAV_CLEANING_STOP);
 		g_is_manual_pause = false;
 		robot::instance()->savedOffsetAngle(0);
-		if (MotionManage::s_slam != nullptr)
-		{
-			delete MotionManage::s_slam;
-			MotionManage::s_slam = nullptr;
-		}
+		if (slam.isMapReady())
+			slam.stop();
 		cm_reset_go_home();
 		g_resume_cleaning = false;
 	}

@@ -59,13 +59,8 @@ void cm_self_check_with_handle(void)
 }
 
 void cm_cleaning() {
-	MotionManage motion;
-	if (!motion.initSucceeded())
-		return;
-
-	g_motion_init_succeeded = true;
-	cs.init();
-	Cell_t curr = cost_map.update_position();
+//	Cell_t curr = cost_map.update_position();
+	Cell_t curr = {0, 0, 0};
 
 	CleanMode* p_cm;
 	if(cm_is_follow_wall())
@@ -76,6 +71,13 @@ void cm_cleaning() {
 		p_cm = new SpotClean(curr, g_plan_path.front(), g_plan_path);
 	else
 		p_cm = new NavigationClean(curr, g_plan_path.front(), g_plan_path);
+
+	MotionManage motion(p_cm);
+	if (!motion.initSucceeded())
+		return;
+
+	g_motion_init_succeeded = true;
+	cs.init();
 
 	g_check_path_in_advance = false;
 
@@ -112,6 +114,78 @@ void cm_cleaning() {
 }
 
 void cm_apply_cs(void) {
+	if (cs.is_open_gyro())
+	{
+		// Set for LEDs.
+		if (ev.remote_home || g_go_home_by_remote)
+			led.set_mode(LED_FLASH, LED_ORANGE, 1000);
+		else
+			led.set_mode(LED_FLASH, LED_GREEN, 1000);
+
+		// Operate on gyro.
+		gyro.setOff();
+		usleep(30000);
+		gyro.reOpen();
+
+		// Reset for keys.
+		key.reset();
+
+		// Playing wavs.
+		// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
+		cm_register_events();
+		if (g_resume_cleaning)
+		{
+			ROS_WARN("Restore from low battery pause");
+			wav.play(WAV_CLEANING_CONTINUE);
+		}
+		else if (cs_is_paused())
+		{
+			ROS_WARN("Restore from manual pause");
+			wav.play(WAV_CLEANING_CONTINUE);
+			if (cs.is_going_home())
+			{
+				wav.play(WAV_BACK_TO_CHARGER);
+			}
+		}
+		else if(g_plan_activated == true)
+		{
+			g_plan_activated = false;
+		}
+		else{
+			wav.play(WAV_CLEANING_START);
+		}
+	}
+	else if (cs.is_back_from_charger())
+	{
+		path_set_home(cost_map.get_curr_cell());
+		cs_work_motor();
+		wheel.set_dir_backward();
+	}
+	else if (cs.is_open_laser())
+	{
+		cs_work_motor();
+		laser.motorCtrl(ON);
+		laser.setScan2Ready(0);
+	}
+	else if (cs.is_align())
+	{
+		laser.startAlign();
+	}
+	else if (cs.is_open_slam())
+	{
+		if (!(g_is_manual_pause || g_resume_cleaning))
+		{
+			robot::instance()->setTfReady(false);
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+			slam.start();
+		}
+		else
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+	}
+	else if (cs.is_clean()) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_GREEN);
+	}
 	if (cs.is_go_home_point()) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
@@ -162,10 +236,6 @@ void cm_apply_cs(void) {
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 		mt.set(MT_FOLLOW_LEFT_WALL);
-	}
-	if (cs.is_clean()) {
-		g_wf_reach_count = 0;
-		led.set_mode(LED_STEADY, LED_GREEN);
 	}
 	if (cs.is_exploration()) {
 		mt.set(MT_LINEARMOVE);
@@ -377,7 +447,7 @@ void cm_self_check(void)
 						{
 							bumper_jam_state++;
 							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-							target_angle = ranged_angle(gyro.get_angle() - 900);
+							target_angle = ranged_angle(robot::instance()->getPoseAngle() - 900);
 							ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 						}
 					}
@@ -385,18 +455,18 @@ void cm_self_check(void)
 				}
 				case 4:
 				{
-					ROS_DEBUG("%s %d: gyro.get_angle(): %d", __FUNCTION__, __LINE__, gyro.get_angle());
+					ROS_DEBUG("%s %d: robot::instance()->getPoseAngle(): %d", __FUNCTION__, __LINE__, robot::instance()->getPoseAngle());
 					// If cliff jam during bumper self resume.
 					if (cliff.get_status() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(ranged_angle(gyro.get_angle() - target_angle)) < 50)
+					else if (abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50)
 					{
 						bumper_jam_state++;
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state);
-						target_angle = ranged_angle(gyro.get_angle() + 900);
+						target_angle = ranged_angle(robot::instance()->getPoseAngle() + 900);
 						ROS_WARN("%s %d: target_angle:%d.", __FUNCTION__, __LINE__, target_angle);
 					}
 					break;
@@ -409,7 +479,7 @@ void cm_self_check(void)
 						ev.cliff_jam = true;
 						resume_cnt = 0;
 					}
-					else if (abs(ranged_angle(gyro.get_angle() - target_angle)) < 50)
+					else if (abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						ev.fatal_quit = true;
@@ -462,12 +532,12 @@ void cm_self_check(void)
 		{
 			if(g_slip_cnt < 3 && g_robot_slip){
 				g_robot_slip = false;
-				target_angle = ranged_angle(gyro.get_angle() + 900);
+				target_angle = ranged_angle(robot::instance()->getPoseAngle() + 900);
 				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 			}
 			else if(g_slip_cnt <4 && g_robot_slip){
 				g_robot_slip = false;
-				target_angle = ranged_angle(gyro.get_angle() - 900);
+				target_angle = ranged_angle(robot::instance()->getPoseAngle() - 900);
 				ROS_INFO("%s,%d,\033[32mrobot slip again slip count %d\033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 			}
 			/*
@@ -476,7 +546,7 @@ void cm_self_check(void)
 				ROS_INFO("%s,%d,robot slip again",__FUNCTION__,__LINE__);
 			}
 			*/
-			if( abs(gyro.get_angle() - target_angle) <= 50 ){
+			if( abs(robot::instance()->getPoseAngle() - target_angle) <= 50 ){
 				g_slip_cnt = 0;
 				g_robot_slip = false;
 				ROS_INFO("\033[32m%s,%d,reach target angle\033[0m ",__FUNCTION__,__LINE__);
@@ -736,7 +806,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 	if(ev.rcon_triggered != 0){
 		cost_map.set_rcon();
 	}
-	c_rcon.reset_status();*/
+	c_rcon.resetStatus();*/
 }
 
 /* Over Current */

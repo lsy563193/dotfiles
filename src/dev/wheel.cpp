@@ -51,10 +51,12 @@ void Wheel::set_dir_backward(void)
 {
 	left_direction = BACKWARD;
 	right_direction = BACKWARD;
+	//ROS_INFO("%s %d: dir left(%d), dir right(%d).", __FUNCTION__, __LINE__, left_direction, right_direction);
 }
 
 void Wheel::set_dir_forward(void)
 {
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 	left_direction = FORWARD;
 	right_direction = FORWARD;
 }
@@ -240,6 +242,8 @@ void Wheel::set_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p
 	int8_t signed_left_speed = (int8_t)Left;
 	int8_t signed_right_speed = (int8_t)Right;
 	set_pid_param(reg_type, PID_p, PID_i, PID_d);
+	//ROS_INFO("%s %d: Signed speed: left(%d), right(%d), dir left(%d), dir right(%d).",
+	//		 __FUNCTION__, __LINE__, signed_left_speed, signed_right_speed, left_direction, right_direction);
 
 	if(left_direction == BACKWARD)
 		signed_left_speed *= -1;
@@ -247,36 +251,31 @@ void Wheel::set_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p
 		signed_right_speed *= -1;
 	left_pid.target_speed = (float)signed_left_speed;
 	right_pid.target_speed = (float)signed_right_speed;
-}
-void Wheel::set_left_speed(uint8_t speed)
-{
-	int16_t l_speed;
-	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
-	l_speed = (int16_t) (speed * SPEED_ALF);
-	left_speed = l_speed;
-	if (left_direction == BACKWARD)
-	{
-		l_speed |= 0x8000;
-		left_speed *= -1;
-	}
-	controller.set(CTL_WHEEL_LEFT_HIGH, (l_speed >> 8) & 0xff);
-	controller.set(CTL_WHEEL_LEFT_LOW, l_speed & 0xff);
-
+	//ROS_INFO("%s %d: PID Target speed: left(%f), right(%f).", __FUNCTION__, __LINE__, left_pid.target_speed, right_pid.target_speed);
 }
 
-void Wheel::set_right_speed(uint8_t speed)
+void Wheel::set_left_speed(float speed)
 {
-	int16_t r_speed;
+	left_speed = speed;
+	uint16_t stream_l_speed;
 	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
-	r_speed = (int16_t) (speed * SPEED_ALF);
-	right_speed = r_speed;
+	stream_l_speed = (uint16_t)(fabs(speed * SPEED_ALF));
+	if (speed < 0)
+		stream_l_speed |= 0x8000;
+	controller.set(CTL_WHEEL_LEFT_HIGH, (stream_l_speed >> 8) & 0xff);
+	controller.set(CTL_WHEEL_LEFT_LOW, stream_l_speed & 0xff);
+}
+
+void Wheel::set_right_speed(float speed)
+{
+	right_speed = speed;
+	uint16_t stream_r_speed;
+	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
+	stream_r_speed = (uint16_t)(fabs(speed * SPEED_ALF));
 	if (right_direction == BACKWARD)
-	{
-		r_speed |= 0x8000;
-		right_speed *= -1;
-	}
-	controller.set(CTL_WHEEL_RIGHT_HIGH, (r_speed >> 8) & 0xff);
-	controller.set(CTL_WHEEL_RIGHT_LOW, r_speed & 0xff);
+		stream_r_speed |= 0x8000;
+	controller.set(CTL_WHEEL_RIGHT_HIGH, (stream_r_speed >> 8) & 0xff);
+	controller.set(CTL_WHEEL_RIGHT_LOW, stream_r_speed & 0xff);
 }
 
 int16_t Wheel::get_left_speed(void)
@@ -297,6 +296,7 @@ void Wheel::move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
 
 void Wheel::set_dir_left(void)
 {
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 	set_direction_flag(Direction_Flag_Left);
 	left_direction = BACKWARD;
 	right_direction = FORWARD;
@@ -304,6 +304,7 @@ void Wheel::set_dir_left(void)
 
 void Wheel::set_dir_right(void)
 {
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 	set_direction_flag(Direction_Flag_Right);
 	left_direction = FORWARD;
 	right_direction = BACKWARD;

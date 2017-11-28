@@ -9,6 +9,7 @@ enum{
 	CS_OPEN_GYRO,
 	CS_BACK_FROM_CHARGER,
 	CS_OPEN_LASER,
+	CS_ALIGN,
 	CS_OPEN_SLAM,
 	CS_CLEAN,
 	CS_GO_HOME_POINT,
@@ -34,6 +35,8 @@ public:
 	bool is_back_from_charger();
 
 	bool is_open_laser();
+
+	bool is_align();
 
 	bool is_open_slam();
 

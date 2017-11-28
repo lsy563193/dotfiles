@@ -45,7 +45,19 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void laserMotorCtrl(bool switch_);
+	void motorCtrl(bool switch_);
+	bool openTimeOut();
+	void startAlign();
+	bool alignTimeOut();
+	bool alignFinish();
+	float alignAngle(void)
+	{
+		return align_angle_;
+	}
+	void alignAngle(float angle)
+	{
+		align_angle_ = angle;
+	}
 
 	uint8_t laserMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
@@ -84,12 +96,19 @@ private:
 	visualization_msgs::Marker fit_line_marker;
 
 	geometry_msgs::Point laser_points_;
+
+	// For opening laser.
+	time_t open_command_time_stamp_;
+
+	// For aligning.
+	time_t start_align_time_stamp_;
+	bool align_finish_;
+	float align_angle_;
 };
 
 bool laser_is_stuck();
 uint8_t laser_get_status();
 uint8_t laser_is_robot_slip();
 
-extern Laser* s_laser;
-
+extern Laser laser;
 #endif

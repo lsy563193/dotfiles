@@ -6,14 +6,18 @@
 #define PP_TILT_H
 
 #include "accelerator.h"
+#include "gyro.h"
+
 class Tilt {
 public:
 Tilt()
 {
 	g_status = 0;
 }
+
 uint8_t check()
 {
+	//todo Change the method of getting the acc data, now data is from gyro instance.
 	static uint16_t front_count = 0;
 	static uint16_t left_count = 0;
 	static uint16_t right_count = 0;
@@ -22,10 +26,10 @@ uint8_t check()
 
 	if (g_enable)
 	{
-		if (acc.get_front() - acc.get_front_init() > FRONT_TILT_LIMIT)
+		if (gyro.getXAcc() - gyro.getInitXAcc() > FRONT_TILT_LIMIT)
 		{
 			front_count += 2;
-			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, acc.get_front(), acc.get_front_init(), front_count);
+			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, gyro.getXAcc(), gyro.getInitXAcc(), front_count);
 		}
 		else
 		{
@@ -34,10 +38,10 @@ uint8_t check()
 			else
 				front_count = 0;
 		}
-		if (acc.get_left() - acc.get_left_init() > LEFT_TILT_LIMIT)
+		if (gyro.getYAcc() - gyro.getInitYAcc() > LEFT_TILT_LIMIT)
 		{
 			left_count++;
-			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, acc.get_left(), acc.get_left_init(), left_count);
+			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, gyro.getYAcc(), gyro.getInitYAcc(), left_count);
 		}
 		else
 		{

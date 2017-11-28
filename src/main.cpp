@@ -123,7 +123,7 @@ void *core_move_thread(void *)
 
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode_------\n");
-				//controller.set_status(Clean_Mode_Sleep);
+				//controller.setStatus(Clean_Mode_Sleep);
 				g_is_low_bat_pause = false;
 				cs_paused_setting();
 				cs_disable_motors();

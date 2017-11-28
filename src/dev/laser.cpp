@@ -14,6 +14,7 @@
 #include <move_type.h>
 #include <accelerator.h>
 #include <wheel.h>
+#include <error.h>
 
 #include "mathematics.h"
 #include "event_manager.h"
@@ -27,25 +28,26 @@ boost::mutex scan3_mutex_;
 boost::mutex scanXY_mutex_;
 //float* Laser::last_ranges_ = NULL;
 
-Laser* s_laser = nullptr;
+Laser laser;
 
 Laser::Laser():angle_n_(0)
 {
-	setScanReady(0);
-	setScan2Ready(0);
-	scan_update_time = ros::Time::now().toSec();
-	scan2_update_time = ros::Time::now().toSec();
+	//todo: laser should add a status for setting ScanReady in case laser still get a scan after shutting down.
+//	setScanReady(0);
+//	setScan2Ready(0);
+//	scan_update_time = ros::Time::now().toSec();
+//	scan2_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
 }
 
 Laser::~Laser()
 {
-	laserMotorCtrl(OFF);
-	setScanReady(0);
-	setScan2Ready(0);
-	//delete []last_ranges_;
-	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
+//	motorCtrl(OFF);
+//	setScanReady(0);
+//	setScan2Ready(0);
+//	//delete []last_ranges_;
+//	ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
 }
 
 void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -58,8 +60,8 @@ void Laser::scanCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		setScanReady(1);
 	}
 	scan_update_time = ros::Time::now().toSec();
-	std::vector<LineABC> lines;
-	findLines(&lines);
+	//std::vector<LineABC> lines;
+	//findLines(&lines);
 }
 
 void Laser::scanCb2(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -161,9 +163,25 @@ void Laser::setScan3Ready(uint8_t val)
 	is_scan3_ready_ = val;
 }
 
-void Laser::laserMotorCtrl(bool switch_)
+void Laser::motorCtrl(bool switch_)
 {
-	time_t start_time = time(NULL);
+	if(switch_){
+		scan_update_time = ros::Time::now().toSec();
+		scan2_update_time = ros::Time::now().toSec();
+		open_command_time_stamp_ = time(NULL);
+	}
+
+	if (!robot::instance()->laserMotorCtrl(switch_))
+		ROS_ERROR("%s %d: Laser service not received!",__FUNCTION__,__LINE__);
+
+	if (!switch_)
+	{
+		setScanReady(0);
+		setScan2Ready(0);
+		//delete []last_ranges_;
+		ROS_INFO("\033[35m" "%s %d: Laser stopped." "\033[0m", __FUNCTION__, __LINE__);
+	}
+/*	time_t start_time = time(NULL);
 	bool eh_status_now = false, eh_status_last = false;
 	bool request_sent = false;
 	while(ros::ok())
@@ -212,7 +230,7 @@ void Laser::laserMotorCtrl(bool switch_)
 			ev.fatal_quit = true;
 			continue;
 		}
-	}
+	}*/
 }
 
 /*
@@ -388,6 +406,30 @@ bool Laser::findLines(std::vector<LineABC> *lines)
 	return true;
 }
 
+void Laser::startAlign()
+{
+	start_align_time_stamp_ = time(NULL);
+	align_finish_ = false;
+}
+
+bool Laser::alignTimeOut()
+{
+	auto time_diff = time(NULL) - start_align_time_stamp_;
+	//ROS_INFO("%s %d: Time diff:%d", __FUNCTION__, __LINE__, time_diff);
+	if (time_diff > 2)
+	{
+		ROS_WARN("%s %d: Align time out.", __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	return false;
+}
+
+bool Laser::alignFinish()
+{
+	return align_finish_;
+}
+
 /*
  * @auther mengshige1988@qq.com
  * @breif get align angle
@@ -417,6 +459,7 @@ bool Laser::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 	if(lines->at(pos).len >= LONG_ENOUGTH){
 		*align_angle = lines->at(pos).angle_x;
 		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
+		align_finish_ = true;
 		return true;
 	}
 
@@ -440,6 +483,7 @@ bool Laser::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
 							avg = sum / (1.0*same_angle_count.size());
 							*align_angle = avg;
+							align_finish_ = true;
 							ROS_INFO("%s,%d,get most popular line angle %f",__FUNCTION__,__LINE__,avg);
 							return true;
 						}
@@ -1301,7 +1345,7 @@ int Laser::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = gyro.get_angle() / 10;
+	int cur_angle = robot::instance()->getPoseAngle() / 10;
 #if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;
@@ -1459,34 +1503,50 @@ bool Laser::laserCheckFresh(float duration, uint8_t type)
 
 	if (time_gap < duration)
 	{
-		//ROS_INFO("%s %d: time_gap(%lf) < duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
+		//ROS_INFO("%s %d: type:%d, time_gap(%lf) < duration(%f).", __FUNCTION__, __LINE__, type, time_gap, duration);
 		return true;
 	}
 
-	//ROS_INFO("%s %d: time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, time_gap, duration);
+	//ROS_INFO("%s %d: type:%d, time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, type, time_gap, duration);
+	return false;
+}
+
+bool Laser::openTimeOut()
+{
+	auto time_diff = time(NULL) - open_command_time_stamp_;
+	//ROS_INFO("%s %d: Time diff:%d", __FUNCTION__, __LINE__, time_diff);
+	if (time_diff > 8)
+	{
+		motorCtrl(OFF);
+		ROS_ERROR("%s %d: Laser Open time out.", __FUNCTION__, __LINE__);
+		ev.fatal_quit = true;
+		error.set(Error_Code_Laser);
+		return true;
+	}
+
 	return false;
 }
 
 
-
 bool laser_is_stuck()
 {
-	if (s_laser != nullptr && !s_laser->laserCheckFresh(4, 2))
+	if (laser.isScan2Ready() && !laser.laserCheckFresh(4, 2))
 		return true;
 	return false;
 }
 
 uint8_t laser_get_status()
 {
-	if (s_laser != nullptr)
-		return s_laser->laserMarker(0.20);
+	if (laser.isScan2Ready())
+		return laser.laserMarker(0.20);
+
 	return 0;
 }
 
 uint8_t laser_is_robot_slip()
 {
 	uint8_t ret = 0;
-	if(s_laser != nullptr && s_laser->isScan2Ready() && s_laser->isRobotSlip()){
+	if(laser.isScan2Ready() && laser.isRobotSlip()){
 		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
 		ret = 1;
 	}

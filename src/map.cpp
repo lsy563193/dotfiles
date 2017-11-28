@@ -98,7 +98,7 @@ int32_t CostMap::get_y_count(void) {
 
 Point32_t CostMap::get_curr_point(void)
 {
-	return {get_x_count(), get_y_count(),gyro.get_angle()};
+	return {get_x_count(), get_y_count(),robot::instance()->getPoseAngle()};
 }
 
 int16_t CostMap::get_x_cell(void) {
@@ -111,7 +111,7 @@ int16_t CostMap::get_y_cell(void) {
 
 Cell_t CostMap::get_curr_cell()
 {
-	return Cell_t{get_x_cell(), CostMap::get_y_cell(),gyro.get_angle()};
+	return Cell_t{get_x_cell(), CostMap::get_y_cell(),robot::instance()->getPoseAngle()};
 }
 
 void CostMap::set_position(double x, double y) {
@@ -325,6 +325,7 @@ Point32_t CostMap::cell_to_point(const Cell_t& cell) {
 	Point32_t pnt;
 	pnt.X = cell_to_count(cell.X);
 	pnt.Y = cell_to_count(cell.Y);
+	pnt.TH = cell.TH;
 	return pnt;
 }
 
@@ -332,7 +333,7 @@ Cell_t CostMap::point_to_cell(Point32_t pnt) {
 	Cell_t cell;
 	cell.X = count_to_cell(pnt.X);
 	cell.Y = count_to_cell(pnt.Y);
-	cell.TH = gyro.get_angle();
+	cell.TH = robot::instance()->getPoseAngle();
 	return cell;
 }
 
@@ -670,9 +671,9 @@ uint8_t CostMap::save_slip()
 	for(auto& d_cell : d_cells)
 	{
 		robot_to_cell(get_curr_point(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		//cm_world_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_slip_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -702,9 +703,9 @@ uint8_t CostMap::save_tilt()
 	for(auto& d_cell : d_cells)
 	{
 		robot_to_cell(get_curr_point(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//cm_world_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		//cm_world_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_tilt_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -737,12 +738,12 @@ uint8_t CostMap::save_obs()
 	{
 		if (d_cell.Y == 0 || (d_cell.Y == 1 & get_wall_adc(0) > 200) || (d_cell.Y == -1 & get_wall_adc(1) > 200))
 		{
-			cm_world_to_cell(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-			//cm_world_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
-			robot_to_cell(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-			//robot_to_point(gyro_get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+			cm_world_to_cell(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+			//cm_world_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+			robot_to_cell(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+			//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 			//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-			//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+			//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 			temp_obs_cells.push_back({x, y});
 			msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 		}
@@ -779,9 +780,9 @@ uint8_t CostMap::save_cliff()
 	for(auto& d_cell : d_cells)
 	{
 		robot_to_cell(get_curr_point(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_cliff_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -822,9 +823,9 @@ uint8_t CostMap::save_bumper()
 	for(auto& d_cell : d_cells)
 	{
 		robot_to_cell(get_curr_point(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_bumper_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -920,9 +921,9 @@ uint8_t CostMap::save_rcon()
 		auto point = get_curr_point();
 		point.TH = g_new_dir;
 		robot_to_cell(point, d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(gyro.get_angle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
+		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, gyro.get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_rcon_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
@@ -939,9 +940,9 @@ uint8_t CostMap::save_follow_wall()
 	//int32_t	x2, y2;
 	std::string msg = "cell:";
 	robot_to_cell(get_curr_point(), dy * CELL_SIZE, 0, x, y);
-	//robot_to_point(gyro.get_angle(), dy * CELL_SIZE, 0, &x2, &y2);
+	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
 	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-	//			, __FUNCTION__, __LINE__, dy, gyro_get_angle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 	if (should_save_for_MAP)
 		temp_fw_cells.push_back({x, y});
 	temp_WFMAP_follow_wall_cells.push_back({x, y});
@@ -1044,7 +1045,7 @@ void CostMap::set_cleaned(std::deque<Cell_t>& cells)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
-			//robot_to_point(gyro.get_angle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
+			//robot_to_point(robot::instance()->getPoseAngle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
 			auto status = get_cell(MAP, get_x_cell() + dx, get_y_cell() + dy);
 			if (status == UNCLEAN){
 				set_cell(MAP, cell_to_count(get_x_cell() + dx), cell_to_count(get_y_cell() + dy), CLEANED);
