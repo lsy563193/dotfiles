@@ -325,6 +325,7 @@ Point32_t CostMap::cell_to_point(const Cell_t& cell) {
 	Point32_t pnt;
 	pnt.X = cell_to_count(cell.X);
 	pnt.Y = cell_to_count(cell.Y);
+	pnt.TH = cell.TH;
 	return pnt;
 }
 
