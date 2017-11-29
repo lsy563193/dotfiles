@@ -5,7 +5,7 @@
 #include <brush.h>
 #include <bumper.h>
 #include <clean_timer.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <charger.h>
 #include <beep.h>
 
@@ -315,35 +315,35 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Remote */
-		if (remote.key(Remote_Clean)) {
+		if (remote.isKeyTrigger(REMOTE_CLEAN)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_CLEAN);
 		}
-		if (remote.key(Remote_Home)) {
+		if (remote.isKeyTrigger(REMOTE_HOME)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_HOME);
 		}
-		if (remote.key(Remote_Forward)) {
+		if (remote.isKeyTrigger(REMOTE_FORWARD)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_FORWARD);
 		}
-		if (remote.key(Remote_Left)) {
+		if (remote.isKeyTrigger(REMOTE_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_LEFT);
 		}
-		if (remote.key(Remote_Right)) {
+		if (remote.isKeyTrigger(REMOTE_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_RIGHT);
 		}
-		if (remote.key(Remote_Spot)) {
+		if (remote.isKeyTrigger(REMOTE_SPOT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_SPOT);
 		}
-		if (remote.key(Remote_Max)) {
+		if (remote.isKeyTrigger(REMOTE_MAX)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_MAX);
 		}
-		if (remote.key(Remote_Wall_Follow)) {
+		if (remote.isKeyTrigger(REMOTE_WALL_FOLLOW)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_WALL_FOLLOW);
 		}

@@ -1,7 +1,7 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <beep.h>
 #include <charger.h>
 #include <wall_follow.h>

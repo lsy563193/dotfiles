@@ -7,7 +7,7 @@
 #include <cliff.h>
 #include <led.h>
 #include <battery.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <charger.h>
 #include <beep.h>
 #include <wheel.hpp>
@@ -346,7 +346,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 }
 void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
-	if (remote.key(Remote_Clean)) {
+	if (remote.isKeyTrigger(REMOTE_CLEAN)) {
 		remote.reset();
 		if (charger.isDirected())
 		{

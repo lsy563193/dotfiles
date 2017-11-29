@@ -306,7 +306,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 
 	if (error.get())
 	{
-		if (remote.get() == Remote_Clean)
+		if (remote.isKeyTrigger(REMOTE_CLEAN))
 		{
 			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 			if (error.clear(error.get()))
@@ -334,8 +334,9 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		beeper.play_for_command(INVALID);
 		reject_reason = 2;
 	}
-	else if ((remote.get() != Remote_Forward && remote.get() != Remote_Left && remote.get() != Remote_Right &&
-					remote.get() != Remote_Home) && !bat_ready_to_clean)
+	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
+			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
+			  && !bat_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beeper.play_for_command(INVALID);
@@ -347,25 +348,25 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		beeper.play_for_command(VALID);
 		switch (remote.get())
 		{
-			case Remote_Forward:
-			case Remote_Left:
-			case Remote_Right:
+			case REMOTE_FORWARD:
+			case REMOTE_LEFT:
+			case REMOTE_RIGHT:
 			{
 				temp_mode = Clean_Mode_Remote;
 				break;
 			}
-			case Remote_Clean:
+			case REMOTE_CLEAN:
 			{
 				temp_mode = Clean_Mode_Navigation;
 				key.resetTriggerStatus();
 				break;
 			}
-			case Remote_Spot:
+			case REMOTE_SPOT:
 			{
 				temp_mode = Clean_Mode_Spot;
 				break;
 			}
-			case Remote_Home:
+			case REMOTE_HOME:
 			{
 				if (cs_is_paused())
 				{
@@ -378,7 +379,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 					temp_mode = Clean_Mode_Exploration;
 				break;
 			}
-			case Remote_Wall_Follow:
+			case REMOTE_WALL_FOLLOW:
 			{
 				temp_mode = Clean_Mode_WallFollow;
 				break;

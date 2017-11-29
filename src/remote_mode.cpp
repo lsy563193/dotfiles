@@ -24,7 +24,7 @@
 #include <battery.h>
 #include <bumper.h>
 #include <pp.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <obs.h>
 #include <beep.h>
 #include <charger.h>
@@ -491,7 +491,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, remote.get());
 	remote_cmd_time = time(NULL);
-	if (remote.get() == Remote_Clean)
+	if (remote.isKeyTrigger(REMOTE_CLEAN))
 	{
 		beeper.play_for_command(VALID);
 		ev.key_clean_pressed = true;
@@ -503,7 +503,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 		beeper.play_for_command(VALID);
 		cs_disable_motors();
 		g_remote_exit = true;
-		if (remote.get() == Remote_Home)
+		if (remote.isKeyTrigger(REMOTE_HOME))
 			//cm_set(Clean_Mode_Gohome);
 			cm_set(Clean_Mode_Exploration);
 		else

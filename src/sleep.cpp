@@ -4,7 +4,7 @@
 #include <cliff.h>
 #include <pp.h>
 #include <clean_timer.h>
-#include <remote.h>
+#include <remote.hpp>
 
 #include "sleep.h"
 #include "key.h"

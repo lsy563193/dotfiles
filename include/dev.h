@@ -20,7 +20,7 @@
 #include "led.h"
 #include "obs.h"
 #include "rcon.h"
-#include "remote.h"
+#include "remote.hpp"
 #include "vacuum.h"
 #include "wav.h"
 #include "wall_follow.h"
