@@ -639,7 +639,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		if (cs.is_open_gyro())
 		{
 			// run
-			wheel.set_speed(0, 0);
+			wheel.setPidTargetSpeed(0, 0);
 
 			// switch
 			gyro.waitForOn();
@@ -658,7 +658,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		else if (cs.is_back_from_charger())
 		{
 			// run
-			wheel.set_speed(20, 20);
+			wheel.setPidTargetSpeed(20, 20);
 
 			// switch
 			if (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5)
@@ -668,7 +668,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		else if (cs.is_open_laser())
 		{
 			// run
-			wheel.set_speed(0, 0);
+			wheel.setPidTargetSpeed(0, 0);
 
 			// switch
 			if (laser.isScanOriginalReady() == 1)
@@ -683,7 +683,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		else if (cs.is_align())
 		{
 			// run
-			wheel.set_speed(0, 0);
+			wheel.setPidTargetSpeed(0, 0);
 			std::vector<LineABC> lines;
 			float align_angle = 0.0;
 			if(laser.findLines(&lines,true))

@@ -2,66 +2,88 @@
 // Created by root on 11/20/17.
 //
 
-#include "pp.h"
-#include "wheel.h"
-
-struct pid_argu_struct argu_for_pid = {REG_TYPE_NONE,0,0,0};
-struct pid_struct left_pid = {0,0,0,0,0,0,0,0}, right_pid = {0,0,0,0,0,0,0,0};
-ros::Time g_lw_t, g_rw_t; // these variable is used for calculate wheel step
+#include "ros/ros.h"
+#include "boost/thread.hpp"
+#include "config.h"
+#include "serial.h"
+#include "wheel.hpp"
 
 Wheel wheel;
 
-int32_t Wheel::get_right_step(void)
+void Wheel::stop(void)
 {
-	double t, step;
-	double rwsp;
-	if (right_speed < 0)
-		rwsp = (double) right_speed * -1;
-	else
-		rwsp = (double) right_speed;
-	t = (ros::Time::now() - g_rw_t).toSec();
-	step = rwsp * t / 0.12;//origin 0.181
-	right_step = (uint32_t) step;
-	return right_step;
+	setPidTargetSpeed(0, 0);
 }
 
-int32_t Wheel::get_left_step(void)
+uint32_t Wheel::getRightStep(void)
 {
-	double t, step;
-	double lwsp;
-	if (left_speed < 0)
-		lwsp = (double) left_speed * -1;
-	else
-		lwsp = (double) left_speed;
-	t = (double) (ros::Time::now() - g_lw_t).toSec();
-	step = lwsp * t / 0.12;//origin 0.181
-	left_step = (uint32_t) step;
-	return left_step;
+	auto delta_t = (ros::Time::now() - right_wheel_step_reset_time_).toSec();
+	right_wheel_step_ = static_cast<uint32_t>(getRightWheelActualSpeed() * delta_t / 0.12);
+	return right_wheel_step_;
 }
 
-void Wheel::reset_step(void)
+uint32_t Wheel::getLeftStep(void)
 {
-	g_lw_t = ros::Time::now();
-	g_rw_t = ros::Time::now();
-	right_step = 0;
-	left_step = 0;
+	auto delta_t = (ros::Time::now() - left_wheel_step_reset_time_).toSec();
+	left_wheel_step_ = static_cast<uint32_t>(getLeftWheelActualSpeed() * delta_t / 0.12);
+	return left_wheel_step_;
 }
 
-void Wheel::set_dir_backward(void)
+void Wheel::resetStep(void)
 {
-	left_direction = BACKWARD;
-	right_direction = BACKWARD;
-	//ROS_INFO("%s %d: dir left(%d), dir right(%d).", __FUNCTION__, __LINE__, left_direction, right_direction);
+	left_wheel_step_reset_time_ = ros::Time::now();
+	right_wheel_step_reset_time_ = ros::Time::now();
+	right_wheel_step_ = 0;
+	left_wheel_step_ = 0;
 }
 
-void Wheel::set_dir_forward(void)
+void Wheel::setDirBackward(void)
+{
+	left_direction_ = DIRECTION_BACKWARD;
+	right_direction_ = DIRECTION_BACKWARD;
+	//ROS_INFO("%s %d: dir left(%d), dir right(%d).", __FUNCTION__, __LINE__, left_direction_, right_direction_);
+}
+
+void Wheel::setDirectionForward(void)
 {
 	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
-	left_direction = FORWARD;
-	right_direction = FORWARD;
+	left_direction_ = DIRECTION_FORWARD;
+	right_direction_ = DIRECTION_FORWARD;
 }
 
-void Wheel::set_pid_param(uint8_t reg_type, float Kp, float Ki, float Kd)
+void Wheel::setDirectionLeft(void)
+{
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
+	left_direction_ = DIRECTION_BACKWARD;
+	right_direction_ = DIRECTION_FORWARD;
+}
+
+void Wheel::setDirectionRight(void)
+{
+	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
+	left_direction_ = DIRECTION_FORWARD;
+	right_direction_ = DIRECTION_BACKWARD;
+}
+
+DirectionType Wheel::getDirection(void)
+{
+	if (left_direction_ == DIRECTION_FORWARD)
+	{
+		if (right_direction_ == DIRECTION_FORWARD)
+			return DIRECTION_FORWARD;
+		else
+			return DIRECTION_RIGHT;
+	}
+	else
+	{
+		if (right_direction_ == DIRECTION_FORWARD)
+			return DIRECTION_LEFT;
+		else
+			return DIRECTION_BACKWARD;
+	}
+}
+
+void Wheel::setPidParam(uint8_t reg_type, float Kp, float Ki, float Kd)
 {
 	boost::mutex::scoped_lock(pid_lock);
 	argu_for_pid.reg_type = reg_type;
@@ -70,7 +92,7 @@ void Wheel::set_pid_param(uint8_t reg_type, float Kp, float Ki, float Kd)
 	argu_for_pid.Kd = Kd;
 }
 
-void Wheel::set_pid(void)
+void Wheel::pidAdjustSpeed(void)
 {
 	boost::mutex::scoped_lock(pid_lock);
 #if 0
@@ -104,7 +126,6 @@ void Wheel::set_pid(void)
 #else
 	if (argu_for_pid.reg_type != REG_TYPE_NONE && (left_pid.last_reg_type != argu_for_pid.reg_type || right_pid.last_reg_type != argu_for_pid.reg_type))
 	{
-#if 1
 		if(argu_for_pid.reg_type == REG_TYPE_BACK)
 		{
 			/*---brake when turn to back regulator---*/
@@ -112,7 +133,6 @@ void Wheel::set_pid(void)
 			right_pid.actual_speed = 0;
 		}
 		else
-#endif
 		{
 			//ROS_INFO("%s %d: Slowly reset the speed to zero.", __FUNCTION__, __LINE__);
 			if (left_pid.actual_speed < 0)
@@ -235,77 +255,78 @@ void Wheel::set_pid(void)
 	/*---update status---*/
 	left_pid.last_target_speed = left_pid.target_speed;
 	right_pid.last_target_speed = right_pid.target_speed;
+	pidSetLeftSpeed(left_pid.actual_speed);
+	pidSetRightSpeed(right_pid.actual_speed);
 #endif
 }
-void Wheel::set_speed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p, float PID_i, float PID_d)
-{
-	int8_t signed_left_speed = (int8_t)Left;
-	int8_t signed_right_speed = (int8_t)Right;
-	set_pid_param(reg_type, PID_p, PID_i, PID_d);
-	//ROS_INFO("%s %d: Signed speed: left(%d), right(%d), dir left(%d), dir right(%d).",
-	//		 __FUNCTION__, __LINE__, signed_left_speed, signed_right_speed, left_direction, right_direction);
 
-	if(left_direction == BACKWARD)
-		signed_left_speed *= -1;
-	if(right_direction == BACKWARD)
-		signed_right_speed *= -1;
-	left_pid.target_speed = (float)signed_left_speed;
-	right_pid.target_speed = (float)signed_right_speed;
+void Wheel::setPidTargetSpeed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p, float PID_i, float PID_d)
+{
+	int8_t signed_left_speed_after_pid_ = (int8_t)Left;
+	int8_t signed_right_speed_after_pid_ = (int8_t)Right;
+	setPidParam(reg_type, PID_p, PID_i, PID_d);
+	//ROS_INFO("%s %d: Signed speed: left(%d), right(%d), dir left(%d), dir right(%d).",
+	//		 __FUNCTION__, __LINE__, signed_left_speed_after_pid_, signed_right_speed_after_pid_, left_direction_, right_direction_);
+
+	if(left_direction_ == DIRECTION_BACKWARD)
+		signed_left_speed_after_pid_ *= -1;
+	if(right_direction_ == DIRECTION_BACKWARD)
+		signed_right_speed_after_pid_ *= -1;
+	left_pid.target_speed = (float)signed_left_speed_after_pid_;
+	right_pid.target_speed = (float)signed_right_speed_after_pid_;
 	//ROS_INFO("%s %d: PID Target speed: left(%f), right(%f).", __FUNCTION__, __LINE__, left_pid.target_speed, right_pid.target_speed);
 }
 
-void Wheel::set_left_speed(float speed)
+void Wheel::pidSetLeftSpeed(float speed)
 {
-	left_speed = speed;
-	uint16_t stream_l_speed;
-	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
-	stream_l_speed = (uint16_t)(fabs(speed * SPEED_ALF));
-	if (speed < 0)
-		stream_l_speed |= 0x8000;
-	serial.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_l_speed >> 8) & 0xff);
-	serial.setSendData(CTL_WHEEL_LEFT_LOW, stream_l_speed & 0xff);
+	left_speed_after_pid_ = static_cast<int8_t>(speed);
+	uint16_t stream_speed;
+	if (speed >= 0)
+	{
+		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
+		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
+	}
+	else
+	{
+		speed = fabs(speed) > RUN_TOP_SPEED ? RUN_TOP_SPEED : fabs(speed);
+		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
+		stream_speed |= 0x8000;
+	}
+	serial.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_speed >> 8) & 0xff);
+	serial.setSendData(CTL_WHEEL_LEFT_LOW, stream_speed & 0xff);
 }
 
-void Wheel::set_right_speed(float speed)
+void Wheel::pidSetRightSpeed(float speed)
 {
-	right_speed = speed;
-	uint16_t stream_r_speed;
-	speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
-	stream_r_speed = (uint16_t)(fabs(speed * SPEED_ALF));
-	if (right_direction == BACKWARD)
-		stream_r_speed |= 0x8000;
-	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_r_speed >> 8) & 0xff);
-	serial.setSendData(CTL_WHEEL_RIGHT_LOW, stream_r_speed & 0xff);
+	right_speed_after_pid_ = static_cast<int8_t>(speed);
+	uint16_t stream_speed;
+	if (speed >= 0)
+	{
+		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
+		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
+	}
+	else
+	{
+		speed = fabs(speed) > RUN_TOP_SPEED ? RUN_TOP_SPEED : fabs(speed);
+		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
+		stream_speed |= 0x8000;
+	}
+	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_speed >> 8) & 0xff);
+	serial.setSendData(CTL_WHEEL_RIGHT_LOW, stream_speed & 0xff);
 }
 
-int16_t Wheel::get_left_speed(void)
+int8_t Wheel::getLeftSpeedAfterPid(void)
 {
-	return left_speed;
+	return left_speed_after_pid_;
 }
 
-int16_t Wheel::get_right_speed(void)
+int8_t Wheel::getRightSpeedAfterPid(void)
 {
-	return right_speed;
+	return right_speed_after_pid_;
 }
 
-void Wheel::move_forward(uint8_t Left_Speed, uint8_t Right_Speed)
+void Wheel::moveForward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
-	set_dir_forward();
-	set_speed(Left_Speed, Right_Speed);
-}
-
-void Wheel::set_dir_left(void)
-{
-	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
-	set_direction_flag(Direction_Flag_Left);
-	left_direction = BACKWARD;
-	right_direction = FORWARD;
-}
-
-void Wheel::set_dir_right(void)
-{
-	//ROS_INFO("%s %d", __FUNCTION__, __LINE__);
-	set_direction_flag(Direction_Flag_Right);
-	left_direction = FORWARD;
-	right_direction = BACKWARD;
+	setDirectionForward();
+	setPidTargetSpeed(Left_Speed, Right_Speed);
 }

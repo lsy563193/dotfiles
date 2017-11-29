@@ -14,7 +14,6 @@
 #include <random>
 
 #include "config.h"
-#include "crc8.h"
 #include "des.h"
 #include "serial.h"
 

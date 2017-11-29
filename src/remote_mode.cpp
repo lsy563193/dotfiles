@@ -28,7 +28,7 @@
 #include <obs.h>
 #include <beep.h>
 #include <charger.h>
-#include <wheel.h>
+#include <wheel.hpp>
 #include <odom.h>
 #include "wav.h"
 #include "robot.hpp"
@@ -151,22 +151,22 @@ void remote_move(void)
 				if (obs.get_status())
 				{
 					if(moving_speed>10)moving_speed--;
-					wheel.move_forward(moving_speed, moving_speed);
+					wheel.moveForward(moving_speed, moving_speed);
 				}
 				else
 				{
 					moving_speed++;
 					if(moving_speed<25)moving_speed=25;
 					if(moving_speed>42)moving_speed=42;
-					wheel.move_forward(moving_speed, moving_speed);
+					wheel.moveForward(moving_speed, moving_speed);
 				}
 				break;
 			}
 			case REMOTE_MODE_BACKWARD:
 			{
 				g_move_back_finished = false;
-				wheel.set_dir_backward();
-				wheel.set_speed(20, 20);
+				wheel.setDirBackward();
+				wheel.setPidTargetSpeed(20, 20);
 
 				float distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
 				ROS_DEBUG("%s %d: current pos(%f, %f), distance:%f.", __FUNCTION__, __LINE__, odom.getX(), odom.getY(), distance);
@@ -241,8 +241,8 @@ void remote_move(void)
 						ROS_WARN("%s %d: Move back. Mark current pos(%f, %f).", __FUNCTION__, __LINE__, saved_pos_x, saved_pos_y);
 						set_move_flag_(REMOTE_MODE_BACKWARD);
 					}
-					wheel.set_dir_backward();
-					wheel.set_speed(20, 20);
+					wheel.setDirBackward();
+					wheel.setPidTargetSpeed(20, 20);
 				}
 				else
 				{
@@ -276,10 +276,10 @@ void remote_move(void)
 				//}
 
 				if (get_move_flag_() == REMOTE_MODE_LEFT)
-					wheel.set_dir_left();
+					wheel.setDirectionLeft();
 				else
-					wheel.set_dir_right();
-				wheel.set_speed(moving_speed, moving_speed);
+					wheel.setDirectionRight();
+				wheel.setPidTargetSpeed(moving_speed, moving_speed);
 				break;
 			}
 		}
@@ -571,14 +571,14 @@ void RM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) wheel.getLwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getLeftWheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_left_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getLeftWheelCurrent());
 		ev.oc_wheel_left = true;
 	}
 }
@@ -587,14 +587,14 @@ void RM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) wheel.getRwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getRightWheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_right_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, %u mA", __FUNCTION__, __LINE__, (uint32_t) wheel.getRightWheelCurrent());
 
 		ev.oc_wheel_right = true;
 	}
@@ -622,7 +622,7 @@ void RM_EventHandle::battery_low(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: Detects battery low.", __FUNCTION__, __LINE__);
 	if (g_battery_low_cnt++ > 50)
 	{
-		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, battery.get_voltage());
+		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, battery.getVoltage());
 		cs_disable_motors();
 		ev.battery_low = true;
 		ev.fatal_quit = true;
