@@ -316,7 +316,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 			beeper.play_for_command(INVALID);
 			charge_reject_reason = 1;
 		}
-		key.reset();
+		key.resetTriggerStatus();
 	}
 	else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 	{
@@ -338,11 +338,11 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 
 	// Key release detection, if user has not release the key, don't do anything.
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 		usleep(20000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
-	key.reset();
+	key.resetTriggerStatus();
 }
 void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
@@ -366,7 +366,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 				beeper.play_for_command(INVALID);
 				charge_reject_reason = 1;
 			}
-			key.reset();
+			key.resetTriggerStatus();
 		}
 		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{

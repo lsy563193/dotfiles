@@ -17,7 +17,7 @@ EventOpenGyro::EventOpenGyro() {
 	gyro.reOpen();
 
 	// Reset for keys.
-	key.reset();
+	key.resetTriggerStatus();
 
 	// Playing wavs.
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.

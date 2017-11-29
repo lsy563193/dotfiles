@@ -549,12 +549,12 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	beeper.play_for_command(VALID);
 	cs_disable_motors();
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 	cm_set(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
-	key.reset();
+	key.resetTriggerStatus();
 }
 
 void RM_EventHandle::charge_detect(bool state_now, bool state_last)
