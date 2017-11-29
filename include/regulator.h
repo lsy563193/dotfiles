@@ -57,11 +57,19 @@ bool laser_turn_angle(int16_t& turn_angle);
 //class Movement {
 //
 //};
-class Movement {
+class Regulator{
 public:
-
+	virtual void adjustSpeed(int32_t&, int32_t&)=0;
+};
+class ActionEvent{
+public:
 	bool isExit();
 	bool isStop();
+};
+class Movement: public Regulator,ActionEvent {
+public:
+	bool isStop();
+	bool isExit();
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void setTarget() = 0;
 	virtual std::string getName() = 0;
