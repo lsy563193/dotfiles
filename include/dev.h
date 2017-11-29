@@ -19,7 +19,6 @@
 #include "laser.hpp"
 #include "led.h"
 #include "obs.h"
-#include "omni.h"
 #include "rcon.h"
 #include "remote.h"
 #include "vacuum.h"

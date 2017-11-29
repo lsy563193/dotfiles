@@ -451,8 +451,6 @@ void *robotbase_routine(void*)
 		gyro.setDynamicOff();
 	}
 	gyro.checkTilt();
-	if(omni.isEnable())
-		omni.detect();
 #endif
 		/*---------extrict end-------*/
 
@@ -537,9 +535,6 @@ void *serial_send_routine(void*)
 		buf[CTL_CRC] = serial.calc_buf_crc8(buf, sl);
 		//debug_send_stream(&buf[0]);
 		serial.write(SEND_LEN, buf);
-		//reset omni wheel bit
-		if(serial.getSendData(CTL_OMNI_RESET) & 0x01)
-			omni.clear();
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);

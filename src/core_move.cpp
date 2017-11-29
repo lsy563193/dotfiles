@@ -271,7 +271,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (ev.bumper_jam || ev.cliff_jam || omni.stop() || ev.laser_stuck)
+	if (ev.bumper_jam || ev.cliff_jam || ev.laser_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = odom.getX();
@@ -519,13 +519,6 @@ void cm_self_check(void)
 				}
 			}
 		}
-		else if (omni.stop())
-		{
-			ROS_ERROR("\033[1m" "%s,%d,omni detect" "\033[0m",__FUNCTION__,__LINE__);
-			error.set(ERROR_CODE_OMNI);
-			ev.fatal_quit = true;
-			break;
-		}
 		else if (g_slip_cnt >= 2)
 		{
 			if(g_slip_cnt < 3 && g_robot_slip){
@@ -584,7 +577,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || omni.stop() || g_slip_cnt >= 2 || ev.laser_stuck);
+	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || g_slip_cnt >= 2 || ev.laser_stuck);
 }
 
 /* Event handler functions. */

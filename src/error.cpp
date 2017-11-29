@@ -6,7 +6,6 @@
 #include "wav.h"
 #include "cliff.h"
 #include "bumper.h"
-#include "omni.h"
 
 
 Error error;
@@ -55,11 +54,6 @@ void Error::alarm(void)
 			wav.play(WAV_ERROR_BUMPER);
 			break;
 		}
-		case ERROR_CODE_OMNI:
-		{
-			wav.play(WAV_ERROR_MOBILITY_WHEEL);
-			break;
-		}
 		case ERROR_CODE_LASER:
 		{
 			wav.play(WAV_TEST_LIDAR);
@@ -104,15 +98,6 @@ bool Error::clear(uint8_t code)
 			if (bumper.get_status())
 			{
 				ROS_WARN("%s %d: Bumper still triggered.", __FUNCTION__, __LINE__);
-				cleared = false;
-			}
-			break;
-		}
-		case ERROR_CODE_OMNI:
-		{
-			if(omni.stop())
-			{
-				ROS_WARN("%s %d: Omni still triggered.", __FUNCTION__, __LINE__);
 				cleared = false;
 			}
 			break;
