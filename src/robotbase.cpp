@@ -342,8 +342,11 @@ void *robotbase_routine(void*)
 
 		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0x30);
 		sensor.lbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x08) ? true : false;		// left brush over current
+		brush.setLeftOc(sensor.lbrush_oc);
 		sensor.mbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x04) ? true : false;		// main brush over current
+		brush.setMainOc(sensor.mbrush_oc);
 		sensor.rbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x02) ? true : false;		// right brush over current
+		brush.setRightOc(sensor.rbrush_oc);
 		sensor.vcum_oc = (serial.receive_stream[REC_CL_OC] & 0x01) ? true : false;		// vaccum over current
 
 		sensor.gyro_dymc = serial.receive_stream[REC_GYRO_DYMC];

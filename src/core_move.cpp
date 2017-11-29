@@ -817,7 +817,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 //	if(!robot::instance()->getLbrushOc()) {
 //		g_oc_brush.left_cnt = 0;
 //		if (stop_cnt++ > 250) {
-//			brush.set_left_pwm(30);
+//			brush.setLeftPwm(30);
 //		}
 //		return;
 //	}
@@ -825,7 +825,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 //	stop_cnt = 0;
 //	if (g_oc_brush.left_cnt++ > 40) {
 //		g_oc_brush.left_cnt = 0;
-//		brush.set_left_pwm(0);
+//		brush.setLeftPwm(0);
 //		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
 //	}
 //}
@@ -834,13 +834,13 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!brush.getMbrushOc()){
-		brush.oc_main_cnt = 0;
+	if (!brush.getMainOc()){
+		brush.oc_main_cnt_ = 0;
 		return;
 	}
 
-	if (brush.oc_main_cnt++ > 40) {
-		brush.oc_main_cnt = 0;
+	if (brush.oc_main_cnt_++ > 40) {
+		brush.oc_main_cnt_ = 0;
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
 		if (cs_self_check(Check_Main_Brush) == 1) {
@@ -859,7 +859,7 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 //	if(!robot::instance()->getRbrushOc()) {
 //		g_oc_brush.right_cnt = 0;
 //		if (stop_cnt++ > 250) {
-//			brush.set_right_pwm(30);
+//			brush.setRightPwm(30);
 //		}
 //		return;
 //	}
@@ -867,7 +867,7 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 //	stop_cnt = 0;
 //	if (g_oc_brush.right_cnt++ > 40) {
 //		g_oc_brush.right_cnt = 0;
-//		brush.set_right_pwm(0);
+//		brush.setRightPwm(0);
 //		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
 //	}
 //}
@@ -1115,8 +1115,8 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 
 		g_battery_low_cnt = 0;
 		vacuum.bldc_speed(v_pwr);
-		brush.set_side_pwm(s_pwr, s_pwr);
-		brush.set_main_pwm(m_pwr);
+		brush.setSidePwm(s_pwr, s_pwr);
+		brush.setMainPwm(m_pwr);
 
 		ev.fatal_quit = true;
 		ev.battery_low = true;

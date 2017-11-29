@@ -361,8 +361,8 @@ void init_spot_after_gyro()
 	g_home_way_list.clear();
 
 	vacuum.mode(Vac_Max);
-	brush.set_main_pwm(80);
-	brush.set_side_pwm(60, 60);
+	brush.setMainPwm(80);
+	brush.setSidePwm(60, 60);
 
 }
 
@@ -390,7 +390,7 @@ bool wait_for_back_from_charge()
 		extern bool g_from_station;
 		g_from_station = 1;
 
-	brush.set_side_pwm(30, 30);
+	brush.setSidePwm(30, 30);
 		int back_segment = MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);
