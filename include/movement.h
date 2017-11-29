@@ -379,16 +379,6 @@ extern struct pid_struct left_pid, right_pid;
 void reset_work_time();
 uint32_t get_work_time();
 
-void error_set(uint8_t Code);
-uint8_t error_get(void);
-void error_alarm(void);
-bool error_clear(uint8_t error_code);
-
-int32_t wheel_get_right_step(void);
-int32_t wheel_get_left_step(void);
-void wheel_reset_step(void);
-
-
 uint8_t is_encoder_fail(void);
 
 void quick_back(uint8_t speed,uint16_t distance);
@@ -406,23 +396,6 @@ uint8_t cm_get(void);
 void cm_set(uint8_t mode);
 
 void cs_disable_motors(void);
-
-void wheel_set_left_speed(uint8_t speed);
-
-void wheel_set_right_speed(uint8_t speed);
-
-int16_t wheel_get_left_speed(void);
-
-int16_t wheel_get_right_speed(void);
-
-void set_direction_flag(uint8_t flag);
-
-uint8_t controller_get_status();
-void controller_set_status(uint8_t val);
-
-void reset_sp_turn_count();
-int32_t get_sp_turn_count();
-void add_sp_turn_count();
 
 bool check_pub_scan();
 

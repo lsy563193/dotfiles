@@ -28,7 +28,11 @@ bool cm_is_go_charger();
 void cm_set(uint8_t mode);
 uint8_t cm_get(void);
 
-class CleanMode:public Movement
+class PathPlan
+{
+
+};
+class CleanMode:public Movement,PathPlan
 {
 public:
 //	CleanMode(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);

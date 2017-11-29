@@ -55,18 +55,10 @@ const int16_t g_home_x = 0, g_home_y = 0;
 Cell_t g_zero_home = {0,0};
 Cell_t g_virtual_target = {SHRT_MAX,SHRT_MAX};//for followall
 
-// This is for the continue point for robot to go after charge.
 Cell_t g_continue_cell;
-//const Cell_t MIN_CELL{-MAP_SIZE,-MAP_SIZE};
-//const Cell_t MAX_CELL{ MAP_SIZE, MAP_SIZE};
-//Cell_t g_cell_history[5];
-
-//uint16_t g_old_dir;
 
 uint32_t g_wf_start_timer;
 uint32_t g_wf_diff_timer;
-
-//std::vector<Cell_t> g_homes = {{0,0},{0,0},{0,0}};
 
 uint8_t g_trapped_cell_size = ESCAPE_TRAPPED_REF_CELL_SIZE;
 
@@ -106,58 +98,16 @@ std::iota(go_home_way_list.begin(), go_home_way_list.end(),0);
 	return go_home_way_list.begin();
 }
 
-
 bool cell_is_out_of_range(const Cell_t &cell)
 {
 	return std::abs(cell.X) > MAP_SIZE || std::abs(cell.Y) > MAP_SIZE;
 }
-//void path_planning_initialize(int32_t *x, int32_t *y)
+
 void path_planning_initialize()
 {
-#if (ROBOT_SIZE == 5)
-
-//	g_weight_cnt_threshold = 4;
-
-#else
-
-//	g_weight_cnt_threshold = 3;
-
-#endif
-
 	g_direct_go = 0;
-
-//	g_cell_history[0] = {0,0};
-//	g_old_dir = 0;
-
-	/* Reset the poisition list. */
-/*	for (auto i = 0; i < 3; i++) {
-		g_cell_history[i] =  {int16_t(i+1), int16_t(i+1)};
-	}*/
-
-	/* Initialize the shortest path. */
-	path_position_init(g_direct_go);
-
-#ifndef ZONE_WALLFOLLOW
-
-	/* Set the back as blocked, since robot will align the start angle with the wall. */
-	cost_map.set_cell(MAP, cell_to_count(-3), cell_to_count(0), BLOCKED_BUMPER);
-
-#endif
-
 	cost_map.mark_robot(MAP);
 }
-
-/* Update the robot position history. */
-/*void path_update_cell_history()
-{
-	g_cell_history[4] = g_cell_history[3];
-	g_cell_history[3] = g_cell_history[2];
-	g_cell_history[2] = g_cell_history[1];
-	g_cell_history[1] = g_cell_history[0];
-
-	g_cell_history[0]= cost_map.get_curr_cell();
-//	g_cell_history[0].dir = path_get_robot_direction();
-}*/
 
 uint16_t path_get_robot_direction()
 {
@@ -586,125 +536,6 @@ void generate_path_to_targets(const Cell_t& curr)
 	}
 }
 
-/*
-
-static bool is_path_valid(const PPTargetType &it,int16_t towards_y, int16_t re_towards_y, int16_t target_y,int16_t curr_y, int16_t turnable)
-{
-//	ROS_WARN("towards_y(%d),re_towards_y(%d),turnable(%d)", towards_y, re_towards_y,turnable);
-	bool inited = false;
-	int16_t last_y = it.front().Y;
-	auto turn = false;
-	auto re_towards = false;
-	auto min = std::min(towards_y, re_towards_y);
-	auto max = std::max(towards_y, re_towards_y);
-	for (const auto &cell : it)
-	{
-		if (!inited || (turnable == 1 && turn))
-		{
-//			ROS_WARN("inited(%d) turnable(%d)turn(%d)",inited, turnable, turn);
-			if(inited){
-				re_towards = true;
-				turnable = 0;
-			}
-			inited = true;
-		}
-		if(turnable > 1)
-			continue;
-		auto pos_dir = (turnable == 1 || !re_towards) ? towards_y > re_towards_y : towards_y < re_towards_y ;
-		turn = (cell.Y != last_y  && (pos_dir ^ cell.Y < last_y));
-//		ROS_INFO("cell(%d,%d),turnable(%d),turn(%d),pos_dir(%d)",cell.X,cell.Y,turnable,turn, pos_dir);
-		if (cell.Y < min || cell.Y > max || (! turnable && turn))
-			return false;
-
-		last_y = cell.Y;
-	}
-//	ROS_WARN("target:(%d,%d)~~~~~~~~~~~~~~~~~~~~",it.target.X, it.target.Y);
-	return true;
-}
-
-static int16_t path_area_target(const Cell_t &curr, int16_t y_min, int16_t y_max, Cell_t &target,
-														 list<PPTargetType> &g_paths)
-{
-	int16_t cost = FINAL_COST;
-	enum { START_Y, TOWARDS, TURN, Y_NUM };
-	int16_t area[6][Y_NUM] = {
-					{ (int16_t)(curr.Y + 2), 1, 0},
-//					{ curr.Y, 1, 1 },
-//					{ (int16_t)(curr.Y - 2), -1, 0},
-//					{ curr.Y, -1, 1 },
-//					{ curr.Y, 1, INT8_MAX },
-//					{ curr.Y, -1, INT8_MAX },
-	};
-	for (auto i = 0; i < 1; i++)
-	{
-		auto &dy = area[i][TOWARDS];
-		auto towards_y = (dy == 1) ? y_max : y_min;
-		auto re_towards_y = (dy == 1) ? y_min : y_max;
-		auto towards_y_end = (dy == 1) ? y_max + 1: y_min - 1 ;
-		auto re_towards_y_end = (dy == 1)? y_min - 1: y_max + 1;
-		auto area_y_begin = area[i][START_Y];
-//		ROS_WARN("%s %d: case %d, TOWARDS(%d), allow turn count: %d ", __FUNCTION__, __LINE__, i, area[i][TOWARDS], area[i][TURN]);
-		do {
-//			ROS_INFO(" %s %d: y: towards_y_end(%d), re_towards_y_end(%d), area_y_begin(%d),", __FUNCTION__, __LINE__,towards_y_end, re_towards_y_end, area_y_begin);
-			for (auto target_y = area_y_begin; target_y != towards_y_end; target_y += dy)
-			{
-//				ROS_INFO(" %s %d: target_y(%d)", __FUNCTION__, __LINE__, target_y);
-				for (const auto &target_it : g_paths)
-				{
-					if (target_y == target_it.back().Y)
-					{
-						if (is_path_valid(target_it, towards_y, re_towards_y, target_y, curr.Y, area[i][TURN]) &&
-								cost > target_it.size())
-						{
-							target = target_it.back();
-							cost = target_it.size();
-//              ROS_INFO(" %s %d: target_y(%d),cost %d", __FUNCTION__, __LINE__, target_y,cost);
-						}
-
-					}
-				}
-				if (cost != FINAL_COST)
-				{
-					ROS_INFO("cost %d", cost);
-					return cost;
-				}
-			}
-			area_y_begin-=dy;
-		} while(area[i][TURN] && area_y_begin != re_towards_y_end);
-	}
-		for (const auto& target_it : g_paths) {
-			if (cost > target_it.size()) {
-				target = target_it.back();
-				cost = target_it.size();
-			}
-	}
-	if (cost != FINAL_COST)
-	{
-		ROS_INFO("cost %d", cost);
-		return cost;
-	}
-	return 0;
-}
-*/
-
-int16_t path_is_trapped(const Cell_t& curr, PPTargetType& path)
-{
-
-}
-
-bool is_trapped(const Cell_t& curr, PPTargetType& path) {
-	int escape_cleaned_count = 0;
-	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
-	if(is_found)
-		return false;
-	auto map_cleand_count = cost_map.get_cleaned_area();
-	double clean_proportion = 0.0;
-	clean_proportion = (double) escape_cleaned_count / (double) map_cleand_count;
-	ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__, escape_cleaned_count);
-	ROS_WARN("%s %d: escape map_cleand_count(%d)!!", __FUNCTION__, __LINE__, map_cleand_count);
-	ROS_WARN("%s %d: clean_proportion(%f) ,when prop < 0,8 is trapped ", __FUNCTION__, __LINE__, clean_proportion);
-	return (clean_proportion < 0.8 /*|| path_escape_trapped(curr) <= 0*/);
-}
 
 bool path_target(const Cell_t& curr, PPTargetType& path)
 {
@@ -980,49 +811,6 @@ bool path_select_target(const Cell_t& curr, Cell_t& temp_target, const BoundingB
 
 	return is_found;
 }
-/*
-
-void path_update_cells()
-{
-	if(!cm_is_navigation())
-		return;
-	*/
-/* Skip, if robot is not moving towards POS_X. *//*
-
-	if ((g_new_dir % 1800) != 0)
-		return;
-
-	auto curr_x = g_cell_history[0].X;
-	auto curr_y = g_cell_history[0].Y;
-	auto last_x = g_cell_history[1].X;
-	auto start = std::min(curr_x, last_x);
-	auto stop  = std::max(curr_x, last_x);
-	ROS_INFO("%s %d: start: %d\tstop: %d", __FUNCTION__, __LINE__, start, stop);
-	for (auto x = start; x <= stop; x++)
-	{
-		for (auto dy = -1; dy <= 1; dy += 2)
-		{
-			if (cost_map.get_cell(MAP, x, curr_y + dy) == BLOCKED_OBS || cost_map.get_cell(MAP, x, curr_y + dy) == BLOCKED_BUMPER)
-			{
-				auto state = CLEANED;
-				auto dx_start = -1;
-				auto dx_stop = 1;
-				if (x == start) dx_start = dx_stop;
-				if (x == stop) dx_stop = dx_start;
-				for (auto dx = dx_start; dx <= dx_stop; dx += 2)
-				{
-					if (cost_map.get_cell(MAP, x + dx, curr_y + dy) == CLEANED)
-						break;
-					else
-						state = UNCLEAN;
-				}
-				ROS_WARN("%s %d: reset (%d,%d) to %d.", __FUNCTION__, __LINE__, x, curr_y + dy, start);
-				cost_map.set_cell(MAP, cell_to_count(x), cell_to_count(curr_y + dy), state);
-			}
-		}
-	}
-}
-*/
 
 bool wf_is_isolate() {
 //	path_update_cell_history();
@@ -1064,26 +852,6 @@ bool wf_is_isolate() {
 		}
 	}
 	return val != 0;
-}
-
-int16_t path_escape_trapped(const Cell_t& curr)
-{
-	int16_t	val = 0;
-	for (auto home_it = g_homes.rbegin(); home_it != g_homes.rend(); ++home_it)
-	{
-		ROS_WARN("%s %d: home_it(%d,%d)", __FUNCTION__, __LINE__, home_it->X, home_it->Y);
-	}
-	for (auto home_it = g_homes.rbegin(); home_it != g_homes.rend() && std::abs(std::distance(home_it, g_homes.rbegin()))<ESCAPE_TRAPPED_REF_CELL_SIZE; ++home_it) {
-		ROS_WARN("%s %d: home_it distance(%ld)", __FUNCTION__, __LINE__, std::distance(home_it, g_homes.rbegin()));
-		if (cost_map.is_block_accessible(home_it->X, home_it->Y) == 0)
-			cost_map.set_cells(ROBOT_SIZE, home_it->X, home_it->Y, CLEANED);
-
-		val = path_find_shortest_path(curr.X, curr.Y, home_it->X, home_it->Y, 0);
-		ROS_WARN("%s %d: val %d", __FUNCTION__, __LINE__, val);
-		val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
-		if(val == 1) break;
-	}
-	return val;
 }
 
 bool cm_is_reach()
