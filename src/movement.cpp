@@ -7,7 +7,7 @@
 #include <vacuum.h>
 #include <brush.h>
 #include <bumper.h>
-#include <wheel.h>
+#include <wheel.hpp>
 #include <odom.h>
 
 #include "robot.hpp"
@@ -39,20 +39,20 @@ uint8_t cs_self_check(uint8_t Check_Code)
 	if (Check_Code == Check_Right_Wheel)
 	{
 		Right_Wheel_Slow = 0;
-		if (wheel.get_direction_flag() == Direction_Flag_Left)
+		if (wheel.getDirection() == DIRECTION_LEFT)
 		{
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		} else
 		{
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		}
-		wheel.set_speed(30, 30);
+		wheel.setPidTargetSpeed(30, 30);
 		usleep(50000);
 		Time_Out = 50;
 		Wheel_Current_Summary = 0;
 		while (Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t) wheel.getRwheelCurrent();
+			Wheel_Current_Summary += (uint32_t) wheel.getRightWheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary /= 50;
@@ -80,20 +80,20 @@ uint8_t cs_self_check(uint8_t Check_Code)
 	else if (Check_Code == Check_Left_Wheel)
 	{
 		Left_Wheel_Slow = 0;
-		if (wheel.get_direction_flag() == Direction_Flag_Right)
+		if (wheel.getDirection() == DIRECTION_RIGHT)
 		{
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		} else
 		{
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		}
-		wheel.set_speed(30, 30);
+		wheel.setPidTargetSpeed(30, 30);
 		usleep(50000);
 		Time_Out = 50;
 		Wheel_Current_Summary = 0;
 		while (Time_Out--)
 		{
-			Wheel_Current_Summary += (uint32_t) wheel.getLwheelCurrent();
+			Wheel_Current_Summary += (uint32_t) wheel.getLeftWheelCurrent();
 			usleep(20000);
 		}
 		Wheel_Current_Summary /= 50;
@@ -198,7 +198,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 	Left_Wheel_Slow = 0;
 	Right_Wheel_Slow = 0;
 	cs_work_motor();
-	//wheel.move_forward(5,5);
+	//wheel.moveForward(5,5);
 	return 0;
 }
 
@@ -255,9 +255,9 @@ void quick_back(uint8_t speed, uint16_t distance)
 	saved_x = odom.getX();
 	saved_y = odom.getY();
 	// Quickly move back for a distance.
-	wheel.set_dir_backward();
-	wheel.reset_step();
-	wheel.set_speed(speed, speed);
+	wheel.setDirBackward();
+	wheel.resetStep();
+	wheel.setPidTargetSpeed(speed, speed);
 	while (sqrtf(powf(saved_x - odom.getX(), 2) + powf(saved_y - odom.getY(), 2)) < (float) distance / 1000)
 	{
 		ROS_DEBUG("%s %d: saved_x: %f, saved_y: %f current x: %f, current y: %f."
@@ -271,13 +271,13 @@ void quick_back(uint8_t speed, uint16_t distance)
 
 bool check_pub_scan()
 {
-	//ROS_INFO("%s %d: get_left_wheel.speed() = %d, get_right_wheel.speed() = %d.", __FUNCTION__, __LINE__, wheel.get_left_speed(), wheel.get_right_speed());
+	//ROS_INFO("%s %d: get_left_wheel.speed() = %d, get_right_wheel.speed() = %d.", __FUNCTION__, __LINE__, wheel.getLeftSpeedAfterPid(), wheel.getRightSpeedAfterPid());
 	if (g_motion_init_succeeded &&
-		((fabs(wheel.getLeftWheelSpeed() - wheel.getRightWheelSpeed()) > 0.1)
-		|| (wheel.getLeftWheelSpeed() * wheel.getRightWheelSpeed() < 0)
+		((fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1)
+		|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
 		|| bumper.get_status() || gyro.getTiltCheckingStatus()
-		|| abs(wheel.get_left_speed() - wheel.get_right_speed()) > 100
-		|| wheel.get_left_speed() * wheel.get_right_speed() < 0))
+		|| abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
+		|| wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0))
 		return false;
 	else
 		return true;

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
-	src/charger.cpp
+	src/charge.cpp
 	src/clean_mode.cpp
 	src/clean_state.cpp
 	src/core_move.cpp
@@ -26,6 +26,18 @@ FILE(GLOB PP_SRC
 	src/dev/wheel.cpp
 	src/dev/laser.cpp
 	src/dev/wav.cpp
+
+				src/action/action.cpp
+				src/action/action_open_gyro.cpp
+				src/action/action_back_from_charger.cpp
+
+				src/action/movement/movement.cpp
+				src/action/movement/movement_back.cpp
+				src/action/movement/movement_fall_wall.cpp
+				src/action/movement/movement_forward.cpp
+				src/action/movement/movement_go_charger.cpp
+				src/action/movement/movement_self_check.cpp
+				src/action/movement/movement_turn.cpp
 	src/error.cpp
 	src/event_manager.cpp
 	src/idle.cpp
@@ -38,7 +50,7 @@ FILE(GLOB PP_SRC
 	src/odom.cpp
 	src/path_planning.cpp
 	src/pose.cpp
-	src/regulator.cpp
+#	src/regulator.cpp
 	src/remote_mode.cpp
 	src/robot.cpp
 	src/robotbase.cpp

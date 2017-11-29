@@ -63,7 +63,7 @@ public:
 	uint8_t isRobotSlip();
 
 	bool laserCheckFresh(float duration, uint8_t type = 1);
-	bool findLines(std::vector<LineABC> *lines);
+	bool findLines(std::vector<LineABC> *lines,bool combine);
 	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
 
 	//void stop(void);
@@ -72,7 +72,15 @@ public:
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void laserPointCb(const visualization_msgs::Marker &point_marker);
-
+	bool isNewScan1()
+	{
+		bool ret = false;
+		if(laserScanData_linear_.header.seq != seq){
+			seq = laserScanData_linear_.header.seq;
+			ret = true;
+		}
+		return ret;
+	}
 private:
 	int angle_n_;
 	uint8_t is_scanLinear_ready_;
@@ -104,6 +112,7 @@ private:
 	time_t start_align_time_stamp_;
 	bool align_finish_;
 	float align_angle_;
+	int seq;
 };
 
 bool laser_is_stuck();

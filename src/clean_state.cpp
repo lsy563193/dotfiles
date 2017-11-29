@@ -203,7 +203,7 @@ bool GoHomePointCS::cs_next(const Cell_t& start, PPTargetType& path) {
 void GoHomePointCS::setting(void)
 {
 		cs_work_motor();
-		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
+	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
 			led.set_mode(LED_STEADY, LED_ORANGE);
 

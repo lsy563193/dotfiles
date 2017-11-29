@@ -21,6 +21,7 @@
 #include "cliff.h"
 #include "gyro.h"
 #include "key.h"
+#include "odom.h"
 #include "laser.hpp"
 #include "led.h"
 #include "obs.h"
@@ -30,6 +31,6 @@
 #include "vacuum.h"
 #include "wav.h"
 #include "wall_follow.h"
-#include "wheel.h"
+#include "wheel.hpp"
 
 #endif //PP_DEV_H

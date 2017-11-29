@@ -12,7 +12,8 @@
 #include <movement.h>
 #include <robot.hpp>
 #include <rcon.h>
-#include <wheel.h>
+#include <wheel.hpp>
+#include <event_action.h>
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
@@ -36,6 +37,12 @@ extern int16_t g_turn_angle;
 #define ROUND_LEFT 1
 #define ROUND_RIGHT 2
 
+extern double robot_to_wall_distance;
+extern float g_back_distance;
+extern bool line_is_found;
+extern bool g_go_to_charger_back_30cm;
+extern bool g_go_to_charger_back_10cm;
+extern bool g_go_to_charger_back_0cm;
 extern int g_wall_distance;
 extern double g_time_straight;
 extern double time_start_straight;
@@ -61,12 +68,8 @@ class Regulator{
 public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 };
-class ActionEvent{
-public:
-	bool isExit();
-	bool isStop();
-};
-class Movement: public Regulator,ActionEvent {
+
+class Movement: public Regulator,EventAction{
 public:
 	bool isStop();
 	bool isExit();
@@ -289,7 +292,7 @@ public:
 		near_counter = 0;
 		side_counter = 0;
 		by_path_move_cnt = 0;
-		c_rcon.reset_status();
+		c_rcon.resetStatus();
 		turn_connect_cnt = 0;
 		turn_connect_dir = ROUND_RIGHT;
 	}
