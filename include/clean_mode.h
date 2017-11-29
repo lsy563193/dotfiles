@@ -32,8 +32,8 @@ class PathPlan
 {
 
 };
-class CleanMode:public Movement,PathPlan
-{
+
+class CleanMode:public Movement,PathPlan {
 public:
 //	CleanMode(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
 //	~CleanMode();
