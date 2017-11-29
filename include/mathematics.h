@@ -341,7 +341,7 @@ typedef struct
   double y1;
   double x2;//point 2
   double y2;
-  double angle_x; //line with x axis angle in degree
+  double K; //gradient in degree
   double dist_2_this_line(Point_d_t p){
 	  return fabs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
   }

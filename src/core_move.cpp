@@ -18,8 +18,7 @@ std::deque<Cell_t> g_passed_path;
 
 //uint8_t	g_remote_go_home = 0;
 //bool	cs.is_going_home() = false;
-bool	g_from_station = 0;
-bool	g_in_charge_signal_range;
+bool	g_from_charger = false;
 
 // This flag is indicating robot is resuming from low battery go home.
 bool g_resume_cleaning = false;
@@ -798,7 +797,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 	}
 	else if (mt.is_linear())
 		// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
-		if (!(c_rcon.get_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
+		if (!(c_rcon.getStatus() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)))
 		return;
 
 	ev.rcon_triggered = c_rcon.get_trig_();

@@ -173,6 +173,10 @@ public:
 		ROS_INFO("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
+	bool isScanAllow()
+	{
+		return scan_ctrl_.allow_publishing?true:false;
+	}
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;

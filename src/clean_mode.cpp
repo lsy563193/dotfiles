@@ -150,7 +150,7 @@ void CleanMode::setMt()
 	g_bumper_cnt = g_cliff_cnt = 0;
 	g_slip_cnt = 0;
 	g_slip_backward = false;
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
 }
 

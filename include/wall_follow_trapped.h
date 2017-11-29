@@ -34,7 +34,6 @@
 #include "config.h"
 
 #include "mathematics.h"
-#include "debug.h"
 
 typedef enum {
 	Escape_Trapped_Escaped,

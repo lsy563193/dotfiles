@@ -1177,7 +1177,7 @@ bool cm_turn_and_check_charger_signal(void)
 			continue;
 		}
 
-		if(c_rcon.get_status())
+		if(c_rcon.getStatus())
 		{
 			ROS_INFO("%s, %d: have seen charger signal, return and go home now.", __FUNCTION__, __LINE__);
 			return true;
