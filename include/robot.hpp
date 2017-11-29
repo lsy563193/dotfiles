@@ -209,9 +209,9 @@ private:
 	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
-	ros::Subscriber	scan_sub_;
-	ros::Subscriber	scan_sub2_;
-	ros::Subscriber	scan_sub3_;
+	ros::Subscriber	scanLinear_sub_;
+	ros::Subscriber	scanOriginal_sub_;
+	ros::Subscriber	scanCompensate_sub_;
 	ros::Subscriber laserPoint_sub_;
 
 	ros::Publisher odom_pub_;
@@ -242,9 +242,9 @@ private:
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
-	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void laserPointCb(const visualization_msgs::Marker &point_marker);
 };
 

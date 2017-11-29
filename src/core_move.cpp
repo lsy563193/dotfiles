@@ -164,7 +164,7 @@ void cm_apply_cs(int next) {
 	{
 		cs_work_motor();
 		laser.motorCtrl(ON);
-		laser.setScan2Ready(0);
+		laser.setScanOriginalReady(0);
 	}
 	else if (next == CS_ALIGN)
 	{

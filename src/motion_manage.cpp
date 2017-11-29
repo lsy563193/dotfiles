@@ -671,7 +671,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			wheel.set_speed(0, 0);
 
 			// switch
-			if (laser.isScan2Ready() == 1)
+			if (laser.isScanOriginalReady() == 1)
 			{
 				// Open laser succeeded.
 				if ((g_is_manual_pause || g_is_low_bat_pause) && slam.isMapReady())
@@ -830,7 +830,7 @@ MotionManage::~MotionManage()
 		s_laser = nullptr;
 	}*/
 	laser.motorCtrl(OFF);
-	laser.setScan2Ready(0);
+	laser.setScanOriginalReady(0);
 	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && cs_is_paused() ) || g_robot_stuck ) )
 	{
 		wav.play(WAV_CLEANING_PAUSE);
