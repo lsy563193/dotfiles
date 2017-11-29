@@ -7,6 +7,8 @@
 
 #include "map.h"
 
+#include <pp/x900sensor.h>
+
 extern pp::x900sensor sensor;
 class Obs {
 public:

@@ -200,7 +200,7 @@ bool Gyro::waitForOn(void)
 			setOn();
 		}
 
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
+		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
 			break;
 
 		if (skip_count == 0 && getAngleV() != 0){
@@ -251,7 +251,7 @@ bool Gyro::isStable()
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 			continue;
 		usleep(10000);
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
+		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
 			break;
 		current_angle = getAngle();
 		ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.", check_stable_count,

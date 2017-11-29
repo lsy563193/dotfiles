@@ -61,7 +61,7 @@ void charge_function(void)
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
 	led.set_mode(LED_BREATH, LED_ORANGE);
-	charger.set_start();
+	charger.setStart();
 	timer.set_status(0);
 	register_event();
 	event_manager_reset_status();
@@ -199,7 +199,7 @@ void charge_function(void)
 		}
 	}
 	unregister_event();
-	charger.set_stop();
+	charger.setStop();
 	// Wait for 20ms to make sure stop charging command has been sent.
 	usleep(30000);
 
@@ -298,7 +298,7 @@ void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 }
 void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 {
-	if (charger.is_directed())
+	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(INVALID);
@@ -330,7 +330,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		beeper.play_for_command(INVALID);
 		charge_reject_reason = 3;
 	}
-	else if (charger.is_on_stub())
+	else if (charger.isOnStub())
 	{
 		ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(VALID);
@@ -348,7 +348,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
 	if (remote.key(Remote_Clean)) {
 		remote.reset();
-		if (charger.is_directed())
+		if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 			beeper.play_for_command(INVALID);
@@ -380,7 +380,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			charge_reject_reason = 3;
 			beeper.play_for_command(INVALID);
 		}
-		else if (charger.is_on_stub())
+		else if (charger.isOnStub())
 		{
 			ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 			beeper.play_for_command(VALID);

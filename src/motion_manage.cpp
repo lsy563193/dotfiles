@@ -395,7 +395,7 @@ bool wait_for_back_from_charge()
 		int back_segment = MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);
-			if (ev.fatal_quit || ev.key_clean_pressed || charger.is_on_stub() || ev.cliff_all_triggered) {
+			if (ev.fatal_quit || ev.key_clean_pressed || charger.isOnStub() || ev.cliff_all_triggered) {
 				cs_disable_motors();
 				if (ev.fatal_quit)
 				{
@@ -646,7 +646,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			gyro.waitForOn();
 			if (gyro.isOn())
 			{
-				if (charger.is_on_stub())
+				if (charger.isOnStub())
 				{
 					cs.setNext(CS_BACK_FROM_CHARGER);
 					charger_pose.setX(odom.getX());
@@ -727,7 +727,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 	{
 		case Clean_Mode_Navigation:
 			init_nav_gyro_charge();
-			if(charger.is_on_stub() && !wait_for_back_from_charge())
+			if(charger.isOnStub() && !wait_for_back_from_charge())
 				return;
 			init_nav_after_charge();
 			break;
@@ -991,7 +991,7 @@ bool MotionManage::initNavigationCleaning(void)
 	init_nav_gyro_charge();
 
 	/*Move back from charge station*/
-	if (charger.is_on_stub()) {
+	if (charger.isOnStub()) {
 		if (!wait_for_back_from_charge())
 			return false;
 	}

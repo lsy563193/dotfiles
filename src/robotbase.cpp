@@ -316,6 +316,7 @@ void *robotbase_routine(void*)
 		key.eliminate_jitter(sensor.key);
 
 		sensor.c_s = serial.receive_stream[REC_CHARGE_STATE];
+		charger.setChargeStatus(sensor.c_s);
 
 		sensor.w_tank = (serial.receive_stream[REC_WATER_TANK]>0)?true:false;
 

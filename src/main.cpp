@@ -45,7 +45,7 @@ void *core_move_thread(void *)
 	//wav.play(WAV_WELCOME_ILIFE);
 	usleep(200000);
 
-	if (charger.is_directed() || charger.is_on_stub())
+	if (charger.isDirected() || charger.isOnStub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.isReadyToClean())
 		wav.play(WAV_PLEASE_START_CLEANING);
