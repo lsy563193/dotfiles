@@ -46,7 +46,7 @@ public:
 	}
 
 	/*1 byte */
-//	uint8_t status_;
+//	uint8_t trigger_status_;
 
 };
 

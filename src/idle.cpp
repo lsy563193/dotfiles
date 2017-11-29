@@ -66,9 +66,9 @@ void idle(void)
 	cs_disable_motors();
 	remote.reset();
 	timer.set_status(0);
-	key.reset();
+	key.resetTriggerStatus();
 	c_rcon.resetStatus();
-	key.reset();
+	key.resetTriggerStatus();
 	vacuum.stop();
 
 	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, battery.getVoltage());
@@ -320,7 +320,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 				beeper.play_for_command(INVALID);
 				reject_reason = 1;
 			}
-			key.reset();
+			key.resetTriggerStatus();
 		}
 		else
 		{
@@ -358,7 +358,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 			case Remote_Clean:
 			{
 				temp_mode = Clean_Mode_Navigation;
-				key.reset();
+				key.resetTriggerStatus();
 				break;
 			}
 			case Remote_Spot:
@@ -472,7 +472,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	else
 		beeper.play_for_command(INVALID);
 
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 	{
 		if (time(NULL) - key_press_start_time >= 3)
 		{
@@ -491,8 +491,8 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 
 	if (long_press_to_sleep)
 	{
-		key.reset();
-		key.reset();
+		key.resetTriggerStatus();
+		key.resetTriggerStatus();
 		return;
 	}
 
@@ -520,8 +520,8 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	if (!reject_reason)
 		temp_mode = Clean_Mode_Navigation;
 
-	key.reset();
-	key.reset();
+	key.resetTriggerStatus();
+	key.resetTriggerStatus();
 }
 
 void Idle_EventHandle::charge_detect(bool state_now, bool state_last)

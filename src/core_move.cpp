@@ -126,7 +126,7 @@ void cm_apply_cs(int next) {
 		gyro.reOpen();
 
 		// Reset for keys.
-		key.reset();
+		key.resetTriggerStatus();
 
 		// Playing wavs.
 		// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
@@ -933,12 +933,12 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	if (ev.slam_error)
 	{
 		beeper.play_for_command(INVALID);
-		while (key.get_press() & KEY_CLEAN)
+		while (key.getPressStatus())
 		{
 			usleep(20000);
 		}
 		ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-		key.reset();
+		key.resetTriggerStatus();
 		return;
 	}
 
@@ -950,7 +950,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 		g_is_manual_pause = true;
 
 	start_time = time(NULL);
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 	{
 		if (cm_is_navigation() && time(NULL) - start_time > 3) {
 			if (!reset_manual_pause)
@@ -967,7 +967,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	key.reset();
+	key.resetTriggerStatus();
 }
 
 /* Remote */

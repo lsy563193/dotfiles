@@ -18,7 +18,7 @@ public:
 	uint8_t key(uint8_t key) {
 		// Debug
 		if (g_status > 0) {
-			ROS_DEBUG("%s, %d g_status = %x", __FUNCTION__, __LINE__, g_status);
+			ROS_DEBUG("%s, %d press_status_ = %x", __FUNCTION__, __LINE__, g_status);
 		}
 		if (g_status & key) {
 			return 1;

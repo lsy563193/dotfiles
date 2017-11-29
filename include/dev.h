@@ -5,12 +5,6 @@
 #ifndef PP_DEV_H
 #define PP_DEV_H
 
-#if __ROBOT_X900
-#define KEY_CLEAN 1
-#else
-#define KEY_CLEAN 0x02
-#endif
-
 #include "serial.h"
 #include "battery.h"
 #include "beep.h"

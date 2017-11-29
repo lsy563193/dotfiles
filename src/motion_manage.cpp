@@ -184,14 +184,14 @@ void init_nav_before_gyro()
 		g_home_way_list.clear();
 	}
 
-	key.reset();
+	key.resetTriggerStatus();
 
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
 
 	c_rcon.resetStatus();
-	key.reset();
+	key.resetTriggerStatus();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	if (g_resume_cleaning)
 	{
@@ -267,14 +267,14 @@ void init_exp_before_gyro()
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	key.reset();
+	key.resetTriggerStatus();
 
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
 
 	c_rcon.resetStatus();
-	key.reset();
+	key.resetTriggerStatus();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
 	wav.play(WAV_EXPLORATION_START);
@@ -298,8 +298,8 @@ void init_wf_before_gyro()
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
 	remote.reset_move_with();
 	c_rcon.resetStatus();
-	key.reset();
-	key.reset();
+	key.resetTriggerStatus();
+	key.resetTriggerStatus();
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
@@ -336,7 +336,7 @@ void init_spot_before_gyro()
 
 	c_rcon.resetStatus();
 	remote.reset_move_with();
-	key.reset();
+	key.resetTriggerStatus();
 
 	gyro.setOff();
 	usleep(30000);
@@ -373,7 +373,7 @@ void init_go_home_before_gyro()
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
-	key.reset();
+	key.resetTriggerStatus();
 	cm_register_events();
 	wav.play(WAV_BACK_TO_CHARGER);
 }
