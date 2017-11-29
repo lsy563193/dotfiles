@@ -9,8 +9,8 @@ Omni omni;
 
 
 void Omni::detect() {
-	auto rv = wheel.getRightWheelSpeed();
-	auto lv = wheel.getLeftWheelSpeed();
+	auto rv = wheel.getRightWheelActualSpeed();
+	auto lv = wheel.getLeftWheelActualSpeed();
 	if (std::abs(rv - lv) <= 0.05 && (rv != 0 && lv != 0)) {
 		if (std::abs(getOmniWheel() - last_omni_wheel) == 0) {
 			omni_detect_cnt++;

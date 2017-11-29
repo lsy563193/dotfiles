@@ -259,8 +259,12 @@ void *robotbase_routine(void*)
 		lw_speed = (serial.receive_stream[REC_LW_S_H] << 8) | serial.receive_stream[REC_LW_S_L];
 		rw_speed = (serial.receive_stream[REC_RW_S_H] << 8) | serial.receive_stream[REC_RW_S_L];
 
-		sensor.lw_vel = (lw_speed & 0x8000) ? -((float)((lw_speed & 0x7fff) / 1000.0)) : (float)((lw_speed & 0x7fff) / 1000.0);
-		sensor.rw_vel = (rw_speed & 0x8000) ? -((float)((rw_speed & 0x7fff) / 1000.0)) : (float)((rw_speed & 0x7fff) / 1000.0);
+		auto _right_wheel_speed = (lw_speed & 0x8000) ? -(static_cast<float>((lw_speed & 0x7fff) / 1000.0)) : static_cast<float>((lw_speed & 0x7fff) / 1000.0);
+		auto _left_wheel_speed = (rw_speed & 0x8000) ? -(static_cast<float>((rw_speed & 0x7fff) / 1000.0)) : static_cast<float>((rw_speed & 0x7fff) / 1000.0);
+		sensor.lw_vel = _left_wheel_speed;
+		sensor.rw_vel = _right_wheel_speed;
+		wheel.setLeftWheelActualSpeed(_left_wheel_speed);
+		wheel.setRightWheelActualSpeed(_right_wheel_speed);
 
 		sensor.angle = -(float)((int16_t)((serial.receive_stream[REC_ANGLE_H] << 8) | serial.receive_stream[REC_ANGLE_L])) / 100.0;//ros angle * -1
 		sensor.angle -= robot::instance()->offsetAngle();
@@ -268,8 +272,12 @@ void *robotbase_routine(void*)
 		sensor.angle_v = -(float)((int16_t)((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_L])) / 100.0;//ros angle * -1
 		gyro.setAngleV(sensor.angle_v);
 
-		sensor.lw_crt = (((serial.receive_stream[REC_LW_C_H] << 8) | serial.receive_stream[REC_LW_C_L]) & 0x7fff) * 1.622;
-		sensor.rw_crt = (((serial.receive_stream[REC_RW_C_H] << 8) | serial.receive_stream[REC_RW_C_L]) & 0x7fff) * 1.622;
+		auto _left_wheel_current = static_cast<float>((((serial.receive_stream[REC_LW_C_H] << 8) | serial.receive_stream[REC_LW_C_L]) & 0x7fff) * 1.622);
+		auto _right_wheel_current = static_cast<float>((((serial.receive_stream[REC_RW_C_H] << 8) | serial.receive_stream[REC_RW_C_L]) & 0x7fff) * 1.622);
+		sensor.lw_crt = _left_wheel_current;
+		sensor.rw_crt = _right_wheel_current;
+		wheel.setLeftWheelCurrent(_left_wheel_current);
+		wheel.setRightWheelCurrent(_right_wheel_current);
 
 		sensor.left_wall = ((serial.receive_stream[REC_L_WALL_H] << 8)| serial.receive_stream[REC_L_WALL_L]);
 
@@ -394,7 +402,7 @@ void *robotbase_routine(void*)
 		sensor.z_acc = (serial.receive_stream[45]<<8)|serial.receive_stream[46]; //in mG
 #endif
 	#if GYRO_DYNAMIC_ADJUSTMENT
-	if (wheel.getLeftWheelSpeed() < 0.01 && wheel.getRightWheelSpeed() < 0.01)
+	if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
 	{
 		gyro.setDynamicOn();
 	} else
@@ -480,10 +488,8 @@ void *serial_send_routine(void*)
 
 		//if(!is_flag_set()){
 			/*---pid for wheels---*/
-		wheel.set_pid();
+		wheel.pidAdjustSpeed();
 
-		wheel.set_left_speed(left_pid.actual_speed);
-		wheel.set_right_speed(right_pid.actual_speed);
 		g_send_stream_mutex.lock();
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
 		g_send_stream_mutex.unlock();

@@ -19,7 +19,6 @@
 #include "robot.hpp"
 #include "main.h"
 #include "serial.h"
-#include "crc8.h"
 #include "robotbase.h"
 #include "spot.h"
 #include "idle.h"

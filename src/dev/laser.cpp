@@ -12,7 +12,7 @@
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
 #include <move_type.h>
-#include <wheel.h>
+#include <wheel.hpp>
 #include <error.h>
 
 #include "mathematics.h"
@@ -1259,7 +1259,8 @@ uint8_t Laser::isRobotSlip()
 	scanOriginal_mutex_.lock();
 	auto tmp_scan_data = laserScanData_original_;
 	scanOriginal_mutex_.unlock();
-	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScanOriginalReady() && ( std::abs(wheel.getLeftWheelSpeed()) >= WSL || std::abs(wheel.getRightWheelSpeed()) >= WSL ) )
+	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScanOriginalReady() && ( std::abs(
+			wheel.getLeftWheelActualSpeed()) >= WSL || std::abs(wheel.getRightWheelActualSpeed()) >= WSL ) )
 	{
 		seq = tmp_scan_data.header.seq;
 		if(last_ranges_init == 0){//for the first time

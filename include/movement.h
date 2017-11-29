@@ -11,9 +11,6 @@
 #define Brush_Power					128
 #define MainBrush_Power				70
 
-#define Direction_Flag_Right		0x01
-#define Direction_Flag_Left			0x02
-
 #define Check_Left_Wheel			0x01
 #define Check_Right_Wheel			0x02
 #define Check_Left_Brush			0x20
@@ -334,35 +331,7 @@ typedef enum{
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
 
-//regulator type
-#define REG_TYPE_NONE			0
-#define REG_TYPE_WALLFOLLOW		1
-#define REG_TYPE_LINEAR			2
-#define REG_TYPE_TURN			3
-#define REG_TYPE_BACK			4
-#define REG_TYPE_CURVE			5
-
 extern uint32_t g_rcon_status;
-
-struct pid_struct
-{
-	float delta;
-	float delta_sum;
-	float delta_last;
-	float target_speed;
-	float actual_speed;
-	float last_target_speed;
-	uint8_t last_reg_type;
-	float variation;
-};
-
-struct pid_argu_struct
-{
-	uint8_t reg_type; // Regulator type
-	float Kp;
-	float Ki;
-	float Kd;
-};
 
 #define RCON_SENSOR_FLFR 0 //define the rcon sensor angle on robotbase (degree)
 #define RCON_SENSOR_FLFR2 30
@@ -373,9 +342,6 @@ typedef struct {
 	int16_t sensor_angle;
 }Rcon_Point_t;
 
-extern struct pid_argu_struct argu_for_pid;
-extern struct pid_struct left_pid, right_pid;
-
 void reset_work_time();
 uint32_t get_work_time();
 
@@ -384,16 +350,12 @@ uint8_t error_get(void);
 void error_alarm(void);
 bool error_clear(uint8_t error_code);
 
-int32_t wheel_get_right_step(void);
-int32_t wheel_get_left_step(void);
 void wheel_reset_step(void);
 
 
 uint8_t is_encoder_fail(void);
 
 void quick_back(uint8_t speed,uint16_t distance);
-
-void wheel_set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
 
@@ -406,19 +368,6 @@ uint8_t cm_get(void);
 void cm_set(uint8_t mode);
 
 void cs_disable_motors(void);
-
-void wheel_set_left_speed(uint8_t speed);
-
-void wheel_set_right_speed(uint8_t speed);
-
-int16_t wheel_get_left_speed(void);
-
-int16_t wheel_get_right_speed(void);
-
-void set_direction_flag(uint8_t flag);
-
-uint8_t controller_get_status();
-void controller_set_status(uint8_t val);
 
 void reset_sp_turn_count();
 int32_t get_sp_turn_count();

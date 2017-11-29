@@ -6,7 +6,7 @@
 #include <charger.h>
 #include <wall_follow.h>
 #include "pp.h"
-#include "wheel.h"
+#include "wheel.hpp"
 #include "error.h"
 #include "odom.h"
 
@@ -158,7 +158,7 @@ void cm_apply_cs(int next) {
 	{
 		path_set_home(cost_map.get_curr_cell());
 		cs_work_motor();
-		wheel.set_dir_backward();
+		wheel.setDirBackward();
 	}
 	else if (next == CS_OPEN_LASER)
 	{
@@ -187,7 +187,7 @@ void cm_apply_cs(int next) {
 	}
 	if (next == CS_GO_HOME_POINT) {
 		cs_work_motor();
-		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
+		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
 			led.set_mode(LED_STEADY, LED_ORANGE);
 
@@ -359,9 +359,9 @@ void cm_self_check(void)
 			else
 			{
 				if (ev.oc_wheel_left)
-					wheel_current_sum += (uint32_t) wheel.getLwheelCurrent();
+					wheel_current_sum += (uint32_t) wheel.getLeftWheelCurrent();
 				else
-					wheel_current_sum += (uint32_t) wheel.getRwheelCurrent();
+					wheel_current_sum += (uint32_t) wheel.getRightWheelCurrent();
 				wheel_current_sum_cnt++;
 			}
 		}
@@ -876,14 +876,14 @@ void CM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) wheel.getLwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getLeftWheelCurrent() < Wheel_Stall_Limit) {
         g_oc_wheel_left_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_left_cnt++ > 40){
 		g_oc_wheel_left_cnt = 0;
-		ROS_WARN("%s %d: left wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) wheel.getLwheelCurrent());
+		ROS_WARN("%s %d: left wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) wheel.getLeftWheelCurrent());
 
 		ev.oc_wheel_left = true;
 	}
@@ -893,14 +893,14 @@ void CM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if ((uint32_t) wheel.getRwheelCurrent() < Wheel_Stall_Limit) {
+	if ((uint32_t) wheel.getRightWheelCurrent() < Wheel_Stall_Limit) {
 		g_oc_wheel_right_cnt = 0;
 		return;
 	}
 
 	if (g_oc_wheel_right_cnt++ > 40){
 		g_oc_wheel_right_cnt = 0;
-		ROS_WARN("%s %d: right wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) wheel.getRwheelCurrent());
+		ROS_WARN("%s %d: right wheel over current, \033[1m%u mA\033[0m", __FUNCTION__, __LINE__, (uint32_t) wheel.getRightWheelCurrent());
 
 		ev.oc_wheel_right = true;
 	}

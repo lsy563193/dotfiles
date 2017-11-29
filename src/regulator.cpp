@@ -51,7 +51,7 @@ bool g_slip_backward = false;
 int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
-	auto get_wheel_step = (mt.is_left()) ? &Wheel::get_right_step : &Wheel::get_left_step;
+	auto get_wheel_step = (mt.is_left()) ? &Wheel::getRightStep : &Wheel::getLeftStep;
 	auto get_obs = (mt.is_left()) ? &Obs::get_left : &Obs::get_right;
 	auto get_obs_value = (mt.is_left()) ? &Obs::get_left_trig_value : &Obs::get_right_trig_value;
 	auto status = ev.bumper_triggered;
@@ -83,7 +83,7 @@ int16_t bumper_turn_angle()
 		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
 	//ROS_INFO("%s %d: g_wall_distance in bumper_turn_angular: %d", __FUNCTION__, __LINE__, g_wall_distance);
-	wheel.reset_step();
+	wheel.resetStep();
 	if(mt.is_right())
 		g_turn_angle = -g_turn_angle;
 	return g_turn_angle;
@@ -372,13 +372,13 @@ bool BackMovement::isLaserStop()
 void BackMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("BackMovement::adjustSpeed");
-	wheel.set_dir_backward();
+	wheel.setDirBackward();
 	if (!cm_is_follow_wall())
 	{
 		speed_ += ++counter_;
 		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
 	}
-	wheel.reset_step();
+	wheel.resetStep();
 	/*if (fabsf(distance) >= g_back_distance * 0.8)
 	{
 		l_speed = r_speed = speed_--;
@@ -536,7 +536,7 @@ void TurnMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto diff = ranged_angle(s_target_angle - robot::instance()->getPoseAngle());
 //	ROS_INFO("TurnMovement::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, robot::instance()->getPoseAngle());
 	ROS_DEBUG("%s %d: TurnMovement diff: %d, s_target_angle: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_angle, robot::instance()->getPoseAngle());
-	(diff >= 0) ? wheel.set_dir_left() : wheel.set_dir_right();
+	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 
 //	ROS_INFO("TurnMovement::adjustSpeed");
 	if (std::abs(diff) > 200){
@@ -562,9 +562,9 @@ void TurnMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 {
 	if ((diff >= 0) && (diff <= 1800))
-		wheel.set_dir_left();
+		wheel.setDirectionLeft();
 	else if ((diff <= 0) && (diff >= (-1800)))
-		wheel.set_dir_right();
+		wheel.setDirectionRight();
 
 	tick_++;
 	if (tick_ > 2)
@@ -749,7 +749,7 @@ void ForwardMovement::setTarget()
 void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
-	wheel.set_dir_forward();
+	wheel.setDirectionForward();
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = cost_map.cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
@@ -996,11 +996,11 @@ void FollowWallMovement::setTarget()
 void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	ROS_DEBUG("%s %d: FollowWallMovement.", __FUNCTION__, __LINE__);
-	wheel.set_dir_forward();
-//	uint32_t same_dist = (wheel.get_right_step() / 100) * 11 ;
+	wheel.setDirectionForward();
+//	uint32_t same_dist = (wheel.getRightStep() / 100) * 11 ;
 	uint32_t rcon_status = 0;
-	auto _l_step = wheel.get_left_step();
-	auto _r_step = wheel.get_right_step();
+	auto _l_step = wheel.getLeftStep();
+	auto _r_step = wheel.getRightStep();
 	auto &same_dist = (mt.is_left()) ? _l_step : _r_step;
 	auto &diff_dist = (mt.is_left()) ? _r_step : _l_step;
 	auto &same_speed = (mt.is_left()) ? l_speed : r_speed;
@@ -1563,7 +1563,7 @@ bool GoToChargerMovement::isSwitch()
 	if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
 	{
 		go_home_bumper_cnt = 0;
-		//wheel.move_forward(9, 9);
+		//wheel.moveForward(9, 9);
 		c_rcon.reset_status();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
 		go_home_state_now = AROUND_CHARGER_STATION;
@@ -2093,22 +2093,22 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	/*---check if near charger station---*/
 	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		l_speed = r_speed = 0;
 	}
 	else if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		l_speed = r_speed = 30;
 	}
 	else if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
 	{
-		wheel.set_dir_right();
+		wheel.setDirectionRight();
 		l_speed = r_speed = 10;
 	}
 	else if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		l_speed = r_speed = 9;
 		around_move_cnt = 0;
 	}
@@ -2119,42 +2119,42 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			if(receive_code&RconL_HomeT)
 			{
 				ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 22;
 				r_speed = 12;
 			}
 			else if(receive_code&RconL_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect L-L.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 22;
 				r_speed = 12;
 			}
 			else if(receive_code&RconFL2_HomeT)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 23;
 				r_speed = 14;
 			}
 			else if(receive_code&RconFL2_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-L.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 20;
 				r_speed = 14;
 			}
 			else if(receive_code&RconFL2_HomeR)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 15;
 				r_speed = 21;
 			}
 			else
 			{
 				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 14;
 				r_speed = 21;
 			}
@@ -2164,49 +2164,49 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			if(receive_code&RconR_HomeT)
 			{
 				ROS_DEBUG("%s %d Detect R-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 12;
 				r_speed = 22;
 			}
 			else if(receive_code&RconR_HomeR)
 			{
 				ROS_DEBUG("%s %d Detect R-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 12;
 				r_speed = 22;
 			}
 			else if(receive_code&RconFR2_HomeT)
 			{
 				ROS_DEBUG("%s %d Detect FR2-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 14;
 				r_speed = 23;
 			}
 			else if(receive_code&RconFR2_HomeR)
 			{
 				ROS_DEBUG("%s %d Detect FR2-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 14;
 				r_speed = 20;
 			}
 			else if(receive_code&RconFR2_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 21;
 				r_speed = 15;
 			}
 			else
 			{
 				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 21;
 				r_speed = 14;
 			}
 		}
 		else
 		{
-			wheel.set_dir_forward();
+			wheel.setDirectionForward();
 			l_speed = left_speed_;
 			r_speed = right_speed_;
 		}
@@ -2215,14 +2215,14 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	{
 		ROS_DEBUG("%s, %d: Check position dir: %d.", __FUNCTION__, __LINE__, check_position_dir);
 		if(check_position_dir == ROUND_LEFT)
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		else if(check_position_dir == ROUND_RIGHT)
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		l_speed = r_speed = 10;
 	}
 	else if (go_home_state_now == BY_PATH)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		auto temp_code = receive_code;
 		temp_code &= RconFrontAll_Home_LR;
 		if (by_path_move_cnt == 25 && temp_code)
@@ -3134,7 +3134,7 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}
 		else
 		{
-			wheel.set_dir_forward();
+			wheel.setDirectionForward();
 			l_speed = left_speed_;
 			r_speed = right_speed_;
 		}
@@ -3142,9 +3142,9 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	else if (go_home_state_now == TURN_CONNECT)
 	{
 		if (turn_connect_dir == ROUND_RIGHT)
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		else if (turn_connect_dir == ROUND_LEFT)
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		l_speed = r_speed = 5;
 	}
 	left_speed_ = l_speed;
@@ -3160,16 +3160,16 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	else if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
 		if (ev.oc_wheel_right) {
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		} else {
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		}
 		left_speed = 30;
 		right_speed = 30;
 	}
 	else if (ev.cliff_jam)
 	{
-		wheel.set_dir_backward();
+		wheel.setDirBackward();
 		left_speed = right_speed = 18;
 	}
 	else if (ev.bumper_jam)
@@ -3181,21 +3181,21 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			case 3:
 			{
 				// Quickly move back for a distance.
-				wheel.set_dir_backward();
+				wheel.setDirBackward();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
 			case 4:
 			{
 				// Quickly turn right for 90 degrees.
-				wheel.set_dir_right();
+				wheel.setDirectionRight();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
 			case 5:
 			{
 				// Quickly turn left for 180 degrees.
-				wheel.set_dir_left();
+				wheel.setDirectionLeft();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
@@ -3203,23 +3203,23 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	}
 //	else if(g_omni_notmove)
 //	{
-		//wheel.set_dir_backward();
+		//wheel.setDirBackward();
 		//left_speed = right_speed = RUN_TOP_SPEED;
 //	}
 	else if(g_slip_cnt>=2)
 	{
 		if(g_slip_cnt <3)
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		else if(g_slip_cnt <4)
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		left_speed = right_speed = ROTATE_TOP_SPEED;
 	}
 	else if (ev.laser_stuck)
 	{
-		wheel.set_dir_backward();
+		wheel.setDirBackward();
 		left_speed = right_speed = 2;
 	}
 
-	wheel.set_speed(left_speed, right_speed);
+	wheel.setPidTargetSpeed(left_speed, right_speed);
 }
 

@@ -12,7 +12,7 @@
 #include <movement.h>
 #include <robot.hpp>
 #include <rcon.h>
-#include <wheel.h>
+#include <wheel.hpp>
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
