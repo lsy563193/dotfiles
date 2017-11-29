@@ -327,28 +327,48 @@ void *robotbase_routine(void*)
 			if(last_lcliff > CLIFF_LIMIT)
 				last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
 			else
+			{
 				sensor.lcliff = last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
+				cliff.setLeft(sensor.lcliff);
+			}
 		}
 		else
+		{
 			sensor.lcliff = last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
+			cliff.setLeft(sensor.lcliff);
+		}
+
 		if(((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]) < CLIFF_LIMIT)
 		{
 			if(last_fcliff > CLIFF_LIMIT)
 				last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
 			else
+			{
 				sensor.fcliff = last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
+				cliff.setFront(sensor.fcliff);
+			}
 		}
 		else
+		{
 			sensor.fcliff = last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
+			cliff.setFront(sensor.fcliff);
+		}
+
 		if(((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]) < CLIFF_LIMIT)
 		{
 			if(last_rcliff > CLIFF_LIMIT)
 				last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
 			else
+			{
 				sensor.rcliff = last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
+				cliff.setRight(sensor.rcliff);
+			}
 		}
 		else
+		{
 			sensor.rcliff = last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
+			cliff.setRight(sensor.rcliff);
+		}
 
 		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0x30);
 		sensor.lbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x08) ? true : false;		// left brush over current

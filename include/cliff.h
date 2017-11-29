@@ -5,72 +5,70 @@
 #ifndef PP_CLIFF_H
 #define PP_CLIFF_H
 
-#include "movement.h"
-#include "map.h"
-#include <pp/x900sensor.h>
-extern pp::x900sensor sensor;
+#include "mathematics.h"
 
-class Cliff {
+#define CLIFF_LIMIT  60
+
+class Cliff
+{
 public:
 	Cliff() {
 		left_trig_value_ = CLIFF_LIMIT;
 		front_trig_value_ = CLIFF_LIMIT;
 		right_trig_value_ = CLIFF_LIMIT;
-		g_left_baseline_ = 100;
-		g_front_baseline_ = 100;
-		g_right_baseline_ = 100;
+		left_value_ = 0;
+		front_value_ = 0;
+		right_value_ = 0;
 	};
 
-	uint8_t get_status(void) {
-		uint8_t status = 0x00;
+	uint8_t get_status(void);
 
-		if (get_left() < get_left_trig_value_())
-			status |= BLOCK_LEFT;
-
-		if (get_front() < get_front_trig_value_())
-			status |= BLOCK_FRONT;
-
-		if (get_right() < get_right_trig_value_())
-			status |= BLOCK_RIGHT;
-
-		//if (status != 0x00){
-		//	ROS_WARN("%s %d: Return Cliff status:%x.", __FUNCTION__, __LINE__, status);
-		//	beep_for_command(true);
-		//}
-		return status;
-	}
-
-	int16_t get_front_trig_value_(void) {
+	int16_t getFrontTrigValue(void) {
 		return front_trig_value_;
 	}
 
-	int16_t get_left_trig_value_(void) {
+	int16_t getLeftTrigValue(void) {
 		return left_trig_value_;
 	}
 
-	int16_t get_right_trig_value_(void) {
+	int16_t getRightTrigValue(void) {
 		return right_trig_value_;
 	}
 
-	int16_t get_front(void) {
-		return sensor.fcliff;
+	int16_t getFront(void) {
+		return front_value_;
 	}
 
-	int16_t get_left(void) {
-		return sensor.lcliff;
+	void setFront(int16_t value)
+	{
+		front_value_ = value;
 	}
 
-	int16_t get_right(void) {
-		return sensor.rcliff;
+	int16_t getLeft(void) {
+		return left_value_;
+	}
+
+	void setLeft(int16_t value)
+	{
+		left_value_ = value;
+	}
+
+	int16_t getRight(void) {
+		return right_value_;
+	}
+
+	void setRight(int16_t value)
+	{
+		right_value_ = value;
 	}
 
 private:
 	int16_t left_trig_value_;
 	int16_t front_trig_value_;
 	int16_t right_trig_value_;
-	int16_t g_left_baseline_;
-	int16_t g_front_baseline_;
-	int16_t g_right_baseline_;
+	int16_t left_value_;
+	int16_t front_value_;
+	int16_t right_value_;
 
 };
 extern Cliff cliff;

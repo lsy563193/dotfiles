@@ -5,6 +5,8 @@
 #ifndef PP_OBS_H
 #define PP_OBS_H
 
+#include "map.h"
+
 extern pp::x900sensor sensor;
 class Obs {
 public:

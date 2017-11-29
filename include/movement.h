@@ -25,8 +25,6 @@
 #define Room_Mode_Auto (uint8_t)0x01
 #define Room_Mode_Large (uint8_t)0x00
 
-#define CLIFF_LIMIT  60
-
 #define Status_Left_Wall			((uint8_t) 0x01)
 //#define Status_Left_OBS				((uint8_t) 0x02)
 #define Status_Left_OBS_2			((uint8_t) 0x04)
