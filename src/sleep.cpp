@@ -151,7 +151,7 @@ void sleep_unregister_events(void)
 void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-	if (error.get() == Error_Code_None)
+	if (error.get() == ERROR_CODE_NONE)
 	{
 		serial.setCleanMode(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
@@ -172,7 +172,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
 	if (timer.get_status() == 3)
 	{
-		if (error.get() != Error_Code_None)
+		if (error.get() != ERROR_CODE_NONE)
 		{
 			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 			sleep_plan_reject_reason = 1;

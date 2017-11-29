@@ -1516,7 +1516,7 @@ bool Laser::openTimeOut()
 		motorCtrl(OFF);
 		ROS_ERROR("%s %d: Laser Open time out.", __FUNCTION__, __LINE__);
 		ev.fatal_quit = true;
-		error.set(Error_Code_Laser);
+		error.set(ERROR_CODE_LASER);
 		return true;
 	}
 

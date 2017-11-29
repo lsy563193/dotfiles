@@ -16,6 +16,7 @@
 #include "clean_mode.h"
 #include "error.h"
 #include "slam.h"
+#include "gyro.h"
 
 uint8_t cs_self_check(uint8_t Check_Code)
 {
@@ -60,7 +61,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		{
 			cs_disable_motors();
 			ROS_WARN("%s,%d right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-			error.set(Error_Code_RightWheel);
+			error.set(ERROR_CODE_RIGHTWHEEL);
 			error.alarm();
 			return 1;
 
@@ -101,7 +102,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		{
 			cs_disable_motors();
 			ROS_WARN("%s %d,left wheel stall maybe, please check!!", __FUNCTION__, __LINE__);
-			error.set(Error_Code_LeftWheel);
+			error.set(ERROR_CODE_LEFTWHEEL);
 			error.alarm();
 			return 1;
 		}
@@ -109,7 +110,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		if(Left_Wheel_Slow>100)
 		{
 			cs_disable_motors();
-			error.set(Error_Code_RightWheel);
+			error.set(ERROR_CODE_RIGHTWHEEL);
 			return 1;
 		}
 		*/
@@ -125,7 +126,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		} else if ((uint32_t) difftime(time(NULL), mboctime) >= 3)
 		{
 			mbrushchecking = 0;
-			error.set(Error_Code_MainBrush);
+			error.set(ERROR_CODE_MAINBRUSH);
 			cs_disable_motors();
 			error.alarm();
 			return 1;
@@ -151,7 +152,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 		{
 			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
 			/*-----vacuum error-----*/
-			error.set(Error_Code_Fan_H);
+			error.set(ERROR_CODE_FAN_H);
 			cs_disable_motors();
 			error.alarm();
 			vacuum.reset_self_check();
@@ -183,13 +184,13 @@ uint8_t cs_self_check(uint8_t Check_Code)
 #endif
 	} else if (Check_Code == Check_Left_Brush)
 	{
-		error.set(Error_Code_LeftBrush);
+		error.set(ERROR_CODE_LEFTBRUSH);
 		cs_disable_motors();
 		error.alarm();
 		return 1;
 	} else if (Check_Code == Check_Right_Brush)
 	{
-		error.set(Error_Code_RightBrush);
+		error.set(ERROR_CODE_RIGHTBRUSH);
 		cs_disable_motors();
 		error.alarm();
 		return 1;

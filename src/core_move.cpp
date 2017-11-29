@@ -320,12 +320,12 @@ void cm_self_check(void)
 						if (ev.oc_wheel_left)
 						{
 							ROS_WARN("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-							error.set(Error_Code_LeftWheel);
+							error.set(ERROR_CODE_LEFTWHEEL);
 						}
 						else
 						{
 							ROS_WARN("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-							error.set(Error_Code_RightWheel);
+							error.set(ERROR_CODE_RIGHTWHEEL);
 						}
 						ev.fatal_quit = true;
 						break;
@@ -383,7 +383,7 @@ void cm_self_check(void)
 				{
 					ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
-					error.set(Error_Code_Cliff);
+					error.set(ERROR_CODE_CLIFF);
 				}
 				else
 				{
@@ -481,7 +481,7 @@ void cm_self_check(void)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						ev.fatal_quit = true;
-						error.set(Error_Code_Bumper);
+						error.set(ERROR_CODE_BUMPER);
 					}
 					break;
 				}
@@ -506,7 +506,7 @@ void cm_self_check(void)
 				if (vacuum.get_self_check_status() == 0x20)
 				{
 					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
-					error.set(Error_Code_Fan_H);
+					error.set(ERROR_CODE_FAN_H);
 					ev.fatal_quit = true;
 					break;
 				}
@@ -522,7 +522,7 @@ void cm_self_check(void)
 		else if (omni.stop())
 		{
 			ROS_ERROR("\033[1m" "%s,%d,omni detect" "\033[0m",__FUNCTION__,__LINE__);
-			error.set(Error_Code_Omni);
+			error.set(ERROR_CODE_OMNI);
 			ev.fatal_quit = true;
 			break;
 		}
@@ -554,7 +554,7 @@ void cm_self_check(void)
 				ROS_INFO("%s,%d,robot stuck ,slip count\033[32m %d \033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 				g_slip_cnt = 0;
 				g_robot_stuck = true;
-				error.set(Error_Code_Stuck);
+				error.set(ERROR_CODE_STUCK);
 				//ev.fatal_quit = true;
 				break;
 			}
@@ -572,7 +572,7 @@ void cm_self_check(void)
 			{
 				ROS_WARN("%s %d: Laser stuck.", __FUNCTION__, __LINE__);
 				ev.fatal_quit = true;
-				error.set(Error_Code_Laser);
+				error.set(ERROR_CODE_LASER);
 			}
 		}
 		else

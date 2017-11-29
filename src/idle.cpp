@@ -163,7 +163,7 @@ void idle(void)
 					led.set_mode(LED_BREATH, LED_GREEN);
 					wav.play(WAV_CLEAR_ERROR);
 					error_alarm_counter = 0;
-					error.set(Error_Code_None);
+					error.set(ERROR_CODE_NONE);
 					reject_reason = 0;
 					break;
 			}
@@ -418,7 +418,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 		case 3:
 		{
 			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-			if (error.get() != Error_Code_None)
+			if (error.get() != ERROR_CODE_NONE)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				reject_reason = 1;

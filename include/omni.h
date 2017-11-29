@@ -5,6 +5,7 @@
 #ifndef PP_OMNI_H
 #define PP_OMNI_H
 
+#include "serial.h"
 #include <pp/x900sensor.h>
 extern pp::x900sensor sensor;
 

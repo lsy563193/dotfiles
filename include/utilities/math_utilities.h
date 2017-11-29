@@ -37,6 +37,7 @@
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Point32.h>
+#include <geometry_msgs/Vector3.h>
 
 namespace obstacle_detector
 {

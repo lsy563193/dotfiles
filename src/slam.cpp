@@ -10,6 +10,7 @@
 #include "slam.h"
 #include "robot.hpp"
 #include "std_srvs/Empty.h"
+#include "clean_mode.h"
 
 Slam slam;
 
@@ -52,7 +53,7 @@ bool Slam::openTimeOut(void)
 	{
 		ROS_ERROR("%s %d: Slam Open time out.", __FUNCTION__, __LINE__);
 		ev.fatal_quit = true;
-		error.set(Error_Code_Slam);
+		error.set(ERROR_CODE_SLAM);
 		return true;
 	}
 

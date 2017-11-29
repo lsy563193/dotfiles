@@ -816,7 +816,7 @@ void df_over_current_brush_left(bool state_now, bool state_last)
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && brush.leftIsStall())
 	{
-		error.set(Error_Code_LeftBrush);
+		error.set(ERROR_CODE_LEFTBRUSH);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
 	}
@@ -835,7 +835,7 @@ void df_over_current_brush_right(bool state_now, bool state_last)
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && brush.rightIsStall())
 	{
-		error.set(Error_Code_RightBrush);
+		error.set(ERROR_CODE_RIGHTBRUSH);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
 	}

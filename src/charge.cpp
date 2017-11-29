@@ -169,7 +169,7 @@ void charge_function(void)
 				case 4:
 					wav.play(WAV_CLEAR_ERROR);
 					charge_reject_reason = 0;
-					error.set(Error_Code_None);
+					error.set(ERROR_CODE_NONE);
 					break;
 			}
 		}
@@ -251,7 +251,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 		case 3:
 		{
 			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-			if (error.get() != Error_Code_None)
+			if (error.get() != ERROR_CODE_NONE)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 1;
@@ -303,7 +303,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(INVALID);
 	}
-	else if (error.get() != Error_Code_None)
+	else if (error.get() != ERROR_CODE_NONE)
 	{
 		ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
 		if (error.clear(error.get()))
@@ -353,7 +353,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 			beeper.play_for_command(INVALID);
 		}
-		else if (error.get() != Error_Code_None)
+		else if (error.get() != ERROR_CODE_NONE)
 		{
 			ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
 			if (error.clear(error.get()))
