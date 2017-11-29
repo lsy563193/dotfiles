@@ -11,6 +11,7 @@
 #include <limits.h>
 
 #include "main.h"
+#include "event_action.h"
 #include "robotbase.h"
 #include "dev.h"
 #include "robot.hpp"

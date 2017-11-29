@@ -37,6 +37,12 @@ extern int16_t g_turn_angle;
 #define ROUND_LEFT 1
 #define ROUND_RIGHT 2
 
+extern double robot_to_wall_distance;
+extern float g_back_distance;
+extern bool line_is_found;
+extern bool g_go_to_charger_back_30cm;
+extern bool g_go_to_charger_back_10cm;
+extern bool g_go_to_charger_back_0cm;
 extern int g_wall_distance;
 extern double g_time_straight;
 extern double time_start_straight;
