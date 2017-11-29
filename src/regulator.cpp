@@ -669,7 +669,7 @@ bool ForwardMovement::shouldMoveBack()
 
 bool ForwardMovement::isRconStop()
 {
-	ev.rcon_triggered = c_rcon.get_trig();
+	ev.rcon_triggered = c_rcon.getTrig();
 	if(ev.rcon_triggered)
 	{
 		g_turn_angle = rcon_turn_angle();
@@ -1009,12 +1009,12 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	wall_buffer[1]=wall_buffer[0];
 	wall_buffer[0]=(mt.is_left()) ? wall.getLeft() : wall.getRight();
 
-	rcon_status = c_rcon.get_status();
+	rcon_status = c_rcon.getStatus();
 	/*---only use a part of the Rcon signal---*/
 	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
 	if(rcon_status)
 	{
-//		ev.rcon_triggered = c_rcon.get_trig();
+//		ev.rcon_triggered = c_rcon.getTrig();
 //		cost_map.set_rcon();
 		int32_t linear_speed = 24;
 		/* angular speed notes						*
@@ -1041,7 +1041,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			else if(mt.is_right())
 				angular_speed = 15;
 		}
-		c_rcon.reset_status();
+		c_rcon.resetStatus();
 		/*---check if should aloud the charger---*/
 		if(seen_charger_counter)
 		{
@@ -1293,7 +1293,7 @@ bool GoToChargerMovement::isSwitch()
 		extern bool g_charge_turn_connect_fail;
 		if(g_charge_turn_connect_fail && no_signal_cnt < 10)
 		{
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code&RconAll_Home_T)
 			{
@@ -1402,7 +1402,7 @@ bool GoToChargerMovement::isSwitch()
 			}
 
 			// Handle for rcon signal
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			if (receive_code)
 			{
 				go_home_state_now = AROUND_CHARGER_STATION_INIT;
@@ -1563,8 +1563,8 @@ bool GoToChargerMovement::isSwitch()
 	if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
 	{
 		go_home_bumper_cnt = 0;
-		//wheel.moveForward(9, 9);
-		c_rcon.reset_status();
+		//wheel.move_forward(9, 9);
+		c_rcon.resetStatus();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
 		go_home_state_now = AROUND_CHARGER_STATION;
 		around_move_cnt = 0;
@@ -1593,7 +1593,7 @@ bool GoToChargerMovement::isSwitch()
 		if (--around_move_cnt <= 0)
 		{
 			around_move_cnt = 7;
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			if(receive_code)
 				no_signal_cnt = 0;
 			else if(++no_signal_cnt > 60)
@@ -1746,9 +1746,9 @@ bool GoToChargerMovement::isSwitch()
 				gyro_step += (-angle_offset);
 			last_angle = current_angle;
 
-			ROS_DEBUG("%s %d: Check_Position c_rcon.get_status() == %8x, R... == %8x.", __FUNCTION__, __LINE__,
-								c_rcon.get_status(), RconFrontAll_Home_LR);
-			receive_code = (c_rcon.get_trig()&RconFrontAll_Home_LR);
+			ROS_DEBUG("%s %d: Check_Position c_rcon.getStatus() == %8x, R... == %8x.", __FUNCTION__, __LINE__,
+								c_rcon.getStatus(), RconFrontAll_Home_LR);
+			receive_code = (c_rcon.getTrig()&RconFrontAll_Home_LR);
 			ROS_DEBUG("%s %d: receive code: %8x.", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code)
 			{
@@ -1799,7 +1799,7 @@ bool GoToChargerMovement::isSwitch()
 			}
 			else
 			{
-				//if((c_rcon.get_status()&RconFront_Home_LR) == 0)
+				//if((c_rcon.getStatus()&RconFront_Home_LR) == 0)
 				//	go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				g_go_to_charger_back_10cm = true;
@@ -1822,7 +1822,7 @@ bool GoToChargerMovement::isSwitch()
 		if (--by_path_move_cnt < 0)
 		{
 			by_path_move_cnt = 25;
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			if(receive_code)
 			{
 				if(receive_code&RconFR_HomeT && receive_code&RconFL_HomeT)

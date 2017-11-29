@@ -92,7 +92,7 @@ void turn_into_exploration(bool is_reset_map)
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	wav.play(WAV_EXPLORATION_START);

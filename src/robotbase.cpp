@@ -305,7 +305,7 @@ void *robotbase_routine(void*)
 
 		sensor.c_stub = (serial.receive_stream[REC_CHARGE_STUB_4] << 24 ) | (serial.receive_stream[REC_CHARGE_STUB_3] << 16)
 			| (serial.receive_stream[REC_CHARGE_STUB_2] << 8) | serial.receive_stream[REC_CHARGE_STUB_1];
-		c_rcon.set_status(c_rcon.get_status() | sensor.c_stub);
+		c_rcon.setStatus(c_rcon.getStatus() | sensor.c_stub);
 
 		sensor.visual_wall = (serial.receive_stream[REC_VISUAL_WALL_H] << 8)| serial.receive_stream[REC_VISUAL_WALL_L];
 

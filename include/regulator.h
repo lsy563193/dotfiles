@@ -289,7 +289,7 @@ public:
 		near_counter = 0;
 		side_counter = 0;
 		by_path_move_cnt = 0;
-		c_rcon.reset_status();
+		c_rcon.resetStatus();
 		turn_connect_cnt = 0;
 		turn_connect_dir = ROUND_RIGHT;
 	}

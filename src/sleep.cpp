@@ -59,7 +59,7 @@ void sleep_mode(void)
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, serial.getCleanMode());
 
 	key.reset();
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	remote.reset();
 	key.reset();
 	timer.set_status(0);
@@ -131,7 +131,7 @@ void sleep_mode(void)
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode_ too soon after waking up.
 	usleep(1500000);
 
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	remote.reset();
 	key.reset();
 	timer.set_status(0);
