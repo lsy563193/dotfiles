@@ -40,9 +40,9 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
-	scan_sub_ = robot_nh_.subscribe("scan", 1, &robot::scanCb, this);
-	scan_sub2_ = robot_nh_.subscribe("scan2",1,&robot::scanCb2, this);
-	scan_sub3_ = robot_nh_.subscribe("scan3",1,&robot::scanCb3, this);
+	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &robot::scanLinearCb, this);
+	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal",1,&robot::scanOriginalCb, this);
+	scanCompensate_sub_ = robot_nh_.subscribe("scanCompensate",1,&robot::scanCompensateCb, this);
 	laserPoint_sub_ = robot_nh_.subscribe("laserPoint",1,&robot::laserPointCb, this);
 	/*map subscriber for exploration*/
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
@@ -272,24 +272,24 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	slam.mapCb(map);
 }
 
-void robot::scanCb(const sensor_msgs::LaserScan::ConstPtr &msg)
+void robot::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	laser.scanCb(msg);
+	laser.scanLinearCb(msg);
 }
 
-void robot::scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg)
+void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	laser.scanCb2(msg);
+	laser.scanOriginalCb(msg);
 }
 
-void robot::scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg)
+void robot::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	laser.scanCb3(msg);
+	laser.scanCompensateCb(msg);
 }
 
 void robot::laserPointCb(const visualization_msgs::Marker &point_marker)
 {
-	if (laser.isScan2Ready())
+	if (laser.isScanOriginalReady())
 		laser.laserPointCb(point_marker);
 }
 

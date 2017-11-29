@@ -109,6 +109,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path);
  *
  * @return	POS_X/POS_Y/NEG_X/NEG_Y for indicating the direction from start cell to first target.
  */
+bool cm_turn_and_check_charger_signal(void);
 int16_t path_full_angle(const Cell_t& start, PPTargetType& path);
 
 //void path_update_cell_history(void);
@@ -164,6 +165,7 @@ bool path_full(const Cell_t& curr, PPTargetType& path);
 int16_t path_escape_trapped(const Cell_t& curr);
 bool cm_is_reach();
 
+bool path_next_spot(const Cell_t &start, PPTargetType &path);
 bool path_next_fw(const Cell_t &start);
 bool path_next_nav(const Cell_t &start, PPTargetType &path);
 /*

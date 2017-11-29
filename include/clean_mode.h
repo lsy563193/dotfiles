@@ -28,7 +28,7 @@ bool cm_is_go_charger();
 void cm_set(uint8_t mode);
 uint8_t cm_get(void);
 
-class CleanMode:public RegulatorBase
+class CleanMode:public Movement
 {
 public:
 //	CleanMode(const Cell_t& start_cell, const Cell_t& target, const PPTargetType& path);
@@ -38,7 +38,7 @@ public:
 	virtual bool isExit()=0;
 	virtual bool isReach() =0;
 	virtual bool isSwitch() = 0 ;
-	virtual bool findTarget(Cell_t& curr);
+	virtual bool csm_next(Cell_t &curr);
 //	virtual bool path_next()=0;
 	void setTarget() {p_reg_->setTarget();}
 
@@ -74,13 +74,13 @@ public:
 	}
 
 protected:
-	RegulatorBase* p_reg_;
-	RegulatorBase* mt_reg_;
-	FollowWallRegulator* fw_reg_;
-	LinearRegulator* line_reg_;
-	GoToChargerRegulator* gtc_reg_;
-	TurnRegulator* turn_reg_;
-	BackRegulator* back_reg_;
+	Movement* p_reg_;
+	Movement* mt_reg_;
+	FollowWallMovement* fw_reg_;
+	ForwardMovement* line_reg_;
+	GoToChargerMovement* gtc_reg_;
+	TurnMovement* turn_reg_;
+	BackMovement* back_reg_;
 
 	int32_t left_speed_;
 	int32_t right_speed_;
@@ -98,7 +98,12 @@ public:
 	bool isExit();
 	bool isReach();
 	bool isSwitch();
-	bool findTarget(Cell_t& curr);
+	bool csm_next(Cell_t &curr);
+//	void setting(void);
+//	bool cs_next(const Cell_t& start, PPTargetType& path);
+
+//private:
+//	std::array<CleanStateBase*,CS_NUM> vss;
 //	bool path_next();
 
 private:
@@ -128,7 +133,7 @@ public:
 	bool isExit();
 	bool isReach();
 	bool isSwitch();
-	bool findTarget(Cell_t& curr);
+	bool csm_next(Cell_t &curr);
 	Cell_t updatePosition(const Point32_t &curr_point);
 };
 
@@ -142,7 +147,7 @@ public:
 	bool isExit();
 	bool isReach();
 	bool isSwitch();
-	bool findTarget(Cell_t& curr);
+	bool csm_next(Cell_t &curr);
 
 private:
 };

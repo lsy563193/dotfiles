@@ -983,10 +983,10 @@ uint8_t CostMap::save_blocks()
 //}
 
 double world_distance(void) {
-	auto dis = sqrtf(powf(RegulatorBase::s_curr_p.X - RegulatorBase::s_origin_p.X, 2) + powf(RegulatorBase::s_curr_p.Y - RegulatorBase::s_origin_p.Y, 2));
+	auto dis = sqrtf(powf(Movement::s_curr_p.X - Movement::s_origin_p.X, 2) + powf(Movement::s_curr_p.Y - Movement::s_origin_p.Y, 2));
 
-//	auto dis =  two_points_distance(RegulatorBase::s_origin_p.X, RegulatorBase::s_origin_p.Y , \
-//														RegulatorBase::s_curr_p.X, RegulatorBase::s_curr_p.Y);
+//	auto dis =  two_points_distance(Movement::s_origin_p.X, Movement::s_origin_p.Y , \
+//														Movement::s_curr_p.X, Movement::s_curr_p.Y);
 	return dis*CELL_SIZE/CELL_COUNT_MUL/1000;
 }
 

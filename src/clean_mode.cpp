@@ -62,7 +62,8 @@ void CleanMode::run()
 
 		if (isReach() || isStop())
 		{
-			if(!findTarget(curr))
+	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
+			if(!csm_next(curr)) //cs manage
 				return;
 		}
 		if (mt.is_linear()) {
@@ -84,11 +85,11 @@ void CleanMode::mark() {
 };
 
 bool CleanMode::isStop(){
-		return RegulatorBase::isStop();
+		return Movement::isStop();
 };
 
 bool CleanMode::isExit(){
-	return RegulatorBase::isExit();
+	return Movement::isExit();
 };
 
 void CleanMode::setMt()
@@ -153,7 +154,7 @@ void CleanMode::setMt()
 	robot::instance()->obsAdjustCount(20);
 }
 
-bool CleanMode::findTarget(Cell_t& curr) {
+bool CleanMode::csm_next(Cell_t &curr) {
 	return false;
 }
 
@@ -234,23 +235,23 @@ void CleanMode::resetTriggeredValue(void)
 
 bool CleanMode::find_target(Cell_t& curr)
 {
-	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
-	mark();
-	auto previous_cs = cs.get();
-	g_old_dir = g_new_dir; // Save current direction.
-	g_plan_path.clear();
-	cs_path_next(curr, g_plan_path);
-
-	display();
-
-	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
-		setMt();
-		g_passed_path.clear();
-	}
-	g_allow_check_path_in_advance = true;
-
-	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
-	return !g_plan_path.empty();
+//	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
+//	mark();
+//	auto previous_cs = cs.get();
+//	g_old_dir = g_new_dir; // Save current direction.
+//	g_plan_path.clear();
+//	cs_path_next(curr, g_plan_path);
+//
+//	display();
+//
+//	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
+//		setMt();
+//		g_passed_path.clear();
+//	}
+//	g_allow_check_path_in_advance = true;
+//
+//	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
+//	return !g_plan_path.empty();
 }
 
 //NavigationClean
@@ -259,11 +260,11 @@ NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, 
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	if(cm_is_go_charger())
@@ -600,56 +601,75 @@ bool NavigationClean::isSwitch()
 	return false;
 }
 
-bool NavigationClean::findTarget(Cell_t& curr)
+bool NavigationClean::csm_next(Cell_t &curr)
 {
 	ROS_INFO("%s %d: cs:%d, current(%d %d), g_check_path_in_advance:%d", __FUNCTION__, __LINE__, cs.get(), cost_map.get_x_cell(), cost_map.get_y_cell(), g_check_path_in_advance);
-	if (cs.is_clean() && g_check_path_in_advance)
-	{
-		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
-		mark();
-		int16_t current_dir = g_new_dir;
-		int16_t temp_new_dir;
+//	if (cs.is_clean() && g_check_path_in_advance)
+//	{
+//		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
+//		mark();
+//		int16_t current_dir = g_new_dir;
+//		int16_t temp_new_dir;
+//
+//		auto start_cell = g_plan_path.back();
+//		ROS_INFO("%s %d: start cell(%d %d)", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y);
+//		PPTargetType path_in_advance;
+//		if (path_next_nav_in_advance(temp_new_dir, start_cell, path_in_advance))
+//		{
+//			if (mt.should_follow_wall(current_dir, start_cell, path_in_advance)) {
+//				// This is for follow wall case.
+//				g_allow_check_path_in_advance = false;
+//				ROS_INFO("%s %d: Fail for wall follow case.", __FUNCTION__, __LINE__);
+//			}
+//			else if ((IS_X_AXIS(current_dir) && IS_X_AXIS(temp_new_dir)) || (IS_Y_AXIS(current_dir) && IS_Y_AXIS(temp_new_dir))) // Old path and new path are in the same axis.
+//			{
+//				if (IS_POS_AXIS(current_dir) ^ IS_POS_AXIS(temp_new_dir))// For cases that target is at opposite direction.
+//				{
+//					g_allow_check_path_in_advance = false;
+//					ROS_INFO("%s %d: Fail for opposite direction case.", __FUNCTION__, __LINE__);
+//				}
+//			}
+//
+//			if (g_allow_check_path_in_advance) // Switch new path.
+//			{
+//				g_plan_path.clear();
+//				for (auto cell : path_in_advance)
+//					g_plan_path.push_back(cell);
+//				g_new_dir = temp_new_dir;
+//				ROS_INFO("%s %d: Switch to new path.", __FUNCTION__, __LINE__);
+//			}
+//		}
+//		else
+//		{
+//			g_allow_check_path_in_advance = false;
+//			ROS_INFO("%s %d: Fail for no target case.", __FUNCTION__, __LINE__);
+//		}
+//
+//		g_check_path_in_advance = false;
+//		printf("\033[44m======================Generate path in advance End============================\033[0m\n\n");
+//		return true;
+//	}
+//	else
+//		return find_target(curr);
+	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
+	mark();
+	auto previous_cs = cs.get();
+	g_old_dir = g_new_dir; // Save current direction.
+	g_plan_path.clear();
+//	cs_path_next(curr, g_plan_path);
+	while (cs.cs_next(curr,g_plan_path))
 
-		auto start_cell = g_plan_path.back();
-		ROS_INFO("%s %d: start cell(%d %d)", __FUNCTION__, __LINE__, start_cell.X, start_cell.Y);
-		PPTargetType path_in_advance;
-		if (path_next_nav_in_advance(temp_new_dir, start_cell, path_in_advance))
-		{
-			if (mt.should_follow_wall(current_dir, start_cell, path_in_advance)) {
-				// This is for follow wall case.
-				g_allow_check_path_in_advance = false;
-				ROS_INFO("%s %d: Fail for wall follow case.", __FUNCTION__, __LINE__);
-			}
-			else if ((IS_X_AXIS(current_dir) && IS_X_AXIS(temp_new_dir)) || (IS_Y_AXIS(current_dir) && IS_Y_AXIS(temp_new_dir))) // Old path and new path are in the same axis.
-			{
-				if (IS_POS_AXIS(current_dir) ^ IS_POS_AXIS(temp_new_dir))// For cases that target is at opposite direction.
-				{
-					g_allow_check_path_in_advance = false;
-					ROS_INFO("%s %d: Fail for opposite direction case.", __FUNCTION__, __LINE__);
-				}
-			}
+	display();
 
-			if (g_allow_check_path_in_advance) // Switch new path.
-			{
-				g_plan_path.clear();
-				for (auto cell : path_in_advance)
-					g_plan_path.push_back(cell);
-				g_new_dir = temp_new_dir;
-				ROS_INFO("%s %d: Switch to new path.", __FUNCTION__, __LINE__);
-			}
-		}
-		else
-		{
-			g_allow_check_path_in_advance = false;
-			ROS_INFO("%s %d: Fail for no target case.", __FUNCTION__, __LINE__);
-		}
-
-		g_check_path_in_advance = false;
-		printf("\033[44m======================Generate path in advance End============================\033[0m\n\n");
-		return true;
+	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
+		setMt();
+		g_passed_path.clear();
 	}
-	else
-		return find_target(curr);
+	g_allow_check_path_in_advance = true;
+
+	printf("\033[44m====================================Generate path and update move type End=========================================\033[0m\n\n");
+	return !g_plan_path.empty();
+
 }
 void NavigationClean::mark()
 {
@@ -687,11 +707,11 @@ SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTarg
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
@@ -801,11 +821,11 @@ WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, 
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
@@ -994,7 +1014,7 @@ void WallFollowClean::mark() {
 //	cost_map.mark_robot(MAP);
 }
 
-bool WallFollowClean::findTarget(Cell_t& curr)
+bool WallFollowClean::csm_next(Cell_t &curr)
 {
 	printf("\n\033[42m======================================WallFollowClean===========================================\033[0m\n");
 	mark();
@@ -1019,11 +1039,11 @@ Exploration::Exploration(const Cell_t& curr, const Cell_t& target_cell, const PP
 	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
 	auto target = cost_map.cell_to_point(target_cell);
 
-	back_reg_ = new BackRegulator();
-	fw_reg_ = new FollowWallRegulator(s_curr_p, target);
-	line_reg_ = new LinearRegulator(target, path);
-	gtc_reg_ = new GoToChargerRegulator();
-	turn_reg_ = new TurnRegulator(0);
+	back_reg_ = new BackMovement();
+	fw_reg_ = new FollowWallMovement(s_curr_p, target);
+	line_reg_ = new ForwardMovement(target, path);
+	gtc_reg_ = new GoToChargerMovement();
+	turn_reg_ = new TurnMovement(0);
 	mt_reg_ = line_reg_;
 
 	p_reg_ = mt_reg_;
@@ -1254,7 +1274,7 @@ bool Exploration::isSwitch()
 	return false;
 }
 
-bool Exploration::findTarget(Cell_t& curr)
+bool Exploration::csm_next(Cell_t &curr)
 {
 	find_target(curr);
 }

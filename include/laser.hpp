@@ -23,12 +23,12 @@ public:
 
 	int compLaneDistance();
 	double getObstacleDistance(uint8_t dir, double range);
-	void setScanReady(uint8_t val);
-	void setScan2Ready(uint8_t val);
-	void setScan3Ready(uint8_t val);
-	int8_t isScanReady();
-	int8_t isScan2Ready();
-	int8_t isScan3Ready();
+	void setScanLinearReady(uint8_t val);
+	void setScanOriginalReady(uint8_t val);
+	void setScanCompensateReady(uint8_t val);
+	int8_t isScanLinearReady();
+	int8_t isScanOriginalReady();
+	int8_t isScanCompensateReady();
 
 	double getLaserDistance(uint16_t angle);
 
@@ -68,23 +68,23 @@ public:
 
 	//void stop(void);
 	//void start(void);
-	void scanCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanCb2(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanCb3(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void laserPointCb(const visualization_msgs::Marker &point_marker);
 
 private:
 	int angle_n_;
-	uint8_t is_scan_ready_;
-	uint8_t is_scan2_ready_;
-	uint8_t is_scan3_ready_;
+	uint8_t is_scanLinear_ready_;
+	uint8_t is_scanOriginal_ready_;
+	uint8_t is_scanCompensate_ready_;
 	std::vector<geometry_msgs::Point> laserXY_points;
 
-	sensor_msgs::LaserScan laserScanData_;
-	sensor_msgs::LaserScan laserScanData_2_;
-	sensor_msgs::LaserScan laserScanData_3_;
-	double scan_update_time;
-	double scan2_update_time;
+	sensor_msgs::LaserScan laserScanData_linear_;
+	sensor_msgs::LaserScan laserScanData_original_;
+	sensor_msgs::LaserScan laserScanData_compensate_;
+	double scanLinear_update_time;
+	double scanOriginal_update_time;
 
 	std::vector<Double_Point>	Laser_Point;
 	std::vector<std::vector<Double_Point> >	Laser_Group;
