@@ -40,8 +40,8 @@ int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
 	auto get_wheel_step = (mt.is_left()) ? &Wheel::getRightStep : &Wheel::getLeftStep;
-	auto get_obs = (mt.is_left()) ? &Obs::get_left : &Obs::get_right;
-	auto get_obs_value = (mt.is_left()) ? &Obs::get_left_trig_value : &Obs::get_right_trig_value;
+	auto get_obs = (mt.is_left()) ? &Obs::getLeft : &Obs::getRight;
+	auto get_obs_value = (mt.is_left()) ? &Obs::getLeftTrigValue : &Obs::getRightTrigValue;
 	auto status = ev.bumper_triggered;
 	auto diff_side = (mt.is_left()) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (mt.is_left()) ? BLOCK_LEFT : BLOCK_RIGHT;

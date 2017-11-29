@@ -282,9 +282,17 @@ void *robotbase_routine(void*)
 
 		sensor.left_wall = ((serial.receive_stream[REC_L_WALL_H] << 8)| serial.receive_stream[REC_L_WALL_L]);
 
-		sensor.l_obs = ((serial.receive_stream[REC_L_OBS_H] << 8) | serial.receive_stream[REC_L_OBS_L]) - obs.get_left_baseline();
-		sensor.f_obs = ((serial.receive_stream[REC_F_OBS_H] << 8) | serial.receive_stream[REC_F_OBS_L]) - obs.get_front_baseline();
-		sensor.r_obs = ((serial.receive_stream[REC_R_OBS_H] << 8) | serial.receive_stream[REC_R_OBS_L]) - obs.get_right_baseline();
+		auto _left_obs_value = ((serial.receive_stream[REC_L_OBS_H] << 8) | serial.receive_stream[REC_L_OBS_L]);
+		obs.setLeft(_left_obs_value);
+		sensor.l_obs = obs.getLeft();
+
+		auto _front_obs_value = ((serial.receive_stream[REC_F_OBS_H] << 8) | serial.receive_stream[REC_F_OBS_L]);
+		obs.setFront(_front_obs_value);
+		sensor.f_obs = obs.getFront();
+
+		auto _right_obs_value = ((serial.receive_stream[REC_R_OBS_H] << 8) | serial.receive_stream[REC_R_OBS_L]);
+		obs.setRight(_right_obs_value);
+		sensor.r_obs = obs.getRight();
 
 #if __ROBOT_X900
 
@@ -329,14 +337,16 @@ void *robotbase_routine(void*)
 				last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
 			else
 			{
-				sensor.lcliff = last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
-				cliff.setLeft(sensor.lcliff);
+				last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
+				sensor.lcliff = last_lcliff;
+				cliff.setLeft(last_lcliff);
 			}
 		}
 		else
 		{
-			sensor.lcliff = last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
-			cliff.setLeft(sensor.lcliff);
+			last_lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
+			sensor.lcliff = last_lcliff;
+			cliff.setLeft(last_lcliff);
 		}
 
 		if(((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]) < CLIFF_LIMIT)
@@ -345,14 +355,16 @@ void *robotbase_routine(void*)
 				last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
 			else
 			{
-				sensor.fcliff = last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
-				cliff.setFront(sensor.fcliff);
+				last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
+				sensor.fcliff = last_fcliff;
+				cliff.setFront(last_fcliff);
 			}
 		}
 		else
 		{
-			sensor.fcliff = last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
-			cliff.setFront(sensor.fcliff);
+			last_fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
+			sensor.fcliff = last_fcliff;
+			cliff.setFront(last_fcliff);
 		}
 
 		if(((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]) < CLIFF_LIMIT)
@@ -361,14 +373,16 @@ void *robotbase_routine(void*)
 				last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
 			else
 			{
-				sensor.rcliff = last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
-				cliff.setRight(sensor.rcliff);
+				last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
+				sensor.rcliff = last_rcliff;
+				cliff.setRight(last_rcliff);
 			}
 		}
 		else
 		{
-			sensor.rcliff = last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
-			cliff.setRight(sensor.rcliff);
+			last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
+			sensor.rcliff = last_rcliff;
+			cliff.setRight(last_rcliff);
 		}
 
 		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0x30);

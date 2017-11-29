@@ -148,7 +148,7 @@ void remote_move(void)
 		{
 			case REMOTE_MODE_FORWARD:
 			{
-				if (obs.get_status())
+				if (obs.getStatus())
 				{
 					if(moving_speed>10)moving_speed--;
 					wheel.moveForward(moving_speed, moving_speed);

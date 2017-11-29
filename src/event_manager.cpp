@@ -213,15 +213,15 @@ void *event_manager_thread(void *data)
 		}
 
 		/* OBS */
-		if (obs.get_front() > obs.get_front_trig_value() + 1700) {
+		if (obs.getFront() > obs.getFrontTrigValue() + 1700) {
 			ROS_DEBUG("%s %d: setting event: front obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_FRONT);
 		}
-		if (obs.get_left() > obs.get_left_trig_value() + 200) {
+		if (obs.getLeft() > obs.getLeftTrigValue() + 200) {
 			ROS_DEBUG("%s %d: setting event: left obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_LEFT);
 		}
-		if (obs.get_right() > obs.get_right_trig_value() + 200) {
+		if (obs.getRight() > obs.getRightTrigValue() + 200) {
 			ROS_DEBUG("%s %d: setting event: right obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_RIGHT);
 		}

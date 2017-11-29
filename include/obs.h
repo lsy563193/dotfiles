@@ -5,95 +5,87 @@
 #ifndef PP_OBS_H
 #define PP_OBS_H
 
-#include "map.h"
+#include "mathematics.h"
 
-#include <pp/x900sensor.h>
-
-extern pp::x900sensor sensor;
 class Obs {
 public:
 	Obs() {
-		left_trig_value = 100;
-		front_trig_value = 100;
-		right_trig_value = 100;
-		g_left_baseline = 100;
-		g_front_baseline = 100;
-		g_right_baseline = 100;
+		left_value_ = 0;
+		front_value_ = 0;
+		right_value_ = 0;
+		left_trig_value_ = 100;
+		front_trig_value_ = 100;
+		right_trig_value_ = 100;
+		left_baseline_ = 100;
+		front_baseline_ = 100;
+		right_baseline_ = 100;
 	};
 
 //--------------------------------------Obs Dynamic adjust----------------------
-	void dynamic_base(uint16_t count);
+	void DynamicAdjust(uint16_t count);
 
-	int16_t get_front_trig_value(void) {
-		return front_trig_value;
+	int16_t getFrontTrigValue(void) {
+		return front_trig_value_;
 	}
 
-	int16_t get_left_trig_value(void) {
-		return left_trig_value;
+	int16_t getLeftTrigValue(void) {
+		return left_trig_value_;
 	}
 
-	int16_t get_right_trig_value(void) {
-		return right_trig_value;
+	int16_t getRightTrigValue(void) {
+		return right_trig_value_;
 	}
 
-	int16_t get_front_baseline(void) {
-		return g_front_baseline;
+	int16_t getFrontBaseline(void) {
+		return front_baseline_;
 	}
 
-	int16_t get_left_baseline(void) {
-		return g_left_baseline;
+	int16_t getLeftBaseline(void) {
+		return left_baseline_;
 	}
 
-	int16_t get_right_baseline(void) {
-		return g_right_baseline;
+	int16_t getRightBaseline(void) {
+		return right_baseline_;
 	}
 
-//	uint8_t get_status(int16_t left_offset, int16_t front_offset, int16_t right_offset) {
-		uint8_t get_status(int16_t left_offset = 0, int16_t front_offset = 0, int16_t right_offset = 0){
-		uint8_t status = 0;
+	uint8_t getStatus(int16_t left_offset = 0, int16_t front_offset = 0, int16_t right_offset = 0);
 
-		if (get_left() > get_left_trig_value() + left_offset)
-			status |= BLOCK_LEFT;
-
-		if (get_front() > get_front_trig_value() + front_offset)
-			status |= BLOCK_FRONT;
-
-		if (get_right() > get_right_trig_value() + right_offset)
-			status |= BLOCK_RIGHT;
-
-		return status;
+	int16_t getFront(void) {
+		return front_value_;
 	}
 
-	int16_t get_front(void) {
-		return sensor.f_obs;
+	void setFront(int16_t value);
+
+	int16_t getLeft(void) {
+		return left_value_;
 	}
 
-	int16_t get_left(void) {
-		return sensor.l_obs;
+	void setLeft(int16_t value);
+
+	int16_t getRight(void) {
+		return right_value_;
 	}
 
-	int16_t get_right(void) {
-		return sensor.r_obs;
-	}
+	void setRight(int16_t value);
 
-	bool is_wall_front(void) {
-		auto status = (get_front() > get_front_trig_value());
-		return  status;
-	}
+	bool frontTriggered(void);
 
-	friend	void obs_dynamic_base(uint16_t count);
 private:
 
-int16_t left_trig_value;
-int16_t front_trig_value;
-int16_t right_trig_value;
-int16_t g_left_baseline;
-int16_t g_front_baseline;
-int16_t g_right_baseline;
+	int16_t left_value_;
+	int16_t front_value_;
+	int16_t right_value_;
+	int16_t left_trig_value_;
+	int16_t front_trig_value_;
+	int16_t right_trig_value_;
+	int16_t left_baseline_;
+	int16_t front_baseline_;
+	int16_t right_baseline_;
 
+	typedef int16_t(Obs::*Pfunc)(void);
+	typedef int16_t(Obs::*Pdata);
 };
 
-void obs_dynamic_base(uint16_t count);
 extern Obs obs;
 
 #endif //PP_OBS_H
