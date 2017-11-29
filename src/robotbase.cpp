@@ -360,19 +360,8 @@ void *robotbase_routine(void*)
 			sensor.z_acc = (serial.receive_stream[REC_ZACC_H]<<8)|serial.receive_stream[REC_ZACC_L];//in mG
 		else
 			sensor.z_acc = ((serial.receive_stream[REC_ZACC_H]<<8)|serial.receive_stream[REC_ZACC_L] + last_z_acc) / 2;//in mG
-#if GYRO_FRONT_X_POS
 		gyro.setXAcc(sensor.x_acc);
 		gyro.setYAcc(sensor.y_acc);
-#elif GYRO_FRONT_X_NEG
-		gyro.setXAcc(-sensor.x_acc);
-		gyro.setYAcc(-sensor.y_acc);
-#elif GYRO_FRONT_Y_POS
-		gyro.setXAcc(sensor.y_acc)
-		gyro.setYAcc(-sensor.x_acc);
-#elif GYRO_FRONT_Y_NEG
-		gyro.setXAcc(-sensor.y_acc)
-		gyro.setYAcc(sensor.x_acc);
-#endif
 		gyro.setZAcc(sensor.z_acc);
 
 		sensor.plan = serial.receive_stream[REC_PLAN];
@@ -397,6 +386,7 @@ void *robotbase_routine(void*)
 		sensor.rbrush_oc_ = (serial.receive_stream[37] & 0x02) ? true : false;		// right brush over current
 		sensor.vcum_oc = (serial.receive_stream[37] & 0x01) ? true : false;		// vaccum over current
 		sensor.gyro_dymc_ = serial.receive_stream[38];
+		gyro.setCalibration(sensor.gyro_dymc_);
 		sensor.right_wall_ = ((serial.receive_stream[39]<<8)|serial.receive_stream[40]);
 		sensor.x_acc = (serial.receive_stream[41]<<8)|serial.receive_stream[42]; //in mG
 		sensor.y_acc = (serial.receive_stream[43]<<8)|serial.receive_stream[44];//in mG
