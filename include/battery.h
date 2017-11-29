@@ -5,8 +5,7 @@
 #ifndef PP_BATTERY_H
 #define PP_BATTERY_H
 
-#include <clean_mode.h>
-#include <pp/x900sensor.h>
+#include "mathematics.h"
 
 class Battery {
 public:

@@ -6,6 +6,7 @@
 #define PP_CLIFF_H
 
 #include "movement.h"
+#include "map.h"
 #include <pp/x900sensor.h>
 extern pp::x900sensor sensor;
 

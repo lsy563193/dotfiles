@@ -11,6 +11,11 @@
 #define MAP 0
 #define SPMAP 1
 
+#define BLOCK_LEFT				((uint8_t) 0x01)
+#define BLOCK_RIGHT			((uint8_t) 0x02)
+#define BLOCK_FRONT			((uint8_t) 0x04)
+#define BLOCK_ALL			((uint8_t) 0x07)
+
 typedef std::deque<Cell_t> PPTargetType;
 
 typedef enum {
