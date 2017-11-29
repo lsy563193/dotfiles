@@ -102,7 +102,7 @@ void cm_cleaning() {
 
 		if (p_cm->isReach() || p_cm->isStop())
 		{
-			if(!p_cm->findTarget(curr))
+			if(!p_cm->csm_next(curr))
 				return;
 		}
 
@@ -112,8 +112,8 @@ void cm_cleaning() {
 	}*/
 }
 
-void cm_apply_cs(void) {
-	if (cs.is_open_gyro())
+void cm_apply_cs(int next) {
+	if (next == CS_OPEN_GYRO)
 	{
 		// Set for LEDs.
 		if (ev.remote_home || g_go_home_by_remote)
@@ -154,23 +154,23 @@ void cm_apply_cs(void) {
 			wav.play(WAV_CLEANING_START);
 		}
 	}
-	else if (cs.is_back_from_charger())
+	else if (next == CS_BACK_FROM_CHARGER)
 	{
 		path_set_home(cost_map.get_curr_cell());
 		cs_work_motor();
 		wheel.set_dir_backward();
 	}
-	else if (cs.is_open_laser())
+	else if (next == CS_OPEN_LASER)
 	{
 		cs_work_motor();
 		laser.motorCtrl(ON);
 		laser.setScanOriginalReady(0);
 	}
-	else if (cs.is_align())
+	else if (next == CS_ALIGN)
 	{
 		laser.startAlign();
 	}
-	else if (cs.is_open_slam())
+	else if (next == CS_OPEN_SLAM)
 	{
 		if (!(g_is_manual_pause || g_resume_cleaning))
 		{
@@ -181,11 +181,11 @@ void cm_apply_cs(void) {
 		else
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
 	}
-	else if (cs.is_clean()) {
+	else if (next == CS_CLEAN) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
-	if (cs.is_go_home_point()) {
+	if (next == CS_GO_HOME_POINT) {
 		cs_work_motor();
 		wheel.set_speed(0, 0, REG_TYPE_LINEAR);
 		if (ev.remote_home || cm_is_go_charger())
@@ -212,7 +212,7 @@ void cm_apply_cs(void) {
 		ev.battrey_home = false;
 		mt.set(MT_LINEARMOVE);
 	}
-	if (cs.is_tmp_spot())
+	if (next == CS_TMP_SPOT)
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
@@ -229,24 +229,24 @@ void cm_apply_cs(void) {
 		}
 		ev.remote_spot = false;
 	}
-	if (cs.is_trapped())
+	if (next == CS_TRAPPED)
 	{
 		g_wf_start_timer = time(NULL);
 		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 		mt.set(MT_FOLLOW_LEFT_WALL);
 	}
-	if (cs.is_exploration()) {
+	if (next == CS_EXPLORATION) {
 		mt.set(MT_LINEARMOVE);
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (cs.is_go_charger())
+	if (next == CS_GO_CHANGER)
 	{
 		gyro.TiltCheckingEnable(false); //disable tilt detect
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (cs.is_self_check())
+	if (next == CS_SELF_CHECK)
 	{
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
@@ -255,7 +255,7 @@ void cm_apply_cs(void) {
 void cm_reset_go_home(void)
 {
 	ROS_DEBUG("%s %d: Reset go home flags here.", __FUNCTION__, __LINE__);
-	cs.set(CS_CLEAN);
+	cs.setNext(CS_CLEAN);
 	g_go_home_by_remote = false;
 }
 

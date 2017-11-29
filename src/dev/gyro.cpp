@@ -343,37 +343,37 @@ void Gyro::setDynamicOff(void)
 
 int16_t Gyro::getFront() {
 #if GYRO_FRONT_X_POS
-	return -sensor.x_acc;
+	return -x_acc_;
 #elif GYRO_FRONT_X_NEG
-	return sensor.x_acc;
+	return x_acc_;
 #elif GYRO_FRONT_Y_POS
-	return -sensor.y_acc;
+	return -y_acc_;
 #elif GYRO_FRONT_Y_NEG
-	return sensor.y_acc;
+	return y_acc_;
 #endif
 }
 
 int16_t Gyro::getLeft() {
 #if GYRO_FRONT_X_POS
-	return -sensor.y_acc;
+	return -y_acc_;
 #elif GYRO_FRONT_X_NEG
-	return sensor.y_acc;
+	return y_acc_;
 #elif GYRO_FRONT_Y_POS
-	return sensor.x_acc;
+	return x_acc_;
 #elif GYRO_FRONT_Y_NEG
-	return -sensor.x_acc;
+	return -x_acc_;
 #endif
 }
 
 int16_t Gyro::getRight() {
 #if GYRO_FRONT_X_POS
-	return -sensor.y_acc;
+	return -y_acc_;
 #elif GYRO_FRONT_X_NEG
-	return sensor.y_acc;
+	return y_acc_;
 #elif GYRO_FRONT_Y_POS
-	return sensor.x_acc;
+	return x_acc_;
 #elif GYRO_FRONT_Y_NEG
-	return -sensor.x_acc;
+	return -x_acc_;
 #endif
 }
 
@@ -444,10 +444,10 @@ uint8_t Gyro::checkTilt()
 
 	if (tilt_checking_enable_)
 	{
-		if (getXAcc() - getInitXAcc() > FRONT_TILT_LIMIT)
+		if (getFront() - getFrontInit() > FRONT_TILT_LIMIT)
 		{
 			front_count += 2;
-			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, getXAcc(), getInitXAcc(), front_count);
+			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, getFront(), getFrontInit(), front_count);
 		}
 		else
 		{
@@ -456,10 +456,10 @@ uint8_t Gyro::checkTilt()
 			else
 				front_count = 0;
 		}
-		if (getYAcc() - getInitYAcc() > LEFT_TILT_LIMIT)
+		if (getLeft() - getLeftInit() > LEFT_TILT_LIMIT)
 		{
 			left_count++;
-			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, getYAcc(), getInitYAcc(), left_count);
+			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, getLeft(), getLeftInit(), left_count);
 		}
 		else
 		{

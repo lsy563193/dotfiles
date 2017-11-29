@@ -54,11 +54,22 @@ int16_t rcon_turn_angle();
 
 bool laser_turn_angle(int16_t& turn_angle);
 
-class RegulatorBase {
+//class Movement {
+//
+//};
+class Regulator{
 public:
-
+	virtual void adjustSpeed(int32_t&, int32_t&)=0;
+};
+class ActionEvent{
+public:
 	bool isExit();
 	bool isStop();
+};
+class Movement: public Regulator,ActionEvent {
+public:
+	bool isStop();
+	bool isExit();
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void setTarget() = 0;
 	virtual std::string getName() = 0;
@@ -72,10 +83,10 @@ public:
 	static Point32_t s_curr_p;
 };
 
-class BackRegulator: public RegulatorBase{
+class BackMovement: public Movement{
 public:
-	BackRegulator();
-	~BackRegulator(){
+	BackMovement();
+	~BackMovement(){
 		//set_wheel.speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
@@ -84,7 +95,7 @@ public:
 	bool isReach();
 	std::string getName()
 	{
-		std::string name = "BackRegulator";
+		std::string name = "BackMovement";
 		return name;
 	}
 
@@ -95,17 +106,17 @@ private:
 	float laser_detect_distance;
 };
 
-class TurnRegulator: public RegulatorBase{
+class TurnMovement: public Movement{
 public:
 
-	TurnRegulator(int16_t angle);
+	TurnMovement(int16_t angle);
 	void adjustSpeed(int32_t&, int32_t&);
 	void setTarget();
 	bool isReach();
 	bool shouldMoveBack();
 	std::string getName()
 	{
-		std::string name = "TurnRegulator";
+		std::string name = "TurnMovement";
 		return name;
 	}
 
@@ -147,12 +158,12 @@ public:
 	void adjustSpeed(uint8_t bumper_jam_state);
 };
 
-class FollowWallRegulator:public RegulatorBase {
+class FollowWallMovement:public Movement {
 
 public:
-	FollowWallRegulator(Point32_t start_point, Point32_t target);
+	FollowWallMovement(Point32_t start_point, Point32_t target);
 
-	~FollowWallRegulator() { /*set_wheel.speed(0,0);*/ };
+	~FollowWallMovement() { /*set_wheel.speed(0,0);*/ };
 
 	void reset_sp_turn_count() {
 		turn_count = 0;
@@ -198,7 +209,7 @@ public:
 	void setTarget();
 
 	std::string getName() {
-		std::string name = "FollowWallRegulator";
+		std::string name = "FollowWallMovement";
 		return name;
 	}
 
@@ -221,10 +232,10 @@ private:
 	int32_t diff_speed_;
 };
 
-class LinearRegulator: public RegulatorBase{
+class ForwardMovement: public Movement{
 public:
-	LinearRegulator(Point32_t, const PPTargetType&);
-	~LinearRegulator(){ };
+	ForwardMovement(Point32_t, const PPTargetType&);
+	~ForwardMovement(){ };
 	bool isRconStop();
 	bool isOBSStop();
 	bool isLaserStop();
@@ -238,7 +249,7 @@ public:
 	void setTarget();
 	std::string getName()
 	{
-		std::string name = "LinearRegulator";
+		std::string name = "ForwardMovement";
 		return name;
 	}
 
@@ -253,10 +264,10 @@ private:
 	float odom_y_start;
 };
 
-class GoToChargerRegulator: public RegulatorBase{
+class GoToChargerMovement: public Movement{
 public:
-	GoToChargerRegulator();
-	~GoToChargerRegulator(){ };
+	GoToChargerMovement();
+	~GoToChargerMovement(){ };
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&);
@@ -284,7 +295,7 @@ public:
 	}
 	std::string getName()
 	{
-		std::string name = "GoToChargerRegulator";
+		std::string name = "GoToChargerMovement";
 		return name;
 	}
 

@@ -216,10 +216,10 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	{
 		target = it[0];
 		//todo
-//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y));
+//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (Movement::s_target_p.Y<Movement::s_origin_p.Y));
 //		if(mt.is_follow_wall() && cm_is_reach())
 //		{
-//			if(mt.is_left() ^ (RegulatorBase::s_target_p.Y<RegulatorBase::s_origin_p.Y))
+//			if(mt.is_left() ^ (Movement::s_target_p.Y<Movement::s_origin_p.Y))
 //				target = it[1];
 //		}
 	}
@@ -1033,7 +1033,7 @@ bool wf_is_isolate() {
 	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 
 	fw_map.mark_robot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
-	auto curr = cost_map.point_to_cell(RegulatorBase::s_curr_p);
+	auto curr = cost_map.point_to_cell(Movement::s_curr_p);
 	fw_map.print(MAP, curr.X, curr.Y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
 
@@ -1092,8 +1092,7 @@ bool cm_is_reach()
 }
 
 bool path_next_spot(const Cell_t &start, PPTargetType &path) {
-	if (!SpotMovement::instance()->spotNextTarget(start, &path))
-		return false;
+	return SpotMovement::instance()->spotNextTarget(start, &path);
 }
 
 bool path_next_fw(const Cell_t &start) {
@@ -1191,6 +1190,7 @@ bool cm_turn_and_check_charger_signal(void)
 	}
 	return false;
 }
+
 int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
 {
 	path.push_front(start);
@@ -1224,7 +1224,7 @@ bool path_next(const Cell_t& start, PPTargetType& path)
 }
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path) {
-	if (!cs.is_going_home()) {
+/*	if (!cs.is_going_home()) {
 		if ((ev.remote_home || ev.battery_home)) {//cs.is_switch_go_home()
 			if(g_have_seen_charger)
 				cs.set(CS_GO_HOME_POINT);
@@ -1237,9 +1237,9 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 		if (ev.remote_spot) {//cs.is_switch_tmp_spot()
 			cs.set(CS_TMP_SPOT);
 		}
-	}
+	}*/
 
-	if (cs.is_trapped()) {
+/*if (cs.is_trapped()) {
 		if (!is_trapped(start, path))
 			cs.set(CS_CLEAN);
 	}
@@ -1284,7 +1284,8 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 				return false;
 	}
 
-	return true;
+	return true;*/
+
 }
 
 void path_fill_path(std::deque<Cell_t>& path)
