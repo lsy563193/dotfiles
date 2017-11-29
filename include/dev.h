@@ -21,6 +21,7 @@
 #include "cliff.h"
 #include "gyro.h"
 #include "key.h"
+#include "odom.h"
 #include "laser.hpp"
 #include "led.h"
 #include "obs.h"

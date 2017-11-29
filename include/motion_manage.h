@@ -14,6 +14,7 @@
 #include <map.h>
 #include "clean_mode.h"
 
+extern Pose charger_pose;
 class MotionManage {
 public:
 	MotionManage(CleanMode* p_cm);
@@ -64,7 +65,6 @@ private:
 	void init_after_slam();
 
 	//For CS_BACK_FROM_CHARGER
-	Pose charger_pose;
 };
 
 #endif //PP_MOTION_MANAGE_H

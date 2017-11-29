@@ -36,6 +36,7 @@
 
 uint32_t g_saved_work_time = 0;//temporary work time
 
+Pose charger_pose;
 /*
 int g_enable_angle_offset = 0;
 boost::mutex g_angle_offset_mt;

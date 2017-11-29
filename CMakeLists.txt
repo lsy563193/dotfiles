@@ -26,6 +26,7 @@ FILE(GLOB PP_SRC
 	src/dev/wheel.cpp
 	src/dev/laser.cpp
 	src/dev/wav.cpp
+	src/event/event_action.cpp
 	src/error.cpp
 	src/event_manager.cpp
 	src/idle.cpp
