@@ -14,7 +14,7 @@
 
 #include "go_home.hpp"
 #include "movement.h"
-#include "charger.hpp"
+#include "charge.hpp"
 #include "robot.hpp"
 #include "gyro.h"
 #include "core_move.h"
