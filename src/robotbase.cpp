@@ -309,6 +309,7 @@ void *robotbase_routine(void*)
 		sensor.w_tank = (serial.receive_stream[REC_WATER_TANK]>0)?true:false;
 
 		sensor.batv = (serial.receive_stream[REC_BAT_V]);
+		battery.setVoltage((uint16_t)sensor.batv * 10);
 
 		if(((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]) < CLIFF_LIMIT)
 		{

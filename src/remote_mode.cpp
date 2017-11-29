@@ -622,7 +622,7 @@ void RM_EventHandle::battery_low(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: Detects battery low.", __FUNCTION__, __LINE__);
 	if (g_battery_low_cnt++ > 50)
 	{
-		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, battery.get_voltage());
+		ROS_WARN("%s %d: Battery too low: %dmV.", __FUNCTION__, __LINE__, battery.getVoltage());
 		cs_disable_motors();
 		ev.battery_low = true;
 		ev.fatal_quit = true;

@@ -48,7 +48,7 @@ void *core_move_thread(void *)
 
 	if (charger.is_directed() || charger.is_on_stub())
 		cm_set(Clean_Mode_Charging);
-	else if (battery.is_ready_to_clean())
+	else if (battery.isReadyToClean())
 		wav.play(WAV_PLEASE_START_CLEANING);
 
 	while(ros::ok()){

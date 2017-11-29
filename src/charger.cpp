@@ -81,7 +81,7 @@ void charge_function(void)
 
 		if (g_resume_cleaning)
 		{
-			if (battery.get_voltage() >= CONTINUE_CLEANING_VOLTAGE)
+			if (battery.getVoltage() >= CONTINUE_CLEANING_VOLTAGE)
 			{
 				bat_enough_to_continue_cleaning_counter++;
 				//ROS_INFO("Bat_Enough_To_Continue_Cleaning_Counter = %d.", bat_enough_to_continue_cleaning_counter);
@@ -101,7 +101,7 @@ void charge_function(void)
 
 		if(++show_batv_counter > 500)//about 10 second
 		{
-			ROS_INFO("%s %d: In charge mode_ looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.get_voltage()/100.0);
+			ROS_INFO("%s %d: In charge mode_ looping , battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 			show_batv_counter = 0;
 		}
 
@@ -115,7 +115,7 @@ void charge_function(void)
 			{
 				if (g_resume_cleaning)
 				{
-					if (battery.get_voltage() < LOW_BATTERY_STOP_VOLTAGE)
+					if (battery.getVoltage() < LOW_BATTERY_STOP_VOLTAGE)
 					{
 						ROS_INFO("%s %d: Exit charger mode_ and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
 						cm_set(Clean_Mode_Idle);
@@ -191,7 +191,7 @@ void charge_function(void)
 		if (cm_is_navigation())
 			break;
 
-		if (battery.is_full() && !battery_full)
+		if (battery.isFull() && !battery_full)
 		{
 			battery_full = true;
 			led.set_mode(LED_STEADY, LED_OFF);
@@ -265,7 +265,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 				charge_plan_status = 2;
 				break;
 			}
-			else if (!battery.is_ready_to_clean())
+			else if (!battery.isReadyToClean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 3;
@@ -324,7 +324,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		beeper.play_for_command(INVALID);
 		charge_reject_reason = 2;
 	}
-	else if (!battery.is_ready_to_clean())
+	else if (!battery.isReadyToClean())
 	{
 		ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beeper.play_for_command(INVALID);
@@ -374,7 +374,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			beeper.play_for_command(INVALID);
 			charge_reject_reason = 2;
 		}
-		else if (!battery.is_ready_to_clean())
+		else if (!battery.isReadyToClean())
 		{
 			ROS_WARN("%s %d: Battery below BATTERY_READY_TO_CLEAN_VOLTAGE(%d) + 600, can't go to navigation mode_.", __FUNCTION__, __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
 			charge_reject_reason = 3;

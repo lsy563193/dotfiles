@@ -349,11 +349,11 @@ void *event_manager_thread(void *data)
 		}
 
 		/* Battery */
-		if (battery.get_voltage() && battery.get_voltage() < LOW_BATTERY_GO_HOME_VOLTAGE) {
+		if (battery.getVoltage() && battery.getVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BATTERY_HOME);
 		}
-		if (battery.get_voltage() < LOW_BATTERY_STOP_VOLTAGE) {
+		if (battery.getVoltage() < LOW_BATTERY_STOP_VOLTAGE) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BATTERY_LOW);
 		}
