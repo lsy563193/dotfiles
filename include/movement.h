@@ -11,9 +11,6 @@
 #define Brush_Power					128
 #define MainBrush_Power				70
 
-#define Direction_Flag_Right		0x01
-#define Direction_Flag_Left			0x02
-
 #define Check_Left_Wheel			0x01
 #define Check_Right_Wheel			0x02
 #define Check_Left_Brush			0x20
@@ -59,129 +56,6 @@
 #define Charge_Home_Right			((uint8_t) 0x02)
 #define Charge_Home_Top				((uint8_t) 0x0c)
 #define Vitual_Wall_Code			((uint8_t) 0x24)
-
-#if __ROBOT_X900
-
-#define RconBL_HomeL		(uint32_t)0x40000000
-#define RconBL_HomeT		(uint32_t)0x20000000
-#define RconBL_HomeR		(uint32_t)0x10000000
-
-#define RconL_HomeL			(uint32_t)0x04000000
-#define RconL_HomeT			(uint32_t)0x02000000
-#define RconL_HomeR			(uint32_t)0x01000000
-
-#define RconFL2_HomeL		(uint32_t)0x00400000
-#define RconFL2_HomeT		(uint32_t)0x00200000
-#define RconFL2_HomeR		(uint32_t)0x00100000
-
-#define RconFL_HomeL		(uint32_t)0x00040000
-#define RconFL_HomeT		(uint32_t)0x00020000
-#define RconFL_HomeR		(uint32_t)0x00010000
-
-#define RconFR_HomeL		(uint32_t)0x00004000
-#define RconFR_HomeT		(uint32_t)0x00002000
-#define RconFR_HomeR		(uint32_t)0x00001000
-
-#define RconFR2_HomeL		(uint32_t)0x00000400
-#define RconFR2_HomeT		(uint32_t)0x00000200
-#define RconFR2_HomeR		(uint32_t)0x00000100
-
-#define RconR_HomeL			(uint32_t)0x00000040
-#define RconR_HomeT			(uint32_t)0x00000020
-#define RconR_HomeR			(uint32_t)0x00000010
-
-#define RconBR_HomeL		(uint32_t)0x00000004
-#define RconBR_HomeT		(uint32_t)0x00000002
-#define RconBR_HomeR		(uint32_t)0x00000001
-
-#define RconAll_Home_T			(uint32_t)0x22222222
-#define RconAll_Home_LR			(uint32_t)0x55555555
-#define RconAll_Home_TLR		(uint32_t)0x77777777
-#define RconFrontAll_Home_T		(uint32_t)0x02222220
-#define RconFrontAll_Home_LR	(uint32_t)0x05555550
-#define RconFrontAll_Home_TLR	(uint32_t)0x07777770
-#define RconFront_Home_T		(uint32_t)0x00222200
-#define RconFront_Home_LR		(uint32_t)0x00555500
-#define RconFront_Home_TLR		(uint32_t)0x00777700
-
-#ifdef VIRTUAL_WALL
-
-#define RconBL_Wall          	(uint16_t)0x8000
-#define RconL_Wall           	(uint16_t)0x4000
-#define RconFL2_Wall           	(uint16_t)0x2000
-#define RconFL_Wall           	(uint16_t)0x1000
-#define RconFR_Wall           	(uint16_t)0x0800
-#define RconFR2_Wall           	(uint16_t)0x0400
-#define RconR_Wall           	(uint16_t)0x0200
-#define RconBR_Wall           	(uint16_t)0x0100
-#define RconBL_Wall_T           (uint16_t)0x0080
-#define RconL_Wall_T           	(uint16_t)0x0040
-#define RconFL2_Wall_T          (uint16_t)0x0020
-#define RconFL_Wall_T           (uint16_t)0x0010
-#define RconFR_Wall_T           (uint16_t)0x0008
-#define RconFR2_Wall_T          (uint16_t)0x0004
-#define RconR_Wall_T           	(uint16_t)0x0002
-#define RconBR_Wall_T           (uint16_t)0x0001
-
-#else
-
-#define RconFL_Wall          	(uint16_t)0x0000
-#define RconFL_Wall_T         (uint16_t)0x0000
-#define RconFR_Wall          	(uint16_t)0x0000
-#define RconFR_Wall_T         (uint16_t)0x0000
-#define RconFL2_Wall         	(uint16_t)0x0000
-#define RconFL2_Wall_T        (uint16_t)0x0000
-#define RconFR2_Wall         	(uint16_t)0x0000
-#define RconFR2_Wall_T        (uint16_t)0x0000
-#define RconL_Wall           	(uint16_t)0x0000
-#define RconL_Wall_T          (uint16_t)0x0000
-#define RconR_Wall           	(uint16_t)0x0000
-#define RconR_Wall_T          (uint16_t)0x0000
-#define RconBL_Wall          	(uint16_t)0x0000
-#define RconBL_Wall_T         (uint16_t)0x0000
-#define RconBR_Wall          	(uint16_t)0x0000
-#define RconBR_Wall_T         (uint16_t)0x0000
-#endif
-
-#else
-
-#define Rcon_Wall 					((uint32_t) 0x00000008)
-#define Rcon_HomeL 					((uint32_t) 0x00000004)
-#define Rcon_HomeT 					((uint32_t) 0x00000002)
-#define Rcon_HomeR 					((uint32_t) 0x00000001)
-
-#define RconL_HomeL					((uint32_t) 0x00004000)
-#define RconL_HomeR					((uint32_t) 0x00001000)
-
-#define RconFL_HomeL				((uint32_t) 0x00400000)
-#define RconFL_HomeR				((uint32_t) 0x00100000)
-
-#define RconFR_HomeL				((uint32_t) 0x00040000)
-#define RconFR_HomeR				((uint32_t) 0x00010000)
-
-#define RconR_HomeL					((uint32_t) 0x00000400)
-#define RconR_HomeR					((uint32_t) 0x00000100)
-
-#define RconR_HomeT					((uint32_t) 0x00000200)
-#define RconFR_HomeT				((uint32_t) 0x00020000)
-#define RconFL_HomeT				((uint32_t) 0x00200000)
-#define RconL_HomeT					((uint32_t) 0x00002000)
-
-#define RconBR_HomeL				((uint32_t) 0x00000004)
-#define RconBR_HomeR				((uint32_t) 0x00000001)
-#define RconBR_HomeT				((uint32_t) 0x00000002)
-
-#define RconBL_HomeL				((uint32_t) 0x00000040)
-#define RconBL_HomeR				((uint32_t) 0x00000010)
-#define RconBL_HomeT				((uint32_t) 0x00000020)
-
-#define RconR_Wall					((uint32_t) 0x00000700)
-#define RconFR_Wall					((uint32_t) 0x00070000)
-#define RconFL_Wall					((uint32_t) 0x00700000)
-#define RconL_Wall					((uint32_t) 0x00007000)
-#define RconBL_Wall					((uint32_t) 0x00000070)
-#define RconBR_Wall					((uint32_t) 0x00000007)
-#endif
 
 #define Remote_All					((uint8_t) 0xFF)
 #define Remote_Forward				((uint8_t) 0x80)
@@ -334,35 +208,7 @@ typedef enum{
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
 
-//regulator type
-#define REG_TYPE_NONE			0
-#define REG_TYPE_WALLFOLLOW		1
-#define REG_TYPE_LINEAR			2
-#define REG_TYPE_TURN			3
-#define REG_TYPE_BACK			4
-#define REG_TYPE_CURVE			5
-
 extern uint32_t g_rcon_status;
-
-struct pid_struct
-{
-	float delta;
-	float delta_sum;
-	float delta_last;
-	float target_speed;
-	float actual_speed;
-	float last_target_speed;
-	uint8_t last_reg_type;
-	float variation;
-};
-
-struct pid_argu_struct
-{
-	uint8_t reg_type; // Regulator type
-	float Kp;
-	float Ki;
-	float Kd;
-};
 
 #define RCON_SENSOR_FLFR 0 //define the rcon sensor angle on robotbase (degree)
 #define RCON_SENSOR_FLFR2 30
@@ -373,17 +219,20 @@ typedef struct {
 	int16_t sensor_angle;
 }Rcon_Point_t;
 
-extern struct pid_argu_struct argu_for_pid;
-extern struct pid_struct left_pid, right_pid;
-
 void reset_work_time();
 uint32_t get_work_time();
+
+void error_set(uint8_t Code);
+uint8_t error_get(void);
+void error_alarm(void);
+bool error_clear(uint8_t error_code);
+
+void wheel_reset_step(void);
+
 
 uint8_t is_encoder_fail(void);
 
 void quick_back(uint8_t speed,uint16_t distance);
-
-void wheel_set_dir_backward(void);
 
 uint8_t is_encoder_fail(void);
 
@@ -396,6 +245,10 @@ uint8_t cm_get(void);
 void cm_set(uint8_t mode);
 
 void cs_disable_motors(void);
+
+void reset_sp_turn_count();
+int32_t get_sp_turn_count();
+void add_sp_turn_count();
 
 bool check_pub_scan();
 

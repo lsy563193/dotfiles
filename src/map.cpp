@@ -13,7 +13,7 @@
 #include <mathematics.h>
 #include <space_exploration.h>
 #include <clean_state.h>
-
+#include "rcon.h"
 #include "map.h"
 #include "mathematics.h"
 #include "robot.hpp"
@@ -610,7 +610,7 @@ uint8_t CostMap::set_rcon()
 	std::string msg = "cell:";
 	for(auto& cell : temp_rcon_cells){
 		msg += "(" + std::to_string(cell.X) + "," + std::to_string(cell.Y) + ")";
-		set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), BLOCKED_CLIFF);
+		set_cell(MAP, cell_to_count(cell.X), cell_to_count(cell.Y), BLOCKED_RCON);
 		block_count++;
 	}
 	temp_rcon_cells.clear();
@@ -618,24 +618,35 @@ uint8_t CostMap::set_rcon()
 	return block_count;
 }
 
-uint8_t CostMap::set_charge_position(const Cell_t home_point)
+uint8_t CostMap::set_charger_position(const Cell_t home_point)
 {
-	int ltx=-2;
-	int lty=-2;
-	g_stub_cell.X =  home_point.X;
-	g_stub_cell.Y =  home_point.Y;
-	ROS_INFO("%s,%d: set g_stub_cell(%d,%d)",__FUNCTION__,__LINE__,g_stub_cell.X,g_stub_cell.Y);
-	int32_t x,y;
-	std::string print_msg("");
-	for(int i=0;i<4;i++){//hight
-		for(int j = 0;j<5;j++){//width
-			robot_to_point(get_curr_point(),CELL_SIZE*(lty+j+home_point.Y),CELL_SIZE*(ltx+i+home_point.X),&x,&y);
-			set_cell(MAP,x,y,BLOCKED_RCON);
-			print_msg+="("+std::to_string(count_to_cell(x))+","+std::to_string(count_to_cell(y))+"),";
+	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
+	int16_t x_min,x_max,y_min,y_max;
+	path_get_range(MAP,&x_min, &x_max,&y_min,&y_max);
+	for(int16_t i = x_min;i<=x_max;i++){
+		for(int16_t j = y_min;j<=y_max;j++){
+			if(get_cell(MAP,i,j) == BLOCKED_RCON)
+				set_cell(MAP,cell_to_count(i),cell_to_count(j),UNCLEAN);
 		}
 	}
-	ROS_INFO("%s,%d: set charge stub area:%s",__FUNCTION__,__LINE__,print_msg.c_str());
-	return 0;
+	uint8_t block_count = 0;
+	const int WIDTH = 5;//cells
+	const int HIGHT = 5;//cells
+	const int ltx=-HIGHT/2;//left top x offset
+	const int lty=-WIDTH/2;//right top y offset
+	int16_t x,y;
+	std::string print_msg("");
+	for(int i=0; i<HIGHT; i++){ 
+		for(int j = 0; j<WIDTH; j++){
+			y = lty+j+home_point.Y;
+			x = ltx+i+home_point.X;
+			temp_rcon_cells.push_back({x,y});
+			print_msg+="("+std::to_string(x)+","+std::to_string(y)+"),";
+			block_count++;
+		}
+	}
+	ROS_INFO("%s,%d: set charge area:\033[32m%s\033[0m",__FUNCTION__,__LINE__,print_msg.c_str());
+	return block_count;
 }
 
 uint8_t CostMap::set_follow_wall()
@@ -835,10 +846,22 @@ uint8_t CostMap::save_bumper()
 
 uint8_t CostMap::save_rcon()
 {
+	uint8_t block_count;
+	if(c_rcon.should_mark_charger_ && !c_rcon.in_rcon_signal_range_){
+		c_rcon.should_mark_charger_ = false;
+		block_count += cost_map.set_charger_position(c_rcon.getRconPos());
+	}
+	else if(c_rcon.should_mark_temp_charger_ && !c_rcon.in_rcon_signal_range_){
+		c_rcon.should_mark_temp_charger_ = false;
+		block_count += cost_map.set_charger_position(c_rcon.getRconPos());
+	}
+	return block_count;
+
+#if 0
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_station && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont mark rcon signal
+	if( g_from_charger && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont mark rcon signal
 	{
 		ev.rcon_triggered = 0;
 		return 0;
@@ -929,6 +952,7 @@ uint8_t CostMap::save_rcon()
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, get_x_cell(), get_y_cell(), msg.c_str());
 	return static_cast<uint8_t >(d_cells.size());
+#endif
 }
 
 uint8_t CostMap::save_follow_wall()

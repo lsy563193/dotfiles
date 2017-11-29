@@ -90,7 +90,7 @@ bool ForwardMovement::shouldMoveBack()
 
 bool ForwardMovement::isRconStop()
 {
-	ev.rcon_triggered = c_rcon.get_trig();
+	ev.rcon_triggered = c_rcon.getTrig();
 	if(ev.rcon_triggered)
 	{
 		g_turn_angle = rcon_turn_angle();
@@ -170,7 +170,7 @@ void ForwardMovement::setTarget()
 void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
-	wheel.set_dir_forward();
+	wheel.setDirectionForward();
 	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = cost_map.cell_to_point(g_plan_path.front());
 	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;

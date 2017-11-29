@@ -12,7 +12,7 @@
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
 #include <move_type.h>
-#include <wheel.h>
+#include <wheel.hpp>
 #include <error.h>
 
 #include "mathematics.h"
@@ -37,6 +37,7 @@ Laser::Laser():angle_n_(0)
 //	scanOriginal_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
+	seq = 0;
 }
 
 Laser::~Laser()
@@ -58,8 +59,7 @@ void Laser::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		setScanLinearReady(1);
 	}
 	scanLinear_update_time = ros::Time::now().toSec();
-	//std::vector<LineABC> lines;
-	//findLines(&lines);
+
 }
 
 void Laser::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
@@ -247,7 +247,7 @@ static bool lineCombine(std::vector<LineABC> *lines_before,std::vector<LineABC> 
 	std::vector<LineABC>::iterator it;
 	for(it = lines_before->begin(); it != lines_before->end(); it++){
 		if( (it+1)!=lines_before->end() ){
-			if(abs(it->angle_x - (it+1)->angle_x) <= MIN_COMBINE_ANGLE){
+			if(abs(it->K - (it+1)->K) <= MIN_COMBINE_ANGLE){
 				if(two_points_distance_double(it->x2,it->y2,(it+1)->x1,(it+1)->y1) < MIN_COMBINE_DIST){
 					line_tmp.x1 = it->x1;
 					line_tmp.y1 = it->y1;
@@ -257,7 +257,7 @@ static bool lineCombine(std::vector<LineABC> *lines_before,std::vector<LineABC> 
 					line_tmp.B = line_tmp.x1 - line_tmp.x2;
 					line_tmp.C = line_tmp.x2 * line_tmp.y1 - line_tmp.x1 * line_tmp.y2;
 					line_tmp.len = two_points_distance_double(line_tmp.x1,line_tmp.y1,line_tmp.x2,line_tmp.y2);
-					line_tmp.angle_x = atan(-1*(line_tmp.A / line_tmp.B))*180/PI;
+					line_tmp.K = atan(-1*(line_tmp.A / line_tmp.B))*180/PI;
 					lines_after->push_back(line_tmp);
 					it++;
 					ret = true;
@@ -276,18 +276,16 @@ static bool lineCombine(std::vector<LineABC> *lines_before,std::vector<LineABC> 
  * @param1 lines vector
  * @return ture if found lines, alse return false
  * */
-bool Laser::findLines(std::vector<LineABC> *lines)
+bool Laser::findLines(std::vector<LineABC> *lines,bool combine)
 {
 	if(!isScanLinearReady())
 		return false;
 	const float MAX_LASER_DIST = 4.0;
 	const float ACCR_PERSET = 0.05;//%5
-	static int seq = 0;
 
 	sensor_msgs::LaserScan scan_data;
 	//scanLinear_mutex_.lock();
-	if(laserScanData_linear_.header.seq != seq){
-		seq = laserScanData_linear_.header.seq;
+	if(isNewScan1()){
 		scan_data = laserScanData_linear_;
 	}
 	else
@@ -343,7 +341,7 @@ bool Laser::findLines(std::vector<LineABC> *lines)
 			line.A = y2-y1;
 			line.B = x1-x2;
 			line.C = x2*y1-x1*y2;
-			line.angle_x = atan((-1)*line.A/line.B)*180/PI;
+			line.K = atan((-1)*line.A/line.B)*180/PI;
 			line.x1 = x1;
 			line.y1 = y1;
 			line.x2 = x2;
@@ -366,12 +364,12 @@ bool Laser::findLines(std::vector<LineABC> *lines)
 			if(point_count>3){
 				double xn_2 = (point_set.at(i-1).x - point_set.at(i-2).x) /2.0 + point_set.at(i-2).x;
 				double yn_2 = (point_set.at(i-1).y - point_set.at(i-2).y) /2.0 + point_set.at(i-2).y;
-				/*---update A,B,C,x2,y2,angle_x---*/
+				/*---update A,B,C,x2,y2,K---*/
 				LineABC *last_line = &lines->back();
 				last_line->A = yn_2 - line.y1;
 				last_line->B = line.x1 - xn_2;
 				last_line->C = xn_2*line.y1-line.x1*yn_2;
-				last_line->angle_x= atan(-1*(last_line->A / last_line->B))*180/PI;
+				last_line->K= atan(-1*(last_line->A / last_line->B))*180/PI;
 				last_line->x2 = xn_2;
 				last_line->y2 = yn_2;
 				last_line->len = two_points_distance_double(line.x1,line.y1,xn_2,yn_2);
@@ -381,21 +379,22 @@ bool Laser::findLines(std::vector<LineABC> *lines)
 	}
 
 	/*------combine short lines to long lines------*/
-	std::vector<LineABC> lines_after;
-	while(lineCombine(lines,&lines_after)){
-		lines->clear();
-		*lines = lines_after;
-		lines_after.clear();
+	if(combine){
+		std::vector<LineABC> lines_after;
+		while(lineCombine(lines,&lines_after)){
+			lines->clear();
+			*lines = lines_after;
+			lines_after.clear();
+		}
 	}
-
 	/*------print line data------*/
 	/*
 	std::string msg("");
 	std::vector<LineABC>::iterator it;
 	for(it = lines->begin();it!= lines->end();it++){
 		msg+= "\n[A:"+ std::to_string(it->A) +",B:" + std::to_string(it->B) +",C:" +
-			std::to_string(it->C)+",len = "+std::to_string(it->len)+",angle_x = " +
-			std::to_string(it->angle_x)+",("+std::to_string(it->x1)+","+
+			std::to_string(it->C)+",len = "+std::to_string(it->len)+",K = " +
+			std::to_string(it->K)+",("+std::to_string(it->x1)+","+
 			std::to_string(it->y1)+"),("+std::to_string(it->x2)+","+std::to_string(it->y2)+")]";
 	}
 	ROS_INFO("%s,%d,pub line markers,lines numbers \033[35m%u\033[0m, lines:\033[32m %s \033[0m",__FUNCTION__,__LINE__,lines->size(),msg.c_str());
@@ -455,7 +454,7 @@ bool Laser::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 		i++;
 	}
 	if(lines->at(pos).len >= LONG_ENOUGTH){
-		*align_angle = lines->at(pos).angle_x;
+		*align_angle = lines->at(pos).K;
 		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
 		align_finish_ = true;
 		return true;
@@ -474,10 +473,10 @@ bool Laser::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 			same_angle_count.clear();
 			for(it1 = it2;it1!= lines->cend(); it1++){
 				if((it1+1) != lines->cend()){
-					if(fabs((it1+1)->angle_x - it1->angle_x) < DIF_ANG_RANGE){
-						sum += it1->angle_x;
-						same_angle_count.push_back(it1->angle_x);
-						printf("similar angle %f\n",it1->angle_x);
+					if(fabs((it1+1)->K - it1->K) < DIF_ANG_RANGE){
+						sum += it1->K;
+						same_angle_count.push_back(it1->K);
+						printf("similar angle %f\n",it1->K);
 						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
 							avg = sum / (1.0*same_angle_count.size());
 							*align_angle = avg;
@@ -976,9 +975,7 @@ void Laser::pubFitLineMarker(double a, double b, double c, double y1, double y2)
  * @angle angle from 0 to 359
  * @return distance value (meter)
  * */
-
 double Laser::getLaserDistance(uint16_t angle){
-	ROS_INFO("%s,%d,input angle = %u",__FUNCTION__,__LINE__,angle);
 	if(angle >359 || angle < 0){
 		ROS_WARN("%s,%d,angle should be in range 0 to 359,input angle = %u",__FUNCTION__,__LINE__,angle);
 		return 0;
@@ -1259,7 +1256,8 @@ uint8_t Laser::isRobotSlip()
 	scanOriginal_mutex_.lock();
 	auto tmp_scan_data = laserScanData_original_;
 	scanOriginal_mutex_.unlock();
-	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScanOriginalReady() && ( std::abs(wheel.getLeftWheelSpeed()) >= WSL || std::abs(wheel.getRightWheelSpeed()) >= WSL ) )
+	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScanOriginalReady() && ( std::abs(
+			wheel.getLeftWheelActualSpeed()) >= WSL || std::abs(wheel.getRightWheelActualSpeed()) >= WSL ) )
 	{
 		seq = tmp_scan_data.header.seq;
 		if(last_ranges_init == 0){//for the first time

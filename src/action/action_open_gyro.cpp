@@ -56,8 +56,8 @@ bool EventOpenGyro::setNext() {
 }
 
 void EventOpenGyro::doSomething() {
-				wheel.set_speed(0, 0);
-			gyro.waitForOn();
+	wheel.setPidTargetSpeed(0, 0);
+	gyro.waitForOn();
 
 }
 

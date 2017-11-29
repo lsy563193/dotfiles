@@ -182,11 +182,11 @@ void FollowWallMovement::setTarget()
 void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	ROS_DEBUG("%s %d: FollowWallMovement.", __FUNCTION__, __LINE__);
-	wheel.set_dir_forward();
+	wheel.setDirectionForward();
 //	uint32_t same_dist = (wheel.get_right_step() / 100) * 11 ;
 	uint32_t rcon_status = 0;
-	auto _l_step = wheel.get_left_step();
-	auto _r_step = wheel.get_right_step();
+	auto _l_step = wheel.getLeftStep();
+	auto _r_step = wheel.getRightStep();
 	auto &same_dist = (mt.is_left()) ? _l_step : _r_step;
 	auto &diff_dist = (mt.is_left()) ? _r_step : _l_step;
 	auto &same_speed = (mt.is_left()) ? l_speed : r_speed;
@@ -195,7 +195,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	wall_buffer[1]=wall_buffer[0];
 	wall_buffer[0]=(mt.is_left()) ? wall.getLeft() : wall.getRight();
 
-	rcon_status = c_rcon.get_status();
+	rcon_status = c_rcon.getStatus();
 	/*---only use a part of the Rcon signal---*/
 	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
 	if(rcon_status)
@@ -227,7 +227,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			else if(mt.is_right())
 				angular_speed = 15;
 		}
-		c_rcon.reset_status();
+		c_rcon.resetStatus();
 		/*---check if should aloud the charger---*/
 		if(seen_charger_counter)
 		{

@@ -190,7 +190,7 @@ void init_nav_before_gyro()
 	usleep(30000);
 	gyro.setOn();
 
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	if (g_resume_cleaning)
@@ -273,7 +273,7 @@ void init_exp_before_gyro()
 	usleep(30000);
 	gyro.setOn();
 
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	key.reset();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
@@ -297,7 +297,7 @@ void init_wf_before_gyro()
 	g_wf_start_timer = time(NULL);
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
 	remote.reset_move_with();
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	key.reset();
 	key.reset();
 	gyro.setOff();
@@ -334,7 +334,7 @@ void init_spot_before_gyro()
 		cm_register_events();
 	led.set_mode(LED_FLASH, LED_GREEN, 1000);
 
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	remote.reset_move_with();
 	key.reset();
 
@@ -380,7 +380,7 @@ void init_go_home_before_gyro()
 void init_go_home_after_gyro()
 {
 	cs_work_motor();
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 
 }
 bool wait_for_back_from_charge()
@@ -388,8 +388,8 @@ bool wait_for_back_from_charge()
 	ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
 		auto curr = cost_map.get_curr_cell();
 		path_set_home(curr);
-		extern bool g_from_station;
-		g_from_station = 1;
+		extern bool g_from_charger;
+		g_from_charger = true;
 
 	brush.set_side_pwm(30, 30);
 		int back_segment = MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
@@ -423,7 +423,7 @@ void init_before_gyro()
 {
 	mt.set(cm_is_follow_wall() ? MT_FOLLOW_LEFT_WALL : MT_LINEARMOVE);
 	if(!cs_is_paused())
-		g_from_station = 0;
+		g_from_charger = false;
 	g_motion_init_succeeded = false;
 
 	bool remote_home_during_pause = false;
@@ -500,7 +500,7 @@ void MotionManage::get_aligment_angle()
 			ROS_INFO("%s,%d,ready to find lines ",__FUNCTION__,__LINE__);
 			float align_angle = 0.0;
 			while(1){
-				if(laser.findLines(&lines)){
+				if(laser.findLines(&lines,true)){
 					if(laser.getAlignAngle(&lines,&align_angle))
 						break;
 				}
@@ -584,7 +584,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 {
 	// Set variables.
 	if(!cs_is_paused())
-		g_from_station = 0;
+		g_from_charger = false;
 	g_motion_init_succeeded = false;
 
 	bool remote_home_during_pause = false;
@@ -640,7 +640,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		if (cs.is_open_gyro())
 		{
 			// run
-			wheel.set_speed(0, 0);
+			wheel.setPidTargetSpeed(0, 0);
 
 			// switch
 			gyro.waitForOn();
@@ -659,7 +659,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		else if (cs.is_back_from_charger())
 		{
 			// run
-			wheel.set_speed(20, 20);
+			wheel.setPidTargetSpeed(20, 20);
 
 			// switch
 			if (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5)
@@ -669,7 +669,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		else if (cs.is_open_laser())
 		{
 			// run
-			wheel.set_speed(0, 0);
+			wheel.setPidTargetSpeed(0, 0);
 
 			// switch
 			if (laser.isScanOriginalReady() == 1)
@@ -684,10 +684,10 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		else if (cs.is_align())
 		{
 			// run
-			wheel.set_speed(0, 0);
+			wheel.setPidTargetSpeed(0, 0);
 			std::vector<LineABC> lines;
 			float align_angle = 0.0;
-			if(laser.findLines(&lines))
+			if(laser.findLines(&lines,true))
 			{
 				if (laser.getAlignAngle(&lines,&align_angle))
 					laser.alignAngle(align_angle);
@@ -784,7 +784,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		}
 	}
 
-	if(g_from_station)
+	if(g_from_charger)
 	{
 		robot::instance()->offsetAngle(180);
 		ROS_INFO("%s,%d,\033[32m charge stub postion estiamate on(%d,%d)\033[0m",__FUNCTION__,__LINE__,(-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
@@ -864,7 +864,7 @@ MotionManage::~MotionManage()
 			ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 	}
 	else{
-		g_from_station = 0;
+		g_from_charger = false;
 	}
 
 	if (!ev.charge_detect)

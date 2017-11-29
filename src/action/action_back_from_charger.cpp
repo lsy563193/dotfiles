@@ -13,6 +13,6 @@ bool EventBackFromCharger::setNext() {
 }
 
 void EventBackFromCharger::doSomething() {
-	wheel.set_speed(20, 20);
+	wheel.setPidTargetSpeed(20, 20);
 }
 

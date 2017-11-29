@@ -60,8 +60,7 @@ typedef struct {
 extern float saved_pos_x, saved_pos_y;
 extern bool g_move_back_finished;
 extern bool g_is_left_start;
-extern bool g_from_station;
-extern bool g_in_charge_signal_range;
+extern bool g_from_charger;
 
 extern uint32_t g_wf_start_timer;
 extern uint32_t g_wf_diff_timer;

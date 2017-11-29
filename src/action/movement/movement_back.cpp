@@ -116,13 +116,13 @@ bool BackMovement::isLaserStop()
 void BackMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("BackMovement::adjustSpeed");
-	wheel.set_dir_backward();
+	wheel.setDirBackward();
 	if (!cm_is_follow_wall())
 	{
 		speed_ += ++counter_;
 		speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
 	}
-	wheel.reset_step();
+	wheel.resetStep();
 	/*if (fabsf(distance) >= g_back_distance * 0.8)
 	{
 		l_speed = r_speed = speed_--;

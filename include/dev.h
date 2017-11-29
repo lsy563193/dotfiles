@@ -31,6 +31,6 @@
 #include "vacuum.h"
 #include "wav.h"
 #include "wall_follow.h"
-#include "wheel.h"
+#include "wheel.hpp"
 
 #endif //PP_DEV_H

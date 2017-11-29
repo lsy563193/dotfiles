@@ -673,7 +673,7 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 					float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
 					float& robot_x, float& robot_y, double& robot_yaw)
 {
-	if (wheel.get_left_speed() * wheel.get_right_speed() > 0)
+	if (wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() > 0)
 	{
 		float scale;
 		scale = fabs(slam_correction_x - robot_correction_x) > 0.05 ? 0.1 * fabs(slam_correction_x - robot_correction_x) / 0.05 : 0.03;

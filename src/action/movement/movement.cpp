@@ -39,7 +39,7 @@ bool g_slip_backward = false;
 int16_t bumper_turn_angle()
 {
 	static int bumper_jam_cnt_ = 0;
-	auto get_wheel_step = (mt.is_left()) ? &Wheel::get_right_step : &Wheel::get_left_step;
+	auto get_wheel_step = (mt.is_left()) ? &Wheel::getRightStep : &Wheel::getLeftStep;
 	auto get_obs = (mt.is_left()) ? &Obs::get_left : &Obs::get_right;
 	auto get_obs_value = (mt.is_left()) ? &Obs::get_left_trig_value : &Obs::get_right_trig_value;
 	auto status = ev.bumper_triggered;
@@ -71,7 +71,7 @@ int16_t bumper_turn_angle()
 		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
 	//ROS_INFO("%s %d: g_wall_distance in bumper_turn_angular: %d", __FUNCTION__, __LINE__, g_wall_distance);
-	wheel.reset_step();
+	wheel.resetStep();
 	if(mt.is_right())
 		g_turn_angle = -g_turn_angle;
 	return g_turn_angle;

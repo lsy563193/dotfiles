@@ -154,7 +154,7 @@ void TurnMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto diff = ranged_angle(s_target_angle - robot::instance()->getPoseAngle());
 //	ROS_INFO("TurnMovement::adjustSpeed diff(%d),(%d,%d)", diff,s_target_angle, robot::instance()->getPoseAngle());
 	ROS_DEBUG("%s %d: TurnMovement diff: %d, s_target_angle: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_angle, robot::instance()->getPoseAngle());
-	(diff >= 0) ? wheel.set_dir_left() : wheel.set_dir_right();
+	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 
 //	ROS_INFO("TurnMovement::adjustSpeed");
 	if (std::abs(diff) > 200){
@@ -180,9 +180,9 @@ void TurnMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
 {
 	if ((diff >= 0) && (diff <= 1800))
-		wheel.set_dir_left();
+		wheel.setDirectionLeft();
 	else if ((diff <= 0) && (diff >= (-1800)))
-		wheel.set_dir_right();
+		wheel.setDirectionRight();
 
 	tick_++;
 	if (tick_ > 2)

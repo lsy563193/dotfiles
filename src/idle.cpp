@@ -67,16 +67,16 @@ void idle(void)
 	remote.reset();
 	timer.set_status(0);
 	key.reset();
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 	key.reset();
 	vacuum.stop();
 
-	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, battery.get_voltage());
+	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, battery.getVoltage());
 	// Check the battery to warn the user.
-	if(!battery.is_ready_to_clean() && !cs_is_paused())
+	if(!battery.isReadyToClean() && !cs_is_paused())
 	{
 		ROS_WARN("%s %d: Battery Level Low = \033[31m%4dmV\033[0m(limit = \033[33m%4dmV\033[0m).", __FUNCTION__, __LINE__,
-						 battery.get_voltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+						 battery.getVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		bat_ready_to_clean = false;
 		led.set_mode(LED_BREATH, LED_ORANGE);
 		wav.play(WAV_BATTERY_LOW);
@@ -108,7 +108,7 @@ void idle(void)
 		if (bat_low_delay > 0)
 			bat_low_delay--;
 
-		if(bat_ready_to_clean && !battery.is_ready_to_clean() && !cs_is_paused())
+		if(bat_ready_to_clean && !battery.isReadyToClean() && !cs_is_paused())
 		{
 			bat_ready_to_clean = false;
 			led.set_mode(LED_BREATH, LED_ORANGE);
@@ -255,7 +255,7 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 {
 	if (cs_is_paused())
 	{
-		c_rcon.reset_status();
+		c_rcon.resetStatus();
 		ROS_DEBUG("%s %d: user_interface detects charger signal, but ignore for manual/stuck pause.", __FUNCTION__, __LINE__);
 		return;
 	}
@@ -268,7 +268,7 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 	}
 	else
 	{
-		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, c_rcon.get_status(), (int)(time(NULL) - charger_signal_start_time));
+		ROS_DEBUG("%s %d: detects charger signal(%8x) for %ds.", __FUNCTION__, __LINE__, c_rcon.getStatus(), (int)(time(NULL) - charger_signal_start_time));
 		if (time(NULL) - charger_signal_start_time >= 180)// 3 mins//180
 		{
 			if (error.get())
@@ -279,14 +279,14 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 				temp_mode = Clean_Mode_Go_Charger;
 		}
 	}
-	c_rcon.reset_status();
+	c_rcon.resetStatus();
 }
 
 void Idle_EventHandle::battery_low(bool state_now, bool state_last)
 {
 	if (bat_low_delay == 0)
 		bat_low_start_time = time(NULL);
-	ROS_DEBUG("%s %d: user_interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, battery.get_voltage(), (int)(time(NULL) - bat_low_start_time));
+	ROS_DEBUG("%s %d: user_interface detects battery low %dmv for %ds.", __FUNCTION__, __LINE__, battery.getVoltage(), (int)(time(NULL) - bat_low_start_time));
 	if (time(NULL) - bat_low_start_time >= 5)// 5 seconds
 	{
 		temp_mode = Clean_Mode_Sleep;
@@ -338,7 +338,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 	else if ((remote.get() != Remote_Forward && remote.get() != Remote_Left && remote.get() != Remote_Right &&
 					remote.get() != Remote_Home) && !bat_ready_to_clean)
 	{
-		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.get_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beeper.play_for_command(INVALID);
 		reject_reason = 3;
 	}
@@ -432,7 +432,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 				plan_status = 2;
 				break;
 			}
-			else if (!battery.is_ready_to_clean())
+			else if (!battery.isReadyToClean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
 				reject_reason = 3;
@@ -513,7 +513,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 	else if(!bat_ready_to_clean && !cs_is_paused())
 	{
-		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.get_voltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		reject_reason = 3;
 	}
 

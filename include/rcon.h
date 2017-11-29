@@ -8,100 +8,195 @@
 #include "move_type.h"
 //#include "clean_mode.h"
 #include "clean_state.h"
-bool cm_is_exploration();
-//bool cs.is_going_home();
-extern bool g_from_station;
-extern bool g_motion_init_succeeded;
-extern bool g_in_charge_signal_range;
+
+#if __ROBOT_X900
+
+#define RconBL_HomeL		(uint32_t)0x40000000
+#define RconBL_HomeT		(uint32_t)0x20000000
+#define RconBL_HomeR		(uint32_t)0x10000000
+
+#define RconL_HomeL			(uint32_t)0x04000000
+#define RconL_HomeT			(uint32_t)0x02000000
+#define RconL_HomeR			(uint32_t)0x01000000
+
+#define RconFL2_HomeL		(uint32_t)0x00400000
+#define RconFL2_HomeT		(uint32_t)0x00200000
+#define RconFL2_HomeR		(uint32_t)0x00100000
+
+#define RconFL_HomeL		(uint32_t)0x00040000
+#define RconFL_HomeT		(uint32_t)0x00020000
+#define RconFL_HomeR		(uint32_t)0x00010000
+
+#define RconFR_HomeL		(uint32_t)0x00004000
+#define RconFR_HomeT		(uint32_t)0x00002000
+#define RconFR_HomeR		(uint32_t)0x00001000
+
+#define RconFR2_HomeL		(uint32_t)0x00000400
+#define RconFR2_HomeT		(uint32_t)0x00000200
+#define RconFR2_HomeR		(uint32_t)0x00000100
+
+#define RconR_HomeL			(uint32_t)0x00000040
+#define RconR_HomeT			(uint32_t)0x00000020
+#define RconR_HomeR			(uint32_t)0x00000010
+
+#define RconBR_HomeL		(uint32_t)0x00000004
+#define RconBR_HomeT		(uint32_t)0x00000002
+#define RconBR_HomeR		(uint32_t)0x00000001
+
+#define RconAll_Home_T			(uint32_t)0x22222222
+#define RconAll_Home_LR			(uint32_t)0x55555555
+#define RconAll_Home_TLR		(uint32_t)0x77777777
+#define RconFrontAll_Home_T		(uint32_t)0x02222220
+#define RconFrontAll_Home_LR	(uint32_t)0x05555550
+#define RconFrontAll_Home_TLR	(uint32_t)0x07777770
+#define RconFront_Home_T		(uint32_t)0x00222200
+#define RconFront_Home_LR		(uint32_t)0x00555500
+#define RconFront_Home_TLR		(uint32_t)0x00777700
+#define RconAll_R_HomeT			(uint32_t)0x00002222
+#define RconAll_L_HomeT			(uint32_t)0x22220000
+
+#ifdef VIRTUAL_WALL
+
+#define RconBL_Wall          	(uint16_t)0x8000
+#define RconL_Wall           	(uint16_t)0x4000
+#define RconFL2_Wall           	(uint16_t)0x2000
+#define RconFL_Wall           	(uint16_t)0x1000
+#define RconFR_Wall           	(uint16_t)0x0800
+#define RconFR2_Wall           	(uint16_t)0x0400
+#define RconR_Wall           	(uint16_t)0x0200
+#define RconBR_Wall           	(uint16_t)0x0100
+#define RconBL_Wall_T           (uint16_t)0x0080
+#define RconL_Wall_T           	(uint16_t)0x0040
+#define RconFL2_Wall_T          (uint16_t)0x0020
+#define RconFL_Wall_T           (uint16_t)0x0010
+#define RconFR_Wall_T           (uint16_t)0x0008
+#define RconFR2_Wall_T          (uint16_t)0x0004
+#define RconR_Wall_T           	(uint16_t)0x0002
+#define RconBR_Wall_T           (uint16_t)0x0001
+
+#else
+
+#define RconFL_Wall          	(uint16_t)0x0000
+#define RconFL_Wall_T         (uint16_t)0x0000
+#define RconFR_Wall          	(uint16_t)0x0000
+#define RconFR_Wall_T         (uint16_t)0x0000
+#define RconFL2_Wall         	(uint16_t)0x0000
+#define RconFL2_Wall_T        (uint16_t)0x0000
+#define RconFR2_Wall         	(uint16_t)0x0000
+#define RconFR2_Wall_T        (uint16_t)0x0000
+#define RconL_Wall           	(uint16_t)0x0000
+#define RconL_Wall_T          (uint16_t)0x0000
+#define RconR_Wall           	(uint16_t)0x0000
+#define RconR_Wall_T          (uint16_t)0x0000
+#define RconBL_Wall          	(uint16_t)0x0000
+#define RconBL_Wall_T         (uint16_t)0x0000
+#define RconBR_Wall          	(uint16_t)0x0000
+#define RconBR_Wall_T         (uint16_t)0x0000
+#endif// VIRTUAL_WALL
+
+#else //__ROBOT_X900
+
+#define Rcon_Wall 					((uint32_t) 0x00000008)
+#define Rcon_HomeL 					((uint32_t) 0x00000004)
+#define Rcon_HomeT 					((uint32_t) 0x00000002)
+#define Rcon_HomeR 					((uint32_t) 0x00000001)
+
+#define RconL_HomeL					((uint32_t) 0x00004000)
+#define RconL_HomeR					((uint32_t) 0x00001000)
+
+#define RconFL_HomeL				((uint32_t) 0x00400000)
+#define RconFL_HomeR				((uint32_t) 0x00100000)
+
+#define RconFR_HomeL				((uint32_t) 0x00040000)
+#define RconFR_HomeR				((uint32_t) 0x00010000)
+
+#define RconR_HomeL					((uint32_t) 0x00000400)
+#define RconR_HomeR					((uint32_t) 0x00000100)
+
+#define RconR_HomeT					((uint32_t) 0x00000200)
+#define RconFR_HomeT				((uint32_t) 0x00020000)
+#define RconFL_HomeT				((uint32_t) 0x00200000)
+#define RconL_HomeT					((uint32_t) 0x00002000)
+
+#define RconBR_HomeL				((uint32_t) 0x00000004)
+#define RconBR_HomeR				((uint32_t) 0x00000001)
+#define RconBR_HomeT				((uint32_t) 0x00000002)
+
+#define RconBL_HomeL				((uint32_t) 0x00000040)
+#define RconBL_HomeR				((uint32_t) 0x00000010)
+#define RconBL_HomeT				((uint32_t) 0x00000020)
+
+#define RconR_Wall					((uint32_t) 0x00000700)
+#define RconFR_Wall					((uint32_t) 0x00070000)
+#define RconFL_Wall					((uint32_t) 0x00700000)
+#define RconL_Wall					((uint32_t) 0x00007000)
+#define RconBL_Wall					((uint32_t) 0x00000070)
+#define RconBR_Wall					((uint32_t) 0x00000007)
+#endif //__ROBOT_X900
+
 class Rcon {
-
 public:
+	bool found_charger_;
+	bool in_rcon_signal_range_;
+	bool should_mark_charger_;
+	bool should_mark_temp_charger_;
+public:
+	Rcon();
+	~Rcon();
+	void init();
+	int getTrig(void);
 
-	int get_trig_() {
-		enum {
-			left, fl1, fl2, fr2, fr1, right
-		};
-		static int8_t cnt[6] = {0, 0, 0, 0, 0, 0};
-		const int MAX_CNT = 1;
-//	if(get_status() != 0)
-//		ROS_WARN("get_status(%d)",get_status());
-		if (get_status() & RconL_HomeT)
-			cnt[left]++;
-		if (get_status() & RconFL_HomeT)
-			cnt[fl1]++;
-		if (get_status() & RconFL2_HomeT)
-			cnt[fl2]++;
-		if (get_status() & RconFR2_HomeT)
-			cnt[fr2]++;
-		if (get_status() & RconFR_HomeT)
-			cnt[fr1]++;
-		if (get_status() & RconR_HomeT)
-			cnt[right]++;
-		auto ret = 0;
-		for (int i = 0; i < 6; i++)
-			if (cnt[i] > MAX_CNT) {
-				cnt[left] = cnt[fl1] = cnt[fl2] = cnt[fr2] = cnt[fr1] = cnt[right] = 0;
-				ret = i + 1;
-				break;
-			}
-		reset_status();
-		return ret;
+	void setStatus(uint32_t code) {
+		rcon_status_ = code;
 	}
 
-	int get_trig(void) {
-//	if (cs.is_going_home()) {
-////		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-//		reset_status();
-//		return 0;
-//	}
-		if (mt.is_follow_wall()) {
-//		ROS_WARN("%s %d: rcon(%d).", __FUNCTION__, __LINE__, (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
-//		ROS_WARN("%s %d: ~rcon(%d).", __FUNCTION__, __LINE__, ~(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT));
-//		ROS_WARN("%s %d: status(%d).", __FUNCTION__, __LINE__, (get_status() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)));
-			if (!(get_status() &
-						(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))) {
-				reset_status();
-				return 0;
-			}
-			else
-				return get_trig_();
-		}
-		else if (mt.is_linear()) {
-//		ROS_WARN("%s %d: is called. Skip while going home.", __FUNCTION__, __LINE__);
-			if (cm_is_exploration()) {
-				auto status = get_status() & RconAll_Home_T;
-				reset_status();
-				return status;
-			}
-				// Since we have front left 2 and front right 2 rcon receiver, seems it is not necessary to handle left or right rcon receives home signal.
-			else if (!(get_status() & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))) {
-				reset_status();
-				return 0;
-			}
-			else
-				return get_trig_();
-		}
-		else if (mt.is_go_to_charger()) {
-			auto status = get_status();
-			reset_status();
-			return status;
-		}
-
-		return 0;
+	void resetStatus(void) {
+		rcon_status_ = 0;
 	}
 
-	void set_status(uint32_t code) {
-		movement_status = code;
+	uint32_t getStatus();
+
+	
+	/*
+	 * @author
+	 * @breif set rcon position
+	 * @param1 pos ,position in cell_t
+	 * @return void
+	 * */
+	void setRconPos(Cell_t pos)
+	{
+		charger_pos_ = pos;
 	}
 
-	void reset_status(void) {
-		movement_status = 0;
+	/*
+	 * @author
+	 * @breif get rcon position
+	 * @return rcon position
+	 * */
+	Cell_t getRconPos()
+	{
+		return charger_pos_;
 	}
-
-	uint32_t get_status() ;
+	/*
+	 * @author mengshige1988@qq.com
+	 * @breif estimate charge postiion ,according to rcon sensor signals
+	 * @return true if found ,else false
+	 * */
+	bool estimateChargerPos(uint32_t rcon_value);
 
 private:
-	uint32_t movement_status;
+	uint32_t rcon_status_;
+	Cell_t charger_pos_;//charger postion 
+
+	/*
+	 * @author
+	 * @breif set rcon position
+	 * @param1 cd ,charge direction
+	 * @param2 dist ,distance between robot and charger
+	 * @return void
+	 * */
+	void setRconPos(float cd,float dist);
+
 };
 
 extern Rcon c_rcon;

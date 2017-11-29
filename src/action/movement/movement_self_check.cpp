@@ -12,16 +12,16 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	else if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
 		if (ev.oc_wheel_right) {
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		} else {
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		}
 		left_speed = 30;
 		right_speed = 30;
 	}
 	else if (ev.cliff_jam)
 	{
-		wheel.set_dir_backward();
+		wheel.setDirBackward();
 		left_speed = right_speed = 18;
 	}
 	else if (ev.bumper_jam)
@@ -33,21 +33,21 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			case 3:
 			{
 				// Quickly move back for a distance.
-				wheel.set_dir_backward();
+				wheel.setDirBackward();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
 			case 4:
 			{
 				// Quickly turn right for 90 degrees.
-				wheel.set_dir_right();
+				wheel.setDirectionRight();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
 			case 5:
 			{
 				// Quickly turn left for 180 degrees.
-				wheel.set_dir_left();
+				wheel.setDirectionLeft();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
@@ -61,17 +61,17 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 	else if(g_slip_cnt>=2)
 	{
 		if(g_slip_cnt <3)
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		else if(g_slip_cnt <4)
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		left_speed = right_speed = ROTATE_TOP_SPEED;
 	}
 	else if (ev.laser_stuck)
 	{
-		wheel.set_dir_backward();
+		wheel.setDirBackward();
 		left_speed = right_speed = 2;
 	}
 
-	wheel.set_speed(left_speed, right_speed);
+	wheel.setPidTargetSpeed(left_speed, right_speed);
 }
 

@@ -1,5 +1,5 @@
 //
-// Created by root on 11/29/17.
+// Created by lsy563193 on 6/28/17.
 //
 
 #include "pp.h"
@@ -39,7 +39,7 @@ bool GoToChargerMovement::isSwitch()
 		extern bool g_charge_turn_connect_fail;
 		if(g_charge_turn_connect_fail && no_signal_cnt < 10)
 		{
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code&RconAll_Home_T)
 			{
@@ -148,7 +148,7 @@ bool GoToChargerMovement::isSwitch()
 			}
 
 			// Handle for rcon signal
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			if (receive_code)
 			{
 				go_home_state_now = AROUND_CHARGER_STATION_INIT;
@@ -310,7 +310,7 @@ bool GoToChargerMovement::isSwitch()
 	{
 		go_home_bumper_cnt = 0;
 		//wheel.move_forward(9, 9);
-		c_rcon.reset_status();
+		c_rcon.resetStatus();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
 		go_home_state_now = AROUND_CHARGER_STATION;
 		around_move_cnt = 0;
@@ -339,7 +339,7 @@ bool GoToChargerMovement::isSwitch()
 		if (--around_move_cnt <= 0)
 		{
 			around_move_cnt = 7;
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			if(receive_code)
 				no_signal_cnt = 0;
 			else if(++no_signal_cnt > 60)
@@ -492,9 +492,9 @@ bool GoToChargerMovement::isSwitch()
 				gyro_step += (-angle_offset);
 			last_angle = current_angle;
 
-			ROS_DEBUG("%s %d: Check_Position c_rcon.get_status() == %8x, R... == %8x.", __FUNCTION__, __LINE__,
-								c_rcon.get_status(), RconFrontAll_Home_LR);
-			receive_code = (c_rcon.get_trig()&RconFrontAll_Home_LR);
+			ROS_DEBUG("%s %d: Check_Position c_rcon.getStatus() == %8x, R... == %8x.", __FUNCTION__, __LINE__,
+								c_rcon.getStatus(), RconFrontAll_Home_LR);
+			receive_code = (c_rcon.getTrig()&RconFrontAll_Home_LR);
 			ROS_DEBUG("%s %d: receive code: %8x.", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code)
 			{
@@ -545,7 +545,7 @@ bool GoToChargerMovement::isSwitch()
 			}
 			else
 			{
-				//if((c_rcon.get_status()&RconFront_Home_LR) == 0)
+				//if((c_rcon.getStatus()&RconFront_Home_LR) == 0)
 				//	go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				g_go_to_charger_back_10cm = true;
@@ -568,7 +568,7 @@ bool GoToChargerMovement::isSwitch()
 		if (--by_path_move_cnt < 0)
 		{
 			by_path_move_cnt = 25;
-			receive_code = c_rcon.get_trig();
+			receive_code = c_rcon.getTrig();
 			if(receive_code)
 			{
 				if(receive_code&RconFR_HomeT && receive_code&RconFL_HomeT)
@@ -839,22 +839,22 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	/*---check if near charger station---*/
 	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		l_speed = r_speed = 0;
 	}
 	else if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		l_speed = r_speed = 30;
 	}
 	else if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
 	{
-		wheel.set_dir_right();
+		wheel.setDirectionRight();
 		l_speed = r_speed = 10;
 	}
 	else if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		l_speed = r_speed = 9;
 		around_move_cnt = 0;
 	}
@@ -865,42 +865,42 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			if(receive_code&RconL_HomeT)
 			{
 				ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 22;
 				r_speed = 12;
 			}
 			else if(receive_code&RconL_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect L-L.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 22;
 				r_speed = 12;
 			}
 			else if(receive_code&RconFL2_HomeT)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 23;
 				r_speed = 14;
 			}
 			else if(receive_code&RconFL2_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-L.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 20;
 				r_speed = 14;
 			}
 			else if(receive_code&RconFL2_HomeR)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 15;
 				r_speed = 21;
 			}
 			else
 			{
 				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 14;
 				r_speed = 21;
 			}
@@ -910,49 +910,49 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			if(receive_code&RconR_HomeT)
 			{
 				ROS_DEBUG("%s %d Detect R-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 12;
 				r_speed = 22;
 			}
 			else if(receive_code&RconR_HomeR)
 			{
 				ROS_DEBUG("%s %d Detect R-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 12;
 				r_speed = 22;
 			}
 			else if(receive_code&RconFR2_HomeT)
 			{
 				ROS_DEBUG("%s %d Detect FR2-T.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 14;
 				r_speed = 23;
 			}
 			else if(receive_code&RconFR2_HomeR)
 			{
 				ROS_DEBUG("%s %d Detect FR2-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 14;
 				r_speed = 20;
 			}
 			else if(receive_code&RconFR2_HomeL)
 			{
 				ROS_DEBUG("%s, %d: Detect FL2-R.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 21;
 				r_speed = 15;
 			}
 			else
 			{
 				ROS_DEBUG("%s, %d: Else.", __FUNCTION__, __LINE__);
-				wheel.set_dir_forward();
+				wheel.setDirectionForward();
 				l_speed = 21;
 				r_speed = 14;
 			}
 		}
 		else
 		{
-			wheel.set_dir_forward();
+			wheel.setDirectionForward();
 			l_speed = left_speed_;
 			r_speed = right_speed_;
 		}
@@ -961,14 +961,14 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	{
 		ROS_DEBUG("%s, %d: Check position dir: %d.", __FUNCTION__, __LINE__, check_position_dir);
 		if(check_position_dir == ROUND_LEFT)
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		else if(check_position_dir == ROUND_RIGHT)
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		l_speed = r_speed = 10;
 	}
 	else if (go_home_state_now == BY_PATH)
 	{
-		wheel.set_dir_forward();
+		wheel.setDirectionForward();
 		auto temp_code = receive_code;
 		temp_code &= RconFrontAll_Home_LR;
 		if (by_path_move_cnt == 25 && temp_code)
@@ -1880,7 +1880,7 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}
 		else
 		{
-			wheel.set_dir_forward();
+			wheel.setDirectionForward();
 			l_speed = left_speed_;
 			r_speed = right_speed_;
 		}
@@ -1888,9 +1888,9 @@ void GoToChargerMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	else if (go_home_state_now == TURN_CONNECT)
 	{
 		if (turn_connect_dir == ROUND_RIGHT)
-			wheel.set_dir_right();
+			wheel.setDirectionRight();
 		else if (turn_connect_dir == ROUND_LEFT)
-			wheel.set_dir_left();
+			wheel.setDirectionLeft();
 		l_speed = r_speed = 5;
 	}
 	left_speed_ = l_speed;
