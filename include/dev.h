@@ -12,7 +12,6 @@
 #endif
 
 #include "serial.h"
-#include "controller.h"
 #include "battery.h"
 #include "beep.h"
 #include "bumper.h"
