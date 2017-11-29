@@ -18,8 +18,6 @@
 #include <vacuum.h>
 #include <brush.h>
 #include <remote.h>
-#include <accelerator.h>
-#include <tilt.h>
 #include <led.h>
 #include <charger.h>
 #include <event_manager.h>
@@ -234,8 +232,8 @@ void init_nav_gyro_charge()
 }
 void init_nav_after_charge()
 {
-acc.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.setAccInitData();//about 200ms delay
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	cs_work_motor();
@@ -283,8 +281,8 @@ void init_exp_before_gyro()
 }
 void init_exp_after_gyro()
 {
-	acc.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.setAccInitData();//about 200ms delay
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	cs_work_motor();
@@ -311,8 +309,8 @@ void init_wf_before_gyro()
 void init_wf_after_gyro()
 {
 		// enable titlt detct
-	acc.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.setAccInitData();//about 200ms delay
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
@@ -349,8 +347,8 @@ void init_spot_before_gyro()
 void init_spot_after_gyro()
 {
 		// enable titlt detct
-	acc.setAccInitData();//about 200ms delay
-	tilt.enable(true);
+	gyro.setAccInitData();//about 200ms delay
+	gyro.TiltCheckingEnable(true);
 	ROS_INFO("\033[33m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 
 	g_saved_work_time = 0;
@@ -443,7 +441,7 @@ void init_before_gyro()
 
 	fw_map.reset(MAP);
 	ros_map.reset(MAP);
-	ros2_map.reset(MAP);
+	decrease_map.reset(MAP);
 	switch (cm_get())
 	{
 		case Clean_Mode_Navigation:
@@ -597,6 +595,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		ev.remote_home = true;
 		ROS_INFO("%s %d: Resume remote home.", __FUNCTION__, __LINE__);
 	}
+	initSucceeded(true);
 
 	reset_work_time();
 
@@ -620,7 +619,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 
 	fw_map.reset(MAP);
 	ros_map.reset(MAP);
-	ros2_map.reset(MAP);
+	decrease_map.reset(MAP);
 
 	cs.setNext(CS_OPEN_GYRO);
 	while (ros::ok())
@@ -632,7 +631,10 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		}
 
 		if (p_cm->isExit())
+		{
+			initSucceeded(false);
 			break;
+		}
 
 		if (cs.is_open_gyro())
 		{
@@ -816,7 +818,7 @@ MotionManage::~MotionManage()
 	}
 	// Disable motor here because there ie a cs_work_motor() in spotDeinit().
 	cs_disable_motors();
-	tilt.enable(false);
+	gyro.TiltCheckingEnable(false);
 	g_robot_slip_enable =false;
 	ROS_INFO("\033[35m" "disable tilt detect & robot stuck detect" "\033[0m");
 
@@ -1044,53 +1046,5 @@ bool MotionManage::initGoHome(void)
 		return false;
 	init_go_home_after_gyro();
 	return true;
-}
-
-void MotionManage::pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
-{
-	// temp_target is valid if only path is not empty.
-	if (path.empty())
-		return;
-
-	int16_t x, y, x_min, x_max, y_min, y_max;
-	CellState cell_state;
-	Cell_t next = path.front();
-	Cell_t target = path.back();
-	map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
-
-	if (next.X == SHRT_MIN )
-		next.X = x_min;
-	else if (next.X == SHRT_MAX)
-		next.X = x_max;
-
-	for (x = x_min; x <= x_max; x++)
-	{
-		for (y = y_min; y <= y_max; y++)
-		{
-			if (x == target.X && y == target.Y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else if (x == next.X && y == next.Y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET);
-			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else
-			{
-				cell_state = cost_map.get_cell(MAP, x, y);
-				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
-					robot::instance()->setCleanMapMarkers(x, y, cell_state);
-			}
-		}
-	}
-#if LINEAR_MOVE_WITH_PATH
-	if (!path.empty())
-	{
-		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
-			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
-
-		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
-	}
-#endif
-
-	robot::instance()->pubCleanMapMarkers();
 }
 

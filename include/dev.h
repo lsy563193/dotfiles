@@ -13,7 +13,6 @@
 
 #include "serial.h"
 #include "controller.h"
-#include "accelerator.h"
 #include "battery.h"
 #include "beep.h"
 #include "bumper.h"
@@ -29,7 +28,6 @@
 #include "omni.h"
 #include "rcon.h"
 #include "remote.h"
-#include "tilt.h"
 #include "vacuum.h"
 #include "wav.h"
 #include "wall_follow.h"

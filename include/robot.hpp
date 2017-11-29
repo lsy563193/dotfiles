@@ -52,7 +52,7 @@ public:
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::vector<Point_d_t> *point, std::string frame_id);
 	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
-	void pubCleanMapMarkers(void);
+	void pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 
 	// Service caller functions.
 	bool laserMotorCtrl(bool switch_);

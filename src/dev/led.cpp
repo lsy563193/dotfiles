@@ -9,8 +9,8 @@ void Led::set(uint16_t G, uint16_t R)
 	// Set the brightnesss of the LED within range(0, 100).
 	G = G < 100 ? G : 100;
 	R = R < 100 ? R : 100;
-	controller.set(CTL_LED_RED, R & 0xff);
-	controller.set(CTL_LED_GREEN, G & 0xff);
+	serial.setSendData(CTL_LED_RED, R & 0xff);
+	serial.setSendData(CTL_LED_GREEN, G & 0xff);
 }
 
 void Led::set_mode(uint8_t type, uint8_t color, uint16_t time_ms)

@@ -22,17 +22,8 @@ public:
 		init_z_acc_ = 0;
 		calibration_status_ = 255;
 		status_ = 0;
+		tilt_checking_status_ = 0;
 	}
-
-	bool waitForOn(void);
-
-	bool isStable(void);
-
-	void setOff(void);
-
-	void setOn(void);
-
-	void reOpen(void);
 
 	void setStatus(void);
 
@@ -40,47 +31,141 @@ public:
 
 	bool isOn(void);
 
+	void setOn(void);
+
+	void reOpen(void);
+
+	bool waitForOn(void);
+
+	bool isStable(void);
+
+	void setOff(void);
+
+	int16_t getFront(void);
+
+	int16_t getLeft(void);
+
+	int16_t getRight(void);
+
+	int16_t getFrontInit(void);
+
+	int16_t getLeftInit(void);
+
+	int16_t getRightInit(void);
+
+	void setAccInitData(void);
+
 #if GYRO_DYNAMIC_ADJUSTMENT
 
 	void setDynamicOn(void);
 
 	void setDynamicOff(void);
-
 #endif
 
-	int16_t getXAcc(void);
+	uint8_t checkTilt(void);
 
-	void setXAcc(int16_t x_acc);
+	bool isTiltCheckingEnable(void);
 
-	int16_t getYAcc(void);
+	void TiltCheckingEnable(bool val);
 
-	void setYAcc(int16_t y_acc);
+	int16_t getXAcc(void)
+	{
+		return x_acc_;
+	}
 
-	int16_t getZAcc(void);
+	void setXAcc(int16_t x_acc)
+	{
+		x_acc_ = x_acc;
+	}
 
-	void setZAcc(int16_t z_acc);
+	int16_t getYAcc(void)
+	{
+		return y_acc_;
+	}
 
-	uint8_t getCalibration(void);
+	void setYAcc(int16_t y_acc)
+	{
+		y_acc_ = y_acc;
+	}
 
-	float getAngle(void);
+	int16_t getZAcc(void)
+	{
+		return z_acc_;
+	}
 
-	void setAngle(float angle);
+	void setZAcc(int16_t z_acc)
+	{
+		z_acc_ = z_acc;
+	}
 
-	float getAngleV();
+	uint8_t getCalibration(void)
+	{
+		return calibration_status_;
+	}
 
-	void setAngleV(float angle_v);
+	void setCalibration(uint8_t val)
+	{
+		calibration_status_ = val;
+	}
 
-	int16_t getInitXAcc() const;
+	float getAngle(void)
+	{
+		return angle_; 
+	}
+	void setAngle(float angle)
+	{
+		angle_ = angle;
+	}
 
-	int16_t getInitYAcc() const;
+	float getAngleV()
+	{
+		return angle_v_;
+	}
 
-	int16_t getInitZAcc() const;
+	void setAngleV(float angle_v)
+	{
+		angle_v_ = angle_v;
+	}
 
-	void setInitXAcc(int16_t val);
+	int16_t getInitXAcc() const
+	{
+		return init_x_acc_;
+	}
 
-	void setInitYAcc(int16_t val);
+	void setInitXAcc(uint16_t val)
+	{
+		init_x_acc_ = val;
+	}
 
-	void setInitZAcc(int16_t val);
+	int16_t getInitYAcc() const
+	{
+		return init_y_acc_;
+	}
+
+	void setInitYAcc(uint16_t val)
+	{
+		init_y_acc_ = val;
+	}
+
+	int16_t getInitZAcc() const
+	{
+		return init_z_acc_;
+	}
+
+	void setInitZAcc(int16_t val)
+	{
+		init_z_acc_ = val;
+	}
+
+	void setTiltCheckingStatus(uint8_t status)
+	{
+		tilt_checking_status_ = status;
+	}
+
+	uint8_t getTiltCheckingStatus()
+	{
+		return tilt_checking_status_;
+	}
 
 private:
 
@@ -104,6 +189,9 @@ private:
 	float average_angle_;
 	uint8_t check_stable_count_;
 	float last_angle_v_;
+	//for tilt checking
+	bool tilt_checking_enable_;
+	uint8_t tilt_checking_status_;
 };
 
 extern Gyro gyro;

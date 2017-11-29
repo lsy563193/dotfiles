@@ -20,7 +20,6 @@
 #include <pp.h>
 #include <bumper.h>
 #include <obs.h>
-#include <tilt.h>
 #include <beep.h>
 #include <wall_follow.h>
 #include <odom.h>
@@ -100,7 +99,7 @@ int16_t cliff_turn_angle()
 
 int16_t tilt_turn_angle()
 {
-	auto tmp_status = tilt.get_status();
+	auto tmp_status = gyro.getTiltCheckingStatus();
 	if (mt.is_left())
 	{
 		if (tmp_status | TILT_LEFT)
@@ -319,7 +318,7 @@ bool BackMovement::isReach()
 
 		g_bumper_cnt = bumper.get_status() == 0 ? 0 : g_bumper_cnt+1 ;
 		g_cliff_cnt = cliff.get_status() == 0 ? 0 : g_cliff_cnt+1 ;
-		ev.tilt_triggered = tilt.get_status();
+		ev.tilt_triggered = gyro.getTiltCheckingStatus();
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
 		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !ev.tilt_triggered)
@@ -467,7 +466,7 @@ bool TurnMovement::shouldMoveBack()
 	// Robot should move back for these cases.
 	ev.bumper_triggered = bumper.get_status();
 	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = tilt.get_status();
+	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
@@ -656,7 +655,7 @@ bool ForwardMovement::shouldMoveBack()
 	// Robot should move back for these cases.
 	ev.bumper_triggered = bumper.get_status();
 	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = tilt.get_status();
+	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 	{
@@ -771,7 +770,7 @@ void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	if (integration_cycle_++ > 10) {
 		auto t = cost_map.point_to_cell(target_p);
-		MotionManage::pubCleanMapMarkers(cost_map, g_plan_path, &t);
+		robot::instance()->pubCleanMapMarkers(cost_map, g_plan_path, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
@@ -779,8 +778,8 @@ void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	auto obstalce_distance_front = laser.getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.get_status();
-	bool should_rosmap2_decrease = ros2_map.is_block();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25) || should_rosmap2_decrease)
+	bool is_decrease_blocked = decrease_map.is_block();
+	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25) || is_decrease_blocked)
 	{
 //		ROS_WARN("decelarate");
 		if (distance < SLOW_DOWN_DISTANCE)
@@ -904,7 +903,7 @@ bool FollowWallMovement::shouldMoveBack()
 		ROS_WARN("%s %d: Cliff triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
-	ev.tilt_triggered = tilt.get_status();
+	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 	if (ev.tilt_triggered) {
 		g_turn_angle = tilt_turn_angle();
 		ROS_WARN("%s %d: Tilt triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);

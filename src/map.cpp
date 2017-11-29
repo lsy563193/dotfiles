@@ -23,7 +23,7 @@
 CostMap cost_map;
 CostMap fw_map;
 CostMap ros_map;
-CostMap ros2_map;
+CostMap decrease_map;
 
 SlamMap slam_map;
 
@@ -325,6 +325,7 @@ Point32_t CostMap::cell_to_point(const Cell_t& cell) {
 	Point32_t pnt;
 	pnt.X = cell_to_count(cell.X);
 	pnt.Y = cell_to_count(cell.Y);
+	pnt.TH = cell.TH;
 	return pnt;
 }
 
@@ -363,74 +364,96 @@ void CostMap::reset(uint8_t id)
 #endif
 }
 
-void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block, bool is_freshen_map,int limit)
+void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block, bool is_freshen_map,int limit, SlamMap* slam_map_)
 {
-	std::vector<int8_t> map_data;
-	uint32_t width, height;
-	float resolution;
-	double origin_x, origin_y;
-	unsigned int mx,my;
-	double wx, wy;
-	int32_t cx, cy;
-	int16_t cell_x,cell_y;
-	int8_t cost;
+	std::vector<int> data_index;
+	std::vector<int8_t> p_map_data;
+	unsigned int map_x,map_y,map_x_min,map_x_max,map_y_min,map_y_max;
+	double world_x, world_y;
+	int32_t count_x, count_y;
+	int16_t cell_x, cell_y;
+	int size;
+	/*---values for counting sum of difference rosmap cells---*/
+	uint32_t occupied_counter = 0, free_counter = 0, unknown_counter = 0;
+
 	slam_map_mutex.lock();
-	width = slam_map.getWidth();
-	height = slam_map.getHeight();
-	resolution = slam_map.getResolution();
-	origin_x = slam_map.getOriginX();
-	origin_y = slam_map.getOriginY();
-	map_data = slam_map.getData();
-	slam_map_mutex.unlock();
-//map_worldToMap(origin_x, origin_y,resolution, width, height, wx, wy, mx, my);
-//cost = getCost(p_map_data, width, mx, my);
-	int size = map_data.size();
-	for (int i = 0; i< size; i++) {
-		indexToCells(width, i, mx, my);
-		cost = map_data[getIndex(width, mx, my)];
-		to_world(origin_x, origin_y, resolution, mx, my, wx, wy);
-		worldToCount(wx, wy, cx, cy);
-		auto temp_cell_x = count_to_cell(cx);
-		auto temp_cell_y = count_to_cell(cy);
-		//auto status = get_cell(id, cell_x, cell_y);
-		auto status = get_cell(id, temp_cell_x, temp_cell_y);
-#if 0
-		if (cell_x == temp_cell_x && cell_y == temp_cell_y) {
-			/*if (status == BLOCKED_ROS_MAP) {
-				continue;
-			}*/
-			continue;
-		} else {
-			cell_x = temp_cell_x;
-			cell_y = temp_cell_y;
-		}
-#endif
-		if (cost == -1) {/*unkown space*/
-			//ROS_INFO("unkown space");
-		} else if (cost == 100) {/*occupied place*/
-			if (is_freshen_map) {
-				if((status < BLOCKED || status > BLOCKED_BOUNDARY) && (status != BLOCKED_ROS_MAP)) {
-					set_cell(id, cx, cy, BLOCKED_ROS_MAP);
-				}
-			} else {
-				set_cell(id, cx, cy, BLOCKED_ROS_MAP);
-			}
-		} else if (cost == 0 ) {/*free space*/
-			if(is_mark_cleaned && status <= 1)
-				set_cell(id, cx, cy, CLEANED);
-			if(is_clear_false_block && (status < BLOCKED || status > BLOCKED_BOUNDARY))
+	auto width = slam_map_->getWidth();
+	auto height = slam_map_->getHeight();
+	auto resolution = slam_map_->getResolution();
+	auto origin_x = slam_map_->getOriginX();
+	auto origin_y = slam_map_->getOriginY();
+	p_map_data = slam_map_->getData();
+
+	/*---side length multi between cell and rosmap cell---*/
+	auto multi = CELL_SIZE / (uint32_t)(resolution * 1000.0);
+	/*----limit count for checking blocked---*/
+	auto limit_count = (multi * multi) * limit / 100;
+	/*---work out the boundary---*/
+	auto cell_x_min = (int16_t)(origin_x * 1000.0 / CELL_SIZE);
+	auto cell_x_max = cell_x_min + (int16_t)(width / multi);
+	auto cell_y_min = (int16_t)(origin_y * 1000.0 / CELL_SIZE);
+	auto cell_y_max = cell_y_min + (int16_t)(height / multi);
+
+	//ROS_INFO("%s,%d: cell_x_min: %d, cell_x_max: %d, cell_y_min: %d, cell_y_max: %d", __FUNCTION__, __LINE__, cell_x_min, cell_x_max, cell_y_min, cell_y_max);
+	for (auto cell_x = cell_x_min; cell_x <= cell_x_max; ++cell_x)
+	{
+		for (auto cell_y = cell_y_min; cell_y <= cell_y_max; ++cell_y)
+		{
+			auto status = get_cell(id, cell_x, cell_y);
+			count_x = cell_to_count(cell_x);
+			count_y = cell_to_count(cell_y);
+			countToWorld(world_x, world_y, count_x, count_y);
+			worldToMap(origin_x, origin_y, resolution, width, height, world_x, world_y, map_x, map_y);
+
+			map_x_min = (map_x > multi/2) ? (map_x - multi/2) : 0;
+			map_x_max = ((map_x + multi/2) < width) ? (map_x + multi/2) : width;
+			map_y_min = (map_y > multi/2) ? (map_y - multi/2) : 0;
+			map_y_max = ((map_y + multi/2) < height) ? (map_y + multi/2) : height;
+
+			for (int i=map_x_min; i<=map_x_max; i++)
+				for(int j=map_y_min; j<=map_y_max; j++)
+					data_index.push_back(getIndex(width, i, j));
+
+			size = data_index.size();
+			for(int index=0; index<size; index++)
 			{
-				set_cell(id, cx, cy, CLEANED);
-				auto status = get_cell(id, count_to_cell(cx), count_to_cell(cy));
+				if(p_map_data[data_index[index]] == 100)		occupied_counter++;
+				else if(p_map_data[data_index[index]] == -1)	unknown_counter++;
+				else if(p_map_data[data_index[index]] == 0)	free_counter++;
 			}
-			/*freshen the costmap*/
-			if (is_freshen_map && (status == BLOCKED_ROS_MAP)) {
-				set_cell(id, cx, cy, CLEANED);
+
+			if(unknown_counter == size)/*---unknown cell---*/
+			{
+			//	ROS_INFO("---unknown cell---");
 			}
+			else if(occupied_counter > limit_count)/*---occupied cell---*/
+			{
+			//	ROS_INFO("---occupied cell---");
+				if (is_freshen_map)
+					if((status < BLOCKED || status > BLOCKED_BOUNDARY) && (status != BLOCKED_ROS_MAP))
+						set_cell(id, count_x, count_y, BLOCKED_ROS_MAP);
+				else
+					set_cell(id, count_x, count_y, BLOCKED_ROS_MAP);
+			}
+			else/*---free cell---*/
+			{
+			//	ROS_INFO("---free cell---");
+				if(is_mark_cleaned && status <= 1)
+					set_cell(id, count_x, count_y, CLEANED);
+				if(is_clear_false_block && (status < BLOCKED || status > BLOCKED_BOUNDARY))
+					set_cell(id, count_x, count_y, CLEANED);
+				/*freshen the map*/
+				if (is_freshen_map && (status == BLOCKED_ROS_MAP))
+					set_cell(id, count_x, count_y, CLEANED);
+			}
+			/*---clear data_index and counter for next loop---*/
+			data_index.clear();
+			occupied_counter = 0;
+			free_counter = 0;
+			unknown_counter = 0;
 		}
 	}
-	//ROS_WARN("end ros costmap convert");
-//	ROS_ERROR("size = %d, width = %d, height = %d, origin_x = %lf, origin_y = %lf, wx = %lf, wy = %lf, mx = %d, my = %d, cx = %d, cy = %d, cost = %d.", size, width, height, origin_x, origin_y, wx, wy, mx, my, cx, cy,cost);
+	slam_map_mutex.unlock();
 }
 
 void CostMap::to_world(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double &wx,
@@ -479,14 +502,10 @@ bool CostMap::worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 	return true;
 }
 
-bool count_to_world(double &wx, double &wy, int32_t &cx, int32_t &cy)
+bool CostMap::countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy)
 {
-	auto count_x = wx * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	auto count_y = wy * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-//cx = count_to_cell(count_x);
-	cx = count_x;
-//cy = count_to_cell(count_y);
-	cy = count_y;
+	wx = (double)cx * CELL_SIZE / CELL_COUNT_MUL / 1000.0;
+	wy = (double)cy * CELL_SIZE / CELL_COUNT_MUL / 1000.0;
 	return true;
 }
 

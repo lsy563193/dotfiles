@@ -7,7 +7,6 @@
 #include <vacuum.h>
 #include <brush.h>
 #include <bumper.h>
-#include <tilt.h>
 #include <wheel.h>
 #include <odom.h>
 
@@ -276,7 +275,7 @@ bool check_pub_scan()
 	if (g_motion_init_succeeded &&
 		((fabs(wheel.getLeftWheelSpeed() - wheel.getRightWheelSpeed()) > 0.1)
 		|| (wheel.getLeftWheelSpeed() * wheel.getRightWheelSpeed() < 0)
-		|| bumper.get_status() || tilt.get_status()
+		|| bumper.get_status() || gyro.getTiltCheckingStatus()
 		|| abs(wheel.get_left_speed() - wheel.get_right_speed()) > 100
 		|| wheel.get_left_speed() * wheel.get_right_speed() < 0))
 		return false;
