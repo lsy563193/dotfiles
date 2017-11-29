@@ -56,13 +56,13 @@ void *core_move_thread(void *)
 		switch(cm_get()){
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
-				controller.setCleanMode(Clean_Mode_Idle);
+				serial.setCleanMode(Clean_Mode_Idle);
 //				wav.play(WAV_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:
 				ROS_INFO("\n-------wall follow mode_------\n");
-				controller.setCleanMode(Clean_Mode_WallFollow);
+				serial.setCleanMode(Clean_Mode_WallFollow);
 				g_is_low_bat_pause = false;
 
 				cs_paused_setting();
@@ -72,18 +72,18 @@ void *core_move_thread(void *)
 				break;
 			case Clean_Mode_Navigation:
 				ROS_INFO("\n-------Navigation mode_------\n");
-				controller.setCleanMode(Clean_Mode_Navigation);
+				serial.setCleanMode(Clean_Mode_Navigation);
 				cm_cleaning();
 				break;
 			case Clean_Mode_Charging:
 				ROS_INFO("\n-------Charge mode_------\n");
-				controller.setCleanMode(Clean_Mode_Charging);
+				serial.setCleanMode(Clean_Mode_Charging);
 				charge_function();
 				break;
 			case Clean_Mode_Go_Charger:
 				//goto_charger();
 				ROS_INFO("\n-------GoHome mode_------\n");
-				controller.setCleanMode(Clean_Mode_Go_Charger);
+				serial.setCleanMode(Clean_Mode_Go_Charger);
 				g_is_low_bat_pause = false;
 				cs_paused_setting();
 #if GO_HOME_REGULATOR
@@ -96,7 +96,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Exploration:
 				//goto_charger();
 				ROS_INFO("\n-------Exploration mode_------\n");
-				controller.setCleanMode(Clean_Mode_Exploration);
+				serial.setCleanMode(Clean_Mode_Exploration);
 				g_is_low_bat_pause = false;
 				cs_paused_setting();
 				cm_cleaning();
@@ -111,7 +111,7 @@ void *core_move_thread(void *)
 
 			case Clean_Mode_Spot:
 				ROS_INFO("\n-------Spot mode_------\n");
-				controller.setCleanMode(Clean_Mode_Spot);
+				serial.setCleanMode(Clean_Mode_Spot);
 				g_is_low_bat_pause = false;
 				cs_paused_setting();
 				remote.reset();
@@ -123,7 +123,7 @@ void *core_move_thread(void *)
 
 			case Clean_Mode_Sleep:
 				ROS_INFO("\n-------Sleep mode_------\n");
-				//controller.setStatus(Clean_Mode_Sleep);
+				//serial.setStatus(Clean_Mode_Sleep);
 				g_is_low_bat_pause = false;
 				cs_paused_setting();
 				cs_disable_motors();
@@ -162,7 +162,7 @@ int main(int argc, char **argv)
 	nh_private.param<int>("baudrate", baudrate, 57600);
 	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper, "/dev/input/event0");
 	
-	serial_init(serial_port.c_str(), baudrate);
+	serial.init(serial_port.c_str(), baudrate);
 	if(bumper_lidar_init(lidar_bumper.c_str()) == -1){
 		ROS_ERROR(" lidar bumper open fail!");
 	}

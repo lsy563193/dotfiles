@@ -54,9 +54,9 @@ void sleep_mode(void)
 	led.set_mode(LED_STEADY, LED_OFF);
 
 	cs_disable_motors();
-	controller.setCleanMode(POWER_DOWN);
+	serial.setCleanMode(POWER_DOWN);
 	usleep(20000);
-	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, controller.getCleanMode());
+	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, serial.getCleanMode());
 
 	key.reset();
 	c_rcon.reset_status();
@@ -153,7 +153,7 @@ void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 	if (error.get() == Error_Code_None)
 	{
-		controller.setCleanMode(Clean_Mode_Go_Charger);
+		serial.setCleanMode(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
 	}
 	reset_sleep_mode_flag();
@@ -162,7 +162,7 @@ void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
-	controller.setCleanMode(Clean_Mode_Idle);
+	serial.setCleanMode(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
 	reset_sleep_mode_flag();
 }
@@ -184,7 +184,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 		else
 		{
-			controller.setCleanMode(Clean_Mode_Navigation);
+			serial.setCleanMode(Clean_Mode_Navigation);
 			g_plan_activated = true;
 		}
 	}
@@ -196,7 +196,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
-	controller.setCleanMode(Clean_Mode_Idle);
+	serial.setCleanMode(Clean_Mode_Idle);
 	reset_sleep_mode_flag();
 	usleep(20000);
 
@@ -212,7 +212,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
-	controller.setCleanMode(Clean_Mode_Charging);
+	serial.setCleanMode(Clean_Mode_Charging);
 	ev.charge_detect = true;
 	reset_sleep_mode_flag();
 }

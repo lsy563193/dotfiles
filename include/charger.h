@@ -5,7 +5,7 @@
 #ifndef PP_CHARGER_H
 #define PP_CHARGER_H
 
-#include <controller.h>
+#include <serial.h>
 #include <pp/x900sensor.h>
 extern pp::x900sensor sensor;
 
@@ -32,12 +32,12 @@ public:
 
 	void set_start(void) {
 		// This function will turn on the charging function.
-		controller.setSendData(CTL_CHARGER, 0x01);
+		serial.setSendData(CTL_CHARGER, 0x01);
 	}
 
 	void set_stop(void) {
 		// Set the flag to false so that it can quit charger mode_.
-		controller.setSendData(CTL_CHARGER, 0x00);
+		serial.setSendData(CTL_CHARGER, 0x00);
 	}
 
 	int getChargeStatus() const

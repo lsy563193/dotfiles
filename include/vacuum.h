@@ -10,7 +10,7 @@
 #define Vac_Speed_NormalL			50 //8000rpm
 
 #include <pp/x900sensor.h>
-#include "controller.h"
+#include "serial.h"
 extern pp::x900sensor sensor;
 enum {
 Vac_Normal=0,
@@ -43,13 +43,13 @@ public:
 	void bldc_speed(uint32_t S);
 
 	void start_self_check(void) {
-		uint8_t omni_reset_byte = controller.getSendData(CTL_OMNI_RESET);
-		controller.setSendData(CTL_OMNI_RESET, omni_reset_byte | 0x02);
+		uint8_t omni_reset_byte = serial.getSendData(CTL_OMNI_RESET);
+		serial.setSendData(CTL_OMNI_RESET, omni_reset_byte | 0x02);
 	}
 
 	void reset_self_check(void) {
-		uint8_t omni_reset_byte = controller.getSendData(CTL_OMNI_RESET);
-		controller.setSendData(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
+		uint8_t omni_reset_byte = serial.getSendData(CTL_OMNI_RESET);
+		serial.setSendData(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
 	}
 
 	uint8_t get_self_check_status(void) {

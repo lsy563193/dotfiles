@@ -61,7 +61,7 @@ void Vacuum::bldc_speed(uint32_t S)
 {
 	// Set the power of BLDC, S should be in range(0, 100).
 	S = S < 100 ? S : 100;
-	controller.setSendData(CTL_VACCUM_PWR, S & 0xff);
+	serial.setSendData(CTL_VACCUM_PWR, S & 0xff);
 }
 
 void Vacuum::set_speed_by_mode(void)

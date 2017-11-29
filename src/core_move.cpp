@@ -2,7 +2,6 @@
 #include <brush.h>
 #include <bumper.h>
 #include <remote.h>
-#include <tilt.h>
 #include <beep.h>
 #include <charger.h>
 #include <wall_follow.h>
@@ -244,7 +243,7 @@ void cm_apply_cs(void) {
 	}
 	if (cs.is_go_charger())
 	{
-		tilt.enable(false); //disable tilt detect
+		gyro.TiltCheckingEnable(false); //disable tilt detect
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if (cs.is_self_check())
