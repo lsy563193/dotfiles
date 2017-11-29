@@ -17,6 +17,20 @@
 
 Gyro gyro;
 
+Gyro::Gyro(void) {
+	angle_ = 0;
+	angle_v_ = 0;
+	x_acc_ = 0;
+	y_acc_ = 0;
+	z_acc_ = 0;
+	init_x_acc_ = 0;
+	init_y_acc_ = 0;
+	init_z_acc_ = 0;
+	calibration_status_ = 255;
+	status_ = 0;
+	tilt_checking_status_ = 0;
+}
+
 void Gyro::setStatus(void)
 {
 	status_ = true;

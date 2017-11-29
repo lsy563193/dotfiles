@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 	bool	verify_ok = true;
 	pthread_t	core_move_thread_id, event_manager_thread_id, event_handler_thread_id;
 	std::string	serial_port;
-	std::string lidar_bumper;
+	std::string lidar_bumper_dev;
 
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
@@ -159,10 +159,10 @@ int main(int argc, char **argv)
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 57600);
-	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper, "/dev/input/event0");
+	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
 	
 	serial.init(serial_port.c_str(), baudrate);
-	if(bumper_lidar_init(lidar_bumper.c_str()) == -1){
+	if(bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1){
 		ROS_ERROR(" lidar bumper open fail!");
 	}
 #if VERIFY_CPU_ID
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 		led.set_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
-	bumper_lidar_deinit();
+	bumper.lidarBumperDeinit();
 	robotbase_deinit();
 	return 0;
 }

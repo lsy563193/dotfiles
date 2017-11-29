@@ -119,7 +119,7 @@ uint8_t cs_self_check(uint8_t Check_Code)
 	{
 		if (!mbrushchecking)
 		{
-			brush.set_main_pwm(0);
+			brush.setMainPwm(0);
 			mbrushchecking = 1;
 			mboctime = time(NULL);
 		} else if ((uint32_t) difftime(time(NULL), mboctime) >= 3)
@@ -216,14 +216,14 @@ void cs_work_motor(void)
 		// Set the vacuum to a normal mode
 		vacuum.mode(Vac_Normal, false);
 		// Turn on the main brush and side brush
-		brush.set_side_pwm(30, 30);
+		brush.setSidePwm(30, 30);
 	} else {
 		vacuum.mode(Vac_Save);
 		// Turn on the main brush and side brush
-		brush.set_side_pwm(50, 50);
+		brush.setSidePwm(50, 50);
 	}
 
-	brush.set_main_pwm(30);
+	brush.setMainPwm(30);
 }
 
 bool cs_is_paused()

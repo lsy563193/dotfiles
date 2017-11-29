@@ -5,6 +5,7 @@
 #ifndef PP_REMOTE_H
 #define PP_REMOTE_H
 
+#include "ros/ros.h"
 
 class Remote {
 public:

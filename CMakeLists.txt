@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
+        include/*
 	src/charge.cpp
 #	src/clean_mode.cpp
 	src/clean_state.cpp

@@ -13,6 +13,7 @@
 #include <clean_timer.h>
 #include <odom.h>
 #include <serial.h>
+#include <robotbase.h>
 
 #define  _RATE 50
 
@@ -291,13 +292,15 @@ void *robotbase_routine(void*)
 
 		sensor.lbumper = (serial.receive_stream[REC_BUMPER] & 0xf0) ? true : false;
 		sensor.rbumper = (serial.receive_stream[REC_BUMPER] & 0x0f) ? true : false;
-		auto lidar_bumper_status = bumper_get_lidar_status();
-		if (lidar_bumper_status == 1)
-			sensor.lidar_bumper = 1;
-		else if (lidar_bumper_status == 0)
-			sensor.lidar_bumper = 0;
-		// else if (lidar_bumper_status == -1)
-		// sensor.lidar_bumper = sensor.lidar_bumper;
+		auto _left_bumper_status = (serial.receive_stream[REC_BUMPER] & 0xf0) ? true : false;
+		auto _right_bumper_status = (serial.receive_stream[REC_BUMPER] & 0x0f) ? true : false;
+		sensor.lbumper = static_cast<uint8_t>(_left_bumper_status);
+		sensor.rbumper = static_cast<uint8_t>(_right_bumper_status);
+		bumper.setLeft(_left_bumper_status);
+		bumper.setRight(_right_bumper_status);
+
+		bumper.setLidarBumperStatus();
+		sensor.rbumper = static_cast<uint8_t>(bumper.getLidarBumperStatus());
 
 		sensor.ir_ctrl = serial.receive_stream[REC_REMOTE_IR];
 		if (sensor.ir_ctrl > 0)
@@ -349,8 +352,11 @@ void *robotbase_routine(void*)
 
 		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0x30);
 		sensor.lbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x08) ? true : false;		// left brush over current
+		brush.setLeftOc(sensor.lbrush_oc);
 		sensor.mbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x04) ? true : false;		// main brush over current
+		brush.setMainOc(sensor.mbrush_oc);
 		sensor.rbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x02) ? true : false;		// right brush over current
+		brush.setRightOc(sensor.rbrush_oc);
 		sensor.vcum_oc = (serial.receive_stream[REC_CL_OC] & 0x01) ? true : false;		// vaccum over current
 
 		sensor.gyro_dymc = serial.receive_stream[REC_GYRO_DYMC];

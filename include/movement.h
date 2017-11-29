@@ -26,10 +26,6 @@
 #define Room_Mode_Large (uint8_t)0x00
 
 #define CLIFF_LIMIT  60
-#define BLOCK_LEFT				((uint8_t) 0x01)
-#define BLOCK_RIGHT			((uint8_t) 0x02)
-#define BLOCK_FRONT			((uint8_t) 0x04)
-#define BLOCK_ALL			((uint8_t) 0x07)
 
 #define Status_Left_Wall			((uint8_t) 0x01)
 //#define Status_Left_OBS				((uint8_t) 0x02)

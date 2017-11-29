@@ -5,51 +5,60 @@
 #ifndef PP_BUMPER_H
 #define PP_BUMPER_H
 
-#include "movement.h"
-#include <pp/x900sensor.h>
-extern pp::x900sensor sensor;
-
-
 class Bumper{
 public:
-	uint8_t get_status(void) {
-		uint8_t Temp_Status = 0;
+	Bumper()
+	{
+		left_bumper_status_ = false;
+		right_bumper_status_ = false;
+		lidar_bumper_status_ = false;
+		lidar_bumper_fd_ = -1;
+		lidar_bumper_activated_ = false;
+	}
 
-		if (getLeft()) {
-			Temp_Status |= BLOCK_LEFT;
-		}
-		if (getRight()) {
-			Temp_Status |= BLOCK_RIGHT;
-		}
-		if (getLidar()) {
-			//Temp_Status |= LidarTrig;
-			Temp_Status |= BLOCK_FRONT;
-		}
-		if (Temp_Status == (BLOCK_LEFT | BLOCK_RIGHT) || (Temp_Status & BLOCK_FRONT) != 0)
-			Temp_Status = BLOCK_ALL;
-		return Temp_Status;
+	uint8_t get_status(void);
+
+	bool getLeft() const
+	{
+		return left_bumper_status_;
+	}
+
+	void setLeft(bool status)
+	{
+		left_bumper_status_ = status;
 	}
 
 	bool getRight() const
 	{
-		return sensor.rbumper;
+		return right_bumper_status_;
 	}
 
-	bool getLeft() const
+	void setRight(bool status)
 	{
-		return sensor.lbumper;
+		right_bumper_status_ = status;
 	}
 
-	uint8_t getLidar() const
+	void setLidarBumperStatus();
+
+	bool getLidarBumperStatus()
 	{
-		return (uint8_t)sensor.lidar_bumper;
+		return lidar_bumper_status_;
 	}
+
+	int8_t lidarBumperInit(const char *device);
+	int8_t lidarBumperDeinit();
+
+private:
+	bool left_bumper_status_;
+	bool right_bumper_status_;
+	bool lidar_bumper_status_;
+
+	// For lidar bumper.
+	int lidar_bumper_fd_;
+	bool lidar_bumper_activated_;
 
 };
 
 extern Bumper bumper;
 
-int8_t bumper_lidar_init(const char *device);
-int8_t bumper_lidar_deinit();
-int8_t bumper_get_lidar_status(void);
 #endif //PP_BUMPER_H
