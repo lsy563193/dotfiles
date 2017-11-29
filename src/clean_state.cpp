@@ -254,7 +254,7 @@ bool SelfCheckCS::cs_next(const Cell_t& start, PPTargetType& path)
 
 void SelfCheckCS::setting(void)
 {
-	tilt.enable(false); //disable tilt detect
+//	tilt.enable(false); //disable tilt detect
 	led.set_mode(LED_STEADY, LED_ORANGE);
 }
 
@@ -266,7 +266,7 @@ bool GoChargeCS::cs_next(const Cell_t& start, PPTargetType& path)
 
 void GoChargeCS::setting(void)
 {
-	tilt.enable(false); //disable tilt detect
+//	tilt.enable(false); //disable tilt detect
 	led.set_mode(LED_STEADY, LED_ORANGE);
 }
 
