@@ -165,7 +165,7 @@ void cm_apply_cs(void) {
 	{
 		cs_work_motor();
 		laser.motorCtrl(ON);
-		laser.setScan2Ready(0);
+		laser.setScanOriginalReady(0);
 	}
 	else if (cs.is_align())
 	{
