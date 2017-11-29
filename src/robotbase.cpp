@@ -13,6 +13,7 @@
 #include <clean_timer.h>
 #include <odom.h>
 #include <serial.h>
+#include <robotbase.h>
 
 #define  _RATE 50
 
