@@ -5,12 +5,6 @@
 #ifndef PP_DEV_H
 #define PP_DEV_H
 
-#if __ROBOT_X900
-#define KEY_CLEAN 1
-#else
-#define KEY_CLEAN 0x02
-#endif
-
 #include "serial.h"
 #include "battery.h"
 #include "beep.h"
@@ -25,9 +19,8 @@
 #include "lidar.hpp"
 #include "led.h"
 #include "obs.h"
-#include "omni.h"
 #include "rcon.h"
-#include "remote.h"
+#include "remote.hpp"
 #include "vacuum.h"
 #include "wav.h"
 #include "wall_follow.h"

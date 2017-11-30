@@ -1516,7 +1516,7 @@ bool Lidar::openTimeOut()
 		motorCtrl(OFF);
 		ROS_ERROR("%s %d: Lidar Open time out.", __FUNCTION__, __LINE__);
 		ev.fatal_quit = true;
-		error.set(Error_Code_Lidar);
+		error.set(ERROR_CODE_LIDAR);
 		return true;
 	}
 

@@ -7,7 +7,7 @@
 #include <cliff.h>
 #include <led.h>
 #include <battery.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <charger.h>
 #include <beep.h>
 #include <wheel.hpp>
@@ -61,7 +61,7 @@ void charge_function(void)
 	uint16_t bat_enough_to_continue_cleaning_counter = 0;
 	bool eh_status_now=false, eh_status_last=false;
 	led.set_mode(LED_BREATH, LED_ORANGE);
-	charger.set_start();
+	charger.setStart();
 	timer.set_status(0);
 	register_event();
 	event_manager_reset_status();
@@ -169,7 +169,7 @@ void charge_function(void)
 				case 4:
 					wav.play(WAV_CLEAR_ERROR);
 					charge_reject_reason = 0;
-					error.set(Error_Code_None);
+					error.set(ERROR_CODE_NONE);
 					break;
 			}
 		}
@@ -199,7 +199,7 @@ void charge_function(void)
 		}
 	}
 	unregister_event();
-	charger.set_stop();
+	charger.setStop();
 	// Wait for 20ms to make sure stop charging command has been sent.
 	usleep(30000);
 
@@ -251,7 +251,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 		case 3:
 		{
 			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-			if (error.get() != Error_Code_None)
+			if (error.get() != ERROR_CODE_NONE)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				charge_reject_reason = 1;
@@ -298,12 +298,12 @@ void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 }
 void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 {
-	if (charger.is_directed())
+	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(INVALID);
 	}
-	else if (error.get() != Error_Code_None)
+	else if (error.get() != ERROR_CODE_NONE)
 	{
 		ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
 		if (error.clear(error.get()))
@@ -316,7 +316,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 			beeper.play_for_command(INVALID);
 			charge_reject_reason = 1;
 		}
-		key.reset();
+		key.resetTriggerStatus();
 	}
 	else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 	{
@@ -330,7 +330,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 		beeper.play_for_command(INVALID);
 		charge_reject_reason = 3;
 	}
-	else if (charger.is_on_stub())
+	else if (charger.isOnStub())
 	{
 		ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(VALID);
@@ -338,22 +338,22 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 
 	// Key release detection, if user has not release the key, don't do anything.
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 		usleep(20000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
-	key.reset();
+	key.resetTriggerStatus();
 }
 void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 {
-	if (remote.key(Remote_Clean)) {
+	if (remote.isKeyTrigger(REMOTE_CLEAN)) {
 		remote.reset();
-		if (charger.is_directed())
+		if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Can not go to navigation mode_ during direct charging.", __FUNCTION__, __LINE__);
 			beeper.play_for_command(INVALID);
 		}
-		else if (error.get() != Error_Code_None)
+		else if (error.get() != ERROR_CODE_NONE)
 		{
 			ROS_INFO("%s %d: Error exists.", __FUNCTION__, __LINE__);
 			if (error.clear(error.get()))
@@ -366,7 +366,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 				beeper.play_for_command(INVALID);
 				charge_reject_reason = 1;
 			}
-			key.reset();
+			key.resetTriggerStatus();
 		}
 		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
@@ -380,7 +380,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 			charge_reject_reason = 3;
 			beeper.play_for_command(INVALID);
 		}
-		else if (charger.is_on_stub())
+		else if (charger.isOnStub())
 		{
 			ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 			beeper.play_for_command(VALID);

@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 2.8.3)
 project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
+        include/*
 	src/charge.cpp
-	src/clean_mode.cpp
+#	src/clean_mode.cpp
 	src/clean_state.cpp
 	src/core_move.cpp
 	src/des.cpp
@@ -22,7 +23,6 @@ FILE(GLOB PP_SRC
 	src/dev/beep.cpp
 	src/dev/charger.cpp
 	src/dev/wall_follow.cpp
-	src/dev/omni.cpp
 	src/dev/wheel.cpp
 	src/dev/lidar.cpp
 	src/dev/wav.cpp
@@ -38,6 +38,13 @@ FILE(GLOB PP_SRC
 				src/action/movement/movement_go_charger.cpp
 				src/action/movement/movement_self_check.cpp
 				src/action/movement/movement_turn.cpp
+
+				src/clean_mode/clean_mode.cpp
+				src/clean_mode/exploration.cpp
+				src/clean_mode/navigation_clean.cpp
+				src/clean_mode/spot_clean.cpp
+				src/clean_mode/wall_follow_clean.cpp
+
 	src/error.cpp
 	src/event_manager.cpp
 	src/idle.cpp

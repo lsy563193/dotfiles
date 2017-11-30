@@ -1,10 +1,11 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <beep.h>
 #include <charger.h>
 #include <wall_follow.h>
+#include <pp.h>
 #include "pp.h"
 #include "wheel.hpp"
 #include "error.h"
@@ -126,7 +127,7 @@ void cm_apply_cs(int next) {
 		gyro.reOpen();
 
 		// Reset for keys.
-		key.reset();
+		key.resetTriggerStatus();
 
 		// Playing wavs.
 		// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
@@ -271,7 +272,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (ev.bumper_jam || ev.cliff_jam || omni.stop() || ev.lidar_stuck)
+	if (ev.bumper_jam || ev.cliff_jam || ev.lidar_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = odom.getX();
@@ -285,7 +286,7 @@ void cm_self_check(void)
 	{
 		ROS_WARN("%s, %d: Vacuum Self checking start", __FUNCTION__, __LINE__);
 		cs_disable_motors();
-		vacuum.start_self_check();
+		vacuum.startSelfCheck();
 	}
 
 	SelfCheckRegulator regulator;
@@ -320,12 +321,12 @@ void cm_self_check(void)
 						if (ev.oc_wheel_left)
 						{
 							ROS_WARN("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-							error.set(Error_Code_LeftWheel);
+							error.set(ERROR_CODE_LEFTWHEEL);
 						}
 						else
 						{
 							ROS_WARN("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-							error.set(Error_Code_RightWheel);
+							error.set(ERROR_CODE_RIGHTWHEEL);
 						}
 						ev.fatal_quit = true;
 						break;
@@ -383,7 +384,7 @@ void cm_self_check(void)
 				{
 					ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
-					error.set(Error_Code_Cliff);
+					error.set(ERROR_CODE_CLIFF);
 				}
 				else
 				{
@@ -481,7 +482,7 @@ void cm_self_check(void)
 					{
 						ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 						ev.fatal_quit = true;
-						error.set(Error_Code_Bumper);
+						error.set(ERROR_CODE_BUMPER);
 					}
 					break;
 				}
@@ -492,10 +493,10 @@ void cm_self_check(void)
 			if(vacuum_oc_state == 1)
 			{
 				ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
-				if (vacuum.get_self_check_status() == 0x10)
+				if (vacuum.getSelfCheckStatus() == 0x10)
 				{
 					ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
-					vacuum.reset_self_check();
+					vacuum.resetSelfCheck();
 					vacuum_oc_state = 2;
 				}
 				continue;
@@ -503,14 +504,14 @@ void cm_self_check(void)
 			else if (vacuum_oc_state == 2)
 			{
 				ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
-				if (vacuum.get_self_check_status() == 0x20)
+				if (vacuum.getSelfCheckStatus() == 0x20)
 				{
 					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
-					error.set(Error_Code_Fan_H);
+					error.set(ERROR_CODE_FAN_H);
 					ev.fatal_quit = true;
 					break;
 				}
-				else if (vacuum.get_self_check_status() == 0x00)
+				else if (vacuum.getSelfCheckStatus() == 0x00)
 				{
 					ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_suction = false;
@@ -518,13 +519,6 @@ void cm_self_check(void)
 					break;
 				}
 			}
-		}
-		else if (omni.stop())
-		{
-			ROS_ERROR("\033[1m" "%s,%d,omni detect" "\033[0m",__FUNCTION__,__LINE__);
-			error.set(Error_Code_Omni);
-			ev.fatal_quit = true;
-			break;
 		}
 		else if (g_slip_cnt >= 2)
 		{
@@ -554,7 +548,7 @@ void cm_self_check(void)
 				ROS_INFO("%s,%d,robot stuck ,slip count\033[32m %d \033[0m",__FUNCTION__,__LINE__,g_slip_cnt);
 				g_slip_cnt = 0;
 				g_robot_stuck = true;
-				error.set(Error_Code_Stuck);
+				error.set(ERROR_CODE_STUCK);
 				//ev.fatal_quit = true;
 				break;
 			}
@@ -572,7 +566,7 @@ void cm_self_check(void)
 			{
 				ROS_WARN("%s %d: Lidar stuck.", __FUNCTION__, __LINE__);
 				ev.fatal_quit = true;
-				error.set(Error_Code_Lidar);
+				error.set(ERROR_CODE_LIDAR);
 			}
 		}
 		else
@@ -584,7 +578,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || omni.stop() || g_slip_cnt >= 2 || ev.lidar_stuck);
+	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || g_slip_cnt >= 2 || ev.lidar_stuck);
 }
 
 /* Event handler functions. */
@@ -816,7 +810,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 //	if(!robot::instance()->getLbrushOc()) {
 //		g_oc_brush.left_cnt = 0;
 //		if (stop_cnt++ > 250) {
-//			brush.set_left_pwm(30);
+//			brush.setLeftPwm(30);
 //		}
 //		return;
 //	}
@@ -824,7 +818,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 //	stop_cnt = 0;
 //	if (g_oc_brush.left_cnt++ > 40) {
 //		g_oc_brush.left_cnt = 0;
-//		brush.set_left_pwm(0);
+//		brush.setLeftPwm(0);
 //		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
 //	}
 //}
@@ -833,13 +827,13 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!brush.getMbrushOc()){
-		brush.oc_main_cnt = 0;
+	if (!brush.getMainOc()){
+		brush.oc_main_cnt_ = 0;
 		return;
 	}
 
-	if (brush.oc_main_cnt++ > 40) {
-		brush.oc_main_cnt = 0;
+	if (brush.oc_main_cnt_++ > 40) {
+		brush.oc_main_cnt_ = 0;
 		ROS_WARN("%s %d: main brush over current", __FUNCTION__, __LINE__);
 
 		if (cs_self_check(Check_Main_Brush) == 1) {
@@ -858,7 +852,7 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 //	if(!robot::instance()->getRbrushOc()) {
 //		g_oc_brush.right_cnt = 0;
 //		if (stop_cnt++ > 250) {
-//			brush.set_right_pwm(30);
+//			brush.setRightPwm(30);
 //		}
 //		return;
 //	}
@@ -866,7 +860,7 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 //	stop_cnt = 0;
 //	if (g_oc_brush.right_cnt++ > 40) {
 //		g_oc_brush.right_cnt = 0;
-//		brush.set_right_pwm(0);
+//		brush.setRightPwm(0);
 //		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
 //	}
 //}
@@ -909,7 +903,7 @@ void CM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!vacuum.getVacuumOc()) {
+	if (!vacuum.getOc()) {
 		g_oc_suction_cnt = 0;
 		return;
 	}
@@ -933,12 +927,12 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	if (ev.slam_error)
 	{
 		beeper.play_for_command(INVALID);
-		while (key.get_press() & KEY_CLEAN)
+		while (key.getPressStatus())
 		{
 			usleep(20000);
 		}
 		ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-		key.reset();
+		key.resetTriggerStatus();
 		return;
 	}
 
@@ -950,7 +944,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 		g_is_manual_pause = true;
 
 	start_time = time(NULL);
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 	{
 		if (cm_is_navigation() && time(NULL) - start_time > 3) {
 			if (!reset_manual_pause)
@@ -967,7 +961,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	key.reset();
+	key.resetTriggerStatus();
 }
 
 /* Remote */
@@ -1079,7 +1073,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 						 battery.getVoltage());
 		ev.battrey_home = true;
 
-		if (vacuum.mode() == Vac_Max) {
+		if (vacuum.getMode() == Vac_Max) {
 			vacuum.switchToNext(false);
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -1113,9 +1107,9 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 		}
 
 		g_battery_low_cnt = 0;
-		vacuum.bldc_speed(v_pwr);
-		brush.set_side_pwm(s_pwr, s_pwr);
-		brush.set_main_pwm(m_pwr);
+		vacuum.bldcSpeed(v_pwr);
+		brush.setSidePwm(s_pwr, s_pwr);
+		brush.setMainPwm(m_pwr);
 
 		ev.fatal_quit = true;
 		ev.battery_low = true;

@@ -100,7 +100,7 @@ private:
 	std::vector<LineABC>	fit_line;
 	//static float *last_ranges_;
 
-//	ros::Publisher lidar_filter_pub = nh_.advertise<sensor_msgs::LidarScan>("lidar_filter",1);
+//	ros::Publisher lidar_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("lidar_filter",1);
 	visualization_msgs::Marker fit_line_marker;
 
 	geometry_msgs::Point lidar_points_;

@@ -107,7 +107,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	is_sensor_ready_ = true;
 
 	// Dynamic adjust obs
-	obs_dynamic_base(OBS_adjust_count);
+	obs.DynamicAdjust(OBS_adjust_count);
 
 	// Check for whether robot should publish this frame of scan.
 	scan_ctrl_.allow_publishing = check_pub_scan();

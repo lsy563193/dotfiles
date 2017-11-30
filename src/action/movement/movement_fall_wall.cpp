@@ -121,7 +121,7 @@ bool FollowWallMovement::shouldTurn()
 		return true;
 	}
 
-	ev.obs_triggered = (obs.get_front() > obs.get_front_trig_value() + 1700);
+	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
 	if (ev.obs_triggered)
 	{
 		ev.obs_triggered = BLOCK_FRONT;
@@ -375,7 +375,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				time_right_angle = ros::Time::now().toSec();
 				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
-			if(obs.is_wall_front() || cost_map.is_front_block_boundary(3) ) {
+			if(obs.frontTriggered() || cost_map.is_front_block_boundary(3) ) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
@@ -404,7 +404,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
-		if (obs.is_wall_front() || cost_map.is_front_block_boundary(3)) {
+		if (obs.frontTriggered() || cost_map.is_front_block_boundary(3)) {
 //			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;

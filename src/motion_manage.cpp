@@ -17,7 +17,7 @@
 #include <clean_state.h>
 #include <vacuum.h>
 #include <brush.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <led.h>
 #include <charger.h>
 #include <event_manager.h>
@@ -184,14 +184,14 @@ void init_nav_before_gyro()
 		g_home_way_list.clear();
 	}
 
-	key.reset();
+	key.resetTriggerStatus();
 
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
 
 	c_rcon.resetStatus();
-	key.reset();
+	key.resetTriggerStatus();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	if (g_resume_cleaning)
 	{
@@ -267,14 +267,14 @@ void init_exp_before_gyro()
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	key.reset();
+	key.resetTriggerStatus();
 
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
 
 	c_rcon.resetStatus();
-	key.reset();
+	key.resetTriggerStatus();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
 	cm_register_events();
 	wav.play(WAV_EXPLORATION_START);
@@ -296,10 +296,9 @@ void init_wf_before_gyro()
 
 	g_wf_start_timer = time(NULL);
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
-	remote.reset_move_with();
 	c_rcon.resetStatus();
-	key.reset();
-	key.reset();
+	key.resetTriggerStatus();
+	key.resetTriggerStatus();
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
@@ -335,8 +334,7 @@ void init_spot_before_gyro()
 	led.set_mode(LED_FLASH, LED_GREEN, 1000);
 
 	c_rcon.resetStatus();
-	remote.reset_move_with();
-	key.reset();
+	key.resetTriggerStatus();
 
 	gyro.setOff();
 	usleep(30000);
@@ -361,9 +359,9 @@ void init_spot_after_gyro()
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	vacuum.mode(Vac_Max);
-	brush.set_main_pwm(80);
-	brush.set_side_pwm(60, 60);
+	vacuum.setMode(Vac_Max);
+	brush.setMainPwm(80);
+	brush.setSidePwm(60, 60);
 
 }
 
@@ -373,7 +371,7 @@ void init_go_home_before_gyro()
 	gyro.setOff();
 	usleep(30000);
 	gyro.setOn();
-	key.reset();
+	key.resetTriggerStatus();
 	cm_register_events();
 	wav.play(WAV_BACK_TO_CHARGER);
 }
@@ -391,11 +389,11 @@ bool wait_for_back_from_charge()
 		extern bool g_from_charger;
 		g_from_charger = true;
 
-	brush.set_side_pwm(30, 30);
+	brush.setSidePwm(30, 30);
 		int back_segment = MOVE_BACK_FROM_STUB_DIST/SIGMENT_LEN;
 		for (int i = 0; i < back_segment; i++) {
 			quick_back(20,SIGMENT_LEN);
-			if (ev.fatal_quit || ev.key_clean_pressed || charger.is_on_stub() || ev.cliff_all_triggered) {
+			if (ev.fatal_quit || ev.key_clean_pressed || charger.isOnStub() || ev.cliff_all_triggered) {
 				cs_disable_motors();
 				if (ev.fatal_quit)
 				{
@@ -646,7 +644,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			gyro.waitForOn();
 			if (gyro.isOn())
 			{
-				if (charger.is_on_stub())
+				if (charger.isOnStub())
 				{
 					cs.setNext(CS_BACK_FROM_CHARGER);
 					charger_pose.setX(odom.getX());
@@ -727,7 +725,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 	{
 		case Clean_Mode_Navigation:
 			init_nav_gyro_charge();
-			if(charger.is_on_stub() && !wait_for_back_from_charge())
+			if(charger.isOnStub() && !wait_for_back_from_charge())
 				return;
 			init_nav_after_charge();
 			break;
@@ -991,7 +989,7 @@ bool MotionManage::initNavigationCleaning(void)
 	init_nav_gyro_charge();
 
 	/*Move back from charge station*/
-	if (charger.is_on_stub()) {
+	if (charger.isOnStub()) {
 		if (!wait_for_back_from_charge())
 			return false;
 	}

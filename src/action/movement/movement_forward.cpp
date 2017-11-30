@@ -198,7 +198,7 @@ void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	}
 	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
 	auto obstalce_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
-	uint8_t obs_state = obs.get_status();
+	uint8_t obs_state = obs.getStatus();
 	bool is_decrease_blocked = decrease_map.is_block();
 	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || cost_map.is_front_block_boundary(3) || (obstalce_distance_front < 0.25) || is_decrease_blocked)
 	{

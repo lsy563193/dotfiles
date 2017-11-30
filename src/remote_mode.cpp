@@ -24,7 +24,7 @@
 #include <battery.h>
 #include <bumper.h>
 #include <pp.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <obs.h>
 #include <beep.h>
 #include <charger.h>
@@ -148,7 +148,7 @@ void remote_move(void)
 		{
 			case REMOTE_MODE_FORWARD:
 			{
-				if (obs.get_status())
+				if (obs.getStatus())
 				{
 					if(moving_speed>10)moving_speed--;
 					wheel.moveForward(moving_speed, moving_speed);
@@ -491,7 +491,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote %x is pressed.", __FUNCTION__, __LINE__, remote.get());
 	remote_cmd_time = time(NULL);
-	if (remote.get() == Remote_Clean)
+	if (remote.isKeyTrigger(REMOTE_CLEAN))
 	{
 		beeper.play_for_command(VALID);
 		ev.key_clean_pressed = true;
@@ -503,7 +503,7 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 		beeper.play_for_command(VALID);
 		cs_disable_motors();
 		g_remote_exit = true;
-		if (remote.get() == Remote_Home)
+		if (remote.isKeyTrigger(REMOTE_HOME))
 			//cm_set(Clean_Mode_Gohome);
 			cm_set(Clean_Mode_Exploration);
 		else
@@ -549,12 +549,12 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 	remote_cmd_time = time(NULL);
 	beeper.play_for_command(VALID);
 	cs_disable_motors();
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 		usleep(40000);
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 	cm_set(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
-	key.reset();
+	key.resetTriggerStatus();
 }
 
 void RM_EventHandle::charge_detect(bool state_now, bool state_last)
@@ -604,7 +604,7 @@ void RM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!vacuum.getVacuumOc()) {
+	if (!vacuum.getOc()) {
 		g_oc_suction_cnt = 0;
 		return;
 	}

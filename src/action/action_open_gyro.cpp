@@ -17,7 +17,7 @@ EventOpenGyro::EventOpenGyro() {
 	gyro.reOpen();
 
 	// Reset for keys.
-	key.reset();
+	key.resetTriggerStatus();
 
 	// Playing wavs.
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
@@ -46,7 +46,7 @@ bool EventOpenGyro::isStop() {
 }
 
 bool EventOpenGyro::setNext() {
-	if (charger.is_on_stub()) {
+	if (charger.isOnStub()) {
 		cs.setNext(CS_BACK_FROM_CHARGER);
 		charger_pose.setX(odom.getX());
 		charger_pose.setY(odom.getY());

@@ -25,12 +25,6 @@
 #define Room_Mode_Auto (uint8_t)0x01
 #define Room_Mode_Large (uint8_t)0x00
 
-#define CLIFF_LIMIT  60
-#define BLOCK_LEFT				((uint8_t) 0x01)
-#define BLOCK_RIGHT			((uint8_t) 0x02)
-#define BLOCK_FRONT			((uint8_t) 0x04)
-#define BLOCK_ALL			((uint8_t) 0x07)
-
 #define Status_Left_Wall			((uint8_t) 0x01)
 //#define Status_Left_OBS				((uint8_t) 0x02)
 #define Status_Left_OBS_2			((uint8_t) 0x04)
@@ -56,17 +50,6 @@
 #define Charge_Home_Right			((uint8_t) 0x02)
 #define Charge_Home_Top				((uint8_t) 0x0c)
 #define Vitual_Wall_Code			((uint8_t) 0x24)
-
-#define Remote_All					((uint8_t) 0xFF)
-#define Remote_Forward				((uint8_t) 0x80)
-#define Remote_Left					((uint8_t) 0x40)
-#define Remote_Right				((uint8_t) 0x20)
-#define Remote_Backward				((uint8_t) 0x10)
-#define Remote_Max					((uint8_t) 0x10)
-#define Remote_Clean				((uint8_t) 0x08)
-#define Remote_Home					((uint8_t) 0x04)
-#define Remote_Wall_Follow			((uint8_t) 0x02)
-#define Remote_Spot					((uint8_t) 0x01)
 
 #define Rcon_Virtualwall			((uint8_t) 0xaa)
 #define Rcon_Charger_Station_Left	((uint8_t) 0x02)
@@ -139,30 +122,6 @@ typedef enum{
 
 #define Power_On					0x01
 #define Power_Off					0x00
-
-#define Error_Code_None			((uint8_t)0x00)
-#define Error_Code_LeftWheel	((uint8_t)0x01)
-#define Error_Code_RightWheel	((uint8_t)0x02)
-#define Error_Code_LeftBrush	((uint8_t)0x03)
-#define Error_Code_RightBrush	((uint8_t)0x04)
-#define Error_Code_PickUp		((uint8_t)0x05)
-#define Error_Code_Cliff		((uint8_t)0x06)
-#define Error_Code_Bumper		((uint8_t)0x07)
-#define Error_Code_Stuck		((uint8_t)0x08)
-#define Error_Code_MainBrush	((uint8_t)0x09)
-#define Error_Code_Fan_H		((uint8_t)0x0A)
-#define Error_Code_WaterTank	((uint8_t)0x0B)
-#define Error_Code_BTA			((uint8_t)0x0C)
-#define Error_Code_Obs			((uint8_t)0x0D)
-#define Error_Code_BatteryLow	((uint8_t)0x0E)
-#define Error_Code_Dustbin		((uint8_t)0x0F)
-#define Error_Code_Gyro			((uint8_t)0x10)
-#define Error_Code_Encoder		((uint8_t)0x11)
-#define Error_Code_Slam			((uint8_t)0x12)
-#define Error_Code_Lidar		((uint8_t)0x13)
-#define Error_Code_Test			((uint8_t)0x14)
-#define Error_Code_Test_Null	((uint8_t)0x15)
-#define Error_Code_Omni			((uint8_t)0x16)
 
 #define Display_Full				4
 #define Display_Low					5

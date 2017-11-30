@@ -17,6 +17,20 @@
 
 Gyro gyro;
 
+Gyro::Gyro(void) {
+	angle_ = 0;
+	angle_v_ = 0;
+	x_acc_ = 0;
+	y_acc_ = 0;
+	z_acc_ = 0;
+	init_x_acc_ = 0;
+	init_y_acc_ = 0;
+	init_z_acc_ = 0;
+	calibration_status_ = 255;
+	status_ = 0;
+	tilt_checking_status_ = 0;
+}
+
 void Gyro::setStatus(void)
 {
 	status_ = true;
@@ -186,7 +200,7 @@ bool Gyro::waitForOn(void)
 			setOn();
 		}
 
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
+		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
 			break;
 
 		if (skip_count == 0 && getAngleV() != 0){
@@ -237,7 +251,7 @@ bool Gyro::isStable()
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 			continue;
 		usleep(10000);
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
+		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
 			break;
 		current_angle = getAngle();
 		ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.", check_stable_count,

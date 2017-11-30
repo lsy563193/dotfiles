@@ -96,7 +96,7 @@ void EventAction::run() {
 //}
 //
 //bool EventBackFromCharger::setNext() {
-//	if (charger.is_on_stub()) {
+//	if (charger.isOnStub()) {
 //		cs.setNext(CS_BACK_FROM_CHARGER);
 //		charger_pose.setX(odom.getX());
 //		charger_pose.setY(odom.getY());

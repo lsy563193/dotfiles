@@ -43,9 +43,9 @@ static SpotMovement *spot_obj = NULL;
 
 static void spot_motor_configure()
 {
-	vacuum.mode(Vac_Max);
-	brush.set_main_pwm(80);
-	brush.set_side_pwm(60, 60);
+	vacuum.setMode(Vac_Max);
+	brush.setMainPwm(80);
+	brush.setSidePwm(60, 60);
 }
 
 SpotMovement::SpotMovement(float diameter = 1.0)

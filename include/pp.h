@@ -15,12 +15,11 @@
 #include "robotbase.h"
 #include "dev.h"
 #include "robot.hpp"
-#include "core_move.h"
 
 
 #include "mathematics.h"
 #include "path_planning.h"
-#include "rounding.h"
+#include <wall_follow.h>
 #include "shortest_path.h"
 #include "spot.h"
 
@@ -41,4 +40,5 @@
 #include <event_manager.h>
 #include "clean_mode.h"
 #include "regulator.h"
+#include "core_move.h"
 #endif //PP_PP_H

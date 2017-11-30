@@ -4,7 +4,7 @@
 #include <cliff.h>
 #include <pp.h>
 #include <clean_timer.h>
-#include <remote.h>
+#include <remote.hpp>
 
 #include "sleep.h"
 #include "key.h"
@@ -58,10 +58,10 @@ void sleep_mode(void)
 	usleep(20000);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, serial.getCleanMode());
 
-	key.reset();
+	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	key.reset();
+	key.resetTriggerStatus();
 	timer.set_status(0);
 
 	event_manager_reset_status();
@@ -133,7 +133,7 @@ void sleep_mode(void)
 
 	c_rcon.resetStatus();
 	remote.reset();
-	key.reset();
+	key.resetTriggerStatus();
 	timer.set_status(0);
 }
 
@@ -151,7 +151,7 @@ void sleep_unregister_events(void)
 void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-	if (error.get() == Error_Code_None)
+	if (error.get() == ERROR_CODE_NONE)
 	{
 		serial.setCleanMode(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
@@ -172,7 +172,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
 	if (timer.get_status() == 3)
 	{
-		if (error.get() != Error_Code_None)
+		if (error.get() != ERROR_CODE_NONE)
 		{
 			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 			sleep_plan_reject_reason = 1;
@@ -202,11 +202,11 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 
 	beeper.play_for_command(VALID);
 
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 		usleep(20000);
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	key.reset();
+	key.resetTriggerStatus();
 }
 
 void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)
