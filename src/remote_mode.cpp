@@ -604,7 +604,7 @@ void RM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!vacuum.getVacuumOc()) {
+	if (!vacuum.getOc()) {
 		g_oc_suction_cnt = 0;
 		return;
 	}

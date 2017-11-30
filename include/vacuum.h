@@ -30,45 +30,48 @@ public:
  * save: if save is ture,save this mode,next time clean will reload at interface
  * */
 
-	void mode(uint8_t mode, bool is_save);
+	void setMode(uint8_t mode, bool is_save);
 
-	void mode(uint8_t mode);
+	void setMode(uint8_t mode);
 
 	void stop();
 
 	void switchToNext(bool is_save);
 
-	uint8_t mode(void);
-
-	void bldc_speed(uint32_t S);
-
-	void start_self_check(void) {
-		uint8_t omni_reset_byte = serial.getSendData(CTL_OMNI_RESET);
-		serial.setSendData(CTL_OMNI_RESET, omni_reset_byte | 0x02);
+	uint8_t getMode(void)
+	{
+		return mode_;
 	}
 
-	void reset_self_check(void) {
-		uint8_t omni_reset_byte = serial.getSendData(CTL_OMNI_RESET);
-		serial.setSendData(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
+	void bldcSpeed(uint32_t S);
+
+	void startSelfCheck(void);
+
+	void resetSelfCheck(void);
+
+	void setSelfCheckStatus(uint8_t val)
+	{
+		self_check_status_ = val;
+	}
+	uint8_t getSelfCheckStatus() const {
+		return self_check_status_;
 	}
 
-	uint8_t get_self_check_status(void) {
-		return (uint8_t) getVacuumSelfCheckStatus();
+	void setOc(bool val)
+	{
+		oc_ = val;
 	}
-
-	uint8_t getVacuumSelfCheckStatus() const {
-		return sensor.vacuum_selfcheck_status;
-	}
-
-	bool getVacuumOc() const {
-		return sensor.vcum_oc;
+	bool getOc() const {
+		return oc_;
 	}
 
 private:
-	void set_speed_by_mode(void);
+	void setSpeedByMode(void);
 
 	uint8_t mode_;
 	uint8_t mode_save_;
+	uint8_t self_check_status_;
+	bool oc_;
 
 };
 

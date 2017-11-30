@@ -285,7 +285,7 @@ void cm_self_check(void)
 	{
 		ROS_WARN("%s, %d: Vacuum Self checking start", __FUNCTION__, __LINE__);
 		cs_disable_motors();
-		vacuum.start_self_check();
+		vacuum.startSelfCheck();
 	}
 
 	SelfCheckRegulator regulator;
@@ -492,10 +492,10 @@ void cm_self_check(void)
 			if(vacuum_oc_state == 1)
 			{
 				ROS_DEBUG("%s %d: Wait for suction self check begin.", __FUNCTION__, __LINE__);
-				if (vacuum.get_self_check_status() == 0x10)
+				if (vacuum.getSelfCheckStatus() == 0x10)
 				{
 					ROS_WARN("%s %d: Suction self check begin.", __FUNCTION__, __LINE__);
-					vacuum.reset_self_check();
+					vacuum.resetSelfCheck();
 					vacuum_oc_state = 2;
 				}
 				continue;
@@ -503,14 +503,14 @@ void cm_self_check(void)
 			else if (vacuum_oc_state == 2)
 			{
 				ROS_DEBUG("%s %d: Wait for suction self check result.", __FUNCTION__, __LINE__);
-				if (vacuum.get_self_check_status() == 0x20)
+				if (vacuum.getSelfCheckStatus() == 0x20)
 				{
 					ROS_WARN("%s %d: Resume suction failed.", __FUNCTION__, __LINE__);
 					error.set(ERROR_CODE_FAN_H);
 					ev.fatal_quit = true;
 					break;
 				}
-				else if (vacuum.get_self_check_status() == 0x00)
+				else if (vacuum.getSelfCheckStatus() == 0x00)
 				{
 					ROS_WARN("%s %d: Resume suction succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_suction = false;
@@ -902,7 +902,7 @@ void CM_EventHandle::over_current_suction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
-	if (!vacuum.getVacuumOc()) {
+	if (!vacuum.getOc()) {
 		g_oc_suction_cnt = 0;
 		return;
 	}
@@ -1072,7 +1072,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 						 battery.getVoltage());
 		ev.battrey_home = true;
 
-		if (vacuum.mode() == Vac_Max) {
+		if (vacuum.getMode() == Vac_Max) {
 			vacuum.switchToNext(false);
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
@@ -1106,7 +1106,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 		}
 
 		g_battery_low_cnt = 0;
-		vacuum.bldc_speed(v_pwr);
+		vacuum.bldcSpeed(v_pwr);
 		brush.setSidePwm(s_pwr, s_pwr);
 		brush.setMainPwm(m_pwr);
 

@@ -393,6 +393,7 @@ void *robotbase_routine(void*)
 		sensor.rbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x02) ? true : false;		// right brush over current
 		brush.setRightOc(sensor.rbrush_oc);
 		sensor.vcum_oc = (serial.receive_stream[REC_CL_OC] & 0x01) ? true : false;		// vaccum over current
+		vacuum.setOc(sensor.vcum_oc);
 
 		sensor.gyro_dymc = serial.receive_stream[REC_GYRO_DYMC];
 

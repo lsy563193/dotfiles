@@ -136,29 +136,29 @@ uint8_t cs_self_check(uint8_t Check_Code)
 	{
 #ifndef BLDC_INSTALL
 		ROS_INFO("%s, %d: Vacuum Over Current!!", __FUNCTION__, __LINE__);
-		ROS_INFO("%d", vacuum.get_self_check_status());
-		while (vacuum.get_self_check_status() != 0x10)
+		ROS_INFO("%d", vacuum.getSelfCheckStatus());
+		while (vacuum.getSelfCheckStatus() != 0x10)
 		{
 			/*-----wait until self check begin-----*/
-			vacuum.start_self_check();
+			vacuum.startSelfCheck();
 		}
 		ROS_INFO("%s, %d: Vacuum Self checking", __FUNCTION__, __LINE__);
 		/*-----reset command for start self check-----*/
-		vacuum.reset_self_check();
+		vacuum.resetSelfCheck();
 		/*-----wait for the end of self check-----*/
-		while (vacuum.get_self_check_status() == 0x10);
+		while (vacuum.getSelfCheckStatus() == 0x10);
 		ROS_INFO("%s, %d: end of Self checking", __FUNCTION__, __LINE__);
-		if (vacuum.get_self_check_status() == 0x20)
+		if (vacuum.getSelfCheckStatus() == 0x20)
 		{
 			ROS_INFO("%s, %d: Vacuum error", __FUNCTION__, __LINE__);
 			/*-----vacuum error-----*/
 			error.set(ERROR_CODE_FAN_H);
 			cs_disable_motors();
 			error.alarm();
-			vacuum.reset_self_check();
+			vacuum.resetSelfCheck();
 			return 1;
 		}
-		vacuum.reset_self_check();
+		vacuum.resetSelfCheck();
 #else
 		Disable_Motors();
 		//wheel.stop();
@@ -215,11 +215,11 @@ void cs_work_motor(void)
 	if (cs.is_going_home() || cs.is_back_from_charger())
 	{
 		// Set the vacuum to a normal mode
-		vacuum.mode(Vac_Normal, false);
+		vacuum.setMode(Vac_Normal, false);
 		// Turn on the main brush and side brush
 		brush.setSidePwm(30, 30);
 	} else {
-		vacuum.mode(Vac_Save);
+		vacuum.setMode(Vac_Save);
 		// Turn on the main brush and side brush
 		brush.setSidePwm(50, 50);
 	}

@@ -361,7 +361,7 @@ void init_spot_after_gyro()
 	g_home_gen_rosmap = true;
 	g_home_way_list.clear();
 
-	vacuum.mode(Vac_Max);
+	vacuum.setMode(Vac_Max);
 	brush.setMainPwm(80);
 	brush.setSidePwm(60, 60);
 

@@ -43,7 +43,7 @@ static SpotMovement *spot_obj = NULL;
 
 static void spot_motor_configure()
 {
-	vacuum.mode(Vac_Max);
+	vacuum.setMode(Vac_Max);
 	brush.setMainPwm(80);
 	brush.setSidePwm(60, 60);
 }
