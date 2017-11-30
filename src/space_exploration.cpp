@@ -67,13 +67,9 @@ void explore_update_map(void)
 
 void turn_into_exploration(bool is_reset_map)
 {
-	reset_work_time();
 	led.set_mode(LED_STEADY, LED_ORANGE);
 
 	// Initialize motors and costmap.
-	extern uint32_t g_saved_work_time;
-	g_saved_work_time = 0;
-	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	// Push the start point into the home point list
 	ROS_INFO("map_init-----------------------------");
 	if (is_reset_map)
@@ -83,6 +79,7 @@ void turn_into_exploration(bool is_reset_map)
 	path_planning_initialize();
 	cs_work_motor();
 	cm_reset_go_home();
+	robot_timer.initWorkTimer();
 
 
 	g_have_seen_charger = false;

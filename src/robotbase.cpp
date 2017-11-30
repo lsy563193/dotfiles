@@ -10,7 +10,7 @@
 #include <dev.h>
 
 #include <sleep.h>
-#include <clean_timer.h>
+#include <robot_timer.h>
 #include <odom.h>
 #include <serial.h>
 #include <robotbase.h>
@@ -417,7 +417,7 @@ void *robotbase_routine(void*)
 
 		sensor.plan = serial.receive_stream[REC_PLAN];
 		if(sensor.plan)
-			timer.set_status(sensor.plan);
+			robot_timer.setPlanStatus(sensor.plan);
 
 #elif __ROBOT_X400
 		sensor.lbumper = (serial.receive_stream[22] & 0xf0)?true:false;

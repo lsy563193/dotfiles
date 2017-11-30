@@ -4,7 +4,6 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
-#include <clean_timer.h>
 #include <remote.hpp>
 #include <charger.h>
 #include <beep.h>
@@ -20,6 +19,7 @@
 #include "event_manager.h"
 #include "obs.h"
 #include "error.h"
+#include "robot_timer.h"
 
 
 /* Events variables */
@@ -309,7 +309,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
-		if (timer.get_status()) {
+		if (robot_timer.getPlanStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
@@ -869,15 +869,15 @@ void EventHandle::remote_plan(bool state_now, bool state_last)
 }
 void df_remote_plan(bool state_now, bool state_last)
 {
-	if (timer.get_status() == 1 || timer.get_status() == 2)
+	if (robot_timer.getPlanStatus() == 1 || robot_timer.getPlanStatus() == 2)
 	{
 		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(INVALID);
 	}
-	else if (timer.get_status() == 3)
+	else if (robot_timer.getPlanStatus() == 3)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
 
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 	remote.reset();
 }
 
