@@ -159,15 +159,15 @@ void cm_apply_cs(int next) {
 		cs_work_motor();
 		wheel.setDirBackward();
 	}
-	else if (next == CS_OPEN_LASER)
+	else if (next == CS_OPEN_LIDAR)
 	{
 		cs_work_motor();
-		laser.motorCtrl(ON);
-		laser.setScanOriginalReady(0);
+		lidar.motorCtrl(ON);
+		lidar.setScanOriginalReady(0);
 	}
 	else if (next == CS_ALIGN)
 	{
-		laser.startAlign();
+		lidar.startAlign();
 	}
 	else if (next == CS_OPEN_SLAM)
 	{
@@ -271,7 +271,7 @@ void cm_self_check(void)
 	int16_t target_angle = 0;
 	bool eh_status_now=false, eh_status_last=false;
 
-	if (ev.bumper_jam || ev.cliff_jam || omni.stop() || ev.laser_stuck)
+	if (ev.bumper_jam || ev.cliff_jam || omni.stop() || ev.lidar_stuck)
 	{
 		// Save current position for moving back detection.
 		saved_pos_x = odom.getX();
@@ -559,20 +559,20 @@ void cm_self_check(void)
 				break;
 			}
 		}
-		else if (ev.laser_stuck)
+		else if (ev.lidar_stuck)
 		{
-			if (!laser_is_stuck())
+			if (!lidar_is_stuck())
 			{
-				ROS_WARN("%s %d: Restore from laser stuck.", __FUNCTION__, __LINE__);
-				ev.laser_stuck = false;
+				ROS_WARN("%s %d: Restore from lidar stuck.", __FUNCTION__, __LINE__);
+				ev.lidar_stuck = false;
 			}
 
 			float distance = sqrtf(powf(saved_pos_x - odom.getX(), 2) + powf(saved_pos_y - odom.getY(), 2));
 			if (fabsf(distance) > 0.35f)
 			{
-				ROS_WARN("%s %d: Laser stuck.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Lidar stuck.", __FUNCTION__, __LINE__);
 				ev.fatal_quit = true;
-				error.set(Error_Code_Laser);
+				error.set(Error_Code_Lidar);
 			}
 		}
 		else
@@ -584,7 +584,7 @@ void cm_self_check(void)
 
 bool cm_should_self_check(void)
 {
-	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || omni.stop() || g_slip_cnt >= 2 || ev.laser_stuck);
+	return (ev.oc_wheel_left || ev.oc_wheel_right || ev.bumper_jam || ev.cliff_jam || ev.oc_suction || omni.stop() || g_slip_cnt >= 2 || ev.lidar_stuck);
 }
 
 /* Event handler functions. */

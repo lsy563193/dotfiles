@@ -152,13 +152,13 @@ static int double_scale_10(double line_angle)
 	return angle;
 }
 
-static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max, int angle_min,int angle_max,double dis_limit=0.217)
+static bool _lidar_turn_angle(int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit=0.217)
 {
 //	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.get_status());
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
-	line_is_found = laser.laserGetFitLine(laser_min, laser_max, -1.0, dis_limit, &line_angle, &distance);
+	line_is_found = lidar.lidarGetFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_angle, &distance);
 //	RESET_WALL_DIS = int(distance * 1000);
 
 //	ROS_INFO("line_distance = %lf", distance);
@@ -179,13 +179,13 @@ static bool _laser_turn_angle(int16_t& turn_angle, int laser_min, int laser_max,
 			robot_to_wall_distance=g_back_distance*100*sin((180-line_angle)*3.1415/180.0);
 //		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_angle);
 		turn_angle = mt.is_right() ? angle : -angle;
-//		ROS_INFO("laser generate turn angle(%d)!",turn_angle);
+//		ROS_INFO("lidar generate turn angle(%d)!",turn_angle);
 		return true;
 	}
 	return false;
 }
 
-bool laser_turn_angle(int16_t& turn_angle)
+bool lidar_turn_angle(int16_t& turn_angle)
 {
 //	ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
 	wheel.stop();
@@ -193,7 +193,7 @@ bool laser_turn_angle(int16_t& turn_angle)
 	if (ev.obs_triggered != 0)
 	{
 //		ROS_INFO("%s %d: \033[32mfront obs trigger.\033[0m", __FUNCTION__, __LINE__);
-		return _laser_turn_angle(turn_angle, 90, 270, 450, 1800, 0.25);
+		return _lidar_turn_angle(turn_angle, 90, 270, 450, 1800, 0.25);
 	}
 	else if(ev.bumper_triggered != 0)
 	{
@@ -211,15 +211,15 @@ bool laser_turn_angle(int16_t& turn_angle)
 
 		if (ev.bumper_triggered == BLOCK_ALL) {
 //			ROS_INFO("%s %d: AllBumper trigger.", __FUNCTION__, __LINE__);
-			return _laser_turn_angle(turn_angle, 90, 270, 900, 1800);
+			return _lidar_turn_angle(turn_angle, 90, 270, 900, 1800);
 		}
 		else if (ev.bumper_triggered == BLOCK_RIGHT) {
 //			ROS_INFO("%s %d: RightBumper trigger.", __FUNCTION__, __LINE__);
-			return _laser_turn_angle(turn_angle, 90, 180, angle_min, angle_max);
+			return _lidar_turn_angle(turn_angle, 90, 180, angle_min, angle_max);
 		}
 		else if (ev.bumper_triggered == BLOCK_LEFT) {
 //			ROS_INFO("%s %d: LeftBumper trigger.", __FUNCTION__, __LINE__);
-			return _laser_turn_angle(turn_angle, 180, 270, angle_min, angle_max);
+			return _lidar_turn_angle(turn_angle, 180, 270, angle_min, angle_max);
 		}
 	}
 	return false;

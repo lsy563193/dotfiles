@@ -10,7 +10,7 @@
 #include "robot.hpp"
 #include "wav.h"
 #include "config.h"
-#include "laser.hpp"
+#include "lidar.hpp"
 #include "slam.h"
 #include "error.h"
 #include "move_type.h"
@@ -467,18 +467,18 @@ void init_before_gyro()
 }
 /*
 
-bool MotionManage::laser_init()
+bool MotionManage::lidar_init()
 {
-	s_laser = new Laser();
-	laser.motorCtrl(ON);
-	if (laser.isScanReady() == -1)
+	s_lidar = new Lidar();
+	lidar.motorCtrl(ON);
+	if (lidar.isScanReady() == -1)
 	{
-		ROS_ERROR("%s %d: Laser opening failed.", __FUNCTION__, __LINE__);
-		error.set(Error_Code_Laser);
+		ROS_ERROR("%s %d: Lidar opening failed.", __FUNCTION__, __LINE__);
+		error.set(Error_Code_Lidar);
 		initSucceeded(false);
 		return false;
 	}
-	else if (laser.isScanReady() == 0)
+	else if (lidar.isScanReady() == 0)
 	{
 		initSucceeded(false);
 		return false;
@@ -500,8 +500,8 @@ void MotionManage::get_aligment_angle()
 			ROS_INFO("%s,%d,ready to find lines ",__FUNCTION__,__LINE__);
 			float align_angle = 0.0;
 			while(1){
-				if(laser.findLines(&lines,true)){
-					if(laser.getAlignAngle(&lines,&align_angle))
+				if(lidar.findLines(&lines,true)){
+					if(lidar.getAlignAngle(&lines,&align_angle))
 						break;
 				}
 				if(difftime(time(NULL) ,time_findline) >= 2){
@@ -653,7 +653,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 					charger_pose.setY(odom.getY());
 				}
 				else
-					cs.setNext(CS_OPEN_LASER);
+					cs.setNext(CS_OPEN_LIDAR);
 			}
 		}
 		else if (cs.is_back_from_charger())
@@ -663,18 +663,18 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 
 			// switch
 			if (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5)
-				cs.setNext(CS_OPEN_LASER);
+				cs.setNext(CS_OPEN_LIDAR);
 
 		}
-		else if (cs.is_open_laser())
+		else if (cs.is_open_lidar())
 		{
 			// run
 			wheel.setPidTargetSpeed(0, 0);
 
 			// switch
-			if (laser.isScanOriginalReady() == 1)
+			if (lidar.isScanOriginalReady() == 1)
 			{
-				// Open laser succeeded.
+				// Open lidar succeeded.
 				if ((g_is_manual_pause || g_is_low_bat_pause) && slam.isMapReady())
 					cs.setNext(CS_CLEAN);
 				else
@@ -687,18 +687,18 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			wheel.setPidTargetSpeed(0, 0);
 			std::vector<LineABC> lines;
 			float align_angle = 0.0;
-			if(laser.findLines(&lines,true))
+			if(lidar.findLines(&lines,true))
 			{
-				if (laser.getAlignAngle(&lines,&align_angle))
-					laser.alignAngle(align_angle);
+				if (lidar.getAlignAngle(&lines,&align_angle))
+					lidar.alignAngle(align_angle);
 			}
 
 			// switch
-			if (laser.alignTimeOut())
+			if (lidar.alignTimeOut())
 				cs.setNext(CS_OPEN_SLAM);
-			if (laser.alignFinish())
+			if (lidar.alignFinish())
 			{
-				float align_angle = laser.alignAngle();
+				float align_angle = lidar.alignAngle();
 				align_angle += (float)(LIDAR_THETA / 10);
 				robot::instance()->offsetAngle(align_angle);
 				g_homes[0].TH = -(int16_t)(align_angle);
@@ -747,14 +747,14 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			ROS_ERROR("This mode_ (%d) should not use MotionManage.", cm_get());
 			break;
 	}
-	// No need to start laser or slam if it is go home mode_.
+	// No need to start lidar or slam if it is go home mode_.
 	if (cm_get() == Clean_Mode_Go_Charger)
 		return;
 
 	*/
-/*--- laser init ---*//*
+/*--- lidar init ---*//*
 
-	if(!laser_init())
+	if(!lidar_init())
 		return;
 */
 /*
@@ -825,13 +825,13 @@ MotionManage::~MotionManage()
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-/*	if (s_laser != nullptr)
+/*	if (s_lidar != nullptr)
 	{
-		delete s_laser; // It takes about 1s.
-		s_laser = nullptr;
+		delete s_lidar; // It takes about 1s.
+		s_lidar = nullptr;
 	}*/
-	laser.motorCtrl(OFF);
-	laser.setScanOriginalReady(0);
+	lidar.motorCtrl(OFF);
+	lidar.setScanOriginalReady(0);
 	if (!ev.fatal_quit && ( ( ev.key_clean_pressed && cs_is_paused() ) || g_robot_stuck ) )
 	{
 		wav.play(WAV_CLEANING_PAUSE);

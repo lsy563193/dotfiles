@@ -159,7 +159,7 @@ typedef enum{
 #define Error_Code_Gyro			((uint8_t)0x10)
 #define Error_Code_Encoder		((uint8_t)0x11)
 #define Error_Code_Slam			((uint8_t)0x12)
-#define Error_Code_Laser		((uint8_t)0x13)
+#define Error_Code_Lidar		((uint8_t)0x13)
 #define Error_Code_Test			((uint8_t)0x14)
 #define Error_Code_Test_Null	((uint8_t)0x15)
 #define Error_Code_Omni			((uint8_t)0x16)

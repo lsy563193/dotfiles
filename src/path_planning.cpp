@@ -121,7 +121,7 @@ uint16_t path_get_robot_direction()
 //	if(is_min)
 //		angle = uranged_angle(angle + 1800);
 //	angle /= 10;
-//	auto dis = MotionManage::s_laser->getLaserDistance(angle);
+//	auto dis = MotionManage::s_lidar->getLidarDistance(angle);
 //	int16_t cell_dis = dis * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 //	if(is_min)
 //		ROS_INFO("min cell_dis(%d)",count_to_cell(cell_dis) );
@@ -1218,7 +1218,7 @@ bool path_get_home_point_target(const Cell_t &curr, PPTargetType &path) {
 				auto rm_status = ros_map.get_cell(MAP, cell.X, cell.Y);
 				auto m_status = cost_map.get_cell(MAP, cell.X, cell.Y);
 //				ROS_INFO("\033[1;46;37m" "%s,%d:cell_it(%d,%d), rms(%d),ms(%d)" "\033[0m", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
-				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_LASER) && rm_status == CLEANED){
+				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_LIDAR) && rm_status == CLEANED){
 					ROS_WARN("%s,%d:cell_it(%d,%d), rms(%d),ms(%d)", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
 					cost_map.set_cell(MAP, cost_map.cell_to_count(cell.X), cost_map.cell_to_count(cell.Y), CLEANED);
 				}

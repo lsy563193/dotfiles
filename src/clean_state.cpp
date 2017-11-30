@@ -33,9 +33,9 @@ bool CleanStateBase::is_back_from_charger()
 	return cs_ == CS_BACK_FROM_CHARGER;
 }
 
-bool CleanStateBase::is_open_laser()
+bool CleanStateBase::is_open_lidar()
 {
-	return cs_ == CS_OPEN_LASER;
+	return cs_ == CS_OPEN_LIDAR;
 }
 
 bool CleanStateBase::is_align()

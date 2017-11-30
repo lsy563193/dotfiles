@@ -9,7 +9,7 @@
 #include <pp.h>
 #include <pp/SetLidar.h>
 #include <odom.h>
-#include "laser.hpp"
+#include "lidar.hpp"
 #include "robot.hpp"
 
 #include "std_srvs/Empty.h"
@@ -43,7 +43,7 @@ robot::robot():offset_angle_(0),saved_offset_angle_(0)
 	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &robot::scanLinearCb, this);
 	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal",1,&robot::scanOriginalCb, this);
 	scanCompensate_sub_ = robot_nh_.subscribe("scanCompensate",1,&robot::scanCompensateCb, this);
-	laserPoint_sub_ = robot_nh_.subscribe("laserPoint",1,&robot::laserPointCb, this);
+	lidarPoint_sub_ = robot_nh_.subscribe("lidarPoint",1,&robot::lidarPointCb, this);
 	/*map subscriber for exploration*/
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
@@ -274,23 +274,23 @@ void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 void robot::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	laser.scanLinearCb(msg);
+	lidar.scanLinearCb(msg);
 }
 
 void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	laser.scanOriginalCb(msg);
+	lidar.scanOriginalCb(msg);
 }
 
 void robot::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-	laser.scanCompensateCb(msg);
+	lidar.scanCompensateCb(msg);
 }
 
-void robot::laserPointCb(const visualization_msgs::Marker &point_marker)
+void robot::lidarPointCb(const visualization_msgs::Marker &point_marker)
 {
-	if (laser.isScanOriginalReady())
-		laser.laserPointCb(point_marker);
+	if (lidar.isScanOriginalReady())
+		lidar.lidarPointCb(point_marker);
 }
 
 void robot::visualizeMarkerInit()
@@ -378,7 +378,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.g = 1.0;
 		color_.b = 1.0;
 	}
-	else if (type == BLOCKED_LASER)
+	else if (type == BLOCKED_LIDAR)
 	{
 		//Blue
 		color_.r = 0.0;
@@ -543,10 +543,10 @@ void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
 	line_marker.color.a = 1.0;
 	line_marker.header.frame_id = "/base_link";
 	line_marker.header.stamp = ros::Time::now();
-	geometry_msgs::Point laser_points_;
-	laser_points_.x = 0.0;
-	laser_points_.y = 0.0;
-	laser_points_.z = 0.0;
+	geometry_msgs::Point lidar_points_;
+	lidar_points_.x = 0.0;
+	lidar_points_.y = 0.0;
+	lidar_points_.z = 0.0;
 
 	/*line_marker.pose.position.x = 0.0;
 	line_marker.pose.position.y = 0.0;
@@ -565,10 +565,10 @@ void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
 			for (int j = 0; j < points_size; j++) {
 				//line_marker.pose.position.x = (iter->begin() + j)->x;
 				//line_marker.pose.position.y = (iter->begin() + j)->y;
-				laser_points_.x = (iter->begin() + j)->x;
-				laser_points_.y = (iter->begin() + j)->y;
-				//ROS_INFO("laser_points_.x = %lf laser_points_.y = %lf",laser_points_.x, laser_points_.y);
-				line_marker.points.push_back(laser_points_);
+				lidar_points_.x = (iter->begin() + j)->x;
+				lidar_points_.y = (iter->begin() + j)->y;
+				//ROS_INFO("lidar_points_.x = %lf lidar_points_.y = %lf",lidar_points_.x, lidar_points_.y);
+				line_marker.points.push_back(lidar_points_);
 			}
 		}
 		line_marker_pub_.publish(line_marker);
@@ -602,14 +602,14 @@ void robot::pubPointMarkers(const std::vector<Point_d_t> *points, std::string fr
 	point_marker.header.frame_id = frame_id;
 	point_marker.header.stamp = ros::Time::now();
 
-	geometry_msgs::Point laser_points;
-	laser_points.z = 0;
+	geometry_msgs::Point lidar_points;
+	lidar_points.z = 0;
 	if (!points->empty()) {
 		std::string msg("");
 		for (std::vector<Double_Point>::const_iterator iter = points->cbegin(); iter != points->cend(); ++iter) {
-			laser_points.x = iter->x;
-			laser_points.y = iter->y;
-			point_marker.points.push_back(laser_points);
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
+			point_marker.points.push_back(lidar_points);
 			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
 		}
 		point_marker_pub_.publish(point_marker);
@@ -624,7 +624,7 @@ void robot::pubPointMarkers(const std::vector<Point_d_t> *points, std::string fr
 	*/
 }
 
-bool robot::laserMotorCtrl(bool switch_)
+bool robot::lidarMotorCtrl(bool switch_)
 {
 	pp::SetLidar ctrl_message;
 	if(switch_){

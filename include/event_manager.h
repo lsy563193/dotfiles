@@ -67,8 +67,8 @@ typedef struct {
 		bool slam_error;
 		bool tilt_triggered;
 		uint8_t charge_detect;
-		bool laser_stuck = false;
-		uint8_t laser_triggered;
+		bool lidar_stuck = false;
+		uint8_t lidar_triggered;
 		bool cliff_all_triggered;
 }Ev_t;
 class EventHandle{
@@ -191,8 +191,8 @@ void lidar_bumper(bool state_new,bool state_last)
 }
 */
 
-// Laser stuck
-virtual void laser_stuck(bool state_new,bool state_last);
+// Lidar stuck
+virtual void lidar_stuck(bool state_new,bool state_last);
 /* Default: empty hanlder */
 //void empty(bool state_now, bool state_last);
 
@@ -302,7 +302,7 @@ typedef enum {
 
 	EVT_LIDAR_BUMPER,
 
-	EVT_LASER_STUCK,
+	EVT_LIDAR_STUCK,
 
 	EVT_MAX,
 } EventType;
@@ -373,5 +373,5 @@ void df_remote_max(bool state_now, bool state_last);
 void df_charge_detect(bool state_now, bool state_last);
 void df_slam_error(bool state_now, bool state_last);
 void df_robot_slip(bool state_new,bool state_last);
-void df_laser_stuck(bool state_new,bool state_last);
+void df_lidar_stuck(bool state_new,bool state_last);
 #endif

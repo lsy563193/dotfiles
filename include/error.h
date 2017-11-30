@@ -68,7 +68,7 @@ void alarm(void)
 			wav.play(WAV_ERROR_MOBILITY_WHEEL);
 			break;
 		}
-		case Error_Code_Laser:
+		case Error_Code_Lidar:
 		{
 			wav.play(WAV_TEST_LIDAR);
 			break;

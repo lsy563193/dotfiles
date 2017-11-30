@@ -48,7 +48,7 @@ void explore_update_map(void)
 {
 	int32_t x, y;
 	bool ret = false;
-	int16_t angle, laser_angle;
+	int16_t angle, lidar_angle;
 	const int RADIUS_CELL = 10;//the radius of the robot can detect
 	angle = robot::instance()->getPoseAngle();
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {

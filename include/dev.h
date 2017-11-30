@@ -22,7 +22,7 @@
 #include "gyro.h"
 #include "key.h"
 #include "odom.h"
-#include "laser.hpp"
+#include "lidar.hpp"
 #include "led.h"
 #include "obs.h"
 #include "omni.h"

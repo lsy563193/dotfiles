@@ -55,7 +55,7 @@ public:
 	void pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 
 	// Service caller functions.
-	bool laserMotorCtrl(bool switch_);
+	bool lidarMotorCtrl(bool switch_);
 	bool slamStart(void);
 	bool slamStop(void);
 
@@ -216,7 +216,7 @@ private:
 	ros::Subscriber	scanLinear_sub_;
 	ros::Subscriber	scanOriginal_sub_;
 	ros::Subscriber	scanCompensate_sub_;
-	ros::Subscriber laserPoint_sub_;
+	ros::Subscriber lidarPoint_sub_;
 
 	ros::Publisher odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
@@ -249,7 +249,7 @@ private:
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void laserPointCb(const visualization_msgs::Marker &point_marker);
+	void lidarPointCb(const visualization_msgs::Marker &point_marker);
 };
 
 #endif

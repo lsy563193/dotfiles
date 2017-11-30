@@ -6,7 +6,7 @@
 #include "rcon.h"
 #include "core_move.h"
 #include "mathematics.h"
-#include "laser.hpp"
+#include "lidar.hpp"
 
 Rcon c_rcon;
 
@@ -185,11 +185,11 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 		return false;
 	}
 	memset(cnt,0,sizeof(int8_t)*13);
-	if(robot::instance()->isScanAllow() && laser.laserCheckFresh(0.210,1)){
+	if(robot::instance()->isScanAllow() && lidar.lidarCheckFresh(0.210,1)){
 		int count = 0;
 		double sum = 0.0;
 		for(int i = cd -1;i<=cd +1;i++){//for calculate avarage distance
-			dist = laser.getLaserDistance(180+i);
+			dist = lidar.getLidarDistance(180+i);
 			if(dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
 				sum += dist;
 				count++;

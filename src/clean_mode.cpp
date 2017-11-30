@@ -116,13 +116,13 @@ void CleanMode::setMt()
 				//		block_angle = rcon_turn_angle();
 			else
 				block_angle = 0;
-			if (LASER_FOLLOW_WALL)
-				if(!laser_turn_angle(g_turn_angle))
+			if (LIDAR_FOLLOW_WALL)
+				if(!lidar_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 		}else{
 //			ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
-			if (LASER_FOLLOW_WALL)
-				if(!laser_turn_angle(g_turn_angle))
+			if (LIDAR_FOLLOW_WALL)
+				if(!lidar_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 		}
 		ROS_INFO("%s,%d: mt.is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
@@ -225,7 +225,7 @@ void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 void CleanMode::resetTriggeredValue(void)
 {
-	ev.laser_triggered = 0;
+	ev.lidar_triggered = 0;
 	ev.rcon_triggered = 0;
 	ev.bumper_triggered = 0;
 	ev.obs_triggered = 0;
@@ -297,7 +297,7 @@ bool NavigationClean::isReach()
 		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
 			if (isMt())
-				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with lidar.
 			else if (isBack())
 				return back_reg_->isReach();
 		}
@@ -357,9 +357,9 @@ bool NavigationClean::isExit()
 	{
 		return CleanMode::isExit();
 	}
-	else if (cs.is_open_laser())
+	else if (cs.is_open_lidar())
 	{
-		return CleanMode::isExit() || laser.openTimeOut();
+		return CleanMode::isExit() || lidar.openTimeOut();
 	}
 	else if (cs.is_open_slam())
 	{
@@ -400,16 +400,16 @@ bool NavigationClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(2);
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -419,9 +419,9 @@ bool NavigationClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -431,9 +431,9 @@ bool NavigationClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -443,17 +443,17 @@ bool NavigationClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop()
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop()
 						|| line_reg_->isPassTargetStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 		else if (mt.is_follow_wall()) // Robot is going to new line.
 		{
 			if (isMt())
 				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(1) || fw_reg_->isIsolate();
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -683,7 +683,7 @@ void NavigationClean::mark()
 	cost_map.set_cliff();
 	cost_map.set_tilt();
 	cost_map.set_slip();
-	cost_map.set_laser();
+	cost_map.set_lidar();
 
 	if(mt.is_follow_wall())
 		cost_map.set_follow_wall();
@@ -779,9 +779,9 @@ bool SpotClean::isStop()
 		if (mt.is_linear()) {
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-								|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+								|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 	return false;
@@ -861,7 +861,7 @@ bool WallFollowClean::isReach() {
 
 	if (mt.is_linear()) {
 		if (isMt())
-			return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+			return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with lidar.
 	}
 	else if (mt.is_follow_wall()) {
 		if (isMt())
@@ -898,9 +898,9 @@ bool WallFollowClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -910,16 +910,16 @@ bool WallFollowClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-								|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+								|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 		else if (mt.is_follow_wall()) // Robot is following wall for cleaning.
 		{
 			if (isMt())
 				return fw_reg_->isIsolate();
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 	return false;
@@ -1006,7 +1006,7 @@ void WallFollowClean::mark() {
 		fw_map.set_cliff();
 		fw_map.set_tilt();
 		fw_map.set_slip();
-		fw_map.set_laser();
+		fw_map.set_lidar();
 		fw_map.set_follow_wall();
 	}
 
@@ -1075,7 +1075,7 @@ bool Exploration::isReach()
 		{
 			if (isMt())
 			{
-				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+				return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with lidar.
 			}
 			else if (isBack())
 				return back_reg_->isReach();
@@ -1140,16 +1140,16 @@ bool Exploration::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 		else if (mt.is_follow_wall()) // Robot is following wall to escape from trapped.
 		{
 			if (isMt())
 				return fw_reg_->isOverOriginLine() || fw_reg_->isClosure(2);
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -1159,9 +1159,9 @@ bool Exploration::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -1172,9 +1172,9 @@ bool Exploration::isStop()
 			{
 				if (isMt())
 					return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-							|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+							|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 				else if (isBack())
-					return back_reg_->isLaserStop();
+					return back_reg_->isLidarStop();
 			}
 		}
 	}

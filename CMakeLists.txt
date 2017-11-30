@@ -24,7 +24,7 @@ FILE(GLOB PP_SRC
 	src/dev/wall_follow.cpp
 	src/dev/omni.cpp
 	src/dev/wheel.cpp
-	src/dev/laser.cpp
+	src/dev/lidar.cpp
 	src/dev/wav.cpp
 
 				src/action/action.cpp
