@@ -26,8 +26,8 @@
 #define TRAPPED 2
 using namespace std;
 const int ISOLATE_COUNT_LIMIT = 4;
-int16_t g_new_dir;
-int16_t g_old_dir;
+MapDirection g_new_dir;
+MapDirection g_old_dir;
 bool g_check_path_in_advance = false;
 bool g_allow_check_path_in_advance = true;
 int g_wf_reach_count;
@@ -109,9 +109,9 @@ void path_planning_initialize()
 	cost_map.mark_robot(MAP);
 }
 
-uint16_t path_get_robot_direction()
+MapDirection path_get_robot_direction()
 {
-	return g_plan_path.front().TH;
+	return static_cast<MapDirection>(g_plan_path.front().TH);
 }
 
 
@@ -959,15 +959,15 @@ bool cm_turn_and_check_charger_signal(void)
 	return false;
 }
 
-int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
+MapDirection path_full_angle(const Cell_t& start, PPTargetType& path)
 {
 	path.push_front(start);
 	for(auto it = path.begin(); it < path.end(); ++it) {
 		auto it_next = it+1;
 		if (it->X == it_next->X)
-			it->TH = it->Y > it_next->Y ? NEG_Y : POS_Y;
+			it->TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
 		else
-			it->TH = it->X > it_next->X ? NEG_X : POS_X;
+			it->TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 	if(cs.is_going_home() && g_home_point == g_zero_home)
@@ -976,7 +976,7 @@ int16_t path_full_angle(const Cell_t& start, PPTargetType& path)
 		path.back().TH = (path.end()-2)->TH;
 	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
 			 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
-	int16_t dir = path.front().TH;
+	MapDirection dir = static_cast<MapDirection>(path.front().TH);
 	path.pop_front();
 	return dir;
 }
@@ -1074,15 +1074,15 @@ void path_fill_path(std::deque<Cell_t>& path)
 		}
 		//ROS_DEBUG("%s %d: it(%d, %d), next it(%d, %d).", __FUNCTION__, __LINE__, it->X, it->Y, next_it->X, next_it->Y);
 		if (next_it->X == it->X)
-			dir = next_it->Y > it->Y ? POS_Y : NEG_Y;
+			dir = next_it->Y > it->Y ? MAP_POS_Y : MAP_NEG_Y;
 		else
-			dir = next_it->X > it->X ? POS_X : NEG_X;
+			dir = next_it->X > it->X ? MAP_POS_X : MAP_NEG_X;
 
 		cell.X = it->X;
 		cell.Y = it->Y;
 		switch(dir)
 		{
-			case POS_X:
+			case MAP_POS_X:
 			{
 				while (cell.X != next_it->X)
 				{
@@ -1093,7 +1093,7 @@ void path_fill_path(std::deque<Cell_t>& path)
 				}
 				break;
 			}
-			case NEG_X:
+			case MAP_NEG_X:
 			{
 				while (cell.X != next_it->X)
 				{
@@ -1104,7 +1104,7 @@ void path_fill_path(std::deque<Cell_t>& path)
 				}
 				break;
 			}
-			case POS_Y:
+			case MAP_POS_Y:
 			{
 				while (cell.Y != next_it->Y)
 				{
@@ -1115,7 +1115,7 @@ void path_fill_path(std::deque<Cell_t>& path)
 				}
 				break;
 			}
-			case NEG_Y:
+			case MAP_NEG_Y:
 			{
 				while (cell.Y != next_it->Y)
 				{

@@ -15,9 +15,9 @@ ForwardMovement::ForwardMovement(Point32_t target, const PPTargetType& path):
 bool ForwardMovement::isCellReach()
 {
 	// Checking if robot has reached target cell.
-	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto curr = (CostMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = cost_map.cell_to_point(g_plan_path.back());
-	auto target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
+	auto target = (CostMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
 	{
@@ -45,17 +45,17 @@ bool ForwardMovement::isPoseReach()
 
 bool ForwardMovement::isNearTarget()
 {
-	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto curr = (CostMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = cost_map.cell_to_point(g_plan_path.front());
-	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
+	auto &target = (CostMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
 	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
-	if ((IS_POS_AXIS(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
-		(!IS_POS_AXIS(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
+	if ((CostMap::isPositiveDirection(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
+		(!CostMap::isPositiveDirection(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
 		if(g_plan_path.size() > 1)
 		{
 			// Switch to next target for smoothly turning.
-			g_new_dir = g_plan_path.front().TH;
+			g_new_dir = static_cast<MapDirection>(g_plan_path.front().TH);
 			g_plan_path.pop_front();
 			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, cost_map.get_x_cell(),
 					 cost_map.get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
@@ -146,14 +146,14 @@ bool ForwardMovement::isBoundaryStop()
 bool ForwardMovement::isPassTargetStop()
 {
 	// Checking if robot has reached target cell.
-	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto curr = (CostMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = cost_map.cell_to_point(g_plan_path.back());
-	auto target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
-	if ((IS_POS_AXIS(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
-		(!IS_POS_AXIS(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
+	auto target = (CostMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
+	if ((CostMap::isPositiveDirection(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
+		(!CostMap::isPositiveDirection(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
 		ROS_INFO("%s, %d: ForwardMovement, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-				 __FUNCTION__, __LINE__, g_new_dir, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), curr, target);
+				 __FUNCTION__, __LINE__, g_new_dir, CostMap::isXDirection(g_new_dir), CostMap::isPositiveDirection(g_new_dir), curr, target);
 		return true;
 	}
 	return false;
@@ -171,23 +171,23 @@ void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
 	wheel.setDirectionForward();
-	auto curr = (IS_X_AXIS(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto curr = (CostMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = cost_map.cell_to_point(g_plan_path.front());
-	auto &target = (IS_X_AXIS(g_new_dir)) ? target_p.X : target_p.Y;
+	auto &target = (CostMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 
 
 	int16_t angle_diff = 0;
 	int16_t dis = std::min(std::abs(curr - target), (int32_t) (1.5 * CELL_COUNT_MUL));
-	if (!IS_POS_AXIS(g_new_dir))
+	if (!CostMap::isPositiveDirection(g_new_dir))
 		dis *= -1;
 	target = curr + dis;
 
 	angle_diff = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y) - robot::instance()->getPoseAngle());
 
-//	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, IS_X_AXIS(g_new_dir), IS_POS_AXIS(g_new_dir), dis, target_p.X, target_p.Y);
-//	auto dis_diff = IS_X_AXIS(g_new_dir) ? s_curr_p.Y - s_target_p.Y : s_curr_p.X - s_target_p.X;
-//	dis_diff = IS_POS_AXIS(g_new_dir) ^ IS_X_AXIS(g_new_dir) ? dis_diff :  -dis_diff;
+//	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, CostMap::isXDirection(g_new_dir), CostMap::isPositiveDirection(g_new_dir), dis, target_p.X, target_p.Y);
+//	auto dis_diff = CostMap::isXDirection(g_new_dir) ? s_curr_p.Y - s_target_p.Y : s_curr_p.X - s_target_p.X;
+//	dis_diff = CostMap::isPositiveDirection(g_new_dir) ^ CostMap::isXDirection(g_new_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
 		auto t = cost_map.point_to_cell(target_p);

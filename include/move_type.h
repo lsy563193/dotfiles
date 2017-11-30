@@ -41,7 +41,7 @@ public:
  * return:	true: Robot should switch move type to following wall.
  * 			false: Robot should not switch move type to following wall.
  */
-	bool should_follow_wall(const int16_t dir, const Cell_t &curr, PPTargetType &path);
+	bool should_follow_wall(const MapDirection dir, const Cell_t &curr, PPTargetType &path);
 
 private:
 	int mt_;

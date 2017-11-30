@@ -44,20 +44,16 @@ typedef enum {
 } CellState;
 
 typedef enum {
-  POS_X = 0,
-  PX_PY = 450,
-  POS_Y = 900,
-  NS_PY = 1350,
-  NEG_X = 1800,
-  NX_NY =-1350,
-  NEG_Y =-900,
-  PX_NY =-450,
-  NONE = 0,
-} Direction_Cardinal;
-
-#define IS_POS_AXIS(x) (x == POS_X || x == POS_Y || x == NONE)
-#define	IS_X_AXIS(x) (x == NEG_X || x == POS_X || x == NONE)
-#define	IS_Y_AXIS(x) (x == POS_Y || x == NEG_Y)
+  MAP_POS_X = 0,
+  MAP_PX_PY = 450,
+  MAP_POS_Y = 900,
+  MAP_NS_PY = 1350,
+  MAP_NEG_X = 1800,
+  MAP_NX_NY =-1350,
+  MAP_NEG_Y =-900,
+  MAP_PX_NY =-450,
+  MAP_NONE = 0,
+} MapDirection;
 
 class SlamMap
 {
@@ -95,6 +91,12 @@ class CostMap {
 public:
 
 	CostMap();
+
+	static bool isPositiveDirection(MapDirection dir);
+
+	static bool isXDirection(MapDirection dir);
+
+	static bool isYDirection(MapDirection dir);
 
 	static int32_t get_x_count(void);
 
@@ -322,6 +324,7 @@ public:
 
 	void color_print(char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
+
 private:
 	uint8_t costmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
 	uint8_t spmap[MAP_SIZE][(MAP_SIZE + 1) / 2];

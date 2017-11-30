@@ -44,8 +44,8 @@ extern std::vector<Cell_t> g_homes;
 extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
 extern bool g_keep_on_wf;
-extern int16_t g_new_dir;
-extern int16_t g_old_dir;
+extern MapDirection g_new_dir;
+extern MapDirection g_old_dir;
 extern Cell_t g_home;
 extern Cell_t g_zero_home;
 extern bool g_home_gen_rosmap;
@@ -110,11 +110,10 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path);
  * @return	POS_X/POS_Y/NEG_X/NEG_Y for indicating the direction from start cell to first target.
  */
 bool cm_turn_and_check_charger_signal(void);
-int16_t path_full_angle(const Cell_t& start, PPTargetType& path);
+MapDirection path_full_angle(const Cell_t& start, PPTargetType& path);
 
 //void path_update_cell_history(void);
 
-uint16_t path_get_robot_direction(void);
 
 bool path_target(const Cell_t& curr, PPTargetType& path);
 //int16_t path_target2(const Cell_t& curr, PPTargetType& path);
@@ -197,7 +196,7 @@ int16_t path_get_home_y(void);
  *
  * @return	Last robot direction
  */
-uint16_t path_get_robot_direction(void);
+MapDirection path_get_robot_direction(void);
 
 /*
  * Check a block is accessible or not, a block is defined as have the same size of robot.

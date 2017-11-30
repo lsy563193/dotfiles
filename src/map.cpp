@@ -66,27 +66,30 @@ CostMap::CostMap() {
 //		xCount = 0;
 //		yCount = 0;
 }
-/*
-int16_t CostMap::get_estimated_room_size(void) {
-	int16_t i, j;
 
-	i = g_x_max - g_x_min;
-	j = g_y_max - g_y_min;
+bool CostMap::isPositiveDirection(MapDirection dir)
+{
+	if (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE)
+		return true;
 
-	if(i < j) {
-		i = g_y_max - g_y_min;
-		j = g_x_max - g_x_min;
-	}
-
-	if(i * 2 > j * 3) {
-		i = (i * i) / 27;				//Convert no of cell to tenth m^2
-	} else {
-		i = (i * j) / 18;				//Convert no of cell to tenth m^2
-	}
-
-	return i;
+	return false;
 }
-*/
+
+bool CostMap::isXDirection(MapDirection dir)
+{
+	if (dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE)
+		return true;
+
+	return false;
+}
+
+bool CostMap::isYDirection(MapDirection dir)
+{
+	if (dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE)
+		return true;
+
+	return false;
+}
 
 int32_t CostMap::get_x_count(void) {
 	return (int32_t)round(xCount);
