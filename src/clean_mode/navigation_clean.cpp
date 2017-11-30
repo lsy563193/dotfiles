@@ -422,7 +422,7 @@ bool NavigationClean::csm_next(Cell_t &curr)
 void NavigationClean::mark()
 {
 	ROS_INFO("%s, %d: NavigationClean::mark", __FUNCTION__, __LINE__);
-	CostMap::save_blocks();
+	cost_map.save_blocks();
 
 //	uint8_t block_count = 0;
 	cost_map.set_obs();

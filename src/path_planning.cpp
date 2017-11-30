@@ -886,7 +886,7 @@ bool path_next_fw(const Cell_t &start) {
 			}
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 			Cell_t cell;
-			auto point = CostMap::get_curr_point();
+			auto point = cost_map.get_curr_point();
 			point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
 			cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
@@ -1315,7 +1315,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		auto angle = -900;
 	Cell_t cell;
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-	auto point = CostMap::get_curr_point();
+	auto point = cost_map.get_curr_point();
 	point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
 	cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 		path.clear();

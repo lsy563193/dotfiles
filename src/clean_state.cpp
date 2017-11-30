@@ -102,7 +102,7 @@ int CleanStateBase::get(void)
 
 bool CleanStateBase::isTrapped() {
 	int escape_cleaned_count = 0;
-	auto curr = CostMap::get_curr_cell();
+	auto curr = cost_map.get_curr_cell();
 	PPTargetType path{{0,0,0}};
 	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
 	if(is_found)

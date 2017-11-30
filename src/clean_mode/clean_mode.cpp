@@ -69,7 +69,7 @@ void CleanMode::run()
 		}
 
 		if (isSwitch()) {
-			CostMap::save_blocks();
+			cost_map.save_blocks();
 		}
 
 		int32_t left_speed = 0, right_speed = 0;
@@ -183,7 +183,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 			g_passed_path.clear();
 			g_wf_reach_count++;
 		}
-		CostMap::save_blocks();
+		cost_map.save_blocks();
 	}
 //	else
 //		is_time_up = !cs.is_trapped();

@@ -186,7 +186,7 @@ bool WallFollowClean::isSwitch()
 
 void WallFollowClean::mark() {
 
-	CostMap::save_blocks();
+	fw_map.save_blocks();
 //	uint8_t block_count = 0;
 	if(mt.is_follow_wall()) {
 		fw_map.set_obs();
