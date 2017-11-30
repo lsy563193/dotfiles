@@ -417,7 +417,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map) {
 			neighbor = cell + g_index[i];
 			if (cost_map.get_cell(MAP, neighbor.X, neighbor.Y) == UNCLEAN) {
 				if (cost_map.is_block_accessible(neighbor.X, neighbor.Y) == 1 && cost_map.get_cell(SPMAP, neighbor.X, neighbor.Y) == UNCLEAN) {
-					cost_map.set_cell(SPMAP, neighbor.X, neighbor.Y, CLEANED);
+					cost_map.setCell(SPMAP, neighbor.X, neighbor.Y, CLEANED);
 					cells.push_back(neighbor);
 				}
 			}
@@ -886,7 +886,7 @@ bool path_next_fw(const Cell_t &start) {
 			}
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 			Cell_t cell;
-			auto point = cost_map.get_curr_point();
+			auto point = cost_map.getCurrPoint();
 			point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
 			cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
@@ -1196,7 +1196,7 @@ bool path_get_home_point_target(const Cell_t &curr, PPTargetType &path) {
 		auto map_tmp = cost_map.generateBound();
 		for (const auto &cell : map_tmp) {
 			if (cost_map.get_cell(MAP, cell.X, cell.Y) == BLOCKED_RCON)
-				cost_map.set_cell(MAP, cost_map.cell_to_count(cell.X), cost_map.cell_to_count(cell.Y), UNCLEAN);
+				cost_map.setCell(MAP, cost_map.cell_to_count(cell.X), cost_map.cell_to_count(cell.Y), UNCLEAN);
 		}
 	}
 	for (; g_home_way_it != g_home_way_list.end(); ++g_home_way_it) {
@@ -1220,7 +1220,7 @@ bool path_get_home_point_target(const Cell_t &curr, PPTargetType &path) {
 //				ROS_INFO("\033[1;46;37m" "%s,%d:cell_it(%d,%d), rms(%d),ms(%d)" "\033[0m", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
 				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_LIDAR) && rm_status == CLEANED){
 					ROS_WARN("%s,%d:cell_it(%d,%d), rms(%d),ms(%d)", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
-					cost_map.set_cell(MAP, cost_map.cell_to_count(cell.X), cost_map.cell_to_count(cell.Y), CLEANED);
+					cost_map.setCell(MAP, cost_map.cell_to_count(cell.X), cost_map.cell_to_count(cell.Y), CLEANED);
 				}
 			}
 		}
@@ -1315,7 +1315,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		auto angle = -900;
 	Cell_t cell;
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-	auto point = cost_map.get_curr_point();
+	auto point = cost_map.getCurrPoint();
 	point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
 	cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 		path.clear();
@@ -1379,7 +1379,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 
 	cost_map.reset(SPMAP);
 
-	cost_map.set_cell(SPMAP,curr.X,curr.Y,COST_1);
+	cost_map.setCell(SPMAP, curr.X, curr.Y, COST_1);
 	Queue queue;
 	Entry startPoint(0.0, curr);
 	cleaned_count = 1;
@@ -1415,7 +1415,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 						if (cost_map.get_cell(MAP, neighbor_.X, neighbor_.Y) == CLEANED && \
 						    cost_map.get_cell(SPMAP, neighbor_.X, neighbor_.Y) == COST_NO) {
 							cleaned_count++;
-							cost_map.set_cell(SPMAP, neighbor_.X, neighbor_.Y, COST_2);
+							cost_map.setCell(SPMAP, neighbor_.X, neighbor_.Y, COST_2);
 //							ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor_.X, neighbor_.Y, cleaned_count);
 						}
 					}
@@ -1423,7 +1423,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 					if (cost_map.is_block_accessible(neighbor.X, neighbor.Y)) {
 //					ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
 						queue.insert(Entry(0, neighbor));
-						cost_map.set_cell(SPMAP, neighbor.X, neighbor.Y, COST_1);
+						cost_map.setCell(SPMAP, neighbor.X, neighbor.Y, COST_1);
 					}
 				}
 			}

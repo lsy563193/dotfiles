@@ -380,7 +380,7 @@ void init_go_home_after_gyro()
 bool wait_for_back_from_charge()
 {
 	ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
-		auto curr = cost_map.get_curr_cell();
+		auto curr = cost_map.getCurrCell();
 		path_set_home(curr);
 		extern bool g_from_charger;
 		g_from_charger = true;
@@ -803,7 +803,7 @@ MotionManage::~MotionManage()
 {
 	if (cm_get() != Clean_Mode_Go_Charger)
 	{
-		cost_map.print(MAP, cost_map.get_x_cell(), cost_map.get_y_cell());
+		cost_map.print(MAP, cost_map.getXCell(), cost_map.getYCell());
 		//if (cm_is_follow_wall())
 		g_wf_reach_count = 0;
 		if (SpotMovement::instance()->getSpotType() != NO_SPOT)

@@ -135,7 +135,7 @@ bool FollowWallMovement::shouldTurn()
 
 bool FollowWallMovement::isBlockCleared()
 {
-	if (!cost_map.is_block_accessible(cost_map.get_x_cell(), cost_map.get_y_cell())) // Robot has step on blocks.
+	if (!cost_map.is_block_accessible(cost_map.getXCell(), cost_map.getYCell())) // Robot has step on blocks.
 	{
 		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;

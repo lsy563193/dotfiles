@@ -5,7 +5,7 @@
 //NavigationClean
 NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	g_plan_path.clear();
-	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
+	s_curr_p = {cost_map.getXCount(), cost_map.getYCount()};
 	auto target = cost_map.cell_to_point(target_cell);
 
 	back_reg_ = new BackMovement();
@@ -351,7 +351,8 @@ bool NavigationClean::isSwitch()
 
 bool NavigationClean::csm_next(Cell_t &curr)
 {
-	ROS_INFO("%s %d: cs:%d, current(%d %d), g_check_path_in_advance:%d", __FUNCTION__, __LINE__, cs.get(), cost_map.get_x_cell(), cost_map.get_y_cell(), g_check_path_in_advance);
+	ROS_INFO("%s %d: cs:%d, current(%d %d), g_check_path_in_advance:%d", __FUNCTION__, __LINE__, cs.get(),
+			 cost_map.getXCell(), cost_map.getYCell(), g_check_path_in_advance);
 //	if (cs.is_clean() && g_check_path_in_advance)
 //	{
 //		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");

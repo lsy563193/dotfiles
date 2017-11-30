@@ -7,7 +7,7 @@
 //WallFollowClean
 WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	g_plan_path.clear();
-	s_curr_p = {cost_map.get_x_count(),cost_map.get_y_count()};
+	s_curr_p = {cost_map.getXCount(), cost_map.getYCount()};
 	auto target = cost_map.cell_to_point(target_cell);
 
 	back_reg_ = new BackMovement();

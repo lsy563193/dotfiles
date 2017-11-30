@@ -98,21 +98,21 @@ public:
 
 	static bool isYDirection(MapDirection dir);
 
-	int32_t get_x_count(void);
+	int32_t getXCount(void);
 
-	int32_t get_y_count(void);
+	int32_t getYCount(void);
 
-	Point32_t get_curr_point(void);
+	Point32_t getCurrPoint(void);
 
-	int16_t get_x_cell(void);
+	int16_t getXCell(void);
 
-	int16_t get_y_cell(void);
+	int16_t getYCell(void);
 
-	Cell_t get_curr_cell();
+	Cell_t getCurrCell();
 
-	void set_cell(uint8_t id, int32_t x, int32_t y, CellState value);
+	void setCell(uint8_t id, int32_t x, int32_t y, CellState value);
 
-	void set_position(double x, double y);
+	void setPosition(double x, double y);
 
 	Point32_t get_relative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 

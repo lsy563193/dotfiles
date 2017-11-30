@@ -1120,7 +1120,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	/* Reset the cells in the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			cost_map.set_cell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
+			cost_map.setCell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
 		}
 	}
 
@@ -1133,12 +1133,12 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
 				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 					for (n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-						cost_map.set_cell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
+						cost_map.setCell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
 					}
 				}
 			}
 			else if(cs == UNCLEAN && is_fobbit_free())
-				cost_map.set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
+				cost_map.setCell(SPMAP, (int32_t) (i), (int32_t) (j), COST_HIGH);
 		}
 	}
 
@@ -1149,7 +1149,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	//}
 
 	/* Set the current robot position has the cost value of 1. */
-	cost_map.set_cell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
+	cost_map.setCell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -1185,25 +1185,25 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 				if(cost_map.get_cell(SPMAP, i, j) == passValue) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
 					if (cost_map.get_cell(SPMAP, i - 1, j) == COST_NO) {
-						cost_map.set_cell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
+						cost_map.setCell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
 					if (cost_map.get_cell(SPMAP, i + 1, j) == COST_NO) {
-						cost_map.set_cell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
+						cost_map.setCell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
 					if (cost_map.get_cell(SPMAP, i, j - 1) == COST_NO) {
-						cost_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
+						cost_map.setCell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
 					if (cost_map.get_cell(SPMAP, i, j + 1) == COST_NO) {
-						cost_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
+						cost_map.setCell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 				}
@@ -1258,7 +1258,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 			targetCost = COST_5;
 
 		/* Set the cell value to 6 if the cells is on the path. */
-		cost_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+		cost_map.setCell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 #define COST_SOUTH	{											\
 				if (next == 0 && (cost_map.get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
@@ -1319,7 +1319,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 		tracex_tmp = tracex;
 		tracey_tmp = tracey;
 	}
-	cost_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+	cost_map.setCell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 	t.X = tracex_tmp;
 	t.Y = tracey_tmp;
@@ -1468,19 +1468,19 @@ int16_t path_next_shortest(const Cell_t &curr, const Cell_t &target, PPTargetTyp
 			if (cost_map.get_cell(SPMAP, x_path - 1, y_path) == COST_PATH) {
 				x_path--;
 				stage = 1;
-				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+				cost_map.setCell(SPMAP, x_path, y_path, COST_NO);
 			} else if (cost_map.get_cell(SPMAP, x_path, y_path + 1) == COST_PATH) {
 				y_path++;
 				stage = 2;
-				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+				cost_map.setCell(SPMAP, x_path, y_path, COST_NO);
 			} else if (cost_map.get_cell(SPMAP, x_path + 1, y_path) == COST_PATH) {
 				x_path++;
 				stage = 3;
-				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+				cost_map.setCell(SPMAP, x_path, y_path, COST_NO);
 			} else if (cost_map.get_cell(SPMAP, x_path, y_path - 1) == COST_PATH) {
 				y_path--;
 				stage = 4;
-				cost_map.set_cell(SPMAP, x_path, y_path, COST_NO);
+				cost_map.setCell(SPMAP, x_path, y_path, COST_NO);
 			}
 
 			if (stage == 0)
@@ -1682,7 +1682,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 	/* Reset the cells in the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			fw_map.set_cell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
+			fw_map.setCell(SPMAP, (int32_t) i, (int32_t) j, COST_NO);
 		}
 	}
 
@@ -1694,12 +1694,12 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++) {
 				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 					for (n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-						fw_map.set_cell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
+						fw_map.setCell(SPMAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
 					}
 				}
 			}
 			else if(cs == UNCLEAN && is_fobbit_free())
-				fw_map.set_cell(SPMAP, (int32_t)(i), (int32_t)(j), COST_HIGH);
+				fw_map.setCell(SPMAP, (int32_t) (i), (int32_t) (j), COST_HIGH);
 		}
 	}
 
@@ -1710,7 +1710,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 	//}
 
 	/* Set the current robot position has the cost value of 1. */
-	fw_map.set_cell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
+	fw_map.setCell(SPMAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -1746,25 +1746,25 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 				if(fw_map.get_cell(SPMAP, i, j) == passValue) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
 					if (fw_map.get_cell(SPMAP, i - 1, j) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
+						fw_map.setCell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
 					if (fw_map.get_cell(SPMAP, i + 1, j) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
+						fw_map.setCell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
 					if (fw_map.get_cell(SPMAP, i, j - 1) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
+						fw_map.setCell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
 					if (fw_map.get_cell(SPMAP, i, j + 1) == COST_NO) {
-						fw_map.set_cell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
+						fw_map.setCell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 				}
@@ -1820,7 +1820,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 			targetCost = COST_5;
 
 		/* Set the cell value to 6 if the cells is on the path. */
-		fw_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+		fw_map.setCell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 #define COST_SOUTH	{											\
 				if (next == 0 && (fw_map.get_cell(SPMAP, tracex - 1, tracey) == targetCost)) {	\
@@ -1881,7 +1881,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 		tracex_tmp = tracex;
 		tracey_tmp = tracey;
 	}
-	fw_map.set_cell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+	fw_map.setCell(SPMAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 	t.X = tracex_tmp;
 	t.Y = tracey_tmp;

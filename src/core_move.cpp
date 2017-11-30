@@ -156,7 +156,7 @@ void cm_apply_cs(int next) {
 	}
 	else if (next == CS_BACK_FROM_CHARGER)
 	{
-		path_set_home(cost_map.get_curr_cell());
+		path_set_home(cost_map.getCurrCell());
 		cs_work_motor();
 		wheel.setDirBackward();
 	}
@@ -216,7 +216,7 @@ void cm_apply_cs(int next) {
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-			Cell_t curr_cell = cost_map.get_curr_cell();
+			Cell_t curr_cell = cost_map.getCurrCell();
 			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
 			SpotMovement::instance() ->setSpotType(CLEAN_SPOT);
 			wheel.stop();
@@ -1078,7 +1078,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
-			path_set_continue_cell(cost_map.get_curr_cell());
+			path_set_continue_cell(cost_map.getCurrCell());
 			g_is_low_bat_pause = true;
 		}
 #endif

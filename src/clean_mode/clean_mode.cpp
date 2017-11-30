@@ -56,7 +56,7 @@ void CleanMode::run()
 			continue;
 		}
 
-		auto curr = updatePosition({cost_map.get_x_count(), cost_map.get_y_count()});
+		auto curr = updatePosition({cost_map.getXCount(), cost_map.getYCount()});
 
 		if (isReach() || isStop())
 		{
@@ -92,7 +92,7 @@ bool CleanMode::isExit(){
 
 void CleanMode::setMt()
 {
-	s_origin_p = {cost_map.get_x_count(), cost_map.get_y_count()};
+	s_origin_p = {cost_map.getXCount(), cost_map.getYCount()};
 	if(mt.is_follow_wall())
 	{
 		s_target_p = cost_map.cell_to_point(g_plan_path.back());
@@ -165,7 +165,7 @@ Cell_t CleanMode::updatePosition(const Point32_t &curr_point)
 {
 		cost_map.update_position();
 		s_curr_p = curr_point;
-		return cost_map.get_curr_cell();
+		return cost_map.getCurrCell();
 }
 
 Cell_t CleanMode::updatePath(const Cell_t& curr)

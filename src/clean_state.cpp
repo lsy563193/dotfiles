@@ -102,7 +102,7 @@ int CleanStateBase::get(void)
 
 bool CleanStateBase::isTrapped() {
 	int escape_cleaned_count = 0;
-	auto curr = cost_map.get_curr_cell();
+	auto curr = cost_map.getCurrCell();
 	PPTargetType path{{0,0,0}};
 	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
 	if(is_found)
@@ -168,7 +168,7 @@ bool TmpSpotCS::cs_next(const Cell_t& start, PPTargetType& path)
 void TmpSpotCS::setting() {
 	if (SpotMovement::instance()->getSpotType() == NO_SPOT) {
 		ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-		Cell_t curr_cell = cost_map.get_curr_cell();
+		Cell_t curr_cell = cost_map.getCurrCell();
 		ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
 		SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		wheel.stop();

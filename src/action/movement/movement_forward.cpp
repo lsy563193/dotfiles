@@ -57,14 +57,16 @@ bool ForwardMovement::isNearTarget()
 			// Switch to next target for smoothly turning.
 			g_new_dir = static_cast<MapDirection>(g_plan_path.front().TH);
 			g_plan_path.pop_front();
-			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__, cost_map.get_x_cell(),
-					 cost_map.get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
+			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
+					 cost_map.getXCell(),
+					 cost_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
 		}
 		else if(g_plan_path.front() != g_zero_home && g_allow_check_path_in_advance)
 		{
 			g_check_path_in_advance = true;
-			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__, cost_map.get_x_cell(),
-					 cost_map.get_y_cell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
+			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__,
+					 cost_map.getXCell(),
+					 cost_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
 			return true;
 		}
 	}
