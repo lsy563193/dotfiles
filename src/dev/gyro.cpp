@@ -7,7 +7,7 @@
 #include "path_planning.h"
 #include "gyro.h"
 #include "movement.h"
-#include "wav.h"
+#include "speaker.h"
 #include "mathematics.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -16,6 +16,20 @@
 #include "error.h"
 
 Gyro gyro;
+
+Gyro::Gyro(void) {
+	angle_ = 0;
+	angle_v_ = 0;
+	x_acc_ = 0;
+	y_acc_ = 0;
+	z_acc_ = 0;
+	init_x_acc_ = 0;
+	init_y_acc_ = 0;
+	init_z_acc_ = 0;
+	calibration_status_ = 255;
+	status_ = 0;
+	tilt_checking_status_ = 0;
+}
 
 void Gyro::setStatus(void)
 {
@@ -128,7 +142,7 @@ bool Gyro::waitForOn(void)
 				last_angle_v_ = getAngleV();
 				error_count_++;
 				open_state_ = WAIT_FOR_CLOSE;
-				wav.play(WAV_SYSTEM_INITIALIZING);
+				speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 			}
 			check_stable_count_++;
 			average_angle_ = (average_angle_ + current_angle_) / 2;
@@ -144,7 +158,7 @@ bool Gyro::waitForOn(void)
 				last_angle_v_ = getAngleV();
 				error_count_++;
 				open_state_ = WAIT_FOR_CLOSE;
-				wav.play(WAV_SYSTEM_INITIALIZING);
+				speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 			}
 			else
 			{
@@ -186,7 +200,7 @@ bool Gyro::waitForOn(void)
 			setOn();
 		}
 
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
+		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
 			break;
 
 		if (skip_count == 0 && getAngleV() != 0){
@@ -237,7 +251,7 @@ bool Gyro::isStable()
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
 			continue;
 		usleep(10000);
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.is_directed())
+		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
 			break;
 		current_angle = getAngle();
 		ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.", check_stable_count,
@@ -245,7 +259,7 @@ bool Gyro::isStable()
 		if (current_angle > 0.02 || current_angle < -0.02)
 		{
 			Gyro::setOff();
-			wav.play(WAV_SYSTEM_INITIALIZING);
+			speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 			break;
 		}
 		check_stable_count++;
@@ -259,7 +273,7 @@ bool Gyro::isStable()
 			ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
 			Gyro::setOff();
 			average_angle = 0;
-			wav.play(WAV_SYSTEM_INITIALIZING);
+			speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 		}
 		else
 		{

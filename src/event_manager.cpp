@@ -4,8 +4,7 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
-#include <clean_timer.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <charger.h>
 #include <beep.h>
 
@@ -20,6 +19,7 @@
 #include "event_manager.h"
 #include "obs.h"
 #include "error.h"
+#include "robot_timer.h"
 
 
 /* Events variables */
@@ -61,7 +61,7 @@ Ev_t ev;
 //bool g_lidar_bumper_jam =false;
 //int g_lidar_bumper_cnt = 0;
 
-// laser stuck
+// lidar stuck
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -150,8 +150,8 @@ void event_manager_init()
 
 	p_handler[EVT_ROBOT_SLIP] = &EventHandle::robot_slip;
 
-//	handler[EVT_LIDAR_BUMPER]=handler_laser_stuck;
-	p_handler[EVT_LASER_STUCK] = &EventHandle::laser_stuck;
+//	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
+	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidar_stuck;
 	eat.peh = &deh;
 }
 
@@ -213,15 +213,15 @@ void *event_manager_thread(void *data)
 		}
 
 		/* OBS */
-		if (obs.get_front() > obs.get_front_trig_value() + 1700) {
+		if (obs.getFront() > obs.getFrontTrigValue() + 1700) {
 			ROS_DEBUG("%s %d: setting event: front obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_FRONT);
 		}
-		if (obs.get_left() > obs.get_left_trig_value() + 200) {
+		if (obs.getLeft() > obs.getLeftTrigValue() + 200) {
 			ROS_DEBUG("%s %d: setting event: left obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_LEFT);
 		}
-		if (obs.get_right() > obs.get_right_trig_value() + 200) {
+		if (obs.getRight() > obs.getRightTrigValue() + 200) {
 			ROS_DEBUG("%s %d: setting event: right obs", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OBS_RIGHT);
 		}
@@ -282,7 +282,7 @@ void *event_manager_thread(void *data)
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_LEFT);
 		}
-		if (brush.getMbrushOc()) {
+		if (brush.getMainOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_MAIN);
 		}
@@ -298,52 +298,52 @@ void *event_manager_thread(void *data)
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 		}
-		if (vacuum.getVacuumOc()) {
+		if (vacuum.getOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_SUCTION);
 		}
 
 		/* Key */
-		if (key.get()) {
+		if (key.getTriggerStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
-		if (timer.get_status()) {
+		if (robot_timer.getPlanStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
 
 		/* Remote */
-		if (remote.key(Remote_Clean)) {
+		if (remote.isKeyTrigger(REMOTE_CLEAN)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_CLEAN);
 		}
-		if (remote.key(Remote_Home)) {
+		if (remote.isKeyTrigger(REMOTE_HOME)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_HOME);
 		}
-		if (remote.key(Remote_Forward)) {
+		if (remote.isKeyTrigger(REMOTE_FORWARD)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_FORWARD);
 		}
-		if (remote.key(Remote_Left)) {
+		if (remote.isKeyTrigger(REMOTE_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_LEFT);
 		}
-		if (remote.key(Remote_Right)) {
+		if (remote.isKeyTrigger(REMOTE_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_DIRECTION_RIGHT);
 		}
-		if (remote.key(Remote_Spot)) {
+		if (remote.isKeyTrigger(REMOTE_SPOT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_SPOT);
 		}
-		if (remote.key(Remote_Max)) {
+		if (remote.isKeyTrigger(REMOTE_MAX)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_MAX);
 		}
-		if (remote.key(Remote_Wall_Follow)) {
+		if (remote.isKeyTrigger(REMOTE_WALL_FOLLOW)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_WALL_FOLLOW);
 		}
@@ -370,7 +370,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_SLAM_ERROR);
 		}
 		/* robot slip */
-		if(laser_is_robot_slip()){
+		if(lidar_is_robot_slip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP);
 		}
@@ -381,10 +381,10 @@ void *event_manager_thread(void *data)
 		}
 		*/
 
-		// Laser stuck
-		if (laser_is_stuck()) {
+		// Lidar stuck
+		if (lidar_is_stuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_LASER_STUCK);
+			evt_set_status_x(EVT_LIDAR_STUCK);
 		}
 
 		if (set) {
@@ -530,8 +530,8 @@ void *event_handler_thread(void *data) {
 		/* lidar bumper*/
 		//evt_handle_check_event(EVT_LIDAR_BUMPER,lidar_bumper)
 
-		// Laser stuck
-		evt_handle_check_event(EVT_LASER_STUCK);
+		// Lidar stuck
+		evt_handle_check_event(EVT_LIDAR_STUCK);
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
@@ -599,9 +599,9 @@ void event_manager_reset_status(void)
 	ev.oc_wheel_left = false;
 	ev.oc_wheel_right = false;
 	ev.oc_suction = false;
-	brush.oc_left_cnt = 0;
-	brush.oc_main_cnt = 0;
-	brush.oc_right_cnt = 0;
+	brush.oc_left_cnt_ = 0;
+	brush.oc_main_cnt_ = 0;
+	brush.oc_right_cnt_ = 0;
 	g_oc_wheel_left_cnt = 0;
 	g_oc_wheel_right_cnt = 0;
 	g_oc_suction_cnt = 0;
@@ -632,8 +632,8 @@ void event_manager_reset_status(void)
 	//g_lidar_bumper = false;
 	//g_lidar_bumper_cnt =0;
 	//g_lidar_bumper_jam = false;
-	// laser stuck
-	ev.laser_stuck = false;
+	// lidar stuck
+	ev.lidar_stuck = false;
 }
 
 /* Below are the internal functions. */
@@ -814,9 +814,9 @@ void EventHandle::over_current_brush_left(bool state_now, bool state_last)
 void df_over_current_brush_left(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && brush.left_is_stall())
+	if (!ev.fatal_quit && brush.leftIsStall())
 	{
-		error.set(Error_Code_LeftBrush);
+		error.set(ERROR_CODE_LEFTBRUSH);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
 	}
@@ -833,9 +833,9 @@ void EventHandle::over_current_brush_right(bool state_now, bool state_last)
 void df_over_current_brush_right(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && brush.right_is_stall())
+	if (!ev.fatal_quit && brush.rightIsStall())
 	{
-		error.set(Error_Code_RightBrush);
+		error.set(ERROR_CODE_RIGHTBRUSH);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
 	}
@@ -869,15 +869,15 @@ void EventHandle::remote_plan(bool state_now, bool state_last)
 }
 void df_remote_plan(bool state_now, bool state_last)
 {
-	if (timer.get_status() == 1 || timer.get_status() == 2)
+	if (robot_timer.getPlanStatus() == 1 || robot_timer.getPlanStatus() == 2)
 	{
 		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(INVALID);
 	}
-	else if (timer.get_status() == 3)
+	else if (robot_timer.getPlanStatus() == 3)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
 
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 	remote.reset();
 }
 
@@ -1039,14 +1039,14 @@ void EventHandle::lidar_bumper(bool state_new,bool state_last)
 }
 */
 
-// Laser stuck
-void EventHandle::laser_stuck(bool state_new,bool state_last)
+// Lidar stuck
+void EventHandle::lidar_stuck(bool state_new,bool state_last)
 {}
-void df_laser_stuck(bool state_new,bool state_last)
+void df_lidar_stuck(bool state_new,bool state_last)
 {
 	beeper.play_for_command(true);
-	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
-	//ev.laser_stuck = true;
+	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
+	//ev.lidar_stuck = true;
 }
 
 ///* Default: empty hanlder */

@@ -11,6 +11,11 @@
 #define MAP 0
 #define SPMAP 1
 
+#define BLOCK_LEFT				((uint8_t) 0x01)
+#define BLOCK_RIGHT			((uint8_t) 0x02)
+#define BLOCK_FRONT			((uint8_t) 0x04)
+#define BLOCK_ALL			((uint8_t) 0x07)
+
 typedef std::deque<Cell_t> PPTargetType;
 
 typedef enum {
@@ -21,7 +26,7 @@ typedef enum {
   BLOCKED_BUMPER = 3,
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
-  BLOCKED_LASER = 6,
+  BLOCKED_LIDAR = 6,
   BLOCKED_TILT = 7,
   BLOCKED_SLIP = 8,
   BLOCKED_ROS_MAP = 9,
@@ -155,7 +160,7 @@ public:
 
 	Cell_t update_position();
 
-	uint8_t set_laser();
+	uint8_t set_lidar();
 
 	uint8_t set_obs();
 
@@ -174,7 +179,7 @@ public:
 	uint8_t set_follow_wall();
 
 
-	static uint8_t save_laser();
+	static uint8_t save_lidar();
 
 	static uint8_t save_obs();
 

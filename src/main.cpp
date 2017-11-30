@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <ros/ros.h>
 #include <battery.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <charger.h>
 #include "charge.hpp"
 #include "core_move.h"
@@ -15,7 +15,7 @@
 #include "bumper.h"
 #include "led.h"
 #include "movement.h"
-#include "laser.hpp"
+#include "lidar.hpp"
 #include "robot.hpp"
 #include "main.h"
 #include "serial.h"
@@ -27,7 +27,7 @@
 #include "wall_follow_trapped.h"
 #include "event_manager.h"
 #include "go_home.hpp"
-#include "wav.h"
+#include "speaker.h"
 #include "clean_mode.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
@@ -42,13 +42,13 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	//ROS_INFO("Robot sensor ready.");
-	//wav.play(WAV_WELCOME_ILIFE);
+	//speaker.play(SPEAKER_WELCOME_ILIFE);
 	usleep(200000);
 
-	if (charger.is_directed() || charger.is_on_stub())
+	if (charger.isDirected() || charger.isOnStub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.isReadyToClean())
-		wav.play(WAV_PLEASE_START_CLEANING);
+		speaker.play(SPEAKER_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
@@ -56,7 +56,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
 				serial.setCleanMode(Clean_Mode_Idle);
-//				wav.play(WAV_TEST_MODE);
+//				speaker.play(SPEAKER_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 	bool	verify_ok = true;
 	pthread_t	core_move_thread_id, event_manager_thread_id, event_handler_thread_id;
 	std::string	serial_port;
-	std::string lidar_bumper;
+	std::string lidar_bumper_dev;
 
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
@@ -159,10 +159,10 @@ int main(int argc, char **argv)
 
 	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
 	nh_private.param<int>("baudrate", baudrate, 57600);
-	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper, "/dev/input/event0");
+	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
 	
 	serial.init(serial_port.c_str(), baudrate);
-	if(bumper_lidar_init(lidar_bumper.c_str()) == -1){
+	if(bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1){
 		ROS_ERROR(" lidar bumper open fail!");
 	}
 #if VERIFY_CPU_ID
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 		led.set_mode(LED_STEADY, LED_ORANGE);
 		sleep(10);
 	}
-	bumper_lidar_deinit();
+	bumper.lidarBumperDeinit();
 	robotbase_deinit();
 	return 0;
 }

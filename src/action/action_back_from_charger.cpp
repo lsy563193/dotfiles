@@ -9,7 +9,7 @@ bool EventBackFromCharger::isStop() {
 }
 
 bool EventBackFromCharger::setNext() {
-	cs.setNext(CS_OPEN_LASER);
+	cs.setNext(CS_OPEN_LIDAR);
 }
 
 void EventBackFromCharger::doSomething() {

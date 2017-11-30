@@ -2,7 +2,20 @@
 // Created by root on 11/17/17.
 //
 
-#include "pp.h"
-#include "remote.h"
+#include <cstdint>
+#include "ros/ros.h"
+#include "remote.hpp"
 
 Remote remote;
+
+bool Remote::isKeyTrigger(uint8_t key) {
+	// Debug
+	if (key_status_ > 0)
+		ROS_DEBUG("%s, %d press_status_ = %x", __FUNCTION__, __LINE__, key_status_);
+
+	if (key_status_ & key)
+		return true;
+
+	return false;
+}
+

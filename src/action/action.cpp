@@ -42,16 +42,16 @@ void EventAction::run() {
 //
 //			// switch
 //			if (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5)
-//				cs.setNext(CS_OPEN_LASER);
+//				cs.setNext(CS_OPEN_LIDAR);
 //
 //		}
-//		else if (cs.is_open_laser()) {
+//		else if (cs.is_open_lidar()) {
 //			// run
 //			wheel.set_speed(0, 0);
 //
 //			// switch
-//			if (laser.isScanOriginalReady() == 1) {
-//				// Open laser succeeded.
+//			if (lidar.isScanOriginalReady() == 1) {
+//				// Open lidar succeeded.
 //				if ((g_is_manual_pause || g_is_low_bat_pause) && slam.isMapReady())
 //					cs.setNext(CS_CLEAN);
 //				else
@@ -63,16 +63,16 @@ void EventAction::run() {
 //			wheel.set_speed(0, 0);
 //			std::vector<LineABC> lines;
 //			float align_angle = 0.0;
-//			if (laser.findLines(&lines)) {
-//				if (laser.getAlignAngle(&lines, &align_angle))
-//					laser.alignAngle(align_angle);
+//			if (lidar.findLines(&lines)) {
+//				if (lidar.getAlignAngle(&lines, &align_angle))
+//					lidar.alignAngle(align_angle);
 //			}
 //
 //			// switch
-//			if (laser.alignTimeOut())
+//			if (lidar.alignTimeOut())
 //				cs.setNext(CS_OPEN_SLAM);
-//			if (laser.alignFinish()) {
-//				float align_angle = laser.alignAngle();
+//			if (lidar.alignFinish()) {
+//				float align_angle = lidar.alignAngle();
 //				align_angle += (float) (LIDAR_THETA / 10);
 //				robot::instance()->offsetAngle(align_angle);
 //				g_homes[0].TH = -(int16_t) (align_angle);
@@ -96,13 +96,13 @@ void EventAction::run() {
 //}
 //
 //bool EventBackFromCharger::setNext() {
-//	if (charger.is_on_stub()) {
+//	if (charger.isOnStub()) {
 //		cs.setNext(CS_BACK_FROM_CHARGER);
 //		charger_pose.setX(odom.getX());
 //		charger_pose.setY(odom.getY());
 //	}
 //	else
-//		cs.setNext(CS_OPEN_LASER);
+//		cs.setNext(CS_OPEN_LIDAR);
 //}
 //
 //void EventBackFromCharger::doSomething() {

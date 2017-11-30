@@ -9,7 +9,7 @@
 #include "movement.h"
 #include "event_manager.h"
 #include "path_planning.h"
-#include "wav.h"
+#include "speaker.h"
 #include "clean_mode.h"
 #if 0
 void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
@@ -48,7 +48,7 @@ void explore_update_map(void)
 {
 	int32_t x, y;
 	bool ret = false;
-	int16_t angle, laser_angle;
+	int16_t angle, lidar_angle;
 	const int RADIUS_CELL = 10;//the radius of the robot can detect
 	angle = robot::instance()->getPoseAngle();
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
@@ -67,13 +67,9 @@ void explore_update_map(void)
 
 void turn_into_exploration(bool is_reset_map)
 {
-	reset_work_time();
 	led.set_mode(LED_STEADY, LED_ORANGE);
 
 	// Initialize motors and costmap.
-	extern uint32_t g_saved_work_time;
-	g_saved_work_time = 0;
-	ROS_INFO("%s ,%d ,set g_saved_work_time to zero ", __FUNCTION__, __LINE__);
 	// Push the start point into the home point list
 	ROS_INFO("map_init-----------------------------");
 	if (is_reset_map)
@@ -83,6 +79,7 @@ void turn_into_exploration(bool is_reset_map)
 	path_planning_initialize();
 	cs_work_motor();
 	cm_reset_go_home();
+	robot_timer.initWorkTimer();
 
 
 	g_have_seen_charger = false;
@@ -93,9 +90,9 @@ void turn_into_exploration(bool is_reset_map)
 	g_home_way_list.clear();
 
 	c_rcon.resetStatus();
-	key.reset();
+	key.resetTriggerStatus();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
-	wav.play(WAV_EXPLORATION_START);
+	speaker.play(SPEAKER_EXPLORATION_START);
 
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 

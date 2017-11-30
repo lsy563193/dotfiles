@@ -56,8 +56,8 @@ void dynamic_base(uint32_t Cy)
 	double obstacle_distance_left = DBL_MAX;
 	double obstacle_distance_right = DBL_MAX;
 
-	obstacle_distance_left = laser.getObstacleDistance(2,ROBOT_RADIUS);
-	obstacle_distance_right = laser.getObstacleDistance(3,ROBOT_RADIUS);
+	obstacle_distance_left = lidar.getObstacleDistance(2,ROBOT_RADIUS);
+	obstacle_distance_right = lidar.getObstacleDistance(3,ROBOT_RADIUS);
 
 	if (abs_minus(Left_Everage_Value, Left_Temp_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || sensor.left_wall > 300)
 	{

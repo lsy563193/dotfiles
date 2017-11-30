@@ -33,9 +33,9 @@ bool CleanStateBase::is_back_from_charger()
 	return cs_ == CS_BACK_FROM_CHARGER;
 }
 
-bool CleanStateBase::is_open_laser()
+bool CleanStateBase::is_open_lidar()
 {
-	return cs_ == CS_OPEN_LASER;
+	return cs_ == CS_OPEN_LIDAR;
 }
 
 bool CleanStateBase::is_align()
@@ -177,7 +177,7 @@ void TmpSpotCS::setting() {
 		ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
 		SpotMovement::instance()->spotDeinit();
 		wheel.stop();
-		wav.play(WAV_CLEANING_CONTINUE);
+		speaker.play(SPEAKER_CLEANING_CONTINUE);
 	}
 	ev.remote_spot = false;
 }
@@ -218,9 +218,9 @@ void GoHomePointCS::setting(void)
 		}
 		// Play wavs.
 		if (ev.battrey_home)
-			wav.play(WAV_BATTERY_LOW);
+			speaker.play(SPEAKER_BATTERY_LOW);
 		if (!cm_is_go_charger())
-			wav.play(WAV_BACK_TO_CHARGER);
+			speaker.play(SPEAKER_BACK_TO_CHARGER);
 
 		if (ev.remote_home)
 			g_go_home_by_remote = true;

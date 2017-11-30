@@ -1,5 +1,5 @@
-#ifndef __LASER_H__
-#define __LASER_H__
+#ifndef __LIDAR_H__
+#define __LIDAR_H__
 
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
@@ -11,15 +11,15 @@
 #define ON true
 #define OFF false
 
-class Laser
+class Lidar
 {
 public:
-	Laser();
-	~Laser();
+	Lidar();
+	~Lidar();
 
-	bool laserObstcalDetected(double distance, int angle, double range);
+	bool lidarObstcalDetected(double distance, int angle, double range);
 
-	bool laserGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
+	bool lidarGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
 
 	int compLaneDistance();
 	double getObstacleDistance(uint8_t dir, double range);
@@ -30,7 +30,7 @@ public:
 	int8_t isScanOriginalReady();
 	int8_t isScanCompensateReady();
 
-	double getLaserDistance(uint16_t angle);
+	double getLidarDistance(uint16_t angle);
 
 	bool lineFit(const std::vector<Double_Point> &points, double &a, double &b, double &c);
 
@@ -59,10 +59,10 @@ public:
 		align_angle_ = angle;
 	}
 
-	uint8_t laserMarker(double X_MAX = 0.237);
+	uint8_t lidarMarker(double X_MAX = 0.237);
 	uint8_t isRobotSlip();
 
-	bool laserCheckFresh(float duration, uint8_t type = 1);
+	bool lidarCheckFresh(float duration, uint8_t type = 1);
 	bool findLines(std::vector<LineABC> *lines,bool combine);
 	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
 
@@ -71,12 +71,12 @@ public:
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void laserPointCb(const visualization_msgs::Marker &point_marker);
+	void lidarPointCb(const visualization_msgs::Marker &point_marker);
 	bool isNewScan1()
 	{
 		bool ret = false;
-		if(laserScanData_linear_.header.seq != seq){
-			seq = laserScanData_linear_.header.seq;
+		if(lidarScanData_linear_.header.seq != seq){
+			seq = lidarScanData_linear_.header.seq;
 			ret = true;
 		}
 		return ret;
@@ -86,26 +86,26 @@ private:
 	uint8_t is_scanLinear_ready_;
 	uint8_t is_scanOriginal_ready_;
 	uint8_t is_scanCompensate_ready_;
-	std::vector<geometry_msgs::Point> laserXY_points;
+	std::vector<geometry_msgs::Point> lidarXY_points;
 
-	sensor_msgs::LaserScan laserScanData_linear_;
-	sensor_msgs::LaserScan laserScanData_original_;
-	sensor_msgs::LaserScan laserScanData_compensate_;
+	sensor_msgs::LaserScan lidarScanData_linear_;
+	sensor_msgs::LaserScan lidarScanData_original_;
+	sensor_msgs::LaserScan lidarScanData_compensate_;
 	double scanLinear_update_time;
 	double scanOriginal_update_time;
 
-	std::vector<Double_Point>	Laser_Point;
-	std::vector<std::vector<Double_Point> >	Laser_Group;
-	std::vector<std::vector<Double_Point> >	Laser_Group_2nd;
+	std::vector<Double_Point>	Lidar_Point;
+	std::vector<std::vector<Double_Point> >	Lidar_Group;
+	std::vector<std::vector<Double_Point> >	Lidar_Group_2nd;
 	std::vector<LineABC>	fit_line;
 	//static float *last_ranges_;
 
-//	ros::Publisher laser_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("laser_filter",1);
+//	ros::Publisher lidar_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("lidar_filter",1);
 	visualization_msgs::Marker fit_line_marker;
 
-	geometry_msgs::Point laser_points_;
+	geometry_msgs::Point lidar_points_;
 
-	// For opening laser.
+	// For opening lidar.
 	time_t open_command_time_stamp_;
 
 	// For aligning.
@@ -115,9 +115,9 @@ private:
 	int seq;
 };
 
-bool laser_is_stuck();
-uint8_t laser_get_status();
-uint8_t laser_is_robot_slip();
+bool lidar_is_stuck();
+uint8_t lidar_get_status();
+uint8_t lidar_is_robot_slip();
 
-extern Laser laser;
+extern Lidar lidar;
 #endif

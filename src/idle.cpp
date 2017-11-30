@@ -65,10 +65,10 @@ void idle(void)
 
 	cs_disable_motors();
 	remote.reset();
-	timer.set_status(0);
-	key.reset();
+	robot_timer.resetPlanStatus();
+	key.resetTriggerStatus();
 	c_rcon.resetStatus();
-	key.reset();
+	key.resetTriggerStatus();
 	vacuum.stop();
 
 	ROS_INFO("%s,%d ,BatteryVoltage = \033[32m%dmV\033[0m.",__FUNCTION__,__LINE__, battery.getVoltage());
@@ -79,7 +79,7 @@ void idle(void)
 						 battery.getVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		bat_ready_to_clean = false;
 		led.set_mode(LED_BREATH, LED_ORANGE);
-		wav.play(WAV_BATTERY_LOW);
+		speaker.play(SPEAKER_BATTERY_LOW);
 	}
 	else
 		led.set_mode(LED_BREATH, LED_GREEN);
@@ -151,19 +151,19 @@ void idle(void)
 					reject_reason = 0;
 					break;
 				case 2:
-					wav.play(WAV_ERROR_LIFT_UP);
+					speaker.play(SPEAKER_ERROR_LIFT_UP);
 					cs_paused_setting();
 					reject_reason = 0;
 					break;
 				case 3:
-					wav.play(WAV_BATTERY_LOW);
+					speaker.play(SPEAKER_BATTERY_LOW);
 					reject_reason = 0;
 					break;
 				case 4:
 					led.set_mode(LED_BREATH, LED_GREEN);
-					wav.play(WAV_CLEAR_ERROR);
+					speaker.play(SPEAKER_CLEAR_ERROR);
 					error_alarm_counter = 0;
-					error.set(Error_Code_None);
+					error.set(ERROR_CODE_NONE);
 					reject_reason = 0;
 					break;
 			}
@@ -173,13 +173,13 @@ void idle(void)
 			if (plan_status == 2 && (time(NULL) - plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Cancel appointment.", __FUNCTION__, __LINE__);
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				plan_status = 0;
 			}
 			else if (plan_status == 1 && (time(NULL) - plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Confirm appointment.", __FUNCTION__, __LINE__);
-				wav.play(WAV_APPOINTMENT_DONE);
+				speaker.play(SPEAKER_APPOINTMENT_DONE);
 				plan_status = 0;
 			}
 		}
@@ -202,9 +202,9 @@ void idle(void)
 
 	// Make sure alarm will be done.
 	if (plan_status == 2)
-		wav.play(WAV_CANCEL_APPOINTMENT);
+		speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 	else if (plan_status == 1)
-		wav.play(WAV_APPOINTMENT_DONE);
+		speaker.play(SPEAKER_APPOINTMENT_DONE);
 	plan_status = 0;
 
 	/*--- reset g_charge_turn_connect_fail except Clean_Mode_GoHome and Clean_Mode_Exploration ---*/
@@ -299,7 +299,6 @@ void Idle_EventHandle::battery_low(bool state_now, bool state_last)
 void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
-	omni.set_stop(false);
 	//g_robot_stuck = false;
 
 	/* reset charger_signal_start_time when get remote cleaning */
@@ -307,7 +306,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 
 	if (error.get())
 	{
-		if (remote.get() == Remote_Clean)
+		if (remote.isKeyTrigger(REMOTE_CLEAN))
 		{
 			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 			if (error.clear(error.get()))
@@ -320,7 +319,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 				beeper.play_for_command(INVALID);
 				reject_reason = 1;
 			}
-			key.reset();
+			key.resetTriggerStatus();
 		}
 		else
 		{
@@ -335,8 +334,9 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		beeper.play_for_command(INVALID);
 		reject_reason = 2;
 	}
-	else if ((remote.get() != Remote_Forward && remote.get() != Remote_Left && remote.get() != Remote_Right &&
-					remote.get() != Remote_Home) && !bat_ready_to_clean)
+	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
+			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
+			  && !bat_ready_to_clean)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beeper.play_for_command(INVALID);
@@ -348,25 +348,25 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 		beeper.play_for_command(VALID);
 		switch (remote.get())
 		{
-			case Remote_Forward:
-			case Remote_Left:
-			case Remote_Right:
+			case REMOTE_FORWARD:
+			case REMOTE_LEFT:
+			case REMOTE_RIGHT:
 			{
 				temp_mode = Clean_Mode_Remote;
 				break;
 			}
-			case Remote_Clean:
+			case REMOTE_CLEAN:
 			{
 				temp_mode = Clean_Mode_Navigation;
-				key.reset();
+				key.resetTriggerStatus();
 				break;
 			}
-			case Remote_Spot:
+			case REMOTE_SPOT:
 			{
 				temp_mode = Clean_Mode_Spot;
 				break;
 			}
-			case Remote_Home:
+			case REMOTE_HOME:
 			{
 				if (cs_is_paused())
 				{
@@ -379,7 +379,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 					temp_mode = Clean_Mode_Exploration;
 				break;
 			}
-			case Remote_Wall_Follow:
+			case REMOTE_WALL_FOLLOW:
 			{
 				temp_mode = Clean_Mode_WallFollow;
 				break;
@@ -393,13 +393,13 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	/* -----------------------------Check if plan event ----------------------------------*/
-	if (timer.get_status())
+	if (robot_timer.getPlanStatus())
 		plan_confirm_time = time(NULL);
 
 	/* reset charger_signal_start_time when get plan status */
 	charger_signal_start_time = time(NULL);
 
-	switch (timer.get_status())
+	switch (robot_timer.getPlanStatus())
 	{
 		case 1:
 		{
@@ -418,7 +418,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 		case 3:
 		{
 			ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-			if (error.get() != Error_Code_None)
+			if (error.get() != ERROR_CODE_NONE)
 			{
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 				reject_reason = 1;
@@ -453,14 +453,13 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 }
 
 void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
-	omni.set_stop(false);
 	//g_robot_stuck = false;
 	time_t key_press_start_time = time(NULL);
 
@@ -472,7 +471,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	else
 		beeper.play_for_command(INVALID);
 
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 	{
 		if (time(NULL) - key_press_start_time >= 3)
 		{
@@ -491,8 +490,8 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 
 	if (long_press_to_sleep)
 	{
-		key.reset();
-		key.reset();
+		key.resetTriggerStatus();
+		key.resetTriggerStatus();
 		return;
 	}
 
@@ -520,8 +519,8 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	if (!reject_reason)
 		temp_mode = Clean_Mode_Navigation;
 
-	key.reset();
-	key.reset();
+	key.resetTriggerStatus();
+	key.resetTriggerStatus();
 }
 
 void Idle_EventHandle::charge_detect(bool state_now, bool state_last)

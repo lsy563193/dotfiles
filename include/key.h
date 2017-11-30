@@ -9,47 +9,46 @@
 class Key {
 public:
 	Key() {
-		status_ = false;
-		g_status = 0;
+		trigger_status_ = false;
+		press_status_ = 0;
 	}
 
-	void reset(void) {
-		status_ = false;
+	void resetTriggerStatus(void) {
+		trigger_status_ = false;
 	}
 
-	uint8_t get(void) {
-		return status_;
+	bool getTriggerStatus(void) {
+		return trigger_status_;
 	}
 
-	void set() {
-		status_ = true;
+	void setTriggerStatus() {
+		trigger_status_ = true;
 	}
 
 
-	void set_press(uint8_t key) {
-		g_status |= key;
+	void setPressStatus() {
+		press_status_ = true;
 	}
 
-	void reset_press(uint8_t key) {
-		g_status &= ~key;
+	void resetPressStatus() {
+		press_status_ = false;
 	}
 
-	uint8_t get_press(void) {
-		return g_status;
+	bool getPressStatus(void) {
+		return press_status_;
 	}
 
-	void eliminate_jitter(uint8_t key_);
+	void eliminate_jitter(uint8_t key_triggered);
 
 private:
-	bool status_;
-	volatile uint8_t g_status;
+	bool trigger_status_;
+	bool press_status_;
 
 // For avoid key value palse.
-	int8_t press_count;
-	int8_t release_count;
+	uint8_t press_count_;
+	uint8_t release_count_;
 
 };
-
 
 extern Key key;
 #endif //PP_KEY_H

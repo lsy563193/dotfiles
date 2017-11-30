@@ -98,7 +98,7 @@ bool FollowWallMovement::shouldMoveBack()
 
 	if(g_robot_slip)
 	{
-		// Temporary use obs as laser triggered.
+		// Temporary use obs as lidar triggered.
 		ev.obs_triggered = BLOCK_FRONT;
 		g_turn_angle = obs_turn_angle();
 		ROS_WARN("%s %d: slip triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
@@ -110,18 +110,18 @@ bool FollowWallMovement::shouldMoveBack()
 
 bool FollowWallMovement::shouldTurn()
 {
-	ev.laser_triggered = laser_get_status();
-	if (ev.laser_triggered)
+	ev.lidar_triggered = lidar_get_status();
+	if (ev.lidar_triggered)
 	{
-		// Temporary use bumper as laser triggered.
-		ev.bumper_triggered = ev.laser_triggered;
+		// Temporary use bumper as lidar triggered.
+		ev.bumper_triggered = ev.lidar_triggered;
 		g_turn_angle = bumper_turn_angle();
 		ev.bumper_triggered = 0;
-		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 
-	ev.obs_triggered = (obs.get_front() > obs.get_front_trig_value() + 1700);
+	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
 	if (ev.obs_triggered)
 	{
 		ev.obs_triggered = BLOCK_FRONT;
@@ -137,7 +137,7 @@ bool FollowWallMovement::isBlockCleared()
 {
 	if (!cost_map.is_block_accessible(cost_map.get_x_cell(), cost_map.get_y_cell())) // Robot has step on blocks.
 	{
-		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 
@@ -375,7 +375,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				time_right_angle = ros::Time::now().toSec();
 				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
-			if(obs.is_wall_front() || cost_map.is_front_block_boundary(3) ) {
+			if(obs.frontTriggered() || cost_map.is_front_block_boundary(3) ) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
@@ -404,7 +404,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
-		if (obs.is_wall_front() || cost_map.is_front_block_boundary(3)) {
+		if (obs.frontTriggered() || cost_map.is_front_block_boundary(3)) {
 //			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;

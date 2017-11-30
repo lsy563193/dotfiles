@@ -3,13 +3,13 @@
 #include <ros/ros.h>
 #include <cliff.h>
 #include <pp.h>
-#include <clean_timer.h>
-#include <remote.h>
+#include <robot_timer.h>
+#include <remote.hpp>
 
 #include "sleep.h"
 #include "key.h"
 #include "movement.h"
-#include "wav.h"
+#include "speaker.h"
 #include "event_manager.h"
 #include "clean_mode.h"
 #include "beep.h"
@@ -58,11 +58,11 @@ void sleep_mode(void)
 	usleep(20000);
 	ROS_INFO("%s %d,power status %u ",__FUNCTION__,__LINE__, serial.getCleanMode());
 
-	key.reset();
+	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	key.reset();
-	timer.set_status(0);
+	key.resetTriggerStatus();
+	robot_timer.resetPlanStatus();
 
 	event_manager_reset_status();
 	sleep_register_events();
@@ -78,17 +78,17 @@ void sleep_mode(void)
 		{
 			case 1:
 				error.alarm();
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 			case 2:
-				wav.play(WAV_ERROR_LIFT_UP);
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_ERROR_LIFT_UP);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 			case 3:
-				wav.play(WAV_BATTERY_LOW);
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_BATTERY_LOW);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 		}
@@ -133,8 +133,8 @@ void sleep_mode(void)
 
 	c_rcon.resetStatus();
 	remote.reset();
-	key.reset();
-	timer.set_status(0);
+	key.resetTriggerStatus();
+	robot_timer.resetPlanStatus();
 }
 
 void sleep_register_events(void)
@@ -151,7 +151,7 @@ void sleep_unregister_events(void)
 void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-	if (error.get() == Error_Code_None)
+	if (error.get() == ERROR_CODE_NONE)
 	{
 		serial.setCleanMode(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
@@ -170,9 +170,9 @@ void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
-	if (timer.get_status() == 3)
+	if (robot_timer.getPlanStatus() == 3)
 	{
-		if (error.get() != Error_Code_None)
+		if (error.get() != ERROR_CODE_NONE)
 		{
 			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 			sleep_plan_reject_reason = 1;
@@ -189,7 +189,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 	reset_sleep_mode_flag();
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 }
 
 void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
@@ -202,11 +202,11 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 
 	beeper.play_for_command(VALID);
 
-	while (key.get_press() & KEY_CLEAN)
+	while (key.getPressStatus())
 		usleep(20000);
 
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
-	key.reset();
+	key.resetTriggerStatus();
 }
 
 void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)

@@ -53,11 +53,6 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			}
 		}
 	}
-//	else if(g_omni_notmove)
-//	{
-		//wheel.set_dir_backward();
-		//left_speed = right_speed = RUN_TOP_SPEED;
-//	}
 	else if(g_slip_cnt>=2)
 	{
 		if(g_slip_cnt <3)
@@ -66,7 +61,7 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			wheel.setDirectionRight();
 		left_speed = right_speed = ROTATE_TOP_SPEED;
 	}
-	else if (ev.laser_stuck)
+	else if (ev.lidar_stuck)
 	{
 		wheel.setDirBackward();
 		left_speed = right_speed = 2;

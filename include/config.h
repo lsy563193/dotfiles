@@ -447,11 +447,11 @@
 #define SLAM_METHOD_2						(1)
 #define USE_ROBOT_TF						(1)
 
-/* ------------------------------------- Laser Follow Wall Enable ------------------------------------- */
-#define LASER_FOLLOW_WALL					(1)
+/* ------------------------------------- Lidar Follow Wall Enable ------------------------------------- */
+#define LIDAR_FOLLOW_WALL					(1)
 
-/* ------------------------------------- Laser Marker Enable ------------------------------------- */
-#define LASER_MARKER						(1)
+/* ------------------------------------- Lidar Marker Enable ------------------------------------- */
+#define LIDAR_MARKER						(1)
 /* ------------------------------------- Moving config --------------------------------------------*/
 #define FORCE_MOVE_LINE						(0)
 #define MAP_SET_REALTIME					(0)

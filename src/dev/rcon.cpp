@@ -6,7 +6,7 @@
 #include "rcon.h"
 #include "core_move.h"
 #include "mathematics.h"
-#include "laser.hpp"
+#include "lidar.hpp"
 
 Rcon c_rcon;
 
@@ -187,12 +187,12 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 	}
 	memset(cnt,0,sizeof(int8_t)*13);
 	bool scan_allow = robot::instance()->isScanAllow();
-	bool laser_new = laser.laserCheckFresh(0.300,1);
-	if( scan_allow && laser_new ){
+	bool lidar_new = lidar.lidarCheckFresh(0.300,1);
+	if( scan_allow && lidar_new ){
 		int count = 0;
 		double sum = 0.0;
 		for(int i = cd -1;i<=cd +1;i++){//for calculate avarage distance
-			dist = laser.getLaserDistance(180+i);
+			dist = lidar.getLidarDistance(180+i);
 			if(dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
 				sum += dist;
 				count++;
@@ -219,7 +219,7 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 		else
 			return false;
 	} else{
-		ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x,scan_allow = %d ,laser_new = %d\033[0m",__FUNCTION__,__LINE__,cd,rcon_value,scan_allow,laser_new);
+		ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x,scan_allow = %d ,lidar_new = %d\033[0m",__FUNCTION__,__LINE__,cd,rcon_value,scan_allow,lidar_new);
 		return false;
 	}
 	setRconPos(cd,dist);
