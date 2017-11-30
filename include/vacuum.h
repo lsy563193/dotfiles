@@ -9,9 +9,6 @@
 #define Vac_Speed_Normal			60 //9000rpm
 #define Vac_Speed_NormalL			50 //8000rpm
 
-#include <pp/x900sensor.h>
-#include "serial.h"
-extern pp::x900sensor sensor;
 enum {
 Vac_Normal=0,
 Vac_Max,
