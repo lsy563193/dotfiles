@@ -15,7 +15,7 @@
 #include "bumper.h"
 #include "led.h"
 #include "movement.h"
-#include "laser.hpp"
+#include "lidar.hpp"
 #include "robot.hpp"
 #include "main.h"
 #include "serial.h"

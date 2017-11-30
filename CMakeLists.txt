@@ -16,7 +16,7 @@ FILE(GLOB PP_SRC
 	src/dev/brush.cpp
 	src/dev/bumper.cpp
 	src/dev/rcon.cpp
-	src/dev/clean_timer.cpp
+		src/dev/robot_timer.cpp
 	src/dev/remote.cpp
 	src/dev/obs.cpp
 	src/dev/led.cpp
@@ -24,8 +24,8 @@ FILE(GLOB PP_SRC
 	src/dev/charger.cpp
 	src/dev/wall_follow.cpp
 	src/dev/wheel.cpp
-	src/dev/laser.cpp
 	src/dev/speaker.cpp
+	src/dev/lidar.cpp
 
 				src/action/action.cpp
 				src/action/action_open_gyro.cpp

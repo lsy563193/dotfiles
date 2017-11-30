@@ -245,7 +245,7 @@ void CostMap::clear_blocks(void) {
 	for(c = g_x_min; c < g_x_max; ++c) {
 		for(d = g_y_min; d < g_y_max; ++d) {
 			CellState state = get_cell(MAP, c, d);
-			if(state == BLOCKED_LASER || state == BLOCKED_BUMPER ||	state == BLOCKED_CLIFF || state  == BLOCKED_OBS) {
+			if(state == BLOCKED_LIDAR || state == BLOCKED_BUMPER ||	state == BLOCKED_CLIFF || state  == BLOCKED_OBS) {
 				if(get_cell(MAP, c - 1, d) != UNCLEAN && get_cell(MAP, c, d + 1) != UNCLEAN &&
 								get_cell(MAP, c + 1, d) != UNCLEAN &&
 								get_cell(MAP, c, d - 1) != UNCLEAN) {
@@ -509,10 +509,10 @@ bool CostMap::countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy)
 	return true;
 }
 
-uint8_t CostMap::set_laser()
+uint8_t CostMap::set_lidar()
 {
-#if LASER_MARKER
-	//MotionManage::s_laser->laserMarker(true);
+#if LIDAR_MARKER
+	//MotionManage::s_lidar->lidarMarker(true);
 #endif
 }
 
@@ -1001,7 +1001,7 @@ uint8_t CostMap::save_blocks()
 //	block_count += set_cliff();
 //	block_count += set_tilt();
 //	block_count += set_slip();
-//	block_count += set_laser();
+//	block_count += set_lidar();
 //
 //	return block_count;
 //}
@@ -1474,7 +1474,7 @@ void CostMap::color_print(char *outString, int16_t y_min, int16_t y_max)
 			else if(cs == '5'){//rcon
 				y_col+="\033[1;46;37m5\033[0m";
 			}
-			else if(cs == '6'){//laser maker
+			else if(cs == '6'){//lidar maker
 				y_col+="\033[1;44;37m6\033[0m";
 			}
 			else if(cs == '7'){//tilt

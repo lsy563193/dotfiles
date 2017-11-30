@@ -4,10 +4,10 @@
 
 #include "pp.h"
 
-#define TURN_REGULATOR_WAITING_FOR_LASER 1
+#define TURN_REGULATOR_WAITING_FOR_LIDAR 1
 #define TURN_REGULATOR_TURNING 2
 
-TurnMovement::TurnMovement(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(TURN_REGULATOR_WAITING_FOR_LASER), waiting_finished_(false)
+TurnMovement::TurnMovement(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(TURN_REGULATOR_WAITING_FOR_LIDAR), waiting_finished_(false)
 {
 	accurate_ = ROTATE_TOP_SPEED > 30 ? 30 : 15;
 	waiting_start_sec_ = ros::Time::now().toSec();
@@ -15,20 +15,20 @@ TurnMovement::TurnMovement(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(TUR
 	if (mt.is_follow_wall())
 	{
 		wait_sec_ = 1;
-		stage_ = TURN_REGULATOR_WAITING_FOR_LASER;
-		skip_laser_turn_angle_cnt_ = 2;
+		stage_ = TURN_REGULATOR_WAITING_FOR_LIDAR;
+		skip_lidar_turn_angle_cnt_ = 2;
 	}
 	else
 	{
 		wait_sec_ = 0;
 		stage_ = TURN_REGULATOR_TURNING;
-		skip_laser_turn_angle_cnt_ = 0;
+		skip_lidar_turn_angle_cnt_ = 0;
 	}
 	ROS_INFO("%s %d: Init, \033[32ms_target_angle: %d\033[0m", __FUNCTION__, __LINE__, s_target_angle);
 }
 bool TurnMovement::isReach()
 {
-	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
+	if (stage_ == TURN_REGULATOR_WAITING_FOR_LIDAR)
 		setTarget();
 	else if (abs(ranged_angle(s_target_angle - robot::instance()->getPoseAngle())) < accurate_){
 
@@ -103,11 +103,11 @@ void TurnMovement::setTarget()
 	{
 		s_target_angle = g_home_point.TH;
 	}
-	else if(LASER_FOLLOW_WALL && !cs.is_trapped() && mt.is_follow_wall() && skip_laser_turn_angle_cnt_ >= 2)
+	else if(LIDAR_FOLLOW_WALL && !cs.is_trapped() && mt.is_follow_wall() && skip_lidar_turn_angle_cnt_ >= 2)
 	{
-		// Use laser data for generating target angle in every 3 times of turning.
+		// Use lidar data for generating target angle in every 3 times of turning.
 		if (waiting_finished_) {
-			stage_ = TURN_REGULATOR_WAITING_FOR_LASER;
+			stage_ = TURN_REGULATOR_WAITING_FOR_LIDAR;
 			waiting_finished_ = false;
 			waiting_start_sec_ = ros::Time::now().toSec();
 			wait_sec_ = 0.33;
@@ -122,13 +122,13 @@ void TurnMovement::setTarget()
 			if (tmp_sec > wait_sec_) {
 				waiting_finished_ = true;
 				stage_ = TURN_REGULATOR_TURNING;
-				laser_turn_angle(g_turn_angle);
+				lidar_turn_angle(g_turn_angle);
 				s_target_angle = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
 				// Reset the speed.
 				speed_ = ROTATE_LOW_SPEED;
 				ROS_INFO("%s %d: TurnMovement, current angle:%d, \033[33ms_target_angle: \033[32m%d\033[0m, after %fs waiting."
 						, __FUNCTION__, __LINE__, robot::instance()->getPoseAngle(), s_target_angle, tmp_sec);
-				skip_laser_turn_angle_cnt_ = 0;
+				skip_lidar_turn_angle_cnt_ = 0;
 			}
 		}
 	}
@@ -138,14 +138,14 @@ void TurnMovement::setTarget()
 		stage_ = TURN_REGULATOR_TURNING;
 		// Reset the speed.
 		speed_ = ROTATE_LOW_SPEED;
-		skip_laser_turn_angle_cnt_++;
-		ROS_INFO("%s %d: TurnMovement, \033[33ms_target_angle: \033[32m%d\033[0m, skip_laser_turn_angle_cnt_: %d.", __FUNCTION__, __LINE__, s_target_angle, skip_laser_turn_angle_cnt_);
+		skip_lidar_turn_angle_cnt_++;
+		ROS_INFO("%s %d: TurnMovement, \033[33ms_target_angle: \033[32m%d\033[0m, skip_lidar_turn_angle_cnt_: %d.", __FUNCTION__, __LINE__, s_target_angle, skip_lidar_turn_angle_cnt_);
 	}
 }
 
 void TurnMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	if (stage_ == TURN_REGULATOR_WAITING_FOR_LASER)
+	if (stage_ == TURN_REGULATOR_WAITING_FOR_LIDAR)
 	{
 		l_speed = r_speed = 0;
 		return;

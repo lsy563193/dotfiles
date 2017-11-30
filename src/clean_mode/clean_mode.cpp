@@ -114,13 +114,13 @@ void CleanMode::setMt()
 				//		block_angle = rcon_turn_angle();
 			else
 				block_angle = 0;
-			if (LASER_FOLLOW_WALL)
-				if(!laser_turn_angle(g_turn_angle))
+			if (LIDAR_FOLLOW_WALL)
+				if(!lidar_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 		}else{
 //			ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
-			if (LASER_FOLLOW_WALL)
-				if(!laser_turn_angle(g_turn_angle))
+			if (LIDAR_FOLLOW_WALL)
+				if(!lidar_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 		}
 		ROS_INFO("%s,%d: mt.is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
@@ -223,7 +223,7 @@ void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 void CleanMode::resetTriggeredValue(void)
 {
-	ev.laser_triggered = 0;
+	ev.lidar_triggered = 0;
 	ev.rcon_triggered = 0;
 	ev.bumper_triggered = 0;
 	ev.obs_triggered = 0;

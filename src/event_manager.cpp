@@ -4,7 +4,6 @@
 #include <battery.h>
 #include <brush.h>
 #include <bumper.h>
-#include <clean_timer.h>
 #include <remote.hpp>
 #include <charger.h>
 #include <beep.h>
@@ -20,6 +19,7 @@
 #include "event_manager.h"
 #include "obs.h"
 #include "error.h"
+#include "robot_timer.h"
 
 
 /* Events variables */
@@ -61,7 +61,7 @@ Ev_t ev;
 //bool g_lidar_bumper_jam =false;
 //int g_lidar_bumper_cnt = 0;
 
-// laser stuck
+// lidar stuck
 
 static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
 
@@ -150,8 +150,8 @@ void event_manager_init()
 
 	p_handler[EVT_ROBOT_SLIP] = &EventHandle::robot_slip;
 
-//	handler[EVT_LIDAR_BUMPER]=handler_laser_stuck;
-	p_handler[EVT_LASER_STUCK] = &EventHandle::laser_stuck;
+//	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
+	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidar_stuck;
 	eat.peh = &deh;
 }
 
@@ -309,7 +309,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
-		if (timer.get_status()) {
+		if (robot_timer.getPlanStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
@@ -370,7 +370,7 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_SLAM_ERROR);
 		}
 		/* robot slip */
-		if(laser_is_robot_slip()){
+		if(lidar_is_robot_slip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP);
 		}
@@ -381,10 +381,10 @@ void *event_manager_thread(void *data)
 		}
 		*/
 
-		// Laser stuck
-		if (laser_is_stuck()) {
+		// Lidar stuck
+		if (lidar_is_stuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_LASER_STUCK);
+			evt_set_status_x(EVT_LIDAR_STUCK);
 		}
 
 		if (set) {
@@ -530,8 +530,8 @@ void *event_handler_thread(void *data) {
 		/* lidar bumper*/
 		//evt_handle_check_event(EVT_LIDAR_BUMPER,lidar_bumper)
 
-		// Laser stuck
-		evt_handle_check_event(EVT_LASER_STUCK);
+		// Lidar stuck
+		evt_handle_check_event(EVT_LIDAR_STUCK);
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
@@ -632,8 +632,8 @@ void event_manager_reset_status(void)
 	//g_lidar_bumper = false;
 	//g_lidar_bumper_cnt =0;
 	//g_lidar_bumper_jam = false;
-	// laser stuck
-	ev.laser_stuck = false;
+	// lidar stuck
+	ev.lidar_stuck = false;
 }
 
 /* Below are the internal functions. */
@@ -869,15 +869,15 @@ void EventHandle::remote_plan(bool state_now, bool state_last)
 }
 void df_remote_plan(bool state_now, bool state_last)
 {
-	if (timer.get_status() == 1 || timer.get_status() == 2)
+	if (robot_timer.getPlanStatus() == 1 || robot_timer.getPlanStatus() == 2)
 	{
 		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(INVALID);
 	}
-	else if (timer.get_status() == 3)
+	else if (robot_timer.getPlanStatus() == 3)
 		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
 
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 	remote.reset();
 }
 
@@ -1039,14 +1039,14 @@ void EventHandle::lidar_bumper(bool state_new,bool state_last)
 }
 */
 
-// Laser stuck
-void EventHandle::laser_stuck(bool state_new,bool state_last)
+// Lidar stuck
+void EventHandle::lidar_stuck(bool state_new,bool state_last)
 {}
-void df_laser_stuck(bool state_new,bool state_last)
+void df_lidar_stuck(bool state_new,bool state_last)
 {
 	beeper.play_for_command(true);
-	//ROS_WARN("\033[32m%s %d: Laser stuck.\033[0m", __FUNCTION__, __LINE__);
-	//ev.laser_stuck = true;
+	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
+	//ev.lidar_stuck = true;
 }
 
 ///* Default: empty hanlder */

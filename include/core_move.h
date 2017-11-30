@@ -249,7 +249,7 @@ void over_current_brush_left(bool state_now, bool state_last)
 
 	void slam_error(bool state_now, bool state_last) { df_slam_error(state_now, state_last); }
 
-	void laser_stuck(bool state_now, bool state_last) { df_laser_stuck(state_now, state_last); }
+	void lidar_stuck(bool state_now, bool state_last) { df_lidar_stuck(state_now, state_last); }
 };
 #endif
 

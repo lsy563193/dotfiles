@@ -50,7 +50,7 @@ bool WallFollowClean::isReach() {
 
 	if (mt.is_linear()) {
 		if (isMt())
-			return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with laser.
+			return line_reg_->isCellReach(); // For reaching 8 meters limit or follow wall with lidar.
 	}
 	else if (mt.is_follow_wall()) {
 		if (isMt())
@@ -87,9 +87,9 @@ bool WallFollowClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-						|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+						|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 
@@ -99,16 +99,16 @@ bool WallFollowClean::isStop()
 		{
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-								|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+								|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 		else if (mt.is_follow_wall()) // Robot is following wall for cleaning.
 		{
 			if (isMt())
 				return fw_reg_->isIsolate();
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 	return false;
@@ -195,7 +195,7 @@ void WallFollowClean::mark() {
 		fw_map.set_cliff();
 		fw_map.set_tilt();
 		fw_map.set_slip();
-		fw_map.set_laser();
+		fw_map.set_lidar();
 		fw_map.set_follow_wall();
 	}
 

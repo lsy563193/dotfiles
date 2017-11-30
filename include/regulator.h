@@ -5,7 +5,7 @@
 #ifndef PP_REGULATOR_BASE_H
 #define PP_REGULATOR_BASE_H
 
-#include <laser.hpp>
+#include <lidar.hpp>
 #include <ros/ros.h>
 #include <move_type.h>
 #include <path_planning.h>
@@ -59,7 +59,7 @@ int16_t obs_turn_angle();
 
 int16_t rcon_turn_angle();
 
-bool laser_turn_angle(int16_t& turn_angle);
+bool lidar_turn_angle(int16_t& turn_angle);
 
 //class Movement {
 //
@@ -93,7 +93,7 @@ public:
 		//set_wheel.speed(1, 1);
 	}
 	void adjustSpeed(int32_t&, int32_t&);
-	bool isLaserStop();
+	bool isLidarStop();
 	void setTarget();
 	bool isReach();
 	std::string getName()
@@ -106,7 +106,7 @@ private:
 	int counter_;
 	int32_t speed_;
 	float distance;
-	float laser_detect_distance;
+	float lidar_detect_distance;
 };
 
 class TurnMovement: public Movement{
@@ -130,8 +130,8 @@ private:
 	double wait_sec_;
 	double waiting_start_sec_;
 	bool waiting_finished_;
-	// It will use laser points to get the turn angle for every skip_laser_turn_angle_cnt_ times.
-	uint8_t skip_laser_turn_angle_cnt_;
+	// It will use lidar points to get the turn angle for every skip_lidar_turn_angle_cnt_ times.
+	uint8_t skip_lidar_turn_angle_cnt_;
 };
 
 class TurnSpeedRegulator{
@@ -241,7 +241,7 @@ public:
 	~ForwardMovement(){ };
 	bool isRconStop();
 	bool isOBSStop();
-	bool isLaserStop();
+	bool isLidarStop();
 	bool isBoundaryStop();
 	bool isPassTargetStop();
 	bool isCellReach();

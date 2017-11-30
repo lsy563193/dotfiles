@@ -98,7 +98,7 @@ bool FollowWallMovement::shouldMoveBack()
 
 	if(g_robot_slip)
 	{
-		// Temporary use obs as laser triggered.
+		// Temporary use obs as lidar triggered.
 		ev.obs_triggered = BLOCK_FRONT;
 		g_turn_angle = obs_turn_angle();
 		ROS_WARN("%s %d: slip triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
@@ -110,14 +110,14 @@ bool FollowWallMovement::shouldMoveBack()
 
 bool FollowWallMovement::shouldTurn()
 {
-	ev.laser_triggered = laser_get_status();
-	if (ev.laser_triggered)
+	ev.lidar_triggered = lidar_get_status();
+	if (ev.lidar_triggered)
 	{
-		// Temporary use bumper as laser triggered.
-		ev.bumper_triggered = ev.laser_triggered;
+		// Temporary use bumper as lidar triggered.
+		ev.bumper_triggered = ev.lidar_triggered;
 		g_turn_angle = bumper_turn_angle();
 		ev.bumper_triggered = 0;
-		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 
@@ -137,7 +137,7 @@ bool FollowWallMovement::isBlockCleared()
 {
 	if (!cost_map.is_block_accessible(cost_map.get_x_cell(), cost_map.get_y_cell())) // Robot has step on blocks.
 	{
-		ROS_WARN("%s %d: Laser triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 

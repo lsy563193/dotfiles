@@ -82,9 +82,9 @@ bool SpotClean::isStop()
 		if (mt.is_linear()) {
 			if (isMt())
 				return (line_reg_->isRconStop() || line_reg_->isOBSStop()
-								|| line_reg_->isLaserStop() || line_reg_->isBoundaryStop());
+								|| line_reg_->isLidarStop() || line_reg_->isBoundaryStop());
 			else if (isBack())
-				return back_reg_->isLaserStop();
+				return back_reg_->isLidarStop();
 		}
 	}
 	return false;

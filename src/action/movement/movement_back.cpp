@@ -101,9 +101,9 @@ bool BackMovement::isReach()
 	return false;
 }
 
-bool BackMovement::isLaserStop()
+bool BackMovement::isLidarStop()
 {
-	auto obstacle_distance = laser.getObstacleDistance(1, ROBOT_RADIUS);
+	auto obstacle_distance = lidar.getObstacleDistance(1, ROBOT_RADIUS);
 	if (g_back_distance >= 0.05 && obstacle_distance < 0.03)
 	{
 		ROS_WARN("%s, %d: obstacle_distance:%f.", __FUNCTION__, __LINE__, obstacle_distance);

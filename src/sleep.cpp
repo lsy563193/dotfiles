@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <cliff.h>
 #include <pp.h>
-#include <clean_timer.h>
+#include <robot_timer.h>
 #include <remote.hpp>
 
 #include "sleep.h"
@@ -62,7 +62,7 @@ void sleep_mode(void)
 	c_rcon.resetStatus();
 	remote.reset();
 	key.resetTriggerStatus();
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 
 	event_manager_reset_status();
 	sleep_register_events();
@@ -134,7 +134,7 @@ void sleep_mode(void)
 	c_rcon.resetStatus();
 	remote.reset();
 	key.resetTriggerStatus();
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 }
 
 void sleep_register_events(void)
@@ -170,7 +170,7 @@ void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
-	if (timer.get_status() == 3)
+	if (robot_timer.getPlanStatus() == 3)
 	{
 		if (error.get() != ERROR_CODE_NONE)
 		{
@@ -189,7 +189,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 	reset_sleep_mode_flag();
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 }
 
 void Sleep_EventHandle::key_clean(bool state_now, bool state_last)

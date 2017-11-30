@@ -52,7 +52,7 @@ bool EventOpenGyro::setNext() {
 		charger_pose.setY(odom.getY());
 	}
 	else
-		cs.setNext(CS_OPEN_LASER);
+		cs.setNext(CS_OPEN_LIDAR);
 }
 
 void EventOpenGyro::doSomething() {

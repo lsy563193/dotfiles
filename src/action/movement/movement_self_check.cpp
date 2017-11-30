@@ -61,7 +61,7 @@ void SelfCheckRegulator::adjustSpeed(uint8_t bumper_jam_state)
 			wheel.setDirectionRight();
 		left_speed = right_speed = ROTATE_TOP_SPEED;
 	}
-	else if (ev.laser_stuck)
+	else if (ev.lidar_stuck)
 	{
 		wheel.setDirBackward();
 		left_speed = right_speed = 2;

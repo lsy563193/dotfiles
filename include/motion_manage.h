@@ -5,7 +5,7 @@
 #ifndef PP_MOTION_MANAGE_H
 #define PP_MOTION_MANAGE_H
 
-#include "laser.hpp"
+#include "lidar.hpp"
 #include "slam.h"
 #include "mathematics.h"
 //#include "obstacle_detector.h"
@@ -59,7 +59,7 @@ private:
 	bool initExplorationCleaning(void);
 	bool initGoHome(void);
 
-	bool laser_init();
+	bool lidar_init();
 	void get_aligment_angle();
 	bool slam_init();
 	void init_after_slam();

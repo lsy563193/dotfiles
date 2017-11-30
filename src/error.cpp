@@ -54,7 +54,7 @@ void Error::alarm(void)
 			speaker.play(SPEAKER_ERROR_BUMPER);
 			break;
 		}
-		case ERROR_CODE_LASER:
+		case ERROR_CODE_LIDAR:
 		{
 			speaker.play(SPEAKER_TEST_LIDAR);
 			break;
