@@ -51,17 +51,6 @@
 #define Charge_Home_Top				((uint8_t) 0x0c)
 #define Vitual_Wall_Code			((uint8_t) 0x24)
 
-#define Remote_All					((uint8_t) 0xFF)
-#define Remote_Forward				((uint8_t) 0x80)
-#define Remote_Left					((uint8_t) 0x40)
-#define Remote_Right				((uint8_t) 0x20)
-#define Remote_Backward				((uint8_t) 0x10)
-#define Remote_Max					((uint8_t) 0x10)
-#define Remote_Clean				((uint8_t) 0x08)
-#define Remote_Home					((uint8_t) 0x04)
-#define Remote_Wall_Follow			((uint8_t) 0x02)
-#define Remote_Spot					((uint8_t) 0x01)
-
 #define Rcon_Virtualwall			((uint8_t) 0xaa)
 #define Rcon_Charger_Station_Left	((uint8_t) 0x02)
 #define Rcon_Charger_Station_Right	((uint8_t) 0x50)

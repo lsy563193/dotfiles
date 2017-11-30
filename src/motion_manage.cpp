@@ -17,7 +17,7 @@
 #include <clean_state.h>
 #include <vacuum.h>
 #include <brush.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <led.h>
 #include <charger.h>
 #include <event_manager.h>
@@ -296,7 +296,6 @@ void init_wf_before_gyro()
 
 	g_wf_start_timer = time(NULL);
 	g_wf_diff_timer = WALL_FOLLOW_TIME;
-	remote.reset_move_with();
 	c_rcon.resetStatus();
 	key.resetTriggerStatus();
 	key.resetTriggerStatus();
@@ -335,7 +334,6 @@ void init_spot_before_gyro()
 	led.set_mode(LED_FLASH, LED_GREEN, 1000);
 
 	c_rcon.resetStatus();
-	remote.reset_move_with();
 	key.resetTriggerStatus();
 
 	gyro.setOff();

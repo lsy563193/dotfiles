@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <ros/ros.h>
 #include <battery.h>
-#include <remote.h>
+#include <remote.hpp>
 #include <charger.h>
 #include "charge.hpp"
 #include "core_move.h"

@@ -20,7 +20,6 @@
 #include "mathematics.h"
 #include "path_planning.h"
 #include <wall_follow.h>
-#include "rounding.h"
 #include "shortest_path.h"
 #include "spot.h"
 
