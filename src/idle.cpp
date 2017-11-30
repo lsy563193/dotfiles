@@ -79,7 +79,7 @@ void idle(void)
 						 battery.getVoltage(),(int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		bat_ready_to_clean = false;
 		led.set_mode(LED_BREATH, LED_ORANGE);
-		wav.play(WAV_BATTERY_LOW);
+		speaker.play(SPEAKER_BATTERY_LOW);
 	}
 	else
 		led.set_mode(LED_BREATH, LED_GREEN);
@@ -151,17 +151,17 @@ void idle(void)
 					reject_reason = 0;
 					break;
 				case 2:
-					wav.play(WAV_ERROR_LIFT_UP);
+					speaker.play(SPEAKER_ERROR_LIFT_UP);
 					cs_paused_setting();
 					reject_reason = 0;
 					break;
 				case 3:
-					wav.play(WAV_BATTERY_LOW);
+					speaker.play(SPEAKER_BATTERY_LOW);
 					reject_reason = 0;
 					break;
 				case 4:
 					led.set_mode(LED_BREATH, LED_GREEN);
-					wav.play(WAV_CLEAR_ERROR);
+					speaker.play(SPEAKER_CLEAR_ERROR);
 					error_alarm_counter = 0;
 					error.set(ERROR_CODE_NONE);
 					reject_reason = 0;
@@ -173,13 +173,13 @@ void idle(void)
 			if (plan_status == 2 && (time(NULL) - plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Cancel appointment.", __FUNCTION__, __LINE__);
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				plan_status = 0;
 			}
 			else if (plan_status == 1 && (time(NULL) - plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Confirm appointment.", __FUNCTION__, __LINE__);
-				wav.play(WAV_APPOINTMENT_DONE);
+				speaker.play(SPEAKER_APPOINTMENT_DONE);
 				plan_status = 0;
 			}
 		}
@@ -202,9 +202,9 @@ void idle(void)
 
 	// Make sure alarm will be done.
 	if (plan_status == 2)
-		wav.play(WAV_CANCEL_APPOINTMENT);
+		speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 	else if (plan_status == 1)
-		wav.play(WAV_APPOINTMENT_DONE);
+		speaker.play(SPEAKER_APPOINTMENT_DONE);
 	plan_status = 0;
 
 	/*--- reset g_charge_turn_connect_fail except Clean_Mode_GoHome and Clean_Mode_Exploration ---*/

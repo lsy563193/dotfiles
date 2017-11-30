@@ -3,7 +3,7 @@
 //
 #include "ros/ros.h"
 #include "error.h"
-#include "wav.h"
+#include "speaker.h"
 #include "cliff.h"
 #include "bumper.h"
 
@@ -16,52 +16,52 @@ void Error::alarm(void)
 	{
 		case ERROR_CODE_LEFTWHEEL:
 		{
-			wav.play(WAV_ERROR_LEFT_WHEEL);
+			speaker.play(SPEAKER_ERROR_LEFT_WHEEL);
 			break;
 		}
 		case ERROR_CODE_RIGHTWHEEL:
 		{
-			wav.play(WAV_ERROR_RIGHT_WHEEL);
+			speaker.play(SPEAKER_ERROR_RIGHT_WHEEL);
 			break;
 		}
 		case ERROR_CODE_LEFTBRUSH:
 		{
-			wav.play(WAV_ERROR_LEFT_BRUSH);
+			speaker.play(SPEAKER_ERROR_LEFT_BRUSH);
 			break;
 		}
 		case ERROR_CODE_RIGHTBRUSH:
 		{
-			wav.play(WAV_ERROR_RIGHT_BRUSH);
+			speaker.play(SPEAKER_ERROR_RIGHT_BRUSH);
 			break;
 		}
 		case ERROR_CODE_MAINBRUSH:
 		{
-			wav.play(WAV_ERROR_MAIN_BRUSH);
+			speaker.play(SPEAKER_ERROR_MAIN_BRUSH);
 			break;
 		}
 		case ERROR_CODE_FAN_H:
 		{
-			wav.play(WAV_ERROR_SUCTION_FAN);
+			speaker.play(SPEAKER_ERROR_SUCTION_FAN);
 			break;
 		}
 		case ERROR_CODE_CLIFF:
 		{
-			wav.play(WAV_ERROR_CLIFF);
+			speaker.play(SPEAKER_ERROR_CLIFF);
 			break;
 		}
 		case ERROR_CODE_BUMPER:
 		{
-			wav.play(WAV_ERROR_BUMPER);
+			speaker.play(SPEAKER_ERROR_BUMPER);
 			break;
 		}
 		case ERROR_CODE_LASER:
 		{
-			wav.play(WAV_TEST_LIDAR);
+			speaker.play(SPEAKER_TEST_LIDAR);
 			break;
 		}
 		case ERROR_CODE_STUCK:
 		{
-			wav.play(WAV_ROBOT_STUCK);
+			speaker.play(SPEAKER_ROBOT_STUCK);
 			break;
 		}
 		default:

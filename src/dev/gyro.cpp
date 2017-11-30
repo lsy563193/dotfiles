@@ -7,7 +7,7 @@
 #include "path_planning.h"
 #include "gyro.h"
 #include "movement.h"
-#include "wav.h"
+#include "speaker.h"
 #include "mathematics.h"
 #include "robot.hpp"
 #include "robotbase.h"
@@ -142,7 +142,7 @@ bool Gyro::waitForOn(void)
 				last_angle_v_ = getAngleV();
 				error_count_++;
 				open_state_ = WAIT_FOR_CLOSE;
-				wav.play(WAV_SYSTEM_INITIALIZING);
+				speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 			}
 			check_stable_count_++;
 			average_angle_ = (average_angle_ + current_angle_) / 2;
@@ -158,7 +158,7 @@ bool Gyro::waitForOn(void)
 				last_angle_v_ = getAngleV();
 				error_count_++;
 				open_state_ = WAIT_FOR_CLOSE;
-				wav.play(WAV_SYSTEM_INITIALIZING);
+				speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 			}
 			else
 			{
@@ -259,7 +259,7 @@ bool Gyro::isStable()
 		if (current_angle > 0.02 || current_angle < -0.02)
 		{
 			Gyro::setOff();
-			wav.play(WAV_SYSTEM_INITIALIZING);
+			speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 			break;
 		}
 		check_stable_count++;
@@ -273,7 +273,7 @@ bool Gyro::isStable()
 			ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
 			Gyro::setOff();
 			average_angle = 0;
-			wav.play(WAV_SYSTEM_INITIALIZING);
+			speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 		}
 		else
 		{

@@ -27,7 +27,7 @@
 #include "wall_follow_trapped.h"
 #include "event_manager.h"
 #include "go_home.hpp"
-#include "wav.h"
+#include "speaker.h"
 #include "clean_mode.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
@@ -42,13 +42,13 @@ void *core_move_thread(void *)
 		usleep(1000);
 	}
 	//ROS_INFO("Robot sensor ready.");
-	//wav.play(WAV_WELCOME_ILIFE);
+	//speaker.play(SPEAKER_WELCOME_ILIFE);
 	usleep(200000);
 
 	if (charger.isDirected() || charger.isOnStub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.isReadyToClean())
-		wav.play(WAV_PLEASE_START_CLEANING);
+		speaker.play(SPEAKER_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
@@ -56,7 +56,7 @@ void *core_move_thread(void *)
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
 				serial.setCleanMode(Clean_Mode_Idle);
-//				wav.play(WAV_TEST_MODE);
+//				speaker.play(SPEAKER_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:

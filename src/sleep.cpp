@@ -9,7 +9,7 @@
 #include "sleep.h"
 #include "key.h"
 #include "movement.h"
-#include "wav.h"
+#include "speaker.h"
 #include "event_manager.h"
 #include "clean_mode.h"
 #include "beep.h"
@@ -78,17 +78,17 @@ void sleep_mode(void)
 		{
 			case 1:
 				error.alarm();
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 			case 2:
-				wav.play(WAV_ERROR_LIFT_UP);
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_ERROR_LIFT_UP);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 			case 3:
-				wav.play(WAV_BATTERY_LOW);
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_BATTERY_LOW);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				sleep_plan_reject_reason = 0;
 				break;
 		}

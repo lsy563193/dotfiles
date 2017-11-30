@@ -30,7 +30,7 @@
 #include <charger.h>
 #include <wheel.hpp>
 #include <odom.h>
-#include "wav.h"
+#include "speaker.h"
 #include "robot.hpp"
 #include "robotbase.h"
 #include "event_manager.h"
@@ -64,7 +64,7 @@ void remote_mode(void)
 		usleep(30000);
 		// Set gyro on before wav.play can save the time for opening the gyro.
 		gyro.setOn();
-		wav.play(WAV_SYSTEM_INITIALIZING);
+		speaker.play(SPEAKER_SYSTEM_INITIALIZING);
 		if (!gyro.waitForOn())
 		{
 			cm_set(Clean_Mode_Idle);
@@ -108,10 +108,10 @@ void remote_mode(void)
 	remote_mode_unregister_events();
 
 	if (ev.battery_low)
-		wav.play(WAV_BATTERY_LOW);
+		speaker.play(SPEAKER_BATTERY_LOW);
 
 	if (ev.cliff_all_triggered)
-		wav.play(WAV_ERROR_LIFT_UP);
+		speaker.play(SPEAKER_ERROR_LIFT_UP);
 }
 
 void remote_move(void)

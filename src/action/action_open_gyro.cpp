@@ -24,20 +24,20 @@ EventOpenGyro::EventOpenGyro() {
 	cm_register_events();
 	if (g_resume_cleaning) {
 		ROS_WARN("Restore from low battery pause");
-		wav.play(WAV_CLEANING_CONTINUE);
+		speaker.play(SPEAKER_CLEANING_CONTINUE);
 	}
 	else if (cs_is_paused()) {
 		ROS_WARN("Restore from manual pause");
-		wav.play(WAV_CLEANING_CONTINUE);
+		speaker.play(SPEAKER_CLEANING_CONTINUE);
 		if (cs.is_going_home()) {
-			wav.play(WAV_BACK_TO_CHARGER);
+			speaker.play(SPEAKER_BACK_TO_CHARGER);
 		}
 	}
 	else if (g_plan_activated == true) {
 		g_plan_activated = false;
 	}
 	else {
-		wav.play(WAV_CLEANING_START);
+		speaker.play(SPEAKER_CLEANING_START);
 	}
 }
 

@@ -12,7 +12,7 @@
 #include <event_manager.h>
 #include <mathematics.h>
 #include <motion_manage.h>
-#include <wav.h>
+#include <speaker.h>
 #include <spot.h>
 #include <robotbase.h>
 #include <path_planning.h>

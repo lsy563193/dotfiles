@@ -21,7 +21,7 @@
 #include "core_move.h"
 #include "map.h"
 #include "gyro.h"
-#include "wav.h"
+#include "speaker.h"
 #include "motion_manage.h"
 #include "event_manager.h"
 #include "slam.h"
@@ -514,7 +514,7 @@ uint8_t SpotMovement::spotNextTarget(const Cell_t& cur_cell,PPTargetType *target
 		/*---init spot move and set start cell---*/
 		if (spt == CLEAN_SPOT)
 		{
-			wav.play(WAV_CLEANING_SPOT);
+			speaker.play(SPEAKER_CLEANING_SPOT);
 			spotInit(1.0, cur_cell);//start from current cell
 		}
 		else if( spt == NORMAL_SPOT){

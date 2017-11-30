@@ -134,15 +134,15 @@ void cm_apply_cs(int next) {
 		if (g_resume_cleaning)
 		{
 			ROS_WARN("Restore from low battery pause");
-			wav.play(WAV_CLEANING_CONTINUE);
+			speaker.play(SPEAKER_CLEANING_CONTINUE);
 		}
 		else if (cs_is_paused())
 		{
 			ROS_WARN("Restore from manual pause");
-			wav.play(WAV_CLEANING_CONTINUE);
+			speaker.play(SPEAKER_CLEANING_CONTINUE);
 			if (cs.is_going_home())
 			{
-				wav.play(WAV_BACK_TO_CHARGER);
+				speaker.play(SPEAKER_BACK_TO_CHARGER);
 			}
 		}
 		else if(g_plan_activated == true)
@@ -150,7 +150,7 @@ void cm_apply_cs(int next) {
 			g_plan_activated = false;
 		}
 		else{
-			wav.play(WAV_CLEANING_START);
+			speaker.play(SPEAKER_CLEANING_START);
 		}
 	}
 	else if (next == CS_BACK_FROM_CHARGER)
@@ -201,9 +201,9 @@ void cm_apply_cs(int next) {
 		}
 		// Play wavs.
 		if (ev.battrey_home)
-			wav.play(WAV_BATTERY_LOW);
+			speaker.play(SPEAKER_BATTERY_LOW);
 		if (!cm_is_go_charger())
-			wav.play(WAV_BACK_TO_CHARGER);
+			speaker.play(SPEAKER_BACK_TO_CHARGER);
 
 		if (ev.remote_home)
 			g_go_home_by_remote = true;
@@ -224,7 +224,7 @@ void cm_apply_cs(int next) {
 			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
 			SpotMovement::instance()->spotDeinit();
 			wheel.stop();
-			wav.play(WAV_CLEANING_CONTINUE);
+			speaker.play(SPEAKER_CLEANING_CONTINUE);
 		}
 		ev.remote_spot = false;
 	}

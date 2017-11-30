@@ -9,7 +9,7 @@
 #include "movement.h"
 #include "event_manager.h"
 #include "path_planning.h"
-#include "wav.h"
+#include "speaker.h"
 #include "clean_mode.h"
 #if 0
 void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
@@ -95,7 +95,7 @@ void turn_into_exploration(bool is_reset_map)
 	c_rcon.resetStatus();
 	key.resetTriggerStatus();
 	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong wav.
-	wav.play(WAV_EXPLORATION_START);
+	speaker.play(SPEAKER_EXPLORATION_START);
 
 	ROS_INFO("\033[47;35m" "%s,%d,enable tilt detect" "\033[0m",__FUNCTION__,__LINE__);
 

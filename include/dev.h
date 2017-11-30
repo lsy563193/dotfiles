@@ -22,7 +22,7 @@
 #include "rcon.h"
 #include "remote.hpp"
 #include "vacuum.h"
-#include "wav.h"
+#include "speaker.h"
 #include "wall_follow.h"
 #include "wheel.hpp"
 

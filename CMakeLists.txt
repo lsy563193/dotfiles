@@ -25,7 +25,7 @@ FILE(GLOB PP_SRC
 	src/dev/wall_follow.cpp
 	src/dev/wheel.cpp
 	src/dev/laser.cpp
-	src/dev/wav.cpp
+	src/dev/speaker.cpp
 
 				src/action/action.cpp
 				src/action/action_open_gyro.cpp

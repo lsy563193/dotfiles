@@ -12,7 +12,7 @@
 
 #include "robot.hpp"
 #include "core_move.h"
-#include "wav.h"
+#include "speaker.h"
 #include "clean_mode.h"
 #include "error.h"
 #include "slam.h"
@@ -239,7 +239,7 @@ void cs_paused_setting(void)
 		g_robot_stuck = false;
 		// These are all the action that ~MotionManage() won't do if isManualPaused() returns true.
 		ROS_WARN("Reset manual/stuck pause status.");
-		wav.play(WAV_CLEANING_STOP);
+		speaker.play(SPEAKER_CLEANING_STOP);
 		g_is_manual_pause = false;
 		robot::instance()->savedOffsetAngle(0);
 		if (slam.isMapReady())

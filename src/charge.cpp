@@ -2,7 +2,7 @@
 #include <ros/console.h>
 #include <stdio.h>
 #include "dev.h"
-#include <wav.h>
+#include <speaker.h>
 #include <key.h>
 #include <cliff.h>
 #include <led.h>
@@ -65,7 +65,7 @@ void charge_function(void)
 	timer.set_status(0);
 	register_event();
 	event_manager_reset_status();
-	wav.play(WAV_BATTERY_CHARGE);
+	speaker.play(SPEAKER_BATTERY_CHARGE);
 	ROS_INFO("%s %d: Start charger mode_.", __FUNCTION__, __LINE__);
 
 	while(ros::ok())
@@ -158,16 +158,16 @@ void charge_function(void)
 					charge_reject_reason = 0;
 					break;
 				case 2:
-					wav.play(WAV_ERROR_LIFT_UP);
+					speaker.play(SPEAKER_ERROR_LIFT_UP);
 					cs_paused_setting();
 					charge_reject_reason = 0;
 					break;
 				case 3:
-					wav.play(WAV_BATTERY_LOW);
+					speaker.play(SPEAKER_BATTERY_LOW);
 					charge_reject_reason = 0;
 					break;
 				case 4:
-					wav.play(WAV_CLEAR_ERROR);
+					speaker.play(SPEAKER_CLEAR_ERROR);
 					charge_reject_reason = 0;
 					error.set(ERROR_CODE_NONE);
 					break;
@@ -178,13 +178,13 @@ void charge_function(void)
 			if (charge_plan_status == 2 && (time(NULL) - charge_plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Cancel appointment.", __FUNCTION__, __LINE__);
-				wav.play(WAV_CANCEL_APPOINTMENT);
+				speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 				charge_plan_status = 0;
 			}
 			else if (charge_plan_status == 1 && (time(NULL) - charge_plan_confirm_time >= 2))
 			{
 				ROS_WARN("%s %d: Confirm appointment.", __FUNCTION__, __LINE__);
-				wav.play(WAV_APPOINTMENT_DONE);
+				speaker.play(SPEAKER_APPOINTMENT_DONE);
 				charge_plan_status = 0;
 			}
 		}
@@ -195,7 +195,7 @@ void charge_function(void)
 		{
 			battery_full = true;
 			led.set_mode(LED_STEADY, LED_OFF);
-			wav.play(WAV_BATTERY_CHARGE_DONE);
+			speaker.play(SPEAKER_BATTERY_CHARGE_DONE);
 		}
 	}
 	unregister_event();
@@ -212,13 +212,13 @@ void charge_function(void)
 		{
 			ROS_WARN("%s %d: Switch is not on.", __FUNCTION__, __LINE__);
 			cm_set(Clean_Mode_Charging);
-			wav.play(WAV_CHECK_SWITCH);
+			speaker.play(SPEAKER_CHECK_SWITCH);
 		}
 	}
 	if (charge_plan_status == 2)
-		wav.play(WAV_CANCEL_APPOINTMENT);
+		speaker.play(SPEAKER_CANCEL_APPOINTMENT);
 	else if (charge_plan_status == 1)
-		wav.play(WAV_APPOINTMENT_DONE);
+		speaker.play(SPEAKER_APPOINTMENT_DONE);
 	charge_plan_status = 0;
 }
 
