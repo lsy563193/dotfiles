@@ -191,12 +191,12 @@ void WallFollowClean::mark() {
 	if(mt.is_follow_wall()) {
 		fw_map.set_obs();
 		fw_map.set_bumper();
-		fw_map.set_rcon();
 		fw_map.set_cliff();
 		fw_map.set_tilt();
 		fw_map.set_slip();
 		fw_map.set_lidar();
 		fw_map.set_follow_wall();
+		fw_map.set_rcon();
 	}
 
 //	cost_map.set_cleaned(g_passed_path);

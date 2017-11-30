@@ -427,7 +427,6 @@ void NavigationClean::mark()
 //	uint8_t block_count = 0;
 	cost_map.set_obs();
 	cost_map.set_bumper();
-	cost_map.set_rcon();
 	cost_map.set_cliff();
 	cost_map.set_tilt();
 	cost_map.set_slip();
@@ -440,6 +439,7 @@ void NavigationClean::mark()
 
 	cost_map.set_cleaned(g_passed_path);
 	cost_map.mark_robot(MAP);
+	cost_map.set_rcon();
 //	cost_map.print(MAP,0,0);
 }
 
