@@ -65,7 +65,7 @@ void idle(void)
 
 	cs_disable_motors();
 	remote.reset();
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	key.resetTriggerStatus();
@@ -393,13 +393,13 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 {
 	/* -----------------------------Check if plan event ----------------------------------*/
-	if (timer.get_status())
+	if (robot_timer.getPlanStatus())
 		plan_confirm_time = time(NULL);
 
 	/* reset charger_signal_start_time when get plan status */
 	charger_signal_start_time = time(NULL);
 
-	switch (timer.get_status())
+	switch (robot_timer.getPlanStatus())
 	{
 		case 1:
 		{
@@ -453,7 +453,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 		}
 	}
 
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 }
 
 void Idle_EventHandle::key_clean(bool state_now, bool state_last)

@@ -11,7 +11,7 @@
 #include "bumper.h"
 #include "brush.h"
 #include "charger.h"
-#include "clean_timer.h"
+#include "robot_timer.h"
 #include "cliff.h"
 #include "gyro.h"
 #include "key.h"

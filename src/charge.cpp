@@ -20,7 +20,7 @@
 #include "core_move.h"
 #include "event_manager.h"
 #include "clean_mode.h"
-#include "clean_timer.h"
+#include "robot_timer.h"
 #include "error.h"
 
 #ifdef Turn_Speed
@@ -62,7 +62,7 @@ void charge_function(void)
 	bool eh_status_now=false, eh_status_last=false;
 	led.set_mode(LED_BREATH, LED_ORANGE);
 	charger.setStart();
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 	register_event();
 	event_manager_reset_status();
 	wav.play(WAV_BATTERY_CHARGE);
@@ -229,10 +229,10 @@ void Charge_EventHandle::charge_detect(bool state_now, bool state_last)
 }
 void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 {
-	if (timer.get_status())
+	if (robot_timer.getPlanStatus())
 		charge_plan_confirm_time = time(NULL);
 
-	switch(timer.get_status())
+	switch(robot_timer.getPlanStatus())
 	{
 		case 1:
 		{
@@ -285,7 +285,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 			}
 		}
 	}
-	timer.set_status(0);
+	robot_timer.resetPlanStatus();
 }
 void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 {
