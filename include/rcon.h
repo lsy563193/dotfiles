@@ -137,6 +137,7 @@
 class Rcon {
 public:
 	bool found_charger_;
+	bool found_temp_charger_;
 	bool in_rcon_signal_range_;
 	bool should_mark_charger_;
 	bool should_mark_temp_charger_;

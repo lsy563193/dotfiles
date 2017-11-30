@@ -658,8 +658,7 @@ bool NavigationClean::csm_next(Cell_t &curr)
 	g_plan_path.clear();
 //	cs_path_next(curr, g_plan_path);
 	while (cs.cs_next(curr,g_plan_path))
-
-	display();
+		display();
 
 	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
 		setMt();
@@ -679,7 +678,6 @@ void NavigationClean::mark()
 //	uint8_t block_count = 0;
 	cost_map.set_obs();
 	cost_map.set_bumper();
-	cost_map.set_rcon();
 	cost_map.set_cliff();
 	cost_map.set_tilt();
 	cost_map.set_slip();
@@ -692,6 +690,7 @@ void NavigationClean::mark()
 
 	cost_map.set_cleaned(g_passed_path);
 	cost_map.mark_robot(MAP);
+	cost_map.set_rcon();
 //	cost_map.print(MAP,0,0);
 }
 
@@ -1002,12 +1001,12 @@ void WallFollowClean::mark() {
 	if(mt.is_follow_wall()) {
 		fw_map.set_obs();
 		fw_map.set_bumper();
-		fw_map.set_rcon();
 		fw_map.set_cliff();
 		fw_map.set_tilt();
 		fw_map.set_slip();
 		fw_map.set_laser();
 		fw_map.set_follow_wall();
+		fw_map.set_rcon();
 	}
 
 //	cost_map.set_cleaned(g_passed_path);

@@ -41,7 +41,7 @@
  * Enable debugging the shortest path map when finding the
  * shortest path is using the A* like method.
  */
-#define DEBUG_SM_MAP			(0)
+#define DEBUG_SM_MAP			(1)
 
 /*
  * Enable target debug.

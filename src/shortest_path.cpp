@@ -1224,7 +1224,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	if (cost_map.get_cell(SPMAP, end_x, end_y) == COST_NO || cost_map.get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y, cost_map.get_cell(SPMAP, end_x, end_y));
 #if	DEBUG_SM_MAP
-		debug_map(SPMAP, end_x, end_y);
+		cost_map.print(SPMAP, end_x, end_y);
 #endif
 		return -2;
 	}
@@ -1361,7 +1361,7 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
 		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
-		fw_map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+		cost_map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
 		val = path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
 		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	}
@@ -1410,7 +1410,7 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 	}
 
 #if	DEBUG_SM_MAP
-	debug_map(SPMAP, endx, endy);
+	cost_map.print(SPMAP, endx, endy);
 #endif
 	return val;
 }
@@ -1785,7 +1785,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 	if (fw_map.get_cell(SPMAP, end_x, end_y) == COST_NO || fw_map.get_cell(SPMAP, end_x, end_y) == COST_HIGH) {
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y, fw_map.get_cell(SPMAP, end_x, end_y));
 #if	DEBUG_SM_MAP
-		debug_map(SPMAP, end_x, end_y);
+		cost_map.print(SPMAP, end_x, end_y);
 #endif
 		return -2;
 	}

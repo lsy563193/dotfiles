@@ -54,7 +54,7 @@ void remote_mode(void)
 	serial.setCleanMode(Clean_Mode_Remote);
 	g_is_low_bat_pause = false;
 	cs_paused_setting();
-
+	c_rcon.init();
 
 	if (!gyro.isOn())
 	{

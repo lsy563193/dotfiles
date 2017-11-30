@@ -616,6 +616,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		g_homes.resize(1,g_zero_home);
 		g_home_gen_rosmap = true;
 		g_home_way_list.clear();
+		c_rcon.init();
 	}
 
 	fw_map.reset(MAP);

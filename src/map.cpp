@@ -618,7 +618,7 @@ uint8_t CostMap::set_rcon()
 	return block_count;
 }
 
-uint8_t CostMap::set_charger_position(const Cell_t home_point)
+uint8_t CostMap::save_charger_area(const Cell_t home_point)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
 	int16_t x_min,x_max,y_min,y_max;
@@ -847,13 +847,13 @@ uint8_t CostMap::save_bumper()
 uint8_t CostMap::save_rcon()
 {
 	uint8_t block_count;
-	if(c_rcon.should_mark_charger_ && !c_rcon.in_rcon_signal_range_){
+	if(c_rcon.should_mark_charger_ ){
 		c_rcon.should_mark_charger_ = false;
-		block_count += cost_map.set_charger_position(c_rcon.getRconPos());
+		block_count += cost_map.save_charger_area(c_rcon.getRconPos());
 	}
-	else if(c_rcon.should_mark_temp_charger_ && !c_rcon.in_rcon_signal_range_){
+	else if(c_rcon.should_mark_temp_charger_ ){
 		c_rcon.should_mark_temp_charger_ = false;
-		block_count += cost_map.set_charger_position(c_rcon.getRconPos());
+		block_count += cost_map.save_charger_area(c_rcon.getRconPos());
 	}
 	return block_count;
 
@@ -1478,19 +1478,19 @@ void CostMap::color_print(char *outString, int16_t y_min, int16_t y_max)
 				y_col+="\033[1;44;37m6\033[0m";
 			}
 			else if(cs == '7'){//tilt
-				y_col+="\033[1;47;30m6\033[0m";
+				y_col+="\033[1;47;30m7\033[0m";
 			}
 			else if(cs == '8'){//slip
-				y_col+="\033[1;43;37m7\033[0m";
+				y_col+="\033[1;43;37m8\033[0m";
 			}
 			else if(cs == '9'){
 				if(std::abs(j%2) == 0)
-					y_col+="\033[1;46;37m1\033[0m";
+					y_col+="\033[1;46;37m9\033[0m";
 				else
-					y_col+="\033[1;42;37m1\033[0m";
+					y_col+="\033[1;42;37m9\033[0m";
 			}
 			else if(cs == 'a'){//bundary
-				y_col+="\033[1;43;37m8\033[0m";
+				y_col+="\033[1;43;37ma\033[0m";
 			}
 			else if(cs == 'e'){//end point
 				y_col+="\033[1;43;37me\033[0m";

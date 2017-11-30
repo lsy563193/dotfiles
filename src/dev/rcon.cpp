@@ -18,6 +18,7 @@ void Rcon::init()
 {
 	rcon_status_ = 0;
 	found_charger_ = false;
+	found_temp_charger_ = false;
 	in_rcon_signal_range_ = false;
 	charger_pos_.X = 0;
 	charger_pos_.Y = 0;
@@ -185,7 +186,9 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 		return false;
 	}
 	memset(cnt,0,sizeof(int8_t)*13);
-	if(robot::instance()->isScanAllow() && laser.laserCheckFresh(0.210,1)){
+	bool scan_allow = robot::instance()->isScanAllow();
+	bool laser_new = laser.laserCheckFresh(0.300,1);
+	if( scan_allow && laser_new ){
 		int count = 0;
 		double sum = 0.0;
 		for(int i = cd -1;i<=cd +1;i++){//for calculate avarage distance
@@ -198,10 +201,11 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 		if(count != 0){
 			dist = sum /(count*1.0);
 			if(fabs(cd)  == 43.0){//it's easy to make mistake in this angle ,which robot was almost paralled to the charger station ,so we add 0.1 to avoid mistake.
-				if( dist >= (DETECT_RANGE_MIN + 0.1) ){
+				if( dist >= (DETECT_RANGE_MIN + 0.15) ){
 					setRconPos(cd,dist);
 					ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x,dist = %f\033[0m",__FUNCTION__,__LINE__,cd,rcon_value,dist);
 					should_mark_temp_charger_ = true;
+					found_temp_charger_ = true;
 					return false;
 				}
 			}
@@ -215,11 +219,12 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 		else
 			return false;
 	} else{
-		ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x\033[0m",__FUNCTION__,__LINE__,cd,rcon_value);
+		ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x,scan_allow = %d ,laser_new = %d\033[0m",__FUNCTION__,__LINE__,cd,rcon_value,scan_allow,laser_new);
 		return false;
 	}
 	setRconPos(cd,dist);
 	found_charger_ = true;
+	found_temp_charger_ = false;
 	should_mark_charger_ = true;
 	return true;
 }
@@ -254,6 +259,8 @@ uint32_t Rcon::getStatus()
 
 static int get_trig_(uint32_t rcon_value)
 {
+	if(rcon_value == 0)
+		return 0;
 	enum {
 		left, fl1, fl2, fr2, fr1, right
 	};
@@ -305,7 +312,7 @@ int Rcon::getTrig(void)
 			rcon_status_ = 0;
 			return get_trig_(rcon_value);
 		}
-		else if (rcon_value & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)) {
+		else if (!(found_temp_charger_ || found_charger_) && rcon_value & (RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)) {
 			rcon_status_ = 0;
 			return get_trig_(rcon_value);
 		}

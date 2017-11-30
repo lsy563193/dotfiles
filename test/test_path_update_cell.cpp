@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 	PPTargetType path;
 //	path_targets(curr, path);
 //	path_find_all_targets();
-	debug_map(MAP, path.target.X, path.target.Y);
+	cost_map.print(MAP, path.target.X, path.target.Y);
 //  Cell_t target;
 //	path_dijkstra(curr,target);
 	auto is_found = false;
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 		is_found = path_full(curr, path);
 		if(is_found){
 //			move_to(curr, path, dir);
-			debug_map(MAP, path.target.X, path.target.Y);
+			cost_map.print(MAP, path.target.X, path.target.Y);
 		}
 //      i++;
 //		if(i>=3)

@@ -169,7 +169,7 @@ public:
 
 	uint8_t set_slip();
 
-	uint8_t set_charger_position(const Cell_t homepoint);
+	uint8_t save_charger_area(const Cell_t homepoint);
 
 	uint8_t set_follow_wall();
 
