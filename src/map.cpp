@@ -25,8 +25,6 @@ CostMap fw_map;
 CostMap ros_map;
 CostMap decrease_map;
 
-SlamMap slam_map;
-
 boost::mutex slam_map_mutex;
 
 #ifndef SHORTEST_PATH_V2
@@ -1525,70 +1523,3 @@ bool CostMap::isFrontBlocked(void)
 	return retval;
 }
 
-SlamMap::SlamMap()
-{
-}
-
-SlamMap::~SlamMap()
-{
-}
-
-void SlamMap::setWidth(uint32_t width)
-{
-	width_ = width;
-}
-
-uint32_t SlamMap::getWidth()
-{
-	return width_;
-}
-
-void SlamMap::setHeight(uint32_t height)
-{
-	height_ = height;
-}
-
-uint32_t SlamMap::getHeight()
-{
-	return height_;
-}
-
-void SlamMap::setResolution(float resolution)
-{
-	resolution_ = resolution;
-}
-
-float SlamMap::getResolution()
-{
-	return resolution_;
-}
-
-void SlamMap::setOriginX(double origin_x)
-{
-	origin_x_ = origin_x;
-}
-
-double SlamMap::getOriginX()
-{
-	return origin_x_;
-}
-
-void SlamMap::setOriginY(double origin_y)
-{
-	origin_y_ = origin_y;
-}
-
-double SlamMap::getOriginY()
-{
-	return origin_y_;
-}
-
-void SlamMap::setData(std::vector<int8_t> data)
-{
-	map_data_ = data;
-}
-
-std::vector<int8_t> SlamMap::getData()
-{
-	return map_data_;
-}

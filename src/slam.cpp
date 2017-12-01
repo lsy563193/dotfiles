@@ -11,6 +11,7 @@
 #include "robot.hpp"
 #include "std_srvs/Empty.h"
 #include "clean_mode.h"
+#include "slam_map.hpp"
 
 Slam slam;
 
