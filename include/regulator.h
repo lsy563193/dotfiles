@@ -76,6 +76,7 @@ public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void setTarget() = 0;
 	virtual std::string getName() = 0;
+	static double getMoveDistance();
 
 public:
 	static Point32_t s_target_p;

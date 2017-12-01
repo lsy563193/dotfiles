@@ -69,7 +69,7 @@ void CleanMode::run()
 		}
 
 		if (isSwitch()) {
-			cost_map.save_blocks();
+			cost_map.saveBlocks();
 		}
 
 		int32_t left_speed = 0, right_speed = 0;
@@ -163,7 +163,7 @@ bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
 
 Cell_t CleanMode::updatePosition(const Point32_t &curr_point)
 {
-		cost_map.update_position();
+	cost_map.updatePosition();
 		s_curr_p = curr_point;
 		return cost_map.getCurrCell();
 }
@@ -183,7 +183,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 			g_passed_path.clear();
 			g_wf_reach_count++;
 		}
-		cost_map.save_blocks();
+		cost_map.saveBlocks();
 	}
 //	else
 //		is_time_up = !cs.is_trapped();

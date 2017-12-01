@@ -106,7 +106,7 @@ bool cell_is_out_of_range(const Cell_t &cell)
 void path_planning_initialize()
 {
 	g_direct_go = 0;
-	cost_map.mark_robot(MAP);
+	cost_map.markRobot(MAP);
 }
 
 MapDirection path_get_robot_direction()
@@ -140,9 +140,9 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr;
 		auto uc = 0;
-		for (Cell_t neighbor = it[i] + g_index[i]; !cell_is_out_of_range(neighbor + g_index[i]) && !cost_map.is_block_blocked(
-						neighbor.X, neighbor.Y); neighbor += g_index[i]) {
-			uc += cost_map.is_block_unclean(neighbor.X, neighbor.Y);
+		for (Cell_t neighbor = it[i] + g_index[i]; !cell_is_out_of_range(neighbor + g_index[i]) && !cost_map.isBlockBlocked(
+				neighbor.X, neighbor.Y); neighbor += g_index[i]) {
+			uc += cost_map.isBlockUnclean(neighbor.X, neighbor.Y);
 			if (uc >= 3) {
 				it[i] = neighbor;
 				uc = 0;
@@ -191,8 +191,8 @@ bool is_axis_access(const Cell_t &start, int i, Cell_t &target)
 	auto is_found = false;
 	for (auto tmp = start; std::abs(tmp.X) < MAP_SIZE && std::abs(tmp.Y) < MAP_SIZE && std::abs(tmp.Y- start.Y)  <=1; tmp += g_index[i]) {
 //		ROS_INFO("%s, %d:tmp(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
-		if(cost_map.is_block_cleanable(tmp.X, tmp.Y) ) {
-			if ((i == 0 || i == 1) || cost_map.is_block_accessible(tmp.X, tmp.Y)) {
+		if(cost_map.isBlockCleanable(tmp.X, tmp.Y) ) {
+			if ((i == 0 || i == 1) || cost_map.isBlockAccessible(tmp.X, tmp.Y)) {
 				is_found = true;
 				target = tmp;
 				if (i == 2 || i == 3)
@@ -416,7 +416,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map) {
 		for (auto i = 0; i < 4; i++) {
 			neighbor = cell + g_index[i];
 			if (cost_map.getCell(MAP, neighbor.X, neighbor.Y) == UNCLEAN) {
-				if (cost_map.is_block_accessible(neighbor.X, neighbor.Y) == 1 &&
+				if (cost_map.isBlockAccessible(neighbor.X, neighbor.Y) == 1 &&
 						cost_map.getCell(SPMAP, neighbor.X, neighbor.Y) == UNCLEAN) {
 					cost_map.setCell(SPMAP, neighbor.X, neighbor.Y, CLEANED);
 					cells.push_back(neighbor);
@@ -472,7 +472,7 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 {
 	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
-	cost_map.generate_SPMAP(curr,g_paths);
+	cost_map.generateSPMAP(curr, g_paths);
 	PPTargetType reachable_targets{};
 	for (auto it = g_paths.begin(); it != g_paths.end();) {
 		if (cost_map.getCell(SPMAP, it->back().X, it->back().Y) == COST_NO ||
@@ -498,7 +498,7 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 void generate_path_to_targets(const Cell_t& curr)
 {
 	int16_t targetCost, x_min, x_max, y_min, y_max;
-	cost_map.path_get_range(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	cost_map.getMapRange(SPMAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto& it : g_paths) {
 		auto trace = it.front();
 		it.pop_front();
@@ -818,10 +818,10 @@ bool wf_is_isolate() {
 	int16_t	val = 0;
 	uint16_t i = 0;
 	int16_t x_min, x_max, y_min, y_max;
-	fw_map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+	fw_map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
 	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 
-	fw_map.mark_robot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
+	fw_map.markRobot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 	auto curr = cost_map.pointToCell(Movement::s_curr_p);
 	fw_map.print(MAP, curr.X, curr.Y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
@@ -830,7 +830,7 @@ bool wf_is_isolate() {
 			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
-		if (cost_map.is_block_accessible(0, 0) == 1) {
+		if (cost_map.isBlockAccessible(0, 0) == 1) {
 			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
@@ -889,7 +889,7 @@ bool path_next_fw(const Cell_t &start) {
 			Cell_t cell;
 			auto point = cost_map.getCurrPoint();
 			point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
-			cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+			cost_map.robotToCell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
 			mt.set(MT_LINEARMOVE);
 			return true;
@@ -1293,7 +1293,7 @@ bool path_get_continue_target(const Cell_t& curr, PPTargetType& path)
 		return true;
 	}
 
-	if (cost_map.is_block_accessible(g_continue_cell.X, g_continue_cell.Y) == 0) {
+	if (cost_map.isBlockAccessible(g_continue_cell.X, g_continue_cell.Y) == 0) {
 		ROS_WARN("%s %d: target(%d, %d) is blocked, unblock the target.\n", __FUNCTION__, __LINE__, g_continue_cell.X, g_continue_cell.Y);
 		cost_map.setCells(ROBOT_SIZE, g_continue_cell.X, g_continue_cell.Y, CLEANED);
 	}
@@ -1318,7 +1318,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 	auto point = cost_map.getCurrPoint();
 	point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
-	cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+	cost_map.robotToCell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 		path.clear();
 	path.push_front(cell);
 		path.push_front(curr);
@@ -1396,7 +1396,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 		queue.erase(start);
 
 //		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
-		if (cost_map.getCell(MAP, next.X, next.Y) == UNCLEAN && !cost_map.is_block_cleaned_unblock(next.X, next.Y))
+		if (cost_map.getCell(MAP, next.X, next.Y) == UNCLEAN && !cost_map.isBlockCleanedUnblock(next.X, next.Y))
 		{
 			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
 			is_found = true;
@@ -1421,7 +1421,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 						}
 					}
 
-					if (cost_map.is_block_accessible(neighbor.X, neighbor.Y)) {
+					if (cost_map.isBlockAccessible(neighbor.X, neighbor.Y)) {
 //					ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
 						queue.insert(Entry(0, neighbor));
 						cost_map.setCell(SPMAP, neighbor.X, neighbor.Y, COST_1);

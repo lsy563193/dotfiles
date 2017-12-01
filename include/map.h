@@ -6,7 +6,8 @@
 #include <vector>
 #include "mathematics.h"
 #include "BoundingBox.h"
-#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include "slam_map.hpp"
 
 #define MAP 0
 #define SPMAP 1
@@ -55,38 +56,6 @@ typedef enum {
   MAP_NONE = 0,
 } MapDirection;
 
-class SlamMap
-{
-public:
-	SlamMap();
-	~SlamMap();
-
-	void setWidth(uint32_t width);
-	uint32_t getWidth();
-	void setHeight(uint32_t height);
-	uint32_t getHeight();
-	void setResolution(float resolution);
-	float getResolution();
-	void setOriginX(double origin_x);
-	double getOriginX();
-	void setOriginY(double origin_y);
-	double getOriginY();
-	void setData(std::vector<int8_t> data);
-	std::vector<int8_t> getData();
-
-private:
-	uint32_t width_;
-	uint32_t height_;
-	float resolution_;
-	double origin_x_;
-	double origin_y_;
-	std::vector<int8_t> map_data_;
-};
-
-extern SlamMap slam_map;
-extern boost::mutex slam_map_mutex;
-
-
 class CostMap {
 public:
 
@@ -112,13 +81,15 @@ public:
 
 	void setCell(uint8_t id, int32_t x, int32_t y, CellState value);
 
+	CellState getCell(int id, int16_t x, int16_t y);
+
 	void setPosition(double x, double y);
 
 	Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 
 	void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-	CellState getCell(int id, int16_t x, int16_t y);
+	void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 	void clearBlocks(void);
 
@@ -158,55 +129,53 @@ public:
 
 	bool countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy);
 
-	bool mark_robot(uint8_t id);
+	bool markRobot(uint8_t id);
 
-	Cell_t update_position();
+	Cell_t updatePosition();
 
-	uint8_t set_lidar();
+	uint8_t setLidar();
 
-	uint8_t set_obs();
+	uint8_t setObs();
 
-	uint8_t set_bumper();
+	uint8_t setBumper();
 
-	uint8_t set_rcon();
+	uint8_t setRcon();
 
-	uint8_t set_cliff();
+	uint8_t setCliff();
 
-	uint8_t set_tilt();
+	uint8_t setTilt();
 
-	uint8_t set_slip();
+	uint8_t setSlip();
 
-	uint8_t save_charger_area(const Cell_t homepoint);
+	uint8_t saveChargerArea(const Cell_t homepoint);
 
-	uint8_t set_follow_wall();
-
-
-	uint8_t save_lidar();
-
-	uint8_t save_obs();
-
-	uint8_t save_bumper();
-
-	uint8_t save_rcon();
-
-	uint8_t save_cliff();
-
-	uint8_t save_tilt();
-
-	uint8_t save_slip();
-
-	uint8_t save_follow_wall();
-
-	uint8_t save_blocks();
-
-	uint8_t set_blocks();
-
-	void robot_to_cell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
+	uint8_t setFollowWall();
 
 
-	void set_cleaned(std::deque<Cell_t> &cells);
+	uint8_t saveLidar();
 
-	uint32_t get_cleaned_area();
+	uint8_t saveObs();
+
+	uint8_t saveBumper();
+
+	uint8_t saveRcon();
+
+	uint8_t saveCliff();
+
+	uint8_t saveTilt();
+
+	uint8_t saveSlip();
+
+	uint8_t saveFollowWall();
+
+	uint8_t saveBlocks();
+
+	uint8_t setBlocks();
+
+
+	void setCleaned(std::deque<Cell_t> &cells);
+
+	uint32_t getCleanedArea();
 
 /*
  * Check a block is accessible by the robot or not.
@@ -218,10 +187,10 @@ public:
  * @return	0 if the block is not blocked by bumper, obs or cliff
  *		1 if the block is blocked
  */
-	uint8_t is_block_accessible(int16_t x, int16_t y);
-	uint8_t is_block_blocked(int16_t x, int16_t y);
+	uint8_t isBlockAccessible(int16_t x, int16_t y);
+	uint8_t isBlockBlocked(int16_t x, int16_t y);
 
-	uint8_t is_block_blocked_x_axis(int16_t x, int16_t y);
+	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y);
 
 /*
  * Check a block is on the boundary or not, a block is defined as have the same size of robot.
@@ -232,7 +201,7 @@ public:
  * @return	0 if the block is not on the boundary
  *		1 if the block is on the boundary
  */
-	uint8_t is_block_boundary(int16_t x, int16_t y);
+	uint8_t isBlockBoundary(int16_t x, int16_t y);
 
 /*
  * Check a block is uncleaned or not, a block is defined as have the same size of brush.
@@ -245,7 +214,7 @@ public:
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-	uint8_t is_block_unclean(int16_t x, int16_t y);
+	uint8_t isBlockUnclean(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
@@ -257,7 +226,7 @@ public:
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-	int8_t is_block_cleaned_unblock(int16_t x, int16_t y);
+	int8_t isBlockCleanedUnblock(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
@@ -269,7 +238,7 @@ public:
  * @return	0 if the block is not cleanable
  *		1 if the block is cleanable
  */
-	bool is_block_cleanable(int16_t x, int16_t y);
+	bool isBlockCleanable(int16_t x, int16_t y);
 
 /*
  * Check a given point is blocked by bumper and/or cliff or not.
@@ -280,7 +249,7 @@ public:
  * @return	0 if it is not blocked by bumper and/or cliff
  *		1 if it is blocked by bumper and/or cliff
  */
-	uint8_t is_blocked_by_bumper(int16_t x, int16_t y);
+	uint8_t isBlockedByBumper(int16_t x, int16_t y);
 
 /*
  * Check whether a given point is an blocked or not.
@@ -291,11 +260,11 @@ public:
  * @return	0 if the given point is not blocked
  * 		1 if the given point is blocked
  */
-	uint8_t is_a_block(int16_t x, int16_t y);
+	uint8_t isABlock(int16_t x, int16_t y);
 
-	bool is_front_block_boundary(int dx);
+	bool isFrontBlockBoundary(int dx);
 
-	void generate_SPMAP(const Cell_t& curr, std::deque<PPTargetType>& g_paths);
+	void generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths);
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -308,7 +277,8 @@ public:
  * @return
  */
 
-	bool is_block(void);
+	bool isFrontBlocked(void);
+
 	BoundingBox2 generateBound()
 	{
 		BoundingBox2 bound{{int16_t(g_x_min), int16_t(g_y_min)}, {g_x_max, g_y_max}};
@@ -320,9 +290,9 @@ public:
 		BoundingBox2 bound{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)}, {g_x_max, g_y_max}};
 		return bound;
 	}
-	void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
-	void color_print(char *outString, int16_t y_min, int16_t y_max);
+	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
 
 private:
@@ -344,5 +314,4 @@ extern CostMap decrease_map;
 
 extern boost::mutex slam_map_mutex;
 
-double world_distance(void);
 #endif /* __MAP_H */

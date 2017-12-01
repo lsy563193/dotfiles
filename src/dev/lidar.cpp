@@ -1213,7 +1213,7 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 
-			cost_map.robot_to_cell(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			cost_map.robotToCell(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
 			auto cell_status = cost_map.getCell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{

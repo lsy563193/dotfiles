@@ -1362,7 +1362,7 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
 		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
-		cost_map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+		cost_map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
 		val = path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
 		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	}
@@ -1400,7 +1400,7 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
-		fw_map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+		fw_map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
 		x_min = x_min - 8;
 		x_max = x_max + 8;
 		y_min = y_min - 8;

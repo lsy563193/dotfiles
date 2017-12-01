@@ -37,7 +37,7 @@ bool FollowWallMovement::isNewLineReach()
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
-		if (cost_map.is_block_blocked(cost_map.countToCell(s_curr_p.X) + dx, cost_map.countToCell(s_curr_p.Y))) {
+		if (cost_map.isBlockBlocked(cost_map.countToCell(s_curr_p.X) + dx, cost_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
 					 __FUNCTION__, __LINE__, cost_map.countToCell(s_origin_p.Y), cost_map.countToCell(s_target_p.Y),
 					 cost_map.countToCell(s_curr_p.Y));
@@ -135,7 +135,7 @@ bool FollowWallMovement::shouldTurn()
 
 bool FollowWallMovement::isBlockCleared()
 {
-	if (!cost_map.is_block_accessible(cost_map.getXCell(), cost_map.getYCell())) // Robot has step on blocks.
+	if (!cost_map.isBlockAccessible(cost_map.getXCell(), cost_map.getYCell())) // Robot has step on blocks.
 	{
 		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
@@ -158,7 +158,7 @@ bool FollowWallMovement::isOverOriginLine()
 					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, robot::instance()->getPoseAngle(), target_angle);
 			return true;
 		}
-		else if (cost_map.is_block_cleaned_unblock(curr.X, curr.Y)) // If robot covers a big block, stop.
+		else if (cost_map.isBlockCleanedUnblock(curr.X, curr.Y)) // If robot covers a big block, stop.
 		{
 			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), s_target_p(%d, %d).",
 					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y);
@@ -375,7 +375,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				time_right_angle = ros::Time::now().toSec();
 				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
-			if(obs.frontTriggered() || cost_map.is_front_block_boundary(3) ) {
+			if(obs.frontTriggered() || cost_map.isFrontBlockBoundary(3) ) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
@@ -404,7 +404,7 @@ void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
-		if (obs.frontTriggered() || cost_map.is_front_block_boundary(3)) {
+		if (obs.frontTriggered() || cost_map.isFrontBlockBoundary(3)) {
 //			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;

@@ -194,11 +194,11 @@ void cm_apply_cs(int next) {
 		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
-			cost_map.update_position();
+			cost_map.updatePosition();
 			//wf_mark_home_point();
 			cost_map.reset(MAP);
 			cost_map.ros_convert(MAP, true, false, false);
-			cost_map.mark_robot(MAP);//note: To clear the obstacles before go home, please don't remove it!
+			cost_map.markRobot(MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.
 		if (ev.battrey_home)

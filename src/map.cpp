@@ -25,8 +25,6 @@ CostMap fw_map;
 CostMap ros_map;
 CostMap decrease_map;
 
-SlamMap slam_map;
-
 boost::mutex slam_map_mutex;
 
 #ifndef SHORTEST_PATH_V2
@@ -305,7 +303,7 @@ void CostMap::robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_l
 	*y = cellToCount(countToCell(relative_point.Y));
 }
 
-void CostMap::robot_to_cell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
+void CostMap::robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
 {
 	auto relative_point = getRelative(point, offset_lat, offset_long, false);
 	x = countToCell(relative_point.X);
@@ -513,14 +511,14 @@ bool CostMap::countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy)
 	return true;
 }
 
-uint8_t CostMap::set_lidar()
+uint8_t CostMap::setLidar()
 {
 #if LIDAR_MARKER
 	//MotionManage::s_lidar->lidarMarker(true);
 #endif
 }
 
-uint8_t CostMap::set_obs()
+uint8_t CostMap::setObs()
 {
 	if (temp_obs_cells.empty())
 		return 0;
@@ -537,7 +535,7 @@ uint8_t CostMap::set_obs()
 	return block_count;
 }
 
-uint8_t CostMap::set_bumper()
+uint8_t CostMap::setBumper()
 {
 	if (temp_bumper_cells.empty())
 		return 0;
@@ -554,7 +552,7 @@ uint8_t CostMap::set_bumper()
 	return block_count;
 }
 
-uint8_t CostMap::set_tilt()
+uint8_t CostMap::setTilt()
 {
 	if (temp_tilt_cells.empty())
 		return 0;
@@ -571,7 +569,7 @@ uint8_t CostMap::set_tilt()
 	return block_count;
 }
 
-uint8_t CostMap::set_slip()
+uint8_t CostMap::setSlip()
 {
 	if (temp_slip_cells.empty())
 		return 0;
@@ -588,7 +586,7 @@ uint8_t CostMap::set_slip()
 	return block_count;
 }
 
-uint8_t CostMap::set_cliff()
+uint8_t CostMap::setCliff()
 {
 	if (temp_cliff_cells.empty())
 		return 0;
@@ -605,7 +603,7 @@ uint8_t CostMap::set_cliff()
 	return block_count;
 }
 
-uint8_t CostMap::set_rcon()
+uint8_t CostMap::setRcon()
 {
 	if (temp_rcon_cells.empty())
 		return 0;
@@ -622,12 +620,12 @@ uint8_t CostMap::set_rcon()
 	return block_count;
 }
 
-uint8_t CostMap::save_charger_area(const Cell_t home_point)
+uint8_t CostMap::saveChargerArea(const Cell_t home_point)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
 	temp_rcon_cells.clear();
 	int16_t x_min,x_max,y_min,y_max;
-	path_get_range(MAP,&x_min, &x_max,&y_min,&y_max);
+	getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
 	for(int16_t i = x_min;i<=x_max;i++){
 		for(int16_t j = y_min;j<=y_max;j++){
 			if(getCell(MAP, i, j) == BLOCKED_RCON)
@@ -654,7 +652,7 @@ uint8_t CostMap::save_charger_area(const Cell_t home_point)
 	return block_count;
 }
 
-uint8_t CostMap::set_follow_wall()
+uint8_t CostMap::setFollowWall()
 {
 
 	uint8_t block_count = 0;
@@ -675,7 +673,7 @@ uint8_t CostMap::set_follow_wall()
 	}
 }
 
-uint8_t CostMap::save_slip()
+uint8_t CostMap::saveSlip()
 {
 	if (!g_robot_slip)
 		return 0;
@@ -688,7 +686,7 @@ uint8_t CostMap::save_slip()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//cm_world_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -699,7 +697,7 @@ uint8_t CostMap::save_slip()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::save_tilt()
+uint8_t CostMap::saveTilt()
 {
 	auto tilt_trig = ev.tilt_triggered;
 //	ROS_INFO("%s,%d: Current(%d, %d), trig(%d)",__FUNCTION__, __LINE__,get_curr_cell().X,get_curr_cell().Y, tilt_trig);
@@ -720,7 +718,7 @@ uint8_t CostMap::save_tilt()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//cm_world_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -731,7 +729,7 @@ uint8_t CostMap::save_tilt()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::save_obs()
+uint8_t CostMap::saveObs()
 {
 	// Now obs is just for slowing down.
 	return 0;
@@ -770,7 +768,7 @@ uint8_t CostMap::save_obs()
 	return static_cast<uint8_t >(d_cells.size());*/
 }
 
-uint8_t CostMap::save_cliff()
+uint8_t CostMap::saveCliff()
 {
 	auto cliff_trig = ev.cliff_triggered/*cliff.get_status()*/;
 	if (! cliff_trig)
@@ -797,7 +795,7 @@ uint8_t CostMap::save_cliff()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -808,7 +806,7 @@ uint8_t CostMap::save_cliff()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::save_bumper()
+uint8_t CostMap::saveBumper()
 {
 	auto bumper_trig = ev.bumper_triggered/*bumper.get_status()*/;
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,get_curr_cell().X,get_curr_cell().Y, ev.bumper_jam, g_bumper_cnt, bumper_trig);
@@ -840,7 +838,7 @@ uint8_t CostMap::save_bumper()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -851,16 +849,16 @@ uint8_t CostMap::save_bumper()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::save_rcon()
+uint8_t CostMap::saveRcon()
 {
 	uint8_t block_count;
 	if(c_rcon.should_mark_charger_ ){
 		c_rcon.should_mark_charger_ = false;
-		block_count += cost_map.save_charger_area(c_rcon.getRconPos());
+		block_count += cost_map.saveChargerArea(c_rcon.getRconPos());
 	}
 	else if(c_rcon.should_mark_temp_charger_ ){
 		c_rcon.should_mark_temp_charger_ = false;
-		block_count += cost_map.save_charger_area(c_rcon.getRconPos());
+		block_count += cost_map.saveChargerArea(c_rcon.getRconPos());
 	}
 	return block_count;
 
@@ -962,18 +960,17 @@ uint8_t CostMap::save_rcon()
 #endif
 }
 
-uint8_t CostMap::save_follow_wall()
+uint8_t CostMap::saveFollowWall()
 {
-	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && world_distance() < 0.1);
-
 	auto dy = mt.is_left() ? 2 : -2;
 	int16_t x, y;
 	//int32_t	x2, y2;
 	std::string msg = "cell:";
-	robot_to_cell(getCurrPoint(), dy * CELL_SIZE, 0, x, y);
+	robotToCell(getCurrPoint(), dy * CELL_SIZE, 0, x, y);
 	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
 	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
 	if (should_save_for_MAP)
 		temp_fw_cells.push_back({x, y});
 	temp_WFMAP_follow_wall_cells.push_back({x, y});
@@ -983,14 +980,14 @@ uint8_t CostMap::save_follow_wall()
 	return 1;
 }
 
-uint8_t CostMap::save_blocks()
+uint8_t CostMap::saveBlocks()
 {
 	uint8_t block_count = 0;
-	block_count += save_bumper();
-	block_count += save_cliff();
-	block_count += save_obs();
-	block_count += save_rcon();
-	block_count += save_slip();
+	block_count += saveBumper();
+	block_count += saveCliff();
+	block_count += saveObs();
+	block_count += saveRcon();
+	block_count += saveSlip();
 //	block_count += save_follow_wall();
 
 	return block_count;
@@ -1013,15 +1010,8 @@ uint8_t CostMap::save_blocks()
 //	return block_count;
 //}
 
-double world_distance(void) {
-	auto dis = sqrtf(powf(Movement::s_curr_p.X - Movement::s_origin_p.X, 2) + powf(Movement::s_curr_p.Y - Movement::s_origin_p.Y, 2));
 
-//	auto dis =  two_points_distance(Movement::s_origin_p.X, Movement::s_origin_p.Y , \
-//														Movement::s_curr_p.X, Movement::s_curr_p.Y);
-	return dis*CELL_SIZE/CELL_COUNT_MUL/1000;
-}
-
-void CostMap::set_cleaned(std::deque<Cell_t>& cells)
+void CostMap::setCleaned(std::deque<Cell_t> &cells)
 {
 	if(cells.empty())
 		return;
@@ -1087,7 +1077,7 @@ void CostMap::set_cleaned(std::deque<Cell_t>& cells)
 	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
-bool CostMap::mark_robot(uint8_t id)
+bool CostMap::markRobot(uint8_t id)
 {
 	if(!cs.is_trapped())
 		return false;
@@ -1110,7 +1100,7 @@ bool CostMap::mark_robot(uint8_t id)
 	return ret;
 }
 
-Cell_t CostMap::update_position()
+Cell_t CostMap::updatePosition()
 {
 	auto pos_x = robot::instance()->getPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -1119,7 +1109,7 @@ Cell_t CostMap::update_position()
 	return getCurrCell();
 }
 
-uint32_t CostMap::get_cleaned_area(void)
+uint32_t CostMap::getCleanedArea(void)
 {
 	uint32_t cleaned_count = 0;
 //	ROS_INFO("g_x_min= %d, g_x_max = %d",g_x_min,g_x_max);
@@ -1135,7 +1125,7 @@ uint32_t CostMap::get_cleaned_area(void)
 	return cleaned_count;
 }
 
-uint8_t CostMap::is_a_block(int16_t x, int16_t y)
+uint8_t CostMap::isABlock(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	CellState cs;
@@ -1148,7 +1138,7 @@ uint8_t CostMap::is_a_block(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_blocked_by_bumper(int16_t x, int16_t y)
+uint8_t CostMap::isBlockedByBumper(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i, j;
@@ -1168,14 +1158,14 @@ uint8_t CostMap::is_blocked_by_bumper(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_block_accessible(int16_t x, int16_t y)
+uint8_t CostMap::isBlockAccessible(int16_t x, int16_t y)
 {
 	uint8_t retval = 1;
 	int16_t i, j;
 
 	for (i = ROBOT_RIGHT_OFFSET; retval == 1 && i <= ROBOT_LEFT_OFFSET; i++) {
 		for (j = ROBOT_RIGHT_OFFSET; retval == 1 && j <= ROBOT_LEFT_OFFSET; j++) {
-			if (is_a_block(x + i, y + j) == 1) {
+			if (isABlock(x + i, y + j) == 1) {
 				retval = 0;
 			}
 		}
@@ -1184,14 +1174,14 @@ uint8_t CostMap::is_block_accessible(int16_t x, int16_t y)
 	return retval;
 }
 
-bool CostMap::is_block_cleanable(int16_t x, int16_t y)
+bool CostMap::isBlockCleanable(int16_t x, int16_t y)
 {
-	auto retval = is_block_unclean(x, y) && !is_block_blocked(x, y);
+	auto retval = isBlockUnclean(x, y) && !isBlockBlocked(x, y);
 //	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
 	return retval;
 }
 
-int8_t CostMap::is_block_cleaned_unblock(int16_t x, int16_t y)
+int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
 {
 	uint8_t cleaned = 0;
 	int16_t i, j;
@@ -1201,7 +1191,7 @@ int8_t CostMap::is_block_cleaned_unblock(int16_t x, int16_t y)
 			auto state = getCell(MAP, x + i, y + j);
 			if (state == CLEANED) {
 				cleaned ++;
-			} else if(is_block_blocked(x, y))
+			} else if(isBlockBlocked(x, y))
 				return false;
 		}
 	}
@@ -1211,7 +1201,7 @@ int8_t CostMap::is_block_cleaned_unblock(int16_t x, int16_t y)
 	return false;
 }
 
-uint8_t CostMap::is_block_unclean(int16_t x, int16_t y)
+uint8_t CostMap::isBlockUnclean(int16_t x, int16_t y)
 {
 	uint8_t unclean_cnt = 0;
 	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
@@ -1223,7 +1213,7 @@ uint8_t CostMap::is_block_unclean(int16_t x, int16_t y)
 	return unclean_cnt;
 }
 
-uint8_t CostMap::is_block_boundary(int16_t x, int16_t y)
+uint8_t CostMap::isBlockBoundary(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i;
@@ -1237,13 +1227,13 @@ uint8_t CostMap::is_block_boundary(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_block_blocked(int16_t x, int16_t y)
+uint8_t CostMap::isBlockBlocked(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i;
 
 	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (is_a_block(x, i) == 1) {
+		if (isABlock(x, i) == 1) {
 			retval = 1;
 		}
 	}
@@ -1252,14 +1242,14 @@ uint8_t CostMap::is_block_blocked(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
+uint8_t CostMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
 {
 	uint8_t retval = 0;
 	int16_t x,y;
 	auto dy = mt.is_left()  ?  2 : -2;
 	for(auto dx =-1; dx<=1,retval == 0; dx++) {
-		robot_to_cell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
-		if (is_a_block(x, y) == 1) {
+		robotToCell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+		if (isABlock(x, y) == 1) {
 			retval = 1;
 		}
 	}
@@ -1268,14 +1258,14 @@ uint8_t CostMap::is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
-void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_paths)
+void CostMap::generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths)
 {
 	bool		all_set;
 	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
 	CellState	cs;
 	reset(SPMAP);
 
-	path_get_range(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	getMapRange(SPMAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto i = x_min; i <= x_max; ++i) {
 		for (auto j = y_min; j <= y_max; ++j) {
 			cs = getCell(MAP, i, j);
@@ -1353,7 +1343,7 @@ void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_pa
 //	print(SPMAP, 0,0);
 }
 
-bool CostMap::is_front_block_boundary(int dx)
+bool CostMap::isFrontBlockBoundary(int dx)
 {
 	int32_t x, y;
 	for (auto dy = -1; dy <= 1; dy++)
@@ -1364,7 +1354,8 @@ bool CostMap::is_front_block_boundary(int dx)
 	}
 	return false;
 }
-void CostMap::path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max)
+void CostMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min,
+						  int16_t *y_range_max)
 {
 	if (id == MAP || id == SPMAP) {
 		*x_range_min = g_x_min - (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
@@ -1385,7 +1376,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 
 		temp_cell = cost_map.getCurrCell();
 
-	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
+	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
 
 	if (id == MAP) {
 		ROS_INFO("Map: %s", "MAP");
@@ -1435,7 +1426,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 			}
 		}
 		#if COLOR_DEBUG_MAP
-		color_print(outString, 0, index);
+		colorPrint(outString, 0, index);
 		#else
 		printf("%s\n", outString);
 		#endif
@@ -1443,7 +1434,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 	printf("\n");
 	#endif
 }
-void CostMap::color_print(char *outString, int16_t y_min, int16_t y_max)
+void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 {
 	int16_t j = 0;
 	char cs;
@@ -1516,7 +1507,7 @@ void CostMap::color_print(char *outString, int16_t y_min, int16_t y_max)
 	}
 	printf("%s\033[0m\n",y_col.c_str());
 }
-bool CostMap::is_block(void)
+bool CostMap::isFrontBlocked(void)
 {
 	bool retval = false;
 	int16_t x,y;
@@ -1525,7 +1516,7 @@ bool CostMap::is_block(void)
 
 	for(auto& d_cell : d_cells)
 	{
-		robot_to_cell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		if(getCell(MAP, x, y) == BLOCKED_ROS_MAP)
 		{
 			retval = true;
@@ -1535,70 +1526,3 @@ bool CostMap::is_block(void)
 	return retval;
 }
 
-SlamMap::SlamMap()
-{
-}
-
-SlamMap::~SlamMap()
-{
-}
-
-void SlamMap::setWidth(uint32_t width)
-{
-	width_ = width;
-}
-
-uint32_t SlamMap::getWidth()
-{
-	return width_;
-}
-
-void SlamMap::setHeight(uint32_t height)
-{
-	height_ = height;
-}
-
-uint32_t SlamMap::getHeight()
-{
-	return height_;
-}
-
-void SlamMap::setResolution(float resolution)
-{
-	resolution_ = resolution;
-}
-
-float SlamMap::getResolution()
-{
-	return resolution_;
-}
-
-void SlamMap::setOriginX(double origin_x)
-{
-	origin_x_ = origin_x;
-}
-
-double SlamMap::getOriginX()
-{
-	return origin_x_;
-}
-
-void SlamMap::setOriginY(double origin_y)
-{
-	origin_y_ = origin_y;
-}
-
-double SlamMap::getOriginY()
-{
-	return origin_y_;
-}
-
-void SlamMap::setData(std::vector<int8_t> data)
-{
-	map_data_ = data;
-}
-
-std::vector<int8_t> SlamMap::getData()
-{
-	return map_data_;
-}

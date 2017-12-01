@@ -107,7 +107,7 @@ bool CleanStateBase::isTrapped() {
 	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
 	if(is_found)
 		return false;
-	auto map_cleand_count = cost_map.get_cleaned_area();
+	auto map_cleand_count = cost_map.getCleanedArea();
 	double clean_proportion = 0.0;
 	clean_proportion = (double) escape_cleaned_count / (double) map_cleand_count;
 	ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__, escape_cleaned_count);
@@ -210,11 +210,11 @@ void GoHomePointCS::setting(void)
 		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
-			cost_map.update_position();
+			cost_map.updatePosition();
 			//wf_mark_home_point();
 			cost_map.reset(MAP);
 			cost_map.ros_convert(MAP, true, false, false);
-			cost_map.mark_robot(MAP);//note: To clear the obstacles before go home, please don't remove it!
+			cost_map.markRobot(MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.
 		if (ev.battrey_home)

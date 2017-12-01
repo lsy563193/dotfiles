@@ -423,24 +423,24 @@ bool NavigationClean::csm_next(Cell_t &curr)
 void NavigationClean::mark()
 {
 	ROS_INFO("%s, %d: NavigationClean::mark", __FUNCTION__, __LINE__);
-	cost_map.save_blocks();
+	cost_map.saveBlocks();
 
 //	uint8_t block_count = 0;
-	cost_map.set_obs();
-	cost_map.set_bumper();
-	cost_map.set_cliff();
-	cost_map.set_tilt();
-	cost_map.set_slip();
-	cost_map.set_lidar();
+	cost_map.setObs();
+	cost_map.setBumper();
+	cost_map.setCliff();
+	cost_map.setTilt();
+	cost_map.setSlip();
+	cost_map.setLidar();
 
 	if(mt.is_follow_wall())
-		cost_map.set_follow_wall();
+		cost_map.setFollowWall();
 	if(cs.is_trapped())
-		fw_map.set_follow_wall();
+		fw_map.setFollowWall();
 
-	cost_map.set_cleaned(g_passed_path);
-	cost_map.mark_robot(MAP);
-	cost_map.set_rcon();
+	cost_map.setCleaned(g_passed_path);
+	cost_map.markRobot(MAP);
+	cost_map.setRcon();
 //	cost_map.print(MAP,0,0);
 }
 

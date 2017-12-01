@@ -65,6 +65,7 @@ FILE(GLOB PP_SRC
 	src/shortest_path.cpp
 	src/signature.c
 	src/slam.cpp
+	src/slam_map.cpp
 	src/sleep.cpp
 	src/space_exploration.cpp
 	src/spot.cpp
