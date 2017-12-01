@@ -114,23 +114,23 @@ public:
 
 	void setPosition(double x, double y);
 
-	Point32_t get_relative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
+	Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 
-	void robot_to_point(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+	void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-	CellState get_cell(int id, int16_t x, int16_t y);
+	CellState getCell(int id, int16_t x, int16_t y);
 
-	void clear_blocks(void);
+	void clearBlocks(void);
 
-	int32_t cell_to_count(int16_t distance);
+	int32_t cellToCount(int16_t distance);
 
-	int16_t count_to_cell(int32_t count);
+	int16_t countToCell(int32_t count);
 
-	Point32_t cell_to_point(const Cell_t &cell);
+	Point32_t cellToPoint(const Cell_t &cell);
 
-	Cell_t point_to_cell(Point32_t pnt);
+	Cell_t pointToCell(Point32_t pnt);
 
-	void set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
+	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
 
 	void reset(uint8_t id);
 
@@ -144,8 +144,8 @@ public:
  */
 	void ros_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map,int limit=20, SlamMap* slam_map_=&slam_map);
 
-	void to_world(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double &wx,
-								double &wy);
+	void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double &wx,
+					double &wy);
 
 	bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx,
 									double wy, unsigned int &mx, unsigned int &my);

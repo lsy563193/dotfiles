@@ -28,8 +28,8 @@ bool FollowWallMovement::isNewLineReach()
 	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
 		ROS_WARN("%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, cost_map.count_to_cell(s_origin_p.Y), cost_map.count_to_cell(s_target_p.Y),
-				 cost_map.count_to_cell(s_curr_p.Y));
+				 __FUNCTION__, __LINE__, cost_map.countToCell(s_origin_p.Y), cost_map.countToCell(s_target_p.Y),
+				 cost_map.countToCell(s_curr_p.Y));
 		ret = true;
 	}
 	else if (is_pos_dir ^ s_curr_p.Y < s_target_p.Y)
@@ -37,10 +37,10 @@ bool FollowWallMovement::isNewLineReach()
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
-		if (cost_map.is_block_blocked(cost_map.count_to_cell(s_curr_p.X) + dx, cost_map.count_to_cell(s_curr_p.Y))) {
+		if (cost_map.is_block_blocked(cost_map.countToCell(s_curr_p.X) + dx, cost_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, cost_map.count_to_cell(s_origin_p.Y), cost_map.count_to_cell(s_target_p.Y),
-					 cost_map.count_to_cell(s_curr_p.Y));
+					 __FUNCTION__, __LINE__, cost_map.countToCell(s_origin_p.Y), cost_map.countToCell(s_target_p.Y),
+					 cost_map.countToCell(s_curr_p.Y));
 			ret = true;
 		}
 	}
@@ -146,7 +146,7 @@ bool FollowWallMovement::isBlockCleared()
 
 bool FollowWallMovement::isOverOriginLine()
 {
-	auto curr = cost_map.point_to_cell(s_curr_p);
+	auto curr = cost_map.pointToCell(s_curr_p);
 	if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120)
 		|| (s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
 	{

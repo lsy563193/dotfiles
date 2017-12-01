@@ -1033,10 +1033,10 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		cost_map.robot_to_point(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-		if (cost_map.get_cell(MAP, cost_map.count_to_cell(x_tmp), cost_map.count_to_cell(y_tmp)) != BLOCKED_BUMPER)
+		cost_map.robotToPoint(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (cost_map.getCell(MAP, cost_map.countToCell(x_tmp), cost_map.countToCell(y_tmp)) != BLOCKED_BUMPER)
 		{
-			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m",cost_map.count_to_cell(x_tmp),cost_map.count_to_cell(y_tmp));
+			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m", cost_map.countToCell(x_tmp), cost_map.countToCell(y_tmp));
 			cost_map.setCell(MAP, x_tmp, y_tmp, BLOCKED_LIDAR);
 		}
 		ret = 1;
@@ -1214,12 +1214,13 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 			}
 
 			cost_map.robot_to_cell(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
-			auto cell_status = cost_map.get_cell(MAP, x_tmp, y_tmp);
+			auto cell_status = cost_map.getCell(MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
 				//ROS_INFO("    \033[36mlidar marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				msg += direction_msg + "(" + std::to_string(cost_map.count_to_cell(x_tmp)) + ", " + std::to_string(cost_map.count_to_cell(y_tmp)) + ")";
-				cost_map.setCell(MAP, cost_map.cell_to_count(x_tmp), cost_map.cell_to_count(y_tmp), BLOCKED_LIDAR); //BLOCKED_OBS);
+				msg += direction_msg + "(" + std::to_string(cost_map.countToCell(x_tmp)) + ", " + std::to_string(
+						cost_map.countToCell(y_tmp)) + ")";
+				cost_map.setCell(MAP, cost_map.cellToCount(x_tmp), cost_map.cellToCount(y_tmp), BLOCKED_LIDAR); //BLOCKED_OBS);
 			}
 		}
 	}

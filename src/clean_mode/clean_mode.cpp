@@ -95,7 +95,7 @@ void CleanMode::setMt()
 	s_origin_p = {cost_map.getXCount(), cost_map.getYCount()};
 	if(mt.is_follow_wall())
 	{
-		s_target_p = cost_map.cell_to_point(g_plan_path.back());
+		s_target_p = cost_map.cellToPoint(g_plan_path.back());
 		mt_reg_ = fw_reg_;
 		if(cm_is_follow_wall()) {
 			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
@@ -128,7 +128,7 @@ void CleanMode::setMt()
 	}else if(mt.is_linear())
 	{
 		ROS_INFO("%s,%d: mt.is_linear",__FUNCTION__, __LINE__);
-		s_target_p = cost_map.cell_to_point(g_plan_path.front());
+		s_target_p = cost_map.cellToPoint(g_plan_path.front());
 		mt_reg_ = line_reg_;
 		g_turn_angle = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());

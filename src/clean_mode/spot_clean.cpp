@@ -8,7 +8,7 @@ SpotClean::SpotClean(const Cell_t& curr, const Cell_t& target_cell, const PPTarg
 {
 	g_plan_path.clear();
 	s_curr_p = {cost_map.getXCount(), cost_map.getYCount()};
-	auto target = cost_map.cell_to_point(target_cell);
+	auto target = cost_map.cellToPoint(target_cell);
 
 	back_reg_ = new BackMovement();
 	fw_reg_ = new FollowWallMovement(s_curr_p, target);

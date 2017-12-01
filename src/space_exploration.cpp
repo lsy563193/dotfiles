@@ -54,8 +54,8 @@ void explore_update_map(void)
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 			Point32_t point = {cost_map.getXCount(), cost_map.getYCell(), static_cast<int16_t>(angle + angle_i * 10)};
-			cost_map.robot_to_point(point, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
-			auto status = cost_map.get_cell(MAP, cost_map.count_to_cell(x), cost_map.count_to_cell(y));
+			cost_map.robotToPoint(point, CELL_SIZE * dy, CELL_SIZE * 0, &x, &y);
+			auto status = cost_map.getCell(MAP, cost_map.countToCell(x), cost_map.countToCell(y));
 			if (status > CLEANED && status < BLOCKED_BOUNDARY) {
 				//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
 				break;
