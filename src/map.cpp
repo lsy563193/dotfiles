@@ -625,6 +625,7 @@ uint8_t CostMap::set_rcon()
 uint8_t CostMap::save_charger_area(const Cell_t home_point)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
+	temp_rcon_cells.clear();
 	int16_t x_min,x_max,y_min,y_max;
 	path_get_range(MAP,&x_min, &x_max,&y_min,&y_max);
 	for(int16_t i = x_min;i<=x_max;i++){
@@ -663,10 +664,12 @@ uint8_t CostMap::set_follow_wall()
 		Cell_t block_cell;
 		auto dy = mt.is_left() ? 2 : -2;
 		for(auto& cell : g_passed_path){
-			robot_to_cell(cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
-			msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
-			setCell(MAP, cellToCount(block_cell.X), cellToCount(block_cell.Y), BLOCKED_CLIFF);
-			block_count++;
+			if(getCell(MAP,cell.X,cell.Y) != BLOCKED_RCON){
+				robot_to_cell(cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
+				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
+				setCell(MAP, cellToCount(block_cell.X), cellToCount(block_cell.Y), BLOCKED_CLIFF);
+				block_count++;
+			}
 		}
 		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark MAP %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	}
@@ -1058,7 +1061,7 @@ void CostMap::set_cleaned(std::deque<Cell_t>& cells)
 		{
 			auto y = cell.Y + dy;
 			auto status = getCell(MAP, cell.X, y);
-			if (status != BLOCKED_TILT && status != BLOCKED_SLIP)
+			if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
 			{
 				setCell(MAP, cellToCount(cell.X), cellToCount(y), CLEANED);
 				//msg += "(" + std::to_string(cell.X) + "," + std::to_string(y) + "),";

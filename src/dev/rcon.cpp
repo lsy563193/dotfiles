@@ -41,6 +41,8 @@ void Rcon::setRconPos(float cd,float dist)
 	y = (int16_t)(wpy*1000/CELL_SIZE);
 	charger_pos_.X = x;
 	charger_pos_.Y = y;
+	if(found_charger_)
+		g_homes.push_back(charger_pos_);
 	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,x,y);
 
 }
@@ -222,10 +224,10 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 		ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x,scan_allow = %d ,lidar_new = %d\033[0m",__FUNCTION__,__LINE__,cd,rcon_value,scan_allow,lidar_new);
 		return false;
 	}
-	setRconPos(cd,dist);
 	found_charger_ = true;
 	found_temp_charger_ = false;
 	should_mark_charger_ = true;
+	setRconPos(cd,dist);
 	return true;
 }
 
