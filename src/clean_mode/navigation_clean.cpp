@@ -438,7 +438,7 @@ void NavigationClean::mark()
 	if(cs.is_trapped())
 		fw_map.setFollowWall();
 
-	cost_map.set_cleaned(g_passed_path);
+	cost_map.setCleaned(g_passed_path);
 	cost_map.markRobot(MAP);
 	cost_map.setRcon();
 //	cost_map.print(MAP,0,0);

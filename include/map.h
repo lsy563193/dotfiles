@@ -204,9 +204,9 @@ public:
 	uint8_t setBlocks();
 
 
-	void set_cleaned(std::deque<Cell_t> &cells);
+	void setCleaned(std::deque<Cell_t> &cells);
 
-	uint32_t get_cleaned_area();
+	uint32_t getCleanedArea();
 
 /*
  * Check a block is accessible by the robot or not.
@@ -218,10 +218,10 @@ public:
  * @return	0 if the block is not blocked by bumper, obs or cliff
  *		1 if the block is blocked
  */
-	uint8_t is_block_accessible(int16_t x, int16_t y);
-	uint8_t is_block_blocked(int16_t x, int16_t y);
+	uint8_t isBlockAccessible(int16_t x, int16_t y);
+	uint8_t isBlockBlocked(int16_t x, int16_t y);
 
-	uint8_t is_block_blocked_x_axis(int16_t x, int16_t y);
+	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y);
 
 /*
  * Check a block is on the boundary or not, a block is defined as have the same size of robot.
@@ -232,7 +232,7 @@ public:
  * @return	0 if the block is not on the boundary
  *		1 if the block is on the boundary
  */
-	uint8_t is_block_boundary(int16_t x, int16_t y);
+	uint8_t isBlockBoundary(int16_t x, int16_t y);
 
 /*
  * Check a block is uncleaned or not, a block is defined as have the same size of brush.
@@ -245,7 +245,7 @@ public:
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-	uint8_t is_block_unclean(int16_t x, int16_t y);
+	uint8_t isBlockUnclean(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
@@ -257,7 +257,7 @@ public:
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-	int8_t is_block_cleaned_unblock(int16_t x, int16_t y);
+	int8_t isBlockCleanedUnblock(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
@@ -269,7 +269,7 @@ public:
  * @return	0 if the block is not cleanable
  *		1 if the block is cleanable
  */
-	bool is_block_cleanable(int16_t x, int16_t y);
+	bool isBlockCleanable(int16_t x, int16_t y);
 
 /*
  * Check a given point is blocked by bumper and/or cliff or not.
@@ -280,7 +280,7 @@ public:
  * @return	0 if it is not blocked by bumper and/or cliff
  *		1 if it is blocked by bumper and/or cliff
  */
-	uint8_t is_blocked_by_bumper(int16_t x, int16_t y);
+	uint8_t isBlockedByBumper(int16_t x, int16_t y);
 
 /*
  * Check whether a given point is an blocked or not.
@@ -291,11 +291,11 @@ public:
  * @return	0 if the given point is not blocked
  * 		1 if the given point is blocked
  */
-	uint8_t is_a_block(int16_t x, int16_t y);
+	uint8_t isABlock(int16_t x, int16_t y);
 
-	bool is_front_block_boundary(int dx);
+	bool isFrontBlockBoundary(int dx);
 
-	void generate_SPMAP(const Cell_t& curr, std::deque<PPTargetType>& g_paths);
+	void generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths);
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -308,7 +308,8 @@ public:
  * @return
  */
 
-	bool is_block(void);
+	bool isFrontBlocked(void);
+
 	BoundingBox2 generateBound()
 	{
 		BoundingBox2 bound{{int16_t(g_x_min), int16_t(g_y_min)}, {g_x_max, g_y_max}};
@@ -320,9 +321,9 @@ public:
 		BoundingBox2 bound{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)}, {g_x_max, g_y_max}};
 		return bound;
 	}
-	void path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
-	void color_print(char *outString, int16_t y_min, int16_t y_max);
+	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
 
 private:
@@ -344,5 +345,4 @@ extern CostMap decrease_map;
 
 extern boost::mutex slam_map_mutex;
 
-double world_distance(void);
 #endif /* __MAP_H */

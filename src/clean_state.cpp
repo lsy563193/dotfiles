@@ -107,7 +107,7 @@ bool CleanStateBase::isTrapped() {
 	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
 	if(is_found)
 		return false;
-	auto map_cleand_count = cost_map.get_cleaned_area();
+	auto map_cleand_count = cost_map.getCleanedArea();
 	double clean_proportion = 0.0;
 	clean_proportion = (double) escape_cleaned_count / (double) map_cleand_count;
 	ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__, escape_cleaned_count);

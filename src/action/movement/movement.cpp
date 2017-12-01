@@ -255,3 +255,12 @@ bool Movement::isStop()
 	return false;
 }
 
+
+double Movement::getMoveDistance()
+{
+	auto dis = sqrtf(powf(s_curr_p.X - s_origin_p.X, 2) + powf(s_curr_p.Y - s_origin_p.Y, 2));
+
+//	auto dis =  two_points_distance(Movement::s_origin_p.X, Movement::s_origin_p.Y , \
+//														Movement::s_curr_p.X, Movement::s_curr_p.Y);
+	return dis*CELL_SIZE/CELL_COUNT_MUL/1000;
+}

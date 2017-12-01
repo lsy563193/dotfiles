@@ -440,7 +440,7 @@ void robot::pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cel
 	CellState cell_state;
 	Cell_t next = path.front();
 	Cell_t target = path.back();
-	map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
+	map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
 		next.X = x_min;

@@ -942,7 +942,7 @@ MotionManage::~MotionManage()
 
 	if (cm_get() != Clean_Mode_Go_Charger)
 	{
-		auto cleaned_count = cost_map.get_cleaned_area();
+		auto cleaned_count = cost_map.getCleanedArea();
 		auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
 		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 				 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),

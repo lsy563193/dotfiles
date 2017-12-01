@@ -626,7 +626,7 @@ uint8_t CostMap::saveChargerArea(const Cell_t home_point)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
 	int16_t x_min,x_max,y_min,y_max;
-	path_get_range(MAP,&x_min, &x_max,&y_min,&y_max);
+	getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
 	for(int16_t i = x_min;i<=x_max;i++){
 		for(int16_t j = y_min;j<=y_max;j++){
 			if(getCell(MAP, i, j) == BLOCKED_RCON)
@@ -961,8 +961,6 @@ uint8_t CostMap::saveRcon()
 
 uint8_t CostMap::saveFollowWall()
 {
-	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && world_distance() < 0.1);
-
 	auto dy = mt.is_left() ? 2 : -2;
 	int16_t x, y;
 	//int32_t	x2, y2;
@@ -971,6 +969,7 @@ uint8_t CostMap::saveFollowWall()
 	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
 	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
 	if (should_save_for_MAP)
 		temp_fw_cells.push_back({x, y});
 	temp_WFMAP_follow_wall_cells.push_back({x, y});
@@ -1010,15 +1009,8 @@ uint8_t CostMap::saveBlocks()
 //	return block_count;
 //}
 
-double world_distance(void) {
-	auto dis = sqrtf(powf(Movement::s_curr_p.X - Movement::s_origin_p.X, 2) + powf(Movement::s_curr_p.Y - Movement::s_origin_p.Y, 2));
 
-//	auto dis =  two_points_distance(Movement::s_origin_p.X, Movement::s_origin_p.Y , \
-//														Movement::s_curr_p.X, Movement::s_curr_p.Y);
-	return dis*CELL_SIZE/CELL_COUNT_MUL/1000;
-}
-
-void CostMap::set_cleaned(std::deque<Cell_t>& cells)
+void CostMap::setCleaned(std::deque<Cell_t> &cells)
 {
 	if(cells.empty())
 		return;
@@ -1116,7 +1108,7 @@ Cell_t CostMap::updatePosition()
 	return getCurrCell();
 }
 
-uint32_t CostMap::get_cleaned_area(void)
+uint32_t CostMap::getCleanedArea(void)
 {
 	uint32_t cleaned_count = 0;
 //	ROS_INFO("g_x_min= %d, g_x_max = %d",g_x_min,g_x_max);
@@ -1132,7 +1124,7 @@ uint32_t CostMap::get_cleaned_area(void)
 	return cleaned_count;
 }
 
-uint8_t CostMap::is_a_block(int16_t x, int16_t y)
+uint8_t CostMap::isABlock(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	CellState cs;
@@ -1145,7 +1137,7 @@ uint8_t CostMap::is_a_block(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_blocked_by_bumper(int16_t x, int16_t y)
+uint8_t CostMap::isBlockedByBumper(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i, j;
@@ -1165,14 +1157,14 @@ uint8_t CostMap::is_blocked_by_bumper(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_block_accessible(int16_t x, int16_t y)
+uint8_t CostMap::isBlockAccessible(int16_t x, int16_t y)
 {
 	uint8_t retval = 1;
 	int16_t i, j;
 
 	for (i = ROBOT_RIGHT_OFFSET; retval == 1 && i <= ROBOT_LEFT_OFFSET; i++) {
 		for (j = ROBOT_RIGHT_OFFSET; retval == 1 && j <= ROBOT_LEFT_OFFSET; j++) {
-			if (is_a_block(x + i, y + j) == 1) {
+			if (isABlock(x + i, y + j) == 1) {
 				retval = 0;
 			}
 		}
@@ -1181,14 +1173,14 @@ uint8_t CostMap::is_block_accessible(int16_t x, int16_t y)
 	return retval;
 }
 
-bool CostMap::is_block_cleanable(int16_t x, int16_t y)
+bool CostMap::isBlockCleanable(int16_t x, int16_t y)
 {
-	auto retval = is_block_unclean(x, y) && !is_block_blocked(x, y);
+	auto retval = isBlockUnclean(x, y) && !isBlockBlocked(x, y);
 //	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
 	return retval;
 }
 
-int8_t CostMap::is_block_cleaned_unblock(int16_t x, int16_t y)
+int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
 {
 	uint8_t cleaned = 0;
 	int16_t i, j;
@@ -1198,7 +1190,7 @@ int8_t CostMap::is_block_cleaned_unblock(int16_t x, int16_t y)
 			auto state = getCell(MAP, x + i, y + j);
 			if (state == CLEANED) {
 				cleaned ++;
-			} else if(is_block_blocked(x, y))
+			} else if(isBlockBlocked(x, y))
 				return false;
 		}
 	}
@@ -1208,7 +1200,7 @@ int8_t CostMap::is_block_cleaned_unblock(int16_t x, int16_t y)
 	return false;
 }
 
-uint8_t CostMap::is_block_unclean(int16_t x, int16_t y)
+uint8_t CostMap::isBlockUnclean(int16_t x, int16_t y)
 {
 	uint8_t unclean_cnt = 0;
 	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
@@ -1220,7 +1212,7 @@ uint8_t CostMap::is_block_unclean(int16_t x, int16_t y)
 	return unclean_cnt;
 }
 
-uint8_t CostMap::is_block_boundary(int16_t x, int16_t y)
+uint8_t CostMap::isBlockBoundary(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i;
@@ -1234,13 +1226,13 @@ uint8_t CostMap::is_block_boundary(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_block_blocked(int16_t x, int16_t y)
+uint8_t CostMap::isBlockBlocked(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i;
 
 	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
-		if (is_a_block(x, i) == 1) {
+		if (isABlock(x, i) == 1) {
 			retval = 1;
 		}
 	}
@@ -1249,14 +1241,14 @@ uint8_t CostMap::is_block_blocked(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
+uint8_t CostMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
 {
 	uint8_t retval = 0;
 	int16_t x,y;
 	auto dy = mt.is_left()  ?  2 : -2;
 	for(auto dx =-1; dx<=1,retval == 0; dx++) {
 		robotToCell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
-		if (is_a_block(x, y) == 1) {
+		if (isABlock(x, y) == 1) {
 			retval = 1;
 		}
 	}
@@ -1265,14 +1257,14 @@ uint8_t CostMap::is_block_blocked_x_axis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
-void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_paths)
+void CostMap::generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths)
 {
 	bool		all_set;
 	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
 	CellState	cs;
 	reset(SPMAP);
 
-	path_get_range(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	getMapRange(SPMAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto i = x_min; i <= x_max; ++i) {
 		for (auto j = y_min; j <= y_max; ++j) {
 			cs = getCell(MAP, i, j);
@@ -1350,7 +1342,7 @@ void CostMap::generate_SPMAP(const Cell_t& curr, std::deque <PPTargetType>& g_pa
 //	print(SPMAP, 0,0);
 }
 
-bool CostMap::is_front_block_boundary(int dx)
+bool CostMap::isFrontBlockBoundary(int dx)
 {
 	int32_t x, y;
 	for (auto dy = -1; dy <= 1; dy++)
@@ -1361,7 +1353,8 @@ bool CostMap::is_front_block_boundary(int dx)
 	}
 	return false;
 }
-void CostMap::path_get_range(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max)
+void CostMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min,
+						  int16_t *y_range_max)
 {
 	if (id == MAP || id == SPMAP) {
 		*x_range_min = g_x_min - (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
@@ -1382,7 +1375,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 
 		temp_cell = cost_map.getCurrCell();
 
-	path_get_range(id, &x_min, &x_max, &y_min, &y_max);
+	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
 
 	if (id == MAP) {
 		ROS_INFO("Map: %s", "MAP");
@@ -1432,7 +1425,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 			}
 		}
 		#if COLOR_DEBUG_MAP
-		color_print(outString, 0, index);
+		colorPrint(outString, 0, index);
 		#else
 		printf("%s\n", outString);
 		#endif
@@ -1440,7 +1433,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 	printf("\n");
 	#endif
 }
-void CostMap::color_print(char *outString, int16_t y_min, int16_t y_max)
+void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 {
 	int16_t j = 0;
 	char cs;
@@ -1513,7 +1506,7 @@ void CostMap::color_print(char *outString, int16_t y_min, int16_t y_max)
 	}
 	printf("%s\033[0m\n",y_col.c_str());
 }
-bool CostMap::is_block(void)
+bool CostMap::isFrontBlocked(void)
 {
 	bool retval = false;
 	int16_t x,y;
