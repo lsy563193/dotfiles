@@ -600,7 +600,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		ROS_INFO("map_init-----------------------------");
 		cost_map.reset(MAP);
 		robot::instance()->initOdomPosition();
-		cost_map.mark_robot(MAP);
+		cost_map.markRobot(MAP);
 
 		g_have_seen_charger = false;
 		g_start_point_seen_charger = false;

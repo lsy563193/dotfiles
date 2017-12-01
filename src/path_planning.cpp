@@ -106,7 +106,7 @@ bool cell_is_out_of_range(const Cell_t &cell)
 void path_planning_initialize()
 {
 	g_direct_go = 0;
-	cost_map.mark_robot(MAP);
+	cost_map.markRobot(MAP);
 }
 
 MapDirection path_get_robot_direction()
@@ -821,7 +821,7 @@ bool wf_is_isolate() {
 	fw_map.path_get_range(MAP, &x_min, &x_max, &y_min, &y_max);
 	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 
-	fw_map.mark_robot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
+	fw_map.markRobot(MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 	auto curr = cost_map.pointToCell(Movement::s_curr_p);
 	fw_map.print(MAP, curr.X, curr.Y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
@@ -889,7 +889,7 @@ bool path_next_fw(const Cell_t &start) {
 			Cell_t cell;
 			auto point = cost_map.getCurrPoint();
 			point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
-			cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+			cost_map.robotToCell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 			g_plan_path.push_back(cell);
 			mt.set(MT_LINEARMOVE);
 			return true;
@@ -1318,7 +1318,7 @@ int16_t isolate_target(const Cell_t& curr, PPTargetType& path) {
 		const float	FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 	auto point = cost_map.getCurrPoint();
 	point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
-	cost_map.robot_to_cell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
+	cost_map.robotToCell(point, 0, FIND_WALL_DISTANCE * 1000, cell.X, cell.Y);
 		path.clear();
 	path.push_front(cell);
 		path.push_front(curr);

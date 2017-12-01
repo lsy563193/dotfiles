@@ -112,13 +112,15 @@ public:
 
 	void setCell(uint8_t id, int32_t x, int32_t y, CellState value);
 
+	CellState getCell(int id, int16_t x, int16_t y);
+
 	void setPosition(double x, double y);
 
 	Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 
 	void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-	CellState getCell(int id, int16_t x, int16_t y);
+	void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 	void clearBlocks(void);
 
@@ -158,50 +160,48 @@ public:
 
 	bool countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy);
 
-	bool mark_robot(uint8_t id);
+	bool markRobot(uint8_t id);
 
-	Cell_t update_position();
+	Cell_t updatePosition();
 
-	uint8_t set_lidar();
+	uint8_t setLidar();
 
-	uint8_t set_obs();
+	uint8_t setObs();
 
-	uint8_t set_bumper();
+	uint8_t setBumper();
 
-	uint8_t set_rcon();
+	uint8_t setRcon();
 
-	uint8_t set_cliff();
+	uint8_t setCliff();
 
-	uint8_t set_tilt();
+	uint8_t setTilt();
 
-	uint8_t set_slip();
+	uint8_t setSlip();
 
-	uint8_t save_charger_area(const Cell_t homepoint);
+	uint8_t saveChargerArea(const Cell_t homepoint);
 
-	uint8_t set_follow_wall();
+	uint8_t setFollowWall();
 
 
-	uint8_t save_lidar();
+	uint8_t saveLidar();
 
-	uint8_t save_obs();
+	uint8_t saveObs();
 
-	uint8_t save_bumper();
+	uint8_t saveBumper();
 
-	uint8_t save_rcon();
+	uint8_t saveRcon();
 
-	uint8_t save_cliff();
+	uint8_t saveCliff();
 
-	uint8_t save_tilt();
+	uint8_t saveTilt();
 
-	uint8_t save_slip();
+	uint8_t saveSlip();
 
-	uint8_t save_follow_wall();
+	uint8_t saveFollowWall();
 
-	uint8_t save_blocks();
+	uint8_t saveBlocks();
 
-	uint8_t set_blocks();
-
-	void robot_to_cell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
+	uint8_t setBlocks();
 
 
 	void set_cleaned(std::deque<Cell_t> &cells);
