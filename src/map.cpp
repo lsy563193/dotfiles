@@ -663,7 +663,7 @@ uint8_t CostMap::setFollowWall()
 		auto dy = mt.is_left() ? 2 : -2;
 		for(auto& cell : g_passed_path){
 			if(getCell(MAP,cell.X,cell.Y) != BLOCKED_RCON){
-				robot_to_cell(cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
+				robotToCell(cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
 				setCell(MAP, cellToCount(block_cell.X), cellToCount(block_cell.Y), BLOCKED_CLIFF);
 				block_count++;
